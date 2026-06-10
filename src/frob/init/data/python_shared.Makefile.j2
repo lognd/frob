@@ -1,0 +1,40 @@
+.PHONY: install test lint typecheck format check all clean
+
+PYTHON := python
+SRC := src
+TESTS := tests
+
+install:
+	uv sync --all-extras
+
+test:
+	pytest $(TESTS)/ -q
+
+test-fast:
+	pytest $(TESTS)/ -q --testmon
+
+test-verbose:
+	pytest $(TESTS)/ -v --tb=short
+
+lint:
+	ruff check $(SRC)/ --output-format concise
+
+lint-fix:
+	ruff check $(SRC)/ --fix
+	ruff format $(SRC)/
+
+typecheck:
+	ty check $(SRC)/
+
+format:
+	ruff format $(SRC)/
+	ruff check $(SRC)/ --fix --select I
+
+check: lint typecheck test
+
+all: install check
+
+clean:
+	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null; true
+	find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null; true
+	rm -rf dist/ build/ .pytest_cache/ .ruff_cache/

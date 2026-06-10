@@ -82,7 +82,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parse_p.add_argument(
         "parse_tool",
         metavar="tool",
-        choices=["pytest", "ruff", "ty", "clang", "clang++", "gcc", "g++", "junit", "gtest", "catch2"],
+        choices=["pytest", "ruff", "ty", "clang", "clang++", "gcc", "g++", "junit", "gtest", "catch2", "pycharm"],
     )
     parse_p.add_argument("parse_input", metavar="file", nargs="?",
                          help="input file (default: stdin)")
@@ -115,6 +115,23 @@ def _build_parser() -> argparse.ArgumentParser:
     dup_p.add_argument("--min-lines", dest="dup_min_lines", type=int, default=6, metavar="N",
                        help="minimum function body size to consider (default: 6)")
     dup_p.add_argument("--json", dest="dup_json", action="store_true")
+
+    # -- inspect -------------------------------------------------------------
+    inspect_p = sub.add_parser(
+        "inspect",
+        help="run PyCharm headless inspection and parse results",
+    )
+    inspect_p.add_argument("inspect_project", metavar="project_dir",
+                           help="path to the project to inspect")
+    inspect_p.add_argument("--pycharm", dest="inspect_pycharm", metavar="PATH",
+                           help="path to PyCharm inspect.bat")
+    inspect_p.add_argument("--profile", dest="inspect_profile", metavar="PATH",
+                           help="path to inspection profile XML")
+    inspect_p.add_argument("--output-dir", dest="inspect_output_dir", metavar="DIR",
+                           help="directory for inspection output (default: temp dir)")
+    inspect_p.add_argument("--scope", dest="inspect_scope", metavar="DIR",
+                           help="subdirectory scope for inspection (e.g. src)")
+    inspect_p.add_argument("--json", dest="inspect_json", action="store_true")
 
     # -- arch ----------------------------------------------------------------
     arch_p = sub.add_parser(

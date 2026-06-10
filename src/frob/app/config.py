@@ -20,6 +20,7 @@ class Subcommand(str, enum.Enum):
     parse = "parse"
     dup = "dup"
     arch = "arch"
+    inspect = "inspect"
 
 
 class AppConfig(BaseModel):
@@ -79,6 +80,14 @@ class AppConfig(BaseModel):
     arch_max_function_lines: int = 30
     arch_max_class_methods: int = 12
 
+    # inspect
+    inspect_project: Path | None = None
+    inspect_pycharm: Path | None = None
+    inspect_profile: Path | None = None
+    inspect_output_dir: Path | None = None
+    inspect_scope: str | None = None
+    inspect_json: bool = False
+
     # parse
     parse_tool: str | None = None
     parse_input: Path | None = None
@@ -108,6 +117,7 @@ class AppConfig(BaseModel):
             "xref_symbol", "xref_lang",
             "bundle_target", "bundle_format",
             "parse_tool",
+            "inspect_scope",
         ):
             val = getattr(args, field, None)
             if val is not None:
@@ -123,6 +133,10 @@ class AppConfig(BaseModel):
             "parse_input",
             "dup_path",
             "arch_path",
+            "inspect_project",
+            "inspect_pycharm",
+            "inspect_profile",
+            "inspect_output_dir",
         ):
             val = getattr(args, path_field, None)
             if val is not None:
@@ -152,6 +166,7 @@ class AppConfig(BaseModel):
             "xref_json", "tokens_detail", "tokens_json",
             "parse_json", "parse_verbose", "parse_passthrough",
             "dup_json", "arch_json",
+            "inspect_json",
         ):
             if getattr(args, flag, False):
                 d[flag] = True

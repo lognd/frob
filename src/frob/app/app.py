@@ -19,6 +19,7 @@ class App:
             cycle_runner,
             dup_runner,
             init_runner,
+            inspect_runner,
             map_runner,
             outline_runner,
             parse_runner,
@@ -50,8 +51,10 @@ class App:
                 dup_runner.run(self._cfg)
             case Subcommand.arch:
                 arch_runner.run(self._cfg)
+            case Subcommand.inspect:
+                inspect_runner.run(self._cfg)
             case _:
                 _log.error(
-                    "usage: frob <init|cycle|stub|outline|map|xref|tokens|bundle|parse|dup|arch> ..."
+                    "usage: frob <init|cycle|stub|outline|map|xref|tokens|bundle|parse|dup|arch|inspect> ..."
                 )
                 sys.exit(1)

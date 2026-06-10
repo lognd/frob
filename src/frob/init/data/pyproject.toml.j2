@@ -12,11 +12,26 @@ license = { text = "MIT" }
 
 dependencies = []
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-testmon>=2",
+    "ruff>=0.8",
+    "ty>=0.0.1a8",
+]
+
+[project.scripts]
+{{ project.name }} = "{{ project.name }}.__main__:main"
+
 [tool.setuptools]
 packages = { find = { where = ["src"] } }
 
 [tool.setuptools.package-data]
-{{ project.name }} = ["py.typed"]
+{{ project.name }} = ["py.typed", "logging/config.toml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
 
 [tool.ruff]
 line-length = 88
@@ -24,8 +39,5 @@ line-length = 88
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]
 
-[tool.black]
-line-length = 88
-
-[tool.isort]
-profile = "black"
+[tool.ruff.format]
+quote-style = "double"
