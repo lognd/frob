@@ -1,0 +1,17 @@
+import argparse
+import tomllib
+from pathlib import Path
+from pydantic import BaseModel
+from typing import Self
+
+
+class AppConfig(BaseModel):
+    @classmethod
+    def from_args(cls, args: argparse.Namespace, config_file: Path | None = None) -> "Self":
+        file_cfg: dict = {}
+        if config_file is not None and config_file.exists():
+            with config_file.open("rb") as f:
+                data = tomllib.load(f)
+            file_cfg = data.get("tool", {}).get("{{ project.name }}", {})
+        # CLI args override file config; add fields to both as the project grows
+        return cls(**file_cfg)

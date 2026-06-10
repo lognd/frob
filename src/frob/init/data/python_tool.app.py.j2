@@ -1,0 +1,9 @@
+from {{ project.name }}.app.config import AppConfig
+
+
+class App:
+    def __init__(self, cfg: AppConfig) -> None:
+        self._cfg = cfg
+
+    def __call__(self) -> None:
+        pass
