@@ -41,6 +41,8 @@ class Diagnostic(BaseModel):
 class TestCase(BaseModel):
     """A single test case result."""
 
+    __test__: bool = False
+
     suite: str = ""
     name: str
     passed: bool
