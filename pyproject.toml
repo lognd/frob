@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "frob"
+version = "0.0.0"
+description = "These are tools that I use in my development workflow."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "Logan Dapp", email = "logan@logand.app" }
+]
+
+dependencies = [
+    "typani>=0.0.3",
+    "pydantic>=2.12.0",
+    "tree-sitter>=0.25.2",
+    "tree-sitter-python>=0.25.0",
+    "tree-sitter-cpp>=0.23.4",
+    "jinja2>=3.1",
+]
+
+[project.urls]
+Homepage = "https://github.com/lognd/frob"
+Documentation = "https://github.com/lognd/frob/docs"
+Source = "https://github.com/lognd/frob"
+Issues = "https://github.com/lognd/frob/issues"
+
+[dependency-groups]
+dev = [
+    "black",
+    "isort",
+    "pytest",
+    "ruff",
+    "ty",
+]
+
+[tool.setuptools]
+packages = { find = { where = ["src"] } }
+
+[tool.setuptools.package-data]
+frob = ["py.typed", "init/data/*.j2"]
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+
+[tool.black]
+line-length = 88
+
+[tool.isort]
+profile = "black"
