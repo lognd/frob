@@ -32,6 +32,9 @@ _MANIFESTS: dict[str, list[_ManifestEntry]] = {
         _ManifestEntry("README.md.j2", "README.md"),
         _ManifestEntry("python_shared.gitignore.j2", ".gitignore"),
         _ManifestEntry("python_shared.Makefile.j2", "Makefile"),
+        _ManifestEntry(
+            "python_shared.scripts.bump_version.py.j2", "scripts/bump_version.py"
+        ),
         _ManifestEntry("pyproject.toml.j2", "pyproject.toml"),
         _ManifestEntry(
             "python_lib.__init__.py.j2", "src/{{ project.name }}/__init__.py"
@@ -75,6 +78,9 @@ _MANIFESTS: dict[str, list[_ManifestEntry]] = {
         _ManifestEntry("README.md.j2", "README.md"),
         _ManifestEntry("python_shared.gitignore.j2", ".gitignore"),
         _ManifestEntry("python_shared.Makefile.j2", "Makefile"),
+        _ManifestEntry(
+            "python_shared.scripts.bump_version.py.j2", "scripts/bump_version.py"
+        ),
         _ManifestEntry("pyproject.toml.j2", "pyproject.toml"),
         _ManifestEntry(
             "python_tool.__init__.py.j2", "src/{{ project.name }}/__init__.py"
