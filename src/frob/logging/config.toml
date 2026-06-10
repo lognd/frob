@@ -1,0 +1,30 @@
+version = 1
+disable_existing_loggers = false
+
+[filters.below_warning]
+"()" = "frob.logging.filter.BelowLevelFilter"
+below = "WARNING"
+
+[formatters.stdout_fmt]
+"()" = "frob.logging.formatter.FrobFormatter"
+
+[formatters.stderr_fmt]
+"()" = "frob.logging.formatter.FrobFormatter"
+show_level = true
+
+[handlers.stdout]
+class = "logging.StreamHandler"
+formatter = "stdout_fmt"
+stream = "ext://sys.stdout"
+level = "DEBUG"
+filters = ["below_warning"]
+
+[handlers.stderr]
+class = "logging.StreamHandler"
+formatter = "stderr_fmt"
+stream = "ext://sys.stderr"
+level = "WARNING"
+
+[root]
+level = "DEBUG"
+handlers = ["stdout", "stderr"]
