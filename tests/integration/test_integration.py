@@ -178,7 +178,9 @@ def test_map_suggests_cheaper_than_full_read(tmp_path):
     """map tokens should be less than reading all files directly (needs enough files)."""
     # Generate enough content so map overhead is clearly smaller than raw source
     for i in range(20):
-        lines = [f"def func_{i}_{j}(x: int) -> int:\n    return x + {j}\n" for j in range(10)]
+        lines = [
+            f"def func_{i}_{j}(x: int) -> int:\n    return x + {j}\n" for j in range(10)
+        ]
         (tmp_path / f"module_{i}.py").write_text("\n".join(lines))
 
     proj_map = map_project(tmp_path)
