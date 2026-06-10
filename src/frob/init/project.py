@@ -176,6 +176,45 @@ _MANIFESTS: dict[str, list[_ManifestEntry]] = {
             "cmake/toolchain-linux-arm64.cmake",
         ),
     ],
+    "pybind11-library": [
+        _ManifestEntry("pybind11_shared.gitignore.j2", ".gitignore"),
+        _ManifestEntry("pybind11_library.pyproject.toml.j2", "pyproject.toml"),
+        _ManifestEntry("pybind11_library.Makefile.j2", "Makefile"),
+        _ManifestEntry("cpp_shared.README.md.j2", "README.md"),
+        _ManifestEntry("cpp_shared.docs.index.md.j2", "docs/index.md"),
+        _ManifestEntry("pybind11_library.CMakeLists.txt.j2", "CMakeLists.txt"),
+        _ManifestEntry("pybind11_library.src.cpp.j2", "src/{{ project.name }}.cpp"),
+        _ManifestEntry("pybind11_library.include.h.j2", "include/{{ project.name }}.h"),
+        _ManifestEntry("pybind11_library.src.bindings.cpp.j2", "src/bindings.cpp"),
+        _ManifestEntry(
+            "pybind11_library.python.__init__.py.j2", "{{ project.name }}/__init__.py"
+        ),
+        _ManifestEntry(
+            "pybind11_library.tests.test_bindings.py.j2", "tests/test_bindings.py"
+        ),
+        _ManifestEntry(
+            "pybind11_library.github.ci.yml.j2", ".github/workflows/ci.yml"
+        ),
+    ],
+    "pyo3-library": [
+        _ManifestEntry("pyo3_shared.gitignore.j2", ".gitignore"),
+        _ManifestEntry("pyo3_library.pyproject.toml.j2", "pyproject.toml"),
+        _ManifestEntry("pyo3_library.Cargo.toml.j2", "Cargo.toml"),
+        _ManifestEntry("pyo3_library.Makefile.j2", "Makefile"),
+        _ManifestEntry("cpp_shared.README.md.j2", "README.md"),
+        _ManifestEntry("cpp_shared.docs.index.md.j2", "docs/index.md"),
+        _ManifestEntry("pyo3_library.src.lib.rs.j2", "src/lib.rs"),
+        _ManifestEntry(
+            "pyo3_library.python.__init__.py.j2",
+            "python/{{ project.name }}/__init__.py",
+        ),
+        _ManifestEntry(
+            "pyo3_library.tests.test_bindings.py.j2", "tests/test_bindings.py"
+        ),
+        _ManifestEntry(
+            "pyo3_library.github.ci.yml.j2", ".github/workflows/ci.yml"
+        ),
+    ],
 }
 
 

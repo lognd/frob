@@ -426,7 +426,7 @@ def test_cycle_suggest_flag(tmp_path):
 # frob dup
 # ---------------------------------------------------------------------------
 
-FIXTURES = Path(__file__).parent / "fixtures"
+FIXTURES = Path(__file__).parent.parent / "fixtures"
 
 
 def test_dup_exits_zero():

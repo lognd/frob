@@ -22,6 +22,8 @@ class Subcommand(str, enum.Enum):
     dup = "dup"
     arch = "arch"
     inspect = "inspect"
+    docs = "docs"
+    bind = "bind"
 
 
 class AppConfig(BaseModel):
@@ -89,6 +91,13 @@ class AppConfig(BaseModel):
     inspect_scope: str | None = None
     inspect_json: bool = False
 
+    # docs
+    docs_path: Path | None = None
+    docs_symbol: str | None = None
+    docs_overview: bool = False
+    docs_search: str | None = None
+    docs_json: bool = False
+
     # parse
     parse_tool: str | None = None
     parse_input: Path | None = None
@@ -123,6 +132,8 @@ class AppConfig(BaseModel):
             "bundle_format",
             "parse_tool",
             "inspect_scope",
+            "docs_symbol",
+            "docs_search",
         ):
             val = getattr(args, field, None)
             if val is not None:
@@ -140,6 +151,7 @@ class AppConfig(BaseModel):
             "parse_input",
             "dup_path",
             "arch_path",
+            "docs_path",
             "inspect_project",
             "inspect_pycharm",
             "inspect_profile",
@@ -186,6 +198,8 @@ class AppConfig(BaseModel):
             "dup_json",
             "arch_json",
             "inspect_json",
+            "docs_json",
+            "docs_overview",
         ):
             if getattr(args, flag, False):
                 d[flag] = True

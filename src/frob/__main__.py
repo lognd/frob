@@ -230,11 +230,63 @@ def _build_parser() -> argparse.ArgumentParser:
         metavar="N",
     )
 
+    # -- docs ----------------------------------------------------------------
+    docs_p = sub.add_parser(
+        "docs",
+        help="extract docstrings or search docs/ for a file/symbol",
+    )
+    docs_p.add_argument("docs_path", metavar="path", help="file or directory to inspect")
+    docs_p.add_argument(
+        "docs_symbol",
+        metavar="symbol",
+        nargs="?",
+        default=None,
+        help="class or function name (optional)",
+    )
+    docs_p.add_argument(
+        "--overview",
+        dest="docs_overview",
+        action="store_true",
+        help="show relevant docs/ headings and summaries",
+    )
+    docs_p.add_argument(
+        "--search",
+        dest="docs_search",
+        metavar="QUERY",
+        help="full-text search through docs/",
+    )
+    docs_p.add_argument("--json", dest="docs_json", action="store_true")
+
+    # -- bind ----------------------------------------------------------------
+    bind_p = sub.add_parser(
+        "bind",
+        help="verify binding declarations match source signatures",
+    )
+    bind_p.add_argument("bind_path", metavar="path", help="project root to scan")
+    bind_p.add_argument(
+        "--list-bindings",
+        dest="bind_list_bindings",
+        action="store_true",
+        help="list all BIND declarations",
+    )
+    bind_p.add_argument(
+        "--list-sources",
+        dest="bind_list_sources",
+        action="store_true",
+        help="list all detected source signatures",
+    )
+    bind_p.add_argument("--json", dest="bind_json", action="store_true")
+
     return p
 
 
 if __name__ == "__main__":
-    parser = _build_parser()
-    args = parser.parse_args()
-    cfg = AppConfig.from_external(args, Path("pyproject.toml"))
-    App(cfg)()
+    import sys as _sys
+    if len(_sys.argv) > 1 and _sys.argv[1] == "bind":
+        from frob.app.bind_runner import run as _bind_run
+        _bind_run(_sys.argv[2:])
+    else:
+        parser = _build_parser()
+        args = parser.parse_args()
+        cfg = AppConfig.from_external(args, Path("pyproject.toml"))
+        App(cfg)()

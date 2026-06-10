@@ -1,4 +1,4 @@
-.PHONY: all install build lint lint-fix format typecheck test test-fast clean upload
+.PHONY: all install build lint lint-fix format typecheck test test-fast clean upload sync-skills
 
 PYPI_NAME := frob
 SRC       := src
@@ -42,6 +42,33 @@ clean:
 	rm -rf dist/ build/ .pytest_cache/ .ruff_cache/
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null; true
 	find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null; true
+
+# ---------- skills / agents sync ----------
+# Copies skills and agents that already exist in ~/.claude to their counterparts
+# here, so local edits in this repo stay in sync. Only updates names that match;
+# never creates new entries in ~/.claude.
+
+CLAUDE_DIR := $(HOME)/.claude
+
+sync-skills:
+	@for d in skills/*/; do \
+	    name=$$(basename "$$d"); \
+	    target="$(CLAUDE_DIR)/skills/$$name"; \
+	    if [ -d "$$target" ]; then \
+	        cp -r "$$d"* "$$target/"; \
+	        echo "synced skill: $$name -> $$target"; \
+	    fi; \
+	done
+	@for d in agents/*/; do \
+	    name=$$(basename "$$d"); \
+	    target="$(CLAUDE_DIR)/agents/$$name"; \
+	    if [ -d "$$target" ]; then \
+	        cp -r "$$d"* "$$target/"; \
+	        echo "synced agent: $$name -> $$target"; \
+	    fi; \
+	done
+
+# ---------- build & publish ----------
 
 upload: clean
 	@LOCAL=$$(python -c "import tomllib; t=tomllib.load(open('pyproject.toml','rb')); print(t['project']['version'])"); \
