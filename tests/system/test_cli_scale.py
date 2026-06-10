@@ -6,8 +6,6 @@ All tests create large projects programmatically and run frob on them.
 import json
 from pathlib import Path
 
-import pytest
-
 from tests.system.conftest import run
 
 
@@ -20,7 +18,7 @@ def make_project(tmp_path: Path, n_files: int, n_functions_per_file: int) -> Non
                 f"def func_{i}_{j}(x: int, y: int) -> int:",
                 f"    # implementation {j}",
                 f"    result = x + y + {j}",
-                f"    return result",
+                "    return result",
                 "",
             ]
         (tmp_path / f"module_{i}.py").write_text("\n".join(lines))
@@ -106,19 +104,21 @@ def test_xref_definition_line_is_correct(tmp_path):
 
 
 def test_dup_detects_duplicate_files(tmp_path):
-    content = "\n".join([
-        "def shared_function(x: int, y: int) -> int:",
-        "    result = x + y",
-        "    intermediate = result * 2",
-        "    final = intermediate - 1",
-        "    return final",
-        "",
-        "def another_shared(s: str) -> str:",
-        "    stripped = s.strip()",
-        "    upper = stripped.upper()",
-        "    return upper",
-        "",
-    ])
+    content = "\n".join(
+        [
+            "def shared_function(x: int, y: int) -> int:",
+            "    result = x + y",
+            "    intermediate = result * 2",
+            "    final = intermediate - 1",
+            "    return final",
+            "",
+            "def another_shared(s: str) -> str:",
+            "    stripped = s.strip()",
+            "    upper = stripped.upper()",
+            "    return upper",
+            "",
+        ]
+    )
     for i in range(20):
         (tmp_path / f"dup_{i}.py").write_text(content)
     r = run("dup", str(tmp_path), "--json")

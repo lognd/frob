@@ -3,7 +3,6 @@ End-to-end tests for `frob tokens`.
 """
 
 import json
-from pathlib import Path
 
 import pytest
 
@@ -51,6 +50,7 @@ def test_stdout_contains_tokens_word(py_src):
 
 def test_stdout_contains_number(py_src):
     import re
+
     r = run("tokens", str(py_src))
     assert re.search(r"\d+", r.stdout)
 

@@ -4,9 +4,6 @@ Each tool is tested with realistic fixture strings.
 """
 
 import json
-from pathlib import Path
-
-import pytest
 
 from tests.system.conftest import run
 
@@ -131,16 +128,12 @@ def test_pytest_json_summary_field():
 
 
 def test_pytest_passthrough_propagates_failure():
-    r = run(
-        "parse", "pytest", "--exit-code", "1", "--passthrough", input=PYTEST_INPUT
-    )
+    r = run("parse", "pytest", "--exit-code", "1", "--passthrough", input=PYTEST_INPUT)
     assert r.returncode != 0
 
 
 def test_pytest_passthrough_no_failure():
-    r = run(
-        "parse", "pytest", "--exit-code", "0", "--passthrough", input=PYTEST_INPUT
-    )
+    r = run("parse", "pytest", "--exit-code", "0", "--passthrough", input=PYTEST_INPUT)
     assert r.returncode == 0
 
 
@@ -201,9 +194,7 @@ def test_ruff_json_severity_error():
 
 
 def test_ruff_passthrough_propagates():
-    r = run(
-        "parse", "ruff", "--exit-code", "1", "--passthrough", input=RUFF_JSON_INPUT
-    )
+    r = run("parse", "ruff", "--exit-code", "1", "--passthrough", input=RUFF_JSON_INPUT)
     assert r.returncode != 0
 
 
@@ -308,9 +299,7 @@ def test_clang_json_warning_diagnostic():
 
 
 def test_clang_passthrough_propagates():
-    r = run(
-        "parse", "clang", "--exit-code", "1", "--passthrough", input=CLANG_INPUT
-    )
+    r = run("parse", "clang", "--exit-code", "1", "--passthrough", input=CLANG_INPUT)
     assert r.returncode != 0
 
 

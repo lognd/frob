@@ -32,7 +32,7 @@ def _strip_docstring(raw: str) -> str:
         if raw.startswith(delim) and raw.endswith(delim) and len(raw) >= 6:
             inner = raw[3:-3]
             lines = inner.splitlines()
-            stripped = [l.strip() for l in lines]
+            stripped = [ln.strip() for ln in lines]
             while stripped and not stripped[0]:
                 stripped.pop(0)
             while stripped and not stripped[-1]:

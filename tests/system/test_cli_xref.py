@@ -3,7 +3,6 @@ End-to-end tests for `frob xref`.
 """
 
 import json
-from pathlib import Path
 
 import pytest
 

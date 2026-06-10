@@ -2,13 +2,10 @@
 End-to-end tests for `frob init`.
 """
 
-import re
-from pathlib import Path
 
 import pytest
 
 from tests.system.conftest import run
-
 
 # ---------------------------------------------------------------------------
 # frob init list
@@ -48,8 +45,12 @@ def test_list_shows_cpp_tool():
 @pytest.fixture
 def python_tool_project(tmp_path):
     r = run(
-        "init", "new", "python-tool", "myapp",
-        "--output", str(tmp_path),
+        "init",
+        "new",
+        "python-tool",
+        "myapp",
+        "--output",
+        str(tmp_path),
         cwd=str(tmp_path),
     )
     assert r.returncode == 0
@@ -58,8 +59,12 @@ def python_tool_project(tmp_path):
 
 def test_python_tool_exit_zero(tmp_path):
     r = run(
-        "init", "new", "python-tool", "myapp",
-        "--output", str(tmp_path),
+        "init",
+        "new",
+        "python-tool",
+        "myapp",
+        "--output",
+        str(tmp_path),
         cwd=str(tmp_path),
     )
     assert r.returncode == 0
@@ -142,8 +147,12 @@ def test_python_tool_main_contains_def_main(python_tool_project):
 @pytest.fixture
 def python_lib_project(tmp_path):
     r = run(
-        "init", "new", "python-library", "mylib",
-        "--output", str(tmp_path),
+        "init",
+        "new",
+        "python-library",
+        "mylib",
+        "--output",
+        str(tmp_path),
         cwd=str(tmp_path),
     )
     assert r.returncode == 0
@@ -152,8 +161,12 @@ def python_lib_project(tmp_path):
 
 def test_python_library_exit_zero(tmp_path):
     r = run(
-        "init", "new", "python-library", "mylib",
-        "--output", str(tmp_path),
+        "init",
+        "new",
+        "python-library",
+        "mylib",
+        "--output",
+        str(tmp_path),
         cwd=str(tmp_path),
     )
     assert r.returncode == 0
@@ -180,8 +193,12 @@ def test_python_library_pyproject_contains_name(python_lib_project):
 @pytest.fixture
 def cpp_lib_project(tmp_path):
     r = run(
-        "init", "new", "cpp-library", "mylib",
-        "--output", str(tmp_path),
+        "init",
+        "new",
+        "cpp-library",
+        "mylib",
+        "--output",
+        str(tmp_path),
         cwd=str(tmp_path),
     )
     assert r.returncode == 0
@@ -190,8 +207,12 @@ def cpp_lib_project(tmp_path):
 
 def test_cpp_library_exit_zero(tmp_path):
     r = run(
-        "init", "new", "cpp-library", "mylib",
-        "--output", str(tmp_path),
+        "init",
+        "new",
+        "cpp-library",
+        "mylib",
+        "--output",
+        str(tmp_path),
         cwd=str(tmp_path),
     )
     assert r.returncode == 0
@@ -226,13 +247,21 @@ def test_cpp_library_source_exists(cpp_lib_project):
 
 def test_double_init_without_force_fails(tmp_path):
     run(
-        "init", "new", "python-library", "mylib",
-        "--output", str(tmp_path),
+        "init",
+        "new",
+        "python-library",
+        "mylib",
+        "--output",
+        str(tmp_path),
         cwd=str(tmp_path),
     )
     r = run(
-        "init", "new", "python-library", "mylib",
-        "--output", str(tmp_path),
+        "init",
+        "new",
+        "python-library",
+        "mylib",
+        "--output",
+        str(tmp_path),
         cwd=str(tmp_path),
     )
     assert r.returncode != 0
@@ -240,13 +269,21 @@ def test_double_init_without_force_fails(tmp_path):
 
 def test_double_init_with_force_succeeds(tmp_path):
     run(
-        "init", "new", "python-library", "mylib",
-        "--output", str(tmp_path),
+        "init",
+        "new",
+        "python-library",
+        "mylib",
+        "--output",
+        str(tmp_path),
         cwd=str(tmp_path),
     )
     r = run(
-        "init", "new", "python-library", "mylib",
-        "--output", str(tmp_path),
+        "init",
+        "new",
+        "python-library",
+        "mylib",
+        "--output",
+        str(tmp_path),
         "--force",
         cwd=str(tmp_path),
     )
@@ -260,8 +297,12 @@ def test_double_init_with_force_succeeds(tmp_path):
 
 def test_unknown_type_exits_nonzero(tmp_path):
     r = run(
-        "init", "new", "does-not-exist", "proj",
-        "--output", str(tmp_path),
+        "init",
+        "new",
+        "does-not-exist",
+        "proj",
+        "--output",
+        str(tmp_path),
         cwd=str(tmp_path),
     )
     assert r.returncode != 0

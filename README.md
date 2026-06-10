@@ -2,7 +2,7 @@
 
 Developer workflow CLI tools. Designed for agentic and human use.
 
-Install: `pip install -e ~/Projects/Personal/frob` (editable) or `uvx frob`.
+Install: `pip install frob` or `uvx frob`. For editable dev install: `pip install -e .`
 
 ---
 

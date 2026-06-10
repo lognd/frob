@@ -3,7 +3,6 @@ End-to-end tests for `frob bundle`.
 """
 
 import json
-from pathlib import Path
 
 import pytest
 

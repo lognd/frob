@@ -3,9 +3,6 @@ End-to-end tests for `frob dup`.
 """
 
 import json
-from pathlib import Path
-
-import pytest
 
 from tests.system.conftest import FIXTURES, run
 
@@ -23,9 +20,7 @@ def test_exit_zero_on_fixture():
 
 
 def test_exit_zero_on_clean_dir(tmp_path):
-    (tmp_path / "a.py").write_text(
-        "def func_a(x: int) -> int:\n    return x + 1\n"
-    )
+    (tmp_path / "a.py").write_text("def func_a(x: int) -> int:\n    return x + 1\n")
     r = run("dup", str(tmp_path))
     assert r.returncode == 0
 

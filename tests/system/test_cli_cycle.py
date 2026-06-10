@@ -2,8 +2,6 @@
 End-to-end tests for `frob cycle`.
 """
 
-import json
-from pathlib import Path
 
 import pytest
 

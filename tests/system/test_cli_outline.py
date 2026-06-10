@@ -4,11 +4,10 @@ All tests run the real CLI via subprocess and assert exact output structure.
 """
 
 import json
-from pathlib import Path
 
 import pytest
 
-from tests.system.conftest import FIXTURES, PY_FIXTURE, run
+from tests.system.conftest import PY_FIXTURE, run
 
 CPP_FIXTURE = """\
 #include <vector>

@@ -3,9 +3,6 @@ End-to-end tests for `frob arch`.
 """
 
 import json
-from pathlib import Path
-
-import pytest
 
 from tests.system.conftest import FIXTURES, PY_FIXTURE, run
 
@@ -102,9 +99,7 @@ def test_json_suggestions_count():
 def test_json_god_class_entry():
     r = run("arch", str(ARCH_PYTHON_DIR), "--json")
     data = json.loads(r.stdout)
-    god = next(
-        s for s in data["suggestions"] if s["category"] == "god-class"
-    )
+    god = next(s for s in data["suggestions"] if s["category"] == "god-class")
     assert god["file"].endswith("big_class.py")
     assert god["severity"] == "warning"
     assert isinstance(god["line"], int)
@@ -114,9 +109,7 @@ def test_json_god_class_entry():
 def test_json_long_function_entry():
     r = run("arch", str(ARCH_PYTHON_DIR), "--json")
     data = json.loads(r.stdout)
-    lf = next(
-        s for s in data["suggestions"] if s["category"] == "long-function"
-    )
+    lf = next(s for s in data["suggestions"] if s["category"] == "long-function")
     assert lf["file"].endswith("long_func.py")
     assert isinstance(lf["line"], int)
     assert lf["line"] > 0
@@ -125,9 +118,7 @@ def test_json_long_function_entry():
 def test_json_deep_nesting_entry():
     r = run("arch", str(ARCH_PYTHON_DIR), "--json")
     data = json.loads(r.stdout)
-    dn = next(
-        s for s in data["suggestions"] if s["category"] == "deep-nesting"
-    )
+    dn = next(s for s in data["suggestions"] if s["category"] == "deep-nesting")
     assert dn["file"].endswith("deep_nest.py")
     assert isinstance(dn["line"], int)
     assert dn["line"] > 0
