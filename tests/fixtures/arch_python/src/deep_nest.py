@@ -1,4 +1,5 @@
 """A module with deeply nested code to trigger nesting warnings."""
+
 from __future__ import annotations
 
 

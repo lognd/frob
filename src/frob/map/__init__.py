@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 from pydantic import BaseModel
 
-from frob.outline import outline_file, ModuleOutline
+from frob.outline import ModuleOutline, outline_file
 
 _SOURCE_EXTS = {".py", ".c", ".cc", ".cpp", ".cxx", ".h", ".hpp", ".hxx"}
 
@@ -93,9 +92,19 @@ def _collect_paths(root: Path, depth: int | None) -> list[Path]:
     return results
 
 
-def _walk(root: Path, current: Path, current_depth: int, max_depth: int | None, out: list[Path]) -> None:
+def _walk(
+    root: Path,
+    current: Path,
+    current_depth: int,
+    max_depth: int | None,
+    out: list[Path],
+) -> None:
     for child in sorted(current.iterdir()):
-        if child.name.startswith(".") or child.name in ("__pycache__", "node_modules", ".venv"):
+        if child.name.startswith(".") or child.name in (
+            "__pycache__",
+            "node_modules",
+            ".venv",
+        ):
             continue
         if child.is_file() and child.suffix.lower() in _SOURCE_EXTS:
             out.append(child)

@@ -1,4 +1,5 @@
 """Gamma module with a clearly different function."""
+
 from __future__ import annotations
 
 

@@ -3,6 +3,7 @@ JUnit XML parser -- shared by pytest (--junit-xml), gtest, Catch2, CTest.
 
 Adapted from lograder.process.parsers.junit.
 """
+
 from __future__ import annotations
 
 import xml.etree.ElementTree as ET
@@ -49,15 +50,19 @@ def parse_junit_xml(content: str, tool: str = "junit") -> ToolResult:
                 failure_message = error_el.get("message") or ""
                 failure_text = (error_el.text or "").strip()
 
-            cases.append(TestCase(
-                suite=suite_name,
-                name=name,
-                passed=(failure_el is None and error_el is None and skipped_el is None),
-                skipped=skipped_el is not None,
-                duration=duration,
-                failure_message=failure_message,
-                failure_text=failure_text,
-            ))
+            cases.append(
+                TestCase(
+                    suite=suite_name,
+                    name=name,
+                    passed=(
+                        failure_el is None and error_el is None and skipped_el is None
+                    ),
+                    skipped=skipped_el is not None,
+                    duration=duration,
+                    failure_message=failure_message,
+                    failure_text=failure_text,
+                )
+            )
 
     passed = sum(1 for c in cases if c.passed)
     failed = sum(1 for c in cases if not c.passed and not c.skipped)

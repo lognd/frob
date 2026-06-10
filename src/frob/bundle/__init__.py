@@ -4,11 +4,10 @@ from pathlib import Path
 from typing import Literal
 
 from pydantic import BaseModel
-
-from typani import ErrorSet, Ok, Err
+from typani import Err, ErrorSet, Ok
 from typani.result import Result
 
-from frob.stub import stub_file, StubError
+from frob.stub import StubError, stub_file
 from frob.tokens import estimate_tokens
 
 
@@ -93,12 +92,14 @@ def build_bundle(
     for imp_path in import_paths:
         sig_content = _signatures_only(imp_path)
         if sig_content:
-            sections.append(BundleSection(
-                path=str(imp_path),
-                role="import",
-                content=sig_content,
-                tokens=estimate_tokens(sig_content),
-            ))
+            sections.append(
+                BundleSection(
+                    path=str(imp_path),
+                    role="import",
+                    content=sig_content,
+                    tokens=estimate_tokens(sig_content),
+                )
+            )
 
     total = sum(s.tokens for s in sections)
     return Ok(Bundle(target=target, sections=sections, total_tokens=total))
@@ -107,7 +108,6 @@ def build_bundle(
 def _discover_local_imports(path: Path, depth: int) -> list[Path]:
     """Return local file paths imported by `path`, up to `depth` levels."""
     root = path.parent
-    ext = path.suffix.lower()
     seen: set[str] = {str(path)}
     frontier: list[Path] = [path]
     result: list[Path] = []
@@ -132,18 +132,21 @@ def _discover_local_imports(path: Path, depth: int) -> list[Path]:
 
 def _get_imports_for(path: Path, root: Path) -> list[str]:
     from frob.ast.common import ModuleTag
-    ext = path.suffix.lower()
+
     try:
         rel = str(path.relative_to(root))
     except ValueError:
         return []
 
+    ext = path.suffix.lower()
     if ext == ".py":
         from frob.ast import python as _py
-        return _py.get_imports(ModuleTag(rel), root)
+
+        return [str(t) for t in _py.get_imports(ModuleTag(rel), root)]
     elif ext in {".c", ".cc", ".cpp", ".cxx", ".h", ".hpp", ".hxx"}:
         from frob.ast import cpp as _cpp
-        return _cpp.get_imports(ModuleTag(rel), root)
+
+        return [str(t) for t in _cpp.get_imports(ModuleTag(rel), root)]
     return []
 
 
@@ -187,7 +190,9 @@ def _py_signatures_only(path: Path) -> str | None:
     visit(tree.root_node)
 
     result = bytearray(src)
-    for start, end, replacement in sorted(replacements, key=lambda r: r[0], reverse=True):
+    for start, end, replacement in sorted(
+        replacements, key=lambda r: r[0], reverse=True
+    ):
         result[start:end] = replacement
     return result.decode()
 
@@ -214,6 +219,8 @@ def _cpp_signatures_only(path: Path) -> str | None:
     visit(tree.root_node)
 
     result = bytearray(src)
-    for start, end, replacement in sorted(replacements, key=lambda r: r[0], reverse=True):
+    for start, end, replacement in sorted(
+        replacements, key=lambda r: r[0], reverse=True
+    ):
         result[start:end] = replacement
     return result.decode()

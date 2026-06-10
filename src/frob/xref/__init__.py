@@ -3,8 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from pydantic import BaseModel
-
-from typani import ErrorSet, Ok, Err
+from typani import Err, ErrorSet, Ok
 from typani.result import Result
 
 
@@ -101,8 +100,7 @@ def _collect_source_files(root: Path, lang: str | None) -> list[Path]:
     results: list[Path] = []
     for path in sorted(root.rglob("*")):
         if path.is_file() and path.suffix.lower() in exts:
-            if not any(p.startswith(".") or p == "__pycache__"
-                       for p in path.parts):
+            if not any(p.startswith(".") or p == "__pycache__" for p in path.parts):
                 results.append(path)
     return results
 
@@ -110,8 +108,9 @@ def _collect_source_files(root: Path, lang: str | None) -> list[Path]:
 def _search_python(
     src: bytes, src_lines: list[str], symbol: str, rel: str
 ) -> tuple[Definition | None, list[Usage]]:
-    from frob.ast import python as _py
     from tree_sitter import Node
+
+    from frob.ast import python as _py
 
     _, tree = _py.parse_bytes(src)
     definition: Definition | None = None
@@ -133,7 +132,10 @@ def _search_python(
             if node.text and node.text.decode() == symbol:
                 parent = node.parent
                 # Skip if this node IS the name field of a definition
-                if parent and parent.type in ("function_definition", "class_definition"):
+                if parent and parent.type in (
+                    "function_definition",
+                    "class_definition",
+                ):
                     if parent.child_by_field_name("name") is node:
                         for child in node.children:
                             visit(child)
@@ -152,8 +154,9 @@ def _search_python(
 def _search_cpp(
     src: bytes, src_lines: list[str], symbol: str, rel: str
 ) -> tuple[Definition | None, list[Usage]]:
-    from frob.ast import cpp as _cpp
     from tree_sitter import Node
+
+    from frob.ast import cpp as _cpp
 
     _, tree = _cpp.parse_bytes(src)
     definition: Definition | None = None

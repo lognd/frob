@@ -4,6 +4,7 @@ PyCharm headless inspection output parser.
 Parses the XML files produced by PyCharm's inspect.bat into Diagnostic objects.
 Each XML file corresponds to one inspection category (e.g. PyUnresolvedReferences).
 """
+
 from __future__ import annotations
 
 import xml.etree.ElementTree as ET
@@ -87,13 +88,15 @@ def parse_pycharm_xml(xml_content: str, *, source_file: str = "") -> list[Diagno
             except ValueError:
                 pass
 
-        diagnostics.append(Diagnostic(
-            file=raw_file if raw_file else None,
-            line=line_num,
-            severity=severity,
-            code=code,
-            message=message,
-        ))
+        diagnostics.append(
+            Diagnostic(
+                file=raw_file if raw_file else None,
+                line=line_num,
+                severity=severity,
+                code=code,
+                message=message,
+            )
+        )
 
     return diagnostics
 

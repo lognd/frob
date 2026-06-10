@@ -1,7 +1,6 @@
 import pytest
-from pathlib import Path
 
-from frob.outline import outline_file, OutlineError
+from frob.outline import OutlineError, outline_file
 
 
 @pytest.fixture
@@ -85,6 +84,7 @@ def test_py_outline_as_text(py_file):
 
 def test_py_outline_as_json(py_file):
     import json
+
     outline = outline_file(py_file).danger_ok
     data = json.loads(outline.as_json())
     assert data["lines"] == outline.lines

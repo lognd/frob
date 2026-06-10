@@ -18,11 +18,17 @@ def _build_parser() -> argparse.ArgumentParser:
     init_sub = init_p.add_subparsers(dest="init_command")
     init_sub.add_parser("list", help="list registered project types")
     new_p = init_sub.add_parser("new", help="create a new project")
-    new_p.add_argument("init_type", metavar="type", help="project type (e.g. python-tool)")
+    new_p.add_argument(
+        "init_type", metavar="type", help="project type (e.g. python-tool)"
+    )
     new_p.add_argument("init_name", metavar="name", help="project name")
     new_p.add_argument("--output", dest="init_output", metavar="DIR")
-    new_p.add_argument("--force", dest="init_force", action="store_true",
-                       help="overwrite existing files")
+    new_p.add_argument(
+        "--force",
+        dest="init_force",
+        action="store_true",
+        help="overwrite existing files",
+    )
 
     # -- cycle ---------------------------------------------------------------
     cycle_p = sub.add_parser("cycle", help="detect dependency cycles")
@@ -31,10 +37,15 @@ def _build_parser() -> argparse.ArgumentParser:
     cycle_p.add_argument("--suggest", dest="cycle_suggest", action="store_true")
 
     # -- stub ----------------------------------------------------------------
-    stub_p = sub.add_parser("stub", help="emit a source file stubbed to a single target")
+    stub_p = sub.add_parser(
+        "stub", help="emit a source file stubbed to a single target"
+    )
     stub_p.add_argument("stub_file", metavar="file")
-    stub_p.add_argument("stub_target", metavar="target",
-                        help="function or ClassName.method to keep intact")
+    stub_p.add_argument(
+        "stub_target",
+        metavar="target",
+        help="function or ClassName.method to keep intact",
+    )
     stub_p.add_argument("--output", dest="stub_output", metavar="FILE")
 
     # -- outline -------------------------------------------------------------
@@ -70,8 +81,12 @@ def _build_parser() -> argparse.ArgumentParser:
         help="estimate token cost of files before reading them",
     )
     tokens_p.add_argument("tokens_paths", metavar="path", nargs="+")
-    tokens_p.add_argument("--detail", dest="tokens_detail", action="store_true",
-                          help="break down by function/class region")
+    tokens_p.add_argument(
+        "--detail",
+        dest="tokens_detail",
+        action="store_true",
+        help="break down by function/class region",
+    )
     tokens_p.add_argument("--json", dest="tokens_json", action="store_true")
 
     # -- parse ---------------------------------------------------------------
@@ -82,29 +97,66 @@ def _build_parser() -> argparse.ArgumentParser:
     parse_p.add_argument(
         "parse_tool",
         metavar="tool",
-        choices=["pytest", "ruff", "ty", "clang", "clang++", "gcc", "g++", "junit", "gtest", "catch2", "pycharm"],
+        choices=[
+            "pytest",
+            "ruff",
+            "ty",
+            "clang",
+            "clang++",
+            "gcc",
+            "g++",
+            "junit",
+            "gtest",
+            "catch2",
+            "pycharm",
+        ],
     )
-    parse_p.add_argument("parse_input", metavar="file", nargs="?",
-                         help="input file (default: stdin)")
-    parse_p.add_argument("--exit-code", dest="parse_exit_code", type=int, default=0,
-                         metavar="N", help="exit code the tool returned (affects pass/fail)")
+    parse_p.add_argument(
+        "parse_input", metavar="file", nargs="?", help="input file (default: stdin)"
+    )
+    parse_p.add_argument(
+        "--exit-code",
+        dest="parse_exit_code",
+        type=int,
+        default=0,
+        metavar="N",
+        help="exit code the tool returned (affects pass/fail)",
+    )
     parse_p.add_argument("--json", dest="parse_json", action="store_true")
-    parse_p.add_argument("--verbose", dest="parse_verbose", action="store_true",
-                         help="show passing tests and notes too")
-    parse_p.add_argument("--passthrough", dest="parse_passthrough", action="store_true",
-                         help="exit non-zero if the tool failed (useful in pipelines)")
+    parse_p.add_argument(
+        "--verbose",
+        dest="parse_verbose",
+        action="store_true",
+        help="show passing tests and notes too",
+    )
+    parse_p.add_argument(
+        "--passthrough",
+        dest="parse_passthrough",
+        action="store_true",
+        help="exit non-zero if the tool failed (useful in pipelines)",
+    )
 
     # -- bundle --------------------------------------------------------------
     bundle_p = sub.add_parser(
         "bundle",
-        help="assemble minimal context for a subagent (stubbed file + import signatures)",
+        help="assemble minimal context for a subagent (stubbed file + import sigs)",
     )
     bundle_p.add_argument("bundle_file", metavar="file")
     bundle_p.add_argument("bundle_target", metavar="target")
-    bundle_p.add_argument("--depth", dest="bundle_depth", type=int, default=1, metavar="N",
-                          help="how many import levels to inline (default: 1)")
-    bundle_p.add_argument("--format", dest="bundle_format",
-                          choices=["markdown", "json"], default="markdown")
+    bundle_p.add_argument(
+        "--depth",
+        dest="bundle_depth",
+        type=int,
+        default=1,
+        metavar="N",
+        help="how many import levels to inline (default: 1)",
+    )
+    bundle_p.add_argument(
+        "--format",
+        dest="bundle_format",
+        choices=["markdown", "json"],
+        default="markdown",
+    )
 
     # -- dup -----------------------------------------------------------------
     dup_p = sub.add_parser(
@@ -112,8 +164,14 @@ def _build_parser() -> argparse.ArgumentParser:
         help="detect duplicate/clone code segments (Type 1 exact, Type 2 renamed)",
     )
     dup_p.add_argument("dup_path", metavar="path", nargs="?", default=".")
-    dup_p.add_argument("--min-lines", dest="dup_min_lines", type=int, default=6, metavar="N",
-                       help="minimum function body size to consider (default: 6)")
+    dup_p.add_argument(
+        "--min-lines",
+        dest="dup_min_lines",
+        type=int,
+        default=6,
+        metavar="N",
+        help="minimum function body size to consider (default: 6)",
+    )
     dup_p.add_argument("--json", dest="dup_json", action="store_true")
 
     # -- inspect -------------------------------------------------------------
@@ -121,29 +179,56 @@ def _build_parser() -> argparse.ArgumentParser:
         "inspect",
         help="run PyCharm headless inspection and parse results",
     )
-    inspect_p.add_argument("inspect_project", metavar="project_dir",
-                           help="path to the project to inspect")
-    inspect_p.add_argument("--pycharm", dest="inspect_pycharm", metavar="PATH",
-                           help="path to PyCharm inspect.bat")
-    inspect_p.add_argument("--profile", dest="inspect_profile", metavar="PATH",
-                           help="path to inspection profile XML")
-    inspect_p.add_argument("--output-dir", dest="inspect_output_dir", metavar="DIR",
-                           help="directory for inspection output (default: temp dir)")
-    inspect_p.add_argument("--scope", dest="inspect_scope", metavar="DIR",
-                           help="subdirectory scope for inspection (e.g. src)")
+    inspect_p.add_argument(
+        "inspect_project", metavar="project_dir", help="path to the project to inspect"
+    )
+    inspect_p.add_argument(
+        "--pycharm",
+        dest="inspect_pycharm",
+        metavar="PATH",
+        help="path to PyCharm inspect.bat",
+    )
+    inspect_p.add_argument(
+        "--profile",
+        dest="inspect_profile",
+        metavar="PATH",
+        help="path to inspection profile XML",
+    )
+    inspect_p.add_argument(
+        "--output-dir",
+        dest="inspect_output_dir",
+        metavar="DIR",
+        help="directory for inspection output (default: temp dir)",
+    )
+    inspect_p.add_argument(
+        "--scope",
+        dest="inspect_scope",
+        metavar="DIR",
+        help="subdirectory scope for inspection (e.g. src)",
+    )
     inspect_p.add_argument("--json", dest="inspect_json", action="store_true")
 
     # -- arch ----------------------------------------------------------------
     arch_p = sub.add_parser(
         "arch",
-        help="architectural analysis: long functions, god classes, coupling, abstraction opportunities",
+        help="arch analysis: long functions, god classes, coupling",
     )
     arch_p.add_argument("arch_path", metavar="path", nargs="?", default=".")
     arch_p.add_argument("--json", dest="arch_json", action="store_true")
-    arch_p.add_argument("--max-function-lines", dest="arch_max_function_lines",
-                        type=int, default=30, metavar="N")
-    arch_p.add_argument("--max-class-methods", dest="arch_max_class_methods",
-                        type=int, default=12, metavar="N")
+    arch_p.add_argument(
+        "--max-function-lines",
+        dest="arch_max_function_lines",
+        type=int,
+        default=30,
+        metavar="N",
+    )
+    arch_p.add_argument(
+        "--max-class-methods",
+        dest="arch_max_class_methods",
+        type=int,
+        default=12,
+        metavar="N",
+    )
 
     return p
 

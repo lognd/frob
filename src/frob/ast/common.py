@@ -1,7 +1,6 @@
-from typing import Protocol, NewType
-from pathlib import Path
+from typing import NewType, Protocol
 
-from tree_sitter import Language, Parser, Node
+from tree_sitter import Language, Node, Parser
 
 ModuleTag = NewType("ModuleTag", str)
 ClassTag = NewType("ClassTag", str)

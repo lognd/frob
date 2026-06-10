@@ -9,9 +9,9 @@ from frob.ast.common import (
     ClassTag,
     FunctionTag,
     ModuleTag,
+    child_by_field,
     make_parser,
     text,
-    child_by_field,
 )
 
 _LANGUAGE = Language(_tscpp.language())
@@ -147,7 +147,9 @@ def emit_stub(source: bytes, tree: Tree, target: str) -> str:
                 replacements.append((body.start_byte, body.end_byte, b";"))
 
     result = bytearray(source)
-    for start, end, replacement in sorted(replacements, key=lambda r: r[0], reverse=True):
+    for start, end, replacement in sorted(
+        replacements, key=lambda r: r[0], reverse=True
+    ):
         result[start:end] = replacement
 
     return result.decode()

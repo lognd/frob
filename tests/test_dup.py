@@ -4,6 +4,7 @@ Unit tests for frob.dup.find_duplicates.
 The frob.dup module may not exist yet; these tests are written against its
 expected public API and will be collected/skipped appropriately.
 """
+
 from __future__ import annotations
 
 import json
@@ -15,6 +16,7 @@ FIXTURES = Path(__file__).parent / "fixtures"
 
 try:
     from frob.dup import find_duplicates
+
     HAS_DUP = True
 except ImportError:
     HAS_DUP = False
@@ -48,11 +50,7 @@ class TestFindDuplicates:
 
     def test_gamma_not_in_dup_group(self):
         result = find_duplicates(FIXTURES / "dup_python" / "src")
-        all_symbols = {
-            f.symbol
-            for g in result.groups
-            for f in g.fragments
-        }
+        all_symbols = {f.symbol for g in result.groups for f in g.fragments}
         assert "format_report" not in all_symbols
 
 
@@ -92,7 +90,11 @@ class TestDupResultFormat:
     def test_as_text_mentions_a_function(self):
         result = find_duplicates(FIXTURES / "dup_python" / "src")
         text = result.as_text()
-        assert "process_items" in text or "handle_entries" in text or "group" in text.lower()
+        assert (
+            "process_items" in text
+            or "handle_entries" in text
+            or "group" in text.lower()
+        )
 
     def test_as_json_is_valid_json(self):
         result = find_duplicates(FIXTURES / "dup_python" / "src")

@@ -2,8 +2,10 @@
 frob inspect -- run PyCharm headless inspection and display results.
 
 Usage:
-    frob inspect [--pycharm PATH] [--profile PATH] [--output-dir DIR] [--scope DIR] <project_dir>
+    frob inspect [--pycharm PATH] [--profile PATH] [--output-dir DIR] [--scope DIR]
+                 <project_dir>
 """
+
 from __future__ import annotations
 
 import sys
@@ -17,7 +19,7 @@ _log = get_logger(__name__)
 
 
 def run(cfg: AppConfig) -> None:
-    from frob.inspect import InspectError, find_pycharm, run_inspection
+    from frob.inspect import find_pycharm, run_inspection
     from frob.process.parsers import parse_pycharm_dir
 
     project = cfg.inspect_project

@@ -7,6 +7,7 @@ AppConfig fields used:
   arch_max_function_lines (int | None)  -- override max lines per function
   arch_max_class_methods  (int | None)  -- override max methods per class
 """
+
 from __future__ import annotations
 
 import sys

@@ -1,4 +1,5 @@
 """Simple Python package with clean, typed functions."""
+
 from __future__ import annotations
 
 

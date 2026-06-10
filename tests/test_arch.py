@@ -7,6 +7,7 @@ expected public API and will be skipped if the module is unavailable.
 The ArchResult model has a `suggestions` list of ArchSuggestion objects.
 Each ArchSuggestion has: file, line, category, severity, message, detail.
 """
+
 from __future__ import annotations
 
 import json
@@ -18,6 +19,7 @@ FIXTURES = Path(__file__).parent / "fixtures"
 
 try:
     from frob.arch import analyze_project
+
     HAS_ARCH = True
 except ImportError:
     HAS_ARCH = False
@@ -121,8 +123,10 @@ class TestAnalyzeProject:
     def test_simple_python_project_clean(self):
         result = analyze_project(FIXTURES / "simple_python" / "src")
         architectural = [
-            s for s in result.suggestions
-            if s.category in ("god-class", "long-function", "deep-nesting", "high-coupling")
+            s
+            for s in result.suggestions
+            if s.category
+            in ("god-class", "long-function", "deep-nesting", "high-coupling")
         ]
         assert len(architectural) == 0
 

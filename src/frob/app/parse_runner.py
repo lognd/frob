@@ -8,6 +8,7 @@ Usage:
     frob parse clang --exit-code 1 < build.log
     frob parse junit < test_results.xml
 """
+
 from __future__ import annotations
 
 import sys
@@ -15,7 +16,6 @@ import sys
 from frob.app.config import AppConfig
 from frob.logging import get_logger
 from frob.process.parsers import (
-    ToolResult,
     parse_clang,
     parse_junit_xml,
     parse_pycharm_dir,

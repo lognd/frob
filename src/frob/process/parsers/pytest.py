@@ -11,21 +11,18 @@ Recognizes:
   - The summary line at the end: "X failed, Y passed in Zs"
   - Failure sections from the "=== FAILURES ===" block
 """
+
 from __future__ import annotations
 
 import re
 
 from frob.process.parsers.common import Diagnostic, TestCase, ToolResult
 
-_RESULT_LINE = re.compile(
-    r"^(PASSED|FAILED|ERROR|SKIPPED)\s+(.*?)(?:\s+-\s+(.*))?$"
-)
+_RESULT_LINE = re.compile(r"^(PASSED|FAILED|ERROR|SKIPPED)\s+(.*?)(?:\s+-\s+(.*))?$")
 _STATUS_LINE = re.compile(
     r"^(tests/\S+|src/\S+|\S+\.py::\S+)\s+(PASSED|FAILED|ERROR|SKIPPED)"
 )
-_SUMMARY_LINE = re.compile(
-    r"=+\s+(.*?)\s+=+\s*$"
-)
+_SUMMARY_LINE = re.compile(r"=+\s+(.*?)\s+=+\s*$")
 _SHORT_SUMMARY = re.compile(
     r"(\d+)\s+failed|(\d+)\s+passed|(\d+)\s+error|(\d+)\s+skipped|in\s+([\d.]+)s"
 )
@@ -51,7 +48,11 @@ def parse_pytest(stdout: str, exit_code: int = 0) -> ToolResult:
             for c in reversed(cases):
                 if c.name == current_fail_name or current_fail_name.endswith(c.name):
                     # Extract the E-lines as the compact failure message
-                    e_lines = [l[2:].strip() for l in current_fail_lines if l.startswith("E ")]
+                    e_lines = [
+                        ln[2:].strip()
+                        for ln in current_fail_lines
+                        if ln.startswith("E ")
+                    ]
                     if e_lines:
                         object.__setattr__(c, "failure_message", e_lines[0])
                         object.__setattr__(c, "failure_text", "\n".join(e_lines))
@@ -73,12 +74,14 @@ def parse_pytest(stdout: str, exit_code: int = 0) -> ToolResult:
             # Diagnostic: file:line: message in failure block
             loc_match = _LOCATION_LINE.match(line)
             if loc_match and "AssertionError" not in line:
-                diagnostics.append(Diagnostic(
-                    file=loc_match.group(1),
-                    line=int(loc_match.group(2)),
-                    severity="error",
-                    message=loc_match.group(3).strip(),
-                ))
+                diagnostics.append(
+                    Diagnostic(
+                        file=loc_match.group(1),
+                        line=int(loc_match.group(2)),
+                        severity="error",
+                        message=loc_match.group(3).strip(),
+                    )
+                )
             continue
 
         # Status line: "tests/foo.py::test_bar PASSED"
@@ -89,12 +92,14 @@ def parse_pytest(stdout: str, exit_code: int = 0) -> ToolResult:
             parts = node_id.rsplit("::", 1)
             name = parts[-1] if parts else node_id
             suite = parts[0] if len(parts) > 1 else ""
-            cases.append(TestCase(
-                suite=suite,
-                name=name,
-                passed=status == "PASSED",
-                skipped=status == "SKIPPED",
-            ))
+            cases.append(
+                TestCase(
+                    suite=suite,
+                    name=name,
+                    passed=status == "PASSED",
+                    skipped=status == "SKIPPED",
+                )
+            )
             continue
 
         # Final summary line

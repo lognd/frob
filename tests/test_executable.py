@@ -4,6 +4,7 @@ frob parse, and verify the compact summary.
 
 Each test class is skipped if the external tool is not installed.
 """
+
 from __future__ import annotations
 
 import shutil
@@ -54,13 +55,19 @@ class TestRuffExecutable:
         assert ruff.returncode != 0 or ruff.stdout.strip() not in ("", "[]")
 
         frob = run_frob(
-            "parse", "ruff",
-            "--exit-code", str(ruff.returncode),
+            "parse",
+            "ruff",
+            "--exit-code",
+            str(ruff.returncode),
             input=ruff.stdout,
         )
         assert frob.returncode == 0, frob.stderr
         # At minimum ruff should have found something (F401 unused import)
-        assert "F401" in frob.stdout or "error" in frob.stdout.lower() or "warning" in frob.stdout.lower()
+        assert (
+            "F401" in frob.stdout
+            or "error" in frob.stdout.lower()
+            or "warning" in frob.stdout.lower()
+        )
 
     def test_ruff_clean_on_simple_python(self):
         fixture = FIXTURES / "simple_python"
@@ -69,8 +76,10 @@ class TestRuffExecutable:
             cwd=str(fixture),
         )
         frob = run_frob(
-            "parse", "ruff",
-            "--exit-code", str(ruff.returncode),
+            "parse",
+            "ruff",
+            "--exit-code",
+            str(ruff.returncode),
             input=ruff.stdout,
         )
         assert frob.returncode == 0, frob.stderr
@@ -86,12 +95,21 @@ class TestPytestExecutable:
     def test_pytest_runs_simple_python(self, tmp_path):
         fixture = FIXTURES / "simple_python"
         result = _run(
-            [sys.executable, "-m", "pytest", str(fixture / "tests"), "-v", "--tb=short"],
+            [
+                sys.executable,
+                "-m",
+                "pytest",
+                str(fixture / "tests"),
+                "-v",
+                "--tb=short",
+            ],
             cwd=str(fixture),
         )
         frob = run_frob(
-            "parse", "pytest",
-            "--exit-code", str(result.returncode),
+            "parse",
+            "pytest",
+            "--exit-code",
+            str(result.returncode),
             input=result.stdout + result.stderr,
         )
         assert frob.returncode == 0, frob.stderr
@@ -106,8 +124,10 @@ class TestPytestExecutable:
             cwd=str(fixture),
         )
         frob = run_frob(
-            "parse", "pytest",
-            "--exit-code", str(result.returncode),
+            "parse",
+            "pytest",
+            "--exit-code",
+            str(result.returncode),
             input=result.stdout + result.stderr,
         )
         assert frob.returncode == 0, frob.stderr
@@ -128,8 +148,10 @@ class TestTyExecutable:
             cwd=str(fixture),
         )
         frob = run_frob(
-            "parse", "ty",
-            "--exit-code", str(ty.returncode),
+            "parse",
+            "ty",
+            "--exit-code",
+            str(ty.returncode),
             input=ty.stdout + ty.stderr,
         )
         assert frob.returncode == 0, frob.stderr
@@ -143,8 +165,10 @@ class TestTyExecutable:
             cwd=str(fixture),
         )
         frob = run_frob(
-            "parse", "ty",
-            "--exit-code", str(ty.returncode),
+            "parse",
+            "ty",
+            "--exit-code",
+            str(ty.returncode),
             input=ty.stdout + ty.stderr,
         )
         assert frob.returncode == 0, frob.stderr
@@ -167,8 +191,10 @@ class TestGccExecutable:
         assert gcc.returncode != 0
 
         frob = run_frob(
-            "parse", "gcc",
-            "--exit-code", str(gcc.returncode),
+            "parse",
+            "gcc",
+            "--exit-code",
+            str(gcc.returncode),
             input=gcc.stderr,
         )
         assert frob.returncode == 0, frob.stderr
@@ -181,8 +207,10 @@ class TestGccExecutable:
             cwd=str(fixture),
         )
         frob = run_frob(
-            "parse", "gcc",
-            "--exit-code", str(gcc.returncode),
+            "parse",
+            "gcc",
+            "--exit-code",
+            str(gcc.returncode),
             input=gcc.stderr,
         )
         assert frob.returncode == 0, frob.stderr
@@ -200,8 +228,10 @@ class TestGppExecutable:
         assert gpp.returncode != 0
 
         frob = run_frob(
-            "parse", "g++",
-            "--exit-code", str(gpp.returncode),
+            "parse",
+            "g++",
+            "--exit-code",
+            str(gpp.returncode),
             input=gpp.stderr,
         )
         assert frob.returncode == 0, frob.stderr

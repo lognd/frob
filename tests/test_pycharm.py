@@ -9,14 +9,12 @@ Covers:
   - Malformed XML handling
   - frob parse pycharm <dir> via subprocess
 """
+
 from __future__ import annotations
 
 import json
 import subprocess
 import sys
-from pathlib import Path
-
-import pytest
 
 from frob.process.parsers import parse_pycharm_dir, parse_pycharm_xml
 from frob.process.parsers.common import Diagnostic

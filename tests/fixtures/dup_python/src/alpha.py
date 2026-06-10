@@ -1,4 +1,5 @@
 """Alpha module with a function that has a duplicate in beta.py."""
+
 from __future__ import annotations
 
 

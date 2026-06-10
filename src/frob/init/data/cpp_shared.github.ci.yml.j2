@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+    branches: ["main", "master"]
+
+jobs:
+  build-and-test:
+    name: ${{ "{{" }} matrix.name {{ "}}" }}
+    runs-on: ${{ "{{" }} matrix.os {{ "}}" }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # ---- native builds (always possible) ----
+          - name: linux-x86_64
+            os: ubuntu-latest
+            cmake_args: ""
+            cross: false
+
+          - name: windows-x86_64
+            os: windows-latest
+            cmake_args: ""
+            cross: false
+
+          - name: macos
+            os: macos-latest
+            cmake_args: ""
+            cross: false
+
+          # ---- cross-compiled on Linux ----
+          # NOTE: these require the cross-compilation toolchain to be installed.
+          # On your local machine:  sudo apt install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+          # The CI runner installs it below; on WSL you must install it manually.
+          - name: linux-arm64
+            os: ubuntu-latest
+            cmake_args: >-
+              -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain-linux-arm64.cmake
+            cross: true
+            apt_packages: gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+
+          # ---- Windows ARM (cross-compile via MSVC) ----
+          # NOTE: requires Visual Studio with ARM64 build tools installed.
+          # On CI this works; locally install "MSVC v143 ARM64" in VS installer.
+          - name: windows-arm64
+            os: windows-latest
+            cmake_args: >-
+              -A ARM64
+            cross: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install cross-compile toolchain (Linux ARM)
+        if: ${{ "{{" }} matrix.apt_packages != '' {{ "}}" }}
+        run: sudo apt-get install -y ${{ "{{" }} matrix.apt_packages {{ "}}" }}
+
+      - name: Configure
+        run: >
+          cmake -B build -DCMAKE_BUILD_TYPE=Release
+          ${{ "{{" }} matrix.cmake_args {{ "}}" }}
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Test
+        # Skip tests for cross-compiled targets (can't run ARM binary on x86)
+        if: ${{ "{{" }} !matrix.cross {{ "}}" }}
+        run: ctest --test-dir build --output-on-failure

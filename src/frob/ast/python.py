@@ -9,9 +9,9 @@ from frob.ast.common import (
     ClassTag,
     FunctionTag,
     ModuleTag,
+    child_by_field,
     make_parser,
     text,
-    child_by_field,
 )
 
 _LANGUAGE = Language(_tsp.language())
@@ -159,9 +159,8 @@ def emit_stub(source: bytes, tree: Tree, target: str) -> str:
                 continue
             name_node = child_by_field(n, "name")
             name = text(name_node) if name_node else ""
-            is_target = (
-                (class_name is None and name == func_name)
-                or (in_target_class and name == func_name)
+            is_target = (class_name is None and name == func_name) or (
+                in_target_class and name == func_name
             )
             if not is_target:
                 body = child_by_field(n, "body")
@@ -171,14 +170,22 @@ def emit_stub(source: bytes, tree: Tree, target: str) -> str:
     for n in tree.root_node.children:
         if n.type == "class_definition":
             name_node = child_by_field(n, "name")
-            is_target_class = class_name is not None and text(name_node) == class_name
+            is_target_class = (
+                class_name is not None
+                and name_node is not None
+                and text(name_node) == class_name
+            )
             if not is_target_class and class_name is None:
                 visit_functions(n, False)
             else:
                 visit_functions(n, is_target_class)
         elif n.type == "function_definition":
             name_node = child_by_field(n, "name")
-            is_target = class_name is None and text(name_node) == func_name
+            is_target = (
+                class_name is None
+                and name_node is not None
+                and text(name_node) == func_name
+            )
             if not is_target:
                 body = child_by_field(n, "body")
                 if body and body.named_children:
@@ -186,7 +193,9 @@ def emit_stub(source: bytes, tree: Tree, target: str) -> str:
 
     # Apply replacements in reverse order so offsets stay valid
     result = bytearray(source)
-    for start, end, replacement in sorted(replacements, key=lambda r: r[0], reverse=True):
+    for start, end, replacement in sorted(
+        replacements, key=lambda r: r[0], reverse=True
+    ):
         result[start:end] = replacement
 
     return result.decode()

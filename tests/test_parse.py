@@ -7,14 +7,12 @@ output format (text and JSON), and boundary conditions.
 System tests run `frob parse <tool>` via subprocess and verify stdout/stderr
 and exit codes end-to-end.
 """
+
 from __future__ import annotations
 
 import json
 import subprocess
 import sys
-from pathlib import Path
-
-import pytest
 
 from frob.process.parsers import (
     parse_clang,
@@ -46,7 +44,14 @@ def run(*args, input: str | None = None) -> subprocess.CompletedProcess:
 
 class TestDiagnosticAsText:
     def test_full(self):
-        d = Diagnostic(file="foo.py", line=10, col=3, severity="error", code="E501", message="too long")
+        d = Diagnostic(
+            file="foo.py",
+            line=10,
+            col=3,
+            severity="error",
+            code="E501",
+            message="too long",
+        )
         text = d.as_text()
         assert "foo.py" in text
         assert "10" in text
@@ -142,7 +147,14 @@ class TestToolResult:
         r = ToolResult(
             tool="pytest",
             exit_code=1,
-            tests=[TestCase(name="t", passed=False, failure_message="msg", failure_text="line1\nline2")],
+            tests=[
+                TestCase(
+                    name="t",
+                    passed=False,
+                    failure_message="msg",
+                    failure_text="line1\nline2",
+                )
+            ],
             summary="1 failed",
         )
         text = r.as_text(verbose=True)
@@ -214,7 +226,9 @@ ERROR collecting tests/test_bad.py
 """
 
 PYTEST_EMPTY = ""
-PYTEST_ONLY_SUMMARY = "============================== 0 passed in 0.01s =============================="
+PYTEST_ONLY_SUMMARY = (
+    "============================== 0 passed in 0.01s =============================="
+)
 
 
 class TestParsePytest:
@@ -330,45 +344,49 @@ src/foo.py:1:1: W291 trailing whitespace
 RUFF_TEXT_CLEAN_EMPTY = ""
 RUFF_TEXT_NO_ISSUES = "All checks passed!"
 
-RUFF_JSON_TWO = json.dumps([
-    {
-        "cell": None,
-        "code": "F401",
-        "end_location": {"column": 10, "row": 3},
-        "filename": "src/frob/ast/python.py",
-        "fix": None,
-        "location": {"column": 8, "row": 3},
-        "message": "`os` imported but unused",
-        "noqa_row": 3,
-        "url": "x",
-    },
-    {
-        "cell": None,
-        "code": "E501",
-        "end_location": {"column": 93, "row": 47},
-        "filename": "src/frob/app/config.py",
-        "fix": None,
-        "location": {"column": 89, "row": 47},
-        "message": "Line too long (92 > 88 characters)",
-        "noqa_row": 47,
-        "url": "x",
-    },
-])
+RUFF_JSON_TWO = json.dumps(
+    [
+        {
+            "cell": None,
+            "code": "F401",
+            "end_location": {"column": 10, "row": 3},
+            "filename": "src/frob/ast/python.py",
+            "fix": None,
+            "location": {"column": 8, "row": 3},
+            "message": "`os` imported but unused",
+            "noqa_row": 3,
+            "url": "x",
+        },
+        {
+            "cell": None,
+            "code": "E501",
+            "end_location": {"column": 93, "row": 47},
+            "filename": "src/frob/app/config.py",
+            "fix": None,
+            "location": {"column": 89, "row": 47},
+            "message": "Line too long (92 > 88 characters)",
+            "noqa_row": 47,
+            "url": "x",
+        },
+    ]
+)
 
 RUFF_JSON_EMPTY = "[]"
-RUFF_JSON_W_ONLY = json.dumps([
-    {
-        "cell": None,
-        "code": "W291",
-        "end_location": {"column": 5, "row": 1},
-        "filename": "src/foo.py",
-        "fix": None,
-        "location": {"column": 1, "row": 1},
-        "message": "trailing whitespace",
-        "noqa_row": 1,
-        "url": "x",
-    }
-])
+RUFF_JSON_W_ONLY = json.dumps(
+    [
+        {
+            "cell": None,
+            "code": "W291",
+            "end_location": {"column": 5, "row": 1},
+            "filename": "src/foo.py",
+            "fix": None,
+            "location": {"column": 1, "row": 1},
+            "message": "trailing whitespace",
+            "noqa_row": 1,
+            "url": "x",
+        }
+    ]
+)
 
 
 class TestParseRuffText:
@@ -484,9 +502,7 @@ warning[possibly-undefined] src/frob/ast/python.py:41:12: Name "node" is possibl
 Found 1 error, 1 warning
 """
 
-TY_ANSI = (
-    "\x1b[31merror\x1b[0m[incompatible-types] src/foo.py:1:1: bad type"
-)
+TY_ANSI = "\x1b[31merror\x1b[0m[incompatible-types] src/foo.py:1:1: bad type"
 
 TY_SIMPLE = """\
 error src/bar.py:5:3: something wrong
@@ -596,7 +612,9 @@ src/engine.cpp:15:10: warning: unused variable 'x' [-Wunused-variable]
 src/engine.cpp:18:1: note: in expansion of macro 'BAR'
 """
 
-CLANG_ANSI = "\x1b[1msrc/foo.cpp:1:1:\x1b[0m \x1b[1;31merror:\x1b[0m undeclared identifier"
+CLANG_ANSI = (
+    "\x1b[1msrc/foo.cpp:1:1:\x1b[0m \x1b[1;31merror:\x1b[0m undeclared identifier"
+)
 
 GCC_BASIC = """\
 src/main.c:5:3: error: expected ';' before '}' token
@@ -847,12 +865,21 @@ tests/test_foo.py::test_beta FAILED
 ============================== 1 failed, 1 passed in 0.3s ==============================
 """
 
-RUFF_JSON_CLI = json.dumps([{
-    "cell": None, "code": "F401", "filename": "foo.py",
-    "location": {"row": 1, "column": 1},
-    "end_location": {"row": 1, "column": 5},
-    "message": "unused import", "fix": None, "noqa_row": 1, "url": "x",
-}])
+RUFF_JSON_CLI = json.dumps(
+    [
+        {
+            "cell": None,
+            "code": "F401",
+            "filename": "foo.py",
+            "location": {"row": 1, "column": 1},
+            "end_location": {"row": 1, "column": 5},
+            "message": "unused import",
+            "fix": None,
+            "noqa_row": 1,
+            "url": "x",
+        }
+    ]
+)
 
 TY_CLI = "error[incompatible-types] src/foo.py:1:1: bad"
 
@@ -884,11 +911,25 @@ class TestParseCliPytest:
         assert "pytest" in r.stdout
 
     def test_passthrough_nonzero_on_failure(self):
-        r = run("parse", "pytest", "--exit-code", "1", "--passthrough", input=PYTEST_FAIL_CLI)
+        r = run(
+            "parse",
+            "pytest",
+            "--exit-code",
+            "1",
+            "--passthrough",
+            input=PYTEST_FAIL_CLI,
+        )
         assert r.returncode != 0
 
     def test_passthrough_zero_on_success(self):
-        r = run("parse", "pytest", "--exit-code", "0", "--passthrough", input=PYTEST_FAIL_CLI)
+        r = run(
+            "parse",
+            "pytest",
+            "--exit-code",
+            "0",
+            "--passthrough",
+            input=PYTEST_FAIL_CLI,
+        )
         assert r.returncode == 0
 
     def test_json_output(self):
@@ -920,7 +961,9 @@ class TestParseCliRuff:
         assert data["tool"] == "ruff"
 
     def test_passthrough(self):
-        r = run("parse", "ruff", "--exit-code", "1", "--passthrough", input=RUFF_JSON_CLI)
+        r = run(
+            "parse", "ruff", "--exit-code", "1", "--passthrough", input=RUFF_JSON_CLI
+        )
         assert r.returncode != 0
 
     def test_clean_input(self):
@@ -997,7 +1040,9 @@ class TestParseCliMisc:
         assert r.returncode != 0
 
     def test_verbose_flag_accepted(self):
-        r = run("parse", "pytest", "--exit-code", "0", "--verbose", input=PYTEST_FAIL_CLI)
+        r = run(
+            "parse", "pytest", "--exit-code", "0", "--verbose", input=PYTEST_FAIL_CLI
+        )
         assert r.returncode == 0
 
     def test_no_exit_code_defaults_zero(self):

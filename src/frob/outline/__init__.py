@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 from pydantic import BaseModel
-
-from typani import ErrorSet, Ok, Err
+from typani import Err, ErrorSet, Ok
 from typani.result import Result
 
 
@@ -57,6 +55,7 @@ def outline_file(path: Path) -> Result[ModuleOutline, OutlineError]:
     if ext in _PY_EXTS:
         return _outline_python(path)
     from frob.ast.cpp import ALL_EXTS as _CPP_EXTS
+
     if ext in _CPP_EXTS:
         return _outline_cpp(path)
     return Err(OutlineError.UnsupportedLanguage)
@@ -64,7 +63,7 @@ def outline_file(path: Path) -> Result[ModuleOutline, OutlineError]:
 
 def _outline_python(path: Path) -> Result[ModuleOutline, OutlineError]:
     from frob.ast import python as _py
-    from frob.ast.common import text, child_by_field
+    from frob.ast.common import child_by_field, text
 
     try:
         src, tree = _py.parse_file(path)
@@ -97,17 +96,20 @@ def _outline_python(path: Path) -> Result[ModuleOutline, OutlineError]:
             if cls:
                 classes.append(cls)
 
-    return Ok(ModuleOutline(
-        path=str(path),
-        lines=lines,
-        imports=imports,
-        functions=functions,
-        classes=classes,
-    ))
+    return Ok(
+        ModuleOutline(
+            path=str(path),
+            lines=lines,
+            imports=imports,
+            functions=functions,
+            classes=classes,
+        )
+    )
 
 
 def _py_function_outline(node) -> FunctionOutline | None:
-    from frob.ast.common import text, child_by_field
+    from frob.ast.common import child_by_field, text
+
     name_node = child_by_field(node, "name")
     if name_node is None:
         return None
@@ -118,7 +120,8 @@ def _py_function_outline(node) -> FunctionOutline | None:
 
 def _py_signature(node) -> str:
     """Reconstruct a clean function signature from a tree-sitter node."""
-    from frob.ast.common import text, child_by_field
+    from frob.ast.common import child_by_field, text
+
     name_node = child_by_field(node, "name")
     params_node = child_by_field(node, "parameters")
     ret_node = child_by_field(node, "return_type")
@@ -130,7 +133,8 @@ def _py_signature(node) -> str:
 
 
 def _py_class_outline(node) -> ClassOutline | None:
-    from frob.ast.common import text, child_by_field
+    from frob.ast.common import child_by_field, text
+
     name_node = child_by_field(node, "name")
     if name_node is None:
         return None
@@ -149,7 +153,7 @@ def _py_class_outline(node) -> ClassOutline | None:
 
 def _outline_cpp(path: Path) -> Result[ModuleOutline, OutlineError]:
     from frob.ast import cpp as _cpp
-    from frob.ast.common import text, child_by_field
+    from frob.ast.common import child_by_field, text  # noqa: F401
 
     try:
         src, tree = _cpp.parse_file(path)
@@ -177,17 +181,20 @@ def _outline_cpp(path: Path) -> Result[ModuleOutline, OutlineError]:
             if cls:
                 classes.append(cls)
 
-    return Ok(ModuleOutline(
-        path=str(path),
-        lines=lines,
-        imports=imports,
-        functions=functions,
-        classes=classes,
-    ))
+    return Ok(
+        ModuleOutline(
+            path=str(path),
+            lines=lines,
+            imports=imports,
+            functions=functions,
+            classes=classes,
+        )
+    )
 
 
 def _cpp_function_outline(node) -> FunctionOutline | None:
-    from frob.ast.common import text, child_by_field
+    from frob.ast.common import child_by_field, text
+
     decl = child_by_field(node, "declarator")
     if decl is None:
         return None
@@ -203,7 +210,8 @@ def _cpp_function_outline(node) -> FunctionOutline | None:
 
 
 def _cpp_class_outline(node) -> ClassOutline | None:
-    from frob.ast.common import text, child_by_field
+    from frob.ast.common import child_by_field, text
+
     name_node = child_by_field(node, "name")
     if name_node is None:
         return None

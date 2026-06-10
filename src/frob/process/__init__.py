@@ -10,15 +10,16 @@ Usage:
     print(result.as_text())   # compact summary + failures only
     print(result.as_json())   # full structured data
 """
+
 from frob.process.parsers import (
+    Diagnostic,
+    TestCase,
+    ToolResult,
     parse_clang,
     parse_junit_xml,
     parse_pytest,
     parse_ruff,
     parse_ty,
-    Diagnostic,
-    TestCase,
-    ToolResult,
 )
 
 __all__ = [

@@ -4,21 +4,22 @@ Integration tests: multiple frob modules working together.
 These test the realistic agentic workflow sequences described in
 docs/agentic-workflow.md.
 """
-import json
-import pytest
+
 from pathlib import Path
 
+import pytest
+
+from frob.bundle import build_bundle
+from frob.cycle.graph import DependencyGraph, find_cycles
 from frob.map import map_project
 from frob.outline import outline_file
-from frob.xref import xref
-from frob.bundle import build_bundle
 from frob.tokens import count_paths
-from frob.cycle.graph import DependencyGraph, find_cycles
-
+from frob.xref import xref
 
 # ---------------------------------------------------------------------------
 # Fixture: a small multi-file Python project with a real cycle
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def mini_project(tmp_path):
@@ -35,9 +36,7 @@ def mini_project(tmp_path):
         "        return helper(42)\n"
     )
     (tmp_path / "utils.py").write_text(
-        "from core import CoreClass\n\n"
-        "def helper(x: int) -> str:\n"
-        "    return str(x)\n"
+        "from core import CoreClass\n\ndef helper(x: int) -> str:\n    return str(x)\n"
     )
     (tmp_path / "main.py").write_text(
         "from core import CoreClass\n\n"
@@ -62,7 +61,9 @@ def test_map_then_outline_consistency(mini_project):
         ol = ol_result.danger_ok
         outline_symbols = {f.name for f in ol.functions} | {c.name for c in ol.classes}
         for sym in node.symbols:
-            assert sym in outline_symbols, f"{sym} in map but not in outline for {node.path}"
+            assert sym in outline_symbols, (
+                f"{sym} in map but not in outline for {node.path}"
+            )
 
 
 def test_map_total_lines_matches_file_sum(mini_project):
@@ -142,6 +143,7 @@ def test_bundle_then_tokens_consistent(mini_project):
     focus = next(s for s in bundle.sections if s.role == "focus")
 
     from frob.tokens import estimate_tokens
+
     recomputed = estimate_tokens(focus.content)
     # Allow small drift from rounding
     assert abs(focus.tokens - recomputed) <= 2
@@ -156,8 +158,13 @@ def test_bundle_import_section_is_smaller_than_full_file(mini_project):
     if not import_secs:
         pytest.skip("no local imports resolved")
 
-    full_costs = count_paths([mini_project / Path(s.path).name for s in import_secs
-                               if (mini_project / Path(s.path).name).exists()])
+    full_costs = count_paths(
+        [
+            mini_project / Path(s.path).name
+            for s in import_secs
+            if (mini_project / Path(s.path).name).exists()
+        ]
+    )
     sig_tokens = sum(s.tokens for s in import_secs)
     assert sig_tokens <= full_costs.total_tokens
 
@@ -173,6 +180,7 @@ def test_map_suggests_cheaper_than_full_read(mini_project):
     map_text = proj_map.as_text()
 
     from frob.tokens import estimate_tokens
+
     map_cost = estimate_tokens(map_text)
 
     full_cost = count_paths([mini_project])

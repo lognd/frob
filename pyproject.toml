@@ -14,6 +14,7 @@ authors = [
 ]
 
 dependencies = [
+    "tomli>=2.0; python_version < '3.11'",
     "typani>=0.0.3",
     "pydantic>=2.12.0",
     "tree-sitter>=0.25.2",
@@ -30,11 +31,12 @@ Issues = "https://github.com/lognd/frob/issues"
 
 [dependency-groups]
 dev = [
-    "black",
-    "isort",
-    "pytest",
-    "ruff",
-    "ty",
+    "black>=24",
+    "packaging",
+    "pytest>=8",
+    "pytest-testmon>=2",
+    "ruff>=0.8",
+    "ty>=0.0.1a8",
 ]
 
 [tool.setuptools]
@@ -49,8 +51,12 @@ line-length = 88
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]
 
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["E501"]
+
 [tool.black]
 line-length = 88
 
-[tool.isort]
-profile = "black"
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

@@ -55,6 +55,8 @@ class App:
                 inspect_runner.run(self._cfg)
             case _:
                 _log.error(
-                    "usage: frob <init|cycle|stub|outline|map|xref|tokens|bundle|parse|dup|arch|inspect> ..."
+                    "usage: frob "
+                    "<init|cycle|stub|outline|map|xref|tokens|bundle|parse|dup|arch|inspect>"
+                    " ..."
                 )
                 sys.exit(1)

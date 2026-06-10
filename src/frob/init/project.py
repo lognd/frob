@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound, TemplateSyntaxError
-from typani import ErrorSet, Ok, Err
+from typani import Err, ErrorSet, Ok
 from typani.result import Result
 
 _DATA_DIR = Path(__file__).parent / "data"
@@ -13,7 +13,9 @@ _DATA_DIR = Path(__file__).parent / "data"
 class InitError(ErrorSet):
     UnknownType = "Requested project type is not registered"
     TemplateNotFound = "Template .j2 file is missing from the data directory"
-    OutputExists = "One or more output files already exist (use force=True to overwrite)"
+    OutputExists = (
+        "One or more output files already exist (use force=True to overwrite)"
+    )
     RenderFailed = "Jinja2 raised an error while rendering a template"
 
 
@@ -31,56 +33,134 @@ _MANIFESTS: dict[str, list[_ManifestEntry]] = {
         _ManifestEntry("python_shared.gitignore.j2", ".gitignore"),
         _ManifestEntry("python_shared.Makefile.j2", "Makefile"),
         _ManifestEntry("pyproject.toml.j2", "pyproject.toml"),
-        _ManifestEntry("python_lib.__init__.py.j2", "src/{{ project.name }}/__init__.py"),
-        _ManifestEntry("python_shared.logging.__init__.py.j2", "src/{{ project.name }}/logging/__init__.py"),
-        _ManifestEntry("python_shared.logging.config.toml.j2", "src/{{ project.name }}/logging/config.toml"),
-        _ManifestEntry("python_shared.logging.filter.py.j2", "src/{{ project.name }}/logging/filter.py"),
-        _ManifestEntry("python_shared.logging.formatter.py.j2", "src/{{ project.name }}/logging/formatter.py"),
-        _ManifestEntry("python_shared.logging.logger.py.j2", "src/{{ project.name }}/logging/logger.py"),
+        _ManifestEntry(
+            "python_lib.__init__.py.j2", "src/{{ project.name }}/__init__.py"
+        ),
+        _ManifestEntry(
+            "python_shared.logging.__init__.py.j2",
+            "src/{{ project.name }}/logging/__init__.py",
+        ),
+        _ManifestEntry(
+            "python_shared.logging.config.toml.j2",
+            "src/{{ project.name }}/logging/config.toml",
+        ),
+        _ManifestEntry(
+            "python_shared.logging.filter.py.j2",
+            "src/{{ project.name }}/logging/filter.py",
+        ),
+        _ManifestEntry(
+            "python_shared.logging.formatter.py.j2",
+            "src/{{ project.name }}/logging/formatter.py",
+        ),
+        _ManifestEntry(
+            "python_shared.logging.logger.py.j2",
+            "src/{{ project.name }}/logging/logger.py",
+        ),
         _ManifestEntry("python_shared.docs.index.md.j2", "docs/index.md"),
         _ManifestEntry("python_shared.tests.conftest.py.j2", "tests/conftest.py"),
-        _ManifestEntry("python_shared.tests.unit.test_placeholder.py.j2", "tests/unit/test_placeholder.py"),
-        _ManifestEntry("python_shared.tests.system.test_build.py.j2", "tests/system/test_build.py"),
+        _ManifestEntry(
+            "python_shared.tests.unit.test_placeholder.py.j2",
+            "tests/unit/test_placeholder.py",
+        ),
+        _ManifestEntry(
+            "python_shared.tests.system.test_build.py.j2", "tests/system/test_build.py"
+        ),
     ],
     "python-tool": [
         _ManifestEntry("README.md.j2", "README.md"),
         _ManifestEntry("python_shared.gitignore.j2", ".gitignore"),
         _ManifestEntry("python_shared.Makefile.j2", "Makefile"),
         _ManifestEntry("pyproject.toml.j2", "pyproject.toml"),
-        _ManifestEntry("python_tool.__init__.py.j2", "src/{{ project.name }}/__init__.py"),
-        _ManifestEntry("python_tool.__main__.py.j2", "src/{{ project.name }}/__main__.py"),
+        _ManifestEntry(
+            "python_tool.__init__.py.j2", "src/{{ project.name }}/__init__.py"
+        ),
+        _ManifestEntry(
+            "python_tool.__main__.py.j2", "src/{{ project.name }}/__main__.py"
+        ),
         _ManifestEntry("python_tool.app.py.j2", "src/{{ project.name }}/app/app.py"),
-        _ManifestEntry("python_tool.config.py.j2", "src/{{ project.name }}/app/config.py"),
-        _ManifestEntry("python_shared.logging.__init__.py.j2", "src/{{ project.name }}/logging/__init__.py"),
-        _ManifestEntry("python_shared.logging.config.toml.j2", "src/{{ project.name }}/logging/config.toml"),
-        _ManifestEntry("python_shared.logging.filter.py.j2", "src/{{ project.name }}/logging/filter.py"),
-        _ManifestEntry("python_shared.logging.formatter.py.j2", "src/{{ project.name }}/logging/formatter.py"),
-        _ManifestEntry("python_shared.logging.logger.py.j2", "src/{{ project.name }}/logging/logger.py"),
+        _ManifestEntry(
+            "python_tool.config.py.j2", "src/{{ project.name }}/app/config.py"
+        ),
+        _ManifestEntry(
+            "python_shared.logging.__init__.py.j2",
+            "src/{{ project.name }}/logging/__init__.py",
+        ),
+        _ManifestEntry(
+            "python_shared.logging.config.toml.j2",
+            "src/{{ project.name }}/logging/config.toml",
+        ),
+        _ManifestEntry(
+            "python_shared.logging.filter.py.j2",
+            "src/{{ project.name }}/logging/filter.py",
+        ),
+        _ManifestEntry(
+            "python_shared.logging.formatter.py.j2",
+            "src/{{ project.name }}/logging/formatter.py",
+        ),
+        _ManifestEntry(
+            "python_shared.logging.logger.py.j2",
+            "src/{{ project.name }}/logging/logger.py",
+        ),
         _ManifestEntry("python_shared.docs.index.md.j2", "docs/index.md"),
         _ManifestEntry("python_shared.tests.conftest.py.j2", "tests/conftest.py"),
-        _ManifestEntry("python_shared.tests.unit.test_placeholder.py.j2", "tests/unit/test_placeholder.py"),
-        _ManifestEntry("python_shared.tests.system.test_build.py.j2", "tests/system/test_build.py"),
+        _ManifestEntry(
+            "python_shared.tests.unit.test_placeholder.py.j2",
+            "tests/unit/test_placeholder.py",
+        ),
+        _ManifestEntry(
+            "python_shared.tests.system.test_build.py.j2", "tests/system/test_build.py"
+        ),
     ],
     "cpp-library": [
         _ManifestEntry("cpp_shared.README.md.j2", "README.md"),
         _ManifestEntry("cpp_shared.gitignore.j2", ".gitignore"),
+        _ManifestEntry("cpp_shared.Makefile.j2", "Makefile"),
         _ManifestEntry("cpp_shared.docs.index.md.j2", "docs/index.md"),
         _ManifestEntry("cpp_library.CMakeLists.txt.j2", "CMakeLists.txt"),
+        _ManifestEntry(
+            "cpp_library.cmake.Config.cmake.in.j2",
+            "cmake/{{ project.name }}Config.cmake.in",
+        ),
         _ManifestEntry("cpp_library.src.cpp.j2", "src/{{ project.name }}.cpp"),
         _ManifestEntry("cpp_library.include.h.j2", "include/{{ project.name }}.h"),
-        _ManifestEntry("cpp_library.tests.CMakeLists.txt.j2", "tests/CMakeLists.txt"),
+        _ManifestEntry("cpp_shared.tests.CMakeLists.txt.j2", "tests/CMakeLists.txt"),
         _ManifestEntry("cpp_library.tests.cpp.j2", "tests/test_{{ project.name }}.cpp"),
+        _ManifestEntry("cpp_shared.github.ci.yml.j2", ".github/workflows/ci.yml"),
+        _ManifestEntry(
+            "cpp_shared.github.release.yml.j2", ".github/workflows/release.yml"
+        ),
+        _ManifestEntry(
+            "cpp_shared.github.branch-protection.yml.j2",
+            ".github/workflows/branch-protection.yml",
+        ),
+        _ManifestEntry(
+            "cpp_shared.cmake.toolchain-linux-arm64.cmake.j2",
+            "cmake/toolchain-linux-arm64.cmake",
+        ),
     ],
     "cpp-tool": [
         _ManifestEntry("cpp_shared.README.md.j2", "README.md"),
         _ManifestEntry("cpp_shared.gitignore.j2", ".gitignore"),
+        _ManifestEntry("cpp_shared.Makefile.j2", "Makefile"),
         _ManifestEntry("cpp_shared.docs.index.md.j2", "docs/index.md"),
         _ManifestEntry("cpp_tool.CMakeLists.txt.j2", "CMakeLists.txt"),
         _ManifestEntry("cpp_tool.src.cpp.j2", "src/{{ project.name }}.cpp"),
         _ManifestEntry("cpp_tool.src.main.cpp.j2", "src/main.cpp"),
         _ManifestEntry("cpp_tool.include.h.j2", "include/{{ project.name }}.h"),
-        _ManifestEntry("cpp_tool.tests.CMakeLists.txt.j2", "tests/CMakeLists.txt"),
+        _ManifestEntry("cpp_shared.tests.CMakeLists.txt.j2", "tests/CMakeLists.txt"),
         _ManifestEntry("cpp_tool.tests.cpp.j2", "tests/test_{{ project.name }}.cpp"),
+        _ManifestEntry("cpp_shared.github.ci.yml.j2", ".github/workflows/ci.yml"),
+        _ManifestEntry(
+            "cpp_shared.github.release.yml.j2", ".github/workflows/release.yml"
+        ),
+        _ManifestEntry(
+            "cpp_shared.github.branch-protection.yml.j2",
+            ".github/workflows/branch-protection.yml",
+        ),
+        _ManifestEntry(
+            "cpp_shared.cmake.toolchain-linux-arm64.cmake.j2",
+            "cmake/toolchain-linux-arm64.cmake",
+        ),
     ],
 }
 
@@ -113,7 +193,7 @@ def render_project(
     for entry in entries:
         try:
             out_rel = env.from_string(entry.output).render(ctx)
-        except Exception as exc:
+        except Exception:
             return Err(InitError.RenderFailed)
         out_path = output_dir / out_rel
         resolved.append((entry, out_path))

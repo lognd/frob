@@ -5,23 +5,24 @@ Each parser consumes the raw stdout/stderr of a tool and returns a
 ToolResult that can be rendered as compact text (for agentic consumption)
 or JSON (for programmatic use).
 """
+
 from __future__ import annotations
 
 from typing import Literal
 
 from pydantic import BaseModel
 
-
 Severity = Literal["error", "warning", "note", "info"]
 
 
 class Diagnostic(BaseModel):
     """A single actionable item from a tool: a linter warning, type error, etc."""
+
     file: str | None = None
     line: int | None = None
     col: int | None = None
     severity: Severity = "error"
-    code: str | None = None    # e.g. "F401", "E501", "error[incompatible-type]"
+    code: str | None = None  # e.g. "F401", "E501", "error[incompatible-type]"
     message: str = ""
 
     def as_text(self) -> str:
@@ -39,6 +40,7 @@ class Diagnostic(BaseModel):
 
 class TestCase(BaseModel):
     """A single test case result."""
+
     suite: str = ""
     name: str
     passed: bool
@@ -53,6 +55,7 @@ class ToolResult(BaseModel):
     Parsed output of a single tool invocation.
     Designed for compact agentic consumption.
     """
+
     tool: str
     exit_code: int = 0
     diagnostics: list[Diagnostic] = []
@@ -107,7 +110,11 @@ class ToolResult(BaseModel):
         if verbose:
             for t in self.tests:
                 if t.passed:
-                    parts.append(f"  pass    {t.suite}.{t.name}" if t.suite else f"  pass    {t.name}")
+                    parts.append(
+                        f"  pass    {t.suite}.{t.name}"
+                        if t.suite
+                        else f"  pass    {t.name}"
+                    )
 
         return "\n".join(parts)
 

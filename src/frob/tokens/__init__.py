@@ -8,7 +8,18 @@ from pydantic import BaseModel
 # typical Python/C++; prose is ~4). We round down to avoid surprises.
 _CHARS_PER_TOKEN = 3.5
 
-_SOURCE_EXTS = {".py", ".c", ".cc", ".cpp", ".cxx", ".h", ".hpp", ".hxx", ".md", ".toml"}
+_SOURCE_EXTS = {
+    ".py",
+    ".c",
+    ".cc",
+    ".cpp",
+    ".cxx",
+    ".h",
+    ".hpp",
+    ".hxx",
+    ".md",
+    ".toml",
+}
 
 
 class RegionCost(BaseModel):
@@ -30,7 +41,9 @@ class FileCost(BaseModel):
             return line
         parts = [line]
         for r in self.regions:
-            parts.append(f"  {r.name:<40} ~{r.tokens:>5,} tokens  [L{r.start_line}-L{r.end_line}]")
+            parts.append(
+                f"  {r.name:<40} ~{r.tokens:>5,} tok  [L{r.start_line}-L{r.end_line}]"
+            )
         return "\n".join(parts)
 
 
@@ -81,7 +94,9 @@ def count_paths(paths: list[Path], detail: bool = False) -> TokenResult:
         elif path.is_dir():
             for child in sorted(path.rglob("*")):
                 if child.is_file() and child.suffix.lower() in _SOURCE_EXTS:
-                    if not any(p.startswith(".") or p == "__pycache__" for p in child.parts):
+                    if not any(
+                        p.startswith(".") or p == "__pycache__" for p in child.parts
+                    ):
                         files.append(count_file(child, detail))
     total = sum(f.tokens for f in files)
     return TokenResult(files=files, total_tokens=total)
@@ -89,7 +104,7 @@ def count_paths(paths: list[Path], detail: bool = False) -> TokenResult:
 
 def _py_regions(src: bytes) -> list[RegionCost]:
     from frob.ast import python as _py
-    from frob.ast.common import text, child_by_field
+    from frob.ast.common import child_by_field, text
 
     try:
         _, tree = _py.parse_bytes(src)
@@ -105,20 +120,22 @@ def _py_regions(src: bytes) -> list[RegionCost]:
             name = text(name_node) if name_node else "?"
             start = node.start_point[0] + 1
             end = node.end_point[0] + 1
-            region_text = "\n".join(src_lines[start - 1:end])
-            regions.append(RegionCost(
-                name=name,
-                start_line=start,
-                end_line=end,
-                tokens=estimate_tokens(region_text),
-            ))
+            region_text = "\n".join(src_lines[start - 1 : end])
+            regions.append(
+                RegionCost(
+                    name=name,
+                    start_line=start,
+                    end_line=end,
+                    tokens=estimate_tokens(region_text),
+                )
+            )
 
     return regions
 
 
 def _cpp_regions(src: bytes) -> list[RegionCost]:
     from frob.ast import cpp as _cpp
-    from frob.ast.common import text, child_by_field
+    from frob.ast.common import child_by_field, text
 
     try:
         _, tree = _cpp.parse_bytes(src)
@@ -138,12 +155,14 @@ def _cpp_regions(src: bytes) -> list[RegionCost]:
             name = text(name_node) if name_node else "?"
             start = node.start_point[0] + 1
             end = node.end_point[0] + 1
-            region_text = "\n".join(src_lines[start - 1:end])
-            regions.append(RegionCost(
-                name=name,
-                start_line=start,
-                end_line=end,
-                tokens=estimate_tokens(region_text),
-            ))
+            region_text = "\n".join(src_lines[start - 1 : end])
+            regions.append(
+                RegionCost(
+                    name=name,
+                    start_line=start,
+                    end_line=end,
+                    tokens=estimate_tokens(region_text),
+                )
+            )
 
     return regions

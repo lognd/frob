@@ -1,7 +1,6 @@
 import pytest
-from pathlib import Path
 
-from frob.bundle import build_bundle, BundleError
+from frob.bundle import BundleError, build_bundle
 
 
 @pytest.fixture
@@ -52,7 +51,7 @@ def test_bundle_has_focus_section(py_file):
 def test_bundle_focus_contains_target_body(py_file):
     bundle = build_bundle(py_file, "helper").danger_ok
     focus = next(s for s in bundle.sections if s.role == "focus")
-    assert 'return str(x)' in focus.content
+    assert "return str(x)" in focus.content
 
 
 def test_bundle_focus_stubs_non_target(py_file):
@@ -134,6 +133,7 @@ def test_bundle_as_markdown(py_file):
 
 def test_bundle_as_json(py_file):
     import json
+
     bundle = build_bundle(py_file, "helper").danger_ok
     data = json.loads(bundle.as_json())
     assert data["target"] == "helper"

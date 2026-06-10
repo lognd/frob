@@ -7,9 +7,11 @@ Parses the standard GCC-format diagnostic output:
 
 Also handles clang's note lines and "In function 'X':" context lines.
 """
+
 from __future__ import annotations
 
 import re
+from typing import cast
 
 from frob.process.parsers.common import Diagnostic, Severity, ToolResult
 
@@ -32,13 +34,15 @@ def parse_clang(stdout: str, exit_code: int = 0, tool: str = "clang") -> ToolRes
         # Strip trailing flag annotations like [-Wunused-variable]
         msg = re.sub(r"\s+\[-W[^\]]+\]$", "", msg).strip()
         sev_str = sev_str.replace("fatal error", "error")
-        diagnostics.append(Diagnostic(
-            file=file,
-            line=int(row),
-            col=int(col),
-            severity=_severity(sev_str),
-            message=msg,
-        ))
+        diagnostics.append(
+            Diagnostic(
+                file=file,
+                line=int(row),
+                col=int(col),
+                severity=_severity(sev_str),
+                message=msg,
+            )
+        )
 
     errors = sum(1 for d in diagnostics if d.severity == "error")
     warnings = sum(1 for d in diagnostics if d.severity == "warning")
@@ -58,5 +62,5 @@ def parse_clang(stdout: str, exit_code: int = 0, tool: str = "clang") -> ToolRes
 
 def _severity(s: str) -> Severity:
     if s in ("error", "warning", "note", "info"):
-        return s  # type: ignore[return-value]
+        return cast(Severity, s)
     return "error"

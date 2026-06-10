@@ -6,11 +6,13 @@ ty outputs lines in the format:
   warning[<code>] file.py:<line>:<col>: <message>
 
 or with ANSI codes stripped:
-  error[incompatible-types] src/foo.py:23:5: Argument of type "str" is not assignable to "int"
+  error[incompatible-types] src/foo.py:23:5: Argument "str" not assignable to "int"
 """
+
 from __future__ import annotations
 
 import re
+from typing import cast
 
 from frob.process.parsers.common import Diagnostic, Severity, ToolResult
 
@@ -36,26 +38,30 @@ def parse_ty(stdout: str, exit_code: int = 0) -> ToolResult:
         m = _DIAG_LINE.match(line)
         if m:
             severity_str, code, file, row, col, msg = m.groups()
-            diagnostics.append(Diagnostic(
-                file=file,
-                line=int(row),
-                col=int(col),
-                severity=_severity(severity_str),
-                code=code,
-                message=msg.strip(),
-            ))
+            diagnostics.append(
+                Diagnostic(
+                    file=file,
+                    line=int(row),
+                    col=int(col),
+                    severity=_severity(severity_str),
+                    code=code,
+                    message=msg.strip(),
+                )
+            )
             continue
 
         m2 = _DIAG_LINE_SIMPLE.match(line)
         if m2:
             severity_str, file, row, col, msg = m2.groups()
-            diagnostics.append(Diagnostic(
-                file=file,
-                line=int(row),
-                col=int(col),
-                severity=_severity(severity_str),
-                message=msg.strip(),
-            ))
+            diagnostics.append(
+                Diagnostic(
+                    file=file,
+                    line=int(row),
+                    col=int(col),
+                    severity=_severity(severity_str),
+                    message=msg.strip(),
+                )
+            )
             continue
 
         m3 = _SUMMARY_LINE.match(line)
@@ -82,5 +88,5 @@ def parse_ty(stdout: str, exit_code: int = 0) -> ToolResult:
 
 def _severity(s: str) -> Severity:
     if s in ("error", "warning", "note", "info"):
-        return s  # type: ignore[return-value]
+        return cast(Severity, s)
     return "error"

@@ -5,11 +5,13 @@ Each test exercises a complete user-facing command and checks stdout/stderr
 and exit codes. These catch wiring bugs (argparse, runner dispatch, logging)
 that unit tests cannot.
 """
+
 import json
 import subprocess
 import sys
-import pytest
 from pathlib import Path
+
+import pytest
 
 FROB = [sys.executable, "-m", "frob"]
 
@@ -41,32 +43,89 @@ def test_init_list_shows_project_types():
 
 
 def test_init_new_creates_files(tmp_path):
-    r = run("init", "new", "python-tool", "myapp", "--output", str(tmp_path), cwd=str(tmp_path))
+    r = run(
+        "init",
+        "new",
+        "python-tool",
+        "myapp",
+        "--output",
+        str(tmp_path),
+        cwd=str(tmp_path),
+    )
     assert r.returncode == 0
     assert (tmp_path / "pyproject.toml").exists()
     assert (tmp_path / "src" / "myapp" / "__main__.py").exists()
 
 
 def test_init_new_pyproject_contains_name(tmp_path):
-    run("init", "new", "python-library", "coollib", "--output", str(tmp_path), cwd=str(tmp_path))
+    run(
+        "init",
+        "new",
+        "python-library",
+        "coollib",
+        "--output",
+        str(tmp_path),
+        cwd=str(tmp_path),
+    )
     content = (tmp_path / "pyproject.toml").read_text()
     assert "coollib" in content
 
 
 def test_init_new_force_overwrites(tmp_path):
-    run("init", "new", "python-library", "mylib", "--output", str(tmp_path), cwd=str(tmp_path))
-    r = run("init", "new", "python-library", "mylib", "--output", str(tmp_path), "--force", cwd=str(tmp_path))
+    run(
+        "init",
+        "new",
+        "python-library",
+        "mylib",
+        "--output",
+        str(tmp_path),
+        cwd=str(tmp_path),
+    )
+    r = run(
+        "init",
+        "new",
+        "python-library",
+        "mylib",
+        "--output",
+        str(tmp_path),
+        "--force",
+        cwd=str(tmp_path),
+    )
     assert r.returncode == 0
 
 
 def test_init_new_no_force_fails_on_existing(tmp_path):
-    run("init", "new", "python-library", "mylib", "--output", str(tmp_path), cwd=str(tmp_path))
-    r = run("init", "new", "python-library", "mylib", "--output", str(tmp_path), cwd=str(tmp_path))
+    run(
+        "init",
+        "new",
+        "python-library",
+        "mylib",
+        "--output",
+        str(tmp_path),
+        cwd=str(tmp_path),
+    )
+    r = run(
+        "init",
+        "new",
+        "python-library",
+        "mylib",
+        "--output",
+        str(tmp_path),
+        cwd=str(tmp_path),
+    )
     assert r.returncode != 0
 
 
 def test_init_unknown_type_fails(tmp_path):
-    r = run("init", "new", "does-not-exist", "proj", "--output", str(tmp_path), cwd=str(tmp_path))
+    r = run(
+        "init",
+        "new",
+        "does-not-exist",
+        "proj",
+        "--output",
+        str(tmp_path),
+        cwd=str(tmp_path),
+    )
     assert r.returncode != 0
 
 
@@ -96,7 +155,7 @@ def test_stub_py_exits_zero(py_src):
 
 def test_stub_py_stdout_contains_target(py_src):
     r = run("stub", str(py_src), "helper")
-    assert 'return str(x)' in r.stdout
+    assert "return str(x)" in r.stdout
 
 
 def test_stub_py_stdout_stubs_others(py_src):
@@ -126,7 +185,7 @@ def test_stub_to_output_file(py_src, tmp_path):
     r = run("stub", str(py_src), "helper", "--output", str(out))
     assert r.returncode == 0
     assert out.exists()
-    assert 'return str(x)' in out.read_text()
+    assert "return str(x)" in out.read_text()
 
 
 # ---------------------------------------------------------------------------
@@ -262,7 +321,7 @@ def test_bundle_shows_focus(py_src):
 
 def test_bundle_target_body_present(py_src):
     r = run("bundle", str(py_src), "helper")
-    assert 'return str(x)' in r.stdout
+    assert "return str(x)" in r.stdout
 
 
 def test_bundle_target_not_found(py_src):
@@ -325,8 +384,9 @@ def test_parse_json_output():
 
 
 def test_parse_passthrough_propagates_failure():
-    r = run("parse", "pytest", "--exit-code", "1", "--passthrough",
-            input=PYTEST_FAIL_OUTPUT)
+    r = run(
+        "parse", "pytest", "--exit-code", "1", "--passthrough", input=PYTEST_FAIL_OUTPUT
+    )
     assert r.returncode != 0
 
 

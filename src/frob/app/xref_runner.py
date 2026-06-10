@@ -5,7 +5,7 @@ from pathlib import Path
 
 from frob.app.config import AppConfig
 from frob.logging import get_logger
-from frob.xref import xref, XrefError
+from frob.xref import xref
 
 _log = get_logger(__name__)
 

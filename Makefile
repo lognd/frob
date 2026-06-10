@@ -1,26 +1,67 @@
-.PHONY: all install lint format typecheck test clean
+.PHONY: all install build lint lint-fix format typecheck test test-fast clean upload
 
-all: lint typecheck test
+PYPI_NAME := frob
+SRC       := src
+TESTS     := tests
+
+all: format lint typecheck test
 
 install:
-	uv sync
+	uv sync --all-extras
 
-lint: install
-	uv run ruff check src/ tests/
-	uv run black --check src/ tests/
-	uv run isort --check-only src/ tests/
+# ---------- formatting & linting ----------
 
 format: install
-	uv run black src/ tests/
-	uv run isort src/ tests/
+	uv run black $(SRC)/ $(TESTS)/
+	uv run ruff check $(SRC)/ $(TESTS)/ --fix --select I
+	uv run ruff format $(SRC)/ $(TESTS)/
+
+lint: install
+	uv run ruff check $(SRC)/ $(TESTS)/
+	uv run ty check $(SRC)/
+
+lint-fix: install
+	uv run ruff check $(SRC)/ $(TESTS)/ --fix
+	uv run black $(SRC)/ $(TESTS)/
+	uv run ruff format $(SRC)/ $(TESTS)/
 
 typecheck: install
-	uv run ty check src/
+	uv run ty check $(SRC)/
+
+# ---------- tests ----------
 
 test: install
-	uv run pytest
+	uv run pytest $(TESTS)/ -q
+
+test-fast: install
+	uv run pytest $(TESTS)/ -q --testmon
+
+# ---------- build & publish ----------
 
 clean:
-	rm -rf .venv .pytest_cache .ruff_cache
-	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
-	find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
+	rm -rf dist/ build/ .pytest_cache/ .ruff_cache/
+	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null; true
+	find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null; true
+
+upload: clean
+	@LOCAL=$$(python -c "import tomllib; t=tomllib.load(open('pyproject.toml','rb')); print(t['project']['version'])"); \
+	PYPI=$$(curl -s https://pypi.org/pypi/$(PYPI_NAME)/json 2>/dev/null \
+	        | python -c "import sys,json; print(json.load(sys.stdin)['info']['version'])" 2>/dev/null \
+	        || echo "0.0.0"); \
+	BUMP=$$(python -c " \
+	from packaging.version import Version; \
+	l, p = Version('$$LOCAL'), Version('$$PYPI'); \
+	print('yes' if l <= p else 'no')"); \
+	if [ "$$BUMP" = "yes" ]; then \
+	    NEW=$$(python -c " \
+	v = '$$LOCAL'.split('.'); v[-1] = str(int(v[-1])+1); print('.'.join(v))"); \
+	    python -c " \
+	import re, pathlib; \
+	p = pathlib.Path('pyproject.toml'); \
+	p.write_text(re.sub(r'^version = .+', 'version = \"$$NEW\"', p.read_text(), flags=re.M))"; \
+	    echo "Bumped $$LOCAL -> $$NEW"; \
+	    git add pyproject.toml; \
+	    git commit -m "chore: bump version to $$NEW"; \
+	    git push; \
+	fi; \
+	uv build && uv publish

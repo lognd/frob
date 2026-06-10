@@ -8,7 +8,6 @@ from typing import Literal
 
 from pydantic import BaseModel
 from tree_sitter import Node
-
 from typani import ErrorSet
 
 from frob.logging import get_logger
@@ -67,7 +66,8 @@ class DupResult(BaseModel):
         ]
         for i, g in enumerate(self.groups, 1):
             lines.append(
-                f"Group {i} ({g.clone_type}, {g.size_lines} line{'s' if g.size_lines != 1 else ''}):"
+                f"Group {i} ({g.clone_type},"
+                f" {g.size_lines} line{'s' if g.size_lines != 1 else ''}):"
             )
             # Align file:line ranges
             max_loc = max(
@@ -95,7 +95,7 @@ def _sha16(s: str) -> str:
 
 def _collect_locals_py(func_node: Node) -> set[str]:
     """Collect identifiers that are local to a Python function."""
-    from frob.ast.common import text, child_by_field
+    from frob.ast.common import child_by_field
 
     locals_: set[str] = set()
 
@@ -179,11 +179,19 @@ def _collect_assigned_names_py(node: Node, out: set[str]) -> None:
             body = child.child_by_field_name("body")
             if body:
                 _collect_assigned_names_py(body, out)
-        elif t in ("if_statement", "while_statement", "try_statement",
-                   "block", "suite"):
+        elif t in (
+            "if_statement",
+            "while_statement",
+            "try_statement",
+            "block",
+            "suite",
+        ):
             _collect_assigned_names_py(child, out)
-        elif t in ("function_definition", "async_function_definition",
-                   "class_definition"):
+        elif t in (
+            "function_definition",
+            "async_function_definition",
+            "class_definition",
+        ):
             # nested -- names in nested scopes are not ours
             pass
 
@@ -216,8 +224,12 @@ def _serialize_py_body(body: Node, locals_: set[str]) -> str:
                 if raw not in mapping:
                     mapping[raw] = f"_v{len(mapping)}"
                 tokens.append(mapping[raw])
-            elif t in ("string", "string_content", "interpolation",
-                       "concatenated_string"):
+            elif t in (
+                "string",
+                "string_content",
+                "interpolation",
+                "concatenated_string",
+            ):
                 tokens.append("_S_")
             elif t in ("integer", "float"):
                 tokens.append("_N_")
@@ -241,7 +253,7 @@ def _serialize_py_body(body: Node, locals_: set[str]) -> str:
 
 
 def _collect_locals_cpp(func_node: Node) -> set[str]:
-    from frob.ast.common import text, child_by_field
+    from frob.ast.common import child_by_field
 
     locals_: set[str] = set()
 
@@ -260,7 +272,6 @@ def _collect_locals_cpp(func_node: Node) -> set[str]:
 
 
 def _harvest_cpp_param(node: Node, out: set[str]) -> None:
-    from frob.ast.common import text
 
     if node.type in ("parameter_declaration", "optional_parameter_declaration"):
         decl = node.child_by_field_name("declarator")
@@ -277,8 +288,11 @@ def _harvest_cpp_declarator_name(node: Node, out: set[str]) -> None:
 
     if node.type == "identifier":
         out.add(text(node))
-    elif node.type in ("pointer_declarator", "reference_declarator",
-                       "abstract_pointer_declarator"):
+    elif node.type in (
+        "pointer_declarator",
+        "reference_declarator",
+        "abstract_pointer_declarator",
+    ):
         inner = node.child_by_field_name("declarator")
         if inner:
             _harvest_cpp_declarator_name(inner, out)
@@ -288,8 +302,6 @@ def _harvest_cpp_declarator_name(node: Node, out: set[str]) -> None:
 
 
 def _collect_assigned_names_cpp(node: Node, out: set[str]) -> None:
-    from frob.ast.common import text
-
     for child in node.named_children:
         t = child.type
         if t == "declaration":
@@ -303,8 +315,13 @@ def _collect_assigned_names_cpp(node: Node, out: set[str]) -> None:
             body = child.child_by_field_name("body")
             if body:
                 _collect_assigned_names_cpp(body, out)
-        elif t in ("if_statement", "while_statement", "do_statement",
-                   "compound_statement", "try_statement"):
+        elif t in (
+            "if_statement",
+            "while_statement",
+            "do_statement",
+            "compound_statement",
+            "try_statement",
+        ):
             _collect_assigned_names_cpp(child, out)
 
 
@@ -324,16 +341,19 @@ def _serialize_cpp_body(body: Node, locals_: set[str]) -> str:
                 if raw not in mapping:
                     mapping[raw] = f"_v{len(mapping)}"
                 tokens.append(mapping[raw])
-            elif t in ("string_literal", "raw_string_literal",
-                       "char_literal", "user_defined_string_literal"):
+            elif t in (
+                "string_literal",
+                "raw_string_literal",
+                "char_literal",
+                "user_defined_string_literal",
+            ):
                 tokens.append("_S_")
             elif t in ("number_literal",):
                 tokens.append("_N_")
             else:
                 tokens.append(raw)
         else:
-            if n.type in ("string_literal", "raw_string_literal",
-                          "char_literal"):
+            if n.type in ("string_literal", "raw_string_literal", "char_literal"):
                 tokens.append("_S_")
                 return
             for child in n.children:
@@ -350,7 +370,7 @@ def _serialize_cpp_body(body: Node, locals_: set[str]) -> str:
 
 def _enclosing_class_py(func_node: Node) -> str | None:
     """Return the enclosing class name for a function node, or None."""
-    from frob.ast.common import text, child_by_field
+    from frob.ast.common import child_by_field, text
 
     parent = func_node.parent
     while parent is not None:
@@ -366,9 +386,9 @@ def _enclosing_class_py(func_node: Node) -> str | None:
 
 def _iter_functions_py(root_node: Node):
     """Yield (func_node, symbol) for all function/async_function nodes."""
-    from frob.ast.common import text, child_by_field
+    from frob.ast.common import child_by_field, text
 
-    def visit(n: Node) -> None:
+    def visit(n: Node):
         if n.type in ("function_definition", "async_function_definition"):
             name_node = child_by_field(n, "name")
             func_name = text(name_node) if name_node else "<unknown>"
@@ -385,7 +405,7 @@ def _iter_functions_py(root_node: Node):
             for child in n.children:
                 yield from _recurse(child)
 
-    def _recurse(n: Node):
+    def _recurse(n: Node):  # type: ignore[return]
         if n.type in ("function_definition", "async_function_definition"):
             yield from visit(n)
         else:
@@ -403,7 +423,6 @@ def _scan_py_file(
     renamed_map: dict[str, list[CodeFragment]],
 ) -> None:
     from frob.ast import python as _py
-    from frob.ast.common import child_by_field
 
     try:
         src, tree = _py.parse_file(path)
@@ -415,6 +434,7 @@ def _scan_py_file(
 
     for func_node, symbol in _iter_functions_py(tree.root_node):
         from frob.ast.common import child_by_field as _cbf
+
         body = _cbf(func_node, "body")
         if body is None:
             continue
@@ -432,7 +452,7 @@ def _scan_py_file(
         )
 
         # Exact hash: normalized whitespace of original text
-        body_bytes = src[body.start_byte:body.end_byte]
+        body_bytes = src[body.start_byte : body.end_byte]
         exact_text = b"\n".join(line.strip() for line in body_bytes.splitlines())
         exact_hash = _sha16(exact_text.decode(errors="replace"))
         exact_map[exact_hash].append(frag)
@@ -450,14 +470,15 @@ def _scan_py_file(
 
 
 def _enclosing_class_cpp(func_node: Node) -> str | None:
-    from frob.ast.common import text, child_by_field
+    from frob.ast.common import child_by_field, text
 
     parent = func_node.parent
     while parent is not None:
         if parent.type == "field_declaration_list":
             grandparent = parent.parent
             if grandparent is not None and grandparent.type in (
-                "class_specifier", "struct_specifier"
+                "class_specifier",
+                "struct_specifier",
             ):
                 name_node = child_by_field(grandparent, "name")
                 if name_node:
@@ -467,7 +488,7 @@ def _enclosing_class_cpp(func_node: Node) -> str | None:
 
 
 def _iter_functions_cpp(root_node: Node):
-    from frob.ast.common import text, child_by_field
+    from frob.ast.common import child_by_field, text
 
     def _func_name(n: Node) -> str:
         decl = child_by_field(n, "declarator")
@@ -534,7 +555,7 @@ def _scan_cpp_file(
             symbol=symbol,
         )
 
-        body_bytes = src[body.start_byte:body.end_byte]
+        body_bytes = src[body.start_byte : body.end_byte]
         exact_text = b"\n".join(line.strip() for line in body_bytes.splitlines())
         exact_hash = _sha16(exact_text.decode(errors="replace"))
         exact_map[exact_hash].append(frag)

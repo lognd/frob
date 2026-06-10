@@ -1,4 +1,5 @@
 """Beta module with a function that duplicates logic from alpha.py."""
+
 from __future__ import annotations
 
 

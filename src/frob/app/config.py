@@ -4,8 +4,9 @@ import argparse
 import enum
 from pathlib import Path
 
-from frob._compat import Self, toml
 from pydantic import BaseModel
+
+from frob._compat import Self, toml
 
 
 class Subcommand(str, enum.Enum):
@@ -111,11 +112,15 @@ class AppConfig(BaseModel):
             d["subcommand"] = Subcommand(sub)
 
         for field in (
-            "init_command", "init_type", "init_name",
+            "init_command",
+            "init_type",
+            "init_name",
             "cycle_lang",
             "stub_target",
-            "xref_symbol", "xref_lang",
-            "bundle_target", "bundle_format",
+            "xref_symbol",
+            "xref_lang",
+            "bundle_target",
+            "bundle_format",
             "parse_tool",
             "inspect_scope",
         ):
@@ -124,8 +129,10 @@ class AppConfig(BaseModel):
                 d[field] = val
 
         for path_field in (
-            "init_output", "cycle_path",
-            "stub_file", "stub_output",
+            "init_output",
+            "cycle_path",
+            "stub_file",
+            "stub_output",
             "outline_file",
             "map_path",
             "xref_path",
@@ -148,8 +155,13 @@ class AppConfig(BaseModel):
             d["tokens_paths"] = [Path(p) for p in token_paths]
 
         # Int fields
-        for int_field in ("map_depth", "bundle_depth", "dup_min_lines",
-                          "arch_max_function_lines", "arch_max_class_methods"):
+        for int_field in (
+            "map_depth",
+            "bundle_depth",
+            "dup_min_lines",
+            "arch_max_function_lines",
+            "arch_max_class_methods",
+        ):
             val = getattr(args, int_field, None)
             if val is not None:
                 d[int_field] = val
@@ -161,11 +173,18 @@ class AppConfig(BaseModel):
 
         # Bool flags: only override when explicitly True
         for flag in (
-            "init_force", "cycle_suggest",
-            "outline_json", "map_json",
-            "xref_json", "tokens_detail", "tokens_json",
-            "parse_json", "parse_verbose", "parse_passthrough",
-            "dup_json", "arch_json",
+            "init_force",
+            "cycle_suggest",
+            "outline_json",
+            "map_json",
+            "xref_json",
+            "tokens_detail",
+            "tokens_json",
+            "parse_json",
+            "parse_verbose",
+            "parse_passthrough",
+            "dup_json",
+            "arch_json",
             "inspect_json",
         ):
             if getattr(args, flag, False):

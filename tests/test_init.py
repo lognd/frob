@@ -1,7 +1,4 @@
-import pytest
-from pathlib import Path
-
-from frob.init.project import render_project, list_project_types, InitError
+from frob.init.project import InitError, list_project_types, render_project
 
 
 def test_list_project_types():

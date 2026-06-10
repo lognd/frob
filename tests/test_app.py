@@ -1,5 +1,4 @@
 import argparse
-import pytest
 from pathlib import Path
 
 from frob.app.config import AppConfig, Subcommand
@@ -40,7 +39,12 @@ def test_config_stub_subcommand():
 
 def test_config_init_new_subcommand():
     cfg = AppConfig.from_args(
-        _args(subcommand="init", init_command="new", init_type="python-tool", init_name="mypkg")
+        _args(
+            subcommand="init",
+            init_command="new",
+            init_type="python-tool",
+            init_name="mypkg",
+        )
     )
     assert cfg.subcommand == Subcommand.init
     assert cfg.init_type == "python-tool"
@@ -48,9 +52,7 @@ def test_config_init_new_subcommand():
 
 
 def test_config_cycle_subcommand():
-    cfg = AppConfig.from_args(
-        _args(subcommand="cycle", cycle_path="src/")
-    )
+    cfg = AppConfig.from_args(_args(subcommand="cycle", cycle_path="src/"))
     assert cfg.subcommand == Subcommand.cycle
     assert cfg.cycle_path == Path("src/")
 
@@ -58,7 +60,9 @@ def test_config_cycle_subcommand():
 def test_config_reads_toml_file(tmp_path):
     cfg_file = tmp_path / "pyproject.toml"
     cfg_file.write_text("[tool.frob]\ncycle_suggest = true\n")
-    cfg = AppConfig.from_external(_args(subcommand="cycle", cycle_path="src/"), cfg_file)
+    cfg = AppConfig.from_external(
+        _args(subcommand="cycle", cycle_path="src/"), cfg_file
+    )
     assert cfg.cycle_suggest is True
 
 

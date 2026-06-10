@@ -1,4 +1,3 @@
-import pytest
 from frob.cycle.graph import DependencyGraph, find_cycles
 
 

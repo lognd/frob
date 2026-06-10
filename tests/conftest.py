@@ -1,6 +1,5 @@
 import pytest
 
-
 PY_SAMPLE = b"""\
 import os
 from pathlib import Path

@@ -1,5 +1,4 @@
 import pytest
-from pathlib import Path
 
 from frob.map import map_project
 
@@ -49,6 +48,7 @@ def test_map_as_text(project):
 
 def test_map_as_json(project):
     import json
+
     result = map_project(project)
     data = json.loads(result.as_json())
     assert data["total_files"] == 2

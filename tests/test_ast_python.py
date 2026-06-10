@@ -1,4 +1,5 @@
 import pytest
+
 from frob.ast import python as py
 
 
@@ -79,7 +80,7 @@ def test_stub_method_stubs_sibling_methods(parsed):
 def test_stub_method_stubs_top_level_functions(parsed):
     src, tree = parsed
     result = py.emit_stub(src, tree, "MyClass.process")
-    assert 'return str(x)' not in result
+    assert "return str(x)" not in result
 
 
 def test_stub_method_stubs_other_class_methods(parsed):

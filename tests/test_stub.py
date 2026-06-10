@@ -1,8 +1,6 @@
 import pytest
-from pathlib import Path
 
-from frob.stub import stub_file, StubError
-from typani import Ok, Err
+from frob.stub import StubError, stub_file
 
 
 @pytest.fixture

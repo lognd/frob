@@ -1,4 +1,5 @@
 """A module with a very long function to trigger long-function warnings."""
+
 from __future__ import annotations
 
 
@@ -47,14 +48,46 @@ def configure_pipeline(config: dict) -> dict:
     step_41 = config.get("step_41", "default")
     return {
         "steps": [
-            step_01, step_02, step_03, step_04, step_05,
-            step_06, step_07, step_08, step_09, step_10,
-            step_11, step_12, step_13, step_14, step_15,
-            step_16, step_17, step_18, step_19, step_20,
-            step_21, step_22, step_23, step_24, step_25,
-            step_26, step_27, step_28, step_29, step_30,
-            step_31, step_32, step_33, step_34, step_35,
-            step_36, step_37, step_38, step_39, step_40,
+            step_01,
+            step_02,
+            step_03,
+            step_04,
+            step_05,
+            step_06,
+            step_07,
+            step_08,
+            step_09,
+            step_10,
+            step_11,
+            step_12,
+            step_13,
+            step_14,
+            step_15,
+            step_16,
+            step_17,
+            step_18,
+            step_19,
+            step_20,
+            step_21,
+            step_22,
+            step_23,
+            step_24,
+            step_25,
+            step_26,
+            step_27,
+            step_28,
+            step_29,
+            step_30,
+            step_31,
+            step_32,
+            step_33,
+            step_34,
+            step_35,
+            step_36,
+            step_37,
+            step_38,
+            step_39,
+            step_40,
             step_41,
         ]
     }

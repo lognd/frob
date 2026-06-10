@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from collections import defaultdict
 from pathlib import Path
-from typing import Literal
+from typing import Literal, cast
 
 from pydantic import BaseModel
 
@@ -103,12 +103,14 @@ def _check_large_file(
 ) -> None:
     n = len(lines)
     if n > max_file_lines:
-        out.append(ArchSuggestion(
-            file=rel,
-            category="large-file",
-            severity="info",
-            message=f"file has {n} lines (threshold: {max_file_lines})",
-        ))
+        out.append(
+            ArchSuggestion(
+                file=rel,
+                category="large-file",
+                severity="info",
+                message=f"file has {n} lines (threshold: {max_file_lines})",
+            )
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -118,7 +120,8 @@ def _check_large_file(
 
 def _py_function_line_count(func_node: "object") -> int:
     from tree_sitter import Node
-    n: Node = func_node  # type: ignore[assignment]
+
+    n: Node = cast("Node", func_node)
     body = n.child_by_field_name("body")
     if body is None:
         return 0
@@ -131,10 +134,11 @@ def _py_check_long_functions(
     max_function_lines: int,
     out: list[ArchSuggestion],
 ) -> None:
-    from frob.ast.common import text, child_by_field
     from tree_sitter import Node, Tree
 
-    t: Tree = tree  # type: ignore[assignment]
+    from frob.ast.common import child_by_field, text
+
+    t: Tree = cast("Tree", tree)
 
     def visit(node: Node, class_prefix: str) -> None:
         for child in node.children:
@@ -150,13 +154,18 @@ def _py_check_long_functions(
                 n_lines = _py_function_line_count(child)
                 if n_lines > max_function_lines:
                     start_line = child.start_point[0] + 1
-                    out.append(ArchSuggestion(
-                        file=rel,
-                        line=start_line,
-                        category="long-function",
-                        severity="warning",
-                        message=f"function `{class_prefix}{fname}` has {n_lines} lines (threshold: {max_function_lines})",
-                    ))
+                    out.append(
+                        ArchSuggestion(
+                            file=rel,
+                            line=start_line,
+                            category="long-function",
+                            severity="warning",
+                            message=(
+                                f"function `{class_prefix}{fname}` has"
+                                f" {n_lines} lines (threshold: {max_function_lines})"
+                            ),
+                        )
+                    )
                 # recurse for nested functions
                 body = child_by_field(child, "body")
                 if body:
@@ -171,10 +180,11 @@ def _py_check_god_classes(
     max_class_methods: int,
     out: list[ArchSuggestion],
 ) -> None:
-    from frob.ast.common import text, child_by_field
-    from tree_sitter import Node, Tree
+    from tree_sitter import Tree
 
-    t: Tree = tree  # type: ignore[assignment]
+    from frob.ast.common import child_by_field, text
+
+    t: Tree = cast("Tree", tree)
 
     for child in t.root_node.children:
         if child.type != "class_definition":
@@ -188,13 +198,16 @@ def _py_check_god_classes(
         n_methods = len(methods)
         if n_methods > max_class_methods:
             start_line = child.start_point[0] + 1
-            out.append(ArchSuggestion(
-                file=rel,
-                line=start_line,
-                category="god-class",
-                severity="warning",
-                message=f"class `{cname}` has {n_methods} methods (threshold: {max_class_methods})",
-            ))
+            out.append(
+                ArchSuggestion(
+                    file=rel,
+                    line=start_line,
+                    category="god-class",
+                    severity="warning",
+                    message=f"class `{cname}` has {n_methods} methods"
+                    f" (threshold: {max_class_methods})",
+                )
+            )
 
 
 def _py_check_high_coupling(
@@ -204,8 +217,8 @@ def _py_check_high_coupling(
     max_local_imports: int,
     out: list[ArchSuggestion],
 ) -> None:
-    from frob.ast.common import ModuleTag
     from frob.ast import python as _py
+    from frob.ast.common import ModuleTag
 
     mod_tag = ModuleTag(rel)
     try:
@@ -215,20 +228,28 @@ def _py_check_high_coupling(
         return
     n = len(set(imports))
     if n > max_local_imports:
-        out.append(ArchSuggestion(
-            file=rel,
-            category="high-coupling",
-            severity="suggestion",
-            message=f"file imports {n} local modules (threshold: {max_local_imports})",
-        ))
+        out.append(
+            ArchSuggestion(
+                file=rel,
+                category="high-coupling",
+                severity="suggestion",
+                message=f"file imports {n} local modules (threshold: {max_local_imports})",  # noqa: E501
+            )
+        )
 
 
 def _py_max_nesting(func_body_node: "object") -> int:
     from tree_sitter import Node
-    body: Node = func_body_node  # type: ignore[assignment]
 
-    _NESTING_TYPES = {"if_statement", "for_statement", "while_statement",
-                      "try_statement", "with_statement"}
+    body: Node = cast("Node", func_body_node)
+
+    _NESTING_TYPES = {
+        "if_statement",
+        "for_statement",
+        "while_statement",
+        "try_statement",
+        "with_statement",
+    }
 
     def depth(node: Node, current: int) -> int:
         best = current
@@ -250,10 +271,11 @@ def _py_check_deep_nesting(
     max_nesting_depth: int,
     out: list[ArchSuggestion],
 ) -> None:
-    from frob.ast.common import text, child_by_field
     from tree_sitter import Node, Tree
 
-    t: Tree = tree  # type: ignore[assignment]
+    from frob.ast.common import child_by_field, text
+
+    t: Tree = cast("Tree", tree)
 
     def visit_functions(node: Node, class_prefix: str) -> None:
         for child in node.children:
@@ -271,13 +293,19 @@ def _py_check_deep_nesting(
                     depth = _py_max_nesting(body)
                     if depth > max_nesting_depth:
                         start_line = child.start_point[0] + 1
-                        out.append(ArchSuggestion(
-                            file=rel,
-                            line=start_line,
-                            category="deep-nesting",
-                            severity="suggestion",
-                            message=f"function `{class_prefix}{fname}` has nesting depth {depth} (threshold: {max_nesting_depth})",
-                        ))
+                        out.append(
+                            ArchSuggestion(
+                                file=rel,
+                                line=start_line,
+                                category="deep-nesting",
+                                severity="suggestion",
+                                message=(
+                                    f"function `{class_prefix}{fname}` has"
+                                    f" nesting depth {depth}"
+                                    f" (threshold: {max_nesting_depth})"
+                                ),
+                            )
+                        )
                     # recurse for nested functions
                     visit_functions(body, class_prefix)
 
@@ -290,9 +318,11 @@ def _py_check_deep_nesting(
 
 
 def _annotation_text(node: "object") -> str:
-    from frob.ast.common import text
     from tree_sitter import Node
-    n: Node = node  # type: ignore[assignment]
+
+    from frob.ast.common import text
+
+    n: Node = cast("Node", node)
     return text(n).strip()
 
 
@@ -304,10 +334,11 @@ def _extract_py_signatures(
     Return list of (rel, func_name, param_types_tuple, return_type_str).
     Only includes functions that have at least one annotated parameter or return.
     """
-    from frob.ast.common import text, child_by_field
     from tree_sitter import Node, Tree
 
-    t: Tree = tree  # type: ignore[assignment]
+    from frob.ast.common import child_by_field, text
+
+    t: Tree = cast("Tree", tree)
     results = []
 
     def visit(node: Node) -> None:
@@ -370,13 +401,17 @@ def _check_abstraction_opportunities(
         fn_names = ", ".join(fname for _, fname in members)
         # Use the first file as the location (arbitrary but stable)
         first_file = members[0][0]
-        out.append(ArchSuggestion(
-            file=first_file,
-            category="abstraction-opportunity",
-            severity="suggestion",
-            message=f"{len(members)} functions share signature `{sig_str}`: {fn_names}",
-            detail="Consider a shared protocol or base class",
-        ))
+        out.append(
+            ArchSuggestion(
+                file=first_file,
+                category="abstraction-opportunity",
+                severity="suggestion",
+                message=(
+                    f"{len(members)} functions share signature `{sig_str}`: {fn_names}"
+                ),
+                detail="Consider a shared protocol or base class",
+            )
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -390,11 +425,12 @@ def _cpp_check_long_functions(
     max_function_lines: int,
     out: list[ArchSuggestion],
 ) -> None:
-    from frob.ast.common import child_by_field
-    from frob.ast.cpp import _iter_function_nodes
     from tree_sitter import Tree
 
-    t: Tree = tree  # type: ignore[assignment]
+    from frob.ast.common import child_by_field
+    from frob.ast.cpp import _iter_function_nodes
+
+    t: Tree = cast("Tree", tree)
 
     for node, name in _iter_function_nodes(t.root_node):
         if node.type != "function_definition":
@@ -405,13 +441,16 @@ def _cpp_check_long_functions(
         n_lines = body.end_point[0] - body.start_point[0] + 1
         if n_lines > max_function_lines:
             start_line = node.start_point[0] + 1
-            out.append(ArchSuggestion(
-                file=rel,
-                line=start_line,
-                category="long-function",
-                severity="warning",
-                message=f"function `{name}` has {n_lines} lines (threshold: {max_function_lines})",
-            ))
+            out.append(
+                ArchSuggestion(
+                    file=rel,
+                    line=start_line,
+                    category="long-function",
+                    severity="warning",
+                    message=f"function `{name}` has {n_lines} lines"
+                    f" (threshold: {max_function_lines})",
+                )
+            )
 
 
 def _cpp_check_god_classes(
@@ -420,10 +459,11 @@ def _cpp_check_god_classes(
     max_class_methods: int,
     out: list[ArchSuggestion],
 ) -> None:
-    from frob.ast.common import text, child_by_field
-    from tree_sitter import Node, Tree
+    from tree_sitter import Tree
 
-    t: Tree = tree  # type: ignore[assignment]
+    from frob.ast.common import child_by_field, text
+
+    t: Tree = cast("Tree", tree)
 
     for child in t.root_node.named_children:
         if child.type not in ("class_specifier", "struct_specifier"):
@@ -434,19 +474,23 @@ def _cpp_check_god_classes(
         if body is None:
             continue
         methods = [
-            n for n in body.named_children
+            n
+            for n in body.named_children
             if n.type in ("function_definition", "declaration")
         ]
         n_methods = len(methods)
         if n_methods > max_class_methods:
             start_line = child.start_point[0] + 1
-            out.append(ArchSuggestion(
-                file=rel,
-                line=start_line,
-                category="god-class",
-                severity="warning",
-                message=f"class `{cname}` has {n_methods} methods (threshold: {max_class_methods})",
-            ))
+            out.append(
+                ArchSuggestion(
+                    file=rel,
+                    line=start_line,
+                    category="god-class",
+                    severity="warning",
+                    message=f"class `{cname}` has {n_methods} methods"
+                    f" (threshold: {max_class_methods})",
+                )
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -463,8 +507,8 @@ def analyze_project(
     max_nesting_depth: int = 4,
     max_file_lines: int = 500,
 ) -> ArchResult:
-    from frob.ast import python as _py
     from frob.ast import cpp as _cpp
+    from frob.ast import python as _py
     from frob.ast.cpp import ALL_EXTS as _CPP_EXTS
 
     suggestions: list[ArchSuggestion] = []

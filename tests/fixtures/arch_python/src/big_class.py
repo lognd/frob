@@ -1,4 +1,5 @@
 """A class with many methods to trigger god-class warnings."""
+
 from __future__ import annotations
 
 

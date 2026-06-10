@@ -4,6 +4,7 @@ PyCharm headless inspection runner.
 Locates PyCharm's inspect.bat on WSL/Windows, runs it, and returns the output
 directory for parsing.
 """
+
 from __future__ import annotations
 
 import getpass
@@ -88,7 +89,8 @@ def run_inspection(
         return s.replace("/", "\\")
 
     cmd = [
-        "cmd.exe", "/c",
+        "cmd.exe",
+        "/c",
         to_win(pycharm_inspect),
         to_win(project),
         to_win(profile),

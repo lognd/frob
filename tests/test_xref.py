@@ -1,7 +1,6 @@
 import pytest
-from pathlib import Path
 
-from frob.xref import xref, XrefError
+from frob.xref import XrefError, xref
 
 
 @pytest.fixture
@@ -110,6 +109,7 @@ def test_as_text(py_file):
 
 def test_as_json(py_file):
     import json
+
     xr = xref("helper", py_file).danger_ok
     data = json.loads(xr.as_json())
     assert data["symbol"] == "helper"

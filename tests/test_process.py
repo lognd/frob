@@ -3,7 +3,7 @@ Tests for frob.process parsers.
 
 Each test uses realistic tool output captured from real runs.
 """
-import pytest
+
 from frob.process.parsers import (
     parse_clang,
     parse_junit_xml,
@@ -12,7 +12,6 @@ from frob.process.parsers import (
     parse_ruff_json,
     parse_ty,
 )
-
 
 # ---------------------------------------------------------------------------
 # pytest parser
@@ -90,6 +89,7 @@ def test_pytest_skipped():
 
 def test_pytest_as_json():
     import json
+
     r = parse_pytest(PYTEST_FAIL, exit_code=1)
     data = json.loads(r.as_json())
     assert data["tool"] == "pytest"
