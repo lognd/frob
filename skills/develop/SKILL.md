@@ -8,79 +8,99 @@ description: Master orchestrator for building a new feature, module, or project 
 Full development pipeline. Runs plan, write-tests, implement, fix, document in order.
 Dispatch subagents for individual functions; use this skill to orchestrate the whole task.
 
-## Before anything else
+## Before anything else: orient cheaply
 
+**If the project uses frob:**
 ```bash
 frob map src/
+frob tokens src/some/file.py   # before reading any file
 ```
 
-This is ~200 tokens. Read it fully. Identify all relevant files before touching anything.
-If the project has >20 files, check token cost before reading any file:
-
+**Otherwise:**
 ```bash
-frob tokens src/some/file.py
+find src -name "*.py" | head -30    # get file list
+grep -r "def \|class " src --include="*.py" -l | head -20   # find key files
+wc -l src/**/*.py | sort -rn | head -10   # find large files
 ```
 
-Only read files with >200 tokens if you have no other choice. Prefer `frob outline` first.
+Never read a file just to understand the project. Get structure first, then read only what's needed.
 
 ## Step 1: Plan
 
 Run `/plan` (or follow it inline):
-- Read README.md and existing docs/ if present
-- Identify architectural risks (error handling, cycles, protocol mismatches) and resolve them first
-- Write/update `docs/<feature>.md` with design decisions
-- Write/update `TODO.md` with a flat checklist of every function/class/test to write
-
-Design doc must include:
-- Module layout (what files, what goes in each)
-- Public API signatures (typed)
-- Error types (`ErrorSet` subclass)
-- Data models (Pydantic `BaseModel`)
-- Any cross-cutting concerns (logging, config, cycles)
+- Read existing docs (README, docs/) first
+- Identify architectural risks before writing any code:
+  - Error propagation: how do failures flow through the system?
+  - Dependency direction: which module depends on which? Any cycles?
+  - Data ownership: which module owns which data types?
+- Write/update design doc in docs/ with API, data models, error types
+- Write/update TODO.md with specific, independently-dispatchable tasks
 
 ## Step 2: Stubs
 
 For each module to be created:
-1. Write the file with all class/function definitions but `...` bodies
-2. Include all imports, type annotations, and docstrings (one line max per function)
-3. Verify no import cycles: `frob cycle src/ --suggest`
+1. Write all class/function signatures with types, `...` bodies
+2. Include all imports and one-line docstrings on public symbols
+3. Check for cycles: `frob cycle src/` or `python -c "import <module>"` on each file
 
-Stubs serve as the contract that tests and implementation agents both see.
+Stubs are the contract: tests and implementations both depend on them.
 
-## Step 3: Write tests
+## Step 3: Tests (BEFORE implementing)
 
-Run `/write-tests` (or follow it inline) before writing any implementation.
-Unit tests first, then integration, then system (subprocess).
+Run `/write-tests`.
+Tests will fail at this stage -- that is correct and expected.
+What must NOT happen: import errors, syntax errors, collection errors.
 
 ## Step 4: Implement
 
-Run `/implement` (or follow it inline):
-- Dispatch one Haiku agent per function/method via `frob bundle`
-- Apply each diff, run `frob parse` on failures, fix or re-dispatch
+Run `/implement`.
+One function at a time. Verify each before moving to the next.
 
 ## Step 5: Fix
 
-Run `/fix` on any remaining test/lint/type failures.
+Run `/fix` on any remaining failures.
 
 ## Step 6: Document
 
-Run `/document` to add docstrings and update docs/.
+Run `/document`.
 
-## Checkpoints (stop and verify before continuing)
+## Checkpoints
 
-- After stubs: `frob cycle src/` must be clean
-- After each agent diff applied: `frob parse pytest` must not increase failure count
-- After implement: `frob parse pytest`, `frob parse ty`, `frob parse ruff` all clean
-- Before document: all tests pass
+- After stubs: no import cycles
+- After each implementation: failing test count must not INCREASE (new failures = regression)
+- After all implementation: all tests pass
+- Before commit: `frob arch src/` or equivalent manual check for new architectural debt
 
-## Token discipline
+## BLOCKER handling (critical)
 
-Never read a file raw if you can avoid it. The hierarchy:
+Any subagent (implementer, debugger, tester) may return:
+```
+BLOCKER: <design problem>
+SUGGESTION: <what should change first>
+```
 
-| Token cost | Action |
-|-----------|--------|
-| ~10 | `frob tokens <file>` -- decide how to read |
-| ~50 | `frob outline <file>` -- structure only |
-| ~200 | `frob stub <file> <target>` -- area around one function |
-| ~500 | `frob bundle <file> <target>` -- ready-to-dispatch context |
-| 300-5000+ | `Read file` -- last resort for small files only |
+**Default (bypass permissions OFF):**
+1. STOP the current pipeline step immediately.
+2. Do NOT re-dispatch the agent.
+3. Do NOT apply a local workaround.
+4. Surface the BLOCKER and SUGGESTION to the user verbatim and wait for a decision.
+
+**Autonomous mode (bypass permissions ON):**
+1. STOP the current pipeline step immediately.
+2. Dispatch /oracle with the BLOCKER as the question and the SUGGESTION as context.
+3. Apply oracle's DECISION, update stubs/design accordingly.
+4. Resume the pipeline from the step that was blocked.
+5. Log: "BLOCKER resolved via oracle: {DECISION}" so the user can review it later.
+
+A BLOCKER is not a failure -- it is the agent doing its job correctly.
+Never silently patch around one.
+
+## Token discipline (if using frob)
+
+| Cost | Action |
+|------|--------|
+| ~10 tok | `frob tokens <file>` -- decide reading strategy |
+| ~50 tok | `frob outline <file>` -- structure only |
+| ~200 tok | `frob stub <file> <target>` -- one function context |
+| ~500 tok | `frob bundle <file> <target>` -- subagent dispatch context |
+| 300-5000+ | Read file directly -- only for small/critical files |

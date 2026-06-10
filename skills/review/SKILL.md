@@ -1,93 +1,120 @@
 ---
 name: review
-description: Review code quality, correctness, and design after implementation. Use when the user says "review X", "check X", "audit X", or before a commit. Checks for design issues, error handling gaps, and test coverage.
+description: Review code quality, correctness, and design after implementation. Use when the user says "review X", "check X", or before committing. Checks error handling, test coverage, and design issues.
 ---
 
 # review
 
-Quality check after implementation. Run after all tests pass, before committing.
+Quality check before commit. Verify tools pass, then check design correctness.
+Prioritize correctness over style.
 
-## Step 1: Orient cheaply
+## Step 1: Orient (do not read files yet)
 
+**If using frob:**
 ```bash
 frob map src/
 frob cycle src/
 ```
 
-Confirm no cycles. Read the map to identify the scope of changes.
-
-## Step 2: Check each changed file
-
-For each modified file, run outline first:
-
+**Otherwise:**
 ```bash
-frob outline src/frob/<module>/__init__.py
+find src -name "*.py" | head -30
+python -c "import <each_module>" 2>&1   # quick import cycle check
 ```
 
-Then read the full file only if the outline reveals something to investigate.
-For large files (>400 tokens), use `frob stub <file> <function>` to zoom in.
+No cycles = prerequisite for everything else.
 
-## Step 3: Error handling audit
-
-For every public function:
-- [ ] Returns `Result[T, E]`, not bare value or raised exception
-- [ ] Every `ErrorSet` variant is actually reachable
-- [ ] Callers handle the Err case (check with `frob xref`)
-- [ ] No silent swallowing of errors (no bare `except:` or `result.danger_ok` without check)
-
-## Step 4: Data model audit
-
-For every `BaseModel`:
-- [ ] All fields have correct types (no `Any` unless unavoidable)
-- [ ] Required vs optional fields match actual usage
-- [ ] `as_text()` and `as_json()` exist for any model that crosses a module boundary
-
-## Step 5: Test coverage audit
+## Step 2: Run all verification tools
 
 ```bash
-pytest tests/ --tb=short 2>&1 | frob parse pytest --exit-code $?
+# Python
+pytest tests/ -q 2>&1 | frob parse pytest --exit-code $?   # with frob
+pytest tests/ -q                                            # without frob
+ty check src/ 2>&1 | head -20
+ruff check src/ --output-format json | head
+
+# C++
+cd build && ctest --output-on-failure
+# compile with -Wall -Wextra and check for warnings
 ```
 
-For each public function, verify at minimum:
+**All must pass before reviewing code.** Tools are faster and more reliable than manual review.
+
+## Step 3: Error handling audit (most important)
+
+For every public function that can fail:
+- [ ] Returns a failure type (Result, error code, exception -- whatever the project convention is)
+- [ ] Every failure case is actually reachable (no dead `Err` variants)
+- [ ] Callers handle the failure (not silently ignored)
+- [ ] No silent swallowing of errors (no bare `except: pass`, no unchecked `danger_ok`)
+
+**If using typani specifically:**
+- [ ] `.danger_ok` / `.danger_err` only used when `.is_ok` / `.is_err` was checked first
+- [ ] Properties accessed without `()` (NOT `result.is_ok()` -- no parentheses)
+
+## Step 4: Test coverage audit
+
+For each public function, check:
 - [ ] Happy path test
-- [ ] Each `ErrorSet` variant tested (Err returned, not raised)
-- [ ] Edge case (empty, boundary)
-- [ ] System test if it has a CLI entry point
+- [ ] Each failure variant tested (failure is returned, not raised, if applicable)
+- [ ] Edge case (empty, None, boundary)
+- [ ] System/CLI test if it has a command-line entry point
 
-Missing tests are a blocking issue -- add them before approving.
+Run `frob arch src/` (if available) or check manually:
+- Any function >30 lines? Consider splitting
+- Any class with >12 methods? Consider splitting
+- Any file importing >8 other project files? Check for coupling
 
-## Step 6: Logging audit
+## Step 5: Staleness check (prevent stale references)
 
-- [ ] All user-visible output uses `get_logger(name)`
-- [ ] No `print()` calls anywhere in `src/`
-- [ ] Debug info at `DEBUG` level, user output at `INFO`, warnings at `WARNING`, errors at `ERROR`
+Before approving, verify every specific claim:
 
-## Step 7: Dependency hygiene
-
+**Verify file paths exist:**
 ```bash
-frob cycle src/
+ls src/<module>/__init__.py  # referenced in docs or tests
 ```
 
-Must be clean. If cycles exist, they are a blocking issue.
+**Verify function names:**
+```bash
+grep -n "def <function_name>" src/**/*.py  # referenced in tests/docs
+```
 
-Also check `pyproject.toml`: every import that is not stdlib must be listed as a dependency.
+**Verify import paths:**
+```bash
+python -c "from <module> import <symbol>"  # referenced imports
+```
+
+A stale reference (file moved, function renamed, wrong module path) is a hard block.
+
+## Step 6: Logging and output audit (Python)
+
+- [ ] No `print()` calls in `src/` -- use `get_logger(__name__)`
+- [ ] Debug info at `DEBUG`, user output at `INFO`, warnings at `WARNING`, errors at `ERROR`
+- [ ] No log messages inside tight loops (performance)
+
+## Step 7: Documentation check
+
+- [ ] Every public function has a docstring (one line is fine)
+- [ ] No docstring describes implementation details ("iterates over the list")
+- [ ] Docstrings mention non-obvious constraints, error conditions, or invariants
 
 ## Verdict
 
-**Approve** if:
-- All tools pass (pytest, ty, ruff)
+**Approve** (ready to commit) if:
+- All tools pass
 - No cycles
-- Error handling is complete
+- Error handling complete
+- No stale references
 - Tests cover all error variants
-- No print() calls
 
-**Block** if any of the above fail. Note each specific issue as a TODO item.
+**Block** if any above fail. List each specific issue with file:line.
 
-## After approval
+## Commit
 
 ```bash
-git add -p
-git status
+git add -p                       # stage selectively, review each hunk
+git diff --staged                # final check
+git status                       # confirm no unintended files
 git commit -m "<type>: <short description>"
 ```
 

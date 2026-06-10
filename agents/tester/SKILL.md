@@ -80,3 +80,21 @@ output a single line:
 ```
 ERROR: <short reason>
 ```
+
+## If the function's design makes it hard to test correctly
+
+If writing honest tests reveals a structural problem -- the function does too many things,
+a dependency is not injectable, the error variants are missing or wrong, or the API boundary
+is in the wrong place -- do NOT write tests that paper over it. Stop and output:
+
+```
+BLOCKER: <one sentence describing why the function is hard to test correctly>
+SUGGESTION: <one sentence describing what should be changed to make it testable>
+```
+
+Examples:
+- "Function reads from a hardcoded global config; tests cannot control its inputs."
+- "Two unrelated behaviors are combined; I would need two test classes for what should be two functions."
+- "ErrorSet has no variant for the failure case I need to test; callers can't distinguish it."
+
+Write tests that are honest about what the code does, not tests that hide design flaws.

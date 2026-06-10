@@ -70,3 +70,21 @@ ERROR: <short reason why this error cannot be fixed without more context>
 ```
 
 Do not guess. A bad fix is worse than no fix.
+
+## If the fix requires a design change
+
+If the root cause is structural -- the same bug pattern recurs in multiple places, the
+fix requires changing a public API, the error exposes a missing abstraction, or patching
+this would hide the real problem -- do NOT silently apply a local workaround. Stop and output:
+
+```
+BLOCKER: <one sentence describing why a local fix would be wrong or hide a deeper issue>
+SUGGESTION: <one sentence describing the structural change needed>
+```
+
+Examples:
+- "This null-check is duplicated in 4 places; the real fix is a validated type at the boundary."
+- "Fixing this requires changing the return type of parse_x(), which has 8 callers."
+- "The error recurs because module A and B share no common error type; they need one."
+
+Do not apply a patch that masks a recurring problem. Report it so the orchestrator can decide.

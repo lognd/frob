@@ -1,118 +1,148 @@
 ---
 name: write-tests
-description: Write unit, integration, and system tests before or alongside implementation. Use when the user says "write tests for X", "add tests", or as part of the develop pipeline. Dispatches Haiku tester agents for individual test files.
+description: Write unit, integration, and system tests before or alongside implementation. Use when the user says "write tests for X", "add tests", or as part of the develop pipeline.
 ---
 
 # write-tests
 
 Tests before code. Unit first, integration second, system third.
 
-## Before writing a single test
+## Get signatures without reading files
 
-Run outline on every file being tested:
-
+**If using frob:**
 ```bash
-frob outline src/frob/<module>/__init__.py
+frob outline src/<module>/__init__.py
 ```
 
-This shows all public functions + signatures at ~50 tokens each.
-If signatures are not yet written (stubs exist), read the stub directly -- it is small.
+**Otherwise:**
+```bash
+grep -n "^def \|^    def \|^class " src/<module>/__init__.py
+```
 
 ## Unit tests
 
-For each public function, dispatch a `tester` agent:
+For each public function, get minimal context then dispatch or write:
+
+**If using frob (dispatch to tester agent):**
+```bash
+frob bundle src/<module>/__init__.py <function_name> > /tmp/ctx.md
+```
+
+**Otherwise:** read just the function with grep + context lines:
+```bash
+grep -n -A 20 "^def <function_name>" src/<module>/__init__.py
+```
+
+### Test structure (language-agnostic)
+
+**Python / pytest:**
+```python
+class TestFunctionName:
+    def test_happy_path(self):
+        result = function_name(valid_input)
+        # assert success
+
+    def test_error_case(self):
+        result = function_name(bad_input)
+        # assert failure with correct reason
+
+    def test_edge_empty(self):
+        result = function_name(empty_input)
+        # assert appropriate handling
+```
+
+**For typani Result types specifically:**
+```python
+assert result.is_ok
+assert result.danger_ok == expected
+
+assert result.is_err
+assert result.danger_err == SomeError.Variant
+```
+
+**C++ / Google Test:**
+```cpp
+TEST(FunctionNameTest, HappyPath) {
+    EXPECT_EQ(function_name(valid_input), expected);
+}
+TEST(FunctionNameTest, ErrorCase) {
+    EXPECT_THROW(function_name(bad_input), std::invalid_argument);
+    // or EXPECT_FALSE, EXPECT_EQ with error code, etc.
+}
+```
+
+**If the tester agent returned BLOCKER:**
+- Bypass permissions OFF: surface BLOCKER + SUGGESTION to user verbatim before continuing.
+- Bypass permissions ON: dispatch /oracle, apply DECISION, resume.
+Never write tests that paper over a design flaw to make them pass.
+
+## After writing tests: verify they COLLECT
 
 ```bash
-frob bundle src/frob/<module>/__init__.py <function_name> > /tmp/ctx.md
+pytest tests/test_<module>.py --collect-only 2>&1 | head -20
 ```
 
-Then use the `tester` agent (see `agents/tester/SKILL.md`) with this prompt template:
+Tests SHOULD fail (not implemented). What must NOT happen:
+- Import errors
+- Syntax errors
+- Collection errors
 
-```
-You are writing pytest unit tests. Context:
-
-{contents of /tmp/ctx.md}
-
-Task: write tests for `{function_name}` covering:
-- Happy path: valid input returns Ok(expected)
-- Error path: each FeatureError variant is returned (not raised)
-- Edge cases: empty input, None where allowed, boundary values
-
-File: tests/test_{module}.py
-Class: Test{FunctionName}
-
-Return ONLY a unified diff. No explanation. No prose.
-```
-
-Apply the diff:
-
-```bash
-git apply /tmp/tester_output.diff
-```
-
-Verify the test file parses (no syntax errors):
-
-```bash
-python -c "import ast; ast.parse(open('tests/test_{module}.py').read())"
-```
+Fix any collection errors immediately before continuing.
 
 ## Integration tests
 
-Integration tests check that two modules work together correctly.
-Write them by hand (they require cross-module knowledge that Haiku lacks).
+Write by hand -- they need cross-module knowledge that agents lack.
+Focus on: module A output feeding module B input, error propagation at boundaries.
 
-Focus on:
-- Module A produces output that Module B consumes
-- Error from A propagates correctly through B
-- Shared data models round-trip correctly
+## System tests (CLI tools)
 
-File: `tests/test_integration_{a}_{b}.py`
-
-## System tests
-
-System tests run the CLI end-to-end via subprocess. Add to `tests/test_system.py`.
-
-Template for a new command:
+Use subprocess with real binaries on fixture projects:
 
 ```python
-def test_{cmd}_exits_zero(fixture):
-    r = run("{cmd}", str(fixture))
+import shutil, subprocess, pytest
+FROB = [sys.executable, "-m", "frob"]
+
+def run(*args, input=None):
+    return subprocess.run(FROB + list(args), capture_output=True, text=True, input=input)
+
+def test_cmd_exits_zero(fixture_path):
+    r = run("cmd", str(fixture_path))
     assert r.returncode == 0
-
-def test_{cmd}_output_contains(fixture):
-    r = run("{cmd}", str(fixture))
-    assert "expected_string" in r.stdout
-
-def test_{cmd}_json(fixture):
-    r = run("{cmd}", str(fixture), "--json")
-    data = json.loads(r.stdout)
-    assert "expected_key" in data
-
-def test_{cmd}_error_exits_nonzero(fixture):
-    r = run("{cmd}", str(fixture), "bad-arg")
-    assert r.returncode != 0
 ```
 
-## After writing tests
+For third-party tools (ruff, gcc, etc.):
+```python
+@pytest.mark.skipif(shutil.which("ruff") is None, reason="ruff not installed")
+def test_with_ruff():
+    ...
+```
 
-Run them immediately to check for errors in the tests themselves:
+## Speed: use testmon for incremental runs
+
+Install once: `pip install pytest-testmon`
 
 ```bash
-pytest tests/test_{module}.py -x --tb=short 2>&1 | frob parse pytest --exit-code $?
+# First run: builds dependency map (~same speed as normal)
+pytest --testmon
+
+# Subsequent runs: only runs tests touching changed files (very fast)
+pytest --testmon
+
+# Force full run (e.g., after deps change):
+pytest --testmon --force
 ```
 
-At this stage tests SHOULD fail (implementation is `...`). That is correct.
-What must NOT happen: import errors, syntax errors, or test collection errors.
-
-Fix any collection errors before continuing.
+After writing a new test, run it alone first:
+```bash
+pytest tests/test_module.py::TestClass::test_name -x --tb=short
+```
 
 ## Coverage checklist
 
-Every public function needs:
-- [ ] At least one happy-path test (Ok result)
-- [ ] One test per ErrorSet variant (Err result returned, not raised)
-- [ ] One edge case test (empty, None, boundary)
-- [ ] One system test (CLI invocation, for commands)
+Every public function:
+- [ ] Happy path (success case)
+- [ ] Each error/failure variant (returned, not raised)
+- [ ] Empty/null/boundary input
+- [ ] System test if it has a CLI entry point
 
-No mocking of internal modules. Hit real code. Only mock filesystem and network
-at the system boundary (use `tmp_path` fixture for files).
+No mocking of internal modules. Use real code. Only mock at system boundary (filesystem, network).

@@ -1,106 +1,103 @@
 ---
 name: plan
-description: Design and document a feature or module before any implementation. Use when the user says "plan X", "design X", "think through X", or when starting a non-trivial task. Writes design docs and TODO.md.
+description: Design and document a feature or module before any implementation. Use when starting a non-trivial task. Writes design docs and TODO.md. Works for any language or project type.
 ---
 
 # plan
 
-Design first, code never. This skill produces docs and TODO.md; nothing else.
+Design first, code never. This skill produces docs and a TODO checklist; nothing else.
 
-## Step 1: Orient
+## Step 1: Orient without reading files
 
+**If using frob:**
 ```bash
 frob map src/
 ```
 
-Read the map fully. Do NOT read individual files yet.
-Then read README.md (always) and any existing docs/ that are relevant.
+**Otherwise:**
+```bash
+find src -type f | grep -E '\.(py|cpp|h|rs|go|ts)$' | sort
+grep -r "^class \|^def \|^func \|^fn \|^pub " src --include="*.py" -l
+```
 
-## Step 2: Identify risks
+Read only README.md and existing docs/ at this step. Don't read source files.
 
-Before writing anything, answer these questions:
+## Step 2: Identify risks BEFORE designing
 
-1. **Error handling**: how do errors propagate? Use `typani.Result[T, E]` + `ErrorSet`.
-   Every public function that can fail must return `Result`, never raise.
-2. **Import cycles**: sketch the dependency graph. If A->B->A would happen, redesign now.
-   Run `frob cycle src/ --suggest` after stubs exist.
-3. **Data flow**: what are the types at each boundary? Define `BaseModel` for all data crossing module lines.
-4. **Logging**: all user-visible output goes through `frob.logging.get_logger(name)`.
-   No `print()`. No bare `logging.getLogger()`.
-5. **Config**: if the feature has user-tunable options, add fields to `AppConfig` in `app/config.py`.
+Answer these before writing anything:
 
-## Step 3: Write design doc
+1. **Error propagation**: how do failures flow? (Result type? exceptions? error codes?)
+2. **Dependency direction**: sketch A->B->C. Would adding your module create a cycle?
+3. **Data ownership**: which module owns each data type? Does anything cross module boundaries?
+4. **Concurrency/ordering**: any shared state, ordering dependencies, or async concerns?
+5. **Performance**: any hot paths that require special data structures?
 
-Write `docs/<feature>.md`:
+If you find a risk that changes the design, resolve it NOW before documenting.
+Architectural problems fixed at design time cost ~10x less than after implementation.
+
+## Step 3: Write design doc (docs/<feature>.md)
 
 ```markdown
 # <Feature Name>
 
 One sentence: what it does and why.
 
-## API
+## Public API
 
-```python
-def public_function(arg: Type) -> Result[ReturnType, FeatureError]:
-    ...
-```
+List every public function/method with full typed signature and one-line description.
 
 ## Data models
 
-```python
-class FeatureModel(BaseModel):
-    field: type
-```
+Every structured data type (class, struct, record) crossing module lines.
 
-## Errors
+## Error types
 
-```python
-class FeatureError(ErrorSet):
-    ReasonOne = "human readable message"
-    ReasonTwo = "human readable message"
-```
+All failure cases and when they occur.
 
 ## Design decisions
 
-- Decision A: why, alternatives considered
-- Decision B: why, alternatives considered
+For each non-obvious decision: what was chosen, alternatives considered, why.
 
 ## Dependencies
 
-- `frob.ast.python` -- for parsing Python files
-- ... (list only direct imports)
+Direct dependencies only. For each: what it provides to this module.
+
+## Integration points
+
+Which existing modules call this. Which this calls. Any protocol contracts.
 ```
 
 ## Step 4: Write TODO.md entries
 
-Append to (or create) `TODO.md`. Use this format:
+Append to (or create) `TODO.md`. Format every item to be independently dispatchable:
 
 ```markdown
 ## <Feature Name>
 
 ### Stubs
-- [ ] src/frob/<feature>/__init__.py -- FeatureError, public_function stub
-- [ ] src/frob/<feature>/_impl.py -- internal helpers
+- [ ] src/<module>/__init__.py -- data models, error types, function signatures
+- [ ] tests/test_<module>.py -- test file (empty, just imports)
 
-### Tests (unit)
-- [ ] tests/test_<feature>.py -- happy path
-- [ ] tests/test_<feature>.py -- error cases
-- [ ] tests/test_<feature>.py -- edge cases
-
-### Tests (integration)
-- [ ] tests/test_integration_<feature>.py -- interaction with <other module>
-
-### Tests (system)
-- [ ] tests/test_system.py -- frob <cmd> end-to-end
+### Tests
+- [ ] tests/test_<module>.py::TestFunctionName -- happy path, error cases, edge cases
+- [ ] tests/test_integration.py::test_<module>_with_<other> -- integration
 
 ### Implementation
-- [ ] <function_name> -- one line description
-- [ ] <function_name> -- one line description
+- [ ] <function_name>(arg: Type) -> ReturnType -- one-line description
+- [ ] <function_name>(arg: Type) -> ReturnType -- one-line description
 
 ### Documentation
-- [ ] docs/<feature>.md -- update after implementation
-- [ ] docstrings for all public functions
+- [ ] docs/<feature>.md -- update signatures after implementation
+- [ ] docstrings for all public symbols
 ```
 
-Every item in TODO.md must be independently dispatchable -- specific enough that
-a Haiku agent can implement it from a bundle + the TODO line alone.
+Every implementation TODO item must be specific enough that an agent can implement
+it from a `frob bundle` output + the TODO line alone, with no additional context.
+
+## Correctness check before signing off
+
+- [ ] Every function that can fail has an explicit error type
+- [ ] No circular dependencies in the design
+- [ ] Every public function has a typed signature
+- [ ] Design doc is specific enough to detect disagreements (not "returns result")
+- [ ] TODO items are independently executable (no item depends on another's status being unknown)

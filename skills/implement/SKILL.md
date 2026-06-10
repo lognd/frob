@@ -1,111 +1,133 @@
 ---
 name: implement
-description: Implement stubbed functions by dispatching Haiku agents per function. Use after stubs and tests exist. Use when the user says "implement X", "fill in X", or as part of the develop pipeline.
+description: Implement stubbed functions by dispatching Haiku agents one function at a time. Use after stubs and tests exist. Emphasizes verify-after-each-function with the fast single-test loop.
 ---
 
 # implement
 
-Fill in `...` bodies one function at a time, using Haiku agents.
-Never implement more than one function per agent dispatch.
+Fill `...` bodies one function at a time. Verify after each one before moving on.
+Never accumulate multiple unverified implementations.
 
 ## Prerequisites
 
-Before dispatching any agent:
-1. Stubs exist (all function signatures defined, bodies are `...`)
-2. Tests exist and collect without errors (they may fail -- that is expected)
-3. `frob cycle src/` is clean
+1. Stubs exist (all signatures written, bodies are `...` or equivalent)
+2. Tests collect without errors (they fail -- that is expected)
+3. No import cycles
 
 ## Process per function
 
-### 1. Get context
+### 1. Get context (minimal)
 
+**If using frob:**
 ```bash
-frob bundle src/frob/<module>/__init__.py <function_name> --depth 2 > /tmp/ctx.md
-frob tokens /tmp/ctx.md
+frob bundle src/<module>/__init__.py <function_name> --depth 2 > /tmp/ctx.md
+frob tokens /tmp/ctx.md   # if >800 tokens, reduce depth to 1
 ```
 
-If `/tmp/ctx.md` is >800 tokens, reduce depth:
-
+**Otherwise (read the function + what it calls):**
 ```bash
-frob bundle src/frob/<module>/__init__.py <function_name> --depth 1 > /tmp/ctx.md
+grep -n -A 30 "^def <function_name>\|^    def <function_name>" src/<module>/<file>.py
 ```
 
-### 2. Check what calls this function
+### 2. Check callers
 
 ```bash
-frob xref <function_name> src/
+frob xref <function_name> src/        # if using frob
+grep -rn "<function_name>" src/       # otherwise
 ```
 
-If callers exist, note their expectations in the agent prompt.
+Note any constraints callers impose (argument types, return shape).
 
-### 3. Dispatch implementer agent
+### 3. Dispatch implementer agent (or implement directly)
 
-Use the `implementer` agent (see `agents/implementer/SKILL.md`):
+**Dispatch when:** function body >10 lines, or has non-trivial logic.
+**Implement directly when:** trivial (<5 lines), a property accessor, or a format conversion.
 
+Agent prompt template:
 ```
 You are implementing a single function. Context:
 
-{contents of /tmp/ctx.md}
+{frob bundle output, or relevant code excerpts}
 
-Task: implement `{function_name}` so that {one sentence description of what it should do}.
+Task: implement `{function_name}` so that {one sentence what it does}.
 
-Callers expect: {note any constraints from xref output, or "none yet"}
+Callers expect: {note from xref, or "none yet"}
 
-Constraints:
-- Use typani Result[T, E] for error returns. Never raise.
-- Use pydantic BaseModel for any structured data.
-- Use frob.logging.get_logger(__name__) for any debug output.
-- Return ONLY a unified diff. No prose.
+Language: {Python/C++}
+
+For Python:
+- Use typani Result[T, E] for fallible returns. Never raise at module boundary.
+- Use pydantic BaseModel for structured data.
+- Use get_logger(__name__) for debug output. No print().
+
+Return ONLY a unified diff. No explanation.
 ```
 
 ### 4. Validate and apply
 
 ```bash
-git apply --check /tmp/impl.diff
+git apply --check /tmp/impl.diff   # verify first
 git apply /tmp/impl.diff
 ```
 
-If `--check` fails, read the diff and fix manually, or re-dispatch with the error.
+If `--check` fails: read the diff and the current file, fix the conflict manually.
 
-### 5. Run tests immediately
+**If the agent returned BLOCKER:**
+- Bypass permissions OFF: surface BLOCKER + SUGGESTION to user verbatim, wait for decision.
+- Bypass permissions ON: dispatch /oracle with the BLOCKER as the question, apply the DECISION,
+  resume. Log "BLOCKER resolved via oracle: {DECISION}" for later review.
+Never patch around a BLOCKER either way.
+
+### 5. Verify with SINGLE test (fast loop)
 
 ```bash
-pytest tests/test_{module}.py -x --tb=short 2>&1 | frob parse pytest --exit-code $?
+pytest tests/test_<module>.py -k "<function_name>" -x --tb=short
 ```
 
-If new failures appear, run `/fix` on just this function before moving on.
-Never accumulate multiple broken functions.
+If that passes, also run the full module test file:
+```bash
+pytest tests/test_<module>.py --tb=short
+```
 
-## Order of implementation
+Only after module tests pass: move to the next function.
 
-Implement in dependency order -- lower-level helpers before the functions that call them.
+**NEVER** run the full test suite after each individual function -- too slow.
+Run the full suite once after ALL functions in a module are implemented.
 
-Read `frob outline src/frob/<module>/__init__.py` to see the call graph implied by
-the import structure. Implement leaf functions first.
+## Implementation order
+
+Implement dependency-first (leaf functions before callers):
+
+```bash
+frob outline src/<module>/__init__.py   # see call structure
+```
+
+Or read imports: functions that import nothing from the same module can be implemented first.
 
 ## When NOT to dispatch to Haiku
 
-- The function requires reading multiple files to understand (use Sonnet -- yourself)
-- The function involves a new algorithm or data structure design (use `/plan` first)
-- The function requires xref/cycle awareness across the whole project
-- The diff from the last agent was completely wrong (redesign the stub instead)
+- Function requires reading multiple files to understand (implement yourself)
+- Function involves a new algorithm or data structure not in the stubs (run /plan first)
+- Function requires cross-file xref awareness (implement yourself)
+- Last agent for this function returned a wrong diff (implement yourself, don't re-dispatch)
+- Agent returned BLOCKER (surface to user, resolve design issue first)
 
-## Batch mode (for simple functions)
-
-For trivial functions (<5 lines each), you may implement them yourself inline
-rather than dispatching. The overhead of dispatch is not worth it for:
-- Property accessors
-- Simple format conversions
-- Pass-through wrappers
-- `__repr__` / `__str__`
-
-## After all functions implemented
+## After all functions in a module implemented
 
 ```bash
-pytest tests/ --tb=short 2>&1 | frob parse pytest --exit-code $?
-ty check src/ 2>&1 | frob parse ty
-ruff check src/ --output-format json | frob parse ruff
-frob cycle src/
+pytest tests/test_<module>.py -q                  # module tests
+pytest tests/test_integration_*.py -q             # integration tests if they exist
 ```
 
-All must be clean before moving to `/document`.
+Fix any failures with /fix before moving to the next module.
+
+## After ALL modules implemented
+
+```bash
+pytest tests/ -q                    # full suite
+ty check src/ 2>&1 | head -30       # type check (Python)
+ruff check src/ --output-format json | head  # lint (Python)
+frob cycle src/                     # if using frob: check for cycles
+```
+
+All must be clean before /document.

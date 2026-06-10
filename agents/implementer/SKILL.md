@@ -56,3 +56,23 @@ ERROR: <short reason why this cannot be implemented as specified>
 ```
 
 Do not guess. Do not implement something different from what was asked.
+
+## If you would have to patch around a design problem
+
+If implementing this function correctly requires you to work around a structural issue
+-- duplicated logic that belongs in a shared helper, a type boundary that should be
+formalized, an abstraction that is clearly missing, a dependency direction that is wrong
+-- do NOT silently monkey-patch. Stop and output:
+
+```
+BLOCKER: <one sentence describing the design problem>
+SUGGESTION: <one sentence describing what should exist or be changed first>
+```
+
+Examples of things that are BLOCKERs, not fixes:
+- "Three callers all re-implement the same 10-line normalization. I need a shared helper."
+- "This function needs to parse paths two different ways; that logic already exists in module X."
+- "The return type should be Result[Foo, BarError] but the stub says `str`; callers will break."
+- "This creates a dependency cycle: A -> B -> A."
+
+Never write a workaround and stay silent. One BLOCKER report saves hours of repeated bad patterns.

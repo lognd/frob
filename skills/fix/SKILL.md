@@ -1,128 +1,155 @@
 ---
 name: fix
-description: Run all tools, parse output, and fix errors by dispatching Haiku debugger agents. Use when tests fail, linter errors exist, or type errors appear. Use when the user says "fix errors", "fix tests", "fix linting", or as part of the develop pipeline.
+description: Run all tools, parse output, and fix errors one at a time. Use when tests fail, linter errors exist, or type errors appear. Emphasizes a tight single-test verification loop for maximum speed.
 ---
 
 # fix
 
-Run tools, parse compact output, fix one error at a time. Never fix blindly in bulk.
+Run tools, parse compact output, fix one error at a time.
+NEVER fix blindly in bulk. ALWAYS verify each fix with the single failing test before moving on.
 
-## Step 1: Run all tools and collect summaries
+## The fast fix loop (critical)
+
+The most common mistake: fixing a bug, then running the full test suite to check.
+Full suites are slow. The fast loop is:
+
+```
+1. Identify the ONE failing test
+2. Run ONLY that test
+3. Fix
+4. Run ONLY that test again -> must pass
+5. Run full suite -> confirm no regressions
+```
 
 ```bash
-pytest tests/ --tb=short 2>&1 | frob parse pytest --exit-code $? > /tmp/tests.txt
+# Step 1: find failing tests quickly
+pytest tests/ --testmon -q 2>&1 | head -20
+# or if no testmon:
+pytest tests/ -x -q 2>&1 | head -20
+
+# Step 2+3+4: single-test loop (fast)
+pytest tests/test_module.py::TestClass::test_name -x --tb=short
+
+# Step 5: full suite only after single test passes
+pytest tests/ -q
+```
+
+**If using frob for compact output:**
+```bash
+pytest tests/ --testmon -q 2>&1 | frob parse pytest --exit-code $?
+# Fix...
+pytest tests/test_module.py::TestClass::test_name --tb=short 2>&1 | frob parse pytest --exit-code $?
+```
+
+## Step 1: Triage all failures
+
+```bash
+# Run all tools, get compact summaries
+pytest tests/ -q 2>&1 > /tmp/tests.txt          # or with --testmon
+ty check src/ 2>&1 > /tmp/types.txt             # if Python
+ruff check src/ --output-format json > /tmp/lint.txt  # if Python
+```
+
+**Or with frob:**
+```bash
+pytest tests/ -q 2>&1 | frob parse pytest --exit-code $? > /tmp/tests.txt
 ty check src/ 2>&1 | frob parse ty > /tmp/types.txt
 ruff check src/ --output-format json | frob parse ruff > /tmp/lint.txt
 ```
 
-Read all three files (~50 tokens total). Triage:
+Read all three (~50 tokens total with frob, or ~200 tokens without).
 
-1. **Type errors first** -- they indicate wrong data flowing between modules
-2. **Test failures second** -- they indicate wrong behavior
-3. **Lint errors last** -- they are mechanical, fix in batch at the end
+**Triage order:**
+1. Type errors first -- indicate wrong data at module boundaries
+2. Test failures second -- indicate wrong behavior
+3. Lint errors last -- mechanical, fix in batch
 
 ## Step 2: Fix type errors
 
-For each type error, check the context:
+For each type error, understand the flow before touching anything:
 
 ```bash
-frob xref <symbol> src/          # who passes this value?
-frob stub src/frob/<file>.py <function_name>  # what does the function expect?
+# Where is the mismatched value coming from?
+frob xref <symbol> src/          # if using frob
+grep -rn "<symbol>" src/         # otherwise
 ```
 
-If the error is in a function body, dispatch a `debugger` agent:
-
+Dispatch debugger agent or fix directly.
+After fix: run ONLY the tests touching that module:
 ```bash
-frob bundle src/frob/<module>/__init__.py <function_name> > /tmp/ctx.md
+pytest tests/test_<module>.py -x --tb=short
 ```
 
-```
-You are fixing a type error. Context:
-
-{contents of /tmp/ctx.md}
-
-Error:
-{exact line from /tmp/types.txt}
-
-Fix ONLY the type error. Do not refactor. Do not change behavior.
-Return ONLY a unified diff. No prose.
-```
-
-Apply, then re-run `frob parse ty` to confirm the error is gone.
-
-## Step 3: Fix test failures
+## Step 3: Fix test failures -- single-test loop
 
 For each failing test:
+1. Identify whether test is wrong or implementation is wrong
+2. If implementation wrong:
+   - Get context: `frob bundle <file> <function>` or read the specific function
+   - Fix
+   - Run ONLY that test: `pytest tests/test_X.py::test_name -x --tb=short`
+   - Must pass before moving to next failure
+3. If test is wrong:
+   - Verify the intended behavior from the design doc or function signature
+   - Fix the test
+   - Run it again
 
-1. Read the test to understand what it expects
-2. Read the function being tested with `frob stub`
-3. Decide: is the test wrong, or is the implementation wrong?
+**When dispatching a debugger agent:**
+```
+Context: {frob bundle output or function body}
 
-If implementation is wrong, dispatch `debugger` agent:
+Failing test: {exact test name}
+Error: {exact error message from --tb=short}
 
+Fix ONLY the implementation of {function_name}.
+Do not change the test. Minimal change only.
+Return ONLY a unified diff.
+```
+
+After applying diff:
 ```bash
-frob bundle src/frob/<module>/__init__.py <failing_function> > /tmp/ctx.md
+git apply /tmp/fix.diff
+pytest tests/test_X.py::test_name -x --tb=short   # verify single test
 ```
 
-```
-You are fixing a failing test. Context:
+**If the agent returned BLOCKER:**
+- Bypass permissions OFF: surface BLOCKER + SUGGESTION to user verbatim, wait for decision.
+- Bypass permissions ON: dispatch /oracle with the BLOCKER as the question, apply the DECISION,
+  resume. Log "BLOCKER resolved via oracle: {DECISION}" for later review.
+Patching over a structural problem hides it and guarantees it recurs. Never do it.
 
-{contents of /tmp/ctx.md}
+## Step 4: Fix lint errors (batch)
 
-Failing test:
-{test name and failure message from /tmp/tests.txt}
-
-Fix ONLY the implementation of `{function_name}`.
-Do not change the test.
-Return ONLY a unified diff. No prose.
-```
-
-After applying, run just that test file:
-
+Mechanical fixes -- do these yourself, don't dispatch:
 ```bash
-pytest tests/test_{module}.py::test_{name} --tb=short 2>&1 | frob parse pytest --exit-code $?
+ruff check src/ --fix                 # auto-fix safe issues
+ruff format src/                      # formatting
 ```
 
-Confirm it passes before moving to the next failure.
-
-## Step 4: Fix lint errors
-
-Ruff errors are usually mechanical. Fix in batch yourself:
-
-- `F401` unused import -- delete the import
-- `E501` line too long -- break the line
-- `F841` unused variable -- delete or use it
-- `W291/W293` trailing whitespace -- auto-fixable
-
-```bash
-ruff check src/ --fix
-ruff format src/
-```
-
-Then re-run `frob parse ruff` to confirm clean.
+Manual: `F401` unused import (delete it), `E501` too long (break the line).
 
 ## Step 5: Final verification
 
 ```bash
-pytest tests/ --tb=short 2>&1 | frob parse pytest --exit-code $?
-ty check src/ 2>&1 | frob parse ty
-ruff check src/ --output-format json | frob parse ruff
+pytest tests/ -q                              # all tests
+ty check src/ 2>&1 | head -20               # type check
+ruff check src/ --output-format json | head  # lint
 ```
 
-All must show zero errors before this skill is done.
+All must be clean.
 
 ## When to stop dispatching and fix manually
 
-- The same function fails after 2 agent attempts: read the function fully and fix it yourself
-- The error message is ambiguous: investigate with `frob xref` before dispatching
-- The fix requires changes across multiple files: do it yourself, don't dispatch
-- Import cycles appear: run `frob cycle src/ --suggest` and fix the structure
+- Same function fails after 2 agent attempts: read it fully and fix yourself
+- Error requires cross-file changes: do it yourself
+- Import cycles appear: `frob cycle src/ --suggest` or inspect imports manually, fix structure first
+- The agent's diff touches more than the one failing function: reject it, fix manually
+- Agent returned BLOCKER: do not fix manually either -- surface to user, resolve design first
 
-## Commit after clean
-
-Once all tools pass, commit:
+## Commit pattern
 
 ```bash
-git add -p     # stage selectively
-git commit -m "fix: <short description of what was broken>"
+git add -p          # stage selectively, review each hunk
+git diff --staged   # confirm what you're committing
+git commit -m "fix: <short description of what was broken and why>"
 ```
