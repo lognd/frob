@@ -1,5 +1,8 @@
-.PHONY: all install build lint lint-fix format typecheck test test-fast test-unit \
-        test-integration test-system clean upload sync-skills check
+# Stamp file: uv sync runs only when pyproject.toml changes.
+STAMP := .venv/.install-stamp
+
+.PHONY: all check install format lint lint-fix typecheck test test-fast \
+        test-unit test-integration test-system clean upload sync-skills
 
 PYPI_NAME := frob
 SRC       := src
@@ -7,57 +10,63 @@ TESTS     := tests
 
 # ---------- default ----------
 
-# Run everything: format, lint, typecheck, then full test suite.
-all: format lint typecheck test
+# Runs each tool exactly once: format, lint, typecheck, test.
+all: $(STAMP)
+	uv run black $(SRC)/ $(TESTS)/
+	uv run ruff check $(SRC)/ $(TESTS)/ --fix --select I
+	uv run ruff format $(SRC)/ $(TESTS)/
+	uv run ty check $(SRC)/
+	uv run pytest $(TESTS)/ -q -n auto
 
-# Verify everything is green without modifying files (CI-style gate).
-check: lint typecheck test
+# Read-only gate (no auto-fix). Safe to run in CI.
+check: $(STAMP)
+	uv run ruff check $(SRC)/ $(TESTS)/
+	uv run ty check $(SRC)/
+	uv run pytest $(TESTS)/ -q -n auto
 
-# ---------- install ----------
+# ---------- install (stamp-guarded) ----------
 
-install:
+$(STAMP): pyproject.toml
 	uv sync --all-extras
+	@touch $(STAMP)
+
+install: $(STAMP)
 
 # ---------- formatting & linting ----------
 
-format: install
+format: $(STAMP)
 	uv run black $(SRC)/ $(TESTS)/
 	uv run ruff check $(SRC)/ $(TESTS)/ --fix --select I
 	uv run ruff format $(SRC)/ $(TESTS)/
 
-lint: install
+lint: $(STAMP)
 	uv run ruff check $(SRC)/ $(TESTS)/
 	uv run ty check $(SRC)/
 
-lint-fix: install
+lint-fix: $(STAMP)
 	uv run ruff check $(SRC)/ $(TESTS)/ --fix
 	uv run black $(SRC)/ $(TESTS)/
 	uv run ruff format $(SRC)/ $(TESTS)/
 
-typecheck: install
+typecheck: $(STAMP)
 	uv run ty check $(SRC)/
 
 # ---------- tests ----------
 
-# Full suite: unit + integration + system
-test: install
-	uv run pytest $(TESTS)/ -q
+test: $(STAMP)
+	uv run pytest $(TESTS)/ -q -n auto
 
-# Fast incremental: only tests touching changed files
-test-fast: install
+test-fast: $(STAMP)
 	uv run pytest $(TESTS)/ -q --testmon
 
-# Unit tests only (fast, no subprocess)
-test-unit: install
-	uv run pytest $(TESTS)/unit/ -q
+test-unit: $(STAMP)
+	uv run pytest $(TESTS)/unit/ -q -n auto
 
-# Integration tests: cross-module API interactions
-test-integration: install
+test-integration: $(STAMP)
 	uv run pytest $(TESTS)/integration/ -q
 
-# System / e2e tests: real CLI via subprocess
-test-system: install
-	uv run pytest $(TESTS)/system/ -q
+test-system: $(STAMP)
+	uv run pytest $(TESTS)/system/ -q -n auto
 
 # ---------- skills / agents sync ----------
 # Copies skills and agents that already exist in ~/.claude to their counterparts

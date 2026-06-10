@@ -20,6 +20,7 @@ dev = [
     "packaging",
     "pytest>=8",
     "pytest-testmon>=2",
+    "pytest-xdist>=3",
     "ruff>=0.8",
     "ty>=0.0.1a8",
 ]
@@ -35,7 +36,8 @@ packages = { find = { where = ["src"] } }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-q"
+addopts = "-q -n auto"
+pythonpath = ["."]
 
 [tool.ruff]
 line-length = 88
