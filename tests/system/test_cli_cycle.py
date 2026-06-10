@@ -2,7 +2,6 @@
 End-to-end tests for `frob cycle`.
 """
 
-
 import pytest
 
 from tests.system.conftest import run

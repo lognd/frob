@@ -60,9 +60,7 @@ def run(cfg: AppConfig) -> None:
         for root, _, files in os.walk(path):
             for f in files:
                 if f.endswith(".py"):
-                    results.extend(
-                        extract_docstrings(Path(root) / f, cfg.docs_symbol)
-                    )
+                    results.extend(extract_docstrings(Path(root) / f, cfg.docs_symbol))
     else:
         results = extract_docstrings(path, cfg.docs_symbol)
 

@@ -19,7 +19,9 @@ def run(argv=None):
         "--list-bindings", action="store_true", help="List all BIND declarations"
     )
     p.add_argument(
-        "--list-sources", action="store_true", help="List all detected source signatures"
+        "--list-sources",
+        action="store_true",
+        help="List all detected source signatures",
     )
     args = p.parse_args(argv)
 
@@ -52,8 +54,12 @@ def run(argv=None):
             "root": str(root),
             "ok": len(mismatches) == 0,
             "mismatches": [
-                {"file": m.binding.file, "line": m.binding.line,
-                 "signature": m.binding.signature, "issue": m.issue}
+                {
+                    "file": m.binding.file,
+                    "line": m.binding.line,
+                    "signature": m.binding.signature,
+                    "issue": m.issue,
+                }
                 for m in mismatches
             ],
         }

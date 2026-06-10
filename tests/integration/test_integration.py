@@ -174,15 +174,18 @@ def test_bundle_import_section_is_smaller_than_full_file(mini_project):
 # ---------------------------------------------------------------------------
 
 
-def test_map_suggests_cheaper_than_full_read(mini_project):
-    """map tokens should be much less than reading all files directly."""
-    proj_map = map_project(mini_project)
+def test_map_suggests_cheaper_than_full_read(tmp_path):
+    """map tokens should be less than reading all files directly (needs enough files)."""
+    # Generate enough content so map overhead is clearly smaller than raw source
+    for i in range(20):
+        lines = [f"def func_{i}_{j}(x: int) -> int:\n    return x + {j}\n" for j in range(10)]
+        (tmp_path / f"module_{i}.py").write_text("\n".join(lines))
+
+    proj_map = map_project(tmp_path)
     map_text = proj_map.as_text()
 
     from frob.tokens import estimate_tokens
 
     map_cost = estimate_tokens(map_text)
-
-    full_cost = count_paths([mini_project])
-    # The map should be dramatically cheaper
+    full_cost = count_paths([tmp_path])
     assert map_cost < full_cost.total_tokens

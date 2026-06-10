@@ -5,6 +5,7 @@ from pathlib import Path
 from pydantic import BaseModel
 
 from frob.outline import ModuleOutline, outline_file
+from frob.tokens import estimate_tokens
 
 _SOURCE_EXTS = {".py", ".c", ".cc", ".cpp", ".cxx", ".h", ".hpp", ".hxx"}
 
@@ -12,6 +13,7 @@ _SOURCE_EXTS = {".py", ".c", ".cc", ".cpp", ".cxx", ".h", ".hpp", ".hxx"}
 class FileNode(BaseModel):
     path: str
     lines: int
+    tokens: int
     symbols: list[str]
 
 
@@ -41,7 +43,9 @@ class MapResult(BaseModel):
                 sym_str = "  " + ", ".join(shown)
                 if len(node.symbols) > max_symbols:
                     sym_str += f" ... (+{len(node.symbols) - max_symbols})"
-            lines.append(f"{indent}{p.name:<30} {node.lines:>4}L{sym_str}")
+            lines.append(
+                f"{indent}{p.name:<30} {node.lines:>4}L  ~{node.tokens:>5} tok{sym_str}"
+            )
         return "\n".join(lines)
 
     def as_json(self) -> str:
@@ -75,7 +79,12 @@ def map_project(root: Path, depth: int | None = None) -> MapResult:
             lines = _count_lines(path)
             symbols = []
 
-        files.append(FileNode(path=rel, lines=lines, symbols=symbols))
+        try:
+            tok = estimate_tokens(path.read_bytes())
+        except Exception:
+            tok = 0
+
+        files.append(FileNode(path=rel, lines=lines, tokens=tok, symbols=symbols))
 
     total_lines = sum(f.lines for f in files)
     return MapResult(

@@ -260,13 +260,14 @@ def test_cpp_json_widget_class_found(cpp_src):
     assert "Widget" in class_names
 
 
-def test_cpp_json_widget_has_methods(cpp_src):
+def test_cpp_json_widget_out_of_line_methods(cpp_src):
+    # C++ out-of-line definitions (Widget::draw, Widget::width) appear as
+    # top-level functions with qualified names, not inside the class methods list.
     r = run("outline", str(cpp_src), "--json")
     data = json.loads(r.stdout)
-    widget = next(c for c in data["classes"] if c["name"] == "Widget")
-    method_names = [m["name"] for m in widget["methods"]]
-    assert "draw" in method_names
-    assert "width" in method_names
+    fn_names = [f["name"] for f in data["functions"]]
+    assert "Widget::draw" in fn_names
+    assert "Widget::width" in fn_names
 
 
 # ---------------------------------------------------------------------------

@@ -235,7 +235,9 @@ def _build_parser() -> argparse.ArgumentParser:
         "docs",
         help="extract docstrings or search docs/ for a file/symbol",
     )
-    docs_p.add_argument("docs_path", metavar="path", help="file or directory to inspect")
+    docs_p.add_argument(
+        "docs_path", metavar="path", help="file or directory to inspect"
+    )
     docs_p.add_argument(
         "docs_symbol",
         metavar="symbol",
@@ -282,8 +284,10 @@ def _build_parser() -> argparse.ArgumentParser:
 
 if __name__ == "__main__":
     import sys as _sys
+
     if len(_sys.argv) > 1 and _sys.argv[1] == "bind":
         from frob.app.bind_runner import run as _bind_run
+
         _bind_run(_sys.argv[2:])
     else:
         parser = _build_parser()

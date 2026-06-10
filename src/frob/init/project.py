@@ -65,9 +65,7 @@ _MANIFESTS: dict[str, list[_ManifestEntry]] = {
         _ManifestEntry(
             "python_shared.tests.system.test_build.py.j2", "tests/system/test_build.py"
         ),
-        _ManifestEntry(
-            "python_shared.github.ci.yml.j2", ".github/workflows/ci.yml"
-        ),
+        _ManifestEntry("python_shared.github.ci.yml.j2", ".github/workflows/ci.yml"),
         _ManifestEntry(
             "python_shared.github.branch-protection.yml.j2",
             ".github/workflows/branch-protection.yml",
@@ -117,9 +115,7 @@ _MANIFESTS: dict[str, list[_ManifestEntry]] = {
         _ManifestEntry(
             "python_shared.tests.system.test_build.py.j2", "tests/system/test_build.py"
         ),
-        _ManifestEntry(
-            "python_shared.github.ci.yml.j2", ".github/workflows/ci.yml"
-        ),
+        _ManifestEntry("python_shared.github.ci.yml.j2", ".github/workflows/ci.yml"),
         _ManifestEntry(
             "python_shared.github.branch-protection.yml.j2",
             ".github/workflows/branch-protection.yml",
@@ -192,9 +188,7 @@ _MANIFESTS: dict[str, list[_ManifestEntry]] = {
         _ManifestEntry(
             "pybind11_library.tests.test_bindings.py.j2", "tests/test_bindings.py"
         ),
-        _ManifestEntry(
-            "pybind11_library.github.ci.yml.j2", ".github/workflows/ci.yml"
-        ),
+        _ManifestEntry("pybind11_library.github.ci.yml.j2", ".github/workflows/ci.yml"),
     ],
     "pyo3-library": [
         _ManifestEntry("pyo3_shared.gitignore.j2", ".gitignore"),
@@ -211,9 +205,7 @@ _MANIFESTS: dict[str, list[_ManifestEntry]] = {
         _ManifestEntry(
             "pyo3_library.tests.test_bindings.py.j2", "tests/test_bindings.py"
         ),
-        _ManifestEntry(
-            "pyo3_library.github.ci.yml.j2", ".github/workflows/ci.yml"
-        ),
+        _ManifestEntry("pyo3_library.github.ci.yml.j2", ".github/workflows/ci.yml"),
     ],
 }
 

@@ -10,3 +10,4 @@ build/
 uv.lock
 skills/
 agents/
+.claude/

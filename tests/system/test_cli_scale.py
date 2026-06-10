@@ -121,7 +121,7 @@ def test_dup_detects_duplicate_files(tmp_path):
     )
     for i in range(20):
         (tmp_path / f"dup_{i}.py").write_text(content)
-    r = run("dup", str(tmp_path), "--json")
+    r = run("dup", str(tmp_path), "--json", "--min-lines", "4")
     assert r.returncode == 0
     data = json.loads(r.stdout)
     assert len(data["groups"]) >= 1

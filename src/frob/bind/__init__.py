@@ -10,7 +10,7 @@ class BindingDecl:
     file: str
     line: int
     signature: str
-    kind: str        # "pybind11" | "pyo3"
+    kind: str  # "pybind11" | "pyo3"
 
 
 @dataclass
@@ -18,7 +18,7 @@ class SourceDecl:
     file: str
     line: int
     signature: str
-    kind: str        # "cpp_header" | "cpp_impl" | "rust"
+    kind: str  # "cpp_header" | "cpp_impl" | "rust"
 
 
 @dataclass
@@ -34,7 +34,9 @@ def scan_bindings(root: Path) -> list[BindingDecl]:
         for i, line in enumerate(path.read_text(errors="replace").splitlines(), 1):
             m = re.search(r"//\s*BIND:\s*(.+)", line)
             if m:
-                results.append(BindingDecl(str(path), i, m.group(1).strip(), "pybind11"))
+                results.append(
+                    BindingDecl(str(path), i, m.group(1).strip(), "pybind11")
+                )
     for path in root.rglob("*.rs"):
         for i, line in enumerate(path.read_text(errors="replace").splitlines(), 1):
             m = re.search(r"//\s*BIND:\s*(.+)", line)
@@ -51,14 +53,18 @@ def scan_sources(root: Path) -> list[SourceDecl]:
         for i, line in enumerate(path.read_text(errors="replace").splitlines(), 1):
             m = fn_re.match(line)
             if m:
-                results.append(SourceDecl(str(path), i, line.strip().rstrip(";"), "cpp_header"))
+                results.append(
+                    SourceDecl(str(path), i, line.strip().rstrip(";"), "cpp_header")
+                )
     for path in root.rglob("*.rs"):
         lines = path.read_text(errors="replace").splitlines()
         for i, line in enumerate(lines, 1):
             if "#[pyfunction]" in line and i < len(lines):
                 next_line = lines[i].strip()
                 if next_line.startswith("fn "):
-                    results.append(SourceDecl(str(path), i + 1, next_line.rstrip(" {"), "rust"))
+                    results.append(
+                        SourceDecl(str(path), i + 1, next_line.rstrip(" {"), "rust")
+                    )
     return results
 
 
@@ -83,5 +89,7 @@ def check(root: Path) -> list[Mismatch]:
         fn_name = name_m.group(1) if name_m else norm
         found = any(fn_name in s for s in source_sigs)
         if not found:
-            mismatches.append(Mismatch(b, f"no source declaration found for '{b.signature}'"))
+            mismatches.append(
+                Mismatch(b, f"no source declaration found for '{b.signature}'")
+            )
     return mismatches
