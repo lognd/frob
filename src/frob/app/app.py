@@ -14,8 +14,10 @@ class App:
 
     def __call__(self) -> None:
         from frob.app import (
+            arch_runner,
             bundle_runner,
             cycle_runner,
+            dup_runner,
             init_runner,
             map_runner,
             outline_runner,
@@ -44,6 +46,12 @@ class App:
                 bundle_runner.run(self._cfg)
             case Subcommand.parse:
                 parse_runner.run(self._cfg)
+            case Subcommand.dup:
+                dup_runner.run(self._cfg)
+            case Subcommand.arch:
+                arch_runner.run(self._cfg)
             case _:
-                _log.error("usage: frob <init|cycle|stub|outline|map|xref|tokens|bundle|parse> ...")
+                _log.error(
+                    "usage: frob <init|cycle|stub|outline|map|xref|tokens|bundle|parse|dup|arch> ..."
+                )
                 sys.exit(1)

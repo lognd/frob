@@ -106,6 +106,28 @@ def _build_parser() -> argparse.ArgumentParser:
     bundle_p.add_argument("--format", dest="bundle_format",
                           choices=["markdown", "json"], default="markdown")
 
+    # -- dup -----------------------------------------------------------------
+    dup_p = sub.add_parser(
+        "dup",
+        help="detect duplicate/clone code segments (Type 1 exact, Type 2 renamed)",
+    )
+    dup_p.add_argument("dup_path", metavar="path", nargs="?", default=".")
+    dup_p.add_argument("--min-lines", dest="dup_min_lines", type=int, default=6, metavar="N",
+                       help="minimum function body size to consider (default: 6)")
+    dup_p.add_argument("--json", dest="dup_json", action="store_true")
+
+    # -- arch ----------------------------------------------------------------
+    arch_p = sub.add_parser(
+        "arch",
+        help="architectural analysis: long functions, god classes, coupling, abstraction opportunities",
+    )
+    arch_p.add_argument("arch_path", metavar="path", nargs="?", default=".")
+    arch_p.add_argument("--json", dest="arch_json", action="store_true")
+    arch_p.add_argument("--max-function-lines", dest="arch_max_function_lines",
+                        type=int, default=30, metavar="N")
+    arch_p.add_argument("--max-class-methods", dest="arch_max_class_methods",
+                        type=int, default=12, metavar="N")
+
     return p
 
 

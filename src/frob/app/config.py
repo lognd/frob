@@ -18,6 +18,8 @@ class Subcommand(str, enum.Enum):
     tokens = "tokens"
     bundle = "bundle"
     parse = "parse"
+    dup = "dup"
+    arch = "arch"
 
 
 class AppConfig(BaseModel):
@@ -66,6 +68,17 @@ class AppConfig(BaseModel):
     bundle_depth: int = 1
     bundle_format: str = "markdown"
 
+    # dup
+    dup_path: Path | None = None
+    dup_min_lines: int = 6
+    dup_json: bool = False
+
+    # arch
+    arch_path: Path | None = None
+    arch_json: bool = False
+    arch_max_function_lines: int = 30
+    arch_max_class_methods: int = 12
+
     # parse
     parse_tool: str | None = None
     parse_input: Path | None = None
@@ -108,6 +121,8 @@ class AppConfig(BaseModel):
             "xref_path",
             "bundle_file",
             "parse_input",
+            "dup_path",
+            "arch_path",
         ):
             val = getattr(args, path_field, None)
             if val is not None:
@@ -119,7 +134,8 @@ class AppConfig(BaseModel):
             d["tokens_paths"] = [Path(p) for p in token_paths]
 
         # Int fields
-        for int_field in ("map_depth", "bundle_depth"):
+        for int_field in ("map_depth", "bundle_depth", "dup_min_lines",
+                          "arch_max_function_lines", "arch_max_class_methods"):
             val = getattr(args, int_field, None)
             if val is not None:
                 d[int_field] = val
@@ -135,6 +151,7 @@ class AppConfig(BaseModel):
             "outline_json", "map_json",
             "xref_json", "tokens_detail", "tokens_json",
             "parse_json", "parse_verbose", "parse_passthrough",
+            "dup_json", "arch_json",
         ):
             if getattr(args, flag, False):
                 d[flag] = True

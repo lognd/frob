@@ -1,0 +1,9 @@
+[project]
+name = "simple-python"
+version = "0.1.0"
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]

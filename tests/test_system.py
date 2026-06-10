@@ -360,3 +360,86 @@ def test_cycle_suggest_flag(tmp_path):
     r = run("cycle", str(tmp_path), "--suggest")
     assert r.returncode == 0
     assert "suggest" in r.stdout.lower()
+
+
+# ---------------------------------------------------------------------------
+# frob dup
+# ---------------------------------------------------------------------------
+
+FIXTURES = Path(__file__).parent / "fixtures"
+
+
+def test_dup_exits_zero():
+    r = run("dup", str(FIXTURES / "dup_python"))
+    assert r.returncode == 0
+
+
+def test_dup_detects_clone():
+    r = run("dup", str(FIXTURES / "dup_python"))
+    assert "duplicate" in r.stdout.lower() or "group" in r.stdout.lower()
+
+
+def test_dup_no_clones_clean_dir(tmp_path, py_sample):
+    (tmp_path / "a.py").write_bytes(py_sample)
+    r = run("dup", str(tmp_path))
+    assert r.returncode == 0
+    assert "no duplicates" in r.stdout.lower()
+
+
+def test_dup_json_output():
+    r = run("dup", str(FIXTURES / "dup_python"), "--json")
+    assert r.returncode == 0
+    data = json.loads(r.stdout)
+    assert "groups" in data
+    assert len(data["groups"]) >= 1
+
+
+def test_dup_min_lines_flag():
+    r = run("dup", str(FIXTURES / "dup_python"), "--min-lines", "100")
+    assert r.returncode == 0
+    assert "no duplicates" in r.stdout.lower()
+
+
+# ---------------------------------------------------------------------------
+# frob arch
+# ---------------------------------------------------------------------------
+
+
+def test_arch_exits_zero():
+    r = run("arch", str(FIXTURES / "arch_python"))
+    assert r.returncode == 0
+
+
+def test_arch_detects_god_class():
+    r = run("arch", str(FIXTURES / "arch_python"))
+    assert "god-class" in r.stdout
+
+
+def test_arch_detects_long_function():
+    r = run("arch", str(FIXTURES / "arch_python"))
+    assert "long-function" in r.stdout
+
+
+def test_arch_detects_deep_nesting():
+    r = run("arch", str(FIXTURES / "arch_python"))
+    assert "deep-nesting" in r.stdout
+
+
+def test_arch_json_output():
+    r = run("arch", str(FIXTURES / "arch_python"), "--json")
+    assert r.returncode == 0
+    data = json.loads(r.stdout)
+    assert "suggestions" in data
+    assert len(data["suggestions"]) >= 3
+
+
+def test_arch_clean_dir_no_warnings(tmp_path, py_sample):
+    (tmp_path / "a.py").write_bytes(py_sample)
+    r = run("arch", str(tmp_path))
+    assert r.returncode == 0
+
+
+def test_arch_max_function_lines_flag():
+    r = run("arch", str(FIXTURES / "arch_python"), "--max-function-lines", "200")
+    assert r.returncode == 0
+    assert "long-function" not in r.stdout
