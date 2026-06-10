@@ -101,6 +101,6 @@ def test_stub_correct_indentation(parsed):
     src, tree = parsed
     result = py.emit_stub(src, tree, "MyClass.process")
     lines = result.splitlines()
-    stub_lines = [l for l in lines if l.strip() == "..."]
+    stub_lines = [ln for ln in lines if ln.strip() == "..."]
     for line in stub_lines:
         assert line.startswith(" "), repr(line)
