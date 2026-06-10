@@ -65,6 +65,13 @@ _MANIFESTS: dict[str, list[_ManifestEntry]] = {
         _ManifestEntry(
             "python_shared.tests.system.test_build.py.j2", "tests/system/test_build.py"
         ),
+        _ManifestEntry(
+            "python_shared.github.ci.yml.j2", ".github/workflows/ci.yml"
+        ),
+        _ManifestEntry(
+            "python_shared.github.branch-protection.yml.j2",
+            ".github/workflows/branch-protection.yml",
+        ),
     ],
     "python-tool": [
         _ManifestEntry("README.md.j2", "README.md"),
@@ -109,6 +116,13 @@ _MANIFESTS: dict[str, list[_ManifestEntry]] = {
         ),
         _ManifestEntry(
             "python_shared.tests.system.test_build.py.j2", "tests/system/test_build.py"
+        ),
+        _ManifestEntry(
+            "python_shared.github.ci.yml.j2", ".github/workflows/ci.yml"
+        ),
+        _ManifestEntry(
+            "python_shared.github.branch-protection.yml.j2",
+            ".github/workflows/branch-protection.yml",
         ),
     ],
     "cpp-library": [

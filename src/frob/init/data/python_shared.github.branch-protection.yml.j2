@@ -1,0 +1,32 @@
+name: Branch Protection
+
+# Enforces tests pass before merging.
+# Complete the setup in GitHub:
+#   Settings > Branches > Add rule for "main":
+#     [x] Require status checks to pass before merging
+#         Add: "Python 3.12" (or whichever version you treat as canonical)
+#     [x] Require branches to be up to date before merging
+#     [x] Do not allow bypassing the above settings
+
+on:
+  pull_request:
+    branches: ["main", "master"]
+  push:
+    branches: ["main", "master"]
+
+jobs:
+  gate:
+    name: All tests pass
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: astral-sh/setup-uv@v4
+
+      - run: uv sync --all-extras
+
+      - run: uv run pytest tests/ -q
