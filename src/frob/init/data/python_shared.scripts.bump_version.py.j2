@@ -1,13 +1,10 @@
 """
-Read local version from pyproject.toml, compare with PyPI, bump patch if needed.
-Prints the (possibly bumped) version to stdout.
-Edits pyproject.toml in place when a bump is required.
+Bump the patch version in pyproject.toml unconditionally.
+Prints the new version to stdout. Edits pyproject.toml in place.
 """
 
-import json
 import re
 import sys
-import urllib.request
 from pathlib import Path
 
 try:
@@ -18,31 +15,19 @@ except ImportError:
     except ImportError:
         import toml as tomllib  # type: ignore[no-redef,import-not-found]
 
-from packaging.version import Version
-
 PYPROJECT = Path("pyproject.toml")
 
 with PYPROJECT.open("rb") as f:
     data = tomllib.load(f)
 
-name = data["project"]["name"]
-local = Version(data["project"]["version"])
+current = data["project"]["version"]
+parts = current.split(".")
+parts[-1] = str(int(parts[-1]) + 1)
+new = ".".join(parts)
 
-try:
-    url = f"https://pypi.org/pypi/{name}/json"
-    with urllib.request.urlopen(url, timeout=10) as r:
-        pypi = Version(json.load(r)["info"]["version"])
-except Exception:
-    pypi = Version("0.0.0")
+text = PYPROJECT.read_text()
+text = re.sub(r'^version = "[^"]+"', f'version = "{new}"', text, flags=re.M)
+PYPROJECT.write_text(text)
 
-if local <= pypi:
-    parts = str(local).split(".")
-    parts[-1] = str(int(parts[-1]) + 1)
-    new = ".".join(parts)
-    text = PYPROJECT.read_text()
-    text = re.sub(r'^version = "[^"]+"', f'version = "{new}"', text, flags=re.M)
-    PYPROJECT.write_text(text)
-    print(f"bumped {local} -> {new}", file=sys.stderr)
-    print(new)
-else:
-    print(str(local))
+print(f"bumped {current} -> {new}", file=sys.stderr)
+print(new)
