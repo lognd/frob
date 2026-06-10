@@ -15,7 +15,7 @@ from pathlib import Path
 import pytest
 
 FROB = [sys.executable, "-m", "frob"]
-FIXTURES = Path(__file__).parent / "fixtures"
+FIXTURES = Path(__file__).parent.parent / "fixtures"
 
 
 def run_frob(*args, input=None):
@@ -48,7 +48,16 @@ class TestRuffExecutable:
     def test_ruff_finds_errors_in_bad_python(self):
         fixture = FIXTURES / "bad_python"
         ruff = _run(
-            ["ruff", "check", "--output-format", "json", str(fixture / "src")],
+            [
+                "ruff",
+                "check",
+                "--isolated",
+                "--select",
+                "E,F,W",
+                "--output-format",
+                "json",
+                str(fixture / "src"),
+            ],
             cwd=str(fixture),
         )
         # ruff exits non-zero when it finds issues

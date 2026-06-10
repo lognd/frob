@@ -1,10 +1,19 @@
-.PHONY: all install build lint lint-fix format typecheck test test-fast clean upload sync-skills
+.PHONY: all install build lint lint-fix format typecheck test test-fast test-unit \
+        test-integration test-system clean upload sync-skills check
 
 PYPI_NAME := frob
 SRC       := src
 TESTS     := tests
 
+# ---------- default ----------
+
+# Run everything: format, lint, typecheck, then full test suite.
 all: format lint typecheck test
+
+# Verify everything is green without modifying files (CI-style gate).
+check: lint typecheck test
+
+# ---------- install ----------
 
 install:
 	uv sync --all-extras
@@ -30,23 +39,29 @@ typecheck: install
 
 # ---------- tests ----------
 
+# Full suite: unit + integration + system
 test: install
 	uv run pytest $(TESTS)/ -q
 
+# Fast incremental: only tests touching changed files
 test-fast: install
 	uv run pytest $(TESTS)/ -q --testmon
 
-# ---------- build & publish ----------
+# Unit tests only (fast, no subprocess)
+test-unit: install
+	uv run pytest $(TESTS)/unit/ -q
 
-clean:
-	rm -rf dist/ build/ .pytest_cache/ .ruff_cache/
-	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null; true
-	find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null; true
+# Integration tests: cross-module API interactions
+test-integration: install
+	uv run pytest $(TESTS)/integration/ -q
+
+# System / e2e tests: real CLI via subprocess
+test-system: install
+	uv run pytest $(TESTS)/system/ -q
 
 # ---------- skills / agents sync ----------
 # Copies skills and agents that already exist in ~/.claude to their counterparts
-# here, so local edits in this repo stay in sync. Only updates names that match;
-# never creates new entries in ~/.claude.
+# here. Only updates entries whose names match; never creates new ones.
 
 CLAUDE_DIR := $(HOME)/.claude
 
@@ -69,6 +84,11 @@ sync-skills:
 	done
 
 # ---------- build & publish ----------
+
+clean:
+	rm -rf dist/ build/ .pytest_cache/ .ruff_cache/ .testmondata
+	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null; true
+	find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null; true
 
 upload: clean
 	@LOCAL=$$(python -c "import tomllib; t=tomllib.load(open('pyproject.toml','rb')); print(t['project']['version'])"); \

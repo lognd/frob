@@ -176,18 +176,8 @@ make format       # black + ruff format
 make lint         # ruff + ty check
 make test         # pytest tests/
 make test-fast    # pytest --testmon (incremental)
-make sync-skills  # sync skills/ and agents/ to ~/.claude (matching names only)
 make upload       # bump version if needed, build wheel, publish to PyPI
 make clean
-```
-
-## Skills and agents
-
-The `skills/` and `agents/` directories contain Claude Code skill and agent definitions.
-They are gitignored (local only). To sync them to `~/.claude`:
-
-```bash
-make sync-skills   # copies matching skills/agents to ~/.claude -- never creates new entries
 ```
 
 The `.frob-foundation.md` convention: when `smart-start` generates infrastructure code,
