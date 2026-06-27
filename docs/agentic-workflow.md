@@ -1,197 +1,208 @@
 # Agentic Workflow Guide
 
-How to use frob tools together when acting as an orchestrator dispatching
-subagents (e.g., Haiku for code generation, Sonnet for review).
+How to use frob when acting as an orchestrator dispatching subagents.
 
 ---
 
-## The full tool inventory
+## Core principle: minimize token cost, maximize parallelism
 
-| Command | Purpose | Typical token cost |
-|---------|---------|-------------------|
-| `frob map` | Whole-project symbol map | ~150-300 |
-| `frob outline` | File skeleton (functions, classes, line numbers) | ~30-80 |
-| `frob tokens` | Estimate cost of reading a file | ~10 |
-| `frob stub` | Keep one function, stub everything else | 20-50% of full file |
-| `frob bundle` | Stubbed file + import signatures, ready for subagent | ~200-800 |
-| `frob xref` | Definition site + all call sites for a symbol | ~50-150 |
-| `frob cycle` | Detect import cycles, suggest fixes | ~20-100 |
-| `frob parse` | Compress tool output (pytest/ruff/ty/clang) to ~5 lines | ~5-20 |
-| `frob init` | Scaffold a new project | one-shot |
+```
+orient -> investigate -> dispatch -> collect -> verify
+```
+
+Every step has a frob tool designed for it. Don't read files directly until
+you've exhausted cheaper options.
 
 ---
 
-## Core loop: orient -> investigate -> change -> verify
+## Step 1: Orient
 
-```
-map -> outline -> (stub | bundle) -> [implement / subagent] -> patch -> parse -> xref
-```
-
-### 1. Orient (map)
-
-Start every session by mapping the project:
-
-```
-frob map src/
+```bash
+frob map src/                    # ~200 tokens: full symbol inventory
+frob gitlog --level user -n 10   # ~100 tokens: recent user-visible changes
+frob todo list                   # cross-session TODOs from prior sessions
 ```
 
-Gives you the full symbol inventory in ~200 tokens. Identify which files are
-relevant before reading anything.
+`frob map` tells you which files are relevant. Read nothing else yet.
 
-### 2. Investigate (outline + tokens + stub)
+---
 
-For each relevant file, get its structure and cost before deciding how to read:
+## Step 2: Investigate
 
-```
-frob outline src/frob/stub/__init__.py
-frob tokens src/frob/stub/__init__.py src/frob/ast/python.py
-```
+For each relevant symbol, use `frob ctx` -- it auto-picks the right depth:
 
-Then choose a reading strategy:
-
-| File size | Strategy |
-|-----------|---------|
-| < 200 tokens | Read in full |
-| 200-800 tokens | `frob stub <file> <nearby_function>` to get context around area of interest |
-| > 800 tokens | `frob bundle <file> <target>` for subagent dispatch |
-
-`frob stub` is especially useful for understanding the structure around a
-function without reading the whole file:
-
-```
-# Read just the area around _emit_py, stub everything else
-frob stub src/frob/stub/__init__.py _emit_py
+```bash
+frob ctx src/frob/edit/__init__.py replace
+# -> tier=bundle, reason=24 lines, 3 deps
+# -> emits function + import signatures
 ```
 
-### 3. Understand impact (xref + cycle)
+Only reach past `frob ctx` when you need something specific:
 
-Before changing anything, know the blast radius:
+| Need | Tool |
+|------|------|
+| Who calls this function? | `frob xref SYMBOL src/` |
+| What's exported from this package? | `frob exports src/pkg/` |
+| Are there cycles in the new dep graph? | `frob cycle src/` |
+| Is this pattern already abstracted? | `frob dup src/` |
+| What do the docstrings say? | `frob docs FILE --search QUERY` |
+| Full file skeleton without bodies | `frob outline FILE` |
 
-```
-frob xref stub_file src/           # who calls this?
-frob cycle src/ --suggest          # will my change create a cycle?
-```
+---
 
-### 4. Dispatch a subagent (bundle)
+## Step 3: Quality baseline
 
-Assemble minimal context and send to a Haiku agent:
+Before dispatching, understand what's already broken:
 
-```
-frob bundle src/frob/stub/__init__.py stub_file --format markdown
-```
-
-Paste the output as the subagent's context, followed by your instruction.
-The agent sees exactly what it needs -- the stubbed file showing where the
-function fits + signatures of everything it can call -- and nothing more.
-
-**Subagent prompt template (implementation):**
-```
-You are implementing a single function. Here is the context:
-
-{frob bundle output}
-
-Task: implement `{target}` so that {description}.
-
-Constraints:
-- Only change the body of `{target}`. Do not touch other functions.
-- Return ONLY a unified diff. Do not explain. Do not include anything outside the diff.
+```bash
+frob check src/
 ```
 
-**Subagent prompt template (tests):**
-```
-You are writing pytest tests for a single function. Here is the context:
+This prevents agents from reporting pre-existing issues as their own errors.
 
-{frob bundle output}
+---
 
-Task: write tests for `{target}` covering: {cases}.
+## Step 4: Dispatch agents
 
-- Add tests to tests/{test_file}.py.
-- Return ONLY a unified diff.
-```
+### Small tasks (one function, one agent)
 
-### 5. Apply the result (patch)
-
-The subagent returns a unified diff:
-
-```
-frob patch --check /tmp/agent_output.diff   # validate first
-frob patch /tmp/agent_output.diff           # apply
+```bash
+frob mission new fix \
+  --file src/frob/edit/__init__.py \
+  --target replace \
+  --error "AttributeError: 'NoneType' object has no attribute 'splitlines'"
+# -> .frob/missions/a1b2c3d4.md  (briefing with frob ctx embedded)
 ```
 
-### 6. Verify (parse + outline + xref)
+Give the mission ID to the sub-agent. It reads the briefing, does the work,
+and calls `frob mission done a1b2c3d4` or `frob mission stuck a1b2c3d4 reason`.
 
+### Parallel tasks editing different files
+
+```bash
+# Create isolated worktrees
+frob dispatch create "fix-edit"
+frob dispatch create "add-ctx-tests"
+# Each agent commits in their worktree independently
+
+# Collect after agents finish
+frob dispatch collect <id1>
+frob dispatch collect <id2>
 ```
-# Run tools, get compact summaries
+
+### Parallel tasks editing the same file
+
+Use the staging model instead of dispatch (lighter weight):
+
+```bash
+# Agent A stages foo, Agent B stages bar -- no contention
+echo "$new_foo" | frob edit src/file.py foo --stage
+echo "$new_bar" | frob edit src/file.py bar --stage   # concurrent, safe
+
+# After both agents done:
+frob edit src/file.py --commit      # atomic: re-parse, apply both, write once
+```
+
+---
+
+## Step 5: Verify
+
+```bash
+frob check src/                       # aggregate gate
 pytest tests/ --tb=short 2>&1 | frob parse pytest --exit-code $?
-ruff check src/ --output-format json | frob parse ruff
-ty check src/ 2>&1 | frob parse ty
-
-# Confirm structure matches intent
-frob outline src/frob/stub/__init__.py
-
-# Confirm callers still compatible
-frob xref stub_file src/
 ```
+
+---
+
+## Agent selection guide
+
+| Task | Agent | Model |
+|------|-------|-------|
+| Implement one stubbed function | implementer | Haiku |
+| Fix one failing test | debugger | Haiku |
+| Write unit tests for one function | tester | Haiku |
+| Write CLI end-to-end tests | system-tester | Sonnet |
+| Write integration tests | integration-tester | Sonnet |
+| Design a new module | architect | Sonnet |
+| Review code for issues | reviewer | Sonnet |
+| Safe structural refactor | refactorer | Sonnet |
+| Quick yes/no architectural decision | oracle | Opus |
+| Build base classes / protocols | smart-start | Sonnet |
+| Decompose + coordinate large task | orchestrator | Sonnet |
 
 ---
 
 ## Token budget reference
 
-| Operation | Typical cost |
-|-----------|-------------|
-| `frob map src/` | ~150-300 tokens |
-| `frob outline <file>` | ~30-80 tokens |
-| `frob tokens <file>` | ~10 tokens |
-| `frob stub <file> <target>` | 20-50% of raw file |
-| `frob bundle <file> <target>` | ~200-800 tokens |
-| `frob xref <symbol> src/` | ~50-150 tokens |
-| `frob parse pytest` (150-test run) | ~10-20 tokens |
-| `frob parse ruff` | ~5-30 tokens |
-| Reading a file directly | 300-5,000+ tokens |
+| Operation | Typical tokens |
+|-----------|--------------|
+| `frob map src/` | 150-300 |
+| `frob outline FILE` | 30-80 |
+| `frob ctx FILE SYMBOL` (stub tier) | 20-80 |
+| `frob ctx FILE SYMBOL` (bundle tier) | 200-600 |
+| `frob ctx FILE SYMBOL` (full tier) | 400-1200 |
+| `frob xref SYMBOL src/` | 50-150 |
+| `frob gitlog --level user -n 10` | 50-150 |
+| `frob parse pytest` (100-test run) | 10-20 |
+| `frob parse ruff` | 5-30 |
+| Reading a file directly | 300-5,000+ |
 
 ---
 
-## Haiku vs Sonnet allocation
+## Cross-session tracking
 
-| Task | Agent |
-|------|-------|
-| Implement a well-scoped function with clear types | Haiku |
-| Write tests for a function given its signature | Haiku |
-| Debug a single failing test | Haiku |
-| Parse/transform a known format | Haiku |
-| Design a new module or protocol | Sonnet (you) |
-| Review a Haiku agent's output for correctness | Sonnet (you) |
-| Refactor across multiple files | Sonnet (you) |
-| Architecture decisions | Sonnet (you) |
-| Anything requiring xref/cycle awareness | Sonnet (you) |
+```bash
+frob todo add "reviewer flagged god class in check/__init__.py"
+frob todo add "need integration test for dispatch + mission"
+frob todo list   # next session: pick up where you left off
+```
 
 ---
 
-## Example: full agentic session
+## Full example: fix a failing test + add coverage
 
 ```bash
 # 1. Orient
 frob map src/frob/
+frob gitlog --level user -n 5
 
-# 2. Pick a target
-frob outline src/frob/bundle/__init__.py
-frob tokens src/frob/bundle/__init__.py src/frob/stub/__init__.py
+# 2. Understand the failure
+frob ctx src/frob/edit/__init__.py _apply_patch_to_content
 
-# 3. Check blast radius
-frob xref build_bundle src/
+# 3. Check baseline
+frob check src/ --skip-ty
 
-# 4. Assemble context for Haiku
-frob bundle src/frob/bundle/__init__.py build_bundle --depth 2 > /tmp/ctx.md
+# 4. Brief the fix agent
+frob mission new fix \
+  --file src/frob/edit/__init__.py \
+  --target _apply_patch_to_content \
+  --error "EditError.ParseFailed returned for valid Python"
+# [Haiku debugger agent handles it, calls mission done]
 
-# 5. [Haiku agent implements or fixes build_bundle]
-# ... haiku produces /tmp/fix.diff ...
+# 5. Brief the test agent
+frob mission new test \
+  --file src/frob/edit/__init__.py \
+  --target _apply_patch_to_content
+# [Haiku tester agent handles it, calls mission done]
 
-# 6. Apply
-frob patch --check /tmp/fix.diff
-frob patch /tmp/fix.diff
+# 6. Collect (they were both staging to the same file)
+frob edit src/frob/edit/__init__.py --commit
 
 # 7. Verify
-pytest tests/test_bundle.py --tb=short 2>&1 | frob parse pytest --exit-code $?
-ty check src/ 2>&1 | frob parse ty
-ruff check src/ --output-format json | frob parse ruff
+frob check src/
+pytest tests/unit/test_edit_staging.py --tb=short 2>&1 | frob parse pytest --exit-code $?
 ```
+
+---
+
+## BLOCKER handling
+
+If a sub-agent returns a BLOCKER:
+
+1. Read the blocker message carefully.
+2. Check if multiple agents report the same structural problem.
+3. If yes: dispatch a smart-start or architect agent to fix the root cause FIRST.
+4. Reissue the original missions after the structural fix lands.
+
+Never issue a workaround mission for a reported blocker. That creates tech debt that
+compounds across agent generations.

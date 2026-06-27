@@ -8,7 +8,5 @@ build/
 .pytest_cache/
 .ruff_cache/
 uv.lock
-skills/
-agents/
 .claude/
 .frob/
