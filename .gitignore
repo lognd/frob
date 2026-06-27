@@ -10,3 +10,18 @@ build/
 uv.lock
 .claude/
 .frob/
+
+# C/C++ build artifacts
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+*.o
+*.a
+*.so
+*.dylib
+
+# Rust build artifacts
+target/
+
+# Valgrind
+vgcore.*
