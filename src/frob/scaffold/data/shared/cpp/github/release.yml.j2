@@ -1,0 +1,99 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    name: ${{ "{{" }} matrix.name {{ "}}" }}
+    runs-on: ${{ "{{" }} matrix.os {{ "}}" }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux-x86_64
+            os: ubuntu-latest
+            artifact: {{ project.name }}-linux-x86_64
+            cmake_args: >-
+              -DCMAKE_EXE_LINKER_FLAGS="-static"
+            cross: false
+
+          - name: linux-arm64
+            os: ubuntu-latest
+            artifact: {{ project.name }}-linux-arm64
+            cmake_args: >-
+              -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain-linux-arm64.cmake
+              -DCMAKE_EXE_LINKER_FLAGS="-static"
+            cross: true
+            apt_packages: gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+
+          # linux-legacy: statically linked, built on older Ubuntu for max compat
+          - name: linux-legacy-x86_64
+            os: ubuntu-22.04
+            artifact: {{ project.name }}-linux-legacy-x86_64
+            cmake_args: >-
+              -DCMAKE_EXE_LINKER_FLAGS="-static"
+            cross: false
+
+          - name: windows-x86_64
+            os: windows-latest
+            artifact: {{ project.name }}-windows-x86_64.exe
+            cmake_args: ""
+            cross: false
+
+          - name: windows-arm64
+            os: windows-latest
+            artifact: {{ project.name }}-windows-arm64.exe
+            cmake_args: >-
+              -A ARM64
+            cross: true
+
+          # macOS: build natively; Apple Silicon runners produce ARM64,
+          # Intel runners produce x86_64. Use separate artifacts rather than
+          # a universal binary to save space.
+          - name: macos-arm64
+            os: macos-14
+            artifact: {{ project.name }}-macos-arm64
+            cmake_args: ""
+            cross: false
+
+          - name: macos-x86_64
+            os: macos-13
+            artifact: {{ project.name }}-macos-x86_64
+            cmake_args: ""
+            cross: false
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install cross-compile toolchain (Linux ARM)
+        if: ${{ "{{" }} matrix.apt_packages != '' {{ "}}" }}
+        run: sudo apt-get install -y ${{ "{{" }} matrix.apt_packages {{ "}}" }}
+
+      - name: Configure
+        run: >
+          cmake -B build -DCMAKE_BUILD_TYPE=Release
+          ${{ "{{" }} matrix.cmake_args {{ "}}" }}
+
+      - name: Build
+        run: cmake --build build --parallel --config Release
+
+      - name: Collect artifact (Unix)
+        if: ${{ "{{" }} runner.os != 'Windows' {{ "}}" }}
+        run: |
+          BIN=$(find build -name "{{ project.name }}" -type f | head -1)
+          cp "$BIN" "${{ "{{" }} matrix.artifact {{ "}}" }}"
+
+      - name: Collect artifact (Windows)
+        if: ${{ "{{" }} runner.os == 'Windows' {{ "}}" }}
+        shell: pwsh
+        run: |
+          $bin = Get-ChildItem -Recurse build -Filter "{{ project.name }}.exe" | Select-Object -First 1
+          Copy-Item $bin.FullName "${{ "{{" }} matrix.artifact {{ "}}" }}"
+
+      - name: Upload to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ "{{" }} matrix.artifact {{ "}}" }}

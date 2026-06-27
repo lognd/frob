@@ -44,7 +44,13 @@ dev = [
 packages = { find = { where = ["src"] } }
 
 [tool.setuptools.package-data]
-frob = ["py.typed", "init/data/*.j2", "logging/config.toml"]
+frob = [
+    "py.typed",
+    "init/data/*.j2",
+    "scaffold/data/**/*.j2",
+    "scaffold/data/**/*.toml",
+    "logging/config.toml",
+]
 
 [tool.ruff]
 line-length = 88

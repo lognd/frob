@@ -23,4 +23,4 @@ def run(cfg: AppConfig) -> None:
     if cfg.outline_json:
         _log.info(ol.as_json())
     else:
-        _log.info(ol.as_text())
+        _log.info(ol.as_text(include_private=cfg.outline_all))

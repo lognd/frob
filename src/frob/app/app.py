@@ -20,11 +20,14 @@ class App:
             cycle_runner,
             docs_runner,
             dup_runner,
+            edit_runner,
+            exports_runner,
             init_runner,
             inspect_runner,
             map_runner,
             outline_runner,
             parse_runner,
+            scaffold_runner,
             stub_runner,
             tokens_runner,
             xref_runner,
@@ -32,7 +35,9 @@ class App:
 
         match self._cfg.subcommand:
             case Subcommand.init:
-                init_runner.run(self._cfg)
+                scaffold_runner.run(self._cfg)
+            case Subcommand.scaffold:
+                scaffold_runner.run(self._cfg)
             case Subcommand.cycle:
                 cycle_runner.run(self._cfg)
             case Subcommand.stub:
@@ -59,10 +64,14 @@ class App:
                 docs_runner.run(self._cfg)
             case Subcommand.bind:
                 bind_runner.run([])
+            case Subcommand.exports:
+                exports_runner.run(self._cfg)
+            case Subcommand.edit:
+                edit_runner.run(self._cfg)
             case _:
                 _log.error(
                     "usage: frob "
-                    "<init|cycle|stub|outline|map|xref|tokens|bundle|parse|dup|arch|inspect|docs|bind>"
+                    "<scaffold|init|cycle|stub|outline|map|xref|tokens|bundle|parse|dup|arch|inspect|docs|bind|exports|edit>"
                     " ..."
                 )
                 sys.exit(1)

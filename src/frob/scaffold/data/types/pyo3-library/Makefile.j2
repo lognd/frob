@@ -1,0 +1,22 @@
+NAME := {{ project.name }}
+
+.PHONY: all develop build test lint clean
+
+all: develop
+
+develop:
+	maturin develop
+
+build:
+	maturin build --release
+
+test:
+	pytest tests/ -q
+
+lint:
+	ruff check python/ tests/
+	cargo clippy
+
+clean:
+	cargo clean
+	rm -rf dist/ target/wheels/

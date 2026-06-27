@@ -1,0 +1,72 @@
+.PHONY: all configure build test install release format lint clean publish
+
+PROJECT   := {{ project.name }}
+BUILD_DIR := build
+REL_DIR   := build-release
+TYPE      := Debug
+FLAGS     :=
+
+all: build test
+
+# ---------- configure & build ----------
+
+configure:
+	cmake -B $(BUILD_DIR) \
+	      -DCMAKE_BUILD_TYPE=$(TYPE) \
+	      -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+	      $(FLAGS)
+
+build: configure
+	cmake --build $(BUILD_DIR) --parallel
+
+release:
+	cmake -B $(REL_DIR) -DCMAKE_BUILD_TYPE=Release $(FLAGS)
+	cmake --build $(REL_DIR) --parallel
+
+# ---------- test ----------
+
+test: build
+	cd $(BUILD_DIR) && ctest --output-on-failure
+
+# ---------- install ----------
+
+install: release
+	cmake --install $(REL_DIR)
+
+# ---------- formatting & linting ----------
+
+format:
+	find src include -name "*.cpp" -o -name "*.h" | xargs clang-format -i 2>/dev/null; true
+
+lint: configure
+	@if command -v clang-tidy > /dev/null; then \
+	    find src -name "*.cpp" | xargs clang-tidy \
+	        -p $(BUILD_DIR)/compile_commands.json; \
+	else \
+	    echo "clang-tidy not found, skipping"; \
+	fi
+
+# ---------- clean ----------
+
+clean:
+	rm -rf $(BUILD_DIR) $(REL_DIR)
+
+# ---------- publish (tag for FetchContent) ----------
+# Consumers use: FetchContent_Declare($(PROJECT) GIT_REPOSITORY <url> GIT_TAG v<version>)
+
+publish:
+	@VERSION=$$(cmake -P cmake/print_version.cmake 2>/dev/null \
+	            || grep -oP 'VERSION \K[0-9]+\.[0-9]+\.[0-9]+' CMakeLists.txt | head -1); \
+	if git rev-parse "v$$VERSION" > /dev/null 2>&1; then \
+	    PATCH=$$(echo $$VERSION | cut -d. -f3); \
+	    NEWPATCH=$$((PATCH + 1)); \
+	    VERSION=$$(echo $$VERSION | sed "s/\.[0-9]*$$/.$${NEWPATCH}/"); \
+	    sed -i "s/VERSION [0-9]\+\.[0-9]\+\.[0-9]\+/VERSION $$VERSION/" CMakeLists.txt; \
+	    echo "Bumped to $$VERSION"; \
+	    git add CMakeLists.txt; \
+	    git commit -m "chore: bump version to $$VERSION"; \
+	    git push; \
+	fi; \
+	git tag -a "v$$VERSION" -m "Release v$$VERSION"; \
+	git push origin "v$$VERSION"; \
+	echo "Tagged v$$VERSION -- consumers can now FetchContent_Declare with GIT_TAG v$$VERSION"

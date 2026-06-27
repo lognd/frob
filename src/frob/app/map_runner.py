@@ -15,4 +15,4 @@ def run(cfg: AppConfig) -> None:
     if cfg.map_json:
         _log.info(result.as_json())
     else:
-        _log.info(result.as_text())
+        _log.info(result.as_text(include_private=cfg.map_all))

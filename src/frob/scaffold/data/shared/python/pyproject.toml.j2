@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "{{ project.name }}"
+version = "0.1.0"
+description = ""
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+
+dependencies = [
+    "tomli>=2.0; python_version < '3.11'",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black>=24",
+    "packaging",
+    "pytest>=8",
+    "pytest-testmon>=2",
+    "pytest-xdist>=3",
+    "ruff>=0.8",
+    "ty>=0.0.1a8",
+]
+
+[project.scripts]
+{{ project.name }} = "{{ project.name }}.__main__:main"
+
+[tool.setuptools]
+packages = { find = { where = ["src"] } }
+
+[tool.setuptools.package-data]
+{{ project.name }} = ["py.typed", "logging/config.toml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q -n auto"
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["E501"]
+
+[tool.ruff.format]
+quote-style = "double"

@@ -15,6 +15,7 @@ class FileNode(BaseModel):
     lines: int
     tokens: int
     symbols: list[str]
+    private_count: int = 0
 
 
 class MapResult(BaseModel):
@@ -23,11 +24,10 @@ class MapResult(BaseModel):
     total_lines: int
     files: list[FileNode]
 
-    def as_text(self, max_symbols: int = 6) -> str:
+    def as_text(self, max_symbols: int = 6, include_private: bool = False) -> str:
         lines: list[str] = [
             f"{self.root}  ({self.total_files} files, {self.total_lines:,} lines)"
         ]
-        # Group by directory
         prev_dir = ""
         for node in self.files:
             p = Path(node.path)
@@ -37,12 +37,33 @@ class MapResult(BaseModel):
                     lines.append(f"  {dir_part}/")
                 prev_dir = dir_part
             indent = "    " if dir_part != "." else "  "
+
             sym_str = ""
-            if node.symbols:
-                shown = node.symbols[:max_symbols]
-                sym_str = "  " + ", ".join(shown)
-                if len(node.symbols) > max_symbols:
-                    sym_str += f" ... (+{len(node.symbols) - max_symbols})"
+            if include_private:
+                # show all symbols (old behavior)
+                all_syms = node.symbols
+                if all_syms:
+                    shown = all_syms[:max_symbols]
+                    sym_str = "  " + ", ".join(shown)
+                    if len(all_syms) > max_symbols:
+                        sym_str += f" ... (+{len(all_syms) - max_symbols})"
+            else:
+                pub = node.symbols
+                priv = node.private_count
+                if pub or priv:
+                    if priv > 0:
+                        shown = pub[:max_symbols]
+                        pub_part = ", ".join(shown) if shown else ""
+                        if pub_part:
+                            sym_str = f"  [{len(pub)} pub: {pub_part} | {priv} priv]"
+                        else:
+                            sym_str = f"  [{priv} priv]"
+                    else:
+                        shown = pub[:max_symbols]
+                        sym_str = "  " + ", ".join(shown)
+                        if len(pub) > max_symbols:
+                            sym_str += f" ... (+{len(pub) - max_symbols})"
+
             lines.append(
                 f"{indent}{p.name:<30} {node.lines:>4}L  ~{node.tokens:>5} tok{sym_str}"
             )
@@ -53,10 +74,6 @@ class MapResult(BaseModel):
 
 
 def map_project(root: Path, depth: int | None = None) -> MapResult:
-    """
-    Walk root recursively (respecting depth) and outline every source file.
-    Unknown file types are counted for line totals but have empty symbol lists.
-    """
     files: list[FileNode] = []
 
     root = root.resolve()
@@ -70,21 +87,27 @@ def map_project(root: Path, depth: int | None = None) -> MapResult:
             result = outline_file(path)
             if result.is_ok:
                 ol = result.danger_ok
-                symbols = _symbols_from_outline(ol)
+                pub_syms, priv_count = _symbols_from_outline(ol)
                 lines = ol.lines
             else:
                 lines = _count_lines(path)
-                symbols = []
+                pub_syms, priv_count = [], 0
         else:
             lines = _count_lines(path)
-            symbols = []
+            pub_syms, priv_count = [], 0
 
         try:
             tok = estimate_tokens(path.read_bytes())
         except Exception:
             tok = 0
 
-        files.append(FileNode(path=rel, lines=lines, tokens=tok, symbols=symbols))
+        files.append(FileNode(
+            path=rel,
+            lines=lines,
+            tokens=tok,
+            symbols=pub_syms,
+            private_count=priv_count,
+        ))
 
     total_lines = sum(f.lines for f in files)
     return MapResult(
@@ -122,13 +145,20 @@ def _walk(
                 _walk(root, child, current_depth + 1, max_depth, out)
 
 
-def _symbols_from_outline(ol: ModuleOutline) -> list[str]:
-    syms: list[str] = []
+def _symbols_from_outline(ol: ModuleOutline) -> tuple[list[str], int]:
+    pub: list[str] = []
+    priv_count = 0
     for fn in ol.functions:
-        syms.append(fn.name)
+        if fn.name.startswith("_"):
+            priv_count += 1
+        else:
+            pub.append(fn.name)
     for cls in ol.classes:
-        syms.append(cls.name)
-    return syms
+        if cls.name.startswith("_"):
+            priv_count += 1
+        else:
+            pub.append(cls.name)
+    return pub, priv_count
 
 
 def _count_lines(path: Path) -> int:

@@ -1,0 +1,22 @@
+cmake_minimum_required(VERSION 3.20)
+project({{ project.name }} VERSION 0.1.0 LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+add_library({{ project.name }}_lib
+    src/{{ project.name }}.cpp
+)
+target_include_directories({{ project.name }}_lib
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+)
+target_compile_options({{ project.name }}_lib PRIVATE -Wall -Wextra -Wpedantic)
+
+add_executable({{ project.name }} src/main.cpp)
+target_link_libraries({{ project.name }} PRIVATE {{ project.name }}_lib)
+
+# Tests
+enable_testing()
+add_subdirectory(tests)

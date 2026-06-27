@@ -31,16 +31,34 @@ class ModuleOutline(BaseModel):
     functions: list[FunctionOutline]
     classes: list[ClassOutline]
 
-    def as_text(self) -> str:
+    def as_text(self, include_private: bool = False) -> str:
         parts = [f"{self.path}  ({self.lines} lines)"]
         if self.imports:
             parts.append(f"  imports: {', '.join(self.imports)}")
+
+        hidden_fns = 0
         for fn in self.functions:
+            if not include_private and fn.name.startswith("_"):
+                hidden_fns += 1
+                continue
             parts.append(f"  {fn.signature}  [L{fn.line}]")
+
+        hidden_methods = 0
         for cls in self.classes:
+            if not include_private and cls.name.startswith("_"):
+                hidden_fns += 1
+                continue
             parts.append(f"  class {cls.name}  [L{cls.line}]")
             for m in cls.methods:
+                if not include_private and m.name.startswith("_"):
+                    hidden_methods += 1
+                    continue
                 parts.append(f"    {m.signature}  [L{m.line}]")
+
+        total_hidden = hidden_fns + hidden_methods
+        if total_hidden > 0:
+            parts.append(f"  [{total_hidden} private -- use --all to show]")
+
         return "\n".join(parts)
 
     def as_json(self) -> str:

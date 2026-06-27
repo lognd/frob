@@ -1,0 +1,12 @@
+#include <pybind11/pybind11.h>
+#include "{{ project.name }}.h"
+
+namespace py = pybind11;
+
+// BIND: add(int a, int b) -> int
+PYBIND11_MODULE(_{{ project.name }}, m) {
+    m.doc() = "{{ project.name }} Python bindings";
+
+    m.def("add", &add, py::arg("a"), py::arg("b"),
+          "Add two integers");
+}

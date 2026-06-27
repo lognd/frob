@@ -13,8 +13,25 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     sub = p.add_subparsers(dest="subcommand")
 
-    # -- init ----------------------------------------------------------------
-    init_p = sub.add_parser("init", help="scaffold a new project from a template")
+    # -- scaffold ------------------------------------------------------------
+    scaffold_p = sub.add_parser("scaffold", help="scaffold a new project from a template")
+    scaffold_sub = scaffold_p.add_subparsers(dest="scaffold_command")
+    scaffold_sub.add_parser("list", help="list registered project types")
+    scaffold_new_p = scaffold_sub.add_parser("new", help="create a new project")
+    scaffold_new_p.add_argument(
+        "scaffold_type", metavar="type", help="project type (e.g. python-tool)"
+    )
+    scaffold_new_p.add_argument("scaffold_name", metavar="name", help="project name")
+    scaffold_new_p.add_argument("--output", dest="scaffold_output", metavar="DIR")
+    scaffold_new_p.add_argument(
+        "--force",
+        dest="scaffold_force",
+        action="store_true",
+        help="overwrite existing files",
+    )
+
+    # -- init (alias for scaffold) -------------------------------------------
+    init_p = sub.add_parser("init", help="alias for scaffold (deprecated)")
     init_sub = init_p.add_subparsers(dest="init_command")
     init_sub.add_parser("list", help="list registered project types")
     new_p = init_sub.add_parser("new", help="create a new project")
@@ -55,6 +72,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     outline_p.add_argument("outline_file", metavar="file")
     outline_p.add_argument("--json", dest="outline_json", action="store_true")
+    outline_p.add_argument("--all", dest="outline_all", action="store_true", help="include private symbols")
 
     # -- map -----------------------------------------------------------------
     map_p = sub.add_parser(
@@ -64,6 +82,7 @@ def _build_parser() -> argparse.ArgumentParser:
     map_p.add_argument("map_path", metavar="path", nargs="?", default=".")
     map_p.add_argument("--json", dest="map_json", action="store_true")
     map_p.add_argument("--depth", dest="map_depth", type=int, metavar="N")
+    map_p.add_argument("--all", dest="map_all", action="store_true", help="include private symbols")
 
     # -- xref ----------------------------------------------------------------
     xref_p = sub.add_parser(
@@ -258,6 +277,46 @@ def _build_parser() -> argparse.ArgumentParser:
         help="full-text search through docs/",
     )
     docs_p.add_argument("--json", dest="docs_json", action="store_true")
+
+    # -- exports -------------------------------------------------------------
+    exports_p = sub.add_parser(
+        "exports",
+        help="generate __init__.py from public symbols in a package directory",
+    )
+    exports_p.add_argument("exports_path", metavar="path")
+    exports_p.add_argument(
+        "--all",
+        dest="exports_all",
+        action="store_true",
+        help="include private symbols",
+    )
+    exports_p.add_argument(
+        "--exclude",
+        dest="exports_exclude",
+        metavar="MODULE",
+        action="append",
+        default=[],
+        help="module name to exclude (repeatable)",
+    )
+    exports_p.add_argument("--json", dest="exports_json", action="store_true")
+
+    # -- edit ----------------------------------------------------------------
+    edit_p = sub.add_parser(
+        "edit",
+        help="isolate or replace a single function/class in a file",
+    )
+    edit_p.add_argument("edit_file", metavar="file")
+    edit_p.add_argument(
+        "edit_symbol",
+        metavar="symbol",
+        help="function name, class name, or ClassName.method",
+    )
+    edit_p.add_argument(
+        "--replace",
+        dest="edit_replace",
+        action="store_true",
+        help="read replacement from stdin and write in-place",
+    )
 
     # -- bind ----------------------------------------------------------------
     bind_p = sub.add_parser(

@@ -11,6 +11,7 @@ from frob._compat import Self, toml
 
 class Subcommand(str, enum.Enum):
     init = "init"
+    scaffold = "scaffold"
     cycle = "cycle"
     stub = "stub"
     outline = "outline"
@@ -24,17 +25,26 @@ class Subcommand(str, enum.Enum):
     inspect = "inspect"
     docs = "docs"
     bind = "bind"
+    exports = "exports"
+    edit = "edit"
 
 
 class AppConfig(BaseModel):
     subcommand: Subcommand | None = None
 
-    # init
-    init_command: str | None = None  # "list" or "new"
+    # init (legacy alias for scaffold)
+    init_command: str | None = None
     init_type: str | None = None
     init_name: str | None = None
     init_output: Path | None = None
     init_force: bool = False
+
+    # scaffold
+    scaffold_command: str | None = None
+    scaffold_type: str | None = None
+    scaffold_name: str | None = None
+    scaffold_output: Path | None = None
+    scaffold_force: bool = False
 
     # cycle
     cycle_path: Path | None = None
@@ -49,11 +59,13 @@ class AppConfig(BaseModel):
     # outline
     outline_file: Path | None = None
     outline_json: bool = False
+    outline_all: bool = False
 
     # map
     map_path: Path | None = None
     map_json: bool = False
     map_depth: int | None = None
+    map_all: bool = False
 
     # xref
     xref_symbol: str | None = None
@@ -98,6 +110,17 @@ class AppConfig(BaseModel):
     docs_search: str | None = None
     docs_json: bool = False
 
+    # exports
+    exports_path: Path | None = None
+    exports_all: bool = False
+    exports_exclude: list[str] = []
+    exports_json: bool = False
+
+    # edit
+    edit_file: Path | None = None
+    edit_symbol: str | None = None
+    edit_replace: bool = False
+
     # parse
     parse_tool: str | None = None
     parse_input: Path | None = None
@@ -124,6 +147,9 @@ class AppConfig(BaseModel):
             "init_command",
             "init_type",
             "init_name",
+            "scaffold_command",
+            "scaffold_type",
+            "scaffold_name",
             "cycle_lang",
             "stub_target",
             "xref_symbol",
@@ -134,6 +160,7 @@ class AppConfig(BaseModel):
             "inspect_scope",
             "docs_symbol",
             "docs_search",
+            "edit_symbol",
         ):
             val = getattr(args, field, None)
             if val is not None:
@@ -141,6 +168,7 @@ class AppConfig(BaseModel):
 
         for path_field in (
             "init_output",
+            "scaffold_output",
             "cycle_path",
             "stub_file",
             "stub_output",
@@ -156,6 +184,8 @@ class AppConfig(BaseModel):
             "inspect_pycharm",
             "inspect_profile",
             "inspect_output_dir",
+            "exports_path",
+            "edit_file",
         ):
             val = getattr(args, path_field, None)
             if val is not None:
@@ -183,12 +213,20 @@ class AppConfig(BaseModel):
         if parse_ec is not None:
             d["parse_exit_code"] = int(parse_ec)
 
+        # Multi-value list fields
+        exports_exclude = getattr(args, "exports_exclude", None)
+        if exports_exclude:
+            d["exports_exclude"] = exports_exclude
+
         # Bool flags: only override when explicitly True
         for flag in (
             "init_force",
+            "scaffold_force",
             "cycle_suggest",
             "outline_json",
+            "outline_all",
             "map_json",
+            "map_all",
             "xref_json",
             "tokens_detail",
             "tokens_json",
@@ -200,6 +238,9 @@ class AppConfig(BaseModel):
             "inspect_json",
             "docs_json",
             "docs_overview",
+            "exports_all",
+            "exports_json",
+            "edit_replace",
         ):
             if getattr(args, flag, False):
                 d[flag] = True

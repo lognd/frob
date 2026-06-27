@@ -1,0 +1,14 @@
+from __future__ import annotations
+
+import logging
+
+
+class BelowLevelFilter(logging.Filter):
+    """Pass only records with levelno strictly below the configured threshold."""
+
+    def __init__(self, below: str = "WARNING") -> None:
+        super().__init__()
+        self._below = getattr(logging, below.upper(), logging.WARNING)
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        return record.levelno < self._below
