@@ -555,7 +555,7 @@ def _build_parser() -> argparse.ArgumentParser:
     return p
 
 
-if __name__ == "__main__":
+def main() -> None:
     import sys as _sys
 
     if len(_sys.argv) > 1 and _sys.argv[1] == "bind":
@@ -567,3 +567,7 @@ if __name__ == "__main__":
         args = parser.parse_args()
         cfg = AppConfig.from_external(args, Path("pyproject.toml"))
         App(cfg)()
+
+
+if __name__ == "__main__":
+    main()

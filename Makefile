@@ -69,28 +69,46 @@ test-system: $(STAMP)
 	uv run pytest $(TESTS)/system/ -q -n auto
 
 # ---------- skills / agents sync ----------
-# Copies skills and agents that already exist in ~/.claude to their counterparts
-# here. Only updates entries whose names match; never creates new ones.
+# Full bidirectional sync: creates new entries, updates existing ones, and
+# removes stale entries from ~/.claude that no longer exist here.
 
 CLAUDE_DIR := $(HOME)/.claude
 
 sync-skills:
-	@for d in skills/*/; do \
-	    name=$$(basename "$$d"); \
-	    target="$(CLAUDE_DIR)/skills/$$name"; \
-	    if [ -d "$$target" ]; then \
-	        cp -r "$$d"* "$$target/"; \
-	        echo "synced skill: $$name -> $$target"; \
-	    fi; \
-	done
+	@mkdir -p "$(CLAUDE_DIR)/agents" "$(CLAUDE_DIR)/skills"
+	@echo "--- syncing agents ---"
 	@for d in agents/*/; do \
 	    name=$$(basename "$$d"); \
-	    target="$(CLAUDE_DIR)/agents/$$name"; \
-	    if [ -d "$$target" ]; then \
-	        cp -r "$$d"* "$$target/"; \
-	        echo "synced agent: $$name -> $$target"; \
+	    mkdir -p "$(CLAUDE_DIR)/agents/$$name"; \
+	    cp -r "$$d"* "$(CLAUDE_DIR)/agents/$$name/"; \
+	    echo "  synced agent: $$name"; \
+	done
+	@echo "--- syncing skills ---"
+	@for d in skills/*/; do \
+	    name=$$(basename "$$d"); \
+	    mkdir -p "$(CLAUDE_DIR)/skills/$$name"; \
+	    cp -r "$$d"* "$(CLAUDE_DIR)/skills/$$name/"; \
+	    echo "  synced skill: $$name"; \
+	done
+	@echo "--- removing stale agents ---"
+	@for d in "$(CLAUDE_DIR)/agents/"/*/; do \
+	    [ -d "$$d" ] || continue; \
+	    name=$$(basename "$$d"); \
+	    if [ ! -d "agents/$$name" ]; then \
+	        rm -rf "$$d"; \
+	        echo "  removed stale agent: $$name"; \
 	    fi; \
 	done
+	@echo "--- removing stale skills ---"
+	@for d in "$(CLAUDE_DIR)/skills/"/*/; do \
+	    [ -d "$$d" ] || continue; \
+	    name=$$(basename "$$d"); \
+	    if [ ! -d "skills/$$name" ]; then \
+	        rm -rf "$$d"; \
+	        echo "  removed stale skill: $$name"; \
+	    fi; \
+	done
+	@echo "done."
 
 # ---------- build & publish ----------
 

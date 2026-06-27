@@ -23,6 +23,9 @@ dependencies = [
     "jinja2>=3.1",
 ]
 
+[project.scripts]
+frob = "frob.__main__:main"
+
 [project.urls]
 Homepage = "https://github.com/lognd/frob"
 Documentation = "https://github.com/lognd/frob/docs"
