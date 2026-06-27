@@ -152,17 +152,23 @@ def collect_dispatch(
 
     current_branch = _current_branch(root)
 
+    # Remove the worktree first -- git won't rebase a branch checked out elsewhere.
+    wt = Path(info.worktree)
+    if wt.exists():
+        _git(["worktree", "remove", "--force", str(wt)], cwd=str(root))
+
     if strategy == "rebase":
-        # Rebase dispatch branch onto current HEAD
+        # Rebase commits on dispatch branch (since base_commit) onto current HEAD.
+        # git rebase --onto <newbase> <upstream> <branch>
         rc, _, err = _git(
-            ["rebase", current_branch, info.branch, "--onto", current_branch],
+            ["rebase", "--onto", current_branch, info.base_commit, info.branch],
             cwd=str(root),
         )
         if rc != 0:
             _git(["rebase", "--abort"], cwd=str(root))
             return Err(DispatchError.MergeFailed)
 
-        # Fast-forward merge
+        # Fast-forward the current branch to the rebased tip
         rc, _, err = _git(["merge", "--ff-only", info.branch], cwd=str(root))
     else:
         rc, _, err = _git(
@@ -173,7 +179,12 @@ def collect_dispatch(
     if rc != 0:
         return Err(DispatchError.MergeFailed)
 
-    _cleanup_dispatch(root, info)
+    # Worktree already removed above; just delete the branch and state file
+    _git(["branch", "-D", info.branch], cwd=str(root))
+    sp = _state_path(root, info.dispatch_id)
+    if sp.exists():
+        sp.unlink()
+
     return Ok(None)
 
 
