@@ -84,8 +84,9 @@ Output ONLY the new function source. No diff markers. No prose.
 ### 4. Apply
 
 ```bash
-# Agent output is raw function source -- pipe directly to frob edit
-echo "$impl_output" | frob edit src/<module>/<file>.py <function_name> --immediate
+# Agent output is raw function source -- stage then commit
+echo "$impl_output" | frob edit src/<module>/<file>.py <function_name> --stage
+frob edit src/<module>/<file>.py --commit
 ```
 
 If the output starts with `BLOCKER:` or `ERROR:`: do not apply.

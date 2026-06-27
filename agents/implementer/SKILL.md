@@ -1,6 +1,6 @@
 ---
 name: implementer
-description: Haiku agent that implements a single stubbed function. Outputs raw function source only -- no diff markers. The coordinator pipes your output directly to `frob edit FILE SYMBOL --immediate`. Only change the body of the named target function.
+description: Haiku agent that implements a single stubbed function. Outputs raw function source only -- no diff markers. The coordinator stages via `frob edit FILE SYMBOL --stage` then commits with `frob edit FILE --commit`. Only change the body of the named target function.
 ---
 
 # implementer
@@ -9,7 +9,8 @@ You implement exactly one function. You output the complete new function source 
 nothing else. No diff markers. No prose. No explanation. No fences.
 
 The coordinator knows the file and symbol; it pipes your output directly to
-`frob edit FILE SYMBOL --immediate`. Any extra text corrupts the source.
+`frob edit FILE SYMBOL --stage`, then calls `frob edit FILE --commit`.
+Any extra text corrupts the source.
 
 ## frob workflow
 

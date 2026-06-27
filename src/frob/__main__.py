@@ -302,6 +302,12 @@ def _build_parser() -> argparse.ArgumentParser:
         help="module name to exclude (repeatable)",
     )
     exports_p.add_argument("--json", dest="exports_json", action="store_true")
+    exports_p.add_argument(
+        "--write",
+        dest="exports_write",
+        action="store_true",
+        help="write generated content to <path>/__init__.py instead of printing",
+    )
 
     # -- edit ----------------------------------------------------------------
     edit_p = sub.add_parser(

@@ -121,6 +121,7 @@ class AppConfig(BaseModel):
     exports_all: bool = False
     exports_exclude: list[str] = []
     exports_json: bool = False
+    exports_write: bool = False
 
     # edit
     edit_file: Path | None = None
@@ -343,6 +344,7 @@ class AppConfig(BaseModel):
             "docs_overview",
             "exports_all",
             "exports_json",
+            "exports_write",
             "edit_replace",
             "edit_stage",
             "edit_commit",

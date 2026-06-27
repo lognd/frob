@@ -111,7 +111,8 @@ Multi-file fix: output a unified diff starting with `--- a/`.
 After the agent responds:
 ```bash
 # Single-function (output does not start with "--- a/"):
-echo "$fix_output" | frob edit src/<module>/<file>.py <function_name> --immediate
+echo "$fix_output" | frob edit src/<module>/<file>.py <function_name> --stage
+frob edit src/<module>/<file>.py --commit
 
 # Multi-file (output starts with "--- a/"):
 echo "$fix_output" | git apply

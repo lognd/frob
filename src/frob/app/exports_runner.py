@@ -24,6 +24,13 @@ def run(cfg: AppConfig) -> None:
         sys.exit(1)
 
     er = result.danger_ok
+
+    if cfg.exports_write:
+        init_path = cfg.exports_path / "__init__.py"
+        init_path.write_text(er.as_text() + "\n")
+        _log.info("wrote %s", init_path)
+        return
+
     if cfg.exports_json:
         _log.info(er.as_json())
     else:
