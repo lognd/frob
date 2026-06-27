@@ -26,7 +26,10 @@ pytest ... 2>&1 | frob parse pytest --exit-code $? --passthrough || exit 1
 | `pytest` | Terminal output | Parses PASSED/FAILED lines + failure blocks |
 | `ruff` | Text or JSON (`--output-format json`) | JSON auto-detected |
 | `ty` | Terminal output | Parses `error[code]` lines |
-| `clang` / `clang++` | GCC-format diagnostics | Strips ANSI codes, strips `-W` annotations |
+| `cargo` | JSON (`--message-format json`) or plain text | Auto-detected; plain text parses `test ... ok/FAILED` lines |
+| `clang-tidy` | Text diagnostics | Deduplicates by location+check, strips ANSI |
+| `valgrind` | Text or XML (`--xml=yes`) | Auto-detected; extracts leak summary and invalid access blocks |
+| `clang` / `clang++` | GCC-format diagnostics | Strips ANSI codes |
 | `gcc` / `g++` | GCC-format diagnostics | Same as clang |
 | `junit` / `gtest` / `catch2` | JUnit XML | `pytest --junit-xml`, gtest `--gtest_output=xml`, Catch2 XML reporter |
 
@@ -70,14 +73,24 @@ actionable information at 1/60th the token cost.
 ## Typical agentic use
 
 ```bash
-# Run tests, parse output, feed compact summary to Claude
-pytest tests/ --tb=short 2>&1 | frob parse pytest --exit-code $? > /tmp/test_summary.txt
+# Python
+pytest tests/ --tb=short 2>&1 | frob parse pytest --exit-code $?
+ruff check src/ --output-format json | frob parse ruff
+ty check src/ 2>&1 | frob parse ty
 
-# Run type checker
-ty check src/ 2>&1 | frob parse ty > /tmp/type_summary.txt
+# Rust
+cargo test 2>&1 | frob parse cargo --exit-code $?
+cargo clippy 2>&1 | frob parse cargo --exit-code $?
 
-# Run linter
-ruff check src/ --output-format json 2>&1 | frob parse ruff > /tmp/lint_summary.txt
+# C++
+clang-tidy src/**/*.cpp -- 2>&1 | frob parse clang-tidy --exit-code $?
+valgrind --xml=yes --xml-file=/tmp/vg.xml ./myapp; frob parse valgrind < /tmp/vg.xml
 
-# Claude reads all three summaries (~50 tokens total) instead of raw output (~2000 tokens)
+# Claude reads compact summaries (~50 tokens) instead of raw output (~2000 tokens)
 ```
+
+## Integration with frob check
+
+`frob check` runs all relevant parsers internally and surfaces results in
+severity order. Use `frob parse` directly only when running individual tools
+outside the `frob check` pipeline.
