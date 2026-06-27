@@ -30,6 +30,9 @@ class Subcommand(str, enum.Enum):
     check = "check"
     ctx = "ctx"
     mission = "mission"
+    gitlog = "gitlog"
+    dispatch = "dispatch"
+    todo = "todo"
 
 
 class AppConfig(BaseModel):
@@ -122,7 +125,11 @@ class AppConfig(BaseModel):
     # edit
     edit_file: Path | None = None
     edit_symbol: str | None = None
-    edit_replace: bool = False
+    edit_replace: bool = False    # legacy immediate replace
+    edit_stage: bool = False      # stage for later commit
+    edit_commit: bool = False     # commit all staged patches
+    edit_status: bool = False     # show staged patches
+    edit_immediate: bool = False  # explicit immediate (lock + write now)
 
     # check (shared)
     check_path: Path | None = None
@@ -166,6 +173,27 @@ class AppConfig(BaseModel):
     ctx_root: Path | None = None
     ctx_depth: int = 1
     ctx_json: bool = False
+
+    # gitlog
+    gitlog_path: Path | None = None
+    gitlog_granularity: str = "user"
+    gitlog_since: str | None = None
+    gitlog_until: str | None = None
+    gitlog_limit: int | None = None
+    gitlog_all: bool = False
+    gitlog_json: bool = False
+
+    # dispatch
+    dispatch_command: str | None = None   # create | collect | abort | list
+    dispatch_label: str | None = None
+    dispatch_id: str | None = None
+    dispatch_strategy: str = "rebase"
+
+    # todo
+    todo_command: str | None = None   # add | done | remove | list | clear-done
+    todo_text: str | None = None
+    todo_id: int | None = None
+    todo_all: bool = False
 
     # parse
     parse_tool: str | None = None
@@ -217,6 +245,15 @@ class AppConfig(BaseModel):
             "mission_test",
             "mission_context",
             "mission_reason",
+            "gitlog_granularity",
+            "gitlog_since",
+            "gitlog_until",
+            "dispatch_command",
+            "dispatch_label",
+            "dispatch_id",
+            "dispatch_strategy",
+            "todo_command",
+            "todo_text",
         ):
             val = getattr(args, field, None)
             if val is not None:
@@ -248,6 +285,7 @@ class AppConfig(BaseModel):
             "check_pycharm",
             "check_build_dir",
             "mission_file",
+            "gitlog_path",
         ):
             val = getattr(args, path_field, None)
             if val is not None:
@@ -266,6 +304,8 @@ class AppConfig(BaseModel):
             "arch_max_function_lines",
             "arch_max_class_methods",
             "ctx_depth",
+            "gitlog_limit",
+            "todo_id",
         ):
             val = getattr(args, int_field, None)
             if val is not None:
@@ -304,6 +344,10 @@ class AppConfig(BaseModel):
             "exports_all",
             "exports_json",
             "edit_replace",
+            "edit_stage",
+            "edit_commit",
+            "edit_status",
+            "edit_immediate",
             "check_skip_ruff",
             "check_skip_ty",
             "check_skip_arch",
@@ -321,6 +365,9 @@ class AppConfig(BaseModel):
             "check_skip_clippy",
             "check_skip_fmt",
             "ctx_json",
+            "gitlog_all",
+            "gitlog_json",
+            "todo_all",
         ):
             if getattr(args, flag, False):
                 d[flag] = True

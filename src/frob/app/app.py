@@ -20,6 +20,8 @@ class App:
             check_runner,
             ctx_runner,
             cycle_runner,
+            dispatch_runner,
+            gitlog_runner,
             mission_runner,
             docs_runner,
             dup_runner,
@@ -32,6 +34,7 @@ class App:
             parse_runner,
             scaffold_runner,
             stub_runner,
+            todo_runner,
             tokens_runner,
             xref_runner,
         )
@@ -77,10 +80,17 @@ class App:
                 ctx_runner.run(self._cfg)
             case Subcommand.mission:
                 mission_runner.run(self._cfg)
+            case Subcommand.gitlog:
+                gitlog_runner.run(self._cfg)
+            case Subcommand.dispatch:
+                dispatch_runner.run(self._cfg)
+            case Subcommand.todo:
+                todo_runner.run(self._cfg)
             case _:
                 _log.error(
                     "usage: frob "
-                    "<scaffold|init|cycle|stub|outline|map|xref|tokens|bundle|parse|dup|arch|inspect|docs|bind|exports|edit>"
+                    "<scaffold|cycle|stub|outline|map|xref|tokens|bundle|parse|dup|arch|inspect|docs|bind|"
+                    "exports|edit|check|ctx|mission|gitlog|dispatch|todo>"
                     " ..."
                 )
                 sys.exit(1)

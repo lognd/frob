@@ -312,13 +312,39 @@ def _build_parser() -> argparse.ArgumentParser:
     edit_p.add_argument(
         "edit_symbol",
         metavar="symbol",
-        help="function name, class name, or ClassName.method",
+        nargs="?",
+        help="function name, class name, or ClassName.method (omit with --commit/--status)",
     )
-    edit_p.add_argument(
+    mode = edit_p.add_mutually_exclusive_group()
+    mode.add_argument(
         "--replace",
         dest="edit_replace",
         action="store_true",
-        help="read replacement from stdin and write in-place",
+        help="(legacy) immediate lock+write; equivalent to --immediate",
+    )
+    mode.add_argument(
+        "--stage",
+        dest="edit_stage",
+        action="store_true",
+        help="stage replacement from stdin for later --commit (safe for concurrent agents)",
+    )
+    mode.add_argument(
+        "--immediate",
+        dest="edit_immediate",
+        action="store_true",
+        help="apply replacement from stdin now under exclusive lock (single-agent)",
+    )
+    mode.add_argument(
+        "--commit",
+        dest="edit_commit",
+        action="store_true",
+        help="apply all staged patches for this file atomically",
+    )
+    mode.add_argument(
+        "--status",
+        dest="edit_status",
+        action="store_true",
+        help="show staged patches for this file",
     )
 
     # -- bind ----------------------------------------------------------------
@@ -444,6 +470,81 @@ def _build_parser() -> argparse.ArgumentParser:
         help="bundle import depth (default: 1)",
     )
     ctx_p.add_argument("--json", dest="ctx_json", action="store_true")
+
+    # -- gitlog ---------------------------------------------------------------
+    gitlog_p = sub.add_parser(
+        "gitlog",
+        help="summarize git history by type/granularity (conventional commits)",
+    )
+    gitlog_p.add_argument(
+        "gitlog_path",
+        metavar="path",
+        nargs="?",
+        help="git repo root (default: current directory)",
+    )
+    gitlog_p.add_argument(
+        "--level",
+        dest="gitlog_granularity",
+        choices=["major", "user", "full", "changelog"],
+        default="user",
+        help="detail level: major=breaking only, user=feat+fix, full=all, changelog=release notes",
+    )
+    gitlog_p.add_argument("--since", dest="gitlog_since", metavar="TAG_OR_DATE",
+                          help="start from tag (e.g. v1.0.0) or date (e.g. 2024-01-01)")
+    gitlog_p.add_argument("--until", dest="gitlog_until", metavar="TAG_OR_DATE")
+    gitlog_p.add_argument("--limit", "-n", dest="gitlog_limit", type=int, metavar="N",
+                          help="max number of commits to fetch")
+    gitlog_p.add_argument("--all", dest="gitlog_all", action="store_true",
+                          help="include non-conventional commits")
+    gitlog_p.add_argument("--json", dest="gitlog_json", action="store_true")
+
+    # -- dispatch -------------------------------------------------------------
+    dispatch_p = sub.add_parser(
+        "dispatch",
+        help="branch-per-agent worktree isolation for thread-safe parallel work",
+    )
+    dispatch_sub = dispatch_p.add_subparsers(dest="dispatch_command")
+
+    create_d = dispatch_sub.add_parser("create", help="create a worktree branch for an agent")
+    create_d.add_argument("dispatch_label", metavar="label",
+                          help="short description (used in branch name)")
+
+    collect_d = dispatch_sub.add_parser("collect", help="rebase+merge completed dispatch branch")
+    collect_d.add_argument("dispatch_id", metavar="id")
+    collect_d.add_argument(
+        "--strategy",
+        dest="dispatch_strategy",
+        choices=["rebase", "merge"],
+        default="rebase",
+        help="rebase (default, linear history) or merge (--no-ff, explicit merge commit)",
+    )
+
+    abort_d = dispatch_sub.add_parser("abort", help="discard a dispatch branch and worktree")
+    abort_d.add_argument("dispatch_id", metavar="id")
+
+    dispatch_sub.add_parser("list", help="list active dispatch worktrees")
+
+    # -- todo -----------------------------------------------------------------
+    todo_p = sub.add_parser(
+        "todo",
+        help="persistent TODO tracker for cross-session context (.frob/todo.md)",
+    )
+    todo_sub = todo_p.add_subparsers(dest="todo_command")
+
+    add_t = todo_sub.add_parser("add", help="add a TODO item")
+    add_t.add_argument("todo_text", metavar="text")
+
+    done_t = todo_sub.add_parser("done", help="mark item done")
+    done_t.add_argument("todo_id", metavar="id", type=int)
+
+    rm_t = todo_sub.add_parser("remove", help="remove item")
+    rm_t.add_argument("todo_id", metavar="id", type=int)
+
+    list_t = todo_sub.add_parser("list", help="list TODO items")
+    list_t.add_argument("--all", dest="todo_all", action="store_true",
+                        help="include completed items")
+
+    todo_sub.add_parser("clear-done", help="remove all completed items")
 
     return p
 
