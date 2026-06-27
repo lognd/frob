@@ -20,6 +20,7 @@ class App:
             check_runner,
             ctx_runner,
             cycle_runner,
+            mission_runner,
             docs_runner,
             dup_runner,
             edit_runner,
@@ -74,6 +75,8 @@ class App:
                 check_runner.run(self._cfg)
             case Subcommand.ctx:
                 ctx_runner.run(self._cfg)
+            case Subcommand.mission:
+                mission_runner.run(self._cfg)
             case _:
                 _log.error(
                     "usage: frob "

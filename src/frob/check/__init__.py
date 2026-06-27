@@ -366,21 +366,377 @@ def _run_exports(root: Path) -> list[ToolResult]:
     return out
 
 
-def _run_pycharm(root: Path, pycharm_path: Path) -> ToolResult | None:
+def _run_pycharm(root: Path, pycharm_path: Path | None) -> ToolResult | None:
     import tempfile
 
     from frob.process.parsers import parse_pycharm_dir
+
+    binary = pycharm_path or _find_pycharm()
+    if binary is None:
+        return None
 
     with tempfile.TemporaryDirectory() as tmp:
         tmp_path = Path(tmp)
         try:
             subprocess.run(
-                [str(pycharm_path), str(root), tmp_path, "-format", "XML"],
+                [str(binary), str(root), str(tmp_path), "-format", "XML"],
                 capture_output=True,
-                timeout=120,
+                timeout=180,
             )
         except (subprocess.TimeoutExpired, FileNotFoundError):
             return None
         result = parse_pycharm_dir(tmp_path)
         result.tool = "pycharm"
         return result
+
+
+def _find_pycharm() -> Path | None:
+    """Auto-locate JetBrains inspect script on Windows and Linux."""
+    import os
+    import platform
+
+    system = platform.system()
+
+    if system == "Windows":
+        # Toolbox default: %LOCALAPPDATA%\JetBrains\Toolbox\apps\PyCharm-P\ch-0\<ver>\bin\inspect.bat
+        base = Path(os.environ.get("LOCALAPPDATA", "")) / "JetBrains" / "Toolbox" / "apps"
+        for app_dir in ("PyCharm-P", "PyCharm-C", "PyCharm"):
+            p = base / app_dir / "ch-0"
+            if p.exists():
+                versions = sorted(p.iterdir(), reverse=True)
+                for v in versions:
+                    candidate = v / "bin" / "inspect.bat"
+                    if candidate.exists():
+                        return candidate
+        # Direct install
+        prog = Path(os.environ.get("ProgramFiles", "C:/Program Files"))
+        for name in ("JetBrains/PyCharm Professional Edition", "JetBrains/PyCharm Community Edition", "JetBrains/PyCharm"):
+            candidate = prog / name / "bin" / "inspect.bat"
+            if candidate.exists():
+                return candidate
+    else:
+        # Linux: Toolbox default ~/.local/share/JetBrains/Toolbox/apps/PyCharm-P/ch-0/<ver>/bin/inspect.sh
+        home = Path.home()
+        for base in (
+            home / ".local" / "share" / "JetBrains" / "Toolbox" / "apps",
+            Path("/opt/jetbrains"),
+        ):
+            for app_dir in ("PyCharm-P", "PyCharm-C", "PyCharm"):
+                p = base / app_dir / "ch-0"
+                if not p.exists():
+                    p = base / app_dir
+                if p.exists():
+                    versions = sorted(p.iterdir(), reverse=True)
+                    for v in versions:
+                        for script in ("bin/inspect.sh", "bin/pycharm.sh"):
+                            candidate = v / script
+                            if candidate.exists():
+                                return candidate
+        # Snap / system installs
+        for candidate in (
+            Path("/snap/pycharm-professional/current/bin/inspect.sh"),
+            Path("/snap/pycharm-community/current/bin/inspect.sh"),
+            Path("/usr/local/bin/pycharm.sh"),
+        ):
+            if candidate.exists():
+                return candidate
+
+    return None
+
+
+# ---------------------------------------------------------------------------
+# C/C++ checks
+# ---------------------------------------------------------------------------
+
+def run_check_cpp(
+    root: Path,
+    *,
+    build_dir: Path | None = None,
+    skip_build: bool = False,
+    skip_clang_tidy: bool = False,
+    skip_clang_format: bool = False,
+    skip_tests: bool = False,
+    valgrind: bool = False,
+    pycharm_path: Path | None = None,
+) -> CheckResult:
+    """Quality gate for CMake C/C++ projects."""
+    results: list[ToolResult] = []
+
+    bdir = build_dir or (root / "build")
+
+    if not skip_build:
+        r = _run_cmake_build(root, bdir)
+        results.append(r)
+        # If build failed, skip test steps
+        if r.exit_code != 0:
+            skip_tests = True
+
+    if not skip_clang_tidy:
+        r = _run_clang_tidy_cmake(root, bdir)
+        if r is not None:
+            results.append(r)
+
+    if not skip_clang_format:
+        r = _run_clang_format(root)
+        if r is not None:
+            results.append(r)
+
+    if not skip_tests:
+        r = _run_ctest(bdir, valgrind=valgrind)
+        if r is not None:
+            results.append(r)
+
+    if pycharm_path is not None:
+        r = _run_pycharm(root, pycharm_path)
+        if r is not None:
+            results.append(r)
+
+    return CheckResult(path=str(root), results=results)
+
+
+def _run_cmake_build(root: Path, build_dir: Path) -> ToolResult:
+    from frob.process.parsers import parse_clang
+
+    build_dir.mkdir(parents=True, exist_ok=True)
+    # Configure
+    cfg = subprocess.run(
+        ["cmake", str(root), "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"],
+        cwd=str(build_dir),
+        capture_output=True, text=True,
+    )
+    if cfg.returncode != 0:
+        return ToolResult(
+            tool="cmake-configure", exit_code=cfg.returncode,
+            diagnostics=[Diagnostic(severity="error", message=l.strip())
+                         for l in (cfg.stderr or cfg.stdout).splitlines() if l.strip()],
+            summary="cmake configure failed",
+        )
+    # Build
+    proc = subprocess.run(
+        ["cmake", "--build", ".", "--", "-j4"],
+        cwd=str(build_dir),
+        capture_output=True, text=True,
+    )
+    r = parse_clang(proc.stdout + proc.stderr, exit_code=proc.returncode, tool="cmake-build")
+    r.tool = "cmake-build"
+    if not r.summary or r.summary == "no issues":
+        r.summary = "build succeeded" if proc.returncode == 0 else "build failed"
+    return r
+
+
+def _run_clang_tidy_cmake(root: Path, build_dir: Path) -> ToolResult | None:
+    from frob.process.parsers import parse_clang_tidy
+
+    # Prefer compile_commands.json in build_dir
+    compile_commands = build_dir / "compile_commands.json"
+    if not compile_commands.exists():
+        compile_commands = root / "compile_commands.json"
+    if not compile_commands.exists():
+        return None
+
+    src_files = list(root.rglob("*.cpp")) + list(root.rglob("*.cc")) + list(root.rglob("*.c"))
+    src_files = [f for f in src_files
+                 if not any(p in {"build", ".venv", "third_party", "extern"} for p in f.parts)]
+    if not src_files:
+        return None
+
+    proc = subprocess.run(
+        ["clang-tidy", f"-p={build_dir}", "--quiet"] + [str(f) for f in src_files[:50]],
+        capture_output=True, text=True,
+    )
+    r = parse_clang_tidy(proc.stdout + proc.stderr, exit_code=proc.returncode)
+    return r
+
+
+def _run_clang_format(root: Path) -> ToolResult | None:
+    src_files = (
+        list(root.rglob("*.cpp")) + list(root.rglob("*.cc")) +
+        list(root.rglob("*.c")) + list(root.rglob("*.h")) + list(root.rglob("*.hpp"))
+    )
+    src_files = [f for f in src_files
+                 if not any(p in {"build", ".venv", "third_party", "extern"} for p in f.parts)]
+    if not src_files:
+        return None
+
+    proc = subprocess.run(
+        ["clang-format", "--dry-run", "--Werror"] + [str(f) for f in src_files],
+        capture_output=True, text=True,
+    )
+    if proc.returncode == 0:
+        return ToolResult(tool="clang-format", exit_code=0, summary="all files formatted")
+
+    needs_format = [
+        l for l in (proc.stderr or proc.stdout).splitlines()
+        if "warning:" in l or "error:" in l
+    ]
+    n = len(needs_format)
+    diags = [Diagnostic(severity="warning", message=l.strip()) for l in needs_format]
+    return ToolResult(tool="clang-format", exit_code=proc.returncode, diagnostics=diags,
+                      summary=f"{n} file{'s' if n != 1 else ''} need formatting")
+
+
+def _run_ctest(build_dir: Path, *, valgrind: bool = False) -> ToolResult | None:
+    from frob.process.parsers import parse_junit_xml, parse_valgrind
+
+    if not build_dir.exists():
+        return None
+
+    if valgrind:
+        proc = subprocess.run(
+            ["ctest", "--test-dir", str(build_dir), "--output-on-failure",
+             "-T", "memcheck", "--output-junit", "results.xml"],
+            capture_output=True, text=True, cwd=str(build_dir),
+        )
+    else:
+        proc = subprocess.run(
+            ["ctest", "--test-dir", str(build_dir), "--output-on-failure",
+             "--output-junit", "results.xml"],
+            capture_output=True, text=True, cwd=str(build_dir),
+        )
+
+    junit_file = build_dir / "results.xml"
+    if junit_file.exists():
+        from frob.process.parsers import parse_junit_xml
+        r = parse_junit_xml(junit_file.read_text(), tool="ctest")
+        r.tool = "ctest"
+        return r
+
+    # Fall back to text parsing
+    from frob.process.parsers import parse_clang
+    r = parse_clang(proc.stdout + proc.stderr, exit_code=proc.returncode, tool="ctest")
+    r.tool = "ctest"
+    if not r.diagnostics:
+        r.summary = "tests passed" if proc.returncode == 0 else "tests failed"
+    return r
+
+
+# ---------------------------------------------------------------------------
+# Rust checks
+# ---------------------------------------------------------------------------
+
+def run_check_rust(
+    root: Path,
+    *,
+    skip_check: bool = False,
+    skip_clippy: bool = False,
+    skip_fmt: bool = False,
+    skip_tests: bool = False,
+    valgrind: bool = False,
+) -> CheckResult:
+    """Quality gate for Rust/Cargo projects."""
+    results: list[ToolResult] = []
+
+    if not skip_check:
+        r = _run_cargo("check", root)
+        if r is not None:
+            results.append(r)
+
+    if not skip_clippy:
+        r = _run_cargo("clippy", root, extra=["--", "-D", "warnings"])
+        if r is not None:
+            results.append(r)
+
+    if not skip_fmt:
+        r = _run_cargo_fmt_check(root)
+        if r is not None:
+            results.append(r)
+
+    if not skip_tests:
+        r = _run_cargo_test(root, valgrind=valgrind)
+        if r is not None:
+            results.append(r)
+
+    return CheckResult(path=str(root), results=results)
+
+
+def _run_cargo(subcmd: str, root: Path, extra: list[str] | None = None) -> ToolResult | None:
+    from frob.process.parsers import parse_cargo
+
+    try:
+        proc = subprocess.run(
+            ["cargo", subcmd, "--message-format", "json"] + (extra or []),
+            capture_output=True, text=True, cwd=str(root),
+        )
+    except FileNotFoundError:
+        return None
+    r = parse_cargo(proc.stdout + proc.stderr, exit_code=proc.returncode, tool=f"cargo-{subcmd}")
+    return r
+
+
+def _run_cargo_fmt_check(root: Path) -> ToolResult | None:
+    try:
+        proc = subprocess.run(
+            ["cargo", "fmt", "--check"],
+            capture_output=True, text=True, cwd=str(root),
+        )
+    except FileNotFoundError:
+        return None
+    if proc.returncode == 0:
+        return ToolResult(tool="cargo-fmt", exit_code=0, summary="all files formatted")
+    lines = (proc.stdout + proc.stderr).strip().splitlines()
+    diags = [Diagnostic(severity="warning", message=l.strip()) for l in lines if l.strip()]
+    return ToolResult(tool="cargo-fmt", exit_code=proc.returncode, diagnostics=diags,
+                      summary=f"{len(diags)} formatting issues")
+
+
+def _run_cargo_test(root: Path, *, valgrind: bool = False) -> ToolResult | None:
+    from frob.process.parsers import parse_cargo, parse_valgrind
+
+    try:
+        if valgrind:
+            # cargo test --no-run first, then run binary under valgrind
+            build_proc = subprocess.run(
+                ["cargo", "test", "--no-run", "--message-format", "json"],
+                capture_output=True, text=True, cwd=str(root),
+            )
+            # Find test binary from JSON output
+            binary = _find_test_binary_from_cargo_json(build_proc.stdout)
+            if binary:
+                proc = subprocess.run(
+                    ["valgrind", "--leak-check=full", "--error-exitcode=1", str(binary)],
+                    capture_output=True, text=True, cwd=str(root),
+                )
+                r = parse_valgrind(proc.stdout + proc.stderr, exit_code=proc.returncode)
+                r.tool = "cargo-test(valgrind)"
+                return r
+        proc = subprocess.run(
+            ["cargo", "test"],
+            capture_output=True, text=True, cwd=str(root),
+        )
+    except FileNotFoundError:
+        return None
+    r = parse_cargo(proc.stdout + proc.stderr, exit_code=proc.returncode, tool="cargo-test")
+    return r
+
+
+def _find_test_binary_from_cargo_json(stdout: str) -> Path | None:
+    import json
+    for line in stdout.splitlines():
+        try:
+            msg = json.loads(line)
+            if msg.get("reason") == "compiler-artifact":
+                profile = msg.get("profile", {})
+                if profile.get("test"):
+                    executables = msg.get("executable")
+                    if executables:
+                        return Path(executables)
+        except Exception:
+            pass
+    return None
+
+
+# ---------------------------------------------------------------------------
+# Auto-detect project type
+# ---------------------------------------------------------------------------
+
+def detect_project_type(root: Path) -> str:
+    """Returns 'python', 'cpp', 'rust', or 'unknown'."""
+    if (root / "Cargo.toml").exists():
+        return "rust"
+    if (root / "CMakeLists.txt").exists():
+        return "cpp"
+    if (root / "pyproject.toml").exists() or (root / "setup.py").exists():
+        return "python"
+    if list(root.glob("*.cpp")) or list(root.glob("*.cc")) or list(root.glob("*.c")):
+        return "cpp"
+    return "unknown"

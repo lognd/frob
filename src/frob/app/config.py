@@ -29,6 +29,7 @@ class Subcommand(str, enum.Enum):
     edit = "edit"
     check = "check"
     ctx = "ctx"
+    mission = "mission"
 
 
 class AppConfig(BaseModel):
@@ -123,9 +124,14 @@ class AppConfig(BaseModel):
     edit_symbol: str | None = None
     edit_replace: bool = False
 
-    # check
+    # check (shared)
     check_path: Path | None = None
     check_pycharm: Path | None = None
+    check_type: str | None = None   # "python", "cpp", "rust", or None=auto-detect
+    check_json: bool = False
+    check_valgrind: bool = False
+    check_skip_tests: bool = False
+    # check (python)
     check_skip_ruff: bool = False
     check_skip_ty: bool = False
     check_skip_arch: bool = False
@@ -133,7 +139,26 @@ class AppConfig(BaseModel):
     check_skip_dup: bool = False
     check_skip_bind: bool = False
     check_skip_exports: bool = False
-    check_json: bool = False
+    # check (cpp)
+    check_build_dir: Path | None = None
+    check_skip_build: bool = False
+    check_skip_clang_tidy: bool = False
+    check_skip_clang_format: bool = False
+    # check (rust)
+    check_skip_cargo_check: bool = False
+    check_skip_clippy: bool = False
+    check_skip_fmt: bool = False
+
+    # mission
+    mission_command: str | None = None   # new | done | stuck | list
+    mission_type: str | None = None      # fix | test | implement | review
+    mission_id: str | None = None
+    mission_file: Path | None = None
+    mission_target: str | None = None
+    mission_error: str | None = None
+    mission_test: str | None = None
+    mission_context: str | None = None
+    mission_reason: str | None = None
 
     # ctx
     ctx_file: Path | None = None
@@ -183,6 +208,15 @@ class AppConfig(BaseModel):
             "docs_search",
             "edit_symbol",
             "ctx_symbol",
+            "check_type",
+            "mission_command",
+            "mission_type",
+            "mission_id",
+            "mission_target",
+            "mission_error",
+            "mission_test",
+            "mission_context",
+            "mission_reason",
         ):
             val = getattr(args, field, None)
             if val is not None:
@@ -212,6 +246,8 @@ class AppConfig(BaseModel):
             "ctx_root",
             "check_path",
             "check_pycharm",
+            "check_build_dir",
+            "mission_file",
         ):
             val = getattr(args, path_field, None)
             if val is not None:
@@ -276,6 +312,14 @@ class AppConfig(BaseModel):
             "check_skip_bind",
             "check_skip_exports",
             "check_json",
+            "check_valgrind",
+            "check_skip_tests",
+            "check_skip_build",
+            "check_skip_clang_tidy",
+            "check_skip_clang_format",
+            "check_skip_cargo_check",
+            "check_skip_clippy",
+            "check_skip_fmt",
             "ctx_json",
         ):
             if getattr(args, flag, False):

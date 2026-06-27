@@ -128,6 +128,9 @@ def _build_parser() -> argparse.ArgumentParser:
             "gtest",
             "catch2",
             "pycharm",
+            "cargo",
+            "clang-tidy",
+            "valgrind",
         ],
     )
     parse_p.add_argument(
@@ -348,11 +351,21 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     check_p.add_argument("check_path", metavar="path", nargs="?", default=".")
     check_p.add_argument(
+        "--type",
+        dest="check_type",
+        choices=["python", "cpp", "rust"],
+        help="project type (default: auto-detect from CMakeLists.txt / Cargo.toml / pyproject.toml)",
+    )
+    check_p.add_argument(
         "--pycharm",
         dest="check_pycharm",
         metavar="PATH",
-        help="path to PyCharm inspect.bat/sh to include inspection results",
+        help="path to PyCharm inspect.bat/sh (auto-located by default for Python/C++ projects)",
     )
+    check_p.add_argument("--valgrind", dest="check_valgrind", action="store_true",
+                         help="run valgrind memcheck on test binary")
+    check_p.add_argument("--skip-tests", dest="check_skip_tests", action="store_true")
+    # Python-specific
     check_p.add_argument("--skip-ruff", dest="check_skip_ruff", action="store_true")
     check_p.add_argument("--skip-ty", dest="check_skip_ty", action="store_true")
     check_p.add_argument("--skip-arch", dest="check_skip_arch", action="store_true")
@@ -360,7 +373,47 @@ def _build_parser() -> argparse.ArgumentParser:
     check_p.add_argument("--skip-dup", dest="check_skip_dup", action="store_true")
     check_p.add_argument("--skip-bind", dest="check_skip_bind", action="store_true")
     check_p.add_argument("--skip-exports", dest="check_skip_exports", action="store_true")
+    # C++ specific
+    check_p.add_argument("--build-dir", dest="check_build_dir", metavar="DIR")
+    check_p.add_argument("--skip-build", dest="check_skip_build", action="store_true")
+    check_p.add_argument("--skip-clang-tidy", dest="check_skip_clang_tidy", action="store_true")
+    check_p.add_argument("--skip-clang-format", dest="check_skip_clang_format", action="store_true")
+    # Rust specific
+    check_p.add_argument("--skip-cargo-check", dest="check_skip_cargo_check", action="store_true")
+    check_p.add_argument("--skip-clippy", dest="check_skip_clippy", action="store_true")
+    check_p.add_argument("--skip-fmt", dest="check_skip_fmt", action="store_true")
     check_p.add_argument("--json", dest="check_json", action="store_true")
+
+    # -- mission -------------------------------------------------------------
+    mission_p = sub.add_parser(
+        "mission",
+        help="create/manage subagent task briefings (.frob/missions/<id>.md)",
+    )
+    mission_sub = mission_p.add_subparsers(dest="mission_command")
+
+    # mission new
+    new_m = mission_sub.add_parser("new", help="create a new mission briefing")
+    new_m.add_argument("mission_type", metavar="type", choices=["fix", "test", "implement", "review"])
+    new_m.add_argument("--file", dest="mission_file", metavar="FILE")
+    new_m.add_argument("--target", dest="mission_target", metavar="SYMBOL")
+    new_m.add_argument("--error", dest="mission_error", metavar="TEXT",
+                       help="error message to include in the briefing")
+    new_m.add_argument("--test", dest="mission_test", metavar="TEST_NAME",
+                       help="specific test name to (re-)run")
+    new_m.add_argument("--context", dest="mission_context", metavar="TEXT",
+                       help="additional freeform context to append")
+
+    # mission done
+    done_m = mission_sub.add_parser("done", help="mark mission complete and delete briefing")
+    done_m.add_argument("mission_id", metavar="id")
+
+    # mission stuck
+    stuck_m = mission_sub.add_parser("stuck", help="mark mission blocked (moves to stuck/)")
+    stuck_m.add_argument("mission_id", metavar="id")
+    stuck_m.add_argument("mission_reason", metavar="reason")
+
+    # mission list
+    mission_sub.add_parser("list", help="list pending missions")
 
     # -- ctx -----------------------------------------------------------------
     ctx_p = sub.add_parser(

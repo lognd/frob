@@ -16,12 +16,15 @@ import sys
 from frob.app.config import AppConfig
 from frob.logging import get_logger
 from frob.process.parsers import (
+    parse_cargo,
     parse_clang,
+    parse_clang_tidy,
     parse_junit_xml,
     parse_pycharm_dir,
     parse_pytest,
     parse_ruff,
     parse_ty,
+    parse_valgrind,
 )
 
 _log = get_logger(__name__)
@@ -37,6 +40,9 @@ _PARSERS = {
     "junit": lambda text, rc: parse_junit_xml(text, tool="junit"),
     "gtest": lambda text, rc: parse_junit_xml(text, tool="gtest"),
     "catch2": lambda text, rc: parse_junit_xml(text, tool="catch2"),
+    "cargo": lambda text, rc: parse_cargo(text, exit_code=rc),
+    "clang-tidy": lambda text, rc: parse_clang_tidy(text, exit_code=rc),
+    "valgrind": lambda text, rc: parse_valgrind(text, exit_code=rc),
 }
 
 
