@@ -27,6 +27,8 @@ class Subcommand(str, enum.Enum):
     bind = "bind"
     exports = "exports"
     edit = "edit"
+    check = "check"
+    ctx = "ctx"
 
 
 class AppConfig(BaseModel):
@@ -121,6 +123,25 @@ class AppConfig(BaseModel):
     edit_symbol: str | None = None
     edit_replace: bool = False
 
+    # check
+    check_path: Path | None = None
+    check_pycharm: Path | None = None
+    check_skip_ruff: bool = False
+    check_skip_ty: bool = False
+    check_skip_arch: bool = False
+    check_skip_cycle: bool = False
+    check_skip_dup: bool = False
+    check_skip_bind: bool = False
+    check_skip_exports: bool = False
+    check_json: bool = False
+
+    # ctx
+    ctx_file: Path | None = None
+    ctx_symbol: str | None = None
+    ctx_root: Path | None = None
+    ctx_depth: int = 1
+    ctx_json: bool = False
+
     # parse
     parse_tool: str | None = None
     parse_input: Path | None = None
@@ -161,6 +182,7 @@ class AppConfig(BaseModel):
             "docs_symbol",
             "docs_search",
             "edit_symbol",
+            "ctx_symbol",
         ):
             val = getattr(args, field, None)
             if val is not None:
@@ -186,6 +208,10 @@ class AppConfig(BaseModel):
             "inspect_output_dir",
             "exports_path",
             "edit_file",
+            "ctx_file",
+            "ctx_root",
+            "check_path",
+            "check_pycharm",
         ):
             val = getattr(args, path_field, None)
             if val is not None:
@@ -203,6 +229,7 @@ class AppConfig(BaseModel):
             "dup_min_lines",
             "arch_max_function_lines",
             "arch_max_class_methods",
+            "ctx_depth",
         ):
             val = getattr(args, int_field, None)
             if val is not None:
@@ -241,6 +268,15 @@ class AppConfig(BaseModel):
             "exports_all",
             "exports_json",
             "edit_replace",
+            "check_skip_ruff",
+            "check_skip_ty",
+            "check_skip_arch",
+            "check_skip_cycle",
+            "check_skip_dup",
+            "check_skip_bind",
+            "check_skip_exports",
+            "check_json",
+            "ctx_json",
         ):
             if getattr(args, flag, False):
                 d[flag] = True

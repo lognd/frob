@@ -338,6 +338,60 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     bind_p.add_argument("--json", dest="bind_json", action="store_true")
 
+    # -- check ---------------------------------------------------------------
+    check_p = sub.add_parser(
+        "check",
+        help=(
+            "aggregate quality gate: ruff, ty, frob cycle/dup/arch/bind/exports; "
+            "errors first, easy to hand to subagents"
+        ),
+    )
+    check_p.add_argument("check_path", metavar="path", nargs="?", default=".")
+    check_p.add_argument(
+        "--pycharm",
+        dest="check_pycharm",
+        metavar="PATH",
+        help="path to PyCharm inspect.bat/sh to include inspection results",
+    )
+    check_p.add_argument("--skip-ruff", dest="check_skip_ruff", action="store_true")
+    check_p.add_argument("--skip-ty", dest="check_skip_ty", action="store_true")
+    check_p.add_argument("--skip-arch", dest="check_skip_arch", action="store_true")
+    check_p.add_argument("--skip-cycle", dest="check_skip_cycle", action="store_true")
+    check_p.add_argument("--skip-dup", dest="check_skip_dup", action="store_true")
+    check_p.add_argument("--skip-bind", dest="check_skip_bind", action="store_true")
+    check_p.add_argument("--skip-exports", dest="check_skip_exports", action="store_true")
+    check_p.add_argument("--json", dest="check_json", action="store_true")
+
+    # -- ctx -----------------------------------------------------------------
+    ctx_p = sub.add_parser(
+        "ctx",
+        help=(
+            "adaptive context: chooses stub/bundle/full based on function complexity; "
+            "use instead of manually deciding between stub, bundle, xref"
+        ),
+    )
+    ctx_p.add_argument("ctx_file", metavar="file")
+    ctx_p.add_argument(
+        "ctx_symbol",
+        metavar="symbol",
+        help="function or class name (ClassName.method for methods)",
+    )
+    ctx_p.add_argument(
+        "--root",
+        dest="ctx_root",
+        metavar="DIR",
+        help="project root for xref search (default: file parent)",
+    )
+    ctx_p.add_argument(
+        "--depth",
+        dest="ctx_depth",
+        type=int,
+        default=1,
+        metavar="N",
+        help="bundle import depth (default: 1)",
+    )
+    ctx_p.add_argument("--json", dest="ctx_json", action="store_true")
+
     return p
 
 

@@ -17,6 +17,8 @@ class App:
             arch_runner,
             bind_runner,
             bundle_runner,
+            check_runner,
+            ctx_runner,
             cycle_runner,
             docs_runner,
             dup_runner,
@@ -68,6 +70,10 @@ class App:
                 exports_runner.run(self._cfg)
             case Subcommand.edit:
                 edit_runner.run(self._cfg)
+            case Subcommand.check:
+                check_runner.run(self._cfg)
+            case Subcommand.ctx:
+                ctx_runner.run(self._cfg)
             case _:
                 _log.error(
                     "usage: frob "
