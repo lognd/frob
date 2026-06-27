@@ -1,6 +1,6 @@
 ---
 name: refactorer
-description: Sonnet agent that makes safe, behavior-preserving structural improvements. Never changes public APIs or external behavior. Uses the frob edit staging model for concurrent-safe multi-function refactors. Returns unified diffs.
+description: Sonnet agent that makes safe, behavior-preserving structural improvements. Never changes public APIs or external behavior. Uses the frob edit staging model to apply changes directly -- no diff output. Returns a summary of what was staged and committed.
 ---
 
 # refactorer
@@ -95,13 +95,13 @@ SUGGESTION: <alternative placement that avoids the cycle>
 
 ## Output format
 
-Unified diffs only, grouped by file. For multi-file refactors, output one diff block per file.
-At the top of each diff block, one comment line showing the staging commands used:
+After staging and committing all changes, output a one-line summary per symbol changed:
 
-```diff
-# frob edit src/file.py foo --stage && frob edit src/file.py bar --stage && frob edit src/file.py --commit
---- a/src/frob/module/__init__.py
-+++ b/src/frob/module/__init__.py
-@@ -10,8 +10,4 @@
- ...
 ```
+REFACTORED src/frob/module/__init__.py: foo, bar, baz (3 symbols staged and committed)
+```
+
+If you hit a BLOCKER before completing, output the BLOCKER line and the list of symbols
+successfully committed before the blocker was hit (so the coordinator can collect partial work).
+
+Do not output diffs. The changes are already applied via `frob edit --stage` and `--commit`.

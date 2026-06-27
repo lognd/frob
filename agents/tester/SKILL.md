@@ -99,6 +99,12 @@ Examples: hardcoded global config, two unrelated behaviors combined, missing err
 Return ONLY a unified diff. Use `/dev/null` as source if the file does not exist yet.
 No explanation. No prose. Just the diff.
 
+The coordinator applies with:
+```bash
+echo "$diff" | git apply
+pytest tests/test_module.py | frob parse pytest --exit-code $?
+```
+
 If the task is impossible:
 ```
 ERROR: <short reason>

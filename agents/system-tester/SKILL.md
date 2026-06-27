@@ -121,3 +121,9 @@ Examples: ambiguous exit codes, missing `--json` on a command that produces stru
 
 Return ONLY a unified diff. Use `/dev/null` as source if the file does not exist yet.
 No explanation. No prose. Just the diff.
+
+The coordinator applies with:
+```bash
+echo "$diff" | git apply
+pytest tests/system/ | frob parse pytest --exit-code $?
+```

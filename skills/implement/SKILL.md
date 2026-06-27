@@ -78,17 +78,17 @@ For Python:
 - Use pydantic BaseModel for structured data.
 - Use get_logger(__name__) for debug output. No print().
 
-Return ONLY a unified diff. No explanation.
+Output ONLY the new function source. No diff markers. No prose.
 ```
 
-### 4. Validate and apply
+### 4. Apply
 
 ```bash
-git apply --check /tmp/impl.diff   # verify first
-git apply /tmp/impl.diff
+# Agent output is raw function source -- pipe directly to frob edit
+echo "$impl_output" | frob edit src/<module>/<file>.py <function_name> --immediate
 ```
 
-If `--check` fails: read the diff and the current file, fix the conflict manually.
+If the output starts with `BLOCKER:` or `ERROR:`: do not apply.
 
 **If the agent returned BLOCKER:**
 - Bypass permissions OFF: surface BLOCKER + SUGGESTION to user verbatim, wait for decision.

@@ -103,12 +103,19 @@ Error: {exact error message from --tb=short}
 
 Fix ONLY the implementation of {function_name}.
 Do not change the test. Minimal change only.
-Return ONLY a unified diff.
+
+Single-function fix: output ONLY the new function source (no diff markers).
+Multi-file fix: output a unified diff starting with `--- a/`.
 ```
 
-After applying diff:
+After the agent responds:
 ```bash
-git apply /tmp/fix.diff
+# Single-function (output does not start with "--- a/"):
+echo "$fix_output" | frob edit src/<module>/<file>.py <function_name> --immediate
+
+# Multi-file (output starts with "--- a/"):
+echo "$fix_output" | git apply
+
 pytest tests/test_X.py::test_name -x --tb=short   # verify single test
 ```
 

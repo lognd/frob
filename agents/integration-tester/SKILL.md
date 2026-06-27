@@ -101,3 +101,9 @@ That adaptation belongs in the module, not the test.
 
 Return ONLY a unified diff. Use `/dev/null` as source if the file does not exist yet.
 No explanation. No prose. Just the diff.
+
+The coordinator applies with:
+```bash
+echo "$diff" | git apply
+pytest tests/integration/ | frob parse pytest --exit-code $?
+```
