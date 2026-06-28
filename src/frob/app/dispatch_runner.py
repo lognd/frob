@@ -62,5 +62,7 @@ def run(cfg: AppConfig) -> None:
                 print(f"  {d.dispatch_id}  [{d.label}]  branch: {d.branch}")
 
         case _:
-            print("usage: frob dispatch <create|collect|abort|list> ...", file=sys.stderr)
+            print(
+                "usage: frob dispatch <create|collect|abort|list> ...", file=sys.stderr
+            )
             sys.exit(1)

@@ -47,12 +47,52 @@ class FileCost(BaseModel):
         return "\n".join(parts)
 
 
+class DirCost(BaseModel):
+    path: str
+    tokens: int
+    file_count: int
+
+
 class TokenResult(BaseModel):
     files: list[FileCost]
     total_tokens: int
 
-    def as_text(self, detail: bool = False) -> str:
-        parts = [f.as_text(detail) for f in self.files]
+    @property
+    def dirs(self) -> list[DirCost]:
+        """Per-directory token subtotals, sorted by tokens descending."""
+        from collections import defaultdict
+
+        buckets: dict[str, int] = defaultdict(int)
+        counts: dict[str, int] = defaultdict(int)
+        for f in self.files:
+            parent = str(Path(f.path).parent)
+            buckets[parent] += f.tokens
+            counts[parent] += 1
+        return sorted(
+            [
+                DirCost(path=d, tokens=t, file_count=counts[d])
+                for d, t in buckets.items()
+            ],
+            key=lambda x: x.tokens,
+            reverse=True,
+        )
+
+    def as_text(
+        self, detail: bool = False, sort: bool = False, by_dir: bool = False
+    ) -> str:
+        files = self.files
+        if sort:
+            files = sorted(files, key=lambda f: f.tokens, reverse=True)
+
+        if by_dir:
+            parts = []
+            for d in self.dirs:
+                parts.append(
+                    f"{d.path:<50} ~{d.tokens:>6,} tokens  ({d.file_count} files)"
+                )
+        else:
+            parts = [f.as_text(detail) for f in files]
+
         if len(self.files) > 1:
             parts.append("-" * 60)
             parts.append(f"{'total':<50} ~{self.total_tokens:>6,} tokens")
@@ -70,9 +110,14 @@ def estimate_tokens(text: str | bytes) -> int:
 
 def count_file(path: Path, detail: bool = False) -> FileCost:
     try:
+        display = str(path.relative_to(Path.cwd()))
+    except ValueError:
+        display = str(path)
+
+    try:
         src = path.read_bytes()
     except Exception:
-        return FileCost(path=str(path), chars=0, tokens=0, regions=[])
+        return FileCost(path=display, chars=0, tokens=0, regions=[])
 
     chars = len(src)
     tokens = estimate_tokens(src)
@@ -83,7 +128,7 @@ def count_file(path: Path, detail: bool = False) -> FileCost:
     elif detail and path.suffix.lower() in {".c", ".cc", ".cpp", ".cxx", ".h", ".hpp"}:
         regions = _cpp_regions(src)
 
-    return FileCost(path=str(path), chars=chars, tokens=tokens, regions=regions)
+    return FileCost(path=display, chars=chars, tokens=tokens, regions=regions)
 
 
 def count_paths(paths: list[Path], detail: bool = False) -> TokenResult:
@@ -92,10 +137,15 @@ def count_paths(paths: list[Path], detail: bool = False) -> TokenResult:
         if path.is_file():
             files.append(count_file(path, detail))
         elif path.is_dir():
+            resolved_root = path.resolve()
             for child in sorted(path.rglob("*")):
                 if child.is_file() and child.suffix.lower() in _SOURCE_EXTS:
+                    try:
+                        rel_parts = child.resolve().relative_to(resolved_root).parts
+                    except ValueError:
+                        rel_parts = child.parts
                     if not any(
-                        p.startswith(".") or p == "__pycache__" for p in child.parts
+                        p.startswith(".") or p == "__pycache__" for p in rel_parts
                     ):
                         files.append(count_file(child, detail))
     total = sum(f.tokens for f in files)

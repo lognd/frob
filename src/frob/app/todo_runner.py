@@ -48,5 +48,8 @@ def run(cfg: AppConfig) -> None:
             print(todos.as_text())
 
         case _:
-            print("usage: frob todo <add|done|remove|list|clear-done> ...", file=sys.stderr)
+            print(
+                "usage: frob todo <add|done|remove|list|clear-done> ...",
+                file=sys.stderr,
+            )
             sys.exit(1)

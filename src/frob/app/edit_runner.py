@@ -35,7 +35,9 @@ def run(cfg: AppConfig) -> None:
         cr = result.danger_ok
         print(f"committed {len(cr.applied)} patch(es): {', '.join(cr.applied)}")
         if cr.skipped:
-            _log.warning("duplicate symbol(s) resolved (kept newest): %s", ", ".join(cr.skipped))
+            _log.warning(
+                "duplicate symbol(s) resolved (kept newest): %s", ", ".join(cr.skipped)
+            )
         return
 
     # All other modes require a symbol

@@ -79,6 +79,8 @@ def exports_package(
             symbols.append(cls.name)
 
         if symbols:
-            modules.append(ModuleExports(module=f"{pkg_name}.{mod_name}", symbols=symbols))
+            modules.append(
+                ModuleExports(module=f"{pkg_name}.{mod_name}", symbols=symbols)
+            )
 
     return Ok(ExportsResult(package_dir=str(pkg_dir), modules=modules))

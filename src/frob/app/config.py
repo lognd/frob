@@ -79,11 +79,14 @@ class AppConfig(BaseModel):
     xref_path: Path | None = None
     xref_lang: str | None = None
     xref_json: bool = False
+    xref_cross_file: bool = False
 
     # tokens
     tokens_paths: list[Path] = []
     tokens_detail: bool = False
     tokens_json: bool = False
+    tokens_sort: bool = False
+    tokens_by_dir: bool = False
 
     # bundle
     bundle_file: Path | None = None
@@ -333,8 +336,11 @@ class AppConfig(BaseModel):
             "map_json",
             "map_all",
             "xref_json",
+            "xref_cross_file",
             "tokens_detail",
             "tokens_json",
+            "tokens_sort",
+            "tokens_by_dir",
             "parse_json",
             "parse_verbose",
             "parse_passthrough",

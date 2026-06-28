@@ -27,16 +27,29 @@ class XrefResult(BaseModel):
     definition: Definition | None
     usages: list[Usage]
 
-    def as_text(self) -> str:
+    def as_text(self, cross_file: bool = False) -> str:
         parts = [self.symbol]
         if self.definition:
             parts.append(f"  defined:  {self.definition.file}:{self.definition.line}")
         else:
             parts.append("  defined:  (not found)")
-        if self.usages:
-            parts.append("  used by:")
-            for u in self.usages:
+
+        usages = self.usages
+        if cross_file and self.definition:
+            def_file = self.definition.file
+            usages = [u for u in usages if u.file != def_file]
+
+        if usages:
+            skipped = len(self.usages) - len(usages)
+            label = "used by (cross-file):" if cross_file else "used by:"
+            parts.append(f"  {label}")
+            for u in usages:
                 parts.append(f"    {u.file}:{u.line:<6} {u.context.strip()}")
+            if skipped:
+                parts.append(
+                    f"    [{skipped} same-file usages hidden"
+                    " -- omit --cross-file to show]"
+                )
         else:
             parts.append("  used by: (none found)")
         return "\n".join(parts)
@@ -100,7 +113,12 @@ def _collect_source_files(root: Path, lang: str | None) -> list[Path]:
     results: list[Path] = []
     for path in sorted(root.rglob("*")):
         if path.is_file() and path.suffix.lower() in exts:
-            if not any(p.startswith(".") or p == "__pycache__" for p in path.parts):
+            # Use resolved parts to avoid false-positives from ".." traversal
+            try:
+                rel_parts = path.resolve().relative_to(root.resolve()).parts
+            except ValueError:
+                rel_parts = path.parts
+            if not any(p.startswith(".") or p == "__pycache__" for p in rel_parts):
                 results.append(path)
     return results
 

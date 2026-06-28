@@ -13,6 +13,10 @@ _log = get_logger(__name__)
 def run(cfg: AppConfig) -> None:
     root = cfg.check_path or Path(".")
 
+    if not root.exists():
+        _log.error("path does not exist: %s", root)
+        sys.exit(1)
+
     project_type = cfg.check_type or detect_project_type(root)
 
     if project_type == "cpp":

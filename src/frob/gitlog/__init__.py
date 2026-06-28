@@ -64,6 +64,23 @@ class GitLogResult(BaseModel):
     granularity: GranularityLevel
     commits: list[CommitEntry]
 
+    @property
+    def groups(self) -> dict[str, list[CommitEntry]]:
+        """Commits grouped by type, with 'breaking' as a special key."""
+        result: dict[str, list[CommitEntry]] = {}
+        for c in self.commits:
+            if c.breaking:
+                result.setdefault("breaking", []).append(c)
+            result.setdefault(c.type, []).append(c)
+        return result
+
+    def as_json(self) -> str:
+        d = self.model_dump()
+        d["groups"] = {k: [c.model_dump() for c in v] for k, v in self.groups.items()}
+        import json
+
+        return json.dumps(d, indent=2)
+
     def as_text(self) -> str:
         if not self.commits:
             return "no commits found"
@@ -82,7 +99,9 @@ class GitLogResult(BaseModel):
         hdr = f"git log ({self.granularity})"
         if self.since:
             hdr += f" since {self.since}"
-        hdr += f"  --  {len(self.commits)} commit{'s' if len(self.commits) != 1 else ''}"
+        hdr += (
+            f"  --  {len(self.commits)} commit{'s' if len(self.commits) != 1 else ''}"
+        )
         lines.append(hdr)
         lines.append("")
 
@@ -93,7 +112,17 @@ class GitLogResult(BaseModel):
             lines.append("")
 
         # Order: feat, fix, perf, refactor, then others
-        order = ["feat", "fix", "perf", "refactor", "docs", "test", "chore", "ci", "build"]
+        order = [
+            "feat",
+            "fix",
+            "perf",
+            "refactor",
+            "docs",
+            "test",
+            "chore",
+            "ci",
+            "build",
+        ]
         seen = set(order)
         order += [k for k in groups if k not in seen]
 
@@ -107,9 +136,6 @@ class GitLogResult(BaseModel):
             lines.append("")
 
         return "\n".join(lines).rstrip()
-
-    def as_json(self) -> str:
-        return self.model_dump_json(indent=2)
 
 
 def _append_entry(lines: list[str], c: CommitEntry) -> None:
@@ -144,9 +170,17 @@ def git_log(
 
     # Filter by granularity
     if granularity == "major":
-        entries = [e for e in entries if e.breaking or "major" in e.description.lower()
-                   or (e.type == "chore" and "bump" in e.description.lower() and
-                       _is_major_version(e.description))]
+        entries = [
+            e
+            for e in entries
+            if e.breaking
+            or "major" in e.description.lower()
+            or (
+                e.type == "chore"
+                and "bump" in e.description.lower()
+                and _is_major_version(e.description)
+            )
+        ]
     elif granularity == "user":
         entries = [e for e in entries if e.type in _USER_VISIBLE or e.breaking]
     elif granularity == "changelog":
@@ -164,12 +198,16 @@ def git_log(
     )
 
 
-def _git_log_raw(cwd: str | None, *, since: str | None, until: str | None, limit: int | None) -> str:
+def _git_log_raw(
+    cwd: str | None, *, since: str | None, until: str | None, limit: int | None
+) -> str:
     # %H = full hash, %h = short, %s = subject, %b = body, %D = refs (tags)
     fmt = "---COMMIT---\n%H\n%h\n%s\n%D\n%b\n---END---"
     cmd = ["git", "log", f"--pretty=format:{fmt}"]
     if since:
-        cmd.append(f"--since={since}" if not since.startswith("v") else f"{since}..HEAD")
+        cmd.append(
+            f"--since={since}" if not since.startswith("v") else f"{since}..HEAD"
+        )
     if until:
         cmd.append(f"--until={until}")
     if limit:
@@ -210,7 +248,8 @@ def _parse_commits(raw: str) -> list[CommitEntry]:
         if m:
             gd = m.groupdict()
             entry = CommitEntry(
-                sha=sha, short_sha=short_sha,
+                sha=sha,
+                short_sha=short_sha,
                 type=gd["type"].lower(),
                 scope=gd["scope"],
                 breaking=bool(gd["breaking"]),
@@ -221,7 +260,8 @@ def _parse_commits(raw: str) -> list[CommitEntry]:
             )
         else:
             entry = CommitEntry(
-                sha=sha, short_sha=short_sha,
+                sha=sha,
+                short_sha=short_sha,
                 type="unknown",
                 scope=None,
                 breaking=False,

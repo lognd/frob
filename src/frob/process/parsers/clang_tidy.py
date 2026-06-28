@@ -11,7 +11,9 @@ import re
 
 from frob.process.parsers.common import Diagnostic, ToolResult
 
-_DIAG = re.compile(r"^(.*?):(\d+):(\d+):\s+(error|warning|note):\s+(.*?)(?:\s+\[([^\]]+)\])?$")
+_DIAG = re.compile(
+    r"^(.*?):(\d+):(\d+):\s+(error|warning|note):\s+(.*?)(?:\s+\[([^\]]+)\])?$"
+)
 _ANSI = re.compile(r"\x1b\[[0-9;]*m")
 
 
@@ -31,16 +33,24 @@ def parse_clang_tidy(stdout: str, exit_code: int = 0) -> ToolResult:
         if key in seen:
             continue
         seen.add(key)
-        diagnostics.append(Diagnostic(
-            file=file, line=int(row), col=int(col),
-            severity="error" if sev == "error" else "warning",
-            code=check,
-            message=msg.strip(),
-        ))
+        diagnostics.append(
+            Diagnostic(
+                file=file,
+                line=int(row),
+                col=int(col),
+                severity="error" if sev == "error" else "warning",
+                code=check,
+                message=msg.strip(),
+            )
+        )
 
     errors = sum(1 for d in diagnostics if d.severity == "error")
     warnings = len(diagnostics) - errors
-    summary = f"{errors} errors, {warnings} warnings" if errors else (
-        f"{warnings} warnings" if warnings else "no issues"
+    summary = (
+        f"{errors} errors, {warnings} warnings"
+        if errors
+        else (f"{warnings} warnings" if warnings else "no issues")
     )
-    return ToolResult(tool="clang-tidy", exit_code=exit_code, diagnostics=diagnostics, summary=summary)
+    return ToolResult(
+        tool="clang-tidy", exit_code=exit_code, diagnostics=diagnostics, summary=summary
+    )

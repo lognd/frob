@@ -101,13 +101,15 @@ def map_project(root: Path, depth: int | None = None) -> MapResult:
         except Exception:
             tok = 0
 
-        files.append(FileNode(
-            path=rel,
-            lines=lines,
-            tokens=tok,
-            symbols=pub_syms,
-            private_count=priv_count,
-        ))
+        files.append(
+            FileNode(
+                path=rel,
+                lines=lines,
+                tokens=tok,
+                symbols=pub_syms,
+                private_count=priv_count,
+            )
+        )
 
     total_lines = sum(f.lines for f in files)
     return MapResult(

@@ -26,4 +26,4 @@ def run(cfg: AppConfig) -> None:
     if cfg.xref_json:
         _log.info(xr.as_json())
     else:
-        _log.info(xr.as_text())
+        _log.info(xr.as_text(cross_file=cfg.xref_cross_file))

@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import json
 import re
-import shutil
 import subprocess
 import time
 from pathlib import Path
@@ -19,6 +18,8 @@ from pathlib import Path
 from pydantic import BaseModel
 from typani.error_set import ErrorSet
 from typani.result import Err, Ok, Result
+
+from frob._frob_state import ensure_gitignore
 
 
 class DispatchError(ErrorSet):
@@ -104,7 +105,9 @@ def create_dispatch(
     worktree_path = root / ".frob" / "worktrees" / dispatch_id
 
     # Create branch + worktree
-    rc, _, err = _git(["worktree", "add", "-b", branch, str(worktree_path)], cwd=str(root))
+    rc, _, err = _git(
+        ["worktree", "add", "-b", branch, str(worktree_path)], cwd=str(root)
+    )
     if rc != 0:
         return Err(DispatchError.GitError)
 
@@ -124,7 +127,7 @@ def create_dispatch(
     _state_path(root, dispatch_id).write_text(info.model_dump_json(indent=2))
 
     # Ensure .frob/ is gitignored
-    _ensure_gitignore(root)
+    ensure_gitignore(root)
 
     return Ok(info)
 
@@ -172,7 +175,13 @@ def collect_dispatch(
         rc, _, err = _git(["merge", "--ff-only", info.branch], cwd=str(root))
     else:
         rc, _, err = _git(
-            ["merge", "--no-ff", "-m", f"dispatch: collect {info.label} ({dispatch_id})", info.branch],
+            [
+                "merge",
+                "--no-ff",
+                "-m",
+                f"dispatch: collect {info.label} ({dispatch_id})",
+                info.branch,
+            ],
             cwd=str(root),
         )
 
@@ -235,14 +244,3 @@ def _cleanup_dispatch(root: Path, info: DispatchInfo) -> None:
     sp = _state_path(root, info.dispatch_id)
     if sp.exists():
         sp.unlink()
-
-
-def _ensure_gitignore(root: Path) -> None:
-    gi = root / ".gitignore"
-    entry = ".frob/"
-    if gi.exists():
-        content = gi.read_text()
-        if entry not in content:
-            gi.write_text(content.rstrip() + f"\n{entry}\n")
-    else:
-        gi.write_text(f"{entry}\n")

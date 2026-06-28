@@ -15,4 +15,10 @@ def run(cfg: AppConfig) -> None:
     if cfg.tokens_json:
         _log.info(result.as_json())
     else:
-        _log.info(result.as_text(detail=cfg.tokens_detail))
+        _log.info(
+            result.as_text(
+                detail=cfg.tokens_detail,
+                sort=cfg.tokens_sort,
+                by_dir=cfg.tokens_by_dir,
+            )
+        )

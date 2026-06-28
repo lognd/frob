@@ -16,6 +16,7 @@ class FunctionOutline(BaseModel):
     name: str
     signature: str
     line: int
+    doc: str = ""
 
 
 class ClassOutline(BaseModel):
@@ -41,7 +42,10 @@ class ModuleOutline(BaseModel):
             if not include_private and fn.name.startswith("_"):
                 hidden_fns += 1
                 continue
-            parts.append(f"  {fn.signature}  [L{fn.line}]")
+            line = f"  {fn.signature}  [L{fn.line}]"
+            if fn.doc:
+                line += f"  -- {fn.doc}"
+            parts.append(line)
 
         hidden_methods = 0
         for cls in self.classes:
@@ -53,7 +57,10 @@ class ModuleOutline(BaseModel):
                 if not include_private and m.name.startswith("_"):
                     hidden_methods += 1
                     continue
-                parts.append(f"    {m.signature}  [L{m.line}]")
+                line = f"    {m.signature}  [L{m.line}]"
+                if m.doc:
+                    line += f"  -- {m.doc}"
+                parts.append(line)
 
         total_hidden = hidden_fns + hidden_methods
         if total_hidden > 0:
@@ -69,14 +76,25 @@ _PY_EXTS = {".py"}
 
 
 def outline_file(path: Path) -> Result[ModuleOutline, OutlineError]:
+    try:
+        display = path.relative_to(Path.cwd())
+    except ValueError:
+        display = path
+
     ext = path.suffix.lower()
     if ext in _PY_EXTS:
-        return _outline_python(path)
-    from frob.ast.cpp import ALL_EXTS as _CPP_EXTS
+        result = _outline_python(path)
+    else:
+        from frob.ast.cpp import ALL_EXTS as _CPP_EXTS
 
-    if ext in _CPP_EXTS:
-        return _outline_cpp(path)
-    return Err(OutlineError.UnsupportedLanguage)
+        if ext in _CPP_EXTS:
+            result = _outline_cpp(path)
+        else:
+            return Err(OutlineError.UnsupportedLanguage)
+
+    if result.is_ok:
+        result.danger_ok.path = str(display)
+    return result
 
 
 def _outline_python(path: Path) -> Result[ModuleOutline, OutlineError]:
@@ -133,7 +151,43 @@ def _py_function_outline(node) -> FunctionOutline | None:
         return None
     name = text(name_node)
     sig = _py_signature(node)
-    return FunctionOutline(name=name, signature=sig, line=node.start_point[0] + 1)
+    doc = _py_first_doc_line(node)
+    return FunctionOutline(
+        name=name, signature=sig, line=node.start_point[0] + 1, doc=doc
+    )
+
+
+def _py_first_doc_line(node) -> str:
+    """Extract first non-blank sentence from docstring, if present."""
+    body = None
+    for child in node.children:
+        if child.type == "block":
+            body = child
+            break
+    if body is None:
+        return ""
+    for child in body.named_children:
+        if child.type == "expression_statement":
+            for sub in child.named_children:
+                if sub.type == "string":
+                    raw = sub.text.decode(errors="replace") if sub.text else ""
+                    # Strip quotes
+                    for q in ('"""', "'''", '"', "'"):
+                        if raw.startswith(q):
+                            raw = raw[len(q) :]
+                            if raw.endswith(q):
+                                raw = raw[: -len(q)]
+                            break
+                    # First non-blank line, truncated at sentence end or 80 chars
+                    for ln in raw.splitlines():
+                        ln = ln.strip()
+                        if ln:
+                            idx = ln.find(".")
+                            if 0 < idx < 80:
+                                return ln[: idx + 1]
+                            return ln[:80]
+            break
+    return ""
 
 
 def _py_signature(node) -> str:

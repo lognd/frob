@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 import re
 
-from frob.process.parsers.common import Diagnostic, Severity, TestCase, ToolResult
+from frob.process.parsers.common import Diagnostic, TestCase, ToolResult
 
 _ANSI = re.compile(r"\x1b\[[0-9;]*m")
 
@@ -29,7 +29,7 @@ def parse_cargo(stdout: str, exit_code: int = 0, tool: str = "cargo") -> ToolRes
     lines = text.splitlines()
 
     # Detect JSON message format (cargo check/clippy --message-format json)
-    json_lines = [l for l in lines if l.startswith("{")]
+    json_lines = [ln for ln in lines if ln.startswith("{")]
     if json_lines:
         return _parse_cargo_json(json_lines, exit_code, tool)
 
@@ -52,7 +52,9 @@ def _parse_cargo_json(json_lines: list[str], exit_code: int, tool: str) -> ToolR
         if level not in ("error", "warning"):
             continue
         spans = m.get("spans", [])
-        primary = next((s for s in spans if s.get("is_primary")), spans[0] if spans else None)
+        primary = next(
+            (s for s in spans if s.get("is_primary")), spans[0] if spans else None
+        )
         file = primary.get("file_name") if primary else None
         line = primary.get("line_start") if primary else None
         col = primary.get("column_start") if primary else None
@@ -61,18 +63,27 @@ def _parse_cargo_json(json_lines: list[str], exit_code: int, tool: str) -> ToolR
         text = m.get("rendered") or m.get("message", "")
         # Use first line of rendered output as message
         message = text.splitlines()[0].strip() if text else m.get("message", "")
-        diagnostics.append(Diagnostic(
-            file=file, line=line, col=col,
-            severity="error" if level == "error" else "warning",
-            code=code, message=message,
-        ))
+        diagnostics.append(
+            Diagnostic(
+                file=file,
+                line=line,
+                col=col,
+                severity="error" if level == "error" else "warning",
+                code=code,
+                message=message,
+            )
+        )
 
     errors = sum(1 for d in diagnostics if d.severity == "error")
     warnings = len(diagnostics) - errors
-    summary = f"{errors} errors, {warnings} warnings" if errors else (
-        f"{warnings} warnings" if warnings else "ok"
+    summary = (
+        f"{errors} errors, {warnings} warnings"
+        if errors
+        else (f"{warnings} warnings" if warnings else "ok")
     )
-    return ToolResult(tool=tool, exit_code=exit_code, diagnostics=diagnostics, summary=summary)
+    return ToolResult(
+        tool=tool, exit_code=exit_code, diagnostics=diagnostics, summary=summary
+    )
 
 
 def _parse_cargo_text(lines: list[str], exit_code: int, tool: str) -> ToolResult:
@@ -85,7 +96,11 @@ def _parse_cargo_text(lines: list[str], exit_code: int, tool: str) -> ToolResult
         m = _TEST_LINE.match(line)
         if m:
             name, status = m.groups()
-            tests.append(TestCase(name=name, passed=(status == "ok"), skipped=(status == "ignored")))
+            tests.append(
+                TestCase(
+                    name=name, passed=(status == "ok"), skipped=(status == "ignored")
+                )
+            )
             continue
 
         m2 = _FAILURE_SEP.match(line)
@@ -95,7 +110,11 @@ def _parse_cargo_text(lines: list[str], exit_code: int, tool: str) -> ToolResult
             continue
 
         if current_failure is not None:
-            if line.strip() == "" and current_failure in failures and len(failures[current_failure]) > 2:
+            if (
+                line.strip() == ""
+                and current_failure in failures
+                and len(failures[current_failure]) > 2
+            ):
                 current_failure = None
             else:
                 failures[current_failure].append(line)
@@ -109,12 +128,15 @@ def _parse_cargo_text(lines: list[str], exit_code: int, tool: str) -> ToolResult
     for t in tests:
         if not t.passed and t.name in failures:
             lines_out = failures[t.name]
-            msg = next((l.strip() for l in lines_out if l.strip()), None)
-            enriched.append(TestCase(
-                name=t.name, passed=False,
-                failure_message=msg,
-                failure_text="\n".join(lines_out[:20]),
-            ))
+            msg = next((ln.strip() for ln in lines_out if ln.strip()), None)
+            enriched.append(
+                TestCase(
+                    name=t.name,
+                    passed=False,
+                    failure_message=msg,
+                    failure_text="\n".join(lines_out[:20]),
+                )
+            )
         else:
             enriched.append(t)
 
@@ -129,4 +151,10 @@ def _parse_cargo_text(lines: list[str], exit_code: int, tool: str) -> ToolResult
     if n_skip:
         parts.append(f"{n_skip} ignored")
     summary = ", ".join(parts) if parts else ("ok" if exit_code == 0 else "failed")
-    return ToolResult(tool=tool, exit_code=exit_code, tests=enriched, diagnostics=diagnostics, summary=summary)
+    return ToolResult(
+        tool=tool,
+        exit_code=exit_code,
+        tests=enriched,
+        diagnostics=diagnostics,
+        summary=summary,
+    )

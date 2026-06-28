@@ -21,7 +21,9 @@ def run(cfg: AppConfig) -> None:
 
     if cmd == "new" or cmd is None:
         if cfg.mission_type is None:
-            _log.error("frob mission new requires <type>: fix | test | implement | review")
+            _log.error(
+                "frob mission new requires <type>: fix | test | implement | review"
+            )
             sys.exit(1)
         result = create_mission(
             cfg.mission_type,

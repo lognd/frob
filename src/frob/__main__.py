@@ -14,7 +14,9 @@ def _build_parser() -> argparse.ArgumentParser:
     sub = p.add_subparsers(dest="subcommand")
 
     # -- scaffold ------------------------------------------------------------
-    scaffold_p = sub.add_parser("scaffold", help="scaffold a new project from a template")
+    scaffold_p = sub.add_parser(
+        "scaffold", help="scaffold a new project from a template"
+    )
     scaffold_sub = scaffold_p.add_subparsers(dest="scaffold_command")
     scaffold_sub.add_parser("list", help="list registered project types")
     scaffold_new_p = scaffold_sub.add_parser("new", help="create a new project")
@@ -72,7 +74,9 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     outline_p.add_argument("outline_file", metavar="file")
     outline_p.add_argument("--json", dest="outline_json", action="store_true")
-    outline_p.add_argument("--all", dest="outline_all", action="store_true", help="include private symbols")
+    outline_p.add_argument(
+        "--all", dest="outline_all", action="store_true", help="include private symbols"
+    )
 
     # -- map -----------------------------------------------------------------
     map_p = sub.add_parser(
@@ -82,7 +86,9 @@ def _build_parser() -> argparse.ArgumentParser:
     map_p.add_argument("map_path", metavar="path", nargs="?", default=".")
     map_p.add_argument("--json", dest="map_json", action="store_true")
     map_p.add_argument("--depth", dest="map_depth", type=int, metavar="N")
-    map_p.add_argument("--all", dest="map_all", action="store_true", help="include private symbols")
+    map_p.add_argument(
+        "--all", dest="map_all", action="store_true", help="include private symbols"
+    )
 
     # -- xref ----------------------------------------------------------------
     xref_p = sub.add_parser(
@@ -93,6 +99,12 @@ def _build_parser() -> argparse.ArgumentParser:
     xref_p.add_argument("xref_path", metavar="path", nargs="?", default=".")
     xref_p.add_argument("--lang", dest="xref_lang", choices=["python", "cpp", "c"])
     xref_p.add_argument("--json", dest="xref_json", action="store_true")
+    xref_p.add_argument(
+        "--cross-file",
+        dest="xref_cross_file",
+        action="store_true",
+        help="hide same-file usages (show only cross-file references)",
+    )
 
     # -- tokens --------------------------------------------------------------
     tokens_p = sub.add_parser(
@@ -107,6 +119,18 @@ def _build_parser() -> argparse.ArgumentParser:
         help="break down by function/class region",
     )
     tokens_p.add_argument("--json", dest="tokens_json", action="store_true")
+    tokens_p.add_argument(
+        "--sort",
+        dest="tokens_sort",
+        action="store_true",
+        help="sort files by token count (largest first)",
+    )
+    tokens_p.add_argument(
+        "--by-dir",
+        dest="tokens_by_dir",
+        action="store_true",
+        help="show per-directory subtotals instead of per-file",
+    )
 
     # -- parse ---------------------------------------------------------------
     parse_p = sub.add_parser(
@@ -319,7 +343,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "edit_symbol",
         metavar="symbol",
         nargs="?",
-        help="function name, class name, or ClassName.method (omit with --commit/--status)",
+        help="symbol name (omit with --commit/--status)",
     )
     mode = edit_p.add_mutually_exclusive_group()
     mode.add_argument(
@@ -332,7 +356,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "--stage",
         dest="edit_stage",
         action="store_true",
-        help="stage replacement from stdin for later --commit (safe for concurrent agents)",
+        help="stage replacement from stdin for later --commit",
     )
     mode.add_argument(
         "--immediate",
@@ -386,16 +410,20 @@ def _build_parser() -> argparse.ArgumentParser:
         "--type",
         dest="check_type",
         choices=["python", "cpp", "rust"],
-        help="project type (default: auto-detect from CMakeLists.txt / Cargo.toml / pyproject.toml)",
+        help="project type (default: auto-detect)",
     )
     check_p.add_argument(
         "--pycharm",
         dest="check_pycharm",
         metavar="PATH",
-        help="path to PyCharm inspect.bat/sh (auto-located by default for Python/C++ projects)",
+        help="path to PyCharm inspect.bat/sh (auto-located by default)",
     )
-    check_p.add_argument("--valgrind", dest="check_valgrind", action="store_true",
-                         help="run valgrind memcheck on test binary")
+    check_p.add_argument(
+        "--valgrind",
+        dest="check_valgrind",
+        action="store_true",
+        help="run valgrind memcheck on test binary",
+    )
     check_p.add_argument("--skip-tests", dest="check_skip_tests", action="store_true")
     # Python-specific
     check_p.add_argument("--skip-ruff", dest="check_skip_ruff", action="store_true")
@@ -404,14 +432,22 @@ def _build_parser() -> argparse.ArgumentParser:
     check_p.add_argument("--skip-cycle", dest="check_skip_cycle", action="store_true")
     check_p.add_argument("--skip-dup", dest="check_skip_dup", action="store_true")
     check_p.add_argument("--skip-bind", dest="check_skip_bind", action="store_true")
-    check_p.add_argument("--skip-exports", dest="check_skip_exports", action="store_true")
+    check_p.add_argument(
+        "--skip-exports", dest="check_skip_exports", action="store_true"
+    )
     # C++ specific
     check_p.add_argument("--build-dir", dest="check_build_dir", metavar="DIR")
     check_p.add_argument("--skip-build", dest="check_skip_build", action="store_true")
-    check_p.add_argument("--skip-clang-tidy", dest="check_skip_clang_tidy", action="store_true")
-    check_p.add_argument("--skip-clang-format", dest="check_skip_clang_format", action="store_true")
+    check_p.add_argument(
+        "--skip-clang-tidy", dest="check_skip_clang_tidy", action="store_true"
+    )
+    check_p.add_argument(
+        "--skip-clang-format", dest="check_skip_clang_format", action="store_true"
+    )
     # Rust specific
-    check_p.add_argument("--skip-cargo-check", dest="check_skip_cargo_check", action="store_true")
+    check_p.add_argument(
+        "--skip-cargo-check", dest="check_skip_cargo_check", action="store_true"
+    )
     check_p.add_argument("--skip-clippy", dest="check_skip_clippy", action="store_true")
     check_p.add_argument("--skip-fmt", dest="check_skip_fmt", action="store_true")
     check_p.add_argument("--json", dest="check_json", action="store_true")
@@ -425,22 +461,40 @@ def _build_parser() -> argparse.ArgumentParser:
 
     # mission new
     new_m = mission_sub.add_parser("new", help="create a new mission briefing")
-    new_m.add_argument("mission_type", metavar="type", choices=["fix", "test", "implement", "review"])
+    new_m.add_argument(
+        "mission_type", metavar="type", choices=["fix", "test", "implement", "review"]
+    )
     new_m.add_argument("--file", dest="mission_file", metavar="FILE")
     new_m.add_argument("--target", dest="mission_target", metavar="SYMBOL")
-    new_m.add_argument("--error", dest="mission_error", metavar="TEXT",
-                       help="error message to include in the briefing")
-    new_m.add_argument("--test", dest="mission_test", metavar="TEST_NAME",
-                       help="specific test name to (re-)run")
-    new_m.add_argument("--context", dest="mission_context", metavar="TEXT",
-                       help="additional freeform context to append")
+    new_m.add_argument(
+        "--error",
+        dest="mission_error",
+        metavar="TEXT",
+        help="error message to include in the briefing",
+    )
+    new_m.add_argument(
+        "--test",
+        dest="mission_test",
+        metavar="TEST_NAME",
+        help="specific test name to (re-)run",
+    )
+    new_m.add_argument(
+        "--context",
+        dest="mission_context",
+        metavar="TEXT",
+        help="additional freeform context to append",
+    )
 
     # mission done
-    done_m = mission_sub.add_parser("done", help="mark mission complete and delete briefing")
+    done_m = mission_sub.add_parser(
+        "done", help="mark mission complete and delete briefing"
+    )
     done_m.add_argument("mission_id", metavar="id")
 
     # mission stuck
-    stuck_m = mission_sub.add_parser("stuck", help="mark mission blocked (moves to stuck/)")
+    stuck_m = mission_sub.add_parser(
+        "stuck", help="mark mission blocked (moves to stuck/)"
+    )
     stuck_m.add_argument("mission_id", metavar="id")
     stuck_m.add_argument("mission_reason", metavar="reason")
 
@@ -493,15 +547,29 @@ def _build_parser() -> argparse.ArgumentParser:
         dest="gitlog_granularity",
         choices=["major", "user", "full", "changelog"],
         default="user",
-        help="detail level: major=breaking only, user=feat+fix, full=all, changelog=release notes",
+        help="major=breaking only | user=feat+fix | full=all | changelog=release notes",
     )
-    gitlog_p.add_argument("--since", dest="gitlog_since", metavar="TAG_OR_DATE",
-                          help="start from tag (e.g. v1.0.0) or date (e.g. 2024-01-01)")
+    gitlog_p.add_argument(
+        "--since",
+        dest="gitlog_since",
+        metavar="TAG_OR_DATE",
+        help="start from tag (e.g. v1.0.0) or date (e.g. 2024-01-01)",
+    )
     gitlog_p.add_argument("--until", dest="gitlog_until", metavar="TAG_OR_DATE")
-    gitlog_p.add_argument("--limit", "-n", dest="gitlog_limit", type=int, metavar="N",
-                          help="max number of commits to fetch")
-    gitlog_p.add_argument("--all", dest="gitlog_all", action="store_true",
-                          help="include non-conventional commits")
+    gitlog_p.add_argument(
+        "--limit",
+        "-n",
+        dest="gitlog_limit",
+        type=int,
+        metavar="N",
+        help="max number of commits to fetch",
+    )
+    gitlog_p.add_argument(
+        "--all",
+        dest="gitlog_all",
+        action="store_true",
+        help="include non-conventional commits",
+    )
     gitlog_p.add_argument("--json", dest="gitlog_json", action="store_true")
 
     # -- dispatch -------------------------------------------------------------
@@ -511,21 +579,30 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     dispatch_sub = dispatch_p.add_subparsers(dest="dispatch_command")
 
-    create_d = dispatch_sub.add_parser("create", help="create a worktree branch for an agent")
-    create_d.add_argument("dispatch_label", metavar="label",
-                          help="short description (used in branch name)")
+    create_d = dispatch_sub.add_parser(
+        "create", help="create a worktree branch for an agent"
+    )
+    create_d.add_argument(
+        "dispatch_label",
+        metavar="label",
+        help="short description (used in branch name)",
+    )
 
-    collect_d = dispatch_sub.add_parser("collect", help="rebase+merge completed dispatch branch")
+    collect_d = dispatch_sub.add_parser(
+        "collect", help="rebase+merge completed dispatch branch"
+    )
     collect_d.add_argument("dispatch_id", metavar="id")
     collect_d.add_argument(
         "--strategy",
         dest="dispatch_strategy",
         choices=["rebase", "merge"],
         default="rebase",
-        help="rebase (default, linear history) or merge (--no-ff, explicit merge commit)",
+        help="rebase=linear history (default) or merge=explicit merge commit",
     )
 
-    abort_d = dispatch_sub.add_parser("abort", help="discard a dispatch branch and worktree")
+    abort_d = dispatch_sub.add_parser(
+        "abort", help="discard a dispatch branch and worktree"
+    )
     abort_d.add_argument("dispatch_id", metavar="id")
 
     dispatch_sub.add_parser("list", help="list active dispatch worktrees")
@@ -547,8 +624,9 @@ def _build_parser() -> argparse.ArgumentParser:
     rm_t.add_argument("todo_id", metavar="id", type=int)
 
     list_t = todo_sub.add_parser("list", help="list TODO items")
-    list_t.add_argument("--all", dest="todo_all", action="store_true",
-                        help="include completed items")
+    list_t.add_argument(
+        "--all", dest="todo_all", action="store_true", help="include completed items"
+    )
 
     todo_sub.add_parser("clear-done", help="remove all completed items")
 

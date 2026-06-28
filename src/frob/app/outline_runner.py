@@ -14,7 +14,23 @@ def run(cfg: AppConfig) -> None:
         _log.error("frob outline requires <file>")
         sys.exit(1)
 
-    result = outline_file(cfg.outline_file)
+    target = cfg.outline_file
+
+    # Fall back to map when given a directory
+    if target.is_dir():
+        from frob.app.config import AppConfig as _Cfg
+        from frob.app.map_runner import run as map_run
+
+        map_cfg = _Cfg(
+            subcommand=cfg.subcommand,
+            map_path=target,
+            map_json=cfg.outline_json,
+            map_all=cfg.outline_all,
+        )
+        map_run(map_cfg)
+        return
+
+    result = outline_file(target)
     if result.is_err:
         _log.error(result.danger_err.value)
         sys.exit(1)

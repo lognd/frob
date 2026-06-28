@@ -205,8 +205,14 @@ def _run_cycle(root: Path) -> ToolResult:
 
     graph = DependencyGraph()
     scan_root = root if root.is_dir() else root.parent
+    resolved_scan = scan_root.resolve()
     for path in scan_root.rglob("*.py"):
-        if any(p in {"__pycache__", ".venv", "build", "dist"} for p in path.parts):
+        try:
+            rel_parts = path.resolve().relative_to(resolved_scan).parts
+        except ValueError:
+            rel_parts = path.parts
+        _skip = {"__pycache__", ".venv", "build", "dist"}
+        if any(p in _skip or p.startswith(".") for p in rel_parts):
             continue
         try:
             rel = str(path.relative_to(scan_root))
@@ -219,13 +225,25 @@ def _run_cycle(root: Path) -> ToolResult:
     cycles = find_cycles(graph)
     diags: list[Diagnostic] = []
     for cycle in cycles:
-        nodes = " -> ".join(cycle + [cycle[0]])
-        diags.append(Diagnostic(severity="error", message=f"import cycle: {nodes}"))
+        n_nodes = len(cycle)
+        # 2-node mutual imports are often TYPE_CHECKING patterns -- info only
+        # 3-5 nodes is a minor cycle -- warning
+        # 6+ is a structural problem -- error
+        if n_nodes <= 2:
+            sev: Severity = "info"
+        elif n_nodes <= 5:
+            sev = "warning"
+        else:
+            sev = "error"
+        lines = (
+            ["import cycle:"] + [f"  {node}" for node in cycle] + [f"  -> {cycle[0]}"]
+        )
+        diags.append(Diagnostic(severity=sev, message="\n".join(lines)))
 
     n = len(cycles)
     return ToolResult(
         tool="frob-cycle",
-        exit_code=1 if cycles else 0,
+        exit_code=1 if any(d.severity == "error" for d in diags) else 0,
         diagnostics=diags,
         summary=f"{n} cycle{'s' if n != 1 else ''} found" if cycles else "no cycles",
     )

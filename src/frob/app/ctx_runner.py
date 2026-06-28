@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import sys
-from pathlib import Path
 
 from frob.app.config import AppConfig
 from frob.ctx import adaptive_context

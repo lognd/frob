@@ -15,6 +15,8 @@ from pydantic import BaseModel
 from typani.error_set import ErrorSet
 from typani.result import Err, Ok, Result
 
+from frob._frob_state import ensure_gitignore
+
 
 class TodoError(ErrorSet):
     NotFound = "TODO item not found"
@@ -96,18 +98,7 @@ def _save(project_root: Path, items: list[TodoItem], max_id: int) -> None:
         mark = "x" if item.done else " "
         lines.append(f"- [{mark}] [#{item.item_id}] {item.text}")
     p.write_text("\n".join(lines) + "\n")
-    _ensure_gitignore(project_root)
-
-
-def _ensure_gitignore(root: Path) -> None:
-    gi = root / ".gitignore"
-    entry = ".frob/"
-    if gi.exists():
-        content = gi.read_text()
-        if entry not in content:
-            gi.write_text(content.rstrip() + f"\n{entry}\n")
-    else:
-        gi.write_text(f"{entry}\n")
+    ensure_gitignore(project_root)
 
 
 def _next_id(max_id: int) -> int:

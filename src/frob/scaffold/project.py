@@ -32,42 +32,102 @@ _MANIFESTS: dict[str, list[_ManifestEntry]] = {
         _ManifestEntry("shared/README.md.j2", "README.md"),
         _ManifestEntry("shared/python/gitignore.j2", ".gitignore"),
         _ManifestEntry("shared/python/Makefile.j2", "Makefile"),
-        _ManifestEntry("shared/python/scripts/bump_version.py.j2", "scripts/bump_version.py"),
+        _ManifestEntry(
+            "shared/python/scripts/bump_version.py.j2", "scripts/bump_version.py"
+        ),
         _ManifestEntry("shared/python/pyproject.toml.j2", "pyproject.toml"),
-        _ManifestEntry("types/python-library/__init__.py.j2", "src/{{ project.name }}/__init__.py"),
-        _ManifestEntry("shared/python/logging/__init__.py.j2", "src/{{ project.name }}/logging/__init__.py"),
-        _ManifestEntry("shared/python/logging/config.toml.j2", "src/{{ project.name }}/logging/config.toml"),
-        _ManifestEntry("shared/python/logging/filter.py.j2", "src/{{ project.name }}/logging/filter.py"),
-        _ManifestEntry("shared/python/logging/formatter.py.j2", "src/{{ project.name }}/logging/formatter.py"),
-        _ManifestEntry("shared/python/logging/logger.py.j2", "src/{{ project.name }}/logging/logger.py"),
+        _ManifestEntry(
+            "types/python-library/__init__.py.j2", "src/{{ project.name }}/__init__.py"
+        ),
+        _ManifestEntry(
+            "shared/python/logging/__init__.py.j2",
+            "src/{{ project.name }}/logging/__init__.py",
+        ),
+        _ManifestEntry(
+            "shared/python/logging/config.toml.j2",
+            "src/{{ project.name }}/logging/config.toml",
+        ),
+        _ManifestEntry(
+            "shared/python/logging/filter.py.j2",
+            "src/{{ project.name }}/logging/filter.py",
+        ),
+        _ManifestEntry(
+            "shared/python/logging/formatter.py.j2",
+            "src/{{ project.name }}/logging/formatter.py",
+        ),
+        _ManifestEntry(
+            "shared/python/logging/logger.py.j2",
+            "src/{{ project.name }}/logging/logger.py",
+        ),
         _ManifestEntry("shared/python/docs/index.md.j2", "docs/index.md"),
         _ManifestEntry("shared/python/tests/conftest.py.j2", "tests/conftest.py"),
-        _ManifestEntry("shared/python/tests/unit/test_placeholder.py.j2", "tests/unit/test_placeholder.py"),
-        _ManifestEntry("shared/python/tests/system/test_build.py.j2", "tests/system/test_build.py"),
+        _ManifestEntry(
+            "shared/python/tests/unit/test_placeholder.py.j2",
+            "tests/unit/test_placeholder.py",
+        ),
+        _ManifestEntry(
+            "shared/python/tests/system/test_build.py.j2", "tests/system/test_build.py"
+        ),
         _ManifestEntry("shared/python/github/ci.yml.j2", ".github/workflows/ci.yml"),
-        _ManifestEntry("shared/python/github/branch-protection.yml.j2", ".github/workflows/branch-protection.yml"),
+        _ManifestEntry(
+            "shared/python/github/branch-protection.yml.j2",
+            ".github/workflows/branch-protection.yml",
+        ),
     ],
     "python-tool": [
         _ManifestEntry("shared/README.md.j2", "README.md"),
         _ManifestEntry("shared/python/gitignore.j2", ".gitignore"),
         _ManifestEntry("shared/python/Makefile.j2", "Makefile"),
-        _ManifestEntry("shared/python/scripts/bump_version.py.j2", "scripts/bump_version.py"),
+        _ManifestEntry(
+            "shared/python/scripts/bump_version.py.j2", "scripts/bump_version.py"
+        ),
         _ManifestEntry("shared/python/pyproject.toml.j2", "pyproject.toml"),
-        _ManifestEntry("types/python-tool/__init__.py.j2", "src/{{ project.name }}/__init__.py"),
-        _ManifestEntry("types/python-tool/__main__.py.j2", "src/{{ project.name }}/__main__.py"),
-        _ManifestEntry("types/python-tool/app/app.py.j2", "src/{{ project.name }}/app/app.py"),
-        _ManifestEntry("types/python-tool/app/config.py.j2", "src/{{ project.name }}/app/config.py"),
-        _ManifestEntry("shared/python/logging/__init__.py.j2", "src/{{ project.name }}/logging/__init__.py"),
-        _ManifestEntry("shared/python/logging/config.toml.j2", "src/{{ project.name }}/logging/config.toml"),
-        _ManifestEntry("shared/python/logging/filter.py.j2", "src/{{ project.name }}/logging/filter.py"),
-        _ManifestEntry("shared/python/logging/formatter.py.j2", "src/{{ project.name }}/logging/formatter.py"),
-        _ManifestEntry("shared/python/logging/logger.py.j2", "src/{{ project.name }}/logging/logger.py"),
+        _ManifestEntry(
+            "types/python-tool/__init__.py.j2", "src/{{ project.name }}/__init__.py"
+        ),
+        _ManifestEntry(
+            "types/python-tool/__main__.py.j2", "src/{{ project.name }}/__main__.py"
+        ),
+        _ManifestEntry(
+            "types/python-tool/app/app.py.j2", "src/{{ project.name }}/app/app.py"
+        ),
+        _ManifestEntry(
+            "types/python-tool/app/config.py.j2", "src/{{ project.name }}/app/config.py"
+        ),
+        _ManifestEntry(
+            "shared/python/logging/__init__.py.j2",
+            "src/{{ project.name }}/logging/__init__.py",
+        ),
+        _ManifestEntry(
+            "shared/python/logging/config.toml.j2",
+            "src/{{ project.name }}/logging/config.toml",
+        ),
+        _ManifestEntry(
+            "shared/python/logging/filter.py.j2",
+            "src/{{ project.name }}/logging/filter.py",
+        ),
+        _ManifestEntry(
+            "shared/python/logging/formatter.py.j2",
+            "src/{{ project.name }}/logging/formatter.py",
+        ),
+        _ManifestEntry(
+            "shared/python/logging/logger.py.j2",
+            "src/{{ project.name }}/logging/logger.py",
+        ),
         _ManifestEntry("shared/python/docs/index.md.j2", "docs/index.md"),
         _ManifestEntry("shared/python/tests/conftest.py.j2", "tests/conftest.py"),
-        _ManifestEntry("shared/python/tests/unit/test_placeholder.py.j2", "tests/unit/test_placeholder.py"),
-        _ManifestEntry("shared/python/tests/system/test_build.py.j2", "tests/system/test_build.py"),
+        _ManifestEntry(
+            "shared/python/tests/unit/test_placeholder.py.j2",
+            "tests/unit/test_placeholder.py",
+        ),
+        _ManifestEntry(
+            "shared/python/tests/system/test_build.py.j2", "tests/system/test_build.py"
+        ),
         _ManifestEntry("shared/python/github/ci.yml.j2", ".github/workflows/ci.yml"),
-        _ManifestEntry("shared/python/github/branch-protection.yml.j2", ".github/workflows/branch-protection.yml"),
+        _ManifestEntry(
+            "shared/python/github/branch-protection.yml.j2",
+            ".github/workflows/branch-protection.yml",
+        ),
     ],
     "cpp-library": [
         _ManifestEntry("shared/cpp/README.md.j2", "README.md"),
@@ -75,15 +135,30 @@ _MANIFESTS: dict[str, list[_ManifestEntry]] = {
         _ManifestEntry("shared/cpp/Makefile.j2", "Makefile"),
         _ManifestEntry("shared/cpp/docs/index.md.j2", "docs/index.md"),
         _ManifestEntry("types/cpp-library/CMakeLists.txt.j2", "CMakeLists.txt"),
-        _ManifestEntry("types/cpp-library/cmake/Config.cmake.in.j2", "cmake/{{ project.name }}Config.cmake.in"),
+        _ManifestEntry(
+            "types/cpp-library/cmake/Config.cmake.in.j2",
+            "cmake/{{ project.name }}Config.cmake.in",
+        ),
         _ManifestEntry("types/cpp-library/src.cpp.j2", "src/{{ project.name }}.cpp"),
-        _ManifestEntry("types/cpp-library/include.h.j2", "include/{{ project.name }}.h"),
+        _ManifestEntry(
+            "types/cpp-library/include.h.j2", "include/{{ project.name }}.h"
+        ),
         _ManifestEntry("shared/cpp/tests/CMakeLists.txt.j2", "tests/CMakeLists.txt"),
-        _ManifestEntry("types/cpp-library/tests.cpp.j2", "tests/test_{{ project.name }}.cpp"),
+        _ManifestEntry(
+            "types/cpp-library/tests.cpp.j2", "tests/test_{{ project.name }}.cpp"
+        ),
         _ManifestEntry("shared/cpp/github/ci.yml.j2", ".github/workflows/ci.yml"),
-        _ManifestEntry("shared/cpp/github/release.yml.j2", ".github/workflows/release.yml"),
-        _ManifestEntry("shared/cpp/github/branch-protection.yml.j2", ".github/workflows/branch-protection.yml"),
-        _ManifestEntry("shared/cpp/cmake/toolchain-linux-arm64.cmake.j2", "cmake/toolchain-linux-arm64.cmake"),
+        _ManifestEntry(
+            "shared/cpp/github/release.yml.j2", ".github/workflows/release.yml"
+        ),
+        _ManifestEntry(
+            "shared/cpp/github/branch-protection.yml.j2",
+            ".github/workflows/branch-protection.yml",
+        ),
+        _ManifestEntry(
+            "shared/cpp/cmake/toolchain-linux-arm64.cmake.j2",
+            "cmake/toolchain-linux-arm64.cmake",
+        ),
     ],
     "cpp-tool": [
         _ManifestEntry("shared/cpp/README.md.j2", "README.md"),
@@ -95,11 +170,21 @@ _MANIFESTS: dict[str, list[_ManifestEntry]] = {
         _ManifestEntry("types/cpp-tool/main.cpp.j2", "src/main.cpp"),
         _ManifestEntry("types/cpp-tool/include.h.j2", "include/{{ project.name }}.h"),
         _ManifestEntry("shared/cpp/tests/CMakeLists.txt.j2", "tests/CMakeLists.txt"),
-        _ManifestEntry("types/cpp-tool/tests.cpp.j2", "tests/test_{{ project.name }}.cpp"),
+        _ManifestEntry(
+            "types/cpp-tool/tests.cpp.j2", "tests/test_{{ project.name }}.cpp"
+        ),
         _ManifestEntry("shared/cpp/github/ci.yml.j2", ".github/workflows/ci.yml"),
-        _ManifestEntry("shared/cpp/github/release.yml.j2", ".github/workflows/release.yml"),
-        _ManifestEntry("shared/cpp/github/branch-protection.yml.j2", ".github/workflows/branch-protection.yml"),
-        _ManifestEntry("shared/cpp/cmake/toolchain-linux-arm64.cmake.j2", "cmake/toolchain-linux-arm64.cmake"),
+        _ManifestEntry(
+            "shared/cpp/github/release.yml.j2", ".github/workflows/release.yml"
+        ),
+        _ManifestEntry(
+            "shared/cpp/github/branch-protection.yml.j2",
+            ".github/workflows/branch-protection.yml",
+        ),
+        _ManifestEntry(
+            "shared/cpp/cmake/toolchain-linux-arm64.cmake.j2",
+            "cmake/toolchain-linux-arm64.cmake",
+        ),
     ],
     "pybind11-library": [
         _ManifestEntry("shared/pybind11/gitignore.j2", ".gitignore"),
@@ -108,12 +193,23 @@ _MANIFESTS: dict[str, list[_ManifestEntry]] = {
         _ManifestEntry("shared/cpp/README.md.j2", "README.md"),
         _ManifestEntry("shared/cpp/docs/index.md.j2", "docs/index.md"),
         _ManifestEntry("types/pybind11-library/CMakeLists.txt.j2", "CMakeLists.txt"),
-        _ManifestEntry("types/pybind11-library/src.cpp.j2", "src/{{ project.name }}.cpp"),
-        _ManifestEntry("types/pybind11-library/include.h.j2", "include/{{ project.name }}.h"),
+        _ManifestEntry(
+            "types/pybind11-library/src.cpp.j2", "src/{{ project.name }}.cpp"
+        ),
+        _ManifestEntry(
+            "types/pybind11-library/include.h.j2", "include/{{ project.name }}.h"
+        ),
         _ManifestEntry("types/pybind11-library/bindings.cpp.j2", "src/bindings.cpp"),
-        _ManifestEntry("types/pybind11-library/python/__init__.py.j2", "{{ project.name }}/__init__.py"),
-        _ManifestEntry("types/pybind11-library/tests/test_bindings.py.j2", "tests/test_bindings.py"),
-        _ManifestEntry("types/pybind11-library/github/ci.yml.j2", ".github/workflows/ci.yml"),
+        _ManifestEntry(
+            "types/pybind11-library/python/__init__.py.j2",
+            "{{ project.name }}/__init__.py",
+        ),
+        _ManifestEntry(
+            "types/pybind11-library/tests/test_bindings.py.j2", "tests/test_bindings.py"
+        ),
+        _ManifestEntry(
+            "types/pybind11-library/github/ci.yml.j2", ".github/workflows/ci.yml"
+        ),
     ],
     "pyo3-library": [
         _ManifestEntry("shared/pyo3/gitignore.j2", ".gitignore"),
@@ -123,9 +219,16 @@ _MANIFESTS: dict[str, list[_ManifestEntry]] = {
         _ManifestEntry("shared/cpp/README.md.j2", "README.md"),
         _ManifestEntry("shared/cpp/docs/index.md.j2", "docs/index.md"),
         _ManifestEntry("types/pyo3-library/src/lib.rs.j2", "src/lib.rs"),
-        _ManifestEntry("types/pyo3-library/python/__init__.py.j2", "python/{{ project.name }}/__init__.py"),
-        _ManifestEntry("types/pyo3-library/tests/test_bindings.py.j2", "tests/test_bindings.py"),
-        _ManifestEntry("types/pyo3-library/github/ci.yml.j2", ".github/workflows/ci.yml"),
+        _ManifestEntry(
+            "types/pyo3-library/python/__init__.py.j2",
+            "python/{{ project.name }}/__init__.py",
+        ),
+        _ManifestEntry(
+            "types/pyo3-library/tests/test_bindings.py.j2", "tests/test_bindings.py"
+        ),
+        _ManifestEntry(
+            "types/pyo3-library/github/ci.yml.j2", ".github/workflows/ci.yml"
+        ),
     ],
 }
 

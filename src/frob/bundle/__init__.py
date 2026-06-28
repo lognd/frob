@@ -77,7 +77,10 @@ def build_bundle(
             return Err(BundleError.UnsupportedLanguage)
         return Err(BundleError.ParseFailed)
 
-    focus_content = stub_result.danger_ok
+    # Prefer a slim focus: module imports + target body only.
+    # Fall back to full stub if the slim extractor fails.
+    slim = _focused_content(path, target)
+    focus_content = slim if slim is not None else stub_result.danger_ok
     sections: list[BundleSection] = [
         BundleSection(
             path=str(path),
@@ -103,6 +106,81 @@ def build_bundle(
 
     total = sum(s.tokens for s in sections)
     return Ok(Bundle(target=target, sections=sections, total_tokens=total))
+
+
+def _focused_content(path: Path, target: str) -> str | None:
+    """
+    Return module-level imports + target function/class body only.
+
+    Produces a much smaller FOCUS section than full-file stubbing for large
+    files with many sibling functions. Falls back to None on parse failure.
+    """
+    ext = path.suffix.lower()
+    if ext != ".py":
+        return None  # Only implemented for Python
+
+    from frob.ast import python as _py
+    from frob.ast.common import child_by_field, text
+
+    try:
+        src, tree = _py.parse_file(path)
+    except Exception:
+        return None
+
+    src_text = src.decode(errors="replace")
+    lines = src_text.splitlines(keepends=True)
+
+    parts = target.split(".", 1)
+    class_name = parts[0] if len(parts) == 2 else None
+    func_name = parts[-1]
+
+    # Collect module-level import lines
+    import_lines: list[str] = []
+    target_lines: list[str] = []
+
+    for node in tree.root_node.children:
+        if node.type in ("import_statement", "import_from_statement"):
+            start = node.start_point[0]
+            end = node.end_point[0] + 1
+            import_lines.extend(lines[start:end])
+        elif node.type == "function_definition" and class_name is None:
+            name_node = child_by_field(node, "name")
+            if name_node and text(name_node) == func_name:
+                start = node.start_point[0]
+                end = node.end_point[0] + 1
+                target_lines.extend(lines[start:end])
+        elif node.type == "class_definition":
+            name_node = child_by_field(node, "name")
+            if name_node and text(name_node) == (class_name or ""):
+                if class_name is not None:
+                    # Find the specific method
+                    body = child_by_field(node, "body")
+                    class_start = node.start_point[0]
+                    sig_end_row = body.start_point[0] if body else node.end_point[0]
+                    class_sig_end = sig_end_row + 1
+                    target_lines.extend(lines[class_start:class_sig_end])
+                    if body:
+                        for child in body.named_children:
+                            if child.type == "function_definition":
+                                mname = child_by_field(child, "name")
+                                if mname and text(mname) == func_name:
+                                    mstart = child.start_point[0]
+                                    mend = child.end_point[0] + 1
+                                    target_lines.extend(lines[mstart:mend])
+                else:
+                    # Entire class is the target
+                    start = node.start_point[0]
+                    end = node.end_point[0] + 1
+                    target_lines.extend(lines[start:end])
+
+    if not target_lines:
+        return None
+
+    result_parts: list[str] = []
+    if import_lines:
+        result_parts.append("".join(import_lines))
+    result_parts.append("".join(target_lines))
+    return "\n".join(result_parts)
 
 
 def _discover_local_imports(path: Path, depth: int) -> list[Path]:

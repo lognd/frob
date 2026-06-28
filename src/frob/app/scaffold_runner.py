@@ -4,8 +4,8 @@ import sys
 from pathlib import Path
 
 from frob.app.config import AppConfig
-from frob.scaffold.project import list_project_types, render_project
 from frob.logging import get_logger
+from frob.scaffold.project import list_project_types, render_project
 
 _log = get_logger(__name__)
 
