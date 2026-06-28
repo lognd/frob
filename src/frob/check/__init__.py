@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import concurrent.futures
 import subprocess
 from pathlib import Path
 
@@ -92,37 +93,39 @@ def run_check(
     pycharm_path: Path | None = None,
     ruff_args: list[str] | None = None,
 ) -> CheckResult:
-    results: list[ToolResult] = []
+    from typing import Callable
+
+    tasks: list[Callable[[], ToolResult | list[ToolResult] | None]] = []
 
     if not skip_ruff:
-        results.extend(_run_ruff(root, ruff_args))
-
+        tasks.append(lambda: _run_ruff(root, ruff_args))
     if not skip_ty:
-        r = _run_ty(root)
-        if r is not None:
-            results.append(r)
-
+        tasks.append(lambda: _run_ty(root))
     if not skip_cycle:
-        results.append(_run_cycle(root))
-
+        tasks.append(lambda: _run_cycle(root))
     if not skip_dup:
-        results.append(_run_dup(root))
-
+        tasks.append(lambda: _run_dup(root))
     if not skip_arch:
-        results.append(_run_arch(root))
-
+        tasks.append(lambda: _run_arch(root))
     if not skip_bind:
-        r = _run_bind(root)
-        if r is not None:
-            results.append(r)
-
+        tasks.append(lambda: _run_bind(root))
     if not skip_exports:
-        results.extend(_run_exports(root))
-
+        tasks.append(lambda: _run_exports(root))
     if pycharm_path is not None:
-        r = _run_pycharm(root, pycharm_path)
-        if r is not None:
-            results.append(r)
+        _pycharm_path = pycharm_path
+        tasks.append(lambda: _run_pycharm(root, _pycharm_path))
+
+    results: list[ToolResult] = []
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = [executor.submit(fn) for fn in tasks]
+        for future in futures:
+            val = future.result()
+            if val is None:
+                pass
+            elif isinstance(val, list):
+                results.extend(val)
+            else:
+                results.append(val)
 
     return CheckResult(path=str(root), results=results)
 
@@ -507,36 +510,36 @@ def run_check_cpp(
     pycharm_path: Path | None = None,
 ) -> CheckResult:
     """Quality gate for CMake C/C++ projects."""
-    results: list[ToolResult] = []
+    from typing import Callable
 
+    results: list[ToolResult] = []
     bdir = build_dir or (root / "build")
 
     if not skip_build:
         r = _run_cmake_build(root, bdir)
         results.append(r)
-        # If build failed, skip test steps
         if r.exit_code != 0:
             skip_tests = True
 
+    # clang-tidy, clang-format, and ctest are independent after build
+    post_build: list[Callable[[], ToolResult | None]] = []
     if not skip_clang_tidy:
-        r = _run_clang_tidy_cmake(root, bdir)
-        if r is not None:
-            results.append(r)
-
+        post_build.append(lambda: _run_clang_tidy_cmake(root, bdir))
     if not skip_clang_format:
-        r = _run_clang_format(root)
-        if r is not None:
-            results.append(r)
-
+        post_build.append(lambda: _run_clang_format(root))
     if not skip_tests:
-        r = _run_ctest(bdir, valgrind=valgrind)
-        if r is not None:
-            results.append(r)
-
+        _valgrind = valgrind
+        post_build.append(lambda: _run_ctest(bdir, valgrind=_valgrind))
     if pycharm_path is not None:
-        r = _run_pycharm(root, pycharm_path)
-        if r is not None:
-            results.append(r)
+        _pycharm_path = pycharm_path
+        post_build.append(lambda: _run_pycharm(root, _pycharm_path))
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = [executor.submit(fn) for fn in post_build]
+        for future in futures:
+            r = future.result()
+            if r is not None:
+                results.append(r)
 
     return CheckResult(path=str(root), results=results)
 
