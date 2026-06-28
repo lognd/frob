@@ -28,7 +28,7 @@ frob = "frob.__main__:main"
 
 [project.urls]
 Homepage = "https://github.com/lognd/frob"
-Documentation = "https://github.com/lognd/frob/docs"
+Documentation = "https://github.com/lognd/frob/tree/main/docs"
 Source = "https://github.com/lognd/frob"
 Issues = "https://github.com/lognd/frob/issues"
 
