@@ -118,7 +118,8 @@ clean:
 	find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null; true
 
 upload: clean
-	@NEW=$$(uv run python scripts/bump_version.py); \
+	@set -a && . ./.env && set +a; \
+	NEW=$$(uv run python scripts/bump_version.py); \
 	git add pyproject.toml; \
 	git commit -m "chore: bump version to $$NEW"; \
 	git push; \
