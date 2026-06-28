@@ -78,9 +78,7 @@ def test_stdout_contains_target_signature(py_src):
 
 def test_stdout_other_functions_stubbed(py_src):
     r = run("bundle", str(py_src), "helper")
-    # other functions should be stubbed with ...
-    assert "..." in r.stdout
-    # their bodies should not appear
+    # slim focus omits other functions entirely -- their bodies must not appear
     assert "do_something" not in r.stdout
 
 

@@ -188,12 +188,25 @@ def _run_ruff(root: Path, extra_args: list[str] | None) -> list[ToolResult]:
 def _run_ty(root: Path) -> ToolResult | None:
     from frob.process.parsers import parse_ty
 
+    scan = root if root.is_dir() else root.parent
+    cmd = ["ty", "check", str(root)]
+
+    # If a ty.toml exists in the root, resolve its extra-paths and pass them
+    # explicitly so ty can find them regardless of the working directory.
+    ty_cfg = scan / "ty.toml"
+    if ty_cfg.exists():
+        try:
+            from frob._compat import toml
+
+            with ty_cfg.open("rb") as f:
+                cfg = toml.load(f)
+            for p in cfg.get("environment", {}).get("extra-paths", []):
+                cmd += ["--extra-search-path", str((scan / p).resolve())]
+        except Exception:
+            pass
+
     try:
-        proc = subprocess.run(
-            ["ty", "check", str(root)],
-            capture_output=True,
-            text=True,
-        )
+        proc = subprocess.run(cmd, capture_output=True, text=True)
     except FileNotFoundError:
         return None
     r = parse_ty(proc.stdout + proc.stderr, exit_code=proc.returncode)

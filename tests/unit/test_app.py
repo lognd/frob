@@ -16,7 +16,7 @@ def _args(**kwargs) -> argparse.Namespace:
         "cycle_lang": None,
         "cycle_suggest": False,
         "stub_file": None,
-        "stub_target": None,
+        "stub_targets": None,
         "stub_output": None,
     }
     defaults.update(kwargs)
@@ -30,11 +30,11 @@ def test_config_no_subcommand():
 
 def test_config_stub_subcommand():
     cfg = AppConfig.from_args(
-        _args(subcommand="stub", stub_file="src/foo.py", stub_target="bar")
+        _args(subcommand="stub", stub_file="src/foo.py", stub_targets=["bar"])
     )
     assert cfg.subcommand == Subcommand.stub
     assert cfg.stub_file == Path("src/foo.py")
-    assert cfg.stub_target == "bar"
+    assert cfg.stub_targets == ["bar"]
 
 
 def test_config_init_new_subcommand():
