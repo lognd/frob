@@ -27,10 +27,9 @@ class CheckResult(BaseModel):
         err = self.total_errors
         warn = self.total_warnings
         status = "FAIL" if err > 0 else ("WARN" if warn > 0 else "PASS")
-        lines.append(
-            f"frob check {self.path}  [{status}]  {err} error{'s' if err != 1 else ''}  "
-            f"{warn} warning{'s' if warn != 1 else ''}"
-        )
+        errs = f"{err} error{'s' if err != 1 else ''}"
+        warns = f"{warn} warning{'s' if warn != 1 else ''}"
+        lines.append(f"frob check {self.path}  [{status}]  {errs}  {warns}")
         lines.append("")
 
         all_errors = [
@@ -129,17 +128,17 @@ def run_check(
 
 
 def _run_ruff(root: Path, extra_args: list[str] | None) -> list[ToolResult]:
-    from frob.process.parsers import parse_ruff
+    from frob.process.parsers import parse_ruff_json
 
     out: list[ToolResult] = []
 
     # ruff check (lint)
     proc = subprocess.run(
-        ["ruff", "check", "--output-format", "text", str(root)],
+        ["ruff", "check", "--output-format", "json", str(root)],
         capture_output=True,
         text=True,
     )
-    r = parse_ruff(proc.stdout + proc.stderr, exit_code=proc.returncode)
+    r = parse_ruff_json(proc.stdout, exit_code=proc.returncode)
     r.tool = "ruff-check"
     out.append(r)
 
@@ -151,26 +150,34 @@ def _run_ruff(root: Path, extra_args: list[str] | None) -> list[ToolResult]:
     )
     if proc2.returncode != 0:
         msg = (proc2.stdout + proc2.stderr).strip()
-        files = [
+        [
             line.strip()
             for line in msg.splitlines()
             if line.strip() and not line.startswith("Would reformat")
         ]
         # Count "Would reformat" lines
-        reformat = [l for l in msg.splitlines() if "Would reformat" in l]
+        reformat = [ln for ln in msg.splitlines() if "Would reformat" in ln]
         n = len(reformat)
         diags = [
-            Diagnostic(file=l.replace("Would reformat ", "").strip(), severity="warning", message="needs formatting")
-            for l in reformat
+            Diagnostic(
+                file=ln.replace("Would reformat ", "").strip(),
+                severity="warning",
+                message="needs formatting",
+            )
+            for ln in reformat
         ]
-        out.append(ToolResult(
-            tool="ruff-format",
-            exit_code=proc2.returncode,
-            diagnostics=diags,
-            summary=f"{n} file{'s' if n != 1 else ''} would be reformatted",
-        ))
+        out.append(
+            ToolResult(
+                tool="ruff-format",
+                exit_code=proc2.returncode,
+                diagnostics=diags,
+                summary=f"{n} file{'s' if n != 1 else ''} would be reformatted",
+            )
+        )
     else:
-        out.append(ToolResult(tool="ruff-format", exit_code=0, summary="all files formatted"))
+        out.append(
+            ToolResult(tool="ruff-format", exit_code=0, summary="all files formatted")
+        )
 
     return out
 
@@ -192,8 +199,8 @@ def _run_ty(root: Path) -> ToolResult | None:
 
 
 def _run_cycle(root: Path) -> ToolResult:
-    from frob.ast.common import ModuleTag
     from frob.ast import python as _py
+    from frob.ast.common import ModuleTag
     from frob.cycle.graph import DependencyGraph, find_cycles
 
     graph = DependencyGraph()
@@ -231,11 +238,13 @@ def _run_dup(root: Path) -> ToolResult:
     diags: list[Diagnostic] = []
     for g in result.groups:
         locs = ", ".join(f"{f.file}:{f.start_line}" for f in g.fragments)
-        diags.append(Diagnostic(
-            severity="warning",
-            code=g.clone_type,
-            message=f"{g.size_lines}-line duplicate block at {locs}",
-        ))
+        diags.append(
+            Diagnostic(
+                severity="warning",
+                code=g.clone_type,
+                message=f"{g.size_lines}-line duplicate block at {locs}",
+            )
+        )
     n = len(result.groups)
     return ToolResult(
         tool="frob-dup",
@@ -249,7 +258,11 @@ def _run_arch(root: Path) -> ToolResult:
     from frob.arch import analyze_project
 
     result = analyze_project(root if root.is_dir() else root.parent)
-    sev_map: dict[str, Severity] = {"warning": "warning", "suggestion": "note", "info": "info"}
+    sev_map: dict[str, Severity] = {
+        "warning": "warning",
+        "suggestion": "note",
+        "info": "info",
+    }
     diags = [
         Diagnostic(
             file=s.file,
@@ -290,7 +303,9 @@ def _run_bind(root: Path) -> ToolResult | None:
         return None
 
     try:
-        from frob.bind import verify_bindings  # type: ignore[import]
+        from frob.bind import (
+            verify_bindings,  # type: ignore[import,attr-defined]  # ty: ignore[unresolved-import]
+        )
     except ImportError:
         return None
 
@@ -304,7 +319,9 @@ def _run_bind(root: Path) -> ToolResult | None:
         tool="frob-bind",
         exit_code=1 if diags else 0,
         diagnostics=diags,
-        summary=f"{n} binding mismatch{'es' if n != 1 else ''}" if diags else "all bindings verified",
+        summary=f"{n} binding mismatch{'es' if n != 1 else ''}"
+        if diags
+        else "all bindings verified",
     )
 
 
@@ -318,8 +335,10 @@ def _run_exports(root: Path) -> list[ToolResult]:
     for init_file in sorted(scan.rglob("__init__.py")):
         pkg_dir = init_file.parent
         # Skip __pycache__, .venv etc.
-        if any(p.startswith(".") or p in {"__pycache__", ".venv", "build", "dist"}
-               for p in pkg_dir.parts):
+        if any(
+            p.startswith(".") or p in {"__pycache__", ".venv", "build", "dist"}
+            for p in pkg_dir.parts
+        ):
             continue
         # Only check packages that have sibling .py files
         sibs = [f for f in pkg_dir.glob("*.py") if f.name != "__init__.py"]
@@ -356,12 +375,15 @@ def _run_exports(root: Path) -> list[ToolResult]:
             ]
             pkg_name = str(pkg_dir.relative_to(scan))
             n = len(missing)
-            out.append(ToolResult(
-                tool=f"frob-exports({pkg_name})",
-                exit_code=0,
-                diagnostics=diags,
-                summary=f"{n} public symbol{'s' if n != 1 else ''} missing from __init__.py",
-            ))
+            out.append(
+                ToolResult(
+                    tool=f"frob-exports({pkg_name})",
+                    exit_code=0,
+                    diagnostics=diags,
+                    summary=f"{n} public symbol{'s' if n != 1 else ''} missing from"
+                    " __init__.py",
+                )
+            )
 
     return out
 
@@ -398,8 +420,10 @@ def _find_pycharm() -> Path | None:
     system = platform.system()
 
     if system == "Windows":
-        # Toolbox default: %LOCALAPPDATA%\JetBrains\Toolbox\apps\PyCharm-P\ch-0\<ver>\bin\inspect.bat
-        base = Path(os.environ.get("LOCALAPPDATA", "")) / "JetBrains" / "Toolbox" / "apps"
+        # Toolbox: %LOCALAPPDATA%\JetBrains\Toolbox\apps\PyCharm-P\ch-0\<ver>\bin
+        base = (
+            Path(os.environ.get("LOCALAPPDATA", "")) / "JetBrains" / "Toolbox" / "apps"
+        )
         for app_dir in ("PyCharm-P", "PyCharm-C", "PyCharm"):
             p = base / app_dir / "ch-0"
             if p.exists():
@@ -410,12 +434,16 @@ def _find_pycharm() -> Path | None:
                         return candidate
         # Direct install
         prog = Path(os.environ.get("ProgramFiles", "C:/Program Files"))
-        for name in ("JetBrains/PyCharm Professional Edition", "JetBrains/PyCharm Community Edition", "JetBrains/PyCharm"):
+        for name in (
+            "JetBrains/PyCharm Professional Edition",
+            "JetBrains/PyCharm Community Edition",
+            "JetBrains/PyCharm",
+        ):
             candidate = prog / name / "bin" / "inspect.bat"
             if candidate.exists():
                 return candidate
     else:
-        # Linux: Toolbox default ~/.local/share/JetBrains/Toolbox/apps/PyCharm-P/ch-0/<ver>/bin/inspect.sh
+        # Linux Toolbox: ~/.local/share/JetBrains/Toolbox/apps/PyCharm-P/ch-0/<ver>/bin
         home = Path.home()
         for base in (
             home / ".local" / "share" / "JetBrains" / "Toolbox" / "apps",
@@ -447,6 +475,7 @@ def _find_pycharm() -> Path | None:
 # ---------------------------------------------------------------------------
 # C/C++ checks
 # ---------------------------------------------------------------------------
+
 
 def run_check_cpp(
     root: Path,
@@ -502,22 +531,30 @@ def _run_cmake_build(root: Path, build_dir: Path) -> ToolResult:
     cfg = subprocess.run(
         ["cmake", str(root), "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"],
         cwd=str(build_dir),
-        capture_output=True, text=True,
+        capture_output=True,
+        text=True,
     )
     if cfg.returncode != 0:
         return ToolResult(
-            tool="cmake-configure", exit_code=cfg.returncode,
-            diagnostics=[Diagnostic(severity="error", message=l.strip())
-                         for l in (cfg.stderr or cfg.stdout).splitlines() if l.strip()],
+            tool="cmake-configure",
+            exit_code=cfg.returncode,
+            diagnostics=[
+                Diagnostic(severity="error", message=ln.strip())
+                for ln in (cfg.stderr or cfg.stdout).splitlines()
+                if ln.strip()
+            ],
             summary="cmake configure failed",
         )
     # Build
     proc = subprocess.run(
         ["cmake", "--build", ".", "--", "-j4"],
         cwd=str(build_dir),
-        capture_output=True, text=True,
+        capture_output=True,
+        text=True,
     )
-    r = parse_clang(proc.stdout + proc.stderr, exit_code=proc.returncode, tool="cmake-build")
+    r = parse_clang(
+        proc.stdout + proc.stderr, exit_code=proc.returncode, tool="cmake-build"
+    )
     r.tool = "cmake-build"
     if not r.summary or r.summary == "no issues":
         r.summary = "build succeeded" if proc.returncode == 0 else "build failed"
@@ -534,15 +571,21 @@ def _run_clang_tidy_cmake(root: Path, build_dir: Path) -> ToolResult | None:
     if not compile_commands.exists():
         return None
 
-    src_files = list(root.rglob("*.cpp")) + list(root.rglob("*.cc")) + list(root.rglob("*.c"))
-    src_files = [f for f in src_files
-                 if not any(p in {"build", ".venv", "third_party", "extern"} for p in f.parts)]
+    src_files = (
+        list(root.rglob("*.cpp")) + list(root.rglob("*.cc")) + list(root.rglob("*.c"))
+    )
+    src_files = [
+        f
+        for f in src_files
+        if not any(p in {"build", ".venv", "third_party", "extern"} for p in f.parts)
+    ]
     if not src_files:
         return None
 
     proc = subprocess.run(
         ["clang-tidy", f"-p={build_dir}", "--quiet"] + [str(f) for f in src_files[:50]],
-        capture_output=True, text=True,
+        capture_output=True,
+        text=True,
     )
     r = parse_clang_tidy(proc.stdout + proc.stderr, exit_code=proc.returncode)
     return r
@@ -550,59 +593,91 @@ def _run_clang_tidy_cmake(root: Path, build_dir: Path) -> ToolResult | None:
 
 def _run_clang_format(root: Path) -> ToolResult | None:
     src_files = (
-        list(root.rglob("*.cpp")) + list(root.rglob("*.cc")) +
-        list(root.rglob("*.c")) + list(root.rglob("*.h")) + list(root.rglob("*.hpp"))
+        list(root.rglob("*.cpp"))
+        + list(root.rglob("*.cc"))
+        + list(root.rglob("*.c"))
+        + list(root.rglob("*.h"))
+        + list(root.rglob("*.hpp"))
     )
-    src_files = [f for f in src_files
-                 if not any(p in {"build", ".venv", "third_party", "extern"} for p in f.parts)]
+    src_files = [
+        f
+        for f in src_files
+        if not any(p in {"build", ".venv", "third_party", "extern"} for p in f.parts)
+    ]
     if not src_files:
         return None
 
     proc = subprocess.run(
         ["clang-format", "--dry-run", "--Werror"] + [str(f) for f in src_files],
-        capture_output=True, text=True,
+        capture_output=True,
+        text=True,
     )
     if proc.returncode == 0:
-        return ToolResult(tool="clang-format", exit_code=0, summary="all files formatted")
+        return ToolResult(
+            tool="clang-format", exit_code=0, summary="all files formatted"
+        )
 
     needs_format = [
-        l for l in (proc.stderr or proc.stdout).splitlines()
-        if "warning:" in l or "error:" in l
+        ln
+        for ln in (proc.stderr or proc.stdout).splitlines()
+        if "warning:" in ln or "error:" in ln
     ]
     n = len(needs_format)
-    diags = [Diagnostic(severity="warning", message=l.strip()) for l in needs_format]
-    return ToolResult(tool="clang-format", exit_code=proc.returncode, diagnostics=diags,
-                      summary=f"{n} file{'s' if n != 1 else ''} need formatting")
+    diags = [Diagnostic(severity="warning", message=ln.strip()) for ln in needs_format]
+    return ToolResult(
+        tool="clang-format",
+        exit_code=proc.returncode,
+        diagnostics=diags,
+        summary=f"{n} file{'s' if n != 1 else ''} need formatting",
+    )
 
 
 def _run_ctest(build_dir: Path, *, valgrind: bool = False) -> ToolResult | None:
-    from frob.process.parsers import parse_junit_xml, parse_valgrind
-
     if not build_dir.exists():
         return None
 
     if valgrind:
         proc = subprocess.run(
-            ["ctest", "--test-dir", str(build_dir), "--output-on-failure",
-             "-T", "memcheck", "--output-junit", "results.xml"],
-            capture_output=True, text=True, cwd=str(build_dir),
+            [
+                "ctest",
+                "--test-dir",
+                str(build_dir),
+                "--output-on-failure",
+                "-T",
+                "memcheck",
+                "--output-junit",
+                "results.xml",
+            ],
+            capture_output=True,
+            text=True,
+            cwd=str(build_dir),
         )
     else:
         proc = subprocess.run(
-            ["ctest", "--test-dir", str(build_dir), "--output-on-failure",
-             "--output-junit", "results.xml"],
-            capture_output=True, text=True, cwd=str(build_dir),
+            [
+                "ctest",
+                "--test-dir",
+                str(build_dir),
+                "--output-on-failure",
+                "--output-junit",
+                "results.xml",
+            ],
+            capture_output=True,
+            text=True,
+            cwd=str(build_dir),
         )
 
     junit_file = build_dir / "results.xml"
     if junit_file.exists():
         from frob.process.parsers import parse_junit_xml
+
         r = parse_junit_xml(junit_file.read_text(), tool="ctest")
         r.tool = "ctest"
         return r
 
     # Fall back to text parsing
     from frob.process.parsers import parse_clang
+
     r = parse_clang(proc.stdout + proc.stderr, exit_code=proc.returncode, tool="ctest")
     r.tool = "ctest"
     if not r.diagnostics:
@@ -613,6 +688,7 @@ def _run_ctest(build_dir: Path, *, valgrind: bool = False) -> ToolResult | None:
 # ---------------------------------------------------------------------------
 # Rust checks
 # ---------------------------------------------------------------------------
+
 
 def run_check_rust(
     root: Path,
@@ -649,17 +725,23 @@ def run_check_rust(
     return CheckResult(path=str(root), results=results)
 
 
-def _run_cargo(subcmd: str, root: Path, extra: list[str] | None = None) -> ToolResult | None:
+def _run_cargo(
+    subcmd: str, root: Path, extra: list[str] | None = None
+) -> ToolResult | None:
     from frob.process.parsers import parse_cargo
 
     try:
         proc = subprocess.run(
             ["cargo", subcmd, "--message-format", "json"] + (extra or []),
-            capture_output=True, text=True, cwd=str(root),
+            capture_output=True,
+            text=True,
+            cwd=str(root),
         )
     except FileNotFoundError:
         return None
-    r = parse_cargo(proc.stdout + proc.stderr, exit_code=proc.returncode, tool=f"cargo-{subcmd}")
+    r = parse_cargo(
+        proc.stdout + proc.stderr, exit_code=proc.returncode, tool=f"cargo-{subcmd}"
+    )
     return r
 
 
@@ -667,16 +749,24 @@ def _run_cargo_fmt_check(root: Path) -> ToolResult | None:
     try:
         proc = subprocess.run(
             ["cargo", "fmt", "--check"],
-            capture_output=True, text=True, cwd=str(root),
+            capture_output=True,
+            text=True,
+            cwd=str(root),
         )
     except FileNotFoundError:
         return None
     if proc.returncode == 0:
         return ToolResult(tool="cargo-fmt", exit_code=0, summary="all files formatted")
     lines = (proc.stdout + proc.stderr).strip().splitlines()
-    diags = [Diagnostic(severity="warning", message=l.strip()) for l in lines if l.strip()]
-    return ToolResult(tool="cargo-fmt", exit_code=proc.returncode, diagnostics=diags,
-                      summary=f"{len(diags)} formatting issues")
+    diags = [
+        Diagnostic(severity="warning", message=ln.strip()) for ln in lines if ln.strip()
+    ]
+    return ToolResult(
+        tool="cargo-fmt",
+        exit_code=proc.returncode,
+        diagnostics=diags,
+        summary=f"{len(diags)} formatting issues",
+    )
 
 
 def _run_cargo_test(root: Path, *, valgrind: bool = False) -> ToolResult | None:
@@ -687,30 +777,44 @@ def _run_cargo_test(root: Path, *, valgrind: bool = False) -> ToolResult | None:
             # cargo test --no-run first, then run binary under valgrind
             build_proc = subprocess.run(
                 ["cargo", "test", "--no-run", "--message-format", "json"],
-                capture_output=True, text=True, cwd=str(root),
+                capture_output=True,
+                text=True,
+                cwd=str(root),
             )
             # Find test binary from JSON output
             binary = _find_test_binary_from_cargo_json(build_proc.stdout)
             if binary:
                 proc = subprocess.run(
-                    ["valgrind", "--leak-check=full", "--error-exitcode=1", str(binary)],
-                    capture_output=True, text=True, cwd=str(root),
+                    [
+                        "valgrind",
+                        "--leak-check=full",
+                        "--error-exitcode=1",
+                        str(binary),
+                    ],
+                    capture_output=True,
+                    text=True,
+                    cwd=str(root),
                 )
                 r = parse_valgrind(proc.stdout + proc.stderr, exit_code=proc.returncode)
                 r.tool = "cargo-test(valgrind)"
                 return r
         proc = subprocess.run(
             ["cargo", "test"],
-            capture_output=True, text=True, cwd=str(root),
+            capture_output=True,
+            text=True,
+            cwd=str(root),
         )
     except FileNotFoundError:
         return None
-    r = parse_cargo(proc.stdout + proc.stderr, exit_code=proc.returncode, tool="cargo-test")
+    r = parse_cargo(
+        proc.stdout + proc.stderr, exit_code=proc.returncode, tool="cargo-test"
+    )
     return r
 
 
 def _find_test_binary_from_cargo_json(stdout: str) -> Path | None:
     import json
+
     for line in stdout.splitlines():
         try:
             msg = json.loads(line)
@@ -728,6 +832,7 @@ def _find_test_binary_from_cargo_json(stdout: str) -> Path | None:
 # ---------------------------------------------------------------------------
 # Auto-detect project type
 # ---------------------------------------------------------------------------
+
 
 def detect_project_type(root: Path) -> str:
     """Returns 'python', 'cpp', 'rust', or 'unknown'."""

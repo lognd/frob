@@ -84,6 +84,7 @@ class CommitResult(BaseModel):
 # Public API
 # ---------------------------------------------------------------------------
 
+
 def isolate(path: Path, symbol: str) -> Result[IsolatedSymbol, EditError]:
     """Extract a symbol's source and line range without modifying the file."""
     if path.suffix.lower() != ".py":
@@ -98,7 +99,9 @@ def isolate(path: Path, symbol: str) -> Result[IsolatedSymbol, EditError]:
     return _locate(tree, lines, path, symbol)
 
 
-def stage(path: Path, symbol: str, new_source: str, *, project_root: Path | None = None) -> Result[Path, EditError]:
+def stage(
+    path: Path, symbol: str, new_source: str, *, project_root: Path | None = None
+) -> Result[Path, EditError]:
     """
     Stage a replacement for symbol without touching the source file.
 
@@ -119,7 +122,9 @@ def stage(path: Path, symbol: str, new_source: str, *, project_root: Path | None
     return Ok(patch_file)
 
 
-def commit(path: Path, *, project_root: Path | None = None) -> Result[CommitResult, EditError]:
+def commit(
+    path: Path, *, project_root: Path | None = None
+) -> Result[CommitResult, EditError]:
     """
     Apply all staged patches for path atomically.
 
@@ -159,7 +164,7 @@ def commit(path: Path, *, project_root: Path | None = None) -> Result[CommitResu
             tmp = path.with_suffix(path.suffix + ".frob_tmp")
             tmp.write_text(content, encoding="utf-8")
             os.replace(tmp, path)
-    except Exception as exc:
+    except Exception:
         return Err(EditError.CommitFailed)
 
     # Clear patches only after successful write
@@ -170,17 +175,21 @@ def commit(path: Path, *, project_root: Path | None = None) -> Result[CommitResu
     except OSError:
         pass
 
-    return Ok(CommitResult(
-        path=str(path),
-        applied=[p.symbol for p in ordered],
-        skipped=skipped,
-    ))
+    return Ok(
+        CommitResult(
+            path=str(path),
+            applied=[p.symbol for p in ordered],
+            skipped=skipped,
+        )
+    )
 
 
 def status(path: Path, *, project_root: Path | None = None) -> list[StagedPatch]:
     """Return all staged patches for path, sorted by staged_at."""
     patch_dir = _patch_dir(path, project_root)
-    return [p for _, p in sorted(_load_patches(patch_dir), key=lambda x: x[1].staged_at)]
+    return [
+        p for _, p in sorted(_load_patches(patch_dir), key=lambda x: x[1].staged_at)
+    ]
 
 
 def replace(path: Path, symbol: str, new_source: str) -> Result[None, EditError]:
@@ -206,8 +215,6 @@ def replace(path: Path, symbol: str, new_source: str) -> Result[None, EditError]
             tmp = path.with_suffix(path.suffix + ".frob_tmp")
             tmp.write_text("".join(merged), encoding="utf-8")
             os.replace(tmp, path)
-    except EditError as exc:
-        return Err(exc)  # type: ignore[arg-type]
     except Exception:
         return Err(EditError.CommitFailed)
     return Ok(None)
@@ -216,6 +223,7 @@ def replace(path: Path, symbol: str, new_source: str) -> Result[None, EditError]
 # ---------------------------------------------------------------------------
 # Internals
 # ---------------------------------------------------------------------------
+
 
 def _patch_dir(path: Path, project_root: Path | None) -> Path:
     root = project_root or _find_project_root(path)
@@ -239,17 +247,22 @@ def _load_patches(patch_dir: Path) -> list[tuple[Path, StagedPatch]]:
     results = []
     for pfile in patch_dir.glob("*.patch"):
         try:
-            results.append((pfile, StagedPatch.from_patch_text(pfile.read_text(encoding="utf-8"))))
+            results.append(
+                (pfile, StagedPatch.from_patch_text(pfile.read_text(encoding="utf-8")))
+            )
         except Exception:
             continue
     return results
 
 
-def _apply_patch_to_content(content: str, path: Path, patch: StagedPatch) -> Result[str, EditError]:
+def _apply_patch_to_content(
+    content: str, path: Path, patch: StagedPatch
+) -> Result[str, EditError]:
     """Apply one patch to in-memory content; re-parses to get fresh line numbers."""
     try:
         import tree_sitter_python as tspython
         from tree_sitter import Language, Parser
+
         tree = Parser(Language(tspython.language())).parse(content.encode("utf-8"))
     except Exception:
         return Err(EditError.ParseFailed)
@@ -294,7 +307,11 @@ def _locate(tree, lines, path: Path, symbol: str) -> Result[IsolatedSymbol, Edit
 def _find_top_level(tree, lines, path, symbol) -> Result[IsolatedSymbol, EditError]:
     matches = []
     for node in tree.root_node.children:
-        if node.type in ("function_definition", "class_definition", "decorated_definition"):
+        if node.type in (
+            "function_definition",
+            "class_definition",
+            "decorated_definition",
+        ):
             name_node = _get_name(node)
             if name_node and ast_text(name_node) == symbol:
                 matches.append(node)
@@ -305,16 +322,20 @@ def _find_top_level(tree, lines, path, symbol) -> Result[IsolatedSymbol, EditErr
     node = matches[0]
     start = node.start_point[0]
     end = node.end_point[0]
-    return Ok(IsolatedSymbol(
-        path=str(path),
-        symbol=symbol,
-        start_line=start + 1,
-        end_line=end + 1,
-        source="".join(lines[start : end + 1]),
-    ))
+    return Ok(
+        IsolatedSymbol(
+            path=str(path),
+            symbol=symbol,
+            start_line=start + 1,
+            end_line=end + 1,
+            source="".join(lines[start : end + 1]),
+        )
+    )
 
 
-def _find_method(tree, lines, path, full_symbol, class_name, method_name) -> Result[IsolatedSymbol, EditError]:
+def _find_method(
+    tree, lines, path, full_symbol, class_name, method_name
+) -> Result[IsolatedSymbol, EditError]:
     for node in tree.root_node.children:
         if node.type == "class_definition":
             name_node = child_by_field(node, "name")
@@ -327,13 +348,15 @@ def _find_method(tree, lines, path, full_symbol, class_name, method_name) -> Res
                             if mn and ast_text(mn) == method_name:
                                 start = child.start_point[0]
                                 end = child.end_point[0]
-                                return Ok(IsolatedSymbol(
-                                    path=str(path),
-                                    symbol=full_symbol,
-                                    start_line=start + 1,
-                                    end_line=end + 1,
-                                    source="".join(lines[start : end + 1]),
-                                ))
+                                return Ok(
+                                    IsolatedSymbol(
+                                        path=str(path),
+                                        symbol=full_symbol,
+                                        start_line=start + 1,
+                                        end_line=end + 1,
+                                        source="".join(lines[start : end + 1]),
+                                    )
+                                )
     return Err(EditError.SymbolNotFound)
 
 

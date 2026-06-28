@@ -7,6 +7,7 @@ from pathlib import Path
 from pydantic import BaseModel
 
 from frob._compat import Self, toml
+from frob.gitlog import GranularityLevel
 
 
 class Subcommand(str, enum.Enum):
@@ -126,16 +127,16 @@ class AppConfig(BaseModel):
     # edit
     edit_file: Path | None = None
     edit_symbol: str | None = None
-    edit_replace: bool = False    # legacy immediate replace
-    edit_stage: bool = False      # stage for later commit
-    edit_commit: bool = False     # commit all staged patches
-    edit_status: bool = False     # show staged patches
+    edit_replace: bool = False  # legacy immediate replace
+    edit_stage: bool = False  # stage for later commit
+    edit_commit: bool = False  # commit all staged patches
+    edit_status: bool = False  # show staged patches
     edit_immediate: bool = False  # explicit immediate (lock + write now)
 
     # check (shared)
     check_path: Path | None = None
     check_pycharm: Path | None = None
-    check_type: str | None = None   # "python", "cpp", "rust", or None=auto-detect
+    check_type: str | None = None  # "python", "cpp", "rust", or None=auto-detect
     check_json: bool = False
     check_valgrind: bool = False
     check_skip_tests: bool = False
@@ -158,8 +159,8 @@ class AppConfig(BaseModel):
     check_skip_fmt: bool = False
 
     # mission
-    mission_command: str | None = None   # new | done | stuck | list
-    mission_type: str | None = None      # fix | test | implement | review
+    mission_command: str | None = None  # new | done | stuck | list
+    mission_type: str | None = None  # fix | test | implement | review
     mission_id: str | None = None
     mission_file: Path | None = None
     mission_target: str | None = None
@@ -177,7 +178,7 @@ class AppConfig(BaseModel):
 
     # gitlog
     gitlog_path: Path | None = None
-    gitlog_granularity: str = "user"
+    gitlog_granularity: GranularityLevel = "user"
     gitlog_since: str | None = None
     gitlog_until: str | None = None
     gitlog_limit: int | None = None
@@ -185,13 +186,13 @@ class AppConfig(BaseModel):
     gitlog_json: bool = False
 
     # dispatch
-    dispatch_command: str | None = None   # create | collect | abort | list
+    dispatch_command: str | None = None  # create | collect | abort | list
     dispatch_label: str | None = None
     dispatch_id: str | None = None
     dispatch_strategy: str = "rebase"
 
     # todo
-    todo_command: str | None = None   # add | done | remove | list | clear-done
+    todo_command: str | None = None  # add | done | remove | list | clear-done
     todo_text: str | None = None
     todo_id: int | None = None
     todo_all: bool = False

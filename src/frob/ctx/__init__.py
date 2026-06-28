@@ -15,9 +15,9 @@ class CtxError(ErrorSet):
 
 
 class CtxTier(str, enum.Enum):
-    stub = "stub"      # signature only -- function is simple
+    stub = "stub"  # signature only -- function is simple
     bundle = "bundle"  # function + import signatures -- standard
-    full = "full"      # bundle + xref callers + relevant docs -- complex
+    full = "full"  # bundle + xref callers + relevant docs -- complex
 
 
 class CtxResult(BaseModel):
@@ -54,9 +54,6 @@ def adaptive_context(
       full   -- function body >= 40 lines, OR caller count >= xref_caller_threshold,
                 OR bundle section count > 4 (many dependencies)
     """
-    from frob.outline import outline_file
-    from frob.stub import StubError, stub_file
-
     ext = path.suffix.lower()
     if ext not in {".py", ".c", ".cc", ".cpp", ".cxx", ".h", ".hpp", ".hxx"}:
         return Err(CtxError.UnsupportedFile)
@@ -73,7 +70,9 @@ def adaptive_context(
         reason = f"function body is {fn_lines} lines (>= 40)"
     else:
         tier = CtxTier.bundle
-        reason = f"function body is {fn_lines} lines" if fn_lines else "line count unknown"
+        reason = (
+            f"function body is {fn_lines} lines" if fn_lines else "line count unknown"
+        )
 
     # Step 3: for stub/bundle tiers, check bundle dep count to possibly upgrade
     if tier in (CtxTier.stub, CtxTier.bundle):
@@ -93,21 +92,29 @@ def adaptive_context(
 
         if tier == CtxTier.stub and len(dep_sections) > 2:
             tier = CtxTier.bundle
-            reason = f"function is small but has {len(dep_sections)} import dependencies"
+            reason = (
+                f"function is small but has {len(dep_sections)} import dependencies"
+            )
 
         if tier == CtxTier.bundle and len(dep_sections) > 4:
             tier = CtxTier.full
             reason = f"function has {len(dep_sections)} import dependencies (> 4)"
 
         if tier in (CtxTier.stub, CtxTier.bundle):
-            content = bundle.as_text() if tier == CtxTier.bundle else _stub_content(path, target)
-            return Ok(CtxResult(
-                path=str(path),
-                symbol=target,
-                tier=tier,
-                tier_reason=reason,
-                content=content,
-            ))
+            content = (
+                bundle.as_text()
+                if tier == CtxTier.bundle
+                else _stub_content(path, target)
+            )
+            return Ok(
+                CtxResult(
+                    path=str(path),
+                    symbol=target,
+                    tier=tier,
+                    tier_reason=reason,
+                    content=content,
+                )
+            )
 
         # tier upgraded to full -- fall through with bundle content
         bundle_text = bundle.as_text()
@@ -139,13 +146,15 @@ def adaptive_context(
         if docs_text:
             extra_parts.append(f"\n## Docstring\n\n{docs_text}")
 
-    return Ok(CtxResult(
-        path=str(path),
-        symbol=target,
-        tier=tier,
-        tier_reason=reason,
-        content="\n".join(extra_parts),
-    ))
+    return Ok(
+        CtxResult(
+            path=str(path),
+            symbol=target,
+            tier=tier,
+            tier_reason=reason,
+            content="\n".join(extra_parts),
+        )
+    )
 
 
 def _estimate_fn_lines(path: Path, target: str) -> int | None:
@@ -187,7 +196,9 @@ def _get_xref(symbol: str, root: Path) -> str:
 
 def _get_docs(path: Path, target: str) -> str:
     try:
-        from frob.docs import extract_docs  # type: ignore[import]
+        from frob.docs import (
+            extract_docs,  # type: ignore[import,attr-defined]  # ty: ignore[unresolved-import]
+        )
 
         result = extract_docs(path, symbol=target)
         if result.is_ok:

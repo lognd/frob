@@ -2,9 +2,9 @@
 frob mission -- structured subagent dispatch via temporary markdown briefings.
 
 Workflow:
-  1. Orchestrator: `frob mission new fix src/foo.py target_fn --error "..."` -> .frob/missions/<id>.md
-  2. Subagent: read the .md file, do the work, call `frob mission done <id>` when finished
-  3. If blocked: call `frob mission stuck <id> "reason"` -- moves to .frob/missions/stuck/<id>.md
+  1. Orchestrator: frob mission new fix src/file.py fn -> .frob/missions/<id>.md
+  2. Subagent: read the .md file, do the work, call frob mission done <id> when finished
+  3. If blocked: call frob mission stuck <id> "reason" -> .frob/missions/stuck/<id>.md
 
 The mission file is the contract between the orchestrator and the subagent.
 All context is pre-assembled (frob ctx output, error, instructions) so the
@@ -35,7 +35,7 @@ class MissionMeta(BaseModel):
     model_config = {}
 
     id: str
-    type: str        # fix | test | implement | review
+    type: str  # fix | test | implement | review
     file: str | None = None
     target: str | None = None
     error: str | None = None
@@ -194,7 +194,9 @@ def done_mission(mission_id: str, project_root: Path) -> Result[None, MissionErr
     return Ok(None)
 
 
-def stuck_mission(mission_id: str, reason: str, project_root: Path) -> Result[Path, MissionError]:
+def stuck_mission(
+    mission_id: str, reason: str, project_root: Path
+) -> Result[Path, MissionError]:
     path = _find_mission(mission_id, project_root)
     if path is None:
         return Err(MissionError.NotFound)
@@ -235,6 +237,7 @@ def _find_mission(mission_id: str, project_root: Path) -> Path | None:
 def _get_context(file: Path, target: str, root: Path) -> str:
     try:
         from frob.ctx import adaptive_context
+
         result = adaptive_context(file, target, root=root)
         if result.is_ok:
             return result.danger_ok.as_text()
@@ -243,6 +246,7 @@ def _get_context(file: Path, target: str, root: Path) -> str:
     # Fallback: try frob bundle
     try:
         from frob.bundle import build_bundle
+
         result = build_bundle(file, target)
         if result.is_ok:
             return result.danger_ok.as_text()
@@ -277,7 +281,8 @@ def _render_mission(
 
 def _utcnow() -> str:
     import datetime
-    return datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    return datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _ensure_gitignore(root: Path) -> None:
@@ -286,7 +291,9 @@ def _ensure_gitignore(root: Path) -> None:
         if gi.exists():
             text = gi.read_text(encoding="utf-8")
             if _GITIGNORE_ENTRY not in text:
-                gi.write_text(text.rstrip() + f"\n{_GITIGNORE_ENTRY}\n", encoding="utf-8")
+                gi.write_text(
+                    text.rstrip() + f"\n{_GITIGNORE_ENTRY}\n", encoding="utf-8"
+                )
         else:
             gi.write_text(f"{_GITIGNORE_ENTRY}\n", encoding="utf-8")
     except Exception:

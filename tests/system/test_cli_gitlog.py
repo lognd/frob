@@ -148,46 +148,29 @@ class TestGitlogJson:
         repo = _setup_repo(tmp_path)
         r = run("gitlog", str(repo), "--json")
         assert r.returncode == 0
-        out = r.stdout + r.stderr
-        # strip any log prefix lines to find JSON
-        for line in out.splitlines():
-            line = line.strip()
-            if line.startswith("{"):
-                data = json.loads(line)
-                assert "commits" in data
-                return
-        raise AssertionError(f"no JSON found in output: {out!r}")
+        data = json.loads(r.stdout)
+        assert "commits" in data
 
     def test_json_commits_have_type_field(self, tmp_path):
         repo = _setup_repo(tmp_path)
         r = run("gitlog", str(repo), "--level", "full", "--json")
-        out = r.stdout + r.stderr
-        for line in out.splitlines():
-            line = line.strip()
-            if line.startswith("{"):
-                data = json.loads(line)
-                assert len(data["commits"]) > 0
-                for c in data["commits"]:
-                    assert "type" in c
-                    assert "sha" in c
-                return
-        raise AssertionError("no JSON in output")
+        data = json.loads(r.stdout)
+        assert len(data["commits"]) > 0
+        for c in data["commits"]:
+            assert "type" in c
+            assert "sha" in c
 
     def test_json_breaking_commit_flagged(self, tmp_path):
         repo = _setup_repo(tmp_path)
         r = run("gitlog", str(repo), "--level", "full", "--json")
-        out = r.stdout + r.stderr
-        for line in out.splitlines():
-            line = line.strip()
-            if line.startswith("{"):
-                data = json.loads(line)
-                breaking = [c for c in data["commits"] if c.get("breaking")]
-                assert len(breaking) >= 1
-                return
-        raise AssertionError("no JSON in output")
+        data = json.loads(r.stdout)
+        breaking = [c for c in data["commits"] if c.get("breaking")]
+        assert len(breaking) >= 1
 
 
 class TestGitlogErrors:
-    def test_non_git_dir_fails(self, tmp_path):
+    def test_non_git_dir_returns_no_commits(self, tmp_path):
         r = run("gitlog", str(tmp_path))
-        assert r.returncode != 0
+        # frob gitlog on a non-git dir returns 0 with "no commits found"
+        assert r.returncode == 0
+        assert "no commits" in (r.stdout + r.stderr).lower()

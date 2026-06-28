@@ -23,6 +23,7 @@ class TodoError(ErrorSet):
 
 _TODO_FILE = ".frob/todo.md"
 _ITEM_RE = re.compile(r"^- \[(?P<done>[ x])\] \[#(?P<id>\d+)\] (?P<text>.+)$")
+_COUNTER_RE = re.compile(r"^<!-- next_id: (\d+) -->$")
 
 
 class TodoItem(BaseModel):
@@ -60,26 +61,37 @@ def _todo_path(project_root: Path) -> Path:
     return project_root / _TODO_FILE
 
 
-def _load(project_root: Path) -> list[TodoItem]:
+def _load(project_root: Path) -> tuple[list[TodoItem], int]:
+    """Returns (items, max_id_seen)."""
     p = _todo_path(project_root)
     if not p.exists():
-        return []
+        return [], 0
     items: list[TodoItem] = []
+    max_id = 0
     for line in p.read_text().splitlines():
+        cm = _COUNTER_RE.match(line.strip())
+        if cm:
+            max_id = int(cm.group(1))
+            continue
         m = _ITEM_RE.match(line.strip())
         if m:
-            items.append(TodoItem(
-                item_id=int(m.group("id")),
-                done=m.group("done") == "x",
-                text=m.group("text"),
-            ))
-    return items
+            item_id = int(m.group("id"))
+            items.append(
+                TodoItem(
+                    item_id=item_id,
+                    done=m.group("done") == "x",
+                    text=m.group("text"),
+                )
+            )
+            if item_id > max_id:
+                max_id = item_id
+    return items, max_id
 
 
-def _save(project_root: Path, items: list[TodoItem]) -> None:
+def _save(project_root: Path, items: list[TodoItem], max_id: int) -> None:
     p = _todo_path(project_root)
     p.parent.mkdir(parents=True, exist_ok=True)
-    lines = ["# frob todo\n"]
+    lines = ["# frob todo", f"<!-- next_id: {max_id} -->", ""]
     for item in items:
         mark = "x" if item.done else " "
         lines.append(f"- [{mark}] [#{item.item_id}] {item.text}")
@@ -98,54 +110,53 @@ def _ensure_gitignore(root: Path) -> None:
         gi.write_text(f"{entry}\n")
 
 
-def _next_id(items: list[TodoItem]) -> int:
-    if not items:
-        return 1
-    return max(i.item_id for i in items) + 1
+def _next_id(max_id: int) -> int:
+    return max_id + 1
 
 
 def add_todo(text: str, *, project_root: Path) -> TodoItem:
-    items = _load(project_root)
+    items, max_id = _load(project_root)
+    new_id = _next_id(max_id)
     item = TodoItem(
-        item_id=_next_id(items),
+        item_id=new_id,
         text=text,
         done=False,
         added_at=time.strftime("%Y-%m-%d"),
     )
     items.append(item)
-    _save(project_root, items)
+    _save(project_root, items, new_id)
     return item
 
 
 def done_todo(item_id: int, *, project_root: Path) -> Result[TodoItem, TodoError]:
-    items = _load(project_root)
+    items, max_id = _load(project_root)
     for item in items:
         if item.item_id == item_id:
             item.done = True
-            _save(project_root, items)
+            _save(project_root, items, max_id)
             return Ok(item)
     return Err(TodoError.NotFound)
 
 
 def remove_todo(item_id: int, *, project_root: Path) -> Result[None, TodoError]:
-    items = _load(project_root)
+    items, max_id = _load(project_root)
     new_items = [i for i in items if i.item_id != item_id]
     if len(new_items) == len(items):
         return Err(TodoError.NotFound)
-    _save(project_root, new_items)
+    _save(project_root, new_items, max_id)
     return Ok(None)
 
 
 def list_todos(project_root: Path, *, show_done: bool = False) -> TodoList:
-    items = _load(project_root)
+    items, _ = _load(project_root)
     if not show_done:
         items = [i for i in items if not i.done]
     return TodoList(items=items)
 
 
 def clear_done(project_root: Path) -> int:
-    items = _load(project_root)
+    items, max_id = _load(project_root)
     before = len(items)
     items = [i for i in items if not i.done]
-    _save(project_root, items)
+    _save(project_root, items, max_id)
     return before - len(items)
