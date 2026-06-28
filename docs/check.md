@@ -41,6 +41,26 @@ frob check src/ --skip-bind
 frob check src/ --skip-exports
 ```
 
+## Cycle severity
+
+`frob cycle` uses size-based severity for detected import cycles:
+
+| Cycle size | Severity |
+|-----------|---------|
+| 1-2 nodes | info |
+| 3-5 nodes | warning |
+| 6+ nodes | error |
+
+Cycles are reported in multi-line format, one symbol per line:
+
+```
+=== CYCLE (warning) ===
+frob.edit
+  -> frob.ast.python
+  -> frob.ast.common
+  -> frob.edit
+```
+
 ## C++ mode (auto-detected from `CMakeLists.txt`)
 
 Runs in order:

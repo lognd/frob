@@ -6,9 +6,10 @@ directory. Also used by `frob check` to detect missing exports.
 ## Usage
 
 ```bash
-frob exports src/frob/edit/         # show generated __init__.py
-frob exports src/frob/edit/ --all   # include private symbols (_foo)
+frob exports src/frob/edit/                      # show generated __init__.py
+frob exports src/frob/edit/ --all                # include private symbols (_foo)
 frob exports src/frob/ --exclude mission --exclude dispatch
+frob exports src/frob/edit/ --write              # write __init__.py in place
 frob exports src/frob/edit/ --json
 ```
 
@@ -19,15 +20,28 @@ from frob.edit._impl import IsolatedSymbol, StagedPatch, CommitResult
 from frob.edit._impl import isolate, stage, commit, status, replace
 
 __all__ = [
+    "CommitResult",
     "IsolatedSymbol",
     "StagedPatch",
-    "CommitResult",
-    "isolate",
-    "stage",
     "commit",
-    "status",
+    "isolate",
     "replace",
+    "stage",
+    "status",
 ]
+```
+
+### Duplicate symbol handling
+
+When two modules in the same package export the same name (e.g. both
+`stub_runner` and `exports_runner` export `run`), the conflicting names are
+aliased automatically:
+
+```python
+from frob.app.stub_runner import run as stub_runner_run
+from frob.app.exports_runner import run as exports_runner_run
+
+__all__ = ["exports_runner_run", "stub_runner_run"]
 ```
 
 ## Integration with frob check
@@ -42,4 +56,5 @@ exported is reported as a warning.
 |------|-------------|
 | `--all` | Include private symbols (names starting with `_`) |
 | `--exclude MODULE` | Skip a submodule entirely (repeatable) |
+| `--write` | Write the generated `__init__.py` directly to the package directory |
 | `--json` | Output structured `ExportsResult` as JSON |

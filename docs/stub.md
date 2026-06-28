@@ -1,24 +1,26 @@
 # frob stub
 
-Reduce a source file to the item of interest, stubbing out everything else.
+Reduce a source file to the item(s) of interest, stubbing out everything else.
 
 ## Usage
 
 ```
-frob stub <file> <target> [--output <file>]
+frob stub <file> <target> [<target>...] [--output <file>]
 ```
 
 `<target>` is a dotted name: `ClassName`, `function_name`, or `ClassName.method`.
+Multiple targets may be given; all listed targets keep their full bodies.
 
 Output goes to stdout unless `--output` is given.
 
 ## What it produces
 
-Given a file with multiple classes and functions, `frob stub` keeps `<target>`
-intact and replaces every other function/method body with `...` (Python) or a
-forward declaration (C++), while preserving all signatures and type annotations.
+Given a file with multiple classes and functions, `frob stub` keeps each
+`<target>` intact and replaces every other function/method body with `...`
+(Python) or a forward declaration (C++), while preserving all signatures and
+type annotations.
 
-### Python example
+### Python example -- single target
 
 ```
 frob stub src/mymodule.py MyClass.process
@@ -39,6 +41,15 @@ class MyClass:
     def _private(self) -> None:   # <-- body stubbed
         ...
 ```
+
+### Python example -- multiple targets
+
+```
+frob stub src/mymodule.py helper MyClass.process
+```
+
+Both `helper` and `MyClass.process` keep their full bodies; `_private` and any
+other functions are stubbed.
 
 ### C++ example
 

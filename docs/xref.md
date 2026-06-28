@@ -5,7 +5,7 @@ Find where a symbol is defined and every file that references it.
 ## Usage
 
 ```
-frob xref <symbol> [path] [--lang python|cpp] [--json]
+frob xref <symbol> [path] [--lang python|cpp] [--cross-file] [--json]
 ```
 
 `path` defaults to the current directory. `<symbol>` can be a function name,
@@ -22,12 +22,35 @@ stub_file
     tests/test_stub.py:29               result = stub_file(py_file, "helper")
 ```
 
+## Cross-file relationships (`--cross-file`)
+
+`--cross-file` additionally shows which other files the defining file calls into,
+giving a two-directional picture of dependencies (callers above, callees below).
+
+```
+stub_file
+  defined:  src/frob/stub/__init__.py:28
+  used by:
+    src/frob/app/stub_runner.py:17
+  calls into:
+    src/frob/ast/python.py
+    src/frob/ast/cpp.py
+```
+
 ## Why it exists
 
 Before changing a function signature or moving a module, Claude needs to know
 the blast radius. Without `xref`, that means grepping and reading every hit.
 `xref` returns a compact list: definition site + every call site with one line
 of context, ready for impact analysis.
+
+## Flags
+
+| Flag | Description |
+|------|-------------|
+| `--lang` | Force language (python or cpp); auto-detected by default |
+| `--cross-file` | Also show files that the defining file calls into |
+| `--json` | Output structured `XrefResult` as JSON |
 
 ## JSON output (`--json`)
 

@@ -12,12 +12,16 @@ frob bundle <file> <target> [--depth N] [--format text|json|markdown]
 `<target>` is a dotted name: `function_name` or `ClassName.method`.
 `--depth` controls how many levels of local imports to inline (default: 1).
 
+Token count is written to stderr so it does not pollute the markdown output.
+
 ## What it produces
 
-1. The **focus file**, stubbed so only `<target>` has its full body.
-2. For each **local import** of that file (up to `--depth` levels): all
-   function/method signatures with no bodies.
-3. An **estimated token count** so you can budget subagent context.
+1. The **focus file** -- module-level imports + the full body of `<target>` only.
+   Sibling functions are not included.
+2. Any private helpers called by `<target>` that are defined in the same file,
+   appended as one-liner stubs under `# same-file helpers called by target:`.
+3. For each **local import** of that file (up to `--depth` levels): all
+   function/method signatures with no bodies (role=SIGNATURES).
 
 ## Example
 
@@ -25,21 +29,28 @@ frob bundle <file> <target> [--depth N] [--format text|json|markdown]
 frob bundle src/frob/stub/__init__.py stub_file
 ```
 
+Token estimate printed to stderr: `# ~420 tokens`
+
 Output (markdown format):
 
 ```markdown
-# Bundle: stub_file  |  src/frob/stub/__init__.py
-# Estimated tokens: ~420
+# Bundle: `stub_file`
 
 ## src/frob/stub/__init__.py  [FOCUS]
 ```python
+from pathlib import Path
+from typani import Err, Ok
+from typani.result import Result
 from frob.ast import python as _py
-...
 
 def stub_file(path: Path, target: str) -> Result[str, StubError]:
     ext = path.suffix.lower()
     if ext in _PY_EXTS:
-        ...  # full body here
+        return _py_stub(path, target)
+    return Err(StubError.UnsupportedLanguage)
+
+# same-file helpers called by target:
+def _py_stub(path: Path, target: str) -> Result[str, StubError]: ...
 ```
 
 ## frob.ast.python  [SIGNATURES]
@@ -73,6 +84,7 @@ frob xref stub_file src/
 frob bundle src/frob/stub/__init__.py stub_file > /tmp/context.md
 # ... paste into subagent prompt ...
 
-# 5. Apply the subagent's patch
-frob patch /tmp/stub_patch.diff
+# 5. Apply the subagent's output
+frob edit src/frob/stub/__init__.py stub_file --stage
+frob edit src/frob/stub/__init__.py --commit
 ```

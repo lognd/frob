@@ -6,11 +6,19 @@ them. Uses a character-based heuristic (code: ~3.5 chars/token).
 ## Usage
 
 ```
-frob tokens <path> [<path>...] [--detail]
+frob tokens <path> [<path>...] [--sort] [--by-dir] [--detail]
 ```
 
 `<path>` can be a file or directory. For directories, all source files are
 counted recursively.
+
+## Flags
+
+| Flag | Description |
+|------|-------------|
+| `--sort` | Sort files by token count descending instead of path order |
+| `--by-dir` | Show per-directory subtotals after the file list |
+| `--detail` | Break down each file by region (imports, classes, functions) |
 
 ## Output (default)
 
@@ -20,6 +28,20 @@ src/frob/ast/cpp.py               ~980 tokens
 src/frob/cycle/graph.py           ~380 tokens
 --
 total                           ~2,600 tokens
+```
+
+## Output (`--by-dir`)
+
+```
+src/frob/ast/python.py          ~1,240 tokens
+src/frob/ast/cpp.py               ~980 tokens
+src/frob/cycle/graph.py           ~380 tokens
+--
+total                           ~2,600 tokens
+
+By directory:
+  src/frob/ast/                 ~2,220 tokens
+  src/frob/cycle/                 ~380 tokens
 ```
 
 ## Output (`--detail`)
@@ -48,6 +70,12 @@ you budget context without reading anything.
 frob tokens src/frob/stub/__init__.py src/frob/ast/python.py
 # -> total ~2,200 tokens  -- safe to include both
 
-frob tokens src/frob/  --detail
-# -> find which functions are expensive before deciding what to stub
+# Find the most expensive files first
+frob tokens src/frob/ --sort
+
+# See which directories dominate token cost
+frob tokens src/frob/ --by-dir
+
+# Find which functions are expensive before deciding what to stub
+frob tokens src/frob/ --detail
 ```

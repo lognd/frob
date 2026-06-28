@@ -50,6 +50,9 @@ Breaking changes appear in a separate `### BREAKING CHANGES` section at the top.
 
 ## JSON output
 
+The JSON output includes both a flat `commits` list and a `groups` dict that
+maps each commit type to the commits of that type.
+
 ```json
 {
   "root": ".",
@@ -66,7 +69,33 @@ Breaking changes appear in a separate `### BREAKING CHANGES` section at the top.
       "body": "",
       "tag": null
     }
-  ]
+  ],
+  "groups": {
+    "feat": [
+      {
+        "sha": "91f6bdb...",
+        "short_sha": "91f6bdb",
+        "type": "feat",
+        "scope": null,
+        "breaking": false,
+        "description": "add frob check ...",
+        "body": "",
+        "tag": null
+      }
+    ],
+    "fix": [
+      {
+        "sha": "2901541...",
+        "short_sha": "2901541",
+        "type": "fix",
+        "scope": null,
+        "breaking": false,
+        "description": "always bump patch version unconditionally on upload",
+        "body": "",
+        "tag": null
+      }
+    ]
+  }
 }
 ```
 

@@ -24,11 +24,11 @@ needed to understand the symbol.
 | < 40 lines AND <= 4 import deps AND few callers | `bundle` | Function + stubbed import signatures |
 | >= 40 lines OR > 4 import deps OR many xref callers | `full` | Bundle + xref caller list + docstrings |
 
-The tier and reason are shown in the output header:
+The tier and estimated token count are shown in the output header:
 
 ```
-# frob ctx: MyFunction  [tier=bundle, reason=23 lines, 3 deps]
-# src/frob/module/__init__.py  L42-L64
+# frob ctx: MyFunction  [tier=bundle  ~342 tok]
+# reason: 23 lines
 ...
 ```
 
@@ -47,7 +47,7 @@ The tier and reason are shown in the output header:
   "path": "src/frob/module/__init__.py",
   "symbol": "MyFunction",
   "tier": "bundle",
-  "tier_reason": "23 lines, 3 import deps",
+  "tier_reason": "23 lines",
   "content": "..."
 }
 ```
