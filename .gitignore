@@ -26,3 +26,6 @@ target/
 # Valgrind
 vgcore.*
 *.froblock
+
+# Secrets
+.env
