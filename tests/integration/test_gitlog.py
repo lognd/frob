@@ -134,12 +134,7 @@ class TestGitlogJson:
         return _setup_repo(tmp_path_factory.mktemp("gitlog_json"))
 
     def _parse_json(self, r: subprocess.CompletedProcess) -> dict:
-        out = r.stdout + r.stderr
-        for line in out.splitlines():
-            line = line.strip()
-            if line.startswith("{"):
-                return json.loads(line)
-        raise AssertionError(f"no JSON in output: {out!r}")
+        return json.loads(r.stdout)
 
     def test_json_valid(self, repo):
         r = _frob(["gitlog", str(repo), "--json"])
@@ -162,7 +157,10 @@ class TestGitlogJson:
         data = self._parse_json(r)
         breaking = [c for c in data["commits"] if c["breaking"]]
         assert len(breaking) >= 1
-        assert any("deprecated" in c["description"] or "v1" in c["description"] for c in breaking)
+        assert any(
+            "deprecated" in c["description"] or "v1" in c["description"]
+            for c in breaking
+        )
 
     def test_json_feat_type_field(self, repo):
         r = _frob(["gitlog", str(repo), "--level", "full", "--json"])
@@ -171,7 +169,9 @@ class TestGitlogJson:
         assert len(feat_commits) >= 2
 
     def test_json_since_tag_filters(self, repo):
-        r = _frob(["gitlog", str(repo), "--level", "full", "--since", "v0.1.0", "--json"])
+        r = _frob(
+            ["gitlog", str(repo), "--level", "full", "--since", "v0.1.0", "--json"]
+        )
         data = self._parse_json(r)
         descriptions = [c["description"] for c in data["commits"]]
         assert not any("login endpoint" in d for d in descriptions)

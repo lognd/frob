@@ -60,7 +60,7 @@ class AppConfig(BaseModel):
 
     # stub
     stub_file: Path | None = None
-    stub_target: str | None = None
+    stub_targets: list[str] = []
     stub_output: Path | None = None
 
     # outline
@@ -230,7 +230,7 @@ class AppConfig(BaseModel):
             "scaffold_type",
             "scaffold_name",
             "cycle_lang",
-            "stub_target",
+            "stub_targets",
             "xref_symbol",
             "xref_lang",
             "bundle_target",
@@ -300,6 +300,11 @@ class AppConfig(BaseModel):
         token_paths = getattr(args, "tokens_paths", None)
         if token_paths:
             d["tokens_paths"] = [Path(p) for p in token_paths]
+
+        # Multi-string fields
+        stub_targets = getattr(args, "stub_targets", None)
+        if stub_targets:
+            d["stub_targets"] = list(stub_targets)
 
         # Int fields
         for int_field in (

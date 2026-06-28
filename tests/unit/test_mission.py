@@ -1,9 +1,5 @@
 """Unit tests for frob.mission."""
 
-from pathlib import Path
-
-import pytest
-
 from frob.mission import (
     MissionError,
     create_mission,

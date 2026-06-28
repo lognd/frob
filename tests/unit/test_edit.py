@@ -2,10 +2,7 @@
 
 from pathlib import Path
 
-import pytest
-
-from frob.edit import EditError, IsolatedSymbol, isolate, replace
-
+from frob.edit import EditError, isolate, replace
 
 PY_SRC = """\
 def foo(x: int) -> int:

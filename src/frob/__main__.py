@@ -57,13 +57,14 @@ def _build_parser() -> argparse.ArgumentParser:
 
     # -- stub ----------------------------------------------------------------
     stub_p = sub.add_parser(
-        "stub", help="emit a source file stubbed to a single target"
+        "stub", help="emit a source file with all functions stubbed except targets"
     )
     stub_p.add_argument("stub_file", metavar="file")
     stub_p.add_argument(
-        "stub_target",
+        "stub_targets",
         metavar="target",
-        help="function or ClassName.method to keep intact",
+        nargs="+",
+        help="one or more functions or ClassName.method to keep intact",
     )
     stub_p.add_argument("--output", dest="stub_output", metavar="FILE")
 

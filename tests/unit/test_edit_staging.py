@@ -3,12 +3,9 @@
 import time
 from pathlib import Path
 
-import pytest
-
 from frob.edit import (
     EditError,
     commit,
-    isolate,
     replace,
     stage,
     status,
@@ -80,14 +77,21 @@ class TestStage:
 class TestCommit:
     def test_commit_applies_single_patch(self, tmp_path):
         p = _py(tmp_path)
-        stage(p, "foo", "def foo(x: int) -> int:\n    return x * 99\n", project_root=tmp_path)
+        stage(
+            p,
+            "foo",
+            "def foo(x: int) -> int:\n    return x * 99\n",
+            project_root=tmp_path,
+        )
         result = commit(p, project_root=tmp_path)
         assert result.is_ok
         assert "return x * 99" in p.read_text()
 
     def test_commit_preserves_other_symbols(self, tmp_path):
         p = _py(tmp_path)
-        stage(p, "foo", "def foo(x: int) -> int:\n    return 0\n", project_root=tmp_path)
+        stage(
+            p, "foo", "def foo(x: int) -> int:\n    return 0\n", project_root=tmp_path
+        )
         commit(p, project_root=tmp_path)
         content = p.read_text()
         assert "def bar" in content
@@ -95,8 +99,15 @@ class TestCommit:
 
     def test_commit_applies_multiple_patches(self, tmp_path):
         p = _py(tmp_path)
-        stage(p, "foo", "def foo(x: int) -> int:\n    return -1\n", project_root=tmp_path)
-        stage(p, "bar", "def bar(y: str) -> str:\n    return y.lower()\n", project_root=tmp_path)
+        stage(
+            p, "foo", "def foo(x: int) -> int:\n    return -1\n", project_root=tmp_path
+        )
+        stage(
+            p,
+            "bar",
+            "def bar(y: str) -> str:\n    return y.lower()\n",
+            project_root=tmp_path,
+        )
         result = commit(p, project_root=tmp_path)
         assert result.is_ok
         content = p.read_text()
@@ -129,8 +140,15 @@ class TestCommit:
         """Two agents stage different symbols; commit applies both correctly."""
         p = _py(tmp_path)
         # Simulate agent A staging foo, agent B staging bar concurrently
-        stage(p, "foo", "def foo(x: int) -> int:\n    return 10\n", project_root=tmp_path)
-        stage(p, "bar", "def bar(y: str) -> str:\n    return 'fixed'\n", project_root=tmp_path)
+        stage(
+            p, "foo", "def foo(x: int) -> int:\n    return 10\n", project_root=tmp_path
+        )
+        stage(
+            p,
+            "bar",
+            "def bar(y: str) -> str:\n    return 'fixed'\n",
+            project_root=tmp_path,
+        )
         result = commit(p, project_root=tmp_path)
         assert result.is_ok
         content = p.read_text()
@@ -213,6 +231,7 @@ class TestWorktreeIsolation:
 
         # Patch dir must be inside the worktree, not tmp_path root
         from frob.edit import _patch_dir
+
         patch_dir = _patch_dir(py_file, None)
         assert str(patch_dir).startswith(str(worktree_root))
 

@@ -26,7 +26,9 @@ def _setup_repo(tmp_path: Path) -> Path:
     _git(["init", "-b", "main"], repo)
     _git(["config", "user.email", "test@test.com"], repo)
     _git(["config", "user.name", "Test"], repo)
-    (repo / "pyproject.toml").write_text('[project]\nname = "test"\nversion = "0.1.0"\n')
+    (repo / "pyproject.toml").write_text(
+        '[project]\nname = "test"\nversion = "0.1.0"\n'
+    )
     _git(["add", "."], repo)
     _git(["commit", "-m", "init: initial commit"], repo)
     return repo

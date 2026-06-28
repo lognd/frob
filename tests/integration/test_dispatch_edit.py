@@ -14,8 +14,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-import pytest
-
 FROB = [sys.executable, "-m", "frob"]
 
 PY_SRC = """\
@@ -37,7 +35,9 @@ def _git(args: list[str], cwd: Path) -> subprocess.CompletedProcess:
     )
 
 
-def _frob(args: list[str], cwd: Path | None = None, input: str | None = None) -> subprocess.CompletedProcess:
+def _frob(
+    args: list[str], cwd: Path | None = None, input: str | None = None
+) -> subprocess.CompletedProcess:
     return subprocess.run(
         FROB + args,
         capture_output=True,
@@ -57,7 +57,7 @@ def _setup_repo(tmp_path: Path) -> tuple[Path, Path]:
     _git(["config", "user.name", "Test"], repo)
 
     # Need a pyproject.toml so frob find_project_root anchors here
-    (repo / "pyproject.toml").write_text("[project]\nname = \"test\"\n")
+    (repo / "pyproject.toml").write_text('[project]\nname = "test"\n')
 
     src = repo / "src"
     src.mkdir()
@@ -86,14 +86,14 @@ class TestDispatchEditIntegration:
 
         # Stage a patch INSIDE the worktree
         new_src = "def alpha(x: int) -> int:\n    return x * 99\n"
-        r = _frob(["edit", str(wt_py_file), "alpha", "--stage"], cwd=wt_path, input=new_src)
+        r = _frob(
+            ["edit", str(wt_py_file), "alpha", "--stage"], cwd=wt_path, input=new_src
+        )
         assert r.returncode == 0, r.stderr
 
         # Patch file must be inside worktree, not main repo
         main_frob_edits = repo / ".frob" / "edits"
-        assert not main_frob_edits.exists(), (
-            "patch leaked into main repo's .frob/edits"
-        )
+        assert not main_frob_edits.exists(), "patch leaked into main repo's .frob/edits"
         wt_frob_edits = wt_path / ".frob" / "edits"
         assert wt_frob_edits.exists(), "patch not found inside worktree"
 
@@ -170,14 +170,22 @@ class TestDispatchEditIntegration:
 
         # Agent 1 edits alpha inside wt1
         new_alpha = "def alpha(x: int) -> int:\n    return x + 100\n"
-        _frob(["edit", str(wt1 / "src" / "mod.py"), "alpha", "--stage"], cwd=wt1, input=new_alpha)
+        _frob(
+            ["edit", str(wt1 / "src" / "mod.py"), "alpha", "--stage"],
+            cwd=wt1,
+            input=new_alpha,
+        )
         _frob(["edit", str(wt1 / "src" / "mod.py"), "--commit"], cwd=wt1)
         _git(["add", "src/mod.py"], wt1)
         _git(["commit", "-m", "feat: alpha +100"], wt1)
 
         # Agent 2 edits beta inside wt2
         new_beta = "def beta(y: str) -> str:\n    return y.strip()\n"
-        _frob(["edit", str(wt2 / "src" / "mod.py"), "beta", "--stage"], cwd=wt2, input=new_beta)
+        _frob(
+            ["edit", str(wt2 / "src" / "mod.py"), "beta", "--stage"],
+            cwd=wt2,
+            input=new_beta,
+        )
         _frob(["edit", str(wt2 / "src" / "mod.py"), "--commit"], cwd=wt2)
         _git(["add", "src/mod.py"], wt2)
         _git(["commit", "-m", "feat: beta strip"], wt2)

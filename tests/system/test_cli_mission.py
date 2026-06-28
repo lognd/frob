@@ -1,8 +1,5 @@
 """End-to-end tests for `frob mission`."""
 
-import pytest
-from pathlib import Path
-
 from tests.system.conftest import run
 
 
@@ -10,7 +7,7 @@ class TestMissionNew:
     def test_creates_file(self, tmp_path):
         r = run("mission", "new", "fix", cwd=str(tmp_path))
         assert r.returncode == 0
-        output = r.stdout.strip() or r.stderr.strip()
+        r.stdout.strip() or r.stderr.strip()
         # Should print the path to the mission file
         mission_files = list((tmp_path / ".frob" / "missions").glob("*.md"))
         assert len(mission_files) == 1
@@ -20,7 +17,9 @@ class TestMissionNew:
         assert r.returncode != 0
 
     def test_with_error_flag(self, tmp_path):
-        r = run("mission", "new", "fix", "--error", "TypeError: oops", cwd=str(tmp_path))
+        r = run(
+            "mission", "new", "fix", "--error", "TypeError: oops", cwd=str(tmp_path)
+        )
         assert r.returncode == 0
         files = list((tmp_path / ".frob" / "missions").glob("*.md"))
         assert "TypeError: oops" in files[0].read_text()

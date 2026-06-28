@@ -1,7 +1,5 @@
 """Unit tests for new parsers: cargo, clang-tidy, valgrind."""
 
-import pytest
-
 from frob.process.parsers.cargo import parse_cargo
 from frob.process.parsers.clang_tidy import parse_clang_tidy
 from frob.process.parsers.valgrind import parse_valgrind
@@ -140,11 +138,7 @@ class TestParseValgrind:
         assert r.summary  # non-empty
 
     def test_xml_clean(self):
-        xml = (
-            '<?xml version="1.0"?>'
-            "<valgrindoutput>"
-            "</valgrindoutput>"
-        )
+        xml = '<?xml version="1.0"?><valgrindoutput></valgrindoutput>'
         r = parse_valgrind(xml, exit_code=0)
         assert r.error_count == 0
 

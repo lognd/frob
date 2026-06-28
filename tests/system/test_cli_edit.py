@@ -1,8 +1,5 @@
 """End-to-end tests for `frob edit`."""
 
-import pytest
-from pathlib import Path
-
 from tests.system.conftest import run
 
 PY_SRC = """\

@@ -30,8 +30,11 @@ class CtxResult(BaseModel):
     content: str
 
     def as_text(self) -> str:
+        from frob.tokens import estimate_tokens
+
+        tok = estimate_tokens(self.content)
         header = (
-            f"# frob ctx: {self.symbol}  [tier={self.tier.value}]\n"
+            f"# frob ctx: {self.symbol}  [tier={self.tier.value}  ~{tok:,} tok]\n"
             f"# reason: {self.tier_reason}\n\n"
         )
         return header + self.content

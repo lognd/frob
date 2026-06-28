@@ -33,10 +33,10 @@ class Bundle(BaseModel):
         """
         Format the bundle for direct use as a subagent context block.
         This is the primary output format -- paste directly into a prompt.
+        Token count is written to stderr by the runner, not embedded here.
         """
         parts: list[str] = []
         parts.append(f"# Bundle: `{self.target}`")
-        parts.append(f"# Total estimated tokens: ~{self.total_tokens:,}")
         parts.append("")
         for sec in self.sections:
             role_label = "FOCUS" if sec.role == "focus" else "SIGNATURES"
@@ -90,6 +90,17 @@ def build_bundle(
         )
     ]
 
+    # 1b. Append same-file private callee signatures to the focus content
+    callee_sigs = _same_file_callee_sigs(path, target)
+    if callee_sigs:
+        focus_content = focus_content.rstrip() + "\n\n" + callee_sigs
+        sections[0] = BundleSection(
+            path=sections[0].path,
+            role="focus",
+            content=focus_content,
+            tokens=estimate_tokens(focus_content),
+        )
+
     # 2. Collect local imports and produce signature-only stubs
     import_paths = _discover_local_imports(path, depth)
     for imp_path in import_paths:
@@ -106,6 +117,87 @@ def build_bundle(
 
     total = sum(s.tokens for s in sections)
     return Ok(Bundle(target=target, sections=sections, total_tokens=total))
+
+
+def _same_file_callee_sigs(path: Path, target: str) -> str:
+    """
+    Return signature lines for private functions in `path` that are called
+    by `target`. Helps agents understand what helpers the target delegates to.
+    """
+    ext = path.suffix.lower()
+    if ext != ".py":
+        return ""
+
+    from frob.ast import python as _py
+    from frob.ast.common import child_by_field, text
+
+    try:
+        src, tree = _py.parse_file(path)
+    except Exception:
+        return ""
+
+    # Find the target node
+    parts = target.split(".", 1)
+    class_name = parts[0] if len(parts) == 2 else None
+    func_name = parts[-1]
+
+    target_node = None
+    for n in tree.root_node.children:
+        if class_name and n.type == "class_definition":
+            cn = child_by_field(n, "name")
+            if cn and text(cn) == class_name:
+                body = child_by_field(n, "body") or n
+                for child in body.named_children:
+                    if child.type == "function_definition":
+                        fn = child_by_field(child, "name")
+                        if fn and text(fn) == func_name:
+                            target_node = child
+                            break
+        elif not class_name and n.type == "function_definition":
+            fn = child_by_field(n, "name")
+            if fn and text(fn) == func_name:
+                target_node = n
+                break
+
+    if target_node is None:
+        return ""
+
+    # Collect all identifiers called in the target body
+    called: set[str] = set()
+
+    def collect_calls(node) -> None:
+        if node.type == "call":
+            fn_node = node.child_by_field_name("function")
+            if fn_node:
+                name = text(fn_node).split("(")[0].strip()
+                if name.startswith("_"):
+                    called.add(name)
+        for child in node.children:
+            collect_calls(child)
+
+    collect_calls(target_node)
+
+    if not called:
+        return ""
+
+    # Find signatures of those private functions defined at module level
+    lines_out: list[str] = []
+    for n in tree.root_node.children:
+        if n.type == "function_definition":
+            fn = child_by_field(n, "name")
+            fname = text(fn) if fn else ""
+            if fname in called:
+                params = child_by_field(n, "parameters")
+                ret = child_by_field(n, "return_type")
+                sig = f"def {fname}{text(params) if params else '()'}"
+                if ret:
+                    sig += f" -> {text(ret)}"
+                sig += ": ..."
+                lines_out.append(sig)
+
+    if not lines_out:
+        return ""
+    return "# same-file helpers called by target:\n" + "\n".join(lines_out)
 
 
 def _focused_content(path: Path, target: str) -> str | None:

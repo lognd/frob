@@ -199,3 +199,56 @@ def emit_stub(source: bytes, tree: Tree, target: str) -> str:
         result[start:end] = replacement
 
     return result.decode()
+
+
+def emit_stub_multi(source: bytes, tree: Tree, targets: list[str]) -> str:
+    """Like emit_stub but reveal multiple targets simultaneously."""
+    # Build lookup sets: {func_name} for module-level, {class_name: {method_name}}
+    module_targets: set[str] = set()
+    class_targets: dict[str, set[str]] = {}
+    for t in targets:
+        parts = t.split(".", 1)
+        if len(parts) == 2:
+            class_targets.setdefault(parts[0], set()).add(parts[1])
+        else:
+            module_targets.add(parts[0])
+
+    replacements: list[tuple[int, int, bytes]] = []
+
+    def stub_body(body: Node) -> None:
+        if not body.named_children:
+            return
+        col = body.start_point[1]
+        indent = b" " * col
+        replace_start = body.start_byte - col
+        replacements.append((replace_start, body.end_byte, indent + b"..."))
+
+    for n in tree.root_node.children:
+        if n.type == "class_definition":
+            name_node = child_by_field(n, "name")
+            cname = text(name_node) if name_node else ""
+            methods_to_reveal = class_targets.get(cname, set())
+            body_node = child_by_field(n, "body") or n
+            for child in body_node.named_children:
+                if child.type != "function_definition":
+                    continue
+                mname_node = child_by_field(child, "name")
+                mname = text(mname_node) if mname_node else ""
+                if mname not in methods_to_reveal:
+                    body = child_by_field(child, "body")
+                    if body and body.named_children:
+                        stub_body(body)
+        elif n.type == "function_definition":
+            name_node = child_by_field(n, "name")
+            fname = text(name_node) if name_node else ""
+            if fname not in module_targets:
+                body = child_by_field(n, "body")
+                if body and body.named_children:
+                    stub_body(body)
+
+    result = bytearray(source)
+    for start, end, replacement in sorted(
+        replacements, key=lambda r: r[0], reverse=True
+    ):
+        result[start:end] = replacement
+    return result.decode()

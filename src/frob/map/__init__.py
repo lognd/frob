@@ -77,6 +77,10 @@ def map_project(root: Path, depth: int | None = None) -> MapResult:
     files: list[FileNode] = []
 
     root = root.resolve()
+    try:
+        display_root = str(root.relative_to(Path.cwd()))
+    except ValueError:
+        display_root = str(root)
     all_paths = _collect_paths(root, depth)
 
     for path in sorted(all_paths):
@@ -113,7 +117,7 @@ def map_project(root: Path, depth: int | None = None) -> MapResult:
 
     total_lines = sum(f.lines for f in files)
     return MapResult(
-        root=str(root),
+        root=display_root,
         total_files=len(files),
         total_lines=total_lines,
         files=files,

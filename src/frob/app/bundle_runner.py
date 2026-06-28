@@ -25,4 +25,7 @@ def run(cfg: AppConfig) -> None:
     if fmt == "json":
         _log.info(bundle.as_json())
     else:
+        import sys as _sys
+
+        print(f"# ~{bundle.total_tokens:,} tokens", file=_sys.stderr)
         _log.info(bundle.as_markdown())

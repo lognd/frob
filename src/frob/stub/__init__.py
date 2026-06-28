@@ -19,6 +19,25 @@ _PY_EXTS = {".py"}
 _CPP_EXTS = _cpp.ALL_EXTS
 
 
+def stub_file_multi(path: Path, targets: list[str]) -> Result[str, StubError]:
+    """Stub all functions except those in `targets` (all revealed simultaneously)."""
+    if not targets:
+        return Err(StubError.TargetNotFound)
+    if len(targets) == 1:
+        return stub_file(path, targets[0])
+
+    ext = path.suffix.lower()
+    if ext not in _PY_EXTS:
+        return Err(StubError.UnsupportedLanguage)
+
+    src, tree = _py.parse_file(path)
+    for t in targets:
+        if not _target_exists_py(tree, t):
+            return Err(StubError.TargetNotFound)
+
+    return Ok(_py.emit_stub_multi(src, tree, targets))
+
+
 def stub_file(path: Path, target: str) -> Result[str, StubError]:
     ext = path.suffix.lower()
 
