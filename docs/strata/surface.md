@@ -123,3 +123,43 @@ onto parent/child tickets.
 Dotted module paths (`use base.labels { Pii }`); per-repo `design/`
 directory; the std vocabulary ships with frob (decision D6). Cross-repo
 registries are deferred but the path syntax already accommodates them.
+
+## Parser
+
+<!-- frob:ticket T-0059 -->
+
+The grammar v0 subset (module/node/flow/boundary/assert/assume; no
+`refine`, deferred to T-0062) is lexed and recursive-descent parsed in the
+`strata-core` Rust extension (charter D3, amended 2026-07-17); Python only
+validates the resulting JSON into frozen pydantic AST models and never
+re-implements the grammar. Every malformed input yields a `{"line",
+"col", "message"}` diagnostic instead of a panic or a Python exception.
+
+Rust (`strata-core/src/parse.rs`, exposed as `strata_core.parse_source`):
+
+- `parse_source(text: &str) -> String` <!-- frob:describes strata-core/src/lib.rs::parse_source -->
+  lexes and parses one source file, returning `{"ok": <module JSON>}` or
+  `{"err": {"line", "col", "message"}}`.
+
+Python AST models (`src/frob/strata/_ast.py`), one frozen pydantic model
+per grammar production:
+
+- `Module` <!-- frob:describes src/frob/strata/_ast.py::Module -->
+  -- name, nodes, flows, boundaries, claims.
+- `NodeDecl` <!-- frob:describes src/frob/strata/_ast.py::NodeDecl -->
+  -- id, trust, is_abstract, clearance, attrs, capacity, residence.
+- `Capacity` <!-- frob:describes src/frob/strata/_ast.py::Capacity -->
+  -- the parsed `capacity RATE UNIT replicas MIN..MAX` node property.
+- `FlowDecl` <!-- frob:describes src/frob/strata/_ast.py::FlowDecl -->
+  -- id, src, dst, label, age/rate/size, attrs, transport.
+- `BoundaryDecl` <!-- frob:describes src/frob/strata/_ast.py::BoundaryDecl -->
+  -- id, kind (endorse/declassify), flow_id, from_level, to_level, predicate.
+- `ClaimDecl` <!-- frob:describes src/frob/strata/_ast.py::ClaimDecl -->
+  -- id, kind (noflow/reach/bound), src/dst or metric/target/limit, assumed,
+  owner, review.
+
+Python entry point (`src/frob/strata/_parse.py`):
+
+- `parse_module(text: str) -> Result[Module, StrataError]` <!-- frob:describes src/frob/strata/_parse.py::parse_module -->
+  calls the Rust parser, logs the line/col/message on failure at ERROR,
+  and returns `Err(StrataError.ParseFailed)` or a validated `Module`.

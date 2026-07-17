@@ -13,6 +13,8 @@
 use pyo3::prelude::*;
 use std::collections::{HashMap, HashSet, VecDeque};
 
+mod parse;
+
 /// One directed edge of the influence graph, flattened for the boundary:
 /// (flow_id, src, dst, barrier) where `barrier` marks a flow carrying any
 /// endorse/declassify boundary (a declared trust/label change point).
@@ -135,12 +137,24 @@ fn demand(rates: Vec<(String, f64)>, node: String) -> f64 {
         .sum()
 }
 
+/// BIND: parse_source
+///
+/// WHY: the surface grammar parser is compute-heavy (charter D3, amended
+/// 2026-07-17) so it lives here; the JSON string is the narrowest
+/// possible boundary back to the Python validators in `frob.strata._ast`.
+#[pyfunction]
+fn parse_source(text: &str) -> String {
+    // frob:doc docs/strata/surface.md#parser
+    parse::parse_source_impl(text)
+}
+
 #[pymodule]
 fn strata_core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     // frob:doc docs/strata/kernel.md#strata-core
     m.add_function(wrap_pyfunction!(reachable, m)?)?;
     m.add_function(wrap_pyfunction!(worst_age, m)?)?;
     m.add_function(wrap_pyfunction!(demand, m)?)?;
+    m.add_function(wrap_pyfunction!(parse_source, m)?)?;
     Ok(())
 }
 

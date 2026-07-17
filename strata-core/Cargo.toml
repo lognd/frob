@@ -17,6 +17,8 @@ crate-type = ["cdylib", "rlib"]
 # maturin passes the feature at wheel-build time; plain `cargo build`/
 # `cargo test` leave it off. (Same posture as frob-core.)
 pyo3 = { version = "0.22", features = ["abi3-py311"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
 
 [features]
 extension-module = ["pyo3/extension-module"]

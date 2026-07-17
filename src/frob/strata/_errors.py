@@ -20,3 +20,4 @@ class StrataError(ErrorSet):
     UnknownReference = "A fact references a node/flow id that is not declared"
     DuplicateId = "Two facts of the same kind share an id"
     MalformedLattice = "A lattice's covering pairs contain a cycle"
+    ParseFailed = "Source text failed to parse into a strata module"

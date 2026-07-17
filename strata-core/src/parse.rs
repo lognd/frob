@@ -1,0 +1,905 @@
+//! Lexer + recursive-descent parser for the strata surface grammar v0
+//! (docs/strata/surface.md#parser). Deterministic and fuzz-safe: every
+//! malformed input yields an `err` JSON object with line/col instead of
+//! panicking (charter D3 as amended: the parser is compute-heavy and
+//! lives here; Python only calls `parse_source` and validates the JSON
+//! into pydantic AST models).
+
+use serde::Serialize;
+use serde_json::json;
+
+// ---------------------------------------------------------------------
+// Lexer
+// ---------------------------------------------------------------------
+
+#[derive(Debug, Clone, PartialEq)]
+enum TokKind {
+    Ident(String),
+    Number(f64),
+    Str(String),
+    Symbol(char), // one of : { } ; -> ( ) . .. handled specially below
+    Arrow,        // ->
+    DotDot,       // ..
+    Eof,
+}
+
+#[derive(Debug, Clone)]
+struct Token {
+    kind: TokKind,
+    line: usize,
+    col: usize,
+}
+
+#[derive(Debug, Clone)]
+struct ParseError {
+    line: usize,
+    col: usize,
+    message: String,
+}
+
+fn is_ident_start(c: char) -> bool {
+    c.is_ascii_alphabetic() || c == '_'
+}
+
+fn is_ident_cont(c: char) -> bool {
+    c.is_ascii_alphanumeric() || c == '_'
+}
+
+/// Turn source text into a token stream, or the first lexical error found.
+///
+/// WHY: a flat token vector lets the recursive-descent parser below use
+/// simple lookahead without re-scanning characters; `//` comments and all
+/// whitespace/newlines are stripped here so the parser never sees them.
+fn lex(text: &str) -> Result<Vec<Token>, ParseError> {
+    let chars: Vec<char> = text.chars().collect();
+    let mut i = 0usize;
+    let mut line = 1usize;
+    let mut col = 1usize;
+    let mut toks: Vec<Token> = Vec::new();
+
+    macro_rules! advance {
+        () => {{
+            if i < chars.len() {
+                if chars[i] == '\n' {
+                    line += 1;
+                    col = 1;
+                } else {
+                    col += 1;
+                }
+                i += 1;
+            }
+        }};
+    }
+
+    while i < chars.len() {
+        let c = chars[i];
+        if c == ' ' || c == '\t' || c == '\r' || c == '\n' {
+            advance!();
+            continue;
+        }
+        if c == '/' && i + 1 < chars.len() && chars[i + 1] == '/' {
+            while i < chars.len() && chars[i] != '\n' {
+                advance!();
+            }
+            continue;
+        }
+        let start_line = line;
+        let start_col = col;
+        if is_ident_start(c) {
+            let mut s = String::new();
+            while i < chars.len() && is_ident_cont(chars[i]) {
+                s.push(chars[i]);
+                advance!();
+            }
+            toks.push(Token {
+                kind: TokKind::Ident(s),
+                line: start_line,
+                col: start_col,
+            });
+            continue;
+        }
+        if c.is_ascii_digit() {
+            let mut s = String::new();
+            while i < chars.len() && chars[i].is_ascii_digit() {
+                s.push(chars[i]);
+                advance!();
+            }
+            if i < chars.len() && chars[i] == '.' && i + 1 < chars.len() && chars[i + 1].is_ascii_digit()
+            {
+                s.push('.');
+                advance!();
+                while i < chars.len() && chars[i].is_ascii_digit() {
+                    s.push(chars[i]);
+                    advance!();
+                }
+            }
+            let value: f64 = s.parse().map_err(|_| ParseError {
+                line: start_line,
+                col: start_col,
+                message: format!("malformed number literal {:?}", s),
+            })?;
+            toks.push(Token {
+                kind: TokKind::Number(value),
+                line: start_line,
+                col: start_col,
+            });
+            continue;
+        }
+        if c == '"' {
+            advance!();
+            let mut s = String::new();
+            while i < chars.len() && chars[i] != '"' {
+                if chars[i] == '\n' {
+                    return Err(ParseError {
+                        line: start_line,
+                        col: start_col,
+                        message: "unterminated string literal".to_string(),
+                    });
+                }
+                s.push(chars[i]);
+                advance!();
+            }
+            if i >= chars.len() {
+                return Err(ParseError {
+                    line: start_line,
+                    col: start_col,
+                    message: "unterminated string literal".to_string(),
+                });
+            }
+            advance!(); // closing quote
+            toks.push(Token {
+                kind: TokKind::Str(s),
+                line: start_line,
+                col: start_col,
+            });
+            continue;
+        }
+        if c == '-' && i + 1 < chars.len() && chars[i + 1] == '>' {
+            advance!();
+            advance!();
+            toks.push(Token {
+                kind: TokKind::Arrow,
+                line: start_line,
+                col: start_col,
+            });
+            continue;
+        }
+        if c == '.' && i + 1 < chars.len() && chars[i + 1] == '.' {
+            advance!();
+            advance!();
+            toks.push(Token {
+                kind: TokKind::DotDot,
+                line: start_line,
+                col: start_col,
+            });
+            continue;
+        }
+        if matches!(c, ':' | '{' | '}' | ';' | '(' | ')' | '%' | '/' | '=' | '<') {
+            advance!();
+            toks.push(Token {
+                kind: TokKind::Symbol(c),
+                line: start_line,
+                col: start_col,
+            });
+            continue;
+        }
+        return Err(ParseError {
+            line: start_line,
+            col: start_col,
+            message: format!("unexpected character {:?}", c),
+        });
+    }
+    toks.push(Token {
+        kind: TokKind::Eof,
+        line,
+        col,
+    });
+    Ok(toks)
+}
+
+// ---------------------------------------------------------------------
+// Parser
+// ---------------------------------------------------------------------
+
+struct Parser {
+    toks: Vec<Token>,
+    pos: usize,
+}
+
+/// A JSON-serializable diagnostic-free AST; every field mirrors the
+/// pydantic models in `frob.strata._ast` so json.loads -> model_validate
+/// is a straight structural map with no renaming.
+#[derive(Serialize, Default)]
+struct ModuleAst {
+    name: String,
+    nodes: Vec<serde_json::Value>,
+    flows: Vec<serde_json::Value>,
+    boundaries: Vec<serde_json::Value>,
+    claims: Vec<serde_json::Value>,
+}
+
+impl Parser {
+    fn new(toks: Vec<Token>) -> Self {
+        Parser { toks, pos: 0 }
+    }
+
+    fn cur(&self) -> &Token {
+        &self.toks[self.pos]
+    }
+
+    fn err<T>(&self, message: impl Into<String>) -> Result<T, ParseError> {
+        let t = self.cur();
+        Err(ParseError {
+            line: t.line,
+            col: t.col,
+            message: message.into(),
+        })
+    }
+
+    fn advance(&mut self) -> Token {
+        let t = self.toks[self.pos].clone();
+        if self.pos + 1 < self.toks.len() {
+            self.pos += 1;
+        }
+        t
+    }
+
+    fn at_eof(&self) -> bool {
+        matches!(self.cur().kind, TokKind::Eof)
+    }
+
+    fn peek_ident(&self) -> Option<&str> {
+        match &self.cur().kind {
+            TokKind::Ident(s) => Some(s.as_str()),
+            _ => None,
+        }
+    }
+
+    fn expect_keyword(&mut self, kw: &str) -> Result<(), ParseError> {
+        match self.peek_ident() {
+            Some(s) if s == kw => {
+                self.advance();
+                Ok(())
+            }
+            _ => self.err(format!("expected keyword {:?}", kw)),
+        }
+    }
+
+    fn expect_ident(&mut self, what: &str) -> Result<String, ParseError> {
+        match &self.cur().kind {
+            TokKind::Ident(s) => {
+                let s = s.clone();
+                self.advance();
+                Ok(s)
+            }
+            _ => self.err(format!("expected {}", what)),
+        }
+    }
+
+    fn expect_number(&mut self, what: &str) -> Result<f64, ParseError> {
+        match self.cur().kind {
+            TokKind::Number(n) => {
+                self.advance();
+                Ok(n)
+            }
+            _ => self.err(format!("expected {}", what)),
+        }
+    }
+
+    fn expect_int(&mut self, what: &str) -> Result<i64, ParseError> {
+        let n = self.expect_number(what)?;
+        Ok(n as i64)
+    }
+
+    fn expect_string(&mut self, what: &str) -> Result<String, ParseError> {
+        match &self.cur().kind {
+            TokKind::Str(s) => {
+                let s = s.clone();
+                self.advance();
+                Ok(s)
+            }
+            _ => self.err(format!("expected {}", what)),
+        }
+    }
+
+    fn expect_symbol(&mut self, sym: char) -> Result<(), ParseError> {
+        match self.cur().kind {
+            TokKind::Symbol(c) if c == sym => {
+                self.advance();
+                Ok(())
+            }
+            _ => self.err(format!("expected {:?}", sym)),
+        }
+    }
+
+    fn at_symbol(&self, sym: char) -> bool {
+        matches!(self.cur().kind, TokKind::Symbol(c) if c == sym)
+    }
+
+    fn at_keyword(&self, kw: &str) -> bool {
+        matches!(&self.cur().kind, TokKind::Ident(s) if s == kw)
+    }
+
+    fn expect_arrow(&mut self) -> Result<(), ParseError> {
+        match self.cur().kind {
+            TokKind::Arrow => {
+                self.advance();
+                Ok(())
+            }
+            _ => self.err("expected ->"),
+        }
+    }
+
+    fn expect_dotdot(&mut self) -> Result<(), ParseError> {
+        match self.cur().kind {
+            TokKind::DotDot => {
+                self.advance();
+                Ok(())
+            }
+            _ => self.err("expected .."),
+        }
+    }
+
+    /// UNIT := IDENT ('/' IDENT)* | '%'; the next bare IDENT after a
+    /// complete unit is never consumed (surface.md: "min" alone, "req/s"
+    /// as one unit).
+    fn parse_unit(&mut self) -> Result<String, ParseError> {
+        if self.at_symbol('%') {
+            self.advance();
+            return Ok("%".to_string());
+        }
+        let mut unit = self.expect_ident("unit")?;
+        while self.at_symbol('/') {
+            self.advance();
+            let part = self.expect_ident("unit component after /")?;
+            unit.push('/');
+            unit.push_str(&part);
+        }
+        Ok(unit)
+    }
+
+    fn parse_quantity(&mut self, what: &str) -> Result<serde_json::Value, ParseError> {
+        let value = self.expect_number(what)?;
+        let unit = self.parse_unit()?;
+        Ok(json!({"value": value, "unit": unit}))
+    }
+
+    /// ATTRVAL := IDENT ['=' IDENT], joined as "a=b" when '=' is present.
+    fn parse_attrval(&mut self) -> Result<String, ParseError> {
+        let key = self.expect_ident("attribute name")?;
+        if self.at_symbol('=') {
+            self.advance();
+            let val = self.expect_ident("attribute value after =")?;
+            Ok(format!("{}={}", key, val))
+        } else {
+            Ok(key)
+        }
+    }
+
+    fn parse_module(&mut self, ast: &mut ModuleAst, seen_module: &mut bool) -> Result<(), ParseError> {
+        if *seen_module {
+            return self.err("duplicate module statement");
+        }
+        self.advance(); // 'module'
+        let name = self.expect_ident("module name")?;
+        ast.name = name;
+        *seen_module = true;
+        Ok(())
+    }
+
+    fn parse_node(&mut self, ast: &mut ModuleAst) -> Result<(), ParseError> {
+        self.advance(); // 'node'
+        let id = self.expect_ident("node id")?;
+        self.expect_symbol(':')?;
+        let trust = self.expect_ident("trust level")?;
+        let mut is_abstract = false;
+        if self.at_keyword("abstract") {
+            self.advance();
+            is_abstract = true;
+        }
+        let mut clearance = "Secret".to_string();
+        let mut attrs: Vec<String> = Vec::new();
+        let mut residence: Option<String> = None;
+        let mut capacity: Option<serde_json::Value> = None;
+        if self.at_symbol('{') {
+            self.advance();
+            loop {
+                if self.at_symbol('}') {
+                    break;
+                }
+                if self.at_keyword("clearance") {
+                    self.advance();
+                    clearance = self.expect_ident("clearance level")?;
+                } else if self.at_keyword("attr") {
+                    self.advance();
+                    attrs.push(self.parse_attrval()?);
+                } else if self.at_keyword("residence") {
+                    self.advance();
+                    residence = Some(self.expect_ident("residence atom")?);
+                } else if self.at_keyword("capacity") {
+                    self.advance();
+                    let rate = self.parse_quantity("capacity rate")?;
+                    self.expect_keyword("replicas")?;
+                    let lo = self.expect_int("replicas_min")?;
+                    self.expect_dotdot()?;
+                    let hi = self.expect_int("replicas_max")?;
+                    capacity = Some(json!({"rate": rate, "replicas_min": lo, "replicas_max": hi}));
+                } else {
+                    return self.err("unknown node property");
+                }
+                if self.at_symbol(';') {
+                    self.advance();
+                } else {
+                    break;
+                }
+            }
+            self.expect_symbol('}')?;
+        }
+        ast.nodes.push(json!({
+            "id": id,
+            "trust": trust,
+            "is_abstract": is_abstract,
+            "clearance": clearance,
+            "attrs": attrs,
+            "capacity": capacity,
+            "residence": residence,
+        }));
+        Ok(())
+    }
+
+    fn parse_flow(&mut self, ast: &mut ModuleAst) -> Result<(), ParseError> {
+        self.advance(); // 'flow'
+        let id = self.expect_ident("flow id")?;
+        self.expect_symbol(':')?;
+        let src = self.expect_ident("flow src")?;
+        self.expect_arrow()?;
+        let dst = self.expect_ident("flow dst")?;
+        let mut label = "Public".to_string();
+        let mut age: Option<serde_json::Value> = None;
+        let mut rate: Option<serde_json::Value> = None;
+        let mut size: Option<serde_json::Value> = None;
+        let mut attrs: Vec<String> = Vec::new();
+        let mut transport: Vec<String> = Vec::new();
+        if self.at_symbol('{') {
+            self.advance();
+            loop {
+                if self.at_symbol('}') {
+                    break;
+                }
+                if self.at_keyword("label") {
+                    self.advance();
+                    label = self.expect_ident("label")?;
+                } else if self.at_keyword("age") {
+                    self.advance();
+                    age = Some(self.parse_quantity("age")?);
+                } else if self.at_keyword("rate") {
+                    self.advance();
+                    rate = Some(self.parse_quantity("rate")?);
+                } else if self.at_keyword("size") {
+                    self.advance();
+                    size = Some(self.parse_quantity("size")?);
+                } else if self.at_keyword("attr") {
+                    self.advance();
+                    attrs.push(self.parse_attrval()?);
+                } else if self.at_keyword("transport") {
+                    self.advance();
+                    transport.push(self.expect_ident("transport atom")?);
+                } else {
+                    return self.err("unknown flow property");
+                }
+                if self.at_symbol(';') {
+                    self.advance();
+                } else {
+                    break;
+                }
+            }
+            self.expect_symbol('}')?;
+        }
+        ast.flows.push(json!({
+            "id": id,
+            "src": src,
+            "dst": dst,
+            "label": label,
+            "age": age,
+            "rate": rate,
+            "size": size,
+            "attrs": attrs,
+            "transport": transport,
+        }));
+        Ok(())
+    }
+
+    fn parse_boundary(&mut self, ast: &mut ModuleAst) -> Result<(), ParseError> {
+        self.advance(); // 'boundary'
+        let id = self.expect_ident("boundary id")?;
+        let kind = if self.at_keyword("endorse") {
+            self.advance();
+            "endorse".to_string()
+        } else if self.at_keyword("declassify") {
+            self.advance();
+            "declassify".to_string()
+        } else {
+            return self.err("expected endorse or declassify");
+        };
+        let flow_id = self.expect_ident("boundary flow id")?;
+        self.expect_symbol(':')?;
+        let from_level = self.expect_ident("from level")?;
+        self.expect_arrow()?;
+        let to_level = self.expect_ident("to level")?;
+        let mut predicate = String::new();
+        if self.at_keyword("when") {
+            self.advance();
+            predicate = self.expect_string("predicate string")?;
+        }
+        ast.boundaries.push(json!({
+            "id": id,
+            "kind": kind,
+            "flow_id": flow_id,
+            "from_level": from_level,
+            "to_level": to_level,
+            "predicate": predicate,
+        }));
+        Ok(())
+    }
+
+    fn parse_metric(&mut self) -> Result<String, ParseError> {
+        let m = self.expect_ident("metric")?;
+        match m.as_str() {
+            "age" | "rate" | "latency" | "size" | "utilization" => Ok(m),
+            _ => self.err(format!("unknown metric {:?}", m)),
+        }
+    }
+
+    /// claim_body := noflow ID -> ID | reach ID -> ID | bound METRIC ID <= NUMBER UNIT
+    fn parse_claim_body(&mut self) -> Result<(String, serde_json::Value), ParseError> {
+        if self.at_keyword("noflow") {
+            self.advance();
+            let src = self.expect_ident("noflow src")?;
+            self.expect_arrow()?;
+            let dst = self.expect_ident("noflow dst")?;
+            Ok(("noflow".to_string(), json!({"src": src, "dst": dst})))
+        } else if self.at_keyword("reach") {
+            self.advance();
+            let src = self.expect_ident("reach src")?;
+            self.expect_arrow()?;
+            let dst = self.expect_ident("reach dst")?;
+            Ok(("reach".to_string(), json!({"src": src, "dst": dst})))
+        } else if self.at_keyword("bound") {
+            self.advance();
+            let metric = self.parse_metric()?;
+            let target = self.expect_ident("bound target")?;
+            // '<=' is lexed as two Symbol('<')/Symbol('=')? not declared --
+            // spec uses '<=' verbatim; lex '<' as unexpected otherwise, so
+            // handle here as two chars via raw symbol checks.
+            self.expect_le()?;
+            let limit = self.parse_quantity("bound limit")?;
+            Ok((
+                "bound".to_string(),
+                json!({"metric": metric, "target": target, "limit": limit}),
+            ))
+        } else {
+            self.err("expected noflow, reach, or bound")
+        }
+    }
+
+    fn expect_le(&mut self) -> Result<(), ParseError> {
+        // '<=' is two raw chars neither of which is in the lexer's symbol
+        // set; recognize them here off the *unconsumed* source is not
+        // possible post-lex, so '<' and '=' must be lexed. See lex(): '='
+        // is a Symbol; '<' needs handling too -- added there.
+        match self.cur().kind {
+            TokKind::Symbol('<') => {
+                self.advance();
+                self.expect_symbol('=')
+            }
+            _ => self.err("expected <="),
+        }
+    }
+
+    fn parse_claim(&mut self, ast: &mut ModuleAst, kind: &str) -> Result<(), ParseError> {
+        self.advance(); // 'assert' or 'assume'
+        let id = self.expect_ident("claim id")?;
+        let (body_kind, body) = self.parse_claim_body()?;
+        let mut owner: Option<String> = None;
+        let mut review: Option<String> = None;
+        if kind == "assume" {
+            self.expect_keyword("owner")?;
+            owner = Some(self.expect_ident("owner")?);
+            self.expect_keyword("review")?;
+            review = Some(self.expect_string("review date")?);
+        }
+        ast.claims.push(json!({
+            "id": id,
+            "kind": body_kind,
+            "src": body.get("src").cloned(),
+            "dst": body.get("dst").cloned(),
+            "metric": body.get("metric").cloned(),
+            "target": body.get("target").cloned(),
+            "limit": body.get("limit").cloned(),
+            "assumed": kind == "assume",
+            "owner": owner,
+            "review": review,
+        }));
+        Ok(())
+    }
+
+    fn parse_program(&mut self) -> Result<ModuleAst, ParseError> {
+        let mut ast = ModuleAst::default();
+        let mut seen_module = false;
+        while !self.at_eof() {
+            let kw = match self.peek_ident() {
+                Some(s) => s.to_string(),
+                None => return self.err("expected a statement keyword"),
+            };
+            match kw.as_str() {
+                "module" => self.parse_module(&mut ast, &mut seen_module)?,
+                "node" | "flow" | "boundary" | "assert" | "assume" => {
+                    if !seen_module {
+                        return self.err("statement before module declaration");
+                    }
+                    match kw.as_str() {
+                        "node" => self.parse_node(&mut ast)?,
+                        "flow" => self.parse_flow(&mut ast)?,
+                        "boundary" => self.parse_boundary(&mut ast)?,
+                        "assert" => self.parse_claim(&mut ast, "assert")?,
+                        "assume" => self.parse_claim(&mut ast, "assume")?,
+                        _ => unreachable!(),
+                    }
+                }
+                _ => return self.err(format!("unknown keyword {:?}", kw)),
+            }
+        }
+        if !seen_module {
+            return self.err("missing module statement");
+        }
+        Ok(ast)
+    }
+}
+
+/// Parse strata surface source text into a JSON-encoded AST or diagnostic.
+///
+/// WHY: the parser is compute-heavy (charter D3, amended 2026-07-17) so it
+/// lives in Rust; JSON is the narrowest possible interface back to Python,
+/// keeping the grammar's only home in this file instead of duplicated in
+/// pydantic validators.
+pub(crate) fn parse_source_impl(text: &str) -> String {
+    // frob:doc docs/strata/surface.md#parser
+    // frob:tests strata-core/src/parse.rs::parse_source_impl kind="unit"
+    match lex(text).and_then(|toks| Parser::new(toks).parse_program()) {
+        Ok(module) => json!({ "ok": module }).to_string(),
+        Err(e) => json!({
+            "err": {"line": e.line, "col": e.col, "message": e.message}
+        })
+        .to_string(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::Value;
+
+    fn ok(text: &str) -> Value {
+        let s = parse_source_impl(text);
+        let v: Value = serde_json::from_str(&s).unwrap();
+        v.get("ok")
+            .unwrap_or_else(|| panic!("expected ok, got {}", s))
+            .clone()
+    }
+
+    fn err(text: &str) -> Value {
+        let s = parse_source_impl(text);
+        let v: Value = serde_json::from_str(&s).unwrap();
+        v.get("err")
+            .unwrap_or_else(|| panic!("expected err, got {}", s))
+            .clone()
+    }
+
+    #[test]
+    fn parses_bare_module() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok("module payments");
+        assert_eq!(v["name"], "payments");
+        assert_eq!(v["nodes"].as_array().unwrap().len(), 0);
+    }
+
+    #[test]
+    fn parses_node_with_all_properties() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok(
+            r#"module m
+            node api : trusted abstract {
+                clearance Secret;
+                attr idempotent;
+                attr region=us;
+                residence us_east;
+                capacity 100 req/s replicas 1..8;
+            }"#,
+        );
+        let n = &v["nodes"][0];
+        assert_eq!(n["id"], "api");
+        assert_eq!(n["trust"], "trusted");
+        assert_eq!(n["is_abstract"], true);
+        assert_eq!(n["clearance"], "Secret");
+        assert_eq!(n["attrs"][0], "idempotent");
+        assert_eq!(n["attrs"][1], "region=us");
+        assert_eq!(n["residence"], "us_east");
+        assert_eq!(n["capacity"]["rate"]["value"], 100.0);
+        assert_eq!(n["capacity"]["rate"]["unit"], "req/s");
+        assert_eq!(n["capacity"]["replicas_min"], 1);
+        assert_eq!(n["capacity"]["replicas_max"], 8);
+    }
+
+    #[test]
+    fn parses_flow_with_all_properties() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok(
+            r#"module m
+            flow f1 : a -> b {
+                label Pii;
+                age 250 ms;
+                rate 5 req/s;
+                size 4 KiB;
+                attr delivery=at_least_once;
+                transport tls;
+            }"#,
+        );
+        let f = &v["flows"][0];
+        assert_eq!(f["src"], "a");
+        assert_eq!(f["dst"], "b");
+        assert_eq!(f["label"], "Pii");
+        assert_eq!(f["age"]["value"], 250.0);
+        assert_eq!(f["age"]["unit"], "ms");
+        assert_eq!(f["rate"]["unit"], "req/s");
+        assert_eq!(f["size"]["unit"], "KiB");
+        assert_eq!(f["attrs"][0], "delivery=at_least_once");
+        assert_eq!(f["transport"][0], "tls");
+    }
+
+    #[test]
+    fn parses_percent_unit() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok(
+            r#"module m
+            assert c1 bound utilization api <= 80 %"#,
+        );
+        assert_eq!(v["claims"][0]["limit"]["unit"], "%");
+    }
+
+    #[test]
+    fn parses_boundary() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok(
+            r#"module m
+            boundary b1 endorse f1 : foreign -> authenticated when "jwt_verified""#,
+        );
+        let b = &v["boundaries"][0];
+        assert_eq!(b["kind"], "endorse");
+        assert_eq!(b["flow_id"], "f1");
+        assert_eq!(b["from_level"], "foreign");
+        assert_eq!(b["to_level"], "authenticated");
+        assert_eq!(b["predicate"], "jwt_verified");
+    }
+
+    #[test]
+    fn parses_assert_noflow_and_reach() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok(
+            r#"module m
+            assert c1 noflow evil -> api
+            assert c2 reach audit -> log"#,
+        );
+        assert_eq!(v["claims"][0]["kind"], "noflow");
+        assert_eq!(v["claims"][1]["kind"], "reach");
+    }
+
+    #[test]
+    fn parses_assume_with_owner_and_review() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok(
+            r#"module m
+            assume c1 noflow evil -> api owner alice review "2026-08-01""#,
+        );
+        assert_eq!(v["claims"][0]["assumed"], true);
+        assert_eq!(v["claims"][0]["owner"], "alice");
+        assert_eq!(v["claims"][0]["review"], "2026-08-01");
+    }
+
+    #[test]
+    fn error_module_missing() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let e = err("node a : trusted");
+        assert_eq!(e["message"], "statement before module declaration");
+    }
+
+    #[test]
+    fn error_duplicate_module() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let e = err("module a\nmodule b");
+        assert_eq!(e["message"], "duplicate module statement");
+        assert_eq!(e["line"], 2);
+        assert_eq!(e["col"], 1);
+    }
+
+    #[test]
+    fn error_unknown_keyword() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let e = err("module a\nbogus x");
+        assert_eq!(e["message"], "unknown keyword \"bogus\"");
+        assert_eq!(e["line"], 2);
+        assert_eq!(e["col"], 1);
+    }
+
+    #[test]
+    fn error_unknown_node_property() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let e = err("module a\nnode n : trusted { bogus x; }");
+        assert_eq!(e["message"], "unknown node property");
+    }
+
+    #[test]
+    fn error_unknown_metric() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let e = err("module a\nassert c1 bound zorp x <= 1 s");
+        assert!(e["message"].as_str().unwrap().contains("unknown metric"));
+    }
+
+    #[test]
+    fn error_on_empty_input_never_panics() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let e = err("");
+        assert_eq!(e["message"], "missing module statement");
+    }
+
+    #[test]
+    fn error_reports_accurate_line_col() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let e = err("module a\nnode n : trusted {\n  clearance ;\n}");
+        assert_eq!(e["line"], 3);
+    }
+
+    #[test]
+    fn unit_slash_continues_but_stops_at_bare_ident() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok("module m\nflow f1 : a -> b { rate 5 req/s; }");
+        assert_eq!(v["flows"][0]["rate"]["unit"], "req/s");
+        let v2 = ok("module m\nnode n : trusted { capacity 1 min replicas 1..1; }");
+        assert_eq!(v2["nodes"][0]["capacity"]["rate"]["unit"], "min");
+    }
+
+    #[test]
+    fn round_trip_small_design() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok(
+            r#"module payments
+            node api : trusted { clearance Pii; capacity 100 req/s replicas 1..8; }
+            node evil : foreign
+            flow f1 : evil -> api { label Pii; rate 5 req/s; transport tls; }
+            boundary b1 endorse f1 : foreign -> authenticated when "jwt_verified"
+            assert c1 noflow evil -> api
+            assume c2 bound age api <= 30 s owner alice review "2026-09-01""#,
+        );
+        assert_eq!(v["nodes"].as_array().unwrap().len(), 2);
+        assert_eq!(v["flows"].as_array().unwrap().len(), 1);
+        assert_eq!(v["boundaries"].as_array().unwrap().len(), 1);
+        assert_eq!(v["claims"].as_array().unwrap().len(), 2);
+    }
+
+    #[test]
+    fn fuzz_safe_random_bytes_never_panic() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let samples = [
+            "\0\0\0",
+            "module",
+            "{{{{",
+            "module m node",
+            "assert c bound age x <= ",
+            "\"unterminated",
+            "module m\n// comment only\n",
+        ];
+        for s in samples {
+            let out = parse_source_impl(s);
+            assert!(serde_json::from_str::<Value>(&out).is_ok());
+        }
+    }
+}

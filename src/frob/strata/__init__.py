@@ -8,6 +8,16 @@ learn a surface vocabulary word (charter law 1).
 
 from __future__ import annotations
 
+from frob.strata._ast import (
+    BoundaryDecl,
+    ClaimDecl,
+    FlowDecl,
+    Module,
+    NodeDecl,
+)
+from frob.strata._ast import (
+    Capacity as SurfaceCapacity,
+)
 from frob.strata._claims import evaluate_claims
 from frob.strata._errors import StrataError
 from frob.strata._facts import FactBase, build_facts
@@ -40,24 +50,30 @@ from frob.strata._models import (
     SetTrust,
     Verdict,
 )
+from frob.strata._parse import parse_module
 
 __all__ = [
     "LABELS",
     "TRUST",
     "Boundary",
+    "BoundaryDecl",
     "BoundaryDirection",
     "BoundClaim",
     "Capacity",
+    "ClaimDecl",
     "FactBase",
     "Claim",
     "ClaimBody",
     "ClaimResult",
     "Flow",
     "FlowCondition",
+    "FlowDecl",
     "KernelModel",
     "Lattice",
     "Metric",
+    "Module",
     "Node",
+    "NodeDecl",
     "NoFlow",
     "Outcome",
     "Quantifier",
@@ -70,7 +86,9 @@ __all__ = [
     "Scenario",
     "SetTrust",
     "StrataError",
+    "SurfaceCapacity",
     "Verdict",
     "build_facts",
     "evaluate_claims",
+    "parse_module",
 ]
