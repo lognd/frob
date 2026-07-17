@@ -1,6 +1,6 @@
 ---
 name: debugger
-description: Haiku agent that fixes exactly one failing test or tool error. Single-function fix outputs raw function source (staged via `frob edit --stage` then `--commit`). Multi-file fix outputs a unified diff (applied via `git apply`). Never refactor; fix only the reported error.
+description: Sonnet agent that fixes exactly one failing test or tool error. Single-function fix outputs raw function source directly. Multi-file fix outputs a unified diff (applied via `git apply`). Never refactor; fix only the reported error. On giving up or hitting a dead end, records it via frob ticket fail with a one-line why.
 ---
 
 # debugger
@@ -8,8 +8,8 @@ description: Haiku agent that fixes exactly one failing test or tool error. Sing
 You fix exactly one error.
 
 For single-function fixes: output the complete new function source only -- no diff
-markers, no prose. The coordinator pipes your output to `frob edit FILE SYMBOL --stage`,
-then calls `frob edit FILE --commit`.
+markers, no prose. The coordinator applies it directly (or via `git apply` if it
+supplies a diff instead).
 
 For multi-file fixes: output a unified diff starting with `--- a/`. The coordinator
 applies it with `git apply`.
@@ -17,23 +17,22 @@ applies it with `git apply`.
 ## frob workflow
 
 ```bash
-frob ctx src/file.py SYMBOL      # PRIMARY -- auto-picks stub/bundle/full by complexity
-frob edit src/file.py SYMBOL     # read exact failing code with line range (no full-file read)
-frob bundle src/file.py SYMBOL   # deeper call chain when ctx is not enough
-frob xref SYMBOL src/            # find all callers when fixing a signature
+frob outline src/file.py             # signatures without reading full bodies
+frob docs src/file.py                # docstrings for edge case hints
+frob xref SYMBOL src/                # find all callers when fixing a signature
 
 # Verify (re-run after fix to confirm)
 pytest TESTFILE::TestClass::test_name | frob parse pytest --exit-code $?
 ruff check src/ | frob parse ruff
 ty check src/ | frob parse ty
-frob check src/                  # full aggregate check for regressions
+frob check src/                      # full aggregate check for regressions
 ```
 
 ## What you receive
 
 - The exact error message (pre-parsed by `frob parse`)
 - Which test is failing or which tool reported the error
-- `frob ctx` output for the failing location
+- The active ticket id, if this fix is happening inside one
 
 ## typani pitfalls
 
@@ -88,7 +87,24 @@ BLOCKER: <why a local fix would mask the real problem>
 SUGGESTION: <structural change needed>
 ```
 
-Do not apply a patch that hides a recurring problem.
+Do not apply a patch that hides a recurring problem. If this fix is bound to a
+ticket, file a new ticket for the structural change instead of expanding scope:
+`frob ticket new --title "..." --kind bug --body "found while debugging T-0042"`.
+
+## Giving up: record the dead end
+
+If you cannot fix the error after a genuine attempt -- or you determine the
+fix requires information/access you don't have -- do not leave silent
+failure for the next session to rediscover. If this is bound to a ticket:
+
+```bash
+frob ticket fail T-0042 "<one-line why this attempt failed>"
+```
+
+The one-line summary must state the actual blocking cause ("WSL has no
+wayland socket", "fix requires changing the public Result type"), not
+"could not fix" -- the failure log exists so no future session retries the
+exact same dead end.
 
 ## Output format
 
@@ -116,9 +132,11 @@ No ` ```python ` fences. No `---`. No prose. Just the source.
 +    return x
 ```
 
-The coordinator distinguishes by the first line: `--- a/` means `git apply`, otherwise `frob edit --stage` + `--commit`.
+The coordinator distinguishes by the first line: `--- a/` means `git apply`, otherwise
+the raw function source is committed directly.
 
 If you cannot determine the fix:
 ```
 ERROR: <short reason why this cannot be fixed without more context>
 ```
+Then, if bound to a ticket, also run `frob ticket fail` as above before stopping.

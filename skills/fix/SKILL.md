@@ -74,6 +74,10 @@ frob xref <symbol> src/          # if using frob
 grep -rn "<symbol>" src/         # otherwise
 ```
 
+If this fix is happening inside a ticket, stay within its `scope` -- a
+type error whose real cause lives outside scope is a new ticket
+(`frob ticket new`), not a widened diff.
+
 Dispatch debugger agent or fix directly.
 After fix: run ONLY the tests touching that module:
 ```bash
@@ -85,7 +89,7 @@ pytest tests/test_<module>.py -x --tb=short
 For each failing test:
 1. Identify whether test is wrong or implementation is wrong
 2. If implementation wrong:
-   - Get context: `frob bundle <file> <function>` or read the specific function
+   - Get context: `frob outline <file>` or read the specific function
    - Fix
    - Run ONLY that test: `pytest tests/test_X.py::test_name -x --tb=short`
    - Must pass before moving to next failure
@@ -96,7 +100,7 @@ For each failing test:
 
 **When dispatching a debugger agent:**
 ```
-Context: {frob bundle output or function body}
+Context: {function body or frob outline output}
 
 Failing test: {exact test name}
 Error: {exact error message from --tb=short}
@@ -111,8 +115,7 @@ Multi-file fix: output a unified diff starting with `--- a/`.
 After the agent responds:
 ```bash
 # Single-function (output does not start with "--- a/"):
-echo "$fix_output" | frob edit src/<module>/<file>.py <function_name> --stage
-frob edit src/<module>/<file>.py --commit
+# Apply the returned source directly to the named function via Edit.
 
 # Multi-file (output starts with "--- a/"):
 echo "$fix_output" | git apply

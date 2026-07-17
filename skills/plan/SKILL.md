@@ -1,41 +1,52 @@
 ---
 name: plan
-description: Design and document a feature or module before any implementation. Use when starting a non-trivial task. Writes design docs and TODO.md. Works for any language or project type.
+description: Turn a goal into a ticket tree via the planner agent. Replaces the old design-doc+TODO.md workflow -- every actionable item becomes a ticket, not a checklist bullet. Use when starting a non-trivial task.
 ---
 
 # plan
 
-Design first, code never. This skill produces docs and a TODO checklist; nothing else.
+Goal in, ticket tree out. Nothing is "planned" until it is a ticket in the
+queue -- a design doc alone is not dispatchable and gets forgotten.
 
 ## Step 1: Orient without reading files
 
-**If using frob:**
 ```bash
 frob map src/
-```
-
-**Otherwise:**
-```bash
-find src -type f | grep -E '\.(py|cpp|h|rs|go|ts)$' | sort
-grep -r "^class \|^def \|^func \|^fn \|^pub " src --include="*.py" -l
+frob ticket list                   # what's already queued -- don't replan it
 ```
 
 Read only README.md and existing docs/ at this step. Don't read source files.
 
-## Step 2: Identify risks BEFORE designing
+## Step 2: Identify risks BEFORE decomposing
 
-Answer these before writing anything:
+Answer these before dispatching the planner:
 
-1. **Error propagation**: how do failures flow? (Result type? exceptions? error codes?)
-2. **Dependency direction**: sketch A->B->C. Would adding your module create a cycle?
-3. **Data ownership**: which module owns each data type? Does anything cross module boundaries?
-4. **Concurrency/ordering**: any shared state, ordering dependencies, or async concerns?
-5. **Performance**: any hot paths that require special data structures?
+1. **Error propagation** -- how do failures flow? (Result type, exceptions, error codes?)
+2. **Dependency direction** -- sketch A->B->C. Would this create a cycle?
+3. **Data ownership** -- which module owns each data type crossing boundaries?
+4. **Concurrency/ordering** -- any shared state or ordering dependencies?
+5. **Performance** -- any hot paths needing special data structures?
 
-If you find a risk that changes the design, resolve it NOW before documenting.
-Architectural problems fixed at design time cost ~10x less than after implementation.
+If a risk changes the design, resolve it now. Architectural problems fixed
+before ticket creation cost far less than after tickets (and their scope)
+are locked in.
 
-## Step 3: Write design doc (docs/<feature>.md)
+## Step 3: Dispatch the planner agent
+
+Give the `planner` agent the goal plus the risk answers from Step 2. It
+decomposes the goal into a ticket tree (`frob ticket new` calls with
+`parent`/`blocked_by` edges and a `scope` per leaf) and never writes code.
+
+Do not create tickets yourself in this skill -- decomposition quality is
+the planner's job; this skill only orients it and checks the result.
+
+## Step 4: Large features still get a design doc -- but no TODO.md
+
+For genuinely large features, a `docs/<feature>.md` design doc is still
+appropriate (public API, data models, error types, design decisions,
+integration points -- same shape as before). The difference: every
+actionable item in it becomes a ticket via the planner, not a `TODO.md`
+bullet. The doc explains the shape; the queue tracks the work.
 
 ```markdown
 # <Feature Name>
@@ -43,61 +54,26 @@ Architectural problems fixed at design time cost ~10x less than after implementa
 One sentence: what it does and why.
 
 ## Public API
-
-List every public function/method with full typed signature and one-line description.
-
 ## Data models
-
-Every structured data type (class, struct, record) crossing module lines.
-
 ## Error types
-
-All failure cases and when they occur.
-
 ## Design decisions
-
-For each non-obvious decision: what was chosen, alternatives considered, why.
-
 ## Dependencies
-
-Direct dependencies only. For each: what it provides to this module.
-
 ## Integration points
-
-Which existing modules call this. Which this calls. Any protocol contracts.
 ```
 
-## Step 4: Write TODO.md entries
+Link the doc from the parent ticket's body so implementers land on it.
 
-Append to (or create) `TODO.md`. Format every item to be independently dispatchable:
+## Step 5: Verify the tree before moving on
 
-```markdown
-## <Feature Name>
-
-### Stubs
-- [ ] src/<module>/__init__.py -- data models, error types, function signatures
-- [ ] tests/test_<module>.py -- test file (empty, just imports)
-
-### Tests
-- [ ] tests/test_<module>.py::TestFunctionName -- happy path, error cases, edge cases
-- [ ] tests/test_integration.py::test_<module>_with_<other> -- integration
-
-### Implementation
-- [ ] <function_name>(arg: Type) -> ReturnType -- one-line description
-- [ ] <function_name>(arg: Type) -> ReturnType -- one-line description
-
-### Documentation
-- [ ] docs/<feature>.md -- update signatures after implementation
-- [ ] docstrings for all public symbols
+```bash
+frob ticket list --parent T-0040     # every leaf the planner claimed to create
+frob ticket show T-00xx              # spot-check scope is narrow, not src/**
 ```
 
-Every implementation TODO item must be specific enough that an agent can implement
-it from a `frob bundle` output + the TODO line alone, with no additional context.
+- [ ] Every leaf ticket has a scope narrower than "the whole goal"
+- [ ] `blocked_by` reflects real dependencies, not just creation order
+- [ ] No leaf duplicates an already-queued ticket
+- [ ] Design doc (if any) is linked from the parent ticket
 
-## Correctness check before signing off
-
-- [ ] Every function that can fail has an explicit error type
-- [ ] No circular dependencies in the design
-- [ ] Every public function has a typed signature
-- [ ] Design doc is specific enough to detect disagreements (not "returns result")
-- [ ] TODO items are independently executable (no item depends on another's status being unknown)
+Nothing else to do here -- dispatch `next` (or hand the tree to the human)
+to start working the queue.

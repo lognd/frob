@@ -1,94 +1,96 @@
 ---
 name: document
-description: Write docstrings and update docs/ after implementation is complete. Use when the user says "document X", "add docs", or as the final step in the develop pipeline.
+description: Driven by drift -- frob check reports DRIFT001 (stale acked docs) and COV001 (missing doc edges); fix exactly those, then frob ack each re-verified ref. Use when frob check flags doc drift or missing documentation coverage, not as a free-standing "write some docs" pass.
 ---
 
 # document
 
-Add docstrings and update docs/ to match the final implementation.
-Docs describe WHAT and WHY. Never HOW (that is the code's job).
+Docs work is driven by the drift report, not by browsing for things that
+look undocumented. If `frob check` doesn't flag it, this skill doesn't
+touch it.
 
-## Step 1: Find what needs docs
-
-**If using frob:**
-```bash
-frob outline src/<module>/__init__.py
-```
-
-**Python without frob:**
-```bash
-grep -n "^def \|^    def \|^class " src/<module>/<file>.py
-```
-
-Look for public symbols (no leading underscore) without docstrings.
-
-## Step 2: Write docstrings
-
-**Rules:**
-- One line for simple functions. Multi-line ONLY for non-obvious behavior.
-- Describe what the function does from the CALLER's perspective.
-- Include return semantics for fallible functions: "Returns Ok(X) on success, Err(E.Y) if Z."
-- Do NOT describe parameters whose name and type are self-documenting.
-- Do NOT reference the current task, issue number, or why it was added.
-- No ASCII art. No parameter tables for simple functions.
-
-**Python format:**
-```python
-def function_name(arg: Type) -> Result[X, E]:
-    """Short description. Returns Ok(X) or Err(E.Reason) if condition."""
-```
-
-Multi-line only when there is a non-obvious constraint:
-```python
-def complex_function(arg: Type) -> Result[X, E]:
-    """
-    Short summary.
-
-    Note: only works when X because Y. Call setup() first.
-    """
-```
-
-**C++ format:**
-```cpp
-/// Brief description.
-/// Returns false if condition.
-bool function_name(Type arg);
-```
-
-## Step 3: Update design docs
-
-For each doc in `docs/<feature>.md`:
-- Update API signatures to match final implementation (they may have changed)
-- Update design decisions if any were changed during implementation
-- Remove TODO items that are now resolved
-
-For `docs/index.md` (or equivalent):
-- Add new module to the list with a one-line description
-
-## Step 4: Verify
-
-**If using frob:**
-```bash
-frob outline src/<module>/__init__.py
-```
-
-The outline should now show clean signatures. If a function looks confusing from
-its outline alone, the docstring is insufficient -- revise it.
-
-## Staleness check
-
-After writing, verify every code example in docs actually works:
+## Step 1: Get the drift report
 
 ```bash
-python -c "from <module> import <symbol>; help(<symbol>)"
+frob check --only drift               # DRIFT001: acked digest moved without re-ack
+                                       # DRIFT002: edge endpoint no longer resolves
+frob check --only coverage            # COV001: public symbol has no doc edge
 ```
 
-**If any example is wrong, fix it before committing.** Stale docs are worse than no docs
-because they actively mislead future readers (including yourself and agents).
+Read every violation. Each one embeds its remedy command (`frob ack <ref>`
+or a pointer to the missing edge) -- do not guess at what changed.
 
-## What NOT to document
+## Step 2: Fix exactly the flagged items
 
-- Private functions (leading underscore) -- only add if non-obvious invariant
-- Trivial one-liners where name and types are self-documenting
-- Implementation details obvious from reading the code
-- The fact that you just wrote this ("Added in version X", "Used by Y")
+**DRIFT001** (acked digest moved): the code or doc changed since the last
+ack. Read both sides:
+
+```bash
+frob graph why <ref>                  # what changed, sig vs body vs doc facet
+```
+
+- If the doc still accurately describes the current signature/behavior,
+  the ack was just never re-run after a body-only change that doesn't
+  affect the facet being tracked -- verify, then re-ack.
+- If the doc is now wrong, fix the prose to match the current code before
+  re-acking. Never `frob ack` a doc you haven't actually verified against
+  the current symbol -- that's a rubber stamp, not documentation.
+
+**DRIFT002** (dangling edge): the symbol was renamed or deleted. Check the
+gate's rename candidates (body-digest match) before editing the doc:
+
+```bash
+frob graph why <ref>                  # lists candidate replacements
+```
+
+Update the doc anchor to the new symref, or remove the anchor if the
+symbol was legitimately deleted (state that in the doc, don't just delete
+the mention silently if other prose still refers to it).
+
+**COV001** (missing doc edge): a public symbol has no `frob:doc` edge at
+all. Write the doc section it's missing, then add the directive:
+
+```markdown
+<!-- frob:describes src/frob/pkg/module.py::function_name -->
+### function_name
+
+One sentence: what it does and why. Include failure semantics: "Returns
+Ok(X) on success, Err(E.Y) if Z."
+```
+
+## Step 3: Docstring rules (same discipline as before)
+
+- One line for simple functions. Multi-line only for non-obvious behavior.
+- Describe behavior from the CALLER's perspective, including error
+  semantics for fallible functions.
+- Do NOT describe self-documenting parameters. No ASCII art.
+- Do NOT reference the current ticket id or why it was added -- that's the
+  ticket's job, not the doc's.
+
+## Step 4: Re-ack
+
+```bash
+frob ack <ref> [--facet sig|body|doc]     # one ref at a time; verify first
+```
+
+Only ack refs you actually re-verified in Step 2. Never batch-ack a whole
+file's worth of DRIFT001 hits without reading each one -- the ack is a
+claim that a human or agent looked at it.
+
+## Step 5: Verify clean
+
+```bash
+frob check --only drift
+frob check --only coverage
+```
+
+Both must be clean (or carry a reasoned `frob:waive`) before this skill is
+done.
+
+## Hard rules
+
+- Never write or update docs that `frob check` did not flag as drifted or
+  missing -- that's scope creep on a documentation pass with no ticket.
+- Never `frob ack` a ref you have not personally re-verified this pass.
+- If this doc work is bound to a ticket, bind the diff with
+  `frob:ticket T-00xx` the same as any other change.
