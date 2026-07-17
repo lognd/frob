@@ -1488,7 +1488,7 @@ Credentials as cache-of-authority (lifetime/revocation obligations), deployment 
 ```yaml
 id: T-0055
 title: 'strata kernel data model: Node/Flow/Boundary/Bound/Claim/Scenario'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-17'
@@ -1498,12 +1498,32 @@ parent: T-0049
 scope:
 - src/frob/strata/**
 - tests/unit/strata/**
-evidence: []
+- docs/strata/**
+- tickets.md
+evidence:
+- tests/unit/strata/test_models.py::TestLattice::test_leq_is_reflexive_transitive_and_ordered
+- tests/unit/strata/test_models.py::TestQuantity::test_leq_across_dimensions_is_an_error_not_false
+- tests/unit/strata/test_models.py::TestKernelModel::test_frozen_models_compare_by_value
 attachments: []
 acceptance: []
 threat: null
 ```
 Frozen pydantic models for the 6 primitives; flows carry payload label, rate, size, age and may be conditioned on phase/outcome (on Ok / on Err / in parse). Law 1: every surface construct must desugar to these.
+
+## Done report
+
+Delivered src/frob/strata/: _errors.py (StrataError closed ErrorSet),
+_models.py (Lattice + TRUST/LABELS cores, Quantity with unit dimensions,
+Capacity, Node, Flow + FlowCondition/Outcome conditional-flow extension,
+Boundary + BoundaryDirection, Metric, claim bodies NoFlow/Reach/BoundClaim,
+Rung, Claim with assume owner/review, Scenario + RemoveNode/ScaleRate/
+SetTrust rewrites, KernelModel, ClaimResult/Verdict/Quantifier),
+__init__.py public API. All frozen pydantic, identity-of-value. 11 unit
+tests bound via frob:tests; frob:doc edges to docs/strata/kernel.md#data-models
+for every public symbol incl. methods (T-0044 workaround used). Ticket
+check exit 0. Deviations: TRUST/LABELS constants are invisible to the
+graph (python CONST extraction gap) -- filed T-0087 rather than widening
+scope; their describes anchors deferred to that ticket.
 
 <!-- ticket:T-0056 -->
 ```yaml
@@ -2164,3 +2184,23 @@ acceptance: []
 threat: null
 ```
 The model compiles to runtime enforcement so static proofs are backed by defense-in-depth that cannot diverge; exported artifacts digest-stamped as evidence.
+
+<!-- ticket:T-0087 -->
+```yaml
+id: T-0087
+title: python CONST extraction misses call-expression assignments (X = Foo(...))
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-17'
+blocked_by: []
+parent: null
+scope:
+- src/frob/lang/**
+- tests/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+UPPER_CASE module constants assigned from a constructor call (TRUST = Lattice(...) in src/frob/strata/_models.py) are not extracted as CONST symbols, so frob:doc/frob:describes edges to them dangle (DRIFT002) and COV001 cannot see them. Found during T-0055.

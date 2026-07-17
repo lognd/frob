@@ -71,6 +71,54 @@ automatically (`evidence.md`). Tier-3 evidence (tests, perf stamps, tool
 attestations) is digest-stamped and drift-checked like every frob
 artifact.
 
+## Data models
+
+<!-- frob:describes src/frob/strata/_errors.py::StrataError -->
+<!-- frob:describes src/frob/strata/_models.py::Lattice -->
+<!-- frob:describes src/frob/strata/_models.py::Quantity -->
+<!-- frob:describes src/frob/strata/_models.py::Capacity -->
+<!-- frob:describes src/frob/strata/_models.py::Node -->
+<!-- frob:describes src/frob/strata/_models.py::Outcome -->
+<!-- frob:describes src/frob/strata/_models.py::FlowCondition -->
+<!-- frob:describes src/frob/strata/_models.py::Flow -->
+<!-- frob:describes src/frob/strata/_models.py::BoundaryDirection -->
+<!-- frob:describes src/frob/strata/_models.py::Boundary -->
+<!-- frob:describes src/frob/strata/_models.py::Metric -->
+<!-- frob:describes src/frob/strata/_models.py::NoFlow -->
+<!-- frob:describes src/frob/strata/_models.py::Reach -->
+<!-- frob:describes src/frob/strata/_models.py::BoundClaim -->
+<!-- frob:describes src/frob/strata/_models.py::Rung -->
+<!-- frob:describes src/frob/strata/_models.py::Claim -->
+<!-- frob:describes src/frob/strata/_models.py::RemoveNode -->
+<!-- frob:describes src/frob/strata/_models.py::ScaleRate -->
+<!-- frob:describes src/frob/strata/_models.py::SetTrust -->
+<!-- frob:describes src/frob/strata/_models.py::Scenario -->
+<!-- frob:describes src/frob/strata/_models.py::KernelModel -->
+<!-- frob:describes src/frob/strata/_models.py::Verdict -->
+<!-- frob:describes src/frob/strata/_models.py::Quantifier -->
+<!-- frob:describes src/frob/strata/_models.py::ClaimResult -->
+
+Frozen pydantic models (T-0055), identity-of-value like `frob.lang`:
+
+- `StrataError` -- the one closed ErrorSet; its enumerability is what makes
+  fault injection exhaustive (`evidence.md`).
+- `Lattice` (+ `TRUST`, `LABELS` built-in cores) -- finite partial orders
+  from covering pairs; `leq` errors on unknown levels rather than
+  silently denying.
+- `Quantity` -- number + unit; cross-dimension comparison is an error.
+- `Node`, `Capacity` -- places with trust, clearance, `may` capability
+  atoms, opaque attrs, service rate/replicas, residence.
+- `Flow`, `FlowCondition`, `Outcome` -- edges with payload label, rate,
+  per-hop age, size, transport atoms, attrs, and the conditional-flow
+  extension.
+- `Boundary`, `BoundaryDirection` -- endorse/declassify on exactly one
+  flow, with predicate + obligations.
+- `Claim` bodies `NoFlow`/`Reach`/`BoundClaim` (+ `Metric`), the `Rung`
+  ladder, and `assumed` with owner/review.
+- `Scenario` + rewrites `RemoveNode`/`ScaleRate`/`SetTrust`.
+- `KernelModel` -- the whole elaborated design.
+- `ClaimResult`, `Verdict`, `Quantifier` -- how claims close (laws 3-4).
+
 ## Prover pipeline
 
 ```
