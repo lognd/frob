@@ -1,0 +1,14 @@
+[build-system]
+requires = ["maturin>=1.7,<2"]
+build-backend = "maturin"
+
+[project]
+name = "frob-core"
+version = "0.1.0"
+description = "Compute-only clone-detection kernels for frob.dup (R3+ rungs); PyO3/abi3 extension"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+
+[tool.maturin]
+features = ["pyo3/extension-module"]
+module-name = "frob_core"

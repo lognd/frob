@@ -162,3 +162,59 @@ rules:
   `frob.fuzz` generators for R6 (docs/fuzz.md).
 - CLI: `frob dup [--all|--base REF] [--probe] [--json]`.
 - `frob check`: DUP001/DUP002 in the gates stage.
+
+## Implementation notes (T-0001)
+
+First pass: R1/R2 pure Python, R3 wired through the real `frob-core`
+PyO3 kernel (built and verified in this environment -- `cargo test` and
+`maturin develop` both pass, `import frob_core` works). Status and
+deviations, so nothing here is silently assumed done:
+
+- **`frob-core/`** is a standalone crate + maturin project (its own
+  `Cargo.toml`/`pyproject.toml`), NOT folded into `frob`'s own build
+  backend -- `frob`'s `pyproject.toml` build-system stays `setuptools`
+  unconditionally. Installing `frob-core` is a separate step
+  (`maturin develop` from `frob-core/`, or building+installing the
+  wheel); a missing Rust toolchain never blocks installing plain
+  `frob`. Exposes `r3_canonical_hash`, `winnow_fingerprints`,
+  `candidate_pairs`, `tree_edit_similarity` -- all data-in/data-out,
+  no IO, `cargo test` covers each.
+  - `tree_edit_similarity` is a statement-sequence Levenshtein
+    alignment, not full APTED (the rung table names APTED explicitly).
+    Catches inserted/deleted statements; does not catch within-statement
+    tree restructuring. Recorded as a follow-up, not silently passed off
+    as APTED.
+- **`find_clones`** (`frob.dup._pipeline`) runs R1 (exact hash), R2
+  (alpha-renamed hash), and R3 (frob-core canonical hash, computed over
+  the R2-normalized token stream -- true R3 canonicalization needs
+  literal abstraction and control-flow normalization that `frob.lang`
+  does not yet expose per-token; this is a simplification, not full R3).
+  R4 candidate discovery/tree-edit verification, R5 (WL-kernel), and R6
+  (behavioral probing) are NOT wired into `find_clones` in this pass --
+  `frob-core`'s R4 kernel functions exist and are tested, but the
+  Python-side winnowing/LSH/verify orchestration is unbuilt. Tracked as
+  `frob:todo T-0001` follow-up.
+- **No pure-Python fallback for R3+** is honored literally: `find_clones`
+  checks `frob_core` importability up front and returns
+  `Err(DupError.CoreUnavailable)` for the whole call if it is missing,
+  rather than silently downgrading to an R1/R2-only report.
+- **`probe_equivalence`** (R6) always returns `Err(DupError.NotPure)` --
+  no purity analysis exists yet to certify a candidate effect-free, so
+  refusing is the honest answer, matching the doc's own wording ("refuses
+  symbols not provably effect-free").
+- **The `.frob/dup.db` cache** (`frob.dup._cache`) implements both tables
+  exactly as specified (content-addressed fingerprints, LRU-evicted
+  verdicts via `last_used`), but `find_clones` does not call into it yet
+  -- it recomputes every fingerprint on every call. Wiring the cache into
+  the pipeline's hot path is the next follow-up.
+- **`find_duplicates`** (the old Type-1/2 scanner) is preserved verbatim
+  in `frob.dup._legacy` and re-exported from `frob.dup.__init__`
+  unchanged, so `frob check`'s dup stage and `frob dup` CLI keep working.
+- **DUP001/DUP002** are pure functions in `frob.dup._rules`:
+  `DUP001(report: CloneReport, touched: frozenset[str], threshold: float)
+  -> tuple[Violation, ...]` (error severity: one side of the pair is a
+  touched/new symbol, the other pre-existing) and `DUP002` with the same
+  signature (warn severity: both sides touched). `touched` is produced by
+  `frob.dup.touched_refs(snapshot, diff)`. Not wired into
+  `frob.gates.__init__` -- that integration is out of this ticket's scope
+  per the dispatch instructions.

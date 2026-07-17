@@ -1,0 +1,23 @@
+[package]
+name = "frob-core"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.85"
+publish = false
+license = "MIT"
+description = "Compute-only clone-detection kernels for frob.dup (R3+ rungs)"
+
+[lib]
+name = "frob_core"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+# extension-module is NOT a default feature: cargo test must link against
+# libpython, which the extension-module ABI flag deliberately suppresses.
+# maturin passes --features pyo3/extension-module (or the [tool.maturin]
+# features list) at wheel-build time; plain `cargo build`/`cargo test`
+# leave it off.
+pyo3 = { version = "0.22", features = ["abi3-py311"] }
+
+[features]
+extension-module = ["pyo3/extension-module"]

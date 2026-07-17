@@ -65,6 +65,15 @@ extend-exclude = ["tests/fixtures"]
 [tool.ty.src]
 exclude = ["tests/fixtures/**"]
 
+# frob_core (frob-core/, docs/dup.md) ships no type stubs -- it's a PyO3
+# native extension, not a Python package ty can introspect. This is the
+# only module that imports it; same posture as lithos's OCP override.
+[[tool.ty.overrides]]
+include = ["src/frob/dup/_core.py"]
+
+[tool.ty.overrides.rules]
+unresolved-attribute = "ignore"
+
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]
 
