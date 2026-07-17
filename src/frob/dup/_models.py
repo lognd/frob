@@ -35,6 +35,7 @@ class DupError(ErrorSet):
     CoreUnavailable = "frob-core native extension is not installed"
     NotPure = "Probe target has effects; observational probing refused"
     CacheCorrupt = "dup cache unreadable; delete .frob/dup.db to rebuild"
+    NoGenerator = "no frob.fuzz Arbitrary generator for a probe parameter"
 
 
 class CloneRegion(BaseModel):

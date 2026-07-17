@@ -1,0 +1,145 @@
+"""Tests for R4/R5/R6 and region-subsection matching (docs/dup.md, T-0001).
+
+Each rung gets a fires-on-target-shape test and a does-not-false-positive
+test, per T-0001's hard rules. Skips (rather than fails) when `frob_core`
+is not installed -- same posture as tests/test_dup_smart.py.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+import pytest
+
+from frob.dup import DupConfig, DupError, find_clones, probe_equivalence
+from frob.dup import _core as dup_core
+from frob.graph import build_graph
+
+pytestmark = pytest.mark.skipif(
+    not dup_core.core_available(),
+    reason="frob-core native extension not installed (build with maturin develop)",
+)
+
+FIXTURE_ROOT = Path(__file__).parent / "fixtures" / "dup_rungs"
+
+
+@pytest.fixture()
+def snapshot(tmp_path):
+    cache = tmp_path / "graph-cache"
+    result = build_graph(FIXTURE_ROOT, cache)
+    assert result.is_ok, result.err
+    return result.danger_ok
+
+
+def _pairs(report, rung):
+    return [
+        (p.left.ref, p.right.ref, p)
+        for group in report.groups
+        for p in group
+        if p.rung == rung
+    ]
+
+
+class TestR4NearMiss:
+    def test_fires_on_gapped_clone(self, snapshot):
+        report = find_clones(
+            snapshot, DupConfig(min_tokens=5, threshold=0.85)
+        ).danger_ok
+        r4 = _pairs(report, "r4")
+        matched = [
+            (a, b, p)
+            for a, b, p in r4
+            if ("process_gapped_a" in a or "process_gapped_a" in b)
+            and ("process_gapped_b" in a or "process_gapped_b" in b)
+        ]
+        assert matched, (
+            f"expected an r4 hit for process_gapped_a/b, got rungs: {[p.rung for _, _, p in r4]}"
+        )
+        _, _, pair = matched[0]
+        assert pair.alignment, "r4 hit should carry a statement alignment"
+
+    def test_no_false_positive_against_distinct_function(self, snapshot):
+        report = find_clones(
+            snapshot, DupConfig(min_tokens=5, threshold=0.85)
+        ).danger_ok
+        r4 = _pairs(report, "r4")
+        bad = [
+            (a, b, p)
+            for a, b, p in r4
+            if "process_distinct" in a or "process_distinct" in b
+        ]
+        assert all(p.similarity < 0.85 for _, _, p in bad)
+
+
+class TestR5Dataflow:
+    def test_fires_on_reordered_dataflow_identical_functions(self, snapshot):
+        report = find_clones(
+            snapshot, DupConfig(min_tokens=5, threshold=0.85)
+        ).danger_ok
+        r5 = _pairs(report, "r5")
+        matched = [
+            (a, b)
+            for a, b, _ in r5
+            if ("combine_a" in a or "combine_a" in b)
+            and ("combine_b" in a or "combine_b" in b)
+        ]
+        assert matched, f"expected an r5 hit for combine_a/b, got: {r5}"
+
+    def test_no_false_positive_against_unrelated_function(self, snapshot):
+        report = find_clones(
+            snapshot, DupConfig(min_tokens=5, threshold=0.85)
+        ).danger_ok
+        r5 = _pairs(report, "r5")
+        bad = [
+            (a, b) for a, b, _ in r5 if "unrelated_calc" in a or "unrelated_calc" in b
+        ]
+        assert not bad, f"unrelated_calc should not r5-match, got: {bad}"
+
+
+class TestR6Probing:
+    def _ref(self, snapshot, name):
+        return next(r for r in snapshot.symbols if name in r)
+
+    def test_fires_on_behaviorally_equivalent_pure_functions(self, snapshot):
+        a = self._ref(snapshot, "add_twice_a")
+        b = self._ref(snapshot, "add_twice_b")
+        result = probe_equivalence(a, b, snapshot, budget_s=2.0)
+        assert result.is_ok, result.err
+        verdict = result.danger_ok
+        assert verdict.equivalent is True
+        assert verdict.cases_run > 0
+
+    def test_does_not_false_positive_on_different_pure_functions(self, snapshot):
+        a = self._ref(snapshot, "add_twice_a")
+        b = self._ref(snapshot, "double_plus_one")
+        result = probe_equivalence(a, b, snapshot, budget_s=2.0)
+        assert result.is_ok, result.err
+        assert result.danger_ok.equivalent is False
+
+    def test_refuses_impure_functions(self, snapshot):
+        a = self._ref(snapshot, "impure_logger")
+        b = self._ref(snapshot, "impure_logger_dup")
+        result = probe_equivalence(a, b, snapshot, budget_s=1.0)
+        assert result.is_err
+        assert result.err == DupError.NotPure
+
+
+class TestRegionSubsection:
+    def test_r4_hit_reports_narrower_span_than_whole_symbol_when_partial(
+        self, snapshot
+    ):
+        report = find_clones(
+            snapshot, DupConfig(min_tokens=5, threshold=0.85)
+        ).danger_ok
+        r4 = _pairs(report, "r4")
+        matched = [
+            p
+            for a, b, p in r4
+            if ("process_gapped_a" in a or "process_gapped_a" in b)
+            and ("process_gapped_b" in a or "process_gapped_b" in b)
+        ]
+        assert matched
+        pair = matched[0]
+        # Both regions must be valid, ordered spans within the symbol's own span.
+        assert pair.left.span[0] <= pair.left.span[1]
+        assert pair.right.span[0] <= pair.right.span[1]

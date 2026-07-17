@@ -184,29 +184,69 @@ deviations, so nothing here is silently assumed done:
     Catches inserted/deleted statements; does not catch within-statement
     tree restructuring. Recorded as a follow-up, not silently passed off
     as APTED.
-- **`find_clones`** (`frob.dup._pipeline`) runs R1 (exact hash), R2
-  (alpha-renamed hash), and R3 (frob-core canonical hash, computed over
-  the R2-normalized token stream -- true R3 canonicalization needs
-  literal abstraction and control-flow normalization that `frob.lang`
-  does not yet expose per-token; this is a simplification, not full R3).
-  R4 candidate discovery/tree-edit verification, R5 (WL-kernel), and R6
-  (behavioral probing) are NOT wired into `find_clones` in this pass --
-  `frob-core`'s R4 kernel functions exist and are tested, but the
-  Python-side winnowing/LSH/verify orchestration is unbuilt. Tracked as
-  `frob:todo T-0001` follow-up.
+- **`find_clones`** (`frob.dup._pipeline`) now runs the full R1-R5 ladder.
+  R1 (exact hash), R2 (alpha-renamed hash), R3 (frob-core canonical hash,
+  computed over the R2-normalized token stream -- see the R3
+  simplification note above) all bucket-match as before. R4 wiring is new
+  this pass: `frob_core.winnow_fingerprints` over the R2-normalized
+  stream, `frob_core.candidate_pairs` for LSH-style candidate discovery
+  (its shared-fingerprint bucketing already serves the "LSH-band
+  bucketer" role named in the ticket -- a second bucketer would just be
+  the same algorithm again, so none was added), then
+  `frob_core.tree_edit_similarity` verification over a heuristically
+  chunked statement sequence (see `_split_statements`'s deviation note in
+  `_pipeline.py` -- `frob.lang` exposes no real statement boundaries, so
+  chunking is a statement-starting-keyword heuristic, not a parse). R5 is
+  new this pass too: a Weisfeiler-Lehman graph-kernel hash
+  (`frob_core.wl_hash`, new kernel) over a co-occurrence proxy for each
+  function's def-use graph (`_build_dataflow_graph`'s deviation note --
+  no real CFG/DFG exists, so this connects every identifier token within
+  a heuristic statement chunk and labels by "immediately followed by `=`"
+  as a def/use proxy).
+- **Region-subsection matching** falls out of R4: `tree_edit_similarity`'s
+  alignment is mapped back to a line-range subset of the statement chunks
+  it covers (`_region_span_for_alignment`), so a partial-body match
+  reports a narrower `CloneRegion.span` than the whole symbol when the
+  matched statements do not cover the whole body. The per-statement line
+  number is itself an approximation (`_line_for_statement_index` spreads
+  statement indices evenly across the symbol's known line span, since the
+  heuristic chunker carries no real source positions) -- documented, not
+  silently precise.
 - **No pure-Python fallback for R3+** is honored literally: `find_clones`
   checks `frob_core` importability up front and returns
   `Err(DupError.CoreUnavailable)` for the whole call if it is missing,
   rather than silently downgrading to an R1/R2-only report.
-- **`probe_equivalence`** (R6) always returns `Err(DupError.NotPure)` --
-  no purity analysis exists yet to certify a candidate effect-free, so
-  refusing is the honest answer, matching the doc's own wording ("refuses
-  symbols not provably effect-free").
-- **The `.frob/dup.db` cache** (`frob.dup._cache`) implements both tables
-  exactly as specified (content-addressed fingerprints, LRU-evicted
-  verdicts via `last_used`), but `find_clones` does not call into it yet
-  -- it recomputes every fingerprint on every call. Wiring the cache into
-  the pipeline's hot path is the next follow-up.
+- **`probe_equivalence`** (R6) is now real for Python-only, heuristically
+  pure candidate pairs. Purity is a conservative token-blocklist check
+  (`_IMPURE_TOKENS` in `_pipeline.py` -- IO, exec/eval, global/nonlocal,
+  common side-effecting stdlib names); anything not certified pure still
+  returns `Err(DupError.NotPure)`, matching the doc's "refuses symbols not
+  provably effect-free." For a certified-pure pair, both callables are
+  loaded via `importlib` from the worktree (Python only -- no
+  cross-language FFI harness exists to probe a Rust/TS/C target), inputs
+  are drawn from `frob.fuzz`'s Arbitrary generators keyed on the first
+  function's parameter type hints (registering plain `int`/`float`/`str`/
+  `bool` generators once through the public `frob.fuzz.register`
+  mechanism, since `resolve` has no built-in fallback for bare scalar
+  types), and outputs are compared for up to `budget_s` seconds
+  (`Err(DupError.NoGenerator)` when a parameter's type has no resolvable
+  generator). `probe_equivalence` is never called by `find_clones` or the
+  DUP gate path -- it is only reachable from a caller that explicitly
+  wants R6 (docs/dup.md's "opt-in `--probe` path"); wiring an actual
+  `frob dup --probe` CLI flag is out of `frob.dup`'s scope and reported
+  to the coordinator.
+- **The `.frob/dup.db` cache** (`frob.dup._cache`) is now wired into
+  `find_clones`'s hot path: R3/R4-fingerprint/R5-hash fingerprints are
+  read/written keyed by body digest, and R4 pairwise verdicts (similarity
+  + alignment) are read/written keyed by `(digest_pair, "r4",
+  corpus_epoch=0)`, both through the existing `frob.dup._cache` API.
+  Fixed a pre-existing schema bug while wiring this in: the
+  `fingerprints` table's primary key was `digest` alone, not
+  `(digest, rung)`, so a symbol with more than one cached rung (now
+  routine, since every symbol gets an R3 hash, an R4 fingerprint set,
+  *and* an R5 hash) silently clobbered all but the last rung written.
+  `DupStats.cache_hits` now reports real hits on unchanged bodies across
+  repeated `find_clones` calls.
 - **`find_duplicates`** (the old Type-1/2 scanner) is preserved verbatim
   in `frob.dup._legacy` and re-exported from `frob.dup.__init__`
   unchanged, so `frob check`'s dup stage and `frob dup` CLI keep working.

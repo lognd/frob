@@ -29,9 +29,10 @@ _log = get_logger(__name__)
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS fingerprints (
-    digest TEXT PRIMARY KEY,
+    digest TEXT NOT NULL,
     rung TEXT NOT NULL,
-    payload TEXT NOT NULL
+    payload TEXT NOT NULL,
+    PRIMARY KEY (digest, rung)
 );
 CREATE TABLE IF NOT EXISTS verdicts (
     d1 TEXT NOT NULL,

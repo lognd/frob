@@ -188,6 +188,58 @@ fn tree_edit_similarity(a: Vec<u64>, b: Vec<u64>) -> (f64, Vec<(usize, usize)>) 
     (similarity, alignment)
 }
 
+/// R5: Weisfeiler-Lehman graph-kernel hash over a def-use/control adjacency.
+///
+/// `adjacency` is an edge list `(u, v)` over node indices `0..labels.len()`
+/// (undirected -- the caller symmetrizes if it wants directed semantics);
+/// `labels[i]` is node `i`'s initial color (identifier role, e.g. "def" vs
+/// "use", the caller's choice). Standard 1-WL refinement: each iteration,
+/// every node's new label is the hash of its own label plus the *sorted*
+/// multiset of its neighbors' labels (sorting makes it isomorphism-stable --
+/// two graphs with relabeled-but-isomorphic structure hash identically).
+/// After `iterations` rounds the per-node labels are folded (order-
+/// independent, via XOR) into one graph hash, so reordered-but-equivalent
+/// dataflow graphs collide regardless of node numbering.
+#[pyfunction]
+fn wl_hash(adjacency: Vec<(usize, usize)>, labels: Vec<String>, iterations: usize) -> u64 {
+    let n = labels.len();
+    if n == 0 {
+        return 0;
+    }
+    let mut neighbors: Vec<Vec<usize>> = vec![Vec::new(); n];
+    for (u, v) in &adjacency {
+        if *u < n && *v < n {
+            neighbors[*u].push(*v);
+            neighbors[*v].push(*u);
+        }
+    }
+
+    let mut colors: Vec<u64> = labels.iter().map(|l| hash_str(l)).collect();
+    for _ in 0..iterations {
+        let mut next_colors: Vec<u64> = Vec::with_capacity(n);
+        for i in 0..n {
+            let mut neighbor_colors: Vec<u64> = neighbors[i].iter().map(|&j| colors[j]).collect();
+            neighbor_colors.sort_unstable();
+            let mut h = DefaultHasher::new();
+            colors[i].hash(&mut h);
+            neighbor_colors.hash(&mut h);
+            next_colors.push(h.finish());
+        }
+        colors = next_colors;
+    }
+
+    // Order-independent fold: the graph hash must not depend on node
+    // numbering, only on the (now-refined) multiset of node colors.
+    let mut sorted_colors = colors;
+    sorted_colors.sort_unstable();
+    let mut acc: u64 = 0x9e3779b97f4a7c15; // golden-ratio seed, arbitrary
+    for c in sorted_colors {
+        acc = acc.wrapping_add(c.wrapping_mul(0xff51afd7ed558ccd));
+        acc ^= acc >> 33;
+    }
+    acc
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -230,6 +282,34 @@ mod tests {
         let (sim, _) = tree_edit_similarity(a, b);
         assert!(sim.abs() < 1e-9);
     }
+
+    #[test]
+    fn wl_hash_isomorphic_relabeled_graphs_collide() {
+        // Triangle a-b-c with labels ["def", "use", "use"], vs the same
+        // triangle with nodes renumbered -- 1-WL must be invariant to that.
+        let labels_a = vec!["def".to_string(), "use".to_string(), "use".to_string()];
+        let adj_a = vec![(0usize, 1usize), (1, 2), (2, 0)];
+        let labels_b = vec!["use".to_string(), "def".to_string(), "use".to_string()];
+        let adj_b = vec![(1usize, 0usize), (0, 2), (2, 1)];
+        assert_eq!(wl_hash(adj_a, labels_a, 2), wl_hash(adj_b, labels_b, 2));
+    }
+
+    #[test]
+    fn wl_hash_structurally_different_graphs_differ() {
+        // A path of 3 nodes vs a triangle of 3 nodes, same labels.
+        let labels = vec!["a".to_string(), "a".to_string(), "a".to_string()];
+        let path = vec![(0usize, 1usize), (1, 2)];
+        let triangle = vec![(0usize, 1usize), (1, 2), (2, 0)];
+        assert_ne!(
+            wl_hash(path, labels.clone(), 2),
+            wl_hash(triangle, labels, 2)
+        );
+    }
+
+    #[test]
+    fn wl_hash_empty_graph_is_zero() {
+        assert_eq!(wl_hash(Vec::new(), Vec::new(), 2), 0);
+    }
 }
 
 #[pymodule]
@@ -238,5 +318,6 @@ fn frob_core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(winnow_fingerprints, m)?)?;
     m.add_function(wrap_pyfunction!(candidate_pairs, m)?)?;
     m.add_function(wrap_pyfunction!(tree_edit_similarity, m)?)?;
+    m.add_function(wrap_pyfunction!(wl_hash, m)?)?;
     Ok(())
 }

@@ -80,11 +80,23 @@ def tree_edit_similarity(
     return Ok((sim, tuple(tuple(p) for p in alignment)))
 
 
+def wl_hash(
+    adjacency: tuple[tuple[int, int], ...], labels: tuple[str, ...], iterations: int
+) -> Result[int, DupError]:
+    """R5: Weisfeiler-Lehman graph-kernel hash of a def-use/control adjacency."""
+    if not core_available():
+        return Err(DupError.CoreUnavailable)
+    import frob_core
+
+    return Ok(frob_core.wl_hash(list(adjacency), list(labels), iterations))
+
+
 __all__ = [
     "INSTALL_HINT",
     "candidate_pairs",
     "core_available",
     "r3_canonical_hash",
     "tree_edit_similarity",
+    "wl_hash",
     "winnow_fingerprints",
 ]
