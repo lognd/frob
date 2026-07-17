@@ -1887,7 +1887,7 @@ passed. ruff format/check clean. ty check clean.
 ```yaml
 id: T-0062
 title: 'strata refinement: abstract components, refine blocks, faithfulness'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-17'
@@ -1902,12 +1902,71 @@ scope:
 - tickets.md
 - src/frob/strata/**
 - tests/unit/strata/**
-evidence: []
+evidence:
+- tests/unit/strata/test_refine.py::TestRefineHappyPath::test_flattens_abstract_node_and_rewires_outer_flow
+- tests/unit/strata/test_refine.py::TestRefineHappyPath::test_noflow_claim_proved_at_abstract_level_stays_proved_after_refinement
+- tests/unit/strata/test_refine.py::TestRefineViolations::test_foreign_inner_node_under_trusted_abstract_fails_trust_laundering
+- tests/unit/strata/test_refine.py::TestUnrefinedFrontier::test_unrefined_abstract_node_keeps_marker
 attachments: []
 acceptance: []
 threat: null
 ```
 Three faithfulness checks: no new external surface, no trust laundering, budget distribution. Policies inherit downward monotonically; code binding legal only on leaves.
+
+## Done report
+
+Changed:
+- strata-core/src/parse.rs::Parser::parse_refine
+- strata-core/src/parse.rs::ModuleAst (new `refines` field)
+- strata-core/src/parse.rs::Parser::parse_program (refine keyword wiring)
+- src/frob/strata/_ast.py::RefineDecl
+- src/frob/strata/_ast.py::Module (new `refines` field)
+- src/frob/strata/_errors.py::StrataError (new `RefinementViolation` member)
+- src/frob/strata/_elaborate.py::_rewire_endpoint
+- src/frob/strata/_elaborate.py::_rewrite_claim_for_refine
+- src/frob/strata/_elaborate.py::_apply_refine
+- src/frob/strata/_elaborate.py::_elaborate_refines
+- src/frob/strata/_elaborate.py::elaborate (now flattens refine blocks)
+- src/frob/strata/__init__.py (export RefineDecl)
+- docs/strata/surface.md ("### v0 semantics" under Refinement, Parser
+  section RefineDecl anchor + grammar-subset note, Elaborator section
+  refine/RefinementViolation notes)
+- tests/unit/strata/test_refine.py (new)
+
+Evidence:
+- tests/unit/strata/test_refine.py::TestRefineHappyPath::test_flattens_abstract_node_and_rewires_outer_flow
+- tests/unit/strata/test_refine.py::TestRefineHappyPath::test_claim_endpoint_rewritten_and_still_evaluable
+- tests/unit/strata/test_refine.py::TestRefineHappyPath::test_noflow_claim_proved_at_abstract_level_stays_proved_after_refinement
+- tests/unit/strata/test_refine.py::TestRefineViolations::test_refine_of_non_abstract_node_fails
+- tests/unit/strata/test_refine.py::TestRefineViolations::test_refine_of_unknown_target_fails
+- tests/unit/strata/test_refine.py::TestRefineViolations::test_inner_flow_touching_outer_id_fails_new_external_surface
+- tests/unit/strata/test_refine.py::TestRefineViolations::test_foreign_inner_node_under_trusted_abstract_fails_trust_laundering
+- tests/unit/strata/test_refine.py::TestRefineViolations::test_bind_to_not_an_inner_node_fails
+- tests/unit/strata/test_refine.py::TestUnrefinedFrontier::test_unrefined_abstract_node_keeps_marker
+- strata-core/src/parse.rs::tests::parses_refine_happy_path
+- strata-core/src/parse.rs::tests::error_refine_zero_binds
+- strata-core/src/parse.rs::tests::error_refine_two_binds
+- strata-core/src/parse.rs::tests::error_refine_binds_lhs_mismatch
+- strata-core/src/parse.rs::tests::error_refine_before_module
+
+Deviations: budget distribution (faithfulness check 3) is explicitly
+DEFERRED to phase 2, as instructed -- not implemented, documented in
+docs/strata/surface.md and as a code comment in `_apply_refine`.
+
+Filed: T-0091 (`make core` creates a stray venv under strata-core/,
+observed while rebuilding the Rust extension for this ticket -- worked
+around with an explicit `VIRTUAL_ENV`, not fixed here since it is outside
+this ticket's deliverable list).
+
+Gates: `cargo test --lib` in strata-core: 27 passed (5 new refine tests).
+`make core` rebuilt both extensions (workaround: `VIRTUAL_ENV=$(pwd)/.venv
+uvx maturin develop --uv --release -m strata-core/Cargo.toml`, see T-0091).
+`uv run pytest tests/unit/strata -q`: all green (81 tests, 9 new).
+`uv run ruff format --check` / `ruff check` clean on all touched files.
+`uv run ty check` clean. `frob graph build` clean (11 describes anchors in
+docs/strata/surface.md). `frob ticket sweep T-0062` recorded. `frob check
+--ticket T-0062` exit 0 (only pre-existing waived PERF003 findings in
+unrelated modules).
 
 <!-- ticket:T-0063 -->
 ```yaml
@@ -2558,3 +2617,45 @@ acceptance: []
 threat: null
 ```
 Reviewer finding during T-0059: strata-core/src/parse.rs carries 18 frob:tests directives targeting strata-core/src/lib.rs::parse_source, but TEST002 reports 0 unit cases collected for that symbol. Suspect the unit-edge collector does not resolve directives living in a different file than the target symbol (rust cross-file binding). Warn-level today; worth fixing before TEST002 is promoted to error.
+
+<!-- ticket:T-0091 -->
+```yaml
+id: T-0091
+title: make core creates a stray venv under strata-core/, contaminating the editable
+  install
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-17'
+blocked_by: []
+parent: null
+scope:
+- Makefile
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+found while working T-0062: running `make core` from repo root invokes `cd strata-core && uvx maturin develop --uv --release`, which (unlike the frob-core target) causes uv/maturin to create and install into a fresh strata-core/.venv instead of the repo root .venv, so the root .venv's installed strata_core.abi3.so goes stale after a rebuild until VIRTUAL_ENV is pinned manually. Repro: rm -rf strata-core/.venv; make core; compare md5sum of strata-core/target/release/libstrata_core.so vs .venv/lib/python3.11/site-packages/strata_core/strata_core.abi3.so -- they differ. Workaround used in T-0062: VIRTUAL_ENV=$(pwd)/.venv uvx maturin develop --uv --release -m strata-core/Cargo.toml. Suggested fix: set VIRTUAL_ENV explicitly in the Makefile core target for both crates, or add a .python-version/uv marker to strata-core/ so uv resolves the root venv the same way it does for frob-core.
+
+<!-- ticket:T-0092 -->
+```yaml
+id: T-0092
+title: 'rust test integration: [[test.runner]] for cargo + COV003 evidence resolution'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-17'
+blocked_by: []
+parent: null
+scope:
+- frob.toml
+- src/frob/testing/**
+- src/frob/gates/**
+- tests/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Two symptoms, one gap, both hit on 2026-07-17: (1) frob test --base main errors NoRunner when rust files are touched because frob.toml has no [[test.runner]] language=rust entry (cargo needs PYO3_PYTHON + LD_LIBRARY_PATH env to link); (2) COV003 rejects cargo test ids as ticket evidence because only python tests are collected (T-0062 closed with rust ids and broke repo check until swapped for pytest ids). Wire a cargo runner + rust test collection so native-kernel work can cite its real tests.

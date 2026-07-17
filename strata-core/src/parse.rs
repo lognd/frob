@@ -216,6 +216,7 @@ struct ModuleAst {
     flows: Vec<serde_json::Value>,
     boundaries: Vec<serde_json::Value>,
     claims: Vec<serde_json::Value>,
+    refines: Vec<serde_json::Value>,
 }
 
 impl Parser {
@@ -542,6 +543,85 @@ impl Parser {
         Ok(())
     }
 
+    /// refine := "refine" ID "into" "{" (node_stmt | flow_stmt)* bind "}"
+    ///
+    /// WHY: decomposes an abstract node into inner nodes/flows plus
+    /// exactly one `binds` clause tying the abstraction's external edges
+    /// back to a chosen inner node (docs/strata/surface.md#refinement);
+    /// zero or two+ binds, or a binds LHS that does not match the refine
+    /// target, are parse errors rather than silent defaults (law 2).
+    fn parse_refine(&mut self, ast: &mut ModuleAst) -> Result<(), ParseError> {
+        self.advance(); // 'refine'
+        let target = self.expect_ident("refine target id")?;
+        self.expect_keyword("into")?;
+        self.expect_symbol('{')?;
+        let mut nodes: Vec<serde_json::Value> = Vec::new();
+        let mut flows: Vec<serde_json::Value> = Vec::new();
+        let mut bind_to: Option<String> = None;
+        loop {
+            if self.at_symbol('}') {
+                break;
+            }
+            if self.at_keyword("node") {
+                let mut inner = ModuleAst::default();
+                self.parse_node(&mut inner)?;
+                nodes.push(inner.nodes.remove(0));
+            } else if self.at_keyword("flow") {
+                let mut inner = ModuleAst::default();
+                self.parse_flow(&mut inner)?;
+                flows.push(inner.flows.remove(0));
+            } else if self.at_keyword("binds") {
+                let tok = self.cur().clone();
+                self.advance();
+                let lhs = self.expect_ident("binds lhs")?;
+                self.expect_symbol('=')?;
+                let rhs = self.expect_ident("binds rhs")?;
+                if bind_to.is_some() {
+                    return Err(ParseError {
+                        line: tok.line,
+                        col: tok.col,
+                        message: "refine block needs exactly one binds clause".to_string(),
+                    });
+                }
+                if lhs != target {
+                    return Err(ParseError {
+                        line: tok.line,
+                        col: tok.col,
+                        message: format!(
+                            "binds lhs {:?} must equal refine target {:?}",
+                            lhs, target
+                        ),
+                    });
+                }
+                bind_to = Some(rhs);
+            } else {
+                return self.err("expected node, flow, or binds inside refine block");
+            }
+            if self.at_symbol(';') {
+                self.advance();
+            }
+        }
+        self.expect_symbol('}')?;
+        let bind_to = match bind_to {
+            Some(b) => b,
+            None => {
+                let t = self.cur();
+                return Err(ParseError {
+                    line: t.line,
+                    col: t.col,
+                    message: "refine block needs exactly one binds clause".to_string(),
+                });
+            }
+        };
+        ast.refines.push(json!({
+            "target": target,
+            "nodes": nodes,
+            "flows": flows,
+            "bind_to": bind_to,
+        }));
+        Ok(())
+    }
+
     fn parse_metric(&mut self) -> Result<String, ParseError> {
         let m = self.expect_ident("metric")?;
         match m.as_str() {
@@ -633,7 +713,7 @@ impl Parser {
             };
             match kw.as_str() {
                 "module" => self.parse_module(&mut ast, &mut seen_module)?,
-                "node" | "flow" | "boundary" | "assert" | "assume" => {
+                "node" | "flow" | "boundary" | "assert" | "assume" | "refine" => {
                     if !seen_module {
                         return self.err("statement before module declaration");
                     }
@@ -643,6 +723,7 @@ impl Parser {
                         "boundary" => self.parse_boundary(&mut ast)?,
                         "assert" => self.parse_claim(&mut ast, "assert")?,
                         "assume" => self.parse_claim(&mut ast, "assume")?,
+                        "refine" => self.parse_refine(&mut ast)?,
                         _ => unreachable!(),
                     }
                 }
@@ -883,6 +964,77 @@ mod tests {
         assert_eq!(v["flows"].as_array().unwrap().len(), 1);
         assert_eq!(v["boundaries"].as_array().unwrap().len(), 1);
         assert_eq!(v["claims"].as_array().unwrap().len(), 2);
+    }
+
+    #[test]
+    fn parses_refine_happy_path() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok(
+            r#"module m
+            node api : trusted abstract
+            refine api into {
+                node inner : trusted
+                flow f1 : inner -> inner
+                binds api = inner
+            }"#,
+        );
+        let r = &v["refines"][0];
+        assert_eq!(r["target"], "api");
+        assert_eq!(r["bind_to"], "inner");
+        assert_eq!(r["nodes"][0]["id"], "inner");
+        assert_eq!(r["flows"][0]["id"], "f1");
+    }
+
+    #[test]
+    fn error_refine_zero_binds() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let e = err(
+            r#"module m
+            node api : trusted abstract
+            refine api into {
+                node inner : trusted
+            }"#,
+        );
+        assert_eq!(e["message"], "refine block needs exactly one binds clause");
+    }
+
+    #[test]
+    fn error_refine_two_binds() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let e = err(
+            r#"module m
+            node api : trusted abstract
+            refine api into {
+                node inner : trusted
+                binds api = inner
+                binds api = inner
+            }"#,
+        );
+        assert_eq!(e["message"], "refine block needs exactly one binds clause");
+    }
+
+    #[test]
+    fn error_refine_binds_lhs_mismatch() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let e = err(
+            r#"module m
+            node api : trusted abstract
+            refine api into {
+                node inner : trusted
+                binds wrong = inner
+            }"#,
+        );
+        assert!(e["message"]
+            .as_str()
+            .unwrap()
+            .contains("must equal refine target"));
+    }
+
+    #[test]
+    fn error_refine_before_module() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let e = err("refine api into { binds api = inner }");
+        assert_eq!(e["message"], "statement before module declaration");
     }
 
     #[test]

@@ -118,6 +118,44 @@ implementation cannot begin on an undecomposed box; the unrefined frontier
 is exactly the planning frontier, and `frob sys plan` (T-0084) maps it
 onto parent/child tickets.
 
+### v0 semantics
+
+<!-- frob:ticket T-0062 -->
+
+`refine ID into { (node_stmt | flow_stmt)* binds ID = ID }` is parsed in
+Rust (`strata-core/src/parse.rs::parse_refine`); exactly one `binds`
+clause is required and its left-hand id must equal the refine target, both
+enforced as parse errors with line/col, not defaults. The elaborator
+(`_elaborate.py::elaborate` -> `_elaborate_refines`) then flattens each
+block into the kernel model:
+
+- **Target validity.** The refine target must already exist in the module
+  and be declared `abstract`; otherwise `StrataError.RefinementViolation`.
+- **No new external surface (faithfulness check 1).** Every inner flow's
+  `src` and `dst` must both be inner node ids; an inner flow touching any
+  id outside the refined assembly is a violation.
+- **No trust laundering (faithfulness check 2).** Every inner node's trust
+  must satisfy `abstract_trust <= inner_trust` in `TRUST` (kernel `std.trust`
+  lattice, `_models.py::Lattice.leq`); a lower-trust inner node is a
+  violation.
+- **Budget distribution (faithfulness check 3) is DEFERRED to phase 2.**
+  v0 performs no budget/latency coverage check between the abstraction's
+  declared bounds and the concrete inner paths; this is a known gap, not
+  an oversight, tracked for the phase-2 ticket that adds path-arithmetic
+  budget propagation to refine blocks.
+- **Flattening.** The abstract node is removed from the kernel model; all
+  inner nodes and flows are added; every outer flow whose `src` or `dst`
+  named the abstraction is rewired to `bind_to` (`bind_to` must be one of
+  the inner node ids, else a violation); every claim endpoint or
+  `bound`-claim target naming the abstraction is rewritten to `bind_to` the
+  same way, logged at INFO per rewrite. This is exactly what keeps a proof
+  made against the abstraction true after decomposition (the
+  compositional-proof property above).
+- **Unrefined frontier.** An `abstract` node with no matching `refine`
+  block is left in the kernel model with its `"abstract"` attrs marker
+  intact, and elaboration logs a WARNING ("unrefined frontier") -- this is
+  the planning-frontier signal (`frob sys plan`, T-0084), not an error.
+
 ## Module system
 
 Dotted module paths (`use base.labels { Pii }`); per-repo `design/`
@@ -128,8 +166,8 @@ registries are deferred but the path syntax already accommodates them.
 
 <!-- frob:ticket T-0059 -->
 
-The grammar v0 subset (module/node/flow/boundary/assert/assume; no
-`refine`, deferred to T-0062) is lexed and recursive-descent parsed in the
+The grammar v0 subset (module/node/flow/boundary/assert/assume/refine,
+T-0062) is lexed and recursive-descent parsed in the
 `strata-core` Rust extension (charter D3, amended 2026-07-17); Python only
 validates the resulting JSON into frozen pydantic AST models and never
 re-implements the grammar. Every malformed input yields a `{"line",
@@ -157,6 +195,8 @@ per grammar production:
 - `ClaimDecl` <!-- frob:describes src/frob/strata/_ast.py::ClaimDecl -->
   -- id, kind (noflow/reach/bound), src/dst or metric/target/limit, assumed,
   owner, review.
+- `RefineDecl` <!-- frob:describes src/frob/strata/_ast.py::RefineDecl -->
+  -- target, nodes, flows, bind_to; see "Refinement" above for v0 semantics.
 
 Python entry point (`src/frob/strata/_parse.py`):
 
@@ -180,8 +220,11 @@ mappings are cheap and change often, unlike the parser and closure kernels
   - `NodeDecl` -> `Node`: `id`/`trust`/`clearance`/`attrs`/`residence` pass
     through; `Capacity` maps `rate` -> `service_rate` and carries
     `replicas_min`/`replicas_max`; `is_abstract=True` appends an
-    `"abstract"` entry to `attrs` (refinement proper is T-0062) and logs at
-    DEBUG.
+    `"abstract"` entry to `attrs` and logs at DEBUG; `RefineDecl` entries
+    are then flattened into the model by `_elaborate_refines` -- see
+    "Refinement -> v0 semantics" above for the full faithfulness/flattening
+    contract, including the deferred budget-distribution check and the
+    unrefined-frontier warning.
   - `FlowDecl` -> `Flow`: `id`/`src`/`dst`/`label`/`age`/`rate`/`size`/
     `attrs`/`transport` pass through field-for-field.
   - `BoundaryDecl` -> `Boundary`: `kind` ("endorse"/"declassify") maps onto
@@ -199,6 +242,9 @@ mappings are cheap and change often, unlike the parser and closure kernels
   - `DuplicateId` -- two nodes, or two flows, share an id.
   - `UnknownReference` -- a boundary names a flow id that is not declared,
     or a `bound` claim names a target id that is not declared.
+  - `RefinementViolation` -- a `refine` block fails target validity or
+    either implemented faithfulness check (T-0062, see "v0 semantics"
+    above).
 
   `noflow`/`reach` claim endpoints are left unvalidated here: they may
   name either a node id or a trust level, and only the kernel's

@@ -15,9 +15,10 @@ from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
 
-from ._ast import BoundaryDecl, ClaimDecl, FlowDecl, Module, NodeDecl
+from ._ast import BoundaryDecl, ClaimDecl, FlowDecl, Module, NodeDecl, RefineDecl
 from ._errors import StrataError
 from ._models import (
+    TRUST,
     Boundary,
     BoundaryDirection,
     BoundClaim,
@@ -166,6 +167,184 @@ def _validate_references(module: Module) -> Result[None, StrataError]:
     return Ok(None)
 
 
+def _rewire_endpoint(value: str, target: str, bind_to: str) -> str:
+    """Replace `value` with `bind_to` when it names the refine target."""
+    return bind_to if value == target else value
+
+
+def _rewrite_claim_for_refine(claim: Claim, refine: RefineDecl) -> Claim:
+    """Rewrite one claim's endpoints/target from a refine's abstraction id to `bind_to`.
+
+    Flattening a refine block must not leave a claim dangling on an id that
+    no longer exists in the model (the abstract node was just removed), so
+    every claim naming the target is re-pointed at `bind_to` -- logged at
+    INFO since this changes what the claim literally asserts, even though
+    its truth is preserved by the faithfulness checks.
+    """
+    body = claim.body
+    if isinstance(body, NoFlow | Reach):
+        if body.src == refine.target or body.dst == refine.target:
+            new_body = type(body)(
+                src=_rewire_endpoint(body.src, refine.target, refine.bind_to),
+                dst=_rewire_endpoint(body.dst, refine.target, refine.bind_to),
+            )
+            _log.info(
+                "refine %s: rewriting claim %s endpoint(s) %s -> %s to bind_to %s",
+                refine.target,
+                claim.id,
+                body.src,
+                body.dst,
+                refine.bind_to,
+            )
+            return claim.model_copy(update={"body": new_body})
+    elif isinstance(body, BoundClaim) and body.target == refine.target:
+        _log.info(
+            "refine %s: rewriting claim %s target to bind_to %s",
+            refine.target,
+            claim.id,
+            refine.bind_to,
+        )
+        return claim.model_copy(
+            update={"body": body.model_copy(update={"target": refine.bind_to})}
+        )
+    return claim
+
+
+def _apply_refine(
+    refine: RefineDecl,
+    nodes: dict[str, Node],
+    flows: list[Flow],
+    claims: list[Claim],
+) -> Result[None, StrataError]:
+    """Flatten one `refine` block into `nodes`/`flows`/`claims` in place.
+
+    WHY: this is the compositional-proof mechanism (docs/strata/surface.md
+    #refinement) -- an abstract node is swapped for its concrete internals
+    only once two of the three faithfulness checks pass (no new external
+    surface, no trust laundering); the third, budget distribution, is
+    DEFERRED to phase 2 and intentionally not checked here. Every outer
+    flow and claim endpoint naming the abstraction is rewired to `bind_to`
+    so the flattened model has no dangling reference to the removed id.
+    """
+    target = nodes.get(refine.target)
+    if target is None:
+        _log.error("refine target %r is not declared in the module", refine.target)
+        return Err(StrataError.RefinementViolation)
+    if _ABSTRACT_ATTR not in target.attrs:
+        _log.error("refine target %r is not declared abstract", refine.target)
+        return Err(StrataError.RefinementViolation)
+
+    inner_nodes = [_elaborate_node(n) for n in refine.nodes]
+    inner_flows = [_elaborate_flow(f) for f in refine.flows]
+    inner_ids = {n.id for n in inner_nodes}
+
+    # Faithfulness check 1: no new external surface -- every inner flow's
+    # endpoints must both stay inside the refined assembly.
+    for flow in inner_flows:
+        if flow.src not in inner_ids or flow.dst not in inner_ids:
+            _log.error(
+                "refine %r: inner flow %r (%s -> %s) touches an id outside the "
+                "refined assembly (new external surface)",
+                refine.target,
+                flow.id,
+                flow.src,
+                flow.dst,
+            )
+            return Err(StrataError.RefinementViolation)
+
+    # Faithfulness check 2: no trust laundering -- every inner node must sit
+    # at or above the abstraction's declared trust in the trust lattice.
+    for inner in inner_nodes:
+        leq = TRUST.leq(target.trust, inner.trust)
+        if leq.is_err:
+            return Err(leq.danger_err)
+        if not leq.danger_ok:
+            _log.error(
+                "refine %r: inner node %r trust %r is below abstraction trust "
+                "%r (trust laundering)",
+                refine.target,
+                inner.id,
+                inner.trust,
+                target.trust,
+            )
+            return Err(StrataError.RefinementViolation)
+
+    # Faithfulness check 3, budget distribution (parent bounds must cover
+    # the concrete paths), is DEFERRED to phase 2 -- see
+    # docs/strata/surface.md#v0-semantics. No check is performed here.
+
+    if refine.bind_to not in inner_ids:
+        _log.error(
+            "refine %r: bind_to %r is not one of the inner node ids %s",
+            refine.target,
+            refine.bind_to,
+            sorted(inner_ids),
+        )
+        return Err(StrataError.RefinementViolation)
+
+    del nodes[refine.target]
+    for inner in inner_nodes:
+        nodes[inner.id] = inner
+    flows.extend(inner_flows)
+
+    for i, flow in enumerate(flows):
+        if flow.src == refine.target or flow.dst == refine.target:
+            new_src = _rewire_endpoint(flow.src, refine.target, refine.bind_to)
+            new_dst = _rewire_endpoint(flow.dst, refine.target, refine.bind_to)
+            _log.info(
+                "refine %s: rewiring flow %s %s -> %s to bind_to %s",
+                refine.target,
+                flow.id,
+                flow.src,
+                flow.dst,
+                refine.bind_to,
+            )
+            flows[i] = flow.model_copy(update={"src": new_src, "dst": new_dst})
+
+    for i, claim in enumerate(claims):
+        claims[i] = _rewrite_claim_for_refine(claim, refine)
+
+    return Ok(None)
+
+
+def _elaborate_refines(
+    module: Module, model: KernelModel
+) -> Result[KernelModel, StrataError]:
+    """Flatten every `refine` block in `module` into `model`.
+
+    WHY: refinement happens after the base model exists so a refine block
+    can reference the already-elaborated abstract node and every outer
+    flow/claim built from the rest of the module (docs/strata/surface.md
+    #refinement). Any abstract node with no matching refine block is left
+    untouched -- that is the unrefined frontier, logged at WARNING as the
+    planning-frontier signal rather than an error.
+    """
+    nodes: dict[str, Node] = {n.id: n for n in model.nodes}
+    flows: list[Flow] = list(model.flows)
+    claims: list[Claim] = list(model.claims)
+
+    for refine in module.refines:
+        applied = _apply_refine(refine, nodes, flows, claims)
+        if applied.is_err:
+            return Err(applied.danger_err)
+
+    for node in nodes.values():
+        if _ABSTRACT_ATTR in node.attrs:
+            _log.warning(
+                "unrefined frontier: node %r is abstract with no refine block", node.id
+            )
+
+    return Ok(
+        model.model_copy(
+            update={
+                "nodes": tuple(nodes.values()),
+                "flows": tuple(flows),
+                "claims": tuple(claims),
+            }
+        )
+    )
+
+
 # frob:doc docs/strata/surface.md#elaborator
 def elaborate(module: Module) -> Result[KernelModel, StrataError]:
     """Elaborate a parsed `Module` into a `KernelModel` under `std.trust`.
@@ -190,12 +369,18 @@ def elaborate(module: Module) -> Result[KernelModel, StrataError]:
         boundaries=tuple(_elaborate_boundary(b) for b in module.boundaries),
         claims=tuple(_elaborate_claim(c) for c in module.claims),
     )
+    refined = _elaborate_refines(module, model)
+    if refined.is_err:
+        return Err(refined.danger_err)
+    model = refined.danger_ok
     _log.info(
-        "elaborated module %s: %d node(s), %d flow(s), %d boundary(ies), %d claim(s)",
+        "elaborated module %s: %d node(s), %d flow(s), %d boundary(ies), %d claim(s), "
+        "%d refine(s)",
         module.name,
         len(model.nodes),
         len(model.flows),
         len(model.boundaries),
         len(model.claims),
+        len(module.refines),
     )
     return Ok(model)

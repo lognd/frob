@@ -21,3 +21,4 @@ class StrataError(ErrorSet):
     DuplicateId = "Two facts of the same kind share an id"
     MalformedLattice = "A lattice's covering pairs contain a cycle"
     ParseFailed = "Source text failed to parse into a strata module"
+    RefinementViolation = "A refine block failed a faithfulness check"

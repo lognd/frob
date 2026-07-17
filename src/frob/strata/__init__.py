@@ -14,6 +14,7 @@ from frob.strata._ast import (
     FlowDecl,
     Module,
     NodeDecl,
+    RefineDecl,
 )
 from frob.strata._ast import (
     Capacity as SurfaceCapacity,
@@ -81,6 +82,7 @@ __all__ = [
     "Quantifier",
     "Quantity",
     "Reach",
+    "RefineDecl",
     "RemoveNode",
     "Rewrite",
     "Rung",

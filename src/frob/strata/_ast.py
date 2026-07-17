@@ -92,6 +92,18 @@ class ClaimDecl(BaseModel):
 
 
 # frob:doc docs/strata/surface.md#parser
+class RefineDecl(BaseModel):
+    """A parsed `refine X into { ... binds ... }` statement, one entry in a `Module`."""
+
+    model_config = ConfigDict(frozen=True)
+
+    target: str
+    nodes: tuple[NodeDecl, ...] = ()
+    flows: tuple[FlowDecl, ...] = ()
+    bind_to: str
+
+
+# frob:doc docs/strata/surface.md#parser
 class Module(BaseModel):
     """A whole parsed source file: exactly the shape the Rust parser emits."""
 
@@ -102,3 +114,4 @@ class Module(BaseModel):
     flows: tuple[FlowDecl, ...] = ()
     boundaries: tuple[BoundaryDecl, ...] = ()
     claims: tuple[ClaimDecl, ...] = ()
+    refines: tuple[RefineDecl, ...] = ()
