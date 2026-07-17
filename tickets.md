@@ -198,6 +198,8 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/**
+- tests/test_serve.py
+- docs/serve.md
 evidence: []
 attachments: []
 acceptance: []

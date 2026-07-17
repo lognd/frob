@@ -38,6 +38,9 @@ The four components that make up the enforcement layer:
 - `docs/perf.md` -- `frob.perf`: profiling (`frob perf profile`), symbol-
   level heat-maps (`frob perf heat`), and the PERF001..PERF004 linear-scan
   gates.
+- `docs/serve.md` -- `frob.serve`: the `frob serve` MCP stdio adapter
+  exposing doable tickets, stale docs, scope checks, and graph queries as
+  read-only tools.
 
 Two modules that support the above but are not yet fully re-platformed:
 

@@ -31,6 +31,7 @@ class Subcommand(str, enum.Enum):
     test = "test"
     vet = "vet"
     perf = "perf"
+    serve = "serve"
 
 
 # frob:ticket T-0030
@@ -196,6 +197,9 @@ class AppConfig(BaseModel):
     perf_annotate: Path | None = None
     perf_ref: str | None = None
 
+    # serve
+    serve_path: Path | None = None
+
     @classmethod
     def from_external(cls, args: argparse.Namespace, file: Path) -> "AppConfig":
         # frob:ticket T-0021
@@ -274,6 +278,7 @@ class AppConfig(BaseModel):
             "vet_path",
             "perf_path",
             "perf_annotate",
+            "serve_path",
         ):
             val = getattr(args, path_field, None)
             if val is not None:

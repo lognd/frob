@@ -583,6 +583,13 @@ def _build_parser() -> argparse.ArgumentParser:
         help="print FILE with per-line hit/time gutters",
     )
 
+    # -- serve -------------------------------------------------------------
+    serve_p = sub.add_parser(
+        "serve",
+        help="MCP stdio adapter exposing frob's enforcement queries as tools",
+    )
+    serve_p.add_argument("serve_path", metavar="path", nargs="?", default=".")
+
     return p
 
 
