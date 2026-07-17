@@ -72,7 +72,8 @@ def load_decisions(root: Path) -> Result[tuple[Decision, ...], DecisionError]:
     if not d.exists():
         return Ok(())
     seen: dict[str, Decision] = {}
-    for path in sorted(d.glob("AD-*.md")):
+    record_paths = sorted(d.glob("AD-*.md"))
+    for path in record_paths:
         text = path.read_text(encoding="utf-8")
         match = _FRONTMATTER_RE.match(text)
         if match is None:
@@ -98,6 +99,58 @@ def load_decisions(root: Path) -> Result[tuple[Decision, ...], DecisionError]:
     return Ok(tuple(seen.values()))
 
 
+def _dec001(known: set[str], snapshot: GraphSnapshot) -> list:
+    """DEC001: a `frob:decision` edge targets a record that does not exist."""
+    from frob.gates._models import Severity, Violation
+
+    violations = []
+    for edge in snapshot.edges:
+        if edge.kind != EdgeKind.DECISION or edge.target in known:
+            continue
+        file, _, line = edge.origin.rpartition(":")
+        violations.append(
+            Violation(
+                rule="DEC001",
+                severity=Severity.ERROR,
+                file=file or edge.src,
+                line=int(line) if line.isdigit() else 0,
+                message=(
+                    f"DEC001: frob:decision {edge.target} has no "
+                    f"decisions/{edge.target}.md record"
+                ),
+            )
+        )
+    return violations
+
+
+def _anchored_decisions(snapshot: GraphSnapshot) -> set[str]:
+    """Decision ids carrying a `frob:decision` anchor edge in code."""
+    return {e.target for e in snapshot.edges if e.kind == EdgeKind.DECISION}
+
+
+def _dec002(decisions: tuple[Decision, ...], anchored: set[str]) -> list:
+    """DEC002: an accepted decision has no `frob:decision` anchor in code."""
+    from frob.gates._models import Severity, Violation
+
+    violations = []
+    for decision in decisions:
+        if decision.status != DecisionStatus.ACCEPTED or decision.id in anchored:
+            continue
+        violations.append(
+            Violation(
+                rule="DEC002",
+                severity=Severity.ERROR,
+                file=f"decisions/{decision.id}.md",
+                line=0,
+                message=(
+                    f"DEC002: accepted decision {decision.id} has no "
+                    f"frob:decision anchor in code"
+                ),
+            )
+        )
+    return violations
+
+
 # frob:doc docs/decisions.md#anchoring-in-code
 def decision_gate(decisions: tuple[Decision, ...], snapshot: GraphSnapshot) -> tuple:
     """DEC001/DEC002 over decision records and their code anchors.
@@ -107,41 +160,9 @@ def decision_gate(decisions: tuple[Decision, ...], snapshot: GraphSnapshot) -> t
     code (an accepted-but-unimplemented decision is drift). Returns
     `Violation`s; the import is local to avoid a cycle with frob.gates.
     """
-    from frob.gates._models import Severity, Violation
-
     known = {d.id for d in decisions}
-    anchored = {e.target for e in snapshot.edges if e.kind == EdgeKind.DECISION}
-    violations = []
-
-    for edge in snapshot.edges:
-        if edge.kind == EdgeKind.DECISION and edge.target not in known:
-            file, _, line = edge.origin.rpartition(":")
-            violations.append(
-                Violation(
-                    rule="DEC001",
-                    severity=Severity.ERROR,
-                    file=file or edge.src,
-                    line=int(line) if line.isdigit() else 0,
-                    message=(
-                        f"DEC001: frob:decision {edge.target} has no "
-                        f"decisions/{edge.target}.md record"
-                    ),
-                )
-            )
-    for decision in decisions:
-        if decision.status == DecisionStatus.ACCEPTED and decision.id not in anchored:
-            violations.append(
-                Violation(
-                    rule="DEC002",
-                    severity=Severity.ERROR,
-                    file=f"decisions/{decision.id}.md",
-                    line=0,
-                    message=(
-                        f"DEC002: accepted decision {decision.id} has no "
-                        f"frob:decision anchor in code"
-                    ),
-                )
-            )
+    anchored = _anchored_decisions(snapshot)
+    violations = [*_dec001(known, snapshot), *_dec002(decisions, anchored)]
     _log.info(
         "decision_gate: %d record(s), %d violation(s)",
         len(decisions),

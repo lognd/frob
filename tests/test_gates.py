@@ -48,6 +48,29 @@ def _snapshot(root: Path):
     return build_graph(root, cache).danger_ok
 
 
+def _rules(violations) -> list[str]:
+    """The rule id of every violation, in order."""
+    return [v.rule for v in violations]
+
+
+def _files(violations) -> set[str]:
+    """The set of files named by the violations."""
+    return {v.file for v in violations}
+
+
+def _first_rule(violations, rule):
+    """The first violation with `rule`, or None -- assertion convenience."""
+    for v in violations:
+        if v.rule == rule:
+            return v
+    return None
+
+
+def _by_rule(violations, rule) -> list:
+    """Every violation carrying `rule` -- assertion convenience."""
+    return [v for v in violations if v.rule == rule]
+
+
 def _git_init(root: Path) -> None:
     subprocess.run(["git", "init", "-q", "-b", "main"], cwd=root, check=True)
     subprocess.run(
@@ -109,8 +132,8 @@ class TestDriftGate:
         assert record.digests.sig != "deadbeef"
 
         violations = drift_gate(snap, lock)
-        assert any(v.rule == "DRIFT001" for v in violations)
-        v = next(v for v in violations if v.rule == "DRIFT001")
+        v = _first_rule(violations, "DRIFT001")
+        assert v is not None
         assert v.severity == Severity.ERROR
         assert "frob ack" in v.message
         assert v.file == "src/a.py"
@@ -125,8 +148,8 @@ class TestDriftGate:
         snap = _snapshot(tmp_path)
         lock = LockFile()
         violations = drift_gate(snap, lock)
-        assert any(v.rule == "DRIFT002" for v in violations)
-        v = next(v for v in violations if v.rule == "DRIFT002")
+        v = _first_rule(violations, "DRIFT002")
+        assert v is not None
         assert "run: frob ack" in v.message or "candidates" in v.message
 
     def test_no_drift_when_clean(self, tmp_path: Path) -> None:
@@ -170,8 +193,8 @@ class TestCoverageGate:
         queue = TicketQueue(tickets={})
         tests = CollectedTests(node_ids=frozenset())
         violations = coverage_gate(snap, queue, diff, tests)
-        assert any(v.rule == "COV002" for v in violations)
-        v = next(v for v in violations if v.rule == "COV002")
+        v = _first_rule(violations, "COV002")
+        assert v is not None
         assert "frob ticket new" in v.message
 
     def test_cov002_passes_with_open_ticket_edge(self, tmp_path: Path) -> None:
@@ -264,14 +287,15 @@ class TestCoverageGate:
         diff = Diff(base="x", hunks=())
         tests = CollectedTests(node_ids=frozenset())
         violations = coverage_gate(snap, queue, diff, tests)
-        assert any(v.rule == "COV001" for v in violations)
+        assert _first_rule(violations, "COV001") is not None
 
         from frob.gates import _apply_waivers  # noqa: PLC0415 - internal, test-only
 
         kept, waived = _apply_waivers(violations, snap)
-        assert not any(v.rule == "COV001" for v in kept)
-        assert any(v.rule == "COV001" for v in waived)
-        assert waived[[v.rule for v in waived].index("COV001")].waived is not None
+        assert _first_rule(kept, "COV001") is None
+        waived_cov001 = _first_rule(waived, "COV001")
+        assert waived_cov001 is not None
+        assert waived_cov001.waived is not None
 
     def test_waive001_missing_reason(self, tmp_path: Path) -> None:
         source = "def helper(x):\n    # frob:waive COV001\n    return x\n"
@@ -525,8 +549,9 @@ class TestTestGate:
         tests = CollectedTests(node_ids=frozenset({node}))
         cfg = TestPolicy(min_unit_cases=3)
         violations = run_test_gate(snap, (), Nothing(), tests, cfg)
-        assert any(v.rule == "TEST002" for v in violations)
-        assert not any(v.rule == "TEST001" for v in violations)
+        rule_ids = _rules(violations)
+        assert "TEST002" in rule_ids
+        assert "TEST001" not in rule_ids
 
     def test_test003_interface_without_integration(self, tmp_path: Path) -> None:
         from typani.option import Nothing
@@ -740,7 +765,6 @@ class TestRunGates:
 
 
 class TestSeverityOverrides:
-    # frob:tests src/frob/gates/__init__.py::scope_digest
     def test_override_downgrades_and_ignores_garbage(self, tmp_path, monkeypatch):
         from frob.gates import Severity, Violation, _apply_severity_overrides
 
@@ -784,8 +808,8 @@ class TestSeverityOverrides:
 
 
 class TestDoclinkGate:
-    # frob:tests src/frob/gates/__init__.py::doclink_gate
     def test_orphan_doc_is_error_and_linked_docs_pass(self, tmp_path):
+        # frob:tests src/frob/gates/__init__.py::doclink_gate kind="unit"
         from frob.gates import doclink_gate
         from frob.graph import build_graph
 
@@ -804,9 +828,8 @@ class TestDoclinkGate:
 
         snap = build_graph(root, root / ".frob" / "cache.db").danger_ok
         violations = doclink_gate(root, snap)
-        orphans = {v.file for v in violations}
-        assert orphans == {"docs/orphan.md"}
-        assert all(v.rule == "DOC001" for v in violations)
+        assert _files(violations) == {"docs/orphan.md"}
+        assert set(_rules(violations)) <= {"DOC001"}
 
     def test_new_file_is_auto_obligated_by_glob(self, tmp_path):
         from frob.gates import doclink_gate
@@ -1052,3 +1075,64 @@ class TestOptInGates:
         snap = _snapshot(tmp_path)
         violations = perf_gate(tmp_path, snap)
         assert any(v.rule == "PERF001" for v in violations)
+
+
+class TestScopeDigest:
+    def test_digest_is_stable_and_scope_sensitive(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/__init__.py::scope_digest kind="unit"
+        from frob.gates import scope_digest
+
+        _write(tmp_path, "src/a.py", "def a():\n    return 1\n")
+        _write(tmp_path, "src/b.py", "def b():\n    return 2\n")
+        snap = _snapshot(tmp_path)
+
+        digest = scope_digest(("src/a.py",), snap)
+        # Deterministic: the same scope over the same snapshot hashes identically.
+        assert digest == scope_digest(("src/a.py",), snap)
+        assert len(digest) == 64  # sha256 hexdigest
+        # A wider scope that pulls in another matching file must change the hash.
+        assert scope_digest(("src/*.py",), snap) != digest
+
+    def test_non_matching_scope_is_empty_hash(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/__init__.py::scope_digest kind="unit"
+        from frob.gates import scope_digest
+
+        _write(tmp_path, "src/a.py", "def a():\n    return 1\n")
+        snap = _snapshot(tmp_path)
+
+        # A scope matching nothing hashes the empty set -- distinct from any
+        # scope that matches at least one file, and identical across snapshots.
+        empty = scope_digest(("does/not/exist/*.py",), snap)
+        assert empty == scope_digest(("nothing_here/*",), snap)
+        assert empty != scope_digest(("src/a.py",), snap)
+
+
+def test_gates_run_gates_integration(tmp_path: Path) -> None:
+    # frob:tests src/frob/gates kind="integration"
+    # Exercises frob.gates across its real dependency boundary: build_graph
+    # (a real snapshot with a doc edge), load_queue, load_lock, and
+    # collect_python_tests all feed run_gates, which merges the drift and
+    # coverage gate results. A documented public symbol must NOT raise COV001,
+    # while an undocumented sibling must -- proving the graph edges reach the
+    # coverage gate through the real loader stack, not a stub.
+    _write(
+        tmp_path,
+        "src/frob/pkg/a.py",
+        "# frob:doc docs/pkg.md#api\n"
+        "def documented(x):\n"
+        "    return x\n\n"
+        "def undocumented(x):\n"
+        "    return x\n",
+    )
+    _git_init(tmp_path)
+    cfg = GateConfig(
+        root=str(tmp_path), base="main", gates=frozenset({"drift", "coverage"})
+    )
+    result = run_gates(cfg)
+    assert result.is_ok
+    report = result.danger_ok
+    cov001 = _by_rule(report.violations, "COV001")
+    assert "src/frob/pkg/a.py" in _files(cov001)  # undocumented symbol flagged
+    cov001_symbols = {v.message.split()[1] for v in cov001}
+    assert any("undocumented" in s for s in cov001_symbols)
+    assert not any("::documented" in s for s in cov001_symbols)

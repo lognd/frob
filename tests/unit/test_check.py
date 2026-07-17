@@ -149,3 +149,21 @@ class TestDetectProjectType:
 
     def test_no_sentinel_is_unknown(self, tmp_path: Path) -> None:
         assert detect_project_type(tmp_path) == "unknown"
+
+
+def test_check_run_check_arch_integration(tmp_path: Path) -> None:
+    # frob:tests src/frob/check kind="integration"
+    # Exercises frob.check across a real analysis boundary: run_check with the
+    # arch stage drives frob.arch.analyze_project over a real source tree and
+    # aggregates its diagnostics into a CheckResult. A file with a deliberately
+    # over-long function must surface a frob-arch diagnostic, proving the
+    # orchestration wiring reaches the analyzer and back, not a stub.
+    long_body = "\n".join(f"    x{i} = {i}" for i in range(80))
+    (tmp_path / "big.py").write_text(f"def huge():\n{long_body}\n    return x0\n")
+
+    result = run_check(tmp_path, only=frozenset({"arch"}))
+    assert isinstance(result, CheckResult)
+    arch_results = [r for r in result.results if r.tool in {"frob-arch"}]
+    assert arch_results, "arch stage should have produced a ToolResult"
+    codes = {d.code for r in arch_results for d in r.diagnostics}
+    assert "long-function" in codes

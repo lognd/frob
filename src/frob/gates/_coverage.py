@@ -28,6 +28,7 @@ _log = get_logger(__name__)
 
 _COVERAGE_XML = "coverage.xml"
 _STAMP_REL = Path(".frob") / "coverage-stamp"
+_SOURCE_EXTS = (".py", ".ts", ".tsx", ".rs", ".c", ".h", ".cpp")
 
 
 def _sha_of(path: Path) -> str | None:
@@ -37,6 +38,78 @@ def _sha_of(path: Path) -> str | None:
     except OSError as exc:
         _log.warning("_coverage: could not read %s: %s", path, exc)
         return None
+
+
+def _parse_line_el(line_el: ET.Element) -> tuple[int, tuple[int, int]] | None:
+    """One Cobertura `<line>` -> `(number, (hits, branch_pct))`, or None if junk."""
+    try:
+        number = int(line_el.get("number", "0"))
+        hits = int(line_el.get("hits", "0"))
+    except ValueError:
+        return None
+    is_branch = line_el.get("branch") == "true"
+    cond_cov = line_el.get("condition-coverage", "")
+    branch_pct = 100 if hits > 0 else 0
+    if is_branch and cond_cov:
+        try:
+            branch_pct = int(cond_cov.split("(")[-1].split("%")[0].strip())
+        except (ValueError, IndexError):
+            branch_pct = 100 if hits > 0 else 0
+    return number, (hits, branch_pct)
+
+
+def _parse_class_lines(class_el: ET.Element) -> dict[int, tuple[int, int]]:
+    """The per-line `{number: (hits, branch_pct)}` map for one `<class>`."""
+    line_hits: dict[int, tuple[int, int]] = {}
+    lines_el = class_el.find("lines")
+    if lines_el is None:
+        return line_hits
+    for line_el in lines_el.findall("line"):
+        parsed = _parse_line_el(line_el)
+        if parsed is not None:
+            line_hits[parsed[0]] = parsed[1]
+    return line_hits
+
+
+def _parse_classes(
+    root_el: ET.Element,
+) -> tuple[dict[str, float], dict[str, dict[int, tuple[int, int]]]]:
+    """`(module_line%, per-file line-hit maps)` over every `<class>` element."""
+    module_line: dict[str, float] = {}
+    hits_by_class_line: dict[str, dict[int, tuple[int, int]]] = {}
+    for class_el in root_el.iter("class"):
+        filename = class_el.get("filename", "")
+        if not filename:
+            continue
+        line_rate = class_el.get("line-rate")
+        if line_rate is not None:
+            try:
+                module_line[filename] = float(line_rate) * 100.0
+            except ValueError:
+                pass
+        hits_by_class_line[filename] = _parse_class_lines(class_el)
+    return module_line, hits_by_class_line
+
+
+def _symbol_branch(
+    snapshot: GraphSnapshot | None,
+    hits_by_class_line: dict[str, dict[int, tuple[int, int]]],
+) -> dict[str, float]:
+    """Average per-symbol branch coverage by mapping line hits onto symbol spans."""
+    symbol_branch: dict[str, float] = {}
+    if snapshot is None:
+        return symbol_branch
+    for record in snapshot.symbols.values():
+        sym_line_hits = hits_by_class_line.get(record.id.path)
+        if sym_line_hits is None:
+            continue
+        start, end = record.span
+        relevant = [
+            pct for line, (hits, pct) in sym_line_hits.items() if start <= line <= end
+        ]
+        if relevant:
+            symbol_branch[record.symref] = sum(relevant) / len(relevant)
+    return symbol_branch
 
 
 # frob:doc docs/gates.md#public-api
@@ -57,55 +130,8 @@ def load_coverage(
         _log.error("load_coverage: %s malformed: %s", xml_path, exc)
         return Err(CoverageError.Malformed)
 
-    module_line: dict[str, float] = {}
-    hits_by_class_line: dict[str, dict[int, tuple[int, int]]] = {}
-    # tuple[int, int] = (hits, branch-taken-fraction-scaled) placeholder per line
-
-    for class_el in tree.getroot().iter("class"):
-        filename = class_el.get("filename", "")
-        if not filename:
-            continue
-        line_rate = class_el.get("line-rate")
-        if line_rate is not None:
-            try:
-                module_line[filename] = float(line_rate) * 100.0
-            except ValueError:
-                pass
-        line_hits: dict[int, tuple[int, int]] = {}
-        lines_el = class_el.find("lines")
-        if lines_el is None:
-            continue
-        for line_el in lines_el.findall("line"):
-            try:
-                number = int(line_el.get("number", "0"))
-                hits = int(line_el.get("hits", "0"))
-            except ValueError:
-                continue
-            branch = line_el.get("branch") == "true"
-            cond_cov = line_el.get("condition-coverage", "")
-            branch_pct = 100 if hits > 0 else 0
-            if branch and cond_cov:
-                try:
-                    branch_pct = int(cond_cov.split("(")[-1].split("%")[0].strip())
-                except (ValueError, IndexError):
-                    branch_pct = 100 if hits > 0 else 0
-            line_hits[number] = (hits, branch_pct)
-        hits_by_class_line[filename] = line_hits
-
-    symbol_branch: dict[str, float] = {}
-    if snapshot is not None:
-        for record in snapshot.symbols.values():
-            sym_line_hits = hits_by_class_line.get(record.id.path)
-            if sym_line_hits is None:
-                continue
-            start, end = record.span
-            relevant = [
-                pct
-                for line, (hits, pct) in sym_line_hits.items()
-                if start <= line <= end
-            ]
-            if relevant:
-                symbol_branch[record.symref] = sum(relevant) / len(relevant)
+    module_line, hits_by_class_line = _parse_classes(tree.getroot())
+    symbol_branch = _symbol_branch(snapshot, hits_by_class_line)
 
     _log.info(
         "load_coverage: %s -> %d module(s), %d symbol(s) mapped",
@@ -120,6 +146,20 @@ def load_coverage(
     )
 
 
+def _collect_file_hashes(root: Path) -> dict[str, str]:
+    """Content-hash every tracked source file under `root` (excluded dirs pruned)."""
+    file_hashes: dict[str, str] = {}
+    for dirpath, _dirnames, filenames in _walk(root):
+        for name in filenames:
+            if not name.endswith(_SOURCE_EXTS):
+                continue
+            path = Path(dirpath) / name
+            digest = _sha_of(path)
+            if digest is not None:
+                file_hashes[str(path.relative_to(root).as_posix())] = digest
+    return file_hashes
+
+
 # frob:doc docs/gates.md#public-api
 def stamp_coverage(root: Path) -> Result[Unit, GateError]:
     """Record coverage.xml's sha plus current per-file content hashes as a stamp."""
@@ -129,16 +169,7 @@ def stamp_coverage(root: Path) -> Result[Unit, GateError]:
         _log.error("stamp_coverage: no readable coverage.xml at %s", xml_path)
         return Err(GateError.WriteFailed)
 
-    file_hashes: dict[str, str] = {}
-    for dirpath, dirnames, filenames in _walk(root):
-        for name in filenames:
-            if not name.endswith((".py", ".ts", ".tsx", ".rs", ".c", ".h", ".cpp")):
-                continue
-            path = Path(dirpath) / name
-            digest = _sha_of(path)
-            if digest is not None:
-                file_hashes[str(path.relative_to(root).as_posix())] = digest
-
+    file_hashes = _collect_file_hashes(root)
     stamp = {"source_sha": source_sha, "file_hashes": file_hashes}
     stamp_path = root / _STAMP_REL
     try:

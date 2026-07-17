@@ -1,18 +1,80 @@
+"""frob.check -- multi-language quality gate orchestration (docs/check.md).
+
+`run_check` (Python) and its `run_check_cpp`/`run_check_rust`/`run_check_ts`
+siblings run each language's tools in parallel and aggregate every
+`ToolResult` into a `CheckResult`. The per-tool runner helpers live in the
+private `_python`/`_native`/`_ts` submodules to keep this module focused on
+the public orchestration surface; the public symbols stay defined here so
+their `frob:doc`/`frob:tests` bindings keep their `__init__.py` symref.
+"""
+
 from __future__ import annotations
 
 import concurrent.futures
-import subprocess
 from pathlib import Path
+from typing import Callable
 
 from pydantic import BaseModel
 
-from frob.process.parsers.common import Diagnostic, Severity, ToolResult
+from frob.check._native import (
+    _run_cargo,
+    _run_cargo_fmt_check,
+    _run_cargo_test,
+    _run_clang_format,
+    _run_clang_tidy_cmake,
+    _run_cmake_build,
+    _run_ctest,
+)
+from frob.check._python import (
+    _run_arch,
+    _run_bind,
+    _run_cycle,
+    _run_dup,
+    _run_exports,
+    _run_gates,
+    _run_ruff,
+    _run_ty,
+)
+from frob.check._ts import _run_eslint, _run_prettier, _run_tsc, _run_vitest
+from frob.process.parsers.common import Diagnostic, ToolResult
 
 # The python-mode tool stages --only may name (gate names are accepted too
 # and resolved through frob.gates._ALL_GATES at call time).
 _TOOL_STAGES = frozenset(
     {"ruff", "ty", "cycle", "dup", "arch", "bind", "exports", "gates"}
 )
+
+
+def _bucket_diags(
+    results: list[ToolResult],
+) -> dict[str, list[tuple[str, Diagnostic]]]:
+    """Partition every diagnostic into error/warning/note buckets in one pass."""
+    buckets: dict[str, list[tuple[str, Diagnostic]]] = {
+        "error": [],
+        "warning": [],
+        "note": [],
+    }
+    for r in results:
+        for d in r.diagnostics:
+            key = d.severity if d.severity in ("error", "warning") else "note"
+            buckets[key].append((r.tool, d))
+    return buckets
+
+
+def _section_lines(
+    title: str, style: str, items: list[tuple[str, Diagnostic]], color: bool
+) -> list[str]:
+    """Rendered lines for one report section (empty if it has no diagnostics)."""
+    if not items:
+        return []
+    from frob.logging.color import CYAN, paint
+
+    lines = [paint(title, style, color)]
+    lines.extend(
+        f"  {paint(f'[{tool}]', CYAN, color)} {d.as_text()}" for tool, d in items
+    )
+    lines.append("")
+    return lines
 
 
 # frob:doc docs/check.md#public-api
@@ -40,9 +102,8 @@ class CheckResult(BaseModel):
         # frob:doc docs/check.md#public-api
         """Human-readable report: errors, then warnings, then notes, then a
         per-tool summary table."""
-        from frob.logging.color import BOLD, CYAN, DIM, GREEN, RED, YELLOW, paint
+        from frob.logging.color import BOLD, DIM, GREEN, RED, YELLOW, paint
 
-        lines: list[str] = []
         err = self.total_errors
         warn = self.total_warnings
         status = "FAIL" if err > 0 else ("WARN" if warn > 0 else "PASS")
@@ -50,61 +111,137 @@ class CheckResult(BaseModel):
         errs = f"{err} error{'s' if err != 1 else ''}"
         warns = f"{warn} warning{'s' if warn != 1 else ''}"
         header_status = paint(f"[{status}]", f"{BOLD};{status_code}", color)
-        lines.append(
+        lines: list[str] = [
             f"frob check {self.path}  {header_status}  "
             f"{paint(errs, RED if err else DIM, color)}  "
-            f"{paint(warns, YELLOW if warn else DIM, color)}"
+            f"{paint(warns, YELLOW if warn else DIM, color)}",
+            "",
+        ]
+
+        buckets = _bucket_diags(self.results)
+        lines.extend(
+            _section_lines("## Errors", f"{BOLD};{RED}", buckets["error"], color)
         )
-        lines.append("")
-
-        all_errors = [
-            (r.tool, d)
-            for r in self.results
-            for d in r.diagnostics
-            if d.severity == "error"
-        ]
-        if all_errors:
-            lines.append(paint("## Errors", f"{BOLD};{RED}", color))
-            for tool, d in all_errors:
-                lines.append(f"  {paint(f'[{tool}]', CYAN, color)} {d.as_text()}")
-            lines.append("")
-
-        all_warnings = [
-            (r.tool, d)
-            for r in self.results
-            for d in r.diagnostics
-            if d.severity == "warning"
-        ]
-        if all_warnings:
-            lines.append(paint("## Warnings", f"{BOLD};{YELLOW}", color))
-            for tool, d in all_warnings:
-                lines.append(f"  {paint(f'[{tool}]', CYAN, color)} {d.as_text()}")
-            lines.append("")
-
-        all_notes = [
-            (r.tool, d)
-            for r in self.results
-            for d in r.diagnostics
-            if d.severity not in ("error", "warning")
-        ]
-        if all_notes:
-            lines.append(paint("## Notes / suggestions", BOLD, color))
-            for tool, d in all_notes:
-                lines.append(f"  {paint(f'[{tool}]', CYAN, color)} {d.as_text()}")
-            lines.append("")
+        lines.extend(
+            _section_lines("## Warnings", f"{BOLD};{YELLOW}", buckets["warning"], color)
+        )
+        lines.extend(
+            _section_lines("## Notes / suggestions", BOLD, buckets["note"], color)
+        )
 
         lines.append(paint("## Tool summary", BOLD, color))
         for r in self.results:
             ok = r.passed and r.error_count == 0
             icon = paint("pass", GREEN, color) if ok else paint("FAIL", RED, color)
             lines.append(f"  {icon}  {r.tool:<22}  {r.summary}")
-
         return "\n".join(lines)
 
     def as_json(self) -> str:
         # frob:doc docs/check.md#public-api
         """The full structured result as JSON (`--json` CLI output)."""
         return self.model_dump_json(indent=2)
+
+
+def _unknown_only_result(root: Path, unknown: frozenset[str]) -> CheckResult:
+    """A loud config-error CheckResult for unrecognised `--only` stage names."""
+    from frob.gates import _ALL_GATES
+
+    return CheckResult(
+        path=str(root),
+        results=[
+            ToolResult(
+                tool="config",
+                exit_code=2,
+                summary=f"unknown --only stage(s): {sorted(unknown)}",
+                diagnostics=[
+                    Diagnostic(
+                        severity="error",
+                        message=(
+                            f"unknown --only stage(s) {sorted(unknown)}; "
+                            f"tools: {sorted(_TOOL_STAGES)}; "
+                            f"gates: {sorted(_ALL_GATES)}"
+                        ),
+                    )
+                ],
+            )
+        ],
+    )
+
+
+def _resolve_only(
+    only: frozenset[str] | None,
+) -> tuple[frozenset[str], frozenset[str] | None, frozenset[str]]:
+    """Split `--only` into `(gate_only, adjusted_only, unknown)`.
+
+    An unknown name must be a loud config error, never a silently-empty
+    selection that passes vacuously (observed: `--only doclink` returned
+    PASS having run nothing at all).
+    """
+    if only is None:
+        return frozenset(), None, frozenset()
+    from frob.gates import _ALL_GATES
+
+    gate_only = frozenset(only) & _ALL_GATES
+    unknown = frozenset(only) - _TOOL_STAGES - _ALL_GATES
+    if unknown:
+        return gate_only, only, unknown
+    adjusted = (frozenset(only) - gate_only) | {"gates"} if gate_only else only
+    return gate_only, adjusted, frozenset()
+
+
+def _python_tasks(
+    root: Path,
+    *,
+    only: frozenset[str] | None,
+    gate_only: frozenset[str],
+    ruff_args: list[str] | None,
+    ticket: str | None,
+    base: str | None,
+    skips: dict[str, bool],
+) -> list[Callable[[], ToolResult | list[ToolResult] | None]]:
+    """The enabled per-tool jobs for a Python check run."""
+
+    def wanted(name: str) -> bool:
+        return only is None or name in only
+
+    tasks: list[Callable[[], ToolResult | list[ToolResult] | None]] = []
+    if not skips["ruff"] and wanted("ruff"):
+        tasks.append(lambda: _run_ruff(root, ruff_args))
+    if not skips["ty"] and wanted("ty"):
+        tasks.append(lambda: _run_ty(root))
+    if not skips["cycle"] and wanted("cycle"):
+        tasks.append(lambda: _run_cycle(root))
+    if not skips["dup"] and wanted("dup"):
+        tasks.append(lambda: _run_dup(root))
+    if not skips["arch"] and wanted("arch"):
+        tasks.append(lambda: _run_arch(root))
+    if not skips["bind"] and wanted("bind"):
+        tasks.append(lambda: _run_bind(root))
+    if not skips["exports"] and wanted("exports"):
+        tasks.append(lambda: _run_exports(root))
+    if not skips["gates"] and wanted("gates"):
+        tasks.append(
+            lambda: _run_gates(root, ticket=ticket, base=base, gates=gate_only)
+        )
+    return tasks
+
+
+def _collect_results(
+    tasks: list[Callable[[], ToolResult | list[ToolResult] | None]],
+) -> list[ToolResult]:
+    """Run `tasks` in parallel and flatten their results, dropping Nones."""
+    results: list[ToolResult] = []
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = [executor.submit(fn) for fn in tasks]
+        for future in futures:
+            val = future.result()
+            if val is None:
+                continue
+            if isinstance(val, list):
+                results.extend(val)
+            else:
+                results.append(val)
+    return results
 
 
 # frob:ticket T-0028
@@ -126,440 +263,30 @@ def run_check(
     base: str | None = None,
 ) -> CheckResult:
     """Quality gate for Python projects: ruff, ty, cycle/dup/arch/bind, gates, etc."""
-    from typing import Callable
+    gate_only, only, unknown = _resolve_only(only)
+    if unknown:
+        return _unknown_only_result(root, unknown)
 
-    tasks: list[Callable[[], ToolResult | list[ToolResult] | None]] = []
-
-    # --only accepts tool stages AND individual gate names; an unknown name
-    # must be a loud config error, never a silently-empty selection that
-    # passes vacuously (observed: `--only doclink` returned PASS having run
-    # nothing at all).
-    gate_only: frozenset[str] = frozenset()
-    if only is not None:
-        from frob.gates import _ALL_GATES
-
-        gate_only = frozenset(only) & _ALL_GATES
-        unknown = frozenset(only) - _TOOL_STAGES - _ALL_GATES
-        if unknown:
-            return CheckResult(
-                path=str(root),
-                results=[
-                    ToolResult(
-                        tool="config",
-                        exit_code=2,
-                        summary=f"unknown --only stage(s): {sorted(unknown)}",
-                        diagnostics=[
-                            Diagnostic(
-                                severity="error",
-                                message=(
-                                    f"unknown --only stage(s) {sorted(unknown)}; "
-                                    f"tools: {sorted(_TOOL_STAGES)}; gates: "
-                                    f"{sorted(_ALL_GATES)}"
-                                ),
-                            )
-                        ],
-                    )
-                ],
-            )
-        if gate_only:
-            only = (frozenset(only) - gate_only) | {"gates"}
-
-    def _wanted(name: str) -> bool:
-        return only is None or name in only
-
-    if not skip_ruff and _wanted("ruff"):
-        tasks.append(lambda: _run_ruff(root, ruff_args))
-    if not skip_ty and _wanted("ty"):
-        tasks.append(lambda: _run_ty(root))
-    if not skip_cycle and _wanted("cycle"):
-        tasks.append(lambda: _run_cycle(root))
-    if not skip_dup and _wanted("dup"):
-        tasks.append(lambda: _run_dup(root))
-    if not skip_arch and _wanted("arch"):
-        tasks.append(lambda: _run_arch(root))
-    if not skip_bind and _wanted("bind"):
-        tasks.append(lambda: _run_bind(root))
-    if not skip_exports and _wanted("exports"):
-        tasks.append(lambda: _run_exports(root))
-    if not skip_gates and _wanted("gates"):
-        tasks.append(
-            lambda: _run_gates(root, ticket=ticket, base=base, gates=gate_only)
-        )
-
-    results: list[ToolResult] = []
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        futures = [executor.submit(fn) for fn in tasks]
-        for future in futures:
-            val = future.result()
-            if val is None:
-                pass
-            elif isinstance(val, list):
-                results.extend(val)
-            else:
-                results.append(val)
-
-    return CheckResult(path=str(root), results=results)
-
-
-def _run_ruff(root: Path, extra_args: list[str] | None) -> list[ToolResult]:
-    from frob.process.parsers import parse_ruff_json
-
-    out: list[ToolResult] = []
-
-    # ruff check (lint)
-    proc = subprocess.run(
-        ["ruff", "check", "--output-format", "json", str(root)],
-        capture_output=True,
-        text=True,
-    )
-    r = parse_ruff_json(proc.stdout, exit_code=proc.returncode)
-    r.tool = "ruff-check"
-    out.append(r)
-
-    # ruff format --check (formatting)
-    proc2 = subprocess.run(
-        ["ruff", "format", "--check", str(root)],
-        capture_output=True,
-        text=True,
-    )
-    if proc2.returncode != 0:
-        msg = (proc2.stdout + proc2.stderr).strip()
-        [
-            line.strip()
-            for line in msg.splitlines()
-            if line.strip() and not line.startswith("Would reformat")
-        ]
-        # Count "Would reformat" lines
-        reformat = [ln for ln in msg.splitlines() if "Would reformat" in ln]
-        n = len(reformat)
-        diags = [
-            Diagnostic(
-                file=ln.replace("Would reformat ", "").strip(),
-                severity="warning",
-                message="needs formatting",
-            )
-            for ln in reformat
-        ]
-        out.append(
-            ToolResult(
-                tool="ruff-format",
-                exit_code=proc2.returncode,
-                diagnostics=diags,
-                summary=f"{n} file{'s' if n != 1 else ''} would be reformatted",
-            )
-        )
-    else:
-        out.append(
-            ToolResult(tool="ruff-format", exit_code=0, summary="all files formatted")
-        )
-
-    return out
-
-
-def _run_ty(root: Path) -> ToolResult | None:
-    from frob.process.parsers import parse_ty
-
-    scan = root if root.is_dir() else root.parent
-    cmd = ["ty", "check", str(root)]
-
-    # If a ty.toml exists in the root, resolve its extra-paths and pass them
-    # explicitly so ty can find them regardless of the working directory.
-    ty_cfg = scan / "ty.toml"
-    if ty_cfg.exists():
-        try:
-            import tomllib
-
-            with ty_cfg.open("rb") as f:
-                cfg = tomllib.load(f)
-            for p in cfg.get("environment", {}).get("extra-paths", []):
-                cmd += ["--extra-search-path", str((scan / p).resolve())]
-        except Exception:
-            pass
-
-    try:
-        proc = subprocess.run(cmd, capture_output=True, text=True)
-    except FileNotFoundError:
-        return None
-    r = parse_ty(proc.stdout + proc.stderr, exit_code=proc.returncode)
-    r.tool = "ty"
-    return r
-
-
-def _run_cycle(root: Path) -> ToolResult:
-    from frob.cycle.graph import DependencyGraph, find_cycles
-    from frob.lang import extract_imports, resolve_local_import
-
-    graph = DependencyGraph()
-    scan_root = root if root.is_dir() else root.parent
-    resolved_scan = scan_root.resolve()
-    for path in scan_root.rglob("*.py"):
-        try:
-            rel_parts = path.resolve().relative_to(resolved_scan).parts
-        except ValueError:
-            rel_parts = path.parts
-        _skip = {"__pycache__", ".venv", "build", "dist"}
-        if any(p in _skip or p.startswith(".") for p in rel_parts):
-            continue
-        try:
-            rel = str(path.relative_to(scan_root))
-            graph.add_node(rel)
-            result = extract_imports(path)
-            if result.is_err:
-                continue
-            for spec in result.danger_ok:
-                resolved = resolve_local_import(
-                    spec, "python", file_dir=path.parent, root=scan_root
-                )
-                if resolved is not None:
-                    graph.add_edge(rel, resolved)
-        except Exception:
-            pass
-
-    cycles = find_cycles(graph)
-    diags: list[Diagnostic] = []
-    for cycle in cycles:
-        n_nodes = len(cycle)
-        # 2-node mutual imports are often TYPE_CHECKING patterns -- info only
-        # 3-5 nodes is a minor cycle -- warning
-        # 6+ is a structural problem -- error
-        if n_nodes <= 2:
-            sev: Severity = "info"
-        elif n_nodes <= 5:
-            sev = "warning"
-        else:
-            sev = "error"
-        lines = (
-            ["import cycle:"] + [f"  {node}" for node in cycle] + [f"  -> {cycle[0]}"]
-        )
-        diags.append(Diagnostic(severity=sev, message="\n".join(lines)))
-
-    n = len(cycles)
-    return ToolResult(
-        tool="frob-cycle",
-        exit_code=1 if any(d.severity == "error" for d in diags) else 0,
-        diagnostics=diags,
-        summary=f"{n} cycle{'s' if n != 1 else ''} found" if cycles else "no cycles",
-    )
-
-
-def _run_dup(root: Path) -> ToolResult:
-    from frob.dup import find_duplicates
-
-    result = find_duplicates(root if root.is_dir() else root.parent)
-    diags: list[Diagnostic] = []
-    for g in result.groups:
-        locs = ", ".join(f"{f.file}:{f.start_line}" for f in g.fragments)
-        diags.append(
-            Diagnostic(
-                severity="warning",
-                code=g.clone_type,
-                message=f"{g.size_lines}-line duplicate block at {locs}",
-            )
-        )
-    n = len(result.groups)
-    return ToolResult(
-        tool="frob-dup",
-        exit_code=0,
-        diagnostics=diags,
-        summary=f"{n} duplicate group{'s' if n != 1 else ''}" if n else "no duplicates",
-    )
-
-
-def _run_arch(root: Path) -> ToolResult:
-    from frob.arch import analyze_project
-
-    result = analyze_project(root if root.is_dir() else root.parent)
-    sev_map: dict[str, Severity] = {
-        "warning": "warning",
-        "suggestion": "note",
-        "info": "info",
+    skips = {
+        "ruff": skip_ruff,
+        "ty": skip_ty,
+        "cycle": skip_cycle,
+        "dup": skip_dup,
+        "arch": skip_arch,
+        "bind": skip_bind,
+        "exports": skip_exports,
+        "gates": skip_gates,
     }
-    diags = [
-        Diagnostic(
-            file=s.file,
-            line=s.line,
-            severity=sev_map.get(s.severity, "note"),
-            code=s.category,
-            message=s.message,
-        )
-        for s in result.suggestions
-    ]
-    n_warn = sum(1 for s in result.suggestions if s.severity == "warning")
-    n_sugg = len(result.suggestions) - n_warn
-    parts = []
-    if n_warn:
-        parts.append(f"{n_warn} warning{'s' if n_warn != 1 else ''}")
-    if n_sugg:
-        parts.append(f"{n_sugg} suggestion{'s' if n_sugg != 1 else ''}")
-    return ToolResult(
-        tool="frob-arch",
-        exit_code=0,
-        diagnostics=diags,
-        summary=", ".join(parts) if parts else "no issues",
+    tasks = _python_tasks(
+        root,
+        only=only,
+        gate_only=gate_only,
+        ruff_args=ruff_args,
+        ticket=ticket,
+        base=base,
+        skips=skips,
     )
-
-
-# frob:ticket T-0028
-def _run_gates(
-    root: Path,
-    *,
-    ticket: str | None = None,
-    base: str | None = None,
-    gates: frozenset[str] = frozenset(),
-) -> ToolResult:
-    """Run frob.gates.run_gates as a check stage; a load failure is a soft skip
-    (git repo / tickets dir are not guaranteed to exist for every `frob check`
-    caller), but any ERROR-severity violation fails the stage like any other
-    tool."""
-    from frob.gates import GateConfig, run_gates
-
-    cfg = GateConfig(root=str(root), base=base or "main", ticket=ticket, gates=gates)
-    result = run_gates(cfg)
-    if result.is_err:
-        return ToolResult(
-            tool="gates",
-            exit_code=0,
-            summary=f"gates skipped: {result.danger_err.value}",
-        )
-    report = result.danger_ok
-
-    diags: list[Diagnostic] = []
-    for v in report.violations:
-        diags.append(
-            Diagnostic(
-                file=v.file,
-                line=v.line,
-                severity="error" if v.severity.value == "error" else "warning",
-                code=v.rule,
-                message=v.message,
-            )
-        )
-    for v in report.waived:
-        diags.append(
-            Diagnostic(
-                file=v.file,
-                line=v.line,
-                severity="note",
-                code=v.rule,
-                message=(
-                    f"{v.message}  [waived: {v.waived.reason if v.waived else ''}]"
-                ),
-            )
-        )
-
-    n_err = sum(1 for v in report.violations if v.severity.value == "error")
-    timing = ", ".join(
-        f"{k}={t:.2f}s" for k, t in sorted(report.stats.timing_s.items())
-    )
-    return ToolResult(
-        tool="gates",
-        exit_code=1 if n_err > 0 else 0,
-        diagnostics=diags,
-        summary=(
-            f"{len(report.violations)} violation(s), {len(report.waived)} waived  "
-            f"[{timing}]"
-        ),
-    )
-
-
-def _run_bind(root: Path) -> ToolResult | None:
-    # Only meaningful if there are BIND comment markers in the tree
-    scan = root if root.is_dir() else root.parent
-    has_bind = False
-    for path in scan.rglob("*.py"):
-        try:
-            if b"# BIND" in path.read_bytes():
-                has_bind = True
-                break
-        except Exception:
-            pass
-    if not has_bind:
-        return None
-
-    try:
-        from frob.bind import (
-            verify_bindings,  # type: ignore[import,attr-defined]  # ty: ignore[unresolved-import]
-        )
-    except ImportError:
-        return None
-
-    result = verify_bindings(scan)
-    diags = [
-        Diagnostic(file=m.file, line=m.line, severity="error", message=m.message)
-        for m in getattr(result, "mismatches", [])
-    ]
-    n = len(diags)
-    return ToolResult(
-        tool="frob-bind",
-        exit_code=1 if diags else 0,
-        diagnostics=diags,
-        summary=f"{n} binding mismatch{'es' if n != 1 else ''}"
-        if diags
-        else "all bindings verified",
-    )
-
-
-def _run_exports(root: Path) -> list[ToolResult]:
-    from frob.exports import exports_package
-
-    scan = root if root.is_dir() else root.parent
-    out: list[ToolResult] = []
-
-    # Find Python packages (dirs with __init__.py) that have submodules
-    for init_file in sorted(scan.rglob("__init__.py")):
-        pkg_dir = init_file.parent
-        # Skip __pycache__, .venv etc.
-        if any(
-            p.startswith(".") or p in {"__pycache__", ".venv", "build", "dist"}
-            for p in pkg_dir.parts
-        ):
-            continue
-        # Only check packages that have sibling .py files
-        sibs = [f for f in pkg_dir.glob("*.py") if f.name != "__init__.py"]
-        if not sibs:
-            continue
-
-        result = exports_package(pkg_dir, include_private=False)
-        if result.is_err:
-            continue
-        er = result.danger_ok
-        if not er.modules:
-            continue
-
-        # Check which symbols are missing from __init__.py
-        try:
-            init_src = init_file.read_text(encoding="utf-8", errors="replace")
-        except Exception:
-            continue
-
-        missing: list[str] = []
-        for mod in er.modules:
-            for sym in mod.symbols:
-                if sym not in init_src:
-                    missing.append(f"{mod.module}.{sym}")
-
-        if missing:
-            diags = [
-                Diagnostic(
-                    file=str(init_file.relative_to(scan)),
-                    severity="note",
-                    message=f"public symbol not exported: {s}",
-                )
-                for s in missing
-            ]
-            pkg_name = str(pkg_dir.relative_to(scan))
-            n = len(missing)
-            out.append(
-                ToolResult(
-                    tool=f"frob-exports({pkg_name})",
-                    exit_code=0,
-                    diagnostics=diags,
-                    summary=f"{n} public symbol{'s' if n != 1 else ''} missing from"
-                    " __init__.py",
-                )
-            )
-
-    return out
+    return CheckResult(path=str(root), results=_collect_results(tasks))
 
 
 # ---------------------------------------------------------------------------
@@ -579,8 +306,6 @@ def run_check_cpp(
     valgrind: bool = False,
 ) -> CheckResult:
     """Quality gate for CMake C/C++ projects."""
-    from typing import Callable
-
     results: list[ToolResult] = []
     bdir = build_dir or (root / "build")
 
@@ -590,7 +315,6 @@ def run_check_cpp(
         if r.exit_code != 0:
             skip_tests = True
 
-    # clang-tidy, clang-format, and ctest are independent after build
     post_build: list[Callable[[], ToolResult | None]] = []
     if not skip_clang_tidy:
         post_build.append(lambda: _run_clang_tidy_cmake(root, bdir))
@@ -608,168 +332,6 @@ def run_check_cpp(
                 results.append(r)
 
     return CheckResult(path=str(root), results=results)
-
-
-def _run_cmake_build(root: Path, build_dir: Path) -> ToolResult:
-    from frob.process.parsers import parse_clang
-
-    build_dir.mkdir(parents=True, exist_ok=True)
-    # Configure
-    cfg = subprocess.run(
-        ["cmake", str(root), "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"],
-        cwd=str(build_dir),
-        capture_output=True,
-        text=True,
-    )
-    if cfg.returncode != 0:
-        return ToolResult(
-            tool="cmake-configure",
-            exit_code=cfg.returncode,
-            diagnostics=[
-                Diagnostic(severity="error", message=ln.strip())
-                for ln in (cfg.stderr or cfg.stdout).splitlines()
-                if ln.strip()
-            ],
-            summary="cmake configure failed",
-        )
-    # Build
-    proc = subprocess.run(
-        ["cmake", "--build", ".", "--", "-j4"],
-        cwd=str(build_dir),
-        capture_output=True,
-        text=True,
-    )
-    r = parse_clang(
-        proc.stdout + proc.stderr, exit_code=proc.returncode, tool="cmake-build"
-    )
-    r.tool = "cmake-build"
-    if not r.summary or r.summary == "no issues":
-        r.summary = "build succeeded" if proc.returncode == 0 else "build failed"
-    return r
-
-
-def _run_clang_tidy_cmake(root: Path, build_dir: Path) -> ToolResult | None:
-    from frob.process.parsers import parse_clang_tidy
-
-    # Prefer compile_commands.json in build_dir
-    compile_commands = build_dir / "compile_commands.json"
-    if not compile_commands.exists():
-        compile_commands = root / "compile_commands.json"
-    if not compile_commands.exists():
-        return None
-
-    src_files = (
-        list(root.rglob("*.cpp")) + list(root.rglob("*.cc")) + list(root.rglob("*.c"))
-    )
-    src_files = [
-        f
-        for f in src_files
-        if not any(p in {"build", ".venv", "third_party", "extern"} for p in f.parts)
-    ]
-    if not src_files:
-        return None
-
-    proc = subprocess.run(
-        ["clang-tidy", f"-p={build_dir}", "--quiet"] + [str(f) for f in src_files[:50]],
-        capture_output=True,
-        text=True,
-    )
-    r = parse_clang_tidy(proc.stdout + proc.stderr, exit_code=proc.returncode)
-    return r
-
-
-def _run_clang_format(root: Path) -> ToolResult | None:
-    src_files = (
-        list(root.rglob("*.cpp"))
-        + list(root.rglob("*.cc"))
-        + list(root.rglob("*.c"))
-        + list(root.rglob("*.h"))
-        + list(root.rglob("*.hpp"))
-    )
-    src_files = [
-        f
-        for f in src_files
-        if not any(p in {"build", ".venv", "third_party", "extern"} for p in f.parts)
-    ]
-    if not src_files:
-        return None
-
-    proc = subprocess.run(
-        ["clang-format", "--dry-run", "--Werror"] + [str(f) for f in src_files],
-        capture_output=True,
-        text=True,
-    )
-    if proc.returncode == 0:
-        return ToolResult(
-            tool="clang-format", exit_code=0, summary="all files formatted"
-        )
-
-    needs_format = [
-        ln
-        for ln in (proc.stderr or proc.stdout).splitlines()
-        if "warning:" in ln or "error:" in ln
-    ]
-    n = len(needs_format)
-    diags = [Diagnostic(severity="warning", message=ln.strip()) for ln in needs_format]
-    return ToolResult(
-        tool="clang-format",
-        exit_code=proc.returncode,
-        diagnostics=diags,
-        summary=f"{n} file{'s' if n != 1 else ''} need formatting",
-    )
-
-
-def _run_ctest(build_dir: Path, *, valgrind: bool = False) -> ToolResult | None:
-    if not build_dir.exists():
-        return None
-
-    if valgrind:
-        proc = subprocess.run(
-            [
-                "ctest",
-                "--test-dir",
-                str(build_dir),
-                "--output-on-failure",
-                "-T",
-                "memcheck",
-                "--output-junit",
-                "results.xml",
-            ],
-            capture_output=True,
-            text=True,
-            cwd=str(build_dir),
-        )
-    else:
-        proc = subprocess.run(
-            [
-                "ctest",
-                "--test-dir",
-                str(build_dir),
-                "--output-on-failure",
-                "--output-junit",
-                "results.xml",
-            ],
-            capture_output=True,
-            text=True,
-            cwd=str(build_dir),
-        )
-
-    junit_file = build_dir / "results.xml"
-    if junit_file.exists():
-        from frob.process.parsers import parse_junit_xml
-
-        r = parse_junit_xml(junit_file.read_text(), tool="ctest")
-        r.tool = "ctest"
-        return r
-
-    # Fall back to text parsing
-    from frob.process.parsers import parse_clang
-
-    r = parse_clang(proc.stdout + proc.stderr, exit_code=proc.returncode, tool="ctest")
-    r.tool = "ctest"
-    if not r.diagnostics:
-        r.summary = "tests passed" if proc.returncode == 0 else "tests failed"
-    return r
 
 
 # ---------------------------------------------------------------------------
@@ -794,17 +356,14 @@ def run_check_rust(
         r = _run_cargo("check", root)
         if r is not None:
             results.append(r)
-
     if not skip_clippy:
         r = _run_cargo("clippy", root, extra=["--", "-D", "warnings"])
         if r is not None:
             results.append(r)
-
     if not skip_fmt:
         r = _run_cargo_fmt_check(root)
         if r is not None:
             results.append(r)
-
     if not skip_tests:
         r = _run_cargo_test(root, valgrind=valgrind)
         if r is not None:
@@ -813,115 +372,9 @@ def run_check_rust(
     return CheckResult(path=str(root), results=results)
 
 
-def _run_cargo(
-    subcmd: str, root: Path, extra: list[str] | None = None
-) -> ToolResult | None:
-    from frob.process.parsers import parse_cargo
-
-    try:
-        proc = subprocess.run(
-            ["cargo", subcmd, "--message-format", "json"] + (extra or []),
-            capture_output=True,
-            text=True,
-            cwd=str(root),
-        )
-    except FileNotFoundError:
-        return None
-    r = parse_cargo(
-        proc.stdout + proc.stderr, exit_code=proc.returncode, tool=f"cargo-{subcmd}"
-    )
-    return r
-
-
-def _run_cargo_fmt_check(root: Path) -> ToolResult | None:
-    try:
-        proc = subprocess.run(
-            ["cargo", "fmt", "--check"],
-            capture_output=True,
-            text=True,
-            cwd=str(root),
-        )
-    except FileNotFoundError:
-        return None
-    if proc.returncode == 0:
-        return ToolResult(tool="cargo-fmt", exit_code=0, summary="all files formatted")
-    lines = (proc.stdout + proc.stderr).strip().splitlines()
-    diags = [
-        Diagnostic(severity="warning", message=ln.strip()) for ln in lines if ln.strip()
-    ]
-    return ToolResult(
-        tool="cargo-fmt",
-        exit_code=proc.returncode,
-        diagnostics=diags,
-        summary=f"{len(diags)} formatting issues",
-    )
-
-
-def _run_cargo_test(root: Path, *, valgrind: bool = False) -> ToolResult | None:
-    from frob.process.parsers import parse_cargo, parse_valgrind
-
-    try:
-        if valgrind:
-            # cargo test --no-run first, then run binary under valgrind
-            build_proc = subprocess.run(
-                ["cargo", "test", "--no-run", "--message-format", "json"],
-                capture_output=True,
-                text=True,
-                cwd=str(root),
-            )
-            # Find test binary from JSON output
-            binary = _find_test_binary_from_cargo_json(build_proc.stdout)
-            if binary:
-                proc = subprocess.run(
-                    [
-                        "valgrind",
-                        "--leak-check=full",
-                        "--error-exitcode=1",
-                        str(binary),
-                    ],
-                    capture_output=True,
-                    text=True,
-                    cwd=str(root),
-                )
-                r = parse_valgrind(proc.stdout + proc.stderr, exit_code=proc.returncode)
-                r.tool = "cargo-test(valgrind)"
-                return r
-        proc = subprocess.run(
-            ["cargo", "test"],
-            capture_output=True,
-            text=True,
-            cwd=str(root),
-        )
-    except FileNotFoundError:
-        return None
-    r = parse_cargo(
-        proc.stdout + proc.stderr, exit_code=proc.returncode, tool="cargo-test"
-    )
-    return r
-
-
-def _find_test_binary_from_cargo_json(stdout: str) -> Path | None:
-    import json
-
-    for line in stdout.splitlines():
-        try:
-            msg = json.loads(line)
-            if msg.get("reason") == "compiler-artifact":
-                profile = msg.get("profile", {})
-                if profile.get("test"):
-                    executables = msg.get("executable")
-                    if executables:
-                        return Path(executables)
-        except Exception:
-            pass
-    return None
-
-
 # ---------------------------------------------------------------------------
 # TypeScript checks
 # ---------------------------------------------------------------------------
-
-_TS_TIMEOUT_S = 300
 
 
 # frob:doc docs/check.md#public-api
@@ -934,8 +387,6 @@ def run_check_ts(
     skip_tests: bool = False,
 ) -> CheckResult:
     """Quality gate for npm/TypeScript projects (tsc/eslint/prettier/vitest)."""
-    from typing import Callable
-
     tasks: list[Callable[[], ToolResult | None]] = []
     if not skip_tsc:
         tasks.append(lambda: _run_tsc(root))
@@ -957,138 +408,6 @@ def run_check_ts(
     return CheckResult(path=str(root), results=results)
 
 
-def _missing_tool_result(tool: str, cmd: str) -> ToolResult:
-    """A missing `npx`/`node` is a soft skip, not a crash -- mirrors the way
-    run_check_cpp tolerates an absent clang-tidy, but with a clear note so
-    the gap is never silently invisible in the summary."""
-    return ToolResult(
-        tool=tool,
-        exit_code=0,
-        diagnostics=[
-            Diagnostic(
-                severity="note",
-                message=f"skipped: {cmd!r} not found on PATH (node/npm not installed?)",
-            )
-        ],
-        summary="skipped: tool not found",
-    )
-
-
-def _run_npx(
-    root: Path, args: list[str], tool: str
-) -> subprocess.CompletedProcess | None:
-    """Run an `npx ...` command in root; returns None if npx is missing."""
-    import shutil
-
-    if shutil.which("npx") is None:
-        return None
-    try:
-        return subprocess.run(
-            ["npx"] + args,
-            cwd=str(root),
-            capture_output=True,
-            text=True,
-            timeout=_TS_TIMEOUT_S,
-        )
-    except FileNotFoundError:
-        return None
-    except subprocess.TimeoutExpired:
-        return None
-
-
-def _run_tsc(root: Path) -> ToolResult:
-    from frob.process.parsers import parse_tsc
-
-    proc = _run_npx(root, ["tsc", "--noEmit"], "tsc")
-    if proc is None:
-        return _missing_tool_result("tsc", "npx")
-    r = parse_tsc(proc.stdout + proc.stderr, exit_code=proc.returncode)
-    r.tool = "tsc"
-    return r
-
-
-def _run_eslint(root: Path) -> ToolResult:
-    from frob.process.parsers import parse_eslint
-
-    proc = _run_npx(root, ["eslint", ".", "--format", "json"], "eslint")
-    if proc is None:
-        return _missing_tool_result("eslint", "npx")
-    r = parse_eslint(proc.stdout, exit_code=proc.returncode)
-    r.tool = "eslint"
-    return r
-
-
-def _run_prettier(root: Path) -> ToolResult:
-    proc = _run_npx(root, ["prettier", "--check", "."], "prettier")
-    if proc is None:
-        return _missing_tool_result("prettier", "npx")
-    if proc.returncode == 0:
-        return ToolResult(tool="prettier", exit_code=0, summary="all files formatted")
-    unformatted = [
-        ln.strip()
-        for ln in (proc.stdout + proc.stderr).splitlines()
-        if ln.strip() and not ln.lstrip().startswith(("[warn]", "Checking"))
-    ]
-    diags = [
-        Diagnostic(file=ln, severity="warning", message="needs formatting")
-        for ln in unformatted
-    ]
-    n = len(diags)
-    return ToolResult(
-        tool="prettier",
-        exit_code=proc.returncode,
-        diagnostics=diags,
-        summary=f"{n} file{'s' if n != 1 else ''} need formatting",
-    )
-
-
-def _run_vitest(root: Path) -> ToolResult:
-    import json as _json
-
-    proc = _run_npx(root, ["vitest", "run", "--reporter", "json"], "vitest")
-    if proc is None:
-        return _missing_tool_result("vitest", "npx")
-
-    from frob.process.parsers.common import TestCase
-
-    tests: list[TestCase] = []
-    try:
-        report = _json.loads(proc.stdout)
-        for suite in report.get("testResults", []):
-            suite_name = suite.get("name", "")
-            for case in suite.get("assertionResults", []):
-                tests.append(
-                    TestCase(
-                        suite=suite_name,
-                        name=case.get("fullName") or case.get("title", ""),
-                        passed=case.get("status") == "passed",
-                        skipped=case.get("status") == "pending",
-                        failure_message=(
-                            "; ".join(case.get("failureMessages", []))
-                            if case.get("failureMessages")
-                            else None
-                        ),
-                    )
-                )
-    except (_json.JSONDecodeError, AttributeError):
-        # vitest emitted non-JSON (crash, missing config, etc) -- fall back
-        # to exit code alone rather than crashing the whole check stage.
-        pass
-
-    n_failed = sum(1 for t in tests if not t.passed and not t.skipped)
-    if tests:
-        summary = f"{len(tests) - n_failed}/{len(tests)} tests passed"
-    else:
-        summary = "tests passed" if proc.returncode == 0 else "tests failed"
-
-    return ToolResult(
-        tool="vitest",
-        exit_code=proc.returncode,
-        tests=tests,
-        summary=summary,
-    )
-
-
 # ---------------------------------------------------------------------------
 # Auto-detect project type
 # ---------------------------------------------------------------------------
@@ -1108,3 +427,13 @@ def detect_project_type(root: Path) -> str:
     if list(root.glob("*.cpp")) or list(root.glob("*.cc")) or list(root.glob("*.c")):
         return "cpp"
     return "unknown"
+
+
+__all__ = [
+    "CheckResult",
+    "detect_project_type",
+    "run_check",
+    "run_check_cpp",
+    "run_check_rust",
+    "run_check_ts",
+]

@@ -64,8 +64,8 @@ def _invariants_dir(root: Path) -> Path:
     return root / "invariants"
 
 
-def _parse_one(path: Path, root: Path) -> Result[Invariant, InvariantError]:
-    """Parse one `invariants/INV-###.md` file's YAML frontmatter."""
+def _frontmatter_dict(path: Path) -> Result[dict, InvariantError]:
+    """Read `path` and parse its YAML frontmatter block into a mapping."""
     try:
         text = path.read_text(encoding="utf-8")
     except OSError as exc:
@@ -86,7 +86,13 @@ def _parse_one(path: Path, root: Path) -> Result[Invariant, InvariantError]:
     if not isinstance(raw, dict):
         _log.warning("load_invariants: %s frontmatter is not a mapping", path)
         return Err(InvariantError.Malformed)
+    return Ok(raw)
 
+
+def _build_invariant(
+    raw: dict, path: Path, root: Path
+) -> Result[Invariant, InvariantError]:
+    """Validate a parsed frontmatter mapping into an `Invariant`."""
     evidence = raw.get("evidence") or []
     if not isinstance(evidence, list):
         _log.warning("load_invariants: %s evidence is not a list", path)
@@ -117,8 +123,15 @@ def _parse_one(path: Path, root: Path) -> Result[Invariant, InvariantError]:
     if not invariant.statement:
         _log.warning("load_invariants: %s has empty statement", path)
         return Err(InvariantError.Malformed)
-
     return Ok(invariant)
+
+
+def _parse_one(path: Path, root: Path) -> Result[Invariant, InvariantError]:
+    """Parse one `invariants/INV-###.md` file's YAML frontmatter."""
+    raw = _frontmatter_dict(path)
+    if raw.is_err:
+        return Err(raw.danger_err)
+    return _build_invariant(raw.danger_ok, path, root)
 
 
 # frob:doc docs/gates.md#public-api
@@ -130,7 +143,8 @@ def load_invariants(root: Path) -> Result[tuple[Invariant, ...], InvariantError]
         return Ok(())
 
     invariants: dict[str, Invariant] = {}
-    for path in sorted(directory.glob("*.md")):
+    inv_paths = sorted(directory.glob("*.md"))
+    for path in inv_paths:
         parsed = _parse_one(path, root)
         if parsed.is_err:
             return Err(parsed.danger_err)
