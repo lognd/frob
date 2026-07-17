@@ -178,7 +178,18 @@ def _process_source_file(
         # frob.lang renders paths cwd-relative (or absolute outside cwd); graph's
         # contract is always repo-root-relative, so the path is corrected here.
         parsed = parsed.model_copy(update={"path": rel_path})
-    symbols = tuple(_symbol_record(rel_path, sym) for sym in parsed.symbols)
+    # Last definition wins on duplicate symrefs: @typing.overload stubs and
+    # conditional redefinitions legally repeat a qualname in one file, and
+    # Python's own semantics are that the final def is the live one (T-0024;
+    # the cache's symref PRIMARY KEY made duplicates a hard crash before).
+    by_ref: dict[str, SymbolRecord] = {}
+    for sym in parsed.symbols:
+        record = _symbol_record(rel_path, sym)
+        if record.symref in by_ref:
+            _log.debug("duplicate symref %s (overload/redef): last def wins",
+                       record.symref)
+        by_ref[record.symref] = record
+    symbols = tuple(by_ref.values())
     edges, malformed = parse_directives(parsed)
     _cache.store_file_data(
         conn,

@@ -394,3 +394,34 @@ class TestCorruptCacheRecovery:
         result = build_graph(root, cache)
         assert result.is_ok, result.err
         assert any("m.py" in ref for ref in result.danger_ok.symbols)
+
+
+class TestDuplicateSymrefs:
+    # frob:tests src/frob/graph/__init__.py::build_graph
+    def test_overload_and_property_setter_do_not_crash(self, tmp_path):
+        """T-0024: @overload chains and property/setter pairs legally repeat
+        a qualname in one file; last definition wins, never a crash."""
+        root = tmp_path / "repo"
+        (root / "src").mkdir(parents=True)
+        (root / "src" / "m.py").write_text(
+            "from typing import overload\n\n"
+            "@overload\n"
+            "def f(x: int) -> int: ...\n"
+            "@overload\n"
+            "def f(x: str) -> str: ...\n"
+            "def f(x):\n"
+            "    return x\n\n"
+            "class C:\n"
+            "    @property\n"
+            "    def v(self):\n"
+            "        return self._v\n"
+            "    @v.setter\n"
+            "    def v(self, value):\n"
+            "        self._v = value\n",
+            encoding="utf-8",
+        )
+        result = build_graph(root, root / ".frob" / "cache.db")
+        assert result.is_ok, result.err
+        snap = result.danger_ok
+        assert "src/m.py::f" in snap.symbols
+        assert "src/m.py::C.v" in snap.symbols
