@@ -12,6 +12,7 @@ from enum import StrEnum
 from pydantic import BaseModel, ConfigDict
 
 
+# frob:doc docs/lang.md#data-models
 class SymbolKind(StrEnum):
     """The five extraction buckets every supported grammar collapses into."""
 
@@ -22,6 +23,7 @@ class SymbolKind(StrEnum):
     TYPE = "type"
 
 
+# frob:doc docs/lang.md#data-models
 class RawSymbol(BaseModel):
     """One extracted declaration: identity, publicness, span, and tokens."""
 
@@ -36,6 +38,7 @@ class RawSymbol(BaseModel):
     doc_text: str
 
 
+# frob:doc docs/lang.md#data-models
 class RawComment(BaseModel):
     """One extracted comment, with its binding to nearby symbols resolved."""
 
@@ -65,6 +68,7 @@ class TreeNode(BaseModel):
     children: tuple["TreeNode", ...] = ()
 
 
+# frob:doc docs/lang.md#data-models
 class ParsedFile(BaseModel):
     """The whole-file extraction result: symbols, comments, and a content hash."""
 

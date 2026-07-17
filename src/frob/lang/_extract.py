@@ -52,6 +52,7 @@ COMMENT_TYPES: dict[str, frozenset[str]] = {
 }
 
 
+# frob:doc docs/lang.md#extraction-api
 def extract(
     tree: Tree, source: bytes, language: str
 ) -> tuple[tuple[RawSymbol, ...], tuple[RawComment, ...]]:
@@ -390,15 +391,50 @@ def _walk_typescript(root: Node) -> tuple[RawSymbol, ...]:
 # ----------------------------------------------------------------------- rust
 
 
+# PyO3 export attributes: an item carrying one of these is the crate's
+# actual Python-facing public surface even without a `pub` keyword, so it
+# must count as public for coverage/doc obligations. (`#[pymethods]` marks
+# an impl block whose contained methods are all exported -- propagated by
+# `_rust_public` via the enclosing container.)
+_PYO3_EXPORT_ATTRS = ("pyfunction", "pymodule", "pyclass", "pymethods")
+
+
 def _rust_has_pub(node: Node) -> bool:
     return any(c.type == "visibility_modifier" for c in node.children)
+
+
+def _rust_pyo3_export(node: Node) -> bool:
+    """True if a PyO3 export attribute precedes `node` (its own item)."""
+    sib = node.prev_sibling
+    while sib is not None and sib.type in (
+        "attribute_item",
+        "line_comment",
+        "block_comment",
+    ):
+        if sib.type == "attribute_item" and any(
+            marker in child_text(sib) for marker in _PYO3_EXPORT_ATTRS
+        ):
+            return True
+        sib = sib.prev_sibling
+    return False
+
+
+def _rust_public(node: Node, in_pyo3_impl: bool = False) -> bool:
+    """Rust publicness: an explicit `pub`, a direct PyO3 export attribute,
+    or membership in a `#[pymethods]` impl (all its methods are exported)."""
+    return in_pyo3_impl or _rust_has_pub(node) or _rust_pyo3_export(node)
 
 
 def _walk_rust(root: Node) -> tuple[RawSymbol, ...]:
     comment_types = COMMENT_TYPES["rust"]
     symbols: list[RawSymbol] = []
 
-    def visit(container: Node, stack: tuple[str, ...], in_impl: bool) -> None:
+    def visit(
+        container: Node,
+        stack: tuple[str, ...],
+        in_impl: bool,
+        in_pyo3_impl: bool = False,
+    ) -> None:
         for node in container.children:
             doc = leading_doc_comment(node, comment_types)
 
@@ -412,7 +448,7 @@ def _walk_rust(root: Node) -> tuple[RawSymbol, ...]:
                     RawSymbol(
                         qualname=".".join((*stack, name)),
                         kind=SymbolKind.METHOD if in_impl else SymbolKind.FUNCTION,
-                        public=_rust_has_pub(node),
+                        public=_rust_public(node, in_pyo3_impl),
                         span=span_of(node),
                         sig_tokens=sig_tokens,
                         body_tokens=body_tokens,
@@ -427,7 +463,7 @@ def _walk_rust(root: Node) -> tuple[RawSymbol, ...]:
                     RawSymbol(
                         qualname=".".join((*stack, name)),
                         kind=SymbolKind.CLASS,
-                        public=_rust_has_pub(node),
+                        public=_rust_public(node),
                         span=span_of(node),
                         sig_tokens=sig_tokens,
                         body_tokens=(),
@@ -446,7 +482,7 @@ def _walk_rust(root: Node) -> tuple[RawSymbol, ...]:
                     RawSymbol(
                         qualname=".".join((*stack, name)),
                         kind=SymbolKind.TYPE,
-                        public=_rust_has_pub(node),
+                        public=_rust_public(node),
                         span=span_of(node),
                         sig_tokens=sig_tokens,
                         body_tokens=(),
@@ -461,7 +497,7 @@ def _walk_rust(root: Node) -> tuple[RawSymbol, ...]:
                     RawSymbol(
                         qualname=".".join((*stack, name)),
                         kind=SymbolKind.CONST,
-                        public=_rust_has_pub(node),
+                        public=_rust_public(node),
                         span=span_of(node),
                         sig_tokens=sig_tokens,
                         body_tokens=(),
@@ -473,7 +509,12 @@ def _walk_rust(root: Node) -> tuple[RawSymbol, ...]:
                 name = child_text(type_node)
                 body = node.child_by_field_name("body")
                 if body is not None:
-                    visit(body, (*stack, name), in_impl=True)
+                    visit(
+                        body,
+                        (*stack, name),
+                        in_impl=True,
+                        in_pyo3_impl=_rust_pyo3_export(node),
+                    )
             elif node.type == "mod_item":
                 name = child_text(node.child_by_field_name("name"))
                 body = node.child_by_field_name("body")
@@ -734,6 +775,7 @@ _IMPORT_WALKERS = {
 }
 
 
+# frob:doc docs/lang.md#extraction-api
 def extract_imports(tree: Tree, language: str) -> tuple[str, ...]:
     """Raw import/include specifiers for `language` (empty tuple if unsupported)."""
     walker = _IMPORT_WALKERS.get(language)
@@ -755,6 +797,7 @@ _IDENTIFIER_TYPES: dict[str, frozenset[str]] = {
 }
 
 
+# frob:doc docs/lang.md#extraction-api
 def iter_identifiers(tree: Tree, language: str) -> tuple[tuple[str, int], ...]:
     """(name, 1-based line) for every identifier-like leaf (empty if unsupported)."""
     types = _IDENTIFIER_TYPES.get(language)

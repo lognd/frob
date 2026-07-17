@@ -28,8 +28,13 @@ coverage: $(STAMP)
 
 # ---------- install (stamp-guarded) ----------
 
+# The `smt` extra (z3-solver) is opt-in and ships no wheel for some
+# platforms (e.g. aarch64), where it fails to build from source; R7 degrades
+# honestly without it. Sync only the routinely-buildable extras so a missing
+# z3 wheel never bricks the dev environment. Install SMT support explicitly
+# with `uv pip install "frob[smt]"` on platforms where z3 is available.
 $(STAMP): pyproject.toml
-	uv sync --all-extras
+	uv sync --extra serve
 	@touch $(STAMP)
 
 install: $(STAMP) core

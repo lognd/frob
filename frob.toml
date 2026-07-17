@@ -4,11 +4,14 @@ check_base = "main"
 exclude = ["tests/fixtures/**", ".claude/worktrees/**"]
 
 [gates.severity]
-# Legacy-adoption baseline (T-0014 flips these back to error as annotation
-# coverage grows): snapshot-wide obligations warn on the un-annotated
-# legacy surface; diff-scoped and drift rules stay hard errors.
-COV001 = "warn"
-TEST001 = "warn"
+# COV001 (public symbol has an explicit frob:doc edge) and TEST001 (public
+# symbol has a unit test) are now hard errors: the whole surface -- Python,
+# Rust (incl. PyO3 exports), and the rest -- is annotated, so any new
+# undocumented/untested public symbol in ANY language fails the build.
+# TEST002/003/005/006 remain the legacy-adoption baseline (interface- and
+# coverage-level obligations) and warn until that campaign lands.
+COV001 = "error"
+TEST001 = "error"
 TEST002 = "warn"
 TEST003 = "warn"
 TEST005 = "warn"

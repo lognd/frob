@@ -81,7 +81,7 @@ the whole declaration and `body_tokens` is always `()`.
 | Language | Rule |
 |---|---|
 | python | `not name.startswith("_")` |
-| rust | presence of a `pub` (`visibility_modifier`) keyword on the item |
+| rust | presence of a `pub` (`visibility_modifier`) keyword on the item, **or** a PyO3 export attribute (`#[pyfunction]`/`#[pymodule]`/`#[pyclass]`/`#[pymethods]`) -- a native-extension export is the crate's real public surface even without `pub`, and every method in a `#[pymethods]` impl is exported |
 | typescript | wrapped in an `export_statement` (`export`/`export default`); class members without an explicit `private`/`protected` `accessibility_modifier` default to public |
 | c | file-scope symbol without a `static` storage-class specifier |
 | cpp | file-scope symbol without `static`; class members are public unless the nearest preceding `access_specifier` in the enclosing `field_declaration_list` is `private`/`protected` (default access is `private` for `class`, `public` for `struct`, matching the language) |
@@ -128,7 +128,77 @@ Notable per-language handling:
   the `declarator` field chain. `namespace_definition` is transparent like
   rust's `mod_item`.
 
+## Data models
+
+<!-- frob:describes src/frob/lang/_models.py::SymbolKind -->
+<!-- frob:describes src/frob/lang/_models.py::RawSymbol -->
+<!-- frob:describes src/frob/lang/_models.py::RawComment -->
+<!-- frob:describes src/frob/lang/_models.py::ParsedFile -->
+
+The value shapes `frob.lang` hands to `frob.graph`, all frozen so a
+`ParsedFile` compares by value for the incremental-rebuild cache.
+
+- `SymbolKind` -- the five extraction buckets every grammar collapses into
+  (`FUNCTION`, `METHOD`, `CLASS`, `CONST`, `TYPE`).
+- `RawSymbol` -- one extracted declaration: `qualname`, `kind`, `public`,
+  `span`, `sig_tokens`, `body_tokens`, `doc_text`.
+- `RawComment` -- one extracted comment with its `enclosing`/`following`
+  symbol bindings resolved.
+- `ParsedFile` -- the whole-file result: `symbols`, `comments`, and a
+  `content_hash`.
+
+## Extraction API
+
+<!-- frob:describes src/frob/lang/_extract.py::extract -->
+<!-- frob:describes src/frob/lang/_extract.py::extract_imports -->
+<!-- frob:describes src/frob/lang/_extract.py::iter_identifiers -->
+
+The per-language walkers behind `parse_file`, also usable directly on an
+already-parsed tree.
+
+- `extract(tree, source, language)` -- symbols then comments (in that order,
+  so comments can bind to symbol spans).
+- `extract_imports(tree, language)` -- raw import/include specifiers, empty
+  for a language with no registered import walker.
+- `iter_identifiers(tree, language)` -- `(name, 1-based line)` for every
+  identifier-like leaf, empty for an unsupported language.
+
+## Primitives
+
+<!-- frob:describes src/frob/lang/_common.py::collapse_ws -->
+<!-- frob:describes src/frob/lang/_common.py::leaf_tokens -->
+<!-- frob:describes src/frob/lang/_common.py::strip_comment_delims -->
+<!-- frob:describes src/frob/lang/_common.py::leading_doc_comment -->
+<!-- frob:describes src/frob/lang/_common.py::span_of -->
+<!-- frob:describes src/frob/lang/_common.py::child_text -->
+<!-- frob:describes src/frob/lang/_common.py::export_tree -->
+<!-- frob:describes src/frob/lang/_common.py::flatten_tree -->
+<!-- frob:describes src/frob/lang/_common.py::iter_cpp_functions -->
+
+The shared, language-agnostic tree-sitter helpers the five walkers are
+built on -- kept in one place so the leaf-token/comment-delimiter/span
+logic is never re-derived per grammar.
+
+- `collapse_ws` -- whitespace-collapse doc text so reflow never perturbs it.
+- `leaf_tokens` -- ordered leaf text under a node, comments and byte-range
+  exclusions skipped (the sig/body token contract).
+- `strip_comment_delims` -- strip `//`, `///`, `/* */`, `/** */`, `#`, and
+  continuation `*` from one comment.
+- `leading_doc_comment` -- the contiguous comment block directly above a
+  node, as doc text.
+- `span_of` -- 1-based inclusive `(start_line, end_line)`, folding the
+  trailing-newline lexer artifact back onto the content line.
+- `child_text` -- decode a node's text, `""` if absent.
+- `export_tree` -- a comment-stripped `TreeNode` snapshot of a subtree (for
+  R4's tree-edit kernel), truncated past a node budget rather than dropped.
+- `flatten_tree` -- `(labels, parents)` preorder arrays in the shape
+  `frob_core.apted_similarity` expects.
+- `iter_cpp_functions` -- `(node, qualified_name)` for every C/C++ function
+  under a root, shared by `frob.arch` and `frob.dup`.
+
 ## Error types
+
+<!-- frob:describes src/frob/lang/__init__.py::LangError -->
 
 ```python
 class LangError(ErrorSet):

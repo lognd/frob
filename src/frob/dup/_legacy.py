@@ -80,13 +80,13 @@ class DupResult(BaseModel):
     root: str
     groups: list[CloneGroup]
 
-    # frob:doc docs/dup.md#legacy-scanner
     @property
     def total_clones(self) -> int:
+        # frob:doc docs/dup.md#legacy-scanner
         return sum(len(g.fragments) for g in self.groups)
 
-    # frob:doc docs/dup.md#legacy-scanner
     def as_text(self) -> str:
+        # frob:doc docs/dup.md#legacy-scanner
         if not self.groups:
             return "no duplicates found"
         n_groups = len(self.groups)
@@ -112,8 +112,8 @@ class DupResult(BaseModel):
                 lines.append(f"  {loc}{padding}{frag.symbol}")
         return "\n".join(lines)
 
-    # frob:doc docs/dup.md#legacy-scanner
     def as_json(self) -> str:
+        # frob:doc docs/dup.md#legacy-scanner
         return json.dumps(self.model_dump(), indent=2)
 
 

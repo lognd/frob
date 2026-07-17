@@ -68,8 +68,8 @@ class ArchResult(BaseModel):
     root: str
     suggestions: list[ArchSuggestion]
 
-    # frob:doc docs/arch.md#arch-result
     def as_text(self) -> str:
+        # frob:doc docs/arch.md#arch-result
         if not self.suggestions:
             return "no architectural issues found"
         lines: list[str] = []
@@ -83,8 +83,8 @@ class ArchResult(BaseModel):
                 lines.append(f"  {s.detail}")
         return "\n".join(lines)
 
-    # frob:doc docs/arch.md#arch-result
     def as_json(self) -> str:
+        # frob:doc docs/arch.md#arch-result
         return json.dumps(self.model_dump(), indent=2)
 
 

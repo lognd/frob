@@ -33,6 +33,7 @@ from frob.logging import get_logger
 _log = get_logger(__name__)
 
 
+# frob:doc docs/lang.md#error-types
 class LangError(ErrorSet):
     """Failure values `parse_file` can return -- never a bare exception."""
 

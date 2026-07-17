@@ -28,6 +28,7 @@ ByteRange = tuple[int, int]
 _MAX_EXPORT_NODES = 4000
 
 
+# frob:doc docs/lang.md#primitives
 def collapse_ws(text: str) -> str:
     """Whitespace-collapse doc text so reflow never changes ``doc_text``."""
     return " ".join(text.split())
@@ -41,6 +42,7 @@ def _in_skip_range(node: Node, skip_ranges: tuple[ByteRange, ...]) -> bool:
     return False
 
 
+# frob:doc docs/lang.md#primitives
 def leaf_tokens(
     node: Node,
     comment_types: frozenset[str],
@@ -72,6 +74,7 @@ def leaf_tokens(
     return tuple(tokens)
 
 
+# frob:doc docs/lang.md#primitives
 def strip_comment_delims(raw: str) -> str:
     """Strip `//`, `///`, `/* */`, `/** */`, and leading `*` from one comment."""
     text = raw.strip()
@@ -98,6 +101,7 @@ def strip_comment_delims(raw: str) -> str:
     return " ".join(lines)
 
 
+# frob:doc docs/lang.md#primitives
 def leading_doc_comment(
     node: Node,
     comment_types: frozenset[str],
@@ -129,6 +133,7 @@ def leading_doc_comment(
     return collapse_ws(" ".join(collected))
 
 
+# frob:doc docs/lang.md#primitives
 def span_of(node: Node) -> tuple[int, int]:
     """1-based inclusive (start_line, end_line) span for `node`.
 
@@ -143,6 +148,7 @@ def span_of(node: Node) -> tuple[int, int]:
     return (node.start_point[0] + 1, end_row + 1)
 
 
+# frob:doc docs/lang.md#primitives
 def child_text(node: Node | None) -> str:
     """Decode a node's own text, or '' if the node is absent -- a programmer
     convenience for optional field lookups (missing name is a grammar bug,
@@ -152,6 +158,7 @@ def child_text(node: Node | None) -> str:
     return node.text.decode("utf-8", errors="replace")
 
 
+# frob:doc docs/lang.md#primitives
 def export_tree(node: Node, comment_types: frozenset[str]) -> TreeNode:
     """A `TreeNode` snapshot of `node`'s subtree, comments stripped.
 
@@ -182,6 +189,7 @@ def export_tree(node: Node, comment_types: frozenset[str]) -> TreeNode:
     return build(node)
 
 
+# frob:doc docs/lang.md#primitives
 def flatten_tree(node: TreeNode) -> tuple[list[str], list[int]]:
     """`(labels, parents)` flat arrays for `frob_core.apted_similarity`.
 
@@ -212,6 +220,7 @@ def _cpp_declarator_name(node: Node) -> str:
     return child_text(node)
 
 
+# frob:doc docs/lang.md#primitives
 def iter_cpp_functions(root: Node) -> tuple[tuple[Node, str], ...]:
     """(node, qualified_name) for every C/C++ function under `root`.
 

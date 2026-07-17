@@ -148,6 +148,37 @@ rules:
 - Errors cross the boundary as values (PyO3 -> a thin shim -> ErrorSet),
   matching the lithos CoreFailure pattern.
 
+### frob-core kernels (the PyO3-exported surface)
+
+<!-- frob:describes frob-core/src/lib.rs::r3_canonical_hash -->
+<!-- frob:describes frob-core/src/lib.rs::winnow_fingerprints -->
+<!-- frob:describes frob-core/src/lib.rs::candidate_pairs -->
+<!-- frob:describes frob-core/src/lib.rs::tree_edit_similarity -->
+<!-- frob:describes frob-core/src/lib.rs::apted_similarity -->
+<!-- frob:describes frob-core/src/lib.rs::wl_hash -->
+<!-- frob:describes frob-core/src/lib.rs::frob_core -->
+
+Every `#[pyfunction]`/`#[pymodule]` item is the crate's Python-facing public
+API (a PyO3 export is public even without a Rust `pub` keyword -- frob's
+Rust extractor treats the export attribute as public for this reason). The
+thin `frob.dup._core` Python shim wraps each of these; see the Python-side
+descriptions above.
+
+- `r3_canonical_hash` -- R3 canonical fold of an alpha-renamed token stream
+  into one stable hex digest (equal-shape bodies collide).
+- `winnow_fingerprints` -- R4 Moss-style winnowed k-gram fingerprints,
+  position-independent, for region-granular matching.
+- `candidate_pairs` -- LSH bucketing that yields only the fragment pairs
+  sharing enough fingerprints to be worth an exact compare.
+- `tree_edit_similarity` -- statement-sequence edit similarity plus the
+  aligned index pairs, used for the near-miss floor and region narrowing.
+- `apted_similarity` -- R4 Zhang-Shasha tree-edit distance over real subtree
+  structure (parent-index arrays), normalized to a similarity score.
+- `wl_hash` -- R5 Weisfeiler-Lehman graph-kernel hash over a def-use/control
+  -flow graph, collapsing reordered-but-dataflow-identical logic.
+- `frob_core` -- the `#[pymodule]` registration entry that exports the above
+  to Python.
+
 ## Gate integration
 
 - DUP001 (error): diff introduces a clone of a pre-existing symbol at or

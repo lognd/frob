@@ -1203,3 +1203,21 @@ Re-platform left two frob.ast consumers needing raw node traversal
 not yet in frob.lang: arch (child_by_field/text, 10 sites) and
 dup/_legacy (14 sites). Add the needed traversal primitives to frob.lang,
 migrate both, then delete src/frob/ast.
+
+<!-- ticket:T-0044 -->
+```yaml
+id: T-0044
+title: 'Comment binder: directive above nested method binds to enclosing class'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-17'
+blocked_by: []
+parent: null
+scope: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+A frob: directive comment placed immediately above a nested method or property binds to the ENCLOSING CLASS, not the method, because the class span contains the comment and 'enclosing' wins over 'following'. The edge is silently dropped (no error), so the method never clears COV001/TEST001. Three doc-campaign agents (a353eda, aa2686f, a1b18ef) independently hit this. Workaround: place the directive as first line INSIDE the method body. Proper fix: when a comment sits directly above a def/decorator, prefer the FOLLOWING symbol over the enclosing one. See src/frob/graph/dsl.py directive binding / _enclosing_src.

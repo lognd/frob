@@ -60,6 +60,21 @@ Two modules that support the above but are not yet fully re-platformed:
   `frob:decision` anchors, and the DEC gates.
 - `docs/mutate.md` -- `frob.mutate`: mutation testing, the honest
   test-quality oracle.
+- `docs/arch.md` -- `frob.arch`: architectural smell detection (long
+  functions, god classes) over the shared `frob.lang` parse.
+- `docs/process.md` -- `frob.process`: the tool-output parsers (ruff, ty,
+  clang-tidy, valgrind, tsc, eslint, junit) and the shared `Diagnostic`/
+  `TestCase`/`ToolResult` types `frob check` consumes.
+
+Support modules underneath the above:
+
+- `docs/app.md` -- `frob.app`: the App/AppConfig runtime wiring and CLI
+  entry (`__main__`).
+- `docs/bind.md` -- `frob.bind`: verifies `// BIND:` declarations in
+  pybind11/PyO3 glue match a real native-side function, so a Python-facing
+  binding never drifts from the C++/Rust signature it wraps.
+- `docs/logging.md` -- `frob.logging`: the module-logger/dictConfig setup
+  and the `quiet_stdout_logs` helper that keeps `--json` output clean.
 
 ## Per-command references
 

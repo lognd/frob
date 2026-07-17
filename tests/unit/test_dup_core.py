@@ -22,6 +22,23 @@ def test_core_available_returns_bool():
     assert isinstance(_core.core_available(), bool)
 
 
+# frob:tests frob-core/src/lib.rs::frob_core kind="unit"
+def test_frob_core_module_registers_exported_kernels():
+    # The #[pymodule] registration entry is what wires the Rust kernels into
+    # Python; assert the module imports and exposes its exported surface.
+    import frob_core
+
+    for name in (
+        "r3_canonical_hash",
+        "winnow_fingerprints",
+        "candidate_pairs",
+        "tree_edit_similarity",
+        "apted_similarity",
+        "wl_hash",
+    ):
+        assert callable(getattr(frob_core, name))
+
+
 # frob:tests src/frob/dup/_core.py::r3_canonical_hash kind="unit"
 class TestR3CanonicalHash:
     def test_identical_token_streams_hash_equal(self):

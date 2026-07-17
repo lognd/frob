@@ -163,6 +163,30 @@ class TestParseTsRustCppC:
         assert const.kind == SymbolKind.CONST
         assert any("sum them" in c.text for c in pf.comments)
 
+    def test_rust_pyo3_export_is_public_without_pub(self, tmp_path: Path) -> None:
+        # A #[pyfunction]/#[pymodule]/#[pymethods] item is the crate's real
+        # Python-facing public API even without a `pub` keyword, so frob must
+        # count it as public (else COV001 silently skips the whole FFI crate).
+        source = (
+            "#[pyfunction]\n"
+            "fn exported_fn(x: i64) -> i64 { x + 1 }\n"
+            "\n"
+            "fn internal_helper(x: i64) -> i64 { x - 1 }\n"
+            "\n"
+            "#[pymethods]\n"
+            "impl Widget {\n"
+            "    fn exported_method(&self) -> i64 { 0 }\n"
+            "}\n"
+            "\n"
+            "#[pymodule]\n"
+            "fn my_core(m: &Bound<'_, PyModule>) -> PyResult<()> { Ok(()) }\n"
+        )
+        pf = parse_file(_write(tmp_path, "core.rs", source)).danger_ok
+        assert _symbol(pf, "exported_fn").public is True
+        assert _symbol(pf, "internal_helper").public is False
+        assert _symbol(pf, "Widget.exported_method").public is True
+        assert _symbol(pf, "my_core").public is True
+
     def test_cpp(self) -> None:
         pf = parse_file(_FIXTURES / "sample.cpp").danger_ok
         assert pf.language == "cpp"

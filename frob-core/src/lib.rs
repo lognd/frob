@@ -29,6 +29,7 @@ fn hash_str(s: &str) -> u64 {
 /// dependency surface at just pyo3.
 #[pyfunction]
 fn r3_canonical_hash(tokens: Vec<String>) -> String {
+    // frob:doc docs/dup.md#frob-core-kernels-the-pyo3-exported-surface
     let mut acc: u64 = 0xcbf29ce484222325; // FNV offset basis, arbitrary seed
     for tok in &tokens {
         let h = hash_str(tok);
@@ -46,6 +47,7 @@ fn r3_canonical_hash(tokens: Vec<String>) -> String {
 /// functions") fall out for free.
 #[pyfunction]
 fn winnow_fingerprints(tokens: Vec<String>, k: usize, w: usize) -> Vec<u64> {
+    // frob:doc docs/dup.md#frob-core-kernels-the-pyo3-exported-surface
     if k == 0 || tokens.len() < k {
         return Vec::new();
     }
@@ -97,6 +99,7 @@ fn winnow_fingerprints(tokens: Vec<String>, k: usize, w: usize) -> Vec<u64> {
 /// verified downstream by `tree_edit_similarity`.
 #[pyfunction]
 fn candidate_pairs(fingerprint_sets: Vec<Vec<u64>>, min_shared: usize) -> Vec<(usize, usize)> {
+    // frob:doc docs/dup.md#frob-core-kernels-the-pyo3-exported-surface
     let mut buckets: HashMap<u64, Vec<usize>> = HashMap::new();
     for (idx, fps) in fingerprint_sets.iter().enumerate() {
         for fp in fps {
@@ -137,6 +140,7 @@ fn candidate_pairs(fingerprint_sets: Vec<Vec<u64>>, min_shared: usize) -> Vec<(u
 /// `alignment` is matched `(i, j)` statement-index pairs.
 #[pyfunction]
 fn tree_edit_similarity(a: Vec<u64>, b: Vec<u64>) -> (f64, Vec<(usize, usize)>) {
+    // frob:doc docs/dup.md#frob-core-kernels-the-pyo3-exported-surface
     let n = a.len();
     let m = b.len();
     if n == 0 && m == 0 {
@@ -351,6 +355,7 @@ fn apted_similarity(
     labels_b: Vec<String>,
     parents_b: Vec<i64>,
 ) -> f64 {
+    // frob:doc docs/dup.md#frob-core-kernels-the-pyo3-exported-surface
     if labels_a.is_empty() && labels_b.is_empty() {
         return 1.0;
     }
@@ -385,6 +390,7 @@ fn apted_similarity(
 /// dataflow graphs collide regardless of node numbering.
 #[pyfunction]
 fn wl_hash(adjacency: Vec<(usize, usize)>, labels: Vec<String>, iterations: usize) -> u64 {
+    // frob:doc docs/dup.md#frob-core-kernels-the-pyo3-exported-surface
     let n = labels.len();
     if n == 0 {
         return 0;
@@ -429,6 +435,7 @@ mod tests {
 
     #[test]
     fn canonical_hash_is_deterministic_and_shape_sensitive() {
+        // frob:tests frob-core/src/lib.rs::r3_canonical_hash kind="unit"
         let a = vec!["def".into(), "_v0".into(), "return".into(), "_v0".into()];
         let b = vec!["def".into(), "_v0".into(), "return".into(), "_v0".into()];
         let c = vec!["def".into(), "_v0".into(), "return".into(), "_N_".into()];
@@ -468,6 +475,7 @@ mod tests {
 
     #[test]
     fn wl_hash_isomorphic_relabeled_graphs_collide() {
+        // frob:tests frob-core/src/lib.rs::wl_hash kind="unit"
         // Triangle a-b-c with labels ["def", "use", "use"], vs the same
         // triangle with nodes renumbered -- 1-WL must be invariant to that.
         let labels_a = vec!["def".to_string(), "use".to_string(), "use".to_string()];
@@ -496,6 +504,7 @@ mod tests {
 
     #[test]
     fn apted_identical_trees_is_similarity_one() {
+        // frob:tests frob-core/src/lib.rs::apted_similarity kind="unit"
         // def -> [return, name]  (a 3-node tree: root + 2 leaf children)
         let labels = vec!["def".into(), "return".into(), "name".into()];
         let parents = vec![-1i64, 0, 0];
@@ -561,6 +570,7 @@ mod tests {
 
 #[pymodule]
 fn frob_core(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    // frob:doc docs/dup.md#frob-core-kernels-the-pyo3-exported-surface
     m.add_function(wrap_pyfunction!(r3_canonical_hash, m)?)?;
     m.add_function(wrap_pyfunction!(winnow_fingerprints, m)?)?;
     m.add_function(wrap_pyfunction!(candidate_pairs, m)?)?;
