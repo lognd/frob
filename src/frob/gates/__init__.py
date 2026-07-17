@@ -1043,8 +1043,59 @@ _ALL_GATES = frozenset(
         "policy",
         "doclink",
         "perf",
+        "fuzz",
     }
 )
+
+
+# frob:ticket T-0002
+def fuzz_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
+    """FUZZ001/002/003 over the [fuzz] policy in frob.toml.
+
+    Default enforce is OFF (a repo opts in): fuzzing is a strong mandate, so
+    it stays silent until [fuzz].enforce is set -- the warn-first adoption
+    posture. Loads the policy, computes obligations, composes the three pure
+    rule functions from frob.fuzz.
+    """
+    from frob.fuzz import (
+        FUZZ001,
+        FUZZ002,
+        FUZZ003,
+        FuzzEnforce,
+        FuzzPolicy,
+        load_fuzz_stamp,
+        obligations,
+        resolve_param_types,
+    )
+
+    root = Path(root)
+    enforce = FuzzEnforce.OFF
+    toml_path = root / "frob.toml"
+    if toml_path.exists():
+        try:
+            with toml_path.open("rb") as fh:
+                raw = tomllib.load(fh).get("fuzz", {}).get("enforce")
+            if raw in tuple(FuzzEnforce):
+                enforce = FuzzEnforce(raw)
+        except (OSError, tomllib.TOMLDecodeError) as exc:
+            _log.warning("fuzz_gate: frob.toml unreadable: %s", exc)
+    if enforce == FuzzEnforce.OFF:
+        _log.debug("fuzz_gate: [fuzz].enforce=off, skipping")
+        return ()
+
+    obs = obligations(snapshot, FuzzPolicy(enforce=enforce))
+    param_types = {ob.ref: resolve_param_types(root, ob.ref) for ob in obs}
+    stamp = load_fuzz_stamp(root)
+    violations = (
+        *FUZZ001(snapshot, obs),
+        *FUZZ002(obs, param_types),
+        *FUZZ003(snapshot, obs, stamp),
+    )
+    _log.info(
+        "fuzz_gate: %d obligation(s), %d violation(s)", len(obs), len(violations)
+    )
+    return tuple(violations)
+
 
 _MD_LINK_RE = re.compile(r"\]\(([^)#\s]+)")
 # Backtick path references (`docs/x.md`) count as links too: these docs are
@@ -1256,11 +1307,21 @@ def run_gates(cfg: GateConfig) -> Result[GateReport, GateError]:
         return Err(GateError.ConfigMalformed)
     lock = lock_result.danger_ok
 
+    # A missing diff (fresh repo with no commits, unknown base, detached
+    # HEAD) must not skip the WHOLE gates stage -- only coverage/scope read
+    # the diff. Degrade to an empty diff so drift/invariant/test/doclink/
+    # fuzz/policy still run; the diff-dependent gates then simply see no
+    # touched symbols.
     diff_result = working_diff(root, cfg.base)
     if diff_result.is_err:
-        _log.error("run_gates: working_diff failed: %s", diff_result.danger_err)
-        return Err(GateError.GitFailed)
-    diff = diff_result.danger_ok
+        _log.warning(
+            "run_gates: working_diff failed (%s); diff-dependent gates see no "
+            "touched set",
+            diff_result.danger_err,
+        )
+        diff = Diff(base=cfg.base, hunks=())
+    else:
+        diff = diff_result.danger_ok
 
     tests_result = collect_python_tests(root)
     if tests_result.is_err:
@@ -1334,6 +1395,8 @@ def run_gates(cfg: GateConfig) -> Result[GateReport, GateError]:
         jobs["doclink"] = lambda: doclink_gate(Path(cfg.root), snapshot)
     if "perf" in selected:
         jobs["perf"] = lambda: perf_gate(root, snapshot)
+    if "fuzz" in selected:
+        jobs["fuzz"] = lambda: fuzz_gate(Path(cfg.root), snapshot)
 
     from concurrent.futures import ThreadPoolExecutor
 
@@ -1396,6 +1459,7 @@ __all__ = [
     "load_coverage",
     "load_invariants",
     "doclink_gate",
+    "fuzz_gate",
     "perf_gate",
     "prework_gate",
     "record_prework",

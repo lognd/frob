@@ -54,10 +54,12 @@ def _run_one(tp: type[BaseModel], policy: FuzzPolicy, digest: str) -> FuzzResult
             ref=ref, body_digest=digest, examples=0, falsified="no generator"
         )
 
+    from typing import Any, cast
+
     from hypothesis import HealthCheck, given, settings
     from hypothesis.errors import Unsatisfiable
 
-    strategy = resolved.danger_ok
+    strategy = cast(Any, resolved.danger_ok)
     count = 0
 
     def _property(instance: BaseModel) -> None:

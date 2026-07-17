@@ -6,10 +6,17 @@ from tests.system.conftest import FIXTURES, run
 
 
 def _make_project(tmp_path: Path, src: str, pkg: str = "mypkg") -> Path:
-    """Create a minimal Python project with pyproject.toml."""
+    """Create a minimal Python project with pyproject.toml + a warn-severity
+    frob.toml (the adoption baseline every real repo has, so the obligation
+    gates run non-blocking while these tests exercise the code-quality tools)."""
     (tmp_path / "pyproject.toml").write_text(
         f'[project]\nname = "{pkg}"\nversion = "0.1.0"\n'
         '[tool.ruff.lint]\nselect = ["E", "F", "W"]\n'
+    )
+    (tmp_path / "frob.toml").write_text(
+        "[gates.severity]\n"
+        'COV001 = "warn"\nTEST001 = "warn"\nTEST002 = "warn"\n'
+        'TEST003 = "warn"\nTEST005 = "warn"\nTEST006 = "warn"\n'
     )
     src_dir = tmp_path / "src" / pkg
     src_dir.mkdir(parents=True)

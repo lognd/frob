@@ -507,6 +507,12 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     test_p.add_argument("test_path", metavar="path", nargs="?", default=".")
     test_p.add_argument("--all", dest="test_all", action="store_true")
+    test_p.add_argument(
+        "--fuzz",
+        dest="test_fuzz",
+        action="store_true",
+        help="property-test fuzz-obligated pydantic models and stamp (T-0002)",
+    )
     test_p.add_argument("--base", dest="test_base", metavar="REF")
     test_p.add_argument(
         "--lang", dest="test_lang", action="append", default=[], metavar="L"

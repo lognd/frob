@@ -27,12 +27,12 @@ from frob.logging import get_logger
 
 _log = get_logger(__name__)
 
+_st: Any = None
 try:
-    import hypothesis.strategies as _st
+    import hypothesis.strategies as _st  # noqa: F811
 
     HYPOTHESIS_AVAILABLE = True
-except ImportError:  # pragma: no cover - exercised only in worktrees lacking hypothesis
-    _st = None  # type: ignore[assignment]
+except ImportError:  # pragma: no cover - exercised only where hypothesis is absent
     HYPOTHESIS_AVAILABLE = False
 
 # frob:todo T-0002 registry is process-global; a future multi-project host
@@ -80,7 +80,7 @@ def _derived_strategy(tp: type[BaseModel]) -> Result[object, FuzzError]:
         _log.warning("resolve: %s has unresolvable type hints: %s", tp, exc)
         return Err(FuzzError.NoGenerator)
 
-    field_strategies: dict[str, object] = {}
+    field_strategies: dict[str, Any] = {}
     for name in tp.model_fields:
         annotation = hints.get(name)
         if annotation is None:

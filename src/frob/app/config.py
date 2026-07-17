@@ -173,6 +173,7 @@ class AppConfig(BaseModel):
 
     # test
     test_all: bool = False
+    test_fuzz: bool = False
     test_base: str | None = None
     test_lang: list[str] = []
     test_fallback: str | None = None
@@ -362,6 +363,7 @@ class AppConfig(BaseModel):
             "graph_json",
             "ticket_json",
             "test_all",
+            "test_fuzz",
             "test_json",
             "vet_json",
             "perf_tests",

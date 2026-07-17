@@ -15,6 +15,63 @@ _CACHE_REL = Path(".frob") / "cache.db"
 _ALL_SENTINEL = "*"
 
 
+# frob:ticket T-0002
+def _run_fuzz(root: Path) -> None:
+    """`frob test --fuzz`: property-test the pydantic models in fuzz-obligated
+    signatures via the hypothesis harness, then stamp so FUZZ003 is satisfied.
+
+    v1 drives the DERIVED pydantic-model case (docs/fuzz.md); non-model
+    params are reported as skipped, not failed."""
+    from pydantic import BaseModel
+
+    from frob.fuzz import (
+        FuzzEnforce,
+        FuzzPolicy,
+        obligations,
+        resolve_param_types,
+        run_fuzz,
+        stamp_fuzz,
+    )
+    from frob.graph import build_graph, load_graph
+
+    cache = root / _CACHE_REL
+    loaded = load_graph(cache)
+    snapshot = (loaded if loaded.is_ok else build_graph(root, cache)).danger_ok
+
+    obs = obligations(snapshot, FuzzPolicy(enforce=FuzzEnforce.INVARIANT_ANCHORED))
+    if not obs:
+        print("frob test --fuzz: no obligated targets (add frob:invariant anchors)")
+        return
+    models: list[type[BaseModel]] = []
+    digests: dict[str, str] = {}
+    for ob in obs:
+        for tp in resolve_param_types(root, ob.ref) or ():
+            if isinstance(tp, type) and issubclass(tp, BaseModel):
+                models.append(tp)
+                rec = snapshot.symbols.get(ob.ref)
+                if rec is not None:
+                    digests[f"{tp.__module__}.{tp.__qualname__}"] = rec.digests.body
+    if not models:
+        print("frob test --fuzz: no derived pydantic-model params to fuzz (v1 scope)")
+        return
+
+    results = run_fuzz(tuple(models), budget_s=60, digests=digests)
+    falsified = [r for r in results if r.falsified]
+    for r in results:
+        mark = (
+            f"FALSIFIED: {r.falsified}"
+            if r.falsified
+            else f"{r.examples} examples ok"
+        )
+        print(f"  {r.ref}: {mark}")
+    stamped = stamp_fuzz(root, results)
+    if stamped.is_err:
+        _log.error("frob test --fuzz: stamp failed: %s", stamped.danger_err)
+        sys.exit(1)
+    if falsified:
+        sys.exit(1)
+
+
 def run(cfg: AppConfig) -> None:
     """Compute the touched set (or run everything with --all) and run the tests."""
     from frob.gitio import repo_root, working_diff
@@ -32,6 +89,10 @@ def run(cfg: AppConfig) -> None:
         _log.error("frob test: %s", root_result.danger_err)
         sys.exit(1)
     root = root_result.danger_ok
+
+    if cfg.test_fuzz:
+        _run_fuzz(root)
+        return
 
     base = cfg.test_base or "main"
 

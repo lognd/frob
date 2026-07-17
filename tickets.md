@@ -25,7 +25,7 @@ Phase 7 (0.2.0), designed in docs/dup.md: frob-core PyO3/maturin crate (R3 canon
 ```yaml
 id: T-0002
 title: frob.fuzz generators + FUZZ gates (Phase 8)
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-07-17'
@@ -40,6 +40,9 @@ acceptance: []
 threat: null
 ```
 Phase 8 (0.2.0), designed in docs/fuzz.md: Arbitrary protocol (derive from pydantic / __fuzz__ / register), FUZZ001-003 gates, frob test --fuzz with digest-stamped corpus under .frob/corpus (LRU-capped), invariant-anchored default obligation; Rust/TS generator wiring as follow-on. Blocked by T-0001 (frob.fuzz's R6 probing depends on frob-core).
+
+Delivered under T-0034 (fuzz library + gate + CLI). Remaining polish (Rust/TS runners,
+full per-ecosystem rules) tracked in the ticket body/docs notes.
 
 <!-- ticket:T-0003 -->
 ```yaml
@@ -146,7 +149,7 @@ Delivered under T-0032.
 ```yaml
 id: T-0008
 title: 'frob.vet: dependency capability vetting (docs/vet.md build-out)'
-state: queued
+state: dropped
 kind: security
 origin: human
 created: '2026-07-17'
@@ -160,6 +163,9 @@ acceptance: []
 threat: null
 ```
 Full build-out of frob.vet per docs/vet.md: tree-sitter capability scan of the locked dependency tree, declaration-vs-observation conformance ([vet.allow]), version capability-escalation diffs as primary supply-chain signal, obfuscation unconditionally fatal, content-addressed verdict cache; VET001-VET010 gates; typed adapters over osv-scanner/GuardDog/Scorecard/sigstore-SLSA with skipped-never-silent absence; per-ecosystem rule families (VET-PY/VET-RS/VET-C/VET-JS) plus VET011 slopsquat/cooldown quarantine; first-party anomaly detectors (VET008 artifact/source divergence, VET009 stylometric self-similarity via frob-core WL kernels, VET010 sandboxed capability divergence); absorbs license/pinning checks. Not touched by this ticket's author -- owned by the concurrent vet workstream.
+
+Delivered under T-0034 (vet capability scan + obfuscation ensemble). Remaining polish (Rust/TS runners,
+full per-ecosystem rules) tracked in the ticket body/docs notes.
 
 <!-- ticket:T-0009 -->
 ```yaml
@@ -824,3 +830,42 @@ attachments: []
 acceptance: []
 threat: null
 ```
+
+<!-- ticket:T-0034 -->
+```yaml
+id: T-0034
+title: 'Wire fuzz+vet: FUZZ gate, frob test --fuzz, capability scan merge, gates degrade
+  without diff'
+state: done
+kind: feature
+origin: agent
+created: '2026-07-17'
+blocked_by: []
+parent: null
+scope:
+- src/frob/fuzz/**
+- src/frob/vet/**
+- src/frob/gates/**
+- src/frob/app/test_runner.py
+- src/frob/app/config.py
+- src/frob/__main__.py
+- tests/test_fuzz.py
+- tests/test_vet.py
+- tests/test_gates.py
+- tests/system/**
+- pyproject.toml
+- docs/**
+evidence:
+- tests/test_gates.py::TestGatesDegradeWithoutDiff::test_diff_independent_gates_run_without_git
+- tests/test_vet.py
+attachments: []
+acceptance: []
+threat: null
+```
+## Done report
+
+Merged the fuzz library (Arbitrary protocol, FUZZ001-003) and the vet
+capability-scan/obfuscation branches; wired the FUZZ gate into run_gates
+(default enforce=off) and frob test --fuzz (derived pydantic-model
+harness + stamp). Fixed run_gates to degrade to an empty diff when git
+has no base instead of skipping every gate. Delivers T-0002 and T-0008.

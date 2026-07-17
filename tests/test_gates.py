@@ -847,3 +847,24 @@ class TestCov002ScopeCoverage:
             GateConfig(root=str(tmp_path), base="main", gates=frozenset({"coverage"}))
         ).danger_ok
         assert not [v for v in report.violations if v.rule == "COV002"]
+
+
+class TestGatesDegradeWithoutDiff:
+    def test_diff_independent_gates_run_without_git(self, tmp_path):
+        """A repo with no valid base (fresh, no commits) must still run the
+        diff-independent gates instead of skipping the whole stage."""
+        from frob.gates import GateConfig, run_gates
+
+        (tmp_path / "src").mkdir()
+        (tmp_path / "src" / "m.py").write_text(
+            "# frob:invariant INV-001\ndef f(x):\n    return x\n"
+        )
+        (tmp_path / "frob.toml").write_text(
+            '[fuzz]\nenforce = "invariant-anchored"\n', encoding="utf-8"
+        )
+        # no git repo at all -> working_diff fails -> must not error the stage
+        report = run_gates(
+            GateConfig(root=str(tmp_path), base="main", gates=frozenset({"fuzz"}))
+        )
+        assert report.is_ok, report.err
+        assert any(v.rule == "FUZZ001" for v in report.danger_ok.violations)
