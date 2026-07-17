@@ -1342,7 +1342,7 @@ phase-0 children chained internally.
 ```yaml
 id: T-0049
 title: 'strata phase 0: kernel + prover core'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-17'
@@ -1352,7 +1352,9 @@ parent: T-0047
 scope:
 - src/frob/strata/**
 - tests/unit/strata/**
-evidence: []
+evidence:
+- tests/unit/strata/test_litmus_payments.py::TestGoldenFindings::test_golden_1_third_party_response_reaches_ledger_unendorsed
+- tests/unit/strata/test_litmus_payments.py::TestGoldenFindings::test_golden_2_refund_decision_reads_a_stale_replica
 attachments: []
 acceptance:
 - GIVEN hand-written kernel facts for the payments litmus WHEN the prover runs THEN
@@ -1360,6 +1362,16 @@ acceptance:
 threat: null
 ```
 Kernel data model + fact base + closure + claim evaluation. Pure Python first; hot kernels move to strata-core (PyO3) later. See docs/strata/kernel.md.
+
+## Done report
+
+Phase 0 complete: T-0055 (kernel data model), T-0056 (fact base +
+closure), T-0057 (claim evaluation), T-0058 (payments litmus goldens)
+all closed with evidence. Exit criterion met exactly as written in the
+acceptance: hand-written kernel facts for the payments litmus produce
+all golden findings with path counterexamples and quantifier-tagged
+verdicts. Side effects: T-0087 (CONST extraction gap) and T-0089
+(scaffold DX flake) filed. Frontier advances to phase 1 (T-0050).
 
 <!-- ticket:T-0050 -->
 ```yaml
@@ -1607,7 +1619,7 @@ check exit 0, ruff clean, 37 strata tests green.
 ```yaml
 id: T-0058
 title: strata payments litmus as kernel facts + golden findings
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-17'
@@ -1619,12 +1631,34 @@ scope:
 - tickets.md
 - tests/unit/strata/**
 - design/litmus/**
-evidence: []
+evidence:
+- tests/unit/strata/test_litmus_payments.py::TestGoldenFindings::test_golden_1_third_party_response_reaches_ledger_unendorsed
+- tests/unit/strata/test_litmus_payments.py::TestGoldenFindings::test_golden_2_refund_decision_reads_a_stale_replica
+- tests/unit/strata/test_litmus_payments.py::TestGoldenFindings::test_golden_3_at_least_once_webhook_into_non_idempotent_consumer
+- tests/unit/strata/test_litmus_payments.py::TestHardenedModel::test_every_assert_holds_after_the_remedies
 attachments: []
 acceptance: []
 threat: null
 ```
 Hand-written kernel facts for the Stripe-shaped model; goldens: foreign-response endorsement gap, stale-replica refund path, webhook idempotency. Phase-0 exit criterion.
+
+## Done report
+
+Delivered tests/unit/strata/test_litmus_payments.py: the payments litmus
+as kernel facts with naive and hardened variants. Golden findings all
+fire with exact witnesses: (1) third-party response endorsement gap
+(stripe -> f_stripe_resp -> api -> f_api_ledger -> ledger), (2) refund
+decision on a stale replica (330.0s > 60.0s with the full read path),
+(3) at-least-once webhook into a non-idempotent consumer (build
+diagnostic). Positive controls: endorsed browser ingress PROVED(forall),
+audit Reach PROVED(exists) with witness, assume ledgered with owner and
+review. Notably the checker caught MY first hardened variant: endorsing
+the response path alone still left stripe -> webhookq -> api -> ledger
+open, so the remedy set gained b_webhook (signature verification) and
+queue dedup -- the tool refuting its own author's incomplete fix is the
+phase-0 exit criterion working as intended. Also fixed a ty typing gap
+in the fixture and filed T-0089 (scaffold DX flake seen during the full
+suite, unrelated to strata). Ticket check exit 0; 45 strata tests green.
 
 <!-- ticket:T-0059 -->
 ```yaml
@@ -2290,3 +2324,22 @@ Acceptance verified: frob graph build clean (edges stable at 1311, zero
 dangling), frob check --ticket T-0088 exit 0 (doclink/drift/coverage all
 pass), frob test --base main --lang python PASS, cargo test --lib 13/13
 PASS.
+
+<!-- ticket:T-0089 -->
+```yaml
+id: T-0089
+title: test_scaffold_dx flaky under full-suite run, passes in isolation
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-17'
+blocked_by: []
+parent: null
+scope:
+- tests/system/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+tests/system/test_scaffold_dx.py::test_python_tool_scaffold_passes_check_immediately failed during a full uv run pytest -q but passes standalone; suspect shared graph cache or cwd contention between system tests. Found during T-0058 close-out. Also: pytest.mark.slow is unregistered (PytestUnknownMarkWarning).
