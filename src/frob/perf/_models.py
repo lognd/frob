@@ -17,6 +17,7 @@ __all__ = [
 ]
 
 
+# frob:doc docs/perf.md#public-api
 # frob:ticket T-0021
 class PerfError(ErrorSet):
     """Failure values every `frob.perf` function can return."""
@@ -26,6 +27,7 @@ class PerfError(ErrorSet):
     BadArtifact = "pstats artifact unreadable"
 
 
+# frob:doc docs/perf.md#public-api
 # frob:ticket T-0021
 class ProfileArtifact(BaseModel):
     """One completed `frob perf profile` run: identity, argv, and totals.
@@ -47,18 +49,21 @@ class ProfileArtifact(BaseModel):
     exit_code: int = 0
 
     @property
+    # frob:doc docs/perf.md#public-api
     # frob:ticket T-0021
     def pstats_name(self) -> str:
         """The pstats file's basename under `.frob/perf/`."""
         return f"{self.sha}.pstats"
 
     @property
+    # frob:doc docs/perf.md#public-api
     # frob:ticket T-0021
     def meta_name(self) -> str:
         """The meta sidecar's basename under `.frob/perf/`."""
         return f"{self.sha}.json"
 
 
+# frob:doc docs/perf.md#public-api
 # frob:ticket T-0021
 class HeatEntry(BaseModel):
     """One symbol's profiled cost, ranked by cumulative time desc."""
@@ -72,6 +77,7 @@ class HeatEntry(BaseModel):
     smells: tuple[str, ...] = ()
 
 
+# frob:doc docs/perf.md#public-api
 # frob:ticket T-0021
 class HeatReport(BaseModel):
     """The full `frob perf heat` join result: ranked entries plus spillover."""

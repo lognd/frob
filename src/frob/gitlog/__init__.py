@@ -42,6 +42,7 @@ _TYPE_LABELS: dict[str, str] = {
 _USER_VISIBLE = {"feat", "fix", "perf", "revert"}
 
 
+# frob:doc docs/gitlog.md#public-api
 class CommitEntry(BaseModel):
     model_config = {}
 
@@ -56,6 +57,7 @@ class CommitEntry(BaseModel):
     raw_subject: str = ""
 
 
+# frob:doc docs/gitlog.md#public-api
 class GitLogResult(BaseModel):
     model_config = {}
 
@@ -65,6 +67,7 @@ class GitLogResult(BaseModel):
     commits: list[CommitEntry]
 
     @property
+    # frob:doc docs/gitlog.md#public-api
     def groups(self) -> dict[str, list[CommitEntry]]:
         """Commits grouped by type, with 'breaking' as a special key."""
         result: dict[str, list[CommitEntry]] = {}
@@ -75,6 +78,7 @@ class GitLogResult(BaseModel):
         return result
 
     def as_json(self) -> str:
+        # frob:doc docs/gitlog.md#public-api
         d = self.model_dump()
         d["groups"] = {k: [c.model_dump() for c in v] for k, v in self.groups.items()}
         import json
@@ -82,6 +86,7 @@ class GitLogResult(BaseModel):
         return json.dumps(d, indent=2)
 
     def as_text(self) -> str:
+        # frob:doc docs/gitlog.md#public-api
         if not self.commits:
             return "no commits found"
 
@@ -146,6 +151,7 @@ def _append_entry(lines: list[str], c: CommitEntry) -> None:
         lines[-1] += f"  [{c.tag}]"
 
 
+# frob:doc docs/gitlog.md#public-api
 def git_log(
     root: Path | None = None,
     *,

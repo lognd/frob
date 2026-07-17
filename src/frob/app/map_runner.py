@@ -10,6 +10,7 @@ from frob.map import map_project
 _log = get_logger(__name__)
 
 
+# frob:doc docs/app.md#runners
 def run(cfg: AppConfig) -> None:
     root = cfg.map_path or Path(".")
     ctx = quiet_stdout_logs() if cfg.map_json else contextlib.nullcontext()

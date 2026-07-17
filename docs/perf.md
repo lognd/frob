@@ -46,6 +46,15 @@ goes". Ranked output, remedy per row.
 
 ## Public API
 
+<!-- frob:describes src/frob/perf/_models.py::PerfError -->
+<!-- frob:describes src/frob/perf/_models.py::ProfileArtifact -->
+<!-- frob:describes src/frob/perf/_models.py::ProfileArtifact.pstats_name -->
+<!-- frob:describes src/frob/perf/_models.py::ProfileArtifact.meta_name -->
+<!-- frob:describes src/frob/perf/_models.py::HeatEntry -->
+<!-- frob:describes src/frob/perf/_models.py::HeatReport -->
+<!-- frob:describes src/frob/perf/_heat.py::join_smells -->
+<!-- frob:describes src/frob/perf/_heat.py::render_bar -->
+
 ```python
 # frob/perf/__init__.py
 def profile_command(argv: Sequence[str], root: Path) -> Result[ProfileArtifact, PerfError]
@@ -56,11 +65,22 @@ def heat(artifact: ProfileArtifact, snapshot: GraphSnapshot) -> HeatReport
 def perf_rules(snapshot: GraphSnapshot, files: Sequence[ParsedFile]) -> tuple[Violation, ...]
     # PERF001..PERF004; pure; consumed by the policy gate stage.
 
+# frob/perf/_heat.py
+def join_smells(report: HeatReport, violations_by_ref: dict[str, tuple[str, ...]]) -> HeatReport
+    # Attach PERF rule ids onto each entry -- the "hot AND quadratic" join.
+def render_bar(cum_s: float, max_s: float, *, color: bool | None = None) -> str
+    # ASCII '#'-block bar sized to cum_s/max_s for the CLI heat-map listing.
+
+# frob/perf/_models.py
 class ProfileArtifact(BaseModel):  # frozen; .frob/perf/<sha>.pstats + meta
     sha: str
     argv: tuple[str, ...]
     created: datetime
     total_s: float
+    def pstats_name(self) -> str
+        # Basename of the raw pstats file under .frob/perf/.
+    def meta_name(self) -> str
+        # Basename of the JSON meta sidecar under .frob/perf/.
 
 class HeatEntry(BaseModel):        # frozen
     ref: str                       # symref
@@ -154,6 +174,17 @@ class PerfError(ErrorSet):
   per-statement number.
 
 ## Integration points
+
+<!-- frob:describes src/frob/perf/_harness.py::main -->
+
+`_harness.py` runs the profiled target as a subprocess entry point:
+
+```python
+# frob/perf/_harness.py
+def main() -> int
+    # Profile the target argv under cProfile, dump stats, and return the
+    # workload's own exit code (not cProfile's, which is always 0).
+```
 
 - CLI: `frob perf profile|heat` (+ `--smells`, `--annotate`, `--json`).
 - `frob check`: PERF rules run in the policy/gates stage at warn.

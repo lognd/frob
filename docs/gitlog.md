@@ -99,6 +99,36 @@ maps each commit type to the commits of that type.
 }
 ```
 
+## Public API
+
+<!-- frob:describes src/frob/gitlog/__init__.py::CommitEntry -->
+<!-- frob:describes src/frob/gitlog/__init__.py::GitLogResult -->
+<!-- frob:describes src/frob/gitlog/__init__.py::GitLogResult.groups -->
+<!-- frob:describes src/frob/gitlog/__init__.py::GitLogResult.as_json -->
+<!-- frob:describes src/frob/gitlog/__init__.py::GitLogResult.as_text -->
+<!-- frob:describes src/frob/gitlog/__init__.py::git_log -->
+
+```python
+# frob/gitlog/__init__.py
+class CommitEntry(BaseModel)
+    # One parsed conventional commit: hash, type, scope, breaking flag, body, tag.
+
+class GitLogResult(BaseModel)
+    # The filtered commit set for one frob gitlog invocation, plus rendering.
+    def groups(self) -> dict[str, list[CommitEntry]]
+        # Commits bucketed by conventional-commit type, with a synthetic
+        # "breaking" bucket for commits marked with '!'.
+    def as_json(self) -> str
+        # Serialize to JSON including both the flat commit list and groups.
+    def as_text(self) -> str
+        # Render the grouped, human-readable log used by the CLI's default output.
+
+def git_log(root, *, granularity="user", since=None, until=None, limit=None,
+            include_non_conventional=False) -> GitLogResult
+    # Run `git log`, parse conventional-commit subjects, and filter by
+    # granularity level; the single entry point behind `frob gitlog`.
+```
+
 ## Agentic use
 
 ```bash

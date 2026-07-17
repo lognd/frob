@@ -8,6 +8,7 @@ from frob.logging import get_logger
 _log = get_logger(__name__)
 
 
+# frob:doc docs/app.md#entry-point
 class App:
     # frob:ticket T-0021
     def __init__(self, cfg: AppConfig) -> None:

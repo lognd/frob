@@ -19,6 +19,7 @@ from frob.vet import check_package, parse_hook_command, scan_tree
 _log = get_logger(__name__)
 
 
+# frob:doc docs/app.md#runners
 def run(cfg: AppConfig) -> None:
     """Dispatch to hook mode (`--hook`) or a full lockfile scan."""
     root = (cfg.vet_path or Path(".")).resolve()

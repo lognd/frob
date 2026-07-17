@@ -16,6 +16,7 @@ import runpy
 import sys
 
 
+# frob:doc docs/perf.md#integration-points
 def main() -> int:
     """Profile the target argv, dump stats, and return the workload's code."""
     if len(sys.argv) < 3:

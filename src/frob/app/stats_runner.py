@@ -12,6 +12,7 @@ _log = get_logger(__name__)
 
 
 # frob:ticket T-0009
+# frob:doc docs/app.md#runners
 def run(cfg: AppConfig) -> None:
     """Render the delivery snapshot (queue health + commit cadence)."""
     from frob.stats import collect

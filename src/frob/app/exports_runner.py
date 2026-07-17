@@ -10,6 +10,7 @@ from frob.logging import get_logger, quiet_stdout_logs
 _log = get_logger(__name__)
 
 
+# frob:doc docs/app.md#runners
 def run(cfg: AppConfig) -> None:
     if cfg.exports_path is None:
         _log.error("frob exports requires <path>")

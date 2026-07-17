@@ -146,6 +146,8 @@ def test_python_tool_scaffold_passes_check_immediately(tmp_path: Path) -> None:
 
 
 def test_all_registered_types_render_without_error(tmp_path: Path) -> None:
+    # frob:tests src/frob/scaffold/project.py::list_project_types kind="unit"
+    # frob:tests src/frob/scaffold/project.py::render_project kind="unit"
     from frob.scaffold.project import list_project_types
 
     for project_type in list_project_types():

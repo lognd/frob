@@ -19,6 +19,7 @@ def _init() -> None:
     _initialized = True
 
 
+# frob:doc docs/logging.md#public-api
 def get_logger(name: str) -> logging.Logger:
     _init()
     return logging.getLogger(name)

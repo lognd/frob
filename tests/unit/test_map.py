@@ -12,6 +12,7 @@ def project(tmp_path, py_sample, cpp_sample):
 
 
 def test_map_finds_all_files(project):
+    # frob:tests src/frob/map/__init__.py::map_project kind="unit"
     result = map_project(project)
     paths = [f.path for f in result.files]
     assert any("foo.py" in p for p in paths)

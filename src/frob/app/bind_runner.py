@@ -8,6 +8,7 @@ from pathlib import Path
 from frob.bind import check, scan_bindings, scan_sources
 
 
+# frob:doc docs/app.md#runners
 def run(argv=None):
     p = argparse.ArgumentParser(
         prog="frob bind",

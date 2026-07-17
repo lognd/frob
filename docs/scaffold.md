@@ -80,6 +80,26 @@ Jinja2 variables available in all templates:
 | `project.name` | Project name as passed on the CLI |
 | `project.type` | The scaffold type being rendered (e.g. `"python-tool"`) -- used by `shared/python/pyproject.toml.j2` to gate the CLI entry point to `python-tool` only |
 
+## Public API
+
+<!-- frob:describes src/frob/scaffold/project.py::ScaffoldError -->
+<!-- frob:describes src/frob/scaffold/project.py::list_project_types -->
+<!-- frob:describes src/frob/scaffold/project.py::render_project -->
+
+```python
+# frob/scaffold/project.py
+class ScaffoldError(ErrorSet)
+    # Failure values: unknown type, missing template, existing output
+    # files without --force, or a Jinja2 render error.
+
+def list_project_types() -> list[str]
+    # The registered scaffold type names, read directly off _MANIFESTS.
+
+def render_project(project_type, name, output_dir, *, force=False) -> Result[list[Path], ScaffoldError]
+    # Render one registered type's templates into output_dir; the single
+    # entry point behind `frob scaffold new`.
+```
+
 ## Adding a project type
 
 1. Create `src/frob/scaffold/data/types/<type-name>/` with `.j2` templates.

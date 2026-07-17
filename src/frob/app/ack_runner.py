@@ -13,6 +13,7 @@ _log = get_logger(__name__)
 _CACHE_REL = Path(".frob") / "cache.db"
 
 
+# frob:doc docs/app.md#runners
 def run(cfg: AppConfig) -> None:
     """Load (building if the cache is stale), acknowledge refs, and write the lock."""
     from frob.graph import build_graph, load_graph

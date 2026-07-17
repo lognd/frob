@@ -14,6 +14,7 @@ _CACHE_REL = Path(".frob") / "cache.db"
 
 
 # frob:ticket T-0003
+# frob:doc docs/app.md#runners
 def run(cfg: AppConfig) -> None:
     """Dispatch to the release subcommand named by `cfg.release_command`."""
     root = (cfg.release_path or Path(".")).resolve()

@@ -6,6 +6,7 @@ from pathlib import Path
 from pydantic import BaseModel
 
 
+# frob:doc docs/app.md#frobdocs-library
 class Docstring(BaseModel):
     symbol: str
     kind: str
@@ -13,6 +14,7 @@ class Docstring(BaseModel):
     text: str
 
 
+# frob:doc docs/app.md#frobdocs-library
 class DocEntry(BaseModel):
     heading: str
     summary: str
@@ -20,6 +22,7 @@ class DocEntry(BaseModel):
     line: int
 
 
+# frob:doc docs/app.md#frobdocs-library
 class DocMatch(BaseModel):
     file: str
     line: int
@@ -27,6 +30,7 @@ class DocMatch(BaseModel):
     excerpt: str
 
 
+# frob:doc docs/app.md#frobdocs-library
 def extract_docstrings(path: Path, symbol: str | None = None) -> list[Docstring]:
     """Every python docstring in `path` (module, class, function, method).
 
@@ -137,6 +141,7 @@ def _module_docstring(path: Path) -> tuple[int, str] | None:
     return line, " ".join(doc.split())
 
 
+# frob:doc docs/app.md#frobdocs-library
 def find_docs_dir(start: Path) -> Path | None:
     current = start if start.is_dir() else start.parent
     for _ in range(8):
@@ -176,6 +181,7 @@ def _md_headings_and_summaries(md_path: Path) -> list[tuple[int, str, str]]:
     return entries
 
 
+# frob:doc docs/app.md#frobdocs-library
 def overview(path: Path, symbol: str | None = None) -> list[DocEntry]:
     docs_dir = find_docs_dir(path)
     if not docs_dir:
@@ -210,6 +216,7 @@ def overview(path: Path, symbol: str | None = None) -> list[DocEntry]:
     return results
 
 
+# frob:doc docs/app.md#frobdocs-library
 def search(query: str, docs_dir: Path) -> list[DocMatch]:
     q = query.lower()
     results: list[DocMatch] = []

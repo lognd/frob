@@ -9,21 +9,25 @@ from typani.result import Result
 from frob.outline import outline_file
 
 
+# frob:doc docs/exports.md#public-api
 class ExportsError(ErrorSet):
     NotADirectory = "Path is not a directory"
     NoSourceFiles = "No Python source files found in directory"
 
 
+# frob:doc docs/exports.md#public-api
 class ModuleExports(BaseModel):
     module: str
     symbols: list[str]
 
 
+# frob:doc docs/exports.md#public-api
 class ExportsResult(BaseModel):
     package_dir: str
     modules: list[ModuleExports]
 
     def as_text(self) -> str:
+        # frob:doc docs/exports.md#public-api
         # Find which symbol names are duplicated across modules
         counts: dict[str, int] = {}
         for mod in self.modules:
@@ -55,9 +59,11 @@ class ExportsResult(BaseModel):
         return "\n".join(lines)
 
     def as_json(self) -> str:
+        # frob:doc docs/exports.md#public-api
         return self.model_dump_json(indent=2)
 
 
+# frob:doc docs/exports.md#public-api
 def exports_package(
     pkg_dir: Path,
     *,

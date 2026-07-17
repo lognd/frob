@@ -24,6 +24,7 @@ BOLD = "1"
 DIM = "2"
 
 
+# frob:doc docs/logging.md#public-api
 def should_color(stream: IO[str] | None = None) -> bool:
     """Whether ANSI color belongs on `stream` (default stdout) right now."""
     if "NO_COLOR" in os.environ:
@@ -36,6 +37,7 @@ def should_color(stream: IO[str] | None = None) -> bool:
     )
 
 
+# frob:doc docs/logging.md#public-api
 def paint(text: str, code: str, enabled: bool = True) -> str:
     """`text` wrapped in the SGR `code` when `enabled`, verbatim otherwise."""
     if not enabled:
