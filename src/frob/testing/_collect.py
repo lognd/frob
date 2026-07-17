@@ -85,7 +85,12 @@ def collect_python_tests(root: Path) -> Result[CollectedTests, TestingError]:
         _log.debug("collect_python_tests: cache hit, %d node id(s)", len(cached))
         return Ok(CollectedTests(node_ids=cached))
 
-    argv = ("uv", "run", "pytest", "--collect-only", "-q")
+    # -o addopts= neutralizes the project's own addopts: a configured -q
+    # would stack with ours into -qq, which switches --collect-only from
+    # node ids to per-file counts (and -n auto adds xdist noise) -- the
+    # evidence oracle would silently see an empty set (observed: INV001
+    # false positives on every invariant).
+    argv = ("uv", "run", "pytest", "--collect-only", "-q", "-o", "addopts=")
     spawned = run_argv(argv, cwd=root, timeout_s=_COLLECT_TIMEOUT_S)
     if spawned.is_err:
         _log.error("collect_python_tests: pytest --collect-only failed to spawn")

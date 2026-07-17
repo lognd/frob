@@ -285,12 +285,21 @@ def coverage_gate(
     return tuple(violations)
 
 
+def _is_test_path(path: str) -> bool:
+    """Test code is not public API; doc obligations do not apply to it."""
+    parts = PurePosixPath(path).parts
+    name = PurePosixPath(path).name
+    return "tests" in parts or name.startswith("test_") or name.endswith("_test.py")
+
+
 def _cov001(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
-    """COV001: public symbol has no `doc` edge."""
+    """COV001: public symbol (outside test code) has no `doc` edge."""
     documented = {e.src for e in snapshot.edges if e.kind == EdgeKind.DOC}
     violations: list[Violation] = []
     for record in snapshot.symbols.values():
         if not record.public or record.symref in documented:
+            continue
+        if _is_test_path(record.id.path):
             continue
         _log.info("COV001: %s undocumented", record.symref)
         violations.append(
@@ -341,6 +350,15 @@ def _cov002(
     return tuple(violations)
 
 
+def _evidence_collected(evidence: str, tests: CollectedTests) -> bool:
+    """Exact node-id membership, or bare-function match for parametrized
+    tests (`f` satisfies evidence when only `f[param]` variants collect)."""
+    if evidence in tests.node_ids:
+        return True
+    prefix = evidence + "["
+    return any(node.startswith(prefix) for node in tests.node_ids)
+
+
 def _cov003(queue: TicketQueue, tests: CollectedTests) -> tuple[Violation, ...]:
     """COV003: a done ticket's evidence ids do not resolve to a collected test."""
     violations: list[Violation] = []
@@ -348,7 +366,7 @@ def _cov003(queue: TicketQueue, tests: CollectedTests) -> tuple[Violation, ...]:
         if ticket.state != TicketState.DONE:
             continue
         for evidence in ticket.evidence:
-            if evidence in tests.node_ids:
+            if _evidence_collected(evidence, tests):
                 continue
             _log.info("COV003: %s evidence %s not collected", ticket.id, evidence)
             violations.append(
@@ -582,7 +600,8 @@ def invariant_gate(
     anchors = {e.target for e in snapshot.edges if e.kind == EdgeKind.INVARIANT}
     for inv in invariants:
         has_evidence = any(
-            item in tests.node_ids or item in policy_rule_ids for item in inv.evidence
+            _evidence_collected(item, tests) or item in policy_rule_ids
+            for item in inv.evidence
         )
         if not inv.evidence or not has_evidence:
             _log.info("INV001: %s has no standing evidence", inv.id)

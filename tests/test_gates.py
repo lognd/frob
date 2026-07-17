@@ -27,7 +27,7 @@ from frob.gates import (
 from frob.gates import (
     test_gate as run_test_gate,
 )
-from frob.gates.invariants import InvariantError, load_invariants
+from frob.gates.invariants import Criticality, InvariantError, load_invariants
 from frob.gitio import Diff, Hunk
 from frob.graph import build_graph
 from frob.graph._models import LockEntry, LockFile
@@ -398,7 +398,7 @@ class TestInvariantGate:
         from frob.gates.invariants import Invariant
 
         snap = _snapshot(tmp_path)
-        inv = Invariant(id="INV-001", statement="x", criticality="high", evidence=())
+        inv = Invariant(id="INV-001", statement="x", criticality=Criticality.HIGH, evidence=())
         tests = CollectedTests(node_ids=frozenset())
         violations = invariant_gate((inv,), snap, tests)
         assert any(v.rule == "INV001" for v in violations)
@@ -410,7 +410,7 @@ class TestInvariantGate:
         inv = Invariant(
             id="INV-001",
             statement="x",
-            criticality="high",
+            criticality=Criticality.HIGH,
             evidence=("tests/test_x.py::test_y",),
         )
         tests = CollectedTests(node_ids=frozenset())
@@ -426,7 +426,7 @@ class TestInvariantGate:
 
         node = "tests/test_x.py::test_y"
         inv = Invariant(
-            id="INV-001", statement="x", criticality="high", evidence=(node,)
+            id="INV-001", statement="x", criticality=Criticality.HIGH, evidence=(node,)
         )
         tests = CollectedTests(node_ids=frozenset({node}))
         violations = invariant_gate((inv,), snap, tests)
@@ -438,7 +438,7 @@ class TestInvariantGate:
         snap = _snapshot(tmp_path)
         node = "tests/test_x.py::test_y"
         inv = Invariant(
-            id="INV-001", statement="x", criticality="high", evidence=(node,)
+            id="INV-001", statement="x", criticality=Criticality.HIGH, evidence=(node,)
         )
         tests = CollectedTests(node_ids=frozenset({node}))
         violations = invariant_gate((inv,), snap, tests)
@@ -449,7 +449,7 @@ class TestInvariantGate:
 
         snap = _snapshot(tmp_path)
         inv = Invariant(
-            id="INV-001", statement="x", criticality="high", evidence=("POL-thing",)
+            id="INV-001", statement="x", criticality=Criticality.HIGH, evidence=("POL-thing",)
         )
         tests = CollectedTests(node_ids=frozenset())
         violations = invariant_gate((inv,), snap, tests, frozenset({"POL-thing"}))
