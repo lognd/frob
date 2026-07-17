@@ -25,6 +25,14 @@ PARTIAL (T-0037): frob-core built + R1/R2/R3 + DUP gate shipped.
 Remaining: R4 (winnowing/LSH orchestration), R5 (WL-kernel), R6
 (observational probing), region-subsection matching, cache-in-hot-path.
 
+RUNGS COMPLETE (worktree agent): R4 (winnow+candidate+tree-edit),
+R5 (WL-hash Rust kernel + co-occurrence proxy graph), R6
+(probe_equivalence real for pure Python pairs via frob.fuzz
+generators), region-subsection spans, cache in hot path (fixed a
+pre-existing PK bug). 8/8 cargo tests, 16 Python rung tests.
+Follow-on only: --probe CLI flag exposure; full APTED (currently
+statement-Levenshtein); real CFG/DFG (currently co-occurrence proxy).
+
 <!-- ticket:T-0002 -->
 ```yaml
 id: T-0002
