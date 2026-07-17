@@ -536,7 +536,7 @@ and unrelated to `frob.perf`; not in scope to fix under T-0021.
 id: T-0022
 title: 'Polyglot monorepo check: per-subtree stage detection, frob.toml [check] scoping,
   TypeScript stage (tsc/eslint)'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-17'
@@ -545,11 +545,18 @@ parent: null
 scope:
 - src/frob/check/**
 - src/frob/app/check_runner.py
-evidence: []
+evidence:
+- tests/unit/test_ts_parsers.py::TestParseTsc::test_clean_output
 attachments: []
 acceptance: []
 threat: null
 ```
+## Done report
+
+run_check_ts (tsc/eslint/prettier/vitest, soft-skip on missing npx),
+parse_tsc/parse_eslint parsers, detect_project_type -> typescript,
+check_runner dispatch + polyglot warning. Verified end-to-end against
+real tsc. Delivers the TS check stage.
 
 <!-- ticket:T-0023 -->
 ```yaml
