@@ -81,19 +81,77 @@ class PerfError(ErrorSet):
 
 ## Design decisions
 
-- **Loop-context detection is lexical, one level deep.** PERF rules see
-  "inside a for/while body" and "inside a function invoked per-item in
-  the same file" -- honest about not being interprocedural dataflow.
-  False negatives accepted; false positives minimized by requiring the
-  scanned collection to be loop-invariant where determinable.
+- **Loop-context detection is lexical, one level deep -- and, as
+  implemented, function-granularity.** `frob.lang`'s leaf-token stream
+  (`RawSymbol.body_tokens`, `frob.lang._common.leaf_tokens`) is
+  whitespace-insensitive by design (docs/graph.md's digest contract
+  depends on it), which means it also carries no line numbers and no
+  block-nesting structure -- there is no INDENT/DEDENT leaf in tree-
+  sitter's Python grammar to lean on. `perf_rules` therefore approximates
+  "inside a for/while body" as "a `for`/`while` keyword appears earlier in
+  the same function's token stream" rather than true block-scoped nesting,
+  and every violation is reported at the *enclosing function's* span
+  start, not the offending statement's exact line. This is a documented
+  cut, not an oversight: a membership test written after a loop in the
+  same function (but not inside it) can false-positive in principle;
+  in practice this is rare because such code is unusual, and the
+  container-kind gate below removes the dominant false-positive source.
+  False negatives (a smell in a genuinely nested block the token stream
+  can't distinguish from the outer one) are accepted over false
+  positives.
+- **PERF001/PERF002's container-kind check is Python-only and
+  assignment-shape-based, not type-inferred.** `frob.perf._rules` tracks
+  `name = [...]` (list) vs `name = {...}` / `set(...)` / `frozenset(...)`
+  / `dict(...)` (set-ish) assignments textually within the same function.
+  An identifier whose assignment shape isn't resolvable this way (e.g. a
+  parameter, or a container built in another function) is never assumed
+  to be a list -- PERF001/PERF002 simply do not fire on it. This is the
+  false-positive-priority design point: silence on the unknown case, not
+  a guess.
+- **Coverage by language, exactly as implemented:**
+  - Python: PERF001 (list membership), PERF002 (`.index()`/`.count()`),
+    PERF003 (nested-loop equality), PERF004 (`sorted()`/`.sort()`) -- all
+    four, first-class.
+  - TypeScript: PERF001 (`.includes(`) and PERF002 (`.indexOf(`) only,
+    both gated on the same function-level loop-token check but with *no*
+    container-kind inference (the token stream carries no type
+    information for this grammar) -- best-effort, higher false-positive
+    risk than Python's PERF001/PERF002.
+  - Rust: PERF001 (`.contains(`, standing in for `Vec::contains`) only,
+    same best-effort posture as TypeScript.
+  - PERF003 (nested-loop equality) is language-agnostic: it only counts
+    `for` tokens and an `==` token, which both grammars' leaf-token
+    streams carry identically.
+  - PERF004 (`sorted`/`.sort()` hoisting) is Python-only; TypeScript's
+    `.sort()` and Rust's `.sort()` are not currently distinguished from
+    unrelated `.sort` identifiers in those grammars and are cut for 0.1.0
+    rather than shipped as a false-positive-prone guess.
+  - C and C++ are not covered: `frob.lang` supports parsing them, but
+    docs/perf.md's rule table has no C/C++ row (no idiomatic linear-scan
+    literal to key off), so `perf_rules` never fires for those languages.
 - **Size-blindness is why PERF defaults to warn.** The gate cannot know
   n=3 from n=28000; the heat-map join is what upgrades a warning into
   "fix this now". Promoting PERF to error is a per-repo choice.
 - **Artifacts are content-addressed and per-worktree** (`.frob/perf/`),
-  same posture as every other derived cache.
+  same posture as every other derived cache. Each `.pstats` file has a
+  JSON meta sidecar (`ProfileArtifact.model_dump_json()`) at the same
+  basename so `load_artifact` never has to re-derive argv/timestamp/total
+  from the binary pstats format.
 - **Python profiling first, runner-agnostic artifact model.** cProfile
   ships in the stdlib and covers frob's own ecosystem; sampling
   profilers for rust/ts are adapters later, not a redesign.
+  `profile_command` strips a leading `python`/`python3` token from the
+  caller's argv before handing it to `python -m cProfile -o <artifact>`,
+  since cProfile already supplies the interpreter and would otherwise try
+  (and fail) to parse `python` itself as the profiled script.
+- **`--annotate` is function-granularity, not line-granularity, because
+  cProfile is.** Unlike `line_profiler`, cProfile records one row per
+  `(file, line, function)` triple where `line` is the function's
+  *definition* line, not a per-statement counter. `frob perf heat
+  --annotate <file>` therefore prints a `cum_s/ncalls` gutter only on
+  each function's `def` line and a blank gutter on every other line --
+  an honest reflection of what cProfile measures, not a fabricated
+  per-statement number.
 
 ## Integration points
 

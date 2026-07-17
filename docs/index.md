@@ -35,6 +35,9 @@ The four components that make up the enforcement layer:
 - `docs/testing.md` -- `frob.testing`: touched-set selection across the diff,
   the per-language runner registry, and worktree-correct git semantics via
   `frob.gitio`.
+- `docs/perf.md` -- `frob.perf`: profiling (`frob perf profile`), symbol-
+  level heat-maps (`frob perf heat`), and the PERF001..PERF004 linear-scan
+  gates.
 
 Two modules that support the above but are not yet fully re-platformed:
 

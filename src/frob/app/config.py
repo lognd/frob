@@ -11,6 +11,7 @@ from frob.gitlog import GranularityLevel
 
 
 class Subcommand(str, enum.Enum):
+    # frob:ticket T-0021
     scaffold = "scaffold"
     cycle = "cycle"
     outline = "outline"
@@ -29,9 +30,11 @@ class Subcommand(str, enum.Enum):
     ticket = "ticket"
     test = "test"
     vet = "vet"
+    perf = "perf"
 
 
 class AppConfig(BaseModel):
+    # frob:ticket T-0021
     subcommand: Subcommand | None = None
 
     # scaffold
@@ -177,8 +180,20 @@ class AppConfig(BaseModel):
     vet_hook: str | None = None
     vet_json: bool = False
 
+    # perf
+    perf_command: str | None = None  # profile|heat
+    perf_path: Path | None = None
+    perf_argv: list[str] = []
+    perf_tests: bool = False
+    perf_json: bool = False
+    perf_smells: bool = False
+    perf_top: int | None = None
+    perf_annotate: Path | None = None
+    perf_ref: str | None = None
+
     @classmethod
     def from_external(cls, args: argparse.Namespace, file: Path) -> "AppConfig":
+        # frob:ticket T-0021
         file_cfg: dict = {}
         if file.exists():
             with file.open("rb") as f:
@@ -222,6 +237,8 @@ class AppConfig(BaseModel):
             "test_base",
             "test_fallback",
             "vet_hook",
+            "perf_command",
+            "perf_ref",
         ):
             val = getattr(args, field, None)
             if val is not None:
@@ -247,6 +264,8 @@ class AppConfig(BaseModel):
             "ticket_attach_path",
             "test_path",
             "vet_path",
+            "perf_path",
+            "perf_annotate",
         ):
             val = getattr(args, path_field, None)
             if val is not None:
@@ -259,6 +278,7 @@ class AppConfig(BaseModel):
             "arch_max_function_lines",
             "arch_max_class_methods",
             "gitlog_limit",
+            "perf_top",
         ):
             val = getattr(args, int_field, None)
             if val is not None:
@@ -281,6 +301,7 @@ class AppConfig(BaseModel):
             "ticket_scope",
             "ticket_blocked_by",
             "test_lang",
+            "perf_argv",
         ):
             val = getattr(args, list_field, None)
             if val:
@@ -335,6 +356,9 @@ class AppConfig(BaseModel):
             "test_all",
             "test_json",
             "vet_json",
+            "perf_tests",
+            "perf_json",
+            "perf_smells",
         ):
             if getattr(args, flag, False):
                 d[flag] = True

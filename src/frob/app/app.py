@@ -9,10 +9,12 @@ _log = get_logger(__name__)
 
 
 class App:
+    # frob:ticket T-0021
     def __init__(self, cfg: AppConfig) -> None:
         self._cfg = cfg
 
     def __call__(self) -> None:
+        # frob:ticket T-0021
         from frob.app import (
             ack_runner,
             arch_runner,
@@ -27,6 +29,7 @@ class App:
             map_runner,
             outline_runner,
             parse_runner,
+            perf_runner,
             scaffold_runner,
             test_runner,
             ticket_runner,
@@ -71,11 +74,13 @@ class App:
                 test_runner.run(self._cfg)
             case Subcommand.vet:
                 vet_runner.run(self._cfg)
+            case Subcommand.perf:
+                perf_runner.run(self._cfg)
             case _:
                 _log.error(
                     "usage: frob "
                     "<scaffold|cycle|outline|map|xref|parse|dup|arch|docs|bind|"
-                    "exports|check|gitlog|graph|ack|ticket|test|vet>"
+                    "exports|check|gitlog|graph|ack|ticket|test|vet|perf>"
                     " ..."
                 )
                 sys.exit(1)

@@ -75,6 +75,33 @@ def _apply_frob_toml_defaults(cfg: AppConfig, root: Path) -> AppConfig:
     return cfg
 
 
+def _warn_if_polyglot(root: Path, chosen: str) -> None:
+    """Loudly name the language stages auto-detection is about to skip.
+
+    Cargo.toml beats pyproject.toml in detect_project_type, so a mixed repo
+    silently ran ONE language's checks -- gates included -- and looked clean
+    (found during the feldspar adoption, T-0022). Detection stays simple;
+    the warning makes the single-stage choice impossible to miss. Pin
+    check_type in frob.toml (or --type) to silence it deliberately.
+    """
+    sentinels = {
+        "rust": (root / "Cargo.toml").exists(),
+        "cpp": (root / "CMakeLists.txt").exists(),
+        "python": (root / "pyproject.toml").exists() or (root / "setup.py").exists(),
+    }
+    others = sorted(
+        lang for lang, present in sentinels.items() if present and lang != chosen
+    )
+    if others:
+        _log.warning(
+            "polyglot repo: running the %s stage only; %s checks (gates "
+            "included) are NOT running -- pin check_type in frob.toml or "
+            "pass --type to choose deliberately",
+            chosen,
+            "/".join(others),
+        )
+
+
 def run(cfg: AppConfig) -> None:
     root = cfg.check_path or Path(".")
 
@@ -96,7 +123,11 @@ def run(cfg: AppConfig) -> None:
 
     with _ctx:
         cfg = _apply_frob_toml_defaults(cfg, root)
+        auto_detected = cfg.check_type is None
         project_type = cfg.check_type or detect_project_type(root)
+        if auto_detected:
+            # frob:ticket T-0022
+            _warn_if_polyglot(root, project_type)
         if project_type == "cpp":
             result = run_check_cpp(
                 root,

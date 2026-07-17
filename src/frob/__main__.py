@@ -7,6 +7,7 @@ from frob.app import App, AppConfig
 
 
 def _build_parser() -> argparse.ArgumentParser:
+    # frob:ticket T-0021
     p = argparse.ArgumentParser(
         prog="frob",
         description="Developer workflow tools -- optimized for agentic use",
@@ -413,9 +414,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     ticket_doable_p.add_argument("--json", dest="ticket_json", action="store_true")
 
-    ticket_plan_p = ticket_sub.add_parser(
-        "plan", help="transition queued -> planned"
-    )
+    ticket_plan_p = ticket_sub.add_parser("plan", help="transition queued -> planned")
     ticket_plan_p.add_argument("ticket_id", metavar="id")
 
     ticket_start_p = ticket_sub.add_parser(
@@ -501,6 +500,49 @@ def _build_parser() -> argparse.ArgumentParser:
         "(Claude Code PreToolUse hook mode)",
     )
     vet_p.add_argument("--json", dest="vet_json", action="store_true")
+
+    # -- perf ------------------------------------------------------------------
+    perf_p = sub.add_parser(
+        "perf", help="profile a command/test suite and inspect its heat-map"
+    )
+    perf_sub = perf_p.add_subparsers(dest="perf_command")
+
+    perf_profile_p = perf_sub.add_parser(
+        "profile", help="run a command under cProfile, storing an artifact"
+    )
+    perf_profile_p.add_argument("--path", dest="perf_path", metavar="DIR", default=".")
+    perf_profile_p.add_argument(
+        "--tests",
+        dest="perf_tests",
+        action="store_true",
+        help="profile the [[test.runner]] python entry instead of an argv",
+    )
+    perf_profile_p.add_argument(
+        "perf_argv",
+        metavar="argv",
+        nargs=argparse.REMAINDER,
+        help="command to run under cProfile, after --",
+    )
+
+    perf_heat_p = perf_sub.add_parser(
+        "heat", help="render the profiled heat-map, ranked by cumulative time"
+    )
+    perf_heat_p.add_argument("--path", dest="perf_path", metavar="DIR", default=".")
+    perf_heat_p.add_argument("--ref", dest="perf_ref", metavar="SHA")
+    perf_heat_p.add_argument("--json", dest="perf_json", action="store_true")
+    perf_heat_p.add_argument(
+        "--smells",
+        dest="perf_smells",
+        action="store_true",
+        help="rank hot symbols that also carry PERF findings first",
+    )
+    perf_heat_p.add_argument("--top", dest="perf_top", type=int, metavar="N")
+    perf_heat_p.add_argument(
+        "--annotate",
+        dest="perf_annotate",
+        metavar="FILE",
+        help="print FILE with per-line hit/time gutters",
+    )
 
     return p
 

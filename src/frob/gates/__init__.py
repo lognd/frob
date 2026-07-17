@@ -58,6 +58,7 @@ from frob.graph._models import LockFile
 from frob.graph.lock import drift as _graph_drift
 from frob.graph.lock import load_lock
 from frob.lang import SymbolKind
+from frob.lang._models import ParsedFile
 from frob.logging import get_logger
 from frob.testing import CollectedTests, collect_python_tests
 from frob.tickets import Ticket, TicketQueue, TicketState, load_queue
@@ -1009,13 +1010,23 @@ def _load_test_config(root: Path) -> tuple[TestPolicy, tuple[SystemSpec, ...]]:
 # ---------------------------------------------------------------------------
 
 _ALL_GATES = frozenset(
-    {"drift", "coverage", "scope", "prework", "invariant", "test", "policy",
-     "doclink"}
+    {
+        "drift",
+        "coverage",
+        "scope",
+        "prework",
+        "invariant",
+        "test",
+        "policy",
+        "doclink",
+        "perf",
+    }
 )
 
 _MD_LINK_RE = re.compile(r"\]\(([^)#\s]+)")
 
 
+# frob:ticket T-0021
 def doclink_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """DOC001: a doc file nothing links to is an error -- orphan docs rot.
 
@@ -1080,9 +1091,7 @@ def doclink_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
         for target in _MD_LINK_RE.findall(text):
             if target.startswith(("http://", "https://", "mailto:")):
                 continue
-            resolved = str(
-                PurePosixPath(*(base / target).parts)
-            ).replace("../", "")
+            resolved = str(PurePosixPath(*(base / target).parts)).replace("../", "")
             for candidate in (resolved, target.lstrip("./")):
                 if candidate in obligated and candidate not in seen:
                     linked.add(candidate)
@@ -1106,6 +1115,33 @@ def doclink_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
         )
     _log.info("doclink: %d obligated, %d orphaned", len(obligated), len(violations))
     return tuple(violations)
+
+
+# frob:doc docs/perf.md#integration-points
+# frob:ticket T-0021
+def perf_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
+    """PERF001..PERF004, run at the policy/gates stage per docs/perf.md's
+    Integration points. Parses every source file in `snapshot.file_hashes`
+    (same posture as `frob.policy`'s `_pattern_violations`: gates does the
+    IO, `frob.perf.perf_rules` stays pure) and hands the parsed set to
+    `perf_rules`; a file that fails to parse is skipped, never fatal."""
+    from frob.lang import parse_file
+    from frob.perf import perf_rules
+
+    parsed: list[ParsedFile] = []
+    for rel_path in sorted(snapshot.file_hashes):
+        result = parse_file(root / rel_path)
+        if result.is_err:
+            _log.debug(
+                "perf_gate: skipping unparsed %s: %s", rel_path, result.danger_err
+            )
+            continue
+        parsed.append(result.danger_ok)
+    violations = perf_rules(snapshot, parsed)
+    _log.info(
+        "perf_gate: %d file(s) scanned, %d violation(s)", len(parsed), len(violations)
+    )
+    return violations
 
 
 # frob:doc docs/gates.md#public-api
@@ -1158,6 +1194,7 @@ def _apply_severity_overrides(
     )
 
 
+# frob:ticket T-0021
 def run_gates(cfg: GateConfig) -> Result[GateReport, GateError]:
     """Load everything once, then run the selected gates in parallel and merge."""
     # Local import: frob.policy imports frob.gates._models (Violation/Severity), so a
@@ -1266,6 +1303,8 @@ def run_gates(cfg: GateConfig) -> Result[GateReport, GateError]:
         jobs["policy"] = lambda: policy_gate(rules, snapshot, diff)
     if "doclink" in selected:
         jobs["doclink"] = lambda: doclink_gate(Path(cfg.root), snapshot)
+    if "perf" in selected:
+        jobs["perf"] = lambda: perf_gate(root, snapshot)
 
     from concurrent.futures import ThreadPoolExecutor
 
@@ -1328,6 +1367,7 @@ __all__ = [
     "load_coverage",
     "load_invariants",
     "doclink_gate",
+    "perf_gate",
     "prework_gate",
     "record_prework",
     "run_gates",
