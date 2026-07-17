@@ -76,6 +76,28 @@ Support modules underneath the above:
 - `docs/logging.md` -- `frob.logging`: the module-logger/dictConfig setup
   and the `quiet_stdout_logs` helper that keeps `--json` output clean.
 
+## strata -- the system-design language (in design; epic T-0047)
+
+strata is frob's provable system-design language: deny-by-default
+architecture models (trust lattices, flows, boundaries, capacity, crash
+and breach scenarios) checked like code and bound two-way to the
+obligation graph. Charter and component designs:
+
+- `docs/strata/charter.md` -- north star, the six laws, the three
+  collapses, decisions, glossary. Read this first.
+- `docs/strata/kernel.md` -- the six primitives, conditional flows, claim
+  forms and decision procedures, verdicts.
+- `docs/strata/surface.md` -- grammar, vocabularies, construct semantics,
+  refinement hierarchy, module system.
+- `docs/strata/evidence.md` -- the L1-L5 evidence ladder, quantifiers,
+  tool attestations, the enables soundness cascade, the assumption ledger.
+- `docs/strata/policy.md` -- the five universal policy forms, semantic
+  scoping, policy packs.
+- `docs/strata/boundary.md` -- the six-phase boundary contract,
+  outcome-conditioned frames, failure atomicity, crash contracts.
+- `docs/strata/roadmap.md` -- phases 0-5 with exit criteria, the litmus
+  program, the ticket map (T-0047..T-0086).
+
 ## Per-command references
 
 Kept commands, each with usage, real output, and a "why it exists" section:
