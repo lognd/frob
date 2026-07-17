@@ -61,6 +61,7 @@ Kept commands, each with usage, real output, and a "why it exists" section:
 | `docs/outline.md` | `frob outline` |
 | `docs/map.md` | `frob map` |
 | `docs/xref.md` | `frob xref` |
+| `docs/exports.md` | `frob exports` |
 | `docs/parse.md` | `frob parse` |
 | `docs/gitlog.md` | `frob gitlog` |
 | `docs/check.md` | `frob check` |

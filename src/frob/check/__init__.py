@@ -8,6 +8,12 @@ from pydantic import BaseModel
 
 from frob.process.parsers.common import Diagnostic, Severity, ToolResult
 
+# The python-mode tool stages --only may name (gate names are accepted too
+# and resolved through frob.gates._ALL_GATES at call time).
+_TOOL_STAGES = frozenset(
+    {"ruff", "ty", "cycle", "dup", "arch", "bind", "exports", "gates"}
+)
+
 
 class CheckResult(BaseModel):
     model_config = {}
@@ -89,6 +95,7 @@ class CheckResult(BaseModel):
         return self.model_dump_json(indent=2)
 
 
+# frob:ticket T-0028
 def run_check(
     root: Path,
     *,
@@ -109,6 +116,40 @@ def run_check(
 
     tasks: list[Callable[[], ToolResult | list[ToolResult] | None]] = []
 
+    # --only accepts tool stages AND individual gate names; an unknown name
+    # must be a loud config error, never a silently-empty selection that
+    # passes vacuously (observed: `--only doclink` returned PASS having run
+    # nothing at all).
+    gate_only: frozenset[str] = frozenset()
+    if only is not None:
+        from frob.gates import _ALL_GATES
+
+        gate_only = frozenset(only) & _ALL_GATES
+        unknown = frozenset(only) - _TOOL_STAGES - _ALL_GATES
+        if unknown:
+            return CheckResult(
+                path=str(root),
+                results=[
+                    ToolResult(
+                        tool="config",
+                        exit_code=2,
+                        summary=f"unknown --only stage(s): {sorted(unknown)}",
+                        diagnostics=[
+                            Diagnostic(
+                                severity="error",
+                                message=(
+                                    f"unknown --only stage(s) {sorted(unknown)}; "
+                                    f"tools: {sorted(_TOOL_STAGES)}; gates: "
+                                    f"{sorted(_ALL_GATES)}"
+                                ),
+                            )
+                        ],
+                    )
+                ],
+            )
+        if gate_only:
+            only = (frozenset(only) - gate_only) | {"gates"}
+
     def _wanted(name: str) -> bool:
         return only is None or name in only
 
@@ -127,7 +168,9 @@ def run_check(
     if not skip_exports and _wanted("exports"):
         tasks.append(lambda: _run_exports(root))
     if not skip_gates and _wanted("gates"):
-        tasks.append(lambda: _run_gates(root, ticket=ticket, base=base))
+        tasks.append(
+            lambda: _run_gates(root, ticket=ticket, base=base, gates=gate_only)
+        )
 
     results: list[ToolResult] = []
     with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -336,8 +379,13 @@ def _run_arch(root: Path) -> ToolResult:
     )
 
 
+# frob:ticket T-0028
 def _run_gates(
-    root: Path, *, ticket: str | None = None, base: str | None = None
+    root: Path,
+    *,
+    ticket: str | None = None,
+    base: str | None = None,
+    gates: frozenset[str] = frozenset(),
 ) -> ToolResult:
     """Run frob.gates.run_gates as a check stage; a load failure is a soft skip
     (git repo / tickets dir are not guaranteed to exist for every `frob check`
@@ -345,7 +393,7 @@ def _run_gates(
     tool."""
     from frob.gates import GateConfig, run_gates
 
-    cfg = GateConfig(root=str(root), base=base or "main", ticket=ticket)
+    cfg = GateConfig(root=str(root), base=base or "main", ticket=ticket, gates=gates)
     result = run_gates(cfg)
     if result.is_err:
         return ToolResult(

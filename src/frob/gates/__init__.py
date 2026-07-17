@@ -1024,9 +1024,14 @@ _ALL_GATES = frozenset(
 )
 
 _MD_LINK_RE = re.compile(r"\]\(([^)#\s]+)")
+# Backtick path references (`docs/x.md`) count as links too: these docs are
+# written terminal-first, where an index names files in code spans rather
+# than markdown links -- an index entry is a link either way.
+_MD_CODE_REF_RE = re.compile(r"`([^`\s]+\.md)`")
 
 
 # frob:ticket T-0021
+# frob:ticket T-0028
 def doclink_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """DOC001: a doc file nothing links to is an error -- orphan docs rot.
 
@@ -1088,7 +1093,8 @@ def doclink_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
         except OSError:
             continue
         base = PurePosixPath(current).parent
-        for target in _MD_LINK_RE.findall(text):
+        targets = _MD_LINK_RE.findall(text) + _MD_CODE_REF_RE.findall(text)
+        for target in targets:
             if target.startswith(("http://", "https://", "mailto:")):
                 continue
             resolved = str(PurePosixPath(*(base / target).parts)).replace("../", "")
