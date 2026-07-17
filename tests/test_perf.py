@@ -226,3 +226,19 @@ def test_heat_joins_pstats_rows_onto_symbol_spans(tmp_path):
     assert hot_entry.cum_s >= 0.0
     if len(report.entries) > 1:
         assert report.entries[0].cum_s >= report.entries[-1].cum_s
+
+
+def test_profile_records_workload_exit_code(tmp_path):
+    """T-0027: a failing workload is profiled anyway and its exit code is
+    recorded on the artifact, not masked as a spawn failure."""
+    (tmp_path / "fail.py").write_text("import sys\nsum(range(100))\nsys.exit(3)\n")
+    result = profile_command(["fail.py"], tmp_path)
+    assert result.is_ok, result.err
+    assert result.danger_ok.exit_code == 3
+
+
+def test_profile_clean_workload_exit_zero(tmp_path):
+    (tmp_path / "ok.py").write_text("sum(range(1000))\n")
+    result = profile_command(["ok.py"], tmp_path)
+    assert result.is_ok, result.err
+    assert result.danger_ok.exit_code == 0

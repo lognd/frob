@@ -630,20 +630,31 @@ dirs a repo excluded.
 id: T-0027
 title: 'perf: cProfile masks workload exit code; profile_command cannot detect failed
   runs'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-17'
 blocked_by: []
 parent: null
 scope:
+- src/frob/app/perf_runner.py
 - src/frob/perf/**
-evidence: []
+- tests/test_perf.py
+evidence:
+- tests/test_perf.py::test_profile_records_workload_exit_code
+- tests/test_perf.py::test_profile_clean_workload_exit_zero
 attachments: []
 acceptance: []
 threat: null
 ```
 found while working T-0021: python -m cProfile exits 0 even when the profiled program exits nonzero (verified: pytest usage error exit 4 -> wrapped exit 0). profile_command therefore records a successful artifact for a workload that never ran. Consider a shim entry that captures SystemExit and records the real returncode in the meta sidecar.
+
+## Done report
+
+Replaced `python -m cProfile` (which swallows SystemExit, always exit 0)
+with a _harness.py that profiles the target programmatically and
+propagates the workload's real exit code onto ProfileArtifact.exit_code;
+frame perf profile now fails when the profiled run failed.
 
 <!-- ticket:T-0028 -->
 ```yaml
@@ -793,3 +804,23 @@ threat: null
 Added incident kind (postmortem template), acceptance criteria,
 STRIDE threat field, and frob ticket renumber (contiguous ids,
 rewrites blocked_by/parent). T-0005/06/07/12 folded in here.
+
+<!-- ticket:T-0033 -->
+```yaml
+id: T-0033
+title: 'perf: cProfile masks workload exit code (harness preserves it)'
+state: dropped
+kind: bug
+origin: agent
+created: '2026-07-17'
+blocked_by: []
+parent: null
+scope:
+- src/frob/perf/**
+- src/frob/app/perf_runner.py
+- tests/test_perf.py
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```

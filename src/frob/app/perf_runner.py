@@ -52,10 +52,15 @@ def _profile(cfg: AppConfig) -> None:
         _log.error("profile failed: %s", result.danger_err)
         sys.exit(1)
     artifact = result.danger_ok
+    status = "ok" if artifact.exit_code == 0 else f"exit={artifact.exit_code}"
     print(
         f"profiled {' '.join(argv)!r} -> "
-        f"sha={artifact.sha} total_s={artifact.total_s:.3f}"
+        f"sha={artifact.sha} total_s={artifact.total_s:.3f} workload={status}"
     )
+    # frob:ticket T-0027 -- propagate the workload's failure to the caller
+    # so `frob perf profile -- pytest ...` fails CI when the run failed.
+    if artifact.exit_code != 0:
+        sys.exit(artifact.exit_code)
 
 
 # frob:ticket T-0021

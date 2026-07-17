@@ -55,14 +55,16 @@ def profile_command(
     sha = _artifact_sha(tuple(argv), created)
     pstats_path = perf_dir / f"{sha}.pstats"
 
-    # `cProfile -o out <script> [args...]` already provides the interpreter;
-    # a caller-supplied leading "python"/"python3" (the natural way to write
-    # `frob perf profile -- python -c '...'`) would otherwise be handed to
-    # cProfile as the "script" and immediately fail to parse as one.
+    # frob:ticket T-0027
+    # Run through our harness (not `python -m cProfile`, which swallows the
+    # workload's exit code): it profiles the target programmatically and
+    # propagates the real exit status. A caller-supplied leading
+    # "python"/"python3" is stripped since the harness supplies the interpreter.
+    harness = Path(__file__).parent / "_harness.py"
     script_argv = list(argv)
     if script_argv and script_argv[0] in ("python", "python3"):
         script_argv = script_argv[1:]
-    full_argv = ["python", "-m", "cProfile", "-o", str(pstats_path), *script_argv]
+    full_argv = ["python", str(harness), str(pstats_path), *script_argv]
     _log.info("profile_command: spawning %s", full_argv)
     start = time.monotonic()
     spawned = run_argv(full_argv, cwd=root, timeout_s=_PROFILE_TIMEOUT_S)
@@ -72,17 +74,25 @@ def profile_command(
         _log.error("profile_command: spawn failed for %s", full_argv)
         return Err(PerfError.SpawnFailed)
     result = spawned.danger_ok
-    if result.returncode != 0 or not pstats_path.exists():
-        _log.error(
-            "profile_command: %s exited %d, artifact present=%s",
+    # frob:ticket T-0027
+    # A missing pstats file is a real profiling failure; a nonzero WORKLOAD
+    # exit is not -- it is recorded on the artifact so callers can see it.
+    if not pstats_path.exists():
+        _log.error("profile_command: %s produced no pstats artifact", full_argv)
+        return Err(PerfError.SpawnFailed)
+    if result.returncode != 0:
+        _log.warning(
+            "profile_command: workload %s exited %d (profiled anyway)",
             full_argv,
             result.returncode,
-            pstats_path.exists(),
         )
-        return Err(PerfError.SpawnFailed)
 
     artifact = ProfileArtifact(
-        sha=sha, argv=tuple(argv), created=created, total_s=total_s
+        sha=sha,
+        argv=tuple(argv),
+        created=created,
+        total_s=total_s,
+        exit_code=result.returncode,
     )
     meta_path = perf_dir / artifact.meta_name
     meta_path.write_text(artifact.model_dump_json(), encoding="utf-8")

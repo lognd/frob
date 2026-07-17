@@ -40,6 +40,11 @@ class ProfileArtifact(BaseModel):
     argv: tuple[str, ...]
     created: datetime
     total_s: float
+    # frob:ticket T-0027
+    # The profiled workload's own exit code (0 = clean). cProfile masks this
+    # in its own exit status, so it is captured here: profiling a failing run
+    # is valid, and the heat-map of a crash is often exactly what you want.
+    exit_code: int = 0
 
     @property
     # frob:ticket T-0021
