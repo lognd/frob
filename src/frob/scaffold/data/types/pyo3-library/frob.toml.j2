@@ -1,0 +1,24 @@
+check_base = "main"
+
+[gates.severity]
+
+# Sized for a fresh, minimal scaffold on day one -- raise as the real
+# test suite grows.
+[testing]
+min_unit_cases = 1
+min_integration = 1
+unit_branch_cov = 50
+module_line_cov = 50
+system_line_cov = 50
+
+[[test.runner]]
+language = "python"
+command = ["uv", "run", "pytest", "-q", "{ids}"]
+all_command = ["uv", "run", "pytest", "-q"]
+cwd = "."
+
+[[test.runner]]
+language = "rust"
+command = ["cargo", "test", "--workspace", "{ids}"]
+all_command = ["cargo", "test", "--workspace"]
+cwd = "."

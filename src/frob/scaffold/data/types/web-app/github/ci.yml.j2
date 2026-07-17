@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+    branches: ["main", "master"]
+
+concurrency:
+  group: ci-${{ "{{" }} github.workflow {{ "}}" }}-${{ "{{" }} github.ref {{ "}}" }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+
+      - name: install
+        run: npm ci
+
+      - name: lint
+        run: npm run lint
+
+      - name: typecheck
+        run: npm run typecheck
+
+      - name: test
+        run: npm run test:coverage
+
+      # See python-tool's ci.yml.j2 for why this step is guarded: frob
+      # is pre-0.1.0 on PyPI, so a stale or missing install must not
+      # red-herring CI.
+      - name: install frob
+        run: pip install --user uv && uv tool install frob || true
+
+      - name: frob check
+        run: |
+          if command -v frob >/dev/null 2>&1 && frob graph --help >/dev/null 2>&1; then
+            frob check
+          else
+            echo "::notice::frob is not installed or not working yet (pre-0.1.0 on PyPI) -- skipping frob check"
+          fi

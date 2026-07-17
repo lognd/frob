@@ -1,0 +1,16 @@
+check_base = "main"
+
+[gates.severity]
+
+[testing]
+min_unit_cases = 1
+min_integration = 1
+unit_branch_cov = 50
+module_line_cov = 50
+system_line_cov = 50
+
+[[test.runner]]
+language = "cpp"
+command = ["ctest", "--test-dir", "build", "--output-on-failure", "-R", "{ids}"]
+all_command = ["ctest", "--test-dir", "build", "--output-on-failure"]
+cwd = "."

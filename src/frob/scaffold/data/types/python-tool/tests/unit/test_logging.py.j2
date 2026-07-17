@@ -1,0 +1,31 @@
+"""Unit tests for the logging setup."""
+
+import logging
+
+from {{ project.name }}.logging.filter import BelowLevelFilter
+from {{ project.name }}.logging.formatter import SimpleFormatter
+from {{ project.name }}.logging.logger import get_logger
+
+
+def _record(level: int) -> logging.LogRecord:
+    return logging.LogRecord("x", level, __file__, 1, "hello", None, None)
+
+
+def test_below_level_filter_passes_records_below_threshold() -> None:
+    # frob:tests src/{{ project.name }}/logging/filter.py::BelowLevelFilter.filter kind="unit"
+    below = BelowLevelFilter(below="WARNING")
+    assert below.filter(_record(logging.INFO)) is True
+    assert below.filter(_record(logging.WARNING)) is False
+
+
+def test_simple_formatter_prefixes_level_at_warning_and_above() -> None:
+    # frob:tests src/{{ project.name }}/logging/formatter.py::SimpleFormatter.format kind="unit"
+    fmt = SimpleFormatter()
+    assert fmt.format(_record(logging.INFO)) == "hello"
+    assert fmt.format(_record(logging.WARNING)) == "WARNING: hello"
+
+
+def test_get_logger_returns_a_configured_logger() -> None:
+    # frob:tests src/{{ project.name }}/logging/logger.py::get_logger kind="unit"
+    log = get_logger(__name__)
+    assert isinstance(log, logging.Logger)

@@ -1,0 +1,54 @@
+"""
+System tests: verify the package installs, imports, and wires together.
+"""
+
+import ast
+import importlib
+import subprocess
+import sys
+from pathlib import Path
+
+
+def test_package_imports():
+    """The top-level package must be importable with no errors."""
+    importlib.import_module("{{ project.name }}")
+
+
+def test_cli_help():
+    """The CLI entry point must exit 0 with --help."""
+    # frob:tests src/{{ project.name }}/__main__.py kind="integration"
+    r = subprocess.run(
+        [sys.executable, "-m", "{{ project.name }}", "--help"],
+        capture_output=True,
+        text=True,
+    )
+    assert r.returncode == 0
+
+
+def test_app_package_wires_end_to_end():
+    """App + AppConfig construct and run together, exactly as __main__ uses them."""
+    # frob:tests src/{{ project.name }}/app kind="integration"
+    from {{ project.name }}.app import App, AppConfig
+
+    App(AppConfig())()
+
+
+def test_logging_package_wires_end_to_end():
+    """The dictConfig-driven logger initializes and emits without raising."""
+    # frob:tests src/{{ project.name }}/logging kind="integration"
+    from {{ project.name }}.logging import get_logger
+
+    get_logger(__name__).info("smoke test")
+
+
+def test_no_syntax_errors_in_src():
+    """All source files must parse without syntax errors."""
+    src_root = Path(__file__).parent.parent.parent / "src" / "{{ project.name }}"
+    errors = []
+    for py_file in src_root.rglob("*.py"):
+        try:
+            ast.parse(py_file.read_bytes())
+        except SyntaxError as exc:
+            errors.append(f"{py_file}: {exc}")
+
+    assert not errors, "Syntax errors found:\n" + "\n".join(errors)

@@ -1,0 +1,25 @@
+use pyo3::prelude::*;
+
+/// Smoke-test binding: replace with your real extension surface.
+// BIND: add(a: i64, b: i64) -> i64
+#[pyfunction]
+fn add(a: i64, b: i64) -> i64 {
+    a + b
+}
+
+#[pymodule]
+fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(add, m)?)?;
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn add_sums_two_integers() {
+        assert_eq!(add(1, 2), 3);
+        assert_eq!(add(-1, 1), 0);
+    }
+}

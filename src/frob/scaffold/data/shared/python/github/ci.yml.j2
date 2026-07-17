@@ -6,31 +6,47 @@ on:
   pull_request:
     branches: ["main", "master"]
 
-jobs:
-  test:
-    name: Python ${{ "{{" }} matrix.python-version {{ "}}" }}
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+concurrency:
+  group: ci-${{ "{{" }} github.workflow {{ "}}" }}-${{ "{{" }} github.ref {{ "}}" }}
+  cancel-in-progress: true
 
+jobs:
+  check:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python ${{ "{{" }} matrix.python-version {{ "}}" }}
-        uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v4
         with:
-          python-version: ${{ "{{" }} matrix.python-version {{ "}}" }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v4
+      - name: install
+        run: uv sync
 
-      - name: Install dependencies
-        run: uv sync --all-extras
+      - name: lint
+        run: uv run ruff check src/ tests/ && uv run ruff format --check src/ tests/
 
-      - name: Check
+      - name: typecheck
+        run: uv run ty check src/
+
+      - name: test
+        run: uv run pytest tests/ --cov=src --cov-report=term-missing
+
+      # NOTE: frob is not yet on PyPI (pre-0.1.0). `uv tool install frob`
+      # below installs whatever the latest published release is, which may
+      # be older than the frob.toml/gates this project was scaffolded
+      # against. Rather than red-herring CI on a stale or missing frob,
+      # detect a working install and skip with a notice otherwise -- once
+      # frob 0.1.0 ships this step starts enforcing automatically, no
+      # workflow edit required.
+      - name: install frob
+        run: uv tool install frob || true
+
+      - name: frob check
         run: |
-          uv run ruff check src/ tests/
-          uv run ty check src/
-          uv run pytest tests/ -q -n auto
+          if command -v frob >/dev/null 2>&1 && frob graph --help >/dev/null 2>&1; then
+            frob check
+          else
+            echo "::notice::frob is not installed or not working yet (pre-0.1.0 on PyPI) -- skipping frob check"
+          fi

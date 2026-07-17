@@ -1,0 +1,22 @@
+# {{ project.name }}
+
+TODO: one-sentence description of what this extension does.
+
+## Quick start
+
+```bash
+uv sync
+uv run maturin develop --uv
+make check    # rust fmt/clippy + python lint/typecheck + tests + frob check
+```
+
+## Development
+
+```bash
+make test        # cargo test + pytest
+make lint         # cargo fmt --check + clippy + ruff
+make typecheck    # ty check
+make coverage     # pytest with coverage report
+make check        # everything above, plus frob check
+make build        # release wheel via maturin
+```

@@ -1,0 +1,38 @@
+STAMP := node_modules/.install-stamp
+
+.PHONY: install format lint typecheck test coverage check clean build
+
+$(STAMP): package.json
+	npm install
+	@touch $(STAMP)
+
+install: $(STAMP)
+
+format: $(STAMP)
+	npm run fmt
+
+lint: $(STAMP)
+	npm run lint
+
+typecheck: $(STAMP)
+	npm run typecheck
+
+test: $(STAMP)
+	npm run test
+
+coverage: $(STAMP)
+	npm run test:coverage
+
+# ---------- the single gate: frob check ----------
+check: $(STAMP)
+	npm run lint
+	npm run typecheck
+	npm run test:coverage
+	frob check --stamp-coverage
+	frob check
+
+build: $(STAMP)
+	npm run build
+
+clean:
+	rm -rf dist/ coverage/ node_modules/.install-stamp

@@ -1,9 +1,12 @@
 """
 System tests: verify the package installs and imports cleanly.
 """
+
+import ast
+import importlib
 import subprocess
 import sys
-import importlib
+from pathlib import Path
 
 
 def test_package_imports():
@@ -23,9 +26,6 @@ def test_cli_help():
 
 def test_no_syntax_errors_in_src():
     """All source files must parse without syntax errors."""
-    import ast
-    from pathlib import Path
-
     src_root = Path(__file__).parent.parent.parent / "src" / "{{ project.name }}"
     errors = []
     for py_file in src_root.rglob("*.py"):

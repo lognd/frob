@@ -1,7 +1,7 @@
 BUILD_DIR := build
 NAME      := {{ project.name }}
 
-.PHONY: all build install develop test lint clean
+.PHONY: all build install develop test lint check clean
 
 all: develop
 
@@ -16,6 +16,10 @@ test:
 
 lint:
 	ruff check src/ tests/
+
+# ---------- the single gate: frob check ----------
+check: lint test
+	frob check
 
 clean:
 	rm -rf $(BUILD_DIR) dist/ *.egg-info _skbuild

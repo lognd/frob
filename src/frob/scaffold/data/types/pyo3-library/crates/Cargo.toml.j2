@@ -1,0 +1,16 @@
+[package]
+name = "{{ project.name }}"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+name = "_core"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3.workspace = true
+
+[lints]
+workspace = true

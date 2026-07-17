@@ -1,4 +1,4 @@
-.PHONY: all configure build test install release format lint clean publish
+.PHONY: all configure build test install release format lint check clean publish
 
 PROJECT   := {{ project.name }}
 BUILD_DIR := build
@@ -45,6 +45,10 @@ lint: configure
 	else \
 	    echo "clang-tidy not found, skipping"; \
 	fi
+
+# ---------- the single gate: frob check ----------
+check: lint test
+	frob check
 
 # ---------- clean ----------
 

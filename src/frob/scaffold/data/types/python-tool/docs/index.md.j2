@@ -1,0 +1,19 @@
+# {{ project.name }}
+
+TODO: one-paragraph overview of what this project does and why.
+
+## Public API
+
+<!-- frob:describes src/{{ project.name }}/__main__.py::main -->
+<!-- frob:describes src/{{ project.name }}/app/app.py::App -->
+<!-- frob:describes src/{{ project.name }}/app/config.py::AppConfig -->
+<!-- frob:describes src/{{ project.name }}/app/config.py::AppConfig.from_external -->
+<!-- frob:describes src/{{ project.name }}/logging/logger.py::get_logger -->
+<!-- frob:describes src/{{ project.name }}/logging/formatter.py::SimpleFormatter -->
+<!-- frob:describes src/{{ project.name }}/logging/formatter.py::SimpleFormatter.format -->
+<!-- frob:describes src/{{ project.name }}/logging/filter.py::BelowLevelFilter -->
+<!-- frob:describes src/{{ project.name }}/logging/filter.py::BelowLevelFilter.filter -->
+
+`main` parses CLI args, builds an `AppConfig` from CLI/TOML, and runs `App`.
+The `logging` subpackage provides `get_logger`, wired per the house
+logging convention (stdout for DEBUG/INFO, stderr for WARNING+).

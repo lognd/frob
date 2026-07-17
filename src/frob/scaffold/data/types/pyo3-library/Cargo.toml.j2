@@ -1,11 +1,21 @@
-[package]
-name = "{{ project.name }}"
+[workspace]
+# Single extension crate today; switch to ["crates/*"] if this grows into
+# a multi-crate workspace later (lithos-style).
+members = ["crates"]
+resolver = "2"
+
+[workspace.package]
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+# Extension crate ships only inside the wheel; never published on its own.
+publish = false
 
-[lib]
-name = "_{{ project.name }}"
-crate-type = ["cdylib"]
-
-[dependencies]
+[workspace.dependencies]
 pyo3 = { version = "0.22", features = ["extension-module"] }
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+
+[workspace.lints.rust]
+unsafe_code = "warn"

@@ -1,32 +1,16 @@
-# Stamp file: uv sync runs only when pyproject.toml changes.
+# Stamp file: uv sync runs only when pyproject.toml or uv.lock changes.
 STAMP := .venv/.install-stamp
 
-.PHONY: all check install format lint lint-fix typecheck test test-fast clean upload
+.PHONY: install format lint typecheck test coverage check clean upload
 
 PYPI_NAME := {{ project.name }}
 SRC       := src
 TESTS     := tests
 
-# ---------- default ----------
-
-# Runs each tool exactly once: format, lint, typecheck, test.
-all: $(STAMP)
-	uv run black $(SRC)/ $(TESTS)/
-	uv run ruff check $(SRC)/ $(TESTS)/ --fix --select I
-	uv run ruff format $(SRC)/ $(TESTS)/
-	uv run ty check $(SRC)/
-	uv run pytest $(TESTS)/ -q -n auto
-
-# Read-only gate (no auto-fix). Safe to run in CI.
-check: $(STAMP)
-	uv run ruff check $(SRC)/ $(TESTS)/
-	uv run ty check $(SRC)/
-	uv run pytest $(TESTS)/ -q -n auto
-
 # ---------- install (stamp-guarded) ----------
 
 $(STAMP): pyproject.toml
-	uv sync --all-extras
+	uv sync
 	@touch $(STAMP)
 
 install: $(STAMP)
@@ -34,18 +18,12 @@ install: $(STAMP)
 # ---------- formatting & linting ----------
 
 format: $(STAMP)
-	uv run black $(SRC)/ $(TESTS)/
-	uv run ruff check $(SRC)/ $(TESTS)/ --fix --select I
+	uv run ruff check $(SRC)/ $(TESTS)/ --fix
 	uv run ruff format $(SRC)/ $(TESTS)/
 
 lint: $(STAMP)
 	uv run ruff check $(SRC)/ $(TESTS)/
-	uv run ty check $(SRC)/
-
-lint-fix: $(STAMP)
-	uv run ruff check $(SRC)/ $(TESTS)/ --fix
-	uv run black $(SRC)/ $(TESTS)/
-	uv run ruff format $(SRC)/ $(TESTS)/
+	uv run ruff format --check $(SRC)/ $(TESTS)/
 
 typecheck: $(STAMP)
 	uv run ty check $(SRC)/
@@ -53,15 +31,28 @@ typecheck: $(STAMP)
 # ---------- tests ----------
 
 test: $(STAMP)
-	uv run pytest $(TESTS)/ -q -n auto
+	uv run pytest $(TESTS)/
 
-test-fast: $(STAMP)
-	uv run pytest $(TESTS)/ -q --testmon
+coverage: $(STAMP)
+	uv run pytest $(TESTS)/ --cov=$(SRC) --cov-report=term-missing --cov-report=xml
+
+# ---------- the single gate: frob check ----------
+# frob is a global uv tool (see `frob scaffold`'s own README), not a
+# project dependency -- `make check` assumes it is already on PATH.
+# coverage.xml + the frob coverage stamp are regenerated first so TEST005/
+# TEST006 see current data, not a stale or missing stamp.
+check: $(STAMP)
+	uv run ruff check $(SRC)/ $(TESTS)/
+	uv run ruff format --check $(SRC)/ $(TESTS)/
+	uv run ty check $(SRC)/
+	uv run pytest $(TESTS)/ --cov=$(SRC) --cov-report=xml
+	frob check --stamp-coverage
+	frob check
 
 # ---------- build & publish ----------
 
 clean:
-	rm -rf dist/ build/ .pytest_cache/ .ruff_cache/ .testmondata
+	rm -rf dist/ build/ .pytest_cache/ .ruff_cache/ .coverage htmlcov/
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null; true
 	find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null; true
 

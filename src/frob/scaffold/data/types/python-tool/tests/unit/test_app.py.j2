@@ -1,0 +1,18 @@
+"""Unit tests for the App/AppConfig wiring."""
+
+import argparse
+from pathlib import Path
+
+from {{ project.name }}.app import App, AppConfig
+
+
+def test_app_config_from_external_with_no_config_file(tmp_path: Path) -> None:
+    # frob:tests src/{{ project.name }}/app/config.py::AppConfig.from_external kind="unit"
+    cfg = AppConfig.from_external(
+        argparse.Namespace(), config_file=tmp_path / "missing.toml"
+    )
+    assert isinstance(cfg, AppConfig)
+
+
+def test_app_is_callable() -> None:
+    App(AppConfig())()

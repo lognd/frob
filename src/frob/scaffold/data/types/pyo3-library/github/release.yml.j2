@@ -1,0 +1,31 @@
+name: Release
+
+# Publishes to PyPI via OIDC trusted publishing -- no API token stored in
+# this repo. One-time setup: on pypi.org, go to the project's
+# "Publishing" settings and add a trusted publisher with:
+#   Owner: <your GitHub org/user>   Repo: {{ project.name }}
+#   Workflow: release.yml           Environment: pypi
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: PyO3/maturin-action@v1
+        with:
+          command: build
+          args: --release --out dist
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist

@@ -1,0 +1,17 @@
+# {{ project.name }}
+
+TODO: one-paragraph overview.
+
+## Modules
+
+| Module | Description |
+|--------|-------------|
+| `crates/lib.rs` | The Rust extension (pyo3), compiled to `{{ project.name }}._core` |
+| `python/{{ project.name }}/__init__.py` | Thin Python re-export layer over `_core` |
+
+## Build
+
+```bash
+uv sync
+uv run maturin develop --uv
+```

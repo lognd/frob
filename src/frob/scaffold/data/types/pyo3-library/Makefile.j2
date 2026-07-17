@@ -1,22 +1,45 @@
-NAME := {{ project.name }}
+STAMP := .venv/.install-stamp
 
-.PHONY: all develop build test lint clean
+.PHONY: install develop format lint typecheck test coverage check clean build
 
-all: develop
+$(STAMP): pyproject.toml Cargo.toml
+	uv sync
+	@touch $(STAMP)
 
-develop:
-	maturin develop
+install: $(STAMP)
+
+develop: $(STAMP)
+	uv run maturin develop --uv
+
+format: $(STAMP)
+	cargo fmt --all
+	uv run ruff check python/ tests/ --fix
+	uv run ruff format python/ tests/
+
+lint: $(STAMP) develop
+	cargo fmt --all --check
+	cargo clippy --workspace --all-targets -- -D warnings
+	uv run ruff check python/ tests/
+	uv run ruff format --check python/ tests/
+
+typecheck: $(STAMP) develop
+	uv run ty check python/{{ project.name }}
+
+test: $(STAMP) develop
+	cargo test --workspace
+	uv run pytest tests/
+
+coverage: $(STAMP) develop
+	uv run pytest tests/ --cov={{ project.name }} --cov-report=term-missing --cov-report=xml
+
+# ---------- the single gate: frob check ----------
+check: lint typecheck test
+	frob check --stamp-coverage
+	frob check
 
 build:
-	maturin build --release
-
-test:
-	pytest tests/ -q
-
-lint:
-	ruff check python/ tests/
-	cargo clippy
+	uv run maturin build --release
 
 clean:
 	cargo clean
-	rm -rf dist/ target/wheels/
+	rm -rf dist/ target/wheels/ .pytest_cache/ .ruff_cache/ .coverage

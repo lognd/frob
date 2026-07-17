@@ -7,11 +7,15 @@ from pathlib import Path
 from pydantic import BaseModel
 
 
+# frob:doc docs/index.md#public-api
 class AppConfig(BaseModel):
     # TODO: add your config fields here
 
     @classmethod
-    def from_external(cls, args: argparse.Namespace, config_file: Path | None = None) -> "AppConfig":
+    def from_external(
+        cls, args: argparse.Namespace, config_file: Path | None = None
+    ) -> "AppConfig":
+        # frob:doc docs/index.md#public-api
         file_cfg: dict = {}
         # Defaults to pyproject.toml in cwd; pass an explicit path to override
         resolved = config_file if config_file is not None else Path("pyproject.toml")

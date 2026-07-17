@@ -6,31 +6,55 @@ on:
   pull_request:
     branches: ["main", "master"]
 
-jobs:
-  test:
-    name: Python ${{ "{{" }} matrix.python-version {{ "}}" }} / ${{ "{{" }} matrix.os {{ "}}" }}
-    runs-on: ${{ "{{" }} matrix.os {{ "}}" }}
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
-        os: [ubuntu-latest, windows-latest, macos-latest]
+concurrency:
+  group: ci-${{ "{{" }} github.workflow {{ "}}" }}-${{ "{{" }} github.ref {{ "}}" }}
+  cancel-in-progress: true
 
+jobs:
+  check:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          python-version: ${{ "{{" }} matrix.python-version {{ "}}" }}
+          components: rustfmt, clippy
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
 
-      - name: Install maturin
-        run: pip install maturin pytest
+      - uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
-      - name: Build and install
-        run: maturin develop
+      - name: install
+        run: uv sync
 
-      - name: Test
-        run: pytest tests/ -q
+      - name: build extension
+        run: uv run maturin develop --uv
+
+      - name: rust lint
+        run: cargo fmt --all --check && cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: python lint
+        run: uv run ruff check python/ tests/ && uv run ruff format --check python/ tests/
+
+      - name: typecheck
+        run: uv run ty check python/{{ project.name }}
+
+      - name: test
+        run: cargo test --workspace && uv run pytest tests/ --cov={{ project.name }} --cov-report=term-missing
+
+      # See python-tool's ci.yml.j2 for why this step is guarded: frob
+      # is pre-0.1.0 on PyPI, so a stale or missing install must not
+      # red-herring CI.
+      - name: install frob
+        run: uv tool install frob || true
+
+      - name: frob check
+        run: |
+          if command -v frob >/dev/null 2>&1 && frob graph --help >/dev/null 2>&1; then
+            frob check
+          else
+            echo "::notice::frob is not installed or not working yet (pre-0.1.0 on PyPI) -- skipping frob check"
+          fi

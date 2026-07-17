@@ -1,0 +1,24 @@
+check_base = "main"
+
+# New projects start strict: no legacy-adoption baseline to dial back
+# (see frob's own frob.toml for what that dial looks like once a repo
+# has un-annotated legacy surface to grandfather in). Every rule below
+# stays at its hard-error default.
+[gates.severity]
+
+# Thresholds sized for a fresh, minimal scaffold on day one -- raise them
+# as the project's real test suite grows. frob's own defaults
+# (min_unit_cases=3, module_line_cov=85) assume an established codebase;
+# a brand-new project has one smoke test per symbol, not three.
+[testing]
+min_unit_cases = 1
+min_integration = 1
+unit_branch_cov = 50
+module_line_cov = 50
+system_line_cov = 50
+
+[[test.runner]]
+language = "python"
+command = ["uv", "run", "pytest", "-q", "{ids}"]
+all_command = ["uv", "run", "pytest", "-q"]
+cwd = "."

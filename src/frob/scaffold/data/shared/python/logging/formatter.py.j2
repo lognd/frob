@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 
 
+# frob:doc docs/index.md#public-api
 class SimpleFormatter(logging.Formatter):
     """Plain message for INFO/DEBUG; prefixes level name for WARNING and above."""
 
@@ -11,6 +12,7 @@ class SimpleFormatter(logging.Formatter):
         self._show_level = show_level
 
     def format(self, record: logging.LogRecord) -> str:
+        # frob:doc docs/index.md#public-api
         msg = record.getMessage()
         if self._show_level or record.levelno >= logging.WARNING:
             return f"{record.levelname}: {msg}"
