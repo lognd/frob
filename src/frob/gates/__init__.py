@@ -321,8 +321,28 @@ def _cov001(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 def _cov002(
     snapshot: GraphSnapshot, queue: TicketQueue, diff: Diff
 ) -> tuple[Violation, ...]:
-    """COV002: diff hunk touches a symbol with no `frob:ticket` edge to an
-    open ticket."""
+    """COV002: a changed symbol is accounted for by neither a `frob:ticket`
+    edge to an open ticket NOR an open ticket whose declared `scope` covers
+    its file.
+
+    Scope coverage means a cohesive refactor is acknowledged once (the
+    ticket's scope glob) instead of demanding a per-symbol directive on
+    every function it touches -- the same blast-radius the scope gate
+    already enforces, read the other direction.
+    """
+    import fnmatch
+
+    open_scopes: list[tuple[str, tuple[str, ...]]] = [
+        (t.id, t.scope)
+        for t in queue.tickets.values()
+        if t.state in _OPEN_STATES and t.scope
+    ]
+
+    def _scope_covers(path: str) -> bool:
+        return any(
+            fnmatch.fnmatch(path, glob) for _tid, scope in open_scopes for glob in scope
+        )
+
     violations: list[Violation] = []
     for symref in sorted(_touched_symrefs(diff, snapshot)):
         ticket_edges = [
@@ -335,6 +355,9 @@ def _cov002(
         if open_bound:
             continue
         record = snapshot.symbols[symref]
+        if _scope_covers(record.id.path):
+            _log.debug("COV002: %s covered by an open ticket's scope", symref)
+            continue
         _log.debug("COV002: %s changed with no open ticket", symref)
         violations.append(
             Violation(

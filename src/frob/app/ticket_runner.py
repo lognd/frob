@@ -34,6 +34,8 @@ def run(cfg: AppConfig) -> None:
             _start(root, cfg)
         case "sweep":
             _sweep_cmd(root, cfg)
+        case "migrate":
+            _migrate(root)
         case "attach":
             _attach(root, cfg)
         case "block":
@@ -170,6 +172,20 @@ def _doable(root: Path, cfg: AppConfig) -> None:
         return
     for t in tickets:
         _log.info("%s  %s  (%s)", t.id, t.title, t.kind.value)
+
+
+def _migrate(root: Path) -> None:
+    from frob.tickets import migrate
+
+    result = migrate(root)
+    if result.is_err:
+        _log.error("ticket migrate failed: %s", result.danger_err)
+        sys.exit(1)
+    n = result.danger_ok
+    if n == 0:
+        _log.info("no legacy tickets/*.md files to migrate")
+    else:
+        _log.info("migrated %d ticket(s) into tickets.md; removed tickets/*.md", n)
 
 
 def _plan(root: Path, cfg: AppConfig) -> None:
@@ -309,7 +325,7 @@ def _attach(root: Path, cfg: AppConfig) -> None:
 
 def _block(root: Path, cfg: AppConfig) -> None:
     from frob.tickets import _load_one
-    from frob.tickets._store import atomic_write, serialize_ticket
+    from frob.tickets._store import write_ticket
 
     if cfg.ticket_id is None or cfg.ticket_by is None:
         _log.error("frob ticket block requires <id> and --by")
@@ -319,11 +335,11 @@ def _block(root: Path, cfg: AppConfig) -> None:
     if loaded.is_err:
         _log.error("block failed: %s", loaded.danger_err)
         sys.exit(1)
-    path, ticket = loaded.danger_ok
+    ticket = loaded.danger_ok
     updated = ticket.model_copy(
         update={"blocked_by": ticket.blocked_by + (cfg.ticket_by,)}
     )
-    written = atomic_write(path, serialize_ticket(updated))
+    written = write_ticket(root, updated)
     if written.is_err:
         _log.error("block failed: %s", written.danger_err)
         sys.exit(1)

@@ -7,15 +7,26 @@ agent, so the bottom of the stack is never silently forgotten.
 
 ## Storage
 
+Two backends, one interface (auto-detected):
+
+- **single-file ledger** (default): all tickets live in one `tickets.md` at
+  the repo root -- the compact central log, no per-ticket file sprawl. Each
+  ticket is a `<!-- ticket:T-#### -->` marker + a fenced ```yaml frontmatter
+  block + a free markdown body. Greppable (`grep ticket:T- tickets.md`).
+- **legacy dir** (back-compat): `tickets/T-####-slug.md`, one file each.
+  `frob ticket migrate` collapses an existing dir into the single ledger.
+
+Detection: `tickets.md` present -> single; else `tickets/*.md` -> dir; else
+(fresh repo) -> single. Attachments live under `tickets/attachments/<id>/`
+in both modes.
+
 ```
-tickets/
-  T-0042-clipboard-attach.md        one file per ticket
-  attachments/
-    T-0042/
-      01-mockup.png
+tickets.md                          the whole queue, one file
+tickets/attachments/T-0042/01-mockup.png
 ```
 
-Ticket file = YAML frontmatter (pydantic-validated) + free markdown body.
+A dir-mode ticket file = YAML `---` frontmatter + body; a ledger section is
+the same fields in a ```yaml fence. Both pydantic-validated, both strict.
 
 ```markdown
 ---

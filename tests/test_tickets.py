@@ -447,3 +447,93 @@ class TestAttach:
         result = attach(tmp_path, "T-9999", AttachmentSource(path=src), "cap")
         assert result.is_err
         assert result.danger_err is TicketError.NotFound
+
+
+class TestSingleFileLedger:
+    def _spec(self, title="a ticket"):
+        from frob.tickets import Origin, TicketKind, TicketSpec
+
+        return TicketSpec(
+            title=title, kind=TicketKind.FEATURE, origin=Origin.AGENT,
+            scope=("src/x.py",), body="Body line.\n",
+        )
+
+    def test_new_tickets_land_in_single_tickets_md(self, tmp_path):
+        from frob.tickets import load_queue, new_ticket
+
+        a = new_ticket(tmp_path, self._spec("first")).danger_ok
+        b = new_ticket(tmp_path, self._spec("second")).danger_ok
+        assert (tmp_path / "tickets.md").exists()
+        assert not (tmp_path / "tickets").exists()
+        q = load_queue(tmp_path).danger_ok
+        assert set(q.tickets) == {a.id, b.id}
+        assert q.tickets[a.id].title == "first"
+        assert q.tickets[b.id].scope == ("src/x.py",)
+
+    def test_ledger_round_trips_body_and_transitions(self, tmp_path):
+        from frob.tickets import TicketState, load_queue, new_ticket, transition
+
+        t = new_ticket(tmp_path, self._spec()).danger_ok
+        transition(tmp_path, t.id, TicketState.PLANNED)
+        transition(tmp_path, t.id, TicketState.IN_PROGRESS)
+        q = load_queue(tmp_path).danger_ok
+        assert q.tickets[t.id].state == TicketState.IN_PROGRESS
+        assert "Body line." in q.tickets[t.id].body
+
+    def test_malformed_ledger_is_hard_err(self, tmp_path):
+        from frob.tickets import TicketError, load_queue
+
+        (tmp_path / "tickets.md").write_text(
+            "# Tickets\n\n<!-- ticket:T-0001 -->\nno yaml fence here\n",
+            encoding="utf-8",
+        )
+        result = load_queue(tmp_path)
+        assert result.is_err
+        assert result.danger_err == TicketError.MalformedFrontmatter
+
+    def test_migrate_collapses_dir_into_ledger(self, tmp_path):
+        from datetime import date
+
+        from frob.tickets import load_queue, migrate
+        from frob.tickets._models import Origin as O
+        from frob.tickets._models import Ticket, TicketKind, TicketState
+        from frob.tickets._store import serialize_ticket, tickets_dir
+
+        d = tickets_dir(tmp_path)
+        d.mkdir()
+        for n, title in [(1, "alpha"), (2, "beta")]:
+            tk = Ticket(
+                id=f"T-{n:04d}", title=title, state=TicketState.QUEUED,
+                kind=TicketKind.BUG, origin=O.HUMAN, created=date.today(),
+                blocked_by=(), parent=None, scope=(), evidence=(),
+                attachments=(), body=f"body {title}\n",
+            )
+            (d / f"T-{n:04d}-{title}.md").write_text(
+                serialize_ticket(tk), encoding="utf-8"
+            )
+        n = migrate(tmp_path).danger_ok
+        assert n == 2
+        assert (tmp_path / "tickets.md").exists()
+        assert not list(d.glob("T-*.md"))
+        q = load_queue(tmp_path).danger_ok
+        assert {t.title for t in q.tickets.values()} == {"alpha", "beta"}
+
+    def test_legacy_dir_still_reads_when_no_ledger(self, tmp_path):
+        from datetime import date
+
+        from frob.tickets import load_queue
+        from frob.tickets._models import Origin as O
+        from frob.tickets._models import Ticket, TicketKind, TicketState
+        from frob.tickets._store import serialize_ticket, tickets_dir
+
+        d = tickets_dir(tmp_path)
+        d.mkdir()
+        tk = Ticket(
+            id="T-0001", title="legacy", state=TicketState.QUEUED,
+            kind=TicketKind.DOCS, origin=O.HUMAN, created=date.today(),
+            blocked_by=(), parent=None, scope=(), evidence=(),
+            attachments=(), body="x\n",
+        )
+        (d / "T-0001-legacy.md").write_text(serialize_ticket(tk), encoding="utf-8")
+        q = load_queue(tmp_path).danger_ok
+        assert q.tickets["T-0001"].title == "legacy"

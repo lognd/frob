@@ -31,13 +31,11 @@ from frob.tickets._models import (
 from frob.tickets._store import (
     atomic_write,
     attachments_dir,
-    find_ticket_path,
-    parse_ticket_file,
-    serialize_ticket,
+    load_all,
+    migrate_to_ledger,
     slugify,
-    ticket_glob,
-    ticket_path,
     tickets_dir,
+    write_ticket,
 )
 from frob.tickets.clipboard import ClipboardError, clipboard_image
 
@@ -75,50 +73,37 @@ _FAILURE_LOG_HEADING = "## Failure log"
 # frob:invariant INV-004
 # frob:doc docs/tickets.md#public-api
 def load_queue(root: Path) -> Result[TicketQueue, TicketError]:
-    """Parse every tickets/*.md under root; any malformed file is a hard Err."""
-    tickets: dict[str, Ticket] = {}
-    for path in ticket_glob(root):
-        parsed = parse_ticket_file(path)
-        if parsed.is_err:
-            _log.error("tickets: load_queue aborted, %s is malformed", path)
-            return Err(parsed.danger_err)
-        ticket = parsed.danger_ok
-        if ticket.id in tickets:
-            _log.error("tickets: duplicate id %s (%s)", ticket.id, path)
-            return Err(TicketError.DuplicateId)
-        tickets[ticket.id] = ticket
-    _log.info("tickets: loaded %d ticket(s) from %s", len(tickets), tickets_dir(root))
+    """Load every ticket (single-file ledger or legacy dir); malformation is Err."""
+    loaded = load_all(root)
+    if loaded.is_err:
+        return Err(loaded.danger_err)
+    tickets = loaded.danger_ok
+    _log.debug("tickets: loaded %d ticket(s) under %s", len(tickets), root)
     return Ok(TicketQueue(tickets=tickets))
 
 
-def _next_id(root: Path) -> Result[str, TicketError]:
-    """Scan tickets/ for the highest existing T-#### id and return the next one."""
-    max_num = 0
-    for path in ticket_glob(root):
-        stem = path.stem  # T-0042-slug
-        parts = stem.split("-", 2)
-        if len(parts) < 2 or parts[0] != "T":
-            continue
-        try:
-            num = int(parts[1])
-        except ValueError:
-            continue
-        max_num = max(max_num, num)
-    next_id = f"T-{max_num + 1:04d}"
-    if find_ticket_path(root, next_id) is not None:
-        _log.error("tickets: id collision allocating %s", next_id)
-        return Err(TicketError.DuplicateId)
-    return Ok(next_id)
+def migrate(root: Path) -> Result[int, TicketError]:
+    """Collapse legacy tickets/*.md files into the single tickets.md ledger."""
+    return migrate_to_ledger(root)
 
 
 # frob:doc docs/tickets.md#public-api
 def new_ticket(root: Path, spec: TicketSpec) -> Result[Ticket, TicketError]:
-    """Allocate the next sequential id, slugify the title, write the file atomically."""
-    id_result = _next_id(root)
-    if id_result.is_err:
-        return Err(id_result.danger_err)
-    ticket_id = id_result.danger_ok
-    slug = slugify(spec.title)
+    """Allocate the next sequential id and upsert the ticket into the store."""
+    loaded = load_all(root)
+    if loaded.is_err:
+        return Err(loaded.danger_err)
+    existing = loaded.danger_ok
+    max_num = 0
+    for tid in existing:
+        try:
+            max_num = max(max_num, int(tid.split("-", 1)[1]))
+        except (IndexError, ValueError):
+            continue
+    ticket_id = f"T-{max_num + 1:04d}"
+    if ticket_id in existing:
+        _log.error("tickets: id collision allocating %s", ticket_id)
+        return Err(TicketError.DuplicateId)
     ticket = Ticket(
         id=ticket_id,
         title=spec.title,
@@ -133,11 +118,10 @@ def new_ticket(root: Path, spec: TicketSpec) -> Result[Ticket, TicketError]:
         attachments=(),
         body=spec.body,
     )
-    path = ticket_path(root, ticket_id, slug)
-    write_result = atomic_write(path, serialize_ticket(ticket))
+    write_result = write_ticket(root, ticket)
     if write_result.is_err:
         return Err(write_result.danger_err)
-    _log.info("tickets: created %s (%s)", ticket_id, path)
+    _log.info("tickets: created %s", ticket_id)
     return Ok(ticket)
 
 
@@ -164,16 +148,16 @@ def _open_blockers(queue: TicketQueue, ticket: Ticket) -> tuple[str, ...]:
     return tuple(open_ids)
 
 
-def _load_one(root: Path, ticket_id: str) -> Result[tuple[Path, Ticket], TicketError]:
-    """Locate and parse the single ticket file for ticket_id."""
-    path = find_ticket_path(root, ticket_id)
-    if path is None:
-        _log.warning("tickets: %s not found under %s", ticket_id, tickets_dir(root))
+def _load_one(root: Path, ticket_id: str) -> Result[Ticket, TicketError]:
+    """Load a single ticket by id from whichever backend the repo uses."""
+    loaded = load_all(root)
+    if loaded.is_err:
+        return Err(loaded.danger_err)
+    ticket = loaded.danger_ok.get(ticket_id)
+    if ticket is None:
+        _log.warning("tickets: %s not found under %s", ticket_id, root)
         return Err(TicketError.NotFound)
-    parsed = parse_ticket_file(path)
-    if parsed.is_err:
-        return Err(parsed.danger_err)
-    return Ok((path, parsed.danger_ok))
+    return Ok(ticket)
 
 
 def _has_done_report(body: str) -> bool:
@@ -187,10 +171,14 @@ def transition(
     root: Path, ticket_id: str, to: TicketState
 ) -> Result[Ticket, TicketError]:
     """Enforce the state machine; `done` also requires evidence and a Done report."""
-    loaded = _load_one(root, ticket_id)
+    loaded = load_all(root)
     if loaded.is_err:
         return Err(loaded.danger_err)
-    path, ticket = loaded.danger_ok
+    queue = loaded.danger_ok
+    ticket = queue.get(ticket_id)
+    if ticket is None:
+        _log.warning("tickets: %s not found under %s", ticket_id, root)
+        return Err(TicketError.NotFound)
 
     allowed = _TRANSITIONS.get(ticket.state, frozenset())
     if to not in allowed:
@@ -200,14 +188,11 @@ def transition(
         return Err(TicketError.InvalidTransition)
 
     if to == TicketState.IN_PROGRESS:
-        open_ids: list[str] = []
-        for blocker_id in ticket.blocked_by:
-            blocker_loaded = _load_one(root, blocker_id)
-            if (
-                blocker_loaded.is_err
-                or blocker_loaded.danger_ok[1].state in _OPEN_STATES
-            ):
-                open_ids.append(blocker_id)
+        open_ids = [
+            b
+            for b in ticket.blocked_by
+            if b not in queue or queue[b].state in _OPEN_STATES
+        ]
         if open_ids:
             _log.warning(
                 "tickets: %s cannot start, open blockers %s", ticket_id, open_ids
@@ -222,15 +207,11 @@ def transition(
             return Err(TicketError.MissingEvidence)
 
     updated = ticket.model_copy(update={"state": to})
-    write_result = atomic_write(path, serialize_ticket(updated))
+    write_result = write_ticket(root, updated)
     if write_result.is_err:
         return Err(write_result.danger_err)
     _log.info("tickets: %s transitioned %s -> %s", ticket_id, ticket.state, to)
-
-    reloaded = parse_ticket_file(path)
-    if reloaded.is_err:
-        return Err(reloaded.danger_err)
-    return Ok(reloaded.danger_ok)
+    return Ok(updated)
 
 
 # frob:doc docs/tickets.md#public-api
@@ -241,20 +222,16 @@ def record_failure(
     loaded = _load_one(root, ticket_id)
     if loaded.is_err:
         return Err(loaded.danger_err)
-    path, ticket = loaded.danger_ok
+    ticket = loaded.danger_ok
 
     line = f"- {entry.date.isoformat()} attempt {entry.attempt}: {entry.summary}"
     new_body = _append_to_section(ticket.body, _FAILURE_LOG_HEADING, line)
     updated = ticket.model_copy(update={"body": new_body})
-    write_result = atomic_write(path, serialize_ticket(updated))
+    write_result = write_ticket(root, updated)
     if write_result.is_err:
         return Err(write_result.danger_err)
     _log.info("tickets: %s recorded failure attempt %d", ticket_id, entry.attempt)
-
-    reloaded = parse_ticket_file(path)
-    if reloaded.is_err:
-        return Err(reloaded.danger_err)
-    return Ok(reloaded.danger_ok)
+    return Ok(updated)
 
 
 def _append_to_section(body: str, heading: str, line: str) -> str:
@@ -286,7 +263,7 @@ def attach(
     loaded = _load_one(root, ticket_id)
     if loaded.is_err:
         return Err(loaded.danger_err)
-    path, ticket = loaded.danger_ok
+    ticket = loaded.danger_ok
 
     if source.path is None:
         _log.debug("tickets: attach %s from clipboard", ticket_id)
@@ -328,7 +305,7 @@ def attach(
     updated = ticket.model_copy(
         update={"attachments": ticket.attachments + (attachment,)}
     )
-    frontmatter_write = atomic_write(path, serialize_ticket(updated))
+    frontmatter_write = write_ticket(root, updated)
     if frontmatter_write.is_err:
         return Err(frontmatter_write.danger_err)
 
@@ -352,6 +329,7 @@ __all__ = [
     "attach",
     "doable",
     "load_queue",
+    "migrate",
     "new_ticket",
     "record_failure",
     "transition",

@@ -436,6 +436,10 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     ticket_sweep_p.add_argument("ticket_id", metavar="id")
 
+    ticket_migrate_p = ticket_sub.add_parser(
+        "migrate", help="collapse legacy tickets/*.md into a single tickets.md ledger"
+    )
+
     ticket_attach_p = ticket_sub.add_parser(
         "attach", help="attach a file or clipboard image to a ticket"
     )
@@ -463,6 +467,7 @@ def _build_parser() -> argparse.ArgumentParser:
         ticket_plan_p,
         ticket_start_p,
         ticket_sweep_p,
+        ticket_migrate_p,
         ticket_attach_p,
         ticket_block_p,
         ticket_close_p,

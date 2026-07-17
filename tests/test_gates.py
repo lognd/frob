@@ -33,7 +33,7 @@ from frob.graph import build_graph
 from frob.graph._models import LockEntry, LockFile
 from frob.testing import CollectedTests
 from frob.tickets import Origin, Ticket, TicketKind, TicketQueue, TicketState
-from frob.tickets._store import atomic_write, serialize_ticket, ticket_path
+from frob.tickets._store import write_ticket
 
 
 def _write(root: Path, rel: str, text: str) -> Path:
@@ -86,8 +86,7 @@ def _ticket(
 
 
 def _write_ticket(root: Path, ticket: Ticket) -> None:
-    path = ticket_path(root, ticket.id, "sample")
-    atomic_write(path, serialize_ticket(ticket)).danger_ok
+    write_ticket(root, ticket).danger_ok
 
 
 _WIDGET_PY = '''class Widget:
@@ -808,3 +807,43 @@ class TestDoclinkGate:
         (root / "docs" / "brand_new.md").write_text("# New\n", encoding="utf-8")
         violations = doclink_gate(root, build_graph(root, cache).danger_ok)
         assert {v.file for v in violations} == {"docs/brand_new.md"}
+
+
+class TestCov002ScopeCoverage:
+    def test_open_ticket_scope_covers_changed_symbol(self, tmp_path):
+        """COV002 passes when a changed symbol's file is within an open
+        ticket's declared scope -- one ticket covers a whole refactor."""
+        import subprocess
+
+        from frob.gates import GateConfig, run_gates
+        from frob.tickets import (
+            Origin,
+            TicketKind,
+            TicketSpec,
+            TicketState,
+            new_ticket,
+            transition,
+        )
+
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        subprocess.run(["git", "config", "user.email", "t@t"], cwd=tmp_path, check=True)
+        subprocess.run(["git", "config", "user.name", "t"], cwd=tmp_path, check=True)
+        (tmp_path / "src").mkdir()
+        (tmp_path / "src" / "m.py").write_text("def f():\n    return 1\n")
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(["git", "commit", "-qm", "base"], cwd=tmp_path, check=True)
+        subprocess.run(["git", "branch", "-M", "main"], cwd=tmp_path, check=True)
+
+        t = new_ticket(
+            tmp_path,
+            TicketSpec(title="refactor", kind=TicketKind.FEATURE,
+                       origin=Origin.AGENT, scope=("src/**",)),
+        ).danger_ok
+        transition(tmp_path, t.id, TicketState.PLANNED)
+        transition(tmp_path, t.id, TicketState.IN_PROGRESS)
+        (tmp_path / "src" / "m.py").write_text("def f():\n    return 2\n")
+
+        report = run_gates(
+            GateConfig(root=str(tmp_path), base="main", gates=frozenset({"coverage"}))
+        ).danger_ok
+        assert not [v for v in report.violations if v.rule == "COV002"]

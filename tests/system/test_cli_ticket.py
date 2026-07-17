@@ -145,9 +145,9 @@ class TestTicketRoundTrip:
         out = r.stdout + r.stderr
         assert r.returncode == 0, out
 
-        ticket_file = tmp_path / "tickets" / "T-0001-flaky.md"
-        assert ticket_file.exists()
-        body = ticket_file.read_text()
+        ledger = tmp_path / "tickets.md"
+        assert ledger.exists()
+        body = ledger.read_text()
         assert "attempt 1" in body
         assert "hit a WSL clipboard edge case" in body
 

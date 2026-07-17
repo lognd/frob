@@ -15,7 +15,7 @@ declaration).
 | DRIFT001 | drift | acked digest moved without re-ack (`frob ack`) |
 | DRIFT002 | drift | edge endpoint no longer resolves (rename/delete) |
 | COV001 | coverage | public symbol has no `doc` edge (docstring counts via `doc` facet only if policy says so) |
-| COV002 | coverage | diff hunk touches a symbol with no `frob:ticket` edge to an open ticket |
+| COV002 | coverage | changed symbol has neither a `frob:ticket` edge to an open ticket NOR an open ticket whose `scope` glob covers its file (so one scoped ticket accounts for a whole refactor, not a per-symbol directive) |
 | COV003 | coverage | ticket in state done with evidence ids that do not resolve to collected tests |
 | COV004 | coverage | attachment sha256 mismatch or file missing |
 | TODO001 | coverage | `frob:todo` (or bare TODO/FIXME comment) not bound to an open ticket |
