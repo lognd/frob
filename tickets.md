@@ -377,7 +377,7 @@ TEST003 alpha semantics treat every src/<pkg> directory with a public symbol as 
 id: T-0018
 title: Convention-based unit-test binding inference to reduce frob:tests annotation
   burden
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-07-17'
@@ -391,6 +391,8 @@ acceptance: []
 threat: null
 ```
 Infer frob:tests unit bindings by naming convention (test_<symbol> -> <symbol>) as a default, with explicit frob:tests directives only needed to override or supplement. Reduces the annotation burden that COV001/TEST001 currently impose on every legacy module. Deferred post-0.1.0.
+
+Delivered under T-0039.
 
 <!-- ticket:T-0019 -->
 ```yaml
@@ -1017,3 +1019,30 @@ threat: null
 ADR: EdgeKind.DECISION + frob:decision DSL verb; decisions/AD-###.md
 records with status; DEC001 (dangling ref), DEC002 (accepted decision
 unanchored) gates, opt-in when decisions/ exists. Delivers T-0004.
+
+<!-- ticket:T-0039 -->
+```yaml
+id: T-0039
+title: Convention-based unit-test binding inference (reduce frob:tests burden)
+state: done
+kind: feature
+origin: agent
+created: '2026-07-17'
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/**
+- tests/test_gates.py
+evidence:
+- tests/test_gates.py::TestConventionUnitBinding::test_test001_satisfied_by_convention_name
+- tests/test_gates.py::TestConventionUnitBinding::test_short_symbol_names_do_not_match_everything
+attachments: []
+acceptance: []
+threat: null
+```
+## Done report
+
+TEST001 is now satisfiable by a conventionally named test (test_<name>,
+snake-cased whole-token match) when no explicit frob:tests edge exists;
+explicit edges stay authoritative (an uncollected edge still surfaces).
+Short names (<3 chars) never infer. Delivers T-0018.

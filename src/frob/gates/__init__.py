@@ -680,6 +680,37 @@ def _valid_edges(edges: list[Edge], tests: CollectedTests) -> list[Edge]:
     return [e for e in edges if _symref_to_nodeid(e.src) in tests.node_ids]
 
 
+def _snake(name: str) -> str:
+    """`CamelCase`/`getHTTP` -> `camel_case`/`get_http` for convention matching."""
+    s1 = re.sub(r"(.)([A-Z][a-z]+)", r"\1_\2", name)
+    return re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
+
+
+# frob:ticket T-0018
+def _inferred_unit_cases(symref: str, tests: CollectedTests) -> int:
+    """Count collected tests that cover `symref` by NAMING CONVENTION.
+
+    A `frob:tests` directive is authoritative, but requiring one on every
+    function is friction. So a public function `foo` (or method `Cls.foo`)
+    is also considered unit-tested by any collected node id whose test
+    name, snake-cased, contains the symbol's snake-cased name -- e.g.
+    `test_foo`, `test_foo_handles_empty`, `TestFoo::test_x`. Conservative:
+    it only counts, never invents an edge, and the symbol name must be a
+    whole `_`-delimited token in the test id so `add` does not match
+    `readd`.
+    """
+    _, _, qualname = symref.partition("::")
+    leaf = _snake(qualname.rsplit(".", 1)[-1])
+    if len(leaf) < 3:  # too-short names (a, id, of) match everything
+        return 0
+    token = re.compile(rf"(^|[^a-z0-9]){re.escape(leaf)}([^a-z0-9]|$)")
+    return sum(
+        1
+        for node in tests.node_ids
+        if token.search(_snake(node.rsplit("::", 1)[-1]))
+    )
+
+
 def _is_test_file(path: str) -> bool:
     """True if `path` is itself a test file (documented duplicate of
     `frob.testing._select._is_test_file`'s name/dir heuristic, not importable
@@ -715,8 +746,20 @@ def _test001_002(
         ):
             continue
         edges = unit_edges.get(record.symref, [])
-        if not edges:
-            _log.debug("TEST001: %s has no unit test edge", record.symref)
+        valid = _valid_edges(edges, tests)
+        # An explicit frob:tests edge is authoritative -- judge it by its
+        # valid (collected) count. Only when NO explicit edge exists does a
+        # conventionally named test (test_<name>) count toward coverage, so
+        # a well-named suite is not forced to annotate every function while
+        # a deliberately-declared-but-broken edge still surfaces (T-0018).
+        if edges:
+            effective = len(valid)
+        else:
+            effective = _inferred_unit_cases(record.symref, tests)
+        leaf = _snake(record.id.qualname.rsplit(".", 1)[-1])
+        if effective == 0 and not edges:
+            _log.debug("TEST001: %s has no unit edge or convention match",
+                       record.symref)
             violations.append(
                 Violation(
                     rule="TEST001",
@@ -725,17 +768,17 @@ def _test001_002(
                     line=record.span[0],
                     message=(
                         f"TEST001: {record.symref} is public with no unit test; "
-                        f'add: frob:tests {record.symref} kind="unit" on its test'
+                        f'add: frob:tests {record.symref} kind="unit" '
+                        f"(or name a test test_{leaf})"
                     ),
                 )
             )
             continue
-        valid = _valid_edges(edges, tests)
-        if len(valid) < cfg.min_unit_cases:
+        if effective < cfg.min_unit_cases:
             _log.info(
                 "TEST002: %s has %d/%d unit cases",
                 record.symref,
-                len(valid),
+                effective,
                 cfg.min_unit_cases,
             )
             violations.append(
@@ -745,7 +788,7 @@ def _test001_002(
                     file=record.id.path,
                     line=record.span[0],
                     message=(
-                        f"TEST002: {record.symref} has {len(valid)} collected unit "
+                        f"TEST002: {record.symref} has {effective} collected unit "
                         f"case(s), below min_unit_cases={cfg.min_unit_cases}; "
                         f'add more: frob:tests {record.symref} kind="unit"'
                     ),

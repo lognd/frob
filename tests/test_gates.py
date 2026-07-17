@@ -868,3 +868,55 @@ class TestGatesDegradeWithoutDiff:
         )
         assert report.is_ok, report.err
         assert any(v.rule == "FUZZ001" for v in report.danger_ok.violations)
+
+
+class TestConventionUnitBinding:
+    def test_test001_satisfied_by_convention_name(self, tmp_path):
+        """T-0018: a public function is unit-covered by a conventionally
+        named test (test_<name>) even without an explicit frob:tests edge."""
+        from typani.option import Nothing
+
+        from frob.gates._models import TestPolicy
+        from frob.testing import CollectedTests
+
+        _write(tmp_path, "src/m.py", "def normalize(x):\n    return x\n")
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(
+            node_ids=frozenset({"tests/test_m.py::test_normalize_handles_empty"})
+        )
+        violations = run_test_gate(
+            snap, (), Nothing(), tests, TestPolicy(min_unit_cases=1)
+        )
+        assert not any(v.rule == "TEST001" for v in violations)
+
+    def test_test001_still_fires_without_matching_test(self, tmp_path):
+        from typani.option import Nothing
+
+        from frob.gates._models import TestPolicy
+        from frob.testing import CollectedTests
+
+        _write(tmp_path, "src/m.py", "def normalize(x):\n    return x\n")
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(
+            node_ids=frozenset({"tests/test_m.py::test_other_thing"})
+        )
+        violations = run_test_gate(
+            snap, (), Nothing(), tests, TestPolicy(min_unit_cases=1)
+        )
+        assert any(v.rule == "TEST001" for v in violations)
+
+    def test_short_symbol_names_do_not_match_everything(self, tmp_path):
+        from typani.option import Nothing
+
+        from frob.gates._models import TestPolicy
+        from frob.testing import CollectedTests
+
+        _write(tmp_path, "src/m.py", "def of(x):\n    return x\n")
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(
+            node_ids=frozenset({"tests/test_m.py::test_unrelated"})
+        )
+        violations = run_test_gate(
+            snap, (), Nothing(), tests, TestPolicy(min_unit_cases=1)
+        )
+        assert any(v.rule == "TEST001" and "::of" in v.message for v in violations)
