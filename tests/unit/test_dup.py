@@ -30,13 +30,13 @@ pytestmark = pytest.mark.skipif(not HAS_DUP, reason="frob.dup not available")
 
 
 class TestFindDuplicates:
-    # frob:tests src/frob/dup/_legacy.py::find_duplicates kind="unit"
     def test_dup_python_finds_one_group(self):
+        # frob:tests src/frob/dup/_legacy.py::find_duplicates kind="unit"
         result = find_duplicates(FIXTURES / "dup_python" / "src")
         assert len(result.groups) == 1
 
-    # frob:tests src/frob/dup/_legacy.py::DupResult.total_clones kind="unit"
     def test_dup_python_total_clones_counts_all_fragments(self):
+        # frob:tests src/frob/dup/_legacy.py::DupResult.total_clones kind="unit"
         result = find_duplicates(FIXTURES / "dup_python" / "src")
         assert result.total_clones == sum(len(g.fragments) for g in result.groups)
 
@@ -123,3 +123,20 @@ class TestDupResultFormat:
         assert isinstance(text, str)
         # Clean project text should indicate no duplicates
         assert "0" in text or "no duplicate" in text.lower()
+
+
+# ---------------------------------------------------------------------------
+# interface-level integration
+# ---------------------------------------------------------------------------
+
+
+def test_dup_end_to_end_scan_then_render():
+    # frob:tests src/frob/dup kind="integration"
+    # Drive the legacy dup boundary end to end: scan a real fixture tree,
+    # group the clones, and round-trip the result through both renderers.
+    result = find_duplicates(FIXTURES / "dup_python" / "src")
+    assert result.groups
+    assert result.total_clones == sum(len(g.fragments) for g in result.groups)
+    data = json.loads(result.as_json())
+    assert len(data["groups"]) == len(result.groups)
+    assert isinstance(result.as_text(), str)

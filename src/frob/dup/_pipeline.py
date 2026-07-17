@@ -90,6 +90,8 @@ import re
 import time
 import warnings
 from collections import defaultdict
+from collections.abc import Iterator
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, cast
 
@@ -367,17 +369,30 @@ def _build_dataflow_graph(
     nodes: list[str] = []  # label per node
     adjacency: list[tuple[int, int]] = []
     for chunk in chunks:
-        chunk_node_ids: list[int] = []
-        for i, tok in enumerate(chunk):
-            if not (_IDENT_RE.match(tok) and tok not in _KEYWORDS):
-                continue
-            is_def = i + 1 < len(chunk) and chunk[i + 1] == "="
-            nodes.append("def" if is_def else "use")
-            chunk_node_ids.append(len(nodes) - 1)
-        for a in range(len(chunk_node_ids)):
-            for b in range(a + 1, len(chunk_node_ids)):
-                adjacency.append((chunk_node_ids[a], chunk_node_ids[b]))
+        _add_chunk_nodes(chunk, nodes, adjacency)
     return tuple(adjacency), tuple(nodes)
+
+
+def _add_chunk_nodes(
+    chunk: tuple[str, ...], nodes: list[str], adjacency: list[tuple[int, int]]
+) -> None:
+    """Append one statement chunk's identifier nodes (def/use) plus their
+    pairwise co-occurrence edges to the running graph (R5 fallback proxy)."""
+    chunk_node_ids: list[int] = []
+    for i, tok in enumerate(chunk):
+        if not (_IDENT_RE.match(tok) and tok not in _KEYWORDS):
+            continue
+        is_def = i + 1 < len(chunk) and chunk[i + 1] == "="
+        nodes.append("def" if is_def else "use")
+        chunk_node_ids.append(len(nodes) - 1)
+    _add_clique_edges(chunk_node_ids, adjacency)
+
+
+def _add_clique_edges(node_ids: list[int], adjacency: list[tuple[int, int]]) -> None:
+    """Add every pairwise edge among `node_ids` (a co-occurrence clique)."""
+    for a in range(len(node_ids)):
+        for b in range(a + 1, len(node_ids)):
+            adjacency.append((node_ids[a], node_ids[b]))
 
 
 _STATEMENT_NODE_LABELS = frozenset(
@@ -460,36 +475,52 @@ def _real_dataflow_graph(
     prev_last_idx: int | None = None
 
     for stmt in statements:
-        is_assignment = bool(stmt.children) and stmt.children[0].label == "assignment"
-        stmt_ids: list[int] = []
-        if is_assignment:
-            assign = stmt.children[0]
-            eq_idx = next(
-                (i for i, c in enumerate(assign.children) if c.label == "="), None
-            )
-            for i, child in enumerate(assign.children):
-                if child.label == "=":
-                    continue
-                role = "def" if (eq_idx is not None and i < eq_idx) else "use"
-                for leaf in _leaf_labels(child):
-                    if _IDENT_RE.match(leaf) and leaf not in _KEYWORDS:
-                        labels.append(role)
-                        stmt_ids.append(len(labels) - 1)
-        else:
-            for leaf in _leaf_labels(stmt):
-                if _IDENT_RE.match(leaf) and leaf not in _KEYWORDS:
-                    labels.append("use")
-                    stmt_ids.append(len(labels) - 1)
-
-        for a in range(len(stmt_ids)):
-            for b in range(a + 1, len(stmt_ids)):
-                adjacency.append((stmt_ids[a], stmt_ids[b]))
+        stmt_ids = _statement_ids(stmt, labels)
+        _add_clique_edges(stmt_ids, adjacency)
         if prev_last_idx is not None and stmt_ids:
             adjacency.append((prev_last_idx, stmt_ids[0]))
         if stmt_ids:
             prev_last_idx = stmt_ids[-1]
 
     return tuple(adjacency), tuple(labels)
+
+
+def _labeled_ids(leaves: tuple[str, ...], role: str, labels: list[str]) -> list[int]:
+    """Append `role` for each identifier leaf, returning the new node indices."""
+    ids: list[int] = []
+    for leaf in leaves:
+        if _IDENT_RE.match(leaf) and leaf not in _KEYWORDS:
+            labels.append(role)
+            ids.append(len(labels) - 1)
+    return ids
+
+
+def _eq_index(children: list[Any]) -> int | None:
+    """Index of the `=` leaf among an assignment node's children, or None."""
+    for i, c in enumerate(children):
+        if c.label == "=":
+            return i
+    return None
+
+
+def _assignment_ids(assign: Any, labels: list[str]) -> list[int]:
+    """Node ids for an `assignment` node: pre-`=` children are "def", the
+    rest "use"."""
+    eq_idx = _eq_index(assign.children)
+    ids: list[int] = []
+    for i, child in enumerate(assign.children):
+        if child.label == "=":
+            continue
+        role = "def" if (eq_idx is not None and i < eq_idx) else "use"
+        ids += _labeled_ids(_leaf_labels(child), role, labels)
+    return ids
+
+
+def _statement_ids(stmt: Any, labels: list[str]) -> list[int]:
+    """Node ids (with def/use labels appended to `labels`) for one statement."""
+    if stmt.children and stmt.children[0].label == "assignment":
+        return _assignment_ids(stmt.children[0], labels)
+    return _labeled_ids(_leaf_labels(stmt), "use", labels)
 
 
 def _core_symbol_tree(root: Path, record: Any) -> Any | None:
@@ -530,6 +561,350 @@ def _apted_similarity_for_pair(
     return sim_result.danger_ok
 
 
+@dataclass
+class _FpState:
+    """Mutable accumulator threaded through the `find_clones` fingerprint and
+    matching passes: per-rung buckets, the ref->tokens/digest/fp maps, and the
+    running fingerprinted/cache-hit/pairs-verified counters."""
+
+    root: Path
+    cfg: DupConfig
+    r1_buckets: dict[str, list[str]] = field(default_factory=lambda: defaultdict(list))
+    r2_buckets: dict[str, list[str]] = field(default_factory=lambda: defaultdict(list))
+    r3_buckets: dict[str, list[str]] = field(default_factory=lambda: defaultdict(list))
+    r5_buckets: dict[int, list[str]] = field(default_factory=lambda: defaultdict(list))
+    fingerprinted: int = 0
+    cache_hits: int = 0
+    pairs_verified: int = 0
+    tokens_by_path: dict[str, dict[str, tuple[str, ...]]] = field(default_factory=dict)
+    body_tokens_by_ref: dict[str, tuple[str, ...]] = field(default_factory=dict)
+    digest_by_ref: dict[str, str] = field(default_factory=dict)
+    fp_by_ref: dict[str, tuple[int, ...]] = field(default_factory=dict)
+
+
+def _r3_fingerprint(
+    state: _FpState, digest: str, normalized: tuple[str, ...]
+) -> str | None:
+    """R3 canonical hash for a normalized token stream, cache-backed. `None`
+    when the frob_core kernel errors (caller skips the symbol's R4/R5)."""
+    cached = _cache.get_fingerprint(state.root, digest, "r3")
+    if cached is not None:
+        state.cache_hits += 1
+        return str(cached[0])
+    result = _core.r3_canonical_hash(normalized)
+    if result.is_err:
+        return None
+    _cache.put_fingerprint(state.root, digest, "r3", (result.danger_ok,))
+    return result.danger_ok
+
+
+def _r4_fingerprint(
+    state: _FpState, symref: str, digest: str, normalized: tuple[str, ...]
+) -> None:
+    """Compute/cache the R4 winnowed fingerprint set for `symref`."""
+    cached = _cache.get_fingerprint(state.root, digest, _R4_FP_RUNG)
+    if cached is not None:
+        state.cache_hits += 1
+        state.fp_by_ref[symref] = cast("tuple[int, ...]", tuple(cached))
+        return
+    result = _core.winnow_fingerprints(normalized, _R4_K, _R4_W)
+    if result.is_ok:
+        state.fp_by_ref[symref] = result.danger_ok
+        _cache.put_fingerprint(state.root, digest, _R4_FP_RUNG, result.danger_ok)
+
+
+def _dataflow_graph(
+    root: Path, record: Any, body_tokens: tuple[str, ...]
+) -> tuple[tuple[tuple[int, int], ...], tuple[str, ...]]:
+    """The R5 def-use/control graph for a symbol: the real statement-node
+    graph when a subtree is available, else the token co-occurrence proxy."""
+    body_tree = _core_symbol_tree(root, record)
+    real = _real_dataflow_graph(body_tree) if body_tree is not None else None
+    if real is not None:
+        return real
+    return _build_dataflow_graph(_split_statements(body_tokens))
+
+
+def _r5_fingerprint(
+    state: _FpState, digest: str, record: Any, body_tokens: tuple[str, ...]
+) -> int | None:
+    """R5 Weisfeiler-Lehman graph hash for a symbol, cache-backed. `None`
+    when the frob_core kernel errors."""
+    cached = _cache.get_fingerprint(state.root, digest, _R5_FP_RUNG)
+    if cached is not None:
+        state.cache_hits += 1
+        return cast(int, cached[0])
+    adjacency, labels = _dataflow_graph(state.root, record, body_tokens)
+    result = _core.wl_hash(adjacency, labels, _R5_ITERATIONS)
+    if result.is_err:
+        return None
+    _cache.put_fingerprint(state.root, digest, _R5_FP_RUNG, (result.danger_ok,))
+    return result.danger_ok
+
+
+def _fingerprint_symbol(state: _FpState, symref: str, record: Any) -> None:
+    """Fingerprint one snapshot symbol into every rung bucket on `state`.
+
+    Bucketing every symbol (not just touched ones) lets a touched symbol
+    match a pre-existing, untouched one. Bodies below `cfg.min_tokens` are
+    skipped. An R3 kernel error skips the symbol's remaining rungs.
+    """
+    path = record.id.path
+    if path not in state.tokens_by_path:
+        state.tokens_by_path[path] = _parsed_symbols_by_path(state.root, path)
+    body_tokens = state.tokens_by_path[path].get(record.id.qualname)
+    if not body_tokens or len(body_tokens) < state.cfg.min_tokens:
+        return
+    state.fingerprinted += 1
+    state.body_tokens_by_ref[symref] = body_tokens
+    digest = _digest(body_tokens)
+    state.digest_by_ref[symref] = digest
+    normalized = _r2_normalize(body_tokens)
+
+    state.r1_buckets[_r1_hash(body_tokens)].append(symref)
+    state.r2_buckets[_r2_hash(body_tokens)].append(symref)
+
+    r3_hash = _r3_fingerprint(state, digest, normalized)
+    if r3_hash is None:
+        return
+    state.r3_buckets["r3:" + r3_hash].append(symref)
+
+    _r4_fingerprint(state, symref, digest, normalized)
+
+    wl = _r5_fingerprint(state, digest, record, body_tokens)
+    if wl is None:
+        return
+    state.r5_buckets[wl].append(symref)
+
+
+def _pair(
+    a: str,
+    b: str,
+    snapshot: GraphSnapshot,
+    similarity: float,
+    rung: str,
+    alignment: tuple[tuple[int, int], ...] = (),
+) -> ClonePair:
+    """A `ClonePair` for refs `a`/`b` using each side's whole symbol span."""
+    return ClonePair(
+        left=CloneRegion(ref=a, span=snapshot.symbols[a].span),
+        right=CloneRegion(ref=b, span=snapshot.symbols[b].span),
+        similarity=similarity,
+        rung=rung,
+        alignment=alignment,
+    )
+
+
+def _bucket_pairs(
+    members: list[str],
+    touched: frozenset[str] | None,
+    seen_pairs: set[frozenset[str]],
+) -> Iterator[tuple[str, str]]:
+    """Unordered new ref pairs in one bucket: skipping untouched-only pairs
+    (when `touched` is set) and any pair already reported by an earlier rung."""
+    if len(members) < 2:
+        return
+    for i in range(len(members)):
+        for j in range(i + 1, len(members)):
+            a, b = members[i], members[j]
+            if touched is not None and a not in touched and b not in touched:
+                continue
+            if frozenset((a, b)) in seen_pairs:
+                continue
+            yield a, b
+
+
+def _hash_rung_groups(
+    state: _FpState,
+    snapshot: GraphSnapshot,
+    touched: frozenset[str] | None,
+    seen_pairs: set[frozenset[str]],
+) -> list[tuple[ClonePair, ...]]:
+    """R1/R2/R3 exact-hash-collision clone groups."""
+    groups: list[tuple[ClonePair, ...]] = []
+    for name, buckets, similarity, rung in (
+        ("r1", state.r1_buckets, 1.0, "r1"),
+        ("r2", state.r2_buckets, 0.95, "r2"),
+        ("r3", state.r3_buckets, 0.9, "r3"),
+    ):
+        for members in buckets.values():
+            group = [
+                _pair(a, b, snapshot, similarity, rung)
+                for a, b in _consume_pairs(
+                    _bucket_pairs(members, touched, seen_pairs), seen_pairs, state
+                )
+            ]
+            if group:
+                groups.append(tuple(group))
+        _log.debug("find_clones: rung=%s buckets=%d", name, len(buckets))
+    return groups
+
+
+def _consume_pairs(
+    pairs: Iterator[tuple[str, str]],
+    seen_pairs: set[frozenset[str]],
+    state: _FpState,
+) -> Iterator[tuple[str, str]]:
+    """Mark each yielded pair seen and count it verified as it is consumed."""
+    for a, b in pairs:
+        seen_pairs.add(frozenset((a, b)))
+        state.pairs_verified += 1
+        yield a, b
+
+
+def _r4_alignment(
+    state: _FpState, a: str, b: str, d1: str, d2: str
+) -> tuple[float, tuple[tuple[int, int], ...]] | None:
+    """The statement-Levenshtein similarity + alignment for an R4 candidate
+    pair, cache-backed. `None` when the frob_core kernel errors."""
+    cached = _cache.get_verdict(state.root, d1, d2, _R4_VERDICT_METHOD, _CORPUS_EPOCH)
+    if cached is not None:
+        state.cache_hits += 1
+        raw = cast("list[list[int]]", cached[1])
+        return cast(float, cached[0]), tuple((p[0], p[1]) for p in raw)
+    a_hashes = _statement_hashes(_split_statements(state.body_tokens_by_ref[a]))
+    b_hashes = _statement_hashes(_split_statements(state.body_tokens_by_ref[b]))
+    result = _core.tree_edit_similarity(a_hashes, b_hashes)
+    if result.is_err:
+        return None
+    sim, alignment_pairs = result.danger_ok
+    _cache.put_verdict(
+        state.root,
+        d1,
+        d2,
+        _R4_VERDICT_METHOD,
+        _CORPUS_EPOCH,
+        (sim, alignment_pairs),
+        state.cfg.cache_entries,
+    )
+    return sim, alignment_pairs
+
+
+def _r4_spans(
+    state: _FpState,
+    a: str,
+    b: str,
+    snapshot: GraphSnapshot,
+    alignment_pairs: tuple[tuple[int, int], ...],
+) -> tuple[tuple[int, int], tuple[int, int]]:
+    """The narrowed left/right region spans for an R4 match's alignment."""
+    a_chunks = _split_statements(state.body_tokens_by_ref[a])
+    b_chunks = _split_statements(state.body_tokens_by_ref[b])
+    a_idx = tuple(p[0] for p in alignment_pairs)
+    b_idx = tuple(p[1] for p in alignment_pairs)
+    left = _region_span_for_alignment(snapshot.symbols[a].span, len(a_chunks), a_idx)
+    right = _region_span_for_alignment(snapshot.symbols[b].span, len(b_chunks), b_idx)
+    return left, right
+
+
+def _r4_verify_pair(
+    state: _FpState,
+    a: str,
+    b: str,
+    snapshot: GraphSnapshot,
+    seen_pairs: set[frozenset[str]],
+) -> ClonePair | None:
+    """Verify one R4 candidate pair, counting it and reporting a `ClonePair`
+    when it clears the near-miss floor (else `None`)."""
+    d1, d2 = state.digest_by_ref[a], state.digest_by_ref[b]
+    verdict = _r4_alignment(state, a, b, d1, d2)
+    if verdict is None:
+        return None
+    sim, alignment_pairs = verdict
+    state.pairs_verified += 1
+    seen_pairs.add(frozenset((a, b)))
+    if sim < _R4_SIMILARITY_FLOOR:
+        return None
+    left_span, right_span = _r4_spans(state, a, b, snapshot, alignment_pairs)
+    reported_sim = _r4_reported_sim(state, a, b, snapshot, d1, d2, sim)
+    return ClonePair(
+        left=CloneRegion(ref=a, span=left_span),
+        right=CloneRegion(ref=b, span=right_span),
+        similarity=reported_sim,
+        rung="r4",
+        alignment=alignment_pairs,
+    )
+
+
+def _r4_reported_sim(
+    state: _FpState,
+    a: str,
+    b: str,
+    snapshot: GraphSnapshot,
+    d1: str,
+    d2: str,
+    fallback: float,
+) -> float:
+    """Reported R4 similarity: cached/real APTED, else `fallback`."""
+    cached = _cache.get_verdict(
+        state.root, d1, d2, _R4_APTED_VERDICT_METHOD, _CORPUS_EPOCH
+    )
+    if cached is not None:
+        state.cache_hits += 1
+        return cast(float, cached[0])
+    apted_sim = _apted_similarity_for_pair(
+        state.root, snapshot.symbols[a], snapshot.symbols[b]
+    )
+    if apted_sim is not None:
+        _cache.put_verdict(
+            state.root,
+            d1,
+            d2,
+            _R4_APTED_VERDICT_METHOD,
+            _CORPUS_EPOCH,
+            (apted_sim, ()),
+            state.cfg.cache_entries,
+        )
+        return apted_sim
+    return fallback
+
+
+def _r4_groups(
+    state: _FpState,
+    snapshot: GraphSnapshot,
+    touched: frozenset[str] | None,
+    seen_pairs: set[frozenset[str]],
+) -> list[tuple[ClonePair, ...]]:
+    """R4 near-miss clone groups: winnow-fingerprint candidates verified by
+    statement alignment, then refined by real tree-edit distance."""
+    r4_refs = list(state.fp_by_ref)
+    if len(r4_refs) < 2:
+        return []
+    sets = tuple(state.fp_by_ref[r] for r in r4_refs)
+    candidates_result = _core.candidate_pairs(sets, _R4_MIN_SHARED)
+    if candidates_result.is_err:
+        _log.debug("find_clones: r4 candidate discovery unavailable")
+        return []
+    r4_group: list[ClonePair] = []
+    for i, j in candidates_result.danger_ok:
+        a, b = r4_refs[i], r4_refs[j]
+        if touched is not None and a not in touched and b not in touched:
+            continue
+        if frozenset((a, b)) in seen_pairs:
+            continue
+        pair = _r4_verify_pair(state, a, b, snapshot, seen_pairs)
+        if pair is not None:
+            r4_group.append(pair)
+    return [tuple(r4_group)] if r4_group else []
+
+
+def _r5_groups(
+    state: _FpState,
+    snapshot: GraphSnapshot,
+    touched: frozenset[str] | None,
+    seen_pairs: set[frozenset[str]],
+) -> list[tuple[ClonePair, ...]]:
+    """R5 clone groups: WL-hash bucket collisions not found by an earlier rung."""
+    r5_group = [
+        _pair(a, b, snapshot, _R5_SIMILARITY, "r5")
+        for members in state.r5_buckets.values()
+        for a, b in _consume_pairs(
+            _bucket_pairs(members, touched, seen_pairs), seen_pairs, state
+        )
+    ]
+    return [tuple(r5_group)] if r5_group else []
+
+
 # frob:doc docs/dup.md#public-api
 def find_clones(
     snapshot: GraphSnapshot, cfg: DupConfig, diff: Diff | None = None
@@ -550,265 +925,27 @@ def find_clones(
 
     touched = touched_refs(snapshot, diff) if diff is not None else None
 
-    root = Path(snapshot.root)
-    r1_buckets: dict[str, list[str]] = defaultdict(list)
-    r2_buckets: dict[str, list[str]] = defaultdict(list)
-    r3_buckets: dict[str, list[str]] = defaultdict(list)
-    r5_buckets: dict[int, list[str]] = defaultdict(list)
-    fingerprinted = 0
-    cache_hits = 0
-    tokens_by_path: dict[str, dict[str, tuple[str, ...]]] = {}
-    body_tokens_by_ref: dict[str, tuple[str, ...]] = {}
-    digest_by_ref: dict[str, str] = {}
-    fp_by_ref: dict[str, tuple[int, ...]] = {}
-
+    state = _FpState(root=Path(snapshot.root), cfg=cfg)
     for symref, record in snapshot.symbols.items():
-        # Bucket every symbol (not just touched ones) so a touched symbol can
-        # match against a pre-existing, untouched one.
-        path = record.id.path
-        if path not in tokens_by_path:
-            tokens_by_path[path] = _parsed_symbols_by_path(root, path)
-        body_tokens = tokens_by_path[path].get(record.id.qualname)
-        if not body_tokens or len(body_tokens) < cfg.min_tokens:
-            continue
-        fingerprinted += 1
-        body_tokens_by_ref[symref] = body_tokens
-        digest = _digest(body_tokens)
-        digest_by_ref[symref] = digest
-        normalized = _r2_normalize(body_tokens)
+        _fingerprint_symbol(state, symref, record)
 
-        r1_buckets[_r1_hash(body_tokens)].append(symref)
-        r2_buckets[_r2_hash(body_tokens)].append(symref)
-
-        # R3: canonicalized subtree hash, computed by the frob_core kernel
-        # over the same alpha-renamed token stream (a simplification of
-        # true R3 canonicalization -- see the module docstring's
-        # Deviations note; literal abstraction/control-flow normalization
-        # is not yet exposed by frob.lang). Cached by digest.
-        cached_r3 = _cache.get_fingerprint(root, digest, "r3")
-        if cached_r3 is not None:
-            cache_hits += 1
-            r3_hash = str(cached_r3[0])
-        else:
-            r3_result = _core.r3_canonical_hash(normalized)
-            if r3_result.is_err:
-                continue
-            r3_hash = r3_result.danger_ok
-            _cache.put_fingerprint(root, digest, "r3", (r3_hash,))
-        r3_buckets["r3:" + r3_hash].append(symref)
-
-        # R4: winnowed fingerprint set, cached by digest.
-        cached_fp = _cache.get_fingerprint(root, digest, _R4_FP_RUNG)
-        if cached_fp is not None:
-            cache_hits += 1
-            fp_by_ref[symref] = cast(tuple[int, ...], tuple(cached_fp))
-        else:
-            fp_result = _core.winnow_fingerprints(normalized, _R4_K, _R4_W)
-            if fp_result.is_ok:
-                fps = fp_result.danger_ok
-                fp_by_ref[symref] = fps
-                _cache.put_fingerprint(root, digest, _R4_FP_RUNG, fps)
-
-        # R5: Weisfeiler-Lehman graph-kernel hash over a def-use/control-
-        # flow graph, cached by digest. Prefers the real graph built from
-        # frob.lang's statement nodes (`_real_dataflow_graph`); falls back
-        # to the token co-occurrence proxy only when the real graph is
-        # unavailable (see both functions' docstrings).
-        cached_wl = _cache.get_fingerprint(root, digest, _R5_FP_RUNG)
-        if cached_wl is not None:
-            cache_hits += 1
-            wl = cast(int, cached_wl[0])
-        else:
-            real_graph = None
-            body_tree = _core_symbol_tree(root, record)
-            if body_tree is not None:
-                real_graph = _real_dataflow_graph(body_tree)
-            if real_graph is not None:
-                adjacency, labels = real_graph
-            else:
-                stmt_chunks = _split_statements(body_tokens)
-                adjacency, labels = _build_dataflow_graph(stmt_chunks)
-            wl_result = _core.wl_hash(adjacency, labels, _R5_ITERATIONS)
-            if wl_result.is_err:
-                continue
-            wl = wl_result.danger_ok
-            _cache.put_fingerprint(root, digest, _R5_FP_RUNG, (wl,))
-        r5_buckets[wl].append(symref)
-
-    groups: list[tuple[ClonePair, ...]] = []
     seen_pairs: set[frozenset[str]] = set()
-    pairs_verified = 0
-
-    for rung_name, buckets, similarity, rung_label in (
-        ("r1", r1_buckets, 1.0, "r1"),
-        ("r2", r2_buckets, 0.95, "r2"),
-        ("r3", r3_buckets, 0.9, "r3"),
-    ):
-        for members in buckets.values():
-            if len(members) < 2:
-                continue
-            group: list[ClonePair] = []
-            for i in range(len(members)):
-                for j in range(i + 1, len(members)):
-                    a, b = members[i], members[j]
-                    if touched is not None and a not in touched and b not in touched:
-                        continue
-                    key = frozenset((a, b))
-                    if key in seen_pairs:
-                        continue
-                    seen_pairs.add(key)
-                    pairs_verified += 1
-                    group.append(
-                        ClonePair(
-                            left=CloneRegion(ref=a, span=snapshot.symbols[a].span),
-                            right=CloneRegion(ref=b, span=snapshot.symbols[b].span),
-                            similarity=similarity,
-                            rung=rung_label,
-                        )
-                    )
-            if group:
-                groups.append(tuple(group))
-        _log.debug("find_clones: rung=%s buckets=%d", rung_name, len(buckets))
-
-    # R4: candidate discovery over winnowed fingerprints, then statement-
-    # alignment verification (skips anything already matched by R1-R3).
-    r4_refs = list(fp_by_ref)
-    if len(r4_refs) >= 2:
-        sets = tuple(fp_by_ref[r] for r in r4_refs)
-        candidates_result = _core.candidate_pairs(sets, _R4_MIN_SHARED)
-        if candidates_result.is_ok:
-            r4_group: list[ClonePair] = []
-            for i, j in candidates_result.danger_ok:
-                a, b = r4_refs[i], r4_refs[j]
-                if touched is not None and a not in touched and b not in touched:
-                    continue
-                key = frozenset((a, b))
-                if key in seen_pairs:
-                    continue
-                d1, d2 = digest_by_ref[a], digest_by_ref[b]
-                cached_verdict = _cache.get_verdict(
-                    root, d1, d2, _R4_VERDICT_METHOD, _CORPUS_EPOCH
-                )
-                if cached_verdict is not None:
-                    cache_hits += 1
-                    sim = cast(float, cached_verdict[0])
-                    raw_alignment = cast("list[list[int]]", cached_verdict[1])
-                    alignment_pairs = tuple((p[0], p[1]) for p in raw_alignment)
-                else:
-                    a_chunks = _split_statements(body_tokens_by_ref[a])
-                    b_chunks = _split_statements(body_tokens_by_ref[b])
-                    a_hashes = _statement_hashes(a_chunks)
-                    b_hashes = _statement_hashes(b_chunks)
-                    sim_result = _core.tree_edit_similarity(a_hashes, b_hashes)
-                    if sim_result.is_err:
-                        continue
-                    sim, alignment_pairs = sim_result.danger_ok
-                    _cache.put_verdict(
-                        root,
-                        d1,
-                        d2,
-                        _R4_VERDICT_METHOD,
-                        _CORPUS_EPOCH,
-                        (sim, alignment_pairs),
-                        cfg.cache_entries,
-                    )
-                pairs_verified += 1
-                seen_pairs.add(key)
-                if sim < _R4_SIMILARITY_FLOOR:
-                    continue
-                a_chunks = _split_statements(body_tokens_by_ref[a])
-                b_chunks = _split_statements(body_tokens_by_ref[b])
-                a_idx = tuple(p[0] for p in alignment_pairs)
-                b_idx = tuple(p[1] for p in alignment_pairs)
-                left_span = _region_span_for_alignment(
-                    snapshot.symbols[a].span, len(a_chunks), a_idx
-                )
-                right_span = _region_span_for_alignment(
-                    snapshot.symbols[b].span, len(b_chunks), b_idx
-                )
-                # Real tree-edit-distance verification (Zhang-Shasha, via
-                # frob-core's apted_similarity): the statement-Levenshtein
-                # `sim` above already cleared the near-miss floor and picked
-                # the region span; this refines the REPORTED similarity to
-                # the real subtree-structure metric, which is sensitive to
-                # within-statement reordering the flat sequence cannot see
-                # (docs/dup.md's "Rung R4" note). Falls back to the
-                # statement-Levenshtein `sim` if either side's subtree
-                # cannot be recovered (e.g. a non-function region span).
-                reported_sim = sim
-                cached_apted = _cache.get_verdict(
-                    root, d1, d2, _R4_APTED_VERDICT_METHOD, _CORPUS_EPOCH
-                )
-                if cached_apted is not None:
-                    cache_hits += 1
-                    reported_sim = cast(float, cached_apted[0])
-                else:
-                    apted_sim = _apted_similarity_for_pair(
-                        root, snapshot.symbols[a], snapshot.symbols[b]
-                    )
-                    if apted_sim is not None:
-                        reported_sim = apted_sim
-                        _cache.put_verdict(
-                            root,
-                            d1,
-                            d2,
-                            _R4_APTED_VERDICT_METHOD,
-                            _CORPUS_EPOCH,
-                            (apted_sim, ()),
-                            cfg.cache_entries,
-                        )
-                r4_group.append(
-                    ClonePair(
-                        left=CloneRegion(ref=a, span=left_span),
-                        right=CloneRegion(ref=b, span=right_span),
-                        similarity=reported_sim,
-                        rung="r4",
-                        alignment=alignment_pairs,
-                    )
-                )
-            if r4_group:
-                groups.append(tuple(r4_group))
-        else:
-            _log.debug("find_clones: r4 candidate discovery unavailable")
-
-    # R5: WL-hash bucket collisions not already found by an earlier rung.
-    r5_group: list[ClonePair] = []
-    for members in r5_buckets.values():
-        if len(members) < 2:
-            continue
-        for i in range(len(members)):
-            for j in range(i + 1, len(members)):
-                a, b = members[i], members[j]
-                if touched is not None and a not in touched and b not in touched:
-                    continue
-                key = frozenset((a, b))
-                if key in seen_pairs:
-                    continue
-                seen_pairs.add(key)
-                pairs_verified += 1
-                r5_group.append(
-                    ClonePair(
-                        left=CloneRegion(ref=a, span=snapshot.symbols[a].span),
-                        right=CloneRegion(ref=b, span=snapshot.symbols[b].span),
-                        similarity=_R5_SIMILARITY,
-                        rung="r5",
-                    )
-                )
-    if r5_group:
-        groups.append(tuple(r5_group))
+    groups = _hash_rung_groups(state, snapshot, touched, seen_pairs)
+    groups += _r4_groups(state, snapshot, touched, seen_pairs)
+    groups += _r5_groups(state, snapshot, touched, seen_pairs)
 
     stats = DupStats(
-        fingerprinted=fingerprinted,
-        cache_hits=cache_hits,
-        pairs_verified=pairs_verified,
+        fingerprinted=state.fingerprinted,
+        cache_hits=state.cache_hits,
+        pairs_verified=state.pairs_verified,
     )
     _log.info(
         "find_clones: %d group(s), %d pair(s) verified, %d symbol(s) fingerprinted, "
         "%d cache hit(s)",
         len(groups),
-        pairs_verified,
-        fingerprinted,
-        cache_hits,
+        state.pairs_verified,
+        state.fingerprinted,
+        state.cache_hits,
     )
     return Ok(CloneReport(groups=tuple(groups), stats=stats))
 
@@ -887,6 +1024,41 @@ def probe_equivalence(
     parameter's type has no resolvable generator) and compares outputs
     for up to `budget_s` seconds.
     """
+    callables = _probe_callables(a, b, snapshot)
+    if callables.is_err:
+        return Err(callables.danger_err)
+    fn_a, fn_b = callables.danger_ok
+
+    strategies_r = _probe_strategies(fn_a)
+    if strategies_r.is_err:
+        return Err(strategies_r.danger_err)
+
+    equivalent, cases_run, counterexample = _run_probe_cases(
+        fn_a, fn_b, strategies_r.danger_ok, budget_s
+    )
+    _log.info(
+        "probe_equivalence: %s vs %s -- equivalent=%s cases_run=%d",
+        a,
+        b,
+        equivalent,
+        cases_run,
+    )
+    return Ok(
+        ProbeVerdict(
+            left=a,
+            right=b,
+            equivalent=equivalent,
+            cases_run=cases_run,
+            counterexample=counterexample,
+        )
+    )
+
+
+def _probe_callables(
+    a: str, b: str, snapshot: GraphSnapshot
+) -> Result[tuple[Any, Any], DupError]:
+    """Resolve `a`/`b` to importable pure Python callables, or `Err(NotPure)`
+    when either is missing, effectful (purity heuristic), or unloadable."""
     root = Path(snapshot.root)
     a_rec = snapshot.symbols.get(a)
     b_rec = snapshot.symbols.get(b)
@@ -908,7 +1080,16 @@ def probe_equivalence(
     if fn_a is None or fn_b is None:
         _log.info("probe_equivalence: %s or %s could not be loaded as a callable", a, b)
         return Err(DupError.NotPure)
+    return Ok((fn_a, fn_b))
 
+
+def _probe_strategies(fn_a: Any) -> Result[dict[str, Any], DupError]:
+    """Arbitrary generators for `fn_a`'s parameters, keyed by name.
+
+    `Err(NoGenerator)` for var-args, an unannotated parameter, or a type
+    with no resolvable generator; `Err(NotPure)` if the signature is
+    uninspectable.
+    """
     import inspect
 
     from frob.fuzz._arbitrary import resolve
@@ -934,7 +1115,23 @@ def probe_equivalence(
         if gen_result.is_err:
             return Err(DupError.NoGenerator)
         strategies[name] = gen_result.danger_ok
+    return Ok(strategies)
 
+
+def _call_safe(fn: Any, kwargs: dict[str, Any]) -> Any:
+    """Call `fn(**kwargs)`, mapping any exception to a comparable sentinel so
+    two callables that fail the same way compare equal."""
+    try:
+        return fn(**kwargs)
+    except Exception as exc:  # noqa: BLE001 - comparing failure modes, not raising
+        return ("__frob_exc__", type(exc).__name__)
+
+
+def _run_probe_cases(
+    fn_a: Any, fn_b: Any, strategies: dict[str, Any], budget_s: float
+) -> tuple[bool, int, dict[str, str] | None]:
+    """Draw inputs and compare `fn_a`/`fn_b` outputs until they diverge, the
+    case budget is hit, or `budget_s` elapses."""
     cases_run = 0
     equivalent = True
     counterexample: dict[str, str] | None = None
@@ -947,14 +1144,8 @@ def probe_equivalence(
         ):
             kwargs = {name: strategy.example() for name, strategy in strategies.items()}
             cases_run += 1
-            try:
-                result_a = fn_a(**kwargs)
-            except Exception as exc:  # noqa: BLE001 - comparing failure modes, not raising
-                result_a = ("__frob_exc__", type(exc).__name__)
-            try:
-                result_b = fn_b(**kwargs)
-            except Exception as exc:  # noqa: BLE001 - comparing failure modes, not raising
-                result_b = ("__frob_exc__", type(exc).__name__)
+            result_a = _call_safe(fn_a, kwargs)
+            result_b = _call_safe(fn_b, kwargs)
             if result_a != result_b:
                 equivalent = False
                 counterexample = {
@@ -962,23 +1153,7 @@ def probe_equivalence(
                     "left_result": repr(result_a),
                     "right_result": repr(result_b),
                 }
-
-    _log.info(
-        "probe_equivalence: %s vs %s -- equivalent=%s cases_run=%d",
-        a,
-        b,
-        equivalent,
-        cases_run,
-    )
-    return Ok(
-        ProbeVerdict(
-            left=a,
-            right=b,
-            equivalent=equivalent,
-            cases_run=cases_run,
-            counterexample=counterexample,
-        )
-    )
+    return equivalent, cases_run, counterexample
 
 
 # R7 (opt-in, bounded-SMT): the AST node types `_smt_translate` accepts.
@@ -1008,56 +1183,78 @@ def _smt_translate(node: Any, z3: Any, env: dict[str, Any]) -> Any:
             raise ValueError(f"unbound name {node.id!r}")
         return env[node.id]
     if isinstance(node, _ast.UnaryOp):
-        operand = _smt_translate(node.operand, z3, env)
-        if isinstance(node.op, _ast.USub):
-            return -operand
-        if isinstance(node.op, _ast.Not):
-            return z3.Not(operand)
-        raise ValueError(f"unsupported unary op {type(node.op).__name__}")
+        return _smt_unaryop(node, z3, env)
     if isinstance(node, _ast.BinOp):
-        op_name = type(node.op).__name__
-        if op_name not in _SMT_BINOPS:
-            raise ValueError(f"unsupported binop {op_name}")
-        left = _smt_translate(node.left, z3, env)
-        right = _smt_translate(node.right, z3, env)
-        return {
-            "Add": lambda: left + right,
-            "Sub": lambda: left - right,
-            "Mult": lambda: left * right,
-            "FloorDiv": lambda: left / right,
-            "Mod": lambda: left % right,
-        }[op_name]()
+        return _smt_binop(node, z3, env)
     if isinstance(node, _ast.BoolOp):
-        op_name = type(node.op).__name__
-        if op_name not in _SMT_BOOLOPS:
-            raise ValueError(f"unsupported boolop {op_name}")
-        values = [_smt_translate(v, z3, env) for v in node.values]
-        return z3.And(*values) if op_name == "And" else z3.Or(*values)
-    is_simple_compare = (
+        return _smt_boolop(node, z3, env)
+    if (
         isinstance(node, _ast.Compare)
         and len(node.ops) == 1
         and len(node.comparators) == 1
-    )
-    if is_simple_compare:
-        op_name = type(node.ops[0]).__name__
-        if op_name not in _SMT_CMPOPS:
-            raise ValueError(f"unsupported compare op {op_name}")
-        left = _smt_translate(node.left, z3, env)
-        right = _smt_translate(node.comparators[0], z3, env)
-        return {
-            "Eq": lambda: left == right,
-            "NotEq": lambda: left != right,
-            "Lt": lambda: left < right,
-            "LtE": lambda: left <= right,
-            "Gt": lambda: left > right,
-            "GtE": lambda: left >= right,
-        }[op_name]()
+    ):
+        return _smt_compare(node, z3, env)
     if isinstance(node, _ast.IfExp):
-        test = _smt_translate(node.test, z3, env)
-        body = _smt_translate(node.body, z3, env)
-        orelse = _smt_translate(node.orelse, z3, env)
-        return z3.If(test, body, orelse)
+        return z3.If(
+            _smt_translate(node.test, z3, env),
+            _smt_translate(node.body, z3, env),
+            _smt_translate(node.orelse, z3, env),
+        )
     raise ValueError(f"unsupported node {type(node).__name__}")
+
+
+def _smt_unaryop(node: Any, z3: Any, env: dict[str, Any]) -> Any:
+    """Translate a unary `-`/`not` expression to Z3."""
+    import ast as _ast
+
+    operand = _smt_translate(node.operand, z3, env)
+    if isinstance(node.op, _ast.USub):
+        return -operand
+    if isinstance(node.op, _ast.Not):
+        return z3.Not(operand)
+    raise ValueError(f"unsupported unary op {type(node.op).__name__}")
+
+
+def _smt_binop(node: Any, z3: Any, env: dict[str, Any]) -> Any:
+    """Translate a bounded arithmetic binary op (`+ - * // %`) to Z3."""
+    op_name = type(node.op).__name__
+    if op_name not in _SMT_BINOPS:
+        raise ValueError(f"unsupported binop {op_name}")
+    left = _smt_translate(node.left, z3, env)
+    right = _smt_translate(node.right, z3, env)
+    return {
+        "Add": lambda: left + right,
+        "Sub": lambda: left - right,
+        "Mult": lambda: left * right,
+        "FloorDiv": lambda: left / right,
+        "Mod": lambda: left % right,
+    }[op_name]()
+
+
+def _smt_boolop(node: Any, z3: Any, env: dict[str, Any]) -> Any:
+    """Translate an `and`/`or` expression to Z3."""
+    op_name = type(node.op).__name__
+    if op_name not in _SMT_BOOLOPS:
+        raise ValueError(f"unsupported boolop {op_name}")
+    values = [_smt_translate(v, z3, env) for v in node.values]
+    return z3.And(*values) if op_name == "And" else z3.Or(*values)
+
+
+def _smt_compare(node: Any, z3: Any, env: dict[str, Any]) -> Any:
+    """Translate a single-operator comparison to Z3."""
+    op_name = type(node.ops[0]).__name__
+    if op_name not in _SMT_CMPOPS:
+        raise ValueError(f"unsupported compare op {op_name}")
+    left = _smt_translate(node.left, z3, env)
+    right = _smt_translate(node.comparators[0], z3, env)
+    return {
+        "Eq": lambda: left == right,
+        "NotEq": lambda: left != right,
+        "Lt": lambda: left < right,
+        "LtE": lambda: left <= right,
+        "Gt": lambda: left > right,
+        "GtE": lambda: left >= right,
+    }[op_name]()
 
 
 def _smt_function_expr(source: str, z3: Any) -> tuple[Any, list[Any]] | None:
@@ -1118,6 +1315,22 @@ def probe_smt_equivalence(
         _log.warning("probe_smt_equivalence: z3-solver not installed")
         return Err(DupError.SmtUnavailable)
 
+    parsed = _smt_parse_pair(a, b, snapshot, z3)
+    if parsed.is_err:
+        return Err(parsed.danger_err)
+    (expr_a, params_a), (expr_b, params_b) = parsed.danger_ok
+    return _smt_solve(a, b, expr_a, params_a, expr_b, params_b, z3)
+
+
+def _smt_parse_pair(
+    a: str, b: str, snapshot: GraphSnapshot, z3: Any
+) -> Result[tuple[tuple[Any, list[Any]], tuple[Any, list[Any]]], DupError]:
+    """Load `a`/`b`, parse each into a bounded Z3 expression + param consts.
+
+    `Err(NotPure)` if either symbol is missing; `Err(SmtUnsupported)` if
+    either is unloadable, unreadable, outside the bounded subset, or the two
+    differ in arity.
+    """
     root = Path(snapshot.root)
     a_rec = snapshot.symbols.get(a)
     b_rec = snapshot.symbols.get(b)
@@ -1142,10 +1355,22 @@ def probe_smt_equivalence(
     parsed_b = _smt_function_expr(src_b, z3)
     if parsed_a is None or parsed_b is None:
         return Err(DupError.SmtUnsupported)
-    expr_a, params_a = parsed_a
-    expr_b, params_b = parsed_b
-    if len(params_a) != len(params_b):
+    if len(parsed_a[1]) != len(parsed_b[1]):
         return Err(DupError.SmtUnsupported)
+    return Ok((parsed_a, parsed_b))
+
+
+def _smt_solve(
+    a: str,
+    b: str,
+    expr_a: Any,
+    params_a: list[Any],
+    expr_b: Any,
+    params_b: list[Any],
+    z3: Any,
+) -> Result[ProbeVerdict, DupError]:
+    """Check `expr_a != expr_b` for satisfiability: UNSAT proves equivalence,
+    SAT yields a counterexample, UNKNOWN is `Err(SmtUnsupported)`."""
     # Share params_a's consts as both functions' free variables (b's own
     # params were already substituted in when translated with its own
     # env -- rebuild b's expr over a's consts by positional identity).

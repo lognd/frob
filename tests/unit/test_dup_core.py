@@ -24,6 +24,7 @@ def test_core_available_returns_bool():
 
 # frob:tests frob-core/src/lib.rs::frob_core kind="unit"
 def test_frob_core_module_registers_exported_kernels():
+    # frob:tests frob-core/src/lib.rs kind="integration"
     # The #[pymodule] registration entry is what wires the Rust kernels into
     # Python; assert the module imports and exposes its exported surface.
     import frob_core
@@ -39,9 +40,10 @@ def test_frob_core_module_registers_exported_kernels():
         assert callable(getattr(frob_core, name))
 
 
-# frob:tests src/frob/dup/_core.py::r3_canonical_hash kind="unit"
 class TestR3CanonicalHash:
     def test_identical_token_streams_hash_equal(self):
+        # frob:tests src/frob/dup/_core.py::r3_canonical_hash kind="unit"
+        # frob:tests frob-core/src/lib.rs::r3_canonical_hash kind="unit"
         tokens = ("def", "_v0", "return", "_v0")
         a = _core.r3_canonical_hash(tokens)
         b = _core.r3_canonical_hash(tokens)
@@ -79,9 +81,10 @@ def test_tree_edit_similarity_identical_sequences_is_one():
     assert alignment == ((0, 0), (1, 1), (2, 2))
 
 
-# frob:tests src/frob/dup/_core.py::apted_similarity kind="unit"
 class TestAptedSimilarity:
     def test_identical_trees_similarity_one(self):
+        # frob:tests src/frob/dup/_core.py::apted_similarity kind="unit"
+        # frob:tests frob-core/src/lib.rs::apted_similarity kind="unit"
         labels = ("def", "return", "name")
         parents = (-1, 0, 0)
         result = _core.apted_similarity(labels, parents, labels, parents)
@@ -94,9 +97,10 @@ class TestAptedSimilarity:
         assert result.danger_ok == pytest.approx(0.0)
 
 
-# frob:tests src/frob/dup/_core.py::wl_hash kind="unit"
 class TestWlHash:
     def test_relabeled_isomorphic_graphs_collide(self):
+        # frob:tests src/frob/dup/_core.py::wl_hash kind="unit"
+        # frob:tests frob-core/src/lib.rs::wl_hash kind="unit"
         labels_a = ("def", "use", "use")
         adj_a = ((0, 1), (1, 2), (2, 0))
         labels_b = ("use", "def", "use")

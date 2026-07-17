@@ -65,6 +65,53 @@ def _enclosing_symbol(
     return min(candidates, key=lambda r: r.span[1] - r.span[0])
 
 
+# frob:ticket T-0021
+def _symbols_by_path(snapshot: GraphSnapshot) -> dict[str, list[SymbolRecord]]:
+    """Group `snapshot`'s symbol records by their source path for span lookup."""
+    by_path: dict[str, list[SymbolRecord]] = {}
+    for record in snapshot.symbols.values():
+        by_path.setdefault(record.id.path, []).append(record)
+    return by_path
+
+
+# frob:ticket T-0021
+def _accumulate_totals(
+    stats_dict: dict, root: Path, by_path: dict[str, list[SymbolRecord]]
+) -> tuple[dict[str, dict[str, float | int]], float]:
+    """Fold pstats rows onto symbol spans: per-symref cum/self/ncalls totals
+    plus the self-time of every row that resolved to no symbol."""
+    totals: dict[str, dict[str, float | int]] = {}
+    unattributed_s = 0.0
+    for (raw_file, line, _funcname), row in stats_dict.items():
+        _cc, ncalls, self_t, cum_t, _callers = row
+        rel_path = _relativize(root, raw_file)
+        record = _enclosing_symbol(by_path, rel_path, line) if rel_path else None
+        if record is None:
+            unattributed_s += self_t
+            continue
+        bucket = totals.setdefault(
+            record.symref, {"cum_s": 0.0, "self_s": 0.0, "ncalls": 0}
+        )
+        bucket["cum_s"] = float(bucket["cum_s"]) + cum_t
+        bucket["self_s"] = float(bucket["self_s"]) + self_t
+        bucket["ncalls"] = int(bucket["ncalls"]) + ncalls
+    return totals, unattributed_s
+
+
+# frob:ticket T-0021
+def _build_entries(totals: dict[str, dict[str, float | int]]) -> list[HeatEntry]:
+    """One `HeatEntry` per symref from its accumulated cum/self/ncalls totals."""
+    return [
+        HeatEntry(
+            ref=ref,
+            cum_s=float(bucket["cum_s"]),
+            self_s=float(bucket["self_s"]),
+            ncalls=int(bucket["ncalls"]),
+        )
+        for ref, bucket in totals.items()
+    ]
+
+
 # frob:doc docs/perf.md#public-api
 # frob:ticket T-0021
 def heat(artifact: ProfileArtifact, snapshot: GraphSnapshot) -> HeatReport:
@@ -80,38 +127,10 @@ def heat(artifact: ProfileArtifact, snapshot: GraphSnapshot) -> HeatReport:
         _log.error("heat: could not load pstats at %s: %s", pstats_path, exc)
         return HeatReport(entries=(), unattributed_s=0.0)
 
-    by_path: dict[str, list[SymbolRecord]] = {}
-    for record in snapshot.symbols.values():
-        by_path.setdefault(record.id.path, []).append(record)
-
-    totals: dict[str, dict[str, float | int]] = {}
-    unattributed_s = 0.0
-
+    by_path = _symbols_by_path(snapshot)
     stats_dict = stats.stats  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
-    for (raw_file, line, _funcname), row in stats_dict.items():
-        _cc, ncalls, self_t, cum_t, _callers = row
-        rel_path = _relativize(root, raw_file)
-        record = _enclosing_symbol(by_path, rel_path, line) if rel_path else None
-        if record is None:
-            unattributed_s += self_t
-            continue
-        bucket = totals.setdefault(
-            record.symref, {"cum_s": 0.0, "self_s": 0.0, "ncalls": 0}
-        )
-        bucket["cum_s"] = float(bucket["cum_s"]) + cum_t
-        bucket["self_s"] = float(bucket["self_s"]) + self_t
-        bucket["ncalls"] = int(bucket["ncalls"]) + ncalls
-
-    entries = tuple(
-        HeatEntry(
-            ref=ref,
-            cum_s=float(bucket["cum_s"]),
-            self_s=float(bucket["self_s"]),
-            ncalls=int(bucket["ncalls"]),
-        )
-        for ref, bucket in totals.items()
-    )
-    ranked = tuple(sorted(entries, key=lambda e: e.cum_s, reverse=True))
+    totals, unattributed_s = _accumulate_totals(stats_dict, root, by_path)
+    ranked = tuple(sorted(_build_entries(totals), key=lambda e: e.cum_s, reverse=True))
     _log.info(
         "heat: %d symbol(s) attributed, %.3fs unattributed", len(ranked), unattributed_s
     )

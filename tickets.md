@@ -1221,3 +1221,23 @@ acceptance: []
 threat: null
 ```
 A frob: directive comment placed immediately above a nested method or property binds to the ENCLOSING CLASS, not the method, because the class span contains the comment and 'enclosing' wins over 'following'. The edge is silently dropped (no error), so the method never clears COV001/TEST001. Three doc-campaign agents (a353eda, aa2686f, a1b18ef) independently hit this. Workaround: place the directive as first line INSIDE the method body. Proper fix: when a comment sits directly above a def/decorator, prefer the FOLLOWING symbol over the enclosing one. See src/frob/graph/dsl.py directive binding / _enclosing_src.
+
+<!-- ticket:T-0045 -->
+```yaml
+id: T-0045
+title: 'perf: split heat/profile long functions and clear PERF-rule self-flags'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-17'
+blocked_by: []
+parent: null
+scope:
+- src/frob/perf/**
+- tests/test_perf.py
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Refactor campaign: extract cohesive helpers in frob.perf._heat/_profile/_rules so no function trips PERF003/PERF004 or the long-function bar, preserving behavior. Accounts for the touched-set under frob check COV002.

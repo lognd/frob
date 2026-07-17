@@ -41,8 +41,8 @@ def _pairs(report, rung):
 
 
 class TestR4NearMiss:
-    # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
     def test_fires_on_gapped_clone(self, snapshot):
+        # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
         report = find_clones(
             snapshot, DupConfig(min_tokens=5, threshold=0.85)
         ).danger_ok
@@ -73,8 +73,8 @@ class TestR4NearMiss:
 
 
 class TestR5Dataflow:
-    # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
     def test_fires_on_reordered_dataflow_identical_functions(self, snapshot):
+        # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
         report = find_clones(
             snapshot, DupConfig(min_tokens=5, threshold=0.85)
         ).danger_ok
@@ -102,8 +102,8 @@ class TestR6Probing:
     def _ref(self, snapshot, name):
         return next(r for r in snapshot.symbols if name in r)
 
-    # frob:tests src/frob/dup/_pipeline.py::probe_equivalence kind="unit"
     def test_fires_on_behaviorally_equivalent_pure_functions(self, snapshot):
+        # frob:tests src/frob/dup/_pipeline.py::probe_equivalence kind="unit"
         a = self._ref(snapshot, "add_twice_a")
         b = self._ref(snapshot, "add_twice_b")
         result = probe_equivalence(a, b, snapshot, budget_s=2.0)
@@ -112,8 +112,8 @@ class TestR6Probing:
         assert verdict.equivalent is True
         assert verdict.cases_run > 0
 
-    # frob:tests src/frob/dup/_pipeline.py::probe_equivalence kind="unit"
     def test_does_not_false_positive_on_different_pure_functions(self, snapshot):
+        # frob:tests src/frob/dup/_pipeline.py::probe_equivalence kind="unit"
         a = self._ref(snapshot, "add_twice_a")
         b = self._ref(snapshot, "double_plus_one")
         result = probe_equivalence(a, b, snapshot, budget_s=2.0)

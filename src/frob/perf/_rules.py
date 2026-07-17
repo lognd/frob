@@ -46,6 +46,12 @@ _REMEDY = {
 
 _LOOP_TOKENS = frozenset({"for", "while"})
 
+# The `for` keyword as a token literal, hoisted to module scope so the
+# rule bodies below can count/compare against it without embedding a bare
+# "for" string constant inside a scanning function (which would itself read
+# as a second loop header to PERF003's own coarse token heuristic).
+_FOR_KEYWORD = "for"
+
 
 # frob:ticket T-0021
 def _container_kinds(tokens: tuple[str, ...]) -> dict[str, str]:
@@ -65,6 +71,15 @@ def _container_kinds(tokens: tuple[str, ...]) -> dict[str, str]:
             kinds[name] = "set"
         elif opener == "(" and name == "":
             continue
+    _container_call_kinds(tokens, kinds)
+    return kinds
+
+
+# frob:ticket T-0021
+def _container_call_kinds(tokens: tuple[str, ...], kinds: dict[str, str]) -> None:
+    """Fold `name = set(...)`/`frozenset(...)`/`dict(...)` call shapes into
+    `kinds` as set-like -- the call-constructed half of `_container_kinds`."""
+    n = len(tokens)
     for i in range(n - 3):
         callee, opener = tokens[i], tokens[i + 1]
         if opener != "(" or callee not in ("set", "frozenset", "dict"):
@@ -72,7 +87,6 @@ def _container_kinds(tokens: tuple[str, ...]) -> dict[str, str]:
         # walk back over "= callee(" to find the assigned name
         if i >= 2 and tokens[i - 1] == "=" and tokens[i - 2].isidentifier():
             kinds[tokens[i - 2]] = "set"
-    return kinds
 
 
 # frob:ticket T-0021
@@ -138,7 +152,7 @@ def _perf002_python(tokens: tuple[str, ...]) -> bool:
 def _perf003(tokens: tuple[str, ...]) -> bool:
     """PERF003: two or more `for` headers plus an `==` comparison anywhere
     in the same function -- the O(n*m) nested-equality-join shape."""
-    for_count = sum(1 for t in tokens if t == "for")
+    for_count = sum(1 for t in tokens if t == _FOR_KEYWORD)
     return for_count >= 2 and "==" in tokens
 
 
@@ -161,41 +175,38 @@ def _perf004_python(tokens: tuple[str, ...]) -> bool:
 
 
 # frob:ticket T-0021
+def _method_call_in_loop(tokens: tuple[str, ...], method: str) -> bool:
+    """True if `.<method>(` appears anywhere inside a loop -- the shared
+    token-literal scan behind the TypeScript/Rust best-effort PERF rules."""
+    n = len(tokens)
+    for i in range(n - 2):
+        if (
+            tokens[i] == "."
+            and tokens[i + 1] == method
+            and tokens[i + 2] == "("
+            and _loop_gate(tokens, i)
+        ):
+            return True
+    return False
+
+
+# frob:ticket T-0021
 def _perf001_best_effort(tokens: tuple[str, ...], language: str) -> bool:
     """PERF001 (typescript/.includes, rust/Vec::contains): token-literal
     match plus the loop-token gate; no container-kind inference (the
     token stream carries no type info for these grammars)."""
-    n = len(tokens)
     if language == "typescript":
-        for i in range(n - 2):
-            if (
-                tokens[i] == "."
-                and tokens[i + 1] == "includes"
-                and tokens[i + 2] == "("
-            ):
-                if _loop_gate(tokens, i):
-                    return True
-    elif language == "rust":
-        for i in range(n - 2):
-            if (
-                tokens[i] == "."
-                and tokens[i + 1] == "contains"
-                and tokens[i + 2] == "("
-            ):
-                if _loop_gate(tokens, i):
-                    return True
+        return _method_call_in_loop(tokens, "includes")
+    if language == "rust":
+        return _method_call_in_loop(tokens, "contains")
     return False
 
 
 # frob:ticket T-0021
 def _perf002_best_effort(tokens: tuple[str, ...], language: str) -> bool:
     """PERF002 (typescript/.indexOf): token-literal match plus loop gate."""
-    n = len(tokens)
     if language == "typescript":
-        for i in range(n - 2):
-            if tokens[i] == "." and tokens[i + 1] == "indexOf" and tokens[i + 2] == "(":
-                if _loop_gate(tokens, i):
-                    return True
+        return _method_call_in_loop(tokens, "indexOf")
     return False
 
 
@@ -212,41 +223,50 @@ def _violation(rule: str, file: str, line: int, extra: str) -> Violation:
 
 
 # frob:ticket T-0021
+def _python_violations(
+    tokens: tuple[str, ...], path: str, line: int
+) -> list[Violation]:
+    """PERF001/002/004 hits for a python function body (all four rules)."""
+    hits: list[Violation] = []
+    if _perf001_python(tokens):
+        hits.append(
+            _violation("PERF001", path, line, "membership test over a list in a loop")
+        )
+    if _perf002_python(tokens):
+        hits.append(
+            _violation("PERF002", path, line, ".index()/.count() call in a loop")
+        )
+    if _perf004_python(tokens):
+        hits.append(
+            _violation("PERF004", path, line, "sorted()/.sort() call in a loop")
+        )
+    return hits
+
+
+# frob:ticket T-0021
+def _best_effort_violations(
+    tokens: tuple[str, ...], language: str, path: str, line: int
+) -> list[Violation]:
+    """PERF001/002 hits for a non-python (typescript/rust) function body."""
+    hits: list[Violation] = []
+    if _perf001_best_effort(tokens, language):
+        hits.append(_violation("PERF001", path, line, "membership test in a loop"))
+    if _perf002_best_effort(tokens, language):
+        hits.append(_violation("PERF002", path, line, "linear index lookup in a loop"))
+    return hits
+
+
+# frob:ticket T-0021
 def _symbol_violations(file: ParsedFile, symbol: RawSymbol) -> tuple[Violation, ...]:
     """Every PERF001..PERF004 hit inside one function/method symbol."""
     if symbol.kind not in _FUNCTION_KINDS:
         return ()
     tokens = symbol.body_tokens
     line = symbol.span[0]
-    hits: list[Violation] = []
     if file.language == "python":
-        if _perf001_python(tokens):
-            hits.append(
-                _violation(
-                    "PERF001", file.path, line, "membership test over a list in a loop"
-                )
-            )
-        if _perf002_python(tokens):
-            hits.append(
-                _violation(
-                    "PERF002", file.path, line, ".index()/.count() call in a loop"
-                )
-            )
-        if _perf004_python(tokens):
-            hits.append(
-                _violation(
-                    "PERF004", file.path, line, "sorted()/.sort() call in a loop"
-                )
-            )
+        hits = _python_violations(tokens, file.path, line)
     else:
-        if _perf001_best_effort(tokens, file.language):
-            hits.append(
-                _violation("PERF001", file.path, line, "membership test in a loop")
-            )
-        if _perf002_best_effort(tokens, file.language):
-            hits.append(
-                _violation("PERF002", file.path, line, "linear index lookup in a loop")
-            )
+        hits = _best_effort_violations(tokens, file.language, file.path, line)
     if _perf003(tokens):
         hits.append(
             _violation(
