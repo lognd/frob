@@ -8,8 +8,8 @@ from pathlib import Path
 from frob.bind import check, scan_bindings, scan_sources
 
 
-# frob:doc docs/app.md#runners
-def run(argv=None):
+def _build_bind_parser() -> argparse.ArgumentParser:
+    """Argument parser for `frob bind`."""
     p = argparse.ArgumentParser(
         prog="frob bind",
         description="Verify that binding declarations match source signatures",
@@ -24,36 +24,24 @@ def run(argv=None):
         action="store_true",
         help="List all detected source signatures",
     )
-    args = p.parse_args(argv)
+    return p
 
-    root = Path(args.path)
-    if not root.exists():
-        print(f"error: {root} does not exist", file=sys.stderr)
-        sys.exit(1)
 
-    if args.list_bindings:
-        items = scan_bindings(root)
-        if args.json:
-            print(json.dumps([vars(i) for i in items], indent=2))
-        else:
-            for b in items:
-                print(f"{b.file}:{b.line}  {b.signature}  [{b.kind}]")
+def _print_items(items, as_json: bool) -> None:
+    """Print scanned binding/source items as JSON or one line each."""
+    if as_json:
+        print(json.dumps([vars(i) for i in items], indent=2))
         return
+    for i in items:
+        print(f"{i.file}:{i.line}  {i.signature}  [{i.kind}]")
 
-    if args.list_sources:
-        items = scan_sources(root)
-        if args.json:
-            print(json.dumps([vars(i) for i in items], indent=2))
-        else:
-            for s in items:
-                print(f"{s.file}:{s.line}  {s.signature}  [{s.kind}]")
-        return
 
-    mismatches = check(root)
-    if args.json:
+def _report_mismatches(mismatches, as_json: bool, root: Path) -> None:
+    """Print binding/source mismatches; exit non-zero on any text-mode mismatch."""
+    if as_json:
         out = {
             "root": str(root),
-            "ok": len(mismatches) == 0,
+            "ok": not mismatches,
             "mismatches": [
                 {
                     "file": m.binding.file,
@@ -65,10 +53,28 @@ def run(argv=None):
             ],
         }
         print(json.dumps(out, indent=2))
-    else:
-        if not mismatches:
-            print("ok: all bindings match source declarations")
-        else:
-            for m in mismatches:
-                print(f"{m.binding.file}:{m.binding.line}: {m.issue}")
-            sys.exit(1)
+        return
+    if not mismatches:
+        print("ok: all bindings match source declarations")
+        return
+    for m in mismatches:
+        print(f"{m.binding.file}:{m.binding.line}: {m.issue}")
+    sys.exit(1)
+
+
+# frob:doc docs/app.md#runners
+def run(argv=None):
+    args = _build_bind_parser().parse_args(argv)
+
+    root = Path(args.path)
+    if not root.exists():
+        print(f"error: {root} does not exist", file=sys.stderr)
+        sys.exit(1)
+
+    if args.list_bindings:
+        _print_items(scan_bindings(root), args.json)
+        return
+    if args.list_sources:
+        _print_items(scan_sources(root), args.json)
+        return
+    _report_mismatches(check(root), args.json, root)

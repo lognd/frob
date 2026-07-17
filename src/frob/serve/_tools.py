@@ -163,6 +163,11 @@ def frob_graph_query(root: Path, symref: str) -> Result[dict, ServeError]:
     )
 
 
+def _edges_by_kind_value(edges, kind_value: str) -> list:
+    """Edges whose `kind.value` equals `kind_value`."""
+    return [e for e in edges if e.kind.value == kind_value]
+
+
 # frob:doc docs/serve.md#tools
 def frob_doc_for(root: Path, symref: str) -> Result[dict, ServeError]:
     """The doc anchor `symref` links to and the describes-edges pointing at it."""
@@ -177,12 +182,8 @@ def frob_doc_for(root: Path, symref: str) -> Result[dict, ServeError]:
         _log.warning("serve: frob_doc_for: %s: %s", symref, resolved.danger_err)
         return Err(ServeError.UnknownSymbol)
     record = resolved.danger_ok
-    doc_edges = [
-        e for e in edges_from(snapshot, record.symref) if e.kind.value == "doc"
-    ]
-    described_by = [
-        e for e in edges_to(snapshot, record.symref) if e.kind.value == "describes"
-    ]
+    doc_edges = _edges_by_kind_value(edges_from(snapshot, record.symref), "doc")
+    described_by = _edges_by_kind_value(edges_to(snapshot, record.symref), "describes")
     _log.info(
         "serve: frob_doc_for: %s: %d doc edge(s), %d describes edge(s)",
         symref,

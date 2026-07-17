@@ -1241,3 +1241,33 @@ acceptance: []
 threat: null
 ```
 Refactor campaign: extract cohesive helpers in frob.perf._heat/_profile/_rules so no function trips PERF003/PERF004 or the long-function bar, preserving behavior. Accounts for the touched-set under frob check COV002.
+
+<!-- ticket:T-0046 -->
+```yaml
+id: T-0046
+title: 'Refactor: clear perf/arch/test warnings in app,process,serve,testing,map,outline,xref,cycle,gitlog,policy'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-17'
+blocked_by: []
+parent: null
+scope:
+- src/frob/app/**
+- src/frob/process/**
+- src/frob/serve/**
+- src/frob/testing/**
+- src/frob/map/**
+- src/frob/outline/**
+- src/frob/xref/**
+- src/frob/cycle/**
+- src/frob/gitlog/**
+- src/frob/policy/**
+- src/frob/__main__.py
+- tests/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Refactor campaign: extract cohesive helpers across the app/process/serve/testing/command modules so no function trips PERF00x or the long-function bar, preserving behavior. Accounts for the touched-set under frob check COV002.

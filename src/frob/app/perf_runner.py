@@ -94,10 +94,51 @@ def _heat(cfg: AppConfig) -> None:
 
 
 # frob:ticket T-0021
+def _smell_rules_by_ref(violations, snapshot) -> dict[str, tuple[str, ...]]:
+    """`{symref: (rule, ...)}` for perf violations, indexed by (path, line).
+
+    The symbol table is indexed once by location so violations join in
+    O(n+m) rather than the O(n*m) scan that pairing each violation against
+    every symbol would require.
+    """
+    location_to_ref: dict[tuple[str, int], str] = {
+        (record.id.path, record.span[0]): record.symref
+        for record in snapshot.symbols.values()
+    }
+    by_ref: dict[str, tuple[str, ...]] = {}
+    for v in violations:
+        symref = location_to_ref.get((v.file, v.line))
+        if symref is not None:
+            by_ref[symref] = (*by_ref.get(symref, ()), v.rule)
+    return by_ref
+
+
+# frob:ticket T-0021
+def _print_heat_table(entries, unattributed_s: float) -> None:
+    """Print the heat table (one row per symbol) plus the unattributed total."""
+    from frob.perf import render_bar
+
+    color = should_color(sys.stdout)
+    max_s = max((e.cum_s for e in entries), default=0.0)
+    header = paint(
+        f"{'symbol':<50} {'cum_s':>8} {'self_s':>8} {'ncalls':>8}  ", BOLD, color
+    )
+    print(header + "heat")
+    for e in entries:
+        bar = render_bar(e.cum_s, max_s, color=color)
+        smell_tag = f" [{','.join(e.smells)}]" if e.smells else ""
+        print(
+            f"{e.ref:<50} {e.cum_s:>8.3f} {e.self_s:>8.3f} {e.ncalls:>8}  "
+            f"{bar}{smell_tag}"
+        )
+    print(paint(f"unattributed: {unattributed_s:.3f}s", DIM, color))
+
+
+# frob:ticket T-0021
 def _heat_body(cfg: AppConfig) -> None:
     """The actual `frob perf heat` body, run inside `_heat`'s optional
     quiet-stdout-logs context so `--json` stays pure JSON on stdout."""
-    from frob.perf import HeatReport, heat, join_smells, load_artifact, render_bar
+    from frob.perf import HeatReport, heat, join_smells, load_artifact
 
     root = (cfg.perf_path or Path(".")).resolve()
 
@@ -113,15 +154,9 @@ def _heat_body(cfg: AppConfig) -> None:
     if cfg.perf_smells:
         from frob.gates import perf_gate
 
-        violations = perf_gate(root, snapshot)
-        by_ref: dict[str, tuple[str, ...]] = {}
-        for v in violations:
-            for record in snapshot.symbols.values():
-                if record.id.path == v.file and record.span[0] == v.line:
-                    by_ref.setdefault(record.symref, ())
-                    by_ref[record.symref] = (*by_ref[record.symref], v.rule)
+        by_ref = _smell_rules_by_ref(perf_gate(root, snapshot), snapshot)
         report = join_smells(report, by_ref)
-        entries = sorted(report.entries, key=lambda e: (len(e.smells) == 0, -e.cum_s))
+        entries = sorted(report.entries, key=lambda e: (not e.smells, -e.cum_s))
     else:
         entries = list(report.entries)
 
@@ -142,21 +177,7 @@ def _heat_body(cfg: AppConfig) -> None:
         print(json.dumps(payload, indent=2))
         return
 
-    color = should_color(sys.stdout)
-    max_s = max((e.cum_s for e in entries), default=0.0)
-    header = paint(
-        f"{'symbol':<50} {'cum_s':>8} {'self_s':>8} {'ncalls':>8}  ", BOLD, color
-    )
-    print(header + "heat")
-    for e in entries:
-        bar = render_bar(e.cum_s, max_s, color=color)
-        smell_tag = f" [{','.join(e.smells)}]" if e.smells else ""
-        line = (
-            f"{e.ref:<50} {e.cum_s:>8.3f} {e.self_s:>8.3f} {e.ncalls:>8}  "
-            f"{bar}{smell_tag}"
-        )
-        print(line)
-    print(paint(f"unattributed: {report.unattributed_s:.3f}s", DIM, color))
+    _print_heat_table(entries, report.unattributed_s)
 
 
 # frob:ticket T-0021

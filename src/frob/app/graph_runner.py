@@ -109,8 +109,57 @@ def _run_query(root: Path, cache: Path, cfg: AppConfig) -> None:
     _log.info("\n".join(lines))
 
 
+def _acked_for(lock, ref: str) -> list:
+    """Lock entries acknowledging `ref`."""
+    return [e for e in lock.entries if e.ref == ref]
+
+
+def _stale_for(report, ref: str) -> list:
+    """Drift-report stale entries whose acked ref is `ref`."""
+    return [s for s in report.stale if s.entry.ref == ref]
+
+
+def _dangling_for(report, ref: str) -> list:
+    """Dangling edges with `ref` at either endpoint."""
+    return [d for d in report.dangling if ref in (d.edge.src, d.edge.target)]
+
+
+def _is_endpoint(snapshot, ref: str) -> bool:
+    """Whether `ref` is the endpoint of any incoming or outgoing edge."""
+    from frob.graph import edges_from, edges_to
+
+    incoming = any(e.target == ref for e in edges_to(snapshot, ref))
+    return incoming or bool(edges_from(snapshot, ref))
+
+
+def _render_why_lines(ref: str, acked: list, stale: list, dangling: list) -> list[str]:
+    """Human-readable `graph why` report lines for the gathered drift facts."""
+    lines = [f"why: {ref}"]
+    if not acked:
+        lines.append(
+            f"  not acked -- no frob.lock entry for this ref (remedy: frob ack {ref})"
+        )
+    for e in acked:
+        lines.append(f"  acked facet={e.facet} digest={e.digest[:12]}")
+    for s in stale:
+        lines.append(
+            f"  STALE facet={s.entry.facet} was={s.entry.digest[:12]} "
+            f"now={s.current[:12]} affects={list(s.dependents)} "
+            f"(remedy: frob ack {ref} --facet {s.entry.facet})"
+        )
+    for d in dangling:
+        lines.append(
+            f"  DANGLING edge {d.edge.src} -> {d.edge.target} "
+            f"candidates={list(d.candidates)} "
+            "(remedy: fix the directive target or rename)"
+        )
+    if not stale and not dangling and acked:
+        lines.append("  clean -- no drift detected")
+    return lines
+
+
 def _run_why(root: Path, cache: Path, cfg: AppConfig) -> None:
-    from frob.graph import edges_from, edges_to, resolve
+    from frob.graph import resolve
     from frob.graph.lock import drift, load_lock
 
     if cfg.graph_ref is None:
@@ -135,54 +184,22 @@ def _run_why(root: Path, cache: Path, cfg: AppConfig) -> None:
     lock = lock_result.danger_ok
     report = drift(lock, snapshot)
 
-    acked = [e for e in lock.entries if e.ref == cfg.graph_ref]
-    stale = [s for s in report.stale if s.entry.ref == cfg.graph_ref]
-    dangling_touching = [
-        d
-        for d in report.dangling
-        if d.edge.src == cfg.graph_ref or d.edge.target == cfg.graph_ref
-    ]
-    incoming_endpoint = any(
-        e.target == cfg.graph_ref for e in edges_to(snapshot, cfg.graph_ref)
-    )
-    outgoing_endpoint = bool(edges_from(snapshot, cfg.graph_ref))
+    ref = cfg.graph_ref
+    acked = _acked_for(lock, ref)
+    stale = _stale_for(report, ref)
+    dangling = _dangling_for(report, ref)
 
     if cfg.graph_json:
         import json
 
         payload = {
-            "ref": cfg.graph_ref,
+            "ref": ref,
             "acked_facets": [e.facet for e in acked],
             "stale": [s.model_dump() for s in stale],
-            "dangling": [d.model_dump() for d in dangling_touching],
-            "is_edge_endpoint": incoming_endpoint or outgoing_endpoint,
+            "dangling": [d.model_dump() for d in dangling],
+            "is_edge_endpoint": _is_endpoint(snapshot, ref),
         }
         _log.info(json.dumps(payload, indent=2))
         return
 
-    lines = [f"why: {cfg.graph_ref}"]
-    if not acked:
-        lines.append(
-            "  not acked -- no frob.lock entry for this ref "
-            f"(remedy: frob ack {cfg.graph_ref})"
-        )
-    else:
-        for e in acked:
-            lines.append(f"  acked facet={e.facet} digest={e.digest[:12]}")
-    if stale:
-        for s in stale:
-            lines.append(
-                f"  STALE facet={s.entry.facet} was={s.entry.digest[:12]} "
-                f"now={s.current[:12]} affects={list(s.dependents)} "
-                f"(remedy: frob ack {cfg.graph_ref} --facet {s.entry.facet})"
-            )
-    if dangling_touching:
-        for d in dangling_touching:
-            lines.append(
-                f"  DANGLING edge {d.edge.src} -> {d.edge.target} "
-                f"candidates={list(d.candidates)} "
-                "(remedy: fix the directive target or rename)"
-            )
-    if not stale and not dangling_touching and acked:
-        lines.append("  clean -- no drift detected")
-    _log.info("\n".join(lines))
+    _log.info("\n".join(_render_why_lines(ref, acked, stale, dangling)))

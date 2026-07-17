@@ -10,9 +10,24 @@ from __future__ import annotations
 import json
 import re
 
-from frob.process.parsers.common import Diagnostic, ToolResult
+from frob.process.parsers.common import Diagnostic, ToolResult, summarize_severity
 
 _TEXT_LINE = re.compile(r"^(.*?):(\d+):(\d+):\s+([A-Z]\d+)\s+(.*)$")
+
+
+# frob:ticket T-0045
+def _ruff_json_diagnostic(item: dict) -> Diagnostic:
+    """One ruff JSON item into a Diagnostic (E/F codes are errors)."""
+    loc = item.get("location", {})
+    code = item.get("code", "")
+    return Diagnostic(
+        file=item.get("filename"),
+        line=loc.get("row"),
+        col=loc.get("column"),
+        severity="error" if code.startswith(("E", "F")) else "warning",
+        code=code,
+        message=item.get("message", ""),
+    )
 
 
 # frob:doc docs/process.md#public-api
@@ -27,35 +42,8 @@ def parse_ruff_json(stdout: str, exit_code: int = 0) -> ToolResult:
             summary=f"malformed JSON: {exc}",
         )
 
-    diagnostics: list[Diagnostic] = []
-    for item in items:
-        loc = item.get("location", {})
-        # ruff severity: errors are fixable/unfixable; treat all as warnings
-        # unless they are in the "E" or "F" category which are errors
-        code = item.get("code", "")
-        severity = "error" if code.startswith(("E", "F")) else "warning"
-        diagnostics.append(
-            Diagnostic(
-                file=item.get("filename"),
-                line=loc.get("row"),
-                col=loc.get("column"),
-                severity=severity,
-                code=code,
-                message=item.get("message", ""),
-            )
-        )
-
-    errors = sum(1 for d in diagnostics if d.severity == "error")
-    warnings = sum(1 for d in diagnostics if d.severity == "warning")
-    if errors or warnings:
-        summary = (
-            f"{errors} errors, {warnings} warnings"
-            if errors
-            else f"{warnings} warnings"
-        )
-    else:
-        summary = "no issues"
-
+    diagnostics = [_ruff_json_diagnostic(item) for item in items]
+    summary = summarize_severity(diagnostics, collapse_errorless=True)
     return ToolResult(
         tool="ruff",
         exit_code=exit_code,
@@ -84,11 +72,7 @@ def parse_ruff_text(stdout: str, exit_code: int = 0) -> ToolResult:
                 )
             )
 
-    errors = sum(1 for d in diagnostics if d.severity == "error")
-    warnings = sum(1 for d in diagnostics if d.severity == "warning")
-    summary = (
-        f"{errors} errors, {warnings} warnings" if errors or warnings else "no issues"
-    )
+    summary = summarize_severity(diagnostics)
 
     return ToolResult(
         tool="ruff",

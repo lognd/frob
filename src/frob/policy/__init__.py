@@ -69,6 +69,80 @@ def _files_under(root: Path, snapshot: GraphSnapshot, pattern: str) -> tuple[str
     return tuple(sorted(p for p in snapshot.file_hashes if fnmatch.fnmatch(p, pattern)))
 
 
+def _load_forbidden_imports(
+    policy_tbl: dict,
+) -> Result[list[PolicyRule], PolicyError]:
+    """Build the FORBIDDEN_IMPORT rules from the `[[policy.forbidden-import]]` table."""
+    rules: list[PolicyRule] = []
+    for entry in policy_tbl.get("forbidden-import", []):
+        try:
+            rules.append(
+                PolicyRule(
+                    id=entry["id"],
+                    kind=PolicyKind.FORBIDDEN_IMPORT,
+                    module=entry["module"],
+                    within=entry["within"],
+                    reason=entry.get("reason", ""),
+                    severity=entry.get("severity", "error"),
+                )
+            )
+        except (KeyError, ValidationError) as exc:
+            _log.error("load_policy: malformed forbidden-import entry: %s", exc)
+            return Err(PolicyError.MalformedRule)
+    return Ok(rules)
+
+
+def _load_pattern_rules(
+    root: Path, policy_tbl: dict
+) -> Result[list[PolicyRule], PolicyError]:
+    """Build and validate PATTERN rules from the `[[policy.pattern]]` table."""
+    rules: list[PolicyRule] = []
+    for entry in policy_tbl.get("pattern", []):
+        try:
+            rule = PolicyRule(
+                id=entry["id"],
+                kind=PolicyKind.PATTERN,
+                language=entry["language"],
+                query=entry.get("query", ""),
+                query_file=entry.get("query_file", ""),
+                globs=tuple(entry.get("globs", ())),
+                reason=entry.get("reason", ""),
+                severity=entry.get("severity", "error"),
+            )
+        except (KeyError, ValidationError) as exc:
+            _log.error("load_policy: malformed pattern entry: %s", exc)
+            return Err(PolicyError.MalformedRule)
+        resolved_query = _resolve_query_text(root, rule)
+        if resolved_query is None:
+            _log.error("load_policy: no query text for pattern rule %s", rule.id)
+            return Err(PolicyError.BadQuery)
+        if _compile_query(rule.language, resolved_query) is None:
+            _log.error("load_policy: query for %s does not compile", rule.id)
+            return Err(PolicyError.BadQuery)
+        rules.append(rule)
+    return Ok(rules)
+
+
+def _load_norm_rules(policy_tbl: dict) -> Result[list[PolicyRule], PolicyError]:
+    """Build the NORM rules from the `[[policy.norm]]` table."""
+    rules: list[PolicyRule] = []
+    for entry in policy_tbl.get("norm", []):
+        try:
+            rules.append(
+                PolicyRule(
+                    id=entry["id"],
+                    kind=PolicyKind.NORM,
+                    max_diff_lines=int(entry["max_diff_lines"]),
+                    reason=entry.get("reason", ""),
+                    severity=entry.get("severity", "error"),
+                )
+            )
+        except (KeyError, ValidationError, ValueError) as exc:
+            _log.error("load_policy: malformed norm entry: %s", exc)
+            return Err(PolicyError.MalformedRule)
+    return Ok(rules)
+
+
 # frob:doc docs/gates.md#public-api
 def load_policy(root: Path) -> Result[tuple[PolicyRule, ...], PolicyError]:
     """Parse `frob.toml`'s `[[policy.*]]` tables; missing file/table is `Ok(())`."""
@@ -85,65 +159,14 @@ def load_policy(root: Path) -> Result[tuple[PolicyRule, ...], PolicyError]:
 
     policy_tbl = doc.get("policy", {})
     rules: list[PolicyRule] = []
-
-    for entry in policy_tbl.get("forbidden-import", []):
-        try:
-            rule = PolicyRule(
-                id=entry["id"],
-                kind=PolicyKind.FORBIDDEN_IMPORT,
-                module=entry["module"],
-                within=entry["within"],
-                reason=entry.get("reason", ""),
-                severity=entry.get("severity", "error"),
-            )
-        except (KeyError, ValidationError) as exc:
-            _log.error("load_policy: malformed forbidden-import entry: %s", exc)
-            return Err(PolicyError.MalformedRule)
-        rules.append(rule)
-
-    for entry in policy_tbl.get("pattern", []):
-        try:
-            language = entry["language"]
-            rule_id = entry["id"]
-            query_text = entry.get("query", "")
-            query_file = entry.get("query_file", "")
-            globs = tuple(entry.get("globs", ()))
-            rule = PolicyRule(
-                id=rule_id,
-                kind=PolicyKind.PATTERN,
-                language=language,
-                query=query_text,
-                query_file=query_file,
-                globs=globs,
-                reason=entry.get("reason", ""),
-                severity=entry.get("severity", "error"),
-            )
-        except (KeyError, ValidationError) as exc:
-            _log.error("load_policy: malformed pattern entry: %s", exc)
-            return Err(PolicyError.MalformedRule)
-        resolved_query = _resolve_query_text(root, rule)
-        if resolved_query is None:
-            _log.error("load_policy: no query text for pattern rule %s", rule.id)
-            return Err(PolicyError.BadQuery)
-        compiled = _compile_query(rule.language, resolved_query)
-        if compiled is None:
-            _log.error("load_policy: query for %s does not compile", rule.id)
-            return Err(PolicyError.BadQuery)
-        rules.append(rule)
-
-    for entry in policy_tbl.get("norm", []):
-        try:
-            rule = PolicyRule(
-                id=entry["id"],
-                kind=PolicyKind.NORM,
-                max_diff_lines=int(entry["max_diff_lines"]),
-                reason=entry.get("reason", ""),
-                severity=entry.get("severity", "error"),
-            )
-        except (KeyError, ValidationError, ValueError) as exc:
-            _log.error("load_policy: malformed norm entry: %s", exc)
-            return Err(PolicyError.MalformedRule)
-        rules.append(rule)
+    for loaded in (
+        _load_forbidden_imports(policy_tbl),
+        _load_pattern_rules(root, policy_tbl),
+        _load_norm_rules(policy_tbl),
+    ):
+        if loaded.is_err:
+            return Err(loaded.danger_err)
+        rules.extend(loaded.danger_ok)
 
     _log.info("load_policy: loaded %d rule(s) from %s", len(rules), toml_path)
     return Ok(tuple(rules))
@@ -181,14 +204,53 @@ def _severity(rule: PolicyRule) -> Severity:
     return Severity.WARN if rule.severity == "warn" else Severity.ERROR
 
 
+def _first_group(match) -> str:
+    """The first non-empty capture group of a regex match (`""` if none)."""
+    return next((g for g in match.groups() if g), "")
+
+
+def _import_violations_in_file(
+    rule: PolicyRule, rel_path: str, text: str, pattern
+) -> list[Violation]:
+    """Forbidden-import violations for the lines of one already-read file."""
+    violations: list[Violation] = []
+    for lineno, line in enumerate(text.splitlines(), start=1):
+        match = pattern.match(line) or pattern.search(line)
+        if match is None:
+            continue
+        imported = _first_group(match)
+        if imported == rule.module or imported.startswith(rule.module + "."):
+            _log.info(
+                "policy: %s violated at %s:%d (imports %s)",
+                rule.id,
+                rel_path,
+                lineno,
+                imported,
+            )
+            violations.append(
+                Violation(
+                    rule=rule.id,
+                    severity=_severity(rule),
+                    file=rel_path,
+                    line=lineno,
+                    message=(
+                        f"{rule.id}: {rel_path}:{lineno} imports forbidden "
+                        f"module {imported!r} "
+                        f"({rule.reason or 'forbidden by policy'}); remove "
+                        f"the import or narrow frob.toml's within glob"
+                    ),
+                )
+            )
+    return violations
+
+
 def _forbidden_import_violations(
     rule: PolicyRule, root: Path, snapshot: GraphSnapshot
 ) -> tuple[Violation, ...]:
     """Every import line in a `within`-matched file that imports `rule.module`."""
     violations: list[Violation] = []
     for rel_path in _files_under(root, snapshot, rule.within):
-        suffix = Path(rel_path).suffix.lower()
-        language = _EXTENSION_LANGUAGE.get(suffix)
+        language = _EXTENSION_LANGUAGE.get(Path(rel_path).suffix.lower())
         pattern = _IMPORT_PATTERNS.get(language or "")
         if pattern is None:
             continue
@@ -197,34 +259,25 @@ def _forbidden_import_violations(
         except OSError as exc:
             _log.warning("policy: could not read %s: %s", rel_path, exc)
             continue
-        for lineno, line in enumerate(text.splitlines(), start=1):
-            match = pattern.match(line) or pattern.search(line)
-            if match is None:
-                continue
-            imported = next((g for g in match.groups() if g), "")
-            if imported == rule.module or imported.startswith(rule.module + "."):
-                _log.info(
-                    "policy: %s violated at %s:%d (imports %s)",
-                    rule.id,
-                    rel_path,
-                    lineno,
-                    imported,
-                )
-                violations.append(
-                    Violation(
-                        rule=rule.id,
-                        severity=_severity(rule),
-                        file=rel_path,
-                        line=lineno,
-                        message=(
-                            f"{rule.id}: {rel_path}:{lineno} imports forbidden "
-                            f"module {imported!r} "
-                            f"({rule.reason or 'forbidden by policy'}); remove "
-                            f"the import or narrow frob.toml's within glob"
-                        ),
-                    )
-                )
+        violations.extend(_import_violations_in_file(rule, rel_path, text, pattern))
     return tuple(violations)
+
+
+def _matching_files(
+    root: Path, snapshot: GraphSnapshot, globs: tuple[str, ...]
+) -> set[str]:
+    """The set of files matching any of `globs` under `root`."""
+    candidates: set[str] = set()
+    for glob in globs:
+        candidates.update(_files_under(root, snapshot, glob))
+    return candidates
+
+
+def _candidate_files(
+    root: Path, snapshot: GraphSnapshot, globs: tuple[str, ...]
+) -> list[str]:
+    """Sorted, de-duplicated files matching any of `globs` under `root`."""
+    return sorted(_matching_files(root, snapshot, globs))
 
 
 def _pattern_violations(
@@ -245,11 +298,7 @@ def _pattern_violations(
         return ()
 
     violations: list[Violation] = []
-    globs = rule.globs or ("**/*",)
-    candidates: set[str] = set()
-    for glob in globs:
-        candidates.update(_files_under(root, snapshot, glob))
-    for rel_path in sorted(candidates):
+    for rel_path in _candidate_files(root, snapshot, rule.globs or ("**/*",)):
         try:
             source = (root / rel_path).read_bytes()
         except OSError as exc:

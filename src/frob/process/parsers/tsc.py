@@ -9,10 +9,24 @@ from __future__ import annotations
 
 import re
 
-from frob.process.parsers.common import Diagnostic, ToolResult
+from frob.process.parsers.common import Diagnostic, ToolResult, summarize_severity
 
 _DIAG = re.compile(r"^(.*?)\((\d+),(\d+)\):\s+(error|warning)\s+(TS\d+):\s+(.*)$")
 _SUMMARY_LINE = re.compile(r"^Found (\d+) error")
+
+
+# frob:ticket T-0045
+def _tsc_diagnostic(m: re.Match) -> Diagnostic:
+    """One `tsc` diagnostic-line match into a Diagnostic."""
+    file, row, col, sev, code, msg = m.groups()
+    return Diagnostic(
+        file=file,
+        line=int(row),
+        col=int(col),
+        severity="error" if sev == "error" else "warning",
+        code=code,
+        message=msg.strip(),
+    )
 
 
 # frob:doc docs/process.md#public-api
@@ -25,30 +39,12 @@ def parse_tsc(stdout: str, exit_code: int = 0) -> ToolResult:
         line = raw.strip()
         m = _DIAG.match(line)
         if m:
-            file, row, col, sev, code, msg = m.groups()
-            diagnostics.append(
-                Diagnostic(
-                    file=file,
-                    line=int(row),
-                    col=int(col),
-                    severity="error" if sev == "error" else "warning",
-                    code=code,
-                    message=msg.strip(),
-                )
-            )
+            diagnostics.append(_tsc_diagnostic(m))
             continue
-        ms = _SUMMARY_LINE.match(line)
-        if ms:
+        if _SUMMARY_LINE.match(line):
             summary_override = line
 
-    errors = sum(1 for d in diagnostics if d.severity == "error")
-    warnings = sum(1 for d in diagnostics if d.severity == "warning")
-    if summary_override:
-        summary = summary_override
-    elif errors or warnings:
-        summary = f"{errors} errors, {warnings} warnings"
-    else:
-        summary = "no issues"
+    summary = summary_override or summarize_severity(diagnostics)
 
     return ToolResult(
         tool="tsc",

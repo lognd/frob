@@ -1055,3 +1055,34 @@ class TestParseCliMisc:
     def test_passthrough_propagates_on_nonzero(self):
         r = run("parse", "ty", "--exit-code", "1", "--passthrough", input=TY_CLI)
         assert r.returncode != 0
+
+
+class TestSummarizeSeverity:
+    def test_empty_default(self):
+        # frob:tests src/frob/process/parsers/common.py::summarize_severity kind="unit"
+        from frob.process.parsers.common import summarize_severity
+
+        assert summarize_severity([]) == "no issues"
+
+    def test_empty_custom(self):
+        from frob.process.parsers.common import summarize_severity
+
+        assert summarize_severity([], empty="clean") == "clean"
+
+    def test_errors_and_warnings(self):
+        from frob.process.parsers.common import Diagnostic, summarize_severity
+
+        diags = [Diagnostic(severity="error"), Diagnostic(severity="warning")]
+        assert summarize_severity(diags) == "1 errors, 1 warnings"
+
+    def test_collapse_errorless(self):
+        from frob.process.parsers.common import Diagnostic, summarize_severity
+
+        diags = [Diagnostic(severity="warning"), Diagnostic(severity="warning")]
+        assert summarize_severity(diags, collapse_errorless=True) == "2 warnings"
+
+    def test_no_collapse_shows_both(self):
+        from frob.process.parsers.common import Diagnostic, summarize_severity
+
+        diags = [Diagnostic(severity="warning")]
+        assert summarize_severity(diags) == "0 errors, 1 warnings"

@@ -70,16 +70,69 @@ def _run_fuzz(root: Path) -> None:
         sys.exit(1)
 
 
+def _load_test_snapshot(root: Path):
+    """Load (or rebuild) the graph snapshot, exiting on hard failure."""
+    from frob.graph import build_graph, load_graph
+
+    cache = root / _CACHE_REL
+    loaded = load_graph(cache)
+    if loaded.is_err:
+        _log.info("frob test: cache stale/missing, building: %s", loaded.danger_err)
+        loaded = build_graph(root, cache)
+    if loaded.is_err:
+        _log.error("frob test: graph unavailable: %s", loaded.danger_err)
+        sys.exit(1)
+    return loaded.danger_ok
+
+
+def _selection_report(cfg: AppConfig, root: Path, snapshot, runners, base: str):
+    """The touched-set selection (or an all-runners selection with --all)."""
+    from frob.gitio import working_diff
+    from frob.testing import SelectConfig, select_tests
+    from frob.testing._models import SelectionReport
+
+    if cfg.test_all:
+        selected = {spec.language: (_ALL_SENTINEL,) for spec in runners}
+        return SelectionReport(
+            touched=(), selected=selected, ripple=(), unbound=(), fallback="all"
+        )
+
+    diff_result = working_diff(root, base)
+    if diff_result.is_err:
+        _log.error("frob test: %s", diff_result.danger_err)
+        sys.exit(1)
+    select_cfg = SelectConfig(fallback=cfg.test_fallback or "package")
+    report = select_tests(snapshot, diff_result.danger_ok, select_cfg)
+    if cfg.test_lang:
+        kept = {
+            lang: ids for lang, ids in report.selected.items() if lang in cfg.test_lang
+        }
+        report = report.model_copy(update={"selected": kept})
+    return report
+
+
+def _print_outcomes(test_run) -> None:
+    """Log a PASS/FAIL line per runner outcome, with tails on failure."""
+    for outcome in test_run.outcomes:
+        status = "PASS" if outcome.exit_code == 0 else "FAIL"
+        _log.info(
+            "[%s] %s  exit=%d  %.2fs",
+            status,
+            outcome.language,
+            outcome.exit_code,
+            outcome.duration_s,
+        )
+        if outcome.exit_code != 0:
+            if outcome.stdout_tail:
+                _log.info(outcome.stdout_tail)
+            if outcome.stderr_tail:
+                _log.info(outcome.stderr_tail)
+
+
 def run(cfg: AppConfig) -> None:
     """Compute the touched set (or run everything with --all) and run the tests."""
-    from frob.gitio import repo_root, working_diff
-    from frob.graph import build_graph, load_graph
-    from frob.testing import (
-        SelectConfig,
-        load_runners,
-        run_selected,
-        select_tests,
-    )
+    from frob.gitio import repo_root
+    from frob.testing import load_runners, run_selected
 
     start = (cfg.test_path or Path(".")).resolve()
     root_result = repo_root(start)
@@ -92,8 +145,6 @@ def run(cfg: AppConfig) -> None:
         _run_fuzz(root)
         return
 
-    base = cfg.test_base or "main"
-
     runners_result = load_runners(root)
     if runners_result.is_err:
         _log.error("frob test: could not load runners: %s", runners_result.danger_err)
@@ -102,45 +153,8 @@ def run(cfg: AppConfig) -> None:
     if cfg.test_lang:
         runners = tuple(r for r in runners if r.language in cfg.test_lang)
 
-    cache = root / _CACHE_REL
-    loaded = load_graph(cache)
-    if loaded.is_err:
-        _log.info("frob test: cache stale/missing, building: %s", loaded.danger_err)
-        loaded = build_graph(root, cache)
-    if loaded.is_err:
-        _log.error("frob test: graph unavailable: %s", loaded.danger_err)
-        sys.exit(1)
-    snapshot = loaded.danger_ok
-
-    if cfg.test_all:
-        selected = {spec.language: (_ALL_SENTINEL,) for spec in runners}
-        from frob.testing._models import SelectionReport
-
-        report = SelectionReport(
-            touched=(),
-            selected=selected,
-            ripple=(),
-            unbound=(),
-            fallback="all",
-        )
-    else:
-        diff_result = working_diff(root, base)
-        if diff_result.is_err:
-            _log.error("frob test: %s", diff_result.danger_err)
-            sys.exit(1)
-        diff = diff_result.danger_ok
-        select_cfg = SelectConfig(fallback=cfg.test_fallback or "package")
-        report = select_tests(snapshot, diff, select_cfg)
-        if cfg.test_lang:
-            report = report.model_copy(
-                update={
-                    "selected": {
-                        lang: ids
-                        for lang, ids in report.selected.items()
-                        if lang in cfg.test_lang
-                    }
-                }
-            )
+    snapshot = _load_test_snapshot(root)
+    report = _selection_report(cfg, root, snapshot, runners, cfg.test_base or "main")
 
     _log.info(
         "selection: touched=%d ripple=%d unbound=%d fallback=%s",
@@ -150,8 +164,7 @@ def run(cfg: AppConfig) -> None:
         report.fallback,
     )
 
-    any_selected = any(report.selected.values())
-    if not any_selected:
+    if not any(report.selected.values()):
         _log.info("nothing touched selects any test")
         if cfg.test_json:
             _log.info(report.model_dump_json(indent=2))
@@ -166,20 +179,7 @@ def run(cfg: AppConfig) -> None:
     if cfg.test_json:
         _log.info(test_run.model_dump_json(indent=2))
     else:
-        for outcome in test_run.outcomes:
-            status = "PASS" if outcome.exit_code == 0 else "FAIL"
-            _log.info(
-                "[%s] %s  exit=%d  %.2fs",
-                status,
-                outcome.language,
-                outcome.exit_code,
-                outcome.duration_s,
-            )
-            if outcome.exit_code != 0:
-                if outcome.stdout_tail:
-                    _log.info(outcome.stdout_tail)
-                if outcome.stderr_tail:
-                    _log.info(outcome.stderr_tail)
+        _print_outcomes(test_run)
 
     if not test_run.ok:
         sys.exit(1)

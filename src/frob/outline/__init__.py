@@ -135,20 +135,26 @@ def _dedupe_imports(raw_imports: tuple[str, ...], ext: str) -> list[str]:
     return out
 
 
-def _outline_symbols(
+def _build_classes(
     symbols: tuple[RawSymbol, ...],
-) -> tuple[list[FunctionOutline], list[ClassOutline]]:
-    """Rebuild the old function/class(+methods) tree from flat qualname symbols."""
-    functions: list[FunctionOutline] = []
+) -> tuple[dict[str, ClassOutline], list[str]]:
+    """Top-level classes keyed by name, plus their source order."""
     classes: dict[str, ClassOutline] = {}
     class_order: list[str] = []
-
     for sym in symbols:
         if sym.kind == SymbolKind.CLASS and "." not in sym.qualname:
-            cls = ClassOutline(name=sym.qualname, line=sym.span[0], methods=[])
-            classes[sym.qualname] = cls
+            classes[sym.qualname] = ClassOutline(
+                name=sym.qualname, line=sym.span[0], methods=[]
+            )
             class_order.append(sym.qualname)
+    return classes, class_order
 
+
+def _assign_functions(
+    symbols: tuple[RawSymbol, ...], classes: dict[str, ClassOutline]
+) -> list[FunctionOutline]:
+    """Collect free functions; attach methods to their owning class in `classes`."""
+    functions: list[FunctionOutline] = []
     for sym in symbols:
         if sym.kind == SymbolKind.FUNCTION:
             functions.append(_function_outline(sym))
@@ -157,7 +163,15 @@ def _outline_symbols(
             cls = classes.get(owner)
             if cls is not None:
                 cls.methods.append(_function_outline(sym, name=name))
+    return functions
 
+
+def _outline_symbols(
+    symbols: tuple[RawSymbol, ...],
+) -> tuple[list[FunctionOutline], list[ClassOutline]]:
+    """Rebuild the old function/class(+methods) tree from flat qualname symbols."""
+    classes, class_order = _build_classes(symbols)
+    functions = _assign_functions(symbols, classes)
     return functions, [classes[name] for name in class_order]
 
 

@@ -151,6 +151,25 @@ def _append_entry(lines: list[str], c: CommitEntry) -> None:
         lines[-1] += f"  [{c.tag}]"
 
 
+def _granularity_keep(e, granularity: GranularityLevel) -> bool:
+    """Whether commit `e` survives the granularity filter (`full` keeps all)."""
+    if granularity == "major":
+        return (
+            e.breaking
+            or "major" in e.description.lower()
+            or (
+                e.type == "chore"
+                and "bump" in e.description.lower()
+                and _is_major_version(e.description)
+            )
+        )
+    if granularity == "user":
+        return e.type in _USER_VISIBLE or e.breaking
+    if granularity == "changelog":
+        return e.type in {"feat", "fix"} or e.breaking
+    return True
+
+
 # frob:doc docs/gitlog.md#public-api
 def git_log(
     root: Path | None = None,
@@ -174,25 +193,7 @@ def git_log(
     raw = _git_log_raw(cwd, since=since, until=until, limit=limit)
     entries = _parse_commits(raw)
 
-    # Filter by granularity
-    if granularity == "major":
-        entries = [
-            e
-            for e in entries
-            if e.breaking
-            or "major" in e.description.lower()
-            or (
-                e.type == "chore"
-                and "bump" in e.description.lower()
-                and _is_major_version(e.description)
-            )
-        ]
-    elif granularity == "user":
-        entries = [e for e in entries if e.type in _USER_VISIBLE or e.breaking]
-    elif granularity == "changelog":
-        entries = [e for e in entries if e.type in {"feat", "fix"} or e.breaking]
-    # "full" keeps all
-
+    entries = [e for e in entries if _granularity_keep(e, granularity)]
     if not include_non_conventional:
         entries = [e for e in entries if e.type != "unknown"]
 

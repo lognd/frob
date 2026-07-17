@@ -7,14 +7,9 @@ from frob.app import App, AppConfig
 
 
 # frob:ticket T-0030
-def _build_parser() -> argparse.ArgumentParser:
-    # frob:ticket T-0021
-    p = argparse.ArgumentParser(
-        prog="frob",
-        description="Developer workflow tools -- optimized for agentic use",
-    )
-    sub = p.add_subparsers(dest="subcommand")
-
+# frob:ticket T-0030
+def _add_scaffold_parser(sub) -> None:
+    """Register the `frob scaffold` subcommand and its arguments."""
     # -- scaffold ------------------------------------------------------------
     scaffold_p = sub.add_parser(
         "scaffold", help="scaffold a new project from a template"
@@ -34,12 +29,20 @@ def _build_parser() -> argparse.ArgumentParser:
         help="overwrite existing files",
     )
 
+
+# frob:ticket T-0030
+def _add_cycle_parser(sub) -> None:
+    """Register the `frob cycle` subcommand and its arguments."""
     # -- cycle ---------------------------------------------------------------
     cycle_p = sub.add_parser("cycle", help="detect dependency cycles")
     cycle_p.add_argument("cycle_path", metavar="path")
     cycle_p.add_argument("--lang", dest="cycle_lang", choices=["python", "cpp", "c"])
     cycle_p.add_argument("--suggest", dest="cycle_suggest", action="store_true")
 
+
+# frob:ticket T-0030
+def _add_outline_parser(sub) -> None:
+    """Register the `frob outline` subcommand and its arguments."""
     # -- outline -------------------------------------------------------------
     outline_p = sub.add_parser(
         "outline",
@@ -51,6 +54,10 @@ def _build_parser() -> argparse.ArgumentParser:
         "--all", dest="outline_all", action="store_true", help="include private symbols"
     )
 
+
+# frob:ticket T-0030
+def _add_map_parser(sub) -> None:
+    """Register the `frob map` subcommand and its arguments."""
     # -- map -----------------------------------------------------------------
     map_p = sub.add_parser(
         "map",
@@ -63,6 +70,10 @@ def _build_parser() -> argparse.ArgumentParser:
         "--all", dest="map_all", action="store_true", help="include private symbols"
     )
 
+
+# frob:ticket T-0030
+def _add_xref_parser(sub) -> None:
+    """Register the `frob xref` subcommand and its arguments."""
     # -- xref ----------------------------------------------------------------
     xref_p = sub.add_parser(
         "xref",
@@ -79,6 +90,10 @@ def _build_parser() -> argparse.ArgumentParser:
         help="hide same-file usages (show only cross-file references)",
     )
 
+
+# frob:ticket T-0030
+def _add_parse_parser(sub) -> None:
+    """Register the `frob parse` subcommand and its arguments."""
     # -- parse ---------------------------------------------------------------
     parse_p = sub.add_parser(
         "parse",
@@ -130,6 +145,10 @@ def _build_parser() -> argparse.ArgumentParser:
         help="exit non-zero if the tool failed (useful in pipelines)",
     )
 
+
+# frob:ticket T-0030
+def _add_dup_parser(sub) -> None:
+    """Register the `frob dup` subcommand and its arguments."""
     # -- dup -----------------------------------------------------------------
     dup_p = sub.add_parser(
         "dup",
@@ -154,6 +173,10 @@ def _build_parser() -> argparse.ArgumentParser:
         help="R6: probe two symbols for observational equivalence (pure only)",
     )
 
+
+# frob:ticket T-0030
+def _add_arch_parser(sub) -> None:
+    """Register the `frob arch` subcommand and its arguments."""
     # -- arch ----------------------------------------------------------------
     arch_p = sub.add_parser(
         "arch",
@@ -176,6 +199,10 @@ def _build_parser() -> argparse.ArgumentParser:
         metavar="N",
     )
 
+
+# frob:ticket T-0030
+def _add_docs_parser(sub) -> None:
+    """Register the `frob docs` subcommand and its arguments."""
     # -- docs ----------------------------------------------------------------
     docs_p = sub.add_parser(
         "docs",
@@ -205,6 +232,10 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     docs_p.add_argument("--json", dest="docs_json", action="store_true")
 
+
+# frob:ticket T-0030
+def _add_exports_parser(sub) -> None:
+    """Register the `frob exports` subcommand and its arguments."""
     # -- exports -------------------------------------------------------------
     exports_p = sub.add_parser(
         "exports",
@@ -233,6 +264,10 @@ def _build_parser() -> argparse.ArgumentParser:
         help="write generated content to <path>/__init__.py instead of printing",
     )
 
+
+# frob:ticket T-0030
+def _add_bind_parser(sub) -> None:
+    """Register the `frob bind` subcommand and its arguments."""
     # -- bind ----------------------------------------------------------------
     bind_p = sub.add_parser(
         "bind",
@@ -253,28 +288,11 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     bind_p.add_argument("--json", dest="bind_json", action="store_true")
 
-    # -- check ---------------------------------------------------------------
-    check_p = sub.add_parser(
-        "check",
-        help=(
-            "aggregate quality gate: ruff, ty, frob cycle/dup/arch/bind/exports; "
-            "errors first, easy to hand to subagents"
-        ),
-    )
-    check_p.add_argument("check_path", metavar="path", nargs="?", default=".")
-    check_p.add_argument(
-        "--type",
-        dest="check_type",
-        choices=["python", "cpp", "rust", "typescript"],
-        help="project type (default: auto-detect)",
-    )
-    check_p.add_argument(
-        "--valgrind",
-        dest="check_valgrind",
-        action="store_true",
-        help="run valgrind memcheck on test binary",
-    )
-    check_p.add_argument("--skip-tests", dest="check_skip_tests", action="store_true")
+
+# frob:ticket T-0030
+# frob:ticket T-0030
+def _add_check_skip_args(check_p) -> None:
+    """Register `frob check`'s per-language stage-skip flags."""
     # Python-specific
     check_p.add_argument("--skip-ruff", dest="check_skip_ruff", action="store_true")
     check_p.add_argument("--skip-ty", dest="check_skip_ty", action="store_true")
@@ -307,6 +325,34 @@ def _build_parser() -> argparse.ArgumentParser:
     check_p.add_argument(
         "--skip-prettier", dest="check_skip_prettier", action="store_true"
     )
+
+
+# frob:ticket T-0030
+def _add_check_parser(sub) -> None:
+    """Register the `frob check` subcommand and its arguments."""
+    # -- check ---------------------------------------------------------------
+    check_p = sub.add_parser(
+        "check",
+        help=(
+            "aggregate quality gate: ruff, ty, frob cycle/dup/arch/bind/exports; "
+            "errors first, easy to hand to subagents"
+        ),
+    )
+    check_p.add_argument("check_path", metavar="path", nargs="?", default=".")
+    check_p.add_argument(
+        "--type",
+        dest="check_type",
+        choices=["python", "cpp", "rust", "typescript"],
+        help="project type (default: auto-detect)",
+    )
+    check_p.add_argument(
+        "--valgrind",
+        dest="check_valgrind",
+        action="store_true",
+        help="run valgrind memcheck on test binary",
+    )
+    check_p.add_argument("--skip-tests", dest="check_skip_tests", action="store_true")
+    _add_check_skip_args(check_p)
     check_p.add_argument("--json", dest="check_json", action="store_true")
     check_p.add_argument("--ticket", dest="check_ticket", metavar="ID")
     check_p.add_argument("--base", dest="check_base", metavar="REF")
@@ -325,6 +371,10 @@ def _build_parser() -> argparse.ArgumentParser:
         help="record coverage.xml as the current coverage stamp and exit",
     )
 
+
+# frob:ticket T-0030
+def _add_gitlog_parser(sub) -> None:
+    """Register the `frob gitlog` subcommand and its arguments."""
     # -- gitlog ---------------------------------------------------------------
     gitlog_p = sub.add_parser(
         "gitlog",
@@ -366,6 +416,10 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     gitlog_p.add_argument("--json", dest="gitlog_json", action="store_true")
 
+
+# frob:ticket T-0030
+def _add_graph_parser(sub) -> None:
+    """Register the `frob graph` subcommand and its arguments."""
     # -- graph -----------------------------------------------------------------
     graph_p = sub.add_parser(
         "graph", help="obligation graph: build cache, query symbols, explain drift"
@@ -386,6 +440,10 @@ def _build_parser() -> argparse.ArgumentParser:
     graph_why_p.add_argument("graph_path", metavar="path", nargs="?", default=".")
     graph_why_p.add_argument("--json", dest="graph_json", action="store_true")
 
+
+# frob:ticket T-0030
+def _add_ack_parser(sub) -> None:
+    """Register the `frob ack` subcommand and its arguments."""
     # -- ack ---------------------------------------------------------------
     ack_p = sub.add_parser(
         "ack", help="acknowledge current digests for one or more symbol refs"
@@ -396,10 +454,11 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     ack_p.add_argument("--path", dest="ack_path", metavar="DIR", default=".")
 
-    # -- ticket ----------------------------------------------------------------
-    ticket_p = sub.add_parser("ticket", help="the statically-checkable ticket queue")
-    ticket_sub = ticket_p.add_subparsers(dest="ticket_command")
 
+# frob:ticket T-0030
+# frob:ticket T-0030
+def _add_ticket_new_parser(ticket_sub) -> None:
+    """Register `frob ticket new` and its (many) creation flags."""
     ticket_new_p = ticket_sub.add_parser("new", help="create a new ticket")
     ticket_new_p.add_argument("--title", dest="ticket_title", required=True)
     ticket_new_p.add_argument(
@@ -444,7 +503,12 @@ def _build_parser() -> argparse.ArgumentParser:
     ticket_new_p.add_argument("--parent", dest="ticket_parent")
     ticket_new_p.add_argument("--body", dest="ticket_body", default="")
     ticket_new_p.add_argument("--json", dest="ticket_json", action="store_true")
+    ticket_new_p.add_argument("--path", dest="ticket_path", metavar="DIR", default=".")
 
+
+# frob:ticket T-0030
+def _add_ticket_query_parsers(ticket_sub) -> list:
+    """Register the read-only `list`/`show`/`doable` ticket subcommands."""
     ticket_list_p = ticket_sub.add_parser("list", help="list tickets")
     ticket_list_p.add_argument("--state", dest="ticket_state")
     ticket_list_p.add_argument("--json", dest="ticket_json", action="store_true")
@@ -457,7 +521,12 @@ def _build_parser() -> argparse.ArgumentParser:
         "doable", help="list doable tickets (queued/planned, no open blockers)"
     )
     ticket_doable_p.add_argument("--json", dest="ticket_json", action="store_true")
+    return [ticket_list_p, ticket_show_p, ticket_doable_p]
 
+
+# frob:ticket T-0030
+def _add_ticket_lifecycle_parsers(ticket_sub) -> list:
+    """Register the state-transition ticket subcommands (plan/start/close/...)."""
     ticket_plan_p = ticket_sub.add_parser("plan", help="transition queued -> planned")
     ticket_plan_p.add_argument("ticket_id", metavar="id")
 
@@ -501,9 +570,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     ticket_fail_p.add_argument("ticket_id", metavar="id")
     ticket_fail_p.add_argument("--summary", dest="ticket_summary", required=True)
-
-    for _tp in (
-        ticket_show_p,
+    return [
         ticket_plan_p,
         ticket_start_p,
         ticket_sweep_p,
@@ -513,14 +580,24 @@ def _build_parser() -> argparse.ArgumentParser:
         ticket_block_p,
         ticket_close_p,
         ticket_fail_p,
-    ):
-        _tp.add_argument("--path", dest="ticket_path", metavar="DIR", default=".")
-    ticket_new_p.add_argument("--path", dest="ticket_path", metavar="DIR", default=".")
-    ticket_list_p.add_argument("--path", dest="ticket_path", metavar="DIR", default=".")
-    ticket_doable_p.add_argument(
-        "--path", dest="ticket_path", metavar="DIR", default="."
-    )
+    ]
 
+
+# frob:ticket T-0030
+def _add_ticket_parser(sub) -> None:
+    """Register the `frob ticket` subcommand and its arguments."""
+    ticket_p = sub.add_parser("ticket", help="the statically-checkable ticket queue")
+    ticket_sub = ticket_p.add_subparsers(dest="ticket_command")
+    _add_ticket_new_parser(ticket_sub)
+    path_parsers = _add_ticket_query_parsers(ticket_sub)
+    path_parsers += _add_ticket_lifecycle_parsers(ticket_sub)
+    for _tp in path_parsers:
+        _tp.add_argument("--path", dest="ticket_path", metavar="DIR", default=".")
+
+
+# frob:ticket T-0030
+def _add_test_parser(sub) -> None:
+    """Register the `frob test` subcommand and its arguments."""
     # -- test ----------------------------------------------------------------
     test_p = sub.add_parser(
         "test", help="select and run tests for the touched set (or --all)"
@@ -544,6 +621,10 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     test_p.add_argument("--json", dest="test_json", action="store_true")
 
+
+# frob:ticket T-0030
+def _add_vet_parser(sub) -> None:
+    """Register the `frob vet` subcommand and its arguments."""
     # -- vet -----------------------------------------------------------------
     vet_p = sub.add_parser(
         "vet",
@@ -560,6 +641,10 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     vet_p.add_argument("--json", dest="vet_json", action="store_true")
 
+
+# frob:ticket T-0030
+def _add_perf_parser(sub) -> None:
+    """Register the `frob perf` subcommand and its arguments."""
     # -- perf ------------------------------------------------------------------
     perf_p = sub.add_parser(
         "perf", help="profile a command/test suite and inspect its heat-map"
@@ -603,6 +688,10 @@ def _build_parser() -> argparse.ArgumentParser:
         help="print FILE with per-line hit/time gutters",
     )
 
+
+# frob:ticket T-0030
+def _add_release_parser(sub) -> None:
+    """Register the `frob release` subcommand and its arguments."""
     # -- release -------------------------------------------------------------
     release_p = sub.add_parser(
         "release", help="mechanical semver from the public-API graph (REL001)"
@@ -621,6 +710,10 @@ def _build_parser() -> argparse.ArgumentParser:
         "--path", dest="release_path", metavar="DIR", default="."
     )
 
+
+# frob:ticket T-0030
+def _add_mutate_parser(sub) -> None:
+    """Register the `frob mutate` subcommand and its arguments."""
     # -- mutate --------------------------------------------------------------
     mutate_p = sub.add_parser(
         "mutate", help="mutation testing: perturb a file, see which mutants survive"
@@ -635,6 +728,10 @@ def _build_parser() -> argparse.ArgumentParser:
         help="test command to run per mutant (after --); default: uv run pytest -q",
     )
 
+
+# frob:ticket T-0030
+def _add_stats_parser(sub) -> None:
+    """Register the `frob stats` subcommand and its arguments."""
     # -- stats ---------------------------------------------------------------
     stats_p = sub.add_parser(
         "stats", help="delivery measurement: queue health + commit cadence"
@@ -645,6 +742,10 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     stats_p.add_argument("--json", dest="stats_json", action="store_true")
 
+
+# frob:ticket T-0030
+def _add_serve_parser(sub) -> None:
+    """Register the `frob serve` subcommand and its arguments."""
     # -- serve ---------------------------------------------------------------
     serve_p = sub.add_parser(
         "serve",
@@ -652,6 +753,38 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     serve_p.add_argument("serve_path", metavar="path", nargs="?", default=".")
 
+
+def _build_parser() -> argparse.ArgumentParser:
+    # frob:ticket T-0021
+    p = argparse.ArgumentParser(
+        prog="frob",
+        description="Developer workflow tools -- optimized for agentic use",
+    )
+    sub = p.add_subparsers(dest="subcommand")
+
+    _add_scaffold_parser(sub)
+    _add_cycle_parser(sub)
+    _add_outline_parser(sub)
+    _add_map_parser(sub)
+    _add_xref_parser(sub)
+    _add_parse_parser(sub)
+    _add_dup_parser(sub)
+    _add_arch_parser(sub)
+    _add_docs_parser(sub)
+    _add_exports_parser(sub)
+    _add_bind_parser(sub)
+    _add_check_parser(sub)
+    _add_gitlog_parser(sub)
+    _add_graph_parser(sub)
+    _add_ack_parser(sub)
+    _add_ticket_parser(sub)
+    _add_test_parser(sub)
+    _add_vet_parser(sub)
+    _add_perf_parser(sub)
+    _add_release_parser(sub)
+    _add_mutate_parser(sub)
+    _add_stats_parser(sub)
+    _add_serve_parser(sub)
     return p
 
 

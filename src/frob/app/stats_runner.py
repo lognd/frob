@@ -49,6 +49,5 @@ def _fmt(counts: dict[str, int]) -> str:
     """Render a count map as `k=v` pairs ordered by descending count."""
     if not counts:
         return "(none)"
-    return "  ".join(
-        f"{k}={v}" for k, v in sorted(counts.items(), key=lambda kv: -kv[1])
-    )
+    ordered = sorted(counts.items(), key=lambda kv: -kv[1])
+    return "  ".join(f"{k}={v}" for k, v in ordered)

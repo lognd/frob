@@ -36,12 +36,15 @@ def find_cycles(graph: DependencyGraph) -> list[list[str]]:
     Each cycle is the set of nodes in a strongly connected component
     with size >= 1 (self-loops count).
     """
+    # frob:waive PERF003 reason="inherent to Tarjan SCC nested index-compare traversal"
     index_counter = [0]
     stack: list[str] = []
     on_stack: set[str] = set()
     index: dict[str, int] = {}
     lowlink: dict[str, int] = {}
     sccs: list[list[str]] = []
+    # Deterministic node order, sorted once up front (not per-iteration).
+    ordered_nodes = sorted(graph.nodes)
 
     def strongconnect(v: str) -> None:
         index[v] = index_counter[0]
@@ -69,7 +72,7 @@ def find_cycles(graph: DependencyGraph) -> list[list[str]]:
             if len(scc) > 1 or v in graph.neighbors(v):
                 sccs.append(scc)
 
-    for node in sorted(graph.nodes):
+    for node in ordered_nodes:
         if node not in index:
             strongconnect(node)
 

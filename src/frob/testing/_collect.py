@@ -25,8 +25,8 @@ _COLLECT_TIMEOUT_S = 300.0
 _NO_TESTS_COLLECTED_EXIT = 5
 
 
-def _find_test_files(root: Path) -> list[Path]:
-    """Every `test_*.py` / `*_test.py` file under `root`, exclusions pruned."""
+def _walk_test_files(root: Path) -> list[Path]:
+    """Unordered `test_*.py` / `*_test.py` files under `root`, exclusions pruned."""
     found: list[Path] = []
     for dirpath, dirnames, filenames in os.walk(root):
         dirnames[:] = [d for d in dirnames if d not in _EXCLUDED_DIRS]
@@ -35,7 +35,12 @@ def _find_test_files(root: Path) -> list[Path]:
                 found.append(Path(dirpath) / name)
             elif name.endswith("_test.py"):
                 found.append(Path(dirpath) / name)
-    return sorted(found)
+    return found
+
+
+def _find_test_files(root: Path) -> list[Path]:
+    """Every `test_*.py` / `*_test.py` file under `root`, sorted, exclusions pruned."""
+    return sorted(_walk_test_files(root))
 
 
 def _content_key(root: Path) -> str:
