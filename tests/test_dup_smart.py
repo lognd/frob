@@ -18,6 +18,16 @@ from frob.dup import _core as dup_core
 from frob.gitio import Diff, Hunk
 from frob.graph import build_graph
 
+# R3+ needs the frob-core native extension (a Rust build). Where it is not
+# installed (CI without the toolchain), the smart-dup rungs are legitimately
+# unavailable, so the suite skips rather than failing -- the CoreUnavailable
+# contract is still covered by the monkeypatched-absence test when core IS
+# present. (frob:ticket T-0001)
+pytestmark = pytest.mark.skipif(
+    not dup_core.core_available(),
+    reason="frob-core native extension not installed (build with maturin develop)",
+)
+
 FIXTURE_ROOT = Path(__file__).parent / "fixtures" / "dup_smart"
 
 

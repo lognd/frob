@@ -21,6 +21,10 @@ threat: null
 ```
 Phase 7 (0.2.0), designed in docs/dup.md: frob-core PyO3/maturin crate (R3 canonicalizer, winnowing, LSH, WL-kernel, APTED; compute-only, no-Python-fallback, lithos as build reference); region-granular matching (function/subsection); content-addressed fingerprint + LRU verdict caches in .frob/dup.db; DUP001/DUP002 gates; R6 observational probing via frob.fuzz generators; pre-work sweep re-platformed onto it.
 
+PARTIAL (T-0037): frob-core built + R1/R2/R3 + DUP gate shipped.
+Remaining: R4 (winnowing/LSH orchestration), R5 (WL-kernel), R6
+(observational probing), region-subsection matching, cache-in-hot-path.
+
 <!-- ticket:T-0002 -->
 ```yaml
 id: T-0002
@@ -937,3 +941,39 @@ frob stats reports ticket-queue health (state/kind counts, doable,
 blocked, failure-log entries) and commit cadence (per-week rate,
 conventional-type breakdown) from git + the queue. Measurement only,
 no gate. Delivers T-0009.
+
+<!-- ticket:T-0037 -->
+```yaml
+id: T-0037
+title: 'Smart-dup: frob-core Rust kernels + DUP gate + build wiring'
+state: done
+kind: feature
+origin: agent
+created: '2026-07-17'
+blocked_by: []
+parent: null
+scope:
+- frob-core/**
+- src/frob/dup/**
+- src/frob/gates/**
+- tests/test_dup_smart.py
+- tests/test_excludes.py
+- tests/test_gates.py
+- Makefile
+- .github/**
+- docs/**
+- tests/fixtures/**
+evidence:
+- tests/test_dup_smart.py::TestFindClones::test_finds_renamed_clone_pair
+- tests/test_gates.py
+attachments: []
+acceptance: []
+threat: null
+```
+## Done report
+
+frob-core PyO3/maturin crate (r3_canonical_hash, winnow, candidate_pairs,
+tree_edit_similarity; 5/5 cargo tests) + the smart-dup Python pipeline
+(find_clones R1/R2 pure-Python, R3 via frob-core, no silent fallback);
+DUP001/DUP002 wired as the opt-in 'clones' gate; make core + CI build
+the Rust side. Delivers the buildable core of T-0001.

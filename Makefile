@@ -1,7 +1,7 @@
 # Stamp file: uv sync runs only when pyproject.toml changes.
 STAMP := .venv/.install-stamp
 
-.PHONY: all check install format lint lint-fix typecheck test test-fast \
+.PHONY: all check install core format lint lint-fix typecheck test test-fast \
         test-unit test-integration test-system coverage clean upload sync-skills
 
 PYPI_NAME := frob
@@ -32,7 +32,19 @@ $(STAMP): pyproject.toml
 	uv sync --all-extras
 	@touch $(STAMP)
 
-install: $(STAMP)
+install: $(STAMP) core
+
+# ---------- native extension (frob-core, Rust/PyO3) ----------
+
+# Build and install the frob-core native extension into the venv. The
+# smart-dup R3+ rungs need it; R1/R2 and every other feature work without
+# it, so this is a best-effort step that warns rather than fails when the
+# Rust toolchain is absent.
+core: $(STAMP)
+	@command -v cargo >/dev/null 2>&1 || { \
+		echo "cargo not found; skipping frob-core (smart-dup R3+ disabled)"; \
+		exit 0; }
+	cd frob-core && uvx maturin develop --uv --release
 
 # ---------- formatting & linting ----------
 

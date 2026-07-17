@@ -1045,8 +1045,55 @@ _ALL_GATES = frozenset(
         "perf",
         "fuzz",
         "release",
+        "clones",
     }
 )
+
+
+# frob:ticket T-0001
+def dup_gate(root: Path, snapshot: GraphSnapshot, diff: Diff) -> tuple[Violation, ...]:
+    """DUP001/DUP002: the diff introduces a clone of an existing symbol.
+
+    Opt-in via `[dup].enforce = true` in frob.toml (default off): smart
+    clone detection needs the frob-core native extension, so it stays
+    silent until a repo turns it on. If enforce is on but frob-core is
+    absent, emits one advisory note rather than failing -- the build is not
+    blocked by a missing optional toolchain.
+    """
+    from frob.dup import DUP001, DUP002, DupConfig, core_available, find_clones
+    from frob.dup import touched_refs as _touched
+
+    root = Path(root)
+    toml_path = root / "frob.toml"
+    enforce = False
+    threshold = 0.85
+    if toml_path.exists():
+        try:
+            with toml_path.open("rb") as fh:
+                dup_cfg = tomllib.load(fh).get("dup", {})
+            enforce = bool(dup_cfg.get("enforce", False))
+            threshold = float(dup_cfg.get("threshold", 0.85))
+        except (OSError, tomllib.TOMLDecodeError, ValueError) as exc:
+            _log.warning("dup_gate: frob.toml unreadable: %s", exc)
+    if not enforce:
+        _log.debug("dup_gate: [dup].enforce off, skipping")
+        return ()
+    if not core_available():
+        _log.warning("dup_gate: frob-core not installed; DUP rules skipped")
+        return ()
+
+    report_result = find_clones(snapshot, DupConfig(threshold=threshold), diff=diff)
+    if report_result.is_err:
+        _log.warning("dup_gate: find_clones failed: %s", report_result.danger_err)
+        return ()
+    report = report_result.danger_ok
+    touched = _touched(snapshot, diff)
+    violations = (
+        *DUP001(report, touched, threshold),
+        *DUP002(report, touched, threshold),
+    )
+    _log.info("dup_gate: %d clone violation(s)", len(violations))
+    return tuple(violations)
 
 
 # frob:ticket T-0003
@@ -1486,6 +1533,8 @@ def run_gates(cfg: GateConfig) -> Result[GateReport, GateError]:
         jobs["fuzz"] = lambda: fuzz_gate(Path(cfg.root), snapshot)
     if "release" in selected:
         jobs["release"] = lambda: release_gate(Path(cfg.root), snapshot)
+    if "clones" in selected:
+        jobs["clones"] = lambda: dup_gate(Path(cfg.root), snapshot, diff)
 
     from concurrent.futures import ThreadPoolExecutor
 
@@ -1548,6 +1597,7 @@ __all__ = [
     "load_coverage",
     "load_invariants",
     "doclink_gate",
+    "dup_gate",
     "fuzz_gate",
     "perf_gate",
     "release_gate",

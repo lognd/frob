@@ -30,3 +30,4 @@ vgcore.*
 
 # Secrets
 .env
+frob-core/target/
