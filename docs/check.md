@@ -10,6 +10,7 @@ frob check src/                        # Python (auto-detected)
 frob check src/ --type python          # force Python mode
 frob check src/ --type cpp             # C++/CMake mode
 frob check src/ --type rust            # Rust/Cargo mode
+frob check src/ --type typescript      # npm/TypeScript mode
 frob check src/ --json                 # machine-readable output
 ```
 
@@ -111,6 +112,32 @@ frob check . --type rust --valgrind
 frob check . --type rust --skip-clippy
 ```
 
+## TypeScript mode (auto-detected from `package.json` + `tsconfig.json`)
+
+Runs in order (each via `npx`):
+1. `tsc --noEmit` -- type errors
+2. `eslint . --format json` -- lint errors/warnings
+3. `prettier --check .` -- format violations
+4. `vitest run --reporter json` (optionally skipped) -- unit tests
+
+A missing `npx`/node toolchain is a soft skip with a note on each stage,
+never a crash.
+
+```bash
+frob check . --type typescript
+frob check . --type typescript --skip-eslint --skip-prettier
+frob check . --type typescript --skip-tests
+```
+
+### TypeScript skip flags
+
+```bash
+frob check src/ --skip-tsc
+frob check src/ --skip-eslint
+frob check src/ --skip-prettier
+frob check src/ --skip-tests
+```
+
 ## Auto-detection
 
 | Sentinel file | Detected type |
@@ -118,6 +145,7 @@ frob check . --type rust --skip-clippy
 | `Cargo.toml` | rust |
 | `CMakeLists.txt` | cpp |
 | `pyproject.toml` | python |
+| `package.json` + `tsconfig.json` | typescript |
 | (none) | python (fallback) |
 
 ## Output format

@@ -7,7 +7,13 @@ from collections.abc import Iterator
 from pathlib import Path
 
 from frob.app.config import AppConfig
-from frob.check import detect_project_type, run_check, run_check_cpp, run_check_rust
+from frob.check import (
+    detect_project_type,
+    run_check,
+    run_check_cpp,
+    run_check_rust,
+    run_check_ts,
+)
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
@@ -88,6 +94,7 @@ def _warn_if_polyglot(root: Path, chosen: str) -> None:
         "rust": (root / "Cargo.toml").exists(),
         "cpp": (root / "CMakeLists.txt").exists(),
         "python": (root / "pyproject.toml").exists() or (root / "setup.py").exists(),
+        "typescript": (root / "package.json").exists(),
     }
     others = sorted(
         lang for lang, present in sentinels.items() if present and lang != chosen
@@ -146,6 +153,14 @@ def run(cfg: AppConfig) -> None:
                 skip_fmt=cfg.check_skip_fmt,
                 skip_tests=cfg.check_skip_tests,
                 valgrind=cfg.check_valgrind,
+            )
+        elif project_type == "typescript":
+            result = run_check_ts(
+                root,
+                skip_tsc=cfg.check_skip_tsc,
+                skip_eslint=cfg.check_skip_eslint,
+                skip_prettier=cfg.check_skip_prettier,
+                skip_tests=cfg.check_skip_tests,
             )
         else:
             # Python (default)

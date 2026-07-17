@@ -101,6 +101,8 @@ def _build_parser() -> argparse.ArgumentParser:
             "cargo",
             "clang-tidy",
             "valgrind",
+            "tsc",
+            "eslint",
         ],
     )
     parse_p.add_argument(
@@ -255,7 +257,7 @@ def _build_parser() -> argparse.ArgumentParser:
     check_p.add_argument(
         "--type",
         dest="check_type",
-        choices=["python", "cpp", "rust"],
+        choices=["python", "cpp", "rust", "typescript"],
         help="project type (default: auto-detect)",
     )
     check_p.add_argument(
@@ -291,6 +293,12 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     check_p.add_argument("--skip-clippy", dest="check_skip_clippy", action="store_true")
     check_p.add_argument("--skip-fmt", dest="check_skip_fmt", action="store_true")
+    # TypeScript specific
+    check_p.add_argument("--skip-tsc", dest="check_skip_tsc", action="store_true")
+    check_p.add_argument("--skip-eslint", dest="check_skip_eslint", action="store_true")
+    check_p.add_argument(
+        "--skip-prettier", dest="check_skip_prettier", action="store_true"
+    )
     check_p.add_argument("--json", dest="check_json", action="store_true")
     check_p.add_argument("--ticket", dest="check_ticket", metavar="ID")
     check_p.add_argument("--base", dest="check_base", metavar="REF")

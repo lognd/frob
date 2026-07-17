@@ -19,9 +19,11 @@ from frob.process.parsers import (
     parse_cargo,
     parse_clang,
     parse_clang_tidy,
+    parse_eslint,
     parse_junit_xml,
     parse_pytest,
     parse_ruff,
+    parse_tsc,
     parse_ty,
     parse_valgrind,
 )
@@ -42,6 +44,8 @@ _PARSERS = {
     "cargo": lambda text, rc: parse_cargo(text, exit_code=rc),
     "clang-tidy": lambda text, rc: parse_clang_tidy(text, exit_code=rc),
     "valgrind": lambda text, rc: parse_valgrind(text, exit_code=rc),
+    "tsc": lambda text, rc: parse_tsc(text, exit_code=rc),
+    "eslint": lambda text, rc: parse_eslint(text, exit_code=rc),
 }
 
 

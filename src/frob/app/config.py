@@ -98,7 +98,9 @@ class AppConfig(BaseModel):
 
     # check (shared)
     check_path: Path | None = None
-    check_type: str | None = None  # "python", "cpp", "rust", or None=auto-detect
+    check_type: str | None = (
+        None  # "python", "cpp", "rust", "typescript", or None=auto-detect
+    )
     check_json: bool = False
     check_valgrind: bool = False
     check_skip_tests: bool = False
@@ -124,6 +126,10 @@ class AppConfig(BaseModel):
     check_skip_cargo_check: bool = False
     check_skip_clippy: bool = False
     check_skip_fmt: bool = False
+    # check (typescript)
+    check_skip_tsc: bool = False
+    check_skip_eslint: bool = False
+    check_skip_prettier: bool = False
 
     # gitlog
     gitlog_path: Path | None = None
@@ -378,6 +384,9 @@ class AppConfig(BaseModel):
             "check_skip_cargo_check",
             "check_skip_clippy",
             "check_skip_fmt",
+            "check_skip_tsc",
+            "check_skip_eslint",
+            "check_skip_prettier",
             "gitlog_all",
             "gitlog_json",
             "check_stamp_coverage",

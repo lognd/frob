@@ -1,8 +1,20 @@
 """End-to-end tests for `frob check` (Python quality gate)."""
 
+import shutil
 from pathlib import Path
 
+import pytest
+
 from tests.system.conftest import FIXTURES, run
+
+# The TS system test needs a real `typescript` install to exercise `tsc`
+# without hitting the network (npx would otherwise try to fetch it and
+# hang/fail offline) -- reuse whatever node_modules a sibling checkout
+# already has, and skip cleanly everywhere else (CI without node included).
+_TS_NODE_MODULES = Path("/home/logan/projects/logand.app/frontend/node_modules")
+_HAS_TS_TOOLCHAIN = (
+    shutil.which("npx") is not None and (_TS_NODE_MODULES / ".bin" / "tsc").exists()
+)
 
 
 def _make_project(tmp_path: Path, src: str, pkg: str = "mypkg") -> Path:
@@ -275,3 +287,62 @@ class TestFrobTomlCheckDefaults:
 
         data = json.loads(r.stdout)
         assert data.get("results") == []
+
+
+@pytest.mark.skipif(
+    not _HAS_TS_TOOLCHAIN, reason="no local typescript toolchain (node_modules) found"
+)
+class TestCheckTypescript:
+    """End-to-end `frob check --type typescript` against a real tsc/npx.
+
+    Reuses the sibling logand.app/frontend node_modules (via symlink) so
+    `npx tsc` resolves locally instead of hitting the network -- keeps the
+    test hermetic-ish while still exercising the real subprocess + parser
+    path, not just parse_tsc in isolation."""
+
+    def _make_ts_project(self, tmp_path: Path, src: str) -> Path:
+        (tmp_path / "node_modules").symlink_to(_TS_NODE_MODULES)
+        (tmp_path / "package.json").write_text(
+            '{"name": "tsfixture", "private": true, "type": "module"}\n'
+        )
+        (tmp_path / "tsconfig.json").write_text(
+            '{"compilerOptions": {"strict": true, "noEmit": true, '
+            '"target": "ES2020", "module": "ESNext", "moduleResolution": '
+            '"Bundler"}}\n'
+        )
+        (tmp_path / "src.ts").write_text(src)
+        return tmp_path
+
+    def test_clean_ts_passes_tsc(self, tmp_path):
+        self._make_ts_project(
+            tmp_path,
+            "export function add(a: number, b: number): number {\n    return a + b;\n}\n",
+        )
+        r = run(
+            "check",
+            str(tmp_path),
+            "--type",
+            "typescript",
+            "--skip-eslint",
+            "--skip-prettier",
+            "--skip-tests",
+            cwd=tmp_path,
+        )
+        out = r.stdout + r.stderr
+        assert r.returncode == 0, out
+
+    def test_type_error_fails_tsc(self, tmp_path):
+        self._make_ts_project(tmp_path, "export const x: number = 'not a number';\n")
+        r = run(
+            "check",
+            str(tmp_path),
+            "--type",
+            "typescript",
+            "--skip-eslint",
+            "--skip-prettier",
+            "--skip-tests",
+            cwd=tmp_path,
+        )
+        out = r.stdout + r.stderr
+        assert r.returncode == 1, out
+        assert "TS2322" in out or "not assignable" in out

@@ -896,18 +896,191 @@ def _find_test_binary_from_cargo_json(stdout: str) -> Path | None:
 
 
 # ---------------------------------------------------------------------------
+# TypeScript checks
+# ---------------------------------------------------------------------------
+
+_TS_TIMEOUT_S = 300
+
+
+def run_check_ts(
+    root: Path,
+    *,
+    skip_tsc: bool = False,
+    skip_eslint: bool = False,
+    skip_prettier: bool = False,
+    skip_tests: bool = False,
+) -> CheckResult:
+    """Quality gate for npm/TypeScript projects (tsc/eslint/prettier/vitest)."""
+    from typing import Callable
+
+    tasks: list[Callable[[], ToolResult | None]] = []
+    if not skip_tsc:
+        tasks.append(lambda: _run_tsc(root))
+    if not skip_eslint:
+        tasks.append(lambda: _run_eslint(root))
+    if not skip_prettier:
+        tasks.append(lambda: _run_prettier(root))
+    if not skip_tests:
+        tasks.append(lambda: _run_vitest(root))
+
+    results: list[ToolResult] = []
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = [executor.submit(fn) for fn in tasks]
+        for future in futures:
+            r = future.result()
+            if r is not None:
+                results.append(r)
+
+    return CheckResult(path=str(root), results=results)
+
+
+def _missing_tool_result(tool: str, cmd: str) -> ToolResult:
+    """A missing `npx`/`node` is a soft skip, not a crash -- mirrors the way
+    run_check_cpp tolerates an absent clang-tidy, but with a clear note so
+    the gap is never silently invisible in the summary."""
+    return ToolResult(
+        tool=tool,
+        exit_code=0,
+        diagnostics=[
+            Diagnostic(
+                severity="note",
+                message=f"skipped: {cmd!r} not found on PATH (node/npm not installed?)",
+            )
+        ],
+        summary="skipped: tool not found",
+    )
+
+
+def _run_npx(
+    root: Path, args: list[str], tool: str
+) -> subprocess.CompletedProcess | None:
+    """Run an `npx ...` command in root; returns None if npx is missing."""
+    import shutil
+
+    if shutil.which("npx") is None:
+        return None
+    try:
+        return subprocess.run(
+            ["npx"] + args,
+            cwd=str(root),
+            capture_output=True,
+            text=True,
+            timeout=_TS_TIMEOUT_S,
+        )
+    except FileNotFoundError:
+        return None
+    except subprocess.TimeoutExpired:
+        return None
+
+
+def _run_tsc(root: Path) -> ToolResult:
+    from frob.process.parsers import parse_tsc
+
+    proc = _run_npx(root, ["tsc", "--noEmit"], "tsc")
+    if proc is None:
+        return _missing_tool_result("tsc", "npx")
+    r = parse_tsc(proc.stdout + proc.stderr, exit_code=proc.returncode)
+    r.tool = "tsc"
+    return r
+
+
+def _run_eslint(root: Path) -> ToolResult:
+    from frob.process.parsers import parse_eslint
+
+    proc = _run_npx(root, ["eslint", ".", "--format", "json"], "eslint")
+    if proc is None:
+        return _missing_tool_result("eslint", "npx")
+    r = parse_eslint(proc.stdout, exit_code=proc.returncode)
+    r.tool = "eslint"
+    return r
+
+
+def _run_prettier(root: Path) -> ToolResult:
+    proc = _run_npx(root, ["prettier", "--check", "."], "prettier")
+    if proc is None:
+        return _missing_tool_result("prettier", "npx")
+    if proc.returncode == 0:
+        return ToolResult(tool="prettier", exit_code=0, summary="all files formatted")
+    unformatted = [
+        ln.strip()
+        for ln in (proc.stdout + proc.stderr).splitlines()
+        if ln.strip() and not ln.lstrip().startswith(("[warn]", "Checking"))
+    ]
+    diags = [
+        Diagnostic(file=ln, severity="warning", message="needs formatting")
+        for ln in unformatted
+    ]
+    n = len(diags)
+    return ToolResult(
+        tool="prettier",
+        exit_code=proc.returncode,
+        diagnostics=diags,
+        summary=f"{n} file{'s' if n != 1 else ''} need formatting",
+    )
+
+
+def _run_vitest(root: Path) -> ToolResult:
+    import json as _json
+
+    proc = _run_npx(root, ["vitest", "run", "--reporter", "json"], "vitest")
+    if proc is None:
+        return _missing_tool_result("vitest", "npx")
+
+    from frob.process.parsers.common import TestCase
+
+    tests: list[TestCase] = []
+    try:
+        report = _json.loads(proc.stdout)
+        for suite in report.get("testResults", []):
+            suite_name = suite.get("name", "")
+            for case in suite.get("assertionResults", []):
+                tests.append(
+                    TestCase(
+                        suite=suite_name,
+                        name=case.get("fullName") or case.get("title", ""),
+                        passed=case.get("status") == "passed",
+                        skipped=case.get("status") == "pending",
+                        failure_message=(
+                            "; ".join(case.get("failureMessages", []))
+                            if case.get("failureMessages")
+                            else None
+                        ),
+                    )
+                )
+    except (_json.JSONDecodeError, AttributeError):
+        # vitest emitted non-JSON (crash, missing config, etc) -- fall back
+        # to exit code alone rather than crashing the whole check stage.
+        pass
+
+    n_failed = sum(1 for t in tests if not t.passed and not t.skipped)
+    if tests:
+        summary = f"{len(tests) - n_failed}/{len(tests)} tests passed"
+    else:
+        summary = "tests passed" if proc.returncode == 0 else "tests failed"
+
+    return ToolResult(
+        tool="vitest",
+        exit_code=proc.returncode,
+        tests=tests,
+        summary=summary,
+    )
+
+
+# ---------------------------------------------------------------------------
 # Auto-detect project type
 # ---------------------------------------------------------------------------
 
 
 def detect_project_type(root: Path) -> str:
-    """Returns 'python', 'cpp', 'rust', or 'unknown'."""
+    """Returns 'python', 'cpp', 'rust', 'typescript', or 'unknown'."""
     if (root / "Cargo.toml").exists():
         return "rust"
     if (root / "CMakeLists.txt").exists():
         return "cpp"
     if (root / "pyproject.toml").exists() or (root / "setup.py").exists():
         return "python"
+    if (root / "package.json").exists() and (root / "tsconfig.json").exists():
+        return "typescript"
     if list(root.glob("*.cpp")) or list(root.glob("*.cc")) or list(root.glob("*.c")):
         return "cpp"
     return "unknown"
