@@ -19,6 +19,7 @@ from collections.abc import Iterator
 
 
 @contextlib.contextmanager
+# frob:doc docs/logging.md#public-api
 def quiet_stdout_logs() -> Iterator[None]:
     """Raise stdout log handlers to WARNING for the duration of the block."""
     root_logger = logging.getLogger()

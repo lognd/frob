@@ -23,6 +23,7 @@ def cpp_file(tmp_path, cpp_sample):
 
 
 def test_py_outline_ok(py_file):
+    # frob:tests src/frob/outline/__init__.py::outline_file kind="unit"
     result = outline_file(py_file)
     assert result.is_ok
 

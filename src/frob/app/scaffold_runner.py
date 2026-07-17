@@ -10,6 +10,7 @@ from frob.scaffold.project import list_project_types, render_project
 _log = get_logger(__name__)
 
 
+# frob:doc docs/app.md#runners
 def run(cfg: AppConfig) -> None:
     cmd = cfg.scaffold_command
     if cmd == "list" or cmd is None:

@@ -14,6 +14,7 @@ _PY_EXTS = {".py"}
 _CPP_EXTS = {".c", ".cc", ".cpp", ".cxx", ".c++", ".h", ".hpp", ".hxx", ".h++"}
 
 
+# frob:doc docs/app.md#runners
 def run(cfg: AppConfig) -> None:
     if cfg.cycle_path is None:
         _log.error("frob cycle requires <path>")

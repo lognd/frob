@@ -15,6 +15,7 @@ _log = get_logger(__name__)
 _CACHE_REL = Path(".frob") / "cache.db"
 
 
+# frob:doc docs/app.md#runners
 def run(cfg: AppConfig) -> None:
     """Dispatch to the ticket subcommand named by `cfg.ticket_command`."""
     root = (cfg.ticket_path or Path(".")).resolve()

@@ -3,27 +3,33 @@ from __future__ import annotations
 from collections import defaultdict
 
 
+# frob:doc docs/cycle.md#public-api
 class DependencyGraph:
     def __init__(self) -> None:
         self._edges: dict[str, set[str]] = defaultdict(set)
         self._nodes: set[str] = set()
 
     def add_edge(self, src: str, dst: str) -> None:
+        # frob:doc docs/cycle.md#public-api
         self._nodes.add(src)
         self._nodes.add(dst)
         self._edges[src].add(dst)
 
     def add_node(self, node: str) -> None:
+        # frob:doc docs/cycle.md#public-api
         self._nodes.add(node)
 
     @property
     def nodes(self) -> frozenset[str]:
+        # frob:doc docs/cycle.md#public-api
         return frozenset(self._nodes)
 
     def neighbors(self, node: str) -> set[str]:
+        # frob:doc docs/cycle.md#public-api
         return self._edges.get(node, set())
 
 
+# frob:doc docs/cycle.md#public-api
 def find_cycles(graph: DependencyGraph) -> list[list[str]]:
     """
     Return a list of cycles using Tarjan's SCC algorithm.

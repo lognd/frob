@@ -2,10 +2,24 @@ from frob.cycle.graph import DependencyGraph, find_cycles
 
 
 def test_no_cycle():
+    # frob:tests src/frob/cycle/graph.py::DependencyGraph.add_edge kind="unit"
+    # frob:tests src/frob/cycle/graph.py::find_cycles kind="unit"
     g = DependencyGraph()
     g.add_edge("a", "b")
     g.add_edge("b", "c")
     assert find_cycles(g) == []
+
+
+def test_add_node_and_nodes_and_neighbors():
+    # frob:tests src/frob/cycle/graph.py::DependencyGraph.add_node kind="unit"
+    # frob:tests src/frob/cycle/graph.py::DependencyGraph.nodes kind="unit"
+    # frob:tests src/frob/cycle/graph.py::DependencyGraph.neighbors kind="unit"
+    g = DependencyGraph()
+    g.add_node("solo")
+    g.add_edge("a", "b")
+    assert g.nodes == frozenset({"solo", "a", "b"})
+    assert g.neighbors("a") == {"b"}
+    assert g.neighbors("solo") == set()
 
 
 def test_simple_cycle():

@@ -109,6 +109,7 @@ def _warn_if_polyglot(root: Path, chosen: str) -> None:
         )
 
 
+# frob:doc docs/app.md#runners
 def run(cfg: AppConfig) -> None:
     root = cfg.check_path or Path(".")
 

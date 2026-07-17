@@ -9,11 +9,13 @@ from typani.result import Result
 from frob.lang import LangError, RawSymbol, SymbolKind, extract_imports, parse_file
 
 
+# frob:doc docs/outline.md#public-api
 class OutlineError(ErrorSet):
     UnsupportedLanguage = "No outline adapter for this file extension"
     ParseFailed = "tree-sitter could not parse the file"
 
 
+# frob:doc docs/outline.md#public-api
 class FunctionOutline(BaseModel):
     name: str
     signature: str
@@ -21,12 +23,14 @@ class FunctionOutline(BaseModel):
     doc: str = ""
 
 
+# frob:doc docs/outline.md#public-api
 class ClassOutline(BaseModel):
     name: str
     line: int
     methods: list[FunctionOutline]
 
 
+# frob:doc docs/outline.md#public-api
 class ModuleOutline(BaseModel):
     path: str
     lines: int
@@ -35,6 +39,7 @@ class ModuleOutline(BaseModel):
     classes: list[ClassOutline]
 
     def as_text(self, include_private: bool = False) -> str:
+        # frob:doc docs/outline.md#public-api
         parts = [f"{self.path}  ({self.lines} lines)"]
         if self.imports:
             parts.append(f"  imports: {', '.join(self.imports)}")
@@ -71,6 +76,7 @@ class ModuleOutline(BaseModel):
         return "\n".join(parts)
 
     def as_json(self) -> str:
+        # frob:doc docs/outline.md#public-api
         return self.model_dump_json(indent=2)
 
 
@@ -78,6 +84,7 @@ _PY_EXTS = {".py"}
 _CPP_EXTS = {".c", ".cc", ".cpp", ".cxx", ".c++", ".h", ".hpp", ".hxx", ".h++"}
 
 
+# frob:doc docs/outline.md#public-api
 def outline_file(path: Path) -> Result[ModuleOutline, OutlineError]:
     try:
         display = path.relative_to(Path.cwd())

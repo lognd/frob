@@ -21,6 +21,7 @@ def test_load_and_match_globs(tmp_path: Path):
         '[graph]\nexclude = ["generated/**", "vendor/**"]\n', encoding="utf-8"
     )
     globs = load_exclude_globs(tmp_path)
+    # frob:tests src/frob/excludes.py::is_excluded kind="unit"
     assert is_excluded("generated/api.ts", globs)
     assert is_excluded("vendor/dep/x.py", globs)
     assert not is_excluded("src/main.py", globs)

@@ -118,6 +118,7 @@ def heat(artifact: ProfileArtifact, snapshot: GraphSnapshot) -> HeatReport:
     return HeatReport(entries=ranked, unattributed_s=unattributed_s)
 
 
+# frob:doc docs/perf.md#public-api
 # frob:ticket T-0021
 def join_smells(
     report: HeatReport, violations_by_ref: dict[str, tuple[str, ...]]
@@ -132,6 +133,7 @@ def join_smells(
     return report.model_copy(update={"entries": updated})
 
 
+# frob:doc docs/perf.md#public-api
 # frob:ticket T-0021
 def render_bar(cum_s: float, max_s: float, *, color: bool | None = None) -> str:
     """An ASCII `#`-block bar sized to `cum_s / max_s`, painted yellow when

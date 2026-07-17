@@ -18,6 +18,7 @@ from frob.logging import get_logger
 _log = get_logger(__name__)
 
 
+# frob:doc docs/app.md#runners
 def run(cfg: AppConfig) -> None:
     from frob.arch import analyze_project
 

@@ -6,6 +6,7 @@ from frob.app.config import AppConfig
 from frob.gitlog import git_log
 
 
+# frob:doc docs/app.md#runners
 def run(cfg: AppConfig) -> None:
     root = cfg.gitlog_path or Path(".")
     result = git_log(

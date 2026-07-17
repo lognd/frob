@@ -21,6 +21,7 @@ def _args(**kwargs) -> argparse.Namespace:
 
 
 def test_config_no_subcommand():
+    # frob:tests src/frob/app/config.py::AppConfig.from_args kind="unit"
     cfg = AppConfig.from_args(_args())
     assert cfg.subcommand is None
 
@@ -46,6 +47,7 @@ def test_config_cycle_subcommand():
 
 
 def test_config_reads_toml_file(tmp_path):
+    # frob:tests src/frob/app/config.py::AppConfig.from_external kind="unit"
     cfg_file = tmp_path / "pyproject.toml"
     cfg_file.write_text("[tool.frob]\ncycle_suggest = true\n")
     cfg = AppConfig.from_external(

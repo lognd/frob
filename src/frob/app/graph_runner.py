@@ -13,6 +13,7 @@ _log = get_logger(__name__)
 _CACHE_REL = Path(".frob") / "cache.db"
 
 
+# frob:doc docs/app.md#runners
 def run(cfg: AppConfig) -> None:
     """Dispatch to build/query/why based on `cfg.graph_command`."""
     root = (cfg.graph_path or Path(".")).resolve()

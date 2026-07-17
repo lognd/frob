@@ -18,6 +18,7 @@ __all__ = ["run"]
 
 
 # frob:ticket T-0021
+# frob:doc docs/app.md#runners
 def run(cfg: AppConfig) -> None:
     """Dispatch to `frob perf profile` or `frob perf heat`."""
     match cfg.perf_command:

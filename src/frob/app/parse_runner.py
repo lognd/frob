@@ -49,6 +49,7 @@ _PARSERS = {
 }
 
 
+# frob:doc docs/app.md#runners
 def run(cfg: AppConfig) -> None:
     tool = cfg.parse_tool
     if tool is None:

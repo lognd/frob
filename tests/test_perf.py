@@ -228,6 +228,54 @@ def test_heat_joins_pstats_rows_onto_symbol_spans(tmp_path):
         assert report.entries[0].cum_s >= report.entries[-1].cum_s
 
 
+def test_join_smells_attaches_rule_ids_by_ref():
+    """`join_smells` attaches PERF rule ids onto matching entries only."""
+    # frob:tests src/frob/perf/_heat.py::join_smells kind="unit"
+    from frob.perf._heat import join_smells
+    from frob.perf._models import HeatEntry, HeatReport
+
+    report = HeatReport(
+        entries=(
+            HeatEntry(ref="a.py::f", cum_s=1.0, self_s=1.0, ncalls=1),
+            HeatEntry(ref="a.py::g", cum_s=2.0, self_s=2.0, ncalls=1),
+        ),
+        unattributed_s=0.0,
+    )
+    updated = join_smells(report, {"a.py::f": ("PERF001",)})
+    smells_by_ref = {e.ref: e.smells for e in updated.entries}
+    assert smells_by_ref["a.py::f"] == ("PERF001",)
+    assert smells_by_ref["a.py::g"] == ()
+
+
+def test_render_bar_scales_fill_to_ratio():
+    """`render_bar` fills proportionally to cum_s/max_s, uncolored when
+    color=False."""
+    # frob:tests src/frob/perf/_heat.py::render_bar kind="unit"
+    from frob.perf._heat import render_bar
+
+    empty = render_bar(0.0, 10.0, color=False)
+    full = render_bar(10.0, 10.0, color=False)
+    half = render_bar(5.0, 10.0, color=False)
+    assert empty == "-" * 30
+    assert full == "#" * 30
+    assert half.count("#") == 15
+
+
+def test_profile_artifact_names_are_sha_derived():
+    """`pstats_name`/`meta_name` derive their basenames from the artifact sha."""
+    # frob:tests src/frob/perf/_models.py::ProfileArtifact.pstats_name kind="unit"
+    # frob:tests src/frob/perf/_models.py::ProfileArtifact.meta_name kind="unit"
+    from datetime import datetime
+
+    from frob.perf._models import ProfileArtifact
+
+    artifact = ProfileArtifact(
+        sha="deadbeef", argv=("workload.py",), created=datetime.now(), total_s=0.1
+    )
+    assert artifact.pstats_name == "deadbeef.pstats"
+    assert artifact.meta_name == "deadbeef.json"
+
+
 def test_profile_records_workload_exit_code(tmp_path):
     """T-0027: a failing workload is profiled anyway and its exit code is
     recorded on the artifact, not masked as a spawn failure."""

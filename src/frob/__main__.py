@@ -651,6 +651,7 @@ def _build_parser() -> argparse.ArgumentParser:
     return p
 
 
+# frob:doc docs/app.md#entry-point
 def main() -> None:
     import sys as _sys
 

@@ -38,6 +38,7 @@ BUILTIN_SKIP_DIRS = frozenset(
 )
 
 
+# frob:doc docs/app.md#shared-exclude-glob-logic
 def load_exclude_globs(root: Path) -> tuple[str, ...]:
     """Read `[graph] exclude = [...]` from frob.toml; absent config is `()`.
 
@@ -60,11 +61,13 @@ def load_exclude_globs(root: Path) -> tuple[str, ...]:
     return tuple(globs)
 
 
+# frob:doc docs/app.md#shared-exclude-glob-logic
 def is_excluded(rel_path: str, exclude_globs: tuple[str, ...]) -> bool:
     """True if `rel_path` (root-relative, POSIX) matches any glob."""
     return any(fnmatch.fnmatch(rel_path, glob) for glob in exclude_globs)
 
 
+# frob:doc docs/app.md#shared-exclude-glob-logic
 def is_skipped_dir(name: str) -> bool:
     """True for a directory name that is always pruned (built-in skip set)."""
     return name in BUILTIN_SKIP_DIRS or name.endswith(".egg-info")

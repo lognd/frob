@@ -15,6 +15,7 @@ class TestExportsPackage:
         return pkg
 
     def test_basic_public_symbols(self, tmp_path):
+        # frob:tests src/frob/exports/__init__.py::exports_package kind="unit"
         pkg = self._make_pkg(
             tmp_path,
             {

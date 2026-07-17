@@ -1,6 +1,7 @@
 import logging
 
 
+# frob:doc docs/logging.md#public-api
 class BelowLevelFilter(logging.Filter):
     """Pass records strictly below `below` level (used to keep stdout clean)."""
 
@@ -9,4 +10,5 @@ class BelowLevelFilter(logging.Filter):
         self._below = getattr(logging, below.upper())
 
     def filter(self, record: logging.LogRecord) -> bool:
+        # frob:doc docs/logging.md#public-api
         return record.levelno < self._below
