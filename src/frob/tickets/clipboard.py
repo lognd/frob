@@ -165,6 +165,43 @@ def _wsl_has_image() -> bool:
     return b"True" in proc.stdout
 
 
+_WSL_SAVE_SCRIPT = (
+    "Add-Type -AssemblyName System.Windows.Forms; "
+    "Add-Type -AssemblyName System.Drawing; "
+    "$img = [Windows.Forms.Clipboard]::GetImage(); "
+    "if ($img -eq $null) {{ exit 2 }} "
+    "$img.Save('{win_png}', [System.Drawing.Imaging.ImageFormat]::Png)"
+)
+
+
+def _wsl_save_and_read(tmp_dir: str, win_png: str) -> Result[bytes, ClipboardError]:
+    """Save the WSL clipboard image to `win_png` via powershell, then read it back."""
+    script = _WSL_SAVE_SCRIPT.format(win_png=win_png)
+    try:
+        proc = subprocess.run(
+            ["powershell.exe", "-NoProfile", "-Command", script],
+            capture_output=True,
+            timeout=_PASTE_TIMEOUT_S,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        _log.error("clipboard: WSL powershell invocation failed: %s", exc)
+        return Err(ClipboardError.BackendFailed)
+    if proc.returncode == 2:
+        _log.info("clipboard: WSL clipboard has no image")
+        return Err(ClipboardError.NoImage)
+    if proc.returncode != 0:
+        _log.error(
+            "clipboard: WSL powershell exited %d: %s", proc.returncode, proc.stderr
+        )
+        return Err(ClipboardError.BackendFailed)
+    wsl_png = Path(tmp_dir) / "clip.png"
+    if not wsl_png.exists():
+        _log.error("clipboard: WSL expected output %s missing", wsl_png)
+        return Err(ClipboardError.BackendFailed)
+    return Ok(wsl_png.read_bytes())
+
+
 def _wsl_image() -> Result[bytes, ClipboardError]:
     _log.info("clipboard: fetching image via WSL powershell.exe")
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -179,36 +216,7 @@ def _wsl_image() -> Result[bytes, ClipboardError]:
             return Err(ClipboardError.BackendFailed)
         win_tmp_path = win_tmp.stdout.decode("ascii", errors="replace").strip()
         win_png = f"{win_tmp_path}\\clip.png"
-        script = (
-            "Add-Type -AssemblyName System.Windows.Forms; "
-            "Add-Type -AssemblyName System.Drawing; "
-            "$img = [Windows.Forms.Clipboard]::GetImage(); "
-            "if ($img -eq $null) { exit 2 } "
-            f"$img.Save('{win_png}', [System.Drawing.Imaging.ImageFormat]::Png)"
-        )
-        try:
-            proc = subprocess.run(
-                ["powershell.exe", "-NoProfile", "-Command", script],
-                capture_output=True,
-                timeout=_PASTE_TIMEOUT_S,
-                check=False,
-            )
-        except (OSError, subprocess.TimeoutExpired) as exc:
-            _log.error("clipboard: WSL powershell invocation failed: %s", exc)
-            return Err(ClipboardError.BackendFailed)
-        if proc.returncode == 2:
-            _log.info("clipboard: WSL clipboard has no image")
-            return Err(ClipboardError.NoImage)
-        if proc.returncode != 0:
-            _log.error(
-                "clipboard: WSL powershell exited %d: %s", proc.returncode, proc.stderr
-            )
-            return Err(ClipboardError.BackendFailed)
-        wsl_png = Path(tmp_dir) / "clip.png"
-        if not wsl_png.exists():
-            _log.error("clipboard: WSL expected output %s missing", wsl_png)
-            return Err(ClipboardError.BackendFailed)
-        return Ok(wsl_png.read_bytes())
+        return _wsl_save_and_read(tmp_dir, win_png)
 
 
 def _pngpaste_has_image() -> bool:

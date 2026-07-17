@@ -84,6 +84,47 @@ def _open(path: Path) -> sqlite3.Connection:
     return conn
 
 
+def _read_schema_version(
+    conn: sqlite3.Connection, path: Path
+) -> tuple[sqlite3.Connection, int | None]:
+    """Read the stored schema version, recreating the file if it is not sqlite."""
+    try:
+        cur = conn.execute("SELECT value FROM meta WHERE key = 'schema_version'")
+        row = cur.fetchone()
+        return conn, (int(row[0]) if row is not None else None)
+    except sqlite3.DatabaseError as exc:
+        _log.warning("cache.connect: unreadable db at %s, rebuilding: %s", path, exc)
+    try:
+        conn.execute("SELECT 1")
+    except sqlite3.DatabaseError:
+        _log.warning("cache.connect: %s is not a sqlite file; recreating", path)
+        conn.close()
+        path.unlink(missing_ok=True)
+        conn = _open(path)
+    return conn, None
+
+
+def _apply_schema(conn: sqlite3.Connection, existing: int | None, path: Path) -> None:
+    """Ensure the schema is current; wipe and rebuild on a version mismatch."""
+    if existing == _SCHEMA_VERSION:
+        conn.executescript(_SCHEMA)
+        return
+    _log.info(
+        "cache.connect: schema %s -> %s at %s, rebuilding",
+        existing,
+        _SCHEMA_VERSION,
+        path,
+    )
+    for table in ("meta", "files", "symbols", "edges", "malformed"):
+        conn.execute(f"DROP TABLE IF EXISTS {table}")
+    conn.executescript(_SCHEMA)
+    conn.execute(
+        "INSERT INTO meta (key, value) VALUES ('schema_version', ?)",
+        (str(_SCHEMA_VERSION),),
+    )
+    conn.commit()
+
+
 # frob:invariant INV-003
 # frob:ticket T-0029
 # frob:doc docs/graph.md#cache
@@ -97,37 +138,8 @@ def connect(path: Path) -> sqlite3.Connection:
     """
     path.parent.mkdir(parents=True, exist_ok=True)
     conn = _open(path)
-    try:
-        cur = conn.execute("SELECT value FROM meta WHERE key = 'schema_version'")
-        row = cur.fetchone()
-        existing = int(row[0]) if row is not None else None
-    except sqlite3.DatabaseError as exc:
-        _log.warning("cache.connect: unreadable db at %s, rebuilding: %s", path, exc)
-        try:
-            conn.execute("SELECT 1")
-        except sqlite3.DatabaseError:
-            _log.warning("cache.connect: %s is not a sqlite file; recreating", path)
-            conn.close()
-            path.unlink(missing_ok=True)
-            conn = _open(path)
-        existing = None
-    if existing != _SCHEMA_VERSION:
-        _log.info(
-            "cache.connect: schema %s -> %s at %s, rebuilding",
-            existing,
-            _SCHEMA_VERSION,
-            path,
-        )
-        for table in ("meta", "files", "symbols", "edges", "malformed"):
-            conn.execute(f"DROP TABLE IF EXISTS {table}")
-        conn.executescript(_SCHEMA)
-        conn.execute(
-            "INSERT INTO meta (key, value) VALUES ('schema_version', ?)",
-            (str(_SCHEMA_VERSION),),
-        )
-        conn.commit()
-    else:
-        conn.executescript(_SCHEMA)
+    conn, existing = _read_schema_version(conn, path)
+    _apply_schema(conn, existing, path)
     return conn
 
 
@@ -157,22 +169,10 @@ def get_file_hash(conn: sqlite3.Connection, file_path: str) -> str | None:
     return row[0] if row is not None else None
 
 
-# frob:doc docs/graph.md#cache
-def store_file_data(
-    conn: sqlite3.Connection,
-    *,
-    file_path: str,
-    content_hash: str,
-    symbols: tuple[SymbolRecord, ...],
-    edges: tuple[Edge, ...],
-    malformed: tuple[MalformedDirective, ...],
+def _store_symbols(
+    conn: sqlite3.Connection, file_path: str, symbols: tuple[SymbolRecord, ...]
 ) -> None:
-    """Replace all rows derived from `file_path` (delete-then-insert, one commit)."""
-    conn.execute(
-        "INSERT INTO files (path, content_hash) VALUES (?, ?) "
-        "ON CONFLICT(path) DO UPDATE SET content_hash = excluded.content_hash",
-        (file_path, content_hash),
-    )
+    """Replace the `symbols` rows derived from `file_path`."""
     conn.execute("DELETE FROM symbols WHERE path = ?", (file_path,))
     for record in symbols:
         conn.execute(
@@ -190,6 +190,12 @@ def store_file_data(
                 record.digests.doc,
             ),
         )
+
+
+def _store_edges(
+    conn: sqlite3.Connection, file_path: str, edges: tuple[Edge, ...]
+) -> None:
+    """Replace the `edges` rows derived from `file_path`."""
     conn.execute("DELETE FROM edges WHERE file = ?", (file_path,))
     for edge in edges:
         conn.execute(
@@ -204,12 +210,41 @@ def store_file_data(
                 json.dumps(dict(edge.attrs)),
             ),
         )
+
+
+def _store_malformed(
+    conn: sqlite3.Connection,
+    file_path: str,
+    malformed: tuple[MalformedDirective, ...],
+) -> None:
+    """Replace the `malformed` rows derived from `file_path`."""
     conn.execute("DELETE FROM malformed WHERE file = ?", (file_path,))
     for item in malformed:
         conn.execute(
             "INSERT INTO malformed (file, line, reason) VALUES (?,?,?)",
             (file_path, item.line, item.reason),
         )
+
+
+# frob:doc docs/graph.md#cache
+def store_file_data(
+    conn: sqlite3.Connection,
+    *,
+    file_path: str,
+    content_hash: str,
+    symbols: tuple[SymbolRecord, ...],
+    edges: tuple[Edge, ...],
+    malformed: tuple[MalformedDirective, ...],
+) -> None:
+    """Replace all rows derived from `file_path` (delete-then-insert, one commit)."""
+    conn.execute(
+        "INSERT INTO files (path, content_hash) VALUES (?, ?) "
+        "ON CONFLICT(path) DO UPDATE SET content_hash = excluded.content_hash",
+        (file_path, content_hash),
+    )
+    _store_symbols(conn, file_path, symbols)
+    _store_edges(conn, file_path, edges)
+    _store_malformed(conn, file_path, malformed)
 
 
 def _row_to_symbol(row: tuple) -> SymbolRecord:

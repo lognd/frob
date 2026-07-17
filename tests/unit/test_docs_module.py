@@ -43,3 +43,31 @@ def test_search(tmp_path):
     matches = search("widget", docs_dir)
     assert matches
     assert any("widget" in m.heading.lower() for m in matches)
+
+
+def test_docs_module_integration(tmp_path):
+    # frob:tests src/frob/docs kind="integration"
+    # Exercises the docs surface together: docstring extraction over a real
+    # source file, plus docs-directory discovery, overview, and search over a
+    # sibling docs/ tree.
+    src = tmp_path / "widget.py"
+    src.write_text(
+        '"""Widget module."""\n\n\n'
+        "def render(value):\n"
+        '    """Render the widget value."""\n'
+        "    return value\n"
+    )
+    docs_dir = tmp_path / "docs"
+    docs_dir.mkdir()
+    (docs_dir / "widget.md").write_text("# Widget\n\nThe widget renders a value.\n")
+
+    docs = extract_docstrings(src)
+    assert any(d.symbol == "render" for d in docs)
+
+    assert find_docs_dir(src) == docs_dir
+
+    entries = overview(src)
+    assert any("widget" in e.heading.lower() for e in entries)
+
+    matches = search("renders", docs_dir)
+    assert any("renders" in m.excerpt.lower() for m in matches)

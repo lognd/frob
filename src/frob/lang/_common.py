@@ -34,6 +34,13 @@ def collapse_ws(text: str) -> str:
     return " ".join(text.split())
 
 
+def _body_skip(body: Node | None) -> tuple[ByteRange, ...]:
+    """A skip-range tuple excluding `body`'s byte span, or empty if absent."""
+    if body is None:
+        return ()
+    return ((body.start_byte, body.end_byte),)
+
+
 def _in_skip_range(node: Node, skip_ranges: tuple[ByteRange, ...]) -> bool:
     """True if `node`'s byte span is fully covered by one skip range."""
     for start, end in skip_ranges:
@@ -179,14 +186,19 @@ def export_tree(node: Node, comment_types: frozenset[str]) -> TreeNode:
         budget[0] -= 1
         kids = [c for c in n.children if c.type not in comment_types]
         if not kids:
-            if n.child_count == 0:
-                text = n.text
-                label = text.decode("utf-8", errors="replace") if text else n.type
-                return TreeNode(label=label)
-            return TreeNode(label=n.type)
+            return _leaf_tree_node(n)
         return TreeNode(label=n.type, children=tuple(build(c) for c in kids))
 
     return build(node)
+
+
+def _leaf_tree_node(n: Node) -> TreeNode:
+    """A `TreeNode` for a childless node: its decoded text, else its grammar type."""
+    if n.child_count == 0:
+        text = n.text
+        label = text.decode("utf-8", errors="replace") if text else n.type
+        return TreeNode(label=label)
+    return TreeNode(label=n.type)
 
 
 # frob:doc docs/lang.md#primitives
@@ -220,6 +232,31 @@ def _cpp_declarator_name(node: Node) -> str:
     return child_text(node)
 
 
+def _cpp_free_function(node: Node) -> tuple[Node, str] | None:
+    """`(node, name)` if `node` is a C/C++ function/declaration, else None."""
+    if node.type not in ("function_definition", "declaration"):
+        return None
+    decl = node.child_by_field_name("declarator")
+    if decl is None:
+        return None
+    return (node, _cpp_declarator_name(decl))
+
+
+def _cpp_class_methods(node: Node) -> list[tuple[Node, str]]:
+    """`(node, ClassName::method)` for every method in a class/struct `node`."""
+    name_node = node.child_by_field_name("name")
+    class_name = child_text(name_node) if name_node else child_text(node)
+    body = node.child_by_field_name("body")
+    if body is None:
+        return []
+    out: list[tuple[Node, str]] = []
+    for m in body.named_children:
+        fn = _cpp_free_function(m)
+        if fn is not None:
+            out.append((fn[0], f"{class_name}::{fn[1]}"))
+    return out
+
+
 # frob:doc docs/lang.md#primitives
 def iter_cpp_functions(root: Node) -> tuple[tuple[Node, str], ...]:
     """(node, qualified_name) for every C/C++ function under `root`.
@@ -231,19 +268,10 @@ def iter_cpp_functions(root: Node) -> tuple[tuple[Node, str], ...]:
     """
     out: list[tuple[Node, str]] = []
     for n in root.named_children:
-        if n.type in ("function_definition", "declaration"):
-            decl = n.child_by_field_name("declarator")
-            if decl:
-                out.append((n, _cpp_declarator_name(decl)))
-        elif n.type in ("class_specifier", "struct_specifier"):
-            name_node = n.child_by_field_name("name")
-            class_name = child_text(name_node) if name_node else child_text(n)
-            body = n.child_by_field_name("body")
-            if body:
-                for m in body.named_children:
-                    if m.type in ("function_definition", "declaration"):
-                        decl = m.child_by_field_name("declarator")
-                        if decl:
-                            fn_name = _cpp_declarator_name(decl)
-                            out.append((m, f"{class_name}::{fn_name}"))
+        if n.type in ("class_specifier", "struct_specifier"):
+            out.extend(_cpp_class_methods(n))
+            continue
+        fn = _cpp_free_function(n)
+        if fn is not None:
+            out.append(fn)
     return tuple(out)

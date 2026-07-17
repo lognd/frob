@@ -240,3 +240,37 @@ class TestErrors:
         # frob:tests src/frob/lang/__init__.py::supported_languages
         langs = supported_languages()
         assert {"python", "typescript", "rust", "c", "cpp"} <= langs
+
+
+def test_lang_pipeline_integration(tmp_path: Path) -> None:
+    # frob:tests src/frob/lang kind="integration"
+    # Exercises the whole lang surface together: symbol/comment extraction
+    # (the per-language walkers via parse_file), import extraction, and
+    # identifier iteration must agree on one real source file.
+    from frob.lang import extract_imports, iter_identifiers, parse_file
+
+    src = _write(
+        tmp_path,
+        "mod.py",
+        '"""Module doc."""\n'
+        "import os\n"
+        "from pathlib import Path\n\n"
+        "class Widget:\n"
+        '    """A widget."""\n\n'
+        "    def render(self, value: int) -> str:\n"
+        "        # frob:doc docs/x.md#render\n"
+        "        return str(value)\n",
+    )
+
+    parsed = parse_file(src).danger_ok
+    names = {s.qualname for s in parsed.symbols}
+    assert {"Widget", "Widget.render"} <= names
+    # the directive comment binds to its enclosing method
+    directive = next(c for c in parsed.comments if "frob:doc" in c.text)
+    assert directive.enclosing == "Widget.render"
+
+    imports = extract_imports(src).danger_ok
+    assert "os" in imports and "pathlib" in imports
+
+    idents = iter_identifiers(src).danger_ok
+    assert any(name == "Widget" for name, _line in idents)

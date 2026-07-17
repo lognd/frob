@@ -81,6 +81,29 @@ def _enclosing_src(comment: RawComment, path: str) -> str:
     return path
 
 
+def _parse_attrs(
+    verb: str, attr_text: str, *, path: str, lineno: int
+) -> dict[str, str] | MalformedDirective:
+    """Parse and validate `key="value"` attributes for `verb`, per-verb rules."""
+    attrs = dict(_ATTR_RE.findall(attr_text))
+    leftover = _ATTR_RE.sub("", attr_text).strip()
+    if leftover:
+        return MalformedDirective(
+            file=path, line=lineno, reason=f"bad attribute syntax: {leftover!r}"
+        )
+    if verb == "waive" and "reason" not in attrs:
+        return MalformedDirective(
+            file=path, line=lineno, reason='frob:waive requires reason="..."'
+        )
+    if verb == "tests":
+        attrs.setdefault("kind", "unit")
+        if attrs["kind"] not in _TESTS_KINDS:
+            return MalformedDirective(
+                file=path, line=lineno, reason=f"invalid tests kind {attrs['kind']!r}"
+            )
+    return attrs
+
+
 def _parse_line(
     line: str, *, path: str, lineno: int, src: str
 ) -> Edge | MalformedDirective:
@@ -107,28 +130,9 @@ def _parse_line(
         )
 
     target, _, attr_text = rest.partition(" ")
-    attr_text = attr_text.strip()
-
-    attrs = dict(_ATTR_RE.findall(attr_text))
-    leftover = _ATTR_RE.sub("", attr_text).strip()
-    if leftover:
-        return MalformedDirective(
-            file=path, line=lineno, reason=f"bad attribute syntax: {leftover!r}"
-        )
-
-    if verb == "waive" and "reason" not in attrs:
-        return MalformedDirective(
-            file=path, line=lineno, reason='frob:waive requires reason="..."'
-        )
-
-    if verb == "tests":
-        attrs.setdefault("kind", "unit")
-        if attrs["kind"] not in _TESTS_KINDS:
-            return MalformedDirective(
-                file=path,
-                line=lineno,
-                reason=f"invalid tests kind {attrs['kind']!r}",
-            )
+    attrs = _parse_attrs(verb, attr_text.strip(), path=path, lineno=lineno)
+    if isinstance(attrs, MalformedDirective):
+        return attrs
 
     return Edge(src=src, kind=kind, target=target, origin=origin, attrs=attrs)
 
