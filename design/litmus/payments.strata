@@ -1,0 +1,43 @@
+// payments.strata -- naive (pre-remedy) Stripe-shaped payments litmus.
+//
+// This is the surface-syntax twin of `_payments_model(hardened=False)` in
+// tests/unit/strata/test_litmus_payments.py (docs/strata/roadmap.md, phase 1
+// exit criterion T-0063). It must parse -> elaborate -> evaluate_claims into
+// the exact same golden findings as the phase-0 kernel-facts model: the
+// findings are goldens enforced in CI by
+// tests/unit/strata/test_litmus_surface.py and must keep firing forever
+// after (docs/strata/roadmap.md#the-litmus-program). Do not "fix" the
+// naive model's findings here -- see payments_hardened.strata for the
+// remedied variant.
+
+module payments
+
+node browser : foreign { clearance Public; }
+node stripe : authenticated { clearance Internal; }
+node gateway : trusted { clearance Pii; }
+node api : trusted { clearance Pii; }
+node ledger : trusted { clearance Secret; }
+node replica : trusted { clearance Secret; }
+node dashboard : trusted { clearance Internal; }
+node refund : trusted { clearance Pii; }
+node webhookq : trusted { clearance Internal; }
+node audit : trusted { clearance Secret; }
+
+flow f_ingress : browser -> gateway { label Pii; }
+flow f_gw_api : gateway -> api { label Pii; }
+flow f_api_ledger : api -> ledger { label Pii; }
+flow f_stripe_resp : stripe -> api { label Internal; }
+flow f_repl : ledger -> replica { label Internal; age 5 min; }
+flow f_dash : replica -> dashboard { label Internal; age 30 s; }
+flow f_refund_read : dashboard -> refund
+flow f_webhook : stripe -> webhookq { label Internal; attr delivery=at_least_once; }
+flow f_wq_api : webhookq -> api { label Internal; attr delivery=at_least_once; }
+flow f_gw_audit : gateway -> audit { label Internal; }
+
+boundary b_ingress endorse f_ingress : foreign -> authenticated when "jwt_verified"
+
+assert c_no_browser_ledger noflow browser -> ledger
+assert c_no_stripe_ledger noflow stripe -> ledger
+assert c_fresh_refund bound age refund <= 60 s
+assert c_audit_path reach gateway -> audit
+assume a_disk_encryption noflow foreign -> ledger owner logan review "2026-10-01"

@@ -11,7 +11,7 @@ fixtures that every language change must keep expressible and firing.
 | Phase | Parent | Contents | Exit criterion |
 |---|---|---|---|
 | 0 kernel + prover | T-0049 | six primitives, fact base, closure, claim evaluation (T-0055..T-0057) | hand-written payments kernel facts reproduce the golden findings with counterexample paths and quantifier-tagged verdicts (T-0058) |
-| 1 surface v0 | T-0050 | parser, elaborator + std.trust, assert/assume + expiry, refinement (T-0059..T-0062) | `design/litmus/payments.strata` reproduces phase-0 goldens end to end in CI (T-0063) |
+| 1 surface v0 | T-0050 | parser, elaborator + std.trust, assert/assume + expiry, refinement (T-0059..T-0062) | `design/litmus/payments.strata` reproduces phase-0 goldens end to end in CI (T-0063, met) |
 | 2 infra + policy | T-0051 | std.infra, age/staleness propagation, capacity + skew + horizons, five policy forms, analyzable pack + enables cascade, six-phase boundaries + frames, errors/observe packs, strata-core crate (T-0064..T-0071) | tube + chirp goldens fire: stampede, immutable-TTL pairing, CDN declassification, fanout ceiling under skew (T-0072) |
 | 3 scenarios | T-0052 | scenario engine, crash contracts + no-hang, atomic/saga + fault-injection generation, breach blast radius + recovery-path independence (T-0073..T-0076) | Breach(Gateway) in the payments litmus yields blast radius, revocation/detection SLAs, and independence verdicts |
 | 4 code binding + self-host | T-0053 | .strata as 6th frob.lang grammar, code globs + import conformance, effect extraction vs may-capabilities, directives + SYS gates (T-0077..T-0080) | `design/frob.strata` exists and frob gates on its own declared architecture (T-0081) |
@@ -43,7 +43,11 @@ vulnerability class:
   third-party response reaching state without endorsement; webhook
   at-least-once vs idempotency; refund decision reading a stale replica
   (freshness mismatch = the double-refund class); breach scenario with
-  blast radius and recovery-path independence.
+  blast radius and recovery-path independence. Phase 1 exit (T-0063) is
+  met: `design/litmus/payments.strata` (naive) and
+  `design/litmus/payments_hardened.strata` (every remedy applied) are the
+  surface-syntax twins of the phase-0 kernel-facts model, with goldens
+  enforced in CI by `tests/unit/strata/test_litmus_surface.py`.
 - **tube.strata** (video platform; phase 2): cold-cache stampede unless
   request coalescing is declared; `staleness unlimited` legal only on
   immutable content-addressed blobs; CDN TLS termination as

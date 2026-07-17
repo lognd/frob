@@ -1377,7 +1377,7 @@ verdicts. Side effects: T-0087 (CONST extraction gap) and T-0089
 ```yaml
 id: T-0050
 title: 'strata phase 1: surface language v0 + std.trust + refinement'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-17'
@@ -1388,7 +1388,9 @@ scope:
 - src/frob/strata/**
 - tests/unit/strata/**
 - design/litmus/**
-evidence: []
+evidence:
+- tests/unit/strata/test_litmus_surface.py::TestNaiveSurfaceGoldens::test_golden_1_third_party_response_reaches_ledger_unendorsed
+- tests/unit/strata/test_litmus_surface.py::TestHardenedSurfaceGoldens::test_every_assert_holds_after_the_remedies
 attachments: []
 acceptance:
 - GIVEN design/litmus/payments.strata WHEN frob sys check runs THEN it parses, elaborates,
@@ -1396,6 +1398,21 @@ acceptance:
 threat: null
 ```
 Recursive-descent parser (pydantic AST, typani Result diagnostics), elaborator framework (vocabularies desugar to kernel facts, prover never learns domain terms), std.trust, assert/assume with owner+expiry, refine blocks with faithfulness checks. See docs/strata/surface.md.
+
+## Done report
+
+Phase 1 complete: T-0059 (Rust lexer/parser, serde JSON boundary, no
+panic paths), T-0060 (elaborator + std.trust, reviewer round added a
+REFUTED-with-witness end-to-end case), T-0061 (verdict report +
+assumption ledger), T-0062 (refinement v0 with faithfulness checks and
+the compositional-proof property), T-0063 (payments litmus twins in
+surface syntax, goldens byte-identical to phase 0, CI-enforced). Exit
+criterion met exactly as written: design/litmus/payments.strata
+reproduces the phase-0 goldens end to end through parse -> elaborate ->
+evaluate -> report. All five children reviewer-approved (T-0060 after
+one rejection round). Side tickets filed en route: T-0090 (TEST002
+cross-file rust directives), T-0091 (make core stray-venv), T-0092
+(rust test runner + COV003 evidence resolution).
 
 <!-- ticket:T-0051 -->
 ```yaml
@@ -1972,7 +1989,7 @@ unrelated modules).
 ```yaml
 id: T-0063
 title: strata payments litmus in surface syntax + CI goldens
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-17'
@@ -1987,12 +2004,68 @@ scope:
 - tickets.md
 - design/litmus/**
 - tests/**
-evidence: []
+evidence:
+- tests/unit/strata/test_litmus_surface.py::TestNaiveSurfaceGoldens::test_golden_1_third_party_response_reaches_ledger_unendorsed
+- tests/unit/strata/test_litmus_surface.py::TestNaiveSurfaceGoldens::test_golden_2_refund_decision_reads_a_stale_replica
+- tests/unit/strata/test_litmus_surface.py::TestNaiveSurfaceGoldens::test_render_report_shows_refuted_before_proved_with_the_witness_path
+- tests/unit/strata/test_litmus_surface.py::TestHardenedSurfaceGoldens::test_every_assert_holds_after_the_remedies
 attachments: []
 acceptance: []
 threat: null
 ```
 design/litmus/payments.strata reproduces phase-0 findings end to end through parser+elaborator; goldens wired into CI. Phase-1 exit criterion.
+
+## Done report
+
+Changed:
+- design/litmus/payments.strata (new)
+- design/litmus/payments_hardened.strata (new)
+- tests/unit/strata/test_litmus_surface.py (new)
+- docs/strata/roadmap.md (litmus program section, phase-1 exit noted met)
+
+design/litmus/payments.strata is the surface-syntax twin of
+`_payments_model(hardened=False)` in test_litmus_payments.py: same node
+ids/trust/clearance, same flow ids/labels/ages (5 min on f_repl, 30 s on
+f_dash) and delivery=at_least_once attrs, same b_ingress endorse boundary,
+same five claims including the assume (owner logan, review 2026-10-01).
+design/litmus/payments_hardened.strata adds b_stripe_resp and b_webhook
+endorse boundaries, idempotent attrs on api/webhookq, and reads the refund
+decision directly off the ledger (f_refund_read: ledger -> refund),
+matching `_payments_model(hardened=True)`.
+tests/unit/strata/test_litmus_surface.py loads both files (repo root
+resolved by walking up from __file__ to the first frob.toml), runs
+parse_module -> elaborate -> evaluate_claims (today=2026-07-17), and
+asserts byte-identical goldens to test_litmus_payments.py: golden 1
+(stripe->ledger REFUTED with the 5-element counterexample), golden 2
+(c_fresh_refund REFUTED, "330.0s > 60.0s", 7-element read path), golden 3
+(build_facts f_wq_api at-least-once diagnostic), the browser-noflow PROVED
+forall, the audit-reach PROVED exists witness, the assume ASSUMED with
+"logan" in detail, and the hardened file's four PROVED asserts plus empty
+diagnostics. One render_report smoke test confirms REFUTED sorts before
+PROVED and the exact witness-path line
+`  path: stripe -> f_stripe_resp -> api -> f_api_ledger -> ledger`
+(format matched against src/frob/strata/_report.py's `"  path: " +
+" -> ".join(counterexample)`).
+
+The v0 surface grammar (strata-core/src/parse.rs) expressed every kernel
+construct needed with no gap: `attr key=value` covers
+`delivery=at_least_once`; `age N unit` covers `5 min` / `30 s`; `assume ID
+noflow ... owner ID review "date"` covers the owner/review pair verbatim.
+No parser-gap ticket was filed -- none was needed.
+
+Evidence:
+- tests/unit/strata/test_litmus_surface.py::TestNaiveSurfaceGoldens::test_golden_1_third_party_response_reaches_ledger_unendorsed
+- tests/unit/strata/test_litmus_surface.py::TestNaiveSurfaceGoldens::test_golden_2_refund_decision_reads_a_stale_replica
+- tests/unit/strata/test_litmus_surface.py::TestNaiveSurfaceGoldens::test_render_report_shows_refuted_before_proved_with_the_witness_path
+- tests/unit/strata/test_litmus_surface.py::TestHardenedSurfaceGoldens::test_every_assert_holds_after_the_remedies
+
+Filed: none.
+
+Gates: `frob ticket sweep T-0063` recorded (dup=48, xref=7, all pre-existing
+repo-wide noise unrelated to this diff); `frob check --ticket T-0063` exit
+0; plain `frob check` exit 0; `uv run pytest tests/unit/strata -q` all 92
+tests green; `uv run ruff format --check` and `uv run ruff check` clean on
+tests/unit/strata/test_litmus_surface.py; `uv run ty check` clean.
 
 <!-- ticket:T-0064 -->
 ```yaml
