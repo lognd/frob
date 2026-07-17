@@ -163,3 +163,46 @@ Python entry point (`src/frob/strata/_parse.py`):
 - `parse_module(text: str) -> Result[Module, StrataError]` <!-- frob:describes src/frob/strata/_parse.py::parse_module -->
   calls the Rust parser, logs the line/col/message on failure at ERROR,
   and returns `Err(StrataError.ParseFailed)` or a validated `Module`.
+
+## Elaborator
+
+<!-- frob:ticket T-0060 -->
+<!-- frob:describes src/frob/strata/_elaborate.py::elaborate -->
+
+`std.trust` is the first vocabulary (see the table above): the elaborator
+contract's pure function `surface construct -> kernel facts`, implemented
+in Python (`src/frob/strata/_elaborate.py`) rather than Rust -- vocabulary
+mappings are cheap and change often, unlike the parser and closure kernels
+(charter D3, amended).
+
+- `elaborate(module: Module) -> Result[KernelModel, StrataError]` <!-- frob:describes src/frob/strata/_elaborate.py::elaborate -->
+  maps every `Module` declaration onto its kernel counterpart:
+  - `NodeDecl` -> `Node`: `id`/`trust`/`clearance`/`attrs`/`residence` pass
+    through; `Capacity` maps `rate` -> `service_rate` and carries
+    `replicas_min`/`replicas_max`; `is_abstract=True` appends an
+    `"abstract"` entry to `attrs` (refinement proper is T-0062) and logs at
+    DEBUG.
+  - `FlowDecl` -> `Flow`: `id`/`src`/`dst`/`label`/`age`/`rate`/`size`/
+    `attrs`/`transport` pass through field-for-field.
+  - `BoundaryDecl` -> `Boundary`: `kind` ("endorse"/"declassify") maps onto
+    `BoundaryDirection`; `flow_id`/`from_level`/`to_level`/`predicate`
+    pass through.
+  - `ClaimDecl` -> `Claim`: `kind` selects the kernel claim body --
+    `"noflow"` -> `NoFlow(src, dst)`, `"reach"` -> `Reach(src, dst)`,
+    `"bound"` -> `BoundClaim(metric, target, limit)` with `metric` mapped
+    onto the `Metric` enum; `assumed`/`owner`/`review` pass through
+    unchanged.
+
+  Elaboration adds exactly the validation the parser cannot make because
+  it spans multiple declarations, each failing closed with a logged
+  `StrataError`:
+  - `DuplicateId` -- two nodes, or two flows, share an id.
+  - `UnknownReference` -- a boundary names a flow id that is not declared,
+    or a `bound` claim names a target id that is not declared.
+
+  `noflow`/`reach` claim endpoints are left unvalidated here: they may
+  name either a node id or a trust level, and only the kernel's
+  `FactBase` (docs/strata/kernel.md#fact-base) can expand a trust level
+  into its member nodes, so checking them early would duplicate that
+  logic. The metric-name vocabulary is closed by the parser's grammar, so
+  there is no defensive "unknown metric" branch in the elaborator.

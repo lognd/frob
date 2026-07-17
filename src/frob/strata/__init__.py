@@ -19,6 +19,7 @@ from frob.strata._ast import (
     Capacity as SurfaceCapacity,
 )
 from frob.strata._claims import evaluate_claims
+from frob.strata._elaborate import elaborate
 from frob.strata._errors import StrataError
 from frob.strata._facts import FactBase, build_facts
 from frob.strata._models import (
@@ -89,6 +90,7 @@ __all__ = [
     "SurfaceCapacity",
     "Verdict",
     "build_facts",
+    "elaborate",
     "evaluate_claims",
     "parse_module",
 ]
