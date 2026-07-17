@@ -104,7 +104,10 @@ fn lex(text: &str) -> Result<Vec<Token>, ParseError> {
                 s.push(chars[i]);
                 advance!();
             }
-            if i < chars.len() && chars[i] == '.' && i + 1 < chars.len() && chars[i + 1].is_ascii_digit()
+            if i < chars.len()
+                && chars[i] == '.'
+                && i + 1 < chars.len()
+                && chars[i + 1].is_ascii_digit()
             {
                 s.push('.');
                 advance!();
@@ -217,6 +220,11 @@ struct ModuleAst {
     boundaries: Vec<serde_json::Value>,
     claims: Vec<serde_json::Value>,
     refines: Vec<serde_json::Value>,
+    stores: Vec<serde_json::Value>,
+    caches: Vec<serde_json::Value>,
+    queues: Vec<serde_json::Value>,
+    cdns: Vec<serde_json::Value>,
+    balancers: Vec<serde_json::Value>,
 }
 
 impl Parser {
@@ -377,7 +385,11 @@ impl Parser {
         }
     }
 
-    fn parse_module(&mut self, ast: &mut ModuleAst, seen_module: &mut bool) -> Result<(), ParseError> {
+    fn parse_module(
+        &mut self,
+        ast: &mut ModuleAst,
+        seen_module: &mut bool,
+    ) -> Result<(), ParseError> {
         if *seen_module {
             return self.err("duplicate module statement");
         }
@@ -622,6 +634,306 @@ impl Parser {
         Ok(())
     }
 
+    /// PERCENT := NUMBER '%'; used by `hit` on cache/cdn (std.infra).
+    fn parse_percent(&mut self, what: &str) -> Result<f64, ParseError> {
+        let n = self.expect_number(what)?;
+        self.expect_symbol('%')?;
+        Ok(n)
+    }
+
+    /// store := "store" ID ":" TRUST "{" store_prop (";" store_prop)* "}"?
+    /// store_prop := node_prop | "engine" IDENT | "immutable" | "append_only"
+    ///
+    /// WHY: store is std.infra's node-with-extras; it reuses the node_prop
+    /// surface (clearance/attr/residence/capacity) verbatim plus engine and
+    /// the immutable/append_only markers the elaborator needs for the
+    /// cdn-unlimited-staleness pairing (docs/strata/surface.md#std-infra).
+    fn parse_store(&mut self, ast: &mut ModuleAst) -> Result<(), ParseError> {
+        self.advance(); // 'store'
+        let id = self.expect_ident("store id")?;
+        self.expect_symbol(':')?;
+        let trust = self.expect_ident("trust level")?;
+        let mut clearance = "Secret".to_string();
+        let mut attrs: Vec<String> = Vec::new();
+        let mut residence: Option<String> = None;
+        let mut capacity: Option<serde_json::Value> = None;
+        let mut engine: Option<String> = None;
+        let mut immutable = false;
+        let mut append_only = false;
+        if self.at_symbol('{') {
+            self.advance();
+            loop {
+                if self.at_symbol('}') {
+                    break;
+                }
+                if self.at_keyword("clearance") {
+                    self.advance();
+                    clearance = self.expect_ident("clearance level")?;
+                } else if self.at_keyword("attr") {
+                    self.advance();
+                    attrs.push(self.parse_attrval()?);
+                } else if self.at_keyword("residence") {
+                    self.advance();
+                    residence = Some(self.expect_ident("residence atom")?);
+                } else if self.at_keyword("capacity") {
+                    self.advance();
+                    let rate = self.parse_quantity("capacity rate")?;
+                    self.expect_keyword("replicas")?;
+                    let lo = self.expect_int("replicas_min")?;
+                    self.expect_dotdot()?;
+                    let hi = self.expect_int("replicas_max")?;
+                    capacity = Some(json!({"rate": rate, "replicas_min": lo, "replicas_max": hi}));
+                } else if self.at_keyword("engine") {
+                    self.advance();
+                    engine = Some(self.expect_ident("engine name")?);
+                } else if self.at_keyword("immutable") {
+                    self.advance();
+                    immutable = true;
+                } else if self.at_keyword("append_only") {
+                    self.advance();
+                    append_only = true;
+                } else {
+                    return self.err("unknown store property");
+                }
+                if self.at_symbol(';') {
+                    self.advance();
+                } else {
+                    break;
+                }
+            }
+            self.expect_symbol('}')?;
+        }
+        ast.stores.push(json!({
+            "id": id,
+            "trust": trust,
+            "clearance": clearance,
+            "attrs": attrs,
+            "capacity": capacity,
+            "residence": residence,
+            "engine": engine,
+            "immutable": immutable,
+            "append_only": append_only,
+        }));
+        Ok(())
+    }
+
+    /// cache := "cache" ID "of" ID "{" cache_prop (";" cache_prop)* "}"?
+    /// cache_prop := "keyed_by" IDENT | "ttl" QUANTITY | "staleness" QUANTITY
+    ///             | "hit" PERCENT | "policy" IDENT | "invalidate_on" IDENT
+    ///
+    /// WHY: `invalidate_on` is repeatable (a cache may be invalidated by
+    /// several write flows), collected in declaration order so the
+    /// elaborator's mandatory-invalidation check can report every declared
+    /// edge (docs/strata/surface.md#std-infra).
+    fn parse_cache(&mut self, ast: &mut ModuleAst) -> Result<(), ParseError> {
+        self.advance(); // 'cache'
+        let id = self.expect_ident("cache id")?;
+        self.expect_keyword("of")?;
+        let of = self.expect_ident("cache source-of-truth id")?;
+        let mut keyed_by: Option<String> = None;
+        let mut ttl: Option<serde_json::Value> = None;
+        let mut staleness: Option<serde_json::Value> = None;
+        let mut hit: Option<f64> = None;
+        let mut policy: Option<String> = None;
+        let mut invalidate_on: Vec<String> = Vec::new();
+        if self.at_symbol('{') {
+            self.advance();
+            loop {
+                if self.at_symbol('}') {
+                    break;
+                }
+                if self.at_keyword("keyed_by") {
+                    self.advance();
+                    keyed_by = Some(self.expect_ident("keyed_by field")?);
+                } else if self.at_keyword("ttl") {
+                    self.advance();
+                    ttl = Some(self.parse_quantity("ttl")?);
+                } else if self.at_keyword("staleness") {
+                    self.advance();
+                    staleness = Some(self.parse_quantity("staleness")?);
+                } else if self.at_keyword("hit") {
+                    self.advance();
+                    hit = Some(self.parse_percent("hit ratio")?);
+                } else if self.at_keyword("policy") {
+                    self.advance();
+                    policy = Some(self.expect_ident("cache policy")?);
+                } else if self.at_keyword("invalidate_on") {
+                    self.advance();
+                    invalidate_on.push(self.expect_ident("invalidate_on flow id")?);
+                } else {
+                    return self.err("unknown cache property");
+                }
+                if self.at_symbol(';') {
+                    self.advance();
+                } else {
+                    break;
+                }
+            }
+            self.expect_symbol('}')?;
+        }
+        ast.caches.push(json!({
+            "id": id,
+            "of": of,
+            "keyed_by": keyed_by,
+            "ttl": ttl,
+            "staleness": staleness,
+            "hit": hit,
+            "policy": policy,
+            "invalidate_on": invalidate_on,
+        }));
+        Ok(())
+    }
+
+    /// queue := "queue" ID "{" queue_prop (";" queue_prop)* "}"?
+    /// queue_prop := "delivery" IDENT | "ordering" IDENT | "attr" ATTRVAL
+    ///             | "clearance" IDENT
+    fn parse_queue(&mut self, ast: &mut ModuleAst) -> Result<(), ParseError> {
+        self.advance(); // 'queue'
+        let id = self.expect_ident("queue id")?;
+        let mut delivery: Option<String> = None;
+        let mut ordering: Option<String> = None;
+        let mut attrs: Vec<String> = Vec::new();
+        let mut clearance: Option<String> = None;
+        if self.at_symbol('{') {
+            self.advance();
+            loop {
+                if self.at_symbol('}') {
+                    break;
+                }
+                if self.at_keyword("delivery") {
+                    self.advance();
+                    delivery = Some(self.expect_ident("delivery mode")?);
+                } else if self.at_keyword("ordering") {
+                    self.advance();
+                    ordering = Some(self.expect_ident("ordering mode")?);
+                } else if self.at_keyword("attr") {
+                    self.advance();
+                    attrs.push(self.parse_attrval()?);
+                } else if self.at_keyword("clearance") {
+                    self.advance();
+                    clearance = Some(self.expect_ident("clearance level")?);
+                } else {
+                    return self.err("unknown queue property");
+                }
+                if self.at_symbol(';') {
+                    self.advance();
+                } else {
+                    break;
+                }
+            }
+            self.expect_symbol('}')?;
+        }
+        ast.queues.push(json!({
+            "id": id,
+            "delivery": delivery,
+            "ordering": ordering,
+            "attrs": attrs,
+            "clearance": clearance,
+        }));
+        Ok(())
+    }
+
+    /// cdn := "cdn" ID "of" ID "{" cdn_prop (";" cdn_prop)* "}"?
+    /// cdn_prop := "provider" IDENT ":" TRUST | "staleness" (QUANTITY | "unlimited")
+    ///           | "hit" PERCENT | "tls_terminates_at_provider"
+    fn parse_cdn(&mut self, ast: &mut ModuleAst) -> Result<(), ParseError> {
+        self.advance(); // 'cdn'
+        let id = self.expect_ident("cdn id")?;
+        self.expect_keyword("of")?;
+        let of = self.expect_ident("cdn source-of-truth id")?;
+        let mut provider: Option<String> = None;
+        let mut provider_trust: Option<String> = None;
+        let mut staleness: Option<serde_json::Value> = None;
+        let mut staleness_unlimited = false;
+        let mut hit: Option<f64> = None;
+        let mut tls_terminates_at_provider = false;
+        if self.at_symbol('{') {
+            self.advance();
+            loop {
+                if self.at_symbol('}') {
+                    break;
+                }
+                if self.at_keyword("provider") {
+                    self.advance();
+                    provider = Some(self.expect_ident("provider name")?);
+                    self.expect_symbol(':')?;
+                    provider_trust = Some(self.expect_ident("provider trust level")?);
+                } else if self.at_keyword("staleness") {
+                    self.advance();
+                    if self.at_keyword("unlimited") {
+                        self.advance();
+                        staleness_unlimited = true;
+                    } else {
+                        staleness = Some(self.parse_quantity("staleness")?);
+                    }
+                } else if self.at_keyword("hit") {
+                    self.advance();
+                    hit = Some(self.parse_percent("hit ratio")?);
+                } else if self.at_keyword("tls_terminates_at_provider") {
+                    self.advance();
+                    tls_terminates_at_provider = true;
+                } else {
+                    return self.err("unknown cdn property");
+                }
+                if self.at_symbol(';') {
+                    self.advance();
+                } else {
+                    break;
+                }
+            }
+            self.expect_symbol('}')?;
+        }
+        ast.cdns.push(json!({
+            "id": id,
+            "of": of,
+            "provider": provider,
+            "provider_trust": provider_trust,
+            "staleness": staleness,
+            "staleness_unlimited": staleness_unlimited,
+            "hit": hit,
+            "tls_terminates_at_provider": tls_terminates_at_provider,
+        }));
+        Ok(())
+    }
+
+    /// balancer := "balancer" ID "{" balancer_prop (";" balancer_prop)* "}"?
+    /// balancer_prop := "policy" IDENT | "sticky"
+    fn parse_balancer(&mut self, ast: &mut ModuleAst) -> Result<(), ParseError> {
+        self.advance(); // 'balancer'
+        let id = self.expect_ident("balancer id")?;
+        let mut policy: Option<String> = None;
+        let mut sticky = false;
+        if self.at_symbol('{') {
+            self.advance();
+            loop {
+                if self.at_symbol('}') {
+                    break;
+                }
+                if self.at_keyword("policy") {
+                    self.advance();
+                    policy = Some(self.expect_ident("balancer policy")?);
+                } else if self.at_keyword("sticky") {
+                    self.advance();
+                    sticky = true;
+                } else {
+                    return self.err("unknown balancer property");
+                }
+                if self.at_symbol(';') {
+                    self.advance();
+                } else {
+                    break;
+                }
+            }
+            self.expect_symbol('}')?;
+        }
+        ast.balancers.push(json!({
+            "id": id,
+            "policy": policy,
+            "sticky": sticky,
+        }));
+        Ok(())
+    }
+
     fn parse_metric(&mut self) -> Result<String, ParseError> {
         let m = self.expect_ident("metric")?;
         match m.as_str() {
@@ -713,7 +1025,8 @@ impl Parser {
             };
             match kw.as_str() {
                 "module" => self.parse_module(&mut ast, &mut seen_module)?,
-                "node" | "flow" | "boundary" | "assert" | "assume" | "refine" => {
+                "node" | "flow" | "boundary" | "assert" | "assume" | "refine" | "store"
+                | "cache" | "queue" | "cdn" | "balancer" => {
                     if !seen_module {
                         return self.err("statement before module declaration");
                     }
@@ -724,6 +1037,11 @@ impl Parser {
                         "assert" => self.parse_claim(&mut ast, "assert")?,
                         "assume" => self.parse_claim(&mut ast, "assume")?,
                         "refine" => self.parse_refine(&mut ast)?,
+                        "store" => self.parse_store(&mut ast)?,
+                        "cache" => self.parse_cache(&mut ast)?,
+                        "queue" => self.parse_queue(&mut ast)?,
+                        "cdn" => self.parse_cdn(&mut ast)?,
+                        "balancer" => self.parse_balancer(&mut ast)?,
                         _ => unreachable!(),
                     }
                 }
@@ -787,16 +1105,14 @@ mod tests {
     #[test]
     fn parses_node_with_all_properties() {
         // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
-        let v = ok(
-            r#"module m
+        let v = ok(r#"module m
             node api : trusted abstract {
                 clearance Secret;
                 attr idempotent;
                 attr region=us;
                 residence us_east;
                 capacity 100 req/s replicas 1..8;
-            }"#,
-        );
+            }"#);
         let n = &v["nodes"][0];
         assert_eq!(n["id"], "api");
         assert_eq!(n["trust"], "trusted");
@@ -814,8 +1130,7 @@ mod tests {
     #[test]
     fn parses_flow_with_all_properties() {
         // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
-        let v = ok(
-            r#"module m
+        let v = ok(r#"module m
             flow f1 : a -> b {
                 label Pii;
                 age 250 ms;
@@ -823,8 +1138,7 @@ mod tests {
                 size 4 KiB;
                 attr delivery=at_least_once;
                 transport tls;
-            }"#,
-        );
+            }"#);
         let f = &v["flows"][0];
         assert_eq!(f["src"], "a");
         assert_eq!(f["dst"], "b");
@@ -840,20 +1154,16 @@ mod tests {
     #[test]
     fn parses_percent_unit() {
         // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
-        let v = ok(
-            r#"module m
-            assert c1 bound utilization api <= 80 %"#,
-        );
+        let v = ok(r#"module m
+            assert c1 bound utilization api <= 80 %"#);
         assert_eq!(v["claims"][0]["limit"]["unit"], "%");
     }
 
     #[test]
     fn parses_boundary() {
         // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
-        let v = ok(
-            r#"module m
-            boundary b1 endorse f1 : foreign -> authenticated when "jwt_verified""#,
-        );
+        let v = ok(r#"module m
+            boundary b1 endorse f1 : foreign -> authenticated when "jwt_verified""#);
         let b = &v["boundaries"][0];
         assert_eq!(b["kind"], "endorse");
         assert_eq!(b["flow_id"], "f1");
@@ -865,11 +1175,9 @@ mod tests {
     #[test]
     fn parses_assert_noflow_and_reach() {
         // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
-        let v = ok(
-            r#"module m
+        let v = ok(r#"module m
             assert c1 noflow evil -> api
-            assert c2 reach audit -> log"#,
-        );
+            assert c2 reach audit -> log"#);
         assert_eq!(v["claims"][0]["kind"], "noflow");
         assert_eq!(v["claims"][1]["kind"], "reach");
     }
@@ -877,10 +1185,8 @@ mod tests {
     #[test]
     fn parses_assume_with_owner_and_review() {
         // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
-        let v = ok(
-            r#"module m
-            assume c1 noflow evil -> api owner alice review "2026-08-01""#,
-        );
+        let v = ok(r#"module m
+            assume c1 noflow evil -> api owner alice review "2026-08-01""#);
         assert_eq!(v["claims"][0]["assumed"], true);
         assert_eq!(v["claims"][0]["owner"], "alice");
         assert_eq!(v["claims"][0]["review"], "2026-08-01");
@@ -951,15 +1257,13 @@ mod tests {
     #[test]
     fn round_trip_small_design() {
         // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
-        let v = ok(
-            r#"module payments
+        let v = ok(r#"module payments
             node api : trusted { clearance Pii; capacity 100 req/s replicas 1..8; }
             node evil : foreign
             flow f1 : evil -> api { label Pii; rate 5 req/s; transport tls; }
             boundary b1 endorse f1 : foreign -> authenticated when "jwt_verified"
             assert c1 noflow evil -> api
-            assume c2 bound age api <= 30 s owner alice review "2026-09-01""#,
-        );
+            assume c2 bound age api <= 30 s owner alice review "2026-09-01""#);
         assert_eq!(v["nodes"].as_array().unwrap().len(), 2);
         assert_eq!(v["flows"].as_array().unwrap().len(), 1);
         assert_eq!(v["boundaries"].as_array().unwrap().len(), 1);
@@ -969,15 +1273,13 @@ mod tests {
     #[test]
     fn parses_refine_happy_path() {
         // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
-        let v = ok(
-            r#"module m
+        let v = ok(r#"module m
             node api : trusted abstract
             refine api into {
                 node inner : trusted
                 flow f1 : inner -> inner
                 binds api = inner
-            }"#,
-        );
+            }"#);
         let r = &v["refines"][0];
         assert_eq!(r["target"], "api");
         assert_eq!(r["bind_to"], "inner");
@@ -988,42 +1290,36 @@ mod tests {
     #[test]
     fn error_refine_zero_binds() {
         // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
-        let e = err(
-            r#"module m
+        let e = err(r#"module m
             node api : trusted abstract
             refine api into {
                 node inner : trusted
-            }"#,
-        );
+            }"#);
         assert_eq!(e["message"], "refine block needs exactly one binds clause");
     }
 
     #[test]
     fn error_refine_two_binds() {
         // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
-        let e = err(
-            r#"module m
+        let e = err(r#"module m
             node api : trusted abstract
             refine api into {
                 node inner : trusted
                 binds api = inner
                 binds api = inner
-            }"#,
-        );
+            }"#);
         assert_eq!(e["message"], "refine block needs exactly one binds clause");
     }
 
     #[test]
     fn error_refine_binds_lhs_mismatch() {
         // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
-        let e = err(
-            r#"module m
+        let e = err(r#"module m
             node api : trusted abstract
             refine api into {
                 node inner : trusted
                 binds wrong = inner
-            }"#,
-        );
+            }"#);
         assert!(e["message"]
             .as_str()
             .unwrap()
@@ -1035,6 +1331,173 @@ mod tests {
         // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
         let e = err("refine api into { binds api = inner }");
         assert_eq!(e["message"], "statement before module declaration");
+    }
+
+    #[test]
+    fn parses_store_with_all_properties() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok(r#"module m
+            store db : trusted {
+                clearance Pii;
+                attr region=us;
+                residence us_east;
+                capacity 100 req/s replicas 1..4;
+                engine postgres;
+                immutable;
+                append_only;
+            }"#);
+        let s = &v["stores"][0];
+        assert_eq!(s["id"], "db");
+        assert_eq!(s["trust"], "trusted");
+        assert_eq!(s["clearance"], "Pii");
+        assert_eq!(s["attrs"][0], "region=us");
+        assert_eq!(s["residence"], "us_east");
+        assert_eq!(s["capacity"]["replicas_max"], 4);
+        assert_eq!(s["engine"], "postgres");
+        assert_eq!(s["immutable"], true);
+        assert_eq!(s["append_only"], true);
+    }
+
+    #[test]
+    fn parses_bare_store() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok("module m\nstore db : trusted");
+        let s = &v["stores"][0];
+        assert_eq!(s["engine"], serde_json::Value::Null);
+        assert_eq!(s["immutable"], false);
+        assert_eq!(s["append_only"], false);
+    }
+
+    #[test]
+    fn error_unknown_store_property() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let e = err("module m\nstore db : trusted { bogus x; }");
+        assert_eq!(e["message"], "unknown store property");
+    }
+
+    #[test]
+    fn parses_cache_with_all_properties() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok(r#"module m
+            cache c of db {
+                keyed_by user_id;
+                staleness 30 s;
+                hit 90 %;
+                policy lru;
+                invalidate_on f1;
+                invalidate_on f2;
+            }"#);
+        let c = &v["caches"][0];
+        assert_eq!(c["id"], "c");
+        assert_eq!(c["of"], "db");
+        assert_eq!(c["keyed_by"], "user_id");
+        assert_eq!(c["staleness"]["value"], 30.0);
+        assert_eq!(c["staleness"]["unit"], "s");
+        assert_eq!(c["hit"], 90.0);
+        assert_eq!(c["policy"], "lru");
+        assert_eq!(c["invalidate_on"][0], "f1");
+        assert_eq!(c["invalidate_on"][1], "f2");
+    }
+
+    #[test]
+    fn parses_cache_ttl() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok("module m\ncache c of db { ttl 60 s; }");
+        assert_eq!(v["caches"][0]["ttl"]["value"], 60.0);
+    }
+
+    #[test]
+    fn error_unknown_cache_property() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let e = err("module m\ncache c of db { bogus x; }");
+        assert_eq!(e["message"], "unknown cache property");
+    }
+
+    #[test]
+    fn parses_queue_with_all_properties() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok(r#"module m
+            queue q {
+                delivery at_least_once;
+                ordering fifo;
+                attr region=us;
+                clearance Internal;
+            }"#);
+        let q = &v["queues"][0];
+        assert_eq!(q["id"], "q");
+        assert_eq!(q["delivery"], "at_least_once");
+        assert_eq!(q["ordering"], "fifo");
+        assert_eq!(q["attrs"][0], "region=us");
+        assert_eq!(q["clearance"], "Internal");
+    }
+
+    #[test]
+    fn error_unknown_queue_property() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let e = err("module m\nqueue q { bogus x; }");
+        assert_eq!(e["message"], "unknown queue property");
+    }
+
+    #[test]
+    fn parses_cdn_with_all_properties() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok(r#"module m
+            cdn c of origin {
+                provider fastly : authenticated;
+                staleness 5 min;
+                hit 95 %;
+                tls_terminates_at_provider;
+            }"#);
+        let c = &v["cdns"][0];
+        assert_eq!(c["id"], "c");
+        assert_eq!(c["of"], "origin");
+        assert_eq!(c["provider"], "fastly");
+        assert_eq!(c["provider_trust"], "authenticated");
+        assert_eq!(c["staleness"]["value"], 5.0);
+        assert_eq!(c["staleness_unlimited"], false);
+        assert_eq!(c["hit"], 95.0);
+        assert_eq!(c["tls_terminates_at_provider"], true);
+    }
+
+    #[test]
+    fn parses_cdn_unlimited_staleness() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok(r#"module m
+            cdn c of origin { provider fastly : authenticated; staleness unlimited; }"#);
+        assert_eq!(v["cdns"][0]["staleness_unlimited"], true);
+        assert_eq!(v["cdns"][0]["staleness"], serde_json::Value::Null);
+    }
+
+    #[test]
+    fn error_unknown_cdn_property() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let e = err("module m\ncdn c of origin { bogus x; }");
+        assert_eq!(e["message"], "unknown cdn property");
+    }
+
+    #[test]
+    fn parses_balancer_with_all_properties() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok("module m\nbalancer b { policy round_robin; sticky; }");
+        let b = &v["balancers"][0];
+        assert_eq!(b["id"], "b");
+        assert_eq!(b["policy"], "round_robin");
+        assert_eq!(b["sticky"], true);
+    }
+
+    #[test]
+    fn parses_bare_balancer() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok("module m\nbalancer b");
+        assert_eq!(v["balancers"][0]["policy"], serde_json::Value::Null);
+        assert_eq!(v["balancers"][0]["sticky"], false);
+    }
+
+    #[test]
+    fn error_unknown_balancer_property() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let e = err("module m\nbalancer b { bogus x; }");
+        assert_eq!(e["message"], "unknown balancer property");
     }
 
     #[test]

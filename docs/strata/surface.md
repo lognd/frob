@@ -252,3 +252,126 @@ mappings are cheap and change often, unlike the parser and closure kernels
   into its member nodes, so checking them early would duplicate that
   logic. The metric-name vocabulary is closed by the parser's grammar, so
   there is no defensive "unknown metric" branch in the elaborator.
+
+## std.infra
+
+<!-- frob:ticket T-0064 -->
+<!-- frob:describes src/frob/strata/_infra.py::elaborate_infra -->
+<!-- frob:describes src/frob/strata/_infra.py::InfraExpansion -->
+<!-- frob:describes src/frob/strata/_ast.py::StoreDecl -->
+<!-- frob:describes src/frob/strata/_ast.py::CacheDecl -->
+<!-- frob:describes src/frob/strata/_ast.py::QueueDecl -->
+<!-- frob:describes src/frob/strata/_ast.py::CdnDecl -->
+<!-- frob:describes src/frob/strata/_ast.py::BalancerDecl -->
+
+The second vocabulary: `store`/`cache`/`queue`/`cdn`/`balancer` are all
+pure sugar over `Node`/`Flow`/`Boundary` (charter law 1) -- the prover
+never learns any of these five words. Grammar (`strata-core/src/parse.rs`,
+`parse_store`/`parse_cache`/`parse_queue`/`parse_cdn`/`parse_balancer`):
+
+```
+store   ID ":" TRUST "{" store_prop* "}"?
+store_prop := node_prop | "engine" IDENT | "immutable" | "append_only"
+
+cache   ID "of" ID "{" cache_prop* "}"?
+cache_prop := "keyed_by" IDENT | "ttl" QUANTITY | "staleness" QUANTITY
+            | "hit" NUM "%" | "policy" IDENT | "invalidate_on" IDENT
+
+queue   ID "{" queue_prop* "}"?
+queue_prop := "delivery" IDENT | "ordering" IDENT | "attr" ATTRVAL
+            | "clearance" IDENT
+
+cdn     ID "of" ID "{" cdn_prop* "}"?
+cdn_prop := "provider" IDENT ":" TRUST | "staleness" (QUANTITY | "unlimited")
+          | "hit" NUM "%" | "tls_terminates_at_provider"
+
+balancer ID "{" balancer_prop* "}"?
+balancer_prop := "policy" IDENT | "sticky"
+```
+
+Elaboration seam (`src/frob/strata/_elaborate.py::elaborate`): after the
+`std.trust` mapping builds the base `Node`/`Flow`/`Boundary`/`Claim`
+tuples, `_infra.py::elaborate_infra(module, nodes, flows, boundaries)` is
+called with those tuples and returns an `InfraExpansion` -- the *full,
+merged* replacement tuples (not an appendix), because queue delivery
+propagation patches attrs on flows `std.trust` already produced. This
+keeps `_elaborate.py::elaborate` the single orchestrator: it owns calling
+order (std.trust, then std.infra, then refine flattening) and owns
+logging `InfraExpansion.diagnostics` at WARNING. `KernelModel` (a kernel
+type) gains no new field for these diagnostics -- see the seam note below.
+
+### Desugar table
+
+| Construct | Kernel facts produced |
+|---|---|
+| `store X : T { ... }` | `Node` X at trust T; `engine=<x>`/`immutable`/`append_only` become attrs |
+| `cache X of Y { ... }` | `Node` X at Y's trust/clearance; flow `X__fill` (Y -> X, age = the ttl/staleness bound); flow `X__inval_<F>` (Y -> X, age 0) per `invalidate_on F`; `hit=<v>`/`policy=<v>`/`keyed_by=<v>` attrs |
+| `queue X { ... }` | `Node` X (trust defaults to `"trusted"` -- see deviation below); `delivery=<x>`/`ordering=<x>` attrs; every outbound flow from X gains `delivery=<x>` |
+| `cdn X of Y { ... }` | `Node` X at the declared provider's trust, Y's clearance; flow `X__fill` (Y -> X, age = staleness, or no age when `unlimited` over an `immutable` Y); `provider=<x>`/`hit=<v>` attrs; `tls_terminates_at_provider` adds boundary `X__declassify` (declassify, Y's clearance -> `Public`, predicate `"tls_terminates_at_provider"`) on `X__fill` |
+| `balancer X { ... }` | `Node` X (trust defaults to `"trusted"`); `policy=<x>`/`sticky` attrs |
+
+### The age collapse, applied
+
+`ttl` and `staleness` are the same bound (charter "the three collapses");
+a cache declaring only one uses it, declaring both requires they agree
+(equal after unit conversion), and declaring neither is
+`StrataError.MissingBound` -- deny by default, a cache with no staleness
+bound is illegal, not defaulted to unbounded.
+
+### Mandatory invalidation
+
+"No cache without an invalidation edge": if Y (the cache's source of
+truth) has *any* inbound flow at std.trust elaboration time and the cache
+declares no `invalidate_on`, elaboration fails
+`StrataError.MissingInvalidation`. Each `invalidate_on F` must name a
+flow that both exists and writes to Y (`dst == Y`); either failure is
+`UnknownReference` (F doesn't exist) or `MissingInvalidation` (F exists
+but doesn't write to Y).
+
+### The immutable-TTL pairing
+
+`cdn ... { staleness unlimited; }` is legal only when the source (`of`)
+node carries the `immutable` attr (typically via `store ... { immutable; }`).
+Unbounded staleness over mutable data is `StrataError.MutableUnbounded`;
+over immutable data the fill flow gets no `age` at all (immutable content
+is exactly as fresh regardless of cache age, so 0 additional staleness is
+correct, not a loophole).
+
+### CDN termination is declassification
+
+`tls_terminates_at_provider` adds a `declassify` boundary on the cdn's
+fill flow, `from_level` = the source's clearance, `to_level` = `"Public"`,
+`predicate = "tls_terminates_at_provider"` -- a CDN edge that terminates
+TLS is where confidentiality control passes to a third party, which is
+exactly what a declassify boundary means (charter security model), never
+an unstated default.
+
+### Queue delivery propagation
+
+A `queue`'s `delivery=<x>` attr is copied onto every flow whose `src` is
+the queue, so `_facts.py`'s existing at-least-once-into-non-idempotent
+diagnostic (docs/strata/kernel.md#fact-base) fires on the queue's
+consumers without `_facts.py` ever learning the word "queue" -- the attr
+is the only channel, preserving law 1.
+
+### Sticky-balancer contradiction
+
+A `sticky` balancer routing to a downstream node carrying `state=none` is
+a structural contradiction (sticky routing exists to pin a client to
+state that, by declaration, does not exist). `elaborate_infra` reports
+this as a non-fatal string in `InfraExpansion.diagnostics`;
+`_elaborate.py::elaborate` logs each at WARNING. This diagnostic is not a
+`KernelModel` field (kernel types may not grow a vocabulary-specific
+field, per law 1) and is not folded into `FactBase.diagnostics` either,
+since that would require editing `_facts.py` (a kernel file, out of
+scope for T-0064) -- callers that need it programmatically call
+`elaborate_infra` directly, as `tests/unit/strata/test_infra.py` does.
+
+### Deviation: queue/balancer trust defaults to `"trusted"`
+
+The grammar above gives `store`/`cache`/`cdn` an explicit or inherited
+trust, but `queue` and `balancer` have no `TRUST` clause at all -- both
+default to `"trusted"` in `_infra.py`. This is a deliberate, documented
+default (not a silent one), tracked for a future grammar extension
+(`frob ticket new`, filed as a T-0064 discovery) that would let `queue`/
+`balancer` declare trust explicitly instead.

@@ -218,7 +218,11 @@ mod tests {
     fn demand_sums_only_the_target_node() {
         // frob:tests strata-core/src/lib.rs::demand kind="unit"
         let total = demand(
-            vec![("api".into(), 100.0), ("api".into(), 2.0), ("db".into(), 9.0)],
+            vec![
+                ("api".into(), 100.0),
+                ("api".into(), 2.0),
+                ("db".into(), 9.0),
+            ],
             "api".to_string(),
         );
         assert_eq!(total, 102.0);

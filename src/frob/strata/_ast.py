@@ -103,6 +103,79 @@ class RefineDecl(BaseModel):
     bind_to: str
 
 
+# frob:doc docs/strata/surface.md#std-infra
+class StoreDecl(BaseModel):
+    """A parsed `store` statement (std.infra): a node with engine/durability markers."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: str
+    trust: str
+    clearance: str = "Secret"
+    attrs: tuple[str, ...] = ()
+    capacity: Capacity | None = None
+    residence: str | None = None
+    engine: str | None = None
+    immutable: bool = False
+    append_only: bool = False
+
+
+# frob:doc docs/strata/surface.md#std-infra
+class CacheDecl(BaseModel):
+    """A parsed `cache X of Y` statement (std.infra): a derived view over `of`."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: str
+    of: str
+    keyed_by: str | None = None
+    ttl: Quantity | None = None
+    staleness: Quantity | None = None
+    hit: float | None = None
+    policy: str | None = None
+    invalidate_on: tuple[str, ...] = ()
+
+
+# frob:doc docs/strata/surface.md#std-infra
+class QueueDecl(BaseModel):
+    """A parsed `queue` statement (std.infra): carries delivery/ordering semantics."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: str
+    delivery: str | None = None
+    ordering: str | None = None
+    attrs: tuple[str, ...] = ()
+    clearance: str | None = None
+
+
+# frob:doc docs/strata/surface.md#std-infra
+class CdnDecl(BaseModel):
+    """A parsed `cdn X of Y` statement (std.infra): a fronting cache with a provider."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: str
+    of: str
+    provider: str | None = None
+    provider_trust: str | None = None
+    staleness: Quantity | None = None
+    staleness_unlimited: bool = False
+    hit: float | None = None
+    tls_terminates_at_provider: bool = False
+
+
+# frob:doc docs/strata/surface.md#std-infra
+class BalancerDecl(BaseModel):
+    """A parsed `balancer` statement (std.infra): a routing policy node."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: str
+    policy: str | None = None
+    sticky: bool = False
+
+
 # frob:doc docs/strata/surface.md#parser
 class Module(BaseModel):
     """A whole parsed source file: exactly the shape the Rust parser emits."""
@@ -115,3 +188,8 @@ class Module(BaseModel):
     boundaries: tuple[BoundaryDecl, ...] = ()
     claims: tuple[ClaimDecl, ...] = ()
     refines: tuple[RefineDecl, ...] = ()
+    stores: tuple[StoreDecl, ...] = ()
+    caches: tuple[CacheDecl, ...] = ()
+    queues: tuple[QueueDecl, ...] = ()
+    cdns: tuple[CdnDecl, ...] = ()
+    balancers: tuple[BalancerDecl, ...] = ()

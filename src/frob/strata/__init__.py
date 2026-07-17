@@ -9,12 +9,17 @@ learn a surface vocabulary word (charter law 1).
 from __future__ import annotations
 
 from frob.strata._ast import (
+    BalancerDecl,
     BoundaryDecl,
+    CacheDecl,
+    CdnDecl,
     ClaimDecl,
     FlowDecl,
     Module,
     NodeDecl,
+    QueueDecl,
     RefineDecl,
+    StoreDecl,
 )
 from frob.strata._ast import (
     Capacity as SurfaceCapacity,
@@ -23,6 +28,7 @@ from frob.strata._claims import evaluate_claims
 from frob.strata._elaborate import elaborate
 from frob.strata._errors import StrataError
 from frob.strata._facts import FactBase, build_facts
+from frob.strata._infra import InfraExpansion, elaborate_infra
 from frob.strata._models import (
     LABELS,
     TRUST,
@@ -58,11 +64,14 @@ from frob.strata._report import render_report, summarize
 __all__ = [
     "LABELS",
     "TRUST",
+    "BalancerDecl",
     "Boundary",
     "BoundaryDecl",
     "BoundaryDirection",
     "BoundClaim",
+    "CacheDecl",
     "Capacity",
+    "CdnDecl",
     "ClaimDecl",
     "FactBase",
     "Claim",
@@ -71,6 +80,7 @@ __all__ = [
     "Flow",
     "FlowCondition",
     "FlowDecl",
+    "InfraExpansion",
     "KernelModel",
     "Lattice",
     "Metric",
@@ -81,6 +91,7 @@ __all__ = [
     "Outcome",
     "Quantifier",
     "Quantity",
+    "QueueDecl",
     "Reach",
     "RefineDecl",
     "RemoveNode",
@@ -89,11 +100,13 @@ __all__ = [
     "ScaleRate",
     "Scenario",
     "SetTrust",
+    "StoreDecl",
     "StrataError",
     "SurfaceCapacity",
     "Verdict",
     "build_facts",
     "elaborate",
+    "elaborate_infra",
     "evaluate_claims",
     "parse_module",
     "render_report",

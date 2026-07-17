@@ -17,6 +17,7 @@ from frob.logging import get_logger
 
 from ._ast import BoundaryDecl, ClaimDecl, FlowDecl, Module, NodeDecl, RefineDecl
 from ._errors import StrataError
+from ._infra import elaborate_infra
 from ._models import (
     TRUST,
     Boundary,
@@ -150,9 +151,19 @@ def _validate_references(module: Module) -> Result[None, StrataError]:
     node id or a trust level, and only the kernel's `FactBase` knows the
     model's trust lattice well enough to expand a level into its nodes
     (docs/strata/kernel.md#fact-base), so checking them prematurely would
-    duplicate that logic and risk disagreeing with it.
+    duplicate that logic and risk disagreeing with it. Bound-claim targets
+    may also name a std.infra node (store/cache/queue/cdn/balancer) --
+    those ids are known even though `elaborate_infra` has not run yet,
+    since the id itself is a parser-guaranteed field on each infra decl
+    (docs/strata/surface.md#std-infra), not something only desugaring
+    computes.
     """
     known_nodes = {n.id for n in module.nodes}
+    known_nodes |= {s.id for s in module.stores}
+    known_nodes |= {c.id for c in module.caches}
+    known_nodes |= {q.id for q in module.queues}
+    known_nodes |= {c.id for c in module.cdns}
+    known_nodes |= {b.id for b in module.balancers}
     known_flows = {f.id for f in module.flows}
     for boundary in module.boundaries:
         if boundary.flow_id not in known_flows:
@@ -369,6 +380,21 @@ def elaborate(module: Module) -> Result[KernelModel, StrataError]:
         boundaries=tuple(_elaborate_boundary(b) for b in module.boundaries),
         claims=tuple(_elaborate_claim(c) for c in module.claims),
     )
+
+    infra = elaborate_infra(module, model.nodes, model.flows, model.boundaries)
+    if infra.is_err:
+        return Err(infra.danger_err)
+    expansion = infra.danger_ok
+    for diagnostic in expansion.diagnostics:
+        _log.warning("std.infra diagnostic: %s", diagnostic)
+    model = model.model_copy(
+        update={
+            "nodes": expansion.nodes,
+            "flows": expansion.flows,
+            "boundaries": expansion.boundaries,
+        }
+    )
+
     refined = _elaborate_refines(module, model)
     if refined.is_err:
         return Err(refined.danger_err)

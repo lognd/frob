@@ -22,3 +22,10 @@ class StrataError(ErrorSet):
     MalformedLattice = "A lattice's covering pairs contain a cycle"
     ParseFailed = "Source text failed to parse into a strata module"
     RefinementViolation = "A refine block failed a faithfulness check"
+    MissingBound = (
+        "A required std.infra bound/declaration is missing where no default is "
+        "permitted (cache ttl/staleness absent or disagreeing; cdn provider trust "
+        "or staleness absent)"
+    )
+    MissingInvalidation = "A cache has no invalidate_on edge for a mutable source"
+    MutableUnbounded = "A cdn declares unlimited staleness over a non-immutable source"
