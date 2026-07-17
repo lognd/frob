@@ -198,7 +198,7 @@ Delivered under T-0036.
 ```yaml
 id: T-0010
 title: 'frob serve: MCP adapter over stale_docs/doable_tickets/check_scope/pre_work'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-17'
@@ -208,12 +208,20 @@ scope:
 - src/frob/**
 - tests/test_serve.py
 - docs/serve.md
-evidence: []
+evidence:
+- tests/test_serve.py::TestBuildServer::test_registers_all_five_tools
 attachments: []
 acceptance: []
 threat: null
 ```
 MCP adapter exposing stale_docs/doable_tickets/check_scope/pre_work queries as MCP tools, so agent clients can query frob state without shelling out. Deferred post-0.1.0.
+
+## Done report
+
+frob serve MCP stdio adapter: 5 read-only tools (doable_tickets,
+stale_docs, check_scope, graph_query, doc_for) over a FastMCP server;
+mcp is an optional [serve] extra so plain frob stays lean, degrading to
+a clear message when absent. Delivered.
 
 <!-- ticket:T-0011 -->
 ```yaml
