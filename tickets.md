@@ -965,7 +965,7 @@ scope:
 - tests/fixtures/**
 evidence:
 - tests/test_dup_smart.py::TestFindClones::test_finds_renamed_clone_pair
-- tests/test_gates.py
+- tests/test_gates.py::TestGatesDegradeWithoutDiff::test_diff_independent_gates_run_without_git
 attachments: []
 acceptance: []
 threat: null
