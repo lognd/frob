@@ -169,6 +169,41 @@ silently drop one. Semantics as implemented in phase 0:
   an overdue or malformed review date is flagged there for the phase-5
   gate to escalate.
 
+## Verdict report
+
+<!-- frob:describes src/frob/strata/_report.py::render_report -->
+<!-- frob:describes src/frob/strata/_report.py::summarize -->
+
+The human-facing report `frob sys check` prints (later phases) and the
+machine-facing count summary, both over the flat `evaluate_claims` output.
+Pure formatting only -- no new evaluation happens here.
+
+- `render_report` -- one line per claim (verdict tag, id, quantifier,
+  detail), an indented witness-path line under a refutation, a summary
+  count line, then -- only when the run has an assume -- an
+  `## Assumption ledger` section. Listing order is REFUTED first (most
+  severe), then ASSUMED, then EVIDENCED, then PROVED, stable by claim_id
+  within a group; law 3 (an assume never proves anything) demands a
+  refutation can never hide behind proofs. `color=True` wraps tags with
+  ANSI via `frob.logging.color`; default `False` keeps JSON/log output
+  byte-stable.
+- `summarize` -- per-`Verdict` counts as a plain dict, all four keys
+  always present so a caller never has to guard a missing key.
+
+Sample layout (`color=False`):
+
+```
+REFUTED  c1 [forall] -- influence path foreign -> db with no boundary
+  path: evil -> api -> db
+PROVED   c2 [forall] -- no unendorsed influence path exists
+ASSUMED  c3 [forall] -- assumed by alice; review by 2026-08-01
+
+3 claim(s): 1 proved, 1 refuted, 1 assumed, 0 evidenced
+
+## Assumption ledger
+  c3: assumed by alice; review by 2026-08-01
+```
+
 ## strata-core
 
 <!-- frob:describes strata-core/src/lib.rs::reachable -->

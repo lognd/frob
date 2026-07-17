@@ -52,6 +52,7 @@ from frob.strata._models import (
     Verdict,
 )
 from frob.strata._parse import parse_module
+from frob.strata._report import render_report, summarize
 
 __all__ = [
     "LABELS",
@@ -93,4 +94,6 @@ __all__ = [
     "elaborate",
     "evaluate_claims",
     "parse_module",
+    "render_report",
+    "summarize",
 ]
