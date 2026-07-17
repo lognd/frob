@@ -14,7 +14,6 @@ from frob.logging import get_logger
 
 _log = get_logger(__name__)
 
-_SKIP_DIRS = {"__pycache__", ".venv", "build", "dist", ".git"}
 _PY_EXTS = {".py"}
 _CPP_EXTS = {".cpp", ".cc", ".cxx", ".h", ".hpp"}
 
@@ -635,10 +634,20 @@ def find_duplicates(root: Path, min_lines: int = 6) -> DupResult:
 
 
 def _walk(root: Path):
-    """Yield all files under root, skipping skip dirs."""
+    """Yield all files under root, honoring built-in skips and [graph] exclude."""
+    # frob:ticket T-0026
+    from frob.excludes import is_excluded, is_skipped_dir, load_exclude_globs
+
+    exclude_globs = load_exclude_globs(root)
     for path in root.rglob("*"):
         if not path.is_file():
             continue
-        if any(part in _SKIP_DIRS for part in path.parts):
+        try:
+            rel = path.relative_to(root)
+        except ValueError:
+            continue
+        if any(is_skipped_dir(part) for part in rel.parts):
+            continue
+        if exclude_globs and is_excluded(rel.as_posix(), exclude_globs):
             continue
         yield path

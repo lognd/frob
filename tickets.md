@@ -539,19 +539,31 @@ check config, DOC001 doclink gate, single-count violation output.
 ```yaml
 id: T-0026
 title: 'Unify exclude surface: dup/arch/cycle scanners must respect [graph] exclude'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-17'
 blocked_by: []
 parent: null
 scope:
-- src/frob/dup/**
+- src/frob/app/cycle_runner.py
 - src/frob/arch/**
 - src/frob/cycle/**
-evidence: []
+- src/frob/dup/**
+- src/frob/excludes.py
+- src/frob/graph/**
+- tests/test_excludes.py
+evidence:
+- tests/test_excludes.py::test_dup_scanner_honors_exclude
+- tests/test_excludes.py::test_load_and_match_globs
 attachments: []
 ```
+## Done report
+
+Extracted the [graph] exclude reader/matcher into the leaf module
+frob.excludes (one copy, shared) and wired dup/arch/cycle plus the graph
+build to it. Scanners no longer walk node_modules/worktrees/generated
+dirs a repo excluded.
 
 <!-- ticket:T-0027 -->
 ```yaml

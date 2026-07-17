@@ -7,6 +7,7 @@ from typing import Literal, cast
 
 from pydantic import BaseModel
 
+from frob.excludes import is_excluded, is_skipped_dir, load_exclude_globs
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
@@ -26,11 +27,10 @@ ArchCategory = Literal[
 
 ArchSeverity = Literal["warning", "suggestion", "info"]
 
-_SKIP_DIRS = {"__pycache__", ".venv", "build", "dist"}
-
 
 def _is_skip_dir(name: str) -> bool:
-    return name in _SKIP_DIRS or name.endswith(".egg-info")
+    # frob:ticket T-0026
+    return is_skipped_dir(name)
 
 
 # ---------------------------------------------------------------------------
@@ -75,14 +75,17 @@ class ArchResult(BaseModel):
 
 
 def _collect_files(root: Path) -> list[Path]:
+    # frob:ticket T-0026
+    exclude_globs = load_exclude_globs(root)
     result: list[Path] = []
     for p in root.rglob("*"):
-        # Check all parent parts relative to root for skip dirs
         try:
-            rel_parts = p.relative_to(root).parts
+            rel = p.relative_to(root)
         except ValueError:
             continue
-        if any(_is_skip_dir(part) for part in rel_parts):
+        if any(_is_skip_dir(part) for part in rel.parts):
+            continue
+        if exclude_globs and is_excluded(rel.as_posix(), exclude_globs):
             continue
         if p.is_file():
             result.append(p)

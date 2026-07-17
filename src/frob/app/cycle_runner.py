@@ -40,17 +40,26 @@ def _build_graph(root: Path, lang: str | None) -> tuple[DependencyGraph, list[st
     graph = DependencyGraph()
     errors: list[str] = []
 
+    # frob:ticket T-0026
+    from frob.excludes import is_excluded, is_skipped_dir, load_exclude_globs
+
     files = [root] if root.is_file() else list(root.rglob("*"))
     scan_root = root.parent if root.is_file() else root
+    exclude_globs = load_exclude_globs(scan_root)
 
     for path in files:
         if not path.is_file():
             continue
         ext = path.suffix.lower()
         try:
-            rel = str(path.relative_to(scan_root))
+            rel_path = path.relative_to(scan_root)
         except ValueError:
             continue
+        if any(is_skipped_dir(part) for part in rel_path.parts):
+            continue
+        if exclude_globs and is_excluded(rel_path.as_posix(), exclude_globs):
+            continue
+        rel = str(rel_path)
 
         graph.add_node(rel)
 

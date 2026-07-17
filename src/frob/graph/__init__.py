@@ -21,15 +21,14 @@ judged out of scope for Phase 2.
 
 from __future__ import annotations
 
-import fnmatch
 import hashlib
 import os
-import tomllib
 from pathlib import Path
 
 from typani import Err, ErrorSet, Ok
 from typani.result import Result
 
+from frob import excludes as _excludes
 from frob.graph import cache as _cache
 from frob.graph._models import (
     BuildStats,
@@ -87,33 +86,11 @@ def _display_path(path: Path, root: Path) -> str:
     return path.relative_to(root).as_posix()
 
 
-def _load_exclude_globs(root: Path) -> tuple[str, ...]:
-    """Read `[graph] exclude = [...]` from `frob.toml`; additive to `_EXCLUDED_DIRS`.
-
-    Missing file/table is `()`, matching `frob.policy.load_policy`'s
-    "absent config is not an error" posture. Globs are matched against the
-    root-relative POSIX path via `fnmatch`, so `"tests/fixtures/**"` excludes
-    every file under that directory regardless of extension.
-    """
-    toml_path = root / "frob.toml"
-    if not toml_path.exists():
-        return ()
-    try:
-        with toml_path.open("rb") as handle:
-            doc = tomllib.load(handle)
-    except (OSError, tomllib.TOMLDecodeError) as exc:
-        _log.warning("_load_exclude_globs: could not parse %s: %s", toml_path, exc)
-        return ()
-    globs = doc.get("graph", {}).get("exclude", [])
-    if not isinstance(globs, list) or not all(isinstance(g, str) for g in globs):
-        _log.warning("_load_exclude_globs: [graph].exclude must be a list of strings")
-        return ()
-    return tuple(globs)
-
-
-def _is_excluded(rel_path: str, exclude_globs: tuple[str, ...]) -> bool:
-    """True if `rel_path` (root-relative, POSIX) matches any `exclude_globs` entry."""
-    return any(fnmatch.fnmatch(rel_path, glob) for glob in exclude_globs)
+# The [graph] exclude reader and matcher live in frob.excludes (the one
+# copy shared with the dup/arch/cycle scanners -- T-0026); these are thin
+# aliases so the graph's internal call sites keep their names.
+_load_exclude_globs = _excludes.load_exclude_globs
+_is_excluded = _excludes.is_excluded
 
 
 def _walk_source_files(root: Path, exclude_globs: tuple[str, ...] = ()) -> list[Path]:
