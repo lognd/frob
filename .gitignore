@@ -10,6 +10,7 @@ build/
 uv.lock
 .claude/
 .frob/
+.serena/
 
 # C/C++ build artifacts
 cmake-build-*/
