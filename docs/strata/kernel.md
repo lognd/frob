@@ -144,6 +144,31 @@ consumer; payload label above destination clearance).
   silent clamp.
 - `FactBase.demand` -- declared inbound rate sum in base units.
 
+## Claim evaluation
+
+<!-- frob:describes src/frob/strata/_claims.py::evaluate_claims -->
+
+`evaluate_claims` (T-0057) walks the model's claims in declaration order
+and returns exactly one `ClaimResult` per claim -- a report can never
+silently drop one. Semantics as implemented in phase 0:
+
+- `noflow` -- REFUTED with the first witness path through the barrier-
+  respecting closure; PROVED forall otherwise. Endpoints may be node ids
+  or trust levels (expanded to every node at that level); anything else
+  fails the whole evaluation closed.
+- `reach` -- PROVED carries quantifier EXISTS and its witness path; the
+  refutation of an exists is a forall ("no path"), tagged accordingly.
+- `bound` -- AGE compares `worst_age` against a time limit (a positive-age
+  cycle refutes as unbounded); RATE compares `demand`; UTILIZATION
+  compares demand against `service_rate x replicas_max` with a percent
+  limit, refusing nodes with no declared capacity (deny by default);
+  SIZE compares a flow's declared size; LATENCY always refutes in phase 0
+  because flows do not yet declare latency (path budgets arrive with the
+  phase-2 surface `flow` construct). Wrong-dimension limits fail closed.
+- `assume` -- closes ASSUMED with owner and review date in the detail;
+  an overdue or malformed review date is flagged there for the phase-5
+  gate to escalate.
+
 ## Prover pipeline
 
 ```

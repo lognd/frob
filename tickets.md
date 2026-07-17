@@ -1566,7 +1566,7 @@ docs/strata/kernel.md#fact-base. Ticket check exit 0, ruff clean.
 ```yaml
 id: T-0057
 title: 'strata claim evaluation: noflow/bound/reach with counterexample traces'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-17'
@@ -1578,12 +1578,30 @@ scope:
 - tickets.md
 - src/frob/strata/**
 - tests/unit/strata/**
-evidence: []
+evidence:
+- tests/unit/strata/test_claims.py::TestNoFlow::test_refuted_with_witness_path_when_no_boundary_intervenes
+- tests/unit/strata/test_claims.py::TestReach::test_refutation_of_exists_is_a_forall
+- tests/unit/strata/test_claims.py::TestBounds::test_age_bound_refuted_with_stalest_path_and_number
 attachments: []
 acceptance: []
 threat: null
 ```
 Verdicts PROVED/EVIDENCED/ASSUMED/REFUTED, quantifier-tagged (forall/exists); every REFUTED carries a path or a number, never a vibe. Interval arithmetic for bounds; z3 only for nonlinear.
+
+## Done report
+
+Delivered src/frob/strata/_claims.py: evaluate_claims walks claims in
+declaration order (one result per claim, none droppable). noflow refutes
+with the first witness path through the barrier-respecting closure and
+supports trust-level endpoint expansion; reach is PROVED(exists)-with-
+witness whose refutation is correctly a forall; bounds cover AGE (worst-
+path staleness, inf-on-cycle refutes as unbounded), RATE (demand),
+UTILIZATION (percent vs replica ceiling, refusing undeclared capacity),
+SIZE (declared flow quantity), LATENCY (deny-by-default refute until
+phase-2 path budgets); wrong-dimension limits fail the evaluation closed.
+Assumes close ASSUMED with owner/review and overdue flagging. 12 new
+unit tests; docs anchor docs/strata/kernel.md#claim-evaluation. Ticket
+check exit 0, ruff clean, 37 strata tests green.
 
 <!-- ticket:T-0058 -->
 ```yaml

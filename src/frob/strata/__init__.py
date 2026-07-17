@@ -8,6 +8,7 @@ learn a surface vocabulary word (charter law 1).
 
 from __future__ import annotations
 
+from frob.strata._claims import evaluate_claims
 from frob.strata._errors import StrataError
 from frob.strata._facts import FactBase, build_facts
 from frob.strata._models import (
@@ -71,4 +72,5 @@ __all__ = [
     "StrataError",
     "Verdict",
     "build_facts",
+    "evaluate_claims",
 ]
