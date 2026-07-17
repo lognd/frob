@@ -31,6 +31,7 @@ __all__ = [
 ]
 
 
+# frob:doc docs/vet.md#public-api
 class Dependency(BaseModel):
     """One (ecosystem, name, version) tuple resolved from a lockfile."""
 
@@ -45,6 +46,7 @@ class Dependency(BaseModel):
     resolved: str = ""
 
 
+# frob:doc docs/vet.md#public-api
 class PackageVerdict(BaseModel):
     """One package's MVP verdict: name/version plus whatever signals fired.
 
@@ -63,6 +65,7 @@ class PackageVerdict(BaseModel):
     signals: tuple[str, ...] = ()
 
 
+# frob:doc docs/vet.md#public-api
 class VetReport(BaseModel):
     """The merged result of a `frob vet` scan: per-package verdicts and violations."""
 
@@ -75,6 +78,7 @@ class VetReport(BaseModel):
     skipped: tuple[str, ...] = ()
 
 
+# frob:doc docs/vet.md#public-api
 def capability_diff(prev: PackageVerdict, cur: PackageVerdict) -> tuple[str, ...]:
     """Capabilities `cur` has that `prev` did not -- the VET003 escalation
     signal (docs/vet.md "Public API"). Order-stable (sorted) for diffable
@@ -83,6 +87,7 @@ def capability_diff(prev: PackageVerdict, cur: PackageVerdict) -> tuple[str, ...
     return tuple(added)
 
 
+# frob:doc docs/vet.md#public-api
 class HookVerdict(BaseModel):
     """One package's --hook-mode verdict against a not-yet-installed package."""
 
@@ -95,6 +100,7 @@ class HookVerdict(BaseModel):
     blocked: bool
 
 
+# frob:doc docs/vet.md#public-api
 class VetConfig(BaseModel):
     """The `[vet]` table plus `[vet.allow]`, loaded from frob.toml."""
 
@@ -108,6 +114,7 @@ class VetConfig(BaseModel):
     allow: Mapping[str, tuple[str, ...] | bool] = {}
 
 
+# frob:doc docs/vet.md#public-api
 class HookAction(StrEnum):
     """A parsed --hook command's disposition before any network check."""
 
@@ -115,6 +122,7 @@ class HookAction(StrEnum):
     IGNORE = "ignore"
 
 
+# frob:doc docs/vet.md#public-api
 class VetError(ErrorSet):
     """Fallible outcomes of frob.vet operations."""
 

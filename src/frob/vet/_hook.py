@@ -71,6 +71,7 @@ def _strip_cargo_version(token: str) -> tuple[str, str]:
     return token, ""
 
 
+# frob:doc docs/vet.md#public-api
 def parse_hook_command(command: str) -> tuple[str, tuple[tuple[str, str], ...]] | None:
     """Parse a shell command string for install-shaped invocations.
     Returns `(ecosystem, ((name, version_or_empty), ...))`, or `None` if the
@@ -144,6 +145,7 @@ def parse_hook_command(command: str) -> tuple[str, tuple[tuple[str, str], ...]] 
     return ecosystem, tuple(packages)
 
 
+# frob:doc docs/vet.md#public-api
 def check_package(
     ecosystem: str, name: str, version: str, *, root: Path
 ) -> HookVerdict:

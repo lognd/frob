@@ -30,6 +30,7 @@ _NPM_HOST = "https://registry.npmjs.org"
 _CRATES_HOST = "https://crates.io"
 
 
+# frob:doc docs/vet.md#public-api
 class RegistryResult(BaseModel):
     """Outcome of a publish-date lookup: `ok=False` means "could not verify"."""
 
@@ -146,6 +147,7 @@ def _parse_published(
     return None, None
 
 
+# frob:doc docs/vet.md#public-api
 def fetch_publish_date(
     ecosystem: str,
     name: str,

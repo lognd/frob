@@ -88,6 +88,7 @@ class TestLockfileParsers:
     def test_find_lockfile_none(self, tmp_path: Path) -> None:
         assert find_lockfile(tmp_path) is None
 
+    # frob:tests src/frob/vet/_lockfile.py::parse_lockfile kind="unit"
     def test_parse_uv_lock(self, tmp_path: Path) -> None:
         path = tmp_path / "uv.lock"
         path.write_text(UV_LOCK)
@@ -157,6 +158,7 @@ class TestAllowConfig:
         cfg = load_vet_config(tmp_path)
         assert cfg.present is False
 
+    # frob:tests src/frob/vet/_allow.py::load_vet_config kind="unit"
     def test_vet_section_present(self, tmp_path: Path) -> None:
         (tmp_path / "frob.toml").write_text(
             """
@@ -184,6 +186,7 @@ jinja2 = ["sandboxed template compilation, reviewed"]
 
 
 class TestQuarantine:
+    # frob:tests src/frob/vet/_hook.py::check_package kind="unit"
     def test_fresh_package_blocked(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -251,6 +254,7 @@ class TestTyposquat:
         assert damerau_levenshtein("requets", "requests") == 1
         assert damerau_levenshtein("laodash", "lodash") == 1
 
+    # frob:tests src/frob/vet/_typosquat.py::find_typosquat kind="unit"
     def test_requets_flags_requests(self) -> None:
         assert find_typosquat("pypi", "requets") == "requests"
 
@@ -309,6 +313,7 @@ def test_parse_hook_command_scoped_npm_package() -> None:
 
 
 class TestCapabilityScan:
+    # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
     def test_python_exec_and_net_detected(self, tmp_path: Path) -> None:
         from frob.vet._capability import scan_file_capabilities
 
@@ -335,6 +340,7 @@ class TestCapabilityScan:
         c_file.write_text('int main() { system("ls"); return 0; }\n')
         assert scan_file_capabilities(c_file) == frozenset()
 
+    # frob:tests src/frob/vet/_capability.py::decode_to_exec_signal kind="unit"
     def test_decode_to_exec_same_function(self, tmp_path: Path) -> None:
         from frob.vet._capability import decode_to_exec_signal
 
@@ -360,8 +366,31 @@ class TestCapabilityScan:
         )
         assert decode_to_exec_signal(pkg) is False
 
+    # frob:tests src/frob/vet/_capability.py::language_for kind="unit"
+    def test_language_for_known_and_unknown_extensions(self, tmp_path: Path) -> None:
+        from frob.vet._capability import language_for
+
+        assert language_for(tmp_path / "mod.py") == "python"
+        assert language_for(tmp_path / "mod.rs") == "rust"
+        assert language_for(tmp_path / "mod.ts") == "typescript"
+        assert language_for(tmp_path / "mod.c") is None
+
+    # frob:tests src/frob/vet/_capability.py::scan_directory_capabilities kind="unit"
+    def test_scan_directory_capabilities_aggregates_across_files(
+        self, tmp_path: Path
+    ) -> None:
+        from frob.vet._capability import scan_directory_capabilities
+
+        (tmp_path / "a.py").write_text("import subprocess\nsubprocess.run(['ls'])\n")
+        (tmp_path / "b.py").write_text("import requests\nrequests.get('x')\n")
+        capabilities, decode_to_exec_hit = scan_directory_capabilities(tmp_path)
+        assert "exec" in capabilities
+        assert "net" in capabilities
+        assert decode_to_exec_hit is False
+
 
 class TestObfuscationEnsemble:
+    # frob:tests src/frob/vet/_obfuscation.py::scan_text_obfuscation kind="unit"
     def test_high_entropy_string_flagged(self) -> None:
         from frob.vet._obfuscation import scan_text_obfuscation
 
@@ -374,6 +403,7 @@ class TestObfuscationEnsemble:
         text = 'greeting = "hello world, this is a normal string literal"\n'
         assert "high-entropy-string" not in scan_text_obfuscation(text)
 
+    # frob:tests src/frob/vet/_obfuscation.py::invisible_text_signal kind="unit"
     def test_bidi_override_is_fatal(self) -> None:
         from frob.vet._obfuscation import invisible_text_signal
 
@@ -385,6 +415,7 @@ class TestObfuscationEnsemble:
 
         assert invisible_text_signal("x = 1\ny = 2\n") is False
 
+    # frob:tests src/frob/vet/_obfuscation.py::hex_identifier_ratio_signal kind="unit"
     def test_hex_identifier_ratio_flagged(self) -> None:
         from frob.vet._obfuscation import hex_identifier_ratio_signal
 
@@ -397,8 +428,38 @@ class TestObfuscationEnsemble:
         idents = " ".join(f"variable_name_{i}" for i in range(30))
         assert hex_identifier_ratio_signal(idents) is False
 
+    # frob:tests src/frob/vet/_obfuscation.py::high_entropy_strings kind="unit"
+    def test_high_entropy_strings_returns_the_literal(self) -> None:
+        from frob.vet._obfuscation import high_entropy_strings
+
+        text = 'x = "aGVsbG8gd29ybGQsIHRoaXMgaXMgYSB0ZXN0IHBheWxvYWQ="\n'
+        hits = high_entropy_strings(text)
+        assert len(hits) == 1
+        assert hits[0].startswith("aGVsbG8")
+
+    def test_high_entropy_strings_empty_for_plain_text(self) -> None:
+        from frob.vet._obfuscation import high_entropy_strings
+
+        text = 'greeting = "hello world, this is a normal string literal"\n'
+        assert high_entropy_strings(text) == ()
+
+    # frob:tests src/frob/vet/_obfuscation.py::scan_directory_obfuscation kind="unit"
+    def test_scan_directory_obfuscation_finds_signal_in_one_file(
+        self, tmp_path: Path
+    ) -> None:
+        from frob.vet._obfuscation import scan_directory_obfuscation
+
+        (tmp_path / "clean.py").write_text("x = 1\n")
+        (tmp_path / "evil.py").write_text(
+            'x = "aGVsbG8gd29ybGQsIHRoaXMgaXMgYSB0ZXN0IHBheWxvYWQ="\n'
+        )
+        signals = scan_directory_obfuscation(tmp_path)
+        assert "high-entropy-string" in signals
+
 
 class TestVerdictCache:
+    # frob:tests src/frob/vet/_cache.py::store_verdict kind="unit"
+    # frob:tests src/frob/vet/_cache.py::latest_verdict kind="unit"
     def test_store_and_retrieve_latest(self, tmp_path: Path) -> None:
         from frob.vet import _cache
         from frob.vet._models import PackageVerdict
@@ -426,6 +487,7 @@ class TestVerdictCache:
 
 
 class TestCapabilityDiff:
+    # frob:tests src/frob/vet/_models.py::capability_diff kind="unit"
     def test_added_capability_detected(self) -> None:
         from frob.vet._models import PackageVerdict, capability_diff
 
@@ -462,6 +524,7 @@ class TestCapabilityDiff:
 
 
 class TestEcosystemRules:
+    # frob:tests src/frob/vet/_ecosystem.py::python_rules kind="unit"
     def test_python_setup_py_cmdclass_flagged(self, tmp_path: Path) -> None:
         from frob.gates._models import Severity
         from frob.vet import _ecosystem
@@ -485,6 +548,7 @@ class TestEcosystemRules:
         violations = _ecosystem.python_rules(dep, tmp_path, "uv.lock")
         assert any(v.rule == "VET-PY002" for v in violations)
 
+    # frob:tests src/frob/vet/_ecosystem.py::rust_rules kind="unit"
     def test_rust_build_rs_capability_flagged(self, tmp_path: Path) -> None:
         from frob.vet import _ecosystem
 
@@ -495,6 +559,7 @@ class TestEcosystemRules:
         violations = _ecosystem.rust_rules(dep, tmp_path, "Cargo.lock")
         assert any(v.rule == "VET-RS001" for v in violations)
 
+    # frob:tests src/frob/vet/_ecosystem.py::npm_non_registry_rule kind="unit"
     def test_npm_non_registry_source_flagged(self) -> None:
         from frob.vet import _ecosystem
 
@@ -585,3 +650,141 @@ class TestScanTreeWithLocalSource:
         assert result.is_ok
         report = result.danger_ok
         assert any(v.rule == "VET002" for v in report.violations)
+
+
+# ---------------------------------------------------------------------------
+# lifecycle scripts
+# ---------------------------------------------------------------------------
+
+
+class TestLifecycleScripts:
+    # frob:tests src/frob/vet/_lifecycle.py::scan_lifecycle_scripts kind="unit"
+    def test_finds_postinstall_script(self, tmp_path: Path) -> None:
+        from frob.vet._lifecycle import scan_lifecycle_scripts
+
+        pkg_dir = tmp_path / "node_modules" / "sketchy-pkg"
+        pkg_dir.mkdir(parents=True)
+        (pkg_dir / "package.json").write_text(
+            json.dumps(
+                {
+                    "name": "sketchy-pkg",
+                    "scripts": {"postinstall": "node evil.js"},
+                }
+            )
+        )
+        found = scan_lifecycle_scripts(tmp_path)
+        assert found == {"sketchy-pkg": ("postinstall",)}
+
+    def test_no_node_modules_returns_empty(self, tmp_path: Path) -> None:
+        from frob.vet._lifecycle import scan_lifecycle_scripts
+
+        assert scan_lifecycle_scripts(tmp_path) == {}
+
+
+# ---------------------------------------------------------------------------
+# osv-scanner adapter
+# ---------------------------------------------------------------------------
+
+
+class TestOsvAdapter:
+    # frob:tests src/frob/vet/_osv.py::is_available kind="unit"
+    def test_is_available_reflects_path_lookup(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from frob.vet import _osv
+
+        monkeypatch.setattr(
+            _osv.shutil, "which", lambda _binary: "/usr/bin/osv-scanner"
+        )
+        assert _osv.is_available() is True
+
+        monkeypatch.setattr(_osv.shutil, "which", lambda _binary: None)
+        assert _osv.is_available() is False
+
+    # frob:tests src/frob/vet/_osv.py::run_osv_scan kind="unit"
+    def test_run_osv_scan_none_when_binary_absent(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from frob.vet import _osv
+
+        monkeypatch.setattr(_osv.shutil, "which", lambda _binary: None)
+        lockfile = tmp_path / "uv.lock"
+        lockfile.write_text("version = 1\n")
+        assert _osv.run_osv_scan(lockfile) is None
+
+
+# ---------------------------------------------------------------------------
+# registry publish-date lookups
+# ---------------------------------------------------------------------------
+
+
+class TestRegistryLookup:
+    # frob:tests src/frob/vet/_registry.py::fetch_publish_date kind="unit"
+    def test_fetch_publish_date_degrades_on_network_failure(
+        self, tmp_path: Path
+    ) -> None:
+        from frob.vet._registry import fetch_publish_date
+
+        result = fetch_publish_date(
+            "pypi",
+            "some-package-that-should-not-resolve",
+            "1.0.0",
+            cache_path=tmp_path / "vet.db",
+            base_url="http://127.0.0.1:1",
+            timeout_s=0.5,
+        )
+        assert result.ok is False
+        assert result.published_at is None
+
+
+# ---------------------------------------------------------------------------
+# local-cache source location
+# ---------------------------------------------------------------------------
+
+
+class TestSourceLocation:
+    # frob:tests src/frob/vet/_source.py::locate_pypi_source kind="unit"
+    def test_locate_pypi_source_from_venv(self, tmp_path: Path) -> None:
+        from frob.vet._source import locate_pypi_source
+
+        site_packages = tmp_path / ".venv" / "lib" / "python3.11" / "site-packages"
+        pkg_dir = site_packages / "some_pkg"
+        pkg_dir.mkdir(parents=True)
+        found = locate_pypi_source(tmp_path, "some-pkg", "1.0.0")
+        assert found == pkg_dir
+
+    def test_locate_pypi_source_missing_returns_none(self, tmp_path: Path) -> None:
+        from frob.vet._source import locate_pypi_source
+
+        assert locate_pypi_source(tmp_path, "totally-absent-pkg", "1.0.0") is None
+
+    # frob:tests src/frob/vet/_source.py::locate_npm_source kind="unit"
+    def test_locate_npm_source_from_node_modules(self, tmp_path: Path) -> None:
+        from frob.vet._source import locate_npm_source
+
+        pkg_dir = tmp_path / "node_modules" / "lodash"
+        pkg_dir.mkdir(parents=True)
+        assert locate_npm_source(tmp_path, "lodash") == pkg_dir
+
+    def test_locate_npm_source_missing_returns_none(self, tmp_path: Path) -> None:
+        from frob.vet._source import locate_npm_source
+
+        assert locate_npm_source(tmp_path, "not-installed") is None
+
+    # frob:tests src/frob/vet/_source.py::locate_cargo_source kind="unit"
+    def test_locate_cargo_source_missing_registry_returns_none(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from frob.vet._source import locate_cargo_source
+
+        monkeypatch.setattr(Path, "home", lambda: tmp_path)
+        assert locate_cargo_source("serde", "1.0.195") is None
+
+    # frob:tests src/frob/vet/_source.py::locate_source kind="unit"
+    def test_locate_source_dispatches_by_ecosystem(self, tmp_path: Path) -> None:
+        from frob.vet._source import locate_source
+
+        pkg_dir = tmp_path / "node_modules" / "lodash"
+        pkg_dir.mkdir(parents=True)
+        assert locate_source(tmp_path, "npm", "lodash", "4.17.21") == pkg_dir
+        assert locate_source(tmp_path, "unknown-ecosystem", "x", "1.0.0") is None

@@ -72,6 +72,21 @@ Waivable per-site as always (`frob:waive FUZZ001 reason="..."`).
 
 ## Public API
 
+<!-- frob:describes src/frob/fuzz/_arbitrary.py::register -->
+<!-- frob:describes src/frob/fuzz/_arbitrary.py::resolve -->
+<!-- frob:describes src/frob/fuzz/_obligations.py::obligations -->
+<!-- frob:describes src/frob/fuzz/_stamp.py::stamp_fuzz -->
+<!-- frob:describes src/frob/fuzz/_stamp.py::load_fuzz_stamp -->
+<!-- frob:describes src/frob/fuzz/_run.py::run_fuzz -->
+<!-- frob:describes src/frob/fuzz/_rules.py::FUZZ001 -->
+<!-- frob:describes src/frob/fuzz/_rules.py::FUZZ002 -->
+<!-- frob:describes src/frob/fuzz/_rules.py::FUZZ003 -->
+<!-- frob:describes src/frob/fuzz/_models.py::FuzzEnforce -->
+<!-- frob:describes src/frob/fuzz/_models.py::FuzzObligation -->
+<!-- frob:describes src/frob/fuzz/_models.py::FuzzResult -->
+<!-- frob:describes src/frob/fuzz/_models.py::FuzzPolicy -->
+<!-- frob:describes src/frob/fuzz/_models.py::FuzzError -->
+
 ```python
 # frob/fuzz/__init__.py
 def register(tp: type, strategy: object) -> None
@@ -83,6 +98,23 @@ def obligations(snapshot: GraphSnapshot, policy: FuzzPolicy)
     # Pure: which symbols owe fuzzing under the configured enforce mode.
 def stamp_fuzz(root: Path, results: tuple[FuzzResult, ...])
         -> Result[Unit, FuzzError]
+    # Writes the digest-per-target fuzz stamp so FUZZ003 can detect staleness.
+def load_fuzz_stamp(root: Path) -> dict[str, str] | None
+    # Reads the fuzz stamp back; None when absent or unreadable.
+def run_fuzz(targets: tuple[type[BaseModel], ...], budget_s: int, ...)
+    # Exercises each target's resolved Arbitrary strategy within budget.
+def FUZZ001(...) -> tuple[Violation, ...]
+    # Flags a fuzz-obligated function with no kind="fuzz" TESTS edge.
+def FUZZ002(...) -> tuple[Violation, ...]
+    # Flags an obligated signature whose type has no generator.
+def FUZZ003(...) -> tuple[Violation, ...]
+    # Flags a missing or stale fuzz stamp for an obligated target.
+
+class FuzzEnforce(StrEnum):
+    # The `[fuzz].enforce` obligation scope: off | invariant-anchored | public.
+    OFF = "off"
+    INVARIANT_ANCHORED = "invariant-anchored"
+    PUBLIC = "public"
 
 class FuzzObligation(BaseModel):  # frozen
     ref: str
@@ -93,6 +125,12 @@ class FuzzResult(BaseModel):      # frozen
     body_digest: str
     examples: int
     falsified: str | None         # minimal counterexample repr, if found
+
+class FuzzPolicy(BaseModel):      # frozen
+    # The `[fuzz]` table: obligation scope, per-run budget, rejection ceiling.
+    enforce: FuzzEnforce
+    budget_s: int
+    max_reject_rate: float
 
 class FuzzError(ErrorSet):
     NoGenerator   = "Type has no derived, declared, or registered strategy"

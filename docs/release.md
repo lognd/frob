@@ -48,13 +48,39 @@ baseline forward.
 
 ## Public API
 
+<!-- frob:describes src/frob/release/__init__.py::BumpClass -->
+<!-- frob:describes src/frob/release/__init__.py::ReleaseManifest -->
+<!-- frob:describes src/frob/release/__init__.py::ReleaseError -->
+<!-- frob:describes src/frob/release/__init__.py::manifest_path -->
+<!-- frob:describes src/frob/release/__init__.py::load_manifest -->
 <!-- frob:describes src/frob/release/__init__.py::stamp -->
 <!-- frob:describes src/frob/release/__init__.py::diff_class -->
 <!-- frob:describes src/frob/release/__init__.py::required_version -->
+<!-- frob:describes src/frob/release/__init__.py::satisfies -->
+
+`BumpClass` is the ordered semver change class (`NONE < PATCH < MINOR <
+MAJOR`). `ReleaseManifest` is the pydantic model persisted to
+`.frob-release.json` (`version` + `api` symref-to-digest map).
+`ReleaseError` is the `ErrorSet` of fallible outcomes (`NoManifest`,
+`Malformed`, `BadVersion`). `manifest_path` resolves the tracked manifest
+path under a repo root.
 
 ```python
-def stamp(root, snapshot, version) -> Result[str, ReleaseError]
+class BumpClass(IntEnum):        # NONE = 0, PATCH = 1, MINOR = 2, MAJOR = 3
+    ...
+
+class ReleaseManifest(BaseModel):
+    version: str
+    api: dict[str, str]
+
+class ReleaseError(ErrorSet):
+    NoManifest
+    Malformed
+    BadVersion
+
+def manifest_path(root) -> Path
 def load_manifest(root) -> Result[ReleaseManifest, ReleaseError]
+def stamp(root, snapshot, version) -> Result[str, ReleaseError]
 def diff_class(manifest, snapshot) -> BumpClass         # NONE|PATCH|MINOR|MAJOR
 def required_version(previous, bump) -> Result[str, ReleaseError]
 def satisfies(current, minimum) -> bool

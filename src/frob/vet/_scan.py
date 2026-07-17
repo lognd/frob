@@ -101,6 +101,7 @@ def _lockfile_name(dep: Dependency, root: Path) -> str:
     return dep.ecosystem
 
 
+# frob:doc docs/vet.md#public-api
 def scan_tree(root: Path, *, fetch: bool = True) -> Result[VetReport, VetError]:
     """Full-lockfile vet pass: allow conformance, quarantine, typosquat,
     JS lifecycle scripts, and the optional osv-scanner adapter."""

@@ -24,6 +24,36 @@ verifying nothing. Mutation testing cannot be gamed that way -- a test that
 does not assert the result kills no mutant, so the score collapses to the
 truth. It is the quality oracle docs/fuzz.md and the TEST family point at.
 
+## Public API
+
+<!-- frob:describes src/frob/mutate/__init__.py::MutateError -->
+<!-- frob:describes src/frob/mutate/__init__.py::Mutant -->
+<!-- frob:describes src/frob/mutate/__init__.py::MutationResult -->
+<!-- frob:describes src/frob/mutate/__init__.py::MutationResult.score -->
+<!-- frob:describes src/frob/mutate/__init__.py::_Mutator.visit_Compare -->
+<!-- frob:describes src/frob/mutate/__init__.py::_Mutator.visit_BinOp -->
+<!-- frob:describes src/frob/mutate/__init__.py::_Mutator.visit_BoolOp -->
+<!-- frob:describes src/frob/mutate/__init__.py::_Mutator.visit_Constant -->
+<!-- frob:describes src/frob/mutate/__init__.py::generate_mutants -->
+<!-- frob:describes src/frob/mutate/__init__.py::run_mutations -->
+
+```python
+class MutateError(ErrorSet)      # fallible outcomes: ParseFailed, NoSource
+class Mutant(BaseModel)          # one applied mutation: file, line, description
+class MutationResult(BaseModel)  # outcome of testing one function's mutants
+    score -> float               # killed / total (1.0 when total == 0)
+
+# ast.NodeTransformer hooks; each applies at most one point mutation, chosen
+# by a running counter, and leaves every other visited node untouched.
+def _Mutator.visit_Compare(node) -> ast.Compare  # maybe swap the comparison op
+def _Mutator.visit_BinOp(node) -> ast.BinOp      # maybe swap the arithmetic op
+def _Mutator.visit_BoolOp(node) -> ast.BoolOp    # maybe swap and/or
+def _Mutator.visit_Constant(node) -> ast.Constant  # maybe negate a bool literal
+
+def generate_mutants(source, file) -> Result[tuple[Mutant, ...], MutateError]
+def run_mutations(root, file, test_argv, timeout_s=300.0) -> Result[MutationResult, MutateError]
+```
+
 ## v1 scope (honest)
 
 - Python source, mutated via a small AST transformer: comparison swaps

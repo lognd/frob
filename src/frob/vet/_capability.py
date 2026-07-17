@@ -86,11 +86,13 @@ _PATTERNS: dict[str, dict[str, tuple[str, ...]]] = {
 }
 
 
+# frob:doc docs/vet.md#public-api
 def language_for(path: Path) -> str | None:
     """The pattern-table bucket for `path`'s extension, or `None` (e.g. C/C++)."""
     return _EXT_LANGUAGE.get(path.suffix.lower())
 
 
+# frob:doc docs/vet.md#public-api
 def scan_file_capabilities(path: Path) -> frozenset[str]:
     """Capability tokens observed in one source file's raw text."""
     language = language_for(path)
@@ -113,6 +115,7 @@ def scan_file_capabilities(path: Path) -> frozenset[str]:
     return frozenset(found)
 
 
+# frob:doc docs/vet.md#public-api
 def decode_to_exec_signal(path: Path) -> bool:
     """True if one function's body reaches both a decode-ish and an exec-ish
     token (docs/vet.md "eval-reachability": the highest-precision detector).
@@ -160,6 +163,7 @@ def decode_to_exec_signal(path: Path) -> bool:
     return False
 
 
+# frob:doc docs/vet.md#public-api
 def scan_directory_capabilities(
     source_dir: Path, *, max_files: int = 500
 ) -> tuple[frozenset[str], bool]:

@@ -99,12 +99,14 @@ class _ThirdParty:
 
 class TestResolve:
     def test_unknown_type_is_no_generator(self) -> None:
+        # frob:tests src/frob/fuzz/_arbitrary.py::resolve kind="unit"
         result = resolve(int if not HYPOTHESIS_AVAILABLE else _ThirdParty)
         assert result.is_err
         assert result.danger_err == type(result.danger_err).NoGenerator
 
     @needs_hypothesis
     def test_registered_type_resolves(self) -> None:
+        # frob:tests src/frob/fuzz/_arbitrary.py::register kind="unit"
         import hypothesis.strategies as st
 
         register(_ThirdParty, st.builds(_ThirdParty))
@@ -161,6 +163,7 @@ class TestObligations:
         assert result == ()
 
     def test_public_obligates_every_public_function(self) -> None:
+        # frob:tests src/frob/fuzz/_obligations.py::obligations kind="unit"
         snapshot = _snapshot(
             {
                 "a.py::f": _record("a.py::f", public=True),
@@ -179,6 +182,7 @@ class TestObligations:
 
 class TestFuzz001:
     def test_flags_obligated_symbol_with_no_fuzz_test(self) -> None:
+        # frob:tests src/frob/fuzz/_rules.py::FUZZ001 kind="unit"
         snapshot = _snapshot({"a.py::f": _record("a.py::f")})
         obs = (FuzzObligation(ref="a.py::f", reason="public"),)
         violations = FUZZ001(snapshot, obs)
@@ -217,6 +221,7 @@ class TestFuzz002:
         assert FUZZ002(obs, {"a.py::f": None}) == ()
 
     def test_flags_ungeneratable_param_type(self) -> None:
+        # frob:tests src/frob/fuzz/_rules.py::FUZZ002 kind="unit"
         class _Bare:
             pass
 
@@ -233,6 +238,7 @@ class TestFuzz002:
 
 class TestFuzz003:
     def test_flags_missing_stamp(self) -> None:
+        # frob:tests src/frob/fuzz/_rules.py::FUZZ003 kind="unit"
         snapshot = _snapshot({"a.py::f": _record("a.py::f")})
         obs = (FuzzObligation(ref="a.py::f", reason="public"),)
         violations = FUZZ003(snapshot, obs, None)
@@ -258,6 +264,8 @@ class TestFuzz003:
 
 class TestStamp:
     def test_round_trips(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/fuzz/_stamp.py::stamp_fuzz kind="unit"
+        # frob:tests src/frob/fuzz/_stamp.py::load_fuzz_stamp kind="unit"
         results = (
             FuzzResult(ref="a.py::f", body_digest="abc", examples=10, falsified=None),
         )
@@ -298,6 +306,7 @@ class TestResolveParamTypes:
         assert resolve_param_types(tmp_path, "src/does_not_exist.py::f") is None
 
     def test_introspects_a_real_function(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/fuzz/_signatures.py::resolve_param_types kind="unit"
         _write(
             tmp_path,
             "src/fuzz_fixture_mod.py",
@@ -320,6 +329,7 @@ class TestRunFuzz:
 
     @needs_hypothesis
     def test_derived_model_produces_examples(self) -> None:
+        # frob:tests src/frob/fuzz/_run.py::run_fuzz kind="unit"
         results = run_fuzz((_Even,), budget_s=1, policy=FuzzPolicy(budget_s=1))
         assert len(results) == 1
         assert results[0].examples > 0
@@ -349,7 +359,7 @@ class TestIntegrationWithGraph:
         _write(
             tmp_path,
             "src/pkg/mod.py",
-            'def critical() -> None:\n    # frob:invariant INV-099\n    pass\n',
+            "def critical() -> None:\n    # frob:invariant INV-099\n    pass\n",
         )
         cache = tmp_path / ".frob" / "cache.db"
         snapshot = build_graph(tmp_path, cache).danger_ok

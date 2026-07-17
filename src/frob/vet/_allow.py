@@ -16,6 +16,7 @@ from frob.vet._models import VetConfig
 _log = get_logger(__name__)
 
 
+# frob:doc docs/vet.md#public-api
 def load_vet_config(root: Path) -> VetConfig:
     """Read `frob.toml`'s `[vet]` table; absent table -> `present=False`
     (advisory-only)."""

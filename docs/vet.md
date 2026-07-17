@@ -281,26 +281,246 @@ gate enforcement.
 
 ## Public API
 
+<!-- frob:describes src/frob/vet/_models.py::Dependency -->
+<!-- frob:describes src/frob/vet/_models.py::PackageVerdict -->
+<!-- frob:describes src/frob/vet/_models.py::VetReport -->
+<!-- frob:describes src/frob/vet/_models.py::capability_diff -->
+<!-- frob:describes src/frob/vet/_models.py::HookVerdict -->
+<!-- frob:describes src/frob/vet/_models.py::VetConfig -->
+<!-- frob:describes src/frob/vet/_models.py::HookAction -->
+<!-- frob:describes src/frob/vet/_models.py::VetError -->
+<!-- frob:describes src/frob/vet/_ecosystem.py::python_rules -->
+<!-- frob:describes src/frob/vet/_ecosystem.py::rust_rules -->
+<!-- frob:describes src/frob/vet/_ecosystem.py::npm_non_registry_rule -->
+<!-- frob:describes src/frob/vet/_cache.py::store_verdict -->
+<!-- frob:describes src/frob/vet/_cache.py::latest_verdict -->
+<!-- frob:describes src/frob/vet/_hook.py::parse_hook_command -->
+<!-- frob:describes src/frob/vet/_hook.py::check_package -->
+<!-- frob:describes src/frob/vet/_lockfile.py::find_lockfile -->
+<!-- frob:describes src/frob/vet/_lockfile.py::parse_lockfile -->
+<!-- frob:describes src/frob/vet/_capability.py::language_for -->
+<!-- frob:describes src/frob/vet/_capability.py::scan_file_capabilities -->
+<!-- frob:describes src/frob/vet/_capability.py::decode_to_exec_signal -->
+<!-- frob:describes src/frob/vet/_capability.py::scan_directory_capabilities -->
+<!-- frob:describes src/frob/vet/_scan.py::scan_tree -->
+<!-- frob:describes src/frob/vet/_lifecycle.py::scan_lifecycle_scripts -->
+<!-- frob:describes src/frob/vet/_obfuscation.py::high_entropy_strings -->
+<!-- frob:describes src/frob/vet/_obfuscation.py::invisible_text_signal -->
+<!-- frob:describes src/frob/vet/_obfuscation.py::hex_identifier_ratio_signal -->
+<!-- frob:describes src/frob/vet/_obfuscation.py::scan_text_obfuscation -->
+<!-- frob:describes src/frob/vet/_obfuscation.py::scan_directory_obfuscation -->
+<!-- frob:describes src/frob/vet/_allow.py::load_vet_config -->
+<!-- frob:describes src/frob/vet/_typosquat.py::damerau_levenshtein -->
+<!-- frob:describes src/frob/vet/_typosquat.py::find_typosquat -->
+<!-- frob:describes src/frob/vet/_osv.py::OsvAdvisory -->
+<!-- frob:describes src/frob/vet/_osv.py::is_available -->
+<!-- frob:describes src/frob/vet/_osv.py::run_osv_scan -->
+<!-- frob:describes src/frob/vet/_registry.py::RegistryResult -->
+<!-- frob:describes src/frob/vet/_registry.py::fetch_publish_date -->
+<!-- frob:describes src/frob/vet/_source.py::locate_pypi_source -->
+<!-- frob:describes src/frob/vet/_source.py::locate_npm_source -->
+<!-- frob:describes src/frob/vet/_source.py::locate_cargo_source -->
+<!-- frob:describes src/frob/vet/_source.py::locate_source -->
+
+- `Dependency` -- one resolved (ecosystem, name, version[, resolved-URL])
+  tuple read from a lockfile; the unit every rule operates on.
+- `PackageVerdict` -- one package's scan outcome: observed capabilities,
+  signals, and the artifact hash the verdict cache keys on.
+- `VetReport` -- the merged `frob vet` result: all verdicts plus all
+  violations for one lockfile pass.
+- `capability_diff` -- capabilities `cur` has that `prev` did not; the
+  VET003 escalation signal, pure and order-stable.
+- `HookVerdict` -- one package's pre-install (`--hook`) disposition, since
+  it is not yet in a lockfile to scan normally.
+- `VetConfig` -- the loaded `[vet]`/`[vet.allow]` table from frob.toml,
+  `present=False` meaning advisory-only (no frob.toml section).
+- `HookAction` -- a parsed hook command's install-vs-ignore disposition.
+- `VetError` -- the fallible outcomes `Result`-typed vet operations return.
+- `python_rules` -- VET-PY001/002/003 local file-shape checks (setup.py
+  cmdclass, `.pth` files, pickle payloads) for one Python dependency.
+- `rust_rules` -- VET-RS001/002 checks (build.rs capability scan,
+  proc-macro presence) for one Rust dependency.
+- `npm_non_registry_rule` -- VET-JS004: flags a dependency resolved to a
+  non-registry (git/http/file) source.
+- `store_verdict` -- best-effort persist of a verdict into `.frob/vet.db`,
+  content-addressed by artifact hash.
+- `latest_verdict` -- the most recently stored verdict for a package name,
+  used as the VET003 escalation baseline.
+- `parse_hook_command` -- tokenizes a shell command string into
+  `(ecosystem, ((name, version), ...))` for recognized install forms.
+- `check_package` -- quarantine + typosquat check for one not-yet-installed
+  package named in a `--hook` command.
+- `find_lockfile` -- the first supported lockfile found directly under a
+  project root.
+- `parse_lockfile` -- dispatches a lockfile path to its format-specific
+  parser, returning the resolved `Dependency` tuples.
+- `language_for` -- maps a source file's extension to its capability
+  pattern-table bucket (or `None` for unsupported languages).
+- `scan_file_capabilities` -- capability tokens observed in one source
+  file's raw text, via the per-language substring table.
+- `decode_to_exec_signal` -- true when a decode-ish and an exec-ish token
+  co-occur in the SAME function body (the highest-precision obfuscation
+  signal).
+- `scan_directory_capabilities` -- aggregates capability tokens and the
+  decode-to-exec signal across every scannable file under a source tree.
+- `scan_tree` -- the full-lockfile `frob vet` pass: allow conformance,
+  quarantine, typosquat, capability/obfuscation scan, and the osv adapter.
+- `scan_lifecycle_scripts` -- packages under `node_modules` declaring
+  preinstall/install/postinstall/prepare scripts (VET-JS lifecycle).
+- `high_entropy_strings` -- string literals whose Shannon entropy exceeds
+  the baseline, i.e. likely base64/hex/packed payloads.
+- `invisible_text_signal` -- true if the text contains a Unicode bidi
+  override, zero-width character, or non-leading BOM (Trojan Source).
+- `hex_identifier_ratio_signal` -- true when `_0x...`-style identifiers
+  dominate the identifier population (obfuscator.io's default rename).
+- `scan_text_obfuscation` -- all obfuscation signal names present in one
+  text blob (empty tuple means clean).
+- `scan_directory_obfuscation` -- union of obfuscation signals across every
+  text-ish file under a source tree.
+- `load_vet_config` -- reads `frob.toml`'s `[vet]`/`[vet.allow]` tables;
+  a missing table means advisory-only mode.
+- `damerau_levenshtein` -- OSA edit distance (insert/delete/substitute/
+  transpose) between two names.
+- `find_typosquat` -- the popular-package name a given name is a likely
+  typosquat of, or `None`.
+- `OsvAdvisory` -- one osv-scanner advisory finding (id, package, version,
+  fixed version if known).
+- `is_available` -- whether the `osv-scanner` binary is resolvable on PATH.
+- `run_osv_scan` -- advisories for a lockfile via osv-scanner, or `None`
+  when the adapter is absent/failed (never treated as "no findings").
+- `RegistryResult` -- outcome of a publish-date lookup; `ok=False` means
+  "could not verify" (never a hard failure offline).
+- `fetch_publish_date` -- the publish timestamp for `name@version` from
+  the ecosystem registry, cached 24h.
+- `locate_pypi_source` -- a local directory containing a Python
+  dependency's source, checked across venv and uv/pip caches.
+- `locate_npm_source` -- a local directory containing a JS/TS dependency's
+  source under `node_modules/`.
+- `locate_cargo_source` -- a local directory containing a Rust
+  dependency's source under `~/.cargo/registry/src`.
+- `locate_source` -- dispatches to the ecosystem-appropriate local-cache
+  source locator.
+
 ```python
-# frob/vet/__init__.py
-def scan_tree(root: Path, cfg: VetConfig) -> Result[VetReport, VetError]
-def capability_diff(prev: PackageVerdict, cur: PackageVerdict) -> tuple[str, ...]
+# frob/vet/_models.py
+class Dependency(BaseModel):       # frozen
+    ecosystem: str
+    name: str
+    version: str
+    resolved: str = ""             # non-registry URL, when the lockfile records one
 
 class PackageVerdict(BaseModel):   # frozen; content-addressed by hash
     name: str
     version: str
-    artifact_hash: str
-    capabilities: frozenset[str]
-    signals: tuple[str, ...]       # obfuscation/install-hook details
+    ecosystem: str
+    artifact_hash: str = ""
+    capabilities: frozenset[str] = frozenset()
+    signals: tuple[str, ...] = ()
 
 class VetReport(BaseModel):        # frozen
-    verdicts: tuple[PackageVerdict, ...]
-    violations: tuple[Violation, ...]   # VET001..VET006, gate-shaped
+    verdicts: tuple[PackageVerdict, ...] = ()
+    violations: tuple[Violation, ...] = ()   # VET001..VET006, gate-shaped
+    enforce: bool = False
+    advisory_only: bool = False
+    skipped: tuple[str, ...] = ()
+
+def capability_diff(prev: PackageVerdict, cur: PackageVerdict) -> tuple[str, ...]
+
+class HookVerdict(BaseModel):      # frozen
+    package: str
+    ecosystem: str
+    verdict: str
+    message: str
+    blocked: bool
+
+class VetConfig(BaseModel):        # frozen
+    present: bool = False
+    enforce: bool = False
+    osv: bool = False
+    quarantine_days: int = 14
+    registry_base_url: str | None = None
+    allow: Mapping[str, tuple[str, ...] | bool] = {}
+
+class HookAction(StrEnum):
+    INSTALL = "install"
+    IGNORE = "ignore"
 
 class VetError(ErrorSet):
     LockfileUnsupported = "No parser for this lockfile format"
     SourceUnavailable   = "Package source not in local caches; rerun with --fetch"
     CacheCorrupt        = "vet cache unreadable; delete .frob/vet.db to rebuild"
+    ConfigMalformed     = "frob.toml [vet]/[vet.allow] table is malformed"
+
+# frob/vet/_ecosystem.py
+def python_rules(dep: Dependency, source_dir: Path, lockfile_name: str) -> list[Violation]
+def rust_rules(dep: Dependency, source_dir: Path, lockfile_name: str) -> list[Violation]
+def npm_non_registry_rule(dep: Dependency, lockfile_name: str) -> Violation | None
+
+# frob/vet/_cache.py
+def store_verdict(db_path: Path, verdict: PackageVerdict) -> None
+def latest_verdict(db_path: Path, ecosystem: str, name: str) -> PackageVerdict | None
+
+# frob/vet/_hook.py
+def parse_hook_command(command: str) -> tuple[str, tuple[tuple[str, str], ...]] | None
+def check_package(ecosystem: str, name: str, version: str, *, root: Path) -> HookVerdict
+
+# frob/vet/_lockfile.py
+def find_lockfile(root: Path) -> Path | None
+def parse_lockfile(path: Path) -> Result[tuple[Dependency, ...], VetError]
+
+# frob/vet/_capability.py
+def language_for(path: Path) -> str | None
+def scan_file_capabilities(path: Path) -> frozenset[str]
+def decode_to_exec_signal(path: Path) -> bool
+def scan_directory_capabilities(source_dir: Path, *, max_files: int = 500) -> tuple[frozenset[str], bool]
+
+# frob/vet/_scan.py
+def scan_tree(root: Path, *, fetch: bool = True) -> Result[VetReport, VetError]
+
+# frob/vet/_lifecycle.py
+def scan_lifecycle_scripts(root: Path) -> dict[str, tuple[str, ...]]
+
+# frob/vet/_obfuscation.py
+def high_entropy_strings(text: str) -> tuple[str, ...]
+def invisible_text_signal(text: str) -> bool
+def hex_identifier_ratio_signal(text: str) -> bool
+def scan_text_obfuscation(text: str) -> tuple[str, ...]
+def scan_directory_obfuscation(source_dir: Path, *, max_files: int = 500) -> tuple[str, ...]
+
+# frob/vet/_allow.py
+def load_vet_config(root: Path) -> VetConfig
+
+# frob/vet/_typosquat.py
+def damerau_levenshtein(a: str, b: str) -> int
+def find_typosquat(ecosystem: str, name: str) -> str | None
+
+# frob/vet/_osv.py
+class OsvAdvisory:
+    advisory_id: str
+    package: str
+    version: str
+    fixed_version: str | None
+
+def is_available() -> bool
+def run_osv_scan(lockfile: Path) -> tuple[OsvAdvisory, ...] | None
+
+# frob/vet/_registry.py
+class RegistryResult(BaseModel):   # frozen
+    ok: bool
+    published_at: datetime | None = None
+    resolved_version: str | None = None
+    note: str = ""
+
+def fetch_publish_date(
+    ecosystem: str, name: str, version: str, *,
+    cache_path: Path, base_url: str | None = None, timeout_s: float = 5.0,
+) -> RegistryResult
+
+# frob/vet/_source.py
+def locate_pypi_source(root: Path, name: str, version: str) -> Path | None
+def locate_npm_source(root: Path, name: str) -> Path | None
+def locate_cargo_source(name: str, version: str) -> Path | None
+def locate_source(root: Path, ecosystem: str, name: str, version: str) -> Path | None
 ```
 
 ## Sequencing and integration

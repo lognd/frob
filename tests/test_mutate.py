@@ -2,9 +2,16 @@
 
 from __future__ import annotations
 
+import ast
 from pathlib import Path
 
-from frob.mutate import MutateError, generate_mutants, run_mutations
+from frob.mutate import (
+    MutateError,
+    MutationResult,
+    _Mutator,
+    generate_mutants,
+    run_mutations,
+)
 
 
 def test_generate_mutants_covers_operators():
@@ -27,7 +34,9 @@ def test_generate_mutants_syntax_error_is_err():
 
 def test_run_mutations_survivors_when_tests_weak(tmp_path):
     # frob:tests src/frob/mutate/__init__.py::run_mutations
-    (tmp_path / "m.py").write_text("def add(a, b):\n    return a + b\n", encoding="utf-8")
+    (tmp_path / "m.py").write_text(
+        "def add(a, b):\n    return a + b\n", encoding="utf-8"
+    )
     # a test that never asserts the result -> mutants survive
     (tmp_path / "t.py").write_text(
         "import m\ndef test_add():\n    m.add(1, 2)\n", encoding="utf-8"
@@ -44,7 +53,9 @@ def test_run_mutations_survivors_when_tests_weak(tmp_path):
 
 
 def test_run_mutations_all_killed_by_strong_test(tmp_path):
-    (tmp_path / "m.py").write_text("def add(a, b):\n    return a + b\n", encoding="utf-8")
+    (tmp_path / "m.py").write_text(
+        "def add(a, b):\n    return a + b\n", encoding="utf-8"
+    )
     (tmp_path / "t.py").write_text(
         "import m\n"
         "def test_add():\n"
@@ -64,3 +75,43 @@ def test_run_mutations_missing_file(tmp_path):
     result = run_mutations(tmp_path, Path("nope.py"), ("true",))
     assert result.is_err
     assert result.danger_err == MutateError.NoSource
+
+
+def test_mutation_result_score():
+    # frob:tests src/frob/mutate/__init__.py::MutationResult.score kind="unit"
+    assert MutationResult(total=0, killed=0, survivors=()).score == 1.0
+    assert MutationResult(total=4, killed=3, survivors=()).score == 0.75
+    assert MutationResult(total=2, killed=0, survivors=()).score == 0.0
+
+
+def _mutate_single(source: str, index: int) -> str:
+    tree = ast.parse(source)
+    mutator = _Mutator(index)
+    mutator.visit(tree)
+    assert mutator.applied is not None
+    ast.fix_missing_locations(tree)
+    return ast.unparse(tree)
+
+
+def test_mutator_visit_compare():
+    # frob:tests src/frob/mutate/__init__.py::_Mutator.visit_Compare kind="unit"
+    mutated = _mutate_single("a < b\n", 0)
+    assert "a >= b" in mutated
+
+
+def test_mutator_visit_bin_op():
+    # frob:tests src/frob/mutate/__init__.py::_Mutator.visit_BinOp kind="unit"
+    mutated = _mutate_single("a + b\n", 0)
+    assert "a - b" in mutated
+
+
+def test_mutator_visit_bool_op():
+    # frob:tests src/frob/mutate/__init__.py::_Mutator.visit_BoolOp kind="unit"
+    mutated = _mutate_single("a and b\n", 0)
+    assert "a or b" in mutated
+
+
+def test_mutator_visit_constant():
+    # frob:tests src/frob/mutate/__init__.py::_Mutator.visit_Constant kind="unit"
+    mutated = _mutate_single("x = True\n", 0)
+    assert "False" in mutated

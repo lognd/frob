@@ -21,6 +21,7 @@ from frob.vet._models import Dependency
 _log = get_logger(__name__)
 
 
+# frob:doc docs/vet.md#public-api
 def python_rules(
     dep: Dependency, source_dir: Path, lockfile_name: str
 ) -> list[Violation]:
@@ -90,6 +91,7 @@ def python_rules(
     return violations
 
 
+# frob:doc docs/vet.md#public-api
 def rust_rules(
     dep: Dependency, source_dir: Path, lockfile_name: str
 ) -> list[Violation]:
@@ -144,6 +146,7 @@ def rust_rules(
     return violations
 
 
+# frob:doc docs/vet.md#public-api
 def npm_non_registry_rule(dep: Dependency, lockfile_name: str) -> Violation | None:
     """VET-JS004: git/http/file dependency sources are declarable-only."""
     if not dep.resolved:

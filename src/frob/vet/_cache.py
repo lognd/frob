@@ -44,6 +44,7 @@ def _connect(db_path: Path) -> sqlite3.Connection | None:
         return None
 
 
+# frob:doc docs/vet.md#public-api
 def store_verdict(db_path: Path, verdict: PackageVerdict) -> None:
     """Persist `verdict`, content-addressed by (ecosystem, name, artifact_hash).
     Best-effort: a write failure is logged, never raised (the scan already
@@ -82,6 +83,7 @@ def store_verdict(db_path: Path, verdict: PackageVerdict) -> None:
         conn.close()
 
 
+# frob:doc docs/vet.md#public-api
 def latest_verdict(db_path: Path, ecosystem: str, name: str) -> PackageVerdict | None:
     """The most recently stored verdict for (ecosystem, name), any hash --
     used as the "previous version" baseline for VET003 escalation diffs."""

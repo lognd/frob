@@ -7,8 +7,10 @@ from pathlib import Path
 from frob.graph import build_graph
 from frob.release import (
     BumpClass,
+    ReleaseError,
     diff_class,
     load_manifest,
+    manifest_path,
     required_version,
     satisfies,
     stamp,
@@ -29,7 +31,9 @@ def test_stamp_and_no_change_is_none(tmp_path):
     _write(tmp_path, "def public(x: int) -> int:\n    return x\n")
     stamp(tmp_path, _snap(tmp_path), "1.0.0")
     assert load_manifest(tmp_path).danger_ok.version == "1.0.0"
-    assert diff_class(load_manifest(tmp_path).danger_ok, _snap(tmp_path)) == BumpClass.NONE
+    assert (
+        diff_class(load_manifest(tmp_path).danger_ok, _snap(tmp_path)) == BumpClass.NONE
+    )
 
 
 def test_new_public_symbol_is_minor(tmp_path):
@@ -37,7 +41,9 @@ def test_new_public_symbol_is_minor(tmp_path):
     _write(tmp_path, "def a(x: int) -> int:\n    return x\n")
     stamp(tmp_path, _snap(tmp_path), "1.0.0")
     manifest = load_manifest(tmp_path).danger_ok
-    _write(tmp_path, "def a(x: int) -> int:\n    return x\ndef b() -> int:\n    return 0\n")
+    _write(
+        tmp_path, "def a(x: int) -> int:\n    return x\ndef b() -> int:\n    return 0\n"
+    )
     (tmp_path / ".frob" / "cache.db").unlink()
     assert diff_class(manifest, _snap(tmp_path)) == BumpClass.MINOR
 
@@ -49,6 +55,27 @@ def test_changed_signature_is_major(tmp_path):
     _write(tmp_path, "def a(x: int, y: int) -> int:\n    return x + y\n")
     (tmp_path / ".frob" / "cache.db").unlink()
     assert diff_class(manifest, _snap(tmp_path)) == BumpClass.MAJOR
+
+
+def test_manifest_path_is_root_relative(tmp_path):
+    # frob:tests src/frob/release/__init__.py::manifest_path kind="unit"
+    assert manifest_path(tmp_path) == tmp_path / ".frob-release.json"
+
+
+def test_load_manifest_missing_is_no_manifest(tmp_path):
+    # frob:tests src/frob/release/__init__.py::load_manifest kind="unit"
+    result = load_manifest(tmp_path)
+    assert result.is_err
+    assert result.danger_err == ReleaseError.NoManifest
+
+
+def test_load_manifest_reads_stamped_version(tmp_path):
+    # frob:tests src/frob/release/__init__.py::load_manifest kind="unit"
+    _write(tmp_path, "def public(x: int) -> int:\n    return x\n")
+    stamp(tmp_path, _snap(tmp_path), "1.0.0")
+    manifest = load_manifest(tmp_path).danger_ok
+    assert manifest.version == "1.0.0"
+    assert any("public" in ref for ref in manifest.api)
 
 
 def test_required_version_and_satisfies():

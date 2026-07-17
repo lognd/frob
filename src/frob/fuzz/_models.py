@@ -22,6 +22,7 @@ __all__ = [
 ]
 
 
+# frob:doc docs/fuzz.md#public-api
 class FuzzEnforce(StrEnum):
     """The `[fuzz].enforce` obligation scope: which symbols owe a fuzz test."""
 
@@ -30,6 +31,7 @@ class FuzzEnforce(StrEnum):
     PUBLIC = "public"
 
 
+# frob:doc docs/fuzz.md#public-api
 class FuzzObligation(BaseModel):
     """One symbol's fuzz debt: which ref owes a test and why it is obligated."""
 
@@ -39,6 +41,7 @@ class FuzzObligation(BaseModel):
     reason: str
 
 
+# frob:doc docs/fuzz.md#public-api
 class FuzzResult(BaseModel):
     """One completed fuzz run: examples exercised and the minimal counterexample."""
 
@@ -50,6 +53,7 @@ class FuzzResult(BaseModel):
     falsified: str | None = None
 
 
+# frob:doc docs/fuzz.md#public-api
 class FuzzPolicy(BaseModel):
     """The `[fuzz]` table: obligation scope, per-run budget, rejection ceiling."""
 
@@ -60,6 +64,7 @@ class FuzzPolicy(BaseModel):
     max_reject_rate: float = 0.99
 
 
+# frob:doc docs/fuzz.md#public-api
 class FuzzError(ErrorSet):
     """Failure values `resolve`/`run_fuzz`/`stamp_fuzz` can return."""
 

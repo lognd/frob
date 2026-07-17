@@ -34,6 +34,7 @@ _MANIFEST_NAME = ".frob-release.json"
 _VERSION_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)")
 
 
+# frob:doc docs/release.md#public-api
 class BumpClass(IntEnum):
     """The semver change class implied by a public-API diff (ordered)."""
 
@@ -43,6 +44,7 @@ class BumpClass(IntEnum):
     MAJOR = 3
 
 
+# frob:doc docs/release.md#public-api
 class ReleaseManifest(BaseModel):
     """The public API digest snapshot recorded at a release (tracked file)."""
 
@@ -53,6 +55,7 @@ class ReleaseManifest(BaseModel):
     api: dict[str, str]
 
 
+# frob:doc docs/release.md#public-api
 class ReleaseError(ErrorSet):
     """Fallible outcomes of release operations."""
 
@@ -77,11 +80,13 @@ def _is_test_or_private_path(path: str) -> bool:
     return "tests" in parts or name.startswith("test_") or name.endswith("_test.py")
 
 
+# frob:doc docs/release.md#public-api
 def manifest_path(root: Path) -> Path:
     """The tracked `.frob-release.json` path at the repo root."""
     return root / _MANIFEST_NAME
 
 
+# frob:doc docs/release.md#public-api
 def load_manifest(root: Path) -> Result[ReleaseManifest, ReleaseError]:
     """Read the release manifest, or Err(NoManifest)/Err(Malformed)."""
     path = manifest_path(root)
@@ -95,6 +100,7 @@ def load_manifest(root: Path) -> Result[ReleaseManifest, ReleaseError]:
         return Err(ReleaseError.Malformed)
 
 
+# frob:doc docs/release.md#public-api
 def stamp(
     root: Path, snapshot: GraphSnapshot, version: str
 ) -> Result[str, ReleaseError]:
@@ -109,6 +115,7 @@ def stamp(
     return Ok(version)
 
 
+# frob:doc docs/release.md#public-api
 def diff_class(manifest: ReleaseManifest, snapshot: GraphSnapshot) -> BumpClass:
     """The semver bump class implied by the current API vs the manifest."""
     current = _public_api(snapshot)
@@ -131,6 +138,7 @@ def _parse(version: str) -> tuple[int, int, int] | None:
     return (int(match.group(1)), int(match.group(2)), int(match.group(3)))
 
 
+# frob:doc docs/release.md#public-api
 def required_version(previous: str, bump: BumpClass) -> Result[str, ReleaseError]:
     """The minimum acceptable version after a `bump`-class change."""
     parsed = _parse(previous)
@@ -146,6 +154,7 @@ def required_version(previous: str, bump: BumpClass) -> Result[str, ReleaseError
     return Ok(previous)
 
 
+# frob:doc docs/release.md#public-api
 def satisfies(current: str, minimum: str) -> bool:
     """True if `current` >= `minimum` by (major, minor, patch) ordering."""
     c, m = _parse(current), _parse(minimum)

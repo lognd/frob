@@ -27,6 +27,7 @@ _LOCKFILE_NAMES = (
 )
 
 
+# frob:doc docs/vet.md#public-api
 def find_lockfile(root: Path) -> Path | None:
     """The first supported lockfile found directly under `root`, or `None`."""
     for name in _LOCKFILE_NAMES:
@@ -37,6 +38,7 @@ def find_lockfile(root: Path) -> Path | None:
     return None
 
 
+# frob:doc docs/vet.md#public-api
 def parse_lockfile(path: Path) -> Result[tuple[Dependency, ...], VetError]:
     """Dispatch to the parser matching `path`'s filename; Err on unsupported."""
     name = path.name

@@ -14,6 +14,7 @@ _log = get_logger(__name__)
 _LIFECYCLE_SCRIPTS = ("preinstall", "install", "postinstall", "prepare")
 
 
+# frob:doc docs/vet.md#public-api
 def scan_lifecycle_scripts(root: Path) -> dict[str, tuple[str, ...]]:
     """`{package_name: (script_name, ...)}` for every node_modules package.json
     declaring a lifecycle script. Empty dict (with a log note) if no node_modules."""

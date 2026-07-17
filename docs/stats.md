@@ -22,3 +22,21 @@ Output covers:
 Deliberately not a gate: DORA-style metrics diagnose, they do not enforce.
 Lead-time-to-close is not yet reported because tickets record a created
 date but not a close timestamp -- a future ticket adds close-time capture.
+
+## Public API
+
+<!-- frob:describes src/frob/stats/__init__.py::TicketStats -->
+<!-- frob:describes src/frob/stats/__init__.py::CommitStats -->
+<!-- frob:describes src/frob/stats/__init__.py::StatsReport -->
+<!-- frob:describes src/frob/stats/__init__.py::ticket_stats -->
+<!-- frob:describes src/frob/stats/__init__.py::commit_stats -->
+<!-- frob:describes src/frob/stats/__init__.py::collect -->
+
+```python
+class TicketStats(BaseModel)      # queue-health snapshot: state/kind counts, doable/blocked, failure entries
+class CommitStats(BaseModel)      # commit cadence over a window, by conventional-commit type
+class StatsReport(BaseModel)      # combined delivery snapshot rendered by `frob stats`
+def ticket_stats(queue) -> TicketStats
+def commit_stats(root, window_days=30) -> Result[CommitStats, GitError]
+def collect(root, window_days=30) -> Result[StatsReport, GitError]
+```

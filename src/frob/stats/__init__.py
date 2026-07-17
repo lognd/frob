@@ -25,6 +25,7 @@ _CONVENTIONAL_RE = re.compile(r"^([a-z]+)(\([^)]*\))?!?:")
 _FAILURE_LINE_RE = re.compile(r"^- \d{4}-\d{2}-\d{2} attempt \d+:", re.MULTILINE)
 
 
+# frob:doc docs/stats.md#public-api
 class TicketStats(BaseModel):
     """Queue-health snapshot: state/kind counts and work-in-flight signals."""
 
@@ -38,6 +39,7 @@ class TicketStats(BaseModel):
     failure_entries: int
 
 
+# frob:doc docs/stats.md#public-api
 class CommitStats(BaseModel):
     """Commit cadence over a recent window, by conventional-commit type."""
 
@@ -49,6 +51,7 @@ class CommitStats(BaseModel):
     by_type: dict[str, int]
 
 
+# frob:doc docs/stats.md#public-api
 class StatsReport(BaseModel):
     """The combined delivery snapshot rendered by `frob stats`."""
 
@@ -58,6 +61,7 @@ class StatsReport(BaseModel):
     commits: CommitStats
 
 
+# frob:doc docs/stats.md#public-api
 def ticket_stats(queue: TicketQueue) -> TicketStats:
     """Compute queue-health counts from a loaded ticket queue (pure)."""
     tickets = list(queue.tickets.values())
@@ -95,6 +99,7 @@ def ticket_stats(queue: TicketQueue) -> TicketStats:
     )
 
 
+# frob:doc docs/stats.md#public-api
 def commit_stats(root: Path, window_days: int = 30) -> Result[CommitStats, GitError]:
     """Count commits in the last `window_days` by conventional-commit type."""
     spawned = run_argv(
@@ -131,6 +136,7 @@ def commit_stats(root: Path, window_days: int = 30) -> Result[CommitStats, GitEr
     )
 
 
+# frob:doc docs/stats.md#public-api
 def collect(root: Path, window_days: int = 30) -> Result[StatsReport, GitError]:
     """The full `frob stats` report: queue health + commit cadence."""
     queue_result = load_queue(root)

@@ -11,6 +11,7 @@ _log = get_logger(__name__)
 _MAX_DISTANCE = 1
 
 
+# frob:doc docs/vet.md#public-api
 def damerau_levenshtein(a: str, b: str) -> int:
     """Edit distance allowing insert/delete/substitute/transpose (OSA variant)."""
     la, lb = len(a), len(b)
@@ -32,6 +33,7 @@ def damerau_levenshtein(a: str, b: str) -> int:
     return d[la][lb]
 
 
+# frob:doc docs/vet.md#public-api
 def find_typosquat(ecosystem: str, name: str) -> str | None:
     """The popular-list name `name` is a likely typosquat of, or `None`."""
     popular = ECOSYSTEM_POPULAR.get(ecosystem)
