@@ -13,7 +13,7 @@ _log = get_logger(__name__)
 # frob:doc docs/app.md#runners
 def run(cfg: AppConfig) -> None:
     cmd = cfg.scaffold_command
-    if cmd == "list" or cmd is None:
+    if cmd in ("list", None):
         for t in list_project_types():
             _log.info(t)
         return

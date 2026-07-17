@@ -73,6 +73,176 @@ def _enclosing_class_symref(symbol: SymbolRecord) -> str | None:
     return f"{symbol.id.path}::{parent}"
 
 
+def _touched_symbols(
+    snapshot: GraphSnapshot, hunks_by_file: dict[str, list[Hunk]]
+) -> set[str]:
+    """Symrefs whose span overlaps a changed hunk in the same file."""
+    touched: set[str] = set()
+    for symbol in snapshot.symbols.values():
+        for hunk in hunks_by_file.get(symbol.id.path, ()):
+            if _overlaps(hunk.span, symbol.span):
+                touched.add(symbol.symref)
+                break
+    return touched
+
+
+def _ripple_symbols(snapshot: GraphSnapshot, touched_symbols: set[str]) -> set[str]:
+    """Symbols that depend (via `uses-contract`) on a touched symbol."""
+    ripple: set[str] = set()
+    for edge in snapshot.edges:
+        if edge.kind == EdgeKind.USES_CONTRACT and edge.target in touched_symbols:
+            ripple.add(edge.src)
+    return ripple
+
+
+def _add_selected(selected: dict[str, set[str]], edge_src: str) -> None:
+    """Group `edge_src` (a test's own symref/file) under its own language."""
+    file_part = edge_src.split("::", 1)[0]
+    language = extension_language(file_part)
+    if language is None:
+        _log.warning("select_tests: no language for test src %r", edge_src)
+        return
+    selected.setdefault(language, set()).add(edge_src)
+
+
+def _matches_enclosing(
+    all_touched: set[str], enclosing_by_symref: dict[str, str | None], target: str
+) -> bool:
+    """Whether `target` is the enclosing class of any touched symbol."""
+    return any(enclosing_by_symref.get(symref) == target for symref in all_touched)
+
+
+def _test_edge_matches(
+    edge,
+    all_touched: set[str],
+    enclosing_by_symref: dict[str, str | None],
+    files_of_touched: set[str],
+    touched_files: set[str],
+) -> bool:
+    """Whether a TESTS edge's target is implicated by the touched set."""
+    target = edge.target
+    if target in all_touched or _matches_enclosing(
+        all_touched, enclosing_by_symref, target
+    ):
+        return True
+    if "::" in target:
+        return False
+    if target in files_of_touched or target in touched_files:
+        return True
+    prefix = target.rstrip("/") + "/"
+    return any(f.startswith(prefix) for f in files_of_touched | touched_files)
+
+
+def _select_from_edges(
+    snapshot: GraphSnapshot,
+    all_touched: set[str],
+    enclosing_by_symref: dict[str, str | None],
+    files_of_touched: set[str],
+    touched_files: set[str],
+) -> tuple[dict[str, set[str]], set[str]]:
+    """Selection and bound-file set from TESTS edges plus touched test files."""
+    selected: dict[str, set[str]] = {}
+    bound_files: set[str] = set()
+    for edge in snapshot.edges:
+        if edge.kind != EdgeKind.TESTS:
+            continue
+        if _test_edge_matches(
+            edge, all_touched, enclosing_by_symref, files_of_touched, touched_files
+        ):
+            _add_selected(selected, edge.src)
+            bound_files.update(files_of_touched)
+    for file in touched_files:
+        if _is_test_file(file):
+            _add_selected(selected, file)
+            bound_files.add(file)
+    return selected, bound_files
+
+
+def _file_has_selected_test(
+    snapshot: GraphSnapshot, file: str, all_touched: set[str]
+) -> bool:
+    """Whether any TESTS edge already selects `file` directly or by prefix."""
+    return any(
+        edge.kind == EdgeKind.TESTS
+        and (
+            edge.target in all_touched
+            or edge.target == file
+            or file.startswith(edge.target.rstrip("/") + "/")
+        )
+        for edge in snapshot.edges
+    )
+
+
+def _apply_fallback(
+    cfg: SelectConfig, file: str, language: str, selected: dict[str, set[str]]
+) -> None:
+    """Add the configured fallback selection for an unbound `file`."""
+    if cfg.fallback == "package":
+        package = str(PurePosixPath(file).parent)
+        selected.setdefault(language, set()).add(package)
+        _log.info("select_tests: fallback=package for %s -> %s", file, package)
+    elif cfg.fallback == "suite":
+        selected.setdefault(language, set()).add(ALL_SENTINEL)
+        _log.info("select_tests: fallback=suite for %s -> all_command", file)
+    elif cfg.fallback == "warn":
+        _log.warning("select_tests: unbound file %s, fallback=warn (skipped)", file)
+    else:
+        _log.warning("select_tests: unknown fallback mode %r", cfg.fallback)
+
+
+def _collect_unbound(
+    snapshot: GraphSnapshot,
+    cfg: SelectConfig,
+    touched_files: set[str],
+    bound_files: set[str],
+    all_touched: set[str],
+    selected: dict[str, set[str]],
+) -> list[str]:
+    """Unbound touched files, applying the fallback policy for each."""
+    ordered_files = sorted(touched_files)
+    unbound: list[str] = []
+    for file in ordered_files:
+        if file in bound_files or _is_test_file(file):
+            continue
+        if _file_has_selected_test(snapshot, file, all_touched):
+            continue
+        unbound.append(file)
+        language = extension_language(file)
+        if language is None:
+            _log.warning("select_tests: unbound file %r has unknown language", file)
+            continue
+        _apply_fallback(cfg, file, language, selected)
+    return unbound
+
+
+def _build_report(
+    all_touched: set[str],
+    touched_files: set[str],
+    selected: dict[str, set[str]],
+    ripple: set[str],
+    unbound: list[str],
+    fallback: str,
+) -> SelectionReport:
+    """Assemble the final `SelectionReport` with deterministic ordering."""
+    touched = tuple(sorted(all_touched | touched_files))
+    ripple_sorted = tuple(sorted(ripple))
+    selected_sorted = {lang: tuple(sorted(ids)) for lang, ids in selected.items()}
+    _log.info(
+        "select_tests: touched=%d ripple=%d selected_langs=%d unbound=%d",
+        len(touched),
+        len(ripple),
+        len(selected),
+        len(unbound),
+    )
+    return SelectionReport(
+        touched=touched,
+        selected=selected_sorted,
+        ripple=ripple_sorted,
+        unbound=tuple(unbound),
+        fallback=fallback,
+    )
+
+
 # frob:doc docs/testing.md#public-api
 def select_tests(
     snapshot: GraphSnapshot, diff: Diff, cfg: SelectConfig
@@ -81,120 +251,32 @@ def select_tests(
     hunks_by_file: dict[str, list[Hunk]] = {}
     for hunk in diff.hunks:
         hunks_by_file.setdefault(hunk.file, []).append(hunk)
-
     touched_files = set(hunks_by_file)
 
-    touched_symbols: set[str] = set()
-    for symbol in snapshot.symbols.values():
-        for hunk in hunks_by_file.get(symbol.id.path, ()):
-            if _overlaps(hunk.span, symbol.span):
-                touched_symbols.add(symbol.symref)
-                break
-
-    ripple: set[str] = set()
-    for edge in snapshot.edges:
-        if edge.kind == EdgeKind.USES_CONTRACT and edge.target in touched_symbols:
-            ripple.add(edge.src)
-    all_touched_symbols = touched_symbols | ripple
+    touched_symbols = _touched_symbols(snapshot, hunks_by_file)
+    ripple = _ripple_symbols(snapshot, touched_symbols)
+    all_touched = touched_symbols | ripple
 
     enclosing_by_symref = {
         symref: _enclosing_class_symref(snapshot.symbols[symref])
-        for symref in all_touched_symbols
+        for symref in all_touched
         if symref in snapshot.symbols
     }
-    files_of_touched_symbols = {
+    files_of_touched = {
         snapshot.symbols[symref].id.path
-        for symref in all_touched_symbols
+        for symref in all_touched
         if symref in snapshot.symbols
     }
 
-    selected: dict[str, set[str]] = {}
-    bound_files: set[str] = set()
-
-    def _add_selected(edge_src: str) -> None:
-        """Group `edge_src` (a test's own symref/file) under its own language."""
-        file_part = edge_src.split("::", 1)[0]
-        language = extension_language(file_part)
-        if language is None:
-            _log.warning("select_tests: no language for test src %r", edge_src)
-            return
-        selected.setdefault(language, set()).add(edge_src)
-
-    for edge in snapshot.edges:
-        if edge.kind != EdgeKind.TESTS:
-            continue
-        target = edge.target
-        matched = target in all_touched_symbols
-        if not matched:
-            matched = any(
-                enclosing_by_symref.get(symref) == target
-                for symref in all_touched_symbols
-            )
-        if not matched and "::" not in target:
-            if target in files_of_touched_symbols or target in touched_files:
-                matched = True
-            elif any(
-                file.startswith(target.rstrip("/") + "/")
-                for file in files_of_touched_symbols | touched_files
-            ):
-                matched = True
-        if matched:
-            _add_selected(edge.src)
-            bound_files.update(files_of_touched_symbols)
-
-    for file in touched_files:
-        if _is_test_file(file):
-            _add_selected(file)
-            bound_files.add(file)
-
-    unbound: list[str] = []
-    for file in sorted(touched_files):
-        if file in bound_files or _is_test_file(file):
-            continue
-        has_selected = any(
-            edge.kind == EdgeKind.TESTS
-            and (
-                edge.target in all_touched_symbols
-                or edge.target == file
-                or file.startswith(edge.target.rstrip("/") + "/")
-            )
-            for edge in snapshot.edges
-        )
-        if has_selected:
-            continue
-        unbound.append(file)
-        language = extension_language(file)
-        if language is None:
-            _log.warning("select_tests: unbound file %r has unknown language", file)
-            continue
-        if cfg.fallback == "package":
-            package = str(PurePosixPath(file).parent)
-            selected.setdefault(language, set()).add(package)
-            _log.info("select_tests: fallback=package for %s -> %s", file, package)
-        elif cfg.fallback == "suite":
-            selected.setdefault(language, set()).add(ALL_SENTINEL)
-            _log.info("select_tests: fallback=suite for %s -> all_command", file)
-        elif cfg.fallback == "warn":
-            _log.warning("select_tests: unbound file %s, fallback=warn (skipped)", file)
-        else:
-            _log.warning("select_tests: unknown fallback mode %r", cfg.fallback)
-
-    touched = tuple(sorted(all_touched_symbols | touched_files))
-    report = SelectionReport(
-        touched=touched,
-        selected={lang: tuple(sorted(ids)) for lang, ids in selected.items()},
-        ripple=tuple(sorted(ripple)),
-        unbound=tuple(unbound),
-        fallback=cfg.fallback,
+    selected, bound_files = _select_from_edges(
+        snapshot, all_touched, enclosing_by_symref, files_of_touched, touched_files
     )
-    _log.info(
-        "select_tests: touched=%d ripple=%d selected_langs=%d unbound=%d",
-        len(touched),
-        len(ripple),
-        len(selected),
-        len(unbound),
+    unbound = _collect_unbound(
+        snapshot, cfg, touched_files, bound_files, all_touched, selected
     )
-    return report
+    return _build_report(
+        all_touched, touched_files, selected, ripple, unbound, cfg.fallback
+    )
 
 
 __all__ = ["ALL_SENTINEL", "extension_language", "select_tests"]

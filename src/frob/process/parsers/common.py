@@ -15,6 +15,42 @@ from pydantic import BaseModel
 Severity = Literal["error", "warning", "note", "info"]
 
 
+# frob:ticket T-0045
+def _count_severities(diagnostics: list[Diagnostic]) -> tuple[int, int]:
+    """`(error_count, warning_count)` over `diagnostics` in a single pass."""
+    errors = 0
+    warnings = 0
+    for d in diagnostics:
+        if d.severity == "error":
+            errors += 1
+        elif d.severity == "warning":
+            warnings += 1
+    return errors, warnings
+
+
+# frob:doc docs/process.md#public-api
+# frob:ticket T-0045
+def summarize_severity(
+    diagnostics: list[Diagnostic],
+    *,
+    empty: str = "no issues",
+    collapse_errorless: bool = False,
+) -> str:
+    """One-line `N errors, M warnings` summary shared by every tool parser.
+
+    `empty` is returned when there are no diagnostics at all. When
+    `collapse_errorless` is set and there are no errors, only the warning
+    count is shown (the format ruff-json/clang-tidy/cargo use); otherwise
+    both counts always appear.
+    """
+    errors, warnings = _count_severities(diagnostics)
+    if not errors and not warnings:
+        return empty
+    if collapse_errorless and not errors:
+        return f"{warnings} warnings"
+    return f"{errors} errors, {warnings} warnings"
+
+
 # frob:doc docs/process.md#public-api
 class Diagnostic(BaseModel):
     """A single actionable item from a tool: a linter warning, type error, etc."""
@@ -93,6 +129,51 @@ class ToolResult(BaseModel):
         """Test cases that neither passed nor were skipped."""
         return [t for t in self.tests if not t.passed and not t.skipped]
 
+    def _partition_diagnostics(
+        self,
+    ) -> tuple[list[Diagnostic], list[Diagnostic], list[Diagnostic]]:
+        """Split diagnostics into (errors, warnings, notes) in one pass."""
+        errors: list[Diagnostic] = []
+        warnings: list[Diagnostic] = []
+        notes: list[Diagnostic] = []
+        for d in self.diagnostics:
+            if d.severity == "error":
+                errors.append(d)
+            elif d.severity == "warning":
+                warnings.append(d)
+            else:
+                notes.append(d)
+        return errors, warnings, notes
+
+    def _render_diagnostics(self, verbose: bool) -> list[str]:
+        """Rendered diagnostic lines: errors, then warnings, then notes."""
+        errors, warnings, notes = self._partition_diagnostics()
+        lines = [f"  error   {d.as_text()}" for d in errors]
+        lines += [f"  warn    {d.as_text()}" for d in warnings]
+        if verbose:
+            lines += [f"  note    {d.as_text()}" for d in notes]
+        return lines
+
+    def _render_tests(self, verbose: bool) -> list[str]:
+        """Rendered test lines: failures (with optional traceback), then passes."""
+        lines: list[str] = []
+        for t in self.failed_tests:
+            loc = f"{t.suite}.{t.name}" if t.suite else t.name
+            msg = f": {t.failure_message}" if t.failure_message else ""
+            lines.append(f"  FAIL    {loc}{msg}")
+            if verbose and t.failure_text:
+                lines += [
+                    f"          {line}"
+                    for line in (t.failure_text or "").splitlines()[:5]
+                ]
+        if verbose:
+            lines += [
+                f"  pass    {t.suite}.{t.name}" if t.suite else f"  pass    {t.name}"
+                for t in self.tests
+                if t.passed
+            ]
+        return lines
+
     def as_text(self, verbose: bool = False) -> str:
         # frob:doc docs/process.md#public-api
         """
@@ -100,38 +181,8 @@ class ToolResult(BaseModel):
         Failures always shown; passing items hidden unless verbose=True.
         """
         parts: list[str] = [f"[{self.tool}]  {self.summary}"]
-
-        # Diagnostics (errors first, then warnings)
-        errors = [d for d in self.diagnostics if d.severity == "error"]
-        warnings = [d for d in self.diagnostics if d.severity == "warning"]
-        notes = [d for d in self.diagnostics if d.severity not in ("error", "warning")]
-
-        for d in errors:
-            parts.append(f"  error   {d.as_text()}")
-        for d in warnings:
-            parts.append(f"  warn    {d.as_text()}")
-        if verbose:
-            for d in notes:
-                parts.append(f"  note    {d.as_text()}")
-
-        # Test cases
-        for t in self.failed_tests:
-            loc = f"{t.suite}.{t.name}" if t.suite else t.name
-            msg = f": {t.failure_message}" if t.failure_message else ""
-            parts.append(f"  FAIL    {loc}{msg}")
-            if verbose and t.failure_text:
-                for line in (t.failure_text or "").splitlines()[:5]:
-                    parts.append(f"          {line}")
-
-        if verbose:
-            for t in self.tests:
-                if t.passed:
-                    parts.append(
-                        f"  pass    {t.suite}.{t.name}"
-                        if t.suite
-                        else f"  pass    {t.name}"
-                    )
-
+        parts += self._render_diagnostics(verbose)
+        parts += self._render_tests(verbose)
         return "\n".join(parts)
 
     def as_json(self) -> str:

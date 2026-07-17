@@ -10,7 +10,26 @@ from __future__ import annotations
 
 import json
 
-from frob.process.parsers.common import Diagnostic, ToolResult
+from frob.process.parsers.common import Diagnostic, ToolResult, summarize_severity
+
+
+# frob:ticket T-0045
+def _diagnostics_for_entry(entry: dict) -> list[Diagnostic]:
+    """Diagnostics for one eslint per-file result object."""
+    file = entry.get("filePath")
+    out: list[Diagnostic] = []
+    for msg in entry.get("messages", []):
+        out.append(
+            Diagnostic(
+                file=file,
+                line=msg.get("line"),
+                col=msg.get("column"),
+                severity="error" if msg.get("severity") == 2 else "warning",
+                code=msg.get("ruleId"),
+                message=msg.get("message", ""),
+            )
+        )
+    return out
 
 
 # frob:doc docs/process.md#public-api
@@ -31,24 +50,9 @@ def parse_eslint(stdout: str, exit_code: int = 0) -> ToolResult:
 
     diagnostics: list[Diagnostic] = []
     for entry in files:
-        file = entry.get("filePath")
-        for msg in entry.get("messages", []):
-            diagnostics.append(
-                Diagnostic(
-                    file=file,
-                    line=msg.get("line"),
-                    col=msg.get("column"),
-                    severity="error" if msg.get("severity") == 2 else "warning",
-                    code=msg.get("ruleId"),
-                    message=msg.get("message", ""),
-                )
-            )
+        diagnostics.extend(_diagnostics_for_entry(entry))
 
-    errors = sum(1 for d in diagnostics if d.severity == "error")
-    warnings = sum(1 for d in diagnostics if d.severity == "warning")
-    summary = (
-        f"{errors} errors, {warnings} warnings" if errors or warnings else "no issues"
-    )
+    summary = summarize_severity(diagnostics)
 
     return ToolResult(
         tool="eslint",

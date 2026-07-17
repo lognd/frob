@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import re
 
-from frob.process.parsers.common import Diagnostic, ToolResult
+from frob.process.parsers.common import Diagnostic, ToolResult, summarize_severity
 
 _DIAG = re.compile(
     r"^(.*?):(\d+):(\d+):\s+(error|warning|note):\s+(.*?)(?:\s+\[([^\]]+)\])?$"
@@ -45,13 +45,7 @@ def parse_clang_tidy(stdout: str, exit_code: int = 0) -> ToolResult:
             )
         )
 
-    errors = sum(1 for d in diagnostics if d.severity == "error")
-    warnings = len(diagnostics) - errors
-    summary = (
-        f"{errors} errors, {warnings} warnings"
-        if errors
-        else (f"{warnings} warnings" if warnings else "no issues")
-    )
+    summary = summarize_severity(diagnostics, collapse_errorless=True)
     return ToolResult(
         tool="clang-tidy", exit_code=exit_code, diagnostics=diagnostics, summary=summary
     )

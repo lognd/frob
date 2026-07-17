@@ -76,9 +76,14 @@ def _apply_frob_toml_defaults(cfg: AppConfig, root: Path) -> AppConfig:
         if hasattr(cfg, field) and not getattr(cfg, field):
             updates[field] = True
     if updates:
-        _log.debug("check defaults from frob.toml: %s", sorted(updates))
+        _log_applied_defaults(updates)
         return cfg.model_copy(update=updates)
     return cfg
+
+
+def _log_applied_defaults(updates: dict) -> None:
+    """Debug-log which frob.toml check defaults were applied, in sorted order."""
+    _log.debug("check defaults from frob.toml: %s", sorted(updates))
 
 
 def _warn_if_polyglot(root: Path, chosen: str) -> None:
@@ -109,6 +114,51 @@ def _warn_if_polyglot(root: Path, chosen: str) -> None:
         )
 
 
+def _dispatch_check(cfg: AppConfig, root: Path, project_type: str):
+    """Run the language-appropriate check stack for `project_type`."""
+    if project_type == "cpp":
+        return run_check_cpp(
+            root,
+            build_dir=cfg.check_build_dir,
+            skip_build=cfg.check_skip_build,
+            skip_clang_tidy=cfg.check_skip_clang_tidy,
+            skip_clang_format=cfg.check_skip_clang_format,
+            skip_tests=cfg.check_skip_tests,
+            valgrind=cfg.check_valgrind,
+        )
+    if project_type == "rust":
+        return run_check_rust(
+            root,
+            skip_check=cfg.check_skip_cargo_check,
+            skip_clippy=cfg.check_skip_clippy,
+            skip_fmt=cfg.check_skip_fmt,
+            skip_tests=cfg.check_skip_tests,
+            valgrind=cfg.check_valgrind,
+        )
+    if project_type == "typescript":
+        return run_check_ts(
+            root,
+            skip_tsc=cfg.check_skip_tsc,
+            skip_eslint=cfg.check_skip_eslint,
+            skip_prettier=cfg.check_skip_prettier,
+            skip_tests=cfg.check_skip_tests,
+        )
+    return run_check(
+        root,
+        skip_ruff=cfg.check_skip_ruff,
+        skip_ty=cfg.check_skip_ty,
+        skip_arch=cfg.check_skip_arch,
+        skip_cycle=cfg.check_skip_cycle,
+        skip_dup=cfg.check_skip_dup,
+        skip_bind=cfg.check_skip_bind,
+        skip_exports=cfg.check_skip_exports,
+        skip_gates=cfg.check_skip_gates,
+        only=frozenset(cfg.check_only) if cfg.check_only else None,
+        ticket=cfg.check_ticket,
+        base=cfg.check_base,
+    )
+
+
 # frob:doc docs/app.md#runners
 def run(cfg: AppConfig) -> None:
     root = cfg.check_path or Path(".")
@@ -136,49 +186,7 @@ def run(cfg: AppConfig) -> None:
         if auto_detected:
             # frob:ticket T-0022
             _warn_if_polyglot(root, project_type)
-        if project_type == "cpp":
-            result = run_check_cpp(
-                root,
-                build_dir=cfg.check_build_dir,
-                skip_build=cfg.check_skip_build,
-                skip_clang_tidy=cfg.check_skip_clang_tidy,
-                skip_clang_format=cfg.check_skip_clang_format,
-                skip_tests=cfg.check_skip_tests,
-                valgrind=cfg.check_valgrind,
-            )
-        elif project_type == "rust":
-            result = run_check_rust(
-                root,
-                skip_check=cfg.check_skip_cargo_check,
-                skip_clippy=cfg.check_skip_clippy,
-                skip_fmt=cfg.check_skip_fmt,
-                skip_tests=cfg.check_skip_tests,
-                valgrind=cfg.check_valgrind,
-            )
-        elif project_type == "typescript":
-            result = run_check_ts(
-                root,
-                skip_tsc=cfg.check_skip_tsc,
-                skip_eslint=cfg.check_skip_eslint,
-                skip_prettier=cfg.check_skip_prettier,
-                skip_tests=cfg.check_skip_tests,
-            )
-        else:
-            # Python (default)
-            result = run_check(
-                root,
-                skip_ruff=cfg.check_skip_ruff,
-                skip_ty=cfg.check_skip_ty,
-                skip_arch=cfg.check_skip_arch,
-                skip_cycle=cfg.check_skip_cycle,
-                skip_dup=cfg.check_skip_dup,
-                skip_bind=cfg.check_skip_bind,
-                skip_exports=cfg.check_skip_exports,
-                skip_gates=cfg.check_skip_gates,
-                only=frozenset(cfg.check_only) if cfg.check_only else None,
-                ticket=cfg.check_ticket,
-                base=cfg.check_base,
-            )
+        result = _dispatch_check(cfg, root, project_type)
 
     if cfg.check_json:
         _log.info(result.as_json())

@@ -113,6 +113,19 @@ def _to_node_id(item: str) -> str:
     return f"{path}::{qualname.replace('.', '::')}"
 
 
+def _expand_placeholder(placeholder: str, items: tuple[str, ...]) -> list[str]:
+    """The argv fragment a single placeholder expands to for `items`."""
+    if placeholder == "{ids}":
+        return [_to_node_id(item) for item in items]
+    if placeholder == "{files}":
+        return list(items)
+    if placeholder == "{filters}":
+        return [" ".join(items)]
+    if placeholder == "{regex}":
+        return ["|".join(items)]
+    return []
+
+
 def _render_command(spec: RunnerSpec, items: tuple[str, ...]) -> tuple[str, ...] | None:
     """`spec.command` with its placeholder replaced by `items`, or `None` if invalid."""
     placeholder = _validate_placeholder(spec.command)
@@ -120,17 +133,10 @@ def _render_command(spec: RunnerSpec, items: tuple[str, ...]) -> tuple[str, ...]
         return None
     argv: list[str] = []
     for part in spec.command:
-        if part != placeholder:
+        if part == placeholder:
+            argv.extend(_expand_placeholder(placeholder, items))
+        else:
             argv.append(part)
-            continue
-        if placeholder in ("{ids}", "{files}"):
-            argv.extend(
-                _to_node_id(item) if placeholder == "{ids}" else item for item in items
-            )
-        elif placeholder == "{filters}":
-            argv.append(" ".join(items))
-        elif placeholder == "{regex}":
-            argv.append("|".join(items))
     return tuple(argv)
 
 

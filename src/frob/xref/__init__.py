@@ -116,17 +116,27 @@ def _collect_source_files(root: Path, lang: str | None) -> list[Path]:
     if root.is_file():
         return [root] if root.suffix.lower() in exts else []
 
+    candidates = sorted(root.rglob("*"))
     results: list[Path] = []
-    for path in sorted(root.rglob("*")):
-        if path.is_file() and path.suffix.lower() in exts:
-            # Use resolved parts to avoid false-positives from ".." traversal
-            try:
-                rel_parts = path.resolve().relative_to(root.resolve()).parts
-            except ValueError:
-                rel_parts = path.parts
-            if not any(p.startswith(".") or p == "__pycache__" for p in rel_parts):
-                results.append(path)
+    for path in candidates:
+        if not path.is_file() or path.suffix.lower() not in exts:
+            continue
+        if not _is_hidden(path, root):
+            results.append(path)
     return results
+
+
+def _is_hidden(path: Path, root: Path) -> bool:
+    """Whether any path component is dot-prefixed or `__pycache__`.
+
+    Uses resolved parts so `..` traversal cannot smuggle a hidden dir past
+    the filter.
+    """
+    try:
+        rel_parts = path.resolve().relative_to(root.resolve()).parts
+    except ValueError:
+        rel_parts = path.parts
+    return any(p.startswith(".") or p == "__pycache__" for p in rel_parts)
 
 
 _DEFINITION_KINDS = (SymbolKind.FUNCTION, SymbolKind.CLASS, SymbolKind.METHOD)
@@ -140,31 +150,45 @@ def _search_parsed(
     path: Path, symbol: str, rel: str
 ) -> tuple[Definition | None, list[Usage]]:
     src_lines = path.read_bytes().decode(errors="replace").splitlines()
-
-    definition: Definition | None = None
-    parsed_result = parse_file(path)
-    if parsed_result.is_ok:
-        for sym in _definition_symbols(parsed_result.danger_ok.symbols):
-            _, _, name = sym.qualname.rpartition(".")
-            if name == symbol:
-                definition = Definition(file=rel, line=sym.span[0])
-                break
-
-    usages: list[Usage] = []
-    ids_result = iter_identifiers(path)
-    if ids_result.is_ok:
-        def_line = definition.line if definition else None
-        for name, line in ids_result.danger_ok:
-            if name != symbol:
-                continue
-            if def_line is not None and line == def_line:
-                # Same line as the matching declaration -- almost certainly
-                # the declaration's own name token, not a usage of it.
-                continue
-            ctx = src_lines[line - 1] if line <= len(src_lines) else ""
-            usages.append(Usage(file=rel, line=line, context=ctx))
-
+    definition = _parsed_definition(path, symbol, rel)
+    usages = _parsed_usages(path, symbol, rel, src_lines, definition)
     return definition, usages
+
+
+def _parsed_definition(path: Path, symbol: str, rel: str) -> Definition | None:
+    """The first parsed definition of `symbol` in `path`, if any."""
+    parsed_result = parse_file(path)
+    if parsed_result.is_err:
+        return None
+    for sym in _definition_symbols(parsed_result.danger_ok.symbols):
+        _, _, name = sym.qualname.rpartition(".")
+        if name == symbol:
+            return Definition(file=rel, line=sym.span[0])
+    return None
+
+
+def _parsed_usages(
+    path: Path,
+    symbol: str,
+    rel: str,
+    src_lines: list[str],
+    definition: Definition | None,
+) -> list[Usage]:
+    """Identifier usages of `symbol` in `path`, excluding its declaration line."""
+    ids_result = iter_identifiers(path)
+    if ids_result.is_err:
+        return []
+    def_line = definition.line if definition else None
+    usages: list[Usage] = []
+    for name, line in ids_result.danger_ok:
+        if name != symbol:
+            continue
+        if def_line is not None and line == def_line:
+            # Same line as the declaration -- its own name token, not a usage.
+            continue
+        ctx = src_lines[line - 1] if line <= len(src_lines) else ""
+        usages.append(Usage(file=rel, line=line, context=ctx))
+    return usages
 
 
 def _search_text(

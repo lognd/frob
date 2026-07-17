@@ -13,7 +13,12 @@ from __future__ import annotations
 import re
 from typing import cast
 
-from frob.process.parsers.common import Diagnostic, Severity, ToolResult
+from frob.process.parsers.common import (
+    Diagnostic,
+    Severity,
+    ToolResult,
+    summarize_severity,
+)
 
 _DIAG_LINE = re.compile(
     r"^(.*?):(\d+):(\d+):\s+(error|warning|note|fatal error):\s+(.*)$"
@@ -45,13 +50,8 @@ def parse_clang(stdout: str, exit_code: int = 0, tool: str = "clang") -> ToolRes
             )
         )
 
-    errors = sum(1 for d in diagnostics if d.severity == "error")
-    warnings = sum(1 for d in diagnostics if d.severity == "warning")
-
-    if errors or warnings:
-        summary = f"{errors} errors, {warnings} warnings"
-    else:
-        summary = "ok" if exit_code == 0 else "build failed (no diagnostics captured)"
+    empty = "ok" if not exit_code else "build failed (no diagnostics captured)"
+    summary = summarize_severity(diagnostics, empty=empty)
 
     return ToolResult(
         tool=tool,

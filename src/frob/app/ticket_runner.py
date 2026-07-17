@@ -100,6 +100,12 @@ def _new(root: Path, cfg: AppConfig) -> None:
                     _log.info("attached clipboard image to %s", ticket.id)
 
 
+def _filter_by_state(tickets, state):
+    """Tickets whose state equals `state` (extracted so `_list` stays a flat
+    sequence of independent steps, not a nested-loop join)."""
+    return [t for t in tickets if t.state == state]
+
+
 def _list(root: Path, cfg: AppConfig) -> None:
     from frob.tickets import TicketState, load_queue
 
@@ -110,7 +116,7 @@ def _list(root: Path, cfg: AppConfig) -> None:
     queue = result.danger_ok
     tickets = sorted(queue.tickets.values(), key=lambda t: t.id)
     if cfg.ticket_state:
-        tickets = [t for t in tickets if t.state == TicketState(cfg.ticket_state)]
+        tickets = _filter_by_state(tickets, TicketState(cfg.ticket_state))
 
     if cfg.ticket_json:
         import json

@@ -50,33 +50,7 @@ class MapResult(BaseModel):
                     lines.append(f"  {dir_part}/")
                 prev_dir = dir_part
             indent = "    " if dir_part != "." else "  "
-
-            sym_str = ""
-            if include_private:
-                # show all symbols (old behavior)
-                all_syms = node.symbols
-                if all_syms:
-                    shown = all_syms[:max_symbols]
-                    sym_str = "  " + ", ".join(shown)
-                    if len(all_syms) > max_symbols:
-                        sym_str += f" ... (+{len(all_syms) - max_symbols})"
-            else:
-                pub = node.symbols
-                priv = node.private_count
-                if pub or priv:
-                    if priv > 0:
-                        shown = pub[:max_symbols]
-                        pub_part = ", ".join(shown) if shown else ""
-                        if pub_part:
-                            sym_str = f"  [{len(pub)} pub: {pub_part} | {priv} priv]"
-                        else:
-                            sym_str = f"  [{priv} priv]"
-                    else:
-                        shown = pub[:max_symbols]
-                        sym_str = "  " + ", ".join(shown)
-                        if len(pub) > max_symbols:
-                            sym_str += f" ... (+{len(pub) - max_symbols})"
-
+            sym_str = _format_symbols(node, max_symbols, include_private)
             lines.append(
                 f"{indent}{p.name:<30} {node.lines:>4}L  ~{node.tokens:>5} tok{sym_str}"
             )
@@ -85,6 +59,34 @@ class MapResult(BaseModel):
     def as_json(self) -> str:
         # frob:doc docs/map.md#public-api
         return self.model_dump_json(indent=2)
+
+
+def _truncated_symbols(syms: list[str], max_symbols: int) -> str:
+    """First `max_symbols` names joined, with a `... (+N)` overflow marker."""
+    shown = ", ".join(syms[:max_symbols])
+    extra = len(syms) - max_symbols
+    return shown + (f" ... (+{extra})" if extra > 0 else "")
+
+
+def _public_symbols_summary(pub: list[str], priv: int, max_symbols: int) -> str:
+    """Public-symbol summary with a trailing private count (the default view)."""
+    if not pub and not priv:
+        return ""
+    if priv <= 0:
+        return "  " + _truncated_symbols(pub, max_symbols)
+    pub_part = ", ".join(pub[:max_symbols])
+    if pub_part:
+        return f"  [{len(pub)} pub: {pub_part} | {priv} priv]"
+    return f"  [{priv} priv]"
+
+
+def _format_symbols(node: FileNode, max_symbols: int, include_private: bool) -> str:
+    """The trailing symbol summary for one file row of the map."""
+    if include_private:
+        if not node.symbols:
+            return ""
+        return "  " + _truncated_symbols(node.symbols, max_symbols)
+    return _public_symbols_summary(node.symbols, node.private_count, max_symbols)
 
 
 # frob:doc docs/map.md#public-api
@@ -96,9 +98,9 @@ def map_project(root: Path, depth: int | None = None) -> MapResult:
         display_root = str(root.relative_to(Path.cwd()))
     except ValueError:
         display_root = str(root)
-    all_paths = _collect_paths(root, depth)
+    all_paths = sorted(_collect_paths(root, depth))
 
-    for path in sorted(all_paths):
+    for path in all_paths:
         rel = str(path.relative_to(root))
         ext = path.suffix.lower()
 
@@ -152,7 +154,8 @@ def _walk(
     max_depth: int | None,
     out: list[Path],
 ) -> None:
-    for child in sorted(current.iterdir()):
+    children = sorted(current.iterdir())
+    for child in children:
         if child.name.startswith(".") or child.name in (
             "__pycache__",
             "node_modules",

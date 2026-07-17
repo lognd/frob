@@ -14,7 +14,12 @@ from __future__ import annotations
 import re
 from typing import cast
 
-from frob.process.parsers.common import Diagnostic, Severity, ToolResult
+from frob.process.parsers.common import (
+    Diagnostic,
+    Severity,
+    ToolResult,
+    summarize_severity,
+)
 
 # Multi-line format: "error[code]: message" header
 _BLOCK_HEADER = re.compile(r"^(error|warning|info|note)\[([^\]]+)\]:\s+(.*)$")
@@ -33,91 +38,85 @@ _SUMMARY_LINE = re.compile(r"^Found (\d+) diagnostic")
 _ANSI = re.compile(r"\x1b\[[0-9;]*m")
 
 
-# frob:doc docs/process.md#public-api
-def parse_ty(stdout: str, exit_code: int = 0) -> ToolResult:
+# frob:ticket T-0045
+def _block_loc_diagnostic(
+    line: str, pending: tuple[str, str, str]
+) -> Diagnostic | None:
+    """Diagnostic for a block-format `--> file:line:col` line, given its header."""
+    ml = _BLOCK_LOC.match(line)
+    if ml is None:
+        return None
+    severity_str, code, msg = pending
+    return Diagnostic(
+        file=ml.group(1),
+        line=int(ml.group(2)),
+        col=int(ml.group(3)),
+        severity=_severity(severity_str),
+        code=code,
+        message=msg.strip(),
+    )
+
+
+# frob:ticket T-0045
+def _single_line_diagnostic(stripped: str) -> Diagnostic | None:
+    """Diagnostic for either legacy single-line ty format, or None."""
+    m = _DIAG_LINE.match(stripped)
+    if m:
+        severity_str, code, file, row, col, msg = m.groups()
+        return Diagnostic(
+            file=file,
+            line=int(row),
+            col=int(col),
+            severity=_severity(severity_str),
+            code=code,
+            message=msg.strip(),
+        )
+    m2 = _DIAG_LINE_SIMPLE.match(stripped)
+    if m2:
+        severity_str, file, row, col, msg = m2.groups()
+        return Diagnostic(
+            file=file,
+            line=int(row),
+            col=int(col),
+            severity=_severity(severity_str),
+            message=msg.strip(),
+        )
+    return None
+
+
+# frob:ticket T-0045
+def _scan_ty_lines(stdout: str) -> tuple[list[Diagnostic], str | None]:
+    """Scan ty output into (diagnostics, optional summary-override line)."""
     diagnostics: list[Diagnostic] = []
     summary_override: str | None = None
-
-    lines = [_ANSI.sub("", ln) for ln in stdout.splitlines()]
-
-    # Pending block-format diagnostic (header parsed, waiting for --> line)
+    # Pending block-format diagnostic (header parsed, waiting for --> line).
     pending: tuple[str, str, str] | None = None  # (severity, code, message)
 
-    for line in lines:
+    for line in (_ANSI.sub("", ln) for ln in stdout.splitlines()):
         stripped = line.strip()
-
-        m3 = _SUMMARY_LINE.match(stripped)
-        if m3:
-            summary_override = stripped
-            pending = None
-            continue
-
-        # Try block header
         mh = _BLOCK_HEADER.match(stripped)
-        if mh:
+        if _SUMMARY_LINE.match(stripped):
+            summary_override, pending = stripped, None
+        elif mh:
             pending = (mh.group(1), mh.group(2), mh.group(3))
-            continue
-
-        # Try block location line
-        if pending is not None:
-            ml = _BLOCK_LOC.match(line)
-            if ml:
-                severity_str, code, msg = pending
-                diagnostics.append(
-                    Diagnostic(
-                        file=ml.group(1),
-                        line=int(ml.group(2)),
-                        col=int(ml.group(3)),
-                        severity=_severity(severity_str),
-                        code=code,
-                        message=msg.strip(),
-                    )
-                )
+        elif pending is not None:
+            # A non-location continuation line keeps pending until we see -->.
+            diag = _block_loc_diagnostic(line, pending)
+            if diag is not None:
+                diagnostics.append(diag)
                 pending = None
-                continue
-            # Non-location continuation line — keep pending until we see -->
-            continue
+        else:
+            diag = _single_line_diagnostic(stripped)
+            if diag is not None:
+                diagnostics.append(diag)
 
-        # Old single-line format
-        m = _DIAG_LINE.match(stripped)
-        if m:
-            severity_str, code, file, row, col, msg = m.groups()
-            diagnostics.append(
-                Diagnostic(
-                    file=file,
-                    line=int(row),
-                    col=int(col),
-                    severity=_severity(severity_str),
-                    code=code,
-                    message=msg.strip(),
-                )
-            )
-            continue
+    return diagnostics, summary_override
 
-        m2 = _DIAG_LINE_SIMPLE.match(stripped)
-        if m2:
-            severity_str, file, row, col, msg = m2.groups()
-            diagnostics.append(
-                Diagnostic(
-                    file=file,
-                    line=int(row),
-                    col=int(col),
-                    severity=_severity(severity_str),
-                    message=msg.strip(),
-                )
-            )
-            continue
 
-    errors = sum(1 for d in diagnostics if d.severity == "error")
-    warnings = sum(1 for d in diagnostics if d.severity == "warning")
-
-    if summary_override:
-        summary = summary_override
-    elif errors or warnings:
-        summary = f"{errors} errors, {warnings} warnings"
-    else:
-        summary = "no issues"
-
+# frob:doc docs/process.md#public-api
+def parse_ty(stdout: str, exit_code: int = 0) -> ToolResult:
+    diagnostics, summary_override = _scan_ty_lines(stdout)
+    summary = summary_override or summarize_severity(diagnostics)
     return ToolResult(
         tool="ty",
         exit_code=exit_code,

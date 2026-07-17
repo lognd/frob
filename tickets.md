@@ -1221,3 +1221,32 @@ acceptance: []
 threat: null
 ```
 A frob: directive comment placed immediately above a nested method or property binds to the ENCLOSING CLASS, not the method, because the class span contains the comment and 'enclosing' wins over 'following'. The edge is silently dropped (no error), so the method never clears COV001/TEST001. Three doc-campaign agents (a353eda, aa2686f, a1b18ef) independently hit this. Workaround: place the directive as first line INSIDE the method body. Proper fix: when a comment sits directly above a def/decorator, prefer the FOLLOWING symbol over the enclosing one. See src/frob/graph/dsl.py directive binding / _enclosing_src.
+
+<!-- ticket:T-0045 -->
+```yaml
+id: T-0045
+title: 'Refactor: clear perf/arch/test warnings in app,process,serve,testing,map,outline,xref,cycle,gitlog,policy'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-17'
+blocked_by: []
+parent: null
+scope:
+- src/frob/app/**
+- src/frob/process/**
+- src/frob/serve/**
+- src/frob/testing/**
+- src/frob/map/**
+- src/frob/outline/**
+- src/frob/xref/**
+- src/frob/cycle/**
+- src/frob/gitlog/**
+- src/frob/policy/**
+- src/frob/__main__.py
+- tests/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
