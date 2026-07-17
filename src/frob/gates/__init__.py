@@ -294,7 +294,13 @@ def _is_test_path(path: str) -> bool:
 
 
 def _cov001(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
-    """COV001: public symbol (outside test code) has no `doc` edge."""
+    """COV001: a public symbol has no explicit `frob:doc` edge.
+
+    A docstring is not enough -- the obligation is an explicit `frob:doc
+    <docs/anchor>` directive tying the symbol to a doc page whose drift is
+    then tracked. Explicit edges are the point: they are what DRIFT001 can
+    check.
+    """
     documented = {e.src for e in snapshot.edges if e.kind == EdgeKind.DOC}
     violations: list[Violation] = []
     for record in snapshot.symbols.values():
@@ -310,7 +316,7 @@ def _cov001(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
                 file=record.id.path,
                 line=record.span[0],
                 message=(
-                    f"COV001: {record.symref} is public with no doc edge; "
+                    f"COV001: {record.symref} is public with no frob:doc edge; "
                     f"add: frob:doc <docs/anchor> above it"
                 ),
             )
