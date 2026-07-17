@@ -119,6 +119,66 @@ class FuzzError(ErrorSet):
   an agent run is recorded on the ticket (`frob ticket fail`) with the
   minimal example, so the reproduction survives the session.
 
+## Implementation notes (T-0002, library slice)
+
+This slice ships `src/frob/fuzz/**` as a standalone library: models,
+`resolve`/`register`, `obligations`, `FUZZ001`/`FUZZ002`/`FUZZ003`,
+`stamp_fuzz`/`load_fuzz_stamp`, and `run_fuzz`. It does NOT wire the CLI
+(`__main__.py`/`config.py`/`app.py`) or `frob.gates.run_gates` -- that is
+separate coordinator work on the same ticket, kept out of this change to
+avoid merge conflicts on those shared files.
+
+- **`resolve` ordering deviates from the literal 1-2-3 list above.**
+  `__fuzz__()` (declared) is checked *before* pydantic derivation, not
+  after. The design-decisions section frames the declared classmethod as
+  the escape hatch for models "where rejection sampling can't hit
+  efficiently" -- if derivation ran first for every `BaseModel`, a
+  `__fuzz__()` on such a model would never be consulted, which would
+  defeat that stated purpose. Declared generators on non-pydantic types
+  are unaffected by the ordering either way.
+- **Derived-model rejection sampling uses hypothesis's own retry engine.**
+  Each field's strategy is combined into a candidate dict, then
+  round-tripped through `model_validate` inside a `hypothesis.strategies.composite`
+  strategy that calls `hypothesis.reject()` on a `ValidationError` --
+  hypothesis's own bounded-retry/`Unsatisfiable` machinery does the
+  "bounded retries, fail loudly if the reject rate is too high" work the
+  design section describes, rather than a hand-rolled counter compared
+  against `max_reject_rate` at resolve time. `max_reject_rate` in
+  `FuzzPolicy` is threaded through as documentation/config surface for the
+  coordinator's future wiring; `run_fuzz`'s harness surfaces an
+  `Unsatisfiable` failure as `FuzzResult.falsified`, not as a hard `Err`.
+- **`obligations()` stays pure per the contract.** Under `enforce="public"`,
+  it obligates every public function/method from the `GraphSnapshot` alone
+  -- it does NOT filter by per-parameter generatability, since checking
+  that would require importing the target module (impure, Python-only).
+  That check is FUZZ002's job, run separately over the obligations this
+  function returns, fed by `frob.fuzz.resolve_param_types` (best-effort
+  dynamic import, `None` on any failure, treated as "skip" not "flag").
+- **`run_fuzz` implements only the DERIVED-model round-trip harness.**
+  Driving an arbitrary user function's actual property (calling the bound
+  `frob:tests kind="fuzz"` test with generated args and checking a real
+  assertion) needs `frob.testing`'s selection/execution machinery to find
+  and call that bound function -- out of scope for this library slice.
+  `run_fuzz(targets: tuple[type[BaseModel], ...], budget_s, ...)` instead
+  proves the resolved strategy for each pydantic model target actually
+  produces valid instances within budget, which is the real, honest v1
+  capability: exercising the Arbitrary protocol's generators, not yet
+  exercising project-authored properties.
+- **`budget_s` maps to a bounded example count, not wall-clock time.**
+  hypothesis's `settings(max_examples=...)` is a per-run example ceiling;
+  a true wall-clock cutoff needs a custom stopping callback. `run_fuzz`
+  approximates budget with `examples = clamp(budget_s * 5, 10, 500)` and
+  logs a `frob:todo T-0002` marker at the approximation site.
+- **hypothesis is an optional import.** Every module that touches it
+  guards the import behind `HYPOTHESIS_AVAILABLE`; a worktree without it
+  installed still imports `frob.fuzz` cleanly and every hypothesis-backed
+  path returns `Err(FuzzError.NoGenerator)` / an empty result instead of
+  raising `ImportError`. hypothesis needs to be added to `pyproject.toml`
+  (dev or main dependency group, per docs/fuzz.md's own "hypothesis (dev
+  dependency)" line) for the resolve/run_fuzz hypothesis paths to do
+  anything; `tests/test_fuzz.py`'s hypothesis-backed cases are marked
+  `skipif(not HYPOTHESIS_AVAILABLE)` so `pytest` stays green either way.
+
 ## Dependencies and integration points
 
 - hypothesis (dev dependency), `frob.graph` (anchors, digests),
