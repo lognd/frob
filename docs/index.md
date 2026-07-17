@@ -58,6 +58,8 @@ Two modules that support the above but are not yet fully re-platformed:
   health + commit cadence); measurement only, never a gate.
 - `docs/decisions.md` -- ADR decision records (`decisions/AD-###.md`),
   `frob:decision` anchors, and the DEC gates.
+- `docs/mutate.md` -- `frob.mutate`: mutation testing, the honest
+  test-quality oracle.
 
 ## Per-command references
 

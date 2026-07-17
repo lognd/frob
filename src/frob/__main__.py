@@ -609,6 +609,20 @@ def _build_parser() -> argparse.ArgumentParser:
         "--path", dest="release_path", metavar="DIR", default="."
     )
 
+    # -- mutate --------------------------------------------------------------
+    mutate_p = sub.add_parser(
+        "mutate", help="mutation testing: perturb a file, see which mutants survive"
+    )
+    mutate_p.add_argument("mutate_file", metavar="file")
+    mutate_p.add_argument("--path", dest="mutate_path", metavar="DIR", default=".")
+    mutate_p.add_argument("--json", dest="mutate_json", action="store_true")
+    mutate_p.add_argument(
+        "mutate_argv",
+        metavar="-- test-cmd",
+        nargs=argparse.REMAINDER,
+        help="test command to run per mutant (after --); default: uv run pytest -q",
+    )
+
     # -- stats ---------------------------------------------------------------
     stats_p = sub.add_parser(
         "stats", help="delivery measurement: queue health + commit cadence"

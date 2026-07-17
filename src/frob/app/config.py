@@ -34,6 +34,7 @@ class Subcommand(str, enum.Enum):
     release = "release"
     stats = "stats"
     serve = "serve"
+    mutate = "mutate"
 
 
 # frob:ticket T-0030
@@ -218,6 +219,12 @@ class AppConfig(BaseModel):
     # serve
     serve_path: Path | None = None
 
+    # mutate
+    mutate_file: Path | None = None
+    mutate_path: Path | None = None
+    mutate_argv: list[str] = []
+    mutate_json: bool = False
+
     @classmethod
     def from_external(cls, args: argparse.Namespace, file: Path) -> "AppConfig":
         # frob:ticket T-0021
@@ -299,6 +306,8 @@ class AppConfig(BaseModel):
             "release_path",
             "stats_path",
             "perf_annotate",
+            "mutate_file",
+            "mutate_path",
             "serve_path",
         ):
             val = getattr(args, path_field, None)
@@ -338,6 +347,7 @@ class AppConfig(BaseModel):
             "ticket_acceptance",
             "test_lang",
             "perf_argv",
+            "mutate_argv",
         ):
             val = getattr(args, list_field, None)
             if val:
@@ -397,6 +407,7 @@ class AppConfig(BaseModel):
             "test_json",
             "vet_json",
             "stats_json",
+            "mutate_json",
             "perf_tests",
             "perf_json",
             "perf_smells",

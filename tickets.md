@@ -229,7 +229,7 @@ a clear message when absent. Delivered.
 ```yaml
 id: T-0011
 title: Mutation testing as the test-quality oracle
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-07-17'
@@ -243,6 +243,9 @@ acceptance: []
 threat: null
 ```
 Add mutation testing (mutmut or equivalent) as the honest test-quality oracle; TEST-family gains a mutation-score floor. Counts and coverage floors are gameable proxies (assert-free tests pass them) -- this is the real defense. Deferred post-0.1.0.
+
+Delivered under T-0040 (frob mutate). MUT gate (score floor on
+invariant-anchored symbols) + non-Python remain follow-on.
 
 <!-- ticket:T-0012 -->
 ```yaml
@@ -1053,3 +1056,35 @@ TEST001 is now satisfiable by a conventionally named test (test_<name>,
 snake-cased whole-token match) when no explicit frob:tests edge exists;
 explicit edges stay authoritative (an uncollected edge still surfaces).
 Short names (<3 chars) never infer. Delivers T-0018.
+
+<!-- ticket:T-0040 -->
+```yaml
+id: T-0040
+title: 'frob mutate: mutation testing quality oracle'
+state: done
+kind: feature
+origin: agent
+created: '2026-07-17'
+blocked_by: []
+parent: null
+scope:
+- src/frob/mutate/**
+- src/frob/app/mutate_runner.py
+- src/frob/app/app.py
+- src/frob/app/config.py
+- src/frob/__main__.py
+- tests/test_mutate.py
+- docs/**
+evidence:
+- tests/test_mutate.py::test_run_mutations_survivors_when_tests_weak
+- tests/test_mutate.py::test_run_mutations_all_killed_by_strong_test
+attachments: []
+acceptance: []
+threat: null
+```
+## Done report
+
+frob mutate: AST-based Python mutation (comparison/arith/boolop swaps,
+bool negation), runs the test command per mutant, reports survivors +
+mutation score, restores source always. Weak tests -> survivors, strong
+tests -> 100%. Delivers T-0011 (MUT gate + other langs = follow-on).

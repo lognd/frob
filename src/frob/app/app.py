@@ -27,6 +27,7 @@ class App:
             gitlog_runner,
             graph_runner,
             map_runner,
+            mutate_runner,
             outline_runner,
             parse_runner,
             perf_runner,
@@ -85,12 +86,14 @@ class App:
                 stats_runner.run(self._cfg)
             case Subcommand.serve:
                 serve_runner.run(self._cfg)
+            case Subcommand.mutate:
+                mutate_runner.run(self._cfg)
             case _:
                 _log.error(
                     "usage: frob "
                     "<scaffold|cycle|outline|map|xref|parse|dup|arch|docs|bind|"
                     "exports|check|gitlog|graph|ack|ticket|test|vet|perf|"
-                    "release|stats|serve>"
+                    "release|stats|serve|mutate>"
                     " ..."
                 )
                 sys.exit(1)
