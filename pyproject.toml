@@ -30,6 +30,12 @@ dependencies = [
 # Install with: uv pip install "frob[serve]"
 [project.optional-dependencies]
 serve = ["mcp>=1.28.1"]
+# R7 (docs/dup.md's bounded-SMT rung): translates tiny pure int/bool
+# functions to Z3 and checks equivalence formally. Optional -- z3-solver
+# ships native binaries and is only needed for `probe_smt_equivalence`;
+# every other frob.dup rung works without it. Install with:
+# uv pip install "frob[smt]"
+smt = ["z3-solver>=4.13"]
 
 [project.scripts]
 frob = "frob.__main__:main"

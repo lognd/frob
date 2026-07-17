@@ -17,14 +17,17 @@ reimplemented in TypeScript is still a clone.
 | R1 | exact token hash | copy-paste | trivial |
 | R2 | alpha-renamed token hash | rename-only clones | trivial |
 | R3 | canonicalized-AST subtree hash: alpha-rename, literal abstraction, commutative-operand ordering, control-flow normalization (for/while desugar, early-return vs if-else) | restructured dressing, same shape (PyCharm's level) | cheap |
-| R4 | winnowed fingerprints (Moss) + Deckard-style characteristic vectors under LSH; candidate pairs verified by tree edit distance (APTED) with statement alignment | gapped/near-miss clones, statements inserted or deleted | moderate; Rust kernel |
-| R5 | Weisfeiler-Lehman graph-kernel hashing over the def-use/control dependence graph of each function | reordered-but-dataflow-identical logic (beyond PyCharm) | moderate; Rust kernel |
+| R4 | winnowed fingerprints (Moss) + Deckard-style characteristic vectors under LSH; candidate pairs verified by real tree edit distance (Zhang-Shasha, a `frob-core` Rust kernel over actual node structure) | gapped/near-miss clones, statements inserted or deleted, within-statement restructuring | moderate; Rust kernel |
+| R5 | Weisfeiler-Lehman graph-kernel hashing over a real def-use/control-flow graph built from `frob.lang`'s statement nodes | reordered-but-dataflow-identical logic (beyond PyCharm) | moderate; Rust kernel |
 | R6 | observational equivalence: probe candidate pure functions with identical inputs drawn from the SHARED invariant-respecting generators (docs/fuzz.md) and compare outputs | true semantic clones -- different algorithm, same behavior | opt-in (`--probe`); Python orchestrated |
+| R7 | bounded-SMT: translate tiny, single-return, int/bool, straight-line functions to a Z3 formula and check equivalence by UNSAT (optional `z3-solver` dep) | formally-proved equivalence over the whole input domain, for the bounded subset | opt-in; degrades to `Err` without `frob[smt]` |
 
 R6 is honest about limits: full Type-4 equivalence is undecidable; probing
-gives high-confidence evidence, not proof. A bounded-SMT rung (translate
-tiny pure int/bool functions to Z3 and check equivalence formally) is a
-recorded research item, not a commitment.
+gives high-confidence evidence, not proof. R7 is real for its explicitly
+bounded subset (see `frob.dup._pipeline._smt_translate`'s accepted node
+set) -- it is a formal proof only within that subset, not a general
+equivalence checker; anything outside the subset is refused
+(`Err(SmtUnsupported)`), never silently approximated.
 
 ## Granularity: regions, not just functions
 
@@ -247,9 +250,12 @@ deviations, so nothing here is silently assumed done:
   *and* an R5 hash) silently clobbered all but the last rung written.
   `DupStats.cache_hits` now reports real hits on unchanged bodies across
   repeated `find_clones` calls.
-- **`find_duplicates`** (the old Type-1/2 scanner) is preserved verbatim
-  in `frob.dup._legacy` and re-exported from `frob.dup.__init__`
+- **`find_duplicates`** (the old Type-1/2 scanner) keeps its exact
+  behavior in `frob.dup._legacy`, re-exported from `frob.dup.__init__`
   unchanged, so `frob check`'s dup stage and `frob dup` CLI keep working.
+  It now parses through `frob.lang.raw_tree` instead of the retired
+  `frob.ast` package (deleted this pass, see "frob.ast retirement"
+  below) -- one grammar-loading mechanism, not a second parser stack.
 - **DUP001/DUP002** are pure functions in `frob.dup._rules`:
   `DUP001(report: CloneReport, touched: frozenset[str], threshold: float)
   -> tuple[Violation, ...]` (error severity: one side of the pair is a
@@ -258,3 +264,107 @@ deviations, so nothing here is silently assumed done:
   `frob.dup.touched_refs(snapshot, diff)`. Not wired into
   `frob.gates.__init__` -- that integration is out of this ticket's scope
   per the dispatch instructions.
+
+## frob.ast retirement
+
+`src/frob/ast/` (the Python-only, hand-rolled tree-sitter wrappers
+`frob.arch` and `frob.dup._legacy` used for their C/C++ and Python node
+walks) is deleted. Both modules now route through `frob.lang`:
+
+- `frob.lang.raw_tree(path)` -- the single grammar-dispatch entry point
+  (`Tree`, source bytes, language label), for callers that need real
+  tree-sitter `Node` access rather than `frob.lang`'s normalized shapes.
+- `frob.lang.cpp_function_nodes(tree)` -- the shared C/C++
+  function-declaration walk (`frob.lang._common.iter_cpp_functions`) that
+  used to be duplicated, with slightly different depth handling, in both
+  `frob.ast.cpp` and `frob.dup._legacy`.
+- `frob.lang.symbol_tree(path, span)` / `frob.lang._common.flatten_tree` --
+  new this pass, feeding `frob-core`'s `apted_similarity` (see R4 above)
+  and R5's real dataflow graph.
+
+`grep -rn "frob\.ast" src/ tests/` (excluding the `SOURCES.txt` build
+artifact) returns nothing.
+
+## Public API reference
+
+<a id="public-api"></a>
+<!-- frob:describes frob.dup.find_clones -->
+<!-- frob:describes frob.dup.probe_equivalence -->
+**`find_clones`/`probe_equivalence`**: see the "Public API" code block
+above for signatures. `find_clones` runs the R1-R5 ladder; `probe_equivalence`
+is R6, opt-in and separate from the gate path.
+
+<a id="rung-r7"></a>
+<!-- frob:describes frob.dup._pipeline.probe_smt_equivalence -->
+**`probe_smt_equivalence`**: R7, opt-in bounded-SMT formal-equivalence
+check for tiny int/bool functions (`z3-solver`, optional).
+
+<a id="pipeline"></a>
+<!-- frob:describes frob.dup._pipeline.touched_refs -->
+**`touched_refs`**: symrefs in a `GraphSnapshot` whose span overlaps a
+`Diff` hunk -- the "new side" restriction `find_clones` uses for the
+DUP001 gate path.
+
+<a id="rust-core"></a>
+<!-- frob:describes frob.dup._core.core_available -->
+<!-- frob:describes frob.dup._core.r3_canonical_hash -->
+<!-- frob:describes frob.dup._core.winnow_fingerprints -->
+<!-- frob:describes frob.dup._core.candidate_pairs -->
+<!-- frob:describes frob.dup._core.tree_edit_similarity -->
+**`frob.dup._core`**: thin `Result`-returning shims over the `frob_core`
+native extension (see "Rust core" above) -- `core_available` gates every
+other call; a missing extension is `Err(DupError.CoreUnavailable)`, never
+a silent downgrade.
+
+<a id="rung-r4"></a>
+<!-- frob:describes frob.dup._core.apted_similarity -->
+**`apted_similarity`**: real Zhang-Shasha tree-edit-distance similarity
+between two exported `frob.lang` subtrees -- R4's verification metric.
+
+<a id="rung-r5"></a>
+<!-- frob:describes frob.dup._core.wl_hash -->
+**`wl_hash`**: Weisfeiler-Lehman graph-kernel hash of a def-use/control-
+flow adjacency -- R5's fingerprint.
+
+<a id="gate-integration"></a>
+<!-- frob:describes frob.dup._rules.DUP001 -->
+<!-- frob:describes frob.dup._rules.DUP002 -->
+See "Gate integration" above for what DUP001/DUP002 report.
+
+<a id="dup-error"></a>
+<!-- frob:describes frob.dup.DupError -->
+<a id="clone-region"></a>
+<!-- frob:describes frob.dup.CloneRegion -->
+<a id="clone-pair"></a>
+<!-- frob:describes frob.dup.ClonePair -->
+<a id="clone-report"></a>
+<!-- frob:describes frob.dup.CloneReport -->
+<a id="dup-stats"></a>
+<!-- frob:describes frob.dup.DupStats -->
+<a id="dup-config"></a>
+<!-- frob:describes frob.dup.DupConfig -->
+<a id="probe-verdict"></a>
+<!-- frob:describes frob.dup.ProbeVerdict -->
+See the "Public API" code block above for `DupError`/`CloneRegion`/
+`ClonePair`/`CloneReport`/`DupStats`/`DupConfig`/`ProbeVerdict` field
+shapes.
+
+<a id="caching"></a>
+<!-- frob:describes frob.dup._cache.get_fingerprint -->
+<!-- frob:describes frob.dup._cache.put_fingerprint -->
+<!-- frob:describes frob.dup._cache.get_verdict -->
+<!-- frob:describes frob.dup._cache.put_verdict -->
+See "Caching (content-addressed + LRU)" above -- these four functions are
+the `.frob/dup.db` read/write surface `find_clones` uses.
+
+<a id="legacy-scanner"></a>
+<!-- frob:describes frob.dup._legacy.DupError -->
+<!-- frob:describes frob.dup._legacy.CodeFragment -->
+<!-- frob:describes frob.dup._legacy.CloneGroup -->
+<!-- frob:describes frob.dup._legacy.DupResult -->
+<!-- frob:describes frob.dup.find_duplicates -->
+The pre-smart-dup Type-1/Type-2 scanner (`frob.dup._legacy`), kept
+verbatim in behavior and re-exported as `frob.dup.find_duplicates` for
+`frob check`'s dup stage and the `frob dup` CLI -- see "frob.ast
+retirement" above for what changed under the hood (parsing now goes
+through `frob.lang.raw_tree`, not the deleted `frob.ast` package).

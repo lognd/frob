@@ -47,6 +47,24 @@ class RawComment(BaseModel):
     following: str | None
 
 
+# frob:doc docs/dup.md#public-api
+class TreeNode(BaseModel):
+    """A simplified, language-agnostic subtree: a node's type label plus
+    its ordered children -- comments and whitespace already stripped.
+
+    `frob.dup`'s R4 rung feeds this to `frob-core`'s Zhang-Shasha kernel
+    (`apted_similarity`) for a real tree-edit-distance comparison, rather
+    than the flat leaf-token sequence `RawSymbol.body_tokens` exposes.
+    Frozen for the same identity-of-value reason as every other
+    `frob.lang` model (docs/graph.md).
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    label: str
+    children: tuple["TreeNode", ...] = ()
+
+
 class ParsedFile(BaseModel):
     """The whole-file extraction result: symbols, comments, and a content hash."""
 

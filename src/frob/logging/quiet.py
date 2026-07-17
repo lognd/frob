@@ -1,8 +1,8 @@
 """Temporarily silence stdout-bound INFO/DEBUG logging (docs/lang.md).
 
 `frob.lang.parse_file` logs at INFO/DEBUG on every parse (the LOG EVERYTHING
-convention) -- the old `frob.ast` wrappers it replaces logged nothing at
-all. Any CLI runner that prints a machine-readable payload (`--json`) to
+convention) -- the retired per-language wrappers it replaces logged nothing
+at all. Any CLI runner that prints a machine-readable payload (`--json`) to
 stdout after calling into `frob.lang` needs those log lines kept off stdout
 for the run, or they corrupt the payload. `frob.app.check_runner` solved
 this once already for the check pipeline; this is that same mechanism

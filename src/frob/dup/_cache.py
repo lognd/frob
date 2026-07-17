@@ -63,6 +63,7 @@ def _connect(root: Path) -> Result[sqlite3.Connection, DupError]:
         return Err(DupError.CacheCorrupt)
 
 
+# frob:doc docs/dup.md#caching
 def get_fingerprint(root: Path, digest: str, rung: str) -> tuple[object, ...] | None:
     """The cached fingerprint payload for `digest`/`rung`, or None on a miss."""
     conn_r = _connect(root)
@@ -79,6 +80,7 @@ def get_fingerprint(root: Path, digest: str, rung: str) -> tuple[object, ...] | 
     return json.loads(row[0]) if row else None
 
 
+# frob:doc docs/dup.md#caching
 def put_fingerprint(
     root: Path, digest: str, rung: str, payload: tuple[object, ...]
 ) -> Result[Unit, DupError]:
@@ -99,6 +101,7 @@ def put_fingerprint(
     return Ok(Unit())
 
 
+# frob:doc docs/dup.md#caching
 def get_verdict(
     root: Path, d1: str, d2: str, method: str, corpus_epoch: int
 ) -> tuple[object, ...] | None:
@@ -127,6 +130,7 @@ def get_verdict(
     return json.loads(row[0])
 
 
+# frob:doc docs/dup.md#caching
 def put_verdict(
     root: Path,
     d1: str,
