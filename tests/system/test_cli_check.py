@@ -111,6 +111,11 @@ class TestCheckFixtures:
             "--skip-cycle",
             "--skip-dup",
             "--skip-bind",
+            # This fixture lives inside frob's own git repo, so `frob.gates`
+            # resolves a real repo context and reports real (expected, by
+            # design) obligation-graph violations -- irrelevant to what this
+            # test checks (a clean ruff/ty/frob-cycle pass).
+            "--skip-gates",
         )
         assert r.returncode == 0, r.stdout + r.stderr
 
@@ -172,3 +177,67 @@ class TestCheckErrors:
     def test_nonexistent_path_fails(self, tmp_path):
         r = run("check", str(tmp_path / "does_not_exist"))
         assert r.returncode != 0
+
+
+def _git(*args, cwd):
+    import subprocess
+
+    subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True)
+
+
+class TestCheckGatesStage:
+    def test_only_gates_reports_violation_with_remedy(self, tmp_path):
+        _git("init", "-q", "-b", "main", cwd=tmp_path)
+        _git("config", "user.email", "test@example.com", cwd=tmp_path)
+        _git("config", "user.name", "Test", cwd=tmp_path)
+        (tmp_path / "pkg.py").write_text(
+            "def add(x: int, y: int) -> int:\n    return x + y\n"
+        )
+        _git("add", "-A", cwd=tmp_path)
+        _git("commit", "-q", "-m", "init", cwd=tmp_path)
+
+        r = run("check", str(tmp_path), "--only", "gates")
+        out = r.stdout + r.stderr
+        assert r.returncode != 0, out
+        assert "TEST001" in out
+        assert "frob:tests" in out  # every violation embeds its remedy
+
+    def test_only_gates_passes_once_bound_and_tested(self, tmp_path):
+        _git("init", "-q", "-b", "main", cwd=tmp_path)
+        _git("config", "user.email", "test@example.com", cwd=tmp_path)
+        _git("config", "user.name", "Test", cwd=tmp_path)
+        (tmp_path / "pkg.py").write_text(
+            "def add(x: int, y: int) -> int:\n    return x + y\n"
+        )
+        (tmp_path / "test_pkg.py").write_text(
+            "from pkg import add\n\n"
+            "def test_add() -> None:\n"
+            "    # frob:tests pkg.py::add\n"
+            "    assert add(1, 2) == 3\n"
+        )
+        (tmp_path / "coverage.xml").write_text(
+            '<?xml version="1.0" ?><coverage line-rate="1.0"></coverage>'
+        )
+        _git("add", "-A", cwd=tmp_path)
+        _git("commit", "-q", "-m", "bound", cwd=tmp_path)
+
+        stamp = run("check", str(tmp_path), "--stamp-coverage")
+        assert stamp.returncode == 0, stamp.stdout + stamp.stderr
+
+        r = run("check", str(tmp_path), "--only", "gates")
+        out = r.stdout + r.stderr
+        assert "TEST001" not in out
+        assert "TEST006" not in out
+        assert r.returncode == 0, out
+
+
+class TestCheckStampCoverage:
+    def test_stamp_coverage_writes_stamp(self, tmp_path):
+        (tmp_path / "coverage.xml").write_text(
+            '<?xml version="1.0" ?><coverage line-rate="1.0"></coverage>'
+        )
+        r = run("check", str(tmp_path), "--stamp-coverage")
+        out = r.stdout + r.stderr
+        assert r.returncode == 0, out
+        stamp = tmp_path / ".frob" / "coverage-stamp"
+        assert stamp.exists()

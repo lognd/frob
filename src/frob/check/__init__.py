@@ -90,30 +90,35 @@ def run_check(
     skip_dup: bool = False,
     skip_bind: bool = False,
     skip_exports: bool = False,
-    pycharm_path: Path | None = None,
+    skip_gates: bool = False,
     ruff_args: list[str] | None = None,
+    only: frozenset[str] | None = None,
+    ticket: str | None = None,
+    base: str | None = None,
 ) -> CheckResult:
     from typing import Callable
 
     tasks: list[Callable[[], ToolResult | list[ToolResult] | None]] = []
 
-    if not skip_ruff:
+    def _wanted(name: str) -> bool:
+        return only is None or name in only
+
+    if not skip_ruff and _wanted("ruff"):
         tasks.append(lambda: _run_ruff(root, ruff_args))
-    if not skip_ty:
+    if not skip_ty and _wanted("ty"):
         tasks.append(lambda: _run_ty(root))
-    if not skip_cycle:
+    if not skip_cycle and _wanted("cycle"):
         tasks.append(lambda: _run_cycle(root))
-    if not skip_dup:
+    if not skip_dup and _wanted("dup"):
         tasks.append(lambda: _run_dup(root))
-    if not skip_arch:
+    if not skip_arch and _wanted("arch"):
         tasks.append(lambda: _run_arch(root))
-    if not skip_bind:
+    if not skip_bind and _wanted("bind"):
         tasks.append(lambda: _run_bind(root))
-    if not skip_exports:
+    if not skip_exports and _wanted("exports"):
         tasks.append(lambda: _run_exports(root))
-    if pycharm_path is not None:
-        _pycharm_path = pycharm_path
-        tasks.append(lambda: _run_pycharm(root, _pycharm_path))
+    if not skip_gates and _wanted("gates"):
+        tasks.append(lambda: _run_gates(root, ticket=ticket, base=base))
 
     results: list[ToolResult] = []
     with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -196,10 +201,10 @@ def _run_ty(root: Path) -> ToolResult | None:
     ty_cfg = scan / "ty.toml"
     if ty_cfg.exists():
         try:
-            from frob._compat import toml
+            import tomllib
 
             with ty_cfg.open("rb") as f:
-                cfg = toml.load(f)
+                cfg = tomllib.load(f)
             for p in cfg.get("environment", {}).get("extra-paths", []):
                 cmd += ["--extra-search-path", str((scan / p).resolve())]
         except Exception:
@@ -322,6 +327,64 @@ def _run_arch(root: Path) -> ToolResult:
     )
 
 
+def _run_gates(
+    root: Path, *, ticket: str | None = None, base: str | None = None
+) -> ToolResult:
+    """Run frob.gates.run_gates as a check stage; a load failure is a soft skip
+    (git repo / tickets dir are not guaranteed to exist for every `frob check`
+    caller), but any ERROR-severity violation fails the stage like any other
+    tool."""
+    from frob.gates import GateConfig, run_gates
+
+    cfg = GateConfig(root=str(root), base=base or "main", ticket=ticket)
+    result = run_gates(cfg)
+    if result.is_err:
+        return ToolResult(
+            tool="gates",
+            exit_code=0,
+            summary=f"gates skipped: {result.danger_err.value}",
+        )
+    report = result.danger_ok
+
+    diags: list[Diagnostic] = []
+    for v in report.violations:
+        diags.append(
+            Diagnostic(
+                file=v.file,
+                line=v.line,
+                severity="error" if v.severity.value == "error" else "warning",
+                code=v.rule,
+                message=v.message,
+            )
+        )
+    for v in report.waived:
+        diags.append(
+            Diagnostic(
+                file=v.file,
+                line=v.line,
+                severity="note",
+                code=v.rule,
+                message=(
+                    f"{v.message}  [waived: {v.waived.reason if v.waived else ''}]"
+                ),
+            )
+        )
+
+    n_err = sum(1 for v in report.violations if v.severity.value == "error")
+    timing = ", ".join(
+        f"{k}={t:.2f}s" for k, t in sorted(report.stats.timing_s.items())
+    )
+    return ToolResult(
+        tool="gates",
+        exit_code=1 if n_err > 0 else 0,
+        diagnostics=diags,
+        summary=(
+            f"{len(report.violations)} violation(s), {len(report.waived)} waived  "
+            f"[{timing}]"
+        ),
+    )
+
+
 def _run_bind(root: Path) -> ToolResult | None:
     # Only meaningful if there are BIND comment markers in the tree
     scan = root if root.is_dir() else root.parent
@@ -422,90 +485,6 @@ def _run_exports(root: Path) -> list[ToolResult]:
     return out
 
 
-def _run_pycharm(root: Path, pycharm_path: Path | None) -> ToolResult | None:
-    import tempfile
-
-    from frob.process.parsers import parse_pycharm_dir
-
-    binary = pycharm_path or _find_pycharm()
-    if binary is None:
-        return None
-
-    with tempfile.TemporaryDirectory() as tmp:
-        tmp_path = Path(tmp)
-        try:
-            subprocess.run(
-                [str(binary), str(root), str(tmp_path), "-format", "XML"],
-                capture_output=True,
-                timeout=180,
-            )
-        except (subprocess.TimeoutExpired, FileNotFoundError):
-            return None
-        result = parse_pycharm_dir(tmp_path)
-        result.tool = "pycharm"
-        return result
-
-
-def _find_pycharm() -> Path | None:
-    """Auto-locate JetBrains inspect script on Windows and Linux."""
-    import os
-    import platform
-
-    system = platform.system()
-
-    if system == "Windows":
-        # Toolbox: %LOCALAPPDATA%\JetBrains\Toolbox\apps\PyCharm-P\ch-0\<ver>\bin
-        base = (
-            Path(os.environ.get("LOCALAPPDATA", "")) / "JetBrains" / "Toolbox" / "apps"
-        )
-        for app_dir in ("PyCharm-P", "PyCharm-C", "PyCharm"):
-            p = base / app_dir / "ch-0"
-            if p.exists():
-                versions = sorted(p.iterdir(), reverse=True)
-                for v in versions:
-                    candidate = v / "bin" / "inspect.bat"
-                    if candidate.exists():
-                        return candidate
-        # Direct install
-        prog = Path(os.environ.get("ProgramFiles", "C:/Program Files"))
-        for name in (
-            "JetBrains/PyCharm Professional Edition",
-            "JetBrains/PyCharm Community Edition",
-            "JetBrains/PyCharm",
-        ):
-            candidate = prog / name / "bin" / "inspect.bat"
-            if candidate.exists():
-                return candidate
-    else:
-        # Linux Toolbox: ~/.local/share/JetBrains/Toolbox/apps/PyCharm-P/ch-0/<ver>/bin
-        home = Path.home()
-        for base in (
-            home / ".local" / "share" / "JetBrains" / "Toolbox" / "apps",
-            Path("/opt/jetbrains"),
-        ):
-            for app_dir in ("PyCharm-P", "PyCharm-C", "PyCharm"):
-                p = base / app_dir / "ch-0"
-                if not p.exists():
-                    p = base / app_dir
-                if p.exists():
-                    versions = sorted(p.iterdir(), reverse=True)
-                    for v in versions:
-                        for script in ("bin/inspect.sh", "bin/pycharm.sh"):
-                            candidate = v / script
-                            if candidate.exists():
-                                return candidate
-        # Snap / system installs
-        for candidate in (
-            Path("/snap/pycharm-professional/current/bin/inspect.sh"),
-            Path("/snap/pycharm-community/current/bin/inspect.sh"),
-            Path("/usr/local/bin/pycharm.sh"),
-        ):
-            if candidate.exists():
-                return candidate
-
-    return None
-
-
 # ---------------------------------------------------------------------------
 # C/C++ checks
 # ---------------------------------------------------------------------------
@@ -520,7 +499,6 @@ def run_check_cpp(
     skip_clang_format: bool = False,
     skip_tests: bool = False,
     valgrind: bool = False,
-    pycharm_path: Path | None = None,
 ) -> CheckResult:
     """Quality gate for CMake C/C++ projects."""
     from typing import Callable
@@ -543,9 +521,6 @@ def run_check_cpp(
     if not skip_tests:
         _valgrind = valgrind
         post_build.append(lambda: _run_ctest(bdir, valgrind=_valgrind))
-    if pycharm_path is not None:
-        _pycharm_path = pycharm_path
-        post_build.append(lambda: _run_pycharm(root, _pycharm_path))
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = [executor.submit(fn) for fn in post_build]

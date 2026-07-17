@@ -32,41 +32,11 @@ def _build_parser() -> argparse.ArgumentParser:
         help="overwrite existing files",
     )
 
-    # -- init (alias for scaffold) -------------------------------------------
-    init_p = sub.add_parser("init", help="alias for scaffold (deprecated)")
-    init_sub = init_p.add_subparsers(dest="init_command")
-    init_sub.add_parser("list", help="list registered project types")
-    new_p = init_sub.add_parser("new", help="create a new project")
-    new_p.add_argument(
-        "init_type", metavar="type", help="project type (e.g. python-tool)"
-    )
-    new_p.add_argument("init_name", metavar="name", help="project name")
-    new_p.add_argument("--output", dest="init_output", metavar="DIR")
-    new_p.add_argument(
-        "--force",
-        dest="init_force",
-        action="store_true",
-        help="overwrite existing files",
-    )
-
     # -- cycle ---------------------------------------------------------------
     cycle_p = sub.add_parser("cycle", help="detect dependency cycles")
     cycle_p.add_argument("cycle_path", metavar="path")
     cycle_p.add_argument("--lang", dest="cycle_lang", choices=["python", "cpp", "c"])
     cycle_p.add_argument("--suggest", dest="cycle_suggest", action="store_true")
-
-    # -- stub ----------------------------------------------------------------
-    stub_p = sub.add_parser(
-        "stub", help="emit a source file with all functions stubbed except targets"
-    )
-    stub_p.add_argument("stub_file", metavar="file")
-    stub_p.add_argument(
-        "stub_targets",
-        metavar="target",
-        nargs="+",
-        help="one or more functions or ClassName.method to keep intact",
-    )
-    stub_p.add_argument("--output", dest="stub_output", metavar="FILE")
 
     # -- outline -------------------------------------------------------------
     outline_p = sub.add_parser(
@@ -107,32 +77,6 @@ def _build_parser() -> argparse.ArgumentParser:
         help="hide same-file usages (show only cross-file references)",
     )
 
-    # -- tokens --------------------------------------------------------------
-    tokens_p = sub.add_parser(
-        "tokens",
-        help="estimate token cost of files before reading them",
-    )
-    tokens_p.add_argument("tokens_paths", metavar="path", nargs="+")
-    tokens_p.add_argument(
-        "--detail",
-        dest="tokens_detail",
-        action="store_true",
-        help="break down by function/class region",
-    )
-    tokens_p.add_argument("--json", dest="tokens_json", action="store_true")
-    tokens_p.add_argument(
-        "--sort",
-        dest="tokens_sort",
-        action="store_true",
-        help="sort files by token count (largest first)",
-    )
-    tokens_p.add_argument(
-        "--by-dir",
-        dest="tokens_by_dir",
-        action="store_true",
-        help="show per-directory subtotals instead of per-file",
-    )
-
     # -- parse ---------------------------------------------------------------
     parse_p = sub.add_parser(
         "parse",
@@ -152,7 +96,6 @@ def _build_parser() -> argparse.ArgumentParser:
             "junit",
             "gtest",
             "catch2",
-            "pycharm",
             "cargo",
             "clang-tidy",
             "valgrind",
@@ -183,28 +126,6 @@ def _build_parser() -> argparse.ArgumentParser:
         help="exit non-zero if the tool failed (useful in pipelines)",
     )
 
-    # -- bundle --------------------------------------------------------------
-    bundle_p = sub.add_parser(
-        "bundle",
-        help="assemble minimal context for a subagent (stubbed file + import sigs)",
-    )
-    bundle_p.add_argument("bundle_file", metavar="file")
-    bundle_p.add_argument("bundle_target", metavar="target")
-    bundle_p.add_argument(
-        "--depth",
-        dest="bundle_depth",
-        type=int,
-        default=1,
-        metavar="N",
-        help="how many import levels to inline (default: 1)",
-    )
-    bundle_p.add_argument(
-        "--format",
-        dest="bundle_format",
-        choices=["markdown", "json"],
-        default="markdown",
-    )
-
     # -- dup -----------------------------------------------------------------
     dup_p = sub.add_parser(
         "dup",
@@ -220,40 +141,6 @@ def _build_parser() -> argparse.ArgumentParser:
         help="minimum function body size to consider (default: 6)",
     )
     dup_p.add_argument("--json", dest="dup_json", action="store_true")
-
-    # -- inspect -------------------------------------------------------------
-    inspect_p = sub.add_parser(
-        "inspect",
-        help="run PyCharm headless inspection and parse results",
-    )
-    inspect_p.add_argument(
-        "inspect_project", metavar="project_dir", help="path to the project to inspect"
-    )
-    inspect_p.add_argument(
-        "--pycharm",
-        dest="inspect_pycharm",
-        metavar="PATH",
-        help="path to PyCharm inspect.bat",
-    )
-    inspect_p.add_argument(
-        "--profile",
-        dest="inspect_profile",
-        metavar="PATH",
-        help="path to inspection profile XML",
-    )
-    inspect_p.add_argument(
-        "--output-dir",
-        dest="inspect_output_dir",
-        metavar="DIR",
-        help="directory for inspection output (default: temp dir)",
-    )
-    inspect_p.add_argument(
-        "--scope",
-        dest="inspect_scope",
-        metavar="DIR",
-        help="subdirectory scope for inspection (e.g. src)",
-    )
-    inspect_p.add_argument("--json", dest="inspect_json", action="store_true")
 
     # -- arch ----------------------------------------------------------------
     arch_p = sub.add_parser(
@@ -334,50 +221,6 @@ def _build_parser() -> argparse.ArgumentParser:
         help="write generated content to <path>/__init__.py instead of printing",
     )
 
-    # -- edit ----------------------------------------------------------------
-    edit_p = sub.add_parser(
-        "edit",
-        help="isolate or replace a single function/class in a file",
-    )
-    edit_p.add_argument("edit_file", metavar="file")
-    edit_p.add_argument(
-        "edit_symbol",
-        metavar="symbol",
-        nargs="?",
-        help="symbol name (omit with --commit/--status)",
-    )
-    mode = edit_p.add_mutually_exclusive_group()
-    mode.add_argument(
-        "--replace",
-        dest="edit_replace",
-        action="store_true",
-        help="(legacy) immediate lock+write; equivalent to --immediate",
-    )
-    mode.add_argument(
-        "--stage",
-        dest="edit_stage",
-        action="store_true",
-        help="stage replacement from stdin for later --commit",
-    )
-    mode.add_argument(
-        "--immediate",
-        dest="edit_immediate",
-        action="store_true",
-        help="apply replacement from stdin now under exclusive lock (single-agent)",
-    )
-    mode.add_argument(
-        "--commit",
-        dest="edit_commit",
-        action="store_true",
-        help="apply all staged patches for this file atomically",
-    )
-    mode.add_argument(
-        "--status",
-        dest="edit_status",
-        action="store_true",
-        help="show staged patches for this file",
-    )
-
     # -- bind ----------------------------------------------------------------
     bind_p = sub.add_parser(
         "bind",
@@ -414,12 +257,6 @@ def _build_parser() -> argparse.ArgumentParser:
         help="project type (default: auto-detect)",
     )
     check_p.add_argument(
-        "--pycharm",
-        dest="check_pycharm",
-        metavar="PATH",
-        help="path to PyCharm inspect.bat/sh (auto-located by default)",
-    )
-    check_p.add_argument(
         "--valgrind",
         dest="check_valgrind",
         action="store_true",
@@ -436,6 +273,7 @@ def _build_parser() -> argparse.ArgumentParser:
     check_p.add_argument(
         "--skip-exports", dest="check_skip_exports", action="store_true"
     )
+    check_p.add_argument("--skip-gates", dest="check_skip_gates", action="store_true")
     # C++ specific
     check_p.add_argument("--build-dir", dest="check_build_dir", metavar="DIR")
     check_p.add_argument("--skip-build", dest="check_skip_build", action="store_true")
@@ -452,85 +290,22 @@ def _build_parser() -> argparse.ArgumentParser:
     check_p.add_argument("--skip-clippy", dest="check_skip_clippy", action="store_true")
     check_p.add_argument("--skip-fmt", dest="check_skip_fmt", action="store_true")
     check_p.add_argument("--json", dest="check_json", action="store_true")
-
-    # -- mission -------------------------------------------------------------
-    mission_p = sub.add_parser(
-        "mission",
-        help="create/manage subagent task briefings (.frob/missions/<id>.md)",
+    check_p.add_argument("--ticket", dest="check_ticket", metavar="ID")
+    check_p.add_argument("--base", dest="check_base", metavar="REF")
+    check_p.add_argument(
+        "--only",
+        dest="check_only",
+        metavar="STAGE",
+        action="append",
+        default=[],
+        help="run only these stages (repeatable); includes 'gates'",
     )
-    mission_sub = mission_p.add_subparsers(dest="mission_command")
-
-    # mission new
-    new_m = mission_sub.add_parser("new", help="create a new mission briefing")
-    new_m.add_argument(
-        "mission_type", metavar="type", choices=["fix", "test", "implement", "review"]
+    check_p.add_argument(
+        "--stamp-coverage",
+        dest="check_stamp_coverage",
+        action="store_true",
+        help="record coverage.xml as the current coverage stamp and exit",
     )
-    new_m.add_argument("--file", dest="mission_file", metavar="FILE")
-    new_m.add_argument("--target", dest="mission_target", metavar="SYMBOL")
-    new_m.add_argument(
-        "--error",
-        dest="mission_error",
-        metavar="TEXT",
-        help="error message to include in the briefing",
-    )
-    new_m.add_argument(
-        "--test",
-        dest="mission_test",
-        metavar="TEST_NAME",
-        help="specific test name to (re-)run",
-    )
-    new_m.add_argument(
-        "--context",
-        dest="mission_context",
-        metavar="TEXT",
-        help="additional freeform context to append",
-    )
-
-    # mission done
-    done_m = mission_sub.add_parser(
-        "done", help="mark mission complete and delete briefing"
-    )
-    done_m.add_argument("mission_id", metavar="id")
-
-    # mission stuck
-    stuck_m = mission_sub.add_parser(
-        "stuck", help="mark mission blocked (moves to stuck/)"
-    )
-    stuck_m.add_argument("mission_id", metavar="id")
-    stuck_m.add_argument("mission_reason", metavar="reason")
-
-    # mission list
-    mission_sub.add_parser("list", help="list pending missions")
-
-    # -- ctx -----------------------------------------------------------------
-    ctx_p = sub.add_parser(
-        "ctx",
-        help=(
-            "adaptive context: chooses stub/bundle/full based on function complexity; "
-            "use instead of manually deciding between stub, bundle, xref"
-        ),
-    )
-    ctx_p.add_argument("ctx_file", metavar="file")
-    ctx_p.add_argument(
-        "ctx_symbol",
-        metavar="symbol",
-        help="function or class name (ClassName.method for methods)",
-    )
-    ctx_p.add_argument(
-        "--root",
-        dest="ctx_root",
-        metavar="DIR",
-        help="project root for xref search (default: file parent)",
-    )
-    ctx_p.add_argument(
-        "--depth",
-        dest="ctx_depth",
-        type=int,
-        default=1,
-        metavar="N",
-        help="bundle import depth (default: 1)",
-    )
-    ctx_p.add_argument("--json", dest="ctx_json", action="store_true")
 
     # -- gitlog ---------------------------------------------------------------
     gitlog_p = sub.add_parser(
@@ -573,63 +348,159 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     gitlog_p.add_argument("--json", dest="gitlog_json", action="store_true")
 
-    # -- dispatch -------------------------------------------------------------
-    dispatch_p = sub.add_parser(
-        "dispatch",
-        help="branch-per-agent worktree isolation for thread-safe parallel work",
+    # -- graph -----------------------------------------------------------------
+    graph_p = sub.add_parser(
+        "graph", help="obligation graph: build cache, query symbols, explain drift"
     )
-    dispatch_sub = dispatch_p.add_subparsers(dest="dispatch_command")
-
-    create_d = dispatch_sub.add_parser(
-        "create", help="create a worktree branch for an agent"
+    graph_sub = graph_p.add_subparsers(dest="graph_command")
+    graph_build_p = graph_sub.add_parser("build", help="(re)build the graph cache")
+    graph_build_p.add_argument("graph_path", metavar="path", nargs="?", default=".")
+    graph_query_p = graph_sub.add_parser(
+        "query", help="resolve a symbol ref and show its edges"
     )
-    create_d.add_argument(
-        "dispatch_label",
-        metavar="label",
-        help="short description (used in branch name)",
+    graph_query_p.add_argument("graph_ref", metavar="ref")
+    graph_query_p.add_argument("graph_path", metavar="path", nargs="?", default=".")
+    graph_query_p.add_argument("--json", dest="graph_json", action="store_true")
+    graph_why_p = graph_sub.add_parser(
+        "why", help="explain drift/ack status and remedy for a ref"
+    )
+    graph_why_p.add_argument("graph_ref", metavar="ref")
+    graph_why_p.add_argument("graph_path", metavar="path", nargs="?", default=".")
+    graph_why_p.add_argument("--json", dest="graph_json", action="store_true")
+
+    # -- ack ---------------------------------------------------------------
+    ack_p = sub.add_parser(
+        "ack", help="acknowledge current digests for one or more symbol refs"
+    )
+    ack_p.add_argument("ack_refs", metavar="ref", nargs="+")
+    ack_p.add_argument(
+        "--facet", dest="ack_facet", choices=["sig", "body", "doc"], default="sig"
+    )
+    ack_p.add_argument("--path", dest="ack_path", metavar="DIR", default=".")
+
+    # -- ticket ----------------------------------------------------------------
+    ticket_p = sub.add_parser("ticket", help="the statically-checkable ticket queue")
+    ticket_sub = ticket_p.add_subparsers(dest="ticket_command")
+
+    ticket_new_p = ticket_sub.add_parser("new", help="create a new ticket")
+    ticket_new_p.add_argument("--title", dest="ticket_title", required=True)
+    ticket_new_p.add_argument(
+        "--kind",
+        dest="ticket_kind",
+        required=True,
+        choices=["feature", "bug", "security", "ux", "docs", "invariant"],
+    )
+    ticket_new_p.add_argument(
+        "--scope", dest="ticket_scope", action="append", default=[]
+    )
+    ticket_new_p.add_argument(
+        "--blocked-by", dest="ticket_blocked_by", action="append", default=[]
+    )
+    ticket_new_p.add_argument("--parent", dest="ticket_parent")
+    ticket_new_p.add_argument("--body", dest="ticket_body", default="")
+    ticket_new_p.add_argument("--json", dest="ticket_json", action="store_true")
+
+    ticket_list_p = ticket_sub.add_parser("list", help="list tickets")
+    ticket_list_p.add_argument("--state", dest="ticket_state")
+    ticket_list_p.add_argument("--json", dest="ticket_json", action="store_true")
+
+    ticket_show_p = ticket_sub.add_parser("show", help="show one ticket")
+    ticket_show_p.add_argument("ticket_id", metavar="id")
+    ticket_show_p.add_argument("--json", dest="ticket_json", action="store_true")
+
+    ticket_doable_p = ticket_sub.add_parser(
+        "doable", help="list doable tickets (queued/planned, no open blockers)"
+    )
+    ticket_doable_p.add_argument("--json", dest="ticket_json", action="store_true")
+
+    ticket_plan_p = ticket_sub.add_parser(
+        "plan", help="transition queued -> planned"
+    )
+    ticket_plan_p.add_argument("ticket_id", metavar="id")
+
+    ticket_start_p = ticket_sub.add_parser(
+        "start",
+        help="transition to in-progress (auto-plans a queued ticket) and run "
+        "the pre-work sweep",
+    )
+    ticket_start_p.add_argument("ticket_id", metavar="id")
+
+    ticket_sweep_p = ticket_sub.add_parser(
+        "sweep", help="re-record the pre-work sweep (after widening scope)"
+    )
+    ticket_sweep_p.add_argument("ticket_id", metavar="id")
+
+    ticket_attach_p = ticket_sub.add_parser(
+        "attach", help="attach a file or clipboard image to a ticket"
+    )
+    ticket_attach_p.add_argument("ticket_id", metavar="id")
+    ticket_attach_p.add_argument(
+        "ticket_attach_path", metavar="path", nargs="?", default=None
+    )
+    ticket_attach_p.add_argument("--caption", dest="ticket_caption", default="")
+
+    ticket_block_p = ticket_sub.add_parser("block", help="record a blocker")
+    ticket_block_p.add_argument("ticket_id", metavar="id")
+    ticket_block_p.add_argument("--by", dest="ticket_by", required=True)
+
+    ticket_close_p = ticket_sub.add_parser("close", help="transition to done")
+    ticket_close_p.add_argument("ticket_id", metavar="id")
+
+    ticket_fail_p = ticket_sub.add_parser(
+        "fail", help="record a failed attempt in the failure log"
+    )
+    ticket_fail_p.add_argument("ticket_id", metavar="id")
+    ticket_fail_p.add_argument("--summary", dest="ticket_summary", required=True)
+
+    for _tp in (
+        ticket_show_p,
+        ticket_plan_p,
+        ticket_start_p,
+        ticket_sweep_p,
+        ticket_attach_p,
+        ticket_block_p,
+        ticket_close_p,
+        ticket_fail_p,
+    ):
+        _tp.add_argument("--path", dest="ticket_path", metavar="DIR", default=".")
+    ticket_new_p.add_argument("--path", dest="ticket_path", metavar="DIR", default=".")
+    ticket_list_p.add_argument("--path", dest="ticket_path", metavar="DIR", default=".")
+    ticket_doable_p.add_argument(
+        "--path", dest="ticket_path", metavar="DIR", default="."
     )
 
-    collect_d = dispatch_sub.add_parser(
-        "collect", help="rebase+merge completed dispatch branch"
+    # -- test ----------------------------------------------------------------
+    test_p = sub.add_parser(
+        "test", help="select and run tests for the touched set (or --all)"
     )
-    collect_d.add_argument("dispatch_id", metavar="id")
-    collect_d.add_argument(
-        "--strategy",
-        dest="dispatch_strategy",
-        choices=["rebase", "merge"],
-        default="rebase",
-        help="rebase=linear history (default) or merge=explicit merge commit",
+    test_p.add_argument("test_path", metavar="path", nargs="?", default=".")
+    test_p.add_argument("--all", dest="test_all", action="store_true")
+    test_p.add_argument("--base", dest="test_base", metavar="REF")
+    test_p.add_argument(
+        "--lang", dest="test_lang", action="append", default=[], metavar="L"
     )
-
-    abort_d = dispatch_sub.add_parser(
-        "abort", help="discard a dispatch branch and worktree"
+    test_p.add_argument(
+        "--fallback",
+        dest="test_fallback",
+        choices=["package", "suite", "warn"],
     )
-    abort_d.add_argument("dispatch_id", metavar="id")
+    test_p.add_argument("--json", dest="test_json", action="store_true")
 
-    dispatch_sub.add_parser("list", help="list active dispatch worktrees")
-
-    # -- todo -----------------------------------------------------------------
-    todo_p = sub.add_parser(
-        "todo",
-        help="persistent TODO tracker for cross-session context (.frob/todo.md)",
+    # -- vet -----------------------------------------------------------------
+    vet_p = sub.add_parser(
+        "vet",
+        help="dependency-vetting: lockfile allow conformance, quarantine, "
+        "typosquat, lifecycle scripts, osv advisories",
     )
-    todo_sub = todo_p.add_subparsers(dest="todo_command")
-
-    add_t = todo_sub.add_parser("add", help="add a TODO item")
-    add_t.add_argument("todo_text", metavar="text")
-
-    done_t = todo_sub.add_parser("done", help="mark item done")
-    done_t.add_argument("todo_id", metavar="id", type=int)
-
-    rm_t = todo_sub.add_parser("remove", help="remove item")
-    rm_t.add_argument("todo_id", metavar="id", type=int)
-
-    list_t = todo_sub.add_parser("list", help="list TODO items")
-    list_t.add_argument(
-        "--all", dest="todo_all", action="store_true", help="include completed items"
+    vet_p.add_argument("vet_path", metavar="path", nargs="?", default=".")
+    vet_p.add_argument(
+        "--hook",
+        dest="vet_hook",
+        metavar="COMMAND",
+        help="check an install-shaped shell command before it runs "
+        "(Claude Code PreToolUse hook mode)",
     )
-
-    todo_sub.add_parser("clear-done", help="remove all completed items")
+    vet_p.add_argument("--json", dest="vet_json", action="store_true")
 
     return p
 

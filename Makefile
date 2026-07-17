@@ -2,7 +2,7 @@
 STAMP := .venv/.install-stamp
 
 .PHONY: all check install format lint lint-fix typecheck test test-fast \
-        test-unit test-integration test-system clean upload sync-skills
+        test-unit test-integration test-system coverage clean upload sync-skills
 
 PYPI_NAME := frob
 SRC       := src
@@ -20,9 +20,11 @@ all: $(STAMP)
 
 # Read-only gate (no auto-fix). Safe to run in CI.
 check: $(STAMP)
-	uv run ruff check $(SRC)/ $(TESTS)/
-	uv run ty check $(SRC)/
-	uv run pytest $(TESTS)/ -q -n auto
+	uv run frob check
+
+coverage: $(STAMP)
+	uv run pytest --cov=src/frob --cov-branch --cov-report=xml -q
+	uv run frob check --stamp-coverage
 
 # ---------- install (stamp-guarded) ----------
 

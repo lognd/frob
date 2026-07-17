@@ -1,0 +1,30 @@
+check_base = "main"
+
+[graph]
+exclude = ["tests/fixtures/**", ".claude/worktrees/**"]
+
+[gates.severity]
+# Legacy-adoption baseline (T-0014 flips these back to error as annotation
+# coverage grows): snapshot-wide obligations warn on the un-annotated
+# legacy surface; diff-scoped and drift rules stay hard errors.
+COV001 = "warn"
+TEST001 = "warn"
+TEST002 = "warn"
+TEST003 = "warn"
+TEST005 = "warn"
+TEST006 = "warn"
+
+[testing]
+# min_unit_cases dropped from the 3-case aspirational target to 1 while the
+# gates dogfood milestone is in progress (see ticket for raising it back).
+min_unit_cases = 1
+min_integration = 1
+unit_branch_cov = 90
+module_line_cov = 85
+system_line_cov = 80
+
+[[test.runner]]
+language = "python"
+command = ["uv", "run", "pytest", "-q", "{ids}"]
+all_command = ["uv", "run", "pytest", "-q"]
+cwd = "."
