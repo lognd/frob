@@ -1,0 +1,224 @@
+# frob.testing -- touched-set test execution across languages
+
+One sentence: `frob test` is the single entry point that computes what was
+touched (diff vs base), selects every test obligated to those symbols via
+the obligation graph, and runs them through per-language runners -- so "run
+the right tests" is one command in any repo, any language, any worktree.
+
+This is the executable counterpart of the TEST gate family (docs/gates.md):
+the gates prove the bindings exist; `frob test` runs the bound tests.
+
+## Selection algorithm
+
+1. `diff = working_diff(root, base)` -- committed-since-merge-base plus
+   staged plus unstaged changes (the agent's whole delta in a worktree).
+2. Touched set: hunks resolved to symrefs against the graph snapshot;
+   files with no resolvable symbols count as touched files.
+3. Direct tests: every `TESTS` edge (any kind) whose target is a touched
+   symbol, its enclosing class, its file, or its package.
+4. Contract ripple (one hop): symbols holding a `uses-contract` edge to a
+   touched symbol are treated as touched -- their tests run too.
+5. Touched test files always run themselves.
+6. Fallback for touched files with zero bindings, per `[testing.select]`
+   `fallback`: `package` (default -- run the owning package's suite for
+   that language), `suite` (whole language suite), or `warn` (skip and
+   emit a warning; the TEST001 gate is what makes this safe to choose).
+
+`--all` skips selection and runs every configured runner's full suite.
+
+## Runner registry (`frob.toml`, `[[test.runner]]`)
+
+```toml
+[[test.runner]]
+language = "python"
+command = ["uv", "run", "pytest", "-q", "{ids}"]     # {ids} -> node ids
+all_command = ["uv", "run", "pytest", "-q"]
+cwd = "."
+
+[[test.runner]]
+language = "rust"
+command = ["cargo", "test", "{filters}"]             # {filters} -> name filters
+all_command = ["cargo", "test"]
+cwd = "."
+
+[[test.runner]]
+language = "typescript"
+command = ["npx", "vitest", "run", "{files}"]        # {files} -> test files
+all_command = ["npx", "vitest", "run"]
+cwd = "web"
+
+[[test.runner]]
+language = "cpp"
+command = ["ctest", "--test-dir", "build", "-R", "{regex}"]
+all_command = ["ctest", "--test-dir", "build"]
+cwd = "."
+```
+
+Placeholders: exactly one of `{ids}` (test node ids), `{files}` (test file
+paths), `{filters}` (cargo-style name filters), `{regex}` (alternation of
+test names). frob renders the selected tests into the placeholder's shape;
+a language with selected tests but no runner is a hard error, not a skip.
+`frob scaffold` templates ship with runners pre-filled. Every spawn goes
+through the typed subprocess seam with an explicit timeout and full logging
+(lithos procio discipline).
+
+## Public API
+
+<!-- frob:describes src/frob/gitio.py::repo_root -->
+<!-- frob:describes src/frob/gitio.py::working_diff -->
+<!-- frob:describes src/frob/gitio.py::current_branch -->
+<!-- frob:describes src/frob/gitio.py::run_argv -->
+<!-- frob:describes src/frob/testing/_select.py::extension_language -->
+<!-- frob:describes src/frob/testing/_select.py::select_tests -->
+<!-- frob:describes src/frob/testing/_runners.py::run_selected -->
+<!-- frob:describes src/frob/testing/_runners.py::load_runners -->
+<!-- frob:describes src/frob/testing/_collect.py::collect_python_tests -->
+
+```python
+# frob/gitio.py -- the ONE git subprocess seam (shared with frob.gates)
+def repo_root(start: Path) -> Result[Path, GitError]
+    # git rev-parse --show-toplevel; works identically inside a linked
+    # worktree (.git file indirection is git's problem, not ours).
+def working_diff(root: Path, base: str) -> Result[Diff, GitError]
+    # merge-base(HEAD, base) .. worktree, including uncommitted changes.
+def current_branch(root: Path) -> Result[str, GitError]
+def run_argv(argv: Sequence[str], *, cwd: Path | None = None,
+             timeout_s: float = 30.0) -> Result[ProcResult, GitError]
+    # The one process-with-timeout primitive in the package. frob.testing
+    # imports THIS function for its own runner/pytest spawns instead of
+    # keeping a second copy -- frob.gitio must not import frob.testing, so
+    # the shared helper lives in gitio and testing depends on it, not the
+    # reverse.
+
+# frob/testing/__init__.py
+def extension_language(path: str) -> str | None
+    # Documented duplicate of frob.lang's extension -> language-label
+    # table (same posture as frob.graph's own copy); a public
+    # extension-listing API on frob.lang was judged out of scope.
+def select_tests(snapshot: GraphSnapshot, diff: Diff,
+                 cfg: SelectConfig) -> SelectionReport
+    # Pure; implements the selection algorithm above.
+def run_selected(selection: SelectionReport, runners: tuple[RunnerSpec, ...],
+                 root: Path) -> Result[TestRunReport, TestingError]
+    # Groups by language, renders placeholders, spawns runners, merges
+    # per-runner outcomes; runner exit codes are data in the report.
+def load_runners(root: Path) -> Result[tuple[RunnerSpec, ...], TestingError]
+def collect_python_tests(root: Path) -> Result[CollectedTests, TestingError]
+    # pytest --collect-only cache (moved here from the gates design; the
+    # TEST gates import it from frob.testing).
+```
+
+**Deviation**: `frob.testing`'s `suite` fallback mode is threaded through the
+same `selected: Mapping[str, tuple[str, ...]]` field `SelectionReport`
+already has, rather than a new field -- a language whose fallback fired in
+`suite` mode gets a single sentinel string (`"*"`, exported as
+`frob.testing._select.ALL_SENTINEL`) inserted into its selected tuple;
+`run_selected` recognizes the sentinel and renders `all_command` for that
+language instead of placeholder-substituting `command`. This keeps
+`SelectionReport` exactly as specified while still letting `select_tests`
+stay pure (the decision is fully resolved by the time `run_selected` reads
+it, with no separate side-channel of "languages needing --all").
+
+## Data models
+
+```python
+class RunnerSpec(BaseModel):     # frozen; one [[test.runner]] entry
+    language: str
+    command: tuple[str, ...]
+    all_command: tuple[str, ...]
+    cwd: str = "."
+    timeout_s: float = 900.0
+
+class SelectionReport(BaseModel)  # frozen
+    touched: tuple[str, ...]              # symrefs and bare files
+    selected: Mapping[str, tuple[str, ...]]   # language -> test ids/files
+    ripple: tuple[str, ...]               # symbols pulled in via uses-contract
+    unbound: tuple[str, ...]              # touched files with no bindings
+    fallback: str
+
+class RunnerOutcome(BaseModel)    # frozen
+    language: str
+    argv: tuple[str, ...]
+    exit_code: int
+    duration_s: float
+    stdout_tail: str              # bounded excerpt, lithos-style
+    stderr_tail: str
+
+class TestRunReport(BaseModel)    # frozen
+    selection: SelectionReport
+    outcomes: tuple[RunnerOutcome, ...]
+    ok: bool                      # every runner exited zero
+```
+
+## Error types
+
+```python
+class GitError(ErrorSet):
+    NotARepo    = "Path is not inside a git repository or worktree"
+    GitFailed   = "git subprocess failed"
+
+class TestingError(ErrorSet):
+    NoRunner       = "A language has selected tests but no [[test.runner]]"
+    BadRunnerSpec  = "Runner entry failed validation or has no placeholder"
+    SpawnFailed    = "Runner process could not be started or timed out"
+    CollectFailed  = "pytest --collect-only failed"
+```
+
+## Git worktrees
+
+The worktree workflow (one agent per worktree on its own branch) is a
+first-class target, not an afterthought:
+
+- **Root discovery**: every git call goes through `frob.gitio` using
+  `git -C <root>`; `repo_root` resolves via `rev-parse --show-toplevel`,
+  which is worktree-correct. frob never touches `.git` internals directly.
+- **Per-worktree derived state**: `.frob/` (graph cache, coverage stamp,
+  pytest-collection cache) lives at each worktree's own root and is never
+  shared -- caches are cheap to rebuild incrementally and sharing them
+  across checkouts of different commits would poison incremental hashing.
+- **Base semantics**: `frob test` (and the scope gate) diff against
+  `merge-base(HEAD, base)`, so in an agent worktree the touched set is
+  exactly that agent's delta -- the common point the user asked for: the
+  same command means "test my changes" in the main checkout and in any
+  worktree.
+- **Tracked truth merges like code**: tickets, invariants, frob.lock, and
+  annotations are ordinary tracked files, so worktree branches carry their
+  own view and merge through git. Known seam: two worktrees can allocate
+  the same sequential ticket id (T-0043 twice); `load_queue` detects the
+  collision post-merge as `DuplicateId` (the gate fails loudly), and a
+  `frob ticket renumber` remedy is deferred post-0.1.0 (recorded in
+  TODO.md).
+
+## Design decisions
+
+- **One git seam (`frob.gitio`)**, shared by gates and testing. The gates
+  design's `gates/diff.py` is superseded by this module -- two diff
+  implementations would desync (docs/gates.md updated accordingly).
+- **Selection is graph-driven, not coverage-driven.** Coverage maps tell
+  you what code a test ran last time; the graph tells you what a test is
+  FOR. Declared bindings survive refactors and work identically across
+  languages that have no coverage tooling wired up.
+- **Fallback defaults to `package`, not `skip`.** An unbound touched file
+  must still get tested conservatively; TEST001 shrinks the unbound set
+  over time until fallback never fires.
+- **Runner exit codes are report data, not process errors.** A failing
+  test is a normal outcome the caller renders; only spawn/config problems
+  are Err (the lithos run_argv/run_tool split).
+- **`frob check` stays static; `frob test` executes.** check verifies the
+  bindings exist (TEST gates); test runs them. The pair is the workflow:
+  check tells you that you owe tests, test runs the ones you have.
+
+## Dependencies
+
+- `frob.graph` (snapshot, TESTS/uses-contract edges), `frob.gitio`,
+  `frob.lang` (language of a file), `pydantic`, `typani`; git and the
+  configured runners via subprocess.
+
+## Integration points
+
+- CLI: `frob test [--all] [--base REF] [--lang L ...] [--fallback MODE]`.
+- `frob.gates`: imports `working_diff`/`Diff` from `frob.gitio` and
+  `collect_python_tests` from `frob.testing`.
+- Agents: implementer runs `frob test` before writing a done-report;
+  `skills/next` treats a red `frob test` as a blocker on close.
+- CI: `frob test --all` plus `make coverage` for the stamp.
