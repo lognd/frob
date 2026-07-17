@@ -1664,7 +1664,7 @@ suite, unrelated to strata). Ticket check exit 0; 45 strata tests green.
 ```yaml
 id: T-0059
 title: strata lexer + recursive-descent parser (pydantic AST, Result diagnostics)
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-17'
@@ -1672,6 +1672,11 @@ blocked_by:
 - T-0049
 parent: T-0050
 scope:
+- strata-core/**
+- Makefile
+- .github/**
+- docs/strata/**
+- tickets.md
 - src/frob/strata/**
 - tests/unit/strata/**
 evidence: []
@@ -1693,6 +1698,11 @@ blocked_by:
 - T-0049
 parent: T-0050
 scope:
+- strata-core/**
+- Makefile
+- .github/**
+- docs/strata/**
+- tickets.md
 - src/frob/strata/**
 - tests/unit/strata/**
 evidence: []
@@ -1714,6 +1724,11 @@ blocked_by:
 - T-0049
 parent: T-0050
 scope:
+- strata-core/**
+- Makefile
+- .github/**
+- docs/strata/**
+- tickets.md
 - src/frob/strata/**
 - tests/unit/strata/**
 evidence: []
@@ -1735,6 +1750,11 @@ blocked_by:
 - T-0049
 parent: T-0050
 scope:
+- strata-core/**
+- Makefile
+- .github/**
+- docs/strata/**
+- tickets.md
 - src/frob/strata/**
 - tests/unit/strata/**
 evidence: []
@@ -1756,6 +1776,11 @@ blocked_by:
 - T-0049
 parent: T-0050
 scope:
+- strata-core/**
+- Makefile
+- .github/**
+- docs/strata/**
+- tickets.md
 - design/litmus/**
 - tests/**
 evidence: []
@@ -1917,23 +1942,47 @@ Exhaustive ErrorSet consumption + variant liveness + no-discarded-Result (graph 
 ```yaml
 id: T-0071
 title: 'strata-core: independent Rust/PyO3 kernel crate (closure + propagation)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-17'
-blocked_by:
-- T-0050
+blocked_by: []
 parent: T-0051
 scope:
+- src/frob/strata/**
+- tests/unit/strata/**
+- docs/strata/**
+- tickets.md
+- pyproject.toml
 - strata-core/**
 - Makefile
 - .github/**
-evidence: []
+evidence:
+- tests/unit/strata/test_facts.py::TestClosure::test_boundaries_stop_taint_unless_asked_otherwise
+- tests/unit/strata/test_facts.py::TestClosure::test_worst_age_reports_unbounded_on_a_positive_cycle
+- tests/unit/strata/test_litmus_payments.py::TestGoldenFindings::test_golden_2_refund_decision_reads_a_stale_replica
 attachments: []
 acceptance: []
 threat: null
 ```
 Own crate mirroring the frob-core maturin pattern; NOT shared with lithos (inspiration only). Kernels: fixpoint closure, staleness/capacity propagation over big models. No pure-Python fallback once adopted.
+
+## Done report
+
+Pulled forward from phase 2 by user directive (Rust-first: the prover
+runs constantly). Delivered strata-core/: independent Cargo/maturin
+crate (pyo3 0.22, abi3-py311, same posture as frob-core), kernels
+reachable (deterministic BFS closure, barrier semantics), worst_age
+(memoized longest-path DFS, +inf on positive cycles), demand
+(inbound-rate aggregation); bundled .pyi stub + py.typed so ty sees
+typed signatures. src/frob/strata/_facts.py now delegates all three
+kernels to strata_core with NO pure-Python fallback (ImportError with
+`make core` remedy); pydantic interface unchanged -- all 45 strata
+tests green against the Rust kernels, 5 cargo tests green. Makefile
+`core` target and CI build/test extended to both crates. Charter D3
+amended in docs/strata/charter.md; kernel.md gained the strata-core
+section. PyO3 exports annotated (frob:doc + frob:tests) per the
+rust-publicness rule.
 
 <!-- ticket:T-0072 -->
 ```yaml

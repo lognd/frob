@@ -119,7 +119,7 @@ than this is lying; strata states exactly this and tracks it.
 |---|---|
 | D1 | The language is named **strata**; files are `design/**/*.strata`; the CLI namespace is `frob sys` |
 | D2 | strata is **completely independent of lithos**. It gets its own Rust/PyO3 crate, `strata-core/`, mirroring the frob-core maturin pattern. lithos may be read for inspiration; no code, crates, or schemas are shared |
-| D3 | The engine lives in `src/frob/strata/` (parser, elaborator, prover, vocabularies); hot kernels move to `strata-core` when litmus models make pure Python slow, with no pure-Python fallback after adoption |
+| D3 | (Amended 2026-07-17, user directive: the prover runs constantly, so Rust-first.) Compute kernels -- closure, staleness/capacity propagation, and the parser as it lands -- live in `strata-core` from phase 1 on, with NO pure-Python fallback; `src/frob/strata/` keeps the open Python interface: pydantic models, validation, elaborator/vocabularies, claim orchestration, reports |
 | D4 | Litmus models are tracked fixtures in `design/litmus/` with golden expected-findings files run in CI; they are the language's compiler test suite and documentation. In-repo until the language stabilizes, then possibly promoted |
 | D5 | Phase order is 0..5 as in `roadmap.md`, strictly sequential at the phase level; scenarios land in phase 3, exporters in phase 5 |
 | D6 | Per-repo `design/` directories; the std vocabulary ships with frob; a cross-repo design registry (one model spanning the sibling repos) is deferred until after phase 5, but the module system uses dotted paths so it extends without breakage |

@@ -50,6 +50,7 @@ core: $(STAMP)
 		echo "cargo not found; skipping frob-core (smart-dup R3+ disabled)"; \
 		exit 0; }
 	cd frob-core && uvx maturin develop --uv --release
+	cd strata-core && uvx maturin develop --uv --release
 
 # ---------- formatting & linting ----------
 

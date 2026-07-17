@@ -169,6 +169,28 @@ silently drop one. Semantics as implemented in phase 0:
   an overdue or malformed review date is flagged there for the phase-5
   gate to escalate.
 
+## strata-core
+
+<!-- frob:describes strata-core/src/lib.rs::reachable -->
+<!-- frob:describes strata-core/src/lib.rs::worst_age -->
+<!-- frob:describes strata-core/src/lib.rs::demand -->
+<!-- frob:describes strata-core/src/lib.rs::strata_core -->
+
+The independent Rust/PyO3 kernel crate (T-0071; charter D2/D3). Data-in/
+data-out only -- flattened graph tuples in, witness paths and numbers out;
+validation and vocabulary stay in Python.
+
+- `reachable` -- deterministic BFS closure over lexicographically sorted
+  out-edges; barrier flag per edge implements endorsement semantics.
+- `worst_age` -- memoized longest-path DFS; positive cycles return +inf
+  plus the cycle witness.
+- `demand` -- inbound-rate aggregation (grows fanout/skew in phase 2).
+- `strata_core` -- the pymodule assembling the exported surface.
+
+Build: `make core` (uvx maturin develop --release); ships a bundled
+`.pyi` stub so ty sees typed signatures. Cargo tests run in CI beside
+frob-core's.
+
 ## Prover pipeline
 
 ```
@@ -184,7 +206,9 @@ prove             lattice ops + Datalog fixpoint + interval arithmetic
 report            per-claim verdicts -> SYS gate violations with remedies
 ```
 
-Performance: pure Python through phase 2; fixpoint and propagation kernels
-move to `strata-core` (independent Rust/PyO3 crate, T-0071) when the
-litmus models make them slow. No pure-Python fallback after adoption
-(matches the frob-core decision).
+Performance (D3 as amended): the fixpoint and propagation kernels
+(`reachable`, `worst_age`, `demand`) run in `strata-core`, the
+independent Rust/PyO3 crate (T-0071) -- REQUIRED, no pure-Python
+fallback; `make core` builds it into the venv alongside frob-core.
+Python keeps validation, orchestration, and the pydantic interface, so
+callers never see the boundary.

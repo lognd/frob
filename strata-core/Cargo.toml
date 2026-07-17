@@ -1,0 +1,22 @@
+[package]
+name = "strata-core"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.85"
+publish = false
+license = "MIT"
+description = "Compute-only kernels for frob.strata (closure, staleness, demand)"
+
+[lib]
+name = "strata_core"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+# extension-module is NOT a default feature: cargo test must link against
+# libpython, which the extension-module ABI flag deliberately suppresses.
+# maturin passes the feature at wheel-build time; plain `cargo build`/
+# `cargo test` leave it off. (Same posture as frob-core.)
+pyo3 = { version = "0.22", features = ["abi3-py311"] }
+
+[features]
+extension-module = ["pyo3/extension-module"]

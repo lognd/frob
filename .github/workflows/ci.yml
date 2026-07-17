@@ -24,13 +24,16 @@ jobs:
           path: |
             ~/.cargo/registry
             frob-core/target
-          key: cargo-${{ hashFiles('frob-core/Cargo.lock') }}
+            strata-core/target
+          key: cargo-${{ hashFiles('frob-core/Cargo.lock', 'strata-core/Cargo.lock') }}
       - name: Sync deps
         run: uv sync --all-extras --all-groups
-      - name: Build frob-core (Rust/PyO3)
+      - name: Build native extensions (frob-core + strata-core, Rust/PyO3)
         run: make core
       - name: cargo test (frob-core kernels)
         run: cd frob-core && cargo test --lib
+      - name: cargo test (strata-core kernels)
+        run: cd strata-core && cargo test --lib
       - name: Lint
         run: uv run ruff check src tests
       - name: Typecheck

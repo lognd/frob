@@ -5,12 +5,24 @@ closure methods are the tier-1 fixpoint the claim evaluator consumes.
 Everything here is complete over the model: reachability, worst-case age
 accumulation, and rate demand are computed over every declared path, so a
 PROVED verdict downstream really is a forall (charter law 4).
+
+Validation and indexing stay in Python (the open interface); the hot
+propagation kernels (reachable/worst_age/demand) run in the independent
+`strata_core` Rust extension, which is REQUIRED -- no pure-Python
+fallback (charter D3 as amended; build with `make core`).
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+try:
+    import strata_core
+except ImportError as exc:  # pragma: no cover - environment bug, not a code path
+    raise ImportError(
+        "strata_core native extension is required (charter D3: no pure-Python "
+        "fallback); build it with `make core`"
+    ) from exc
 from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
@@ -81,18 +93,12 @@ class FactBase:
         boundaries, which is what positive `reach` claims want.
         """
         # frob:doc docs/strata/kernel.md#fact-base
-        paths: dict[str, tuple[str, ...]] = {src: (src,)}
-        frontier = [src]
-        while frontier:
-            current = frontier.pop()
-            for flow_id in self.outgoing.get(current, ()):
-                if not through_barriers and self.boundaries_on.get(flow_id):
-                    _log.debug("closure: barrier on %s stops taint", flow_id)
-                    continue
-                dst = self.flows[flow_id].dst
-                if dst not in paths:
-                    paths[dst] = paths[current] + (flow_id, dst)
-                    frontier.append(dst)
+        edges = [
+            (f.id, f.src, f.dst, bool(self.boundaries_on.get(f.id)))
+            for f in self.flows.values()
+        ]
+        raw = strata_core.reachable(edges, src, through_barriers)
+        paths = {node: tuple(path) for node, path in raw.items()}
         _log.debug("closure from %s reached %d node(s)", src, len(paths) - 1)
         return paths
 
@@ -105,46 +111,27 @@ class FactBase:
         claim evaluator turns into a refutation, never a silent clamp.
         """
         # frob:doc docs/strata/kernel.md#fact-base
-        incoming: dict[str, list[str]] = {}
+        edges = []
         for flow in self.flows.values():
-            incoming.setdefault(flow.dst, []).append(flow.id)
-
-        best: dict[str, tuple[float, tuple[str, ...]]] = {}
-
-        def visit(node: str, active: frozenset[str]) -> tuple[float, tuple[str, ...]]:
-            if node in active:
-                return (float("inf"), (node,))
-            if node in best:
-                return best[node]
-            worst: tuple[float, tuple[str, ...]] = (0.0, (node,))
-            for flow_id in incoming.get(node, ()):
-                flow = self.flows[flow_id]
-                hop = 0.0
-                if flow.age is not None:
-                    base = flow.age.base_value()
-                    hop = base.danger_ok if base.is_ok else 0.0
-                up_age, up_path = visit(flow.src, active | {node})
-                total = up_age + hop
-                if total > worst[0]:
-                    worst = (total, up_path + (flow_id, node))
-            if node not in active:
-                best[node] = worst
-            return worst
-
-        age, path = visit(target, frozenset())
+            hop = 0.0
+            if flow.age is not None:
+                base = flow.age.base_value()
+                hop = base.danger_ok if base.is_ok else 0.0
+            edges.append((flow.id, flow.src, flow.dst, hop))
+        age, path = strata_core.worst_age(edges, target)
         _log.debug("worst_age(%s) = %s via %s", target, age, path)
-        return age, path
+        return age, tuple(path)
 
     def demand(self, node_id: str) -> float:
         """Total declared inbound rate at a node in base units (per second)."""
         # frob:doc docs/strata/kernel.md#fact-base
-        total = 0.0
+        rates = []
         for flow in self.flows.values():
-            if flow.dst == node_id and flow.rate is not None:
+            if flow.rate is not None:
                 base = flow.rate.base_value()
                 if base.is_ok:
-                    total += base.danger_ok
-        return total
+                    rates.append((flow.dst, base.danger_ok))
+        return strata_core.demand(rates, node_id)
 
 
 def _validate_ids(model: KernelModel) -> Result[None, StrataError]:
