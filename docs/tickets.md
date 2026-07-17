@@ -229,8 +229,20 @@ AttachError = TicketError | ClipboardError
 
 - `frob.gates`: scope gate reads `scope`, coverage gate reads `evidence`
   and joins `frob:ticket`/`frob:todo` edge targets against the queue.
-- CLI: `frob ticket new|list|show|doable|plan|start|sweep|attach|block|
-  close|fail`. `start` auto-plans a queued ticket (both legal steps);
-  `sweep` re-records the pre-work sweep after a scope change.
+- CLI: `frob ticket new|list|show|doable|plan|start|sweep|migrate|renumber|
+  attach|block|close|fail`. `start` auto-plans a queued ticket (both legal
+  steps); `sweep` re-records the pre-work sweep after a scope change;
+  `migrate` collapses a legacy dir into the ledger; `renumber` reassigns ids
+  to a contiguous T-0001.. sequence (the remedy for worktree-merge id
+  collisions, rewriting blocked_by/parent references).
+
+Ticket kinds: feature, bug, security, ux, docs, invariant, incident.
+- `--kind incident` seeds a blameless-postmortem body template (Summary,
+  Timeline, Root cause, Action items -- each action item becomes a ticket).
+- `--acceptance "given/when/then"` (repeatable) records criteria the
+  reviewer agent verifies against the diff before close.
+- `--threat` sets a STRIDE category (spoofing/tampering/repudiation/
+  info-disclosure/denial-of-service/elevation-of-privilege) on a security
+  ticket, so the security-auditor can organize sweeps by category.
 - Agents: planner emits ticket trees; implementer starts/closes tickets and
   writes done-reports; auditors file tickets with `origin: auditor`.

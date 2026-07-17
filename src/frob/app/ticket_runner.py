@@ -36,6 +36,8 @@ def run(cfg: AppConfig) -> None:
             _sweep_cmd(root, cfg)
         case "migrate":
             _migrate(root)
+        case "renumber":
+            _renumber(root)
         case "attach":
             _attach(root, cfg)
         case "block":
@@ -54,13 +56,12 @@ def run(cfg: AppConfig) -> None:
 
 # frob:ticket T-0030
 def _new(root: Path, cfg: AppConfig) -> None:
-    from frob.tickets import Origin, TicketKind, TicketSpec, new_ticket
+    # frob:ticket T-0005
+    from frob.tickets import Origin, Stride, TicketKind, TicketSpec, new_ticket
 
     if cfg.ticket_title is None or cfg.ticket_kind is None:
         _log.error("frob ticket new requires --title and --kind")
         sys.exit(1)
-
-    body = cfg.ticket_body
 
     spec = TicketSpec(
         title=cfg.ticket_title,
@@ -69,7 +70,9 @@ def _new(root: Path, cfg: AppConfig) -> None:
         scope=tuple(cfg.ticket_scope),
         blocked_by=tuple(cfg.ticket_blocked_by),
         parent=cfg.ticket_parent,
-        body=body,
+        acceptance=tuple(cfg.ticket_acceptance),
+        threat=Stride(cfg.ticket_threat) if cfg.ticket_threat else None,
+        body=cfg.ticket_body,
     )
     result = new_ticket(root, spec)
     if result.is_err:
@@ -186,6 +189,21 @@ def _migrate(root: Path) -> None:
         _log.info("no legacy tickets/*.md files to migrate")
     else:
         _log.info("migrated %d ticket(s) into tickets.md; removed tickets/*.md", n)
+
+
+def _renumber(root: Path) -> None:
+    # frob:ticket T-0012
+    from frob.tickets import renumber
+
+    result = renumber(root)
+    if result.is_err:
+        _log.error("ticket renumber failed: %s", result.danger_err)
+        sys.exit(1)
+    n = result.danger_ok
+    if n:
+        _log.info("renumbered %d ticket(s)", n)
+    else:
+        _log.info("ids already contiguous")
 
 
 def _plan(root: Path, cfg: AppConfig) -> None:

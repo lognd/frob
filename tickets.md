@@ -16,6 +16,8 @@ scope:
 - src/frob/dup/**,frob-core/**
 evidence: []
 attachments: []
+acceptance: []
+threat: null
 ```
 Phase 7 (0.2.0), designed in docs/dup.md: frob-core PyO3/maturin crate (R3 canonicalizer, winnowing, LSH, WL-kernel, APTED; compute-only, no-Python-fallback, lithos as build reference); region-granular matching (function/subsection); content-addressed fingerprint + LRU verdict caches in .frob/dup.db; DUP001/DUP002 gates; R6 observational probing via frob.fuzz generators; pre-work sweep re-platformed onto it.
 
@@ -34,6 +36,8 @@ scope:
 - src/frob/fuzz/**
 evidence: []
 attachments: []
+acceptance: []
+threat: null
 ```
 Phase 8 (0.2.0), designed in docs/fuzz.md: Arbitrary protocol (derive from pydantic / __fuzz__ / register), FUZZ001-003 gates, frob test --fuzz with digest-stamped corpus under .frob/corpus (LRU-capped), invariant-anchored default obligation; Rust/TS generator wiring as follow-on. Blocked by T-0001 (frob.fuzz's R6 probing depends on frob-core).
 
@@ -51,6 +55,8 @@ scope:
 - src/frob/gates/**
 evidence: []
 attachments: []
+acceptance: []
+threat: null
 ```
 Public sig digests changed vs the last release tag must require a version bump of the right class (semver, mechanically derived from the graph); frob gitlog drafts the changelog from conventional commits (release-manager role). Phase 9 (0.2.x).
 
@@ -68,6 +74,8 @@ scope:
 - decisions/**,src/frob/graph/**
 evidence: []
 attachments: []
+acceptance: []
+threat: null
 ```
 decisions/AD-###.md decision records: frontmatter id/status/context, frob:decision AD-### edges from implementing code, drift when decided-upon code changes without a superseding record (architect role; lithos AD-x referencing style is the precedent). Phase 9 (0.2.x).
 
@@ -75,7 +83,7 @@ decisions/AD-###.md decision records: frontmatter id/status/context, frob:decisi
 ```yaml
 id: T-0005
 title: Ticket kind=incident with blameless-postmortem body template
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-07-17'
@@ -85,14 +93,18 @@ scope:
 - src/frob/tickets/**,docs/tickets.md
 evidence: []
 attachments: []
+acceptance: []
+threat: null
 ```
 ticket kind=incident with a blameless-postmortem body template; postmortem action items MUST become tickets (COV-style gate: an incident cannot close with unticketed action items). Phase 9 (0.2.x), SRE role.
+
+Delivered under T-0032.
 
 <!-- ticket:T-0006 -->
 ```yaml
 id: T-0006
 title: Ticket acceptance field (given/when/then) verified by reviewer agent
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-07-17'
@@ -102,14 +114,18 @@ scope:
 - src/frob/tickets/**,docs/tickets.md
 evidence: []
 attachments: []
+acceptance: []
+threat: null
 ```
 acceptance: field on tickets (given/when/then bullets); reviewer agent verifies each criterion against the diff before close. Phase 9 (0.2.x), product-owner role.
+
+Delivered under T-0032.
 
 <!-- ticket:T-0007 -->
 ```yaml
 id: T-0007
 title: STRIDE threat field on kind=security tickets
-state: queued
+state: dropped
 kind: security
 origin: human
 created: '2026-07-17'
@@ -119,8 +135,12 @@ scope:
 - src/frob/tickets/**,docs/tickets.md
 evidence: []
 attachments: []
+acceptance: []
+threat: null
 ```
 threat: STRIDE category frontmatter on kind=security tickets; security-auditor prompts organize sweeps by category (AppSec role). Phase 9 (0.2.x).
+
+Delivered under T-0032.
 
 <!-- ticket:T-0008 -->
 ```yaml
@@ -136,6 +156,8 @@ scope:
 - src/frob/vet/**
 evidence: []
 attachments: []
+acceptance: []
+threat: null
 ```
 Full build-out of frob.vet per docs/vet.md: tree-sitter capability scan of the locked dependency tree, declaration-vs-observation conformance ([vet.allow]), version capability-escalation diffs as primary supply-chain signal, obfuscation unconditionally fatal, content-addressed verdict cache; VET001-VET010 gates; typed adapters over osv-scanner/GuardDog/Scorecard/sigstore-SLSA with skipped-never-silent absence; per-ecosystem rule families (VET-PY/VET-RS/VET-C/VET-JS) plus VET011 slopsquat/cooldown quarantine; first-party anomaly detectors (VET008 artifact/source divergence, VET009 stylometric self-similarity via frob-core WL kernels, VET010 sandboxed capability divergence); absorbs license/pinning checks. Not touched by this ticket's author -- owned by the concurrent vet workstream.
 
@@ -153,6 +175,8 @@ scope:
 - src/frob/gitlog/**,src/frob/tickets/**
 evidence: []
 attachments: []
+acceptance: []
+threat: null
 ```
 frob stats: lead time, close rate, failure-log recurrence computed from gitlog + ticket timestamps -- measurement only, never a gate. Phase 9 (0.2.x).
 
@@ -170,6 +194,8 @@ scope:
 - src/frob/**
 evidence: []
 attachments: []
+acceptance: []
+threat: null
 ```
 MCP adapter exposing stale_docs/doable_tickets/check_scope/pre_work queries as MCP tools, so agent clients can query frob state without shelling out. Deferred post-0.1.0.
 
@@ -187,6 +213,8 @@ scope:
 - src/frob/gates/**,src/frob/testing/**
 evidence: []
 attachments: []
+acceptance: []
+threat: null
 ```
 Add mutation testing (mutmut or equivalent) as the honest test-quality oracle; TEST-family gains a mutation-score floor. Counts and coverage floors are gameable proxies (assert-free tests pass them) -- this is the real defense. Deferred post-0.1.0.
 
@@ -194,7 +222,7 @@ Add mutation testing (mutmut or equivalent) as the honest test-quality oracle; T
 ```yaml
 id: T-0012
 title: 'frob ticket renumber: remedy for sequential-id collisions'
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-07-17'
@@ -204,8 +232,12 @@ scope:
 - src/frob/tickets/**
 evidence: []
 attachments: []
+acceptance: []
+threat: null
 ```
 frob ticket renumber -- remedy for sequential-id collisions when two agents create tickets concurrently on separate branches and both claim the same T-#### id. Deferred post-0.1.0.
+
+Delivered under T-0032.
 
 <!-- ticket:T-0013 -->
 ```yaml
@@ -221,6 +253,8 @@ scope:
 - frob.toml
 evidence: []
 attachments: []
+acceptance: []
+threat: null
 ```
 frob.toml's [testing] min_unit_cases was dropped from the 3-case aspirational target to 1 to unblock the gates dogfood milestone (TEST002 fires thousands of times on legacy surface otherwise). Raise it back to 3 once the new core modules (lang/graph/tickets/gitio/testing/gates/policy) have real multi-case unit coverage, then extend to the rest of the codebase.
 
@@ -239,6 +273,8 @@ scope:
 - src/frob/app/**,src/frob/check/**,src/frob/process/**,src/frob/map/**,src/frob/outline/**,src/frob/xref/**,src/frob/cycle/**,src/frob/dup/**,src/frob/scaffold/**,src/frob/bind/**,src/frob/arch/**,src/frob/gitlog/**,src/frob/exports/**,src/frob/docs/**,src/frob/ast/**
 evidence: []
 attachments: []
+acceptance: []
+threat: null
 ```
 COV001/TEST001/TEST002/TEST003/TEST005/TEST006 were fixed as ERROR in gates code (src/frob/gates/__init__.py has no per-rule severity override mechanism read from frob.toml -- see T for that gap) but fire thousands of times on legacy pre-gates modules. Since severity cannot be config-overridden today, real convergence on the legacy surface requires actually annotating (frob:doc/frob:tests) the legacy public API, module by module, not just the new core covered by this dogfood milestone.
 
@@ -259,6 +295,8 @@ evidence:
 - tests/test_gates.py::TestSeverityOverrides::test_override_downgrades_and_ignores_garbage
 - tests/test_gates.py::TestSeverityOverrides::test_no_frob_toml_is_identity
 attachments: []
+acceptance: []
+threat: null
 ```
 docs/gates.md's rule catalog states severity is 'per-rule default overridable in frob.toml', but src/frob/gates/__init__.py's own Phase 4 implementation notes say this was explicitly scoped out: severities are fixed constants in code (ERROR for DRIFT/COV002-004/SCOPE001/PRE001/INV001-002/TEST001/TEST004/WAIVE001; WARN for COV001/TODO001/TEST002/003/005), and frob.toml has no [rules] or per-rule table read anywhere in the gates loading path. This was discovered while trying to set a legacy-adoption severity baseline (TEST001/TEST004/TEST006 -> warn) for the dogfood milestone: writing such config to frob.toml would be silently ignored, so no baseline was written. Implement real per-rule severity override support (e.g. a [rules] table in frob.toml, read in run_gates, applied when constructing each Violation) so this baseline can actually be set.
 
@@ -284,6 +322,8 @@ scope:
 - src/frob/map/**,src/frob/outline/**,src/frob/xref/**,src/frob/cycle/**,src/frob/dup/**,src/frob/ast/**
 evidence: []
 attachments: []
+acceptance: []
+threat: null
 ```
 Re-platform map/outline/xref/cycle/dup onto frob.lang's uniform ParsedFile contract, then delete src/frob/ast. Deferred post-0.1.0; blocked_by T-0001 since dup's re-platform is entangled with the frob-core work.
 
@@ -301,6 +341,8 @@ scope:
 - src/frob/gates/**
 evidence: []
 attachments: []
+acceptance: []
+threat: null
 ```
 TEST003 alpha semantics treat every src/<pkg> directory with a public symbol as an interface owing min_integration edges (an honest over-approximation, per docs/gates.md's Phase 4 notes). Deferred: derive real consumer x provider pairs once frob.graph gains cross-file import edges, and require min_integration per pair rather than per provider.
 
@@ -319,6 +361,8 @@ scope:
 - src/frob/testing/**
 evidence: []
 attachments: []
+acceptance: []
+threat: null
 ```
 Infer frob:tests unit bindings by naming convention (test_<symbol> -> <symbol>) as a default, with explicit frob:tests directives only needed to override or supplement. Reduces the annotation burden that COV001/TEST001 currently impose on every legacy module. Deferred post-0.1.0.
 
@@ -337,6 +381,8 @@ scope:
 evidence:
 - tests/test_graph.py::TestCorruptCacheRecovery::test_garbage_cache_file_is_recreated
 attachments: []
+acceptance: []
+threat: null
 ```
 Discovered while writing INV-003 evidence (cache is always rebuildable): frob.graph.cache.connect() catches sqlite3.DatabaseError only around the schema-version SELECT and falls back to a fresh-rebuild path, but that path still runs DROP TABLE IF EXISTS against the same corrupt connection, which itself raises DatabaseError('file is not a database') when the on-disk bytes are not a valid sqlite file at all (as opposed to merely wrong-schema). A missing cache.db rebuilds fine (verified: tests/test_graph.py::TestLoadGraph::test_deleted_cache_is_rebuildable_from_source); a present-but-garbage cache.db does not (build_graph raises instead of returning Err or rebuilding). Fix: on DatabaseError, close and unlink/reopen the file before executescript, or catch DatabaseError around the DROP/executescript block too.
 
@@ -368,6 +414,8 @@ evidence:
 - tests/test_prework_parity.py::TestCliStartRecordsGateCompatibleDigest::test_start_then_gate_is_clean
 - tests/test_graph.py::TestCorruptCacheRecovery::test_garbage_cache_file_is_recreated
 attachments: []
+acceptance: []
+threat: null
 ```
 ## Done report
 
@@ -416,6 +464,8 @@ evidence:
 - tests/system/test_cli_perf.py::TestPerfProfileAndHeat::test_heat_without_artifact_fails_cleanly
 - tests/system/test_cli_perf.py::TestCheckOnlyPerf::test_perf001_fixture_warns_but_check_exits_zero
 attachments: []
+acceptance: []
+threat: null
 ```
 ## Done report
 
@@ -469,6 +519,8 @@ scope:
 - src/frob/app/check_runner.py
 evidence: []
 attachments: []
+acceptance: []
+threat: null
 ```
 
 <!-- ticket:T-0023 -->
@@ -487,6 +539,8 @@ scope:
 - src/frob/app/**
 evidence: []
 attachments: []
+acceptance: []
+threat: null
 ```
 
 <!-- ticket:T-0024 -->
@@ -504,6 +558,8 @@ scope:
 evidence:
 - tests/test_graph.py::TestDuplicateSymrefs::test_overload_and_property_setter_do_not_crash
 attachments: []
+acceptance: []
+threat: null
 ```
 ## Done report
 
@@ -529,6 +585,8 @@ evidence:
 - tests/test_gates.py::TestDoclinkGate::test_new_file_is_auto_obligated_by_glob
 - tests/system/test_cli_check.py::TestFrobTomlCheckDefaults::test_check_skip_from_frob_toml
 attachments: []
+acceptance: []
+threat: null
 ```
 ## Done report
 
@@ -557,6 +615,8 @@ evidence:
 - tests/test_excludes.py::test_dup_scanner_honors_exclude
 - tests/test_excludes.py::test_load_and_match_globs
 attachments: []
+acceptance: []
+threat: null
 ```
 ## Done report
 
@@ -580,6 +640,8 @@ scope:
 - src/frob/perf/**
 evidence: []
 attachments: []
+acceptance: []
+threat: null
 ```
 found while working T-0021: python -m cProfile exits 0 even when the profiled program exits nonzero (verified: pytest usage error exit 4 -> wrapped exit 0). profile_command therefore records a successful artifact for a workload that never ran. Consider a shim entry that captures SystemExit and records the real returncode in the meta sidecar.
 
@@ -600,6 +662,8 @@ evidence:
 - tests/test_gates.py::TestDoclinkGate::test_orphan_doc_is_error_and_linked_docs_pass
 - tests/system/test_cli_check.py::TestFrobTomlCheckDefaults::test_check_skip_from_frob_toml
 attachments: []
+acceptance: []
+threat: null
 ```
 found while working T-0021: uv run frob check exits 1 on a clean HEAD checkout (verified in a detached worktree of 369cbd2): 17 gate errors (16x DOC001 orphan docs -- agentic-workflow/check/cycle/dup/exports/fuzz/gitlog/lang/map/outline/parse/quickstart/rework/scaffold/vet/xref -- linked from nowhere) plus ruff-format would reformat 9 committed files (src/frob/graph/__init__.py, tests/system/test_cli_exports.py, tests/system/test_cli_vet.py, tests/test_gates.py, tests/test_prework_parity.py, tests/test_testing.py, tests/test_vet.py, others). This makes the commit gate (frob check exit 0) unattainable for every in-scope ticket until cleared. Either link the docs from docs/index.md / add frob:describes anchors, and run ruff format on the drifted files.
 
@@ -627,6 +691,8 @@ scope:
 evidence:
 - tests/test_graph.py::TestConcurrentCache::test_concurrent_connections_do_not_raise_disk_io
 attachments: []
+acceptance: []
+threat: null
 ```
 REMAINING (kept open beyond the connection fix): fully race-free
 concurrent build_graph on one cache.db needs a build lockfile or
@@ -656,6 +722,8 @@ scope:
 evidence:
 - tests/system/test_cli_ticket.py::TestTicketRoundTrip::test_plan_then_sweep_flow
 attachments: []
+acceptance: []
+threat: null
 ```
 ## Done report
 
@@ -687,9 +755,41 @@ evidence:
 - tests/test_tickets.py::TestSingleFileLedger::test_migrate_collapses_dir_into_ledger
 - tests/test_gates.py::TestCov002ScopeCoverage::test_open_ticket_scope_covers_changed_symbol
 attachments: []
+acceptance: []
+threat: null
 ```
 ## Done report
 
 Single-file tickets.md ledger (compact central log) with frob ticket
 migrate; COV002 clears a whole refactor via an open ticket's scope glob
 instead of per-symbol directives. frob's own 30 tickets migrated.
+
+<!-- ticket:T-0032 -->
+```yaml
+id: T-0032
+title: 'Ticket schema: incident kind, acceptance, STRIDE threat, renumber'
+state: done
+kind: feature
+origin: agent
+created: '2026-07-17'
+blocked_by: []
+parent: null
+scope:
+- src/frob/tickets/**
+- src/frob/app/ticket_runner.py
+- src/frob/app/config.py
+- src/frob/__main__.py
+- tests/test_tickets.py
+- docs/tickets.md
+evidence:
+- tests/test_tickets.py::TestSchemaExtras::test_renumber_makes_ids_contiguous
+- tests/test_tickets.py::TestSchemaExtras::test_acceptance_and_threat_round_trip
+attachments: []
+acceptance: []
+threat: null
+```
+## Done report
+
+Added incident kind (postmortem template), acceptance criteria,
+STRIDE threat field, and frob ticket renumber (contiguous ids,
+rewrites blocked_by/parent). T-0005/06/07/12 folded in here.

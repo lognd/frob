@@ -31,6 +31,18 @@ class TicketKind(StrEnum):
     UX = "ux"
     DOCS = "docs"
     INVARIANT = "invariant"
+    INCIDENT = "incident"
+
+
+class Stride(StrEnum):
+    """STRIDE threat categories for kind=security tickets (T-0007)."""
+
+    SPOOFING = "spoofing"
+    TAMPERING = "tampering"
+    REPUDIATION = "repudiation"
+    INFO_DISCLOSURE = "info-disclosure"
+    DENIAL_OF_SERVICE = "denial-of-service"
+    ELEVATION_OF_PRIVILEGE = "elevation-of-privilege"
 
 
 class Origin(StrEnum):
@@ -77,6 +89,10 @@ class Ticket(BaseModel):
     scope: tuple[str, ...] = ()
     evidence: tuple[str, ...] = ()
     attachments: tuple[Attachment, ...] = ()
+    # given/when/then acceptance criteria the reviewer verifies (T-0006)
+    acceptance: tuple[str, ...] = ()
+    # STRIDE category for kind=security tickets (T-0007)
+    threat: Stride | None = None
     body: str = ""
 
 
@@ -91,6 +107,8 @@ class TicketSpec(BaseModel):
     scope: tuple[str, ...] = ()
     blocked_by: tuple[str, ...] = ()
     parent: str | None = None
+    acceptance: tuple[str, ...] = ()
+    threat: Stride | None = None
     body: str = ""
 
 

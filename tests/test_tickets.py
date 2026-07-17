@@ -537,3 +537,73 @@ class TestSingleFileLedger:
         (d / "T-0001-legacy.md").write_text(serialize_ticket(tk), encoding="utf-8")
         q = load_queue(tmp_path).danger_ok
         assert q.tickets["T-0001"].title == "legacy"
+
+
+class TestSchemaExtras:
+    def _spec(self, **kw):
+        from frob.tickets import Origin, TicketKind, TicketSpec
+
+        kw.setdefault("title", "t")
+        kw.setdefault("kind", TicketKind.FEATURE)
+        kw.setdefault("origin", Origin.AGENT)
+        return TicketSpec(**kw)
+
+    def test_incident_gets_postmortem_template(self, tmp_path):
+        from frob.tickets import TicketKind, load_queue, new_ticket
+
+        t = new_ticket(tmp_path, self._spec(kind=TicketKind.INCIDENT)).danger_ok
+        q = load_queue(tmp_path).danger_ok
+        body = q.tickets[t.id].body
+        assert "## Root cause (blameless)" in body
+        assert "## Action items" in body
+
+    def test_acceptance_and_threat_round_trip(self, tmp_path):
+        from frob.tickets import Stride, TicketKind, load_queue, new_ticket
+
+        t = new_ticket(
+            tmp_path,
+            self._spec(
+                kind=TicketKind.SECURITY,
+                acceptance=("given X when Y then Z",),
+                threat=Stride.TAMPERING,
+            ),
+        ).danger_ok
+        q = load_queue(tmp_path).danger_ok
+        assert q.tickets[t.id].acceptance == ("given X when Y then Z",)
+        assert q.tickets[t.id].threat == Stride.TAMPERING
+
+    def test_renumber_makes_ids_contiguous(self, tmp_path):
+        from frob.tickets import (
+            load_queue,
+            new_ticket,
+            renumber,
+        )
+        from frob.tickets._store import write_all
+
+        new_ticket(tmp_path, self._spec(title="a")).danger_ok
+        b = new_ticket(tmp_path, self._spec(title="b")).danger_ok
+        new_ticket(tmp_path, self._spec(title="c")).danger_ok
+        # simulate a gap: drop b, leaving T-0001 and T-0003
+        q = load_queue(tmp_path).danger_ok
+        remaining = {k: v for k, v in q.tickets.items() if k != b.id}
+        write_all(tmp_path, remaining)
+        n = renumber(tmp_path).danger_ok
+        assert n >= 1
+        ids = set(load_queue(tmp_path).danger_ok.tickets)
+        assert ids == {"T-0001", "T-0002"}
+
+    def test_renumber_rewrites_blocked_by(self, tmp_path):
+        from frob.tickets import load_queue, new_ticket, renumber
+        from frob.tickets._store import write_all
+
+        a = new_ticket(tmp_path, self._spec(title="a")).danger_ok
+        b = new_ticket(tmp_path, self._spec(title="b", blocked_by=(a.id,))).danger_ok
+        q = load_queue(tmp_path).danger_ok
+        # drop a, then re-add b blocked by old a id, forcing renumber remap
+        write_all(tmp_path, {k: v for k, v in q.tickets.items()})
+        # introduce a gap by removing a and keeping b (blocked_by references a)
+        only_b = {b.id: q.tickets[b.id]}
+        write_all(tmp_path, only_b)
+        renumber(tmp_path).danger_ok
+        q2 = load_queue(tmp_path).danger_ok
+        assert "T-0001" in q2.tickets

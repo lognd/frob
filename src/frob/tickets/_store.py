@@ -241,6 +241,25 @@ def write_ticket(root: Path, ticket: Ticket) -> Result[None, TicketError]:
     return atomic_write(_dir_path_for(root, ticket), serialize_ticket(ticket))
 
 
+def write_all(root: Path, tickets: dict[str, Ticket]) -> Result[None, TicketError]:
+    """Replace the ENTIRE store with `tickets` (used by renumber). Single mode
+    rewrites the ledger wholesale; dir mode writes each file and removes any
+    T-*.md whose id is no longer present."""
+    if store_mode(root) == "single":
+        return atomic_write(ledger_path(root), _render_ledger(tickets))
+    keep_files: set[Path] = set()
+    for ticket in tickets.values():
+        path = _dir_path_for(root, ticket)
+        result = atomic_write(path, serialize_ticket(ticket))
+        if result.is_err:
+            return Err(result.danger_err)
+        keep_files.add(path)
+    for path in _dir_glob(root):
+        if path not in keep_files:
+            path.unlink(missing_ok=True)
+    return Ok(None)
+
+
 def migrate_to_ledger(root: Path) -> Result[int, TicketError]:
     """Collapse a legacy tickets/*.md layout into a single tickets.md ledger.
 

@@ -158,6 +158,8 @@ class AppConfig(BaseModel):
     ticket_title: str | None = None
     ticket_kind: str | None = None
     ticket_origin: str | None = None
+    ticket_acceptance: list[str] = []
+    ticket_threat: str | None = None
     ticket_scope: list[str] = []
     ticket_blocked_by: list[str] = []
     ticket_parent: str | None = None
@@ -233,6 +235,7 @@ class AppConfig(BaseModel):
             "ticket_title",
             "ticket_kind",
             "ticket_origin",
+            "ticket_threat",
             "ticket_parent",
             "ticket_state",
             "ticket_by",
@@ -304,6 +307,7 @@ class AppConfig(BaseModel):
             "ticket_ids",
             "ticket_scope",
             "ticket_blocked_by",
+            "ticket_acceptance",
             "test_lang",
             "perf_argv",
         ):

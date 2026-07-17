@@ -21,6 +21,7 @@ from frob.tickets._models import (
     AttachmentSource,
     FailureEntry,
     Origin,
+    Stride,
     Ticket,
     TicketError,
     TicketKind,
@@ -35,6 +36,7 @@ from frob.tickets._store import (
     migrate_to_ledger,
     slugify,
     tickets_dir,
+    write_all,
     write_ticket,
 )
 from frob.tickets.clipboard import ClipboardError, clipboard_image
@@ -104,6 +106,9 @@ def new_ticket(root: Path, spec: TicketSpec) -> Result[Ticket, TicketError]:
     if ticket_id in existing:
         _log.error("tickets: id collision allocating %s", ticket_id)
         return Err(TicketError.DuplicateId)
+    body = spec.body
+    if spec.kind == TicketKind.INCIDENT and not body.strip():
+        body = _INCIDENT_TEMPLATE
     ticket = Ticket(
         id=ticket_id,
         title=spec.title,
@@ -116,13 +121,63 @@ def new_ticket(root: Path, spec: TicketSpec) -> Result[Ticket, TicketError]:
         scope=spec.scope,
         evidence=(),
         attachments=(),
-        body=spec.body,
+        acceptance=spec.acceptance,
+        threat=spec.threat,
+        body=body,
     )
     write_result = write_ticket(root, ticket)
     if write_result.is_err:
         return Err(write_result.danger_err)
     _log.info("tickets: created %s", ticket_id)
     return Ok(ticket)
+
+
+_INCIDENT_TEMPLATE = (
+    "## Summary\n\n"
+    "## Timeline\n\n"
+    "## Root cause (blameless)\n\n"
+    "## Action items\n"
+    "<!-- each action item MUST become a ticket -- link them here as T-#### -->\n"
+)
+
+
+def renumber(root: Path) -> Result[int, TicketError]:
+    """Reassign ticket ids to a contiguous T-0001.. sequence (ordered by
+    current id), rewriting blocked_by/parent references so the queue stays
+    consistent. The remedy for sequential-id collisions after a worktree
+    merge (T-0012). Returns the number of tickets renumbered.
+    """
+    loaded = load_all(root)
+    if loaded.is_err:
+        return Err(loaded.danger_err)
+    old = loaded.danger_ok
+    ordered = sorted(old.values(), key=lambda t: t.id)
+    mapping = {t.id: f"T-{i + 1:04d}" for i, t in enumerate(ordered)}
+    if all(t.id == mapping[t.id] for t in ordered):
+        _log.info("tickets: renumber -- already contiguous, nothing to do")
+        return Ok(0)
+
+    def remap(tid: str) -> str:
+        return mapping.get(tid, tid)
+
+    new_map: dict[str, Ticket] = {}
+    renumbered = 0
+    for ticket in ordered:
+        new_id = mapping[ticket.id]
+        if new_id != ticket.id:
+            renumbered += 1
+        new_map[new_id] = ticket.model_copy(
+            update={
+                "id": new_id,
+                "blocked_by": tuple(remap(b) for b in ticket.blocked_by),
+                "parent": remap(ticket.parent) if ticket.parent else None,
+            }
+        )
+    result = write_all(root, new_map)
+    if result.is_err:
+        return Err(result.danger_err)
+    _log.info("tickets: renumbered %d ticket(s)", renumbered)
+    return Ok(renumbered)
 
 
 # frob:doc docs/tickets.md#public-api
@@ -329,8 +384,10 @@ __all__ = [
     "attach",
     "doable",
     "load_queue",
+    "Stride",
     "migrate",
     "new_ticket",
+    "renumber",
     "record_failure",
     "transition",
 ]

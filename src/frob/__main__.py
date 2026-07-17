@@ -390,7 +390,24 @@ def _build_parser() -> argparse.ArgumentParser:
         "--kind",
         dest="ticket_kind",
         required=True,
-        choices=["feature", "bug", "security", "ux", "docs", "invariant"],
+        choices=["feature", "bug", "security", "ux", "docs", "invariant", "incident"],
+    )
+    ticket_new_p.add_argument(
+        "--acceptance",
+        dest="ticket_acceptance",
+        action="append",
+        default=[],
+        metavar="CRITERION",
+        help="given/when/then acceptance criterion (repeatable)",
+    )
+    ticket_new_p.add_argument(
+        "--threat",
+        dest="ticket_threat",
+        choices=[
+            "spoofing", "tampering", "repudiation", "info-disclosure",
+            "denial-of-service", "elevation-of-privilege",
+        ],
+        help="STRIDE category for a kind=security ticket",
     )
     ticket_new_p.add_argument(
         "--origin",
@@ -439,6 +456,9 @@ def _build_parser() -> argparse.ArgumentParser:
     ticket_migrate_p = ticket_sub.add_parser(
         "migrate", help="collapse legacy tickets/*.md into a single tickets.md ledger"
     )
+    ticket_renumber_p = ticket_sub.add_parser(
+        "renumber", help="reassign ids to a contiguous T-0001.. sequence"
+    )
 
     ticket_attach_p = ticket_sub.add_parser(
         "attach", help="attach a file or clipboard image to a ticket"
@@ -468,6 +488,7 @@ def _build_parser() -> argparse.ArgumentParser:
         ticket_start_p,
         ticket_sweep_p,
         ticket_migrate_p,
+        ticket_renumber_p,
         ticket_attach_p,
         ticket_block_p,
         ticket_close_p,
