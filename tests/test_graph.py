@@ -579,3 +579,37 @@ class TestConcurrentCache:
         with ThreadPoolExecutor(max_workers=4) as ex:
             futures = [ex.submit(writer, n) for n in range(4)]
             assert all(f.result() for f in futures)
+
+
+def test_graph_build_lock_drift_integration(tmp_path: Path) -> None:
+    # frob:tests src/frob/graph kind="integration"
+    # Exercises the graph pipeline end to end: build_graph parses + digests a
+    # source file into the sqlite cache, acknowledge writes a lock, and drift
+    # (with the lock module) reports staleness once the source digest moves.
+    from frob.graph.lock import acknowledge, drift, load_lock, write_lock
+
+    cache = tmp_path / ".frob" / "cache.db"
+    _write(tmp_path, "widget.py", _BASE_PY)
+    snapshot = build_graph(tmp_path, cache).danger_ok
+    ref = "widget.py::Widget.render"
+    assert ref in snapshot.symbols
+
+    lock = load_lock(tmp_path / "frob.lock").danger_ok
+    acked = acknowledge(lock, snapshot, [ref]).danger_ok
+    assert write_lock(acked, tmp_path / "frob.lock").is_ok
+    assert drift(acked, snapshot).stale == ()
+
+    # change the render signature; drift must now flag the acked ref (sig
+    # facet) as stale
+    _write(
+        tmp_path,
+        "widget.py",
+        _BASE_PY.replace(
+            "def render(self, value: int) -> str:",
+            "def render(self, value: int, extra: int = 0) -> str:",
+        ),
+    )
+    cache.unlink()
+    snapshot2 = build_graph(tmp_path, cache).danger_ok
+    report = drift(acked, snapshot2)
+    assert any(item.entry.ref == ref for item in report.stale)

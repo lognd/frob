@@ -161,6 +161,13 @@ class TestStateMachine:
         assert result.is_ok, result.err
         assert result.danger_ok.state == to
 
+    def test_transition_queued_to_planned_unit(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/__init__.py::transition kind="unit"
+        _write(tmp_path, _ticket(state=TicketState.QUEUED))
+        result = transition(tmp_path, "T-0001", TicketState.PLANNED)
+        assert result.is_ok, result.err
+        assert result.danger_ok.state == TicketState.PLANNED
+
     def test_planned_to_in_progress(self, tmp_path: Path) -> None:
         _write(tmp_path, _ticket(state=TicketState.PLANNED))
         result = transition(tmp_path, "T-0001", TicketState.IN_PROGRESS)
@@ -626,3 +633,39 @@ class TestSchemaExtras:
         renumber(tmp_path).danger_ok
         q2 = load_queue(tmp_path).danger_ok
         assert "T-0001" in q2.tickets
+
+
+def test_tickets_queue_workflow_integration(tmp_path: Path) -> None:
+    # frob:tests src/frob/tickets kind="integration"
+    # Exercises the ticket workflow across store + state machine: create two
+    # tickets (one blocking the other), confirm doable ordering respects the
+    # open blocker, then drive the blocker through its legal transitions and
+    # confirm the dependent becomes doable.
+    from frob.tickets import TicketSpec
+
+    blocker = new_ticket(
+        tmp_path,
+        TicketSpec(title="blocker", kind=TicketKind.FEATURE, origin=Origin.HUMAN),
+    ).danger_ok
+    dependent = new_ticket(
+        tmp_path,
+        TicketSpec(
+            title="dependent",
+            kind=TicketKind.FEATURE,
+            origin=Origin.HUMAN,
+            blocked_by=(blocker.id,),
+        ),
+    ).danger_ok
+
+    queue = load_queue(tmp_path).danger_ok
+    doable_ids = {t.id for t in doable(queue)}
+    assert blocker.id in doable_ids
+    assert dependent.id not in doable_ids  # open blocker hides it
+
+    assert transition(tmp_path, blocker.id, TicketState.PLANNED).is_ok
+    assert transition(tmp_path, blocker.id, TicketState.IN_PROGRESS).is_ok
+    # cannot close without evidence + Done report
+    assert transition(tmp_path, blocker.id, TicketState.DROPPED).is_ok
+
+    queue2 = load_queue(tmp_path).danger_ok
+    assert dependent.id in {t.id for t in doable(queue2)}

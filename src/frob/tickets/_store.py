@@ -196,7 +196,8 @@ def _parse_ledger(text: str) -> Result[dict[str, Ticket], TicketError]:
 def _render_ledger(tickets: dict[str, Ticket]) -> str:
     """Render an id -> Ticket map to ledger text, ordered by id."""
     parts = [_LEDGER_HEADER]
-    for ticket_id in sorted(tickets):
+    ordered_ids = sorted(tickets)
+    for ticket_id in ordered_ids:
         ticket = tickets[ticket_id]
         body = ticket.body.strip("\n")
         section = (
@@ -262,10 +263,15 @@ def write_all(root: Path, tickets: dict[str, Ticket]) -> Result[None, TicketErro
         if result.is_err:
             return Err(result.danger_err)
         keep_files.add(path)
+    _prune_stale_files(root, keep_files)
+    return Ok(None)
+
+
+def _prune_stale_files(root: Path, keep_files: set[Path]) -> None:
+    """Delete any dir-mode ticket file whose path is not in `keep_files`."""
     for path in _dir_glob(root):
         if path not in keep_files:
             path.unlink(missing_ok=True)
-    return Ok(None)
 
 
 # frob:doc docs/tickets.md#storage-internals

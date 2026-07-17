@@ -78,6 +78,11 @@ def _facet_for_ref(ref: str, snapshot: GraphSnapshot) -> str:
     return _DEFAULT_FACET
 
 
+def _sorted_entries(entries: Sequence[LockEntry]) -> tuple[LockEntry, ...]:
+    """Lock entries in the canonical, diff-stable `(ref, facet)` order."""
+    return tuple(sorted(entries, key=lambda e: (e.ref, e.facet)))
+
+
 # frob:doc docs/graph.md#public-api
 def acknowledge(
     lock: LockFile, snapshot: GraphSnapshot, refs: Sequence[str]
@@ -100,7 +105,7 @@ def acknowledge(
         digest = getattr(record.digests, facet)
         entries[(ref, facet)] = LockEntry(ref=ref, facet=facet, digest=digest)
         _log.info("acknowledge: %s facet=%s digest=%s", ref, facet, digest[:8])
-    ordered = tuple(sorted(entries.values(), key=lambda e: (e.ref, e.facet)))
+    ordered = _sorted_entries(list(entries.values()))
     return Ok(LockFile(version=lock.version, entries=ordered))
 
 
@@ -120,28 +125,46 @@ def _vanished_endpoint(edge: Edge, snapshot: GraphSnapshot) -> str | None:
     return None
 
 
+def _recorded_digests(vanished_ref: str, lock: LockFile) -> set[str]:
+    """Every digest the lock recorded for `vanished_ref`."""
+    return {entry.digest for entry in lock.entries if entry.ref == vanished_ref}
+
+
+def _body_digest_matches(
+    vanished_ref: str, lock: LockFile, snapshot: GraphSnapshot
+) -> set[str]:
+    """Symrefs whose body digest matches a recorded ack of `vanished_ref`."""
+    recorded = _recorded_digests(vanished_ref, lock)
+    return {
+        record.symref
+        for record in snapshot.symbols.values()
+        if record.digests.body in recorded
+    }
+
+
+def _qualname_matches(vanished_ref: str, snapshot: GraphSnapshot) -> set[str]:
+    """Symrefs sharing the qualname of `vanished_ref` (a plausible rename)."""
+    if "::" not in vanished_ref:
+        return set()
+    _path, _sep, qualname = vanished_ref.partition("::")
+    return {
+        record.symref
+        for record in snapshot.symbols.values()
+        if record.id.qualname == qualname
+    }
+
+
 def _rename_candidates(
     vanished_ref: str, lock: LockFile, snapshot: GraphSnapshot
 ) -> tuple[str, ...]:
     """Body-digest and same-qualname rename candidates for `vanished_ref`."""
-    recorded_digests = {
-        entry.digest for entry in lock.entries if entry.ref == vanished_ref
-    }
-    candidates: set[str] = set()
-    for record in snapshot.symbols.values():
-        if record.digests.body in recorded_digests:
-            candidates.add(record.symref)
-    if "::" in vanished_ref:
-        _path, _sep, qualname = vanished_ref.partition("::")
-        for record in snapshot.symbols.values():
-            if record.id.qualname == qualname:
-                candidates.add(record.symref)
+    candidates = _body_digest_matches(vanished_ref, lock, snapshot)
+    candidates |= _qualname_matches(vanished_ref, snapshot)
     return tuple(sorted(candidates))
 
 
-# frob:doc docs/graph.md#public-api
-def drift(lock: LockFile, snapshot: GraphSnapshot) -> DriftReport:
-    """Pure comparison: stale acks (digest moved) and dangling edges (endpoint gone)."""
+def _stale_items(lock: LockFile, snapshot: GraphSnapshot) -> tuple[StaleItem, ...]:
+    """Acked entries whose current digest has moved off the recorded value."""
     stale: list[StaleItem] = []
     for entry in lock.entries:
         record = snapshot.symbols.get(entry.ref)
@@ -157,7 +180,13 @@ def drift(lock: LockFile, snapshot: GraphSnapshot) -> DriftReport:
                 dependents=_dependents(entry.ref, snapshot),
             )
         )
+    return tuple(stale)
 
+
+def _dangling_edges(
+    lock: LockFile, snapshot: GraphSnapshot
+) -> tuple[DanglingEdge, ...]:
+    """Edges whose endpoint no longer resolves, with rename candidates attached."""
     dangling: list[DanglingEdge] = []
     for edge in snapshot.edges:
         vanished = _vanished_endpoint(edge, snapshot)
@@ -168,16 +197,23 @@ def drift(lock: LockFile, snapshot: GraphSnapshot) -> DriftReport:
                 edge=edge, candidates=_rename_candidates(vanished, lock, snapshot)
             )
         )
+    return tuple(dangling)
 
+
+# frob:doc docs/graph.md#public-api
+def drift(lock: LockFile, snapshot: GraphSnapshot) -> DriftReport:
+    """Pure comparison: stale acks (digest moved) and dangling edges (endpoint gone)."""
+    stale = _stale_items(lock, snapshot)
+    dangling = _dangling_edges(lock, snapshot)
     _log.info("drift: %d stale, %d dangling", len(stale), len(dangling))
-    return DriftReport(stale=tuple(stale), dangling=tuple(dangling))
+    return DriftReport(stale=stale, dangling=dangling)
 
 
 # frob:invariant INV-001
 # frob:doc docs/graph.md#public-api
 def write_lock(lock: LockFile, path: Path) -> Result[Unit, LockError]:
     """Atomically write `lock` as deterministic, sorted, diff-friendly JSON."""
-    ordered = sorted(lock.entries, key=lambda e: (e.ref, e.facet))
+    ordered = _sorted_entries(lock.entries)
     document = {
         "version": lock.version,
         "entries": [entry.model_dump() for entry in ordered],

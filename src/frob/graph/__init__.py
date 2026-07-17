@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+from collections.abc import Sequence
 from pathlib import Path
 
 from typani import Err, ErrorSet, Ok
@@ -134,6 +135,25 @@ def _symbol_record(rel_path: str, symbol) -> SymbolRecord:  # noqa: ANN001
     )
 
 
+def _dedupe_symbols(rel_path: str, parsed: ParsedFile) -> tuple[SymbolRecord, ...]:
+    """Symbol records for `parsed`, last-def-wins on duplicate symrefs.
+
+    @typing.overload stubs and conditional redefinitions legally repeat a
+    qualname in one file, and Python's own semantics are that the final def
+    is the live one (T-0024; the cache's symref PRIMARY KEY made duplicates
+    a hard crash before).
+    """
+    by_ref: dict[str, SymbolRecord] = {}
+    for sym in parsed.symbols:
+        record = _symbol_record(rel_path, sym)
+        if record.symref in by_ref:
+            _log.debug(
+                "duplicate symref %s (overload/redef): last def wins", record.symref
+            )
+        by_ref[record.symref] = record
+    return tuple(by_ref.values())
+
+
 def _process_source_file(
     conn, root: Path, path: Path, on_disk_hash: str
 ) -> tuple[
@@ -156,19 +176,7 @@ def _process_source_file(
         # frob.lang renders paths cwd-relative (or absolute outside cwd); graph's
         # contract is always repo-root-relative, so the path is corrected here.
         parsed = parsed.model_copy(update={"path": rel_path})
-    # Last definition wins on duplicate symrefs: @typing.overload stubs and
-    # conditional redefinitions legally repeat a qualname in one file, and
-    # Python's own semantics are that the final def is the live one (T-0024;
-    # the cache's symref PRIMARY KEY made duplicates a hard crash before).
-    by_ref: dict[str, SymbolRecord] = {}
-    for sym in parsed.symbols:
-        record = _symbol_record(rel_path, sym)
-        if record.symref in by_ref:
-            _log.debug(
-                "duplicate symref %s (overload/redef): last def wins", record.symref
-            )
-        by_ref[record.symref] = record
-    symbols = tuple(by_ref.values())
+    symbols = _dedupe_symbols(rel_path, parsed)
     edges, malformed = parse_directives(parsed)
     _cache.store_file_data(
         conn,
@@ -205,6 +213,56 @@ def _process_doc_file(conn, root: Path, path: Path, on_disk_hash: str) -> bool:
     return True
 
 
+def _ingest_source_files(
+    conn, root: Path, source_files: Sequence[Path]
+) -> tuple[set[str], int, int]:
+    """Process every source file; return `(seen_paths, parsed_count, cache_hits)`."""
+    seen_paths: set[str] = set()
+    parsed_count = 0
+    cache_hits = 0
+    for path in source_files:
+        on_disk = _content_hash(path)
+        if on_disk is None:
+            continue
+        seen_paths.add(_display_path(path, root))
+        was_parsed, *_ = _process_source_file(conn, root, path, on_disk)
+        if was_parsed:
+            parsed_count += 1
+        else:
+            cache_hits += 1
+    return seen_paths, parsed_count, cache_hits
+
+
+def _ingest_doc_files(
+    conn, root: Path, doc_files: Sequence[Path]
+) -> tuple[set[str], int, int]:
+    """Process every markdown file; return `(seen_paths, parsed_count, cache_hits)`."""
+    seen_paths: set[str] = set()
+    parsed_count = 0
+    cache_hits = 0
+    for path in doc_files:
+        on_disk = _content_hash(path)
+        if on_disk is None:
+            continue
+        seen_paths.add(_display_path(path, root))
+        if _process_doc_file(conn, root, path, on_disk):
+            parsed_count += 1
+        else:
+            cache_hits += 1
+    return seen_paths, parsed_count, cache_hits
+
+
+def _prune_stale_cache(conn, seen_paths: set[str]) -> None:
+    """Delete cache rows for files that no longer exist on disk."""
+    stale_cached = {row[0] for row in conn.execute("SELECT path FROM files")}
+    for stale_path in stale_cached - seen_paths:
+        _log.info("removing deleted file from cache: %s", stale_path)
+        conn.execute("DELETE FROM files WHERE path = ?", (stale_path,))
+        conn.execute("DELETE FROM symbols WHERE path = ?", (stale_path,))
+        conn.execute("DELETE FROM edges WHERE file = ?", (stale_path,))
+        conn.execute("DELETE FROM malformed WHERE file = ?", (stale_path,))
+
+
 # frob:doc docs/graph.md#public-api
 def build_graph(root: Path, cache: Path) -> Result[GraphSnapshot, BuildError]:
     """Incrementally (re)build the obligation graph for `root` into `cache`."""
@@ -215,59 +273,37 @@ def build_graph(root: Path, cache: Path) -> Result[GraphSnapshot, BuildError]:
         exclude_globs = _load_exclude_globs(root)
         source_files = _walk_source_files(root, exclude_globs)
         doc_files = _walk_doc_files(root, exclude_globs)
-        seen_paths: set[str] = set()
-        parsed_count = 0
-        cache_hits = 0
 
-        for path in source_files:
-            on_disk = _content_hash(path)
-            if on_disk is None:
-                continue
-            rel_path = _display_path(path, root)
-            seen_paths.add(rel_path)
-            was_parsed, *_ = _process_source_file(conn, root, path, on_disk)
-            if was_parsed:
-                parsed_count += 1
-            else:
-                cache_hits += 1
+        src_seen, src_parsed, src_hits = _ingest_source_files(conn, root, source_files)
+        doc_seen, doc_parsed, doc_hits = _ingest_doc_files(conn, root, doc_files)
+        seen_paths = src_seen | doc_seen
+        parsed_count = src_parsed + doc_parsed
+        cache_hits = src_hits + doc_hits
 
-        for path in doc_files:
-            on_disk = _content_hash(path)
-            if on_disk is None:
-                continue
-            rel_path = _display_path(path, root)
-            seen_paths.add(rel_path)
-            was_parsed = _process_doc_file(conn, root, path, on_disk)
-            if was_parsed:
-                parsed_count += 1
-            else:
-                cache_hits += 1
-
-        stale_cached = {
-            row[0] for row in conn.execute("SELECT path FROM files")
-        } - seen_paths
-        for stale_path in stale_cached:
-            _log.info("removing deleted file from cache: %s", stale_path)
-            conn.execute("DELETE FROM files WHERE path = ?", (stale_path,))
-            conn.execute("DELETE FROM symbols WHERE path = ?", (stale_path,))
-            conn.execute("DELETE FROM edges WHERE file = ?", (stale_path,))
-            conn.execute("DELETE FROM malformed WHERE file = ?", (stale_path,))
-
-        _cache.set_root(conn, root.as_posix())
-        conn.commit()
-        stats = BuildStats(parsed=parsed_count, cache_hits=cache_hits)
-        snapshot = _cache.load_all(conn, stats=stats)
-        _log.info(
-            "build_graph: done, parsed=%d hits=%d symbols=%d edges=%d malformed=%d",
-            parsed_count,
-            cache_hits,
-            len(snapshot.symbols),
-            len(snapshot.edges),
-            len(snapshot.malformed),
-        )
+        _prune_stale_cache(conn, seen_paths)
+        snapshot = _finalize_build(conn, root, parsed_count, cache_hits)
         return Ok(snapshot)
     finally:
         conn.close()
+
+
+def _finalize_build(
+    conn, root: Path, parsed_count: int, cache_hits: int
+) -> GraphSnapshot:
+    """Persist the root, commit, and load the final snapshot with build stats."""
+    _cache.set_root(conn, root.as_posix())
+    conn.commit()
+    stats = BuildStats(parsed=parsed_count, cache_hits=cache_hits)
+    snapshot = _cache.load_all(conn, stats=stats)
+    _log.info(
+        "build_graph: done, parsed=%d hits=%d symbols=%d edges=%d malformed=%d",
+        parsed_count,
+        cache_hits,
+        len(snapshot.symbols),
+        len(snapshot.edges),
+        len(snapshot.malformed),
+    )
+    return snapshot
 
 
 # frob:doc docs/graph.md#public-api

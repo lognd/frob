@@ -2,8 +2,12 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
+
+if TYPE_CHECKING:
+    from frob.lang._models import RawSymbol
 
 
 # frob:doc docs/app.md#frobdocs-library
@@ -30,6 +34,63 @@ class DocMatch(BaseModel):
     excerpt: str
 
 
+class _SymbolFilters(BaseModel):
+    """The class/method/function name filters derived from a `symbol` query."""
+
+    class_filter: str | None = None
+    method_filter: str | None = None
+    func_filter: str | None = None
+
+
+def _symbol_filters(symbol: str | None) -> _SymbolFilters:
+    """Split a `symbol` query into class/method/function name filters."""
+    if symbol is None:
+        return _SymbolFilters()
+    if "." in symbol:
+        cls, _, method = symbol.partition(".")
+        return _SymbolFilters(class_filter=cls, method_filter=method)
+    return _SymbolFilters(class_filter=symbol, func_filter=symbol)
+
+
+def _method_docstring(sym: RawSymbol, filters: _SymbolFilters) -> Docstring | None:
+    """The `Docstring` for a method symbol under `filters`, or None if filtered."""
+    owner, _, mname = sym.qualname.rpartition(".")
+    if filters.class_filter is not None and owner != filters.class_filter:
+        return None
+    if filters.method_filter is not None and mname != filters.method_filter:
+        return None
+    return Docstring(
+        symbol=sym.qualname, kind="method", line=sym.span[0], text=sym.doc_text
+    )
+
+
+def _docstring_for_symbol(sym: RawSymbol, filters: _SymbolFilters) -> Docstring | None:
+    """The `Docstring` for one parsed symbol under `filters`, or None if filtered."""
+    from frob.lang import SymbolKind
+
+    if not sym.doc_text:
+        return None
+    if sym.kind == SymbolKind.FUNCTION:
+        if filters.func_filter is not None and sym.qualname != filters.func_filter:
+            return None
+        if filters.class_filter is not None and filters.func_filter is None:
+            return None
+        return Docstring(
+            symbol=sym.qualname, kind="function", line=sym.span[0], text=sym.doc_text
+        )
+    if sym.kind == SymbolKind.CLASS and "." not in sym.qualname:
+        if filters.class_filter is not None and sym.qualname != filters.class_filter:
+            return None
+        if filters.method_filter is None:
+            return Docstring(
+                symbol=sym.qualname, kind="class", line=sym.span[0], text=sym.doc_text
+            )
+        return None
+    if sym.kind == SymbolKind.METHOD:
+        return _method_docstring(sym, filters)
+    return None
+
+
 # frob:doc docs/app.md#frobdocs-library
 def extract_docstrings(path: Path, symbol: str | None = None) -> list[Docstring]:
     """Every python docstring in `path` (module, class, function, method).
@@ -41,7 +102,7 @@ def extract_docstrings(path: Path, symbol: str | None = None) -> list[Docstring]
     ever displays or greps this text, never round-trips it, so the shape
     change is invisible to callers.
     """
-    from frob.lang import SymbolKind, parse_file
+    from frob.lang import parse_file
 
     result = parse_file(path)
     if result.is_err:
@@ -50,73 +111,24 @@ def extract_docstrings(path: Path, symbol: str | None = None) -> list[Docstring]
     if parsed.language != "python":
         return []
 
-    results: list[Docstring] = []
-
-    class_filter: str | None = None
-    method_filter: str | None = None
-    func_filter: str | None = None
-
-    if symbol is not None:
-        if "." in symbol:
-            parts = symbol.split(".", 1)
-            class_filter = parts[0]
-            method_filter = parts[1]
-        else:
-            class_filter = symbol
-            func_filter = symbol
-
-    if symbol is None:
-        module_doc = _module_docstring(path)
-        if module_doc is not None:
-            line, text = module_doc
-            results.append(
-                Docstring(symbol="module", kind="module", line=line, text=text)
-            )
-
+    filters = _symbol_filters(symbol)
+    results: list[Docstring] = _module_entries(path, symbol)
     for sym in parsed.symbols:
-        if not sym.doc_text:
-            continue
-        if sym.kind == SymbolKind.FUNCTION:
-            if func_filter is not None and sym.qualname != func_filter:
-                continue
-            if class_filter is not None and func_filter is None:
-                continue
-            results.append(
-                Docstring(
-                    symbol=sym.qualname,
-                    kind="function",
-                    line=sym.span[0],
-                    text=sym.doc_text,
-                )
-            )
-        elif sym.kind == SymbolKind.CLASS and "." not in sym.qualname:
-            if class_filter is not None and sym.qualname != class_filter:
-                continue
-            if method_filter is None:
-                results.append(
-                    Docstring(
-                        symbol=sym.qualname,
-                        kind="class",
-                        line=sym.span[0],
-                        text=sym.doc_text,
-                    )
-                )
-        elif sym.kind == SymbolKind.METHOD:
-            owner, _, mname = sym.qualname.rpartition(".")
-            if class_filter is not None and owner != class_filter:
-                continue
-            if method_filter is not None and mname != method_filter:
-                continue
-            results.append(
-                Docstring(
-                    symbol=sym.qualname,
-                    kind="method",
-                    line=sym.span[0],
-                    text=sym.doc_text,
-                )
-            )
-
+        doc = _docstring_for_symbol(sym, filters)
+        if doc is not None:
+            results.append(doc)
     return results
+
+
+def _module_entries(path: Path, symbol: str | None) -> list[Docstring]:
+    """The module-level docstring row for `path`, unless a `symbol` filter is set."""
+    if symbol is not None:
+        return []
+    module_doc = _module_docstring(path)
+    if module_doc is None:
+        return []
+    line, text = module_doc
+    return [Docstring(symbol="module", kind="module", line=line, text=text)]
 
 
 def _module_docstring(path: Path) -> tuple[int, str] | None:
@@ -195,25 +207,34 @@ def overview(path: Path, symbol: str | None = None) -> list[DocEntry]:
             if w and w not in keywords:
                 keywords.append(w)
 
-    results: list[DocEntry] = []
-    all_entries: list[DocEntry] = []
-
-    for md_file in sorted(docs_dir.rglob("*.md")):
-        for line_no, heading, summary in _md_headings_and_summaries(md_file):
-            entry = DocEntry(
-                heading=heading,
-                summary=summary,
-                file=str(md_file),
-                line=line_no,
-            )
-            all_entries.append(entry)
-            combined = (heading + " " + summary).lower()
-            if any(kw in combined for kw in keywords):
-                results.append(entry)
-
+    all_entries = _collect_doc_entries(docs_dir)
+    results = [e for e in all_entries if _entry_matches(e, keywords)]
     if not results:
         return all_entries
     return results
+
+
+def _collect_doc_entries(docs_dir: Path) -> list[DocEntry]:
+    """Every heading/summary in `docs_dir` as `DocEntry` rows, file-sorted."""
+    md_files = sorted(docs_dir.rglob("*.md"))
+    entries: list[DocEntry] = []
+    for md_file in md_files:
+        for line_no, heading, summary in _md_headings_and_summaries(md_file):
+            entries.append(
+                DocEntry(
+                    heading=heading,
+                    summary=summary,
+                    file=str(md_file),
+                    line=line_no,
+                )
+            )
+    return entries
+
+
+def _entry_matches(entry: DocEntry, keywords: list[str]) -> bool:
+    """Whether any of `keywords` appears in the entry's heading or summary."""
+    combined = (entry.heading + " " + entry.summary).lower()
+    return any(kw in combined for kw in keywords)
 
 
 # frob:doc docs/app.md#frobdocs-library
@@ -221,7 +242,8 @@ def search(query: str, docs_dir: Path) -> list[DocMatch]:
     q = query.lower()
     results: list[DocMatch] = []
 
-    for md_file in sorted(docs_dir.rglob("*.md")):
+    md_files = sorted(docs_dir.rglob("*.md"))
+    for md_file in md_files:
         lines = md_file.read_text(encoding="utf-8", errors="replace").splitlines()
         current_heading = ""
         for i, line in enumerate(lines):
