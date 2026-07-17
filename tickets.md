@@ -386,7 +386,7 @@ Re-platform map/outline/xref/cycle/dup onto frob.lang's uniform ParsedFile contr
 ```yaml
 id: T-0017
 title: Pair-level (consumer x provider) integration test obligations for TEST003
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-07-17'
@@ -400,6 +400,8 @@ acceptance: []
 threat: null
 ```
 TEST003 alpha semantics treat every src/<pkg> directory with a public symbol as an interface owing min_integration edges (an honest over-approximation, per docs/gates.md's Phase 4 notes). Deferred: derive real consumer x provider pairs once frob.graph gains cross-file import edges, and require min_integration per pair rather than per provider.
+
+Delivered under T-0042.
 
 <!-- ticket:T-0018 -->
 ```yaml
@@ -1136,3 +1138,31 @@ threat: null
 Follow-on polish from T-0001 (rungs complete): wire frob dup --probe
 to probe_equivalence; replace statement-Levenshtein with full APTED;
 replace R5's co-occurrence proxy with a real CFG/DFG.
+
+<!-- ticket:T-0042 -->
+```yaml
+id: T-0042
+title: 'TEST007: pair-level integration obligations from uses-contract edges'
+state: done
+kind: feature
+origin: agent
+created: '2026-07-17'
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/**
+- tests/test_gates.py
+- docs/**
+evidence:
+- tests/test_gates.py::TestPairLevelIntegration::test_test007_fires_on_uncovered_boundary
+- tests/test_gates.py::TestPairLevelIntegration::test_test007_passes_when_boundary_tested
+attachments: []
+acceptance: []
+threat: null
+```
+## Done report
+
+TEST007: each cross-package frob:uses-contract dependency (C->P) owes a
+pairwise integration test -- a valid integration edge targeting P whose
+test path carries C's package leaf. Opt-in via [testing].pair_integration.
+Delivers T-0017.

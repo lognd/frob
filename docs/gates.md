@@ -31,6 +31,7 @@ declaration).
 | TEST004 | test | declared system has fewer than its `min_e2e` e2e edges |
 | TEST005 | test | measured coverage below threshold (per-symbol branch, per-module line, or per-system line) |
 | TEST006 | test | coverage evidence missing, or stale against current file hashes |
+| TEST007 | test | a cross-package `frob:uses-contract` dependency has no pairwise integration test covering that boundary (opt-in via `[testing].pair_integration`) |
 | DOC001 | doclink | a doc file matching `[gates.docs] include` globs (default `docs/**/*.md` -- new files auto-obligated) has no frob:describes anchor, no frob:doc edge into it, and is unreachable via markdown links from the roots (docs/index.md, README.md) |
 | POL* | policy | user-defined rules from `frob.toml` (see below) |
 

@@ -850,6 +850,77 @@ def _test003(
     return tuple(violations)
 
 
+# frob:ticket T-0017
+def _test007_pairs(
+    snapshot: GraphSnapshot, tests: CollectedTests, cfg: TestPolicy
+) -> tuple[Violation, ...]:
+    """TEST007: a declared cross-package dependency owes a pairwise
+    integration test.
+
+    Where a `frob:uses-contract` edge crosses a package boundary (consumer
+    package C depends on provider package P), that specific (C, P) boundary
+    must be covered by an integration test that names BOTH packages -- an
+    integration edge whose `src` (the test) lives in or under C and whose
+    `target` is P (or under it). This is the pair-level strictness the
+    per-provider TEST003 approximates: TEST003 asks "is P integration-
+    tested at all"; TEST007 asks "is the C->P edge specifically tested".
+    Opt-in via `[testing].pair_integration = true` so it does not fire on
+    repos that have not declared uses-contract edges.
+    """
+    if not cfg.pair_integration:
+        return ()
+    integration = _test_edges(snapshot, "integration")
+    pairs: set[tuple[str, str]] = set()
+    for edge in snapshot.edges:
+        if edge.kind != EdgeKind.USES_CONTRACT:
+            continue
+        consumer = _interface_package(edge.src.split("::", 1)[0])
+        provider = _interface_package(edge.target.split("::", 1)[0])
+        if consumer != provider:
+            pairs.add((consumer, provider))
+
+    violations: list[Violation] = []
+    for consumer, provider in sorted(pairs):
+        # The consumer's package leaf (src/app -> "app"); tests conventionally
+        # mirror the source layout (tests/app/..., test_app.py), so a valid
+        # integration test targeting the provider whose own path carries that
+        # leaf covers the C->P boundary.
+        consumer_leaf = PurePosixPath(consumer).name
+        if consumer_leaf.endswith(".py"):
+            consumer_leaf = PurePosixPath(consumer).parent.name
+        covered = False
+        prov_prefix = provider.rstrip("/") + "/"
+        for target, edges in integration.items():
+            if not (target == provider or target.startswith(prov_prefix)):
+                continue
+            for edge in _valid_edges(edges, tests):
+                test_path = edge.src.split("::", 1)[0]
+                if consumer_leaf in PurePosixPath(test_path).parts or (
+                    f"test_{consumer_leaf}" in test_path
+                ):
+                    covered = True
+                    break
+            if covered:
+                break
+        if not covered:
+            _log.info("TEST007: %s -> %s boundary untested", consumer, provider)
+            violations.append(
+                Violation(
+                    rule="TEST007",
+                    severity=Severity.WARN,
+                    file=consumer,
+                    line=0,
+                    message=(
+                        f"TEST007: the {consumer} -> {provider} dependency has no "
+                        f"integration test covering that boundary; add an "
+                        f'integration test in {consumer} with frob:tests {provider} '
+                        f'kind="integration"'
+                    ),
+                )
+            )
+    return tuple(violations)
+
+
 def _test004(
     systems: tuple[SystemSpec, ...], snapshot: GraphSnapshot, tests: CollectedTests
 ) -> tuple[Violation, ...]:
@@ -1023,6 +1094,7 @@ def test_gate(
     violations: list[Violation] = []
     violations.extend(_test001_002(snapshot, tests, cfg))
     violations.extend(_test003(snapshot, tests, cfg))
+    violations.extend(_test007_pairs(snapshot, tests, cfg))
     violations.extend(_test004(systems, snapshot, tests))
     violations.extend(_test005(snapshot, systems, coverage, cfg))
     violations.extend(_test006(snapshot))

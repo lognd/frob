@@ -920,3 +920,74 @@ class TestConventionUnitBinding:
             snap, (), Nothing(), tests, TestPolicy(min_unit_cases=1)
         )
         assert any(v.rule == "TEST001" and "::of" in v.message for v in violations)
+
+
+class TestPairLevelIntegration:
+    def _snap_with_dep(self, tmp_path):
+        # consumer pkg src/app uses-contract on provider pkg src/core
+        _write(tmp_path, "src/core/__init__.py", "def engine():\n    return 1\n")
+        _write(
+            tmp_path,
+            "src/app/__init__.py",
+            "# frob:uses-contract src/core/__init__.py::engine\n"
+            "def handler():\n    return 2\n",
+        )
+        return _snapshot(tmp_path)
+
+    def test_test007_fires_on_uncovered_boundary(self, tmp_path):
+        # frob:tests src/frob/gates/__init__.py::test_gate
+        from typani.option import Nothing
+
+        from frob.gates import test_gate as run_tg
+        from frob.gates._models import TestPolicy
+        from frob.testing import CollectedTests
+
+        snap = self._snap_with_dep(tmp_path)
+        tests = CollectedTests(node_ids=frozenset())
+        pol = TestPolicy(min_unit_cases=1, pair_integration=True)
+        violations = run_tg(snap, (), Nothing(), tests, pol)
+        assert any(
+            v.rule == "TEST007" and "src/app" in v.message and "src/core" in v.message
+            for v in violations
+        )
+
+    def test_test007_off_by_default(self, tmp_path):
+        from typani.option import Nothing
+
+        from frob.gates import test_gate as run_tg
+        from frob.gates._models import TestPolicy
+        from frob.testing import CollectedTests
+
+        snap = self._snap_with_dep(tmp_path)
+        tests = CollectedTests(node_ids=frozenset())
+        violations = run_tg(snap, (), Nothing(), tests, TestPolicy(min_unit_cases=1))
+        assert not any(v.rule == "TEST007" for v in violations)
+
+    def test_test007_passes_when_boundary_tested(self, tmp_path):
+        from typani.option import Nothing
+
+        from frob.gates import test_gate as run_tg
+        from frob.gates._models import TestPolicy
+        from frob.testing import CollectedTests
+
+        _write(tmp_path, "src/core/__init__.py", "def engine():\n    return 1\n")
+        _write(
+            tmp_path,
+            "src/app/__init__.py",
+            "# frob:uses-contract src/core/__init__.py::engine\n"
+            "def handler():\n    return 2\n",
+        )
+        _write(
+            tmp_path,
+            "tests/app/test_boundary.py",
+            "def test_app_core():\n"
+            '    # frob:tests src/core/__init__.py kind="integration"\n'
+            "    assert True\n",
+        )
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(
+            node_ids=frozenset({"tests/app/test_boundary.py::test_app_core"})
+        )
+        pol = TestPolicy(min_unit_cases=1, pair_integration=True)
+        violations = run_tg(snap, (), Nothing(), tests, pol)
+        assert not any(v.rule == "TEST007" for v in violations)

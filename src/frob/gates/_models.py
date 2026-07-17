@@ -122,6 +122,9 @@ class TestPolicy(BaseModel):
     unit_branch_cov: int = 90
     module_line_cov: int = 85
     system_line_cov: int = 80
+    # TEST007: require a pairwise integration test per cross-package
+    # uses-contract dependency (opt-in; off by default). (T-0017)
+    pair_integration: bool = False
 
 
 class CoverageData(BaseModel):
