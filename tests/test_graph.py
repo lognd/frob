@@ -47,6 +47,7 @@ class TestDigests:
         return next(s for s in pf.symbols if s.qualname == "Widget.render")
 
     def test_reformat_identical_digests(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/digest.py::compute_digests
         orig = self._parse(tmp_path, _BASE_PY, "a.py")
         reformatted = _BASE_PY.replace("    def render", "    def   render") + "\n\n"
         rf = self._parse(tmp_path, reformatted, "b.py")
@@ -94,9 +95,56 @@ class TestDigests:
         assert d1.body == d2.body
         assert d1.doc != d2.doc
 
+    def test_digest_sig_body_doc_are_independent_facets(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/digest.py::digest_sig
+        # frob:tests src/frob/graph/digest.py::digest_body
+        # frob:tests src/frob/graph/digest.py::digest_doc
+        from frob.graph.digest import digest_body, digest_doc, digest_sig
+
+        method = self._method(self._parse(tmp_path, _BASE_PY, "a.py"))
+        sig = digest_sig(method)
+        body = digest_body(method)
+        doc = digest_doc(method)
+        # each facet is a distinct sha256 hex digest of a different token
+        # stream, so a signature change must not perturb the other two.
+        assert len(sig) == 64
+        assert len(body) == 64
+        assert len(doc) == 64
+        assert sig != body
+        renamed_method = self._method(
+            self._parse(
+                tmp_path,
+                _BASE_PY.replace(
+                    "def render(self, value: int)", "def render(self, amount: int)"
+                ),
+                "b.py",
+            )
+        )
+        assert digest_sig(renamed_method) != sig
+        assert digest_body(renamed_method) == body
+        assert digest_doc(renamed_method) == doc
+
+
+class TestSymbolRecord:
+    def test_symref_renders_canonical_path_qualname(self) -> None:
+        # frob:tests src/frob/graph/_models.py::SymbolRecord.symref
+        from frob.graph._models import Digests, SymbolId, SymbolRecord
+        from frob.lang import SymbolKind
+
+        record = SymbolRecord(
+            id=SymbolId(path="src/a.py", qualname="Widget.render"),
+            kind=SymbolKind.METHOD,
+            public=True,
+            digests=Digests(sig="s", body="b", doc="d"),
+            span=(1, 2),
+        )
+        assert record.symref == "src/a.py::Widget.render"
+        assert record.symref == str(record.id)
+
 
 class TestDsl:
     def test_hash_comment_directive(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/dsl.py::parse_directives
         src = """def foo() -> None:
     # frob:ticket T-0042
     pass
@@ -216,6 +264,7 @@ def foo() -> None:
 
 class TestMarkdownAnchors:
     def test_describes_edge_with_heading_slug_and_facet(self) -> None:
+        # frob:tests src/frob/graph/dsl.py::markdown_anchors
         text = """# Top Heading
 
 ## Lock File
@@ -425,6 +474,76 @@ class TestDuplicateSymrefs:
         snap = result.danger_ok
         assert "src/m.py::f" in snap.symbols
         assert "src/m.py::C.v" in snap.symbols
+
+
+class TestCacheModule:
+    """Direct exercise of frob.graph.cache's row-level read/write primitives
+    (build_graph/load_graph exercise them transitively, but each function
+    gets its own assertion here per docs/graph.md's Cache section)."""
+
+    def test_set_root_and_get_root_roundtrip(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/cache.py::set_root
+        # frob:tests src/frob/graph/cache.py::get_root
+        from frob.graph import cache as _cache
+
+        conn = _cache.connect(tmp_path / ".frob" / "cache.db")
+        try:
+            assert _cache.get_root(conn) is None
+            _cache.set_root(conn, "/repo/root")
+            conn.commit()
+            assert _cache.get_root(conn) == "/repo/root"
+        finally:
+            conn.close()
+
+    def test_store_and_load_file_data_roundtrip(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/cache.py::store_file_data
+        # frob:tests src/frob/graph/cache.py::load_file_data
+        # frob:tests src/frob/graph/cache.py::get_file_hash
+        # frob:tests src/frob/graph/cache.py::load_all
+        from frob.graph import cache as _cache
+        from frob.graph._models import Digests, Edge, EdgeKind, SymbolId, SymbolRecord
+        from frob.lang import SymbolKind
+
+        conn = _cache.connect(tmp_path / ".frob" / "cache.db")
+        try:
+            _cache.set_root(conn, str(tmp_path))
+            record = SymbolRecord(
+                id=SymbolId(path="src/a.py", qualname="foo"),
+                kind=SymbolKind.FUNCTION,
+                public=True,
+                digests=Digests(sig="s", body="b", doc="d"),
+                span=(1, 3),
+            )
+            edge = Edge(
+                src="src/a.py::foo",
+                kind=EdgeKind.TICKET,
+                target="T-0001",
+                origin="src/a.py:1",
+            )
+            assert _cache.get_file_hash(conn, "src/a.py") is None
+            _cache.store_file_data(
+                conn,
+                file_path="src/a.py",
+                content_hash="deadbeef",
+                symbols=(record,),
+                edges=(edge,),
+                malformed=(),
+            )
+            conn.commit()
+
+            assert _cache.get_file_hash(conn, "src/a.py") == "deadbeef"
+
+            symbols, edges, malformed = _cache.load_file_data(conn, "src/a.py")
+            assert symbols == (record,)
+            assert edges == (edge,)
+            assert malformed == ()
+
+            snapshot = _cache.load_all(conn)
+            assert snapshot.root == str(tmp_path)
+            assert "src/a.py::foo" in snapshot.symbols
+            assert snapshot.file_hashes["src/a.py"] == "deadbeef"
+        finally:
+            conn.close()
 
 
 class TestConcurrentCache:

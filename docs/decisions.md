@@ -27,10 +27,33 @@ superseded_by: null       # AD-### when status is superseded
 ...
 ```
 
+## Data models
+
+<!-- frob:describes src/frob/gates/decisions.py::DecisionStatus -->
+<!-- frob:describes src/frob/gates/decisions.py::Decision -->
+<!-- frob:describes src/frob/gates/decisions.py::DecisionError -->
+
+- `DecisionStatus` -- the lifecycle state of an ADR (`proposed` |
+  `accepted` | `superseded` | `deprecated`); only `accepted` carries the
+  DEC002 anchoring obligation.
+- `Decision` -- one architecture decision record parsed from a
+  `decisions/AD-###.md` file's YAML frontmatter.
+- `DecisionError` -- fallible outcomes of loading decision records
+  (malformed frontmatter, duplicate id, bad id shape).
+
 ## Anchoring in code
 
 <!-- frob:describes src/frob/gates/decisions.py::load_decisions -->
+<!-- frob:describes src/frob/gates/decisions.py::decisions_dir -->
 <!-- frob:describes src/frob/gates/decisions.py::decision_gate -->
+
+- `decisions_dir` -- the tracked `decisions/` directory holding
+  `AD-###.md` records, under a given repo root.
+- `load_decisions` -- parses every `decisions/AD-###.md` record; any
+  malformation is a hard `Err` (the record set is a contract surface,
+  like the ticket queue).
+- `decision_gate` -- the pure DEC001/DEC002 comparison between loaded
+  decisions and the graph snapshot's `frob:decision` edges.
 
 A comment directive links the implementing symbol to the record:
 

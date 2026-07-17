@@ -30,6 +30,7 @@ __all__ = [
 ]
 
 
+# frob:doc docs/gates.md#data-models
 class Severity(StrEnum):
     """A violation's exit-code weight: `error` fails `frob check`, `warn` does not."""
 
@@ -37,6 +38,7 @@ class Severity(StrEnum):
     WARN = "warn"
 
 
+# frob:doc docs/gates.md#data-models
 class WaiverRef(BaseModel):
     """The `frob:waive` edge that suppressed a violation, kept for the report."""
 
@@ -46,6 +48,7 @@ class WaiverRef(BaseModel):
     reason: str
 
 
+# frob:doc docs/gates.md#data-models
 class Violation(BaseModel):
     """One gate finding: rule, site, and a message that embeds its own remedy."""
 
@@ -59,6 +62,7 @@ class Violation(BaseModel):
     waived: WaiverRef | None = None
 
 
+# frob:doc docs/gates.md#data-models
 class GateStats(BaseModel):
     """Per-gate counters: how many violations, how long, and whether it ran."""
 
@@ -69,6 +73,7 @@ class GateStats(BaseModel):
     skipped: tuple[str, ...] = ()
 
 
+# frob:doc docs/gates.md#data-models
 class GateReport(BaseModel):
     """The merged result of `run_gates`: kept violations, waived ones, and stats."""
 
@@ -79,6 +84,7 @@ class GateReport(BaseModel):
     stats: GateStats
 
 
+# frob:doc docs/gates.md#data-models
 class GateConfig(BaseModel):
     """Everything `run_gates` needs to load state and select which gates run."""
 
@@ -90,6 +96,7 @@ class GateConfig(BaseModel):
     gates: frozenset[str] = frozenset()
 
 
+# frob:doc docs/gates.md#data-models
 class PreworkSweep(BaseModel):
     """A recorded dup+xref sweep over a ticket's scope at `frob ticket start` time."""
 
@@ -101,6 +108,7 @@ class PreworkSweep(BaseModel):
     digest: str
 
 
+# frob:doc docs/gates.md#data-models
 class SystemSpec(BaseModel):
     """One `[[system]]` entry: an e2e-tested surface and its coverage scope."""
 
@@ -112,6 +120,7 @@ class SystemSpec(BaseModel):
     paths: tuple[str, ...] = ()
 
 
+# frob:doc docs/gates.md#data-models
 class TestPolicy(BaseModel):
     """The `[testing]` table: all test-obligation floors, each overridable."""
 
@@ -127,6 +136,7 @@ class TestPolicy(BaseModel):
     pair_integration: bool = False
 
 
+# frob:doc docs/gates.md#data-models
 class CoverageData(BaseModel):
     """Parsed `coverage.xml` mapped onto the snapshot: per-symbol and per-module."""
 
@@ -137,6 +147,7 @@ class CoverageData(BaseModel):
     module_line: Mapping[str, float] = {}
 
 
+# frob:doc docs/gates.md#error-types
 class GateError(ErrorSet):
     """Failure values `run_gates` and its loading steps can return."""
 
@@ -148,6 +159,7 @@ class GateError(ErrorSet):
     WriteFailed = "Could not write gate state to disk"
 
 
+# frob:doc docs/gates.md#error-types
 class CoverageError(ErrorSet):
     """Failure values `load_coverage`/`stamp_coverage` can return."""
 

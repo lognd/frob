@@ -60,6 +60,7 @@ _EXCLUDED_DIRS = frozenset(
 )
 
 
+# frob:doc docs/graph.md#error-types
 class GraphError(ErrorSet):
     """Failure values graph read paths can return -- never a bare exception."""
 

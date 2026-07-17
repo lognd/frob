@@ -27,6 +27,7 @@ _ID_RE = re.compile(r"^INV-\d{3}$")
 _FRONTMATTER_RE = re.compile(r"^---\n(.*?)\n---\n?(.*)$", re.DOTALL)
 
 
+# frob:doc docs/gates.md#invariants
 class Criticality(StrEnum):
     """How severe a broken invariant would be."""
 
@@ -37,6 +38,7 @@ class Criticality(StrEnum):
 _CRITICALITY_VALUES = frozenset(c.value for c in Criticality)
 
 
+# frob:doc docs/gates.md#invariants
 class Invariant(BaseModel):
     """One tracked invariant: id, statement, criticality, and its evidence list."""
 
@@ -49,6 +51,7 @@ class Invariant(BaseModel):
     path: str = ""
 
 
+# frob:doc docs/gates.md#invariants
 class InvariantError(ErrorSet):
     """Failure values `load_invariants` can return."""
 

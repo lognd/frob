@@ -508,6 +508,7 @@ def _todo001(
     return tuple(violations)
 
 
+# frob:doc docs/gates.md#public-api
 def scope_digest(scope: Sequence[str], snapshot: GraphSnapshot) -> str:
     """Sha256 over the sorted `(file, hash)` pairs of files matching `scope`.
 
@@ -1172,6 +1173,7 @@ _ALL_GATES = frozenset(
 )
 
 
+# frob:doc docs/gates.md#public-api
 # frob:ticket T-0004
 def decisions_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """DEC001/DEC002: decision records and their code anchors (T-0004).
@@ -1199,6 +1201,7 @@ def decisions_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]
     return decision_gate(loaded.danger_ok, snapshot)
 
 
+# frob:doc docs/gates.md#public-api
 # frob:ticket T-0001
 def dup_gate(root: Path, snapshot: GraphSnapshot, diff: Diff) -> tuple[Violation, ...]:
     """DUP001/DUP002: the diff introduces a clone of an existing symbol.
@@ -1245,6 +1248,7 @@ def dup_gate(root: Path, snapshot: GraphSnapshot, diff: Diff) -> tuple[Violation
     return tuple(violations)
 
 
+# frob:doc docs/gates.md#public-api
 # frob:ticket T-0003
 def release_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """REL001: the public-API change since the last `frob release stamp`
@@ -1331,6 +1335,7 @@ def _changelog_mentions(root: Path, version: str) -> bool:
     return True
 
 
+# frob:doc docs/gates.md#public-api
 # frob:ticket T-0002
 def fuzz_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """FUZZ001/002/003 over the [fuzz] policy in frob.toml.
@@ -1389,6 +1394,7 @@ _MD_CODE_REF_RE = re.compile(r"`([^`\s]+\.md)`")
 
 # frob:ticket T-0021
 # frob:ticket T-0028
+# frob:doc docs/gates.md#public-api
 def doclink_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """DOC001: a doc file nothing links to is an error -- orphan docs rot.
 
@@ -1557,6 +1563,7 @@ def _apply_severity_overrides(
     )
 
 
+# frob:doc docs/gates.md#public-api
 # frob:ticket T-0021
 def run_gates(cfg: GateConfig) -> Result[GateReport, GateError]:
     """Load everything once, then run the selected gates in parallel and merge."""

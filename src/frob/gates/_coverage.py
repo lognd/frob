@@ -165,6 +165,7 @@ def _walk(root: Path):  # noqa: ANN202
         yield dirpath, dirnames, filenames
 
 
+# frob:doc docs/gates.md#public-api
 def load_stamp(root: Path) -> dict | None:
     """The raw `.frob/coverage-stamp` document, or `None` if missing/unreadable."""
     stamp_path = root / _STAMP_REL

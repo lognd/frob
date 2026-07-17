@@ -44,6 +44,7 @@ def test_malformed_record_is_err(tmp_path):
 
 def test_dec001_dangling_decision_edge(tmp_path):
     # frob:tests src/frob/gates/__init__.py::decisions_gate
+    # frob:tests src/frob/gates/decisions.py::decision_gate
     (tmp_path / "decisions").mkdir()  # exists but empty
     (tmp_path / "src").mkdir()
     (tmp_path / "src" / "m.py").write_text(
