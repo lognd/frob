@@ -90,7 +90,13 @@ def _parse_package_lock_json(path: Path) -> Result[tuple[Dependency, ...], VetEr
                 continue
             # key looks like "node_modules/foo" or "node_modules/@scope/foo"
             name = key.rsplit("node_modules/", 1)[-1]
-            deps.append(Dependency(ecosystem="npm", name=name, version=version))
+            resolved = meta.get("resolved", "")
+            resolved = resolved if isinstance(resolved, str) else ""
+            deps.append(
+                Dependency(
+                    ecosystem="npm", name=name, version=version, resolved=resolved
+                )
+            )
     else:
         for name, meta in data.get("dependencies", {}).items():
             if not isinstance(meta, dict):
@@ -98,7 +104,13 @@ def _parse_package_lock_json(path: Path) -> Result[tuple[Dependency, ...], VetEr
             version = meta.get("version")
             if version is None:
                 continue
-            deps.append(Dependency(ecosystem="npm", name=name, version=version))
+            resolved = meta.get("resolved", "")
+            resolved = resolved if isinstance(resolved, str) else ""
+            deps.append(
+                Dependency(
+                    ecosystem="npm", name=name, version=version, resolved=resolved
+                )
+            )
 
     _log.info("vet: parsed %d package(s) from %s", len(deps), path)
     return Ok(tuple(deps))

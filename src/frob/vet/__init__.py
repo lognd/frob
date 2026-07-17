@@ -1,9 +1,12 @@
-"""frob.vet -- dependency-vetting MVP (docs/vet.md).
+"""frob.vet -- dependency-vetting (docs/vet.md).
 
-Implements the lockfile-conformance slice of the full design: allow-list
-conformance (VET001), cooldown quarantine (VET011), JS lifecycle-script
-detection (VET-JS), typosquat distance, and an osv-scanner adapter (VET005).
-Full capability scanning (VET002-VET004, VET006-VET010) is 0.2.x.
+Lockfile-conformance slice: allow-list conformance (VET001), cooldown
+quarantine (VET011), JS lifecycle-script detection (VET-JS), typosquat
+distance, and an osv-scanner adapter (VET005). T-0008 slice on top: tree-
+sitter capability scanning, the VET004 obfuscation ensemble, VET002/VET003
+conformance-and-escalation diffs, and cheap per-ecosystem rules (VET-PY,
+VET-RS, VET-JS004). See docs/vet.md "Implementation notes" for what remains
+out of scope (VET006-VET010, most of VET-C, dynamic detonation).
 """
 
 from __future__ import annotations
@@ -17,6 +20,7 @@ from frob.vet._models import (
     VetError,
     VetReport,
     Violation,
+    capability_diff,
 )
 from frob.vet._scan import scan_tree
 
@@ -28,6 +32,7 @@ __all__ = [
     "VetError",
     "VetReport",
     "Violation",
+    "capability_diff",
     "check_package",
     "parse_hook_command",
     "scan_tree",

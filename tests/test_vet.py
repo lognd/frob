@@ -184,10 +184,14 @@ jinja2 = ["sandboxed template compilation, reviewed"]
 
 
 class TestQuarantine:
-    def test_fresh_package_blocked(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_fresh_package_blocked(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         from frob.vet import _registry
 
-        def fake_fetch(ecosystem, name, version, *, cache_path, base_url=None, timeout_s=5.0):
+        def fake_fetch(
+            ecosystem, name, version, *, cache_path, base_url=None, timeout_s=5.0
+        ):
             return RegistryResult(
                 ok=True,
                 published_at=datetime.now(UTC) - timedelta(days=2),
@@ -199,10 +203,14 @@ class TestQuarantine:
         assert verdict.verdict == "quarantine"
         assert verdict.blocked is True
 
-    def test_old_package_ok(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_old_package_ok(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         from frob.vet import _registry
 
-        def fake_fetch(ecosystem, name, version, *, cache_path, base_url=None, timeout_s=5.0):
+        def fake_fetch(
+            ecosystem, name, version, *, cache_path, base_url=None, timeout_s=5.0
+        ):
             return RegistryResult(
                 ok=True,
                 published_at=datetime.now(UTC) - timedelta(days=900),
@@ -219,8 +227,12 @@ class TestQuarantine:
     ) -> None:
         from frob.vet import _registry
 
-        def fake_fetch(ecosystem, name, version, *, cache_path, base_url=None, timeout_s=5.0):
-            return RegistryResult(ok=False, note="could not verify publish date: timeout")
+        def fake_fetch(
+            ecosystem, name, version, *, cache_path, base_url=None, timeout_s=5.0
+        ):
+            return RegistryResult(
+                ok=False, note="could not verify publish date: timeout"
+            )
 
         monkeypatch.setattr(_registry, "fetch_publish_date", fake_fetch)
         verdict = check_package("pypi", "requests", "2.31.0", root=tmp_path)
@@ -289,3 +301,287 @@ def test_parse_hook_command(command: str, expected) -> None:
 def test_parse_hook_command_scoped_npm_package() -> None:
     result = parse_hook_command("npm install @babel/core@7.23.0")
     assert result == ("npm", (("@babel/core", "7.23.0"),))
+
+
+# ---------------------------------------------------------------------------
+# capability scan (T-0008)
+# ---------------------------------------------------------------------------
+
+
+class TestCapabilityScan:
+    def test_python_exec_and_net_detected(self, tmp_path: Path) -> None:
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text(
+            "import subprocess\nimport requests\nsubprocess.run(['ls'])\nrequests.get('x')\n"
+        )
+        capabilities = scan_file_capabilities(pkg)
+        assert "exec" in capabilities
+        assert "net" in capabilities
+
+    def test_rust_exec_detected(self, tmp_path: Path) -> None:
+        from frob.vet._capability import scan_file_capabilities
+
+        build_rs = tmp_path / "build.rs"
+        build_rs.write_text('fn main() { std::process::Command::new("sh"); }\n')
+        capabilities = scan_file_capabilities(build_rs)
+        assert "exec" in capabilities
+
+    def test_no_pattern_table_for_c(self, tmp_path: Path) -> None:
+        from frob.vet._capability import scan_file_capabilities
+
+        c_file = tmp_path / "foo.c"
+        c_file.write_text('int main() { system("ls"); return 0; }\n')
+        assert scan_file_capabilities(c_file) == frozenset()
+
+    def test_decode_to_exec_same_function(self, tmp_path: Path) -> None:
+        from frob.vet._capability import decode_to_exec_signal
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text(
+            "import base64\n"
+            "def run(payload):\n"
+            "    data = base64.b64decode(payload)\n"
+            "    exec(data)\n"
+        )
+        assert decode_to_exec_signal(pkg) is True
+
+    def test_decode_to_exec_absent_when_separate(self, tmp_path: Path) -> None:
+        from frob.vet._capability import decode_to_exec_signal
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text(
+            "import base64\n"
+            "def decode(payload):\n"
+            "    return base64.b64decode(payload)\n"
+            "def other():\n"
+            "    return 1\n"
+        )
+        assert decode_to_exec_signal(pkg) is False
+
+
+class TestObfuscationEnsemble:
+    def test_high_entropy_string_flagged(self) -> None:
+        from frob.vet._obfuscation import scan_text_obfuscation
+
+        text = 'x = "aGVsbG8gd29ybGQsIHRoaXMgaXMgYSB0ZXN0IHBheWxvYWQ="\n'
+        assert "high-entropy-string" in scan_text_obfuscation(text)
+
+    def test_plain_string_not_flagged(self) -> None:
+        from frob.vet._obfuscation import scan_text_obfuscation
+
+        text = 'greeting = "hello world, this is a normal string literal"\n'
+        assert "high-entropy-string" not in scan_text_obfuscation(text)
+
+    def test_bidi_override_is_fatal(self) -> None:
+        from frob.vet._obfuscation import invisible_text_signal
+
+        text = "x = 1" + chr(0x202E) + "y = 2"
+        assert invisible_text_signal(text) is True
+
+    def test_clean_text_no_bidi(self) -> None:
+        from frob.vet._obfuscation import invisible_text_signal
+
+        assert invisible_text_signal("x = 1\ny = 2\n") is False
+
+    def test_hex_identifier_ratio_flagged(self) -> None:
+        from frob.vet._obfuscation import hex_identifier_ratio_signal
+
+        idents = " ".join(f"_0x{i:04x}" for i in range(30))
+        assert hex_identifier_ratio_signal(idents) is True
+
+    def test_normal_identifiers_not_flagged(self) -> None:
+        from frob.vet._obfuscation import hex_identifier_ratio_signal
+
+        idents = " ".join(f"variable_name_{i}" for i in range(30))
+        assert hex_identifier_ratio_signal(idents) is False
+
+
+class TestVerdictCache:
+    def test_store_and_retrieve_latest(self, tmp_path: Path) -> None:
+        from frob.vet import _cache
+        from frob.vet._models import PackageVerdict
+
+        db_path = tmp_path / ".frob" / "vet.db"
+        v1 = PackageVerdict(
+            name="foo",
+            version="1.0.0",
+            ecosystem="pypi",
+            artifact_hash="hash1",
+            capabilities=frozenset({"net"}),
+        )
+        _cache.store_verdict(db_path, v1)
+        latest = _cache.latest_verdict(db_path, "pypi", "foo")
+        assert latest is not None
+        assert latest.artifact_hash == "hash1"
+        assert latest.capabilities == frozenset({"net"})
+
+    def test_missing_cache_returns_none(self, tmp_path: Path) -> None:
+        from frob.vet import _cache
+
+        assert (
+            _cache.latest_verdict(tmp_path / ".frob" / "vet.db", "pypi", "nope") is None
+        )
+
+
+class TestCapabilityDiff:
+    def test_added_capability_detected(self) -> None:
+        from frob.vet._models import PackageVerdict, capability_diff
+
+        prev = PackageVerdict(
+            name="foo",
+            version="1.0.0",
+            ecosystem="pypi",
+            capabilities=frozenset({"net"}),
+        )
+        cur = PackageVerdict(
+            name="foo",
+            version="1.1.0",
+            ecosystem="pypi",
+            capabilities=frozenset({"net", "exec"}),
+        )
+        assert capability_diff(prev, cur) == ("exec",)
+
+    def test_no_diff_when_unchanged(self) -> None:
+        from frob.vet._models import PackageVerdict, capability_diff
+
+        prev = PackageVerdict(
+            name="foo",
+            version="1.0.0",
+            ecosystem="pypi",
+            capabilities=frozenset({"net"}),
+        )
+        cur = PackageVerdict(
+            name="foo",
+            version="1.1.0",
+            ecosystem="pypi",
+            capabilities=frozenset({"net"}),
+        )
+        assert capability_diff(prev, cur) == ()
+
+
+class TestEcosystemRules:
+    def test_python_setup_py_cmdclass_flagged(self, tmp_path: Path) -> None:
+        from frob.gates._models import Severity
+        from frob.vet import _ecosystem
+
+        (tmp_path / "setup.py").write_text(
+            "from setuptools import setup\nsetup(cmdclass={'install': Foo})\n"
+        )
+        dep = Dependency(ecosystem="pypi", name="evilpkg", version="1.0.0")
+        violations = _ecosystem.python_rules(dep, tmp_path, "uv.lock")
+        rules = {v.rule for v in violations}
+        assert "VET-PY001" in rules
+        assert any(
+            v.severity is Severity.ERROR for v in violations if v.rule == "VET-PY001"
+        )
+
+    def test_python_pth_file_flagged(self, tmp_path: Path) -> None:
+        from frob.vet import _ecosystem
+
+        (tmp_path / "evil.pth").write_text("import os; os.system('echo hi')\n")
+        dep = Dependency(ecosystem="pypi", name="evilpkg", version="1.0.0")
+        violations = _ecosystem.python_rules(dep, tmp_path, "uv.lock")
+        assert any(v.rule == "VET-PY002" for v in violations)
+
+    def test_rust_build_rs_capability_flagged(self, tmp_path: Path) -> None:
+        from frob.vet import _ecosystem
+
+        (tmp_path / "build.rs").write_text(
+            'fn main() { std::process::Command::new("curl"); }\n'
+        )
+        dep = Dependency(ecosystem="cargo", name="evilcrate", version="1.0.0")
+        violations = _ecosystem.rust_rules(dep, tmp_path, "Cargo.lock")
+        assert any(v.rule == "VET-RS001" for v in violations)
+
+    def test_npm_non_registry_source_flagged(self) -> None:
+        from frob.vet import _ecosystem
+
+        dep = Dependency(
+            ecosystem="npm",
+            name="evilpkg",
+            version="1.0.0",
+            resolved="git+https://example.com/evil/evilpkg.git",
+        )
+        violation = _ecosystem.npm_non_registry_rule(dep, "package-lock.json")
+        assert violation is not None
+        assert violation.rule == "VET-JS004"
+
+    def test_npm_registry_source_not_flagged(self) -> None:
+        from frob.vet import _ecosystem
+
+        dep = Dependency(
+            ecosystem="npm",
+            name="lodash",
+            version="4.17.21",
+            resolved="https://registry.npmjs.org/lodash/-/lodash-4.17.21.tgz",
+        )
+        violation = _ecosystem.npm_non_registry_rule(dep, "package-lock.json")
+        assert violation is None
+
+
+class TestScanTreeWithLocalSource:
+    def test_scan_tree_detects_capabilities_from_node_modules(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """End-to-end: a lockfile dep whose node_modules source uses net/exec
+        surfaces those capabilities in the report's verdict."""
+        from frob.vet._scan import scan_tree
+
+        (tmp_path / "package-lock.json").write_text(
+            json.dumps(
+                {
+                    "name": "app",
+                    "lockfileVersion": 3,
+                    "packages": {
+                        "": {"name": "app", "version": "1.0.0"},
+                        "node_modules/sketchy-pkg": {"version": "1.0.0"},
+                    },
+                }
+            )
+        )
+        pkg_dir = tmp_path / "node_modules" / "sketchy-pkg"
+        pkg_dir.mkdir(parents=True)
+        (pkg_dir / "index.js").write_text(
+            "const cp = require('child_process');\ncp.execSync('ls');\n"
+        )
+        (tmp_path / "frob.toml").write_text(
+            "[vet]\nenforce = true\n\n[vet.allow]\nsketchy-pkg = true\n"
+        )
+
+        result = scan_tree(tmp_path, fetch=False)
+        assert result.is_ok
+        report = result.danger_ok
+        verdict = next(v for v in report.verdicts if v.name == "sketchy-pkg")
+        assert "exec" in verdict.capabilities
+
+    def test_scan_tree_flags_undeclared_capability(self, tmp_path: Path) -> None:
+        """VET002: a declared capability list narrower than what's observed fires."""
+        from frob.vet._scan import scan_tree
+
+        (tmp_path / "package-lock.json").write_text(
+            json.dumps(
+                {
+                    "name": "app",
+                    "lockfileVersion": 3,
+                    "packages": {
+                        "": {"name": "app", "version": "1.0.0"},
+                        "node_modules/sketchy-pkg": {"version": "1.0.0"},
+                    },
+                }
+            )
+        )
+        pkg_dir = tmp_path / "node_modules" / "sketchy-pkg"
+        pkg_dir.mkdir(parents=True)
+        (pkg_dir / "index.js").write_text(
+            "const cp = require('child_process');\ncp.execSync('ls');\n"
+        )
+        (tmp_path / "frob.toml").write_text(
+            '[vet]\nenforce = true\n\n[vet.allow]\nsketchy-pkg = ["net"]\n'
+        )
+
+        result = scan_tree(tmp_path, fetch=False)
+        assert result.is_ok
+        report = result.danger_ok
+        assert any(v.rule == "VET002" for v in report.violations)

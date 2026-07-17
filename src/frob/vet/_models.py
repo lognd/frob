@@ -1,11 +1,12 @@
-"""Data shapes and errors for frob.vet (docs/vet.md is authoritative; MVP subset).
+"""Data shapes and errors for frob.vet (docs/vet.md is authoritative).
 
-MVP note (docs/vet.md implementation notes): full tree-sitter capability
-scanning, escalation diffs (VET002/VET003), and the first-party detector
-battery (VET004/VET007-VET010) are 0.2.x. This module implements the
-lockfile-conformance slice: VET001 (allow-list conformance), VET011
-(cooldown quarantine), VET-JS (lifecycle scripts), typosquat distance, and
-the osv-scanner adapter (VET005).
+Covers the lockfile-conformance slice (VET001, VET011, VET-JS lifecycle
+scripts, typosquat distance, VET005 osv-scanner adapter) plus the T-0008
+capability-scan slice built on top of it: capability/obfuscation signals on
+`PackageVerdict`, `capability_diff` for VET003 escalation, and the ecosystem
+rules in `_ecosystem.py`. See "Implementation notes" in docs/vet.md for what
+of the full design (VET007-VET010, most of VET-C, dynamic detonation) is
+still out of scope.
 """
 
 from __future__ import annotations
@@ -26,6 +27,7 @@ __all__ = [
     "VetError",
     "VetReport",
     "Violation",
+    "capability_diff",
 ]
 
 
@@ -37,6 +39,10 @@ class Dependency(BaseModel):
     ecosystem: str
     name: str
     version: str
+    # non-registry resolution target (git+/http(s)/file: URL), when the
+    # lockfile records one -- feeds VET-JS004 "declarable-only" sources.
+    # Empty string means "resolved from the normal registry" (the common case).
+    resolved: str = ""
 
 
 class PackageVerdict(BaseModel):
@@ -67,6 +73,14 @@ class VetReport(BaseModel):
     enforce: bool = False
     advisory_only: bool = False
     skipped: tuple[str, ...] = ()
+
+
+def capability_diff(prev: PackageVerdict, cur: PackageVerdict) -> tuple[str, ...]:
+    """Capabilities `cur` has that `prev` did not -- the VET003 escalation
+    signal (docs/vet.md "Public API"). Order-stable (sorted) for diffable
+    output; empty when `cur` added nothing new."""
+    added = sorted(cur.capabilities - prev.capabilities)
+    return tuple(added)
 
 
 class HookVerdict(BaseModel):

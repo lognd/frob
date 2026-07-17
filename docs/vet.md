@@ -312,3 +312,67 @@ class VetError(ErrorSet):
 - Supersedes the earlier "POL kind=dependency" idea: license and pinning
   checks fold into frob.vet as VET-family rules rather than a parallel
   policy kind.
+
+## Implementation notes (T-0008, capability-scan slice)
+
+What landed on top of the lockfile-conformance MVP:
+
+- **Capability scan** (`_capability.py`): per-language substring scan over
+  `frob.lang`-parsed source, dispatched by extension. Python, TypeScript/JS,
+  and Rust each get a pattern table for exec/eval/net/fs-write/env/ffi/
+  install-hook. C/C++ intentionally return an empty capability set (no
+  idiomatic literal exists yet) rather than a false claim of coverage.
+  `decode_to_exec_signal` uses `frob.lang` symbol extraction so a decode
+  call and an exec/eval call must land in the SAME function body to count
+  -- the highest-precision obfuscation signal, per the docs above.
+- **Source location** (`_source.py`): best-effort local-cache lookup only
+  (`.venv/lib/*/site-packages`, `~/.cache/uv`, `~/.cache/pip`,
+  `node_modules/<name>`, `~/.cargo/registry/src`). No network fetch is
+  implemented; a dependency not found locally scans with an empty
+  capability set plus a `source-unavailable` signal, never a crash or a
+  false "clean" verdict.
+- **Obfuscation ensemble** (`_obfuscation.py`, VET004): string-literal
+  Shannon entropy vs a fixed per-language threshold, Unicode bidi/zero-
+  width/BOM scan (deterministic, always fatal), and hex-identifier ratio
+  (`_0x...` obfuscator.io fingerprint). All three plus decode-to-exec are
+  fatal (VET004 ERROR) the instant they fire -- no "deobfuscate and judge."
+  CUT from this slice: packer/flattener AST-shape metrics (dispatch-loop
+  density, opaque predicates), evasion-trigger conditional-guard queries,
+  stego scans over non-code files, and the VET008 divergence co-detector
+  that would let minified-vs-obfuscated be told apart reliably. Documented
+  here rather than half-implemented against data this scan doesn't have.
+- **Verdict cache** (`_cache.py`): sqlite `.frob/vet.db`, content-addressed
+  by `(ecosystem, name, artifact_hash)`, plus a "most recent by name"
+  lookup that VET003 uses as the escalation baseline. `capability_diff`
+  (public API, `frob/vet/_models.py`) is the pure diff function; `_scan.py`
+  wires it to VET003.
+- **Conformance upgrade**: `[vet.allow]` entries that are a list are now
+  read as capability tokens (`requests = ["net", "env"]`); an observed
+  capability outside that list is VET002. A bare `name = true` still means
+  "any capability" (unchanged MVP behavior) so existing declarations do not
+  need to be rewritten immediately.
+- **Per-ecosystem cheap rules** (`_ecosystem.py`): VET-PY001 (setup.py with
+  `cmdclass`), VET-PY002 (`.pth` files), VET-PY003 (pickle/marshal payloads
+  in package data, WARN severity), VET-RS001 (build.rs capability-scanned
+  like any package file), VET-RS002 (proc-macro crate presence), VET-JS004
+  (non-registry `resolved` URLs in package-lock.json, WARN). CUT: VET-PY001's
+  "when a wheel exists" qualifier and VET-PY004 (index-priority confusion)
+  need registry/index metadata this local-cache scan doesn't have;
+  VET-JS002 (dependency confusion against `[vet].internal_scopes`) needs a
+  config field and registry-vs-scope resolution logic not yet added;
+  VET-RS003 ([patch]/git substitutions) needs `Cargo.lock` `source` field
+  parsing the MVP lockfile parser doesn't capture; VET-C family needs a
+  CMake/conan/vcpkg lockfile parser frob doesn't have yet. All are next-
+  ticket candidates, not silently dropped.
+- **Models**: `PackageVerdict.capabilities`/`.signals` were already present
+  in the MVP models (frozen, from the start) and are now actually populated;
+  `Dependency.resolved` (default `""`) was added to carry npm's `resolved`
+  URL for VET-JS004. No new `VetError` members were needed -- the existing
+  `SourceUnavailable` member already covers the "no local source" case,
+  surfaced as a per-package `source-unavailable` signal rather than a
+  scan-wide error (a single dependency's missing source should not fail
+  the whole tree).
+- **`vet_runner.py`**: untouched, per instructions. `PackageVerdict.
+  capabilities`/`.signals` already flowed through `report.model_dump_json()`
+  and the table printer's per-package notes column, so the new fields
+  surface automatically with no runner changes.
