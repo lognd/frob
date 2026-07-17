@@ -1,0 +1,215 @@
+{
+  "entries": [
+    {
+      "digest": "a3ec91100e15e9216e6c754b0ba623ee6e8c45468ee86805045ad43623853c7b",
+      "facet": "sig",
+      "ref": "src/frob/gates/__init__.py::active_ticket"
+    },
+    {
+      "digest": "dc87a4a200a735beae29ae8f435a50e9cbbcd4db3ed8a2c5bdcb9ff25a1df2c8",
+      "facet": "sig",
+      "ref": "src/frob/gates/__init__.py::coverage_gate"
+    },
+    {
+      "digest": "5c212d52c12a13920ee34ad607ff4d2367a47d7d7f940927aae71563b733a8e4",
+      "facet": "sig",
+      "ref": "src/frob/gates/__init__.py::drift_gate"
+    },
+    {
+      "digest": "db80869313057d3f514f93b4764e8349d29a1e2ab5e5dced51ade8e5cdedba61",
+      "facet": "sig",
+      "ref": "src/frob/gates/__init__.py::invariant_gate"
+    },
+    {
+      "digest": "0910de3b28246fcbca2fc1a84697bd960cbdabffaeaba7b9aafc2c1cfbb6ab2d",
+      "facet": "sig",
+      "ref": "src/frob/gates/__init__.py::prework_gate"
+    },
+    {
+      "digest": "72d803c6ae83e55cc93daf84e07a20c4fb5d2bed6c671385028240cf9f5217ee",
+      "facet": "sig",
+      "ref": "src/frob/gates/__init__.py::run_gates"
+    },
+    {
+      "digest": "4874fed58820ae91c7819804c10e9ec10f8ffc0fd1d9af893becf340caf38136",
+      "facet": "sig",
+      "ref": "src/frob/gates/__init__.py::scope_gate"
+    },
+    {
+      "digest": "9d54802ceab4033db2ea30804f1fa7aa9c581ccd186686a6ea3931c66e979251",
+      "facet": "sig",
+      "ref": "src/frob/gates/__init__.py::test_gate"
+    },
+    {
+      "digest": "11c8be26f27b5dc5f7fedb8bd72404b05212131cff0dec4602e153ff01745296",
+      "facet": "sig",
+      "ref": "src/frob/gates/_coverage.py::load_coverage"
+    },
+    {
+      "digest": "17dd518b00c5b5c1c6f90b1092a682270844d7425b395896339e226c5165c903",
+      "facet": "sig",
+      "ref": "src/frob/gates/_coverage.py::stamp_coverage"
+    },
+    {
+      "digest": "6b6341690e88e4139864b006a4fb5eda77f3b0f31b69d0a64a43200049c2f372",
+      "facet": "sig",
+      "ref": "src/frob/gates/_prework.py::record_prework"
+    },
+    {
+      "digest": "665ae6d12c7b7b89371895196db67b373e31ff71306f5af194f4bc8d7e80bc6f",
+      "facet": "sig",
+      "ref": "src/frob/gates/invariants.py::load_invariants"
+    },
+    {
+      "digest": "66e3ff92d2fc47068c3dd79599699c04a85b3d4696a423fed379ab6d43cbe295",
+      "facet": "sig",
+      "ref": "src/frob/gitio.py::current_branch"
+    },
+    {
+      "digest": "a9401b65328fdaed09960fa5fa8f012c07b2da09830c74081230620a04d9ff2b",
+      "facet": "sig",
+      "ref": "src/frob/gitio.py::repo_root"
+    },
+    {
+      "digest": "24c128ec98484a3387c0a9490dfb2760b8c0d0dd9110e72f64a07d70f33cc32e",
+      "facet": "sig",
+      "ref": "src/frob/gitio.py::run_argv"
+    },
+    {
+      "digest": "0b743559c042264d89ed77be0e31ebd24532f7bb29f9ce52f03bfc3d35ca6fd3",
+      "facet": "sig",
+      "ref": "src/frob/gitio.py::working_diff"
+    },
+    {
+      "digest": "c2b6a00c4af34fbd04caf36a73074fffec5268c9c1467d257131b9774fb36755",
+      "facet": "sig",
+      "ref": "src/frob/graph/__init__.py::build_graph"
+    },
+    {
+      "digest": "950920c37f62d10c42acde2bd524c0f4fd414a24660c5358fabbadde1a138472",
+      "facet": "sig",
+      "ref": "src/frob/graph/__init__.py::edges_from"
+    },
+    {
+      "digest": "75535e22d16d1601eadadcd41b75089f91b862da46b804a8957fd962cfe67ebd",
+      "facet": "sig",
+      "ref": "src/frob/graph/__init__.py::edges_to"
+    },
+    {
+      "digest": "76c2972f9d1e84401b66517de875357b1f7b0200c1130cf17ec2df06ddfd10bd",
+      "facet": "sig",
+      "ref": "src/frob/graph/__init__.py::load_graph"
+    },
+    {
+      "digest": "818f35d405aecbf91f7617090bd689e44ba2fc2db7c96a0088d7166c9e408f8b",
+      "facet": "sig",
+      "ref": "src/frob/graph/__init__.py::resolve"
+    },
+    {
+      "digest": "fa7492b15b796f86b6627da79468d2fcfa6926d24fbf6083e2f044e1f30fad50",
+      "facet": "sig",
+      "ref": "src/frob/graph/lock.py::acknowledge"
+    },
+    {
+      "digest": "25dee81cd83be7667e48f12e1f5081382dfdbdfe4f5355ae92898397ab5a543f",
+      "facet": "sig",
+      "ref": "src/frob/graph/lock.py::drift"
+    },
+    {
+      "digest": "e2753e8b041a5d0449de4ad04ea741e7488aaf65e88f6a5494f64316ebebc4ac",
+      "facet": "sig",
+      "ref": "src/frob/graph/lock.py::load_lock"
+    },
+    {
+      "digest": "1715452e0664e253f2fa96528dd5ed111fa7cfc4e6cb4a93e0fd90ef84e49882",
+      "facet": "sig",
+      "ref": "src/frob/graph/lock.py::write_lock"
+    },
+    {
+      "digest": "22a8b73d0a1aba089b664caa7675ed7ee9e0097df331516e24247e04ea0e6099",
+      "facet": "sig",
+      "ref": "src/frob/lang/__init__.py::parse_file"
+    },
+    {
+      "digest": "35747d2ab1aa11f396d1bc875f6eb25fe8460872a77fcc1733c9def5d414bf9a",
+      "facet": "sig",
+      "ref": "src/frob/lang/__init__.py::supported_languages"
+    },
+    {
+      "digest": "40dfe05a156e5ad5a98e060ec876fc66f66980582f5402ee423a65359cd41cb3",
+      "facet": "sig",
+      "ref": "src/frob/policy/__init__.py::load_policy"
+    },
+    {
+      "digest": "118e0cf396bd30f8d181389be45f119f5a8660c87a0d4d50b5f7a172aa5b6bc6",
+      "facet": "sig",
+      "ref": "src/frob/policy/__init__.py::policy_gate"
+    },
+    {
+      "digest": "e1173036256e0cb104e4294d327d0b4d2427ce9df329b19e775cc048cd0172ac",
+      "facet": "sig",
+      "ref": "src/frob/testing/_collect.py::collect_python_tests"
+    },
+    {
+      "digest": "b94409e146f42ed0d384ed3f0cfae07ba6c04321c563d17ded584004dc7457d9",
+      "facet": "sig",
+      "ref": "src/frob/testing/_runners.py::load_runners"
+    },
+    {
+      "digest": "86ab81a5f9241bc325b8d5755ba02c40e31c91f2058439b048f55f410e5dc747",
+      "facet": "sig",
+      "ref": "src/frob/testing/_runners.py::run_selected"
+    },
+    {
+      "digest": "2074720e494eb10d552d32e80e54eb61e31c27a5c4511afa60a8c5787b1f874f",
+      "facet": "sig",
+      "ref": "src/frob/testing/_select.py::extension_language"
+    },
+    {
+      "digest": "8f4fe13083776b7ac3905e70f7fe2261e9069af4aa676349997eb53eb2c1e50c",
+      "facet": "sig",
+      "ref": "src/frob/testing/_select.py::select_tests"
+    },
+    {
+      "digest": "5df30457c0549f6170224e79cdb437421a48d725f985f150f2bbd2e073947b2c",
+      "facet": "sig",
+      "ref": "src/frob/tickets/__init__.py::attach"
+    },
+    {
+      "digest": "cce604d22281025362c80c6982d276a1643086196fa9bf894e7f6e936f67a5ce",
+      "facet": "sig",
+      "ref": "src/frob/tickets/__init__.py::doable"
+    },
+    {
+      "digest": "e44b20c7734cc812f5ab85900637ecc72ebb3d0a34af85eeb17cd97c1aca2d0a",
+      "facet": "sig",
+      "ref": "src/frob/tickets/__init__.py::load_queue"
+    },
+    {
+      "digest": "cc53a261c161b3d120dedb38c7fff4cf692460efc84466cb7aa62507b6c77717",
+      "facet": "sig",
+      "ref": "src/frob/tickets/__init__.py::new_ticket"
+    },
+    {
+      "digest": "ed4f7d8066c114b4aa0f7868f15d069ad386184f6c3d8289481e8c65ffef8dd8",
+      "facet": "sig",
+      "ref": "src/frob/tickets/__init__.py::record_failure"
+    },
+    {
+      "digest": "4c852b04e4012a118e82a72d400a6f894a01ddacdb335e2edf32043a992d0723",
+      "facet": "sig",
+      "ref": "src/frob/tickets/__init__.py::transition"
+    },
+    {
+      "digest": "16dd69d6531a3f4a287d539fc5112ea94ee69be195a8f410bae001955953fd6a",
+      "facet": "sig",
+      "ref": "src/frob/tickets/clipboard.py::clipboard_has_image"
+    },
+    {
+      "digest": "b1a83f11e01d1abc8e365d1c3369c57b882ef747d95e06bd5cfddc25f5ad3000",
+      "facet": "sig",
+      "ref": "src/frob/tickets/clipboard.py::clipboard_image"
+    }
+  ],
+  "version": 1
+}
