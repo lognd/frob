@@ -145,6 +145,14 @@ def _build_parser() -> argparse.ArgumentParser:
         help="minimum function body size to consider (default: 6)",
     )
     dup_p.add_argument("--json", dest="dup_json", action="store_true")
+    dup_p.add_argument(
+        "--probe",
+        dest="dup_probe",
+        nargs=2,
+        metavar=("SYMREF_A", "SYMREF_B"),
+        default=[],
+        help="R6: probe two symbols for observational equivalence (pure only)",
+    )
 
     # -- arch ----------------------------------------------------------------
     arch_p = sub.add_parser(

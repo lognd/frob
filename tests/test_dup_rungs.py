@@ -143,3 +143,27 @@ class TestRegionSubsection:
         # Both regions must be valid, ordered spans within the symbol's own span.
         assert pair.left.span[0] <= pair.left.span[1]
         assert pair.right.span[0] <= pair.right.span[1]
+
+
+def test_cli_probe_equivalent_functions(tmp_path):
+    """frob dup --probe reports observational equivalence of two pure funcs."""
+    import subprocess
+    import sys
+
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / "m.py").write_text(
+        "def da(x: int) -> int:\n    return x * 2\n\n"
+        "def db(x: int) -> int:\n    return x + x\n",
+        encoding="utf-8",
+    )
+    r = subprocess.run(
+        [
+            sys.executable, "-m", "frob", "dup", str(tmp_path),
+            "--probe", "src/m.py::da", "src/m.py::db",
+        ],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+    )
+    assert "EQUIVALENT" in (r.stdout + r.stderr)
+    assert r.returncode == 0

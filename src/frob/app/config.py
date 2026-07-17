@@ -76,6 +76,7 @@ class AppConfig(BaseModel):
     dup_path: Path | None = None
     dup_min_lines: int = 6
     dup_json: bool = False
+    dup_probe: list[str] = []
 
     # arch
     arch_path: Path | None = None
@@ -348,6 +349,7 @@ class AppConfig(BaseModel):
             "test_lang",
             "perf_argv",
             "mutate_argv",
+            "dup_probe",
         ):
             val = getattr(args, list_field, None)
             if val:

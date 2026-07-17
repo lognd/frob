@@ -1121,15 +1121,19 @@ tests -> 100%. Delivers T-0011 (MUT gate + other langs = follow-on).
 ```yaml
 id: T-0041
 title: 'dup follow-on: --probe CLI, full APTED, real CFG/DFG'
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-07-17'
 blocked_by: []
 parent: null
 scope:
-- src/frob/dup/**
 - frob-core/**
+- src/frob/__main__.py
+- src/frob/app/config.py
+- src/frob/app/dup_runner.py
+- src/frob/dup/**
+- tests/test_dup_rungs.py
 evidence: []
 attachments: []
 acceptance: []
