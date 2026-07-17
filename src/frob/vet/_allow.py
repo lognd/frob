@@ -16,6 +16,26 @@ from frob.vet._models import VetConfig
 _log = get_logger(__name__)
 
 
+def _parse_allow(allow_raw: object) -> dict[str, tuple[str, ...] | bool]:
+    """Coerce a raw `[vet.allow]` table into `{name: bool | (reason, ...)}`,
+    logging and dropping entries with an unsupported value shape."""
+    allow: dict[str, tuple[str, ...] | bool] = {}
+    if not isinstance(allow_raw, dict):
+        return allow
+    for name, value in allow_raw.items():
+        if isinstance(value, bool):
+            allow[str(name)] = value
+        elif isinstance(value, list):
+            allow[str(name)] = tuple(str(v) for v in value)
+        else:
+            _log.warning(
+                "vet: [vet.allow] entry %r has unsupported value %r; ignoring",
+                name,
+                value,
+            )
+    return allow
+
+
 # frob:doc docs/vet.md#public-api
 def load_vet_config(root: Path) -> VetConfig:
     """Read `frob.toml`'s `[vet]` table; absent table -> `present=False`
@@ -35,20 +55,7 @@ def load_vet_config(root: Path) -> VetConfig:
         _log.info("vet: no [vet] section in %s; advisory-only mode", toml_path)
         return VetConfig(present=False)
 
-    allow_raw = vet.get("allow", {})
-    allow: dict[str, tuple[str, ...] | bool] = {}
-    if isinstance(allow_raw, dict):
-        for name, value in allow_raw.items():
-            if isinstance(value, bool):
-                allow[name] = value
-            elif isinstance(value, list):
-                allow[name] = tuple(str(v) for v in value)
-            else:
-                _log.warning(
-                    "vet: [vet.allow] entry %r has unsupported value %r; ignoring",
-                    name,
-                    value,
-                )
+    allow = _parse_allow(vet.get("allow", {}))
 
     cfg = VetConfig(
         present=True,

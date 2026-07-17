@@ -69,6 +69,24 @@ def run_osv_scan(lockfile: Path) -> tuple[OsvAdvisory, ...] | None:
         _log.warning("vet: osv-scanner output unparseable: %s", exc)
         return None
 
+    advisories = _advisories_from_data(data)
+    _log.info("vet: osv-scanner reported %d advisory finding(s)", len(advisories))
+    return tuple(advisories)
+
+
+def _fixed_version(vuln: dict) -> str | None:
+    """The last-declared `fixed` event across a vuln's affected ranges, if any."""
+    fixed: str | None = None
+    for affected in vuln.get("affected", []):
+        for rng in affected.get("ranges", []):
+            for event in rng.get("events", []):
+                if "fixed" in event:
+                    fixed = event["fixed"]
+    return fixed
+
+
+def _advisories_from_data(data: dict) -> list[OsvAdvisory]:
+    """Flatten osv-scanner's nested results JSON into `OsvAdvisory` records."""
     advisories: list[OsvAdvisory] = []
     for result_entry in data.get("results", []):
         for pkg_entry in result_entry.get("packages", []):
@@ -77,15 +95,10 @@ def run_osv_scan(lockfile: Path) -> tuple[OsvAdvisory, ...] | None:
             version = pkg_info.get("version", "")
             for vuln in pkg_entry.get("vulnerabilities", []):
                 vuln_id = vuln.get("id", "unknown")
-                fixed = None
-                for affected in vuln.get("affected", []):
-                    for rng in affected.get("ranges", []):
-                        for event in rng.get("events", []):
-                            if "fixed" in event:
-                                fixed = event["fixed"]
-                advisories.append(OsvAdvisory(vuln_id, name, version, fixed))
-    _log.info("vet: osv-scanner reported %d advisory finding(s)", len(advisories))
-    return tuple(advisories)
+                advisories.append(
+                    OsvAdvisory(vuln_id, name, version, _fixed_version(vuln))
+                )
+    return advisories
 
 
 __all__ = ["OsvAdvisory", "is_available", "run_osv_scan"]

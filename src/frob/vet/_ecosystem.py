@@ -21,6 +21,76 @@ from frob.vet._models import Dependency
 _log = get_logger(__name__)
 
 
+def _read_text_or_empty(path: Path) -> str:
+    """`path`'s UTF-8 text (replacement errors) or `""` on an OS read failure."""
+    try:
+        return path.read_text(encoding="utf-8", errors="replace")
+    except OSError as exc:
+        _log.warning("vet: could not read %s: %s", path, exc)
+        return ""
+
+
+def _setup_py_violation(
+    dep: Dependency, source_dir: Path, lockfile_name: str
+) -> Violation | None:
+    """VET-PY001: setup.py declares cmdclass (install-time code execution)."""
+    setup_py = source_dir / "setup.py"
+    if not setup_py.is_file() or "cmdclass" not in _read_text_or_empty(setup_py):
+        return None
+    return Violation(
+        rule="VET-PY001",
+        severity=Severity.ERROR,
+        file=lockfile_name,
+        line=0,
+        message=(
+            f"{dep.name}@{dep.version}: setup.py declares cmdclass "
+            f"(install-time code execution)"
+        ),
+    )
+
+
+def _pth_violation(
+    dep: Dependency, source_dir: Path, lockfile_name: str
+) -> Violation | None:
+    """VET-PY002: shipped `.pth` files (interpreter-startup code execution)."""
+    pth_files = list(source_dir.glob("*.pth"))
+    if not pth_files:
+        return None
+    return Violation(
+        rule="VET-PY002",
+        severity=Severity.ERROR,
+        file=lockfile_name,
+        line=0,
+        message=(
+            f"{dep.name}@{dep.version}: ships {len(pth_files)} .pth file(s) "
+            f"(interpreter-startup code execution)"
+        ),
+    )
+
+
+def _pickle_violation(
+    dep: Dependency, source_dir: Path, lockfile_name: str
+) -> Violation | None:
+    """VET-PY003: shipped pickle payloads (serialized-code load == eval)."""
+    pickle_files = [
+        p
+        for p in source_dir.rglob("*")
+        if p.suffix in (".pkl", ".pickle") and p.is_file()
+    ]
+    if not pickle_files:
+        return None
+    return Violation(
+        rule="VET-PY003",
+        severity=Severity.WARN,
+        file=lockfile_name,
+        line=0,
+        message=(
+            f"{dep.name}@{dep.version}: ships {len(pickle_files)} pickle "
+            f"payload(s) in package data (serialized-code load == eval)"
+        ),
+    )
+
+
 # frob:doc docs/vet.md#public-api
 def python_rules(
     dep: Dependency, source_dir: Path, lockfile_name: str
@@ -32,63 +102,58 @@ def python_rules(
     (index-priority confusion) need registry metadata this local-cache-only
     scan does not have; documented, not implemented.
     """
-    violations: list[Violation] = []
+    candidates = (
+        _setup_py_violation(dep, source_dir, lockfile_name),
+        _pth_violation(dep, source_dir, lockfile_name),
+        _pickle_violation(dep, source_dir, lockfile_name),
+    )
+    return [v for v in candidates if v is not None]
 
-    setup_py = source_dir / "setup.py"
-    if setup_py.is_file():
-        try:
-            text = setup_py.read_text(encoding="utf-8", errors="replace")
-        except OSError as exc:
-            _log.warning("vet: could not read %s: %s", setup_py, exc)
-            text = ""
-        if "cmdclass" in text:
-            violations.append(
-                Violation(
-                    rule="VET-PY001",
-                    severity=Severity.ERROR,
-                    file=lockfile_name,
-                    line=0,
-                    message=(
-                        f"{dep.name}@{dep.version}: setup.py declares cmdclass "
-                        f"(install-time code execution)"
-                    ),
-                )
-            )
 
-    pth_files = list(source_dir.glob("*.pth"))
-    if pth_files:
-        violations.append(
-            Violation(
-                rule="VET-PY002",
-                severity=Severity.ERROR,
-                file=lockfile_name,
-                line=0,
-                message=(
-                    f"{dep.name}@{dep.version}: ships {len(pth_files)} .pth file(s) "
-                    f"(interpreter-startup code execution)"
-                ),
-            )
-        )
+def _build_rs_violation(
+    dep: Dependency, source_dir: Path, lockfile_name: str
+) -> Violation | None:
+    """VET-RS001: build.rs exercises capabilities at cargo-build time."""
+    from frob.vet._capability import scan_file_capabilities
 
-    pickle_files = [
-        p
-        for p in source_dir.rglob("*")
-        if p.suffix in (".pkl", ".pickle") and p.is_file()
-    ]
-    if pickle_files:
-        violations.append(
-            Violation(
-                rule="VET-PY003",
-                severity=Severity.WARN,
-                file=lockfile_name,
-                line=0,
-                message=(
-                    f"{dep.name}@{dep.version}: ships {len(pickle_files)} pickle "
-                    f"payload(s) in package data (serialized-code load == eval)"
-                ),
-            )
-        )
-    return violations
+    build_rs = source_dir / "build.rs"
+    if not build_rs.is_file():
+        return None
+    capabilities = scan_file_capabilities(build_rs)
+    if not capabilities:
+        return None
+    return Violation(
+        rule="VET-RS001",
+        severity=Severity.ERROR,
+        file=lockfile_name,
+        line=0,
+        message=(
+            f"{dep.name}@{dep.version}: build.rs exercises "
+            f"{', '.join(sorted(capabilities))} at cargo-build time"
+        ),
+    )
+
+
+def _proc_macro_violation(
+    dep: Dependency, source_dir: Path, lockfile_name: str
+) -> Violation | None:
+    """VET-RS002: proc-macro crate (executes in the compiler)."""
+    cargo_toml = source_dir / "Cargo.toml"
+    if not cargo_toml.is_file():
+        return None
+    text = _read_text_or_empty(cargo_toml)
+    if "proc-macro" not in text or "true" not in text:
+        return None
+    return Violation(
+        rule="VET-RS002",
+        severity=Severity.ERROR,
+        file=lockfile_name,
+        line=0,
+        message=(
+            f"{dep.name}@{dep.version}: proc-macro crate (executes "
+            f"in the compiler; requires [vet.allow] declaration)"
+        ),
+    )
 
 
 # frob:doc docs/vet.md#public-api
@@ -102,48 +167,11 @@ def rust_rules(
     field parsing this MVP's lockfile parser doesn't capture; documented,
     not implemented.
     """
-    from frob.vet._capability import scan_file_capabilities
-
-    violations: list[Violation] = []
-
-    build_rs = source_dir / "build.rs"
-    if build_rs.is_file():
-        capabilities = scan_file_capabilities(build_rs)
-        if capabilities:
-            violations.append(
-                Violation(
-                    rule="VET-RS001",
-                    severity=Severity.ERROR,
-                    file=lockfile_name,
-                    line=0,
-                    message=(
-                        f"{dep.name}@{dep.version}: build.rs exercises "
-                        f"{', '.join(sorted(capabilities))} at cargo-build time"
-                    ),
-                )
-            )
-
-    cargo_toml = source_dir / "Cargo.toml"
-    if cargo_toml.is_file():
-        try:
-            text = cargo_toml.read_text(encoding="utf-8", errors="replace")
-        except OSError as exc:
-            _log.warning("vet: could not read %s: %s", cargo_toml, exc)
-            text = ""
-        if "proc-macro" in text and "true" in text:
-            violations.append(
-                Violation(
-                    rule="VET-RS002",
-                    severity=Severity.ERROR,
-                    file=lockfile_name,
-                    line=0,
-                    message=(
-                        f"{dep.name}@{dep.version}: proc-macro crate (executes "
-                        f"in the compiler; requires [vet.allow] declaration)"
-                    ),
-                )
-            )
-    return violations
+    candidates = (
+        _build_rs_violation(dep, source_dir, lockfile_name),
+        _proc_macro_violation(dep, source_dir, lockfile_name),
+    )
+    return [v for v in candidates if v is not None]
 
 
 # frob:doc docs/vet.md#public-api

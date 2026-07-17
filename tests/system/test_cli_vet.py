@@ -90,6 +90,7 @@ class TestHookMode:
         assert r.returncode == 0
 
     def test_old_package_passes(self, tmp_path: Path, fake_registry: str) -> None:
+        # frob:tests src/frob/vet kind="integration"
         (tmp_path / "frob.toml").write_text(
             f'[vet]\nquarantine_days = 14\nregistry_base_url = "{fake_registry}"\n'
         )

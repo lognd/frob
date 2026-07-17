@@ -43,33 +43,71 @@ def parse_lockfile(path: Path) -> Result[tuple[Dependency, ...], VetError]:
     """Dispatch to the parser matching `path`'s filename; Err on unsupported."""
     name = path.name
     if name == "uv.lock":
-        return _parse_uv_lock(path)
+        return _parse_toml_packages(path, "pypi")
     if name == "package-lock.json":
         return _parse_package_lock_json(path)
     if name == "pnpm-lock.yaml":
         return _parse_pnpm_lock(path)
     if name == "Cargo.lock":
-        return _parse_cargo_lock(path)
+        return _parse_toml_packages(path, "cargo")
     _log.warning(
         "vet: no parser for %s; supported: %s", path, ", ".join(_LOCKFILE_NAMES)
     )
     return Err(VetError.LockfileUnsupported)
 
 
-def _parse_uv_lock(path: Path) -> Result[tuple[Dependency, ...], VetError]:
-    """`uv.lock` -> pypi dependencies via `[[package]]` TOML tables."""
+def _parse_toml_packages(
+    path: Path, ecosystem: str
+) -> Result[tuple[Dependency, ...], VetError]:
+    """`[[package]]` TOML tables (uv.lock, Cargo.lock) -> `Dependency` tuples."""
     try:
         data = tomllib.loads(path.read_text(encoding="utf-8"))
     except (OSError, tomllib.TOMLDecodeError) as exc:
         _log.warning("vet: could not parse %s: %s", path, exc)
         return Err(VetError.LockfileUnsupported)
     deps = tuple(
-        Dependency(ecosystem="pypi", name=pkg["name"], version=pkg["version"])
+        Dependency(ecosystem=ecosystem, name=pkg["name"], version=pkg["version"])
         for pkg in data.get("package", [])
         if "name" in pkg and "version" in pkg
     )
     _log.info("vet: parsed %d package(s) from %s", len(deps), path)
     return Ok(deps)
+
+
+def _npm_dep(name: str, meta: dict) -> Dependency | None:
+    """One npm `Dependency` from a lockfile metadata table, or `None` if it
+    carries no version."""
+    version = meta.get("version")
+    if version is None:
+        return None
+    resolved = meta.get("resolved", "")
+    resolved = resolved if isinstance(resolved, str) else ""
+    return Dependency(ecosystem="npm", name=name, version=version, resolved=resolved)
+
+
+def _npm_deps_from_packages(packages: dict) -> list[Dependency]:
+    """v2/v3 `packages` map (keys like `node_modules/@scope/foo`) -> deps."""
+    deps: list[Dependency] = []
+    for key, meta in packages.items():
+        if not key or not isinstance(meta, dict):
+            continue
+        name = key.rsplit("node_modules/", 1)[-1]
+        dep = _npm_dep(name, meta)
+        if dep is not None:
+            deps.append(dep)
+    return deps
+
+
+def _npm_deps_from_dependencies(dependencies: dict) -> list[Dependency]:
+    """v1 `dependencies` map (name -> meta) -> deps."""
+    deps: list[Dependency] = []
+    for name, meta in dependencies.items():
+        if not isinstance(meta, dict):
+            continue
+        dep = _npm_dep(name, meta)
+        if dep is not None:
+            deps.append(dep)
+    return deps
 
 
 def _parse_package_lock_json(path: Path) -> Result[tuple[Dependency, ...], VetError]:
@@ -81,38 +119,11 @@ def _parse_package_lock_json(path: Path) -> Result[tuple[Dependency, ...], VetEr
         _log.warning("vet: could not parse %s: %s", path, exc)
         return Err(VetError.LockfileUnsupported)
 
-    deps: list[Dependency] = []
     packages = data.get("packages")
     if isinstance(packages, dict):
-        for key, meta in packages.items():
-            if not key or not isinstance(meta, dict):
-                continue
-            version = meta.get("version")
-            if version is None:
-                continue
-            # key looks like "node_modules/foo" or "node_modules/@scope/foo"
-            name = key.rsplit("node_modules/", 1)[-1]
-            resolved = meta.get("resolved", "")
-            resolved = resolved if isinstance(resolved, str) else ""
-            deps.append(
-                Dependency(
-                    ecosystem="npm", name=name, version=version, resolved=resolved
-                )
-            )
+        deps = _npm_deps_from_packages(packages)
     else:
-        for name, meta in data.get("dependencies", {}).items():
-            if not isinstance(meta, dict):
-                continue
-            version = meta.get("version")
-            if version is None:
-                continue
-            resolved = meta.get("resolved", "")
-            resolved = resolved if isinstance(resolved, str) else ""
-            deps.append(
-                Dependency(
-                    ecosystem="npm", name=name, version=version, resolved=resolved
-                )
-            )
+        deps = _npm_deps_from_dependencies(data.get("dependencies", {}))
 
     _log.info("vet: parsed %d package(s) from %s", len(deps), path)
     return Ok(tuple(deps))
@@ -146,22 +157,6 @@ def _parse_pnpm_lock(path: Path) -> Result[tuple[Dependency, ...], VetError]:
         )
     _log.info("vet: parsed %d package(s) from %s", len(deps), path)
     return Ok(tuple(deps))
-
-
-def _parse_cargo_lock(path: Path) -> Result[tuple[Dependency, ...], VetError]:
-    """`Cargo.lock` -> crates.io dependencies via `[[package]]` TOML tables."""
-    try:
-        data = tomllib.loads(path.read_text(encoding="utf-8"))
-    except (OSError, tomllib.TOMLDecodeError) as exc:
-        _log.warning("vet: could not parse %s: %s", path, exc)
-        return Err(VetError.LockfileUnsupported)
-    deps = tuple(
-        Dependency(ecosystem="cargo", name=pkg["name"], version=pkg["version"])
-        for pkg in data.get("package", [])
-        if "name" in pkg and "version" in pkg
-    )
-    _log.info("vet: parsed %d package(s) from %s", len(deps), path)
-    return Ok(deps)
 
 
 __all__ = ["find_lockfile", "parse_lockfile"]

@@ -8,13 +8,14 @@ from __future__ import annotations
 
 import re
 import shlex
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 
 from frob.logging import get_logger
 from frob.vet import _registry, _typosquat
 from frob.vet._allow import load_vet_config
-from frob.vet._models import HookVerdict
+from frob.vet._models import HookVerdict, VetConfig
 
 _log = get_logger(__name__)
 
@@ -71,6 +72,71 @@ def _strip_cargo_version(token: str) -> tuple[str, str]:
     return token, ""
 
 
+_Strip = Callable[[str], tuple[str, str]]
+_INSTALL_TOOLS = ("uv", "pip", "pip3", "npm", "pnpm", "yarn", "cargo")
+
+
+def _skip_env_assignments(tokens: list[str]) -> int:
+    """Index of the first token past leading `FOO=bar` env assignments."""
+    idx = 0
+    while idx < len(tokens) and re.match(r"^[A-Za-z_][A-Za-z0-9_]*=", tokens[idx]):
+        idx += 1
+    return idx
+
+
+def _parse_npx_target(
+    tokens: list[str], idx: int
+) -> tuple[str, tuple[tuple[str, str], ...]] | None:
+    """npx runs exactly one target package: the first non-flag token."""
+    for tok in tokens[idx:]:
+        if tok.startswith("-"):
+            continue
+        name, version = _strip_npm_version(tok)
+        _log.info("vet: hook: parsed npx target %s@%s", name, version or "*")
+        return "npm", ((name, version),)
+    return None
+
+
+def _strip_for_ecosystem(ecosystem: str) -> _Strip:
+    """The name/version splitter for `ecosystem`."""
+    if ecosystem == "pypi":
+        return _strip_pypi_version
+    if ecosystem == "npm":
+        return _strip_npm_version
+    return _strip_cargo_version
+
+
+def _resolve_install_form(
+    tool: str, tokens: list[str], idx: int
+) -> tuple[str, _Strip, int] | None:
+    """`(ecosystem, strip_fn, next_idx)` for a recognized subcommand, else None."""
+    if idx >= len(tokens):
+        return None
+    sub = tokens[idx]
+    idx += 1
+    if tool == "uv" and sub == "pip":
+        if idx >= len(tokens) or tokens[idx] != "install":
+            return None
+        return "pypi", _strip_pypi_version, idx + 1
+    if (tool, sub) in _INSTALL_FORMS:
+        ecosystem = _INSTALL_FORMS[(tool, sub)]
+        return ecosystem, _strip_for_ecosystem(ecosystem), idx
+    return None
+
+
+def _collect_packages(pkg_tokens: list[str], strip: _Strip) -> list[tuple[str, str]]:
+    """Split each non-flag token into `(name, version)`, dropping empty names."""
+    packages: list[tuple[str, str]] = []
+    for tok in pkg_tokens:
+        if tok.startswith("-"):
+            continue
+        name, version = strip(tok)
+        if not name:
+            continue
+        packages.append((name, version))
+    return packages
+
+
 # frob:doc docs/vet.md#public-api
 def parse_hook_command(command: str) -> tuple[str, tuple[tuple[str, str], ...]] | None:
     """Parse a shell command string for install-shaped invocations.
@@ -84,87 +150,33 @@ def parse_hook_command(command: str) -> tuple[str, tuple[tuple[str, str], ...]] 
     if not tokens:
         return None
 
-    # Skip leading env-var assignments (FOO=bar cmd ...).
-    idx = 0
-    while idx < len(tokens) and re.match(r"^[A-Za-z_][A-Za-z0-9_]*=", tokens[idx]):
-        idx += 1
+    idx = _skip_env_assignments(tokens)
     if idx >= len(tokens):
         return None
     tool = Path(tokens[idx]).name  # strip any path prefix
     idx += 1
 
     if tool == "npx":
-        ecosystem = "npm"
-        pkg_tokens = tokens[idx:]
-        strip = _strip_npm_version
-        # npx runs exactly one target package; only the first non-flag token.
-        for tok in pkg_tokens:
-            if tok.startswith("-"):
-                continue
-            name, version = strip(tok)
-            _log.info("vet: hook: parsed npx target %s@%s", name, version or "*")
-            return ecosystem, ((name, version),)
+        return _parse_npx_target(tokens, idx)
+    if tool not in _INSTALL_TOOLS:
         return None
 
-    if tool not in ("uv", "pip", "pip3", "npm", "pnpm", "yarn", "cargo"):
+    resolved = _resolve_install_form(tool, tokens, idx)
+    if resolved is None:
         return None
+    ecosystem, strip, idx = resolved
 
-    if idx >= len(tokens):
-        return None
-    sub = tokens[idx]
-    idx += 1
-
-    if tool == "uv" and sub == "pip":
-        if idx >= len(tokens) or tokens[idx] != "install":
-            return None
-        idx += 1
-        ecosystem = "pypi"
-        strip = _strip_pypi_version
-    elif (tool, sub) in _INSTALL_FORMS:
-        ecosystem = _INSTALL_FORMS[(tool, sub)]
-        strip = (
-            _strip_pypi_version
-            if ecosystem == "pypi"
-            else (_strip_npm_version if ecosystem == "npm" else _strip_cargo_version)
-        )
-    else:
-        return None
-
-    packages: list[tuple[str, str]] = []
-    for tok in tokens[idx:]:
-        if tok.startswith("-"):
-            continue
-        name, version = strip(tok)
-        if not name:
-            continue
-        packages.append((name, version))
-
+    packages = _collect_packages(tokens[idx:], strip)
     if not packages:
         return None
     _log.info("vet: hook: parsed %s install of %s", ecosystem, packages)
     return ecosystem, tuple(packages)
 
 
-# frob:doc docs/vet.md#public-api
-def check_package(
-    ecosystem: str, name: str, version: str, *, root: Path
+def _quarantine_verdict(
+    ecosystem: str, name: str, version: str, cfg: VetConfig, cache_path: Path
 ) -> HookVerdict:
-    """Quarantine + typosquat check for one not-yet-installed package."""
-    cfg = load_vet_config(root)
-    cache_path = root / _CACHE_REL
-
-    typosquat_of = _typosquat.find_typosquat(ecosystem, name)
-    if typosquat_of is not None:
-        msg = f"{name}: possible typosquat of {typosquat_of}"
-        _log.warning("vet: hook: BLOCK %s", msg)
-        return HookVerdict(
-            package=name,
-            ecosystem=ecosystem,
-            verdict="typosquat",
-            message=msg,
-            blocked=True,
-        )
-
+    """Registry publish-date verdict: unverified / not-found / quarantine / ok."""
     lookup_version = version or _registry.LATEST_VERSION
     lookup = _registry.fetch_publish_date(
         ecosystem,
@@ -214,6 +226,29 @@ def check_package(
     return HookVerdict(
         package=name, ecosystem=ecosystem, verdict="ok", message=msg, blocked=False
     )
+
+
+# frob:doc docs/vet.md#public-api
+def check_package(
+    ecosystem: str, name: str, version: str, *, root: Path
+) -> HookVerdict:
+    """Quarantine + typosquat check for one not-yet-installed package."""
+    cfg = load_vet_config(root)
+    cache_path = root / _CACHE_REL
+
+    typosquat_of = _typosquat.find_typosquat(ecosystem, name)
+    if typosquat_of is not None:
+        msg = f"{name}: possible typosquat of {typosquat_of}"
+        _log.warning("vet: hook: BLOCK %s", msg)
+        return HookVerdict(
+            package=name,
+            ecosystem=ecosystem,
+            verdict="typosquat",
+            message=msg,
+            blocked=True,
+        )
+
+    return _quarantine_verdict(ecosystem, name, version, cfg, cache_path)
 
 
 __all__ = ["check_package", "parse_hook_command"]

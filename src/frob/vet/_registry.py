@@ -147,32 +147,29 @@ def _parse_published(
     return None, None
 
 
-# frob:doc docs/vet.md#public-api
-def fetch_publish_date(
+def _result_from_cached(
+    ecosystem: str, name: str, version: str, key: str, cached: str
+) -> RegistryResult:
+    """Build a `RegistryResult` from an already-cached registry JSON body."""
+    try:
+        resolved, published = _parse_published(ecosystem, name, version, cached)
+    except (json.JSONDecodeError, ValueError) as exc:
+        _log.warning("vet: cached body for %s unparseable: %s", key, exc)
+        return RegistryResult(ok=False, note="cached response unparseable")
+    _log.info("vet: %s publish date from cache: %s", key, published)
+    return RegistryResult(ok=True, published_at=published, resolved_version=resolved)
+
+
+def _result_from_network(
     ecosystem: str,
     name: str,
     version: str,
-    *,
+    key: str,
+    url: str,
     cache_path: Path,
-    base_url: str | None = None,
-    timeout_s: float = _TIMEOUT_S,
+    timeout_s: float,
 ) -> RegistryResult:
-    """The publish timestamp for `name@version`; `ok=False` on any lookup failure."""
-    key = _cache_key(ecosystem, name, version)
-    cached = None if version == _LATEST else _cache_get(cache_path, key)
-    if cached is not None:
-        try:
-            resolved, published = _parse_published(ecosystem, name, version, cached)
-        except (json.JSONDecodeError, ValueError) as exc:
-            _log.warning("vet: cached body for %s unparseable: %s", key, exc)
-            return RegistryResult(ok=False, note="cached response unparseable")
-        _log.info("vet: %s publish date from cache: %s", key, published)
-        return RegistryResult(
-            ok=True, published_at=published, resolved_version=resolved
-        )
-
-    url = _url_for(ecosystem, name, version, base_url)
-    _log.info("vet: querying registry for %s: %s", key, url)
+    """Fetch, parse, and (for pinned versions) cache a registry publish date."""
     try:
         with urllib.request.urlopen(url, timeout=timeout_s) as resp:  # noqa: S310
             body = resp.read().decode("utf-8")
@@ -190,6 +187,29 @@ def fetch_publish_date(
         _cache_set(cache_path, key, body)
     _log.info("vet: %s publish date: %s (resolved=%s)", key, published, resolved)
     return RegistryResult(ok=True, published_at=published, resolved_version=resolved)
+
+
+# frob:doc docs/vet.md#public-api
+def fetch_publish_date(
+    ecosystem: str,
+    name: str,
+    version: str,
+    *,
+    cache_path: Path,
+    base_url: str | None = None,
+    timeout_s: float = _TIMEOUT_S,
+) -> RegistryResult:
+    """The publish timestamp for `name@version`; `ok=False` on any lookup failure."""
+    key = _cache_key(ecosystem, name, version)
+    cached = None if version == _LATEST else _cache_get(cache_path, key)
+    if cached is not None:
+        return _result_from_cached(ecosystem, name, version, key, cached)
+
+    url = _url_for(ecosystem, name, version, base_url)
+    _log.info("vet: querying registry for %s: %s", key, url)
+    return _result_from_network(
+        ecosystem, name, version, key, url, cache_path, timeout_s
+    )
 
 
 LATEST_VERSION = _LATEST

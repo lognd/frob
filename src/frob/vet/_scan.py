@@ -32,6 +32,7 @@ from frob.vet._lockfile import find_lockfile, parse_lockfile
 from frob.vet._models import (
     Dependency,
     PackageVerdict,
+    VetConfig,
     VetError,
     VetReport,
     capability_diff,
@@ -56,12 +57,25 @@ def _artifact_hash(source_dir: Path, *, max_files: int = 500) -> str:
     return digest.hexdigest()
 
 
-def _is_allowed(dep: Dependency, allow: dict) -> bool:
-    return dep.name in allow
+def _lockfile_name(dep: Dependency, root: Path) -> str:
+    return dep.ecosystem
+
+
+def _vet011_violation(
+    dep: Dependency, root: Path, severity: Severity, message: str
+) -> Violation:
+    """A VET011 quarantine/verification violation for `dep`."""
+    return Violation(
+        rule="VET011",
+        severity=severity,
+        file=str(_lockfile_name(dep, root)),
+        line=0,
+        message=message,
+    )
 
 
 def _quarantine_violation(
-    dep: Dependency, root: Path, cfg, cache_path: Path
+    dep: Dependency, root: Path, cfg: VetConfig, cache_path: Path
 ) -> Violation | None:
     """VET011: ERROR if newly published within the cooldown window, WARN if
     the publish date could not be verified (never a hard block offline)."""
@@ -73,23 +87,21 @@ def _quarantine_violation(
         base_url=cfg.registry_base_url,
     )
     if not lookup.ok:
-        return Violation(
-            rule="VET011",
-            severity=Severity.WARN,
-            file=str(_lockfile_name(dep, root)),
-            line=0,
-            message=f"{dep.name}@{dep.version}: could not verify publish date",
+        return _vet011_violation(
+            dep,
+            root,
+            Severity.WARN,
+            f"{dep.name}@{dep.version}: could not verify publish date",
         )
     if lookup.published_at is None:
         return None
     age_days = (datetime.now(UTC) - lookup.published_at.astimezone(UTC)).days
     if age_days < cfg.quarantine_days:
-        return Violation(
-            rule="VET011",
-            severity=Severity.ERROR,
-            file=str(_lockfile_name(dep, root)),
-            line=0,
-            message=(
+        return _vet011_violation(
+            dep,
+            root,
+            Severity.ERROR,
+            (
                 f"{dep.name}@{dep.version}: quarantined: published {age_days} "
                 f"day(s) ago; add to [vet.allow] after review"
             ),
@@ -97,8 +109,307 @@ def _quarantine_violation(
     return None
 
 
-def _lockfile_name(dep: Dependency, root: Path) -> str:
-    return dep.ecosystem
+def _vet001_violation(
+    dep: Dependency, cfg: VetConfig, lockfile_name: str
+) -> Violation | None:
+    """VET001: an enforced [vet] config with no [vet.allow] entry for `dep`."""
+    if not cfg.present or dep.name in cfg.allow:
+        return None
+    return Violation(
+        rule="VET001",
+        severity=Severity.ERROR,
+        file=lockfile_name,
+        line=0,
+        message=(
+            f"{dep.name}@{dep.version}: no [vet.allow] entry; "
+            f"add `{dep.name} = true` (or a reason list) after review"
+        ),
+    )
+
+
+def _vet004_violation(
+    dep: Dependency, lockfile_name: str, signals: list[str]
+) -> Violation:
+    """VET004: one or more obfuscation/decode-to-exec signals fired."""
+    return Violation(
+        rule="VET004",
+        severity=Severity.ERROR,
+        file=lockfile_name,
+        line=0,
+        message=(
+            f"{dep.name}@{dep.version}: obfuscation signal(s): {', '.join(signals)}"
+        ),
+    )
+
+
+def _vet002_violation(
+    dep: Dependency, cfg: VetConfig, lockfile_name: str, capabilities: set[str]
+) -> Violation | None:
+    """VET002: an observed capability not present in the package's declaration."""
+    declared = cfg.allow.get(dep.name)
+    if not isinstance(declared, tuple):
+        return None
+    undeclared = sorted(capabilities - set(declared))
+    if not undeclared:
+        return None
+    return Violation(
+        rule="VET002",
+        severity=Severity.ERROR,
+        file=lockfile_name,
+        line=0,
+        message=(
+            f"{dep.name}@{dep.version}: observed capability "
+            f"not declared: {', '.join(undeclared)}"
+        ),
+    )
+
+
+def _vet003_violation(
+    dep: Dependency,
+    cache_path: Path,
+    lockfile_name: str,
+    capabilities: set[str],
+    signals: list[str],
+    artifact_hash: str,
+) -> Violation | None:
+    """VET003: a version bump that adds a capability vs the stored verdict."""
+    previous = _cache.latest_verdict(cache_path, dep.ecosystem, dep.name)
+    if previous is None or previous.artifact_hash == artifact_hash:
+        return None
+    current = PackageVerdict(
+        name=dep.name,
+        version=dep.version,
+        ecosystem=dep.ecosystem,
+        artifact_hash=artifact_hash,
+        capabilities=frozenset(capabilities),
+        signals=tuple(signals),
+    )
+    added = capability_diff(previous, current)
+    if not added:
+        return None
+    return Violation(
+        rule="VET003",
+        severity=Severity.ERROR,
+        file=lockfile_name,
+        line=0,
+        message=(
+            f"{dep.name}: version bump {previous.version} -> "
+            f"{dep.version} adds capability: {', '.join(added)}"
+        ),
+    )
+
+
+def _scan_source(
+    dep: Dependency,
+    source_dir: Path,
+    lockfile_name: str,
+    cfg: VetConfig,
+    cache_path: Path,
+) -> tuple[set[str], list[str], list[Violation]]:
+    """Capability + obfuscation + VET002/VET003 + ecosystem scan of a located
+    dependency source. Returns `(capabilities, signals, violations)` and stores
+    the fresh verdict for future escalation diffs."""
+    signals: list[str] = []
+    violations: list[Violation] = []
+    artifact_hash = _artifact_hash(source_dir)
+
+    observed, decode_to_exec = _capability.scan_directory_capabilities(source_dir)
+    capabilities = set(observed)
+    if decode_to_exec:
+        signals.append("decode-to-exec")
+
+    obfuscation_signals = _obfuscation.scan_directory_obfuscation(source_dir)
+    signals.extend(obfuscation_signals)
+    if obfuscation_signals or decode_to_exec:
+        violations.append(_vet004_violation(dep, lockfile_name, signals))
+
+    for maybe in (
+        _vet002_violation(dep, cfg, lockfile_name, capabilities),
+        _vet003_violation(
+            dep, cache_path, lockfile_name, capabilities, signals, artifact_hash
+        ),
+    ):
+        if maybe is not None:
+            violations.append(maybe)
+
+    if dep.ecosystem == "pypi":
+        violations.extend(_ecosystem.python_rules(dep, source_dir, lockfile_name))
+    elif dep.ecosystem == "cargo":
+        violations.extend(_ecosystem.rust_rules(dep, source_dir, lockfile_name))
+
+    if artifact_hash:
+        _cache.store_verdict(
+            cache_path,
+            PackageVerdict(
+                name=dep.name,
+                version=dep.version,
+                ecosystem=dep.ecosystem,
+                artifact_hash=artifact_hash,
+                capabilities=frozenset(capabilities),
+                signals=tuple(signals),
+            ),
+        )
+    return capabilities, signals, violations
+
+
+def _prehook_violations(
+    dep: Dependency, root: Path, cfg: VetConfig, cache_path: Path, lockfile_name: str
+) -> tuple[list[Violation], list[str]]:
+    """VET011 quarantine + typosquat checks for a not-yet-allowed dependency."""
+    violations: list[Violation] = []
+    signals: list[str] = []
+    quarantine_v = _quarantine_violation(dep, root, cfg, cache_path)
+    if quarantine_v is not None:
+        violations.append(quarantine_v)
+        if quarantine_v.severity is Severity.ERROR:
+            signals.append("quarantined")
+
+    typosquat_of = _typosquat.find_typosquat(dep.ecosystem, dep.name)
+    if typosquat_of is not None:
+        violations.append(
+            Violation(
+                rule="VET-JS003",
+                severity=Severity.ERROR,
+                file=lockfile_name,
+                line=0,
+                message=f"{dep.name}: possible typosquat of {typosquat_of}",
+            )
+        )
+        signals.append("typosquat")
+    return violations, signals
+
+
+def _process_dependency(
+    dep: Dependency,
+    root: Path,
+    lockfile: Path,
+    cfg: VetConfig,
+    cache_path: Path,
+    is_new: bool,
+    fetch: bool,
+) -> tuple[list[Violation], PackageVerdict]:
+    """All per-dependency checks; returns its violations plus its verdict."""
+    capabilities: set[str] = set()
+    signals: list[str] = []
+    violations: list[Violation] = []
+
+    v001 = _vet001_violation(dep, cfg, lockfile.name)
+    if v001 is not None:
+        violations.append(v001)
+
+    source_dir = _source.locate_source(root, dep.ecosystem, dep.name, dep.version)
+    if source_dir is None:
+        signals.append("source-unavailable")
+        _log.info(
+            "vet: %s/%s@%s: source unavailable locally; empty capability set",
+            dep.ecosystem,
+            dep.name,
+            dep.version,
+        )
+    else:
+        caps, src_signals, src_violations = _scan_source(
+            dep, source_dir, lockfile.name, cfg, cache_path
+        )
+        capabilities |= caps
+        signals.extend(src_signals)
+        violations.extend(src_violations)
+
+    if dep.ecosystem == "npm":
+        js_violation = _ecosystem.npm_non_registry_rule(dep, lockfile.name)
+        if js_violation is not None:
+            violations.append(js_violation)
+
+    if is_new and fetch:
+        pre_violations, pre_signals = _prehook_violations(
+            dep, root, cfg, cache_path, lockfile.name
+        )
+        violations.extend(pre_violations)
+        signals.extend(pre_signals)
+
+    verdict = PackageVerdict(
+        name=dep.name,
+        version=dep.version,
+        ecosystem=dep.ecosystem,
+        capabilities=frozenset(capabilities),
+        signals=tuple(signals),
+    )
+    return violations, verdict
+
+
+def _scan_dependencies(
+    deps: tuple[Dependency, ...],
+    root: Path,
+    lockfile: Path,
+    cfg: VetConfig,
+    cache_path: Path,
+    fetch: bool,
+) -> tuple[list[Violation], list[PackageVerdict]]:
+    """Run every per-dependency check over `deps`, collecting violations/verdicts."""
+    violations: list[Violation] = []
+    verdicts: list[PackageVerdict] = []
+    allow = dict(cfg.allow)
+    for dep in deps:
+        is_new = dep.name not in allow
+        dep_violations, verdict = _process_dependency(
+            dep, root, lockfile, cfg, cache_path, is_new, fetch
+        )
+        violations.extend(dep_violations)
+        verdicts.append(verdict)
+    return violations, verdicts
+
+
+def _lifecycle_violations(
+    root: Path, cfg: VetConfig
+) -> tuple[list[Violation], list[str]]:
+    """VET-JS: node_modules lifecycle scripts not covered by [vet.allow]."""
+    violations: list[Violation] = []
+    skipped: list[str] = []
+    hooks = _lifecycle.scan_lifecycle_scripts(root)
+    if not (root / "node_modules").is_dir():
+        skipped.append("VET-JS: no node_modules present")
+    allow = dict(cfg.allow)
+    for name, scripts in hooks.items():
+        if name in allow:
+            continue
+        violations.append(
+            Violation(
+                rule="VET-JS",
+                severity=Severity.ERROR,
+                file="node_modules",
+                line=0,
+                message=(
+                    f"{name}: lifecycle script(s) {', '.join(scripts)} "
+                    f"not in [vet.allow]"
+                ),
+            )
+        )
+    return violations, skipped
+
+
+def _osv_violations(
+    lockfile: Path, cfg: VetConfig
+) -> tuple[list[Violation], list[str]]:
+    """VET005: osv-scanner advisories, or a skipped-note when unavailable/off."""
+    if not cfg.osv:
+        return [], ["VET005: osv disabled ([vet].osv = false)"]
+    if not _osv.is_available():
+        return [], ["VET005: osv-scanner not on PATH"]
+    advisories = _osv.run_osv_scan(lockfile)
+    if advisories is None:
+        return [], ["VET005: osv-scanner invocation failed"]
+    violations: list[Violation] = []
+    for adv in advisories:
+        fixed_note = f"; fixed in {adv.fixed_version}" if adv.fixed_version else ""
+        violations.append(
+            Violation(
+                rule="VET005",
+                severity=Severity.ERROR,
+                file=lockfile.name,
+                line=0,
+                message=f"{adv.package}@{adv.version}: {adv.advisory_id}{fixed_note}",
+            )
+        )
+    return violations, []
 
 
 # frob:doc docs/vet.md#public-api
@@ -122,217 +433,22 @@ def scan_tree(root: Path, *, fetch: bool = True) -> Result[VetReport, VetError]:
 
     cfg = load_vet_config(root)
     cache_path = root / _CACHE_REL
-
-    violations: list[Violation] = []
-    verdicts: list[PackageVerdict] = []
-    skipped: list[str] = []
-
     if not cfg.present:
         _log.info("vet: no [vet] section; advisory-only mode")
 
-    new_deps = [d for d in deps if not _is_allowed(d, dict(cfg.allow))]
-
-    for dep in deps:
-        capabilities: set[str] = set()
-        signals: list[str] = []
-        artifact_hash = ""
-
-        allowed = _is_allowed(dep, dict(cfg.allow))
-        if cfg.present and not allowed:
-            violations.append(
-                Violation(
-                    rule="VET001",
-                    severity=Severity.ERROR,
-                    file=lockfile.name,
-                    line=0,
-                    message=(
-                        f"{dep.name}@{dep.version}: no [vet.allow] entry; "
-                        f"add `{dep.name} = true` (or a reason list) after review"
-                    ),
-                )
-            )
-
-        # -- capability scan (docs/vet.md "Mechanics") -------------------
-        source_dir = _source.locate_source(root, dep.ecosystem, dep.name, dep.version)
-        if source_dir is None:
-            signals.append("source-unavailable")
-            _log.info(
-                "vet: %s/%s@%s: source unavailable locally; empty capability set",
-                dep.ecosystem,
-                dep.name,
-                dep.version,
-            )
-        else:
-            artifact_hash = _artifact_hash(source_dir)
-            observed, decode_to_exec = _capability.scan_directory_capabilities(
-                source_dir
-            )
-            capabilities |= observed
-            if decode_to_exec:
-                signals.append("decode-to-exec")
-
-            obfuscation_signals = _obfuscation.scan_directory_obfuscation(source_dir)
-            signals.extend(obfuscation_signals)
-            if obfuscation_signals or decode_to_exec:
-                violations.append(
-                    Violation(
-                        rule="VET004",
-                        severity=Severity.ERROR,
-                        file=lockfile.name,
-                        line=0,
-                        message=(
-                            f"{dep.name}@{dep.version}: obfuscation signal(s): "
-                            f"{', '.join(signals)}"
-                        ),
-                    )
-                )
-
-            # -- VET002: observed capability not declared --------------
-            declared = cfg.allow.get(dep.name)
-            if isinstance(declared, tuple):
-                undeclared = sorted(capabilities - set(declared))
-                if undeclared:
-                    violations.append(
-                        Violation(
-                            rule="VET002",
-                            severity=Severity.ERROR,
-                            file=lockfile.name,
-                            line=0,
-                            message=(
-                                f"{dep.name}@{dep.version}: observed capability "
-                                f"not declared: {', '.join(undeclared)}"
-                            ),
-                        )
-                    )
-
-            # -- VET003: escalation vs previously stored verdict --------
-            previous = _cache.latest_verdict(cache_path, dep.ecosystem, dep.name)
-            if previous is not None and previous.artifact_hash != artifact_hash:
-                current_verdict = PackageVerdict(
-                    name=dep.name,
-                    version=dep.version,
-                    ecosystem=dep.ecosystem,
-                    artifact_hash=artifact_hash,
-                    capabilities=frozenset(capabilities),
-                    signals=tuple(signals),
-                )
-                added = capability_diff(previous, current_verdict)
-                if added:
-                    violations.append(
-                        Violation(
-                            rule="VET003",
-                            severity=Severity.ERROR,
-                            file=lockfile.name,
-                            line=0,
-                            message=(
-                                f"{dep.name}: version bump {previous.version} -> "
-                                f"{dep.version} adds capability: {', '.join(added)}"
-                            ),
-                        )
-                    )
-
-            # -- ecosystem-specific cheap rules -------------------------
-            if dep.ecosystem == "pypi":
-                violations.extend(
-                    _ecosystem.python_rules(dep, source_dir, lockfile.name)
-                )
-            elif dep.ecosystem == "cargo":
-                violations.extend(_ecosystem.rust_rules(dep, source_dir, lockfile.name))
-
-            if artifact_hash:
-                _cache.store_verdict(
-                    cache_path,
-                    PackageVerdict(
-                        name=dep.name,
-                        version=dep.version,
-                        ecosystem=dep.ecosystem,
-                        artifact_hash=artifact_hash,
-                        capabilities=frozenset(capabilities),
-                        signals=tuple(signals),
-                    ),
-                )
-
-        if dep.ecosystem == "npm":
-            js_violation = _ecosystem.npm_non_registry_rule(dep, lockfile.name)
-            if js_violation is not None:
-                violations.append(js_violation)
-
-        if dep in new_deps and fetch:
-            quarantine_v = _quarantine_violation(dep, root, cfg, cache_path)
-            if quarantine_v is not None:
-                violations.append(quarantine_v)
-                if quarantine_v.severity is Severity.ERROR:
-                    signals.append("quarantined")
-
-            typosquat_of = _typosquat.find_typosquat(dep.ecosystem, dep.name)
-            if typosquat_of is not None:
-                violations.append(
-                    Violation(
-                        rule="VET-JS003",
-                        severity=Severity.ERROR,
-                        file=lockfile.name,
-                        line=0,
-                        message=(f"{dep.name}: possible typosquat of {typosquat_of}"),
-                    )
-                )
-                signals.append("typosquat")
-
-        verdicts.append(
-            PackageVerdict(
-                name=dep.name,
-                version=dep.version,
-                ecosystem=dep.ecosystem,
-                capabilities=frozenset(capabilities),
-                signals=tuple(signals),
-            )
-        )
+    violations, verdicts = _scan_dependencies(
+        deps, root, lockfile, cfg, cache_path, fetch
+    )
+    skipped: list[str] = []
 
     if lockfile.name in ("package-lock.json", "pnpm-lock.yaml"):
-        hooks = _lifecycle.scan_lifecycle_scripts(root)
-        if not (root / "node_modules").is_dir():
-            skipped.append("VET-JS: no node_modules present")
-        for name, scripts in hooks.items():
-            if name in dict(cfg.allow):
-                continue
-            violations.append(
-                Violation(
-                    rule="VET-JS",
-                    severity=Severity.ERROR,
-                    file="node_modules",
-                    line=0,
-                    message=(
-                        f"{name}: lifecycle script(s) {', '.join(scripts)} "
-                        f"not in [vet.allow]"
-                    ),
-                )
-            )
+        lc_violations, lc_skipped = _lifecycle_violations(root, cfg)
+        violations.extend(lc_violations)
+        skipped.extend(lc_skipped)
 
-    if cfg.osv:
-        if not _osv.is_available():
-            skipped.append("VET005: osv-scanner not on PATH")
-        else:
-            advisories = _osv.run_osv_scan(lockfile)
-            if advisories is None:
-                skipped.append("VET005: osv-scanner invocation failed")
-            else:
-                for adv in advisories:
-                    fixed_note = (
-                        f"; fixed in {adv.fixed_version}" if adv.fixed_version else ""
-                    )
-                    violations.append(
-                        Violation(
-                            rule="VET005",
-                            severity=Severity.ERROR,
-                            file=lockfile.name,
-                            line=0,
-                            message=(
-                                f"{adv.package}@{adv.version}: {adv.advisory_id}"
-                                f"{fixed_note}"
-                            ),
-                        )
-                    )
-    else:
-        skipped.append("VET005: osv disabled ([vet].osv = false)")
+    osv_violations, osv_skipped = _osv_violations(lockfile, cfg)
+    violations.extend(osv_violations)
+    skipped.extend(osv_skipped)
 
     report = VetReport(
         verdicts=tuple(verdicts),

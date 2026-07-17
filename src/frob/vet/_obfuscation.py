@@ -131,6 +131,17 @@ def scan_directory_obfuscation(
     source_dir: Path, *, max_files: int = 500
 ) -> tuple[str, ...]:
     """Union of obfuscation signals across every text-ish file under `source_dir`."""
+    signals = _collect_dir_signals(source_dir, max_files)
+    if signals:
+        _log.warning("vet: %s: obfuscation signals: %s", source_dir, sorted(signals))
+    return tuple(sorted(signals))
+
+
+_SCANNABLE_SUFFIXES = (".py", ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".rs")
+
+
+def _collect_dir_signals(source_dir: Path, max_files: int) -> set[str]:
+    """Union obfuscation signals over readable source files, bounded by `max_files`."""
     signals: set[str] = set()
     scanned = 0
     for path in source_dir.rglob("*"):
@@ -139,16 +150,7 @@ def scan_directory_obfuscation(
                 "vet: %s: obfuscation scan truncated at %d files", source_dir, max_files
             )
             break
-        if not path.is_file() or path.suffix.lower() not in (
-            ".py",
-            ".ts",
-            ".tsx",
-            ".js",
-            ".jsx",
-            ".mjs",
-            ".cjs",
-            ".rs",
-        ):
+        if not path.is_file() or path.suffix.lower() not in _SCANNABLE_SUFFIXES:
             continue
         try:
             text = path.read_text(encoding="utf-8", errors="replace")
@@ -157,9 +159,7 @@ def scan_directory_obfuscation(
             continue
         signals |= set(scan_text_obfuscation(text))
         scanned += 1
-    if signals:
-        _log.warning("vet: %s: obfuscation signals: %s", source_dir, sorted(signals))
-    return tuple(sorted(signals))
+    return signals
 
 
 __all__ = [

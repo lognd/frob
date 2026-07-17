@@ -56,20 +56,7 @@ def store_verdict(db_path: Path, verdict: PackageVerdict) -> None:
     if conn is None:
         return
     try:
-        conn.execute(
-            "INSERT OR REPLACE INTO verdicts "
-            "(ecosystem, name, version, artifact_hash, capabilities, "
-            "signals, stored_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (
-                verdict.ecosystem,
-                verdict.name,
-                verdict.version,
-                verdict.artifact_hash,
-                json.dumps(sorted(verdict.capabilities)),
-                json.dumps(list(verdict.signals)),
-                time.time(),
-            ),
-        )
+        _insert_verdict(conn, verdict)
         conn.commit()
         _log.debug(
             "vet: stored verdict for %s/%s@%s",
@@ -81,6 +68,24 @@ def store_verdict(db_path: Path, verdict: PackageVerdict) -> None:
         _log.warning("vet: could not store verdict for %s: %s", verdict.name, exc)
     finally:
         conn.close()
+
+
+def _insert_verdict(conn: sqlite3.Connection, verdict: PackageVerdict) -> None:
+    """Content-addressed INSERT OR REPLACE of one verdict row (no commit)."""
+    conn.execute(
+        "INSERT OR REPLACE INTO verdicts "
+        "(ecosystem, name, version, artifact_hash, capabilities, "
+        "signals, stored_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (
+            verdict.ecosystem,
+            verdict.name,
+            verdict.version,
+            verdict.artifact_hash,
+            json.dumps(sorted(verdict.capabilities)),
+            json.dumps(list(verdict.signals)),
+            time.time(),
+        ),
+    )
 
 
 # frob:doc docs/vet.md#public-api
