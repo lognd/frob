@@ -28,6 +28,7 @@ _EXCERPT_LINES = 40
 _DEFAULT_TIMEOUT_S = 30.0
 
 
+# frob:doc docs/testing.md#error-types
 class GitError(ErrorSet):
     """Failure values every `frob.gitio` function can return."""
 
@@ -35,6 +36,7 @@ class GitError(ErrorSet):
     GitFailed = "git subprocess failed"
 
 
+# frob:doc docs/testing.md#data-models
 class Hunk(BaseModel):
     """One contiguous new-file line range touched in `file`."""
 
@@ -44,6 +46,7 @@ class Hunk(BaseModel):
     span: tuple[int, int]
 
 
+# frob:doc docs/testing.md#data-models
 class Diff(BaseModel):
     """The working-tree delta against `base`'s merge-base sha."""
 
@@ -53,6 +56,7 @@ class Diff(BaseModel):
     hunks: tuple[Hunk, ...]
 
 
+# frob:doc docs/testing.md#data-models
 class ProcResult(BaseModel):
     """One completed spawn's captured result (any returncode)."""
 

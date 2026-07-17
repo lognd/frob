@@ -25,6 +25,7 @@ _PROBE_TIMEOUT_S = 5.0
 _PASTE_TIMEOUT_S = 15.0
 
 
+# frob:doc docs/tickets.md#error-types
 class ClipboardError(ErrorSet):
     """Fallible outcomes of clipboard image capture."""
 

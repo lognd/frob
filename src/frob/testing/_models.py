@@ -7,6 +7,7 @@ from collections.abc import Mapping
 from pydantic import BaseModel, ConfigDict
 
 
+# frob:doc docs/testing.md#data-models
 class RunnerSpec(BaseModel):
     """One `[[test.runner]]` entry: how to invoke a language's test runner."""
 
@@ -19,6 +20,7 @@ class RunnerSpec(BaseModel):
     timeout_s: float = 900.0
 
 
+# frob:doc docs/testing.md#data-models
 class SelectConfig(BaseModel):
     """Selection knobs: the unbound-file fallback mode."""
 
@@ -27,6 +29,7 @@ class SelectConfig(BaseModel):
     fallback: str = "package"
 
 
+# frob:doc docs/testing.md#data-models
 class SelectionReport(BaseModel):
     """The pure result of `select_tests`: what was touched and what runs."""
 
@@ -39,6 +42,7 @@ class SelectionReport(BaseModel):
     fallback: str
 
 
+# frob:doc docs/testing.md#data-models
 class RunnerOutcome(BaseModel):
     """One runner's completed invocation: argv, exit code, bounded output."""
 
@@ -52,6 +56,7 @@ class RunnerOutcome(BaseModel):
     stderr_tail: str
 
 
+# frob:doc docs/testing.md#data-models
 class TestRunReport(BaseModel):
     """Every runner outcome for one `run_selected` call, plus the selection it ran."""
 
@@ -62,6 +67,7 @@ class TestRunReport(BaseModel):
     ok: bool
 
 
+# frob:doc docs/testing.md#data-models
 class CollectedTests(BaseModel):
     """The set of pytest node ids collected by `collect_python_tests`."""
 

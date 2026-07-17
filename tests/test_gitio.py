@@ -5,7 +5,7 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
-from frob.gitio import GitError, current_branch, repo_root, working_diff
+from frob.gitio import GitError, current_branch, repo_root, run_argv, working_diff
 
 
 def _git(root: Path, *args: str) -> None:
@@ -138,6 +138,32 @@ class TestWorkingDiff:
         _commit(repo, "base")
 
         result = working_diff(repo, "does-not-exist")
+        assert result.is_err
+        assert result.danger_err == GitError.GitFailed
+
+
+class TestRunArgv:
+    def test_captures_stdout_and_zero_returncode(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gitio.py::run_argv
+        result = run_argv(["echo", "hello"], cwd=tmp_path)
+        assert result.is_ok
+        proc = result.danger_ok
+        assert proc.returncode == 0
+        assert proc.stdout.strip() == "hello"
+
+    def test_nonzero_returncode_is_ok_not_err(self, tmp_path: Path) -> None:
+        # a nonzero exit is data (ProcResult), not a spawn failure
+        result = run_argv(["sh", "-c", "exit 3"], cwd=tmp_path)
+        assert result.is_ok
+        assert result.danger_ok.returncode == 3
+
+    def test_nonexistent_binary_is_git_failed(self, tmp_path: Path) -> None:
+        result = run_argv(["/no/such/binary"], cwd=tmp_path)
+        assert result.is_err
+        assert result.danger_err == GitError.GitFailed
+
+    def test_timeout_is_git_failed(self, tmp_path: Path) -> None:
+        result = run_argv(["sleep", "5"], cwd=tmp_path, timeout_s=0.2)
         assert result.is_err
         assert result.danger_err == GitError.GitFailed
 

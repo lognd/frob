@@ -9,6 +9,7 @@ from frob.process.parsers import parse_eslint, parse_tsc
 
 class TestParseTsc:
     def test_clean_output(self):
+        # frob:tests src/frob/process/parsers/tsc.py::parse_tsc kind="unit"
         r = parse_tsc("", exit_code=0)
         assert r.tool == "tsc"
         assert r.exit_code == 0
@@ -51,6 +52,7 @@ class TestParseTsc:
 
 class TestParseEslint:
     def test_empty_output(self):
+        # frob:tests src/frob/process/parsers/eslint.py::parse_eslint kind="unit"
         r = parse_eslint("", exit_code=0)
         assert r.tool == "eslint"
         assert r.summary == "no output"

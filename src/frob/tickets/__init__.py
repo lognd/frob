@@ -84,6 +84,7 @@ def load_queue(root: Path) -> Result[TicketQueue, TicketError]:
     return Ok(TicketQueue(tickets=tickets))
 
 
+# frob:doc docs/tickets.md#public-api
 def migrate(root: Path) -> Result[int, TicketError]:
     """Collapse legacy tickets/*.md files into the single tickets.md ledger."""
     return migrate_to_ledger(root)
@@ -141,6 +142,7 @@ _INCIDENT_TEMPLATE = (
 )
 
 
+# frob:doc docs/tickets.md#public-api
 def renumber(root: Path) -> Result[int, TicketError]:
     """Reassign ticket ids to a contiguous T-0001.. sequence (ordered by
     current id), rewriting blocked_by/parent references so the queue stays

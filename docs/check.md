@@ -14,6 +14,55 @@ frob check src/ --type typescript      # npm/TypeScript mode
 frob check src/ --json                 # machine-readable output
 ```
 
+## Public API
+
+<!-- frob:describes src/frob/check/__init__.py::CheckResult -->
+<!-- frob:describes src/frob/check/__init__.py::CheckResult.total_errors -->
+<!-- frob:describes src/frob/check/__init__.py::CheckResult.total_warnings -->
+<!-- frob:describes src/frob/check/__init__.py::CheckResult.as_text -->
+<!-- frob:describes src/frob/check/__init__.py::CheckResult.as_json -->
+<!-- frob:describes src/frob/check/__init__.py::run_check -->
+<!-- frob:describes src/frob/check/__init__.py::run_check_cpp -->
+<!-- frob:describes src/frob/check/__init__.py::run_check_rust -->
+<!-- frob:describes src/frob/check/__init__.py::run_check_ts -->
+<!-- frob:describes src/frob/check/__init__.py::detect_project_type -->
+
+```python
+# frob/check/__init__.py
+class CheckResult(BaseModel)
+    # Aggregate outcome of one `frob check` run: every tool's ToolResult,
+    # plus the derived error/warning counts and text/JSON renderers.
+    path: str
+    results: list[ToolResult]
+    total_errors: int      # property; sum of error diagnostics across tools
+    total_warnings: int    # property; sum of warning diagnostics across tools
+    def as_text(self, color: bool = False) -> str
+        # Human report: errors, warnings, notes, then a per-tool summary table.
+    def as_json(self) -> str
+        # The full structured result as JSON (--json CLI output).
+
+def run_check(root: Path, *, skip_ruff=False, skip_ty=False, ..., only=None,
+              ticket=None, base=None) -> CheckResult
+    # Python quality gate: ruff, ty, cycle/dup/arch/bind/exports, then gates
+    # (docs/gates.md) -- the entry point `frob check` dispatches to for a
+    # Python project (or --type python).
+def run_check_cpp(root: Path, *, build_dir=None, skip_build=False, ...,
+                   valgrind: bool = False) -> CheckResult
+    # Quality gate for CMake C/C++ projects: cmake build, clang-tidy,
+    # clang-format, ctest -- a failed build short-circuits the test stage.
+def run_check_rust(root: Path, *, skip_check=False, skip_clippy=False, ...,
+                    valgrind: bool = False) -> CheckResult
+    # Quality gate for Rust/Cargo projects: cargo check, clippy, fmt --check,
+    # cargo test.
+def run_check_ts(root: Path, *, skip_tsc=False, skip_eslint=False, ...,
+                  skip_tests: bool = False) -> CheckResult
+    # Quality gate for npm/TypeScript projects: tsc, eslint, prettier,
+    # vitest; a missing node/npx toolchain is a soft skip per stage.
+def detect_project_type(root: Path) -> str
+    # Sentinel-file auto-detection: 'rust'|'cpp'|'python'|'typescript'|
+    # 'unknown', per the Auto-detection table below.
+```
+
 ## Python mode
 
 Runs in order:

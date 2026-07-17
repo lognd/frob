@@ -31,6 +31,7 @@ _PLACEHOLDERS = ("{ids}", "{files}", "{filters}", "{regex}")
 _EXCERPT_LINES = 40
 
 
+# frob:doc docs/testing.md#error-types
 class TestingError(ErrorSet):
     """Failure values `frob.testing`'s executing functions can return."""
 

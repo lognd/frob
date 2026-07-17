@@ -70,6 +70,7 @@ class TestParseCargo:
 
 class TestParseClangTidy:
     def test_clean(self):
+        # frob:tests src/frob/process/parsers/clang_tidy.py::parse_clang_tidy kind="unit"
         r = parse_clang_tidy("", exit_code=0)
         assert r.error_count == 0
         assert r.warning_count == 0
@@ -123,6 +124,7 @@ class TestParseValgrind:
     )
 
     def test_clean(self):
+        # frob:tests src/frob/process/parsers/valgrind.py::parse_valgrind kind="unit"
         text = "==1== ERROR SUMMARY: 0 errors from 0 contexts\n"
         r = parse_valgrind(text, exit_code=0)
         assert r.error_count == 0

@@ -11,6 +11,7 @@ import xml.etree.ElementTree as ET
 from frob.process.parsers.common import TestCase, ToolResult
 
 
+# frob:doc docs/process.md#public-api
 def parse_junit_xml(content: str, tool: str = "junit") -> ToolResult:
     """Parse JUnit XML into a ToolResult."""
     try:
