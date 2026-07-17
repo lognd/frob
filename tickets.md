@@ -1529,7 +1529,7 @@ scope; their describes anchors deferred to that ticket.
 ```yaml
 id: T-0056
 title: strata fact base + semi-naive Datalog closure engine
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-17'
@@ -1537,14 +1537,30 @@ blocked_by:
 - T-0055
 parent: T-0049
 scope:
+- docs/strata/**
+- tickets.md
 - src/frob/strata/**
 - tests/unit/strata/**
-evidence: []
+evidence:
+- tests/unit/strata/test_facts.py::TestClosure::test_boundaries_stop_taint_unless_asked_otherwise
+- tests/unit/strata/test_facts.py::TestClosure::test_worst_age_accumulates_along_the_stalest_path
+- tests/unit/strata/test_facts.py::TestBuildFacts::test_at_least_once_into_non_idempotent_node_is_diagnosed
 attachments: []
 acceptance: []
 threat: null
 ```
 Tuple store + fixpoint closure (reach/taint over lattices). Pure Python; port to strata-core when litmus models make it slow.
+
+## Done report
+
+Delivered src/frob/strata/_facts.py: build_facts (fails closed on
+duplicate ids, dangling flow/boundary references, unknown lattice levels,
+cyclic lattices; emits deny-by-default structural diagnostics for
+at-least-once-into-non-idempotent and label-above-clearance) and FactBase
+(nodes_at, reachable with witness paths + barrier semantics, worst_age
+longest-path staleness with inf-on-cycle, demand in base units). 14 new
+unit tests bound via frob:tests; describes anchors + frob:doc edges to
+docs/strata/kernel.md#fact-base. Ticket check exit 0, ruff clean.
 
 <!-- ticket:T-0057 -->
 ```yaml
@@ -1558,6 +1574,8 @@ blocked_by:
 - T-0056
 parent: T-0049
 scope:
+- docs/strata/**
+- tickets.md
 - src/frob/strata/**
 - tests/unit/strata/**
 evidence: []
@@ -1579,6 +1597,8 @@ blocked_by:
 - T-0057
 parent: T-0049
 scope:
+- docs/strata/**
+- tickets.md
 - tests/unit/strata/**
 - design/litmus/**
 evidence: []

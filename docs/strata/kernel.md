@@ -119,6 +119,31 @@ Frozen pydantic models (T-0055), identity-of-value like `frob.lang`:
 - `KernelModel` -- the whole elaborated design.
 - `ClaimResult`, `Verdict`, `Quantifier` -- how claims close (laws 3-4).
 
+## Fact base
+
+<!-- frob:describes src/frob/strata/_facts.py::build_facts -->
+<!-- frob:describes src/frob/strata/_facts.py::FactBase -->
+<!-- frob:describes src/frob/strata/_facts.py::FactBase.nodes_at -->
+<!-- frob:describes src/frob/strata/_facts.py::FactBase.reachable -->
+<!-- frob:describes src/frob/strata/_facts.py::FactBase.worst_age -->
+<!-- frob:describes src/frob/strata/_facts.py::FactBase.demand -->
+
+The tier-1 engine (T-0056). `build_facts` fails closed on structural
+errors (duplicate ids, dangling references, unknown lattice levels,
+cyclic lattices) and records non-fatal deny-by-default findings as
+`FactBase.diagnostics` (at-least-once delivery into a non-idempotent
+consumer; payload label above destination clearance).
+
+- `FactBase.nodes_at` -- node ids at an exact trust level (deterministic
+  order for reproducible counterexamples).
+- `FactBase.reachable` -- the influence closure with witness paths; flows
+  carrying a boundary stop taint (endorsement semantics) unless the
+  caller asks to pass through barriers (positive `reach` claims do).
+- `FactBase.worst_age` -- longest-path staleness accumulation in seconds;
+  a positive-age cycle yields `inf` plus the cycle as witness, never a
+  silent clamp.
+- `FactBase.demand` -- declared inbound rate sum in base units.
+
 ## Prover pipeline
 
 ```
