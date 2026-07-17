@@ -188,6 +188,189 @@ fn tree_edit_similarity(a: Vec<u64>, b: Vec<u64>) -> (f64, Vec<(usize, usize)>) 
     (similarity, alignment)
 }
 
+/// R4 verification (real tree edit distance): Zhang-Shasha algorithm over
+/// two labeled ordered trees, each given as a flat `parents` array (index i
+/// is a node, `parents[i]` its parent index or `-1` for the root; any
+/// traversal order is fine -- this function derives its own postorder).
+///
+/// This is the real tree-edit-distance metric the rung table names (APTED
+/// generalizes Zhang-Shasha with a smarter choice of single/double-path
+/// decomposition for better worst-case complexity; Zhang-Shasha is the
+/// same edit-distance *result* -- insert/delete/rename over full subtree
+/// structure, not a flat statement sequence -- at a still-polynomial
+/// O(n*m*min(depth,leaves)) cost, which is what frob.dup's clone-sized
+/// inputs need). Unlike the old `tree_edit_similarity` (kept below for
+/// R4's statement-alignment/region-span narrowing, a different job), this
+/// operates on real subtree shape: a token reordered *within* one
+/// statement changes the tree structure and is caught here, where the
+/// flat statement-sequence Levenshtein could not see it.
+fn build_postorder(parents: &[i64]) -> (Vec<usize>, Vec<usize>, usize) {
+    let n = parents.len();
+    let mut children: Vec<Vec<usize>> = vec![Vec::new(); n];
+    let mut root = 0usize;
+    for (i, &p) in parents.iter().enumerate() {
+        if p < 0 {
+            root = i;
+        } else {
+            children[p as usize].push(i);
+        }
+    }
+    let mut postorder: Vec<usize> = Vec::with_capacity(n);
+    let mut leftmost_of: Vec<usize> = vec![0; n]; // node id -> leftmost-leaf node id
+    // iterative post-order to avoid unbounded recursion depth on large trees
+    let mut stack: Vec<(usize, usize)> = vec![(root, 0)]; // (node, next-child-idx)
+    let mut first_leaf_stack: Vec<Option<usize>> = vec![None];
+    while let Some(&(node, idx)) = stack.last() {
+        let kids = &children[node];
+        if kids.is_empty() {
+            postorder.push(node);
+            leftmost_of[node] = node;
+            stack.pop();
+            first_leaf_stack.pop();
+            if let Some(top) = first_leaf_stack.last_mut() {
+                if top.is_none() {
+                    *top = Some(node);
+                }
+            }
+        } else if idx < kids.len() {
+            stack.last_mut().unwrap().1 += 1;
+            stack.push((kids[idx], 0));
+            first_leaf_stack.push(None);
+        } else {
+            postorder.push(node);
+            let lf = first_leaf_stack.pop().unwrap().unwrap_or(node);
+            leftmost_of[node] = lf;
+            stack.pop();
+            if let Some(top) = first_leaf_stack.last_mut() {
+                if top.is_none() {
+                    *top = Some(lf);
+                }
+            }
+        }
+    }
+    let mut pos_of: Vec<usize> = vec![0; n];
+    for (i, &node) in postorder.iter().enumerate() {
+        pos_of[node] = i;
+    }
+    let lmd: Vec<usize> = postorder.iter().map(|&node| pos_of[leftmost_of[node]]).collect();
+    (postorder, lmd, root)
+}
+
+fn keyroots(lmd: &[usize]) -> Vec<usize> {
+    let mut last_for_l: HashMap<usize, usize> = HashMap::new();
+    for (i, &l) in lmd.iter().enumerate() {
+        last_for_l.insert(l, i); // largest i wins, since we overwrite in order
+    }
+    let mut kr: Vec<usize> = last_for_l.values().copied().collect();
+    kr.sort_unstable();
+    kr
+}
+
+/// The Zhang-Shasha tree-edit-distance value between two labeled trees
+/// (postorder positions are 0-indexed internally; the algorithm's classic
+/// formulation is used with a +1 offset for the forestdist boundary row).
+fn zhang_shasha_distance(
+    labels_a: &[String],
+    postorder_a: &[usize],
+    lmd_a: &[usize],
+    labels_b: &[String],
+    postorder_b: &[usize],
+    lmd_b: &[usize],
+) -> usize {
+    let n = postorder_a.len();
+    let m = postorder_b.len();
+    if n == 0 && m == 0 {
+        return 0;
+    }
+    if n == 0 {
+        return m;
+    }
+    if m == 0 {
+        return n;
+    }
+    let mut treedist = vec![vec![0usize; m]; n];
+    let kr_a = keyroots(lmd_a);
+    let kr_b = keyroots(lmd_b);
+
+    for &i in &kr_a {
+        for &j in &kr_b {
+            let li = lmd_a[i];
+            let lj = lmd_b[j];
+            let rows = i - li + 2;
+            let cols = j - lj + 2;
+            let mut forestdist = vec![vec![0usize; cols]; rows];
+            for x in 1..rows {
+                forestdist[x][0] = forestdist[x - 1][0] + 1;
+            }
+            for y in 1..cols {
+                forestdist[0][y] = forestdist[0][y - 1] + 1;
+            }
+            for x in 1..rows {
+                let node_x = li + x - 1;
+                for y in 1..cols {
+                    let node_y = lj + y - 1;
+                    if lmd_a[node_x] == li && lmd_b[node_y] == lj {
+                        let cost_rename =
+                            if labels_a[postorder_a[node_x]] == labels_b[postorder_b[node_y]] {
+                                0
+                            } else {
+                                1
+                            };
+                        let del = forestdist[x - 1][y] + 1;
+                        let ins = forestdist[x][y - 1] + 1;
+                        let ren = forestdist[x - 1][y - 1] + cost_rename;
+                        let val = del.min(ins).min(ren);
+                        forestdist[x][y] = val;
+                        treedist[node_x][node_y] = val;
+                    } else {
+                        let p = lmd_a[node_x] - li;
+                        let q = lmd_b[node_y] - lj;
+                        let del = forestdist[x - 1][y] + 1;
+                        let ins = forestdist[x][y - 1] + 1;
+                        let ren = forestdist[p][q] + treedist[node_x][node_y];
+                        forestdist[x][y] = del.min(ins).min(ren);
+                    }
+                }
+            }
+        }
+    }
+    treedist[n - 1][m - 1]
+}
+
+/// R4 verification (real APTED-class tree edit distance): see
+/// `zhang_shasha_distance` for the algorithm. `parents_a`/`parents_b` are
+/// flat parent-index arrays (root has parent `-1`); `labels_a`/`labels_b`
+/// are the per-node labels in the SAME index space as their parents array
+/// (node structure, not tree-sitter node types directly -- the caller,
+/// `frob.dup._pipeline`, builds this from `frob.lang`'s exported subtree).
+/// Returns similarity in `[0, 1]` (`1 - distance / max(|A|, |B|)`).
+#[pyfunction]
+fn apted_similarity(
+    labels_a: Vec<String>,
+    parents_a: Vec<i64>,
+    labels_b: Vec<String>,
+    parents_b: Vec<i64>,
+) -> f64 {
+    if labels_a.is_empty() && labels_b.is_empty() {
+        return 1.0;
+    }
+    if labels_a.is_empty() || labels_b.is_empty() {
+        return 0.0;
+    }
+    let (postorder_a, lmd_a, _root_a) = build_postorder(&parents_a);
+    let (postorder_b, lmd_b, _root_b) = build_postorder(&parents_b);
+    let dist = zhang_shasha_distance(
+        &labels_a,
+        &postorder_a,
+        &lmd_a,
+        &labels_b,
+        &postorder_b,
+        &lmd_b,
+    );
+    let max_len = labels_a.len().max(labels_b.len());
+    1.0 - (dist as f64 / max_len as f64)
+}
+
 /// R5: Weisfeiler-Lehman graph-kernel hash over a def-use/control adjacency.
 ///
 /// `adjacency` is an edge list `(u, v)` over node indices `0..labels.len()`
@@ -310,6 +493,70 @@ mod tests {
     fn wl_hash_empty_graph_is_zero() {
         assert_eq!(wl_hash(Vec::new(), Vec::new(), 2), 0);
     }
+
+    #[test]
+    fn apted_identical_trees_is_similarity_one() {
+        // def -> [return, name]  (a 3-node tree: root + 2 leaf children)
+        let labels = vec!["def".into(), "return".into(), "name".into()];
+        let parents = vec![-1i64, 0, 0];
+        let sim = apted_similarity(labels.clone(), parents.clone(), labels, parents);
+        assert!((sim - 1.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn apted_disjoint_single_leaf_trees_is_zero_similarity() {
+        let sim = apted_similarity(
+            vec!["a".into()],
+            vec![-1i64],
+            vec!["b".into()],
+            vec![-1i64],
+        );
+        assert!(sim.abs() < 1e-9);
+    }
+
+    #[test]
+    fn apted_catches_within_statement_restructuring() {
+        // Tree A: add(x, y) as add -> [x, y]
+        // Tree B: add(y, x) as add -> [y, x] -- same flat token multiset,
+        // different tree shape/order. A flat statement hash (the old
+        // tree_edit_similarity's unit) cannot distinguish operand order
+        // within one "statement"; a real tree metric can via rename cost
+        // at matching positions.
+        let labels_a = vec!["add".into(), "x".into(), "y".into()];
+        let parents_a = vec![-1i64, 0, 0];
+        let labels_b = vec!["add".into(), "y".into(), "x".into()];
+        let parents_b = vec![-1i64, 0, 0];
+        let sim = apted_similarity(labels_a, parents_a, labels_b, parents_b);
+        // Not identical (rename cost at the two leaf positions), but still
+        // highly similar (same root label, same arity/shape).
+        assert!(sim < 1.0);
+        assert!(sim > 0.0);
+    }
+
+    #[test]
+    fn apted_inserted_node_costs_one() {
+        // Tree A: root -> [a]
+        // Tree B: root -> [a, b]  (one inserted leaf)
+        let labels_a = vec!["root".into(), "a".into()];
+        let parents_a = vec![-1i64, 0];
+        let labels_b = vec!["root".into(), "a".into(), "b".into()];
+        let parents_b = vec![-1i64, 0, 0];
+        let dist = zhang_shasha_distance(
+            &labels_a,
+            &build_postorder(&parents_a).0,
+            &build_postorder(&parents_a).1,
+            &labels_b,
+            &build_postorder(&parents_b).0,
+            &build_postorder(&parents_b).1,
+        );
+        assert_eq!(dist, 1);
+    }
+
+    #[test]
+    fn apted_empty_vs_empty_is_similarity_one() {
+        let sim = apted_similarity(Vec::new(), Vec::new(), Vec::new(), Vec::new());
+        assert!((sim - 1.0).abs() < 1e-9);
+    }
 }
 
 #[pymodule]
@@ -318,6 +565,7 @@ fn frob_core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(winnow_fingerprints, m)?)?;
     m.add_function(wrap_pyfunction!(candidate_pairs, m)?)?;
     m.add_function(wrap_pyfunction!(tree_edit_similarity, m)?)?;
+    m.add_function(wrap_pyfunction!(apted_similarity, m)?)?;
     m.add_function(wrap_pyfunction!(wl_hash, m)?)?;
     Ok(())
 }

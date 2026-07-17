@@ -5,6 +5,12 @@ Kept verbatim behind `find_duplicates` for `frob check`'s dup stage and the
 re-platformed onto the rung pipeline yet. New code should prefer
 `frob.dup.find_clones` (docs/dup.md's smart pipeline); this module is the
 compatibility shim that keeps the existing entry point working.
+
+Parses through `frob.lang.raw_tree` (one grammar-loading mechanism, per
+docs/lang.md) rather than a bespoke per-module tree-sitter parser stack --
+`_child`/`_node_text` below are trivial `child_by_field_name`/decode
+one-liners kept local since they are not parsing infrastructure worth a
+shared home.
 """
 
 from __future__ import annotations
@@ -27,11 +33,24 @@ _PY_EXTS = {".py"}
 _CPP_EXTS = {".cpp", ".cc", ".cxx", ".h", ".hpp"}
 
 
+def _child(node: Node, field: str) -> Node | None:
+    """`node.child_by_field_name(field)` -- see the module docstring."""
+    return node.child_by_field_name(field)
+
+
+def _node_text(node: Node | None) -> str:
+    """Decode `node`'s own text, or '' if absent (missing name = grammar bug)."""
+    if node is None or node.text is None:
+        return ""
+    return node.text.decode("utf-8", errors="replace")
+
+
 # ---------------------------------------------------------------------------
 # Errors
 # ---------------------------------------------------------------------------
 
 
+# frob:doc docs/dup.md#legacy-scanner
 class DupError(ErrorSet):
     ParseFailed = "failed to parse file"
 
@@ -41,6 +60,7 @@ class DupError(ErrorSet):
 # ---------------------------------------------------------------------------
 
 
+# frob:doc docs/dup.md#legacy-scanner
 class CodeFragment(BaseModel):
     file: str
     start_line: int
@@ -48,20 +68,24 @@ class CodeFragment(BaseModel):
     symbol: str
 
 
+# frob:doc docs/dup.md#legacy-scanner
 class CloneGroup(BaseModel):
     clone_type: Literal["exact", "renamed"]
     size_lines: int
     fragments: list[CodeFragment]
 
 
+# frob:doc docs/dup.md#legacy-scanner
 class DupResult(BaseModel):
     root: str
     groups: list[CloneGroup]
 
+    # frob:doc docs/dup.md#legacy-scanner
     @property
     def total_clones(self) -> int:
         return sum(len(g.fragments) for g in self.groups)
 
+    # frob:doc docs/dup.md#legacy-scanner
     def as_text(self) -> str:
         if not self.groups:
             return "no duplicates found"
@@ -88,6 +112,7 @@ class DupResult(BaseModel):
                 lines.append(f"  {loc}{padding}{frag.symbol}")
         return "\n".join(lines)
 
+    # frob:doc docs/dup.md#legacy-scanner
     def as_json(self) -> str:
         return json.dumps(self.model_dump(), indent=2)
 
@@ -103,17 +128,15 @@ def _sha16(s: str) -> str:
 
 def _collect_locals_py(func_node: Node) -> set[str]:
     """Collect identifiers that are local to a Python function."""
-    from frob.ast.common import child_by_field
-
     locals_: set[str] = set()
 
     # Parameters
-    params = child_by_field(func_node, "parameters")
+    params = _child(func_node, "parameters")
     if params:
         _collect_param_names_py(params, locals_)
 
     # Body assignments / for / with
-    body = child_by_field(func_node, "body")
+    body = _child(func_node, "body")
     if body:
         _collect_assigned_names_py(body, locals_)
 
@@ -121,26 +144,24 @@ def _collect_locals_py(func_node: Node) -> set[str]:
 
 
 def _collect_param_names_py(node: Node, out: set[str]) -> None:
-    from frob.ast.common import text
-
     for child in node.named_children:
         t = child.type
         if t == "identifier":
-            out.add(text(child))
+            out.add(_node_text(child))
         elif t in ("default_parameter", "typed_parameter", "typed_default_parameter"):
             name_node = child.child_by_field_name("name")
             if name_node:
-                out.add(text(name_node))
+                out.add(_node_text(name_node))
             else:
                 # first identifier child
                 for c in child.named_children:
                     if c.type == "identifier":
-                        out.add(text(c))
+                        out.add(_node_text(c))
                         break
         elif t in ("list_splat_pattern", "dictionary_splat_pattern"):
             for c in child.named_children:
                 if c.type == "identifier":
-                    out.add(text(c))
+                    out.add(_node_text(c))
                     break
         elif t == "keyword_separator":
             pass
@@ -148,8 +169,6 @@ def _collect_param_names_py(node: Node, out: set[str]) -> None:
 
 def _collect_assigned_names_py(node: Node, out: set[str]) -> None:
     """Walk the body and harvest assignment/for/with binding names."""
-    from frob.ast.common import text
-
     for child in node.children:
         t = child.type
         if t == "expression_statement":
@@ -162,7 +181,7 @@ def _collect_assigned_names_py(node: Node, out: set[str]) -> None:
                 elif inner.type == "augmented_assignment":
                     lhs = inner.child_by_field_name("left")
                     if lhs and lhs.type == "identifier":
-                        out.add(text(lhs))
+                        out.add(_node_text(lhs))
         elif t == "assignment":
             lhs = child.child_by_field_name("left")
             if lhs:
@@ -170,7 +189,7 @@ def _collect_assigned_names_py(node: Node, out: set[str]) -> None:
         elif t == "augmented_assignment":
             lhs = child.child_by_field_name("left")
             if lhs and lhs.type == "identifier":
-                out.add(text(lhs))
+                out.add(_node_text(lhs))
         elif t in ("for_statement", "async_for_statement"):
             left = child.child_by_field_name("left")
             if left:
@@ -205,10 +224,8 @@ def _collect_assigned_names_py(node: Node, out: set[str]) -> None:
 
 
 def _harvest_pattern(node: Node, out: set[str]) -> None:
-    from frob.ast.common import text
-
     if node.type == "identifier":
-        out.add(text(node))
+        out.add(_node_text(node))
     else:
         for child in node.named_children:
             _harvest_pattern(child, out)
@@ -216,8 +233,6 @@ def _harvest_pattern(node: Node, out: set[str]) -> None:
 
 def _serialize_py_body(body: Node, locals_: set[str]) -> str:
     """Serialize a Python body node to a normalized token string."""
-    from frob.ast.common import text
-
     mapping: dict[str, str] = {}
     tokens: list[str] = []
 
@@ -227,7 +242,7 @@ def _serialize_py_body(body: Node, locals_: set[str]) -> str:
         if not n.children:
             # leaf
             t = n.type
-            raw = text(n)
+            raw = _node_text(n)
             if t == "identifier" and raw in locals_:
                 if raw not in mapping:
                     mapping[raw] = f"_v{len(mapping)}"
@@ -261,18 +276,16 @@ def _serialize_py_body(body: Node, locals_: set[str]) -> str:
 
 
 def _collect_locals_cpp(func_node: Node) -> set[str]:
-    from frob.ast.common import child_by_field
-
     locals_: set[str] = set()
 
     # Parameters
-    params = child_by_field(func_node, "parameters")
+    params = _child(func_node, "parameters")
     if params:
         for child in params.named_children:
             _harvest_cpp_param(child, locals_)
 
     # Body declarations / for
-    body = child_by_field(func_node, "body")
+    body = _child(func_node, "body")
     if body:
         _collect_assigned_names_cpp(body, locals_)
 
@@ -292,10 +305,8 @@ def _harvest_cpp_param(node: Node, out: set[str]) -> None:
 
 
 def _harvest_cpp_declarator_name(node: Node, out: set[str]) -> None:
-    from frob.ast.common import text
-
     if node.type == "identifier":
-        out.add(text(node))
+        out.add(_node_text(node))
     elif node.type in (
         "pointer_declarator",
         "reference_declarator",
@@ -334,8 +345,6 @@ def _collect_assigned_names_cpp(node: Node, out: set[str]) -> None:
 
 
 def _serialize_cpp_body(body: Node, locals_: set[str]) -> str:
-    from frob.ast.common import text
-
     mapping: dict[str, str] = {}
     tokens: list[str] = []
 
@@ -344,7 +353,7 @@ def _serialize_cpp_body(body: Node, locals_: set[str]) -> str:
             return
         if not n.children:
             t = n.type
-            raw = text(n)
+            raw = _node_text(n)
             if t == "identifier" and raw in locals_:
                 if raw not in mapping:
                     mapping[raw] = f"_v{len(mapping)}"
@@ -378,34 +387,30 @@ def _serialize_cpp_body(body: Node, locals_: set[str]) -> str:
 
 def _enclosing_class_py(func_node: Node) -> str | None:
     """Return the enclosing class name for a function node, or None."""
-    from frob.ast.common import child_by_field, text
-
     parent = func_node.parent
     while parent is not None:
         if parent.type == "block":
             grandparent = parent.parent
             if grandparent is not None and grandparent.type == "class_definition":
-                name_node = child_by_field(grandparent, "name")
+                name_node = _child(grandparent, "name")
                 if name_node:
-                    return text(name_node)
+                    return _node_text(name_node)
         parent = parent.parent
     return None
 
 
 def _iter_functions_py(root_node: Node):
     """Yield (func_node, symbol) for all function/async_function nodes."""
-    from frob.ast.common import child_by_field, text
-
     def visit(n: Node):
         if n.type in ("function_definition", "async_function_definition"):
-            name_node = child_by_field(n, "name")
-            func_name = text(name_node) if name_node else "<unknown>"
+            name_node = _child(n, "name")
+            func_name = _node_text(name_node) if name_node else "<unknown>"
             class_name = _enclosing_class_py(n)
             symbol = f"{class_name}.{func_name}" if class_name else func_name
             yield_item = (n, symbol)
             yield yield_item
             # recurse into nested functions
-            body = child_by_field(n, "body")
+            body = _child(n, "body")
             if body:
                 for child in body.children:
                     yield from _recurse(child)
@@ -430,20 +435,18 @@ def _scan_py_file(
     exact_map: dict[str, list[CodeFragment]],
     renamed_map: dict[str, list[CodeFragment]],
 ) -> None:
-    from frob.ast import python as _py
+    from frob.lang import raw_tree
 
-    try:
-        src, tree = _py.parse_file(path)
-    except Exception as exc:
-        _log.warning("parse failed for %s: %s", path, exc)
+    parsed = raw_tree(path)
+    if parsed.is_err:
+        _log.warning("parse failed for %s: %s", path, parsed.err)
         return
+    tree, src, _language = parsed.danger_ok
 
     rel = str(path.relative_to(root))
 
     for func_node, symbol in _iter_functions_py(tree.root_node):
-        from frob.ast.common import child_by_field as _cbf
-
-        body = _cbf(func_node, "body")
+        body = _child(func_node, "body")
         if body is None:
             continue
         start_line = body.start_point[0] + 1
@@ -478,8 +481,6 @@ def _scan_py_file(
 
 
 def _enclosing_class_cpp(func_node: Node) -> str | None:
-    from frob.ast.common import child_by_field, text
-
     parent = func_node.parent
     while parent is not None:
         if parent.type == "field_declaration_list":
@@ -488,18 +489,16 @@ def _enclosing_class_cpp(func_node: Node) -> str | None:
                 "class_specifier",
                 "struct_specifier",
             ):
-                name_node = child_by_field(grandparent, "name")
+                name_node = _child(grandparent, "name")
                 if name_node:
-                    return text(name_node)
+                    return _node_text(name_node)
         parent = parent.parent
     return None
 
 
 def _iter_functions_cpp(root_node: Node):
-    from frob.ast.common import child_by_field, text
-
     def _func_name(n: Node) -> str:
-        decl = child_by_field(n, "declarator")
+        decl = _child(n, "declarator")
         if decl is None:
             return "<unknown>"
         # unwrap pointer/ref/function declarator
@@ -511,12 +510,12 @@ def _iter_functions_cpp(root_node: Node):
             decl = inner
         if inner.type == "function_declarator":
             name_node = inner.child_by_field_name("declarator")
-            return text(name_node) if name_node else text(inner)
-        return text(inner)
+            return _node_text(name_node) if name_node else _node_text(inner)
+        return _node_text(inner)
 
     def visit(n: Node):
         if n.type == "function_definition":
-            body = child_by_field(n, "body")
+            body = _child(n, "body")
             if body is not None:
                 func_name = _func_name(n)
                 class_name = _enclosing_class_cpp(n)
@@ -535,19 +534,18 @@ def _scan_cpp_file(
     exact_map: dict[str, list[CodeFragment]],
     renamed_map: dict[str, list[CodeFragment]],
 ) -> None:
-    from frob.ast import cpp as _cpp
-    from frob.ast.common import child_by_field
+    from frob.lang import raw_tree
 
-    try:
-        src, tree = _cpp.parse_file(path)
-    except Exception as exc:
-        _log.warning("parse failed for %s: %s", path, exc)
+    parsed = raw_tree(path)
+    if parsed.is_err:
+        _log.warning("parse failed for %s: %s", path, parsed.err)
         return
+    tree, src, _language = parsed.danger_ok
 
     rel = str(path.relative_to(root))
 
     for func_node, symbol in _iter_functions_cpp(tree.root_node):
-        body = child_by_field(func_node, "body")
+        body = _child(func_node, "body")
         if body is None:
             continue
         start_line = body.start_point[0] + 1
@@ -579,17 +577,25 @@ def _scan_cpp_file(
 # ---------------------------------------------------------------------------
 
 
+# frob:doc docs/dup.md#legacy-scanner
 def find_duplicates(root: Path, min_lines: int = 6) -> DupResult:
     """Scan root recursively for duplicate function bodies."""
+    from frob.logging.quiet import quiet_stdout_logs
+
     exact_map: dict[str, list[CodeFragment]] = defaultdict(list)
     renamed_map: dict[str, list[CodeFragment]] = defaultdict(list)
 
-    for path in _walk(root):
-        ext = path.suffix.lower()
-        if ext in _PY_EXTS:
-            _scan_py_file(path, root, min_lines, exact_map, renamed_map)
-        elif ext in _CPP_EXTS:
-            _scan_cpp_file(path, root, min_lines, exact_map, renamed_map)
+    # frob.lang.raw_tree logs at INFO/DEBUG per parse (unlike the retired
+    # per-language wrappers this module used to call, which logged nothing)
+    # -- CLI callers piping `--json` need that off stdout, same reasoning
+    # as frob.logging.quiet's own docstring.
+    with quiet_stdout_logs():
+        for path in _walk(root):
+            ext = path.suffix.lower()
+            if ext in _PY_EXTS:
+                _scan_py_file(path, root, min_lines, exact_map, renamed_map)
+            elif ext in _CPP_EXTS:
+                _scan_cpp_file(path, root, min_lines, exact_map, renamed_map)
 
     # Build clone groups
     # exact_map keys that have 2+ identical fragments -> Type 1 (exact)

@@ -6,11 +6,26 @@ from pathlib import Path
 from typing import Literal, cast
 
 from pydantic import BaseModel
+from tree_sitter import Node
 
 from frob.excludes import is_excluded, is_skipped_dir, load_exclude_globs
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
+
+
+def _child(node: Node, field: str) -> Node | None:
+    """`node.child_by_field_name(field)` -- a one-line convenience so every
+    walker below doesn't repeat the tree-sitter field-lookup call directly.
+    """
+    return node.child_by_field_name(field)
+
+
+def _node_text(node: Node | None) -> str:
+    """Decode `node`'s own text, or '' if absent (missing name = grammar bug)."""
+    if node is None or node.text is None:
+        return ""
+    return node.text.decode("utf-8", errors="replace")
 
 # ---------------------------------------------------------------------------
 # Types
@@ -38,6 +53,7 @@ def _is_skip_dir(name: str) -> bool:
 # ---------------------------------------------------------------------------
 
 
+# frob:doc docs/arch.md#arch-suggestion
 class ArchSuggestion(BaseModel):
     file: str
     line: int | None = None
@@ -47,10 +63,12 @@ class ArchSuggestion(BaseModel):
     detail: str | None = None
 
 
+# frob:doc docs/arch.md#arch-result
 class ArchResult(BaseModel):
     root: str
     suggestions: list[ArchSuggestion]
 
+    # frob:doc docs/arch.md#arch-result
     def as_text(self) -> str:
         if not self.suggestions:
             return "no architectural issues found"
@@ -65,6 +83,7 @@ class ArchResult(BaseModel):
                 lines.append(f"  {s.detail}")
         return "\n".join(lines)
 
+    # frob:doc docs/arch.md#arch-result
     def as_json(self) -> str:
         return json.dumps(self.model_dump(), indent=2)
 
@@ -122,7 +141,6 @@ def _check_large_file(
 
 
 def _py_function_line_count(func_node: "object") -> int:
-    from tree_sitter import Node
 
     n: Node = cast("Node", func_node)
     body = n.child_by_field_name("body")
@@ -137,23 +155,21 @@ def _py_check_long_functions(
     max_function_lines: int,
     out: list[ArchSuggestion],
 ) -> None:
-    from tree_sitter import Node, Tree
-
-    from frob.ast.common import child_by_field, text
+    from tree_sitter import Tree
 
     t: Tree = cast("Tree", tree)
 
     def visit(node: Node, class_prefix: str) -> None:
         for child in node.children:
             if child.type == "class_definition":
-                name_node = child_by_field(child, "name")
-                cname = text(name_node) if name_node else "?"
-                body = child_by_field(child, "body")
+                name_node = _child(child, "name")
+                cname = _node_text(name_node) if name_node else "?"
+                body = _child(child, "body")
                 if body:
                     visit(body, cname + ".")
             elif child.type == "function_definition":
-                name_node = child_by_field(child, "name")
-                fname = text(name_node) if name_node else "?"
+                name_node = _child(child, "name")
+                fname = _node_text(name_node) if name_node else "?"
                 n_lines = _py_function_line_count(child)
                 if n_lines > max_function_lines:
                     start_line = child.start_point[0] + 1
@@ -170,7 +186,7 @@ def _py_check_long_functions(
                         )
                     )
                 # recurse for nested functions
-                body = child_by_field(child, "body")
+                body = _child(child, "body")
                 if body:
                     visit(body, class_prefix)
 
@@ -185,16 +201,14 @@ def _py_check_god_classes(
 ) -> None:
     from tree_sitter import Tree
 
-    from frob.ast.common import child_by_field, text
-
     t: Tree = cast("Tree", tree)
 
     for child in t.root_node.children:
         if child.type != "class_definition":
             continue
-        name_node = child_by_field(child, "name")
-        cname = text(name_node) if name_node else "?"
-        body = child_by_field(child, "body")
+        name_node = _child(child, "name")
+        cname = _node_text(name_node) if name_node else "?"
+        body = _child(child, "body")
         if body is None:
             continue
         methods = [n for n in body.named_children if n.type == "function_definition"]
@@ -214,22 +228,24 @@ def _py_check_god_classes(
 
 
 def _py_check_high_coupling(
-    tree: "object",
+    path: Path,
     rel: str,
     root: Path,
     max_local_imports: int,
     out: list[ArchSuggestion],
 ) -> None:
-    from frob.ast import python as _py
-    from frob.ast.common import ModuleTag
+    from frob.lang import extract_imports, resolve_local_import
 
-    mod_tag = ModuleTag(rel)
-    try:
-        imports = _py.get_imports(mod_tag, root)
-    except Exception as exc:
-        _log.debug("high-coupling: failed to parse %s: %s", rel, exc)
+    specs_result = extract_imports(path)
+    if specs_result.is_err:
+        _log.debug("high-coupling: failed to parse %s: %s", rel, specs_result.err)
         return
-    n = len(set(imports))
+    resolved = {
+        resolve_local_import(spec, "python", file_dir=path.parent, root=root)
+        for spec in specs_result.danger_ok
+    }
+    resolved.discard(None)
+    n = len(resolved)
     if n > max_local_imports:
         out.append(
             ArchSuggestion(
@@ -242,7 +258,6 @@ def _py_check_high_coupling(
 
 
 def _py_max_nesting(func_body_node: "object") -> int:
-    from tree_sitter import Node
 
     body: Node = cast("Node", func_body_node)
 
@@ -274,24 +289,22 @@ def _py_check_deep_nesting(
     max_nesting_depth: int,
     out: list[ArchSuggestion],
 ) -> None:
-    from tree_sitter import Node, Tree
-
-    from frob.ast.common import child_by_field, text
+    from tree_sitter import Tree
 
     t: Tree = cast("Tree", tree)
 
     def visit_functions(node: Node, class_prefix: str) -> None:
         for child in node.children:
             if child.type == "class_definition":
-                name_node = child_by_field(child, "name")
-                cname = text(name_node) if name_node else "?"
-                body = child_by_field(child, "body")
+                name_node = _child(child, "name")
+                cname = _node_text(name_node) if name_node else "?"
+                body = _child(child, "body")
                 if body:
                     visit_functions(body, cname + ".")
             elif child.type == "function_definition":
-                name_node = child_by_field(child, "name")
-                fname = text(name_node) if name_node else "?"
-                body = child_by_field(child, "body")
+                name_node = _child(child, "name")
+                fname = _node_text(name_node) if name_node else "?"
+                body = _child(child, "body")
                 if body:
                     depth = _py_max_nesting(body)
                     if depth > max_nesting_depth:
@@ -321,12 +334,9 @@ def _py_check_deep_nesting(
 
 
 def _annotation_text(node: "object") -> str:
-    from tree_sitter import Node
-
-    from frob.ast.common import text
 
     n: Node = cast("Node", node)
-    return text(n).strip()
+    return _node_text(n).strip()
 
 
 def _extract_py_signatures(
@@ -337,9 +347,7 @@ def _extract_py_signatures(
     Return list of (rel, func_name, param_types_tuple, return_type_str).
     Only includes functions that have at least one annotated parameter or return.
     """
-    from tree_sitter import Node, Tree
-
-    from frob.ast.common import child_by_field, text
+    from tree_sitter import Tree
 
     t: Tree = cast("Tree", tree)
     results = []
@@ -347,20 +355,20 @@ def _extract_py_signatures(
     def visit(node: Node) -> None:
         for child in node.children:
             if child.type in ("class_definition",):
-                body = child_by_field(child, "body")
+                body = _child(child, "body")
                 if body:
                     visit(body)
             elif child.type == "function_definition":
-                name_node = child_by_field(child, "name")
-                fname = text(name_node) if name_node else "?"
+                name_node = _child(child, "name")
+                fname = _node_text(name_node) if name_node else "?"
 
                 # parameters
-                params_node = child_by_field(child, "parameters")
+                params_node = _child(child, "parameters")
                 param_types: list[str] = []
                 if params_node:
                     for p in params_node.named_children:
                         if p.type in ("typed_parameter", "typed_default_parameter"):
-                            ann = child_by_field(p, "type")
+                            ann = _child(p, "type")
                             if ann:
                                 param_types.append(_annotation_text(ann))
                         elif p.type == "identifier":
@@ -368,14 +376,14 @@ def _extract_py_signatures(
                             pass
 
                 # return type
-                ret_node = child_by_field(child, "return_type")
+                ret_node = _child(child, "return_type")
                 ret = _annotation_text(ret_node) if ret_node else ""
 
                 if param_types or ret:
                     results.append((rel, fname, tuple(param_types), ret))
 
                 # recurse for nested functions
-                body = child_by_field(child, "body")
+                body = _child(child, "body")
                 if body:
                     visit(body)
 
@@ -430,15 +438,14 @@ def _cpp_check_long_functions(
 ) -> None:
     from tree_sitter import Tree
 
-    from frob.ast.common import child_by_field
-    from frob.ast.cpp import _iter_function_nodes
+    from frob.lang import cpp_function_nodes
 
     t: Tree = cast("Tree", tree)
 
-    for node, name in _iter_function_nodes(t.root_node):
+    for node, name in cpp_function_nodes(t):
         if node.type != "function_definition":
             continue
-        body = child_by_field(node, "body")
+        body = _child(node, "body")
         if body is None:
             continue
         n_lines = body.end_point[0] - body.start_point[0] + 1
@@ -464,16 +471,14 @@ def _cpp_check_god_classes(
 ) -> None:
     from tree_sitter import Tree
 
-    from frob.ast.common import child_by_field, text
-
     t: Tree = cast("Tree", tree)
 
     for child in t.root_node.named_children:
         if child.type not in ("class_specifier", "struct_specifier"):
             continue
-        name_node = child_by_field(child, "name")
-        cname = text(name_node) if name_node else "?"
-        body = child_by_field(child, "body")
+        name_node = _child(child, "name")
+        cname = _node_text(name_node) if name_node else "?"
+        body = _child(child, "body")
         if body is None:
             continue
         methods = [
@@ -501,6 +506,7 @@ def _cpp_check_god_classes(
 # ---------------------------------------------------------------------------
 
 
+# frob:doc docs/arch.md#public-api
 def analyze_project(
     root: Path,
     *,
@@ -510,58 +516,59 @@ def analyze_project(
     max_nesting_depth: int = 4,
     max_file_lines: int = 500,
 ) -> ArchResult:
-    from frob.ast import cpp as _cpp
-    from frob.ast import python as _py
-    from frob.ast.cpp import ALL_EXTS as _CPP_EXTS
+    from frob.lang import raw_tree
+    from frob.logging.quiet import quiet_stdout_logs
 
     suggestions: list[ArchSuggestion] = []
     all_py_sigs: list[tuple[str, str, tuple[str, ...], str]] = []
 
     files = _collect_files(root)
 
-    for path in files:
-        try:
-            rel = str(path.relative_to(root))
-        except ValueError:
-            continue
-
-        ext = path.suffix.lower()
-
-        try:
-            raw = path.read_bytes()
-        except OSError as exc:
-            _log.debug("arch: cannot read %s: %s", rel, exc)
-            continue
-
-        lines = raw.splitlines()
-
-        # large-file (all files)
-        _check_large_file(path, rel, lines, max_file_lines, suggestions)
-
-        if ext == ".py":
+    # frob.lang logs at INFO/DEBUG per parse (unlike the retired
+    # per-language wrappers analyze_project used to call, which logged
+    # nothing) -- CLI callers piping `--json` need that off stdout, same
+    # reasoning as frob.logging.quiet's own docstring.
+    with quiet_stdout_logs():
+        for path in files:
             try:
-                _, tree = _py.parse_bytes(raw)
-            except Exception as exc:
-                _log.debug("arch: parse error in %s: %s", rel, exc)
+                rel = str(path.relative_to(root))
+            except ValueError:
                 continue
 
-            _py_check_long_functions(tree, rel, max_function_lines, suggestions)
-            _py_check_god_classes(tree, rel, max_class_methods, suggestions)
-            _py_check_high_coupling(tree, rel, root, max_local_imports, suggestions)
-            _py_check_deep_nesting(tree, rel, max_nesting_depth, suggestions)
-
-            sigs = _extract_py_signatures(tree, rel)
-            all_py_sigs.extend(sigs)
-
-        elif ext in _CPP_EXTS:
             try:
-                _, tree = _cpp.parse_bytes(raw)
-            except Exception as exc:
-                _log.debug("arch: parse error in %s: %s", rel, exc)
+                raw = path.read_bytes()
+            except OSError as exc:
+                _log.debug("arch: cannot read %s: %s", rel, exc)
                 continue
 
-            _cpp_check_long_functions(tree, rel, max_function_lines, suggestions)
-            _cpp_check_god_classes(tree, rel, max_class_methods, suggestions)
+            lines = raw.splitlines()
+
+            # large-file (all files)
+            _check_large_file(path, rel, lines, max_file_lines, suggestions)
+
+            # Every other check needs a parse -- one dispatch through
+            # frob.lang's single grammar-loading mechanism (docs/arch.md),
+            # not a bespoke per-language extension table duplicated here.
+            parsed = raw_tree(path)
+            if parsed.is_err:
+                _log.debug("arch: %s not parsed (%s)", rel, parsed.err)
+                continue
+            tree, _source, language = parsed.danger_ok
+
+            if language == "python":
+                _py_check_long_functions(tree, rel, max_function_lines, suggestions)
+                _py_check_god_classes(tree, rel, max_class_methods, suggestions)
+                _py_check_high_coupling(
+                    path, rel, root, max_local_imports, suggestions
+                )
+                _py_check_deep_nesting(tree, rel, max_nesting_depth, suggestions)
+
+                sigs = _extract_py_signatures(tree, rel)
+                all_py_sigs.extend(sigs)
+
+            elif language == "cpp":
+                _cpp_check_long_functions(tree, rel, max_function_lines, suggestions)
+                _cpp_check_god_classes(tree, rel, max_class_methods, suggestions)
 
     # cross-file check
     _check_abstraction_opportunities(all_py_sigs, suggestions)

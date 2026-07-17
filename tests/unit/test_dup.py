@@ -30,9 +30,15 @@ pytestmark = pytest.mark.skipif(not HAS_DUP, reason="frob.dup not available")
 
 
 class TestFindDuplicates:
+# frob:tests src/frob/dup/_legacy.py::find_duplicates kind="unit"
     def test_dup_python_finds_one_group(self):
         result = find_duplicates(FIXTURES / "dup_python" / "src")
         assert len(result.groups) == 1
+
+    # frob:tests src/frob/dup/_legacy.py::DupResult.total_clones kind="unit"
+    def test_dup_python_total_clones_counts_all_fragments(self):
+        result = find_duplicates(FIXTURES / "dup_python" / "src")
+        assert result.total_clones == sum(len(g.fragments) for g in result.groups)
 
     def test_dup_python_group_has_two_fragments(self):
         result = find_duplicates(FIXTURES / "dup_python" / "src")

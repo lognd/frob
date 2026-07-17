@@ -15,7 +15,17 @@ from __future__ import annotations
 
 from tree_sitter import Node
 
+from frob.lang._models import TreeNode
+
 ByteRange = tuple[int, int]
+
+# Cap on exported-tree size (node count): R4's Zhang-Shasha kernel is
+# O(n*m*min(depth,leaves)) -- fine for a clone-candidate function body, not
+# fine for a 50k-node file. `export_tree` truncates deeper descent past
+# this many nodes rather than let one huge body blow up a comparison; the
+# caller (frob.dup._pipeline) treats a truncated tree as still-comparable
+# (truncation is symmetric per input, not silently dropped).
+_MAX_EXPORT_NODES = 4000
 
 
 def collapse_ws(text: str) -> str:
@@ -140,3 +150,91 @@ def child_text(node: Node | None) -> str:
     if node is None or node.text is None:
         return ""
     return node.text.decode("utf-8", errors="replace")
+
+
+def export_tree(node: Node, comment_types: frozenset[str]) -> TreeNode:
+    """A `TreeNode` snapshot of `node`'s subtree, comments stripped.
+
+    Leaf nodes label themselves with their decoded text (so `x` and `y`
+    are distinguishable leaves, matching the rename-cost story in
+    `frob-core`'s `apted_similarity`); internal nodes label themselves
+    with their grammar type (`if_statement`, `binary_operator`, ...), which
+    is what makes the tree comparable across alpha-renamed-but-
+    structurally-identical bodies. Truncates past `_MAX_EXPORT_NODES` total
+    nodes (see the module-level cap's docstring) by stopping descent, not
+    by silently dropping the whole subtree.
+    """
+    budget = [_MAX_EXPORT_NODES]
+
+    def build(n: Node) -> TreeNode:
+        if budget[0] <= 0:
+            return TreeNode(label=n.type)
+        budget[0] -= 1
+        kids = [c for c in n.children if c.type not in comment_types]
+        if not kids:
+            if n.child_count == 0:
+                text = n.text
+                label = text.decode("utf-8", errors="replace") if text else n.type
+                return TreeNode(label=label)
+            return TreeNode(label=n.type)
+        return TreeNode(label=n.type, children=tuple(build(c) for c in kids))
+
+    return build(node)
+
+
+def flatten_tree(node: TreeNode) -> tuple[list[str], list[int]]:
+    """`(labels, parents)` flat arrays for `frob_core.apted_similarity`.
+
+    Preorder walk; `parents[i]` is the index of node `i`'s parent, `-1` for
+    the root -- the exact shape `frob-core`'s Zhang-Shasha kernel expects
+    (it derives its own postorder internally, so any traversal order that
+    keeps parent indices consistent works).
+    """
+    labels: list[str] = []
+    parents: list[int] = []
+
+    def walk(n: TreeNode, parent_idx: int) -> None:
+        my_idx = len(labels)
+        labels.append(n.label)
+        parents.append(parent_idx)
+        for child in n.children:
+            walk(child, my_idx)
+
+    walk(node, -1)
+    return labels, parents
+
+
+def _cpp_declarator_name(node: Node) -> str:
+    """Innermost name of a C/C++ declarator, unwrapping `function_declarator`."""
+    if node.type == "function_declarator":
+        name_node = node.child_by_field_name("declarator")
+        return child_text(name_node) if name_node else child_text(node)
+    return child_text(node)
+
+
+def iter_cpp_functions(root: Node) -> tuple[tuple[Node, str], ...]:
+    """(node, qualified_name) for every C/C++ function under `root`.
+
+    Shared by `frob.arch` (long-function/god-class checks) and `frob.dup`
+    (the legacy Type-1/2 scanner) so a C/C++ function-declaration walk lives
+    in exactly one place. `ClassName::method` qualnames for one level of
+    class/struct nesting; free functions are unqualified.
+    """
+    out: list[tuple[Node, str]] = []
+    for n in root.named_children:
+        if n.type in ("function_definition", "declaration"):
+            decl = n.child_by_field_name("declarator")
+            if decl:
+                out.append((n, _cpp_declarator_name(decl)))
+        elif n.type in ("class_specifier", "struct_specifier"):
+            name_node = n.child_by_field_name("name")
+            class_name = child_text(name_node) if name_node else child_text(n)
+            body = n.child_by_field_name("body")
+            if body:
+                for m in body.named_children:
+                    if m.type in ("function_definition", "declaration"):
+                        decl = m.child_by_field_name("declarator")
+                        if decl:
+                            fn_name = _cpp_declarator_name(decl)
+                            out.append((m, f"{class_name}::{fn_name}"))
+    return tuple(out)

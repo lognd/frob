@@ -2,9 +2,9 @@
 
 `frob.graph` needs one shape -- symbols plus comments plus a content hash --
 regardless of whether the source file is Python, TypeScript, Rust, C, or
-C++. Hand-rolling five bespoke parsers (the fate of the old, Python-only
-`frob.ast`) means five places to fix every bug and five places graph-level
-assumptions can silently drift apart. `tree-sitter-language-pack` gives one
+C++. Hand-rolling five bespoke parsers (the fate of the retired, Python-only
+predecessor module) means five places to fix every bug and five places
+graph-level assumptions can silently drift apart. `tree-sitter-language-pack` gives one
 grammar-loading mechanism for all five; this package gives one extraction
 contract on top of it. Everything language-specific (node-type tables,
 publicness rules, doc-comment conventions) lives in `_extract.py`'s per-
@@ -17,15 +17,17 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 
-from tree_sitter import Tree
+from tree_sitter import Node, Tree
 from tree_sitter_language_pack import get_parser
 from typani import Err, ErrorSet, Ok
 from typani.result import Result
 
-from frob.lang._extract import extract
+from frob.lang._common import export_tree as _export_tree
+from frob.lang._common import iter_cpp_functions as _iter_cpp_functions
+from frob.lang._extract import COMMENT_TYPES, extract
 from frob.lang._extract import extract_imports as _extract_imports
 from frob.lang._extract import iter_identifiers as _iter_identifiers
-from frob.lang._models import ParsedFile, RawComment, RawSymbol, SymbolKind
+from frob.lang._models import ParsedFile, RawComment, RawSymbol, SymbolKind, TreeNode
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
@@ -51,6 +53,7 @@ _EXTENSION_TABLE: dict[str, tuple[str, str]] = {
     ".hpp": ("cpp", "cpp"),
     ".cc": ("cpp", "cpp"),
     ".hh": ("cpp", "cpp"),
+    ".cxx": ("cpp", "cpp"),
 }
 
 _SUPPORTED_LANGUAGES = frozenset(label for _grammar, label in _EXTENSION_TABLE.values())
@@ -164,6 +167,61 @@ def iter_identifiers(path: Path) -> Result[tuple[tuple[str, int], ...], LangErro
 
 
 # frob:doc docs/graph.md#public-api
+def raw_tree(path: Path) -> Result[tuple[Tree, bytes, str], LangError]:
+    """The raw tree-sitter `(Tree, source_bytes, language_label)` for `path`.
+
+    An escape hatch for callers that need node-level tree-sitter access
+    (`frob.arch`'s structural metric walks, `frob.dup._legacy`'s Type-1/2
+    scanner) without standing up a second `get_parser`/`Parser.parse` call
+    site of their own -- every grammar load in the process still goes
+    through this module's single `_parse` dispatch table. Prefer
+    `parse_file`/`extract_imports`/`iter_identifiers` when the normalized
+    shape is enough; reach for `raw_tree` only when a caller genuinely needs
+    tree-sitter's `Node` API (field lookups, byte spans) directly.
+    """
+    return _parse(path)
+
+
+# frob:doc docs/graph.md#public-api
+def cpp_function_nodes(tree: Tree) -> tuple[tuple[Node, str], ...]:
+    """(node, qualified_name) for every C/C++ function in `tree` (one level
+    of class/struct nesting). Thin public wrapper around
+    `frob.lang._common.iter_cpp_functions` -- see its docstring for the
+    exact walk semantics `frob.arch` and `frob.dup._legacy` share."""
+    return _iter_cpp_functions(tree.root_node)
+
+
+# frob:doc docs/dup.md#public-api
+def symbol_tree(path: Path, span: tuple[int, int]) -> Result[TreeNode, LangError]:
+    """The `TreeNode` subtree covering `span` (1-based, inclusive lines) in `path`.
+
+    `frob.dup`'s R4 rung calls this with a `RawSymbol.span` (from an earlier
+    `parse_file`) to get real node structure for `frob-core`'s Zhang-Shasha
+    tree-edit-distance kernel, instead of the flat `body_tokens` sequence.
+    Re-parses `path` (a second `_parse` call for the same file `parse_file`
+    already visited) -- acceptable here since `frob.dup._pipeline` calls
+    this only for R4 candidate pairs already surfaced by cheaper rungs, not
+    for every symbol in a scan.
+    """
+    parsed_result = _parse(path)
+    if parsed_result.is_err:
+        return Err(parsed_result.danger_err)
+    tree, _source, language_label = parsed_result.danger_ok
+    start_line, end_line = span
+    start_point = (max(start_line - 1, 0), 0)
+    # A too-large end column makes some tree-sitter bindings fall back to
+    # the whole-tree root instead of the smallest enclosing node -- probe a
+    # single point first, then climb parents until the span is covered.
+    node = tree.root_node.descendant_for_point_range(start_point, start_point)
+    if node is None:
+        node = tree.root_node
+    while node.parent is not None and node.end_point[0] < end_line - 1:
+        node = node.parent
+    comment_types = COMMENT_TYPES.get(language_label, frozenset())
+    return Ok(_export_tree(node, comment_types))
+
+
+# frob:doc docs/graph.md#public-api
 def resolve_local_import(
     specifier: str, language: str, *, file_dir: Path, root: Path
 ) -> str | None:
@@ -197,9 +255,13 @@ __all__ = [
     "RawComment",
     "RawSymbol",
     "SymbolKind",
+    "cpp_function_nodes",
     "extract_imports",
     "iter_identifiers",
     "parse_file",
+    "raw_tree",
     "resolve_local_import",
     "supported_languages",
+    "symbol_tree",
+    "TreeNode",
 ]

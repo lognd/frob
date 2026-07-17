@@ -32,6 +32,7 @@ def _waiver_hint(rule: str) -> str:
     return f'waive with: frob:waive {rule} reason="..."'
 
 
+# frob:doc docs/dup.md#gate-integration
 def DUP001(
     report: CloneReport, touched: frozenset[str], threshold: float
 ) -> tuple[Violation, ...]:
@@ -66,6 +67,7 @@ def DUP001(
     return tuple(violations)
 
 
+# frob:doc docs/dup.md#gate-integration
 def DUP002(
     report: CloneReport, touched: frozenset[str], threshold: float
 ) -> tuple[Violation, ...]:
