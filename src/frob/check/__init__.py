@@ -23,14 +23,22 @@ class CheckResult(BaseModel):
     def total_warnings(self) -> int:
         return sum(r.warning_count for r in self.results)
 
-    def as_text(self) -> str:
+    def as_text(self, color: bool = False) -> str:
+        from frob.logging.color import BOLD, CYAN, DIM, GREEN, RED, YELLOW, paint
+
         lines: list[str] = []
         err = self.total_errors
         warn = self.total_warnings
         status = "FAIL" if err > 0 else ("WARN" if warn > 0 else "PASS")
+        status_code = {"FAIL": RED, "WARN": YELLOW, "PASS": GREEN}[status]
         errs = f"{err} error{'s' if err != 1 else ''}"
         warns = f"{warn} warning{'s' if warn != 1 else ''}"
-        lines.append(f"frob check {self.path}  [{status}]  {errs}  {warns}")
+        header_status = paint(f"[{status}]", f"{BOLD};{status_code}", color)
+        lines.append(
+            f"frob check {self.path}  {header_status}  "
+            f"{paint(errs, RED if err else DIM, color)}  "
+            f"{paint(warns, YELLOW if warn else DIM, color)}"
+        )
         lines.append("")
 
         all_errors = [
@@ -40,9 +48,9 @@ class CheckResult(BaseModel):
             if d.severity == "error"
         ]
         if all_errors:
-            lines.append("## Errors")
+            lines.append(paint("## Errors", f"{BOLD};{RED}", color))
             for tool, d in all_errors:
-                lines.append(f"  [{tool}] {d.as_text()}")
+                lines.append(f"  {paint(f'[{tool}]', CYAN, color)} {d.as_text()}")
             lines.append("")
 
         all_warnings = [
@@ -52,9 +60,9 @@ class CheckResult(BaseModel):
             if d.severity == "warning"
         ]
         if all_warnings:
-            lines.append("## Warnings")
+            lines.append(paint("## Warnings", f"{BOLD};{YELLOW}", color))
             for tool, d in all_warnings:
-                lines.append(f"  [{tool}] {d.as_text()}")
+                lines.append(f"  {paint(f'[{tool}]', CYAN, color)} {d.as_text()}")
             lines.append("")
 
         all_notes = [
@@ -64,14 +72,15 @@ class CheckResult(BaseModel):
             if d.severity not in ("error", "warning")
         ]
         if all_notes:
-            lines.append("## Notes / suggestions")
+            lines.append(paint("## Notes / suggestions", BOLD, color))
             for tool, d in all_notes:
-                lines.append(f"  [{tool}] {d.as_text()}")
+                lines.append(f"  {paint(f'[{tool}]', CYAN, color)} {d.as_text()}")
             lines.append("")
 
-        lines.append("## Tool summary")
+        lines.append(paint("## Tool summary", BOLD, color))
         for r in self.results:
-            icon = "pass" if r.passed and r.error_count == 0 else "FAIL"
+            ok = r.passed and r.error_count == 0
+            icon = paint("pass", GREEN, color) if ok else paint("FAIL", RED, color)
             lines.append(f"  {icon}  {r.tool:<22}  {r.summary}")
 
         return "\n".join(lines)

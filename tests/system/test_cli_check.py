@@ -241,3 +241,30 @@ class TestCheckStampCoverage:
         assert r.returncode == 0, out
         stamp = tmp_path / ".frob" / "coverage-stamp"
         assert stamp.exists()
+
+
+class TestFrobTomlCheckDefaults:
+    def test_check_skip_from_frob_toml(self, tmp_path):
+        """[check] skip in frob.toml disables stages without CLI flags."""
+        import subprocess
+        import sys
+
+        (tmp_path / "src").mkdir()
+        (tmp_path / "src" / "m.py").write_text("def f():\n    return 1\n")
+        (tmp_path / "frob.toml").write_text(
+            '[check]\nskip = ["ty", "ruff", "gates", "dup", "arch", "cycle", '
+            '"bind", "exports"]\n',
+            encoding="utf-8",
+        )
+        r = subprocess.run(
+            [sys.executable, "-m", "frob", "check", str(tmp_path), "--json"],
+            capture_output=True,
+            text=True,
+            cwd=tmp_path,
+        )
+        assert r.returncode == 0, r.stdout + r.stderr
+        # every stage skipped -> no tool results at all
+        import json
+
+        data = json.loads(r.stdout)
+        assert data.get("results") == []

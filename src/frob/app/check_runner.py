@@ -37,6 +37,44 @@ def _quiet_stdout_logs() -> Iterator[None]:
             h.setLevel(level)
 
 
+def _apply_frob_toml_defaults(cfg: AppConfig, root: Path) -> AppConfig:
+    """Fill check defaults from frob.toml so ONE file configures a repo.
+
+    CLI flags win; frob.toml supplies repo defaults: top-level `check_base`
+    and `check_type`, plus `[check] skip = [...]` / `only = [...]` (the
+    polyglot-monorepo dial, T-0022 -- pyproject [tool.frob] previously held
+    these alone, which two adoption passes independently tripped over).
+    """
+    import tomllib
+
+    toml_path = root / "frob.toml"
+    if not toml_path.exists():
+        return cfg
+    try:
+        with toml_path.open("rb") as fh:
+            data = tomllib.load(fh)
+    except (OSError, tomllib.TOMLDecodeError) as exc:
+        _log.warning("frob.toml unreadable for check defaults: %s", exc)
+        return cfg
+    updates: dict = {}
+    if cfg.check_base is None and isinstance(data.get("check_base"), str):
+        updates["check_base"] = data["check_base"]
+    if cfg.check_type is None and isinstance(data.get("check_type"), str):
+        updates["check_type"] = data["check_type"]
+    section = data.get("check", {})
+    if not cfg.check_only and isinstance(section.get("only"), list):
+        updates["check_only"] = [str(s) for s in section["only"]]
+    skip_list = section.get("skip") if isinstance(section.get("skip"), list) else []
+    for stage in skip_list:
+        field = f"check_skip_{str(stage).replace('-', '_')}"
+        if hasattr(cfg, field) and not getattr(cfg, field):
+            updates[field] = True
+    if updates:
+        _log.debug("check defaults from frob.toml: %s", sorted(updates))
+        return cfg.model_copy(update=updates)
+    return cfg
+
+
 def run(cfg: AppConfig) -> None:
     root = cfg.check_path or Path(".")
 
@@ -54,11 +92,11 @@ def run(cfg: AppConfig) -> None:
         _log.info("coverage stamp written")
         return
 
-    project_type = cfg.check_type or detect_project_type(root)
-
     _ctx = _quiet_stdout_logs() if cfg.check_json else contextlib.nullcontext()
 
     with _ctx:
+        cfg = _apply_frob_toml_defaults(cfg, root)
+        project_type = cfg.check_type or detect_project_type(root)
         if project_type == "cpp":
             result = run_check_cpp(
                 root,
@@ -98,7 +136,9 @@ def run(cfg: AppConfig) -> None:
     if cfg.check_json:
         _log.info(result.as_json())
     else:
-        _log.info(result.as_text())
+        from frob.logging.color import should_color
+
+        _log.info(result.as_text(color=should_color(sys.stdout)))
 
     if result.total_errors > 0:
         sys.exit(1)
