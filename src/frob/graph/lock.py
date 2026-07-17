@@ -36,6 +36,7 @@ _log = get_logger(__name__)
 _DEFAULT_FACET = "sig"
 
 
+# frob:doc docs/graph.md#error-types
 class LockError(ErrorSet):
     """Failure values `frob.lock` read/write paths can return."""
 

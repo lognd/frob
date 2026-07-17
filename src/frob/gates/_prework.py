@@ -57,6 +57,7 @@ def record_prework(
     return Ok(Unit())
 
 
+# frob:doc docs/gates.md#public-api
 def load_prework(root: Path, ticket_id: str) -> PreworkSweep | None:
     """The recorded sweep for `ticket_id`, or `None` if never recorded/unreadable."""
     path = _prework_path(root, ticket_id)

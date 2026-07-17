@@ -57,6 +57,35 @@ waiver is visible debt, never silence.
 <!-- frob:describes src/frob/policy/__init__.py::load_policy -->
 <!-- frob:describes src/frob/policy/__init__.py::policy_gate -->
 <!-- frob:describes src/frob/gates/invariants.py::load_invariants -->
+<!-- frob:describes src/frob/gates/_coverage.py::load_stamp -->
+<!-- frob:describes src/frob/gates/_prework.py::load_prework -->
+<!-- frob:describes src/frob/gates/__init__.py::scope_digest -->
+<!-- frob:describes src/frob/gates/__init__.py::decisions_gate -->
+<!-- frob:describes src/frob/gates/__init__.py::dup_gate -->
+<!-- frob:describes src/frob/gates/__init__.py::release_gate -->
+<!-- frob:describes src/frob/gates/__init__.py::fuzz_gate -->
+<!-- frob:describes src/frob/gates/__init__.py::doclink_gate -->
+<!-- frob:describes src/frob/gates/__init__.py::run_gates -->
+
+- `load_stamp` -- the raw `.frob/coverage-stamp` document, or `None` if
+  never stamped/unreadable; TEST006 compares it against live file hashes.
+- `load_prework` -- the recorded pre-work sweep for a ticket, or `None` if
+  `frob ticket start` never ran one; PRE001 compares it to a fresh digest.
+- `scope_digest` -- the one canonical sha256 over a scope glob's matched
+  file hashes, shared by `frob ticket start` and `prework_gate` so PRE001
+  can never see two independently-computed digests drift apart.
+- `decisions_gate` -- DEC001/DEC002 over `decisions/` records and their
+  code anchors; a no-op when no `decisions/` directory exists.
+- `dup_gate` -- DUP001/DUP002: flags a diff that introduces a clone of an
+  existing symbol; opt-in via `[dup].enforce` in `frob.toml`.
+- `release_gate` -- REL001: the public-API change since the last release
+  stamp demands a version bump the declared version does not cover.
+- `fuzz_gate` -- FUZZ001..003 over the `[fuzz]` policy; opt-in via
+  `[fuzz].enforce`, default off.
+- `doclink_gate` -- DOC001: a doc file nothing links to (no describes
+  anchor, no `frob:doc` edge, unreachable from the doc roots) is an error.
+- `run_gates` -- the single entry point: loads all state once, then runs
+  the selected gates in parallel and merges/severity-overrides the result.
 
 ```python
 # frob/gates/__init__.py
@@ -115,6 +144,17 @@ def load_invariants(root: Path) -> Result[tuple[Invariant, ...], InvariantError]
 
 ## Invariants
 
+<!-- frob:describes src/frob/gates/invariants.py::Criticality -->
+<!-- frob:describes src/frob/gates/invariants.py::Invariant -->
+<!-- frob:describes src/frob/gates/invariants.py::InvariantError -->
+
+- `Criticality` -- how severe a broken invariant would be (`high` |
+  `medium`); feeds severity weighting in INV001/INV002 reporting.
+- `Invariant` -- one tracked invariant: id, statement, criticality, and
+  its evidence list, parsed from `invariants/INV-###.md`.
+- `InvariantError` -- failure values `load_invariants` can return
+  (malformed frontmatter, duplicate id).
+
 "Proving things that matter": an invariant is a tracked statement whose
 truth must have standing evidence. Files in `invariants/INV-###.md`:
 
@@ -137,6 +177,14 @@ Security work becomes monotonic: each audit finding lands as an invariant
 plus a policy rule or property test, never a one-off fix.
 
 ## Policy rules (`frob.toml`, `[policy]`)
+
+<!-- frob:describes src/frob/policy/_models.py::PolicyKind -->
+<!-- frob:describes src/frob/policy/_models.py::PolicyRule -->
+
+- `PolicyKind` -- the three rule kinds `frob.toml`'s `[policy]` table
+  supports at alpha: `forbidden-import`, `pattern`, `norm`.
+- `PolicyRule` -- one `[[policy.<kind>]]` entry; fields not used by its
+  `kind` are left at their default.
 
 ```toml
 [[policy.forbidden-import]]
@@ -186,6 +234,38 @@ A stale or missing stamp is itself a violation (TEST006) -- the gate never
 silently passes because tests were not run.
 
 ## Data models
+
+<!-- frob:describes src/frob/gates/_models.py::Severity -->
+<!-- frob:describes src/frob/gates/_models.py::WaiverRef -->
+<!-- frob:describes src/frob/gates/_models.py::Violation -->
+<!-- frob:describes src/frob/gates/_models.py::GateStats -->
+<!-- frob:describes src/frob/gates/_models.py::GateReport -->
+<!-- frob:describes src/frob/gates/_models.py::GateConfig -->
+<!-- frob:describes src/frob/gates/_models.py::PreworkSweep -->
+<!-- frob:describes src/frob/gates/_models.py::SystemSpec -->
+<!-- frob:describes src/frob/gates/_models.py::TestPolicy -->
+<!-- frob:describes src/frob/gates/_models.py::CoverageData -->
+
+- `Severity` -- a violation's exit-code weight: `error` fails
+  `frob check`, `warn` does not.
+- `WaiverRef` -- the `frob:waive` edge that suppressed a violation, kept
+  on the `Violation` so waivers stay visible debt rather than silence.
+- `Violation` -- one gate finding: rule id, severity, site, and a message
+  that always embeds its own remedy command.
+- `GateStats` -- per-gate counters (violation counts, timing, skipped
+  gates) attached to every `GateReport`.
+- `GateReport` -- the merged result of `run_gates`: kept violations,
+  waived violations, and stats.
+- `GateConfig` -- everything `run_gates` needs to load state and select
+  which gates run (root, base ref, ticket, gate subset).
+- `PreworkSweep` -- a recorded dup+xref sweep over a ticket's scope,
+  stamped at `frob ticket start` time; PRE001's evidence.
+- `SystemSpec` -- one `[[system]]` entry: an e2e-tested surface, its
+  entrypoint, and its coverage scope for TEST004/TEST005.
+- `TestPolicy` -- the `[testing]` table: all test-obligation floors
+  (unit case counts, coverage percentages), each overridable.
+- `CoverageData` -- parsed `coverage.xml` mapped onto the snapshot:
+  per-symbol branch and per-module line percentages.
 
 ```python
 class Violation(BaseModel):
@@ -247,6 +327,18 @@ class CoverageData(BaseModel):
 ```
 
 ## Error types
+
+<!-- frob:describes src/frob/gates/_models.py::GateError -->
+<!-- frob:describes src/frob/gates/_models.py::CoverageError -->
+<!-- frob:describes src/frob/policy/_models.py::PolicyError -->
+
+- `GateError` -- failure values `run_gates` and its loading steps
+  (graph build, ticket queue, lock, git diff) can return.
+- `CoverageError` -- failure values `load_coverage`/`stamp_coverage` can
+  return (missing `coverage.xml`, malformed XML).
+- `PolicyError` -- failure values `frob.policy`'s rule loading and
+  matching paths can return (malformed rule, non-compiling tree-sitter
+  query).
 
 ```python
 class GateError(ErrorSet):

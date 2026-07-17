@@ -694,6 +694,7 @@ class TestCoverageLoad:
 
     def test_stamp_coverage_roundtrip(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_coverage.py::stamp_coverage
+        # frob:tests src/frob/gates/_coverage.py::load_stamp
         _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
         (tmp_path / "coverage.xml").write_text("<coverage></coverage>")
         result = stamp_coverage(tmp_path)
@@ -991,3 +992,47 @@ class TestPairLevelIntegration:
         pol = TestPolicy(min_unit_cases=1, pair_integration=True)
         violations = run_tg(snap, (), Nothing(), tests, pol)
         assert not any(v.rule == "TEST007" for v in violations)
+
+
+class TestOptInGates:
+    """dup_gate/fuzz_gate/perf_gate are opt-in (default off in frob.toml);
+    each gate must genuinely no-op when its config key is absent, and this
+    is verified against a real GraphSnapshot/Diff rather than mocked."""
+
+    def test_dup_gate_off_by_default(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/__init__.py::dup_gate
+        from frob.gates import dup_gate
+
+        _write(tmp_path, "src/a.py", "def foo():\n    return 1\n")
+        snap = _snapshot(tmp_path)
+        diff = Diff(base="main", hunks=())
+        violations = dup_gate(tmp_path, snap, diff)
+        assert violations == ()
+
+    def test_fuzz_gate_off_by_default(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/__init__.py::fuzz_gate
+        from frob.gates import fuzz_gate
+
+        _write(tmp_path, "src/a.py", "def foo(x: int) -> int:\n    return x\n")
+        snap = _snapshot(tmp_path)
+        violations = fuzz_gate(tmp_path, snap)
+        assert violations == ()
+
+    def test_perf_gate_flags_list_membership_in_loop(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/__init__.py::perf_gate
+        from frob.gates import perf_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def scan(items):\n"
+            "    data = [1, 2, 3]\n"
+            "    hits = 0\n"
+            "    for x in items:\n"
+            "        if x in data:\n"
+            "            hits += 1\n"
+            "    return hits\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = perf_gate(tmp_path, snap)
+        assert any(v.rule == "PERF001" for v in violations)

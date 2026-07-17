@@ -45,6 +45,7 @@ def _slugify(heading: str) -> str:
     return slug or "top"
 
 
+# frob:doc docs/graph.md#comment-dsl
 def markdown_anchors(doc_path: str, text: str) -> tuple[Edge, ...]:
     """Extract `<!-- frob:describes ... -->` anchors bound to the nearest heading."""
     edges: list[Edge] = []
@@ -132,6 +133,7 @@ def _parse_line(
     return Edge(src=src, kind=kind, target=target, origin=origin, attrs=attrs)
 
 
+# frob:doc docs/graph.md#comment-dsl
 def parse_directives(
     parsed: ParsedFile,
 ) -> tuple[tuple[Edge, ...], tuple[MalformedDirective, ...]]:

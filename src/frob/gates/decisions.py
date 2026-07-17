@@ -28,6 +28,7 @@ _FRONTMATTER_RE = re.compile(r"\A---\n(.*?\n)---\n(.*)\Z", re.DOTALL)
 _AD_ID_RE = re.compile(r"^AD-\d{3}$")
 
 
+# frob:doc docs/decisions.md#data-models
 class DecisionStatus(StrEnum):
     """The lifecycle state of an ADR."""
 
@@ -37,6 +38,7 @@ class DecisionStatus(StrEnum):
     DEPRECATED = "deprecated"
 
 
+# frob:doc docs/decisions.md#data-models
 class Decision(BaseModel):
     """One architecture decision record parsed from decisions/AD-###.md."""
 
@@ -48,6 +50,7 @@ class Decision(BaseModel):
     superseded_by: str | None = None
 
 
+# frob:doc docs/decisions.md#data-models
 class DecisionError(ErrorSet):
     """Fallible outcomes of loading decision records."""
 
@@ -56,11 +59,13 @@ class DecisionError(ErrorSet):
     BadId = "Decision id is not AD-###"
 
 
+# frob:doc docs/decisions.md#anchoring-in-code
 def decisions_dir(root: Path) -> Path:
     """The tracked decisions/ directory holding AD-###.md records."""
     return root / "decisions"
 
 
+# frob:doc docs/decisions.md#anchoring-in-code
 def load_decisions(root: Path) -> Result[tuple[Decision, ...], DecisionError]:
     """Parse every decisions/AD-###.md record; any malformation is a hard Err."""
     d = decisions_dir(root)
@@ -93,6 +98,7 @@ def load_decisions(root: Path) -> Result[tuple[Decision, ...], DecisionError]:
     return Ok(tuple(seen.values()))
 
 
+# frob:doc docs/decisions.md#anchoring-in-code
 def decision_gate(
     decisions: tuple[Decision, ...], snapshot: GraphSnapshot
 ) -> tuple:
