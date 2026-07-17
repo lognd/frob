@@ -1271,3 +1271,896 @@ acceptance: []
 threat: null
 ```
 Refactor campaign: extract cohesive helpers across the app/process/serve/testing/command modules so no function trips PERF00x or the long-function bar, preserving behavior. Accounts for the touched-set under frob check COV002.
+
+<!-- ticket:T-0047 -->
+```yaml
+id: T-0047
+title: 'strata: provable system-design language (epic)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-17'
+blocked_by: []
+parent: null
+scope:
+- docs/strata/**
+- src/frob/strata/**
+- strata-core/**
+- design/**
+- tests/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Umbrella for the strata language: deny-by-default architecture models, kernel of 6 primitives (Node/Flow/Boundary/Bound/Claim/Scenario), 3-way claim closure (proved/evidenced/assumed), evidence ladder L1-L5, refinement hierarchy, policy forms, work-order compiler. Charter: docs/strata/charter.md. Independent engine (own strata-core PyO3 crate, NOT lithos); lithos is inspiration only.
+
+<!-- ticket:T-0048 -->
+```yaml
+id: T-0048
+title: strata charter + design doc tree under docs/strata/
+state: done
+kind: docs
+origin: human
+created: '2026-07-17'
+blocked_by: []
+parent: T-0047
+scope:
+- docs/strata/**
+- docs/index.md
+evidence:
+- tests/test_gates.py::TestDoclinkGate::test_orphan_doc_is_error_and_linked_docs_pass
+attachments: []
+acceptance:
+- GIVEN the doc tree WHEN frob check runs THEN DOC001 passes and every strata page
+  is reachable from docs/index.md
+threat: null
+```
+Write charter.md (north star, laws, decisions), kernel.md, surface.md, evidence.md, policy.md, boundary.md, roadmap.md. All decisions from the design sessions recorded unambiguously; strata name final; engine independent of lithos with its own strata-core crate.
+
+## Done report
+
+All seven pages written under docs/strata/ and linked from docs/index.md
+(new "strata" section): charter (north star, six laws, three collapses,
+decisions D1-D10, glossary), kernel (six primitives, conditional flows,
+claim forms + decision procedures, prover pipeline), surface (grammar
+sketch, elaborator contract, vocabulary/ticket map, refinement
+faithfulness, module system), evidence (L1-L5 ladder, quantifier rules,
+exhaustive fault injection, tool attestations, enables cascade, assumption
+ledger), policy (five forms, semantic scoping, compilation, packs),
+boundary (six-phase contract, frames, atomicity discharge patterns,
+cross-store refusal, crash contracts), roadmap (phases 0-5 with exit
+criteria, CLI surface, litmus program, ticket map T-0047..T-0086).
+
+Acceptance verified: frob check exit 0; doclink (DOC001) gate passes with
+all strata pages reachable from docs/index.md; no gate violation
+references docs/strata/** or docs/index.md. Ticket tree T-0047..T-0086
+filed with parent/blocked_by chains; phase parents chained sequentially;
+phase-0 children chained internally.
+
+<!-- ticket:T-0049 -->
+```yaml
+id: T-0049
+title: 'strata phase 0: kernel + prover core'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0048
+parent: T-0047
+scope:
+- src/frob/strata/**
+- tests/unit/strata/**
+evidence: []
+attachments: []
+acceptance:
+- GIVEN hand-written kernel facts for the payments litmus WHEN the prover runs THEN
+  all golden findings fire with path counterexamples and quantifier-tagged verdicts
+threat: null
+```
+Kernel data model + fact base + closure + claim evaluation. Pure Python first; hot kernels move to strata-core (PyO3) later. See docs/strata/kernel.md.
+
+<!-- ticket:T-0050 -->
+```yaml
+id: T-0050
+title: 'strata phase 1: surface language v0 + std.trust + refinement'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0049
+parent: T-0047
+scope:
+- src/frob/strata/**
+- tests/unit/strata/**
+- design/litmus/**
+evidence: []
+attachments: []
+acceptance:
+- GIVEN design/litmus/payments.strata WHEN frob sys check runs THEN it parses, elaborates,
+  and reproduces the phase-0 golden findings via CI
+threat: null
+```
+Recursive-descent parser (pydantic AST, typani Result diagnostics), elaborator framework (vocabularies desugar to kernel facts, prover never learns domain terms), std.trust, assert/assume with owner+expiry, refine blocks with faithfulness checks. See docs/strata/surface.md.
+
+<!-- ticket:T-0051 -->
+```yaml
+id: T-0051
+title: 'strata phase 2: std.infra + bounds + policy forms + boundaries'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0050
+parent: T-0047
+scope:
+- src/frob/strata/**
+- tests/unit/strata/**
+- design/litmus/**
+evidence: []
+attachments: []
+acceptance:
+- GIVEN tube.strata and chirp.strata WHEN frob sys check runs THEN stampede, fanout-ceiling,
+  staleness, and CDN-declassification findings fire per goldens
+threat: null
+```
+store/cache/queue/cdn elaboration with mandatory invalidation edges, unified age/staleness propagation, capacity arithmetic with skew + growth horizons + cold/degraded modes, the 5 policy forms with semantic scoping + enables cascade, std.policy.analyzable, six-phase boundary contract with outcome-conditioned frames, errors-total/panics-contained/observe packs. See docs/strata/{policy,boundary}.md.
+
+<!-- ticket:T-0052 -->
+```yaml
+id: T-0052
+title: 'strata phase 3: scenarios, crash contracts, atomicity'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0051
+parent: T-0047
+scope:
+- src/frob/strata/**
+- tests/unit/strata/**
+- design/litmus/**
+evidence: []
+attachments: []
+acceptance:
+- GIVEN scenario Breach(Gateway) in the payments litmus WHEN frob sys check runs THEN
+  blast radius, revocation SLA, and recovery-path-independence verdicts are produced
+threat: null
+```
+Scenario rewrites (node loss, rate surge, trust downgrade), on-crash contracts with no-hang caller-timeout checks and crash-retry-idempotency join, atomic/saga with cross-store refusal and exhaustive fault-injection test generation from closed ErrorSets.
+
+<!-- ticket:T-0053 -->
+```yaml
+id: T-0053
+title: 'strata phase 4: code binding (tier 2) + self-hosting'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0052
+parent: T-0047
+scope:
+- src/frob/strata/**
+- src/frob/lang/**
+- src/frob/gates/**
+- tests/**
+- design/**
+evidence: []
+attachments: []
+acceptance:
+- GIVEN design/frob.strata WHEN frob check runs on this repo THEN SYS gates enforce
+  frob's own declared architecture (self-hosting)
+threat: null
+```
+.strata as a 6th frob.lang grammar (design constructs become graph symbols with digests/acks/drift), code globs + import conformance, effect extraction vs may-capabilities, frob:channel/boundary/secret directives, SYS gate family in run_gates. Exit = frob gates on its own design.
+
+<!-- ticket:T-0054 -->
+```yaml
+id: T-0054
+title: 'strata phase 5: std.secrets, std.deploy, work-order compiler, exporters'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0053
+parent: T-0047
+scope:
+- src/frob/strata/**
+- tests/**
+- design/**
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a refuted or undischarged claim WHEN frob sys plan runs THEN scoped tickets
+  are filed idempotently and a sys ticket cannot close until its claim discharges
+  at the required rung
+threat: null
+```
+Credentials as cache-of-authority (lifetime/revocation obligations), deployment as endorsement pipeline (canary schedules, rollback budgets, vet as endorsement evidence), frob sys plan obligation->ticket compiler, frob sys doc generator + DOC002 claims audit, k8s-netpol/seccomp/IAM exporters.
+
+<!-- ticket:T-0055 -->
+```yaml
+id: T-0055
+title: 'strata kernel data model: Node/Flow/Boundary/Bound/Claim/Scenario'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0048
+parent: T-0049
+scope:
+- src/frob/strata/**
+- tests/unit/strata/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Frozen pydantic models for the 6 primitives; flows carry payload label, rate, size, age and may be conditioned on phase/outcome (on Ok / on Err / in parse). Law 1: every surface construct must desugar to these.
+
+<!-- ticket:T-0056 -->
+```yaml
+id: T-0056
+title: strata fact base + semi-naive Datalog closure engine
+state: queued
+kind: feature
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0055
+parent: T-0049
+scope:
+- src/frob/strata/**
+- tests/unit/strata/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Tuple store + fixpoint closure (reach/taint over lattices). Pure Python; port to strata-core when litmus models make it slow.
+
+<!-- ticket:T-0057 -->
+```yaml
+id: T-0057
+title: 'strata claim evaluation: noflow/bound/reach with counterexample traces'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0056
+parent: T-0049
+scope:
+- src/frob/strata/**
+- tests/unit/strata/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Verdicts PROVED/EVIDENCED/ASSUMED/REFUTED, quantifier-tagged (forall/exists); every REFUTED carries a path or a number, never a vibe. Interval arithmetic for bounds; z3 only for nonlinear.
+
+<!-- ticket:T-0058 -->
+```yaml
+id: T-0058
+title: strata payments litmus as kernel facts + golden findings
+state: queued
+kind: feature
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0057
+parent: T-0049
+scope:
+- tests/unit/strata/**
+- design/litmus/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Hand-written kernel facts for the Stripe-shaped model; goldens: foreign-response endorsement gap, stale-replica refund path, webhook idempotency. Phase-0 exit criterion.
+
+<!-- ticket:T-0059 -->
+```yaml
+id: T-0059
+title: strata lexer + recursive-descent parser (pydantic AST, Result diagnostics)
+state: queued
+kind: feature
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0049
+parent: T-0050
+scope:
+- src/frob/strata/**
+- tests/unit/strata/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Hand-rolled parser for the surface grammar in docs/strata/surface.md; units as lexed token classes; diagnostics as typani Results with spans.
+
+<!-- ticket:T-0060 -->
+```yaml
+id: T-0060
+title: strata elaborator framework + std.trust vocabulary
+state: queued
+kind: feature
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0049
+parent: T-0050
+scope:
+- src/frob/strata/**
+- tests/unit/strata/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Vocabularies are pure functions surface->kernel facts; the prover never learns domain words. std.trust: lattices, principals, components, channels, endorse/declassify boundaries.
+
+<!-- ticket:T-0061 -->
+```yaml
+id: T-0061
+title: 'strata assert/assume: owner, expiry, verdict report'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0049
+parent: T-0050
+scope:
+- src/frob/strata/**
+- tests/unit/strata/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Assumption ledger (named, owned, expiring; overdue = gate failure); report renders per-claim verdict + quantifier + evidence rung.
+
+<!-- ticket:T-0062 -->
+```yaml
+id: T-0062
+title: 'strata refinement: abstract components, refine blocks, faithfulness'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0049
+parent: T-0050
+scope:
+- src/frob/strata/**
+- tests/unit/strata/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Three faithfulness checks: no new external surface, no trust laundering, budget distribution. Policies inherit downward monotonically; code binding legal only on leaves.
+
+<!-- ticket:T-0063 -->
+```yaml
+id: T-0063
+title: strata payments litmus in surface syntax + CI goldens
+state: queued
+kind: feature
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0049
+parent: T-0050
+scope:
+- design/litmus/**
+- tests/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+design/litmus/payments.strata reproduces phase-0 findings end to end through parser+elaborator; goldens wired into CI. Phase-1 exit criterion.
+
+<!-- ticket:T-0064 -->
+```yaml
+id: T-0064
+title: 'strata std.infra: store/cache/queue/cdn/balancer elaboration'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0050
+parent: T-0051
+scope:
+- src/frob/strata/**
+- tests/unit/strata/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Caches are derived views: mandatory source-of-truth + invalidation edge + staleness bound; queues carry delivery semantics; delivery x idempotency join; managed components skip tier-2.
+
+<!-- ticket:T-0065 -->
+```yaml
+id: T-0065
+title: strata age/staleness propagation (TTL = rotation = RPO = expiry)
+state: queued
+kind: feature
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0050
+parent: T-0051
+scope:
+- src/frob/strata/**
+- tests/unit/strata/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+One age metric propagated along read paths; freshness requirements proved or refuted with the accumulating path.
+
+<!-- ticket:T-0066 -->
+```yaml
+id: T-0066
+title: 'strata capacity arithmetic: utilization, fanout, skew, growth horizons'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0050
+parent: T-0051
+scope:
+- src/frob/strata/**
+- tests/unit/strata/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Demand propagation with fanout multipliers and zipf skew (check hottest shard, not mean); cold/degraded modes; saturation-date diagnostics; measured capacities bind to frob.perf stamps.
+
+<!-- ticket:T-0067 -->
+```yaml
+id: T-0067
+title: 'strata policy sublanguage: 5 forms, semantic scoping, tree-sitter compilation'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0050
+parent: T-0051
+scope:
+- src/frob/strata/**
+- src/frob/policy/**
+- tests/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+forbid/confine/at-require/mediate/structural, scoped over the model (trust level, component, label) and resolved to files via code globs; compiles to per-language tree-sitter queries; extends existing POL machinery.
+
+<!-- ticket:T-0068 -->
+```yaml
+id: T-0068
+title: strata std.policy.analyzable base pack + enables soundness cascade
+state: queued
+kind: security
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0050
+parent: T-0051
+scope:
+- src/frob/strata/**
+- tests/**
+evidence: []
+attachments: []
+acceptance: []
+threat: elevation-of-privilege
+```
+Mandatory for trusted components: no eval/exec/dynamic import/reflection dispatch, FFI only via frob bind, anti-aliasing rules. Policies declare enables; waiving one downgrades every dependent claim PROVED -> ASSUMED automatically.
+
+<!-- ticket:T-0069 -->
+```yaml
+id: T-0069
+title: strata six-phase boundaries + outcome-conditioned frames
+state: queued
+kind: feature
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0050
+parent: T-0051
+scope:
+- src/frob/strata/**
+- tests/unit/strata/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+admit/parse/judge/effect/record/refuse with per-phase frames and label rules; no-effects-before-judgment; refusal frame is audit-only; error responses are labeled egress flows; modifies-on-Ok/Err claims.
+
+<!-- ticket:T-0070 -->
+```yaml
+id: T-0070
+title: strata errors-total, panics-contained, observe blocks (ERR/OBS gates)
+state: queued
+kind: feature
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0050
+parent: T-0051
+scope:
+- src/frob/strata/**
+- tests/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Exhaustive ErrorSet consumption + variant liveness + no-discarded-Result (graph join); per-language panic chokepoints; observe = obligated labeled flows to an observability node; log rules enable detection SLAs via the cascade.
+
+<!-- ticket:T-0071 -->
+```yaml
+id: T-0071
+title: 'strata-core: independent Rust/PyO3 kernel crate (closure + propagation)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0050
+parent: T-0051
+scope:
+- strata-core/**
+- Makefile
+- .github/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Own crate mirroring the frob-core maturin pattern; NOT shared with lithos (inspiration only). Kernels: fixpoint closure, staleness/capacity propagation over big models. No pure-Python fallback once adopted.
+
+<!-- ticket:T-0072 -->
+```yaml
+id: T-0072
+title: strata tube + chirp litmus models + goldens
+state: queued
+kind: feature
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0050
+parent: T-0051
+scope:
+- design/litmus/**
+- tests/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Tube: stampede/cold-cache, immutable-TTL pairing, CDN declassification, payout-vs-approximate-counter. Chirp: fanout write ceiling under zipf skew forcing the hybrid. Phase-2 exit criterion.
+
+<!-- ticket:T-0073 -->
+```yaml
+id: T-0073
+title: 'strata scenario engine: node loss, rate surge, trust downgrade'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0051
+parent: T-0052
+scope:
+- src/frob/strata/**
+- tests/unit/strata/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Scenario = counterfactual model rewrite; all claims re-checked under it; quorum/placement arithmetic; retry-storm multipliers.
+
+<!-- ticket:T-0074 -->
+```yaml
+id: T-0074
+title: 'strata crash contracts: on-crash, no-hang check, crash-retry-idempotency join'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0051
+parent: T-0052
+scope:
+- src/frob/strata/**
+- tests/unit/strata/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Crash-only contracts desugar to auto scenarios + bounds; every caller of a crashable component must declare a compatible timeout; crash+retry implies at-least-once implies idempotency demand downstream.
+
+<!-- ticket:T-0075 -->
+```yaml
+id: T-0075
+title: 'strata atomic/saga: cross-store refusal + fault-injection generation'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0051
+parent: T-0052
+scope:
+- src/frob/strata/**
+- tests/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+modifies {} on Err via stage-commit (infallible-commit decidable from Result graph), immutable swap, tx chokepoint, WAL; atomic claims spanning stores refused without saga/2PC; generated exhaustive fault-injection property tests from closed ErrorSets.
+
+<!-- ticket:T-0076 -->
+```yaml
+id: T-0076
+title: 'strata breach scenarios: blast radius + recovery-path independence'
+state: queued
+kind: security
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0051
+parent: T-0052
+scope:
+- src/frob/strata/**
+- tests/unit/strata/**
+evidence: []
+attachments: []
+acceptance: []
+threat: info-disclosure
+```
+trust(X) := foreign rewrite; reachability = blast radius; containment bounds (credential age, revocation SLA, detection SLA); assert independent(recovery path, compromised node).
+
+<!-- ticket:T-0077 -->
+```yaml
+id: T-0077
+title: 'strata as 6th frob.lang grammar: design constructs become graph symbols'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0052
+parent: T-0053
+scope:
+- src/frob/lang/**
+- src/frob/strata/**
+- tests/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+ParsedFile contract over .strata: components/boundaries/claims get qualnames, sig/body digests, acks, DRIFT, frob:doc edges, COV obligations -- the whole existing machinery for free.
+
+<!-- ticket:T-0078 -->
+```yaml
+id: T-0078
+title: 'strata code binding: code globs + import-level conformance'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0052
+parent: T-0053
+scope:
+- src/frob/strata/**
+- src/frob/gates/**
+- tests/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Undeclared cross-component import = SYS violation with file:line; unclassified code is foreign by default; reflexion-model tier.
+
+<!-- ticket:T-0079 -->
+```yaml
+id: T-0079
+title: 'strata effect extraction: net/fs/exec facts vs may-capabilities'
+state: queued
+kind: security
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0052
+parent: T-0053
+scope:
+- src/frob/lang/**
+- src/frob/strata/**
+- tests/**
+evidence: []
+attachments: []
+acceptance: []
+threat: tampering
+```
+Per-language extraction of socket/http/fs/subprocess surfaces; an effect with no may clause in its component fails; sound given std.policy.analyzable (tracked via enables).
+
+<!-- ticket:T-0080 -->
+```yaml
+id: T-0080
+title: strata directives (frob:channel/boundary/secret) + SYS gates in run_gates
+state: queued
+kind: feature
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0052
+parent: T-0053
+scope:
+- src/frob/graph/**
+- src/frob/gates/**
+- src/frob/strata/**
+- tests/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Call sites bind to kernel edges; SYS001.. family joins model, graph, and evidence in frob check with severity dial + waivers + remedies.
+
+<!-- ticket:T-0081 -->
+```yaml
+id: T-0081
+title: 'strata self-hosting: design/frob.strata models frob itself'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0052
+parent: T-0053
+scope:
+- design/**
+- frob.toml
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+frob declares its own components (lang/graph/gates/tickets/check), trust levels, and module-dependency architecture in strata and gates on it. Phase-4 exit criterion; supersedes the informal docs/rework.md dependency diagram as enforced truth.
+
+<!-- ticket:T-0082 -->
+```yaml
+id: T-0082
+title: 'strata std.secrets: credentials as cache-of-authority'
+state: queued
+kind: security
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0053
+parent: T-0054
+scope:
+- src/frob/strata/**
+- tests/**
+evidence: []
+attachments: []
+acceptance: []
+threat: info-disclosure
+```
+issued-by/audience/lifetime/revocation; no credential without a revocation edge (same rule as cache invalidation); readers() as exact-set closure; secret-in-logs/repo/artifact become label violations.
+
+<!-- ticket:T-0083 -->
+```yaml
+id: T-0083
+title: 'strata std.deploy: endorsement pipeline, canary schedules, rollback budgets'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0053
+parent: T-0054
+scope:
+- src/frob/strata/**
+- tests/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Review/build/admit as endorsement boundaries on code-as-data (SLSA falls out); noflow(unreviewed -> prod); staged rate bounds; frob vet as the endorsement evidence for third-party code.
+
+<!-- ticket:T-0084 -->
+```yaml
+id: T-0084
+title: 'strata frob sys plan: obligation -> ticket compiler'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0053
+parent: T-0054
+scope:
+- src/frob/strata/**
+- src/frob/tickets/**
+- tests/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+REFUTED claims, undischarged obligations, expiring assumes become scoped tickets (scope from counterexample paths, blocked_by from proof dependencies, STRIDE prefilled); idempotent re-planning; sys tickets close only when the claim discharges at the required rung.
+
+<!-- ticket:T-0085 -->
+```yaml
+id: T-0085
+title: strata frob sys doc + DOC002 claims audit
+state: queued
+kind: feature
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0053
+parent: T-0054
+scope:
+- src/frob/strata/**
+- src/frob/docs/**
+- tests/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Generated reference (prose + mermaid topology) per module; guarantee-shaped prose in docs must cite a PROVED claim via frob:claim anchors; overclaiming documentation becomes a build failure.
+
+<!-- ticket:T-0086 -->
+```yaml
+id: T-0086
+title: 'strata exporters: k8s netpol / seccomp / IAM from the model'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0053
+parent: T-0054
+scope:
+- src/frob/strata/**
+- tests/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+The model compiles to runtime enforcement so static proofs are backed by defense-in-depth that cannot diverge; exported artifacts digest-stamped as evidence.
