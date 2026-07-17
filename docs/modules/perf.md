@@ -104,7 +104,7 @@ class PerfError(ErrorSet):
 - **Loop-context detection is lexical, one level deep -- and, as
   implemented, function-granularity.** `frob.lang`'s leaf-token stream
   (`RawSymbol.body_tokens`, `frob.lang._common.leaf_tokens`) is
-  whitespace-insensitive by design (docs/graph.md's digest contract
+  whitespace-insensitive by design (docs/modules/graph.md's digest contract
   depends on it), which means it also carries no line numbers and no
   block-nesting structure -- there is no INDENT/DEDENT leaf in tree-
   sitter's Python grammar to lean on. `perf_rules` therefore approximates
@@ -147,7 +147,7 @@ class PerfError(ErrorSet):
     unrelated `.sort` identifiers in those grammars and are cut for 0.1.0
     rather than shipped as a false-positive-prone guess.
   - C and C++ are not covered: `frob.lang` supports parsing them, but
-    docs/perf.md's rule table has no C/C++ row (no idiomatic linear-scan
+    docs/modules/perf.md's rule table has no C/C++ row (no idiomatic linear-scan
     literal to key off), so `perf_rules` never fires for those languages.
 - **Size-blindness is why PERF defaults to warn.** The gate cannot know
   n=3 from n=28000; the heat-map join is what upgrades a warning into

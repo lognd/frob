@@ -1,4 +1,4 @@
-"""Tests for frob.graph.lock -- acknowledgement and drift (docs/graph.md)."""
+"""Tests for frob.graph.lock -- acknowledgement and drift (docs/modules/graph.md)."""
 
 from __future__ import annotations
 

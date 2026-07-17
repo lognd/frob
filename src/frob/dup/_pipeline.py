@@ -1,6 +1,6 @@
 """The smart-dup pipeline: fingerprint -> candidates -> verify -> report.
 
-Implements docs/dup.md's `find_clones` across the full rung ladder:
+Implements docs/modules/dup.md's `find_clones` across the full rung ladder:
 
 - R1 (exact token hash) and R2 (alpha-renamed token hash) are pure Python,
   always available -- they operate directly on `frob.lang`'s
@@ -8,16 +8,16 @@ Implements docs/dup.md's `find_clones` across the full rung ladder:
 - R3 (canonicalized subtree hash), R4 (winnowed fingerprints + candidate
   discovery + statement-alignment verification), and R5 (Weisfeiler-Lehman
   dataflow-graph hashing) all need the `frob_core` native extension. Per
-  docs/dup.md's no-silent-fallback rule there is no pure-Python
+  docs/modules/dup.md's no-silent-fallback rule there is no pure-Python
   reimplementation of R3+ to fall back on: `find_clones` treats the whole
   ladder as one call and returns `Err(DupError.CoreUnavailable)` up front
   when `frob_core` is not importable.
 - R6 (`probe_equivalence`) is opt-in and orchestrated separately -- it is
   never called from `find_clones`/the DUP gate path, only from a caller
-  that explicitly wants behavioral probing (docs/dup.md: "opt-in --probe
+  that explicitly wants behavioral probing (docs/modules/dup.md: "opt-in --probe
   path").
 
-**Deviations from docs/dup.md** (recorded, not silently dropped):
+**Deviations from docs/modules/dup.md** (recorded, not silently dropped):
 - R2's alpha-renaming abstracts every identifier-shaped token uniformly
   (no scope/locals distinction), because `frob.lang.RawSymbol.body_tokens`
   is a flat leaf-token tuple with no node-type metadata attached -- unlike
@@ -60,7 +60,7 @@ Implements docs/dup.md's `find_clones` across the full rung ladder:
   T-0001` follow-up. `_build_dataflow_graph` (the original co-occurrence
   proxy) is kept as the fallback for regions where no `block` node is
   found (non-function regions, parse failures).
-- **R7 (`probe_smt_equivalence`) is the bounded-SMT rung** docs/dup.md
+- **R7 (`probe_smt_equivalence`) is the bounded-SMT rung** docs/modules/dup.md
   named as a research item, now real for its explicitly bounded subset:
   single-`return`, int/bool-annotated, straight-line functions built from
   `+ - * // %`, comparisons, `and/or/not`, and one `if`-expression --
@@ -314,7 +314,7 @@ def _region_span_for_alignment(
     """The contiguous line subrange covering `matched_indices` of `total` statements.
 
     Falls back to the whole `span` when there is nothing to narrow (region-
-    subsection matching per docs/dup.md: a subsection hit should report a
+    subsection matching per docs/modules/dup.md: a subsection hit should report a
     tighter span than the whole symbol whenever the alignment does not
     cover every statement).
     """
@@ -326,7 +326,7 @@ def _region_span_for_alignment(
     return (min(lo, hi), max(lo, hi))
 
 
-# frob:doc docs/dup.md#pipeline
+# frob:doc docs/modules/dup.md#pipeline
 def touched_refs(snapshot: GraphSnapshot, diff: Diff) -> frozenset[str]:
     """Symrefs in `snapshot` whose span overlaps a `diff` hunk (the "new side")."""
     touched: set[str] = set()
@@ -905,7 +905,7 @@ def _r5_groups(
     return [tuple(r5_group)] if r5_group else []
 
 
-# frob:doc docs/dup.md#public-api
+# frob:doc docs/modules/dup.md#public-api
 def find_clones(
     snapshot: GraphSnapshot, cfg: DupConfig, diff: Diff | None = None
 ) -> Result[CloneReport, DupError]:
@@ -1010,7 +1010,7 @@ def _load_python_callable(root: Path, path: str, qualname: str) -> Any | None:
     return obj if callable(obj) else None
 
 
-# frob:doc docs/dup.md#public-api
+# frob:doc docs/modules/dup.md#public-api
 def probe_equivalence(
     a: str, b: str, snapshot: GraphSnapshot, budget_s: float
 ) -> Result[ProbeVerdict, DupError]:
@@ -1293,11 +1293,11 @@ def _smt_function_expr(source: str, z3: Any) -> tuple[Any, list[Any]] | None:
     return expr, params
 
 
-# frob:doc docs/dup.md#rung-r7
+# frob:doc docs/modules/dup.md#rung-r7
 def probe_smt_equivalence(
     a: str, b: str, snapshot: GraphSnapshot
 ) -> Result[ProbeVerdict, DupError]:
-    """R7 (opt-in, research-frontier per docs/dup.md): bounded-SMT formal
+    """R7 (opt-in, research-frontier per docs/modules/dup.md): bounded-SMT formal
     equivalence for tiny pure int/bool functions, via z3-solver.
 
     Degrades to `Err(SmtUnavailable)` when `z3-solver` is not installed

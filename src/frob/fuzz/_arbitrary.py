@@ -1,4 +1,5 @@
-"""The Arbitrary protocol: derived, declared, and registered generators (docs/fuzz.md).
+"""The Arbitrary protocol: derived, declared, and registered generators
+(docs/modules/fuzz.md).
 
 A type becomes generatable exactly one of three ways, resolved by
 `resolve`: a `__fuzz__()` classmethod (declared -- the escape hatch for
@@ -40,7 +41,7 @@ except ImportError:  # pragma: no cover - exercised only where hypothesis is abs
 _REGISTRY: dict[type, object] = {}
 
 
-# frob:doc docs/fuzz.md#public-api
+# frob:doc docs/modules/fuzz.md#public-api
 def register(tp: type, strategy: object) -> None:
     """Register `strategy` (a hypothesis `SearchStrategy`) as the generator for `tp`."""
     _log.info("register: %s -> %r", tp, strategy)
@@ -108,11 +109,11 @@ def _derived_strategy(tp: type[BaseModel]) -> Result[object, FuzzError]:
     return Ok(_validated())
 
 
-# frob:doc docs/fuzz.md#public-api
+# frob:doc docs/modules/fuzz.md#public-api
 def resolve(tp: type) -> Result[object, FuzzError]:
     """Derived -> declared -> registered; `Err(NoGenerator)` otherwise.
 
-    Deviation from docs/fuzz.md's literal 1-2-3 ordering: `__fuzz__()` is
+    Deviation from docs/modules/fuzz.md's literal 1-2-3 ordering: `__fuzz__()` is
     checked *before* pydantic derivation, not after. The design-decisions
     section frames the declared classmethod as the escape hatch for models
     "where rejection sampling can't hit efficiently" -- if derivation were

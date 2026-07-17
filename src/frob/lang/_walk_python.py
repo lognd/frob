@@ -1,4 +1,4 @@
-"""Python symbol walker (docs/lang.md extraction table).
+"""Python symbol walker (docs/modules/lang.md extraction table).
 
 Python's declaration vocabulary (docstring-as-first-statement,
 `decorated_definition` wrappers, SCREAMING_CASE module constants) is kept

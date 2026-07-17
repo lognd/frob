@@ -1,4 +1,5 @@
-"""Extraction dispatch: symbols, comments, imports, and identifiers (docs/lang.md).
+"""Extraction dispatch: symbols, comments, imports, and identifiers
+(docs/modules/lang.md).
 
 Five grammars, five node vocabularies -- python's docstring-as-first-
 statement has no analogue in rust's `///`-comment-above-item convention, and
@@ -60,7 +61,7 @@ _WALKERS = {
 }
 
 
-# frob:doc docs/lang.md#extraction-api
+# frob:doc docs/modules/lang.md#extraction-api
 def extract(
     tree: Tree, source: bytes, language: str
 ) -> tuple[tuple[RawSymbol, ...], tuple[RawComment, ...]]:
@@ -137,7 +138,7 @@ def _find_following(
 # frob.cycle needs raw import/include specifiers (unresolved -- "os.path",
 # "local.h") to build its dependency graph; this is a second, narrower walk
 # per language, kept here next to the symbol walkers so cycle detection
-# never has to touch tree-sitter nodes directly (docs/lang.md).
+# never has to touch tree-sitter nodes directly (docs/modules/lang.md).
 
 
 def _python_import_specifiers(n: Node) -> list[str]:
@@ -191,7 +192,7 @@ _IMPORT_WALKERS = {
 }
 
 
-# frob:doc docs/lang.md#extraction-api
+# frob:doc docs/modules/lang.md#extraction-api
 def extract_imports(tree: Tree, language: str) -> tuple[str, ...]:
     """Raw import/include specifiers for `language` (empty tuple if unsupported)."""
     walker = _IMPORT_WALKERS.get(language)
@@ -213,7 +214,7 @@ _IDENTIFIER_TYPES: dict[str, frozenset[str]] = {
 }
 
 
-# frob:doc docs/lang.md#extraction-api
+# frob:doc docs/modules/lang.md#extraction-api
 def iter_identifiers(tree: Tree, language: str) -> tuple[tuple[str, int], ...]:
     """(name, 1-based line) for every identifier-like leaf (empty if unsupported)."""
     types = _IDENTIFIER_TYPES.get(language)

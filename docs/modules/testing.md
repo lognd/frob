@@ -5,7 +5,7 @@ touched (diff vs base), selects every test obligated to those symbols via
 the obligation graph, and runs them through per-language runners -- so "run
 the right tests" is one command in any repo, any language, any worktree.
 
-This is the executable counterpart of the TEST gate family (docs/gates.md):
+This is the executable counterpart of the TEST gate family (docs/modules/gates.md):
 the gates prove the bindings exist; `frob test` runs the bound tests.
 
 ## Selection algorithm
@@ -213,7 +213,7 @@ first-class target, not an afterthought:
 
 - **One git seam (`frob.gitio`)**, shared by gates and testing. The gates
   design's `gates/diff.py` is superseded by this module -- two diff
-  implementations would desync (docs/gates.md updated accordingly).
+  implementations would desync (docs/modules/gates.md updated accordingly).
 - **Selection is graph-driven, not coverage-driven.** Coverage maps tell
   you what code a test ran last time; the graph tells you what a test is
   FOR. Declared bindings survive refactors and work identically across

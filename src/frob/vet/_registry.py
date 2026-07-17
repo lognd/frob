@@ -1,7 +1,7 @@
 """Registry publish-date lookups (VET011 cooldown) with a 24h sqlite cache.
 
 Network calls: 5s timeout, degrade to a WARN on any failure (offline must
-never hard-block -- docs/vet.md VET011). `[vet].registry_base_url` swaps the
+never hard-block -- docs/modules/vet.md VET011). `[vet].registry_base_url` swaps the
 host for tests; the path suffix per ecosystem is identical to the real
 registry so parsing logic is shared between real and fake responses.
 """
@@ -30,7 +30,7 @@ _NPM_HOST = "https://registry.npmjs.org"
 _CRATES_HOST = "https://crates.io"
 
 
-# frob:doc docs/vet.md#public-api
+# frob:doc docs/modules/vet.md#public-api
 class RegistryResult(BaseModel):
     """Outcome of a publish-date lookup: `ok=False` means "could not verify"."""
 
@@ -189,7 +189,7 @@ def _result_from_network(
     return RegistryResult(ok=True, published_at=published, resolved_version=resolved)
 
 
-# frob:doc docs/vet.md#public-api
+# frob:doc docs/modules/vet.md#public-api
 def fetch_publish_date(
     ecosystem: str,
     name: str,

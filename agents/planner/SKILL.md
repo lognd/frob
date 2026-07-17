@@ -60,7 +60,7 @@ Ticket tree for: <goal>
 T-0040 (parent, feature) "..."
   T-0041 (feature) "..." scope=src/frob/graph/** blocked_by=[]
   T-0042 (feature) "..." scope=src/frob/graph/lock.py blocked_by=[T-0041]
-  T-0043 (docs) "..." scope=docs/graph.md blocked_by=[T-0042]
+  T-0043 (docs) "..." scope=docs/modules/graph.md blocked_by=[T-0042]
 ```
 
 List every created id. This is the only handoff to the rest of the stack --

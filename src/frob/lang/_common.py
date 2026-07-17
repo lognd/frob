@@ -3,7 +3,7 @@
 Every grammar tree-sitter hands back is formatting-insensitive at the leaf
 level: whitespace is never itself a node. That single property is what lets
 ``leaf_tokens`` double as the entire "normalized token" story for the sig/
-body digest contract in docs/graph.md -- no per-language pretty-printer is
+body digest contract in docs/modules/graph.md -- no per-language pretty-printer is
 needed, only a byte-range exclusion list (a symbol's own body, a docstring
 statement) and a comment-type-name set. Keeping that trick here, instead of
 re-deriving it in each of the five per-language walkers in ``_extract.py``,
@@ -28,7 +28,7 @@ ByteRange = tuple[int, int]
 _MAX_EXPORT_NODES = 4000
 
 
-# frob:doc docs/lang.md#primitives
+# frob:doc docs/modules/lang.md#primitives
 def collapse_ws(text: str) -> str:
     """Whitespace-collapse doc text so reflow never changes ``doc_text``."""
     return " ".join(text.split())
@@ -49,7 +49,7 @@ def _in_skip_range(node: Node, skip_ranges: tuple[ByteRange, ...]) -> bool:
     return False
 
 
-# frob:doc docs/lang.md#primitives
+# frob:doc docs/modules/lang.md#primitives
 def leaf_tokens(
     node: Node,
     comment_types: frozenset[str],
@@ -81,7 +81,7 @@ def leaf_tokens(
     return tuple(tokens)
 
 
-# frob:doc docs/lang.md#primitives
+# frob:doc docs/modules/lang.md#primitives
 def strip_comment_delims(raw: str) -> str:
     """Strip `//`, `///`, `/* */`, `/** */`, and leading `*` from one comment."""
     text = raw.strip()
@@ -108,7 +108,7 @@ def strip_comment_delims(raw: str) -> str:
     return " ".join(lines)
 
 
-# frob:doc docs/lang.md#primitives
+# frob:doc docs/modules/lang.md#primitives
 def leading_doc_comment(
     node: Node,
     comment_types: frozenset[str],
@@ -140,7 +140,7 @@ def leading_doc_comment(
     return collapse_ws(" ".join(collected))
 
 
-# frob:doc docs/lang.md#primitives
+# frob:doc docs/modules/lang.md#primitives
 def span_of(node: Node) -> tuple[int, int]:
     """1-based inclusive (start_line, end_line) span for `node`.
 
@@ -155,7 +155,7 @@ def span_of(node: Node) -> tuple[int, int]:
     return (node.start_point[0] + 1, end_row + 1)
 
 
-# frob:doc docs/lang.md#primitives
+# frob:doc docs/modules/lang.md#primitives
 def child_text(node: Node | None) -> str:
     """Decode a node's own text, or '' if the node is absent -- a programmer
     convenience for optional field lookups (missing name is a grammar bug,
@@ -165,7 +165,7 @@ def child_text(node: Node | None) -> str:
     return node.text.decode("utf-8", errors="replace")
 
 
-# frob:doc docs/lang.md#primitives
+# frob:doc docs/modules/lang.md#primitives
 def export_tree(node: Node, comment_types: frozenset[str]) -> TreeNode:
     """A `TreeNode` snapshot of `node`'s subtree, comments stripped.
 
@@ -201,7 +201,7 @@ def _leaf_tree_node(n: Node) -> TreeNode:
     return TreeNode(label=n.type)
 
 
-# frob:doc docs/lang.md#primitives
+# frob:doc docs/modules/lang.md#primitives
 def flatten_tree(node: TreeNode) -> tuple[list[str], list[int]]:
     """`(labels, parents)` flat arrays for `frob_core.apted_similarity`.
 
@@ -257,7 +257,7 @@ def _cpp_class_methods(node: Node) -> list[tuple[Node, str]]:
     return out
 
 
-# frob:doc docs/lang.md#primitives
+# frob:doc docs/modules/lang.md#primitives
 def iter_cpp_functions(root: Node) -> tuple[tuple[Node, str], ...]:
     """(node, qualified_name) for every C/C++ function under `root`.
 

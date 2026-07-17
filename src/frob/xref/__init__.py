@@ -9,32 +9,32 @@ from typani.result import Result
 from frob.lang import RawSymbol, SymbolKind, iter_identifiers, parse_file
 
 
-# frob:doc docs/xref.md#public-api
+# frob:doc docs/commands/xref.md#public-api
 class XrefError(ErrorSet):
     NoFilesFound = "No source files found under the given path"
 
 
-# frob:doc docs/xref.md#public-api
+# frob:doc docs/commands/xref.md#public-api
 class Definition(BaseModel):
     file: str
     line: int
 
 
-# frob:doc docs/xref.md#public-api
+# frob:doc docs/commands/xref.md#public-api
 class Usage(BaseModel):
     file: str
     line: int
     context: str
 
 
-# frob:doc docs/xref.md#public-api
+# frob:doc docs/commands/xref.md#public-api
 class XrefResult(BaseModel):
     symbol: str
     definition: Definition | None
     usages: list[Usage]
 
     def as_text(self, cross_file: bool = False) -> str:
-        # frob:doc docs/xref.md#public-api
+        # frob:doc docs/commands/xref.md#public-api
         parts = [self.symbol]
         if self.definition:
             parts.append(f"  defined:  {self.definition.file}:{self.definition.line}")
@@ -62,7 +62,7 @@ class XrefResult(BaseModel):
         return "\n".join(parts)
 
     def as_json(self) -> str:
-        # frob:doc docs/xref.md#public-api
+        # frob:doc docs/commands/xref.md#public-api
         return self.model_dump_json(indent=2)
 
 
@@ -72,7 +72,7 @@ _SOURCE_EXTS = _PY_EXTS | _CPP_EXTS
 _LANG_EXTS = {"python": _PY_EXTS, "c": _CPP_EXTS, "cpp": _CPP_EXTS}
 
 
-# frob:doc docs/xref.md#public-api
+# frob:doc docs/commands/xref.md#public-api
 def xref(
     symbol: str,
     root: Path,

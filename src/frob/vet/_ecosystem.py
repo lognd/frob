@@ -1,4 +1,4 @@
-"""Cheap per-ecosystem rules (docs/vet.md "Python, Rust, C/C++: same care,
+"""Cheap per-ecosystem rules (docs/modules/vet.md "Python, Rust, C/C++: same care,
 ecosystem-shaped" + "JavaScript/TypeScript: first-priority ecosystem").
 
 Each function takes a located local source directory (see `_source.py`) and
@@ -91,7 +91,7 @@ def _pickle_violation(
     )
 
 
-# frob:doc docs/vet.md#public-api
+# frob:doc docs/modules/vet.md#public-api
 def python_rules(
     dep: Dependency, source_dir: Path, lockfile_name: str
 ) -> list[Violation]:
@@ -156,7 +156,7 @@ def _proc_macro_violation(
     )
 
 
-# frob:doc docs/vet.md#public-api
+# frob:doc docs/modules/vet.md#public-api
 def rust_rules(
     dep: Dependency, source_dir: Path, lockfile_name: str
 ) -> list[Violation]:
@@ -174,7 +174,7 @@ def rust_rules(
     return [v for v in candidates if v is not None]
 
 
-# frob:doc docs/vet.md#public-api
+# frob:doc docs/modules/vet.md#public-api
 def npm_non_registry_rule(dep: Dependency, lockfile_name: str) -> Violation | None:
     """VET-JS004: git/http/file dependency sources are declarable-only."""
     if not dep.resolved:

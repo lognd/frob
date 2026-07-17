@@ -78,7 +78,7 @@ def _run_extract(cfg: AppConfig, path: Path) -> None:
         _log.info("")
 
 
-# frob:doc docs/app.md#runners
+# frob:doc docs/modules/app.md#runners
 def run(cfg: AppConfig) -> None:
     path = cfg.docs_path
     if path is None:

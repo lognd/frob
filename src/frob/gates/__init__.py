@@ -1,4 +1,4 @@
-"""frob.gates -- enforcement gates, policy, and invariants (docs/gates.md).
+"""frob.gates -- enforcement gates, policy, and invariants (docs/modules/gates.md).
 
 The drift half (nothing declared is silently broken) and the coverage half
 (nothing new escapes declaration) meet here. Per docs/rework.md's cycle-
@@ -303,7 +303,7 @@ def _apply_waivers(
     return tuple(kept), tuple(waived)
 
 
-# frob:doc docs/gates.md#public-api
+# frob:doc docs/modules/gates.md#public-api
 # frob:uses-contract src/frob/graph/__init__.py::build_graph
 # frob:uses-contract src/frob/graph/lock.py::drift
 # frob:uses-contract src/frob/tickets/__init__.py::load_queue
@@ -356,7 +356,7 @@ def _apply_severity_overrides(
 _BRANCH_TICKET_RE = re.compile(r"^(T-\d{4})-")
 
 
-# frob:doc docs/gates.md#public-api
+# frob:doc docs/modules/gates.md#public-api
 def active_ticket(root: Path, explicit: str | None) -> Option[str]:
     """`--ticket` wins; else the branch name matching `^(T-\\d{4})-`; else Nothing."""
     if explicit:
@@ -429,7 +429,7 @@ def _drift002(report) -> list[Violation]:  # noqa: ANN001
     return violations
 
 
-# frob:doc docs/gates.md#public-api
+# frob:doc docs/modules/gates.md#public-api
 def drift_gate(snapshot: GraphSnapshot, lock: LockFile) -> tuple[Violation, ...]:
     """DRIFT001 (stale ack) and DRIFT002 (dangling edge endpoint)."""
     report = _graph_drift(lock, snapshot)
@@ -441,7 +441,7 @@ def drift_gate(snapshot: GraphSnapshot, lock: LockFile) -> tuple[Violation, ...]
 # ---------------------------------------------------------------------------
 
 
-# frob:doc docs/gates.md#public-api
+# frob:doc docs/modules/gates.md#public-api
 def coverage_gate(
     snapshot: GraphSnapshot, queue: TicketQueue, diff: Diff, tests: CollectedTests
 ) -> tuple[Violation, ...]:
@@ -701,7 +701,7 @@ def _todo001(
 # ---------------------------------------------------------------------------
 
 
-# frob:doc docs/gates.md#public-api
+# frob:doc docs/modules/gates.md#public-api
 def scope_digest(scope: Sequence[str], snapshot: GraphSnapshot) -> str:
     """Sha256 over the sorted `(file, hash)` pairs of files matching `scope`.
 
@@ -727,7 +727,7 @@ def _scope_digest(ticket: Ticket, snapshot: GraphSnapshot) -> str:
     return scope_digest(ticket.scope, snapshot)
 
 
-# frob:doc docs/gates.md#public-api
+# frob:doc docs/modules/gates.md#public-api
 def scope_gate(
     diff: Diff, ticket: Ticket, snapshot: GraphSnapshot
 ) -> tuple[Violation, ...]:
@@ -773,13 +773,13 @@ def _pre001(ticket: Ticket, message: str) -> tuple[Violation, ...]:
     )
 
 
-# frob:doc docs/gates.md#public-api
+# frob:doc docs/modules/gates.md#public-api
 def prework_gate(
     ticket: Ticket, snapshot: GraphSnapshot, sweep: Option[PreworkSweep] = Nothing()
 ) -> tuple[Violation, ...]:
     """PRE001: ticket moved to in-progress without a recorded, current pre-work sweep.
 
-    **Deviation from docs/gates.md's exact signature** `(ticket, snapshot)`: the
+    **Deviation from docs/modules/gates.md's exact signature** `(ticket, snapshot)`: the
     sweep is loaded state (from `.frob/prework/<id>.json`, see gates/_prework.py),
     and gates must not perform IO, so `run_gates` loads it and passes it in as an
     optional third argument rather than this function reaching into the
@@ -844,7 +844,7 @@ def _inv002(inv: Invariant) -> Violation:
     )
 
 
-# frob:doc docs/gates.md#public-api
+# frob:doc docs/modules/gates.md#public-api
 def invariant_gate(
     invariants: tuple[Invariant, ...],
     snapshot: GraphSnapshot,
@@ -854,7 +854,7 @@ def invariant_gate(
     """INV001 (no evidence) and INV002 (no code anchor).
 
     **Deviation**: adds an optional `policy_rule_ids` parameter beyond
-    docs/gates.md's `(invariants, snapshot, tests)` signature so INV001 can
+    docs/modules/gates.md's `(invariants, snapshot, tests)` signature so INV001 can
     treat a loaded policy rule id as valid evidence, per the doc's own
     evidence-list example (`POL-no-direct-lock-write`); without it there
     would be no way for this pure function to see policy state at all.
@@ -983,7 +983,8 @@ def _test003(
 ) -> tuple[Violation, ...]:
     """TEST003: every package with public symbols owes `min_integration` edges.
 
-    **Interface derivation, alpha semantics**: docs/gates.md describes interfaces
+    **Interface derivation, alpha semantics**: docs/modules/gates.md describes
+    interfaces
     as "packages whose public symbols are imported by another package." The
     graph does not track cross-file import edges, so alpha instead treats every
     `src/<pkg>/<subpkg>` directory that contains at least one public symbol as
@@ -1296,7 +1297,7 @@ def _test006(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     return _test006_stale(stamp.get("file_hashes", {}), snapshot)
 
 
-# frob:doc docs/gates.md#public-api
+# frob:doc docs/modules/gates.md#public-api
 def test_gate(
     snapshot: GraphSnapshot,
     systems: tuple[SystemSpec, ...],
@@ -1364,7 +1365,7 @@ def _load_test_config(root: Path) -> tuple[TestPolicy, tuple[SystemSpec, ...]]:
     return policy, _load_systems(doc)
 
 
-# frob:doc docs/gates.md#public-api
+# frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-0004
 def decisions_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """DEC001/DEC002: decision records and their code anchors (T-0004).
@@ -1409,7 +1410,7 @@ def _dup_config(root: Path) -> tuple[bool, float]:
         return False, 0.85
 
 
-# frob:doc docs/gates.md#public-api
+# frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-0001
 def dup_gate(root: Path, snapshot: GraphSnapshot, diff) -> tuple[Violation, ...]:  # noqa: ANN001
     """DUP001/DUP002: the diff introduces a clone of an existing symbol.
@@ -1495,7 +1496,7 @@ def _rel001_version(manifest, snapshot, current_version):  # noqa: ANN001
     return bump, []
 
 
-# frob:doc docs/gates.md#public-api
+# frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-0003
 def release_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """REL001: the public-API change since the last `frob release stamp`
@@ -1553,7 +1554,7 @@ def _fuzz_enforce(root: Path):  # noqa: ANN202
     return enforce
 
 
-# frob:doc docs/gates.md#public-api
+# frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-0002
 def fuzz_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """FUZZ001/002/003 over the [fuzz] policy in frob.toml.
@@ -1675,7 +1676,7 @@ def _crawl_reachable(
 
 # frob:ticket T-0021
 # frob:ticket T-0028
-# frob:doc docs/gates.md#public-api
+# frob:doc docs/modules/gates.md#public-api
 def doclink_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """DOC001: a doc file nothing links to is an error -- orphan docs rot.
 
@@ -1713,10 +1714,10 @@ def doclink_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     return tuple(violations)
 
 
-# frob:doc docs/perf.md#integration-points
+# frob:doc docs/modules/perf.md#integration-points
 # frob:ticket T-0021
 def perf_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
-    """PERF001..PERF004, run at the policy/gates stage per docs/perf.md's
+    """PERF001..PERF004, run at the policy/gates stage per docs/modules/perf.md's
     Integration points. Parses every source file in `snapshot.file_hashes`
     (same posture as `frob.policy`'s `_pattern_violations`: gates does the
     IO, `frob.perf.perf_rules` stays pure) and hands the parsed set to
@@ -1971,7 +1972,7 @@ def _run_jobs(
     return violations, counts, timing
 
 
-# frob:doc docs/gates.md#public-api
+# frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-0021
 def run_gates(cfg: GateConfig) -> Result[GateReport, GateError]:
     """Load everything once, then run the selected gates in parallel and merge."""

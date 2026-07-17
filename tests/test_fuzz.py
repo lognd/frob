@@ -1,4 +1,4 @@
-"""Tests for frob.fuzz: Arbitrary protocol, obligations, and FUZZ001/002/003 (docs/fuzz.md)."""
+"""Tests for frob.fuzz: Arbitrary protocol, obligations, and FUZZ001/002/003 (docs/modules/fuzz.md)."""
 
 from __future__ import annotations
 

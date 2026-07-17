@@ -1,10 +1,10 @@
-"""Data shapes and errors for frob.vet (docs/vet.md is authoritative).
+"""Data shapes and errors for frob.vet (docs/modules/vet.md is authoritative).
 
 Covers the lockfile-conformance slice (VET001, VET011, VET-JS lifecycle
 scripts, typosquat distance, VET005 osv-scanner adapter) plus the T-0008
 capability-scan slice built on top of it: capability/obfuscation signals on
 `PackageVerdict`, `capability_diff` for VET003 escalation, and the ecosystem
-rules in `_ecosystem.py`. See "Implementation notes" in docs/vet.md for what
+rules in `_ecosystem.py`. See "Implementation notes" in docs/modules/vet.md for what
 of the full design (VET007-VET010, most of VET-C, dynamic detonation) is
 still out of scope.
 """
@@ -31,7 +31,7 @@ __all__ = [
 ]
 
 
-# frob:doc docs/vet.md#public-api
+# frob:doc docs/modules/vet.md#public-api
 class Dependency(BaseModel):
     """One (ecosystem, name, version) tuple resolved from a lockfile."""
 
@@ -46,7 +46,7 @@ class Dependency(BaseModel):
     resolved: str = ""
 
 
-# frob:doc docs/vet.md#public-api
+# frob:doc docs/modules/vet.md#public-api
 class PackageVerdict(BaseModel):
     """One package's MVP verdict: name/version plus whatever signals fired.
 
@@ -65,7 +65,7 @@ class PackageVerdict(BaseModel):
     signals: tuple[str, ...] = ()
 
 
-# frob:doc docs/vet.md#public-api
+# frob:doc docs/modules/vet.md#public-api
 class VetReport(BaseModel):
     """The merged result of a `frob vet` scan: per-package verdicts and violations."""
 
@@ -78,16 +78,16 @@ class VetReport(BaseModel):
     skipped: tuple[str, ...] = ()
 
 
-# frob:doc docs/vet.md#public-api
+# frob:doc docs/modules/vet.md#public-api
 def capability_diff(prev: PackageVerdict, cur: PackageVerdict) -> tuple[str, ...]:
     """Capabilities `cur` has that `prev` did not -- the VET003 escalation
-    signal (docs/vet.md "Public API"). Order-stable (sorted) for diffable
+    signal (docs/modules/vet.md "Public API"). Order-stable (sorted) for diffable
     output; empty when `cur` added nothing new."""
     added = sorted(cur.capabilities - prev.capabilities)
     return tuple(added)
 
 
-# frob:doc docs/vet.md#public-api
+# frob:doc docs/modules/vet.md#public-api
 class HookVerdict(BaseModel):
     """One package's --hook-mode verdict against a not-yet-installed package."""
 
@@ -100,7 +100,7 @@ class HookVerdict(BaseModel):
     blocked: bool
 
 
-# frob:doc docs/vet.md#public-api
+# frob:doc docs/modules/vet.md#public-api
 class VetConfig(BaseModel):
     """The `[vet]` table plus `[vet.allow]`, loaded from frob.toml."""
 
@@ -114,7 +114,7 @@ class VetConfig(BaseModel):
     allow: Mapping[str, tuple[str, ...] | bool] = {}
 
 
-# frob:doc docs/vet.md#public-api
+# frob:doc docs/modules/vet.md#public-api
 class HookAction(StrEnum):
     """A parsed --hook command's disposition before any network check."""
 
@@ -122,7 +122,7 @@ class HookAction(StrEnum):
     IGNORE = "ignore"
 
 
-# frob:doc docs/vet.md#public-api
+# frob:doc docs/modules/vet.md#public-api
 class VetError(ErrorSet):
     """Fallible outcomes of frob.vet operations."""
 

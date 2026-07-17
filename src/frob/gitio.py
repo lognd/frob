@@ -1,9 +1,9 @@
-"""The ONE git subprocess seam (docs/testing.md), shared by testing and gates.
+"""The ONE git subprocess seam (docs/modules/testing.md), shared by testing and gates.
 
 Every git invocation in frob goes through this module: `repo_root` (worktree-
 correct root discovery), `working_diff` (merge-base-to-worktree unified diff,
 including uncommitted and untracked changes), and `current_branch`. Two diff
-implementations would desync (docs/gates.md's old `gates/diff.py` design is
+implementations would desync (docs/modules/gates.md's old `gates/diff.py` design is
 superseded by this module). `_run_git` is the private spawn primitive;
 `run_argv` is the small public wrapper `frob.testing` reuses for its own
 runner spawns so there is exactly one subprocess-with-timeout helper in the
@@ -28,7 +28,7 @@ _EXCERPT_LINES = 40
 _DEFAULT_TIMEOUT_S = 30.0
 
 
-# frob:doc docs/testing.md#error-types
+# frob:doc docs/modules/testing.md#error-types
 class GitError(ErrorSet):
     """Failure values every `frob.gitio` function can return."""
 
@@ -36,7 +36,7 @@ class GitError(ErrorSet):
     GitFailed = "git subprocess failed"
 
 
-# frob:doc docs/testing.md#data-models
+# frob:doc docs/modules/testing.md#data-models
 class Hunk(BaseModel):
     """One contiguous new-file line range touched in `file`."""
 
@@ -46,7 +46,7 @@ class Hunk(BaseModel):
     span: tuple[int, int]
 
 
-# frob:doc docs/testing.md#data-models
+# frob:doc docs/modules/testing.md#data-models
 class Diff(BaseModel):
     """The working-tree delta against `base`'s merge-base sha."""
 
@@ -56,7 +56,7 @@ class Diff(BaseModel):
     hunks: tuple[Hunk, ...]
 
 
-# frob:doc docs/testing.md#data-models
+# frob:doc docs/modules/testing.md#data-models
 class ProcResult(BaseModel):
     """One completed spawn's captured result (any returncode)."""
 
@@ -76,7 +76,7 @@ def _excerpt(text: str, *, lines: int = _EXCERPT_LINES) -> str:
     return "\n".join(["...(truncated)...", *parts[-lines:]])
 
 
-# frob:doc docs/testing.md#public-api
+# frob:doc docs/modules/testing.md#public-api
 def run_argv(
     argv: Sequence[str],
     *,
@@ -130,7 +130,7 @@ def _run_git(
     return Ok(result.stdout)
 
 
-# frob:doc docs/testing.md#public-api
+# frob:doc docs/modules/testing.md#public-api
 def repo_root(start: Path) -> Result[Path, GitError]:
     """The repo root for `start`; worktree-correct via `rev-parse --show-toplevel`."""
     if not start.exists():
@@ -146,7 +146,7 @@ def repo_root(start: Path) -> Result[Path, GitError]:
     return Ok(root)
 
 
-# frob:doc docs/testing.md#public-api
+# frob:doc docs/modules/testing.md#public-api
 def current_branch(root: Path) -> Result[str, GitError]:
     """The current branch name (`git rev-parse --abbrev-ref HEAD`)."""
     return _run_git(("rev-parse", "--abbrev-ref", "HEAD"), cwd=root).map(str.strip)
@@ -193,7 +193,7 @@ def _parse_unified_diff(text: str) -> dict[str, list[tuple[int, int]]]:
     return per_file
 
 
-# frob:doc docs/testing.md#public-api
+# frob:doc docs/modules/testing.md#public-api
 def working_diff(root: Path, base: str) -> Result[Diff, GitError]:
     """The delta from `merge-base(HEAD, base)` to the working tree (committed
     since merge-base, plus staged, unstaged, and untracked whole-file hunks)."""

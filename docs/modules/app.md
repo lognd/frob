@@ -7,7 +7,7 @@ settings into one typed config object, and `App.__call__` dispatches on
 thin adapter: parse `cfg`, call the real library function in the matching
 `frob.<module>`, print/log the result, set the exit code. This page documents
 the CLI-facing seams; the actual logic lives in each library's own docs page
-(docs/map.md, docs/outline.md, docs/perf.md, ...).
+(docs/commands/map.md, docs/commands/outline.md, docs/modules/perf.md, ...).
 
 ## Usage
 
@@ -92,45 +92,45 @@ semantics live in `AppConfig` and in each subcommand's own docs page.
 <!-- frob:describes src/frob/app/map_runner.py::run -->
 
 - `gitlog_runner.run` -- runs `frob.gitlog.git_log` over `cfg.gitlog_*` and
-  prints text or JSON (docs/gitlog.md).
+  prints text or JSON (docs/commands/gitlog.md).
 - `vet_runner.run` -- runs `frob vet [path]` or `frob vet --hook`; hook mode
   exits 2 on a quarantine/typosquat block for a Claude Code PreToolUse hook.
 - `stats_runner.run` -- renders the delivery snapshot (queue health + commit
   cadence) from `frob.stats.collect`.
 - `arch_runner.run` -- runs the architectural linter (long functions, god
   classes) over `cfg.arch_path`.
-- `perf_runner.run` -- dispatches `frob perf profile|heat` (docs/perf.md).
+- `perf_runner.run` -- dispatches `frob perf profile|heat` (docs/modules/perf.md).
 - `dup_runner.run` -- runs `frob.dup.find_duplicates` over `cfg.dup_path`.
 - `xref_runner.run` -- runs `frob.xref.xref` for `cfg.xref_symbol`
-  (docs/xref.md).
+  (docs/commands/xref.md).
 - `parse_runner.run` -- reads a tool's raw output (pytest/ruff/ty/clang/...)
   from stdin or a file and emits a compact structured summary.
 - `scaffold_runner.run` -- lists project types or renders a new project
-  scaffold (docs/scaffold.md).
+  scaffold (docs/commands/scaffold.md).
 - `check_runner.run` -- runs the full `frob check` tool pipeline
-  (docs/check.md).
+  (docs/commands/check.md).
 - `ack_runner.run` -- builds/loads the graph, acknowledges refs, writes the
-  lock file (docs/graph.md).
+  lock file (docs/modules/graph.md).
 - `ticket_runner.run` -- dispatches to the ticket subcommand named by
-  `cfg.ticket_command` (docs/tickets.md).
+  `cfg.ticket_command` (docs/modules/tickets.md).
 - `outline_runner.run` -- runs `frob.outline.outline_file`, falling back to
-  `frob map` output for a directory target (docs/outline.md).
+  `frob map` output for a directory target (docs/commands/outline.md).
 - `mutate_runner.run` -- runs `frob.mutate.run_mutations` and reports which
   mutants survived the given test command.
 - `exports_runner.run` -- runs `frob.exports.exports_package` over
-  `cfg.exports_path` (docs/exports.md).
+  `cfg.exports_path` (docs/commands/exports.md).
 - `docs_runner.run` -- runs `frob.docs` overview/search/extract over
   `cfg.docs_path`.
 - `release_runner.run` -- dispatches to the release subcommand named by
   `cfg.release_command` (mechanical semver stamping/checking).
 - `graph_runner.run` -- dispatches build/query/why based on
-  `cfg.graph_command` (docs/graph.md).
+  `cfg.graph_command` (docs/modules/graph.md).
 - `bind_runner.run` -- verifies BIND declarations against source signatures
-  (docs/bind.md); parses its own argv rather than taking `AppConfig`.
+  (docs/modules/bind.md); parses its own argv rather than taking `AppConfig`.
 - `cycle_runner.run` -- runs `frob.cycle.graph.find_cycles` over
-  `cfg.cycle_path` (docs/cycle.md).
+  `cfg.cycle_path` (docs/commands/cycle.md).
 - `map_runner.run` -- runs `frob.map.map_project` over `cfg.map_path`
-  (docs/map.md).
+  (docs/commands/map.md).
 
 ## frob.docs library
 

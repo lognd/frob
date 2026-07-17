@@ -1,4 +1,4 @@
-"""Temporarily silence stdout-bound INFO/DEBUG logging (docs/lang.md).
+"""Temporarily silence stdout-bound INFO/DEBUG logging (docs/modules/lang.md).
 
 `frob.lang.parse_file` logs at INFO/DEBUG on every parse (the LOG EVERYTHING
 convention) -- the retired per-language wrappers it replaces logged nothing
@@ -19,7 +19,7 @@ from collections.abc import Iterator
 
 
 @contextlib.contextmanager
-# frob:doc docs/logging.md#public-api
+# frob:doc docs/modules/logging.md#public-api
 def quiet_stdout_logs() -> Iterator[None]:
     """Raise stdout log handlers to WARNING for the duration of the block."""
     root_logger = logging.getLogger()

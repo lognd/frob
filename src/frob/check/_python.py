@@ -1,4 +1,4 @@
-"""Per-tool runners for the Python `frob check` pipeline (docs/check.md).
+"""Per-tool runners for the Python `frob check` pipeline (docs/commands/check.md).
 
 Each `_run_*` helper shells out to one tool (ruff, ty, the frob native
 analyses, the gates stage) and normalises its output into a `ToolResult`.

@@ -20,7 +20,7 @@ def _estimate_tokens(text: str | bytes) -> int:
     return max(1, int(len(text) / _CHARS_PER_TOKEN))
 
 
-# frob:doc docs/map.md#public-api
+# frob:doc docs/commands/map.md#public-api
 class FileNode(BaseModel):
     path: str
     lines: int
@@ -29,7 +29,7 @@ class FileNode(BaseModel):
     private_count: int = 0
 
 
-# frob:doc docs/map.md#public-api
+# frob:doc docs/commands/map.md#public-api
 class MapResult(BaseModel):
     root: str
     total_files: int
@@ -37,7 +37,7 @@ class MapResult(BaseModel):
     files: list[FileNode]
 
     def as_text(self, max_symbols: int = 6, include_private: bool = False) -> str:
-        # frob:doc docs/map.md#public-api
+        # frob:doc docs/commands/map.md#public-api
         lines: list[str] = [
             f"{self.root}  ({self.total_files} files, {self.total_lines:,} lines)"
         ]
@@ -57,7 +57,7 @@ class MapResult(BaseModel):
         return "\n".join(lines)
 
     def as_json(self) -> str:
-        # frob:doc docs/map.md#public-api
+        # frob:doc docs/commands/map.md#public-api
         return self.model_dump_json(indent=2)
 
 
@@ -89,7 +89,7 @@ def _format_symbols(node: FileNode, max_symbols: int, include_private: bool) -> 
     return _public_symbols_summary(node.symbols, node.private_count, max_symbols)
 
 
-# frob:doc docs/map.md#public-api
+# frob:doc docs/commands/map.md#public-api
 def map_project(root: Path, depth: int | None = None) -> MapResult:
     files: list[FileNode] = []
 

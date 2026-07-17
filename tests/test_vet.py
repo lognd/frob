@@ -1,5 +1,5 @@
 """Unit tests for frob.vet: lockfile parsers, allow conformance, quarantine,
-typosquat, and hook-command parsing (docs/vet.md). No real network calls."""
+typosquat, and hook-command parsing (docs/modules/vet.md). No real network calls."""
 
 from __future__ import annotations
 

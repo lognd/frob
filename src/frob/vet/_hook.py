@@ -1,4 +1,4 @@
-"""Hook-mode parsing and checks for `frob vet --hook '<command>'` (docs/vet.md
+"""Hook-mode parsing and checks for `frob vet --hook '<command>'` (docs/modules/vet.md
 HOOK MODE): parse an install-shaped shell command, then run the
 pre-install-relevant checks (quarantine + typosquat) against the named
 packages directly, since they are not in a lockfile yet.
@@ -137,7 +137,7 @@ def _collect_packages(pkg_tokens: list[str], strip: _Strip) -> list[tuple[str, s
     return packages
 
 
-# frob:doc docs/vet.md#public-api
+# frob:doc docs/modules/vet.md#public-api
 def parse_hook_command(command: str) -> tuple[str, tuple[tuple[str, str], ...]] | None:
     """Parse a shell command string for install-shaped invocations.
     Returns `(ecosystem, ((name, version_or_empty), ...))`, or `None` if the
@@ -228,7 +228,7 @@ def _quarantine_verdict(
     )
 
 
-# frob:doc docs/vet.md#public-api
+# frob:doc docs/modules/vet.md#public-api
 def check_package(
     ecosystem: str, name: str, version: str, *, root: Path
 ) -> HookVerdict:

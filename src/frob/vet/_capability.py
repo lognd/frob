@@ -1,12 +1,12 @@
 """Tree-sitter-backed capability scan over a dependency's local source
-(docs/vet.md "Capability taxonomy" + "Mechanics").
+(docs/modules/vet.md "Capability taxonomy" + "Mechanics").
 
 Detection is a per-language token/substring scan over `frob.lang`-parsed
-source (Python/JS-TS/Rust first-class, per docs/vet.md); C/C++ is scanned
-honestly-empty (no idiomatic literal exists yet -- see docs/vet.md
+source (Python/JS-TS/Rust first-class, per docs/modules/vet.md); C/C++ is scanned
+honestly-empty (no idiomatic literal exists yet -- see docs/modules/vet.md
 "Python, Rust, C/C++"). A missing/unreadable file never crashes the scan;
 it degrades to an empty capability set plus a `source-unavailable`-shaped
-note (docs/vet.md "Honest limits").
+note (docs/modules/vet.md "Honest limits").
 """
 
 from __future__ import annotations
@@ -86,13 +86,13 @@ _PATTERNS: dict[str, dict[str, tuple[str, ...]]] = {
 }
 
 
-# frob:doc docs/vet.md#public-api
+# frob:doc docs/modules/vet.md#public-api
 def language_for(path: Path) -> str | None:
     """The pattern-table bucket for `path`'s extension, or `None` (e.g. C/C++)."""
     return _EXT_LANGUAGE.get(path.suffix.lower())
 
 
-# frob:doc docs/vet.md#public-api
+# frob:doc docs/modules/vet.md#public-api
 def scan_file_capabilities(path: Path) -> frozenset[str]:
     """Capability tokens observed in one source file's raw text."""
     language = language_for(path)
@@ -121,10 +121,10 @@ def _matched_capabilities(text: str, table: dict[str, tuple[str, ...]]) -> set[s
     return found
 
 
-# frob:doc docs/vet.md#public-api
+# frob:doc docs/modules/vet.md#public-api
 def decode_to_exec_signal(path: Path) -> bool:
     """True if one function's body reaches both a decode-ish and an exec-ish
-    token (docs/vet.md "eval-reachability": the highest-precision detector).
+    token (docs/modules/vet.md "eval-reachability": the highest-precision detector).
 
     Uses `frob.lang` symbol extraction so the two tokens must co-occur inside
     the SAME function body, not merely the same file.
@@ -175,7 +175,7 @@ def _body_reaches_decode_and_exec(body: str) -> bool:
     return has_decode and has_exec
 
 
-# frob:doc docs/vet.md#public-api
+# frob:doc docs/modules/vet.md#public-api
 def scan_directory_capabilities(
     source_dir: Path, *, max_files: int = 500
 ) -> tuple[frozenset[str], bool]:

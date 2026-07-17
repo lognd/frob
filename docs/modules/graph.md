@@ -86,7 +86,7 @@ the symbol immediately following it, for preceding-line comments).
 
 | Directive | Meaning (edge created) |
 |---|---|
-| `frob:doc docs/graph.md#lock` | enclosing symbol is described by that doc anchor |
+| `frob:doc docs/modules/graph.md#lock` | enclosing symbol is described by that doc anchor |
 | `frob:uses-contract <symref>` | enclosing symbol depends on target's signature semantics; target sig change flags this symbol |
 | `frob:invariant INV-007` | enclosing symbol is an anchor for that invariant |
 | `frob:ticket T-0042` | enclosing symbol (or hunk) satisfies that ticket |
@@ -95,7 +95,7 @@ the symbol immediately following it, for preceding-line comments).
 | `frob:tests <symref>` | enclosing test function unit-tests that symbol |
 | `frob:tests <pkg-path> kind="integration"` | enclosing test exercises that package's public boundary with real collaborators |
 | `frob:tests <system-id> kind="e2e"` | enclosing test drives that declared system end to end |
-| `frob:decision AD-###` | enclosing symbol implements that decision record (see docs/decisions.md) |
+| `frob:decision AD-###` | enclosing symbol implements that decision record (see docs/modules/decisions.md) |
 
 Markdown side (doc anchors), in HTML comments; applies from the comment to
 the next heading of equal or higher level:

@@ -1,5 +1,5 @@
 """VET-JS lifecycle-script scan: preinstall/install/postinstall/prepare in any
-package.json under node_modules/ (docs/vet.md "Lifecycle scripts are the
+package.json under node_modules/ (docs/modules/vet.md "Lifecycle scripts are the
 headline capability")."""
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ _log = get_logger(__name__)
 _LIFECYCLE_SCRIPTS = ("preinstall", "install", "postinstall", "prepare")
 
 
-# frob:doc docs/vet.md#public-api
+# frob:doc docs/modules/vet.md#public-api
 def scan_lifecycle_scripts(root: Path) -> dict[str, tuple[str, ...]]:
     """`{package_name: (script_name, ...)}` for every node_modules package.json
     declaring a lifecycle script. Empty dict (with a log note) if no node_modules."""

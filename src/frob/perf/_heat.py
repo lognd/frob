@@ -1,4 +1,4 @@
-"""`heat`: pure(-ish) join of pstats rows onto symbol spans (docs/perf.md's
+"""`heat`: pure(-ish) join of pstats rows onto symbol spans (docs/modules/perf.md's
 Heat-map piece), plus the ASCII bar renderer `frob perf heat` prints with.
 
 `heat` reads the artifact's `.pstats` file via the stdlib `pstats` module --
@@ -112,7 +112,7 @@ def _build_entries(totals: dict[str, dict[str, float | int]]) -> list[HeatEntry]
     ]
 
 
-# frob:doc docs/perf.md#public-api
+# frob:doc docs/modules/perf.md#public-api
 # frob:ticket T-0021
 def heat(artifact: ProfileArtifact, snapshot: GraphSnapshot) -> HeatReport:
     """Join `artifact`'s pstats rows onto `snapshot`'s symbol spans, ranked
@@ -137,13 +137,13 @@ def heat(artifact: ProfileArtifact, snapshot: GraphSnapshot) -> HeatReport:
     return HeatReport(entries=ranked, unattributed_s=unattributed_s)
 
 
-# frob:doc docs/perf.md#public-api
+# frob:doc docs/modules/perf.md#public-api
 # frob:ticket T-0021
 def join_smells(
     report: HeatReport, violations_by_ref: dict[str, tuple[str, ...]]
 ) -> HeatReport:
     """Attach PERF rule ids from `violations_by_ref` (symref -> rule ids)
-    onto each entry -- the `--smells` step docs/perf.md calls "the killer
+    onto each entry -- the `--smells` step docs/modules/perf.md calls "the killer
     join": hot AND quadratic."""
     updated = tuple(
         entry.model_copy(update={"smells": violations_by_ref.get(entry.ref, ())})
@@ -152,7 +152,7 @@ def join_smells(
     return report.model_copy(update={"entries": updated})
 
 
-# frob:doc docs/perf.md#public-api
+# frob:doc docs/modules/perf.md#public-api
 # frob:ticket T-0021
 def render_bar(cum_s: float, max_s: float, *, color: bool | None = None) -> str:
     """An ASCII `#`-block bar sized to `cum_s / max_s`, painted yellow when

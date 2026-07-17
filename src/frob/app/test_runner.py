@@ -1,5 +1,5 @@
 """CLI wiring for `frob test [--all] [--base REF] [--lang L] [--fallback MODE]`
-(docs/testing.md)."""
+(docs/modules/testing.md)."""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ def _run_fuzz(root: Path) -> None:
     """`frob test --fuzz`: property-test the pydantic models in fuzz-obligated
     signatures via the hypothesis harness, then stamp so FUZZ003 is satisfied.
 
-    v1 drives the DERIVED pydantic-model case (docs/fuzz.md); non-model
+    v1 drives the DERIVED pydantic-model case (docs/modules/fuzz.md); non-model
     params are reported as skipped, not failed."""
     from pydantic import BaseModel
 

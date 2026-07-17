@@ -1,5 +1,5 @@
 """`profile_command`/`load_artifact`: spawn-under-cProfile and artifact
-storage (docs/perf.md's Profile piece).
+storage (docs/modules/perf.md's Profile piece).
 
 Reuses `frob.gitio.run_argv` -- the package's one subprocess-with-timeout
 seam -- rather than a second `subprocess.run` call site; `frob.gitio`'s own
@@ -57,7 +57,7 @@ def _harness_argv(argv: Sequence[str], pstats_path: Path) -> list[str]:
     return ["python", str(harness), str(pstats_path), *script_argv]
 
 
-# frob:doc docs/perf.md#public-api
+# frob:doc docs/modules/perf.md#public-api
 # frob:ticket T-0021
 def profile_command(
     argv: Sequence[str], root: Path
@@ -159,7 +159,7 @@ def _choose_meta_path(perf_dir: Path, ref: str | None) -> Result[Path, PerfError
     return Ok(max(meta_paths, key=lambda p: p.stat().st_mtime))
 
 
-# frob:doc docs/perf.md#public-api
+# frob:doc docs/modules/perf.md#public-api
 # frob:ticket T-0021
 def load_artifact(
     root: Path, ref: str | None = None

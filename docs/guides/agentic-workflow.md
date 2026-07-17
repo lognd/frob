@@ -17,7 +17,7 @@ frob ticket attach T-0040        # paste a clipboard mockup, if stdin is a TTY
 ```
 
 `frob ticket new`/`attach` offer clipboard paste only interactively; agents
-and CI always pass explicit file paths (see `docs/tickets.md`).
+and CI always pass explicit file paths (see `docs/modules/tickets.md`).
 
 Everything downstream -- decomposition, implementation, review, proof -- is
 an agent's job, dispatched through the roles below and defined in
@@ -154,7 +154,7 @@ each on its own branch:
 git worktree add ../frob-t0042 -b T-0042-clipboard-attach
 ```
 
-This is a first-class target, not an afterthought (see `docs/testing.md`
+This is a first-class target, not an afterthought (see `docs/modules/testing.md`
 "Git worktrees"):
 
 - **`frob.gitio` is the one git subprocess seam**, and `repo_root` resolves

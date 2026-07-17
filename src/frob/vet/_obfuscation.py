@@ -1,13 +1,13 @@
-"""The VET004 obfuscation ensemble (docs/vet.md "Obfuscation detection").
+"""The VET004 obfuscation ensemble (docs/modules/vet.md "Obfuscation detection").
 
 Implements the tractable slice: string-literal Shannon entropy vs a fixed
 per-language baseline, Unicode bidi/zero-width/homoglyph scan (deterministic,
 always fatal), and hex-identifier ratio (obfuscator.io-style `_0x...` names).
 Decode-to-exec dataflow lives in `_capability.py` (it needs `frob.lang`
 symbol bodies, not raw text). Detection is fatal, never "deobfuscate and
-judge" (docs/vet.md).
+judge" (docs/modules/vet.md).
 
-Cut from this slice (documented, not hidden -- docs/vet.md "Honest limits"):
+Cut from this slice (documented, not hidden -- docs/modules/vet.md "Honest limits"):
 packer/flattener AST-shape metrics (dispatch-loop density, opaque
 predicates), evasion-trigger conditional-guard queries, and stego scans over
 non-code files. These need a cost/benefit case tree-sitter queries alone
@@ -66,7 +66,7 @@ def _shannon_entropy(s: str) -> float:
     return -sum((n / length) * math.log2(n / length) for n in counts.values())
 
 
-# frob:doc docs/vet.md#public-api
+# frob:doc docs/modules/vet.md#public-api
 def high_entropy_strings(text: str) -> tuple[str, ...]:
     """String literals whose Shannon entropy exceeds the baseline -- likely
     base64/hex/packed payloads rather than legitimate code strings."""
@@ -83,7 +83,7 @@ def high_entropy_strings(text: str) -> tuple[str, ...]:
     return tuple(hits)
 
 
-# frob:doc docs/vet.md#public-api
+# frob:doc docs/modules/vet.md#public-api
 def invisible_text_signal(text: str) -> bool:
     """True if `text` contains a Unicode bidi override, zero-width character,
     or BOM outside the file's leading position -- the Trojan Source family.
@@ -98,7 +98,7 @@ def invisible_text_signal(text: str) -> bool:
     return False
 
 
-# frob:doc docs/vet.md#public-api
+# frob:doc docs/modules/vet.md#public-api
 def hex_identifier_ratio_signal(text: str) -> bool:
     """True if `_0x...`-style identifiers (obfuscator.io's default rename
     scheme) dominate the identifier population."""
@@ -113,7 +113,7 @@ def hex_identifier_ratio_signal(text: str) -> bool:
     return False
 
 
-# frob:doc docs/vet.md#public-api
+# frob:doc docs/modules/vet.md#public-api
 def scan_text_obfuscation(text: str) -> tuple[str, ...]:
     """All obfuscation signal names present in `text` (empty = clean)."""
     signals: list[str] = []
@@ -126,7 +126,7 @@ def scan_text_obfuscation(text: str) -> tuple[str, ...]:
     return tuple(signals)
 
 
-# frob:doc docs/vet.md#public-api
+# frob:doc docs/modules/vet.md#public-api
 def scan_directory_obfuscation(
     source_dir: Path, *, max_files: int = 500
 ) -> tuple[str, ...]:

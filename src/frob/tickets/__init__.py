@@ -1,5 +1,5 @@
 """
-frob.tickets -- statically-checkable ticket and feature queue (docs/tickets.md).
+frob.tickets -- statically-checkable ticket and feature queue (docs/modules/tickets.md).
 
 A git-tracked queue of tickets (features, bugs, audits, invariant work) with
 a state machine, blockers, evidence, failure memory, and image attachments --
@@ -73,7 +73,7 @@ _FAILURE_LOG_HEADING = "## Failure log"
 
 
 # frob:invariant INV-004
-# frob:doc docs/tickets.md#public-api
+# frob:doc docs/modules/tickets.md#public-api
 def load_queue(root: Path) -> Result[TicketQueue, TicketError]:
     """Load every ticket (single-file ledger or legacy dir); malformation is Err."""
     loaded = load_all(root)
@@ -84,7 +84,7 @@ def load_queue(root: Path) -> Result[TicketQueue, TicketError]:
     return Ok(TicketQueue(tickets=tickets))
 
 
-# frob:doc docs/tickets.md#public-api
+# frob:doc docs/modules/tickets.md#public-api
 def migrate(root: Path) -> Result[int, TicketError]:
     """Collapse legacy tickets/*.md files into the single tickets.md ledger."""
     return migrate_to_ledger(root)
@@ -124,7 +124,7 @@ def _ticket_from_spec(ticket_id: str, spec: TicketSpec) -> Ticket:
     )
 
 
-# frob:doc docs/tickets.md#public-api
+# frob:doc docs/modules/tickets.md#public-api
 def new_ticket(root: Path, spec: TicketSpec) -> Result[Ticket, TicketError]:
     """Allocate the next sequential id and upsert the ticket into the store."""
     loaded = load_all(root)
@@ -181,7 +181,7 @@ def _apply_renumber(
     return new_map, renumbered
 
 
-# frob:doc docs/tickets.md#public-api
+# frob:doc docs/modules/tickets.md#public-api
 def renumber(root: Path) -> Result[int, TicketError]:
     """Reassign ticket ids to a contiguous T-0001.. sequence (ordered by
     current id), rewriting blocked_by/parent references so the queue stays
@@ -214,7 +214,7 @@ def _doable_candidates(queue: TicketQueue) -> list[Ticket]:
     ]
 
 
-# frob:doc docs/tickets.md#public-api
+# frob:doc docs/modules/tickets.md#public-api
 def doable(queue: TicketQueue) -> tuple[Ticket, ...]:
     """Tickets in {queued, planned} with no open blockers, ordered oldest-first."""
     candidates = _doable_candidates(queue)
@@ -277,7 +277,7 @@ def _transition_guard(
 
 
 # frob:invariant INV-002
-# frob:doc docs/tickets.md#public-api
+# frob:doc docs/modules/tickets.md#public-api
 def transition(
     root: Path, ticket_id: str, to: TicketState
 ) -> Result[Ticket, TicketError]:
@@ -310,7 +310,7 @@ def transition(
     return Ok(updated)
 
 
-# frob:doc docs/tickets.md#public-api
+# frob:doc docs/modules/tickets.md#public-api
 def record_failure(
     root: Path, ticket_id: str, entry: FailureEntry
 ) -> Result[Ticket, TicketError]:
@@ -370,7 +370,7 @@ def _attachment_bytes(
     return Ok((data, source.path.suffix or ".png"))
 
 
-# frob:doc docs/tickets.md#public-api
+# frob:doc docs/modules/tickets.md#public-api
 def attach(
     root: Path, ticket_id: str, source: AttachmentSource, caption: str
 ) -> Result[Attachment, AttachError]:

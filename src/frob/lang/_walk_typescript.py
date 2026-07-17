@@ -1,4 +1,4 @@
-"""TypeScript / TSX symbol walker (docs/lang.md extraction table).
+"""TypeScript / TSX symbol walker (docs/modules/lang.md extraction table).
 
 TypeScript's `export [default]` publicness and `accessibility_modifier`
 method visibility are kept here; the shared token/span/doc mechanism lives

@@ -1,4 +1,4 @@
-"""CLI wiring for `frob graph build|query|why` (docs/graph.md)."""
+"""CLI wiring for `frob graph build|query|why` (docs/modules/graph.md)."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ _log = get_logger(__name__)
 _CACHE_REL = Path(".frob") / "cache.db"
 
 
-# frob:doc docs/app.md#runners
+# frob:doc docs/modules/app.md#runners
 def run(cfg: AppConfig) -> None:
     """Dispatch to build/query/why based on `cfg.graph_command`."""
     root = (cfg.graph_path or Path(".")).resolve()

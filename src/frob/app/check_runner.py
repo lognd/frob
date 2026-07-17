@@ -159,7 +159,7 @@ def _dispatch_check(cfg: AppConfig, root: Path, project_type: str):
     )
 
 
-# frob:doc docs/app.md#runners
+# frob:doc docs/modules/app.md#runners
 def run(cfg: AppConfig) -> None:
     root = cfg.check_path or Path(".")
 

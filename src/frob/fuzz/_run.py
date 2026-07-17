@@ -1,4 +1,5 @@
-"""`run_fuzz`: the actual hypothesis execution harness (docs/fuzz.md "Execution").
+"""`run_fuzz`: the actual hypothesis execution harness
+(docs/modules/fuzz.md "Execution").
 
 Honest v1 limit (documented, not silently dropped): driving arbitrary user
 functions -- calling the real property under test with generated args and
@@ -9,7 +10,7 @@ pydantic `BaseModel` target, resolve its generator and drive it through
 hypothesis's real engine, proving the rejection-sampled strategy actually
 produces valid instances within `policy.max_reject_rate` and the budget.
 Wiring `run_fuzz` to call bound `kind="fuzz"` test functions is `frob.testing`
-+ coordinator work (docs/fuzz.md "Execution and corpus"), not this ticket.
++ coordinator work (docs/modules/fuzz.md "Execution and corpus"), not this ticket.
 """
 
 from __future__ import annotations
@@ -91,7 +92,7 @@ def _run_one(tp: type[BaseModel], policy: FuzzPolicy, digest: str) -> FuzzResult
     return FuzzResult(ref=ref, body_digest=digest, examples=count, falsified=None)
 
 
-# frob:doc docs/fuzz.md#public-api
+# frob:doc docs/modules/fuzz.md#public-api
 def run_fuzz(
     targets: tuple[type[BaseModel], ...],
     budget_s: int,

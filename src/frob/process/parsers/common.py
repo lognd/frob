@@ -28,7 +28,7 @@ def _count_severities(diagnostics: list[Diagnostic]) -> tuple[int, int]:
     return errors, warnings
 
 
-# frob:doc docs/process.md#public-api
+# frob:doc docs/modules/process.md#public-api
 # frob:ticket T-0045
 def summarize_severity(
     diagnostics: list[Diagnostic],
@@ -51,7 +51,7 @@ def summarize_severity(
     return f"{errors} errors, {warnings} warnings"
 
 
-# frob:doc docs/process.md#public-api
+# frob:doc docs/modules/process.md#public-api
 class Diagnostic(BaseModel):
     """A single actionable item from a tool: a linter warning, type error, etc."""
 
@@ -63,7 +63,7 @@ class Diagnostic(BaseModel):
     message: str = ""
 
     def as_text(self) -> str:
-        # frob:doc docs/process.md#public-api
+        # frob:doc docs/modules/process.md#public-api
         """One-line `file:line:col  CODE  message` rendering."""
         loc = ""
         if self.file:
@@ -77,7 +77,7 @@ class Diagnostic(BaseModel):
         return f"{loc}{code_str}{self.message}"
 
 
-# frob:doc docs/process.md#public-api
+# frob:doc docs/modules/process.md#public-api
 class TestCase(BaseModel):
     """A single test case result."""
 
@@ -92,7 +92,7 @@ class TestCase(BaseModel):
     failure_text: str | None = None
 
 
-# frob:doc docs/process.md#public-api
+# frob:doc docs/modules/process.md#public-api
 class ToolResult(BaseModel):
     """
     Parsed output of a single tool invocation.
@@ -107,25 +107,25 @@ class ToolResult(BaseModel):
 
     @property
     def passed(self) -> bool:
-        # frob:doc docs/process.md#public-api
+        # frob:doc docs/modules/process.md#public-api
         """Whether the tool invocation itself exited zero."""
         return self.exit_code == 0
 
     @property
     def error_count(self) -> int:
-        # frob:doc docs/process.md#public-api
+        # frob:doc docs/modules/process.md#public-api
         """Number of error-severity diagnostics."""
         return sum(1 for d in self.diagnostics if d.severity == "error")
 
     @property
     def warning_count(self) -> int:
-        # frob:doc docs/process.md#public-api
+        # frob:doc docs/modules/process.md#public-api
         """Number of warning-severity diagnostics."""
         return sum(1 for d in self.diagnostics if d.severity == "warning")
 
     @property
     def failed_tests(self) -> list[TestCase]:
-        # frob:doc docs/process.md#public-api
+        # frob:doc docs/modules/process.md#public-api
         """Test cases that neither passed nor were skipped."""
         return [t for t in self.tests if not t.passed and not t.skipped]
 
@@ -175,7 +175,7 @@ class ToolResult(BaseModel):
         return lines
 
     def as_text(self, verbose: bool = False) -> str:
-        # frob:doc docs/process.md#public-api
+        # frob:doc docs/modules/process.md#public-api
         """
         Compact text representation optimized for Claude to read.
         Failures always shown; passing items hidden unless verbose=True.
@@ -186,6 +186,6 @@ class ToolResult(BaseModel):
         return "\n".join(parts)
 
     def as_json(self) -> str:
-        # frob:doc docs/process.md#public-api
+        # frob:doc docs/modules/process.md#public-api
         """The full structured result as JSON."""
         return self.model_dump_json(indent=2)

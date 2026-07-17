@@ -1,4 +1,4 @@
-"""Tests for frob.testing -- touched-set test selection and execution (docs/testing.md)."""
+"""Tests for frob.testing -- touched-set test selection and execution (docs/modules/testing.md)."""
 
 from __future__ import annotations
 

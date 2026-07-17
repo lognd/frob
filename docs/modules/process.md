@@ -105,6 +105,6 @@ stdout/stderr text, never spawn processes themselves.
 
 ## Integration points
 
-`frob.check` (docs/check.md) is the sole consumer: each `_run_*` helper
+`frob.check` (docs/commands/check.md) is the sole consumer: each `_run_*` helper
 shells out to a tool and hands its captured output to the matching
 `parse_*` function, folding the resulting `ToolResult` into `CheckResult`.

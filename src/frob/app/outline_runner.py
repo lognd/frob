@@ -10,7 +10,7 @@ from frob.outline import outline_file
 _log = get_logger(__name__)
 
 
-# frob:doc docs/app.md#runners
+# frob:doc docs/modules/app.md#runners
 def run(cfg: AppConfig) -> None:
     if cfg.outline_file is None:
         _log.error("frob outline requires <file>")

@@ -1,4 +1,4 @@
-"""frob.perf -- profiling, heat-maps, and PERF linear-scan rules (docs/perf.md).
+"""frob.perf -- profiling, heat-maps, and PERF linear-scan rules (docs/modules/perf.md).
 
 # frob:ticket T-0021
 

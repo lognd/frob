@@ -1,6 +1,6 @@
 """frob.fuzz -- enforced property fuzzing with invariant-respecting generators.
 
-(docs/fuzz.md is authoritative.)
+(docs/modules/fuzz.md is authoritative.)
 
 Fuzzing stops being optional: every fuzz-obligated function (invariant-
 anchored by default, or every public function under `enforce="public"`)

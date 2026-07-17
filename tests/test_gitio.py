@@ -1,4 +1,4 @@
-"""Tests for frob.gitio -- the one git subprocess seam (docs/testing.md)."""
+"""Tests for frob.gitio -- the one git subprocess seam (docs/modules/testing.md)."""
 
 from __future__ import annotations
 

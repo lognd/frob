@@ -1,7 +1,7 @@
 import logging
 
 
-# frob:doc docs/logging.md#public-api
+# frob:doc docs/modules/logging.md#public-api
 class FrobFormatter(logging.Formatter):
     """
     Plain formatter. INFO and DEBUG emit just the message; WARNING+ prefix
@@ -13,7 +13,7 @@ class FrobFormatter(logging.Formatter):
         self._show_level = show_level
 
     def format(self, record: logging.LogRecord) -> str:
-        # frob:doc docs/logging.md#public-api
+        # frob:doc docs/modules/logging.md#public-api
         msg = record.getMessage()
         if self._show_level or record.levelno >= logging.WARNING:
             return f"{record.levelname}: {msg}"

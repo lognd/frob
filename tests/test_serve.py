@@ -1,4 +1,4 @@
-"""Tests for frob.serve -- the MCP tool layer (docs/serve.md).
+"""Tests for frob.serve -- the MCP tool layer (docs/modules/serve.md).
 
 Exercises `frob.serve._tools` (the plain-function layer) directly; the
 `mcp` SDK transport (`frob.serve.server`) is a thin wrapper that raises on

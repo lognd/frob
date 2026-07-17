@@ -1,4 +1,4 @@
-"""End-to-end tests for `frob vet` (docs/vet.md). Uses a local fake HTTP
+"""End-to-end tests for `frob vet` (docs/modules/vet.md). Uses a local fake HTTP
 registry server via `[vet].registry_base_url` -- no real network calls."""
 
 from __future__ import annotations

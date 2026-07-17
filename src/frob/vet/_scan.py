@@ -1,4 +1,4 @@
-"""`scan_tree`: the full-lockfile `frob vet` pass (docs/vet.md "Mechanics").
+"""`scan_tree`: the full-lockfile `frob vet` pass (docs/modules/vet.md "Mechanics").
 
 Runs VET001 (allow conformance), VET011 (cooldown quarantine), VET-JS
 (lifecycle scripts), typosquat distance, and VET005 (osv-scanner, opt-in)
@@ -45,7 +45,7 @@ _CACHE_REL = Path(".frob") / "vet.db"
 
 def _artifact_hash(source_dir: Path, *, max_files: int = 500) -> str:
     """sha256 over sorted (relpath, content) pairs -- the content address the
-    verdict cache keys on (docs/vet.md "Verdict cache")."""
+    verdict cache keys on (docs/modules/vet.md "Verdict cache")."""
     digest = hashlib.sha256()
     files = sorted(p for p in source_dir.rglob("*") if p.is_file())[:max_files]
     for path in files:
@@ -412,7 +412,7 @@ def _osv_violations(
     return violations, []
 
 
-# frob:doc docs/vet.md#public-api
+# frob:doc docs/modules/vet.md#public-api
 def scan_tree(root: Path, *, fetch: bool = True) -> Result[VetReport, VetError]:
     """Full-lockfile vet pass: allow conformance, quarantine, typosquat,
     JS lifecycle scripts, and the optional osv-scanner adapter."""

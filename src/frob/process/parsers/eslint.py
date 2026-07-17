@@ -32,7 +32,7 @@ def _diagnostics_for_entry(entry: dict) -> list[Diagnostic]:
     return out
 
 
-# frob:doc docs/process.md#public-api
+# frob:doc docs/modules/process.md#public-api
 def parse_eslint(stdout: str, exit_code: int = 0) -> ToolResult:
     """Parse `eslint --format json` output into a ToolResult."""
     stripped = stdout.strip()

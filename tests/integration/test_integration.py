@@ -2,7 +2,7 @@
 Integration tests: multiple frob modules working together.
 
 These test the realistic agentic workflow sequences described in
-docs/agentic-workflow.md.
+docs/guides/agentic-workflow.md.
 """
 
 import pytest

@@ -1,4 +1,5 @@
-"""Which symbols owe a fuzz test, under the configured enforcement mode (docs/fuzz.md).
+"""Which symbols owe a fuzz test, under the configured enforcement mode
+(docs/modules/fuzz.md).
 
 `obligations` is pure: it reads only the already-built `GraphSnapshot` and
 the `[fuzz]` policy, never the filesystem or the interpreter, so a caller
@@ -46,7 +47,7 @@ def _public(snapshot: GraphSnapshot) -> tuple[FuzzObligation, ...]:
     return tuple(obligations)
 
 
-# frob:doc docs/fuzz.md#public-api
+# frob:doc docs/modules/fuzz.md#public-api
 def obligations(
     snapshot: GraphSnapshot, policy: FuzzPolicy
 ) -> tuple[FuzzObligation, ...]:

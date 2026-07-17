@@ -1,4 +1,4 @@
-"""End-to-end tests for `frob perf profile|heat` (docs/perf.md).
+"""End-to-end tests for `frob perf profile|heat` (docs/modules/perf.md).
 
 # frob:ticket T-0021
 """

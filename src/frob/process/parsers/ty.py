@@ -113,7 +113,7 @@ def _scan_ty_lines(stdout: str) -> tuple[list[Diagnostic], str | None]:
     return diagnostics, summary_override
 
 
-# frob:doc docs/process.md#public-api
+# frob:doc docs/modules/process.md#public-api
 def parse_ty(stdout: str, exit_code: int = 0) -> ToolResult:
     diagnostics, summary_override = _scan_ty_lines(stdout)
     summary = summary_override or summarize_severity(diagnostics)

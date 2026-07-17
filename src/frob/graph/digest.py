@@ -1,4 +1,4 @@
-"""Sha256 digests over `frob.lang` token streams (docs/graph.md, "Digests").
+"""Sha256 digests over `frob.lang` token streams (docs/modules/graph.md, "Digests").
 
 Three independent digests per symbol -- `sig`, `body`, `doc` -- so that a
 body-only refactor never invalidates a contract doc, and a signature change
@@ -25,25 +25,25 @@ def _hash_tokens(tokens: tuple[str, ...]) -> str:
     return hashlib.sha256(_JOIN.join(tokens).encode("utf-8")).hexdigest()
 
 
-# frob:doc docs/graph.md#digests
+# frob:doc docs/modules/graph.md#digests
 def digest_sig(symbol: RawSymbol) -> str:
     """Sha256 hex digest of `symbol.sig_tokens`."""
     return _hash_tokens(symbol.sig_tokens)
 
 
-# frob:doc docs/graph.md#digests
+# frob:doc docs/modules/graph.md#digests
 def digest_body(symbol: RawSymbol) -> str:
     """Sha256 hex digest of `symbol.body_tokens` (empty for class/const/type)."""
     return _hash_tokens(symbol.body_tokens)
 
 
-# frob:doc docs/graph.md#digests
+# frob:doc docs/modules/graph.md#digests
 def digest_doc(symbol: RawSymbol) -> str:
     """Sha256 hex digest of `symbol.doc_text` (already whitespace-collapsed)."""
     return hashlib.sha256(symbol.doc_text.encode("utf-8")).hexdigest()
 
 
-# frob:doc docs/graph.md#digests
+# frob:doc docs/modules/graph.md#digests
 def compute_digests(symbol: RawSymbol) -> Digests:
     """All three digests for `symbol` in one `Digests` value."""
     digests = Digests(

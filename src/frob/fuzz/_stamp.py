@@ -1,4 +1,5 @@
-"""`.frob/fuzz-stamp.json`: per-target body digest at the last fuzz run (docs/fuzz.md).
+"""`.frob/fuzz-stamp.json`: per-target body digest at the last fuzz run
+(docs/modules/fuzz.md).
 
 Mirrors `frob.gates._coverage`'s stamp posture: the stamp is a plain JSON
 map keyed by `ref` (a `path::qualname` symref) to the body digest recorded
@@ -23,7 +24,7 @@ _log = get_logger(__name__)
 _STAMP_REL = Path(".frob") / "fuzz-stamp.json"
 
 
-# frob:doc docs/fuzz.md#public-api
+# frob:doc docs/modules/fuzz.md#public-api
 def stamp_fuzz(root: Path, results: tuple[FuzzResult, ...]) -> Result[Unit, FuzzError]:
     """Record `results`' body digests, merged over any prior stamp at `root`."""
     stamp_path = root / _STAMP_REL
@@ -42,7 +43,7 @@ def stamp_fuzz(root: Path, results: tuple[FuzzResult, ...]) -> Result[Unit, Fuzz
     return Ok(Unit())
 
 
-# frob:doc docs/fuzz.md#public-api
+# frob:doc docs/modules/fuzz.md#public-api
 def load_fuzz_stamp(root: Path) -> dict[str, str] | None:
     """The raw `{ref: body_digest}` map from `.frob/fuzz-stamp.json`, or `None`."""
     stamp_path = root / _STAMP_REL

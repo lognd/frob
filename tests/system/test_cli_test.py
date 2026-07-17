@@ -1,4 +1,4 @@
-"""End-to-end tests for `frob test` (docs/testing.md)."""
+"""End-to-end tests for `frob test` (docs/modules/testing.md)."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""Data shapes for the obligation graph (docs/graph.md).
+"""Data shapes for the obligation graph (docs/modules/graph.md).
 
 Every model is a frozen pydantic ``BaseModel`` so a `GraphSnapshot` can be
 compared, cached, and diffed by identity-of-value -- the incremental build
@@ -33,7 +33,7 @@ __all__ = [
 ]
 
 
-# frob:doc docs/graph.md#data-models
+# frob:doc docs/modules/graph.md#data-models
 class SymbolId(BaseModel):
     """A symbol's identity: repo-relative path plus dotted qualname."""
 
@@ -47,7 +47,7 @@ class SymbolId(BaseModel):
         return f"{self.path}::{self.qualname}"
 
 
-# frob:doc docs/graph.md#data-models
+# frob:doc docs/modules/graph.md#data-models
 class Digests(BaseModel):
     """The three independent sha256 digests tracked per symbol."""
 
@@ -58,7 +58,7 @@ class Digests(BaseModel):
     doc: str
 
 
-# frob:doc docs/graph.md#data-models
+# frob:doc docs/modules/graph.md#data-models
 class SymbolRecord(BaseModel):
     """One resolvable symbol: identity, kind, publicness, digests, span."""
 
@@ -71,13 +71,13 @@ class SymbolRecord(BaseModel):
     span: tuple[int, int]
 
     @property
-    # frob:doc docs/graph.md#data-models
+    # frob:doc docs/modules/graph.md#data-models
     def symref(self) -> str:
         """The canonical `path::qualname` key this record is stored under."""
         return str(self.id)
 
 
-# frob:doc docs/graph.md#data-models
+# frob:doc docs/modules/graph.md#data-models
 class EdgeKind(StrEnum):
     """The typed relationships a `frob:` directive or doc anchor can declare."""
 
@@ -92,7 +92,7 @@ class EdgeKind(StrEnum):
     DECISION = "decision"
 
 
-# frob:doc docs/graph.md#data-models
+# frob:doc docs/modules/graph.md#data-models
 class Edge(BaseModel):
     """One directive/anchor's declared obligation between a src and a target."""
 
@@ -105,7 +105,7 @@ class Edge(BaseModel):
     attrs: Mapping[str, str] = {}
 
 
-# frob:doc docs/graph.md#data-models
+# frob:doc docs/modules/graph.md#data-models
 class MalformedDirective(BaseModel):
     """A `frob:` comment line that failed to parse -- never silently dropped."""
 
@@ -116,7 +116,7 @@ class MalformedDirective(BaseModel):
     reason: str
 
 
-# frob:doc docs/graph.md#data-models
+# frob:doc docs/modules/graph.md#data-models
 class BuildStats(BaseModel):
     """Per-`build_graph` counters proving incrementality to callers and tests."""
 
@@ -126,7 +126,7 @@ class BuildStats(BaseModel):
     cache_hits: int
 
 
-# frob:doc docs/graph.md#data-models
+# frob:doc docs/modules/graph.md#data-models
 class GraphSnapshot(BaseModel):
     """The whole obligation graph at one point in time: symbols, edges, hashes."""
 
@@ -140,7 +140,7 @@ class GraphSnapshot(BaseModel):
     stats: BuildStats = BuildStats(parsed=0, cache_hits=0)
 
 
-# frob:doc docs/graph.md#data-models
+# frob:doc docs/modules/graph.md#data-models
 class LockEntry(BaseModel):
     """One acknowledged (ref, facet) pair and the digest it was acked at."""
 
@@ -151,7 +151,7 @@ class LockEntry(BaseModel):
     digest: str
 
 
-# frob:doc docs/graph.md#data-models
+# frob:doc docs/modules/graph.md#data-models
 class LockFile(BaseModel):
     """The full `frob.lock` document: a version tag plus sorted entries."""
 
@@ -161,7 +161,7 @@ class LockFile(BaseModel):
     entries: tuple[LockEntry, ...] = ()
 
 
-# frob:doc docs/graph.md#data-models
+# frob:doc docs/modules/graph.md#data-models
 class StaleItem(BaseModel):
     """A locked entry whose current digest no longer matches the ack."""
 
@@ -172,7 +172,7 @@ class StaleItem(BaseModel):
     dependents: tuple[str, ...]
 
 
-# frob:doc docs/graph.md#data-models
+# frob:doc docs/modules/graph.md#data-models
 class DanglingEdge(BaseModel):
     """An edge whose endpoint no longer resolves in the current snapshot."""
 
@@ -182,7 +182,7 @@ class DanglingEdge(BaseModel):
     candidates: tuple[str, ...]
 
 
-# frob:doc docs/graph.md#data-models
+# frob:doc docs/modules/graph.md#data-models
 class DriftReport(BaseModel):
     """Pure comparison result between a `LockFile` and a `GraphSnapshot`."""
 

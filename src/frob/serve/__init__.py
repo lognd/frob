@@ -1,4 +1,5 @@
-"""frob.serve -- MCP adapter exposing frob's enforcement queries (docs/serve.md).
+"""frob.serve -- MCP adapter exposing frob's enforcement queries
+(docs/modules/serve.md).
 
 The tool layer (`_tools`) is plain functions over `Result[dict, ServeError]`
 and has no dependency on the `mcp` SDK, so it stays importable and testable

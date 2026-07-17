@@ -1,4 +1,5 @@
-"""FUZZ001/FUZZ002/FUZZ003: pure gate rules over already-loaded state (docs/fuzz.md).
+"""FUZZ001/FUZZ002/FUZZ003: pure gate rules over already-loaded state
+(docs/modules/fuzz.md).
 
 These are plain functions, not wired into `frob.gates.run_gates` by this
 change -- the coordinator does that wiring. Each takes only data (a
@@ -25,7 +26,7 @@ def _split_ref(ref: str) -> tuple[str, int]:
     return path, 0
 
 
-# frob:doc docs/fuzz.md#public-api
+# frob:doc docs/modules/fuzz.md#public-api
 def FUZZ001(  # noqa: N802 - rule-id naming convention shared with frob.gates.invariants
     snapshot: GraphSnapshot, obligations: tuple[FuzzObligation, ...]
 ) -> tuple[Violation, ...]:
@@ -56,7 +57,7 @@ def FUZZ001(  # noqa: N802 - rule-id naming convention shared with frob.gates.in
     return tuple(violations)
 
 
-# frob:doc docs/fuzz.md#public-api
+# frob:doc docs/modules/fuzz.md#public-api
 def FUZZ002(  # noqa: N802 - rule-id naming convention shared with frob.gates.invariants
     obligations: tuple[FuzzObligation, ...],
     param_types: Mapping[str, tuple[type, ...] | None],
@@ -98,7 +99,7 @@ def FUZZ002(  # noqa: N802 - rule-id naming convention shared with frob.gates.in
     return tuple(violations)
 
 
-# frob:doc docs/fuzz.md#public-api
+# frob:doc docs/modules/fuzz.md#public-api
 def FUZZ003(  # noqa: N802 - rule-id naming convention shared with frob.gates.invariants
     snapshot: GraphSnapshot,
     obligations: tuple[FuzzObligation, ...],

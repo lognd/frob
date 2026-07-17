@@ -1,7 +1,7 @@
 """Ticket storage: a single-file `tickets.md` ledger (default) or the legacy
 one-file-per-ticket `tickets/*.md` layout, behind one interface.
 
-The queue is a contract surface (docs/tickets.md): every read is strict
+The queue is a contract surface (docs/modules/tickets.md): every read is strict
 (Err on any malformation) and every write is atomic (temp file + os.replace
 in the same directory, so a crash mid-write never corrupts what a
 concurrent reader observes).
@@ -47,26 +47,26 @@ _LEDGER_HEADER = (
 )
 
 
-# frob:doc docs/tickets.md#storage-internals
+# frob:doc docs/modules/tickets.md#storage-internals
 def slugify(title: str) -> str:
     """Lowercase, hyphenate, and strip non-alnum runs from a title for a filename."""
     slug = _SLUG_RE.sub("-", title.strip().lower()).strip("-")
     return slug or "untitled"
 
 
-# frob:doc docs/tickets.md#storage-internals
+# frob:doc docs/modules/tickets.md#storage-internals
 def tickets_dir(root: Path) -> Path:
     """The legacy tickets/ directory (also holds attachments in single mode)."""
     return root / "tickets"
 
 
-# frob:doc docs/tickets.md#storage-internals
+# frob:doc docs/modules/tickets.md#storage-internals
 def ledger_path(root: Path) -> Path:
     """The single-file `tickets.md` ledger path at the repo root."""
     return root / _LEDGER_NAME
 
 
-# frob:doc docs/tickets.md#storage-internals
+# frob:doc docs/modules/tickets.md#storage-internals
 def attachments_dir(root: Path, ticket_id: str) -> Path:
     """The tickets/attachments/<id>/ directory for a given ticket (both modes)."""
     return tickets_dir(root) / "attachments" / ticket_id
@@ -80,7 +80,7 @@ def _dir_glob(root: Path) -> list[Path]:
     return sorted(p for p in d.glob("T-*.md") if p.is_file())
 
 
-# frob:doc docs/tickets.md#storage-internals
+# frob:doc docs/modules/tickets.md#storage-internals
 def store_mode(root: Path) -> str:
     """Which backend a repo uses: 'single' if tickets.md exists, 'dir' if only
     the legacy tickets/*.md files exist, else 'single' (the default for a
@@ -103,7 +103,7 @@ def _frontmatter_yaml(ticket: Ticket) -> str:
     return yaml.safe_dump(payload, sort_keys=False, default_flow_style=False)
 
 
-# frob:doc docs/tickets.md#storage-internals
+# frob:doc docs/modules/tickets.md#storage-internals
 def serialize_ticket(ticket: Ticket) -> str:
     """Render a Ticket to legacy `---`-frontmatter + body (dir-mode file text)."""
     return f"---\n{_frontmatter_yaml(ticket)}---\n{ticket.body}"
@@ -127,7 +127,7 @@ def _validate(data: dict, body: str, where: str) -> Result[Ticket, TicketError]:
 # ---------------------------------------------------------------------------
 
 
-# frob:doc docs/tickets.md#storage-internals
+# frob:doc docs/modules/tickets.md#storage-internals
 def parse_ticket_file(path: Path) -> Result[Ticket, TicketError]:
     """Split a legacy ticket file into frontmatter + body and validate it."""
     text = path.read_text(encoding="utf-8")
@@ -214,7 +214,7 @@ def _render_ledger(tickets: dict[str, Ticket]) -> str:
 # ---------------------------------------------------------------------------
 
 
-# frob:doc docs/tickets.md#storage-internals
+# frob:doc docs/modules/tickets.md#storage-internals
 def load_all(root: Path) -> Result[dict[str, Ticket], TicketError]:
     """Every ticket in the repo as an id -> Ticket map, backend-agnostic."""
     if store_mode(root) == "single":
@@ -236,7 +236,7 @@ def load_all(root: Path) -> Result[dict[str, Ticket], TicketError]:
     return Ok(tickets)
 
 
-# frob:doc docs/tickets.md#storage-internals
+# frob:doc docs/modules/tickets.md#storage-internals
 def write_ticket(root: Path, ticket: Ticket) -> Result[None, TicketError]:
     """Upsert one ticket into whichever backend the repo uses (atomic)."""
     if store_mode(root) == "single":
@@ -249,7 +249,7 @@ def write_ticket(root: Path, ticket: Ticket) -> Result[None, TicketError]:
     return atomic_write(_dir_path_for(root, ticket), serialize_ticket(ticket))
 
 
-# frob:doc docs/tickets.md#storage-internals
+# frob:doc docs/modules/tickets.md#storage-internals
 def write_all(root: Path, tickets: dict[str, Ticket]) -> Result[None, TicketError]:
     """Replace the ENTIRE store with `tickets` (used by renumber). Single mode
     rewrites the ledger wholesale; dir mode writes each file and removes any
@@ -274,7 +274,7 @@ def _prune_stale_files(root: Path, keep_files: set[Path]) -> None:
             path.unlink(missing_ok=True)
 
 
-# frob:doc docs/tickets.md#storage-internals
+# frob:doc docs/modules/tickets.md#storage-internals
 def migrate_to_ledger(root: Path) -> Result[int, TicketError]:
     """Collapse a legacy tickets/*.md layout into a single tickets.md ledger.
 
@@ -303,7 +303,7 @@ def migrate_to_ledger(root: Path) -> Result[int, TicketError]:
     return Ok(len(tickets))
 
 
-# frob:doc docs/tickets.md#storage-internals
+# frob:doc docs/modules/tickets.md#storage-internals
 def atomic_write(path: Path, content: str | bytes) -> Result[None, TicketError]:
     """Write content via temp file + os.replace in the same directory (crash-safe)."""
     path.parent.mkdir(parents=True, exist_ok=True)

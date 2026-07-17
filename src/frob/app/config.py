@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from frob.gitlog import GranularityLevel
 
 
-# frob:doc docs/app.md#config
+# frob:doc docs/modules/app.md#config
 class Subcommand(str, enum.Enum):
     # frob:ticket T-0021
     scaffold = "scaffold"
@@ -38,7 +38,7 @@ class Subcommand(str, enum.Enum):
     mutate = "mutate"
 
 
-# frob:doc docs/app.md#config
+# frob:doc docs/modules/app.md#config
 # frob:ticket T-0030
 class AppConfig(BaseModel):
     # frob:ticket T-0021
@@ -230,7 +230,7 @@ class AppConfig(BaseModel):
 
     @classmethod
     def from_external(cls, args: argparse.Namespace, file: Path) -> "AppConfig":
-        # frob:doc docs/app.md#config
+        # frob:doc docs/modules/app.md#config
         # frob:ticket T-0021
         # frob:ticket T-0030
         file_cfg: dict = {}
@@ -424,5 +424,5 @@ class AppConfig(BaseModel):
 
     @classmethod
     def from_args(cls, args: argparse.Namespace) -> "AppConfig":
-        # frob:doc docs/app.md#config
+        # frob:doc docs/modules/app.md#config
         return cls.from_external(args, Path("pyproject.toml"))

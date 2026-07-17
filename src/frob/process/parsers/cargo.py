@@ -25,7 +25,7 @@ _FAILURE_SEP = re.compile(r"^---- (.+?) stdout ----$")
 _PANIC_LINE = re.compile(r"^thread '.*?' panicked at '(.*?)'")
 
 
-# frob:doc docs/process.md#public-api
+# frob:doc docs/modules/process.md#public-api
 def parse_cargo(stdout: str, exit_code: int = 0, tool: str = "cargo") -> ToolResult:
     """
     Unified cargo parser. Detects JSON message format automatically;

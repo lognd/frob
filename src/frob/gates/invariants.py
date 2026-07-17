@@ -1,4 +1,4 @@
-"""Invariant loading (docs/gates.md's Invariants section).
+"""Invariant loading (docs/modules/gates.md's Invariants section).
 
 An invariant is a tracked statement (`invariants/INV-###.md`, YAML
 frontmatter over markdown prose) whose truth must have standing evidence --
@@ -27,7 +27,7 @@ _ID_RE = re.compile(r"^INV-\d{3}$")
 _FRONTMATTER_RE = re.compile(r"^---\n(.*?)\n---\n?(.*)$", re.DOTALL)
 
 
-# frob:doc docs/gates.md#invariants
+# frob:doc docs/modules/gates.md#invariants
 class Criticality(StrEnum):
     """How severe a broken invariant would be."""
 
@@ -38,7 +38,7 @@ class Criticality(StrEnum):
 _CRITICALITY_VALUES = frozenset(c.value for c in Criticality)
 
 
-# frob:doc docs/gates.md#invariants
+# frob:doc docs/modules/gates.md#invariants
 class Invariant(BaseModel):
     """One tracked invariant: id, statement, criticality, and its evidence list."""
 
@@ -51,7 +51,7 @@ class Invariant(BaseModel):
     path: str = ""
 
 
-# frob:doc docs/gates.md#invariants
+# frob:doc docs/modules/gates.md#invariants
 class InvariantError(ErrorSet):
     """Failure values `load_invariants` can return."""
 
@@ -134,7 +134,7 @@ def _parse_one(path: Path, root: Path) -> Result[Invariant, InvariantError]:
     return _build_invariant(raw.danger_ok, path, root)
 
 
-# frob:doc docs/gates.md#public-api
+# frob:doc docs/modules/gates.md#public-api
 def load_invariants(root: Path) -> Result[tuple[Invariant, ...], InvariantError]:
     """Parse every `invariants/INV-###.md` under `root`; a missing dir is `Ok(())`."""
     directory = _invariants_dir(root)

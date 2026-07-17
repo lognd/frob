@@ -132,7 +132,7 @@ def _scan_pytest_output(
     return cases, diagnostics, summary
 
 
-# frob:doc docs/process.md#public-api
+# frob:doc docs/modules/process.md#public-api
 def parse_pytest(stdout: str, exit_code: int = 0) -> ToolResult:
     cases, diagnostics, summary = _scan_pytest_output(stdout)
     return ToolResult(

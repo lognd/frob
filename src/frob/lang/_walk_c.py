@@ -1,4 +1,4 @@
-"""C / C++ symbol walker (docs/lang.md extraction table).
+"""C / C++ symbol walker (docs/modules/lang.md extraction table).
 
 C/C++ publicness rules (file-scope `static` for free functions, `access_specifier`
 for class members) and out-of-line `Class::method` declarator naming are kept

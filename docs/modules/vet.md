@@ -239,7 +239,7 @@ if the method is known, because the baseline is per-target.
 | Rule | Detector | Signal |
 |---|---|---|
 | VET008 | artifact/source divergence | the published sdist/tarball differs from the tagged source repo beyond expected build outputs (the xz shape: the backdoor was in the tarball, not in git) |
-| VET009 | stylometric self-similarity | new code in version N+1 is structurally alien to the package's own history -- reuses the frob-core WL-kernel/fingerprint machinery from docs/dup.md pointed at "this package vs itself over time" |
+| VET009 | stylometric self-similarity | new code in version N+1 is structurally alien to the package's own history -- reuses the frob-core WL-kernel/fingerprint machinery from docs/modules/dup.md pointed at "this package vs itself over time" |
 | VET010 | dynamic/static divergence | opt-in detonation: import/install the package in a no-network, syscall-observed sandbox (bwrap/seccomp); capabilities OBSERVED dynamically but invisible statically are the highest-severity finding vet produces (dynamic-import smuggling) |
 | signals | cadence + maintainer anomalies | dormant package suddenly releasing, maintainer handover immediately followed by a capability change -- registry metadata feeding VET003/VET004 severity, not standalone rules |
 

@@ -19,7 +19,7 @@ reimplemented in TypeScript is still a clone.
 | R3 | canonicalized-AST subtree hash: alpha-rename, literal abstraction, commutative-operand ordering, control-flow normalization (for/while desugar, early-return vs if-else) | restructured dressing, same shape (PyCharm's level) | cheap |
 | R4 | winnowed fingerprints (Moss) + Deckard-style characteristic vectors under LSH; candidate pairs verified by real tree edit distance (Zhang-Shasha, a `frob-core` Rust kernel over actual node structure) | gapped/near-miss clones, statements inserted or deleted, within-statement restructuring | moderate; Rust kernel |
 | R5 | Weisfeiler-Lehman graph-kernel hashing over a real def-use/control-flow graph built from `frob.lang`'s statement nodes | reordered-but-dataflow-identical logic (beyond PyCharm) | moderate; Rust kernel |
-| R6 | observational equivalence: probe candidate pure functions with identical inputs drawn from the SHARED invariant-respecting generators (docs/fuzz.md) and compare outputs | true semantic clones -- different algorithm, same behavior | opt-in (`--probe`); Python orchestrated |
+| R6 | observational equivalence: probe candidate pure functions with identical inputs drawn from the SHARED invariant-respecting generators (docs/modules/fuzz.md) and compare outputs | true semantic clones -- different algorithm, same behavior | opt-in (`--probe`); Python orchestrated |
 | R7 | bounded-SMT: translate tiny, single-return, int/bool, straight-line functions to a Z3 formula and check equivalence by UNSAT (optional `z3-solver` dep) | formally-proved equivalence over the whole input domain, for the bounded subset | opt-in; degrades to `Err` without `frob[smt]` |
 
 R6 is honest about limits: full Type-4 equivalence is undecidable; probing
@@ -193,7 +193,7 @@ descriptions above.
 
 - `frob.lang` (normalized tokens/trees), `frob.graph` (digests, purity
   facts, snapshot), `frob.gitio` (diff), `frob-core` (kernels),
-  `frob.fuzz` generators for R6 (docs/fuzz.md).
+  `frob.fuzz` generators for R6 (docs/modules/fuzz.md).
 - CLI: `frob dup [--all|--base REF] [--probe] [--json]`.
 - `frob check`: DUP001/DUP002 in the gates stage.
 
@@ -266,7 +266,7 @@ deviations, so nothing here is silently assumed done:
   (`Err(DupError.NoGenerator)` when a parameter's type has no resolvable
   generator). `probe_equivalence` is never called by `find_clones` or the
   DUP gate path -- it is only reachable from a caller that explicitly
-  wants R6 (docs/dup.md's "opt-in `--probe` path"); wiring an actual
+  wants R6 (docs/modules/dup.md's "opt-in `--probe` path"); wiring an actual
   `frob dup --probe` CLI flag is out of `frob.dup`'s scope and reported
   to the coordinator.
 - **The `.frob/dup.db` cache** (`frob.dup._cache`) is now wired into

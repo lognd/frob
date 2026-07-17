@@ -1,6 +1,6 @@
 """Thin Result-returning shim over the `frob_core` native extension.
 
-Matches the lithos `CoreFailure` pattern named in docs/dup.md: PyO3 calls
+Matches the lithos `CoreFailure` pattern named in docs/modules/dup.md: PyO3 calls
 never cross the boundary as exceptions the rest of `frob.dup` has to know
 about -- `core_available()` gates every call site, and a missing extension
 becomes `Err(DupError.CoreUnavailable)`, never a silent downgrade.
@@ -23,7 +23,7 @@ INSTALL_HINT = (
 )
 
 
-# frob:doc docs/dup.md#rust-core
+# frob:doc docs/modules/dup.md#rust-core
 @lru_cache(maxsize=1)
 def core_available() -> bool:
     """Whether the compiled `frob_core` extension is importable, cached once."""
@@ -37,7 +37,7 @@ def core_available() -> bool:
     return True
 
 
-# frob:doc docs/dup.md#rust-core
+# frob:doc docs/modules/dup.md#rust-core
 def r3_canonical_hash(tokens: tuple[str, ...]) -> Result[str, DupError]:
     """R3: canonicalized-AST subtree hash of a normalized token sequence."""
     if not core_available():
@@ -47,7 +47,7 @@ def r3_canonical_hash(tokens: tuple[str, ...]) -> Result[str, DupError]:
     return Ok(frob_core.r3_canonical_hash(list(tokens)))
 
 
-# frob:doc docs/dup.md#rust-core
+# frob:doc docs/modules/dup.md#rust-core
 def winnow_fingerprints(
     tokens: tuple[str, ...], k: int, w: int
 ) -> Result[tuple[int, ...], DupError]:
@@ -59,7 +59,7 @@ def winnow_fingerprints(
     return Ok(tuple(frob_core.winnow_fingerprints(list(tokens), k, w)))
 
 
-# frob:doc docs/dup.md#rust-core
+# frob:doc docs/modules/dup.md#rust-core
 def candidate_pairs(
     fingerprint_sets: tuple[tuple[int, ...], ...], min_shared: int
 ) -> Result[tuple[tuple[int, int], ...], DupError]:
@@ -72,7 +72,7 @@ def candidate_pairs(
     return Ok(tuple(tuple(p) for p in frob_core.candidate_pairs(sets, min_shared)))
 
 
-# frob:doc docs/dup.md#rust-core
+# frob:doc docs/modules/dup.md#rust-core
 def tree_edit_similarity(
     a: tuple[int, ...], b: tuple[int, ...]
 ) -> Result[tuple[float, tuple[tuple[int, int], ...]], DupError]:
@@ -85,7 +85,7 @@ def tree_edit_similarity(
     return Ok((sim, tuple(tuple(p) for p in alignment)))
 
 
-# frob:doc docs/dup.md#rung-r4
+# frob:doc docs/modules/dup.md#rung-r4
 def apted_similarity(
     labels_a: tuple[str, ...],
     parents_a: tuple[int, ...],
@@ -109,7 +109,7 @@ def apted_similarity(
     )
 
 
-# frob:doc docs/dup.md#rung-r5
+# frob:doc docs/modules/dup.md#rung-r5
 def wl_hash(
     adjacency: tuple[tuple[int, int], ...], labels: tuple[str, ...], iterations: int
 ) -> Result[int, DupError]:

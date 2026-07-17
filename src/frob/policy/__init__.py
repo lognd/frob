@@ -1,6 +1,6 @@
 """frob.policy -- user-defined rules from `frob.toml`'s `[policy]` table.
 
-(docs/gates.md is authoritative.)
+(docs/modules/gates.md is authoritative.)
 
 Three rule kinds at alpha: `forbidden-import` (regex over import syntax,
 documented duplicate of language-specific import grammar rather than a
@@ -143,7 +143,7 @@ def _load_norm_rules(policy_tbl: dict) -> Result[list[PolicyRule], PolicyError]:
     return Ok(rules)
 
 
-# frob:doc docs/gates.md#public-api
+# frob:doc docs/modules/gates.md#public-api
 def load_policy(root: Path) -> Result[tuple[PolicyRule, ...], PolicyError]:
     """Parse `frob.toml`'s `[[policy.*]]` tables; missing file/table is `Ok(())`."""
     toml_path = root / "frob.toml"
@@ -348,7 +348,7 @@ def _norm_violations(rule: PolicyRule, diff: Diff) -> tuple[Violation, ...]:
     )
 
 
-# frob:doc docs/gates.md#public-api
+# frob:doc docs/modules/gates.md#public-api
 def policy_gate(
     rules: tuple[PolicyRule, ...], snapshot: GraphSnapshot, diff: Diff
 ) -> tuple[Violation, ...]:

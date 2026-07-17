@@ -129,7 +129,7 @@ def record_prework(root: Path, ticket_id: str,
     # sweep digest in the ticket body; PRE001 checks its presence.
 
 # Diff/working_diff live in frob/gitio.py (the ONE git seam, shared with
-# frob.testing -- see docs/testing.md); base default "main", configurable
+# frob.testing -- see docs/modules/testing.md); base default "main", configurable
 # [tool.frob] check_base. CollectedTests and its pytest-collection cache
 # live in frob.testing and are imported from there.
 
@@ -226,7 +226,7 @@ paths = ["src/frob/check/**", "src/frob/gates/**"]   # system_line_cov scope
 ```
 
 Binding is explicit: a test declares what it tests via `frob:tests`
-directives (see docs/graph.md); the gate verifies the declared node ids are
+directives (see docs/modules/graph.md); the gate verifies the declared node ids are
 actually collected by pytest, so a deleted test cannot keep satisfying an
 obligation. Coverage is recorded evidence: `make coverage` runs pytest-cov
 then `stamp_coverage`; `frob check` only reads the stamp and coverage.xml.

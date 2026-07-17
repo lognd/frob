@@ -1,4 +1,4 @@
-"""Tests for frob.lang -- uniform tree-sitter parsing (docs/lang.md)."""
+"""Tests for frob.lang -- uniform tree-sitter parsing (docs/modules/lang.md)."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""`frob.lock` -- acknowledged digests and drift detection (docs/graph.md).
+"""`frob.lock` -- acknowledged digests and drift detection (docs/modules/graph.md).
 
 Locking covers edge endpoints only, not every symbol -- locking everything
 would churn `frob.lock` on every commit and drown review signal. `drift` is
@@ -36,7 +36,7 @@ _log = get_logger(__name__)
 _DEFAULT_FACET = "sig"
 
 
-# frob:doc docs/graph.md#error-types
+# frob:doc docs/modules/graph.md#error-types
 class LockError(ErrorSet):
     """Failure values `frob.lock` read/write paths can return."""
 
@@ -45,7 +45,7 @@ class LockError(ErrorSet):
     WriteFailed = "Atomic write of frob.lock failed"
 
 
-# frob:doc docs/graph.md#public-api
+# frob:doc docs/modules/graph.md#public-api
 def load_lock(path: Path) -> Result[LockFile, LockError]:
     """Load `frob.lock`; a missing file is an empty lock, not an error."""
     if not path.exists():
@@ -83,7 +83,7 @@ def _sorted_entries(entries: Sequence[LockEntry]) -> tuple[LockEntry, ...]:
     return tuple(sorted(entries, key=lambda e: (e.ref, e.facet)))
 
 
-# frob:doc docs/graph.md#public-api
+# frob:doc docs/modules/graph.md#public-api
 def acknowledge(
     lock: LockFile, snapshot: GraphSnapshot, refs: Sequence[str]
 ) -> Result[LockFile, LockError]:
@@ -200,7 +200,7 @@ def _dangling_edges(
     return tuple(dangling)
 
 
-# frob:doc docs/graph.md#public-api
+# frob:doc docs/modules/graph.md#public-api
 def drift(lock: LockFile, snapshot: GraphSnapshot) -> DriftReport:
     """Pure comparison: stale acks (digest moved) and dangling edges (endpoint gone)."""
     stale = _stale_items(lock, snapshot)
@@ -210,7 +210,7 @@ def drift(lock: LockFile, snapshot: GraphSnapshot) -> DriftReport:
 
 
 # frob:invariant INV-001
-# frob:doc docs/graph.md#public-api
+# frob:doc docs/modules/graph.md#public-api
 def write_lock(lock: LockFile, path: Path) -> Result[Unit, LockError]:
     """Atomically write `lock` as deterministic, sorted, diff-friendly JSON."""
     ordered = _sorted_entries(lock.entries)

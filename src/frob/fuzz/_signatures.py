@@ -50,7 +50,7 @@ def _resolve_attr(module: object, qualname: str) -> object | None:
     return obj
 
 
-# frob:doc docs/fuzz.md#implementation-notes
+# frob:doc docs/modules/fuzz.md#implementation-notes
 def resolve_param_types(root: Path, ref: str) -> tuple[type, ...] | None:
     """Best-effort: the non-`self`/`cls` parameter types of the Python symbol `ref`.
 

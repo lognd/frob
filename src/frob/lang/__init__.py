@@ -1,4 +1,4 @@
-"""Uniform tree-sitter parsing across five languages (docs/graph.md, Phase 1).
+"""Uniform tree-sitter parsing across five languages (docs/modules/graph.md, Phase 1).
 
 `frob.graph` needs one shape -- symbols plus comments plus a content hash --
 regardless of whether the source file is Python, TypeScript, Rust, C, or
@@ -33,7 +33,7 @@ from frob.logging import get_logger
 _log = get_logger(__name__)
 
 
-# frob:doc docs/lang.md#error-types
+# frob:doc docs/modules/lang.md#error-types
 class LangError(ErrorSet):
     """Failure values `parse_file` can return -- never a bare exception."""
 
@@ -60,7 +60,7 @@ _EXTENSION_TABLE: dict[str, tuple[str, str]] = {
 _SUPPORTED_LANGUAGES = frozenset(label for _grammar, label in _EXTENSION_TABLE.values())
 
 
-# frob:doc docs/graph.md#public-api
+# frob:doc docs/modules/graph.md#public-api
 def supported_languages() -> frozenset[str]:
     """The set of `ParsedFile.language` labels `parse_file` can ever produce."""
     return _SUPPORTED_LANGUAGES
@@ -107,7 +107,7 @@ def _parse(path: Path) -> Result[tuple[Tree, bytes, str], LangError]:
     return Ok((tree, source, language_label))
 
 
-# frob:doc docs/graph.md#public-api
+# frob:doc docs/modules/graph.md#public-api
 def parse_file(path: Path) -> Result[ParsedFile, LangError]:
     """Read, parse, and extract `path` into a `ParsedFile` (dispatch by extension)."""
     parsed_result = _parse(path)
@@ -134,7 +134,7 @@ def parse_file(path: Path) -> Result[ParsedFile, LangError]:
     return Ok(parsed)
 
 
-# frob:doc docs/graph.md#public-api
+# frob:doc docs/modules/graph.md#public-api
 def extract_imports(path: Path) -> Result[tuple[str, ...], LangError]:
     """Raw, unresolved import/include specifiers declared in `path`.
 
@@ -152,7 +152,7 @@ def extract_imports(path: Path) -> Result[tuple[str, ...], LangError]:
     return Ok(specifiers)
 
 
-# frob:doc docs/graph.md#public-api
+# frob:doc docs/modules/graph.md#public-api
 def iter_identifiers(path: Path) -> Result[tuple[tuple[str, int], ...], LangError]:
     """(name, 1-based line) for every identifier-like leaf token in `path`.
 
@@ -167,7 +167,7 @@ def iter_identifiers(path: Path) -> Result[tuple[tuple[str, int], ...], LangErro
     return Ok(_iter_identifiers(tree, language_label))
 
 
-# frob:doc docs/graph.md#public-api
+# frob:doc docs/modules/graph.md#public-api
 def raw_tree(path: Path) -> Result[tuple[Tree, bytes, str], LangError]:
     """The raw tree-sitter `(Tree, source_bytes, language_label)` for `path`.
 
@@ -183,7 +183,7 @@ def raw_tree(path: Path) -> Result[tuple[Tree, bytes, str], LangError]:
     return _parse(path)
 
 
-# frob:doc docs/graph.md#public-api
+# frob:doc docs/modules/graph.md#public-api
 def cpp_function_nodes(tree: Tree) -> tuple[tuple[Node, str], ...]:
     """(node, qualified_name) for every C/C++ function in `tree` (one level
     of class/struct nesting). Thin public wrapper around
@@ -192,7 +192,7 @@ def cpp_function_nodes(tree: Tree) -> tuple[tuple[Node, str], ...]:
     return _iter_cpp_functions(tree.root_node)
 
 
-# frob:doc docs/dup.md#public-api
+# frob:doc docs/modules/dup.md#public-api
 def symbol_tree(path: Path, span: tuple[int, int]) -> Result[TreeNode, LangError]:
     """The `TreeNode` subtree covering `span` (1-based, inclusive lines) in `path`.
 
@@ -222,7 +222,7 @@ def symbol_tree(path: Path, span: tuple[int, int]) -> Result[TreeNode, LangError
     return Ok(_export_tree(node, comment_types))
 
 
-# frob:doc docs/graph.md#public-api
+# frob:doc docs/modules/graph.md#public-api
 def resolve_local_import(
     specifier: str, language: str, *, file_dir: Path, root: Path
 ) -> str | None:

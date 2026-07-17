@@ -1,4 +1,4 @@
-"""Tests for frob.graph -- obligation graph registry (docs/graph.md)."""
+"""Tests for frob.graph -- obligation graph registry (docs/modules/graph.md)."""
 
 from __future__ import annotations
 
@@ -272,10 +272,10 @@ class TestMarkdownAnchors:
 <!-- frob:describes src/frob/graph/lock.py::LockFile body -->
 Some text.
 """
-        edges = markdown_anchors("docs/graph.md", text)
+        edges = markdown_anchors("docs/modules/graph.md", text)
         assert len(edges) == 1
         edge = edges[0]
-        assert edge.src == "docs/graph.md#lock-file"
+        assert edge.src == "docs/modules/graph.md#lock-file"
         assert edge.target == "src/frob/graph/lock.py::LockFile"
         assert edge.attrs["facet"] == "body"
 
@@ -479,7 +479,7 @@ class TestDuplicateSymrefs:
 class TestCacheModule:
     """Direct exercise of frob.graph.cache's row-level read/write primitives
     (build_graph/load_graph exercise them transitively, but each function
-    gets its own assertion here per docs/graph.md's Cache section)."""
+    gets its own assertion here per docs/modules/graph.md's Cache section)."""
 
     def test_set_root_and_get_root_roundtrip(self, tmp_path: Path) -> None:
         # frob:tests src/frob/graph/cache.py::set_root

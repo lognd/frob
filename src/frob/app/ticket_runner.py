@@ -1,5 +1,5 @@
 """CLI wiring for `frob ticket new|list|show|doable|plan|start|sweep|attach|
-block|close|fail` (docs/tickets.md)."""
+block|close|fail` (docs/modules/tickets.md)."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ _log = get_logger(__name__)
 _CACHE_REL = Path(".frob") / "cache.db"
 
 
-# frob:doc docs/app.md#runners
+# frob:doc docs/modules/app.md#runners
 def run(cfg: AppConfig) -> None:
     """Dispatch to the ticket subcommand named by `cfg.ticket_command`."""
     root = (cfg.ticket_path or Path(".")).resolve()

@@ -1,4 +1,4 @@
-"""C++ architectural checks: long-function and god-class (docs/arch.md).
+"""C++ architectural checks: long-function and god-class (docs/modules/arch.md).
 
 Best-effort structural checks over the tree-sitter C++ grammar; the smaller
 rule surface than Python (no coupling/nesting/abstraction) mirrors the

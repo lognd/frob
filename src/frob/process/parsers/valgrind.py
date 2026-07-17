@@ -20,7 +20,7 @@ _INVALID = re.compile(
 )
 
 
-# frob:doc docs/process.md#public-api
+# frob:doc docs/modules/process.md#public-api
 def parse_valgrind(stdout: str, exit_code: int = 0) -> ToolResult:
     text = stdout.strip()
     if text.startswith("<?xml") or text.startswith("<valgrindoutput"):

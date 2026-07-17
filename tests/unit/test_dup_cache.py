@@ -1,4 +1,4 @@
-"""Unit tests for frob.dup._cache's content-addressed + LRU cache (docs/dup.md)."""
+"""Unit tests for frob.dup._cache's content-addressed + LRU cache (docs/modules/dup.md)."""
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ class TestFingerprintRoundTrip:
         assert _cache.get_fingerprint(tmp_path, "nope", "r3") is None
 
     def test_different_rungs_do_not_clobber_each_other(self, tmp_path: Path):
-        # Regression for the fixed primary-key bug (docs/dup.md's
+        # Regression for the fixed primary-key bug (docs/modules/dup.md's
         # Implementation notes): a digest with more than one cached rung
         # must keep both, not silently drop all but the last write.
         _cache.put_fingerprint(tmp_path, "digestB", "r3", ("hash-value",))

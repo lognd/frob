@@ -1,4 +1,4 @@
-"""frob.check -- multi-language quality gate orchestration (docs/check.md).
+"""frob.check -- multi-language quality gate orchestration (docs/commands/check.md).
 
 `run_check` (Python) and its `run_check_cpp`/`run_check_rust`/`run_check_ts`
 siblings run each language's tools in parallel and aggregate every
@@ -77,7 +77,7 @@ def _section_lines(
     return lines
 
 
-# frob:doc docs/check.md#public-api
+# frob:doc docs/commands/check.md#public-api
 class CheckResult(BaseModel):
     """Aggregate outcome of one `frob check` run: every tool's `ToolResult`."""
 
@@ -88,18 +88,18 @@ class CheckResult(BaseModel):
 
     @property
     def total_errors(self) -> int:
-        # frob:doc docs/check.md#public-api
+        # frob:doc docs/commands/check.md#public-api
         """Sum of error-severity diagnostics across every tool that ran."""
         return sum(r.error_count for r in self.results)
 
     @property
     def total_warnings(self) -> int:
-        # frob:doc docs/check.md#public-api
+        # frob:doc docs/commands/check.md#public-api
         """Sum of warning-severity diagnostics across every tool that ran."""
         return sum(r.warning_count for r in self.results)
 
     def as_text(self, color: bool = False) -> str:
-        # frob:doc docs/check.md#public-api
+        # frob:doc docs/commands/check.md#public-api
         """Human-readable report: errors, then warnings, then notes, then a
         per-tool summary table."""
         from frob.logging.color import BOLD, DIM, GREEN, RED, YELLOW, paint
@@ -137,7 +137,7 @@ class CheckResult(BaseModel):
         return "\n".join(lines)
 
     def as_json(self) -> str:
-        # frob:doc docs/check.md#public-api
+        # frob:doc docs/commands/check.md#public-api
         """The full structured result as JSON (`--json` CLI output)."""
         return self.model_dump_json(indent=2)
 
@@ -245,7 +245,7 @@ def _collect_results(
 
 
 # frob:ticket T-0028
-# frob:doc docs/check.md#public-api
+# frob:doc docs/commands/check.md#public-api
 def run_check(
     root: Path,
     *,
@@ -294,7 +294,7 @@ def run_check(
 # ---------------------------------------------------------------------------
 
 
-# frob:doc docs/check.md#public-api
+# frob:doc docs/commands/check.md#public-api
 def run_check_cpp(
     root: Path,
     *,
@@ -339,7 +339,7 @@ def run_check_cpp(
 # ---------------------------------------------------------------------------
 
 
-# frob:doc docs/check.md#public-api
+# frob:doc docs/commands/check.md#public-api
 def run_check_rust(
     root: Path,
     *,
@@ -377,7 +377,7 @@ def run_check_rust(
 # ---------------------------------------------------------------------------
 
 
-# frob:doc docs/check.md#public-api
+# frob:doc docs/commands/check.md#public-api
 def run_check_ts(
     root: Path,
     *,
@@ -413,7 +413,7 @@ def run_check_ts(
 # ---------------------------------------------------------------------------
 
 
-# frob:doc docs/check.md#public-api
+# frob:doc docs/commands/check.md#public-api
 def detect_project_type(root: Path) -> str:
     """Returns 'python', 'cpp', 'rust', 'typescript', or 'unknown'."""
     if (root / "Cargo.toml").exists():

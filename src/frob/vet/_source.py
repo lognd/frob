@@ -1,4 +1,5 @@
-"""Locates a locked dependency's SOURCE in local caches (docs/vet.md "Mechanics":
+"""Locates a locked dependency's SOURCE in local caches (docs/modules/vet.md
+"Mechanics":
 "fetch/locate the package source (local caches first: uv/pip cache, cargo
 registry cache, node_modules; network fetch only with consent)").
 
@@ -6,7 +7,7 @@ MVP-plus note: this is best-effort local-cache discovery only; no network
 fetch is implemented (`--fetch` in the CLI controls the quarantine/typosquat
 registry lookups, not source download). A dependency whose source is not
 found locally scans with an empty capability set and a "source-unavailable"
-signal, never a crash (docs/vet.md "Honest limits").
+signal, never a crash (docs/modules/vet.md "Honest limits").
 """
 
 from __future__ import annotations
@@ -34,7 +35,7 @@ def _normalize_py_name(name: str) -> str:
     return name.replace("-", "_").lower()
 
 
-# frob:doc docs/vet.md#public-api
+# frob:doc docs/modules/vet.md#public-api
 def locate_pypi_source(root: Path, name: str, version: str) -> Path | None:
     """A directory containing `name`'s Python source, or `None`.
 
@@ -59,7 +60,7 @@ def locate_pypi_source(root: Path, name: str, version: str) -> Path | None:
     return None
 
 
-# frob:doc docs/vet.md#public-api
+# frob:doc docs/modules/vet.md#public-api
 def locate_npm_source(root: Path, name: str) -> Path | None:
     """A directory containing `name`'s JS/TS source under `node_modules/`."""
     candidate = root / "node_modules" / name
@@ -70,7 +71,7 @@ def locate_npm_source(root: Path, name: str) -> Path | None:
     return None
 
 
-# frob:doc docs/vet.md#public-api
+# frob:doc docs/modules/vet.md#public-api
 def locate_cargo_source(name: str, version: str) -> Path | None:
     """A directory containing `name`'s Rust source under `~/.cargo/registry/src`."""
     registry_root = Path.home() / ".cargo" / "registry" / "src"
@@ -85,7 +86,7 @@ def locate_cargo_source(name: str, version: str) -> Path | None:
     return None
 
 
-# frob:doc docs/vet.md#public-api
+# frob:doc docs/modules/vet.md#public-api
 def locate_source(root: Path, ecosystem: str, name: str, version: str) -> Path | None:
     """Dispatch to the ecosystem-appropriate local-cache source locator."""
     if ecosystem == "pypi":

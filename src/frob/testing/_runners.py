@@ -1,7 +1,8 @@
-"""Runner registry loading and per-language spawn (docs/testing.md's Runner registry).
+"""Runner registry loading and per-language spawn
+(docs/modules/testing.md's Runner registry).
 
 Spawns go through `frob.gitio.run_argv` -- the one process-with-timeout helper in
-the package (documented in docs/testing.md's Design decisions: `frob.gitio` must
+the package (documented in docs/modules/testing.md's Design decisions: `frob.gitio` must
 not depend on `frob.testing`, so the shared primitive lives in `gitio` and this
 module imports it, rather than a second timeout-handling copy living here).
 """
@@ -31,7 +32,7 @@ _PLACEHOLDERS = ("{ids}", "{files}", "{filters}", "{regex}")
 _EXCERPT_LINES = 40
 
 
-# frob:doc docs/testing.md#error-types
+# frob:doc docs/modules/testing.md#error-types
 class TestingError(ErrorSet):
     """Failure values `frob.testing`'s executing functions can return."""
 
@@ -57,7 +58,7 @@ def _validate_placeholder(command: tuple[str, ...]) -> str | None:
     return found[0]
 
 
-# frob:doc docs/testing.md#public-api
+# frob:doc docs/modules/testing.md#public-api
 def load_runners(root: Path) -> Result[tuple[RunnerSpec, ...], TestingError]:
     """Parse `frob.toml`'s `[[test.runner]]` entries; missing file/table is `Ok(())`."""
     toml_path = root / "frob.toml"
@@ -140,7 +141,7 @@ def _render_command(spec: RunnerSpec, items: tuple[str, ...]) -> tuple[str, ...]
     return tuple(argv)
 
 
-# frob:doc docs/testing.md#public-api
+# frob:doc docs/modules/testing.md#public-api
 def run_selected(
     selection: SelectionReport, runners: tuple[RunnerSpec, ...], root: Path
 ) -> Result[TestRunReport, TestingError]:
@@ -157,7 +158,7 @@ def run_selected(
             _log.error(
                 "run_selected: language %r has selected tests but no runner -- "
                 "add a [[test.runner]] entry with language = %r to frob.toml at "
-                "the repo root (see docs/testing.md)",
+                "the repo root (see docs/modules/testing.md)",
                 language,
                 language,
             )

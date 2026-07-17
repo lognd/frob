@@ -1,4 +1,4 @@
-"""SQLite-backed snapshot cache at `.frob/cache.db` (docs/graph.md, "Cache").
+"""SQLite-backed snapshot cache at `.frob/cache.db` (docs/modules/graph.md, "Cache").
 
 Everything stored here is derived and rebuildable from the tracked source
 tree -- safe to delete at any time. Rows are keyed per source/doc file so
@@ -127,7 +127,7 @@ def _apply_schema(conn: sqlite3.Connection, existing: int | None, path: Path) ->
 
 # frob:invariant INV-003
 # frob:ticket T-0029
-# frob:doc docs/graph.md#cache
+# frob:doc docs/modules/graph.md#cache
 def connect(path: Path) -> sqlite3.Connection:
     """Open (creating parent dirs) the cache db; wipe and rebuild on schema mismatch.
 
@@ -143,7 +143,7 @@ def connect(path: Path) -> sqlite3.Connection:
     return conn
 
 
-# frob:doc docs/graph.md#cache
+# frob:doc docs/modules/graph.md#cache
 def set_root(conn: sqlite3.Connection, root: str) -> None:
     """Record the snapshot's repo root (used by `load_graph`)."""
     conn.execute(
@@ -153,7 +153,7 @@ def set_root(conn: sqlite3.Connection, root: str) -> None:
     )
 
 
-# frob:doc docs/graph.md#cache
+# frob:doc docs/modules/graph.md#cache
 def get_root(conn: sqlite3.Connection) -> str | None:
     """The stored repo root, if any snapshot has ever been saved."""
     cur = conn.execute("SELECT value FROM meta WHERE key = 'root'")
@@ -161,7 +161,7 @@ def get_root(conn: sqlite3.Connection) -> str | None:
     return row[0] if row is not None else None
 
 
-# frob:doc docs/graph.md#cache
+# frob:doc docs/modules/graph.md#cache
 def get_file_hash(conn: sqlite3.Connection, file_path: str) -> str | None:
     """The cached content hash for `file_path`, or `None` if never stored."""
     cur = conn.execute("SELECT content_hash FROM files WHERE path = ?", (file_path,))
@@ -226,7 +226,7 @@ def _store_malformed(
         )
 
 
-# frob:doc docs/graph.md#cache
+# frob:doc docs/modules/graph.md#cache
 def store_file_data(
     conn: sqlite3.Connection,
     *,
@@ -259,7 +259,7 @@ def _row_to_symbol(row: tuple) -> SymbolRecord:
     )
 
 
-# frob:doc docs/graph.md#cache
+# frob:doc docs/modules/graph.md#cache
 def load_file_data(
     conn: sqlite3.Connection, file_path: str
 ) -> tuple[tuple[SymbolRecord, ...], tuple[Edge, ...], tuple[MalformedDirective, ...]]:
@@ -292,7 +292,7 @@ def load_file_data(
     return symbols, edges, malformed
 
 
-# frob:doc docs/graph.md#cache
+# frob:doc docs/modules/graph.md#cache
 def load_all(
     conn: sqlite3.Connection, *, stats: BuildStats | None = None
 ) -> GraphSnapshot:

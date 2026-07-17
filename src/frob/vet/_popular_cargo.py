@@ -1,5 +1,5 @@
 """Bundled top-crates.io package names for the typosquat distance check
-(docs/vet.md VET-JS003 generalized). Split out of `_popular.py` to keep each
+(docs/modules/vet.md VET-JS003 generalized). Split out of `_popular.py` to keep each
 data module under the large-file threshold; refresh via a future
 `--sync-advisories`-style command rather than by hand.
 """

@@ -64,7 +64,7 @@ def _summarize_cases(cases: list[TestCase]) -> tuple[int, str]:
     return failed, summary
 
 
-# frob:doc docs/process.md#public-api
+# frob:doc docs/modules/process.md#public-api
 def parse_junit_xml(content: str, tool: str = "junit") -> ToolResult:
     """Parse JUnit XML into a ToolResult."""
     try:

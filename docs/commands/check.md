@@ -44,7 +44,7 @@ class CheckResult(BaseModel)
 def run_check(root: Path, *, skip_ruff=False, skip_ty=False, ..., only=None,
               ticket=None, base=None) -> CheckResult
     # Python quality gate: ruff, ty, cycle/dup/arch/bind/exports, then gates
-    # (docs/gates.md) -- the entry point `frob check` dispatches to for a
+    # (docs/modules/gates.md) -- the entry point `frob check` dispatches to for a
     # Python project (or --type python).
 def run_check_cpp(root: Path, *, build_dir=None, skip_build=False, ...,
                    valgrind: bool = False) -> CheckResult
@@ -75,7 +75,7 @@ Runs in order:
 7. `frob bind` -- pybind11/PyO3 BIND coverage
 8. `frob exports` -- missing `__init__.py` exports
 9. PyCharm inspection (if auto-located)
-10. `gates` -- `frob.gates.run_gates` (docs/gates.md): drift, coverage, scope,
+10. `gates` -- `frob.gates.run_gates` (docs/modules/gates.md): drift, coverage, scope,
     pre-work, invariant, test, and policy rule violations. A load failure
     (e.g. not a git repo, no `tickets/`) is a soft skip, not a check failure;
     any `ERROR`-severity violation fails the stage like any other tool.

@@ -13,7 +13,7 @@ Remaining backlog now lives as tickets, one coherent item per ticket:
 - T-0005 -- Ticket kind=incident with blameless-postmortem body template
 - T-0006 -- Ticket acceptance field (given/when/then) verified by reviewer agent
 - T-0007 -- STRIDE threat field on kind=security tickets
-- T-0008 -- frob.vet: dependency capability vetting (docs/vet.md build-out)
+- T-0008 -- frob.vet: dependency capability vetting (docs/modules/vet.md build-out)
 - T-0009 -- frob stats: DORA-ish measurement from gitlog + tickets
 - T-0010 -- frob serve: MCP adapter over stale_docs/doable_tickets/check_scope/pre_work
 - T-0011 -- Mutation testing as the test-quality oracle

@@ -1,4 +1,4 @@
-"""Unit tests for frob.dup._pipeline.probe_smt_equivalence (docs/dup.md's R7).
+"""Unit tests for frob.dup._pipeline.probe_smt_equivalence (docs/modules/dup.md's R7).
 
 `z3-solver` is optional (`frob[smt]`) and not installed in every dev/CI
 environment, so this file always exercises the honest degrade path

@@ -1,4 +1,4 @@
-"""frob.arch -- lightweight architectural analysis (docs/arch.md).
+"""frob.arch -- lightweight architectural analysis (docs/modules/arch.md).
 
 `analyze_project` walks a repo and flags long functions, god classes, deep
 nesting, high coupling, large files, and shared-signature abstraction
@@ -142,7 +142,7 @@ def _run_python_checks(
     all_py_sigs.extend(_python._extract_signatures(tree, rel))
 
 
-# frob:doc docs/arch.md#public-api
+# frob:doc docs/modules/arch.md#public-api
 def analyze_project(
     root: Path,
     *,

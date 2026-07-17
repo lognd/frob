@@ -1,4 +1,5 @@
-"""The obligation graph: symbols, comment-DSL edges, and doc anchors (docs/graph.md).
+"""The obligation graph: symbols, comment-DSL edges, and doc anchors
+(docs/modules/graph.md).
 
 `frob.graph` is a persistent registry of every symbol's identity and
 digests, plus typed edges declared in `frob:` comments and markdown
@@ -11,7 +12,7 @@ tree-sitter node directly.
 the sqlite cache (`frob.graph.cache`), and a file whose hash is unchanged
 loads its symbols/edges back from the cache instead of being re-parsed.
 
-**Deviation from docs/graph.md**: the source-extension table is a small,
+**Deviation from docs/modules/graph.md**: the source-extension table is a small,
 documented duplicate of `frob.lang`'s internal extension dispatch table
 (`.py .ts .tsx .rs .c .h .cpp .hpp .cc .hh`) -- `frob.lang` exposes only
 `supported_languages()` (a label set), not the extension mapping itself,
@@ -61,7 +62,7 @@ _EXCLUDED_DIRS = frozenset(
 )
 
 
-# frob:doc docs/graph.md#error-types
+# frob:doc docs/modules/graph.md#error-types
 class GraphError(ErrorSet):
     """Failure values graph read paths can return -- never a bare exception."""
 
@@ -263,7 +264,7 @@ def _prune_stale_cache(conn, seen_paths: set[str]) -> None:
         conn.execute("DELETE FROM malformed WHERE file = ?", (stale_path,))
 
 
-# frob:doc docs/graph.md#public-api
+# frob:doc docs/modules/graph.md#public-api
 def build_graph(root: Path, cache: Path) -> Result[GraphSnapshot, BuildError]:
     """Incrementally (re)build the obligation graph for `root` into `cache`."""
     root = root.resolve()
@@ -306,7 +307,7 @@ def _finalize_build(
     return snapshot
 
 
-# frob:doc docs/graph.md#public-api
+# frob:doc docs/modules/graph.md#public-api
 def load_graph(cache: Path) -> Result[GraphSnapshot, GraphError]:
     """Cache-only read: `Err(CacheStale)` if any on-disk hash moved, `Err(CacheCorrupt)`
     if the cache is unreadable or has never been built."""
@@ -340,7 +341,7 @@ def load_graph(cache: Path) -> Result[GraphSnapshot, GraphError]:
         conn.close()
 
 
-# frob:doc docs/graph.md#public-api
+# frob:doc docs/modules/graph.md#public-api
 def resolve(snapshot: GraphSnapshot, ref: str) -> Result[SymbolRecord, GraphError]:
     """Resolve `ref`: exact `path::qualname`, else a unique qualname/suffix match."""
     exact = snapshot.symbols.get(ref)
@@ -362,13 +363,13 @@ def resolve(snapshot: GraphSnapshot, ref: str) -> Result[SymbolRecord, GraphErro
     return Err(GraphError.UnknownSymbol)
 
 
-# frob:doc docs/graph.md#public-api
+# frob:doc docs/modules/graph.md#public-api
 def edges_from(snapshot: GraphSnapshot, ref: str) -> tuple[Edge, ...]:
     """All edges whose `src` is exactly `ref`."""
     return tuple(edge for edge in snapshot.edges if edge.src == ref)
 
 
-# frob:doc docs/graph.md#public-api
+# frob:doc docs/modules/graph.md#public-api
 def edges_to(snapshot: GraphSnapshot, target: str) -> tuple[Edge, ...]:
     """All edges whose `target` is exactly `target`."""
     return tuple(edge for edge in snapshot.edges if edge.target == target)

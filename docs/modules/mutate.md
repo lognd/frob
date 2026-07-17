@@ -22,7 +22,7 @@ TEST002 counts cases and TEST005 measures coverage, but both are gameable:
 an assert-free test executes the code (100% coverage) and adds a case while
 verifying nothing. Mutation testing cannot be gamed that way -- a test that
 does not assert the result kills no mutant, so the score collapses to the
-truth. It is the quality oracle docs/fuzz.md and the TEST family point at.
+truth. It is the quality oracle docs/modules/fuzz.md and the TEST family point at.
 
 ## Public API
 

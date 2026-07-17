@@ -1,8 +1,8 @@
-"""Tests for the smart-dup pipeline (docs/dup.md): find_clones + DUP001/DUP002.
+"""Tests for the smart-dup pipeline (docs/modules/dup.md): find_clones + DUP001/DUP002.
 
 Exercises the real `frob_core` extension when it is importable (this repo's
 CI/dev environment has it, per frob-core/README-equivalent notes in
-docs/dup.md) and the honest CoreUnavailable path via monkeypatching
+docs/modules/dup.md) and the honest CoreUnavailable path via monkeypatching
 `frob.dup._core.core_available`, so both branches of the no-silent-fallback
 rule are covered regardless of which environment runs the suite.
 """

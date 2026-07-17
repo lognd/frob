@@ -1,4 +1,4 @@
-"""DUP001/DUP002 pure rule functions (docs/dup.md's Gate integration).
+"""DUP001/DUP002 pure rule functions (docs/modules/dup.md's Gate integration).
 
 Both take an already-computed `CloneReport` (from `find_clones(snapshot,
 cfg, diff)`) plus the `touched` symref set that produced it, and are pure:
@@ -32,7 +32,7 @@ def _waiver_hint(rule: str) -> str:
     return f'waive with: frob:waive {rule} reason="..."'
 
 
-# frob:doc docs/dup.md#gate-integration
+# frob:doc docs/modules/dup.md#gate-integration
 def DUP001(
     report: CloneReport, touched: frozenset[str], threshold: float
 ) -> tuple[Violation, ...]:
@@ -67,7 +67,7 @@ def DUP001(
     return tuple(violations)
 
 
-# frob:doc docs/dup.md#gate-integration
+# frob:doc docs/modules/dup.md#gate-integration
 def DUP002(
     report: CloneReport, touched: frozenset[str], threshold: float
 ) -> tuple[Violation, ...]:

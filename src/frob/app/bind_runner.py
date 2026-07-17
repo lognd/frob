@@ -62,7 +62,7 @@ def _report_mismatches(mismatches, as_json: bool, root: Path) -> None:
     sys.exit(1)
 
 
-# frob:doc docs/app.md#runners
+# frob:doc docs/modules/app.md#runners
 def run(argv=None):
     args = _build_bind_parser().parse_args(argv)
 

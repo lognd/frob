@@ -93,5 +93,5 @@ frob ack src/demo/calc.py::multiply --facet sig    # acknowledge a described con
 frob ticket close T-0001                           # requires evidence + a Done report
 ```
 
-See `docs/quickstart.md` for the full walkthrough with real command output, and
+See `docs/guides/quickstart.md` for the full walkthrough with real command output, and
 `docs/` for per-command references and module design docs.

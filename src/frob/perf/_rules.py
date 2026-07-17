@@ -1,5 +1,5 @@
 """PERF001..PERF004: lexical, one-token-stream-deep linear-scan smells
-(docs/perf.md's rule table).
+(docs/modules/perf.md's rule table).
 
 These rules run over `frob.lang`'s flattened, position-free leaf-token
 stream (`RawSymbol.body_tokens`) -- the same "whitespace never a node"
@@ -9,7 +9,7 @@ per-token line number, so every violation is reported at the *enclosing
 symbol's* span start (`RawSymbol.span[0]`), not the exact offending line.
 Loop-context is therefore approximated at function granularity -- "this
 function contains a for/while keyword and a qualifying pattern" -- rather
-than true lexical block nesting. This is a documented cut (docs/perf.md
+than true lexical block nesting. This is a documented cut (docs/modules/perf.md
 Design decisions), not an oversight: false negatives (a smell missed
 because the loop check is coarse) are accepted; false positives are
 minimized by requiring the container's assignment shape to be resolvable
@@ -212,7 +212,7 @@ def _perf002_best_effort(tokens: tuple[str, ...], language: str) -> bool:
 
 # frob:ticket T-0021
 def _violation(rule: str, file: str, line: int, extra: str) -> Violation:
-    """One PERF violation, message carrying its docs/perf.md remedy text."""
+    """One PERF violation, message carrying its docs/modules/perf.md remedy text."""
     return Violation(
         rule=rule,
         severity=Severity.WARN,
@@ -276,13 +276,13 @@ def _symbol_violations(file: ParsedFile, symbol: RawSymbol) -> tuple[Violation, 
     return tuple(hits)
 
 
-# frob:doc docs/perf.md#public-api
+# frob:doc docs/modules/perf.md#public-api
 # frob:ticket T-0021
 def perf_rules(
     snapshot: GraphSnapshot, files: Sequence[ParsedFile]
 ) -> tuple[Violation, ...]:
     """PERF001..PERF004 over every function/method symbol in `files`; pure,
-    consumed by the policy/gates stage per docs/perf.md's Integration
+    consumed by the policy/gates stage per docs/modules/perf.md's Integration
     points. `snapshot` is accepted per the documented signature but is not
     presently consulted -- the token-stream rules are self-contained per
     `ParsedFile`; it is reserved for a future cross-symbol join (e.g.

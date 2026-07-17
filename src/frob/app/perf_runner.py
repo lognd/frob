@@ -1,4 +1,4 @@
-"""CLI wiring for `frob perf profile|heat` (docs/perf.md).
+"""CLI wiring for `frob perf profile|heat` (docs/modules/perf.md).
 
 # frob:ticket T-0021
 """
@@ -18,7 +18,7 @@ __all__ = ["run"]
 
 
 # frob:ticket T-0021
-# frob:doc docs/app.md#runners
+# frob:doc docs/modules/app.md#runners
 def run(cfg: AppConfig) -> None:
     """Dispatch to `frob perf profile` or `frob perf heat`."""
     match cfg.perf_command:

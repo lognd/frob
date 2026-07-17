@@ -1,4 +1,4 @@
-//! frob-core: compute-only clone-detection kernels for frob.dup (docs/dup.md).
+//! frob-core: compute-only clone-detection kernels for frob.dup (docs/modules/dup.md).
 //!
 //! Every function here is data-in/data-out: serialized token lists in,
 //! fingerprints/hashes/distances out. No IO, no caching policy, no git
@@ -29,7 +29,7 @@ fn hash_str(s: &str) -> u64 {
 /// dependency surface at just pyo3.
 #[pyfunction]
 fn r3_canonical_hash(tokens: Vec<String>) -> String {
-    // frob:doc docs/dup.md#frob-core-kernels-the-pyo3-exported-surface
+    // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
     let mut acc: u64 = 0xcbf29ce484222325; // FNV offset basis, arbitrary seed
     for tok in &tokens {
         let h = hash_str(tok);
@@ -43,11 +43,11 @@ fn r3_canonical_hash(tokens: Vec<String>) -> String {
 /// Returns the set of selected k-gram hashes after winnowing with window
 /// `w`, so fingerprints are position-independent -- the same substring
 /// anywhere in the token stream produces the same fingerprint, which is
-/// what makes region-granular matching (docs/dup.md's "regions, not just
+/// what makes region-granular matching (docs/modules/dup.md's "regions, not just
 /// functions") fall out for free.
 #[pyfunction]
 fn winnow_fingerprints(tokens: Vec<String>, k: usize, w: usize) -> Vec<u64> {
-    // frob:doc docs/dup.md#frob-core-kernels-the-pyo3-exported-surface
+    // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
     // frob:waive PERF003 reason="winnowing scans a sliding window over k-gram hashes; the per-window minimum scan is inherent to the winnowing algorithm"
     if k == 0 || tokens.len() < k {
         return Vec::new();
@@ -100,7 +100,7 @@ fn winnow_fingerprints(tokens: Vec<String>, k: usize, w: usize) -> Vec<u64> {
 /// verified downstream by `tree_edit_similarity`.
 #[pyfunction]
 fn candidate_pairs(fingerprint_sets: Vec<Vec<u64>>, min_shared: usize) -> Vec<(usize, usize)> {
-    // frob:doc docs/dup.md#frob-core-kernels-the-pyo3-exported-surface
+    // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
     let mut buckets: HashMap<u64, Vec<usize>> = HashMap::new();
     for (idx, fps) in fingerprint_sets.iter().enumerate() {
         for fp in fps {
@@ -130,7 +130,7 @@ fn candidate_pairs(fingerprint_sets: Vec<Vec<u64>>, min_shared: usize) -> Vec<(u
 
 /// R4 verification: statement-sequence edit distance and alignment.
 ///
-/// **Deviation from docs/dup.md**: the design names APTED (tree edit
+/// **Deviation from docs/modules/dup.md**: the design names APTED (tree edit
 /// distance over the full subtree structure). This implementation is a
 /// statement-level Needleman-Wunsch/Levenshtein alignment over each
 /// region's flattened statement-hash sequence, not a full tree metric --
@@ -141,7 +141,7 @@ fn candidate_pairs(fingerprint_sets: Vec<Vec<u64>>, min_shared: usize) -> Vec<(u
 /// `alignment` is matched `(i, j)` statement-index pairs.
 #[pyfunction]
 fn tree_edit_similarity(a: Vec<u64>, b: Vec<u64>) -> (f64, Vec<(usize, usize)>) {
-    // frob:doc docs/dup.md#frob-core-kernels-the-pyo3-exported-surface
+    // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
     // frob:waive PERF003 reason="statement-sequence edit distance is an inherently O(n*m) dynamic program over the two hash sequences"
     let n = a.len();
     let m = b.len();
@@ -358,7 +358,7 @@ fn apted_similarity(
     labels_b: Vec<String>,
     parents_b: Vec<i64>,
 ) -> f64 {
-    // frob:doc docs/dup.md#frob-core-kernels-the-pyo3-exported-surface
+    // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
     if labels_a.is_empty() && labels_b.is_empty() {
         return 1.0;
     }
@@ -393,7 +393,7 @@ fn apted_similarity(
 /// dataflow graphs collide regardless of node numbering.
 #[pyfunction]
 fn wl_hash(adjacency: Vec<(usize, usize)>, labels: Vec<String>, iterations: usize) -> u64 {
-    // frob:doc docs/dup.md#frob-core-kernels-the-pyo3-exported-surface
+    // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
     // frob:waive PERF003 reason="Weisfeiler-Lehman refinement re-aggregates every edge's neighbor labels each iteration; the edge loop is inherent to the graph kernel"
     let n = labels.len();
     if n == 0 {
@@ -574,7 +574,7 @@ mod tests {
 
 #[pymodule]
 fn frob_core(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    // frob:doc docs/dup.md#frob-core-kernels-the-pyo3-exported-surface
+    // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
     m.add_function(wrap_pyfunction!(r3_canonical_hash, m)?)?;
     m.add_function(wrap_pyfunction!(winnow_fingerprints, m)?)?;
     m.add_function(wrap_pyfunction!(candidate_pairs, m)?)?;

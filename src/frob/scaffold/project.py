@@ -10,7 +10,7 @@ from typani.result import Result
 _DATA_DIR = Path(__file__).parent / "data"
 
 
-# frob:doc docs/scaffold.md#public-api
+# frob:doc docs/commands/scaffold.md#public-api
 class ScaffoldError(ErrorSet):
     UnknownType = "Requested project type is not registered"
     TemplateNotFound = "Template .j2 file is missing from the data directory"
@@ -300,12 +300,12 @@ _MANIFESTS: dict[str, list[_ManifestEntry]] = {
 }
 
 
-# frob:doc docs/scaffold.md#public-api
+# frob:doc docs/commands/scaffold.md#public-api
 def list_project_types() -> list[str]:
     return list(_MANIFESTS.keys())
 
 
-# frob:doc docs/scaffold.md#public-api
+# frob:doc docs/commands/scaffold.md#public-api
 def render_project(
     project_type: str,
     name: str,

@@ -1,4 +1,4 @@
-"""osv-scanner adapter (docs/vet.md "External tool adapters" -- VET005).
+"""osv-scanner adapter (docs/modules/vet.md "External tool adapters" -- VET005).
 
 Honest absence: no binary on PATH -> skipped-with-note, never silent."""
 
@@ -16,7 +16,7 @@ _log = get_logger(__name__)
 _BINARY = "osv-scanner"
 
 
-# frob:doc docs/vet.md#public-api
+# frob:doc docs/modules/vet.md#public-api
 class OsvAdvisory:
     """One advisory finding: id + affected package + fixed version, if known."""
 
@@ -31,13 +31,13 @@ class OsvAdvisory:
         self.fixed_version = fixed_version
 
 
-# frob:doc docs/vet.md#public-api
+# frob:doc docs/modules/vet.md#public-api
 def is_available() -> bool:
     """Whether `osv-scanner` is resolvable on PATH."""
     return shutil.which(_BINARY) is not None
 
 
-# frob:doc docs/vet.md#public-api
+# frob:doc docs/modules/vet.md#public-api
 def run_osv_scan(lockfile: Path) -> tuple[OsvAdvisory, ...] | None:
     """Advisories for `lockfile`, or `None` if osv-scanner is absent/failed
     (caller must report a skipped-note, never treat `None` as "no findings")."""

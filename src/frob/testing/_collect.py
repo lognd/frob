@@ -80,7 +80,7 @@ def _store_cache(cache_path: Path, key: str, node_ids: frozenset[str]) -> None:
     )
 
 
-# frob:doc docs/testing.md#public-api
+# frob:doc docs/modules/testing.md#public-api
 def collect_python_tests(root: Path) -> Result[CollectedTests, TestingError]:
     """`uv run pytest --collect-only -q` node ids, cached on test-file content hash."""
     key = _content_key(root)

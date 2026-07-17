@@ -1,4 +1,4 @@
-"""Data shapes for frob.policy (docs/gates.md's Policy rules section)."""
+"""Data shapes for frob.policy (docs/modules/gates.md's Policy rules section)."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from typani.error_set import ErrorSet
 __all__ = ["PolicyError", "PolicyKind", "PolicyRule"]
 
 
-# frob:doc docs/gates.md#policy-rules-frob-toml-policy
+# frob:doc docs/modules/gates.md#policy-rules-frob-toml-policy
 class PolicyKind(StrEnum):
     """The three rule kinds `frob.toml`'s `[policy]` table supports at alpha."""
 
@@ -19,7 +19,7 @@ class PolicyKind(StrEnum):
     NORM = "norm"
 
 
-# frob:doc docs/gates.md#policy-rules-frob-toml-policy
+# frob:doc docs/modules/gates.md#policy-rules-frob-toml-policy
 class PolicyRule(BaseModel):
     """One `[[policy.<kind>]]` entry; fields not used by `kind` are left default."""
 
@@ -44,7 +44,7 @@ class PolicyRule(BaseModel):
     max_diff_lines: int = 0
 
 
-# frob:doc docs/gates.md#error-types
+# frob:doc docs/modules/gates.md#error-types
 class PolicyError(ErrorSet):
     """Failure values `frob.policy`'s loading and matching paths can return."""
 

@@ -1,6 +1,6 @@
 """Python architectural checks: long-function, god-class, high-coupling,
 deep-nesting, and the cross-file abstraction-opportunity signature grouping
-(docs/arch.md's Python rules).
+(docs/modules/arch.md's Python rules).
 
 Every walker is driven off the one shared `_iter_py_functions` generator so
 the recursion (into class bodies and nested functions) lives in exactly one

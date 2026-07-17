@@ -1,4 +1,4 @@
-"""Cross-platform clipboard image capture (docs/tickets.md "Clipboard capture").
+"""Cross-platform clipboard image capture (docs/modules/tickets.md "Clipboard capture").
 
 Backend chain, first available wins: wl-paste (Wayland), xclip (X11),
 powershell.exe Get-Clipboard (WSL), pngpaste/osascript (macOS). Every probe
@@ -25,7 +25,7 @@ _PROBE_TIMEOUT_S = 5.0
 _PASTE_TIMEOUT_S = 15.0
 
 
-# frob:doc docs/tickets.md#error-types
+# frob:doc docs/modules/tickets.md#error-types
 class ClipboardError(ErrorSet):
     """Fallible outcomes of clipboard image capture."""
 
@@ -255,7 +255,7 @@ def _pngpaste_image() -> Result[bytes, ClipboardError]:
     return Ok(proc.stdout)
 
 
-# frob:doc docs/tickets.md#public-api
+# frob:doc docs/modules/tickets.md#public-api
 def clipboard_image() -> Result[bytes, ClipboardError]:
     """PNG bytes from the platform clipboard, via the first working backend."""
     if _is_wayland():
@@ -275,7 +275,7 @@ def clipboard_image() -> Result[bytes, ClipboardError]:
     return Err(ClipboardError.NoBackend)
 
 
-# frob:doc docs/tickets.md#public-api
+# frob:doc docs/modules/tickets.md#public-api
 def clipboard_has_image() -> bool:
     """Cheap probe used to decide whether to offer the interactive paste prompt."""
     if _is_wayland():

@@ -1,4 +1,4 @@
-"""Touched-set test selection and execution across languages (docs/testing.md).
+"""Touched-set test selection and execution across languages (docs/modules/testing.md).
 
 `frob test` is the single entry point that computes what was touched (diff
 vs base), selects every test obligated to those symbols via the obligation

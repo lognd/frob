@@ -47,7 +47,7 @@ _BOOLOP_SWAPS: dict[type[ast.boolop], type[ast.boolop]] = {
 }
 
 
-# frob:doc docs/mutate.md#public-api
+# frob:doc docs/modules/mutate.md#public-api
 class MutateError(ErrorSet):
     """Fallible outcomes of mutation testing."""
 
@@ -55,7 +55,7 @@ class MutateError(ErrorSet):
     NoSource = "Target file does not exist"
 
 
-# frob:doc docs/mutate.md#public-api
+# frob:doc docs/modules/mutate.md#public-api
 class Mutant(BaseModel):
     """One applied mutation: what changed and where."""
 
@@ -66,7 +66,7 @@ class Mutant(BaseModel):
     description: str
 
 
-# frob:doc docs/mutate.md#public-api
+# frob:doc docs/modules/mutate.md#public-api
 class MutationResult(BaseModel):
     """The outcome of testing one function's mutants."""
 
@@ -79,7 +79,7 @@ class MutationResult(BaseModel):
     @property
     def score(self) -> float:
         """Killed / total (1.0 = every mutant caught; NaN-safe as 1.0)."""
-        # frob:doc docs/mutate.md#public-api
+        # frob:doc docs/modules/mutate.md#public-api
         return 1.0 if self.total == 0 else self.killed / self.total
 
 
@@ -108,7 +108,7 @@ class _Mutator(ast.NodeTransformer):
         return False
 
     def visit_Compare(self, node: ast.Compare):  # noqa: N802
-        # frob:doc docs/mutate.md#public-api
+        # frob:doc docs/modules/mutate.md#public-api
         self.generic_visit(node)
         if len(node.ops) == 1 and type(node.ops[0]) in _COMPARE_SWAPS:
             if self._hit(f"compare {type(node.ops[0]).__name__} swapped"):
@@ -116,7 +116,7 @@ class _Mutator(ast.NodeTransformer):
         return node
 
     def visit_BinOp(self, node: ast.BinOp):  # noqa: N802
-        # frob:doc docs/mutate.md#public-api
+        # frob:doc docs/modules/mutate.md#public-api
         self.generic_visit(node)
         if type(node.op) in _BINOP_SWAPS and self._hit(
             f"binop {type(node.op).__name__} swapped"
@@ -125,7 +125,7 @@ class _Mutator(ast.NodeTransformer):
         return node
 
     def visit_BoolOp(self, node: ast.BoolOp):  # noqa: N802
-        # frob:doc docs/mutate.md#public-api
+        # frob:doc docs/modules/mutate.md#public-api
         self.generic_visit(node)
         if type(node.op) in _BOOLOP_SWAPS and self._hit(
             f"boolop {type(node.op).__name__} swapped"
@@ -134,7 +134,7 @@ class _Mutator(ast.NodeTransformer):
         return node
 
     def visit_Constant(self, node: ast.Constant):  # noqa: N802
-        # frob:doc docs/mutate.md#public-api
+        # frob:doc docs/modules/mutate.md#public-api
         if isinstance(node.value, bool) and self._hit(f"bool {node.value} negated"):
             return ast.copy_location(ast.Constant(value=not node.value), node)
         return node
@@ -147,7 +147,7 @@ def _count_mutations(tree: ast.AST) -> int:
     return counter._seen
 
 
-# frob:doc docs/mutate.md#public-api
+# frob:doc docs/modules/mutate.md#public-api
 def generate_mutants(
     source: str, file: str
 ) -> Result[tuple[_Mutation, ...], MutateError]:
@@ -184,7 +184,7 @@ def generate_mutants(
     return Ok(tuple(mutations))
 
 
-# frob:doc docs/mutate.md#public-api
+# frob:doc docs/modules/mutate.md#public-api
 def run_mutations(
     root: Path, file: Path, test_argv: tuple[str, ...], timeout_s: float = 300.0
 ) -> Result[MutationResult, MutateError]:

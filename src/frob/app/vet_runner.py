@@ -1,5 +1,5 @@
 """CLI wiring for `frob vet [path] [--json]` and `frob vet --hook '<command>'`
-(docs/vet.md).
+(docs/modules/vet.md).
 
 Hook-mode exit-code contract: 0 = fine (or non-install command, exits fast
 with no network), 2 = BLOCK (quarantine/typosquat hit), reason on stderr for
@@ -19,7 +19,7 @@ from frob.vet import check_package, parse_hook_command, scan_tree
 _log = get_logger(__name__)
 
 
-# frob:doc docs/app.md#runners
+# frob:doc docs/modules/app.md#runners
 def run(cfg: AppConfig) -> None:
     """Dispatch to hook mode (`--hook`) or a full lockfile scan."""
     root = (cfg.vet_path or Path(".")).resolve()

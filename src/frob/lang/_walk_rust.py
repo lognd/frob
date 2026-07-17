@@ -1,4 +1,4 @@
-"""Rust symbol walker (docs/lang.md extraction table).
+"""Rust symbol walker (docs/modules/lang.md extraction table).
 
 Rust's `pub` visibility plus PyO3 export attributes (`#[pyfunction]`,
 `#[pymethods]`, ...) define the crate's Python-facing public surface; that

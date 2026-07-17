@@ -1,13 +1,13 @@
-"""Legacy Type-1/Type-2 duplicate scan (pre-smart-dup, docs/dup.md).
+"""Legacy Type-1/Type-2 duplicate scan (pre-smart-dup, docs/modules/dup.md).
 
 Kept verbatim behind `find_duplicates` for `frob check`'s dup stage and the
 `frob dup` CLI (`frob.app.dup_runner`), neither of which has been
 re-platformed onto the rung pipeline yet. New code should prefer
-`frob.dup.find_clones` (docs/dup.md's smart pipeline); this module is the
+`frob.dup.find_clones` (docs/modules/dup.md's smart pipeline); this module is the
 compatibility shim that keeps the existing entry point working.
 
 Parses through `frob.lang.raw_tree` (one grammar-loading mechanism, per
-docs/lang.md). The per-language fingerprinting/iteration helpers live in the
+docs/modules/lang.md). The per-language fingerprinting/iteration helpers live in the
 cohesive `_legacy_py`/`_legacy_cpp` submodules (with shared node/hash
 helpers in `_legacy_common`); this module owns the models, the file
 scanners, and the clone-grouping entry point.
@@ -49,12 +49,12 @@ _CPP_EXTS = {".cpp", ".cc", ".cxx", ".h", ".hpp"}
 # ---------------------------------------------------------------------------
 
 
-# frob:doc docs/dup.md#legacy-scanner
+# frob:doc docs/modules/dup.md#legacy-scanner
 class DupError(ErrorSet):
     ParseFailed = "failed to parse file"
 
 
-# frob:doc docs/dup.md#legacy-scanner
+# frob:doc docs/modules/dup.md#legacy-scanner
 class CodeFragment(BaseModel):
     file: str
     start_line: int
@@ -62,25 +62,25 @@ class CodeFragment(BaseModel):
     symbol: str
 
 
-# frob:doc docs/dup.md#legacy-scanner
+# frob:doc docs/modules/dup.md#legacy-scanner
 class CloneGroup(BaseModel):
     clone_type: Literal["exact", "renamed"]
     size_lines: int
     fragments: list[CodeFragment]
 
 
-# frob:doc docs/dup.md#legacy-scanner
+# frob:doc docs/modules/dup.md#legacy-scanner
 class DupResult(BaseModel):
     root: str
     groups: list[CloneGroup]
 
     @property
     def total_clones(self) -> int:
-        # frob:doc docs/dup.md#legacy-scanner
+        # frob:doc docs/modules/dup.md#legacy-scanner
         return sum(len(g.fragments) for g in self.groups)
 
     def as_text(self) -> str:
-        # frob:doc docs/dup.md#legacy-scanner
+        # frob:doc docs/modules/dup.md#legacy-scanner
         if not self.groups:
             return "no duplicates found"
         n_groups = len(self.groups)
@@ -106,7 +106,7 @@ class DupResult(BaseModel):
         return "\n".join(lines)
 
     def as_json(self) -> str:
-        # frob:doc docs/dup.md#legacy-scanner
+        # frob:doc docs/modules/dup.md#legacy-scanner
         return json.dumps(self.model_dump(), indent=2)
 
 
@@ -261,7 +261,7 @@ def _renamed_groups(
     return groups
 
 
-# frob:doc docs/dup.md#legacy-scanner
+# frob:doc docs/modules/dup.md#legacy-scanner
 def find_duplicates(root: Path, min_lines: int = 6) -> DupResult:
     """Scan root recursively for duplicate function bodies."""
     from frob.logging.quiet import quiet_stdout_logs

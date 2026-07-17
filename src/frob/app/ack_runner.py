@@ -1,4 +1,4 @@
-"""CLI wiring for `frob ack <ref...> [--facet]` (docs/graph.md)."""
+"""CLI wiring for `frob ack <ref...> [--facet]` (docs/modules/graph.md)."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ _log = get_logger(__name__)
 _CACHE_REL = Path(".frob") / "cache.db"
 
 
-# frob:doc docs/app.md#runners
+# frob:doc docs/modules/app.md#runners
 def run(cfg: AppConfig) -> None:
     """Load (building if the cache is stale), acknowledge refs, and write the lock."""
     from frob.graph import build_graph, load_graph
@@ -43,7 +43,7 @@ def run(cfg: AppConfig) -> None:
     lock = lock_result.danger_ok
 
     # NOTE: frob.graph.lock.acknowledge derives the facet per-ref from the
-    # DESCRIBES edge (docs/graph.md); it does not take a facet override.
+    # DESCRIBES edge (docs/modules/graph.md); it does not take a facet override.
     # --facet is accepted for forward-compat / documentation parity but has
     # no effect on which facet gets acked today.
     if cfg.ack_facet != "sig":

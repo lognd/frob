@@ -1,5 +1,5 @@
 """`.frob/vet.db` verdict cache: content-addressed by artifact hash
-(docs/vet.md "Verdict cache" + "Mechanics"). Reused for VET003 escalation
+(docs/modules/vet.md "Verdict cache" + "Mechanics"). Reused for VET003 escalation
 diffs, which need the MOST RECENTLY STORED verdict for a (ecosystem, name)
 regardless of hash -- a version bump changes the hash on purpose.
 
@@ -44,7 +44,7 @@ def _connect(db_path: Path) -> sqlite3.Connection | None:
         return None
 
 
-# frob:doc docs/vet.md#public-api
+# frob:doc docs/modules/vet.md#public-api
 def store_verdict(db_path: Path, verdict: PackageVerdict) -> None:
     """Persist `verdict`, content-addressed by (ecosystem, name, artifact_hash).
     Best-effort: a write failure is logged, never raised (the scan already
@@ -88,7 +88,7 @@ def _insert_verdict(conn: sqlite3.Connection, verdict: PackageVerdict) -> None:
     )
 
 
-# frob:doc docs/vet.md#public-api
+# frob:doc docs/modules/vet.md#public-api
 def latest_verdict(db_path: Path, ecosystem: str, name: str) -> PackageVerdict | None:
     """The most recently stored verdict for (ecosystem, name), any hash --
     used as the "previous version" baseline for VET003 escalation diffs."""

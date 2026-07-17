@@ -1,4 +1,4 @@
-"""Data shapes ``frob.lang`` hands to ``frob.graph`` (docs/graph.md).
+"""Data shapes ``frob.lang`` hands to ``frob.graph`` (docs/modules/graph.md).
 
 Frozen pydantic models so a `ParsedFile` can be cached, hashed, and diffed
 by identity-of-value rather than identity-of-object -- `frob.graph`'s
@@ -12,7 +12,7 @@ from enum import StrEnum
 from pydantic import BaseModel, ConfigDict
 
 
-# frob:doc docs/lang.md#data-models
+# frob:doc docs/modules/lang.md#data-models
 class SymbolKind(StrEnum):
     """The five extraction buckets every supported grammar collapses into."""
 
@@ -23,7 +23,7 @@ class SymbolKind(StrEnum):
     TYPE = "type"
 
 
-# frob:doc docs/lang.md#data-models
+# frob:doc docs/modules/lang.md#data-models
 class RawSymbol(BaseModel):
     """One extracted declaration: identity, publicness, span, and tokens."""
 
@@ -38,7 +38,7 @@ class RawSymbol(BaseModel):
     doc_text: str
 
 
-# frob:doc docs/lang.md#data-models
+# frob:doc docs/modules/lang.md#data-models
 class RawComment(BaseModel):
     """One extracted comment, with its binding to nearby symbols resolved."""
 
@@ -50,7 +50,7 @@ class RawComment(BaseModel):
     following: str | None
 
 
-# frob:doc docs/dup.md#public-api
+# frob:doc docs/modules/dup.md#public-api
 class TreeNode(BaseModel):
     """A simplified, language-agnostic subtree: a node's type label plus
     its ordered children -- comments and whitespace already stripped.
@@ -59,7 +59,7 @@ class TreeNode(BaseModel):
     (`apted_similarity`) for a real tree-edit-distance comparison, rather
     than the flat leaf-token sequence `RawSymbol.body_tokens` exposes.
     Frozen for the same identity-of-value reason as every other
-    `frob.lang` model (docs/graph.md).
+    `frob.lang` model (docs/modules/graph.md).
     """
 
     model_config = ConfigDict(frozen=True)
@@ -68,7 +68,7 @@ class TreeNode(BaseModel):
     children: tuple["TreeNode", ...] = ()
 
 
-# frob:doc docs/lang.md#data-models
+# frob:doc docs/modules/lang.md#data-models
 class ParsedFile(BaseModel):
     """The whole-file extraction result: symbols, comments, and a content hash."""
 

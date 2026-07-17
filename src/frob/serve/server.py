@@ -1,4 +1,5 @@
-"""FastMCP stdio server exposing `frob.serve._tools` as MCP tools (docs/serve.md).
+"""FastMCP stdio server exposing `frob.serve._tools` as MCP tools
+(docs/modules/serve.md).
 
 Deferred import of `mcp` -- `frob.serve` must remain importable (for tests
 and `frob serve --help`) even in environments where the `mcp` SDK is not
@@ -15,7 +16,7 @@ from frob.serve import _tools
 _log = get_logger(__name__)
 
 
-# frob:doc docs/serve.md#mcp-sdk
+# frob:doc docs/modules/serve.md#mcp-sdk
 class McpUnavailable(Exception):
     """Raised when the `mcp` SDK is not importable; an env/setup bug, not a Result."""
 
@@ -33,7 +34,7 @@ def _require_mcp():  # noqa: ANN202
     return FastMCP
 
 
-# frob:doc docs/serve.md#mcp-sdk
+# frob:doc docs/modules/serve.md#mcp-sdk
 def build_server(root: Path):  # noqa: ANN201
     """Construct a `FastMCP` server bound to `root`, every read-only tool registered."""
     FastMCP = _require_mcp()  # noqa: N806
@@ -84,7 +85,7 @@ def build_server(root: Path):  # noqa: ANN201
     return server
 
 
-# frob:doc docs/serve.md#mcp-sdk
+# frob:doc docs/modules/serve.md#mcp-sdk
 def run_stdio(root: Path) -> None:
     """Build the server and block, serving tool calls over stdio transport."""
     server = build_server(root)

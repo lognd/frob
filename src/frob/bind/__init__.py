@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-# frob:doc docs/bind.md#public-api
+# frob:doc docs/modules/bind.md#public-api
 @dataclass
 class BindingDecl:
     file: str
@@ -14,7 +14,7 @@ class BindingDecl:
     kind: str  # "pybind11" | "pyo3"
 
 
-# frob:doc docs/bind.md#public-api
+# frob:doc docs/modules/bind.md#public-api
 @dataclass
 class SourceDecl:
     file: str
@@ -23,14 +23,14 @@ class SourceDecl:
     kind: str  # "cpp_header" | "cpp_impl" | "rust"
 
 
-# frob:doc docs/bind.md#public-api
+# frob:doc docs/modules/bind.md#public-api
 @dataclass
 class Mismatch:
     binding: BindingDecl
     issue: str
 
 
-# frob:doc docs/bind.md#public-api
+# frob:doc docs/modules/bind.md#public-api
 def scan_bindings(root: Path) -> list[BindingDecl]:
     """Scan a project root for // BIND: comments in .cpp and .rs files."""
     results = []
@@ -49,7 +49,7 @@ def scan_bindings(root: Path) -> list[BindingDecl]:
     return results
 
 
-# frob:doc docs/bind.md#public-api
+# frob:doc docs/modules/bind.md#public-api
 def scan_sources(root: Path) -> list[SourceDecl]:
     """Scan .h and .cpp files for declared functions, and .rs for #[pyfunction]."""
     results = []
@@ -82,7 +82,7 @@ def _normalize(sig: str) -> str:
     return sig
 
 
-# frob:doc docs/bind.md#public-api
+# frob:doc docs/modules/bind.md#public-api
 def check(root: Path) -> list[Mismatch]:
     """Return mismatches: bindings that have no matching source declaration."""
     bindings = scan_bindings(root)

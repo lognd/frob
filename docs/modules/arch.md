@@ -33,7 +33,7 @@ shown in the Public API section below; there is no `frob.toml` table for
 
 `analyze_project` parses every collected file once through
 `frob.lang.raw_tree` (one grammar-loading mechanism shared with every
-other `frob.lang` consumer -- see docs/lang.md) inside a
+other `frob.lang` consumer -- see docs/modules/lang.md) inside a
 `frob.logging.quiet.quiet_stdout_logs()` block, so `frob arch --json`'s
 machine-readable stdout payload is never corrupted by `frob.lang`'s
 per-parse INFO/DEBUG log lines. C/C++ function/class walks share

@@ -1,4 +1,4 @@
-"""Pure touched-set test selection (docs/testing.md's Selection algorithm).
+"""Pure touched-set test selection (docs/modules/testing.md's Selection algorithm).
 
 `select_tests` never touches the filesystem or spawns a process -- it is a
 function of a `GraphSnapshot` and a `Diff`, so it is trivially unit-tested
@@ -38,7 +38,7 @@ _EXTENSION_LANGUAGE: dict[str, str] = {
 ALL_SENTINEL = "*"
 
 
-# frob:doc docs/testing.md#public-api
+# frob:doc docs/modules/testing.md#public-api
 def extension_language(path: str) -> str | None:
     """The `frob.lang` language label for `path`'s extension, or `None` if unknown."""
     suffix = PurePosixPath(path).suffix.lower()
@@ -243,7 +243,7 @@ def _build_report(
     )
 
 
-# frob:doc docs/testing.md#public-api
+# frob:doc docs/modules/testing.md#public-api
 def select_tests(
     snapshot: GraphSnapshot, diff: Diff, cfg: SelectConfig
 ) -> SelectionReport:

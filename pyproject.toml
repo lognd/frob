@@ -30,7 +30,7 @@ dependencies = [
 # Install with: uv pip install "frob[serve]"
 [project.optional-dependencies]
 serve = ["mcp>=1.28.1"]
-# R7 (docs/dup.md's bounded-SMT rung): translates tiny pure int/bool
+# R7 (docs/modules/dup.md's bounded-SMT rung): translates tiny pure int/bool
 # functions to Z3 and checks equivalence formally. Optional -- z3-solver
 # ships native binaries and is only needed for `probe_smt_equivalence`;
 # every other frob.dup rung works without it. Install with:
@@ -79,7 +79,7 @@ extend-exclude = ["tests/fixtures"]
 [tool.ty.src]
 exclude = ["tests/fixtures/**"]
 
-# frob_core (frob-core/, docs/dup.md) ships no type stubs -- it's a PyO3
+# frob_core (frob-core/, docs/modules/dup.md) ships no type stubs -- it's a PyO3
 # native extension, not a Python package ty can introspect. This is the
 # only module that imports it; same posture as lithos's OCP override.
 [[tool.ty.overrides]]

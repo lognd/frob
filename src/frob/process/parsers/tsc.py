@@ -29,7 +29,7 @@ def _tsc_diagnostic(m: re.Match) -> Diagnostic:
     )
 
 
-# frob:doc docs/process.md#public-api
+# frob:doc docs/modules/process.md#public-api
 def parse_tsc(stdout: str, exit_code: int = 0) -> ToolResult:
     """Parse `tsc --noEmit` output into a ToolResult."""
     diagnostics: list[Diagnostic] = []

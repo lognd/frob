@@ -1,4 +1,4 @@
-"""Damerau-Levenshtein typosquat distance check (docs/vet.md VET-JS003,
+"""Damerau-Levenshtein typosquat distance check (docs/modules/vet.md VET-JS003,
 generalized across ecosystems)."""
 
 from __future__ import annotations
@@ -11,7 +11,7 @@ _log = get_logger(__name__)
 _MAX_DISTANCE = 1
 
 
-# frob:doc docs/vet.md#public-api
+# frob:doc docs/modules/vet.md#public-api
 def damerau_levenshtein(a: str, b: str) -> int:
     """Edit distance allowing insert/delete/substitute/transpose (OSA variant)."""
     # frob:waive PERF003 reason="algorithm-inherent edit-distance DP nested scan"
@@ -34,7 +34,7 @@ def damerau_levenshtein(a: str, b: str) -> int:
     return d[la][lb]
 
 
-# frob:doc docs/vet.md#public-api
+# frob:doc docs/modules/vet.md#public-api
 def find_typosquat(ecosystem: str, name: str) -> str | None:
     """The popular-list name `name` is a likely typosquat of, or `None`."""
     popular = ECOSYSTEM_POPULAR.get(ecosystem)

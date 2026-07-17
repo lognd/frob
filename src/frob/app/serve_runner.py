@@ -1,4 +1,4 @@
-"""CLI wiring for `frob serve` (docs/serve.md): the stdio MCP adapter."""
+"""CLI wiring for `frob serve` (docs/modules/serve.md): the stdio MCP adapter."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from frob.logging import get_logger
 _log = get_logger(__name__)
 
 
-# frob:doc docs/serve.md#mcp-sdk
+# frob:doc docs/modules/serve.md#mcp-sdk
 def run(cfg: AppConfig) -> None:
     """Start the stdio MCP server rooted at `cfg.serve_path`, exit 1 if unavailable."""
     from frob.serve.server import McpUnavailable, run_stdio

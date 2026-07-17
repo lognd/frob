@@ -1,4 +1,4 @@
-"""Unit tests for frob.dup._core's frob_core shims (docs/dup.md's Rust core).
+"""Unit tests for frob.dup._core's frob_core shims (docs/modules/dup.md's Rust core).
 
 Skips when the `frob_core` native extension is not importable -- the
 no-silent-fallback rule means these functions themselves already return

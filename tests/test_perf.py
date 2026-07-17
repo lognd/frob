@@ -48,7 +48,7 @@ def test_perf001_fires_on_list_membership_in_loop(tmp_path):
 
 def test_perf001_does_not_fire_on_set_membership_in_loop(tmp_path):
     """PERF001 does not fire when the container is already a set -- the
-    false-positive guard docs/perf.md and the ticket both name as
+    false-positive guard docs/modules/perf.md and the ticket both name as
     priority #1."""
     # frob:ticket T-0021
     src = (

@@ -1,5 +1,6 @@
 """Lockfile parsers: uv.lock, package-lock.json, pnpm-lock.yaml, Cargo.lock ->
-`Dependency` tuples (docs/vet.md "Input"; 0.2.x adds poetry.lock/yarn.lock/bun.lockb).
+`Dependency` tuples
+(docs/modules/vet.md "Input"; 0.2.x adds poetry.lock/yarn.lock/bun.lockb).
 """
 
 from __future__ import annotations
@@ -27,7 +28,7 @@ _LOCKFILE_NAMES = (
 )
 
 
-# frob:doc docs/vet.md#public-api
+# frob:doc docs/modules/vet.md#public-api
 def find_lockfile(root: Path) -> Path | None:
     """The first supported lockfile found directly under `root`, or `None`."""
     for name in _LOCKFILE_NAMES:
@@ -38,7 +39,7 @@ def find_lockfile(root: Path) -> Path | None:
     return None
 
 
-# frob:doc docs/vet.md#public-api
+# frob:doc docs/modules/vet.md#public-api
 def parse_lockfile(path: Path) -> Result[tuple[Dependency, ...], VetError]:
     """Dispatch to the parser matching `path`'s filename; Err on unsupported."""
     name = path.name

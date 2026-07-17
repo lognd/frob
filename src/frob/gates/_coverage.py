@@ -1,4 +1,5 @@
-"""coverage.xml parsing and the `.frob/coverage-stamp` (docs/gates.md TEST005/006).
+"""coverage.xml parsing and the `.frob/coverage-stamp`
+(docs/modules/gates.md TEST005/006).
 
 `load_coverage` parses Cobertura-style `coverage.xml` (branch mode,
 produced by `pytest-cov --cov-report=xml`) and maps line hits onto symbol
@@ -112,7 +113,7 @@ def _symbol_branch(
     return symbol_branch
 
 
-# frob:doc docs/gates.md#public-api
+# frob:doc docs/modules/gates.md#public-api
 def load_coverage(
     root: Path, snapshot: GraphSnapshot | None = None
 ) -> Result[CoverageData, CoverageError]:
@@ -160,7 +161,7 @@ def _collect_file_hashes(root: Path) -> dict[str, str]:
     return file_hashes
 
 
-# frob:doc docs/gates.md#public-api
+# frob:doc docs/modules/gates.md#public-api
 def stamp_coverage(root: Path) -> Result[Unit, GateError]:
     """Record coverage.xml's sha plus current per-file content hashes as a stamp."""
     xml_path = root / _COVERAGE_XML
@@ -196,7 +197,7 @@ def _walk(root: Path):  # noqa: ANN202
         yield dirpath, dirnames, filenames
 
 
-# frob:doc docs/gates.md#public-api
+# frob:doc docs/modules/gates.md#public-api
 def load_stamp(root: Path) -> dict | None:
     """The raw `.frob/coverage-stamp` document, or `None` if missing/unreadable."""
     stamp_path = root / _STAMP_REL

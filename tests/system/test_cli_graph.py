@@ -1,4 +1,4 @@
-"""End-to-end tests for `frob graph` and `frob ack` (docs/graph.md)."""
+"""End-to-end tests for `frob graph` and `frob ack` (docs/modules/graph.md)."""
 
 from __future__ import annotations
 

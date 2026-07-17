@@ -20,7 +20,7 @@ attachments: []
 acceptance: []
 threat: null
 ```
-Phase 7 (0.2.0), designed in docs/dup.md: frob-core PyO3/maturin crate (R3 canonicalizer, winnowing, LSH, WL-kernel, APTED; compute-only, no-Python-fallback, lithos as build reference); region-granular matching (function/subsection); content-addressed fingerprint + LRU verdict caches in .frob/dup.db; DUP001/DUP002 gates; R6 observational probing via frob.fuzz generators; pre-work sweep re-platformed onto it.
+Phase 7 (0.2.0), designed in docs/modules/dup.md: frob-core PyO3/maturin crate (R3 canonicalizer, winnowing, LSH, WL-kernel, APTED; compute-only, no-Python-fallback, lithos as build reference); region-granular matching (function/subsection); content-addressed fingerprint + LRU verdict caches in .frob/dup.db; DUP001/DUP002 gates; R6 observational probing via frob.fuzz generators; pre-work sweep re-platformed onto it.
 
 PARTIAL (T-0037): frob-core built + R1/R2/R3 + DUP gate shipped.
 Remaining: R4 (winnowing/LSH orchestration), R5 (WL-kernel), R6
@@ -57,7 +57,7 @@ attachments: []
 acceptance: []
 threat: null
 ```
-Phase 8 (0.2.0), designed in docs/fuzz.md: Arbitrary protocol (derive from pydantic / __fuzz__ / register), FUZZ001-003 gates, frob test --fuzz with digest-stamped corpus under .frob/corpus (LRU-capped), invariant-anchored default obligation; Rust/TS generator wiring as follow-on. Blocked by T-0001 (frob.fuzz's R6 probing depends on frob-core).
+Phase 8 (0.2.0), designed in docs/modules/fuzz.md: Arbitrary protocol (derive from pydantic / __fuzz__ / register), FUZZ001-003 gates, frob test --fuzz with digest-stamped corpus under .frob/corpus (LRU-capped), invariant-anchored default obligation; Rust/TS generator wiring as follow-on. Blocked by T-0001 (frob.fuzz's R6 probing depends on frob-core).
 
 Delivered under T-0034 (fuzz library + gate + CLI). Remaining polish (Rust/TS runners,
 full per-ecosystem rules) tracked in the ticket body/docs notes.
@@ -115,7 +115,7 @@ created: '2026-07-17'
 blocked_by: []
 parent: null
 scope:
-- src/frob/tickets/**,docs/tickets.md
+- src/frob/tickets/**,docs/modules/tickets.md
 evidence: []
 attachments: []
 acceptance: []
@@ -136,7 +136,7 @@ created: '2026-07-17'
 blocked_by: []
 parent: null
 scope:
-- src/frob/tickets/**,docs/tickets.md
+- src/frob/tickets/**,docs/modules/tickets.md
 evidence: []
 attachments: []
 acceptance: []
@@ -157,7 +157,7 @@ created: '2026-07-17'
 blocked_by: []
 parent: null
 scope:
-- src/frob/tickets/**,docs/tickets.md
+- src/frob/tickets/**,docs/modules/tickets.md
 evidence: []
 attachments: []
 acceptance: []
@@ -170,7 +170,7 @@ Delivered under T-0032.
 <!-- ticket:T-0008 -->
 ```yaml
 id: T-0008
-title: 'frob.vet: dependency capability vetting (docs/vet.md build-out)'
+title: 'frob.vet: dependency capability vetting (docs/modules/vet.md build-out)'
 state: dropped
 kind: security
 origin: human
@@ -184,7 +184,7 @@ attachments: []
 acceptance: []
 threat: null
 ```
-Full build-out of frob.vet per docs/vet.md: tree-sitter capability scan of the locked dependency tree, declaration-vs-observation conformance ([vet.allow]), version capability-escalation diffs as primary supply-chain signal, obfuscation unconditionally fatal, content-addressed verdict cache; VET001-VET010 gates; typed adapters over osv-scanner/GuardDog/Scorecard/sigstore-SLSA with skipped-never-silent absence; per-ecosystem rule families (VET-PY/VET-RS/VET-C/VET-JS) plus VET011 slopsquat/cooldown quarantine; first-party anomaly detectors (VET008 artifact/source divergence, VET009 stylometric self-similarity via frob-core WL kernels, VET010 sandboxed capability divergence); absorbs license/pinning checks. Not touched by this ticket's author -- owned by the concurrent vet workstream.
+Full build-out of frob.vet per docs/modules/vet.md: tree-sitter capability scan of the locked dependency tree, declaration-vs-observation conformance ([vet.allow]), version capability-escalation diffs as primary supply-chain signal, obfuscation unconditionally fatal, content-addressed verdict cache; VET001-VET010 gates; typed adapters over osv-scanner/GuardDog/Scorecard/sigstore-SLSA with skipped-never-silent absence; per-ecosystem rule families (VET-PY/VET-RS/VET-C/VET-JS) plus VET011 slopsquat/cooldown quarantine; first-party anomaly detectors (VET008 artifact/source divergence, VET009 stylometric self-similarity via frob-core WL kernels, VET010 sandboxed capability divergence); absorbs license/pinning checks. Not touched by this ticket's author -- owned by the concurrent vet workstream.
 
 Delivered under T-0034 (vet capability scan + obfuscation ensemble). Remaining polish (Rust/TS runners,
 full per-ecosystem rules) tracked in the ticket body/docs notes.
@@ -223,7 +223,7 @@ parent: null
 scope:
 - src/frob/**
 - tests/test_serve.py
-- docs/serve.md
+- docs/modules/serve.md
 evidence:
 - tests/test_serve.py::TestBuildServer::test_registers_all_five_tools
 attachments: []
@@ -353,14 +353,14 @@ attachments: []
 acceptance: []
 threat: null
 ```
-docs/gates.md's rule catalog states severity is 'per-rule default overridable in frob.toml', but src/frob/gates/__init__.py's own Phase 4 implementation notes say this was explicitly scoped out: severities are fixed constants in code (ERROR for DRIFT/COV002-004/SCOPE001/PRE001/INV001-002/TEST001/TEST004/WAIVE001; WARN for COV001/TODO001/TEST002/003/005), and frob.toml has no [rules] or per-rule table read anywhere in the gates loading path. This was discovered while trying to set a legacy-adoption severity baseline (TEST001/TEST004/TEST006 -> warn) for the dogfood milestone: writing such config to frob.toml would be silently ignored, so no baseline was written. Implement real per-rule severity override support (e.g. a [rules] table in frob.toml, read in run_gates, applied when constructing each Violation) so this baseline can actually be set.
+docs/modules/gates.md's rule catalog states severity is 'per-rule default overridable in frob.toml', but src/frob/gates/__init__.py's own Phase 4 implementation notes say this was explicitly scoped out: severities are fixed constants in code (ERROR for DRIFT/COV002-004/SCOPE001/PRE001/INV001-002/TEST001/TEST004/WAIVE001; WARN for COV001/TODO001/TEST002/003/005), and frob.toml has no [rules] or per-rule table read anywhere in the gates loading path. This was discovered while trying to set a legacy-adoption severity baseline (TEST001/TEST004/TEST006 -> warn) for the dogfood milestone: writing such config to frob.toml would be silently ignored, so no baseline was written. Implement real per-rule severity override support (e.g. a [rules] table in frob.toml, read in run_gates, applied when constructing each Violation) so this baseline can actually be set.
 
 ## Done report
 
 Implemented [gates.severity] frob.toml table; applied as a
 post-processing step in run_gates (_apply_severity_overrides) so every
 gate stays pure and there is exactly one override site. Garbage values
-are logged and ignored. docs/gates.md severity paragraph now true.
+are logged and ignored. docs/modules/gates.md severity paragraph now true.
 
 <!-- ticket:T-0016 -->
 ```yaml
@@ -407,7 +407,7 @@ attachments: []
 acceptance: []
 threat: null
 ```
-TEST003 alpha semantics treat every src/<pkg> directory with a public symbol as an interface owing min_integration edges (an honest over-approximation, per docs/gates.md's Phase 4 notes). Deferred: derive real consumer x provider pairs once frob.graph gains cross-file import edges, and require min_integration per pair rather than per provider.
+TEST003 alpha semantics treat every src/<pkg> directory with a public symbol as an interface owing min_integration edges (an honest over-approximation, per docs/modules/gates.md's Phase 4 notes). Deferred: derive real consumer x provider pairs once frob.graph gains cross-file import edges, and require min_integration per pair rather than per provider.
 
 Delivered under T-0042.
 
@@ -495,7 +495,7 @@ cache recovery, invariant evidence ids corrected, whole-tree ty clean.
 <!-- ticket:T-0021 -->
 ```yaml
 id: T-0021
-title: 'frob.perf: profiling, heat-maps, PERF linear-scan rules (docs/perf.md)'
+title: 'frob.perf: profiling, heat-maps, PERF linear-scan rules (docs/modules/perf.md)'
 state: done
 kind: feature
 origin: human
@@ -508,7 +508,7 @@ scope:
 - src/frob/app/**
 - src/frob/gates/__init__.py
 - src/frob/__main__.py
-- docs/perf.md
+- docs/modules/perf.md
 - docs/index.md
 - tests/test_perf.py
 - tests/system/test_cli_perf.py
@@ -544,7 +544,7 @@ Changed:
 - src/frob/app/config.py::AppConfig, Subcommand, AppConfig.from_external (perf_* fields wired)
 - src/frob/app/app.py::App.__call__ (perf dispatch case)
 - src/frob/__main__.py::_build_parser (perf/profile/heat argparse subcommands)
-- docs/perf.md (refreshed for actual coverage/caveats), docs/index.md (link added)
+- docs/modules/perf.md (refreshed for actual coverage/caveats), docs/index.md (link added)
 - tests/test_perf.py (new, unit), tests/system/test_cli_perf.py (new, system)
 
 Evidence: see frontmatter evidence list (12 unit + 4 system node ids), all
@@ -755,7 +755,7 @@ found while working T-0021: uv run frob check exits 1 on a clean HEAD checkout (
 ## Done report
 
 frob check exits 0 at HEAD again: doclink crawler now counts backtick
-path references (terminal-first index style), docs/exports.md linked in
+path references (terminal-first index style), docs/commands/exports.md linked in
 the index, --only validates stage names (unknown -> loud config error,
 never a vacuous PASS) and accepts individual gate names by mapping them
 onto the gates stage with sub-selection.
@@ -835,7 +835,7 @@ scope:
 - tests/test_tickets.py
 - tests/test_gates.py
 - tests/system/test_cli_ticket.py
-- docs/tickets.md
+- docs/modules/tickets.md
 evidence:
 - tests/test_tickets.py::TestSingleFileLedger::test_migrate_collapses_dir_into_ledger
 - tests/test_gates.py::TestCov002ScopeCoverage::test_open_ticket_scope_covers_changed_symbol
@@ -865,7 +865,7 @@ scope:
 - src/frob/app/config.py
 - src/frob/__main__.py
 - tests/test_tickets.py
-- docs/tickets.md
+- docs/modules/tickets.md
 evidence:
 - tests/test_tickets.py::TestSchemaExtras::test_renumber_makes_ids_contiguous
 - tests/test_tickets.py::TestSchemaExtras::test_acceptance_and_threat_round_trip
@@ -2204,3 +2204,51 @@ acceptance: []
 threat: null
 ```
 UPPER_CASE module constants assigned from a constructor call (TRUST = Lattice(...) in src/frob/strata/_models.py) are not extracted as CONST symbols, so frob:doc/frob:describes edges to them dangle (DRIFT002) and COV001 cannot see them. Found during T-0055.
+
+<!-- ticket:T-0088 -->
+```yaml
+id: T-0088
+title: reorganize flat docs/ into guides/ modules/ commands/ hierarchy
+state: done
+kind: docs
+origin: human
+created: '2026-07-17'
+blocked_by: []
+parent: null
+scope:
+- docs/**
+- src/**
+- tests/**
+- frob-core/**
+- README.md
+- frob.toml
+- tickets.md
+- agents/**
+- skills/**
+- scripts/**
+- invariants/**
+- TODO.md
+- pyproject.toml
+evidence:
+- tests/test_gates.py::TestDoclinkGate::test_orphan_doc_is_error_and_linked_docs_pass
+attachments: []
+acceptance:
+- GIVEN the moved docs WHEN frob check runs THEN doclink/drift/coverage gates pass
+  with zero dangling frob:doc or describes edges
+threat: null
+```
+Flat docs/ (31 files) becomes: index.md + rework.md at root; guides/ (quickstart, agentic-workflow); modules/ (19 module design docs); commands/ (9 per-command refs); strata/ unchanged. Every frob:doc directive, describes anchor consumer, markdown/backtick link, and config path updated in the same change.
+
+## Done report
+
+Moved 30 files via git mv: guides/ (2), commands/ (9), modules/ (19);
+index.md + rework.md stay at root; strata/ untouched. One global rewrite
+pass updated every reference in 179 tracked files (frob:doc directives,
+backtick doc links, README, TODO.md, pyproject.toml, agents/, skills/,
+scripts/, invariants/, frob-core comments). 17 E501s introduced by the
+longer paths fixed by wrapping at the doc parenthetical -- doc-facet
+digests unaffected because doc_text is whitespace-collapsed by design.
+Acceptance verified: frob graph build clean (edges stable at 1311, zero
+dangling), frob check --ticket T-0088 exit 0 (doclink/drift/coverage all
+pass), frob test --base main --lang python PASS, cargo test --lib 13/13
+PASS.

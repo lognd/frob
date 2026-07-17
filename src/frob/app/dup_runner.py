@@ -37,7 +37,7 @@ def _probe(cfg: AppConfig, dup_path: Path) -> None:
     sys.exit(0 if verdict.equivalent else 1)
 
 
-# frob:doc docs/app.md#runners
+# frob:doc docs/modules/app.md#runners
 def run(cfg: AppConfig) -> None:
     dup_path: Path | None = getattr(cfg, "dup_path", None)
     if dup_path is None:

@@ -2,7 +2,7 @@
 
 Covers the language-agnostic tree-sitter helpers in `frob.lang._common`,
 the tree-based walkers in `frob.lang._extract`, and the path-based public
-wrappers in `frob.lang.__init__` (docs/lang.md's Primitives / Extraction
+wrappers in `frob.lang.__init__` (docs/modules/lang.md's Primitives / Extraction
 API sections). Node-based helpers are exercised against a real tree-sitter
 parse obtained via `raw_tree`, so the assertions reflect actual grammar
 output rather than a hand-built stub.

@@ -1,6 +1,6 @@
-"""Pre-work sweep storage (docs/gates.md's PRE001 / `record_prework`).
+"""Pre-work sweep storage (docs/modules/gates.md's PRE001 / `record_prework`).
 
-**Deviation from docs/gates.md**: the doc's prose suggested storing the
+**Deviation from docs/modules/gates.md**: the doc's prose suggested storing the
 sweep digest "in the ticket body" via `frob.tickets`' record-style body
 appender, but `frob.tickets` exposes only `record_failure` (a fixed
 "## Failure log" section) -- no generic body-section appender, and
@@ -32,7 +32,7 @@ def _prework_path(root: Path, ticket_id: str) -> Path:
     return root / ".frob" / "prework" / f"{ticket_id}.json"
 
 
-# frob:doc docs/gates.md#public-api
+# frob:doc docs/modules/gates.md#public-api
 def record_prework(
     root: Path, ticket_id: str, sweep: PreworkSweep
 ) -> Result[Unit, GateError]:
@@ -57,7 +57,7 @@ def record_prework(
     return Ok(Unit())
 
 
-# frob:doc docs/gates.md#public-api
+# frob:doc docs/modules/gates.md#public-api
 def load_prework(root: Path, ticket_id: str) -> PreworkSweep | None:
     """The recorded sweep for `ticket_id`, or `None` if never recorded/unreadable."""
     path = _prework_path(root, ticket_id)

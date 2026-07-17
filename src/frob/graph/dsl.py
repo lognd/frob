@@ -1,4 +1,4 @@
-"""The `frob:<verb> <target> [key="value" ...]` comment DSL (docs/graph.md).
+"""The `frob:<verb> <target> [key="value" ...]` comment DSL (docs/modules/graph.md).
 
 Line-oriented, no expressions, grep-able in any of `frob.lang`'s five
 grammars -- delimiters (`#`, `//`, `/* */`) are already stripped by the time
@@ -45,7 +45,7 @@ def _slugify(heading: str) -> str:
     return slug or "top"
 
 
-# frob:doc docs/graph.md#comment-dsl
+# frob:doc docs/modules/graph.md#comment-dsl
 def markdown_anchors(doc_path: str, text: str) -> tuple[Edge, ...]:
     """Extract `<!-- frob:describes ... -->` anchors bound to the nearest heading."""
     edges: list[Edge] = []
@@ -137,7 +137,7 @@ def _parse_line(
     return Edge(src=src, kind=kind, target=target, origin=origin, attrs=attrs)
 
 
-# frob:doc docs/graph.md#comment-dsl
+# frob:doc docs/modules/graph.md#comment-dsl
 def parse_directives(
     parsed: ParsedFile,
 ) -> tuple[tuple[Edge, ...], tuple[MalformedDirective, ...]]:

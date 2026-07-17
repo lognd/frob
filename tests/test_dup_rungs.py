@@ -1,4 +1,4 @@
-"""Tests for R4/R5/R6 and region-subsection matching (docs/dup.md, T-0001).
+"""Tests for R4/R5/R6 and region-subsection matching (docs/modules/dup.md, T-0001).
 
 Each rung gets a fires-on-target-shape test and a does-not-false-positive
 test, per T-0001's hard rules. Skips (rather than fails) when `frob_core`

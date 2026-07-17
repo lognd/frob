@@ -1,4 +1,5 @@
-"""Loads `[vet]`/`[vet.allow]` from frob.toml (docs/vet.md "Declaration and gates").
+"""Loads `[vet]`/`[vet.allow]` from frob.toml
+(docs/modules/vet.md "Declaration and gates").
 
 MVP note: allow entries are coarse -- `name = true` or `name = ["reason", ...]`;
 full per-capability declarations (`name = ["net", "env"]` meaning literal
@@ -36,7 +37,7 @@ def _parse_allow(allow_raw: object) -> dict[str, tuple[str, ...] | bool]:
     return allow
 
 
-# frob:doc docs/vet.md#public-api
+# frob:doc docs/modules/vet.md#public-api
 def load_vet_config(root: Path) -> VetConfig:
     """Read `frob.toml`'s `[vet]` table; absent table -> `present=False`
     (advisory-only)."""

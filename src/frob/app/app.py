@@ -65,7 +65,7 @@ def _dispatch_table() -> dict[Subcommand, Callable[[AppConfig], None]]:
     }
 
 
-# frob:doc docs/app.md#entry-point
+# frob:doc docs/modules/app.md#entry-point
 class App:
     # frob:ticket T-0021
     def __init__(self, cfg: AppConfig) -> None:

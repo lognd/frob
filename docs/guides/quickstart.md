@@ -209,9 +209,9 @@ rejected.
 
 ## Next steps
 
-- `docs/gates.md` -- the full rule catalog (DRIFT/COV/SCOPE/PRE/INV/TEST/POL)
+- `docs/modules/gates.md` -- the full rule catalog (DRIFT/COV/SCOPE/PRE/INV/TEST/POL)
   and what closes each one out.
-- `docs/agentic-workflow.md` -- running this same loop through the
+- `docs/guides/agentic-workflow.md` -- running this same loop through the
   planner/implementer/reviewer/prover agents instead of by hand.
-- `docs/testing.md` -- the touched-set selection algorithm and the
+- `docs/modules/testing.md` -- the touched-set selection algorithm and the
   `[[test.runner]]` registry for other languages.

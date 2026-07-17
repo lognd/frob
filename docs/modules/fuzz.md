@@ -6,7 +6,7 @@ values satisfying each type's invariants, and a missing generator or
 missing fuzz binding is a gate failure, not a code-review hope.
 
 The generator registry is shared infrastructure: the same strategies that
-fuzz a function also drive observational clone probing (docs/dup.md R6).
+fuzz a function also drive observational clone probing (docs/modules/dup.md R6).
 
 ## The Arbitrary protocol
 
@@ -212,7 +212,7 @@ avoid merge conflicts on those shared files.
   installed still imports `frob.fuzz` cleanly and every hypothesis-backed
   path returns `Err(FuzzError.NoGenerator)` / an empty result instead of
   raising `ImportError`. hypothesis needs to be added to `pyproject.toml`
-  (dev or main dependency group, per docs/fuzz.md's own "hypothesis (dev
+  (dev or main dependency group, per docs/modules/fuzz.md's own "hypothesis (dev
   dependency)" line) for the resolve/run_fuzz hypothesis paths to do
   anything; `tests/test_fuzz.py`'s hypothesis-backed cases are marked
   `skipif(not HYPOTHESIS_AVAILABLE)` so `pytest` stays green either way.

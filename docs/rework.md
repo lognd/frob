@@ -12,9 +12,9 @@ context retrieval or packing.
 
 This is the umbrella document. Component designs:
 
-- `docs/graph.md` -- obligation graph engine, comment DSL, lock file, drift
-- `docs/tickets.md` -- ticket/feature queue, attachments, clipboard capture
-- `docs/gates.md` -- gates (drift, coverage, scope, pre-work), policy,
+- `docs/modules/graph.md` -- obligation graph engine, comment DSL, lock file, drift
+- `docs/modules/tickets.md` -- ticket/feature queue, attachments, clipboard capture
+- `docs/modules/gates.md` -- gates (drift, coverage, scope, pre-work), policy,
   invariants, `frob check` integration
 
 ## Architecture
@@ -79,7 +79,7 @@ never as a blocker): `scaffold`, `map`, `outline`, `xref`, `parse`, `dup`,
 `cycle`, `arch`, `bind`, `exports`, `docs`, `gitlog`, `check`.
 
 New commands: `frob graph`, `frob ack`, `frob ticket`, `frob test`
-(touched-set cross-language test execution; see docs/testing.md). Deferred
+(touched-set cross-language test execution; see docs/modules/testing.md). Deferred
 (post-alpha): `frob serve` (MCP adapter exposing enforcement queries).
 
 `frob.ast` (Python + C++ only) survives Phase 0 because kept commands use it;
@@ -153,9 +153,9 @@ half of the stack and forgotten).
 5. Agents/skills replacement set.
 6. Docs/README refresh; release 0.1.0.
 7. (0.2.0) `frob-core` Rust kernels + smart dup: region-granular semantic
-   clone detection with DUP001/DUP002 gates (docs/dup.md).
+   clone detection with DUP001/DUP002 gates (docs/modules/dup.md).
 8. (0.2.0) `frob.fuzz`: enforced property fuzzing, Arbitrary protocol,
-   FUZZ gates (docs/fuzz.md).
+   FUZZ gates (docs/modules/fuzz.md).
 
 Post-0.2.0: `frob serve` (MCP adapter).
 

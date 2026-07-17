@@ -1,4 +1,5 @@
-"""Data models and error types for frob.tickets (docs/tickets.md is authoritative)."""
+"""Data models and error types for frob.tickets
+(docs/modules/tickets.md is authoritative)."""
 
 from __future__ import annotations
 
@@ -11,7 +12,7 @@ from pydantic import BaseModel, ConfigDict
 from typani.error_set import ErrorSet
 
 
-# frob:doc docs/tickets.md#data-models
+# frob:doc docs/modules/tickets.md#data-models
 class TicketState(StrEnum):
     """The six states a ticket can occupy in the queue state machine."""
 
@@ -23,7 +24,7 @@ class TicketState(StrEnum):
     DROPPED = "dropped"
 
 
-# frob:doc docs/tickets.md#data-models
+# frob:doc docs/modules/tickets.md#data-models
 class TicketKind(StrEnum):
     """What kind of work a ticket represents."""
 
@@ -36,7 +37,7 @@ class TicketKind(StrEnum):
     INCIDENT = "incident"
 
 
-# frob:doc docs/tickets.md#data-models
+# frob:doc docs/modules/tickets.md#data-models
 class Stride(StrEnum):
     """STRIDE threat categories for kind=security tickets (T-0007)."""
 
@@ -48,7 +49,7 @@ class Stride(StrEnum):
     ELEVATION_OF_PRIVILEGE = "elevation-of-privilege"
 
 
-# frob:doc docs/tickets.md#data-models
+# frob:doc docs/modules/tickets.md#data-models
 class Origin(StrEnum):
     """Who filed a ticket."""
 
@@ -57,7 +58,7 @@ class Origin(StrEnum):
     AUDITOR = "auditor"
 
 
-# frob:doc docs/tickets.md#data-models
+# frob:doc docs/modules/tickets.md#data-models
 class Attachment(BaseModel):
     """One image/file attached to a ticket, with integrity hash."""
 
@@ -68,7 +69,7 @@ class Attachment(BaseModel):
     sha256: str
 
 
-# frob:doc docs/tickets.md#data-models
+# frob:doc docs/modules/tickets.md#data-models
 class FailureEntry(BaseModel):
     """One line of append-only cross-session failure memory for a ticket."""
 
@@ -79,7 +80,7 @@ class FailureEntry(BaseModel):
     summary: str
 
 
-# frob:doc docs/tickets.md#data-models
+# frob:doc docs/modules/tickets.md#data-models
 class Ticket(BaseModel):
     """One ticket: frontmatter fields plus the verbatim markdown body."""
 
@@ -103,7 +104,7 @@ class Ticket(BaseModel):
     body: str = ""
 
 
-# frob:doc docs/tickets.md#data-models
+# frob:doc docs/modules/tickets.md#data-models
 class TicketSpec(BaseModel):
     """Input to new_ticket; id/created/state are assigned by the library."""
 
@@ -120,7 +121,7 @@ class TicketSpec(BaseModel):
     body: str = ""
 
 
-# frob:doc docs/tickets.md#data-models
+# frob:doc docs/modules/tickets.md#data-models
 class TicketQueue(BaseModel):
     """The full set of tickets loaded from tickets/, keyed by id."""
 
@@ -129,7 +130,7 @@ class TicketQueue(BaseModel):
     tickets: Mapping[str, Ticket]
 
 
-# frob:doc docs/tickets.md#data-models
+# frob:doc docs/modules/tickets.md#data-models
 class AttachmentSource(BaseModel):
     """Where attach() should read image bytes from; None path means clipboard."""
 
@@ -138,7 +139,7 @@ class AttachmentSource(BaseModel):
     path: Path | None = None
 
 
-# frob:doc docs/tickets.md#error-types
+# frob:doc docs/modules/tickets.md#error-types
 class TicketError(ErrorSet):
     """Fallible outcomes of frob.tickets queue/mutation operations."""
 
