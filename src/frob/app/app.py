@@ -32,6 +32,7 @@ class App:
             perf_runner,
             release_runner,
             scaffold_runner,
+            serve_runner,
             stats_runner,
             test_runner,
             ticket_runner,
@@ -82,11 +83,14 @@ class App:
                 release_runner.run(self._cfg)
             case Subcommand.stats:
                 stats_runner.run(self._cfg)
+            case Subcommand.serve:
+                serve_runner.run(self._cfg)
             case _:
                 _log.error(
                     "usage: frob "
                     "<scaffold|cycle|outline|map|xref|parse|dup|arch|docs|bind|"
-                    "exports|check|gitlog|graph|ack|ticket|test|vet|perf|release>"
+                    "exports|check|gitlog|graph|ack|ticket|test|vet|perf|"
+                    "release|stats|serve>"
                     " ..."
                 )
                 sys.exit(1)

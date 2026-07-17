@@ -24,6 +24,13 @@ dependencies = [
     "jinja2>=3.1",
 ]
 
+# Optional: `frob serve` (the MCP adapter) needs the mcp SDK; installing it
+# pulls uvicorn and friends, so it stays out of the core install. `frob
+# serve` degrades to a clear "mcp not installed" message without it.
+# Install with: uv pip install "frob[serve]"
+[project.optional-dependencies]
+serve = ["mcp>=1.28.1"]
+
 [project.scripts]
 frob = "frob.__main__:main"
 
@@ -41,6 +48,7 @@ dev = [
     "pytest-cov>=5",
     "pytest-testmon>=2",
     "hypothesis>=6",
+    "mcp>=1.28.1",
     "pytest-xdist>=3",
     "ruff>=0.8",
     "ty>=0.0.1a8",
@@ -73,6 +81,7 @@ include = ["src/frob/dup/_core.py"]
 
 [tool.ty.overrides.rules]
 unresolved-attribute = "ignore"
+unresolved-import = "ignore"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]
