@@ -366,7 +366,7 @@ are logged and ignored. docs/gates.md severity paragraph now true.
 ```yaml
 id: T-0016
 title: Re-platform map/outline/xref/cycle/dup onto frob.lang; delete frob.ast
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-17'
