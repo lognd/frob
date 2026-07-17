@@ -86,6 +86,7 @@ the symbol immediately following it, for preceding-line comments).
 | `frob:tests <symref>` | enclosing test function unit-tests that symbol |
 | `frob:tests <pkg-path> kind="integration"` | enclosing test exercises that package's public boundary with real collaborators |
 | `frob:tests <system-id> kind="e2e"` | enclosing test drives that declared system end to end |
+| `frob:decision AD-###` | enclosing symbol implements that decision record (see docs/decisions.md) |
 
 Markdown side (doc anchors), in HTML comments; applies from the comment to
 the next heading of equal or higher level:

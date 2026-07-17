@@ -84,6 +84,7 @@ class EdgeKind(StrEnum):
     WAIVE = "waive"
     DESCRIBES = "describes"
     TESTS = "tests"
+    DECISION = "decision"
 
 
 class Edge(BaseModel):

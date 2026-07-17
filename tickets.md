@@ -73,7 +73,7 @@ Delivered under T-0035.
 ```yaml
 id: T-0004
 title: 'Decision records (ADR): decisions/AD-###.md + frob:decision edges'
-state: queued
+state: dropped
 kind: docs
 origin: human
 created: '2026-07-17'
@@ -87,6 +87,8 @@ acceptance: []
 threat: null
 ```
 decisions/AD-###.md decision records: frontmatter id/status/context, frob:decision AD-### edges from implementing code, drift when decided-upon code changes without a superseding record (architect role; lithos AD-x referencing style is the precedent). Phase 9 (0.2.x).
+
+Delivered under T-0038.
 
 <!-- ticket:T-0005 -->
 ```yaml
@@ -987,3 +989,31 @@ tree_edit_similarity; 5/5 cargo tests) + the smart-dup Python pipeline
 (find_clones R1/R2 pure-Python, R3 via frob-core, no silent fallback);
 DUP001/DUP002 wired as the opt-in 'clones' gate; make core + CI build
 the Rust side. Delivers the buildable core of T-0001.
+
+<!-- ticket:T-0038 -->
+```yaml
+id: T-0038
+title: 'ADR decision records: frob:decision edges + DEC gates'
+state: done
+kind: feature
+origin: agent
+created: '2026-07-17'
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/**
+- src/frob/graph/**
+- tests/test_decisions.py
+- docs/**
+evidence:
+- tests/test_decisions.py::test_dec002_accepted_decision_unanchored
+- tests/test_decisions.py::test_dec001_dangling_decision_edge
+attachments: []
+acceptance: []
+threat: null
+```
+## Done report
+
+ADR: EdgeKind.DECISION + frob:decision DSL verb; decisions/AD-###.md
+records with status; DEC001 (dangling ref), DEC002 (accepted decision
+unanchored) gates, opt-in when decisions/ exists. Delivers T-0004.

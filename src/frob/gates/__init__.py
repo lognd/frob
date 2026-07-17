@@ -1046,8 +1046,36 @@ _ALL_GATES = frozenset(
         "fuzz",
         "release",
         "clones",
+        "decisions",
     }
 )
+
+
+# frob:ticket T-0004
+def decisions_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
+    """DEC001/DEC002: decision records and their code anchors (T-0004).
+
+    Runs only when a `decisions/` directory exists (opt-in by convention).
+    A malformed record fails loudly rather than silently degrading, since
+    the record set is a contract surface like the ticket queue.
+    """
+    from frob.gates.decisions import decision_gate, decisions_dir, load_decisions
+
+    root = Path(root)
+    if not decisions_dir(root).exists():
+        return ()
+    loaded = load_decisions(root)
+    if loaded.is_err:
+        return (
+            Violation(
+                rule="DEC000",
+                severity=Severity.ERROR,
+                file="decisions/",
+                line=0,
+                message=f"DEC000: decision records unreadable: {loaded.danger_err}",
+            ),
+        )
+    return decision_gate(loaded.danger_ok, snapshot)
 
 
 # frob:ticket T-0001
@@ -1535,6 +1563,8 @@ def run_gates(cfg: GateConfig) -> Result[GateReport, GateError]:
         jobs["release"] = lambda: release_gate(Path(cfg.root), snapshot)
     if "clones" in selected:
         jobs["clones"] = lambda: dup_gate(Path(cfg.root), snapshot, diff)
+    if "decisions" in selected:
+        jobs["decisions"] = lambda: decisions_gate(Path(cfg.root), snapshot)
 
     from concurrent.futures import ThreadPoolExecutor
 
@@ -1596,6 +1626,7 @@ __all__ = [
     "invariant_gate",
     "load_coverage",
     "load_invariants",
+    "decisions_gate",
     "doclink_gate",
     "dup_gate",
     "fuzz_gate",

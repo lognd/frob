@@ -23,6 +23,8 @@ declaration).
 | PRE001 | pre-work | ticket moved to in-progress without a recorded pre-work sweep |
 | INV001 | invariant | invariant has no evidence (test or policy rule) |
 | INV002 | invariant | invariant has no code anchor (`frob:invariant`) |
+| DEC001 | decisions | a `frob:decision AD-###` edge points at a record that does not exist (opt-in: a `decisions/` dir must exist) |
+| DEC002 | decisions | an `accepted` decision record has no `frob:decision` code anchor |
 | TEST001 | test | public function/method has no `frob:tests` unit edge |
 | TEST002 | test | unit edges for a symbol number fewer than `min_unit_cases` |
 | TEST003 | test | interface (package whose public symbols are imported by another package) has fewer than `min_integration` integration edges |

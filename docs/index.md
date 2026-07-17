@@ -56,6 +56,8 @@ Two modules that support the above but are not yet fully re-platformed:
   public-API graph, `frob release stamp|check`, and the REL001 gate.
 - `docs/stats.md` -- `frob.stats`: DORA-ish delivery measurement (queue
   health + commit cadence); measurement only, never a gate.
+- `docs/decisions.md` -- ADR decision records (`decisions/AD-###.md`),
+  `frob:decision` anchors, and the DEC gates.
 
 ## Per-command references
 

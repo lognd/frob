@@ -25,6 +25,7 @@ _VERB_TABLE: dict[str, EdgeKind] = {
     "todo": EdgeKind.TODO,
     "waive": EdgeKind.WAIVE,
     "tests": EdgeKind.TESTS,
+    "decision": EdgeKind.DECISION,
 }
 
 _LINE_RE = re.compile(r"^frob:(?P<verb>\S+)(?:\s+(?P<rest>.*))?$")
