@@ -538,7 +538,7 @@ class TestParseTy:
     def test_error_file(self):
         r = parse_ty(TY_BRACKET, exit_code=1)
         err = next(d for d in r.diagnostics if d.severity == "error")
-        assert "config.py" in err.file
+        assert err.file and "config.py" in err.file
 
     def test_error_line(self):
         r = parse_ty(TY_BRACKET, exit_code=1)
@@ -646,7 +646,7 @@ class TestParseClang:
     def test_error_file(self):
         r = parse_clang(CLANG_BASIC, exit_code=1)
         err = next(d for d in r.diagnostics if d.severity == "error")
-        assert "engine.cpp" in err.file
+        assert err.file and "engine.cpp" in err.file
 
     def test_error_line(self):
         r = parse_clang(CLANG_BASIC, exit_code=1)

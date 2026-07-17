@@ -43,6 +43,7 @@ def test_py_finds_definition(py_file):
 def test_py_definition_correct_line(py_file, py_sample):
     xr = xref("helper", py_file).danger_ok
     src_lines = py_sample.decode().splitlines()
+    assert xr.definition is not None
     assert src_lines[xr.definition.line - 1].startswith("def helper")
 
 

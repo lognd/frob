@@ -5,15 +5,8 @@ Prints the new version to stdout. Edits pyproject.toml in place.
 
 import re
 import sys
+import tomllib
 from pathlib import Path
-
-try:
-    import tomllib
-except ImportError:
-    try:
-        import tomli as tomllib  # type: ignore[no-redef]
-    except ImportError:
-        import toml as tomllib  # type: ignore[no-redef,import-not-found]
 
 PYPROJECT = Path("pyproject.toml")
 

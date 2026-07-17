@@ -61,6 +61,9 @@ line-length = 88
 # Fixture files are intentionally bad/broken code used as parser test data
 extend-exclude = ["tests/fixtures"]
 
+[tool.ty.src]
+exclude = ["tests/fixtures/**"]
+
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]
 

@@ -64,7 +64,7 @@ class _FakeRegistryHandler(http.server.BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(payload)
 
-    def log_message(self, fmt, *args):  # noqa: D102 -- silence test server logging
+    def log_message(self, format: str, *args: object) -> None:  # noqa: D102 -- silence test server logging
         pass
 
 

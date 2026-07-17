@@ -205,7 +205,7 @@ def test_ty_error_code():
 def test_ty_error_file():
     r = parse_ty(TY_OUTPUT, exit_code=1)
     error = next(d for d in r.diagnostics if d.severity == "error")
-    assert "config.py" in error.file
+    assert error.file and "config.py" in error.file
 
 
 def test_ty_as_text():
@@ -245,7 +245,7 @@ def test_clang_parses():
 def test_clang_file():
     r = parse_clang(CLANG_OUTPUT, exit_code=1)
     error = next(d for d in r.diagnostics if d.severity == "error")
-    assert "engine.cpp" in error.file
+    assert error.file and "engine.cpp" in error.file
 
 
 def test_clang_line_number():

@@ -235,8 +235,8 @@ class TestRunners:
     def _spec(self, placeholder: str, **kwargs) -> RunnerSpec:
         return RunnerSpec(
             language="python",
-            command=["pytest", placeholder],
-            all_command=["pytest"],
+            command=("pytest", placeholder),
+            all_command=("pytest",),
             **kwargs,
         )
 
@@ -335,8 +335,8 @@ class TestRunners:
         script.write_text("import sys\nsys.exit(1)\n")
         spec = RunnerSpec(
             language="python",
-            command=[sys.executable, str(script), "{files}"],
-            all_command=[sys.executable, str(script)],
+            command=(sys.executable, str(script), "{files}",),
+            all_command=(sys.executable, str(script),),
         )
         selection = SelectionReport(
             touched=(),
@@ -356,8 +356,8 @@ class TestRunners:
 
         spec = RunnerSpec(
             language="python",
-            command=["/no/such/binary", "{files}"],
-            all_command=["/no/such/binary"],
+            command=("/no/such/binary", "{files}",),
+            all_command=("/no/such/binary",),
         )
         selection = SelectionReport(
             touched=(),
@@ -377,8 +377,8 @@ class TestRunners:
         script.write_text("import time\ntime.sleep(5)\n")
         spec = RunnerSpec(
             language="python",
-            command=[sys.executable, str(script), "{files}"],
-            all_command=[sys.executable, str(script)],
+            command=(sys.executable, str(script), "{files}",),
+            all_command=(sys.executable, str(script),),
             timeout_s=0.5,
         )
         selection = SelectionReport(

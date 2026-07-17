@@ -150,8 +150,13 @@ class TestPytestExecutable:
 
 @pytest.mark.skipif(shutil.which("ty") is None, reason="ty not installed")
 class TestTyExecutable:
-    def test_ty_finds_type_errors(self):
-        fixture = FIXTURES / "bad_python"
+    def test_ty_finds_type_errors(self, tmp_path):
+        # Copied out of the repo: the repo pyproject excludes tests/fixtures
+        # from ty, and ty discovers that config from any cwd inside the repo.
+        import shutil
+
+        fixture = tmp_path / "bad_python"
+        shutil.copytree(FIXTURES / "bad_python", fixture)
         ty = _run(
             ["ty", "check", str(fixture / "src")],
             cwd=str(fixture),
