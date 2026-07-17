@@ -5,15 +5,11 @@ These test the realistic agentic workflow sequences described in
 docs/agentic-workflow.md.
 """
 
-from pathlib import Path
-
 import pytest
 
-from frob.bundle import build_bundle
 from frob.cycle.graph import DependencyGraph, find_cycles
 from frob.map import map_project
 from frob.outline import outline_file
-from frob.tokens import count_paths
 from frob.xref import xref
 
 # ---------------------------------------------------------------------------
@@ -129,65 +125,3 @@ def test_cycle_detected_in_mini_project(mini_project):
     for c in cycles:
         cycle_nodes.update(c)
     assert "core.py" in cycle_nodes or "utils.py" in cycle_nodes
-
-
-# ---------------------------------------------------------------------------
-# bundle + tokens: agentic context assembly pipeline
-# ---------------------------------------------------------------------------
-
-
-def test_bundle_then_tokens_consistent(mini_project):
-    """Token count of a bundle section should match direct file token count."""
-    core = mini_project / "core.py"
-    bundle = build_bundle(core, "CoreClass.run", depth=1).danger_ok
-    focus = next(s for s in bundle.sections if s.role == "focus")
-
-    from frob.tokens import estimate_tokens
-
-    recomputed = estimate_tokens(focus.content)
-    # Allow small drift from rounding
-    assert abs(focus.tokens - recomputed) <= 2
-
-
-def test_bundle_import_section_is_smaller_than_full_file(mini_project):
-    """Signatures-only should be cheaper than the full file."""
-    core = mini_project / "core.py"
-    bundle = build_bundle(core, "CoreClass.run", depth=1).danger_ok
-
-    import_secs = [s for s in bundle.sections if s.role == "import"]
-    if not import_secs:
-        pytest.skip("no local imports resolved")
-
-    full_costs = count_paths(
-        [
-            mini_project / Path(s.path).name
-            for s in import_secs
-            if (mini_project / Path(s.path).name).exists()
-        ]
-    )
-    sig_tokens = sum(s.tokens for s in import_secs)
-    assert sig_tokens <= full_costs.total_tokens
-
-
-# ---------------------------------------------------------------------------
-# map -> tokens: budget a full read vs selective reading
-# ---------------------------------------------------------------------------
-
-
-def test_map_suggests_cheaper_than_full_read(tmp_path):
-    """map tokens should be less than reading all files directly (needs enough files)."""
-    # Generate enough content so map overhead is clearly smaller than raw source
-    for i in range(20):
-        lines = [
-            f"def func_{i}_{j}(x: int) -> int:\n    return x + {j}\n" for j in range(10)
-        ]
-        (tmp_path / f"module_{i}.py").write_text("\n".join(lines))
-
-    proj_map = map_project(tmp_path)
-    map_text = proj_map.as_text()
-
-    from frob.tokens import estimate_tokens
-
-    map_cost = estimate_tokens(map_text)
-    full_cost = count_paths([tmp_path])
-    assert map_cost < full_cost.total_tokens

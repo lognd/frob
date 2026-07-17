@@ -5,9 +5,19 @@ from pathlib import Path
 from pydantic import BaseModel
 
 from frob.outline import ModuleOutline, outline_file
-from frob.tokens import estimate_tokens
 
 _SOURCE_EXTS = {".py", ".c", ".cc", ".cpp", ".cxx", ".h", ".hpp", ".hxx"}
+
+# Conservative estimate: code is denser than prose (~3.5 chars/token for
+# typical Python/C++; prose is ~4). We round down to avoid surprises.
+_CHARS_PER_TOKEN = 3.5
+
+
+def _estimate_tokens(text: str | bytes) -> int:
+    """Rough token-count estimate from character count (no tokenizer dep)."""
+    if isinstance(text, bytes):
+        text = text.decode(errors="replace")
+    return max(1, int(len(text) / _CHARS_PER_TOKEN))
 
 
 class FileNode(BaseModel):
@@ -101,7 +111,7 @@ def map_project(root: Path, depth: int | None = None) -> MapResult:
             pub_syms, priv_count = [], 0
 
         try:
-            tok = estimate_tokens(path.read_bytes())
+            tok = _estimate_tokens(path.read_bytes())
         except Exception:
             tok = 0
 

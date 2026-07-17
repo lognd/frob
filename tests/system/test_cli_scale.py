@@ -55,26 +55,6 @@ def test_map_50_files_all_basenames_present(tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# frob tokens scale
-# ---------------------------------------------------------------------------
-
-
-def test_tokens_50_files_total_above_5000(tmp_path):
-    make_project(tmp_path, 50, 10)
-    r = run("tokens", str(tmp_path), "--json")
-    assert r.returncode == 0
-    data = json.loads(r.stdout)
-    assert data["total_tokens"] > 5000
-
-
-def test_tokens_50_files_count_matches(tmp_path):
-    make_project(tmp_path, 50, 10)
-    r = run("tokens", str(tmp_path), "--json")
-    data = json.loads(r.stdout)
-    assert len(data["files"]) == 50
-
-
-# ---------------------------------------------------------------------------
 # frob xref scale
 # ---------------------------------------------------------------------------
 

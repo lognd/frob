@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import logging
 import logging.config
+import tomllib
 from pathlib import Path
-
-from frob._compat import toml
 
 _CONFIG_PATH = Path(__file__).parent / "config.toml"
 _initialized = False
@@ -15,7 +14,7 @@ def _init() -> None:
     if _initialized:
         return
     with _CONFIG_PATH.open("rb") as f:
-        cfg = toml.load(f)
+        cfg = tomllib.load(f)
     logging.config.dictConfig(cfg)
     _initialized = True
 

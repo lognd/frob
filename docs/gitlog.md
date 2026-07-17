@@ -39,7 +39,7 @@ Commits not matching this pattern are `unknown` type and excluded by default
 git log (user) since v0.0.1  --  4 commits
 
 ### Features
-  91f6bdb  add frob check (C++/Rust/valgrind), frob mission, and new parsers
+  91f6bdb  add frob check (C++/Rust/valgrind) and new parsers
   b99e468  add frob check and frob ctx aggregate utilities
 
 ### Bug fixes

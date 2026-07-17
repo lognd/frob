@@ -1,6 +1,6 @@
 # frob scaffold
 
-Scaffold new projects from registered templates. (`frob init` is a deprecated alias.)
+Scaffold new projects from registered templates.
 
 ## Usage
 
