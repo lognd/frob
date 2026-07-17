@@ -33,6 +33,7 @@ class Subcommand(str, enum.Enum):
     perf = "perf"
 
 
+# frob:ticket T-0030
 class AppConfig(BaseModel):
     # frob:ticket T-0021
     subcommand: Subcommand | None = None
@@ -156,6 +157,7 @@ class AppConfig(BaseModel):
     ticket_ids: list[str] = []
     ticket_title: str | None = None
     ticket_kind: str | None = None
+    ticket_origin: str | None = None
     ticket_scope: list[str] = []
     ticket_blocked_by: list[str] = []
     ticket_parent: str | None = None
@@ -194,6 +196,7 @@ class AppConfig(BaseModel):
     @classmethod
     def from_external(cls, args: argparse.Namespace, file: Path) -> "AppConfig":
         # frob:ticket T-0021
+        # frob:ticket T-0030
         file_cfg: dict = {}
         if file.exists():
             with file.open("rb") as f:
@@ -229,6 +232,7 @@ class AppConfig(BaseModel):
             "ticket_id",
             "ticket_title",
             "ticket_kind",
+            "ticket_origin",
             "ticket_parent",
             "ticket_state",
             "ticket_by",

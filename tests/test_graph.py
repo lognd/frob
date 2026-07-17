@@ -425,3 +425,38 @@ class TestDuplicateSymrefs:
         snap = result.danger_ok
         assert "src/m.py::f" in snap.symbols
         assert "src/m.py::C.v" in snap.symbols
+
+
+class TestConcurrentCache:
+    # frob:ticket T-0029
+    def test_concurrent_connections_do_not_raise_disk_io(self, tmp_path):
+        # frob:ticket T-0029
+        # frob:tests src/frob/graph/cache.py::connect
+        """T-0029: two connections writing the same cache.db must serialize on
+        WAL + the busy timeout, not raise `sqlite3.OperationalError: disk I/O
+        error` (the hard crash a second `frob graph build` process hit).
+
+        This pins the connection-lock fix specifically. Full race-free
+        concurrent build_graph on one cache (overlapping schema rebuilds and
+        per-file commits) is broader work tracked in T-0029's body -- it wants
+        a build lockfile, not just a busy timeout."""
+        from concurrent.futures import ThreadPoolExecutor
+
+        from frob.graph import cache as _cache
+
+        cache_path = tmp_path / ".frob" / "cache.db"
+        _cache.connect(cache_path).close()  # initialize schema once
+
+        def writer(n: int) -> bool:
+            conn = _cache.connect(cache_path)
+            try:
+                for i in range(20):
+                    _cache.set_root(conn, f"root-{n}-{i}")
+                    conn.commit()
+                return True
+            finally:
+                conn.close()
+
+        with ThreadPoolExecutor(max_workers=4) as ex:
+            futures = [ex.submit(writer, n) for n in range(4)]
+            assert all(f.result() for f in futures)

@@ -50,6 +50,7 @@ def run(cfg: AppConfig) -> None:
             sys.exit(1)
 
 
+# frob:ticket T-0030
 def _new(root: Path, cfg: AppConfig) -> None:
     from frob.tickets import Origin, TicketKind, TicketSpec, new_ticket
 
@@ -62,7 +63,7 @@ def _new(root: Path, cfg: AppConfig) -> None:
     spec = TicketSpec(
         title=cfg.ticket_title,
         kind=TicketKind(cfg.ticket_kind),
-        origin=Origin.HUMAN,
+        origin=Origin(cfg.ticket_origin) if cfg.ticket_origin else Origin.HUMAN,
         scope=tuple(cfg.ticket_scope),
         blocked_by=tuple(cfg.ticket_blocked_by),
         parent=cfg.ticket_parent,

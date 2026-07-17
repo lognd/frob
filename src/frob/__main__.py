@@ -6,6 +6,7 @@ from pathlib import Path
 from frob.app import App, AppConfig
 
 
+# frob:ticket T-0030
 def _build_parser() -> argparse.ArgumentParser:
     # frob:ticket T-0021
     p = argparse.ArgumentParser(
@@ -390,6 +391,12 @@ def _build_parser() -> argparse.ArgumentParser:
         dest="ticket_kind",
         required=True,
         choices=["feature", "bug", "security", "ux", "docs", "invariant"],
+    )
+    ticket_new_p.add_argument(
+        "--origin",
+        dest="ticket_origin",
+        choices=["human", "agent", "auditor"],
+        help="who filed this ticket (default: human)",
     )
     ticket_new_p.add_argument(
         "--scope", dest="ticket_scope", action="append", default=[]

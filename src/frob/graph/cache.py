@@ -63,7 +63,29 @@ CREATE TABLE IF NOT EXISTS malformed (
 """
 
 
+# frob:ticket T-0029
+def _open(path: Path) -> sqlite3.Connection:
+    """A cache connection with a busy timeout so concurrent builds wait
+    rather than raising `disk I/O error` (T-0029: two agents building the
+    same worktree cache collided; sqlite's default is no wait at all)."""
+    conn = sqlite3.connect(str(path), timeout=30.0)
+    # These pragmas can touch page structure, so on a non-sqlite file they
+    # raise here -- swallow it and let connect()'s schema SELECT be the one
+    # place that detects corruption and triggers recreate (T-0019/T-0029).
+    # WAL lets concurrent builds queue on a single writer instead of
+    # deadlocking on a shared->exclusive lock upgrade; rollback-journal mode
+    # timed out even at 30s under 4 parallel builders.
+    try:
+        conn.execute("PRAGMA busy_timeout = 30000")
+        conn.execute("PRAGMA journal_mode = WAL")
+    except sqlite3.DatabaseError as exc:
+        _log.debug("cache: pragma setup deferred (%s)", exc)
+    conn.execute("PRAGMA foreign_keys = OFF")
+    return conn
+
+
 # frob:invariant INV-003
+# frob:ticket T-0029
 def connect(path: Path) -> sqlite3.Connection:
     """Open (creating parent dirs) the cache db; wipe and rebuild on schema mismatch.
 
@@ -73,8 +95,7 @@ def connect(path: Path) -> sqlite3.Connection:
     is delete-and-recreate the file (T-0019 / INV-003).
     """
     path.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(str(path))
-    conn.execute("PRAGMA foreign_keys = OFF")
+    conn = _open(path)
     try:
         cur = conn.execute("SELECT value FROM meta WHERE key = 'schema_version'")
         row = cur.fetchone()
@@ -87,8 +108,7 @@ def connect(path: Path) -> sqlite3.Connection:
             _log.warning("cache.connect: %s is not a sqlite file; recreating", path)
             conn.close()
             path.unlink(missing_ok=True)
-            conn = sqlite3.connect(str(path))
-            conn.execute("PRAGMA foreign_keys = OFF")
+            conn = _open(path)
         existing = None
     if existing != _SCHEMA_VERSION:
         _log.info(
