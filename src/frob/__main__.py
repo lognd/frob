@@ -583,6 +583,24 @@ def _build_parser() -> argparse.ArgumentParser:
         help="print FILE with per-line hit/time gutters",
     )
 
+    # -- release -------------------------------------------------------------
+    release_p = sub.add_parser(
+        "release", help="mechanical semver from the public-API graph (REL001)"
+    )
+    release_sub = release_p.add_subparsers(dest="release_command")
+    release_stamp_p = release_sub.add_parser(
+        "stamp", help="record the current public API + version to .frob-release.json"
+    )
+    release_stamp_p.add_argument(
+        "--path", dest="release_path", metavar="DIR", default="."
+    )
+    release_check_p = release_sub.add_parser(
+        "check", help="verify the version bump covers the public-API change"
+    )
+    release_check_p.add_argument(
+        "--path", dest="release_path", metavar="DIR", default="."
+    )
+
     return p
 
 

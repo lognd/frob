@@ -31,6 +31,7 @@ class Subcommand(str, enum.Enum):
     test = "test"
     vet = "vet"
     perf = "perf"
+    release = "release"
 
 
 # frob:ticket T-0030
@@ -185,6 +186,11 @@ class AppConfig(BaseModel):
     vet_hook: str | None = None
     vet_json: bool = False
 
+    # release
+    release_command: str | None = None  # stamp|check
+    release_path: Path | None = None
+    release_json: bool = False
+
     # perf
     perf_command: str | None = None  # profile|heat
     perf_path: Path | None = None
@@ -245,6 +251,7 @@ class AppConfig(BaseModel):
             "test_base",
             "test_fallback",
             "vet_hook",
+            "release_command",
             "perf_command",
             "perf_ref",
         ):
@@ -273,6 +280,7 @@ class AppConfig(BaseModel):
             "test_path",
             "vet_path",
             "perf_path",
+            "release_path",
             "perf_annotate",
         ):
             val = getattr(args, path_field, None)

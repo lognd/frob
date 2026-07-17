@@ -49,6 +49,8 @@ Two modules that support the above but are not yet fully re-platformed:
 - `docs/fuzz.md` -- `frob.fuzz`: the 0.2.0 enforced property fuzzing design
   (Arbitrary protocol, FUZZ gates).
 - `docs/vet.md` -- policy/vetting notes referenced by `frob.gates`.
+- `docs/release.md` -- `frob.release`: mechanical semver from the
+  public-API graph, `frob release stamp|check`, and the REL001 gate.
 
 ## Per-command references
 

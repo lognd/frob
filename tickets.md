@@ -48,7 +48,7 @@ full per-ecosystem rules) tracked in the ticket body/docs notes.
 ```yaml
 id: T-0003
 title: 'REL001 release gate: semver-correct version bump from graph digests'
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-07-17'
@@ -62,6 +62,8 @@ acceptance: []
 threat: null
 ```
 Public sig digests changed vs the last release tag must require a version bump of the right class (semver, mechanically derived from the graph); frob gitlog drafts the changelog from conventional commits (release-manager role). Phase 9 (0.2.x).
+
+Delivered under T-0035.
 
 <!-- ticket:T-0004 -->
 ```yaml
@@ -869,3 +871,35 @@ capability-scan/obfuscation branches; wired the FUZZ gate into run_gates
 (default enforce=off) and frob test --fuzz (derived pydantic-model
 harness + stamp). Fixed run_gates to degrade to an empty diff when git
 has no base instead of skipping every gate. Delivers T-0002 and T-0008.
+
+<!-- ticket:T-0035 -->
+```yaml
+id: T-0035
+title: 'REL001 release gate: mechanical semver from public-API digests'
+state: done
+kind: feature
+origin: agent
+created: '2026-07-17'
+blocked_by: []
+parent: null
+scope:
+- src/frob/release/**
+- src/frob/gates/**
+- src/frob/app/release_runner.py
+- src/frob/app/app.py
+- src/frob/app/config.py
+- src/frob/__main__.py
+- tests/test_release.py
+- docs/**
+evidence:
+- tests/test_release.py::test_release_gate_flags_missing_bump
+- tests/test_release.py::test_changed_signature_is_major
+attachments: []
+acceptance: []
+threat: null
+```
+## Done report
+
+frob.release computes the semver bump class from public sig digests;
+frob release stamp/check + the opt-in REL001 gate (runs only when a
+.frob-release.json manifest exists) enforce it. Delivers T-0003.

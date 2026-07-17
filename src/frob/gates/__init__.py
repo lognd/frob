@@ -1044,8 +1044,95 @@ _ALL_GATES = frozenset(
         "doclink",
         "perf",
         "fuzz",
+        "release",
     }
 )
+
+
+# frob:ticket T-0003
+def release_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
+    """REL001: the public-API change since the last `frob release stamp`
+    demands a version bump the declared version does not cover, or the
+    changelog does not mention the version.
+
+    Opt-in: runs only when a `.frob-release.json` manifest exists (a repo
+    adopts the release discipline by stamping once). The bump class is
+    computed mechanically from public signature digests -- breaking sig
+    change is major, new public symbol is minor.
+    """
+    from frob.release import diff_class, load_manifest, required_version, satisfies
+
+    root = Path(root)
+    manifest_result = load_manifest(root)
+    if manifest_result.is_err:
+        _log.debug("release_gate: no manifest, skipping")
+        return ()
+    manifest = manifest_result.danger_ok
+
+    current_version = _current_version(root)
+    if current_version is None:
+        _log.debug("release_gate: no detectable project version, skipping")
+        return ()
+
+    bump = diff_class(manifest, snapshot)
+    violations: list[Violation] = []
+    need = required_version(manifest.version, bump)
+    if need.is_ok and not satisfies(current_version, need.danger_ok):
+        cls = bump.name.lower()
+        violations.append(
+            Violation(
+                rule="REL001",
+                severity=Severity.ERROR,
+                file="pyproject.toml",
+                line=0,
+                message=(
+                    f"REL001: public API changed ({cls}) since {manifest.version}; "
+                    f"bump the version to >= {need.danger_ok} (currently "
+                    f"{current_version}), then run: frob release stamp"
+                ),
+            )
+        )
+    if bump != 0 and not _changelog_mentions(root, current_version):
+        violations.append(
+            Violation(
+                rule="REL001",
+                severity=Severity.ERROR,
+                file="CHANGELOG.md",
+                line=0,
+                message=(
+                    f"REL001: no CHANGELOG.md entry for {current_version}; the "
+                    f"public API changed and needs a release note"
+                ),
+            )
+        )
+    _log.info("release_gate: bump=%s, %d violation(s)", bump.name, len(violations))
+    return tuple(violations)
+
+
+def _current_version(root: Path) -> str | None:
+    """The project version from pyproject.toml, or None if undetectable."""
+    toml_path = root / "pyproject.toml"
+    if not toml_path.exists():
+        return None
+    try:
+        with toml_path.open("rb") as fh:
+            data = tomllib.load(fh)
+    except (OSError, tomllib.TOMLDecodeError):
+        return None
+    version = data.get("project", {}).get("version")
+    return version if isinstance(version, str) else None
+
+
+def _changelog_mentions(root: Path, version: str) -> bool:
+    """Whether CHANGELOG.md (if present) names `version`; absent file passes."""
+    for name in ("CHANGELOG.md", "CHANGES.md", "HISTORY.md"):
+        path = root / name
+        if path.exists():
+            try:
+                return version in path.read_text(encoding="utf-8", errors="replace")
+            except OSError:
+                return True
+    return True
 
 
 # frob:ticket T-0002
@@ -1397,6 +1484,8 @@ def run_gates(cfg: GateConfig) -> Result[GateReport, GateError]:
         jobs["perf"] = lambda: perf_gate(root, snapshot)
     if "fuzz" in selected:
         jobs["fuzz"] = lambda: fuzz_gate(Path(cfg.root), snapshot)
+    if "release" in selected:
+        jobs["release"] = lambda: release_gate(Path(cfg.root), snapshot)
 
     from concurrent.futures import ThreadPoolExecutor
 
@@ -1461,6 +1550,7 @@ __all__ = [
     "doclink_gate",
     "fuzz_gate",
     "perf_gate",
+    "release_gate",
     "prework_gate",
     "record_prework",
     "run_gates",

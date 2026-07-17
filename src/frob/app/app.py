@@ -30,6 +30,7 @@ class App:
             outline_runner,
             parse_runner,
             perf_runner,
+            release_runner,
             scaffold_runner,
             test_runner,
             ticket_runner,
@@ -76,11 +77,13 @@ class App:
                 vet_runner.run(self._cfg)
             case Subcommand.perf:
                 perf_runner.run(self._cfg)
+            case Subcommand.release:
+                release_runner.run(self._cfg)
             case _:
                 _log.error(
                     "usage: frob "
                     "<scaffold|cycle|outline|map|xref|parse|dup|arch|docs|bind|"
-                    "exports|check|gitlog|graph|ack|ticket|test|vet|perf>"
+                    "exports|check|gitlog|graph|ack|ticket|test|vet|perf|release>"
                     " ..."
                 )
                 sys.exit(1)
