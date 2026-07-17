@@ -6,6 +6,8 @@ from pydantic import BaseModel
 from typani import Err, ErrorSet, Ok
 from typani.result import Result
 
+from frob.lang import LangError, RawSymbol, SymbolKind, extract_imports, parse_file
+
 
 class OutlineError(ErrorSet):
     UnsupportedLanguage = "No outline adapter for this file extension"
@@ -73,6 +75,7 @@ class ModuleOutline(BaseModel):
 
 
 _PY_EXTS = {".py"}
+_CPP_EXTS = {".c", ".cc", ".cpp", ".cxx", ".c++", ".h", ".hpp", ".hxx", ".h++"}
 
 
 def outline_file(path: Path) -> Result[ModuleOutline, OutlineError]:
@@ -82,59 +85,31 @@ def outline_file(path: Path) -> Result[ModuleOutline, OutlineError]:
         display = path
 
     ext = path.suffix.lower()
-    if ext in _PY_EXTS:
-        result = _outline_python(path)
-    else:
-        from frob.ast.cpp import ALL_EXTS as _CPP_EXTS
+    if ext not in _PY_EXTS and ext not in _CPP_EXTS:
+        return Err(OutlineError.UnsupportedLanguage)
 
-        if ext in _CPP_EXTS:
-            result = _outline_cpp(path)
-        else:
+    parsed_result = parse_file(path)
+    if parsed_result.is_err:
+        err = parsed_result.danger_err
+        if err == LangError.UnsupportedLanguage:
             return Err(OutlineError.UnsupportedLanguage)
+        return Err(OutlineError.ParseFailed)
+    parsed = parsed_result.danger_ok
 
-    if result.is_ok:
-        result.danger_ok.path = str(display)
-    return result
-
-
-def _outline_python(path: Path) -> Result[ModuleOutline, OutlineError]:
-    from frob.ast import python as _py
-    from frob.ast.common import child_by_field, text
+    imports_result = extract_imports(path)
+    raw_imports = imports_result.danger_ok if imports_result.is_ok else ()
+    imports = _dedupe_imports(raw_imports, ext)
 
     try:
-        src, tree = _py.parse_file(path)
-    except Exception:
+        lines = path.read_bytes().count(b"\n") + 1
+    except OSError:
         return Err(OutlineError.ParseFailed)
 
-    lines = src.count(b"\n") + 1
-    imports: list[str] = []
-    functions: list[FunctionOutline] = []
-    classes: list[ClassOutline] = []
-
-    for node in tree.root_node.children:
-        if node.type == "import_statement":
-            for child in node.named_children:
-                name = text(child).split(".")[0]
-                if name not in imports:
-                    imports.append(name)
-        elif node.type == "import_from_statement":
-            mod = child_by_field(node, "module_name")
-            if mod:
-                name = text(mod).split(".")[0]
-                if name not in imports:
-                    imports.append(name)
-        elif node.type == "function_definition":
-            fn = _py_function_outline(node)
-            if fn:
-                functions.append(fn)
-        elif node.type == "class_definition":
-            cls = _py_class_outline(node)
-            if cls:
-                classes.append(cls)
+    functions, classes = _outline_symbols(parsed.symbols)
 
     return Ok(
         ModuleOutline(
-            path=str(path),
+            path=str(display),
             lines=lines,
             imports=imports,
             functions=functions,
@@ -143,158 +118,110 @@ def _outline_python(path: Path) -> Result[ModuleOutline, OutlineError]:
     )
 
 
-def _py_function_outline(node) -> FunctionOutline | None:
-    from frob.ast.common import child_by_field, text
+def _dedupe_imports(raw_imports: tuple[str, ...], ext: str) -> list[str]:
+    """Old outline behavior: python's first dotted segment, cpp's raw include text."""
+    out: list[str] = []
+    for spec in raw_imports:
+        name = spec.split(".")[0] if ext in _PY_EXTS else spec
+        if name not in out:
+            out.append(name)
+    return out
 
-    name_node = child_by_field(node, "name")
-    if name_node is None:
-        return None
-    name = text(name_node)
-    sig = _py_signature(node)
-    doc = _py_first_doc_line(node)
+
+def _outline_symbols(
+    symbols: tuple[RawSymbol, ...],
+) -> tuple[list[FunctionOutline], list[ClassOutline]]:
+    """Rebuild the old function/class(+methods) tree from flat qualname symbols."""
+    functions: list[FunctionOutline] = []
+    classes: dict[str, ClassOutline] = {}
+    class_order: list[str] = []
+
+    for sym in symbols:
+        if sym.kind == SymbolKind.CLASS and "." not in sym.qualname:
+            cls = ClassOutline(name=sym.qualname, line=sym.span[0], methods=[])
+            classes[sym.qualname] = cls
+            class_order.append(sym.qualname)
+
+    for sym in symbols:
+        if sym.kind == SymbolKind.FUNCTION:
+            functions.append(_function_outline(sym))
+        elif sym.kind == SymbolKind.METHOD and "." in sym.qualname:
+            owner, _, name = sym.qualname.rpartition(".")
+            cls = classes.get(owner)
+            if cls is not None:
+                cls.methods.append(_function_outline(sym, name=name))
+
+    return functions, [classes[name] for name in class_order]
+
+
+def _function_outline(sym: RawSymbol, name: str | None = None) -> FunctionOutline:
+    display_name = name if name is not None else sym.qualname
     return FunctionOutline(
-        name=name, signature=sig, line=node.start_point[0] + 1, doc=doc
+        name=display_name,
+        signature=_signature_from_tokens(display_name, sym.sig_tokens),
+        line=sym.span[0],
+        doc=_first_doc_line(sym.doc_text),
     )
 
 
-def _py_first_doc_line(node) -> str:
-    """Extract first non-blank sentence from docstring, if present."""
-    body = None
-    for child in node.children:
-        if child.type == "block":
-            body = child
-            break
-    if body is None:
-        return ""
-    for child in body.named_children:
-        if child.type == "expression_statement":
-            for sub in child.named_children:
-                if sub.type == "string":
-                    raw = sub.text.decode(errors="replace") if sub.text else ""
-                    # Strip quotes
-                    for q in ('"""', "'''", '"', "'"):
-                        if raw.startswith(q):
-                            raw = raw[len(q) :]
-                            if raw.endswith(q):
-                                raw = raw[: -len(q)]
-                            break
-                    # First non-blank line, truncated at sentence end or 80 chars
-                    for ln in raw.splitlines():
-                        ln = ln.strip()
-                        if ln:
-                            idx = ln.find(".")
-                            if 0 < idx < 80:
-                                return ln[: idx + 1]
-                            return ln[:80]
-            break
-    return ""
+def _signature_from_tokens(name: str, sig_tokens: tuple[str, ...]) -> str:
+    """Reconstruct `name(params) -> ret` from the leaf-token stream.
 
-
-def _py_signature(node) -> str:
-    """Reconstruct a clean function signature from a tree-sitter node."""
-    from frob.ast.common import child_by_field, text
-
-    name_node = child_by_field(node, "name")
-    params_node = child_by_field(node, "parameters")
-    ret_node = child_by_field(node, "return_type")
-
-    name = text(name_node) if name_node else "?"
-    params = text(params_node) if params_node else "()"
-    ret = f" -> {text(ret_node)}" if ret_node else ""
-    return f"{name}{params}{ret}"
-
-
-def _py_class_outline(node) -> ClassOutline | None:
-    from frob.ast.common import child_by_field, text
-
-    name_node = child_by_field(node, "name")
-    if name_node is None:
-        return None
-    name = text(name_node)
-    line = node.start_point[0] + 1
-    methods: list[FunctionOutline] = []
-    body = child_by_field(node, "body")
-    if body:
-        for child in body.named_children:
-            if child.type == "function_definition":
-                fn = _py_function_outline(child)
-                if fn:
-                    methods.append(fn)
-    return ClassOutline(name=name, line=line, methods=methods)
-
-
-def _outline_cpp(path: Path) -> Result[ModuleOutline, OutlineError]:
-    from frob.ast import cpp as _cpp
-    from frob.ast.common import child_by_field, text  # noqa: F401
-
+    `sig_tokens` is the same normalized token sequence `frob.graph` hashes --
+    reusing it here (instead of re-deriving a signature string a second way)
+    is what keeps outline and graph agreeing on what a symbol's "shape" is.
+    """
+    # Find matching parens for the parameter list, then anything after the
+    # closing paren (skipping a leading "->" ) is the return annotation.
     try:
-        src, tree = _cpp.parse_file(path)
-    except Exception:
-        return Err(OutlineError.ParseFailed)
+        open_idx = sig_tokens.index("(")
+    except ValueError:
+        return f"{name}()"
+    depth = 0
+    close_idx = None
+    for i in range(open_idx, len(sig_tokens)):
+        if sig_tokens[i] == "(":
+            depth += 1
+        elif sig_tokens[i] == ")":
+            depth -= 1
+            if depth == 0:
+                close_idx = i
+                break
+    if close_idx is None:
+        return f"{name}()"
 
-    lines = src.count(b"\n") + 1
-    imports: list[str] = []
-    functions: list[FunctionOutline] = []
-    classes: list[ClassOutline] = []
-
-    for node in tree.root_node.named_children:
-        if node.type == "preproc_include":
-            path_node = node.named_children[0] if node.named_children else None
-            if path_node:
-                raw = text(path_node).strip('"<>')
-                if raw not in imports:
-                    imports.append(raw)
-        elif node.type == "function_definition":
-            fn = _cpp_function_outline(node)
-            if fn:
-                functions.append(fn)
-        elif node.type in ("class_specifier", "struct_specifier"):
-            cls = _cpp_class_outline(node)
-            if cls:
-                classes.append(cls)
-
-    return Ok(
-        ModuleOutline(
-            path=str(path),
-            lines=lines,
-            imports=imports,
-            functions=functions,
-            classes=classes,
-        )
-    )
+    params = "".join(_spaced(sig_tokens[open_idx + 1 : close_idx]))
+    ret = ""
+    tail = sig_tokens[close_idx + 1 :]
+    if tail and tail[0] == "->":
+        ret_tokens = tail[1:]
+        # Stop the return annotation at the signature's closing colon, if any.
+        if ret_tokens and ret_tokens[-1] == ":":
+            ret_tokens = ret_tokens[:-1]
+        ret = " -> " + "".join(_spaced(ret_tokens))
+    return f"{name}({params}){ret}"
 
 
-def _cpp_function_outline(node) -> FunctionOutline | None:
-    from frob.ast.common import child_by_field, text
-
-    decl = child_by_field(node, "declarator")
-    if decl is None:
-        return None
-    name_node = child_by_field(decl, "declarator")
-    name = text(name_node) if name_node else text(decl)
-    # Reconstruct signature: return_type + declarator (minus body)
-    body = child_by_field(node, "body")
-    if body:
-        sig = text(node).replace(text(body), "").strip().rstrip("{").strip()
-    else:
-        sig = text(node).rstrip(";").strip()
-    return FunctionOutline(name=name, signature=sig, line=node.start_point[0] + 1)
+_NO_SPACE_BEFORE = {",", ")", ":", "]", "."}
+_NO_SPACE_AFTER = {"(", "[", "."}
 
 
-def _cpp_class_outline(node) -> ClassOutline | None:
-    from frob.ast.common import child_by_field, text
+def _spaced(tokens: tuple[str, ...]) -> list[str]:
+    out: list[str] = []
+    prev: str | None = None
+    for tok in tokens:
+        if out and prev not in _NO_SPACE_AFTER and tok not in _NO_SPACE_BEFORE:
+            out.append(" ")
+        out.append(tok)
+        prev = tok
+    return out
 
-    name_node = child_by_field(node, "name")
-    if name_node is None:
-        return None
-    name = text(name_node)
-    line = node.start_point[0] + 1
-    methods: list[FunctionOutline] = []
-    body = child_by_field(node, "body")
-    if body:
-        for child in body.named_children:
-            if child.type == "function_definition":
-                fn = _cpp_function_outline(child)
-                if fn:
-                    methods.append(fn)
-    return ClassOutline(name=name, line=line, methods=methods)
+
+def _first_doc_line(doc_text: str) -> str:
+    """First sentence (or first 80 chars) of a collapsed-whitespace docstring."""
+    if not doc_text:
+        return ""
+    idx = doc_text.find(".")
+    if 0 < idx < 80:
+        return doc_text[: idx + 1]
+    return doc_text[:80]

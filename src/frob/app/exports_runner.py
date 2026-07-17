@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import contextlib
 import sys
 
 from frob.app.config import AppConfig
 from frob.exports import exports_package
-from frob.logging import get_logger
+from frob.logging import get_logger, quiet_stdout_logs
 
 _log = get_logger(__name__)
 
@@ -14,11 +15,13 @@ def run(cfg: AppConfig) -> None:
         _log.error("frob exports requires <path>")
         sys.exit(1)
 
-    result = exports_package(
-        cfg.exports_path,
-        include_private=cfg.exports_all,
-        exclude_modules=cfg.exports_exclude or [],
-    )
+    ctx = quiet_stdout_logs() if cfg.exports_json else contextlib.nullcontext()
+    with ctx:
+        result = exports_package(
+            cfg.exports_path,
+            include_private=cfg.exports_all,
+            exclude_modules=cfg.exports_exclude or [],
+        )
     if result.is_err:
         _log.error(result.danger_err.value)
         sys.exit(1)

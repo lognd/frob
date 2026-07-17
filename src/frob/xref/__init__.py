@@ -6,6 +6,8 @@ from pydantic import BaseModel
 from typani import Err, ErrorSet, Ok
 from typani.result import Result
 
+from frob.lang import RawSymbol, SymbolKind, iter_identifiers, parse_file
+
 
 class XrefError(ErrorSet):
     NoFilesFound = "No source files found under the given path"
@@ -61,6 +63,7 @@ class XrefResult(BaseModel):
 _PY_EXTS = {".py"}
 _CPP_EXTS = {".c", ".cc", ".cpp", ".cxx", ".c++", ".h", ".hpp", ".hxx", ".h++"}
 _SOURCE_EXTS = _PY_EXTS | _CPP_EXTS
+_LANG_EXTS = {"python": _PY_EXTS, "c": _CPP_EXTS, "cpp": _CPP_EXTS}
 
 
 def xref(
@@ -82,14 +85,10 @@ def xref(
         except ValueError:
             rel = str(path)
 
-        src = path.read_bytes()
-        src_lines = src.decode(errors="replace").splitlines()
-
-        if ext in _PY_EXTS:
-            defn, file_usages = _search_python(src, src_lines, symbol, rel)
-        elif ext in _CPP_EXTS:
-            defn, file_usages = _search_cpp(src, src_lines, symbol, rel)
+        if ext in _SOURCE_EXTS:
+            defn, file_usages = _search_parsed(path, symbol, rel)
         else:
+            src_lines = path.read_bytes().decode(errors="replace").splitlines()
             defn, file_usages = _search_text(src_lines, symbol, rel)
 
         if defn and definition is None:
@@ -123,93 +122,41 @@ def _collect_source_files(root: Path, lang: str | None) -> list[Path]:
     return results
 
 
-def _search_python(
-    src: bytes, src_lines: list[str], symbol: str, rel: str
+_DEFINITION_KINDS = (SymbolKind.FUNCTION, SymbolKind.CLASS, SymbolKind.METHOD)
+
+
+def _definition_symbols(symbols: tuple[RawSymbol, ...]) -> tuple[RawSymbol, ...]:
+    return tuple(sym for sym in symbols if sym.kind in _DEFINITION_KINDS)
+
+
+def _search_parsed(
+    path: Path, symbol: str, rel: str
 ) -> tuple[Definition | None, list[Usage]]:
-    from tree_sitter import Node
+    src_lines = path.read_bytes().decode(errors="replace").splitlines()
 
-    from frob.ast import python as _py
-
-    _, tree = _py.parse_bytes(src)
     definition: Definition | None = None
+    parsed_result = parse_file(path)
+    if parsed_result.is_ok:
+        for sym in _definition_symbols(parsed_result.danger_ok.symbols):
+            _, _, name = sym.qualname.rpartition(".")
+            if name == symbol:
+                definition = Definition(file=rel, line=sym.span[0])
+                break
+
     usages: list[Usage] = []
+    ids_result = iter_identifiers(path)
+    if ids_result.is_ok:
+        def_line = definition.line if definition else None
+        for name, line in ids_result.danger_ok:
+            if name != symbol:
+                continue
+            if def_line is not None and line == def_line:
+                # Same line as the matching declaration -- almost certainly
+                # the declaration's own name token, not a usage of it.
+                continue
+            ctx = src_lines[line - 1] if line <= len(src_lines) else ""
+            usages.append(Usage(file=rel, line=line, context=ctx))
 
-    def visit(node: Node) -> None:
-        nonlocal definition
-
-        # Definition: function_definition or class_definition with matching name
-        if node.type in ("function_definition", "class_definition"):
-            name_node = node.child_by_field_name("name")
-            if name_node and name_node.text and name_node.text.decode() == symbol:
-                line = node.start_point[0] + 1
-                if definition is None:
-                    definition = Definition(file=rel, line=line)
-
-        # Usage: any identifier that matches and is NOT the definition name
-        elif node.type == "identifier":
-            if node.text and node.text.decode() == symbol:
-                parent = node.parent
-                # Skip if this node IS the name field of a definition
-                if parent and parent.type in (
-                    "function_definition",
-                    "class_definition",
-                ):
-                    if parent.child_by_field_name("name") is node:
-                        for child in node.children:
-                            visit(child)
-                        return
-                line = node.start_point[0] + 1
-                ctx = src_lines[line - 1] if line <= len(src_lines) else ""
-                usages.append(Usage(file=rel, line=line, context=ctx))
-
-        for child in node.children:
-            visit(child)
-
-    visit(tree.root_node)
-    return definition, usages
-
-
-def _search_cpp(
-    src: bytes, src_lines: list[str], symbol: str, rel: str
-) -> tuple[Definition | None, list[Usage]]:
-    from tree_sitter import Node
-
-    from frob.ast import cpp as _cpp
-
-    _, tree = _cpp.parse_bytes(src)
-    definition: Definition | None = None
-    usages: list[Usage] = []
-
-    def visit(node: Node) -> None:
-        nonlocal definition
-
-        if node.type == "function_definition":
-            decl = node.child_by_field_name("declarator")
-            if decl:
-                inner = decl.child_by_field_name("declarator")
-                name_node = inner or decl
-                if name_node.text and name_node.text.decode() == symbol:
-                    line = node.start_point[0] + 1
-                    if definition is None:
-                        definition = Definition(file=rel, line=line)
-
-        elif node.type in ("class_specifier", "struct_specifier"):
-            name_node = node.child_by_field_name("name")
-            if name_node and name_node.text and name_node.text.decode() == symbol:
-                line = node.start_point[0] + 1
-                if definition is None:
-                    definition = Definition(file=rel, line=line)
-
-        elif node.type in ("identifier", "type_identifier"):
-            if node.text and node.text.decode() == symbol:
-                line = node.start_point[0] + 1
-                ctx = src_lines[line - 1] if line <= len(src_lines) else ""
-                usages.append(Usage(file=rel, line=line, context=ctx))
-
-        for child in node.children:
-            visit(child)
-
-    visit(tree.root_node)
     return definition, usages
 
 

@@ -27,60 +27,26 @@ class DocMatch(BaseModel):
     excerpt: str
 
 
-def _strip_docstring(raw: str) -> str:
-    for delim in ('"""', "'''"):
-        if raw.startswith(delim) and raw.endswith(delim) and len(raw) >= 6:
-            inner = raw[3:-3]
-            lines = inner.splitlines()
-            stripped = [ln.strip() for ln in lines]
-            while stripped and not stripped[0]:
-                stripped.pop(0)
-            while stripped and not stripped[-1]:
-                stripped.pop()
-            return "\n".join(stripped)
-    if (raw.startswith('"') and raw.endswith('"')) or (
-        raw.startswith("'") and raw.endswith("'")
-    ):
-        return raw[1:-1]
-    return raw
-
-
-def _first_docstring_child(body_node):
-    if body_node is None:
-        return None
-    for child in body_node.named_children:
-        if child.type == "expression_statement":
-            for sub in child.named_children:
-                if sub.type == "string":
-                    return sub
-        break
-    return None
-
-
 def extract_docstrings(path: Path, symbol: str | None = None) -> list[Docstring]:
-    from frob.ast import python as _py
-    from frob.ast.common import child_by_field, text
+    """Every python docstring in `path` (module, class, function, method).
 
-    try:
-        src, tree = _py.parse_file(path)
-    except Exception:
+    Rebuilt on top of `frob.lang.parse_file`'s `RawSymbol.doc_text` -- that
+    field is already whitespace-collapsed (`_common.collapse_ws`), so the
+    `text` returned here is a single-line rendering rather than the old
+    tree-sitter walker's multi-line, quote-stripped one. `frob.docs` only
+    ever displays or greps this text, never round-trips it, so the shape
+    change is invisible to callers.
+    """
+    from frob.lang import SymbolKind, parse_file
+
+    result = parse_file(path)
+    if result.is_err:
+        return []
+    parsed = result.danger_ok
+    if parsed.language != "python":
         return []
 
     results: list[Docstring] = []
-    root = tree.root_node
-
-    if symbol is None:
-        ds = _first_docstring_child(root)
-        if ds:
-            raw = text(ds)
-            results.append(
-                Docstring(
-                    symbol="module",
-                    kind="module",
-                    line=ds.start_point[0] + 1,
-                    text=_strip_docstring(raw),
-                )
-            )
 
     class_filter: str | None = None
     method_filter: str | None = None
@@ -95,74 +61,80 @@ def extract_docstrings(path: Path, symbol: str | None = None) -> list[Docstring]
             class_filter = symbol
             func_filter = symbol
 
-    for node in root.children:
-        if node.type == "function_definition":
-            name_node = child_by_field(node, "name")
-            if name_node is None:
-                continue
-            fname = text(name_node)
-            if func_filter is not None and fname != func_filter:
+    if symbol is None:
+        module_doc = _module_docstring(path)
+        if module_doc is not None:
+            line, text = module_doc
+            results.append(
+                Docstring(symbol="module", kind="module", line=line, text=text)
+            )
+
+    for sym in parsed.symbols:
+        if not sym.doc_text:
+            continue
+        if sym.kind == SymbolKind.FUNCTION:
+            if func_filter is not None and sym.qualname != func_filter:
                 continue
             if class_filter is not None and func_filter is None:
                 continue
-            body = child_by_field(node, "body")
-            ds = _first_docstring_child(body)
-            if ds:
-                raw = text(ds)
+            results.append(
+                Docstring(
+                    symbol=sym.qualname,
+                    kind="function",
+                    line=sym.span[0],
+                    text=sym.doc_text,
+                )
+            )
+        elif sym.kind == SymbolKind.CLASS and "." not in sym.qualname:
+            if class_filter is not None and sym.qualname != class_filter:
+                continue
+            if method_filter is None:
                 results.append(
                     Docstring(
-                        symbol=fname,
-                        kind="function",
-                        line=ds.start_point[0] + 1,
-                        text=_strip_docstring(raw),
+                        symbol=sym.qualname,
+                        kind="class",
+                        line=sym.span[0],
+                        text=sym.doc_text,
                     )
                 )
-
-        elif node.type == "class_definition":
-            name_node = child_by_field(node, "name")
-            if name_node is None:
+        elif sym.kind == SymbolKind.METHOD:
+            owner, _, mname = sym.qualname.rpartition(".")
+            if class_filter is not None and owner != class_filter:
                 continue
-            cname = text(name_node)
-            if class_filter is not None and cname != class_filter:
+            if method_filter is not None and mname != method_filter:
                 continue
-
-            body = child_by_field(node, "body")
-            if method_filter is None:
-                ds = _first_docstring_child(body)
-                if ds:
-                    raw = text(ds)
-                    results.append(
-                        Docstring(
-                            symbol=cname,
-                            kind="class",
-                            line=ds.start_point[0] + 1,
-                            text=_strip_docstring(raw),
-                        )
-                    )
-
-            if body:
-                for child in body.named_children:
-                    if child.type == "function_definition":
-                        mname_node = child_by_field(child, "name")
-                        if mname_node is None:
-                            continue
-                        mname = text(mname_node)
-                        if method_filter is not None and mname != method_filter:
-                            continue
-                        mbody = child_by_field(child, "body")
-                        ds = _first_docstring_child(mbody)
-                        if ds:
-                            raw = text(ds)
-                            results.append(
-                                Docstring(
-                                    symbol=f"{cname}.{mname}",
-                                    kind="method",
-                                    line=ds.start_point[0] + 1,
-                                    text=_strip_docstring(raw),
-                                )
-                            )
+            results.append(
+                Docstring(
+                    symbol=sym.qualname,
+                    kind="method",
+                    line=sym.span[0],
+                    text=sym.doc_text,
+                )
+            )
 
     return results
+
+
+def _module_docstring(path: Path) -> tuple[int, str] | None:
+    """The module-level docstring's (line, collapsed text), if present.
+
+    `RawSymbol`/`RawComment` do not carry a module docstring (it is neither
+    a declaration nor a comment) -- python's own `ast` module handles this
+    one case cheaply and correctly without a second tree-sitter pass.
+    """
+    import ast as _pyast
+
+    try:
+        source = path.read_text(encoding="utf-8", errors="replace")
+        tree = _pyast.parse(source)
+    except (OSError, SyntaxError):
+        return None
+    doc = _pyast.get_docstring(tree, clean=True)
+    if doc is None or not tree.body:
+        return None
+    first = tree.body[0]
+    line = getattr(first, "lineno", 1)
+    return line, " ".join(doc.split())
 
 
 def find_docs_dir(start: Path) -> Path | None:

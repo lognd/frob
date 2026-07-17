@@ -272,9 +272,8 @@ def _run_ty(root: Path) -> ToolResult | None:
 
 
 def _run_cycle(root: Path) -> ToolResult:
-    from frob.ast import python as _py
-    from frob.ast.common import ModuleTag
     from frob.cycle.graph import DependencyGraph, find_cycles
+    from frob.lang import extract_imports, resolve_local_import
 
     graph = DependencyGraph()
     scan_root = root if root.is_dir() else root.parent
@@ -290,8 +289,15 @@ def _run_cycle(root: Path) -> ToolResult:
         try:
             rel = str(path.relative_to(scan_root))
             graph.add_node(rel)
-            for imp in _py.get_imports(ModuleTag(rel), scan_root):
-                graph.add_edge(rel, imp)
+            result = extract_imports(path)
+            if result.is_err:
+                continue
+            for spec in result.danger_ok:
+                resolved = resolve_local_import(
+                    spec, "python", file_dir=path.parent, root=scan_root
+                )
+                if resolved is not None:
+                    graph.add_edge(rel, resolved)
         except Exception:
             pass
 

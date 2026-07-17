@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import contextlib
 import sys
 
 from frob.app.config import AppConfig
-from frob.logging import get_logger
+from frob.logging import get_logger, quiet_stdout_logs
 from frob.outline import outline_file
 
 _log = get_logger(__name__)
@@ -30,7 +31,9 @@ def run(cfg: AppConfig) -> None:
         map_run(map_cfg)
         return
 
-    result = outline_file(target)
+    ctx = quiet_stdout_logs() if cfg.outline_json else contextlib.nullcontext()
+    with ctx:
+        result = outline_file(target)
     if result.is_err:
         _log.error(result.danger_err.value)
         sys.exit(1)

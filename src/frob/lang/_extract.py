@@ -488,9 +488,18 @@ def _walk_rust(root: Node) -> tuple[RawSymbol, ...]:
 
 
 def _find_declarator_name(node: Node) -> str:
-    """Descend through pointer/function declarators to the innermost identifier."""
+    """Descend through pointer/function declarators to the innermost identifier.
+
+    An out-of-line method definition's declarator (`Widget::draw`) is a
+    `qualified_identifier`, not a bare `identifier` -- its own text (with
+    the `::` scope kept intact) is the name, not the trailing segment,
+    otherwise `Widget::draw` and an unrelated top-level `draw` would
+    collapse to the same qualname.
+    """
     cur = node
     while cur is not None:
+        if cur.type == "qualified_identifier":
+            return child_text(cur)
         if cur.type in ("identifier", "field_identifier", "type_identifier"):
             return child_text(cur)
         inner = cur.child_by_field_name("declarator")
@@ -668,3 +677,99 @@ _WALKERS = {
     "c": _walk_c,
     "cpp": _walk_cpp,
 }
+
+
+# ------------------------------------------------------------------ imports
+#
+# frob.cycle needs raw import/include specifiers (unresolved -- "os.path",
+# "local.h") to build its dependency graph; this is a second, narrower walk
+# per language, kept here next to the symbol walkers so cycle detection
+# never has to touch tree-sitter nodes directly (docs/lang.md).
+
+
+def _imports_python(root: Node) -> tuple[str, ...]:
+    results: list[str] = []
+
+    def visit(n: Node) -> None:
+        if n.type == "import_statement":
+            for child in n.named_children:
+                results.append(child_text(child))
+        elif n.type == "import_from_statement":
+            mod = n.child_by_field_name("module_name")
+            if mod is not None:
+                results.append(child_text(mod))
+        for child in n.children:
+            visit(child)
+
+    visit(root)
+    return tuple(results)
+
+
+def _imports_c_family(root: Node) -> tuple[str, ...]:
+    """Every `#include`, quoted (local) or angled (system) alike.
+
+    Local-vs-system is not this walker's call -- `resolve_local_import`
+    naturally drops system includes (they never resolve to a file under the
+    scan root), and callers that just want to *display* every include (the
+    outline command) need both.
+    """
+    results: list[str] = []
+
+    def visit(n: Node) -> None:
+        if n.type == "preproc_include":
+            path_node = n.named_children[0] if n.named_children else None
+            if path_node is not None:
+                results.append(child_text(path_node).strip('"<>'))
+        for child in n.children:
+            visit(child)
+
+    visit(root)
+    return tuple(results)
+
+
+_IMPORT_WALKERS = {
+    "python": _imports_python,
+    "c": _imports_c_family,
+    "cpp": _imports_c_family,
+}
+
+
+def extract_imports(tree: Tree, language: str) -> tuple[str, ...]:
+    """Raw import/include specifiers for `language` (empty tuple if unsupported)."""
+    walker = _IMPORT_WALKERS.get(language)
+    if walker is None:
+        return ()
+    return walker(tree.root_node)
+
+
+# --------------------------------------------------------------- identifiers
+#
+# frob.xref needs every identifier-token occurrence (name, line) to find
+# usages, not just declarations -- a different shape than RawSymbol, so it
+# gets its own narrow walk rather than forcing xref to reach into tree-sitter.
+
+_IDENTIFIER_TYPES: dict[str, frozenset[str]] = {
+    "python": frozenset({"identifier"}),
+    "c": frozenset({"identifier", "type_identifier"}),
+    "cpp": frozenset({"identifier", "type_identifier"}),
+}
+
+
+def iter_identifiers(tree: Tree, language: str) -> tuple[tuple[str, int], ...]:
+    """(name, 1-based line) for every identifier-like leaf (empty if unsupported)."""
+    types = _IDENTIFIER_TYPES.get(language)
+    if types is None:
+        return ()
+    out: list[tuple[str, int]] = []
+
+    def visit(n: Node) -> None:
+        if n.type in types:
+            txt = child_text(n)
+            if txt:
+                out.append((txt, span_of(n)[0]))
+            return
+        for child in n.children:
+            visit(child)
+
+    visit(tree.root_node)
+    return tuple(out)

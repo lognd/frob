@@ -106,16 +106,21 @@ def test_xref_finds_all_callers(mini_project):
 
 
 def test_cycle_detected_in_mini_project(mini_project):
-    from frob.ast import python as _py
-    from frob.ast.common import ModuleTag
+    from frob.lang import extract_imports, resolve_local_import
 
     graph = DependencyGraph()
     for path in mini_project.glob("*.py"):
         rel = path.name
         graph.add_node(rel)
         try:
-            for imp in _py.get_imports(ModuleTag(rel), mini_project):
-                graph.add_edge(rel, imp)
+            result = extract_imports(path)
+            if result.is_ok:
+                for spec in result.danger_ok:
+                    resolved = resolve_local_import(
+                        spec, "python", file_dir=path.parent, root=mini_project
+                    )
+                    if resolved is not None:
+                        graph.add_edge(rel, resolved)
         except Exception:
             pass
 

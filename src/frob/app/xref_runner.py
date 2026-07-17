@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import contextlib
 import sys
 from pathlib import Path
 
 from frob.app.config import AppConfig
-from frob.logging import get_logger
+from frob.logging import get_logger, quiet_stdout_logs
 from frob.xref import xref
 
 _log = get_logger(__name__)
@@ -16,7 +17,9 @@ def run(cfg: AppConfig) -> None:
         sys.exit(1)
 
     root = cfg.xref_path or Path(".")
-    result = xref(cfg.xref_symbol, root, lang=cfg.xref_lang)
+    ctx = quiet_stdout_logs() if cfg.xref_json else contextlib.nullcontext()
+    with ctx:
+        result = xref(cfg.xref_symbol, root, lang=cfg.xref_lang)
 
     if result.is_err:
         _log.error(result.danger_err.value)

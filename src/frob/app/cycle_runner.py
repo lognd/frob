@@ -4,11 +4,14 @@ import sys
 from pathlib import Path
 
 from frob.app.config import AppConfig
-from frob.ast.common import ModuleTag
 from frob.cycle.graph import DependencyGraph, find_cycles
+from frob.lang import extract_imports, resolve_local_import
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
+
+_PY_EXTS = {".py"}
+_CPP_EXTS = {".c", ".cc", ".cpp", ".cxx", ".c++", ".h", ".hpp", ".hxx", ".h++"}
 
 
 def run(cfg: AppConfig) -> None:
@@ -34,9 +37,6 @@ def run(cfg: AppConfig) -> None:
 
 
 def _build_graph(root: Path, lang: str | None) -> tuple[DependencyGraph, list[str]]:
-    from frob.ast import cpp as _cpp
-    from frob.ast import python as _py
-
     graph = DependencyGraph()
     errors: list[str] = []
 
@@ -63,14 +63,21 @@ def _build_graph(root: Path, lang: str | None) -> tuple[DependencyGraph, list[st
 
         graph.add_node(rel)
 
-        try:
-            if ext == ".py" and lang in (None, "python"):
-                for imp in _py.get_imports(ModuleTag(rel), scan_root):
-                    graph.add_edge(rel, imp)
-            elif ext in _cpp.ALL_EXTS and lang in (None, "cpp", "c"):
-                for imp in _cpp.get_imports(ModuleTag(rel), scan_root):
-                    graph.add_edge(rel, imp)
-        except Exception as exc:
-            errors.append(f"parse error in {rel}: {exc}")
+        want_python = ext in _PY_EXTS and lang in (None, "python")
+        want_cpp = ext in _CPP_EXTS and lang in (None, "cpp", "c")
+        if not (want_python or want_cpp):
+            continue
+        language = "python" if want_python else "cpp"
+
+        result = extract_imports(path)
+        if result.is_err:
+            errors.append(f"parse error in {rel}: {result.danger_err}")
+            continue
+        for spec in result.danger_ok:
+            resolved = resolve_local_import(
+                spec, language, file_dir=path.parent, root=scan_root
+            )
+            if resolved is not None:
+                graph.add_edge(rel, resolved)
 
     return graph, errors
