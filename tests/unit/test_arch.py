@@ -109,10 +109,17 @@ class TestDeepNesting:
 
 
 class TestAnalyzeProject:
-    # frob:tests src/frob/arch/__init__.py::analyze_project kind="unit"
     def test_arch_python_project_finds_issues(self):
+        # frob:tests src/frob/arch/__init__.py::analyze_project kind="unit"
         result = analyze_project(FIXTURES / "arch_python" / "src")
         assert len(result.suggestions) > 0
+
+    def test_arch_python_project_reports_line_numbers(self):
+        # frob:tests src/frob/arch/__init__.py::analyze_project kind="unit"
+        result = analyze_project(FIXTURES / "arch_python" / "src")
+        located = [s.line for s in result.suggestions if s.line is not None]
+        assert located, "at least one suggestion should carry a line number"
+        assert all(line >= 1 for line in located)
 
     def test_arch_python_project_has_all_three_kinds(self):
         result = analyze_project(FIXTURES / "arch_python" / "src")
@@ -170,3 +177,20 @@ class TestArchResultFormat:
         assert isinstance(text, str)
         # Simple project may have no issues at all
         assert "no architectural issues" in text or isinstance(text, str)
+
+
+# ---------------------------------------------------------------------------
+# interface-level integration
+# ---------------------------------------------------------------------------
+
+
+def test_arch_end_to_end_analyze_then_render():
+    # frob:tests src/frob/arch kind="integration"
+    # Drive the whole arch boundary: walk a real fixture tree, produce an
+    # ArchResult, and round-trip it through both public renderers.
+    result = analyze_project(FIXTURES / "arch_python" / "src")
+    categories = {s.category for s in result.suggestions}
+    assert {"god-class", "long-function", "deep-nesting"} <= categories
+    data = json.loads(result.as_json())
+    assert len(data["suggestions"]) == len(result.suggestions)
+    assert isinstance(result.as_text(), str)

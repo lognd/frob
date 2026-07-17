@@ -8,9 +8,9 @@ from frob.dup import _cache
 
 
 class TestFingerprintRoundTrip:
-    # frob:tests src/frob/dup/_cache.py::get_fingerprint kind="unit"
-    # frob:tests src/frob/dup/_cache.py::put_fingerprint kind="unit"
     def test_put_then_get_returns_same_payload(self, tmp_path: Path):
+        # frob:tests src/frob/dup/_cache.py::get_fingerprint kind="unit"
+        # frob:tests src/frob/dup/_cache.py::put_fingerprint kind="unit"
         result = _cache.put_fingerprint(tmp_path, "digestA", "r3", ("abc123",))
         assert result.is_ok, result.err
         assert _cache.get_fingerprint(tmp_path, "digestA", "r3") == ["abc123"]
@@ -29,9 +29,9 @@ class TestFingerprintRoundTrip:
 
 
 class TestVerdictRoundTrip:
-    # frob:tests src/frob/dup/_cache.py::get_verdict kind="unit"
-    # frob:tests src/frob/dup/_cache.py::put_verdict kind="unit"
     def test_put_then_get_returns_same_payload(self, tmp_path: Path):
+        # frob:tests src/frob/dup/_cache.py::get_verdict kind="unit"
+        # frob:tests src/frob/dup/_cache.py::put_verdict kind="unit"
         result = _cache.put_verdict(
             tmp_path, "d1", "d2", "r4", 0, (0.9, ((0, 0), (1, 1))), 200_000
         )

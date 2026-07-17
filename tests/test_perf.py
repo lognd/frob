@@ -290,3 +290,24 @@ def test_profile_clean_workload_exit_zero(tmp_path):
     result = profile_command(["ok.py"], tmp_path)
     assert result.is_ok, result.err
     assert result.danger_ok.exit_code == 0
+
+
+def test_perf_end_to_end_profile_load_and_heat(tmp_path):
+    # frob:tests src/frob/perf kind="integration"
+    # Drive the whole perf boundary: profile a real workload to a stored
+    # artifact, reload it by sha, and join its pstats rows onto the graph.
+    # frob:ticket T-0021
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / "work.py").write_text(
+        "def busy():\n    return sum(range(50000))\n\n\nbusy()\n",
+        encoding="utf-8",
+    )
+    profiled = profile_command(["src/work.py"], tmp_path)
+    assert profiled.is_ok, profiled.err
+
+    reloaded = load_artifact(tmp_path, profiled.danger_ok.sha)
+    assert reloaded.is_ok, reloaded.err
+
+    snapshot = _snapshot(tmp_path)
+    report = heat(reloaded.danger_ok, snapshot)
+    assert report.unattributed_s >= 0.0
