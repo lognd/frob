@@ -375,12 +375,20 @@ blocked_by:
 parent: null
 scope:
 - src/frob/map/**,src/frob/outline/**,src/frob/xref/**,src/frob/cycle/**,src/frob/dup/**,src/frob/ast/**
-evidence: []
+evidence:
+- tests/integration/test_integration.py::test_cycle_detected_in_mini_project
 attachments: []
 acceptance: []
 threat: null
 ```
 Re-platform map/outline/xref/cycle/dup onto frob.lang's uniform ParsedFile contract, then delete src/frob/ast. Deferred post-0.1.0; blocked_by T-0001 since dup's re-platform is entangled with the frob-core work.
+
+## Done report
+
+map/outline/xref/cycle/docs migrated onto frob.lang (added extract_imports,
+resolve_local_import, iter_identifiers; fixed a cpp out-of-line-method bug
+and a --json stdout log leak). frob.ast deletion blocked on arch +
+dup/_legacy raw traversal -> T-0043.
 
 <!-- ticket:T-0017 -->
 ```yaml
@@ -1170,3 +1178,28 @@ TEST007: each cross-package frob:uses-contract dependency (C->P) owes a
 pairwise integration test -- a valid integration edge targeting P whose
 test path carries C's package leaf. Opt-in via [testing].pair_integration.
 Delivers T-0017.
+
+<!-- ticket:T-0043 -->
+```yaml
+id: T-0043
+title: Migrate arch + dup/_legacy off frob.ast, then delete frob.ast
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-17'
+blocked_by: []
+parent: null
+scope:
+- src/frob/arch/**
+- src/frob/dup/**
+- src/frob/ast/**
+- src/frob/lang/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Re-platform left two frob.ast consumers needing raw node traversal
+not yet in frob.lang: arch (child_by_field/text, 10 sites) and
+dup/_legacy (14 sites). Add the needed traversal primitives to frob.lang,
+migrate both, then delete src/frob/ast.
