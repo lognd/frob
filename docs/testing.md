@@ -129,6 +129,9 @@ class RunnerSpec(BaseModel):     # frozen; one [[test.runner]] entry
     cwd: str = "."
     timeout_s: float = 900.0
 
+class SelectConfig(BaseModel):    # frozen; selection knobs
+    fallback: str = "package"     # unbound-file policy: package|suite|warn
+
 class SelectionReport(BaseModel)  # frozen
     touched: tuple[str, ...]              # symrefs and bare files
     selected: Mapping[str, tuple[str, ...]]   # language -> test ids/files
@@ -148,6 +151,23 @@ class TestRunReport(BaseModel)    # frozen
     selection: SelectionReport
     outcomes: tuple[RunnerOutcome, ...]
     ok: bool                      # every runner exited zero
+
+class CollectedTests(BaseModel):  # frozen; collect_python_tests's result
+    node_ids: frozenset[str]      # every pytest node id in the project
+
+class Hunk(BaseModel):            # frozen; one gitio.py touched-line range
+    file: str
+    span: tuple[int, int]
+
+class Diff(BaseModel):            # frozen; gitio.py working-tree delta
+    base: str
+    hunks: tuple[Hunk, ...]
+
+class ProcResult(BaseModel):      # frozen; gitio.py's one spawn result shape
+    argv: tuple[str, ...]
+    returncode: int
+    stdout: str
+    stderr: str
 ```
 
 ## Error types

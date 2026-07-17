@@ -70,6 +70,8 @@ attachments:
 <!-- frob:describes src/frob/tickets/__init__.py::attach -->
 <!-- frob:describes src/frob/tickets/clipboard.py::clipboard_image -->
 <!-- frob:describes src/frob/tickets/clipboard.py::clipboard_has_image -->
+<!-- frob:describes src/frob/tickets/__init__.py::migrate -->
+<!-- frob:describes src/frob/tickets/__init__.py::renumber -->
 
 ```python
 # frob/tickets/__init__.py
@@ -88,6 +90,12 @@ def record_failure(root: Path, ticket_id: str, entry: FailureEntry) -> Result[Ti
 def attach(root: Path, ticket_id: str, source: AttachmentSource,
            caption: str) -> Result[Attachment, AttachError]
     # source is a file path or clipboard; stores under tickets/attachments/.
+def migrate(root: Path) -> Result[int, TicketError]
+    # Collapses legacy tickets/*.md files into the single tickets.md ledger.
+def renumber(root: Path) -> Result[int, TicketError]
+    # Reassigns ticket ids to a contiguous T-0001.. sequence, remapping
+    # every blocked_by/parent reference (the remedy for id collisions
+    # after a worktree merge).
 
 # frob/tickets/clipboard.py
 def clipboard_image() -> Result[bytes, ClipboardError]
@@ -141,6 +149,12 @@ class TicketKind(StrEnum):
 
 class Origin(StrEnum):
     HUMAN = "human"; AGENT = "agent"; AUDITOR = "auditor"
+
+class Stride(StrEnum):          # STRIDE threat category, kind=security only
+    SPOOFING = "spoofing"; TAMPERING = "tampering"
+    REPUDIATION = "repudiation"; INFO_DISCLOSURE = "info-disclosure"
+    DENIAL_OF_SERVICE = "denial-of-service"
+    ELEVATION_OF_PRIVILEGE = "elevation-of-privilege"
 
 class Attachment(BaseModel):
     path: str                   # relative to tickets/
@@ -200,6 +214,59 @@ class ClipboardError(ErrorSet):
     BackendFailed = "Clipboard backend exited nonzero"
 
 AttachError = TicketError | ClipboardError
+```
+
+## Storage internals
+
+<!-- frob:describes src/frob/tickets/_store.py::slugify -->
+<!-- frob:describes src/frob/tickets/_store.py::tickets_dir -->
+<!-- frob:describes src/frob/tickets/_store.py::ledger_path -->
+<!-- frob:describes src/frob/tickets/_store.py::attachments_dir -->
+<!-- frob:describes src/frob/tickets/_store.py::store_mode -->
+<!-- frob:describes src/frob/tickets/_store.py::serialize_ticket -->
+<!-- frob:describes src/frob/tickets/_store.py::parse_ticket_file -->
+<!-- frob:describes src/frob/tickets/_store.py::load_all -->
+<!-- frob:describes src/frob/tickets/_store.py::write_ticket -->
+<!-- frob:describes src/frob/tickets/_store.py::write_all -->
+<!-- frob:describes src/frob/tickets/_store.py::migrate_to_ledger -->
+<!-- frob:describes src/frob/tickets/_store.py::atomic_write -->
+
+`frob/tickets/_store.py` implements the single-file-ledger-vs-legacy-dir
+backend switch described under Storage above; `frob/tickets/__init__.py`
+(the Public API) is the only caller.
+
+```python
+# frob/tickets/_store.py
+def slugify(title: str) -> str
+    # Lowercase, hyphenate, strip non-alnum runs -- the tickets/T-####-slug.md
+    # filename fragment for a ticket title.
+def tickets_dir(root: Path) -> Path
+    # The legacy tickets/ directory (also holds attachments in single mode).
+def ledger_path(root: Path) -> Path
+    # The single-file tickets.md ledger path at the repo root.
+def attachments_dir(root: Path, ticket_id: str) -> Path
+    # tickets/attachments/<id>/ for a given ticket (both storage modes).
+def store_mode(root: Path) -> str
+    # Which backend a repo uses: 'single' if tickets.md exists, 'dir' if
+    # only legacy tickets/*.md files exist, else 'single' (fresh-repo default).
+def serialize_ticket(ticket: Ticket) -> str
+    # Renders a Ticket to legacy ---frontmatter + body (dir-mode file text).
+def parse_ticket_file(path: Path) -> Result[Ticket, TicketError]
+    # Splits a legacy ticket file into frontmatter + body and validates it.
+def load_all(root: Path) -> Result[dict[str, Ticket], TicketError]
+    # Every ticket in the repo as an id -> Ticket map, backend-agnostic.
+def write_ticket(root: Path, ticket: Ticket) -> Result[None, TicketError]
+    # Upserts one ticket into whichever backend the repo uses (atomic).
+def write_all(root: Path, tickets: dict[str, Ticket]) -> Result[None, TicketError]
+    # Replaces the ENTIRE store with `tickets` (used by renumber); single
+    # mode rewrites the ledger wholesale, dir mode writes each file and
+    # deletes any T-*.md whose id is no longer present.
+def migrate_to_ledger(root: Path) -> Result[int, TicketError]
+    # Collapses a legacy tickets/*.md layout into a single tickets.md ledger,
+    # deleting the source files after a successful write.
+def atomic_write(path: Path, content: str | bytes) -> Result[None, TicketError]
+    # Writes via temp file + os.replace in the same directory (crash-safe);
+    # the one write primitive both storage backends funnel through.
 ```
 
 ## Design decisions

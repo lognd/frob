@@ -7,7 +7,7 @@ import sys
 import textwrap
 from pathlib import Path
 
-from frob.gitio import Diff, Hunk, working_diff
+from frob.gitio import Diff, Hunk, ProcResult, working_diff
 from frob.graph import build_graph
 from frob.testing import (
     RunnerSpec,
@@ -335,8 +335,15 @@ class TestRunners:
         script.write_text("import sys\nsys.exit(1)\n")
         spec = RunnerSpec(
             language="python",
-            command=(sys.executable, str(script), "{files}",),
-            all_command=(sys.executable, str(script),),
+            command=(
+                sys.executable,
+                str(script),
+                "{files}",
+            ),
+            all_command=(
+                sys.executable,
+                str(script),
+            ),
         )
         selection = SelectionReport(
             touched=(),
@@ -356,7 +363,10 @@ class TestRunners:
 
         spec = RunnerSpec(
             language="python",
-            command=("/no/such/binary", "{files}",),
+            command=(
+                "/no/such/binary",
+                "{files}",
+            ),
             all_command=("/no/such/binary",),
         )
         selection = SelectionReport(
@@ -377,8 +387,15 @@ class TestRunners:
         script.write_text("import time\ntime.sleep(5)\n")
         spec = RunnerSpec(
             language="python",
-            command=(sys.executable, str(script), "{files}",),
-            all_command=(sys.executable, str(script),),
+            command=(
+                sys.executable,
+                str(script),
+                "{files}",
+            ),
+            all_command=(
+                sys.executable,
+                str(script),
+            ),
             timeout_s=0.5,
         )
         selection = SelectionReport(
@@ -433,3 +450,54 @@ class TestWorktree:
         diff = working_diff(wt, "main").danger_ok
         report = select_tests(snapshot, diff, SelectConfig())
         assert "tests/test_foo.py::test_widget" in report.selected["python"]
+
+
+class TestCollectPythonTests:
+    def test_parses_node_ids_and_caches_on_content_hash(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_python_tests
+        from typani import Ok
+
+        import frob.testing._collect as collect_mod
+
+        _write(
+            tmp_path,
+            "tests/test_thing.py",
+            """
+            def test_a() -> None:
+                assert True
+
+            def test_b() -> None:
+                assert True
+            """,
+        )
+
+        calls: list[tuple] = []
+
+        def fake_run_argv(argv, *, cwd=None, timeout_s=300.0):
+            calls.append(tuple(argv))
+            stdout = "tests/test_thing.py::test_a\ntests/test_thing.py::test_b\n"
+            return Ok(
+                ProcResult(argv=tuple(argv), returncode=0, stdout=stdout, stderr="")
+            )
+
+        monkeypatch.setattr(collect_mod, "run_argv", fake_run_argv)
+
+        result = collect_mod.collect_python_tests(tmp_path)
+        assert result.is_ok
+        node_ids = result.danger_ok.node_ids
+        assert node_ids == frozenset(
+            {"tests/test_thing.py::test_a", "tests/test_thing.py::test_b"}
+        )
+        assert len(calls) == 1
+        cache_path = tmp_path / ".frob" / "pytest-collect.json"
+        assert cache_path.exists()
+
+        # Second call with unchanged test files must be a cache hit: no
+        # second spawn, same node ids -- the whole point of content-hash
+        # keyed caching.
+        result2 = collect_mod.collect_python_tests(tmp_path)
+        assert result2.is_ok
+        assert result2.danger_ok.node_ids == node_ids
+        assert len(calls) == 1

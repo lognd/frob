@@ -17,6 +17,7 @@ _DIAG = re.compile(
 _ANSI = re.compile(r"\x1b\[[0-9;]*m")
 
 
+# frob:doc docs/process.md#public-api
 def parse_clang_tidy(stdout: str, exit_code: int = 0) -> ToolResult:
     diagnostics: list[Diagnostic] = []
     seen: set[tuple] = set()

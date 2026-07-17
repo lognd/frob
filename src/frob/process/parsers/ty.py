@@ -33,6 +33,7 @@ _SUMMARY_LINE = re.compile(r"^Found (\d+) diagnostic")
 _ANSI = re.compile(r"\x1b\[[0-9;]*m")
 
 
+# frob:doc docs/process.md#public-api
 def parse_ty(stdout: str, exit_code: int = 0) -> ToolResult:
     diagnostics: list[Diagnostic] = []
     summary_override: str | None = None

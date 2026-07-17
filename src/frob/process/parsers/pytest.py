@@ -31,6 +31,7 @@ _ERROR_LINE = re.compile(r"^E\s+(.*)$")
 _LOCATION_LINE = re.compile(r"^(.*\.py):(\d+):\s+(.*)$")
 
 
+# frob:doc docs/process.md#public-api
 def parse_pytest(stdout: str, exit_code: int = 0) -> ToolResult:
     lines = stdout.splitlines()
 

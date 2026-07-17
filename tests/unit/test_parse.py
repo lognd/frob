@@ -391,6 +391,7 @@ RUFF_JSON_W_ONLY = json.dumps(
 
 class TestParseRuffText:
     def test_two_errors_parsed(self):
+        # frob:tests src/frob/process/parsers/ruff.py::parse_ruff_text kind="unit"
         r = parse_ruff_text(RUFF_TEXT_TWO, exit_code=1)
         assert len(r.diagnostics) == 2
 
@@ -523,6 +524,7 @@ warning[w1] src/c.py:3:3: a warning
 
 class TestParseTy:
     def test_error_count(self):
+        # frob:tests src/frob/process/parsers/ty.py::parse_ty kind="unit"
         r = parse_ty(TY_BRACKET, exit_code=1)
         assert r.error_count == 1
 
@@ -767,6 +769,7 @@ JUNIT_EMPTY_SUITE = '<testsuites><testsuite name="Empty" tests="0"/></testsuites
 
 class TestParseJunit:
     def test_all_pass(self):
+        # frob:tests src/frob/process/parsers/junit.py::parse_junit_xml kind="unit"
         r = parse_junit_xml(JUNIT_ALL_PASS)
         assert r.passed
         assert len(r.tests) == 3

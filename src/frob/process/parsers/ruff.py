@@ -15,6 +15,7 @@ from frob.process.parsers.common import Diagnostic, ToolResult
 _TEXT_LINE = re.compile(r"^(.*?):(\d+):(\d+):\s+([A-Z]\d+)\s+(.*)$")
 
 
+# frob:doc docs/process.md#public-api
 def parse_ruff_json(stdout: str, exit_code: int = 0) -> ToolResult:
     """Parse `ruff check --output-format json` output."""
     try:
@@ -63,6 +64,7 @@ def parse_ruff_json(stdout: str, exit_code: int = 0) -> ToolResult:
     )
 
 
+# frob:doc docs/process.md#public-api
 def parse_ruff_text(stdout: str, exit_code: int = 0) -> ToolResult:
     """Parse default `ruff check` text output."""
     diagnostics: list[Diagnostic] = []
@@ -96,6 +98,7 @@ def parse_ruff_text(stdout: str, exit_code: int = 0) -> ToolResult:
     )
 
 
+# frob:doc docs/process.md#public-api
 def parse_ruff(stdout: str, exit_code: int = 0) -> ToolResult:
     """Auto-detect JSON vs text format."""
     stripped = stdout.strip()

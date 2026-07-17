@@ -15,7 +15,10 @@ _TOOL_STAGES = frozenset(
 )
 
 
+# frob:doc docs/check.md#public-api
 class CheckResult(BaseModel):
+    """Aggregate outcome of one `frob check` run: every tool's `ToolResult`."""
+
     model_config = {}
 
     path: str
@@ -23,13 +26,20 @@ class CheckResult(BaseModel):
 
     @property
     def total_errors(self) -> int:
+        # frob:doc docs/check.md#public-api
+        """Sum of error-severity diagnostics across every tool that ran."""
         return sum(r.error_count for r in self.results)
 
     @property
     def total_warnings(self) -> int:
+        # frob:doc docs/check.md#public-api
+        """Sum of warning-severity diagnostics across every tool that ran."""
         return sum(r.warning_count for r in self.results)
 
     def as_text(self, color: bool = False) -> str:
+        # frob:doc docs/check.md#public-api
+        """Human-readable report: errors, then warnings, then notes, then a
+        per-tool summary table."""
         from frob.logging.color import BOLD, CYAN, DIM, GREEN, RED, YELLOW, paint
 
         lines: list[str] = []
@@ -92,10 +102,13 @@ class CheckResult(BaseModel):
         return "\n".join(lines)
 
     def as_json(self) -> str:
+        # frob:doc docs/check.md#public-api
+        """The full structured result as JSON (`--json` CLI output)."""
         return self.model_dump_json(indent=2)
 
 
 # frob:ticket T-0028
+# frob:doc docs/check.md#public-api
 def run_check(
     root: Path,
     *,
@@ -112,6 +125,7 @@ def run_check(
     ticket: str | None = None,
     base: str | None = None,
 ) -> CheckResult:
+    """Quality gate for Python projects: ruff, ty, cycle/dup/arch/bind, gates, etc."""
     from typing import Callable
 
     tasks: list[Callable[[], ToolResult | list[ToolResult] | None]] = []
@@ -553,6 +567,7 @@ def _run_exports(root: Path) -> list[ToolResult]:
 # ---------------------------------------------------------------------------
 
 
+# frob:doc docs/check.md#public-api
 def run_check_cpp(
     root: Path,
     *,
@@ -762,6 +777,7 @@ def _run_ctest(build_dir: Path, *, valgrind: bool = False) -> ToolResult | None:
 # ---------------------------------------------------------------------------
 
 
+# frob:doc docs/check.md#public-api
 def run_check_rust(
     root: Path,
     *,
@@ -908,6 +924,7 @@ def _find_test_binary_from_cargo_json(stdout: str) -> Path | None:
 _TS_TIMEOUT_S = 300
 
 
+# frob:doc docs/check.md#public-api
 def run_check_ts(
     root: Path,
     *,
@@ -1077,6 +1094,7 @@ def _run_vitest(root: Path) -> ToolResult:
 # ---------------------------------------------------------------------------
 
 
+# frob:doc docs/check.md#public-api
 def detect_project_type(root: Path) -> str:
     """Returns 'python', 'cpp', 'rust', 'typescript', or 'unknown'."""
     if (root / "Cargo.toml").exists():

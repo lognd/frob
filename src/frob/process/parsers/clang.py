@@ -22,6 +22,7 @@ _CONTEXT_LINE = re.compile(r"^(?:In function|In member function|At top level)")
 _ANSI = re.compile(r"\x1b\[[0-9;]*m")
 
 
+# frob:doc docs/process.md#public-api
 def parse_clang(stdout: str, exit_code: int = 0, tool: str = "clang") -> ToolResult:
     diagnostics: list[Diagnostic] = []
 
