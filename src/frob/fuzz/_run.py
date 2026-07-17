@@ -80,9 +80,7 @@ def _run_one(tp: type[BaseModel], policy: FuzzPolicy, digest: str) -> FuzzResult
     except Unsatisfiable as exc:
         _log.warning("run_fuzz: %s exceeded max_reject_rate: %s", ref, exc)
         reason = f"rejection rate too high (max={policy.max_reject_rate}): {exc}"
-        return FuzzResult(
-            ref=ref, body_digest=digest, examples=count, falsified=reason
-        )
+        return FuzzResult(ref=ref, body_digest=digest, examples=count, falsified=reason)
     except AssertionError as exc:  # pragma: no cover - _property never fails logically
         _log.error("run_fuzz: %s falsified: %s", ref, exc)
         return FuzzResult(

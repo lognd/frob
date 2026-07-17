@@ -27,6 +27,7 @@ def _node_text(node: Node | None) -> str:
         return ""
     return node.text.decode("utf-8", errors="replace")
 
+
 # ---------------------------------------------------------------------------
 # Types
 # ---------------------------------------------------------------------------
@@ -141,7 +142,6 @@ def _check_large_file(
 
 
 def _py_function_line_count(func_node: "object") -> int:
-
     n: Node = cast("Node", func_node)
     body = n.child_by_field_name("body")
     if body is None:
@@ -258,7 +258,6 @@ def _py_check_high_coupling(
 
 
 def _py_max_nesting(func_body_node: "object") -> int:
-
     body: Node = cast("Node", func_body_node)
 
     _NESTING_TYPES = {
@@ -334,7 +333,6 @@ def _py_check_deep_nesting(
 
 
 def _annotation_text(node: "object") -> str:
-
     n: Node = cast("Node", node)
     return _node_text(n).strip()
 
@@ -558,9 +556,7 @@ def analyze_project(
             if language == "python":
                 _py_check_long_functions(tree, rel, max_function_lines, suggestions)
                 _py_check_god_classes(tree, rel, max_class_methods, suggestions)
-                _py_check_high_coupling(
-                    path, rel, root, max_local_imports, suggestions
-                )
+                _py_check_high_coupling(path, rel, root, max_local_imports, suggestions)
                 _py_check_deep_nesting(tree, rel, max_nesting_depth, suggestions)
 
                 sigs = _extract_py_signatures(tree, rel)

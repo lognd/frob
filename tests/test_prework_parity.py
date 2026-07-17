@@ -131,6 +131,4 @@ class TestCliStartRecordsGateCompatibleDigest:
             capture_output=True,
             text=True,
         )
-        assert "PRE001" not in check.stdout + check.stderr, (
-            check.stdout + check.stderr
-        )
+        assert "PRE001" not in check.stdout + check.stderr, check.stdout + check.stderr

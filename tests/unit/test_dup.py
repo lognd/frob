@@ -30,7 +30,7 @@ pytestmark = pytest.mark.skipif(not HAS_DUP, reason="frob.dup not available")
 
 
 class TestFindDuplicates:
-# frob:tests src/frob/dup/_legacy.py::find_duplicates kind="unit"
+    # frob:tests src/frob/dup/_legacy.py::find_duplicates kind="unit"
     def test_dup_python_finds_one_group(self):
         result = find_duplicates(FIXTURES / "dup_python" / "src")
         assert len(result.groups) == 1

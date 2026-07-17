@@ -43,8 +43,7 @@ _LEDGER_NAME = "tickets.md"
 _LEDGER_MARKER_RE = re.compile(r"(?m)^<!-- ticket:(T-\d{4}) -->[ \t]*$")
 _YAML_FENCE_RE = re.compile(r"\A\s*```ya?ml\n(.*?\n)```[ \t]*\n?(.*)\Z", re.DOTALL)
 _LEDGER_HEADER = (
-    "# Tickets\n\n"
-    "Central ledger managed by `frob ticket` -- one section per ticket.\n"
+    "# Tickets\n\nCentral ledger managed by `frob ticket` -- one section per ticket.\n"
 )
 
 
@@ -201,8 +200,7 @@ def _render_ledger(tickets: dict[str, Ticket]) -> str:
         ticket = tickets[ticket_id]
         body = ticket.body.strip("\n")
         section = (
-            f"\n<!-- ticket:{ticket_id} -->\n"
-            f"```yaml\n{_frontmatter_yaml(ticket)}```\n"
+            f"\n<!-- ticket:{ticket_id} -->\n```yaml\n{_frontmatter_yaml(ticket)}```\n"
         )
         if body:
             section += f"{body}\n"

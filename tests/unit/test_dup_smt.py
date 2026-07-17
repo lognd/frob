@@ -17,7 +17,7 @@ from frob.dup._pipeline import probe_smt_equivalence
 from frob.graph._models import GraphSnapshot
 
 try:
-    import z3  # noqa: F401
+    import z3  # noqa: F401  # ty: ignore[unresolved-import]
 
     HAS_Z3 = True
 except ImportError:

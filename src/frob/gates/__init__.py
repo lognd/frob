@@ -712,9 +712,7 @@ def _inferred_unit_cases(symref: str, tests: CollectedTests) -> int:
         return 0
     token = re.compile(rf"(^|[^a-z0-9]){re.escape(leaf)}([^a-z0-9]|$)")
     return sum(
-        1
-        for node in tests.node_ids
-        if token.search(_snake(node.rsplit("::", 1)[-1]))
+        1 for node in tests.node_ids if token.search(_snake(node.rsplit("::", 1)[-1]))
     )
 
 
@@ -765,8 +763,9 @@ def _test001_002(
             effective = _inferred_unit_cases(record.symref, tests)
         leaf = _snake(record.id.qualname.rsplit(".", 1)[-1])
         if effective == 0 and not edges:
-            _log.debug("TEST001: %s has no unit edge or convention match",
-                       record.symref)
+            _log.debug(
+                "TEST001: %s has no unit edge or convention match", record.symref
+            )
             violations.append(
                 Violation(
                     rule="TEST001",
@@ -920,7 +919,7 @@ def _test007_pairs(
                     message=(
                         f"TEST007: the {consumer} -> {provider} dependency has no "
                         f"integration test covering that boundary; add an "
-                        f'integration test in {consumer} with frob:tests {provider} '
+                        f"integration test in {consumer} with frob:tests {provider} "
                         f'kind="integration"'
                     ),
                 )
@@ -1379,9 +1378,7 @@ def fuzz_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
         *FUZZ002(obs, param_types),
         *FUZZ003(snapshot, obs, stamp),
     )
-    _log.info(
-        "fuzz_gate: %d obligation(s), %d violation(s)", len(obs), len(violations)
-    )
+    _log.info("fuzz_gate: %d obligation(s), %d violation(s)", len(obs), len(violations))
     return tuple(violations)
 
 

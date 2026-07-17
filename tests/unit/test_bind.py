@@ -8,7 +8,7 @@ from frob.bind import check, scan_bindings, scan_sources
 def test_scan_bindings_finds_cpp_and_rust(tmp_path):
     # frob:tests src/frob/bind/__init__.py::scan_bindings kind="unit"
     (tmp_path / "glue.cpp").write_text(
-        '// BIND: int add(int a, int b)\nint add(int a, int b) { return a + b; }\n'
+        "// BIND: int add(int a, int b)\nint add(int a, int b) { return a + b; }\n"
     )
     (tmp_path / "glue.rs").write_text(
         "// BIND: fn sub(a: i32, b: i32) -> i32\nfn sub(a: i32, b: i32) -> i32 { a - b }\n"
@@ -35,7 +35,7 @@ def test_scan_sources_finds_header_and_rust(tmp_path):
 
 def test_check_reports_mismatch_for_unbound_binding(tmp_path):
     (tmp_path / "glue.cpp").write_text(
-        '// BIND: int mystery(int x)\nint mystery(int x) { return x; }\n'
+        "// BIND: int mystery(int x)\nint mystery(int x) { return x; }\n"
     )
     mismatches = check(tmp_path)
     assert len(mismatches) == 1

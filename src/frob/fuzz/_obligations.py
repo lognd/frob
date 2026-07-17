@@ -23,9 +23,7 @@ def _invariant_anchored(snapshot: GraphSnapshot) -> tuple[FuzzObligation, ...]:
         if edge.src in seen:
             continue
         seen[edge.src] = f"invariant {edge.target} anchor"
-    return tuple(
-        FuzzObligation(ref=ref, reason=reason) for ref, reason in seen.items()
-    )
+    return tuple(FuzzObligation(ref=ref, reason=reason) for ref, reason in seen.items())
 
 
 def _public(snapshot: GraphSnapshot) -> tuple[FuzzObligation, ...]:

@@ -454,8 +454,11 @@ class TestSingleFileLedger:
         from frob.tickets import Origin, TicketKind, TicketSpec
 
         return TicketSpec(
-            title=title, kind=TicketKind.FEATURE, origin=Origin.AGENT,
-            scope=("src/x.py",), body="Body line.\n",
+            title=title,
+            kind=TicketKind.FEATURE,
+            origin=Origin.AGENT,
+            scope=("src/x.py",),
+            body="Body line.\n",
         )
 
     def test_new_tickets_land_in_single_tickets_md(self, tmp_path):
@@ -503,10 +506,18 @@ class TestSingleFileLedger:
         d.mkdir()
         for n, title in [(1, "alpha"), (2, "beta")]:
             tk = Ticket(
-                id=f"T-{n:04d}", title=title, state=TicketState.QUEUED,
-                kind=TicketKind.BUG, origin=O.HUMAN, created=date.today(),
-                blocked_by=(), parent=None, scope=(), evidence=(),
-                attachments=(), body=f"body {title}\n",
+                id=f"T-{n:04d}",
+                title=title,
+                state=TicketState.QUEUED,
+                kind=TicketKind.BUG,
+                origin=O.HUMAN,
+                created=date.today(),
+                blocked_by=(),
+                parent=None,
+                scope=(),
+                evidence=(),
+                attachments=(),
+                body=f"body {title}\n",
             )
             (d / f"T-{n:04d}-{title}.md").write_text(
                 serialize_ticket(tk), encoding="utf-8"
@@ -529,10 +540,18 @@ class TestSingleFileLedger:
         d = tickets_dir(tmp_path)
         d.mkdir()
         tk = Ticket(
-            id="T-0001", title="legacy", state=TicketState.QUEUED,
-            kind=TicketKind.DOCS, origin=O.HUMAN, created=date.today(),
-            blocked_by=(), parent=None, scope=(), evidence=(),
-            attachments=(), body="x\n",
+            id="T-0001",
+            title="legacy",
+            state=TicketState.QUEUED,
+            kind=TicketKind.DOCS,
+            origin=O.HUMAN,
+            created=date.today(),
+            blocked_by=(),
+            parent=None,
+            scope=(),
+            evidence=(),
+            attachments=(),
+            body="x\n",
         )
         (d / "T-0001-legacy.md").write_text(serialize_ticket(tk), encoding="utf-8")
         q = load_queue(tmp_path).danger_ok

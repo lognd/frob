@@ -397,7 +397,9 @@ class TestInvariantGate:
         from frob.gates.invariants import Invariant
 
         snap = _snapshot(tmp_path)
-        inv = Invariant(id="INV-001", statement="x", criticality=Criticality.HIGH, evidence=())
+        inv = Invariant(
+            id="INV-001", statement="x", criticality=Criticality.HIGH, evidence=()
+        )
         tests = CollectedTests(node_ids=frozenset())
         violations = invariant_gate((inv,), snap, tests)
         assert any(v.rule == "INV001" for v in violations)
@@ -448,7 +450,10 @@ class TestInvariantGate:
 
         snap = _snapshot(tmp_path)
         inv = Invariant(
-            id="INV-001", statement="x", criticality=Criticality.HIGH, evidence=("POL-thing",)
+            id="INV-001",
+            statement="x",
+            criticality=Criticality.HIGH,
+            evidence=("POL-thing",),
         )
         tests = CollectedTests(node_ids=frozenset())
         violations = invariant_gate((inv,), snap, tests, frozenset({"POL-thing"}))
@@ -745,11 +750,17 @@ class TestSeverityOverrides:
         )
         violations = (
             Violation(
-                rule="COV001", severity=Severity.ERROR, file="a.py", line=1,
+                rule="COV001",
+                severity=Severity.ERROR,
+                file="a.py",
+                line=1,
                 message="m",
             ),
             Violation(
-                rule="SCOPE001", severity=Severity.ERROR, file="b.py", line=2,
+                rule="SCOPE001",
+                severity=Severity.ERROR,
+                file="b.py",
+                line=2,
                 message="m",
             ),
         )
@@ -762,7 +773,10 @@ class TestSeverityOverrides:
 
         violations = (
             Violation(
-                rule="COV001", severity=Severity.ERROR, file="a.py", line=1,
+                rule="COV001",
+                severity=Severity.ERROR,
+                file="a.py",
+                line=1,
                 message="m",
             ),
         )
@@ -837,8 +851,12 @@ class TestCov002ScopeCoverage:
 
         t = new_ticket(
             tmp_path,
-            TicketSpec(title="refactor", kind=TicketKind.FEATURE,
-                       origin=Origin.AGENT, scope=("src/**",)),
+            TicketSpec(
+                title="refactor",
+                kind=TicketKind.FEATURE,
+                origin=Origin.AGENT,
+                scope=("src/**",),
+            ),
         ).danger_ok
         transition(tmp_path, t.id, TicketState.PLANNED)
         transition(tmp_path, t.id, TicketState.IN_PROGRESS)
@@ -914,9 +932,7 @@ class TestConventionUnitBinding:
 
         _write(tmp_path, "src/m.py", "def of(x):\n    return x\n")
         snap = _snapshot(tmp_path)
-        tests = CollectedTests(
-            node_ids=frozenset({"tests/test_m.py::test_unrelated"})
-        )
+        tests = CollectedTests(node_ids=frozenset({"tests/test_m.py::test_unrelated"}))
         violations = run_test_gate(
             snap, (), Nothing(), tests, TestPolicy(min_unit_cases=1)
         )

@@ -164,8 +164,9 @@ def _process_source_file(
     for sym in parsed.symbols:
         record = _symbol_record(rel_path, sym)
         if record.symref in by_ref:
-            _log.debug("duplicate symref %s (overload/redef): last def wins",
-                       record.symref)
+            _log.debug(
+                "duplicate symref %s (overload/redef): last def wins", record.symref
+            )
         by_ref[record.symref] = record
     symbols = tuple(by_ref.values())
     edges, malformed = parse_directives(parsed)

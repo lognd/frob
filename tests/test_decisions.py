@@ -36,7 +36,9 @@ def test_load_decisions_parses_records(tmp_path):
 
 def test_malformed_record_is_err(tmp_path):
     (tmp_path / "decisions").mkdir()
-    (tmp_path / "decisions" / "AD-001.md").write_text("no frontmatter", encoding="utf-8")
+    (tmp_path / "decisions" / "AD-001.md").write_text(
+        "no frontmatter", encoding="utf-8"
+    )
     result = load_decisions(tmp_path)
     assert result.is_err
     assert result.danger_err == DecisionError.Malformed

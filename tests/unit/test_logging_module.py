@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import io
 import logging
+import sys
 
 from frob.logging import get_logger, quiet_stdout_logs
 from frob.logging.color import paint, should_color
@@ -51,9 +51,7 @@ def test_paint_verbatim_when_disabled():
 def test_quiet_stdout_logs_raises_and_restores_level():
     # frob:tests src/frob/logging/quiet.py::quiet_stdout_logs kind="unit"
     root = logging.getLogger()
-    stream = io.StringIO()
-    handler = logging.StreamHandler(stream)
-    handler.stream = __import__("sys").stdout
+    handler = logging.StreamHandler(sys.stdout)
     handler.setLevel(logging.DEBUG)
     root.addHandler(handler)
     try:

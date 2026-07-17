@@ -31,9 +31,7 @@ class _FakeRegistryHandler(http.server.BaseHTTPRequestHandler):
             parts = self.path.strip("/").split("/")
             name, version = parts[1], parts[2]
             ts = fresh_time if "new" in name else old_time
-            body = json.dumps(
-                {"releases": {version: [{"upload_time_iso_8601": ts}]}}
-            )
+            body = json.dumps({"releases": {version: [{"upload_time_iso_8601": ts}]}})
             self._send(body)
             return
 

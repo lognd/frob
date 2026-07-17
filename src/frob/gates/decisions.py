@@ -99,9 +99,7 @@ def load_decisions(root: Path) -> Result[tuple[Decision, ...], DecisionError]:
 
 
 # frob:doc docs/decisions.md#anchoring-in-code
-def decision_gate(
-    decisions: tuple[Decision, ...], snapshot: GraphSnapshot
-) -> tuple:
+def decision_gate(decisions: tuple[Decision, ...], snapshot: GraphSnapshot) -> tuple:
     """DEC001/DEC002 over decision records and their code anchors.
 
     DEC001: a `frob:decision AD-###` edge targets a record that does not

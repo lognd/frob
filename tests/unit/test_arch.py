@@ -109,7 +109,7 @@ class TestDeepNesting:
 
 
 class TestAnalyzeProject:
-# frob:tests src/frob/arch/__init__.py::analyze_project kind="unit"
+    # frob:tests src/frob/arch/__init__.py::analyze_project kind="unit"
     def test_arch_python_project_finds_issues(self):
         result = analyze_project(FIXTURES / "arch_python" / "src")
         assert len(result.suggestions) > 0

@@ -47,9 +47,7 @@ class TestExportsBasic:
         import_line = next(
             (ln for ln in out.splitlines() if ln.startswith("from ")), ""
         )
-        all_line = next(
-            (ln for ln in out.splitlines() if ln.startswith("__all__")), ""
-        )
+        all_line = next((ln for ln in out.splitlines() if ln.startswith("__all__")), "")
         assert "_private" not in import_line
         assert "_private" not in all_line
 

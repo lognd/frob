@@ -52,7 +52,8 @@ class TestFindClones:
         matched = {
             r
             for r in refs
-            if any("compute_total" in x for x in r) and any("compute_sum" in x for x in r)
+            if any("compute_total" in x for x in r)
+            and any("compute_sum" in x for x in r)
         }
         assert matched, f"expected compute_total/compute_sum clone pair, got {refs}"
 
@@ -64,7 +65,9 @@ class TestFindClones:
         report = find_clones(snapshot, DupConfig(min_tokens=10_000)).danger_ok
         assert report.groups == ()
 
-    def test_core_unavailable_is_honest_err_not_silent_downgrade(self, snapshot, monkeypatch):
+    def test_core_unavailable_is_honest_err_not_silent_downgrade(
+        self, snapshot, monkeypatch
+    ):
         monkeypatch.setattr(dup_core, "core_available", lambda: False)
         # _pipeline imported core_available via `from frob.dup import _core`
         # and calls `_core.core_available()`, so patching the module
@@ -86,7 +89,9 @@ class TestTouchedRefs:
 
 class TestGateRules:
     def test_dup001_fires_when_one_side_touched(self, snapshot):
-        report = find_clones(snapshot, DupConfig(min_tokens=5, threshold=0.85)).danger_ok
+        report = find_clones(
+            snapshot, DupConfig(min_tokens=5, threshold=0.85)
+        ).danger_ok
         clone_ref = next(
             p.left.ref
             for group in report.groups
@@ -99,7 +104,9 @@ class TestGateRules:
         assert all(v.severity.value == "error" for v in violations)
 
     def test_dup002_fires_when_both_sides_touched(self, snapshot):
-        report = find_clones(snapshot, DupConfig(min_tokens=5, threshold=0.85)).danger_ok
+        report = find_clones(
+            snapshot, DupConfig(min_tokens=5, threshold=0.85)
+        ).danger_ok
         pair = next(
             p
             for group in report.groups
@@ -112,6 +119,8 @@ class TestGateRules:
         assert all(v.severity.value == "warn" for v in violations)
 
     def test_dup001_silent_when_neither_side_touched(self, snapshot):
-        report = find_clones(snapshot, DupConfig(min_tokens=5, threshold=0.85)).danger_ok
+        report = find_clones(
+            snapshot, DupConfig(min_tokens=5, threshold=0.85)
+        ).danger_ok
         violations = DUP001(report, frozenset(), threshold=0.85)
         assert violations == ()

@@ -93,9 +93,7 @@ def test_leaf_tokens_are_formatting_insensitive(tmp_path: Path):
 def test_span_of_is_one_based_inclusive(tmp_path: Path):
     # frob:tests src/frob/lang/_common.py::span_of kind="unit"
     tree, _src, _lang = _py_tree(tmp_path)
-    fn = next(
-        n for n in tree.root_node.children if n.type == "function_definition"
-    )
+    fn = next(n for n in tree.root_node.children if n.type == "function_definition")
     start, end = span_of(fn)
     assert start == 5  # `def greet` is the 5th line
     assert end >= start
@@ -104,9 +102,7 @@ def test_span_of_is_one_based_inclusive(tmp_path: Path):
 def test_child_text_decodes_and_tolerates_none(tmp_path: Path):
     # frob:tests src/frob/lang/_common.py::child_text kind="unit"
     tree, _src, _lang = _py_tree(tmp_path)
-    fn = next(
-        n for n in tree.root_node.children if n.type == "function_definition"
-    )
+    fn = next(n for n in tree.root_node.children if n.type == "function_definition")
     assert child_text(fn.child_by_field_name("name")) == "greet"
     assert child_text(None) == ""
 
@@ -114,9 +110,7 @@ def test_child_text_decodes_and_tolerates_none(tmp_path: Path):
 def test_leading_doc_comment_gathers_block(tmp_path: Path):
     # frob:tests src/frob/lang/_common.py::leading_doc_comment kind="unit"
     tree, _src, _lang = _py_tree(tmp_path)
-    fn = next(
-        n for n in tree.root_node.children if n.type == "function_definition"
-    )
+    fn = next(n for n in tree.root_node.children if n.type == "function_definition")
     assert leading_doc_comment(fn, COMMENT_TYPES["python"]) == "a leading comment"
 
 
@@ -124,9 +118,7 @@ def test_export_tree_and_flatten_tree_round_trip(tmp_path: Path):
     # frob:tests src/frob/lang/_common.py::export_tree kind="unit"
     # frob:tests src/frob/lang/_common.py::flatten_tree kind="unit"
     tree, _src, _lang = _py_tree(tmp_path)
-    fn = next(
-        n for n in tree.root_node.children if n.type == "function_definition"
-    )
+    fn = next(n for n in tree.root_node.children if n.type == "function_definition")
     node = export_tree(fn, COMMENT_TYPES["python"])
     labels, parents = flatten_tree(node)
     assert labels[0] == "function_definition"
@@ -194,8 +186,6 @@ def test_resolve_local_import_maps_to_repo_relative(tmp_path: Path):
     pkg = root / "pkg"
     pkg.mkdir()
     (pkg / "mod.py").write_text("x = 1\n")
-    resolved = resolve_local_import(
-        "pkg.mod", "python", file_dir=root, root=root
-    )
+    resolved = resolve_local_import("pkg.mod", "python", file_dir=root, root=root)
     assert resolved == "pkg/mod.py"
     assert resolve_local_import("os", "python", file_dir=root, root=root) is None

@@ -420,8 +420,12 @@ def _build_parser() -> argparse.ArgumentParser:
         "--threat",
         dest="ticket_threat",
         choices=[
-            "spoofing", "tampering", "repudiation", "info-disclosure",
-            "denial-of-service", "elevation-of-privilege",
+            "spoofing",
+            "tampering",
+            "repudiation",
+            "info-disclosure",
+            "denial-of-service",
+            "elevation-of-privilege",
         ],
         help="STRIDE category for a kind=security ticket",
     )

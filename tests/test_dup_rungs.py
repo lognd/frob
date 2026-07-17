@@ -41,7 +41,7 @@ def _pairs(report, rung):
 
 
 class TestR4NearMiss:
-# frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
+    # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
     def test_fires_on_gapped_clone(self, snapshot):
         report = find_clones(
             snapshot, DupConfig(min_tokens=5, threshold=0.85)
@@ -73,7 +73,7 @@ class TestR4NearMiss:
 
 
 class TestR5Dataflow:
-# frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
+    # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
     def test_fires_on_reordered_dataflow_identical_functions(self, snapshot):
         report = find_clones(
             snapshot, DupConfig(min_tokens=5, threshold=0.85)
@@ -162,8 +162,14 @@ def test_cli_probe_equivalent_functions(tmp_path):
     )
     r = subprocess.run(
         [
-            sys.executable, "-m", "frob", "dup", str(tmp_path),
-            "--probe", "src/m.py::da", "src/m.py::db",
+            sys.executable,
+            "-m",
+            "frob",
+            "dup",
+            str(tmp_path),
+            "--probe",
+            "src/m.py::da",
+            "src/m.py::db",
         ],
         cwd=tmp_path,
         capture_output=True,

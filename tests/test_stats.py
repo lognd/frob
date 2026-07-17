@@ -33,8 +33,12 @@ def test_ticket_stats_counts_states_and_doable(tmp_path):
     # frob:tests src/frob/stats/__init__.py::ticket_stats
     from frob.tickets import load_queue
 
-    a = new_ticket(tmp_path, TicketSpec(title="a", kind=TicketKind.FEATURE, origin=Origin.AGENT)).danger_ok
-    new_ticket(tmp_path, TicketSpec(title="b", kind=TicketKind.BUG, origin=Origin.AGENT))
+    a = new_ticket(
+        tmp_path, TicketSpec(title="a", kind=TicketKind.FEATURE, origin=Origin.AGENT)
+    ).danger_ok
+    new_ticket(
+        tmp_path, TicketSpec(title="b", kind=TicketKind.BUG, origin=Origin.AGENT)
+    )
     transition(tmp_path, a.id, TicketState.PLANNED)
     stats = ticket_stats(load_queue(tmp_path).danger_ok)
     assert stats.total == 2
@@ -60,7 +64,9 @@ def test_collect_combines_both(tmp_path):
     # frob:tests src/frob/stats/__init__.py::collect
     root = _repo(tmp_path)
     _commit(root, "chore: init")
-    new_ticket(root, TicketSpec(title="t", kind=TicketKind.FEATURE, origin=Origin.HUMAN))
+    new_ticket(
+        root, TicketSpec(title="t", kind=TicketKind.FEATURE, origin=Origin.HUMAN)
+    )
     report = collect(root, window_days=7).danger_ok
     assert report.tickets.total == 1
     assert report.commits.total == 1

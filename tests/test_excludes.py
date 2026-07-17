@@ -44,9 +44,5 @@ def test_dup_scanner_honors_exclude(tmp_path: Path):
     gen.mkdir()
     (gen / "copy.py").write_text(dup_body)
     result = find_duplicates(tmp_path)
-    hit_files = {
-        frag.file
-        for group in result.groups
-        for frag in group.fragments
-    }
+    hit_files = {frag.file for group in result.groups for frag in group.fragments}
     assert not any("generated" in f for f in hit_files)

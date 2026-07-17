@@ -293,7 +293,6 @@ def _collect_locals_cpp(func_node: Node) -> set[str]:
 
 
 def _harvest_cpp_param(node: Node, out: set[str]) -> None:
-
     if node.type in ("parameter_declaration", "optional_parameter_declaration"):
         decl = node.child_by_field_name("declarator")
         if decl:
@@ -401,6 +400,7 @@ def _enclosing_class_py(func_node: Node) -> str | None:
 
 def _iter_functions_py(root_node: Node):
     """Yield (func_node, symbol) for all function/async_function nodes."""
+
     def visit(n: Node):
         if n.type in ("function_definition", "async_function_definition"):
             name_node = _child(n, "name")

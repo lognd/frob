@@ -59,9 +59,7 @@ def _run_fuzz(root: Path) -> None:
     falsified = [r for r in results if r.falsified]
     for r in results:
         mark = (
-            f"FALSIFIED: {r.falsified}"
-            if r.falsified
-            else f"{r.examples} examples ok"
+            f"FALSIFIED: {r.falsified}" if r.falsified else f"{r.examples} examples ok"
         )
         print(f"  {r.ref}: {mark}")
     stamped = stamp_fuzz(root, results)
