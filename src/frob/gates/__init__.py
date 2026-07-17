@@ -160,7 +160,7 @@ def _waive001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     for md in snapshot.malformed:
         if "frob:waive" not in md.reason:
             continue
-        _log.info("WAIVE001: %s:%d %s", md.file, md.line, md.reason)
+        _log.debug("WAIVE001: %s:%d %s", md.file, md.line, md.reason)
         violations.append(
             Violation(
                 rule="WAIVE001",
@@ -236,7 +236,7 @@ def drift_gate(snapshot: GraphSnapshot, lock: LockFile) -> tuple[Violation, ...]
         record = snapshot.symbols.get(stale.entry.ref)
         line = record.span[0] if record is not None else 0
         file = stale.entry.ref.split("::", 1)[0]
-        _log.info("DRIFT001: %s facet=%s moved", stale.entry.ref, stale.entry.facet)
+        _log.debug("DRIFT001: %s facet=%s moved", stale.entry.ref, stale.entry.facet)
         violations.append(
             Violation(
                 rule="DRIFT001",
@@ -253,7 +253,7 @@ def drift_gate(snapshot: GraphSnapshot, lock: LockFile) -> tuple[Violation, ...]
     for dangling in report.dangling:
         file, line = _site_from_edge_origin(dangling.edge.origin)
         candidates = ", ".join(dangling.candidates) or "no candidates found"
-        _log.info("DRIFT002: %s -> %s gone", dangling.edge.src, dangling.edge.target)
+        _log.debug("DRIFT002: %s -> %s gone", dangling.edge.src, dangling.edge.target)
         violations.append(
             Violation(
                 rule="DRIFT002",
@@ -301,7 +301,7 @@ def _cov001(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
             continue
         if _is_test_path(record.id.path):
             continue
-        _log.info("COV001: %s undocumented", record.symref)
+        _log.debug("COV001: %s undocumented", record.symref)
         violations.append(
             Violation(
                 rule="COV001",
@@ -334,7 +334,7 @@ def _cov002(
         if open_bound:
             continue
         record = snapshot.symbols[symref]
-        _log.info("COV002: %s changed with no open ticket", symref)
+        _log.debug("COV002: %s changed with no open ticket", symref)
         violations.append(
             Violation(
                 rule="COV002",
@@ -368,7 +368,7 @@ def _cov003(queue: TicketQueue, tests: CollectedTests) -> tuple[Violation, ...]:
         for evidence in ticket.evidence:
             if _evidence_collected(evidence, tests):
                 continue
-            _log.info("COV003: %s evidence %s not collected", ticket.id, evidence)
+            _log.debug("COV003: %s evidence %s not collected", ticket.id, evidence)
             violations.append(
                 Violation(
                     rule="COV003",
@@ -432,7 +432,7 @@ def _todo001(
         if target is not None and target.state in _OPEN_STATES:
             continue
         file, line = _site_from_edge_origin(edge.origin)
-        _log.info("TODO001: %s -> %s not open", edge.src, edge.target)
+        _log.debug("TODO001: %s -> %s not open", edge.src, edge.target)
         violations.append(
             Violation(
                 rule="TODO001",
@@ -462,7 +462,7 @@ def _todo001(
                 if _TODO_RE.search(line_text) is None:
                     continue
                 lineno = comment.span[0] + offset
-                _log.info("TODO001: bare TODO/FIXME at %s:%d", file, lineno)
+                _log.debug("TODO001: bare TODO/FIXME at %s:%d", file, lineno)
                 violations.append(
                     Violation(
                         rule="TODO001",
@@ -519,7 +519,7 @@ def scope_gate(
     for file in sorted(_touched_files(diff)):
         if any(fnmatch.fnmatch(file, glob) for glob in ticket.scope):
             continue
-        _log.info("SCOPE001: %s outside %s's scope", file, ticket.id)
+        _log.debug("SCOPE001: %s outside %s's scope", file, ticket.id)
         violations.append(
             Violation(
                 rule="SCOPE001",
@@ -550,7 +550,7 @@ def prework_gate(
     if ticket.state != TicketState.IN_PROGRESS:
         return ()
     if sweep.is_nothing:
-        _log.info("PRE001: %s in-progress with no recorded sweep", ticket.id)
+        _log.debug("PRE001: %s in-progress with no recorded sweep", ticket.id)
         return (
             Violation(
                 rule="PRE001",
@@ -565,7 +565,7 @@ def prework_gate(
         )
     current_digest = _scope_digest(ticket, snapshot)
     if sweep.danger_some.digest != current_digest:
-        _log.info("PRE001: %s sweep is stale (digest moved)", ticket.id)
+        _log.debug("PRE001: %s sweep is stale (digest moved)", ticket.id)
         return (
             Violation(
                 rule="PRE001",
@@ -604,7 +604,7 @@ def invariant_gate(
             for item in inv.evidence
         )
         if not inv.evidence or not has_evidence:
-            _log.info("INV001: %s has no standing evidence", inv.id)
+            _log.debug("INV001: %s has no standing evidence", inv.id)
             violations.append(
                 Violation(
                     rule="INV001",
@@ -619,7 +619,7 @@ def invariant_gate(
                 )
             )
         if inv.id not in anchors:
-            _log.info("INV002: %s has no code anchor", inv.id)
+            _log.debug("INV002: %s has no code anchor", inv.id)
             violations.append(
                 Violation(
                     rule="INV002",
@@ -692,7 +692,7 @@ def _test001_002(
             continue
         edges = unit_edges.get(record.symref, [])
         if not edges:
-            _log.info("TEST001: %s has no unit test edge", record.symref)
+            _log.debug("TEST001: %s has no unit test edge", record.symref)
             violations.append(
                 Violation(
                     rule="TEST001",
@@ -912,7 +912,7 @@ def _test006(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     root = Path(snapshot.root)
     stamp = load_stamp(root)
     if stamp is None:
-        _log.info("TEST006: no coverage stamp at %s", root)
+        _log.debug("TEST006: no coverage stamp at %s", root)
         return (
             Violation(
                 rule="TEST006",
@@ -926,7 +926,7 @@ def _test006(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     for path, current_hash in snapshot.file_hashes.items():
         stamped = stamped_hashes.get(path)
         if stamped is not None and stamped != current_hash:
-            _log.info("TEST006: coverage stamp stale for %s", path)
+            _log.debug("TEST006: coverage stamp stale for %s", path)
             return (
                 Violation(
                     rule="TEST006",
@@ -1009,8 +1009,103 @@ def _load_test_config(root: Path) -> tuple[TestPolicy, tuple[SystemSpec, ...]]:
 # ---------------------------------------------------------------------------
 
 _ALL_GATES = frozenset(
-    {"drift", "coverage", "scope", "prework", "invariant", "test", "policy"}
+    {"drift", "coverage", "scope", "prework", "invariant", "test", "policy",
+     "doclink"}
 )
+
+_MD_LINK_RE = re.compile(r"\]\(([^)#\s]+)")
+
+
+def doclink_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
+    """DOC001: a doc file nothing links to is an error -- orphan docs rot.
+
+    The obligated set is discovered by GLOB (default `docs/**/*.md`,
+    `[gates.docs] include/exclude` in frob.toml), so a newly added doc file
+    is automatically covered the moment it exists. A doc counts as linked
+    when it carries a frob:describes anchor, is the target of a frob:doc
+    edge, or is reachable through relative markdown links crawled from the
+    root set (default docs/index.md and README.md).
+    """
+    import fnmatch
+
+    root = Path(root)
+    include = ["docs/**/*.md"]
+    exclude: list[str] = []
+    roots = ["docs/index.md", "README.md"]
+    toml_path = root / "frob.toml"
+    if toml_path.exists():
+        try:
+            with toml_path.open("rb") as fh:
+                section = tomllib.load(fh).get("gates", {}).get("docs", {})
+            include = list(section.get("include", include))
+            exclude = list(section.get("exclude", exclude))
+            roots = list(section.get("roots", roots))
+        except (OSError, tomllib.TOMLDecodeError) as exc:
+            _log.warning("doclink: frob.toml unreadable: %s", exc)
+
+    obligated: set[str] = set()
+    for glob in include:
+        for path in root.glob(glob):
+            rel = path.relative_to(root).as_posix()
+            if not any(fnmatch.fnmatch(rel, ex) for ex in exclude):
+                obligated.add(rel)
+    if not obligated:
+        _log.debug("doclink: no docs matched %s", include)
+        return ()
+
+    linked: set[str] = set()
+    for edge in snapshot.edges:
+        if edge.kind == EdgeKind.DESCRIBES:
+            linked.add(edge.src.split("#", 1)[0])
+        elif edge.kind == EdgeKind.DOC:
+            linked.add(edge.target.split("#", 1)[0])
+
+    # Crawl relative markdown links from the roots plus already-linked docs;
+    # a doc linked from a reachable doc is reachable.
+    queue = [r for r in roots if (root / r).exists()] + sorted(linked)
+    seen: set[str] = set()
+    while queue:
+        current = queue.pop()
+        if current in seen:
+            continue
+        seen.add(current)
+        current_path = root / current
+        if not current_path.exists():
+            continue
+        try:
+            text = current_path.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        base = PurePosixPath(current).parent
+        for target in _MD_LINK_RE.findall(text):
+            if target.startswith(("http://", "https://", "mailto:")):
+                continue
+            resolved = str(
+                PurePosixPath(*(base / target).parts)
+            ).replace("../", "")
+            for candidate in (resolved, target.lstrip("./")):
+                if candidate in obligated and candidate not in seen:
+                    linked.add(candidate)
+                    queue.append(candidate)
+
+    violations: list[Violation] = []
+    for orphan in sorted(obligated - linked - set(roots)):
+        _log.debug("DOC001: %s is unlinked", orphan)
+        violations.append(
+            Violation(
+                rule="DOC001",
+                severity=Severity.ERROR,
+                file=orphan,
+                line=0,
+                message=(
+                    f"DOC001: {orphan} is linked from nowhere; add a "
+                    f"frob:describes anchor, reference it with frob:doc, or "
+                    f"link it from {roots[0]}"
+                ),
+            )
+        )
+    _log.info("doclink: %d obligated, %d orphaned", len(obligated), len(violations))
+    return tuple(violations)
 
 
 # frob:doc docs/gates.md#public-api
@@ -1169,6 +1264,8 @@ def run_gates(cfg: GateConfig) -> Result[GateReport, GateError]:
         )
     if "policy" in selected:
         jobs["policy"] = lambda: policy_gate(rules, snapshot, diff)
+    if "doclink" in selected:
+        jobs["doclink"] = lambda: doclink_gate(Path(cfg.root), snapshot)
 
     from concurrent.futures import ThreadPoolExecutor
 
@@ -1230,6 +1327,7 @@ __all__ = [
     "invariant_gate",
     "load_coverage",
     "load_invariants",
+    "doclink_gate",
     "prework_gate",
     "record_prework",
     "run_gates",

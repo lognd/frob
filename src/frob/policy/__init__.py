@@ -261,7 +261,7 @@ def _pattern_violations(
         for _name, nodes in captures.items():
             for node in nodes:
                 line = node.start_point[0] + 1
-                _log.info("policy: %s matched at %s:%d", rule.id, rel_path, line)
+                _log.debug("policy: %s matched at %s:%d", rule.id, rel_path, line)
                 violations.append(
                     Violation(
                         rule=rule.id,
@@ -283,7 +283,7 @@ def _norm_violations(rule: PolicyRule, diff: Diff) -> tuple[Violation, ...]:
     total = sum(hunk.span[1] - hunk.span[0] + 1 for hunk in diff.hunks)
     if total <= rule.max_diff_lines:
         return ()
-    _log.info("policy: %s exceeded, %d > %d", rule.id, total, rule.max_diff_lines)
+    _log.debug("policy: %s exceeded, %d > %d", rule.id, total, rule.max_diff_lines)
     return (
         Violation(
             rule=rule.id,

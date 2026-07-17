@@ -767,3 +767,44 @@ class TestSeverityOverrides:
             ),
         )
         assert _apply_severity_overrides(violations, tmp_path) == violations
+
+
+class TestDoclinkGate:
+    # frob:tests src/frob/gates/__init__.py::doclink_gate
+    def test_orphan_doc_is_error_and_linked_docs_pass(self, tmp_path):
+        from frob.gates import doclink_gate
+        from frob.graph import build_graph
+
+        root = tmp_path / "repo"
+        (root / "docs").mkdir(parents=True)
+        (root / "src").mkdir()
+        (root / "docs" / "index.md").write_text(
+            "# Docs\n\n[linked](linked.md)\n", encoding="utf-8"
+        )
+        (root / "docs" / "linked.md").write_text("# Linked\n", encoding="utf-8")
+        (root / "docs" / "orphan.md").write_text("# Orphan\n", encoding="utf-8")
+        (root / "docs" / "described.md").write_text(
+            "<!-- frob:describes src/m.py::f -->\n# Described\n", encoding="utf-8"
+        )
+        (root / "src" / "m.py").write_text("def f():\n    return 1\n")
+
+        snap = build_graph(root, root / ".frob" / "cache.db").danger_ok
+        violations = doclink_gate(root, snap)
+        orphans = {v.file for v in violations}
+        assert orphans == {"docs/orphan.md"}
+        assert all(v.rule == "DOC001" for v in violations)
+
+    def test_new_file_is_auto_obligated_by_glob(self, tmp_path):
+        from frob.gates import doclink_gate
+        from frob.graph import build_graph
+
+        root = tmp_path / "repo"
+        (root / "docs").mkdir(parents=True)
+        (root / "docs" / "index.md").write_text("# Docs\n", encoding="utf-8")
+        cache = root / ".frob" / "cache.db"
+        snap = build_graph(root, cache).danger_ok
+        assert doclink_gate(root, snap) == ()
+
+        (root / "docs" / "brand_new.md").write_text("# New\n", encoding="utf-8")
+        violations = doclink_gate(root, build_graph(root, cache).danger_ok)
+        assert {v.file for v in violations} == {"docs/brand_new.md"}
