@@ -32,6 +32,7 @@ class App:
             perf_runner,
             release_runner,
             scaffold_runner,
+            stats_runner,
             test_runner,
             ticket_runner,
             vet_runner,
@@ -79,6 +80,8 @@ class App:
                 perf_runner.run(self._cfg)
             case Subcommand.release:
                 release_runner.run(self._cfg)
+            case Subcommand.stats:
+                stats_runner.run(self._cfg)
             case _:
                 _log.error(
                     "usage: frob "

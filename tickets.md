@@ -173,7 +173,7 @@ full per-ecosystem rules) tracked in the ticket body/docs notes.
 ```yaml
 id: T-0009
 title: 'frob stats: DORA-ish measurement from gitlog + tickets'
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-07-17'
@@ -187,6 +187,8 @@ acceptance: []
 threat: null
 ```
 frob stats: lead time, close rate, failure-log recurrence computed from gitlog + ticket timestamps -- measurement only, never a gate. Phase 9 (0.2.x).
+
+Delivered under T-0036.
 
 <!-- ticket:T-0010 -->
 ```yaml
@@ -903,3 +905,35 @@ threat: null
 frob.release computes the semver bump class from public sig digests;
 frob release stamp/check + the opt-in REL001 gate (runs only when a
 .frob-release.json manifest exists) enforce it. Delivers T-0003.
+
+<!-- ticket:T-0036 -->
+```yaml
+id: T-0036
+title: 'frob stats: DORA-ish delivery measurement (queue health + commit cadence)'
+state: done
+kind: feature
+origin: agent
+created: '2026-07-17'
+blocked_by: []
+parent: null
+scope:
+- src/frob/stats/**
+- src/frob/app/stats_runner.py
+- src/frob/app/app.py
+- src/frob/app/config.py
+- src/frob/__main__.py
+- tests/test_stats.py
+- docs/**
+evidence:
+- tests/test_stats.py::test_collect_combines_both
+- tests/test_stats.py::test_commit_stats_classifies_conventional_types
+attachments: []
+acceptance: []
+threat: null
+```
+## Done report
+
+frob stats reports ticket-queue health (state/kind counts, doable,
+blocked, failure-log entries) and commit cadence (per-week rate,
+conventional-type breakdown) from git + the queue. Measurement only,
+no gate. Delivers T-0009.

@@ -51,6 +51,8 @@ Two modules that support the above but are not yet fully re-platformed:
 - `docs/vet.md` -- policy/vetting notes referenced by `frob.gates`.
 - `docs/release.md` -- `frob.release`: mechanical semver from the
   public-API graph, `frob release stamp|check`, and the REL001 gate.
+- `docs/stats.md` -- `frob.stats`: DORA-ish delivery measurement (queue
+  health + commit cadence); measurement only, never a gate.
 
 ## Per-command references
 

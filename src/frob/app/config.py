@@ -32,6 +32,7 @@ class Subcommand(str, enum.Enum):
     vet = "vet"
     perf = "perf"
     release = "release"
+    stats = "stats"
 
 
 # frob:ticket T-0030
@@ -191,6 +192,11 @@ class AppConfig(BaseModel):
     release_path: Path | None = None
     release_json: bool = False
 
+    # stats
+    stats_path: Path | None = None
+    stats_days: int | None = None
+    stats_json: bool = False
+
     # perf
     perf_command: str | None = None  # profile|heat
     perf_path: Path | None = None
@@ -281,6 +287,7 @@ class AppConfig(BaseModel):
             "vet_path",
             "perf_path",
             "release_path",
+            "stats_path",
             "perf_annotate",
         ):
             val = getattr(args, path_field, None)
@@ -295,6 +302,7 @@ class AppConfig(BaseModel):
             "arch_max_class_methods",
             "gitlog_limit",
             "perf_top",
+            "stats_days",
         ):
             val = getattr(args, int_field, None)
             if val is not None:
@@ -374,6 +382,7 @@ class AppConfig(BaseModel):
             "test_fuzz",
             "test_json",
             "vet_json",
+            "stats_json",
             "perf_tests",
             "perf_json",
             "perf_smells",

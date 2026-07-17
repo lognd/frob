@@ -601,6 +601,16 @@ def _build_parser() -> argparse.ArgumentParser:
         "--path", dest="release_path", metavar="DIR", default="."
     )
 
+    # -- stats ---------------------------------------------------------------
+    stats_p = sub.add_parser(
+        "stats", help="delivery measurement: queue health + commit cadence"
+    )
+    stats_p.add_argument("--path", dest="stats_path", metavar="DIR", default=".")
+    stats_p.add_argument(
+        "--days", dest="stats_days", type=int, metavar="N", help="commit window (30)"
+    )
+    stats_p.add_argument("--json", dest="stats_json", action="store_true")
+
     return p
 
 
