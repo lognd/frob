@@ -25,6 +25,10 @@ Runs in order:
 7. `frob bind` -- pybind11/PyO3 BIND coverage
 8. `frob exports` -- missing `__init__.py` exports
 9. PyCharm inspection (if auto-located)
+10. `gates` -- `frob.gates.run_gates` (docs/gates.md): drift, coverage, scope,
+    pre-work, invariant, test, and policy rule violations. A load failure
+    (e.g. not a git repo, no `tickets/`) is a soft skip, not a check failure;
+    any `ERROR`-severity violation fails the stage like any other tool.
 
 Output order: errors first, then warnings, then notes. Each tool gets a
 one-line summary. Fails fast if errors are found.
@@ -39,7 +43,24 @@ frob check src/ --skip-dup
 frob check src/ --skip-arch
 frob check src/ --skip-bind
 frob check src/ --skip-exports
+frob check src/ --skip-gates
 ```
+
+### Gates integration flags
+
+```bash
+frob check --ticket T-0042             # explicit ticket context for scope/pre-work gates
+frob check --base main                 # base ref for the drift/coverage diff (default: main)
+frob check --only gates                # run only the gates stage (repeatable; any stage name)
+frob check --only ruff --only gates    # run ruff and gates only
+frob check --stamp-coverage            # record coverage.xml as the current stamp, then exit
+```
+
+`--only` accepts any stage name (`ruff`, `ty`, `cycle`, `dup`, `arch`, `bind`,
+`exports`, `gates`); when omitted, every non-skipped stage runs
+(gates included). `--stamp-coverage` is how `make coverage` records
+`.frob/coverage-stamp` after `pytest --cov` runs; TEST006 compares the stamp
+against the live graph snapshot on later `frob check` runs.
 
 ## Cycle severity
 

@@ -1,208 +1,189 @@
-# Agentic Workflow Guide
+# Agentic workflow
 
-How to use frob when acting as an orchestrator dispatching subagents.
-
----
-
-## Core principle: minimize token cost, maximize parallelism
-
-```
-orient -> investigate -> dispatch -> collect -> verify
-```
-
-Every step has a frob tool designed for it. Don't read files directly until
-you've exhausted cheaper options.
+How the human and a fleet of agents share one work surface: the ticket
+queue, gated by `frob check`. Nothing is done until it is a closed ticket
+with evidence; nothing escapes review because the gates are mechanical, not
+a matter of an agent remembering to ask.
 
 ---
 
-## Step 1: Orient
+## The human/AI split
+
+The human's job is to queue outcomes, not implementation steps:
 
 ```bash
-frob map src/                    # ~200 tokens: full symbol inventory
-frob gitlog --level user -n 10   # ~100 tokens: recent user-visible changes
-frob todo list                   # cross-session TODOs from prior sessions
+frob ticket new --title "..." --kind feature --body "..."
+frob ticket attach T-0040        # paste a clipboard mockup, if stdin is a TTY
 ```
 
-`frob map` tells you which files are relevant. Read nothing else yet.
+`frob ticket new`/`attach` offer clipboard paste only interactively; agents
+and CI always pass explicit file paths (see `docs/tickets.md`).
+
+Everything downstream -- decomposition, implementation, review, proof -- is
+an agent's job, dispatched through the roles below and defined in
+`agents/*/SKILL.md`.
 
 ---
 
-## Step 2: Investigate
+## The roles
 
-For each relevant symbol, use `frob ctx` -- it auto-picks the right depth:
+| Role | Agent | Reads | Writes |
+|---|---|---|---|
+| Decompose a goal into work | `agents/planner` | the goal, `frob ticket list` | ticket tree (`parent`/`blocked_by`) |
+| Implement one ticket | `agents/implementer` | the ticket, its scope | code, directives, Done report |
+| Verify a Done report | `agents/reviewer` | diff, evidence, gate output | a verdict (APPROVE/REJECT) -- never fixes |
+| Close invariant gaps | `agents/prover` | `frob check --only invariant` | property tests, policy rules, evidence lists |
+| Audit one module boundary | `agents/interface-auditor` | one package's public API | tickets only |
+| Run a security sweep | `agents/security-auditor` | the repo/subtree | policy rules + invariants + tickets, always all three |
+| Fix one failing test | `agents/debugger` | the error, the target function | a fix, or a `frob ticket fail` entry |
 
-```bash
-frob ctx src/frob/edit/__init__.py replace
-# -> tier=bundle, reason=24 lines, 3 deps
-# -> emits function + import signatures
-```
-
-Only reach past `frob ctx` when you need something specific:
-
-| Need | Tool |
-|------|------|
-| Who calls this function? | `frob xref SYMBOL src/` |
-| What's exported from this package? | `frob exports src/pkg/` |
-| Are there cycles in the new dep graph? | `frob cycle src/` |
-| Is this pattern already abstracted? | `frob dup src/` |
-| What do the docstrings say? | `frob docs FILE --search QUERY` |
-| Full file skeleton without bodies | `frob outline FILE` |
+No agent holds private state. The ticket queue, `frob.lock`, `invariants/`,
+and `frob.toml` policy are the only durable memory; a mission that doesn't
+write to one of those did not happen, as far as the next session is
+concerned.
 
 ---
 
-## Step 3: Quality baseline
-
-Before dispatching, understand what's already broken:
+## skills/plan: goal -> ticket tree
 
 ```bash
-frob check src/
+frob map src/
+frob ticket list                 # don't replan what's already queued
 ```
 
-This prevents agents from reporting pre-existing issues as their own errors.
+`skills/plan` orients (without reading source files), resolves design risks
+before decomposition locks in scope, then dispatches `agents/planner`. The
+planner never implements -- it emits `frob ticket new` calls with
+`parent`/`blocked_by` edges and a narrow `scope` per leaf, and ends with the
+full list of ticket ids it created. If a leaf ticket's scope is `src/**`,
+it isn't decomposed; split it further.
 
 ---
 
-## Step 4: Dispatch agents
-
-### Small tasks (one function, one agent)
+## skills/next: the work loop
 
 ```bash
-frob mission new fix \
-  --file src/frob/edit/__init__.py \
-  --target replace \
-  --error "AttributeError: 'NoneType' object has no attribute 'splitlines'"
-# -> .frob/missions/a1b2c3d4.md  (briefing with frob ctx embedded)
+frob ticket doable                # ordered, unblocked, oldest-first
 ```
 
-Give the mission ID to the sub-agent. It reads the briefing, does the work,
-and calls `frob mission done a1b2c3d4` or `frob mission stuck a1b2c3d4 reason`.
+`skills/next` is the loop that pops one ticket, dispatches `implementer`,
+dispatches `reviewer` against the same ticket id, and either closes
+(APPROVE) or hands the reviewer's findings back to a fresh `implementer`
+dispatch (REJECT). It re-queries `frob ticket doable` every pass, since
+closing one ticket can unblock others. It never implements directly and
+never closes over a REJECT.
 
-### Parallel tasks editing different files
+### implementer: pre-work gate, scope, evidence
 
 ```bash
-# Create isolated worktrees
-frob dispatch create "fix-edit"
-frob dispatch create "add-ctx-tests"
-# Each agent commits in their worktree independently
-
-# Collect after agents finish
-frob dispatch collect <id1>
-frob dispatch collect <id2>
+frob ticket start T-0042          # pre-work sweep: dup + xref over scope
+# implement strictly within scope; add frob:ticket / frob:tests directives
+frob check --ticket T-0042        # scope/pre-work/drift/coverage/test gates
+frob ticket close T-0042          # requires non-empty evidence + Done report
 ```
 
-### Parallel tasks editing the same file
-
-Use the staging model instead of dispatch (lighter weight):
+Anything found outside the ticket's declared `scope` is filed as a new
+ticket, never folded into the current diff:
 
 ```bash
-# Agent A stages foo, Agent B stages bar -- no contention
-echo "$new_foo" | frob edit src/file.py foo --stage
-echo "$new_bar" | frob edit src/file.py bar --stage   # concurrent, safe
-
-# After both agents done:
-frob edit src/file.py --commit      # atomic: re-parse, apply both, write once
+frob ticket new --title "..." --kind bug --scope "..." --body "found while working T-0042"
 ```
+
+### reviewer: verifying the done-report
+
+The reviewer re-runs `frob check --ticket T-0042`, reads the actual diff
+against the claimed scope, opens every evidence test node id, and confirms
+docs that carry a `doc` edge were genuinely updated (not rubber-stamp
+`frob ack`s). One failed checklist item is REJECT -- see `agents/reviewer`
+for the full six-point checklist. The reviewer never fixes and never calls
+`frob ticket close` itself; its verdict is the only output.
 
 ---
 
-## Step 5: Verify
+## skills/audit: interface + security sweeps
 
 ```bash
-frob check src/                       # aggregate gate
-pytest tests/ --tb=short 2>&1 | frob parse pytest --exit-code $?
+frob map src/                     # enumerate package boundaries
+frob check --only test             # TEST003 already flags known interfaces
 ```
 
----
-
-## Agent selection guide
-
-| Task | Agent | Model |
-|------|-------|-------|
-| Implement one stubbed function | implementer | Haiku |
-| Fix one failing test | debugger | Haiku |
-| Write unit tests for one function | tester | Haiku |
-| Write CLI end-to-end tests | system-tester | Sonnet |
-| Write integration tests | integration-tester | Sonnet |
-| Design a new module | architect | Sonnet |
-| Review code for issues | reviewer | Sonnet |
-| Safe structural refactor | refactorer | Sonnet |
-| Quick yes/no architectural decision | oracle | Opus |
-| Build base classes / protocols | smart-start | Sonnet |
-| Decompose + coordinate large task | orchestrator | Sonnet |
+One `interface-auditor` mission per package boundary (never repo-wide in a
+single mission -- that produces shallow findings), plus one repo-wide
+`security-auditor` mission. Both are report-only: every finding becomes a
+ticket, and every security finding additionally produces a policy rule (or
+tree-sitter query) and an `invariants/INV-###.md` entry, so a fix without a
+rule that would have caught it recurring is treated as half-done.
 
 ---
 
-## Token budget reference
-
-| Operation | Typical tokens |
-|-----------|--------------|
-| `frob map src/` | 150-300 |
-| `frob outline FILE` | 30-80 |
-| `frob ctx FILE SYMBOL` (stub tier) | 20-80 |
-| `frob ctx FILE SYMBOL` (bundle tier) | 200-600 |
-| `frob ctx FILE SYMBOL` (full tier) | 400-1200 |
-| `frob xref SYMBOL src/` | 50-150 |
-| `frob gitlog --level user -n 10` | 50-150 |
-| `frob parse pytest` (100-test run) | 10-20 |
-| `frob parse ruff` | 5-30 |
-| Reading a file directly | 300-5,000+ |
-
----
-
-## Cross-session tracking
+## skills/prove: closing invariant gaps
 
 ```bash
-frob todo add "reviewer flagged god class in check/__init__.py"
-frob todo add "need integration test for dispatch + mission"
-frob todo list   # next session: pick up where you left off
+frob check --only invariant       # INV001 (no evidence) / INV002 (no anchor)
 ```
+
+`agents/prover` anchors missing `frob:invariant` comments and writes
+property tests (hypothesis-style where the property is a "for all inputs"
+claim) or policy rules as evidence, looping until `frob check --only
+invariant` is clean. It never implements missing enforcement code itself --
+that's a `kind: invariant` ticket for `implementer` to pick up.
 
 ---
 
-## Full example: fix a failing test + add coverage
+## `frob check` as the gate every agent must pass
+
+Every agent's contract ends the same way: `frob check` (scoped to the
+active ticket via `--ticket`, or the relevant `--only` stage) must be clean,
+or every remaining violation must carry a reasoned
+`frob:waive RULE-ID reason="..."`. A ticket closed with failing gates is
+worse than one left open -- it defeats the reason the queue exists.
+
+`frob test --base main` is the executable counterpart: `frob check` proves
+the test bindings exist (`TEST001`-`TEST006`), `frob test` runs exactly the
+touched-set tests those bindings declare, before any Done report is
+written.
+
+---
+
+## Worktree-per-agent
+
+Dispatching multiple agents in parallel means one git worktree per agent,
+each on its own branch:
 
 ```bash
-# 1. Orient
-frob map src/frob/
-frob gitlog --level user -n 5
-
-# 2. Understand the failure
-frob ctx src/frob/edit/__init__.py _apply_patch_to_content
-
-# 3. Check baseline
-frob check src/ --skip-ty
-
-# 4. Brief the fix agent
-frob mission new fix \
-  --file src/frob/edit/__init__.py \
-  --target _apply_patch_to_content \
-  --error "EditError.ParseFailed returned for valid Python"
-# [Haiku debugger agent handles it, calls mission done]
-
-# 5. Brief the test agent
-frob mission new test \
-  --file src/frob/edit/__init__.py \
-  --target _apply_patch_to_content
-# [Haiku tester agent handles it, calls mission done]
-
-# 6. Collect (they were both staging to the same file)
-frob edit src/frob/edit/__init__.py --commit
-
-# 7. Verify
-frob check src/
-pytest tests/unit/test_edit_staging.py --tb=short 2>&1 | frob parse pytest --exit-code $?
+git worktree add ../frob-t0042 -b T-0042-clipboard-attach
 ```
+
+This is a first-class target, not an afterthought (see `docs/testing.md`
+"Git worktrees"):
+
+- **`frob.gitio` is the one git subprocess seam**, and `repo_root` resolves
+  via `git rev-parse --show-toplevel`, which is correct from inside a linked
+  worktree -- frob never touches `.git` internals directly.
+- **`.frob/` is per-worktree, never shared.** The graph cache, the pre-work
+  sweep, and the pytest-collection cache all live at each worktree's own
+  root; sharing them across checkouts of different commits would poison
+  incremental hashing. This falls straight out of `.frob/` being gitignored
+  and always rebuildable.
+- **Base semantics are branch-relative.** `frob test`/`frob check` diff
+  against `merge-base(HEAD, base)`, so in an agent's worktree the touched
+  set is exactly that agent's own delta -- the same command means "test my
+  changes" whether run in the main checkout or any worktree.
+- **Tracked truth merges like code.** Tickets, invariants, `frob.lock`, and
+  comment directives are ordinary tracked files; worktree branches carry
+  their own view and merge through git like any other change. The one known
+  seam: two worktrees can allocate the same sequential ticket id
+  concurrently -- `frob ticket list` surfaces the collision as
+  `DuplicateId` post-merge, and a `frob ticket renumber` remedy is deferred
+  post-0.1.0 (see `TODO.md`).
 
 ---
 
 ## BLOCKER handling
 
-If a sub-agent returns a BLOCKER:
-
-1. Read the blocker message carefully.
-2. Check if multiple agents report the same structural problem.
-3. If yes: dispatch a smart-start or architect agent to fix the root cause FIRST.
-4. Reissue the original missions after the structural fix lands.
-
-Never issue a workaround mission for a reported blocker. That creates tech debt that
-compounds across agent generations.
+If `implementer` or `debugger` returns a BLOCKER (the fix is structural,
+would mask a recurring bug, or requires a public API change it isn't
+authorized to make): do not patch around it. Read the blocker, check
+whether other agents are hitting the same root cause, resolve the
+structural problem first (a fresh ticket, possibly `kind: invariant` if it
+implies a property that must hold), then reissue the original ticket.
