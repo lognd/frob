@@ -56,6 +56,9 @@ Two modules that support the above but are not yet fully re-platformed:
 - `docs/modules/fuzz.md` -- `frob.fuzz`: the 0.2.0 enforced property fuzzing design
   (Arbitrary protocol, FUZZ gates).
 - `docs/modules/vet.md` -- policy/vetting notes referenced by `frob.gates`.
+- `docs/modules/cve.md` -- `frob.cve`: pydantic v2 models and a local-mirror
+  parser for CVE Record Format v5 (cvelistV5); no network, parser+models
+  only (vet integration is T-0147).
 - `docs/modules/release.md` -- `frob.release`: mechanical semver from the
   public-API graph, `frob release stamp|check`, and the REL001 gate.
 - `docs/modules/stats.md` -- `frob.stats`: DORA-ish delivery measurement (queue
