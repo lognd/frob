@@ -39,6 +39,43 @@ class ObserveDecl(BaseModel):
     to: str
 
 
+# frob:doc docs/strata/surface.md#std-deploy
+class CanaryStageDecl(BaseModel):
+    """A parsed `LEVEL for QUANTITY` canary stage (T-0136), one entry in
+    `DeployDecl.stages`.
+
+    Mirrors `_models.py::CanaryStage` field for field, minus
+    `max_error_rate` -- the surface grammar has no syntax for the abort
+    predicate yet (not requested by T-0136's spec), so the elaborator
+    always passes `None` for it.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    level: str
+    bake: Quantity
+
+
+# frob:doc docs/strata/surface.md#std-deploy
+class DeployDecl(BaseModel):
+    """A parsed `on deploy { canary { ... }; endorsed_by ...; rollback within t }`
+    node property (T-0136), mirroring `_models.py::DeployContract` field for field.
+
+    `stages`/`endorsed_by` are grammar-optional and default to `()` --
+    `DeployContract.stages`/`endorsement_chain` accept an empty tuple as
+    "no canary schedule"/"no endorsement required" rather than the parser
+    inventing a silent default. `rollback_budget` is mandatory (the parser
+    fails closed with no `rollback within QUANTITY` clause), matching
+    `DeployContract.rollback_budget` having no default.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    stages: tuple[CanaryStageDecl, ...] = ()
+    endorsed_by: tuple[str, ...] = ()
+    rollback_budget: Quantity
+
+
 # frob:doc docs/strata/surface.md#parser
 class NodeDecl(BaseModel):
     """A parsed `node` statement, one entry in a `Module`."""
@@ -55,6 +92,12 @@ class NodeDecl(BaseModel):
     errors_total: bool = False
     panics_contained_by: str | None = None
     observe: ObserveDecl | None = None
+    # `code GLOB+`, T-0132; elaborated to `code=<glob>` attrs
+    code: tuple[str, ...] = ()
+    # `may "CAPABILITY"` atoms, T-0132; elaborated straight to Node.may
+    may: tuple[str, ...] = ()
+    # `on deploy { ... }`, T-0136; elaborated straight to Node.deploy
+    deploy: DeployDecl | None = None
 
 
 # frob:doc docs/strata/surface.md#parser
@@ -460,6 +503,29 @@ class PolicyDecl(BaseModel):
         }
 
 
+# frob:doc docs/strata/surface.md#std-secrets
+class SecretDecl(BaseModel):
+    """A parsed `secret ID { issued_by ...; audience { ... }; lifetime ...;
+    revoke ... }` statement (T-0136), one entry in a `Module`.
+
+    Mirrors `_secrets.py::SecretSpec` field for field -- the elaborator
+    (`_elaborate.py`) builds a `SecretSpec` straight from this decl and
+    calls the landed `elaborate_secret` (T-0082), never re-validating
+    issuer/audience/lifetime/revoke logic here (charter law 1: a vocabulary
+    is a pure function, defined once). `revoke` is grammar-optional -- a
+    missing revocation SLA fails closed inside `elaborate_secret`
+    (`StrataError.MissingRevocation`), not at parse time.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    id: str
+    issued_by: str
+    audience: tuple[str, ...] = ()
+    lifetime: Quantity
+    revoke: Quantity | None = None
+
+
 # frob:doc docs/strata/surface.md#parser
 class Module(BaseModel):
     """A whole parsed source file: exactly the shape the Rust parser emits."""
@@ -480,3 +546,4 @@ class Module(BaseModel):
     policies: tuple[PolicyDecl, ...] = ()
     operations: tuple[OperationDecl, ...] = ()
     scenarios: tuple[ScenarioDecl, ...] = ()
+    secrets: tuple[SecretDecl, ...] = ()

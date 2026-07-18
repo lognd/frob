@@ -46,6 +46,45 @@ class TestParseModule:
         assert node.capacity.replicas_max == 8
 
     # frob:tests src/frob/strata/_parse.py::parse_module kind="unit"
+    def test_parses_node_code_globs_and_may_capabilities(self):
+        # T-0132: `code=<glob>` / `may <capability>` surface grammar,
+        # STRING-quoted since globs/capabilities carry `/`, `*`, `.`, `:`.
+        text = """
+        module m
+        node api : trusted {
+            code "src/frob/**" "tests/frob/**";
+            may "net.out:stripe.com";
+            may "fs.read:/etc/tls";
+        }
+        """
+        module = parse_module(text).danger_ok
+        node = module.nodes[0]
+        assert node.code == ("src/frob/**", "tests/frob/**")
+        assert node.may == ("net.out:stripe.com", "fs.read:/etc/tls")
+
+    # frob:tests src/frob/strata/_parse.py::parse_module kind="unit"
+    def test_node_without_code_or_may_defaults_empty(self):
+        # T-0132: pre-existing sources without code/may statements parse
+        # identically to before -- both fields default to an empty tuple.
+        module = parse_module("module m\nnode api : trusted").danger_ok
+        node = module.nodes[0]
+        assert node.code == ()
+        assert node.may == ()
+
+    # frob:tests src/frob/strata/_parse.py::parse_module kind="unit"
+    def test_may_bare_ident_is_parse_failed(self):
+        # T-0132: capability atoms must be STRING-quoted, not IDENT.
+        text = """
+        module m
+        node api : trusted {
+            may net.out;
+        }
+        """
+        result = parse_module(text)
+        assert result.is_err
+        assert result.danger_err is StrataError.ParseFailed
+
+    # frob:tests src/frob/strata/_parse.py::parse_module kind="unit"
     def test_parses_flow_with_all_properties_and_units(self):
         text = """
         module m

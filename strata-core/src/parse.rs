@@ -231,6 +231,7 @@ struct ModuleAst {
     policies: Vec<serde_json::Value>,
     operations: Vec<serde_json::Value>,
     scenarios: Vec<serde_json::Value>,
+    secrets: Vec<serde_json::Value>,
 }
 
 impl Parser {
@@ -423,6 +424,9 @@ impl Parser {
         let mut errors_total = false;
         let mut panics_contained_by: Option<String> = None;
         let mut observe: Option<serde_json::Value> = None;
+        let mut code: Vec<String> = Vec::new();
+        let mut may: Vec<String> = Vec::new();
+        let mut deploy: Option<serde_json::Value> = None;
         if self.at_symbol('{') {
             self.advance();
             loop {
@@ -459,6 +463,38 @@ impl Parser {
                     // node attr "errors_total" and requires an observe block.
                     self.advance();
                     errors_total = true;
+                } else if self.at_keyword("code") {
+                    // T-0132: `code GLOB+` -- one or more STRING-quoted
+                    // globs (surface.md#grammar-sketch); STRING rather than
+                    // IDENT because globs carry `/` and `*`, neither a
+                    // valid ident char. Elaborated to `code=<glob>` node
+                    // attrs, one per glob (T-0078 attr convention).
+                    self.advance();
+                    code.push(self.expect_string("code glob")?);
+                    while matches!(self.cur().kind, TokKind::Str(_)) {
+                        code.push(self.expect_string("code glob")?);
+                    }
+                } else if self.at_keyword("may") {
+                    // T-0132: `may CAPABILITY` -- a STRING-quoted
+                    // capability atom (e.g. "net.out:stripe.com"); STRING
+                    // rather than IDENT because capability atoms carry `.`
+                    // and `:`, neither a valid ident char. Repeatable via
+                    // multiple `may "...";` statements; lands directly in
+                    // `Node.may` (no attr encoding needed, unlike `code`).
+                    self.advance();
+                    may.push(self.expect_string("may capability")?);
+                } else if self.at_keyword("on") {
+                    // T-0136: `on deploy { canary { ... }; endorsed_by ...;
+                    // rollback within QUANTITY }` -- a node's deploy
+                    // contract (docs/strata/surface.md#std-deploy, T-0083's
+                    // landed kernel construct). `on crash`/`on breach` are
+                    // still unimplemented surface syntax (T-0083's own
+                    // deferral note), so `deploy` is the only `on` keyword
+                    // this parser accepts today; anything else is a parse
+                    // error, not a silent no-op (law 2).
+                    self.advance();
+                    self.expect_keyword("deploy")?;
+                    deploy = Some(self.parse_on_deploy_block()?);
                 } else if self.at_keyword("panics_contained_by") {
                     // T-0070: names the crash-boundary supervisor node id;
                     // reference validity is an elaboration-time check.
@@ -521,6 +557,157 @@ impl Parser {
             "errors_total": errors_total,
             "panics_contained_by": panics_contained_by,
             "observe": observe,
+            "code": code,
+            "may": may,
+            "deploy": deploy,
+        }));
+        Ok(())
+    }
+
+    /// deploy_block := "{" deploy_prop (";" deploy_prop)* "}"
+    /// deploy_prop  := "canary" "{" canary_stage ("," canary_stage)* "}"
+    ///               | "endorsed_by" REF ("," REF)*
+    ///               | "rollback" "within" QUANTITY
+    /// canary_stage := IDENT "for" QUANTITY
+    ///
+    /// WHY: `on deploy` desugars straight onto `_models.py::DeployContract`
+    /// (T-0083's landed kernel construct, no new primitive here) --
+    /// `canary`/`endorsed_by` are optional and default to an empty list
+    /// (the elaborator supplies `()`, matching `DeployContract.stages`/
+    /// `endorsement_chain`'s own semantics of "no stages/no endorsement
+    /// required" rather than a parser default), but `rollback within
+    /// QUANTITY` is mandatory -- `DeployContract.rollback_budget` has no
+    /// default, and a missing rollback bound is exactly the "half a
+    /// containment story" charter law 2 refuses to leave implicit
+    /// (docs/strata/surface.md#std-deploy).
+    fn parse_on_deploy_block(&mut self) -> Result<serde_json::Value, ParseError> {
+        self.expect_symbol('{')?;
+        let mut stages: Vec<serde_json::Value> = Vec::new();
+        let mut endorsed_by: Vec<String> = Vec::new();
+        let mut rollback_budget: Option<serde_json::Value> = None;
+        loop {
+            if self.at_symbol('}') {
+                break;
+            }
+            if self.at_keyword("canary") {
+                self.advance();
+                self.expect_symbol('{')?;
+                if !self.at_symbol('}') {
+                    stages.push(self.parse_canary_stage()?);
+                    while self.at_symbol(',') {
+                        self.advance();
+                        stages.push(self.parse_canary_stage()?);
+                    }
+                }
+                self.expect_symbol('}')?;
+            } else if self.at_keyword("endorsed_by") {
+                self.advance();
+                endorsed_by.push(self.expect_ident("endorsed_by boundary id")?);
+                while self.at_symbol(',') {
+                    self.advance();
+                    endorsed_by.push(self.expect_ident("endorsed_by boundary id")?);
+                }
+            } else if self.at_keyword("rollback") {
+                self.advance();
+                self.expect_keyword("within")?;
+                rollback_budget = Some(self.parse_quantity("rollback budget")?);
+            } else {
+                return self.err("unknown deploy property");
+            }
+            if self.at_symbol(';') {
+                self.advance();
+            } else {
+                break;
+            }
+        }
+        self.expect_symbol('}')?;
+        let rollback_budget = match rollback_budget {
+            Some(r) => r,
+            None => return self.err("on deploy block needs a rollback within QUANTITY clause"),
+        };
+        Ok(json!({
+            "stages": stages,
+            "endorsed_by": endorsed_by,
+            "rollback_budget": rollback_budget,
+        }))
+    }
+
+    /// canary_stage := IDENT "for" QUANTITY
+    fn parse_canary_stage(&mut self) -> Result<serde_json::Value, ParseError> {
+        let level = self.expect_ident("canary stage level")?;
+        self.expect_keyword("for")?;
+        let bake = self.parse_quantity("canary stage bake duration")?;
+        Ok(json!({"level": level, "bake": bake}))
+    }
+
+    /// secret := "secret" ID "{" secret_prop (";" secret_prop)* "}"
+    /// secret_prop := "issued_by" REF | "audience" "{" REF ("," REF)* "}"
+    ///              | "lifetime" QUANTITY | "revoke" QUANTITY
+    ///
+    /// WHY: mirrors `_secrets.py::SecretSpec` field for field (T-0082's
+    /// landed kernel construct, docs/strata/surface.md#std-secrets's
+    /// normative sketch: `secret X issued_by Y audience [...] lifetime T
+    /// revoke T'`). `revoke` is grammar-optional -- `SecretSpec.revoke` is
+    /// `Quantity | None`, and the mandatory-revocation rule is enforced by
+    /// `_secrets.py::_validate_secret_bounds` (`MissingRevocation`) at
+    /// elaboration time, not here, matching how `code`/`may`'s downstream
+    /// validation already lives in the elaborator rather than the parser.
+    fn parse_secret(&mut self, ast: &mut ModuleAst) -> Result<(), ParseError> {
+        self.advance(); // 'secret'
+        let id = self.expect_ident("secret id")?;
+        self.expect_symbol('{')?;
+        let mut issued_by: Option<String> = None;
+        let mut audience: Vec<String> = Vec::new();
+        let mut lifetime: Option<serde_json::Value> = None;
+        let mut revoke: Option<serde_json::Value> = None;
+        loop {
+            if self.at_symbol('}') {
+                break;
+            }
+            if self.at_keyword("issued_by") {
+                self.advance();
+                issued_by = Some(self.expect_ident("secret issuing authority")?);
+            } else if self.at_keyword("audience") {
+                self.advance();
+                self.expect_symbol('{')?;
+                if !self.at_symbol('}') {
+                    audience.push(self.expect_ident("secret audience member")?);
+                    while self.at_symbol(',') {
+                        self.advance();
+                        audience.push(self.expect_ident("secret audience member")?);
+                    }
+                }
+                self.expect_symbol('}')?;
+            } else if self.at_keyword("lifetime") {
+                self.advance();
+                lifetime = Some(self.parse_quantity("secret lifetime")?);
+            } else if self.at_keyword("revoke") {
+                self.advance();
+                revoke = Some(self.parse_quantity("secret revoke SLA")?);
+            } else {
+                return self.err("unknown secret property");
+            }
+            if self.at_symbol(';') {
+                self.advance();
+            } else {
+                break;
+            }
+        }
+        self.expect_symbol('}')?;
+        let issued_by = match issued_by {
+            Some(i) => i,
+            None => return self.err("secret needs an issued_by clause"),
+        };
+        let lifetime = match lifetime {
+            Some(l) => l,
+            None => return self.err("secret needs a lifetime clause"),
+        };
+        ast.secrets.push(json!({
+            "id": id,
+            "issued_by": issued_by,
+            "audience": audience,
+            "lifetime": lifetime,
+            "revoke": revoke,
         }));
         Ok(())
     }
@@ -1643,7 +1830,7 @@ impl Parser {
                 "module" => self.parse_module(&mut ast, &mut seen_module)?,
                 "node" | "flow" | "boundary" | "assert" | "assume" | "refine" | "store"
                 | "cache" | "queue" | "cdn" | "balancer" | "policy" | "operation"
-                | "scenario" => {
+                | "scenario" | "secret" => {
                     if !seen_module {
                         return self.err("statement before module declaration");
                     }
@@ -1662,6 +1849,7 @@ impl Parser {
                         "policy" => self.parse_policy(&mut ast)?,
                         "operation" => self.parse_operation(&mut ast)?,
                         "scenario" => self.parse_scenario(&mut ast)?,
+                        "secret" => self.parse_secret(&mut ast)?,
                         _ => unreachable!(),
                     }
                 }
@@ -1810,6 +1998,161 @@ mod tests {
         assert_eq!(v["claims"][0]["assumed"], true);
         assert_eq!(v["claims"][0]["owner"], "alice");
         assert_eq!(v["claims"][0]["review"], "2026-08-01");
+    }
+
+    #[test]
+    fn parses_node_code_globs_and_may_capabilities() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0132: code=<glob> / may <capability> surface grammar.
+        let v = ok(r#"module m
+            node api : trusted {
+                code "src/frob/**" "tests/frob/**";
+                may "net.out:stripe.com";
+                may "fs.read:/etc/tls";
+            }"#);
+        let n = &v["nodes"][0];
+        assert_eq!(n["code"][0], "src/frob/**");
+        assert_eq!(n["code"][1], "tests/frob/**");
+        assert_eq!(n["may"][0], "net.out:stripe.com");
+        assert_eq!(n["may"][1], "fs.read:/etc/tls");
+    }
+
+    #[test]
+    fn parses_node_without_code_or_may_defaults_empty() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0132: pre-existing sources with no code/may statements must
+        // still elaborate -- both fields default to an empty list.
+        let v = ok("module m\nnode api : trusted");
+        let n = &v["nodes"][0];
+        assert_eq!(n["code"].as_array().unwrap().len(), 0);
+        assert_eq!(n["may"].as_array().unwrap().len(), 0);
+    }
+
+    #[test]
+    fn error_code_requires_at_least_one_glob() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0132: `code` is glob+, not glob*; a bare `code;` is a parse
+        // error rather than silently binding zero globs (law 2).
+        let e = err(r#"module m
+            node api : trusted {
+                code;
+            }"#);
+        assert_eq!(e["message"], "expected code glob");
+    }
+
+    #[test]
+    fn error_may_requires_string_not_ident() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0132: capability atoms are STRING-quoted; a bare ident is
+        // rejected rather than silently truncated at the first `.`/`:`.
+        let e = err(r#"module m
+            node api : trusted {
+                may net.out;
+            }"#);
+        assert_eq!(e["message"], "expected may capability");
+    }
+
+    #[test]
+    fn parses_secret_construct() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0136: `secret ID { issued_by ...; audience { ... }; lifetime
+        // ...; revoke ... }` -- surface syntax for `_secrets.py::SecretSpec`.
+        let v = ok(r#"module m
+            node vault : trusted
+            node api : trusted
+            secret db_creds {
+                issued_by vault;
+                audience { api };
+                lifetime 24 h;
+                revoke 5 min;
+            }"#);
+        let s = &v["secrets"][0];
+        assert_eq!(s["id"], "db_creds");
+        assert_eq!(s["issued_by"], "vault");
+        assert_eq!(s["audience"][0], "api");
+        assert_eq!(s["lifetime"]["value"], 24.0);
+        assert_eq!(s["lifetime"]["unit"], "h");
+        assert_eq!(s["revoke"]["value"], 5.0);
+        assert_eq!(s["revoke"]["unit"], "min");
+    }
+
+    #[test]
+    fn parses_secret_without_revoke_or_audience() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0136: `revoke`/`audience` are grammar-optional -- the mandatory-
+        // revocation rule fails closed in the elaborator
+        // (`_secrets.py::_validate_secret_bounds`), not the parser.
+        let v = ok(r#"module m
+            node vault : trusted
+            secret db_creds {
+                issued_by vault;
+                lifetime 24 h;
+            }"#);
+        let s = &v["secrets"][0];
+        assert_eq!(s["audience"].as_array().unwrap().len(), 0);
+        assert!(s["revoke"].is_null());
+    }
+
+    #[test]
+    fn error_secret_requires_issued_by() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0136: `issued_by` is mandatory -- a credential with no named
+        // issuing authority is a dangling promise, never a silent default.
+        let e = err(r#"module m
+            secret db_creds {
+                lifetime 24 h;
+            }"#);
+        assert_eq!(e["message"], "secret needs an issued_by clause");
+    }
+
+    #[test]
+    fn parses_on_deploy_block() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0136: `on deploy { canary { ... }; endorsed_by ...; rollback
+        // within ... }` -- surface syntax for `_models.py::DeployContract`.
+        let v = ok(r#"module m
+            node api : trusted {
+                on deploy {
+                    canary { canary for 10 min, staged for 30 min };
+                    endorsed_by review_gate, build_gate;
+                    rollback within 5 min;
+                }
+            }"#);
+        let d = &v["nodes"][0]["deploy"];
+        assert_eq!(d["stages"][0]["level"], "canary");
+        assert_eq!(d["stages"][0]["bake"]["value"], 10.0);
+        assert_eq!(d["stages"][1]["level"], "staged");
+        assert_eq!(d["endorsed_by"][0], "review_gate");
+        assert_eq!(d["endorsed_by"][1], "build_gate");
+        assert_eq!(d["rollback_budget"]["value"], 5.0);
+        assert_eq!(d["rollback_budget"]["unit"], "min");
+    }
+
+    #[test]
+    fn parses_node_without_on_deploy_defaults_null() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0136: pre-existing sources with no `on deploy` block must still
+        // elaborate -- `deploy` defaults to null (no contract declared).
+        let v = ok("module m\nnode api : trusted");
+        assert!(v["nodes"][0]["deploy"].is_null());
+    }
+
+    #[test]
+    fn error_on_deploy_requires_rollback_budget() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0136: `rollback_budget` has no default on `DeployContract`
+        // (mandatory containment bound, charter law 2) -- a deploy block
+        // with no rollback clause is a parse error, not an empty default.
+        let e = err(r#"module m
+            node api : trusted {
+                on deploy {
+                    endorsed_by review_gate;
+                }
+            }"#);
+        assert_eq!(
+            e["message"],
+            "on deploy block needs a rollback within QUANTITY clause"
+        );
     }
 
     #[test]

@@ -49,6 +49,81 @@ quantity    := number unit | number
 Comments are `//`; docs attach with `///` and are drift-checked once
 `.strata` joins `frob.lang` (T-0077).
 
+### `node` grammar (implemented; T-0132 closes the `code=`/`may` gap,
+T-0136 adds `on deploy`)
+
+The construct actually implemented by `strata-core/src/parse.rs::parse_node`
+today is spelled `node`, not the future `component` shown in the sketch
+above (T-0059 renames it once `runs on`/`state`/`managed` land). Its
+grammar, extended by T-0132 to admit `code`/`may` and by T-0136 to admit
+`on deploy`:
+
+```
+node        := "node" IDENT ":" TRUST "abstract"? ("{" node_prop* "}")?
+node_prop   := "clearance" IDENT | "attr" ATTRVAL | "residence" IDENT
+             | "capacity" quantity "replicas" INT ".." INT
+             | "skew" "zipf" NUMBER | "errors_total"
+             | "panics_contained_by" IDENT | "observe" observe_block
+             | "code" STRING+ | "may" STRING | "on" "deploy" deploy_block
+deploy_block  := "{" deploy_prop (";" deploy_prop)* "}"
+deploy_prop   := "canary" "{" canary_stage ("," canary_stage)* "}"
+                | "endorsed_by" IDENT ("," IDENT)*
+                | "rollback" "within" quantity
+canary_stage  := IDENT "for" quantity
+ATTRVAL     := IDENT ("=" IDENT)?
+STRING      := '"' char* '"'   // no escapes in v0; '"' and newline forbidden
+```
+
+**Design choice (T-0132): STRING-quoted values, not a new token class.**
+`code=<glob>` globs (`src/frob/**`) and `may` capability atoms
+(`net.out:stripe.com`) both need characters -- `*`, `/`, `.`, `:` -- that
+`is_ident_cont` never accepted and that would each need their own
+lexer special-case if given a dedicated atom token. The lexer already had
+a general-purpose `TokKind::Str` (used by `boundary ... when "predicate"`
+and `assume ... review "date"`); reusing it needs zero new `TokKind`
+variants, imposes no new escaping rules, and generalizes to any future
+value that needs non-ident characters, at the cost of quotes the ATTRVAL
+IDENT form doesn't need. A dedicated glob/capability atom token was
+rejected: two bespoke character classes (one permitting `/`+`*`, one
+permitting `.`+`:`) for two constructs is exactly the "grow a token per
+vocabulary" trap law 1 warns against, whereas STRING is already
+general-purpose parser furniture.
+
+`code` is `STRING+` (glob+, at least one -- a bare `code;` is a parse
+error, not a silent zero-glob no-op, per law 2). `may` is a single
+`STRING` per statement; multiple capabilities are written as repeated
+`may "...";` statements, matching the repeatable-statement shape `attr`
+already uses. Elaboration (`_elaborate.py::_elaborate_node`): each `code`
+glob becomes one `code=<glob>` node attr, the same convention
+`_code_binding.py::_node_code_globs` already reads (T-0078); `may` atoms
+copy straight into `Node.may` (`_models.py`), which has carried this field
+since the kernel model was defined but had no surface syntax to write it
+until now.
+
+### `secret` grammar (implemented; T-0136)
+
+`strata-core/src/parse.rs::parse_secret` implements the surface grammar
+`std.secrets` (below) previously only had as a Python-API vocabulary:
+
+```
+secret      := "secret" IDENT "{" secret_prop (";" secret_prop)* "}"
+secret_prop := "issued_by" IDENT | "audience" "{" IDENT ("," IDENT)* "}"
+             | "lifetime" quantity | "revoke" quantity
+```
+
+`issued_by` and `lifetime` are mandatory (parse errors if absent, per law
+2 -- a credential with no issuer or no rotation cadence is a dangling
+promise, not a legal declaration); `audience`/`revoke` are grammar-optional
+and default to `()`/`None`. `revoke` staying optional at the grammar layer
+(rather than a third mandatory clause) matches `_secrets.py::SecretSpec`'s
+own typing (`revoke: Quantity | None = None`) -- the mandatory-revocation
+rule is enforced once, in `_secrets.py::_validate_secret_bounds`
+(`StrataError.MissingRevocation`), not duplicated as a parser-level
+requirement (charter law 1: a vocabulary's rule lives in one place).
+`_elaborate.py::_elaborate_secrets` builds a `SecretSpec` straight from
+each parsed `SecretDecl` and calls the landed `elaborate_secret` (T-0082)
+unchanged -- no validation logic is duplicated at the surface-syntax layer.
+
 ## The elaborator contract
 
 A vocabulary is a pure function `surface construct -> kernel facts`
@@ -145,13 +220,12 @@ lattice's top). This is the CWE-798/256 hardcoded/plaintext-credential
 precondition from docs/strata/threat.md's catalog, discharged by
 machinery that already existed before this ticket.
 
-**Deferred surface grammar (T-0134).** The `.strata` grammar's planned
-`secret X issued_by Y audience [...] lifetime T revoke T'` syntax (line 31
-and the table above) is not yet implemented in the `strata_core` Rust
-parser -- `std.secrets` is a Python-API vocabulary only until T-0134 wires
-a `SecretDecl` AST node and a `Module.secrets` field through
-`_elaborate.py`, the same deferral shape T-0132 established for surface
-syntax that outruns the parser.
+**Surface grammar implemented (T-0136).** The `.strata` grammar's `secret X
+{ issued_by Y; audience { ... }; lifetime T; revoke T' }` syntax (see the
+"`secret` grammar (implemented)" section above) is now wired end to end:
+`strata-core/src/parse.rs::parse_secret` -> `_ast.py::SecretDecl` ->
+`_elaborate.py::_elaborate_secrets` -> this module's `elaborate_secret`,
+unchanged. `std.secrets` is no longer a Python-API-only vocabulary.
 
 ## Refinement (hierarchical models)
 
@@ -637,10 +711,14 @@ kernel's existing scenario/rewrite machinery -- no new primitive, no new
 prover code path. The kernel-level fields (`_models.py::DeployContract`,
 `Node.deploy`) and the evaluator (`_deploy.py::evaluate_deploy_contracts`)
 are load-bearing today; the surface grammar to write `on deploy { ... }`
-in `.strata` source text does not exist yet (deferred, T-0134, the same
-class of gap T-0132 filed for `code=`/`may` -- v0's lexer has no
-multi-value block syntax for a canary schedule or an endorsement-chain
-list).
+in `.strata` source text is now implemented (T-0136, see the `node`
+grammar section above) -- `parse_node`'s `on deploy` branch parses the
+canary-stage list and endorsement-chain id list as comma-separated blocks
+(neither needed STRING-quoting; `IDENT for quantity` and repeated `IDENT`
+were sufficient), then `_elaborate.py::_elaborate_deploy` maps the parsed
+`DeployDecl` onto `DeployContract`/`CanaryStage` field for field. `on
+crash`/`on breach` remain unimplemented surface syntax -- this ticket's
+scope was `on deploy` only.
 
 Two joined validations, both failing closed (crash-contract precedent,
 T-0074 -- a missing or incompatible bound is a model error, never a

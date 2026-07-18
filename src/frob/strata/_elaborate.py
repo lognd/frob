@@ -18,6 +18,7 @@ from frob.logging import get_logger
 from ._ast import (
     BoundaryDecl,
     ClaimDecl,
+    DeployDecl,
     FlowDecl,
     Module,
     NodeDecl,
@@ -25,8 +26,10 @@ from ._ast import (
     RemoveDecl,
     ScaleDecl,
     ScenarioDecl,
+    SecretDecl,
     TrustDecl,
 )
+from ._code_binding import _CODE_PREFIX
 from ._errors import StrataError
 from ._infra import elaborate_infra
 from ._models import (
@@ -35,9 +38,11 @@ from ._models import (
     Boundary,
     BoundaryDirection,
     BoundClaim,
+    CanaryStage,
     Capacity,
     Claim,
     ClaimBody,
+    DeployContract,
     Flow,
     FlowCondition,
     KernelModel,
@@ -53,6 +58,7 @@ from ._models import (
     SetTrust,
 )
 from ._packs import require_analyzable
+from ._secrets import SecretExpansion, SecretSpec, elaborate_secret
 
 _log = get_logger(__name__)
 
@@ -71,8 +77,23 @@ _OBSERVE_LOG_CLASSES = frozenset(
 )
 
 
+def _elaborate_deploy(decl: DeployDecl) -> DeployContract:
+    """One `DeployDecl` -> one `DeployContract` (T-0136); a direct field-for-field
+    mapping onto T-0083's landed kernel construct -- `max_error_rate` is always
+    `None` since the surface grammar has no abort-predicate syntax yet."""
+    return DeployContract(
+        stages=tuple(
+            CanaryStage(level=s.level, bake=s.bake, max_error_rate=None)
+            for s in decl.stages
+        ),
+        endorsement_chain=decl.endorsed_by,
+        rollback_budget=decl.rollback_budget,
+    )
+
+
 def _elaborate_node(decl: NodeDecl) -> Node:
-    """One `NodeDecl` -> one kernel `Node`; abstract/errors_total/panics -> attrs."""
+    """One `NodeDecl` -> one kernel `Node`; abstract/errors_total/panics/code -> attrs,
+    may -> Node.may directly (T-0132), deploy -> Node.deploy directly (T-0136)."""
     attrs = decl.attrs
     if decl.is_abstract:
         _log.debug(
@@ -85,6 +106,11 @@ def _elaborate_node(decl: NodeDecl) -> Node:
     if decl.panics_contained_by is not None:
         _log.debug("node %s: panics contained by %s", decl.id, decl.panics_contained_by)
         attrs = (*attrs, f"panics={decl.panics_contained_by}")
+    if decl.code:
+        # T-0132: `code GLOB+` -> one `code=<glob>` attr per glob, the
+        # convention `_code_binding.py::_node_code_globs` already reads.
+        _log.debug("node %s declares %d code glob(s)", decl.id, len(decl.code))
+        attrs = (*attrs, *(f"{_CODE_PREFIX}{glob}" for glob in decl.code))
     capacity = None
     if decl.capacity is not None:
         capacity = Capacity(
@@ -92,13 +118,16 @@ def _elaborate_node(decl: NodeDecl) -> Node:
             replicas_min=decl.capacity.replicas_min,
             replicas_max=decl.capacity.replicas_max,
         )
+    deploy = None if decl.deploy is None else _elaborate_deploy(decl.deploy)
     return Node(
         id=decl.id,
         trust=decl.trust,
         clearance=decl.clearance,
+        may=decl.may,
         attrs=attrs,
         capacity=capacity,
         residence=decl.residence,
+        deploy=deploy,
     )
 
 
@@ -229,6 +258,31 @@ def _elaborate_scenario(decl: ScenarioDecl) -> Scenario:
     )
 
 
+def _elaborate_secrets(
+    secrets: tuple[SecretDecl, ...], known: dict[str, Node]
+) -> Result[tuple[SecretExpansion, ...], StrataError]:
+    """Every `SecretDecl` -> a `SecretSpec` handed to the landed `elaborate_secret`
+    (T-0082) -- never re-validating issuer/audience/lifetime/revoke logic here
+    (charter law 1: a vocabulary is a pure function, defined exactly once in
+    `_secrets.py`). Fails closed on the first `SecretDecl` `elaborate_secret`
+    rejects, same first-error-wins posture as every other `elaborate()` step.
+    """
+    expansions: list[SecretExpansion] = []
+    for decl in secrets:
+        spec = SecretSpec(
+            id=decl.id,
+            issued_by=decl.issued_by,
+            audience=decl.audience,
+            lifetime=decl.lifetime,
+            revoke=decl.revoke,
+        )
+        expanded = elaborate_secret(spec, known)
+        if expanded.is_err:
+            return Err(expanded.danger_err)
+        expansions.append(expanded.danger_ok)
+    return Ok(tuple(expansions))
+
+
 def _validate_no_duplicates(module: Module) -> Result[None, StrataError]:
     """Node ids and flow ids must each be unique within their own kind.
 
@@ -240,6 +294,7 @@ def _validate_no_duplicates(module: Module) -> Result[None, StrataError]:
     for kind, ids in (
         ("node", [n.id for n in module.nodes]),
         ("flow", [f.id for f in module.flows]),
+        ("secret", [s.id for s in module.secrets]),
     ):
         if len(ids) != len(set(ids)):
             dupes = sorted({i for i in ids if ids.count(i) > 1})
@@ -268,6 +323,7 @@ def _validate_references(module: Module) -> Result[None, StrataError]:
     known_nodes |= {q.id for q in module.queues}
     known_nodes |= {c.id for c in module.cdns}
     known_nodes |= {b.id for b in module.balancers}
+    known_nodes |= {s.id for s in module.secrets}
     known_flows = {f.id for f in module.flows}
     for boundary in module.boundaries:
         if boundary.flow_id not in known_flows:
@@ -290,6 +346,7 @@ def _known_node_ids(module: Module) -> set[str]:
     ids |= {q.id for q in module.queues}
     ids |= {c.id for c in module.cdns}
     ids |= {b.id for b in module.balancers}
+    ids |= {s.id for s in module.secrets}
     return ids
 
 
@@ -792,6 +849,30 @@ def elaborate(module: Module) -> Result[KernelModel, StrataError]:
             "boundaries": expansion.boundaries,
         }
     )
+
+    known_nodes = {n.id: n for n in model.nodes}
+    secrets = _elaborate_secrets(module.secrets, known_nodes)
+    if secrets.is_err:
+        return Err(secrets.danger_err)
+    secret_expansions = secrets.danger_ok
+    if secret_expansions:
+        _log.info("elaborated %d secret(s) (T-0136)", len(secret_expansions))
+        model = model.model_copy(
+            update={
+                "nodes": (
+                    *model.nodes,
+                    *(e.node for e in secret_expansions),
+                ),
+                "flows": (
+                    *model.flows,
+                    *(f for e in secret_expansions for f in e.flows),
+                ),
+                "claims": (
+                    *model.claims,
+                    *(c for e in secret_expansions for c in e.claims),
+                ),
+            }
+        )
 
     refined = _elaborate_refines(module, model)
     if refined.is_err:

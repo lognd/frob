@@ -14,6 +14,7 @@ from frob.strata import (
     Verdict,
     elaborate,
     evaluate_claims,
+    evaluate_deploy_contracts,
     parse_module,
 )
 
@@ -102,6 +103,180 @@ class TestElaborateAbstract:
         module = parse_module(text).danger_ok
         model = elaborate(module).danger_ok
         assert "abstract" in model.nodes[0].attrs
+
+
+class TestElaborateCodeAndMay:
+    # T-0132: `code GLOB+` / `may "CAPABILITY"` surface grammar wiring.
+    # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
+    def test_code_globs_become_code_attrs(self):
+        text = """
+        module m
+        node api : trusted {
+            code "src/frob/**" "tests/frob/**";
+        }
+        """
+        module = parse_module(text).danger_ok
+        model = elaborate(module).danger_ok
+        assert model.nodes[0].attrs == ("code=src/frob/**", "code=tests/frob/**")
+
+    # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
+    def test_may_capabilities_land_on_node_may(self):
+        text = """
+        module m
+        node api : trusted {
+            may "net.out:stripe.com";
+            may "fs.read:/etc/tls";
+        }
+        """
+        module = parse_module(text).danger_ok
+        model = elaborate(module).danger_ok
+        assert model.nodes[0].may == ("net.out:stripe.com", "fs.read:/etc/tls")
+
+    # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
+    def test_code_and_abstract_attrs_compose(self):
+        # code=<glob> attrs must not clobber other attr-derived markers
+        # (abstract/errors_total/panics) already appended by elaboration.
+        text = """
+        module m
+        node api : trusted abstract {
+            code "src/frob/**";
+        }
+        """
+        module = parse_module(text).danger_ok
+        model = elaborate(module).danger_ok
+        assert model.nodes[0].attrs == ("abstract", "code=src/frob/**")
+
+    # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
+    def test_no_code_or_may_leaves_node_unchanged(self):
+        module = parse_module("module m\nnode api : trusted").danger_ok
+        model = elaborate(module).danger_ok
+        assert model.nodes[0].attrs == ()
+        assert model.nodes[0].may == ()
+
+
+class TestElaborateSecretAndDeploy:
+    # T-0136: `secret ID { ... }` / `on deploy { ... }` surface grammar
+    # wiring onto the landed T-0082/T-0083 kernel constructs.
+    # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
+    # frob:waive PERF003 reason="a set comprehension plus a separate any() assertion, not a nested join"
+    def test_secret_desugars_to_issue_revoke_reads_and_readers_claim(self):
+        text = """
+        module m
+        node vault : trusted
+        node api : trusted
+        secret db_creds {
+            issued_by vault;
+            audience { api };
+            lifetime 24 h;
+            revoke 5 min;
+        }
+        """
+        module = parse_module(text).danger_ok
+        model = elaborate(module).danger_ok
+        secret_node = next(n for n in model.nodes if n.id == "db_creds")
+        assert secret_node.clearance == "Secret"
+        flow_ids = {f.id for f in model.flows}
+        assert {
+            "db_creds__issue",
+            "db_creds__revoke",
+            "db_creds__reads_api",
+        } <= flow_ids
+        assert any(c.id == "db_creds__readers" for c in model.claims)
+
+    # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
+    def test_secret_missing_revoke_fails_closed(self):
+        text = """
+        module m
+        node vault : trusted
+        secret db_creds {
+            issued_by vault;
+            lifetime 24 h;
+        }
+        """
+        module = parse_module(text).danger_ok
+        result = elaborate(module)
+        assert result.is_err
+        assert result.danger_err is StrataError.MissingRevocation
+
+    # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
+    def test_secret_unknown_issuer_fails_closed(self):
+        text = """
+        module m
+        secret db_creds {
+            issued_by ghost;
+            lifetime 24 h;
+            revoke 5 min;
+        }
+        """
+        module = parse_module(text).danger_ok
+        result = elaborate(module)
+        assert result.is_err
+        assert result.danger_err is StrataError.UnknownReference
+
+    # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
+    def test_duplicate_secret_id_fails_closed(self):
+        text = """
+        module m
+        node vault : trusted
+        secret db_creds { issued_by vault; lifetime 24 h; revoke 5 min; }
+        secret db_creds { issued_by vault; lifetime 24 h; revoke 5 min; }
+        """
+        module = parse_module(text).danger_ok
+        result = elaborate(module)
+        assert result.is_err
+        assert result.danger_err is StrataError.DuplicateId
+
+    # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
+    def test_on_deploy_lands_on_node_deploy_contract(self):
+        text = """
+        module m
+        boundary review_gate endorse artifact_flow : Public -> Internal
+        node api : trusted {
+            on deploy {
+                canary { authenticated for 10 min, trusted for 30 min };
+                endorsed_by review_gate;
+                rollback within 5 min;
+            }
+        }
+        node vault : trusted
+        flow artifact_flow : vault -> api
+        """
+        module = parse_module(text).danger_ok
+        model = elaborate(module).danger_ok
+        api_node = next(n for n in model.nodes if n.id == "api")
+        assert api_node.deploy is not None
+        assert [s.level for s in api_node.deploy.stages] == ["authenticated", "trusted"]
+        assert api_node.deploy.endorsement_chain == ("review_gate",)
+        assert api_node.deploy.rollback_budget.value == 5.0
+
+    # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
+    def test_no_on_deploy_leaves_node_deploy_none(self):
+        module = parse_module("module m\nnode api : trusted").danger_ok
+        model = elaborate(module).danger_ok
+        assert model.nodes[0].deploy is None
+
+    # frob:tests src/frob/strata/_deploy.py::evaluate_deploy_contracts kind="unit"
+    def test_on_deploy_reaches_evaluate_deploy_contracts_end_to_end(self):
+        # T-0136 acceptance: `on deploy { ... }` parsed from source text
+        # reaches the landed T-0083 evaluator, not just Node.deploy.
+        text = """
+        module m
+        boundary review_gate endorse artifact_flow : Public -> Internal
+        node vault : trusted
+        node api : trusted {
+            on deploy {
+                canary { authenticated for 10 min };
+                endorsed_by review_gate;
+                rollback within 5 min;
+            }
+        }
+        flow artifact_flow : vault -> api
+        """
+        module = parse_module(text).danger_ok
+        model = elaborate(module).danger_ok
+        report = evaluate_deploy_contracts(model)
+        assert report.is_ok
+        assert len(report.danger_ok.scenario_results) == 2  # 1 canary + 1 rollback
 
 
 class TestElaborateValidation:

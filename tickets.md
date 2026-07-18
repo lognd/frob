@@ -6911,15 +6911,19 @@ correct behavior for every variant tried
 id: T-0132
 title: 'strata surface grammar: code=<glob>/may <capability> unreachable from .strata
   source text'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-18'
 blocked_by: []
 parent: null
 scope:
-- strata-core/src/parse.rs,src/frob/strata/_ast.py,src/frob/strata/_elaborate.py,docs/strata/surface.md
-evidence: []
+- strata-core/src/parse.rs
+- src/frob/strata/_ast.py
+- src/frob/strata/_elaborate.py
+- docs/strata/surface.md
+evidence:
+- tests/unit/strata/test_parse.py::TestParseModule::test_parses_node_code_globs_and_may_capabilities
 attachments: []
 acceptance: []
 threat: null
@@ -6952,6 +6956,21 @@ today. Fix: extend the lexer with a STRING token (or a glob-safe IDENT
 extension allowing `/`, `*`, `.`) and wire `code`/`may` into `parse_node`
 (or the `component` decl), then update design/frob.strata to use the real
 syntax and drop this ticket's workaround comment.
+
+## Done report
+
+STRING-quoted attr values reach the surface language: the lexer's
+existing Str token is now accepted in exactly two new positions --
+code="<glob>" (one or more, landing in Node attrs per the T-0078
+convention) and may "<capability>" (landing in Node.may) -- with
+unterminated/malformed strings failing closed through the existing
+line/col diagnostic path and no loosening anywhere an IDENT was
+expected (reviewer-verified live). Wired parse.rs -> _ast.NodeDecl ->
+_elaborate. Existing litmus goldens byte-identical; 4 new rust tests
+plus python parse/elaborate tests. Reviewer verified the round trip
+end-to-end and APPROVED the code; this trail was completed at merge by
+the coordinator. Verified on main: 378 strata tests green after make
+core.
 
 <!-- ticket:T-0133 -->
 ```yaml
@@ -7200,7 +7219,7 @@ ticket's or T-0134's own open scope) are the only other output.
 id: T-0136
 title: 'strata surface grammar: on deploy / secret constructs unreachable from .strata
   source text'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-07-18'
@@ -7211,7 +7230,9 @@ scope:
 - src/frob/strata/_ast.py
 - src/frob/strata/_elaborate.py
 - docs/strata/surface.md
-evidence: []
+evidence:
+- tests/unit/strata/test_litmus_deploy_secret.py::TestDeploySecretGoldens::test_secret_desugars_to_issue_revoke_reads_flows
+- tests/unit/strata/test_litmus_deploy_secret.py::TestDeploySecretGoldens::test_on_deploy_lands_on_worker_node
 attachments: []
 acceptance: []
 threat: null
