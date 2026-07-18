@@ -1457,7 +1457,7 @@ Filed: none.
 id: T-0155
 title: 'design lint family: caching, resource bounds, rate-limiting, kill-switch rules
   over the kernel model'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-18'
@@ -1470,12 +1470,55 @@ scope:
 - tests/unit/strata/**
 - docs/strata/**
 - tickets.md
-evidence: []
+- design/litmus/audit_hardened.strata
+- tests/system/test_cli_sys_audit.py
+evidence:
+- tests/unit/strata/test_lint.py::TestEvaluateLint::test_evaluate_lint_aggregates_every_rule
+- tests/unit/strata/test_litmus_lint.py::TestLintVulnLitmus::test_vuln_fires_every_rule
+- tests/unit/strata/test_litmus_lint.py::TestLintHardenedLitmus::test_hardened_discharges_every_fired_obligation
+- tests/unit/strata/test_audit.py::TestExhaustiveness::test_lint_gap_reported
+- tests/unit/strata/test_audit.py::TestHardenedLitmus::test_hardened_clean
+- tests/unit/strata/test_litmus_audit_hardened.py::TestAuditHardenedGolden::test_proves_clean_in_security_and_quality
+- tests/system/test_cli_sys_audit.py::TestSysAuditCli::test_clean_model_exits_zero
 attachments: []
 acceptance: []
 threat: null
 ```
+Scope widened (T-0155 sweep, post-implementation): the new LINT001 rate-limit check fires on two pre-existing fixtures outside the original scope globs (`design/litmus/audit_hardened.strata`'s foreign-sourced `f_browse` flow, and `tests/system/test_cli_sys_audit.py`'s `_CLEAN_MODEL` fixture) as a direct, required consequence of wiring `evaluate_lint` into `frob sys audit`'s `evaluate_exhaustiveness` -- both received a minimal, mechanical `rate` declaration to stay green, per the ticket's own "expect cascading consequences per T-0150/T-0151 precedent" note.
+
 Operational design linting over the kernel model, as a new rule family alongside SYS100-102. INVESTIGATE FIRST: the scenario engine (node loss, rate surge, trust downgrade -- T-0073), Bound/capacity claims, and quantity grammar (rates, sizes) -- reuse their vocabulary. Rules (each loud, waivable only with reason, drift-locked in a rule registry): LINT: public/edge boundary accepting external flows without a declared rate limit; store consumed by flows whose declared rate exceeds the store's declared service rate without a caching/TTL declaration; node participating in a surge scenario without a capacity Bound claim; node holding a risky capability (exec/net per the may declarations from T-0150) without a declared kill-switch/flag mechanism; flow fan-in exceeding declared downstream capacity. Each rule needs a written justification of WHY the kernel can express it (or an honest OutOfScope-style entry if it cannot yet -- follow the threat catalog discipline); fire/discharge litmus fixtures from parsed surface; wired into frob sys audit output beside self-conformance. Apply to design/frob.strata itself and make it green honestly (declare real rate/caching/capacity facts or waive with reasons -- expect cascading consequences per T-0150/T-0151 precedent).
+
+## Done report
+
+Changed:
+- src/frob/strata/_lint.py (new module: LINT001-005 rule family)
+- src/frob/strata/_audit.py (evaluate_exhaustiveness joins evaluate_lint under a fixed lint:model view)
+- src/frob/strata/__init__.py (exports for the new _lint.py public surface)
+- docs/strata/threat.md (Operational design lints (std.lint, T-0155) section)
+- design/frob.strata (f_registry_fetch declares a real rate 1 req/s; checker/core/stratamod/vet documented as honest LINT004 gaps -- no fabricated kill switch)
+- tests/unit/strata/test_lint.py (new: hand-built KernelModel unit coverage per rule)
+- tests/unit/strata/test_litmus_lint.py (new: surface round-trip via lint_vuln.strata/lint_hardened.strata)
+- tests/unit/strata/litmus/lint_vuln.strata, lint_hardened.strata (new litmus pair, fires/discharges all five rules)
+- tests/unit/strata/test_audit.py (TestExhaustiveness.test_lint_gap_reported added; _hardened_model's f_collect flow gets a declared rate)
+- design/litmus/audit_hardened.strata (OUT OF SCOPE, cascading fix: f_browse needs a declared rate to keep report.gaps == () under the new LINT001 check)
+- tests/system/test_cli_sys_audit.py (OUT OF SCOPE, cascading fix: _CLEAN_MODEL's f1 flow needs a declared rate for the same reason)
+- tickets.md (scope widened to cover the two cascading-fix files above; this Done report)
+
+Design notes:
+- LINT001 (rate limit): a foreign-trust-sourced flow with no declared `Flow.rate`. No claim override (PII001 no-override precedent).
+- LINT002 (cache-or-capacity, caching-escapable): a node's declared `capacity.service_rate` exceeded by non-infra inbound flow rate, no `cache` construct covering it.
+- LINT003 (surge scenario bound): a `Scenario` with a `ScaleRate` rewrite nesting no `BoundClaim` (RATE/UTILIZATION) over the scaled flow or its endpoints.
+- LINT004 (kill switch): a node with a risky (exec/net) `may` capability and no `attr flag=<id>` -- reuses the grammar's existing generic `attr IDENT=IDENT` node property, no new keyword.
+- LINT005 (fan-in, caching-agnostic): a node's declared `capacity` (service_rate * replicas_max) exceeded by TOTAL inbound rate, unconditionally -- the LINT002/LINT005 relationship mirrors the PII003/GDPR-RETENTION precedent (can fail one and pass the other).
+- Self-model honesty: design/frob.strata's f_registry_fetch now declares a real `rate 1 req/s`. checker/core/stratamod/vet each hold may "exec"/"net" with NO real kill switch in the codebase today -- rather than fabricate a `flag=<id>` attr, these are left as honest, named LINT004 gaps in `frob sys audit` output (T-0150/T-0151 "declare real facts or waive with reasons" precedent). Follow-on ticket T-draft-47dc1469 filed for the real kill-switch mechanism.
+
+Evidence: 7 pytest node ids recorded via `frob ticket evidence T-0155` (see `evidence:` list above); full suite (`uv run pytest tests/ -q`) green before and after the T-0155 change set, both pre- and post-merge with main.
+
+Filed: T-draft-47dc1469 (add real kill-switch/feature-flag mechanism for exec/net capabilities on checker/core/stratamod/vet, to genuinely discharge LINT004 on design/frob.strata).
+
+Gates: `uv run frob check --ticket T-0155` clean (exit 0; remaining TEST005/TEST006 items are pre-existing warn-severity baseline debt in src/frob/gates/__init__.py, unrelated to this ticket's scope). `uv run frob test --base main` PASS (python exit=0, strata exit=0). `git diff main --diff-filter=D --stat` empty (no deletions anywhere) after merging main into this branch.
+
+Out-of-scope cascading fixes (declared explicitly, not silent): design/litmus/audit_hardened.strata and tests/system/test_cli_sys_audit.py each received a minimal one-line `rate` declaration on a foreign-sourced flow fixture, required by LINT001 firing once `evaluate_lint` was wired into `frob sys audit`. Ticket scope was widened to cover both files (see `scope:` above) rather than editing silently.
 
 <!-- ticket:T-0156 -->
 ```yaml
@@ -2080,7 +2123,7 @@ repo-wide waived PERF/arch advisories. `pytest tests/test_gates.py` passes
 ```yaml
 id: T-0165
 title: 'DOC002 anchor errors: report the computed slug and suggest nearest valid anchor'
-state: queued
+state: done
 kind: ux
 origin: agent
 created: '2026-07-18'
@@ -2091,12 +2134,57 @@ scope:
 - src/frob/docs/**
 - tests/**
 - tickets.md
-evidence: []
+evidence:
+- tests/test_gates.py::TestDocanchorGate::test_unresolvable_anchor_reports_slug_and_nearest_match
+- tests/test_gates.py::TestDocanchorGate::test_unresolvable_anchor_fires
+- tests/test_gates.py::TestDocanchorGate::test_missing_file_fires
+- tests/test_gates.py::TestDocanchorGate::test_malformed_target_missing_fragment_fires
+- tests/test_gates.py::TestDocanchorGate::test_resolvable_heading_and_explicit_anchor_pass
 attachments: []
 acceptance: []
 threat: null
 ```
 Typani pilot: DOC002 anchor-resolution failures forced manual guessing of GitHub-style slugs. The error must print the slug it computed, the anchors it found in the target file, and the nearest match (edit distance). Small change, large DX payoff for every frob:doc user.
+
+## Done report
+
+Changed:
+- src/frob/gates/__init__.py::_anchor_mismatch_message (new)
+- src/frob/gates/__init__.py::docanchor_gate (unresolved-anchor branch now delegates
+  message construction to _anchor_mismatch_message)
+
+The unresolved-anchor DOC002 message now reports the computed slug, the full set of
+anchors found in the target doc file (or "(none)" if empty), and the nearest match by
+edit distance via difflib.get_close_matches (cutoff=0.0, so a suggestion is always
+offered when the target file has at least one anchor). Example:
+"DOC002: frob:doc anchor 'docs/m.md#real-headin' does not resolve; computed slug
+#real-headin does not match any anchor in docs/m.md (found: real-heading); did you
+mean #real-heading?"
+
+The other three DOC002 failure modes (missing #anchor, missing target file) are
+unchanged -- this ticket only touched the "anchor exists in slug set is false" branch,
+since those are the ones where guessing was blind.
+
+Evidence: (bound via frob:tests directives, recorded with frob ticket evidence)
+- tests/test_gates.py::TestDocanchorGate::test_unresolvable_anchor_reports_slug_and_nearest_match (new)
+- tests/test_gates.py::TestDocanchorGate::test_unresolvable_anchor_fires
+- tests/test_gates.py::TestDocanchorGate::test_missing_file_fires
+- tests/test_gates.py::TestDocanchorGate::test_malformed_target_missing_fragment_fires
+- tests/test_gates.py::TestDocanchorGate::test_resolvable_heading_and_explicit_anchor_pass
+
+Filed: none (change was small and fully in scope; no out-of-scope work found)
+
+Gates: `uv run frob check` -- gates FAIL is pre-existing baseline (40 waived-adjacent
+violations unrelated to this change, e.g. PERF003 test-file waivers); ty FAIL is the
+known worktree-natives artifact (strata_core/frob_core unresolved-import in nested
+pytest subprocess collection, present identically on main, not a regression).
+`uv run frob test --base main` selects tests/test_gates.py; the 5 Docanchor tests
+above all pass. The other failures in that run (TestSysGate::test_sys001_dangling,
+test_sys002_unbound, test_sys004_suppresses_sys001, test_doc003_proved_claim_passes,
+test_doc003_refutes_names_obligations, TestCov002StrataModuleCoverage::
+test_declaration_without_module_edge_still_fires) reproduce identically on main with
+this change stashed out -- confirmed pre-existing (strata_core native-parser
+unavailable in the nested pytest subprocess env), not caused by this ticket.
 
 <!-- ticket:T-0166 -->
 ```yaml
@@ -2365,7 +2453,7 @@ logand.app pilot: check-gate violations have frob:waive with written reasons, bu
 ```yaml
 id: T-0175
 title: 'agent playbook in-repo: kill per-dispatch retreading'
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-07-18'
@@ -2377,12 +2465,52 @@ scope:
 - CLAUDE.md
 - Makefile
 - tickets.md
-evidence: []
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 attachments: []
 acceptance: []
 threat: null
 ```
 Every worktree agent currently re-learns the same session lessons from scratch, and the coordinator's dispatch prompts have grown into essays carrying them. Move the workflow knowledge into the repo: docs/guides/agent-playbook.md covering -- fresh-worktree setup (git merge main FIRST, make core for natives, use uv run frob never the global binary inside worktrees), scope conventions (tickets.md always in scope), evidence recording (CLI from a natives-built checkout, node-id forms), gate measurement discipline (frob check --delta against the stamped baseline instead of stash-isolation dances -- verify the existing check_delta/stamp_baseline machinery works for this and document the exact commands), Done-report requirements (measured numbers only, honest disclosure of cuts), waive discipline, the deletion-filter land rule, and ledger-conflict splice guidance. Link from CLAUDE.md so agents load it; add a make target or script for the worktree warm-up steps. ALSO: shared natives -- investigate making fresh worktrees inherit prebuilt strata-core/frob_core artifacts (shared cargo target dir via CARGO_TARGET_DIR, or a wheel cache reused by make core) so make core in a worktree is seconds, not minutes; document the mechanism in the playbook.
+
+## Done report
+
+Changed:
+docs/guides/agent-playbook.md (new -- the per-dispatch checklist: worktree
+warm-up incl. `git merge main` + tip verification, `make core` natives,
+`uv run frob` discipline, never-pipe-verifying-commands rule, scope
+conventions, evidence recording incl. the T-0167 CLI-dispatch-test
+precedent for docs-only tickets, gate measurement via `frob check --delta`
++ `--stamp-baseline`, waive discipline, Done-report requirements, the
+deletion-filter land rule with the T-0167 stale-merge incident cited,
+ledger-conflict splice guidance, ticket workflow, style)
+docs/index.md (new bullet under Getting started linking the playbook)
+CLAUDE.md (appended pointer section directing every worktree agent to read
+the playbook first; original rework brief left untouched, out of this
+ticket's remit)
+Makefile (`playbook` target added to .PHONY and the target list, `cat`s
+docs/guides/agent-playbook.md -- judgment call: the Makefile's style favors
+thin `$(STAMP)`-guarded targets that shell out to `uv run`, but a doc
+pointer needs no venv, so this target skips the stamp dependency and just
+cats the file)
+tickets.md (this Done report)
+
+Investigated but NOT implemented (disclosed per plan's "ALSO" item):
+shared-natives inheritance across worktrees (CARGO_TARGET_DIR sharing or a
+wheel cache reused by `make core`) was investigated only to the point of
+confirming the current cost (`make core` in this fresh worktree took ~34s
+of `cargo build --release` for strata-core alone, from-scratch, per the
+`make core` run performed for this ticket) and documenting that fact plus
+the general mechanism options in the playbook's warm-up section (item 1).
+No `CARGO_TARGET_DIR` wiring or wheel-cache mechanism was built -- that is
+real implementation work (Makefile + possibly CI cache plumbing) beyond a
+docs ticket's scope, and is called out explicitly in the playbook rather
+than silently dropped.
+
+Evidence: tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+(ran directly: `uv run pytest tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches -q -o addopts=` -> `1 passed in 0.95s`; recorded via `frob ticket evidence`), per the T-0167 precedent for docs-only tickets with no pytest surface of their own. `frob test --base main` (touched-set) reports `nothing touched selects any test` for the five touched files (CLAUDE.md, Makefile, docs/guides/agent-playbook.md, docs/index.md, tickets.md all resolve as `unbound file ... has unknown language` -- expected for markdown/Makefile-only changes, no test-file endpoint exists to select).
+Filed: none (the shared-natives mechanism is documented as future work in the playbook itself, not filed as a separate ticket since T-0175's own "ALSO" clause already tracks it and re-filing would duplicate)
+Gates: `uv run frob check --ticket T-0175 --json`: gates stage exit_code=0, zero error-severity diagnostics (PRE001 refreshed via `frob ticket sweep T-0175` after editing past the initial pre-work sweep). ruff-check/ruff-format/ty/frob-cycle/frob-dup/frob-arch/frob-exports(all packages): all exit_code=0. TEST006 (no coverage stamp) is the pre-existing campaign-wide warn, not re-stamped per instruction (never run `make coverage`). `ruff check src/ tests/` under the project-pinned `uv run ruff` (0.15.16): "All checks passed!" -- no Python source was touched by this ticket so PATH-ruff (0.14.10) parity is moot for this diff (running it against docs/Makefile produces nonsense non-Python-syntax noise, not a real signal).
 
 <!-- ticket:T-0176 -->
 ```yaml
@@ -3205,3 +3333,27 @@ acceptance: []
 threat: null
 ```
 Survey sec 5, user mandate: registry of detectors/rungs/claimed clone types; parametrized fixture pairs per claimed cell (fire + negative); unclaimed cells need written exclusions; a detector or clone-type claim added without a fixture fails the suite -- T-0158 capability-matrix mold. Meta-test must be green over the CURRENT detector set before any new detector lands (acceptance from T-0187).
+
+<!-- ticket:T-0200 -->
+```yaml
+id: T-0200
+title: add real kill-switch/feature-flag mechanism for exec/net capabilities (checker/core/stratamod/vet)
+state: queued
+kind: feature
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/process/**
+- src/frob/check/**
+- src/frob/strata/**
+- design/frob.strata
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0155's LINT004 rule (design lint family) fires honestly on design/frob.strata's checker/core/stratamod/vet nodes: each holds a risky (exec/net) may capability with no real, checked-in kill switch (env var / feature flag) an operator can flip live to disable it. T-0155 deliberately did not fabricate a flag=<id> attr naming a mechanism that does not exist (declare real facts or waive with reasons, T-0150/T-0151 precedent) -- this ticket is the follow-on product work to build the actual mechanism and then discharge LINT004 for real on design/frob.strata.

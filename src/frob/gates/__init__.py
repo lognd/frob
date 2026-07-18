@@ -18,6 +18,7 @@ is decomposed into small private helpers alongside it.
 
 from __future__ import annotations
 
+import difflib
 import fnmatch
 import hashlib
 import re
@@ -2699,6 +2700,24 @@ def _doc_anchor_slugs(path: Path) -> Option[set[str]]:
     return Some(slugs)
 
 
+# frob:doc docs/modules/gates.md#public-api
+def _anchor_mismatch_message(
+    target: str, docfile: str, slug: str, slugs: set[str]
+) -> str:
+    """Build the DOC002 unresolved-anchor message: the computed slug, the
+    anchors actually found in the target file, and the nearest match by
+    edit distance (via `difflib.get_close_matches`) so a `frob:doc` author
+    does not have to guess a GitHub-style slug by hand."""
+    found = ", ".join(sorted(slugs)) if slugs else "(none)"
+    nearest = difflib.get_close_matches(slug, slugs, n=1, cutoff=0.0)
+    suggestion = f"; did you mean #{nearest[0]}?" if nearest else ""
+    return (
+        f"DOC002: frob:doc anchor {target!r} does not resolve; computed "
+        f"slug #{slug} does not match any anchor in {docfile} "
+        f"(found: {found}){suggestion}"
+    )
+
+
 def _docanchor_violation(rule_file: str, line: int, message: str) -> Violation:
     """Build one DOC002 error `Violation` -- every failure mode is the same shape."""
     return Violation(
@@ -2758,8 +2777,7 @@ def docanchor_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]
                 _docanchor_violation(
                     origin_file,
                     line,
-                    f"DOC002: frob:doc anchor {target!r} does not resolve; no "
-                    f"heading or <a id> matches #{slug} in {docfile}",
+                    _anchor_mismatch_message(target, docfile, slug, slugs.danger_some),
                 )
             )
     _log.info("docanchor: %d violation(s)", len(violations))

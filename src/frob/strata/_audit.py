@@ -30,6 +30,7 @@ from frob.logging import get_logger
 
 from ._compliance import REGULATION_VIEWS, ComplianceViolation, evaluate_compliance
 from ._errors import StrataError
+from ._lint import LintViolation, evaluate_lint
 from ._models import KernelModel
 from ._pii import PiiViolation, evaluate_pii
 from ._threat import (
@@ -147,6 +148,23 @@ def _pii_gaps(violations: tuple[PiiViolation, ...]) -> tuple[FamilyGap, ...]:
     )
 
 
+def _lint_gaps(violations: tuple[LintViolation, ...]) -> tuple[FamilyGap, ...]:
+    """Adapt `_lint.py::LintViolation`s into `FamilyGap`s. `_lint.py::
+    evaluate_lint` has no baseline-view concept (LINT001-005 are all
+    structural joins, not a catalog-completeness check like THREAT001), so
+    every gap is reported under the fixed `"model"` view -- the same
+    fixed-view shape `_pii_gaps` uses (T-0154 precedent), T-0155."""
+    return tuple(
+        FamilyGap(
+            family="lint",
+            view="model",
+            rule=v.rule,
+            detail=v.detail or (v.target or "unnamed"),
+        )
+        for v in violations
+    )
+
+
 def _evaluate_family(
     model: KernelModel,
     view: str,
@@ -185,6 +203,7 @@ def _evaluate_family(
 # frob:tests tests/unit/strata/test_audit.py::TestVulnLitmus.test_refutes_gap_per_family
 # frob:tests tests/unit/strata/test_audit.py::TestHardenedLitmus.test_hardened_clean
 # frob:tests tests/unit/strata/test_audit.py::TestExhaustiveness.test_pii_gap_reported
+# frob:tests tests/unit/strata/test_audit.py::TestExhaustiveness.test_lint_gap_reported
 # frob:waive TEST005 reason="Err branches need a deep StrataError; debt T-0160"
 def evaluate_exhaustiveness(
     model: KernelModel,
@@ -236,6 +255,12 @@ def evaluate_exhaustiveness(
         return Err(pii_report.danger_err)
     gaps.extend(_pii_gaps(pii_report.danger_ok.violations))
     checked.append("pii:model")
+
+    lint_report = evaluate_lint(model)
+    if lint_report.is_err:
+        return Err(lint_report.danger_err)
+    gaps.extend(_lint_gaps(lint_report.danger_ok.violations))
+    checked.append("lint:model")
 
     _log.info(
         "audit: evaluated views=%d -> %d gap(s)",
