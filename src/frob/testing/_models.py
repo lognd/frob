@@ -61,6 +61,8 @@ class RunnerOutcome(BaseModel):
 class TestRunReport(BaseModel):
     """Every runner outcome for one `run_selected` call, plus the selection it ran."""
 
+    __test__: bool = False
+
     model_config = ConfigDict(frozen=True)
 
     selection: SelectionReport

@@ -1123,3 +1123,25 @@ acceptance: []
 threat: null
 ```
 User directive 2026-07-18: the pass-line counters hide real debt -- frob-exports reports 12-253 public symbols missing from __init__.py per package (decide policy: export or demote to private, per package, no blanket waiver), frob-dup 64 duplicate groups (triage: real extraction candidates vs false pairs; feeds T-0187 tree), frob-arch 197 warnings + 123 suggestions (long-function/god-class residue post-calibration -- fix or waive with reasons), perf gate 174 violations (166 waived -- re-audit every waiver still holds after T-0161's heuristic fixes land; the 8 unwaived need real fixes). Deliverable: each family driven to a state where the summary line is HONEST -- zero unwaived findings or a written per-finding reason; no threshold-loosening without a disclosed decision. Split into child tickets per family if any single family exceeds a session of work -- this ticket is the umbrella and the accounting.
+
+<!-- ticket:T-0205 -->
+```yaml
+id: T-0205
+title: pytest collects Test*-prefixed product classes -- set __test__ = False
+state: queued
+kind: bug
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/_models.py
+- src/frob/testing/_models.py
+- src/frob/testing/_runners.py
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+User report 2026-07-18 (CI warnings summary): PytestCollectionWarning for gates/_models.py::TestPolicy and testing/_runners.py::TestingError -- pytest matches the Test* class-name prefix and tries to collect product classes. Fix: annotated __test__: bool = False on TestPolicy, TestingError, and TestRunReport (testing/_models.py), matching the existing precedent on process/parsers/common.py::TestCase. Verified: pytest --collect-only over tests/test_gates.py + tests/test_testing.py emits zero PytestCollectionWarning; both suites still pass.
