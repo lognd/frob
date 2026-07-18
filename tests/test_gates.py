@@ -1441,6 +1441,27 @@ class TestDocanchorGate:
         assert set(_rules(violations)) == {"DOC002"}
         assert any("nonexistent-slug" in v.message for v in violations)
 
+    def test_unresolvable_anchor_reports_slug_and_nearest_match(self, tmp_path):
+        # frob:tests src/frob/gates/__init__.py::_anchor_mismatch_message kind="unit"
+        from frob.gates import docanchor_gate
+
+        root = tmp_path / "repo"
+        (root / "docs").mkdir(parents=True)
+        (root / "src").mkdir()
+        (root / "docs" / "m.md").write_text(
+            "# Title\n\n## Real Heading\n", encoding="utf-8"
+        )
+        (root / "src" / "m.py").write_text(
+            "# frob:doc docs/m.md#real-headin\ndef f():\n    return 1\n",
+            encoding="utf-8",
+        )
+        violations = docanchor_gate(root, self._snap(root))
+        assert set(_rules(violations)) == {"DOC002"}
+        (message,) = [v.message for v in violations]
+        assert "computed slug #real-headin" in message
+        assert "found: real-heading" in message
+        assert "did you mean #real-heading?" in message
+
     def test_missing_file_fires(self, tmp_path):
         from frob.gates import docanchor_gate
 
@@ -1684,6 +1705,29 @@ class TestConventionUnitBinding:
             snap, (), Nothing(), tests, TestPolicy(min_unit_cases=1)
         )
         assert any(v.rule == "TEST001" and "::of" in v.message for v in violations)
+
+    # frob:tests tests/test_gates.py::TestConventionUnitBinding.test_test001_exempts_strata_flow_declarations kind="unit"
+    def test_test001_exempts_strata_flow_declarations(self, tmp_path):
+        """T-0168: a `flow` (or other) `.strata` declaration has no defined
+        "unit test" meaning -- design conformance is proven by the sys
+        gates (`frob sys audit`/self-conformance), not pytest bindings.
+        TEST001 must not demand a `frob:tests` edge for it, with no
+        matching test and no edge at all."""
+        from typani.option import Nothing
+
+        from frob.gates._models import TestPolicy
+        from frob.testing import CollectedTests
+
+        _write(tmp_path, "design/m.strata", _DESIGN_STRATA)
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(node_ids=frozenset())
+        violations = run_test_gate(
+            snap, (), Nothing(), tests, TestPolicy(min_unit_cases=1)
+        )
+        assert not any(
+            v.rule in ("TEST001", "TEST002") and v.file == "design/m.strata"
+            for v in violations
+        )
 
 
 class TestPairLevelIntegration:

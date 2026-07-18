@@ -1,0 +1,39 @@
+// lint_hardened.strata -- the hardened twin of lint_vuln.strata (T-0155).
+// SAME firing preconditions, but every joinable LINT001-005 obligation is
+// now discharged:
+//
+// - LINT001: f_open declares a rate (5 req/s).
+// - LINT002: cache_data declares a cache over store_data (ttl-bound), the
+//   caching escape valve `_lint.py::_cache_covers` looks for.
+// - LINT003: surge_s nests an asserted bound(rate) claim over f_load.
+// - LINT004: store_data declares `attr flag=store_data_kill_switch`.
+// - LINT005: store_data's replicas widen to 1..5, so declared capacity
+//   headroom (5 req/s x 5 = 25 req/s) covers the 20 req/s fan-in --
+//   LINT005 has no caching escape (module docstring), only headroom.
+//
+// tested end to end (parse -> elaborate -> evaluate_lint) by
+// tests/unit/strata/test_litmus_lint.py.
+
+module lint_hardened
+
+node client : foreign { clearance Public; }
+node api : trusted { clearance Internal; }
+node store_data : trusted {
+    clearance Internal;
+    capacity 5 req/s replicas 1..5;
+    may "exec";
+    attr flag=store_data_kill_switch;
+}
+
+flow f_open : client -> api { label Public; rate 5 req/s; }
+flow f_load : api -> store_data { label Internal; rate 20 req/s; }
+
+cache cache_data of store_data {
+    ttl 30 s;
+    invalidate_on f_load;
+}
+
+scenario surge_s {
+    scale f_load by 3.0;
+    assert c_surge_bound bound rate f_load <= 100 req/s;
+}

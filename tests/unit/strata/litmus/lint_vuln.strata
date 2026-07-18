@@ -1,0 +1,36 @@
+// lint_vuln.strata -- T-0155 litmus: deliberately fires all five LINT001-005
+// operational design lints from real declared surface, no hand-built
+// KernelModel needed for the firing half of the proof:
+//
+// - LINT001 (rate limit): f_open crosses foreign -> trusted with no
+//   declared rate.
+// - LINT002 (cache/capacity): store_data declares capacity 5 req/s;
+//   f_load into it declares rate 20 req/s (exceeds it); no cache
+//   construct is declared over store_data.
+// - LINT003 (surge capacity bound): surge_s scales f_load by 3.0 with no
+//   nested bound(rate|utilization) claim.
+// - LINT004 (kill switch): store_data holds `may "exec"` with no declared
+//   `attr flag=<id>`.
+// - LINT005 (fan-in): store_data's total inbound rate (20 req/s) exceeds
+//   its declared capacity headroom (5 req/s x 1 replica = 5 req/s),
+//   unconditionally (no cache exemption for this rule).
+//
+// tested end to end (parse -> elaborate -> evaluate_lint) by
+// tests/unit/strata/test_litmus_lint.py.
+
+module lint_vuln
+
+node client : foreign { clearance Public; }
+node api : trusted { clearance Internal; }
+node store_data : trusted {
+    clearance Internal;
+    capacity 5 req/s replicas 1..1;
+    may "exec";
+}
+
+flow f_open : client -> api { label Public; }
+flow f_load : api -> store_data { label Internal; rate 20 req/s; }
+
+scenario surge_s {
+    scale f_load by 3.0;
+}

@@ -21,6 +21,10 @@ real.
 - `docs/guides/agentic-workflow.md` -- the human/AI split: how planner, implementer,
   reviewer, prover, and the auditors use the ticket queue and gates as the
   shared work surface, including the worktree-per-agent pattern.
+- `docs/guides/agent-playbook.md` -- the per-dispatch checklist: worktree
+  warm-up, scope/evidence/gate discipline, the deletion-filter land rule,
+  and ledger-conflict splice guidance. Every worktree agent should read
+  this before starting a ticket.
 - `docs/guides/editors.md` -- syntax highlighting for `.strata` in VSCode
   and JetBrains IDEs via one drift-locked TextMate grammar.
 - `docs/guides/exhaustive-research.md` -- the frontier-loop for total-coverage
@@ -57,6 +61,10 @@ Two modules that support the above but are not yet fully re-platformed:
 - `docs/modules/dup.md` -- `frob.dup`: duplicate/clone detection, including the
   0.2.0 smart-dup design (region-granular semantic clones, DUP001/DUP002
   gates).
+- `docs/modules/dup-sota-survey.md` -- T-0187 phase-1 survey: clone-detection
+  state of the art dispositioned against `frob.dup` (26 techniques), the
+  reverse-templating design sketch, the exhaustiveness-matrix meta-test
+  design, and the source of the T-0191..T-0199 ticket tree.
 - `docs/modules/fuzz.md` -- `frob.fuzz`: the 0.2.0 enforced property fuzzing design
   (Arbitrary protocol, FUZZ gates).
 - `docs/modules/vet.md` -- policy/vetting notes referenced by `frob.gates`.
