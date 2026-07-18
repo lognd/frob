@@ -251,6 +251,7 @@ consistent with third-party/stdlib specifiers.
   softer "undeclared foreign dependency" diagnostic once `FOREIGN` also
   attaches to a synthetic node id in `bind_code`'s output.
 
+<a id="directives-t-0080"></a>
 ## Directives: frob:channel / frob:boundary / frob:secret (T-0080)
 
 <!-- frob:ticket T-0080 -->

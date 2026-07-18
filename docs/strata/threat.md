@@ -56,6 +56,7 @@ machinery. Secrets in `localStorage` is `Secret` data resting at a
 refutes. The catalog's job is to NAME, CITE, and prove EXHAUSTIVE
 COVERAGE of these, not to re-detect each.
 
+<a id="the-catalog-stdcwe"></a>
 ## The catalog (`std.cwe`)
 
 A versioned vocabulary pack shipped with strata, pinned to a MITRE CWE

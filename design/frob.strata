@@ -1,0 +1,229 @@
+// frob.strata -- frob's own architecture, modeled in its own language
+// (phase 4 self-hosting exit criterion, T-0081, docs/strata/roadmap.md
+// "Self-hosting commitments (decision D7)"). This supersedes the informal
+// module-dependency diagram in docs/rework.md as enforced truth: `frob
+// check --only sys` gates on the directives below resolving into THIS
+// model, and (T-0080) on cross-component imports respecting the flows
+// declared here wherever tier-2 `code=` binding is in force.
+//
+// GRAMMAR GAP FOUND WHILE WRITING THIS MODEL (filed as a new ticket, see
+// Done report): `strata-core`'s lexer only accepts `[A-Za-z_][A-Za-z0-9_]*`
+// for IDENT (`is_ident_start`/`is_ident_cont`, strata-core/src/parse.rs),
+// and `attr KEY=VAL` requires VAL to be one IDENT token
+// (`parse_attrval`). There is no STRING- or glob-valued attr in the
+// surface grammar today, so `code=<glob>` (docs/strata/surface.md#code-
+// binding-tier-2-v0-implementation) and `may <capability>` (the
+// `component` decl's `comp_item`) are NOT reachable from `.strata` source
+// text -- only from a hand-built `KernelModel` in Python, which is exactly
+// how every `_code_binding.py`/`_effects.py` test exercises them. This
+// model therefore documents each component's real code ownership as a
+// plain comment (informal, not machine-bound) rather than a `code=` attr
+// it cannot express, and omits `may` capabilities for the same reason.
+// Making `code`/`may` parseable is real follow-up work, not something to
+// fake around here (bind honestly, per this ticket's own instructions).
+//
+// Every flow below is a real import edge this repo's `src/frob/*`
+// packages actually have today (computed by walking `from frob.X import`/
+// `import frob.X` across every file and rolling the 25+ leaf packages up
+// into the 8 components docs/strata/roadmap.md names for phase 4:
+// cli/app layer, graph+lang, gates, tickets, check, strata, dup+frob-core,
+// vet). Where two components import each other in both directions, both
+// flows are declared -- this model does not pretend the real dependency
+// graph is a DAG when it is not.
+
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+module frob
+
+// -- components --------------------------------------------------------
+
+// The only foreign-trust node: third-party package registries (PyPI/npm/
+// crates.io/OSV) that `frob.vet` queries over the network
+// (src/frob/vet/_registry.py, _osv.py, _popular_*.py). Nothing else in
+// this model talks to the network.
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+node registry : foreign { clearance Public; }
+
+// cli/app layer: src/frob/__main__.py, src/frob/app/**. The single
+// entrypoint every subcommand dispatches through (app.py's
+// `_dispatch_table`); every other component is reached only via a runner
+// in this layer.
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+node cli : trusted { clearance Internal; }
+
+// graph+lang: src/frob/graph/**, src/frob/lang/**, src/frob/arch/**. Owns
+// parsing (tree-sitter walkers + the strata-core native module), the
+// symbol graph snapshot, and per-language digest extraction that every
+// other component reads.
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+node graphlang : trusted { clearance Internal; }
+
+// gates: src/frob/gates/**. The obligation-graph rule engine (SYS/DRIFT/
+// COV/task-tracking/etc.); reads graph+lang's snapshot and strata's design models,
+// writes nothing on its own (violations are reported, not auto-filed --
+// T-0086's `frob sys plan` is the future ticket-filing seam).
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+node gates : trusted { clearance Internal; }
+
+// check orchestration: src/frob/check/**. Runs the gate suite plus the
+// process-spawned tool integrations (ruff/mypy/pytest via `frob.process`)
+// and folds results into one exit code.
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+node checker : trusted { clearance Internal; }
+
+// strata itself: src/frob/strata/**, strata-core/**. Parses/elaborates/
+// evaluates `.strata` design models (this file included) and does tier-2
+// code-binding/effect extraction, which is why it depends on `vet`'s
+// capability pattern tables (`_effects.py` reuses `frob.vet._capability`).
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+node stratamod : trusted { clearance Internal; }
+
+// dup+frob-core: everything that is real infrastructure but not one of
+// the named components above -- src/frob/dup/**, logging/**, process/**,
+// gitlog/**, gitio.py, xref/**, outline/**, map/**, exports/**,
+// mutate/**, perf/**, policy/**, release/**, scaffold/**, serve/**,
+// stats/**, bind/**, docs/**, fuzz/**, cycle/**, testing/**. Rolled into
+// one node deliberately: these packages form a dense, largely acyclic
+// utility mesh (logging alone has ~90 inbound imports repo-wide) that
+// does not carve into independently-owned components the way
+// gates/check/strata/vet do; modeling each one separately would not
+// change any claim in this file, only inflate the flow count.
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+node core : trusted { clearance Internal; }
+
+// vet: src/frob/vet/**. Dependency-vetting -- the ONE component that
+// crosses the trust boundary out to `registry` (network fetches for
+// publish dates, OSV advisories, popularity data).
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+node vet : trusted { clearance Internal; }
+
+// The ticket ledger: tickets.md + tickets/, git-tracked truth
+// (src/frob/tickets/**). `append_only` because the ledger is edited by
+// appending new tickets and updating ticket bodies in place under git
+// history, never by deleting the record of what happened (archive moves
+// closed tickets to a separate tracked file, `write_archive`, rather than
+// erasing them).
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+store tickets_ledger : trusted {
+    clearance Internal;
+    engine git_tracked;
+    append_only;
+}
+
+// The `.frob/` symbol-graph cache (`frob.graph`'s snapshot cache): derived
+// entirely from a `graphlang` parse and invalidated by the next one, never
+// hand-edited -- staleness is bounded by "no parse has happened since the
+// last one", modeled here as a 1s ttl (parse-triggered invalidation is
+// effectively immediate, not time-based, but the cache sugar requires a
+// bound and 1s documents "as fresh as the last parse" without claiming a
+// false 0).
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+cache graph_cache of graphlang {
+    ttl 1 s;
+    invalidate_on f_parse;
+}
+
+// -- flows ---------------------------------------------------------------
+
+// vet's one network-facing edge (src/frob/vet/_registry.py::
+// _result_from_network, _osv.py, _popular_*.py).
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_registry_fetch : registry -> vet { label Public; }
+
+// cli dispatches into every other component (src/frob/app/app.py::
+// _dispatch_table + the runner modules under src/frob/app/).
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_parse : cli -> graphlang { label Internal; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_cli_core : cli -> core { label Internal; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_cli_checker : cli -> checker { label Internal; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_cli_gates : cli -> gates { label Internal; }
+// The ledger write path a ticket-mutating subcommand takes
+// (src/frob/app/ticket_runner.py -> src/frob/tickets/_store.py::
+// write_ticket). See the `frob:channel f_cli_tickets` anchor there.
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_cli_tickets : cli -> tickets_ledger { label Internal; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_cli_vet : cli -> vet { label Internal; }
+
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_graphlang_core : graphlang -> core { label Internal; }
+
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_checker_graphlang : checker -> graphlang { label Internal; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_checker_core : checker -> core { label Internal; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_checker_gates : checker -> gates { label Internal; }
+
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_core_graphlang : core -> graphlang { label Internal; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_core_gates : core -> gates { label Internal; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_core_tickets : core -> tickets_ledger { label Internal; }
+
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_gates_graphlang : gates -> graphlang { label Internal; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_gates_core : gates -> core { label Internal; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_gates_strata : gates -> stratamod { label Internal; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_gates_tickets : gates -> tickets_ledger { label Internal; }
+
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_strata_graphlang : stratamod -> graphlang { label Internal; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_strata_core : stratamod -> core { label Internal; }
+// strata's `_effects.py` reuses `frob.vet._capability`'s pattern tables
+// (docstring, T-0079) -- the one strata -> vet edge.
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_strata_vet : stratamod -> vet { label Internal; }
+
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_vet_gates : vet -> gates { label Internal; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_vet_graphlang : vet -> graphlang { label Internal; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_vet_core : vet -> core { label Internal; }
+
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_tickets_core : tickets_ledger -> core { label Internal; }
+
+// -- boundary --------------------------------------------------------
+
+// `_result_from_network` parses and validates the registry response
+// before it becomes a `RegistryResult` anything downstream trusts; that
+// validation IS the endorsement (see the `frob:boundary b_vet_endorse`
+// anchor at src/frob/vet/_registry.py::_result_from_network). Nothing
+// downstream of `vet` re-validates a registry response, so if this
+// boundary is ever deleted the taint closure below (`c_no_registry_
+// ledger`) must -- and will -- flip to REFUTED.
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+boundary b_vet_endorse endorse f_registry_fetch : foreign -> trusted when "checksum_verified"
+
+// -- claims --------------------------------------------------------
+
+// Supply-chain integrity: raw third-party registry content must never
+// reach the tracked ticket ledger unendorsed. Proves only because
+// `b_vet_endorse` stops the taint closure at the registry -> vet hop;
+// delete that boundary (or the `frob:boundary` anchor that attests it in
+// code) and the witness path registry -> vet -> gates -> tickets_ledger
+// refutes it, which is the whole point of drawing this claim.
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+assert c_no_registry_ledger noflow registry -> tickets_ledger
+
+// The symbol-graph cache is derivable, not a second source of truth: its
+// only freshness bound is "as old as the last parse", asserted here as
+// <= 5s (the 1s ttl declared above with headroom, not a tight SLA -- the
+// claim is "bounded and cheap to recompute", not "sub-second").
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+assert c_cache_derivable bound age graph_cache <= 5 s
+
+// Sanity check that the gate suite's findings CAN reach the ledger
+// through the layer that actually writes to it (cli's ticket_runner),
+// i.e. this model has not accidentally drawn gates as a dead end.
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+assert c_gates_reach_tickets reach gates -> tickets_ledger

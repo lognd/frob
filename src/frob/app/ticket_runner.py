@@ -402,6 +402,7 @@ def _attach(root: Path, cfg: AppConfig) -> None:
     _log.info("attached %s (sha256=%s)", attachment.path, attachment.sha256)
 
 
+# frob:ticket T-0081
 def _block(root: Path, cfg: AppConfig) -> None:
     from frob.tickets import _load_one
     from frob.tickets._store import write_ticket
@@ -418,6 +419,9 @@ def _block(root: Path, cfg: AppConfig) -> None:
     updated = ticket.model_copy(
         update={"blocked_by": ticket.blocked_by + (cfg.ticket_by,)}
     )
+    # frob:channel f_cli_tickets
+    # design/frob.strata's `flow f_cli_tickets : cli -> tickets_ledger` --
+    # this is one of the cli-layer write sites into the ticket ledger.
     written = write_ticket(root, updated)
     if written.is_err:
         _log.error("block failed: %s", written.danger_err)

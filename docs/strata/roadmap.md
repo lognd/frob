@@ -77,11 +77,33 @@ search-shaped model (batch index pipelines with freshness lag).
 ## Self-hosting commitments (decision D7)
 
 - This effort is tracked in frob tickets from day one: T-0047..T-0086.
-- Phase 4 exit: `design/frob.strata` declares frob's own architecture
-  (module dependency direction, trust of inputs, the gitio subprocess
-  seam, tickets/lock as tracked truth) and `frob check` enforces it,
-  superseding the informal dependency diagram in `docs/rework.md` as
-  enforced truth.
+- Phase 4 exit MET (T-0081): `design/frob.strata` declares frob's own
+  architecture -- 8 components rolled up from the repo's 25+ leaf
+  packages (cli/app layer, graph+lang, gates, check, strata, dup+frob-
+  core, vet, plus the `registry` foreign node vet talks to over the
+  network), the tickets ledger as an `append_only` git-tracked `store`,
+  and the `.frob/` symbol-graph cache as a `cache` derived from a
+  `graphlang` parse -- and `frob check --only sys` enforces it at zero
+  violations, superseding the informal dependency diagram in
+  `docs/rework.md` as enforced truth. Every flow in the model is a real
+  cross-package import this repo has today (walked directly, not
+  aspirational). Three claims prove: `c_no_registry_ledger` (supply-chain
+  noflow from vet's network fetch to the ticket ledger, held by the
+  `b_vet_endorse` boundary at `src/frob/vet/_registry.py::
+  _result_from_network`), `c_cache_derivable` (the symbol-graph cache's
+  age is bounded), and `c_gates_reach_tickets` (the gate suite's findings
+  can reach the layer that writes the ledger). Locked in CI by
+  `tests/system/test_frob_self_model.py`.
+  - Grammar gap found while writing the model: the surface language's
+    `code=<glob>` (docs/strata/surface.md#code-binding-tier-2-v0-
+    implementation) and `may <capability>` (T-0079) are unreachable from
+    `.strata` source text today -- `strata-core`'s lexer only accepts
+    `[A-Za-z_][A-Za-z0-9_]*` IDENT tokens and `attr KEY=VAL` requires a
+    single IDENT value, so a glob like `src/frob/app/**` cannot be
+    written as an attr. Both features currently only work via a
+    hand-built `KernelModel` in Python (exactly how their own test
+    suites exercise them). Tracked as follow-up work, filed alongside
+    this ticket's Done report.
 - Phase 5: `frob sys plan` files strata's own remaining work as tickets --
   the language plans its own completion.
 

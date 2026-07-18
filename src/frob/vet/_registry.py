@@ -160,6 +160,12 @@ def _result_from_cached(
     return RegistryResult(ok=True, published_at=published, resolved_version=resolved)
 
 
+# frob:boundary b_vet_endorse
+# This is the endorsement site for design/frob.strata's
+# `boundary b_vet_endorse endorse f_registry_fetch : foreign -> trusted`:
+# a raw network response is parsed/validated into a `RegistryResult` here,
+# and nothing downstream re-validates it -- delete this validation and the
+# model's `c_no_registry_ledger` noflow claim would (correctly) refute.
 def _result_from_network(
     ecosystem: str,
     name: str,

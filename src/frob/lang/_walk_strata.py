@@ -17,10 +17,18 @@ concrete `RawSymbol` span without hand-rolling a second strata parser.
 
 from __future__ import annotations
 
+import importlib
 import json
 import re
+from types import ModuleType
 
-import strata_core
+try:
+    strata_core: ModuleType | None = importlib.import_module("strata_core")
+except ImportError:  # pragma: no cover - environment-dependent
+    # The native parser is a maturin-built extension present in dev venvs
+    # but not in standalone tool installs; .strata parsing degrades to a
+    # per-file Err instead of crashing every frob invocation (T-0133).
+    strata_core = None
 from typani import Err, Ok
 from typani.result import Result
 
@@ -205,6 +213,11 @@ def walk_strata(
     the header regex has fallen out of sync with the real grammar
     (strata-core/src/parse.rs's top-level keyword table).
     """
+    if strata_core is None:
+        return Err(
+            "strata_core native extension unavailable; .strata parsing "
+            "requires a dev install (make core) -- see T-0133"
+        )
     parsed = json.loads(strata_core.parse_source(source))
     if "err" in parsed:
         return Err(_reject(parsed["err"]))

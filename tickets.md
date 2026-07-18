@@ -3864,7 +3864,7 @@ by the same suites.
 ```yaml
 id: T-0081
 title: 'strata self-hosting: design/frob.strata models frob itself'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-17'
@@ -3874,12 +3874,45 @@ parent: T-0053
 scope:
 - design/**
 - frob.toml
-evidence: []
+- src/frob/vet/_registry.py
+- src/frob/app/ticket_runner.py
+- docs/strata/roadmap.md
+- tests/system/test_frob_self_model.py
+- tickets.md
+evidence:
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_parses_and_elaborates
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_every_claim_proves
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_sys_gate_zero_violations
 attachments: []
 acceptance: []
 threat: null
 ```
 frob declares its own components (lang/graph/gates/tickets/check), trust levels, and module-dependency architecture in strata and gates on it. Phase-4 exit criterion; supersedes the informal docs/rework.md dependency diagram as enforced truth.
+
+Scope extended beyond the original `design/**, frob.toml` during
+implementation: proving `frob check --only sys` gates on the model at
+zero violations required a couple of real `frob:channel`/`frob:boundary`
+code anchors (`src/frob/vet/_registry.py`, `src/frob/app/ticket_runner.py`),
+a CI-locking system test (`tests/system/test_frob_self_model.py`), and the
+roadmap doc update -- all explicitly called for by this ticket's own
+dispatch instructions.
+## Done report
+
+design/frob.strata models frob itself: 10 nodes (8 roadmap components
++ tickets ledger store + graph cache), 27 flows every one derived from
+real cross-package imports, 1 boundary, 3 claims all PROVED (registry
+noflow to ledger, cache age bound, gates reach tickets). Reviewer
+spot-verified 8 flows against real imports, confirmed 3 candidate
+omissions genuinely absent, and ran the negative check (synthetic
+registry->ledger flow flips the claim to REFUTED -- load-bearing, not
+vacuous). Two sparse directives anchor the vet endorsement boundary
+and the cli->tickets channel. CI-locked by a 4-test system suite.
+Grammar gap filed as T-0132 (code=/may unreachable from surface text).
+Landing surfaced two integration incidents fixed alongside: the
+standalone tool crashed on the hard strata_core import (guarded,
+T-0133 tracks bundling; global tool now installed --with both crates)
+and three DOC002 anchor mismatches got explicit anchors. Verified at
+close: frob check exit 0 with the bundled tool, self-model suite 4/4.
 
 <!-- ticket:T-0082 -->
 ```yaml
@@ -5858,3 +5891,69 @@ acceptance: []
 threat: null
 ```
 Found during T-0128: the first frob ticket start/evidence invocation run from inside a git linked worktree resolved the repo root to the MAIN checkout (/home/logan/projects/frob) and wrote main's tickets.md, while later invocations in the same session correctly targeted the worktree. The same misresolution likely explains a mid-session incident where frob ticket close, run with cwd inside a worktree, transitioned the ticket in main's ledger. test_linked_worktree_resolves_to_worktree_root exists and passes, so the failure is conditional -- suspect cache/state (.frob dir presence?) or cwd-vs-env resolution order on first run. Repro attempt: fresh worktree, no .frob, run frob ticket show from the worktree root and compare the 'loaded N tickets under <path>' line. Fix the resolution order and add a regression test covering the first-invocation case.
+
+<!-- ticket:T-0132 -->
+```yaml
+id: T-0132
+title: 'strata surface grammar: code=<glob>/may <capability> unreachable from .strata
+  source text'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- strata-core/src/parse.rs,src/frob/strata/_ast.py,src/frob/strata/_elaborate.py,docs/strata/surface.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Found while writing design/frob.strata (T-0081, self-hosting phase-4 exit).
+
+strata-core's lexer only accepts [A-Za-z_][A-Za-z0-9_]* for IDENT
+(is_ident_start/is_ident_cont, strata-core/src/parse.rs), and parse_node's
+`attr KEY=VAL` requires VAL to be exactly one IDENT token (parse_attrval).
+There is no STRING- or glob-valued attr anywhere in the surface grammar.
+
+This means two tier-2 features that already have full Python
+implementations and test suites are completely unreachable from `.strata`
+source text:
+
+- `code=<glob>` (T-0078, docs/strata/surface.md#code-binding-tier-2-v0-
+  implementation) -- a glob like `src/frob/app/**` cannot be lexed; every
+  test exercising bind_code/check_import_conformance builds a KernelModel
+  directly in Python (tests/unit/strata/test_code_binding.py).
+- `may <capability>` (T-0079) -- same story; the `component` decl that
+  would host `may` per the grammar sketch
+  (docs/strata/surface.md's `comp_item := ... | "may" capability`) is not
+  even parsed (`parse_component` does not exist in strata-core/src/parse.rs
+  outside the policy scope-spec use of the `component` keyword).
+
+design/frob.strata (T-0081) documents each component's real code
+ownership as an informal comment instead of a `code=` attr, and omits
+`may` capabilities entirely, because the grammar cannot express either
+today. Fix: extend the lexer with a STRING token (or a glob-safe IDENT
+extension allowing `/`, `*`, `.`) and wire `code`/`may` into `parse_node`
+(or the `component` decl), then update design/frob.strata to use the real
+syntax and drop this ticket's workaround comment.
+
+<!-- ticket:T-0133 -->
+```yaml
+id: T-0133
+title: 'standalone tool install crashes: strata_core hard import in frob.lang (hotfixed);
+  bundle or degrade natives properly'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0077's _walk_strata did a module-level 'import strata_core', making the maturin-built native extension a hard dependency of frob.lang -- every invocation of the standalone uv-tool-installed frob crashed with ModuleNotFoundError in ANY repo. Hotfixed with a guarded import: walk_strata returns Err('strata_core native extension unavailable...') when the parser is absent, so .strata files degrade to a per-file parse error instead of killing the process. Follow-up decisions this ticket tracks: (a) should supported_extensions() advertise .strata when the parser is missing (currently yes -- graph build will log the per-file Err; consider filtering), (b) ship strata-core (and frob-core) as wheels or optional extras so tool installs get full functionality, (c) add a CI job that uv-tool-installs the wheel in a clean env and runs frob check on a fixture repo to catch import-time regressions of the standalone binary.
