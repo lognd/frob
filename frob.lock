@@ -31,7 +31,7 @@
       "ref": "src/frob/gates/__init__.py::run_gates"
     },
     {
-      "digest": "4874fed58820ae91c7819804c10e9ec10f8ffc0fd1d9af893becf340caf38136",
+      "digest": "267c1e176d8d70d0a21b9d707765ef44ad2cb08f72ab3d440ef260cf786768f1",
       "facet": "sig",
       "ref": "src/frob/gates/__init__.py::scope_gate"
     },

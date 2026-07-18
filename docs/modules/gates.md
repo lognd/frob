@@ -132,8 +132,17 @@ def run_gates(cfg: GateConfig) -> Result[GateReport, GateError]
 def drift_gate(snapshot: GraphSnapshot, lock: LockFile) -> tuple[Violation, ...]
 def coverage_gate(snapshot: GraphSnapshot, queue: TicketQueue,
                   diff: Diff, tests: CollectedTests) -> tuple[Violation, ...]
-def scope_gate(diff: Diff, ticket: Ticket,
-               snapshot: GraphSnapshot) -> tuple[Violation, ...]
+def scope_gate(diff: Diff, ticket: Ticket, snapshot: GraphSnapshot, *,
+               root: Path | None = None,
+               queue: TicketQueue | None = None) -> tuple[Violation, ...]
+    # SCOPE001. When root/queue are given (run_gates always passes them),
+    # a file failing this ticket's own scope is re-checked hunk by hunk via
+    # git blame: a hunk is exempt only if every line is already committed
+    # (never a dirty/uncommitted line) and every covering commit's subject
+    # names another ticket whose own declared scope covers the file (T-0108
+    # -- fixes false SCOPE001 on files an earlier ticket already committed
+    # on the same branch). Callers omitting root/queue keep the old,
+    # unconditional check.
 def prework_gate(ticket: Ticket, snapshot: GraphSnapshot) -> tuple[Violation, ...]
 def invariant_gate(invariants: tuple[Invariant, ...], snapshot: GraphSnapshot,
                    tests: CollectedTests) -> tuple[Violation, ...]

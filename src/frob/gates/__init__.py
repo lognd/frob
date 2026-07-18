@@ -18,6 +18,7 @@ is decomposed into small private helpers alongside it.
 
 from __future__ import annotations
 
+import fnmatch
 import hashlib
 import re
 import time
@@ -55,7 +56,7 @@ from frob.gates._models import (
 )
 from frob.gates._prework import load_prework, record_prework
 from frob.gates.invariants import Invariant, InvariantError, load_invariants
-from frob.gitio import Diff, current_branch, working_diff
+from frob.gitio import Diff, Hunk, current_branch, run_argv, working_diff
 from frob.graph import (
     BuildError,
     Edge,
@@ -159,7 +160,6 @@ def _interface_package(path: str) -> str:
 
 def _glob_prefix_match(path: str, glob: str) -> bool:
     """True if `path` sits under a `[[system]].paths` glob's directory prefix."""
-    import fnmatch
 
     return fnmatch.fnmatch(path, glob) or path.startswith(glob.split("*")[0])
 
@@ -685,7 +685,6 @@ def _open_scopes(queue: TicketQueue) -> list[tuple[str, tuple[str, ...]]]:
 
 def _scope_covers(path: str, open_scopes: list[tuple[str, tuple[str, ...]]]) -> bool:
     """True if `path` matches any open ticket's scope glob."""
-    import fnmatch
 
     return any(
         fnmatch.fnmatch(path, glob) for _tid, scope in open_scopes for glob in scope
@@ -892,7 +891,6 @@ def scope_digest(scope: Sequence[str], snapshot: GraphSnapshot) -> str:
     `prework_gate` compares against it -- a second copy of this hash is how
     PRE001 becomes permanently stale (it happened; see tests/test_prework_parity.py).
     """
-    import fnmatch
 
     matched = sorted(
         (path, digest)
@@ -910,12 +908,122 @@ def _scope_digest(ticket: Ticket, snapshot: GraphSnapshot) -> str:
     return scope_digest(ticket.scope, snapshot)
 
 
+_TICKET_REF_RE = re.compile(r"T-\d{4}")
+
+# git blame --porcelain's sentinel sha for lines not yet committed (T-0108: a
+# hunk owning only this sha is real, in-progress work -- never exempt from SCOPE001).
+_UNCOMMITTED_SHA = "0" * 40
+_BLAME_SHA_LINE_RE = re.compile(r"^[0-9a-f]{40} ")
+
+
+def _blame_shas(root: Path, file: str, start: int, end: int) -> Option[frozenset[str]]:
+    """Distinct commit shas covering lines `[start, end]` of `file` at HEAD
+    (`git blame --porcelain`), or `Nothing()` if blame fails (missing file,
+    not a repo, etc). `_UNCOMMITTED_SHA` marks working-tree-dirty lines. Spawns
+    through `frob.gitio.run_argv` -- the package's one process-with-timeout
+    seam -- rather than adding a second git subprocess helper (T-0108)."""
+    argv = (
+        "git",
+        "-C",
+        str(root),
+        "blame",
+        "-L",
+        f"{start},{end}",
+        "--porcelain",
+        "--",
+        file,
+    )
+    spawned = run_argv(argv)
+    if spawned.is_err or spawned.danger_ok.returncode != 0:
+        _log.debug("scope_gate: git blame failed for %s:%d-%d", file, start, end)
+        return Nothing()
+    shas = frozenset(
+        line.split(" ", 1)[0]
+        for line in spawned.danger_ok.stdout.splitlines()
+        if _BLAME_SHA_LINE_RE.match(line)
+    )
+    return Some(shas)
+
+
+def _commit_subject(root: Path, sha: str) -> Option[str]:
+    """The subject line (`%s`) of commit `sha`, or `Nothing()` if unreadable --
+    read to recover the ticket id a prior commit belongs to for SCOPE001's
+    cross-ticket exemption (T-0108)."""
+    spawned = run_argv(("git", "-C", str(root), "log", "-1", "--format=%s", sha))
+    if spawned.is_err or spawned.danger_ok.returncode != 0:
+        _log.debug("scope_gate: could not read subject of %s", sha)
+        return Nothing()
+    return Some(spawned.danger_ok.stdout.strip())
+
+
+def _commit_exempts_file(
+    root: Path, sha: str, file: str, ticket: Ticket, queue: TicketQueue
+) -> bool:
+    """True if commit `sha`'s subject names another ticket (not `ticket`) whose
+    own declared `scope` covers `file` -- the SCOPE001 cross-ticket exemption
+    (T-0108): a commit's authorship is attributed by the ticket id its subject
+    references, not by whichever ticket happens to be running the check now."""
+
+    subject = _commit_subject(root, sha)
+    if subject.is_nothing:
+        return False
+    # frob:waive PERF003 reason="one subject, few T-#### refs; bounded scan, not a join"
+    for ref in _TICKET_REF_RE.findall(subject.danger_some):
+        if ref == ticket.id:
+            continue
+        other = queue.tickets.get(ref)
+        if other is None:
+            continue
+        if any(fnmatch.fnmatch(file, glob) for glob in other.scope):
+            return True
+    return False
+
+
+def _hunk_exempt(root: Path, hunk: Hunk, ticket: Ticket, queue: TicketQueue) -> bool:
+    """True if every line of `hunk` is already committed (no working-tree-dirty
+    lines) and attributable to a commit exempted per `_commit_exempts_file`."""
+    start, end = hunk.span
+    shas_opt = _blame_shas(root, hunk.file, start, end)
+    if shas_opt.is_nothing:
+        return False
+    shas = shas_opt.danger_some
+    if not shas or _UNCOMMITTED_SHA in shas:
+        return False
+    return all(
+        _commit_exempts_file(root, sha, hunk.file, ticket, queue) for sha in shas
+    )
+
+
+def _scope_exempt_file(
+    root: Path, file: str, diff: Diff, ticket: Ticket, queue: TicketQueue
+) -> bool:
+    """True if every hunk touching `file` in `diff` was already committed under
+    another ticket's own declared scope -- fixes SCOPE001 false positives when
+    ticket A's committed work still shows up in ticket B's diff against `base`
+    (T-0108). Working-tree-dirty hunks are never exempt: only prior commits
+    naming a scoping ticket are."""
+    # frob:waive PERF003 reason="filter then check-all: two single-pass loops"
+    hunks = tuple(h for h in diff.hunks if h.file == file)
+    if not hunks:
+        return False
+    return all(_hunk_exempt(root, hunk, ticket, queue) for hunk in hunks)
+
+
 # frob:doc docs/modules/gates.md#public-api
 def scope_gate(
-    diff: Diff, ticket: Ticket, snapshot: GraphSnapshot
+    diff: Diff,
+    ticket: Ticket,
+    snapshot: GraphSnapshot,
+    *,
+    root: Path | None = None,
+    queue: TicketQueue | None = None,
 ) -> tuple[Violation, ...]:
-    """SCOPE001: diff touches paths outside the active ticket's `scope`."""
-    import fnmatch
+    """SCOPE001: diff touches paths outside the active ticket's `scope`. When
+    `root` and `queue` are given, a file already committed entirely under
+    another ticket's own scope (its commits' subjects reference that ticket
+    id) is exempt -- fixes SCOPE001 false positives when ticket A's
+    already-committed work still shows up in ticket B's diff on the same
+    branch (T-0108)."""
 
     if not ticket.scope:
         _log.debug(
@@ -926,6 +1034,17 @@ def scope_gate(
     violations: list[Violation] = []
     for file in touched:
         if any(fnmatch.fnmatch(file, glob) for glob in ticket.scope):
+            continue
+        if (
+            root is not None
+            and queue is not None
+            and _scope_exempt_file(root, file, diff, ticket, queue)
+        ):
+            _log.debug(
+                "SCOPE001: %s exempt for %s (committed under another ticket's scope)",
+                file,
+                ticket.id,
+            )
             continue
         _log.debug("SCOPE001: %s outside %s's scope", file, ticket.id)
         violations.append(
@@ -1803,7 +1922,6 @@ def _doclink_config(root: Path) -> tuple[list[str], list[str], list[str]]:
 
 def _obligated_docs(root: Path, include: list[str], exclude: list[str]) -> set[str]:
     """The set of doc files matched by `include` and not `exclude`."""
-    import fnmatch
 
     obligated: set[str] = set()
     for glob in include:
@@ -2105,7 +2223,9 @@ def _build_jobs(
     if "scope" in selected:
         scope_ticket = st.ticket
         if scope_ticket is not None:
-            jobs["scope"] = lambda: scope_gate(st.diff, scope_ticket, st.snapshot)
+            jobs["scope"] = lambda: scope_gate(
+                st.diff, scope_ticket, st.snapshot, root=st.root, queue=st.queue
+            )
         else:
             skipped.append("scope")
     if "prework" in selected:

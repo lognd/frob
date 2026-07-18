@@ -33,7 +33,7 @@ from frob.gates import (
     test_gate as run_test_gate,
 )
 from frob.gates.invariants import Criticality, InvariantError, load_invariants
-from frob.gitio import Diff, Hunk
+from frob.gitio import Diff, Hunk, working_diff
 from frob.graph import build_graph
 from frob.graph._models import LockEntry, LockFile
 from frob.testing import CollectedTests
@@ -540,6 +540,98 @@ class TestScopePrework:
         ticket = _ticket(scope=())
         diff = Diff(base="x", hunks=(Hunk(file="src/anything.py", span=(1, 1)),))
         assert scope_gate(diff, ticket, snap) == ()
+
+    def test_scope001_exempts_file_committed_by_earlier_ticket(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::scope_gate
+        # Reproduces T-0108: ticket A commits within its own scope, then ticket
+        # B's scope check must not flag A's already-committed file.
+        _git_init(tmp_path)
+        _write_ticket(
+            tmp_path,
+            _ticket(ticket_id="T-0001", scope=("src/a/**",)),
+        )
+        _write_ticket(
+            tmp_path,
+            _ticket(ticket_id="T-0002", scope=("src/b/**",)),
+        )
+        subprocess.run(
+            ["git", "checkout", "-q", "-b", "work"], cwd=tmp_path, check=True
+        )
+        _write(tmp_path, "src/a/mod.py", "def f():\n    return 1\n")
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "feat(a): add mod (T-0001)"],
+            cwd=tmp_path,
+            check=True,
+        )
+        queue = TicketQueue(
+            tickets={
+                "T-0001": _ticket(ticket_id="T-0001", scope=("src/a/**",)),
+                "T-0002": _ticket(ticket_id="T-0002", scope=("src/b/**",)),
+            }
+        )
+        diff = working_diff(tmp_path, "main").danger_ok
+        snap = _snapshot(tmp_path)
+        ticket_b = _ticket(ticket_id="T-0002", scope=("src/b/**",))
+
+        # frob:waive PERF003 reason="two separate any() assertions, not a nested join"
+        # Without root/queue (old behavior): false positive SCOPE001 on A's file.
+        violations_no_context = scope_gate(diff, ticket_b, snap)
+        assert any(v.file == "src/a/mod.py" for v in violations_no_context)
+
+        # With root/queue: T-0001's committed file is exempt from T-0002's check.
+        violations = scope_gate(diff, ticket_b, snap, root=tmp_path, queue=queue)
+        assert not any(v.file == "src/a/mod.py" for v in violations)
+
+    def test_scope001_still_flags_uncommitted_out_of_scope_edit(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::scope_gate
+        # The exemption must not swallow a ticket's own dirty, out-of-scope edit.
+        _git_init(tmp_path)
+        _write_ticket(tmp_path, _ticket(ticket_id="T-0002", scope=("src/b/**",)))
+        _write(tmp_path, "src/a/mod.py", "def f():\n    return 1\n")
+        queue = TicketQueue(
+            tickets={"T-0002": _ticket(ticket_id="T-0002", scope=("src/b/**",))}
+        )
+        diff = working_diff(tmp_path, "main").danger_ok
+        snap = _snapshot(tmp_path)
+        ticket_b = _ticket(ticket_id="T-0002", scope=("src/b/**",))
+
+        violations = scope_gate(diff, ticket_b, snap, root=tmp_path, queue=queue)
+        assert any(v.file == "src/a/mod.py" for v in violations)
+
+    def test_scope001_does_not_exempt_when_referenced_ticket_lacks_scope(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::scope_gate
+        # A commit referencing a ticket that doesn't declare the file in its own
+        # scope must not grant an exemption.
+        _git_init(tmp_path)
+        subprocess.run(
+            ["git", "checkout", "-q", "-b", "work"], cwd=tmp_path, check=True
+        )
+        _write(tmp_path, "src/a/mod.py", "def f():\n    return 1\n")
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "feat(a): add mod (T-0001)"],
+            cwd=tmp_path,
+            check=True,
+        )
+        queue = TicketQueue(
+            tickets={
+                "T-0001": _ticket(ticket_id="T-0001", scope=("src/other/**",)),
+                "T-0002": _ticket(ticket_id="T-0002", scope=("src/b/**",)),
+            }
+        )
+        diff = working_diff(tmp_path, "main").danger_ok
+        snap = _snapshot(tmp_path)
+        ticket_b = _ticket(ticket_id="T-0002", scope=("src/b/**",))
+
+        violations = scope_gate(diff, ticket_b, snap, root=tmp_path, queue=queue)
+        assert any(v.file == "src/a/mod.py" for v in violations)
 
     def test_pre001_missing_sweep(self, tmp_path: Path) -> None:
         from typani.option import Nothing
