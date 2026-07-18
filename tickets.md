@@ -1889,6 +1889,28 @@ threat: null
 ```
 Filed from malmberg pilot P3 (/mnt/c, 2026-07-18). Malmberg pilot dedicated /mnt/c findings: same content, same machine -- graph cold 7.4s vs 1.1s, warm up to 31s vs 0.5s, gates-only 19-47s vs 7.9s; ~0.5ms/stat under load (11.3k stats in 90s of sweep strace); sqlite commit 8.2ms vs 2.3ms; concurrent frob processes drove D-state stalls with no lock feedback. Fixes: batch directory walks (os.scandir reuse), cut redundant per-file stats (trust one snapshot pass), sqlite busy_timeout + a visible waiting-on-lock message, and a docs page on WSL-mount expectations. Acceptance: measured cold graph build on the malmberg /mnt/c checkout under 3s.
 
+<!-- ticket:T-0246 -->
+```yaml
+id: T-0246
+title: 'PERF003 correlation: unwind one level of call parens in _operand_names (f(x)
+  == g(y) joins)'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/perf/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0161 round-2 review follow-up (non-blocking boundary found by the reviewer): a real nested join comparing derived values -- f(x) == g(y) with x,y the loop variables inside call parens -- does not fire because _operand_names only unwinds bare identifiers and one bracket-pair subscript (a[i-1] == b[j-1] works). Extend the unwinding one level of call parens, symmetric with the subscript handling; keep the attribute-access narrowing (its 4 sibling-loop FP sites are documented in T-0161's Done report). Regression: derived-value join fires; the 4 FP classes stay silent.
+
 <!-- ticket:T-draft-117dcdb8 -->
 ```yaml
 id: T-draft-117dcdb8
