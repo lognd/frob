@@ -1418,7 +1418,7 @@ cross-file rust directives), T-0091 (make core stray-venv), T-0092
 ```yaml
 id: T-0051
 title: 'strata phase 2: std.infra + bounds + policy forms + boundaries'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-17'
@@ -1429,7 +1429,9 @@ scope:
 - src/frob/strata/**
 - tests/unit/strata/**
 - design/litmus/**
-evidence: []
+evidence:
+- tests/unit/strata/test_litmus_tube.py::TestTubeGoldens::test_payout_age_bound_refutes_on_the_approximate_counter_path
+- tests/unit/strata/test_litmus_chirp.py::TestChirpGoldens::test_hot_shard_refutes_where_mean_proves
 attachments: []
 acceptance:
 - GIVEN tube.strata and chirp.strata WHEN frob sys check runs THEN stampede, fanout-ceiling,
@@ -1437,6 +1439,18 @@ acceptance:
 threat: null
 ```
 store/cache/queue/cdn elaboration with mandatory invalidation edges, unified age/staleness propagation, capacity arithmetic with skew + growth horizons + cold/degraded modes, the 5 policy forms with semantic scoping + enables cascade, std.policy.analyzable, six-phase boundary contract with outcome-conditioned frames, errors-total/panics-contained/observe packs. See docs/strata/{policy,boundary}.md.
+
+## Done report
+
+Phase 2 complete: T-0064 std.infra, T-0065 age/staleness (+ the SCC
+worst_age soundness fix), T-0066 capacity/skew/horizons, T-0067/68
+policy forms + enables cascade, T-0069/70 boundaries/frames +
+observability, T-0071 strata-core (pulled forward by user directive),
+T-0072 tube+chirp litmus (exit criterion met: hot-shard-vs-mean,
+growth-horizon, immutable-TTL, CDN-declassify goldens fire numerically
+in CI). T-0103 (store capacity dropped at desugar) found by the litmus
+and fixed same-day. Every child reviewer-verified; two children
+required rejection rounds (evidence schema, worst_age soundness).
 
 <!-- ticket:T-0052 -->
 ```yaml
@@ -2662,7 +2676,7 @@ rust-publicness rule.
 ```yaml
 id: T-0072
 title: strata tube + chirp litmus models + goldens
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-17'
@@ -3380,3 +3394,33 @@ acceptance: []
 threat: null
 ```
 Found during T-0067/68 review: a malformed evidence block in tickets.md made load_queue fail; frob check printed 'gates skipped: Ticket queue failed to load' and EXITED 0 -- every obligation gate silently vanished while reporting success (the vacuous-pass class again). A queue load failure must be a hard error with remedy text. Companion fix: frob ticket new/close should validate evidence schema on write so malformed entries cannot land at all.
+
+<!-- ticket:T-0103 -->
+```yaml
+id: T-0103
+title: std.infra drops declared store capacity (UTILIZATION can never target a store)
+state: done
+kind: bug
+origin: agent
+created: '2026-07-17'
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/**
+- tests/unit/strata/**
+- docs/strata/**
+- tickets.md
+evidence:
+- tests/unit/strata/test_infra.py::TestStoreCapacity::test_store_capacity_maps_through_to_the_kernel_node
+attachments: []
+acceptance: []
+threat: null
+```
+T-0072 litmus gap report: store { capacity N unit replicas A..B } parses, but _infra.py::_elaborate_store hardcodes capacity=None, so utilization claims on stores always refute 'declares no capacity'. Map the surface capacity through to the kernel Node exactly as _elaborate.py does for NodeDecl.
+
+## Done report
+
+_infra.py::_elaborate_store now maps StoreDecl.capacity to the kernel
+Capacity exactly as _elaborate.py does for nodes (import aliased to
+KernelCapacity to avoid the surface-model clash). One regression test;
+all strata tests green; ruff/ty clean.

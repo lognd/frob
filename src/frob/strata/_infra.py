@@ -30,6 +30,7 @@ from frob.logging import get_logger
 from ._ast import BalancerDecl, CacheDecl, CdnDecl, Module, QueueDecl, StoreDecl
 from ._errors import StrataError
 from ._models import Boundary, BoundaryDirection, Flow, Node, Quantity
+from ._models import Capacity as KernelCapacity
 
 _log = get_logger(__name__)
 
@@ -91,6 +92,14 @@ def _elaborate_store(decl: StoreDecl) -> Result[Node, StrataError]:
             return Err(StrataError.UnitMismatch)
         seconds = decl.rpo.base_value().danger_ok
         attrs.append(f"rpo={seconds}")
+    capacity = None
+    if decl.capacity is not None:
+        capacity = KernelCapacity(
+            service_rate=decl.capacity.rate,
+            replicas_min=decl.capacity.replicas_min,
+            replicas_max=decl.capacity.replicas_max,
+        )
+        _log.debug("store %s: declared capacity mapped through (T-0103)", decl.id)
     _log.debug("store %s -> node at trust %s, attrs=%s", decl.id, decl.trust, attrs)
     return Ok(
         Node(
@@ -98,7 +107,7 @@ def _elaborate_store(decl: StoreDecl) -> Result[Node, StrataError]:
             trust=decl.trust,
             clearance=decl.clearance,
             attrs=tuple(attrs),
-            capacity=None,
+            capacity=capacity,
             residence=decl.residence,
         )
     )
