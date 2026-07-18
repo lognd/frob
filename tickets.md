@@ -477,7 +477,7 @@ NOT closed and NOT committed per dispatch instructions.
 ```yaml
 id: T-0145
 title: 'per-CWE litmus fixtures: every catalog weakness fires from real .strata source'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-18'
@@ -488,12 +488,58 @@ scope:
 - tests/unit/strata/test_litmus_cwe.py
 - docs/strata/threat.md
 - tickets.md
-evidence: []
+evidence:
+- tests/unit/strata/test_litmus_cwe.py::TestFixtureCoverageIsExhaustive::test_every_catalog_entry_has_a_fixture_mapping
+- tests/unit/strata/test_litmus_cwe.py::TestFixtureCoverageIsExhaustive::test_unfired_ids_are_exactly_the_capability_kind_none_entries
+- tests/unit/strata/test_litmus_cwe.py::TestFixtureCoverageIsExhaustive::test_every_firing_id_also_has_a_hardened_fixture
+- tests/unit/strata/test_litmus_cwe.py::TestOutOfScopeExemptionMatchesCatalogExactly::test_cwe_top_25_view_is_satisfied_by_the_litmus_catalog
+- tests/unit/strata/test_litmus_cwe.py::TestOutOfScopeExemptionMatchesCatalogExactly::test_out_of_scope_ids_are_disjoint_from_the_fixture_catalog
+- tests/unit/strata/test_litmus_cwe.py::TestOutOfScopeExemptionMatchesCatalogExactly::test_out_of_scope_ids_cover_the_top_25_gap_exactly
+- tests/unit/strata/test_litmus_cwe.py::TestFiringFromParsedSurfaceSource::test_fires_undischarged[CWE-502]
+- tests/unit/strata/test_litmus_cwe.py::TestFiringFromParsedSurfaceSource::test_fires_undischarged[CWE-78]
+- tests/unit/strata/test_litmus_cwe.py::TestFiringFromParsedSurfaceSource::test_fires_undischarged[CWE-79]
+- tests/unit/strata/test_litmus_cwe.py::TestFiringFromParsedSurfaceSource::test_fires_undischarged[CWE-89]
+- tests/unit/strata/test_litmus_cwe.py::TestFiringFromParsedSurfaceSource::test_fires_undischarged[CWE-918]
+- tests/unit/strata/test_litmus_cwe.py::TestFiringFromParsedSurfaceSource::test_fires_undischarged[CWE-922]
+- tests/unit/strata/test_litmus_cwe.py::TestFiringFromParsedSurfaceSource::test_fires_undischarged[CWE-94]
+- tests/unit/strata/test_litmus_cwe.py::TestHardenedDischargesFromParsedSurfaceSource::test_discharges_cleanly[CWE-502]
+- tests/unit/strata/test_litmus_cwe.py::TestHardenedDischargesFromParsedSurfaceSource::test_discharges_cleanly[CWE-78]
+- tests/unit/strata/test_litmus_cwe.py::TestHardenedDischargesFromParsedSurfaceSource::test_discharges_cleanly[CWE-79]
+- tests/unit/strata/test_litmus_cwe.py::TestHardenedDischargesFromParsedSurfaceSource::test_discharges_cleanly[CWE-89]
+- tests/unit/strata/test_litmus_cwe.py::TestHardenedDischargesFromParsedSurfaceSource::test_discharges_cleanly[CWE-918]
+- tests/unit/strata/test_litmus_cwe.py::TestHardenedDischargesFromParsedSurfaceSource::test_discharges_cleanly[CWE-922]
+- tests/unit/strata/test_litmus_cwe.py::TestHardenedDischargesFromParsedSurfaceSource::test_discharges_cleanly[CWE-94]
+- tests/unit/strata/test_litmus_cwe.py::TestSharedExecCapabilityDischargesIndependently::test_vuln_fixture_fires_both_independently
+- tests/unit/strata/test_litmus_cwe.py::TestSharedExecCapabilityDischargesIndependently::test_hardened_fixture_discharges_both_independently
+- tests/unit/strata/test_litmus_cwe.py::TestSharedExecCapabilityDischargesIndependently::test_discharging_only_one_leaves_the_other_undischarged
+- tests/unit/strata/test_litmus_cwe.py::TestCapabilityKindNoneEntriesNeverFireByDesign::test_never_fires_even_in_a_plausible_vulnerable_scenario[CWE-22]
+- tests/unit/strata/test_litmus_cwe.py::TestCapabilityKindNoneEntriesNeverFireByDesign::test_never_fires_even_in_a_plausible_vulnerable_scenario[CWE-352]
+- tests/unit/strata/test_litmus_cwe.py::TestCapabilityKindNoneEntriesNeverFireByDesign::test_never_fires_even_in_a_plausible_vulnerable_scenario[CWE-798]
+- tests/unit/strata/test_litmus_cwe.py::TestCapabilityKindNoneEntriesNeverFireByDesign::test_capability_kind_is_none_for_all_three
 attachments: []
 acceptance: []
 threat: null
 ```
 Every WeaknessEntry in CWE_CATALOG and CWE_TOP_25_CATALOG must be exercised by a real .strata litmus project in which its obligation FIRES from parsed surface source (strata_core parse of a .strata file), not from hand-built kernel objects -- plus a hardened variant that discharges it wherever the kernel can express the mitigation. Parametrize the test over the union of both catalogs so adding a WeaknessEntry without a firing fixture FAILS the suite (vacuous-pass doctrine, drift-lock style like the tmLanguage keyword parity test). Follow the existing vuln/hardened litmus pair precedent. OutOfScopeEntry rows are exempt but the test must assert the exemption list matches the catalog's out-of-scope ids exactly so nothing silently escapes.
+
+## Done report
+
+Changed:
+- tests/unit/strata/litmus/cwe_79_vuln.strata, cwe_79_hardened.strata (CWE-79, may "html_render")
+- tests/unit/strata/litmus/cwe_89_vuln.strata, cwe_89_hardened.strata (CWE-89, may "sql")
+- tests/unit/strata/litmus/cwe_exec_vuln.strata, cwe_exec_hardened.strata (CWE-78 + CWE-94 shared, may "exec")
+- tests/unit/strata/litmus/cwe_918_vuln.strata, cwe_918_hardened.strata (CWE-918, may "fetch_url")
+- tests/unit/strata/litmus/cwe_502_vuln.strata, cwe_502_hardened.strata (CWE-502, may "deserialize")
+- tests/unit/strata/litmus/cwe_922_vuln.strata, cwe_922_hardened.strata (CWE-922, may "client_storage")
+- tests/unit/strata/litmus/cwe_22_unfired.strata, cwe_352_unfired.strata, cwe_798_unfired.strata (design-finding: capability_kind=None, never fire under THREAT003 -- asserted explicitly, not skipped)
+- tests/unit/strata/test_litmus_cwe.py (new, 27 tests: fixture-coverage drift-lock, out-of-scope exemption exactness, parametrized firing/discharge over the union catalog, shared-exec independence, capability_kind=None non-firing)
+- docs/strata/threat.md#litmus-coverage (new section: fixture-pair convention, the shared-exec join, the three-id design finding, the out-of-scope boundary proof)
+
+Evidence: 27 node ids recorded via `frob ticket evidence T-0145 <ids>` (tests/unit/strata/test_litmus_cwe.py, all classes) -- `uv run pytest tests/unit/strata/test_litmus_cwe.py -q` -> 27 passed. Full `tests/unit/strata/` suite (528 tests) also passes unchanged.
+
+Filed: T-0149 (frob test: no [[test.runner]] for language=strata blocks touched-set selection on .strata fixtures -- `frob test --base main` errors NoRunner when new .strata files are touched; out of T-0145's declared scope, frob.toml is not in scope). No other out-of-scope findings.
+
+Gates: `frob check --ticket T-0145` clean -- Tool summary all `pass` (ruff-check, ruff-format, ty, frob-cycle, frob-dup, frob-arch, frob-exports x17), gates line `pass  gates  87 violation(s), 57 waived` (main baseline: 87 violations / 55 waived; the +2 waivers are `frob:waive PERF003 reason="two set comprehensions over small fixtures, not a join"` on two new test methods in test_litmus_cwe.py, matching the identical waiver already used four times in test_threat.py for the same false-positive shape -- violation COUNT unchanged from baseline, no new unwaived violations). `frob test --base main` currently errors before running (NoRunner for language=strata, T-0149) -- a pre-existing tooling gap this ticket's fixtures exposed, not a regression from this diff; verified correctness instead via direct `uv run pytest`.
 
 <!-- ticket:T-0146 -->
 ```yaml
@@ -566,3 +612,23 @@ acceptance: []
 threat: null
 ```
 The gates stage currently reports 87 violation(s), 55 waived on main. End state: the gates line reports 0 violation(s). Triage every reported item: (1) fix it properly, (2) add a narrowly-scoped frob:waive with a specific written reason where the rule genuinely misfires, or (3) file a specific follow-up ticket and mark the site frob:todo T-#### when the fix is real but out of scope. No blanket or file-level waivers; no rule disabling in frob.toml without a written rationale in the Done report. Document the per-rule-family outcome table (family, count, disposition) in the Done report. Run AFTER the current wave lands (T-0140/T-0141/T-0144/T-0145/T-0146 touch overlapping files).
+
+<!-- ticket:T-0149 -->
+```yaml
+id: T-0149
+title: 'frob test: no [[test.runner]] for language=strata blocks touched-set selection
+  on .strata fixtures'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- frob.toml
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Found while working T-0145: adding new .strata files under tests/unit/strata/litmus/ (or anywhere) makes frob test --base main fail with NoRunner: 'language strata has selected tests but no runner -- add a [[test.runner]] entry'. frob.toml has runners for python and rust only; strata surface files (.strata) are a distinct language frob.lang/frob.testing classifies but there is no [[test.runner]] entry (and likely no sensible native pytest-equivalent for a .strata file standalone -- it is exercised THROUGH the python tests that parse it, e.g. test_litmus_cwe.py). Needs either: (1) a [[test.runner]] entry that maps .strata files to the python test files that bind them (frob:tests directives already exist on the fixtures' consuming test modules), or (2) frob.testing/select_tests excluding .strata from touched-set language classification entirely since it is data, not directly-runnable source. Verified reproducing: touching tests/unit/strata/litmus/*.strata and running 'frob test --base main' errors NoRunner before running any tests.

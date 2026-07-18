@@ -1,0 +1,19 @@
+// cwe_922_hardened.strata -- the hardened twin of cwe_922_vuln.strata
+// (T-0145). SAME firing precondition (`app`'s `may "client_storage"`),
+// discharged as an ASSUMED NoFlow claim named `weakness:CWE-922:app`
+// (`_threat.py::_discharge_claim_id`), owned and reviewed.
+//
+// tested end to end (parse -> elaborate -> check_discharge_completeness)
+// by tests/unit/strata/test_litmus_cwe.py.
+
+module cwe_922_hardened
+
+node user : foreign { clearance Public; }
+node app : trusted {
+    clearance Internal;
+    may "client_storage";
+}
+
+flow f_save : user -> app { label Public; }
+
+assume "weakness:CWE-922:app" noflow user -> app owner logan review "2026-10-01"

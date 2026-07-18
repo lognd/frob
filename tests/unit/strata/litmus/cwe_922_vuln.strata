@@ -1,0 +1,17 @@
+// cwe_922_vuln.strata -- T-0145 per-CWE litmus: CWE-922 (Insecure Storage
+// of Sensitive Information) fires undischarged from `app`'s `may
+// "client_storage"` capability (docs/strata/threat.md#the-catalog-
+// stdcwe). No claim discharges it here.
+//
+// tested end to end (parse -> elaborate -> check_discharge_completeness)
+// by tests/unit/strata/test_litmus_cwe.py.
+
+module cwe_922_vuln
+
+node user : foreign { clearance Public; }
+node app : trusted {
+    clearance Internal;
+    may "client_storage";
+}
+
+flow f_save : user -> app { label Public; }

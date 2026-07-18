@@ -1,0 +1,21 @@
+// cwe_89_vuln.strata -- T-0145 per-CWE litmus: CWE-89 (Improper
+// Neutralization of Special Elements used in an SQL Command, "SQL
+// Injection") fires undischarged from `db`'s `may "sql"` capability
+// (docs/strata/threat.md#the-catalog-stdcwe). No claim discharges it
+// here. (A near-identical `may "sql"` fixture already exists at
+// design/litmus/audit_vuln.strata for the T-0115/T-0138 exhaustiveness
+// golden -- this file is this ticket's OWN scoped fixture under
+// tests/unit/strata/litmus/, kept separate per T-0145's declared scope.)
+//
+// tested end to end (parse -> elaborate -> check_discharge_completeness)
+// by tests/unit/strata/test_litmus_cwe.py.
+
+module cwe_89_vuln
+
+node client : foreign { clearance Public; }
+node db : trusted {
+    clearance Internal;
+    may "sql";
+}
+
+flow f_query : client -> db { label Public; }

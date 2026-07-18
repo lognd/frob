@@ -1,0 +1,19 @@
+// cwe_502_hardened.strata -- the hardened twin of cwe_502_vuln.strata
+// (T-0145). SAME firing precondition (`worker`'s `may "deserialize"`),
+// discharged as an ASSUMED NoFlow claim named `weakness:CWE-502:worker`
+// (`_threat.py::_discharge_claim_id`), owned and reviewed.
+//
+// tested end to end (parse -> elaborate -> check_discharge_completeness)
+// by tests/unit/strata/test_litmus_cwe.py.
+
+module cwe_502_hardened
+
+node producer : foreign { clearance Public; }
+node worker : trusted {
+    clearance Internal;
+    may "deserialize";
+}
+
+flow f_payload : producer -> worker { label Public; }
+
+assume "weakness:CWE-502:worker" noflow producer -> worker owner logan review "2026-10-01"

@@ -1,0 +1,23 @@
+// cwe_352_unfired.strata -- T-0145 per-CWE litmus, design-finding
+// fixture: CWE-352 (Cross-Site Request Forgery) is cataloged with
+// `capability_kind=None` (`_threat.py::CWE_CATALOG`'s own comment:
+// "state-changing-endpoint precondition, not a capability kind"). No
+// `may` atom can ever drag this obligation in -- same structural gap as
+// CWE-22/CWE-798 (docs/strata/threat.md#the-litmus-coverage-
+// cwe-22352798-never-fire-by-design). This fixture models a
+// state-changing endpoint reached by a foreign browser precisely to
+// prove the negative: THREAT003 reports ZERO CWE-352 obligations here.
+// No hardened twin: there is nothing to discharge when nothing fires.
+//
+// tested end to end (parse -> elaborate -> check_discharge_completeness)
+// by tests/unit/strata/test_litmus_cwe.py, which asserts this NON-firing
+// explicitly rather than skipping the id.
+
+module cwe_352_unfired
+
+node browser : foreign { clearance Public; }
+node api : trusted {
+    clearance Internal;
+}
+
+flow f_post : browser -> api { label Public; }

@@ -1,0 +1,19 @@
+// cwe_918_hardened.strata -- the hardened twin of cwe_918_vuln.strata
+// (T-0145). SAME firing precondition (`fetcher`'s `may "fetch_url"`),
+// discharged as an ASSUMED NoFlow claim named `weakness:CWE-918:fetcher`
+// (`_threat.py::_discharge_claim_id`), owned and reviewed.
+//
+// tested end to end (parse -> elaborate -> check_discharge_completeness)
+// by tests/unit/strata/test_litmus_cwe.py.
+
+module cwe_918_hardened
+
+node client : foreign { clearance Public; }
+node fetcher : trusted {
+    clearance Internal;
+    may "fetch_url";
+}
+
+flow f_fetch : client -> fetcher { label Public; }
+
+assume "weakness:CWE-918:fetcher" noflow client -> fetcher owner logan review "2026-10-01"

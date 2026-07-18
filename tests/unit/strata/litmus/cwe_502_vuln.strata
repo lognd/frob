@@ -1,0 +1,17 @@
+// cwe_502_vuln.strata -- T-0145 per-CWE litmus: CWE-502 (Deserialization
+// of Untrusted Data) fires undischarged from `worker`'s `may
+// "deserialize"` capability (docs/strata/threat.md#the-catalog-stdcwe).
+// No claim discharges it here.
+//
+// tested end to end (parse -> elaborate -> check_discharge_completeness)
+// by tests/unit/strata/test_litmus_cwe.py.
+
+module cwe_502_vuln
+
+node producer : foreign { clearance Public; }
+node worker : trusted {
+    clearance Internal;
+    may "deserialize";
+}
+
+flow f_payload : producer -> worker { label Public; }

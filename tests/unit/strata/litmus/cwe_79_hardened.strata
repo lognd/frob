@@ -1,0 +1,21 @@
+// cwe_79_hardened.strata -- the hardened twin of cwe_79_vuln.strata
+// (T-0145). SAME firing precondition (`web`'s `may "html_render"`), but
+// discharged as an ASSUMED NoFlow claim named `weakness:CWE-79:web`
+// (`_threat.py::_discharge_claim_id`), owned and reviewed -- the SAME
+// discharge shape design/litmus/audit_hardened.strata (T-0138) already
+// proves round-trips through the surface parser.
+//
+// tested end to end (parse -> elaborate -> check_discharge_completeness)
+// by tests/unit/strata/test_litmus_cwe.py.
+
+module cwe_79_hardened
+
+node attacker : foreign { clearance Public; }
+node web : trusted {
+    clearance Internal;
+    may "html_render";
+}
+
+flow f_request : attacker -> web { label Public; }
+
+assume "weakness:CWE-79:web" noflow attacker -> web owner logan review "2026-10-01"

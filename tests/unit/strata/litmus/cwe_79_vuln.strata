@@ -1,0 +1,17 @@
+// cwe_79_vuln.strata -- T-0145 per-CWE litmus: CWE-79 (Improper
+// Neutralization of Input During Web Page Generation, "Reflected/Stored
+// XSS") fires undischarged from `web`'s `may "html_render"` capability
+// (docs/strata/threat.md#the-catalog-stdcwe). No claim discharges it here.
+//
+// tested end to end (parse -> elaborate -> check_discharge_completeness)
+// by tests/unit/strata/test_litmus_cwe.py.
+
+module cwe_79_vuln
+
+node attacker : foreign { clearance Public; }
+node web : trusted {
+    clearance Internal;
+    may "html_render";
+}
+
+flow f_request : attacker -> web { label Public; }

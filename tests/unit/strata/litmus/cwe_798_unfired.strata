@@ -1,0 +1,27 @@
+// cwe_798_unfired.strata -- T-0145 per-CWE litmus, design-finding
+// fixture: CWE-798 (Use of Hard-coded Credentials) is cataloged with
+// `capability_kind=None` (`_threat.py::CWE_CATALOG`'s own comment:
+// "secret-resting-at-low-clearance precondition, already the lattice's
+// own clearance-violation refusal; no capability kind fires it"). No
+// `may` atom can ever drag this obligation in -- same structural gap as
+// CWE-22/CWE-352 (docs/strata/threat.md#the-litmus-coverage-
+// cwe-22352798-never-fire-by-design). This fixture models a low-
+// clearance node reachable from a foreign caller precisely to prove the
+// negative: THREAT003 reports ZERO CWE-798 obligations here (the
+// obligation this id names is refuted by the LATTICE's own
+// clearance-violation machinery, a separate already-shipped mechanism,
+// not THREAT003). No hardened twin: there is nothing to discharge when
+// nothing fires.
+//
+// tested end to end (parse -> elaborate -> check_discharge_completeness)
+// by tests/unit/strata/test_litmus_cwe.py, which asserts this NON-firing
+// explicitly rather than skipping the id.
+
+module cwe_798_unfired
+
+node client : foreign { clearance Public; }
+node secret_store : trusted {
+    clearance Internal;
+}
+
+flow f_access : client -> secret_store { label Public; }

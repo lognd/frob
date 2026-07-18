@@ -1,0 +1,21 @@
+// cwe_exec_vuln.strata -- T-0145 per-CWE litmus, shared fixture: the
+// kernel model does not distinguish an OS-command sink (CWE-78) from a
+// code-eval sink (CWE-94) -- both weaknesses fire on the SAME `may "exec"`
+// capability (`_threat.py::CWE_TOP_25_CATALOG`'s CWE-94 comment; the same
+// CWE-639/CWE-89 "sql" join precedent). ONE fixture, TWO independently
+// firing obligations against `runner` -- neither discharged here.
+//
+// tested end to end (parse -> elaborate -> check_discharge_completeness)
+// by tests/unit/strata/test_litmus_cwe.py, which asserts EACH cwe id
+// fires independently against `runner` (test_cwe_94_reuses_the_exec_
+// capability_join's precedent, tests/unit/strata/test_threat.py).
+
+module cwe_exec_vuln
+
+node caller : foreign { clearance Public; }
+node runner : trusted {
+    clearance Internal;
+    may "exec";
+}
+
+flow f_invoke : caller -> runner { label Public; }

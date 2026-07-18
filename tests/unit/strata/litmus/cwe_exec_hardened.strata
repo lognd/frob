@@ -1,0 +1,24 @@
+// cwe_exec_hardened.strata -- the hardened twin of cwe_exec_vuln.strata
+// (T-0145). SAME firing precondition (`runner`'s `may "exec"`), but BOTH
+// CWE-78 and CWE-94 are discharged independently as ASSUMED NoFlow claims
+// (`weakness:CWE-78:runner` and `weakness:CWE-94:runner`,
+// `_threat.py::_discharge_claim_id`), each owned and reviewed -- proving
+// the two obligations sharing one capability join discharge independently
+// (test_cwe_94_fires_and_discharges_on_exec_capability's precedent,
+// tests/unit/strata/test_threat.py).
+//
+// tested end to end (parse -> elaborate -> check_discharge_completeness)
+// by tests/unit/strata/test_litmus_cwe.py.
+
+module cwe_exec_hardened
+
+node caller : foreign { clearance Public; }
+node runner : trusted {
+    clearance Internal;
+    may "exec";
+}
+
+flow f_invoke : caller -> runner { label Public; }
+
+assume "weakness:CWE-78:runner" noflow caller -> runner owner logan review "2026-10-01"
+assume "weakness:CWE-94:runner" noflow caller -> runner owner logan review "2026-10-01"

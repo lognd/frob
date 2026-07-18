@@ -1,0 +1,17 @@
+// cwe_918_vuln.strata -- T-0145 per-CWE litmus: CWE-918 (Server-Side
+// Request Forgery) fires undischarged from `fetcher`'s `may "fetch_url"`
+// capability (docs/strata/threat.md#the-catalog-stdcwe). No claim
+// discharges it here.
+//
+// tested end to end (parse -> elaborate -> check_discharge_completeness)
+// by tests/unit/strata/test_litmus_cwe.py.
+
+module cwe_918_vuln
+
+node client : foreign { clearance Public; }
+node fetcher : trusted {
+    clearance Internal;
+    may "fetch_url";
+}
+
+flow f_fetch : client -> fetcher { label Public; }

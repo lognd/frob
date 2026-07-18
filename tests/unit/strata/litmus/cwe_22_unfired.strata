@@ -1,0 +1,28 @@
+// cwe_22_unfired.strata -- T-0145 per-CWE litmus, design-finding fixture:
+// CWE-22 (Improper Limitation of a Pathname to a Restricted Directory,
+// "Path Traversal") is cataloged with `capability_kind=None`
+// (`_threat.py::CWE_CATALOG`'s own comment: "flow-to-filesystem-path-sink
+// precondition, not a capability kind the charter's auto-instantiate
+// table lists"). No `may` atom ANY node declares can ever drag this
+// obligation in -- `_fired_obligations`/`_entries_by_capability_kind`
+// only join entries whose `capability_kind is not None`
+// (docs/strata/threat.md#the-litmus-coverage-cwe-22352798-never-fire-by-
+// design). This fixture models the scenario a path-traversal weakness
+// would actually look like (a foreign caller feeding a filesystem-facing
+// node) precisely to prove the negative: even here, THREAT003 reports
+// ZERO CWE-22 obligations, because the precondition the catalog would
+// need to detect it structurally does not exist in phase A. No hardened
+// twin: there is nothing to discharge when nothing fires.
+//
+// tested end to end (parse -> elaborate -> check_discharge_completeness)
+// by tests/unit/strata/test_litmus_cwe.py, which asserts this NON-firing
+// explicitly rather than skipping the id.
+
+module cwe_22_unfired
+
+node client : foreign { clearance Public; }
+node file_server : trusted {
+    clearance Internal;
+}
+
+flow f_read : client -> file_server { label Public; }

@@ -283,6 +283,65 @@ adapter and 14-day cooldown; the join is the shared CWE id. A live CVE
 whose CWE obligation is undischarged is a high-severity finding; one whose
 obligation is discharged is defense-in-depth and reported as contained.
 
+<a id="litmus-coverage"></a>
+## Litmus coverage: every catalog entry fires from real source (T-0145)
+
+`tests/unit/strata/litmus/*.strata` + `tests/unit/strata/test_litmus_cwe.py`
+prove, for EVERY `WeaknessEntry` in `CWE_CATALOG` and `CWE_TOP_25_CATALOG`,
+that its THREAT003 obligation actually fires from a `.strata` file run
+through the real `parse_module -> elaborate -> check_discharge_completeness`
+pipeline -- never a hand-built `KernelModel` (that precedent stays in
+`test_threat.py`, e.g. `TestCweTop25.test_cwe_94_fires_and_discharges_on_
+exec_capability`). This is the same round trip `design/litmus/audit_vuln.
+strata` + `audit_hardened.strata` (T-0115/T-0138) already prove for
+CWE-89/CWE-639; T-0145 extends it to EVERY catalog id, parametrized so a
+future `WeaknessEntry` with no fixture fails the suite (vacuous-pass
+doctrine, the same drift-lock discipline the tmLanguage keyword-parity
+test uses).
+
+**One fixture pair per firing id** (`<id>_vuln.strata` fires undischarged,
+`<id>_hardened.strata` discharges it as an ASSUMED `NoFlow` claim named
+`weakness:<cwe-id>:<node-id>`, owned and reviewed): CWE-79, CWE-89,
+CWE-918, CWE-502, CWE-922. **One shared fixture pair** for CWE-78/CWE-94
+(`cwe_exec_vuln.strata`/`cwe_exec_hardened.strata`): both weaknesses fire
+on the SAME `may "exec"` capability (the kernel has no OS-command-vs-
+code-eval distinction), so one fixture proves both fire, and the hardened
+twin proves both discharge independently -- an extra test drops just the
+CWE-94 discharge claim and confirms CWE-78 alone stays discharged while
+CWE-94 alone stays undischarged (the shared-join non-duplication
+guarantee, matching `test_cwe_94_reuses_the_exec_capability_join`'s
+precedent).
+
+**Design finding: three catalog ids can never fire.** CWE-22, CWE-352,
+and CWE-798 are cataloged with `capability_kind=None` (each entry's own
+comment names why: CWE-22 is a "flow-to-filesystem-path-sink
+precondition, not a capability kind"; CWE-352 is a "state-changing-
+endpoint precondition"; CWE-798 is a "secret-resting-at-low-clearance
+precondition, already the lattice's own clearance-violation refusal").
+`_fired_obligations`/`_entries_by_capability_kind` only join entries whose
+`capability_kind is not None` -- structurally, NO `.strata` source, no
+matter how plausibly vulnerable-looking, can make these three fire under
+THREAT003 as it exists today. `cwe_22_unfired.strata`,
+`cwe_352_unfired.strata`, and `cwe_798_unfired.strata` each model the
+scenario the weakness would actually look like (a foreign caller reaching
+a filesystem/endpoint/secret-facing node) specifically to prove the
+negative explicitly -- `test_never_fires_even_in_a_plausible_vulnerable_
+scenario` asserts zero THREAT003 violations for each id, rather than
+skipping it. Closing this gap for real needs the same new kernel
+vocabulary each entry's `capability_kind=None` comment already names (a
+filesystem-path-sink concept, a state-changing-endpoint concept, or
+reusing the lattice's clearance-violation machinery directly instead of a
+THREAT003 join) -- out of T-0145's scope (fixture coverage of the
+EXISTING catalog, not new kernel primitives), tracked as an honest,
+disclosed gap rather than a silent one.
+
+The out-of-scope exemption boundary is checked too:
+`test_out_of_scope_ids_cover_the_top_25_gap_exactly` proves
+`CWE_TOP_25_OUT_OF_SCOPE`'s ids are exactly the `cwe-top-25` view members
+this suite's catalog union (`CWE_CATALOG + CWE_TOP_25_CATALOG`) does not
+cover -- no id can silently escape both the fixture table and the
+out-of-scope list.
+
 ## What is honestly not covered
 
 Stated and enforced as assumptions: zero-day weakness classes not yet in
