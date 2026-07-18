@@ -46,7 +46,7 @@ from frob.graph._models import (
     SymbolRecord,
 )
 from frob.graph.digest import compute_digests
-from frob.graph.dsl import markdown_anchors, parse_directives, slugify
+from frob.graph.dsl import dedupe_slug, markdown_anchors, parse_directives, slugify
 from frob.lang import LangError, ParsedFile, parse_file, supported_extensions
 from frob.logging import get_logger
 
@@ -397,6 +397,7 @@ __all__ = [
     "SymbolId",
     "SymbolRecord",
     "build_graph",
+    "dedupe_slug",
     "edges_from",
     "edges_to",
     "load_graph",

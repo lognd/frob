@@ -28,24 +28,34 @@ REQUIRED_MCP_SERVERS = {"serena", "frob", "fetch", "arxiv"}
 
 _FROB_DOC_RE = re.compile(r"<!--\s*frob:doc\s+(?P<file>\S+?)#(?P<slug>\S+?)\s*-->")
 _HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$")
-_SLUG_STRIP_RE = re.compile(r"[^a-z0-9]+")
+_SLUG_STRIP_RE = re.compile(r"[^\w\- ]", re.UNICODE)
 
 
 def _slugify(heading: str) -> str:
-    """GitHub-style heading slug: lowercase, non-alnum runs collapsed to '-'.
+    """GitHub heading-anchor slug: lowercase, strip disallowed punctuation,
+    spaces become hyphens one-for-one (T-0212).
 
     WHY: mirrors frob.graph.dsl.slugify exactly so this test checks the
     same anchor resolution the doclink/docanchor gates perform, without
     importing gate internals into a unit test.
     """
-    slug = _SLUG_STRIP_RE.sub("-", heading.strip().lower()).strip("-")
+    slug = _SLUG_STRIP_RE.sub("", heading.strip().lower())
+    slug = slug.replace(" ", "-")
     return slug or "top"
+
+
+def _dedupe_slug(slug: str, seen: dict[str, int]) -> str:
+    """Mirror frob.graph.dsl.dedupe_slug: GitHub's `-1`/`-2` repeat suffixing."""
+    count = seen.get(slug, 0)
+    seen[slug] = count + 1
+    return slug if count == 0 else f"{slug}-{count}"
 
 
 def _heading_slugs(text: str) -> set[str]:
     """Every heading slug present in a markdown document's text."""
+    seen: dict[str, int] = {}
     return {
-        _slugify(match.group(2))
+        _dedupe_slug(_slugify(match.group(2)), seen)
         for line in text.splitlines()
         if (match := _HEADING_RE.match(line)) is not None
     }

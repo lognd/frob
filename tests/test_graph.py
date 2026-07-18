@@ -5,6 +5,8 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
+import pytest
+
 from frob.graph import (
     GraphError,
     build_graph,
@@ -422,7 +424,7 @@ Some text.
 
 
 class TestSlugify:
-    def test_lowercases_and_collapses_non_alnum_runs(self) -> None:
+    def test_lowercases_and_strips_disallowed_punctuation(self) -> None:
         # frob:tests src/frob/graph/dsl.py::slugify kind="unit"
         from frob.graph.dsl import slugify
 
@@ -430,11 +432,64 @@ class TestSlugify:
         assert slugify("Public API") == "public-api"
         assert slugify("`DupError`") == "duperror"
 
-    def test_empty_or_all_punctuation_falls_back_to_top(self) -> None:
+    def test_empty_falls_back_to_top(self) -> None:
         from frob.graph.dsl import slugify
 
         assert slugify("") == "top"
-        assert slugify("---") == "top"
+
+    # frob:ticket T-0212
+    @pytest.mark.parametrize(
+        ("heading", "expected"),
+        [
+            # T-0212: GitHub does not collapse punctuation runs to a single
+            # `-` the way frob's old slugger did -- it deletes disallowed
+            # punctuation outright and turns each remaining space into its
+            # own `-`, so runs of spaces (left behind by deleted punctuation)
+            # survive as runs of hyphens. These are the exact tricky cases
+            # from the T-0212 ticket plus the pilot-repo false positives
+            # (docs/guides/agent-playbook.md, tickets.md T-0212).
+            ("10.1 DataTable", "101-datatable"),
+            ("Output & layouts", "output--layouts"),
+            ("Public/Private Boundary", "publicprivate-boundary"),
+            ("Hello, World!", "hello-world"),
+            ("snake_case_name", "snake_case_name"),
+            ("already-hyphenated", "already-hyphenated"),
+            ("  leading and trailing  ", "leading-and-trailing"),
+            ("Cafe Resume", "cafe-resume"),
+            ("100% Done", "100-done"),
+            ("C++ vs Rust", "c-vs-rust"),
+            ("---", "---"),
+        ],
+    )
+    def test_github_slug_table(self, heading: str, expected: str) -> None:
+        # frob:tests src/frob/graph/dsl.py::slugify kind="unit"
+        from frob.graph.dsl import slugify
+
+        assert slugify(heading) == expected
+
+    def test_unicode_letters_survive_emoji_are_stripped(self) -> None:
+        """Word chars are unicode-aware (accented letters keep), but emoji
+        (not \\w) are deleted like other punctuation -- built via chr() to
+        stay pure ASCII in the source file (T-0212)."""
+        # frob:tests src/frob/graph/dsl.py::slugify kind="unit"
+        from frob.graph.dsl import slugify
+
+        e_acute = chr(0xE9)
+        heading = "Caf" + e_acute + " R" + e_acute + "sum" + e_acute
+        expected = "caf" + e_acute + "-r" + e_acute + "sum" + e_acute
+        assert slugify(heading) == expected
+
+        emoji = chr(0x1F389)
+        great_job = "Great " + emoji + " Job"
+        assert slugify(great_job) == "great--job"
+
+    def test_dedupe_slug_suffixes_repeats(self) -> None:
+        # frob:tests src/frob/graph/dsl.py::dedupe_slug kind="unit"
+        from frob.graph.dsl import dedupe_slug, slugify
+
+        seen: dict[str, int] = {}
+        slugs = [dedupe_slug(slugify(h), seen) for h in ["Usage", "Usage", "Usage"]]
+        assert slugs == ["usage", "usage-1", "usage-2"]
 
 
 class TestBuildIncremental:

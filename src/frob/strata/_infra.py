@@ -1,7 +1,7 @@
 """std.infra elaborator: store/cache/queue/cdn/balancer -> kernel facts.
 
 A vocabulary is a pure function `surface construct -> kernel facts` (charter
-law 1, docs/strata/surface.md#std-infra). `std.infra` is the second
+law 1, docs/strata/surface.md#stdinfra). `std.infra` is the second
 vocabulary after `std.trust` (`_elaborate.py`); it never grows the kernel --
 every construct here desugars to `Node`/`Flow`/`Boundary` and nothing else.
 Callers pass in the `Node`/`Flow`/`Boundary` facts already produced by
@@ -16,7 +16,7 @@ at WARNING by the caller rather than folded into the kernel model, since
 `queue X : TRUST { ... }` / `balancer X : TRUST { ... }`), matching
 `store`/`cache`/`cdn`. When the clause is omitted the elaborator still
 falls back to the documented `"trusted"` default below -- a declared
-deviation, not a silent one (docs/strata/surface.md#std-infra).
+deviation, not a silent one (docs/strata/surface.md#stdinfra).
 """
 
 from __future__ import annotations
@@ -50,7 +50,7 @@ _STATE_NONE = "state=none"
 _MANAGED_ATTR = "managed"
 
 
-# frob:doc docs/strata/surface.md#std-infra
+# frob:doc docs/strata/surface.md#stdinfra
 class InfraExpansion(BaseModel):
     """The full merged `Node`/`Flow`/`Boundary` tuples after std.infra desugaring.
 
@@ -184,7 +184,7 @@ def _elaborate_queue(decl: QueueDecl) -> Node:
 
     T-0093: `decl.trust` is `None` unless the source declares `queue X :
     TRUST`, in which case it wins over the documented `"trusted"` default
-    (module docstring, docs/strata/surface.md#std-infra deviation note).
+    (module docstring, docs/strata/surface.md#stdinfra deviation note).
     """
     attrs = list(decl.attrs)
     if decl.delivery is not None:
@@ -212,7 +212,7 @@ def _elaborate_balancer(decl: BalancerDecl) -> Node:
 
     T-0093: `decl.trust` is `None` unless the source declares `balancer X :
     TRUST`, in which case it wins over the documented `"trusted"` default
-    (module docstring, docs/strata/surface.md#std-infra deviation note).
+    (module docstring, docs/strata/surface.md#stdinfra deviation note).
     """
     attrs: list[str] = []
     if decl.policy is not None:
@@ -235,7 +235,7 @@ def _elaborate_cache(
 ) -> Result[tuple[Node, tuple[Flow, ...]], StrataError]:
     """`cache X of Y` -> `Node` X + fill flow + mandatory invalidation edges.
 
-    Fails closed (deny by default, docs/strata/surface.md#std-infra):
+    Fails closed (deny by default, docs/strata/surface.md#stdinfra):
     unknown `of` target; ttl/staleness both absent, or both present and
     disagreeing (the age collapse -- one bound, not two independent ones);
     an `invalidate_on` naming a flow that does not exist or does not write
@@ -474,7 +474,7 @@ def _sticky_balancer_diagnostics(
     return tuple(findings)
 
 
-# frob:doc docs/strata/surface.md#std-infra
+# frob:doc docs/strata/surface.md#stdinfra
 def elaborate_infra(
     module: Module,
     nodes: tuple[Node, ...],

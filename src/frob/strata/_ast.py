@@ -39,7 +39,7 @@ class ObserveDecl(BaseModel):
     to: str
 
 
-# frob:doc docs/strata/surface.md#std-deploy
+# frob:doc docs/strata/surface.md#stddeploy
 class CanaryStageDecl(BaseModel):
     """A parsed `LEVEL for QUANTITY` canary stage (T-0136), one entry in
     `DeployDecl.stages`.
@@ -56,7 +56,7 @@ class CanaryStageDecl(BaseModel):
     bake: Quantity
 
 
-# frob:doc docs/strata/surface.md#std-deploy
+# frob:doc docs/strata/surface.md#stddeploy
 class DeployDecl(BaseModel):
     """A parsed `on deploy { canary { ... }; endorsed_by ...; rollback within t }`
     node property (T-0136), mirroring `_models.py::DeployContract` field for field.
@@ -322,7 +322,7 @@ class RefineDecl(BaseModel):
     bind_to: str
 
 
-# frob:doc docs/strata/surface.md#std-infra
+# frob:doc docs/strata/surface.md#stdinfra
 class StoreDecl(BaseModel):
     """A parsed `store` statement (std.infra): a node with engine/durability markers."""
 
@@ -357,7 +357,7 @@ class StoreDecl(BaseModel):
     waives: tuple[WaiverDecl, ...] = ()
 
 
-# frob:doc docs/strata/surface.md#std-infra
+# frob:doc docs/strata/surface.md#stdinfra
 class CacheDecl(BaseModel):
     """A parsed `cache X of Y` statement (std.infra): a derived view over `of`."""
 
@@ -373,14 +373,14 @@ class CacheDecl(BaseModel):
     invalidate_on: tuple[str, ...] = ()
 
 
-# frob:doc docs/strata/surface.md#std-infra
+# frob:doc docs/strata/surface.md#stdinfra
 class QueueDecl(BaseModel):
     """A parsed `queue` statement (std.infra): carries delivery/ordering semantics.
 
     `trust` is optional (T-0093): the grammar now accepts `queue X : TRUST`;
     when omitted the elaborator (`_infra.py::_elaborate_queue`) applies the
     documented `"trusted"` default instead of the parser silently assuming
-    one (docs/strata/surface.md#std-infra).
+    one (docs/strata/surface.md#stdinfra).
     """
 
     model_config = ConfigDict(frozen=True)
@@ -393,7 +393,7 @@ class QueueDecl(BaseModel):
     clearance: str | None = None
 
 
-# frob:doc docs/strata/surface.md#std-infra
+# frob:doc docs/strata/surface.md#stdinfra
 class CdnDecl(BaseModel):
     """A parsed `cdn X of Y` statement (std.infra): a fronting cache with a provider."""
 
@@ -409,14 +409,14 @@ class CdnDecl(BaseModel):
     tls_terminates_at_provider: bool = False
 
 
-# frob:doc docs/strata/surface.md#std-infra
+# frob:doc docs/strata/surface.md#stdinfra
 class BalancerDecl(BaseModel):
     """A parsed `balancer` statement (std.infra): a routing policy node.
 
     `trust` is optional (T-0093): the grammar now accepts `balancer X : TRUST`;
     when omitted the elaborator (`_infra.py::_elaborate_balancer`) applies the
     documented `"trusted"` default instead of the parser silently assuming
-    one (docs/strata/surface.md#std-infra).
+    one (docs/strata/surface.md#stdinfra).
     """
 
     model_config = ConfigDict(frozen=True)

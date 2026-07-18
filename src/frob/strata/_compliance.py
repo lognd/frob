@@ -1,6 +1,6 @@
 """strata obligation catalog phase F (compliance): `std.compliance` --
 COPPA/GDPR/HIPAA regulatory obligations + privacy-policy-as-claims reverse
-audit (docs/strata/threat.md#compliance-regulatory-obligations-std-compliance,
+audit (docs/strata/threat.md#compliance-regulatory-obligations-stdcompliance,
 T-0109/T-0116).
 
 A fifth catalog family alongside security/performance/reliability/
@@ -65,7 +65,7 @@ _COVERED_PARTY = "covered-party"
 _REVOCATION_ATTR = "revocation"
 
 
-# frob:doc docs/strata/threat.md#compliance-regulatory-obligations-std-compliance
+# frob:doc docs/strata/threat.md#compliance-regulatory-obligations-stdcompliance
 # frob:doc docs/guides/extending/compliance-registry.md#compliance-registry
 class RegulationEntry(BaseModel):
     """One `std.compliance` catalog entry: a conditional regulatory duty,
@@ -85,7 +85,7 @@ class RegulationEntry(BaseModel):
     mitigation: str = ""
 
 
-# frob:doc docs/strata/threat.md#compliance-regulatory-obligations-std-compliance
+# frob:doc docs/strata/threat.md#compliance-regulatory-obligations-stdcompliance
 class OutOfScopeRegulation(BaseModel):
     """A baseline regulation id explicitly excluded from the catalog.
 
@@ -103,7 +103,7 @@ class OutOfScopeRegulation(BaseModel):
     review: str  # ISO date
 
 
-# frob:doc docs/strata/threat.md#compliance-regulatory-obligations-std-compliance
+# frob:doc docs/strata/threat.md#compliance-regulatory-obligations-stdcompliance
 # The charter's compliance obligations table, transcribed with authoritative
 # citations (COPPA/GDPR/HIPAA); the pinned/digest-verified ingestion the
 # CWE-catalog docstring defers is the same follow-up here (out of scope,
@@ -157,7 +157,7 @@ COMPLIANCE_CATALOG: tuple[RegulationEntry, ...] = (
     ),
 )
 
-# frob:doc docs/strata/threat.md#compliance-regulatory-obligations-std-compliance
+# frob:doc docs/strata/threat.md#compliance-regulatory-obligations-stdcompliance
 #: Baseline VIEWS: the regulation id set a selected view holds the catalog
 #: to (mirrors `_threat.py::VIEWS`). `all-regulations` is the union;
 #: per-jurisdiction views let a caller prove exhaustiveness against just
@@ -172,7 +172,7 @@ REGULATION_VIEWS: dict[str, frozenset[str]] = {
 }
 
 
-# frob:doc docs/strata/threat.md#compliance-regulatory-obligations-std-compliance
+# frob:doc docs/strata/threat.md#compliance-regulatory-obligations-stdcompliance
 class ComplianceViolation(BaseModel):
     """One COMPLIANCE001-003 finding: a rule id, the firing regulation id,
     the firing target (flow or node id), and a human detail. Mirrors
@@ -188,7 +188,7 @@ class ComplianceViolation(BaseModel):
     detail: str = ""
 
 
-# frob:doc docs/strata/threat.md#compliance-regulatory-obligations-std-compliance
+# frob:doc docs/strata/threat.md#compliance-regulatory-obligations-stdcompliance
 class ComplianceReport(BaseModel):
     """Every COMPLIANCE001-003 violation, in rule-then-regulation-then-target order."""
 
@@ -210,7 +210,7 @@ def _catalog_violation(view: str, reg_id: str) -> ComplianceViolation:
     )
 
 
-# frob:doc docs/strata/threat.md#compliance-regulatory-obligations-std-compliance
+# frob:doc docs/strata/threat.md#compliance-regulatory-obligations-stdcompliance
 def check_regulation_catalog_completeness(
     view: str,
     catalog: tuple[RegulationEntry, ...] = COMPLIANCE_CATALOG,
@@ -563,7 +563,7 @@ def _check_minimization(model: KernelModel) -> tuple[ComplianceViolation, ...]:
     return tuple(violations)
 
 
-# frob:doc docs/strata/threat.md#compliance-regulatory-obligations-std-compliance
+# frob:doc docs/strata/threat.md#compliance-regulatory-obligations-stdcompliance
 # frob:waive TEST005 reason="check_regulation_discharge 83.3% branch cover, debt T-0160"
 def check_regulation_discharge(
     model: KernelModel,
@@ -595,7 +595,7 @@ def check_regulation_discharge(
     return Ok(all_violations)
 
 
-# frob:doc docs/strata/threat.md#compliance-regulatory-obligations-std-compliance
+# frob:doc docs/strata/threat.md#compliance-regulatory-obligations-stdcompliance
 class PrivacyPolicy(BaseModel):
     """A privacy policy modeled as DECLARED data practices (docs/strata/
     threat.md#compliance, "Privacy policy as claims"): the fields it
@@ -618,7 +618,7 @@ def _flow_field(flow_attrs: tuple[str, ...]) -> str | None:
     return None
 
 
-# frob:doc docs/strata/threat.md#compliance-regulatory-obligations-std-compliance
+# frob:doc docs/strata/threat.md#compliance-regulatory-obligations-stdcompliance
 # frob:waive TEST005 reason="check_privacy_policy 81.8% branch cover, debt T-0160"
 def check_privacy_policy(
     model: KernelModel, policy: PrivacyPolicy
@@ -657,7 +657,7 @@ def check_privacy_policy(
     return tuple(violations)
 
 
-# frob:doc docs/strata/threat.md#compliance-regulatory-obligations-std-compliance
+# frob:doc docs/strata/threat.md#compliance-regulatory-obligations-stdcompliance
 def evaluate_compliance(
     model: KernelModel,
     view: str,
