@@ -19,7 +19,15 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
 ## [0.2.0] - unreleased
 
+Ticket list frozen at the T-0156 landing commit; T-0174 (sys-audit waiver
+channel) and T-0208 (vet obfuscation-scan performance) closed during the
+final review rounds and are included below. Tickets closed after this
+landing appear in the next release's section.
+
 ### strata (design-language kernel, prover, policy, self-conformance)
+
+- T-0174: waive clause for sys-audit findings: RULE:SUBTARGET specificity,
+  mandatory reasons, stale-waiver drift-lock, PROVED-(N-waived) reporting
 
 - T-0047: strata: provable system-design language (epic)
 - T-0048: strata charter + design doc tree under docs/strata/
@@ -163,6 +171,8 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 ### vet (dependency vetting)
 
 - T-0034: Wire fuzz+vet: FUZZ gate, frob test --fuzz, capability scan merge, gates degrade without diff
+- T-0208: obfuscation scan rewritten single-pass (~100x on pathological files),
+  per-package progress, honest per-package timeout verdicts
 - T-0181: survey-prioritized third-party python/npm/cargo dangerous-surface registry entries (T-0158 addendum 2 remainder)
 
 ### threat / CVE / compliance

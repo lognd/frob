@@ -2833,11 +2833,11 @@ threat: null
 ```
 T-0208 built scan_tree(root, *, timeout=None, jobs=1) and per-package progress logging in src/frob/vet/_scan.py (in scope: src/frob/vet/**), but CLI wiring (--timeout/--jobs flags, AppConfig fields, vet_runner.py dispatch) is out of that ticket's scope (app/** and __main__.py). File this to add the flags: vet_p.add_argument for --timeout (float, seconds) and --jobs (int) in _add_vet_parser (src/frob/__main__.py ~line 784), AppConfig.vet_timeout/vet_jobs fields plus float/int field wiring in from_args (src/frob/app/config.py), and pass them through in _run_scan (src/frob/app/vet_runner.py) as scan_tree(root, timeout=cfg.vet_timeout, jobs=cfg.vet_jobs or 1). Disclosed risk (see _scan.py's _scan_dependencies docstring): jobs>1 is best-effort against the sqlite verdict cache and registry disk cache, which are not lock-hardened for concurrent writes -- document this in docs/modules/vet.md when wiring the flag.
 
-<!-- ticket:T-draft-89a86c7a -->
+<!-- ticket:T-0252 -->
 ```yaml
-id: T-draft-89a86c7a
+id: T-0252
 title: 'T-0168 evidence id uses dot instead of :: separator, fails COV003'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-18'
@@ -2845,9 +2845,21 @@ blocked_by: []
 parent: null
 scope:
 - tickets-archive.md
-evidence: []
+evidence:
+- tests/test_gates.py::TestConventionUnitBinding::test_test001_exempts_strata_flow_declarations
 attachments: []
 acceptance: []
 threat: null
 ```
 Found while working T-0156 (release readiness). tickets-archive.md T-0168 evidence entry 'tests/test_gates.py::TestConventionUnitBinding.test_test001_exempts_strata_flow_declarations' uses a dot between class and method instead of pytest's :: separator, so it never resolves via 'frob test --collect' and COV003 fires on 'frob check'. Pre-existing, unrelated to T-0156's scope (tickets-archive.md not in T-0156 scope). Fix: correct the evidence line to use :: between class and method, matching the real collected node id.
+## Done report
+
+Changed: tickets-archive.md -- 3 occurrences of the malformed
+Class.method evidence id corrected to the pytest Class::method form.
+COV003 confirmed gone (frob check --only coverage exit 0). This was the
+last standing frob check error; main is now at zero errors.
+
+Evidence: tests/test_gates.py::TestConventionUnitBinding::test_test001_exempts_strata_flow_declarations
+(the exact id the fix makes resolvable; passes).
+
+Filed: none.

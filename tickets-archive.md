@@ -10813,7 +10813,7 @@ scope:
 - tests/**
 - tickets.md
 evidence:
-- tests/test_gates.py::TestConventionUnitBinding.test_test001_exempts_strata_flow_declarations
+- tests/test_gates.py::TestConventionUnitBinding::test_test001_exempts_strata_flow_declarations
 attachments: []
 acceptance: []
 threat: null
@@ -10842,7 +10842,7 @@ Changed:
   skip; docstring extended to record the T-0168 decision)
 
 Evidence:
-- tests/test_gates.py::TestConventionUnitBinding.test_test001_exempts_strata_flow_declarations
+- tests/test_gates.py::TestConventionUnitBinding::test_test001_exempts_strata_flow_declarations
   (new regression test: a `.strata` file's `flow` declaration with zero
   edges and zero matching tests must not raise TEST001/TEST002)
 - tests/test_gates.py -k "TEST001 or TestConventionUnitBinding or
@@ -12123,7 +12123,7 @@ violations, none of them PRE001 and none touching this ticket's scope --
 11x COV003 on ticket T-0065 (stale evidence ids on
 `tests/unit/strata/test_kernel_properties.py`, a file this ticket never
 touched), 1x COV003 on T-0148, 1x COV003 on ticket T-0168 (same pattern on
-`tests/test_gates.py::TestConventionUnitBinding.test_test001_exempts_strata_flow_declarations`,
+`tests/test_gates.py::TestConventionUnitBinding::test_test001_exempts_strata_flow_declarations`,
 pre-existing before this ticket's edits), and
 1x TEST006 (no coverage stamp; TEST006 is campaign-wide and explicitly out
 of scope per this ticket's dispatch instructions). No new violations
