@@ -2547,7 +2547,7 @@ ASCII only, no emojis.
 ```yaml
 id: T-draft-fc754e8c
 title: link docs/guides/exhaustive-research.md from docs/index.md
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-07-18'
@@ -2555,6 +2555,7 @@ blocked_by: []
 parent: null
 scope:
 - docs/index.md
+- tickets.md
 evidence: []
 attachments: []
 acceptance: []
