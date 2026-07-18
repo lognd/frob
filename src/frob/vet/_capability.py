@@ -160,6 +160,22 @@ _FINGERPRINT_CATALOG_PATH = (
 
 
 # frob:doc docs/modules/vet.md#public-api
+# frob:ticket T-0169
+#: Every language bucket `_EXT_LANGUAGE` maps at least one extension to --
+#: i.e. every language a capability-scan CALLER (self-conformance's
+#: `_selfconform.py::_sorted_capability_files`, `vet`'s dependency scan)
+#: actually reaches via `language_for`/`scan_file_capabilities`. Exists so
+#: a drift-lock test can assert this set equals
+#: `_capability_registry.LANGUAGES` (the registry's claimed-supported set)
+#: without either side hand-duplicating the other's language list -- a new
+#: registry language with no `_EXT_LANGUAGE` extension entry (or vice
+#: versa) fails that test loudly instead of silently going unscanned
+#: (T-0169: this exact class of gap is what let TS/JS self-conformance
+#: scanning go dark in the logand.app pilot).
+SCANNED_LANGUAGES: frozenset[str] = frozenset(_EXT_LANGUAGE.values())
+
+
+# frob:doc docs/modules/vet.md#public-api
 def language_for(path: Path) -> str | None:
     """The pattern-table bucket for `path`'s extension (T-0158: C/C++ is now
     a first-class `"c-cpp"` bucket, not `None`), or `None` for an extension
@@ -451,6 +467,7 @@ def _aggregate_fingerprints(
 
 
 __all__ = [
+    "SCANNED_LANGUAGES",
     "decode_to_exec_signal",
     "language_for",
     "scan_directory_capabilities",
