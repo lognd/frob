@@ -3062,3 +3062,55 @@ acceptance: []
 threat: null
 ```
 T-0254 child 6 (proof on reality). Apply the full chain to malmberg (the real server product from pilot P3: server_api/ingest/cloudsync/faces/backup/display + media_store): extend design/malmberg.strata with std.host (dedicated service users per component, units, ownership of media_store paths, ports), prove HOST001/HOST002 movement-impossibility or record honest waivers, generate the deploy scripts, run the conformance gate, and if a VirtualBox environment is available run the full VM snapshot audit and attach the attestation. Remediate the current awkward setup step in malmberg's docs/scripts with the generated sequence. Work happens IN THE MALMBERG REPO per the break-and-report pilot protocol (frob-side gaps come back as tickets, filed serially by the coordinator); this frob-side ticket tracks the campaign and collects the gap list. Success = malmberg installs/uninstalls via generated scripts with a green conformance gate and a documented (or executed) VM audit path.
+
+<!-- ticket:T-0261 -->
+```yaml
+id: T-0261
+title: 'std.host windows backend: services, gMSA/service accounts, ACLs, named pipes,
+  firewall ports'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-18'
+blocked_by:
+- T-0255
+parent: T-0254
+scope:
+- strata-core/src/parse.rs
+- src/frob/strata/**
+- src/frob/deploy/**
+- editors/**
+- docs/strata/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0254 Windows pillar. Generalize the HostManifest (T-0255, Linux/systemd-first) into a platform-tagged model so a node can target windows. Windows analogs: service account instead of runs_as (dedicated low-priv local account, or a group Managed Service Account gMSA for domain-joined hosts -- NO interactive-logon right, deny-network-logon where possible, SeDenyBatchLogonRight per hardening); Windows Service (SCM) instead of systemd unit, with the hardening equivalents (service SID type restricted, required-privileges allowlist derived from may-capabilities, protected-process where applicable); NTFS ACLs (owner + explicit DACL entries) instead of POSIX owns MODE -- model must express deny-inheritance and per-principal rights, richer than a 3-octal mode; named pipes + Windows firewall rules for the listens surface. The platform tag drives which fields are required (a windows node without an ACL model is a HOST-family gap, mirroring a linux node without owns). Keep ONE HostManifest with a platform discriminator, not two parallel models -- the movement proofs (T-0256) and conformance (T-0258) must consume both uniformly. Grammar in parse.rs, tmLanguage drift-lock, litmus pair (linux + windows), docs/strata/host.md gains a Windows section. Generator/audit are separate tickets -- manifest + model only here.
+
+<!-- ticket:T-0262 -->
+```yaml
+id: T-0262
+title: 'std.krb: Kerberos/AD domain trust, SPNs, and delegation as first-class strata'
+state: queued
+kind: security
+origin: human
+created: '2026-07-18'
+blocked_by:
+- T-0255
+parent: T-0254
+scope:
+- strata-core/src/parse.rs
+- src/frob/strata/**
+- editors/**
+- docs/strata/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: elevation-of-privilege
+```
+T-0254 auth pillar. Model the Kerberos/Active-Directory layer that sits between OS principals and the backend so domain auth becomes provable architecture. New std.krb vocabulary: a realm/domain and its KDC as trust-lattice nodes; a service principal name (SPN) bound to a service account (the runs_as / windows service account from T-0255/T-0261); an authenticates-via edge (a flow crosses a Kerberos boundary -- ticket-granting, service-ticket); and DELEGATION as an explicit, typed declaration -- none | constrained target=<spn-set> | rbcd | unconstrained. Delegation is the crown-jewel modeling target because it is the classic movement vector. Domain trusts (one-way/two-way, transitive) join the lattice so cross-realm reachability is model-checked. Elaborate into the KernelModel so existing flow/noflow/reach machinery applies to ticket flows. This ticket is the MODEL + vocabulary only; the delegation-abuse obligations live in T-0263. Grammar + tmLanguage drift-lock, litmus, docs/strata/krb.md. std.krb must compose with both linux (MIT/Heimdal keytabs) and windows (AD) host backends.
