@@ -2606,7 +2606,10 @@ scope:
 - .mcp.json
 - docs/guides/**
 - tickets.md
-evidence: []
+- tests/unit/test_research_assets.py
+evidence:
+- tests/unit/test_research_assets.py::test_mcp_json_parses_and_declares_required_servers
+- tests/unit/test_research_assets.py::test_skill_frob_doc_anchor_resolves_in_guide
 attachments: []
 acceptance: []
 threat: null
@@ -2680,7 +2683,9 @@ parent: null
 scope:
 - docs/index.md
 - tickets.md
-evidence: []
+- tests/unit/test_research_assets.py
+evidence:
+- tests/unit/test_research_assets.py::test_docs_index_links_the_guide
 attachments: []
 acceptance: []
 threat: null
