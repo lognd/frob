@@ -192,6 +192,7 @@ class AppConfig(BaseModel):
     ticket_old_id: str | None = None
     ticket_new_id: str | None = None
     ticket_dry_run: bool = False
+    ticket_worktree: Path | None = None
 
     # test
     test_all: bool = False
@@ -334,6 +335,7 @@ class AppConfig(BaseModel):
             "ack_path",
             "ticket_path",
             "ticket_attach_path",
+            "ticket_worktree",
             "test_path",
             "vet_path",
             "vet_cve_mirror",

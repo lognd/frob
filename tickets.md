@@ -2354,7 +2354,7 @@ Every worktree agent currently re-learns the same session lessons from scratch, 
 ```yaml
 id: T-0176
 title: 'frob ticket land: one-command landing (merge-check-splice-close-commit)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-18'
@@ -2367,12 +2367,117 @@ scope:
 - tests/**
 - docs/modules/tickets.md
 - tickets.md
-evidence: []
+evidence:
+- tests/test_ticket_land.py::TestSpliceLedger::test_disjoint_ids_both_kept
+- tests/test_ticket_land.py::TestSpliceLedger::test_same_id_newer_state_wins
+- tests/test_ticket_land.py::TestLand::test_dry_run_lands_cleanly_and_leaves_no_trace
+- tests/test_ticket_land.py::TestLand::test_real_land_lands
+- tests/test_ticket_land.py::TestLand::test_refuses_on_dirty_main
+- tests/test_ticket_land.py::TestLand::test_refuses_without_evidence_or_done_report
+- tests/test_ticket_land.py::TestStaleBaseDeletion::test_unowned_deletion_aborts_loudly
+- tests/test_ticket_land.py::TestStaleBaseDeletion::test_scoped_deletion_is_allowed
+- tests/test_ticket_land.py::TestLedgerBothSidesAppend::test_both_sides_append_merges_cleanly
+- tests/test_ticket_land.py::TestDraftIdFinalization::test_draft_id_finalized_on_land
+- tests/system/test_cli_ticket_land.py::TestLandCLI::test_dry_run_reports_clean
 attachments: []
 acceptance: []
 threat: null
 ```
 The landing procedure is manual coordinator surgery repeated per ticket: wip-commit in the worktree, merge main, deletion-filter check (git diff main --diff-filter=D must be empty of unowned files), squash-apply, ledger splice on conflict, close with evidence validation, conventional commit. Implement frob ticket land <id> --worktree <path> doing the whole chain atomically with a dry-run mode: refuses on a dirty main, runs the deletion check and ABORTS loudly listing unowned deletions (the stale-base guard), auto-splices tickets.md keeping newest state per ticket section, finalizes provisional ids via the T-0162 mechanism (hence blocked_by), closes the ticket (evidence+done-report validation as today), and commits with a message template. Every abort path must name the exact manual remedy. Tests: fixture repo with a worktree simulating the real incident classes from this session (stale base deleting landed features, ledger both-sides-append conflict, id finalize).
+
+## Done report
+
+Changed:
+- src/frob/tickets/_land.py (new): `land()`, `splice_ledger()`, plus private
+  helpers (`_newer`, `_porcelain_dirty`, `_conflicted_files`, `_in_scope`,
+  `_validate_closeable`, `_abort_merge`, `_splice_and_stage`,
+  `_merge_main_into_worktree`, `_unowned_deletions`, `_wip_commit`,
+  `_commit_message`).
+- src/frob/tickets/_models.py: added `LandError` (ErrorSet), `LandReport`
+  (BaseModel).
+- src/frob/tickets/__init__.py: exported `land`, `splice_ledger`,
+  `LandError`, `LandReport`.
+- src/frob/app/ticket_runner.py: `_land` CLI handler, dispatch table entry,
+  usage string, module docstring.
+- src/frob/app/config.py: `AppConfig.ticket_worktree` field, wired through
+  `from_external`'s path-field list.
+- src/frob/__main__.py: `frob ticket land <id> --worktree <path>
+  [--dry-run]` argparse registration (outside T-0176's declared scope --
+  see Filed below; SCOPE001 waived there with a named remedy).
+- docs/modules/tickets.md: new "## `frob ticket land`" section (full
+  step-by-step order-of-operations rationale, why validation runs before
+  any git mutation, why tickets.md is always resolved via `splice_ledger`
+  rather than git's textual merge) plus updated the provisional-ids
+  section's "not wired up yet" language now that T-0176 wires it.
+- tests/test_ticket_land.py (new): `TestSpliceLedger` (id-level merge:
+  disjoint ids both kept, same-id newest-state-wins), `TestLand` (dry-run
+  leaves zero trace on both checkouts, real land merges+closes+commits,
+  refuses on dirty main, refuses without evidence/Done report before any
+  git mutation), `TestStaleBaseDeletion` (unowned deletion aborts loudly
+  and unwinds the merge; scoped deletion is allowed), `TestLedgerBothSidesAppend`
+  (main and the worktree each independently append a new ticket --
+  resolves as keep-both, not a conflict), `TestDraftIdFinalization` (a
+  T-draft-* id filed off-branch is finalized to a real sequential id at
+  land time). All against real git fixture repos (subprocess `git
+  worktree add`), not mocks.
+- tests/system/test_cli_ticket_land.py (new): `TestLandCLI` -- the real
+  `frob ticket land ... --dry-run` subprocess entrypoint end to end.
+
+Verification performed manually beyond the automated suite: a live
+`/tmp` smoke test creating a real worktree, filing a draft-id ticket,
+running `frob ticket land <draft-id> --worktree <wt> --path <main>`
+(no --dry-run) and confirming the draft finalized to T-0001, the file
+landed, the ticket closed to `done`, and a `feat(tickets): land T-0001 ...`
+commit was created on main -- matches the automated
+`TestLand::test_real_land_lands` coverage.
+
+Design notes on the three named incident classes:
+- Stale-base deletion: `land` merges main into the worktree FIRST (so the
+  worktree's tree already reflects main's current state), then diffs the
+  worktree against main with `--diff-filter=D`; any deleted path outside
+  the ticket's declared `scope` aborts loudly and unwinds the staged
+  merge (`git merge --abort`), naming the exact restore command.
+- Ledger both-sides-append: `tickets.md` is NEVER resolved via git's
+  line-level merge. Every merge/squash step (main-into-worktree,
+  worktree-into-main) always recomputes `tickets.md` via `splice_ledger`,
+  an id-level union that keeps a ticket present on only one side
+  unconditionally and picks the newer state (state-machine rank, then
+  Done-report presence, then evidence count) on a genuine same-id
+  divergence.
+- Id finalization: `finalize_draft` (T-0162's mechanism, previously
+  wired to nothing) is now called automatically inside `land`, against
+  the worktree's post-merge view, before close.
+
+Ordering (why close-validation runs first): `_validate_closeable` checks
+evidence + Done report BEFORE any git mutation. This matters because
+`frob ticket close` (`transition(..., DONE)`) enforces the same
+precondition -- if `land` merged first and validated last, a missing
+Done report would be discovered only after main-affecting state had
+already changed, forcing a manual unwind. Checking first means a failed
+precondition is always a no-op abort. `--dry-run` runs every check AND
+every git mutation the real run would (staged merge, real deletion diff,
+real splice) then unwinds it (`git merge --abort` / `git reset --hard`),
+so a clean dry run is a guarantee, not a simulation that could diverge
+from reality.
+
+Evidence: 11 pytest node ids (see evidence: list above), all collected
+fresh via `frob ticket evidence T-0176 ...` against a live `frob test`
+collection. Full suite (`uv run frob test . --all`) and
+`uv run frob test . --base main` both pass; `uv run frob check
+--ticket T-0176` is 0 errors (269 pre-existing warnings, unrelated to
+this ticket's scope).
+
+Filed: T-draft-4032e080 ("T-0176 scope gap: src/frob/__main__.py missing
+from declared scope") -- T-0176's declared scope omitted
+`src/frob/__main__.py`, but the CLI argparse registration for any new
+`frob ticket` subcommand lives there (as it did for T-0162, whose scope
+explicitly included it). `land` could not be invoked from the CLI without
+that file's change, so the addition was made and waived (`frob:waive
+SCOPE001` at src/frob/__main__.py:2, reason names the filed ticket)
+rather than expanding T-0176's scope unilaterally.
+
+Gates: `uv run frob check --ticket T-0176` clean (0 errors); no other
+waivers introduced beyond the one SCOPE001 waiver named above.
 
 <!-- ticket:T-0177 -->
 ```yaml
@@ -2756,3 +2861,22 @@ acceptance: []
 threat: null
 ```
 User mandate 2026-07-18: frob dup does the basics (R1-R6 rungs: winnow, WL-hash, candidate_pairs, tree_edit in frob-core; statement-Levenshtein; co-occurrence CFG/DFG proxy) but must be bleeding-edge. Phase 1 RESEARCH (exhaustive-researcher): map the clone-detection state of the art against our implementation -- APTED exact tree edit distance, SourcererCC bag-of-tokens overlap, Oreo metrics-based type-3/4, NiCad normalization+abstraction, DECKARD characteristic vectors, learning-based (ASTNN, FA-AST GNN, CCLearner) with honest feasibility calls for a no-model-dependency tool, cross-language clone detection, and ANTI-UNIFICATION / reverse templating: report each clone group with its abstracted template plus per-instance bindings (the shared skeleton with holes), so the fix suggestion is the extracted function signature, not just 'these are similar'. Phase 2 DESIGN+TICKETS: planner converts the survey into an implementation ticket tree (rust-kernel work vs python orchestration split explicit). Phase 3 META-TEST: exhaustiveness drift-lock in the T-0158/T-0182 mold -- a registry of detectors/rungs/clone-types, parametrized litmus fixtures proving every (clone type 1-4 x supported language x rung) cell either fires on a minimal fixture pair or carries a written exclusion; adding a detector or claiming a clone type without a firing fixture fails the suite. Acceptance: survey doc committed, ticket tree filed, meta-test green over the CURRENT detector set before any new detector lands.
+
+<!-- ticket:T-draft-4032e080 -->
+```yaml
+id: T-draft-4032e080
+title: 'T-0176 scope gap: src/frob/__main__.py missing from declared scope'
+state: queued
+kind: docs
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0176's scope listed src/frob/tickets/**, src/frob/app/**, tests/**, docs/modules/tickets.md, tickets.md but omitted src/frob/__main__.py -- every prior ticket-subcommand-adding ticket (e.g. T-0162) explicitly included src/frob/__main__.py in scope, since the ticket subcommand argparse wiring lives there, not under src/frob/app/. T-0176 needed exactly that (frob ticket land's --worktree/--dry-run argparse registration) and could not deliver a usable CLI command without it. Waived SCOPE001 at src/frob/__main__.py in T-0176's commit rather than expanding scope unilaterally; this ticket exists to note the gap for future ticket-scope authoring (mechanically: any ticket adding a new frob subcommand should include src/frob/__main__.py in scope up front).
