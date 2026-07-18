@@ -2594,7 +2594,7 @@ Review: APPROVED (non-repro + regression hardening accepted).
 ```yaml
 id: T-0185
 title: 'exhaustive-research agent: frontier-loop with external graph-knowledge store'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-18'
@@ -2666,3 +2666,23 @@ setup docs like the serena/frob wiring; (5) reference arxiv priors on
 agent externalization/memory (2604.08224 externalization review;
 2604.11243 self-evolving knowledge wikis) in the design doc.
 ASCII only, no emojis.
+
+<!-- ticket:T-draft-fc754e8c -->
+```yaml
+id: T-draft-fc754e8c
+title: link docs/guides/exhaustive-research.md from docs/index.md
+state: in-progress
+kind: docs
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- docs/index.md
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0185 shipped docs/guides/exhaustive-research.md but docs/index.md is outside T-0185's declared scope, so DOC001 (doclink) cannot be satisfied without touching it. Add one bullet under 'Getting started' pointing at the new guide, matching the existing entries for install/quickstart/agentic-workflow/editors.
