@@ -198,6 +198,22 @@ per grammar production:
 - `RefineDecl` <!-- frob:describes src/frob/strata/_ast.py::RefineDecl -->
   -- target, nodes, flows, bind_to; see "Refinement" above for v0 semantics.
 
+**Capacity attrs (T-0066).** Three more flow/node properties desugar
+straight to an `attrs` entry inside `parse.rs` itself, with no dedicated
+AST or kernel field (charter law 1; docs/strata/kernel.md#capacity-
+semantics):
+
+- flow `fanout NUM` -> flow attr `fanout=<float>` (demand-propagation
+  multiplier).
+- flow `growth NUM %` -> flow attr `growth=<pct_per_month>` (compound
+  monthly growth, read by UTILIZATION bound claims for saturation dating).
+- node/store `skew zipf NUM` -> node/store attr `skew=<alpha>` (zipf
+  hottest-shard exponent).
+
+Because these are just more `attrs` entries, `FlowDecl`/`NodeDecl`/
+`StoreDecl` need no new fields and `elaborate`/`elaborate_infra` need no
+new mapping code -- `attrs` already passes through field-for-field.
+
 Python entry point (`src/frob/strata/_parse.py`):
 
 - `parse_module(text: str) -> Result[Module, StrataError]` <!-- frob:describes src/frob/strata/_parse.py::parse_module -->

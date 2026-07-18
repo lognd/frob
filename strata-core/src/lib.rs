@@ -467,6 +467,155 @@ fn demand(rates: Vec<(String, f64)>, node: String) -> f64 {
         .sum()
 }
 
+/// One demand-carrying edge: (flow_id, src, dst, declared_rate, fanout).
+/// `declared_rate` is `None` when the flow has no declared rate (demand
+/// must propagate upstream through it); `fanout` is 1.0 when the flow
+/// declares no `fanout` attr.
+type DemandEdge = (String, String, String, Option<f64>, f64);
+
+/// Recursive demand computation with cycle detection via an explicit
+/// active-recursion stack (mirrors `find_positive_cycle`'s pattern, but
+/// SUM-aggregates instead of taking a single accumulated value, since
+/// load adds across converging paths -- unlike age, which maxes).
+///
+/// `incoming_undeclared[node]` are `(flow_id, src, fanout)` triples for
+/// flows into `node` with no declared rate (demand recurses into `src`);
+/// `incoming_declared[node]` are `(flow_id, src, contribution)` triples
+/// where `contribution = declared_rate * fanout` is a constant, computed
+/// once and never recursed into (a declared rate terminates propagation
+/// on that hop, docs/strata/kernel.md#capacity-semantics).
+///
+/// `Err` carries the witness path of a cycle that both (a) lies entirely
+/// on flows without declared rates and (b) is reachable, forward, from
+/// some node with a declared outbound rate (`reach`) -- the documented v0
+/// unboundedness rule.
+#[allow(clippy::too_many_arguments)]
+fn compute_demand(
+    node: &str,
+    incoming_undeclared: &HashMap<String, Vec<(String, String, f64)>>,
+    incoming_declared: &HashMap<String, Vec<(String, String, f64)>>,
+    reach: &HashSet<String>,
+    memo: &mut HashMap<String, f64>,
+    active: &mut Vec<String>,
+) -> Result<f64, Vec<String>> {
+    if let Some(v) = memo.get(node) {
+        return Ok(*v);
+    }
+    active.push(node.to_string());
+    let mut total = 0.0;
+    if let Some(consts) = incoming_declared.get(node) {
+        let mut sorted = consts.clone();
+        sorted.sort_by(|a, b| a.0.cmp(&b.0));
+        for (_, _, contribution) in sorted {
+            total += contribution;
+        }
+    }
+    if let Some(ins) = incoming_undeclared.get(node) {
+        let mut sorted = ins.clone();
+        sorted.sort_by(|a, b| a.0.cmp(&b.0));
+        for (flow_id, src, fanout) in sorted {
+            if let Some(pos) = active.iter().position(|n| n == &src) {
+                let cycle_reaches_source = active[pos..].iter().any(|n| reach.contains(n))
+                    || reach.contains(node);
+                if !cycle_reaches_source {
+                    continue; // cycle with no rate feeding it: contributes 0
+                }
+                let mut witness: Vec<String> = active[pos..].to_vec();
+                witness.push(flow_id);
+                witness.push(node.to_string());
+                active.pop();
+                return Err(witness);
+            }
+            match compute_demand(&src, incoming_undeclared, incoming_declared, reach, memo, active)
+            {
+                Ok(v) => total += v * fanout,
+                Err(w) => {
+                    active.pop();
+                    return Err(w);
+                }
+            }
+        }
+    }
+    active.pop();
+    memo.insert(node.to_string(), total);
+    Ok(total)
+}
+
+/// BIND: propagated_demand
+///
+/// WHY: fanout multiplies demand as it propagates along a flow (charter
+/// docs/strata/kernel.md#capacity-semantics); unlike `worst_age`, which
+/// maxes over paths, demand SUMS over converging paths (load adds). A
+/// declared flow `rate` terminates propagation on that hop -- it does not
+/// recurse into its source's own demand. Positive-rate cycles (a cycle of
+/// undeclared-rate flows reachable, forward, from a node with a declared
+/// outbound rate, and which also reaches `target`) are unbounded: `+inf`
+/// with the cycle as witness, never a silent clamp (deny-by-default,
+/// charter law 2).
+#[pyfunction]
+fn propagated_demand(edges: Vec<DemandEdge>, target: String) -> (f64, Vec<String>) {
+    // frob:doc docs/strata/kernel.md#capacity-semantics
+    let mut outgoing_all: HashMap<String, Vec<String>> = HashMap::new();
+    let mut rate_sources: HashSet<String> = HashSet::new();
+    let mut incoming_undeclared: HashMap<String, Vec<(String, String, f64)>> = HashMap::new();
+    let mut incoming_declared: HashMap<String, Vec<(String, String, f64)>> = HashMap::new();
+    for (flow_id, src, dst, rate, fanout) in &edges {
+        outgoing_all.entry(src.clone()).or_default().push(dst.clone());
+        match rate {
+            Some(r) => {
+                rate_sources.insert(src.clone());
+                incoming_declared
+                    .entry(dst.clone())
+                    .or_default()
+                    .push((flow_id.clone(), src.clone(), r * fanout));
+            }
+            None => {
+                incoming_undeclared
+                    .entry(dst.clone())
+                    .or_default()
+                    .push((flow_id.clone(), src.clone(), *fanout));
+            }
+        }
+    }
+
+    // Forward closure from every declared-rate source: the set of nodes a
+    // rate can reach, used to decide whether a cycle is fed (see above).
+    let mut reach: HashSet<String> = HashSet::new();
+    let mut sources: Vec<&String> = rate_sources.iter().collect();
+    sources.sort();
+    let mut frontier: VecDeque<String> = VecDeque::new();
+    for s in sources {
+        if reach.insert(s.clone()) {
+            frontier.push_back(s.clone());
+        }
+    }
+    while let Some(cur) = frontier.pop_front() {
+        if let Some(outs) = outgoing_all.get(&cur) {
+            let mut sorted = outs.clone();
+            sorted.sort();
+            for n in sorted {
+                if reach.insert(n.clone()) {
+                    frontier.push_back(n);
+                }
+            }
+        }
+    }
+
+    let mut memo: HashMap<String, f64> = HashMap::new();
+    let mut active: Vec<String> = Vec::new();
+    match compute_demand(
+        &target,
+        &incoming_undeclared,
+        &incoming_declared,
+        &reach,
+        &mut memo,
+        &mut active,
+    ) {
+        Ok(v) => (v, vec![target]),
+        Err(witness) => (f64::INFINITY, witness),
+    }
+}
+
 /// BIND: parse_source
 ///
 /// WHY: the surface grammar parser is compute-heavy (charter D3, amended
@@ -484,6 +633,7 @@ fn strata_core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(reachable, m)?)?;
     m.add_function(wrap_pyfunction!(worst_age, m)?)?;
     m.add_function(wrap_pyfunction!(demand, m)?)?;
+    m.add_function(wrap_pyfunction!(propagated_demand, m)?)?;
     m.add_function(wrap_pyfunction!(parse_source, m)?)?;
     Ok(())
 }
@@ -569,6 +719,65 @@ mod tests {
             "a".to_string(),
         );
         assert!(age.is_infinite());
+    }
+
+    #[test]
+    fn propagated_demand_chain_multiplies_fanout() {
+        // frob:tests strata-core/src/lib.rs::propagated_demand kind="unit"
+        // src(10/s) -> a (fanout 2) -> b (fanout 3): 10 * 2 * 3 = 60.
+        let (v, _) = propagated_demand(
+            vec![
+                ("f1".into(), "src".into(), "a".into(), Some(10.0), 2.0),
+                ("f2".into(), "a".into(), "b".into(), None, 3.0),
+            ],
+            "b".to_string(),
+        );
+        assert_eq!(v, 60.0);
+    }
+
+    #[test]
+    fn propagated_demand_sums_converging_paths() {
+        // frob:tests strata-core/src/lib.rs::propagated_demand kind="unit"
+        // two independent declared sources into the same target: sums.
+        let (v, _) = propagated_demand(
+            vec![
+                ("f1".into(), "s1".into(), "t".into(), Some(4.0), 1.0),
+                ("f2".into(), "s2".into(), "t".into(), Some(6.0), 1.0),
+            ],
+            "t".to_string(),
+        );
+        assert_eq!(v, 10.0);
+    }
+
+    #[test]
+    fn propagated_demand_positive_cycle_is_infinite() {
+        // frob:tests strata-core/src/lib.rs::propagated_demand kind="unit"
+        // src feeds a, a<->b cycle (both undeclared), b is the target.
+        let (v, witness) = propagated_demand(
+            vec![
+                ("f0".into(), "src".into(), "a".into(), Some(5.0), 1.0),
+                ("f1".into(), "a".into(), "b".into(), None, 1.0),
+                ("f2".into(), "b".into(), "a".into(), None, 1.0),
+            ],
+            "b".to_string(),
+        );
+        assert!(v.is_infinite());
+        assert!(witness.contains(&"a".to_string()));
+        assert!(witness.contains(&"b".to_string()));
+    }
+
+    #[test]
+    fn propagated_demand_unfed_cycle_contributes_zero() {
+        // frob:tests strata-core/src/lib.rs::propagated_demand kind="unit"
+        // a<->b cycle with no declared rate anywhere reaching it: 0, finite.
+        let (v, _) = propagated_demand(
+            vec![
+                ("f1".into(), "a".into(), "b".into(), None, 1.0),
+                ("f2".into(), "b".into(), "a".into(), None, 1.0),
+            ],
+            "b".to_string(),
+        );
+        assert_eq!(v, 0.0);
     }
 
     #[test]

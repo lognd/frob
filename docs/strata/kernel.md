@@ -142,7 +142,9 @@ consumer; payload label above destination clearance).
 - `FactBase.worst_age` -- longest-path staleness accumulation in seconds;
   a positive-age cycle yields `inf` plus the cycle as witness, never a
   silent clamp.
-- `FactBase.demand` -- declared inbound rate sum in base units.
+- `FactBase.demand` -- propagated inbound demand sum in base units
+  (fanout-multiplied; see "Capacity semantics" below).
+- `FactBase.propagated_demand` -- the same, plus a witness path/cycle.
 
 ### Age propagation semantics
 
@@ -214,6 +216,92 @@ memoized-DFS (WRONG):  3.0  via A->T
 SCC condensation (RIGHT): 4.0  via C->B->A->T
 ```
 
+### Capacity semantics
+
+<!-- frob:ticket T-0066 -->
+<!-- frob:describes src/frob/strata/_facts.py::FactBase.propagated_demand -->
+<!-- frob:describes src/frob/strata/_facts.py::_flow_fanout -->
+<!-- frob:describes src/frob/strata/_claims.py::_node_skew -->
+<!-- frob:describes src/frob/strata/_claims.py::_zipf_hottest_share -->
+<!-- frob:describes src/frob/strata/_claims.py::_flow_growth -->
+<!-- frob:describes src/frob/strata/_claims.py::_add_months -->
+<!-- frob:describes src/frob/strata/_claims.py::_months_to_saturation -->
+<!-- frob:describes strata-core/src/lib.rs::propagated_demand -->
+
+Three surface words extend capacity arithmetic beyond the plain demand sum
+without adding a kernel field (charter law 1): flow `fanout NUM`, node/store
+`skew zipf NUM`, and flow `growth NUM %`. Each desugars straight to an attr
+string at parse time (`fanout=<float>`, `skew=<alpha>`, `growth=<pct>`) --
+`_facts.py`/`_claims.py` read them back out of `Flow.attrs`/`Node.attrs`.
+
+**Demand propagation (sum over paths, not max).** `age` is a longest-path
+(max) problem because staleness on a read path does not add across
+alternate routes; demand is the opposite -- load converging from multiple
+paths ADDS. `propagated_demand(target)`:
+
+```
+demand(n) = sum over inbound flows f of n of
+              (f.rate if declared else demand(f.src)) * fanout(f)
+```
+
+A flow's own declared `rate` terminates recursion on that hop (it does not
+also pull in its source's demand); an undeclared flow propagates the
+source's own demand, scaled by `fanout` (default 1.0 when not declared).
+`FactBase.demand` stays the metric RATE/UTILIZATION bounds read; it is now
+a thin wrapper over `FactBase.propagated_demand`, which also returns a
+witness.
+
+**Cycle rule (v0, deliberately conservative).** A cycle of *undeclared-rate*
+flows is only a problem if something actually feeds it: `propagated_demand`
+treats a cycle as `+inf` (with the cycle as witness) exactly when it is
+reachable, forward, from some node with a declared outbound rate (a "rate
+source") and the cycle also reaches `target`. An isolated cycle with no
+source feeding it contributes 0 forever, not `+inf` -- it is inert, not
+unbounded. This is the "honest v0 rule" from the ticket: it does not try to
+multiply out fanout products around the cycle to distinguish a
+sub-unity-gain loop (which would actually converge to a finite geometric
+sum) from a growing one; ANY rate-fed cycle reaching the target is `+inf`,
+deny-by-default (charter law 2). A future revision may compute the true
+per-cycle fanout product and only flag `+inf` when it exceeds 1.0; until
+then this is intentionally conservative, not incomplete.
+
+**Zipf hottest-shard utilization.** A node marked `skew zipf ALPHA` is a
+sharded resource where load is not evenly spread across its
+`capacity.replicas_max` shards. The UTILIZATION bound then checks the
+*hottest* shard's estimate, not the mean:
+
+```
+H(k, alpha)   = 1 / k^alpha
+hottest_share = H(1, alpha) / sum_{k=1..replicas_max} H(k, alpha)
+utilization_hot = 100 * demand(target) * hottest_share / service_rate
+```
+
+`service_rate` here is the *single-replica* rate (no `* replicas_max`,
+unlike the unskewed ceiling) -- the hottest shard is served by exactly one
+replica no matter how many total replicas exist. `alpha=0` degenerates to
+an even split (`hottest_share = 1/replicas_max`, matching the unskewed
+mean check); larger `alpha` concentrates load harder on rank 1. A
+REFUTED verdict's detail always names the hottest-shard share and the zipf
+exponent, never just a bare percentage, so the counterexample is
+self-explanatory without re-deriving the formula. A node with no `skew`
+attr keeps the original mean-based ceiling check (`demand / (rate *
+replicas_max)`) unchanged.
+
+**Growth horizons (saturation dating, not a new claim form).** Charter law
+1 forbids a new claim kind for this, so growth-awareness lives inside the
+existing UTILIZATION bound: when any flow feeding the target declares
+`growth NUM %` (the largest declared growth percent among the target's
+direct inbound flows, if more than one), a verdict that would otherwise be
+PROVED is re-checked against compound monthly growth. Utilization at month
+`t` is `utilization0 * (1 + growth/100)^t`; the saturation date is the
+smallest `t` where that crosses `limit`. `GROWTH_HORIZON_MONTHS = 24`
+(`_claims.py`, module-level constant) is the deny-by-default horizon: if
+saturation falls within 24 months of `evaluate_claims`'s `today`, the
+verdict flips from PROVED to REFUTED with detail `"saturates in N months
+(YYYY-MM)"` -- a design that is fine today but will structurally fail
+within two years is not a passing claim. No growth declared, or a
+horizon beyond 24 months, leaves the verdict PROVED untouched.
+
 ## Claim evaluation
 
 <!-- frob:describes src/frob/strata/_claims.py::evaluate_claims -->
@@ -279,6 +367,7 @@ ASSUMED  c3 [forall] -- assumed by alice; review by 2026-08-01
 <!-- frob:describes strata-core/src/lib.rs::reachable -->
 <!-- frob:describes strata-core/src/lib.rs::worst_age -->
 <!-- frob:describes strata-core/src/lib.rs::demand -->
+<!-- frob:describes strata-core/src/lib.rs::propagated_demand -->
 <!-- frob:describes strata-core/src/lib.rs::strata_core -->
 
 The independent Rust/PyO3 kernel crate (T-0071; charter D2/D3). Data-in/
@@ -287,9 +376,13 @@ validation and vocabulary stay in Python.
 
 - `reachable` -- deterministic BFS closure over lexicographically sorted
   out-edges; barrier flag per edge implements endorsement semantics.
-- `worst_age` -- memoized longest-path DFS; positive cycles return +inf
-  plus the cycle witness.
-- `demand` -- inbound-rate aggregation (grows fanout/skew in phase 2).
+- `worst_age` -- SCC-condensation longest-path DP; positive cycles return
+  +inf plus the cycle witness.
+- `demand` -- plain declared inbound-rate aggregation (superseded by
+  `propagated_demand` for fanout-aware bounds; kept for its own tests).
+- `propagated_demand` -- fanout-weighted demand SUMmed over converging
+  paths (see "Capacity semantics" above); rate-fed cycles return +inf plus
+  the cycle witness, mirroring `worst_age`'s deny-by-default shape.
 - `strata_core` -- the pymodule assembling the exported surface.
 
 Build: `make core` (uvx maturin develop --release); ships a bundled

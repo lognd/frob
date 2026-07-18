@@ -8,7 +8,9 @@ refuted against the `FactBase` closure, which is complete over the model.
 
 from __future__ import annotations
 
+import calendar
 import datetime as _dt
+import math
 
 from typani.result import Err, Ok, Result
 
@@ -30,6 +32,77 @@ from ._models import (
 )
 
 _log = get_logger(__name__)
+
+#: Node attr prefix for zipf skew (surface `skew zipf NUM`).
+_SKEW_PREFIX = "skew="
+#: Flow attr prefix for monthly compound growth (surface `growth NUM %`).
+_GROWTH_PREFIX = "growth="
+#: Deny-by-default saturation horizon (months); a PROVED utilization whose
+#: growth-projected saturation falls within this window is REFUTED instead
+#: (docs/strata/kernel.md#capacity-semantics).
+GROWTH_HORIZON_MONTHS = 24
+
+
+def _node_skew(node) -> float | None:
+    """A node's zipf skew exponent: its `skew=<alpha>` attr, or None."""
+    # frob:doc docs/strata/kernel.md#capacity-semantics
+    for attr in node.attrs:
+        if attr.startswith(_SKEW_PREFIX):
+            try:
+                return float(attr[len(_SKEW_PREFIX) :])
+            except ValueError:
+                _log.warning("node %s: malformed skew attr %r", node.id, attr)
+                return None
+    return None
+
+
+def _zipf_hottest_share(alpha: float, shards: int) -> float:
+    """The rank-1 zipf share among `shards` replicas at skew exponent `alpha`.
+
+    `hottest_share = (1/1^alpha) / sum_{k=1..shards} (1/k^alpha)` --
+    docs/strata/kernel.md#capacity-semantics.
+    """
+    # frob:doc docs/strata/kernel.md#capacity-semantics
+    weights = [1.0 / (k**alpha) for k in range(1, max(shards, 1) + 1)]
+    return weights[0] / sum(weights)
+
+
+def _flow_growth(flow) -> float | None:
+    """A flow's declared monthly growth percent: its `growth=<pct>` attr, or None."""
+    # frob:doc docs/strata/kernel.md#capacity-semantics
+    for attr in flow.attrs:
+        if attr.startswith(_GROWTH_PREFIX):
+            try:
+                return float(attr[len(_GROWTH_PREFIX) :])
+            except ValueError:
+                _log.warning("flow %s: malformed growth attr %r", flow.id, attr)
+                return None
+    return None
+
+
+def _add_months(d: _dt.date, months: int) -> _dt.date:
+    """`d` advanced by `months` whole months, clamping the day to the target month."""
+    # frob:doc docs/strata/kernel.md#capacity-semantics
+    month_index = d.month - 1 + months
+    year = d.year + month_index // 12
+    month = month_index % 12 + 1
+    day = min(d.day, calendar.monthrange(year, month)[1])
+    return _dt.date(year, month, day)
+
+
+def _months_to_saturation(
+    utilization0: float, limit: float, growth_pct: float
+) -> float | None:
+    """Months of compound monthly growth until `utilization0` crosses `limit`.
+
+    None when it never crosses (already >= limit, non-positive utilization,
+    or non-positive growth).
+    """
+    # frob:doc docs/strata/kernel.md#capacity-semantics
+    if utilization0 <= 0.0 or utilization0 >= limit or growth_pct <= 0.0:
+        return None
+    g = growth_pct / 100.0
+    return math.log(limit / utilization0) / math.log(1.0 + g)
 
 
 def _expand(facts: FactBase, ref: str) -> Result[tuple[str, ...], StrataError]:
@@ -145,7 +218,7 @@ def _proved(claim: Claim, detail: str) -> ClaimResult:
 
 
 def _eval_bound(
-    facts: FactBase, claim: Claim, body: BoundClaim
+    facts: FactBase, claim: Claim, body: BoundClaim, today: _dt.date
 ) -> Result[ClaimResult, StrataError]:
     """Arithmetic bounds: age/rate/utilization on nodes, latency/size on flows."""
     if body.metric is Metric.AGE:
@@ -184,21 +257,63 @@ def _eval_bound(
         rate = node.capacity.service_rate.base_value()
         if rate.is_err:
             return Err(rate.danger_err)
-        ceiling = rate.danger_ok * node.capacity.replicas_max
-        if ceiling <= 0:
-            return Ok(_refuted(claim, f"{node.id} has zero service ceiling"))
-        utilization = 100.0 * facts.demand(body.target) / ceiling
-        if utilization > limit.danger_ok:
-            return Ok(
-                _refuted(
-                    claim,
-                    f"utilization {utilization:.1f}% > {limit.danger_ok}% "
-                    f"at max replicas {node.capacity.replicas_max}",
-                )
+        single_rate = rate.danger_ok
+        demand = facts.demand(body.target)
+        skew_alpha = _node_skew(node)
+        if skew_alpha is not None:
+            if single_rate <= 0:
+                return Ok(_refuted(claim, f"{node.id} has zero service ceiling"))
+            hottest_share = _zipf_hottest_share(skew_alpha, node.capacity.replicas_max)
+            utilization = 100.0 * demand * hottest_share / single_rate
+            over_detail = (
+                f"utilization {utilization:.1f}% > {limit.danger_ok}% "
+                f"at hottest-shard share {hottest_share:.4f} "
+                f"(zipf alpha={skew_alpha}, {node.capacity.replicas_max} shards)"
             )
-        return Ok(
-            _proved(claim, f"utilization {utilization:.1f}% <= {limit.danger_ok}%")
-        )
+            ok_detail = (
+                f"utilization {utilization:.1f}% <= {limit.danger_ok}% "
+                f"at hottest-shard share {hottest_share:.4f}"
+            )
+        else:
+            ceiling = single_rate * node.capacity.replicas_max
+            if ceiling <= 0:
+                return Ok(_refuted(claim, f"{node.id} has zero service ceiling"))
+            utilization = 100.0 * demand / ceiling
+            over_detail = (
+                f"utilization {utilization:.1f}% > {limit.danger_ok}% "
+                f"at max replicas {node.capacity.replicas_max}"
+            )
+            ok_detail = f"utilization {utilization:.1f}% <= {limit.danger_ok}%"
+        if utilization > limit.danger_ok:
+            return Ok(_refuted(claim, over_detail))
+
+        growth_pct: float | None = None
+        for f in facts.flows.values():
+            if f.dst != body.target:
+                continue
+            g = _flow_growth(f)
+            if g is not None and (growth_pct is None or g > growth_pct):
+                growth_pct = g
+        if growth_pct is not None:
+            months = _months_to_saturation(utilization, limit.danger_ok, growth_pct)
+            if months is not None and months <= GROWTH_HORIZON_MONTHS:
+                horizon = math.ceil(months)
+                sat_date = _add_months(today, horizon)
+                _log.warning(
+                    "bound %s: utilization %s saturates in %s month(s) "
+                    "(growth=%s%%/mo)",
+                    claim.id,
+                    body.target,
+                    horizon,
+                    growth_pct,
+                )
+                return Ok(
+                    _refuted(
+                        claim,
+                        f"saturates in {horizon} months ({sat_date.isoformat()[:7]})",
+                    )
+                )
+        return Ok(_proved(claim, ok_detail))
 
     # LATENCY / SIZE: direct comparison against the flow's declared quantity.
     flow = facts.flows.get(body.target)
@@ -275,7 +390,7 @@ def evaluate_claims(
         elif isinstance(body, Reach):
             outcome = _eval_reach(facts, claim, body)
         else:
-            outcome = _eval_bound(facts, claim, body)
+            outcome = _eval_bound(facts, claim, body, current)
         if outcome.is_err:
             return Err(outcome.danger_err)
         results.append(outcome.danger_ok)

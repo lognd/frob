@@ -437,6 +437,14 @@ impl Parser {
                     self.expect_dotdot()?;
                     let hi = self.expect_int("replicas_max")?;
                     capacity = Some(json!({"rate": rate, "replicas_min": lo, "replicas_max": hi}));
+                } else if self.at_keyword("skew") {
+                    // skew := "skew" "zipf" NUMBER; desugars straight to a
+                    // node attr "skew=<alpha>" (docs/strata/kernel.md
+                    // #capacity-semantics) -- no dedicated kernel field.
+                    self.advance();
+                    self.expect_keyword("zipf")?;
+                    let alpha = self.expect_number("skew zipf exponent")?;
+                    attrs.push(format!("skew={}", alpha));
                 } else {
                     return self.err("unknown node property");
                 }
@@ -497,6 +505,23 @@ impl Parser {
                 } else if self.at_keyword("transport") {
                     self.advance();
                     transport.push(self.expect_ident("transport atom")?);
+                } else if self.at_keyword("fanout") {
+                    // fanout := "fanout" NUMBER; desugars to a flow attr
+                    // "fanout=<float>" (docs/strata/kernel.md#capacity-
+                    // semantics) -- multiplies demand propagated along
+                    // this flow. No dedicated kernel field (charter law 1).
+                    self.advance();
+                    let n = self.expect_number("fanout multiplier")?;
+                    attrs.push(format!("fanout={}", n));
+                } else if self.at_keyword("growth") {
+                    // growth := "growth" NUMBER "%"; desugars to a flow
+                    // attr "growth=<pct_per_month>" -- no new claim form
+                    // (charter law 1); UTILIZATION bound claims read it for
+                    // saturation-horizon diagnostics.
+                    self.advance();
+                    let n = self.expect_number("growth percent")?;
+                    self.expect_symbol('%')?;
+                    attrs.push(format!("growth={}", n));
                 } else {
                     return self.err("unknown flow property");
                 }
@@ -702,6 +727,11 @@ impl Parser {
                 } else if self.at_keyword("rpo") {
                     self.advance();
                     rpo = Some(self.parse_quantity("rpo")?);
+                } else if self.at_keyword("skew") {
+                    self.advance();
+                    self.expect_keyword("zipf")?;
+                    let alpha = self.expect_number("skew zipf exponent")?;
+                    attrs.push(format!("skew={}", alpha));
                 } else {
                     return self.err("unknown store property");
                 }
@@ -1514,6 +1544,48 @@ mod tests {
         let v = ok("module m\nbalancer b");
         assert_eq!(v["balancers"][0]["policy"], serde_json::Value::Null);
         assert_eq!(v["balancers"][0]["sticky"], false);
+    }
+
+    #[test]
+    fn parses_node_skew() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok("module m\nnode n : trusted { skew zipf 1.2; }");
+        assert_eq!(v["nodes"][0]["attrs"][0], "skew=1.2");
+    }
+
+    #[test]
+    fn parses_store_skew() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok("module m\nstore db : trusted { skew zipf 0.9; }");
+        assert_eq!(v["stores"][0]["attrs"][0], "skew=0.9");
+    }
+
+    #[test]
+    fn parses_flow_fanout() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok("module m\nflow f1 : a -> b { fanout 2.5; }");
+        assert_eq!(v["flows"][0]["attrs"][0], "fanout=2.5");
+    }
+
+    #[test]
+    fn parses_flow_growth() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok("module m\nflow f1 : a -> b { growth 5 %; }");
+        assert_eq!(v["flows"][0]["attrs"][0], "growth=5");
+    }
+
+    #[test]
+    fn error_skew_requires_zipf_keyword() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let e = err("module m\nnode n : trusted { skew 1.2; }");
+        assert_eq!(e["message"], "expected keyword \"zipf\"");
+    }
+
+    #[test]
+    fn error_growth_requires_percent() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let e = err("module m\nflow f1 : a -> b { growth 5; }");
+        assert_eq!(e["message"], "expected \'%\'");
     }
 
     #[test]

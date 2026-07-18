@@ -36,6 +36,21 @@ _log = get_logger(__name__)
 _AT_LEAST_ONCE = "delivery=at_least_once"
 #: Node attr that discharges the at-least-once obligation.
 _IDEMPOTENT = "idempotent"
+#: Flow attr prefix for the demand-propagation multiplier (surface `fanout NUM`).
+_FANOUT_PREFIX = "fanout="
+
+
+def _flow_fanout(flow: Flow) -> float:
+    """A flow's demand-propagation multiplier: its `fanout=<float>` attr, or 1.0."""
+    # frob:doc docs/strata/kernel.md#capacity-semantics
+    for attr in flow.attrs:
+        if attr.startswith(_FANOUT_PREFIX):
+            try:
+                return float(attr[len(_FANOUT_PREFIX) :])
+            except ValueError:
+                _log.warning("flow %s: malformed fanout attr %r", flow.id, attr)
+                return 1.0
+    return 1.0
 
 
 def _lattice_is_acyclic(lattice: Lattice) -> bool:
@@ -123,15 +138,46 @@ class FactBase:
         return age, tuple(path)
 
     def demand(self, node_id: str) -> float:
-        """Total declared inbound rate at a node in base units (per second)."""
+        """Total propagated inbound demand at a node in base units (per second).
+
+        Thin wrapper over `propagated_demand` that drops the witness path;
+        RATE/UTILIZATION bound claims (`_claims.py`) only need the number,
+        and an `inf` value already refutes any finite limit on its own.
+        """
         # frob:doc docs/strata/kernel.md#fact-base
-        rates = []
+        return self.propagated_demand(node_id)[0]
+
+    def propagated_demand(self, node_id: str) -> tuple[float, tuple[str, ...]]:
+        """Inbound demand at a node, fanout-multiplied, summed over paths.
+
+        Demand at a node is the sum over inbound flows of (the flow's own
+        declared rate, if any, else the propagated demand at its source)
+        times the flow's `fanout` attr (default 1.0) -- load ADDS across
+        converging paths, unlike `worst_age`, which MAXES
+        (docs/strata/kernel.md#capacity-semantics). A positive-rate cycle
+        (undeclared-rate flows in a loop, fed by some declared-rate source,
+        reaching `node_id`) is unbounded: `+inf` with the cycle as witness,
+        never a silent clamp (deny-by-default, charter law 2).
+        """
+        # frob:doc docs/strata/kernel.md#capacity-semantics
+        edges = []
         for flow in self.flows.values():
+            rate: float | None = None
             if flow.rate is not None:
                 base = flow.rate.base_value()
                 if base.is_ok:
-                    rates.append((flow.dst, base.danger_ok))
-        return strata_core.demand(rates, node_id)
+                    rate = base.danger_ok
+            edges.append((flow.id, flow.src, flow.dst, rate, _flow_fanout(flow)))
+        value, witness = strata_core.propagated_demand(edges, node_id)
+        if value == float("inf"):
+            _log.warning(
+                "propagated_demand(%s) unbounded: positive-rate cycle %s",
+                node_id,
+                witness,
+            )
+        else:
+            _log.debug("propagated_demand(%s) = %s", node_id, value)
+        return value, tuple(witness)
 
 
 def _validate_ids(model: KernelModel) -> Result[None, StrataError]:
