@@ -1374,7 +1374,18 @@ def _test001_002_one(
 def _test001_002(
     snapshot: GraphSnapshot, tests: CollectedTests, cfg: TestPolicy
 ) -> tuple[Violation, ...]:
-    """TEST001 (no unit edge) and TEST002 (fewer than min_unit_cases valid edges)."""
+    """TEST001 (no unit edge) and TEST002 (fewer than min_unit_cases valid edges).
+
+    `.strata` design-file declarations (`flow`, `operation`, `scenario` --
+    mapped to `SymbolKind.FUNCTION`/`METHOD` by `_walk_strata.py`'s
+    best-effort analogy) are exempt (T-0168): a "unit test" for a design
+    construct has no defined meaning -- pytest cannot exercise a `flow`,
+    only strata's own prover/audit machinery (`frob sys audit`,
+    self-conformance) verifies it means what it claims. Demanding a
+    `frob:tests` edge here would be a semantically confused warning class,
+    consistent with T-0164's COV002 precedent that a `.strata` file is one
+    design artifact governed by design-level gates, not pytest bindings.
+    """
     unit_edges = _test_edges(snapshot, "unit")
     violations: list[Violation] = []
     for record in snapshot.symbols.values():
@@ -1382,6 +1393,7 @@ def _test001_002(
             not record.public
             or record.kind not in (SymbolKind.FUNCTION, SymbolKind.METHOD)
             or _is_test_file(record.id.path)
+            or record.id.path.endswith(".strata")
         ):
             continue
         verdict = _test001_002_one(record, unit_edges, tests, cfg, snapshot)

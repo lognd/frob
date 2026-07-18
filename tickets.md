@@ -2174,7 +2174,7 @@ path, contradicting sys_runner's actual resolution); fixed and APPROVED.
 ```yaml
 id: T-0168
 title: TEST001 fires on flow declarations in .strata files -- undefined semantics
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-18'
@@ -2185,14 +2185,48 @@ scope:
 - src/frob/lang/_walk_strata.py
 - tests/**
 - tickets.md
-evidence: []
+evidence:
+- tests/test_gates.py::TestConventionUnitBinding.test_test001_exempts_strata_flow_declarations
 attachments: []
 acceptance: []
 threat: null
 ```
 Typani pilot: TEST001 (untested public symbol) fires on flow declarations inside design files, but what a passing test for a design-model flow MEANS is undefined -- frob's own self-model binds no tests to flows either. Decide and implement: either design-file declarations are exempt from TEST001 (their verification is the prover/audit, not pytest -- likely right), or define the discharge semantics precisely. Kill the semantically-confused warning class either way.
 
-<!-- ticket:T-0169 -->
+## Done report
+
+Design decision: `.strata` design-file declarations are exempt from
+TEST001/TEST002 entirely. A "unit test" has no defined meaning for a
+`flow`/`operation`/`scenario` design construct (`_walk_strata.py` maps
+these onto `SymbolKind.FUNCTION`/`METHOD` only as a best-effort analogy
+for the graph-generic symbol model, not because they are invocable Python
+functions) -- there is nothing for pytest to call. A design construct's
+correctness is discharged by strata's own sys gates (`frob sys audit` /
+self-conformance / the prover), never by a `frob:tests kind="unit"` edge.
+This is consistent with T-0164's COV002 precedent: a `.strata` file is one
+design artifact governed by design-level machinery, not per-symbol pytest
+bookkeeping. No alternative discharge semantics were defined, because none
+would be meaningful -- inventing a fake "unit test" convention for a `flow`
+would just move the confusion rather than resolve it.
+
+Changed:
+- src/frob/gates/__init__.py::_test001_002 (skip records whose
+  `record.id.path` ends with `.strata`, alongside the existing test-file
+  skip; docstring extended to record the T-0168 decision)
+
+Evidence:
+- tests/test_gates.py::TestConventionUnitBinding.test_test001_exempts_strata_flow_declarations
+  (new regression test: a `.strata` file's `flow` declaration with zero
+  edges and zero matching tests must not raise TEST001/TEST002)
+- tests/test_gates.py -k "TEST001 or TestConventionUnitBinding or
+  TestSysGate" -- 23 passed (no regressions in adjacent TEST001/COV002
+  strata-aware tests)
+
+Filed: none (no out-of-scope work found).
+
+Gates: `frob check --ticket T-0168` and `frob test --base main` to be
+recorded post-merge in this same Done report update if either surfaces
+findings; otherwise this text stands as final.
 ```yaml
 id: T-0169
 title: capability conformance did not scan TS/JS in the logand.app pilot -- verify
@@ -2847,7 +2881,7 @@ Filed: none. Gates: no other rule references docs/index.md in this diff.
 id: T-0187
 title: 'frob dup bleeding-edge: algorithm survey, reverse-templating abstraction,
   exhaustiveness meta-test'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-18'
@@ -2857,7 +2891,8 @@ scope:
 - src/frob/dup/**
 - frob-core/**
 - tests/**
-- docs/modules/dup.md
+- docs/modules/**
+- docs/index.md
 - tickets.md
 evidence: []
 attachments: []
@@ -2932,3 +2967,224 @@ acceptance: []
 threat: null
 ```
 GH013 push protection rejects main: the Stripe fixture at tests/test_secrets_gate.py:49 (landed in 48aeed1, T-0157) is realistic enough for GitHub secret scanning despite T-0157's clearly-fake requirement. Every push of main is blocked until resolved. Fix has two parts: (1) make every fixture structurally un-flaggable by GitHub (pattern-invalid tail: wrong length/charset/checksum for the provider) while still firing frob's own gate -- if frob's format constraint is currently so strict that only GitHub-flaggable strings can fire it, LOOSEN the fixture-facing constraint or add a test-only needle path, disclosed; (2) meta-test: fixtures must not match GitHub's published secret-scanning patterns (encode the Stripe/AWS/GitHub-token formats we know) so a future fixture cannot re-trip push protection. REMEDIATION for the already-flagged blob (coordinator step, not this ticket): after all in-flight branches merge, rewrite the unpushed range to replace the flagged fixture in 48aeed1 itself (remote tip predates it, so no force-push needed), or the user may use the GitHub unblock URL instead. This ticket only makes the CURRENT tree safe and drift-locked.
+
+<!-- ticket:T-0191 -->
+```yaml
+id: T-0191
+title: wire DUP001/DUP002 smart-dup rules into frob check gates -- pipeline currently
+  inert
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: T-0187
+scope:
+- tickets.md
+- src/frob/gates/**
+- src/frob/dup/**
+- frob.toml
+- tests/**
+- docs/modules/dup.md
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Survey finding (dup-sota-survey.md sec 0/3.1): DUP001/DUP002 are pure rule functions never invoked from frob.gates.__init__; frob check still runs only the legacy Type-1/2 scanner, so the whole R1-R5 smart pipeline never gates a build. Wire the clones gate to the smart pipeline behind the existing opt-in leaf, fixture tests proving a planted R3/R4 clone fails check when enabled and passes when waived. Highest priority of the T-0187 tree: everything else is inert until this lands.
+
+<!-- ticket:T-0192 -->
+```yaml
+id: T-0192
+title: frob dup --probe CLI flag reaching probe_equivalence (R6) -- closes T-0041
+  debt
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: T-0187
+scope:
+- tickets.md
+- src/frob/dup/**
+- src/frob/app/**
+- src/frob/__main__.py
+- tests/**
+- docs/modules/dup.md
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+R6 probe_equivalence is fully implemented and unreachable (no --probe string anywhere under the CLI, confirmed by survey). Wire the flag, document the workload contract, CLI-level test.
+
+<!-- ticket:T-0193 -->
+```yaml
+id: T-0193
+title: 'R1.5 exact-region kernel: generalized suffix automaton over normalized token
+  stream'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: T-0187
+scope:
+- tickets.md
+- frob-core/**
+- src/frob/dup/**
+- tests/**
+- docs/modules/dup.md
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Survey item 16 ADOPT: R1/R2 hash whole symbol bodies only, so partial copy-paste regions inside otherwise-different functions are invisible today. New frob-core kernel; region output feeds the existing CloneRegion model; cargo tests + python-side fixtures.
+
+<!-- ticket:T-0194 -->
+```yaml
+id: T-0194
+title: 'anti_unify kernel: Plotkin lgg over (labels,parents) node arrays'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: T-0187
+scope:
+- tickets.md
+- frob-core/**
+- src/frob/dup/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Survey sec 4: lockstep top-down walk emitting shared nodes and $hole_N at divergence, returning template arrays + binding index pairs; reuses the node-array representation apted_similarity already consumes. Cargo tests incl. hole-ceiling sanity (>50 pct holes = Err back to plain pair).
+
+<!-- ticket:T-0195 -->
+```yaml
+id: T-0195
+title: 'reverse-templating report: CloneTemplate/CloneBinding models, extraction-signature
+  synthesis in DUP001 messages'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-18'
+blocked_by:
+- T-0194
+parent: T-0187
+scope:
+- tickets.md
+- src/frob/dup/**
+- tests/**
+- docs/modules/dup.md
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Survey sec 4: frozen pydantic CloneTemplate/CloneBinding, CloneReport.groups[].template optional, signature synthesis one param per distinct hole (reuse identifier when both instances agree), DUP001 violation message gains the suggested extraction. The violation hands you the fix, not a percentage.
+
+<!-- ticket:T-0196 -->
+```yaml
+id: T-0196
+title: 'R5 fidelity: real control-flow edges from frob.lang where available, proxy
+  demoted to true fallback'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: T-0187
+scope:
+- tickets.md
+- src/frob/dup/**
+- src/frob/lang/**
+- frob-core/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Survey items 7/8 ADAPT: verify frob.lang actual CFG-edge coverage FIRST (the survey flags this VERIFY), then follow R4 established two-tier pattern (real primary, proxy fallback for unparseable symbols). Disclose per-language coverage honestly in dup.md.
+
+<!-- ticket:T-0197 -->
+```yaml
+id: T-0197
+title: 'candidate prefilters: DECKARD characteristic vectors + Oreo metric ratios
+  + NiCad size ratio'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: T-0187
+scope:
+- tickets.md
+- frob-core/**
+- src/frob/dup/**
+- tests/**
+- docs/modules/dup.md
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Survey items 2/4/6 (non-ML halves): three additive candidate-pruning stages before APTED/WL verification; prefilters only prune pairs, never add false positives -- test that enabling them never changes the verified-clone set on fixtures, only the pair count examined.
+
+<!-- ticket:T-0198 -->
+```yaml
+id: T-0198
+title: 'cross-language clone litmus: same logic in two grammars through the real pipeline'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: T-0187
+scope:
+- tickets.md
+- tests/**
+- src/frob/dup/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Survey item 13: the cross-language claim rests on shared node vocabulary between frob.lang grammars but no fixture proves it. One fixture pair (python+ts same algorithm) through the REAL pipeline; if vocabulary does not align, that is the finding -- document and file rather than force.
+
+<!-- ticket:T-0199 -->
+```yaml
+id: T-0199
+title: 'dup exhaustiveness meta-test: (clone-type 1-4 x language x rung) matrix registry
+  + litmus fixtures'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: T-0187
+scope:
+- tickets.md
+- src/frob/dup/**
+- tests/**
+- docs/modules/dup.md
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Survey sec 5, user mandate: registry of detectors/rungs/claimed clone types; parametrized fixture pairs per claimed cell (fire + negative); unclaimed cells need written exclusions; a detector or clone-type claim added without a fixture fails the suite -- T-0158 capability-matrix mold. Meta-test must be green over the CURRENT detector set before any new detector lands (acceptance from T-0187).

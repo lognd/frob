@@ -57,6 +57,10 @@ Two modules that support the above but are not yet fully re-platformed:
 - `docs/modules/dup.md` -- `frob.dup`: duplicate/clone detection, including the
   0.2.0 smart-dup design (region-granular semantic clones, DUP001/DUP002
   gates).
+- `docs/modules/dup-sota-survey.md` -- T-0187 phase-1 survey: clone-detection
+  state of the art dispositioned against `frob.dup` (26 techniques), the
+  reverse-templating design sketch, the exhaustiveness-matrix meta-test
+  design, and the source of the T-0191..T-0199 ticket tree.
 - `docs/modules/fuzz.md` -- `frob.fuzz`: the 0.2.0 enforced property fuzzing design
   (Arbitrary protocol, FUZZ gates).
 - `docs/modules/vet.md` -- policy/vetting notes referenced by `frob.gates`.
