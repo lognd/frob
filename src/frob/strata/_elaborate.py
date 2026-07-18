@@ -68,6 +68,12 @@ _log = get_logger(__name__)
 #: Node attr marker for `is_abstract` nodes; refinement proper is T-0062.
 _ABSTRACT_ATTR = "abstract"
 
+#: Node attr marker for `managed` nodes (T-0172): external, pure-config
+#: infrastructure with no scannable code by declaration (docs/strata/
+#: surface.md#key-construct-semantics). `_code_binding.py`/`_threat.py`
+#: read this back the same way they read `_ABSTRACT_ATTR`.
+_MANAGED_ATTR = "managed"
+
 #: Node attr marker for the `errors total` claim (T-0070).
 _ERRORS_TOTAL_ATTR = "errors_total"
 
@@ -95,14 +101,20 @@ def _elaborate_deploy(decl: DeployDecl) -> DeployContract:
 
 
 def _elaborate_node(decl: NodeDecl) -> Node:
-    """One `NodeDecl` -> one kernel `Node`; abstract/errors_total/panics/code -> attrs,
-    may -> Node.may directly (T-0132), deploy -> Node.deploy directly (T-0136)."""
+    """One `NodeDecl` -> one kernel `Node`; abstract/managed/errors_total/panics/code
+    -> attrs, may -> Node.may directly (T-0132), deploy -> Node.deploy directly
+    (T-0136)."""
     attrs = decl.attrs
     if decl.is_abstract:
         _log.debug(
             "node %s is abstract; marking attrs with %r", decl.id, _ABSTRACT_ATTR
         )
         attrs = (*attrs, _ABSTRACT_ATTR)
+    if decl.is_managed:
+        # T-0172: config-only infra (e.g. a Caddyfile-configured edge) --
+        # no `code=` glob is expected or required for it.
+        _log.debug("node %s is managed; marking attrs with %r", decl.id, _MANAGED_ATTR)
+        attrs = (*attrs, _MANAGED_ATTR)
     if decl.errors_total:
         _log.debug("node %s declares errors_total", decl.id)
         attrs = (*attrs, _ERRORS_TOTAL_ATTR)

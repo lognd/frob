@@ -2786,22 +2786,42 @@ def docanchor_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]
 
 # frob:doc docs/modules/perf.md#integration-points
 # frob:ticket T-0021
+# frob:ticket T-0203
 # frob:waive TEST005 reason="perf_gate 85.7% branch cover, debt T-0160"
 def perf_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """PERF001..PERF004, run at the policy/gates stage per docs/modules/perf.md's
     Integration points. Parses every source file in `snapshot.file_hashes`
-    (same posture as `frob.policy`'s `_pattern_violations`: gates does the
-    IO, `frob.perf.perf_rules` stays pure) and hands the parsed set to
-    `perf_rules`; a file that fails to parse is skipped, never fatal."""
-    from frob.lang import parse_file
+    that carries a registered tree-sitter grammar (`frob.lang.tree_sitter_extensions`,
+    the canonical T-0129 extension table -- not a hand-copied duplicate);
+    files with no registered grammar are unscannable by design and are
+    filtered out before parsing, so they never reach `parse_file` and never
+    produce an UnsupportedLanguage skip line (T-0203). A file whose
+    extension SHOULD parse but fails still gets a visible skip message.
+    Hands the parsed set to `frob.perf.perf_rules` (same posture as
+    `frob.policy`'s `_pattern_violations`: gates does the IO, `perf_rules`
+    stays pure)."""
+    from frob.lang import parse_file, tree_sitter_extensions
     from frob.perf import perf_rules
 
+    scannable_extensions = tree_sitter_extensions()
     ordered_paths = sorted(snapshot.file_hashes)
+    candidate_paths = [
+        rel_path
+        for rel_path in ordered_paths
+        if Path(rel_path).suffix.lower() in scannable_extensions
+    ]
+    skipped_unscannable = len(ordered_paths) - len(candidate_paths)
+    if skipped_unscannable:
+        _log.debug(
+            "perf_gate: %d file(s) filtered out (no registered grammar)",
+            skipped_unscannable,
+        )
+
     parsed: list[ParsedFile] = []
-    for rel_path in ordered_paths:
+    for rel_path in candidate_paths:
         result = parse_file(root / rel_path)
         if result.is_err:
-            _log.debug(
+            _log.warning(
                 "perf_gate: skipping unparsed %s: %s", rel_path, result.danger_err
             )
             continue

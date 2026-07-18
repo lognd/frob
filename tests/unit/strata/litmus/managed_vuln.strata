@@ -1,0 +1,26 @@
+// managed_vuln.strata -- T-0172 litmus: the NON-managed twin of
+// managed_hardened.strata. SAME firing precondition (`db`'s `may "sql"`)
+// and the SAME discharging claim/boundary shape, but `db` is an ordinary
+// (non-managed) node, so `_threat.py::_check_one_discharge` still runs the
+// full `_mitigation_is_chokepoint` boundary-KIND proof -- the ENDORSE
+// boundary's predicate ("unrelated_check") does not match CWE-89's
+// catalog mitigation ("parameterization"), so the obligation still fires
+// undischarged, exactly as it would with no managed marker at all
+// (docs/strata/surface.md#node-grammar).
+//
+// tested end to end (parse -> elaborate -> check_discharge_completeness)
+// by tests/unit/strata/test_managed.py.
+
+module managed_vuln
+
+node client : foreign { clearance Public; }
+node db : trusted {
+    clearance Internal;
+    may "sql";
+}
+
+flow f_query : client -> db { label Public; }
+
+boundary b_query endorse f_query : foreign -> trusted when "unrelated_check"
+
+assert "weakness:CWE-89:db" noflow client -> db

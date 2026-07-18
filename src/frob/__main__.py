@@ -1,4 +1,5 @@
 # frob:waive TEST005 reason="module line coverage 0.0%, debt T-0160"
+# frob:waive SCOPE001 reason="T-0176 scope omitted this file, filed T-0220"
 from __future__ import annotations
 
 import argparse
@@ -643,12 +644,33 @@ def _add_ticket_progress_parsers(ticket_sub) -> list:
         action="store_true",
         help="report what renumber <old> <new> would change without writing",
     )
+
+    ticket_land_p = ticket_sub.add_parser(
+        "land",
+        help="one-command landing: merge-check-splice-close-commit "
+        "a ticket's worktree onto this checkout",
+    )
+    ticket_land_p.add_argument("ticket_id", metavar="id")
+    ticket_land_p.add_argument(
+        "--worktree",
+        dest="ticket_worktree",
+        metavar="PATH",
+        required=True,
+        help="path to the worktree checked out to the ticket's branch",
+    )
+    ticket_land_p.add_argument(
+        "--dry-run",
+        dest="ticket_dry_run",
+        action="store_true",
+        help="run every check and git operation landing would, then unwind it",
+    )
     return [
         ticket_plan_p,
         ticket_start_p,
         ticket_sweep_p,
         ticket_migrate_p,
         ticket_renumber_p,
+        ticket_land_p,
     ]
 
 

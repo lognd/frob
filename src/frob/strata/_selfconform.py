@@ -62,6 +62,7 @@ anywhere -- exactly the gap this ticket asked SYS102 to close.
 
 from __future__ import annotations
 
+import fnmatch
 from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict
@@ -69,9 +70,9 @@ from typani.result import Err, Ok, Result
 
 from frob.excludes import is_skipped_dir
 from frob.logging import get_logger
-from frob.vet._capability import scan_file_capabilities
+from frob.vet._capability import language_for, scan_file_capabilities
 
-from ._code_binding import FOREIGN, CodeBinding, bind_code
+from ._code_binding import FOREIGN, CodeBinding, _node_code_globs, bind_code
 from ._effects import _KIND_MAP, _declared_kinds, check_capability_conformance
 from ._errors import StrataError
 from ._models import KernelModel
@@ -144,7 +145,21 @@ def _core_undeclared_violations(
 ) -> list[SelfConformViolation]:
     """SYS100 for net/fs-write/exec, delegated verbatim to THREAT004's
     `check_capability_conformance` -- zero new detection (module
-    docstring's SYS100 core case)."""
+    docstring's SYS100 core case). REVIEWER-CAUGHT T-0169 CORRECTION: this
+    function does no language filtering itself -- it only ever sees what
+    `binding` puts in front of it. Earlier in this same ticket, the caller
+    passed `bind_code`'s raw Python-only binding here on the mistaken
+    belief that `check_capability_conformance` was Python-import-syntax-
+    specific like `bind_code`'s OWN binding step is. It is not:
+    `_effects.py::_line_effects`/`check_capability_conformance` call
+    `language_for`/`_PATTERNS` directly, the SAME multi-language
+    (python/typescript/rust/c-cpp) machinery `vet._capability` and this
+    module's SYS100-extended/SYS101 already use -- there is no Python-
+    specific parsing anywhere in this delegated path. So `check_self_
+    conformance` now passes THIS function the same `_capability_binding`
+    superset as the other two rules, and a `.ts`/`.rs`/`.c`/`.cpp` file's
+    raw net/fs-write/exec effects reach SYS100 exactly like a `.py`
+    file's do."""
     conformance = check_capability_conformance(model, binding, root)
     found = []
     for violation in conformance.violations:
@@ -174,12 +189,70 @@ def _sorted_owned_files(binding: CodeBinding) -> list[str]:
     return sorted(rel for rel, owner in binding.owner.items() if owner != FOREIGN)
 
 
+def _sorted_capability_files(root: Path) -> list[Path]:
+    """Every file under `root` whose extension `vet._capability.language_for`
+    recognizes (i.e. has a capability pattern table), skip-dir-filtered, in
+    deterministic path order (T-0169: the multi-language superset of
+    `bind_code`'s `.py`-only walk -- `bind_code` itself stays Python-only
+    since it also powers import-conformance, which is Python-syntax-
+    specific; capability *observation* has no such constraint)."""
+    found: list[Path] = []
+    for path in sorted(root.rglob("*")):
+        if not path.is_file() or language_for(path) is None:
+            continue
+        rel_path = path.relative_to(root)
+        if any(is_skipped_dir(part) for part in rel_path.parts):
+            continue
+        found.append(path)
+    return found
+
+
+def _capability_binding(
+    model: KernelModel, binding: CodeBinding, root: Path
+) -> Result[CodeBinding, StrataError]:
+    """`binding` (Python-only, from `bind_code`) extended with every OTHER
+    capability-scannable-language file under `root`, bound by the SAME
+    `code=` glob convention (T-0169 GAP STATEMENT: `bind_code` walks only
+    `*.py` -- module docstring/T-0078 -- because it also backs import-
+    conformance, which needs Python's import syntax specifically; that
+    scope choice silently meant SYS100/SYS101 never saw a single TS/JS/
+    Rust/C-C++ file either, even though `vet._capability` has scanned
+    those languages since T-0079/T-0158. This function is the fix: it
+    re-runs `bind_code`'s glob-match (via `_node_code_globs`, reused not
+    reimplemented) over the non-`.py` capability-scannable file set, deny-
+    by-default on ambiguity exactly like `bind_code`, and merges the
+    result into `binding.owner` so every downstream SYS100/SYS101 join in
+    this module sees every registry-covered language, not just Python)."""
+    globs = [(node.id, glob) for node in model.nodes for glob in _node_code_globs(node)]
+    owner = dict(binding.owner)
+    for path in _sorted_capability_files(root):
+        if path.suffix.lower() == ".py":
+            continue  # already bound by `bind_code`
+        rel = path.relative_to(root).as_posix()
+        matched = {node_id for node_id, glob in globs if fnmatch.fnmatch(rel, glob)}
+        if len(matched) > 1:
+            _log.error(
+                "capability binding: %s matched by multiple nodes %s",
+                rel,
+                tuple(sorted(matched)),
+            )
+            return Err(StrataError.AmbiguousCodeBinding)
+        owner[rel] = next(iter(matched)) if matched else FOREIGN
+    bound = sum(1 for v in owner.values() if v != FOREIGN) - sum(
+        1 for v in binding.owner.values() if v != FOREIGN
+    )
+    _log.info("capability binding: %d additional non-python file(s) bound", bound)
+    return Ok(CodeBinding(owner=owner))
+
+
 def _observed_extended_kinds_by_node(
     binding: CodeBinding, root: Path
 ) -> dict[str, frozenset[str]]:
     """Every node id -> the union of `_EXTENDED_KINDS` capabilities
     `scan_file_capabilities` observes across that node's `code=`-bound
-    files (module docstring's SYS100 extended case)."""
+    files (module docstring's SYS100 extended case). `binding` here is
+    ALWAYS the T-0169 `_capability_binding` superset, never the raw
+    `.py`-only `bind_code` output -- see that function's docstring."""
     per_node: dict[str, set[str]] = {}
     for rel in _sorted_owned_files(binding):
         owner = binding.owner[rel]
@@ -196,7 +269,10 @@ def _observed_all_kinds_by_node(
     across its bound files, net/fs-write/exec normalized through
     `_effects.py::_KIND_MAP` to the SAME kind spelling `may` declarations
     use ("fs" not "fs-write") -- SYS101's observed side, which (unlike
-    SYS100) needs the full vocabulary regardless of THREAT004's scope."""
+    SYS100) needs the full vocabulary regardless of THREAT004's scope.
+    `binding` here is the T-0169 `_capability_binding` superset (see that
+    function's docstring), so SYS101 stale-design also covers every
+    registry-scanned language, not just Python."""
     per_node: dict[str, set[str]] = {}
     for rel in _sorted_owned_files(binding):
         owner = binding.owner[rel]
@@ -281,8 +357,15 @@ def _unmodeled_violations(
     root: Path, binding: CodeBinding
 ) -> list[SelfConformViolation]:
     """SYS102: every top-level `src/frob/` directory whose files (if any)
-    are ALL `FOREIGN` to `bind_code`'s partition -- no node's `code=`
-    glob claims it at all (module docstring's SYS102 gap statement)."""
+    are ALL `FOREIGN` to `code=`'s partition -- no node's `code=` glob
+    claims it at all (module docstring's SYS102 gap statement). `binding`
+    is the T-0169 `_capability_binding` superset here, not `bind_code`'s
+    raw `.py`-only output: a directory containing ONLY a `.ts`/`.rs`/etc.
+    file that a node's `code=` glob genuinely claims used to misreport
+    SYS102 ("unmodeled") because the Python-only binding never bound that
+    file at all -- a spurious finding on top of the missed SYS100/SYS101,
+    now fixed by using the same superset every other rule in this module
+    uses."""
     prefix_owned: set[str] = set()
     # frob:waive PERF003 reason="ownership loop, separate dirs loop below, not a join"
     for rel, owner in binding.owner.items():
@@ -315,7 +398,22 @@ def check_self_conformance(
     glob, then SYS100/SYS101/SYS102 reconcile that partition against
     `Node.may` (module docstring: SYS100's net/fs-write/exec slice
     delegates to THREAT004 outright; the rest is new code with a written
-    gap statement each). `Err` propagates `bind_code`'s
+    gap statement each). ALL THREE rules -- SYS100 core, SYS100-extended,
+    and SYS101 -- run over `_capability_binding`'s superset (T-0169), not
+    `bind_code`'s raw `.py`-only partition: `check_capability_conformance`
+    (SYS100 core's delegate) is language-generic (`_effects.py::
+    _line_effects` uses `language_for`/`_PATTERNS`, no Python-specific
+    parsing), so restricting it to the Python-only binding was itself part
+    of the same wiring bug this ticket fixes, not a deliberate scope cut
+    (see `_core_undeclared_violations`'s docstring for the reviewer-caught
+    correction). SYS102 also uses the superset for its ownership check, so
+    a directory claimed by a node's `code=` glob only through a non-Python
+    file no longer misreports as unmodeled (see `_unmodeled_violations`'s
+    docstring). `bind_code`'s raw Python-only binding is still computed
+    and still the ONLY input to `bind_code` itself (which stays Python-
+    import-syntax-specific by design, unrelated to this fix) -- it is
+    simply no longer handed to any of SYS100/SYS101/SYS102's joins.
+    `Err` propagates `bind_code`'s (or `_capability_binding`'s)
     `AmbiguousCodeBinding` unchanged -- deny by default, never a silent
     partial scan."""
     bound = bind_code(model, root)
@@ -323,10 +421,15 @@ def check_self_conformance(
         return Err(bound.danger_err)
     binding = bound.danger_ok
 
-    violations = _core_undeclared_violations(model, binding, root)
-    violations.extend(_extended_kind_violations(model, binding, root))
-    violations.extend(_stale_design_violations(model, binding, root))
-    violations.extend(_unmodeled_violations(root, binding))
+    capability_bound = _capability_binding(model, binding, root)
+    if capability_bound.is_err:
+        return Err(capability_bound.danger_err)
+    capability_binding = capability_bound.danger_ok
+
+    violations = _core_undeclared_violations(model, capability_binding, root)
+    violations.extend(_extended_kind_violations(model, capability_binding, root))
+    violations.extend(_stale_design_violations(model, capability_binding, root))
+    violations.extend(_unmodeled_violations(root, capability_binding))
 
     _log.info("selfconform: %d violation(s) found under %s", len(violations), root)
     return Ok(SelfConformReport(violations=tuple(violations)))
