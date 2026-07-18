@@ -731,7 +731,7 @@
     "src/frob/vet/_cache.py::store_verdict": "0c7c59af846557ea09956262b1c7c4e1dc24ac2b0ee463248f57fc8f3ec0949b",
     "src/frob/vet/_capability.py::SCANNED_LANGUAGES": "5aebd3fdc82504e34242f2ce9cb677f17c218c78396779690308a52ede0a6e08",
     "src/frob/vet/_capability.py::decode_to_exec_signal": "dd69f1867d58e0eaaf7e5e55222a6b341e2c74022c57365c431465d32443e6a8",
-    "src/frob/vet/_capability.py::is_self_pattern_path": "67d496723ca6e1099be61a8896b6faf2eebdf11783785364b8a0f638d39202aa",
+    "src/frob/vet/_capability.py::is_self_pattern_path": "ef9449c8d835900ba126c14ba4df537d846adebd4d4418230f2b76bdb4e4f08c",
     "src/frob/vet/_capability.py::language_for": "b4e50c3603e4861cf8713c841dd270a813378269def2c43008711f53bf0bdf81",
     "src/frob/vet/_capability.py::scan_directory_capabilities": "e50294b538daca083ce5f8a703b0e3e7c07f910300f1e38c7553cac1dae4f7e8",
     "src/frob/vet/_capability.py::scan_directory_fingerprints": "96e62d437ff0c6f0b21bb70a3b79ad9adfb6512f13dbf9d030f47a172a11cfc6",
