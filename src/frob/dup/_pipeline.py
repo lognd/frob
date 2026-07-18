@@ -1015,8 +1015,16 @@ def probe_equivalence(
     callables (see the module docstring's R6 deviation notes). Draws
     inputs from `frob.fuzz`'s Arbitrary generators keyed on `a`'s
     parameter type hints (falls back to `Err(NoGenerator)` when a
-    parameter's type has no resolvable generator) and compares outputs
-    for up to `budget_s` seconds.
+    parameter's type has no resolvable generator, when a parameter is
+    var-args or keyword-only -- see `_probe_strategies` -- or when `b`
+    cannot be called with `a`'s positional arity -- see
+    `_probe_arity_compatible`) and compares outputs for up to `budget_s`
+    seconds. These refusals exist because both sides are called
+    positionally (`_call_safe`), and a pair the prober cannot legitimately
+    call that way must never fall through to a verdict: `_call_safe`
+    collapses matching exceptions to a comparable sentinel, so an
+    uncallable pair that both raise `TypeError` would otherwise score as
+    a vacuous `equivalent=True`.
     """
     callables = _probe_callables(a, b, snapshot)
     if callables.is_err:
@@ -1026,9 +1034,19 @@ def probe_equivalence(
     strategies_r = _probe_strategies(fn_a)
     if strategies_r.is_err:
         return Err(strategies_r.danger_err)
+    strategies = strategies_r.danger_ok
+
+    if not _probe_arity_compatible(fn_b, len(strategies)):
+        _log.info(
+            "probe_equivalence: %s vs %s -- fn_b not callable with %d positional arg(s)",
+            a,
+            b,
+            len(strategies),
+        )
+        return Err(DupError.NoGenerator)
 
     equivalent, cases_run, counterexample = _run_probe_cases(
-        fn_a, fn_b, strategies_r.danger_ok, budget_s
+        fn_a, fn_b, strategies, budget_s
     )
     _log.info(
         "probe_equivalence: %s vs %s -- equivalent=%s cases_run=%d",
@@ -1080,9 +1098,23 @@ def _probe_callables(
 def _probe_strategies(fn_a: Any) -> Result[dict[str, Any], DupError]:
     """Arbitrary generators for `fn_a`'s parameters, keyed by name.
 
-    `Err(NoGenerator)` for var-args, an unannotated parameter, or a type
-    with no resolvable generator; `Err(NotPure)` if the signature is
-    uninspectable.
+    `Err(NoGenerator)` for var-args, keyword-only params, an unannotated
+    parameter, or a type with no resolvable generator; `Err(NotPure)` if
+    the signature is uninspectable.
+
+    KEYWORD_ONLY is rejected for the same reason VAR_POSITIONAL/
+    VAR_KEYWORD are: `_run_probe_cases` calls both `fn_a` and `fn_b`
+    positionally (`_call_safe`'s docstring explains why -- renamed clones
+    have differently-named parameters, so keyword binding by `fn_a`'s
+    names would call `fn_b` with the wrong names). A keyword-only
+    parameter can never legitimately be supplied positionally, so probing
+    it would always raise `TypeError` on the very first case -- and
+    because `_call_safe` maps matching exceptions to a comparable
+    sentinel, two functions that are NOT equivalent but both reject
+    positional calling would score `equivalent=True` on every case (the
+    vacuous-pass bug this guard exists to close, T-0041 reviewer repro).
+    A pair the prober cannot legitimately call this way must be an
+    explicit refusal, never a verdict.
     """
     import inspect
 
@@ -1100,6 +1132,7 @@ def _probe_strategies(fn_a: Any) -> Result[dict[str, Any], DupError]:
         if param.kind in (
             inspect.Parameter.VAR_POSITIONAL,
             inspect.Parameter.VAR_KEYWORD,
+            inspect.Parameter.KEYWORD_ONLY,
         ):
             return Err(DupError.NoGenerator)
         annotation = param.annotation
@@ -1112,11 +1145,48 @@ def _probe_strategies(fn_a: Any) -> Result[dict[str, Any], DupError]:
     return Ok(strategies)
 
 
-def _call_safe(fn: Any, kwargs: dict[str, Any]) -> Any:
-    """Call `fn(**kwargs)`, mapping any exception to a comparable sentinel so
-    two callables that fail the same way compare equal."""
+def _probe_arity_compatible(fn_b: Any, n_positional: int) -> bool:
+    """True if `fn_b` can be called with exactly `n_positional` positional
+    arguments, checked via `Signature.bind` (never by calling `fn_b`).
+
+    `_run_probe_cases` calls `fn_b(*args)` with `len(args) ==
+    n_positional` (the count of `fn_a`'s probed parameters -- see
+    `_probe_strategies`). If `fn_b` requires a different arity (extra
+    required params, too few params, or a keyword-only param with no
+    default that positional binding can't satisfy), the call always
+    raises `TypeError`, which is not "equivalent" evidence -- it is an
+    uncallable pair. Without this guard a differing-arity pair would
+    silently degenerate into the same vacuous-pass failure mode
+    `_probe_strategies`'s KEYWORD_ONLY rejection closes for `fn_a`: if
+    `fn_a` also happens to raise on some input, `_call_safe`'s shared
+    exception sentinel would count the mismatch as agreement. Checked
+    with placeholder values via `bind`, so this never partially
+    executes `fn_b`.
+    """
+    import inspect
+
     try:
-        return fn(**kwargs)
+        sig_b = inspect.signature(fn_b)
+        sig_b.bind(*([None] * n_positional))
+    except TypeError:
+        return False
+    except ValueError:
+        return False
+    return True
+
+
+def _call_safe(fn: Any, args: tuple[Any, ...]) -> Any:
+    """Call `fn(*args)` positionally, mapping any exception to a comparable
+    sentinel so two callables that fail the same way compare equal.
+
+    Positional, not keyword, because R6's whole purpose is comparing
+    *renamed* clones -- `fn_b`'s parameters routinely have different names
+    than `fn_a`'s (that is the rename), so binding by name would call
+    `fn_b` with `fn_a`'s parameter names and raise a spurious TypeError on
+    every renamed pair, making renamed clones always compare unequal.
+    """
+    try:
+        return fn(*args)
     except Exception as exc:  # noqa: BLE001 - comparing failure modes, not raising
         return ("__frob_exc__", type(exc).__name__)
 
@@ -1125,7 +1195,13 @@ def _run_probe_cases(
     fn_a: Any, fn_b: Any, strategies: dict[str, Any], budget_s: float
 ) -> tuple[bool, int, dict[str, str] | None]:
     """Draw inputs and compare `fn_a`/`fn_b` outputs until they diverge, the
-    case budget is hit, or `budget_s` elapses."""
+    case budget is hit, or `budget_s` elapses.
+
+    Inputs are drawn once per case (keyed on `fn_a`'s parameter names, in
+    declaration order) and passed to BOTH callables positionally in that
+    same order -- see `_call_safe` for why keyword-binding would be wrong
+    for renamed clones.
+    """
     cases_run = 0
     equivalent = True
     counterexample: dict[str, str] | None = None
@@ -1137,9 +1213,10 @@ def _run_probe_cases(
             equivalent and cases_run < max_cases and time.monotonic() - start < budget_s
         ):
             kwargs = {name: strategy.example() for name, strategy in strategies.items()}
+            args = tuple(kwargs.values())
             cases_run += 1
-            result_a = _call_safe(fn_a, kwargs)
-            result_b = _call_safe(fn_b, kwargs)
+            result_a = _call_safe(fn_a, args)
+            result_b = _call_safe(fn_b, args)
             if result_a != result_b:
                 equivalent = False
                 counterexample = {

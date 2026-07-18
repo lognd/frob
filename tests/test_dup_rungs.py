@@ -120,12 +120,57 @@ class TestR6Probing:
         assert result.is_ok, result.err
         assert result.danger_ok.equivalent is False
 
+    def test_fires_on_equivalent_functions_with_renamed_multi_arg_params(
+        self, snapshot
+    ):
+        # frob:tests src/frob/dup/_pipeline.py::probe_equivalence kind="unit"
+        # frob:ticket T-0041 -- regression for the kwargs-by-name bug where
+        # _call_safe bound fn_b with fn_a's parameter names, so any renamed
+        # multi-arg pair (the common case R6 exists to catch) always
+        # raised TypeError on fn_b and compared as DIFFER.
+        a = self._ref(snapshot, "sum_twice_a")
+        b = self._ref(snapshot, "sum_twice_b")
+        result = probe_equivalence(a, b, snapshot, budget_s=2.0)
+        assert result.is_ok, result.err
+        verdict = result.danger_ok
+        assert verdict.equivalent is True
+        assert verdict.cases_run > 0
+
     def test_refuses_impure_functions(self, snapshot):
         a = self._ref(snapshot, "impure_logger")
         b = self._ref(snapshot, "impure_logger_dup")
         result = probe_equivalence(a, b, snapshot, budget_s=1.0)
         assert result.is_err
         assert result.err == DupError.NotPure
+
+    def test_refuses_keyword_only_params_instead_of_vacuous_pass(self, snapshot):
+        # frob:tests src/frob/dup/_pipeline.py::probe_equivalence kind="unit"
+        # frob:ticket T-0041 -- reviewer repro: kwonly_subtract(a-b) and
+        # kwonly_add(x+y) are OPPOSITE logic. Before the KEYWORD_ONLY guard,
+        # _run_probe_cases called both positionally, both raised TypeError
+        # on every case (kwonly params can't bind positionally), and
+        # _call_safe's shared-exception sentinel counted the matching
+        # TypeErrors as agreement -- reporting equivalent=True cases_run=50
+        # for two functions that disagree on every real input. This must
+        # be an explicit refusal (Err(NoGenerator)), never a verdict.
+        a = self._ref(snapshot, "kwonly_subtract")
+        b = self._ref(snapshot, "kwonly_add")
+        result = probe_equivalence(a, b, snapshot, budget_s=2.0)
+        assert result.is_err
+        assert result.err == DupError.NoGenerator
+
+    def test_refuses_mismatched_arity_instead_of_vacuous_pass(self, snapshot):
+        # frob:tests src/frob/dup/_pipeline.py::probe_equivalence kind="unit"
+        # frob:ticket T-0041 -- same vacuous-pass shape as the kwonly case,
+        # but via arity: arity_three requires a 3rd positional arg
+        # arity_two doesn't have, so calling arity_three(*two_args) always
+        # raises TypeError. Must refuse, not silently score as equivalent
+        # via the shared-exception sentinel.
+        a = self._ref(snapshot, "arity_two")
+        b = self._ref(snapshot, "arity_three")
+        result = probe_equivalence(a, b, snapshot, budget_s=2.0)
+        assert result.is_err
+        assert result.err == DupError.NoGenerator
 
 
 class TestRegionSubsection:
