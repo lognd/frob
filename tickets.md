@@ -7,7 +7,7 @@ Central ledger managed by `frob ticket` -- one section per ticket.
 id: T-0139
 title: editor syntax highlighting for .strata (VSCode + JetBrains via one TextMate
   grammar)
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-18'
@@ -19,7 +19,11 @@ scope:
 - docs/guides/editors.md
 - docs/index.md
 - tickets.md
-evidence: []
+evidence:
+- tests/unit/test_strata_tmlanguage.py::test_tmlanguage_is_valid_json
+- tests/unit/test_strata_tmlanguage.py::test_construct_keywords_match_parser_bidirectionally
+- tests/unit/test_strata_tmlanguage.py::test_clause_keywords_covered_by_grammar
+- tests/unit/test_strata_tmlanguage.py::test_string_pattern_terminates_at_end_of_line
 attachments: []
 acceptance: []
 threat: null
