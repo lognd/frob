@@ -87,10 +87,10 @@ def _strata_files(
 
 # frob:doc docs/strata/surface.md#directives-t-0080
 # frob:ticket T-0080
-# frob:tests tests/unit/strata/test_design_load.py::TestLoadIds::test_merges_ids
-# frob:tests tests/unit/strata/test_design_load.py::TestLoadIds::test_no_dir_empty
-# frob:tests tests/unit/strata/test_design_load.py::TestLoadIds::test_bad_file_reported
-# frob:tests tests/unit/strata/test_design_load.py::TestLoadIds::test_excluded_no_ids
+# frob:tests tests/unit/strata/test_design_load.py::TestLoadIds.test_merges_ids
+# frob:tests tests/unit/strata/test_design_load.py::TestLoadIds.test_no_dir_empty
+# frob:tests tests/unit/strata/test_design_load.py::TestLoadIds.test_bad_file_reported
+# frob:tests tests/unit/strata/test_design_load.py::TestLoadIds.test_excluded_no_ids
 def load_design_ids(root: Path, design_dir: str = DEFAULT_DESIGN_DIR) -> DesignIds:
     """Parse+elaborate every `.strata` file under `root/design_dir` and merge
     their Flow/Boundary/Secret-clearance-Node ids into one `DesignIds`.

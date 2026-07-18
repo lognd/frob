@@ -1888,14 +1888,14 @@ def _sys002(snapshot: GraphSnapshot, design_ids) -> list[Violation]:  # noqa: AN
 
 # frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-0080
-# frob:tests tests/test_gates.py::TestSysGate::test_noop_no_design_dir
-# frob:tests tests/test_gates.py::TestSysGate::test_sys001_dangling
-# frob:tests tests/test_gates.py::TestSysGate::test_sys001_valid
-# frob:tests tests/test_gates.py::TestSysGate::test_sys002_unbound
-# frob:tests tests/test_gates.py::TestSysGate::test_sys002_bound
-# frob:tests tests/test_gates.py::TestSysGate::test_sys003_import
-# frob:tests tests/test_gates.py::TestSysGate::test_sys004_load_failure
-# frob:tests tests/test_gates.py::TestSysGate::test_sys004_suppresses_sys001
+# frob:tests tests/test_gates.py::TestSysGate.test_noop_no_design_dir
+# frob:tests tests/test_gates.py::TestSysGate.test_sys001_dangling
+# frob:tests tests/test_gates.py::TestSysGate.test_sys001_valid
+# frob:tests tests/test_gates.py::TestSysGate.test_sys002_unbound
+# frob:tests tests/test_gates.py::TestSysGate.test_sys002_bound
+# frob:tests tests/test_gates.py::TestSysGate.test_sys003_import
+# frob:tests tests/test_gates.py::TestSysGate.test_sys004_load_failure
+# frob:tests tests/test_gates.py::TestSysGate.test_sys004_suppresses_sys001
 def sys_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """SYS001 (dangling directive), SYS002 (unbound boundary/secret), SYS003
     (undeclared cross-component import, tier-2 conformance), and SYS004 (a
