@@ -1891,25 +1891,6 @@ tests/test_gates.py + tests/test_testing.py).
 
 Filed: none. Gates: ruff format stable on all three files.
 
-<!-- ticket:T-draft-39874401 -->
-```yaml
-id: T-draft-39874401
-title: exhaustive log/print call-site classification across src/frob (T-0202 follow-up)
-state: queued
-kind: ux
-origin: human
-created: '2026-07-18'
-blocked_by: []
-parent: null
-scope:
-- src/frob/**
-evidence: []
-attachments: []
-acceptance: []
-threat: null
-```
-T-0202 fixed the check-path log-level bug (stdout handler defaulted to DEBUG unconditionally) and demoted the per-symbol/per-violation INFO calls found in gates/graph along that path. It did not exhaustively classify every _log./print( call site repo-wide (~1016 sites across src/frob) into keep-INFO/demote-DEBUG/convert-print as the ticket's enumerate-first instruction asked -- only src/frob/{gates,graph,check,app/check_runner.py,logging} got a full pass; the other 26 files under src/frob/app/ (89 INFO, 125 ERROR, 46 print call sites) and all non-scope dirs (strata 27, vet 17, fuzz 6, dup 5, tickets 4, testing 3, perf 3, lang 3, serve 2, arch 2, stats 1, release 1, policy 1, mutate 1, cve 1) were only sampled, not individually classified. Do the full pass and produce the classification table T-0202's Done report deferred.
-
 <!-- ticket:T-0206 -->
 ```yaml
 id: T-0206
@@ -2119,7 +2100,7 @@ Filed from sibling-repo pilot P2 (lograder/aprog-public/aprog-private, 2026-07-1
 ```yaml
 id: T-0215
 title: non-pytest evidence channel for docs/design tickets + close-from-queued hint
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-07-18'
@@ -2560,3 +2541,45 @@ acceptance: []
 threat: null
 ```
 Filed from sibling-repo pilot P1 (graphite/feldspar/lithos, 2026-07-18). P1 gap 23: graphite frontend/src/api/api.generated.ts draws COV001 doc-edge demands (its repo ticket T-0006 documents the dead end). The [graph] excludes leaf exists but repos want generated code IN the graph (xref) yet exempt from doc/test obligations. Add a generated marker (glob list in frob.toml, or filename pattern *.generated.*) that COV/TEST gates respect while graph/xref still see the symbols.
+
+<!-- ticket:T-0235 -->
+```yaml
+id: T-0235
+title: exhaustive log/print call-site classification across src/frob (T-0202 follow-up)
+state: queued
+kind: ux
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0202 fixed the check-path log-level bug (stdout handler defaulted to DEBUG unconditionally) and demoted the per-symbol/per-violation INFO calls found in gates/graph along that path. It did not exhaustively classify every _log./print( call site repo-wide (~1016 sites across src/frob) into keep-INFO/demote-DEBUG/convert-print as the ticket's enumerate-first instruction asked -- only src/frob/{gates,graph,check,app/check_runner.py,logging} got a full pass; the other 26 files under src/frob/app/ (89 INFO, 125 ERROR, 46 print call sites) and all non-scope dirs (strata 27, vet 17, fuzz 6, dup 5, tickets 4, testing 3, perf 3, lang 3, serve 2, arch 2, stats 1, release 1, policy 1, mutate 1, cve 1) were only sampled, not individually classified. Do the full pass and produce the classification table T-0202's Done report deferred.
+
+<!-- ticket:T-0236 -->
+```yaml
+id: T-0236
+title: PRE001 stale-sweep churn in the multi-agent loop -- land should refresh the
+  sweep
+state: queued
+kind: ux
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/tickets/**
+- src/frob/gates/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Three consecutive reviews (T-0181, T-0203, T-0202) REJECTed solely or partly on a stale PRE001 pre-work sweep, caused not by implementer negligence but by main moving between implementation and review in a multi-agent loop -- any unrelated landing that touches a ticket's scope globs invalidates its recorded sweep. Fix: frob ticket land refreshes the sweep against the post-merge state automatically before close (it already validates evidence/done-report pre-merge; add sweep-refresh as a post-merge, pre-close step), and frob check --ticket's PRE001 message should say when the staleness is due to out-of-scope-agent drift (compare sweep tree hash provenance) vs a genuinely un-swept scope change. Tests: land a ticket whose sweep predates an unrelated main landing; assert land succeeds and the recorded sweep is fresh.
