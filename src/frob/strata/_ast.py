@@ -98,6 +98,8 @@ class NodeDecl(BaseModel):
     may: tuple[str, ...] = ()
     # `on deploy { ... }`, T-0136; elaborated straight to Node.deploy
     deploy: DeployDecl | None = None
+    # `carries "PII_TAG"+`, T-0154; elaborated to `pii=<tag>` attrs
+    carries: tuple[str, ...] = ()
 
 
 # frob:doc docs/strata/surface.md#parser
@@ -311,6 +313,8 @@ class StoreDecl(BaseModel):
     immutable: bool = False
     append_only: bool = False
     rpo: Quantity | None = None
+    # `carries "PII_TAG"+`, T-0154; elaborated to `pii=<tag>` attrs
+    carries: tuple[str, ...] = ()
 
 
 # frob:doc docs/strata/surface.md#std-infra

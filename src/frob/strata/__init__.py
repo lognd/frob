@@ -146,6 +146,18 @@ from frob.strata._models import (
 )
 from frob.strata._packs import ANALYZABLE, ANALYZABLE_POLICY_ID, require_analyzable
 from frob.strata._parse import parse_module
+from frob.strata._pii import (
+    PII_CATEGORIES,
+    PiiReport,
+    PiiViolation,
+    check_pii_boundary_protection,
+    check_pii_catalog,
+    check_pii_retention_erasure,
+    check_pii_undeclared_flow,
+    evaluate_pii,
+    node_carries_pii,
+    node_pii_tags,
+)
 from frob.strata._plan import MARKER_PREFIX, PlannedTicket, PlanResult, plan_obligations
 from frob.strata._policy import CompiledPolicies, CompiledPolicy, compile_policies
 from frob.strata._report import render_report, summarize
@@ -344,6 +356,16 @@ __all__ = [
     "generate_fault_injection_cases",
     "load_design_ids",
     "merge_models",
+    "PII_CATEGORIES",
+    "PiiReport",
+    "PiiViolation",
+    "check_pii_boundary_protection",
+    "check_pii_catalog",
+    "check_pii_retention_erasure",
+    "check_pii_undeclared_flow",
+    "evaluate_pii",
+    "node_carries_pii",
+    "node_pii_tags",
     "parse_module",
     "plan_obligations",
     "render_audit_matrix",

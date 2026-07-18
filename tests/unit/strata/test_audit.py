@@ -84,6 +84,24 @@ class TestExhaustiveness:
         result = evaluate_exhaustiveness(model, security_views=("no-such-view",))
         assert result.is_err
 
+    # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness kind="unit"
+    def test_pii_gap_reported(self):
+        """T-0154: `evaluate_exhaustiveness` joins `_pii.py::evaluate_pii` in
+        under the fixed `pii:model` view; a PII-carrying node with no
+        retention/erasure path surfaces as a `family="pii"` gap, same as
+        every other family's join."""
+        model = KernelModel(
+            nodes=(Node(id="store", trust="trusted", attrs=("pii=identifier.email",)),)
+        )
+        result = evaluate_exhaustiveness(model)
+        assert result.is_ok
+        report = result.danger_ok
+        assert not report.proved
+        assert "pii:model" in report.views_checked
+        pii_gaps = [g for g in report.gaps if g.family == "pii"]
+        assert len(pii_gaps) == 1
+        assert pii_gaps[0].rule == "PII003"
+
 
 def _vulnerable_model() -> KernelModel:
     """The deliberately-vulnerable litmus model: one `may "sql"` capability

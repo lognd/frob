@@ -50,13 +50,13 @@ Comments are `//`; docs attach with `///` and are drift-checked once
 `.strata` joins `frob.lang` (T-0077).
 
 ### `node` grammar (implemented; T-0132 closes the `code=`/`may` gap,
-T-0136 adds `on deploy`)
+T-0136 adds `on deploy`, T-0154 adds `carries`)
 
 The construct actually implemented by `strata-core/src/parse.rs::parse_node`
 today is spelled `node`, not the future `component` shown in the sketch
 above (T-0059 renames it once `runs on`/`state`/`managed` land). Its
-grammar, extended by T-0132 to admit `code`/`may` and by T-0136 to admit
-`on deploy`:
+grammar, extended by T-0132 to admit `code`/`may`, by T-0136 to admit
+`on deploy`, and by T-0154 to admit `carries`:
 
 ```
 node        := "node" IDENT ":" TRUST "abstract"? ("{" node_prop* "}")?
@@ -65,6 +65,7 @@ node_prop   := "clearance" IDENT | "attr" ATTRVAL | "residence" IDENT
              | "skew" "zipf" NUMBER | "errors_total"
              | "panics_contained_by" IDENT | "observe" observe_block
              | "code" STRING+ | "may" STRING | "on" "deploy" deploy_block
+             | "carries" STRING+
 deploy_block  := "{" deploy_prop (";" deploy_prop)* "}"
 deploy_prop   := "canary" "{" canary_stage ("," canary_stage)* "}"
                 | "endorsed_by" IDENT ("," IDENT)*
@@ -73,6 +74,18 @@ canary_stage  := IDENT "for" quantity
 ATTRVAL     := IDENT ("=" IDENT)?
 STRING      := '"' char* '"'   // no escapes in v0; '"' and newline forbidden
 ```
+
+**`carries` (T-0154, docs/strata/threat.md#pii-declarations-std-pii-t-0154):**
+`STRING+` (tag+, at least one -- a bare `carries;` is a parse error,
+matching `code`'s glob+ requirement, per law 2), same STRING-not-IDENT
+reasoning as `code`/
+`may` (a `<category>.<field>` PII tag carries `.`, not a valid ident
+char). `strata-core/src/parse.rs::parse_store` accepts the identical
+`carries STRING+` clause -- a store is the most common PII resting place.
+Elaboration (`_elaborate.py::_elaborate_node`, `_infra.py::
+_elaborate_store`): each tag becomes one `pii=<tag>` attr, the same
+per-atom desugar convention `code` established (`_pii.py::
+node_pii_tags` reads it back).
 
 **Design choice (T-0132): STRING-quoted values, not a new token class.**
 `code=<glob>` globs (`src/frob/**`) and `may` capability atoms

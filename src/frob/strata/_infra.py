@@ -30,6 +30,7 @@ from ._ast import BalancerDecl, CacheDecl, CdnDecl, Module, QueueDecl, StoreDecl
 from ._errors import StrataError
 from ._models import Boundary, BoundaryDirection, Flow, Node, Quantity
 from ._models import Capacity as KernelCapacity
+from ._pii import _PII_PREFIX
 
 _log = get_logger(__name__)
 
@@ -70,6 +71,12 @@ def _elaborate_store(decl: StoreDecl) -> Result[Node, StrataError]:
     coercion).
     """
     attrs = list(decl.attrs)
+    if decl.carries:
+        # T-0154: `carries PII_TAG+` -> one `pii=<tag>` attr per tag, the
+        # SAME per-atom desugar `_elaborate.py::_elaborate_node` uses for
+        # `node`'s `carries` clause (`_pii.py::node_pii_tags` reads it back).
+        _log.debug("store %s carries %d pii tag(s)", decl.id, len(decl.carries))
+        attrs.extend(f"{_PII_PREFIX}{tag}" for tag in decl.carries)
     if decl.engine is not None:
         attrs.append(f"engine={decl.engine}")
     if decl.immutable:

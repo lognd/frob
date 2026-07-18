@@ -36,6 +36,22 @@
 // vet). Where two components import each other in both directions, both
 // flows are declared -- this model does not pretend the real dependency
 // graph is a DAG when it is not.
+//
+// PII posture (T-0154, std.pii): EXPLICITLY ZERO. frob processes design
+// text, ticket text, and code -- not personal data. No node/store below
+// declares `carries "<category>.<field>"`, and that absence is checked,
+// not assumed: `tests/unit/strata/test_pii.py::
+// TestFrobSelfModelPiiPosture` asserts zero `pii=` attrs on every node
+// here AND that `_pii.py::evaluate_pii` reports zero PII001-004
+// violations, so a future edit that silently starts modeling personal
+// data (e.g. a `registry` node gaining an author-email store) fails that
+// test loudly rather than the zero case just happening to hold by
+// omission. The one genuinely personal datum anywhere near this repo --
+// git commit author name/email -- is process/VCS metadata `git` itself
+// already records outside `design/`'s scope entirely, the same reasoning
+// every other node's `attrs` already applies to "things this model does
+// not represent" (docs/strata/threat.md#compliance zero-case precedent:
+// an explicit exclusion, never a silent one).
 
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
 module frob

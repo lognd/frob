@@ -272,6 +272,60 @@ is classified, every fired duty is discharged or assumed (with the assume
 carrying legal ownership + a review date -- regulations change, so the
 staleness bound matters more here than anywhere).
 
+## PII declarations (`std.pii`, T-0154)
+
+`std.compliance` (above) proves REGULATORY obligations (COPPA/GDPR/HIPAA)
+keyed on `subject:`/`jurisdiction:`/`basis:` attrs and the `Pii` label
+rung -- opaque-string vocabulary an author must remember to attach by
+hand. `std.pii` adds the missing FIRST-CLASS layer underneath it: a
+`carries "<category>.<field>"` surface declaration (`strata-core/src/
+parse.rs::parse_node`/`parse_store`, the SAME STRING-quoted `code`/`may`
+grammar shape T-0132 established) naming WHAT personal data a node/store
+actually holds, one attr per tag (`pii=<category>.<field>`,
+`_pii.py::_PII_PREFIX`) -- no new kernel primitive (charter law 1), just
+a new attr convention `code`/`skew`/`fanout` already established the
+shape for.
+
+**Categories** (`_pii.py::PII_CATEGORIES`, T-0154 ticket body): identifier,
+contact, financial, health, biometric, behavioral, credentials. A
+`carries` tag's category prefix (before the first `.`) must be one of
+these seven.
+
+Everything past the declaration itself is a JOIN, not new detection where
+existing machinery already computes the fact:
+
+| Rule | Fires when | Discharge |
+|---|---|---|
+| PII001 (catalog) | a `carries` tag's category prefix is not one of the fixed seven | none -- fix the tag; a malformed/unknown category is not a claim-overridable obligation, the same shape THREAT001's catalog-completeness check has no per-violation override either |
+| PII002 (boundary-crossing protection) | a flow touching a PII-carrying node (either end) crosses a different `TRUST` level | an ASSUMED `pii:PROTECTION:<flow-id>` claim, owner+review -- deny-by-default since no structural encryption/pseudonymization/consent detector exists (the SAME THREAT003 discharge shape, applied to a capability-free precondition) |
+| PII003 (retention/erasure) | a PII-carrying node has no `retention=` bound and no revocation-edge flow | a declared `retention=<bound>` attr, or a flow carrying `attrs=("revocation", ...)` -- REUSING `_compliance.py::_retention_limit`/`_REVOCATION_ATTR` directly, not re-detecting either fact (the "join to existing compliance obligations rather than duplicating them" instruction) |
+| PII004 (undeclared-PII lint) | a flow sourced from a PII-carrying node is labeled below `Pii` | relabel the flow `Pii` (or above) -- the model's own `carries` fact contradicting the flow's declared label is the violation |
+
+PII003 is deliberately JURISDICTION-AGNOSTIC (fires on `carries` alone,
+no `jurisdiction:eu-resident` tag required) -- it is the baseline "if you
+carry PII at all, declare how it leaves" duty; `_compliance.py`'s
+GDPR-RETENTION/GDPR-ERASURE checks are the EU-specific tightening layered
+on top of the SAME two helpers, not a second implementation of the same
+rule.
+
+**Litmus pair**: `tests/unit/strata/litmus/pii_vuln.strata` fires
+PII002/PII003/PII004 undischarged (a collection flow into a `carries
+"identifier.email"` store, no protection claim, no retention/erasure, and
+a mislabeled downstream flow); `pii_hardened.strata` discharges every one
+of them (an assumed `pii:PROTECTION:f_collect` claim, a revocation-edge
+flow, and a correctly `Pii`-labeled downstream flow) -- both round-trip
+through the real parser (`tests/unit/strata/test_litmus_pii.py`), the
+same T-0145 discipline `cwe_79_vuln.strata`/`cwe_79_hardened.strata`
+established. PII001 has no discharge shape to litmus-test (see table
+above), so its coverage lives in `test_pii.py`'s hand-built-`KernelModel`
+unit tests instead, mirroring where `_compliance.py`'s own tests live.
+
+**Self-model**: `design/frob.strata` declares its own PII posture
+EXPLICITLY ZERO (frob models design/ticket/code text, not personal data)
+-- `tests/unit/strata/test_pii.py::TestFrobSelfModelPiiPosture` locks this
+as a checked assertion (zero `pii=` attrs on every node, `evaluate_pii`
+clean) rather than letting the zero case hold silently by omission.
+
 ## CVE: threat intelligence joined to the proof
 
 CWE is the design side; CVE is the dependency side, enriching `frob vet`.

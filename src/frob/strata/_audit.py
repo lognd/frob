@@ -31,6 +31,7 @@ from frob.logging import get_logger
 from ._compliance import REGULATION_VIEWS, ComplianceViolation, evaluate_compliance
 from ._errors import StrataError
 from ._models import KernelModel
+from ._pii import PiiViolation, evaluate_pii
 from ._threat import (
     CWE_CATALOG,
     DEFAULT_BENIGN_CAPABILITIES,
@@ -130,6 +131,22 @@ def _compliance_gaps(
     )
 
 
+def _pii_gaps(violations: tuple[PiiViolation, ...]) -> tuple[FamilyGap, ...]:
+    """Adapt `_pii.py::PiiViolation`s into `FamilyGap`s. `_pii.py::
+    evaluate_pii` has no baseline-view concept (PII001-004 are all
+    structural joins, not a catalog-completeness check like THREAT001), so
+    every gap is reported under the fixed `"model"` view (T-0154)."""
+    return tuple(
+        FamilyGap(
+            family="pii",
+            view="model",
+            rule=v.rule,
+            detail=v.detail or (v.target or "unnamed"),
+        )
+        for v in violations
+    )
+
+
 def _evaluate_family(
     model: KernelModel,
     view: str,
@@ -167,6 +184,8 @@ def _evaluate_family(
 # frob:tests tests/unit/strata/test_audit.py::TestExhaustiveness.test_clean_proved
 # frob:tests tests/unit/strata/test_audit.py::TestVulnLitmus.test_refutes_gap_per_family
 # frob:tests tests/unit/strata/test_audit.py::TestHardenedLitmus.test_hardened_clean
+# frob:tests tests/unit/strata/test_audit.py::TestExhaustiveness.test_pii_gap_reported
+# frob:waive TEST005 reason="Err branches need a deep StrataError; debt T-0160"
 def evaluate_exhaustiveness(
     model: KernelModel,
     *,
@@ -211,6 +230,12 @@ def evaluate_exhaustiveness(
             return Err(compliance_report.danger_err)
         gaps.extend(_compliance_gaps(view, compliance_report.danger_ok.violations))
         checked.append(f"compliance:{view}")
+
+    pii_report = evaluate_pii(model)
+    if pii_report.is_err:
+        return Err(pii_report.danger_err)
+    gaps.extend(_pii_gaps(pii_report.danger_ok.violations))
+    checked.append("pii:model")
 
     _log.info(
         "audit: evaluated views=%d -> %d gap(s)",

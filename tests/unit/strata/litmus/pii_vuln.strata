@@ -1,0 +1,24 @@
+// pii_vuln.strata -- T-0154 litmus: a store `carries "identifier.email"`
+// (std.pii) and fires all three joinable PII obligations undischarged:
+//
+// - PII002 (boundary): f_collect crosses foreign -> trusted with no
+//   assumed `pii:PROTECTION:f_collect` claim.
+// - PII003 (retention/erasure): store_users has no retention= bound and
+//   no revocation-edge flow.
+// - PII004 (undeclared lint): f_leak sources from the pii-carrying
+//   store_users but is labeled Public, below Pii.
+//
+// tested end to end (parse -> elaborate -> evaluate_pii) by
+// tests/unit/strata/test_litmus_pii.py.
+
+module pii_vuln
+
+node client : foreign { clearance Public; }
+node store_users : trusted {
+    clearance Pii;
+    carries "identifier.email";
+}
+node analytics : trusted { clearance Internal; }
+
+flow f_collect : client -> store_users { label Pii; }
+flow f_leak : store_users -> analytics { label Public; }

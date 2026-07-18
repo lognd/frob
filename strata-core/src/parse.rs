@@ -450,6 +450,7 @@ impl Parser {
         let mut code: Vec<String> = Vec::new();
         let mut may: Vec<String> = Vec::new();
         let mut deploy: Option<serde_json::Value> = None;
+        let mut carries: Vec<String> = Vec::new();
         if self.at_symbol('{') {
             self.advance();
             loop {
@@ -506,6 +507,19 @@ impl Parser {
                     // `Node.may` (no attr encoding needed, unlike `code`).
                     self.advance();
                     may.push(self.expect_string("may capability")?);
+                } else if self.at_keyword("carries") {
+                    // T-0154: `carries PII_TAG+` -- one or more STRING-
+                    // quoted PII tags (e.g. "identifier.email"), the SAME
+                    // STRING-not-IDENT shape T-0132 chose for `code`/`may`
+                    // (`.` is not a valid ident char, docs/strata/
+                    // surface.md#node-grammar). Elaborated to `pii=<tag>`
+                    // node attrs, one per tag (mirrors `code`'s
+                    // `code=<glob>` desugar, `_pii.py::_PII_PREFIX`).
+                    self.advance();
+                    carries.push(self.expect_string("carries pii tag")?);
+                    while matches!(self.cur().kind, TokKind::Str(_)) {
+                        carries.push(self.expect_string("carries pii tag")?);
+                    }
                 } else if self.at_keyword("on") {
                     // T-0136: `on deploy { canary { ... }; endorsed_by ...;
                     // rollback within QUANTITY }` -- a node's deploy
@@ -583,6 +597,7 @@ impl Parser {
             "code": code,
             "may": may,
             "deploy": deploy,
+            "carries": carries,
         }));
         Ok(())
     }
@@ -1238,6 +1253,7 @@ impl Parser {
         let mut immutable = false;
         let mut append_only = false;
         let mut rpo: Option<serde_json::Value> = None;
+        let mut carries: Vec<String> = Vec::new();
         if self.at_symbol('{') {
             self.advance();
             loop {
@@ -1250,6 +1266,15 @@ impl Parser {
                 } else if self.at_keyword("attr") {
                     self.advance();
                     attrs.push(self.parse_attrval()?);
+                } else if self.at_keyword("carries") {
+                    // T-0154: same `carries PII_TAG+` shape as `node`
+                    // (parse_node) -- a store is the most common PII
+                    // resting place, so it gets the same declaration.
+                    self.advance();
+                    carries.push(self.expect_string("carries pii tag")?);
+                    while matches!(self.cur().kind, TokKind::Str(_)) {
+                        carries.push(self.expect_string("carries pii tag")?);
+                    }
                 } else if self.at_keyword("residence") {
                     self.advance();
                     residence = Some(self.expect_ident("residence atom")?);
@@ -1300,6 +1325,7 @@ impl Parser {
             "immutable": immutable,
             "append_only": append_only,
             "rpo": rpo,
+            "carries": carries,
         }));
         Ok(())
     }
@@ -2132,6 +2158,55 @@ mod tests {
                 may net.out;
             }"#);
         assert_eq!(e["message"], "expected may capability");
+    }
+
+    #[test]
+    fn parses_node_carries_pii_tags() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0154: `carries PII_TAG+` -- one or more STRING-quoted PII tags
+        // on a node, the same STRING+ shape T-0132 established for `code`.
+        let v = ok(r#"module m
+            node api : trusted {
+                carries "identifier.email" "contact.phone";
+            }"#);
+        let n = &v["nodes"][0];
+        assert_eq!(n["carries"][0], "identifier.email");
+        assert_eq!(n["carries"][1], "contact.phone");
+    }
+
+    #[test]
+    fn parses_store_carries_pii_tags() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0154: `carries` is also legal inside `store` -- the most
+        // common PII resting place.
+        let v = ok(r#"module m
+            store users : trusted {
+                carries "identifier.email";
+            }"#);
+        let s = &v["stores"][0];
+        assert_eq!(s["carries"][0], "identifier.email");
+    }
+
+    #[test]
+    fn parses_node_without_carries_defaults_empty() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0154: pre-existing sources with no `carries` statement must
+        // still elaborate -- the field defaults to an empty list.
+        let v = ok("module m\nnode api : trusted");
+        let n = &v["nodes"][0];
+        assert_eq!(n["carries"].as_array().unwrap().len(), 0);
+    }
+
+    #[test]
+    fn error_carries_requires_at_least_one_tag() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0154: `carries` is tag+, not tag*; a bare `carries;` is a
+        // parse error rather than silently binding zero tags (law 2).
+        let e = err(r#"module m
+            node api : trusted {
+                carries;
+            }"#);
+        assert_eq!(e["message"], "expected carries pii tag");
     }
 
     #[test]

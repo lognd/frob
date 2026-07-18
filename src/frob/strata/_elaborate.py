@@ -60,6 +60,7 @@ from ._models import (
     SetTrust,
 )
 from ._packs import require_analyzable
+from ._pii import _PII_PREFIX
 from ._secrets import SecretExpansion, SecretSpec, elaborate_secret
 
 _log = get_logger(__name__)
@@ -113,6 +114,12 @@ def _elaborate_node(decl: NodeDecl) -> Node:
         # convention `_code_binding.py::_node_code_globs` already reads.
         _log.debug("node %s declares %d code glob(s)", decl.id, len(decl.code))
         attrs = (*attrs, *(f"{_CODE_PREFIX}{glob}" for glob in decl.code))
+    if decl.carries:
+        # T-0154: `carries PII_TAG+` -> one `pii=<tag>` attr per tag, the
+        # SAME per-atom attr-desugar convention `code` established
+        # (`_pii.py::node_pii_tags` reads this back).
+        _log.debug("node %s carries %d pii tag(s)", decl.id, len(decl.carries))
+        attrs = (*attrs, *(f"{_PII_PREFIX}{tag}" for tag in decl.carries))
     capacity = None
     if decl.capacity is not None:
         capacity = Capacity(

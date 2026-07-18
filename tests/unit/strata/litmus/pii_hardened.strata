@@ -1,0 +1,34 @@
+// pii_hardened.strata -- the hardened twin of pii_vuln.strata (T-0154).
+// SAME firing preconditions (store_users carries "identifier.email",
+// f_collect crosses foreign -> trusted), but every joinable obligation is
+// now discharged:
+//
+// - PII002: f_collect is discharged by an ASSUMED
+//   `pii:PROTECTION:f_collect` claim, owned and reviewed -- the SAME
+//   discharge shape tests/unit/strata/litmus/cwe_79_hardened.strata
+//   (T-0145) already proves round-trips through the surface parser.
+// - PII003: f_erase carries the `revocation` attr touching store_users --
+//   the SAME revocation-edge convention `_compliance.py::_check_erasure`
+//   (GDPR-ERASURE) already establishes, reused here rather than
+//   duplicated (`_pii.py::check_pii_retention_erasure`).
+// - PII004: f_report is labeled Pii, matching store_users' declared
+//   carried data (no under-labeling).
+//
+// tested end to end (parse -> elaborate -> evaluate_pii) by
+// tests/unit/strata/test_litmus_pii.py.
+
+module pii_hardened
+
+node client : foreign { clearance Public; }
+node store_users : trusted {
+    clearance Pii;
+    carries "identifier.email";
+}
+node analytics : trusted { clearance Internal; }
+node erasure_service : trusted { clearance Internal; }
+
+flow f_collect : client -> store_users { label Pii; }
+flow f_report : store_users -> analytics { label Pii; }
+flow f_erase : erasure_service -> store_users { attr revocation; }
+
+assume "pii:PROTECTION:f_collect" noflow client -> store_users owner logan review "2026-10-01"
