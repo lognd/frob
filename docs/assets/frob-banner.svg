@@ -42,9 +42,6 @@
       <stop offset="0.4" stop-color="#22351c"/>
       <stop offset="1" stop-color="#10160d"/>
     </radialGradient>
-    <clipPath id="bodyclip">
-      <path d="M290 150 C324 150 346 176 350 206 C352 222 349 233 344 240 L236 240 C231 233 228 222 230 206 C234 176 256 150 290 150 Z"/>
-    </clipPath>
     <clipPath id="ballclip"><circle cx="290" cy="230" r="56"/></clipPath>
   </defs>
 
@@ -71,14 +68,9 @@
              C258 158 237 140 236 115
              L242 112
              C244 92 262 76 290 76 Z"/>
-    <!-- body: hunched mound behind the ball -->
-    <path d="M290 150
-             C332 150 358 184 362 236
-             C364 250 362 258 358 262
-             L222 262
-             C218 258 216 250 218 236
-             C222 184 248 150 290 150 Z"/>
-  </g>
+    <!-- body: hunched mound, flanks merge into the ball rim -->
+    <path d="M290 148 C322 148 342 168 346 192 C346 200 342 208 334 214 L246 214 C238 208 234 200 234 192 C238 168 258 148 290 148 Z"/>
+    </g>
 
   <!-- eyes: soft, contented, glowing gently (round tops, flat bottoms) -->
   <circle cx="268" cy="132" r="8" fill="#b8f0a8" opacity="0.10"/>
