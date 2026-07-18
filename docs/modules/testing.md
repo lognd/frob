@@ -37,9 +37,9 @@ cwd = "."
 
 [[test.runner]]
 language = "rust"
-command = ["cargo", "test", "{filters}"]             # {filters} -> name filters
-all_command = ["cargo", "test"]
-cwd = "."
+command = ["cargo", "test", "--lib", "{filters}"]    # {filters} -> name filters
+all_command = ["cargo", "test", "--lib"]
+cwd = "strata-core"    # one crate per runner entry -- see "Rust runner" below
 
 [[test.runner]]
 language = "typescript"
@@ -58,9 +58,45 @@ Placeholders: exactly one of `{ids}` (test node ids), `{files}` (test file
 paths), `{filters}` (cargo-style name filters), `{regex}` (alternation of
 test names). frob renders the selected tests into the placeholder's shape;
 a language with selected tests but no runner is a hard error, not a skip.
-`frob scaffold` templates ship with runners pre-filled. Every spawn goes
-through the typed subprocess seam with an explicit timeout and full logging
-(lithos procio discipline).
+For `{filters}` under `language = "rust"`, each selected symref's `path::a.b`
+form is first reduced to cargo's own `a::b` filter spelling (the path prefix
+means nothing to `cargo test`, and cargo module segments are `::`-joined, not
+dot-joined) -- see `_to_rust_filter`. `frob scaffold` templates ship with
+runners pre-filled. Every spawn goes through the typed subprocess seam with
+an explicit timeout and full logging (lithos procio discipline).
+
+## Rust runner
+
+`cargo test` for a PyO3 crate (`frob-core`, `strata-core` -- both build with
+`extension-module` off, so linking needs libpython) needs two things cargo
+cannot infer on its own: `PYO3_PYTHON` pointing at an interpreter meeting the
+crate's abi3 floor (`abi3-py311` here, i.e. Python>=3.11), and that
+interpreter's shared libpython directory on `LD_LIBRARY_PATH`. Without them
+the build fails deep inside `pyo3-build-config` with a message that gives no
+hint what's wrong.
+
+Both the rust runner (`run_selected`) and rust test collection
+(`collect_rust_tests`) resolve this env the same way before ever spawning
+`cargo`:
+
+1. Prefer an existing `PYO3_PYTHON` env var; otherwise probe
+   `python3.13`, `python3.12`, `python3.11`, then plain `python3` (in that
+   order) and keep the first one whose reported version is >= 3.11.
+2. Ask that interpreter for `sysconfig.get_config_var("LIBDIR")` and prepend
+   it to `LD_LIBRARY_PATH` for the subprocess only (`_env_overlay` patches
+   `os.environ` for the duration of the call and restores it after --
+   `frob.gitio.run_argv` has no `env=` parameter by design, so this is the
+   one place a spawn's environment gets adjusted).
+3. If no interpreter clears the floor, or its libpython directory cannot be
+   resolved, both call sites return `Err(TestingError.CargoEnvUnavailable)`
+   **before** spawning `cargo` at all -- never a silent skip, never an
+   empty-but-successful test run (T-0102's vacuous-pass principle applies to
+   the runner exactly as it does to the gates).
+
+Only `strata-core` has a `[[test.runner]]` entry today; `frob-core` is a
+second PyO3 crate under the identical constraint but needs its own runner
+entry (one entry per language means one crate per entry) -- filed as a
+follow-up rather than expanding this ticket's scope.
 
 ## Public API
 
@@ -74,6 +110,7 @@ through the typed subprocess seam with an explicit timeout and full logging
 <!-- frob:describes src/frob/testing/_runners.py::run_selected -->
 <!-- frob:describes src/frob/testing/_runners.py::load_runners -->
 <!-- frob:describes src/frob/testing/_collect.py::collect_python_tests -->
+<!-- frob:describes src/frob/testing/_collect.py::collect_rust_tests -->
 
 ```python
 # frob/gitio.py -- the ONE git subprocess seam (shared with frob.gates)
@@ -111,6 +148,11 @@ ALL_SENTINEL = "*"
     # renders the runner's all_command instead of the per-file command.
     # pytest --collect-only cache (moved here from the gates design; the
     # TEST gates import it from frob.testing).
+def collect_rust_tests(root: Path) -> Result[CollectedTests, TestingError]
+    # `cargo test --lib -- --list` cache, one entry per discovered
+    # Cargo.toml; Err (not an empty Ok) when the PyO3 env cannot be
+    # resolved -- see "Rust runner" above. Merged with collect_python_tests
+    # by frob.gates._load_tests into one CollectedTests for COV003.
 ```
 
 **Deviation**: `frob.testing`'s `suite` fallback mode is threaded through the
@@ -157,8 +199,8 @@ class TestRunReport(BaseModel)    # frozen
     outcomes: tuple[RunnerOutcome, ...]
     ok: bool                      # every runner exited zero
 
-class CollectedTests(BaseModel):  # frozen; collect_python_tests's result
-    node_ids: frozenset[str]      # every pytest node id in the project
+class CollectedTests(BaseModel):  # frozen; collect_python_tests + collect_rust_tests
+    node_ids: frozenset[str]      # every pytest node id and cargo test symref
 
 class Hunk(BaseModel):            # frozen; one gitio.py touched-line range
     file: str
@@ -187,6 +229,7 @@ class TestingError(ErrorSet):
     BadRunnerSpec  = "Runner entry failed validation or has no placeholder"
     SpawnFailed    = "Runner process could not be started or timed out"
     CollectFailed  = "pytest --collect-only failed"
+    CargoEnvUnavailable = "cargo test needs a Python>=3.11 dev environment frob could not find"
 ```
 
 ## Git worktrees
@@ -198,9 +241,10 @@ first-class target, not an afterthought:
   `git -C <root>`; `repo_root` resolves via `rev-parse --show-toplevel`,
   which is worktree-correct. frob never touches `.git` internals directly.
 - **Per-worktree derived state**: `.frob/` (graph cache, coverage stamp,
-  pytest-collection cache) lives at each worktree's own root and is never
-  shared -- caches are cheap to rebuild incrementally and sharing them
-  across checkouts of different commits would poison incremental hashing.
+  pytest-collection cache, cargo-collection cache) lives at each worktree's
+  own root and is never shared -- caches are cheap to rebuild incrementally
+  and sharing them across checkouts of different commits would poison
+  incremental hashing.
 - **Base semantics**: `frob test` (and the scope gate) diff against
   `merge-base(HEAD, base)`, so in an agent worktree the touched set is
   exactly that agent's delta -- the common point the user asked for: the
@@ -243,7 +287,8 @@ first-class target, not an afterthought:
 
 - CLI: `frob test [--all] [--base REF] [--lang L ...] [--fallback MODE]`.
 - `frob.gates`: imports `working_diff`/`Diff` from `frob.gitio` and
-  `collect_python_tests` from `frob.testing`.
+  `collect_python_tests`/`collect_rust_tests` from `frob.testing`, merged in
+  `_load_tests` into one `CollectedTests` COV003 resolves evidence against.
 - Agents: implementer runs `frob test` before writing a done-report;
   `skills/next` treats a red `frob test` as a blocker on close.
 - CI: `frob test --all` plus `make coverage` for the stamp.

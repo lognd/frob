@@ -315,6 +315,67 @@ class TestCoverageGate:
         violations = coverage_gate(snap, queue, diff, tests)
         assert not any(v.rule == "COV003" for v in violations)
 
+    def test_cov003_passes_for_rust_evidence_id(self, tmp_path: Path) -> None:
+        """T-0092: a done ticket citing a cargo test id resolves against
+        `collect_rust_tests`' node ids the same way a pytest id resolves
+        against `collect_python_tests`' -- COV003 is language-agnostic once
+        the id lands in `CollectedTests.node_ids` (merged by
+        `frob.gates._load_tests`)."""
+        snap = _snapshot(tmp_path)
+        node = "strata-core/src/lib.rs::tests::reachable_returns_witness_paths"
+        queue = TicketQueue(
+            tickets={
+                "T-0002": _ticket(
+                    ticket_id="T-0002", state=TicketState.DONE, evidence=(node,)
+                )
+            }
+        )
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset({node}))
+        violations = coverage_gate(snap, queue, diff, tests)
+        assert not any(v.rule == "COV003" for v in violations)
+
+    def test_load_tests_merges_python_and_rust_node_ids(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """T-0092: `_load_tests` merges `collect_python_tests` and
+        `collect_rust_tests` into one `CollectedTests`, each collector
+        degrading independently (a broken cargo toolchain must not blank
+        out python evidence, and vice versa)."""
+        from typani import Err, Ok
+
+        import frob.gates as gates_mod
+        from frob.testing import TestingError
+
+        monkeypatch.setattr(
+            gates_mod,
+            "collect_python_tests",
+            lambda root: Ok(
+                CollectedTests(node_ids=frozenset({"tests/test_x.py::test_a"}))
+            ),
+        )
+        monkeypatch.setattr(
+            gates_mod,
+            "collect_rust_tests",
+            lambda root: Ok(
+                CollectedTests(node_ids=frozenset({"crate/src/lib.rs::tests::foo"}))
+            ),
+        )
+        merged = gates_mod._load_tests(tmp_path)
+        assert merged.node_ids == frozenset(
+            {"tests/test_x.py::test_a", "crate/src/lib.rs::tests::foo"}
+        )
+
+        # A broken rust collector degrades to "no rust ids", not a crash and
+        # not a wipe of the python ids already collected.
+        monkeypatch.setattr(
+            gates_mod,
+            "collect_rust_tests",
+            lambda root: Err(TestingError.CollectFailed),
+        )
+        merged2 = gates_mod._load_tests(tmp_path)
+        assert merged2.node_ids == frozenset({"tests/test_x.py::test_a"})
+
     def test_cov004_missing_attachment(self, tmp_path: Path) -> None:
         from frob.tickets import Attachment
 
@@ -708,8 +769,11 @@ class TestTestGate:
     ) -> None:
         """Regression for T-0090: a `frob:tests` directive living in a
         different rust file than its target symbol must still count as unit
-        evidence, even though `CollectedTests` (pytest-only) never sees the
-        rust test's node id."""
+        evidence. T-0092 gave rust a real execution-based collector
+        (`collect_rust_tests`), so this now asserts through the FIRST branch
+        of `_valid_edges` (real collected node id), not the structural
+        fallback the T-0090 comment used to describe -- `.rs` was removed
+        from `_NATIVE_TEST_EXTENSIONS` accordingly."""
         from typani.option import Nothing
 
         _write(
@@ -727,10 +791,9 @@ class TestTestGate:
             "}\n",
         )
         snap = _snapshot(tmp_path)
-        # No rust test collector exists yet -- CollectedTests is pytest-only,
-        # so this deliberately stays empty to prove the fix does not depend
-        # on the src ever landing in tests.node_ids.
-        tests = CollectedTests(node_ids=frozenset())
+        tests = CollectedTests(
+            node_ids=frozenset({"strata-core/src/parse.rs::test_parse_basic"})
+        )
         cfg = TestPolicy(min_unit_cases=1)
         violations = run_test_gate(snap, (), Nothing(), tests, cfg)
         rule_ids = _rules(violations)

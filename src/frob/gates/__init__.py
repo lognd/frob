@@ -70,7 +70,7 @@ from frob.graph.lock import load_lock
 from frob.lang import SymbolKind
 from frob.lang._models import ParsedFile
 from frob.logging import get_logger
-from frob.testing import CollectedTests, collect_python_tests
+from frob.testing import CollectedTests, collect_python_tests, collect_rust_tests
 from frob.tickets import Ticket, TicketQueue, TicketState, load_queue
 
 _log = get_logger(__name__)
@@ -196,11 +196,15 @@ def _test_edges(snapshot: GraphSnapshot, kind: str) -> dict[str, list[Edge]]:
 
 
 # Extensions frob parses but does not (yet) run/collect executed test
-# evidence for -- `collect_python_tests` only spawns pytest, so a rust/ts/c/
-# cpp `frob:tests` edge can never have its `src` land in `tests.node_ids`, no
-# matter which file the directive itself lives in (T-0090).
+# evidence for -- collect_python_tests only spawns pytest and
+# collect_rust_tests only spawns cargo, so a ts/c/cpp `frob:tests` edge can
+# never have its `src` land in `tests.node_ids`, no matter which file the
+# directive itself lives in (T-0090). Rust was removed from this set by
+# T-0092: `collect_rust_tests` gives rust real execution evidence via
+# `tests.node_ids` (the first branch of `_valid_edges` below), so a rust
+# `frob:tests` src no longer needs (or should use) the structural fallback.
 _NATIVE_TEST_EXTENSIONS = frozenset(
-    {".rs", ".ts", ".tsx", ".c", ".h", ".cpp", ".hpp", ".cc", ".hh"}
+    {".ts", ".tsx", ".c", ".h", ".cpp", ".hpp", ".cc", ".hh"}
 )
 
 
@@ -234,20 +238,20 @@ def _valid_edges(
     tests: CollectedTests,
     snapshot: GraphSnapshot | None = None,
 ) -> list[Edge]:
-    """Edges whose `src` is a collected pytest node id, or -- for a language
-    frob has no execution-based test collector for (T-0090, tracked toward
-    real execution evidence by T-0092) -- a `src` that both looks like test
-    code (`_is_native_test_symref`) and resolves to a real bound symbol in
-    `snapshot`.
+    """Edges whose `src` is a collected pytest or cargo node id (real execution
+    evidence, `_symref_to_nodeid`), or -- for a language frob still has no
+    execution-based test collector for (ts/c/cpp, T-0090) -- a `src` that both
+    looks like test code (`_is_native_test_symref`) and resolves to a real
+    bound symbol in `snapshot`.
 
     The comment DSL binds a `frob:tests` directive to its enclosing/following
     symbol regardless of which file it lives in relative to its target
     (`frob.graph.dsl.parse_directives`), so a directive whose src is a genuine
-    rust/ts/c/cpp test function is structurally authoritative the moment it
-    exists; frob just cannot (yet) prove the test actually ran the way it can
-    for pytest via `collect_python_tests` (that gap is T-0092's scope, not
-    this one). `snapshot` is optional so existing callers that only ever see
-    python evidence are unaffected.
+    ts/c/cpp test function is structurally authoritative the moment it exists;
+    frob just cannot (yet) prove the test actually ran the way it now can for
+    python (`collect_python_tests`) and rust (`collect_rust_tests`, T-0092).
+    `snapshot` is optional so existing callers that only ever see python
+    evidence are unaffected.
     """
     valid: list[Edge] = []
     for e in edges:
@@ -1983,12 +1987,25 @@ def _load_diff(root: Path, base: str) -> Diff:
 
 
 def _load_tests(root: Path) -> CollectedTests:
-    """Collected pytest node ids, degrading to an empty set on collection failure."""
-    tests_result = collect_python_tests(root)
-    if tests_result.is_err:
-        _log.error("run_gates: pytest collection failed: %s", tests_result.danger_err)
-        return CollectedTests(node_ids=frozenset())
-    return tests_result.danger_ok
+    """Collected pytest + cargo node ids, degrading each collector independently
+    to an empty set on failure (a missing/broken toolchain must not halt the
+    whole gates run -- but see `_cov003`: an evidence id that consequently
+    fails to resolve becomes a loud violation, never a silent pass, T-0102)."""
+    node_ids: set[str] = set()
+
+    python_result = collect_python_tests(root)
+    if python_result.is_err:
+        _log.error("run_gates: pytest collection failed: %s", python_result.danger_err)
+    else:
+        node_ids.update(python_result.danger_ok.node_ids)
+
+    rust_result = collect_rust_tests(root)
+    if rust_result.is_err:
+        _log.error("run_gates: cargo collection failed: %s", rust_result.danger_err)
+    else:
+        node_ids.update(rust_result.danger_ok.node_ids)
+
+    return CollectedTests(node_ids=frozenset(node_ids))
 
 
 def _resolve_ticket(

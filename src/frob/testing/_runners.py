@@ -9,8 +9,12 @@ module imports it, rather than a second timeout-handling copy living here).
 
 from __future__ import annotations
 
+import os
+import shutil
 import time
 import tomllib
+from collections.abc import Iterator, Mapping
+from contextlib import contextmanager
 from pathlib import Path
 
 from typani import Err, ErrorSet, Ok
@@ -31,6 +35,13 @@ _log = get_logger(__name__)
 _PLACEHOLDERS = ("{ids}", "{files}", "{filters}", "{regex}")
 _EXCERPT_LINES = 40
 
+# pyo3's abi3-py311 feature (frob-core, strata-core) pins a floor: any
+# interpreter frob offers `cargo test` as PYO3_PYTHON must be at least this,
+# or the build fails deep inside pyo3-build-config with a cryptic message.
+_PYO3_MIN_PYTHON = (3, 11)
+_PYO3_PYTHON_CANDIDATES = ("python3.13", "python3.12", "python3.11")
+_ENV_PROBE_TIMEOUT_S = 10.0
+
 
 # frob:doc docs/modules/testing.md#error-types
 class TestingError(ErrorSet):
@@ -40,6 +51,10 @@ class TestingError(ErrorSet):
     BadRunnerSpec = "Runner entry failed validation or has no placeholder"
     SpawnFailed = "Runner process could not be started or timed out"
     CollectFailed = "pytest --collect-only failed"
+    CargoEnvUnavailable = (
+        "cargo test needs a Python>=3.11 dev environment (PYO3_PYTHON + a "
+        "discoverable libpython) that frob could not find"
+    )
 
 
 def _excerpt(text: str, *, lines: int = _EXCERPT_LINES) -> str:
@@ -120,14 +135,30 @@ def _to_node_id(item: str) -> str:
     return f"{path}::{qualname.replace('.', '::')}"
 
 
-def _expand_placeholder(placeholder: str, items: tuple[str, ...]) -> list[str]:
+def _to_rust_filter(item: str) -> str:
+    """A selected rust symref's qualname as a `cargo test` substring filter:
+    `path::tests.foo` -> `tests::foo` (the path prefix cargo has no use for,
+    dots rejoined with `::` to match the crate's real module path)."""
+    _, sep, qualname = item.partition("::")
+    if not sep:
+        return item
+    return qualname.replace(".", "::")
+
+
+def _expand_placeholder(
+    placeholder: str, items: tuple[str, ...], language: str
+) -> list[str]:
     """The argv fragment a single placeholder expands to for `items`."""
+    # frob:waive PERF003 reason="if-chain dispatch, one flat comprehension per branch"
     if placeholder == "{ids}":
         return [_to_node_id(item) for item in items]
     if placeholder == "{files}":
         return list(items)
     if placeholder == "{filters}":
-        return [" ".join(items)]
+        rendered = (
+            [_to_rust_filter(i) for i in items] if language == "rust" else list(items)
+        )
+        return [" ".join(rendered)]
     if placeholder == "{regex}":
         return ["|".join(items)]
     return []
@@ -141,7 +172,7 @@ def _render_command(spec: RunnerSpec, items: tuple[str, ...]) -> tuple[str, ...]
     argv: list[str] = []
     for part in spec.command:
         if part == placeholder:
-            argv.extend(_expand_placeholder(placeholder, items))
+            argv.extend(_expand_placeholder(placeholder, items, spec.language))
         else:
             argv.append(part)
     return tuple(argv)
@@ -162,6 +193,89 @@ def _build_runner_argv(
     return Ok(argv)
 
 
+# frob:doc docs/modules/testing.md#rust-runner
+def _python_version(python: str) -> tuple[int, int] | None:
+    """`(major, minor)` for `python`'s interpreter, or `None` if it cannot run."""
+    spawned = run_argv(
+        [python, "-c", "import sys; print(sys.version_info[0], sys.version_info[1])"],
+        timeout_s=_ENV_PROBE_TIMEOUT_S,
+    )
+    if spawned.is_err or spawned.danger_ok.returncode != 0:
+        return None
+    try:
+        major, minor = spawned.danger_ok.stdout.split()
+        return int(major), int(minor)
+    except ValueError:
+        return None
+
+
+def _python_lib_dir(python: str) -> Path | None:
+    """The directory holding `python`'s libpython, or `None` if undiscoverable."""
+    probe = "import sysconfig; print(sysconfig.get_config_var('LIBDIR') or '')"
+    spawned = run_argv([python, "-c", probe], timeout_s=_ENV_PROBE_TIMEOUT_S)
+    if spawned.is_err or spawned.danger_ok.returncode != 0:
+        return None
+    libdir = spawned.danger_ok.stdout.strip()
+    return Path(libdir) if libdir else None
+
+
+def _find_pyo3_python() -> str | None:
+    """The first interpreter meeting pyo3's abi3-py311 floor (env override first,
+    then well-known `python3.NN` binaries, then plain `python3` as a last resort)."""
+    override = os.environ.get("PYO3_PYTHON")
+    candidates: list[str] = [override] if override else []
+    candidates.extend(
+        found for c in _PYO3_PYTHON_CANDIDATES if (found := shutil.which(c)) is not None
+    )
+    default = shutil.which("python3")
+    if default is not None:
+        candidates.append(default)
+    for candidate in candidates:
+        version = _python_version(candidate)
+        if version is not None and version >= _PYO3_MIN_PYTHON:
+            return candidate
+    return None
+
+
+# frob:doc docs/modules/testing.md#rust-runner
+def _cargo_env() -> Result[dict[str, str], TestingError]:
+    """The `PYO3_PYTHON` + `LD_LIBRARY_PATH` overlay a `cargo test` subprocess
+    needs to link/run a PyO3 crate. `Err` -- never a fabricated pass -- when no
+    Python>=3.11 interpreter with a discoverable libpython exists (T-0092: the
+    known environment gap, degraded honestly instead of a cryptic linker
+    failure or a silently-skipped rust run)."""
+    python = _find_pyo3_python()
+    if python is None:
+        _log.error("cargo_env: no python>=3.11 interpreter found for PYO3_PYTHON")
+        return Err(TestingError.CargoEnvUnavailable)
+    lib_dir = _python_lib_dir(python)
+    if lib_dir is None or not lib_dir.exists():
+        _log.error("cargo_env: could not resolve a libpython dir for %s", python)
+        return Err(TestingError.CargoEnvUnavailable)
+    existing = os.environ.get("LD_LIBRARY_PATH", "")
+    ld_path = f"{lib_dir}:{existing}" if existing else str(lib_dir)
+    _log.info("cargo_env: PYO3_PYTHON=%s LD_LIBRARY_PATH+=%s", python, lib_dir)
+    return Ok({"PYO3_PYTHON": python, "LD_LIBRARY_PATH": ld_path})
+
+
+@contextmanager
+def _env_overlay(overlay: Mapping[str, str]) -> Iterator[None]:
+    """Temporarily set `overlay` into `os.environ`, restoring prior values on exit
+    (shared by the cargo runner here and `frob.testing._collect`'s cargo-list
+    collector -- `frob.gitio.run_argv` has no `env=` parameter, so this is the
+    one place process env gets patched for a subprocess call)."""
+    restore = {k: os.environ.get(k) for k in overlay}
+    os.environ.update(overlay)
+    try:
+        yield
+    finally:
+        for key, value in restore.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+
+
 def _run_one_runner(
     spec: RunnerSpec, items: tuple[str, ...], root: Path
 ) -> Result[RunnerOutcome, TestingError]:
@@ -171,9 +285,21 @@ def _run_one_runner(
         return Err(built.danger_err)
     argv = built.danger_ok
 
+    env_overlay: dict[str, str] = {}
+    if spec.language == "rust":
+        env_result = _cargo_env()
+        if env_result.is_err:
+            _log.error(
+                "run_selected: rust env unavailable, refusing to spawn cargo "
+                "rather than let it fail vacuously"
+            )
+            return Err(env_result.danger_err)
+        env_overlay = env_result.danger_ok
+
     cwd = root / spec.cwd
     start = time.monotonic()
-    spawned = run_argv(argv, cwd=cwd, timeout_s=spec.timeout_s)
+    with _env_overlay(env_overlay):
+        spawned = run_argv(argv, cwd=cwd, timeout_s=spec.timeout_s)
     duration = time.monotonic() - start
     if spawned.is_err:
         _log.error("run_selected: %s runner failed to spawn/timeout", spec.language)

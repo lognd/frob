@@ -31,3 +31,17 @@ language = "python"
 command = ["uv", "run", "pytest", "-q", "{ids}"]
 all_command = ["uv", "run", "pytest", "-q"]
 cwd = "."
+
+[[test.runner]]
+# strata-core's rust kernel crate (native-kernel work, T-0073/T-0093).
+# frob-core is a second pyo3 crate under the same env constraints but is not
+# wired here yet -- one [[test.runner]] entry per language means a second
+# rust crate needs its own selection path, filed as a follow-up (see
+# tickets.md, "found while working T-0092").
+# `cargo test --lib` (not plain `cargo test`) avoids also compiling/linking
+# doctests, which need the SAME PyO3 env but double the link cost for no
+# extra coverage here (no doc examples in this crate).
+language = "rust"
+command = ["cargo", "test", "--lib", "{filters}"]
+all_command = ["cargo", "test", "--lib"]
+cwd = "strata-core"

@@ -3958,7 +3958,7 @@ rust-side fix.
 ```yaml
 id: T-0092
 title: 'rust test integration: [[test.runner]] for cargo + COV003 evidence resolution'
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-07-17'
@@ -3969,12 +3969,31 @@ scope:
 - src/frob/testing/**
 - src/frob/gates/**
 - tests/**
-evidence: []
+- docs/modules/testing.md
+- tickets.md
+evidence:
+- tests/test_gates.py::TestCoverageGate::test_cov003_passes_for_rust_evidence_id
 attachments: []
 acceptance: []
 threat: null
 ```
 Two symptoms, one gap, both hit on 2026-07-17: (1) frob test --base main errors NoRunner when rust files are touched because frob.toml has no [[test.runner]] language=rust entry (cargo needs PYO3_PYTHON + LD_LIBRARY_PATH env to link); (2) COV003 rejects cargo test ids as ticket evidence because only python tests are collected (T-0062 closed with rust ids and broke repo check until swapped for pytest ids). Wire a cargo runner + rust test collection so native-kernel work can cite its real tests.
+## Done report
+
+Cargo [[test.runner]] for strata-core with {filters} converted to bare
+module paths (_to_rust_filter); _cargo_env probes PYO3_PYTHON/python3.x
+plus sysconfig LIBDIR and returns Err(CargoEnvUnavailable) BEFORE
+spawning, so an unbuildable environment fails loudly on both the runner
+and collection paths (no vacuous pass -- reviewer-verified with tests).
+collect_rust_tests walks crates, parses cargo test --list, maps module
+paths back to path::qualname symrefs, cached on rust content hash;
+gates._load_tests merges python+rust collections with independent
+degrade. .rs removed from the structural-evidence fallback: rust now
+has execution evidence, superseding T-0090 for rust only (ts/c/cpp
+unchanged). Real end-to-end proof: cargo test run + 93 collected ids
+incl. the exact id existing directives cite. frob-core runner coverage
+filed as T-0128. Reviewer APPROVED; verified at merge on main: 119
+tests across testing+gates suites.
 
 <!-- ticket:T-0093 -->
 ```yaml
@@ -5286,6 +5305,26 @@ acceptance: []
 threat: null
 ```
 Found during T-0126 review: frob:doc directives can target heading slugs that do not exist (e.g. docs/strata/evidence.md#the-enables-cascade vs the real slug #the-enables-cascade-soundness-dependencies-mechanized from '## The enables cascade (soundness dependencies, mechanized)'). No gate validates that a frob:doc target file+slug resolves (_slugify exists in src/frob/graph/dsl.py). Add a gate that parses doc targets, slugifies headings in the target file, and errors/warns on unresolvable anchors. Several pre-existing broken anchors in strata/_packs.py and _claims.py will surface -- fix them in the same change.
+
+<!-- ticket:T-0128 -->
+```yaml
+id: T-0128
+title: extend rust [[test.runner]] coverage to frob-core (second PyO3 crate)
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- frob.toml
+- src/frob/testing/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0092 wired a cargo [[test.runner]] and collect_rust_tests for strata-core only, since one [[test.runner]] entry maps to exactly one language today and there is no root workspace Cargo.toml unifying the two crates. collect_rust_tests already discovers and collects BOTH crates generically (93 ids across frob-core + strata-core), but frob test's selection+run path only has a runner entry for strata-core. Either allow multiple [[test.runner]] entries per language (cwd-scoped) or add a workspace Cargo.toml so one runner covers both crates.
 
 <!-- ticket:T-0129 -->
 ```yaml

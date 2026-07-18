@@ -7,6 +7,8 @@ import sys
 import textwrap
 from pathlib import Path
 
+from typani import Err
+
 from frob.gitio import Diff, Hunk, ProcResult, working_diff
 from frob.graph import build_graph
 from frob.testing import (
@@ -500,3 +502,261 @@ class TestCollectPythonTests:
         assert result2.is_ok
         assert result2.danger_ok.node_ids == node_ids
         assert len(calls) == 1
+
+
+class TestRustFilterPlaceholder:
+    def test_to_rust_filter_strips_path_and_rejoins_dots(self) -> None:
+        # frob:tests src/frob/testing/_runners.py::_to_rust_filter
+        from frob.testing._runners import _to_rust_filter
+
+        assert (
+            _to_rust_filter("strata-core/src/lib.rs::tests.reachable")
+            == "tests::reachable"
+        )
+        assert _to_rust_filter("nodots") == "nodots"
+
+    def test_render_command_uses_rust_filter_for_rust_language(self) -> None:
+        # frob:tests src/frob/testing/_runners.py::_render_command
+        from frob.testing._runners import _render_command
+
+        spec = RunnerSpec(
+            language="rust",
+            command=("cargo", "test", "--lib", "{filters}"),
+            all_command=("cargo", "test", "--lib"),
+        )
+        argv = _render_command(
+            spec, ("strata-core/src/lib.rs::tests.reachable_returns_witness_paths",)
+        )
+        assert argv == (
+            "cargo",
+            "test",
+            "--lib",
+            "tests::reachable_returns_witness_paths",
+        )
+
+    def test_python_filters_placeholder_unaffected(self) -> None:
+        # {filters} for a non-rust language keeps raw items, unchanged behavior.
+        from frob.testing._runners import _render_command
+
+        spec = RunnerSpec(
+            language="python", command=("pytest", "{filters}"), all_command=("pytest",)
+        )
+        argv = _render_command(spec, ("foo", "bar"))
+        assert argv == ("pytest", "foo bar")
+
+
+class TestCargoEnv:
+    def test_cargo_env_ok_when_python311_and_libdir_found(
+        self, monkeypatch, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/testing/_runners.py::_cargo_env
+        from typani import Ok
+
+        import frob.testing._runners as runners_mod
+
+        lib_dir = tmp_path / "py312-lib"
+        lib_dir.mkdir()
+
+        monkeypatch.delenv("PYO3_PYTHON", raising=False)
+        monkeypatch.setattr(
+            runners_mod.shutil, "which", lambda name: f"/usr/bin/{name}"
+        )
+
+        def fake_run_argv(argv, *, cwd=None, timeout_s=10.0):
+            if "sys.version_info" in argv[-1]:
+                return Ok(
+                    ProcResult(argv=tuple(argv), returncode=0, stdout="3 12", stderr="")
+                )
+            return Ok(
+                ProcResult(
+                    argv=tuple(argv), returncode=0, stdout=f"{lib_dir}\n", stderr=""
+                )
+            )
+
+        monkeypatch.setattr(runners_mod, "run_argv", fake_run_argv)
+        result = runners_mod._cargo_env()
+        assert result.is_ok
+        overlay = result.danger_ok
+        assert overlay["PYO3_PYTHON"] == "/usr/bin/python3.13"
+        assert str(lib_dir) in overlay["LD_LIBRARY_PATH"]
+
+    def test_cargo_env_err_when_no_qualifying_interpreter(self, monkeypatch) -> None:
+        # frob:tests src/frob/testing/_runners.py::_cargo_env
+        from typani import Ok
+
+        import frob.testing._runners as runners_mod
+
+        monkeypatch.delenv("PYO3_PYTHON", raising=False)
+        monkeypatch.setattr(runners_mod.shutil, "which", lambda name: None)
+
+        def fake_run_argv(argv, *, cwd=None, timeout_s=10.0):
+            return Ok(
+                ProcResult(argv=tuple(argv), returncode=1, stdout="", stderr="no such")
+            )
+
+        monkeypatch.setattr(runners_mod, "run_argv", fake_run_argv)
+        result = runners_mod._cargo_env()
+        assert result.is_err
+        assert result.danger_err == TestingError.CargoEnvUnavailable
+
+    def test_env_overlay_restores_prior_values(self, monkeypatch) -> None:
+        # frob:tests src/frob/testing/_runners.py::_env_overlay
+        import os
+
+        from frob.testing._runners import _env_overlay
+
+        monkeypatch.setenv("FROB_T0092_PROBE", "before")
+        with _env_overlay({"FROB_T0092_PROBE": "during", "FROB_T0092_NEW": "x"}):
+            assert os.environ["FROB_T0092_PROBE"] == "during"
+            assert os.environ["FROB_T0092_NEW"] == "x"
+        assert os.environ["FROB_T0092_PROBE"] == "before"
+        assert "FROB_T0092_NEW" not in os.environ
+
+    def test_rust_runner_refuses_to_spawn_when_env_unavailable(
+        self, monkeypatch, tmp_path
+    ) -> None:
+        # frob:tests src/frob/testing/_runners.py::run_selected
+        # Vacuous-pass guard (T-0102): a missing PyO3 env must surface as an
+        # Err from run_selected, never a skipped-but-"ok" runner outcome.
+        import frob.testing._runners as runners_mod
+        from frob.testing._models import SelectionReport
+
+        monkeypatch.setattr(
+            runners_mod, "_cargo_env", lambda: Err(TestingError.CargoEnvUnavailable)
+        )
+        spec = RunnerSpec(
+            language="rust",
+            command=("cargo", "test", "--lib", "{filters}"),
+            all_command=("cargo", "test", "--lib"),
+        )
+        selection = SelectionReport(
+            touched=(),
+            selected={"rust": ("crate/src/lib.rs::tests.foo",)},
+            ripple=(),
+            unbound=(),
+            fallback="package",
+        )
+        result = run_selected(selection, (spec,), tmp_path)
+        assert result.is_err
+        assert result.danger_err == TestingError.CargoEnvUnavailable
+
+
+class TestCollectRustTests:
+    def _write_crate(self, root: Path) -> None:
+        _write(
+            root,
+            "crate/Cargo.toml",
+            """
+            [package]
+            name = "crate"
+            version = "0.1.0"
+            """,
+        )
+        _write(
+            root,
+            "crate/src/lib.rs",
+            """
+            #[cfg(test)]
+            mod tests {
+                #[test]
+                fn reachable_returns_witness_paths() {}
+            }
+            """,
+        )
+        _write(
+            root,
+            "crate/src/parse.rs",
+            """
+            #[cfg(test)]
+            mod tests {
+                #[test]
+                fn error_unknown_metric() {}
+            }
+            """,
+        )
+
+    def test_module_path_to_symref_inline_and_file_module(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_rust_tests
+        from frob.testing._collect import _module_path_to_symref
+
+        self._write_crate(tmp_path)
+        crate_dir = tmp_path / "crate"
+        assert (
+            _module_path_to_symref(
+                tmp_path, crate_dir, "tests::reachable_returns_witness_paths"
+            )
+            == "crate/src/lib.rs::tests::reachable_returns_witness_paths"
+        )
+        assert (
+            _module_path_to_symref(
+                tmp_path, crate_dir, "parse::tests::error_unknown_metric"
+            )
+            == "crate/src/parse.rs::tests::error_unknown_metric"
+        )
+
+    def test_collect_rust_tests_parses_and_caches(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_rust_tests
+        from typani import Ok
+
+        import frob.testing._collect as collect_mod
+
+        self._write_crate(tmp_path)
+        monkeypatch.setattr(
+            collect_mod,
+            "_cargo_env",
+            lambda: Ok({"PYO3_PYTHON": "/usr/bin/python3.12"}),
+        )
+
+        calls: list[tuple] = []
+
+        def fake_run_argv(argv, *, cwd=None, timeout_s=300.0):
+            calls.append(tuple(argv))
+            stdout = (
+                "parse::tests::error_unknown_metric: test\n"
+                "tests::reachable_returns_witness_paths: test\n"
+                "\n2 tests, 0 benchmarks\n"
+            )
+            return Ok(
+                ProcResult(argv=tuple(argv), returncode=0, stdout=stdout, stderr="")
+            )
+
+        monkeypatch.setattr(collect_mod, "run_argv", fake_run_argv)
+
+        result = collect_mod.collect_rust_tests(tmp_path)
+        assert result.is_ok
+        assert result.danger_ok.node_ids == frozenset(
+            {
+                "crate/src/parse.rs::tests::error_unknown_metric",
+                "crate/src/lib.rs::tests::reachable_returns_witness_paths",
+            }
+        )
+        assert len(calls) == 1
+
+        result2 = collect_mod.collect_rust_tests(tmp_path)
+        assert result2.is_ok
+        assert result2.danger_ok.node_ids == result.danger_ok.node_ids
+        assert len(calls) == 1  # cache hit, no second spawn
+
+    def test_collect_rust_tests_no_crates_is_ok_empty(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_rust_tests
+        from frob.testing._collect import collect_rust_tests
+
+        result = collect_rust_tests(tmp_path)
+        assert result.is_ok
+        assert result.danger_ok.node_ids == frozenset()
+
+    def test_collect_rust_tests_err_when_env_unavailable(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_rust_tests
+        import frob.testing._collect as collect_mod
+
+        self._write_crate(tmp_path)
+        monkeypatch.setattr(
+            collect_mod, "_cargo_env", lambda: Err(TestingError.CargoEnvUnavailable)
+        )
+        result = collect_mod.collect_rust_tests(tmp_path)
+        assert result.is_err
+        assert result.danger_err == TestingError.CargoEnvUnavailable
