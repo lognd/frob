@@ -56,6 +56,7 @@ from frob.gates._models import (
     WaiverRef,
 )
 from frob.gates._prework import load_prework, record_prework
+from frob.gates._secrets import secrets_gate
 from frob.gates.invariants import Invariant, InvariantError, load_invariants
 from frob.gitio import Diff, Hunk, current_branch, run_argv, working_diff
 from frob.graph import (
@@ -382,6 +383,9 @@ _KNOWN_GATE_RULES = frozenset(
         "SYS002",
         "SYS003",
         "SYS004",
+        "SEC001",
+        "SEC002",
+        "SEC003",
         "TICK001",
         "TICK002",
     }
@@ -398,6 +402,22 @@ _KNOWN_GATE_RULES = frozenset(
 # frob.toml diff, not a buried code comment) and is NOT blocked here --
 # only the same-repo `frob:waive` directive path is.
 #
+# frob:ticket T-0157
+# SEC003 (`frob.gates._secrets`): a live Stripe SECRET key (`sk_live_...`)
+# or a private-key PEM header tracked in the repo. Written decision (the
+# ticket asked for one explicitly): these two get the same unwaivable
+# treatment as TEST008, NOT the broader `SEC001` rule id that the rest of
+# the secrets-scan pattern table reports under. `SEC001` deliberately stays
+# waivable -- it also carries lower-confidence, genuinely disputable
+# findings (a JWT that may be a public ID token, Plaid's context-gated
+# heuristic, Stripe TEST-mode keys) where a written `frob:waive` reason is
+# the correct, honest outcome, not a workaround. A live Stripe secret key
+# or a PEM private-key header have no such legitimate "yes, intentionally"
+# case -- unlike a JWT, there is no reading of either shape that is
+# supposed to be public, so silencing one with a comment is never correct
+# and is now structurally impossible, the same way TEST008 makes a silent
+# coverage misconfiguration impossible.
+#
 # frob:ticket T-0162
 # TICK001/TICK002 join TEST008 for the identical reason: they exist
 # specifically to make the T-0162 ticket-id collision invariant's failure
@@ -408,7 +428,7 @@ _KNOWN_GATE_RULES = frozenset(
 # catch -- a `frob:waive TICK002 reason="..."` sitting in the tree would
 # let a live collision risk sit there quietly forever. See the decision
 # record in docs/modules/tickets.md#decision-record-t-0162.
-_UNWAIVABLE_RULES = frozenset({"TEST008", "TICK001", "TICK002"})
+_UNWAIVABLE_RULES = frozenset({"TEST008", "SEC003", "TICK001", "TICK002"})
 
 
 def _unwaivable_channel_rules() -> frozenset[str]:
@@ -2738,6 +2758,7 @@ _ALL_GATES = frozenset(
         "clones",
         "decisions",
         "sys",
+        "secrets",
         "tickets",
     }
 )
@@ -2938,6 +2959,8 @@ def _build_jobs(
         jobs["decisions"] = lambda: decisions_gate(st.root, st.snapshot)
     if "sys" in selected:
         jobs["sys"] = lambda: sys_gate(st.root, st.snapshot)
+    if "secrets" in selected:
+        jobs["secrets"] = lambda: secrets_gate(st.root)
     if "tickets" in selected:
         jobs["tickets"] = lambda: tickets_gate(st.root, st.queue)
     return jobs, skipped
@@ -3046,6 +3069,7 @@ __all__ = [
     "run_gates",
     "scope_digest",
     "scope_gate",
+    "secrets_gate",
     "stamp_baseline",
     "stamp_coverage",
     "sys_gate",

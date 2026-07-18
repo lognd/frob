@@ -1515,7 +1515,7 @@ Get frob into a releasable state once the gates-zero sweep and the three feature
 id: T-0157
 title: 'secrets-scan gate: real-looking API tokens in tracked files fail check unless
   marked fake'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-07-18'
@@ -1528,12 +1528,102 @@ scope:
 - docs/modules/gates.md
 - frob.toml
 - tickets.md
-evidence: []
+evidence:
+- tests/test_secrets_gate.py::TestRedact::test_never_returns_the_token
+- tests/test_secrets_gate.py::TestFindsTokens::test_stripe_live_key_sec003
+- tests/test_secrets_gate.py::TestFindsTokens::test_pem_private_key_header_flagged_sec003
+- tests/test_secrets_gate.py::TestFindsTokens::test_anthropic_key_flagged_sec001
+- tests/test_secrets_gate.py::TestFindsTokens::test_stripe_test_key_is_low_severity_warn
+- tests/test_secrets_gate.py::TestFakeMarking::test_placeholder_xxxx_tail_is_not_flagged
+- tests/test_secrets_gate.py::TestFakeMarking::test_literal_fake_word_in_token_is_not_flagged
+- tests/test_secrets_gate.py::TestFakeMarking::test_fake_marker_same_line
+- tests/test_secrets_gate.py::TestFakeMarking::test_frob_secret_fake_marker_on_line_above
+- tests/test_secrets_gate.py::TestTrackedEnvFile::test_env_file_sec002
+- tests/test_secrets_gate.py::TestTrackedEnvFile::test_env_example_is_not_flagged
+- tests/test_secrets_gate.py::TestTrackedEnvFile::test_untracked_env_file_is_never_scanned
+- tests/test_secrets_gate.py::TestDriftLock::test_every_provider_has_a_fixture
+- tests/test_secrets_gate.py::TestGateIsGreenOnItself::test_secrets_module_source_is_clean
+- tests/test_secrets_gate.py::TestGateIsGreenOnItself::test_this_test_file_is_clean
+- tests/test_secrets_gate.py::TestGateIsGreenOnItself::test_repo_is_clean
+- tests/test_secrets_gate.py::TestTrackedEnvFile::test_tracked_binary_file_is_skipped_not_crashed
+- tests/test_secrets_gate.py::TestOverlapClaim::test_embedded_overlapping_match_is_not_double_claimed
+- tests/test_secrets_gate.py::TestTrackedFilesGitFailure::test_spawn_error_yields_no_tracked_files
+- tests/test_secrets_gate.py::TestTrackedFilesGitFailure::test_nonzero_exit_yields_no_tracked_files
 attachments: []
 acceptance: []
 threat: info-disclosure
 ```
 New gate family: scan TRACKED files (git ls-files, never untracked/.env -- and a TRACKED .env is itself a critical finding) for real-looking API tokens and credentials; any match fails frob check unless the site is explicitly marked fake. INVESTIGATE FIRST: the existing frob:secret directive in the comment DSL -- build on its semantics (e.g. frob:secret fake annotation) rather than inventing a parallel marker; also honor obvious placeholder shapes (XXXX runs, asterisks, the literal words fake/changeme/example/placeholder inside the token) so docs and tests stay writable. Pattern table, named per provider with SPECIAL ATTENTION to: OpenAI (sk- and sk-proj- prefixed), Anthropic (sk-ant-), Stripe (sk_live_/rk_live_/pk_live_/whsec_ -- pk_test/sk_test count as real-looking too, flag at lower severity), and finance/common services: AWS (AKIA/ASIA access ids + paired 40-char secrets), GitHub (ghp_/gho_/ghs_/ghu_/github_pat_), GitLab (glpat-), Slack (xoxb-/xoxp-/xoxa-/xoxs-), Google (AIza...), Twilio, SendGrid (SG.), Plaid, Square (sq0), PayPal/Braintree, npm (npm_), PyPI (pypi-), HuggingFace (hf_), private-key PEM blocks (BEGIN ... PRIVATE KEY), and JWTs (eyJ header heuristic). Each pattern carries provider name, severity, and a format constraint (length/charset/checksum where the format has one) to cut false positives; generic high-entropy fallback only if it can be made honest (document the false-positive class per T-0151 precedent, or omit with written reasoning). CRITICAL implementation constraints: (1) NEVER echo the full matched token in any output, log, or ticket -- redact to provider + prefix + length; (2) the gate's own tests need realistic-SHAPED tokens: construct them clearly fake (e.g. correct prefix + XXXX/pattern-invalid tail) and/or annotate with frob:secret fake so the gate does not fail its own fixtures (T-0151 self-match lesson -- lock this with an explicit test that the test files themselves pass the gate); (3) wire into frob check as a default-on gate with its own rule ids and a waive path requiring a written reason; (4) run the new gate against the whole current repo and make it green honestly -- if anything real-looking is already tracked, that is a finding to surface loudly in the Done report, not to quietly waive. Drift-lock: a provider listed in the pattern table without a fixture exercising it fails the suite.
+
+## Done report
+
+Changed:
+- src/frob/gates/_secrets.py
+- src/frob/gates/__init__.py
+- tests/test_secrets_gate.py
+- docs/modules/gates.md
+- tickets.md
+
+Key decisions:
+- SEC003-unwaivable rationale: only live Stripe secret keys (`sk_live_...`) and
+  PEM private-key headers are unwaivable, because neither pattern has a
+  legitimate "intentionally tracked" reading -- a live Stripe secret key or a
+  private-key PEM block committed to a tracked file is a real, exploitable
+  leak in every case, unlike JWTs or Stripe test keys, which stay under the
+  waivable SEC001 (a JWT can be a test fixture with no real backing account,
+  and a Stripe *test*-mode key is by definition not a production credential).
+- `frob:secret-fake` naming decision: the existing `frob:secret <id>` DSL
+  verb already means something different -- it binds a code site to a strata
+  design's Secret-clearance `Node`, consumed by SYS001/SYS002 to prove every
+  design secret has a code attestation. Reusing that verb for "this literal
+  string is a fake credential" would mint a bogus graph edge and conflate two
+  unrelated concerns. Instead a new, non-DSL marker `frob:secret-fake` was
+  introduced: matched by plain text scan only, never routed through the DSL
+  verb table, never becomes a graph edge.
+
+Evidence: see the evidence list in this ticket's YAML frontmatter above
+(tests/test_secrets_gate.py, all classes).
+
+Gates (measured fresh, 2026-07-18, after fixing both findings below for real):
+- `frob ticket sweep T-0157`: re-recorded pre-work sweep against current
+  scope (dup=155, xref=6) -- clears PRE001, which was a mechanical
+  ticket-lifecycle staleness, not a code defect.
+- `secrets_gate` branch coverage: a prior pass on this ticket mischaracterized
+  its own TEST005 finding (81.2% branch coverage on `secrets_gate`,
+  `src/frob/gates/_secrets.py:513`) as "pre-existing, out-of-scope" debt.
+  That was wrong -- `secrets_gate` is code this ticket added, so the gap was
+  squarely this ticket's own responsibility. Root-caused via coverage.xml
+  branch/line inspection to three untested paths inside `secrets_gate`
+  itself: (a) the span-claim overlap continue in `_scan_line` (a later,
+  less-specific pattern's match nested inside an earlier, more-specific
+  pattern's already-claimed span); (b) `_tracked_files`'s `run_argv`
+  spawn-error path (`Err(GitError...)`, e.g. `git` missing/timeout); (c) the
+  `except (OSError, UnicodeDecodeError)` skip for a tracked binary/unreadable
+  file. Added three targeted tests to `tests/test_secrets_gate.py`
+  (`TestOverlapClaim`, `TestTrackedFilesGitFailure` x2,
+  `TestTrackedEnvFile::test_tracked_binary_file_is_skipped_not_crashed`),
+  all runtime-constructed per this file's existing self-match discipline (no
+  contiguous 20+ char literal secret-shaped token in the file's own source).
+  `secrets_gate` branch coverage is now 100.0% (measured via
+  `frob.gates._coverage.load_coverage` against a freshly regenerated
+  `coverage.xml`), above the 90% `unit_branch_cov` floor.
+- `make coverage` / `uv run pytest --cov=src/frob --cov-branch
+  --cov-report=xml`: full pytest suite green under coverage instrumentation
+  (exit 0), stamp_coverage stamped 340 files, source_sha=5305e4eb.
+- `uv run pytest tests/test_secrets_gate.py`: 47 passed, 0 failed (43
+  original + 1 SEC003-waiver-inert regression + 3 new coverage-closing
+  tests).
+- `uv run frob check --ticket T-0157`: exit 0, gates report 0 violation(s),
+  343 waived (unchanged, pre-existing repo-wide waivers unrelated to this
+  ticket). Fully clean.
+- `uv run frob sys audit`: exit 0 -- PROVED. Checked 8 views
+  (security:owasp-top-10, quality:web-performance-baseline,
+  quality:reliability-baseline, quality:web-quality-security-baseline,
+  compliance:all-regulations, compliance:us-coppa, compliance:eu-gdpr,
+  compliance:us-hipaa); selfconform 0 violations; "zero gaps across every
+  configured view"; self-conformance "PROVED -- zero SYS gaps".
+
+Filed: none
 
 <!-- ticket:T-0158 -->
 ```yaml

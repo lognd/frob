@@ -43,6 +43,9 @@ declaration).
 | SYS002 | sys | a `Boundary` or Secret-clearance `Node` in the design model has no `frob:boundary`/`frob:secret` code binding anywhere |
 | SYS003 | sys | (warn) tier-2 code binding (`frob.strata.bind_code`/`check_import_conformance`) finds an undeclared cross-component import between two design-bound files; warn-first on landing, intended to flip to error via `[gates.severity]` once proven |
 | SYS004 | sys | a `.strata` design file failed to parse/elaborate |
+| SEC001 | secrets | a git-tracked file contains text matching a provider's real-looking credential shape (waivable with reason) |
+| SEC002 | secrets | a git-tracked `.env`/`.env.*` file exists (`.env.example`/`.env.sample`/`.env.template` excepted) |
+| SEC003 | secrets | a git-tracked file contains a live Stripe secret key (`sk_live_...`) or a private-key PEM header -- unwaivable, see `_UNWAIVABLE_RULES` |
 | WAIVE001 | (always on) | a `frob:waive` directive is missing `reason="..."` |
 | WAIVE002 | (always on) | a `frob:waive` targets a rule id that can never be matched -- see "Waive boundary" below |
 
@@ -108,6 +111,8 @@ channel waivable, delete the `ArchCategory` half of
 <!-- frob:describes src/frob/gates/_baseline.py::is_baseline_stale -->
 <!-- frob:describes src/frob/gates/_baseline.py::delta_violations -->
 <!-- frob:describes src/frob/gates/_baseline.py::violation_fingerprint -->
+<!-- frob:describes src/frob/gates/_secrets.py::secrets_gate -->
+<!-- frob:describes src/frob/gates/_secrets.py::redact -->
 
 - `load_stamp` -- the raw `.frob/coverage-stamp` document, or `None` if
   never stamped/unreadable; TEST006 compares it against live file hashes.
@@ -134,6 +139,20 @@ channel waivable, delete the `ArchCategory` half of
 - `docanchor_gate` -- DOC002: a `frob:doc` target whose anchor doesn't
   resolve (missing `#anchor`, missing file, or `<slug>` matches neither a
   heading slug nor an explicit `<a id>`) is an error.
+- `secrets_gate` -- SEC001/SEC002/SEC003 (T-0157): scans every git-tracked
+  file (never untracked/`.env`-skipped -- a tracked `.env` IS the SEC002
+  finding) for real-looking provider credentials via a per-provider regex
+  table; default-on. `redact` is the one function allowed to turn a matched
+  token into printable output (`<provider prefix>... (<N> chars)`, never
+  the token itself). A site is exempted by a placeholder shape inside the
+  token (`XXXX`/`****` runs, or the words fake/changeme/example/placeholder)
+  or by a `frob:secret-fake` marker comment on the same or preceding line
+  -- deliberately NOT the pre-existing `frob:secret <construct-id>`
+  directive, which already binds code to a strata design's Secret-clearance
+  node id; see `frob.gates._secrets`'s module docstring for the full
+  reasoning. `SEC003` (live Stripe secret keys, PEM private-key headers) is
+  in `_UNWAIVABLE_RULES` alongside `TEST008`; `SEC001`/`SEC002` stay
+  waivable with a written reason like every other rule.
 - `run_gates` -- the single entry point: loads all state once, then runs
   the selected gates in parallel and merges/severity-overrides the result.
 
