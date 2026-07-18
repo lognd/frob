@@ -5182,7 +5182,7 @@ scaffold-dx tests; collection still parses cleanly.
 ```yaml
 id: T-0124
 title: frob check --ticket exits 1 with no diagnostic output (repro on closed T-0075)
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-07-18'
@@ -5191,7 +5191,10 @@ parent: null
 scope:
 - src/frob/app/check_runner.py
 - src/frob/check/**
-evidence: []
+- tests/system/test_cli_check.py
+- tickets.md
+evidence:
+- tests/system/test_cli_check.py::TestCheckTicketScopedAlwaysReportsOnFailure::test_ticket_scoped_nonzero_exit_has_diagnostic_output
 attachments: []
 acceptance: []
 threat: null

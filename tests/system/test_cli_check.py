@@ -198,6 +198,46 @@ class TestCheckErrors:
         assert r.returncode != 0
 
 
+class TestCheckTicketScopedAlwaysReportsOnFailure:
+    def test_ticket_scoped_nonzero_exit_has_diagnostic_output(self, tmp_path):
+        # frob:tests src/frob/app/check_runner.py::run kind="system"
+        # T-0124: `frob check --ticket <id>` must never exit nonzero with no
+        # diagnostic/summary output -- regression guard for the swallowed-
+        # failure symptom reported against T-0075 (root-caused as already
+        # fixed by T-0122/T-0125's logging-race repair; this pins the
+        # behavior so it cannot silently regress).
+        _git("init", "-q", "-b", "main", cwd=tmp_path)
+        _git("config", "user.email", "test@example.com", cwd=tmp_path)
+        _git("config", "user.name", "Test", cwd=tmp_path)
+        (tmp_path / "pkg.py").write_text(
+            "def add(x: int, y: int) -> int:\n    return x + y\n"
+        )
+        _git("add", "-A", cwd=tmp_path)
+        _git("commit", "-q", "-m", "init", cwd=tmp_path)
+
+        new = run(
+            "ticket",
+            "new",
+            "--title",
+            "unbound add()",
+            "--kind",
+            "bug",
+            "--scope",
+            "pkg.py",
+            "--path",
+            str(tmp_path),
+        )
+        assert new.returncode == 0, new.stdout + new.stderr
+        ticket_id = "T-0001"
+        assert ticket_id in (new.stdout + new.stderr)
+
+        r = run("check", str(tmp_path), "--ticket", ticket_id, "--only", "gates")
+        out = r.stdout + r.stderr
+        assert r.returncode != 0, out
+        assert out.strip(), "nonzero exit must never be silent"
+        assert ticket_id in out or "TEST001" in out
+
+
 def _git(*args, cwd):
     import subprocess
 

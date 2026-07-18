@@ -118,8 +118,7 @@ def _validate_containment_bounds(
             return Err(detect_ok.danger_err)
         if not detect_ok.danger_ok:
             _log.error(
-                "node %s: detection SLA %s%s exceeds revocation bound %s%s "
-                "(T-0076)",
+                "node %s: detection SLA %s%s exceeds revocation bound %s%s (T-0076)",
                 node.id,
                 contract.detect.value,
                 contract.detect.unit,
@@ -134,8 +133,7 @@ def _validate_containment_bounds(
             return Err(age_ok.danger_err)
         if not age_ok.danger_ok:
             _log.error(
-                "node %s: credential_age %s%s outlives revocation bound %s%s "
-                "(T-0076)",
+                "node %s: credential_age %s%s outlives revocation bound %s%s (T-0076)",
                 node.id,
                 contract.credential_age.value,
                 contract.credential_age.unit,
