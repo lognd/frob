@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from tree_sitter import Node
 
-from frob.lang._models import TreeNode
+from frob.lang._models import RawSymbol, TreeNode
 
 ByteRange = tuple[int, int]
 
@@ -207,6 +207,52 @@ def _leaf_tree_node(n: Node) -> TreeNode:
         label = text.decode("utf-8", errors="replace") if text else n.type
         return TreeNode(label=label)
     return TreeNode(label=n.type)
+
+
+# frob:doc docs/modules/lang.md#primitives
+def find_enclosing_symbol(
+    span: tuple[int, int], symbols: tuple[RawSymbol, ...]
+) -> str | None:
+    """Deepest (narrowest-span) symbol whose span fully contains `span`.
+
+    Span-comparison logic, not tree-sitter-node logic -- both the
+    tree-sitter comment walk (`frob.lang._extract`) and the text-based
+    strata walk (`frob.lang._walk_strata`) bind a comment to its enclosing
+    symbol by comparing `RawSymbol.span` tuples, so this lives here once
+    instead of twice.
+    """
+    best: RawSymbol | None = None
+    for sym in symbols:
+        if sym.span[0] <= span[0] and sym.span[1] >= span[1]:
+            width = sym.span[1] - sym.span[0]
+            if best is None or width < (best.span[1] - best.span[0]):
+                best = sym
+    return best.qualname if best is not None else None
+
+
+# frob:doc docs/modules/lang.md#primitives
+def find_following_symbol(
+    span: tuple[int, int], symbols: tuple[RawSymbol, ...]
+) -> str | None:
+    """Symbol starting within 2 lines after `span`'s end line, earliest first.
+
+    Shared by the tree-sitter and strata comment walks -- see
+    `find_enclosing_symbol`. `span[1]` need not be the comment's own end
+    line: `frob.lang._extract._extract_comments` passes a stacked-comment
+    *block*'s end line instead (T-0100 -- `_block_ends`/`_is_trailing_comment`
+    there), so a directive several lines above a `def` still resolves as
+    long as every intervening line is either another comment in the same
+    contiguous block or a single blank line. This function only ever
+    compares the span tuple it is given; the block-vs-own-line distinction
+    is entirely the caller's concern.
+    """
+    end = span[1]
+    best: RawSymbol | None = None
+    for sym in symbols:
+        if end < sym.span[0] <= end + 2:
+            if best is None or sym.span[0] < best.span[0]:
+                best = sym
+    return best.qualname if best is not None else None
 
 
 # frob:doc docs/modules/lang.md#primitives

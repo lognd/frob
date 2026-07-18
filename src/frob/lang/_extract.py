@@ -16,6 +16,8 @@ from __future__ import annotations
 from tree_sitter import Node, Tree
 
 from frob.lang._common import child_text, span_of, strip_comment_delims
+from frob.lang._common import find_enclosing_symbol as _find_enclosing
+from frob.lang._common import find_following_symbol as _find_following
 from frob.lang._models import RawComment, RawSymbol
 from frob.lang._walk_c import _walk_c_family
 from frob.lang._walk_python import _walk_python
@@ -160,39 +162,6 @@ def _block_ends(sorted_nodes: list[Node]) -> list[int]:
         )
         block_end[i] = block_end[i + 1] if chains_forward else ends[i]
     return block_end
-
-
-def _find_enclosing(
-    span: tuple[int, int], symbols: tuple[RawSymbol, ...]
-) -> str | None:
-    """Deepest (narrowest-span) symbol whose span fully contains `span`."""
-    best: RawSymbol | None = None
-    for sym in symbols:
-        if sym.span[0] <= span[0] and sym.span[1] >= span[1]:
-            width = sym.span[1] - sym.span[0]
-            if best is None or width < (best.span[1] - best.span[0]):
-                best = sym
-    return best.qualname if best is not None else None
-
-
-def _find_following(
-    span: tuple[int, int], symbols: tuple[RawSymbol, ...]
-) -> str | None:
-    """Symbol starting within 2 lines after `span`'s end line, earliest first.
-
-    `span[1]` is the comment's *block* end (T-0100), not necessarily its own
-    line -- see `_block_ends`. This is what lets a directive several lines
-    above a def still resolve, as long as every line between it and the def
-    is either another comment in the same contiguous block or a single
-    blank line.
-    """
-    end = span[1]
-    best: RawSymbol | None = None
-    for sym in symbols:
-        if end < sym.span[0] <= end + 2:
-            if best is None or sym.span[0] < best.span[0]:
-                best = sym
-    return best.qualname if best is not None else None
 
 
 # ------------------------------------------------------------------ imports

@@ -1,14 +1,18 @@
-"""Uniform tree-sitter parsing across five languages (docs/modules/graph.md, Phase 1).
+"""Uniform parsing across six grammars (docs/modules/graph.md, Phase 1; T-0077).
 
 `frob.graph` needs one shape -- symbols plus comments plus a content hash --
-regardless of whether the source file is Python, TypeScript, Rust, C, or
-C++. Hand-rolling five bespoke parsers (the fate of the retired, Python-only
-predecessor module) means five places to fix every bug and five places
-graph-level assumptions can silently drift apart. `tree-sitter-language-pack` gives one
-grammar-loading mechanism for all five; this package gives one extraction
-contract on top of it. Everything language-specific (node-type tables,
-publicness rules, doc-comment conventions) lives in `_extract.py`'s per-
-language walkers; everything else (models, dispatch, hashing, the Result
+regardless of whether the source file is Python, TypeScript, Rust, C, C++,
+or a `.strata` design file. Hand-rolling bespoke parsers (the fate of the
+retired, Python-only predecessor module) means one place to fix every bug
+per language and just as many places graph-level assumptions can silently
+drift apart. `tree-sitter-language-pack` gives one grammar-loading
+mechanism for the five code languages; this package gives one extraction
+contract on top of it. `.strata` has no tree-sitter grammar, so it routes
+through strata-core's own parser instead (`frob.lang._walk_strata`) but
+produces the identical `ParsedFile` contract -- see `parse_file`.
+Everything language-specific (node-type tables, publicness rules, doc-
+comment conventions) lives in `_extract.py`'s per-language walkers or
+`_walk_strata.py`; everything else (models, dispatch, hashing, the Result
 boundary) lives here.
 """
 
@@ -30,6 +34,7 @@ from frob.lang._extract import COMMENT_TYPES, extract
 from frob.lang._extract import extract_imports as _extract_imports
 from frob.lang._extract import iter_identifiers as _iter_identifiers
 from frob.lang._models import ParsedFile, RawComment, RawSymbol, SymbolKind, TreeNode
+from frob.lang._walk_strata import walk_strata as _walk_strata
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
@@ -59,7 +64,22 @@ _EXTENSION_TABLE: dict[str, tuple[str, str]] = {
     ".cxx": ("cpp", "cpp"),
 }
 
-_SUPPORTED_LANGUAGES = frozenset(label for _grammar, label in _EXTENSION_TABLE.values())
+# `.strata` has no tree-sitter grammar (`_parse`/`_EXTENSION_TABLE` below
+# is tree-sitter-only) -- `parse_file` special-cases it through
+# `frob.lang._walk_strata` instead (docs/modules/lang.md#strata, T-0077).
+# It is still a first-class `frob.lang` language for every purpose
+# `supported_languages()` signals: `parse_file` succeeds, symbols/comments
+# come back, and `frob.graph`/`frob.check` can bind `frob:doc`/`frob:tests`
+# to strata qualnames like any other grammar's. `extract_imports`,
+# `iter_identifiers`, `raw_tree`, and `symbol_tree` are tree-sitter escape
+# hatches with no strata analogue yet and return `Err(UnsupportedLanguage)`
+# for `.strata` paths -- see each function's docstring.
+_STRATA_EXTENSION = ".strata"
+_STRATA_LANGUAGE = "strata"
+
+_SUPPORTED_LANGUAGES = frozenset(
+    label for _grammar, label in _EXTENSION_TABLE.values()
+) | {_STRATA_LANGUAGE}
 
 
 # frob:doc docs/modules/graph.md#public-api
@@ -109,22 +129,20 @@ def _parse(path: Path) -> Result[tuple[Tree, bytes, str], LangError]:
     return Ok((tree, source, language_label))
 
 
-# frob:doc docs/modules/graph.md#public-api
-def parse_file(path: Path) -> Result[ParsedFile, LangError]:
-    """Read, parse, and extract `path` into a `ParsedFile` (dispatch by extension)."""
-    parsed_result = _parse(path)
-    if parsed_result.is_err:
-        return Err(parsed_result.danger_err)
-    tree, source, language_label = parsed_result.danger_ok
-
-    symbols, comments = extract(tree, source, language_label)
-    content_hash = hashlib.sha256(source).hexdigest()
+def _build_parsed_file(
+    path: Path,
+    language_label: str,
+    symbols: tuple[RawSymbol, ...],
+    comments: tuple[RawComment, ...],
+    content_bytes: bytes,
+) -> ParsedFile:
+    """Assemble and log a `ParsedFile` -- the tail both `parse_file` branches share."""
     parsed = ParsedFile(
         path=_display_path(path),
         language=language_label,
         symbols=symbols,
         comments=comments,
-        content_hash=content_hash,
+        content_hash=hashlib.sha256(content_bytes).hexdigest(),
     )
     _log.info(
         "parsed %s: language=%s symbols=%d comments=%d",
@@ -133,7 +151,51 @@ def parse_file(path: Path) -> Result[ParsedFile, LangError]:
         len(symbols),
         len(comments),
     )
+    return parsed
+
+
+# frob:doc docs/modules/graph.md#public-api
+def _parse_strata_file(path: Path) -> Result[ParsedFile, LangError]:
+    """`parse_file`'s `.strata` branch -- strata-core validation, no tree-sitter.
+
+    Mirrors `parse_file`'s tree-sitter branch shape (read -> extract ->
+    hash -> log -> `ParsedFile`, via the shared `_build_parsed_file` tail)
+    so both branches produce an identical contract for `frob.graph`, just
+    with `frob.lang._walk_strata.walk_strata` standing in for `extract`.
+    """
+    try:
+        source_bytes = path.read_bytes()
+    except OSError as exc:
+        _log.error("failed to read %s: %s", path, exc)
+        return Err(LangError.IoFailed)
+
+    walked = _walk_strata(source_bytes.decode("utf-8", errors="replace"))
+    if walked.is_err:
+        _log.error("strata parse failed for %s: %s", path, walked.danger_err)
+        return Err(LangError.ParseFailed)
+    symbols, comments = walked.danger_ok
+    parsed = _build_parsed_file(path, _STRATA_LANGUAGE, symbols, comments, source_bytes)
     return Ok(parsed)
+
+
+# frob:doc docs/modules/graph.md#public-api
+def parse_file(path: Path) -> Result[ParsedFile, LangError]:
+    """Read, parse, and extract `path` into a `ParsedFile` (dispatch by extension).
+
+    `.strata` files route through `_parse_strata_file` (strata-core's own
+    parser, no tree-sitter grammar exists for the language); every other
+    extension routes through the tree-sitter `_parse`/`extract` pair below.
+    """
+    if path.suffix.lower() == _STRATA_EXTENSION:
+        return _parse_strata_file(path)
+
+    parsed_result = _parse(path)
+    if parsed_result.is_err:
+        return Err(parsed_result.danger_err)
+    tree, source, language_label = parsed_result.danger_ok
+
+    symbols, comments = extract(tree, source, language_label)
+    return Ok(_build_parsed_file(path, language_label, symbols, comments, source))
 
 
 # frob:doc docs/modules/graph.md#public-api

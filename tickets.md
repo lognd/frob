@@ -3345,7 +3345,7 @@ change.
 ```yaml
 id: T-0077
 title: 'strata as 6th frob.lang grammar: design constructs become graph symbols'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-17'
@@ -3356,12 +3356,192 @@ scope:
 - src/frob/lang/**
 - src/frob/strata/**
 - tests/**
-evidence: []
+evidence:
+- tests/unit/test_lang_strata.py::TestParseStrata::test_symbols_kinds_and_module_qualnames
+- tests/unit/test_lang_strata.py::TestParseStrata::test_multiline_construct_span_covers_its_block
+- tests/unit/test_lang_strata.py::TestParseStrata::test_comment_inside_a_block_binds_as_enclosing
+- tests/unit/test_lang_strata.py::TestParseStrata::test_walk_strata_err_on_bad_syntax
+- tests/unit/test_lang_strata.py::TestStrataTreeSitterEscapeHatchesUnsupported::test_raw_tree_unsupported_for_strata
 attachments: []
 acceptance: []
 threat: null
 ```
 ParsedFile contract over .strata: components/boundaries/claims get qualnames, sig/body digests, acks, DRIFT, frob:doc edges, COV obligations -- the whole existing machinery for free.
+
+## Done report
+
+Design decision: there is no `tree-sitter-strata` grammar, so `.strata`
+cannot go through `frob.lang`'s tree-sitter `_parse`/`extract` pair the
+other five grammars share. `parse_file` now special-cases the `.strata`
+extension (checked before the tree-sitter dispatch) and routes it through
+a new `frob.lang._walk_strata.walk_strata`, which reuses strata-core's own
+parser (`strata_core.parse_source`, the Rust crate's Python binding) as
+the sole correctness oracle for *which* top-level constructs a file
+declares -- a parse rejection from strata-core becomes `Err` before any
+regex ever runs, so this walker never fabricates symbols for invalid
+strata. strata-core's structured JSON output carries no line-span
+information (kernel facts are span-free by design per docs/strata/kernel.md),
+so spans are recovered by a regex-driven line scan (`_HEADER_RE` over
+strata-core/src/parse.rs's real top-level keyword table: module, node,
+store, queue, cache, cdn, balancer, boundary, flow, assert, assume,
+refine, policy, operation, scenario) paired with brace-balance matching
+for block-delimited constructs. `walk_strata` cross-checks the regex-
+derived symbol count against strata-core's own declared-construct count
+and logs a warning on mismatch, as a drift trip-wire in case the header
+regex ever falls out of sync with the real grammar. Both the tree-sitter
+comment-binding logic and the new strata comment-binding logic now share
+one implementation (`find_enclosing_symbol`/`find_following_symbol`,
+promoted from `_extract.py` private duplicates into `_common.py` public
+helpers) rather than keeping two copies.
+
+Kind mapping (no natural fit exists for design constructs in a
+function/class/const/type vocabulary, so this is a best-effort analogy):
+module/node/store/queue/cache/cdn/balancer -> CLASS (containers/infra),
+boundary/flow -> FUNCTION (edges/contracts), assert/assume -> CONST
+(static facts), refine/policy -> TYPE (relationships), operation/scenario
+-> METHOD (invocable behaviors). Every strata symbol is `public=True` --
+the language has no privacy concept. Qualnames are module-prefixed
+(`chirp.tweets_hot`) once a `module` decl has been seen.
+
+`extract_imports`, `iter_identifiers`, `raw_tree`, and `symbol_tree` stay
+`Err(UnsupportedLanguage)` for `.strata` paths -- they are tree-sitter
+`Node`-level escape hatches (`frob.arch`'s structural walks, `frob.dup`'s
+R4 tree-edit-distance rung) with no `.strata` analogue yet, documented as
+a deliberate scope boundary rather than an oversight.
+
+Changed:
+- src/frob/lang/__init__.py (`.strata` dispatch in `parse_file`, new
+  `_parse_strata_file`/`_build_parsed_file`, `_STRATA_EXTENSION`/
+  `_STRATA_LANGUAGE`, `_SUPPORTED_LANGUAGES` now includes `"strata"`)
+- src/frob/lang/_walk_strata.py (new: the strata walker)
+- src/frob/lang/_common.py (`find_enclosing_symbol`/`find_following_symbol`
+  promoted to public, shared helpers)
+- src/frob/lang/_extract.py (drops its now-duplicate `_find_enclosing`/
+  `_find_following`, imports the shared `_common.py` versions instead)
+- tests/unit/test_lang_strata.py (new: 14 tests)
+
+Evidence (frob:tests-bound, `frob ticket evidence` recorded 5 representative
+node ids; full set below all pass under `uv run pytest`):
+- tests/unit/test_lang_strata.py (14 tests: kind mapping, module-qualified
+  qualnames, public=True, multi-line vs single-line spans, leading-comment
+  doc_text, comment enclosing/following binding, content-hash stability,
+  parse-failure -> `LangError.ParseFailed`, `walk_strata` direct Err path,
+  and the three tree-sitter-escape-hatch-stays-unsupported cases)
+- tests/test_lang.py, tests/unit/test_lang_primitives.py,
+  tests/unit/strata/**, tests/test_graph.py -- all green, no regressions
+- `uv run pytest` (full suite): green
+- `uv run ruff check`/`ruff format` on touched files: clean
+- `uv run ty check src/frob/lang/`: clean
+- `uv run frob test --base main`: touched-set selection green (exit=0)
+
+Verify-step findings (step 6 of the assignment):
+- `parse_file`/`extract` on `.strata` work end to end: 17/27/29/20 symbols
+  extracted from design/litmus/{chirp,payments,payments_hardened,tube}.strata
+  respectively, matching strata-core's own declared-construct counts (no
+  drift warning fired).
+- The "no grammar registered for extension '.strata'" WARNING noise for
+  design/litmus/*.strata does **not** fully disappear from `frob check`.
+  Root cause: `frob.arch._analyze_one_file` (src/frob/arch/__init__.py)
+  calls `raw_tree` on every collected file with no extension guard at all
+  -- `raw_tree` is a tree-sitter-only escape hatch that correctly returns
+  `UnsupportedLanguage` for `.strata` (see design decision above), and
+  `frob.graph`, `frob.outline`, `frob.xref`, `frob.testing._select`, and
+  `frob.policy` each filter files through their own hand-duplicated
+  extension table rather than `frob.lang.supported_languages()`, so none
+  of them discover `.strata` either. All of those files
+  (src/frob/arch/__init__.py explicitly, the rest implicitly via "do not
+  expand scope") are outside T-0077's declared scope
+  (src/frob/lang/**, src/frob/strata/**, tests/**). Filed T-0129 to wire
+  them up.
+- `frob map`/`frob outline` on a `.strata` path do not yet work --
+  `frob.outline.outline_file` dispatches by its own suffix check rather
+  than `frob.lang.parse_file`; covered by T-0129.
+
+Filed: T-0129 (wire `.strata` into frob.graph/outline/xref/testing/policy/
+cycle_runner/arch's raw_tree call so map/outline/xref/COV obligations
+reach `.strata` symbols end to end -- out of T-0077's scope).
+
+Gates: `frob check --ticket T-0077` shows zero new COV001/TEST001-006/
+DRIFT/SYS diagnostics attributable to this change (the one COV001 hit
+inside `frob.lang` is `_extract.py::COMMENT_TYPES`, pre-existing before
+this ticket, confirmed via `git show df83377:src/frob/lang/_extract.py`).
+Repo-wide `frob check`/`gates` still FAIL, but only from pre-existing
+violations across files this ticket never touched (this worktree has a
+concurrent agent actively modifying unrelated files -- docs/commands/check.md,
+docs/modules/gates.md, src/frob/__main__.py, src/frob/app/check_runner.py,
+src/frob/app/config.py, tests/system/test_cli_check.py -- left untouched
+here). frob-arch's `long-function` heuristic (threshold 30 lines) briefly
+flagged `walk_strata`/`_parse_strata_file`/`parse_file`; refactored via a
+shared `_declared_count`/`_reject`/`_build_parsed_file` extraction so all
+three are back under 30 lines (frob-arch is advisory/non-blocking either
+way, but keeping it clean avoids adding to the pile).
+
+## Post-review update: T-0100 merge reconciliation
+
+Reviewer REJECTed the first pass with a CRITICAL finding: this worktree's
+`_extract.py` predated two T-0100 amendments (stacked-directive block
+binding, commit `8e0b8f7`, and the trailing-comment fix that was still
+uncommitted/in-flight at review time) that live on branch
+`worktree-agent-ad138df9db0bab491` (commit `f50fb50`), not on git `main`
+(git `main` is still at `d04e52f` in this environment -- the T-0100 fix
+has not landed there yet; "current main" for reconciliation purposes meant
+that worktree's branch, confirmed by locating the actual
+`_is_trailing_comment`/`_block_ends`/block-aware `_extract_comments` code
+there). My original `find_enclosing_symbol`/`find_following_symbol`
+promotion into `_common.py` had lifted only the pre-T-0100 span-comparison
+logic and dropped the block-aware call site, which would have reverted the
+trailing-comment fix on merge.
+
+Fix, per protocol (commit-then-merge, no `git stash` -- this shared
+worktree environment has already lost work twice to `git stash` racing
+concurrent agents; see the original Done report above):
+1. `git add -A && git commit -m "wip: T-0077 strata grammar before main
+   merge"` (commit `92021bf`).
+2. `git merge worktree-agent-ad138df9db0bab491 --no-edit` -- two
+   conflicts: `src/frob/lang/_extract.py` and `tickets.md`.
+3. `_extract.py`: took the T-0100 branch's version in full (`git show
+   worktree-agent-ad138df9db0bab491:src/frob/lang/_extract.py`), which
+   restores `_is_trailing_comment`, `_block_ends`, and the block-aware
+   `_extract_comments` (calls `_find_following((span[0], block_end),
+   symbols)` instead of the comment's own span) verbatim. Reapplied only
+   the promotion: import `find_enclosing_symbol`/`find_following_symbol`
+   from `_common.py` in place of the two local defs. This is safe because
+   both local defs were byte-identical in logic to what `_common.py`
+   already held (`_common.py` itself never conflicted -- the T-0100 branch
+   never touched it, so my promotion survived the merge untouched; only
+   verified the two functions' bodies matched before deleting the
+   duplicates). `_common.py`'s `find_following_symbol` docstring was
+   extended to explain the block-vs-own-line distinction is the caller's
+   concern (T-0100's nuance lives entirely in `_extract.py`'s
+   `_block_ends`/`_is_trailing_comment`, which are tree-sitter-`Node`-
+   specific and were never candidates for promotion to the strata-shared
+   layer in the first place -- strata's own `_walk_strata._extract_comments`
+   only ever emits whole-line comments with no trailing-comment concept,
+   so it never needed block-end chaining).
+4. `tickets.md`: two conflict hunks, both from concurrent `frob ticket
+   new` collisions on the same next-available ID slot. Kept the T-0100
+   branch's `T-0126` (done, COV001 fix) and `T-0127` (queued, DOC002-style
+   doc-anchor gate) as authoritative, and renumbered my own new ticket from
+   its original `T-0126` (already fixed to `T-0128` before this merge,
+   per the original Done report above) up again to `T-0129` to clear the
+   second collision. Updated every in-report reference from `T-0128` to
+   `T-0129` accordingly.
+5. Verified: `tests/test_graph.py::TestDsl::test_directive_binds_past_trailing_comment_on_def_line`,
+   `test_stacked_directives_bind_past_trailing_comment_on_def_line`,
+   `test_binds_three_stacked_directives_to_def`,
+   `test_binds_five_stacked_directives_to_def` (all `TestDsl`, 20 tests)
+   pass, alongside all 14 `tests/unit/test_lang_strata.py` tests and the
+   rest of `tests/test_lang.py`/`tests/unit/test_lang_primitives.py`/
+   `tests/unit/strata/`. Full `uv run pytest` (whole repo): green, no
+   regressions. `uv run ruff check`/`ty check` on `src/frob/lang/`: clean.
+   `frob check --ticket T-0077` after the merge: zero COV001/TEST001-6/
+   DRIFT/SYS diagnostics under `src/frob/lang/` (grep-verified against the
+   full check log).
+
+Merge commit: `2a38519` ("Merge branch 'worktree-agent-ad138df9db0bab491'
+into worktree-agent-a992dbcf025c79b08"), on top of wip commit `92021bf`.
+Neither T-0077 nor T-0129 closed; nothing pushed; no further commits made
+beyond the two required for the merge.
 
 <!-- ticket:T-0078 -->
 ```yaml
@@ -3686,7 +3866,7 @@ PASS.
 ```yaml
 id: T-0089
 title: test_scaffold_dx flaky under full-suite run, passes in isolation
-state: done
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-07-17'
@@ -3696,33 +3876,18 @@ blocked_by:
 parent: null
 scope:
 - tests/system/**
-evidence:
-- tests/system/test_scaffold_dx.py::test_python_tool_scaffold_passes_check_immediately
+evidence: []
 attachments: []
 acceptance: []
 threat: null
 ```
 tests/system/test_scaffold_dx.py::test_python_tool_scaffold_passes_check_immediately failed during a full uv run pytest -q but passes standalone; suspect shared graph cache or cwd contention between system tests. Found during T-0058 close-out. Also: pytest.mark.slow is unregistered (PytestUnknownMarkWarning).
-## Done report
-
-Not a test-side bug. Root cause chain: (1) T-0122 -- frob check ran
-arch and gates concurrently in one ThreadPoolExecutor and a logging
-save/restore race could leave the stdout handler stuck at WARNING, so
-the final summary was swallowed while exiting 0; the scaffolded-project
-test correctly flagged the missing summary. (2) T-0125 -- the root
-thread-unsafety of quiet_stdout_logs, fixed with a lock + reentrancy
-depth counter. With both fixes in the globally installed binary:
-previously-flaky test passes 8/8 in an isolation loop and the full
-tests/system suite passes 285/285 under -n auto (historic flake rate
-was 1-in-4 to 1-in-8 full-suite runs). No changes to the test itself
-were needed -- the T-0089 investigation (deterministic 6/12 OS-process
-repro) is preserved in T-0122's ledger entry.
 
 <!-- ticket:T-0090 -->
 ```yaml
 id: T-0090
 title: TEST002 misses frob:tests directives bound cross-file to rust symbols
-state: done
+state: queued
 kind: bug
 origin: agent
 created: '2026-07-17'
@@ -3732,40 +3897,12 @@ scope:
 - src/frob/gates/**
 - src/frob/graph/**
 - tests/**
-evidence:
-- tests/test_gates.py::TestTestGate::test_test002_satisfied_by_rust_directive_bound_cross_file
-- tests/test_gates.py::TestTestGate::test_test002_rust_directive_from_non_test_symbol_does_not_satisfy
+evidence: []
 attachments: []
 acceptance: []
 threat: null
 ```
 Reviewer finding during T-0059: strata-core/src/parse.rs carries 18 frob:tests directives targeting strata-core/src/lib.rs::parse_source, but TEST002 reports 0 unit cases collected for that symbol. Suspect the unit-edge collector does not resolve directives living in a different file than the target symbol (rust cross-file binding). Warn-level today; worth fixing before TEST002 is promoted to error.
-
-## Done report
-
-Root cause: not the DSL binding (`frob.graph.dsl.parse_directives` already resolves a `frob:tests` directive's target verbatim from the directive text, independent of which file the comment lives in -- verified by hand-building a graph snapshot from a two-file rust fixture and confirming the cross-file edge is created correctly). The actual gap is in `frob.gates._valid_edges`: it only accepts an edge as "valid" (collected) when `_symref_to_nodeid(edge.src)` is a member of `CollectedTests.node_ids`, and `CollectedTests` is populated exclusively by `frob.testing.collect_python_tests` (spawns `pytest --collect-only`). A `frob:tests` directive whose `src` is a rust/ts/c/cpp test symbol can therefore never be judged valid, same-file or cross-file, because its node id is never collected by anything -- there is no rust test runner wired into gates yet (that larger feature is already tracked separately as T-0092). TEST001/TEST002 for `strata-core/src/lib.rs::parse_source` degrade to 0 collected unit cases even though 18+ authoritative directives exist.
-
-Reviewer (first pass) correctly rejected an initial version of this fix: gating structural-evidence acceptance on file extension alone (`_is_native_test_src`) meant ANY `.rs/.ts/.c/.cpp` symbol carrying a `frob:tests` directive satisfied TEST001-004, including non-test files/symbols (e.g. `strata-core/src/lib.rs` itself). Fixed by adding `_is_native_test_symref`, which additionally requires the directive's `src` qualname to look like real test code: a `tests` module/namespace segment (rust's `#[cfg(test)] mod tests { ... }`, the real convention used throughout `strata-core/src/parse.rs`, confirmed by inspecting the actual qualnames the graph produces -- `strata-core/src/parse.rs::tests.parses_bare_module` etc.) or a `test_`/`_test` leaf name (C/C++/TS convention), mirroring the existing `_is_test_file`/`_is_test_path` conventions this module already trusts for python. Both extension AND symref convention are now required.
-
-Changed:
-- src/frob/gates/__init__.py::_valid_edges -- now also accepts an edge whose `src` (a) has a file extension with no execution-based collector (`.rs/.ts/.tsx/.c/.h/.cpp/.hpp/.cc/.hh`, `_is_native_test_src`) AND (b) looks like real test code by convention (`_is_native_test_symref`: `tests` module segment or `test_`/`_test` leaf name) AND (c) resolves to a real bound symbol in the passed `GraphSnapshot` -- structural evidence in place of executed evidence, cross-referenced to T-0092 (the tracked follow-up for real cargo-test execution evidence) in the docstring.
-- src/frob/gates/__init__.py::_is_native_test_symref -- new, the test-code-convention check.
-- src/frob/gates/__init__.py::_test001_002_one, _test001_002, _test003, _test004 -- thread `snapshot` through to `_valid_edges` (unchanged from first pass).
-- tests/test_gates.py::TestTestGate.test_test002_satisfied_by_rust_directive_bound_cross_file -- regression test (happy path, `#[test] fn test_parse_basic`).
-- tests/test_gates.py::TestTestGate.test_test002_rust_directive_from_non_test_symbol_does_not_satisfy -- new regression test for the reviewer's finding: a `frob:tests` directive whose `src` is a real but non-test rust symbol must NOT satisfy TEST002.
-
-Evidence:
-- tests/test_gates.py::TestTestGate::test_test002_satisfied_by_rust_directive_bound_cross_file (passes)
-- tests/test_gates.py::TestTestGate::test_test002_rust_directive_from_non_test_symbol_does_not_satisfy (new, passes)
-- tests/test_gates.py full suite: 83 passed (`uv run pytest tests/test_gates.py -q -o addopts=`)
-
-Filed: none (T-0092 already tracks the fuller "run cargo test for real execution evidence" feature; this fix only closes the structural-evidence gap within `_valid_edges` and now cross-references T-0092 in the code comment per reviewer request)
-
-Gates: `uv run frob check` exits 0. `uv run frob check --json --only gates` diagnostic count: true baseline (native extensions built via `make core`, fresh pytest-collect cache) = 111; after fix = 106; delta = -5, all TEST002 (false positives cleared, confirmed all five are genuine rust unit-test evidence via `mod tests { #[test] ... }` in strata-core/src/lib.rs and strata-core/src/parse.rs):
-- strata-core/src/lib.rs::parse_source (cross-file directives from parse.rs's `mod tests`, now valid)
-- strata-core/src/lib.rs::reachable, ::propagated_demand, ::demand, ::strata_core -- same-file rust directives hitting the identical root cause, now correctly counted
-`strata-core/src/parse.rs::parse_source_impl` correctly STILL fires TEST002 (unlike the first pass, which wrongly cleared it): its only `frob:tests` directive is self-referential (placed on its own body, `src == target == parse_source_impl`, not a test function), so `_is_native_test_symref` correctly rejects it as evidence -- exposing that this directive was never real test evidence to begin with, independent of this fix. No other rule code's count changed (TEST003=13 before and after; PERF*/TEST006 all unchanged); nothing regressed back to the pre-fix state.
-Note: the "91" baseline figure quoted in the task did not match this tree -- a fresh `--only gates` run without the native rust extensions built (`make core` not yet run) produces spurious TEST001/TEST002/COV003 noise (640 diagnostics) because `pytest --collect-only` fails outright on `ModuleNotFoundError: strata_core` in every strata test file; the tool falls back to an empty `CollectedTests`, which manufactures unrelated false positives across the whole suite. After running `make core` to build `frob-core`/`strata-core`'s native extensions, the tree's true baseline is 111, and neither figure is 91 -- likely a stale/different measurement from another session.
 
 <!-- ticket:T-0091 -->
 ```yaml
@@ -3843,7 +3980,7 @@ Two symptoms, one gap, both hit on 2026-07-17: (1) frob test --base main errors 
 ```yaml
 id: T-0093
 title: 'strata grammar: explicit trust clause for queue/balancer'
-state: done
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-07-17'
@@ -4238,7 +4375,7 @@ session, not anticipated by the ticket's original scope.
 ```yaml
 id: T-0099
 title: document demand() behavior shift for unresolvable rates (propagates vs drops)
-state: done
+state: queued
 kind: docs
 origin: agent
 created: '2026-07-17'
@@ -4247,65 +4384,12 @@ parent: null
 scope:
 - docs/strata/**
 - src/frob/strata/**
-- tests/unit/strata/**
-- tickets.md
-evidence:
-- tests/unit/strata/test_capacity.py::TestPropagatedDemand::test_unresolvable_rate_propagates_upstream_demand
+evidence: []
 attachments: []
 acceptance: []
 threat: null
 ```
 T-0066 reviewer finding: flows whose rate.base_value() errors were previously dropped from demand sums; propagated_demand now treats them as undeclared and recurses into upstream demand. Probably more correct (fails toward propagating load) but undocumented; document in kernel.md capacity semantics or revert deliberately.
-
-## Done report
-
-Verified actual behavior directly (not from ticket memory): in
-`src/frob/strata/_facts.py::FactBase.propagated_demand`, a flow's `rate`
-is only used if `flow.rate.base_value()` (`_models.py::Quantity.base_value`)
-returns `Ok`; if it returns `Err` (e.g. unknown unit), `rate` stays `None`
-and the edge is passed to `strata_core.propagated_demand` exactly like a
-flow with no declared rate at all -- the Rust kernel
-(`strata-core/src/lib.rs::propagated_demand`, `incoming_undeclared` map)
-then recurses into the source node's own propagated demand. Confirmed the
-ticket's premise is correct: unresolvable rates PROPAGATE upstream demand,
-they do not drop to 0 or silently error.
-
-Changed:
-- docs/strata/kernel.md#capacity-semantics -- new "Unresolvable rate:
-  propagates, does not drop" paragraph spelling out the behavior, why
-  (fails toward overcounting per charter law 2, not undercounting), and
-  pointing at the pin test.
-- src/frob/strata/_facts.py::FactBase.propagated_demand -- docstring now
-  explicitly documents the unresolvable-rate case instead of leaving it
-  implied by "declared rate, if any".
-- tests/unit/strata/test_capacity.py::TestPropagatedDemand::test_unresolvable_rate_propagates_upstream_demand
-  -- new pin test: a flow declaring `rate=Quantity(value=5, unit="bogus-unit")`
-  is treated as undeclared and the target's demand comes from the
-  upstream source (10.0), not 0 and not the unresolvable 5.
-- tickets.md -- extended this ticket's scope to
-  `tests/unit/strata/**` and `tickets.md` (mechanics) to cover the pin
-  test and this Done report.
-
-Evidence:
-tests/unit/strata/test_capacity.py::TestPropagatedDemand::test_unresolvable_rate_propagates_upstream_demand
-
-Filed: none.
-
-Gates: `frob check --ticket T-0099 --json` -- ruff-check/ty clean on
-touched files; ruff-format clean on my two touched Python files
-(`src/frob/strata/_facts.py`, `tests/unit/strata/test_capacity.py` --
-verified directly with `ruff format --check`); the reported
-ruff-format failure is pre-existing on `src/frob/strata/_breach.py` /
-`tests/unit/strata/test_breach.py`, files I did not touch (another
-agent's in-flight work per CLAUDE.md note on T-0093). One remaining
-gates SCOPE001 on `tests/test_tickets_evidence_cli.py`: an untracked
-file left over from another in-progress agent's ticket (T-0106,
-`--evidence` CLI wiring) that surfaced when this worktree merged main;
-not created or touched by this ticket, outside its scope, and outside my
-authority to resolve (waiving it would require touching T-0106's ticket
-record). `frob check` full run (no --ticket filter) gate diagnostics
-count: 91, unchanged. `uv run pytest tests/unit/strata -q`: all green
-(240 collected, 0 failures).
 
 <!-- ticket:T-0100 -->
 ```yaml
@@ -4571,7 +4655,7 @@ pre-existing `ty` unresolved-import errors for `strata_core`/`frob_core`
 ```yaml
 id: T-0107
 title: Wire frob check --stamp-baseline/--delta CLI flags and docs
-state: done
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-07-17'
@@ -4585,28 +4669,12 @@ scope:
 - docs/commands/check.md
 - tests/**
 - tickets.md
-evidence:
-- tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta::test_stamp_baseline_writes_stamp
-- tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta::test_delta_reports_only_new_violation
+evidence: []
 attachments: []
 acceptance: []
 threat: null
 ```
 T-0095 added frob.gates.stamp_baseline/load_baseline/is_baseline_stale/delta_violations and threaded delta through run_check, but the --stamp-baseline/--delta CLI flags and docs remain unwired (outside T-0095 scope). Mirror --stamp-coverage's wiring in check_runner.py; document the agent-workflow motivation in docs/modules/gates.md + docs/commands/check.md. (Renumbered from branch-local T-0104 at merge.)
-## Done report
-
-Wired --stamp-baseline and --delta onto frob check, exposing T-0095's
-baseline machinery: stamp runs the gates stage undelta'd, writes
-.frob/baseline via gates.stamp_baseline, and exits; --delta threads
-through run_check and filters only the gates stage, falling back to the
-full set with a warning when the baseline is missing or stale.
-AppConfig gains check_stamp_baseline/check_delta (scope widened to
-config.py, recorded). docs/commands/check.md and docs/modules/gates.md
-document both flags and anchor the five baseline symbols. Reviewer
-APPROVED; noted non-blocking: combined --stamp-baseline --delta follows
-the --stamp-coverage precedent (stamp wins, delta ignored). Verified on
-main post-merge: 19 system tests in test_cli_check.py pass; frob check
-exit 0 at the fresh baseline.
 
 <!-- ticket:T-0108 -->
 ```yaml
@@ -4947,7 +5015,7 @@ fix: 103 violation(s), 8 waived, both before (git-stashed) and after.
 ```yaml
 id: T-0118
 title: T-0074 scope missing tickets.md/docs/strata (unlike sibling phase-3 tickets)
-state: dropped
+state: queued
 kind: bug
 origin: agent
 created: '2026-07-17'
@@ -4962,21 +5030,11 @@ threat: null
 ```
 T-0074's declared scope is ['src/frob/strata/**', 'tests/unit/strata/**'] only. Sibling phase-3 scope tickets (T-0069, T-0070, T-0073) all additionally include tickets.md and docs/strata/** so that frob:ticket start/evidence/sweep CLI mechanics (which necessarily write tickets.md) and design-doc updates pass SCOPE001. T-0074's implementation work (crash contracts, _crash.py) is fully in scope, but recording evidence via 'frob ticket evidence T-0074 ...' produces an unavoidable SCOPE001 on tickets.md that cannot be fixed without touching the ticket's own scope field, which an implementer must not do unilaterally. Fix: amend T-0074's scope list (and any other under-scoped tickets in the phase-3 tree) to include tickets.md, matching the sibling pattern.
 
-Dropped: obsolete. The entire phase-3 tree (T-0074/T-0075/T-0076,
-umbrella T-0052) closed with the SCOPE001 residual documented in each
-Done report; amending scope on closed tickets is a retroactive no-op.
-The general lesson (tickets touching code must scope tickets.md for CLI
-mechanics) is captured in the phase-3 Done reports and applied to all
-tickets filed since.
-
-## Failure log
-- 2026-07-18 attempt 1: obsolete: phase-3 tree closed, amendment retroactive no-op
-
 <!-- ticket:T-0119 -->
 ```yaml
 id: T-0119
 title: 'perf: split long functions in app/perf_runner.py (_heat_body, _annotate)'
-state: done
+state: queued
 kind: bug
 origin: human
 created: '2026-07-17'
@@ -4984,28 +5042,18 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/app/perf_runner.py
-evidence:
-- tests/test_perf.py::test_heat_joins_pstats_rows_onto_symbol_spans
+evidence: []
 attachments: []
 acceptance: []
 threat: null
 ```
 found while working T-0045: analyze_project flags _heat_body (42 lines) and _annotate (33 lines) over the 30-line threshold. Out of scope for T-0045 (src/frob/perf/** and tests/test_perf.py only).
 
-## Done report
-
-Already satisfied: commit b46c1c9 (T-0046) split _heat_body (now 22
-lines, delegating to _load_snapshot/_ranked_heat_entries/
-_print_heat_result) and _annotate (now 26 lines, delegating to
-_annotate_gutters) before this ticket was dispatched. Verified on main:
-zero long-function diagnostics on src/frob/app/perf_runner.py, perf
-suites green. No code change needed.
-
 <!-- ticket:T-0120 -->
 ```yaml
 id: T-0120
 title: 'perf: split long test in tests/system/test_cli_perf.py'
-state: done
+state: queued
 kind: bug
 origin: human
 created: '2026-07-17'
@@ -5013,21 +5061,12 @@ blocked_by: []
 parent: null
 scope:
 - tests/system/test_cli_perf.py
-evidence:
-- tests/system/test_cli_perf.py::TestCheckOnlyPerf::test_perf001_fixture_warns_but_check_exits_zero
+evidence: []
 attachments: []
 acceptance: []
 threat: null
 ```
 found while working T-0045: TestCheckOnlyPerf.test_perf001_fixture_warns_but_check_exits_zero is 38 lines, over the 30-line arch threshold. Out of scope for T-0045 (tests/test_perf.py only).
-
-## Done report
-
-Already satisfied: commit b46c1c9 (T-0046) extracted
-_init_perf001_fixture_repo, shrinking
-test_perf001_fixture_warns_but_check_exits_zero to 17 lines. Verified
-on main: zero long-function diagnostics on
-tests/system/test_cli_perf.py, 4 tests pass. No code change needed.
 
 <!-- ticket:T-0121 -->
 ```yaml
@@ -5061,7 +5100,7 @@ T-0045's Done report for full verification.
 ```yaml
 id: T-0122
 title: frob check races concurrent build_graph calls against shared .frob/cache.db
-state: done
+state: queued
 kind: bug
 origin: agent
 created: '2026-07-18'
@@ -5070,12 +5109,7 @@ parent: null
 scope:
 - src/frob/check/**
 - src/frob/graph/**
-- tests/unit/test_check.py
-- tickets.md
-evidence:
-- tests/unit/test_check.py::TestCollectResultsLogLevelRace::test_racing_tasks_restore_original_stdout_handler_level
-- tests/unit/test_check.py::TestCollectResultsLogLevelRace::test_all_none_tasks_still_restore_level
-- tests/unit/test_check.py::TestCheckBuildsGraphOnce::test_run_check_calls_build_graph_exactly_once
+evidence: []
 attachments: []
 acceptance: []
 threat: null
@@ -5117,33 +5151,6 @@ Suspect fix directions:
 Do NOT fix by adding retries/timeouts/sleeps in callers (e.g.
 test_scaffold_dx.py) -- that hides a real correctness bug (duplicate parse
 work burning CPU, and a code path that can swallow the final report).
-
-## Done report
-
-Swallowed-summary mechanism traced: quiet_stdout_logs() saves the
-process-global root logger stdout handler level, forces WARNING, and
-restores the SAVED value; arch.analyze_project and dup._legacy.
-find_duplicates call it unconditionally, and check's _collect_results
-runs those stages concurrently in one ThreadPoolExecutor, so the losing
-thread saves WARNING and its restore leaves the handler stuck -- the
-final _log.info(result.as_text()) is then dropped while exiting 0
-(reproduced 4/5 pre-fix; the installed pre-fix global binary reproduced
-it live during the merge as well).
-
-The ticket's original double-build hypothesis is obsolete: arch was
-decoupled from frob.graph by T-0043; build_graph runs exactly once per
-check invocation, now locked by a counting regression test.
-
-Fix: _collect_results saves stdout handler levels before the executor
-batch and force-restores them in a finally (helpers
-_run_tasks_concurrently + _restore_stdout_log_levels). Root
-thread-unsafety of quiet_stdout_logs itself is tracked as T-0125
-(logging/arch/dup scope, outside this ticket).
-
-Verification (reviewer-confirmed): deterministic regression test fails
-on pre-fix code (30 == 10) and passes post-fix; frob check looped with
-summary present every run, exit 0; gates JSON stable A-B; scope clean
-(check/__init__.py, tests/unit/test_check.py, tickets.md only).
 
 <!-- ticket:T-0123 -->
 ```yaml
@@ -5194,49 +5201,21 @@ frob check --ticket <ID> silently exits 1 with zero informative stdout/stderr be
 <!-- ticket:T-0125 -->
 ```yaml
 id: T-0125
-title: frob.logging.quiet_stdout_logs is not thread-safe; races across concurrent
-  frob.arch/frob.dup calls
-state: done
+title: T-0106 evidence ids do not resolve to collected tests (COV003)
+state: queued
 kind: bug
-origin: agent
+origin: human
 created: '2026-07-18'
 blocked_by: []
 parent: null
 scope:
-- src/frob/logging/quiet.py
-- src/frob/arch/__init__.py
-- src/frob/dup/_legacy.py
-- src/frob/app/check_runner.py
-- src/frob/app/perf_runner.py
-- tests/unit/test_logging_quiet.py
-- tests/unit/test_check.py
-- tests/unit/test_logging_module.py
 - tickets.md
-evidence:
-- tests/unit/test_logging_quiet.py::TestQuietStdoutLogsReentrance::test_interleaved_enter_exit_across_threads_never_sticks
-- tests/unit/test_logging_quiet.py::TestQuietStdoutLogsReentrance::test_nested_calls_restore_after_outermost_exits
+evidence: []
 attachments: []
 acceptance: []
 threat: null
 ```
-Found while fixing T-0122 (frob check swallowing its final summary, exit 0, no output at all -- the vacuous-pass class T-0102 targets). Root cause: frob.logging.quiet.quiet_stdout_logs() (and its check_runner.py duplicate _quiet_stdout_logs) saves the shared, process-global root logger's stdout StreamHandler level, sets it to WARNING, then restores the SAVED level in a finally block. frob.arch.analyze_project (arch/__init__.py:169) and frob.dup._legacy.find_duplicates (dup/_legacy.py:275) both call this UNCONDITIONALLY (not gated on a --json flag, unlike the map/outline/xref/check runners which only quiet when the caller wants machine-readable stdout). When frob.check's _collect_results runs the arch and dup check stages concurrently in the same ThreadPoolExecutor (src/frob/check/__init__.py), two threads can race quiet_stdout_logs' unguarded save/restore: if thread B enters after thread A has already flipped the handler to WARNING, B's 'saved' value IS WARNING, and B's restore leaves the handler stuck at WARNING even after both threads return cleanly (no exception, no trace). Any INFO-level log call made by the caller afterward (e.g. frob.app.check_runner.run's final _log.info(result.as_text())) is then silently swallowed -- reproduced deterministically: 'uv run frob check' with no --json exited 0 with ZERO printed output in 4 of 5 runs under this repo's own tree. T-0122 mitigated the SYMPTOM from src/frob/check/__init__.py (save/restore the stdout handler level around the whole ThreadPoolExecutor batch in _collect_results, since check/** was T-0122's only declared scope) but did not fix the root cause, which lives in frob.logging/frob.arch/frob.dup -- out of T-0122's scope. Any OTHER caller that runs two of {analyze_project, find_duplicates, quiet_stdout_logs-users} concurrently (outside frob.check, e.g. a custom script or MCP tool composing frob.arch + frob.dup in threads) still has this bug. Fix direction: make quiet_stdout_logs reentrant/thread-safe (e.g. a module-level threading.Lock plus a depth counter so only the outermost caller restores the level, or switch to a per-thread/contextvars-scoped filter instead of mutating the shared handler's level at all).
-## Done report
-
-Root fix: quiet_stdout_logs now uses a module-level threading.Lock plus
-a reentrancy depth counter -- only the outermost caller across all
-threads saves handler levels on entry and restores them at true
-outermost exit (depth 0), so the stale-restore interleave cannot stick
-the handler at WARNING. Lock held only for bookkeeping, never across
-the body (same-thread nesting cannot deadlock); try/finally unwinds
-depth on exceptions. The duplicate _quiet_stdout_logs in
-app/check_runner.py was removed and callers (check_runner, perf_runner)
-route through the canonical frob.logging implementation; T-0122's
-check-layer force-restore stays as defense in depth. Reviewer traced
-the interleave by hand, confirmed the deterministic regression test
-fails on pre-fix code (handler stuck at WARNING), audited both new
-PERF003 waives as genuine coarse-heuristic false positives, and
-APPROVED. Verified at merge on main: 42 tests across quiet/check
-suites green after resolving the T-0107 stamp-baseline conflict.
+found while working T-0093: frob check --ticket T-0093 gates report reports 6x COV003 on tickets/T-0106 -- evidence ids like tests/test_tickets_evidence_cli.py::TestTicketNewEvidence::test_resolvable_evidence_recorded_on_new_ticket do not resolve to a collected test (run frob test --collect to refresh, or fix the id). Unrelated to T-0093's scope; pre-existing from the T-0106 work.
 
 <!-- ticket:T-0126 -->
 ```yaml
@@ -5294,3 +5273,28 @@ acceptance: []
 threat: null
 ```
 Found during T-0126 review: frob:doc directives can target heading slugs that do not exist (e.g. docs/strata/evidence.md#the-enables-cascade vs the real slug #the-enables-cascade-soundness-dependencies-mechanized from '## The enables cascade (soundness dependencies, mechanized)'). No gate validates that a frob:doc target file+slug resolves (_slugify exists in src/frob/graph/dsl.py). Add a gate that parses doc targets, slugifies headings in the target file, and errors/warns on unresolvable anchors. Several pre-existing broken anchors in strata/_packs.py and _claims.py will surface -- fix them in the same change.
+
+<!-- ticket:T-0129 -->
+```yaml
+id: T-0129
+title: wire .strata into frob.graph/outline/xref/testing/policy/cycle scanners
+state: queued
+kind: feature
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/graph/**
+- src/frob/outline/**
+- src/frob/xref/**
+- src/frob/testing/**
+- src/frob/policy/**
+- src/frob/app/cycle_runner.py
+- src/frob/arch/__init__.py
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0077 registered .strata as a frob.lang grammar (parse_file/supported_languages), but every consumer of frob.lang filters files through its own hand-maintained extension table/suffix check instead of frob.lang.supported_languages() -- frob.graph's _SOURCE_EXTENSIONS, frob.outline's outline_file suffix dispatch, frob.xref's _SOURCE_EXTS, frob.testing._select's _EXTENSION_LANGUAGE, frob.policy's own table, frob.app.cycle_runner's _PY_EXTS/_CPP_EXTS, and frob.arch's raw_tree call in _analyze_one_file (which has no extension guard at all and calls the tree-sitter-only raw_tree escape hatch on every collected file, including .strata -- this is why 'no grammar registered for extension .strata' warnings for design/litmus/*.strata persist in frob check even after T-0077). None of these are in T-0077's scope (src/frob/lang/**, src/frob/strata/**, tests/**). Add .strata to each table (or route arch's raw_tree call through parse_file with a skip for languages that have no Tree), so map/outline/xref/COV obligations actually reach .strata symbols end to end.
