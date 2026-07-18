@@ -434,19 +434,44 @@ selection green (exit=0).
 id: T-0144
 title: pytest --collect-only hard-fails repo-wide when strata_core native ext is absent,
   blocking frob ticket evidence for any ticket
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-18'
 blocked_by: []
 parent: null
-scope: []
-evidence: []
+scope:
+- tests/unit/strata/test_kernel_properties.py
+- tickets.md
+evidence:
+- tests/test_testing.py::TestCollectPythonTests::test_parses_node_ids_and_caches_on_content_hash
 attachments: []
 acceptance: []
 threat: null
 ```
 Found while working T-0141: tests/unit/strata/test_kernel_properties.py does 'import strata_core' at module level with no guard/importorskip. In an environment without the native extension built (uv tool install frob with no natives, matching the T-0133/T-0134 degraded-import precedent used elsewhere in frob.lang), 'uv run pytest --collect-only -q -o addopts=' errors out entirely (Interrupted: 1 error during collection), which frob.testing.collect_python_tests treats as a hard failure. This in turn makes 'frob ticket evidence <id> <node-id>...' fail for EVERY ticket, not just ones touching strata, since it always collects the whole repo first. Fix: guard the strata_core import in that test module (pytest.importorskip or equivalent) so collection degrades gracefully like frob.lang already does, matching the natives-less precedent.
+
+## Done report
+
+Changed:
+- tests/unit/strata/test_kernel_properties.py (module-level `import strata_core` replaced with `strata_core = pytest.importorskip("strata_core", reason="strata_core native extension not built -- run `make core`")`, matching the existing `frob_core` skip precedent in tests/unit/test_dup_core.py; docstring extended to record the T-0144 fix and its rationale; `frob:ticket T-0144` directive added)
+
+Swept for the same defect class (unguarded module-level `import strata_core`/`import frob_core` in tests/): only test_kernel_properties.py had it at module level. tests/unit/test_dup_core.py already guards its `frob_core` import correctly (imported inside a test function, plus a `pytestmark = pytest.mark.skipif(not HAS_CORE, ...)` gate) and tests/unit/strata/test_capacity.py's `import strata_core` is inside a hypothesis test function body, not module level, so it does not block `pytest --collect-only` (collection never executes function bodies). No other file needed a fix; ticket scope was not extended beyond tests/unit/strata/test_kernel_properties.py and tickets.md.
+
+Verification (natives-less case, this worktree has no strata_core/frob_core built, so this is not simulated but the real environment):
+- `uv run pytest --collect-only -q -o addopts=` over the whole repo: before this fix, hard error (`Interrupted: 1 error during collection`) on `tests/unit/strata/test_kernel_properties.py`'s bare `import strata_core`; after this fix, exits 0, `1792 tests collected`.
+- `uv run pytest tests/unit/strata/test_kernel_properties.py -q -o addopts= -rs`: `1 skipped` with the loud reason `strata_core native extension not built -- run \`make core\`` (was a collection error before).
+
+Verification (natives-present case, simulated via a stub `strata_core.py` module on `PYTHONPATH` implementing `reachable`/`worst_age`/`demand`/`propagated_demand`, since this worktree has no native build):
+- `PYTHONPATH=<stub dir> uv run pytest tests/unit/strata/test_kernel_properties.py --collect-only -q -o addopts=`: `11 tests collected` -- the module's full test list resolves normally when the extension is importable, same count as before this change (the `import strata_core` -> `pytest.importorskip` swap does not change which tests exist, only how absence degrades).
+
+Evidence: `tests/test_testing.py::TestCollectPythonTests::test_parses_node_ids_and_caches_on_content_hash` attached via `frob ticket evidence T-0144` (the `collect_python_tests` machinery this fix unblocks repo-wide). The module's own 11 test node ids (`test_reachable_matches_bfs_oracle`, `test_worst_age_matches_longest_path_oracle_on_dags`, `test_worst_age_cycle_property`, `test_demand_matches_sum_oracle`, `test_reachable_is_deterministic`, `test_worst_age_is_deterministic`, `test_demand_is_deterministic`, `TestReviewerRegression::test_context_dependent_memo_undercount`, `TestReviewerRegression::test_adversarial_shared_node_divergent_entry_a`, `TestReviewerRegression::test_adversarial_shared_node_divergent_entry_b`, `TestReviewerRegression::test_adversarial_three_way_convergence`) could not be attached via `frob ticket evidence` in this natives-less worktree -- they correctly do not appear in `pytest --collect-only`'s output here (the module is skipped, by design, exactly as this ticket asks); this is the fix working as intended, not a gap. Confirmed instead by the manual verification above (real collection succeeds repo-wide; the skip fires with the correct reason; a natives-present stub environment collects the same 11 ids the module always had, pre- and post-fix).
+
+Gates: `frob check --ticket T-0144` gates stage: 98 violation(s), 55 waived, zero SCOPE001/PRE001/COV001/COV002/TEST001 attributable to this diff. All violations reported inside `tests/unit/strata/test_kernel_properties.py` (5 `PERF003`/`PERF004` lines) are pre-existing code shapes shifted by this change's +18 line insert, confirmed against `git show a71834c:tests/unit/strata/test_kernel_properties.py` at the corresponding pre-edit line numbers -- same nested-loop/`sorted()`-in-loop patterns, not introduced by this diff. The `ty` stage's 2 diagnostics (`unresolved-import` for `strata_core` in `tests/unit/strata/test_capacity.py:351` and `frob_core` in `tests/unit/test_dup_core.py:30`) are the same known natives-not-built environment artifact already documented in T-0142's Done report, in files this ticket's scope does not touch. `ruff`, `ruff-format` clean. Full-repo `frob check` gates count before this fix (main, no in-progress ticket): 1051 violation(s), 55 waived -- collapsed to 98 once collection stops hard-failing and every downstream gate that depends on `collect_python_tests` (COV002/COV003/TEST001/TEST002/etc.) can actually run, which is this ticket's whole point.
+
+Filed: none.
+
+NOT closed and NOT committed per dispatch instructions.
 
 <!-- ticket:T-0145 -->
 ```yaml

@@ -7,16 +7,30 @@ T-0065 (age propagation): the kernel already implements the age collapse
 (BFS closure, memoized longest-path DFS, rate sum), this file is what
 proves it over the space of graphs, not just the handful of examples in
 test_facts.py.
+
+T-0144: the module used to do a bare module-level `import strata_core`,
+which hard-fails `pytest --collect-only` (not just this module's tests)
+in any environment without the native extension built -- breaking
+`frob ticket evidence` for every ticket, not just strata ones. Guarded
+via `pytest.importorskip` (the same natives-less precedent as
+`tests/unit/test_dup_core.py`'s `frob_core` skip) so collection always
+succeeds and this module's tests skip loudly instead of erroring.
 """
 
+# frob:ticket T-0144
 from __future__ import annotations
 
 import math
 from itertools import combinations
 
-import strata_core
+import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
+
+strata_core = pytest.importorskip(
+    "strata_core",
+    reason="strata_core native extension not built -- run `make core`",
+)
 
 # frob:tests strata-core/src/lib.rs::reachable kind="unit"
 # frob:tests strata-core/src/lib.rs::worst_age kind="unit"
