@@ -150,6 +150,9 @@ obligation graph. Charter and component designs:
   (COPPA/GDPR/HIPAA + privacy-policy-as-claims) anti-patterns as
   conditional obligations with a three-part exhaustiveness proof
   (epic T-0109).
+- `docs/strata/selfconform.md` -- self-conformance: SYS100-102, the check
+  that our own `src/frob/` capability surface actually matches what
+  `design/frob.strata` declares (T-0150).
 
 ## Per-command references
 

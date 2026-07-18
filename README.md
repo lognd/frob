@@ -107,3 +107,16 @@ frob ticket close T-0001                           # requires evidence + a Done 
 
 See `docs/guides/quickstart.md` for the full walkthrough with real command output, and
 `docs/` for per-command references and module design docs.
+
+---
+
+## Release status
+
+`frob` is at `0.2.0` -- no tagged release has been published yet, but the
+tree is provably releasable: `frob release check` is green against the
+tracked `.frob-release.json` manifest, `uv build --wheel` produces a
+working wheel, and the natives-less degrade contract (T-0133/T-0134/T-0135)
+plus dependency completeness (T-0142/T-0152) are verified from that built
+wheel in a bare venv, not just from source. See `CHANGELOG.md` for the full
+list of what shipped, grouped by area, and `docs/modules/release.md` for
+the REL001 gate mechanics.
