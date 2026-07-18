@@ -3114,3 +3114,55 @@ acceptance: []
 threat: elevation-of-privilege
 ```
 T-0254 auth pillar. Model the Kerberos/Active-Directory layer that sits between OS principals and the backend so domain auth becomes provable architecture. New std.krb vocabulary: a realm/domain and its KDC as trust-lattice nodes; a service principal name (SPN) bound to a service account (the runs_as / windows service account from T-0255/T-0261); an authenticates-via edge (a flow crosses a Kerberos boundary -- ticket-granting, service-ticket); and DELEGATION as an explicit, typed declaration -- none | constrained target=<spn-set> | rbcd | unconstrained. Delegation is the crown-jewel modeling target because it is the classic movement vector. Domain trusts (one-way/two-way, transitive) join the lattice so cross-realm reachability is model-checked. Elaborate into the KernelModel so existing flow/noflow/reach machinery applies to ticket flows. This ticket is the MODEL + vocabulary only; the delegation-abuse obligations live in T-0263. Grammar + tmLanguage drift-lock, litmus, docs/strata/krb.md. std.krb must compose with both linux (MIT/Heimdal keytabs) and windows (AD) host backends.
+
+<!-- ticket:T-0263 -->
+```yaml
+id: T-0263
+title: 'Kerberos/AD movement vectors: delegation abuse, Kerberoasting, S4U, cross-realm
+  as HOST/KRB obligations'
+state: queued
+kind: security
+origin: human
+created: '2026-07-18'
+blocked_by:
+- T-0256
+- T-0262
+parent: T-0254
+scope:
+- src/frob/strata/**
+- docs/strata/**
+- design/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: elevation-of-privilege
+```
+T-0254: the red-team Kerberos playbook as demanded, provable obligations extending T-0256's movement-impossibility family. KRB001 unconstrained delegation: any node declaring delegation unconstrained is a hard finding (it lets a compromised service impersonate ANY user to ANY service -- the worst lateral+vertical vector) -- must be re-declared constrained/rbcd or waived with a written accepted-risk reason and sub-target. KRB002 Kerberoasting exposure: an SPN bound to a principal whose credential class is a human-memorable/user password (not a machine account or gMSA) is roastable -- demand gMSA/machine-account or a waiver. KRB003 constrained-delegation blast radius: for a node with constrained delegation, prove the target SPN set does not transitively reach a higher-trust principal (S4U2Proxy chaining) -- reachability over the SPN graph, counterexample trace on failure. KRB004 cross-realm containment: a one-way/transitive trust must not create an undeclared path from a low-trust realm to a high-trust service. Each rule joins a separate compromised-domain-principal threat view (WeaknessEntry rows: CWE-522/CWE-269/CWE-284 class) per the separate-view precedent, NOT widening defaults. Reuse the T-0073 scenario engine for a compromised-service-account scenario whose closure shows the Kerberos blast radius. Litmus: an unconstrained-delegation + roastable-SPN vuln model fires KRB001/002; a gMSA + constrained + non-chaining hardened model discharges all four.
+
+<!-- ticket:T-0264 -->
+```yaml
+id: T-0264
+title: 'frob deploy generate windows: PowerShell/DSC install/status/uninstall from
+  the manifest, drift-locked'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-18'
+blocked_by:
+- T-0257
+- T-0261
+parent: T-0254
+scope:
+- src/frob/deploy/**
+- src/frob/app/**
+- docs/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0254 Windows generation. The T-0257 generator gains a windows target emitting idempotent PowerShell (check-then-apply, same contract as the bash target): install creates the service account/gMSA, registers the Windows Service with its hardening (service SID type, required-privileges, deny-logon rights), applies the NTFS ACLs exactly from the manifest, opens the declared firewall ports / creates named pipes, and configures the SPN + delegation setting from std.krb (setspn / the delegation flags) when a krb model is present. status queries SCM state + health. uninstall removes exactly the manifest set (service, account, ACL grants, firewall rules, SPN registration) leaving no artifacts. Same DEPLOY001 digest-header drift-lock as bash. Scripts must be PSScriptAnalyzer-clean and depend only on in-box modules (no PSGallery). The conformance gate (T-0258) and VM audit (T-0259) must handle the PowerShell mutation surface too -- coordinate the manifest abstraction so those tickets' parsers are platform-tagged, not bash-only; if T-0258/T-0259 landed bash-only, file follow-ups for their windows extension rather than expanding scope here.
