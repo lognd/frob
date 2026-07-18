@@ -1038,7 +1038,7 @@ def probe_equivalence(
 
     if not _probe_arity_compatible(fn_b, len(strategies)):
         _log.info(
-            "probe_equivalence: %s vs %s -- fn_b not callable with %d positional arg(s)",
+            "probe_equivalence: %s vs %s -- fn_b rejects %d positional arg(s)",
             a,
             b,
             len(strategies),
