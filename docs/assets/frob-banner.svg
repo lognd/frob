@@ -37,7 +37,12 @@
       <stop offset="0" stop-color="#273242"/>
       <stop offset="1" stop-color="#141b26"/>
     </linearGradient>
-    <clipPath id="ballclip"><circle cx="290" cy="232" r="54"/></clipPath>
+    <radialGradient id="figLight" gradientUnits="userSpaceOnUse" cx="290" cy="235" r="190">
+      <stop offset="0" stop-color="#3c6132"/>
+      <stop offset="0.4" stop-color="#22351c"/>
+      <stop offset="1" stop-color="#10160d"/>
+    </radialGradient>
+    <clipPath id="ballclip"><circle cx="290" cy="230" r="56"/></clipPath>
   </defs>
 
   <rect width="1200" height="320" fill="url(#bg)"/>
@@ -47,59 +52,57 @@
   <!-- hairline top accent -->
   <rect x="0" y="0" width="1200" height="2" fill="#1f6feb" opacity="0.35"/>
 
-  <!-- ================= mascot: silhouette froblin (no outlines) ================= -->
-  <!-- body silhouette: hump, ears, head. Arms tucked behind the ball. -->
-  <g fill="#2d4124">
-    <path d="M212 212 C206 164 238 140 290 140 C342 140 374 164 368 212 C348 190 232 190 212 212 Z"/>
-    <path d="M240 112 C210 92 172 92 148 122 C158 138 196 142 238 128 Z"/>
-    <path d="M340 112 C370 92 408 92 432 122 C422 138 384 142 342 128 Z"/>
-    <ellipse cx="290" cy="127" rx="60" ry="48"/>
+  <!-- ================= mascot: froblin in the shadows (v12) ================= -->
+  <g fill="url(#figLight)">
+    <!-- ears: drooping blades, attached at jaw height -->
+    <path d="M260 133 C224 122 178 118 150 127 C149 131 154 136 163 139 C196 146 234 147 261 144 Z"/>
+    <path d="M320 131 C356 118 402 114 430 123 C431 127 426 132 417 135 C384 142 346 145 319 142 Z"/>
+    <!-- goggles perched on the crown: two contour bumps -->
+    <circle cx="273" cy="80" r="7.5"/>
+    <circle cx="307" cy="80" r="7.5"/>
+    <!-- head: tall dome with tiny cap-brim notches in the contour -->
+    <path d="M290 76
+             C318 76 336 92 338 112
+             L344 115
+             C343 140 322 158 290 158
+             C258 158 237 140 236 115
+             L242 112
+             C244 92 262 76 290 76 Z"/>
+    <!-- body: hunched mound behind the ball -->
+    <path d="M290 150
+             C332 150 358 184 362 236
+             C364 250 362 258 358 262
+             L222 262
+             C218 258 216 250 218 236
+             C222 184 248 150 290 150 Z"/>
   </g>
-  <!-- nose: tone-separated hook, no stroke -->
-  <path d="M280 140 C297 140 305 159 295 170 C287 177 276 171 277 158 C277 149 278 144 280 140 Z" fill="#385030"/>
 
-  <!-- aviator cap: covers the skull completely -->
-  <g fill="#231911">
-    <path d="M226 122 C226 64 354 64 354 122 L354 131 C312 112 268 112 226 131 Z"/>
-    <path d="M228 122 C223 139 225 150 233 156 C240 148 242 135 240 123 Z"/>
-    <path d="M352 122 C357 139 355 150 347 156 C340 148 338 135 340 123 Z"/>
-  </g>
-  <!-- goggles: dim gold rims -->
-  <rect x="250" y="92" width="80" height="7" rx="3.5" fill="#191007"/>
-  <circle cx="268" cy="96" r="12.5" fill="#120c06" stroke="#8a6f3a" stroke-width="2.6"/>
-  <circle cx="312" cy="96" r="12.5" fill="#120c06" stroke="#8a6f3a" stroke-width="2.6"/>
-  <path d="M262 91 a8 8 0 0 1 7 -4" fill="none" stroke="#c7a95e" stroke-width="1.5" stroke-linecap="round" opacity="0.8"/>
-  <path d="M306 91 a8 8 0 0 1 7 -4" fill="none" stroke="#c7a95e" stroke-width="1.5" stroke-linecap="round" opacity="0.8"/>
-
-  <!-- eyes: pure glowing glints, no pupils -->
-  <circle cx="266" cy="138" r="8" fill="#9fe88a" opacity="0.15"/>
-  <circle cx="319" cy="134" r="7" fill="#9fe88a" opacity="0.15"/>
-  <path d="M258 136 a8 5.6 -10 1 0 16 -3 a8 5.6 -10 1 0 -16 3 Z" fill="#a9f096"/>
-  <path d="M312 132 a7 4.9 -10 1 0 14 -2.6 a7 4.9 -10 1 0 -14 2.6 Z" fill="#a9f096"/>
+  <!-- eyes: two glowing upturned almonds -->
+  <circle cx="268" cy="132" r="9" fill="#9fe88a" opacity="0.14"/>
+  <circle cx="314" cy="129" r="8" fill="#9fe88a" opacity="0.14"/>
+  <path d="M260 130 a8 5 -8 1 0 16 -2.4 a8 5 -8 1 0 -16 2.4 Z" fill="#a9f096"/>
+  <path d="M307 127 a7 4.4 -8 1 0 14 -2 a7 4.4 -8 1 0 -14 2 Z" fill="#a9f096"/>
 
   <!-- stand -->
-  <path d="M256 280 Q290 274 324 280 L314 298 Q290 302 266 298 Z" fill="url(#standg)"/>
-  <ellipse cx="290" cy="302" rx="40" ry="4.5" fill="#000000" opacity="0.3"/>
+  <path d="M258 282 Q290 276 322 282 L313 299 Q290 303 267 299 Z" fill="url(#standg)"/>
+  <ellipse cx="290" cy="303" rx="38" ry="4" fill="#000000" opacity="0.3"/>
 
   <!-- crystal ball -->
-  <circle cx="290" cy="232" r="54" fill="url(#ballsheen)" stroke="#4a5a75" stroke-width="2"/>
+  <circle cx="290" cy="230" r="56" fill="url(#ballsheen)" stroke="#4a5a75" stroke-width="2"/>
   <g clip-path="url(#ballclip)" stroke-linecap="round" fill="none" stroke-width="2.8">
-    <path d="M252 212 l6 0 m4 0 l3 -6 l3 6 m6 0 l6 0" stroke="#ff7b72"/>
-    <path d="M288 212 l8 0 m4 0 l5 0 m4 -4 l0 4" stroke="#d2a8ff"/>
-    <path d="M262 226 l5 0 m4 0 l4 -5 m2 5 l5 0" stroke="#79c0ff"/>
-    <path d="M292 226 l6 0 m4 -4 a3 3 0 1 0 0.1 0" stroke="#7ee787"/>
-    <path d="M318 226 l5 0" stroke="#8b949e"/>
-    <path d="M268 240 l4 0 m3 -5 l0 5 m4 0 l5 0" stroke="#ffa657"/>
-    <path d="M294 240 l4 0 m3 0 l4 -5 l4 5" stroke="#79c0ff"/>
-    <path d="M262 254 l6 0 m4 0 a3 3 0 1 1 0.1 0" stroke="#7ee787"/>
-    <path d="M286 254 l5 0 m4 -5 l3 5 l3 -5" stroke="#d2a8ff"/>
-    <path d="M312 254 l6 0" stroke="#ff7b72"/>
+    <path d="M252 210 l6 0 m4 0 l3 -6 l3 6 m6 0 l6 0" stroke="#ff7b72"/>
+    <path d="M288 210 l8 0 m4 0 l5 0 m4 -4 l0 4" stroke="#d2a8ff"/>
+    <path d="M262 224 l5 0 m4 0 l4 -5 m2 5 l5 0" stroke="#79c0ff"/>
+    <path d="M292 224 l6 0 m4 -4 a3 3 0 1 0 0.1 0" stroke="#7ee787"/>
+    <path d="M318 224 l5 0" stroke="#8b949e"/>
+    <path d="M268 238 l4 0 m3 -5 l0 5 m4 0 l5 0" stroke="#ffa657"/>
+    <path d="M294 238 l4 0 m3 0 l4 -5 l4 5" stroke="#79c0ff"/>
+    <path d="M262 252 l6 0 m4 0 a3 3 0 1 1 0.1 0" stroke="#7ee787"/>
+    <path d="M286 252 l5 0 m4 -5 l3 5 l3 -5" stroke="#d2a8ff"/>
+    <path d="M312 252 l6 0" stroke="#ff7b72"/>
   </g>
-  <ellipse cx="268" cy="204" rx="19" ry="10" fill="#e6edf3" opacity="0.14" transform="rotate(-24 268 204)"/>
-  <circle cx="290" cy="232" r="54" fill="none" stroke="#7ee787" stroke-width="1.2" opacity="0.22"/>
-
-  <!-- chin glow crescent -->
-  <path d="M272 172 C282 176 298 176 308 170" fill="none" stroke="#7ee787" stroke-width="1.8" stroke-linecap="round" opacity="0.2"/>
+  <ellipse cx="268" cy="202" rx="19" ry="10" fill="#e6edf3" opacity="0.14" transform="rotate(-24 268 202)"/>
+  <circle cx="290" cy="230" r="56" fill="none" stroke="#7ee787" stroke-width="1.2" opacity="0.25"/>
 
   <!-- ================= wordmark ================= -->
   <text x="500" y="158" font-family="ui-monospace, 'Cascadia Code', 'Fira Code', Menlo, Consolas, monospace" font-size="96" font-weight="700" fill="url(#wordmark)" letter-spacing="-2">frob</text>
