@@ -2001,6 +2001,26 @@ threat: null
 ```
 T-0161 round-2 review follow-up (non-blocking boundary found by the reviewer): a real nested join comparing derived values -- f(x) == g(y) with x,y the loop variables inside call parens -- does not fire because _operand_names only unwinds bare identifiers and one bracket-pair subscript (a[i-1] == b[j-1] works). Extend the unwinding one level of call parens, symmetric with the subscript handling; keep the attribute-access narrowing (its 4 sibling-loop FP sites are documented in T-0161's Done report). Regression: derived-value join fires; the 4 FP classes stay silent.
 
+<!-- ticket:T-0247 -->
+```yaml
+id: T-0247
+title: store grammar still missing on-deploy/observe/errors_total/panics_contained_by
+  from node_prop
+state: queued
+kind: bug
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- strata-core/src/parse.rs,docs/strata/surface.md,src/frob/strata/**,tests/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+found while working T-0166: docs/strata/surface.md's std.infra grammar block says store_prop := node_prop | engine | immutable | append_only | rpo, implying store accepts the FULL node_prop set. T-0166 closed the code/may gap (the one this ticket's scope named), but parse_store still has no branch for on deploy/observe/errors_total/panics_contained_by -- store_prop remains a real subset of node_prop, not the full union the grammar block literally claims. Either implement the remaining node_prop items on store (mirroring parse_node) or narrow the surface.md grammar line to enumerate the actual accepted subset instead of the misleading 'node_prop' alias.
+
 <!-- ticket:T-draft-117dcdb8 -->
 ```yaml
 id: T-draft-117dcdb8
@@ -2042,26 +2062,6 @@ acceptance: []
 threat: null
 ```
 Found while writing T-0159's extending guides: 'frob outline strata-core/src/parse.rs' errors with 'No outline adapter for this file extension' even though frob.lang extracts 151 symbols from the same file (dispatching path=strata-core/src/parse.rs to grammar=rust). The outline adapter registry does not cover every language frob.lang supports; either add the missing adapters (rust at minimum, check c/cpp/tsx too) or have outline fall back to the frob.lang symbol walk so the two language registries cannot drift apart. (Refiled: first draft was lost in a tickets.md ledger splice during T-0159's concurrent-agent merge.)
-
-<!-- ticket:T-draft-956203f7 -->
-```yaml
-id: T-draft-956203f7
-title: store grammar still missing on-deploy/observe/errors_total/panics_contained_by
-  from node_prop
-state: queued
-kind: bug
-origin: human
-created: '2026-07-18'
-blocked_by: []
-parent: null
-scope:
-- strata-core/src/parse.rs,docs/strata/surface.md,src/frob/strata/**,tests/**
-evidence: []
-attachments: []
-acceptance: []
-threat: null
-```
-found while working T-0166: docs/strata/surface.md's std.infra grammar block says store_prop := node_prop | engine | immutable | append_only | rpo, implying store accepts the FULL node_prop set. T-0166 closed the code/may gap (the one this ticket's scope named), but parse_store still has no branch for on deploy/observe/errors_total/panics_contained_by -- store_prop remains a real subset of node_prop, not the full union the grammar block literally claims. Either implement the remaining node_prop items on store (mirroring parse_node) or narrow the surface.md grammar line to enumerate the actual accepted subset instead of the misleading 'node_prop' alias.
 
 <!-- ticket:T-draft-c4c47359 -->
 ```yaml
