@@ -16,8 +16,11 @@ from frob.tickets import (
     TicketError,
     TicketKind,
     TicketState,
+    add_evidence,
+    archive,
     attach,
     doable,
+    load_active,
     load_queue,
     new_ticket,
     record_failure,
@@ -454,6 +457,147 @@ class TestAttach:
         result = attach(tmp_path, "T-9999", AttachmentSource(path=src), "cap")
         assert result.is_err
         assert result.danger_err is TicketError.NotFound
+
+
+class TestEvidence:
+    def test_resolvable_ids_appended(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/__init__.py::add_evidence
+        _write(tmp_path, _ticket())
+        collected = frozenset({"tests/test_x.py::test_a", "tests/test_x.py::test_b"})
+        result = add_evidence(
+            tmp_path, "T-0001", ["tests/test_x.py::test_a"], collected
+        )
+        assert result.is_ok
+        assert result.danger_ok.evidence == ("tests/test_x.py::test_a",)
+
+        queue = load_queue(tmp_path).danger_ok
+        assert queue.tickets["T-0001"].evidence == ("tests/test_x.py::test_a",)
+
+    def test_parametrized_bare_name_matches(self, tmp_path: Path) -> None:
+        _write(tmp_path, _ticket())
+        collected = frozenset({"tests/test_x.py::test_a[case0]"})
+        result = add_evidence(tmp_path, "T-0001", ["tests/test_x.py::test_a"], collected)
+        assert result.is_ok
+        assert result.danger_ok.evidence == ("tests/test_x.py::test_a",)
+
+    def test_unresolvable_id_rejected(self, tmp_path: Path) -> None:
+        _write(tmp_path, _ticket())
+        collected = frozenset({"tests/test_x.py::test_a"})
+        result = add_evidence(
+            tmp_path, "T-0001", ["tests/test_x.py::test_missing"], collected
+        )
+        assert result.is_err
+        assert result.danger_err is TicketError.UnknownEvidence
+        queue = load_queue(tmp_path).danger_ok
+        assert queue.tickets["T-0001"].evidence == ()
+
+    def test_mixed_batch_rejected_wholesale(self, tmp_path: Path) -> None:
+        _write(tmp_path, _ticket())
+        collected = frozenset({"tests/test_x.py::test_a"})
+        result = add_evidence(
+            tmp_path,
+            "T-0001",
+            ["tests/test_x.py::test_a", "tests/test_x.py::test_missing"],
+            collected,
+        )
+        assert result.is_err
+        queue = load_queue(tmp_path).danger_ok
+        assert queue.tickets["T-0001"].evidence == ()
+
+    def test_dedupes_against_existing_evidence(self, tmp_path: Path) -> None:
+        ticket = _ticket(evidence=("tests/test_x.py::test_a",))
+        _write(tmp_path, ticket)
+        collected = frozenset({"tests/test_x.py::test_a", "tests/test_x.py::test_b"})
+        result = add_evidence(
+            tmp_path,
+            "T-0001",
+            ["tests/test_x.py::test_a", "tests/test_x.py::test_b"],
+            collected,
+        )
+        assert result.is_ok
+        assert result.danger_ok.evidence == (
+            "tests/test_x.py::test_a",
+            "tests/test_x.py::test_b",
+        )
+
+    def test_unknown_ticket_not_found(self, tmp_path: Path) -> None:
+        (tmp_path / "tickets").mkdir()
+        result = add_evidence(tmp_path, "T-9999", ["x"], frozenset({"x"}))
+        assert result.is_err
+        assert result.danger_err is TicketError.NotFound
+
+
+class TestArchive:
+    def test_moves_done_and_dropped_only(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/__init__.py::archive
+        # frob:tests src/frob/tickets/__init__.py::load_active
+        _write(tmp_path, _ticket(ticket_id="T-0001", state=TicketState.DONE), "done")
+        _write(
+            tmp_path,
+            _ticket(ticket_id="T-0002", state=TicketState.DROPPED),
+            "dropped",
+        )
+        _write(
+            tmp_path, _ticket(ticket_id="T-0003", state=TicketState.QUEUED), "open"
+        )
+        result = archive(tmp_path)
+        assert result.is_ok
+        assert result.danger_ok == 2
+
+        active = load_active(tmp_path).danger_ok
+        assert set(active.tickets) == {"T-0003"}
+
+        from frob.tickets._store import load_archive
+
+        archived = load_archive(tmp_path).danger_ok
+        assert set(archived) == {"T-0001", "T-0002"}
+
+    def test_idempotent_second_run_moves_nothing(self, tmp_path: Path) -> None:
+        _write(tmp_path, _ticket(ticket_id="T-0001", state=TicketState.DONE), "done")
+        first = archive(tmp_path)
+        assert first.danger_ok == 1
+        second = archive(tmp_path)
+        assert second.is_ok
+        assert second.danger_ok == 0
+
+    def test_nothing_to_archive_is_zero(self, tmp_path: Path) -> None:
+        _write(
+            tmp_path, _ticket(ticket_id="T-0001", state=TicketState.QUEUED), "open"
+        )
+        result = archive(tmp_path)
+        assert result.is_ok
+        assert result.danger_ok == 0
+
+    def test_load_queue_merges_active_and_archive(self, tmp_path: Path) -> None:
+        _write(tmp_path, _ticket(ticket_id="T-0001", state=TicketState.DONE), "done")
+        archive(tmp_path)
+        _write(
+            tmp_path, _ticket(ticket_id="T-0002", state=TicketState.QUEUED), "open"
+        )
+
+        merged = load_queue(tmp_path)
+        assert merged.is_ok
+        assert set(merged.danger_ok.tickets) == {"T-0001", "T-0002"}
+
+        active_only = load_active(tmp_path)
+        assert set(active_only.danger_ok.tickets) == {"T-0002"}
+
+    def test_blocked_by_archived_ticket_resolves_closed(self, tmp_path: Path) -> None:
+        # A blocker that has since been archived (done) must still let the
+        # blocked ticket start -- it must not look like an unknown/open
+        # blocker just because it moved out of the active ledger.
+        _write(tmp_path, _ticket(ticket_id="T-0001", state=TicketState.DONE), "done")
+        archive(tmp_path)
+        from frob.tickets._store import write_ticket as _write_ticket
+
+        _write_ticket(
+            tmp_path,
+            _ticket(ticket_id="T-0002", state=TicketState.QUEUED, blocked_by=("T-0001",)),
+        )
+        planned = transition(tmp_path, "T-0002", TicketState.PLANNED)
+        assert planned.is_ok
+        started = transition(tmp_path, "T-0002", TicketState.IN_PROGRESS)
+        assert started.is_ok
 
 
 class TestSingleFileLedger:
