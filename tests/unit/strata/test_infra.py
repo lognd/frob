@@ -39,6 +39,29 @@ class TestStoreDesugar:
         assert "immutable" in node.attrs
         assert "append_only" in node.attrs
 
+    # frob:tests src/frob/strata/_infra.py::elaborate_infra kind="unit"
+    def test_store_rpo_becomes_seconds_attr(self):
+        text = """
+        module m
+        store db : trusted {
+            rpo 5 min;
+        }
+        """
+        model = _elaborate(text).danger_ok
+        node = next(n for n in model.nodes if n.id == "db")
+        assert "rpo=300.0" in node.attrs
+
+    # frob:tests src/frob/strata/_infra.py::elaborate_infra kind="unit"
+    def test_store_rpo_wrong_dimension_fails_closed(self):
+        text = """
+        module m
+        store db : trusted {
+            rpo 5 MiB;
+        }
+        """
+        result = _elaborate(text)
+        assert result.danger_err is StrataError.UnitMismatch
+
 
 class TestCacheDesugar:
     # frob:tests src/frob/strata/_infra.py::elaborate_infra kind="unit"

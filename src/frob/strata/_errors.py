@@ -29,3 +29,8 @@ class StrataError(ErrorSet):
     )
     MissingInvalidation = "A cache has no invalidate_on edge for a mutable source"
     MutableUnbounded = "A cdn declares unlimited staleness over a non-immutable source"
+    NegativeQuantity = (
+        "A flow age/rate/size is negative; the age-propagation SCC soundness "
+        "argument (docs/strata/kernel.md#age-propagation-semantics) requires "
+        "every hop weight to be non-negative"
+    )

@@ -60,8 +60,15 @@ class InfraExpansion(BaseModel):
     diagnostics: tuple[str, ...] = ()
 
 
-def _elaborate_store(decl: StoreDecl) -> Node:
-    """`store` -> `Node` at its declared trust; engine/durability become attrs."""
+def _elaborate_store(decl: StoreDecl) -> Result[Node, StrataError]:
+    """`store` -> `Node` at its declared trust; engine/durability/rpo become attrs.
+
+    `rpo` is the store's declared durability/replication lag -- the same
+    age-collapse family as cache ttl (docs/strata/kernel.md#age-propagation-
+    semantics). The grammar accepts any unit; here the elaborator fails
+    closed if it is not a time unit (deny by default, no silent dimension
+    coercion).
+    """
     attrs = list(decl.attrs)
     if decl.engine is not None:
         attrs.append(f"engine={decl.engine}")
@@ -69,14 +76,31 @@ def _elaborate_store(decl: StoreDecl) -> Node:
         attrs.append("immutable")
     if decl.append_only:
         attrs.append("append_only")
+    if decl.rpo is not None:
+        dimension = decl.rpo.dimension()
+        if dimension.is_err:
+            _log.error("store %s: rpo has unknown unit %r", decl.id, decl.rpo.unit)
+            return Err(dimension.danger_err)
+        if dimension.danger_ok != "time":
+            _log.error(
+                "store %s: rpo %s%s is not a time unit",
+                decl.id,
+                decl.rpo.value,
+                decl.rpo.unit,
+            )
+            return Err(StrataError.UnitMismatch)
+        seconds = decl.rpo.base_value().danger_ok
+        attrs.append(f"rpo={seconds}")
     _log.debug("store %s -> node at trust %s, attrs=%s", decl.id, decl.trust, attrs)
-    return Node(
-        id=decl.id,
-        trust=decl.trust,
-        clearance=decl.clearance,
-        attrs=tuple(attrs),
-        capacity=None,
-        residence=decl.residence,
+    return Ok(
+        Node(
+            id=decl.id,
+            trust=decl.trust,
+            clearance=decl.clearance,
+            attrs=tuple(attrs),
+            capacity=None,
+            residence=decl.residence,
+        )
     )
 
 
@@ -377,7 +401,10 @@ def elaborate_infra(
 
     new_nodes: list[Node] = []
     for store in module.stores:
-        new_nodes.append(_elaborate_store(store))
+        store_result = _elaborate_store(store)
+        if store_result.is_err:
+            return Err(store_result.danger_err)
+        new_nodes.append(store_result.danger_ok)
     for queue in module.queues:
         new_nodes.append(_elaborate_queue(queue))
     for balancer in module.balancers:

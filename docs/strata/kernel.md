@@ -144,6 +144,76 @@ consumer; payload label above destination clearance).
   silent clamp.
 - `FactBase.demand` -- declared inbound rate sum in base units.
 
+### Age propagation semantics
+
+<!-- frob:ticket T-0065 -->
+
+One age metric, one propagation rule, four surface words. Precisely:
+
+`age(target) = max over every flow-path P ending at target of sum(hop_age(e)
+for e in P)`, where `hop_age(e)` is the flow's declared `age` (0 when
+undeclared); when a positive-age cycle can reach `target`, the max is
+unbounded and `worst_age` returns `+inf` with the cycle as witness (never a
+silent clamp -- see `strata-core` below). This single bound family is what
+cache `ttl`/`staleness`, CDN staleness, store `rpo` (replication/durability
+lag), and -- in phase 5 -- credential rotation all desugar to: each is one
+more flow declaring an `age`, not a separate metric with its own procedure.
+An `AGE` bound claim (`evaluate_claims`) refutes with the accumulated
+worst-case path, exactly like any other longest-path witness.
+
+`store`'s `rpo NUM UNIT` property (docs/strata/surface.md#std-infra)
+declares that store's own durability/replication lag; `_infra.py` folds it
+into a `rpo=<seconds>` attr on the store's node (dimension-checked: a
+non-time unit is `UnitMismatch`, fails closed). `rpo` does not itself
+create a flow -- a store only participates in the age closure through
+flows that already carry it. The pattern for a replica is to declare the
+replication flow's own `age` directly:
+
+```
+store primary : trusted { rpo 5 min; }
+store replica : trusted
+flow repl : primary -> replica { age 5 min; }
+assert bound age(replica) <= 10 min
+```
+
+Here `age(replica)` walks the single hop `repl` (5 min) -- the same
+longest-path accumulation a cache's `ttl` or a CDN's `staleness` flow
+produces; a design with a chain of replicas or a cache in front of a
+replica composes for free, because the kernel never learns the words
+"replica" or "cache", only flow ages (charter law 1).
+
+**Non-negativity precondition (T-0065 reviewer round).** Every flow
+age/rate/size must be `>= 0`; `_facts.py::build_facts` fails closed with
+`StrataError.NegativeQuantity` otherwise (ERROR-logged). The surface
+grammar cannot express a negative quantity, but the Python API can, so
+this is enforced explicitly rather than assumed. Non-negativity is what
+makes the `strata-core` algorithm below sound: it is the premise of the
+"any intra-SCC edge lies on a cycle, so a positive edge makes that cycle
+positive" argument -- with negative weights allowed, an edge could sit on
+a cycle without making the cycle's *total* positive, and a positive-weight
+edge inside an SCC would no longer guarantee unboundedness.
+
+`strata-core`'s `worst_age` computes this via SCC condensation, not a
+naive memoized DFS: with non-negative weights, (1) a pre-pass finds any
+positive-weight cycle able to reach `target` and returns `+inf` with the
+cycle as witness; (2) otherwise every intra-SCC edge among nodes that can
+reach `target` is provably 0-weight, so condensing each SCC to one
+supernode and running longest-path DP over the resulting DAG (topological
+order) is exact. An earlier memoized-DFS version was rejected in review:
+`best[node]` computed while a caller was mid-recursion (with that caller's
+node on the "active" stack) got cached and wrongly reused by a *different*
+caller with a different active set, silently undercounting the true
+longest path -- the kind of bug that can make an `AGE bound claim <= v`
+FALSELY PROVED. The counterexample (kept as a permanent regression, cargo
+`worst_age_reviewer_regression_context_dependent_memo` and pytest
+`TestReviewerRegression::test_context_dependent_memo_undercount`):
+
+```
+edges: B->A(0), B->T(0), A->T(3), A->B(0), C->B(1)   target: T
+memoized-DFS (WRONG):  3.0  via A->T
+SCC condensation (RIGHT): 4.0  via C->B->A->T
+```
+
 ## Claim evaluation
 
 <!-- frob:describes src/frob/strata/_claims.py::evaluate_claims -->

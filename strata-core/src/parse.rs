@@ -643,11 +643,17 @@ impl Parser {
 
     /// store := "store" ID ":" TRUST "{" store_prop (";" store_prop)* "}"?
     /// store_prop := node_prop | "engine" IDENT | "immutable" | "append_only"
+    ///             | "rpo" QUANTITY
     ///
     /// WHY: store is std.infra's node-with-extras; it reuses the node_prop
-    /// surface (clearance/attr/residence/capacity) verbatim plus engine and
-    /// the immutable/append_only markers the elaborator needs for the
-    /// cdn-unlimited-staleness pairing (docs/strata/surface.md#std-infra).
+    /// surface (clearance/attr/residence/capacity) verbatim plus engine, the
+    /// immutable/append_only markers the elaborator needs for the
+    /// cdn-unlimited-staleness pairing, and `rpo` -- a store's declared
+    /// durability/replication lag, the same age-collapse family as cache ttl
+    /// (docs/strata/surface.md#std-infra, docs/strata/kernel.md#age-
+    /// propagation-semantics). The grammar accepts any unit here; dimension
+    /// validation (must be a time unit) is the elaborator's job, matching
+    /// how ttl/staleness stay units-only at parse time too.
     fn parse_store(&mut self, ast: &mut ModuleAst) -> Result<(), ParseError> {
         self.advance(); // 'store'
         let id = self.expect_ident("store id")?;
@@ -660,6 +666,7 @@ impl Parser {
         let mut engine: Option<String> = None;
         let mut immutable = false;
         let mut append_only = false;
+        let mut rpo: Option<serde_json::Value> = None;
         if self.at_symbol('{') {
             self.advance();
             loop {
@@ -692,6 +699,9 @@ impl Parser {
                 } else if self.at_keyword("append_only") {
                     self.advance();
                     append_only = true;
+                } else if self.at_keyword("rpo") {
+                    self.advance();
+                    rpo = Some(self.parse_quantity("rpo")?);
                 } else {
                     return self.err("unknown store property");
                 }
@@ -713,6 +723,7 @@ impl Parser {
             "engine": engine,
             "immutable": immutable,
             "append_only": append_only,
+            "rpo": rpo,
         }));
         Ok(())
     }
@@ -1356,6 +1367,18 @@ mod tests {
         assert_eq!(s["engine"], "postgres");
         assert_eq!(s["immutable"], true);
         assert_eq!(s["append_only"], true);
+    }
+
+    #[test]
+    fn parses_store_rpo() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok(r#"module m
+            store db : trusted {
+                rpo 5 min;
+            }"#);
+        let s = &v["stores"][0];
+        assert_eq!(s["rpo"]["value"], 5.0);
+        assert_eq!(s["rpo"]["unit"], "min");
     }
 
     #[test]

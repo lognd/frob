@@ -90,6 +90,30 @@ class TestBuildFacts:
         assert build_facts(fixed).danger_ok.diagnostics == ()
 
     # frob:tests src/frob/strata/_facts.py::build_facts kind="unit"
+    def test_negative_age_fails_closed(self):
+        model = KernelModel(
+            nodes=(_node("a"), _node("b")),
+            flows=(_flow("f1", "a", "b", age=Quantity(value=-1, unit="s")),),
+        )
+        assert build_facts(model).danger_err is StrataError.NegativeQuantity
+
+    # frob:tests src/frob/strata/_facts.py::build_facts kind="unit"
+    def test_negative_rate_fails_closed(self):
+        model = KernelModel(
+            nodes=(_node("a"), _node("b")),
+            flows=(_flow("f1", "a", "b", rate=Quantity(value=-5, unit="req/s")),),
+        )
+        assert build_facts(model).danger_err is StrataError.NegativeQuantity
+
+    # frob:tests src/frob/strata/_facts.py::build_facts kind="unit"
+    def test_nonnegative_age_is_accepted(self):
+        model = KernelModel(
+            nodes=(_node("a"), _node("b")),
+            flows=(_flow("f1", "a", "b", age=Quantity(value=0, unit="s")),),
+        )
+        assert build_facts(model).is_ok
+
+    # frob:tests src/frob/strata/_facts.py::build_facts kind="unit"
     def test_label_above_clearance_is_diagnosed(self):
         model = KernelModel(
             nodes=(_node("a"), _node("b", clearance="Public")),

@@ -118,6 +118,7 @@ class StoreDecl(BaseModel):
     engine: str | None = None
     immutable: bool = False
     append_only: bool = False
+    rpo: Quantity | None = None
 
 
 # frob:doc docs/strata/surface.md#std-infra

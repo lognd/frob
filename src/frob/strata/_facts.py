@@ -177,6 +177,40 @@ def _validate_levels(model: KernelModel) -> Result[None, StrataError]:
     return Ok(None)
 
 
+def _validate_nonnegative_quantities(model: KernelModel) -> Result[None, StrataError]:
+    """Flow age/rate/size must be non-negative.
+
+    The SCC-condensation soundness argument for `worst_age`
+    (docs/strata/kernel.md#age-propagation-semantics) depends on every hop
+    weight being non-negative: any intra-SCC edge lies on a cycle, and a
+    positive edge there makes the cycle positive (the `+inf` case) --
+    that reasoning only holds when weights cannot be negative. The surface
+    grammar cannot express a negative quantity, but the Python API can, so
+    this is enforced here, fail closed.
+    """
+    for flow in model.flows:
+        for field_name, quantity in (
+            ("age", flow.age),
+            ("rate", flow.rate),
+            ("size", flow.size),
+        ):
+            if quantity is None:
+                continue
+            base = quantity.base_value()
+            if base.is_err:
+                continue  # unknown unit is reported by other validation paths
+            if base.danger_ok < 0.0:
+                _log.error(
+                    "flow %s: %s %s%s is negative",
+                    flow.id,
+                    field_name,
+                    quantity.value,
+                    quantity.unit,
+                )
+                return Err(StrataError.NegativeQuantity)
+    return Ok(None)
+
+
 def _structural_diagnostics(
     model: KernelModel, nodes: dict[str, Node]
 ) -> tuple[str, ...]:
@@ -220,6 +254,9 @@ def build_facts(model: KernelModel) -> Result[FactBase, StrataError]:
     levels_ok = _validate_levels(model)
     if levels_ok.is_err:
         return Err(levels_ok.danger_err)
+    nonneg_ok = _validate_nonnegative_quantities(model)
+    if nonneg_ok.is_err:
+        return Err(nonneg_ok.danger_err)
 
     nodes = {n.id: n for n in model.nodes}
     flows = {f.id: f for f in model.flows}

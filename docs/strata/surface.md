@@ -272,6 +272,7 @@ never learns any of these five words. Grammar (`strata-core/src/parse.rs`,
 ```
 store   ID ":" TRUST "{" store_prop* "}"?
 store_prop := node_prop | "engine" IDENT | "immutable" | "append_only"
+            | "rpo" QUANTITY
 
 cache   ID "of" ID "{" cache_prop* "}"?
 cache_prop := "keyed_by" IDENT | "ttl" QUANTITY | "staleness" QUANTITY
@@ -304,7 +305,7 @@ type) gains no new field for these diagnostics -- see the seam note below.
 
 | Construct | Kernel facts produced |
 |---|---|
-| `store X : T { ... }` | `Node` X at trust T; `engine=<x>`/`immutable`/`append_only` become attrs |
+| `store X : T { ... }` | `Node` X at trust T; `engine=<x>`/`immutable`/`append_only` become attrs; `rpo QUANTITY` becomes `rpo=<seconds>` (a time unit, or `UnitMismatch` -- docs/strata/kernel.md#age-propagation-semantics) |
 | `cache X of Y { ... }` | `Node` X at Y's trust/clearance; flow `X__fill` (Y -> X, age = the ttl/staleness bound); flow `X__inval_<F>` (Y -> X, age 0) per `invalidate_on F`; `hit=<v>`/`policy=<v>`/`keyed_by=<v>` attrs |
 | `queue X { ... }` | `Node` X (trust defaults to `"trusted"` -- see deviation below); `delivery=<x>`/`ordering=<x>` attrs; every outbound flow from X gains `delivery=<x>` |
 | `cdn X of Y { ... }` | `Node` X at the declared provider's trust, Y's clearance; flow `X__fill` (Y -> X, age = staleness, or no age when `unlimited` over an `immutable` Y); `provider=<x>`/`hit=<v>` attrs; `tls_terminates_at_provider` adds boundary `X__declassify` (declassify, Y's clearance -> `Public`, predicate `"tls_terminates_at_provider"`) on `X__fill` |
