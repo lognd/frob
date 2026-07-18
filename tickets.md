@@ -2685,7 +2685,7 @@ Review: APPROVED (non-repro + regression hardening accepted).
 ```yaml
 id: T-0185
 title: 'exhaustive-research agent: frontier-loop with external graph-knowledge store'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-18'
@@ -2697,7 +2697,10 @@ scope:
 - .mcp.json
 - docs/guides/**
 - tickets.md
-evidence: []
+- tests/unit/test_research_assets.py
+evidence:
+- tests/unit/test_research_assets.py::test_mcp_json_parses_and_declares_required_servers
+- tests/unit/test_research_assets.py::test_skill_frob_doc_anchor_resolves_in_guide
 attachments: []
 acceptance: []
 threat: null
@@ -2758,11 +2761,37 @@ agent externalization/memory (2604.08224 externalization review;
 2604.11243 self-evolving knowledge wikis) in the design doc.
 ASCII only, no emojis.
 
+## Done report
+
+Changed: commit 22654d4 (pre-ticket-start) landed the skill
+(.claude/skills/exhaustive-research/SKILL.md) and agent
+(.claude/agents/exhaustive-researcher.md); this ticket's remainder landed
+.mcp.json (serena/frob/fetch/arxiv stdio servers -- the repo had no MCP
+pinning at all), docs/guides/exhaustive-research.md (setup guide: three
+phases, store-per-corpus table, Obsidian-vault-over-MegaMem decision,
+.mcp.json wiring, the two arxiv priors), a frob:doc edge from SKILL.md to
+the guide anchor, and tests/unit/test_research_assets.py as a drift-lock
+(mcp config parses and declares the four servers; the SKILL.md anchor
+resolves in the guide).
+
+Evidence:
+tests/unit/test_research_assets.py::test_mcp_json_parses_and_declares_required_servers
+tests/unit/test_research_assets.py::test_skill_frob_doc_anchor_resolves_in_guide
+
+Filed: T-0186 (docs/index.md link, DOC001 -- index was outside this
+ticket's scope), landed in the same merge so main's gate never went red.
+Gates: 41 violations reported in the worktree, 40 pre-existing and none
+touching this diff's surface (DRIFT002 self-model x26, COV003
+T-0065/T-0148 x12, SYS004+TEST006 worktree-native artifacts); the one
+diff-caused DOC001 resolved by T-0186.
+Review: one REJECT round (gate-report phrasing overstated as "clean
+except DOC001"; landing-state confusion); corrected per coordinator.
+
 <!-- ticket:T-0186 -->
 ```yaml
 id: T-0186
 title: link docs/guides/exhaustive-research.md from docs/index.md
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-07-18'
@@ -2771,12 +2800,26 @@ parent: null
 scope:
 - docs/index.md
 - tickets.md
-evidence: []
+- tests/unit/test_research_assets.py
+evidence:
+- tests/unit/test_research_assets.py::test_docs_index_links_the_guide
 attachments: []
 acceptance: []
 threat: null
 ```
 T-0185 shipped docs/guides/exhaustive-research.md but docs/index.md is outside T-0185's declared scope, so DOC001 (doclink) cannot be satisfied without touching it. Add one bullet under 'Getting started' pointing at the new guide, matching the existing entries for install/quickstart/agentic-workflow/editors.
+
+## Done report
+
+Changed: docs/index.md (one bullet under Getting started, matching the
+install/quickstart/agentic-workflow/editors entry style).
+
+Evidence: tests/unit/test_research_assets.py::test_docs_index_links_the_guide
+(drift-lock: the link's absence fails the suite). Gate proof: DOC001 for
+docs/guides/exhaustive-research.md present before this change, absent
+after; repo violation count dropped by exactly one.
+
+Filed: none. Gates: no other rule references docs/index.md in this diff.
 
 <!-- ticket:T-0187 -->
 ```yaml
@@ -2801,3 +2844,70 @@ acceptance: []
 threat: null
 ```
 User mandate 2026-07-18: frob dup does the basics (R1-R6 rungs: winnow, WL-hash, candidate_pairs, tree_edit in frob-core; statement-Levenshtein; co-occurrence CFG/DFG proxy) but must be bleeding-edge. Phase 1 RESEARCH (exhaustive-researcher): map the clone-detection state of the art against our implementation -- APTED exact tree edit distance, SourcererCC bag-of-tokens overlap, Oreo metrics-based type-3/4, NiCad normalization+abstraction, DECKARD characteristic vectors, learning-based (ASTNN, FA-AST GNN, CCLearner) with honest feasibility calls for a no-model-dependency tool, cross-language clone detection, and ANTI-UNIFICATION / reverse templating: report each clone group with its abstracted template plus per-instance bindings (the shared skeleton with holes), so the fix suggestion is the extracted function signature, not just 'these are similar'. Phase 2 DESIGN+TICKETS: planner converts the survey into an implementation ticket tree (rust-kernel work vs python orchestration split explicit). Phase 3 META-TEST: exhaustiveness drift-lock in the T-0158/T-0182 mold -- a registry of detectors/rungs/clone-types, parametrized litmus fixtures proving every (clone type 1-4 x supported language x rung) cell either fires on a minimal fixture pair or carries a written exclusion; adding a detector or claiming a clone type without a firing fixture fails the suite. Acceptance: survey doc committed, ticket tree filed, meta-test green over the CURRENT detector set before any new detector lands.
+
+<!-- ticket:T-0188 -->
+```yaml
+id: T-0188
+title: 'catalog: add CWE-295 (improper cert validation) WeaknessEntry to unblock TLS
+  verify=False fingerprint'
+state: queued
+kind: security
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/**
+- tests/**
+- docs/strata/threat.md
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: spoofing
+```
+T-0153 review follow-up: the TLS verify=False fingerprint class was correctly cut because no CWE-295 WeaknessEntry exists in CWE_CATALOG/CWE_TOP_25_CATALOG/QUALITY_CATALOG and the CVEFP001 drift-lock (rightly) refuses fingerprints citing absent CWEs. Add the catalog row (with honest views placement), then the fingerprint entry (requests/httpx/aiohttp verify=False, node tls rejectUnauthorized false, rust danger_accept_invalid_certs), litmus positive/negative source tests per T-0153's pattern. Also reconcile CWE-916 (mentioned in _cve_fingerprint.py docstring but in neither catalog nor cut-class list) -- add it or fix the docstring.
+
+<!-- ticket:T-0189 -->
+```yaml
+id: T-0189
+title: 'catalog: add CWE-611 (XXE) WeaknessEntry to unblock XML external-entity fingerprint'
+state: queued
+kind: security
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/**
+- tests/**
+- docs/strata/threat.md
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: info-disclosure
+```
+T-0153 review follow-up: XXE fingerprint class cut because no CWE-611 WeaknessEntry exists and CVEFP001 refuses fingerprints citing absent CWEs. Add the catalog row, then the fingerprint entry (python lxml etree.parse with resolve_entities, xml.sax without feature_external_ges disabled, java-style patterns out of scope -- only supported languages), litmus positive/negative tests per T-0153's pattern.
+
+<!-- ticket:T-0190 -->
+```yaml
+id: T-0190
+title: secrets-gate fixtures trip GitHub push protection -- main is unpushable
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- tests/test_secrets_gate.py
+- src/frob/gates/_secrets.py
+- docs/modules/gates.md
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+GH013 push protection rejects main: the Stripe fixture at tests/test_secrets_gate.py:49 (landed in 48aeed1, T-0157) is realistic enough for GitHub secret scanning despite T-0157's clearly-fake requirement. Every push of main is blocked until resolved. Fix has two parts: (1) make every fixture structurally un-flaggable by GitHub (pattern-invalid tail: wrong length/charset/checksum for the provider) while still firing frob's own gate -- if frob's format constraint is currently so strict that only GitHub-flaggable strings can fire it, LOOSEN the fixture-facing constraint or add a test-only needle path, disclosed; (2) meta-test: fixtures must not match GitHub's published secret-scanning patterns (encode the Stripe/AWS/GitHub-token formats we know) so a future fixture cannot re-trip push protection. REMEDIATION for the already-flagged blob (coordinator step, not this ticket): after all in-flight branches merge, rewrite the unpushed range to replace the flagged fixture in 48aeed1 itself (remote tip predates it, so no force-push needed), or the user may use the GitHub unblock URL instead. This ticket only makes the CURRENT tree safe and drift-locked.
