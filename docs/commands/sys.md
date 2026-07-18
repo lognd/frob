@@ -10,30 +10,34 @@ doc and `src/frob/app/sys_runner.py` extend rather than get replaced.
 
 ## Quickstart (T-0167)
 
-Every `frob sys <verb>` (except `export`) takes a **design root**, not a
-single file: a directory (default `.`) containing one or more `.strata`
-design files under its `design/` subdirectory (or `[strata].design_dir`
-in `frob.toml`). Point the command at the repo root, not at
-`design/frob.strata` directly:
+`plan`, `doc`, and `audit` all take a **repo root** (default `.`), not a
+design directory: the command itself appends the configured design dir
+(default `design/`, or `[strata].design_dir` in `frob.toml`) and reads
+every `.strata` file under it. Pass the repo root -- passing `design/`
+directly makes the command look for `design/design/` and find nothing:
 
 ```bash
-frob sys plan design/            # dry-run: print the would-be ticket tree
-frob sys plan design/ --apply    # write the planned tickets
-frob sys doc design/             # threat-catalog audit matrix (owasp-top-10)
-frob sys audit design/           # check per-family exhaustiveness, exit nonzero on gaps
+frob sys plan                    # dry-run: print the would-be ticket tree
+frob sys plan --apply            # write the planned tickets
+frob sys plan /path/to/repo      # plan a different repo root
+frob sys doc                     # threat-catalog audit matrix (owasp-top-10)
+frob sys audit                   # check per-family exhaustiveness, exit nonzero on gaps
 ```
 
 `export` is the one exception: it takes a **path to a single `.strata`
 file** (default `design/frob.strata`), since a config skeleton is
-rendered from one elaborated `KernelModel`, not a directory of models:
+rendered from one elaborated `KernelModel`, not a directory of models --
+passing a directory is a hard error:
 
 ```bash
-frob sys export design/frob.strata --format seccomp
+frob sys export --format seccomp design/frob.strata
+frob sys export --format seccomp                    # defaults to design/frob.strata
 ```
 
-`frob sys --help` (and each verb's own `--help`) repeats this
-distinction inline as an epilog -- see `_add_sys_parser` in
-`src/frob/__main__.py`.
+`frob sys --help` repeats this distinction inline as an epilog -- see
+`_add_sys_parser` in `src/frob/__main__.py`. All of the commands above
+were run against this worktree while writing this section; see the
+T-0167 Done report for the verified output.
 
 ## `frob sys plan`
 

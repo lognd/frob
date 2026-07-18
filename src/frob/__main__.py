@@ -904,15 +904,19 @@ def _add_sys_parser(sub) -> None:
     # frob:ticket T-0167
     sys_epilog = (
         "examples:\n"
-        "  frob sys plan design/            plan a ticket tree from design/*.strata\n"
-        "  frob sys plan design/ --apply    write the planned tickets\n"
-        "  frob sys doc design/             render the threat-catalog audit matrix\n"
-        "  frob sys audit design/           check per-family exhaustiveness\n"
-        "  frob sys export design/frob.strata --format seccomp\n"
+        "  frob sys plan                    plan a ticket tree (dry-run)\n"
+        "  frob sys plan --apply             write the planned tickets\n"
+        "  frob sys plan /path/to/repo      plan a different repo root\n"
+        "  frob sys doc                     render the threat-catalog audit matrix\n"
+        "  frob sys audit                   check per-family exhaustiveness\n"
+        "  frob sys export --format seccomp design/frob.strata\n"
         "\n"
-        "convention: <path> is a design root (default '.') containing one or\n"
-        "more *.strata design files, e.g. design/frob.strata -- not a single\n"
-        "source file. Point sys at the directory, not the file."
+        "convention: for plan/doc/audit, <path> (default '.') is the REPO\n"
+        "ROOT -- the command appends the configured design dir itself\n"
+        "(default 'design/', or [strata].design_dir in frob.toml) and reads\n"
+        "every *.strata file under it. export is the exception: it takes a\n"
+        "path to ONE *.strata file (default 'design/frob.strata'), not a\n"
+        "root or a directory."
     )
     sys_p = sub.add_parser(
         "sys",
