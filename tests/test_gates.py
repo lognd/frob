@@ -27,6 +27,7 @@ from frob.gates import (
     scope_gate,
     stamp_baseline,
     stamp_coverage,
+    sys_gate,
     violation_fingerprint,
 )
 from frob.gates import (

@@ -2299,6 +2299,7 @@ _ALL_GATES = frozenset(
         "release",
         "clones",
         "decisions",
+        "sys",
     }
 )
 
@@ -2494,6 +2495,8 @@ def _build_jobs(
         jobs["clones"] = lambda: dup_gate(st.root, st.snapshot, st.diff)
     if "decisions" in selected:
         jobs["decisions"] = lambda: decisions_gate(st.root, st.snapshot)
+    if "sys" in selected:
+        jobs["sys"] = lambda: sys_gate(st.root, st.snapshot)
     return jobs, skipped
 
 
@@ -2601,6 +2604,7 @@ __all__ = [
     "scope_gate",
     "stamp_baseline",
     "stamp_coverage",
+    "sys_gate",
     "test_gate",
     "violation_fingerprint",
 ]
