@@ -28,6 +28,7 @@ _RUNNER_MODULE_NAMES = (
     "scaffold_runner",
     "serve_runner",
     "stats_runner",
+    "sys_runner",
     "test_runner",
     "ticket_runner",
     "vet_runner",
@@ -84,6 +85,7 @@ def _dispatch_table() -> dict[Subcommand, Callable[[AppConfig], None]]:
         Subcommand.stats: r["stats_runner"],
         Subcommand.serve: r["serve_runner"],
         Subcommand.mutate: r["mutate_runner"],
+        Subcommand.sys: r["sys_runner"],
     }
 
 
@@ -102,7 +104,7 @@ class App:
                 "usage: frob "
                 "<scaffold|cycle|outline|map|xref|parse|dup|arch|docs|bind|"
                 "exports|check|gitlog|graph|ack|ticket|test|vet|perf|"
-                "release|stats|serve|mutate>"
+                "release|stats|serve|mutate|sys>"
                 " ..."
             )
             sys.exit(1)

@@ -1,11 +1,12 @@
-"""Unit tests for frob.strata._design_load (T-0080)."""
+"""Unit tests for frob.strata._design_load (T-0080, T-0084)."""
 
 from __future__ import annotations
 
 from pathlib import Path
 
+from frob.graph import Edge, EdgeKind, GraphSnapshot
 from frob.strata import DesignIds, load_design_ids
-from frob.strata._design_load import DesignLoadError
+from frob.strata._design_load import DesignLoadError, unbound_constructs
 
 _MODEL = """module m
 node client : foreign { clearance Public; }
@@ -60,3 +61,34 @@ class TestLoadIds:
         _write(tmp_path, "design/litmus/example.strata", _MODEL)
         ids = load_design_ids(tmp_path)
         assert ids == DesignIds()
+
+
+def _snapshot(*edges: Edge) -> GraphSnapshot:
+    return GraphSnapshot(root=".", symbols={}, edges=tuple(edges))
+
+
+class TestUnbound:
+    """Shared SYS002 join (T-0084 review finding 1): `frob.gates.sys_gate`'s
+    SYS002 and `frob.strata.plan_obligations`'s "unbound" frontier both
+    consume this, so it must return the same `(kind, id)` pairs either
+    caller would have computed on its own."""
+
+    # frob:tests src/frob/strata/_design_load.py::unbound_constructs kind="unit"
+    def test_unbound_pair(self) -> None:
+        ids = DesignIds(boundaries=frozenset({"b1"}), secrets=frozenset({"s1"}))
+        result = unbound_constructs(ids, _snapshot())
+        assert result == ((EdgeKind.BOUNDARY, "b1"), (EdgeKind.SECRET, "s1"))
+
+    # frob:tests src/frob/strata/_design_load.py::unbound_constructs kind="unit"
+    def test_bound_excluded(self) -> None:
+        ids = DesignIds(boundaries=frozenset({"b1"}), secrets=frozenset({"s1"}))
+        snapshot = _snapshot(
+            Edge(
+                src="pkg.mod.func",
+                kind=EdgeKind.BOUNDARY,
+                target="b1",
+                origin="pkg/mod.py:1",
+            ),
+        )
+        result = unbound_constructs(ids, snapshot)
+        assert result == ((EdgeKind.SECRET, "s1"),)

@@ -10,6 +10,15 @@ elaborate it (`_elaborate.elaborate`), and merge the resulting
 `KernelModel`s' id sets. A file that fails to parse or elaborate is
 reported, never silently dropped (charter law 1) -- the caller (gates)
 decides severity.
+
+`unbound_constructs` is the SYS002 question ("which boundary/secret
+constructs have no code binding anywhere") as a neutral, output-agnostic
+join -- `frob.gates.sys_gate` (SYS002 `Violation`s) and
+`frob.strata.plan_obligations` (the "unbound" frontier's `PlannedTicket`s,
+T-0084) both need exactly this detection and previously duplicated it
+line-for-line; it lives here once, and each caller renders its own output
+shape from the same `(EdgeKind, construct_id)` pairs (T-0084 review
+finding 1).
 """
 
 from __future__ import annotations
@@ -18,6 +27,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from frob.excludes import is_excluded, load_exclude_globs
+from frob.graph import EdgeKind, GraphSnapshot
 from frob.logging import get_logger
 
 from ._elaborate import elaborate
@@ -26,6 +36,16 @@ from ._models import KernelModel
 from ._parse import parse_module
 
 _log = get_logger(__name__)
+
+# frob:doc docs/strata/surface.md#directives-t-0080
+#: Construct kinds that require at least one code binding (`frob:boundary`/
+#: `frob:secret` directive) -- boundaries and secrets are the enforcement/
+#: authority sites the surface language calls out; channels (Flow ids) are
+#: left optional since most flows are pure data movement with no single
+#: enforcing call site to bind (T-0080 decision, docs/strata/surface.md
+#: #directives-t-0080). Shared by `frob.gates`'s SYS002 and
+#: `frob.strata.plan_obligations`'s "unbound" frontier (T-0084).
+UNBOUND_REQUIRED_KINDS: tuple[EdgeKind, ...] = (EdgeKind.BOUNDARY, EdgeKind.SECRET)
 
 #: Default directory (relative to a repo root) design files live under, when
 #: `frob.toml` declares none (`[strata].design_dir`, read by the gates caller).
@@ -81,6 +101,7 @@ def _strata_files(
     if not design_dir.is_dir():
         return []
     found = []
+    # frob:waive PERF004 reason="one sort of the file list, not per-iteration"
     for path in sorted(design_dir.rglob("*.strata")):
         rel = path.relative_to(root).as_posix()
         if exclude_globs and is_excluded(rel, exclude_globs):
@@ -111,6 +132,7 @@ def load_design_ids(root: Path, design_dir: str = DEFAULT_DESIGN_DIR) -> DesignI
     errors: list[DesignLoadError] = []
     models: list[KernelModel] = []
     exclude_globs = load_exclude_globs(root)
+    # frob:waive PERF003 reason="one flat scan over discovered design files, not a join"
     for path in _strata_files(root, root / design_dir, exclude_globs):
         rel = path.relative_to(root).as_posix()
         try:
@@ -157,4 +179,44 @@ def load_design_ids(root: Path, design_dir: str = DEFAULT_DESIGN_DIR) -> DesignI
     )
 
 
-__all__ = ["DEFAULT_DESIGN_DIR", "DesignIds", "DesignLoadError", "load_design_ids"]
+# frob:doc docs/strata/surface.md#directives-t-0080
+# frob:ticket T-0084
+# frob:tests tests/unit/strata/test_design_load.py::TestUnbound.test_unbound_pair
+# frob:tests tests/unit/strata/test_design_load.py::TestUnbound.test_bound_excluded
+def unbound_constructs(
+    design_ids: DesignIds,
+    snapshot: GraphSnapshot,
+    kinds: tuple[EdgeKind, ...] = UNBOUND_REQUIRED_KINDS,
+) -> tuple[tuple[EdgeKind, str], ...]:
+    """Every `(kind, construct_id)` in `kinds` (boundary/secret by default)
+    with no `frob:<kind>` directive edge anywhere in `snapshot` -- the raw
+    SYS002 join, shared by `frob.gates.sys_gate` (renders `Violation`s) and
+    `frob.strata.plan_obligations` (renders `PlannedTicket`s), in
+    construct-id order within each kind so both callers get a stable,
+    deterministic sequence."""
+    bound: dict[EdgeKind, set[str]] = {kind: set() for kind in kinds}
+    for edge in snapshot.edges:
+        if edge.kind in bound:
+            bound[edge.kind].add(edge.target)
+    ids_by_kind = {
+        EdgeKind.BOUNDARY: design_ids.boundaries,
+        EdgeKind.SECRET: design_ids.secrets,
+    }
+    unbound: list[tuple[EdgeKind, str]] = []
+    # frob:waive PERF003 reason="outer loop is a handful of fixed kinds, not a join"
+    # frob:waive PERF004 reason="one sort per kind over a small construct-id set"
+    for kind in kinds:
+        for construct_id in sorted(ids_by_kind.get(kind, frozenset())):
+            if construct_id not in bound[kind]:
+                unbound.append((kind, construct_id))
+    return tuple(unbound)
+
+
+__all__ = [
+    "DEFAULT_DESIGN_DIR",
+    "UNBOUND_REQUIRED_KINDS",
+    "DesignIds",
+    "DesignLoadError",
+    "load_design_ids",
+    "unbound_constructs",
+]

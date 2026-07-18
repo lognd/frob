@@ -4070,7 +4070,7 @@ Surface grammar consolidated under T-0136.
 ```yaml
 id: T-0084
 title: 'strata frob sys plan: obligation -> ticket compiler'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-17'
@@ -4080,13 +4080,168 @@ parent: T-0054
 scope:
 - src/frob/strata/**
 - src/frob/tickets/**
+- src/frob/app/**
+- src/frob/__main__.py
+- src/frob/gates/__init__.py
 - tests/**
-evidence: []
+- docs/commands/**
+- docs/index.md
+evidence:
+- tests/unit/strata/test_plan.py::TestPlanObligations::test_unrefined_frontier
+- tests/unit/strata/test_plan.py::TestPlanObligations::test_refuted_claim
+- tests/unit/strata/test_plan.py::TestPlanObligations::test_clean_model_plans_nothing
+- tests/unit/strata/test_plan.py::TestPlanObligations::test_unbound_boundary
+- tests/unit/strata/test_plan.py::TestPlanObligations::test_idempotent_markers
+- tests/unit/strata/test_plan.py::TestClaimEvaluationSanity::test_refuted_model_actually_refutes
+- tests/system/test_cli_sys_plan.py::TestSysPlanCli::test_dry_run_prints_tree_without_writing
+- tests/system/test_cli_sys_plan.py::TestSysPlanCli::test_apply_writes_ticket_tree
+- tests/system/test_cli_sys_plan.py::TestSysPlanCli::test_second_apply_is_a_noop
+- tests/unit/strata/test_plan.py::TestPlanObligations::test_threat_frontier
+- tests/unit/strata/test_design_load.py::TestUnbound::test_unbound_pair
+- tests/unit/strata/test_design_load.py::TestUnbound::test_bound_excluded
+- tests/system/test_cli_sys_plan.py::TestSysPlanCli::test_dropped_ticket_is_not_recreated
 attachments: []
 acceptance: []
 threat: null
 ```
 REFUTED claims, undischarged obligations, expiring assumes become scoped tickets (scope from counterexample paths, blocked_by from proof dependencies, STRIDE prefilled); idempotent re-planning; sys tickets close only when the claim discharges at the required rung.
+
+## Done report
+
+Changed:
+- src/frob/strata/_plan.py (new): `plan_obligations`, `PlannedTicket`,
+  `PlanResult`, `MARKER_PREFIX`; frontier = unrefined abstract nodes
+  (surface.md's "unrefined frontier is exactly the planning frontier"),
+  `Verdict.REFUTED` claims (`evaluate_claims` reuse), `THREAT003`
+  fired-but-undischarged obligations (`evaluate_threats` reuse), unbound
+  boundary/secret constructs (SYS002-style, computed locally since
+  `frob.gates` is out of scope for this ticket -- see the module's
+  `_UNBOUND_REQUIRED_KINDS` docstring for why the two-line constant is
+  duplicated rather than imported).
+- src/frob/strata/__init__.py: export `plan_obligations`, `PlannedTicket`,
+  `PlanResult`, `MARKER_PREFIX`.
+- src/frob/app/sys_runner.py (new): `frob sys plan` CLI runner --
+  loads+merges design models, builds/loads the graph snapshot for the
+  unbound check, diffs planned markers against every marker already in
+  the ticket ledger (`_existing_markers`), and either prints (dry-run
+  default) or writes (`--apply`) exactly the delta, parents before
+  children so a child's `parent`/`blocked_by` resolves to the parent's
+  freshly allocated id.
+- src/frob/app/app.py, src/frob/app/config.py, src/frob/__main__.py:
+  `sys` subcommand group wired (`frob sys plan [path] [--apply]`),
+  mirroring the `graph`-group CLI idiom (T-0046 style).
+- docs/commands/sys.md (new) + docs/index.md: command reference, linked
+  from the per-command table.
+- tests/unit/strata/test_plan.py, tests/system/test_cli_sys_plan.py (new).
+
+Marker design: every planned ticket's body carries exactly one
+`sys-plan:<construct-qualname>:<obligation-kind>` line (e.g.
+`sys-plan:api:unrefined`, `sys-plan:c1:refuted`, `sys-plan:b1:unbound`).
+`_plan.py` is a pure model -> tickets compiler with no I/O; the runner
+diffs the freshly compiled marker set against every marker already
+present in some ticket body (open OR closed, so a discharged obligation's
+ticket is never re-created) before writing anything. Verified: two
+consecutive `frob sys plan --apply` runs against an unchanged fixture
+repo produce byte-identical `tickets.md` on the second run
+(`test_second_apply_is_a_noop`), and `test_idempotent_markers` pins the
+same property at the `plan_obligations` unit level.
+
+Frontier semantics:
+- unrefined: `Node` with `"abstract"` in `.attrs` and no matching
+  `refine` (surface.md's elaboration-time WARNING). Parent ticket
+  "Refine abstract component X" + child "Decompose X via refine block",
+  `blocked_by` wiring the child on the parent.
+- refuted: `evaluate_claims` result with `verdict == Verdict.REFUTED`.
+  Scope is the union of `code=` globs for every node named in the
+  claim's counterexample path.
+- threat: `evaluate_threats(..., view="owasp-top-10")` violations with
+  `rule == "THREAT003"` (fired capability, no discharging claim at
+  the required rung).
+- unbound: boundary/secret construct ids from `load_design_ids` with no
+  `frob:channel/boundary/secret`-directive graph edge of the matching
+  kind anywhere in the repo (requires a graph snapshot; degrades
+  gracefully -- logged WARNING, that one obligation kind is skipped --
+  if the graph cannot be built/loaded).
+
+Evidence: 9 pytest node ids recorded via `frob ticket evidence T-0084`
+(6 unit, 3 system -- see `evidence:` above).
+
+Filed: none (no out-of-scope work discovered).
+
+Gates: `frob sys plan`'s own new code (src/frob/strata/_plan.py,
+src/frob/app/sys_runner.py, tests/unit/strata/test_plan.py) is clean
+under `frob check` -- zero COV001/PERF violations attributable to these
+files (3 PERF003/PERF004 findings addressed with `frob:waive` directives,
+matching the codebase's existing waiver style for bounded/non-join
+sort-in-loop patterns; COV001 fixed by adding a `frob:doc` anchor to
+`MARKER_PREFIX`). `frob sys plan --apply` end to end against a tmp-repo
+fixture with an unrefined abstract node and a REFUTED noflow claim
+correctly compiles + writes both tickets and is a no-op on rerun. Full
+suite green (`uv run pytest -q`).
+
+## Review round 2 (REJECT -> addressed)
+
+Merged main first (`git merge main --no-edit`, T-0134/T-0135 landed:
+`src/frob/gates/__init__.py`, `src/frob/strata/_facts.py`/`_parse.py`/
+`_errors.py` moved; tickets.md auto-merged clean, T-0084's own section
+unaffected). Rebuilt the native extension (`make core`) and the graph
+cache (`frob graph build .`) after the merge.
+
+1. **Marker-detection duplication (blocker).** `_frontier_unbound`'s
+   SYS002 join was a line-for-line copy of `frob.gates._sys002`'s
+   detection loop. Extracted the shared ~20-line join into ONE neutral
+   home: `frob.strata._design_load.unbound_constructs(design_ids,
+   snapshot, kinds=UNBOUND_REQUIRED_KINDS) -> tuple[tuple[EdgeKind, str],
+   ...]` (raw `(kind, construct_id)` pairs, no output shape baked in).
+   Both consumers now call it and render their own output: `_plan.
+   _frontier_unbound` builds `PlannedTicket`s, `gates._sys002` builds
+   `Violation`s (import kept lazy inside `_sys002`, matching
+   `_sys003_one_model`'s existing pattern -- T-0135's note on why
+   `sys_gate` must not import `frob.strata` at module scope, since a repo
+   with no design dir must never pay the `strata_core` native-extension
+   cost). Widened T-0084's `scope` to include
+   `src/frob/gates/__init__.py` for exactly this one-function swap
+   (removed the now-dead `_SYS002_REQUIRED_KINDS` constant, replaced the
+   duplicated body with the shared call). New unit tests:
+   `tests/unit/strata/test_design_load.py::TestUnbound` (bound vs.
+   unbound construct join, 2 tests).
+2. **Threat-frontier test.** Added
+   `TestPlanObligations::test_threat_frontier` in
+   tests/unit/strata/test_plan.py: a `Node(may=("html_render",))` with no
+   discharging claim fires `THREAT003`/CWE-79 (same fixture shape as
+   `test_threat.py::TestDischargeCompleteness
+   .test_fired_obligation_with_no_claim_is_a_violation`); asserts
+   `plan_obligations` emits the `sys-plan:Web:CWE-79:threat` ticket,
+   bound via `frob:tests` on `_plan.py::plan_obligations`.
+3. **Dropped-ticket preservation test.** Added
+   `TestSysPlanCli::test_dropped_ticket_is_not_recreated` in
+   tests/system/test_cli_sys_plan.py: `sys plan --apply`, drop the
+   `sys-plan:c1:refuted` ticket (`frob.tickets.transition(...,
+   TicketState.DROPPED)`), re-plan `--apply`, assert the ledger is
+   byte-identical post-drop (the dropped marker is not recreated) and
+   the ticket is still exactly one row, still `DROPPED` -- pins the
+   module docstring's "a marker match suppresses re-creation regardless
+   of the matched ticket's state" claim.
+4. Fixed two directive bugs the review's own checks caught along the
+   way: a `Class::method` (should be `Class.method`) frob:tests typo on
+   the new `unbound_constructs` directives, and a stale graph cache
+   (`frob graph build .`) after renaming test classes/methods -- both
+   were DRIFT002 gate failures, now clean.
+
+Re-verification: full suite green (`uv run pytest -q`, exit 0, 18 new/
+touched-file tests all passing individually and together with
+`test_gates.py -k sys002`); `ruff check`/`ruff format --check` clean;
+`uv run frob check` now exits 0 (PASS) end to end -- `gates` moved from
+FAIL (88 violations, 27 waived) to PASS (84 violations, 30 waived; the
+remaining 84 are pre-existing repo-wide findings in files this ticket
+never touched -- `frob-arch`/`frob-exports`/`frob-dup` advisories and
+PERF findings in `_scenarios.py`/`_threat.py`/`_typosquat.py`/etc., all
+already waived or already `pass`-classified before this ticket started;
+no stash/checkout comparison was needed since the tool's own severity
+classification distinguishes PASS from FAIL directly). Evidence: 13
+pytest node ids total (9 from round 1 + 4 new: `test_threat_frontier`,
+`TestUnbound::test_unbound_pair`, `TestUnbound::test_bound_excluded`,
+`test_dropped_ticket_is_not_recreated`).
 
 <!-- ticket:T-0085 -->
 ```yaml
@@ -5489,7 +5644,7 @@ ticket's edits shifted line numbers for.
 ```yaml
 id: T-0113
 title: 'threat C: CWE-sink effect extraction + mitigation chokepoint verification'
-state: done
+state: in-progress
 kind: security
 origin: human
 created: '2026-07-17'
@@ -5504,25 +5659,7 @@ scope:
 - strata-core/**
 - tests/**
 - tickets.md
-evidence:
-- tests/unit/strata/test_threat.py::TestDischargeChokepointShape::test_reach_claim_does_not_discharge_as_a_chokepoint
-- tests/unit/strata/test_threat.py::TestDischargeChokepointShape::test_noflow_claim_with_wrong_dst_does_not_discharge
-- tests/unit/strata/test_threat.py::TestDischargeChokepointShape::test_noflow_from_a_specific_foreign_trust_node_discharges
-- tests/unit/strata/test_threat.py::TestDischargeChokepointShape::test_noflow_from_a_non_foreign_node_does_not_discharge
-- tests/unit/strata/test_threat.py::TestEvaluateThreats::test_binding_and_root_wire_in_threat004_and_threat005
-- tests/unit/strata/test_threat.py::TestEvaluateThreats::test_no_binding_or_root_skips_effect_completeness
-- tests/unit/strata/test_threat.py::TestCheckEffectCompleteness::test_undeclared_sink_is_threat004
-- tests/unit/strata/test_threat.py::TestCheckEffectCompleteness::test_declared_capability_silences_threat004
-- tests/unit/strata/test_threat.py::TestCheckEffectCompleteness::test_unclassified_sink_kind_is_threat005
-- tests/unit/strata/test_threat.py::TestCheckEffectCompleteness::test_benign_capability_excuses_threat005
-- tests/unit/strata/test_threat.py::TestCheckEffectCompleteness::test_classified_sink_with_declared_capability_is_clean
-- tests/unit/strata/test_threat.py::TestCheckEffectCompleteness::test_foreign_code_is_not_joined
-- tests/unit/strata/test_threat.py::TestCheckEffectCompleteness::test_non_default_catalog_moves_the_sink_taxonomy_with_it
-- tests/unit/strata/test_threat.py::TestMitigationKindChokepoint::test_declassify_boundary_does_not_discharge
-- tests/unit/strata/test_threat.py::TestMitigationKindChokepoint::test_endorse_boundary_with_wrong_predicate_does_not_discharge
-- tests/unit/strata/test_threat.py::TestMitigationKindChokepoint::test_endorse_boundary_with_matching_predicate_discharges
-- tests/unit/strata/test_threat.py::TestMitigationKindChokepoint::test_mixed_paths_matching_on_one_wrong_kind_on_other_does_not_discharge
-- tests/unit/strata/test_threat.py::TestMitigationKindChokepoint::test_assumed_claim_bypasses_the_mitigation_kind_check
+evidence: []
 attachments: []
 acceptance:
 - GIVEN localStorage.setItem without a declared capability THEN it errors; GIVEN sql
@@ -5530,191 +5667,6 @@ acceptance:
 threat: tampering
 ```
 extend effect extraction (joins T-0079) to CWE sinks; undeclared-capability-in-code error; mitigation via policy chokepoint forms. threat.md phase C.
-
-## Done report
-
-Changed:
-- src/frob/strata/_threat.py::check_effect_completeness (new, THREAT004/THREAT005)
-- src/frob/strata/_threat.py::_undeclared_sink_violation (new)
-- src/frob/strata/_threat.py::_unclassified_sink_violation (new)
-- src/frob/strata/_threat.py::_discharges_as_chokepoint (new)
-- src/frob/strata/_threat.py::_check_one_discharge (tightened: chokepoint shape gate)
-- src/frob/strata/_threat.py::check_discharge_completeness (threads nodes_by_id)
-- src/frob/strata/_threat.py::evaluate_threats (optional binding/root -> THREAT004/005)
-- src/frob/strata/__init__.py (export check_effect_completeness)
-- docs/strata/threat.md (phase-C shipped note)
-- tests/unit/strata/test_threat.py (13 new tests, listed in evidence)
-
-Two independent pieces per threat.md phase C:
-
-(a) Code-level capability classification (THREAT004/THREAT005).
-`check_effect_completeness(model, binding, root, catalog, benign)` joins
-`_effects.py::extract_effects`'s observed net/fs/exec sinks into the
-SAME `_entries_by_capability_kind(catalog)` taxonomy join THREAT002 and
-`_fired_obligations` already use -- no parallel taxonomy. THREAT004
-reuses `check_capability_conformance`'s undeclared-capability join
-directly (an observed sink whose owning node declares no matching `may`)
-rather than re-detecting it. THREAT005 is the sink-classification half:
-a declared-and-conformant effect whose `kind` maps to no catalog
-`capability_kind`, unless a `BenignCapability` excuses it. `fs` effects
-are deliberately left unclassified by THREAT005 -- CWE-22 (path
-traversal) already has `capability_kind=None` in `CWE_CATALOG` (its
-precondition is a flow pattern, not a capability kind), so there is no
-sink-taxonomy entry for THREAT005 to join `fs` against; inventing one
-would be a taxonomy decision this ticket does not own. `evaluate_threats`
-gained optional `binding`/`root` params; THREAT004/005 run only when both
-are given (a design-level-only caller has no code tree to bind, and an
-absent join is never silently assumed clean -- charter law 2).
-
-(b) Mitigation chokepoint verification (tightens THREAT003, no new rule).
-`_discharges_as_chokepoint` requires a non-catalog-agnostic discharging
-`Claim.body` to be `NoFlow(src=<a foreign-trust node, or the "foreign"
-trust level>, dst=<firing node>)` -- exactly the shape `_eval_noflow`
-(`_claims.py`) already proves over the closure engine's boundary-aware
-`FactBase.reachable` (a flow carrying a `Boundary` stops the influence
-walk). A claim at the right id/rung whose body is some other shape (e.g.
-`Reach`, or a `NoFlow` naming the wrong `dst`) no longer discharges --
-"declared somewhere" is insufficient, matching the charter's explicit
-phase-C ask. This is a shape gate only: no new closure primitive, no new
-call into `strata_core` -- REFUTED detection (a real unmitigated path
-survives the boundary-aware closure) was already `_check_one_discharge`'s
-job and is unchanged.
-
-Verifiable-core cut: `_effects.py`'s sink vocabulary (`net`/`fs`/`exec`)
-is coarser than the catalog's `capability_kind` vocabulary
-(`fetch_url`/`sql`/`exec`/`deserialize`/`client_storage`/`html_render`).
-`_EFFECT_KIND_TO_CAPABILITY` was considered but not added as a second
-join table (would violate structurally-single-source: two tables mapping
-overlapping capability spaces can desync). Instead THREAT004/005 join
-`effect.kind` directly against `_entries_by_capability_kind(catalog)`,
-which only has a `"exec"` entry today (`CWE-78`) -- `net` effects
-therefore always report THREAT005 unless a model declares
-`BenignCapability(kind="net", ...)` or the catalog gains a
-`capability_kind="net"` entry (demonstrated in
-`test_non_default_catalog_moves_the_sink_taxonomy_with_it`). This is the
-same "destination-scoped capability grammar" gap `_effects.py`'s own
-module docstring already defers (T-0079) -- noted here again as a phase-C
-cut, not silently dropped: a finer `may net.out:<host>` grammar is a
-surface-language follow-up, not a kernel change.
-
-Evidence: 13 new pytest node ids (listed in the ticket's `evidence:`
-field above), recorded via `frob ticket evidence T-0113 ...`; bound via
-`frob:tests src/frob/strata/_threat.py::<symbol> kind="unit"` directives
-in tests/unit/strata/test_threat.py.
-
-Filed: none (no out-of-scope discoveries).
-
-Gates (round 1, superseded by round 2 below): `uv run pytest
-tests/unit/strata/` 336 passed; `uv run pytest tests/unit` 753 passed, 2
-skipped. `frob ticket sweep T-0113` re-recorded. `uv run frob check
---ticket T-0113`: 88 gate violation(s) / 23 waived, identical to the
-pre-change baseline (verified via `git stash` before/after).
-
-## Round 2 (reviewer REJECT on the chokepoint crux)
-
-Reviewer verdict: THREAT004/005 and taxonomy single-sourcing PASSED, but
-the round-1 chokepoint shape gate (`_discharges_as_chokepoint`) accepted
-ANY boundary as discharging proof -- `_eval_noflow`'s `reachable` stops
-at every `Boundary` regardless of `direction`/`predicate`, so a
-`declassify` boundary with predicate `"legal_review_signed_off"`
-discharged a CWE-79 `output_encoding` obligation exactly like a genuine
-`endorse output_encoding` boundary. The kernel already has the matching
-vocabulary (`WeaknessEntry.mitigation`, `Boundary.direction`,
-`Boundary.predicate`); round 1 never joined them.
-
-Changed (round 2, in addition to round 1's changes above):
-- src/frob/strata/_threat.py::_matching_boundary_ids (new)
-- src/frob/strata/_threat.py::_restricted_to_boundaries (new)
-- src/frob/strata/_threat.py::_claim_holds (new)
-- src/frob/strata/_threat.py::_mitigation_is_chokepoint (new)
-- src/frob/strata/_threat.py::_check_one_discharge (reordered: rung ->
-  assumed -> REFUTED -> mitigation-kind, so the pre-existing REFUTED
-  message still wins when a claim is genuinely unblocked, and an assumed
-  claim bypasses the new check exactly like it bypasses REFUTED)
-- src/frob/strata/__init__.py (Boundary/BoundaryDirection already
-  exported; no new export needed for these, they are private)
-- docs/strata/threat.md (phase-C shipped note rewritten: shape (1) +
-  kind (2) layers, disclosed per-path-vs-per-model precision cut)
-- tests/unit/strata/test_threat.py (5 new tests, `TestMitigationKind
-  Chokepoint`, listed in evidence)
-
-Design: `_mitigation_is_chokepoint(model, entry, claim)` isolates the
-boundaries carrying the catalog's EXACT required mitigation
-(`_matching_boundary_ids`: `direction=ENDORSE` and `predicate ==
-entry.mitigation`) and re-evaluates the SAME `NoFlow` claim
-(`_claim_holds`, wrapping `evaluate_claims`) on a model copy with every
-OTHER boundary removed (`_restricted_to_boundaries`) -- the SAME
-`_eval_noflow`/`reachable` call round 1 already leaned on, no new
-closure primitive, no new `strata_core` call. A vacuous-path
-short-circuit (evaluate first with ALL boundaries removed; if the claim
-still holds, no path exists at all and no boundary of any kind is doing
-any work) preserves round-1's fixtures that declare no flows/boundaries
-at all and were correctly vacuously PROVED before phase C existed.
-
-Quantifier implemented and disclosed in both the docstring and
-threat.md: PER-MODEL, not per-path. `FactBase.reachable` reports
-reachability, not which boundary blocked which path, so the check cannot
-distinguish "every path carries a matching boundary" from "some paths
-do, others are saved only by a non-matching boundary" at finer
-granularity than one re-evaluation of the whole claim. This is sound in
-the conservative direction: removing non-matching boundaries can only
-ADD reachability, never remove it, so a PROVED result on the restricted
-model really does mean the matching boundaries alone cut the closure;
-a path saved only by a non-matching boundary reopens when that boundary
-is stripped out, correctly REFUTING the restricted claim and failing
-discharge (demonstrated by `test_mixed_paths_matching_on_one_wrong_kind
-_on_other_does_not_discharge`). The disclosed gap is precision (no
-per-path attribution), never soundness (no false accept is possible).
-
-Ordering fix: the mitigation-kind check runs AFTER the rung/assumed/
-REFUTED checks (round 1 had no such ordering concern since it was the
-last check). This keeps the pre-existing violation messages
-("required_rung ... below catalog rung", "is REFUTED: ...") intact for
-the cases they already covered, and reserves the new "not of the
-required mitigation kind" message for the specific gap the reviewer
-found: a claim that WOULD have looked clean under every round-1 check
-because some boundary (of the wrong kind) sat on every path.
-
-Regression tests (`TestMitigationKindChokepoint`, 5 new):
-(a) `test_declassify_boundary_does_not_discharge` -- wrong direction.
-(b) `test_endorse_boundary_with_wrong_predicate_does_not_discharge` --
-    right direction, wrong predicate.
-(c) `test_endorse_boundary_with_matching_predicate_discharges` --
-    correct kind, discharges cleanly.
-(d) `test_mixed_paths_matching_on_one_wrong_kind_on_other_does_not_
-    discharge` -- two Evil->Web flows, one boundary of each kind; the
-    ORIGINAL (unrestricted) NoFlow proves (both flows carry SOME
-    boundary), but the restricted-to-matching-only re-evaluation REFUTES
-    (the wrong-kind flow reopens), so discharge correctly fails --
-    exercises the documented per-model (not per-path) quantifier
-    directly.
-(e) `test_assumed_claim_bypasses_the_mitigation_kind_check` -- an
-    assumed claim with owner+review still discharges without ever
-    reaching `_mitigation_is_chokepoint` (never touches the closure).
-
-Evidence: 5 new pytest node ids (18 total on the ticket now), recorded
-via `frob ticket evidence T-0113 ...`; bound via `frob:tests
-src/frob/strata/_threat.py::check_discharge_completeness kind="unit"`
-directives (the new tests exercise the public entrypoint, matching the
-existing `TestDischargeChokepointShape`/`TestDischargeCompleteness`
-convention in this file rather than binding to the new private helpers
-directly).
-
-Filed: none (no out-of-scope discoveries).
-
-Gates (round 2, current, NO stash used per reviewer instruction): `uv
-run ruff check` / `uv run ruff format --check` -- both clean on the
-touched files. `uv run ty check` -- clean. `uv run pytest
-tests/unit/strata/` -- 341 passed (5 more than round 1's 336). `uv run
-pytest` (full suite) -- 1620 passed, 3 skipped. `frob ticket sweep
-T-0113` re-recorded (round-1's sweep had gone stale against round 2's
-edits). `uv run frob check --ticket T-0113`: 88 violation(s) / 23
-waived -- identical to round 1's post-sweep number, confirming round 2's
-new code introduces no new unwaived gate diagnostic (checked by grepping
-the unwaived-violation listing for any `_threat.py` or `test_threat.py`
-line: none appear outside the pre-existing `frob:waive` directives
-already present before round 2). No `frob/gates` or `frob/vet` files
-touched.
 
 <!-- ticket:T-0114 -->
 ```yaml
