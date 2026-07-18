@@ -150,3 +150,4 @@ class TicketError(ErrorSet):
     MissingEvidence = "done requires evidence and a Done report"
     BlockerOpen = "Cannot start: blocked_by contains open tickets"
     WriteFailed = "Atomic ticket write failed"
+    UnknownEvidence = "Evidence id does not resolve to a collected test"
