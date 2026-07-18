@@ -261,7 +261,7 @@ def _prune_stale_cache(conn, seen_paths: set[str]) -> None:
     """Delete cache rows for files that no longer exist on disk."""
     stale_cached = {row[0] for row in conn.execute("SELECT path FROM files")}
     for stale_path in stale_cached - seen_paths:
-        _log.info("removing deleted file from cache: %s", stale_path)
+        _log.debug("removing deleted file from cache: %s", stale_path)
         conn.execute("DELETE FROM files WHERE path = ?", (stale_path,))
         conn.execute("DELETE FROM symbols WHERE path = ?", (stale_path,))
         conn.execute("DELETE FROM edges WHERE file = ?", (stale_path,))

@@ -52,6 +52,32 @@ def _stdout_stream_handlers() -> list[logging.StreamHandler]:
 
 @contextlib.contextmanager
 # frob:doc docs/modules/logging.md#public-api
+def stdout_log_level(level: int) -> Iterator[None]:
+    """Set every stdout-bound `StreamHandler` to `level` for the duration of the block.
+
+    Backs `frob check`'s `-v`/`-vv` verbosity gating (T-0202): the shared
+    root-logger stdout handler defaults to DEBUG (`config.toml`), so every
+    per-file/per-symbol DEBUG/INFO log line prints at default verbosity
+    unless a caller narrows the handler first. Unlike `quiet_stdout_logs`,
+    this is a plain save/restore -- callers own a single top-level CLI
+    invocation (not concurrent library code), so the reentrancy/thread-
+    safety machinery `quiet_stdout_logs` needs for T-0125 is not needed
+    here. Do not nest this with `quiet_stdout_logs`; a caller wants one or
+    the other, never both.
+    """
+    handlers = _stdout_stream_handlers()
+    saved = [h.level for h in handlers]
+    for h in handlers:
+        h.setLevel(level)
+    try:
+        yield
+    finally:
+        for h, saved_level in zip(handlers, saved, strict=True):
+            h.setLevel(saved_level)
+
+
+@contextlib.contextmanager
+# frob:doc docs/modules/logging.md#public-api
 def quiet_stdout_logs() -> Iterator[None]:
     """Raise stdout log handlers to WARNING for the duration of the block.
 

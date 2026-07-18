@@ -117,6 +117,9 @@ class AppConfig(BaseModel):
     check_stamp_coverage: bool = False
     check_stamp_baseline: bool = False
     check_delta: bool = False
+    # -v/-vv count (T-0202): 0=summary+violations only, 1=INFO firehose,
+    # 2+=full per-symbol DEBUG.
+    check_verbose: int = 0
     # check (python)
     check_skip_ruff: bool = False
     check_skip_ty: bool = False
@@ -362,6 +365,7 @@ class AppConfig(BaseModel):
             "gitlog_limit",
             "perf_top",
             "stats_days",
+            "check_verbose",
         ):
             val = getattr(args, int_field, None)
             if val is not None:

@@ -403,6 +403,18 @@ def _add_check_selection_args(check_p) -> None:
             "degrades to the full set with a warning"
         ),
     )
+    check_p.add_argument(
+        "-v",
+        "--verbose",
+        dest="check_verbose",
+        action="count",
+        default=0,
+        help=(
+            "-v restores per-file/per-stage INFO log lines; -vv adds "
+            "per-symbol DEBUG detail (T-0202; default is summary+violations "
+            "only)"
+        ),
+    )
 
 
 # frob:ticket T-0030

@@ -63,6 +63,40 @@ class TestCheckCleanProject:
         )
 
 
+class TestCheckVerbosity:
+    """T-0202: default check output has no per-file/per-symbol log chatter;
+    -v restores it."""
+
+    def test_default_has_no_dispatch_or_digest_lines(self, tmp_path):
+        """No -v: `dispatching`/`parsed`/`digested` lines must not appear."""
+        _make_project(tmp_path, "def add(x: int, y: int) -> int:\n    return x + y\n")
+        r = run(
+            "check",
+            str(tmp_path),
+            "--skip-tests",
+            "--skip-exports",
+            cwd=tmp_path,
+        )
+        out = r.stdout + r.stderr
+        assert "dispatching path=" not in out
+        assert not any(line.startswith("parsed ") for line in out.splitlines())
+        assert "digested " not in out
+
+    def test_verbose_restores_dispatch_and_parse_lines(self, tmp_path):
+        """-v: the per-file INFO firehose (at least `parsed ...`) is back."""
+        _make_project(tmp_path, "def add(x: int, y: int) -> int:\n    return x + y\n")
+        r = run(
+            "check",
+            str(tmp_path),
+            "--skip-tests",
+            "--skip-exports",
+            "-v",
+            cwd=tmp_path,
+        )
+        out = r.stdout + r.stderr
+        assert any(line.startswith("parsed ") for line in out.splitlines())
+
+
 class TestCheckBadCode:
     def test_unused_import_fails(self, tmp_path):
         src = "import os\n\ndef foo() -> None:\n    pass\n"

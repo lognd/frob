@@ -1,7 +1,7 @@
 # frob:waive TEST005 reason="module line coverage 0.0%, debt T-0160"
 from __future__ import annotations
 
-import contextlib
+import logging
 import sys
 from pathlib import Path
 
@@ -13,9 +13,24 @@ from frob.check import (
     run_check_rust,
     run_check_ts,
 )
-from frob.logging import get_logger, quiet_stdout_logs
+from frob.logging import get_logger, quiet_stdout_logs, stdout_log_level
 
 _log = get_logger(__name__)
+
+
+def _verbosity_to_level(count: int) -> int:
+    """Map `frob check`'s `-v` count to a stdout log level (T-0202).
+
+    0 (default) = WARNING only, so the printed summary/violations table is
+    the whole story; 1 (`-v`) = INFO, restoring the per-file/per-stage
+    firehose that used to be the unconditional default; 2+ (`-vv`) = DEBUG,
+    adding per-symbol digest/dispatch detail.
+    """
+    if count <= 0:
+        return logging.WARNING
+    if count == 1:
+        return logging.INFO
+    return logging.DEBUG
 
 
 def _toml_top_level_updates(cfg: AppConfig, data: dict) -> dict:
@@ -214,13 +229,19 @@ def _run_stamp_baseline(root: Path, cfg: AppConfig) -> None:
 
 
 def _report_check_result(cfg: AppConfig, result) -> None:  # noqa: ANN001
-    """Log `result` as JSON or colorized text per `cfg`, then exit 1 on errors."""
+    """Print `result` as JSON or colorized text per `cfg`, then exit 1 on errors.
+
+    Printed directly to stdout rather than through the logger (T-0202): the
+    summary/violations table is `frob check`'s actual deliverable output,
+    not a diagnostic, so it must appear regardless of `-v` level or a
+    caller having raised the stdout handler above INFO.
+    """
     if cfg.check_json:
-        _log.info(result.as_json())
+        print(result.as_json())
     else:
         from frob.logging.color import should_color
 
-        _log.info(result.as_text(color=should_color(sys.stdout)))
+        print(result.as_text(color=should_color(sys.stdout)))
 
     if result.total_errors > 0:
         sys.exit(1)
@@ -243,7 +264,14 @@ def run(cfg: AppConfig) -> None:
         _run_stamp_baseline(root, cfg)
         return
 
-    _ctx = quiet_stdout_logs() if cfg.check_json else contextlib.nullcontext()
+    # T-0202: --json always forces stdout logs quiet (payload must stay
+    # clean); otherwise the stdout handler level is gated by -v/-vv so
+    # default output is the summary/violations table with no log chatter.
+    _ctx = (
+        quiet_stdout_logs()
+        if cfg.check_json
+        else stdout_log_level(_verbosity_to_level(cfg.check_verbose))
+    )
 
     with _ctx:
         cfg = _apply_frob_toml_defaults(cfg, root)
