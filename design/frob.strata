@@ -160,11 +160,13 @@ node stratamod : trusted {
 // mutate/**, perf/**, policy/**, release/**, scaffold/**, serve/**,
 // stats/**, bind/**, docs/**, fuzz/**, cycle/**, testing/**, cve/** (T-0150
 // self-conformance audit found src/frob/cve/** unmapped -- added here
-// rather than as a ninth component for the same density reason), AND
-// src/frob/tickets/** (T-0150 rework: `tickets_ledger` is a `store`, and
-// `store_prop` cannot actually declare `code`/`may` -- see that store's
-// own comment; the CODE writing to it is `core`-owned code, consistent
-// with `core`'s existing `f_core_tickets` flow into `tickets_ledger`).
+// rather than as a ninth component for the same density reason).
+// src/frob/tickets/** is NOT here (T-0166 un-fold): T-0150 folded it into
+// `core` as a workaround for `store_prop` not accepting `code`/`may` --
+// that grammar gap is now fixed (`strata-core/src/parse.rs::parse_store`,
+// docs/strata/surface.md#node-grammar-implemented), so `src/frob/
+// tickets/**` moved onto the `tickets_ledger` store below, where it
+// honestly belongs (the CODE that owns the ticket ledger, not `core`'s).
 // Rolled into one node deliberately: these packages form a dense, largely
 // acyclic utility mesh (logging alone has ~90 inbound imports repo-wide)
 // that does not carve into independently-owned components the way
@@ -183,7 +185,7 @@ node core : trusted {
         "src/frob/release/**" "src/frob/scaffold/**" "src/frob/serve/**"
         "src/frob/stats/**" "src/frob/bind/**" "src/frob/docs/**"
         "src/frob/fuzz/**" "src/frob/cycle/**" "src/frob/testing/**"
-        "src/frob/cve/**" "src/frob/tickets/**";
+        "src/frob/cve/**";
     may "env";
     may "eval";
     may "exec";
@@ -227,25 +229,36 @@ node vet : trusted {
     may "net";
 }
 
-// The ticket ledger: tickets.md + tickets/, git-tracked truth. No
-// `code`/`may` here: `store_prop` in `strata-core/src/parse.rs::
-// parse_store` does NOT actually accept `code`/`may` (a real, narrow gap
-// this ticket found -- `docs/strata/surface.md`'s own `store_prop :=
-// node_prop | ...` line claims otherwise; filed separately, not fixed
-// here since it is a `strata-core` grammar change, outside T-0150's
-// scope). The CODE that writes to this ledger (`src/frob/tickets/**`) is
-// folded into the `core` node's `code`/`may` below instead -- consistent
-// with `core`'s existing `f_core_tickets: core -> tickets_ledger` flow,
-// which already models exactly that write path; `append_only` because the
-// ledger is edited by appending new tickets and updating ticket bodies in
-// place under git history, never by deleting the record of what happened
-// (archive moves closed tickets to a separate tracked file,
-// `write_archive`, rather than erasing them).
+// The ticket ledger: tickets.md + tickets/, git-tracked truth.
+// `code "src/frob/tickets/**"` (T-0166 un-fold): `store_prop` in
+// `strata-core/src/parse.rs::parse_store` used to reject `code`/`may` (the
+// real, narrow gap T-0150 found and worked around by folding this code
+// into `core` instead); T-0166 fixed the grammar (mirrors `node`'s
+// `code`/`may`, docs/strata/surface.md#node-grammar-implemented), so the
+// ledger's own code now binds here, where it honestly belongs, rather
+// than on a neighboring node. `may` was measured the same honest way the
+// module docstring's header describes for every other node/store here
+// (`frob.vet._capability.scan_directory_capabilities` against
+// `src/frob/tickets/**`: `env` (`clipboard.py` env probing),
+// `exec` (`clipboard.py`'s `subprocess.run` calls to `wl-paste`/platform
+// clipboard tools), `fs` (`_store.py`/`_land.py` ledger file writes) --
+// zero `eval`/`net`/`ffi` observed). `core`'s existing
+// `f_core_tickets: core -> tickets_ledger` flow (and the cli/gates
+// equivalents) still model the real cross-component calls INTO this
+// code, unchanged by where the code itself is bound; `append_only`
+// because the ledger is edited by appending new tickets and updating
+// ticket bodies in place under git history, never by deleting the record
+// of what happened (archive moves closed tickets to a separate tracked
+// file, `write_archive`, rather than erasing them).
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
 store tickets_ledger : trusted {
     clearance Internal;
     engine git_tracked;
     append_only;
+    code "src/frob/tickets/**";
+    may "env";
+    may "exec";
+    may "fs";
 }
 
 // The `.frob/` symbol-graph cache (`frob.graph`'s snapshot cache): derived
@@ -395,14 +408,33 @@ assume "weakness:CWE-78:checker" noflow registry -> checker owner logan review "
 // would be REFUTED -- an `assume` is the honest tool, not a workaround:
 // every exec call site under `core`'s `code=` globs
 // (src/frob/gitio.py, src/frob/mutate/**, src/frob/perf/**,
-// src/frob/tickets/clipboard.py, src/frob/gitlog/**) invokes a FIXED,
-// hardcoded argv list (git/cargo/pbcopy/xclip subcommands) built from
-// this repo's own config, never from registry response bytes -- the
-// registry->vet->core path carries dependency METADATA (name/version/
-// hashes, already checksum-endorsed by `b_vet_endorse`), not command
-// arguments, so it cannot reach any of these argv lists. Reviewed 2026-07.
+// src/frob/gitlog/**) invokes a FIXED, hardcoded argv list (git/cargo
+// subcommands) built from this repo's own config, never from registry
+// response bytes -- the registry->vet->core path carries dependency
+// METADATA (name/version/hashes, already checksum-endorsed by
+// `b_vet_endorse`), not command arguments, so it cannot reach any of
+// these argv lists. Reviewed 2026-07. (`src/frob/tickets/clipboard.py`'s
+// exec call site moved to `tickets_ledger`'s own discharge below, T-0166
+// un-fold.)
 // frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
 assume "weakness:CWE-78:core" noflow registry -> core owner logan review "2026-10-15"
+
+// tickets_ledger: T-0166 un-fold moved `src/frob/tickets/clipboard.py`'s
+// `subprocess.run` exec call site (`wl-paste`/platform clipboard probing,
+// a FIXED hardcoded argv, never registry-derived) onto this store's own
+// `code`/`may`, dragging in its own CWE-78 obligation. `c_no_registry_
+// ledger` above already ASSERTS (and the closure proves) that registry
+// cannot reach `tickets_ledger` at all -- a graph-provable NoFlow, same
+// as `checker`'s case above -- but THREAT003's discharge check requires
+// an `assume` here too: an `assert`ed claim still has to pass the
+// boundary-KIND (mitigation-chokepoint) proof (no ENDORSE boundary sits
+// on this non-existent path to be of any kind), an exemption only
+// `assume`/`managed` get (docs/strata/threat.md#phasing item C), so this
+// follows the SAME `assume`-for-uniformity precedent `checker`'s comment
+// above documents -- the graph-provable case is exactly as safe assumed
+// as asserted.
+// frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
+assume "weakness:CWE-78:tickets_ledger" noflow registry -> tickets_ledger owner logan review "2026-10-15"
 
 // vet: registry flows directly into vet (`f_registry_fetch`). The ONLY
 // file under vet's `code=` glob matching the scanner's `exec` needle is

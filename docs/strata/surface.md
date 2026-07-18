@@ -107,6 +107,28 @@ _elaborate_store`): each tag becomes one `pii=<tag>` attr, the same
 per-atom desugar convention `code` established (`_pii.py::
 node_pii_tags` reads it back).
 
+**`code`/`may` on `store` (T-0166):** the identical `code STRING+` /
+`may STRING` clauses `node` has, now also accepted by
+`strata-core/src/parse.rs::parse_store` -- "component / store: nodes"
+(#key-construct-semantics), the same reasoning `managed`/`carries` above
+already document for this construct. Before T-0166, `parse_store` had no
+`code`/`may` branch at all (a real, narrow grammar gap this ticket found:
+the `store_prop := node_prop | ...` grammar line above implied support
+that did not exist -- T-0150 worked around it by folding a store's owning
+code into a neighboring `node` instead, see `design/frob.strata`'s
+`tickets_ledger` history). Elaboration (`_infra.py::_elaborate_store`) is
+byte-for-byte the same desugar `_elaborate.py::_elaborate_node` gives
+`node`: `code` globs become one `code=<glob>` attr per glob (the SAME
+`_code_binding.py::_node_code_globs` convention `code` on `node`
+established), and `may` capability atoms land directly on the elaborated
+`Node`'s `may` field. Both consumers read `Node.may`/`code=` attrs
+generically off any elaborated `Node` with no store/node distinction, so
+a store with `code`/`may` participates in tier-2 import conformance
+(`_code_binding.py::check_import_conformance`) and auto-instantiates
+THREAT003 weakness obligations (`_threat.py::check_discharge_completeness`)
+exactly the way a code-modeled node's would -- no new join, no new
+exemption.
+
 **Design choice (T-0132): STRING-quoted values, not a new token class.**
 `code=<glob>` globs (`src/frob/**`) and `may` capability atoms
 (`net.out:stripe.com`) both need characters -- `*`, `/`, `.`, `:` -- that

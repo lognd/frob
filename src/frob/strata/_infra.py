@@ -27,6 +27,7 @@ from typani.result import Err, Ok, Result
 from frob.logging import get_logger
 
 from ._ast import BalancerDecl, CacheDecl, CdnDecl, Module, QueueDecl, StoreDecl
+from ._code_binding import _CODE_PREFIX
 from ._errors import StrataError
 from ._models import Boundary, BoundaryDirection, Flow, Node, Quantity
 from ._models import Capacity as KernelCapacity
@@ -75,6 +76,15 @@ def _elaborate_store(decl: StoreDecl) -> Result[Node, StrataError]:
     semantics). The grammar accepts any unit; here the elaborator fails
     closed if it is not a time unit (deny by default, no silent dimension
     coercion).
+
+    T-0166: `code`/`may` desugar the SAME way `_elaborate.py::
+    _elaborate_node` desugars them for `node` -- `code` globs become
+    `code=<glob>` attrs (so a code-modeled store binds source and
+    participates in tier-2 import conformance exactly like a code-modeled
+    node), and `may` capabilities land directly on `Node.may` (so a
+    store's `may` atoms auto-instantiate THREAT003 weakness obligations
+    exactly like a node's would -- `_threat.py` reads `Node.may`
+    generically off any elaborated `Node`, with no store/node distinction).
     """
     attrs = list(decl.attrs)
     if decl.carries:
@@ -83,6 +93,15 @@ def _elaborate_store(decl: StoreDecl) -> Result[Node, StrataError]:
         # `node`'s `carries` clause (`_pii.py::node_pii_tags` reads it back).
         _log.debug("store %s carries %d pii tag(s)", decl.id, len(decl.carries))
         attrs.extend(f"{_PII_PREFIX}{tag}" for tag in decl.carries)
+    if decl.code:
+        # T-0166: `code GLOB+` -> one `code=<glob>` attr per glob, the SAME
+        # per-atom desugar `_elaborate.py::_elaborate_node` uses for
+        # `node`'s `code` clause (`_code_binding.py::_node_code_globs`
+        # reads this back off ANY elaborated `Node`, store-derived or not
+        # -- a store with `code` participates in tier-2 import conformance
+        # exactly like a code-modeled node would).
+        _log.debug("store %s declares %d code glob(s)", decl.id, len(decl.code))
+        attrs.extend(f"{_CODE_PREFIX}{glob}" for glob in decl.code)
     if decl.engine is not None:
         attrs.append(f"engine={decl.engine}")
     if decl.immutable:
@@ -122,6 +141,7 @@ def _elaborate_store(decl: StoreDecl) -> Result[Node, StrataError]:
             id=decl.id,
             trust=decl.trust,
             clearance=decl.clearance,
+            may=decl.may,
             attrs=tuple(attrs),
             capacity=capacity,
             residence=decl.residence,

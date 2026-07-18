@@ -105,8 +105,13 @@ class TestFrobSelfModel:
         # `may "sql"` to graphlang+vet and `may "fetch_url"`/
         # `may "deserialize"` to vet, which drags in 6 more discharge
         # claims (CWE-89 + CWE-639 for graphlang and vet each, plus
-        # CWE-918 and CWE-502 for vet) = 12.
-        assert len(_model.claims) == 12
+        # CWE-918 and CWE-502 for vet) = 12. T-0166: `store_prop` now
+        # accepts `code`/`may` (docs/strata/surface.md#node-grammar-
+        # implemented), un-folding `src/frob/tickets/**`'s code off `core`
+        # onto `tickets_ledger`'s own `code`/`may` -- its `may "exec"`
+        # drags in one more `weakness:CWE-78:tickets_ledger` discharge
+        # claim = 13.
+        assert len(_model.claims) == 13
 
     # frob:tests tests/system/test_frob_self_model.py::TestFrobSelfModel.test_every_claim_proves kind="e2e"
     def test_every_claim_proves(self, _model) -> None:
@@ -118,16 +123,18 @@ class TestFrobSelfModel:
         a real regression (e.g. the `b_vet_endorse` boundary directive was
         deleted from `src/frob/vet/_registry.py`) -- either way, CI must
         fail loudly rather than let the claim silently stop meaning
-        anything. The three `weakness:CWE-78:*` claims are ASSUMEd, not
-        PROVEd, by design (docs/strata/selfconform.md: `core`'s discharge
+        anything. The `weakness:CWE-78:*` claims are ASSUMEd, not PROVEd,
+        by design (docs/strata/selfconform.md: `core`'s discharge
         specifically cannot be graph-proved, since `registry` DOES reach
-        `core` transitively via `vet`) -- verified ASSUMED here rather
-        than PROVED, and never REFUTED.
+        `core` transitively via `vet`; `tickets_ledger`'s IS graph-provable
+        via `c_no_registry_ledger` but still follows the assume-for-
+        uniformity precedent, T-0166) -- verified ASSUMED here rather than
+        PROVED, and never REFUTED.
         """
         outcome = evaluate_claims(_model)
         assert outcome.is_ok, f"evaluate_claims failed: {outcome.err}"
         claim_results = outcome.danger_ok
-        assert len(claim_results) == 12
+        assert len(claim_results) == 13
         proved_ids = {
             "c_no_registry_ledger",
             "c_cache_derivable",
@@ -137,6 +144,10 @@ class TestFrobSelfModel:
             "weakness:CWE-78:checker",
             "weakness:CWE-78:core",
             "weakness:CWE-78:vet",
+            # T-0166: un-folding `src/frob/tickets/**` off `core` onto
+            # `tickets_ledger`'s own code/may (see test_parses_and_
+            # elaborates above for the full reasoning).
+            "weakness:CWE-78:tickets_ledger",
             # T-0158: exhaustive registry additions (see test_parses_and_
             # elaborates above for the full reasoning).
             "weakness:CWE-89:graphlang",

@@ -319,6 +319,13 @@ class StoreDecl(BaseModel):
     carries: tuple[str, ...] = ()
     # `managed` bare marker, T-0172; elaborated to a `"managed"` attr
     is_managed: bool = False
+    # `code "GLOB"+`, T-0166; elaborated to `code=<glob>` attrs, same
+    # per-atom desugar `node`'s `code` clause uses (`_code_binding.py::
+    # _node_code_globs`).
+    code: tuple[str, ...] = ()
+    # `may "CAPABILITY"`, T-0166; lands directly on the elaborated `Node`'s
+    # `may` field, same as `node`'s `may` clause (T-0132).
+    may: tuple[str, ...] = ()
 
 
 # frob:doc docs/strata/surface.md#std-infra

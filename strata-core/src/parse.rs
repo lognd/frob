@@ -1271,6 +1271,8 @@ impl Parser {
         let mut rpo: Option<serde_json::Value> = None;
         let mut carries: Vec<String> = Vec::new();
         let mut is_managed = false;
+        let mut code: Vec<String> = Vec::new();
+        let mut may: Vec<String> = Vec::new();
         if self.at_symbol('{') {
             self.advance();
             loop {
@@ -1283,6 +1285,22 @@ impl Parser {
                 } else if self.at_keyword("attr") {
                     self.advance();
                     attrs.push(self.parse_attrval()?);
+                } else if self.at_keyword("code") {
+                    // T-0166: `code GLOB+` -- same STRING+ shape T-0132 gave
+                    // `node` (parse_node); a store is a node too
+                    // (docs/strata/surface.md#key-construct-semantics), so
+                    // it binds source the same way a code-modeled node does.
+                    self.advance();
+                    code.push(self.expect_string("code glob")?);
+                    while matches!(self.cur().kind, TokKind::Str(_)) {
+                        code.push(self.expect_string("code glob")?);
+                    }
+                } else if self.at_keyword("may") {
+                    // T-0166: `may CAPABILITY` -- same STRING-quoted
+                    // capability atom shape T-0132 gave `node`. Lands
+                    // directly in `Node.may` on elaboration, same as node.
+                    self.advance();
+                    may.push(self.expect_string("may capability")?);
                 } else if self.at_keyword("carries") {
                     // T-0154: same `carries PII_TAG+` shape as `node`
                     // (parse_node) -- a store is the most common PII
@@ -1350,6 +1368,8 @@ impl Parser {
             "rpo": rpo,
             "carries": carries,
             "is_managed": is_managed,
+            "code": code,
+            "may": may,
         }));
         Ok(())
     }
@@ -2209,6 +2229,58 @@ mod tests {
             }"#);
         let s = &v["stores"][0];
         assert_eq!(s["carries"][0], "identifier.email");
+    }
+
+    #[test]
+    fn parses_store_code_globs_and_may_capabilities() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0166: `code`/`may` are also legal inside `store` -- "component
+        // / store: nodes" (docs/strata/surface.md#key-construct-semantics),
+        // same STRING+ / STRING shape T-0132 gave `node`.
+        let v = ok(r#"module m
+            store tickets_ledger : trusted {
+                code "src/frob/tickets/**";
+                may "fs";
+                may "exec";
+            }"#);
+        let s = &v["stores"][0];
+        assert_eq!(s["code"][0], "src/frob/tickets/**");
+        assert_eq!(s["may"][0], "fs");
+        assert_eq!(s["may"][1], "exec");
+    }
+
+    #[test]
+    fn parses_store_without_code_or_may_defaults_empty() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0166: pre-existing store sources with no code/may statements
+        // must still elaborate -- both fields default to an empty list.
+        let v = ok("module m\nstore users : trusted");
+        let s = &v["stores"][0];
+        assert_eq!(s["code"].as_array().unwrap().len(), 0);
+        assert_eq!(s["may"].as_array().unwrap().len(), 0);
+    }
+
+    #[test]
+    fn error_store_code_requires_at_least_one_glob() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0166: `code` on a store is glob+, not glob*, same as `node`.
+        let e = err(r#"module m
+            store users : trusted {
+                code;
+            }"#);
+        assert_eq!(e["message"], "expected code glob");
+    }
+
+    #[test]
+    fn error_store_may_requires_string_not_ident() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0166: capability atoms on a store are STRING-quoted, same as
+        // `node`; a bare ident is rejected.
+        let e = err(r#"module m
+            store users : trusted {
+                may net.out;
+            }"#);
+        assert_eq!(e["message"], "expected may capability");
     }
 
     #[test]
