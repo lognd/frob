@@ -1238,6 +1238,30 @@ threat: null
 ```
 Make the security proof chain sound end to end: THREAT003/THREAT004/SYS100 conclusions (code observes what the design declares, obligations discharge) are only valid if NO reserved capability kind can hide in an unscanned language or an unpatterned cell. Today that is not provable: vet _capability's _PATTERNS covers python/typescript/rust per-kind ad hoc, and C/C++ is excused wholesale ('honestly-empty'). Deliverables: (1) SINGLE-SOURCE capability registry -- one authoritative enumeration of every reserved kind (union of: _PATTERNS keys, every capability_kind in CWE_CATALOG/CWE_TOP_25_CATALOG, every may declaration the surface grammar accepts, DEFAULT_BENIGN_CAPABILITIES) -- with all consumers importing it; any kind used anywhere but absent from the registry fails loudly (extends the T-0150 drift-lock). (2) COVERAGE MATRIX GATE: for every (kind x supported-language) cell, either detection patterns exist OR an explicit per-cell excuse entry with a written reason ('client_storage: no C idiom -- browser-only concept', 'html_render in rust: covered via templating-crate needles ...'). The blanket C/C++ excuse is retired: each kind gets its own C/C++ decision. Unexcused empty cell = gate failure; excuse entries follow the OutOfScopeEntry discipline (specific reason naming the missing idiom, never boilerplate). (3) PER-CELL FIRE FIXTURES: for every patterned cell, a minimal real code snippet in that language that the scanner MUST flag, parametrized so a pattern without a firing fixture fails (T-0145 drift-lock style); plus per-cell negative fixtures locking the documented false-positive boundaries (T-0151 lessons: dotted-call exclusions, self-match). (4) CROSS-CHECKS: matrix kinds reconcile against the threat catalog joins (every capability_kind used by a WeaknessEntry must be a registry kind with at least one patterned language) and against design/frob.strata's may declarations. (5) Wire the matrix verdict into frob sys audit output beside self-conformance ('capability coverage: N kinds x M languages, K cells patterned+proven, J excused with reasons, 0 unexcused') so the exhaustiveness claim is a printed, checkable proof, not folklore. Expect cascading consequences (new patterns change observed capabilities -> design/goldens -- handle per T-0150/T-0151 precedent, green honestly.
 
+Addendum (user, 2026-07-18) -- the matrix cells must be a STRUCTURED
+DANGEROUS-OPERATIONS REGISTRY, not anonymous needle strings: promote
+every _PATTERNS needle into a first-class entry {language, library
+(stdlib module / crate / npm package), function-or-pattern,
+capability_kind, cwe_links (joining the threat catalog), rationale (one
+line: why dangerous), safer_alternative, severity}. Coverage mandate per
+language: the dangerous surface of the COMMON libraries, not just
+builtins -- python: subprocess/os.system+popen+exec*/pickle/marshal/
+shelve/ctypes/importlib/eval+compile/socket+http+urllib+requests/
+sqlite3+DB-API string interp; typescript-js: eval/Function/child_process/
+vm/innerHTML+outerHTML+document.write/dangerouslySetInnerHTML/
+localStorage+sessionStorage+indexedDB/fetch+XMLHttpRequest+WebSocket;
+rust: std::process::Command/unsafe extern FFI/libloading/std::net/
+mem::transmute; c-cpp: system+popen+exec family/dlopen/strcpy+sprintf+
+gets family/socket -- each an entry with metadata, each backed by a
+matrix fire fixture. Audit output upgrades accordingly: a capability
+finding names the registry entry (library, function, rationale,
+safer_alternative), so 'frob sys audit' findings become actionable
+prose, not bare kind labels. T-0153's CVE fingerprints join THIS
+registry's kind vocabulary and may cite its entries, but remain a
+separate catalog (known-vulnerable usage shapes vs capability-granting
+operations). The T-0159 extension guide for this registry documents the
+add-an-operation recipe.
+
 <!-- ticket:T-0159 -->
 ```yaml
 id: T-0159
