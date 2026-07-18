@@ -1170,6 +1170,7 @@ blocked_by:
 - T-0155
 - T-0157
 - T-0158
+- T-0159
 parent: null
 scope:
 - pyproject.toml
@@ -1235,3 +1236,31 @@ acceptance: []
 threat: null
 ```
 Make the security proof chain sound end to end: THREAT003/THREAT004/SYS100 conclusions (code observes what the design declares, obligations discharge) are only valid if NO reserved capability kind can hide in an unscanned language or an unpatterned cell. Today that is not provable: vet _capability's _PATTERNS covers python/typescript/rust per-kind ad hoc, and C/C++ is excused wholesale ('honestly-empty'). Deliverables: (1) SINGLE-SOURCE capability registry -- one authoritative enumeration of every reserved kind (union of: _PATTERNS keys, every capability_kind in CWE_CATALOG/CWE_TOP_25_CATALOG, every may declaration the surface grammar accepts, DEFAULT_BENIGN_CAPABILITIES) -- with all consumers importing it; any kind used anywhere but absent from the registry fails loudly (extends the T-0150 drift-lock). (2) COVERAGE MATRIX GATE: for every (kind x supported-language) cell, either detection patterns exist OR an explicit per-cell excuse entry with a written reason ('client_storage: no C idiom -- browser-only concept', 'html_render in rust: covered via templating-crate needles ...'). The blanket C/C++ excuse is retired: each kind gets its own C/C++ decision. Unexcused empty cell = gate failure; excuse entries follow the OutOfScopeEntry discipline (specific reason naming the missing idiom, never boilerplate). (3) PER-CELL FIRE FIXTURES: for every patterned cell, a minimal real code snippet in that language that the scanner MUST flag, parametrized so a pattern without a firing fixture fails (T-0145 drift-lock style); plus per-cell negative fixtures locking the documented false-positive boundaries (T-0151 lessons: dotted-call exclusions, self-match). (4) CROSS-CHECKS: matrix kinds reconcile against the threat catalog joins (every capability_kind used by a WeaknessEntry must be a registry kind with at least one patterned language) and against design/frob.strata's may declarations. (5) Wire the matrix verdict into frob sys audit output beside self-conformance ('capability coverage: N kinds x M languages, K cells patterned+proven, J excused with reasons, 0 unexcused') so the exhaustiveness claim is a printed, checkable proof, not folklore. Expect cascading consequences (new patterns change observed capabilities -> design/goldens -- handle per T-0150/T-0151 precedent, green honestly.
+
+<!-- ticket:T-0159 -->
+```yaml
+id: T-0159
+title: 'extending frob: developer guides for every registry and extension point'
+state: queued
+kind: docs
+origin: human
+created: '2026-07-18'
+blocked_by:
+- T-0153
+- T-0154
+- T-0155
+- T-0157
+- T-0158
+parent: null
+scope:
+- docs/guides/**
+- docs/index.md
+- src/frob/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+A guide series under docs/guides/extending/ making every registry trivially extendable. INVENTORY FIRST: enumerate every registry/extension point in the codebase -- at minimum: gate rule families and their registration (COV/TEST/DRIFT/SCOPE/PRE/DOC/PERF/SYS/THREAT/COMPLIANCE/WAIVE), comment DSL directives (frob:ticket/tests/doc/waive/todo/invariant/channel/boundary/secret), threat catalog (WeaknessEntry/OutOfScopeEntry/views incl. the separate-views precedent), compliance regulations/views, capability registry + pattern tables + per-language matrix cells (T-0158), CVE fingerprints (T-0153), PII categories (T-0154), design-lint rules (T-0155), secrets-scan providers (T-0157), prover claim kinds, scenario kinds, strata surface grammar keywords (and the tmLanguage drift-lock), [[test.runner]] entries, language grammar handlers, sys export formats, litmus fixture mappings, benign capabilities, ticket kinds/states. ONE GUIDE PER REGISTRY on a common template: what it is and where it lives (file paths + symbol names); step-by-step 'add a new entry' recipe; WHICH DRIFT-LOCKS WILL FIRE when you add one and exactly what each demands (fixture, test, excuse entry, doc anchor, golden regen); a worked example diff; common mistakes (cite real session incidents where instructive, e.g. separate-views vs widening defaults, self-match false positives, stale-comment traps). ANTI-ROT MECHANISM (the point of doing this in frob): every guide is bound to its registry's code symbol with frob:doc anchors so the DOC gates flag drift when the registry changes; plus a completeness drift-lock test -- a machine-readable registry-of-registries (the inventory above) asserting every entry has a guide file and a live anchor, so ADDING A NEW REGISTRY without a guide fails the build. docs/index.md gains an Extending section linking every guide. Writing guides will require reading each registry's code carefully -- fix nothing beyond doc anchors; file tickets for any defect discovered while documenting.
