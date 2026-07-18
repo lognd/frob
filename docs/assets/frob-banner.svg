@@ -1,0 +1,134 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 320" width="1200" height="320" role="img" aria-label="frob: the enforcement layer for agentic development">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b0f16"/>
+      <stop offset="1" stop-color="#0f141d"/>
+    </linearGradient>
+    <radialGradient id="glowGreen" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#3fb950" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#3fb950" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowBlue" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#388bfd" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#388bfd" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="ballsheen" cx="0.35" cy="0.28" r="0.95">
+      <stop offset="0" stop-color="#2b3648"/>
+      <stop offset="0.55" stop-color="#131824"/>
+      <stop offset="1" stop-color="#04060a"/>
+    </radialGradient>
+    <linearGradient id="wordmark" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#e6edf3"/>
+      <stop offset="1" stop-color="#9fb6c9"/>
+    </linearGradient>
+    <clipPath id="ballclip"><circle cx="290" cy="232" r="54"/></clipPath>
+  </defs>
+
+  <rect width="1200" height="320" fill="url(#bg)"/>
+  <!-- modern soft accent glows -->
+  <circle cx="1120" cy="30" r="260" fill="url(#glowBlue)"/>
+  <circle cx="240" cy="290" r="300" fill="url(#glowGreen)"/>
+  <!-- hairline top accent -->
+  <rect x="0" y="0" width="1200" height="2" fill="#1f6feb" opacity="0.35"/>
+
+  <!-- ================= mascot ================= -->
+  <!-- shoulders/hunch: low, behind everything -->
+  <path d="M208 208 C204 164 234 140 290 140 C346 140 376 164 372 208 C350 186 230 186 208 208 Z" fill="#4f9440" stroke="#28511f" stroke-width="4"/>
+
+  <!-- ears: long, pointed, swept outward and DOWN -->
+  <path d="M232 116 C196 110 164 122 148 146 C172 150 204 144 230 132 Z" fill="#63b34e" stroke="#28511f" stroke-width="4"/>
+  <path d="M348 116 C384 110 416 122 432 146 C408 150 376 144 350 132 Z" fill="#63b34e" stroke="#28511f" stroke-width="4"/>
+  <path d="M162 142 C172 144 184 143 194 140" fill="none" stroke="#28511f" stroke-width="2.5" opacity="0.6"/>
+  <path d="M418 142 C408 144 396 143 386 140" fill="none" stroke="#28511f" stroke-width="2.5" opacity="0.6"/>
+
+  <!-- head: wide, low-slung over the ball -->
+  <ellipse cx="290" cy="126" rx="62" ry="50" fill="#6cbc55" stroke="#28511f" stroke-width="4"/>
+
+  <!-- aviator cap: low dome over the brow + earflaps -->
+  <path d="M230 116 C228 70 352 70 350 116 L350 126 C310 108 270 108 230 126 Z" fill="#95643a" stroke="#5b3a1e" stroke-width="4"/>
+  <path d="M232 118 C226 136 228 148 236 154 C244 146 246 132 244 120 Z" fill="#8a5a33" stroke="#5b3a1e" stroke-width="3.5"/>
+  <path d="M348 118 C354 136 352 148 344 154 C336 146 334 132 336 120 Z" fill="#8a5a33" stroke="#5b3a1e" stroke-width="3.5"/>
+  <path d="M254 88 C272 82 308 82 326 88" fill="none" stroke="#5b3a1e" stroke-width="2.5" stroke-dasharray="5 4" opacity="0.8"/>
+  <!-- goggles on the cap front -->
+  <rect x="242" y="96" width="96" height="9" rx="4.5" fill="#3a2614"/>
+  <circle cx="267" cy="100" r="13" fill="#1a1009" stroke="#c9a34c" stroke-width="4.5"/>
+  <circle cx="313" cy="100" r="13" fill="#1a1009" stroke="#c9a34c" stroke-width="4.5"/>
+  <path d="M261 95 a8 8 0 0 1 7 -4" fill="none" stroke="#e8cf8e" stroke-width="2.5" stroke-linecap="round" opacity="0.9"/>
+  <path d="M307 95 a8 8 0 0 1 7 -4" fill="none" stroke="#e8cf8e" stroke-width="2.5" stroke-linecap="round" opacity="0.9"/>
+
+  <!-- face: fully visible, gazing down into the ball -->
+  <ellipse cx="264" cy="136" rx="14" ry="12" fill="#f4f9e8" stroke="#28511f" stroke-width="3"/>
+  <ellipse cx="321" cy="132" rx="11" ry="10" fill="#f4f9e8" stroke="#28511f" stroke-width="3"/>
+  <circle cx="266" cy="142" r="6" fill="#161f10"/>
+  <circle cx="322" cy="137" r="5" fill="#161f10"/>
+  <circle cx="268" cy="140" r="1.8" fill="#e6edf3" opacity="0.9"/>
+  <circle cx="324" cy="135" r="1.5" fill="#e6edf3" opacity="0.9"/>
+  <path d="M250 128 C256 123 272 123 277 127" fill="none" stroke="#28511f" stroke-width="4" stroke-linecap="round"/>
+  <path d="M311 124 C315 120 328 120 332 123" fill="none" stroke="#28511f" stroke-width="4" stroke-linecap="round"/>
+  <!-- bulbous hooked nose hanging toward the glass -->
+  <path d="M281 146 C296 146 302 164 293 173 C285 178 274 174 275 163 C275 154 277 149 281 146 Z" fill="#7fcc68" stroke="#28511f" stroke-width="4"/>
+  <circle cx="295" cy="169" r="2.4" fill="#5da84a" stroke="#28511f" stroke-width="1.5"/>
+  <!-- sly grin + snaggle tooth -->
+  <path d="M254 162 C268 174 302 175 322 161" fill="none" stroke="#28511f" stroke-width="4" stroke-linecap="round"/>
+  <path d="M306 168 L310 178 L315 167 Z" fill="#f4f9e8" stroke="#28511f" stroke-width="2"/>
+  <circle cx="242" cy="152" r="3" fill="#5da84a" stroke="#28511f" stroke-width="2"/>
+
+  <!-- arms reaching down around the ball -->
+  <path d="M216 186 C202 204 200 228 212 250 L234 240 C224 224 226 206 238 194 Z" fill="#63b34e" stroke="#28511f" stroke-width="4"/>
+  <path d="M364 186 C378 204 380 228 368 250 L346 240 C356 224 354 206 342 194 Z" fill="#63b34e" stroke="#28511f" stroke-width="4"/>
+
+  <!-- stand -->
+  <path d="M254 282 L326 282 L316 300 L264 300 Z" fill="#1d2733" stroke="#0b0f16" stroke-width="3"/>
+  <ellipse cx="290" cy="302" rx="42" ry="5" fill="#000000" opacity="0.35"/>
+
+  <!-- crystal ball -->
+  <circle cx="290" cy="232" r="54" fill="url(#ballsheen)" stroke="#39445a" stroke-width="3"/>
+  <g clip-path="url(#ballclip)" stroke-linecap="round" fill="none" stroke-width="3.2">
+    <path d="M252 212 l6 0 m4 0 l3 -6 l3 6 m6 0 l6 0" stroke="#ff7b72"/>
+    <path d="M288 212 l8 0 m4 0 l5 0 m4 -4 l0 4" stroke="#d2a8ff"/>
+    <path d="M262 226 l5 0 m4 0 l4 -5 m2 5 l5 0" stroke="#79c0ff"/>
+    <path d="M292 226 l6 0 m4 -4 a3 3 0 1 0 0.1 0" stroke="#7ee787"/>
+    <path d="M318 226 l5 0" stroke="#8b949e"/>
+    <path d="M268 240 l4 0 m3 -5 l0 5 m4 0 l5 0" stroke="#ffa657"/>
+    <path d="M294 240 l4 0 m3 0 l4 -5 l4 5" stroke="#79c0ff"/>
+    <path d="M262 254 l6 0 m4 0 a3 3 0 1 1 0.1 0" stroke="#7ee787"/>
+    <path d="M286 254 l5 0 m4 -5 l3 5 l3 -5" stroke="#d2a8ff"/>
+    <path d="M312 254 l6 0" stroke="#ff7b72"/>
+  </g>
+  <ellipse cx="270" cy="206" rx="17" ry="9" fill="#e6edf3" opacity="0.10" transform="rotate(-24 270 206)"/>
+  <circle cx="290" cy="232" r="54" fill="none" stroke="#7ee787" stroke-width="1.5" opacity="0.25"/>
+
+  <!-- fingers gripping OVER the glass -->
+  <g fill="#63b34e" stroke="#28511f" stroke-width="3">
+    <path d="M212 246 C222 256 234 262 246 264 L248 253 C238 251 228 246 220 239 Z"/>
+    <path d="M220 254 C230 263 243 268 254 269 L255 258 C245 256 234 251 227 245 Z"/>
+    <path d="M368 246 C358 256 346 262 334 264 L332 253 C342 251 352 246 360 239 Z"/>
+    <path d="M360 254 C350 263 337 268 326 269 L325 258 C335 256 346 251 353 245 Z"/>
+  </g>
+
+  <!-- glow cast up onto chin/nose -->
+  <path d="M262 168 C276 176 304 176 318 166 C306 182 274 182 262 168 Z" fill="#7ee787" opacity="0.12"/>
+
+  <!-- ================= wordmark ================= -->
+  <text x="500" y="158" font-family="ui-monospace, 'Cascadia Code', 'Fira Code', Menlo, Consolas, monospace" font-size="96" font-weight="700" fill="url(#wordmark)" letter-spacing="-2">frob</text>
+  <text x="504" y="200" font-family="ui-monospace, 'Cascadia Code', 'Fira Code', Menlo, Consolas, monospace" font-size="23" fill="#8d97a5">the enforcement layer for agentic development</text>
+
+  <!-- modern pill chips -->
+  <g font-family="ui-monospace, Menlo, Consolas, monospace" font-size="17">
+    <rect x="504" y="222" width="76" height="30" rx="15" fill="#12251a" stroke="#2ea04326"/>
+    <rect x="504" y="222" width="76" height="30" rx="15" fill="none" stroke="#2ea043" stroke-opacity="0.45"/>
+    <text x="542" y="242" text-anchor="middle" fill="#7ee787">graph</text>
+
+    <rect x="590" y="222" width="90" height="30" rx="15" fill="#101c2e"/>
+    <rect x="590" y="222" width="90" height="30" rx="15" fill="none" stroke="#388bfd" stroke-opacity="0.45"/>
+    <text x="635" y="242" text-anchor="middle" fill="#79c0ff">tickets</text>
+
+    <rect x="690" y="222" width="76" height="30" rx="15" fill="#261a10"/>
+    <rect x="690" y="222" width="76" height="30" rx="15" fill="none" stroke="#db6d28" stroke-opacity="0.45"/>
+    <text x="728" y="242" text-anchor="middle" fill="#ffa657">gates</text>
+
+    <rect x="776" y="222" width="84" height="30" rx="15" fill="#1c142a"/>
+    <rect x="776" y="222" width="84" height="30" rx="15" fill="none" stroke="#8957e5" stroke-opacity="0.45"/>
+    <text x="818" y="242" text-anchor="middle" fill="#d2a8ff">strata</text>
+  </g>
+</svg>

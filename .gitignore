@@ -31,3 +31,5 @@ vgcore.*
 # Secrets
 .env
 frob-core/target/
+# Playwright MCP session artifacts
+.playwright-mcp/

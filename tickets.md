@@ -3119,3 +3119,120 @@ acceptance: []
 threat: null
 ```
 tickets.md is 2100+ lines and grows with every done report; agents hand-edit it by string surgery (three evidence failures already) and re-read big chunks every mission. Add frob ticket archive moving done/dropped tickets verbatim to tickets-archive.md (same format, grep-compatible, still tracked); active ledger stays a few hundred lines. Single-file model preserved -- just two files by temperature. Complements T-0094 (evidence CLI).
+
+<!-- ticket:T-0097 -->
+```yaml
+id: T-0097
+title: README banner with goblin mascot (aviator cap, crystal ball of rune-code)
+state: done
+kind: docs
+origin: human
+created: '2026-07-17'
+blocked_by: []
+parent: null
+scope:
+- README.md
+- docs/assets/**
+- tickets.md
+- .gitignore
+evidence:
+- tests/test_gates.py::TestDoclinkGate::test_orphan_doc_is_error_and_linked_docs_pass
+attachments: []
+acceptance: []
+threat: null
+```
+Professional repo banner: dark, wordmark + tagline, mascot = cute-ugly miniature green goblin in an aviator cap hunched over a black crystal ball showing unintelligible syntax-highlighted glyph-code. Hand-authored SVG (ASCII-only source, glyphs drawn as paths not unicode), render-iterated via browser screenshots.
+
+## Done report
+
+docs/assets/frob-banner.svg hand-authored (ASCII source, glyph-code as
+paths, no unicode): dark modern frame (soft corner glows, gradient
+wordmark, pill chips for graph/tickets/gates/strata), goblin mascot in
+aviator cap + goggles hunched over the crystal ball, fingers gripping
+the glass, syntax-highlighted rune-code inside. Render-iterated 4
+versions via cairosvg screenshots (v1 rabbit-ears/beside-ball, v2
+turtle-read/face-hidden, v3 composition fixed, v4 face polish).
+README.md includes it above the H1. frob check exit 0.
+
+<!-- ticket:T-0098 -->
+```yaml
+id: T-0098
+title: frob ticket attach without path should error usefully outside a TTY
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-17'
+blocked_by: []
+parent: null
+scope:
+- src/frob/tickets/**
+- src/frob/app/**
+- tests/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Malmberg adoption agent gap report: frob ticket attach with no path argument attempts clipboard-image capture even in a non-interactive agent session, instead of failing fast with a clear message (or accepting a text note). Agents cannot paste from a clipboard; the command should detect no-TTY and error with remedy text.
+
+<!-- ticket:T-0099 -->
+```yaml
+id: T-0099
+title: document demand() behavior shift for unresolvable rates (propagates vs drops)
+state: queued
+kind: docs
+origin: agent
+created: '2026-07-17'
+blocked_by: []
+parent: null
+scope:
+- docs/strata/**
+- src/frob/strata/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0066 reviewer finding: flows whose rate.base_value() errors were previously dropped from demand sums; propagated_demand now treats them as undeclared and recurses into upstream demand. Probably more correct (fails toward propagating load) but undocumented; document in kernel.md capacity semantics or revert deliberately.
+
+<!-- ticket:T-0100 -->
+```yaml
+id: T-0100
+title: frob:tests directives silently degrade when stacked 3+ or separated from def
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-17'
+blocked_by: []
+parent: null
+scope:
+- src/frob/graph/**
+- src/frob/lang/**
+- tests/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+typani campaign gap report: a stack of 3 frob:tests directives above one test def collapsed to a generic file-level edge losing kind=unit; a 5-stack silently dropped the first 3; directives above non-def statements degrade too. Silent data loss in the obligation graph -- should either work or error loudly.
+
+<!-- ticket:T-0101 -->
+```yaml
+id: T-0101
+title: extend frob:waive to arch/perf tool channels or document the boundary
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-17'
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/**
+- src/frob/arch/**
+- docs/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+typani campaign gap report: frob:waive suppresses gates-channel rule ids only; a waive on an arch long-function finding has no effect and fails silently. Either honor waivers in the arch/dup tool channels or make the waive command error when targeting an unwaivable channel.
