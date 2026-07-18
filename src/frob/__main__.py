@@ -868,29 +868,6 @@ def _add_serve_parser(sub) -> None:
     serve_p.add_argument("serve_path", metavar="path", nargs="?", default=".")
 
 
-# frob:ticket T-0084
-def _add_sys_parser(sub) -> None:
-    """Register the `frob sys` subcommand group (`plan` today; `check`/`trace`/
-    `capacity`/`threats`/`doc`/`export` are later roadmap-phase-5 siblings,
-    docs/strata/roadmap.md)."""
-    # -- sys -------------------------------------------------------------------
-    sys_p = sub.add_parser(
-        "sys", help="strata design-model operations (obligation -> ticket plan, ...)"
-    )
-    sys_sub = sys_p.add_subparsers(dest="sys_command")
-    sys_plan_p = sys_sub.add_parser(
-        "plan",
-        help="compile the obligation frontier into a ticket tree (idempotent)",
-    )
-    sys_plan_p.add_argument("sys_path", metavar="path", nargs="?", default=".")
-    sys_plan_p.add_argument(
-        "--apply",
-        dest="sys_apply",
-        action="store_true",
-        help="write the planned tickets (default: dry-run, print the tree)",
-    )
-
-
 def _build_parser() -> argparse.ArgumentParser:
     # frob:ticket T-0021
     p = argparse.ArgumentParser(
@@ -922,7 +899,6 @@ def _build_parser() -> argparse.ArgumentParser:
     _add_mutate_parser(sub)
     _add_stats_parser(sub)
     _add_serve_parser(sub)
-    _add_sys_parser(sub)
     return p
 
 

@@ -1713,6 +1713,15 @@ _SYS_DIRECTIVE_KINDS: dict[EdgeKind, str] = {
     EdgeKind.BOUNDARY: "boundaries",
     EdgeKind.SECRET: "secrets",
 }
+#: Construct kinds SYS002 requires at least one code binding for. Boundaries
+#: and secrets are the enforcement/authority sites the surface language
+#: itself calls out (docs/strata/surface.md's boundary/secret semantics);
+#: channels (Flow ids) are left optional since most flows are pure data
+#: movement with no single enforcing call site to bind (T-0080 decision,
+#: documented in docs/strata/surface.md#directives-t-0080).
+_SYS002_REQUIRED_KINDS: tuple[EdgeKind, ...] = (EdgeKind.BOUNDARY, EdgeKind.SECRET)
+
+
 #: Mirrors `frob.strata._design_load.DEFAULT_DESIGN_DIR`. Duplicated as a
 #: bare literal (rather than imported) so `_design_dir` -- called as
 #: `sys_gate`'s FIRST statement, before the opt-in existence check below --
@@ -1861,30 +1870,33 @@ def _sys002(snapshot: GraphSnapshot, design_ids) -> list[Violation]:  # noqa: AN
     """SYS002: a boundary or secret construct in the design model has no
     `frob:boundary`/`frob:secret` code binding anywhere -- the construct
     exists on paper but nothing in code attests it (docs/strata/surface.md
-    #directives-t-0080). Detection is `frob.strata._design_load.
-    unbound_constructs`, imported lazily here (not at module top) for the
-    same reason `_sys003_one_model` does: a repo with no design dir must
-    never pay `frob.strata`'s `strata_core` native-extension import cost
-    (T-0135) -- shared with `frob.strata.plan_obligations`'s "unbound"
-    frontier so the join lives in exactly one place (T-0084 review
-    finding 1)."""
-    from frob.strata import unbound_constructs
-
+    #directives-t-0080)."""
+    bound: dict[EdgeKind, set[str]] = {kind: set() for kind in _SYS002_REQUIRED_KINDS}
+    for edge in snapshot.edges:
+        if edge.kind in bound:
+            bound[edge.kind].add(edge.target)
+    ids_by_kind = {
+        EdgeKind.BOUNDARY: design_ids.boundaries,
+        EdgeKind.SECRET: design_ids.secrets,
+    }
     violations: list[Violation] = []
-    for kind, construct_id in unbound_constructs(design_ids, snapshot):
-        _log.debug("SYS002: %s %s has no code binding", kind.value, construct_id)
-        violations.append(
-            Violation(
-                rule="SYS002",
-                severity=Severity.WARN,
-                file=f"design/{kind.value}/{construct_id}",
-                line=0,
-                message=(
-                    f"SYS002: {kind.value} {construct_id} has no code binding; "
-                    f"add: frob:{kind.value} {construct_id} at the enforcing site"
-                ),
+    for kind in _SYS002_REQUIRED_KINDS:
+        for construct_id in sorted(ids_by_kind[kind]):
+            if construct_id in bound[kind]:
+                continue
+            _log.debug("SYS002: %s %s has no code binding", kind.value, construct_id)
+            violations.append(
+                Violation(
+                    rule="SYS002",
+                    severity=Severity.WARN,
+                    file=f"design/{kind.value}/{construct_id}",
+                    line=0,
+                    message=(
+                        f"SYS002: {kind.value} {construct_id} has no code binding; "
+                        f"add: frob:{kind.value} {construct_id} at the enforcing site"
+                    ),
+                )
             )
-        )
     return violations
 
 

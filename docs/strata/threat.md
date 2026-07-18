@@ -241,14 +241,94 @@ the unknown -- and says so.
   capability grammar `_effects.py` itself defers.
 - **C (code binding)**: effect extraction of CWE-relevant sinks (joins
   T-0079), the "undeclared capability in code" error, mitigation
-  chokepoint verification via the policy forms.
+  chokepoint verification via the policy forms. SHIPPED (T-0113):
+  `check_effect_completeness` joins `_effects.py::extract_effects`'s
+  observed net/fs/exec sinks into the SAME `_entries_by_capability_kind`
+  taxonomy THREAT002 and `_fired_obligations` use -- THREAT004 (an
+  observed sink whose owning node declares no matching `may` capability,
+  reusing `check_capability_conformance`'s join rather than re-detecting
+  it) and THREAT005 (a declared-and-conformant sink whose kind names no
+  catalog `capability_kind`, unless a `BenignCapability` excuses it; `fs`
+  is left unmapped on purpose since CWE-22's precondition is a flow
+  pattern, not a capability kind, per its own `capability_kind=None`
+  entry). Mitigation chokepoint verification tightens THREAT003 instead
+  of adding a new rule, in two layers:
+
+  (1) SHAPE: a discharging claim must be `NoFlow(src=<foreign-trust node
+  or the "foreign" level>, dst=<firing node>)`, the exact form
+  `_eval_noflow` already proves over the closure engine's boundary-aware
+  `reachable` -- a `Claim` at the right id and rung but the wrong body no
+  longer discharges.
+
+  (2) KIND: review round 2 found that (1) alone is insufficient --
+  `reachable`'s barrier test fires on ANY `Boundary` regardless of
+  `direction`/`predicate`, so a PROVED `NoFlow` originally meant only
+  "SOME boundary blocks every path", and a `declassify` boundary (or an
+  `endorse` boundary with an unrelated `predicate`, e.g.
+  `"legal_review_signed_off"` standing in for a CWE-79 `output_encoding`
+  requirement) discharged exactly like the catalog's actual required
+  mitigation. `_mitigation_is_chokepoint` closes this: it isolates the
+  boundaries carrying the catalog's EXACT mitigation
+  (`direction=ENDORSE`, `predicate == WeaknessEntry.mitigation`) and
+  re-evaluates the SAME `NoFlow` claim on a model copy with every OTHER
+  boundary removed -- still the SAME `evaluate_claims`/`_eval_noflow`/
+  `reachable` call, no new closure primitive. An `assumed` claim skips
+  this check (it never reaches the closure at all; the owner/review gate
+  is its only accountability, same as every other claim form).
+
+  Disclosed precision cut (symmetric with THREAT005's `fs` disclosure
+  above): the re-evaluation is PER-MODEL, not per-path.
+  `FactBase.reachable` reports reachability, not which boundary blocked
+  which specific path, so this cannot distinguish "every path carries a
+  matching boundary" from "some paths carry a matching boundary and
+  others carry only a non-matching one" at finer-than-model granularity --
+  it collapses both to a single re-evaluation of the SAME claim with only
+  the matching boundaries kept in. This is SOUND (removing non-matching
+  boundaries can only add reachability, never remove it, so a PROVED
+  result here really does mean the matching boundaries alone cut the
+  closure) and deny-by-default in the imprecise direction (a path saved
+  only by a non-matching boundary reopens in the restricted model and
+  REFUTES the claim, correctly failing discharge) -- but a model wanting
+  a true per-path mitigation-kind proof needs boundary-to-path attribution
+  the closure API does not expose today. Noted here as a scope cut, not
+  silently assumed away.
 - **D (CVE join)**: NVD CVE->CWE ingestion into vet, the containment
   report, live-exposure severity.
 - **E (quality families)**: `std.perf` / `std.reliability` /
   `std.compat` catalog packs with the anti-pattern table above; the small
   new precondition predicates (CORS wildcard, compression, batch-write,
   optimistic-render, route-authz) and their cited baselines. Reuses A-C
-  machinery; adds no kernel.
+  machinery; adds no kernel. SHIPPED (T-0114): `QUALITY_CATALOG` in
+  `_threat.py` catalogs the three table rows that map onto EXISTING
+  kernel detectables with NO new precondition logic -- CWE-639 (dynamic
+  ORM/query scoping) reuses the SAME `sql` `capability_kind` join CWE-89
+  already fires on (a different cited id and mitigation, `tenant_scoping`,
+  over the identical THREAT002/THREAT003 machinery); REL-001 (single-
+  dependency bottleneck) and PERF-002 (non-statically-hosted content) are
+  `capability_kind=None` citation-only entries whose actual refutation
+  lives in the already-shipped capacity/budget (T-0066) and std.infra
+  cdn/immutable machineries, mirroring the existing CWE-22/352/798
+  citation-only precedent. Stored XSS needed no new entry at all: the
+  existing CWE-79 `NoFlow` chokepoint check already walks `reachable`
+  transitively, so a two-hop foreign-to-store-to-render path is the SAME
+  obligation the phase-A entry already covers. `QUALITY_VIEWS` adds three
+  family-scoped baselines (`web-performance-baseline`,
+  `reliability-baseline`, `web-quality-security-baseline`) that
+  `check_catalog_completeness` (THREAT001, unmodified) proves exhaustive
+  when passed `QUALITY_CATALOG`/`QUALITY_OUT_OF_SCOPE` explicitly -- kept
+  separate from `CWE_CATALOG`/`VIEWS` so the `owasp-top-10` view (built
+  directly from `CWE_CATALOG`'s ids) never silently absorbs non-OWASP
+  quality rows. The remaining five table rows (uncompressed JSON,
+  one-at-a-time writes, un-optimistic render, wide-open CORS, loose
+  backend URL rules) each need a genuinely new precondition the kernel
+  model has no field for today (write cardinality, a `waits_for` render
+  edge, a CORS-credentials boundary predicate, an endpoint/route concept)
+  -- `QUALITY_OUT_OF_SCOPE` catalogs each with a reasoned entry rather
+  than forcing a precondition that does not exist, honestly disclosed
+  per docs/strata/threat.md#what-is-honestly-not-covered. No
+  `compatibility`-family view is stubbed: the anti-pattern table above
+  names zero compatibility rows, so a `compat-baseline` view would lie
+  about what it checks.
 - **F (audit + docs)**: `frob sys audit` per-family exhaustiveness matrix,
   DOC002 binding of security/quality prose, the litmus (a deliberately
   vulnerable+unoptimized model whose every planted anti-pattern the audit
