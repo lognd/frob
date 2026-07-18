@@ -2082,7 +2082,7 @@ Typani pilot: frob sys audit <file.strata> misbehaves silently, appending a bogu
 id: T-0164
 title: COV002 demands per-declaration frob:ticket edges inside .strata files -- boilerplate
   x28
-state: queued
+state: in-progress
 kind: ux
 origin: agent
 created: '2026-07-18'
@@ -2093,12 +2093,42 @@ scope:
 - src/frob/lang/_walk_strata.py
 - tests/**
 - tickets.md
-evidence: []
+evidence:
+- tests/test_gates.py::TestCov002StrataModuleCoverage::test_module_level_ticket_edge_covers_nested_declaration
+- tests/test_gates.py::TestCov002StrataModuleCoverage::test_declaration_without_module_edge_still_fires
 attachments: []
 acceptance: []
 threat: null
 ```
 Typani pilot: COV002 required a frob:ticket directive on every strata declaration (module/node/flow/assert) individually -- ~28 copy-paste edges for one ticket with no granularity value. Design decision needed: either a module-level directive in a .strata file covers all its declarations (likely right -- a design file is one artifact), or document why per-declaration edges matter. Whichever way, kill the boilerplate.
+
+## Done report
+
+Design decision: a `.strata` file is one design artifact -- a single
+`frob:ticket` directive on the file's `module` declaration now covers every
+`node`/`flow`/`boundary`/`assert`/... nested under it for COV002 purposes,
+the same blast-radius reasoning `_scope_covers` already applies at the file
+level, one notch finer. Per-declaration edges are no longer demanded; a
+`.strata` file with no directive anywhere still fires COV002 normally (not
+a blanket exemption).
+
+Changed:
+- src/frob/gates/__init__.py::_strata_module_symref (new)
+- src/frob/gates/__init__.py::_covered_by_strata_module (new)
+- src/frob/gates/__init__.py::_cov002 (extended: checks strata-module
+  coverage before falling through to scope coverage)
+
+Evidence:
+- tests/test_gates.py::TestCov002StrataModuleCoverage::test_module_level_ticket_edge_covers_nested_declaration
+- tests/test_gates.py::TestCov002StrataModuleCoverage::test_declaration_without_module_edge_still_fires
+
+Filed: none (no out-of-scope work found; T-0165/T-0168 explicitly left
+untouched per instructions).
+
+Gates: `frob check --ticket T-0164` clean -- 0 errors, only the pre-existing
+TEST006 warn (no coverage stamp, unrelated to this change) and the usual
+repo-wide waived PERF/arch advisories. `pytest tests/test_gates.py` passes
+(all prior COV002 tests plus the 2 new ones).
 
 <!-- ticket:T-0165 -->
 ```yaml
@@ -2150,7 +2180,7 @@ Confirmed twice (T-0150 review read parse_store directly: no code/may branch, fa
 ```yaml
 id: T-0167
 title: 'frob sys --help: add example invocations and directory-root convention'
-state: queued
+state: done
 kind: docs
 origin: agent
 created: '2026-07-18'
@@ -2160,12 +2190,39 @@ scope:
 - src/frob/__main__.py
 - docs/**
 - tickets.md
-evidence: []
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 attachments: []
 acceptance: []
 threat: null
 ```
 Typani pilot: sys subcommand help gives no example invocation or the design-root directory convention -- the pilot reverse-engineered usage from frob.strata comments. Add epilog examples (plan/doc/audit/export against a design root) to the argparse help and a quickstart paragraph in docs.
+
+## Done report
+
+Changed:
+src/frob/__main__.py::_add_sys_parser (epilog with example invocations,
+RawDescriptionHelpFormatter)
+docs/commands/sys.md (Quickstart section)
+
+Convention documented after live verification: plan/doc/audit take the repo
+ROOT (default `.`) and the tool appends the configured design dir itself;
+export is the single exception taking one .strata file (default
+design/frob.strata) and errors on a directory argument. Every example
+invocation in the epilog/Quickstart was run directly in the worktree and its
+real output verified, including the negative cases (`sys plan design`
+reproducing the design/design lookup miss the old text would have caused;
+`sys export ... design` erroring on a directory). File-path behavior of
+`sys audit <file>` deliberately left undocumented: T-0163 owns making it a
+hard error.
+
+Evidence: tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+(frob test --base main, PASS)
+Filed: none
+Gates: frob check clean for this change; TEST006 coverage-stamp staleness is
+campaign-wide and re-stamped at release verification, not per-ticket.
+Review: one REJECT round (initial text documented passing design/ as the
+path, contradicting sys_runner's actual resolution); fixed and APPROVED.
 
 <!-- ticket:T-0168 -->
 ```yaml

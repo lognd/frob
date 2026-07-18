@@ -1,12 +1,43 @@
 # frob sys
 
 Applications of the strata design model (`docs/strata/roadmap.md` "CLI
-surface (target)"). Three verbs today: `plan` (T-0084, obligation ->
-ticket compiler), `doc` (T-0085, threat-catalog audit matrix), and
-`export` (T-0086, k8s/seccomp/IAM config skeletons). `check`/`trace`/
-`capacity`/`threats` are later phase-5 tickets not yet landed on `main`
--- when they land, this doc and `src/frob/app/sys_runner.py` extend
-rather than get replaced.
+surface (target)"). Four verbs today: `plan` (T-0084, obligation ->
+ticket compiler), `doc` (T-0085, threat-catalog audit matrix), `export`
+(T-0086, k8s/seccomp/IAM config skeletons), and `audit` (T-0115, the
+checking counterpart to `doc`). `check`/`trace`/`capacity`/`threats` are
+later phase-5 tickets not yet landed on `main` -- when they land, this
+doc and `src/frob/app/sys_runner.py` extend rather than get replaced.
+
+## Quickstart (T-0167)
+
+`plan`, `doc`, and `audit` all take a **repo root** (default `.`), not a
+design directory: the command itself appends the configured design dir
+(default `design/`, or `[strata].design_dir` in `frob.toml`) and reads
+every `.strata` file under it. Pass the repo root -- passing `design/`
+directly makes the command look for `design/design/` and find nothing:
+
+```bash
+frob sys plan                    # dry-run: print the would-be ticket tree
+frob sys plan --apply            # write the planned tickets
+frob sys plan /path/to/repo      # plan a different repo root
+frob sys doc                     # threat-catalog audit matrix (owasp-top-10)
+frob sys audit                   # check per-family exhaustiveness, exit nonzero on gaps
+```
+
+`export` is the one exception: it takes a **path to a single `.strata`
+file** (default `design/frob.strata`), since a config skeleton is
+rendered from one elaborated `KernelModel`, not a directory of models --
+passing a directory is a hard error:
+
+```bash
+frob sys export --format seccomp design/frob.strata
+frob sys export --format seccomp                    # defaults to design/frob.strata
+```
+
+`frob sys --help` repeats this distinction inline as an epilog -- see
+`_add_sys_parser` in `src/frob/__main__.py`. All of the commands above
+were run against this worktree while writing this section; see the
+T-0167 Done report for the verified output.
 
 ## `frob sys plan`
 
