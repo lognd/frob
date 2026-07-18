@@ -1457,7 +1457,7 @@ Filed: none.
 id: T-0155
 title: 'design lint family: caching, resource bounds, rate-limiting, kill-switch rules
   over the kernel model'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-18'
@@ -2123,7 +2123,7 @@ repo-wide waived PERF/arch advisories. `pytest tests/test_gates.py` passes
 ```yaml
 id: T-0165
 title: 'DOC002 anchor errors: report the computed slug and suggest nearest valid anchor'
-state: in-progress
+state: done
 kind: ux
 origin: agent
 created: '2026-07-18'
@@ -3030,7 +3030,6 @@ threat: null
 ```
 GH013 push protection rejects main: the Stripe fixture at tests/test_secrets_gate.py:49 (landed in 48aeed1, T-0157) is realistic enough for GitHub secret scanning despite T-0157's clearly-fake requirement. Every push of main is blocked until resolved. Fix has two parts: (1) make every fixture structurally un-flaggable by GitHub (pattern-invalid tail: wrong length/charset/checksum for the provider) while still firing frob's own gate -- if frob's format constraint is currently so strict that only GitHub-flaggable strings can fire it, LOOSEN the fixture-facing constraint or add a test-only needle path, disclosed; (2) meta-test: fixtures must not match GitHub's published secret-scanning patterns (encode the Stripe/AWS/GitHub-token formats we know) so a future fixture cannot re-trip push protection. REMEDIATION for the already-flagged blob (coordinator step, not this ticket): after all in-flight branches merge, rewrite the unpushed range to replace the flagged fixture in 48aeed1 itself (remote tip predates it, so no force-push needed), or the user may use the GitHub unblock URL instead. This ticket only makes the CURRENT tree safe and drift-locked.
 
-<<<<<<< HEAD
 <!-- ticket:T-0191 -->
 ```yaml
 id: T-0191
@@ -3076,26 +3075,11 @@ scope:
 - tests/**
 - docs/modules/dup.md
 - tickets.md
-=======
-<!-- ticket:T-draft-47dc1469 -->
-```yaml
-id: T-draft-47dc1469
-title: add real kill-switch/feature-flag mechanism for exec/net capabilities (checker/core/stratamod/vet)
-state: queued
-kind: feature
-origin: human
-created: '2026-07-18'
-blocked_by: []
-parent: null
-scope:
-- src/frob/process/**,src/frob/check/**
->>>>>>> worktree-agent-ac7930f2fcf774089
 evidence: []
 attachments: []
 acceptance: []
 threat: null
 ```
-<<<<<<< HEAD
 R6 probe_equivalence is fully implemented and unreachable (no --probe string anywhere under the CLI, confirmed by survey). Wire the flag, document the workload contract, CLI-level test.
 
 <!-- ticket:T-0193 -->
@@ -3266,6 +3250,27 @@ acceptance: []
 threat: null
 ```
 Survey sec 5, user mandate: registry of detectors/rungs/claimed clone types; parametrized fixture pairs per claimed cell (fire + negative); unclaimed cells need written exclusions; a detector or clone-type claim added without a fixture fails the suite -- T-0158 capability-matrix mold. Meta-test must be green over the CURRENT detector set before any new detector lands (acceptance from T-0187).
-=======
+
+<!-- ticket:T-0200 -->
+```yaml
+id: T-0200
+title: add real kill-switch/feature-flag mechanism for exec/net capabilities (checker/core/stratamod/vet)
+state: queued
+kind: feature
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/process/**
+- src/frob/check/**
+- src/frob/strata/**
+- design/frob.strata
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
 T-0155's LINT004 rule (design lint family) fires honestly on design/frob.strata's checker/core/stratamod/vet nodes: each holds a risky (exec/net) may capability with no real, checked-in kill switch (env var / feature flag) an operator can flip live to disable it. T-0155 deliberately did not fabricate a flag=<id> attr naming a mechanism that does not exist (declare real facts or waive with reasons, T-0150/T-0151 precedent) -- this ticket is the follow-on product work to build the actual mechanism and then discharge LINT004 for real on design/frob.strata.
->>>>>>> worktree-agent-ac7930f2fcf774089
