@@ -21,6 +21,10 @@ real.
 - `docs/guides/agentic-workflow.md` -- the human/AI split: how planner, implementer,
   reviewer, prover, and the auditors use the ticket queue and gates as the
   shared work surface, including the worktree-per-agent pattern.
+- `docs/guides/agent-playbook.md` -- the per-dispatch checklist: worktree
+  warm-up, scope/evidence/gate discipline, the deletion-filter land rule,
+  and ledger-conflict splice guidance. Every worktree agent should read
+  this before starting a ticket.
 - `docs/guides/editors.md` -- syntax highlighting for `.strata` in VSCode
   and JetBrains IDEs via one drift-locked TextMate grammar.
 - `docs/guides/exhaustive-research.md` -- the frontier-loop for total-coverage
