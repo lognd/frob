@@ -433,6 +433,77 @@ class TestFrobTomlCheckDefaults:
         assert data.get("results") == []
 
 
+class TestCheckPolyglot:
+    """T-0229: polyglot repos must not silently skip a detected stage.
+
+    Unpinned auto-detect runs every detected language's stage (gates
+    included); pinning `check_type` is the deliberate, honest opt-out and
+    must report a `SKIPPED: ...` line naming what it excludes."""
+
+    def _make_polyglot_project(self, tmp_path: Path) -> Path:
+        # frob:tests tests/system/test_cli_check.py::TestCheckPolyglot._make_polyglot_project
+        """A repo with both a Rust and a Python marker file present."""
+        (tmp_path / "Cargo.toml").write_text(
+            '[package]\nname = "polyfix"\nversion = "0.1.0"\nedition = "2021"\n'
+        )
+        (tmp_path / "src").mkdir()
+        (tmp_path / "src" / "main.rs").write_text("fn main() {}\n")
+        (tmp_path / "pyproject.toml").write_text(
+            '[project]\nname = "polyfix"\nversion = "0.1.0"\n'
+        )
+        (tmp_path / "frob.toml").write_text(
+            "[gates.severity]\n"
+            'COV001 = "warn"\nTEST001 = "warn"\nTEST002 = "warn"\n'
+            'TEST003 = "warn"\nTEST005 = "warn"\nTEST006 = "warn"\n'
+        )
+        src_dir = tmp_path / "srcpy" / "polyfix"
+        src_dir.mkdir(parents=True)
+        (src_dir / "__init__.py").write_text(
+            "def add(x: int, y: int) -> int:\n    return x + y\n"
+        )
+        return tmp_path
+
+    def test_unpinned_polyglot_runs_python_stage(self, tmp_path):
+        """Auto-detect (no --type, no frob.toml check_type) still runs the
+        python stage's tools even with a Cargo.toml also present -- the
+        JSON tool list must not be limited to rust-only tools."""
+        self._make_polyglot_project(tmp_path)
+        r = run(
+            "check",
+            str(tmp_path),
+            "--skip-tests",
+            "--skip-exports",
+            "--json",
+            cwd=tmp_path,
+        )
+        import json
+
+        data = json.loads(r.stdout)
+        tools = {res["tool"] for res in data["results"]}
+        # ruff-check only runs as part of the python stage -- its presence
+        # proves the python stage actually ran, not just the rust stage
+        # that `detect_project_type` alone would have picked (Cargo.toml
+        # wins in the single-winner priority order).
+        assert "ruff-check" in tools, tools
+
+    def test_pinned_check_type_reports_skipped_line(self, tmp_path):
+        """`--type python` on the same polyglot repo must name the rust
+        stage it is deliberately excluding, not just go quiet about it."""
+        self._make_polyglot_project(tmp_path)
+        r = run(
+            "check",
+            str(tmp_path),
+            "--type",
+            "python",
+            "--skip-tests",
+            "--skip-exports",
+            cwd=tmp_path,
+        )
+        out = r.stdout + r.stderr
+        assert "SKIPPED" in out
+        assert "rust" in out
+
+
 @pytest.mark.skipif(
     not _HAS_TS_TOOLCHAIN, reason="no local typescript toolchain (node_modules) found"
 )

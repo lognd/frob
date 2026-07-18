@@ -7,6 +7,7 @@ from pathlib import Path
 
 from frob.app.config import AppConfig
 from frob.check import (
+    CheckResult,
     detect_project_type,
     run_check,
     run_check_cpp,
@@ -14,6 +15,7 @@ from frob.check import (
     run_check_ts,
 )
 from frob.logging import get_logger, quiet_stdout_logs, stdout_log_level
+from frob.process.parsers.common import Diagnostic, ToolResult
 
 _log = get_logger(__name__)
 
@@ -90,14 +92,14 @@ def _log_applied_defaults(updates: dict) -> None:
     _log.debug("check defaults from frob.toml: %s", sorted(updates))
 
 
-def _warn_if_polyglot(root: Path, chosen: str) -> None:
-    """Loudly name the language stages auto-detection is about to skip.
+def _detected_types(root: Path) -> list[str]:
+    """Every language stage whose marker file is present under `root`.
 
-    Cargo.toml beats pyproject.toml in detect_project_type, so a mixed repo
-    silently ran ONE language's checks -- gates included -- and looked clean
-    (found during the feldspar adoption, T-0022). Detection stays simple;
-    the warning makes the single-stage choice impossible to miss. Pin
-    check_type in frob.toml (or --type) to silence it deliberately.
+    Order is stable (rust, cpp, python, typescript) and independent of
+    `detect_project_type`'s single-winner priority -- that function picks
+    ONE type for legacy single-language callers; this one enumerates ALL of
+    them so a polyglot repo can run every applicable stage instead of
+    silently running only the first match (T-0229).
     """
     sentinels = {
         "rust": (root / "Cargo.toml").exists(),
@@ -105,16 +107,49 @@ def _warn_if_polyglot(root: Path, chosen: str) -> None:
         "python": (root / "pyproject.toml").exists() or (root / "setup.py").exists(),
         "typescript": (root / "package.json").exists(),
     }
-    others = sorted(
-        lang for lang, present in sentinels.items() if present and lang != chosen
+    return [lang for lang in ("rust", "cpp", "python", "typescript") if sentinels[lang]]
+
+
+def _skip_note_result(skipped: str, chosen: str) -> ToolResult:
+    """A synthetic `ToolResult` recording that `skipped`'s stage did NOT run.
+
+    Pinning `check_type` (CLI `--type` or `frob.toml`'s top-level
+    `check_type`) is a deliberate, honest way to run only one language's
+    stage in a polyglot repo -- but the pin must never look like a silent
+    clean pass for the language it excludes (T-0229: a lithos `frob check`
+    warned about a skipped stage and then printed `[PASS] 0 errors 0
+    warnings`, contradicting its own warning). This turns the exclusion
+    into a visible `SKIPPED: <lang>` line in both the text and JSON report,
+    with exit_code 0 (a deliberate pin) so it never contributes a false
+    error/warning count.
+    """
+    summary = f"SKIPPED: {skipped} (pinned to {chosen} via check_type)"
+    return ToolResult(
+        tool=f"skipped:{skipped}",
+        exit_code=0,
+        summary=summary,
+        diagnostics=[Diagnostic(severity="note", message=summary)],
     )
+
+
+def _warn_if_polyglot(root: Path, chosen: str, others: list[str]) -> None:
+    """Loudly name the language stages a `check_type` pin is excluding.
+
+    Cargo.toml beats pyproject.toml in detect_project_type, so a mixed repo
+    could silently run ONE language's checks -- gates included -- and look
+    clean (found during the feldspar adoption, T-0022). Auto-detection now
+    runs every detected stage by default (see `_run_all_detected`); this
+    warning only fires for the deliberate opt-out (`check_type` pinned in
+    frob.toml or `--type` on the CLI), where the summary also carries a
+    `SKIPPED: ...` line per excluded language (`_skip_note_result`).
+    """
     if others:
         _log.warning(
-            "polyglot repo: running the %s stage only; %s checks (gates "
-            "included) are NOT running -- pin check_type in frob.toml or "
-            "pass --type to choose deliberately",
+            "check_type pinned to %s: %s checks (gates included) are NOT "
+            "running -- this is a deliberate opt-out; unpin check_type to "
+            "run every detected stage",
             chosen,
-            "/".join(others),
+            "/".join(sorted(others)),
         )
 
 
@@ -180,10 +215,31 @@ _DISPATCH_BY_TYPE = {
 }
 
 
-def _dispatch_check(cfg: AppConfig, root: Path, project_type: str):
+def _dispatch_check(cfg: AppConfig, root: Path, project_type: str) -> CheckResult:
     """Run the language-appropriate check stack for `project_type`."""
     dispatch = _DISPATCH_BY_TYPE.get(project_type, _dispatch_check_python)
     return dispatch(cfg, root)
+
+
+# frob:ticket T-0229
+def _run_all_detected(cfg: AppConfig, root: Path, types: list[str]) -> CheckResult:
+    """Run every detected language stage and merge their results into one report.
+
+    T-0229: a polyglot repo used to auto-detect and run exactly ONE
+    language's stage (whichever `detect_project_type` picked first), gates
+    included, and report a clean PASS with every other language's checks
+    never having run. Auto-detection now runs ALL detected stages by
+    default -- the only way to run a single stage deliberately is pinning
+    `check_type` (CLI `--type` or `frob.toml`), which stays fast and now
+    also reports a `SKIPPED: ...` line per excluded language
+    (`_skip_note_result`). `total_errors`/`total_warnings` sum naturally
+    across the merged `results` list, so a failure in ANY detected stage
+    fails the overall run.
+    """
+    results: list[ToolResult] = []
+    for project_type in types:
+        results.extend(_dispatch_check(cfg, root, project_type).results)
+    return CheckResult(path=str(root), results=results)
 
 
 def _run_stamp_coverage(root: Path) -> None:
@@ -276,10 +332,30 @@ def run(cfg: AppConfig) -> None:
     with _ctx:
         cfg = _apply_frob_toml_defaults(cfg, root)
         auto_detected = cfg.check_type is None
-        project_type = cfg.check_type or detect_project_type(root)
+        # frob:ticket T-0229
         if auto_detected:
+            detected = _detected_types(root) or [detect_project_type(root)]
+            if len(detected) > 1:
+                _log.info(
+                    "polyglot repo: running every detected stage (%s) -- "
+                    "pin check_type in frob.toml or pass --type to run "
+                    "just one",
+                    "/".join(detected),
+                )
+            result = _run_all_detected(cfg, root, detected)
+        else:
+            project_type = cfg.check_type
+            others = [t for t in _detected_types(root) if t != project_type]
             # frob:ticket T-0022
-            _warn_if_polyglot(root, project_type)
-        result = _dispatch_check(cfg, root, project_type)
+            _warn_if_polyglot(root, project_type, others)
+            result = _dispatch_check(cfg, root, project_type)
+            if others:
+                result = CheckResult(
+                    path=result.path,
+                    results=[
+                        *result.results,
+                        *(_skip_note_result(lang, project_type) for lang in others),
+                    ],
+                )
 
     _report_check_result(cfg, result)
