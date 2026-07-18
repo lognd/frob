@@ -2528,7 +2528,7 @@ T-0158 shipped python stdlib coverage (subprocess/os/pickle/marshal/shelve/ctype
 id: T-0182
 title: per-operation fire+negative fixture parametrization for the full DANGEROUS_OPERATIONS
   table (T-0158 deliverable 3 remainder)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-07-18'
