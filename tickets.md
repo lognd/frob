@@ -1166,6 +1166,7 @@ blocked_by:
 - T-0153
 - T-0154
 - T-0155
+- T-0157
 parent: null
 scope:
 - pyproject.toml
@@ -1181,3 +1182,28 @@ acceptance: []
 threat: null
 ```
 Get frob into a releasable state once the gates-zero sweep and the three feature tickets land. Deliverables: (1) version bump decision (current 0.1.0 line -- pick the next version honestly against the scale of what shipped) stamped via frob release stamp, with frob release check green as the gate; (2) CHANGELOG.md generated from the ticket archive + git history since the last release, grouped by area (strata, threat/CVE, vet, check/gates, tickets, editors), human-readable, every T-#### referenced; (3) README refresh: current subcommand table, strata overview with the self-model/self-conformance story, editors support, CVE mirror workflow, install paths (uv tool install, bare pip, dev) each verified by actually running them; (4) docs/index.md completeness pass -- every docs/ page linked, every public module documented; (5) packaging: uv build the wheel, decide and document the native-crate strategy (strata-core/frob_core: bundled, separate wheels, or optional with the T-0133-135 degrade contract -- verify the degrade contract works from the actual built wheel in a bare venv, and verify the T-0142/T-0152 dependency completeness holds there too); (6) final release gate: frob check exit 0 with gates at zero, frob sys audit fully PROVED, full pytest suite green, drift-locks all live. Do not tag or publish -- leave the repo in a provably releasable state and report what the release command sequence would be.
+
+<!-- ticket:T-0157 -->
+```yaml
+id: T-0157
+title: 'secrets-scan gate: real-looking API tokens in tracked files fail check unless
+  marked fake'
+state: queued
+kind: security
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/**
+- src/frob/check/**
+- tests/**
+- docs/modules/gates.md
+- frob.toml
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: info-disclosure
+```
+New gate family: scan TRACKED files (git ls-files, never untracked/.env -- and a TRACKED .env is itself a critical finding) for real-looking API tokens and credentials; any match fails frob check unless the site is explicitly marked fake. INVESTIGATE FIRST: the existing frob:secret directive in the comment DSL -- build on its semantics (e.g. frob:secret fake annotation) rather than inventing a parallel marker; also honor obvious placeholder shapes (XXXX runs, asterisks, the literal words fake/changeme/example/placeholder inside the token) so docs and tests stay writable. Pattern table, named per provider with SPECIAL ATTENTION to: OpenAI (sk- and sk-proj- prefixed), Anthropic (sk-ant-), Stripe (sk_live_/rk_live_/pk_live_/whsec_ -- pk_test/sk_test count as real-looking too, flag at lower severity), and finance/common services: AWS (AKIA/ASIA access ids + paired 40-char secrets), GitHub (ghp_/gho_/ghs_/ghu_/github_pat_), GitLab (glpat-), Slack (xoxb-/xoxp-/xoxa-/xoxs-), Google (AIza...), Twilio, SendGrid (SG.), Plaid, Square (sq0), PayPal/Braintree, npm (npm_), PyPI (pypi-), HuggingFace (hf_), private-key PEM blocks (BEGIN ... PRIVATE KEY), and JWTs (eyJ header heuristic). Each pattern carries provider name, severity, and a format constraint (length/charset/checksum where the format has one) to cut false positives; generic high-entropy fallback only if it can be made honest (document the false-positive class per T-0151 precedent, or omit with written reasoning). CRITICAL implementation constraints: (1) NEVER echo the full matched token in any output, log, or ticket -- redact to provider + prefix + length; (2) the gate's own tests need realistic-SHAPED tokens: construct them clearly fake (e.g. correct prefix + XXXX/pattern-invalid tail) and/or annotate with frob:secret fake so the gate does not fail its own fixtures (T-0151 self-match lesson -- lock this with an explicit test that the test files themselves pass the gate); (3) wire into frob check as a default-on gate with its own rule ids and a waive path requiring a written reason; (4) run the new gate against the whole current repo and make it green honestly -- if anything real-looking is already tracked, that is a finding to surface loudly in the Done report, not to quietly waive. Drift-lock: a provider listed in the pattern table without a fixture exercising it fails the suite.
