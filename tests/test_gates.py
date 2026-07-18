@@ -383,6 +383,80 @@ class TestCoverageGate:
         assert any(v.rule == "WAIVE001" for v in violations)
         assert violations[0].severity == Severity.ERROR
 
+    def test_waive002_known_gate_rule_is_not_flagged(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/__init__.py::_waive002_violations kind="unit"
+        source = 'def helper(x):\n    # frob:waive COV001 reason="ok"\n    return x\n'
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        from frob.gates import _waive002_violations  # noqa: PLC0415
+
+        violations = _waive002_violations(snap, frozenset())
+        assert violations == ()
+
+    def test_waive002_flags_arch_category_as_ineffective(self, tmp_path: Path) -> None:
+        # T-0101: a waiver on an arch category (e.g. long-function) can
+        # never be matched by _apply_waivers -- WAIVE002 must say so loudly
+        # rather than silently doing nothing.
+        source = (
+            'def helper(x):\n    # frob:waive long-function reason="huge but ok"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        from frob.gates import _waive002_violations  # noqa: PLC0415
+
+        violations = _waive002_violations(snap, frozenset())
+        v = _first_rule(violations, "WAIVE002")
+        assert v is not None
+        assert v.severity == Severity.WARN
+        assert "frob-arch" in v.message
+
+    def test_waive002_flags_unknown_rule_id_as_ineffective(
+        self, tmp_path: Path
+    ) -> None:
+        source = (
+            'def helper(x):\n    # frob:waive NOTAREALRULE reason="typo"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        from frob.gates import _waive002_violations  # noqa: PLC0415
+
+        violations = _waive002_violations(snap, frozenset())
+        v = _first_rule(violations, "WAIVE002")
+        assert v is not None
+        assert "not a recognized gate or policy rule id" in v.message
+
+    def test_waive002_honors_loaded_policy_rule_ids(self, tmp_path: Path) -> None:
+        source = (
+            'def helper(x):\n    # frob:waive POL-custom reason="known false positive"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        from frob.gates import _waive002_violations  # noqa: PLC0415
+
+        violations = _waive002_violations(snap, frozenset({"POL-custom"}))
+        assert violations == ()
+
+    def test_waive002_end_to_end_via_run_gates(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/__init__.py::run_gates kind="integration"
+        _git_init(tmp_path)
+        source = (
+            'def helper(x):\n    # frob:waive god-class reason="legacy, tracked"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "add file"], cwd=tmp_path, check=True
+        )
+        cfg = GateConfig(root=str(tmp_path), base="main")
+        result = run_gates(cfg)
+        assert result.is_ok
+        report = result.danger_ok
+        assert _first_rule(report.violations, "WAIVE002") is not None
+
 
 class TestScopePrework:
     def test_scope001_out_of_scope_file(self, tmp_path: Path) -> None:

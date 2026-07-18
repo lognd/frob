@@ -34,12 +34,43 @@ declaration).
 | TEST007 | test | a cross-package `frob:uses-contract` dependency has no pairwise integration test covering that boundary (opt-in via `[testing].pair_integration`) |
 | DOC001 | doclink | a doc file matching `[gates.docs] include` globs (default `docs/**/*.md` -- new files auto-obligated) has no frob:describes anchor, no frob:doc edge into it, and is unreachable via markdown links from the roots (docs/index.md, README.md) |
 | POL* | policy | user-defined rules from `frob.toml` (see below) |
+| DUP001/DUP002 | clones | the diff introduces a clone of an existing symbol (opt-in, `[dup].enforce`) |
+| FUZZ001-003 | fuzz | fuzz obligations under `[fuzz]` (opt-in) |
+| PERF001-004 | perf | lexical performance smells (build-a-set-once, etc.) |
+| REL001 | release | release-readiness check |
+| WAIVE001 | (always on) | a `frob:waive` directive is missing `reason="..."` |
+| WAIVE002 | (always on) | a `frob:waive` targets a rule id that can never be matched -- see "Waive boundary" below |
 
 Severity: `error` (exit 1) or `warn`; per-rule default overridable via the
 `[gates.severity]` table in `frob.toml` (`COV001 = "warn"`), applied as a
-single post-processing step in `run_gates` -- the legacy-adoption dial. Any rule is waivable at a site via
+single post-processing step in `run_gates` -- the legacy-adoption dial. A
+rule produced by any of the gates above is waivable at a site via
 `frob:waive RULE-ID reason="..."`; waivers are listed in every report, so a
 waiver is visible debt, never silence.
+
+### Waive boundary (T-0101)
+
+`frob:waive` only ever suppresses entries in a `GateReport`'s `violations`
+tuple -- `_apply_waivers` matches a waiver's target against `Violation.rule`
+and can never see anything that isn't a `Violation`. Two `frob check` tool
+stages produce diagnostics a different way and were never reachable:
+
+- **`frob-arch`** (`long-function`, `god-class`, `high-coupling`,
+  `deep-nesting`, `abstraction-opportunity`, `large-file`): `frob.check`
+  calls `frob.arch.analyze_project` directly and wraps its
+  `ArchSuggestion`s straight into `Diagnostic`s, bypassing `frob.gates`
+  entirely.
+- Any rule id that is simply a typo or a rule that was never registered.
+
+Rather than silently doing nothing (the bug this ticket exists to close)
+or growing the waiver-matching machinery into `frob.check`'s Diagnostic
+pipeline (a bigger surface change than the problem warrants), a `frob:waive`
+naming one of these is flagged as **WAIVE002**: a loud, always-on WARN
+listing the waiver as ineffective and why. `frob.gates._KNOWN_GATE_RULES`
+(plus the run's loaded `[policy]` rule ids) is the whitelist; anything
+outside it is presumed unwaivable. If a future change makes the arch
+channel waivable, delete the `ArchCategory` half of
+`_unwaivable_channel_rules` and this note.
 
 ## Public API
 

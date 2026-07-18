@@ -262,6 +262,115 @@ def _waive001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     return tuple(violations)
 
 
+# frob:ticket T-0101
+# Every rule id any Violation-producing gate can emit. `frob:waive` only
+# ever suppresses entries in the GateReport's `violations` tuple (see
+# `_apply_waivers` below) -- a waiver targeting anything outside this set
+# can never match, so WAIVE002 treats that as the definition of
+# "unwaivable channel" rather than hardcoding a channel allowlist.
+_KNOWN_GATE_RULES = frozenset(
+    {
+        "COV001",
+        "COV002",
+        "COV003",
+        "COV004",
+        "DRIFT001",
+        "DRIFT002",
+        "SCOPE001",
+        "PRE001",
+        "INV001",
+        "INV002",
+        "TEST001",
+        "TEST002",
+        "TEST003",
+        "TEST004",
+        "TEST005",
+        "TEST006",
+        "TEST007",
+        "TODO001",
+        "WAIVE001",
+        "WAIVE002",
+        "DEC001",
+        "DEC002",
+        "REL001",
+        "DOC001",
+        "DUP001",
+        "DUP002",
+        "FUZZ001",
+        "FUZZ002",
+        "FUZZ003",
+        "PERF001",
+        "PERF002",
+        "PERF003",
+        "PERF004",
+    }
+)
+
+
+def _unwaivable_channel_rules() -> frozenset[str]:
+    """Rule/category ids from tool channels `frob:waive` can never reach.
+
+    T-0101 decision (documented in docs/modules/gates.md#waive-boundary):
+    honoring waivers in the `frob-arch` check stage would mean threading
+    the waiver-matching machinery into `frob.check`'s Diagnostic pipeline
+    (`analyze_project` produces `ArchSuggestion`s, never `Violation`s) --
+    a bigger surface change than a WARN justifies today. Instead, a waiver
+    that names one of `frob.arch`'s categories is flagged as ineffective
+    rather than silently doing nothing.
+    """
+    from typing import get_args
+
+    from frob.arch._models import ArchCategory
+
+    return frozenset(get_args(ArchCategory))
+
+
+def _waive002_violations(
+    snapshot: GraphSnapshot, rule_ids: frozenset[str]
+) -> tuple[Violation, ...]:
+    """WAIVE002: a `frob:waive` targets a rule id that can never be matched
+    by `_apply_waivers` -- neither a known gate rule nor a loaded policy
+    rule id. T-0101: this is the "unwaivable channel" case made loud
+    instead of a silent no-op; `rule_ids` is the run's loaded policy rule
+    ids, since those are dynamic (frob.toml-defined) and not known statically.
+    """
+    known = _KNOWN_GATE_RULES | rule_ids
+    if _waive_edges(snapshot) == ():
+        return ()
+    arch_categories = _unwaivable_channel_rules()
+    violations: list[Violation] = []
+    for edge in _waive_edges(snapshot):
+        if edge.target in known:
+            continue
+        file = edge.src.split("::", 1)[0]
+        if edge.target in arch_categories:
+            detail = (
+                f"'{edge.target}' is a frob-arch category, not a gates rule id; "
+                f"the frob-arch check stage does not consult frob:waive"
+            )
+        else:
+            detail = f"'{edge.target}' is not a recognized gate or policy rule id"
+        _log.warning(
+            "WAIVE002: %s waives %s, which is ineffective: %s",
+            edge.src,
+            edge.target,
+            detail,
+        )
+        violations.append(
+            Violation(
+                rule="WAIVE002",
+                severity=Severity.WARN,
+                file=file,
+                line=0,
+                message=(
+                    f"WAIVE002: frob:waive on {edge.src} targeting "
+                    f"'{edge.target}' is ineffective -- {detail}"
+                ),
+            )
+        )
+    return tuple(violations)
+
+
 def _match_waiver(
     violation: Violation, waivers_by_rule: dict[str, list[Edge]]
 ) -> Edge | None:
@@ -1995,7 +2104,10 @@ def run_gates(cfg: GateConfig) -> Result[GateReport, GateError]:
     st = inputs_result.danger_ok
 
     jobs, skipped = _build_jobs(selected, st)
-    all_violations: list[Violation] = list(_waive001_violations(st.snapshot))
+    all_violations: list[Violation] = [
+        *_waive001_violations(st.snapshot),
+        *_waive002_violations(st.snapshot, st.rule_ids),
+    ]
     job_violations, counts, timing = _run_jobs(jobs)
     counts["waive"] = len(all_violations)
     all_violations.extend(job_violations)
