@@ -50,14 +50,15 @@ Comments are `//`; docs attach with `///` and are drift-checked once
 `.strata` joins `frob.lang` (T-0077).
 
 ### `node` grammar (implemented; T-0132 closes the `code=`/`may` gap,
-T-0136 adds `on deploy`, T-0154 adds `carries`, T-0172 adds `managed`)
+T-0136 adds `on deploy`, T-0154 adds `carries`, T-0172 adds `managed`,
+T-0174 adds `waive`)
 
 The construct actually implemented by `strata-core/src/parse.rs::parse_node`
 today is spelled `node`, not the future `component` shown in the sketch
 above (T-0059 renames it once `runs on`/`state` land). Its
 grammar, extended by T-0132 to admit `code`/`may`, by T-0136 to admit
-`on deploy`, by T-0154 to admit `carries`, and by T-0172 to admit
-`managed`:
+`on deploy`, by T-0154 to admit `carries`, by T-0172 to admit `managed`,
+and by T-0174 to admit `waive`:
 
 ```
 node        := "node" IDENT ":" TRUST "abstract"? ("{" node_prop* "}")?
@@ -66,7 +67,8 @@ node_prop   := "clearance" IDENT | "attr" ATTRVAL | "residence" IDENT
              | "skew" "zipf" NUMBER | "errors_total"
              | "panics_contained_by" IDENT | "observe" observe_block
              | "code" STRING+ | "may" STRING | "on" "deploy" deploy_block
-             | "carries" STRING+ | "managed"
+             | "carries" STRING+ | "managed" | "waive" waive_clause
+waive_clause  := STRING "reason" STRING ("ticket" STRING)?
 deploy_block  := "{" deploy_prop (";" deploy_prop)* "}"
 deploy_prop   := "canary" "{" canary_stage ("," canary_stage)* "}"
                 | "endorsed_by" IDENT ("," IDENT)*
@@ -106,6 +108,18 @@ Elaboration (`_elaborate.py::_elaborate_node`, `_infra.py::
 _elaborate_store`): each tag becomes one `pii=<tag>` attr, the same
 per-atom desugar convention `code` established (`_pii.py::
 node_pii_tags` reads it back).
+
+**`waive` (T-0174, docs/strata/waive.md):** `RULE_ID STRING "reason" STRING
+("ticket" STRING)?` -- an in-design waiver for a `frob sys audit` finding
+(SYS100-102/THREAT002-003/LINT004/PII/COMPLIANCE) against THIS node, the
+surface analog of `frob:waive` for gate violations. `reason` is mandatory
+IN THE GRAMMAR -- a `waive` clause with no reason is a parse error, never
+a value that can exist without one. `RULE_ID` may carry a `RULE:SUBTARGET`
+sub-target (e.g. `"SYS100:fs-write"`) -- REQUIRED for multi-instance-per-
+node rule families (SYS100/SYS101/THREAT002/THREAT003; see `_waive.py::
+MULTI_INSTANCE_WAIVER_FAMILIES`) and rejected at elaborate time if
+missing. See `docs/strata/waive.md` for the matching/staleness algorithm,
+the sub-target requirement, and the WAIVED report format.
 
 **`code`/`may` on `store` (T-0166):** the identical `code STRING+` /
 `may STRING` clauses `node` has, now also accepted by

@@ -361,6 +361,11 @@ absorbs the fan-in) -- the exact LINT002-vs-LINT005 relationship
 `_lint.py`'s module docstring spells out is the same PII003/GDPR-RETENTION
 precedent this catalog already establishes (above).
 
+Any LINT001-005 finding (or SYS100-102/THREAT002-003/PII/COMPLIANCE) can
+be waived with a written reason via a `waive` clause on the firing node --
+see `docs/strata/waive.md` (T-0174) for the mechanism, WAIVED reporting,
+and the stale-waiver drift lock.
+
 **Litmus pair**: `tests/unit/strata/litmus/lint_vuln.strata` fires all
 five rules from one small model (a foreign-sourced unrated flow, an
 overloaded `may "exec"` store with no cache/kill-switch, and an unbounded
@@ -381,12 +386,13 @@ alongside self-conformance/PII/compliance in one audit report.
 conservative `rate 1 req/s` (LINT001 discharged). `checker`/`core`/
 `stratamod`/`vet` each hold a risky (`exec`/`net`) capability with
 **no real kill switch in the codebase today** -- rather than fabricate a
-`flag=<id>` attr that names a mechanism that does not exist,
-`design/frob.strata` leaves LINT004 firing on these four nodes as an
-HONEST, named gap in `frob sys audit`'s output (the T-0150/T-0151
-"declare real facts or waive with reasons" precedent this ticket's own
-body cites); building the actual kill-switch infrastructure is filed as
-separate follow-on product work, not silently faked here.
+`flag=<id>` attr that names a mechanism that does not exist, each of these
+four nodes now declares a `waive "LINT004" reason "..." ticket "T-0200";`
+clause (T-0174, `docs/strata/waive.md`): `frob sys audit` prints these as
+WAIVED with the reason rather than either a fabricated pass or permanent
+unexplained red, and the waiver goes stale (fails the run) the moment
+T-0200 lands a real kill switch and the LINT004 finding stops firing --
+so the debt cannot silently outlive its own fix.
 
 ## CVE: threat intelligence joined to the proof
 

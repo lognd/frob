@@ -375,8 +375,33 @@ def _print_audit_report(report: AuditReport) -> None:
         len(report.views_checked),
         ", ".join(report.views_checked),
     )
+    # T-0174: waived gaps are ALWAYS printed, proved or not -- a waiver is
+    # never allowed to make a run look silent (module docstring's "loud in
+    # output" requirement, `_waive.py`).
+    for waived in report.waived:
+        _log.warning(
+            "sys audit: WAIVED family=%s view=%s rule=%s target=%s detail=%s",
+            waived.family,
+            waived.view,
+            waived.rule,
+            waived.target,
+            waived.detail,
+        )
     if report.proved:
-        _log.info("sys audit: PROVED -- zero gaps across every configured view")
+        # T-0174 REJECT round: the summary line itself must carry the
+        # waived count -- a separate WARNING line is lost under grep/
+        # quiet-mode filtering (reviewer-confirmed live), so "PROVED"
+        # alone would read as "nothing to see here" even with active
+        # waivers propping the result up. "PROVED" (no waivers) stays
+        # exactly as before; "PROVED (N waived)" whenever any exist.
+        if report.waived:
+            _log.info(
+                "sys audit: PROVED (%d waived) -- zero UNWAIVED gaps across "
+                "every configured view",
+                len(report.waived),
+            )
+        else:
+            _log.info("sys audit: PROVED -- zero gaps across every configured view")
         return
     _log.error("sys audit: %d gap(s) found", len(report.gaps))
     for gap in report.gaps:
@@ -395,8 +420,27 @@ def _print_selfconform_report(report: SelfConformReport) -> None:
     SYS100 (undeclared interface)/SYS101 (stale design)/SYS102 (unmodeled
     code) violation, one per line, matching `_print_audit_report`'s
     CI-parseable style."""
+    # T-0174: waived violations are ALWAYS printed, matching
+    # `_print_audit_report`'s "loud in output" WAIVED line (never silent
+    # just because the run happens to be otherwise clean).
+    for waived in report.waived:
+        _log.warning(
+            "sys audit: WAIVED family=sys rule=%s node=%s detail=%s",
+            waived.rule,
+            waived.node,
+            waived.detail,
+        )
     if not report.violations:
-        _log.info("sys audit: self-conformance PROVED -- zero SYS gaps")
+        # T-0174 REJECT round: same honesty fix as `_print_audit_report`
+        # -- the summary line must carry the waived count itself.
+        if report.waived:
+            _log.info(
+                "sys audit: self-conformance PROVED (%d waived) -- zero "
+                "UNWAIVED SYS gaps",
+                len(report.waived),
+            )
+        else:
+            _log.info("sys audit: self-conformance PROVED -- zero SYS gaps")
         return
     _log.error("sys audit: %d self-conformance gap(s) found", len(report.violations))
     for violation in report.violations:

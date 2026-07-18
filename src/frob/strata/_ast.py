@@ -77,6 +77,23 @@ class DeployDecl(BaseModel):
 
 
 # frob:doc docs/strata/surface.md#parser
+class WaiverDecl(BaseModel):
+    """A parsed `waive RULE reason="..." [ticket="T-XXXX"]` clause inside a
+    `node` block (T-0174): the surface analog of `frob:waive` for a
+    `frob sys audit` finding (SYS100-102/THREAT002-003/LINT004) against
+    that node. `reason` is mandatory in the grammar itself (`strata-core/
+    src/parse.rs`'s `waive` clause hard-errors without one), so unlike
+    `frob:waive`'s comment-DSL WAIVE001 (a soft gate over already-parsed
+    text), a reasonless `.strata` waiver cannot exist as a value at all."""
+
+    model_config = ConfigDict(frozen=True)
+
+    rule: str
+    reason: str
+    ticket: str | None = None
+
+
+# frob:doc docs/strata/surface.md#parser
 class NodeDecl(BaseModel):
     """A parsed `node` statement, one entry in a `Module`."""
 
@@ -102,6 +119,12 @@ class NodeDecl(BaseModel):
     carries: tuple[str, ...] = ()
     # `managed` bare marker, T-0172; elaborated to a `"managed"` attr
     is_managed: bool = False
+    # `waive RULE reason="..." [ticket="..."]`+, T-0174; elaborated
+    # straight to Node.waives (same direct-mapping convention `may`/
+    # `deploy` use -- a waiver's rule/reason/ticket are structured data a
+    # `FamilyGap`/`SelfConformViolation` match needs, not an opaque attr
+    # string).
+    waives: tuple[WaiverDecl, ...] = ()
 
 
 # frob:doc docs/strata/surface.md#parser

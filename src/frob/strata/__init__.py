@@ -41,6 +41,7 @@ from frob.strata._ast import (
     ScopeSpec,
     StoreDecl,
     TrustDecl,
+    WaiverDecl,
 )
 from frob.strata._ast import (
     Capacity as SurfaceCapacity,
@@ -163,6 +164,7 @@ from frob.strata._models import (
     SetEquality,
     SetTrust,
     Verdict,
+    Waiver,
 )
 from frob.strata._packs import ANALYZABLE, ANALYZABLE_POLICY_ID, require_analyzable
 from frob.strata._parse import parse_module
@@ -216,6 +218,13 @@ from frob.strata._threat import (
     check_discharge_completeness,
     check_effect_completeness,
     evaluate_threats,
+)
+from frob.strata._waive import (
+    STALE_WAIVER_RULE,
+    WaivedFinding,
+    WaiverApplication,
+    WaiverMatch,
+    apply_waivers,
 )
 
 __all__ = [
@@ -347,7 +356,14 @@ __all__ = [
     "ThreatViolation",
     "TrustDecl",
     "Verdict",
+    "Waiver",
+    "WaiverDecl",
+    "WaivedFinding",
+    "WaiverApplication",
+    "WaiverMatch",
+    "STALE_WAIVER_RULE",
     "WeaknessEntry",
+    "apply_waivers",
     "audit_claim",
     "bind_code",
     "build_facts",

@@ -38,6 +38,11 @@ from ._errors import StrataError
 from ._lint import LintViolation, evaluate_lint
 from ._models import KernelModel
 from ._pii import PiiViolation, evaluate_pii
+from ._selfconform import (
+    SYS_STALE_DESIGN,
+    SYS_UNDECLARED_INTERFACE,
+    SYS_UNMODELED_CODE,
+)
 from ._threat import (
     CWE_CATALOG,
     DEFAULT_BENIGN_CAPABILITIES,
@@ -53,6 +58,7 @@ from ._threat import (
     check_catalog_completeness,
     check_discharge_completeness,
 )
+from ._waive import STALE_WAIVER_RULE, apply_waivers, stale_detail
 
 _log = get_logger(__name__)
 
@@ -83,6 +89,20 @@ class FamilyGap(BaseModel):
     view: str
     rule: str
     detail: str
+    # T-0174: the node/target id this gap fired against, when the
+    # underlying violation names one -- the key a `waive` clause (T-0174,
+    # `_waive.py`) matches against. `None` for family/view-level gaps
+    # (e.g. a catalog-completeness gap) that name no single node.
+    target: str | None = None
+    # T-0174 REJECT round: the sub-target (capability kind for THREAT002,
+    # CWE id for THREAT003) THIS instance fired for -- these two rules can
+    # each fire more than once on the same node, so a `waive` clause
+    # targeting either MUST name a sub-target (`_waive.py::
+    # MULTI_INSTANCE_WAIVER_FAMILIES`) and matching needs this structured
+    # field, never parsed back out of `detail`'s free text. `None` for
+    # every single-instance-per-node family (LINT/PII/COMPLIANCE) and for
+    # THREAT001 (a catalog/view-level gap, not per-node).
+    sub_target: str | None = None
 
 
 # frob:doc docs/strata/threat.md#the-exhaustiveness-proof-the-point
@@ -96,6 +116,11 @@ class AuditReport(BaseModel):
 
     views_checked: tuple[str, ...] = ()
     gaps: tuple[FamilyGap, ...] = ()
+    # T-0174: gaps suppressed by a matching `waive` clause -- kept here for
+    # report visibility (never a silent drop, `_waive.py` module
+    # docstring), separate from `gaps` so `proved` stays exactly "zero
+    # UNWAIVED gaps."
+    waived: tuple[FamilyGap, ...] = ()
 
     # frob:doc docs/strata/threat.md#the-exhaustiveness-proof-the-point
     @property
@@ -103,6 +128,21 @@ class AuditReport(BaseModel):
         """True iff every configured view's exhaustiveness conjunction held
         across all families -- zero named gaps anywhere."""
         return not self.gaps
+
+
+def _threat_violation_sub_target(v: ThreatViolation) -> str | None:
+    """THREAT002/THREAT003's multi-instance-per-node sub-target: the
+    capability kind THREAT002 fired for, or the CWE id THREAT003 fired
+    for (`_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES`'s module docstring).
+    `None` for THREAT001 (a catalog/view-level gap, not per-node) and for
+    any violation that names neither (should not happen for THREAT002/
+    THREAT003 -- `check_capability_completeness`/`check_discharge_
+    completeness` always set one)."""
+    if v.rule == "THREAT002":
+        return v.capability
+    if v.rule == "THREAT003":
+        return v.cwe or None
+    return None
 
 
 def _threat_gaps(
@@ -117,6 +157,8 @@ def _threat_gaps(
             view=view,
             rule=v.rule,
             detail=v.detail or (v.cwe or v.capability or v.node or "unnamed"),
+            target=v.node,
+            sub_target=_threat_violation_sub_target(v),
         )
         for v in violations
     )
@@ -132,6 +174,7 @@ def _compliance_gaps(
             view=view,
             rule=v.rule,
             detail=v.detail or (v.target or v.regulation or "unnamed"),
+            target=v.target,
         )
         for v in violations
     )
@@ -148,6 +191,7 @@ def _pii_gaps(violations: tuple[PiiViolation, ...]) -> tuple[FamilyGap, ...]:
             view="model",
             rule=v.rule,
             detail=v.detail or (v.target or "unnamed"),
+            target=v.target,
         )
         for v in violations
     )
@@ -165,6 +209,7 @@ def _lint_gaps(violations: tuple[LintViolation, ...]) -> tuple[FamilyGap, ...]:
             view="model",
             rule=v.rule,
             detail=v.detail or (v.target or "unnamed"),
+            target=v.target,
         )
         for v in violations
     )
@@ -294,12 +339,81 @@ def evaluate_exhaustiveness(
     gaps.extend(_fingerprint_gaps(fingerprint_report.danger_ok))
     checked.append("cve-fingerprint:catalog")
 
-    _log.info(
-        "audit: evaluated views=%d -> %d gap(s)",
-        len(checked),
-        len(gaps),
+    # T-0174: apply every node's `waive` clause against this run's full gap
+    # set before reporting -- a matched waiver moves its gap into `waived`
+    # (still visible, never dropped); a waiver that matched nothing is
+    # STALE and becomes a new SYSWAIVE002 gap under the "waiver" family so
+    # drift fails the exhaustiveness conjunction rather than silently
+    # going stale forever (`_waive.py` module docstring).
+    applied = apply_waivers(
+        model,
+        gaps,
+        rule_of=lambda g: g.rule,
+        target_of=lambda g: g.target,
+        # T-0174 REJECT round: THREAT002/THREAT003 fire once per
+        # capability kind/CWE per node -- `FamilyGap.sub_target` already
+        # carries it (`_threat_gaps`); every other family here is
+        # single-instance-per-node and leaves `sub_target` `None`.
+        sub_target_of=lambda g: g.sub_target,
+        # T-0174: this call sees every THREAT/LINT/PII/compliance/
+        # CVE-fingerprint finding -- everything EXCEPT SYS100-102, which
+        # `check_self_conformance` owns (apply_waivers' `in_scope`
+        # docstring). Excluding the SYS rule ids here (rather than
+        # enumerating every rule this call DOES own) keeps this predicate
+        # correct as new gap-producing rule families are added -- a new
+        # rule id is in scope here by default, exactly like `gaps` itself
+        # already is.
+        in_scope=lambda rule: (
+            rule not in (SYS_UNDECLARED_INTERFACE, SYS_STALE_DESIGN, SYS_UNMODELED_CODE)
+        ),
     )
-    return Ok(AuditReport(views_checked=tuple(checked), gaps=tuple(gaps)))
+    final_gaps = list(applied.kept)
+    for stale in applied.stale:
+        final_gaps.append(
+            FamilyGap(
+                family="waiver",
+                view="model",
+                rule=STALE_WAIVER_RULE,
+                detail=stale_detail(stale),
+                target=stale.node,
+            )
+        )
+    # T-0174: fold the waiver's reason/ticket into the reported gap's
+    # `detail` -- `report.waived` must show WHY, never just THAT (module
+    # docstring's "loud in output" requirement, mirrors `frob.gates`'s
+    # `WaiverRef`-annotated `Violation.waived`).
+    # T-0174 REJECT round: fold `wf.waiver.rule` (the RAW declared string,
+    # e.g. "THREAT003:CWE-78") into the printed detail, not just
+    # `wf.finding.rule` (the bare family) -- a reader must be able to see
+    # the exact sub-target a waiver named, never just that SOME waiver on
+    # this rule matched (module docstring's "no blanket waivers").
+    waived_gaps = tuple(
+        wf.finding.model_copy(
+            update={
+                "detail": (
+                    f"{wf.finding.detail} -- WAIVED[{wf.waiver.rule}]: "
+                    f"{wf.waiver.reason!r}"
+                    + (f" (ticket {wf.waiver.ticket})" if wf.waiver.ticket else "")
+                )
+            }
+        )
+        for wf in applied.waived
+    )
+
+    _log.info(
+        "audit: evaluated views=%d -> %d gap(s), %d waived, %d stale waiver(s)",
+        len(checked),
+        len(final_gaps),
+        len(waived_gaps),
+        len(applied.stale),
+    )
+    return Ok(
+        AuditReport(
+            views_checked=tuple(checked),
+            gaps=tuple(final_gaps),
+            waived=waived_gaps,
+        )
+    )
 
 
 __all__ = [

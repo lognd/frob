@@ -1,0 +1,54 @@
+// waive_lint.strata -- T-0174 litmus: a real `waive` clause suppressing a
+// genuinely-firing LINT004 finding, a real STALE `waive` clause whose
+// target does not fire, and (T-0174 REJECT round) a real sub-target
+// discrimination case -- all proven end to end (parse -> elaborate ->
+// evaluate_exhaustiveness) with no hand-built KernelModel/Waiver value:
+//
+// - node_waived holds `may "exec"` with no declared kill-switch attr
+//   (fires LINT004, same shape as lint_vuln.strata's store_data) AND
+//   declares `waive "LINT004" reason "..." ticket "T-0200"` -- the finding
+//   must be suppressed (moved to AuditReport.waived), never appear in
+//   AuditReport.gaps. LINT004 is single-instance-per-node (one finding
+//   combines every risky kind a node holds -- `_lint.py::
+//   check_lint_kill_switch`), so a bare rule (no sub-target) is correct
+//   here, not an oversight.
+// - node_stale declares `attr flag=node_stale_kill_switch` (so LINT004
+//   does NOT fire for it) AND ALSO declares `waive "LINT004" reason "..."`
+//   -- a waiver with nothing to waive. It must surface as a NEW
+//   SYSWAIVE002 gap (family "waiver"), proving the drift-lock: a waiver
+//   whose target finding stops firing is itself reported, not silently
+//   inert forever.
+// - node_multi holds `may "exec"` (CWE-78) and `may "sql"` (CWE-89),
+//   BOTH undischarged -- two THREAT003 findings on the SAME node, one per
+//   CWE (`_threat.py::check_discharge_completeness`, the exact multi-
+//   instance-per-node shape T-0174's REJECT round found unsound). It
+//   declares ONLY `waive "THREAT003:CWE-78" reason "..."` -- CWE-78 must
+//   be waived, but CWE-89 MUST STILL FIRE as an unwaived gap. A bare
+//   `waive "THREAT003"` on this node would be an elaborate-time
+//   `MalformedWaiver` error (no sub-target on a multi-instance family) --
+//   not exercised here since a malformed fixture cannot elaborate;
+//   see tests/unit/strata/test_elaborate.py for that negative case.
+//
+// tested end to end by tests/unit/strata/test_litmus_waive.py.
+
+module waive_lint
+
+node node_waived : trusted {
+    clearance Internal;
+    may "exec";
+    waive "LINT004" reason "no kill switch yet, tracked in T-0200" ticket "T-0200";
+}
+
+node node_stale : trusted {
+    clearance Internal;
+    may "exec";
+    attr flag=node_stale_kill_switch;
+    waive "LINT004" reason "stale waiver litmus fixture -- never actually fires";
+}
+
+node node_multi : trusted {
+    clearance Internal;
+    may "exec";
+    may "sql";
+    waive "THREAT003:CWE-78" reason "os-command discharge tracked separately, litmus fixture";
+}

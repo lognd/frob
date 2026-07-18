@@ -452,6 +452,7 @@ impl Parser {
         let mut deploy: Option<serde_json::Value> = None;
         let mut carries: Vec<String> = Vec::new();
         let mut is_managed = false;
+        let mut waives: Vec<serde_json::Value> = Vec::new();
         if self.at_symbol('{') {
             self.advance();
             loop {
@@ -552,6 +553,35 @@ impl Parser {
                     // _check_one_discharge`).
                     self.advance();
                     is_managed = true;
+                } else if self.at_keyword("waive") {
+                    // T-0174: `waive RULE reason="..." [ticket="T-XXXX"]` --
+                    // an in-design waiver for a `frob sys audit` finding
+                    // (SYS100-102/THREAT002-003/LINT004) against THIS node,
+                    // the surface analog of `frob:waive` for gate
+                    // violations (docs/strata/surface.md#node-grammar,
+                    // `frob.strata._waive`). RULE and reason are STRING
+                    // (not IDENT) for the same reason `may`/`carries` are:
+                    // rule ids and free-text reasons are not valid idents.
+                    // `reason` is mandatory at parse time (law 2: no
+                    // fabricated/implicit waivers, mirrors `assume`'s
+                    // mandatory `owner`/`review` above) -- a `waive` clause
+                    // with no reason is a hard parse error, never a silent
+                    // pass. Repeatable: a node may waive more than one
+                    // rule.
+                    self.advance();
+                    let rule = self.expect_string("waive rule id")?;
+                    self.expect_keyword("reason")?;
+                    let reason = self.expect_string("waive reason")?;
+                    let mut ticket: Option<String> = None;
+                    if self.at_keyword("ticket") {
+                        self.advance();
+                        ticket = Some(self.expect_string("waive ticket ref")?);
+                    }
+                    waives.push(json!({
+                        "rule": rule,
+                        "reason": reason,
+                        "ticket": ticket,
+                    }));
                 } else if self.at_keyword("observe") {
                     // T-0070: observe { log IDENT (, IDENT)* ; to IDENT }
                     self.advance();
@@ -614,6 +644,7 @@ impl Parser {
             "deploy": deploy,
             "carries": carries,
             "is_managed": is_managed,
+            "waives": waives,
         }));
         Ok(())
     }

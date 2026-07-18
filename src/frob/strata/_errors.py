@@ -104,6 +104,17 @@ class StrataError(ErrorSet):
         "for the review/build/admit endorsement a deploy requires "
         "(docs/strata/surface.md#std-deploy, T-0083)"
     )
+    MalformedWaiver = (
+        "A node's `waive` clause is invalid: the reason is empty/whitespace-"
+        "only (a blank reason is a functional bypass, not a written debt "
+        "record), or a multi-instance-per-node rule family (SYS100, "
+        "THREAT002, THREAT003 -- one node can fire the same rule more than "
+        "once, per capability kind/CWE) is waived with a bare rule id and no "
+        "`RULE:SUBTARGET` sub-target, which would blanket-suppress every "
+        "current and future finding of that rule on the node under one "
+        "stale reason (T-0148 blanket-waiver bug, T-0174, docs/strata/"
+        "waive.md#sub-targets-required-for-multi-instance-families)"
+    )
     NativeExtensionUnavailable = (
         "The strata_core native extension is not installed (a standalone "
         "`uv tool install frob` with no natives) -- .strata parsing and "

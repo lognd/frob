@@ -80,6 +80,7 @@ from ._code_binding import FOREIGN, CodeBinding, _node_code_globs, bind_code
 from ._effects import _KIND_MAP, _declared_kinds, check_capability_conformance
 from ._errors import StrataError
 from ._models import KernelModel
+from ._waive import STALE_WAIVER_RULE, apply_waivers, stale_detail
 
 _log = get_logger(__name__)
 
@@ -125,23 +126,38 @@ _EXTENDED_KINDS = frozenset(
 # frob:doc docs/strata/selfconform.md#the-three-rules
 class SelfConformViolation(BaseModel):
     """One SYS100/SYS101/SYS102 finding: rule id, the node (or directory,
-    for SYS102) it concerns, and a human-readable detail string."""
+    for SYS102) it concerns, a human-readable detail string, and (SYS100/
+    SYS101 only) the capability kind this specific instance fired for.
+    `capability` is T-0174's multi-instance sub-target: SYS100/SYS101 can
+    each fire more than once per node (once per capability kind), so a
+    `waive` clause targeting one of them must name a sub-target
+    (`_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES`) and matching needs a
+    structured field to compare against -- never parsed back out of
+    `detail`'s free text."""
 
     model_config = ConfigDict(frozen=True)
 
     rule: str
     node: str
     detail: str
+    capability: str | None = None
 
 
 # frob:doc docs/strata/selfconform.md#the-three-rules
 class SelfConformReport(BaseModel):
-    """Every self-conformance violation found, in rule-then-node order
-    (module docstring)."""
+    """Every UNWAIVED self-conformance violation, in rule-then-node order
+    (module docstring), plus `waived` (T-0174: findings suppressed by a
+    matching `waive` clause, kept here for report visibility -- never
+    silently dropped, `_waive.py` module docstring). A stale waiver (its
+    `(node, rule)` matched zero findings) is folded back INTO `violations`
+    as a `SYSWAIVE002` entry rather than a separate field, so the existing
+    `not selfconform.danger_ok.violations` gate condition (`sys_runner.py::
+    _run_audit`) fails closed on drift without a second check to forget."""
 
     model_config = ConfigDict(frozen=True)
 
     violations: tuple[SelfConformViolation, ...] = ()
+    waived: tuple[SelfConformViolation, ...] = ()
 
 
 def _core_undeclared_violations(
@@ -182,6 +198,7 @@ def _core_undeclared_violations(
                     f"capability {violation.kind!r} observed at "
                     f"{violation.file}:{violation.line} but not declared"
                 ),
+                capability=violation.kind,
             )
         )
     return found
@@ -324,6 +341,7 @@ def _extended_kind_violations(
                     rule=SYS_UNDECLARED_INTERFACE,
                     node=node.id,
                     detail=f"capability {kind!r} observed but not declared",
+                    capability=kind,
                 )
             )
     return found
@@ -352,6 +370,7 @@ def _stale_design_violations(
                     rule=SYS_STALE_DESIGN,
                     node=node.id,
                     detail=f"capability {kind!r} declared but never observed",
+                    capability=kind,
                 )
             )
     return found
@@ -448,8 +467,71 @@ def check_self_conformance(
     violations.extend(_stale_design_violations(model, capability_binding, root))
     violations.extend(_unmodeled_violations(root, capability_binding))
 
-    _log.info("selfconform: %d violation(s) found under %s", len(violations), root)
-    return Ok(SelfConformReport(violations=tuple(violations)))
+    # T-0174: apply every node's `waive` clause against these SYS100-102
+    # findings before reporting -- a matched waiver moves its finding into
+    # `waived` (still visible, never dropped); a waiver that matched
+    # nothing is STALE and becomes a new SYSWAIVE002 violation so drift
+    # (the waived condition no longer firing) fails the audit rather than
+    # silently going stale forever (`_waive.py` module docstring).
+    _sys_rules = frozenset(
+        (SYS_UNDECLARED_INTERFACE, SYS_STALE_DESIGN, SYS_UNMODELED_CODE)
+    )
+    applied = apply_waivers(
+        model,
+        violations,
+        rule_of=lambda v: v.rule,
+        target_of=lambda v: v.node,
+        # T-0174 REJECT round: SYS100/SYS101 fire once per capability kind
+        # per node, so the sub-target IS the capability kind
+        # (`SelfConformViolation.capability`); SYS102 has no sub-target
+        # concept (one finding per unmodeled directory) and returns None.
+        sub_target_of=lambda v: v.capability,
+        # T-0174: this call only ever sees SYS100-102 findings -- a waiver
+        # declared for any other rule (LINT004, THREAT002, ...) belongs to
+        # `evaluate_exhaustiveness`'s pass, not this one (apply_waivers'
+        # `in_scope` docstring: staleness must be judged only against
+        # waivers this caller can actually match).
+        in_scope=lambda rule: rule in _sys_rules,
+    )
+    kept = list(applied.kept)
+    for stale in applied.stale:
+        kept.append(
+            SelfConformViolation(
+                rule=STALE_WAIVER_RULE,
+                node=stale.node,
+                detail=stale_detail(stale),
+            )
+        )
+    # T-0174: fold the waiver's reason/ticket into the reported violation's
+    # `detail` -- `report.waived` must show WHY, never just THAT (module
+    # docstring's "loud in output" requirement, mirrors `frob.gates`'s
+    # `WaiverRef`-annotated `Violation.waived`).
+    # T-0174 REJECT round: fold `wf.waiver.rule` (the RAW declared string,
+    # e.g. "SYS100:fs-write") into the printed detail, not just
+    # `wf.finding.rule` (the bare family) -- a reader must be able to see
+    # the exact sub-target a waiver named, never just that SOME waiver on
+    # this rule matched (module docstring's "no blanket waivers").
+    waived_violations = tuple(
+        wf.finding.model_copy(
+            update={
+                "detail": (
+                    f"{wf.finding.detail} -- WAIVED[{wf.waiver.rule}]: "
+                    f"{wf.waiver.reason!r}"
+                    + (f" (ticket {wf.waiver.ticket})" if wf.waiver.ticket else "")
+                )
+            }
+        )
+        for wf in applied.waived
+    )
+
+    _log.info(
+        "selfconform: %d violation(s), %d waived, %d stale waiver(s) found under %s",
+        len(kept),
+        len(waived_violations),
+        len(applied.stale),
+        root,
+    )
+    return Ok(SelfConformReport(violations=tuple(kept), waived=waived_violations))
 
 
 __all__ = [

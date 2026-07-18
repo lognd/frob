@@ -58,10 +58,12 @@ from ._models import (
     ScaleRate,
     Scenario,
     SetTrust,
+    Waiver,
 )
 from ._packs import require_analyzable
 from ._pii import _PII_PREFIX
 from ._secrets import SecretExpansion, SecretSpec, elaborate_secret
+from ._waive import validate_waiver_fields
 
 _log = get_logger(__name__)
 
@@ -140,6 +142,9 @@ def _elaborate_node(decl: NodeDecl) -> Node:
             replicas_max=decl.capacity.replicas_max,
         )
     deploy = None if decl.deploy is None else _elaborate_deploy(decl.deploy)
+    waives = tuple(
+        Waiver(rule=w.rule, reason=w.reason, ticket=w.ticket) for w in decl.waives
+    )
     return Node(
         id=decl.id,
         trust=decl.trust,
@@ -149,6 +154,7 @@ def _elaborate_node(decl: NodeDecl) -> Node:
         capacity=capacity,
         residence=decl.residence,
         deploy=deploy,
+        waives=waives,
     )
 
 
@@ -324,6 +330,34 @@ def _validate_no_duplicates(module: Module) -> Result[None, StrataError]:
             dupes = sorted(i for i, n in counts.items() if n > 1)
             _log.error("duplicate %s id(s) in module %s: %s", kind, module.name, dupes)
             return Err(StrataError.DuplicateId)
+    return Ok(None)
+
+
+def _validate_waivers(module: Module) -> Result[None, StrataError]:
+    """Every node's `waive` clauses must carry a non-blank reason, and any
+    `MULTI_INSTANCE_WAIVER_FAMILIES` rule (SYS100/SYS101/THREAT002/
+    THREAT003, which can each fire more than once per node) must carry a
+    `RULE:SUBTARGET` sub-target -- fails closed at elaborate time
+    (`_waive.py::validate_waiver_fields`'s module docstring: a bare rule
+    on one of these families would blanket-suppress every current and
+    future finding of that rule on the node, the T-0148 bug reopened at
+    node scope; an empty reason is a functional bypass with nothing
+    written down to justify it). Elaborate-time (not parse-time) because
+    the grammar cannot know which rule families are multi-instance --
+    that is a Python-side vocabulary fact (T-0174), same layering as
+    every other cross-declaration validator in this module.
+    """
+    for node in module.nodes:
+        for waiver in node.waives:
+            checked = validate_waiver_fields(waiver.rule, waiver.reason)
+            if checked.is_err:
+                _log.error(
+                    "node %s: malformed waive clause rule=%r reason=%r",
+                    node.id,
+                    waiver.rule,
+                    waiver.reason,
+                )
+                return Err(checked.danger_err)
     return Ok(None)
 
 
@@ -831,6 +865,9 @@ def elaborate(module: Module) -> Result[KernelModel, StrataError]:
     dupes_ok = _validate_no_duplicates(module)
     if dupes_ok.is_err:
         return Err(dupes_ok.danger_err)
+    waivers_ok = _validate_waivers(module)
+    if waivers_ok.is_err:
+        return Err(waivers_ok.danger_err)
     refs_ok = _validate_references(module)
     if refs_ok.is_err:
         return Err(refs_ok.danger_err)

@@ -92,6 +92,19 @@ if `_KIND_MAP` (THREAT004's scope) ever grows, or `_PATTERNS` grows an
 eighth kind neither set accounts for, that test fails first, loudly, in
 review.
 
+## Waiving a SYS100-102 finding (T-0174)
+
+A SYS100/SYS101/SYS102 finding can be waived like any other `frob sys
+audit` finding. SYS100 and SYS101 fire once PER CAPABILITY KIND on a
+node, so their `waive` clause MUST name that kind as a sub-target --
+`waive "SYS100:net" reason "..." ticket "T-...";` -- a bare `waive
+"SYS100"` is an elaborate-time error (T-0174 REJECT round: a bare rule
+would blanket-suppress every current and future SYS100 finding on the
+node). SYS102 fires once per unmodeled directory (not per node
+capability) and keeps the bare-rule form: `waive "SYS102" reason "...";`.
+See `docs/strata/waive.md` for the full mechanism (grammar, sub-target
+requirement, WAIVED reporting, stale-waiver drift lock).
+
 ## First honest run
 
 Running `check_self_conformance` against a `design/frob.strata` with no

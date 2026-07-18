@@ -20,10 +20,12 @@ from frob.strata import (
     SYS_UNMODELED_CODE,
     KernelModel,
     Node,
+    Waiver,
     check_self_conformance,
 )
 from frob.strata._effects import _KIND_MAP
 from frob.strata._selfconform import _EXTENDED_KINDS, _sorted_capability_files
+from frob.strata._waive import STALE_WAIVER_RULE
 from frob.vet._capability import _PATTERNS, SCANNED_LANGUAGES, language_for
 from frob.vet._capability_registry import LANGUAGES
 
@@ -458,6 +460,121 @@ class TestExtendedKindsDriftLock:
             kind for table in _PATTERNS.values() for kind in table
         )
         assert _EXTENDED_KINDS | frozenset(_KIND_MAP.keys()) == all_pattern_kinds
+
+
+class TestWaiverChannel:
+    """T-0174: a `Node.waives` entry suppresses its matching SYS finding
+    (kept in `report.waived`, never dropped) and a waiver matching nothing
+    is reported as a new SYSWAIVE002 violation (drift-lock)."""
+
+    # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    # frob:waive PERF001 reason="an any()-generator plus a two-clause list comprehension over one tiny fixture result, not a hot loop"
+    def test_matching_waiver_moves_violation_to_waived(self, tmp_path: Path):
+        """SYS100 is multi-instance-per-node (T-0174 REJECT round), so the
+        waiver must name the exact capability kind (`net`, matching
+        `requests.get`'s observed effect) as a `SYS100:net` sub-target --
+        a bare `SYS100` waiver would be an elaborate-adjacent-invalid
+        value this test does not construct."""
+        _write(
+            tmp_path, "src/frob/widget/_io.py", "import requests\nrequests.get('x')\n"
+        )
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="widget",
+                    trust="trusted",
+                    attrs=("code=src/frob/widget/**",),
+                    waives=(
+                        Waiver(
+                            rule=f"{SYS_UNDECLARED_INTERFACE}:net",
+                            reason="pilot fixture, tracked in T-0174",
+                        ),
+                    ),
+                ),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        assert not any(
+            v.rule == SYS_UNDECLARED_INTERFACE for v in result.danger_ok.violations
+        )
+        waived = [
+            v
+            for v in result.danger_ok.waived
+            if v.rule == SYS_UNDECLARED_INTERFACE and v.node == "widget"
+        ]
+        assert len(waived) == 1
+        assert "WAIVED" in waived[0].detail
+        assert "pilot fixture, tracked in T-0174" in waived[0].detail
+        assert "SYS100:net" in waived[0].detail
+
+    # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    def test_stale(self, tmp_path: Path):
+        """`widget` declares no capability at all, so SYS100:net never
+        fires -- the waiver on it matches zero findings and must be
+        reported as a new SYSWAIVE002 violation, not silently accepted."""
+        _write(tmp_path, "src/frob/widget/_io.py", "x = 1\n")
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="widget",
+                    trust="trusted",
+                    attrs=("code=src/frob/widget/**",),
+                    waives=(
+                        Waiver(
+                            rule=f"{SYS_UNDECLARED_INTERFACE}:net",
+                            reason="never fires -- stale waiver litmus",
+                        ),
+                    ),
+                ),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        stale = [v for v in result.danger_ok.violations if v.rule == STALE_WAIVER_RULE]
+        assert len(stale) == 1
+        assert stale[0].node == "widget"
+
+    # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    def test_sub_target_waiver_does_not_suppress_a_different_kind(self, tmp_path: Path):
+        """T-0174 REJECT round, the critical fixture at the
+        `check_self_conformance` layer: `widget` observes BOTH `net`
+        (`requests.get`) and `exec` (`subprocess.run`) undeclared -- two
+        SYS100 findings on the same node. Waiving only `SYS100:net` must
+        NOT suppress the `SYS100:exec` finding."""
+        _write(
+            tmp_path,
+            "src/frob/widget/_io.py",
+            "import requests\nimport subprocess\n"
+            "requests.get('x')\nsubprocess.run(['ls'])\n",
+        )
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="widget",
+                    trust="trusted",
+                    attrs=("code=src/frob/widget/**",),
+                    waives=(
+                        Waiver(
+                            rule=f"{SYS_UNDECLARED_INTERFACE}:net",
+                            reason="net leg tracked separately, litmus fixture",
+                        ),
+                    ),
+                ),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        remaining = [
+            v for v in result.danger_ok.violations if v.rule == SYS_UNDECLARED_INTERFACE
+        ]
+        assert len(remaining) == 1
+        assert remaining[0].capability == "exec"
+        waived = [
+            v for v in result.danger_ok.waived if v.rule == SYS_UNDECLARED_INTERFACE
+        ]
+        assert len(waived) == 1
+        assert waived[0].capability == "net"
 
 
 class TestRealGateGreen:

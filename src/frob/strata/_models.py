@@ -265,6 +265,23 @@ class DeployContract(BaseModel):
     rollback_budget: Quantity
 
 
+# frob:doc docs/strata/waive.md
+class Waiver(BaseModel):
+    """One `waive RULE reason="..." [ticket="..."]` declared on a node
+    (T-0174): the surface analog of `frob:waive` for a `frob sys audit`
+    finding (SYS100-102/THREAT002-003/LINT004) against that node. `reason`
+    is never optional -- the grammar itself refuses to parse a `waive`
+    clause without one (`strata-core/src/parse.rs`), so every `Waiver`
+    value that exists in a `KernelModel` carries a written reason by
+    construction."""
+
+    model_config = ConfigDict(frozen=True)
+
+    rule: str
+    reason: str
+    ticket: str | None = None
+
+
 # frob:doc docs/strata/kernel.md#data-models
 class Node(BaseModel):
     """A place that holds state or runs computation (component, store, principal...)."""
@@ -281,6 +298,8 @@ class Node(BaseModel):
     crash: CrashContract | None = None  # `on crash { ... }` contract, T-0074
     breach: BreachContract | None = None  # `on breach { ... }` contract, T-0076
     deploy: DeployContract | None = None  # `on deploy { ... }` contract, T-0083
+    # `waive RULE reason="..." [ticket="..."]`+ declared on this node, T-0174
+    waives: tuple[Waiver, ...] = ()
 
 
 # frob:doc docs/strata/kernel.md#data-models

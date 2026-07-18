@@ -305,6 +305,87 @@ class TestElaborateValidation:
         assert result.danger_err is StrataError.UnknownReference
 
 
+class TestElaborateWaivers:
+    """T-0174 REJECT round: `waive` clause validation (`_elaborate.py::
+    _validate_waivers`) -- fails closed on an empty reason or a
+    multi-instance-per-node rule family with no sub-target."""
+
+    # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
+    def test_empty_reason_fails_closed(self):
+        text = """
+        module m
+        node api : trusted {
+            clearance Secret;
+            waive "LINT004" reason "";
+        }
+        """
+        module = parse_module(text).danger_ok
+        result = elaborate(module)
+        assert result.is_err
+        assert result.danger_err is StrataError.MalformedWaiver
+
+    # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
+    def test_whitespace_only_reason_fails_closed(self):
+        text = """
+        module m
+        node api : trusted {
+            clearance Secret;
+            waive "LINT004" reason "   ";
+        }
+        """
+        module = parse_module(text).danger_ok
+        result = elaborate(module)
+        assert result.is_err
+        assert result.danger_err is StrataError.MalformedWaiver
+
+    # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
+    def test_multi_instance_family_without_sub_target_fails_closed(self):
+        """A bare `waive "SYS100"` would blanket-suppress every current
+        and future SYS100 finding on the node -- rejected, not silently
+        accepted."""
+        text = """
+        module m
+        node api : trusted {
+            clearance Secret;
+            waive "SYS100" reason "no sub-target named";
+        }
+        """
+        module = parse_module(text).danger_ok
+        result = elaborate(module)
+        assert result.is_err
+        assert result.danger_err is StrataError.MalformedWaiver
+
+    # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
+    def test_multi_instance_family_with_sub_target_elaborates_cleanly(self):
+        text = """
+        module m
+        node api : trusted {
+            clearance Secret;
+            waive "SYS100:fs-write" reason "named sub-target";
+        }
+        """
+        module = parse_module(text).danger_ok
+        result = elaborate(module)
+        assert result.is_ok
+        assert result.danger_ok.nodes[0].waives[0].rule == "SYS100:fs-write"
+
+    # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
+    def test_single_instance_family_bare_rule_elaborates_cleanly(self):
+        """LINT004 fires at most once per node -- a bare rule (no sub-
+        target) is correct, not an oversight."""
+        text = """
+        module m
+        node api : trusted {
+            clearance Secret;
+            waive "LINT004" reason "bare rule is fine for a single-instance family";
+        }
+        """
+        module = parse_module(text).danger_ok
+        result = elaborate(module)
+        assert result.is_ok
+        assert result.danger_ok.nodes[0].waives[0].rule == "LINT004"
+
+
 class TestElaborateEndToEnd:
     # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
     def test_parse_elaborate_evaluate_matches_expected_verdicts(self):
