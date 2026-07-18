@@ -2680,9 +2680,9 @@ threat: null
 ```
 T-0166 (fix(tickets): land T-0166 store grammar rejects code/may despite surface.md implying support) added real code/may declarations to design/frob.strata's tickets_ledger store, including may "exec" with no kill switch -- this now fires a genuine LINT004 gap (frob sys audit exits 1) that T-0174's waive mechanism cannot suppress because the waive clause was only added to strata-core/src/parse.rs::parse_node, not parse_store (T-0174's declared scope did not include store grammar work). Extend waive to store the same way T-0166 extended code/may to store (parse_store, StoreDecl, _elaborate_store), then waive tickets_ledger's LINT004 with reason pointing at T-0200, mirroring checker/core/stratamod/vet's existing waivers. Until this lands, frob sys audit honestly reports this one named gap rather than silently or fictitiously passing.
 
-<!-- ticket:T-draft-ebdd2606 -->
+<!-- ticket:T-0251 -->
 ```yaml
-id: T-draft-ebdd2606
+id: T-0251
 title: wire frob vet --timeout/--jobs CLI flags to scan_tree
 state: queued
 kind: feature
