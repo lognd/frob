@@ -70,9 +70,11 @@ from frob.strata._crash import CrashContractReport, evaluate_crash_contracts
 from frob.strata._deploy import DeployContractReport, evaluate_deploy_contracts
 from frob.strata._design_load import (
     DEFAULT_DESIGN_DIR,
+    UNBOUND_REQUIRED_KINDS,
     DesignIds,
     DesignLoadError,
     load_design_ids,
+    unbound_constructs,
 )
 from frob.strata._effects import (
     CapabilityViolation,
@@ -122,6 +124,7 @@ from frob.strata._models import (
 )
 from frob.strata._packs import ANALYZABLE, ANALYZABLE_POLICY_ID, require_analyzable
 from frob.strata._parse import parse_module
+from frob.strata._plan import MARKER_PREFIX, PlannedTicket, PlanResult, plan_obligations
 from frob.strata._policy import CompiledPolicies, CompiledPolicy, compile_policies
 from frob.strata._report import render_report, summarize
 from frob.strata._scenarios import ScenarioResult, evaluate_scenarios
@@ -145,19 +148,20 @@ from frob.strata._threat import (
     check_capability_completeness,
     check_catalog_completeness,
     check_discharge_completeness,
-    check_effect_completeness,
     evaluate_threats,
 )
 
 __all__ = [
+    "QUALITY_VIEWS",
+    "QUALITY_OUT_OF_SCOPE",
+    "QUALITY_CATALOG",
     "ANALYZABLE",
     "ANALYZABLE_POLICY_ID",
     "DEFAULT_DESIGN_DIR",
+    "MARKER_PREFIX",
+    "UNBOUND_REQUIRED_KINDS",
     "CWE_CATALOG",
     "LABELS",
-    "QUALITY_CATALOG",
-    "QUALITY_OUT_OF_SCOPE",
-    "QUALITY_VIEWS",
     "SECRET_LABEL",
     "TRUST",
     "VIEWS",
@@ -221,6 +225,8 @@ __all__ = [
     "OutOfScopeEntry",
     "ParsePhase",
     "PhaseBlock",
+    "PlanResult",
+    "PlannedTicket",
     "PolicyDecl",
     "PolicyRule",
     "Quantifier",
@@ -259,7 +265,6 @@ __all__ = [
     "check_capability_conformance",
     "check_catalog_completeness",
     "check_discharge_completeness",
-    "check_effect_completeness",
     "check_import_conformance",
     "compile_policies",
     "elaborate",
@@ -277,7 +282,9 @@ __all__ = [
     "generate_fault_injection_cases",
     "load_design_ids",
     "parse_module",
+    "plan_obligations",
     "render_report",
     "require_analyzable",
     "summarize",
+    "unbound_constructs",
 ]

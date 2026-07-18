@@ -36,6 +36,7 @@ class Subcommand(str, enum.Enum):
     stats = "stats"
     serve = "serve"
     mutate = "mutate"
+    sys = "sys"
 
 
 # frob:doc docs/modules/app.md#config
@@ -231,6 +232,11 @@ class AppConfig(BaseModel):
     mutate_argv: list[str] = []
     mutate_json: bool = False
 
+    # sys
+    sys_command: str | None = None  # plan (more per roadmap phase 5)
+    sys_path: Path | None = None
+    sys_apply: bool = False
+
     @classmethod
     def from_external(cls, args: argparse.Namespace, file: Path) -> "AppConfig":
         # frob:doc docs/modules/app.md#config
@@ -284,6 +290,7 @@ class AppConfig(BaseModel):
             "release_command",
             "perf_command",
             "perf_ref",
+            "sys_command",
         ):
             val = getattr(args, field, None)
             if val is not None:
@@ -316,6 +323,7 @@ class AppConfig(BaseModel):
             "mutate_file",
             "mutate_path",
             "serve_path",
+            "sys_path",
         ):
             val = getattr(args, path_field, None)
             if val is not None:
@@ -422,6 +430,7 @@ class AppConfig(BaseModel):
             "perf_tests",
             "perf_json",
             "perf_smells",
+            "sys_apply",
         ):
             if getattr(args, flag, False):
                 d[flag] = True
