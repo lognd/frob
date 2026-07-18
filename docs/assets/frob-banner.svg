@@ -47,7 +47,7 @@
       <stop offset="1" stop-color="#0d1117" stop-opacity="1"/>
     </linearGradient>
     <clipPath id="bodyclip">
-      <path d="M290 150 C332 150 358 184 362 236 C364 250 362 258 358 262 L222 262 C218 258 216 250 218 236 C222 184 248 150 290 150 Z"/>
+      <path d="M290 150 C326 150 348 182 352 228 C354 244 350 256 344 262 L236 262 C230 256 226 244 228 228 C232 182 254 150 290 150 Z"/>
     </clipPath>
     <clipPath id="ballclip"><circle cx="290" cy="230" r="56"/></clipPath>
   </defs>
@@ -62,8 +62,8 @@
   <!-- ================= mascot: froblin in the shadows (v12) ================= -->
   <g fill="url(#figLight)">
     <!-- ears: drooping blades, attached at jaw height -->
-    <path d="M262 134 C228 124 184 126 154 144 C154 150 161 155 171 156 C202 158 234 152 262 146 Z"/>
-    <path d="M318 132 C352 120 398 122 428 140 C428 146 421 151 411 152 C380 155 348 150 318 144 Z"/>
+    <path d="M262 132 C222 118 174 120 152 138 C144 146 141 158 147 170 C153 174 161 170 166 162 C174 152 196 150 224 150 C238 150 252 148 262 146 Z"/>
+    <path d="M318 130 C356 117 404 120 426 138 C433 146 435 156 429 166 C423 170 416 166 412 159 C404 150 384 148 356 148 C342 148 328 146 318 144 Z"/>
     <!-- goggles perched on the crown: two contour bumps -->
     <circle cx="273" cy="80" r="7.5"/>
     <circle cx="307" cy="80" r="7.5"/>
@@ -87,8 +87,8 @@
   <!-- eyes: soft, contented, glowing gently (round tops, flat bottoms) -->
   <circle cx="268" cy="132" r="8" fill="#b8f0a8" opacity="0.10"/>
   <circle cx="314" cy="130" r="7" fill="#b8f0a8" opacity="0.10"/>
-  <path d="M261 134 a7 6.4 0 1 1 14 0 Z" fill="#b8f0a8"/>
-  <path d="M308 132 a6 5.6 0 1 1 12 0 Z" fill="#b8f0a8"/>
+  <path d="M261 135 a7 9 0 1 1 14 0 Z" fill="#b8f0a8"/>
+  <path d="M308 133 a6 8 0 1 1 12 0 Z" fill="#b8f0a8"/>
 
   <!-- fade the figure's lower edge into the dark (clipped to the mound) -->
   <g clip-path="url(#bodyclip)">
@@ -96,8 +96,8 @@
   </g>
 
   <!-- stand -->
-  <path d="M258 282 Q290 276 322 282 L313 299 Q290 303 267 299 Z" fill="url(#standg)"/>
-  <ellipse cx="290" cy="303" rx="38" ry="4" fill="#000000" opacity="0.3"/>
+  <path d="M268 284 Q290 280 312 284 L306 296 Q290 299 274 296 Z" fill="url(#standg)" opacity="0.85"/>
+  <ellipse cx="290" cy="299" rx="34" ry="3.5" fill="#000000" opacity="0.28"/>
 
   <!-- crystal ball -->
   <circle cx="290" cy="230" r="56" fill="url(#ballsheen)" stroke="#4a5a75" stroke-width="2"/>
