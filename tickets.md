@@ -2505,7 +2505,7 @@ T-0158's test_capability_registry.py::_FIRE_FIXTURES covers one representative f
 ```yaml
 id: T-0184
 title: frob ticket close prints ERROR MissingEvidence but exits 0
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-07-18'
@@ -2516,7 +2516,9 @@ scope:
 - src/frob/tickets/**
 - tests/**
 - tickets.md
-evidence: []
+evidence:
+- tests/system/test_cli_ticket.py::TestTicketRoundTrip::test_close_without_evidence_fails
+- tests/system/test_cli_ticket.py::TestTicketRoundTrip::test_close_with_evidence_and_done_report_succeeds
 attachments: []
 acceptance: []
 threat: null

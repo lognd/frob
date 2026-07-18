@@ -107,6 +107,11 @@ class TestTicketRoundTrip:
         assert r.returncode == 0, r.stderr
 
     def test_close_without_evidence_fails(self, tmp_path):
+        # frob:ticket T-0184
+        # A close that hits MissingEvidence must exit nonzero (vacuous-pass
+        # doctrine, T-0184) AND must never mutate the ledger -- a caller
+        # chaining `frob ticket close && git commit` must never see a
+        # committed close on an unclosed ticket.
         _init_repo(tmp_path)
         run(
             "ticket",
@@ -118,8 +123,54 @@ class TestTicketRoundTrip:
             "--path",
             str(tmp_path),
         )
+        started = run("ticket", "start", "T-0001", "--path", str(tmp_path))
+        assert started.returncode == 0, started.stdout + started.stderr
+
         r = run("ticket", "close", "T-0001", "--path", str(tmp_path))
-        assert r.returncode != 0
+        out = r.stdout + r.stderr
+        assert r.returncode != 0, out
+        assert "MissingEvidence" in out
+
+        shown = run("ticket", "show", "T-0001", "--path", str(tmp_path))
+        assert "[done]" not in shown.stdout
+        assert "[in-progress]" in shown.stdout
+
+    def test_close_with_evidence_and_done_report_succeeds(self, tmp_path):
+        # frob:ticket T-0184
+        # The successful-close counterpart to test_close_without_evidence_
+        # fails: exit 0 and the ledger actually transitions to done, so the
+        # nonzero-on-failure fix above didn't just flip every close to fail.
+        _init_repo(tmp_path)
+        (tmp_path / "test_thing.py").write_text("def test_it():\n    assert True\n")
+        run(
+            "ticket",
+            "new",
+            "--title",
+            "closeable2",
+            "--kind",
+            "feature",
+            "--path",
+            str(tmp_path),
+            "--body",
+            "## Description\nx\n\n## Done report\nAll good.\n",
+        )
+        started = run("ticket", "start", "T-0001", "--path", str(tmp_path))
+        assert started.returncode == 0, started.stdout + started.stderr
+
+        r = run(
+            "ticket",
+            "close",
+            "T-0001",
+            "--evidence",
+            "test_thing.py::test_it",
+            "--path",
+            str(tmp_path),
+        )
+        out = r.stdout + r.stderr
+        assert r.returncode == 0, out
+
+        shown = run("ticket", "show", "T-0001", "--path", str(tmp_path))
+        assert "[done]" in shown.stdout
 
     def test_fail_records_failure_log(self, tmp_path):
         _init_repo(tmp_path)
