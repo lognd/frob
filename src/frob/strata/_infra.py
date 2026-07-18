@@ -41,6 +41,12 @@ _INFRA_DEFAULT_TRUST = "trusted"
 #: Node attr a sticky balancer's downstream must NOT carry (contradiction).
 _STATE_NONE = "state=none"
 
+#: Node attr marker for `managed` stores (T-0172), the SAME literal
+#: `_elaborate.py::_MANAGED_ATTR` uses for `node` -- kept as a local
+#: literal rather than an import to avoid a cycle (`_elaborate.py` already
+#: imports THIS module for `elaborate_infra`).
+_MANAGED_ATTR = "managed"
+
 
 # frob:doc docs/strata/surface.md#std-infra
 class InfraExpansion(BaseModel):
@@ -83,6 +89,10 @@ def _elaborate_store(decl: StoreDecl) -> Result[Node, StrataError]:
         attrs.append("immutable")
     if decl.append_only:
         attrs.append("append_only")
+    if decl.is_managed:
+        # T-0172: config-only infra store -- no `code=` glob expected.
+        _log.debug("store %s is managed; marking attrs with %r", decl.id, _MANAGED_ATTR)
+        attrs.append(_MANAGED_ATTR)
     if decl.rpo is not None:
         dimension = decl.rpo.dimension()
         if dimension.is_err:
