@@ -428,7 +428,7 @@ T-0158 shipped the single-source dangerous-operations registry, the (kind x lang
 id: T-0181
 title: survey-prioritized third-party python/npm/cargo dangerous-surface registry
   entries (T-0158 addendum 2 remainder)
-state: in-progress
+state: done
 kind: security
 origin: human
 created: '2026-07-18'
@@ -439,7 +439,10 @@ scope:
 - tests/**
 - docs/modules/vet.md
 - tickets.md
-evidence: []
+evidence:
+- tests/test_capability_registry.py::TestMatrixExhaustiveness::test_every_operation_kind_and_language_registered
+- tests/test_capability_registry.py::TestPerOperationFireFixtures::test_entry_fires_scan_file_operations
+- tests/test_capability_registry.py::TestPerOperationFireFixtures::test_entry_absent_from_benign_source
 attachments: []
 acceptance: []
 threat: null
