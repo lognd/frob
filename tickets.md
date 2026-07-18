@@ -2413,9 +2413,9 @@ threat: null
 ```
 Incident during T-0156 review: T-0166 landed a parse.rs grammar change and design/frob.strata began using it, but main's built strata_core predated the change -- frob check reported SYS004 (design failed to load, suppressing SYS001 project-wide) until the coordinator manually ran make core + tool reinstall. Two fixes: (1) frob ticket land detects when the landed diff touches strata-core/**, frob-core/**, or any native-crate source and prints a LOUD post-land instruction (or optionally runs make core) before the final commit; (2) the SYS004 message should distinguish 'parse failed with unknown construct X' and hint that a grammar/native version mismatch is the likely cause when the construct is recognized by the python-side surface docs. Regression: fixture simulating a grammar-ahead-of-native state asserting the hint appears.
 
-<!-- ticket:T-draft-41982e4b -->
+<!-- ticket:T-0250 -->
 ```yaml
-id: T-draft-41982e4b
+id: T-0250
 title: extend waive clause grammar to store nodes (tickets_ledger LINT004 gap from
   T-0166)
 state: queued
