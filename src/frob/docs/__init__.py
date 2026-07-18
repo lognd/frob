@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from frob.lang._models import RawSymbol
 
 
-# frob:doc docs/modules/app.md#frobdocs-library
+# frob:doc docs/modules/app.md#frob-docs-library
 class Docstring(BaseModel):
     symbol: str
     kind: str
@@ -18,7 +18,7 @@ class Docstring(BaseModel):
     text: str
 
 
-# frob:doc docs/modules/app.md#frobdocs-library
+# frob:doc docs/modules/app.md#frob-docs-library
 class DocEntry(BaseModel):
     heading: str
     summary: str
@@ -26,7 +26,7 @@ class DocEntry(BaseModel):
     line: int
 
 
-# frob:doc docs/modules/app.md#frobdocs-library
+# frob:doc docs/modules/app.md#frob-docs-library
 class DocMatch(BaseModel):
     file: str
     line: int
@@ -91,7 +91,7 @@ def _docstring_for_symbol(sym: RawSymbol, filters: _SymbolFilters) -> Docstring 
     return None
 
 
-# frob:doc docs/modules/app.md#frobdocs-library
+# frob:doc docs/modules/app.md#frob-docs-library
 def extract_docstrings(path: Path, symbol: str | None = None) -> list[Docstring]:
     """Every python docstring in `path` (module, class, function, method).
 
@@ -153,7 +153,7 @@ def _module_docstring(path: Path) -> tuple[int, str] | None:
     return line, " ".join(doc.split())
 
 
-# frob:doc docs/modules/app.md#frobdocs-library
+# frob:doc docs/modules/app.md#frob-docs-library
 def find_docs_dir(start: Path) -> Path | None:
     current = start if start.is_dir() else start.parent
     for _ in range(8):
@@ -193,7 +193,7 @@ def _md_headings_and_summaries(md_path: Path) -> list[tuple[int, str, str]]:
     return entries
 
 
-# frob:doc docs/modules/app.md#frobdocs-library
+# frob:doc docs/modules/app.md#frob-docs-library
 def overview(path: Path, symbol: str | None = None) -> list[DocEntry]:
     docs_dir = find_docs_dir(path)
     if not docs_dir:
@@ -237,7 +237,7 @@ def _entry_matches(entry: DocEntry, keywords: list[str]) -> bool:
     return any(kw in combined for kw in keywords)
 
 
-# frob:doc docs/modules/app.md#frobdocs-library
+# frob:doc docs/modules/app.md#frob-docs-library
 def search(query: str, docs_dir: Path) -> list[DocMatch]:
     q = query.lower()
     results: list[DocMatch] = []

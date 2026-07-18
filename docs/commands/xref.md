@@ -69,3 +69,37 @@ of context, ready for impact analysis.
 
 Python (tree-sitter identifier search), C/C++ (tree-sitter identifier search).
 Plain text grep fallback for unknown extensions.
+
+## Public API
+
+<!-- frob:describes src/frob/xref/__init__.py::XrefError -->
+<!-- frob:describes src/frob/xref/__init__.py::Definition -->
+<!-- frob:describes src/frob/xref/__init__.py::Usage -->
+<!-- frob:describes src/frob/xref/__init__.py::XrefResult -->
+<!-- frob:describes src/frob/xref/__init__.py::xref -->
+
+```python
+# frob/xref/__init__.py
+class XrefError(ErrorSet)
+    NoFilesFound   # no source files found under the given path
+
+class Definition(BaseModel)
+    file: str
+    line: int
+
+class Usage(BaseModel)
+    file: str
+    line: int
+    context: str
+
+class XrefResult(BaseModel)
+    symbol: str
+    definition: Definition | None
+    usages: list[Usage]
+    def as_text(self, cross_file: bool = False) -> str
+    def as_json(self) -> str
+
+def xref(symbol: str, root: Path, lang: str | None = None) -> Result[XrefResult, XrefError]
+    # Collects source files, finds symbol's definition and every usage; the
+    # single entry point behind `frob xref`.
+```

@@ -58,7 +58,7 @@ distinct evidence source kind -- tool attestations -- digest-stamped like
 coverage evidence (TEST006 pattern) so a silently-disabled checker cannot
 keep discharging claims.
 
-## The enables cascade (soundness dependencies, mechanized)
+## The enables cascade
 
 <!-- frob:describes src/frob/strata/_claims.py::evaluate_claims -->
 

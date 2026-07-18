@@ -157,6 +157,8 @@ class FuzzError(ErrorSet):
   an agent run is recorded on the ticket (`frob ticket fail`) with the
   minimal example, so the reproduction survives the session.
 
+<a id="implementation-notes"></a>
+
 ## Implementation notes (T-0002, library slice)
 
 This slice ships `src/frob/fuzz/**` as a standalone library: models,

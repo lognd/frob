@@ -50,3 +50,23 @@ Returns `Result[list[Cycle], CycleError]`:
 
 - `CycleError.ParseFailed` -- tree-sitter could not parse a file
 - `CycleError.UnsupportedLanguage` -- no adapter registered for detected language
+
+## Public API
+
+<!-- frob:describes src/frob/cycle/graph.py::DependencyGraph -->
+<!-- frob:describes src/frob/cycle/graph.py::find_cycles -->
+
+```python
+# frob/cycle/graph.py
+class DependencyGraph
+    def add_edge(self, src: str, dst: str) -> None
+    def add_node(self, node: str) -> None
+    @property
+    def nodes(self) -> frozenset[str]
+    def neighbors(self, node: str) -> set[str]
+
+def find_cycles(graph: DependencyGraph) -> list[list[str]]
+    # Tarjan's SCC algorithm; every strongly connected component of size
+    # >= 2 (or a self-loop) is a cycle, the single entry point behind
+    # `frob cycle`.
+```

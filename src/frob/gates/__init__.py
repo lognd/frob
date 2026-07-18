@@ -64,6 +64,7 @@ from frob.graph import (
     GraphSnapshot,
     build_graph,
     edges_from,
+    slugify,
 )
 from frob.graph._models import LockFile
 from frob.graph.lock import drift as _graph_drift
@@ -361,6 +362,7 @@ _KNOWN_GATE_RULES = frozenset(
         "DEC002",
         "REL001",
         "DOC001",
+        "DOC002",
         "DUP001",
         "DUP002",
         "FUZZ001",
@@ -533,9 +535,11 @@ def _apply_severity_overrides(
     if not overrides:
         return violations
     return tuple(
-        v.model_copy(update={"severity": overrides[v.rule]})
-        if v.rule in overrides
-        else v
+        (
+            v.model_copy(update={"severity": overrides[v.rule]})
+            if v.rule in overrides
+            else v
+        )
         for v in violations
     )
 
@@ -2254,6 +2258,92 @@ def doclink_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     return tuple(violations)
 
 
+_ANCHOR_ID_RE = re.compile(r'<a\s+id="([^"]+)"')
+_MD_HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$", re.MULTILINE)
+
+
+def _doc_anchor_slugs(path: Path) -> Option[set[str]]:
+    """Every resolvable slug in a doc file: heading slugs plus explicit `<a id>`s.
+
+    `Nothing` means the file could not be read at all (missing or IO error),
+    distinct from `Some(set())` (a real, empty doc).
+    """
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return Nothing()
+    slugs = {slugify(heading.group(2)) for heading in _MD_HEADING_RE.finditer(text)}
+    slugs.update(m.group(1) for m in _ANCHOR_ID_RE.finditer(text))
+    return Some(slugs)
+
+
+def _docanchor_violation(rule_file: str, line: int, message: str) -> Violation:
+    """Build one DOC002 error `Violation` -- every failure mode is the same shape."""
+    return Violation(
+        rule="DOC002",
+        severity=Severity.ERROR,
+        file=rule_file,
+        line=line,
+        message=message,
+    )
+
+
+# frob:doc docs/modules/gates.md#public-api
+def docanchor_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
+    """DOC002: a `frob:doc` edge whose target anchor does not resolve is an error.
+
+    Every `frob:doc <file>#<slug>` target must resolve: `<file>` must exist
+    under `root`, and `<slug>` must be either a GitHub-style heading slug
+    (`frob.graph.dsl.slugify`, the same slugifier `markdown_anchors` uses)
+    or an explicit `<a id="...">` anchor in that file -- the second form is
+    how docs/modules/dup.md and docs/modules/arch.md give several models a
+    stable anchor under one heading.
+    """
+    root = Path(root)
+    violations: list[Violation] = []
+    slug_cache: dict[str, Option[set[str]]] = {}
+    for edge in snapshot.edges:
+        if edge.kind != EdgeKind.DOC:
+            continue
+        origin_file, _, lineno_text = edge.origin.rpartition(":")
+        line = int(lineno_text) if lineno_text.isdigit() else 0
+        origin_file = origin_file or edge.origin
+        target = edge.target
+        if "#" not in target:
+            violations.append(
+                _docanchor_violation(
+                    origin_file,
+                    line,
+                    f"DOC002: frob:doc target {target!r} has no #anchor; "
+                    f"use <file>#<slug>",
+                )
+            )
+            continue
+        docfile, slug = target.split("#", 1)
+        if docfile not in slug_cache:
+            slug_cache[docfile] = _doc_anchor_slugs(root / docfile)
+        slugs = slug_cache[docfile]
+        if slugs.is_nothing:
+            violations.append(
+                _docanchor_violation(
+                    origin_file,
+                    line,
+                    f"DOC002: frob:doc target file {docfile!r} does not exist",
+                )
+            )
+        elif slug not in slugs.danger_some:
+            violations.append(
+                _docanchor_violation(
+                    origin_file,
+                    line,
+                    f"DOC002: frob:doc anchor {target!r} does not resolve; no "
+                    f"heading or <a id> matches #{slug} in {docfile}",
+                )
+            )
+    _log.info("docanchor: %d violation(s)", len(violations))
+    return tuple(violations)
+
+
 # frob:doc docs/modules/perf.md#integration-points
 # frob:ticket T-0021
 def perf_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
@@ -2294,6 +2384,7 @@ _ALL_GATES = frozenset(
         "test",
         "policy",
         "doclink",
+        "docanchor",
         "perf",
         "fuzz",
         "release",
@@ -2485,6 +2576,8 @@ def _build_jobs(
         jobs["policy"] = lambda: policy_gate(st.rules, st.snapshot, st.diff)
     if "doclink" in selected:
         jobs["doclink"] = lambda: doclink_gate(st.root, st.snapshot)
+    if "docanchor" in selected:
+        jobs["docanchor"] = lambda: docanchor_gate(st.root, st.snapshot)
     if "perf" in selected:
         jobs["perf"] = lambda: perf_gate(st.root, st.snapshot)
     if "fuzz" in selected:
@@ -2593,6 +2686,7 @@ __all__ = [
     "load_invariants",
     "decisions_gate",
     "doclink_gate",
+    "docanchor_gate",
     "dup_gate",
     "fuzz_gate",
     "perf_gate",

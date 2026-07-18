@@ -45,7 +45,8 @@ _HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$")
 _SLUG_RE = re.compile(r"[^a-z0-9]+")
 
 
-def _slugify(heading: str) -> str:
+# frob:doc docs/modules/graph.md#comment-dsl
+def slugify(heading: str) -> str:
     """GitHub-style heading slug: lowercase, non-alnum runs collapsed to `-`."""
     slug = _SLUG_RE.sub("-", heading.strip().lower()).strip("-")
     return slug or "top"
@@ -59,7 +60,7 @@ def markdown_anchors(doc_path: str, text: str) -> tuple[Edge, ...]:
     for line in text.splitlines():
         heading = _HEADING_RE.match(line)
         if heading is not None:
-            slug = _slugify(heading.group(2))
+            slug = slugify(heading.group(2))
             continue
         match = _DESCRIBES_RE.search(line)
         if match is None:
@@ -177,4 +178,4 @@ def parse_directives(
     return tuple(edges), tuple(malformed)
 
 
-__all__ = ["markdown_anchors", "parse_directives"]
+__all__ = ["markdown_anchors", "parse_directives", "slugify"]

@@ -45,3 +45,31 @@ planning question in a single tool call at minimal token cost.
 
 Returns a tree of `FileNode` objects, each with `path`, `lines`, and `symbols`
 (top-level names only). Machine-readable for subagent dispatch logic.
+
+## Public API
+
+<!-- frob:describes src/frob/map/__init__.py::FileNode -->
+<!-- frob:describes src/frob/map/__init__.py::MapResult -->
+<!-- frob:describes src/frob/map/__init__.py::map_project -->
+
+```python
+# frob/map/__init__.py
+class FileNode(BaseModel)
+    path: str
+    lines: int
+    tokens: int
+    symbols: list[str]
+    private_count: int = 0
+
+class MapResult(BaseModel)
+    root: str
+    total_files: int
+    total_lines: int
+    files: list[FileNode]
+    def as_text(self, max_symbols: int = 6, include_private: bool = False) -> str
+    def as_json(self) -> str
+
+def map_project(root: Path, depth: int | None = None) -> MapResult
+    # Walks root and returns a per-file token/line/symbol summary; the
+    # single entry point behind `frob map`.
+```

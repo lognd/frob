@@ -58,3 +58,34 @@ exported is reported as a warning.
 | `--exclude MODULE` | Skip a submodule entirely (repeatable) |
 | `--write` | Write the generated `__init__.py` directly to the package directory |
 | `--json` | Output structured `ExportsResult` as JSON |
+
+## Public API
+
+<!-- frob:describes src/frob/exports/__init__.py::ExportsError -->
+<!-- frob:describes src/frob/exports/__init__.py::ModuleExports -->
+<!-- frob:describes src/frob/exports/__init__.py::ExportsResult -->
+<!-- frob:describes src/frob/exports/__init__.py::exports_package -->
+
+```python
+# frob/exports/__init__.py
+class ExportsError(ErrorSet)
+    NotADirectory   # path is not a directory
+    NoSourceFiles   # no Python source files found in directory
+
+class ModuleExports(BaseModel)
+    module: str
+    symbols: list[str]
+
+class ExportsResult(BaseModel)
+    package_dir: str
+    modules: list[ModuleExports]
+    def as_text(self) -> str    # a generated __init__.py, duplicate names aliased
+    def as_json(self) -> str
+
+def exports_package(
+    pkg_dir: Path, *, include_private: bool = False,
+    exclude_modules: list[str] | None = None,
+) -> Result[ExportsResult, ExportsError]
+    # Walks pkg_dir's modules via frob.outline, collects public symbols per
+    # module; the single entry point behind `frob exports`.
+```

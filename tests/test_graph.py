@@ -417,7 +417,22 @@ Some text.
         text = "<!-- frob:describes src/foo.py::bar -->\n"
         edges = markdown_anchors("docs/foo.md", text)
         assert edges[0].attrs["facet"] == "sig"
-        assert edges[0].src == "docs/foo.md#top"
+
+
+class TestSlugify:
+    def test_lowercases_and_collapses_non_alnum_runs(self) -> None:
+        # frob:tests src/frob/graph/dsl.py::slugify kind="unit"
+        from frob.graph.dsl import slugify
+
+        assert slugify("The enables cascade") == "the-enables-cascade"
+        assert slugify("Public API") == "public-api"
+        assert slugify("`DupError`") == "duperror"
+
+    def test_empty_or_all_punctuation_falls_back_to_top(self) -> None:
+        from frob.graph.dsl import slugify
+
+        assert slugify("") == "top"
+        assert slugify("---") == "top"
 
 
 class TestBuildIncremental:

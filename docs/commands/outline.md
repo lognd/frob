@@ -58,3 +58,42 @@ whole file, stub it, or skip it entirely.
 ## Language support
 
 Python (tree-sitter-python), C/C++ (tree-sitter-cpp).
+
+## Public API
+
+<!-- frob:describes src/frob/outline/__init__.py::OutlineError -->
+<!-- frob:describes src/frob/outline/__init__.py::FunctionOutline -->
+<!-- frob:describes src/frob/outline/__init__.py::ClassOutline -->
+<!-- frob:describes src/frob/outline/__init__.py::ModuleOutline -->
+<!-- frob:describes src/frob/outline/__init__.py::outline_file -->
+
+```python
+# frob/outline/__init__.py
+class OutlineError(ErrorSet)
+    UnsupportedLanguage   # no outline adapter for this file extension
+    ParseFailed           # tree-sitter could not parse the file
+
+class FunctionOutline(BaseModel)
+    name: str
+    signature: str
+    line: int
+    doc: str = ""
+
+class ClassOutline(BaseModel)
+    name: str
+    line: int
+    methods: list[FunctionOutline]
+
+class ModuleOutline(BaseModel)
+    path: str
+    lines: int
+    imports: list[str]
+    functions: list[FunctionOutline]
+    classes: list[ClassOutline]
+    def as_text(self, include_private: bool = False) -> str
+    def as_json(self) -> str
+
+def outline_file(path: Path) -> Result[ModuleOutline, OutlineError]
+    # Parses one file and returns its module-level shape; the single entry
+    # point behind `frob outline`.
+```

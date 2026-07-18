@@ -1211,6 +1211,76 @@ class TestDoclinkGate:
         assert {v.file for v in violations} == {"docs/brand_new.md"}
 
 
+class TestDocanchorGate:
+    def _snap(self, root: Path):
+        from frob.graph import build_graph
+
+        return build_graph(root, root / ".frob" / "cache.db").danger_ok
+
+    def test_resolvable_heading_and_explicit_anchor_pass(self, tmp_path):
+        # frob:tests src/frob/gates/__init__.py::docanchor_gate kind="unit"
+        from frob.gates import docanchor_gate
+
+        root = tmp_path / "repo"
+        (root / "docs").mkdir(parents=True)
+        (root / "src").mkdir()
+        (root / "docs" / "m.md").write_text(
+            '# Title\n\n## Public API\n\n<a id="widget"></a>\n', encoding="utf-8"
+        )
+        (root / "src" / "m.py").write_text(
+            "# frob:doc docs/m.md#public-api\ndef f():\n    return 1\n\n\n"
+            "# frob:doc docs/m.md#widget\ndef g():\n    return 2\n",
+            encoding="utf-8",
+        )
+        violations = docanchor_gate(root, self._snap(root))
+        assert violations == ()
+
+    def test_unresolvable_anchor_fires(self, tmp_path):
+        from frob.gates import docanchor_gate
+
+        root = tmp_path / "repo"
+        (root / "docs").mkdir(parents=True)
+        (root / "src").mkdir()
+        (root / "docs" / "m.md").write_text(
+            "# Title\n\n## Real Heading\n", encoding="utf-8"
+        )
+        (root / "src" / "m.py").write_text(
+            "# frob:doc docs/m.md#nonexistent-slug\ndef f():\n    return 1\n",
+            encoding="utf-8",
+        )
+        violations = docanchor_gate(root, self._snap(root))
+        assert set(_rules(violations)) == {"DOC002"}
+        assert any("nonexistent-slug" in v.message for v in violations)
+
+    def test_missing_file_fires(self, tmp_path):
+        from frob.gates import docanchor_gate
+
+        root = tmp_path / "repo"
+        (root / "docs").mkdir(parents=True)
+        (root / "src").mkdir()
+        (root / "src" / "m.py").write_text(
+            "# frob:doc docs/does_not_exist.md#anything\ndef f():\n    return 1\n",
+            encoding="utf-8",
+        )
+        violations = docanchor_gate(root, self._snap(root))
+        assert set(_rules(violations)) == {"DOC002"}
+        assert any("does not exist" in v.message for v in violations)
+
+    def test_malformed_target_missing_fragment_fires(self, tmp_path):
+        from frob.gates import docanchor_gate
+
+        root = tmp_path / "repo"
+        (root / "docs").mkdir(parents=True)
+        (root / "src").mkdir()
+        (root / "docs" / "m.md").write_text("# Title\n", encoding="utf-8")
+        (root / "src" / "m.py").write_text(
+            "# frob:doc docs/m.md\ndef f():\n    return 1\n", encoding="utf-8"
+        )
+        violations = docanchor_gate(root, self._snap(root))
+        assert set(_rules(violations)) == {"DOC002"}
+        assert any("no #anchor" in v.message for v in violations)
+
+
 class TestCov002ScopeCoverage:
     def test_open_ticket_scope_covers_changed_symbol(self, tmp_path):
         """COV002 passes when a changed symbol's file is within an open

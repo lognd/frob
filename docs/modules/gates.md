@@ -33,6 +33,7 @@ declaration).
 | TEST006 | test | coverage evidence missing, or stale against current file hashes |
 | TEST007 | test | a cross-package `frob:uses-contract` dependency has no pairwise integration test covering that boundary (opt-in via `[testing].pair_integration`) |
 | DOC001 | doclink | a doc file matching `[gates.docs] include` globs (default `docs/**/*.md` -- new files auto-obligated) has no frob:describes anchor, no frob:doc edge into it, and is unreachable via markdown links from the roots (docs/index.md, README.md) |
+| DOC002 | docanchor | a `frob:doc <file>#<slug>` edge whose target doesn't resolve: missing `#anchor`, missing file, or `<slug>` matches neither a heading slug (`frob.graph.dsl.slugify`) nor an explicit `<a id="...">` in `<file>` |
 | POL* | policy | user-defined rules from `frob.toml` (see below) |
 | DUP001/DUP002 | clones | the diff introduces a clone of an existing symbol (opt-in, `[dup].enforce`) |
 | FUZZ001-003 | fuzz | fuzz obligations under `[fuzz]` (opt-in) |
@@ -100,6 +101,7 @@ channel waivable, delete the `ArchCategory` half of
 <!-- frob:describes src/frob/gates/__init__.py::release_gate -->
 <!-- frob:describes src/frob/gates/__init__.py::fuzz_gate -->
 <!-- frob:describes src/frob/gates/__init__.py::doclink_gate -->
+<!-- frob:describes src/frob/gates/__init__.py::docanchor_gate -->
 <!-- frob:describes src/frob/gates/__init__.py::run_gates -->
 <!-- frob:describes src/frob/gates/_baseline.py::stamp_baseline -->
 <!-- frob:describes src/frob/gates/_baseline.py::load_baseline -->
@@ -129,6 +131,9 @@ channel waivable, delete the `ArchCategory` half of
   against a `.strata` design model; opt-in via a `design/` (or
   `[strata].design_dir`) directory of `.strata` files existing, same
   posture as `decisions_gate`. See docs/strata/surface.md#directives-t-0080.
+- `docanchor_gate` -- DOC002: a `frob:doc` target whose anchor doesn't
+  resolve (missing `#anchor`, missing file, or `<slug>` matches neither a
+  heading slug nor an explicit `<a id>`) is an error.
 - `run_gates` -- the single entry point: loads all state once, then runs
   the selected gates in parallel and merges/severity-overrides the result.
 
