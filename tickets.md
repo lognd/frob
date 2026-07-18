@@ -1079,3 +1079,105 @@ ledger operations, so this was fixed inline with ticket accounting
 an implementer; reviewed by the T-0148 sweep as a backstop.
 
 Filed: none.
+
+<!-- ticket:T-0153 -->
+```yaml
+id: T-0153
+title: 'std.cve fingerprints: pattern catalog for known vulnerable-usage classes'
+state: queued
+kind: security
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/**
+- src/frob/vet/_capability.py
+- tests/unit/strata/**
+- tests/test_vet.py
+- docs/strata/threat.md
+- docs/modules/vet.md
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Extend the standard library beyond CWE entries with CVE FINGERPRINTS: code-level patterns for canonical vulnerable-usage classes, so the scanner can flag the pattern in our own code and in vetted dependency source -- not just match dependency versions against the mirror (T-0146/T-0147 handle that). Model: CveFingerprint entries (id, title, cve cite(s), linked cwe id joining the existing catalogs, language, detection needles following vet _capability's recall-over-precision substring philosophy including the T-0151 dot-exclusion lessons, remediation guidance). Curated starter set of 10-15 canonical classes with REAL citations, e.g.: pickle.loads on untrusted data, yaml.load without SafeLoader, subprocess shell=True with interpolation, requests verify=False, weak-hash password storage, jndi-style lookup injection (Log4Shell class), eval on request data, tarfile extractall path traversal, xml external entities. Each fingerprint drift-locked to the CWE catalog (unknown cwe id fails loudly) and exercised by fire/discharge fixtures in the litmus style. Wire into vet scan output and into the threat catalog views as a separate table following the CWE_TOP_25_VIEWS precedent (do not silently widen default views). Honest limits documented: substring fingerprints have false-positive classes -- document them per T-0151's precedent rather than half-building AST precision.
+
+<!-- ticket:T-0154 -->
+```yaml
+id: T-0154
+title: 'PII declarations: first-class personal-data modeling and flow proofs in strata'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- strata-core/src/**
+- src/frob/strata/**
+- design/frob.strata
+- tests/unit/strata/**
+- docs/strata/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+First-class PII in the design language. INVESTIGATE FIRST: the compliance layer (COPPA/GDPR/HIPAA views), kernel Flow/Boundary/Claim machinery, and the T-0132 code/may attr grammar -- reuse, never parallel-build (T-0150 round-1 lesson). Feature: declare what personal data a node/store/flow carries (e.g. carries "pii.email", categories: identifier, contact, financial, health, biometric, behavioral, credentials) in surface grammar + elaboration + kernel; prover joins: PII crossing a trust boundary without a declared protection (encryption/pseudonymization/consent) is a violation; stores carrying PII require declared retention and erasure paths feeding the GDPR/HIPAA views (join to existing compliance obligations rather than duplicating them); undeclared-PII linting where flows source from stores with declared PII. Litmus vuln/hardened pair firing and discharging each new rule from parsed surface source. Self-model: declare frob's own PII posture in design/frob.strata (expected: none beyond git author metadata -- proving the zero case counts and must be explicit, not silent). Seccomp/self-model goldens regenerated if affected, per T-0150 precedent.
+
+<!-- ticket:T-0155 -->
+```yaml
+id: T-0155
+title: 'design lint family: caching, resource bounds, rate-limiting, kill-switch rules
+  over the kernel model'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/**
+- design/frob.strata
+- tests/unit/strata/**
+- docs/strata/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Operational design linting over the kernel model, as a new rule family alongside SYS100-102. INVESTIGATE FIRST: the scenario engine (node loss, rate surge, trust downgrade -- T-0073), Bound/capacity claims, and quantity grammar (rates, sizes) -- reuse their vocabulary. Rules (each loud, waivable only with reason, drift-locked in a rule registry): LINT: public/edge boundary accepting external flows without a declared rate limit; store consumed by flows whose declared rate exceeds the store's declared service rate without a caching/TTL declaration; node participating in a surge scenario without a capacity Bound claim; node holding a risky capability (exec/net per the may declarations from T-0150) without a declared kill-switch/flag mechanism; flow fan-in exceeding declared downstream capacity. Each rule needs a written justification of WHY the kernel can express it (or an honest OutOfScope-style entry if it cannot yet -- follow the threat catalog discipline); fire/discharge litmus fixtures from parsed surface; wired into frob sys audit output beside self-conformance. Apply to design/frob.strata itself and make it green honestly (declare real rate/caching/capacity facts or waive with reasons -- expect cascading consequences per T-0150/T-0151 precedent).
+
+<!-- ticket:T-0156 -->
+```yaml
+id: T-0156
+title: 'release readiness: version, changelog, packaging, and the release gate'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-18'
+blocked_by:
+- T-0148
+- T-0153
+- T-0154
+- T-0155
+parent: null
+scope:
+- pyproject.toml
+- CHANGELOG.md
+- README.md
+- docs/**
+- strata-core/Cargo.toml
+- frob-core/Cargo.toml
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Get frob into a releasable state once the gates-zero sweep and the three feature tickets land. Deliverables: (1) version bump decision (current 0.1.0 line -- pick the next version honestly against the scale of what shipped) stamped via frob release stamp, with frob release check green as the gate; (2) CHANGELOG.md generated from the ticket archive + git history since the last release, grouped by area (strata, threat/CVE, vet, check/gates, tickets, editors), human-readable, every T-#### referenced; (3) README refresh: current subcommand table, strata overview with the self-model/self-conformance story, editors support, CVE mirror workflow, install paths (uv tool install, bare pip, dev) each verified by actually running them; (4) docs/index.md completeness pass -- every docs/ page linked, every public module documented; (5) packaging: uv build the wheel, decide and document the native-crate strategy (strata-core/frob_core: bundled, separate wheels, or optional with the T-0133-135 degrade contract -- verify the degrade contract works from the actual built wheel in a bare venv, and verify the T-0142/T-0152 dependency completeness holds there too); (6) final release gate: frob check exit 0 with gates at zero, frob sys audit fully PROVED, full pytest suite green, drift-locks all live. Do not tag or publish -- leave the repo in a provably releasable state and report what the release command sequence would be.
