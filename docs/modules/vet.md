@@ -379,6 +379,33 @@ catch the common attack shape, and VET005/osv covers disclosed compromises.
 frob.vet raises the cost of the attack classes that actually occur; it is
 not a proof of benignity, and the docs say so.
 
+Self-match false positives (T-0151): the capability scanner's pattern
+tables (`_PATTERNS` in `src/frob/vet/_capability.py`) are plain-text
+needles, matched with substring search over raw source text, not an AST.
+Any file whose comments, docstrings, or unrelated string literals happen
+to contain one of those needles (e.g. a variable-name check for the
+literal `"cmdclass"`, or a docstring that mentions `os.environ`) will
+report the corresponding capability even though no such call exists.
+This is an accepted, DOCUMENTED false-positive class, not silently eaten:
+distinguishing "used as a call" from "appears as data" cheaply would
+require tokenizing/parsing the scanned file, which the scanner
+deliberately does not do (its own header comment: "recall over precision").
+Two narrower, cheap mitigations ARE applied: (1) the `eval` capability's
+`compile(` needle only fires for a bare builtin call, not a dotted method
+access like `re.compile(`/`ast.compile(`, since that dotted form was
+responsible for the entire cross-file false-positive set observed before
+T-0151 (cli/graphlang/gates/checker/core all spuriously reported "eval"
+from ordinary `re.compile(` calls); (2) `scan_directory_capabilities`
+excludes `_capability.py`'s own file from directory aggregation, since
+its pattern tables are guaranteed to contain every needle as literal
+data. Neither mitigation is a general fix: `src/frob/vet/_ecosystem.py`'s
+genuine `"cmdclass" in text` install-hook check, for example, still
+reports "install-hook" for `vet` itself even though `vet` does not
+install-hook anything -- that is the accepted false-positive class this
+paragraph documents, exercised by
+`TestCapabilityScan::test_capability_module_self_scan_documented_false_positive`
+in `tests/test_vet.py`.
+
 Prior art is embraced, not reimplemented: GuardDog, pip-audit/osv-scanner,
 OpenSSF Scorecard, and sigstore run as adapters (see above). frob's
 first-party differentiators: declaration-vs-observation conformance (not

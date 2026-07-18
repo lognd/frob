@@ -80,11 +80,18 @@ node graphlang : trusted {
 // COV/task-tracking/etc.); reads graph+lang's snapshot and strata's design models,
 // writes nothing on its own (violations are reported, not auto-filed --
 // T-0086's `frob sys plan` is the future ticket-filing seam).
+// T-0151: `may "eval"` REMOVED here. It was measured from vet's capability
+// scanner matching bare `compile(` against this package's `re.compile(`
+// calls (_FRONTMATTER_RE, _AD_ID_RE, _TODO_RE, etc -- all regex, zero real
+// eval/exec/dynamic-import anywhere in src/frob/gates/**, confirmed by
+// direct grep). The scanner's `compile(` needle now only counts a BARE
+// builtin call (T-0151, src/frob/vet/_capability.py), so this package no
+// longer observes "eval" and the declaration would otherwise be a stale,
+// unfalsifiable claim -- exactly what SYS101 exists to catch.
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
 node gates : trusted {
     clearance Internal;
     code "src/frob/gates/**";
-    may "eval";
     may "fs";
 }
 

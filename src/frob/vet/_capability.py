@@ -7,10 +7,42 @@ honestly-empty (no idiomatic literal exists yet -- see docs/modules/vet.md
 "Python, Rust, C/C++"). A missing/unreadable file never crashes the scan;
 it degrades to an empty capability set plus a `source-unavailable`-shaped
 note (docs/modules/vet.md "Honest limits").
+
+T-0151: a bare `"compile("` substring needle used to sit in the Python
+`eval` pattern table. It was meant to catch the `compile()` builtin used
+to turn a code string into a code object for later `eval`/`exec` -- a
+genuine eval-adjacent primitive. Because the match was plain substring
+search, it fired on every `re.compile(`/`ast.compile(`-style dotted call
+too (confirmed: every non-self hit across cli/graphlang/gates/core was
+`re.compile(`, zero bare builtin `compile(` calls anywhere in this repo).
+The needle is now a dot-exclusion check (`_has_bare_compile_call`): it
+only counts as "eval" when `compile(` is NOT preceded by `.` or an
+identifier character, i.e. it is the bare builtin, not a method access.
+This keeps the "recall over precision" token-scan philosophy (still no
+AST/call-graph analysis) while removing the one needle that was wrong by
+construction rather than merely coarse.
+
+Self-match note (T-0151, part b): `_PATTERNS` below stores needles as
+Python string literals, so scanning this file's OWN text can still match
+needles that appear only as table data (e.g. `"cmdclass"`, `"os.environ"`)
+-- and the same class of false positive can hit ANY file that happens to
+mention one of these substrings in a comment, docstring, or unrelated
+string literal (confirmed hitting `_threat.py` prose before it was
+reworded). Distinguishing "used as a call" from "appears as data" cheaply
+would require tokenizing/parsing the file, which the module's docstring
+above deliberately avoids -- see docs/modules/vet.md "Honest limits" for
+this accepted false-positive class, now documented rather than silently
+eaten. As a narrow, cheap mitigation for the worst instance of this class,
+`scan_directory_capabilities` excludes this module's own file from
+directory-level aggregation (it is the one file guaranteed to contain
+every needle as literal data); `scan_file_capabilities` called directly
+on this file is unaffected and still shows the documented false positive.
 """
 
+# frob:ticket T-0151
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
 
 from frob.lang import parse_file
@@ -40,7 +72,6 @@ _PATTERNS: dict[str, dict[str, tuple[str, ...]]] = {
         "eval": (
             "eval(",
             "exec(",
-            "compile(",
             "__import__(",
             "importlib.import_module(",
         ),
@@ -86,6 +117,38 @@ _PATTERNS: dict[str, dict[str, tuple[str, ...]]] = {
 }
 
 
+def _has_bare_compile_call(text: str) -> bool:
+    """True if `compile(` appears as a bare builtin call, not a dotted method
+    access like `re.compile(`/`ast.compile(` (T-0151: the builtin turning a
+    code string into a code object is eval-adjacent; `re.compile(` is not,
+    and was the entire source of this scanner's cross-file false positives)."""
+    needle = "compile("
+    idx = 0
+    while True:
+        idx = text.find(needle, idx)
+        if idx == -1:
+            return False
+        prev = text[idx - 1] if idx > 0 else ""
+        if prev != "." and not (prev.isalnum() or prev == "_"):
+            return True
+        idx += len(needle)
+
+
+# language -> capability -> extra callable(text) -> bool, applied ON TOP of
+# the plain substring needles above for needles that need one bit more
+# context than "does this substring appear anywhere" (T-0151: `compile(`
+# as a bare builtin call vs. `re.compile(`/`x.compile(` method access).
+_SPECIAL_CHECKS: dict[str, dict[str, tuple[Callable[[str], bool], ...]]] = {
+    "python": {"eval": (_has_bare_compile_call,)},
+}
+
+# absolute path of this module's own source file -- excluded from directory
+# aggregation (T-0151: this file's _PATTERNS table stores every needle as a
+# literal string, so scanning it against itself trivially "observes" every
+# capability regardless of what the code actually does).
+_SELF_PATH = Path(__file__).resolve()
+
+
 # frob:doc docs/modules/vet.md#public-api
 def language_for(path: Path) -> str | None:
     """The pattern-table bucket for `path`'s extension, or `None` (e.g. C/C++)."""
@@ -106,17 +169,23 @@ def scan_file_capabilities(path: Path) -> frozenset[str]:
         _log.warning("vet: could not read %s for capability scan: %s", path, exc)
         return frozenset()
 
-    found = _matched_capabilities(text, table)
+    found = _matched_capabilities(text, table, language)
     if found:
         _log.info("vet: %s: capabilities observed: %s", path, sorted(found))
     return frozenset(found)
 
 
-def _matched_capabilities(text: str, table: dict[str, tuple[str, ...]]) -> set[str]:
-    """Capability tokens whose needle set appears anywhere in `text`."""
+def _matched_capabilities(
+    text: str, table: dict[str, tuple[str, ...]], language: str
+) -> set[str]:
+    """Capability tokens whose needle set appears anywhere in `text`, plus
+    any `_SPECIAL_CHECKS` hit for that language/capability (T-0151)."""
     found: set[str] = set()
     for capability, needles in table.items():
         if any(needle in text for needle in needles):
+            found.add(capability)
+    for capability, checks in _SPECIAL_CHECKS.get(language, {}).items():
+        if any(check(text) for check in checks):
             found.add(capability)
     return found
 
@@ -202,6 +271,16 @@ def _is_test_path(path: Path) -> bool:
     return "test" in path.parts or "tests" in path.parts
 
 
+def _is_self_path(path: Path) -> bool:
+    """True for this module's own source file (T-0151: excluded from directory
+    aggregation since its `_PATTERNS` table contains every needle as literal
+    data, guaranteeing a self-match unrelated to what the code does)."""
+    try:
+        return path.resolve() == _SELF_PATH
+    except OSError:
+        return False
+
+
 def _aggregate_capabilities(
     source_dir: Path, max_files: int
 ) -> tuple[set[str], bool, int]:
@@ -221,7 +300,7 @@ def _aggregate_capabilities(
                     max_files,
                 )
                 break
-            if _is_test_path(path):
+            if _is_test_path(path) or _is_self_path(path):
                 continue
             capabilities |= scan_file_capabilities(path)
             if not decode_to_exec_hit:

@@ -388,6 +388,77 @@ class TestCapabilityScan:
         assert "net" in capabilities
         assert decode_to_exec_hit is False
 
+    def test_re_compile_alone_does_not_report_eval(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0151: bare `compile(` used to match `re.compile(`/`ast.compile(`
+        # dotted calls, spuriously reporting "eval" for ordinary regex code.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text(
+            "import re\nimport ast\n"
+            "_RE = re.compile(r'^x$')\n"
+            "tree = ast.compile('1', '<s>', 'eval')\n"
+        )
+        assert "eval" not in scan_file_capabilities(pkg)
+
+    def test_bare_compile_call_still_reports_eval(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0151: the bare builtin `compile()` (not a dotted method access) is
+        # a genuine eval-adjacent primitive and must still be caught.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("code = compile(source, '<s>', 'exec')\n")
+        assert "eval" in scan_file_capabilities(pkg)
+
+    def test_genuine_eval_still_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("eval(user_input)\n")
+        assert "eval" in scan_file_capabilities(pkg)
+
+    def test_capability_module_self_scan_documented_false_positive(self) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0151: `_capability.py` stores every needle as literal string data,
+        # so scanning IT directly (not via directory aggregation) still shows
+        # the accepted false-positive class documented in the module
+        # docstring and docs/modules/vet.md -- this locks that decision so a
+        # future "fix" doesn't silently change the behavior either way.
+        from frob.vet._capability import scan_file_capabilities
+
+        own_path = (
+            Path(__file__).resolve().parents[1]
+            / "src"
+            / "frob"
+            / "vet"
+            / "_capability.py"
+        )
+        capabilities = scan_file_capabilities(own_path)
+        assert "install-hook" in capabilities  # "cmdclass" appears as data
+
+    def test_scan_directory_capabilities_excludes_own_module(self) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_directory_capabilities kind="unit"
+        # T-0151: directory aggregation over vet's REAL package path must not
+        # self-inflate "eval"/"exec" from _capability.py's own pattern-table
+        # literals (its needle tuples contain "eval(", "subprocess.", etc as
+        # data, and nowhere ELSE in src/frob/vet does real eval/exec-ish code
+        # exist -- direct grep confirms zero non-_capability.py hits for
+        # eval(/exec(/__import__(/importlib.import_module(). "install-hook"
+        # is deliberately NOT asserted absent here: _ecosystem.py's genuine
+        # cmdclass-detection logic contains the literal substring "cmdclass"
+        # as its own check target, which is the separate, documented,
+        # accepted false-positive class from the module docstring and
+        # docs/modules/vet.md -- not something this exclusion targets.
+        from frob.vet._capability import scan_directory_capabilities
+
+        vet_src = Path(__file__).resolve().parents[1] / "src" / "frob" / "vet"
+        capabilities, _ = scan_directory_capabilities(vet_src)
+        assert "eval" not in capabilities
+        assert "exec" not in capabilities
+
 
 class TestObfuscationEnsemble:
     def test_high_entropy_string_flagged(self) -> None:
