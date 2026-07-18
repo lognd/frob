@@ -2667,9 +2667,9 @@ agent externalization/memory (2604.08224 externalization review;
 2604.11243 self-evolving knowledge wikis) in the design doc.
 ASCII only, no emojis.
 
-<!-- ticket:T-draft-fc754e8c -->
+<!-- ticket:T-0186 -->
 ```yaml
-id: T-draft-fc754e8c
+id: T-0186
 title: link docs/guides/exhaustive-research.md from docs/index.md
 state: in-progress
 kind: docs
