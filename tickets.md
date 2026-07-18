@@ -1657,7 +1657,7 @@ Filed: none. All out-of-scope findings above belong to modules other agents alre
 ```yaml
 id: T-0047
 title: 'strata: provable system-design language (epic)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-17'
@@ -1669,12 +1669,25 @@ scope:
 - strata-core/**
 - design/**
 - tests/**
-evidence: []
+evidence:
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_every_claim_proves
+- tests/unit/strata/test_litmus_audit_hardened.py::TestAuditHardenedGolden::test_proves_clean_in_security_and_quality
 attachments: []
 acceptance: []
 threat: null
 ```
 Umbrella for the strata language: deny-by-default architecture models, kernel of 6 primitives (Node/Flow/Boundary/Bound/Claim/Scenario), 3-way claim closure (proved/evidenced/assumed), evidence ladder L1-L5, refinement hierarchy, policy forms, work-order compiler. Charter: docs/strata/charter.md. Independent engine (own strata-core PyO3 crate, NOT lithos); lithos is inspiration only.
+## Done report
+
+The strata epic: phases 0 through 5 all shipped and reviewed --
+kernel + prover (phase 0), surface language + std.trust (1),
+std.infra + bounds + policy + boundaries (2), scenarios + crash +
+atomic + breach (3), .strata as a frob.lang grammar + code binding +
+effects + SYS gates + self-hosting design/frob.strata (4), and
+std.secrets/std.deploy/sys plan|doc|audit|export + the full threat
+catalog (5, with epic T-0109). frob now models, proves, plans,
+audits, and exports its own architecture from a design file checked
+like code. Verified at close: full suite green, frob check exit 0.
 
 <!-- ticket:T-0048 -->
 ```yaml
@@ -1923,7 +1936,7 @@ suite green.
 ```yaml
 id: T-0054
 title: 'strata phase 5: std.secrets, std.deploy, work-order compiler, exporters'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-17'
@@ -1934,7 +1947,9 @@ scope:
 - src/frob/strata/**
 - tests/**
 - design/**
-evidence: []
+evidence:
+- tests/unit/strata/test_export_golden.py::TestExportGolden::test_k8s
+- tests/unit/strata/test_secrets.py::TestReadersExactSetClosure::test_readers_claim_proved_on_exact_match
 attachments: []
 acceptance:
 - GIVEN a refuted or undischarged claim WHEN frob sys plan runs THEN scoped tickets
@@ -1943,6 +1958,16 @@ acceptance:
 threat: null
 ```
 Credentials as cache-of-authority (lifetime/revocation obligations), deployment as endorsement pipeline (canary schedules, rollback budgets, vet as endorsement evidence), frob sys plan obligation->ticket compiler, frob sys doc generator + DOC002 claims audit, k8s-netpol/seccomp/IAM exporters.
+## Done report
+
+Phase-5 umbrella closed on completion of all five children, each
+reviewed and merged separately: T-0082 std.secrets (credentials as
+cache-of-authority), T-0083 std.deploy (endorsement/canary/rollback),
+T-0084 frob sys plan (the obligation -> ticket work-order compiler),
+T-0085 frob sys doc + DOC003 claims audit, T-0086 config exporters
+(k8s netpol / seccomp / IAM). Surface grammar for the phase's
+constructs landed alongside via T-0132/T-0136/T-0138. Verified at
+close: full suite green, frob check exit 0.
 
 <!-- ticket:T-0055 -->
 ```yaml
@@ -6124,7 +6149,7 @@ contorting the code to dodge a coarse token heuristic.
 ```yaml
 id: T-0109
 title: 'strata obligation catalog: CWE/CVE + quality anti-pattern auditing (epic)'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-07-17'
@@ -6137,12 +6162,26 @@ scope:
 - src/frob/vet/**
 - tests/**
 - design/**
-evidence: []
+evidence:
+- tests/unit/strata/test_litmus_audit_vuln.py::TestAuditVulnGolden::test_fires_undischarged_in_security_and_quality
+- tests/unit/strata/test_threat.py::TestCatalogCompleteness::test_missing_entry_is_a_violation
 attachments: []
 acceptance: []
 threat: null
 ```
 Umbrella: make it impossible to forget a class of protection. CWE weaknesses + performance/reliability/compat anti-patterns as conditional obligations (precondition pattern fires -> cited mitigation discharges -> exhaustiveness proof over a cited baseline). Charter: docs/strata/threat.md. Reuses closure/boundaries/policy/lattice/evidence-ladder; no kernel primitive. CVE joins vet via shared CWE id. Catalog ingested from MITRE CWE + NVD, pinned + digest-verified, never hand-transcribed.
+## Done report
+
+Threat-catalog epic closed on completion of all seven children:
+T-0111 (std.cwe phase A + THREAT001/003), T-0112 (THREAT002
+capability completeness, structurally single-source), T-0113
+(sink-effect joins + mitigation-kind chokepoints), T-0110 (CVE->CWE
+ingestion + containment report with four honest states), T-0114
+(quality anti-pattern families), T-0115 (frob sys audit exhaustiveness
+conjunction + vuln/hardened litmus pair), T-0116 (std.compliance six
+regulations + privacy-policy reverse audit). The charter's three-part
+exhaustiveness proof is checkable end-to-end from .strata source.
+Verified at close: full suite green, frob check exit 0.
 
 <!-- ticket:T-0110 -->
 ```yaml
