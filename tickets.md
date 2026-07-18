@@ -1381,3 +1381,267 @@ acceptance: []
 threat: info-disclosure
 ```
 User mandate 2026-07-18 ('if it passes, it's safe'): extend T-0154 (PII flow proofs) and T-0157 (secrets token scan) with STRUCTURAL detection over data surfaces, every rule waivable via frob:waive with a written reason so zero-unwaived means every PII/secret surface is either declared or consciously waived. Detector families: (1) DATA-STRUCTURE FIELDS: pydantic/dataclass/TypedDict/attrs field names and types across supported languages (name keyword table: email, phone, ssn, dob, address, ip, password, token, api_key, secret, salt, card/pan/cvv...; type-based: EmailStr, SecretStr, and TS/rust equivalents) -- a detected PII-shaped field on a node without a matching T-0154 PII category declaration (or waiver) fires; declared-but-never-observed goes stale like SYS101. (2) DATABASE SCHEMA: CREATE TABLE / column DDL in migrations (alembic, raw SQL) and ORM models (sqlalchemy columns) scanned with the same keyword+type tables -- schema headers are the highest-value PII surface. (3) ENV/SECRET SOURCES: os.environ[...]/os.getenv/load_dotenv() call sites (and process.env, std::env::var) are secret-source observations that must map to declared strata secret nodes (T-0082 std.secrets) or be waived -- an unmapped env read fires. (4) EMAIL-SHAPE VALUES: detect email-shaped string literals in code/fixtures WITHOUT naive regex (user explicit: regex is bad for email matching) -- use a structural parse (local@domain.tld via a real address parser, e.g. email.utils/parseaddr semantics or the WHATWG algorithm) with the T-0157 fake-marker escape (frob:secret fake / placeholder shapes stay writable). (5) KEYWORD SWEEP: identifier/comment keyword hits at suggestion severity only (no hard fail on names alone). DISCIPLINE (non-negotiable, per registry precedent): single-source keyword/type registry (no duplication between detectors); litmus fire+discharge fixtures per detector (T-0145 style); per-entry parametrized drift-lock (T-0182 style) so a registry keyword without a firing fixture fails; exhaustiveness matrix (detector x language) with written exclusions for unpatterned cells (T-0158 style); self-match exclusion for the registry file itself designed in from day one (T-0201 lesson -- the keyword table must not detect itself); wire into frob check as a new gate family (PII0xx/SEC1xx) default-on at WARN for adoption, severity dial in frob.toml; sys audit gains the joined view (structural observations vs declared PII/secret model). Split into child tickets per detector family at plan time if needed; this is the umbrella.
+
+<!-- ticket:T-0208 -->
+```yaml
+id: T-0208
+title: vet obfuscation scan pathologically slow -- high_entropy_strings dominates,
+  no progress/timeout
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/vet/**
+- tests/**
+- docs/modules/vet.md
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Filed from sibling-repo pilot P2 (lograder/aprog-public/aprog-private, 2026-07-18). Pilot P2 (all 3 repos): frob vet unusable -- lograder killed at 11m47s with 15/30 packages (101MB venv); aprog-public stuck on numpy at 120s. cProfile+SIGALRM around scan_tree(fetch=False): _obfuscation.py:70 high_entropy_strings consumed 82 of 120 profiled seconds (785 calls); tree-sitter/capability scans fine. Fix: cap candidate string count/length per file, skip literal-table files over a size threshold, optimize the entropy loop, add per-package progress lines and --timeout/--jobs. Acceptance: frob vet completes on lograder's venv under 2 minutes with progress output.
+
+<!-- ticket:T-0209 -->
+```yaml
+id: T-0209
+title: capability scanner matches needles inside comments and strings
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/vet/_capability.py
+- src/frob/lang/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Filed from sibling-repo pilot P2 (lograder/aprog-public/aprog-private, 2026-07-18). Pilot P2 aprog-public: SYS100 reported capability net observed at assignments/api-harvester/assets/starter.py:22 -- that line is COMMENT text describing requests.get; the assignment forbids real network imports. Forced a false may declaration dragging bogus CWE-918 obligations -- corrupts the security posture the model attests (medium-high). Fix: consult tree-sitter comment/string spans (already produced by frob.lang) before substring matching; needle hits fully inside comment spans are dropped (string literals are subtler -- keep string hits for languages where code-in-string is an exec vector, e.g. eval payloads, but drop pure-comment hits everywhere). Litmus: comment-only fixture must NOT fire; code fixture still fires; the T-0151/T-0201 self-match tests stay green. Note duplicate-line issue too: the same site was reported twice (pilot gap 12) -- dedupe observations by (file,line,kind) while in there.
+
+<!-- ticket:T-0210 -->
+```yaml
+id: T-0210
+title: frob test package-fallback treats pytest exit 5 (no tests collected) as FAIL
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/testing/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Filed from sibling-repo pilot P2 (lograder/aprog-public/aprog-private, 2026-07-18). Pilot P2 aprog-private: editing a file in a package with no tests (activities/git-heist/) makes frob test --base HEAD~1 report [FAIL] python exit=5. pytest exit 5 = collected 0 tests; the package fallback should degrade to the same neutral nothing-touched-selects-any-test outcome the empty-selection path prints. Regression test: fixture package with a source edit and zero tests -> PASS/neutral, not FAIL.
+
+<!-- ticket:T-0211 -->
+```yaml
+id: T-0211
+title: selfconform warns '<repo>/src/frob does not exist' in every non-frob repo
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/_selfconform.py
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Filed from sibling-repo pilot P2 (lograder/aprog-public/aprog-private, 2026-07-18). Pilot P2 (all 3 repos): the warning prints in every sibling repo while self-conformance PROVED still appears; the checks DO run (verified by falsifiability probes) but the stale frob-self path assumption reads as 'this proof is vacuous' -- trust-eroding. The SYS102 unmodeled join is frob-self-specific (_PACKAGE_ROOT); it should detect it is not in the frob repo and skip silently (one DEBUG line), not warn.
+
+<!-- ticket:T-0212 -->
+```yaml
+id: T-0212
+title: DOC002 slugger disagrees with GitHub anchor algorithm in both directions
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/**
+- src/frob/docs/**
+- tests/**
+- docs/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Filed from sibling-repo pilot P2 (lograder/aprog-public/aprog-private, 2026-07-18). Pilot P2 lograder (7 DOC002 errors, most error-prone adoption step): 'Output & layouts' -> GitHub #output--layouts vs frob #output-layouts; 'Public/Private Boundary' -> GitHub #publicprivate-boundary vs frob #public-private-boundary. Punctuation runs collapse differently, so anchors satisfying DOC002 can 404 on GitHub and vice versa. Fix: implement GitHub's slug algorithm exactly (test against a table of tricky headings) or accept both forms; T-0165's nearest-anchor suggestions must use the corrected slugs.
+
+<!-- ticket:T-0213 -->
+```yaml
+id: T-0213
+title: COV001 short message says 'undocumented' for symbols that have docstrings
+state: queued
+kind: ux
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Filed from sibling-repo pilot P2 (lograder/aprog-public/aprog-private, 2026-07-18). Pilot P2 lograder: COV001 flags DeveloperException/StaffException which HAVE docstrings -- rule means 'no frob:doc edge'; long-form message is correct, short line is wrong and misleads adopters into thinking docstrings satisfy it. Align the short message with the long form.
+
+<!-- ticket:T-0214 -->
+```yaml
+id: T-0214
+title: COV002 close-before-commit catch-22 turns covered changes into hard errors
+state: queued
+kind: ux
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/**
+- src/frob/tickets/**
+- docs/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Filed from sibling-repo pilot P2 (lograder/aprog-public/aprog-private, 2026-07-18). Pilot P2 aprog-public: closing the covering ticket while its strata file is still uncommitted turned every symbol in the file into 'changed with no open ticket' (30 hard errors) which vanish after commit. Either honor recently-done tickets' frob:ticket references for working-tree changes (grace window until commit) or make frob ticket close warn when the covering scope still has uncommitted changes, and document commit-then-close ordering in the playbook. Relates to T-0176 land (which enforces the safe order mechanically).
+
+<!-- ticket:T-0215 -->
+```yaml
+id: T-0215
+title: non-pytest evidence channel for docs/design tickets + close-from-queued hint
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/tickets/**
+- src/frob/app/**
+- tests/**
+- docs/modules/tickets.md
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Filed from sibling-repo pilot P2 (lograder/aprog-public/aprog-private, 2026-07-18). Pilot P2 (gap 10) + coordinator experience this session (T-0167/T-0185/T-0186 all needed drift-lock tests written solely to satisfy close): frob ticket close accepts only pytest node ids. Add a vetted evidence alternative for docs/design tickets -- e.g. --evidence-cmd 'command' whose exit 0 is recorded with its output digest, or gate-based evidence referencing a rule that must be absent/present -- WITHOUT weakening code tickets (kind-gated: only docs/design kinds may use it). Also: close on a queued ticket errors InvalidTransition with no hint -- name the remedy (frob ticket start) in the message. And frob ticket start on an in-progress ticket errors InvalidTransition too -- make it idempotent or hint that it is already started (coordinator hit this on T-0169).
+
+<!-- ticket:T-0216 -->
+```yaml
+id: T-0216
+title: graph build never names the malformed file
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/graph/**
+- src/frob/lang/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Filed from sibling-repo pilot P2 (lograder/aprog-public/aprog-private, 2026-07-18). Pilot P2 aprog-private: malformed=1 in build output, persists across cache flush, no way to find WHICH file (no verbosity flag on the subcommand). Print path + parse error at WARN when malformed>0. Trivial but blocks users from fixing their own files.
+
+<!-- ticket:T-0217 -->
+```yaml
+id: T-0217
+title: sys plan/doc log raw pre-discharge threat counts that contradict the PROVED
+  verdict
+state: queued
+kind: ux
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/**
+- src/frob/app/sys_runner.py
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Filed from sibling-repo pilot P2 (lograder/aprog-public/aprog-private, 2026-07-18). Pilot P2 (gap 13): 'threat: evaluated ... -> 13 violation(s)' logs right before '0 obligation tickets / PROVED' -- the 13 is the pre-discharge obligation count, not live violations. Rename the log line (obligations evaluated, N discharged, 0 residual) or demote to DEBUG; contradictory-looking output erodes trust in PROVED.
+
+<!-- ticket:T-0218 -->
+```yaml
+id: T-0218
+title: graph build reports edges=0 on cache-hit runs while the loaded graph has edges
+state: queued
+kind: ux
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/graph/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Filed from sibling-repo pilot P2 (lograder/aprog-public/aprog-private, 2026-07-18). Pilot P2 (gap 14): build counter means newly-parsed edges, so cache-hit runs print edges=0 followed later by load_graph: ... 60 edges. Rename the counter (new_edges=) or report total after load.
+
+<!-- ticket:T-0219 -->
+```yaml
+id: T-0219
+title: secrets scan misses adjacent sk-live key and placeholder-phrase fakes
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/_secrets.py
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Filed from sibling-repo pilot P2 (lograder/aprog-public/aprog-private, 2026-07-18). Pilot P2 aprog-private (gap 15): SEC001 flagged a fake Slack token but MISSED the sk-live-... key on the adjacent line (detection gap -- the miss matters more than any false positive), and the fake-marker heuristics missed obvious placeholder phrasing ('real-slack-token-here' contains no recognized fake word). Fix both directions: audit the provider table against the fixture file that produced the miss (why did sk-live- not match -- prefix table or format constraint?), and extend placeholder recognition ('...-here', 'your-', 'insert-', 'changeme') with fixtures. Coordinate with T-0190 (GitHub-unflaggable fixtures) so new fixtures satisfy both constraints.
