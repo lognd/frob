@@ -1256,7 +1256,7 @@ User directive 2026-07-18: the pass-line counters hide real debt -- frob-exports
 ```yaml
 id: T-0205
 title: pytest collects Test*-prefixed product classes -- set __test__ = False
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-18'
@@ -1267,12 +1267,31 @@ scope:
 - src/frob/testing/_models.py
 - src/frob/testing/_runners.py
 - tickets.md
-evidence: []
+evidence:
+- tests/test_testing.py::TestSelect::test_direct_hit
+- tests/test_gates.py::TestCoverageGate::test_waive002_honors_loaded_policy_rule_ids
 attachments: []
 acceptance: []
 threat: null
 ```
 User report 2026-07-18 (CI warnings summary): PytestCollectionWarning for gates/_models.py::TestPolicy and testing/_runners.py::TestingError -- pytest matches the Test* class-name prefix and tries to collect product classes. Fix: annotated __test__: bool = False on TestPolicy, TestingError, and TestRunReport (testing/_models.py), matching the existing precedent on process/parsers/common.py::TestCase. Verified: pytest --collect-only over tests/test_gates.py + tests/test_testing.py emits zero PytestCollectionWarning; both suites still pass.
+
+## Done report
+
+Changed: src/frob/gates/_models.py::TestPolicy,
+src/frob/testing/_models.py::TestRunReport,
+src/frob/testing/_runners.py::TestingError -- each gains
+`__test__: bool = False` matching the TestCase precedent in
+process/parsers/common.py. Coordinator-applied direct user request
+(exact locations user-supplied); swept via frob ticket start before close.
+
+Evidence: tests/test_testing.py::TestSelect::test_direct_hit and
+tests/test_gates.py::TestCoverageGate::test_waive002_honors_loaded_policy_rule_ids
+(both suites collect warning-free and pass; verified
+`pytest --collect-only` emits zero PytestCollectionWarning across
+tests/test_gates.py + tests/test_testing.py).
+
+Filed: none. Gates: ruff format stable on all three files.
 
 <!-- ticket:T-draft-4032e080 -->
 ```yaml
