@@ -29,6 +29,16 @@ class Capacity(BaseModel):
     replicas_max: int
 
 
+# frob:doc docs/strata/boundary.md#v0-implementation
+class ObserveDecl(BaseModel):
+    """A parsed `observe { log CLASSLIST; to IDENT }` node property (T-0070)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    log: tuple[str, ...] = ()
+    to: str
+
+
 # frob:doc docs/strata/surface.md#parser
 class NodeDecl(BaseModel):
     """A parsed `node` statement, one entry in a `Module`."""
@@ -42,6 +52,9 @@ class NodeDecl(BaseModel):
     attrs: tuple[str, ...] = ()
     capacity: Capacity | None = None
     residence: str | None = None
+    errors_total: bool = False
+    panics_contained_by: str | None = None
+    observe: ObserveDecl | None = None
 
 
 # frob:doc docs/strata/surface.md#parser
@@ -61,6 +74,79 @@ class FlowDecl(BaseModel):
     transport: tuple[str, ...] = ()
 
 
+# frob:doc docs/strata/boundary.md#v0-implementation
+class AdmitPhase(BaseModel):
+    """A parsed `admit { rate_limit ...; max_size ... }` boundary phase block."""
+
+    model_config = ConfigDict(frozen=True)
+
+    rate_limit: Quantity | None = None
+    max_size: Quantity | None = None
+
+
+# frob:doc docs/strata/boundary.md#v0-implementation
+class ParsePhase(BaseModel):
+    """A parsed `parse { time ...; frame { ... } }` boundary phase block.
+
+    `frame` is grammar-open (unlike `judge`'s fixed-empty block) so the
+    elaborator's "admit/parse frames must be empty" rule
+    (docs/strata/boundary.md#v0-implementation) has an actual violation to
+    catch rather than being vacuously true by grammar shape alone.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    time: str | None = None
+    frame: tuple[str, ...] = ()
+
+
+# frob:doc docs/strata/boundary.md#v0-implementation
+class EffectPhase(BaseModel):
+    """A parsed `effect { frame { ... } }` boundary phase block."""
+
+    model_config = ConfigDict(frozen=True)
+
+    frame: tuple[str, ...] = ()
+
+
+# frob:doc docs/strata/boundary.md#v0-implementation
+class RecordPhase(BaseModel):
+    """A parsed `record { audit to IDENT }` boundary phase block."""
+
+    model_config = ConfigDict(frozen=True)
+
+    audit_to: str
+
+
+# frob:doc docs/strata/boundary.md#v0-implementation
+class RefusePhase(BaseModel):
+    """A parsed `refuse { respond IDENT; frame { ... }? }` boundary phase block."""
+
+    model_config = ConfigDict(frozen=True)
+
+    respond: str
+    frame: tuple[str, ...] = ()
+
+
+# frob:doc docs/strata/boundary.md#v0-implementation
+class PhaseBlock(BaseModel):
+    """The parsed six-phase block attached to a `boundary` statement (T-0069).
+
+    Each phase is optional at the AST layer -- the parser accepts any
+    subset -- but the elaborator may require particular combinations; this
+    model only mirrors parser output, it enforces nothing.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    admit: AdmitPhase | None = None
+    parse: ParsePhase | None = None
+    judge: bool = False
+    effect: EffectPhase | None = None
+    record: RecordPhase | None = None
+    refuse: RefusePhase | None = None
+
+
 # frob:doc docs/strata/surface.md#parser
 class BoundaryDecl(BaseModel):
     """A parsed `boundary` statement, one entry in a `Module`."""
@@ -73,6 +159,20 @@ class BoundaryDecl(BaseModel):
     from_level: str
     to_level: str
     predicate: str = ""
+    phases: PhaseBlock | None = None
+
+
+# frob:doc docs/strata/boundary.md#v0-implementation
+class OperationDecl(BaseModel):
+    """A parsed `operation ID on IDENT { modifies ... atomic via ... }` statement."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: str
+    on: str
+    modifies_ok: tuple[str, ...] = ()
+    modifies_err: tuple[str, ...] = ()
+    atomic_via: str
 
 
 # frob:doc docs/strata/surface.md#parser
@@ -317,3 +417,4 @@ class Module(BaseModel):
     cdns: tuple[CdnDecl, ...] = ()
     balancers: tuple[BalancerDecl, ...] = ()
     policies: tuple[PolicyDecl, ...] = ()
+    operations: tuple[OperationDecl, ...] = ()

@@ -229,6 +229,7 @@ struct ModuleAst {
     cdns: Vec<serde_json::Value>,
     balancers: Vec<serde_json::Value>,
     policies: Vec<serde_json::Value>,
+    operations: Vec<serde_json::Value>,
 }
 
 impl Parser {
@@ -418,6 +419,9 @@ impl Parser {
         let mut attrs: Vec<String> = Vec::new();
         let mut residence: Option<String> = None;
         let mut capacity: Option<serde_json::Value> = None;
+        let mut errors_total = false;
+        let mut panics_contained_by: Option<String> = None;
+        let mut observe: Option<serde_json::Value> = None;
         if self.at_symbol('{') {
             self.advance();
             loop {
@@ -449,6 +453,51 @@ impl Parser {
                     self.expect_keyword("zipf")?;
                     let alpha = self.expect_number("skew zipf exponent")?;
                     attrs.push(format!("skew={}", alpha));
+                } else if self.at_keyword("errors_total") {
+                    // T-0070: bare marker; the elaborator turns this into a
+                    // node attr "errors_total" and requires an observe block.
+                    self.advance();
+                    errors_total = true;
+                } else if self.at_keyword("panics_contained_by") {
+                    // T-0070: names the crash-boundary supervisor node id;
+                    // reference validity is an elaboration-time check.
+                    self.advance();
+                    panics_contained_by = Some(self.expect_ident("panics supervisor id")?);
+                } else if self.at_keyword("observe") {
+                    // T-0070: observe { log IDENT (, IDENT)* ; to IDENT }
+                    self.advance();
+                    self.expect_symbol('{')?;
+                    let mut log: Vec<String> = Vec::new();
+                    let mut to: Option<String> = None;
+                    loop {
+                        if self.at_symbol('}') {
+                            break;
+                        }
+                        if self.at_keyword("log") {
+                            self.advance();
+                            log.push(self.expect_ident("observe log class")?);
+                            while self.at_symbol(',') {
+                                self.advance();
+                                log.push(self.expect_ident("observe log class")?);
+                            }
+                        } else if self.at_keyword("to") {
+                            self.advance();
+                            to = Some(self.expect_ident("observe target id")?);
+                        } else {
+                            return self.err("unknown observe property");
+                        }
+                        if self.at_symbol(';') {
+                            self.advance();
+                        } else {
+                            break;
+                        }
+                    }
+                    self.expect_symbol('}')?;
+                    let to = match to {
+                        Some(t) => t,
+                        None => return self.err("observe block needs a to IDENT"),
+                    };
+                    observe = Some(json!({"log": log, "to": to}));
                 } else {
                     return self.err("unknown node property");
                 }
@@ -468,6 +517,9 @@ impl Parser {
             "attrs": attrs,
             "capacity": capacity,
             "residence": residence,
+            "errors_total": errors_total,
+            "panics_contained_by": panics_contained_by,
+            "observe": observe,
         }));
         Ok(())
     }
@@ -573,6 +625,10 @@ impl Parser {
             self.advance();
             predicate = self.expect_string("predicate string")?;
         }
+        let mut phases: Option<serde_json::Value> = None;
+        if self.at_symbol('{') {
+            phases = Some(self.parse_phase_block()?);
+        }
         ast.boundaries.push(json!({
             "id": id,
             "kind": kind,
@@ -580,6 +636,281 @@ impl Parser {
             "from_level": from_level,
             "to_level": to_level,
             "predicate": predicate,
+            "phases": phases,
+        }));
+        Ok(())
+    }
+
+    /// FRAMETARGET := IDENT ['(' IDENT ')'], joined as "Balance(from)" when
+    /// the parenthesized entity-selector is present (docs/strata/boundary.md
+    /// operation example); the paren form is purely a display convention --
+    /// the elaborator treats the whole string as one frame target id.
+    fn parse_frame_target(&mut self) -> Result<String, ParseError> {
+        let base = self.expect_ident("frame target")?;
+        if self.at_symbol('(') {
+            self.advance();
+            let arg = self.expect_ident("frame target argument")?;
+            self.expect_symbol(')')?;
+            Ok(format!("{}({})", base, arg))
+        } else {
+            Ok(base)
+        }
+    }
+
+    /// frame_prop := "frame" "{" FRAMETARGET (',' FRAMETARGET)* "}"
+    ///             | "frame" "{" "}"
+    fn parse_frame_prop(&mut self) -> Result<Vec<String>, ParseError> {
+        self.expect_keyword("frame")?;
+        self.expect_symbol('{')?;
+        let mut targets: Vec<String> = Vec::new();
+        if !self.at_symbol('}') {
+            targets.push(self.parse_frame_target()?);
+            while self.at_symbol(',') {
+                self.advance();
+                targets.push(self.parse_frame_target()?);
+            }
+        }
+        self.expect_symbol('}')?;
+        Ok(targets)
+    }
+
+    /// phase_block := "{" (admit_phase | parse_phase | judge_phase | effect_phase
+    ///                    | record_phase | refuse_phase)* "}"
+    ///
+    /// Each of the six phase keywords may appear at most once
+    /// (docs/strata/boundary.md#the-six-phases, T-0069 v0); a repeated
+    /// phase keyword is a parse error rather than last-write-wins, since
+    /// silently dropping one phase's declaration would be a security-
+    /// relevant default (charter law 2).
+    fn parse_phase_block(&mut self) -> Result<serde_json::Value, ParseError> {
+        self.expect_symbol('{')?;
+        let mut admit: Option<serde_json::Value> = None;
+        let mut parse_phase: Option<serde_json::Value> = None;
+        let mut judge = false;
+        let mut effect: Option<serde_json::Value> = None;
+        let mut record: Option<serde_json::Value> = None;
+        let mut refuse: Option<serde_json::Value> = None;
+        loop {
+            if self.at_symbol('}') {
+                break;
+            }
+            let tok = self.cur().clone();
+            if self.at_keyword("admit") {
+                if admit.is_some() {
+                    return Err(ParseError {
+                        line: tok.line,
+                        col: tok.col,
+                        message: "duplicate admit phase".to_string(),
+                    });
+                }
+                self.advance();
+                self.expect_symbol('{')?;
+                let mut rate_limit: Option<serde_json::Value> = None;
+                let mut max_size: Option<serde_json::Value> = None;
+                loop {
+                    if self.at_symbol('}') {
+                        break;
+                    }
+                    if self.at_keyword("rate_limit") {
+                        self.advance();
+                        rate_limit = Some(self.parse_quantity("rate_limit")?);
+                    } else if self.at_keyword("max_size") {
+                        self.advance();
+                        max_size = Some(self.parse_quantity("max_size")?);
+                    } else {
+                        return self.err("unknown admit property");
+                    }
+                    if self.at_symbol(';') {
+                        self.advance();
+                    } else {
+                        break;
+                    }
+                }
+                self.expect_symbol('}')?;
+                admit = Some(json!({"rate_limit": rate_limit, "max_size": max_size}));
+            } else if self.at_keyword("parse") {
+                if parse_phase.is_some() {
+                    return Err(ParseError {
+                        line: tok.line,
+                        col: tok.col,
+                        message: "duplicate parse phase".to_string(),
+                    });
+                }
+                self.advance();
+                self.expect_symbol('{')?;
+                let mut time: Option<String> = None;
+                let mut frame: Vec<String> = Vec::new();
+                loop {
+                    if self.at_symbol('}') {
+                        break;
+                    }
+                    if self.at_keyword("time") {
+                        self.advance();
+                        time = Some(self.expect_ident("parse time bound")?);
+                    } else if self.at_keyword("frame") {
+                        frame = self.parse_frame_prop()?;
+                    } else {
+                        return self.err("unknown parse property");
+                    }
+                    if self.at_symbol(';') {
+                        self.advance();
+                    } else {
+                        break;
+                    }
+                }
+                self.expect_symbol('}')?;
+                parse_phase = Some(json!({"time": time, "frame": frame}));
+            } else if self.at_keyword("judge") {
+                if judge {
+                    return Err(ParseError {
+                        line: tok.line,
+                        col: tok.col,
+                        message: "duplicate judge phase".to_string(),
+                    });
+                }
+                self.advance();
+                self.expect_symbol('{')?;
+                self.expect_symbol('}')?;
+                judge = true;
+            } else if self.at_keyword("effect") {
+                if effect.is_some() {
+                    return Err(ParseError {
+                        line: tok.line,
+                        col: tok.col,
+                        message: "duplicate effect phase".to_string(),
+                    });
+                }
+                self.advance();
+                self.expect_symbol('{')?;
+                let frame = self.parse_frame_prop()?;
+                if self.at_symbol(';') {
+                    self.advance();
+                }
+                self.expect_symbol('}')?;
+                effect = Some(json!({"frame": frame}));
+            } else if self.at_keyword("record") {
+                if record.is_some() {
+                    return Err(ParseError {
+                        line: tok.line,
+                        col: tok.col,
+                        message: "duplicate record phase".to_string(),
+                    });
+                }
+                self.advance();
+                self.expect_symbol('{')?;
+                self.expect_keyword("audit")?;
+                self.expect_keyword("to")?;
+                let audit_to = self.expect_ident("audit target id")?;
+                if self.at_symbol(';') {
+                    self.advance();
+                }
+                self.expect_symbol('}')?;
+                record = Some(json!({"audit_to": audit_to}));
+            } else if self.at_keyword("refuse") {
+                if refuse.is_some() {
+                    return Err(ParseError {
+                        line: tok.line,
+                        col: tok.col,
+                        message: "duplicate refuse phase".to_string(),
+                    });
+                }
+                self.advance();
+                self.expect_symbol('{')?;
+                self.expect_keyword("respond")?;
+                let respond = self.expect_ident("response label")?;
+                if self.at_symbol(';') {
+                    self.advance();
+                }
+                let mut frame: Vec<String> = Vec::new();
+                if self.at_keyword("frame") {
+                    frame = self.parse_frame_prop()?;
+                    if self.at_symbol(';') {
+                        self.advance();
+                    }
+                }
+                self.expect_symbol('}')?;
+                refuse = Some(json!({"respond": respond, "frame": frame}));
+            } else {
+                return self.err("unknown phase keyword");
+            }
+        }
+        self.expect_symbol('}')?;
+        Ok(json!({
+            "admit": admit,
+            "parse": parse_phase,
+            "judge": judge,
+            "effect": effect,
+            "record": record,
+            "refuse": refuse,
+        }))
+    }
+
+    /// operation := "operation" ID "on" IDENT "{" operation_prop* "}"
+    /// operation_prop := "modifies" "{" FRAMETARGET (',' FRAMETARGET)* "}"? "on" IDENT
+    ///                  | "atomic" "via" IDENT
+    ///
+    /// WHY "on" IDENT rather than a fixed Ok/Err pair: the outcome name is
+    /// validated against the kernel `Outcome` enum at elaboration time (case-
+    /// insensitively -- docs/strata/boundary.md writes `on Ok`/`on Err`, the
+    /// kernel's `Outcome` values are lowercase), not the parser, matching
+    /// how boundary `kind` and claim `kind` are grammar-open, elaborator-
+    /// closed elsewhere in this file.
+    fn parse_operation(&mut self, ast: &mut ModuleAst) -> Result<(), ParseError> {
+        self.advance(); // 'operation'
+        let id = self.expect_ident("operation id")?;
+        self.expect_keyword("on")?;
+        let on = self.expect_ident("operation store id")?;
+        self.expect_symbol('{')?;
+        let mut modifies_ok: Vec<String> = Vec::new();
+        let mut modifies_err: Vec<String> = Vec::new();
+        let mut atomic_via: Option<String> = None;
+        loop {
+            if self.at_symbol('}') {
+                break;
+            }
+            if self.at_keyword("modifies") {
+                self.advance();
+                self.expect_symbol('{')?;
+                let mut targets: Vec<String> = Vec::new();
+                if !self.at_symbol('}') {
+                    targets.push(self.parse_frame_target()?);
+                    while self.at_symbol(',') {
+                        self.advance();
+                        targets.push(self.parse_frame_target()?);
+                    }
+                }
+                self.expect_symbol('}')?;
+                self.expect_keyword("on")?;
+                let outcome = self.expect_ident("modifies outcome (Ok/Err)")?;
+                match outcome.to_lowercase().as_str() {
+                    "ok" => modifies_ok = targets,
+                    "err" => modifies_err = targets,
+                    _ => return self.err("modifies outcome must be Ok or Err"),
+                }
+            } else if self.at_keyword("atomic") {
+                self.advance();
+                self.expect_keyword("via")?;
+                atomic_via = Some(self.expect_ident("atomic coordinator id")?);
+            } else {
+                return self.err("unknown operation property");
+            }
+            if self.at_symbol(';') {
+                self.advance();
+            } else {
+                break;
+            }
+        }
+        self.expect_symbol('}')?;
+        let atomic_via = match atomic_via {
+            Some(a) => a,
+            None => return self.err("operation needs an atomic via clause"),
+        };
+        ast.operations.push(json!({
+            "id": id,
+            "on": on,
+            "modifies_ok": modifies_ok,
+            "modifies_err": modifies_err,
+            "atomic_via": atomic_via,
         }));
         Ok(())
     }
@@ -1213,7 +1544,7 @@ impl Parser {
             match kw.as_str() {
                 "module" => self.parse_module(&mut ast, &mut seen_module)?,
                 "node" | "flow" | "boundary" | "assert" | "assume" | "refine" | "store"
-                | "cache" | "queue" | "cdn" | "balancer" | "policy" => {
+                | "cache" | "queue" | "cdn" | "balancer" | "policy" | "operation" => {
                     if !seen_module {
                         return self.err("statement before module declaration");
                     }
@@ -1230,6 +1561,7 @@ impl Parser {
                         "cdn" => self.parse_cdn(&mut ast)?,
                         "balancer" => self.parse_balancer(&mut ast)?,
                         "policy" => self.parse_policy(&mut ast)?,
+                        "operation" => self.parse_operation(&mut ast)?,
                         _ => unreachable!(),
                     }
                 }
@@ -1874,6 +2206,96 @@ mod tests {
         let idents = v["policies"][0]["rules"][0]["idents"].as_array().unwrap();
         assert_eq!(idents[0], "a.b.c");
         assert_eq!(idents[1], "d");
+    }
+
+    #[test]
+    fn parses_boundary_with_phases() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok(r#"module m
+            node gw : authenticated
+            node audit_log : trusted { attr append_only; }
+            node view : trusted
+            flow f1 : gw -> gw
+            boundary b1 endorse f1 : foreign -> authenticated when "jwt_verified" {
+                admit { rate_limit 20 req/min; max_size 64 KiB; }
+                parse { time linear; frame {} }
+                judge {}
+                effect { frame { gw } }
+                record { audit to audit_log }
+                refuse { respond Public; frame { audit_log } }
+            }"#);
+        let phases = &v["boundaries"][0]["phases"];
+        assert_eq!(phases["admit"]["max_size"]["value"], 64.0);
+        assert_eq!(phases["parse"]["time"], "linear");
+        assert_eq!(phases["judge"], true);
+        assert_eq!(phases["effect"]["frame"][0], "gw");
+        assert_eq!(phases["record"]["audit_to"], "audit_log");
+        assert_eq!(phases["refuse"]["respond"], "Public");
+        assert_eq!(phases["refuse"]["frame"][0], "audit_log");
+    }
+
+    #[test]
+    fn parses_boundary_without_phases_is_still_legal() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok(r#"module m
+            boundary b1 endorse f1 : foreign -> authenticated"#);
+        assert!(v["boundaries"][0]["phases"].is_null());
+    }
+
+    #[test]
+    fn parses_operation_with_ok_and_err_frames() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok(r#"module m
+            operation Transfer on LedgerDb {
+                modifies { Balance(from), Balance(to) } on Ok;
+                modifies {} on Err;
+                atomic via LedgerDb
+            }"#);
+        let op = &v["operations"][0];
+        assert_eq!(op["id"], "Transfer");
+        assert_eq!(op["on"], "LedgerDb");
+        assert_eq!(op["modifies_ok"][0], "Balance(from)");
+        assert_eq!(op["modifies_ok"][1], "Balance(to)");
+        assert_eq!(op["modifies_err"].as_array().unwrap().len(), 0);
+        assert_eq!(op["atomic_via"], "LedgerDb");
+    }
+
+    #[test]
+    fn parses_node_with_errors_total_panics_and_observe() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok(r#"module m
+            node api : trusted {
+                errors_total;
+                panics_contained_by supervisor;
+                observe { log error_paths, boundary_crossings; to obs_sink }
+            }"#);
+        let n = &v["nodes"][0];
+        assert_eq!(n["errors_total"], true);
+        assert_eq!(n["panics_contained_by"], "supervisor");
+        assert_eq!(n["observe"]["log"][0], "error_paths");
+        assert_eq!(n["observe"]["log"][1], "boundary_crossings");
+        assert_eq!(n["observe"]["to"], "obs_sink");
+    }
+
+    #[test]
+    fn parses_bare_node_defaults_observability_fields() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok("module m\n            node api : trusted");
+        let n = &v["nodes"][0];
+        assert_eq!(n["errors_total"], false);
+        assert!(n["panics_contained_by"].is_null());
+        assert!(n["observe"].is_null());
+    }
+
+    #[test]
+    fn duplicate_phase_keyword_is_a_parse_error() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let e = err(r#"module m
+            boundary b1 endorse f1 : foreign -> authenticated {
+                judge {}
+                judge {}
+            }"#);
+        assert!(e["message"].as_str().unwrap().contains("duplicate judge"));
     }
 
     #[test]

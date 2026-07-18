@@ -34,3 +34,20 @@ class StrataError(ErrorSet):
         "argument (docs/strata/kernel.md#age-propagation-semantics) requires "
         "every hop weight to be non-negative"
     )
+    FrameViolation = (
+        "A boundary phase's frame breaks its structural rule (admit/parse "
+        "frames declaring entries, or a refuse frame naming a non-append-only "
+        "node) -- docs/strata/boundary.md#v0-implementation (T-0069)"
+    )
+    CrossStoreAtomicity = (
+        "An operation's `modifies {} on Err` strong guarantee names an "
+        "atomic-via node that is neither the single store holding every Ok-"
+        "frame target nor a declared coordinator -- distributed atomicity by "
+        "wishful thinking is refused, never silently accepted "
+        "(docs/strata/boundary.md#frames-and-failure-atomicity, T-0069)"
+    )
+    UnknownLogClass = (
+        "An observe block's log class is not one of the fixed vocabulary "
+        "{error_paths, state_transitions, boundary_crossings, crash_events} "
+        "(docs/strata/policy.md#packs, T-0070)"
+    )

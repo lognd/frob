@@ -2521,7 +2521,7 @@ exit 0, gates stage executed. ruff format/check and ty remain clean.
 ```yaml
 id: T-0069
 title: strata six-phase boundaries + outcome-conditioned frames
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-17'
@@ -2537,18 +2537,39 @@ scope:
 - design/litmus/**
 - src/frob/strata/**
 - tests/unit/strata/**
-evidence: []
+evidence:
+- tests/unit/strata/test_boundary_phases.py::TestPhaseBlockHappyPath::test_effect_and_record_phases_generate_flows
+- tests/unit/strata/test_boundary_phases.py::TestOperationFailClosed::test_cross_store_atomic_via_without_coordinator_is_refused
+- tests/unit/strata/test_observe.py::TestEndToEnd::test_phases_operation_and_observe_together
 attachments: []
 acceptance: []
 threat: null
 ```
 admit/parse/judge/effect/record/refuse with per-phase frames and label rules; no-effects-before-judgment; refusal frame is audit-only; error responses are labeled egress flows; modifies-on-Ok/Err claims.
 
+## Done report
+
+Changed: strata-core/src/parse.rs (phase_block/operation/node observability
+grammar + 7 cargo tests), src/frob/strata/_ast.py (PhaseBlock family,
+OperationDecl, ObserveDecl, NodeDecl fields), src/frob/strata/_errors.py
+(FrameViolation, CrossStoreAtomicity, UnknownLogClass),
+src/frob/strata/_elaborate.py (phase/operation validation + conditioned-
+flow construction), src/frob/strata/__init__.py exports,
+docs/strata/boundary.md (## v0 implementation), 19 new pytest cases in
+tests/unit/strata/test_boundary_phases.py + test_observe.py.
+Evidence: 3 pytest node ids above (of 19 new, all green); 71/71 cargo
+tests green; full `tests/unit/strata` suite green (155 tests).
+Filed: none.
+Gates: `frob check --ticket T-0069` exit 0, gates stage executed
+(clones/coverage/decisions/doclink/drift/fuzz/invariant/perf/policy/
+prework/release/test all ran); plain `frob check` exit 0, no skip.
+ruff format/check and ty clean.
+
 <!-- ticket:T-0070 -->
 ```yaml
 id: T-0070
 title: strata errors-total, panics-contained, observe blocks (ERR/OBS gates)
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-17'
@@ -2564,12 +2585,32 @@ scope:
 - design/litmus/**
 - src/frob/strata/**
 - tests/**
-evidence: []
+evidence:
+- tests/unit/strata/test_observe.py::TestObservabilityHappyPath::test_errors_total_and_panics_become_node_attrs
+- tests/unit/strata/test_observe.py::TestObservabilityFailClosed::test_unknown_log_class_is_rejected
+- tests/unit/strata/test_observe.py::TestObservabilityHappyPath::test_errors_total_without_observe_is_non_fatal
 attachments: []
 acceptance: []
 threat: null
 ```
 Exhaustive ErrorSet consumption + variant liveness + no-discarded-Result (graph join); per-language panic chokepoints; observe = obligated labeled flows to an observability node; log rules enable detection SLAs via the cascade.
+
+## Done report
+
+Changed: strata-core/src/parse.rs (node errors_total/panics_contained_by/
+observe grammar), src/frob/strata/_ast.py (ObserveDecl, NodeDecl fields),
+src/frob/strata/_errors.py (UnknownLogClass), src/frob/strata/_elaborate.py
+(_validate_observability, _elaborate_observe_flows), 7 new pytest cases
+in tests/unit/strata/test_observe.py (shared file with T-0069's phase/
+operation tests). v0 scope note: node-only (store did not gain these
+three properties -- grammar deviation documented in
+docs/strata/boundary.md#v0-implementation); ERR/OBS gate wiring into
+`frob check` is out of scope (phase 4), only declared-structure checks
+implemented.
+Evidence: 3 pytest node ids above (of 7 new, all green).
+Filed: none.
+Gates: `frob check --ticket T-0070` exit 0, gates stage executed; plain
+`frob check` exit 0. ruff/ty clean.
 
 <!-- ticket:T-0071 -->
 ```yaml
@@ -2621,7 +2662,7 @@ rust-publicness rule.
 ```yaml
 id: T-0072
 title: strata tube + chirp litmus models + goldens
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-17'
