@@ -83,16 +83,37 @@ def _declared_capability_kinds(model: KernelModel) -> frozenset[str]:
     return frozenset(kinds)
 
 
+def _assumed_cwes(model: KernelModel) -> frozenset[str]:
+    """CWE ids with at least one `assumed` discharging claim (naming
+    convention `weakness:<cwe-id>:<node-id>`, docs/strata/threat.md#the-
+    core-reframe) -- the matrix (T-0224) must never print PROVED for these:
+    an assume is a human-owned TCB entry `_claims.py::evaluate_claims`
+    short-circuits to the `ASSUMED` verdict without ever running it through
+    the closure, so a row backed only by an assume carries weaker assurance
+    than one the closure actually proved and must say so distinctly."""
+    cwes: set[str] = set()
+    for claim in model.claims:
+        if not claim.assumed:
+            continue
+        parts = claim.id.split(":")
+        if len(parts) >= 3 and parts[0] == "weakness":
+            cwes.add(parts[1])
+    return frozenset(cwes)
+
+
 def _row(
     entry: WeaknessEntry,
     *,
     declared: frozenset[str],
     discharge_violations: dict[str, list[ThreatViolation]],
+    assumed: frozenset[str],
 ) -> tuple[str, str, str, str, str, str]:
     """One matrix row: (id, title, precondition-present?, mitigation,
     status/evidence-rung, citation) -- the exact five-column shape the
     charter names, plus the id/title lead columns a human-readable table
-    needs."""
+    needs. `assumed` (T-0224) forces a distinct ASSUMED status whenever the
+    discharging claim is a human-owned assume rather than a closure-proved
+    result -- PROVED must never overstate an assume's assurance."""
     if entry.capability_kind is None:
         precondition = "n/a (design-level)"
         status = "not evaluated (no precondition detector yet, phase A)"
@@ -101,6 +122,8 @@ def _row(
         violations = discharge_violations.get(entry.id, [])
         if violations:
             status = "FAILING: " + "; ".join(v.detail for v in violations)
+        elif entry.id in assumed:
+            status = f"ASSUMED ({entry.rung.value})"
         else:
             status = f"PROVED ({entry.rung.value})"
     else:
@@ -150,6 +173,7 @@ def render_audit_matrix(
         return Err(discharge.danger_err)
 
     declared = _declared_capability_kinds(model)
+    assumed = _assumed_cwes(model)
     by_cwe: dict[str, list[ThreatViolation]] = {}
     for violation in discharge.danger_ok:
         by_cwe.setdefault(violation.cwe, []).append(violation)
@@ -173,7 +197,9 @@ def render_audit_matrix(
         lines.append(_md_row(header))
         lines.append(_md_row(("---", "---", "---", "---", "---", "---")))
         for entry in entries_by_family[family]:
-            row = _row(entry, declared=declared, discharge_violations=by_cwe)
+            row = _row(
+                entry, declared=declared, discharge_violations=by_cwe, assumed=assumed
+            )
             lines.append(_md_row(row))
         lines.append("")
 
