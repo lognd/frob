@@ -2365,7 +2365,7 @@ logand.app pilot: check-gate violations have frob:waive with written reasons, bu
 ```yaml
 id: T-0175
 title: 'agent playbook in-repo: kill per-dispatch retreading'
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-07-18'
