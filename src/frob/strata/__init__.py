@@ -67,6 +67,13 @@ from frob.strata._code_binding import (
     check_import_conformance,
 )
 from frob.strata._crash import CrashContractReport, evaluate_crash_contracts
+from frob.strata._effects import (
+    CapabilityViolation,
+    EffectReport,
+    ObservedEffect,
+    check_capability_conformance,
+    extract_effects,
+)
 from frob.strata._elaborate import elaborate
 from frob.strata._errors import StrataError
 from frob.strata._facts import FactBase, build_facts
@@ -126,6 +133,7 @@ __all__ = [
     "BreachContract",
     "BreachContractReport",
     "CacheDecl",
+    "CapabilityViolation",
     "Capacity",
     "CdnDecl",
     "ClaimDecl",
@@ -137,6 +145,7 @@ __all__ = [
     "CrashContract",
     "CrashContractReport",
     "EffectPhase",
+    "EffectReport",
     "FOREIGN",
     "FactBase",
     "FaultInjectionCase",
@@ -159,6 +168,7 @@ __all__ = [
     "Node",
     "NodeDecl",
     "NoFlow",
+    "ObservedEffect",
     "ObserveDecl",
     "OperationDecl",
     "Outcome",
@@ -192,6 +202,7 @@ __all__ = [
     "Verdict",
     "bind_code",
     "build_facts",
+    "check_capability_conformance",
     "check_import_conformance",
     "compile_policies",
     "elaborate",
@@ -202,6 +213,7 @@ __all__ = [
     "evaluate_crash_contracts",
     "evaluate_saga_contracts",
     "evaluate_scenarios",
+    "extract_effects",
     "generate_fault_injection_cases",
     "parse_module",
     "render_report",
