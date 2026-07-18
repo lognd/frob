@@ -3953,7 +3953,7 @@ issued-by/audience/lifetime/revocation; no credential without a revocation edge 
 ```yaml
 id: T-0083
 title: 'strata std.deploy: endorsement pipeline, canary schedules, rollback budgets'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-17'
@@ -3977,6 +3977,21 @@ acceptance: []
 threat: null
 ```
 Review/build/admit as endorsement boundaries on code-as-data (SLSA falls out); noflow(unreviewed -> prod); staged rate bounds; frob vet as the endorsement evidence for third-party code.
+## Done report
+
+std.deploy desugars entirely to existing kernel machinery (T-0074
+precedent, no parallel evaluator): DeployContract/CanaryStage on
+Node.deploy; canary stages become independent SetTrust scenarios
+(copy-of-model semantics documented in the module docstring), rollback
+budgets gate a RemoveNode recovery scenario (budget comparison against
+measured recovery honestly documented as not yet wired), endorsement
+chains fail closed on missing ids (MissingEndorsement) and
+wrong-direction boundaries (IncompatibleEndorsement, tested with a
+DECLASSIFY boundary). Review round fixed two PERF004 sorted-in-loop
+hits and a PERF003 test pattern by restructuring (no waivers) and
+corrected the report numbers: 296 strata tests in-worktree (288+8),
+check A/B 88 -> 86 with zero deltas attributable to the new files.
+Surface grammar consolidated under T-0136.
 
 <!-- ticket:T-0084 -->
 ```yaml
@@ -6258,7 +6273,8 @@ Root cause found while verifying T-0133's CI degrade job: frob/gates/__init__.py
 <!-- ticket:T-0136 -->
 ```yaml
 id: T-0136
-title: 'strata surface grammar: on deploy / secret constructs unreachable from .strata source text'
+title: 'strata surface grammar: on deploy / secret constructs unreachable from .strata
+  source text'
 state: queued
 kind: bug
 origin: agent
