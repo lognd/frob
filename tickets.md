@@ -1657,3 +1657,20 @@ acceptance: []
 threat: null
 ```
 Diagnostics ONLY -- explicitly NOT a gate family: no rule ids, nothing fails on these numbers, report-only (user directive: for designing tooling around, never for gating). Deliverables: (1) frob CLI entry timing hook -- every frob invocation appends {iso_ts, subcommand, args_head, duration_ms, exit, tree_hash} to .frob/telemetry.jsonl (local-only, already gitignored via .frob/, opt-out env var FROB_NO_TELEMETRY); reuse the per-gate timing frob check already computes by logging it structured instead of display-only. (2) ISO timestamps on ticket state transitions (created/started/done currently date-only) so per-ticket cycle time is computable. (3) EXTERNAL TOOL COVERAGE: ship a Claude Code PostToolUse hook script (scripts/frob-telemetry-hook + docs/guides page with the settings.json snippet) that appends every harness tool invocation -- Bash command head, duration, exit -- to the same telemetry stream; hooks fire for subagents too, so implementer/reviewer runs are covered without per-tool shims; document an optional PATH-shim mode for profiling outside the harness. (4) frob stats --agentic report over the merged stream: per-ticket cycle time and review-round count (parse Done-report addenda), command-time breakdown by category (frob-check / test-suite / native-build / vcs / other), top wall-clock sinks, and RETREAD DETECTION -- identical command+tree_hash re-runs counted as cache-hit candidates, which directly quantifies the T-0177 daemon payoff before it is built. (5) coordinator flow: document attaching the harness usage block (tokens, tool_uses, duration per dispatch role) at ticket close via the existing frob ticket attach, so cost history survives sessions. Privacy: telemetry never committed, never networked, redact anything matching the T-0157 secrets patterns before writing the command head. Tests: hook script emits valid JSONL under fake invocations; stats aggregation over a fixture stream; redaction case.
+
+Addendum (user, 2026-07-18) -- TOKENS as a first-class dimension beside
+time: (a) per-tool-call token cost -- the PostToolUse hook also records
+an output-size token estimate (len/4 heuristic is fine; note the method)
+for every tool result, since tool OUTPUT is what silently consumes agent
+context: the report must rank tools by cumulative output tokens (e.g.
+'frob check dumps cost N tokens/run x M runs') to identify which tools
+need quieter output modes or pagination; (b) per-development-stage
+attribution -- bucket both time and tokens by lifecycle stage, using the
+telemetry markers already present in the stream (frob ticket start ->
+first edit -> first test run -> evidence recording -> done report) and
+by dispatch role (implement / review / rework round N / land), so the
+report answers 'what does a REJECT round cost in tokens and minutes'
+with measured numbers; (c) the coordinator-attached harness usage block
+(subagent_tokens, tool_uses, duration per dispatch) is the ground truth
+to reconcile the per-call estimates against -- report both and the
+discrepancy.
