@@ -280,7 +280,7 @@ def _observed_extended_kinds_by_node(
     per_node: dict[str, set[str]] = {}
     for rel in _sorted_owned_files(binding):
         path = root / rel
-        if is_self_pattern_path(path):
+        if is_self_pattern_path(path, root):
             continue
         owner = binding.owner[rel]
         found = scan_file_capabilities(path) & _EXTENDED_KINDS
@@ -308,7 +308,7 @@ def _observed_all_kinds_by_node(
     per_node: dict[str, set[str]] = {}
     for rel in _sorted_owned_files(binding):
         path = root / rel
-        if is_self_pattern_path(path):
+        if is_self_pattern_path(path, root):
             continue
         owner = binding.owner[rel]
         raw = scan_file_capabilities(path)
