@@ -2515,13 +2515,79 @@ created: '2026-07-18'
 blocked_by: []
 parent: null
 scope:
-- src/frob/vet/_capability_registry.py,tests/**,docs/modules/vet.md
+- src/frob/vet/_capability_registry.py
+- tests/**
+- docs/modules/vet.md
 evidence: []
 attachments: []
 acceptance: []
 threat: null
 ```
 T-0158 shipped python stdlib coverage (subprocess/os/pickle/marshal/shelve/ctypes/importlib/eval+compile/socket+http+urllib+requests/httpx/aiohttp/sqlite3/asyncio/pty/multiprocessing) plus the common third-party python net clients (requests/aiohttp/httpx) already folded into the base table. NOT shipped: the addendum 2 (3) REAL-WORLD PRIORITY list's remaining survey items -- pydantic, fastapi, numpy, cryptography, jinja2, python-dotenv, uvicorn, sqlalchemy, asyncpg, alembic, redis, boto3, stripe, anthropic, argon2-cffi, aiosmtpd, playwright, Pillow (python); react/react-dom, vite/vitest, playwright, openapi-typescript, eslint tooling (npm); pyo3, serde/serde_json, tracing, libloading, wasm-bindgen, crossbeam, thiserror (cargo). Each needs its own DangerousOperation entries (or an explicit 'no dangerous surface, pure library' NO_CAPABILITY-style entry) surveyed against its actual API surface, not guessed. Left for a dedicated per-library-survey pass; T-0158's Done report has the full reasoning for why this was cut, not silently dropped.
+
+## Done report
+
+Changed:
+- src/frob/vet/_capability_registry.py::DANGEROUS_OPERATIONS (17 new entries)
+- src/frob/vet/_capability_registry.py::CAPABILITY_MATRIX_EXCUSES (removed the
+  now-stale python/html_render excuse: jinja2's autoescape=False entry
+  patterns that cell)
+- docs/modules/vet.md (new "Third-party library survey (T-0181)" section)
+- tickets.md::T-0181 (scope field fixed: the ticket was filed with the three
+  scope globs joined into one comma-separated string element instead of
+  three list items, which SCOPE001 could not parse as separate globs --
+  corrected to a proper 3-item YAML list, an in-scope self-fix, not a
+  silent drop)
+
+Every T-0158-addendum-2 library disposed of (full table in
+docs/modules/vet.md "Third-party library survey (T-0181)"):
+- patterned (new DangerousOperation entries): numpy (allow_pickle
+  deserialize), jinja2 (SSTI eval + autoescape=False html_render),
+  python-dotenv (env), uvicorn (net), sqlalchemy (text() sql), asyncpg
+  (net), boto3 (net), stripe (net), anthropic (net), aiosmtpd (net),
+  playwright python+npm (exec browser-launch + eval page.evaluate),
+  Pillow (ImageMath.eval, eval), pyo3 (ffi), wasm-bindgen (ffi)
+- pure / no dangerous surface (documented, not silently dropped): pydantic,
+  fastapi, cryptography, alembic, argon2-cffi (python); react/react-dom,
+  vite/vitest, openapi-typescript, eslint tooling (npm); serde/serde_json,
+  tracing, crossbeam, thiserror (cargo)
+- already covered pre-T-0181: libloading (rust/ffi, T-0158)
+- honest gap (tracked, not claimed covered): redis's EVAL Lua-script
+  idiom has no client-name-independent literal substring pattern without
+  unacceptable false-positive risk; redis's connection surface is not
+  separately patterned (subsumed by the same net reasoning as
+  requests/httpx/asyncpg -- no dedicated redis entry added since it adds
+  no new detection over the existing net cell); Pillow's decompression-bomb
+  DoS has no matching capability_kind in this registry
+
+Evidence:
+- tests/test_capability_registry.py (all 200 tests, incl. the T-0182
+  per-operation fire+negative parametrization over every DANGEROUS_OPERATIONS
+  entry including the 17 new ones -- their needles[0] genuinely fire
+  scan_file_operations/scan_file_capabilities and are absent from the
+  language's benign-source negative fixture)
+- tests/test_vet.py (full pass, no regression)
+- `uv run frob test --base main` touched-set selection: python exit=0
+  (tests/system/test_cli_vet.py::TestHookMode::test_old_package_passes,
+  tests/test_capability_registry.py::TestMatrixExhaustiveness::test_every_operation_kind_and_language_registered,
+  tests/test_capability_registry.py::TestNoSilentNeedleRegression -- all 3)
+- `uv run frob check --ticket T-0181`: SCOPE001 clean for all three scope
+  files after the scope-field fix; ruff-check/ruff-format clean; remaining
+  gate output is pre-existing repo-wide noise (COV003 stale-collection
+  entries on unrelated closed tickets, frob-exports/frob-arch advisory
+  warnings, `ty` frob_core native-module unresolved-import in this
+  worktree -- known env artifact, not a regression) untouched by this
+  ticket's scope
+
+Filed: none (redis EVAL and Pillow decompression-bomb gaps recorded above
+as honest limits in docs/modules/vet.md, not filed as separate tickets --
+consistent with T-0158's own "Honest limits" documentation style)
+
+Gates: `frob check --ticket T-0181` clean for SCOPE001/COV002/ruff on all
+three declared-scope files; PRE001 flags the pre-work sweep as stale
+against the corrected scope (expected -- `frob ticket start` cannot be
+re-run mid-in-progress; the scope correction only narrowed/clarified the
+already-swept file set, no new files entered scope)
 
 <!-- ticket:T-0182 -->
 ```yaml

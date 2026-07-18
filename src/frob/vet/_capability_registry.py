@@ -1006,8 +1006,7 @@ DANGEROUS_OPERATIONS: tuple[DangerousOperation, ...] = (
         "deserialize",
         "loading a .npy/.npz file with allow_pickle=True lets the file's "
         "embedded pickle stream execute arbitrary code on load",
-        "never set allow_pickle=True for untrusted files; the default "
-        "(False) is safe",
+        "never set allow_pickle=True for untrusted files; the default (False) is safe",
         "critical",
         ("allow_pickle=True",),
         ("CWE-502",),
@@ -1033,8 +1032,7 @@ DANGEROUS_OPERATIONS: tuple[DangerousOperation, ...] = (
         "html_render",
         "disables Jinja2's automatic HTML escaping, letting injected markup "
         "render unescaped",
-        "use autoescape=True (or select_autoescape) for any HTML-producing "
-        "environment",
+        "use autoescape=True (or select_autoescape) for any HTML-producing environment",
         "high",
         ("autoescape=False",),
         ("CWE-79",),
@@ -1044,10 +1042,8 @@ DANGEROUS_OPERATIONS: tuple[DangerousOperation, ...] = (
         "python-dotenv",
         "dotenv.load_dotenv",
         "env",
-        "loads environment variables from a .env file into the process "
-        "environment",
-        "keep .env out of version control and out of any untrusted-writable "
-        "path",
+        "loads environment variables from a .env file into the process environment",
+        "keep .env out of version control and out of any untrusted-writable path",
         "low",
         ("load_dotenv(",),
         (),
@@ -1081,8 +1077,7 @@ DANGEROUS_OPERATIONS: tuple[DangerousOperation, ...] = (
         "asyncpg",
         "asyncpg.connect",
         "net",
-        "opens an async PostgreSQL network connection using supplied "
-        "credentials/host",
+        "opens an async PostgreSQL network connection using supplied credentials/host",
         "validate the connection target and load credentials from a vetted "
         "secret store",
         "medium",
@@ -1107,8 +1102,7 @@ DANGEROUS_OPERATIONS: tuple[DangerousOperation, ...] = (
         "stripe",
         "stripe.api_key / stripe.Charge.create",
         "net",
-        "issues authenticated payment-processing API calls carrying a live "
-        "secret key",
+        "issues authenticated payment-processing API calls carrying a live secret key",
         "load stripe.api_key from a vetted secret store; never accept "
         "attacker-controlled amounts/params unvalidated",
         "medium",
@@ -1169,8 +1163,7 @@ DANGEROUS_OPERATIONS: tuple[DangerousOperation, ...] = (
         "Pillow",
         "PIL.ImageMath.eval",
         "eval",
-        "evaluates a string expression against image data, an eval-"
-        "adjacent primitive",
+        "evaluates a string expression against image data, an eval-adjacent primitive",
         "never build the ImageMath expression from untrusted input",
         "high",
         ("ImageMath.eval(",),
@@ -1219,8 +1212,7 @@ DANGEROUS_OPERATIONS: tuple[DangerousOperation, ...] = (
         "pyo3",
         "Python::with_gil / pyo3::prelude",
         "ffi",
-        "embeds/calls into the Python interpreter from Rust across the FFI "
-        "boundary",
+        "embeds/calls into the Python interpreter from Rust across the FFI boundary",
         "keep the embedded-Python surface minimal and audited; never eval "
         "attacker-controlled Python strings through it",
         "high",
