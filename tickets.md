@@ -5489,7 +5489,7 @@ ticket's edits shifted line numbers for.
 ```yaml
 id: T-0113
 title: 'threat C: CWE-sink effect extraction + mitigation chokepoint verification'
-state: queued
+state: in-progress
 kind: security
 origin: human
 created: '2026-07-17'

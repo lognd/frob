@@ -14,6 +14,8 @@ real.
 
 ## Getting started
 
+- `docs/guides/install.md` -- the bare, full (native-extension), and dev
+  install paths, and why the standalone tool needs --with for the crates.
 - `docs/guides/quickstart.md` -- a real end-to-end walkthrough: build the graph,
   file a ticket, annotate code, hit a violation, fix it, ack, test, close.
 - `docs/guides/agentic-workflow.md` -- the human/AI split: how planner, implementer,
