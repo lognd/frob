@@ -329,3 +329,97 @@ public symbols and test methods. `uv run pytest tests/unit/strata/ -q`:
 full suite green (all tests, including the audit/litmus regression this
 work initially broke and then fixed). `frob test --base main`: touched-set
 selection green (exit=0).
+
+<!-- ticket:T-0145 -->
+```yaml
+id: T-0145
+title: 'per-CWE litmus fixtures: every catalog weakness fires from real .strata source'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- tests/unit/strata/litmus/**
+- tests/unit/strata/test_litmus_cwe.py
+- docs/strata/threat.md
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Every WeaknessEntry in CWE_CATALOG and CWE_TOP_25_CATALOG must be exercised by a real .strata litmus project in which its obligation FIRES from parsed surface source (strata_core parse of a .strata file), not from hand-built kernel objects -- plus a hardened variant that discharges it wherever the kernel can express the mitigation. Parametrize the test over the union of both catalogs so adding a WeaknessEntry without a firing fixture FAILS the suite (vacuous-pass doctrine, drift-lock style like the tmLanguage keyword parity test). Follow the existing vuln/hardened litmus pair precedent. OutOfScopeEntry rows are exempt but the test must assert the exemption list matches the catalog's out-of-scope ids exactly so nothing silently escapes.
+
+<!-- ticket:T-0146 -->
+```yaml
+id: T-0146
+title: 'cvelistV5 record parser: pydantic models for CVE Record Format v5'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/cve/**
+- tests/unit/cve/**
+- docs/modules/cve.md
+- docs/index.md
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Parser for CVE Record Format v5 JSON as published in github.com/CVEProject/cvelistV5. Pydantic v2 models: cveMetadata (id/state/dates), containers.cna and containers.adp (affected products with vendor/product/versions incl. lessThan/lessThanOrEqual/versionType/status semantics, problemTypes with CWE ids, metrics CVSS v3.1 and v4.0, references, descriptions), REJECTED-state records. parse_record(path) and iter_mirror(dir) over a local clone/snapshot layout (cves/YYYY/NNNxxx/CVE-*.json). typani Result error values; an unparseable record is a loud typed failure, never a silent skip (vacuous-pass doctrine). NO network anywhere: tests run against a handful of real record JSONs committed as fixtures covering the shape variety (version ranges, multiple containers, rejected, cwe-bearing problemTypes). This ticket is parser+models only; vet integration is the follow-up ticket.
+
+<!-- ticket:T-0147 -->
+```yaml
+id: T-0147
+title: 'frob vet: match dependencies against a local cvelistV5 mirror, link CVEs to
+  the threat catalog'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-18'
+blocked_by:
+- T-0146
+parent: null
+scope:
+- src/frob/cve/**
+- src/frob/vet/**
+- tests/unit/cve/**
+- docs/modules/vet.md
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Build on the T-0146 parser: frob vet gains CVE matching against a local cvelistV5 mirror directory (configured via [tool.frob] in pyproject.toml; explicit CLI flag override). Match project dependencies (name plus installed version) against affected[] product/version ranges honoring lessThan/lessThanOrEqual/versionType/status semantics; report CVE id, CVSS score/severity, and description. Link each CVE's problemTypes CWE ids to the strata threat catalog (CWE_CATALOG plus CWE_TOP_25_CATALOG) so a dependency CVE citing e.g. CWE-89 names the catalog entry and mitigation that covers it, and OutOfScopeEntry ids are reported as such. Loud typed failure when a mirror path is configured but missing or unreadable (vacuous-pass doctrine); clean no-op only when no mirror is configured. Tests: fixture mirror dir with a handful of real records; matching cases covering range semantics, rejected records skipped-with-log, and the CWE linkage.
+
+<!-- ticket:T-0148 -->
+```yaml
+id: T-0148
+title: drive frob check gates to zero violations
+state: queued
+kind: bug
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/**
+- tests/**
+- docs/**
+- frob.toml
+- pyproject.toml
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+The gates stage currently reports 87 violation(s), 55 waived on main. End state: the gates line reports 0 violation(s). Triage every reported item: (1) fix it properly, (2) add a narrowly-scoped frob:waive with a specific written reason where the rule genuinely misfires, or (3) file a specific follow-up ticket and mark the site frob:todo T-#### when the fix is real but out of scope. No blanket or file-level waivers; no rule disabling in frob.toml without a written rationale in the Done report. Document the per-rule-family outcome table (family, count, disposition) in the Done report. Run AFTER the current wave lands (T-0140/T-0141/T-0144/T-0145/T-0146 touch overlapping files).
