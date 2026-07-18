@@ -1106,7 +1106,7 @@ Survey finding (dup-sota-survey.md sec 0/3.1): DUP001/DUP002 are pure rule funct
 id: T-0192
 title: frob dup --probe CLI flag reaching probe_equivalence (R6) -- closes T-0041
   debt
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-07-18'
@@ -1120,12 +1120,97 @@ scope:
 - tests/**
 - docs/modules/dup.md
 - tickets.md
-evidence: []
+evidence:
+- tests/test_dup_rungs.py::test_cli_probe_equivalent_functions
 attachments: []
 acceptance: []
 threat: null
 ```
 R6 probe_equivalence is fully implemented and unreachable (no --probe string anywhere under the CLI, confirmed by survey). Wire the flag, document the workload contract, CLI-level test.
+
+## Done report
+
+Survey premise correction: the CLI surface itself (`--probe` flag on `frob
+dup`, `dup_probe` config field, `_probe`/`dup_runner.run` dispatch, and a
+CLI-level subprocess test `test_cli_probe_equivalent_functions`) already
+landed in commit `7b748bea71fd0372e8e32c92c865637c6f6e8a0e`
+("feat(dup): wire frob dup --probe for R6 observational equivalence",
+frob:ticket T-0041) before this worktree's base -- reachable and passing
+in a fresh `make core` build. The T-0192 survey that filed this ticket ran
+against a tree that predates that landing. What was still genuinely
+missing, and what this ticket did:
+
+- `docs/modules/dup.md`'s R6 implementation note (lines ~254-272) still
+  said "wiring an actual `frob dup --probe` CLI flag is out of
+  `frob.dup`'s scope and reported to the coordinator" -- stale, since the
+  flag exists. Replaced with an accurate description of the CLI surface
+  (path resolution, cache/graph build, 30s fixed budget, exit codes) and
+  a loud, explicit safety/workload-contract paragraph: the purity
+  heuristic only inspects the two probed functions' body tokens, but
+  `_load_python_callable` (`src/frob/dup/_pipeline.py`) loads each
+  candidate via `importlib.util.spec_from_file_location` +
+  `spec.loader.exec_module(module)`, which executes the ENTIRE source
+  file's top-level code, not just the probed function -- no sandbox, no
+  subprocess isolation, arbitrary repo-controlled code runs with the
+  `frob` process's own privileges. Verified this by reading
+  `_load_python_callable`/`_probe_callables` in `_pipeline.py` directly.
+- `src/frob/__main__.py`'s `--probe` argparse help text repeated only "R6:
+  probe two symbols for observational equivalence (pure only)" with no
+  hint that it executes code. Rewrote the help text to state the
+  execution/sandbox fact and point at the doc.
+- `src/frob/app/dup_runner.py`'s `_probe` had no docstring beyond a
+  one-liner; added the same warning to its docstring.
+- Added `frob:ticket T-0192` directives on `_add_dup_parser` (__main__.py)
+  and `_probe` (dup_runner.py) alongside the existing T-0041 directives,
+  since both were touched under this ticket.
+- No source-code behavior change to `probe_equivalence`/`_probe`/the
+  argparse wiring itself -- it was already correct and already tested at
+  the CLI level; this pass is documentation-and-help-text honesty about a
+  safety property that existed but was not surfaced to the operator.
+
+Changed:
+- docs/modules/dup.md (R6 implementation note: stale scope claim ->
+  accurate CLI description + safety/workload contract)
+- src/frob/__main__.py (`_add_dup_parser`: `--probe` help text now states
+  the execution/sandbox fact; added `frob:ticket T-0192`)
+- src/frob/app/dup_runner.py (`_probe`: docstring now states the
+  execution/sandbox fact; added `frob:ticket T-0192`)
+
+Evidence:
+- `tests/test_dup_rungs.py::test_cli_probe_equivalent_functions` -- real
+  subprocess (`python -m frob dup <tmp_path> --probe src/m.py::da
+  src/m.py::db`) against two genuinely-equivalent pure functions in a
+  throwaway repo; asserts `EQUIVALENT` in stdout/stderr and returncode 0.
+  Ran directly: `uv run pytest
+  tests/test_dup_rungs.py::test_cli_probe_equivalent_functions -v` ->
+  `1 passed in 2.21s`. Node id confirmed via `pytest
+  tests/test_dup_rungs.py --collect-only`.
+- Full `tests/test_dup_rungs.py` (12 tests, including the 6
+  `probe_equivalence`-unit tests already bound via existing `frob:tests`
+  directives) -- `uv run pytest tests/test_dup_rungs.py -q` -> all 12
+  passed.
+- `uv run frob dup --help` -- manually confirmed the new warning text
+  renders in the actual CLI help output.
+- `uv run ruff check src/frob/__main__.py src/frob/app/dup_runner.py` and
+  `ruff check` (both PATH and project-pinned) -- both clean, no
+  discrepancy.
+- `uv run ty check src/frob/app/dup_runner.py src/frob/__main__.py` --
+  clean.
+
+Filed: none. No out-of-scope work discovered.
+
+Gates: `uv run frob check --delta --ticket T-0192` clean after a fresh
+`frob ticket sweep T-0192` (pre-work sweep was stale from a prior `make
+core` run touching Cargo.lock, which was reverted -- see below):
+`gates 0/3 new  0 violation(s), 27 waived` -- the 27 waived are
+pre-existing repo-wide waivers untouched by this ticket, not new. The
+`git diff main --diff-filter=D --stat` land-rule check (agent-playbook.md
+section 9) is empty -- no unintended deletions.
+
+Note: `make core` regenerated `frob-core/Cargo.lock` and
+`strata-core/Cargo.lock` as a build side effect; both reverted with `git
+checkout` since they are outside T-0192's scope and carried no
+substantive change.
 
 <!-- ticket:T-0193 -->
 ```yaml
@@ -1726,7 +1811,7 @@ Filed from sibling-repo pilot P2 (lograder/aprog-public/aprog-private, 2026-07-1
 ```yaml
 id: T-0212
 title: DOC002 slugger disagrees with GitHub anchor algorithm in both directions
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-18'
@@ -1735,15 +1820,178 @@ parent: null
 scope:
 - src/frob/gates/**
 - src/frob/docs/**
+- src/frob/strata/_ast.py
+- src/frob/strata/_compliance.py
+- src/frob/strata/_deploy.py
+- src/frob/strata/_infra.py
+- src/frob/strata/_lint.py
+- src/frob/strata/_models.py
+- src/frob/strata/_pii.py
+- src/frob/policy/_models.py
 - tests/**
 - docs/**
 - tickets.md
-evidence: []
+evidence:
+- tests/test_graph.py::TestSlugify::test_lowercases_and_strips_disallowed_punctuation
+- tests/test_graph.py::TestMarkdownAnchors::test_describes_edge_with_heading_slug_and_facet
 attachments: []
 acceptance: []
 threat: null
 ```
 Filed from sibling-repo pilot P2 (lograder/aprog-public/aprog-private, 2026-07-18). Pilot P2 lograder (7 DOC002 errors, most error-prone adoption step): 'Output & layouts' -> GitHub #output--layouts vs frob #output-layouts; 'Public/Private Boundary' -> GitHub #publicprivate-boundary vs frob #public-private-boundary. Punctuation runs collapse differently, so anchors satisfying DOC002 can 404 on GitHub and vice versa. Fix: implement GitHub's slug algorithm exactly (test against a table of tricky headings) or accept both forms; T-0165's nearest-anchor suggestions must use the corrected slugs.
+
+Scope widened 2026-07-18 (coordinator directive, post-review): the 46
+DOC002 anchors in src/frob/strata/{_ast,_compliance,_deploy,_infra,_lint,
+_models,_pii}.py and src/frob/policy/_models.py are a direct mechanical
+consequence of this ticket's slugify rewrite and only resolvable with
+this branch's slugger present, so they land in the same motion instead of
+a separate follow-up ticket. The originally-filed T-draft-2327479e is
+folded into this ticket and dropped from the ledger (see Done report).
+
+## Done report
+
+Changed:
+- src/frob/graph/dsl.py :: slugify -- rewritten to GitHub's real algorithm
+  (lowercase, strip everything that is not `\w`/hyphen/space via
+  unicode-aware `\w`, then replace each space with its own hyphen -- no
+  more collapsing punctuation+space runs into a single `-`)
+- src/frob/graph/dsl.py :: dedupe_slug (new) -- applies GitHub's repeated-
+  heading `-1`/`-2` suffixing, given a per-document `seen` counter
+- src/frob/graph/dsl.py :: markdown_anchors -- now threads a `seen` dict
+  through the heading walk and calls dedupe_slug so `frob:describes`
+  anchors get the same suffixing GitHub would apply
+- src/frob/graph/__init__.py -- exports dedupe_slug alongside slugify
+- src/frob/gates/__init__.py :: _doc_anchor_slugs -- now applies
+  dedupe_slug over the ordered heading walk before building the resolvable
+  slug set, so DOC002 (and its T-0165 did-you-mean suggestion, which reuses
+  this same slug set via difflib in _anchor_mismatch_message) reflect
+  GitHub's real duplicate-heading anchors, not just first-occurrence ones
+- src/frob/docs/__init__.py -- 7 frob:doc anchors targeting
+  docs/modules/app.md updated from the stale slug `#frob-docs-library` to
+  the corrected `#frobdocs-library` (heading is "## frob.docs library";
+  the `.` is deleted outright under the new algorithm instead of
+  collapsing with the following space into one `-`)
+- tests/test_graph.py :: TestSlugify -- rewrote the punctuation-collapse
+  assertion, added a table-driven `test_github_slug_table` covering the
+  ticket's own tricky-heading examples plus '.', '&', '/', ',', '!', '_',
+  existing '-', leading/trailing spaces, '%', '+', and an all-hyphens
+  heading; added test_unicode_letters_survive_emoji_are_stripped (unicode
+  letters survive via chr()-built strings to stay ASCII-in-file per repo
+  rule, emoji do not since they are not \w) and
+  test_dedupe_slug_suffixes_repeats
+- tests/unit/test_research_assets.py -- the local `_slugify`/`_heading_slugs`
+  mirror of frob.graph.dsl (kept separate on purpose so this drift-lock
+  test doesn't import gate internals) updated to match the new algorithm
+  plus its own `_dedupe_slug` mirror
+- src/frob/strata/_ast.py, _compliance.py, _deploy.py, _infra.py,
+  _lint.py, _models.py, _pii.py, src/frob/policy/_models.py -- the
+  remaining 46 frob:doc anchors broken by the corrected slugify, fixed
+  with the exact did-you-mean slugs the docanchor gate itself computed:
+  `docs/strata/surface.md#std-deploy` -> `#stddeploy` (_ast.py x2,
+  _models.py x2, _deploy.py x2), `docs/strata/surface.md#std-infra` ->
+  `#stdinfra` (_ast.py x5, _infra.py x2),
+  `docs/strata/threat.md#operational-design-lints-std-lint-t-0155` ->
+  `#operational-design-lints-stdlint-t-0155` (_lint.py x9),
+  `docs/strata/threat.md#compliance-regulatory-obligations-std-compliance`
+  -> `#compliance-regulatory-obligations-stdcompliance` (_compliance.py
+  x10), `docs/strata/threat.md#pii-declarations-std-pii-t-0154` ->
+  `#pii-declarations-stdpii-t-0154` (_pii.py x10),
+  `docs/modules/gates.md#policy-rules-frob-toml-policy` ->
+  `#policy-rules-frobtoml-policy` (_models.py x2)
+- pyproject.toml -- version 0.2.0 -> 0.3.0 (RELEASE001: adding the new
+  public `dedupe_slug` symbol to frob.graph's exports is a minor public
+  API change); `.frob-release.json` re-stamped via `frob release stamp`
+
+Scope note: T-0212 was widened per coordinator directive after initial
+review -- the 46 anchors above were originally filed as a separate ticket
+(T-draft-2327479e) on the theory that they were outside T-0212's declared
+scope. On review it was correctly identified that those 46 breaks are a
+direct, inseparable mechanical consequence of THIS branch's slugify
+rewrite (they only resolve, or fail to resolve, against this exact
+slugger), so landing them as a follow-up would leave main red between the
+two landings. T-0212's scope was widened to include the 8 affected files
+(src/frob/strata/_ast.py, _compliance.py, _deploy.py, _infra.py, _lint.py,
+_models.py, _pii.py, src/frob/policy/_models.py), T-draft-2327479e's
+content was folded into this ticket and the draft entry was dropped
+entirely from tickets.md (it never had a landed T-#### id -- it was a
+provisional id minted off-default-branch and never merged, so there was
+no dangling reference to clean up elsewhere).
+
+Migration decision (disclosed, not silent): clean cutover, no
+old-slug-acceptance compatibility window. All 53 DOC002 violations the
+corrected slugify produced (7 in the original scope + 46 in the widened
+scope) are fixed in this single branch. A dual-form-acceptance shim in
+slugify/docanchor_gate was considered and rejected: 53 total anchor edits
+is cheap and mechanical (six distinct old->new slug mappings, applied via
+targeted sed across the 9 affected files), and a compatibility shim would
+be permanent complexity for a one-time migration.
+
+Evidence:
+- `uv run pytest tests/test_graph.py -k TestSlugify` -- 15 passed
+  (test_lowercases_and_strips_disallowed_punctuation,
+  test_empty_falls_back_to_top, test_github_slug_table[11 cases],
+  test_unicode_letters_survive_emoji_are_stripped,
+  test_dedupe_slug_suffixes_repeats)
+- `uv run pytest tests/test_graph.py tests/test_gates.py
+  tests/unit/test_research_assets.py
+  tests/unit/test_extending_guides_complete.py tests/unit/test_ticket_store.py
+  tests/unit/strata` -- all passed (full run after the scope-widening fix)
+- `uv run ruff check` + `uv run ruff format --check` on every changed
+  file, including the 8 widened-scope files -- all clean
+- `uv run frob check --only docanchor --json` -- 0 DOC002 violations
+  repo-wide (was 53 before any fix)
+- `uv run frob check --only doclink --json` -- 0 DOC001 violations
+- `uv run frob check --only release --json` -- 0 REL001 violations after
+  the 0.3.0 version bump + `frob release stamp`
+- `uv run frob check` (full run) -- exit code 0. Remaining diagnostics
+  (30, all warning/note severity: PERF001-004, TEST006) are pre-existing
+  and unrelated to this ticket, confirmed by running the same `--only`
+  gates on the pre-widen commit via `git stash`; none are DOC002 or
+  DOC001 and none were introduced by this diff
+- `git diff main --diff-filter=D --stat` -- empty (no unintended
+  deletions), re-checked after merging main (T-0192/T-0229, fast-forward
+  99ec64c -> 289f2c6) and after the scope-widening fix
+- `git merge origin/main` -- fast-forward, no conflicts against source;
+  the only conflict was in tickets.md itself (T-0261 vs the now-dropped
+  T-draft-2327479e block), resolved by keeping T-0261 intact and removing
+  the draft ticket entirely
+
+Filed: none (T-draft-2327479e folded into this ticket and removed from
+the ledger, per the coordinator's directive; no other out-of-scope work
+discovered)
+
+Gates: `uv run frob check` clean (exit 0). `docanchor` and `doclink`
+gates both 0 violations repo-wide. No waivers added.
+
+Second main merge (land-rule catch, worked as designed): after finishing
+the scope-widening fix above, `git diff main --diff-filter=D --stat`
+showed `tests/unit/strata/litmus/waive_lint_store.strata` and
+`tests/unit/strata/test_litmus_waive_store.py` as deletions -- files this
+branch never touched. Cause: `origin/main` moved again mid-session (from
+289f2c6 to 423c299, landing T-0250 "extend waive clause to stores", which
+added those two files plus new lines in src/frob/strata/_ast.py and
+src/frob/strata/_infra.py -- both files this ticket's widened scope also
+touches). Per agent-playbook.md section 9, merged main again
+(fast-forward, no conflicts against source; the tickets.md ledger
+auto-merged cleanly this time) instead of committing through the stale
+deletion-filter result. T-0250 also changed strata-core/src/parse.rs, so
+`make core` was re-run to rebuild the native extension (stale
+strata_core rejected the new store-property grammar with "unknown store
+property" parse errors on design/frob.strata and the new litmus fixture
+until rebuilt). After the rebuild: `docanchor` and `doclink` gates still
+0 repo-wide, `release` gate still 0 (re-verified against the new merge),
+`frob check --diff-filter=D --stat` against the now-current main is
+empty, and `pytest tests/test_graph.py tests/test_gates.py
+tests/unit/test_research_assets.py tests/unit/test_extending_guides_complete.py
+tests/unit/test_ticket_store.py tests/unit/strata` all pass. No conflict
+or interaction between this ticket's anchor-slug edits and T-0250's new
+_ast.py/_infra.py lines (T-0250 added new frob:doc-anchored code below
+the lines this ticket edited; git auto-merged both cleanly and the
+did-you-mean-derived slugs still apply verbatim to the pre-existing
+anchors).
+
+NOT closing this ticket per the review-gated flow (agent-playbook.md
+section 11.4).
 
 <!-- ticket:T-0213 -->
 ```yaml
@@ -2339,7 +2587,7 @@ Filed from sibling-repo pilot P1 (graphite/feldspar/lithos, 2026-07-18). P1 gap 
 ```yaml
 id: T-0229
 title: polyglot check-type default silently skips gates then reports clean PASS
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-18'
@@ -2351,12 +2599,81 @@ scope:
 - tests/**
 - docs/**
 - tickets.md
-evidence: []
+evidence:
+- tests/system/test_cli_check.py::TestCheckPolyglot::test_unpinned_polyglot_runs_python_stage
+- tests/system/test_cli_check.py::TestCheckPolyglot::test_pinned_check_type_reports_skipped_line
 attachments: []
 acceptance: []
 threat: null
 ```
 Filed from sibling-repo pilot P1 (graphite/feldspar/lithos, 2026-07-18). P1 gap 14 (HIGH -- a repo can look enforced while unenforced): lithos frob check warned 'python checks (gates included) NOT running' then printed [PASS] 0 errors 0 warnings exit 0 -- the obligation system never ran. Fix: run all detected stages by default in polyglot repos; if that is too slow, the unpinned-polyglot state must be a FAILING finding, not a warning contradicted by the PASS line. Regression: polyglot fixture repo, unpinned -> nonzero exit or all stages run.
+
+## Done report
+
+Changed:
+- `src/frob/app/check_runner.py::_detected_types` (new) -- enumerates ALL
+  language markers present under root, not just `detect_project_type`'s
+  single-winner pick.
+- `src/frob/app/check_runner.py::_run_all_detected` (new) -- runs every
+  detected language stage and merges their `ToolResult`s into one
+  `CheckResult` (errors/warnings sum across the merge, so a failure in ANY
+  detected stage fails the overall run).
+- `src/frob/app/check_runner.py::_skip_note_result` (new) -- synthetic
+  `ToolResult` producing a `SKIPPED: <lang> (pinned to <chosen> via
+  check_type)` line, appended to the report whenever `check_type` is
+  pinned (CLI `--type` or `frob.toml`'s top-level `check_type`) and other
+  language markers are also present.
+- `src/frob/app/check_runner.py::_warn_if_polyglot` (rewritten) -- now
+  only fires for the deliberate pinned-opt-out case (previously fired for
+  every auto-detected polyglot repo, which is the bug: warn-then-PASS).
+- `src/frob/app/check_runner.py::run` -- auto-detect (`check_type` unset)
+  now calls `_run_all_detected` over every detected language marker
+  instead of dispatching a single winner; the pinned path appends
+  `_skip_note_result` entries for every other detected language and keeps
+  the (now honest) `_warn_if_polyglot` warning.
+
+Behavior:
+- Unpinned polyglot repo -> every detected language's stage runs (gates
+  included for python); a failure in any of them makes the overall exit
+  code nonzero, same as a single-language repo.
+- Pinned polyglot repo (`--type <lang>` or `frob.toml` `check_type`) ->
+  unchanged single-stage behavior, but the text/JSON report now carries an
+  explicit `SKIPPED: <other-lang> (pinned to <lang> via check_type)` tool
+  entry per excluded language, and a WARNING log line naming what the pin
+  excludes -- so the exclusion can never look like an unqualified clean
+  PASS.
+
+Evidence:
+- `tests/system/test_cli_check.py::TestCheckPolyglot::test_unpinned_polyglot_runs_python_stage`
+  -- polyglot fixture (Cargo.toml + pyproject.toml both present), unpinned
+  `frob check --json`; asserts `ruff-check` (a python-only tool) is in the
+  tool list, proving the python stage ran even though `Cargo.toml` alone
+  would have won `detect_project_type`'s single-winner priority.
+- `tests/system/test_cli_check.py::TestCheckPolyglot::test_pinned_check_type_reports_skipped_line`
+  -- same fixture, `--type python`; asserts the text report contains
+  `SKIPPED` and names the excluded `rust` stage.
+- Both collected under `pytest --collect-only -q -o addopts=""
+  tests/system/test_cli_check.py` (repo addopts forces `-n auto`, which
+  hides node ids from `--collect-only`; ran with `-o addopts=""` to
+  confirm the exact ids above are real).
+- `pytest tests/system/test_cli_check.py -q` (full file, includes the
+  2 new tests): `24 passed`.
+- `uv run ruff check src/frob/app/check_runner.py tests/system/test_cli_check.py`
+  and the same bare `ruff check ...`: `All checks passed!` (both PATH and
+  project-pinned ruff, per playbook section 12).
+- `uv run ty check src/frob/app/check_runner.py`: `All checks passed!`.
+
+Filed: none -- no out-of-scope work discovered.
+
+Gates: `frob check --delta --ticket T-0229` clean after `frob ticket sweep
+T-0229` re-ran the pre-work sweep post-edit (the first delta run correctly
+flagged `PRE001` stale-sweep and `SCOPE001` on two `Cargo.lock` files that
+`make core`'s build touched during warm-up -- both `Cargo.lock` files were
+reverted with `git checkout --`, out of this ticket's scope). Post-fix
+delta: `gates 3/3 new` all pre-existing WARNING-level (TEST006 missing
+coverage stamp; PERF004/PERF003 in unrelated files `_land.py`/
+`_obfuscation.py`) -- none introduced by this change, none ERROR-level, so
+gates report `pass`.
 
 <!-- ticket:T-0230 -->
 ```yaml
@@ -2792,7 +3109,7 @@ Incident during T-0156 review: T-0166 landed a parse.rs grammar change and desig
 id: T-0250
 title: extend waive clause grammar to store nodes (tickets_ledger LINT004 gap from
   T-0166)
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-18'
@@ -2807,12 +3124,49 @@ scope:
 - docs/strata/waive.md
 - tests/**
 - editors/vscode-strata/**
-evidence: []
+- tickets.md
+evidence:
+- tests/unit/strata/test_infra.py::TestStoreWaivers::test_multi_instance_family_with_sub_target_elaborates_cleanly
+- tests/unit/strata/test_infra.py::TestStoreWaivers::test_multi_instance_family_without_sub_target_fails_closed
+- tests/unit/strata/test_litmus_waive_store.py::TestWaiveStoreLitmus::test_matched_store_waiver_suppresses_the_finding
 attachments: []
 acceptance: []
 threat: null
 ```
 T-0166 (fix(tickets): land T-0166 store grammar rejects code/may despite surface.md implying support) added real code/may declarations to design/frob.strata's tickets_ledger store, including may "exec" with no kill switch -- this now fires a genuine LINT004 gap (frob sys audit exits 1) that T-0174's waive mechanism cannot suppress because the waive clause was only added to strata-core/src/parse.rs::parse_node, not parse_store (T-0174's declared scope did not include store grammar work). Extend waive to store the same way T-0166 extended code/may to store (parse_store, StoreDecl, _elaborate_store), then waive tickets_ledger's LINT004 with reason pointing at T-0200, mirroring checker/core/stratamod/vet's existing waivers. Until this lands, frob sys audit honestly reports this one named gap rather than silently or fictitiously passing.
+
+## Done report
+
+Changed:
+- strata-core/src/parse.rs::parse_store -- added the `waive RULE reason="..." [ticket="..."]` clause, byte-identical shape/behavior to `parse_node`'s T-0174 `waive` clause (mandatory `reason`, optional `ticket`, repeatable); `StoreAst`/`ast.stores` JSON now carries a `waives` array.
+- src/frob/strata/_ast.py::StoreDecl.waives -- new `tuple[WaiverDecl, ...] = ()` field, reusing the existing `WaiverDecl` model T-0174 added (no new model needed, `node`/`store` share the shape).
+- src/frob/strata/_infra.py::_elaborate_store -- desugars `decl.waives` straight to `Node.waives`, the same direct-mapping convention `_elaborate.py::_elaborate_node` uses; ALSO calls `_waive.py::validate_waiver_fields` per waiver and fails closed with `StrataError.MalformedWaiver` on a blank reason or a multi-instance family (SYS100/SYS101/THREAT002/THREAT003) with no sub-target.
+- design/frob.strata::tickets_ledger -- added `waive "LINT004" reason "no real kill switch around subprocess spawning yet -- T-0200 is the follow-on ticket to build one" ticket "T-0200";`, same reason text as `checker`/`core`'s existing exec waivers.
+- tests/unit/strata/litmus/waive_lint_store.strata (new), tests/unit/strata/test_litmus_waive_store.py (new) -- store-side mirror of T-0174's `waive_lint.strata`/`test_litmus_waive.py` litmus fixture: a matched waiver that discharges, a stale waiver that fails, and a wrong-sub-target waiver that does not suppress a different sub-target's finding, all on `store` declarations.
+- tests/unit/strata/test_infra.py::TestStoreWaivers (new class) -- store-side mirror of `test_elaborate.py::TestElaborateWaivers`'s negative-path coverage (empty reason, whitespace-only reason, multi-instance family with no sub-target all fail closed; multi-instance family with sub-target elaborates cleanly).
+
+Scope note (BLOCKER-adjacent, resolved in-scope): `_elaborate.py::_validate_waivers` (T-0174) only walks `module.nodes` -- it runs BEFORE `elaborate_infra`/`_elaborate_store` ever sees `module.stores`, so a store `waive` clause would have silently skipped the mandatory-non-blank-reason/sub-target check entirely if left alone. `_elaborate.py` is not in T-0250's declared scope, so rather than editing it, the same check (`_waive.py::validate_waiver_fields`, imported read-only) was added directly inside `_elaborate_store` (`src/frob/strata/_infra.py`, in scope) -- same error, same `StrataError.MalformedWaiver`, just enforced at the point a store is elaborated instead of the point a node is. Covered by `TestStoreWaivers` above.
+
+Evidence (all measured, commands run and output read in full):
+- `uv run pytest tests/unit/strata/test_litmus_waive_store.py tests/unit/strata/test_infra.py::TestStoreWaivers -o addopts="-v"` -- 9 passed:
+  `tests/unit/strata/test_litmus_waive_store.py::TestWaiveStoreLitmus::test_matched_store_waiver_suppresses_the_finding`
+  `tests/unit/strata/test_litmus_waive_store.py::TestWaiveStoreLitmus::test_matched_store_waiver_is_surfaced_in_waived_with_reason`
+  `tests/unit/strata/test_litmus_waive_store.py::TestWaiveStoreLitmus::test_stale_store_waiver_reported_as_syswaive002_gap`
+  `tests/unit/strata/test_litmus_waive_store.py::TestWaiveStoreLitmus::test_store_stale_fails`
+  `tests/unit/strata/test_litmus_waive_store.py::TestWaiveStoreLitmus::test_store_sub_target_waiver_does_not_suppress_a_different_sub_target`
+  `tests/unit/strata/test_infra.py::TestStoreWaivers::test_empty_reason_fails_closed`
+  `tests/unit/strata/test_infra.py::TestStoreWaivers::test_whitespace_only_reason_fails_closed`
+  `tests/unit/strata/test_infra.py::TestStoreWaivers::test_multi_instance_family_without_sub_target_fails_closed`
+  `tests/unit/strata/test_infra.py::TestStoreWaivers::test_multi_instance_family_with_sub_target_elaborates_cleanly`
+- `uv run pytest tests/unit/strata/test_litmus_waive_store.py tests/unit/strata/test_litmus_waive.py tests/unit/strata/test_infra.py tests/unit/test_strata_tmlanguage.py -q` -- all passed (existing node-side litmus + tmLanguage drift-lock unaffected; tmLanguage needed no edit, `waive`/`reason`/`ticket` are already shared keywords in `clause-keywords`, not per-construct).
+- `uv run frob test --base main` -- both selected suites PASS: `[PASS] python exit=0 2.13s`, `[PASS] strata exit=0 3.01s` (touched-set selection pulled in `test_frob_self_model.py`, `test_infra.py`, `test_litmus_waive_store.py`, `test_managed.py`, `test_pii.py`, `test_store_code_may.py` plus a full `tests/unit/strata` + the new litmus fixture strata run).
+- **Headline**: `uv run frob sys audit` -- `sys audit: PROVED (5 waived) -- zero UNWAIVED gaps across every configured view` / `sys audit: self-conformance PROVED -- zero SYS gaps` / `sys audit: capability coverage: 13 kind(s) x 4 language(s), 30 cell(s) patterned+proven, 22 excused with reasons, 0 unexcused`. The 5th WAIVED line, previously the unwaived gap this ticket exists to close: `WAIVED family=lint view=model rule=LINT004 target=tickets_ledger detail=node tickets_ledger holds risky capability kind(s) ['exec'] with no declared attr flag=<id> kill-switch -- WAIVED[LINT004]: 'no real kill switch around subprocess spawning yet -- T-0200 is the follow-on ticket to build one' (ticket T-0200)`.
+- `uv run frob check --delta --ticket T-0250` -- exit 0, `gates 3/3 new 3 violation(s), 27 waived` (the 3 are pre-existing debt unrelated to this ticket: `TEST006` no coverage stamp, `PERF004` at `src/frob/tickets/_land.py:75`, `PERF003` at `src/frob/vet/_obfuscation.py:77` -- same 3 the clean pre-change baseline stamp recorded); `ruff-check`/`ruff-format`/`ty` all pass.
+- `git diff main --diff-filter=D --stat` -- empty (no deletions, deletion-filter land rule clean).
+
+Filed: none -- the one out-of-scope-looking discovery (`_validate_waivers` not covering stores) was resolved inside the declared scope (`_infra.py`) rather than filed, per the note above; no new ticket needed.
+
+Gates: `uv run frob check --delta --ticket T-0250` clean (exit 0, 0 new violations beyond pre-existing baselined debt). `make core` rebuild required after the `parse.rs` grammar change and was run before any check/test/audit above. Note: `make core`/`frob check`/`frob test` invocations regenerate `frob-core/Cargo.lock` and `strata-core/Cargo.lock` with a trivial version-string diff (`0.1.0` <-> `0.2.0`) as a side effect of the maturin/cargo build -- these were `git checkout`-ed back to HEAD before finishing since they carry no real content change and are not part of this ticket's scope.
 
 <!-- ticket:T-0251 -->
 ```yaml

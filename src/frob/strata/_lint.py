@@ -1,6 +1,6 @@
 """`std.lint`: operational design lints -- caching, resource bounds,
 rate-limiting, and kill-switch rules over the kernel model (T-0155,
-docs/strata/threat.md#operational-design-lints-std-lint-t-0155,
+docs/strata/threat.md#operational-design-lints-stdlint-t-0155,
 docs/strata/surface.md#node-grammar).
 
 INVESTIGATED FIRST (T-0150/T-0154 lesson: reuse, never parallel-build):
@@ -93,7 +93,7 @@ _FLAG_PREFIX = "flag="
 #: and outbound network egress -- module docstring). Deliberately narrower
 #: than `_threat.py`'s full sink taxonomy: LINT004 is an OPERATIONAL
 #: (can-you-turn-it-off-live) concern, not a weakness-classification one.
-# frob:doc docs/strata/threat.md#operational-design-lints-std-lint-t-0155
+# frob:doc docs/strata/threat.md#operational-design-lints-stdlint-t-0155
 RISKY_CAPABILITY_KINDS: frozenset[str] = frozenset({"exec", "net"})
 
 #: Flow attrs marking std.infra caching-layer traffic against a source of
@@ -102,7 +102,7 @@ RISKY_CAPABILITY_KINDS: frozenset[str] = frozenset({"exec", "net"})
 _INFRA_LOAD_EXEMPT_ATTRS = frozenset({"fill", "invalidation"})
 
 
-# frob:doc docs/strata/threat.md#operational-design-lints-std-lint-t-0155
+# frob:doc docs/strata/threat.md#operational-design-lints-stdlint-t-0155
 # frob:doc docs/guides/extending/design-lint-rules.md#design-lint-rules-lint001-005
 class LintViolation(BaseModel):
     """One LINT001-005 finding: a rule id, the firing target (node/flow/
@@ -118,7 +118,7 @@ class LintViolation(BaseModel):
     detail: str = ""
 
 
-# frob:doc docs/strata/threat.md#operational-design-lints-std-lint-t-0155
+# frob:doc docs/strata/threat.md#operational-design-lints-stdlint-t-0155
 class LintReport(BaseModel):
     """Every LINT001-005 violation, in rule-then-target order."""
 
@@ -130,7 +130,7 @@ class LintReport(BaseModel):
 def node_flag_ids(node: Node) -> tuple[str, ...]:
     """Every kill-switch/feature-flag id `node` declares via `attr
     flag=<id>` (i.e. every `flag=<id>` attr, `_FLAG_PREFIX` convention)."""
-    # frob:doc docs/strata/threat.md#operational-design-lints-std-lint-t-0155
+    # frob:doc docs/strata/threat.md#operational-design-lints-stdlint-t-0155
     return tuple(
         attr[len(_FLAG_PREFIX) :]
         for attr in node.attrs
@@ -158,7 +158,7 @@ def _rate_base(quantity_owner: str, value: Quantity) -> Result[float, StrataErro
     return value.base_value()
 
 
-# frob:doc docs/strata/threat.md#operational-design-lints-std-lint-t-0155
+# frob:doc docs/strata/threat.md#operational-design-lints-stdlint-t-0155
 def check_lint_rate_limit(
     model: KernelModel,
 ) -> Result[tuple[LintViolation, ...], StrataError]:
@@ -201,7 +201,7 @@ def _cache_covers(model: KernelModel, node_id: str) -> bool:
     return any(f.src == node_id and "fill" in f.attrs for f in model.flows)
 
 
-# frob:doc docs/strata/threat.md#operational-design-lints-std-lint-t-0155
+# frob:doc docs/strata/threat.md#operational-design-lints-stdlint-t-0155
 def check_lint_cache_or_capacity(
     model: KernelModel,
 ) -> Result[tuple[LintViolation, ...], StrataError]:
@@ -284,7 +284,7 @@ def _scenario_has_bound_claim(
     return False
 
 
-# frob:doc docs/strata/threat.md#operational-design-lints-std-lint-t-0155
+# frob:doc docs/strata/threat.md#operational-design-lints-stdlint-t-0155
 def check_lint_surge_capacity_bound(model: KernelModel) -> tuple[LintViolation, ...]:
     """LINT003: every `Scenario` with a `ScaleRate` rewrite nests a
     `BoundClaim` (RATE or UTILIZATION) targeting the scaled flow or one of
@@ -318,7 +318,7 @@ def check_lint_surge_capacity_bound(model: KernelModel) -> tuple[LintViolation, 
     return tuple(violations)
 
 
-# frob:doc docs/strata/threat.md#operational-design-lints-std-lint-t-0155
+# frob:doc docs/strata/threat.md#operational-design-lints-stdlint-t-0155
 def check_lint_kill_switch(model: KernelModel) -> tuple[LintViolation, ...]:
     """LINT004: every node holding a risky (`RISKY_CAPABILITY_KINDS`) `may`
     capability declares a `flag=<id>` kill-switch attr (module
@@ -348,7 +348,7 @@ def check_lint_kill_switch(model: KernelModel) -> tuple[LintViolation, ...]:
     return tuple(violations)
 
 
-# frob:doc docs/strata/threat.md#operational-design-lints-std-lint-t-0155
+# frob:doc docs/strata/threat.md#operational-design-lints-stdlint-t-0155
 def check_lint_fanin_capacity(
     model: KernelModel,
 ) -> Result[tuple[LintViolation, ...], StrataError]:
@@ -395,7 +395,7 @@ def check_lint_fanin_capacity(
     return Ok(tuple(violations))
 
 
-# frob:doc docs/strata/threat.md#operational-design-lints-std-lint-t-0155
+# frob:doc docs/strata/threat.md#operational-design-lints-stdlint-t-0155
 def evaluate_lint(model: KernelModel) -> Result[LintReport, StrataError]:
     """The strata-level operational-lint entrypoint: LINT001-005 over
     `model` (module docstring). Kept gate-agnostic (no `src/frob/gates`

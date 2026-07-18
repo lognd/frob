@@ -1,5 +1,5 @@
 """`std.pii`: first-class personal-data modeling and flow proofs (T-0154,
-docs/strata/threat.md#pii-declarations-std-pii-t-0154,
+docs/strata/threat.md#pii-declarations-stdpii-t-0154,
 docs/strata/surface.md#node-grammar).
 
 INVESTIGATED FIRST (T-0150 round-1 lesson: reuse, never parallel-build):
@@ -73,7 +73,7 @@ _PII_PREFIX = "pii="
 
 #: The fixed seven personal-data categories (T-0154 ticket body). A
 #: `carries` tag is `<category>.<field>`, e.g. `"identifier.email"`.
-# frob:doc docs/strata/threat.md#pii-declarations-std-pii-t-0154
+# frob:doc docs/strata/threat.md#pii-declarations-stdpii-t-0154
 PII_CATEGORIES: frozenset[str] = frozenset(
     {
         "identifier",
@@ -87,7 +87,7 @@ PII_CATEGORIES: frozenset[str] = frozenset(
 )
 
 
-# frob:doc docs/strata/threat.md#pii-declarations-std-pii-t-0154
+# frob:doc docs/strata/threat.md#pii-declarations-stdpii-t-0154
 # frob:doc docs/guides/extending/pii-categories.md#pii-categories
 class PiiViolation(BaseModel):
     """One PII001-004 finding: a rule id, the firing target (node or flow
@@ -102,7 +102,7 @@ class PiiViolation(BaseModel):
     detail: str = ""
 
 
-# frob:doc docs/strata/threat.md#pii-declarations-std-pii-t-0154
+# frob:doc docs/strata/threat.md#pii-declarations-stdpii-t-0154
 class PiiReport(BaseModel):
     """Every PII001-004 violation, in rule-then-target order."""
 
@@ -111,7 +111,7 @@ class PiiReport(BaseModel):
     violations: tuple[PiiViolation, ...] = ()
 
 
-# frob:doc docs/strata/threat.md#pii-declarations-std-pii-t-0154
+# frob:doc docs/strata/threat.md#pii-declarations-stdpii-t-0154
 def node_pii_tags(node: Node) -> tuple[str, ...]:
     """Every `<category>.<field>` tag `node` declares via `carries`
     (i.e. every `pii=<tag>` attr, `_PII_PREFIX` convention). Public: `_pii.py`
@@ -121,7 +121,7 @@ def node_pii_tags(node: Node) -> tuple[str, ...]:
     )
 
 
-# frob:doc docs/strata/threat.md#pii-declarations-std-pii-t-0154
+# frob:doc docs/strata/threat.md#pii-declarations-stdpii-t-0154
 def node_carries_pii(node: Node) -> bool:
     """Whether `node` declares any PII tag at all -- the join predicate
     `_compliance.py`'s retention/erasure checks extend on (module
@@ -136,7 +136,7 @@ def _pii_category(tag: str) -> str | None:
     return category if sep else None
 
 
-# frob:doc docs/strata/threat.md#pii-declarations-std-pii-t-0154
+# frob:doc docs/strata/threat.md#pii-declarations-stdpii-t-0154
 def check_pii_catalog(model: KernelModel) -> tuple[PiiViolation, ...]:
     """PII001: every `carries` tag's category prefix is one of the fixed
     seven (`PII_CATEGORIES`) -- deny-by-default on a malformed or unknown
@@ -192,7 +192,7 @@ def _pii_claim_override(
     return True, None
 
 
-# frob:doc docs/strata/threat.md#pii-declarations-std-pii-t-0154
+# frob:doc docs/strata/threat.md#pii-declarations-stdpii-t-0154
 def check_pii_boundary_protection(model: KernelModel) -> tuple[PiiViolation, ...]:
     """PII002: a flow touching a PII-carrying node (EITHER end -- data
     moving into a PII store from elsewhere, or out of one) that crosses a
@@ -242,7 +242,7 @@ def check_pii_boundary_protection(model: KernelModel) -> tuple[PiiViolation, ...
     return tuple(violations)
 
 
-# frob:doc docs/strata/threat.md#pii-declarations-std-pii-t-0154
+# frob:doc docs/strata/threat.md#pii-declarations-stdpii-t-0154
 def check_pii_retention_erasure(model: KernelModel) -> tuple[PiiViolation, ...]:
     """PII003: every PII-carrying node declares EITHER a `retention=`
     bound OR a revocation-edge flow (or both) -- REUSING `_compliance.py`'s
@@ -284,7 +284,7 @@ def check_pii_retention_erasure(model: KernelModel) -> tuple[PiiViolation, ...]:
     return tuple(violations)
 
 
-# frob:doc docs/strata/threat.md#pii-declarations-std-pii-t-0154
+# frob:doc docs/strata/threat.md#pii-declarations-stdpii-t-0154
 def check_pii_undeclared_flow(model: KernelModel) -> tuple[PiiViolation, ...]:
     """PII004: a flow sourced from a PII-carrying node whose own `label`
     sits BELOW `Pii` in `LABELS` is under-labeled -- the model's `carries`
@@ -318,7 +318,7 @@ def check_pii_undeclared_flow(model: KernelModel) -> tuple[PiiViolation, ...]:
     return tuple(violations)
 
 
-# frob:doc docs/strata/threat.md#pii-declarations-std-pii-t-0154
+# frob:doc docs/strata/threat.md#pii-declarations-stdpii-t-0154
 def evaluate_pii(model: KernelModel) -> Result[PiiReport, StrataError]:
     """The strata-level PII-audit entrypoint: PII001-004 over `model`
     (module docstring). Kept gate-agnostic (no `src/frob/gates` import),

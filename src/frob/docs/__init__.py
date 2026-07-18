@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from frob.lang._models import RawSymbol
 
 
-# frob:doc docs/modules/app.md#frob-docs-library
+# frob:doc docs/modules/app.md#frobdocs-library
 class Docstring(BaseModel):
     symbol: str
     kind: str
@@ -19,7 +19,7 @@ class Docstring(BaseModel):
     text: str
 
 
-# frob:doc docs/modules/app.md#frob-docs-library
+# frob:doc docs/modules/app.md#frobdocs-library
 class DocEntry(BaseModel):
     heading: str
     summary: str
@@ -27,7 +27,7 @@ class DocEntry(BaseModel):
     line: int
 
 
-# frob:doc docs/modules/app.md#frob-docs-library
+# frob:doc docs/modules/app.md#frobdocs-library
 class DocMatch(BaseModel):
     file: str
     line: int
@@ -92,7 +92,7 @@ def _docstring_for_symbol(sym: RawSymbol, filters: _SymbolFilters) -> Docstring 
     return None
 
 
-# frob:doc docs/modules/app.md#frob-docs-library
+# frob:doc docs/modules/app.md#frobdocs-library
 # frob:waive TEST005 reason="extract_docstrings 85.7% branch cover, debt T-0160"
 def extract_docstrings(path: Path, symbol: str | None = None) -> list[Docstring]:
     """Every python docstring in `path` (module, class, function, method).
@@ -155,7 +155,7 @@ def _module_docstring(path: Path) -> tuple[int, str] | None:
     return line, " ".join(doc.split())
 
 
-# frob:doc docs/modules/app.md#frob-docs-library
+# frob:doc docs/modules/app.md#frobdocs-library
 # frob:waive TEST005 reason="find_docs_dir 80.0% branch cover, debt T-0160"
 def find_docs_dir(start: Path) -> Path | None:
     current = start if start.is_dir() else start.parent
@@ -196,7 +196,7 @@ def _md_headings_and_summaries(md_path: Path) -> list[tuple[int, str, str]]:
     return entries
 
 
-# frob:doc docs/modules/app.md#frob-docs-library
+# frob:doc docs/modules/app.md#frobdocs-library
 # frob:waive TEST005 reason="overview 60.0% branch cover, debt T-0160"
 def overview(path: Path, symbol: str | None = None) -> list[DocEntry]:
     docs_dir = find_docs_dir(path)
@@ -241,7 +241,7 @@ def _entry_matches(entry: DocEntry, keywords: list[str]) -> bool:
     return any(kw in combined for kw in keywords)
 
 
-# frob:doc docs/modules/app.md#frob-docs-library
+# frob:doc docs/modules/app.md#frobdocs-library
 def search(query: str, docs_dir: Path) -> list[DocMatch]:
     q = query.lower()
     results: list[DocMatch] = []

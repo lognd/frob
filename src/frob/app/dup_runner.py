@@ -19,8 +19,16 @@ _CACHE_REL = Path(".frob") / "cache.db"
 
 
 # frob:ticket T-0041
+# frob:ticket T-0192
 def _probe(cfg: AppConfig, dup_path: Path) -> None:
-    """`frob dup --probe A B`: R6 observational-equivalence of two symbols."""
+    """`frob dup --probe A B`: R6 observational-equivalence of two symbols.
+
+    WARNING (see docs/modules/dup.md's probe safety/workload contract):
+    resolving each symref loads its whole source FILE via
+    `importlib.util.spec_from_file_location` + `exec_module`, which runs
+    every top-level statement in that file, not just the probed function
+    -- there is no sandbox. Only point this at trees you already trust.
+    """
     from frob.dup import probe_equivalence
     from frob.graph import build_graph, load_graph
 

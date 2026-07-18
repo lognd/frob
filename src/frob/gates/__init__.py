@@ -66,6 +66,7 @@ from frob.graph import (
     EdgeKind,
     GraphSnapshot,
     build_graph,
+    dedupe_slug,
     edges_from,
     slugify,
 )
@@ -2734,7 +2735,11 @@ def _doc_anchor_slugs(path: Path) -> Option[set[str]]:
         text = path.read_text(encoding="utf-8", errors="replace")
     except OSError:
         return Nothing()
-    slugs = {slugify(heading.group(2)) for heading in _MD_HEADING_RE.finditer(text)}
+    seen: dict[str, int] = {}
+    slugs = {
+        dedupe_slug(slugify(heading.group(2)), seen)
+        for heading in _MD_HEADING_RE.finditer(text)
+    }
     slugs.update(m.group(1) for m in _ANCHOR_ID_RE.finditer(text))
     return Some(slugs)
 

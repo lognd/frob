@@ -160,6 +160,7 @@ def _add_parse_parser(sub) -> None:
 
 
 # frob:ticket T-0030
+# frob:ticket T-0192
 def _add_dup_parser(sub) -> None:
     """Register the `frob dup` subcommand and its arguments."""
     # -- dup -----------------------------------------------------------------
@@ -183,7 +184,14 @@ def _add_dup_parser(sub) -> None:
         nargs=2,
         metavar=("SYMREF_A", "SYMREF_B"),
         default=[],
-        help="R6: probe two symbols for observational equivalence (pure only)",
+        help=(
+            "R6: probe two symbols for observational equivalence "
+            "(heuristically pure-only). WARNING: this EXECUTES the "
+            "entire source file each symbol lives in via importlib "
+            "(no sandbox) -- only use on symrefs from a tree you "
+            "already trust. See docs/modules/dup.md's probe safety "
+            "note."
+        ),
     )
 
 

@@ -393,3 +393,77 @@ store db : trusted { engine postgres; capacity 100 req/s replicas 2 .. 4 }
         assert node.capacity is not None
         assert node.capacity.service_rate.value == 100
         assert node.capacity.replicas_max == 4
+
+
+class TestStoreWaivers:
+    """T-0250: `waive` clause validation on `store` (`_infra.py::
+    _elaborate_store`) -- mirrors `test_elaborate.py::
+    TestElaborateWaivers`'s node-side coverage exactly: fails closed on an
+    empty reason or a multi-instance-per-node rule family with no
+    sub-target, since `_elaborate.py::_validate_waivers` only walks
+    `module.nodes` and never sees `module.stores` (stores are elaborated
+    separately, after node validation, by `elaborate_infra`)."""
+
+    # frob:tests src/frob/strata/_infra.py::_elaborate_store kind="unit"
+    def test_empty_reason_fails_closed(self):
+        text = """
+        module m
+        store db : trusted {
+            clearance Secret;
+            engine postgres;
+            waive "LINT004" reason "";
+        }
+        """
+        module = parse_module(text).danger_ok
+        result = elaborate(module)
+        assert result.is_err
+        assert result.danger_err is StrataError.MalformedWaiver
+
+    # frob:tests src/frob/strata/_infra.py::_elaborate_store kind="unit"
+    def test_whitespace_only_reason_fails_closed(self):
+        text = """
+        module m
+        store db : trusted {
+            clearance Secret;
+            engine postgres;
+            waive "LINT004" reason "   ";
+        }
+        """
+        module = parse_module(text).danger_ok
+        result = elaborate(module)
+        assert result.is_err
+        assert result.danger_err is StrataError.MalformedWaiver
+
+    # frob:tests src/frob/strata/_infra.py::_elaborate_store kind="unit"
+    def test_multi_instance_family_without_sub_target_fails_closed(self):
+        """A bare `waive "SYS100"` on a store would blanket-suppress every
+        current and future SYS100 finding on it -- rejected, not silently
+        accepted, same as the node-side rule."""
+        text = """
+        module m
+        store db : trusted {
+            clearance Secret;
+            engine postgres;
+            waive "SYS100" reason "no sub-target named";
+        }
+        """
+        module = parse_module(text).danger_ok
+        result = elaborate(module)
+        assert result.is_err
+        assert result.danger_err is StrataError.MalformedWaiver
+
+    # frob:tests src/frob/strata/_infra.py::_elaborate_store kind="unit"
+    def test_multi_instance_family_with_sub_target_elaborates_cleanly(self):
+        text = """
+        module m
+        store db : trusted {
+            clearance Secret;
+            engine postgres;
+            waive "SYS100:fs-write" reason "named sub-target";
+        }
+        """
+        module = parse_module(text).danger_ok
+        result = elaborate(module)
+        assert result.is_ok
+        node = {n.id: n for n in result.danger_ok.nodes}["db"]
+        assert node.waives[0].rule == "SYS100:fs-write"

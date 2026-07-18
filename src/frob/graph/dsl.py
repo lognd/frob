@@ -43,14 +43,33 @@ _DESCRIBES_RE = re.compile(
     r"<!--\s*frob:describes\s+(?P<symref>\S+)(?:\s+(?P<facet>sig|body|doc))?\s*-->"
 )
 _HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$")
-_SLUG_RE = re.compile(r"[^a-z0-9]+")
+# T-0212: GitHub strips everything except word chars (unicode-aware, so
+# accented letters survive but emoji do not), hyphens, and spaces -- it
+# does NOT collapse punctuation runs to a single `-` the way the old
+# regex did, which is exactly what made frob's slugs disagree with
+# GitHub's in both directions (docs/guides/agent-playbook.md, T-0212).
+_SLUG_STRIP_RE = re.compile(r"[^\w\- ]", re.UNICODE)
 
 
 # frob:doc docs/modules/graph.md#comment-dsl
 def slugify(heading: str) -> str:
-    """GitHub-style heading slug: lowercase, non-alnum runs collapsed to `-`."""
-    slug = _SLUG_RE.sub("-", heading.strip().lower()).strip("-")
+    """GitHub heading-anchor slug: lowercase, strip disallowed punctuation
+    (keeping word chars/hyphens/spaces), spaces become hyphens one-for-one
+    (consecutive spaces stay as consecutive hyphens, unlike the old
+    collapse-to-single-`-` behavior this replaces, T-0212)."""
+    slug = _SLUG_STRIP_RE.sub("", heading.strip().lower())
+    slug = slug.replace(" ", "-")
     return slug or "top"
+
+
+# frob:doc docs/modules/graph.md#comment-dsl
+def dedupe_slug(slug: str, seen: dict[str, int]) -> str:
+    """Apply GitHub's repeated-heading suffixing (`-1`, `-2`, ...) to `slug`,
+    mutating `seen` (a per-document slug -> occurrence-count map) in place;
+    the first occurrence of a slug is returned unsuffixed (T-0212)."""
+    count = seen.get(slug, 0)
+    seen[slug] = count + 1
+    return slug if count == 0 else f"{slug}-{count}"
 
 
 # frob:doc docs/modules/graph.md#comment-dsl
@@ -58,10 +77,11 @@ def markdown_anchors(doc_path: str, text: str) -> tuple[Edge, ...]:
     """Extract `<!-- frob:describes ... -->` anchors bound to the nearest heading."""
     edges: list[Edge] = []
     slug = "top"
+    seen: dict[str, int] = {}
     for line in text.splitlines():
         heading = _HEADING_RE.match(line)
         if heading is not None:
-            slug = slugify(heading.group(2))
+            slug = dedupe_slug(slugify(heading.group(2)), seen)
             continue
         match = _DESCRIBES_RE.search(line)
         if match is None:
@@ -179,4 +199,4 @@ def parse_directives(
     return tuple(edges), tuple(malformed)
 
 
-__all__ = ["markdown_anchors", "parse_directives", "slugify"]
+__all__ = ["dedupe_slug", "markdown_anchors", "parse_directives", "slugify"]
