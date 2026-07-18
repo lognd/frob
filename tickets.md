@@ -331,11 +331,26 @@ pre-existing SYS100 findings (capabilities observed but undeclared in
 out); not touched, out of scope.
 
 Filed while documenting (out-of-scope defects found, not fixed here):
-none required filing as new tickets -- the "known gaps" above are
-documentation-level disclosures inside the guides themselves (per the
-ticket's own instruction to file tickets only for defects, not for
-documented absence of a gate), since no gate currently claims to cover
-these cases and none is silently broken.
+- T-draft-c4c47359: frob:tests edge code endpoints and kind= attr are not
+  gate-verified -- tests/unit/test_strata_tmlanguage.py:13 cites
+  `parse.rs::parse_program` (real qualname `Parser.parse_program`) with
+  `kind="drift"` (not in `_TESTS_KINDS`), and neither problem fires any
+  gate, while the identical dead endpoint on a frob:describes edge fires
+  DRIFT002. A silently-broken evidence edge, not a documented absence.
+- T-draft-29ea9722: `frob outline` has no Rust adapter though `frob.lang`
+  parses Rust (151 symbols from parse.rs) -- the outline adapter registry
+  and the language-walker registry can drift apart.
+Both drafts were first filed mid-ticket and lost in a tickets.md ledger
+splice during a concurrent-agent merge; refiled post-merge. The remaining
+"known gaps" above are documentation-level disclosures inside the guides
+(no gate claims to cover them and none is silently broken), so per the
+ticket's instruction they are disclosed, not ticketed.
+
+Waivers added by this ticket (all in
+tests/unit/test_extending_guides_complete.py, each with reason=): one
+PERF003 (fixed-size per-row anchor scan) and three PERF004 (sorted() only
+formatting tiny sets for assert messages) -- the new test file's only
+lexical-perf findings; no other waivers introduced.
 
 Deletion-filter (`git diff main --diff-filter=D --stat`): empty after the
 final `git merge main` (main had landed T-0176's `frob ticket land`,
