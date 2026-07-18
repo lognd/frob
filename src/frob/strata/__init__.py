@@ -67,6 +67,12 @@ from frob.strata._code_binding import (
     check_import_conformance,
 )
 from frob.strata._crash import CrashContractReport, evaluate_crash_contracts
+from frob.strata._design_load import (
+    DEFAULT_DESIGN_DIR,
+    DesignIds,
+    DesignLoadError,
+    load_design_ids,
+)
 from frob.strata._effects import (
     CapabilityViolation,
     EffectReport,
@@ -119,6 +125,7 @@ from frob.strata._scenarios import ScenarioResult, evaluate_scenarios
 __all__ = [
     "ANALYZABLE",
     "ANALYZABLE_POLICY_ID",
+    "DEFAULT_DESIGN_DIR",
     "LABELS",
     "TRUST",
     "AdmitPhase",
@@ -144,6 +151,8 @@ __all__ = [
     "ConformanceReport",
     "CrashContract",
     "CrashContractReport",
+    "DesignIds",
+    "DesignLoadError",
     "EffectPhase",
     "EffectReport",
     "FOREIGN",
@@ -215,6 +224,7 @@ __all__ = [
     "evaluate_scenarios",
     "extract_effects",
     "generate_fault_injection_cases",
+    "load_design_ids",
     "parse_module",
     "render_report",
     "require_analyzable",

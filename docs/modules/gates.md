@@ -38,6 +38,10 @@ declaration).
 | FUZZ001-003 | fuzz | fuzz obligations under `[fuzz]` (opt-in) |
 | PERF001-004 | perf | lexical performance smells (build-a-set-once, etc.) |
 | REL001 | release | release-readiness check |
+| SYS001 | sys | a `frob:channel/boundary/secret` directive names a construct id absent from the loaded `.strata` design model (opt-in: a `design/`, or `[strata].design_dir`, directory of `.strata` files must exist); suppressed for the whole run while any design file fails to load (SYS004 reports that instead) |
+| SYS002 | sys | a `Boundary` or Secret-clearance `Node` in the design model has no `frob:boundary`/`frob:secret` code binding anywhere |
+| SYS003 | sys | (warn) tier-2 code binding (`frob.strata.bind_code`/`check_import_conformance`) finds an undeclared cross-component import between two design-bound files; warn-first on landing, intended to flip to error via `[gates.severity]` once proven |
+| SYS004 | sys | a `.strata` design file failed to parse/elaborate |
 | WAIVE001 | (always on) | a `frob:waive` directive is missing `reason="..."` |
 | WAIVE002 | (always on) | a `frob:waive` targets a rule id that can never be matched -- see "Waive boundary" below |
 
@@ -120,6 +124,11 @@ channel waivable, delete the `ArchCategory` half of
   `[fuzz].enforce`, default off.
 - `doclink_gate` -- DOC001: a doc file nothing links to (no describes
   anchor, no `frob:doc` edge, unreachable from the doc roots) is an error.
+- `sys_gate` -- SYS001/SYS002/SYS003/SYS004 (T-0080): joins `frob:channel`/
+  `frob:boundary`/`frob:secret` code directives and tier-2 code binding
+  against a `.strata` design model; opt-in via a `design/` (or
+  `[strata].design_dir`) directory of `.strata` files existing, same
+  posture as `decisions_gate`. See docs/strata/surface.md#directives-t-0080.
 - `run_gates` -- the single entry point: loads all state once, then runs
   the selected gates in parallel and merges/severity-overrides the result.
 

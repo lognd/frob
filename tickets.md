@@ -3821,7 +3821,7 @@ repo-wide. Full `tests/unit/strata` suite green (all prior + 7 new).
 ```yaml
 id: T-0080
 title: strata directives (frob:channel/boundary/secret) + SYS gates in run_gates
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-17'
@@ -3833,12 +3833,32 @@ scope:
 - src/frob/gates/**
 - src/frob/strata/**
 - tests/**
-evidence: []
+evidence:
+- tests/unit/strata/test_design_load.py::TestLoadIds::test_merges_ids
+- tests/unit/strata/test_design_load.py::TestLoadIds::test_excluded_no_ids
 attachments: []
 acceptance: []
 threat: null
 ```
 Call sites bind to kernel edges; SYS001.. family joins model, graph, and evidence in frob check with severity dial + waivers + remedies.
+## Done report
+
+frob:channel/frob:boundary/frob:secret verbs added to the comment DSL
+(EdgeKind.CHANNEL/BOUNDARY/SECRET); load_design_ids parses+elaborates
+every .strata file under design/ (or [strata].design_dir), RESPECTING
+the shared frob.excludes leaf so excluded example models carry no
+obligations; sys gate: SYS001 (ERROR, dangling directive reference --
+suppressed whenever any design file failed to load), SYS002 (WARN,
+boundary/secret-clearance node with no code binding), SYS003 (WARN,
+warn-first per COV001 precedent, tier-2 import conformance surfaced),
+SYS004 (ERROR, design file failed to parse -- the honest diagnostic
+instead of fake danglings). Opt-in: no design dir, no gate. Review
+round 1 REJECTed on exclude-leaf wiring, parse-failure false positives,
+and SYS003 severity; all three fixed and re-verified (frob check --only
+sys = 0 violations on this repo). Verified at merge on main: 135 tests
+across design-load/graph/gates suites; a cherry-pick dropped the
+dsl/_models hunks initially, recovered from the worktree and verified
+by the same suites.
 
 <!-- ticket:T-0081 -->
 ```yaml
@@ -5769,3 +5789,22 @@ T-0129 files still uncommitted in this same worktree (expected -- those are
 T-0129's scope, not T-0130's) plus tickets.md's own SCOPE001 (expected for
 any ticket that edits the ledger); no waiver needed for either since they
 are cross-ticket, not defects in T-0130 itself.
+
+<!-- ticket:T-0131 -->
+```yaml
+id: T-0131
+title: frob ticket resolves repo root to main checkout from inside a linked worktree
+  (first invocation)
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Found during T-0128: the first frob ticket start/evidence invocation run from inside a git linked worktree resolved the repo root to the MAIN checkout (/home/logan/projects/frob) and wrote main's tickets.md, while later invocations in the same session correctly targeted the worktree. The same misresolution likely explains a mid-session incident where frob ticket close, run with cwd inside a worktree, transitioned the ticket in main's ledger. test_linked_worktree_resolves_to_worktree_root exists and passes, so the failure is conditional -- suspect cache/state (.frob dir presence?) or cwd-vs-env resolution order on first run. Repro attempt: fresh worktree, no .frob, run frob ticket show from the worktree root and compare the 'loaded N tickets under <path>' line. Fix the resolution order and add a regression test covering the first-invocation case.

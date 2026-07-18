@@ -90,6 +90,9 @@ class EdgeKind(StrEnum):
     DESCRIBES = "describes"
     TESTS = "tests"
     DECISION = "decision"
+    CHANNEL = "channel"  # T-0080: binds code to a strata Flow id
+    BOUNDARY = "boundary"  # T-0080: binds code to a strata Boundary id
+    SECRET = "secret"  # T-0080: binds code to a strata Secret-clearance Node id
 
 
 # frob:doc docs/modules/graph.md#data-models

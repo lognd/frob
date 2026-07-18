@@ -26,6 +26,12 @@ _VERB_TABLE: dict[str, EdgeKind] = {
     "waive": EdgeKind.WAIVE,
     "tests": EdgeKind.TESTS,
     "decision": EdgeKind.DECISION,
+    # T-0080: strata directives -- bind a code symbol to a design construct
+    # id (Flow/Boundary/Secret-clearance Node) so `frob.gates`' SYS family
+    # can join code and model without `frob.graph` learning strata vocabulary.
+    "channel": EdgeKind.CHANNEL,
+    "boundary": EdgeKind.BOUNDARY,
+    "secret": EdgeKind.SECRET,
 }
 
 _LINE_RE = re.compile(r"^frob:(?P<verb>\S+)(?:\s+(?P<rest>.*))?$")

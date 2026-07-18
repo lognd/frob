@@ -1499,3 +1499,131 @@ def test_gates_run_gates_integration(tmp_path: Path) -> None:
     cov001_symbols = {v.message.split()[1] for v in cov001}
     assert any("undocumented" in s for s in cov001_symbols)
     assert not any("::documented" in s for s in cov001_symbols)
+
+
+_DESIGN_STRATA = """module m
+node client : foreign { clearance Public; }
+node api : authenticated { clearance Internal; }
+node vault : trusted { clearance Secret; }
+flow f_login : client -> api
+boundary b_login endorse f_login : foreign -> authenticated when "jwt_verified"
+"""
+
+
+class TestSysGate:
+    # frob:tests src/frob/gates/__init__.py::sys_gate kind="unit"
+    def test_noop_no_design_dir(self, tmp_path: Path) -> None:
+        _write(tmp_path, "src/a.py", "def f(): pass\n")
+        snapshot = _snapshot(tmp_path)
+        assert sys_gate(tmp_path, snapshot) == ()
+
+    def test_sys001_dangling(self, tmp_path: Path) -> None:
+        _write(tmp_path, "design/m.strata", _DESIGN_STRATA)
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def send():\n    # frob:channel f_does_not_exist\n    pass\n",
+        )
+        snapshot = _snapshot(tmp_path)
+        violations = sys_gate(tmp_path, snapshot)
+        sys001 = _by_rule(violations, "SYS001")
+        assert len(sys001) == 1
+        assert sys001[0].severity == Severity.ERROR
+
+    def test_sys001_valid(self, tmp_path: Path) -> None:
+        _write(tmp_path, "design/m.strata", _DESIGN_STRATA)
+        _write(
+            tmp_path, "src/a.py", "def send():\n    # frob:channel f_login\n    pass\n"
+        )
+        snapshot = _snapshot(tmp_path)
+        assert _by_rule(sys_gate(tmp_path, snapshot), "SYS001") == []
+
+    def test_sys002_unbound(self, tmp_path: Path) -> None:
+        _write(tmp_path, "design/m.strata", _DESIGN_STRATA)
+        _write(tmp_path, "src/a.py", "def f(): pass\n")
+        snapshot = _snapshot(tmp_path)
+        violations = sys_gate(tmp_path, snapshot)
+        sys002 = _by_rule(violations, "SYS002")
+        assert {v.message.split()[2] for v in sys002} == {"b_login", "vault"}
+        assert all(v.severity == Severity.WARN for v in sys002)
+
+    def test_sys002_bound(self, tmp_path: Path) -> None:
+        _write(tmp_path, "design/m.strata", _DESIGN_STRATA)
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def verify():\n"
+            "    # frob:boundary b_login\n"
+            "    pass\n\n"
+            "def rotate():\n"
+            "    # frob:secret vault\n"
+            "    pass\n",
+        )
+        snapshot = _snapshot(tmp_path)
+        assert _by_rule(sys_gate(tmp_path, snapshot), "SYS002") == []
+
+    def test_sys003_import(self, tmp_path: Path, monkeypatch) -> None:
+        """T-0080: SYS003 surfaces `check_import_conformance`'s tier-2
+        violations through `sys_gate`. The surface grammar does not lex
+        `code=` globs yet (docs/strata/surface.md#code-binding-tier-2-v0-
+        implementation), so this wires a `KernelModel` built via the Python
+        API directly, monkeypatching `frob.strata.load_design_ids` the way
+        `test_load_tests_merges_python_and_rust_node_ids` monkeypatches
+        collectors -- the design/ dir only needs to exist for `sys_gate`'s
+        opt-in check.
+        """
+        import frob.strata as strata_mod
+        from frob.strata import DesignIds, Node
+
+        _write(tmp_path, "design/.gitkeep", "")
+        _write(tmp_path, "pkg_a/mod.py", "import pkg_b.mod\n")
+        _write(tmp_path, "pkg_b/mod.py", "x = 1\n")
+        model = strata_mod.KernelModel(
+            nodes=(
+                Node(id="a", trust="trusted", attrs=("code=pkg_a/*.py",)),
+                Node(id="b", trust="trusted", attrs=("code=pkg_b/*.py",)),
+            )
+        )
+        monkeypatch.setattr(
+            strata_mod,
+            "load_design_ids",
+            lambda root, design_dir: DesignIds(models=(model,)),
+        )
+        snapshot = _snapshot(tmp_path)
+        violations = sys_gate(tmp_path, snapshot)
+        sys003 = _by_rule(violations, "SYS003")
+        assert len(sys003) == 1
+        assert sys003[0].file == "pkg_a/mod.py"
+        # SYS003 is WARN, not ERROR: warn-first adoption, same posture as
+        # COV001 (T-0080 REJECT round 1, severity item).
+        assert sys003[0].severity == Severity.WARN
+
+    def test_sys004_load_failure(self, tmp_path: Path) -> None:
+        # T-0080 REJECT round 1: a malformed .strata file must be reported
+        # as its own SYS004 violation naming the file, not silently dropped.
+        _write(tmp_path, "design/bad.strata", "this is not valid strata {{{")
+        _write(tmp_path, "src/a.py", "def f(): pass\n")
+        snapshot = _snapshot(tmp_path)
+        violations = sys_gate(tmp_path, snapshot)
+        sys004 = _by_rule(violations, "SYS004")
+        assert len(sys004) == 1
+        assert sys004[0].file == "design/bad.strata"
+        assert sys004[0].severity == Severity.ERROR
+
+    def test_sys004_suppresses_sys001(self, tmp_path: Path) -> None:
+        # T-0080 REJECT round 1: when a sibling .strata file fails to load,
+        # ids are merged with no per-file provenance, so a directive
+        # referencing an id that WOULD have come from the broken file must
+        # not be misdiagnosed as SYS001 dangling -- SYS001 is suppressed for
+        # the whole run and SYS004 alone reports the real problem.
+        _write(tmp_path, "design/good.strata", _DESIGN_STRATA)
+        _write(tmp_path, "design/bad.strata", "this is not valid strata {{{")
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def send():\n    # frob:channel f_login\n    pass\n",
+        )
+        snapshot = _snapshot(tmp_path)
+        violations = sys_gate(tmp_path, snapshot)
+        assert _by_rule(violations, "SYS001") == []
+        assert len(_by_rule(violations, "SYS004")) == 1

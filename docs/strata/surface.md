@@ -251,6 +251,84 @@ consistent with third-party/stdlib specifiers.
   softer "undeclared foreign dependency" diagnostic once `FOREIGN` also
   attaches to a synthetic node id in `bind_code`'s output.
 
+## Directives: frob:channel / frob:boundary / frob:secret (T-0080)
+
+<!-- frob:ticket T-0080 -->
+<!-- frob:describes src/frob/strata/_design_load.py::load_design_ids -->
+<!-- frob:describes src/frob/strata/_design_load.py::DesignIds -->
+<!-- frob:describes src/frob/strata/_design_load.py::DesignLoadError -->
+<!-- frob:describes src/frob/strata/_design_load.py::DEFAULT_DESIGN_DIR -->
+<!-- frob:describes src/frob/gates/__init__.py::sys_gate -->
+
+Three `frob:` comment directives (`frob.graph.dsl`'s verb table) bind a
+code symbol to a design construct id, the same shape as `frob:ticket`/
+`frob:invariant` binding code to a ticket/invariant id:
+
+- `frob:channel <flow-id>` -- the enclosing symbol implements (sends or
+  receives on) the named `Flow`.
+- `frob:boundary <boundary-id>` -- the enclosing symbol enforces the named
+  `Boundary`'s endorse/declassify contract.
+- `frob:secret <node-id>` -- the enclosing symbol handles the named
+  Secret-clearance `Node`'s cache-of-authority. The kernel has no
+  dedicated secret construct yet (`std.secrets` is T-0082 future work), so
+  a node whose elaborated `clearance == "Secret"` is the standing proxy
+  for "this id names a secret" until `std.secrets` lands.
+
+`frob.gates.sys_gate` (opt-in: runs only when a `design/`, or
+`[strata].design_dir`, directory of `.strata` files exists, same posture
+as `decisions_gate`) loads every non-excluded file under that directory
+via `frob.strata.load_design_ids` -- parse (`parse_module`) + elaborate
+(`elaborate`) each file, then merge every `Flow.id`, `Boundary.id`, and
+Secret-clearance `Node.id` into one id surface -- and checks four rules.
+`load_design_ids` walks through `frob.excludes.load_exclude_globs`/
+`is_excluded` exactly as `frob.graph._walk_source_files` does (T-0080
+REJECT round 1: an earlier version rglobbed `design_dir` directly, so a
+repo's own `[graph].exclude`-d example models -- e.g. `design/litmus/**`,
+excluded by T-0130 precisely so they carry no obligations -- re-acquired
+SYS002 obligations anyway; a file-walking surface that does not consult
+`frob.excludes` is exactly the desync that module exists to prevent).
+
+- **SYS001** (error): a `frob:channel/boundary/secret` directive names an
+  id absent from that merged surface -- a dangling reference, same
+  severity posture as DRIFT002's dangling edge endpoint. Suppressed for
+  the whole run whenever any `.strata` file failed to load (see SYS004):
+  ids are merged across every design file with no per-file provenance, so
+  a failed sibling's would-be ids are indistinguishable from a genuinely
+  dangling reference (reviewer-caught, T-0080 REJECT round 1) -- SYS004
+  alone reports the real problem until every design file loads clean.
+- **SYS002** (warn): a `Boundary` or Secret-clearance `Node` in the model
+  has no directive anywhere binding code to it. Channels (`Flow` ids) are
+  deliberately NOT required to carry a binding: most flows are pure data
+  movement with no single enforcing call site, whereas a boundary or
+  secret is exactly the surface language's own "site of a security-
+  relevant obligation" (`## Key construct semantics` above: boundary is
+  "the only legal site of label/trust change"; secret is "cache-of-
+  authority" with a mandatory revocation edge) -- the construct kinds a
+  human reviewer would most want attested by real code, not just the
+  model.
+- **SYS003** (warn): tier-2 `bind_code` + `check_import_conformance`
+  (`## Code binding (tier 2, v0 implementation)` above), run once per
+  elaborated design model and surfaced as gate violations -- the "not yet
+  wired" cut noted in that section is now closed. An ambiguous binding
+  within one model is logged and skipped for that model only, never fatal
+  to the whole gate. WARN, not ERROR, on landing (T-0080 REJECT round 1,
+  severity item): every other gate in this family starts warn-first and is
+  flipped to error only by a deliberate, tracked decision once a repo's
+  design/code pairing has stabilized (COV001's history is the precedent).
+  Tier-2 conformance is new and unproven at repo scale; the intended future
+  state is `SYS003 = "error"` via `[gates.severity]` once a repo has run it
+  clean for a while, not a default that can break a build on day one.
+- **SYS004** (error): a `.strata` file under the design directory failed
+  to parse or elaborate. Distinct from SYS001 on purpose -- a load failure
+  and a dangling reference are different problems with different fixes
+  (fix the design file vs. fix the directive), and collapsing them would
+  misdirect whoever reads the message.
+
+`frob:waive` can suppress any of these per the usual waiver-boundary rules
+(`docs/modules/gates.md#waive-boundary`); all four rule ids are registered
+in `frob.gates`' known-rule set so a waiver targeting them is never
+flagged WAIVE002.
+
 ## Module system
 
 Dotted module paths (`use base.labels { Pii }`); per-repo `design/`

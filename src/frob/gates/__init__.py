@@ -370,6 +370,10 @@ _KNOWN_GATE_RULES = frozenset(
         "PERF002",
         "PERF003",
         "PERF004",
+        "SYS001",
+        "SYS002",
+        "SYS003",
+        "SYS004",
     }
 )
 
@@ -1694,6 +1698,240 @@ def decisions_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]
             ),
         )
     return decision_gate(loaded.danger_ok, snapshot)
+
+
+# ---------------------------------------------------------------------------
+# SYS001 / SYS002: strata directive <-> design binding (T-0080)
+# ---------------------------------------------------------------------------
+
+_SYS_DIRECTIVE_KINDS: dict[EdgeKind, str] = {
+    EdgeKind.CHANNEL: "channels",
+    EdgeKind.BOUNDARY: "boundaries",
+    EdgeKind.SECRET: "secrets",
+}
+#: Construct kinds SYS002 requires at least one code binding for. Boundaries
+#: and secrets are the enforcement/authority sites the surface language
+#: itself calls out (docs/strata/surface.md's boundary/secret semantics);
+#: channels (Flow ids) are left optional since most flows are pure data
+#: movement with no single enforcing call site to bind (T-0080 decision,
+#: documented in docs/strata/surface.md#directives-t-0080).
+_SYS002_REQUIRED_KINDS: tuple[EdgeKind, ...] = (EdgeKind.BOUNDARY, EdgeKind.SECRET)
+
+
+def _design_dir(root: Path) -> str:
+    """`[strata].design_dir` from frob.toml, defaulting to `DEFAULT_DESIGN_DIR`."""
+    from frob.strata import DEFAULT_DESIGN_DIR
+
+    toml_path = root / "frob.toml"
+    if not toml_path.exists():
+        return DEFAULT_DESIGN_DIR
+    try:
+        with toml_path.open("rb") as fh:
+            return (
+                tomllib.load(fh).get("strata", {}).get("design_dir", DEFAULT_DESIGN_DIR)
+            )
+    except (OSError, tomllib.TOMLDecodeError) as exc:
+        _log.warning("sys_gate: frob.toml unreadable: %s", exc)
+        return DEFAULT_DESIGN_DIR
+
+
+def _sys004(design_ids) -> list[Violation]:  # noqa: ANN001
+    """SYS004: a `.strata` design file itself failed to parse/elaborate.
+
+    Reported as its own rule, distinct from SYS001, because a load failure
+    and a dangling reference are different problems with different fixes
+    (fix the design file vs. fix the directive) -- collapsing them would
+    misdirect whoever reads the message (reviewer-caught, T-0080 REJECT
+    round 1)."""
+    return [
+        Violation(
+            rule="SYS004",
+            severity=Severity.ERROR,
+            file=error.path,
+            line=0,
+            message=(
+                f"SYS004: {error.path} failed to load ({error.error.value}); "
+                f"fix the .strata file -- SYS001 dangling-reference checks are "
+                f"suppressed while any design file fails to load, since ids are "
+                f"merged across all design files and a missing sibling's ids "
+                f"cannot be told apart from a genuinely dangling reference"
+            ),
+        )
+        for error in design_ids.errors
+    ]
+
+
+def _sys001(snapshot: GraphSnapshot, design_ids) -> list[Violation]:  # noqa: ANN001
+    """SYS001: a `frob:channel/boundary/secret` directive names a construct id
+    that does not exist in the loaded design model -- a dangling reference,
+    same posture as DRIFT002.
+
+    Suppressed entirely when any `.strata` design file failed to load
+    (`design_ids.errors`): construct ids are merged across every design
+    file with no per-file provenance, so a failed sibling file's would-be
+    ids are indistinguishable from a genuinely dangling reference -- fail
+    toward the honest `SYS004` diagnostic (`sys_gate`), not a misleading
+    SYS001 (reviewer-caught, T-0080 REJECT round 1: a single malformed
+    design file was making every directive referencing its ids look
+    dangling)."""
+    if design_ids.errors:
+        _log.debug(
+            "SYS001: suppressed, %d design file(s) failed to load",
+            len(design_ids.errors),
+        )
+        return []
+    valid = {
+        EdgeKind.CHANNEL: design_ids.channels,
+        EdgeKind.BOUNDARY: design_ids.boundaries,
+        EdgeKind.SECRET: design_ids.secrets,
+    }
+    violations: list[Violation] = []
+    for edge in snapshot.edges:
+        if edge.kind not in _SYS_DIRECTIVE_KINDS:
+            continue
+        if edge.target in valid[edge.kind]:
+            continue
+        file, line = _site_from_edge_origin(edge.origin)
+        _log.debug("SYS001: %s -> %s not in design model", edge.src, edge.target)
+        violations.append(
+            Violation(
+                rule="SYS001",
+                severity=Severity.ERROR,
+                file=file,
+                line=line,
+                message=(
+                    f"SYS001: frob:{edge.kind.value} {edge.target} at {edge.src} "
+                    f"does not name a {_SYS_DIRECTIVE_KINDS[edge.kind]} construct "
+                    f"in the loaded design model; fix the id or add it to the "
+                    f".strata design"
+                ),
+            )
+        )
+    return violations
+
+
+def _sys003_one_model(model, root: Path) -> list[Violation]:  # noqa: ANN001
+    """SYS003 violations from one design model's tier-2 code-binding
+    conformance check (`bind_code` + `check_import_conformance`); an
+    ambiguous binding within this model is logged and skipped, never fatal
+    to the whole gate (a model's `code=` globs are scoped to its own
+    nodes, so ambiguity here is a design-file bug, not a cross-model
+    concern)."""
+    from frob.strata import bind_code, check_import_conformance
+
+    bound = bind_code(model, root)
+    if bound.is_err:
+        _log.warning("SYS003: code binding ambiguous, skipping: %s", bound.danger_err)
+        return []
+    report = check_import_conformance(model, bound.danger_ok, root)
+    return [
+        Violation(
+            rule="SYS003",
+            severity=Severity.WARN,
+            file=violation.file,
+            line=violation.line,
+            message=(
+                f"SYS003: undeclared cross-component import {violation.spec} at "
+                f"{violation.file}:{violation.line} ({violation.src_component} -> "
+                f"{violation.dst_component}); declare a Flow in that direction or "
+                f"remove the import"
+            ),
+        )
+        for violation in report.violations
+    ]
+
+
+def _sys003(design_ids, root: Path) -> list[Violation]:
+    """SYS003: an in-repo import crosses two design-bound files with no
+    declared `Flow` in that direction (docs/strata/surface.md#code-binding-
+    tier-2-v0-implementation's "not yet wired" SYS-gate surfacing, T-0080).
+    Runs once per successfully elaborated design model."""
+    violations: list[Violation] = []
+    for model in design_ids.models:
+        violations.extend(_sys003_one_model(model, root))
+    return violations
+
+
+def _sys002(snapshot: GraphSnapshot, design_ids) -> list[Violation]:  # noqa: ANN001
+    """SYS002: a boundary or secret construct in the design model has no
+    `frob:boundary`/`frob:secret` code binding anywhere -- the construct
+    exists on paper but nothing in code attests it (docs/strata/surface.md
+    #directives-t-0080)."""
+    bound: dict[EdgeKind, set[str]] = {kind: set() for kind in _SYS002_REQUIRED_KINDS}
+    for edge in snapshot.edges:
+        if edge.kind in bound:
+            bound[edge.kind].add(edge.target)
+    ids_by_kind = {
+        EdgeKind.BOUNDARY: design_ids.boundaries,
+        EdgeKind.SECRET: design_ids.secrets,
+    }
+    violations: list[Violation] = []
+    for kind in _SYS002_REQUIRED_KINDS:
+        for construct_id in sorted(ids_by_kind[kind]):
+            if construct_id in bound[kind]:
+                continue
+            _log.debug("SYS002: %s %s has no code binding", kind.value, construct_id)
+            violations.append(
+                Violation(
+                    rule="SYS002",
+                    severity=Severity.WARN,
+                    file=f"design/{kind.value}/{construct_id}",
+                    line=0,
+                    message=(
+                        f"SYS002: {kind.value} {construct_id} has no code binding; "
+                        f"add: frob:{kind.value} {construct_id} at the enforcing site"
+                    ),
+                )
+            )
+    return violations
+
+
+# frob:doc docs/modules/gates.md#public-api
+# frob:ticket T-0080
+# frob:tests tests/test_gates.py::TestSysGate::test_noop_no_design_dir
+# frob:tests tests/test_gates.py::TestSysGate::test_sys001_dangling
+# frob:tests tests/test_gates.py::TestSysGate::test_sys001_valid
+# frob:tests tests/test_gates.py::TestSysGate::test_sys002_unbound
+# frob:tests tests/test_gates.py::TestSysGate::test_sys002_bound
+# frob:tests tests/test_gates.py::TestSysGate::test_sys003_import
+# frob:tests tests/test_gates.py::TestSysGate::test_sys004_load_failure
+# frob:tests tests/test_gates.py::TestSysGate::test_sys004_suppresses_sys001
+def sys_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
+    """SYS001 (dangling directive), SYS002 (unbound boundary/secret), SYS003
+    (undeclared cross-component import, tier-2 conformance), and SYS004 (a
+    `.strata` design file failed to parse/elaborate -- suppresses SYS001
+    for the whole run since ids are merged across files with no per-file
+    provenance).
+
+    Opt-in via a `design/` (or `[strata].design_dir`) directory of `.strata`
+    files existing, same posture as `decisions_gate`: a repo not yet using
+    strata sees nothing.
+    """
+    from frob.strata import load_design_ids
+
+    root = Path(root)
+    design_dir = _design_dir(root)
+    if not (root / design_dir).is_dir():
+        _log.debug("sys_gate: no %s/ directory, skipping", design_dir)
+        return ()
+
+    design_ids = load_design_ids(root, design_dir)
+    violations = (
+        *_sys004(design_ids),
+        *_sys001(snapshot, design_ids),
+        *_sys002(snapshot, design_ids),
+        *_sys003(design_ids, root),
+    )
+    _log.info(
+        "sys_gate: %d channel(s)/%d boundary(ies)/%d secret(s) in model, "
+        "%d violation(s), %d design load error(s)",
+        len(design_ids.channels),
+        len(design_ids.boundaries),
+        len(design_ids.secrets),
+        len(violations),
+        len(design_ids.errors),
+    )
+    return violations
 
 
 def _dup_config(root: Path) -> tuple[bool, float]:
