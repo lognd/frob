@@ -292,6 +292,128 @@ class TestNonPythonLanguageWiring:
         assert any(p.suffix == ".ts" for p in found)
 
 
+class TestCoreUndeclaredInterfaceNonPython:
+    """REVIEWER-CAUGHT REJECT ROUND (T-0169): the extended-kinds/SYS101
+    fix above still left `_core_undeclared_violations` (net/fs-write/exec,
+    delegated to THREAT004's `check_capability_conformance`) on the raw
+    Python-only `bind_code` binding -- so a `.ts` `axios.get(...)` or a
+    `.rs` `Command::new(...).spawn()` under a `code=` glob produced ZERO
+    SYS100 and a SPURIOUS SYS102 instead, exactly reproducing the original
+    bug for the raw net/exec/fs-write kinds the pilot most needs caught.
+    `check_capability_conformance` is language-generic (`_effects.py::
+    _line_effects` uses `language_for`/`_PATTERNS`, no Python-specific
+    parsing) so this was purely a wiring omission, not a real scope
+    boundary -- `check_self_conformance` now hands `_core_undeclared_
+    violations` and `_unmodeled_violations` the SAME `_capability_binding`
+    superset as SYS100-extended/SYS101."""
+
+    # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    def test_typescript_core_net_undeclared_fires(self, tmp_path: Path):
+        """A `.ts` file calling `axios.get(...)` (raw `net`, THREAT004's
+        core delegated kind) with no `may` declaration is SYS100, and NOT
+        also a spurious SYS102 for the same directory."""
+        _write(
+            tmp_path,
+            "src/frob/widget/app.ts",
+            "import axios from 'axios';\naxios.get('https://evil.example/x');\n",
+        )
+        model = KernelModel(
+            nodes=(
+                Node(id="widget", trust="trusted", attrs=("code=src/frob/widget/**",)),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        violations = result.danger_ok.violations
+        assert any(
+            v.rule == SYS_UNDECLARED_INTERFACE
+            and v.node == "widget"
+            and "net" in v.detail
+            for v in violations
+        )
+        assert not any(v.rule == SYS_UNMODELED_CODE for v in violations)
+
+    # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    def test_typescript_core_net_discharges_once_declared(self, tmp_path: Path):
+        """The same `axios.get(...)` fixture with `may=("net",)` declared
+        produces no SYS100 for `net` -- proves the TS core-kind scan
+        actually reaches the declared/observed join, not just the raw
+        scanner."""
+        _write(
+            tmp_path,
+            "src/frob/widget/app.ts",
+            "import axios from 'axios';\naxios.get('https://evil.example/x');\n",
+        )
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="widget",
+                    trust="trusted",
+                    attrs=("code=src/frob/widget/**",),
+                    may=("net",),
+                ),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        assert not any(
+            v.rule == SYS_UNDECLARED_INTERFACE and v.node == "widget"
+            for v in result.danger_ok.violations
+        )
+
+    # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    def test_rust_core_exec_undeclared_fires(self, tmp_path: Path):
+        """A `.rs` file calling `Command::new(...).spawn()` (raw `exec`)
+        with no `may` declaration is SYS100, and NOT also a spurious
+        SYS102 for the same directory."""
+        _write(
+            tmp_path,
+            "src/frob/widget/main.rs",
+            'use std::process::Command;\nfn f() { Command::new("ls").spawn(); }\n',
+        )
+        model = KernelModel(
+            nodes=(
+                Node(id="widget", trust="trusted", attrs=("code=src/frob/widget/**",)),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        violations = result.danger_ok.violations
+        assert any(
+            v.rule == SYS_UNDECLARED_INTERFACE
+            and v.node == "widget"
+            and "exec" in v.detail
+            for v in violations
+        )
+        assert not any(v.rule == SYS_UNMODELED_CODE for v in violations)
+
+    # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    def test_rust_core_exec_discharges_once_declared(self, tmp_path: Path):
+        """The same `Command::new(...).spawn()` fixture with
+        `may=("exec",)` declared produces no SYS100 for `exec`."""
+        _write(
+            tmp_path,
+            "src/frob/widget/main.rs",
+            'use std::process::Command;\nfn f() { Command::new("ls").spawn(); }\n',
+        )
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="widget",
+                    trust="trusted",
+                    attrs=("code=src/frob/widget/**",),
+                    may=("exec",),
+                ),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        assert not any(
+            v.rule == SYS_UNDECLARED_INTERFACE and v.node == "widget"
+            for v in result.danger_ok.violations
+        )
+
+
 class TestLanguageCoverageDriftLock:
     # frob:tests src/frob/strata/_selfconform.py::_sorted_capability_files kind="drift"
     def test_scanned_languages_equals_registry_languages(self):

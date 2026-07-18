@@ -145,7 +145,21 @@ def _core_undeclared_violations(
 ) -> list[SelfConformViolation]:
     """SYS100 for net/fs-write/exec, delegated verbatim to THREAT004's
     `check_capability_conformance` -- zero new detection (module
-    docstring's SYS100 core case)."""
+    docstring's SYS100 core case). REVIEWER-CAUGHT T-0169 CORRECTION: this
+    function does no language filtering itself -- it only ever sees what
+    `binding` puts in front of it. Earlier in this same ticket, the caller
+    passed `bind_code`'s raw Python-only binding here on the mistaken
+    belief that `check_capability_conformance` was Python-import-syntax-
+    specific like `bind_code`'s OWN binding step is. It is not:
+    `_effects.py::_line_effects`/`check_capability_conformance` call
+    `language_for`/`_PATTERNS` directly, the SAME multi-language
+    (python/typescript/rust/c-cpp) machinery `vet._capability` and this
+    module's SYS100-extended/SYS101 already use -- there is no Python-
+    specific parsing anywhere in this delegated path. So `check_self_
+    conformance` now passes THIS function the same `_capability_binding`
+    superset as the other two rules, and a `.ts`/`.rs`/`.c`/`.cpp` file's
+    raw net/fs-write/exec effects reach SYS100 exactly like a `.py`
+    file's do."""
     conformance = check_capability_conformance(model, binding, root)
     found = []
     for violation in conformance.violations:
@@ -343,8 +357,15 @@ def _unmodeled_violations(
     root: Path, binding: CodeBinding
 ) -> list[SelfConformViolation]:
     """SYS102: every top-level `src/frob/` directory whose files (if any)
-    are ALL `FOREIGN` to `bind_code`'s partition -- no node's `code=`
-    glob claims it at all (module docstring's SYS102 gap statement)."""
+    are ALL `FOREIGN` to `code=`'s partition -- no node's `code=` glob
+    claims it at all (module docstring's SYS102 gap statement). `binding`
+    is the T-0169 `_capability_binding` superset here, not `bind_code`'s
+    raw `.py`-only output: a directory containing ONLY a `.ts`/`.rs`/etc.
+    file that a node's `code=` glob genuinely claims used to misreport
+    SYS102 ("unmodeled") because the Python-only binding never bound that
+    file at all -- a spurious finding on top of the missed SYS100/SYS101,
+    now fixed by using the same superset every other rule in this module
+    uses."""
     prefix_owned: set[str] = set()
     # frob:waive PERF003 reason="ownership loop, separate dirs loop below, not a join"
     for rel, owner in binding.owner.items():
@@ -377,10 +398,21 @@ def check_self_conformance(
     glob, then SYS100/SYS101/SYS102 reconcile that partition against
     `Node.may` (module docstring: SYS100's net/fs-write/exec slice
     delegates to THREAT004 outright; the rest is new code with a written
-    gap statement each). SYS100-extended and SYS101 run over
-    `_capability_binding`'s superset (T-0169), not `bind_code`'s raw
-    `.py`-only partition, so every language `vet._capability` scans
-    (TypeScript/JS included) is actually reconciled, not silently skipped.
+    gap statement each). ALL THREE rules -- SYS100 core, SYS100-extended,
+    and SYS101 -- run over `_capability_binding`'s superset (T-0169), not
+    `bind_code`'s raw `.py`-only partition: `check_capability_conformance`
+    (SYS100 core's delegate) is language-generic (`_effects.py::
+    _line_effects` uses `language_for`/`_PATTERNS`, no Python-specific
+    parsing), so restricting it to the Python-only binding was itself part
+    of the same wiring bug this ticket fixes, not a deliberate scope cut
+    (see `_core_undeclared_violations`'s docstring for the reviewer-caught
+    correction). SYS102 also uses the superset for its ownership check, so
+    a directory claimed by a node's `code=` glob only through a non-Python
+    file no longer misreports as unmodeled (see `_unmodeled_violations`'s
+    docstring). `bind_code`'s raw Python-only binding is still computed
+    and still the ONLY input to `bind_code` itself (which stays Python-
+    import-syntax-specific by design, unrelated to this fix) -- it is
+    simply no longer handed to any of SYS100/SYS101/SYS102's joins.
     `Err` propagates `bind_code`'s (or `_capability_binding`'s)
     `AmbiguousCodeBinding` unchanged -- deny by default, never a silent
     partial scan."""
@@ -394,10 +426,10 @@ def check_self_conformance(
         return Err(capability_bound.danger_err)
     capability_binding = capability_bound.danger_ok
 
-    violations = _core_undeclared_violations(model, binding, root)
+    violations = _core_undeclared_violations(model, capability_binding, root)
     violations.extend(_extended_kind_violations(model, capability_binding, root))
     violations.extend(_stale_design_violations(model, capability_binding, root))
-    violations.extend(_unmodeled_violations(root, binding))
+    violations.extend(_unmodeled_violations(root, capability_binding))
 
     _log.info("selfconform: %d violation(s) found under %s", len(violations), root)
     return Ok(SelfConformReport(violations=tuple(violations)))

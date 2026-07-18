@@ -2342,14 +2342,44 @@ logand.app pilot reports browser-side capabilities could not be auto-verified, l
 Root cause: WIRING BUG, confirmed by repro. `_selfconform.py::check_self_conformance`
 handed `bind_code`'s Python-only `CodeBinding` (`_code_binding.py::_sorted_py_files`
 walks only `*.py`, by design -- it also backs Python-import conformance) straight to
-the capability-observation joins (`_observed_extended_kinds_by_node`,
-`_observed_all_kinds_by_node`). A `.ts`/`.js`/`.rs`/`.c-cpp` file was therefore never
-even a KEY in `binding.owner`, so `scan_file_capabilities` (which DOES have a
-typescript pattern table, `_EXT_LANGUAGE` in `_capability.py`) was simply never
-called on it. Repro: a `.ts` node file with `fetch(...)` + `localStorage.setItem(...)`
-under a `code=` glob produced ZERO SYS100 violations before the fix (only spurious
-SYS102 "unmodeled code", since bind_code saw 0 bound files); after the fix it
-correctly fires SYS100 for `fetch_url` and `client_storage`.
+EVERY join that reconciles observed vs. declared capabilities. A `.ts`/`.js`/`.rs`/
+`.c-cpp` file was therefore never even a KEY in `binding.owner`, so neither
+`scan_file_capabilities` (extended kinds/SYS101) NOR `check_capability_conformance`
+(core net/fs-write/exec kinds/SYS100) was ever called on it -- and the empty
+directory-ownership set also produced a spurious SYS102 "unmodeled code" for any
+directory whose only files were non-Python.
+
+FIX ROUND 1 (extended kinds + SYS101 only): added `_capability_binding`, a superset
+of `bind_code`'s binding covering every `language_for`-recognized extension, and
+wired it into `_extended_kind_violations`/`_stale_design_violations`. Repro at the
+time: a `.ts` file with `fetch(...)` + `localStorage.setItem(...)` went from 0
+violations to correctly firing SYS100 for `fetch_url`/`client_storage`.
+
+REVIEWER REJECT (round 1): correctly caught that `_core_undeclared_violations`
+(net/fs-write/exec, delegated to THREAT004's `check_capability_conformance`) and
+`_unmodeled_violations` (SYS102) were STILL being handed the raw Python-only
+`binding`, not the `_capability_binding` superset -- so a `.ts` `axios.get(...)`
+or `.rs` `Command::new(...).spawn()` still produced ZERO SYS100 and a SPURIOUS
+SYS102, i.e. the exact same class of bug survived for the raw net/exec/fs-write
+kinds the logand.app pilot most needs caught. My round-1 rationale ("Python-
+import-syntax-specific by design") was WRONG for this delegate: verified by
+reading `_effects.py::_line_effects`, which calls `language_for`/`_PATTERNS`
+directly -- there is no Python-specific parsing anywhere in
+`check_capability_conformance`'s path; only `bind_code` itself (the binding step,
+not the capability-conformance check) needs Python's import syntax specifically.
+
+FIX ROUND 2 (this round): `check_self_conformance` now passes `capability_binding`
+(the superset) to ALL FOUR joins -- `_core_undeclared_violations`,
+`_extended_kind_violations`, `_stale_design_violations`, AND `_unmodeled_violations`.
+`bind_code`'s raw Python-only binding is still computed and is still the ONLY input
+to `bind_code` itself (unrelated to this fix, stays Python-import-syntax-specific
+by design) and to `_capability_binding`'s own construction (it extends that binding,
+doesn't replace its Python-file entries). Repro confirmed both new cases: a `.ts`
+`axios.get(...)` fires SYS100 `net` with no spurious SYS102; a `.rs`
+`Command::new("ls").spawn()` fires SYS100 `exec` with no spurious SYS102. Design
+choices reconfirmed unchanged: `_PACKAGE_ROOT = "src/frob"` (SYS102 scope, still
+correct -- unrelated to language), and deny-by-default `AmbiguousCodeBinding` on a
+multi-node glob match (unchanged in `_capability_binding`).
 
 Fix (both files in scope):
 - `src/frob/vet/_capability.py`: added public `SCANNED_LANGUAGES` (frozenset of
@@ -2362,40 +2392,48 @@ Fix (both files in scope):
   OTHER capability-scannable-language file, bound by the SAME `code=` glob
   convention via `_node_code_globs`, reused not reimplemented; deny-by-default
   `AmbiguousCodeBinding` on a multi-node glob match, same as `bind_code`).
-  `check_self_conformance` now builds this superset binding and passes it to
-  `_extended_kind_violations`/`_stale_design_violations` (SYS100-extended and
-  SYS101), so every registry-covered language is reconciled, not just Python.
-  `bind_code`'s raw Python-only binding is still used for `_core_undeclared_violations`
-  (delegates verbatim to THREAT004/`_effects.py`, out of scope, Python-import-
-  syntax-specific by design) and `_unmodeled_violations` (SYS102 is specifically
-  about `src/frob/` package-directory ownership, unrelated to capability language).
+  `check_self_conformance` builds this superset binding once and passes it to ALL
+  FOUR violation-collecting functions (`_core_undeclared_violations`,
+  `_extended_kind_violations`, `_stale_design_violations`, `_unmodeled_violations`),
+  so every registry-covered language is reconciled by every rule, not just
+  Python by some of them.
 
 Changed:
   src/frob/vet/_capability.py::SCANNED_LANGUAGES
   src/frob/strata/_selfconform.py::_sorted_capability_files
   src/frob/strata/_selfconform.py::_capability_binding
-  src/frob/strata/_selfconform.py::_observed_extended_kinds_by_node (binding source changed)
-  src/frob/strata/_selfconform.py::_observed_all_kinds_by_node (binding source changed)
-  src/frob/strata/_selfconform.py::check_self_conformance (wires _capability_binding in)
+  src/frob/strata/_selfconform.py::_core_undeclared_violations (binding source changed, round 2)
+  src/frob/strata/_selfconform.py::_observed_extended_kinds_by_node (binding source changed, round 1)
+  src/frob/strata/_selfconform.py::_observed_all_kinds_by_node (binding source changed, round 1)
+  src/frob/strata/_selfconform.py::_unmodeled_violations (binding source changed, round 2)
+  src/frob/strata/_selfconform.py::check_self_conformance (wires _capability_binding into all four joins)
 
-Evidence (frob:tests-bound, tests/unit/strata/test_selfconform.py):
+Evidence (frob:tests-bound, tests/unit/strata/test_selfconform.py, 20 tests total):
   TestNonPythonLanguageWiring.test_typescript_undeclared_capability_fires
   TestNonPythonLanguageWiring.test_typescript_undeclared_capability_discharges_once_declared
   TestNonPythonLanguageWiring.test_typescript_stale_design_fires
   TestNonPythonLanguageWiring.test_sorted_capability_files_includes_typescript
+  TestCoreUndeclaredInterfaceNonPython.test_typescript_core_net_undeclared_fires
+  TestCoreUndeclaredInterfaceNonPython.test_typescript_core_net_discharges_once_declared
+  TestCoreUndeclaredInterfaceNonPython.test_rust_core_exec_undeclared_fires
+  TestCoreUndeclaredInterfaceNonPython.test_rust_core_exec_discharges_once_declared
   TestLanguageCoverageDriftLock.test_scanned_languages_equals_registry_languages
   TestLanguageCoverageDriftLock.test_language_for_is_consistent_with_scanned_languages
-All prior SYS100/SYS101/SYS102/drift-lock/real-gate-green tests in the same file
-still pass unmodified (16/16 total in tests/unit/strata/test_selfconform.py).
+The four new round-2 tests each assert both the SYS100 fire AND the absence of a
+SYS102 for the same directory (the spurious-misreport the reviewer flagged). All
+prior SYS100/SYS101/SYS102/drift-lock/real-gate-green tests in the same file still
+pass unmodified.
 
 Filed: none (fix stayed inside declared scope; T-0158's own coverage matrix and
 T-0181's `_capability_registry.py` were not touched).
 
-Gates: `uv run frob check` clean except the pre-existing campaign-wide TEST006
-coverage-stamp warning (never run `make coverage` per standing instruction).
-`uv run frob test --base main` PASS (python exit=0, 16.52s), including the real
-gate-green self-conformance test against `design/frob.strata` + the live repo tree.
-`ruff format --check .` clean.
+Gates: `uv run frob check` -- the only non-waived findings are a pre-existing
+campaign-wide TEST006 coverage-stamp warning (never run `make coverage` per
+standing instruction) and a pre-existing COV003 on ticket T-0168's evidence id,
+confirmed present on merged `main` BEFORE this ticket's changes via `git stash`
+(unrelated to this ticket's scope). `uv run frob test --base main` PASS (python
+exit=0), including the real gate-green self-conformance test against
+`design/frob.strata` + the live repo tree. `ruff format --check .` clean.
 
 Not closing this ticket per workflow instructions (implementer records evidence and
 Done report; closing/verification is a separate step).
