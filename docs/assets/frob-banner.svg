@@ -77,11 +77,11 @@
              C222 184 248 150 290 150 Z"/>
   </g>
 
-  <!-- eyes: two glowing upturned almonds -->
-  <circle cx="268" cy="132" r="9" fill="#9fe88a" opacity="0.14"/>
-  <circle cx="314" cy="129" r="8" fill="#9fe88a" opacity="0.14"/>
-  <path d="M260 130 a8 5 -8 1 0 16 -2.4 a8 5 -8 1 0 -16 2.4 Z" fill="#a9f096"/>
-  <path d="M307 127 a7 4.4 -8 1 0 14 -2 a7 4.4 -8 1 0 -14 2 Z" fill="#a9f096"/>
+  <!-- eyes: soft, contented, glowing gently (round tops, flat bottoms) -->
+  <circle cx="268" cy="132" r="8" fill="#b8f0a8" opacity="0.10"/>
+  <circle cx="314" cy="130" r="7" fill="#b8f0a8" opacity="0.10"/>
+  <path d="M261 134 a7 6.4 0 1 1 14 0 Z" fill="#b8f0a8"/>
+  <path d="M308 132 a6 5.6 0 1 1 12 0 Z" fill="#b8f0a8"/>
 
   <!-- stand -->
   <path d="M258 282 Q290 276 322 282 L313 299 Q290 303 267 299 Z" fill="url(#standg)"/>
