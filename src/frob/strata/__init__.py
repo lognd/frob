@@ -58,6 +58,14 @@ from frob.strata._breach import (
     evaluate_breach_contracts,
 )
 from frob.strata._claims import evaluate_claims
+from frob.strata._code_binding import (
+    FOREIGN,
+    CodeBinding,
+    ConformanceReport,
+    ImportViolation,
+    bind_code,
+    check_import_conformance,
+)
 from frob.strata._crash import CrashContractReport, evaluate_crash_contracts
 from frob.strata._elaborate import elaborate
 from frob.strata._errors import StrataError
@@ -121,12 +129,15 @@ __all__ = [
     "Capacity",
     "CdnDecl",
     "ClaimDecl",
+    "CodeBinding",
     "CompiledPolicies",
     "CompiledPolicy",
     "ConfineUse",
+    "ConformanceReport",
     "CrashContract",
     "CrashContractReport",
     "EffectPhase",
+    "FOREIGN",
     "FactBase",
     "FaultInjectionCase",
     "Claim",
@@ -137,6 +148,7 @@ __all__ = [
     "FlowDecl",
     "ForbidCall",
     "ForbidImport",
+    "ImportViolation",
     "Independent",
     "InfraExpansion",
     "KernelModel",
@@ -178,7 +190,9 @@ __all__ = [
     "SurfaceCapacity",
     "TrustDecl",
     "Verdict",
+    "bind_code",
     "build_facts",
+    "check_import_conformance",
     "compile_policies",
     "elaborate",
     "elaborate_infra",

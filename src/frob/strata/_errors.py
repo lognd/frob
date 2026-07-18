@@ -77,3 +77,9 @@ class StrataError(ErrorSet):
         "detection must land before revocation, else the compromise persists "
         "past its own contract (docs/strata/kernel.md#scenario, T-0076)"
     )
+    AmbiguousCodeBinding = (
+        "A source file matches the `code=` glob of more than one node -- "
+        "tier-2 code binding requires a partition, since two-way binding "
+        "(charter law 5) needs exactly one node to attest for any given file "
+        "(docs/strata/surface.md#code-binding-tier-2-v0-implementation, T-0078)"
+    )

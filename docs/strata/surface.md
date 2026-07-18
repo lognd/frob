@@ -156,6 +156,101 @@ block into the kernel model:
   intact, and elaboration logs a WARNING ("unrefined frontier") -- this is
   the planning-frontier signal (`frob sys plan`, T-0084), not an error.
 
+## Code binding (tier 2, v0 implementation)
+
+<!-- frob:ticket T-0078 -->
+<!-- frob:describes src/frob/strata/_code_binding.py::bind_code -->
+<!-- frob:describes src/frob/strata/_code_binding.py::check_import_conformance -->
+<!-- frob:describes src/frob/strata/_code_binding.py::CodeBinding -->
+<!-- frob:describes src/frob/strata/_code_binding.py::ConformanceReport -->
+<!-- frob:describes src/frob/strata/_code_binding.py::ImportViolation -->
+
+The surface grammar's `code glob+` comp_item (`comp_item` above) is not
+yet lexed by `strata-core/src/parse.rs` -- v0 binds code the same way
+`skew`/`fanout`/`growth` desugar (`kernel.md#capacity-semantics`): a node
+declares one or more `code=<glob>` attrs directly in the kernel model
+(Python API today; a first-class `code` keyword is a parser follow-up,
+not a kernel change, since the fact stays an opaque node attr either
+way). `bind_code` glob-matches every `.py` file under a scan root against
+every node's `code=` attrs:
+
+- A file matched by exactly one node's glob is bound to that node.
+- A file matched by zero nodes is `FOREIGN` (charter law 2: "unclassified
+  code is foreign by default").
+- A file matched by more than one node's glob is `StrataError.
+  AmbiguousCodeBinding` -- ownership must partition the tree, since
+  two-way binding (law 5) needs exactly one node to attest for any given
+  file.
+
+`check_import_conformance` then walks every bound file's python imports
+(stdlib `ast`, so line numbers are exact, including relative imports --
+see below) and resolves each specifier to an in-repo file via
+`frob.lang.resolve_local_import`; unresolved specifiers (third-party,
+stdlib) are not tracked -- only in-repo crossings are a design concern.
+
+**Direction is exact, not either-way (normative, T-0078 review round).**
+`Flow` is a DIRECTED primitive (`kernel.md`'s primitive table: "Flow --
+directed movement between two nodes"); a declared `Flow(src=A, dst=B)`
+authorizes an import from A's bound code into B's bound code and NOTHING
+else -- it does not also authorize a B -> A import, exactly as it would
+not license a B -> A data flow. Charter law 2 ("undeclared flows are
+forbidden") is enforced per direction, not per unordered pair: an import
+whose (importer's owner, imported file's owner) pair, IN THAT ORDER, has
+no matching `(Flow.src, Flow.dst)` in the `KernelModel` is an
+`ImportViolation` (`file`, `line`, `spec`, `src_component`,
+`dst_component`) -- "undeclared cross-component import" (this ticket's
+one-line spec). An earlier draft of this module authorized either
+direction from one declared `Flow` (justified, incorrectly, by charter law
+5 -- which is about the two-way *conformance join*, design constrains code
+and code attests design, not about one edge licensing both directions of
+traffic); that was a REJECT-worthy soundness hole, fixed before this
+ticket closed. A future revision MAY relax this if a bidirectional
+channel construct is ever added to the surface grammar (RPC request/reply,
+say) -- that would be a new kernel-model shape, recorded here when it
+lands, not a silent default.
+
+This is the tier-2 half of `kernel.md`'s `frame(op)` / soundness-
+boundaries note that "tier-2 joins code-derived facts (imports, effects,
+directives from the frob graph)". It is reflexion-model conformance
+(declared architecture vs. as-built dependency graph): the kernel model
+is the "declared" side, `bind_code` + real imports are the "as-built"
+side, and `check_import_conformance` is the join.
+
+**Relative imports resolve to their absolute in-repo equivalent.**
+`from . import x` and `from ..pkg import y` (`ast.ImportFrom.level >= 1`)
+are the dominant intra-package import style, including strata's own
+source tree, and are resolved against the importing file's own package
+position (standard python relative-import semantics: level 1 is the
+importing file's own package; each further level walks up one more
+directory) rather than skipped. `from . import x[, y]` (no `module`)
+treats each imported name as a candidate submodule of the target package,
+mirroring python's own name-resolution order; a name that is not actually
+a submodule (a plain attribute import) simply fails to resolve in-repo
+downstream (`resolve_local_import` returns None) and is not tracked,
+consistent with third-party/stdlib specifiers.
+
+**Not yet wired / v0 scope cuts (explicit, not oversights):**
+
+- `frob check` SYS-gate surfacing of `ConformanceReport` (T-0080's SYS
+  gate family).
+- Non-Python languages: C/C++ `#include` resolution already exists in
+  `frob.lang.resolve_local_import`, but v0 only reads import lines for
+  python via `ast`, since a general per-language "import statement -> line
+  number" walk lives in `frob.lang` and is out of this ticket's scope.
+- `FOREIGN -> bound` imports (a file matched by no node's `code=` glob
+  importing a file that IS bound to a node) are not checked: the outer
+  walk in `check_import_conformance` only iterates over bound (non-
+  `FOREIGN`) files, so an unclassified script importing into a component
+  is silent today. Rationale for the cut, not an oversight: `FOREIGN`
+  names no kernel node, so there is no `Flow.src` id to require a
+  declaration against, and "every unclassified file in the repo" is a much
+  larger and noisier surface than "every declared component's own code" --
+  the same asymmetry the surface grammar's `managed` marker already
+  encodes (nodes opt out of tier-2 conformance explicitly; unclassified
+  code was never opted in). A future revision could still flag these as a
+  softer "undeclared foreign dependency" diagnostic once `FOREIGN` also
+  attaches to a synthetic node id in `bind_code`'s output.
+
 ## Module system
 
 Dotted module paths (`use base.labels { Pii }`); per-repo `design/`
