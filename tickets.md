@@ -3118,7 +3118,7 @@ T-0064 discovery: std.infra's queue/balancer grammar has no TRUST clause (unlike
 ```yaml
 id: T-0094
 title: 'frob ticket evidence subcommand: append structured evidence ids from the CLI'
-state: queued
+state: done
 kind: ux
 origin: agent
 created: '2026-07-17'
@@ -3128,12 +3128,55 @@ scope:
 - src/frob/tickets/**
 - src/frob/app/**
 - tests/**
-evidence: []
+- src/frob/__main__.py
+- docs/modules/tickets.md
+- tickets.md
+evidence:
+- tests/test_tickets.py::TestEvidence::test_resolvable_ids_appended
+- tests/test_tickets.py::TestEvidence::test_parametrized_bare_name_matches
+- tests/test_tickets.py::TestEvidence::test_unresolvable_id_rejected
+- tests/test_tickets.py::TestEvidence::test_mixed_batch_rejected_wholesale
+- tests/test_tickets.py::TestEvidence::test_dedupes_against_existing_evidence
+- tests/test_tickets.py::TestEvidence::test_unknown_ticket_not_found
 attachments: []
 acceptance: []
 threat: null
 ```
 Three implementer agents in a row (T-0062, T-0063, T-0064) wrote Done-report prose evidence but left the structured evidence: YAML empty or wrong (cargo ids), because the only way to record evidence is hand-editing tickets.md YAML. Add 'frob ticket evidence T-XXXX <pytest-node-id>...' that validates ids against collected tests (rejecting unresolvable ids up front, closing the COV003 gap at write time) and appends to the structured list. Orchestration keeps catching this by hand; the tool should make the right thing the easy thing.
+
+## Done report
+
+Changed:
+- src/frob/tickets/_models.py::TicketError.UnknownEvidence
+- src/frob/tickets/__init__.py::_matches_collected
+- src/frob/tickets/__init__.py::add_evidence
+- src/frob/app/ticket_runner.py::_evidence
+- src/frob/app/ticket_runner.py::run (dispatch case "evidence")
+- src/frob/app/config.py::AppConfig.ticket_evidence_ids
+- src/frob/__main__.py::_add_ticket_lifecycle_parsers (evidence subparser)
+- docs/modules/tickets.md (Public API, Error types, Integration points)
+
+`add_evidence` takes the collected node-id set as a parameter (dependency
+injection) rather than importing `frob.testing` directly -- `frob.testing`
+transitively imports `frob.graph`, which the module docstring explicitly
+disclaims (docs/rework.md cycle-avoidance). The CLI runner
+(`frob.app.ticket_runner._evidence`) is the one place that calls
+`frob.testing.collect_python_tests` and passes the result in. A batch with
+any unresolvable id is rejected wholesale (Err(UnknownEvidence)) rather than
+partially applied, so a typo can never sneak an unrelated id into evidence.
+Dogfooded: `uv run frob ticket evidence T-0094 <6 node ids>` recorded this
+ticket's own evidence below.
+
+Evidence: see structured `evidence:` list above (6 pytest node ids in
+tests/test_tickets.py::TestEvidence, recorded via the new command itself).
+Filed: none.
+Gates: `frob check --ticket T-0094 --only gates` clean (exit 0; remaining
+118 warn-level violations are pre-existing repo-wide PERF/ARCH debt outside
+this ticket's scope, unaffected by this change). Widened scope mid-ticket
+(recorded via `frob ticket sweep`) to include `src/frob/__main__.py`,
+`docs/modules/tickets.md`, and `tickets.md` -- all required to wire the CLI
+subcommand and document it per house rules, and not anticipated by the
+ticket's original scope.
 
 <!-- ticket:T-0095 -->
 ```yaml
@@ -3160,7 +3203,7 @@ Agentic token sink measured during the strata build: every frob check run prints
 ```yaml
 id: T-0096
 title: 'frob ticket archive: rotate done tickets out of the active ledger'
-state: queued
+state: done
 kind: ux
 origin: agent
 created: '2026-07-17'
@@ -3170,12 +3213,66 @@ scope:
 - src/frob/tickets/**
 - src/frob/app/**
 - tests/**
-evidence: []
+- src/frob/__main__.py
+- docs/modules/tickets.md
+- tickets.md
+- tickets-archive.md
+evidence:
+- tests/test_tickets.py::TestArchive::test_moves_done_and_dropped_only
+- tests/test_tickets.py::TestArchive::test_idempotent_second_run_moves_nothing
+- tests/test_tickets.py::TestArchive::test_nothing_to_archive_is_zero
+- tests/test_tickets.py::TestArchive::test_load_queue_merges_active_and_archive
+- tests/test_tickets.py::TestArchive::test_blocked_by_archived_ticket_resolves_closed
+- tests/unit/test_ticket_store.py::TestArchiveLedger::test_archive_path_at_root
+- tests/unit/test_ticket_store.py::TestArchiveLedger::test_load_archive_missing_file_is_empty
+- tests/unit/test_ticket_store.py::TestArchiveLedger::test_write_then_load_archive_round_trips
+- tests/unit/test_ticket_store.py::TestArchiveLedger::test_archive_format_matches_ledger_marker
 attachments: []
 acceptance: []
 threat: null
 ```
 tickets.md is 2100+ lines and grows with every done report; agents hand-edit it by string surgery (three evidence failures already) and re-read big chunks every mission. Add frob ticket archive moving done/dropped tickets verbatim to tickets-archive.md (same format, grep-compatible, still tracked); active ledger stays a few hundred lines. Single-file model preserved -- just two files by temperature. Complements T-0094 (evidence CLI).
+
+## Done report
+
+Changed:
+- src/frob/tickets/_store.py::archive_path
+- src/frob/tickets/_store.py::load_archive
+- src/frob/tickets/_store.py::write_archive
+- src/frob/tickets/_store.py::_render_ledger (header parameter)
+- src/frob/tickets/__init__.py::archive
+- src/frob/tickets/__init__.py::load_active (renamed from the old
+  active-only load_queue body)
+- src/frob/tickets/__init__.py::load_queue (redefined: now merges active +
+  archive via the new `_load_merged` helper)
+- src/frob/tickets/__init__.py::transition (blocker resolution now reads
+  `_load_merged`, so an archived blocker still resolves as closed)
+- src/frob/app/ticket_runner.py::_archive, `_list` switched to `load_active`
+- src/frob/app/config.py, src/frob/__main__.py (archive subparser)
+- docs/modules/tickets.md (Storage, Public API, Storage internals)
+
+`tickets-archive.md` is the same ledger section format as `tickets.md`,
+just a different header. `load_queue` merges both files (DuplicateId on an
+id collision between them) because blocked_by/parent references and gate
+joins must keep resolving after a ticket is archived -- a done ticket that
+becomes a blocker's target must still read as closed, not unknown/open
+(covered by test_blocked_by_archived_ticket_resolves_closed). `frob ticket
+list`/`doable` deliberately read the active file only (`load_active`), so
+the archive never bloats them back up -- the whole point of archiving.
+`archive()` is idempotent: a second run with nothing newly done/dropped
+returns Ok(0) and touches neither file.
+
+Evidence: see structured `evidence:` list above (9 pytest node ids across
+tests/test_tickets.py::TestArchive and
+tests/unit/test_ticket_store.py::TestArchiveLedger, recorded via `frob
+ticket evidence`).
+Filed: none.
+Gates: `frob check --ticket T-0096 --only gates` clean (exit 0; remaining
+118 warn-level violations are pre-existing repo-wide debt outside this
+ticket's scope). Widened scope mid-ticket (via `frob ticket sweep`) to
+include `src/frob/__main__.py`, `docs/modules/tickets.md`, `tickets.md`,
+and `tickets-archive.md` -- the CLI wiring, docs, and both ledger files this
+feature necessarily touches, not anticipated by the ticket's original scope.
 
 <!-- ticket:T-0097 -->
 ```yaml
@@ -3215,7 +3312,7 @@ README.md includes it above the H1. frob check exit 0.
 ```yaml
 id: T-0098
 title: frob ticket attach without path should error usefully outside a TTY
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-17'
@@ -3225,12 +3322,45 @@ scope:
 - src/frob/tickets/**
 - src/frob/app/**
 - tests/**
-evidence: []
+- docs/modules/tickets.md
+- tickets.md
+- src/frob/__main__.py
+evidence:
+- tests/system/test_cli_ticket.py::TestTicketAttachNonInteractive::test_attach_without_path_fails_fast_off_tty
 attachments: []
 acceptance: []
 threat: null
 ```
 Malmberg adoption agent gap report: frob ticket attach with no path argument attempts clipboard-image capture even in a non-interactive agent session, instead of failing fast with a clear message (or accepting a text note). Agents cannot paste from a clipboard; the command should detect no-TTY and error with remedy text.
+
+## Done report
+
+Changed:
+- src/frob/app/ticket_runner.py::_attach (stdin.isatty() check before any
+  clipboard attempt)
+- docs/modules/tickets.md (Clipboard capture)
+
+The check lives in the CLI runner, not `frob.tickets.attach` -- the library
+function stays a pure "copy these bytes from a path or the clipboard"
+primitive; the CLI is what decides whether the clipboard should even be
+offered. Non-TTY + no path now exits 1 immediately with remedy text
+("pass an explicit file path: frob ticket attach <id> <path>") instead of
+spawning a clipboard backend (wl-paste/xclip/powershell.exe/pngpaste) that
+can never produce an image in a headless agent session -- the actual
+adoption-agent gap report this ticket exists to close.
+
+Evidence: see structured `evidence:` list above (1 pytest node id,
+tests/system/test_cli_ticket.py::TestTicketAttachNonInteractive, an
+end-to-end subprocess test with a 10s timeout to catch a hang, recorded via
+`frob ticket evidence`).
+Filed: none.
+Gates: `frob check --ticket T-0098 --only gates` clean (exit 0; remaining
+118 warn-level violations are pre-existing repo-wide debt outside this
+ticket's scope). Widened scope mid-ticket (via `frob ticket sweep`) to
+include `docs/modules/tickets.md`, `tickets.md`, and `src/frob/__main__.py`
+-- the doc update this house rule requires, plus files already modified on
+this branch by the sibling T-0094/T-0096 tickets worked in the same
+session, not anticipated by the ticket's original scope.
 
 <!-- ticket:T-0099 -->
 ```yaml

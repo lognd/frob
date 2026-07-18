@@ -177,3 +177,35 @@ class TestTicketNewNonInteractive:
         out = r.stdout + r.stderr
         assert r.returncode == 0, out
         assert "?" not in out
+
+
+class TestTicketAttachNonInteractive:
+    def test_attach_without_path_fails_fast_off_tty(self, tmp_path):
+        # frob:tests tests/system/test_cli_ticket.py::TestTicketAttachNonInteractive.test_attach_without_path_fails_fast_off_tty
+        _init_repo(tmp_path)
+        new = run(
+            "ticket",
+            "new",
+            "--title",
+            "needs a screenshot",
+            "--kind",
+            "bug",
+            "--path",
+            str(tmp_path),
+        )
+        assert new.returncode == 0, new.stdout + new.stderr
+
+        # No path argument means "read from clipboard" -- but this
+        # subprocess has no TTY, so it must fail fast with remedy text
+        # instead of attempting clipboard capture (T-0098). A 10s timeout
+        # catches a hang if it doesn't.
+        r = subprocess.run(
+            FROB + ["ticket", "attach", "T-0001", "--path", str(tmp_path)],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        out = r.stdout + r.stderr
+        assert r.returncode == 1, out
+        assert "TTY" in out
+        assert "T-0001" in out

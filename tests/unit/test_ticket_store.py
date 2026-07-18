@@ -7,16 +7,19 @@ from pathlib import Path
 
 from frob.tickets._models import Origin, Ticket, TicketError, TicketKind, TicketState
 from frob.tickets._store import (
+    archive_path,
     atomic_write,
     attachments_dir,
     ledger_path,
     load_all,
+    load_archive,
     migrate_to_ledger,
     parse_ticket_file,
     serialize_ticket,
     slugify,
     store_mode,
     tickets_dir,
+    write_archive,
     write_ticket,
 )
 
@@ -150,6 +153,36 @@ class TestMigrateToLedger:
         result = migrate_to_ledger(tmp_path)
         assert result.is_ok
         assert result.danger_ok == 0
+
+
+class TestArchiveLedger:
+    def test_archive_path_at_root(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/_store.py::archive_path kind="unit"
+        assert archive_path(tmp_path) == tmp_path / "tickets-archive.md"
+
+    def test_load_archive_missing_file_is_empty(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/_store.py::load_archive kind="unit"
+        result = load_archive(tmp_path)
+        assert result.is_ok
+        assert result.danger_ok == {}
+
+    def test_write_then_load_archive_round_trips(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/_store.py::write_archive kind="unit"
+        ticket = _ticket(ticket_id="T-0002", title="Archived one")
+        written = write_archive(tmp_path, {"T-0002": ticket})
+        assert written.is_ok
+        assert archive_path(tmp_path).exists()
+
+        loaded = load_archive(tmp_path)
+        assert loaded.is_ok
+        assert loaded.danger_ok.keys() == {"T-0002"}
+        assert loaded.danger_ok["T-0002"].title == "Archived one"
+
+    def test_archive_format_matches_ledger_marker(self, tmp_path: Path) -> None:
+        write_archive(tmp_path, {"T-0001": _ticket()})
+        text = archive_path(tmp_path).read_text(encoding="utf-8")
+        assert "<!-- ticket:T-0001 -->" in text
+        assert "```yaml" in text
 
 
 class TestAtomicWrite:

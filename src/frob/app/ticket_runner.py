@@ -1,5 +1,5 @@
 """CLI wiring for `frob ticket new|list|show|doable|plan|start|sweep|attach|
-block|close|fail` (docs/modules/tickets.md)."""
+block|close|fail|evidence|archive` (docs/modules/tickets.md)."""
 
 from __future__ import annotations
 
@@ -47,10 +47,14 @@ def run(cfg: AppConfig) -> None:
             _close(root, cfg)
         case "fail":
             _fail(root, cfg)
+        case "evidence":
+            _evidence(root, cfg)
+        case "archive":
+            _archive(root)
         case _:
             _log.error(
                 "usage: frob ticket <new|list|show|doable|plan|start|sweep|"
-                "attach|block|close|fail> ..."
+                "attach|block|close|fail|evidence|archive> ..."
             )
             sys.exit(1)
 
@@ -107,9 +111,12 @@ def _filter_by_state(tickets, state):
 
 
 def _list(root: Path, cfg: AppConfig) -> None:
-    from frob.tickets import TicketState, load_queue
+    # Active store only (T-0096) -- archived done/dropped tickets would
+    # otherwise pile back up in every `list` the archive command exists to
+    # keep them out of.
+    from frob.tickets import TicketState, load_active
 
-    result = load_queue(root)
+    result = load_active(root)
     if result.is_err:
         _log.error("ticket list failed: %s", result.danger_err)
         sys.exit(1)
@@ -339,6 +346,19 @@ def _attach(root: Path, cfg: AppConfig) -> None:
         _log.error("frob ticket attach requires <id>")
         sys.exit(1)
 
+    # No path means "read from clipboard" -- but a non-interactive agent
+    # session has no clipboard to paste from, and would otherwise hang or
+    # spawn a clipboard backend that can never produce an image (T-0098).
+    if cfg.ticket_attach_path is None and not sys.stdin.isatty():
+        _log.error(
+            "frob ticket attach %s: no path given and stdin is not a TTY "
+            "(non-interactive session cannot paste from the clipboard); "
+            "pass an explicit file path: frob ticket attach %s <path>",
+            cfg.ticket_id,
+            cfg.ticket_id,
+        )
+        sys.exit(1)
+
     source = AttachmentSource(path=cfg.ticket_attach_path)
     result = attach(root, cfg.ticket_id, source, caption=cfg.ticket_caption)
     if result.is_err:
@@ -407,3 +427,58 @@ def _fail(root: Path, cfg: AppConfig) -> None:
         _log.error("fail failed: %s", result.danger_err)
         sys.exit(1)
     _log.info("%s: recorded failure attempt %d", cfg.ticket_id, attempt)
+
+
+# frob:ticket T-0094
+def _evidence(root: Path, cfg: AppConfig) -> None:
+    """Validate `cfg.ticket_evidence_ids` against collected pytest node ids
+    and append the resolvable ones to the ticket's structured evidence list."""
+    from frob.testing import collect_python_tests
+    from frob.tickets import add_evidence
+
+    if cfg.ticket_id is None or not cfg.ticket_evidence_ids:
+        _log.error("frob ticket evidence requires <id> <pytest-node-id>...")
+        sys.exit(1)
+
+    collected = collect_python_tests(root)
+    if collected.is_err:
+        _log.error(
+            "ticket evidence: pytest collection failed: %s", collected.danger_err
+        )
+        sys.exit(1)
+
+    result = add_evidence(
+        root, cfg.ticket_id, cfg.ticket_evidence_ids, collected.danger_ok.node_ids
+    )
+    if result.is_err:
+        _log.error(
+            "ticket evidence failed: %s (run `frob test --collect` to refresh "
+            "collected tests, or fix the id)",
+            result.danger_err,
+        )
+        sys.exit(1)
+    ticket = result.danger_ok
+    _log.info(
+        "%s: evidence now has %d id(s): %s",
+        cfg.ticket_id,
+        len(ticket.evidence),
+        list(ticket.evidence),
+    )
+
+
+# frob:ticket T-0096
+def _archive(root: Path) -> None:
+    """Move every done/dropped ticket from the active ledger into
+    tickets-archive.md, verbatim (idempotent -- a second run finds nothing
+    to move)."""
+    from frob.tickets import archive
+
+    result = archive(root)
+    if result.is_err:
+        _log.error("ticket archive failed: %s", result.danger_err)
+        sys.exit(1)
+    n = result.danger_ok
+    if n == 0:
+        _log.info("nothing to archive")
+    else:
+        _log.info("archived %d ticket(s) into tickets-archive.md", n)
