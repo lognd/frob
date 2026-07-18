@@ -193,6 +193,53 @@ class ClaimDecl(BaseModel):
     review: str | None = None
 
 
+# frob:doc docs/strata/kernel.md#scenario
+class RemoveDecl(BaseModel):
+    """A parsed `remove IDENT` scenario rewrite: the node (and its edges) is gone."""
+
+    model_config = ConfigDict(frozen=True)
+
+    kind: Literal["remove"] = "remove"
+    node_id: str
+
+
+# frob:doc docs/strata/kernel.md#scenario
+class ScaleDecl(BaseModel):
+    """A parsed `scale IDENT by NUM` scenario rewrite: multiply a flow's rate."""
+
+    model_config = ConfigDict(frozen=True)
+
+    kind: Literal["scale"] = "scale"
+    flow_id: str
+    factor: float
+
+
+# frob:doc docs/strata/kernel.md#scenario
+class TrustDecl(BaseModel):
+    """A parsed `trust IDENT := IDENT` scenario rewrite: reassign a node's trust."""
+
+    model_config = ConfigDict(frozen=True)
+
+    kind: Literal["trust"] = "trust"
+    node_id: str
+    level: str
+
+
+#: The typed union of syntactic scenario rewrite forms (docs/strata/kernel.md#scenario).
+RewriteDecl = RemoveDecl | ScaleDecl | TrustDecl
+
+
+# frob:doc docs/strata/kernel.md#scenario
+class ScenarioDecl(BaseModel):
+    """A parsed `scenario ID { rewrite* claim* }` statement, one entry in a `Module`."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: str
+    rewrites: tuple[RewriteDecl, ...] = ()
+    claims: tuple[ClaimDecl, ...] = ()
+
+
 # frob:doc docs/strata/surface.md#parser
 class RefineDecl(BaseModel):
     """A parsed `refine X into { ... binds ... }` statement, one entry in a `Module`."""
@@ -418,3 +465,4 @@ class Module(BaseModel):
     balancers: tuple[BalancerDecl, ...] = ()
     policies: tuple[PolicyDecl, ...] = ()
     operations: tuple[OperationDecl, ...] = ()
+    scenarios: tuple[ScenarioDecl, ...] = ()

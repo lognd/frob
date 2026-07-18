@@ -34,8 +34,13 @@ from frob.strata._ast import (
     RecordPhase,
     RefineDecl,
     RefusePhase,
+    RemoveDecl,
+    RewriteDecl,
+    ScaleDecl,
+    ScenarioDecl,
     ScopeSpec,
     StoreDecl,
+    TrustDecl,
 )
 from frob.strata._ast import (
     Capacity as SurfaceCapacity,
@@ -78,6 +83,7 @@ from frob.strata._packs import ANALYZABLE, ANALYZABLE_POLICY_ID, require_analyza
 from frob.strata._parse import parse_module
 from frob.strata._policy import CompiledPolicies, CompiledPolicy, compile_policies
 from frob.strata._report import render_report, summarize
+from frob.strata._scenarios import ScenarioResult, evaluate_scenarios
 
 __all__ = [
     "ANALYZABLE",
@@ -131,22 +137,29 @@ __all__ = [
     "RecordPhase",
     "RefineDecl",
     "RefusePhase",
+    "RemoveDecl",
     "RemoveNode",
     "Rewrite",
+    "RewriteDecl",
     "Rung",
+    "ScaleDecl",
     "ScaleRate",
     "Scenario",
+    "ScenarioDecl",
+    "ScenarioResult",
     "ScopeSpec",
     "SetTrust",
     "StoreDecl",
     "StrataError",
     "SurfaceCapacity",
+    "TrustDecl",
     "Verdict",
     "build_facts",
     "compile_policies",
     "elaborate",
     "elaborate_infra",
     "evaluate_claims",
+    "evaluate_scenarios",
     "parse_module",
     "render_report",
     "require_analyzable",

@@ -15,7 +15,18 @@ from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
 
-from ._ast import BoundaryDecl, ClaimDecl, FlowDecl, Module, NodeDecl, RefineDecl
+from ._ast import (
+    BoundaryDecl,
+    ClaimDecl,
+    FlowDecl,
+    Module,
+    NodeDecl,
+    RefineDecl,
+    RemoveDecl,
+    ScaleDecl,
+    ScenarioDecl,
+    TrustDecl,
+)
 from ._errors import StrataError
 from ._infra import elaborate_infra
 from ._models import (
@@ -35,6 +46,11 @@ from ._models import (
     NoFlow,
     Outcome,
     Reach,
+    RemoveNode,
+    Rewrite,
+    ScaleRate,
+    Scenario,
+    SetTrust,
 )
 from ._packs import require_analyzable
 
@@ -143,6 +159,73 @@ def _elaborate_claim(decl: ClaimDecl) -> Claim:
         assumed=decl.assumed,
         owner=decl.owner,
         review=decl.review,
+    )
+
+
+def _validate_scenarios(module: Module) -> Result[None, StrataError]:
+    """Every scenario rewrite target must resolve; every trust level must be known.
+
+    Fail-closed (charter law 2): a `remove`/`scale`/`trust` naming an
+    undeclared node/flow, or a `trust` reassignment to a level absent from
+    the trust lattice, is `UnknownReference`/`UnknownLevel` -- never a
+    silent no-op rewrite (docs/strata/kernel.md#scenario, T-0073).
+    """
+    known_nodes = _known_node_ids(module)
+    known_flows = {f.id for f in module.flows}
+    trust_levels = TRUST.elements()
+    for scenario in module.scenarios:
+        for rewrite in scenario.rewrites:
+            if isinstance(rewrite, RemoveDecl):
+                if rewrite.node_id not in known_nodes:
+                    _log.error(
+                        "scenario %s: remove target %r is not declared",
+                        scenario.id,
+                        rewrite.node_id,
+                    )
+                    return Err(StrataError.UnknownReference)
+            elif isinstance(rewrite, ScaleDecl):
+                if rewrite.flow_id not in known_flows:
+                    _log.error(
+                        "scenario %s: scale target %r is not declared",
+                        scenario.id,
+                        rewrite.flow_id,
+                    )
+                    return Err(StrataError.UnknownReference)
+            else:
+                assert isinstance(rewrite, TrustDecl)
+                if rewrite.node_id not in known_nodes:
+                    _log.error(
+                        "scenario %s: trust target %r is not declared",
+                        scenario.id,
+                        rewrite.node_id,
+                    )
+                    return Err(StrataError.UnknownReference)
+                if rewrite.level not in trust_levels:
+                    _log.error(
+                        "scenario %s: trust level %r is not in the trust lattice %s",
+                        scenario.id,
+                        rewrite.level,
+                        sorted(trust_levels),
+                    )
+                    return Err(StrataError.UnknownLevel)
+    return Ok(None)
+
+
+def _elaborate_rewrite(decl: RemoveDecl | ScaleDecl | TrustDecl) -> Rewrite:
+    """One AST rewrite decl -> one kernel `Rewrite` (a field-for-field mapping)."""
+    if isinstance(decl, RemoveDecl):
+        return RemoveNode(node_id=decl.node_id)
+    if isinstance(decl, ScaleDecl):
+        return ScaleRate(flow_id=decl.flow_id, factor=decl.factor)
+    return SetTrust(node_id=decl.node_id, level=decl.level)
+
+
+def _elaborate_scenario(decl: ScenarioDecl) -> Scenario:
+    """One `ScenarioDecl` -> one kernel `Scenario`; nested claims elaborate in place."""
+    return Scenario(
+        id=decl.id,
+        rewrites=tuple(_elaborate_rewrite(r) for r in decl.rewrites),
+        claims=tuple(_elaborate_claim(c) for c in decl.claims),
     )
 
 
@@ -679,6 +762,9 @@ def elaborate(module: Module) -> Result[KernelModel, StrataError]:
     observability_ok = _validate_observability(module)
     if observability_ok.is_err:
         return Err(observability_ok.danger_err)
+    scenarios_ok = _validate_scenarios(module)
+    if scenarios_ok.is_err:
+        return Err(scenarios_ok.danger_err)
 
     extra_flows = (
         *_elaborate_boundary_phase_flows(module),
@@ -690,6 +776,7 @@ def elaborate(module: Module) -> Result[KernelModel, StrataError]:
         flows=(*(_elaborate_flow(f) for f in module.flows), *extra_flows),
         boundaries=tuple(_elaborate_boundary(b) for b in module.boundaries),
         claims=tuple(_elaborate_claim(c) for c in module.claims),
+        scenarios=tuple(_elaborate_scenario(s) for s in module.scenarios),
     )
 
     infra = elaborate_infra(module, model.nodes, model.flows, model.boundaries)

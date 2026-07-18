@@ -230,6 +230,7 @@ struct ModuleAst {
     balancers: Vec<serde_json::Value>,
     policies: Vec<serde_json::Value>,
     operations: Vec<serde_json::Value>,
+    scenarios: Vec<serde_json::Value>,
 }
 
 impl Parser {
@@ -1506,6 +1507,19 @@ impl Parser {
         }
     }
 
+    fn expect_coloneq(&mut self) -> Result<(), ParseError> {
+        // ':=' is two raw Symbol chars, same pairing trick as expect_le;
+        // scenario's `trust IDENT := IDENT` reassignment is the only user
+        // (docs/strata/kernel.md#scenario, T-0073).
+        match self.cur().kind {
+            TokKind::Symbol(':') => {
+                self.advance();
+                self.expect_symbol('=')
+            }
+            _ => self.err("expected :="),
+        }
+    }
+
     fn parse_claim(&mut self, ast: &mut ModuleAst, kind: &str) -> Result<(), ParseError> {
         self.advance(); // 'assert' or 'assume'
         let id = self.expect_ident("claim id")?;
@@ -1533,6 +1547,66 @@ impl Parser {
         Ok(())
     }
 
+    /// scenario := "scenario" IDENT "{" rewrite* claim* "}"
+    /// rewrite := "remove" IDENT
+    ///          | "scale" IDENT "by" NUMBER
+    ///          | "trust" IDENT ":=" IDENT
+    /// claim reuses the assert/assume productions verbatim (parse_claim) so
+    /// a scenario's nested claims are re-checked under the rewritten fact
+    /// base with the exact same claim vocabulary (docs/strata/kernel.md
+    /// #scenario, T-0073).
+    fn parse_scenario(&mut self, ast: &mut ModuleAst) -> Result<(), ParseError> {
+        self.advance(); // 'scenario'
+        let id = self.expect_ident("scenario id")?;
+        self.expect_symbol('{')?;
+        let mut rewrites: Vec<serde_json::Value> = Vec::new();
+        let mut claims: Vec<serde_json::Value> = Vec::new();
+        loop {
+            if self.at_symbol('}') {
+                break;
+            }
+            if self.at_keyword("remove") {
+                self.advance();
+                let node_id = self.expect_ident("remove target node id")?;
+                rewrites.push(json!({"kind": "remove", "node_id": node_id}));
+            } else if self.at_keyword("scale") {
+                self.advance();
+                let flow_id = self.expect_ident("scale target flow id")?;
+                self.expect_keyword("by")?;
+                let factor = self.expect_number("scale factor")?;
+                rewrites.push(json!({"kind": "scale", "flow_id": flow_id, "factor": factor}));
+            } else if self.at_keyword("trust") {
+                self.advance();
+                let node_id = self.expect_ident("trust target node id")?;
+                self.expect_coloneq()?;
+                let level = self.expect_ident("trust level")?;
+                rewrites.push(json!({"kind": "trust", "node_id": node_id, "level": level}));
+            } else if self.at_keyword("assert") {
+                let mut inner = ModuleAst::default();
+                self.parse_claim(&mut inner, "assert")?;
+                claims.push(inner.claims.remove(0));
+            } else if self.at_keyword("assume") {
+                let mut inner = ModuleAst::default();
+                self.parse_claim(&mut inner, "assume")?;
+                claims.push(inner.claims.remove(0));
+            } else {
+                return self.err(
+                    "expected remove, scale, trust, assert, or assume inside scenario block",
+                );
+            }
+            if self.at_symbol(';') {
+                self.advance();
+            }
+        }
+        self.expect_symbol('}')?;
+        ast.scenarios.push(json!({
+            "id": id,
+            "rewrites": rewrites,
+            "claims": claims,
+        }));
+        Ok(())
+    }
+
     fn parse_program(&mut self) -> Result<ModuleAst, ParseError> {
         let mut ast = ModuleAst::default();
         let mut seen_module = false;
@@ -1544,7 +1618,8 @@ impl Parser {
             match kw.as_str() {
                 "module" => self.parse_module(&mut ast, &mut seen_module)?,
                 "node" | "flow" | "boundary" | "assert" | "assume" | "refine" | "store"
-                | "cache" | "queue" | "cdn" | "balancer" | "policy" | "operation" => {
+                | "cache" | "queue" | "cdn" | "balancer" | "policy" | "operation"
+                | "scenario" => {
                     if !seen_module {
                         return self.err("statement before module declaration");
                     }
@@ -1562,6 +1637,7 @@ impl Parser {
                         "balancer" => self.parse_balancer(&mut ast)?,
                         "policy" => self.parse_policy(&mut ast)?,
                         "operation" => self.parse_operation(&mut ast)?,
+                        "scenario" => self.parse_scenario(&mut ast)?,
                         _ => unreachable!(),
                     }
                 }
@@ -2314,5 +2390,61 @@ mod tests {
             let out = parse_source_impl(s);
             assert!(serde_json::from_str::<Value>(&out).is_ok());
         }
+    }
+
+    #[test]
+    fn parses_scenario_with_all_rewrite_kinds_and_nested_claims() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok(r#"module m
+            scenario node_loss {
+                remove n1;
+                scale f1 by 3.0;
+                trust n2 := foreign;
+                assert c1 noflow n1 -> n2;
+                assume c2 bound rate f1 <= 10 req/s owner alice review "2026-01-01";
+            }"#);
+        let s = &v["scenarios"][0];
+        assert_eq!(s["id"], "node_loss");
+        assert_eq!(s["rewrites"][0]["kind"], "remove");
+        assert_eq!(s["rewrites"][0]["node_id"], "n1");
+        assert_eq!(s["rewrites"][1]["kind"], "scale");
+        assert_eq!(s["rewrites"][1]["flow_id"], "f1");
+        assert_eq!(s["rewrites"][1]["factor"], 3.0);
+        assert_eq!(s["rewrites"][2]["kind"], "trust");
+        assert_eq!(s["rewrites"][2]["node_id"], "n2");
+        assert_eq!(s["rewrites"][2]["level"], "foreign");
+        assert_eq!(s["claims"][0]["id"], "c1");
+        assert_eq!(s["claims"][0]["kind"], "noflow");
+        assert_eq!(s["claims"][1]["id"], "c2");
+        assert_eq!(s["claims"][1]["assumed"], true);
+        // scenario-local claims never leak into the module's top-level list
+        assert_eq!(v["claims"].as_array().unwrap().len(), 0);
+    }
+
+    #[test]
+    fn parses_bare_scenario_with_no_rewrites_or_claims() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok("module m\nscenario s { }");
+        let s = &v["scenarios"][0];
+        assert_eq!(s["id"], "s");
+        assert_eq!(s["rewrites"].as_array().unwrap().len(), 0);
+        assert_eq!(s["claims"].as_array().unwrap().len(), 0);
+    }
+
+    #[test]
+    fn error_scenario_rejects_unknown_statement() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let e = err("module m\nscenario s { bogus x; }");
+        assert_eq!(
+            e["message"],
+            "expected remove, scale, trust, assert, or assume inside scenario block"
+        );
+    }
+
+    #[test]
+    fn error_scenario_trust_requires_coloneq() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let e = err("module m\nscenario s { trust n1 = foreign; }");
+        assert_eq!(e["message"], "expected :=");
     }
 }

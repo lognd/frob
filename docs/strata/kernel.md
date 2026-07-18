@@ -327,6 +327,49 @@ silently drop one. Semantics as implemented in phase 0:
   an overdue or malformed review date is flagged there for the phase-5
   gate to escalate.
 
+## Scenario
+
+<!-- frob:describes src/frob/strata/_ast.py::RemoveDecl -->
+<!-- frob:describes src/frob/strata/_ast.py::ScaleDecl -->
+<!-- frob:describes src/frob/strata/_ast.py::TrustDecl -->
+<!-- frob:describes src/frob/strata/_ast.py::ScenarioDecl -->
+<!-- frob:describes src/frob/strata/_scenarios.py::ScenarioResult -->
+<!-- frob:describes src/frob/strata/_scenarios.py::evaluate_scenarios -->
+
+A scenario (T-0073) is a named counterfactual rewrite of the model: the
+surface grammar is `scenario ID { rewrite* claim* }`, where `rewrite` is
+`remove IDENT` (node loss), `scale IDENT by NUM` (rate surge/retry storm),
+or `trust IDENT := IDENT` (compromise/trust downgrade), and `claim` reuses
+the ordinary `assert`/`assume` productions verbatim -- a scenario's nested
+claims are the same claim vocabulary re-checked under the rewritten fact
+base, not a separate language.
+
+Elaboration (`_elaborate.py::_validate_scenarios`) fails closed exactly
+like every other cross-declaration check: a rewrite naming an undeclared
+node/flow is `UnknownReference`; a `trust` reassignment to a level absent
+from the trust lattice is `UnknownLevel`. There is no silent no-op
+rewrite.
+
+`evaluate_scenarios` (`_scenarios.py`, T-0073) applies each scenario's
+rewrites to a COPY of the elaborated `KernelModel` -- the input model is
+never mutated -- then runs the existing `evaluate_claims` machinery over
+the rewritten model with the scenario's own nested claims:
+
+- `RemoveNode` deletes the node and cascades: every flow touching it (as
+  src or dst) is also deleted, and every boundary attached to one of
+  those flows is deleted with it. Each cascade deletion is logged at
+  INFO so a scenario's blast radius is auditable from the log alone.
+- `ScaleRate` multiplies the named flow's declared `rate` by `factor`. A
+  flow with no declared rate is `UnratedFlow` -- deny by default; a
+  surge on a rate nobody declared is meaningless, not a silent 0 x N.
+- `SetTrust` reassigns a node's `trust` field to the (already
+  lattice-validated) new level.
+
+Result shape: one `ScenarioResult(scenario_id, results)` per scenario, in
+declaration order, `results` being the same `tuple[ClaimResult, ...]`
+`evaluate_claims` would produce for that scenario's claims alone -- a
+scenario never silently drops a claim any more than the base model does.
+
 ## Verdict report
 
 <!-- frob:describes src/frob/strata/_report.py::render_report -->

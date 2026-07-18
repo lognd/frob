@@ -46,6 +46,11 @@ class StrataError(ErrorSet):
         "wishful thinking is refused, never silently accepted "
         "(docs/strata/boundary.md#frames-and-failure-atomicity, T-0069)"
     )
+    UnratedFlow = (
+        "A scenario `scale` rewrite targets a flow with no declared rate; a "
+        "surge multiplier on an undeclared rate is meaningless -- deny by "
+        "default (docs/strata/kernel.md#scenario, T-0073)"
+    )
     UnknownLogClass = (
         "An observe block's log class is not one of the fixed vocabulary "
         "{error_paths, state_transitions, boundary_crossings, crash_events} "
