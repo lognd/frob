@@ -2079,3 +2079,320 @@ acceptance: []
 threat: null
 ```
 T-0176's scope listed src/frob/tickets/**, src/frob/app/**, tests/**, docs/modules/tickets.md, tickets.md but omitted src/frob/__main__.py -- every prior ticket-subcommand-adding ticket (e.g. T-0162) explicitly included src/frob/__main__.py in scope, since the ticket subcommand argparse wiring lives there, not under src/frob/app/. T-0176 needed exactly that (frob ticket land's --worktree/--dry-run argparse registration) and could not deliver a usable CLI command without it. Waived SCOPE001 at src/frob/__main__.py in T-0176's commit rather than expanding scope unilaterally; this ticket exists to note the gap for future ticket-scope authoring (mechanically: any ticket adding a new frob subcommand should include src/frob/__main__.py in scope up front).
+
+<!-- ticket:T-0221 -->
+```yaml
+id: T-0221
+title: frob vet <lockfile> misparses path arg and exits 0 on ERROR
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/vet/**
+- src/frob/app/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Filed from sibling-repo pilot P1 (graphite/feldspar/lithos, 2026-07-18). P1 gap 3: frob vet uv.lock -> 'no supported lockfile under /repo/uv.lock' + ERROR LockfileUnsupported + EXIT 0. Two bugs: the path arg is treated as a directory root only (a lockfile path should be accepted), and the error exit code is lost (exit-0-on-error is gate-poisoning, same vacuous-pass doctrine as T-0184). Regression tests for both.
+
+<!-- ticket:T-0222 -->
+```yaml
+id: T-0222
+title: per-node capability excuse channel + missing needles (fs-read, uvicorn bind,
+  pyo3 import)
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/**
+- src/frob/vet/_capability_registry.py
+- tests/**
+- docs/strata/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Filed from sibling-repo pilot P1 (graphite/feldspar/lithos, 2026-07-18). P1 gap 5 (HIGH for adoption; 6 residual gaps across graphite+feldspar trace here): real-but-scanner-invisible capabilities force permanent SYS101 red or dishonest under-declaration -- may ffi on a pyo3-import node, may net for uvicorn.run, may fs for Path.read_text are all 'declared but never observed'. Fix both sides: (a) BenignCapability-style per-node excuse with a written reason (relates to T-0174 waiver channel -- coordinate, do not duplicate); (b) add the missing needles: fs-read (Path.read_text/open-for-read), socket/uvicorn bind, compiled-extension import as ffi observation. Litmus per needle per T-0182 discipline.
+
+<!-- ticket:T-0223 -->
+```yaml
+id: T-0223
+title: THREAT003 CWE-78 discharge impossible in foreign-less library models
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/**
+- tests/**
+- docs/strata/threat.md
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Filed from sibling-repo pilot P1 (graphite/feldspar/lithos, 2026-07-18). P1 gap 8 (medium-high): a library repo with no foreign node (feldspar) declaring may exec cannot discharge CWE-78 -- the demanded claim form is NoFlow(foreign src -> node) and no foreign source exists; frob sys plan --apply then mints permanently unclosable tickets (feldspar T-0009/T-0010 left queued as evidence). Add a library-mode discharge form: an argv-confinement assume against the outermost caller, or an explicit no-foreign-sources model-level fact that discharges the foreign-path obligation family with a written reason.
+
+<!-- ticket:T-0224 -->
+```yaml
+id: T-0224
+title: frob sys doc matrix prints PROVED (L4) for claims that were only ASSUMED
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/**
+- src/frob/app/sys_runner.py
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Filed from sibling-repo pilot P1 (graphite/feldspar/lithos, 2026-07-18). P1 gap 9 (medium, overstates assurance): audit summary says {proved: N, assumed: M} but the matrix rows for assumed CWE discharges read PROVED (L4). Add a distinct ASSUMED status in the matrix rendering; a claim resting on an assume must never print as PROVED. Regression fixture: model with one proved and one assumed claim, assert distinct labels.
+
+<!-- ticket:T-0225 -->
+```yaml
+id: T-0225
+title: TEST003 fires on design/ dir; strata ids need e2e-binding obligation not unit/integration
+  gates
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/**
+- src/frob/lang/_walk_strata.py
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Filed from sibling-repo pilot P1 (graphite/feldspar/lithos, 2026-07-18). P1 gap 10: T-0168 exempted .strata from TEST001/TEST002 but TEST003 ('interface design has 0 integration tests') still fires on the design dir (graphite +16 findings). Per the refs, system ids bind kind=e2e. Decide + implement consistently with T-0168: exempt design artifacts from TEST003, and (design decision, document it) whether a SYS-family obligation should demand e2e bindings for flows instead.
+
+<!-- ticket:T-0226 -->
+```yaml
+id: T-0226
+title: utility/non-transitive flow marking -- SYS003 hub edges destroy true noflow
+  claims
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/**
+- strata-core/src/parse.rs
+- docs/strata/**
+- tests/**
+- design/frob.strata
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Filed from sibling-repo pilot P1 (graphite/feldspar/lithos, 2026-07-18). P1 gap 11 (expressiveness): graphite had to withdraw a TRUE claim ('TUI never crosses HTTP') because SYS003 forced declaring tui->core (logging import) and core->server (entrypoint hosting), and reachability closure then refutes the noflow through the hub. Add a flow attribute (utility / no-transit) excluded from noflow transitive closure, or claim-level path exclusions; litmus pair: hub edge marked utility keeps the noflow claim provable, unmarked refutes it. Grammar change -> tmLanguage drift-lock will fire.
+
+<!-- ticket:T-0227 -->
+```yaml
+id: T-0227
+title: gitio treats untracked gitlink/directory as file (Errno 21 warning spam)
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/gitio.py
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Filed from sibling-repo pilot P1 (graphite/feldspar/lithos, 2026-07-18). P1 gap 12: graphite has .claude/worktrees/lithos (gitlink); every frob check/test warns 'could not read untracked file ...: [Errno 21] Is a directory'. Skip directories/gitlinks from ls-files --others handling; regression test with an untracked dir.
+
+<!-- ticket:T-0228 -->
+```yaml
+id: T-0228
+title: check summary conflates errors and warnings ('pass ... 987 violation(s)')
+state: queued
+kind: ux
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/app/check_runner.py
+- src/frob/gates/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Filed from sibling-repo pilot P1 (graphite/feldspar/lithos, 2026-07-18). P1 gap 13 (all 3 repos; honesty risk): 'pass gates 987 violation(s), 0 waived' on exit 0, 'pass frob-cycle 1 cycle found', and failing lines counting warn-class findings as violations. Split every summary line into N error(s), M warning(s), K waived; never label warn findings violations on a passing gate. Builds on T-0202's output work.
+
+<!-- ticket:T-0229 -->
+```yaml
+id: T-0229
+title: polyglot check-type default silently skips gates then reports clean PASS
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/app/**
+- src/frob/process/**
+- tests/**
+- docs/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Filed from sibling-repo pilot P1 (graphite/feldspar/lithos, 2026-07-18). P1 gap 14 (HIGH -- a repo can look enforced while unenforced): lithos frob check warned 'python checks (gates included) NOT running' then printed [PASS] 0 errors 0 warnings exit 0 -- the obligation system never ran. Fix: run all detected stages by default in polyglot repos; if that is too slow, the unpinned-polyglot state must be a FAILING finding, not a warning contradicted by the PASS line. Regression: polyglot fixture repo, unpinned -> nonzero exit or all stages run.
+
+<!-- ticket:T-0230 -->
+```yaml
+id: T-0230
+title: PERF00x findings anchor to enclosing def line, not the offending statement
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/perf/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Filed from sibling-repo pilot P1 (graphite/feldspar/lithos, 2026-07-18). P1 gap 15: lithos audit.py:450 PERF002 while the .index() calls sit at 465-466; rust conformance.rs:31 PERF003 points at the fn signature. Report the call-site line. Feeds T-0161 (heuristic fixes) -- coordinate. Regression fixtures asserting the exact reported line.
+
+<!-- ticket:T-0231 -->
+```yaml
+id: T-0231
+title: 'small CLI/UX batch: --version flag, sys plan dry-run label, DOC001 hint for
+  missing docs root'
+state: queued
+kind: ux
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/__main__.py
+- src/frob/app/**
+- src/frob/gates/**
+- src/frob/strata/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Filed from sibling-repo pilot P1 (graphite/feldspar/lithos, 2026-07-18). P1 gaps 16/17/18 batched: (a) frob --version -> argparse error; add version output from package metadata. (b) frob sys plan without --apply prints 'compiled 1 obligation ticket(s)' with no dry-run label and no --apply mention -- say DRY RUN and name the flag. (c) DOC001 hint says 'link it from docs/index.md' in repos with no docs/index.md (lithos x256) -- resolve the configured/existing docs root or suggest creating one. Three small fixes, one ticket, tests each.
+
+<!-- ticket:T-0232 -->
+```yaml
+id: T-0232
+title: per-gate timing attribution shared/wrong; concurrent frob runs contend on .frob
+  db
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/**
+- src/frob/graph/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Filed from sibling-repo pilot P1 (graphite/feldspar/lithos, 2026-07-18). P1 gap 20: graphite shows secrets=39.71s sys=39.71s tickets=39.69s (identical; 3.6s when quiet) -- shared scan time is attributed to every gate; stages balloon ~56s while a frob vet runs concurrently in the same repo (db contention). Attribute shared scans once (report separately), and check .frob cache.db locking behavior under concurrent invocations (WAL was added once before -- verify it covers this path).
+
+<!-- ticket:T-0233 -->
+```yaml
+id: T-0233
+title: broken frob:doc target suppresses other coverage findings on the same file
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Filed from sibling-repo pilot P1 (graphite/feldspar/lithos, 2026-07-18). P1 gap 21 (correctness): feldspar had DOC002 anchor-less targets; fixing them UNMASKED 6 previously-unreported COV001s on the same files -- a broken doc edge was counting as coverage. A frob:doc edge that fails to resolve must not satisfy COV001. Regression: fixture with a broken edge asserts COV001 still fires.
+
+<!-- ticket:T-0234 -->
+```yaml
+id: T-0234
+title: generated-file marker respected by coverage gates (COV001 on generated sources)
+state: queued
+kind: ux
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/**
+- src/frob/graph/**
+- docs/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Filed from sibling-repo pilot P1 (graphite/feldspar/lithos, 2026-07-18). P1 gap 23: graphite frontend/src/api/api.generated.ts draws COV001 doc-edge demands (its repo ticket T-0006 documents the dead end). The [graph] excludes leaf exists but repos want generated code IN the graph (xref) yet exempt from doc/test obligations. Add a generated marker (glob list in frob.toml, or filename pattern *.generated.*) that COV/TEST gates respect while graph/xref still see the symbols.
