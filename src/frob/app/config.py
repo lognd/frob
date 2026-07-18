@@ -42,6 +42,7 @@ class Subcommand(str, enum.Enum):
 # frob:doc docs/modules/app.md#config
 # frob:ticket T-0030
 # frob:ticket T-0085
+# frob:ticket T-0115
 class AppConfig(BaseModel):
     # frob:ticket T-0021
     subcommand: Subcommand | None = None
@@ -233,7 +234,8 @@ class AppConfig(BaseModel):
     mutate_argv: list[str] = []
     mutate_json: bool = False
 
-    # sys (T-0084: plan; T-0085: doc; T-0086: export; check/trace/capacity/
+    # sys (T-0084 plan; T-0085 doc; T-0086 export; T-0115 audit;
+    # check/trace/capacity/
     # threats are later phase-5 tickets, not yet landed)
     sys_command: str | None = None  # plan|doc|export (more per roadmap phase 5)
     sys_path: Path | None = None

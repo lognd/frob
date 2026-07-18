@@ -876,7 +876,8 @@ def _add_sys_parser(sub) -> None:
     (T-0085), and `export` (T-0086) today; `check`/`trace`/`capacity`/
     `threats` (docs/strata/roadmap.md "CLI surface (target)") are later
     roadmap-phase-5 siblings -- extend this parser with one more
-    `sys_sub.add_parser` per verb as they land, never replace it."""
+    `sys_sub.add_parser` per verb as they land, never replace it. `audit`
+    (T-0115) is the checking counterpart to `doc`."""
     # -- sys -------------------------------------------------------------------
     sys_p = sub.add_parser(
         "sys", help="strata design-model applications (plan, doc, export, ...)"
@@ -920,6 +921,13 @@ def _add_sys_parser(sub) -> None:
         default="owasp-top-10",
         help="baseline view to render the matrix for (default: owasp-top-10)",
     )
+
+    sys_audit_p = sys_sub.add_parser(
+        "audit",
+        help="check the full per-family exhaustiveness conjunction; "
+        "nonzero exit + named gaps on any failure (T-0115)",
+    )
+    sys_audit_p.add_argument("sys_path", metavar="path", nargs="?", default=".")
 
 
 def _build_parser() -> argparse.ArgumentParser:

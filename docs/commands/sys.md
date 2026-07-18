@@ -200,3 +200,52 @@ def export_iam(model: KernelModel) -> str
 <!-- frob:describes src/frob/app/sys_runner.py::run -->
 <!-- frob:describes src/frob/app/sys_runner.py::_run_doc -->
 <!-- frob:describes src/frob/app/sys_runner.py::_run_export -->
+
+## `frob sys audit`
+
+The CHECKING counterpart to `frob sys doc`'s human-facing matrix: evaluates
+the full three-part exhaustiveness conjunction (docs/strata/threat.md#the-
+exhaustiveness-proof-the-point) -- THREAT001+002+003 for the security AND
+quality families, COMPLIANCE001+002 for compliance -- against EVERY
+configured baseline view for every `.strata` design file under the repo's
+design dir, and exits nonzero with a named-gap summary (family, view,
+rule, detail) when any part fails. Zero new detection: composed entirely
+from the already-shipped `check_catalog_completeness` / `check_capability_
+completeness` / `check_discharge_completeness` / `evaluate_compliance`
+calls `frob sys doc` and `evaluate_threats` already make.
+
+```bash
+frob sys audit                 # every default view, every family
+frob sys audit /path/to/repo
+```
+
+Default views: every entry in `VIEWS` (security), `QUALITY_VIEWS`
+(quality), and `REGULATION_VIEWS` (compliance) -- so a clean run proves
+exhaustiveness against every baseline the repo's catalogs currently ship,
+not just one. CI-parseable output: one `GAP family=... view=... rule=...
+detail=...` line per violation, `PROVED` on a clean run.
+
+### Public API
+
+<!-- frob:describes src/frob/strata/_audit.py::evaluate_exhaustiveness -->
+<!-- frob:describes src/frob/strata/_audit.py::AuditReport -->
+<!-- frob:describes src/frob/strata/_audit.py::FamilyGap -->
+
+### CLI wiring
+
+<!-- frob:describes src/frob/app/sys_runner.py::_run_audit -->
+<!-- frob:describes src/frob/app/sys_runner.py::_print_audit_report -->
+
+### The vuln-litmus pair
+
+`design/litmus/audit_vuln.strata` is a deliberately-vulnerable model whose
+`may "sql"` capability fires an undischarged THREAT003 obligation in both
+the security (CWE-89) and quality (CWE-639) families -- refuted by `frob
+sys audit` with exactly those two named gaps (tests/unit/strata/test_
+litmus_audit_vuln.py, permanent CI golden). The compliance family and the
+hardened (all-clean) twin are built as `KernelModel` fixtures directly in
+tests/unit/strata/test_audit.py instead of a second `.strata` file: a real
+surface-grammar gap (T-0137, claim ids cannot contain `:`/`-`, so no
+`.strata` source can author a `weakness:<cwe>:<node>`-shaped discharge
+claim today) blocks a hardened `.strata` twin from round-tripping through
+the parser. See that test module's docstring for the full explanation.

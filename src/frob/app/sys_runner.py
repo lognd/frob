@@ -42,8 +42,10 @@ from frob.logging.quiet import quiet_stdout_logs
 from frob.strata import (
     DEFAULT_DESIGN_DIR,
     MARKER_PREFIX,
+    AuditReport,
     KernelModel,
     PlannedTicket,
+    evaluate_exhaustiveness,
     load_design_ids,
     plan_obligations,
     render_audit_matrix,
@@ -307,6 +309,64 @@ def _run_doc(cfg: AppConfig) -> None:
     print(rendered.danger_ok, end="")
 
 
+# frob:ticket T-0115
+def _print_audit_report(report: AuditReport) -> None:
+    """Print `frob sys audit`'s machine-usable summary: which views were
+    checked, then every named gap grouped by family (docs/strata/threat.md
+    #the-exhaustiveness-proof-the-point: "every gap named, owned, and
+    expiring") -- CI-parseable one-gap-per-line, no ambiguity about which
+    conjunction member failed."""
+    _log.info(
+        "sys audit: checked %d view(s): %s",
+        len(report.views_checked),
+        ", ".join(report.views_checked),
+    )
+    if report.proved:
+        _log.info("sys audit: PROVED -- zero gaps across every configured view")
+        return
+    _log.error("sys audit: %d gap(s) found", len(report.gaps))
+    for gap in report.gaps:
+        _log.error(
+            "sys audit: GAP family=%s view=%s rule=%s detail=%s",
+            gap.family,
+            gap.view,
+            gap.rule,
+            gap.detail,
+        )
+
+
+# frob:ticket T-0115
+def _run_audit(cfg: AppConfig) -> None:
+    """`frob sys audit`: evaluate the full three-part exhaustiveness
+    conjunction (THREAT001-003 for security/quality, COMPLIANCE001-002 for
+    compliance, docs/strata/threat.md#the-exhaustiveness-proof-the-point)
+    for every `.strata` design file under the repo's design dir against
+    EVERY configured baseline view, and exit nonzero with a named-gap
+    summary when any part fails -- the CI-ready checking counterpart to
+    `frob sys doc`'s human-facing matrix rendering (T-0115)."""
+    root = (cfg.sys_path or Path(".")).resolve()
+    design_dir = _design_dir(root)
+    ids = load_design_ids(root, design_dir)
+    if ids.errors:
+        for error in ids.errors:
+            _log.error("sys audit: %s failed to load: %s", error.path, error.error)
+        sys.exit(1)
+    if not ids.models:
+        _log.info("sys audit: no design models under %s/%s", root, design_dir)
+        return
+
+    model = _merge_models(ids.models)
+    audited = evaluate_exhaustiveness(model)
+    if audited.is_err:
+        _log.error("sys audit: %s", audited.danger_err)
+        sys.exit(1)
+
+    report = audited.danger_ok
+    _print_audit_report(report)
+    if not report.proved:
+        sys.exit(1)
+
+
 # frob:doc docs/modules/app.md#runners
 # frob:ticket T-0084
 # frob:ticket T-0085
@@ -321,6 +381,9 @@ def run(cfg: AppConfig) -> None:
         return
     if cfg.sys_command == "doc":
         _run_doc(cfg)
+        return
+    if cfg.sys_command == "audit":
+        _run_audit(cfg)
         return
     if cfg.sys_command == "export":
         _run_export(cfg)

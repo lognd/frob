@@ -266,12 +266,25 @@ the unknown -- and says so.
   audit binding security/quality prose, the litmus (a deliberately
   vulnerable+unoptimized model whose every planted anti-pattern the audit
   flags, with a hardened twin that discharges all families). SHIPPED
-  (T-0085) in part: `frob sys doc` renders the matrix
+  (T-0085 + T-0115): `frob sys doc` renders the matrix
   (`frob.strata._sysdoc.render_audit_matrix`, docs/commands/sys.md#frob-
-  sys-doc) and the claims audit (DOC003, charter drift note above) is
-  wired into `sys_gate`. The litmus (deliberately vulnerable + hardened
-  twin models) is not part of T-0085's scope; noted as a remaining cut,
-  not silently dropped.
+  sys-doc), the claims audit (DOC003, charter drift note above) is wired
+  into `sys_gate`, and `frob sys audit`
+  (`frob.strata._audit.evaluate_exhaustiveness`, docs/commands/sys.md
+  #frob-sys-audit) is the CI-ready checking counterpart: the full
+  THREAT001-003 + COMPLIANCE001-002 conjunction against every configured
+  view, exiting nonzero with named gaps. The vuln-litmus/hardened-twin
+  pair (`design/litmus/audit_vuln.strata` + `tests/unit/strata/test_
+  audit.py`) exercises at least one fired-undischarged obligation per
+  family (security CWE-89, quality CWE-639, compliance COPPA), refuted
+  then proved clean by its hardened twin. Scope note: the hardened twin
+  and the compliance-family obligation are `KernelModel` Python fixtures,
+  not `.strata` source, because of a real surface-grammar gap found while
+  building this litmus and filed as T-0137 (a `weakness:<cwe>:<node>` /
+  `compliance:<reg>:<target>` discharge claim id needs `:`/`-`, which
+  `strata-core/src/parse.rs::parse_claim`'s bare-IDENT claim id cannot
+  express) -- `strata-core/**` is outside T-0115's scope, so this is noted
+  and filed, not silently patched around.
 
 Catalog data is ingested from the authoritative sources (MITRE CWE
 lists, NVD CVE->CWE), never hand-transcribed from memory -- the build
