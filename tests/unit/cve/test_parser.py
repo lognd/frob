@@ -29,9 +29,7 @@ def test_fixtures_are_ascii_and_escaped_unicode_round_trips() -> None:
 
     record = parse_record(_FIXTURES / "CVE-2024-4681.json").danger_ok
     # frob:waive PERF003 reason="one next() lookup over one record's small descriptions[] list, not a nested join"
-    german = next(
-        d.value for d in record.containers.cna.descriptions if d.lang == "de"
-    )
+    german = next(d.value for d in record.containers.cna.descriptions if d.lang == "de")
     assert german.startswith(
         "Es wurde eine Schwachstelle in Campcodes Legal Case Management System"
     )
