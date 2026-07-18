@@ -2181,9 +2181,9 @@ threat: null
 ```
 Bake consistent pretty formatting and color into frob's terminal output for TTYs, skipped cleanly when non-TTY. Build on the existing src/frob/logging/color.py should_color machinery -- single source of truth, honoring isatty, NO_COLOR, FORCE_COLOR, and a [tool.frob] override. Apply across the surfaces users actually read: frob check tool/gates summary (pass/fail coloring, aligned columns, per-gate timing dimmed), frob sys audit (PROVED green, GAP red, view sections), frob ticket list/doable (state-colored ids), frob vet reports (severity coloring), frob stats. HARD CONSTRAINT: non-TTY output must remain byte-stable plain text -- agents, CI, and this repo's own snapshot tests parse it; add tests locking both modes (force-color golden and plain golden) so pretty mode can never leak ANSI into piped output. No new heavyweight dependency without written justification (prefer hand-rolled ANSI via the existing color module over adding rich).
 
-<!-- ticket:T-0180 -->
+<!-- ticket:T-0184 -->
 ```yaml
-id: T-0180
+id: T-0184
 title: frob ticket close prints ERROR MissingEvidence but exits 0
 state: queued
 kind: bug
@@ -2201,119 +2201,5 @@ attachments: []
 acceptance: []
 threat: null
 ```
-During T-0154 land,  printed 'ERROR: close failed: MissingEvidence' yet exited 0, so a chained  ran and committed an unclosed ticket. A failed close MUST exit nonzero (vacuous-pass doctrine: a failure that reports success is the worst outcome). Audit all ticket_runner.py exit paths for the same print-error-return-zero pattern; add a CLI test asserting close on a ticket lacking evidence/done-report exits nonzero. Related: the same session hit _strata_files: design/litmus/audit_hardened.strata excluded by [graph].exclude
-_strata_files: design/litmus/audit_vuln.strata excluded by [graph].exclude
-_strata_files: design/litmus/chirp.strata excluded by [graph].exclude
-_strata_files: design/litmus/deploy_secret.strata excluded by [graph].exclude
-_strata_files: design/litmus/payments.strata excluded by [graph].exclude
-_strata_files: design/litmus/payments_hardened.strata excluded by [graph].exclude
-_strata_files: design/litmus/tube.strata excluded by [graph].exclude
-strata parse ok: module 'frob'
-node cli declares 2 code glob(s)
-node graphlang declares 3 code glob(s)
-node gates declares 1 code glob(s)
-node checker declares 1 code glob(s)
-node stratamod declares 1 code glob(s)
-node core declares 23 code glob(s)
-node vet declares 1 code glob(s)
-store tickets_ledger -> node at trust trusted, attrs=['engine=git_tracked', 'append_only']
-cache graph_cache of graphlang -> node + fill flow (age=value=1.0 unit='s') + 1 invalidation edge(s)
-elaborated std.infra for module frob: 1 store(s), 1 cache(s), 0 queue(s), 0 cdn(s), 0 balancer(s), 0 diagnostic(s)
-elaborated module frob: 10 node(s), 27 flow(s), 1 boundary(ies), 6 claim(s), 0 refine(s)
-load_design_ids: 27 channel(s), 1 boundary(ies), 0 secret(s), 0 error(s)
-fact base built: 10 node(s), 27 flow(s), 1 boundary(ies), 0 diagnostic(s)
-closure from registry reached 0 node(s)
-worst_age(graph_cache) = 1.0 via ['graphlang', 'graph_cache__fill', 'graph_cache']
-closure from gates reached 6 node(s)
-evaluated 6 claim(s): {'proved': 3, 'evidenced': 0, 'assumed': 3, 'refuted': 0}
-threat: THREAT003 no fired obligations (no matching capabilities)
-threat: THREAT003 no fired obligations (no matching capabilities)
-threat: THREAT003 no fired obligations (no matching capabilities)
-fact base built: 10 node(s), 27 flow(s), 1 boundary(ies), 0 diagnostic(s)
-compliance: discharge check over 10 node(s)/27 flow(s) -> 0 violation(s)
-compliance: evaluated view='all-regulations' catalog=6 out_of_scope=0 -> 0 violation(s)
-fact base built: 10 node(s), 27 flow(s), 1 boundary(ies), 0 diagnostic(s)
-compliance: discharge check over 10 node(s)/27 flow(s) -> 0 violation(s)
-compliance: evaluated view='us-coppa' catalog=6 out_of_scope=0 -> 0 violation(s)
-fact base built: 10 node(s), 27 flow(s), 1 boundary(ies), 0 diagnostic(s)
-compliance: discharge check over 10 node(s)/27 flow(s) -> 0 violation(s)
-compliance: evaluated view='eu-gdpr' catalog=6 out_of_scope=0 -> 0 violation(s)
-fact base built: 10 node(s), 27 flow(s), 1 boundary(ies), 0 diagnostic(s)
-compliance: discharge check over 10 node(s)/27 flow(s) -> 0 violation(s)
-compliance: evaluated view='us-hipaa' catalog=6 out_of_scope=0 -> 0 violation(s)
-audit: evaluated views=8 -> 0 gap(s)
-code binding: 186 file(s) bound, 26454 foreign
-vet: /home/logan/projects/frob/src/frob/app/app.py: capabilities observed: ['eval']
-vet: /home/logan/projects/frob/src/frob/app/check_runner.py: capabilities observed: ['fs-write']
-vet: /home/logan/projects/frob/src/frob/app/config.py: capabilities observed: ['fs-write']
-vet: /home/logan/projects/frob/src/frob/app/release_runner.py: capabilities observed: ['fs-write']
-vet: /home/logan/projects/frob/src/frob/app/sys_runner.py: capabilities observed: ['fs-write']
-vet: /home/logan/projects/frob/src/frob/check/_native.py: capabilities observed: ['exec']
-vet: /home/logan/projects/frob/src/frob/check/_python.py: capabilities observed: ['exec', 'fs-write']
-vet: /home/logan/projects/frob/src/frob/check/_ts.py: capabilities observed: ['exec']
-vet: /home/logan/projects/frob/src/frob/dup/_pipeline.py: capabilities observed: ['eval']
-vet: /home/logan/projects/frob/src/frob/fuzz/_signatures.py: capabilities observed: ['eval']
-vet: /home/logan/projects/frob/src/frob/gates/__init__.py: capabilities observed: ['fs-write']
-vet: /home/logan/projects/frob/src/frob/gitio.py: capabilities observed: ['exec']
-vet: /home/logan/projects/frob/src/frob/gitlog/__init__.py: capabilities observed: ['exec']
-vet: /home/logan/projects/frob/src/frob/graph/cache.py: capabilities observed: ['fs-write']
-vet: /home/logan/projects/frob/src/frob/graph/lock.py: capabilities observed: ['fs-write']
-vet: /home/logan/projects/frob/src/frob/lang/_walk_strata.py: capabilities observed: ['eval']
-vet: /home/logan/projects/frob/src/frob/logging/color.py: capabilities observed: ['env']
-vet: /home/logan/projects/frob/src/frob/logging/logger.py: capabilities observed: ['fs-write']
-vet: /home/logan/projects/frob/src/frob/mutate/__init__.py: capabilities observed: ['exec']
-vet: /home/logan/projects/frob/src/frob/perf/_profile.py: capabilities observed: ['exec']
-vet: /home/logan/projects/frob/src/frob/policy/__init__.py: capabilities observed: ['fs-write']
-vet: /home/logan/projects/frob/src/frob/strata/_effects.py: capabilities observed: ['net']
-vet: /home/logan/projects/frob/src/frob/strata/_facts.py: capabilities observed: ['eval']
-vet: /home/logan/projects/frob/src/frob/strata/_packs.py: capabilities observed: ['ffi']
-vet: /home/logan/projects/frob/src/frob/strata/_parse.py: capabilities observed: ['eval']
-vet: /home/logan/projects/frob/src/frob/testing/_runners.py: capabilities observed: ['env', 'fs-write']
-vet: /home/logan/projects/frob/src/frob/tickets/_store.py: capabilities observed: ['fs-write']
-vet: /home/logan/projects/frob/src/frob/tickets/clipboard.py: capabilities observed: ['env', 'exec']
-vet: /home/logan/projects/frob/src/frob/vet/_capability.py: capabilities observed: ['env', 'eval', 'exec', 'ffi', 'fs-write', 'install-hook', 'net']
-vet: /home/logan/projects/frob/src/frob/vet/_ecosystem.py: capabilities observed: ['install-hook']
-vet: /home/logan/projects/frob/src/frob/vet/_nvd.py: capabilities observed: ['fs-write', 'net']
-vet: /home/logan/projects/frob/src/frob/vet/_popular_npm.py: capabilities observed: ['net']
-vet: /home/logan/projects/frob/src/frob/vet/_popular_pypi.py: capabilities observed: ['ffi']
-vet: /home/logan/projects/frob/src/frob/vet/_registry.py: capabilities observed: ['fs-write', 'net']
-vet: /home/logan/projects/frob/src/frob/vet/_source.py: capabilities observed: ['env']
-vet: /home/logan/projects/frob/src/frob/app/app.py: capabilities observed: ['eval']
-vet: /home/logan/projects/frob/src/frob/app/check_runner.py: capabilities observed: ['fs-write']
-vet: /home/logan/projects/frob/src/frob/app/config.py: capabilities observed: ['fs-write']
-vet: /home/logan/projects/frob/src/frob/app/release_runner.py: capabilities observed: ['fs-write']
-vet: /home/logan/projects/frob/src/frob/app/sys_runner.py: capabilities observed: ['fs-write']
-vet: /home/logan/projects/frob/src/frob/check/_native.py: capabilities observed: ['exec']
-vet: /home/logan/projects/frob/src/frob/check/_python.py: capabilities observed: ['exec', 'fs-write']
-vet: /home/logan/projects/frob/src/frob/check/_ts.py: capabilities observed: ['exec']
-vet: /home/logan/projects/frob/src/frob/dup/_pipeline.py: capabilities observed: ['eval']
-vet: /home/logan/projects/frob/src/frob/fuzz/_signatures.py: capabilities observed: ['eval']
-vet: /home/logan/projects/frob/src/frob/gates/__init__.py: capabilities observed: ['fs-write']
-vet: /home/logan/projects/frob/src/frob/gitio.py: capabilities observed: ['exec']
-vet: /home/logan/projects/frob/src/frob/gitlog/__init__.py: capabilities observed: ['exec']
-vet: /home/logan/projects/frob/src/frob/graph/cache.py: capabilities observed: ['fs-write']
-vet: /home/logan/projects/frob/src/frob/graph/lock.py: capabilities observed: ['fs-write']
-vet: /home/logan/projects/frob/src/frob/lang/_walk_strata.py: capabilities observed: ['eval']
-vet: /home/logan/projects/frob/src/frob/logging/color.py: capabilities observed: ['env']
-vet: /home/logan/projects/frob/src/frob/logging/logger.py: capabilities observed: ['fs-write']
-vet: /home/logan/projects/frob/src/frob/mutate/__init__.py: capabilities observed: ['exec']
-vet: /home/logan/projects/frob/src/frob/perf/_profile.py: capabilities observed: ['exec']
-vet: /home/logan/projects/frob/src/frob/policy/__init__.py: capabilities observed: ['fs-write']
-vet: /home/logan/projects/frob/src/frob/strata/_effects.py: capabilities observed: ['net']
-vet: /home/logan/projects/frob/src/frob/strata/_facts.py: capabilities observed: ['eval']
-vet: /home/logan/projects/frob/src/frob/strata/_packs.py: capabilities observed: ['ffi']
-vet: /home/logan/projects/frob/src/frob/strata/_parse.py: capabilities observed: ['eval']
-vet: /home/logan/projects/frob/src/frob/testing/_runners.py: capabilities observed: ['env', 'fs-write']
-vet: /home/logan/projects/frob/src/frob/tickets/_store.py: capabilities observed: ['fs-write']
-vet: /home/logan/projects/frob/src/frob/tickets/clipboard.py: capabilities observed: ['env', 'exec']
-vet: /home/logan/projects/frob/src/frob/vet/_capability.py: capabilities observed: ['env', 'eval', 'exec', 'ffi', 'fs-write', 'install-hook', 'net']
-vet: /home/logan/projects/frob/src/frob/vet/_ecosystem.py: capabilities observed: ['install-hook']
-vet: /home/logan/projects/frob/src/frob/vet/_nvd.py: capabilities observed: ['fs-write', 'net']
-vet: /home/logan/projects/frob/src/frob/vet/_popular_npm.py: capabilities observed: ['net']
-vet: /home/logan/projects/frob/src/frob/vet/_popular_pypi.py: capabilities observed: ['ffi']
-vet: /home/logan/projects/frob/src/frob/vet/_registry.py: capabilities observed: ['fs-write', 'net']
-vet: /home/logan/projects/frob/src/frob/vet/_source.py: capabilities observed: ['env']
-selfconform: 0 violation(s) found under /home/logan/projects/frob
-sys audit: checked 8 view(s): security:owasp-top-10, quality:web-performance-baseline, quality:reliability-baseline, quality:web-quality-security-baseline, compliance:all-regulations, compliance:us-coppa, compliance:eu-gdpr, compliance:us-hipaa
-sys audit: PROVED -- zero gaps across every configured view
-sys audit: self-conformance PROVED -- zero SYS gaps printing GAP lines but exiting 0 once too -- sweep sys_runner.py and check_runner.py for the same class.
+During T-0154 land, the close CLI printed 'ERROR: close failed: MissingEvidence' yet exited 0, so a chained git commit ran and committed an unclosed ticket. A failed close MUST exit nonzero (vacuous-pass doctrine: a failure that reports success is the worst outcome). Audit all ticket_runner.py exit paths for the same print-error-return-zero pattern; add a CLI test asserting close on a ticket lacking evidence or a done report exits nonzero. Related: the same session saw sys audit print GAP lines but exit 0 once too -- sweep sys_runner.py and check_runner.py for the same class.
+
