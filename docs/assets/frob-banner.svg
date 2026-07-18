@@ -42,6 +42,13 @@
       <stop offset="0.4" stop-color="#22351c"/>
       <stop offset="1" stop-color="#10160d"/>
     </radialGradient>
+    <linearGradient id="bodyFade" gradientUnits="userSpaceOnUse" x1="0" y1="198" x2="0" y2="262">
+      <stop offset="0" stop-color="#0d1117" stop-opacity="0"/>
+      <stop offset="1" stop-color="#0d1117" stop-opacity="1"/>
+    </linearGradient>
+    <clipPath id="bodyclip">
+      <path d="M290 150 C332 150 358 184 362 236 C364 250 362 258 358 262 L222 262 C218 258 216 250 218 236 C222 184 248 150 290 150 Z"/>
+    </clipPath>
     <clipPath id="ballclip"><circle cx="290" cy="230" r="56"/></clipPath>
   </defs>
 
@@ -55,8 +62,8 @@
   <!-- ================= mascot: froblin in the shadows (v12) ================= -->
   <g fill="url(#figLight)">
     <!-- ears: drooping blades, attached at jaw height -->
-    <path d="M260 133 C224 122 178 118 150 127 C149 131 154 136 163 139 C196 146 234 147 261 144 Z"/>
-    <path d="M320 131 C356 118 402 114 430 123 C431 127 426 132 417 135 C384 142 346 145 319 142 Z"/>
+    <path d="M262 134 C228 124 184 126 154 144 C154 150 161 155 171 156 C202 158 234 152 262 146 Z"/>
+    <path d="M318 132 C352 120 398 122 428 140 C428 146 421 151 411 152 C380 155 348 150 318 144 Z"/>
     <!-- goggles perched on the crown: two contour bumps -->
     <circle cx="273" cy="80" r="7.5"/>
     <circle cx="307" cy="80" r="7.5"/>
@@ -82,6 +89,11 @@
   <circle cx="314" cy="130" r="7" fill="#b8f0a8" opacity="0.10"/>
   <path d="M261 134 a7 6.4 0 1 1 14 0 Z" fill="#b8f0a8"/>
   <path d="M308 132 a6 5.6 0 1 1 12 0 Z" fill="#b8f0a8"/>
+
+  <!-- fade the figure's lower edge into the dark (clipped to the mound) -->
+  <g clip-path="url(#bodyclip)">
+    <rect x="140" y="198" width="300" height="66" fill="url(#bodyFade)"/>
+  </g>
 
   <!-- stand -->
   <path d="M258 282 Q290 276 322 282 L313 299 Q290 303 267 299 Z" fill="url(#standg)"/>
