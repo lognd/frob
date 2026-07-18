@@ -1441,6 +1441,27 @@ class TestDocanchorGate:
         assert set(_rules(violations)) == {"DOC002"}
         assert any("nonexistent-slug" in v.message for v in violations)
 
+    def test_unresolvable_anchor_reports_slug_and_nearest_match(self, tmp_path):
+        # frob:tests src/frob/gates/__init__.py::_anchor_mismatch_message kind="unit"
+        from frob.gates import docanchor_gate
+
+        root = tmp_path / "repo"
+        (root / "docs").mkdir(parents=True)
+        (root / "src").mkdir()
+        (root / "docs" / "m.md").write_text(
+            "# Title\n\n## Real Heading\n", encoding="utf-8"
+        )
+        (root / "src" / "m.py").write_text(
+            "# frob:doc docs/m.md#real-headin\ndef f():\n    return 1\n",
+            encoding="utf-8",
+        )
+        violations = docanchor_gate(root, self._snap(root))
+        assert set(_rules(violations)) == {"DOC002"}
+        (message,) = [v.message for v in violations]
+        assert "computed slug #real-headin" in message
+        assert "found: real-heading" in message
+        assert "did you mean #real-heading?" in message
+
     def test_missing_file_fires(self, tmp_path):
         from frob.gates import docanchor_gate
 
