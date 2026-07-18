@@ -2021,3 +2021,25 @@ threat: null
 ```
 found while working T-0166: docs/strata/surface.md's std.infra grammar block says store_prop := node_prop | engine | immutable | append_only | rpo, implying store accepts the FULL node_prop set. T-0166 closed the code/may gap (the one this ticket's scope named), but parse_store still has no branch for on deploy/observe/errors_total/panics_contained_by -- store_prop remains a real subset of node_prop, not the full union the grammar block literally claims. Either implement the remaining node_prop items on store (mirroring parse_node) or narrow the surface.md grammar line to enumerate the actual accepted subset instead of the misleading 'node_prop' alias.
 
+<!-- ticket:T-0248 -->
+```yaml
+id: T-0248
+title: grammar-affecting landings leave stale natives on main -- land/check must detect
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/tickets/**
+- src/frob/strata/**
+- Makefile
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Incident during T-0156 review: T-0166 landed a parse.rs grammar change and design/frob.strata began using it, but main's built strata_core predated the change -- frob check reported SYS004 (design failed to load, suppressing SYS001 project-wide) until the coordinator manually ran make core + tool reinstall. Two fixes: (1) frob ticket land detects when the landed diff touches strata-core/**, frob-core/**, or any native-crate source and prints a LOUD post-land instruction (or optionally runs make core) before the final commit; (2) the SYS004 message should distinguish 'parse failed with unknown construct X' and hint that a grammar/native version mismatch is the likely cause when the construct is recognized by the python-side surface docs. Regression: fixture simulating a grammar-ahead-of-native state asserting the hint appears.
