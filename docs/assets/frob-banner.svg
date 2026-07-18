@@ -47,40 +47,35 @@
   <!-- hairline top accent -->
   <rect x="0" y="0" width="1200" height="2" fill="#1f6feb" opacity="0.35"/>
 
-  <!-- ================= mascot: silhouette froblin (duotone) ================= -->
-  <!-- body silhouette: hump, ears, head, arms in one tone, thin keyline -->
-  <g fill="#2a3d22" stroke="#426033" stroke-width="1.4">
+  <!-- ================= mascot: silhouette froblin (no outlines) ================= -->
+  <!-- body silhouette: hump, ears, head. Arms tucked behind the ball. -->
+  <g fill="#2d4124">
     <path d="M212 212 C206 164 238 140 290 140 C342 140 374 164 368 212 C348 190 232 190 212 212 Z"/>
     <path d="M240 112 C210 92 172 92 148 122 C158 138 196 142 238 128 Z"/>
     <path d="M340 112 C370 92 408 92 432 122 C422 138 384 142 342 128 Z"/>
     <ellipse cx="290" cy="127" rx="60" ry="48"/>
-    <path d="M222 186 C206 204 202 228 212 250 L234 242 C226 226 228 208 240 194 Z"/>
-    <path d="M358 186 C374 204 378 228 368 250 L346 242 C354 226 352 208 340 194 Z"/>
   </g>
-  <!-- nose: own tone so the hook reads -->
-  <path d="M280 140 C297 140 305 159 295 170 C287 177 276 171 277 158 C277 149 278 144 280 140 Z" fill="#33492a"/>
-  <path d="M280 140 C297 140 305 159 295 170" fill="none" stroke="#4a6b39" stroke-width="1.4"/>
+  <!-- nose: tone-separated hook, no stroke -->
+  <path d="M280 140 C297 140 305 159 295 170 C287 177 276 171 277 158 C277 149 278 144 280 140 Z" fill="#385030"/>
 
-  <!-- aviator cap: clearly darker leather duotone -->
-  <g fill="#231911" stroke="#3d2c1a" stroke-width="1.4">
-    <path d="M231 119 C231 71 349 71 349 119 L349 128 C310 112 270 112 231 128 Z"/>
-    <path d="M233 121 C228 138 230 149 238 155 C245 147 247 134 245 122 Z"/>
-    <path d="M347 121 C352 138 350 149 342 155 C335 147 333 134 335 122 Z"/>
+  <!-- aviator cap: covers the skull completely -->
+  <g fill="#231911">
+    <path d="M226 122 C226 64 354 64 354 122 L354 131 C312 112 268 112 226 131 Z"/>
+    <path d="M228 122 C223 139 225 150 233 156 C240 148 242 135 240 123 Z"/>
+    <path d="M352 122 C357 139 355 150 347 156 C340 148 338 135 340 123 Z"/>
   </g>
-  <!-- goggles: dim gold rims on the cap -->
-  <rect x="250" y="93" width="80" height="7" rx="3.5" fill="#191007"/>
-  <circle cx="268" cy="97" r="12.5" fill="#120c06" stroke="#8a6f3a" stroke-width="2.6"/>
-  <circle cx="312" cy="97" r="12.5" fill="#120c06" stroke="#8a6f3a" stroke-width="2.6"/>
-  <path d="M262 92 a8 8 0 0 1 7 -4" fill="none" stroke="#c7a95e" stroke-width="1.5" stroke-linecap="round" opacity="0.8"/>
-  <path d="M306 92 a8 8 0 0 1 7 -4" fill="none" stroke="#c7a95e" stroke-width="1.5" stroke-linecap="round" opacity="0.8"/>
+  <!-- goggles: dim gold rims -->
+  <rect x="250" y="92" width="80" height="7" rx="3.5" fill="#191007"/>
+  <circle cx="268" cy="96" r="12.5" fill="#120c06" stroke="#8a6f3a" stroke-width="2.6"/>
+  <circle cx="312" cy="96" r="12.5" fill="#120c06" stroke="#8a6f3a" stroke-width="2.6"/>
+  <path d="M262 91 a8 8 0 0 1 7 -4" fill="none" stroke="#c7a95e" stroke-width="1.5" stroke-linecap="round" opacity="0.8"/>
+  <path d="M306 91 a8 8 0 0 1 7 -4" fill="none" stroke="#c7a95e" stroke-width="1.5" stroke-linecap="round" opacity="0.8"/>
 
-  <!-- eyes: ball-lit glints gazing down -->
+  <!-- eyes: pure glowing glints, no pupils -->
   <circle cx="266" cy="138" r="8" fill="#9fe88a" opacity="0.15"/>
   <circle cx="319" cy="134" r="7" fill="#9fe88a" opacity="0.15"/>
   <path d="M258 136 a8 5.6 -10 1 0 16 -3 a8 5.6 -10 1 0 -16 3 Z" fill="#a9f096"/>
   <path d="M312 132 a7 4.9 -10 1 0 14 -2.6 a7 4.9 -10 1 0 -14 2.6 Z" fill="#a9f096"/>
-  <circle cx="267" cy="136" r="2.2" fill="#16240f"/>
-  <circle cx="320" cy="132" r="1.9" fill="#16240f"/>
 
   <!-- stand -->
   <path d="M256 280 Q290 274 324 280 L314 298 Q290 302 266 298 Z" fill="url(#standg)"/>
@@ -103,19 +98,8 @@
   <ellipse cx="268" cy="204" rx="19" ry="10" fill="#e6edf3" opacity="0.14" transform="rotate(-24 268 204)"/>
   <circle cx="290" cy="232" r="54" fill="none" stroke="#7ee787" stroke-width="1.2" opacity="0.22"/>
 
-  <!-- fingers gripping over the glass -->
-  <g fill="#2a3d22">
-    <path d="M215 246 C224 255 235 261 246 263 L248 254 C238 252 229 247 222 240 Z"/>
-    <path d="M223 253 C232 261 244 266 254 267 L255 258 C246 256 236 252 230 246 Z"/>
-    <path d="M365 246 C356 255 345 261 334 263 L332 254 C342 252 351 247 358 240 Z"/>
-    <path d="M357 253 C348 261 336 266 326 267 L325 258 C334 256 344 252 350 246 Z"/>
-  </g>
-  <!-- subtle glow on finger tops + chin crescent -->
-  <g fill="none" stroke="#7ee787" stroke-linecap="round">
-    <path d="M246 262 C236 259 227 254 221 247" stroke-width="1.6" opacity="0.3"/>
-    <path d="M334 262 C344 259 353 254 359 247" stroke-width="1.6" opacity="0.3"/>
-    <path d="M272 172 C282 176 298 176 308 170" stroke-width="1.8" opacity="0.25"/>
-  </g>
+  <!-- chin glow crescent -->
+  <path d="M272 172 C282 176 298 176 308 170" fill="none" stroke="#7ee787" stroke-width="1.8" stroke-linecap="round" opacity="0.2"/>
 
   <!-- ================= wordmark ================= -->
   <text x="500" y="158" font-family="ui-monospace, 'Cascadia Code', 'Fira Code', Menlo, Consolas, monospace" font-size="96" font-weight="700" fill="url(#wordmark)" letter-spacing="-2">frob</text>
