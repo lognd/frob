@@ -2886,3 +2886,179 @@ acceptance: []
 threat: null
 ```
 T-0156 closing-review finding, now reproducible on main: is_self_pattern_path (T-0201) resolves the RUNNING package's module file paths, so the exclusion only matches when the scanned tree IS the running package (editable install). Under the uv-tool global binary, scanning frob's own checkout self-matches all pattern-catalog needle literals again: frob sys audit = 36 SYS100 false gaps; uv run frob sys audit = 0. Only affects auditing frob's own repo with a non-editable binary (sibling repos have no pattern files), but that is exactly what CI or a user would do. Fix: match by repo-relative path suffix of the KNOWN pattern files (src/frob/vet/_capability.py, _capability_registry.py, strata/_cve_fingerprint.py) against the SCANNED tree, not identity of the running package's files; keep the T-0201 drift-lock and extend it with a test that simulates a foreign-install scan (copy the tree to a tmp path, scan with the exclusion, assert zero self-matches).
+
+<!-- ticket:T-0254 -->
+```yaml
+id: T-0254
+title: 'frob deploy epic: auditable, isolated, provable OS-layer deployment'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/**
+- strata-core/**
+- design/**
+- docs/**
+- tests/**
+- Makefile
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+User mandate 2026-07-19: a frob deploy utility built into strata. The threat model: red teams compromise the one user that owns a service and nothing isolates that user -- lateral and vertical movement must be PROVABLY blocked, not hoped. The deployment sequence (idempotent install, status/health, uninstall with NO artifacts) must be auditable end to end, including an expensive opt-in VM-snapshot audit (VirtualBox) that is NOT part of make check. Scripts must tie into the model so hand edits are DETECTABLE through the strata checker, and the 'weird layer between the OS and the backend' (users, groups, units, ownership, ports) becomes provable architecture. Children: std.host OS-layer modeling -> movement-impossibility proofs + deploy script generation -> script<->model conformance gate -> VM snapshot audit harness -> real-service pilot (malmberg) remediating its awkward setup. Umbrella closes when all children close.
+
+<!-- ticket:T-0255 -->
+```yaml
+id: T-0255
+title: 'std.host: OS-layer modeling -- service users, units, ownership, ports as first-class
+  strata'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: T-0254
+scope:
+- strata-core/src/parse.rs
+- src/frob/strata/**
+- editors/**
+- docs/strata/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0254 child 1 (foundation). New std.host vocabulary: a node/store gains  (dedicated service user; the deploy generator creates it system-scoped, no login shell, no home unless declared),  binding (systemd service with hardening directives derived from the model: NoNewPrivileges, ProtectSystem=strict, PrivateTmp, CapabilityBoundingSet from may-capabilities, plus the EXISTING seccomp exporter wired in as SystemCallFilter),  for files/dirs with explicit modes/ownership,  for sockets. OS users join the trust lattice so flows between service users are model-checked like any flow. Grammar in parse.rs (mirror managed/waive precedent, tmLanguage drift-lock will fire), elaborate to node attrs + a HostManifest model (the single source the generator, conformance checker, and VM auditor all consume -- one manifest, no duplication). Litmus pair + docs/strata/host.md. Do NOT build the generator here -- manifest only.
+
+<!-- ticket:T-0256 -->
+```yaml
+id: T-0256
+title: 'movement-impossibility proofs: lateral/vertical isolation claims + red-team
+  threat entries'
+state: queued
+kind: security
+origin: human
+created: '2026-07-18'
+blocked_by:
+- T-0255
+parent: T-0254
+scope:
+- src/frob/strata/**
+- docs/strata/**
+- design/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: elevation-of-privilege
+```
+T-0254 child 2. The red-team scenario as first-class obligations: when a model declares 2+ runs_as users, LATERAL claims are DEMANDED (HOST001: for every service-user pair, prove NoFlow/no shared writable paths/no shared group membership/no socket reachable across users unless a declared flow exists -- derived from HostManifest intersection, not hand-written per pair) and VERTICAL claims demanded per user (HOST002: no sudoers grant, no setuid binary owned, no root-run unit executing user-writable paths, no write access to any path a higher-trust unit reads -- each either proven from the manifest or an explicit waive with sub-target per T-0174 discipline). New WeaknessEntry rows for the compromised-service-owner class joining the threat catalog views (separate view per precedent, not widening defaults). Litmus: shared-user vuln model fires HOST001/002; isolated hardened model discharges. A compromised-user scenario kind (reuse the T-0073 scenario engine: mark user compromised, closure shows blast radius = exactly that user's manifest slice, claim asserts it).
+
+<!-- ticket:T-0257 -->
+```yaml
+id: T-0257
+title: 'frob deploy generate: install/status/uninstall scripts compiled from HostManifest,
+  drift-locked'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-18'
+blocked_by:
+- T-0255
+parent: T-0254
+scope:
+- src/frob/deploy/**
+- src/frob/app/**
+- src/frob/__main__.py
+- src/frob/strata/**
+- docs/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0254 child 3. frob deploy generate compiles deploy/install.sh, deploy/status.sh, deploy/uninstall.sh from the HostManifest. INSTALL: idempotent by construction -- every step is check-then-apply (user exists? unit enrolled? file hash matches?), re-run = zero changes, exit codes honest; creates service users per T-0255 spec, writes units with the hardening block, sets exact ownership/modes from owns entries. STATUS: per-unit active/health from the model (listens ports probed, declared health endpoints checked), machine-readable + human summaries. UNINSTALL: removes EXACTLY the manifest set (units stopped+disabled+deleted, users removed, owned paths deleted, nothing else touched) -- artifact-freeness is manifest completeness, which the VM audit (child 5) proves empirically. Generated scripts carry a header manifest digest; a DEPLOY001 drift gate (default-on when deploy/ exists) fails check if committed scripts do not match regeneration from the current model -- the tmLanguage drift-lock pattern. Shellcheck-clean bash, no external deps beyond coreutils/systemctl.
+
+<!-- ticket:T-0258 -->
+```yaml
+id: T-0258
+title: 'deploy conformance: script<->manifest bidirectional verification (DEPLOY gates)'
+state: queued
+kind: security
+origin: human
+created: '2026-07-18'
+blocked_by:
+- T-0256
+parent: T-0254
+scope:
+- src/frob/deploy/**
+- src/frob/gates/**
+- src/frob/strata/**
+- tests/**
+- docs/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: tampering
+```
+T-0254 child 4. Hand edits to deploy scripts must be DETECTABLE through the checker even when someone bypasses regeneration: parse the committed scripts' mutation surface (useradd/groupadd/install/cp/mkdir/chown/chmod/systemctl/rm invocations and their targets -- structured extraction, not naive grep, honoring the generated check-then-apply shapes) and verify bidirectionally against HostManifest: DEPLOY002 = script mutation not declared in the manifest (the red-team-relevant direction: a smuggled extra user/path/unit fails check); DEPLOY003 = manifest entry no mutation implements (incomplete install/uninstall). Fire/discharge litmus incl. a tampered-script fixture. This is the tie that makes the scripts part of the provable architecture rather than artifacts beside it.
+
+<!-- ticket:T-0259 -->
+```yaml
+id: T-0259
+title: 'frob deploy audit --vm: VirtualBox snapshot-diff harness proving artifact-free
+  uninstall'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-18'
+blocked_by:
+- T-0256
+parent: T-0254
+scope:
+- src/frob/deploy/**
+- scripts/**
+- Makefile
+- docs/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0254 child 5. The expensive empirical audit, NOT in make check: dedicated  / . VBoxManage workflow: restore base snapshot -> capture state S0 (filesystem manifest w/ hashes+ownership+modes via ssh, /etc/passwd+group, systemd unit files+enabled set, listening sockets) -> run install.sh -> S1 -> run install.sh AGAIN -> S1' (idempotence: S1' == S1 EXACTLY) -> status.sh (healthy) -> uninstall.sh -> S2. PROOFS: diff(S0,S2) EMPTY = no artifacts; diff(S0,S1) == HostManifest EXACTLY (nothing extra, nothing missing) modulo a documented allowlist (logs/journal, machine-id class) each entry justified in docs. Emits an attestation JSON (timestamps, snapshot ids, diff digests) recordable as ticket evidence via --evidence-cmd (T-0215) and referenced as L4-class evidence for the movement claims (T-0256/T-0082 evidence-ladder precedent). Graceful degrade when VBoxManage absent: clear SKIPPED, never fake pass. Unit-test the diff/compare logic with fixture state captures so the logic itself is covered in the normal suite without a VM.
+
+<!-- ticket:T-0260 -->
+```yaml
+id: T-0260
+title: 'deploy pilot: model+generate+audit malmberg''s services, remediate the awkward
+  setup'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-18'
+blocked_by:
+- T-0257
+parent: T-0254
+scope:
+- docs/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0254 child 6 (proof on reality). Apply the full chain to malmberg (the real server product from pilot P3: server_api/ingest/cloudsync/faces/backup/display + media_store): extend design/malmberg.strata with std.host (dedicated service users per component, units, ownership of media_store paths, ports), prove HOST001/HOST002 movement-impossibility or record honest waivers, generate the deploy scripts, run the conformance gate, and if a VirtualBox environment is available run the full VM snapshot audit and attach the attestation. Remediate the current awkward setup step in malmberg's docs/scripts with the generated sequence. Work happens IN THE MALMBERG REPO per the break-and-report pilot protocol (frob-side gaps come back as tickets, filed serially by the coordinator); this frob-side ticket tracks the campaign and collects the gap list. Success = malmberg installs/uninstalls via generated scripts with a green conformance gate and a documented (or executed) VM audit path.
