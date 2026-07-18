@@ -220,7 +220,7 @@ class BreachContract(BaseModel):
     recovers_via: str | None = None
 
 
-# frob:doc docs/strata/surface.md#std-deploy
+# frob:doc docs/strata/surface.md#stddeploy
 class CanaryStage(BaseModel):
     """One staged rollout step: promote to `level` after `bake` with no abort.
 
@@ -241,10 +241,10 @@ class CanaryStage(BaseModel):
     max_error_rate: Quantity | None = None
 
 
-# frob:doc docs/strata/surface.md#std-deploy
+# frob:doc docs/strata/surface.md#stddeploy
 class DeployContract(BaseModel):
     """A node's `on deploy { canary { ... }; endorsed_by X; rollback within t }`
-    contract (docs/strata/surface.md#std-deploy, T-0083).
+    contract (docs/strata/surface.md#stddeploy, T-0083).
 
     `stages` is the canary schedule, evaluated in declaration order as one
     staged-trust-escalation scenario per stage. `endorsement_chain` names

@@ -10,7 +10,7 @@ from typani.error_set import ErrorSet
 __all__ = ["PolicyError", "PolicyKind", "PolicyRule"]
 
 
-# frob:doc docs/modules/gates.md#policy-rules-frob-toml-policy
+# frob:doc docs/modules/gates.md#policy-rules-frobtoml-policy
 class PolicyKind(StrEnum):
     """The three rule kinds `frob.toml`'s `[policy]` table supports at alpha."""
 
@@ -19,7 +19,7 @@ class PolicyKind(StrEnum):
     NORM = "norm"
 
 
-# frob:doc docs/modules/gates.md#policy-rules-frob-toml-policy
+# frob:doc docs/modules/gates.md#policy-rules-frobtoml-policy
 class PolicyRule(BaseModel):
     """One `[[policy.<kind>]]` entry; fields not used by `kind` are left default."""
 

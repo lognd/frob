@@ -1,4 +1,4 @@
-"""Deploy contracts for the strata kernel (docs/strata/surface.md#std-deploy, T-0083).
+"""Deploy contracts for the strata kernel (docs/strata/surface.md#stddeploy, T-0083).
 
 A node's `on deploy { canary { ... }; endorsed_by X, Y; rollback within t }`
 contract desugars to two joined checks plus one generation step, following
@@ -62,10 +62,10 @@ from ._scenarios import ScenarioResult, evaluate_scenarios
 _log = get_logger(__name__)
 
 
-# frob:doc docs/strata/surface.md#std-deploy
+# frob:doc docs/strata/surface.md#stddeploy
 class DeployContractReport(BaseModel):
     """The joined output of every declared deploy contract's canary and rollback
-    scenarios (docs/strata/surface.md#std-deploy, T-0083)."""
+    scenarios (docs/strata/surface.md#stddeploy, T-0083)."""
 
     model_config = ConfigDict(frozen=True)
 
@@ -217,7 +217,7 @@ def _evaluate_generated_scenarios(
     return Ok(DeployContractReport(scenario_results=scenarios.danger_ok))
 
 
-# frob:doc docs/strata/surface.md#std-deploy
+# frob:doc docs/strata/surface.md#stddeploy
 def evaluate_deploy_contracts(
     model: KernelModel,
     *,
@@ -227,7 +227,7 @@ def evaluate_deploy_contracts(
 ) -> Result[DeployContractReport, StrataError]:
     """Validate, then generate + evaluate, every `on deploy` contract in `model`
     (fail closed, first error wins; no contracts is a valid empty report --
-    docs/strata/surface.md#std-deploy, T-0083)."""
+    docs/strata/surface.md#stddeploy, T-0083)."""
     deployable = {n.id: n for n in model.nodes if n.deploy is not None}
     if not deployable:
         _log.info("evaluate_deploy_contracts: no deploy contracts declared")
