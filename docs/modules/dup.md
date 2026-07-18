@@ -267,9 +267,29 @@ deviations, so nothing here is silently assumed done:
   (`Err(DupError.NoGenerator)` when a parameter's type has no resolvable
   generator). `probe_equivalence` is never called by `find_clones` or the
   DUP gate path -- it is only reachable from a caller that explicitly
-  wants R6 (docs/modules/dup.md's "opt-in `--probe` path"); wiring an actual
-  `frob dup --probe` CLI flag is out of `frob.dup`'s scope and reported
-  to the coordinator.
+  wants R6 (docs/modules/dup.md's "opt-in `--probe` path").
+  **`frob dup <path> --probe SYMREF_A SYMREF_B`** (T-0041/T-0192, landed
+  in `src/frob/app/dup_runner.py`'s `_probe` and wired in
+  `src/frob/__main__.py`'s `_add_dup_parser`) is the CLI surface: it
+  loads/builds the `.frob/cache.db` graph snapshot for `<path>`, resolves
+  both symrefs against it, calls `probe_equivalence` with a fixed
+  30-second budget, prints `EQUIVALENT`/`DIFFER`, and exits 0 for
+  `EQUIVALENT`/1 for `DIFFER` or any `Err`.
+  **Safety/workload contract (read before running this on an untrusted
+  tree):** the purity heuristic (`_IMPURE_TOKENS`) only inspects the BODY
+  TOKENS of the two probed functions -- it says nothing about the rest of
+  the file. `_load_python_callable` loads each candidate with
+  `importlib.util.spec_from_file_location` +
+  `spec.loader.exec_module(module)`, which executes the ENTIRE module's
+  top-level code (imports, module-level statements, decorators,
+  `if __name__ == "__main__":` guards that happen to run at import time,
+  anything), not just the two probed functions. There is no sandbox, no
+  subprocess isolation, and no resource/network restriction anywhere in
+  this path -- `--probe` runs arbitrary repo-controlled Python with the
+  same privileges as the `frob` process itself. Only run `--probe`
+  against symbols in a tree you already trust; it is not safe to point at
+  unreviewed or adversarial source. The CLI `--probe` help text repeats
+  this warning; do not remove it when touching the parser.
 - **The `.frob/dup.db` cache** (`frob.dup._cache`) is now wired into
   `find_clones`'s hot path: R3/R4-fingerprint/R5-hash fingerprints are
   read/written keyed by body digest, and R4 pairwise verdicts (similarity
