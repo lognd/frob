@@ -2732,3 +2732,27 @@ acceptance: []
 threat: null
 ```
 T-0185 shipped docs/guides/exhaustive-research.md but docs/index.md is outside T-0185's declared scope, so DOC001 (doclink) cannot be satisfied without touching it. Add one bullet under 'Getting started' pointing at the new guide, matching the existing entries for install/quickstart/agentic-workflow/editors.
+
+<!-- ticket:T-0187 -->
+```yaml
+id: T-0187
+title: 'frob dup bleeding-edge: algorithm survey, reverse-templating abstraction,
+  exhaustiveness meta-test'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/dup/**
+- frob-core/**
+- tests/**
+- docs/modules/dup.md
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+User mandate 2026-07-18: frob dup does the basics (R1-R6 rungs: winnow, WL-hash, candidate_pairs, tree_edit in frob-core; statement-Levenshtein; co-occurrence CFG/DFG proxy) but must be bleeding-edge. Phase 1 RESEARCH (exhaustive-researcher): map the clone-detection state of the art against our implementation -- APTED exact tree edit distance, SourcererCC bag-of-tokens overlap, Oreo metrics-based type-3/4, NiCad normalization+abstraction, DECKARD characteristic vectors, learning-based (ASTNN, FA-AST GNN, CCLearner) with honest feasibility calls for a no-model-dependency tool, cross-language clone detection, and ANTI-UNIFICATION / reverse templating: report each clone group with its abstracted template plus per-instance bindings (the shared skeleton with holes), so the fix suggestion is the extracted function signature, not just 'these are similar'. Phase 2 DESIGN+TICKETS: planner converts the survey into an implementation ticket tree (rust-kernel work vs python orchestration split explicit). Phase 3 META-TEST: exhaustiveness drift-lock in the T-0158/T-0182 mold -- a registry of detectors/rungs/clone-types, parametrized litmus fixtures proving every (clone type 1-4 x supported language x rung) cell either fires on a minimal fixture pair or carries a written exclusion; adding a detector or claiming a clone type without a firing fixture fails the suite. Acceptance: survey doc committed, ticket tree filed, meta-test green over the CURRENT detector set before any new detector lands.
