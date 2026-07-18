@@ -1557,3 +1557,77 @@ acceptance: []
 threat: null
 ```
 logand.app pilot: check-gate violations have frob:waive with written reasons, but sys-audit findings (SYS100-102, THREAT002/003) have no waiver channel -- external repos must either fix immediately or live with permanent red, which pushes toward gaming the model instead of honest debt. Design the analog: an in-design waive/accept declaration (surface syntax on the node/claim, e.g. an accept clause with a mandatory reason string and optional ticket ref -- reuse the assume claim machinery where it already fits rather than a parallel channel), surfaced in audit output as WAIVED with the reason, counted separately, drift-locked so reasonless or stale waivers fail. Must satisfy the same discipline as frob:waive: narrowly scoped, reason mandatory, loud in output.
+
+<!-- ticket:T-0175 -->
+```yaml
+id: T-0175
+title: 'agent playbook in-repo: kill per-dispatch retreading'
+state: queued
+kind: docs
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- docs/guides/agent-playbook.md
+- docs/index.md
+- CLAUDE.md
+- Makefile
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Every worktree agent currently re-learns the same session lessons from scratch, and the coordinator's dispatch prompts have grown into essays carrying them. Move the workflow knowledge into the repo: docs/guides/agent-playbook.md covering -- fresh-worktree setup (git merge main FIRST, make core for natives, use uv run frob never the global binary inside worktrees), scope conventions (tickets.md always in scope), evidence recording (CLI from a natives-built checkout, node-id forms), gate measurement discipline (frob check --delta against the stamped baseline instead of stash-isolation dances -- verify the existing check_delta/stamp_baseline machinery works for this and document the exact commands), Done-report requirements (measured numbers only, honest disclosure of cuts), waive discipline, the deletion-filter land rule, and ledger-conflict splice guidance. Link from CLAUDE.md so agents load it; add a make target or script for the worktree warm-up steps. ALSO: shared natives -- investigate making fresh worktrees inherit prebuilt strata-core/frob_core artifacts (shared cargo target dir via CARGO_TARGET_DIR, or a wheel cache reused by make core) so make core in a worktree is seconds, not minutes; document the mechanism in the playbook.
+
+<!-- ticket:T-0176 -->
+```yaml
+id: T-0176
+title: 'frob ticket land: one-command landing (merge-check-splice-close-commit)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-18'
+blocked_by:
+- T-0162
+parent: null
+scope:
+- src/frob/tickets/**
+- src/frob/app/**
+- tests/**
+- docs/modules/tickets.md
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+The landing procedure is manual coordinator surgery repeated per ticket: wip-commit in the worktree, merge main, deletion-filter check (git diff main --diff-filter=D must be empty of unowned files), squash-apply, ledger splice on conflict, close with evidence validation, conventional commit. Implement frob ticket land <id> --worktree <path> doing the whole chain atomically with a dry-run mode: refuses on a dirty main, runs the deletion check and ABORTS loudly listing unowned deletions (the stale-base guard), auto-splices tickets.md keeping newest state per ticket section, finalizes provisional ids via the T-0162 mechanism (hence blocked_by), closes the ticket (evidence+done-report validation as today), and commits with a message template. Every abort path must name the exact manual remedy. Tests: fixture repo with a worktree simulating the real incident classes from this session (stale base deleting landed features, ledger both-sides-append conflict, id finalize).
+
+<!-- ticket:T-0177 -->
+```yaml
+id: T-0177
+title: 'frob serve daemon: incremental gate evaluation over the warm obligation graph'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/serve/**
+- src/frob/gates/**
+- src/frob/graph/**
+- src/frob/app/**
+- pyproject.toml
+- Makefile
+- tests/**
+- docs/modules/serve.md
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+frob serve is already a FastMCP stdio server with 5 read-only tools (doable tickets, stale docs, graph query, doc-for, check-scope) and is now wired into the coordinator's MCP config. Grow it into the structural fix for test-wait latency: the obligation graph knows exactly which obligations a diff can invalidate (frob test --base already proves the touched-set concept for tests) -- exploit it for gates. Deliverables: (1) warm state: the daemon holds the parsed graph snapshot, collected test ids, and the stamped violation baseline, refreshing incrementally on file-change (mtime/content-hash walk, reuse the .frob sqlite cache) instead of cold-parsing per invocation; (2) frob_check_delta MCP tool: given a base ref or dirty set, evaluate ONLY the obligations whose inputs changed and return the violation delta against the stamped baseline, in seconds; (3) frob_run_touched_tests tool wrapping the existing touched-set selection; (4) correctness guarantee: incremental results must provably match a cold frob check -- add a verification mode that runs both and diffs, plus property tests for the invalidation logic (an obligation NOT re-evaluated must have had no changed inputs -- vacuous-pass doctrine applies to the cache); (5) packaging: mcp becomes a proper [serve] extra in pyproject (mirroring [smt]) with _require_mcp's remedy message updated; Makefile install-tool already passes --with mcp -- reconcile with the extra; (6) docs/modules/serve.md updated with the daemon lifecycle and the staleness/correctness contract. Sequence AFTER the T-0148 sweep lands (gates code moves under it).

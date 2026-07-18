@@ -67,7 +67,7 @@ core: $(STAMP)
 # Rust toolchain (`cargo`); true wheel publishing to PyPI for frob-core/
 # strata-core is out of scope for this ticket -- see docs/guides/install.md.
 install-tool:
-	uv tool install --force --reinstall . --with ./strata-core --with ./frob-core
+	uv tool install --force --reinstall . --with ./strata-core --with ./frob-core --with "mcp>=1.28.1"
 
 # ---------- formatting & linting ----------
 
