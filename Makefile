@@ -1,7 +1,7 @@
 # Stamp file: uv sync runs only when pyproject.toml changes.
 STAMP := .venv/.install-stamp
 
-.PHONY: all check install core format lint lint-fix typecheck test test-fast \
+.PHONY: all check install install-tool core format lint lint-fix typecheck test test-fast \
         test-unit test-integration test-system coverage clean upload sync-skills
 
 PYPI_NAME := frob
@@ -51,6 +51,23 @@ core: $(STAMP)
 		exit 0; }
 	VIRTUAL_ENV=$(CURDIR)/.venv uvx maturin develop --uv --release -m frob-core/Cargo.toml
 	VIRTUAL_ENV=$(CURDIR)/.venv uvx maturin develop --uv --release -m strata-core/Cargo.toml
+
+# ---------- standalone tool install (T-0133) ----------
+
+# `uv tool install frob` alone installs only the pure-Python `frob` package
+# -- neither native extension (frob-core, strata-core) is a declared
+# dependency (they are local maturin path packages, not published wheels;
+# see pyproject.toml's dependencies list and T-0133's Done report for why
+# a real `[project.optional-dependencies]` extra can't point at them). That
+# leaves the standalone binary working (frob.lang degrades every .strata
+# file to a typed Err and frob-core-only dup rungs turn off, per T-0133's
+# (a) decision) but short of full functionality. This target rebuilds and
+# installs both native extensions as `--with` deps of the same `uv tool`
+# environment so the globally-installed `frob` gets them too. Requires a
+# Rust toolchain (`cargo`); true wheel publishing to PyPI for frob-core/
+# strata-core is out of scope for this ticket -- see docs/guides/install.md.
+install-tool:
+	uv tool install --force --reinstall . --with ./strata-core --with ./frob-core
 
 # ---------- formatting & linting ----------
 

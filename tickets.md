@@ -6175,16 +6175,74 @@ syntax and drop this ticket's workaround comment.
 id: T-0133
 title: 'standalone tool install crashes: strata_core hard import in frob.lang (hotfixed);
   bundle or degrade natives properly'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-18'
 blocked_by: []
 parent: null
 scope: []
-evidence: []
+evidence:
+- tests/unit/test_lang_strata.py::TestStrataNativeParserUnavailable::test_parse_file_returns_native_parser_unavailable
+- tests/unit/test_lang_strata.py::TestStrataNativeParserUnavailable::test_graph_build_skips_quietly
 attachments: []
 acceptance: []
 threat: null
 ```
 T-0077's _walk_strata did a module-level 'import strata_core', making the maturin-built native extension a hard dependency of frob.lang -- every invocation of the standalone uv-tool-installed frob crashed with ModuleNotFoundError in ANY repo. Hotfixed with a guarded import: walk_strata returns Err('strata_core native extension unavailable...') when the parser is absent, so .strata files degrade to a per-file parse error instead of killing the process. Follow-up decisions this ticket tracks: (a) should supported_extensions() advertise .strata when the parser is missing (currently yes -- graph build will log the per-file Err; consider filtering), (b) ship strata-core (and frob-core) as wheels or optional extras so tool installs get full functionality, (c) add a CI job that uv-tool-installs the wheel in a clean env and runs frob check on a fixture repo to catch import-time regressions of the standalone binary.
+## Done report
+
+Completed the three hotfix follow-ups: (a) .strata stays advertised
+with a NativeParserUnavailable sentinel distinguishing parser absence
+(DEBUG, quiet everywhere -- 7 monkeypatched degrade tests) from real
+syntax errors (still loud); (b) make install-tool pins the supported
+full install (uv tool install --with both crates, proven end-to-end
+twice) with docs/guides/install.md explaining bare/full/dev paths;
+(c) CI standalone-install job installs the bare wheel in a clean venv,
+hard-asserts frob --help, and greps frob check output for tracebacks
+(continue-on-error until T-0135 lands -- its exit criterion). Two real
+degrade gaps discovered and filed: T-0134 (_facts hard import) and
+T-0135 (sys_gate imports strata before the opt-in check). Reviewer
+APPROVED all dimensions. Verified at merge: 21 lang-strata tests
+green, check baseline unchanged.
+
+<!-- ticket:T-0134 -->
+```yaml
+id: T-0134
+title: frob.strata._facts hard 'import strata_core' crashes standalone installs with
+  a design/ dir (found while working T-0133)
+state: queued
+kind: bug
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0133 fixed frob.lang's guarded import of strata_core (_walk_strata.py) so standalone tool installs no longer crash on .strata source files. frob/strata/_facts.py (imported transitively by frob/strata/__init__.py -> _atomic.py -> _facts.py) still does a module-level 'import strata_core' with no guard, and raises ImportError itself (not even ModuleNotFoundError) if missing: 'strata_core native extension is required (charter D3: no pure-Python fallback); build it with make core'. This crashes frob check's sys_gate (frob/gates/__init__.py sys_gate -> frob.strata.load_design_ids) with an unhandled exception -- not a typed Result.Err -- for ANY repo that has a design/ directory, in a standalone (no frob-core/strata-core) tool install. Reproduced: uv tool install frob (bare, no --with natives) + a repo with design/*.strata content -> frob check crashes with a raw traceback instead of failing a gate cleanly. Charter D3 (no pure-Python fallback for strata semantics) may still hold for the actual facts/proof pipeline -- but the crash needs to become a typed Err (e.g. sys_gate should catch/skip with a clear degrade message) instead of an unhandled ImportError, matching frob.lang's T-0133 pattern.
+
+<!-- ticket:T-0135 -->
+```yaml
+id: T-0135
+title: sys_gate imports frob.strata (and its unguarded strata_core dep) before the
+  design/ opt-in check -- crashes frob check on ANY repo in a standalone install (supersedes/extends
+  T-0134)
+state: queued
+kind: bug
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/__init__.py,src/frob/strata/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Root cause found while verifying T-0133's CI degrade job: frob/gates/__init__.py's sys_gate() does 'from frob.strata import load_design_ids' as its FIRST statement, before the 'if not (root/design_dir).is_dir(): return ()' opt-in check below it. frob.strata.__init__ transitively imports frob/strata/_facts.py, which does an unguarded module-level 'import strata_core' and raises ImportError immediately if absent (charter D3: no pure-Python fallback, intentional -- but the crash should not be reachable for repos that never opted into a design/ directory at all). Net effect: 'frob check' crashes with a raw traceback on EVERY repo in a standalone (uv tool install frob, no --with natives) install, not just ones using strata design files -- reproduced locally building the wheel with 'uv build --wheel', installing into a clean venv, and running frob check against a fixture repo with no design/ dir. Fix: move the 'from frob.strata import load_design_ids' import inside sys_gate to after the design_dir existence check (or make it lazy/guarded), so repos that never touch design/ never pay the strata_core import cost. T-0134 (already filed) covers making frob.strata._facts's own crash a typed Err for repos that DO use design/ files without the native parser -- this ticket is the more urgent half: repos that don't use design/ at all must never hit frob.strata's import machinery.

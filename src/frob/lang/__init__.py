@@ -34,6 +34,7 @@ from frob.lang._extract import COMMENT_TYPES, extract
 from frob.lang._extract import extract_imports as _extract_imports
 from frob.lang._extract import iter_identifiers as _iter_identifiers
 from frob.lang._models import ParsedFile, RawComment, RawSymbol, SymbolKind, TreeNode
+from frob.lang._walk_strata import NATIVE_UNAVAILABLE_MESSAGE as _NATIVE_UNAVAIL_MSG
 from frob.lang._walk_strata import walk_strata as _walk_strata
 from frob.logging import get_logger
 
@@ -47,6 +48,9 @@ class LangError(ErrorSet):
     UnsupportedLanguage = "File extension has no registered grammar"
     ParseFailed = "tree-sitter could not produce a usable tree"
     IoFailed = "File could not be read"
+    NativeParserUnavailable = (
+        "strata-core native extension unavailable in this install (T-0133)"
+    )
 
 
 # extension -> (tree-sitter-language-pack grammar name, ParsedFile.language label)
@@ -223,7 +227,15 @@ def _parse_strata_file(path: Path) -> Result[ParsedFile, LangError]:
 
     walked = _walk_strata(source_bytes.decode("utf-8", errors="replace"))
     if walked.is_err:
-        _log.error("strata parse failed for %s: %s", path, walked.danger_err)
+        message = walked.danger_err
+        if message == _NATIVE_UNAVAIL_MSG:
+            # Expected degrade path (T-0133), not a real parse failure --
+            # every .strata file in a standalone (native-less) install hits
+            # this once per graph build; logging it at error/warning level
+            # for each file would be pure spam. One debug line is enough.
+            _log.debug("strata parser unavailable for %s: %s", path, message)
+            return Err(LangError.NativeParserUnavailable)
+        _log.error("strata parse failed for %s: %s", path, message)
         return Err(LangError.ParseFailed)
     symbols, comments = walked.danger_ok
     parsed = _build_parsed_file(path, _STRATA_LANGUAGE, symbols, comments, source_bytes)

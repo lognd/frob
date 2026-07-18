@@ -150,6 +150,7 @@ def _dedupe_symbols(rel_path: str, parsed: ParsedFile) -> tuple[SymbolRecord, ..
     return tuple(by_ref.values())
 
 
+# frob:ticket T-0133
 def _process_source_file(
     conn, root: Path, path: Path, on_disk_hash: str
 ) -> tuple[
@@ -165,7 +166,15 @@ def _process_source_file(
 
     parsed_result = parse_file(path)
     if parsed_result.is_err:
-        _log.warning("skipping %s: %s", rel_path, parsed_result.danger_err)
+        err = parsed_result.danger_err
+        if err == LangError.NativeParserUnavailable:
+            # Expected degrade path (T-0133): a standalone tool install has
+            # no strata-core native extension, so every .strata file skips
+            # here every build -- debug, not warning, or a repo with any
+            # .strata files would spam a warning line per file per run.
+            _log.debug("skipping %s: %s", rel_path, err)
+        else:
+            _log.warning("skipping %s: %s", rel_path, err)
         return True, (), (), ()
     parsed: ParsedFile = parsed_result.danger_ok
     if parsed.path != rel_path:

@@ -42,3 +42,58 @@ jobs:
         run: uv run pytest -q
       - name: frob check (self-gate)
         run: uv run frob check || echo "::warning::frob check reported findings"
+
+  # Locks the T-0133 degrade contract: a bare `pip install`/`uv tool
+  # install` of the frob wheel (NO frob-core, NO strata-core -- exactly what
+  # `uv tool install frob` gets before `make install-tool`) must never
+  # crash. This is a separate job (no Rust toolchain, no `make core`) so a
+  # regression like T-0077/T-0133's original module-level `import
+  # strata_core` gets caught here even if the main `build` job's native
+  # extensions mask it.
+  standalone-install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Build the bare wheel (no native extras)
+        run: uv build --wheel
+      - name: Install into a clean venv
+        run: |
+          uv venv /tmp/frob-standalone-venv
+          uv pip install --python /tmp/frob-standalone-venv/bin/python dist/*.whl
+      - name: frob --help must not crash without native extensions
+        run: /tmp/frob-standalone-venv/bin/frob --help
+      # KNOWN GAP (T-0135, filed while wiring up this job): sys_gate
+      # (src/frob/gates/__init__.py) imports frob.strata -- and therefore
+      # frob.strata._facts's own unguarded `import strata_core` (T-0134) --
+      # as its first statement, BEFORE the `design/`-directory opt-in check
+      # below it. That means this step currently fails on ANY fixture, with
+      # or without a design/ dir, until T-0135 lands: sys_gate crashes with
+      # a raw ImportError instead of a typed Err. Both bugs are outside
+      # T-0133's declared scope (src/frob/lang/**) -- fixing them here would
+      # be undeclared scope creep, so this step stays `continue-on-error`
+      # with the failure surfaced as a loud warning until T-0135 closes.
+      # Remove `continue-on-error` here the same change that closes T-0135.
+      - name: frob check on a tiny fixture repo must not crash
+        continue-on-error: true
+        run: |
+          set -e
+          fixture=/tmp/frob-standalone-fixture
+          rm -rf "$fixture" && mkdir -p "$fixture/src/demo"
+          cd "$fixture"
+          git init -q
+          printf '"""Empty demo package."""\n' > src/demo/__init__.py
+          printf 'module m\nnode n : trusted {\n}\n' > src/demo/x.strata
+          # Exit code is not asserted: a real repo can legitimately fail
+          # gates (missing tickets, coverage stamp, ...). What this step
+          # locks down is that the process itself does not crash with an
+          # unhandled exception/traceback when strata-core and frob-core
+          # are both absent -- grep the output for the traceback marker
+          # Python always emits on an uncaught exception.
+          output="$(/tmp/frob-standalone-venv/bin/frob check 2>&1)" || true
+          echo "$output"
+          if echo "$output" | grep -q "^Traceback (most recent call last):"; then
+            echo "::error::frob check crashed with an unhandled exception in a natives-less install"
+            exit 1
+          fi

@@ -69,6 +69,17 @@ _KEYWORD_KIND: dict[str, SymbolKind] = {
     "scenario": SymbolKind.METHOD,
 }
 
+# frob:doc docs/modules/lang.md#error-types
+# Sentinel `Err` message `walk_strata` returns when `strata_core` is absent
+# (T-0133) -- `frob.lang._parse_strata_file` matches on this exact string to
+# distinguish "native parser not installed" (expected in standalone tool
+# installs, log at debug) from a real strata syntax rejection (log at
+# error). Kept as one constant so the two modules cannot drift apart.
+NATIVE_UNAVAILABLE_MESSAGE = (
+    "strata_core native extension unavailable; .strata parsing "
+    "requires a dev install (make core) -- see T-0133"
+)
+
 _HEADER_RE = re.compile(
     r"^(module|node|store|queue|cache|cdn|balancer|boundary|flow"
     r"|assert|assume|refine|policy|operation|scenario)\s+"
@@ -214,10 +225,7 @@ def walk_strata(
     (strata-core/src/parse.rs's top-level keyword table).
     """
     if strata_core is None:
-        return Err(
-            "strata_core native extension unavailable; .strata parsing "
-            "requires a dev install (make core) -- see T-0133"
-        )
+        return Err(NATIVE_UNAVAILABLE_MESSAGE)
     parsed = json.loads(strata_core.parse_source(source))
     if "err" in parsed:
         return Err(_reject(parsed["err"]))

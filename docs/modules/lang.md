@@ -205,10 +205,29 @@ logic is never re-derived per grammar.
 
 ```python
 class LangError(ErrorSet):
-    UnsupportedLanguage = "File extension has no registered grammar"
-    ParseFailed         = "tree-sitter could not produce a usable tree"
-    IoFailed            = "File could not be read"
+    UnsupportedLanguage      = "File extension has no registered grammar"
+    ParseFailed              = "tree-sitter could not produce a usable tree"
+    IoFailed                 = "File could not be read"
+    NativeParserUnavailable  = "strata-core native extension unavailable in this install"
 ```
+
+`NativeParserUnavailable` (T-0133) is `.strata`-only: it is what `parse_file`
+returns instead of `ParseFailed` when the `strata_core` maturin extension is
+not installed (a bare `uv tool install frob`, before `make install-tool` --
+see docs/guides/install.md). `.strata` stays a first-class listed extension
+in `supported_extensions()` either way -- the graph still sees the files
+exist -- but each one degrades to this typed `Err` rather than crashing the
+process (the T-0077 regression this ticket fixed) or logging like a real
+syntax error. Consumers (`frob.graph._process_source_file`) log this case at
+debug, not warning, to avoid one warning line per `.strata` file per build in
+every natives-less install.
+
+<!-- frob:describes src/frob/lang/_walk_strata.py::NATIVE_UNAVAILABLE_MESSAGE -->
+
+`frob.lang._walk_strata.NATIVE_UNAVAILABLE_MESSAGE` is the exact `Err`
+message string `walk_strata` returns for this case; `frob.lang.parse_file`
+matches on it to translate to `LangError.NativeParserUnavailable` rather than
+the generic `ParseFailed` a real strata syntax rejection gets.
 
 ## Dependencies
 

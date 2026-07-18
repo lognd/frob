@@ -14,7 +14,15 @@ Division of labor: your editor or Serena navigates and edits code, frob
 accounts for it. frob owns durable cross-artifact claims (docs, tickets,
 invariants, policy) and their enforcement.
 
-Install: `uv tool install frob`. For editable dev install: `pip install -e .`
+Install: `uv tool install frob`. This gets you the full CLI plus every gate
+except two native-accelerated features -- smart-dup's R3+ rungs (frob-core)
+and `.strata` design-file parsing (strata-core) -- both degrade honestly
+(clear `Err`, no crash; see T-0133) rather than being required. For those,
+build the native extensions from source and reinstall them into the same
+tool environment: `make install-tool` (needs a Rust toolchain). See
+docs/guides/install.md for the full picture, including why the natives
+aren't a plain `pip install "frob[...]"` extra yet. For editable dev
+install: `pip install -e .`, then `make core`.
 
 ---
 

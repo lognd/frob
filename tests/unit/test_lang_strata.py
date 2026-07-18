@@ -8,7 +8,10 @@ path and the tree-sitter-escape-hatch functions that stay unsupported for
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
+
+import pytest
 
 from frob.lang import (
     LangError,
@@ -16,10 +19,11 @@ from frob.lang import (
     extract_imports,
     parse_file,
     raw_tree,
+    supported_extensions,
     supported_languages,
     symbol_tree,
 )
-from frob.lang._walk_strata import walk_strata
+from frob.lang._walk_strata import NATIVE_UNAVAILABLE_MESSAGE, walk_strata
 
 _LITMUS = Path(__file__).resolve().parents[2] / "design" / "litmus" / "chirp.strata"
 
@@ -145,3 +149,77 @@ class TestStrataTreeSitterEscapeHatchesUnsupported:
     def test_symbol_tree_unsupported_for_strata(self) -> None:
         # frob:tests src/frob/lang/__init__.py::symbol_tree kind="unit"
         assert symbol_tree(_LITMUS, (1, 2)).danger_err == LangError.UnsupportedLanguage
+
+
+class TestStrataNativeParserUnavailable:
+    """T-0133: standalone tool installs have no `strata_core` extension.
+
+    Simulates that install shape by monkeypatching the module-level
+    `strata_core` binding to `None` -- the same state a bare `uv tool
+    install frob` leaves it in -- and checks every consumer degrades to a
+    typed `Result.Err` instead of crashing or logging like a real parse
+    failure.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _no_native_parser(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        # `frob.lang.__init__` rebinds the package attribute
+        # `frob.lang._walk_strata` to the `walk_strata` function (its own
+        # `from ... import walk_strata as _walk_strata`), shadowing the real
+        # submodule object -- go through `sys.modules` for the actual
+        # submodule so this monkeypatch lands on the binding `walk_strata`
+        # itself reads at call time.
+        walk_strata_mod = sys.modules["frob.lang._walk_strata"]
+        monkeypatch.setattr(walk_strata_mod, "strata_core", None)
+
+    def test_walk_strata_returns_err(self) -> None:
+        # frob:tests src/frob/lang/_walk_strata.py::walk_strata kind="unit"
+        result = walk_strata("module m\nnode n : trusted {\n}\n")
+        assert result.is_err
+        assert result.danger_err == NATIVE_UNAVAILABLE_MESSAGE
+
+    def test_parse_file_returns_native_parser_unavailable(self) -> None:
+        # frob:tests src/frob/lang/__init__.py::parse_file kind="unit"
+        result = parse_file(_LITMUS)
+        assert result.is_err
+        assert result.danger_err == LangError.NativeParserUnavailable
+
+    def test_strata_extension_still_advertised(self) -> None:
+        # frob:tests src/frob/lang/__init__.py::supported_extensions kind="unit"
+        # (a) decision: .strata stays listed even with no native parser --
+        # the graph should still SEE the files exist, just fail to parse
+        # each one with a typed Err rather than being invisible to xref/
+        # coverage/gates entirely.
+        assert ".strata" in supported_extensions()
+
+    def test_graph_build_skips_quietly(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/__init__.py::build_graph kind="unit"
+        from frob.graph import build_graph
+
+        (tmp_path / "a.strata").write_text("module m\nnode n : trusted {\n}\n")
+        result = build_graph(tmp_path, tmp_path / ".frob-cache.sqlite")
+        assert result.is_ok, "a missing native parser must not crash build_graph"
+
+    def test_outline_file_returns_err_not_crash(self) -> None:
+        # frob:tests src/frob/outline/__init__.py::outline_file kind="unit"
+        from frob.outline import outline_file
+
+        result = outline_file(_LITMUS)
+        assert result.is_err
+
+    def test_map_file_node_degrades_without_raising(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/map/__init__.py::_file_node kind="unit"
+        from frob.map import _file_node
+
+        path = tmp_path / "a.strata"
+        path.write_text("module m\nnode n : trusted {\n}\n")
+        node = _file_node(tmp_path, path)
+        assert node.lines > 0
+
+    def test_xref_search_does_not_raise(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/xref/__init__.py::_parsed_definition kind="unit"
+        from frob.xref import _parsed_definition
+
+        path = tmp_path / "a.strata"
+        path.write_text("module m\nnode n : trusted {\n}\n")
+        assert _parsed_definition(path, "n", "a.strata") is None
