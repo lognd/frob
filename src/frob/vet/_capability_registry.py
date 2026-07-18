@@ -22,6 +22,17 @@ empty" exemption with a per-(kind, language) decision: every cell is
 EITHER patterned (>=1 `DangerousOperation`) OR excused with a specific
 written reason (`OutOfScopeEntry`-style discipline, docs/modules/vet.md
 "Coverage matrix").
+
+T-0181 (addendum 2 remainder, 2026-07-18) drains the addendum 2 priority
+survey list -- python (pydantic/fastapi/numpy/cryptography/jinja2/
+python-dotenv/uvicorn/sqlalchemy/asyncpg/alembic/redis/boto3/stripe/
+anthropic/argon2-cffi/aiosmtpd/playwright/Pillow), npm (react/react-dom/
+vite/vitest/playwright/openapi-typescript/eslint tooling), and cargo
+(pyo3/serde/serde_json/tracing/libloading/wasm-bindgen/crossbeam/
+thiserror) -- against each library's real API surface: each library ends
+as either new `DangerousOperation` entries below or is a pure library with
+no dangerous surface (documented in docs/modules/vet.md "Third-party
+library survey (T-0181)", not silently dropped).
 """
 
 from __future__ import annotations
@@ -981,6 +992,253 @@ DANGEROUS_OPERATIONS: tuple[DangerousOperation, ...] = (
         ("socket(", "connect(", "bind("),
         (),
     ),
+    # -- python: third-party priority survey (T-0181, T-0158 addendum 2 -----
+    # remainder) -- pydantic/fastapi/cryptography/alembic/argon2-cffi are
+    # deliberately NOT patterned here: surveyed against their actual API
+    # surface and found to have no dangerous-operation idiom distinct from
+    # what the generic entries above already cover. See docs/modules/vet.md
+    # "Third-party library survey (T-0181)" for the full per-library
+    # disposition table, pure libraries included.
+    _op(
+        "python",
+        "numpy",
+        "numpy.load(..., allow_pickle=True)",
+        "deserialize",
+        "loading a .npy/.npz file with allow_pickle=True lets the file's "
+        "embedded pickle stream execute arbitrary code on load",
+        "never set allow_pickle=True for untrusted files; the default "
+        "(False) is safe",
+        "critical",
+        ("allow_pickle=True",),
+        ("CWE-502",),
+    ),
+    _op(
+        "python",
+        "jinja2",
+        "jinja2.Template()/Environment.from_string()",
+        "eval",
+        "rendering a template built from attacker-influenced text is "
+        "server-side template injection: Jinja2 expressions can reach "
+        "arbitrary Python via __class__ traversal",
+        "never build a template from untrusted input; use a fixed template "
+        "file with a safe, data-only context",
+        "critical",
+        ("jinja2.Template(", "Environment.from_string("),
+        ("CWE-1336", "CWE-95"),
+    ),
+    _op(
+        "python",
+        "jinja2",
+        "Environment(autoescape=False)",
+        "html_render",
+        "disables Jinja2's automatic HTML escaping, letting injected markup "
+        "render unescaped",
+        "use autoescape=True (or select_autoescape) for any HTML-producing "
+        "environment",
+        "high",
+        ("autoescape=False",),
+        ("CWE-79",),
+    ),
+    _op(
+        "python",
+        "python-dotenv",
+        "dotenv.load_dotenv",
+        "env",
+        "loads environment variables from a .env file into the process "
+        "environment",
+        "keep .env out of version control and out of any untrusted-writable "
+        "path",
+        "low",
+        ("load_dotenv(",),
+        (),
+    ),
+    _op(
+        "python",
+        "uvicorn",
+        "uvicorn.run",
+        "net",
+        "binds and serves an ASGI application on a network socket",
+        "bind only to a trusted interface and pin host/port explicitly",
+        "medium",
+        ("uvicorn.run(",),
+        (),
+    ),
+    _op(
+        "python",
+        "sqlalchemy",
+        "sqlalchemy.text() with string-formatted SQL",
+        "sql",
+        "wrapping a string-formatted/f-string SQL fragment in text() "
+        "re-opens the injection surface parameterized queries close",
+        "use bound parameters (text(sql).bindparams(...)) or the query "
+        "builder; never interpolate values into the string",
+        "high",
+        ("sqlalchemy.text(",),
+        ("CWE-89",),
+    ),
+    _op(
+        "python",
+        "asyncpg",
+        "asyncpg.connect",
+        "net",
+        "opens an async PostgreSQL network connection using supplied "
+        "credentials/host",
+        "validate the connection target and load credentials from a vetted "
+        "secret store",
+        "medium",
+        ("asyncpg.connect(",),
+        (),
+    ),
+    _op(
+        "python",
+        "boto3",
+        "boto3.client()/boto3.resource()",
+        "net",
+        "creates an AWS SDK client/resource using ambient or supplied cloud "
+        "credentials -- an outbound net + cloud-credential surface",
+        "scope credentials via IAM least privilege; never accept an "
+        "attacker-controlled service name/endpoint",
+        "medium",
+        ("boto3.client(", "boto3.resource("),
+        (),
+    ),
+    _op(
+        "python",
+        "stripe",
+        "stripe.api_key / stripe.Charge.create",
+        "net",
+        "issues authenticated payment-processing API calls carrying a live "
+        "secret key",
+        "load stripe.api_key from a vetted secret store; never accept "
+        "attacker-controlled amounts/params unvalidated",
+        "medium",
+        ("stripe.api_key",),
+        (),
+    ),
+    _op(
+        "python",
+        "anthropic",
+        "anthropic.Anthropic()/client.messages.create",
+        "net",
+        "issues authenticated outbound API calls to the Anthropic API "
+        "carrying an API key",
+        "load the API key from a vetted secret store; validate/bound any "
+        "user-influenced prompt content",
+        "low",
+        ("anthropic.Anthropic(",),
+        (),
+    ),
+    _op(
+        "python",
+        "aiosmtpd",
+        "aiosmtpd.controller.Controller",
+        "net",
+        "runs an SMTP server accepting inbound network connections",
+        "bind only to a trusted interface; validate/sanitize all inbound "
+        "message handling",
+        "medium",
+        ("aiosmtpd.controller.Controller(",),
+        (),
+    ),
+    _op(
+        "python",
+        "playwright",
+        "sync_playwright()/async_playwright() browser launch",
+        "exec",
+        "launches a full browser as a subprocess",
+        "never launch a browser against untrusted automation scripts "
+        "without sandboxing",
+        "medium",
+        ("sync_playwright(", "async_playwright("),
+        (),
+    ),
+    _op(
+        "python",
+        "playwright",
+        "page.evaluate()",
+        "eval",
+        "executes arbitrary JavaScript inside the automated page context",
+        "never pass untrusted input as script; use fixed, parameterized "
+        "functions with page.evaluate",
+        "high",
+        ("page.evaluate(",),
+        ("CWE-95",),
+    ),
+    _op(
+        "python",
+        "Pillow",
+        "PIL.ImageMath.eval",
+        "eval",
+        "evaluates a string expression against image data, an eval-"
+        "adjacent primitive",
+        "never build the ImageMath expression from untrusted input",
+        "high",
+        ("ImageMath.eval(",),
+        ("CWE-95",),
+    ),
+    # -- typescript/js: third-party priority survey (T-0181) -----------------
+    # react/react-dom, vite/vitest, openapi-typescript, and the eslint
+    # tooling family are deliberately NOT patterned here: surveyed and found
+    # to have no dangerous-operation idiom distinct from what the generic
+    # entries above already cover (react's dangerouslySetInnerHTML is
+    # already patterned). See docs/modules/vet.md "Third-party library
+    # survey (T-0181)".
+    _op(
+        "typescript",
+        "playwright",
+        "chromium.launch()/firefox.launch()/webkit.launch()",
+        "exec",
+        "launches a full browser as a subprocess",
+        "never launch a browser against untrusted automation scripts "
+        "without sandboxing",
+        "medium",
+        ("chromium.launch(", "firefox.launch(", "webkit.launch("),
+        (),
+    ),
+    _op(
+        "typescript",
+        "playwright",
+        "page.evaluate()",
+        "eval",
+        "executes arbitrary JavaScript inside the automated page context",
+        "never pass untrusted input as script; use fixed, parameterized "
+        "functions with page.evaluate",
+        "high",
+        ("page.evaluate(",),
+        ("CWE-95",),
+    ),
+    # -- rust: third-party priority survey (T-0181) --------------------------
+    # serde/serde_json, tracing, and thiserror/crossbeam are deliberately
+    # NOT patterned here: type-directed (de)serialization, structured
+    # logging, and pure library/derive-macro utilities respectively, with no
+    # dangerous-operation idiom. libloading is already patterned above
+    # (T-0158). See docs/modules/vet.md "Third-party library survey
+    # (T-0181)".
+    _op(
+        "rust",
+        "pyo3",
+        "Python::with_gil / pyo3::prelude",
+        "ffi",
+        "embeds/calls into the Python interpreter from Rust across the FFI "
+        "boundary",
+        "keep the embedded-Python surface minimal and audited; never eval "
+        "attacker-controlled Python strings through it",
+        "high",
+        ("pyo3::", "Python::with_gil("),
+        (),
+    ),
+    _op(
+        "rust",
+        "wasm-bindgen",
+        "#[wasm_bindgen] / wasm_bindgen::",
+        "ffi",
+        "exposes Rust functions to (and calls into) JavaScript across the "
+        "wasm/JS FFI boundary",
+        "validate/sanitize every value crossing the wasm/JS boundary",
+        "medium",
+        ("wasm_bindgen::", "#[wasm_bindgen]"),
+        (),
+    ),
 )
 
 
@@ -1107,14 +1365,6 @@ CAPABILITY_MATRIX_EXCUSES: tuple[MatrixExcuse, ...] = (
         reason="no Rust packaging-install-hook idiom analogous to setuptools "
         "cmdclass; cargo build.rs is itself already the exec-capability "
         "surface (patterned separately as build.rs -> Command::new)",
-    ),
-    MatrixExcuse(
-        capability_kind="html_render",
-        language="python",
-        reason="covered via string-formatted-template-into-response findings "
-        "at the framework layer (Flask/Django autoescape), not a bare "
-        "builtin/stdlib primitive; framework-specific survey tracked as a "
-        "follow-up, not claimed covered by this stdlib-scoped registry",
     ),
     MatrixExcuse(
         capability_kind="client_storage",

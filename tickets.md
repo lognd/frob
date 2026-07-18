@@ -2508,7 +2508,7 @@ T-0158 shipped the single-source dangerous-operations registry, the (kind x lang
 id: T-0181
 title: survey-prioritized third-party python/npm/cargo dangerous-surface registry
   entries (T-0158 addendum 2 remainder)
-state: queued
+state: in-progress
 kind: security
 origin: human
 created: '2026-07-18'
