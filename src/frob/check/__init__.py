@@ -198,6 +198,7 @@ def _python_tasks(
     ticket: str | None,
     base: str | None,
     skips: dict[str, bool],
+    delta: bool = False,
 ) -> list[Callable[[], ToolResult | list[ToolResult] | None]]:
     """The enabled per-tool jobs for a Python check run."""
 
@@ -221,7 +222,9 @@ def _python_tasks(
         tasks.append(lambda: _run_exports(root))
     if not skips["gates"] and wanted("gates"):
         tasks.append(
-            lambda: _run_gates(root, ticket=ticket, base=base, gates=gate_only)
+            lambda: _run_gates(
+                root, ticket=ticket, base=base, gates=gate_only, delta=delta
+            )
         )
     return tasks
 
@@ -261,8 +264,14 @@ def run_check(
     only: frozenset[str] | None = None,
     ticket: str | None = None,
     base: str | None = None,
+    delta: bool = False,
 ) -> CheckResult:
-    """Quality gate for Python projects: ruff, ty, cycle/dup/arch/bind, gates, etc."""
+    """Quality gate for Python projects: ruff, ty, cycle/dup/arch/bind, gates, etc.
+
+    `delta=True` (T-0095) makes the gates stage report only violations new
+    since `.frob/baseline` (see `frob.gates.stamp_baseline`/`delta_violations`) --
+    an agent-facing signal-only mode; every other tool is unaffected.
+    """
     gate_only, only, unknown = _resolve_only(only)
     if unknown:
         return _unknown_only_result(root, unknown)
@@ -285,6 +294,7 @@ def run_check(
         ticket=ticket,
         base=base,
         skips=skips,
+        delta=delta,
     )
     return CheckResult(path=str(root), results=_collect_results(tasks))
 

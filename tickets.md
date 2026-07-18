@@ -3139,7 +3139,7 @@ Three implementer agents in a row (T-0062, T-0063, T-0064) wrote Done-report pro
 ```yaml
 id: T-0095
 title: 'frob check --delta: report only violations new since a stamped baseline'
-state: queued
+state: in-progress
 kind: ux
 origin: agent
 created: '2026-07-17'
@@ -3150,12 +3150,37 @@ scope:
 - src/frob/gates/**
 - tests/**
 - tickets.md
-evidence: []
+evidence:
+- tests/test_gates.py::TestBaselineDelta::test_delta_filters_known_violations
+- tests/test_gates.py::TestBaselineDelta::test_baseline_stale_when_file_changes
+- tests/unit/test_check.py::TestRunGatesDelta::test_no_baseline_falls_back_to_full_set_with_warning
 attachments: []
 acceptance: []
 threat: null
 ```
 Agentic token sink measured during the strata build: every frob check run prints ~90 pre-existing warn-level violations (ticketed legacy debt), and each implementer agent runs check 3-6 times per ticket, paying to re-read the same noise. Add a baseline stamp (like coverage-stamp) plus --delta mode that prints only violations absent from the baseline; frob check --stamp-baseline records it. Warn-dial stays for humans; agents get signal only.
+
+## Done report
+
+Changed: new src/frob/gates/_baseline.py (violation_fingerprint,
+stamp_baseline, load_baseline, is_baseline_stale, delta_violations --
+mirrors _coverage.py's stamp/stale-detection shape, keyed on
+rule+file+message sha256 so line-number churn from unrelated edits
+doesn't invalidate the baseline). frob.check._python._run_gates gained
+delta: bool; when set it filters kept violations via delta_violations,
+falling back to the FULL set plus a WARN diagnostic (never a silent
+no-op) if the baseline is missing or stale. run_check/_python_tasks
+thread delta through. --stamp-baseline/--delta CLI flags need
+src/frob/__main__.py + src/frob/app/check_runner.py (out of T-0095's
+declared scope); filed as T-0104. docs/modules/gates.md +
+docs/commands/check.md documentation also filed under T-0104 (docs/**
+out of scope).
+Evidence: see evidence: list above (pytest --collect-only verified).
+Filed: T-0104 (CLI/docs wiring), T-0105 (SCOPE001 false-positive on
+files already committed by an earlier ticket on the same branch --
+discovered running this ticket's check after T-0102's commit).
+Gates: `frob check --ticket T-0095 --base 05951ad` and plain
+`frob check` both exit 0 (see T-0105 for why --base had to be pinned).
 
 <!-- ticket:T-0096 -->
 ```yaml
@@ -3363,3 +3388,46 @@ acceptance: []
 threat: null
 ```
 T-0102 added frob.tickets.validate_evidence/add_evidence (schema-validated, in-process path for landing ticket evidence) but left them unwired to the CLI because src/frob/__main__.py, src/frob/app/config.py, src/frob/app/ticket_runner.py, and docs/** are outside T-0102's declared scope (src/frob/check/**, src/frob/gates/**, src/frob/tickets/**, tests/**). Add --evidence (repeatable) to 'frob ticket new' and 'frob ticket close', wire through AppConfig.ticket_evidence, call add_evidence/TicketSpec.evidence, and document in docs/modules/tickets.md + docs/commands/check.md. This removes the last reason for agents to hand-edit the evidence: YAML block in tickets.md directly.
+
+<!-- ticket:T-0104 -->
+```yaml
+id: T-0104
+title: Wire frob check --stamp-baseline/--delta CLI flags and docs
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-17'
+blocked_by: []
+parent: null
+scope:
+- src/frob/__main__.py
+- src/frob/app/check_runner.py
+- docs/modules/gates.md
+- docs/commands/check.md
+- tests/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0095 added frob.gates.stamp_baseline/load_baseline/is_baseline_stale/delta_violations (src/frob/gates/_baseline.py) and threaded a delta: bool param through frob.check.run_check/_run_gates (src/frob/check/**), but left the --stamp-baseline and --delta CLI flags and docs/modules/gates.md and docs/commands/check.md documentation unwired because src/frob/__main__.py, src/frob/app/check_runner.py, and docs/** are outside T-0095's declared scope (src/frob/check/**, src/frob/gates/**, tests/**, tickets.md). Add --stamp-baseline (calls frob.gates.stamp_baseline with the gates report's violations, mirroring --stamp-coverage's wiring in check_runner.py) and --delta (threads delta=True into run_check) to 'frob check', and document the agent-workflow motivation (why --delta exists: token cost of re-reading ~100 pre-existing warn-level violations per check run) in docs/modules/gates.md and docs/commands/check.md.
+
+<!-- ticket:T-0105 -->
+```yaml
+id: T-0105
+title: SCOPE001 flags files already committed by earlier tickets on the same branch
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-17'
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/**
+- tests/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Discovered while batching T-0102/T-0095/T-0101 on one branch with per-ticket commits: scope_gate diffs unconditionally against --base (default 'main'), so once ticket A commits a change to file X, every later ticket B on the same branch (even with --base defaulted) sees X in its diff and gets a false SCOPE001 if X is outside B's declared scope -- even though B never touched X. Workaround used in this session: pass --base <previous-ticket-commit-sha> explicitly per check invocation. This is fragile (requires the caller to track commit shas) and easy to forget, silently reintroducing false positives. Consider: frob check --ticket should default --base to the ticket's own frob:ticket start commit/prework-sweep point rather than a fixed ref, or scope_gate should diff against the working tree's last commit when no explicit --base is given.

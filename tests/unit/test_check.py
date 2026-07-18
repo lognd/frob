@@ -176,6 +176,41 @@ class TestRunGatesQueueFailure:
         assert any(d.severity == "error" for d in result.diagnostics)
 
 
+class TestRunGatesDelta:
+    """T-0095: --delta filters to violations new since .frob/baseline."""
+
+    def test_no_baseline_falls_back_to_full_set_with_warning(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/check/_python.py::_run_gates kind="unit"
+        from frob.check._python import _run_gates
+
+        (tmp_path / "tickets.md").write_text("# Tickets\n")
+        result = _run_gates(tmp_path, delta=True)
+        assert result.tool == "gates"
+        assert any("no baseline found" in d.message for d in result.diagnostics)
+
+    def test_stale_baseline_falls_back_to_full_set_with_warning(
+        self, tmp_path: Path
+    ) -> None:
+        from frob.check._python import _run_gates
+        from frob.gates import Severity, Violation, stamp_baseline
+
+        (tmp_path / "tickets.md").write_text("# Tickets\n")
+        (tmp_path / "a.py").write_text("x = 1\n")
+        stamp_baseline(
+            tmp_path,
+            (
+                Violation(
+                    rule="R1", severity=Severity.WARN, file="a.py", line=1, message="m"
+                ),
+            ),
+        )
+        (tmp_path / "a.py").write_text("x = 2\n")
+        result = _run_gates(tmp_path, delta=True)
+        assert any("stale" in d.message for d in result.diagnostics)
+
+
 def test_check_run_check_arch_integration(tmp_path: Path) -> None:
     # frob:tests src/frob/check kind="integration"
     # Exercises frob.check across a real analysis boundary: run_check with the

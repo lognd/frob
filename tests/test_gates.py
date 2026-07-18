@@ -15,14 +15,19 @@ from frob.gates import (
     TestPolicy,
     active_ticket,
     coverage_gate,
+    delta_violations,
     drift_gate,
     invariant_gate,
+    is_baseline_stale,
+    load_baseline,
     load_coverage,
     prework_gate,
     record_prework,
     run_gates,
     scope_gate,
+    stamp_baseline,
     stamp_coverage,
+    violation_fingerprint,
 )
 from frob.gates import (
     test_gate as run_test_gate,
@@ -158,6 +163,77 @@ class TestDriftGate:
         snap = _snapshot(tmp_path)
         violations = drift_gate(snap, LockFile())
         assert violations == ()
+
+
+def _violation(rule="R1", file="a.py", message="m", severity=Severity.WARN, line=1):
+    from frob.gates import Violation
+
+    return Violation(
+        rule=rule, severity=severity, file=file, line=line, message=message
+    )
+
+
+class TestBaselineDelta:
+    """T-0095: baseline stamp + --delta filtering."""
+
+    def test_fingerprint_ignores_line_number(self) -> None:
+        # frob:tests src/frob/gates/_baseline.py::violation_fingerprint kind="unit"
+        a = _violation(line=1)
+        b = _violation(line=99)
+        assert violation_fingerprint(a) == violation_fingerprint(b)
+
+    def test_fingerprint_differs_on_rule_file_or_message(self) -> None:
+        base = _violation()
+        assert violation_fingerprint(base) != violation_fingerprint(
+            _violation(rule="R2")
+        )
+        assert violation_fingerprint(base) != violation_fingerprint(
+            _violation(file="b.py")
+        )
+        assert violation_fingerprint(base) != violation_fingerprint(
+            _violation(message="other")
+        )
+
+    def test_stamp_and_load_round_trip(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_baseline.py::stamp_baseline kind="unit"
+        _write(tmp_path, "src/a.py", "def f():\n    pass\n")
+        violations = (_violation(file="src/a.py"),)
+        result = stamp_baseline(tmp_path, violations)
+        assert result.is_ok
+        baseline = load_baseline(tmp_path)
+        assert baseline is not None
+        assert violation_fingerprint(violations[0]) in baseline["fingerprints"]
+
+    def test_load_baseline_missing_is_none(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_baseline.py::load_baseline kind="unit"
+        assert load_baseline(tmp_path) is None
+
+    def test_delta_filters_known_violations(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_baseline.py::delta_violations kind="unit"
+        _write(tmp_path, "src/a.py", "def f():\n    pass\n")
+        old = _violation(file="src/a.py", message="old")
+        stamp_baseline(tmp_path, (old,))
+        baseline = load_baseline(tmp_path)
+        assert baseline is not None
+        new = _violation(file="src/a.py", message="new")
+        kept = delta_violations((old, new), baseline)
+        assert kept == (new,)
+
+    def test_baseline_not_stale_when_files_unchanged(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_baseline.py::is_baseline_stale kind="unit"
+        _write(tmp_path, "src/a.py", "def f():\n    pass\n")
+        stamp_baseline(tmp_path, (_violation(file="src/a.py"),))
+        baseline = load_baseline(tmp_path)
+        assert baseline is not None
+        assert is_baseline_stale(tmp_path, baseline) is False
+
+    def test_baseline_stale_when_file_changes(self, tmp_path: Path) -> None:
+        _write(tmp_path, "src/a.py", "def f():\n    pass\n")
+        stamp_baseline(tmp_path, (_violation(file="src/a.py"),))
+        baseline = load_baseline(tmp_path)
+        assert baseline is not None
+        _write(tmp_path, "src/a.py", "def f():\n    return 1\n")
+        assert is_baseline_stale(tmp_path, baseline) is True
 
 
 class TestCoverageGate:

@@ -31,6 +31,13 @@ from typani import Err, Ok
 from typani.option import Nothing, Option, Some
 from typani.result import Result
 
+from frob.gates._baseline import (
+    delta_violations,
+    is_baseline_stale,
+    load_baseline,
+    stamp_baseline,
+    violation_fingerprint,
+)
 from frob.gates._coverage import load_coverage, load_stamp, stamp_coverage
 from frob.gates._models import (
     CoverageData,
@@ -2023,8 +2030,11 @@ __all__ = [
     "WaiverRef",
     "active_ticket",
     "coverage_gate",
+    "delta_violations",
     "drift_gate",
     "invariant_gate",
+    "is_baseline_stale",
+    "load_baseline",
     "load_coverage",
     "load_invariants",
     "decisions_gate",
@@ -2038,6 +2048,8 @@ __all__ = [
     "run_gates",
     "scope_digest",
     "scope_gate",
+    "stamp_baseline",
     "stamp_coverage",
     "test_gate",
+    "violation_fingerprint",
 ]

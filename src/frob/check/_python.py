@@ -10,8 +10,12 @@ from __future__ import annotations
 
 import subprocess
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from frob.process.parsers.common import Diagnostic, Severity, ToolResult
+
+if TYPE_CHECKING:
+    from frob.gates import Violation
 
 
 def _run_ruff(root: Path, extra_args: list[str] | None) -> list[ToolResult]:
@@ -262,12 +266,14 @@ def _error_count(violations) -> int:  # noqa: ANN001
 
 # frob:ticket T-0028
 # frob:ticket T-0102
+# frob:ticket T-0095
 def _run_gates(
     root: Path,
     *,
     ticket: str | None = None,
     base: str | None = None,
     gates: frozenset[str] = frozenset(),
+    delta: bool = False,
 ) -> ToolResult:
     """Run frob.gates.run_gates as a check stage. Most load failures (git repo
     / tickets dir not guaranteed to exist for every `frob check` caller) are a
@@ -275,7 +281,11 @@ def _run_gates(
     remedy text (T-0102): a malformed tickets.md must never silently vanish
     every gate while still exiting 0 (the vacuous-pass class). Any
     ERROR-severity violation from a successful run also fails the stage like
-    any other tool."""
+    any other tool. `delta=True` (T-0095) filters the kept violations down
+    to those absent from `.frob/baseline` before scoring/reporting -- the
+    agent-facing signal-only mode; a missing or stale baseline degrades to
+    the full (unfiltered) set with a WARN diagnostic, never a silent no-op.
+    """
     from frob.gates import GateConfig, GateError, run_gates
 
     cfg = GateConfig(root=str(root), base=base or "main", ticket=ticket, gates=gates)
@@ -306,17 +316,52 @@ def _run_gates(
             summary=f"gates skipped: {err.value}",
         )
     report = result.danger_ok
-    diags = [*_violation_diags(report.violations), *_waived_diags(report.waived)]
-    n_err = _error_count(report.violations)
+    violations, delta_note = (
+        _apply_delta(root, report.violations)
+        if delta
+        else (
+            report.violations,
+            None,
+        )
+    )
+    diags = [*_violation_diags(violations), *_waived_diags(report.waived)]
+    if delta_note is not None:
+        diags.append(Diagnostic(severity="warning", message=delta_note))
+    n_err = _error_count(violations)
+    summary = f"{len(violations)} violation(s), {len(report.waived)} waived"
+    if delta:
+        summary = f"{len(violations)}/{len(report.violations)} new  " + summary
     return ToolResult(
         tool="gates",
         exit_code=1 if n_err > 0 else 0,
         diagnostics=diags,
-        summary=(
-            f"{len(report.violations)} violation(s), {len(report.waived)} waived  "
-            f"[{_timing_str(report.stats)}]"
-        ),
+        summary=f"{summary}  [{_timing_str(report.stats)}]",
     )
+
+
+def _apply_delta(
+    root: Path, violations: tuple[Violation, ...]
+) -> tuple[tuple[Violation, ...], str | None]:
+    """T-0095: filter `violations` to those new since `.frob/baseline`.
+
+    A missing or stale baseline is never a silent no-op -- it degrades to
+    the unfiltered set plus a WARN note telling the caller to re-stamp.
+    """
+    from frob.gates import delta_violations, is_baseline_stale, load_baseline
+
+    baseline = load_baseline(root)
+    if baseline is None:
+        return violations, (
+            "--delta requested but no baseline found; showing all violations. "
+            "Run `frob check --stamp-baseline` first."
+        )
+    if is_baseline_stale(root, baseline):
+        return violations, (
+            "--delta requested but the baseline is stale (source changed since "
+            "stamping); showing all violations. Re-run `frob check "
+            "--stamp-baseline`."
+        )
+    return delta_violations(violations, baseline), None
 
 
 def _run_bind(root: Path) -> ToolResult | None:
