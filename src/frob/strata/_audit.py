@@ -33,6 +33,7 @@ from ._errors import StrataError
 from ._models import KernelModel
 from ._threat import (
     CWE_CATALOG,
+    DEFAULT_BENIGN_CAPABILITIES,
     QUALITY_CATALOG,
     QUALITY_OUT_OF_SCOPE,
     QUALITY_VIEWS,
@@ -172,20 +173,24 @@ def evaluate_exhaustiveness(
     security_views: tuple[str, ...] = DEFAULT_SECURITY_VIEWS,
     quality_views: tuple[str, ...] = DEFAULT_QUALITY_VIEWS,
     compliance_views: tuple[str, ...] = DEFAULT_COMPLIANCE_VIEWS,
+    benign: tuple[BenignCapability, ...] = DEFAULT_BENIGN_CAPABILITIES,
 ) -> Result[AuditReport, StrataError]:
     """`frob sys audit`'s model-side entrypoint: the full three-part
     exhaustiveness conjunction (THREAT001-003 for security AND quality,
     COMPLIANCE001-002 for compliance) over `model` against every configured
     view, composed from the ALREADY-SHIPPED per-check functions -- zero new
-    detection (module docstring). Fails closed: an unknown view name in any
-    family propagates as `Err(StrataError.UnknownReference)` rather than
-    being silently skipped, matching every other exhaustiveness check in
-    this package."""
+    detection (module docstring). `benign` defaults to
+    `DEFAULT_BENIGN_CAPABILITIES` (T-0150) so tier-2 `may` kinds with no
+    CWE-catalog analog do not fail THREAT002 by default; a caller wanting
+    the pre-T-0150 strict behavior passes `benign=()`. Fails closed: an
+    unknown view name in any family propagates as
+    `Err(StrataError.UnknownReference)` rather than being silently
+    skipped, matching every other exhaustiveness check in this package."""
     gaps: list[FamilyGap] = []
     checked: list[str] = []
 
     for view in security_views:
-        report = _evaluate_family(model, view, CWE_CATALOG, (), (), VIEWS)
+        report = _evaluate_family(model, view, CWE_CATALOG, (), benign, VIEWS)
         if report.is_err:
             return Err(report.danger_err)
         gaps.extend(_threat_gaps("security", view, report.danger_ok))
@@ -193,7 +198,7 @@ def evaluate_exhaustiveness(
 
     for view in quality_views:
         report = _evaluate_family(
-            model, view, QUALITY_CATALOG, QUALITY_OUT_OF_SCOPE, (), QUALITY_VIEWS
+            model, view, QUALITY_CATALOG, QUALITY_OUT_OF_SCOPE, benign, QUALITY_VIEWS
         )
         if report.is_err:
             return Err(report.danger_err)

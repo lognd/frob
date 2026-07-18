@@ -36,6 +36,7 @@ from ._errors import StrataError
 from ._models import KernelModel
 from ._threat import (
     CWE_CATALOG,
+    DEFAULT_BENIGN_CAPABILITIES,
     VIEWS,
     BenignCapability,
     OutOfScopeEntry,
@@ -219,7 +220,7 @@ def audit_claim(
     *,
     catalog: tuple[WeaknessEntry, ...] = CWE_CATALOG,
     out_of_scope: tuple[OutOfScopeEntry, ...] = (),
-    benign: tuple[BenignCapability, ...] = (),
+    benign: tuple[BenignCapability, ...] = DEFAULT_BENIGN_CAPABILITIES,
 ) -> Result[ClaimAuditResult, StrataError]:
     """DOC003's model-side half: is `view`'s exhaustiveness claim PROVED
     against `model` -- or which obligations are failing, named (docs/
@@ -228,7 +229,12 @@ def audit_claim(
     `evaluate_threats` exactly as `frob sys doc`'s matrix would; a claim
     is PROVED iff the SAME conjunction the matrix reports has zero
     violations -- the two can never honestly disagree (charter: no
-    duplication)."""
+    duplication). `benign` defaults to `DEFAULT_BENIGN_CAPABILITIES`
+    (T-0150), matching `evaluate_exhaustiveness`'s default, so DOC003 (the
+    ONLY caller that reaches `design/frob.strata`'s own `frob:claims`
+    marker, `src/frob/gates/__init__.py::_doc003_one_marker`) does not
+    fail on tier-2 `may` kinds with no CWE-catalog analog by default; a
+    caller wanting the pre-T-0150 strict behavior passes `benign=()`."""
     report = evaluate_threats(model, view, catalog, out_of_scope, benign)
     if report.is_err:
         return Err(report.danger_err)

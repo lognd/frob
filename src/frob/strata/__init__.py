@@ -156,6 +156,14 @@ from frob.strata._secrets import (
     SecretSpec,
     elaborate_secret,
 )
+from frob.strata._selfconform import (
+    SYS_STALE_DESIGN,
+    SYS_UNDECLARED_INTERFACE,
+    SYS_UNMODELED_CODE,
+    SelfConformReport,
+    SelfConformViolation,
+    check_self_conformance,
+)
 from frob.strata._sysdoc import (
     ClaimAuditResult,
     audit_claim,
@@ -164,6 +172,7 @@ from frob.strata._sysdoc import (
 )
 from frob.strata._threat import (
     CWE_CATALOG,
+    DEFAULT_BENIGN_CAPABILITIES,
     VIEWS,
     BenignCapability,
     OutOfScopeEntry,
@@ -185,9 +194,13 @@ __all__ = [
     "UNBOUND_REQUIRED_KINDS",
     "COMPLIANCE_CATALOG",
     "CWE_CATALOG",
+    "DEFAULT_BENIGN_CAPABILITIES",
     "DEFAULT_COMPLIANCE_VIEWS",
     "DEFAULT_QUALITY_VIEWS",
     "DEFAULT_SECURITY_VIEWS",
+    "SYS_STALE_DESIGN",
+    "SYS_UNDECLARED_INTERFACE",
+    "SYS_UNMODELED_CODE",
     "LABELS",
     "REGULATION_VIEWS",
     "SECRET_LABEL",
@@ -285,6 +298,8 @@ __all__ = [
     "ScopeSpec",
     "SecretExpansion",
     "SecretSpec",
+    "SelfConformReport",
+    "SelfConformViolation",
     "SetEquality",
     "SetTrust",
     "StoreDecl",
@@ -307,6 +322,7 @@ __all__ = [
     "check_privacy_policy",
     "check_regulation_catalog_completeness",
     "check_regulation_discharge",
+    "check_self_conformance",
     "compile_policies",
     "elaborate",
     "elaborate_infra",

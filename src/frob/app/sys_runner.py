@@ -45,6 +45,8 @@ from frob.strata import (
     AuditReport,
     KernelModel,
     PlannedTicket,
+    SelfConformReport,
+    check_self_conformance,
     evaluate_exhaustiveness,
     load_design_ids,
     plan_obligations,
@@ -335,15 +337,38 @@ def _print_audit_report(report: AuditReport) -> None:
         )
 
 
+# frob:ticket T-0150
+def _print_selfconform_report(report: SelfConformReport) -> None:
+    """Print `frob sys audit`'s self-conformance summary (T-0150): every
+    SYS100 (undeclared interface)/SYS101 (stale design)/SYS102 (unmodeled
+    code) violation, one per line, matching `_print_audit_report`'s
+    CI-parseable style."""
+    if not report.violations:
+        _log.info("sys audit: self-conformance PROVED -- zero SYS gaps")
+        return
+    _log.error("sys audit: %d self-conformance gap(s) found", len(report.violations))
+    for violation in report.violations:
+        _log.error(
+            "sys audit: GAP family=sys rule=%s node=%s detail=%s",
+            violation.rule,
+            violation.node,
+            violation.detail,
+        )
+
+
 # frob:ticket T-0115
+# frob:ticket T-0150
 def _run_audit(cfg: AppConfig) -> None:
     """`frob sys audit`: evaluate the full three-part exhaustiveness
     conjunction (THREAT001-003 for security/quality, COMPLIANCE001-002 for
     compliance, docs/strata/threat.md#the-exhaustiveness-proof-the-point)
     for every `.strata` design file under the repo's design dir against
-    EVERY configured baseline view, and exit nonzero with a named-gap
-    summary when any part fails -- the CI-ready checking counterpart to
-    `frob sys doc`'s human-facing matrix rendering (T-0115)."""
+    EVERY configured baseline view, PLUS the SYS100-102 self-conformance
+    check (T-0150: vet's own capability scanner pointed at OUR src/ tree,
+    reconciled against `[strata.code_map]`/`[strata.capability_map]` in
+    frob.toml) -- and exit nonzero with a named-gap summary when any part
+    fails -- the CI-ready checking counterpart to `frob sys doc`'s
+    human-facing matrix rendering (T-0115)."""
     root = (cfg.sys_path or Path(".")).resolve()
     design_dir = _design_dir(root)
     ids = load_design_ids(root, design_dir)
@@ -361,9 +386,15 @@ def _run_audit(cfg: AppConfig) -> None:
         _log.error("sys audit: %s", audited.danger_err)
         sys.exit(1)
 
+    selfconform = check_self_conformance(model, root)
+    if selfconform.is_err:
+        _log.error("sys audit: self-conformance: %s", selfconform.danger_err)
+        sys.exit(1)
+
     report = audited.danger_ok
     _print_audit_report(report)
-    if not report.proved:
+    _print_selfconform_report(selfconform.danger_ok)
+    if not report.proved or selfconform.danger_ok.violations:
         sys.exit(1)
 
 

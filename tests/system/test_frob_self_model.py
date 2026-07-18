@@ -93,34 +93,60 @@ class TestFrobSelfModel:
         # table) = 27.
         assert len(_model.flows) == 27
         assert len(_model.boundaries) == 1
-        assert len(_model.claims) == 3
+        # T-0150: 3 original PROVED architecture claims + 3 `assume
+        # weakness:CWE-78:<node>` discharge claims that declaring `may
+        # "exec"` on checker/core/vet (measured honestly, T-0150 Done
+        # report) drags in via THREAT003 (docs/strata/threat.md
+        # #capabilities-drag-in-obligations) = 6.
+        assert len(_model.claims) == 6
 
     # frob:tests tests/system/test_frob_self_model.py::TestFrobSelfModel.test_every_claim_proves kind="e2e"
     def test_every_claim_proves(self, _model) -> None:
-        """Every claim this model draws about frob's own architecture holds today.
+        """Every architecture claim this model draws holds today, and every
+        T-0150 capability-discharge claim is a deliberately human-owned
+        ASSUME (never silently PROVED, never REFUTED).
 
         A REFUTED claim here means either the model drifted from reality or
         a real regression (e.g. the `b_vet_endorse` boundary directive was
         deleted from `src/frob/vet/_registry.py`) -- either way, CI must
         fail loudly rather than let the claim silently stop meaning
-        anything.
+        anything. The three `weakness:CWE-78:*` claims are ASSUMEd, not
+        PROVEd, by design (docs/strata/selfconform.md: `core`'s discharge
+        specifically cannot be graph-proved, since `registry` DOES reach
+        `core` transitively via `vet`) -- verified ASSUMED here rather
+        than PROVED, and never REFUTED.
         """
         outcome = evaluate_claims(_model)
         assert outcome.is_ok, f"evaluate_claims failed: {outcome.err}"
         claim_results = outcome.danger_ok
-        assert len(claim_results) == 3
-        seen_ids: set[str] = set()
-        for claim_result in claim_results:
-            seen_ids.add(claim_result.claim_id)
-            assert claim_result.verdict == Verdict.PROVED, (
-                f"{claim_result.claim_id} did not prove: "
-                f"{claim_result.verdict} {claim_result.detail}"
-            )
-        assert seen_ids == {
+        assert len(claim_results) == 6
+        proved_ids = {
             "c_no_registry_ledger",
             "c_cache_derivable",
             "c_gates_reach_tickets",
         }
+        assumed_ids = {
+            "weakness:CWE-78:checker",
+            "weakness:CWE-78:core",
+            "weakness:CWE-78:vet",
+        }
+        seen_ids: set[str] = set()
+        for claim_result in claim_results:
+            seen_ids.add(claim_result.claim_id)
+            assert claim_result.verdict != Verdict.REFUTED, (
+                f"{claim_result.claim_id} REFUTED: {claim_result.detail}"
+            )
+            if claim_result.claim_id in proved_ids:
+                assert claim_result.verdict == Verdict.PROVED, (
+                    f"{claim_result.claim_id} did not prove: "
+                    f"{claim_result.verdict} {claim_result.detail}"
+                )
+            else:
+                assert claim_result.verdict == Verdict.ASSUMED, (
+                    f"{claim_result.claim_id} expected ASSUMED, got "
+                    f"{claim_result.verdict} {claim_result.detail}"
+                )
+        assert seen_ids == proved_ids | assumed_ids
 
     # frob:tests tests/system/test_frob_self_model.py::TestFrobSelfModel.test_sys_gate_zero_violations kind="e2e"
     def test_sys_gate_zero_violations(self, tmp_path: Path) -> None:

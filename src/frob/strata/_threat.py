@@ -158,6 +158,95 @@ class BenignCapability(BaseModel):
     reason: str = Field(min_length=1)
 
 
+#: T-0150: `may` capability kinds `_selfconform.py`'s SYS100/SYS101 measure
+#: via `frob.vet._capability`'s scanner vocabulary (net/fs-write-derived
+#: "fs"/eval/env/ffi/install-hook) that name NO `CWE_CATALOG`/
+#: `QUALITY_CATALOG` `capability_kind` at all (the catalog's kinds --
+#: html_render/sql/exec/fetch_url/deserialize/client_storage -- are a
+#: DIFFERENT, CWE-sink-shaped vocabulary, docs/strata/threat.md#the-
+#: catalog-stdcwe). Declaring these on `design/frob.strata`'s nodes (so
+#: SYS100/SYS101 can reconcile them) would otherwise fail THREAT002 on
+#: every one of them ("matches no sink taxonomy entry") with NO way to
+#: excuse it, since `BenignCapability` is a Python-side argument neither
+#: `evaluate_exhaustiveness` (`_audit.py`) nor `audit_claim` (`_sysdoc.py`,
+#: DOC003's model-side half) wired to a default until now. `exec` IS
+#: listed below too, despite having a real `CWE_CATALOG` entry (CWE-78) --
+#: `_evaluate_family` (`_audit.py`) passes the SAME `benign` tuple to BOTH
+#: the security (`CWE_CATALOG`) and quality (`QUALITY_CATALOG`) family
+#: loops, and `QUALITY_CATALOG` has no `exec`-mapped entry at all;
+#: `check_capability_completeness`'s `known` set is catalog-derived, so
+#: `exec` already being `known` for the security loop makes this entry a
+#: no-op there (`excused` is consulted only for kinds NOT already known) --
+#: it only takes effect for the quality loop, where it is a genuine gap in
+#: `QUALITY_CATALOG`'s vocabulary, not a security exemption.
+# frob:doc docs/strata/threat.md#the-exhaustiveness-proof-the-point
+DEFAULT_BENIGN_CAPABILITIES: tuple[BenignCapability, ...] = (
+    BenignCapability(
+        kind="exec",
+        reason=(
+            "already classified as CWE-78 in CWE_CATALOG (the security "
+            "family); this entry only affects the QUALITY_CATALOG loop, "
+            "which has no exec-mapped weakness at all -- module docstring "
+            "above explains why this is a no-op for the security loop"
+        ),
+    ),
+    BenignCapability(
+        kind="net",
+        reason=(
+            "tier-2 net-effect capability (T-0079 _KIND_MAP); no CWE_CATALOG "
+            "entry targets bare outbound network calls as a sink on their own "
+            "(SSRF/fetch_url is the catalog's closest analog and is a distinct, "
+            "already-classified kind)"
+        ),
+    ),
+    BenignCapability(
+        kind="fs",
+        reason=(
+            "tier-2 filesystem-write capability (T-0079 _KIND_MAP, from vet's "
+            "fs-write); no CWE_CATALOG entry targets local filesystem writes "
+            "as a sink on their own (CWE-22 path traversal is a distinct, "
+            "flow-to-path-sink precondition, capability_kind=None)"
+        ),
+    ),
+    BenignCapability(
+        kind="eval",
+        reason=(
+            "vet dependency-vetting signal (compile/eval/__import__ literal "
+            "match, frob.vet._capability._PATTERNS); no CWE_CATALOG entry "
+            "targets dynamic code evaluation as a sink -- vet's own scanner "
+            "self-matches its own pattern-table string literals in "
+            "_capability.py (filed as a separate scanner-precision ticket, "
+            "T-0150 Done report), a distinct, already-flagged gap"
+        ),
+    ),
+    BenignCapability(
+        kind="env",
+        reason=(
+            "vet dependency-vetting signal (environment-variable read "
+            "access); no CWE_CATALOG entry targets environment-variable "
+            "reads as a sink"
+        ),
+    ),
+    BenignCapability(
+        kind="ffi",
+        reason=(
+            "vet dependency-vetting signal (ctypes/extern C usage); no "
+            "CWE_CATALOG entry targets FFI/native-extension boundaries as a "
+            "sink in v0's catalog"
+        ),
+    ),
+    BenignCapability(
+        kind="install-hook",
+        reason=(
+            "vet dependency-vetting signal (setuptools packaging install "
+            "hooks); no CWE_CATALOG entry targets packaging install hooks as "
+            "a sink -- this is a dependency-supply-chain concern `frob vet` "
+            "itself already flags, not a CWE-catalog weakness"
+        ),
+    ),
+)
+
+
 # frob:doc docs/strata/threat.md#the-catalog-stdcwe
 # The OWASP Top-10 subset shipped as phase-A data (docs/strata/threat.md
 # #phasing "the OWASP Top-10 subset as data"). Every precondition/mitigation
@@ -1157,6 +1246,7 @@ __all__ = [
     "CWE_TOP_25_CATALOG",
     "CWE_TOP_25_OUT_OF_SCOPE",
     "CWE_TOP_25_VIEWS",
+    "DEFAULT_BENIGN_CAPABILITIES",
     "QUALITY_CATALOG",
     "QUALITY_OUT_OF_SCOPE",
     "QUALITY_VIEWS",

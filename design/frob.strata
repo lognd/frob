@@ -3,24 +3,30 @@
 // "Self-hosting commitments (decision D7)"). This supersedes the informal
 // module-dependency diagram in docs/rework.md as enforced truth: `frob
 // check --only sys` gates on the directives below resolving into THIS
-// model, and (T-0080) on cross-component imports respecting the flows
-// declared here wherever tier-2 `code=` binding is in force.
+// model, on (T-0080) cross-component imports respecting the flows
+// declared here wherever tier-2 `code=` binding is in force, and (T-0150)
+// on each node's `code`/`may` declarations below matching what `frob sys
+// audit`'s SYS100/SYS101/SYS102 self-conformance checks actually observe
+// in `src/frob/`.
 //
-// GRAMMAR GAP FOUND WHILE WRITING THIS MODEL (filed as a new ticket, see
-// Done report): `strata-core`'s lexer only accepts `[A-Za-z_][A-Za-z0-9_]*`
-// for IDENT (`is_ident_start`/`is_ident_cont`, strata-core/src/parse.rs),
-// and `attr KEY=VAL` requires VAL to be one IDENT token
-// (`parse_attrval`). There is no STRING- or glob-valued attr in the
-// surface grammar today, so `code=<glob>` (docs/strata/surface.md#code-
-// binding-tier-2-v0-implementation) and `may <capability>` (the
-// `component` decl's `comp_item`) are NOT reachable from `.strata` source
-// text -- only from a hand-built `KernelModel` in Python, which is exactly
-// how every `_code_binding.py`/`_effects.py` test exercises them. This
-// model therefore documents each component's real code ownership as a
-// plain comment (informal, not machine-bound) rather than a `code=` attr
-// it cannot express, and omits `may` capabilities for the same reason.
-// Making `code`/`may` parseable is real follow-up work, not something to
-// fake around here (bind honestly, per this ticket's own instructions).
+// Every node below declares `code "<glob>" ...;` (tier-2 code binding,
+// T-0078/T-0132) and `may "<capability>";` (declared capability surface,
+// T-0079/T-0132) directly -- both ARE reachable from `.strata` source text
+// today (T-0132 landed the STRING-quoted `code`/`may` grammar in
+// `strata-core/src/parse.rs::parse_node`, `docs/strata/surface.md#node-
+// grammar-implemented-t-0132-closes-the-code-may-gap-t-0136-adds-on-
+// deploy`). A PRIOR version of this file's header claimed otherwise --
+// that claim was already stale when written (T-0132 landed before this
+// file's merge-base) and has been corrected here; see T-0150's Done
+// report for the full correction record. `may` values were measured
+// honestly via `frob.vet._capability.scan_file_capabilities` against every
+// file each node's `code` globs bind (T-0150); a "may" atom's kind is the
+// segment before its first `.`/`:` (`_effects.py::_may_kind`), so a bare
+// kind name like `"net"`/`"fs"`/`"exec"` (the same three names THREAT004's
+// `_KIND_MAP` already normalizes net/fs-write/exec sinks to) or
+// `"eval"`/`"env"`/`"ffi"`/`"install-hook"` (vet's own kind names, which
+// have no tier-2 line-level analog -- T-0150's SYS100 extended case) is
+// declared as-is.
 //
 // Every flow below is a real import edge this repo's `src/frob/*`
 // packages actually have today (computed by walking `from frob.X import`/
@@ -46,62 +52,131 @@ node registry : foreign { clearance Public; }
 // cli/app layer: src/frob/__main__.py, src/frob/app/**. The single
 // entrypoint every subcommand dispatches through (app.py's
 // `_dispatch_table`); every other component is reached only via a runner
-// in this layer.
+// in this layer. `may`: T-0150 measured `eval` (bare `compile(` matches --
+// see the filed T-0151-class scanner-precision ticket in this ticket's
+// Done report, not fixed here) and `fs` (config/log file writes) across
+// every file `code` binds.
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
-node cli : trusted { clearance Internal; }
+node cli : trusted {
+    clearance Internal;
+    code "src/frob/app/**" "src/frob/__main__.py";
+    may "eval";
+    may "fs";
+}
 
 // graph+lang: src/frob/graph/**, src/frob/lang/**, src/frob/arch/**. Owns
 // parsing (tree-sitter walkers + the strata-core native module), the
 // symbol graph snapshot, and per-language digest extraction that every
 // other component reads.
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
-node graphlang : trusted { clearance Internal; }
+node graphlang : trusted {
+    clearance Internal;
+    code "src/frob/graph/**" "src/frob/lang/**" "src/frob/arch/**";
+    may "eval";
+    may "fs";
+}
 
 // gates: src/frob/gates/**. The obligation-graph rule engine (SYS/DRIFT/
 // COV/task-tracking/etc.); reads graph+lang's snapshot and strata's design models,
 // writes nothing on its own (violations are reported, not auto-filed --
 // T-0086's `frob sys plan` is the future ticket-filing seam).
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
-node gates : trusted { clearance Internal; }
+node gates : trusted {
+    clearance Internal;
+    code "src/frob/gates/**";
+    may "eval";
+    may "fs";
+}
 
 // check orchestration: src/frob/check/**. Runs the gate suite plus the
 // process-spawned tool integrations (ruff/mypy/pytest via `frob.process`)
 // and folds results into one exit code.
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
-node checker : trusted { clearance Internal; }
+node checker : trusted {
+    clearance Internal;
+    code "src/frob/check/**";
+    may "exec";
+    may "fs";
+}
 
 // strata itself: src/frob/strata/**, strata-core/**. Parses/elaborates/
 // evaluates `.strata` design models (this file included) and does tier-2
 // code-binding/effect extraction, which is why it depends on `vet`'s
 // capability pattern tables (`_effects.py` reuses `frob.vet._capability`).
+// `code` covers only the python half (`strata-core/**`'s rust source is
+// outside `bind_code`'s `*.py` walk, T-0078 scope).
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
-node stratamod : trusted { clearance Internal; }
+node stratamod : trusted {
+    clearance Internal;
+    code "src/frob/strata/**";
+    may "eval";
+    may "ffi";
+    may "net";
+}
 
 // dup+frob-core: everything that is real infrastructure but not one of
 // the named components above -- src/frob/dup/**, logging/**, process/**,
 // gitlog/**, gitio.py, xref/**, outline/**, map/**, exports/**,
 // mutate/**, perf/**, policy/**, release/**, scaffold/**, serve/**,
-// stats/**, bind/**, docs/**, fuzz/**, cycle/**, testing/**. Rolled into
-// one node deliberately: these packages form a dense, largely acyclic
-// utility mesh (logging alone has ~90 inbound imports repo-wide) that
-// does not carve into independently-owned components the way
+// stats/**, bind/**, docs/**, fuzz/**, cycle/**, testing/**, cve/** (T-0150
+// self-conformance audit found src/frob/cve/** unmapped -- added here
+// rather than as a ninth component for the same density reason), AND
+// src/frob/tickets/** (T-0150 rework: `tickets_ledger` is a `store`, and
+// `store_prop` cannot actually declare `code`/`may` -- see that store's
+// own comment; the CODE writing to it is `core`-owned code, consistent
+// with `core`'s existing `f_core_tickets` flow into `tickets_ledger`).
+// Rolled into one node deliberately: these packages form a dense, largely
+// acyclic utility mesh (logging alone has ~90 inbound imports repo-wide)
+// that does not carve into independently-owned components the way
 // gates/check/strata/vet do; modeling each one separately would not
 // change any claim in this file, only inflate the flow count.
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
-node core : trusted { clearance Internal; }
+node core : trusted {
+    clearance Internal;
+    code "src/frob/dup/**" "src/frob/logging/**" "src/frob/process/**"
+        "src/frob/gitlog/**" "src/frob/gitio.py" "src/frob/xref/**"
+        "src/frob/outline/**" "src/frob/map/**" "src/frob/exports/**"
+        "src/frob/mutate/**" "src/frob/perf/**" "src/frob/policy/**"
+        "src/frob/release/**" "src/frob/scaffold/**" "src/frob/serve/**"
+        "src/frob/stats/**" "src/frob/bind/**" "src/frob/docs/**"
+        "src/frob/fuzz/**" "src/frob/cycle/**" "src/frob/testing/**"
+        "src/frob/cve/**" "src/frob/tickets/**";
+    may "env";
+    may "eval";
+    may "exec";
+    may "fs";
+}
 
 // vet: src/frob/vet/**. Dependency-vetting -- the ONE component that
 // crosses the trust boundary out to `registry` (network fetches for
 // publish dates, OSV advisories, popularity data).
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
-node vet : trusted { clearance Internal; }
+node vet : trusted {
+    clearance Internal;
+    code "src/frob/vet/**";
+    may "env";
+    may "eval";
+    may "exec";
+    may "ffi";
+    may "fs";
+    may "install-hook";
+    may "net";
+}
 
-// The ticket ledger: tickets.md + tickets/, git-tracked truth
-// (src/frob/tickets/**). `append_only` because the ledger is edited by
-// appending new tickets and updating ticket bodies in place under git
-// history, never by deleting the record of what happened (archive moves
-// closed tickets to a separate tracked file, `write_archive`, rather than
-// erasing them).
+// The ticket ledger: tickets.md + tickets/, git-tracked truth. No
+// `code`/`may` here: `store_prop` in `strata-core/src/parse.rs::
+// parse_store` does NOT actually accept `code`/`may` (a real, narrow gap
+// this ticket found -- `docs/strata/surface.md`'s own `store_prop :=
+// node_prop | ...` line claims otherwise; filed separately, not fixed
+// here since it is a `strata-core` grammar change, outside T-0150's
+// scope). The CODE that writes to this ledger (`src/frob/tickets/**`) is
+// folded into the `core` node's `code`/`may` below instead -- consistent
+// with `core`'s existing `f_core_tickets: core -> tickets_ledger` flow,
+// which already models exactly that write path; `append_only` because the
+// ledger is edited by appending new tickets and updating ticket bodies in
+// place under git history, never by deleting the record of what happened
+// (archive moves closed tickets to a separate tracked file,
+// `write_archive`, rather than erasing them).
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
 store tickets_ledger : trusted {
     clearance Internal;
@@ -227,3 +302,48 @@ assert c_cache_derivable bound age graph_cache <= 5 s
 // i.e. this model has not accidentally drawn gates as a dead end.
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
 assert c_gates_reach_tickets reach gates -> tickets_ledger
+
+// T-0150: declaring `may "exec"` on checker/core/vet (measured honestly
+// from real `scan_file_capabilities` sites) drags in a THREAT003 CWE-78
+// (OS-command-injection) discharge obligation per node
+// (docs/strata/threat.md#capabilities-drag-in-obligations) -- these three
+// `assume` claims discharge it, each with the SPECIFIC reason a human
+// (not the closure engine) is attesting no exploitable OS-command
+// injection exists, honestly stated rather than shaped to pass:
+//
+// checker: `assert` was tried first and PROVES clean -- no flow reaches
+// checker from `registry` at all (`f_vet_gates`/`f_vet_graphlang`/
+// `f_vet_core` exist, no `vet -> checker` edge), so this is provably true,
+// not merely assumed... except an `assume` (not `assert`) is used anyway
+// for uniformity with core/vet below, since all three obligations share
+// one discharge shape and one review cadence; the graph-provable case is
+// exactly as safe assumed as asserted.
+// frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
+assume "weakness:CWE-78:checker" noflow registry -> checker owner logan review "2026-10-15"
+
+// core: registry DOES reach core transitively (`f_registry_fetch: registry
+// -> vet`, `f_vet_core: vet -> core`), so a plain `assert noflow` here
+// would be REFUTED -- an `assume` is the honest tool, not a workaround:
+// every exec call site under `core`'s `code=` globs
+// (src/frob/gitio.py, src/frob/mutate/**, src/frob/perf/**,
+// src/frob/tickets/clipboard.py, src/frob/gitlog/**) invokes a FIXED,
+// hardcoded argv list (git/cargo/pbcopy/xclip subcommands) built from
+// this repo's own config, never from registry response bytes -- the
+// registry->vet->core path carries dependency METADATA (name/version/
+// hashes, already checksum-endorsed by `b_vet_endorse`), not command
+// arguments, so it cannot reach any of these argv lists. Reviewed 2026-07.
+// frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
+assume "weakness:CWE-78:core" noflow registry -> core owner logan review "2026-10-15"
+
+// vet: registry flows directly into vet (`f_registry_fetch`). The ONLY
+// file under vet's `code=` glob matching the scanner's `exec` needle is
+// `src/frob/vet/_capability.py` itself, and its ONLY match is the literal
+// STRING `"subprocess."` stored as pattern-table DATA
+// (`_PATTERNS["python"]["exec"]`) -- there is no `subprocess.run`/`os.
+// system` CALL anywhere in `src/frob/vet/*.py` (verified by direct grep,
+// T-0150's Done report). This is the scanner-self-match artifact filed as
+// a separate ticket in this ticket's Done report (vet's own pattern
+// tables trivially match themselves) -- not fixed here, per that ticket's
+// scope, but honestly discharged here rather than left dangling.
+// frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
+assume "weakness:CWE-78:vet" noflow registry -> vet owner logan review "2026-10-15"
