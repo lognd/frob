@@ -1,0 +1,31 @@
+// managed_hardened.strata -- T-0172 litmus: the `managed` twin of
+// managed_vuln.strata. SAME firing precondition (`db`'s `may "sql"`) and
+// the SAME discharging claim/boundary shape (an ENDORSE boundary whose
+// predicate does NOT match CWE-89's catalog mitigation, exactly as
+// managed_vuln.strata's does not) -- but `db` is declared `managed`
+// (config-only infra, no scannable code by declaration), so
+// `_threat.py::_check_one_discharge` skips the boundary-KIND
+// (`_mitigation_is_chokepoint`) proof a code-modeled node needs: "no
+// tier-2 conformance; obligations shift to config evidence or assumes"
+// (docs/strata/surface.md#node-grammar). The claim still has to exist and
+// prove a chokepoint shape (`_discharges_as_chokepoint`), which it does --
+// the ENDORSE boundary interposes on the only path from `client` to `db`
+// regardless of its predicate.
+//
+// tested end to end (parse -> elaborate -> check_discharge_completeness)
+// by tests/unit/strata/test_managed.py.
+
+module managed_hardened
+
+node client : foreign { clearance Public; }
+node db : trusted {
+    clearance Internal;
+    may "sql";
+    managed;
+}
+
+flow f_query : client -> db { label Public; }
+
+boundary b_query endorse f_query : foreign -> trusted when "unrelated_check"
+
+assert "weakness:CWE-89:db" noflow client -> db

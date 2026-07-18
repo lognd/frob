@@ -83,7 +83,7 @@ from typani.result import Err, Ok, Result
 from frob.logging import get_logger
 
 from ._claims import evaluate_claims
-from ._code_binding import CodeBinding
+from ._code_binding import CodeBinding, is_managed
 from ._effects import (
     CapabilityViolation,
     ObservedEffect,
@@ -1046,6 +1046,16 @@ def _check_one_discharge(
     closure-derived proof to inspect for boundary kind -- the owner/review
     gate a few lines up is the only accountability an assume gets, same as
     every other claim form in this module.
+
+    It is ALSO skipped when `node_id` names a `managed` node (T-0172,
+    `_code_binding.py::is_managed`): a managed node is external, pure-config
+    infrastructure declared to have no scannable code, so there is no
+    tier-2 code-modeled boundary for `_mitigation_is_chokepoint` to inspect
+    either -- "no tier-2 conformance; obligations shift to config evidence
+    or assumes" (docs/strata/surface.md#key-construct-semantics). The claim
+    still has to exist, prove a chokepoint shape (`_discharges_as_chokepoint`
+    above), and clear the catalog rung -- only the boundary-KIND proof is
+    exempted, same as an assume gets.
     """
     claim_id = _discharge_claim_id(entry.id, node_id)
     claim = claims_by_id.get(claim_id)
@@ -1078,7 +1088,13 @@ def _check_one_discharge(
         return _discharge_violation(
             entry, node_id, f"claim {claim_id!r} is REFUTED: {result.detail}"
         )
-    if not claim.assumed and not _mitigation_is_chokepoint(model, entry, claim):
+    node = nodes_by_id.get(node_id)
+    node_is_managed = node is not None and is_managed(node)
+    if (
+        not claim.assumed
+        and not node_is_managed
+        and not _mitigation_is_chokepoint(model, entry, claim)
+    ):
         return _discharge_violation(
             entry,
             node_id,

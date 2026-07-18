@@ -100,6 +100,8 @@ class NodeDecl(BaseModel):
     deploy: DeployDecl | None = None
     # `carries "PII_TAG"+`, T-0154; elaborated to `pii=<tag>` attrs
     carries: tuple[str, ...] = ()
+    # `managed` bare marker, T-0172; elaborated to a `"managed"` attr
+    is_managed: bool = False
 
 
 # frob:doc docs/strata/surface.md#parser
@@ -315,6 +317,8 @@ class StoreDecl(BaseModel):
     rpo: Quantity | None = None
     # `carries "PII_TAG"+`, T-0154; elaborated to `pii=<tag>` attrs
     carries: tuple[str, ...] = ()
+    # `managed` bare marker, T-0172; elaborated to a `"managed"` attr
+    is_managed: bool = False
 
 
 # frob:doc docs/strata/surface.md#std-infra

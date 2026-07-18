@@ -451,6 +451,7 @@ impl Parser {
         let mut may: Vec<String> = Vec::new();
         let mut deploy: Option<serde_json::Value> = None;
         let mut carries: Vec<String> = Vec::new();
+        let mut is_managed = false;
         if self.at_symbol('{') {
             self.advance();
             loop {
@@ -537,6 +538,20 @@ impl Parser {
                     // reference validity is an elaboration-time check.
                     self.advance();
                     panics_contained_by = Some(self.expect_ident("panics supervisor id")?);
+                } else if self.at_keyword("managed") {
+                    // T-0172: bare marker, no argument -- mirrors
+                    // `errors_total`'s shape. Marks the node as external,
+                    // pure-config infrastructure with no scannable code by
+                    // declaration (docs/strata/surface.md#node-grammar,
+                    // #key-construct-semantics): tier-2 code-binding
+                    // conformance is not required for it, and a fired
+                    // weakness obligation on it discharges without the
+                    // stricter mitigation-chokepoint (boundary-kind) proof
+                    // that a code-modeled node needs -- config evidence or
+                    // an `assume` claim stands in (`_threat.py::
+                    // _check_one_discharge`).
+                    self.advance();
+                    is_managed = true;
                 } else if self.at_keyword("observe") {
                     // T-0070: observe { log IDENT (, IDENT)* ; to IDENT }
                     self.advance();
@@ -598,6 +613,7 @@ impl Parser {
             "may": may,
             "deploy": deploy,
             "carries": carries,
+            "is_managed": is_managed,
         }));
         Ok(())
     }
@@ -1254,6 +1270,7 @@ impl Parser {
         let mut append_only = false;
         let mut rpo: Option<serde_json::Value> = None;
         let mut carries: Vec<String> = Vec::new();
+        let mut is_managed = false;
         if self.at_symbol('{') {
             self.advance();
             loop {
@@ -1303,6 +1320,12 @@ impl Parser {
                     self.expect_keyword("zipf")?;
                     let alpha = self.expect_number("skew zipf exponent")?;
                     attrs.push(format!("skew={}", alpha));
+                } else if self.at_keyword("managed") {
+                    // T-0172: same bare marker as `node` (parse_node) --
+                    // a store is a node too (docs/strata/surface.md
+                    // #key-construct-semantics: "component / store: nodes").
+                    self.advance();
+                    is_managed = true;
                 } else {
                     return self.err("unknown store property");
                 }
@@ -1326,6 +1349,7 @@ impl Parser {
             "append_only": append_only,
             "rpo": rpo,
             "carries": carries,
+            "is_managed": is_managed,
         }));
         Ok(())
     }
@@ -2310,6 +2334,40 @@ mod tests {
             e["message"],
             "on deploy block needs a rollback within QUANTITY clause"
         );
+    }
+
+    #[test]
+    fn parses_node_managed_marker() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0172: `managed` is a bare marker on `node`, mirroring
+        // `errors_total`'s shape -- config-only infra (e.g. a Caddyfile-
+        // configured edge) declared with no `code=` glob.
+        let v = ok(r#"module m
+            node edge : trusted {
+                managed;
+            }"#);
+        assert_eq!(v["nodes"][0]["is_managed"], true);
+    }
+
+    #[test]
+    fn parses_node_without_managed_defaults_false() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0172: pre-existing sources with no `managed` clause must still
+        // elaborate -- `is_managed` defaults to false.
+        let v = ok("module m\nnode api : trusted");
+        assert_eq!(v["nodes"][0]["is_managed"], false);
+    }
+
+    #[test]
+    fn parses_store_managed_marker() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0172: `store` is a node too (docs/strata/surface.md
+        // #key-construct-semantics) -- same bare `managed` marker.
+        let v = ok(r#"module m
+            store cache_db : trusted {
+                managed;
+            }"#);
+        assert_eq!(v["stores"][0]["is_managed"], true);
     }
 
     #[test]
