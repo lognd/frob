@@ -293,7 +293,42 @@ the unknown -- and says so.
   the closure API does not expose today. Noted here as a scope cut, not
   silently assumed away.
 - **D (CVE join)**: NVD CVE->CWE ingestion into vet, the containment
-  report, live-exposure severity.
+  report, live-exposure severity. SHIPPED (T-0110): `frob.vet._osv.
+  cve_ids` extracts CVE-shaped ids from an osv-scanner advisory (its own
+  id plus `aliases` -- GHSA/PYSEC/RUSTSEC-only advisories with no CVE
+  alias are honestly excluded, not guessed at); `frob.vet._nvd.
+  fetch_cwe_for_cve` maps each CVE to its CWE ids via NVD's `cves/2.0`
+  API, cached 7d in `.frob/vet.db`, degrading loudly (`ok=False`) on any
+  network/cache-miss failure under `fetch=False` -- the SAME offline-first
+  posture `_registry.py::fetch_publish_date` established for VET011, never
+  a silent "no weaknesses" pass. `frob.vet._containment.
+  build_containment_report` is the join itself: for each CVE's mapped CWE
+  ids that are also in `frob.strata.CWE_CATALOG`, it finds the node(s)
+  whose `code=` glob binds a file importing the vulnerable dependency
+  (`find_importing_nodes`, a heuristic top-level-module-name match, not a
+  full resolver) and asks `frob.strata.check_discharge_completeness`
+  whether that node's obligation for the CWE is discharged. `state` is
+  one of four values, kept DELIBERATELY distinct (round-2 review): a live
+  CVE against an undischarged obligation is `state="live"` (the design
+  offers no proof of mitigation where the vulnerable code actually
+  runs); an NVD lookup that could not be completed (network failure,
+  cache miss under `fetch=False`, unparseable response) is
+  `state="unverified"` -- "we could not check this CVE" is a distinct,
+  MORE urgent condition than genuine no-coverage, and collapsing the two
+  would let a data-source outage silently read as benign, exactly the
+  vacuous pass law 2 forbids; a discharged obligation is
+  `state="contained"` (defense-in-depth); no covering node or no catalog
+  entry for the mapped CWE is `state="unmodeled"` (there is genuinely
+  nothing to check). `render_containment_report`'s sort/severity order
+  is LIVE, then UNVERIFIED, then CONTAINED, then UNMODELED -- UNVERIFIED
+  sits directly after LIVE and strictly ahead of both resolved states so
+  a triage consumer scanning top-to-bottom hits every unresolved outage
+  before anything the join actually resolved. Import-only consumer of
+  the phase A-C public API (`CWE_CATALOG`, `FOREIGN`, `bind_code`,
+  `check_discharge_completeness`); adds no kernel primitive and touches
+  no `strata/**` internals. `render_containment_report` gives the text
+  form; a `frob vet --containment` CLI flag through `app/vet_runner.py`
+  is a follow-up, out of T-0110's `src/frob/vet/**` scope.
 - **E (quality families)**: `std.perf` / `std.reliability` /
   `std.compat` catalog packs with the anti-pattern table above; the small
   new precondition predicates (CORS wildcard, compression, batch-write,

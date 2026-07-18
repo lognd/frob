@@ -209,6 +209,25 @@ waiver mechanism, and its diff is the audit trail.
   fact expiring by time instead of by hash. Live queries disclose your
   dependency list to a third party, so the default is off; recommended
   posture is off locally, on (or offline-mirror) in CI.
+- **Containment (CVE->CWE join, phase D)**: `_containment.py::
+  build_containment_report` joins each VET005 advisory's CVE id(s)
+  against `frob.strata`'s CWE obligation model via NVD's `cves/2.0` API,
+  cached 7d in the same `.frob/vet.db` (`_nvd.py::fetch_cwe_for_cve`,
+  offline-first -- `fetch=False` restricts to cache, degrading loudly to
+  `"unverified"` on a miss/failure rather than a silent pass). `state`
+  is one of four values, deliberately kept distinct: `"live"`
+  (undischarged -- high severity), `"unverified"` (the NVD lookup could
+  not be completed -- "we could not check", never conflated with
+  no-coverage), `"contained"` (discharged, defense-in-depth), or
+  `"unmodeled"` (genuine no-coverage: no covering node, or no catalog
+  entry for the mapped CWE). See docs/strata/threat.md "CVE: threat
+  intelligence joined to the proof" for the join semantics.
+  `render_containment_report` produces the text form, LIVE-then-
+  UNVERIFIED-then-CONTAINED-then-UNMODELED ordered so a data-source
+  outage is never scrolled past as if it were a routine no-coverage
+  result; wiring a `frob vet --containment` CLI flag through `app/
+  vet_runner.py`/`__main__.py` is a follow-up (out of T-0110's declared
+  scope, which is `src/frob/vet/**` only).
 
 ## External tool adapters
 
@@ -326,6 +345,18 @@ gate enforcement.
 <!-- frob:describes src/frob/vet/_source.py::locate_npm_source -->
 <!-- frob:describes src/frob/vet/_source.py::locate_cargo_source -->
 <!-- frob:describes src/frob/vet/_source.py::locate_source -->
+<!-- frob:describes src/frob/vet/_osv.py::cve_ids -->
+<!-- frob:describes src/frob/vet/_nvd.py::NvdResult -->
+<!-- frob:describes src/frob/vet/_nvd.py::fetch_cwe_for_cve -->
+<!-- frob:describes src/frob/vet/_containment.py::ContainmentFinding -->
+<!-- frob:describes src/frob/vet/_containment.py::ContainmentReport -->
+<!-- frob:describes src/frob/vet/_containment.py::find_importing_nodes -->
+<!-- frob:describes src/frob/vet/_containment.py::build_containment_report -->
+<!-- frob:describes src/frob/vet/_containment.py::render_containment_report -->
+<!-- frob:describes src/frob/vet/_containment.py::LIVE -->
+<!-- frob:describes src/frob/vet/_containment.py::UNVERIFIED -->
+<!-- frob:describes src/frob/vet/_containment.py::CONTAINED -->
+<!-- frob:describes src/frob/vet/_containment.py::UNMODELED -->
 
 - `Dependency` -- one resolved (ecosystem, name, version[, resolved-URL])
   tuple read from a lockfile; the unit every rule operates on.
@@ -411,6 +442,34 @@ gate enforcement.
   source under `node_modules/`.
 - `locate_cargo_source` -- a local directory containing a Rust
   dependency's source under `~/.cargo/registry/src`.
+- `cve_ids` -- the CVE-shaped ids naming an `OsvAdvisory` (its own id plus
+  any `aliases`); empty when the advisory has no CVE alias (GHSA/PYSEC/
+  RUSTSEC-only), honestly excluded from the containment join rather than
+  guessed at.
+- `NvdResult` -- outcome of an NVD CVE->CWE lookup; `ok=False` means
+  "could not verify" (never "no weaknesses" -- same posture as
+  `RegistryResult`).
+- `fetch_cwe_for_cve` -- the CWE ids NVD lists for one CVE, cached 7d in
+  `.frob/vet.db`; `fetch=False` restricts to the existing cache and
+  degrades to `ok=False` on a miss rather than calling out.
+- `ContainmentFinding` -- one CVE joined against the strata obligation
+  model: its CWE ids, the covering node (if any), and a `state` of
+  `"live"` (undischarged obligation -- high severity), `"unverified"`
+  (the NVD lookup itself failed -- "we could not check", distinct from
+  and sorted ahead of no-coverage so a data-source outage is never read
+  as benign), `"contained"` (discharged, defense-in-depth), or
+  `"unmodeled"` (no covering node or no catalog entry -- genuine
+  no-coverage, never conflated with either "contained" or "unverified").
+- `ContainmentReport` -- every `ContainmentFinding` from one
+  `build_containment_report` pass.
+- `find_importing_nodes` -- node ids whose `code=`-bound files import a
+  given dependency's likely top-level module name.
+- `build_containment_report` -- joins osv-scanner advisories against a
+  `frob.strata` `KernelModel`'s CWE obligations via NVD CVE->CWE data
+  (docs/strata/threat.md "CVE: threat intelligence joined to the proof").
+- `render_containment_report` -- human-readable text rendering of a
+  `ContainmentReport`, ordered LIVE, then UNVERIFIED, then CONTAINED,
+  then UNMODELED.
 - `locate_source` -- dispatches to the ecosystem-appropriate local-cache
   source locator.
 
