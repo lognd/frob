@@ -1685,6 +1685,29 @@ class TestConventionUnitBinding:
         )
         assert any(v.rule == "TEST001" and "::of" in v.message for v in violations)
 
+    # frob:tests tests/test_gates.py::TestConventionUnitBinding.test_test001_exempts_strata_flow_declarations kind="unit"
+    def test_test001_exempts_strata_flow_declarations(self, tmp_path):
+        """T-0168: a `flow` (or other) `.strata` declaration has no defined
+        "unit test" meaning -- design conformance is proven by the sys
+        gates (`frob sys audit`/self-conformance), not pytest bindings.
+        TEST001 must not demand a `frob:tests` edge for it, with no
+        matching test and no edge at all."""
+        from typani.option import Nothing
+
+        from frob.gates._models import TestPolicy
+        from frob.testing import CollectedTests
+
+        _write(tmp_path, "design/m.strata", _DESIGN_STRATA)
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(node_ids=frozenset())
+        violations = run_test_gate(
+            snap, (), Nothing(), tests, TestPolicy(min_unit_cases=1)
+        )
+        assert not any(
+            v.rule in ("TEST001", "TEST002") and v.file == "design/m.strata"
+            for v in violations
+        )
+
 
 class TestPairLevelIntegration:
     def _snap_with_dep(self, tmp_path):
