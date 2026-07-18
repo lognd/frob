@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sqlite3
 from pathlib import Path
 
 from frob.graph import (
@@ -12,6 +13,7 @@ from frob.graph import (
     load_graph,
     resolve,
 )
+from frob.graph import cache as graph_cache
 from frob.graph.digest import compute_digests
 from frob.graph.dsl import markdown_anchors, parse_directives
 from frob.lang import parse_file
@@ -577,21 +579,100 @@ class TestLoadGraph:
         assert "src/a.py::foo" in rebuilt.danger_ok.symbols
 
 
+# frob:ticket T-0141
 class TestCorruptCacheRecovery:
+    # frob:ticket T-0141
     # frob:tests src/frob/graph/cache.py::connect
     def test_garbage_cache_file_is_recreated(self, tmp_path):
         """T-0019 / INV-003: a cache.db that is not sqlite at all must not
-        crash build_graph -- the derived cache is deleted and rebuilt."""
+        crash build_graph -- the derived cache is deleted and rebuilt.
+
+        T-0141: also seeds orphaned `-wal`/`-shm` sidecars next to the
+        garbage file and asserts `_recreate` cleans those up too, not just
+        the main db file -- otherwise every corrupt-cache recovery leaks
+        two more files that nothing else ever removes."""
         root = tmp_path / "repo"
         (root / "src").mkdir(parents=True)
         (root / "src" / "m.py").write_text("def f():\n    return 1\n")
         cache = root / ".frob" / "cache.db"
         cache.parent.mkdir(parents=True)
         cache.write_bytes(b"this is not a sqlite database at all")
+        wal = cache.with_name(cache.name + "-wal")
+        shm = cache.with_name(cache.name + "-shm")
+        wal.write_bytes(b"stale wal")
+        shm.write_bytes(b"stale shm")
 
         result = build_graph(root, cache)
         assert result.is_ok, result.err
         assert any("m.py" in ref for ref in result.danger_ok.symbols)
+        assert not wal.exists()
+        assert not shm.exists()
+
+    # frob:ticket T-0141
+    # frob:tests src/frob/graph/cache.py::connect
+    def test_truncated_sqlite_header_is_recreated(self, tmp_path):
+        """T-0141: a real sqlite file truncated mid-header (valid magic
+        prefix, no page data) must recover the same way as pure garbage."""
+        root = tmp_path / "repo"
+        (root / "src").mkdir(parents=True)
+        (root / "src" / "m.py").write_text("def f():\n    return 1\n")
+        cache = root / ".frob" / "cache.db"
+        cache.parent.mkdir(parents=True)
+        conn = sqlite3.connect(str(cache))
+        conn.execute("CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT)")
+        conn.commit()
+        conn.close()
+        # Truncate to just the sqlite magic header -- no page 1 body, no
+        # btree data at all.
+        header = cache.read_bytes()[:16]
+        cache.write_bytes(header)
+
+        result = build_graph(root, cache)
+        assert result.is_ok, result.err
+        assert any("m.py" in ref for ref in result.danger_ok.symbols)
+
+    # frob:ticket T-0141
+    # frob:tests src/frob/graph/cache.py::connect
+    def test_ddl_failure_after_connect_probe_passes_is_recovered(self, tmp_path):
+        """T-0141: on py3.12, a db can look readable to connect()'s own
+        probes (SELECT 1 never touches a table's btree page) and only fail
+        once _apply_schema's DROP TABLE actually reads the damaged page.
+        Reproduced deterministically here by corrupting the `meta` table's
+        page in-place while leaving the sqlite header (page 1) intact, so
+        `SELECT 1` succeeds but any DDL touching `meta` raises
+        DatabaseError -- this must still recover, not crash."""
+        cache = tmp_path / "cache.db"
+        conn = sqlite3.connect(str(cache))
+        conn.execute("PRAGMA page_size=4096")
+        conn.execute("CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT)")
+        conn.execute("INSERT INTO meta VALUES ('schema_version', '99')")
+        rootpage = conn.execute(
+            "SELECT rootpage FROM sqlite_master WHERE name = 'meta'"
+        ).fetchone()[0]
+        conn.commit()
+        conn.close()
+
+        page_size = 4096
+        data = bytearray(cache.read_bytes())
+        start = (rootpage - 1) * page_size
+        for i in range(start, start + page_size):
+            data[i] = 0xFF
+        cache.write_bytes(bytes(data))
+
+        # SELECT 1 must still succeed -- confirms this exercises the
+        # DDL-failure path in _apply_schema, not the earlier probe.
+        probe = sqlite3.connect(str(cache))
+        probe.execute("SELECT 1")
+        probe.close()
+
+        conn = graph_cache.connect(cache)
+        try:
+            row = conn.execute(
+                "SELECT value FROM meta WHERE key = 'schema_version'"
+            ).fetchone()
+        finally:
+            conn.close()
+        assert row is not None and row[0] == "1"
 
 
 class TestDuplicateSymrefs:

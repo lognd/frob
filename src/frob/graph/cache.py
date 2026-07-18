@@ -84,6 +84,7 @@ def _open(path: Path) -> sqlite3.Connection:
     return conn
 
 
+# frob:ticket T-0141
 def _read_schema_version(
     conn: sqlite3.Connection, path: Path
 ) -> tuple[sqlite3.Connection, int | None]:
@@ -98,9 +99,7 @@ def _read_schema_version(
         conn.execute("SELECT 1")
     except sqlite3.DatabaseError:
         _log.warning("cache.connect: %s is not a sqlite file; recreating", path)
-        conn.close()
-        path.unlink(missing_ok=True)
-        conn = _open(path)
+        conn = _recreate(conn, path)
     return conn, None
 
 
@@ -125,8 +124,57 @@ def _apply_schema(conn: sqlite3.Connection, existing: int | None, path: Path) ->
     conn.commit()
 
 
+# frob:ticket T-0141
+def _recreate(conn: sqlite3.Connection, path: Path) -> sqlite3.Connection:
+    """Close `conn`, delete `path` and its WAL/SHM sidecars, reopen fresh.
+
+    Shared by both corruption-detection points in `connect` (T-0141): a
+    cache.db whose bytes cannot be trusted is derived state, so the only
+    honest recovery is delete-and-recreate, never DDL over the bad handle.
+    The `-wal`/`-shm` sidecars from T-0029's WAL mode are not themselves a
+    corruption vector here (a fresh db's WAL salt won't match a stale
+    sidecar, so sqlite discards it on open) -- but leaving them behind on
+    every recovery orphans them permanently since nothing else ever cleans
+    them up, so they are unlinked alongside the main file.
+    """
+    conn.close()
+    path.unlink(missing_ok=True)
+    path.with_name(path.name + "-wal").unlink(missing_ok=True)
+    path.with_name(path.name + "-shm").unlink(missing_ok=True)
+    return _open(path)
+
+
+# frob:ticket T-0141
+def _apply_schema_with_recovery(
+    conn: sqlite3.Connection, existing: int | None, path: Path
+) -> sqlite3.Connection:
+    """Apply the schema; on a DatabaseError escaping the DDL, recreate once.
+
+    `_read_schema_version`'s own "is this even sqlite" probe (`SELECT 1`)
+    can pass on a file that is sqlite-shaped but has a corrupted table page
+    (T-0141: this is what py3.12's libsqlite exposes that 3.11 did not) --
+    `SELECT 1` never touches a btree page, so it can't see that damage. The
+    DDL here is what actually reads the meta/files/symbols pages, so it is
+    the second and final place corruption can surface. A failure right
+    after recreation is a real error, not something to loop on, so the
+    retry's own DatabaseError propagates uncaught.
+    """
+    try:
+        _apply_schema(conn, existing, path)
+    except sqlite3.DatabaseError as exc:
+        _log.warning(
+            "cache.connect: %s failed schema application, recreating: %s",
+            path,
+            exc,
+        )
+        conn = _recreate(conn, path)
+        _apply_schema(conn, None, path)
+    return conn
+
+
 # frob:invariant INV-003
 # frob:ticket T-0029
+# frob:ticket T-0141
 # frob:doc docs/modules/graph.md#cache
 def connect(path: Path) -> sqlite3.Connection:
     """Open (creating parent dirs) the cache db; wipe and rebuild on schema mismatch.
@@ -134,13 +182,13 @@ def connect(path: Path) -> sqlite3.Connection:
     A cache.db whose bytes are not sqlite at all (truncation, disk garbage)
     cannot be repaired through its own connection -- DROP TABLE raises the
     same DatabaseError. The cache is derived state, so the honest recovery
-    is delete-and-recreate the file (T-0019 / INV-003).
+    is delete-and-recreate the file (T-0019 / INV-003), applied at both the
+    connect-probe stage and, per T-0141, the later DDL stage too.
     """
     path.parent.mkdir(parents=True, exist_ok=True)
     conn = _open(path)
     conn, existing = _read_schema_version(conn, path)
-    _apply_schema(conn, existing, path)
-    return conn
+    return _apply_schema_with_recovery(conn, existing, path)
 
 
 # frob:doc docs/modules/graph.md#cache
