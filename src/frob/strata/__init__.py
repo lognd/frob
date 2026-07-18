@@ -67,6 +67,7 @@ from frob.strata._code_binding import (
     check_import_conformance,
 )
 from frob.strata._crash import CrashContractReport, evaluate_crash_contracts
+from frob.strata._deploy import DeployContractReport, evaluate_deploy_contracts
 from frob.strata._design_load import (
     DEFAULT_DESIGN_DIR,
     DesignIds,
@@ -91,11 +92,13 @@ from frob.strata._models import (
     BoundaryDirection,
     BoundClaim,
     BreachContract,
+    CanaryStage,
     Capacity,
     Claim,
     ClaimBody,
     ClaimResult,
     CrashContract,
+    DeployContract,
     Flow,
     FlowCondition,
     Independent,
@@ -153,6 +156,7 @@ __all__ = [
     "BreachContract",
     "BreachContractReport",
     "CacheDecl",
+    "CanaryStage",
     "CapabilityViolation",
     "Capacity",
     "CdnDecl",
@@ -164,6 +168,8 @@ __all__ = [
     "ConformanceReport",
     "CrashContract",
     "CrashContractReport",
+    "DeployContract",
+    "DeployContractReport",
     "DesignIds",
     "DesignLoadError",
     "EffectPhase",
@@ -239,6 +245,7 @@ __all__ = [
     "evaluate_breach_contracts",
     "evaluate_claims",
     "evaluate_crash_contracts",
+    "evaluate_deploy_contracts",
     "evaluate_saga_contracts",
     "evaluate_scenarios",
     "evaluate_threats",

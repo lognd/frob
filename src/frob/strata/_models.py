@@ -218,6 +218,51 @@ class BreachContract(BaseModel):
     recovers_via: str | None = None
 
 
+# frob:doc docs/strata/surface.md#std-deploy
+class CanaryStage(BaseModel):
+    """One staged rollout step: promote to `level` after `bake` with no abort.
+
+    `level` is the trust level this stage promotes the deploying node to --
+    canary is modeled as staged trust escalation (docs/strata/surface.md
+    #std-deploy, T-0083), reusing the existing `SetTrust` scenario rewrite
+    rather than inventing a parallel rollout-percentage mechanism.
+    `max_error_rate` is an optional abort predicate: an observed error rate
+    above this bound at this stage means the rollout does not proceed --
+    left opaque (checked by the caller/CI, not the kernel) exactly like
+    `Boundary.predicate`, since v0 has no live-metric feed into the prover.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    level: str
+    bake: Quantity
+    max_error_rate: Quantity | None = None
+
+
+# frob:doc docs/strata/surface.md#std-deploy
+class DeployContract(BaseModel):
+    """A node's `on deploy { canary { ... }; endorsed_by X; rollback within t }`
+    contract (docs/strata/surface.md#std-deploy, T-0083).
+
+    `stages` is the canary schedule, evaluated in declaration order as one
+    staged-trust-escalation scenario per stage. `endorsement_chain` names
+    the upstream `Boundary` ids (review/build/admit) an artifact must have
+    already crossed before this node may deploy it -- validated to exist
+    and to be `endorse`-directed, else the contract fails closed
+    (`_deploy.py`, crash-contract precedent T-0074). `rollback_budget`
+    bounds how long reverting a bad deploy may take; desugars to an
+    auto-generated bounded-recovery scenario (node loss, the same
+    `RemoveNode` rewrite `on crash` uses) so a rollback is checked exactly
+    like any other total-loss counterfactual, never a parallel evaluator.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    stages: tuple[CanaryStage, ...]
+    endorsement_chain: tuple[str, ...]
+    rollback_budget: Quantity
+
+
 # frob:doc docs/strata/kernel.md#data-models
 class Node(BaseModel):
     """A place that holds state or runs computation (component, store, principal...)."""
@@ -233,6 +278,7 @@ class Node(BaseModel):
     residence: str | None = None  # host/zone/region atom for scenario rewrites
     crash: CrashContract | None = None  # `on crash { ... }` contract, T-0074
     breach: BreachContract | None = None  # `on breach { ... }` contract, T-0076
+    deploy: DeployContract | None = None  # `on deploy { ... }` contract, T-0083
 
 
 # frob:doc docs/strata/kernel.md#data-models

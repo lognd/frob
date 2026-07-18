@@ -83,3 +83,16 @@ class StrataError(ErrorSet):
         "(charter law 5) needs exactly one node to attest for any given file "
         "(docs/strata/surface.md#code-binding-tier-2-v0-implementation, T-0078)"
     )
+    MissingEndorsement = (
+        "A deploy contract's endorsement_chain names a boundary id that is "
+        "not declared in the model -- an upstream endorsement chain that "
+        "points nowhere is a dangling promise, not a silently accepted one "
+        "(docs/strata/surface.md#std-deploy, T-0083)"
+    )
+    IncompatibleEndorsement = (
+        "A deploy contract's endorsement_chain names a boundary whose "
+        "direction is not endorse -- only an endorse boundary raises "
+        "integrity, so a declassify (or any other) boundary cannot stand in "
+        "for the review/build/admit endorsement a deploy requires "
+        "(docs/strata/surface.md#std-deploy, T-0083)"
+    )

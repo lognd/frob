@@ -567,3 +567,56 @@ omitted, `_infra.py::_elaborate_queue`/`_elaborate_balancer` still default
 to `"trusted"`. This is a deliberate, documented default (not a silent
 one) -- the clause is optional rather than mandatory so every pre-T-0093
 `.strata` source keeps parsing and elaborating identically.
+
+## std.deploy
+
+<!-- frob:ticket T-0083 -->
+<!-- frob:describes src/frob/strata/_deploy.py::evaluate_deploy_contracts -->
+<!-- frob:describes src/frob/strata/_deploy.py::DeployContractReport -->
+<!-- frob:describes src/frob/strata/_models.py::DeployContract -->
+<!-- frob:describes src/frob/strata/_models.py::CanaryStage -->
+
+A node's `on deploy { canary { ... }; endorsed_by X, Y; rollback within t }`
+contract (T-0083) is, like `on crash` and `on breach`, pure sugar over the
+kernel's existing scenario/rewrite machinery -- no new primitive, no new
+prover code path. The kernel-level fields (`_models.py::DeployContract`,
+`Node.deploy`) and the evaluator (`_deploy.py::evaluate_deploy_contracts`)
+are load-bearing today; the surface grammar to write `on deploy { ... }`
+in `.strata` source text does not exist yet (deferred, T-0134, the same
+class of gap T-0132 filed for `code=`/`may` -- v0's lexer has no
+multi-value block syntax for a canary schedule or an endorsement-chain
+list).
+
+Two joined validations, both failing closed (crash-contract precedent,
+T-0074 -- a missing or incompatible bound is a model error, never a
+silent pass):
+
+- **Endorsement chain.** `endorsement_chain` names upstream `Boundary`
+  ids (review/build/admit, docs/strata/boundary.md) an artifact must have
+  already crossed. Every named id must exist (`MissingEndorsement`) and
+  be `endorse`-directed (`IncompatibleEndorsement`) -- a `declassify`
+  boundary, or no boundary at all, cannot stand in for the endorsement a
+  deploy requires.
+- **Canary levels.** Every `CanaryStage.level` must be a real level in
+  the model's trust lattice (`Lattice.leq`'s existing `UnknownLevel`,
+  reused rather than re-derived).
+
+Once both pass, `evaluate_deploy_contracts` generates and evaluates two
+kinds of auto-generated scenario via the existing `evaluate_scenarios`
+(never a parallel evaluator):
+
+- **Canary = staged trust escalation.** One `SetTrust` scenario per
+  declared stage, in order (`<node>__canary_<index>_<level>`), re-checking
+  every claim declared on the model exactly like a crash contract's
+  auto-generated node-loss scenarios.
+- **Rollback budget = bounded recovery scenario.** One `RemoveNode`
+  scenario per deploying node (`<node>__rollback`) -- a rollback and a
+  crash are both "this node's current state is gone, does the rest of
+  the model still hold," so the same total-loss rewrite `on crash` uses
+  is reused rather than a parallel rewrite kind. `rollback_budget` is a
+  required `Quantity` field (pydantic-enforced at construction, mirroring
+  `CrashContract.restart`); the kernel does not yet compare it against a
+  measured recovery time (no live-metric feed into the prover in v0,
+  the same limitation `CanaryStage.max_error_rate` and
+  `Boundary.predicate` share) -- it documents the budget and gates the
+  bounded-recovery scenario's existence.
