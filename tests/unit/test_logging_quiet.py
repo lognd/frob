@@ -13,7 +13,7 @@ import sys
 import threading
 import time
 
-from frob.logging.quiet import quiet_stdout_logs
+from frob.logging.quiet import quiet_stdout_logs, stdout_log_level
 
 
 def _install_stdout_handler(level: int) -> logging.StreamHandler:
@@ -122,6 +122,36 @@ class TestQuietStdoutLogsReentrance:
             before = handler.level
             with quiet_stdout_logs():
                 assert handler.level == logging.WARNING
+            assert handler.level == before
+        finally:
+            logging.getLogger().removeHandler(handler)
+
+
+class TestStdoutLogLevel:
+    """T-0202: `stdout_log_level` sets an arbitrary level and restores it."""
+
+    def test_sets_and_restores_arbitrary_level(self) -> None:
+        # frob:tests src/frob/logging/quiet.py::stdout_log_level kind="unit"
+        handler = _install_stdout_handler(logging.DEBUG)
+        try:
+            before = handler.level
+            with stdout_log_level(logging.WARNING):
+                assert handler.level == logging.WARNING
+            assert handler.level == before
+        finally:
+            logging.getLogger().removeHandler(handler)
+
+    def test_restores_on_exception(self) -> None:
+        # frob:tests src/frob/logging/quiet.py::stdout_log_level kind="unit"
+        handler = _install_stdout_handler(logging.DEBUG)
+        try:
+            before = handler.level
+            try:
+                with stdout_log_level(logging.INFO):
+                    assert handler.level == logging.INFO
+                    raise ValueError("boom")
+            except ValueError:
+                pass
             assert handler.level == before
         finally:
             logging.getLogger().removeHandler(handler)

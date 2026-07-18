@@ -555,7 +555,7 @@ def _apply_waivers(
         if match is None:
             kept.append(violation)
             continue
-        _log.info(
+        _log.debug(
             "waived: %s at %s:%d (%s)",
             violation.rule,
             violation.file,
@@ -1352,7 +1352,7 @@ def _test001_002_one(
             ),
         )
     if effective < cfg.min_unit_cases:
-        _log.info(
+        _log.debug(
             "TEST002: %s has %d/%d unit cases",
             record.symref,
             effective,
@@ -1446,7 +1446,7 @@ def _test003(
     for package in ordered_packages:
         valid = _valid_edges(_edges_for_package(all_pairs, package), tests, snapshot)
         if len(valid) < cfg.min_integration:
-            _log.info(
+            _log.debug(
                 "TEST003: %s has %d/%d integration edges",
                 package,
                 len(valid),
@@ -1534,7 +1534,7 @@ def _test007_pairs(
     for consumer, provider in ordered_pairs:
         if _pair_covered(_consumer_leaf(consumer), provider, all_pairs, tests):
             continue
-        _log.info("TEST007: %s -> %s boundary untested", consumer, provider)
+        _log.debug("TEST007: %s -> %s boundary untested", consumer, provider)
         violations.append(
             Violation(
                 rule="TEST007",
@@ -1566,7 +1566,7 @@ def _test004(
     for system in systems:
         valid = _valid_edges(e2e_edges.get(system.id, []), tests, snapshot)
         if len(valid) < system.min_e2e:
-            _log.info(
+            _log.debug(
                 "TEST004: %s has %d/%d e2e edges", system.id, len(valid), system.min_e2e
             )
             violations.append(
@@ -1598,7 +1598,7 @@ def _test005_symbols(
             continue
         pct = data.symbol_branch.get(record.symref)
         if pct is not None and pct < cfg.unit_branch_cov:
-            _log.info(
+            _log.debug(
                 "TEST005: %s branch cov %.1f%% < %d%%",
                 record.symref,
                 pct,
@@ -1626,7 +1626,7 @@ def _test005_modules(data: CoverageData, cfg: TestPolicy) -> list[Violation]:
     violations: list[Violation] = []
     for module, pct in data.module_line.items():
         if pct < cfg.module_line_cov:
-            _log.info(
+            _log.debug(
                 "TEST005: %s line cov %.1f%% < %d%%", module, pct, cfg.module_line_cov
             )
             violations.append(
@@ -1660,7 +1660,7 @@ def _test005_systems(
             continue
         avg = sum(relevant) / len(relevant)
         if avg < cfg.system_line_cov:
-            _log.info(
+            _log.debug(
                 "TEST005: system %s line cov %.1f%% < %d%%",
                 system.id,
                 avg,

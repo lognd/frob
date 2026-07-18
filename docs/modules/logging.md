@@ -26,6 +26,7 @@ _log.info("did the thing: %s", detail)
 <!-- frob:describes src/frob/logging/color.py::should_color -->
 <!-- frob:describes src/frob/logging/color.py::paint -->
 <!-- frob:describes src/frob/logging/quiet.py::quiet_stdout_logs -->
+<!-- frob:describes src/frob/logging/quiet.py::stdout_log_level -->
 
 ```python
 # frob/logging/logger.py
@@ -69,4 +70,11 @@ quiet_stdout_logs() -> Iterator[None]
     # Context manager that raises stdout log handlers to WARNING for the
     # duration of the block, so a runner can print a --json payload to
     # stdout without INFO/DEBUG log lines corrupting it.
+
+stdout_log_level(level: int) -> Iterator[None]
+    # Context manager that sets stdout log handlers to an arbitrary level
+    # for the duration of the block and restores it after; backs `frob
+    # check`'s -v/-vv verbosity gating (WARNING default, INFO at -v, DEBUG
+    # at -vv). Not reentrant/thread-safe like quiet_stdout_logs -- for a
+    # single top-level CLI invocation, not concurrent library code.
 ```
