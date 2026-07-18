@@ -268,7 +268,7 @@ def scan_file_fingerprints(path: Path) -> tuple[CveFingerprint, ...]:
         and any(needle in text for needle in entry.needles)
     )
     if matched:
-        # frob:waive PERF004 reason="one sort of the matched entries for a single log call, not per-iteration"
+        # frob:waive PERF004 reason="one sort for a single log call, not per-iteration"
         _log.info(
             "vet: %s: cve fingerprints matched: %s",
             path,
