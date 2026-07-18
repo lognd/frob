@@ -399,10 +399,62 @@ def _aggregate_capabilities(
     return capabilities, decode_to_exec_hit, scanned
 
 
+# frob:doc docs/modules/vet.md#public-api
+# frob:ticket T-0153
+def scan_directory_fingerprints(
+    source_dir: Path, *, max_files: int = 500
+) -> tuple["CveFingerprint", ...]:
+    """Aggregate `frob.strata.CVE_FINGERPRINTS` matches across every scannable
+    file under `source_dir` -- the fingerprint sibling of
+    `scan_directory_capabilities` (T-0153: wires `scan_file_fingerprints`
+    into the SAME directory-walk shape `_scan_source` (`frob.vet._scan`)
+    already calls `scan_directory_capabilities` from, so a dependency
+    containing e.g. `yaml.load(...)`/`pickle.loads(...)` surfaces a real
+    `frob vet` finding, not just a direct-import-only capability). Bounded
+    by `max_files`, same test/self-path exclusions as `scan_directory_
+    capabilities` (`_is_test_path`/`_is_self_path`)."""
+    matched, scanned = _aggregate_fingerprints(source_dir, max_files)
+    if matched:
+        _log.info(
+            "vet: %s: scanned %d file(s), fingerprints=%s",
+            source_dir,
+            scanned,
+            sorted(entry.id for entry in matched),
+        )
+    return tuple(matched)
+
+
+def _aggregate_fingerprints(
+    source_dir: Path, max_files: int
+) -> tuple[set["CveFingerprint"], int]:
+    """Union `CveFingerprint` matches across scannable files, bounded by
+    `max_files`. Returns `(matched, files_scanned)` -- the fingerprint
+    sibling of `_aggregate_capabilities`, same walk/exclusion shape."""
+    matched: set[CveFingerprint] = set()
+    scanned = 0
+    for ext in _EXT_LANGUAGE:
+        if scanned >= max_files:
+            break
+        for path in source_dir.rglob(f"*{ext}"):
+            if scanned >= max_files:
+                _log.warning(
+                    "vet: %s: fingerprint scan truncated at %d file(s)",
+                    source_dir,
+                    max_files,
+                )
+                break
+            if _is_test_path(path) or _is_self_path(path):
+                continue
+            matched.update(scan_file_fingerprints(path))
+            scanned += 1
+    return matched, scanned
+
+
 __all__ = [
     "decode_to_exec_signal",
     "language_for",
     "scan_directory_capabilities",
+    "scan_directory_fingerprints",
     "scan_file_capabilities",
     "scan_file_fingerprints",
     "scan_file_operations",

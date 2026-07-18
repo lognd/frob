@@ -1344,6 +1344,7 @@ parent: null
 scope:
 - src/frob/strata/**
 - src/frob/vet/_capability.py
+- src/frob/vet/_scan.py
 - tests/unit/strata/**
 - tests/test_vet.py
 - docs/strata/threat.md
@@ -1365,6 +1366,10 @@ evidence:
 - tests/test_vet.py::TestFingerprintScan::test_unreadable_file_returns_empty
 - tests/test_vet.py::TestFingerprintScan::test_language_mismatch_does_not_match
 - tests/test_vet.py::TestFingerprintScan::test_own_catalog_file_excluded_from_directory_aggregation
+- tests/test_vet.py::TestFingerprintScan::test_scan_directory_fingerprints_aggregates_across_files
+- tests/test_vet.py::TestFingerprintScan::test_scan_directory_fingerprints_excludes_the_catalog_itself
+- tests/test_vet.py::TestScanTreeWithLocalSource::test_scan_tree_surfaces_a_cve_fingerprint_finding
+- tests/unit/strata/test_audit.py::TestExhaustiveness::test_cve_fingerprint_catalog_checked_every_call
 attachments: []
 acceptance: []
 threat: null

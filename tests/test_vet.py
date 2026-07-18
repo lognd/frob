@@ -567,6 +567,28 @@ class TestFingerprintScan:
 
         assert _is_self_path(_FINGERPRINT_CATALOG_PATH)
 
+    def test_scan_directory_fingerprints_aggregates_across_files(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_directory_fingerprints kind="unit"
+        from frob.vet._capability import scan_directory_fingerprints
+
+        (tmp_path / "a.py").write_text("data = yaml.load(raw_bytes)\n")
+        (tmp_path / "b.py").write_text("def add(a, b):\n    return a + b\n")
+        matched = scan_directory_fingerprints(tmp_path)
+        assert any(m.id == "FP-DESERIALIZE-YAML-001" for m in matched)
+
+    def test_scan_directory_fingerprints_excludes_the_catalog_itself(self) -> None:
+        # scanning frob's own src tree must not self-match every fingerprint
+        # via _cve_fingerprint.py's own needle literals (self-match note,
+        # docs/strata/threat.md#cve-fingerprints-code-level-pattern-catalog-t-0153).
+        # frob:tests src/frob/vet/_capability.py::scan_directory_fingerprints kind="unit"
+        from frob.vet._capability import scan_directory_fingerprints
+
+        strata_src = Path(__file__).resolve().parents[1] / "src" / "frob" / "strata"
+        matched = scan_directory_fingerprints(strata_src)
+        assert not any(m.id == "FP-DESERIALIZE-YAML-001" for m in matched)
+
 
 class TestObfuscationEnsemble:
     def test_high_entropy_string_flagged(self) -> None:
@@ -830,6 +852,40 @@ class TestScanTreeWithLocalSource:
         assert result.is_ok
         report = result.danger_ok
         assert any(v.rule == "VET002" for v in report.violations)
+
+    def test_scan_tree_surfaces_a_cve_fingerprint_finding(self, tmp_path: Path) -> None:
+        # T-0153: a dependency whose source contains a fingerprinted
+        # vulnerable-usage pattern (here, FP-DESERIALIZE-YAML-001's
+        # yaml.load() needle) must surface a VET006 finding through the
+        # REAL `frob vet` pipeline (scan_tree), not just via a direct
+        # scan_file_fingerprints import -- proving the wiring, not just
+        # the detector.
+        # frob:waive PERF001 reason="a list comprehension over one report's violations plus a sibling next()-generator over verdicts, not a hot loop"
+        # frob:tests src/frob/vet/_scan.py::_scan_source kind="unit"
+        from frob.vet._scan import scan_tree
+
+        (tmp_path / "uv.lock").write_text(
+            '[[package]]\nname = "sketchy-pkg"\nversion = "1.0.0"\n'
+        )
+        pkg_dir = (
+            tmp_path / ".venv" / "lib" / "python3.11" / "site-packages" / "sketchy_pkg"
+        )
+        pkg_dir.mkdir(parents=True)
+        (pkg_dir / "__init__.py").write_text(
+            "import yaml\n\ndef load_config(raw):\n    return yaml.load(raw)\n"
+        )
+        (tmp_path / "frob.toml").write_text(
+            "[vet]\nenforce = true\n\n[vet.allow]\nsketchy-pkg = true\n"
+        )
+
+        result = scan_tree(tmp_path, fetch=False)
+        assert result.is_ok
+        report = result.danger_ok
+        fp_violations = [v for v in report.violations if v.rule == "VET006"]
+        assert fp_violations
+        assert "FP-DESERIALIZE-YAML-001" in fp_violations[0].message
+        verdict = next(v for v in report.verdicts if v.name == "sketchy-pkg")
+        assert "cve-fingerprint" in verdict.signals
 
 
 # ---------------------------------------------------------------------------

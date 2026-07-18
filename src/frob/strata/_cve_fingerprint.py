@@ -28,13 +28,14 @@ memory) for the pattern class it fingerprints. A handful of the ticket's
 suggested example classes are deliberately NOT shipped here rather than
 force-fit with a low-confidence or fabricated citation:
 
-- TLS `verify=False` (CWE-295) and XML external entities (CWE-611): no
-  `WeaknessEntry` for CWE-295/CWE-611 exists in ANY catalog tuple yet
-  (`CWE_CATALOG`/`CWE_TOP_25_CATALOG`/`QUALITY_CATALOG`) -- shipping a
-  fingerprint for either would fail `check_fingerprint_catalog_drift`
-  outright by this module's OWN drift-lock rule, confirming they must wait
-  for a `WeaknessEntry` (a separate, catalog-scoped ticket) before a
-  fingerprint can honestly join them.
+- TLS `verify=False` (CWE-295), weak-hash password storage (CWE-916), and
+  XML external entities (CWE-611): no `WeaknessEntry` for CWE-295, CWE-916,
+  or CWE-611 exists in ANY catalog tuple yet (`CWE_CATALOG`/
+  `CWE_TOP_25_CATALOG`/`QUALITY_CATALOG`) -- shipping a fingerprint for any
+  of the three would fail `check_fingerprint_catalog_drift` outright by
+  this module's OWN drift-lock rule, confirming they must wait for a
+  `WeaknessEntry` (a separate, catalog-scoped ticket) before a fingerprint
+  can honestly join them.
 - JNDI-style lookup injection (the Log4Shell class): Log4Shell is a
   Java/JNDI-specific shape with no equivalent construct in any of the four
   languages `frob.vet._capability` scans (python/typescript/rust/c-cpp) --
@@ -42,10 +43,10 @@ force-fit with a low-confidence or fabricated citation:
   undetectable data, not a real pattern-match capability.
 
 Nine fingerprints ship, each with a needle in a language the vet scanner
-actually covers -- weak-hash password storage and requests-verify=False
-are tracked as an honest, disclosed gap (module docstring above) rather
-than silently dropped; a follow-up ticket adding the missing CWE-295/
-CWE-916 `WeaknessEntry` rows would unblock both.
+actually covers. TLS `verify=False`, weak-hash password storage, and XXE
+are tracked as an honest, disclosed gap (this docstring) rather than
+silently dropped; a follow-up ticket adding the missing CWE-295, CWE-916,
+and CWE-611 `WeaknessEntry` rows would unblock all three.
 """
 
 from __future__ import annotations

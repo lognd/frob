@@ -364,18 +364,34 @@ follows. `CVE_FINGERPRINT_VIEWS['cve-fingerprint-catalog']` is a SEPARATE
 view table (never merged into `VIEWS`/`CWE_TOP_25_VIEWS`), following the
 same "no silent default-view widening" precedent those tables already set.
 
-**Curated, not exhaustive -- a disclosed cut, not a silent one.** Two of
+**Curated, not exhaustive -- a disclosed cut, not a silent one.** Three of
 the ticket's suggested example classes are deliberately NOT shipped:
-TLS `verify=False` (CWE-295) and XML external entities (CWE-611) have no
-`WeaknessEntry` in ANY catalog tuple yet, so a fingerprint citing either
-would fail this module's OWN CVEFP001 drift-lock -- confirming they need a
-catalog addition (a separate, catalog-scoped ticket) before a fingerprint
-can honestly join them, rather than being force-fit around the drift-lock.
+TLS `verify=False` (CWE-295), weak-hash password storage (CWE-916), and
+XML external entities (CWE-611) have no `WeaknessEntry` in ANY catalog
+tuple yet, so a fingerprint citing any of the three would fail this
+module's OWN CVEFP001 drift-lock -- confirming they need a catalog
+addition (a separate, catalog-scoped ticket) before a fingerprint can
+honestly join them, rather than being force-fit around the drift-lock.
 JNDI-style lookup injection (the Log4Shell class) is Java/JNDI-specific
 with no equivalent construct in any of the four languages `frob.vet.
 _capability` scans (python/typescript/rust/c-cpp); a fingerprint with no
 genuine needle in a scanned language would be undetectable data, not a
 pattern-match capability, so it is omitted rather than shipped inert.
+
+**Wired into two operational paths, not test-only.** (1) `frob.vet.
+_capability.scan_directory_fingerprints` runs from `frob.vet._scan.
+_scan_source` the SAME way `scan_directory_capabilities` already does --
+a `frob vet` run over a dependency tree surfaces a VET006 finding (and a
+`"cve-fingerprint"` signal on the stored `PackageVerdict`) when a
+dependency's source matches a fingerprint's needle(s), independent of
+whether its pinned version has a filed osv advisory. (2)
+`check_fingerprint_catalog_drift` runs from `_audit.py::
+evaluate_exhaustiveness` every call (model-independent, like `_pii_gaps`
+-- reported under the fixed `cve-fingerprint:catalog` pseudo-view,
+mirroring PII001-004's fixed `"model"` view since a catalog-join property
+has no per-model baseline-view concept), so `frob sys audit` fails closed
+on a drifted `cwe_id` the same way THREAT001-003 already do for the
+security/quality families.
 
 **Self-match note (same class as T-0151/T-0158):** `_cve_fingerprint.py`
 stores every needle as a Python string literal, so scanning that file's
