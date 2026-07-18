@@ -1,12 +1,10 @@
 # frob sys
 
-Applications of the strata design model (`docs/strata/roadmap.md` "CLI
-surface (target)"). Three verbs today: `plan` (T-0084, obligation ->
-ticket compiler), `doc` (T-0085, threat-catalog audit matrix), and
-`export` (T-0086, k8s/seccomp/IAM config skeletons). `check`/`trace`/
-`capacity`/`threats` are later phase-5 tickets not yet landed on `main`
--- when they land, this doc and `src/frob/app/sys_runner.py` extend
-rather than get replaced.
+Strata design-model operations. Today: `frob sys plan`, the obligation ->
+ticket compiler (T-0084), and `frob sys doc`, the threat-catalog audit
+matrix (T-0085). Later phase-5 siblings per `docs/strata/roadmap.md`
+(`check`, `trace`, `capacity`, `export`) are separate future tickets, not
+implemented here.
 
 ## `frob sys plan`
 
@@ -28,7 +26,7 @@ Reads every `.strata` design file under the repo's design dir (default
   `frob:boundary`/`frob:secret` code directive anywhere (the SYS002
   question). One security ticket per construct.
 
-### Usage
+## Usage
 
 ```bash
 frob sys plan                 # dry-run: print the would-be ticket tree
@@ -39,7 +37,7 @@ frob sys plan /path/to/repo   # plan a different repo root
 Dry-run is the default deliberately -- a plan is a proposal, not a
 side-effecting command, until `--apply` says otherwise.
 
-### Idempotency
+## Idempotency
 
 Every planned ticket's body carries exactly one `sys-plan:<construct-
 qualname>:<obligation-kind>` marker line. `frob sys plan` diffs the
@@ -51,7 +49,7 @@ is never re-created after being closed, since the marker matches
 regardless of ticket state -- closing a sys-plan ticket is the discharge
 signal, not a re-open trigger.
 
-### Public API
+## Public API
 
 <!-- frob:describes src/frob/strata/_plan.py::plan_obligations -->
 <!-- frob:describes src/frob/strata/_plan.py::PlannedTicket -->
@@ -105,98 +103,14 @@ DOC003 for the claims audit -- see docs/strata/threat.md's charter-drift
 note. Suppressed, like SYS001, while any `.strata` design file fails to
 load.
 
-### Public API
+## Public API
 
 <!-- frob:describes src/frob/strata/_sysdoc.py::render_audit_matrix -->
 <!-- frob:describes src/frob/strata/_sysdoc.py::audit_claim -->
 <!-- frob:describes src/frob/strata/_sysdoc.py::ClaimAuditResult -->
 <!-- frob:describes src/frob/strata/_sysdoc.py::merge_models -->
 
-## `frob sys export`
-
-Render a runtime-enforcement config skeleton from a `.strata` design's
-elaborated `KernelModel`. The model already proves architecture-level
-claims statically (phase 0-4); exporting to real enforcement planes means a
-static proof is backed by defense-in-depth that cannot silently diverge
-from the declared design.
-
-### Usage
-
-```bash
-frob sys export --format k8s design/frob.strata        # k8s NetworkPolicy YAML
-frob sys export --format seccomp design/frob.strata     # seccomp profile JSON
-frob sys export --format iam design/frob.strata         # IAM policy JSON
-frob sys export --format k8s                             # defaults to design/frob.strata
-```
-
-Output is always deterministic (sorted keys, stable node/flow ordering) so
-two exports of the same model are byte-for-byte identical -- this is what
-makes exports diffable in review and CI-checkable against a golden fixture
-(`tests/unit/strata/test_export_golden.py`, run against frob's own
-self-hosting model, `design/frob.strata`, T-0081).
-
-### k8s NetworkPolicy
-
-One `NetworkPolicy` document per component `Node`, deny-by-default (kernel
-law 2): ingress is allowed only from nodes with a declared `Flow` into it,
-egress only to declared `Flow` targets. A `Flow` whose peer is a
-foreign-trust node (e.g. `registry` in `design/frob.strata`) has no
-in-cluster pod to select -- that peer is recorded as a
-`frob.strata/foreign-peer` annotation rather than silently dropped or
-silently allowed from anywhere.
-
-### seccomp profile skeletons
-
-One profile per `Node`, `SCMP_ACT_ERRNO` default (deny unlisted syscalls).
-Allowed syscalls are a fixed baseline (`exit`, `read`, `write`, ...) plus
-whatever a declared `may` capability KIND maps to:
-
-| `may` KIND | syscall family allowed |
-|---|---|
-| `exec` | `execve`, `execveat`, `fork`, `vfork`, `clone` |
-| `net` | `socket`, `connect`, `bind`, `listen`, `accept`, `sendto`, `recvfrom` |
-| (any other kind, or none) | baseline only |
-
-The KIND of a `may` atom is the segment before its first `.` or `:`
-(`"net.out:stripe.com"` -> `"net"`), the same extraction
-`_effects.py::_may_kind` already uses for tier-2 capability conformance
-(no duplicated rule). **This mapping is deliberately coarse (v0)**: a
-capability KIND names a class of effect, not an exact syscall list. Do not
-treat an exported profile as a substitute for a real syscall audit --
-treat it as a starting skeleton to tighten by hand.
-
-### IAM policy skeletons
-
-A generic, provider-agnostic JSON document (no AWS/GCP/Azure-specific
-grammar) with two `Allow` statements per declared `Flow`: a `write`
-statement (the flow changes the destination's state) and a `read`
-statement (the flow's caller reads whatever response the destination
-returns), `principal` = `Flow.src`, `resource` = `Flow.dst`. Flow
-direction is the only signal the kernel model carries for IAM action
-inference today; a real read-vs-write split needs an explicit flow
-attribute the surface grammar does not yet express (follow-up, not this
-ticket's scope).
-
-### Public API
-
-<!-- frob:describes src/frob/strata/_export.py::export_k8s_netpol -->
-<!-- frob:describes src/frob/strata/_export.py::export_seccomp -->
-<!-- frob:describes src/frob/strata/_export.py::export_iam -->
-
-```python
-# frob/strata/_export.py
-def export_k8s_netpol(model: KernelModel) -> str
-    # One deny-by-default NetworkPolicy YAML doc per component Node.
-
-def export_seccomp(model: KernelModel) -> str
-    # One seccomp profile skeleton (JSON) per Node, may-capability-derived.
-
-def export_iam(model: KernelModel) -> str
-    # One generic IAM policy document (JSON), two statements per Flow.
-```
-
 ## CLI wiring
 
 <!-- frob:describes src/frob/app/sys_runner.py::run -->
 <!-- frob:describes src/frob/app/sys_runner.py::_run_doc -->
-<!-- frob:describes src/frob/app/sys_runner.py::_run_export -->

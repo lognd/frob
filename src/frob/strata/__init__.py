@@ -98,7 +98,6 @@ from frob.strata._effects import (
 )
 from frob.strata._elaborate import elaborate
 from frob.strata._errors import StrataError
-from frob.strata._export import export_iam, export_k8s_netpol, export_seccomp
 from frob.strata._facts import FactBase, build_facts
 from frob.strata._infra import InfraExpansion, elaborate_infra
 from frob.strata._models import (
@@ -165,7 +164,6 @@ from frob.strata._threat import (
     check_capability_completeness,
     check_catalog_completeness,
     check_discharge_completeness,
-    check_effect_completeness,
     evaluate_threats,
 )
 
@@ -289,7 +287,6 @@ __all__ = [
     "check_capability_conformance",
     "check_catalog_completeness",
     "check_discharge_completeness",
-    "check_effect_completeness",
     "check_import_conformance",
     "check_privacy_policy",
     "check_regulation_catalog_completeness",
@@ -307,9 +304,6 @@ __all__ = [
     "evaluate_saga_contracts",
     "evaluate_scenarios",
     "evaluate_threats",
-    "export_iam",
-    "export_k8s_netpol",
-    "export_seccomp",
     "extract_effects",
     "generate_fault_injection_cases",
     "load_design_ids",

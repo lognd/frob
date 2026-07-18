@@ -101,24 +101,69 @@ def _matches_enclosing(
     return any(enclosing_by_symref.get(symref) == target for symref in all_touched)
 
 
-def _test_edge_matches(
-    edge,
+def _edge_symref_path(symref: str) -> str:
+    """The file-path half of a `path::qualname` (or bare-path) symref."""
+    return symref.split("::", 1)[0]
+
+
+def _looks_like_test_symbol(symref: str) -> bool:
+    """Whether `symref` is itself a test: a conventional test *file*
+    (`_is_test_file`), or a Rust inline `mod tests { ... }` symbol whose
+    qualname's leading component is `tests` (e.g.
+    `strata-core/src/parse.rs::tests.some_case`) -- those live in the same
+    source file as the code they cover, so the file-path check alone
+    would call neither endpoint a test."""
+    path, sep, qualname = symref.partition("::")
+    if _is_test_file(path):
+        return True
+    return sep == "::" and qualname.split(".", 1)[0] == "tests"
+
+
+def _edge_test_and_source(edge) -> tuple[str, str] | None:
+    """Which endpoint of a `TESTS` edge is the test and which is the tested
+    source symbol, or `None` if that can't be determined.
+
+    T-0137: the `frob:tests` directive is written on either side in
+    practice -- above the source symbol naming the covering test (`src` is
+    the source, `target` is the test), or above the test naming what it
+    covers (`src` is the test, `target` is the source, matching
+    `frob.gates`' `_test_edges` convention). Both are real in this
+    codebase (compare `src/frob/strata/_sysdoc.py`'s directives above
+    `merge_models` with `tests/unit/strata/test_sysdoc.py`'s directives
+    above each test method, or `strata-core/src/parse.rs`'s `mod tests`
+    directives above its own source functions), so selection must not
+    assume a fixed side -- only whichever endpoint looks like a test
+    (`_looks_like_test_symbol`) can be "the test to run"; the other
+    endpoint is what must be touched to trigger it.
+    """
+    src_is_test = _looks_like_test_symbol(edge.src)
+    target_is_test = _looks_like_test_symbol(edge.target)
+    if src_is_test and not target_is_test:
+        return edge.src, edge.target
+    if target_is_test and not src_is_test:
+        return edge.target, edge.src
+    return None
+
+
+def _source_matches_touched(
+    source: str,
     all_touched: set[str],
     enclosing_by_symref: dict[str, str | None],
     files_of_touched: set[str],
     touched_files: set[str],
 ) -> bool:
-    """Whether a TESTS edge's target is implicated by the touched set."""
-    target = edge.target
-    if target in all_touched or _matches_enclosing(
-        all_touched, enclosing_by_symref, target
+    """Whether `source` (a `TESTS` edge's tested-side symref) is implicated
+    by the touched set: itself, its enclosing class, its file, or its
+    package."""
+    if source in all_touched or _matches_enclosing(
+        all_touched, enclosing_by_symref, source
     ):
         return True
-    if "::" in target:
+    if "::" in source:
         return False
-    if target in files_of_touched or target in touched_files:
+    if source in files_of_touched or source in touched_files:
         return True
-    prefix = target.rstrip("/") + "/"
+    prefix = source.rstrip("/") + "/"
     return any(f.startswith(prefix) for f in files_of_touched | touched_files)
 
 
@@ -135,10 +180,24 @@ def _select_from_edges(
     for edge in snapshot.edges:
         if edge.kind != EdgeKind.TESTS:
             continue
-        if _test_edge_matches(
-            edge, all_touched, enclosing_by_symref, files_of_touched, touched_files
+        sides = _edge_test_and_source(edge)
+        if sides is None:
+            _log.warning(
+                "select_tests: TESTS edge %s -> %s has no test-file endpoint "
+                "(or both sides look like test files); skipping",
+                edge.src,
+                edge.target,
+            )
+            continue
+        test_ref, source_ref = sides
+        if _source_matches_touched(
+            source_ref,
+            all_touched,
+            enclosing_by_symref,
+            files_of_touched,
+            touched_files,
         ):
-            _add_selected(selected, edge.src)
+            _add_selected(selected, test_ref)
             bound_files.update(files_of_touched)
     for file in touched_files:
         if _is_test_file(file):
@@ -150,16 +209,27 @@ def _select_from_edges(
 def _file_has_selected_test(
     snapshot: GraphSnapshot, file: str, all_touched: set[str]
 ) -> bool:
-    """Whether any TESTS edge already selects `file` directly or by prefix."""
-    return any(
-        edge.kind == EdgeKind.TESTS
-        and (
-            edge.target in all_touched
-            or edge.target == file
-            or file.startswith(edge.target.rstrip("/") + "/")
-        )
-        for edge in snapshot.edges
-    )
+    """Whether any TESTS edge already selects `file` directly or by prefix.
+
+    T-0137: reads the edge's tested-source side via `_edge_test_and_source`
+    (direction-agnostic, see its docstring) rather than assuming `target`
+    is always the source -- an edge written the other way round must still
+    count here, or `_collect_unbound` would wrongly apply the fallback for
+    a file that already has a bound test."""
+    for edge in snapshot.edges:
+        if edge.kind != EdgeKind.TESTS:
+            continue
+        sides = _edge_test_and_source(edge)
+        if sides is None:
+            continue
+        _, source = sides
+        if (
+            source in all_touched
+            or source == file
+            or file.startswith(source.rstrip("/") + "/")
+        ):
+            return True
+    return False
 
 
 def _apply_fallback(

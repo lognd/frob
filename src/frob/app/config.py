@@ -233,14 +233,11 @@ class AppConfig(BaseModel):
     mutate_argv: list[str] = []
     mutate_json: bool = False
 
-    # sys (T-0084: plan; T-0085: doc; T-0086: export; check/trace/capacity/
-    # threats are later phase-5 tickets, not yet landed)
-    sys_command: str | None = None  # plan|doc|export (more per roadmap phase 5)
+    # sys
+    sys_command: str | None = None  # plan, doc (more per roadmap phase 5)
     sys_path: Path | None = None
     sys_apply: bool = False
     sys_view: str = "owasp-top-10"  # T-0085: `frob sys doc`'s baseline view
-    sys_export_format: str | None = None
-    sys_export_path: Path | None = None
 
     @classmethod
     def from_external(cls, args: argparse.Namespace, file: Path) -> "AppConfig":
@@ -298,7 +295,6 @@ class AppConfig(BaseModel):
             "perf_ref",
             "sys_command",
             "sys_view",
-            "sys_export_format",
         ):
             val = getattr(args, field, None)
             if val is not None:
@@ -332,7 +328,6 @@ class AppConfig(BaseModel):
             "mutate_path",
             "serve_path",
             "sys_path",
-            "sys_export_path",
         ):
             val = getattr(args, path_field, None)
             if val is not None:

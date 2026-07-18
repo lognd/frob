@@ -870,16 +870,13 @@ def _add_serve_parser(sub) -> None:
 
 # frob:ticket T-0084
 # frob:ticket T-0085
-# frob:ticket T-0086
 def _add_sys_parser(sub) -> None:
-    """Register the `frob sys` subcommand group: `plan` (T-0084), `doc`
-    (T-0085), and `export` (T-0086) today; `check`/`trace`/`capacity`/
-    `threats` (docs/strata/roadmap.md "CLI surface (target)") are later
-    roadmap-phase-5 siblings -- extend this parser with one more
-    `sys_sub.add_parser` per verb as they land, never replace it."""
+    """Register the `frob sys` subcommand group (`plan`/`doc` today;
+    `check`/`trace`/`capacity`/`threats`/`export` are later roadmap-phase-5
+    siblings, docs/strata/roadmap.md)."""
     # -- sys -------------------------------------------------------------------
     sys_p = sub.add_parser(
-        "sys", help="strata design-model applications (plan, doc, export, ...)"
+        "sys", help="strata design-model operations (obligation -> ticket plan, ...)"
     )
     sys_sub = sys_p.add_subparsers(dest="sys_command")
     sys_plan_p = sys_sub.add_parser(
@@ -892,21 +889,6 @@ def _add_sys_parser(sub) -> None:
         dest="sys_apply",
         action="store_true",
         help="write the planned tickets (default: dry-run, print the tree)",
-    )
-    sys_export_p = sys_sub.add_parser(
-        "export", help="render a k8s/seccomp/iam config skeleton from a design"
-    )
-    sys_export_p.add_argument(
-        "--format",
-        dest="sys_export_format",
-        choices=["k8s", "seccomp", "iam"],
-        required=True,
-    )
-    sys_export_p.add_argument(
-        "sys_export_path",
-        metavar="design.strata",
-        nargs="?",
-        help="path to a .strata design file (default: design/frob.strata)",
     )
 
     sys_doc_p = sys_sub.add_parser(

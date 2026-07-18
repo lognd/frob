@@ -120,7 +120,6 @@ Kept commands, each with usage, real output, and a "why it exists" section:
 | `docs/commands/parse.md` | `frob parse` |
 | `docs/commands/gitlog.md` | `frob gitlog` |
 | `docs/commands/check.md` | `frob check` |
-| `docs/commands/sys.md` | `frob sys` (plan T-0084, export T-0086) |
 
 `frob graph`, `frob ack`, `frob ticket`, and `frob test` are documented in
 their owning module design docs above (`docs/modules/graph.md`, `docs/modules/tickets.md`,

@@ -14,8 +14,19 @@ the gates prove the bindings exist; `frob test` runs the bound tests.
    staged plus unstaged changes (the agent's whole delta in a worktree).
 2. Touched set: hunks resolved to symrefs against the graph snapshot;
    files with no resolvable symbols count as touched files.
-3. Direct tests: every `TESTS` edge (any kind) whose target is a touched
-   symbol, its enclosing class, its file, or its package.
+3. Direct tests: every `TESTS` edge (any kind) whose tested-source
+   endpoint is a touched symbol, its enclosing class, its file, or its
+   package. `frob:tests` is written on either endpoint in this codebase --
+   above the source symbol, naming its covering test as the target, or
+   above the test, naming what it covers as the target (`frob.gates`'
+   convention) -- so selection identifies which endpoint is the test by
+   whether that endpoint's file is itself a test file (T-0137), rather
+   than assuming `target` is always the source. Only the resolved test
+   endpoint is ever added to a runner's selection; the other (source)
+   endpoint is never passed to a test runner, even if the touched set
+   makes it look selected (e.g. a brand-new test file's own methods count
+   as "touched," which used to leak the paired source symbol's node id
+   into the pytest argv and crash collection).
 4. Contract ripple (one hop): symbols holding a `uses-contract` edge to a
    touched symbol are treated as touched -- their tests run too.
 5. Touched test files always run themselves.

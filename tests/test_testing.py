@@ -206,6 +206,42 @@ class TestSelect:
         report = select_tests(snapshot, diff, SelectConfig(fallback="suite"))
         assert ALL_SENTINEL in report.selected["python"]
 
+    # frob:waive PERF003 reason="a next() lookup plus a not-any() assertion, not a nested join"
+    def test_reversed_directive_never_selects_the_source_symbol(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0137 regression: a `frob:tests` directive written above the
+        SOURCE symbol (naming the test as its target, reversed from every
+        other fixture in this class) must never leak that source symbol
+        into `selected`, even when a touched test file makes the edge's
+        target look "touched" (e.g. the test file is new)."""
+        _write_files(
+            tmp_path,
+            {
+                "src/foo2.py": """
+                    # frob:tests tests/test_foo2.py::test_widget2
+                    def widget2() -> int:
+                        return 1
+                    """,
+                "tests/test_foo2.py": """
+                    def test_widget2() -> None:
+                        pass
+                    """,
+            },
+        )
+        snapshot = build_graph(tmp_path, tmp_path / ".frob" / "cache.db").danger_ok
+        test_fn = next(
+            s for s in snapshot.symbols.values() if s.id.qualname == "test_widget2"
+        )
+        diff = Diff(
+            base="deadbeef", hunks=(Hunk(file="tests/test_foo2.py", span=test_fn.span),)
+        )
+        selected_python = select_tests(snapshot, diff, SelectConfig()).selected.get(
+            "python", ()
+        )
+        assert not any("src/foo2.py" in item for item in selected_python)
+        assert "tests/test_foo2.py" in selected_python
+
     def test_unbound_fallback_warn(self, tmp_path: Path) -> None:
         _write(
             tmp_path,
