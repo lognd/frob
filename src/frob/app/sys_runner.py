@@ -80,6 +80,52 @@ _EXPORT_FORMATS = ("k8s", "seccomp", "iam")
 # ---------------------------------------------------------------------------
 
 
+# frob:ticket T-0163
+# frob:waive PERF003 reason="two sibling single-pass ancestor walks, not a nested join"
+def _repo_root_for(file_path: Path) -> Path:
+    """Best-effort repo root to suggest in `_resolve_design_root`'s error
+    message: the nearest ancestor with a `frob.toml`/`.git`, else the
+    grandparent of a `design_dir`-named ancestor (e.g. `design/x.strata`
+    -> its parent), else just the file's own parent -- advisory text only,
+    never used to actually resolve a design load."""
+    for ancestor in (file_path.parent, *file_path.parents):
+        if (ancestor / "frob.toml").exists() or (ancestor / ".git").exists():
+            return ancestor
+    for ancestor in file_path.parents:
+        if ancestor.name == DEFAULT_DESIGN_DIR:
+            return ancestor.parent
+    return file_path.parent
+
+
+# frob:tests tests/system/test_cli_sys_audit.py::TestSysAuditCli.test_file_arg_fails
+def _resolve_design_root(cfg: AppConfig, command: str) -> Path:
+    """Resolve `cfg.sys_path` (or `.`) to the repo-root directory `plan`/
+    `doc`/`audit` walk with `_design_dir`+`load_design_ids` (those two
+    callees always append `[strata].design_dir` themselves -- the argument
+    here is the repo root, never the design directory or a `.strata` file).
+
+    T-0163: a bare (repo-root) directory is the only invocation those two
+    callees understand -- silently joining `design_dir` onto a *file* path
+    (e.g. `frob sys audit design/frob.strata`) used to produce a
+    nonexistent `<file>/design` path and an unearned "no design models"
+    PASS (vacuous-pass doctrine violation). A file argument now fails
+    loudly here, naming the expected repo-root invocation, instead of
+    being mangled silently downstream."""
+    root = (cfg.sys_path or Path(".")).resolve()
+    if root.is_file():
+        _log.error(
+            "sys %s: %s is a file; pass the repo root directory instead "
+            "(design files live under its [strata].design_dir, e.g. "
+            "`frob sys %s %s`)",
+            command,
+            root,
+            command,
+            _repo_root_for(root),
+        )
+        sys.exit(1)
+    return root
+
+
 def _design_dir(root: Path) -> str:
     """`[strata].design_dir` from frob.toml, defaulting to `DEFAULT_DESIGN_DIR`
     (duplicated from `frob.gates`'s identical helper -- T-0084 scope excludes
@@ -197,7 +243,7 @@ def _apply(root: Path, new: list[PlannedTicket]) -> None:
 def _run_plan(cfg: AppConfig) -> None:
     """`frob sys plan`: compile the frontier, diff against the ledger, and
     print (default) or write (`--apply`) exactly the delta."""
-    root = (cfg.sys_path or Path(".")).resolve()
+    root = _resolve_design_root(cfg, "plan")
     design_dir = _design_dir(root)
     ids = load_design_ids(root, design_dir)
     if ids.errors:
@@ -299,7 +345,7 @@ def _run_doc(cfg: AppConfig) -> None:
     (docs/strata/threat.md#the-exhaustiveness-proof-the-point) for
     `cfg.sys_view` against every `.strata` design file under the repo's
     design dir, and print it (deterministic markdown, T-0085)."""
-    root = (cfg.sys_path or Path(".")).resolve()
+    root = _resolve_design_root(cfg, "doc")
     design_dir = _design_dir(root)
     ids = load_design_ids(root, design_dir)
     if ids.errors:
@@ -408,7 +454,7 @@ def _run_audit(cfg: AppConfig) -> None:
     frob.toml) -- and exit nonzero with a named-gap summary when any part
     fails -- the CI-ready checking counterpart to `frob sys doc`'s
     human-facing matrix rendering (T-0115)."""
-    root = (cfg.sys_path or Path(".")).resolve()
+    root = _resolve_design_root(cfg, "audit")
     design_dir = _design_dir(root)
     ids = load_design_ids(root, design_dir)
     if ids.errors:

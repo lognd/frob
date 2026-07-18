@@ -1,0 +1,24 @@
+{
+  "mcpServers": {
+    "serena": {
+      "type": "stdio",
+      "command": "serena",
+      "args": ["start-mcp-server", "--context", "claude-code", "--project-from-cwd"]
+    },
+    "frob": {
+      "type": "stdio",
+      "command": "frob",
+      "args": ["serve"]
+    },
+    "fetch": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["mcp-server-fetch"]
+    },
+    "arxiv": {
+      "type": "stdio",
+      "command": "arxiv-mcp-server",
+      "args": []
+    }
+  }
+}

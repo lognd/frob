@@ -3,6 +3,8 @@ name: exhaustive-research
 description: Research or map something to genuine completeness without exiting early. Use when a task needs EVERYTHING covered -- audit every module, enumerate every case, read every relevant paper/doc, map an entire subsystem -- and a normal pass would drain only the top of the stack. Externalizes the frontier so completeness is a checkable fact, not a feeling.
 ---
 
+<!-- frob:doc docs/guides/exhaustive-research.md#exhaustive-research-the-frontier-loop -->
+
 # exhaustive-research
 
 Early exit is the default failure of "be thorough" tasks: the list of
