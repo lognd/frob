@@ -1338,7 +1338,43 @@ native-extension-unavailable environment artifacts, not caused by this
 ticket. `ruff check` and `ruff format --check` clean on both changed
 files (both `ruff` and `uv run ruff`). `ty check src/frob/gates/__init__.py`
 clean (the repo-wide `frob check`'s "ty: Found 2 diagnostics" line is
-unrelated to the changed file).
+unrelated to the changed file -- see the round-2 addendum below for exactly
+which two diagnostics these are).
+
+Reviewer round 1 caught an unwaived PRE001 (the recorded pre-work sweep had
+gone stale against current scope) that this Done report had not addressed.
+Fix: re-ran `uv run frob ticket sweep T-0203` (plain `frob ticket start`
+errors `InvalidTransition` on an already-in-progress ticket -- `sweep` is
+the correct refresh command) to record a fresh sweep
+(`dup_findings=165 xref_hits=4`), then re-ran `uv run frob check --ticket
+T-0203` clean of PRE001: the ticket-scoped run reports 15 non-waived
+violations, none of them PRE001 and none touching this ticket's scope --
+11x COV003 on tickets T-0065/T-0148 (stale evidence ids on
+`tests/unit/strata/test_kernel_properties.py`, a file this ticket never
+touched), 1x COV003 on ticket T-0168 (same pattern on
+`tests/test_gates.py::TestConventionUnitBinding.test_test001_exempts_strata_flow_declarations`,
+pre-existing before this ticket's edits), 1x SYS004 (design/frob.strata
+failing to load because `strata_core` is unavailable inside the `frob
+check` subprocess -- the same worktree-natives artifact noted above), and
+1x TEST006 (no coverage stamp; TEST006 is campaign-wide and explicitly out
+of scope per this ticket's dispatch instructions). No new violations
+appeared as a result of the sweep refresh.
+
+Also confirming per reviewer request: the 2 `ty` diagnostics
+(`Found 2 diagnostics`) are exactly `error[unresolved-import]: Cannot
+resolve imported module 'strata_core'` at
+`tests/unit/strata/test_capacity.py:351` and `error[unresolved-import]:
+Cannot resolve imported module 'frob_core'` at
+`tests/unit/test_dup_core.py:30` -- confirmed via `uv run ty check` run
+directly. Both are the known frob_core/strata_core worktree-native
+artifact: `ty`'s static import resolver does not see the maturin-built
+native extensions installed into this worktree's `.venv` (it only
+resolves against `site-packages`/first-party source, not the editable
+native build), so it flags the two files that `import strata_core` /
+`import frob_core` directly even though those imports resolve fine at
+runtime (confirmed above via passing pytest runs that exercise the same
+natives). Neither file is in this ticket's scope or touched by this
+change; `ty check src/frob/gates/__init__.py` in isolation remains clean.
 
 <!-- ticket:T-0204 -->
 ```yaml
