@@ -177,7 +177,9 @@ def archive(root: Path) -> Result[int, TicketError]:
 
 
 def _next_ticket_id(existing: dict[str, Ticket]) -> str:
-    """The next sequential `T-####` id above the highest existing ticket number."""
+    """The next sequential `T-####` id above the highest existing ticket number
+    in `existing` -- callers must pass the id space they want ids kept clear
+    of (T-0140: `new_ticket` passes active+archive merged, not active alone)."""
     max_num = 0
     for tid in existing:
         try:
@@ -213,13 +215,20 @@ def _ticket_from_spec(
 
 
 # frob:ticket T-0102
+# frob:ticket T-0140
 # frob:doc docs/modules/tickets.md#public-api
 def new_ticket(root: Path, spec: TicketSpec) -> Result[Ticket, TicketError]:
     """Allocate the next sequential id and upsert the ticket into the store.
 
     Any `spec.evidence` entries are schema-validated (validate_evidence)
     before the ticket is ever built, so a malformed entry cannot land via
-    `frob ticket new` either (T-0102 companion fix).
+    `frob ticket new` either (T-0102 companion fix). The id is allocated from
+    the max across BOTH the active ledger and the archive (T-0140) -- scanning
+    only the active store restarts numbering at T-0001 the moment a queue has
+    been archived, colliding with archived ids and making the merged queue
+    unloadable (DuplicateId) on the very next `load_queue`. A malformed
+    archive fails loudly here too, via the same `_load_merged` path
+    `load_queue` uses -- never silently ignored.
     """
     validated = _validate_evidence_list(spec.evidence)
     if validated.is_err:
@@ -228,7 +237,11 @@ def new_ticket(root: Path, spec: TicketSpec) -> Result[Ticket, TicketError]:
     if loaded.is_err:
         return Err(loaded.danger_err)
     existing = loaded.danger_ok
-    ticket_id = _next_ticket_id(existing)
+    merged = _load_merged(root)
+    if merged.is_err:
+        _log.error("tickets: id allocation aborted, archive unreadable")
+        return Err(merged.danger_err)
+    ticket_id = _next_ticket_id(merged.danger_ok)
     if ticket_id in existing:
         _log.error("tickets: id collision allocating %s", ticket_id)
         return Err(TicketError.DuplicateId)

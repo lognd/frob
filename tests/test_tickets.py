@@ -666,6 +666,75 @@ class TestArchive:
         started = transition(tmp_path, "T-0002", TicketState.IN_PROGRESS)
         assert started.is_ok
 
+    def test_new_ticket_id_continues_past_archived_max(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/__init__.py::new_ticket
+        # T-0140 regression: archive a full T-0001..T-0136 queue, then file a
+        # fresh ticket -- the allocator must skip past the archived max, not
+        # restart at T-0001 (which would collide and make the merged queue
+        # unloadable on the very next load_queue).
+        from frob.tickets import Origin, TicketKind, TicketSpec
+
+        for i in range(1, 137):
+            _write(
+                tmp_path,
+                _ticket(ticket_id=f"T-{i:04d}", state=TicketState.DONE),
+                f"done-{i}",
+            )
+        archived_count = archive(tmp_path)
+        assert archived_count.is_ok
+        assert archived_count.danger_ok == 136
+
+        spec = TicketSpec(
+            title="post-archive ticket",
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+        )
+        created = new_ticket(tmp_path, spec)
+        assert created.is_ok
+        assert created.danger_ok.id == "T-0137"
+
+        merged = load_queue(tmp_path)
+        assert merged.is_ok
+        assert "T-0137" in merged.danger_ok.tickets
+
+    def test_new_ticket_fresh_repo_no_archive_file(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/__init__.py::new_ticket
+        # A repo that has never archived anything has no tickets-archive.md
+        # at all -- allocation must not error just because the file is
+        # absent (T-0140).
+        from frob.tickets import Origin, TicketKind, TicketSpec
+
+        assert not (tmp_path / "tickets-archive.md").exists()
+        spec = TicketSpec(
+            title="first ticket ever",
+            kind=TicketKind.FEATURE,
+            origin=Origin.AGENT,
+        )
+        created = new_ticket(tmp_path, spec)
+        assert created.is_ok
+        assert created.danger_ok.id == "T-0001"
+
+    def test_new_ticket_corrupt_archive_fails_loudly(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/__init__.py::new_ticket
+        # A malformed archive must never be silently skipped during id
+        # allocation -- vacuous-pass doctrine: fail loudly rather than
+        # allocating an id that might collide with unreadable content.
+        from frob.tickets import Origin, TicketKind, TicketSpec
+
+        archive_file = tmp_path / "tickets-archive.md"
+        archive_file.write_text(
+            "<!-- ticket:T-0001 -->\nno yaml frontmatter fence here at all\n",
+            encoding="utf-8",
+        )
+
+        spec = TicketSpec(
+            title="should not be created",
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+        )
+        created = new_ticket(tmp_path, spec)
+        assert created.is_err
+
 
 class TestSingleFileLedger:
     def _spec(self, title="a ticket"):
