@@ -1,0 +1,151 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "strata",
+  "scopeName": "source.strata",
+  "fileTypes": [
+    "strata"
+  ],
+  "patterns": [
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#strings"
+    },
+    {
+      "include": "#quantities"
+    },
+    {
+      "include": "#declaration-keywords"
+    },
+    {
+      "include": "#clause-keywords"
+    },
+    {
+      "include": "#operators"
+    },
+    {
+      "include": "#punctuation"
+    },
+    {
+      "include": "#numbers"
+    },
+    {
+      "include": "#identifiers"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.documentation.strata",
+          "match": "///.*$"
+        },
+        {
+          "name": "comment.line.double-slash.strata",
+          "match": "//.*$"
+        }
+      ]
+    },
+    "strings": {
+      "comment": "strata string literals never contain escapes and never span a line (docs/strata/surface.md: no escapes in v0; a literal quote or newline is forbidden inside the string, matching strata-core/src/parse.rs::lex, lines 131-151). Matched as single-line patterns rather than begin/end so an unterminated string cannot swallow the rest of the file as string content; the second pattern flags an unterminated string on one line as invalid.illegal, making the lexer error visible in the editor instead of silently unstyled.",
+      "patterns": [
+        {
+          "name": "string.quoted.double.strata",
+          "match": "\"[^\"\\n]*\""
+        },
+        {
+          "name": "invalid.illegal.unterminated-string.strata",
+          "match": "\"[^\"\\n]*$"
+        }
+      ]
+    },
+    "quantities": {
+      "comment": "NUMBER UNIT, where UNIT is IDENT ('/' IDENT)* or a bare '%' (strata-core/src/parse.rs::parse_unit / parse_quantity). Matches '5 req/s', '250 ms', '4 KiB', '15 %/month' style values; does not match a bare identifier.",
+      "match": "(\\b\\d+(?:\\.\\d+)?\\b)(\\s+)([A-Za-z_][A-Za-z0-9_]*(?:/[A-Za-z_][A-Za-z0-9_]*)*|%(?:/[A-Za-z_][A-Za-z0-9_]*)?)",
+      "captures": {
+        "1": {
+          "name": "constant.numeric.strata"
+        },
+        "3": {
+          "name": "keyword.other.unit.strata"
+        }
+      }
+    },
+    "numbers": {
+      "name": "constant.numeric.strata",
+      "match": "\\b\\d+(?:\\.\\d+)?\\b"
+    },
+    "declaration-keywords": {
+      "comment": "Top-level construct keywords accepted by strata-core/src/parse.rs::parse_program's dispatch table. Drift-locked bidirectionally by tests/unit/test_strata_tmlanguage.py.",
+      "name": "keyword.declaration.strata",
+      "match": "\\b(module|node|flow|boundary|assert|assume|refine|store|cache|queue|cdn|balancer|policy|operation|scenario|secret)\\b"
+    },
+    "clause-keywords": {
+      "comment": "Property/clause keywords used inside declaration bodies (at_keyword/expect_keyword call sites in strata-core/src/parse.rs). Checked one-directionally (parser -> grammar) by tests/unit/test_strata_tmlanguage.py.",
+      "name": "keyword.other.strata",
+      "match": "\\b(abstract|admit|age|append_only|arg|assert|assume|at|atomic|attr|audience|audit|binds|bound|by|call|canary|capacity|clearance|code|component|confine|declassify|delivery|deploy|effect|enables|endorse|endorsed_by|engine|errors_total|fanout|flow|for|forbid|frame|growth|hit|immutable|import|into|invalidate_on|issued_by|judge|keyed_by|label|latency|lifetime|log|max_size|may|mediate|modifies|node|noflow|observe|of|on|ordering|owner|panics_contained_by|parse|policy|provider|rate|rate_limit|rationale|reach|record|refuse|remove|replicas|require|residence|respond|review|revoke|rollback|rpo|scale|size|skew|staleness|sticky|time|tls_terminates_at_provider|to|transport|trust|ttl|unlimited|use|utilization|via|when|within|zipf)\\b"
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.arrow.strata",
+          "match": "->"
+        },
+        {
+          "name": "keyword.operator.range.strata",
+          "match": "\\.\\."
+        },
+        {
+          "name": "keyword.operator.comparison.strata",
+          "match": "<=|>="
+        },
+        {
+          "name": "keyword.operator.assignment.strata",
+          "match": ":=|="
+        }
+      ]
+    },
+    "punctuation": {
+      "patterns": [
+        {
+          "name": "punctuation.section.block.begin.strata",
+          "match": "\\{"
+        },
+        {
+          "name": "punctuation.section.block.end.strata",
+          "match": "\\}"
+        },
+        {
+          "name": "punctuation.terminator.statement.strata",
+          "match": ";"
+        },
+        {
+          "name": "punctuation.separator.colon.strata",
+          "match": ":"
+        },
+        {
+          "name": "punctuation.separator.comma.strata",
+          "match": ","
+        },
+        {
+          "name": "punctuation.separator.dot.strata",
+          "match": "\\."
+        }
+      ]
+    },
+    "identifiers": {
+      "patterns": [
+        {
+          "comment": "An identifier immediately followed by ':' or '{' is treated as a declared entity name (node id, flow id, secret id, and similar -- strata-core/src/parse.rs's expect_ident calls right after a construct keyword).",
+          "match": "\\b([A-Za-z_][A-Za-z0-9_]*)\\b(?=\\s*[:{])",
+          "name": "entity.name.function.strata"
+        },
+        {
+          "name": "variable.other.strata",
+          "match": "\\b[A-Za-z_][A-Za-z0-9_]*\\b"
+        }
+      ]
+    }
+  }
+}

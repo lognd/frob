@@ -21,6 +21,8 @@ real.
 - `docs/guides/agentic-workflow.md` -- the human/AI split: how planner, implementer,
   reviewer, prover, and the auditors use the ticket queue and gates as the
   shared work surface, including the worktree-per-agent pattern.
+- `docs/guides/editors.md` -- syntax highlighting for `.strata` in VSCode
+  and JetBrains IDEs via one drift-locked TextMate grammar.
 
 ## Module design docs
 

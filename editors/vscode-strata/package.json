@@ -1,0 +1,35 @@
+{
+  "name": "strata-syntax",
+  "displayName": "strata Syntax Highlighting",
+  "description": "TextMate grammar syntax highlighting for .strata files (the strata surface language). Drift-locked against strata-core/src/parse.rs via tests/unit/test_strata_tmlanguage.py.",
+  "version": "0.1.0",
+  "publisher": "frob",
+  "engines": {
+    "vscode": "^1.70.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "strata",
+        "aliases": [
+          "strata",
+          "strata surface language"
+        ],
+        "extensions": [
+          ".strata"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "strata",
+        "scopeName": "source.strata",
+        "path": "./syntaxes/strata.tmLanguage.json"
+      }
+    ]
+  }
+}
