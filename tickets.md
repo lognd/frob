@@ -6,7 +6,7 @@ Central ledger managed by `frob ticket` -- one section per ticket.
 ```yaml
 id: T-0153
 title: 'std.cve fingerprints: pattern catalog for known vulnerable-usage classes'
-state: in-progress
+state: done
 kind: security
 origin: human
 created: '2026-07-18'
