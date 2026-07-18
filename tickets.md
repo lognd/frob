@@ -2174,7 +2174,7 @@ path, contradicting sys_runner's actual resolution); fixed and APPROVED.
 ```yaml
 id: T-0168
 title: TEST001 fires on flow declarations in .strata files -- undefined semantics
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-18'
