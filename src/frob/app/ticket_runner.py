@@ -372,6 +372,12 @@ def _auto_plan_if_queued(root: Path, ticket_id: str, ticket):  # noqa: ANN201
 
 
 def _start(root: Path, cfg: AppConfig) -> None:
+    """Transition to in-progress (auto-planning a queued ticket first) and
+    run the pre-work sweep. Starting a ticket that is ALREADY in-progress is
+    a hard error, not a silent no-op or refresh (T-0215): `frob ticket
+    sweep <id>` already exists as the idempotent refresh path, so re-running
+    `start` on an in-progress ticket is treated as a coordinator mistake and
+    named explicitly, pointing at `sweep` instead of quietly duplicating it."""
     from frob.tickets import TicketState, transition
 
     if cfg.ticket_id is None:
@@ -379,6 +385,15 @@ def _start(root: Path, cfg: AppConfig) -> None:
         sys.exit(1)
 
     ticket = _load_ticket_or_exit(root, cfg.ticket_id, verb="start")
+    if ticket.state == TicketState.IN_PROGRESS:
+        _log.error(
+            "ticket start failed: %s is already in-progress -- run "
+            "`frob ticket sweep %s` to refresh the pre-work sweep instead",
+            cfg.ticket_id,
+            cfg.ticket_id,
+        )
+        sys.exit(1)
+
     ticket = _auto_plan_if_queued(root, cfg.ticket_id, ticket)
 
     transitioned = transition(root, cfg.ticket_id, TicketState.IN_PROGRESS)
@@ -521,26 +536,63 @@ def _block(root: Path, cfg: AppConfig) -> None:
     _log.info("%s now blocked by %s", cfg.ticket_id, cfg.ticket_by)
 
 
+# frob:ticket T-0215
+def _close_failure_hint(ticket_id: str, state, err) -> str:  # noqa: ANN001
+    """The log message for a failed close: names a concrete remedy instead of
+    just echoing the raw error (T-0215 -- both close-on-queued's
+    InvalidTransition and MissingEvidence used to log with no next step)."""
+    from frob.tickets import TicketError, TicketState
+
+    if err == TicketError.InvalidTransition and state in (
+        TicketState.QUEUED,
+        TicketState.PLANNED,
+    ):
+        return (
+            f"close failed: {err} -- {ticket_id} is {state.value}, not "
+            f"in-progress -- run `frob ticket start {ticket_id}` first"
+        )
+    if err == TicketError.MissingEvidence:
+        return (
+            f"close failed: {err} -- {ticket_id} is missing evidence or a "
+            f"Done report -- add evidence (`frob ticket evidence {ticket_id} "
+            f"<node-id>...`, or for a docs-kind ticket `--evidence-cmd "
+            f"'<command>'`) and write a '## Done report' heading under "
+            f"{ticket_id}'s section in tickets.md"
+        )
+    return f"close failed: {err}"
+
+
 # frob:ticket T-0106
+# frob:ticket T-0215
 def _close(root: Path, cfg: AppConfig) -> None:
-    """Transition a ticket to done; if `--evidence` ids were given, validate
-    and append them first (via `_apply_evidence`) and refuse to transition
-    at all if any id is unresolvable, so a bad --evidence flag can never
-    close a ticket on unvalidated evidence."""
+    """Transition a ticket to done; if `--evidence` ids or `--evidence-cmd`
+    were given, validate and append them first (`_apply_evidence` /
+    `_apply_cmd_evidence`) and refuse to transition at all if either is
+    unresolvable/fails, so a bad flag can never close a ticket on
+    unvalidated evidence. A failed transition is reported through
+    `_close_failure_hint` so the operator gets a concrete next command, not
+    just the bare state-machine error (T-0215)."""
     from frob.tickets import TicketState, transition
 
     if cfg.ticket_id is None:
         _log.error("frob ticket close requires <id>")
         sys.exit(1)
 
+    ticket = _load_ticket_or_exit(root, cfg.ticket_id, verb="close")
+
     if cfg.ticket_evidence_ids:
         added = _apply_evidence(root, cfg.ticket_id, cfg.ticket_evidence_ids)
         if added.is_err:
             sys.exit(1)
 
+    if cfg.ticket_evidence_cmd:
+        cmd_added = _apply_cmd_evidence(root, cfg.ticket_id, cfg.ticket_evidence_cmd)
+        if cmd_added.is_err:
+            sys.exit(1)
+
     result = transition(root, cfg.ticket_id, TicketState.DONE)
     if result.is_err:
-        _log.error("close failed: %s", result.danger_err)
+        _log.error(_close_failure_hint(cfg.ticket_id, ticket.state, result.danger_err))
         sys.exit(1)
     _log.info("%s closed (done)", cfg.ticket_id)
 
@@ -572,16 +624,30 @@ def _fail(root: Path, cfg: AppConfig) -> None:
 
 # frob:ticket T-0094
 # frob:ticket T-0106
+# frob:ticket T-0215
 def _evidence(root: Path, cfg: AppConfig) -> None:
     """Validate `cfg.ticket_evidence_ids` against collected pytest node ids
-    and append the resolvable ones to the ticket's structured evidence list."""
-    if cfg.ticket_id is None or not cfg.ticket_evidence_ids:
-        _log.error("frob ticket evidence requires <id> <pytest-node-id>...")
+    and append the resolvable ones to the ticket's structured evidence list;
+    or, with `--evidence-cmd`, record the T-0215 non-pytest cmd-evidence
+    entry instead (docs-kind tickets only). Requires at least one of the
+    two -- neither is silently a no-op."""
+    has_evidence = cfg.ticket_evidence_ids or cfg.ticket_evidence_cmd
+    if cfg.ticket_id is None or not has_evidence:
+        _log.error(
+            "frob ticket evidence requires <id> and either <pytest-node-id>... "
+            "or --evidence-cmd 'command'"
+        )
         sys.exit(1)
 
-    result = _apply_evidence(root, cfg.ticket_id, cfg.ticket_evidence_ids)
-    if result.is_err:
-        sys.exit(1)
+    if cfg.ticket_evidence_ids:
+        result = _apply_evidence(root, cfg.ticket_id, cfg.ticket_evidence_ids)
+        if result.is_err:
+            sys.exit(1)
+
+    if cfg.ticket_evidence_cmd:
+        cmd_result = _apply_cmd_evidence(root, cfg.ticket_id, cfg.ticket_evidence_cmd)
+        if cmd_result.is_err:
+            sys.exit(1)
 
 
 # frob:ticket T-0106
@@ -618,6 +684,36 @@ def _apply_evidence(root: Path, ticket_id: str, node_ids: list[str]):
     ticket = result.danger_ok
     _log.info(
         "%s: evidence now has %d id(s): %s",
+        ticket_id,
+        len(ticket.evidence),
+        list(ticket.evidence),
+    )
+    return result
+
+
+# frob:ticket T-0215
+# frob:tests tests/test_tickets_evidence_cli.py
+def _apply_cmd_evidence(root: Path, ticket_id: str, command: str):
+    """Run `command` via `frob.tickets.add_cmd_evidence` and append its
+    exit-status/digest entry to `ticket_id`'s evidence list -- the
+    docs/design-kind non-pytest evidence channel (T-0215). Returns the
+    `add_cmd_evidence` Result unchanged so callers (`_close`, `_evidence`)
+    can refuse to transition state on failure, the same contract
+    `_apply_evidence` gives pytest-node-id evidence."""
+    from frob.tickets import add_cmd_evidence
+
+    result = add_cmd_evidence(root, ticket_id, command)
+    if result.is_err:
+        _log.error(
+            "ticket evidence-cmd failed: %s (docs-kind tickets only; code "
+            "kinds require pytest --evidence node ids)",
+            result.danger_err,
+        )
+        return result
+
+    ticket = result.danger_ok
+    _log.info(
+        "%s: evidence now has %d entries: %s",
         ticket_id,
         len(ticket.evidence),
         list(ticket.evidence),

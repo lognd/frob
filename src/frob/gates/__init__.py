@@ -77,6 +77,7 @@ from frob.lang._models import ParsedFile
 from frob.logging import get_logger
 from frob.testing import CollectedTests, collect_python_tests, collect_rust_tests
 from frob.tickets import Ticket, TicketQueue, TicketState, load_queue
+from frob.tickets._models import CMD_EVIDENCE_ALLOWED_KINDS, is_cmd_evidence
 from frob.tickets._provisional import is_draft_id, on_default_branch
 from frob.tickets._store import load_all as _tickets_load_all
 from frob.tickets._store import load_archive as _tickets_load_archive
@@ -184,6 +185,32 @@ def _evidence_collected(evidence: str, tests: CollectedTests) -> bool:
         return True
     prefix = evidence + "["
     return any(node.startswith(prefix) for node in tests.node_ids)
+
+
+# frob:ticket T-0215
+def _evidence_valid_for_ticket(
+    evidence: str, ticket: Ticket, tests: CollectedTests
+) -> bool:
+    """Whether `evidence` counts as proof `ticket` is actually done: a
+    collected pytest node id (`_evidence_collected`), OR -- for a
+    docs-kind ticket ONLY -- a well-formed `cmd:<command> exit=0
+    sha256=<12-hex>` entry (T-0215's non-pytest evidence channel, review
+    round 2). `frob check` cannot cheaply re-run an arbitrary recorded
+    command on every invocation (the command may be slow, non-idempotent,
+    or depend on state that has since moved on) -- the cmd: digest is
+    record-time attestation, not something COV003 re-verifies. What COV003
+    CAN and does check cheaply: shape (`is_cmd_evidence`, mirrors the exact
+    regex `run_cmd_evidence` writes) AND kind (`ticket.kind` must be in
+    `CMD_EVIDENCE_ALLOWED_KINDS`) -- so neither a malformed/hand-pasted
+    entry nor a cmd: entry on a non-docs ticket (kind hand-edited after
+    recording, or hand-pasted onto the wrong ticket) can ever validate.
+    A cmd: entry on a disallowed kind is rejected outright here, never
+    falling through to `_evidence_collected` (a `cmd:...` string could
+    never coincidentally match a pytest node id anyway, but the explicit
+    branch keeps the two evidence classes from ever being confused)."""
+    if is_cmd_evidence(evidence):
+        return ticket.kind in CMD_EVIDENCE_ALLOWED_KINDS
+    return _evidence_collected(evidence, tests)
 
 
 # ---------------------------------------------------------------------------
@@ -880,26 +907,41 @@ def _cov002(
 
 
 def _cov003(queue: TicketQueue, tests: CollectedTests) -> tuple[Violation, ...]:
-    """COV003: a done ticket's evidence ids do not resolve to a collected test."""
+    """COV003: a done ticket's evidence ids do not resolve to a collected
+    test -- OR, for a `cmd:` entry (T-0215), do not resolve to a
+    well-formed cmd: shape on a kind-permitted (docs) ticket. See
+    `_evidence_valid_for_ticket` for exactly what each evidence class
+    proves and why a cmd: entry is format+kind checked here rather than
+    re-executed."""
+    allowed_kinds = sorted(k.value for k in CMD_EVIDENCE_ALLOWED_KINDS)
     violations: list[Violation] = []
     for ticket in queue.tickets.values():
         if ticket.state != TicketState.DONE:
             continue
         for evidence in ticket.evidence:
-            if _evidence_collected(evidence, tests):
+            if _evidence_valid_for_ticket(evidence, ticket, tests):
                 continue
             _log.debug("COV003: %s evidence %s not collected", ticket.id, evidence)
+            if is_cmd_evidence(evidence):
+                message = (
+                    f"COV003: {ticket.id} evidence {evidence!r} is cmd: evidence "
+                    f"but kind={ticket.kind.value!r} is not in "
+                    f"{allowed_kinds}; fix the ticket's kind or replace with "
+                    f"pytest --evidence node ids"
+                )
+            else:
+                message = (
+                    f"COV003: {ticket.id} evidence {evidence!r} does not resolve "
+                    f"to a collected test; run: frob test --collect to refresh, "
+                    f"or fix the evidence id"
+                )
             violations.append(
                 Violation(
                     rule="COV003",
                     severity=Severity.ERROR,
                     file=f"tickets/{ticket.id}",
                     line=0,
-                    message=(
-                        f"COV003: {ticket.id} evidence {evidence!r} does not resolve "
-                        f"to a collected test; run: frob test --collect to refresh, "
-                        f"or fix the evidence id"
-                    ),
+                    message=message,
                 )
             )
     return tuple(violations)

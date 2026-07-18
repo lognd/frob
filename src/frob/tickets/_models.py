@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping
 from datetime import date
 from enum import StrEnum
@@ -36,6 +37,42 @@ class TicketKind(StrEnum):
     DOCS = "docs"
     INVARIANT = "invariant"
     INCIDENT = "incident"
+
+
+# frob:doc docs/modules/tickets.md#public-api
+# T-0215: docs/design tickets (no pytest surface of their own) may close on
+# a vetted shell command's exit status + output digest instead of pytest
+# node ids. Code kinds (bug/feature/security/...) are excluded on purpose.
+# Lives in `_models.py` (not `__init__.py`, where the record-time
+# `add_cmd_evidence` primitive lives) so BOTH `frob.tickets.__init__`
+# (record + close-time guard) and `frob.tickets._land` (land-time guard)
+# can import it without a circular import -- `_land` is imported BY
+# `__init__.py`, so the reverse import is not available there.
+CMD_EVIDENCE_ALLOWED_KINDS = frozenset({TicketKind.DOCS})
+
+# The exact shape `run_cmd_evidence` writes: `cmd:<command> exit=0
+# sha256=<12-hex>`. Single source of truth for "does this evidence string
+# look like a cmd: entry" -- `frob.gates`'s COV003 check and every
+# kind-consistency guard (`_transition_guard`, `_land._validate_closeable`)
+# match against this SAME regex (imported, never reimplemented) so the
+# record-time shape and every later recognition of a cmd: entry can never
+# drift apart (T-0215 review round 2).
+_CMD_EVIDENCE_RE = re.compile(r"^cmd:.+ exit=0 sha256=[0-9a-f]{12}$")
+
+
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets_cmd_evidence.py::TestIsCmdEvidence.test_shapes
+def is_cmd_evidence(entry: str) -> bool:
+    """Whether `entry` has the `cmd:<command> exit=0 sha256=<12-hex>` shape
+    `run_cmd_evidence` writes -- the format test `frob.gates`'s COV003 and
+    the kind-consistency close/land guards use to recognize a cmd: entry
+    without re-running anything (T-0215). NOT a validity check by itself:
+    callers additionally gate on ticket kind (only `docs` may carry a
+    cmd: entry) -- this only answers "does it have the shape," so a
+    malformed prefix (typo'd, hand-edited) correctly falls through to the
+    pytest-node-id check instead and fails there too.
+    """
+    return bool(_CMD_EVIDENCE_RE.match(entry))
 
 
 # frob:doc docs/modules/tickets.md#data-models
@@ -170,6 +207,9 @@ class TicketError(ErrorSet):
     BlockerOpen = "Cannot start: blocked_by contains open tickets"
     WriteFailed = "Atomic ticket write failed"
     UnknownEvidence = "Evidence id does not resolve to a collected test"
+    # T-0215: non-pytest evidence channel for docs-kind tickets
+    EvidenceKindNotAllowed = "cmd evidence is only allowed for docs-kind tickets"
+    EvidenceCmdFailed = "evidence command failed to launch or exited nonzero"
 
 
 # frob:ticket T-0176

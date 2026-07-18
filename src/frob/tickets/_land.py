@@ -23,7 +23,15 @@ from typani.result import Err, Ok, Result
 
 from frob.gitio import current_branch, run_argv
 from frob.logging import get_logger
-from frob.tickets._models import LandError, LandReport, Ticket, TicketError, TicketState
+from frob.tickets._models import (
+    CMD_EVIDENCE_ALLOWED_KINDS,
+    LandError,
+    LandReport,
+    Ticket,
+    TicketError,
+    TicketState,
+    is_cmd_evidence,
+)
 from frob.tickets._provisional import is_draft_id
 from frob.tickets._store import _parse_ledger, _render_ledger, archive_path, ledger_path
 
@@ -149,15 +157,36 @@ def _validate_closeable(ticket: Ticket) -> Result[None, LandError]:
     enforce anyway -- checked here FIRST, before any git mutation, so a
     landing never merges main into the worktree only to discover at close
     time that it must be unwound (the exact ordering hazard T-0176 exists
-    to close)."""
+    to close). Also re-checks the T-0215 kind-consistency rule
+    (`_transition_guard`'s DONE-path twin): a non-docs-kind ticket carrying
+    any `cmd:` evidence entry -- kind hand-edited after the entry was
+    recorded, or the entry hand-pasted directly into the ledger -- must
+    never land, mirroring the write-time gate in `add_cmd_evidence`."""
     if not ticket.evidence or not _has_done_report(ticket.body):
         _log.error(
             "land: %s cannot land -- missing evidence or a Done report; "
-            "record evidence (`frob ticket evidence %s <node-id>...`) and add "
-            "a '## Done report' section to the ticket body in the worktree, "
-            "then retry `frob ticket land %s`",
+            "record evidence (`frob ticket evidence %s <node-id>...`, or for "
+            "a docs-kind ticket `frob ticket close %s --evidence-cmd "
+            "'<command>'`) and add a '## Done report' section under %s's "
+            "entry in tickets.md, then retry `frob ticket land %s`",
             ticket.id,
             ticket.id,
+            ticket.id,
+            ticket.id,
+            ticket.id,
+        )
+        return Err(LandError.NotCloseable)
+    if ticket.kind not in CMD_EVIDENCE_ALLOWED_KINDS and any(
+        is_cmd_evidence(e) for e in ticket.evidence
+    ):
+        _log.error(
+            "land: %s cannot land -- kind=%s carries cmd: evidence, only "
+            "allowed for kind in %s; fix the ticket's kind or replace the "
+            "cmd: entry with real pytest --evidence node ids, then retry "
+            "`frob ticket land %s`",
+            ticket.id,
+            ticket.kind,
+            sorted(k.value for k in CMD_EVIDENCE_ALLOWED_KINDS),
             ticket.id,
         )
         return Err(LandError.NotCloseable)

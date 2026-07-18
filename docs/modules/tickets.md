@@ -78,6 +78,8 @@ attachments:
 <!-- frob:describes src/frob/tickets/__init__.py::record_failure -->
 <!-- frob:describes src/frob/tickets/__init__.py::attach -->
 <!-- frob:describes src/frob/tickets/__init__.py::add_evidence -->
+<!-- frob:describes src/frob/tickets/__init__.py::run_cmd_evidence -->
+<!-- frob:describes src/frob/tickets/__init__.py::add_cmd_evidence -->
 <!-- frob:describes src/frob/tickets/clipboard.py::clipboard_image -->
 <!-- frob:describes src/frob/tickets/clipboard.py::clipboard_has_image -->
 <!-- frob:describes src/frob/tickets/__init__.py::migrate -->
@@ -116,6 +118,16 @@ def add_evidence(root: Path, ticket_id: str, node_ids: Sequence[str],
     # node ids, supplied by the caller) and appends the resolvable ones;
     # rejects the whole batch as Err(UnknownEvidence) if any id is
     # unresolvable -- closes the COV003-after-close gap at write time.
+def run_cmd_evidence(command: str) -> Result[str, TicketError]
+    # T-0215: runs `command` through the shell and folds exit status + a
+    # stdout digest into one evidence string (`cmd:<command> exit=0
+    # sha256=<12-hex>`); Err(EvidenceCmdFailed) on nonzero exit or launch
+    # failure.
+def add_cmd_evidence(root: Path, ticket_id: str, command: str) -> Result[Ticket, TicketError]
+    # T-0215: kind-gated non-pytest evidence channel for tickets with no
+    # pytest surface of their own -- only kind=docs may use it
+    # (Err(EvidenceKindNotAllowed) otherwise); records `run_cmd_evidence`'s
+    # entry via the same write path as add_evidence.
 def migrate(root: Path) -> Result[int, TicketError]
     # Collapses legacy tickets/*.md files into the single tickets.md ledger.
 def renumber(root: Path) -> Result[int, TicketError]
@@ -440,6 +452,8 @@ class TicketError(ErrorSet):
     BlockerOpen         = "Cannot start: blocked_by contains open tickets"
     WriteFailed         = "Atomic ticket write failed"
     UnknownEvidence     = "Evidence id does not resolve to a collected test"
+    EvidenceKindNotAllowed = "cmd evidence is only allowed for docs-kind tickets"
+    EvidenceCmdFailed   = "evidence command failed to launch or exited nonzero"
 
 class ClipboardError(ErrorSet):
     NoBackend     = "No clipboard backend available on this platform"
@@ -537,7 +551,8 @@ def atomic_write(path: Path, content: str | bytes) -> Result[None, TicketError]
 
 ## Dependencies
 
-- `pydantic`, `typani`; stdlib `subprocess` (clipboard), `hashlib`, `date`.
+- `pydantic`, `typani`; stdlib `subprocess` (clipboard, T-0215 cmd
+  evidence), `hashlib`, `date`.
 - PyYAML (frontmatter) -- already transitively present; pinned direct.
 - No dependency on `frob.graph` (gates join the two; see `docs/rework.md`).
 
@@ -572,6 +587,27 @@ def atomic_write(path: Path, content: str | bytes) -> Result[None, TicketError]
   transition and, on any unresolvable id, refuses the transition
   entirely -- a bad `--evidence` id can never close a ticket on
   unvalidated evidence.
+- `evidence <id> [<pytest-node-id>...] [--evidence-cmd 'command']` and
+  `close <id> [--evidence <id>...] [--evidence-cmd 'command']` (T-0215):
+  the non-pytest evidence channel for docs-kind tickets that have no
+  pytest surface of their own (pure doc/design work, where the old gate
+  forced writing a drift-lock test purely to satisfy close). `--evidence-cmd`
+  runs the given command, records its exit status and a stdout digest as
+  one evidence entry, and is kind-gated -- `add_cmd_evidence` refuses with
+  `Err(EvidenceKindNotAllowed)` for every kind except `docs`, so a
+  bug/feature/security ticket can never close on a shell command's exit
+  status alone; those kinds still require real pytest node ids via
+  `--evidence`/`evidence`. A failing command (nonzero exit, or one that
+  fails to launch) is `Err(EvidenceCmdFailed)` and never gets recorded.
+- Close-failure hints (T-0215): closing a `queued`/`planned` ticket fails
+  `InvalidTransition` with a message naming the remedy (`frob ticket start
+  <id>`); closing without evidence or a Done report fails
+  `MissingEvidence` with a message naming where the Done report belongs
+  (a `## Done report` heading under the ticket's own section in
+  `tickets.md`). `frob ticket start` on an already-in-progress ticket is a
+  hard error naming `frob ticket sweep <id>` as the refresh path, not a
+  silent idempotent no-op -- `sweep` already exists as that mechanism, so a
+  second entry point doing the same thing would just be duplication.
 
 Ticket kinds: feature, bug, security, ux, docs, invariant, incident.
 - `--kind incident` seeds a blameless-postmortem body template (Summary,

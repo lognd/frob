@@ -699,6 +699,14 @@ def _add_ticket_attach_and_lifecycle_end_parsers(ticket_sub) -> list:
         metavar="NODE-ID",
         help="pytest node id to record as evidence before closing (repeatable)",
     )
+    ticket_close_p.add_argument(
+        "--evidence-cmd",
+        dest="ticket_evidence_cmd",
+        metavar="COMMAND",
+        help="non-pytest evidence channel (T-0215): run COMMAND, record its "
+        "exit status and an output digest as evidence before closing -- "
+        "docs-kind tickets only, code kinds still require --evidence node ids",
+    )
     return [ticket_attach_p, ticket_block_p, ticket_close_p]
 
 
@@ -715,7 +723,17 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
         help="append pytest node ids to a ticket's structured evidence list",
     )
     ticket_evidence_p.add_argument("ticket_id", metavar="id")
-    ticket_evidence_p.add_argument("ticket_evidence_ids", metavar="node-id", nargs="+")
+    ticket_evidence_p.add_argument(
+        "ticket_evidence_ids", metavar="node-id", nargs="*", default=[]
+    )
+    ticket_evidence_p.add_argument(
+        "--evidence-cmd",
+        dest="ticket_evidence_cmd",
+        metavar="COMMAND",
+        help="non-pytest evidence channel (T-0215): run COMMAND, record its "
+        "exit status and an output digest as evidence -- docs-kind tickets "
+        "only, code kinds still require pytest node ids",
+    )
 
     ticket_archive_p = ticket_sub.add_parser(
         "archive", help="move done/dropped tickets into tickets-archive.md"

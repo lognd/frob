@@ -192,6 +192,7 @@ class AppConfig(BaseModel):
     ticket_attach_path: Path | None = None
     ticket_json: bool = False
     ticket_evidence_ids: list[str] = []
+    ticket_evidence_cmd: str | None = None
     ticket_old_id: str | None = None
     ticket_new_id: str | None = None
     ticket_dry_run: bool = False
@@ -306,6 +307,7 @@ class AppConfig(BaseModel):
             "ticket_caption",
             "ticket_old_id",
             "ticket_new_id",
+            "ticket_evidence_cmd",
             "test_base",
             "test_fallback",
             "vet_hook",

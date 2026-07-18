@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import hashlib
 import re
+import subprocess
 from collections.abc import Sequence
 from datetime import date
 from pathlib import Path
@@ -20,6 +21,7 @@ from typani.result import Err, Ok, Result
 from frob.logging import get_logger
 from frob.tickets._land import land, splice_ledger
 from frob.tickets._models import (
+    CMD_EVIDENCE_ALLOWED_KINDS,
     Attachment,
     AttachmentSource,
     FailureEntry,
@@ -34,6 +36,7 @@ from frob.tickets._models import (
     TicketQueue,
     TicketSpec,
     TicketState,
+    is_cmd_evidence,
 )
 from frob.tickets._provisional import is_draft_id, mint_draft_id, on_default_branch
 from frob.tickets._store import (
@@ -642,13 +645,31 @@ def _transition_guard(
                 "tickets: %s cannot start, open blockers %s", ticket.id, open_ids
             )
             return Err(TicketError.BlockerOpen)
-    if to == TicketState.DONE and (
-        not ticket.evidence or not _has_done_report(ticket.body)
-    ):
-        _log.warning(
-            "tickets: %s cannot close, missing evidence or Done report", ticket.id
-        )
-        return Err(TicketError.MissingEvidence)
+    if to == TicketState.DONE:
+        if not ticket.evidence or not _has_done_report(ticket.body):
+            _log.warning(
+                "tickets: %s cannot close, missing evidence or Done report",
+                ticket.id,
+            )
+            return Err(TicketError.MissingEvidence)
+        # T-0215 review round 2: a cmd: entry is only ever valid evidence on
+        # a docs-kind ticket (COV003 mirrors this at check time). Re-check
+        # HERE too, not just at add_cmd_evidence write time -- a ticket's
+        # kind can be hand-edited after evidence was recorded, or a cmd:
+        # entry can be hand-pasted directly into the ledger, either of
+        # which would otherwise slip a code-kind ticket through close on
+        # unverifiable evidence.
+        if ticket.kind not in CMD_EVIDENCE_ALLOWED_KINDS and any(
+            is_cmd_evidence(e) for e in ticket.evidence
+        ):
+            _log.warning(
+                "tickets: %s is kind=%s but carries cmd: evidence, only "
+                "allowed for kind in %s",
+                ticket.id,
+                ticket.kind,
+                sorted(k.value for k in CMD_EVIDENCE_ALLOWED_KINDS),
+            )
+            return Err(TicketError.EvidenceKindNotAllowed)
     return Ok(None)
 
 
@@ -755,6 +776,87 @@ def add_evidence(
         len(node_ids),
         len(updated.evidence),
     )
+    return Ok(updated)
+
+
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets_cmd_evidence.py::TestCmdEvidence.test_exit_zero
+# frob:tests tests/test_tickets_cmd_evidence.py::TestCmdEvidence.test_nonzero_exit
+def run_cmd_evidence(command: str) -> Result[str, TicketError]:
+    """Run `command` through the shell and fold its outcome into one evidence
+    string (`cmd:<command> exit=0 sha256=<12-hex>`) -- the non-pytest
+    evidence primitive `add_cmd_evidence` records for docs/design tickets
+    (T-0215). A nonzero exit or a command that fails to launch at all is
+    Err(EvidenceCmdFailed): a broken or never-run command can never
+    masquerade as evidence just by being named. The digest is taken over
+    stdout only (deterministic across whitespace-only stderr noise) so the
+    same command run twice against the same repo state records the same
+    entry instead of appending a new one every time.
+    """
+    try:
+        completed = subprocess.run(
+            command,
+            shell=True,  # noqa: S602 -- caller-supplied vetted command, T-0215
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError as exc:
+        _log.error("tickets: evidence command %r failed to launch: %s", command, exc)
+        return Err(TicketError.EvidenceCmdFailed)
+    if completed.returncode != 0:
+        _log.warning(
+            "tickets: evidence command %r exited %d (stderr tail: %r)",
+            command,
+            completed.returncode,
+            completed.stderr[-500:],
+        )
+        return Err(TicketError.EvidenceCmdFailed)
+    digest = hashlib.sha256(completed.stdout.encode("utf-8")).hexdigest()[:12]
+    entry = f"cmd:{command} exit=0 sha256={digest}"
+    return validate_evidence(entry)
+
+
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets_cmd_evidence.py::TestKindGate.test_docs_kind_closes
+# frob:tests tests/test_tickets_cmd_evidence.py::TestKindGate.test_bug_kind_rejected
+def add_cmd_evidence(
+    root: Path, ticket_id: str, command: str
+) -> Result[Ticket, TicketError]:
+    """Kind-gated non-pytest evidence channel (T-0215): runs `command` via
+    `run_cmd_evidence` and appends the resulting entry to `ticket_id`'s
+    structured evidence list. Only tickets whose `kind` is in
+    `CMD_EVIDENCE_ALLOWED_KINDS` (currently just `docs`) may use this --
+    code-kind tickets (bug/feature/security/ux/invariant/incident) always
+    still require real pytest node ids via `add_evidence`, enforced here
+    with Err(EvidenceKindNotAllowed) so a code change can never close on an
+    unrelated shell command's exit status alone.
+    """
+    loaded = _load_one(root, ticket_id)
+    if loaded.is_err:
+        return Err(loaded.danger_err)
+    ticket = loaded.danger_ok
+
+    if ticket.kind not in CMD_EVIDENCE_ALLOWED_KINDS:
+        _log.warning(
+            "tickets: %s is kind=%s, cmd evidence only allowed for kind in %s",
+            ticket_id,
+            ticket.kind,
+            sorted(k.value for k in CMD_EVIDENCE_ALLOWED_KINDS),
+        )
+        return Err(TicketError.EvidenceKindNotAllowed)
+
+    recorded = run_cmd_evidence(command)
+    if recorded.is_err:
+        return Err(recorded.danger_err)
+    entry = recorded.danger_ok
+
+    merged = ticket.evidence if entry in ticket.evidence else ticket.evidence + (entry,)
+    updated = ticket.model_copy(update={"evidence": merged})
+    write_result = write_ticket(root, updated)
+    if write_result.is_err:
+        return Err(write_result.danger_err)
+    _log.info("tickets: %s recorded cmd evidence (%s)", ticket_id, entry)
     return Ok(updated)
 
 
@@ -892,10 +994,12 @@ __all__ = [
     "TicketQueue",
     "TicketSpec",
     "TicketState",
+    "add_cmd_evidence",
     "add_evidence",
     "archive",
     "attach",
     "doable",
+    "is_cmd_evidence",
     "land",
     "load_active",
     "load_queue",
@@ -904,6 +1008,7 @@ __all__ = [
     "new_ticket",
     "renumber",
     "record_failure",
+    "run_cmd_evidence",
     "splice_ledger",
     "transition",
     "validate_evidence",
