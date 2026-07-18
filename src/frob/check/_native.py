@@ -4,6 +4,8 @@ Private helpers of `frob.check`; `run_check_cpp` and `run_check_rust`
 compose them. Each shells out to one tool and normalises to a `ToolResult`.
 """
 
+# frob:waive TEST005 reason="module line coverage 21.9%, debt T-0160"
+
 from __future__ import annotations
 
 import subprocess

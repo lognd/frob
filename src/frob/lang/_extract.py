@@ -224,6 +224,7 @@ _IMPORT_WALKERS = {
 
 
 # frob:doc docs/modules/lang.md#extraction-api
+# frob:waive TEST005 reason="extract_imports 80.0% branch cover, debt T-0160"
 def extract_imports(tree: Tree, language: str) -> tuple[str, ...]:
     """Raw import/include specifiers for `language` (empty tuple if unsupported)."""
     walker = _IMPORT_WALKERS.get(language)

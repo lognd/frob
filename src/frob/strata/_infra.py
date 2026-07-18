@@ -207,6 +207,7 @@ def _elaborate_cache(
         _log.error("cache %s: neither ttl nor staleness declared", decl.id)
         return Err(StrataError.MissingBound)
 
+    # frob:waive PERF003 reason="list comp plus separate loop below, not a join"
     writes_to_source = [f for f in base_flows if f.dst == decl.of]
     if writes_to_source and not decl.invalidate_on:
         _log.error(
@@ -381,15 +382,20 @@ def _propagate_queue_delivery(
     return tuple(patched)
 
 
+# frob:ticket T-0148
 def _sticky_balancer_diagnostics(
     balancers: tuple[BalancerDecl, ...], nodes: dict[str, Node], flows: tuple[Flow, ...]
 ) -> tuple[str, ...]:
     """A sticky balancer routing to a `state=none` downstream is a contradiction."""
     findings: list[str] = []
+    downstream_by_src: dict[str, set[str]] = {}
+    for flow in flows:
+        downstream_by_src.setdefault(flow.src, set()).add(flow.dst)
     for decl in balancers:
         if not decl.sticky:
             continue
-        downstream_ids = {f.dst for f in flows if f.src == decl.id}
+        downstream_ids = downstream_by_src.get(decl.id, set())
+        # frob:waive PERF004 reason="distinct small per-balancer set, not repeated"
         for dst_id in sorted(downstream_ids):
             dst = nodes.get(dst_id)
             if dst is not None and _STATE_NONE in dst.attrs:

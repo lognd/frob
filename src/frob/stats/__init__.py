@@ -100,6 +100,7 @@ def ticket_stats(queue: TicketQueue) -> TicketStats:
 
 
 # frob:doc docs/modules/stats.md#public-api
+# frob:waive TEST005 reason="commit_stats 80.0% branch cover, debt T-0160"
 def commit_stats(root: Path, window_days: int = 30) -> Result[CommitStats, GitError]:
     """Count commits in the last `window_days` by conventional-commit type."""
     spawned = run_argv(
@@ -137,6 +138,7 @@ def commit_stats(root: Path, window_days: int = 30) -> Result[CommitStats, GitEr
 
 
 # frob:doc docs/modules/stats.md#public-api
+# frob:waive TEST005 reason="collect 83.3% branch cover, debt T-0160"
 def collect(root: Path, window_days: int = 30) -> Result[StatsReport, GitError]:
     """The full `frob stats` report: queue health + commit cadence."""
     queue_result = load_queue(root)

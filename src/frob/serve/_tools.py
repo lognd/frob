@@ -49,6 +49,7 @@ def _load_snapshot(root: Path):  # noqa: ANN202
 
 
 # frob:doc docs/modules/serve.md#tools
+# frob:waive TEST005 reason="frob_doable_tickets 66.7% branch cover, debt T-0160"
 def frob_doable_tickets(root: Path) -> Result[list[dict], ServeError]:
     """Doable tickets (id/title/kind), oldest-first, as JSON-able dicts."""
     queue_result = load_queue(root)
@@ -88,6 +89,7 @@ def _dangling_entries_as_dicts(report) -> list[dict]:  # noqa: ANN001
 
 
 # frob:doc docs/modules/serve.md#tools
+# frob:waive TEST005 reason="frob_stale_docs 69.2% branch cover, debt T-0160"
 def frob_stale_docs(root: Path) -> Result[dict, ServeError]:
     """DRIFT001 stale acks and DRIFT002 dangling edges from the drift report."""
     snapshot_result = _load_snapshot(root)
@@ -116,6 +118,7 @@ def frob_stale_docs(root: Path) -> Result[dict, ServeError]:
 
 
 # frob:doc docs/modules/serve.md#tools
+# frob:waive TEST005 reason="frob_check_scope 81.8% branch cover, debt T-0160"
 def frob_check_scope(root: Path, ticket_id: str) -> Result[dict, ServeError]:
     """Whether the working diff stays within `ticket_id`'s declared scope (SCOPE001)."""
     from frob.gates import GateConfig, run_gates
@@ -153,6 +156,7 @@ def _resolve_symref(
 
 
 # frob:doc docs/modules/serve.md#tools
+# frob:waive TEST005 reason="frob_graph_query 85.7% branch cover, debt T-0160"
 def frob_graph_query(root: Path, symref: str) -> Result[dict, ServeError]:
     """Resolve `symref`; list outgoing/incoming edges, like `frob graph query`."""
     snapshot_result = _load_snapshot(root)
@@ -192,6 +196,7 @@ def _edges_by_kind_value(edges, kind_value: str) -> list:
 
 
 # frob:doc docs/modules/serve.md#tools
+# frob:waive TEST005 reason="frob_doc_for 85.7% branch cover, debt T-0160"
 def frob_doc_for(root: Path, symref: str) -> Result[dict, ServeError]:
     """The doc anchor `symref` links to and the describes-edges pointing at it."""
     snapshot_result = _load_snapshot(root)

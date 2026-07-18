@@ -131,6 +131,7 @@ def test_leading_doc_comment_gathers_block(tmp_path: Path):
     assert leading_doc_comment(fn, COMMENT_TYPES["python"]) == "a leading comment"
 
 
+# frob:waive PERF003 reason="a next()-generator over tree children plus an all()-generator with a range()-index comparison; not a nested join"
 def test_export_tree_and_flatten_tree_round_trip(tmp_path: Path):
     # frob:tests src/frob/lang/_common.py::export_tree kind="unit"
     # frob:tests src/frob/lang/_common.py::flatten_tree kind="unit"

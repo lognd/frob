@@ -15,6 +15,7 @@ fallback (charter D3 as amended; build with `make core`).
 from __future__ import annotations
 
 import importlib
+from collections import Counter
 from dataclasses import dataclass, field
 from types import ModuleType
 
@@ -206,13 +207,16 @@ class FactBase:
         return value, tuple(witness)
 
 
+# frob:ticket T-0148
 def _validate_ids(model: KernelModel) -> Result[None, StrataError]:
     """Every id unique within its kind; every reference resolves."""
     node_ids = [n.id for n in model.nodes]
     flow_ids = [f.id for f in model.flows]
+    # frob:waive PERF004 reason="runs once, only on the fail-closed dupe-id path"
     for kind, ids in (("node", node_ids), ("flow", flow_ids)):
         if len(ids) != len(set(ids)):
-            dupes = sorted({i for i in ids if ids.count(i) > 1})
+            counts = Counter(ids)
+            dupes = sorted(i for i, n in counts.items() if n > 1)
             _log.error("duplicate %s id(s): %s", kind, dupes)
             return Err(StrataError.DuplicateId)
     known_nodes = set(node_ids)

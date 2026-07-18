@@ -29,6 +29,8 @@ runtime-enforcement config skeletons from its `KernelModel`
 seccomp/IAM mapping semantics.
 """
 
+# frob:waive TEST005 reason="module line coverage 0.0%, debt T-0160"
+
 from __future__ import annotations
 
 import sys
@@ -402,6 +404,7 @@ def _run_audit(cfg: AppConfig) -> None:
 # frob:ticket T-0084
 # frob:ticket T-0085
 # frob:ticket T-0086
+# frob:waive TEST005 reason="run 0.0% branch cover, debt T-0160"
 def run(cfg: AppConfig) -> None:
     """Dispatch `frob sys <command>`: `plan` (T-0084), `doc` (T-0085), and
     `export` (T-0086) exist today; roadmap phase 5's `check`/`trace`/

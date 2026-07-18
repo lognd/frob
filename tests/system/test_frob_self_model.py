@@ -83,6 +83,8 @@ class TestFrobSelfModel:
     # frob:tests design/frob.strata::frob.f_vet_core kind="unit"
     # frob:tests design/frob.strata::frob.f_tickets_core kind="unit"
     # frob:tests design/frob.strata::frob.b_vet_endorse kind="unit"
+    # frob:tests strata-core/src/lib.rs kind="integration"
+    # frob:tests strata-core/src/parse.rs kind="integration"
     def test_parses_and_elaborates(self, _model) -> None:
         """Sanity: the model declares a nonzero component/flow/boundary/claim surface."""
         assert len(_model.nodes) == 10

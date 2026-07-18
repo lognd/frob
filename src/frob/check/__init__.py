@@ -8,6 +8,8 @@ the public orchestration surface; the public symbols stay defined here so
 their `frob:doc`/`frob:tests` bindings keep their `__init__.py` symref.
 """
 
+# frob:waive TEST005 reason="module line coverage 79.1%, debt T-0160"
+
 from __future__ import annotations
 
 import concurrent.futures
@@ -141,6 +143,7 @@ class CheckResult(BaseModel):
             lines.append(f"  {icon}  {r.tool:<22}  {r.summary}")
         return "\n".join(lines)
 
+    # frob:waive TEST005 reason="CheckResult.as_json 50.0% branch cover, debt T-0160"
     def as_json(self) -> str:
         # frob:doc docs/commands/check.md#public-api
         """The full structured result as JSON (`--json` CLI output)."""
@@ -312,6 +315,7 @@ def _collect_results(
 
 # frob:ticket T-0028
 # frob:doc docs/commands/check.md#public-api
+# frob:waive TEST005 reason="run_check 83.3% branch cover, debt T-0160"
 def run_check(
     root: Path,
     *,
@@ -368,6 +372,7 @@ def run_check(
 
 
 # frob:doc docs/commands/check.md#public-api
+# frob:waive TEST005 reason="run_check_cpp 50.0% branch cover, debt T-0160"
 def run_check_cpp(
     root: Path,
     *,
@@ -413,6 +418,7 @@ def run_check_cpp(
 
 
 # frob:doc docs/commands/check.md#public-api
+# frob:waive TEST005 reason="run_check_rust 33.3% branch cover, debt T-0160"
 def run_check_rust(
     root: Path,
     *,
@@ -451,6 +457,7 @@ def run_check_rust(
 
 
 # frob:doc docs/commands/check.md#public-api
+# frob:waive TEST005 reason="run_check_ts 58.8% branch cover, debt T-0160"
 def run_check_ts(
     root: Path,
     *,

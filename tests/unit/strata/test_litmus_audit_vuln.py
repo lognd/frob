@@ -52,6 +52,7 @@ class TestAuditVulnGolden:
         assert web.may == ("sql",)
 
     # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness kind="unit"
+    # frob:waive PERF003 reason="two sibling any()-generators over report.gaps, each with its own == filters; not a nested join"
     def test_fires_undischarged_in_security_and_quality(self):
         model = _load_model()
         result = evaluate_exhaustiveness(model)

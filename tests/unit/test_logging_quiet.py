@@ -45,6 +45,10 @@ class TestQuietStdoutLogsReentrance:
 
     def test_interleaved_enter_exit_across_threads_never_sticks(self) -> None:
         # frob:tests src/frob/logging/quiet.py::quiet_stdout_logs kind="unit"
+        # frob:tests src/frob/logging kind="integration"
+        # Exercises quiet_stdout_logs against the real stdlib logging
+        # handler/root-logger state under real thread concurrency, not a
+        # mocked logging subsystem.
         # Deterministic interleaving: thread A enters, thread B enters
         # while A is still inside (so B would have seen A's WARNING as its
         # "saved" level under the old unguarded implementation), A exits

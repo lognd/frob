@@ -4,6 +4,8 @@ Valgrind memcheck output parser.
 Supports both plain text and XML (--xml=yes) output.
 """
 
+# frob:waive TEST005 reason="module line coverage 72.0%, debt T-0160"
+
 from __future__ import annotations
 
 import re

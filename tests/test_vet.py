@@ -595,6 +595,7 @@ class TestCapabilityDiff:
 
 
 class TestEcosystemRules:
+    # frob:waive PERF003 reason="a set comprehension plus a sibling any() generator with == on rule name, not a nested join"
     def test_python_setup_py_cmdclass_flagged(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_ecosystem.py::python_rules kind="unit"
         from frob.gates._models import Severity

@@ -13,6 +13,8 @@ Wiring `run_fuzz` to call bound `kind="fuzz"` test functions is `frob.testing`
 + coordinator work (docs/modules/fuzz.md "Execution and corpus"), not this ticket.
 """
 
+# frob:waive TEST005 reason="module line coverage 83.7%, debt T-0160"
+
 from __future__ import annotations
 
 from collections.abc import Mapping
@@ -93,6 +95,7 @@ def _run_one(tp: type[BaseModel], policy: FuzzPolicy, digest: str) -> FuzzResult
 
 
 # frob:doc docs/modules/fuzz.md#public-api
+# frob:waive TEST005 reason="run_fuzz 71.4% branch cover, debt T-0160"
 def run_fuzz(
     targets: tuple[type[BaseModel], ...],
     budget_s: int,

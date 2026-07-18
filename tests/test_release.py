@@ -88,6 +88,9 @@ def test_required_version_and_satisfies():
 
 def test_release_gate_flags_missing_bump(tmp_path):
     # frob:tests src/frob/gates/__init__.py::release_gate
+    # frob:tests src/frob/release kind="integration"
+    # Drives frob.release's manifest loading, snapshot diffing, and required
+    # version/satisfies check together through the real release_gate caller.
     from frob.gates import release_gate
 
     _write(tmp_path, "def a(x: int) -> int:\n    return x\n")

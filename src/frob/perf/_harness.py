@@ -9,6 +9,8 @@ status reflects the workload, not cProfile.
 Usage: ``python _harness.py <pstats-out> (<script.py>|-m <module>) [args...]``
 """
 
+# frob:waive TEST005 reason="module line coverage 0.0%, debt T-0160"
+
 from __future__ import annotations
 
 import cProfile
@@ -17,6 +19,7 @@ import sys
 
 
 # frob:doc docs/modules/perf.md#integration-points
+# frob:waive TEST005 reason="main 0.0% branch cover, debt T-0160"
 def main() -> int:
     """Profile the target argv, dump stats, and return the workload's code."""
     if len(sys.argv) < 3:

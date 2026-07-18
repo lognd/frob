@@ -7,6 +7,8 @@ at the last completed budgeted run. FUZZ003 compares digests, never
 wall-clock age, so an untouched function never re-obligates.
 """
 
+# frob:waive TEST005 reason="module line coverage 78.4%, debt T-0160"
+
 from __future__ import annotations
 
 import json
@@ -25,6 +27,7 @@ _STAMP_REL = Path(".frob") / "fuzz-stamp.json"
 
 
 # frob:doc docs/modules/fuzz.md#public-api
+# frob:waive TEST005 reason="stamp_fuzz 72.7% branch cover, debt T-0160"
 def stamp_fuzz(root: Path, results: tuple[FuzzResult, ...]) -> Result[Unit, FuzzError]:
     """Record `results`' body digests, merged over any prior stamp at `root`."""
     stamp_path = root / _STAMP_REL
@@ -44,6 +47,7 @@ def stamp_fuzz(root: Path, results: tuple[FuzzResult, ...]) -> Result[Unit, Fuzz
 
 
 # frob:doc docs/modules/fuzz.md#public-api
+# frob:waive TEST005 reason="load_fuzz_stamp 63.6% branch cover, debt T-0160"
 def load_fuzz_stamp(root: Path) -> dict[str, str] | None:
     """The raw `{ref: body_digest}` map from `.frob/fuzz-stamp.json`, or `None`."""
     stamp_path = root / _STAMP_REL

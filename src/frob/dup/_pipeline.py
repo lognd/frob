@@ -82,6 +82,8 @@ Implements docs/modules/dup.md's `find_clones` across the full rung ladder:
   Python).
 """
 
+# frob:waive TEST005 reason="module line coverage 57.9%, debt T-0160"
+
 from __future__ import annotations
 
 import hashlib
@@ -1365,6 +1367,7 @@ def _smt_function_expr(source: str, z3: Any) -> tuple[Any, list[Any]] | None:
 
 
 # frob:doc docs/modules/dup.md#rung-r7
+# frob:waive TEST005 reason="probe_smt_equivalence 66.7% branch cover, debt T-0160"
 def probe_smt_equivalence(
     a: str, b: str, snapshot: GraphSnapshot
 ) -> Result[ProbeVerdict, DupError]:

@@ -272,6 +272,8 @@ class TestErrors:
         langs = supported_languages()
         assert {"python", "typescript", "rust", "c", "cpp"} <= langs
 
+    # frob:waive PERF003 reason="two sibling generator/set comprehensions over one parsed file's symbols/comments, not a nested join"
+
 
 def test_lang_pipeline_integration(tmp_path: Path) -> None:
     # frob:tests src/frob/lang kind="integration"

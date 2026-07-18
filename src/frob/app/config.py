@@ -248,6 +248,7 @@ class AppConfig(BaseModel):
     sys_export_format: str | None = None
     sys_export_path: Path | None = None
 
+    # frob:waive TEST005 reason="from_external 87.2% branch cover, debt T-0160"
     @classmethod
     def from_external(cls, args: argparse.Namespace, file: Path) -> "AppConfig":
         # frob:doc docs/modules/app.md#config

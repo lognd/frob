@@ -51,6 +51,7 @@ class Lattice(BaseModel):
             return Ok(True)
         frontier = {low}
         seen: set[str] = set()
+        # frob:waive PERF003 reason="algorithm-inherent BFS over lattice pairs"
         while frontier:
             current = frontier.pop()
             seen.add(current)
@@ -122,6 +123,7 @@ class Quantity(BaseModel):
             return Err(StrataError.UnknownUnit)
         return Ok(self.value * entry[1])
 
+    # frob:waive TEST005 reason="Quantity.leq 80.0% branch cover, debt T-0160"
     def leq(self, other: Quantity) -> Result[bool, StrataError]:
         """Whether self <= other after conversion to a shared base unit."""
         # frob:doc docs/strata/kernel.md#data-models

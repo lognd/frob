@@ -131,6 +131,7 @@ def _run_git(
 
 
 # frob:doc docs/modules/testing.md#public-api
+# frob:waive TEST005 reason="repo_root 80.0% branch cover, debt T-0160"
 def repo_root(start: Path) -> Result[Path, GitError]:
     """The repo root for `start`; worktree-correct via `rev-parse --show-toplevel`."""
     if not start.exists():
@@ -194,6 +195,7 @@ def _parse_unified_diff(text: str) -> dict[str, list[tuple[int, int]]]:
 
 
 # frob:doc docs/modules/testing.md#public-api
+# frob:waive TEST005 reason="working_diff 87.5% branch cover, debt T-0160"
 def working_diff(root: Path, base: str) -> Result[Diff, GitError]:
     """The delta from `merge-base(HEAD, base)` to the working tree (committed
     since merge-base, plus staged, unstaged, and untracked whole-file hunks)."""

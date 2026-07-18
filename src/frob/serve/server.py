@@ -6,6 +6,8 @@ and `frob serve --help`) even in environments where the `mcp` SDK is not
 installed; only `build_server`/`run_stdio` require it.
 """
 
+# frob:waive TEST005 reason="module line coverage 76.6%, debt T-0160"
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -89,6 +91,7 @@ def build_server(root: Path):  # noqa: ANN201
 
 
 # frob:doc docs/modules/serve.md#mcp-sdk
+# frob:waive TEST005 reason="run_stdio 50.0% branch cover, debt T-0160"
 def run_stdio(root: Path) -> None:
     """Build the server and block, serving tool calls over stdio transport."""
     server = build_server(root)

@@ -156,6 +156,7 @@ def language_for(path: Path) -> str | None:
 
 
 # frob:doc docs/modules/vet.md#public-api
+# frob:waive TEST005 reason="scan_file_capabilities 76.9% branch cover, debt T-0160"
 def scan_file_capabilities(path: Path) -> frozenset[str]:
     """Capability tokens observed in one source file's raw text."""
     language = language_for(path)

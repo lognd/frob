@@ -11,6 +11,8 @@ declarations -- duplicate ids and dangling references.
 
 from __future__ import annotations
 
+from collections import Counter
+
 from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
@@ -230,6 +232,7 @@ def _validate_scenarios(module: Module) -> Result[None, StrataError]:
                     )
                     return Err(StrataError.UnknownReference)
                 if rewrite.level not in trust_levels:
+                    # frob:waive PERF004 reason="runs only on the fail-closed err path"
                     _log.error(
                         "scenario %s: trust level %r is not in the trust lattice %s",
                         scenario.id,
@@ -283,6 +286,7 @@ def _elaborate_secrets(
     return Ok(tuple(expansions))
 
 
+# frob:ticket T-0148
 def _validate_no_duplicates(module: Module) -> Result[None, StrataError]:
     """Node ids and flow ids must each be unique within their own kind.
 
@@ -297,7 +301,8 @@ def _validate_no_duplicates(module: Module) -> Result[None, StrataError]:
         ("secret", [s.id for s in module.secrets]),
     ):
         if len(ids) != len(set(ids)):
-            dupes = sorted({i for i in ids if ids.count(i) > 1})
+            counts = Counter(ids)
+            dupes = sorted(i for i, n in counts.items() if n > 1)
             _log.error("duplicate %s id(s) in module %s: %s", kind, module.name, dupes)
             return Err(StrataError.DuplicateId)
     return Ok(None)
@@ -325,6 +330,7 @@ def _validate_references(module: Module) -> Result[None, StrataError]:
     known_nodes |= {b.id for b in module.balancers}
     known_nodes |= {s.id for s in module.secrets}
     known_flows = {f.id for f in module.flows}
+    # frob:waive PERF003 reason="two separate single-pass loops, set checks, not a join"
     for boundary in module.boundaries:
         if boundary.flow_id not in known_flows:
             _log.error(

@@ -17,6 +17,7 @@ def _make_pkg(tmp_path: Path, files: dict[str, str]) -> Path:
 
 class TestExportsBasic:
     def test_shows_import_line(self, tmp_path):
+        # frob:tests src/frob/exports kind="integration"
         pkg = _make_pkg(tmp_path, {"mod.py": "def foo(): ...\ndef bar(): ...\n"})
         r = run("exports", str(pkg))
         assert r.returncode == 0
@@ -103,6 +104,7 @@ class TestExportsFlags:
         r = run("exports", str(pkg), "--json")
         data = json.loads(r.stdout)
         all_symbols = [s for m in data["modules"] for s in m["symbols"]]
+        # frob:waive PERF001 reason="one membership check against a list built once in a two-clause comprehension over tiny fixture data, not a hot loop"
         assert "alpha" in all_symbols
 
 

@@ -108,6 +108,7 @@ def _find_block_end(lines: list[str], start: int) -> int:
         # mistaken for this one's block open.
         return start
     depth = 0
+    # frob:waive PERF002 reason="str.count of braces per line, not a list scan"
     for i in range(start, len(lines)):
         code = _code_only(lines[i])
         depth += code.count("{") - code.count("}")
@@ -135,6 +136,7 @@ def _extract_symbols(lines: list[str]) -> tuple[RawSymbol, ...]:
     """One `RawSymbol` per matched top-level header line, module-qualified."""
     out: list[RawSymbol] = []
     module_name: str | None = None
+    # frob:waive PERF003 reason="calls a helper with its own loop, not a join"
     for idx, line in enumerate(lines):
         match = _HEADER_RE.match(line)
         if match is None:

@@ -1,5 +1,7 @@
 """CLI wiring for `frob ack <ref...> [--facet]` (docs/modules/graph.md)."""
 
+# frob:waive TEST005 reason="module line coverage 0.0%, debt T-0160"
+
 from __future__ import annotations
 
 import sys
@@ -70,6 +72,7 @@ def _acknowledge_and_write(cfg: AppConfig, lock, snapshot, lock_path: Path) -> N
 
 
 # frob:doc docs/modules/app.md#runners
+# frob:waive TEST005 reason="run 0.0% branch cover, debt T-0160"
 def run(cfg: AppConfig) -> None:
     """Load (building if the cache is stale), acknowledge refs, and write the lock."""
     if not cfg.ack_refs:

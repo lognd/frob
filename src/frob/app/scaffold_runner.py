@@ -1,3 +1,4 @@
+# frob:waive TEST005 reason="module line coverage 0.0%, debt T-0160"
 from __future__ import annotations
 
 import sys
@@ -11,6 +12,7 @@ _log = get_logger(__name__)
 
 
 # frob:doc docs/modules/app.md#runners
+# frob:waive TEST005 reason="run 0.0% branch cover, debt T-0160"
 def run(cfg: AppConfig) -> None:
     cmd = cfg.scaffold_command
     if cmd in ("list", None):

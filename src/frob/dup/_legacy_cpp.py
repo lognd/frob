@@ -4,6 +4,8 @@ Mirrors `_legacy_py` for the tree-sitter C++ grammar: declarator-name
 harvesting for locals, body serialization, and a function-node walker.
 """
 
+# frob:waive TEST005 reason="module line coverage 15.2%, debt T-0160"
+
 from __future__ import annotations
 
 from collections.abc import Iterator

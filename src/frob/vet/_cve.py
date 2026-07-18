@@ -378,6 +378,7 @@ def _match_record_dependency(
 
 
 # frob:doc docs/modules/vet.md#public-api
+# frob:waive TEST005 reason="match_deps_against_mirror 88.9% branch cover, debt T-0160"
 def match_dependencies_against_mirror(
     deps: tuple[Dependency, ...], mirror_root: Path
 ) -> Result[tuple[CveMatch, ...], VetError]:

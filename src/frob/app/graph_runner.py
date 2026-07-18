@@ -1,5 +1,7 @@
 """CLI wiring for `frob graph build|query|why` (docs/modules/graph.md)."""
 
+# frob:waive TEST005 reason="module line coverage 0.0%, debt T-0160"
+
 from __future__ import annotations
 
 import sys
@@ -14,6 +16,7 @@ _CACHE_REL = Path(".frob") / "cache.db"
 
 
 # frob:doc docs/modules/app.md#runners
+# frob:waive TEST005 reason="run 0.0% branch cover, debt T-0160"
 def run(cfg: AppConfig) -> None:
     """Dispatch to build/query/why based on `cfg.graph_command`."""
     root = (cfg.graph_path or Path(".")).resolve()

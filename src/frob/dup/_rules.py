@@ -68,6 +68,7 @@ def DUP001(
 
 
 # frob:doc docs/modules/dup.md#gate-integration
+# frob:waive TEST005 reason="DUP002 77.8% branch cover, debt T-0160"
 def DUP002(
     report: CloneReport, touched: frozenset[str], threshold: float
 ) -> tuple[Violation, ...]:

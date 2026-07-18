@@ -114,6 +114,7 @@ def _build_entries(totals: dict[str, dict[str, float | int]]) -> list[HeatEntry]
 
 # frob:doc docs/modules/perf.md#public-api
 # frob:ticket T-0021
+# frob:waive TEST005 reason="heat 76.9% branch cover, debt T-0160"
 def heat(artifact: ProfileArtifact, snapshot: GraphSnapshot) -> HeatReport:
     """Join `artifact`'s pstats rows onto `snapshot`'s symbol spans, ranked
     by cumulative time desc. `HeatEntry.smells` is always empty here --
@@ -154,6 +155,7 @@ def join_smells(
 
 # frob:doc docs/modules/perf.md#public-api
 # frob:ticket T-0021
+# frob:waive TEST005 reason="render_bar 80.0% branch cover, debt T-0160"
 def render_bar(cum_s: float, max_s: float, *, color: bool | None = None) -> str:
     """An ASCII `#`-block bar sized to `cum_s / max_s`, painted yellow when
     `color` (or `should_color()` when `color` is `None`)."""

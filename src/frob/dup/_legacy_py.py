@@ -6,6 +6,8 @@ recursion shallow by delegating each statement/parameter shape to a small
 handler rather than nesting the branches inline.
 """
 
+# frob:waive TEST005 reason="module line coverage 79.4%, debt T-0160"
+
 from __future__ import annotations
 
 from collections.abc import Iterator

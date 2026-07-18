@@ -115,6 +115,7 @@ class TestElaborateScenario:
 
 class TestEvaluateScenarios:
     # frob:tests src/frob/strata/_scenarios.py::evaluate_scenarios kind="unit"
+    # frob:waive PERF003 reason="a list comprehension plus a sibling all()-generator over scenarios, each independent; not a nested join"
     def test_evaluates_every_scenario_in_declaration_order(self):
         module = parse_module(_MODULE_TEXT).danger_ok
         model = elaborate(module).danger_ok

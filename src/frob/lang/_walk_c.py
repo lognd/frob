@@ -8,6 +8,8 @@ is threaded through the walk in a `_Ctx` (never a module global -- the parser
 runs under `frob.check`'s thread pool).
 """
 
+# frob:waive TEST005 reason="module line coverage 69.9%, debt T-0160"
+
 from __future__ import annotations
 
 from dataclasses import dataclass

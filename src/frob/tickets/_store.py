@@ -18,6 +18,8 @@ The public `Ticket` / `TicketQueue` shapes are identical across both, so
 frob.gates and the CLI never see the difference.
 """
 
+# frob:waive TEST005 reason="module line coverage 84.8%, debt T-0160"
+
 from __future__ import annotations
 
 import os
@@ -143,6 +145,7 @@ def _validate(data: dict, body: str, where: str) -> Result[Ticket, TicketError]:
 
 
 # frob:doc docs/modules/tickets.md#storage-internals
+# frob:waive TEST005 reason="parse_ticket_file 80.0% branch cover, debt T-0160"
 def parse_ticket_file(path: Path) -> Result[Ticket, TicketError]:
     """Split a legacy ticket file into frontmatter + body and validate it."""
     text = path.read_text(encoding="utf-8")
@@ -272,6 +275,7 @@ def write_archive(root: Path, tickets: dict[str, Ticket]) -> Result[None, Ticket
 
 
 # frob:doc docs/modules/tickets.md#storage-internals
+# frob:waive TEST005 reason="write_ticket 85.7% branch cover, debt T-0160"
 def write_ticket(root: Path, ticket: Ticket) -> Result[None, TicketError]:
     """Upsert one ticket into whichever backend the repo uses (atomic)."""
     if store_mode(root) == "single":
@@ -310,6 +314,7 @@ def _prune_stale_files(root: Path, keep_files: set[Path]) -> None:
 
 
 # frob:doc docs/modules/tickets.md#storage-internals
+# frob:waive TEST005 reason="migrate_to_ledger 77.8% branch cover, debt T-0160"
 def migrate_to_ledger(root: Path) -> Result[int, TicketError]:
     """Collapse a legacy tickets/*.md layout into a single tickets.md ledger.
 
@@ -339,6 +344,7 @@ def migrate_to_ledger(root: Path) -> Result[int, TicketError]:
 
 
 # frob:doc docs/modules/tickets.md#storage-internals
+# frob:waive TEST005 reason="atomic_write 56.2% branch cover, debt T-0160"
 def atomic_write(path: Path, content: str | bytes) -> Result[None, TicketError]:
     """Write content via temp file + os.replace in the same directory (crash-safe)."""
     path.parent.mkdir(parents=True, exist_ok=True)

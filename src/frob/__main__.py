@@ -1,3 +1,4 @@
+# frob:waive TEST005 reason="module line coverage 0.0%, debt T-0160"
 from __future__ import annotations
 
 import argparse
@@ -973,6 +974,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 # frob:doc docs/modules/app.md#entry-point
+# frob:waive TEST005 reason="main 0.0% branch cover, debt T-0160"
 def main() -> None:
     import sys as _sys
 

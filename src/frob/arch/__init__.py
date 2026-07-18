@@ -8,6 +8,8 @@ language-agnostic large-file check, and the orchestration that fans each
 parsed file out to its language's checks.
 """
 
+# frob:waive TEST005 reason="module line coverage 83.1%, debt T-0160"
+
 from __future__ import annotations
 
 from dataclasses import dataclass

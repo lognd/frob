@@ -25,6 +25,7 @@ INSTALL_HINT = (
 
 
 # frob:doc docs/modules/dup.md#rust-core
+# frob:waive TEST005 reason="core_available 66.7% branch cover, debt T-0160"
 @lru_cache(maxsize=1)
 def core_available() -> bool:
     """Whether the compiled `frob_core` extension is importable, cached once."""

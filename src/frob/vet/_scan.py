@@ -5,6 +5,8 @@ Runs VET001 (allow conformance), VET011 (cooldown quarantine), VET-JS
 over every dependency in the project's lockfile.
 """
 
+# frob:waive TEST005 reason="module line coverage 66.1%, debt T-0160"
+
 from __future__ import annotations
 
 import hashlib
@@ -413,6 +415,7 @@ def _osv_violations(
 
 
 # frob:doc docs/modules/vet.md#public-api
+# frob:waive TEST005 reason="scan_tree 84.0% branch cover, debt T-0160"
 def scan_tree(root: Path, *, fetch: bool = True) -> Result[VetReport, VetError]:
     """Full-lockfile vet pass: allow conformance, quarantine, typosquat,
     JS lifecycle scripts, and the optional osv-scanner adapter."""

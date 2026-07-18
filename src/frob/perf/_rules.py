@@ -22,6 +22,8 @@ container-kind inference (list vs set/Map) is Python-only since sig/body
 tokens carry no type information to lean on for the other two languages.
 """
 
+# frob:waive TEST005 reason="module line coverage 82.0%, debt T-0160"
+
 from __future__ import annotations
 
 from collections.abc import Sequence

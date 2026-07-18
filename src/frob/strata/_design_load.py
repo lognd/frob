@@ -117,6 +117,7 @@ def _strata_files(
 # frob:tests tests/unit/strata/test_design_load.py::TestLoadIds.test_no_dir_empty
 # frob:tests tests/unit/strata/test_design_load.py::TestLoadIds.test_bad_file_reported
 # frob:tests tests/unit/strata/test_design_load.py::TestLoadIds.test_excluded_no_ids
+# frob:waive TEST005 reason="load_design_ids 78.8% branch cover, debt T-0160"
 def load_design_ids(root: Path, design_dir: str = DEFAULT_DESIGN_DIR) -> DesignIds:
     """Parse+elaborate every `.strata` file under `root/design_dir` and merge
     their Flow/Boundary/Secret-clearance-Node ids into one `DesignIds`.

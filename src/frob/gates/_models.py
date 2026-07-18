@@ -60,6 +60,19 @@ class Violation(BaseModel):
     line: int
     message: str
     waived: WaiverRef | None = None
+    # frob:ticket T-0148
+    # Set only where a violation is precisely about ONE symbol (currently
+    # TEST005's per-symbol branch-coverage check) so `_match_waiver` can
+    # require an exact `path::qualname` waiver match instead of the
+    # file-wide match every other rule still uses -- without this,
+    # `frob:waive` placement above a specific symbol is cosmetic: the
+    # match still falls back to file-only equality and one directive
+    # waives every violation of that rule anywhere in the file (the
+    # blanket-waiver bug T-0148's review caught). Left None for rules
+    # that are inherently file/module-scoped (module-line TEST005,
+    # PERF, TEST006, ...), where a file-level waiver is the correct and
+    # intentional precision, not a shortcut.
+    symref: str | None = None
 
 
 # frob:doc docs/modules/gates.md#data-models
@@ -145,6 +158,17 @@ class CoverageData(BaseModel):
     source_sha: str
     symbol_branch: Mapping[str, float] = {}
     module_line: Mapping[str, float] = {}
+    # frob:ticket T-0148
+    # False only when coverage.xml had classes AND the repo had known source
+    # paths to join against, but every re-rooting strategy _parse_classes
+    # tried (every <sources><source> entry, then the bare filename fallback)
+    # matched zero of them -- the "silent zero-match" failure mode this
+    # ticket exists to make loud instead of quiet. True is also the
+    # trivially-correct value when there was nothing to join (no classes,
+    # or no known paths to check against).
+    root_join_ok: bool = True
+    # The exact roots `_parse_classes` tried, in order, for diagnostics.
+    attempted_roots: tuple[str, ...] = ()
 
 
 # frob:doc docs/modules/gates.md#error-types

@@ -281,6 +281,7 @@ def extract_imports(path: Path) -> Result[tuple[str, ...], LangError]:
 
 
 # frob:doc docs/modules/graph.md#public-api
+# frob:waive TEST005 reason="iter_identifiers 75.0% branch cover, debt T-0160"
 def iter_identifiers(path: Path) -> Result[tuple[tuple[str, int], ...], LangError]:
     """(name, 1-based line) for every identifier-like leaf token in `path`.
 
@@ -367,6 +368,7 @@ def symbol_tree(path: Path, span: tuple[int, int]) -> Result[TreeNode, LangError
 
 
 # frob:doc docs/modules/graph.md#public-api
+# frob:waive TEST005 reason="resolve_local_import 57.1% branch cover, debt T-0160"
 def resolve_local_import(
     specifier: str, language: str, *, file_dir: Path, root: Path
 ) -> str | None:

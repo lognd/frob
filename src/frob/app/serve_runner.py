@@ -1,5 +1,7 @@
 """CLI wiring for `frob serve` (docs/modules/serve.md): the stdio MCP adapter."""
 
+# frob:waive TEST005 reason="module line coverage 78.6%, debt T-0160"
+
 from __future__ import annotations
 
 import sys
@@ -12,6 +14,7 @@ _log = get_logger(__name__)
 
 
 # frob:doc docs/modules/serve.md#mcp-sdk
+# frob:waive TEST005 reason="run 83.3% branch cover, debt T-0160"
 def run(cfg: AppConfig) -> None:
     """Start the stdio MCP server rooted at `cfg.serve_path`, exit 1 if unavailable."""
     from frob.serve.server import McpUnavailable, run_stdio

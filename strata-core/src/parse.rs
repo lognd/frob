@@ -1928,8 +1928,10 @@ mod tests {
     }
 
     #[test]
+    // frob:ticket T-0148
     fn parses_bare_module() {
         // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // frob:tests strata-core/src/parse.rs::parse_source_impl kind="unit"
         let v = ok("module payments");
         assert_eq!(v["name"], "payments");
         assert_eq!(v["nodes"].as_array().unwrap().len(), 0);

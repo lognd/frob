@@ -7,6 +7,8 @@ docstring names this exact reuse contract ("the small public wrapper
 `frob.testing` reuses ... never a second copy").
 """
 
+# frob:waive TEST005 reason="module line coverage 84.0%, debt T-0160"
+
 from __future__ import annotations
 
 import hashlib
@@ -161,6 +163,7 @@ def _choose_meta_path(perf_dir: Path, ref: str | None) -> Result[Path, PerfError
 
 # frob:doc docs/modules/perf.md#public-api
 # frob:ticket T-0021
+# frob:waive TEST005 reason="load_artifact 68.8% branch cover, debt T-0160"
 def load_artifact(
     root: Path, ref: str | None = None
 ) -> Result[ProfileArtifact, PerfError]:

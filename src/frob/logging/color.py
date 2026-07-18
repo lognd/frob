@@ -31,6 +31,7 @@ DIM = "2"
 
 
 # frob:doc docs/modules/logging.md#public-api
+# frob:waive TEST005 reason="should_color 71.4% branch cover, debt T-0160"
 def should_color(stream: IO[str] | None = None) -> bool:
     """Whether ANSI color belongs on `stream` (default stdout) right now."""
     if "NO_COLOR" in os.environ:

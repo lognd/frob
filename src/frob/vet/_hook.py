@@ -4,6 +4,8 @@ pre-install-relevant checks (quarantine + typosquat) against the named
 packages directly, since they are not in a lockfile yet.
 """
 
+# frob:waive TEST005 reason="module line coverage 84.7%, debt T-0160"
+
 from __future__ import annotations
 
 import re
@@ -138,6 +140,7 @@ def _collect_packages(pkg_tokens: list[str], strip: _Strip) -> list[tuple[str, s
 
 
 # frob:doc docs/modules/vet.md#public-api
+# frob:waive TEST005 reason="parse_hook_command 75.0% branch cover, debt T-0160"
 def parse_hook_command(command: str) -> tuple[str, tuple[tuple[str, str], ...]] | None:
     """Parse a shell command string for install-shaped invocations.
     Returns `(ecosystem, ((name, version_or_empty), ...))`, or `None` if the
@@ -229,6 +232,7 @@ def _quarantine_verdict(
 
 
 # frob:doc docs/modules/vet.md#public-api
+# frob:waive TEST005 reason="check_package 62.5% branch cover, debt T-0160"
 def check_package(
     ecosystem: str, name: str, version: str, *, root: Path
 ) -> HookVerdict:

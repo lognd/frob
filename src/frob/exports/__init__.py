@@ -26,6 +26,7 @@ class ExportsResult(BaseModel):
     package_dir: str
     modules: list[ModuleExports]
 
+    # frob:waive TEST005 reason="ExportsResult.as_text 80.0% branch cover, debt T-0160"
     def as_text(self) -> str:
         # frob:doc docs/commands/exports.md#public-api
         # Find which symbol names are duplicated across modules
@@ -54,10 +55,12 @@ class ExportsResult(BaseModel):
             lines.append(f"from {mod.module} import {', '.join(parts)}")
         lines.append("")
         if all_exported:
+            # frob:waive PERF004 reason="one sort of all_exported, not per-iteration"
             quoted = ", ".join(f'"{n}"' for n in sorted(all_exported))
             lines.append(f"__all__ = [{quoted}]")
         return "\n".join(lines)
 
+    # frob:waive TEST005 reason="ExportsResult.as_json 50.0% branch cover, debt T-0160"
     def as_json(self) -> str:
         # frob:doc docs/commands/exports.md#public-api
         return self.model_dump_json(indent=2)

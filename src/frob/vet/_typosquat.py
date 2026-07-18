@@ -35,6 +35,7 @@ def damerau_levenshtein(a: str, b: str) -> int:
 
 
 # frob:doc docs/modules/vet.md#public-api
+# frob:waive TEST005 reason="find_typosquat 85.7% branch cover, debt T-0160"
 def find_typosquat(ecosystem: str, name: str) -> str | None:
     """The popular-list name `name` is a likely typosquat of, or `None`."""
     popular = ECOSYSTEM_POPULAR.get(ecosystem)

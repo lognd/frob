@@ -115,6 +115,7 @@ def _cyclic_edges(
     return nodes, edges
 
 
+# frob:waive PERF004 reason="one sort per adjacency list to make BFS traversal order deterministic, not resorted per iteration; oracle only runs over hypothesis-generated small graphs"
 def _bfs_oracle(
     nodes: tuple[str, ...],
     edges: list[tuple[str, str, str, bool]],
@@ -159,6 +160,7 @@ def _assert_valid_witness(
         assert node_positions[idx + 1] == expected_dst
 
 
+# frob:waive PERF003 reason="dict/set comprehensions over the oracle output plus a real BFS-walk loop, over hypothesis-generated small graphs; not a cross join"
 @settings(max_examples=60, deadline=None)
 @given(_plain_edges(), st.booleans())
 def test_reachable_matches_bfs_oracle(graph, through_barriers) -> None:

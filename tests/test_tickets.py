@@ -781,6 +781,7 @@ class TestSingleFileLedger:
         assert result.is_err
         assert result.danger_err == TicketError.MalformedFrontmatter
 
+    # frob:waive PERF003 reason="fixture-setup for-loop plus a final set-comprehension equality assert, not a nested join"
     def test_migrate_collapses_dir_into_ledger(self, tmp_path):
         from datetime import date
 

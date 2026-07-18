@@ -72,6 +72,7 @@ type AgedEdge = (String, String, String, f64);
 /// Depth-first search for a cycle through `start` (following forward
 /// out-edges) whose accumulated age is strictly positive. Returns the cycle
 /// witness (node/flow ids from `start` back to `start`) when found.
+// frob:waive PERF001 reason="active.contains is a HashSet<String> lookup, already O(1)"
 fn find_positive_cycle(
     start: &str,
     node: &str,
@@ -142,6 +143,7 @@ fn has_positive_cycle_reaching(
 /// context-dependent nondeterminism, so every helper here is deterministic
 /// by construction, not by accident).
 #[allow(clippy::too_many_arguments)]
+// frob:waive PERF001 reason="indices/on_stack membership checks are HashMap/HashSet lookups, already O(1)"
 fn strongconnect(
     v: &str,
     outgoing: &HashMap<&str, Vec<&AgedEdge>>,
@@ -232,6 +234,7 @@ fn compute_sccs(
 /// #age-propagation-semantics): any intra-SCC edge lies on a cycle, so a
 /// positive one would already have triggered the `+inf` case. Used only to
 /// stitch together the witness path; never to compute the age itself.
+// frob:waive PERF001 reason="visited.contains is a HashSet<String> lookup, already O(1)"
 fn zero_weight_path(
     from: &str,
     to: &str,
@@ -294,6 +297,8 @@ fn zero_weight_path(
 /// case, returning `+inf` with the cycle witness). Condensing to SCCs and
 /// running longest-path DP over the resulting DAG in topological order is
 /// then exact -- no caller-context-dependent memoization anywhere.
+// frob:waive PERF001 reason="can_reach_target.contains is a HashSet<String> lookup, already O(1)"
+// frob:waive PERF003 reason="outer loop over incoming edges per node plus a HashSet contains check, not a nested join"
 #[pyfunction]
 fn worst_age(edges: Vec<AgedEdge>, target: String) -> (f64, Vec<String>) {
     // frob:doc docs/strata/kernel.md#strata-core
@@ -489,6 +494,8 @@ type DemandEdge = (String, String, String, Option<f64>, f64);
 /// on flows without declared rates and (b) is reachable, forward, from
 /// some node with a declared outbound rate (`reach`) -- the documented v0
 /// unboundedness rule.
+// frob:waive PERF001 reason="active is the recursion call stack, bounded by graph depth, not a hot lookup table"
+// frob:waive PERF003 reason="active[pos..].iter().any over the small in-progress call stack, not a nested join"
 #[allow(clippy::too_many_arguments)]
 fn compute_demand(
     node: &str,

@@ -1,6 +1,8 @@
 """CLI wiring for `frob test [--all] [--base REF] [--lang L] [--fallback MODE]`
 (docs/modules/testing.md)."""
 
+# frob:waive TEST005 reason="module line coverage 0.0%, debt T-0160"
+
 from __future__ import annotations
 
 import sys
@@ -182,6 +184,7 @@ def _run_selected_and_report(cfg: AppConfig, report, runners, root: Path) -> Non
         sys.exit(1)
 
 
+# frob:waive TEST005 reason="run 0.0% branch cover, debt T-0160"
 def run(cfg: AppConfig) -> None:
     """Compute the touched set (or run everything with --all) and run the tests."""
     root = _resolve_test_root(cfg)

@@ -10,6 +10,8 @@ confusion resolution, are noted inline and left for a follow-up ticket
 rather than half-implemented against data this scan doesn't have).
 """
 
+# frob:waive TEST005 reason="module line coverage 83.0%, debt T-0160"
+
 from __future__ import annotations
 
 from pathlib import Path

@@ -64,6 +64,7 @@ def _connect(root: Path) -> Result[sqlite3.Connection, DupError]:
 
 
 # frob:doc docs/modules/dup.md#caching
+# frob:waive TEST005 reason="get_fingerprint 85.7% branch cover, debt T-0160"
 def get_fingerprint(root: Path, digest: str, rung: str) -> tuple[object, ...] | None:
     """The cached fingerprint payload for `digest`/`rung`, or None on a miss."""
     conn_r = _connect(root)
@@ -131,6 +132,7 @@ def get_verdict(
 
 
 # frob:doc docs/modules/dup.md#caching
+# frob:waive TEST005 reason="put_verdict 71.4% branch cover, debt T-0160"
 def put_verdict(
     root: Path,
     d1: str,

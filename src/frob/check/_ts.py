@@ -6,6 +6,8 @@ vacuous-pass doctrine, a missing tool must be a loud failure, not a silent
 skip that vanishes the whole stage from the report).
 """
 
+# frob:waive TEST005 reason="module line coverage 30.4%, debt T-0160"
+
 from __future__ import annotations
 
 import subprocess

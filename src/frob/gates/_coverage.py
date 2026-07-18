@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import posixpath
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -72,16 +73,133 @@ def _parse_class_lines(class_el: ET.Element) -> dict[int, tuple[int, int]]:
     return line_hits
 
 
+def _parse_sources(root_el: ET.Element) -> tuple[str, ...]:
+    """The `<sources><source>...</source></sources>` roots Cobertura declared.
+
+    `coverage.py`'s `--cov-report=xml` writer emits these precisely so a
+    reader can re-root `<class filename="...">` (relative to whatever
+    `--cov=` target was measured) back to real repo paths. Text is
+    whitespace-stripped; empty entries are dropped.
+    """
+    sources_el = root_el.find("sources")
+    if sources_el is None:
+        return ()
+    roots: list[str] = []
+    for source_el in sources_el.findall("source"):
+        text = (source_el.text or "").strip()
+        if text:
+            roots.append(text)
+    return tuple(roots)
+
+
+def _repo_relative_root(source: str, repo_root: Path) -> str | None:
+    """A `<source>` entry made repo-relative and posix-normalized.
+
+    `source` may be an absolute path (the common case -- coverage.py
+    resolves `--cov=src/frob` to an absolute directory at run time) or
+    already relative. An absolute source outside `repo_root` cannot be
+    re-rooted (a different checkout, a CI-only path) and is dropped
+    rather than guessed at.
+    """
+    source_path = Path(source)
+    if source_path.is_absolute():
+        try:
+            rel = source_path.relative_to(repo_root.resolve())
+        except ValueError:
+            return None
+        return rel.as_posix()
+    return Path(source).as_posix().removeprefix("./")
+
+
+def _join_candidate(root: str, raw_filename: str) -> str:
+    """`root/raw_filename`, posix-joined and normalized (no `root=""` case)."""
+    if not root:
+        return raw_filename
+    return posixpath.normpath(f"{root}/{raw_filename}")
+
+
+def _score_root(
+    classes: tuple[tuple[str, ET.Element], ...],
+    root: str,
+    known_paths: frozenset[str],
+) -> int:
+    """How many `<class>` filenames `root` joins onto a real, known path."""
+    return sum(
+        1
+        for raw_filename, _el in classes
+        if _join_candidate(root, raw_filename) in known_paths
+    )
+
+
+_ParsedClasses = tuple[
+    dict[str, float], dict[str, dict[int, tuple[int, int]]], bool, tuple[str, ...]
+]
+
+
 def _parse_classes(
-    root_el: ET.Element,
-) -> tuple[dict[str, float], dict[str, dict[int, tuple[int, int]]]]:
-    """`(module_line%, per-file line-hit maps)` over every `<class>` element."""
+    root_el: ET.Element, repo_root: Path, known_paths: frozenset[str]
+) -> _ParsedClasses:
+    """`(module_line%, per-file line-hit maps, join_ok, roots_tried)`.
+
+    Cobertura `<class filename="...">` attributes are relative to whatever
+    `--cov=` target produced the report (e.g. `app/ack_runner.py` for this
+    repo's `pytest --cov=src/frob`) -- NOT necessarily repo-relative, which
+    is what every other path in `frob.graph` is (`src/frob/app/ack_runner.py`),
+    and thus what every `frob:waive`/`frob:doc`/etc directive binds against
+    and what `_symbol_branch` below joins on via `record.id.path`.
+
+    This gate ships in and runs against many sibling repos with different
+    package roots, so a single hardcoded prefix silently reproduces T-0148's
+    original zero-match bug in every repo but this one. Instead: read the
+    `<sources><source>` root(s) Cobertura itself declares, try joining each
+    class filename against each one (PRIMARY), score each root by how many
+    classes it actually resolves to a known repo path, and use the
+    highest-scoring root. If no `<source>` entry scores (missing, or none
+    resolve), fall back to the bare filename as-is (FALLBACK -- covers
+    repos whose coverage config already emits repo-relative paths). If
+    BOTH strategies resolve zero classes while there were classes to
+    resolve and known paths to resolve against, that is reported via the
+    `join_ok=False` return value rather than silently producing an empty
+    map -- `frob.gates`' TEST008 turns that into a loud violation.
+    """
+    classes = tuple(
+        (class_el.get("filename", ""), class_el)
+        for class_el in root_el.iter("class")
+        if class_el.get("filename", "")
+    )
+    declared_roots = _parse_sources(root_el)
+    candidate_roots = [
+        rel
+        for rel in (_repo_relative_root(src, repo_root) for src in declared_roots)
+        if rel is not None
+    ]
+    # FALLBACK: bare filename, i.e. coverage.xml already repo-relative.
+    candidate_roots.append("")
+
+    join_ok = True
+    winning_root = candidate_roots[-1]  # bare filename until proven otherwise
+    if classes and known_paths:
+        scored = [
+            (_score_root(classes, root, known_paths), root) for root in candidate_roots
+        ]
+        best_score, best_root = max(scored, key=lambda pair: pair[0])
+        if best_score > 0:
+            winning_root = best_root
+        else:
+            join_ok = False
+            _log.error(
+                "_parse_classes: 0/%d class(es) joined against any of %d "
+                "candidate root(s) %r -- coverage data for this run will "
+                "not attach to any symbol or module (TEST008)",
+                len(classes),
+                len(candidate_roots),
+                candidate_roots,
+            )
+
     module_line: dict[str, float] = {}
     hits_by_class_line: dict[str, dict[int, tuple[int, int]]] = {}
-    for class_el in root_el.iter("class"):
-        filename = class_el.get("filename", "")
-        if not filename:
-            continue
+    for raw_filename, class_el in classes:
+        filename = _join_candidate(winning_root, raw_filename)
         line_rate = class_el.get("line-rate")
         if line_rate is not None:
             try:
@@ -89,7 +207,7 @@ def _parse_classes(
             except ValueError:
                 pass
         hits_by_class_line[filename] = _parse_class_lines(class_el)
-    return module_line, hits_by_class_line
+    return module_line, hits_by_class_line, join_ok, tuple(candidate_roots)
 
 
 def _symbol_branch(
@@ -131,20 +249,41 @@ def load_coverage(
         _log.error("load_coverage: %s malformed: %s", xml_path, exc)
         return Err(CoverageError.Malformed)
 
-    module_line, hits_by_class_line = _parse_classes(tree.getroot())
+    known_paths = _known_repo_paths(root, snapshot)
+    module_line, hits_by_class_line, join_ok, tried_roots = _parse_classes(
+        tree.getroot(), root, known_paths
+    )
     symbol_branch = _symbol_branch(snapshot, hits_by_class_line)
 
     _log.info(
-        "load_coverage: %s -> %d module(s), %d symbol(s) mapped",
+        "load_coverage: %s -> %d module(s), %d symbol(s) mapped, join_ok=%s",
         xml_path,
         len(module_line),
         len(symbol_branch),
+        join_ok,
     )
     return Ok(
         CoverageData(
-            source_sha=source_sha, symbol_branch=symbol_branch, module_line=module_line
+            source_sha=source_sha,
+            symbol_branch=symbol_branch,
+            module_line=module_line,
+            root_join_ok=join_ok,
+            attempted_roots=tried_roots,
         )
     )
+
+
+def _known_repo_paths(root: Path, snapshot: GraphSnapshot | None) -> frozenset[str]:
+    """Repo-relative paths to validate a coverage-root join against.
+
+    Prefers the graph snapshot's own symbol paths (exactly what
+    `_symbol_branch`/downstream `frob:waive` joins need to match) since
+    that is the real join target; falls back to a filesystem walk when no
+    snapshot was supplied (e.g. `load_coverage` called standalone).
+    """
+    if snapshot is not None and snapshot.symbols:
+        return frozenset(record.id.path for record in snapshot.symbols.values())
+    return frozenset(_collect_file_hashes(root))
 
 
 def _collect_file_hashes(root: Path) -> dict[str, str]:
@@ -162,6 +301,7 @@ def _collect_file_hashes(root: Path) -> dict[str, str]:
 
 
 # frob:doc docs/modules/gates.md#public-api
+# frob:waive TEST005 reason="stamp_coverage 68.8% branch cover, debt T-0160"
 def stamp_coverage(root: Path) -> Result[Unit, GateError]:
     """Record coverage.xml's sha plus current per-file content hashes as a stamp."""
     xml_path = root / _COVERAGE_XML
@@ -198,6 +338,7 @@ def _walk(root: Path):  # noqa: ANN202
 
 
 # frob:doc docs/modules/gates.md#public-api
+# frob:waive TEST005 reason="load_stamp 85.7% branch cover, debt T-0160"
 def load_stamp(root: Path) -> dict | None:
     """The raw `.frob/coverage-stamp` document, or `None` if missing/unreadable."""
     stamp_path = root / _STAMP_REL

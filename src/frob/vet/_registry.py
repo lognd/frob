@@ -6,6 +6,8 @@ host for tests; the path suffix per ecosystem is identical to the real
 registry so parsing logic is shared between real and fake responses.
 """
 
+# frob:waive TEST005 reason="module line coverage 39.5%, debt T-0160"
+
 from __future__ import annotations
 
 import json
@@ -196,6 +198,7 @@ def _result_from_network(
 
 
 # frob:doc docs/modules/vet.md#public-api
+# frob:waive TEST005 reason="fetch_publish_date 87.5% branch cover, debt T-0160"
 def fetch_publish_date(
     ecosystem: str,
     name: str,

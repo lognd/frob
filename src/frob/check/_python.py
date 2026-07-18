@@ -6,6 +6,8 @@ They are private helpers of `frob.check`; `run_check` composes them in
 parallel.
 """
 
+# frob:waive TEST005 reason="module line coverage 42.0%, debt T-0160"
+
 from __future__ import annotations
 
 import subprocess

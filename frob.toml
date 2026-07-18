@@ -7,7 +7,22 @@ check_base = "main"
 # visible to map/outline/xref/cycle when pointed at them explicitly (those
 # commands never consult this exclude list), just kept out of the
 # graph/dup/arch obligation surface COV001/TEST001 run over.
-exclude = ["tests/fixtures/**", "design/litmus/**", ".claude/worktrees/**"]
+# src/frob/scaffold/data/**: jinja templates for scaffolded projects (T-0148)
+# -- rendered into OTHER repos' source trees, not executed as part of this
+# package's own runtime. TEST005 (module line-coverage floor) was measuring
+# these .j2 files as if they were maintained frob modules, which is a
+# category error: they are exercised at the rendered-artifact level via
+# tests/system/test_scaffold_dx.py (render -> git init -> frob check on the
+# OUTPUT), never imported/executed in-process here, so "line coverage" of
+# the template source itself is meaningless. Excluded rather than waived
+# per-file to avoid leaking frob:waive/T-#### directives into scaffolded
+# output that ships into unrelated user projects.
+exclude = [
+    "tests/fixtures/**",
+    "design/litmus/**",
+    ".claude/worktrees/**",
+    "src/frob/scaffold/data/**",
+]
 
 [gates.severity]
 # COV001 (public symbol has an explicit frob:doc edge) and TEST001 (public

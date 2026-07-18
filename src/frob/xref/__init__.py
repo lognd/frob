@@ -1,3 +1,4 @@
+# frob:waive TEST005 reason="module line coverage 81.8%, debt T-0160"
 from __future__ import annotations
 
 from pathlib import Path
@@ -39,6 +40,7 @@ class XrefResult(BaseModel):
     definition: Definition | None
     usages: list[Usage]
 
+    # frob:waive TEST005 reason="XrefResult.as_text 44.4% branch cover, debt T-0160"
     def as_text(self, cross_file: bool = False) -> str:
         # frob:doc docs/commands/xref.md#public-api
         parts = [self.symbol]
@@ -96,6 +98,7 @@ _ALL_EXTS = supported_extensions() | _SOURCE_EXTS
 
 
 # frob:doc docs/commands/xref.md#public-api
+# frob:waive TEST005 reason="xref 78.9% branch cover, debt T-0160"
 def xref(
     symbol: str,
     root: Path,

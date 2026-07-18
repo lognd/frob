@@ -241,6 +241,7 @@ def _frontier_unbound(
 # frob:tests tests/unit/strata/test_plan.py::TestPlanObligations.test_refuted_claim
 # frob:tests tests/unit/strata/test_plan.py::TestPlanObligations.test_unbound_boundary
 # frob:tests tests/unit/strata/test_plan.py::TestPlanObligations.test_idempotent_markers
+# frob:waive TEST005 reason="plan_obligations 83.3% branch cover, debt T-0160"
 def plan_obligations(
     model: KernelModel,
     *,

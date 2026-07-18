@@ -119,6 +119,8 @@ def _md_row(cells: tuple[str, ...]) -> str:
 
 
 # frob:doc docs/strata/threat.md#the-exhaustiveness-proof-the-point
+# frob:ticket T-0148
+# frob:waive TEST005 reason="render_audit_matrix 85.7% branch cover, debt T-0160"
 def render_audit_matrix(
     model: KernelModel,
     view: str,
@@ -152,6 +154,7 @@ def render_audit_matrix(
     for violation in discharge.danger_ok:
         by_cwe.setdefault(violation.cwe, []).append(violation)
 
+    # frob:waive PERF004 reason="sorts once per call, not per loop iteration"
     entries = sorted(
         (e for e in catalog if e.id in members), key=lambda e: (e.family, e.id)
     )
@@ -159,14 +162,17 @@ def render_audit_matrix(
 
     lines: list[str] = [f"# Audit matrix -- view {view!r}", ""]
 
-    families = sorted({e.family for e in entries})
+    entries_by_family: dict[str, list[WeaknessEntry]] = {}
+    for entry in entries:
+        entries_by_family.setdefault(entry.family, []).append(entry)
+    families = sorted(entries_by_family)
     for family in families:
         lines.append(f"## {family}")
         lines.append("")
         header = ("CWE", "title", "precondition", "mitigation", "status", "citation")
         lines.append(_md_row(header))
         lines.append(_md_row(("---", "---", "---", "---", "---", "---")))
-        for entry in (e for e in entries if e.family == family):
+        for entry in entries_by_family[family]:
             row = _row(entry, declared=declared, discharge_violations=by_cwe)
             lines.append(_md_row(row))
         lines.append("")

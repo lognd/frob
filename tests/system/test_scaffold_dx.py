@@ -46,6 +46,9 @@ def _subprocess_env() -> dict[str, str]:
 
 @pytest.mark.skipif(not _uv_available(), reason="uv not on PATH")
 def test_python_tool_scaffold_passes_check_immediately(tmp_path: Path) -> None:
+    # frob:tests src/frob/scaffold kind="integration"
+    # Renders a real project via render_project, commits it, then runs it
+    # through git + the rest of the toolchain end to end.
     project_dir = tmp_path / "demo"
     result = render_project("python-tool", "demo", project_dir)
     assert result.is_ok, result

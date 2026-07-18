@@ -6,6 +6,8 @@ with no network), 2 = BLOCK (quarantine/typosquat hit), reason on stderr for
 a Claude Code PreToolUse hook to surface to the agent.
 """
 
+# frob:waive TEST005 reason="module line coverage 19.2%, debt T-0160"
+
 from __future__ import annotations
 
 import json
@@ -28,6 +30,7 @@ _log = get_logger(__name__)
 
 
 # frob:doc docs/modules/app.md#runners
+# frob:waive TEST005 reason="run 25.0% branch cover, debt T-0160"
 def run(cfg: AppConfig) -> None:
     """Dispatch to hook mode (`--hook`) or a full lockfile scan."""
     root = (cfg.vet_path or Path(".")).resolve()

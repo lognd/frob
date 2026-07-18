@@ -10,6 +10,8 @@ found locally scans with an empty capability set and a "source-unavailable"
 signal, never a crash (docs/modules/vet.md "Honest limits").
 """
 
+# frob:waive TEST005 reason="module line coverage 78.3%, debt T-0160"
+
 from __future__ import annotations
 
 import os
@@ -36,6 +38,7 @@ def _normalize_py_name(name: str) -> str:
 
 
 # frob:doc docs/modules/vet.md#public-api
+# frob:waive TEST005 reason="locate_pypi_source 73.3% branch cover, debt T-0160"
 def locate_pypi_source(root: Path, name: str, version: str) -> Path | None:
     """A directory containing `name`'s Python source, or `None`.
 
@@ -72,6 +75,7 @@ def locate_npm_source(root: Path, name: str) -> Path | None:
 
 
 # frob:doc docs/modules/vet.md#public-api
+# frob:waive TEST005 reason="locate_cargo_source 55.6% branch cover, debt T-0160"
 def locate_cargo_source(name: str, version: str) -> Path | None:
     """A directory containing `name`'s Rust source under `~/.cargo/registry/src`."""
     registry_root = Path.home() / ".cargo" / "registry" / "src"
@@ -87,6 +91,7 @@ def locate_cargo_source(name: str, version: str) -> Path | None:
 
 
 # frob:doc docs/modules/vet.md#public-api
+# frob:waive TEST005 reason="locate_source 71.4% branch cover, debt T-0160"
 def locate_source(root: Path, ecosystem: str, name: str, version: str) -> Path | None:
     """Dispatch to the ecosystem-appropriate local-cache source locator."""
     if ecosystem == "pypi":

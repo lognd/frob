@@ -35,6 +35,9 @@ def test_absent_config_is_empty(tmp_path: Path):
 
 def test_dup_scanner_honors_exclude(tmp_path: Path):
     # frob:tests src/frob/dup/_legacy.py::find_duplicates
+    # frob:tests src/frob/excludes.py kind="integration"
+    # Drives excludes.py's public load_exclude_globs/is_excluded through a
+    # real consumer (find_duplicates), not just in isolation.
     from frob.dup import find_duplicates
 
     (tmp_path / "frob.toml").write_text(

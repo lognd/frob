@@ -128,6 +128,7 @@ def _load_norm_rules(policy_tbl: dict) -> Result[list[PolicyRule], PolicyError]:
 
 
 # frob:doc docs/modules/gates.md#public-api
+# frob:waive TEST005 reason="load_policy 82.4% branch cover, debt T-0160"
 def load_policy(root: Path) -> Result[tuple[PolicyRule, ...], PolicyError]:
     """Parse `frob.toml`'s `[[policy.*]]` tables; missing file/table is `Ok(())`."""
     toml_path = root / "frob.toml"

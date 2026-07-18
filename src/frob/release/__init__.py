@@ -87,6 +87,7 @@ def manifest_path(root: Path) -> Path:
 
 
 # frob:doc docs/modules/release.md#public-api
+# frob:waive TEST005 reason="load_manifest 87.5% branch cover, debt T-0160"
 def load_manifest(root: Path) -> Result[ReleaseManifest, ReleaseError]:
     """Read the release manifest, or Err(NoManifest)/Err(Malformed)."""
     path = manifest_path(root)
@@ -139,6 +140,7 @@ def _parse(version: str) -> tuple[int, int, int] | None:
 
 
 # frob:doc docs/modules/release.md#public-api
+# frob:waive TEST005 reason="required_version 83.3% branch cover, debt T-0160"
 def required_version(previous: str, bump: BumpClass) -> Result[str, ReleaseError]:
     """The minimum acceptable version after a `bump`-class change."""
     parsed = _parse(previous)
@@ -155,6 +157,7 @@ def required_version(previous: str, bump: BumpClass) -> Result[str, ReleaseError
 
 
 # frob:doc docs/modules/release.md#public-api
+# frob:waive TEST005 reason="satisfies 75.0% branch cover, debt T-0160"
 def satisfies(current: str, minimum: str) -> bool:
     """True if `current` >= `minimum` by (major, minor, patch) ordering."""
     c, m = _parse(current), _parse(minimum)

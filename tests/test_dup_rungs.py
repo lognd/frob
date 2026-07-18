@@ -32,6 +32,7 @@ def snapshot(tmp_path):
 
 
 def _pairs(report, rung):
+    # frob:waive PERF003 reason="flattening report.groups into member pairs with an equality filter; single-level nesting over small fixture data, not a cross join"
     return [
         (p.left.ref, p.right.ref, p)
         for group in report.groups

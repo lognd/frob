@@ -8,6 +8,8 @@ excluded). A second copy of this logic is exactly the desync frob exists
 to prevent, so it lives here as a leaf with no frob dependencies.
 """
 
+# frob:waive TEST005 reason="module line coverage 81.5%, debt T-0160"
+
 from __future__ import annotations
 
 import fnmatch
@@ -40,6 +42,7 @@ BUILTIN_SKIP_DIRS = frozenset(
 
 
 # frob:doc docs/modules/app.md#shared-exclude-glob-logic
+# frob:waive TEST005 reason="load_exclude_globs 69.2% branch cover, debt T-0160"
 def load_exclude_globs(root: Path) -> tuple[str, ...]:
     """Read `[graph] exclude = [...]` from frob.toml; absent config is `()`.
 

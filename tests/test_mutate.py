@@ -53,6 +53,9 @@ def test_run_mutations_survivors_when_tests_weak(tmp_path):
 
 
 def test_run_mutations_all_killed_by_strong_test(tmp_path):
+    # frob:tests src/frob/mutate kind="integration"
+    # run_mutations drives generate_mutants plus a real subprocess pytest
+    # invocation end to end, scoring survivors against actual test output.
     (tmp_path / "m.py").write_text(
         "def add(a, b):\n    return a + b\n", encoding="utf-8"
     )

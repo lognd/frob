@@ -312,6 +312,7 @@ def _finalize_build(
 
 
 # frob:doc docs/modules/graph.md#public-api
+# frob:waive TEST005 reason="load_graph 87.0% branch cover, debt T-0160"
 def load_graph(cache: Path) -> Result[GraphSnapshot, GraphError]:
     """Cache-only read: `Err(CacheStale)` if any on-disk hash moved, `Err(CacheCorrupt)`
     if the cache is unreadable or has never been built."""

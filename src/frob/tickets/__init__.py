@@ -76,6 +76,7 @@ _FAILURE_LOG_HEADING = "## Failure log"
 
 
 # frob:doc docs/modules/tickets.md#public-api
+# frob:waive TEST005 reason="load_active 80.0% branch cover, debt T-0160"
 def load_active(root: Path) -> Result[TicketQueue, TicketError]:
     """Load only the active store (single-file ledger or legacy dir), NOT the
     archive -- the source `frob ticket list`/`doable` display against, so a
@@ -133,6 +134,7 @@ def migrate(root: Path) -> Result[int, TicketError]:
 
 
 # frob:doc docs/modules/tickets.md#public-api
+# frob:waive TEST005 reason="archive 75.0% branch cover, debt T-0160"
 def archive(root: Path) -> Result[int, TicketError]:
     """Move every done/dropped ticket from the active store into
     tickets-archive.md, verbatim (same section format, still tracked and
@@ -217,6 +219,7 @@ def _ticket_from_spec(
 # frob:ticket T-0102
 # frob:ticket T-0140
 # frob:doc docs/modules/tickets.md#public-api
+# frob:waive TEST005 reason="new_ticket 80.0% branch cover, debt T-0160"
 def new_ticket(root: Path, spec: TicketSpec) -> Result[Ticket, TicketError]:
     """Allocate the next sequential id and upsert the ticket into the store.
 
@@ -292,6 +295,7 @@ def _apply_renumber(
 
 
 # frob:doc docs/modules/tickets.md#public-api
+# frob:waive TEST005 reason="renumber 69.2% branch cover, debt T-0160"
 def renumber(root: Path) -> Result[int, TicketError]:
     """Reassign ticket ids to a contiguous T-0001.. sequence (ordered by
     current id), rewriting blocked_by/parent references so the queue stays
@@ -598,6 +602,7 @@ def _attachment_bytes(
 
 
 # frob:doc docs/modules/tickets.md#public-api
+# frob:waive TEST005 reason="attach 87.5% branch cover, debt T-0160"
 def attach(
     root: Path, ticket_id: str, source: AttachmentSource, caption: str
 ) -> Result[Attachment, AttachError]:

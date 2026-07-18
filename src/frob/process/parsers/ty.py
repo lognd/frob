@@ -9,6 +9,8 @@ or the older single-line format:
   error[<code>] file.py:<line>:<col>: <message>
 """
 
+# frob:waive TEST005 reason="module line coverage 77.8%, debt T-0160"
+
 from __future__ import annotations
 
 import re

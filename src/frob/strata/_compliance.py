@@ -564,6 +564,7 @@ def _check_minimization(model: KernelModel) -> tuple[ComplianceViolation, ...]:
 
 
 # frob:doc docs/strata/threat.md#compliance-regulatory-obligations-std-compliance
+# frob:waive TEST005 reason="check_regulation_discharge 83.3% branch cover, debt T-0160"
 def check_regulation_discharge(
     model: KernelModel,
 ) -> Result[tuple[ComplianceViolation, ...], StrataError]:
@@ -618,6 +619,7 @@ def _flow_field(flow_attrs: tuple[str, ...]) -> str | None:
 
 
 # frob:doc docs/strata/threat.md#compliance-regulatory-obligations-std-compliance
+# frob:waive TEST005 reason="check_privacy_policy 81.8% branch cover, debt T-0160"
 def check_privacy_policy(
     model: KernelModel, policy: PrivacyPolicy
 ) -> tuple[ComplianceViolation, ...]:

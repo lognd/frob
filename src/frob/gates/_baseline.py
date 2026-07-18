@@ -88,6 +88,7 @@ def violation_fingerprint(violation: Violation) -> str:
 
 
 # frob:doc docs/modules/gates.md#public-api
+# frob:waive TEST005 reason="stamp_baseline 75.0% branch cover, debt T-0160"
 def stamp_baseline(
     root: Path, violations: tuple[Violation, ...]
 ) -> Result[Unit, GateError]:
@@ -117,6 +118,7 @@ def stamp_baseline(
 
 
 # frob:doc docs/modules/gates.md#public-api
+# frob:waive TEST005 reason="load_baseline 85.7% branch cover, debt T-0160"
 def load_baseline(root: Path) -> dict | None:
     """The raw `.frob/baseline` document, or `None` if missing/unreadable."""
     stamp_path = root / _BASELINE_REL

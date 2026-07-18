@@ -1,3 +1,4 @@
+# frob:waive TEST005 reason="module line coverage 52.0%, debt T-0160"
 from __future__ import annotations
 
 import sys

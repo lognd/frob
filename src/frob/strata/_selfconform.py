@@ -203,6 +203,7 @@ def _extended_kind_violations(
     for node in model.nodes:
         declared = _declared_kinds(node) & _EXTENDED_KINDS
         observed = observed_by_node.get(node.id, frozenset())
+        # frob:waive PERF004 reason="distinct small per-node diff set, not repeated"
         for kind in sorted(observed - declared):
             _log.warning(
                 "selfconform: SYS100 (extended) %s observed but undeclared on %s",
@@ -230,6 +231,7 @@ def _stale_design_violations(
     for node in model.nodes:
         declared = _declared_kinds(node)
         observed = observed_by_node.get(node.id, frozenset())
+        # frob:waive PERF004 reason="distinct small per-node diff set, not repeated"
         for kind in sorted(declared - observed):
             _log.warning(
                 "selfconform: SYS101 %s declared but never observed on %s",
@@ -267,6 +269,7 @@ def _unmodeled_violations(
     are ALL `FOREIGN` to `bind_code`'s partition -- no node's `code=`
     glob claims it at all (module docstring's SYS102 gap statement)."""
     prefix_owned: set[str] = set()
+    # frob:waive PERF003 reason="ownership loop, separate dirs loop below, not a join"
     for rel, owner in binding.owner.items():
         if owner == FOREIGN or not rel.startswith(f"{_PACKAGE_ROOT}/"):
             continue

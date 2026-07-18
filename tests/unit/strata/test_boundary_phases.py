@@ -19,6 +19,7 @@ def _elaborate(text: str):
 
 class TestPhaseBlockHappyPath:
     # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
+    # frob:waive PERF003 reason="two sibling next()-generator lookups over model.flows, each with its own == filter; not a nested join"
     def test_effect_and_record_phases_generate_flows(self):
         text = """
         module m
@@ -130,6 +131,7 @@ class TestPhaseBlockFailClosed:
 
 class TestOperationHappyPath:
     # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
+    # frob:waive PERF003 reason="a list comprehension over model.flows plus a sibling all()-generator with == on outcome; not a nested join"
     def test_modifies_frames_become_conditioned_flows(self):
         text = """
         module m

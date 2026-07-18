@@ -65,6 +65,7 @@ class TestStoreDesugar:
 
 class TestCacheDesugar:
     # frob:tests src/frob/strata/_infra.py::elaborate_infra kind="unit"
+    # frob:waive PERF003 reason="three sibling next()-generator lookups over model.nodes/model.flows, each with its own == filter; not a nested join"
     def test_cache_node_and_fill_flow(self):
         text = """
         module m
@@ -206,6 +207,7 @@ class TestQueueDesugar:
         assert node.trust == "authenticated"
 
     # frob:tests src/frob/strata/_infra.py::elaborate_infra kind="unit"
+    # frob:waive PERF003 reason="a next()-generator lookup over model.flows plus a sibling any()-generator over facts.diagnostics; not a nested join"
     def test_queue_delivery_propagates_to_outbound_flows_and_fires_diagnostic(self):
         text = """
         module m
@@ -228,6 +230,7 @@ class TestQueueDesugar:
 
 class TestCdnDesugar:
     # frob:tests src/frob/strata/_infra.py::elaborate_infra kind="unit"
+    # frob:waive PERF003 reason="two sibling next()-generator lookups over model.nodes/model.flows, each with its own == filter; not a nested join"
     def test_cdn_node_and_fill_flow(self):
         text = """
         module m

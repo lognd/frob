@@ -84,6 +84,7 @@ def high_entropy_strings(text: str) -> tuple[str, ...]:
 
 
 # frob:doc docs/modules/vet.md#public-api
+# frob:waive TEST005 reason="invisible_text_signal 85.7% branch cover, debt T-0160"
 def invisible_text_signal(text: str) -> bool:
     """True if `text` contains a Unicode bidi override, zero-width character,
     or BOM outside the file's leading position -- the Trojan Source family.
@@ -114,6 +115,7 @@ def hex_identifier_ratio_signal(text: str) -> bool:
 
 
 # frob:doc docs/modules/vet.md#public-api
+# frob:waive TEST005 reason="scan_text_obfuscation 85.7% branch cover, debt T-0160"
 def scan_text_obfuscation(text: str) -> tuple[str, ...]:
     """All obfuscation signal names present in `text` (empty = clean)."""
     signals: list[str] = []

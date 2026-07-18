@@ -8,6 +8,8 @@ AppConfig fields used:
   arch_max_class_methods  (int | None)  -- override max methods per class
 """
 
+# frob:waive TEST005 reason="module line coverage 0.0%, debt T-0160"
+
 from __future__ import annotations
 
 import sys
@@ -19,6 +21,7 @@ _log = get_logger(__name__)
 
 
 # frob:doc docs/modules/app.md#runners
+# frob:waive TEST005 reason="run 0.0% branch cover, debt T-0160"
 def run(cfg: AppConfig) -> None:
     from frob.arch import analyze_project
 

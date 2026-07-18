@@ -48,6 +48,7 @@ def _declared_dists() -> set[str]:
     return {d.split(">")[0].split("=")[0].split("<")[0].strip() for d in deps}
 
 
+# frob:waive PERF003 reason="one AST-body walk with a per-alias generator inside, bounded by one file import statement list; not a cross join"
 def _top_level_imports(path: Path) -> set[str]:
     # frob:ticket T-0152
     tree = ast.parse(path.read_text(encoding="utf-8"))
@@ -64,6 +65,7 @@ class TestRuntimeDepsDeclared:
     # frob:tests src/frob/vet/_cve.py
     # frob:ticket T-0152
 
+    # frob:waive PERF004 reason="sorted() is the outer loop iterable, called once, not resorted per iteration"
     def test_every_unguarded_third_party_import_is_declared(self) -> None:
         declared = _declared_dists()
         missing: dict[str, set[str]] = {}

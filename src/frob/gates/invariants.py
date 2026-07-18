@@ -8,6 +8,8 @@ code-anchor closure) live in `frob.gates` proper since they must join
 against `CollectedTests` and the `GraphSnapshot`.
 """
 
+# frob:waive TEST005 reason="module line coverage 78.3%, debt T-0160"
+
 from __future__ import annotations
 
 import re

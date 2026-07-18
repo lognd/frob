@@ -1187,6 +1187,7 @@ def check_effect_completeness(
 
 
 # frob:doc docs/strata/threat.md#the-exhaustiveness-proof-the-point
+# frob:waive TEST005 reason="evaluate_threats 83.3% branch cover, debt T-0160"
 def evaluate_threats(
     model: KernelModel,
     view: str,

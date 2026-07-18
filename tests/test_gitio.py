@@ -68,6 +68,10 @@ class TestWorkingDiff:
         self, tmp_path: Path
     ) -> None:
         # frob:tests src/frob/gitio.py::working_diff
+        # frob:tests src/frob/gitio.py kind="integration"
+        # Exercises gitio's real git subprocess seam end to end (init,
+        # commit, stage, and untracked state) against a live repo, not a
+        # mocked subprocess.
         repo = tmp_path / "repo"
         _init_repo(repo)
         (repo / "base.py").write_text("x = 1\n")

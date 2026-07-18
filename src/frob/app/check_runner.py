@@ -1,3 +1,4 @@
+# frob:waive TEST005 reason="module line coverage 0.0%, debt T-0160"
 from __future__ import annotations
 
 import contextlib
@@ -226,6 +227,7 @@ def _report_check_result(cfg: AppConfig, result) -> None:  # noqa: ANN001
 
 
 # frob:doc docs/modules/app.md#runners
+# frob:waive TEST005 reason="run 0.0% branch cover, debt T-0160"
 def run(cfg: AppConfig) -> None:
     root = cfg.check_path or Path(".")
 

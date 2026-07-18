@@ -32,6 +32,7 @@ from typani import Err, Ok
 from typani.option import Nothing, Option, Some
 from typani.result import Result
 
+from frob.excludes import is_excluded, load_exclude_globs
 from frob.gates._baseline import (
     delta_violations,
     is_baseline_stale,
@@ -355,6 +356,7 @@ _KNOWN_GATE_RULES = frozenset(
         "TEST005",
         "TEST006",
         "TEST007",
+        "TEST008",
         "TODO001",
         "WAIVE001",
         "WAIVE002",
@@ -379,6 +381,18 @@ _KNOWN_GATE_RULES = frozenset(
         "SYS004",
     }
 )
+
+# frob:ticket T-0148
+# TEST008 (coverage.xml carried data but zero of it joined to a known repo
+# path) is excluded from `_match_waiver` by construction, not merely by
+# convention -- it exists specifically to make a silent-death coverage
+# misconfiguration loud in EVERY sibling repo this gate runs in, so a
+# `frob:waive TEST008 reason="..."` sitting in one repo's tree must never
+# quietly suppress it there. `frob.toml`'s `[gates.severity]` override
+# table is a different, explicit, per-repo mechanism (visible in the
+# frob.toml diff, not a buried code comment) and is NOT blocked here --
+# only the same-repo `frob:waive` directive path is.
+_UNWAIVABLE_RULES = frozenset({"TEST008"})
 
 
 def _unwaivable_channel_rules() -> frozenset[str]:
@@ -448,13 +462,43 @@ def _waive002_violations(
 def _match_waiver(
     violation: Violation, waivers_by_rule: dict[str, list[Edge]]
 ) -> Edge | None:
-    """The first WAIVE edge whose site matches `violation`'s file, or None.
+    """The first WAIVE edge whose site matches `violation`, or None.
 
-    A waiver matches when its edge's `src` symbol/file equals the violation's
-    `file` (either the bare path or a `path::qualname` symref rooted at that
-    path).
+    Two modes, chosen by whether `violation.symref` is set (T-0148):
+
+    - `violation.symref is not None` (currently only TEST005's per-symbol
+      branch-coverage check): the violation is about exactly one symbol,
+      so only an EXACT `waiver.src == violation.symref` counts -- a
+      `frob:waive` placed above a *different* symbol, or bare at file
+      top, does not match. Without this, placement above a specific
+      symbol is cosmetic: `frob.graph.dsl`'s `_enclosing_src` still binds
+      a `path::qualname` edge, but the old file-prefix comparison below
+      stripped the `::qualname` back off before comparing, so one
+      directive anywhere in a file silently waived every violation of
+      that rule in the whole file (the blanket-waiver bug T-0148's
+      review caught empirically: 102 file-top waivers absorbing 195
+      distinct findings).
+    - `violation.symref is None` (every other rule, plus TEST005's own
+      per-module line-coverage and per-system checks, which have no
+      single symbol to bind to): the original file-scoped match -- a
+      waiver's `src` symbol/file equals the violation's `file` (either
+      the bare path or a `path::qualname` symref rooted at that path).
+      This is the CORRECT precision for those checks, not a shortcut:
+      one module-line violation per file has exactly one natural site.
+
+    `violation.rule in _UNWAIVABLE_RULES` (currently just TEST008) short-
+    circuits to `None` regardless of any matching `frob:waive` edge --
+    by construction, not by omission; see `_UNWAIVABLE_RULES`'s comment.
     """
-    for waiver in waivers_by_rule.get(violation.rule, ()):
+    if violation.rule in _UNWAIVABLE_RULES:
+        return None
+    candidates = waivers_by_rule.get(violation.rule, ())
+    if violation.symref is not None:
+        for waiver in candidates:
+            if waiver.src == violation.symref:
+                return waiver
+        return None
+    for waiver in candidates:
         if waiver.src == violation.file or waiver.src.split("::", 1)[0] == (
             violation.file
         ):
@@ -1478,6 +1522,7 @@ def _test005_symbols(
                         f"unit_branch_cov={cfg.unit_branch_cov}%; add tests, then: "
                         f"make coverage"
                     ),
+                    symref=record.symref,
                 )
             )
     return violations
@@ -1544,6 +1589,42 @@ def _test005_systems(
     return violations
 
 
+# frob:ticket T-0148
+def _test008_unjoined_root(data: CoverageData) -> tuple[Violation, ...]:
+    """TEST008: coverage.xml carried real data but NONE of it joined to a
+    known repo path.
+
+    `_coverage.py::_parse_classes` tries every `<sources><source>` root
+    Cobertura declared, then a bare-filename fallback, before giving up --
+    `data.root_join_ok` is only False when every one of those strategies
+    resolved zero `<class>` filenames against a real path. That is a
+    silent-death condition (TEST005 would otherwise just report "0
+    modules measured" and every consumer of `CoverageData` would quietly
+    treat this repo as having no coverage at all) rather than a real
+    "nothing to report" state, so it is always an ERROR: this gate ships
+    in many sibling repos with different package layouts, and a hardcoded
+    or wrong root here must fail loudly, never degrade to a quiet zero.
+    """
+    if data.root_join_ok:
+        return ()
+    tried = ", ".join(r or "(bare filename)" for r in data.attempted_roots)
+    return (
+        Violation(
+            rule="TEST008",
+            severity=Severity.ERROR,
+            file="coverage.xml",
+            line=0,
+            message=(
+                "TEST008: coverage.xml has class data but none of it joined "
+                f"to a known repo path via any of the {len(data.attempted_roots)} "
+                f"root(s) tried ({tried}); TEST005 coverage floors are "
+                "silently measuring nothing -- check pytest-cov's --cov= "
+                "target against this repo's real package layout"
+            ),
+        ),
+    )
+
+
 def _test005(
     snapshot: GraphSnapshot,
     systems: tuple[SystemSpec, ...],
@@ -1551,11 +1632,40 @@ def _test005(
     cfg: TestPolicy,
 ) -> tuple[Violation, ...]:
     """TEST005: measured coverage below a per-symbol, per-module, or
-    per-system floor."""
+    per-system floor.
+
+    `coverage.xml` is produced straight from whatever `pytest --cov`
+    walked, so it does not honor `[graph] exclude` (T-0148) the way
+    `frob.graph`'s own walk does -- e.g. `src/frob/scaffold/data/**`
+    (jinja templates rendered into OTHER repos, never imported/executed
+    here) shows up as near-random "line coverage" of template source
+    text. Re-filtering `data.module_line`/`.symbol_branch` here, against
+    the same excludes every other file-walking surface already respects
+    (`frob.excludes`), keeps TEST005 measuring only this package's own
+    maintained modules.
+    """
     if coverage.is_nothing:
         return ()
     data = coverage.danger_some
+    exclude_globs = load_exclude_globs(Path(snapshot.root))
+    if exclude_globs:
+        data = CoverageData(
+            source_sha=data.source_sha,
+            symbol_branch={
+                symref: pct
+                for symref, pct in data.symbol_branch.items()
+                if not is_excluded(symref.split("::", 1)[0], exclude_globs)
+            },
+            module_line={
+                path: pct
+                for path, pct in data.module_line.items()
+                if not is_excluded(path, exclude_globs)
+            },
+            root_join_ok=data.root_join_ok,
+            attempted_roots=data.attempted_roots,
+        )
     return (
+        *_test008_unjoined_root(data),
         *_test005_symbols(snapshot, data, cfg),
         *_test005_modules(data, cfg),
         *_test005_systems(systems, data, cfg),
@@ -1679,6 +1789,7 @@ def _load_test_config(root: Path) -> tuple[TestPolicy, tuple[SystemSpec, ...]]:
 
 # frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-0004
+# frob:waive TEST005 reason="decisions_gate 88.9% branch cover, debt T-0160"
 def decisions_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """DEC001/DEC002: decision records and their code anchors (T-0004).
 
@@ -1927,6 +2038,7 @@ def _claims_markers(root: Path) -> list[tuple[str, int, str]]:
     include, exclude, roots = _doclink_config(root)
     paths = _obligated_docs(root, include, exclude) | set(roots)
     found: list[tuple[str, int, str]] = []
+    # frob:waive PERF004 reason="one sort of the doc path set, not per-iteration"
     for rel in sorted(paths):
         path = root / rel
         try:
@@ -2099,6 +2211,7 @@ def _dup_config(root: Path) -> tuple[bool, float]:
 
 # frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-0001
+# frob:waive TEST005 reason="dup_gate 52.2% branch cover, debt T-0160"
 def dup_gate(root: Path, snapshot: GraphSnapshot, diff) -> tuple[Violation, ...]:  # noqa: ANN001
     """DUP001/DUP002: the diff introduces a clone of an existing symbol.
 
@@ -2185,6 +2298,7 @@ def _rel001_version(manifest, snapshot, current_version):  # noqa: ANN001
 
 # frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-0003
+# frob:waive TEST005 reason="release_gate 82.4% branch cover, debt T-0160"
 def release_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """REL001: the public-API change since the last `frob release stamp`
     demands a version bump the declared version does not cover, or the
@@ -2488,6 +2602,7 @@ def docanchor_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]
 
 # frob:doc docs/modules/perf.md#integration-points
 # frob:ticket T-0021
+# frob:waive TEST005 reason="perf_gate 85.7% branch cover, debt T-0160"
 def perf_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """PERF001..PERF004, run at the policy/gates stage per docs/modules/perf.md's
     Integration points. Parses every source file in `snapshot.file_hashes`

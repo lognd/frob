@@ -1008,6 +1008,78 @@ class TestTestGate:
         )
         assert any(v.rule == "TEST005" and "sys" in v.file for v in violations)
 
+    def test_test008_fires_on_unjoined_root(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/__init__.py::_test008_unjoined_root
+        from typani.option import Some
+
+        from frob.gates import CoverageData
+
+        snap = _snapshot(tmp_path)
+        coverage = CoverageData(
+            source_sha="x",
+            symbol_branch={},
+            module_line={"nope.py": 0.0},
+            root_join_ok=False,
+            attempted_roots=("wrong/root", ""),
+        )
+        tests = CollectedTests(node_ids=frozenset())
+        violations = run_test_gate(snap, (), Some(coverage), tests, TestPolicy())
+        test008 = [v for v in violations if v.rule == "TEST008"]
+        assert len(test008) == 1
+        assert test008[0].severity == Severity.ERROR
+
+    def test_test008_silent_when_root_joined(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/__init__.py::_test008_unjoined_root
+        from typani.option import Some
+
+        from frob.gates import CoverageData
+
+        snap = _snapshot(tmp_path)
+        coverage = CoverageData(
+            source_sha="x",
+            symbol_branch={},
+            module_line={"src/frob/pkg/a.py": 100.0},
+            root_join_ok=True,
+            attempted_roots=("src/frob",),
+        )
+        tests = CollectedTests(node_ids=frozenset())
+        violations = run_test_gate(
+            snap, (), Some(coverage), tests, TestPolicy(module_line_cov=0)
+        )
+        assert not any(v.rule == "TEST008" for v in violations)
+
+    def test_test008_cannot_be_waived(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/__init__.py::_match_waiver
+        # TEST008 is unwaivable BY CONSTRUCTION (_UNWAIVABLE_RULES), not
+        # just by nobody thinking to try -- a same-repo `frob:waive
+        # TEST008` directive must never suppress it, since this gate's
+        # entire purpose is staying loud in every sibling repo it runs in.
+        source = (
+            '# frob:waive TEST008 reason="pretend this is fine"\n'
+            "def helper(x):\n"
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        from typani.option import Some  # noqa: PLC0415
+
+        from frob.gates import CoverageData, _apply_waivers  # noqa: PLC0415
+
+        coverage = CoverageData(
+            source_sha="x",
+            symbol_branch={},
+            module_line={},
+            root_join_ok=False,
+            attempted_roots=("wrong/root", ""),
+        )
+        tests = CollectedTests(node_ids=frozenset())
+        violations = run_test_gate(snap, (), Some(coverage), tests, TestPolicy())
+        assert any(v.rule == "TEST008" for v in violations)
+
+        kept, waived = _apply_waivers(violations, snap)
+        assert any(v.rule == "TEST008" for v in kept)
+        assert not any(v.rule == "TEST008" for v in waived)
+
     def test_test006_missing_stamp(self, tmp_path: Path) -> None:
         snap = _snapshot(tmp_path)
         from frob.gates import _test006  # noqa: PLC0415
@@ -1066,12 +1138,22 @@ class TestCoverageLoad:
         snap = _snapshot(tmp_path)
         record = snap.symbols["src/frob/pkg/a.py::helper"]
         start = record.span[0]
+        # frob:ticket T-0148: Cobertura `<class filename>` attrs are
+        # relative to whatever `--cov=` target produced the report (e.g.
+        # "pkg/a.py" for a `--cov=src/frob` run), not repo-relative --
+        # load_coverage re-roots them using the `<sources><source>` entry
+        # Cobertura itself declares (_coverage.py::_parse_classes), rather
+        # than a hardcoded prefix (a hardcode would silently zero-match in
+        # any sibling repo with a different package root).
         xml = f"""<?xml version="1.0"?>
 <coverage>
+  <sources>
+    <source>{(tmp_path / "src/frob").resolve()}</source>
+  </sources>
   <packages>
     <package>
       <classes>
-        <class filename="src/frob/pkg/a.py" line-rate="0.5">
+        <class filename="pkg/a.py" line-rate="0.5">
           <lines>
             <line number="{start}" hits="1" branch="false"/>
             <line number="{start + 1}" hits="0" branch="false"/>
@@ -1088,6 +1170,110 @@ class TestCoverageLoad:
         data = result.danger_ok
         assert data.module_line["src/frob/pkg/a.py"] == 50.0
         assert record.symref in data.symbol_branch
+        assert data.root_join_ok
+
+    def test_joins_via_repo_relative_source(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_coverage.py::load_coverage
+        # A non-frob layout: package lives at the repo root, no `src/`
+        # tree at all (e.g. a sibling repo like typani or logand.app) --
+        # proves the join is not frob-specific.
+        _write(tmp_path, "mypkg/a.py", "def helper(x):\n    return x\n")
+        snap = _snapshot(tmp_path)
+        record = snap.symbols["mypkg/a.py::helper"]
+        start = record.span[0]
+        xml = f"""<?xml version="1.0"?>
+<coverage>
+  <sources>
+    <source>mypkg</source>
+  </sources>
+  <packages>
+    <package>
+      <classes>
+        <class filename="a.py" line-rate="1.0">
+          <lines>
+            <line number="{start}" hits="1" branch="false"/>
+          </lines>
+        </class>
+      </classes>
+    </package>
+  </packages>
+</coverage>
+"""
+        (tmp_path / "coverage.xml").write_text(xml)
+        result = load_coverage(tmp_path, snap)
+        assert result.is_ok
+        data = result.danger_ok
+        assert data.module_line["mypkg/a.py"] == 100.0
+        assert record.symref in data.symbol_branch
+        assert data.root_join_ok
+
+    def test_multi_source_picks_the_root_that_joins(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_coverage.py::load_coverage
+        # Multiple <source> entries (a monorepo-style coverage run) --
+        # only one of them actually resolves any class; that one wins.
+        _write(tmp_path, "backend/svc/a.py", "def helper(x):\n    return x\n")
+        snap = _snapshot(tmp_path)
+        record = snap.symbols["backend/svc/a.py::helper"]
+        start = record.span[0]
+        xml = f"""<?xml version="1.0"?>
+<coverage>
+  <sources>
+    <source>frontend/app</source>
+    <source>backend/svc</source>
+  </sources>
+  <packages>
+    <package>
+      <classes>
+        <class filename="a.py" line-rate="1.0">
+          <lines>
+            <line number="{start}" hits="1" branch="false"/>
+          </lines>
+        </class>
+      </classes>
+    </package>
+  </packages>
+</coverage>
+"""
+        (tmp_path / "coverage.xml").write_text(xml)
+        result = load_coverage(tmp_path, snap)
+        assert result.is_ok
+        data = result.danger_ok
+        assert data.module_line["backend/svc/a.py"] == 100.0
+        assert record.symref in data.symbol_branch
+        assert data.root_join_ok
+
+    def test_zero_join_is_loud_not_silent(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_coverage.py::load_coverage
+        # Every candidate root -- the declared <source> AND the bare
+        # filename fallback -- fails to resolve any class: this must be
+        # reported (root_join_ok=False), never a quiet empty map.
+        _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
+        snap = _snapshot(tmp_path)
+        xml = """<?xml version="1.0"?>
+<coverage>
+  <sources>
+    <source>completely/wrong/root</source>
+  </sources>
+  <packages>
+    <package>
+      <classes>
+        <class filename="nope.py" line-rate="0.0">
+          <lines>
+            <line number="1" hits="0" branch="false"/>
+          </lines>
+        </class>
+      </classes>
+    </package>
+  </packages>
+</coverage>
+"""
+        (tmp_path / "coverage.xml").write_text(xml)
+        result = load_coverage(tmp_path, snap)
+        assert result.is_ok
+        data = result.danger_ok
+        assert not data.root_join_ok
+        assert len(data.attempted_roots) == 2
+        assert data.symbol_branch == {}
 
     def test_stamp_coverage_roundtrip(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_coverage.py::stamp_coverage
@@ -1487,6 +1673,7 @@ class TestOptInGates:
 
     def test_fuzz_gate_off_by_default(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/__init__.py::fuzz_gate
+        # frob:tests src/frob/fuzz kind="integration"
         from frob.gates import fuzz_gate
 
         _write(tmp_path, "src/a.py", "def foo(x: int) -> int:\n    return x\n")

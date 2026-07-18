@@ -62,6 +62,9 @@ def test_commit_stats_classifies_conventional_types(tmp_path):
 
 def test_collect_combines_both(tmp_path):
     # frob:tests src/frob/stats/__init__.py::collect
+    # frob:tests src/frob/stats kind="integration"
+    # collect() drives ticket_stats + commit_stats together against a real
+    # git repo and a real ticket queue -- exercises the module's boundary.
     root = _repo(tmp_path)
     _commit(root, "chore: init")
     new_ticket(

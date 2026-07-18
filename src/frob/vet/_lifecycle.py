@@ -15,6 +15,7 @@ _LIFECYCLE_SCRIPTS = ("preinstall", "install", "postinstall", "prepare")
 
 
 # frob:doc docs/modules/vet.md#public-api
+# frob:waive TEST005 reason="scan_lifecycle_scripts 80.0% branch cover, debt T-0160"
 def scan_lifecycle_scripts(root: Path) -> dict[str, tuple[str, ...]]:
     """`{package_name: (script_name, ...)}` for every node_modules package.json
     declaring a lifecycle script. Empty dict (with a log note) if no node_modules."""

@@ -15,6 +15,8 @@ installed still imports this module cleanly, and every function that would
 need it returns `Err(NoGenerator)` instead of raising `ImportError`.
 """
 
+# frob:waive TEST005 reason="module line coverage 77.2%, debt T-0160"
+
 from __future__ import annotations
 
 from typing import Any, get_type_hints
@@ -110,6 +112,7 @@ def _derived_strategy(tp: type[BaseModel]) -> Result[object, FuzzError]:
 
 
 # frob:doc docs/modules/fuzz.md#public-api
+# frob:waive TEST005 reason="resolve 88.2% branch cover, debt T-0160"
 def resolve(tp: type) -> Result[object, FuzzError]:
     """Derived -> declared -> registered; `Err(NoGenerator)` otherwise.
 

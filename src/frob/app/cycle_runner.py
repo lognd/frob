@@ -1,3 +1,4 @@
+# frob:waive TEST005 reason="module line coverage 0.0%, debt T-0160"
 from __future__ import annotations
 
 import sys
@@ -23,6 +24,7 @@ _CPP_EXTS = {".c", ".cc", ".cpp", ".cxx", ".c++", ".h", ".hpp", ".hxx", ".h++"}
 
 
 # frob:doc docs/modules/app.md#runners
+# frob:waive TEST005 reason="run 0.0% branch cover, debt T-0160"
 def run(cfg: AppConfig) -> None:
     if cfg.cycle_path is None:
         _log.error("frob cycle requires <path>")
