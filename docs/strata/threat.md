@@ -326,6 +326,68 @@ EXPLICITLY ZERO (frob models design/ticket/code text, not personal data)
 as a checked assertion (zero `pii=` attrs on every node, `evaluate_pii`
 clean) rather than letting the zero case hold silently by omission.
 
+## Operational design lints (`std.lint`, T-0155)
+
+`std.pii` (above) proves a MODELING-shape obligation family (does a
+node's own `carries` fact stay consistent with the rest of the model);
+`std.lint` proves an OPERATIONAL family instead: caching, resource
+bounds, rate-limiting, and kill-switch rules over the SAME kernel facts
+`Node.capacity` (T-0103), `Flow.rate`, `std.infra`'s `cache` construct
+(`_infra.py`), the scenario engine's `ScaleRate` rewrite (T-0073), and
+`Node.may` capability kinds (`_effects.py::_may_kind`, T-0150) already
+carry. Zero new kernel primitive (charter law 1) -- every LINT rule is a
+JOIN, and the one new surface vocabulary word (a kill-switch reference)
+reuses the grammar's already-existing generic `attr IDENT=IDENT` node
+property (`flag=<id>`), the SAME attr-desugar convention `code=`/`pii=`
+established (T-0132/T-0154), not a new keyword.
+
+| Rule | Fires when | Discharge |
+|---|---|---|
+| LINT001 (undeclared rate limit) | a flow sourced from a `foreign`-trust node has no declared `rate` | declare `rate` on the flow -- no claim override; a missing rate is a missing FACT, not an assumable risk (the PII001 no-override shape) |
+| LINT002 (store overload, caching-escapable) | a node's declared `capacity.service_rate` is exceeded by its non-infra inbound flows' combined rate, with no `cache` construct declared over it | declare a `cache X of <node>` (`_infra.py`), OR raise `capacity`, OR lower the flow(s)' declared rate |
+| LINT003 (surge scenario with no capacity bound) | a `Scenario` with a `ScaleRate` rewrite nests no `BoundClaim` (RATE or UTILIZATION) targeting the scaled flow or either endpoint | nest an `assert`/`assume bound rate|utilization ... <= ...` claim inside the same scenario -- structural presence only, asserted or assumed both count |
+| LINT004 (risky capability, no kill switch) | a node holds a `may` atom of kind `exec`/`net` (`RISKY_CAPABILITY_KINDS`) with no declared `attr flag=<id>` | declare `attr flag=<id>;` naming the real feature-flag/kill-switch identifier an operator flips live |
+| LINT005 (fan-in exceeding capacity, unconditional) | a node's declared `capacity` (`service_rate * replicas_max`) is exceeded by its TOTAL inbound flow rate, regardless of caching | raise `capacity` (service rate or `replicas_max`), or reduce the fan-in -- no caching escape (module docstring: caching relieves repeated reads of a source of truth, not a compute sink's raw fan-in) |
+
+LINT002 and LINT005 are deliberately NOT the same check under two names:
+LINT002 is narrower and caching-escapable (a store-shaped node's overload
+is relieved once a cache sits in front of it); LINT005 is the
+caching-agnostic baseline (a node with no possible cache construct over
+it -- a queue consumer, a balancer target -- still needs enough replica
+headroom to absorb its fan-in). A model can fail LINT002 and pass LINT005
+(cache-covered, but the cached node itself sits below its callers'
+declared rate) or vice versa (no cache, but `replicas_max` headroom
+absorbs the fan-in) -- the exact LINT002-vs-LINT005 relationship
+`_lint.py`'s module docstring spells out is the same PII003/GDPR-RETENTION
+precedent this catalog already establishes (above).
+
+**Litmus pair**: `tests/unit/strata/litmus/lint_vuln.strata` fires all
+five rules from one small model (a foreign-sourced unrated flow, an
+overloaded `may "exec"` store with no cache/kill-switch, and an unbounded
+surge scenario); `lint_hardened.strata` discharges every one of them (a
+declared rate, a `cache` construct, a nested bound claim, an `attr
+flag=<id>`, and widened `replicas_max`) -- both round-trip through the
+real parser (`tests/unit/strata/test_litmus_lint.py`), the same T-0145/
+T-0154 discipline established.
+
+**Wired into `frob sys audit`**: `_audit.py::evaluate_exhaustiveness`
+joins `_lint.py::evaluate_lint` in under a fixed `lint:model` view (LINT
+rules have no baseline-view/catalog-completeness concept, the same fixed-
+view shape `pii:model` uses), so every LINT001-005 finding surfaces
+alongside self-conformance/PII/compliance in one audit report.
+
+**Self-model honesty note (T-0155, "make it green honestly")**:
+`design/frob.strata`'s `f_registry_fetch` now declares a real, honestly
+conservative `rate 1 req/s` (LINT001 discharged). `checker`/`core`/
+`stratamod`/`vet` each hold a risky (`exec`/`net`) capability with
+**no real kill switch in the codebase today** -- rather than fabricate a
+`flag=<id>` attr that names a mechanism that does not exist,
+`design/frob.strata` leaves LINT004 firing on these four nodes as an
+HONEST, named gap in `frob sys audit`'s output (the T-0150/T-0151
+"declare real facts or waive with reasons" precedent this ticket's own
+body cites); building the actual kill-switch infrastructure is filed as
+separate follow-on product work, not silently faked here.
+
 ## CVE: threat intelligence joined to the proof
 
 CWE is the design side; CVE is the dependency side, enriching `frob vet`.

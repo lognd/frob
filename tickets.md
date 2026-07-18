@@ -1457,7 +1457,7 @@ Filed: none.
 id: T-0155
 title: 'design lint family: caching, resource bounds, rate-limiting, kill-switch rules
   over the kernel model'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-18'
@@ -1470,11 +1470,15 @@ scope:
 - tests/unit/strata/**
 - docs/strata/**
 - tickets.md
+- design/litmus/audit_hardened.strata
+- tests/system/test_cli_sys_audit.py
 evidence: []
 attachments: []
 acceptance: []
 threat: null
 ```
+Scope widened (T-0155 sweep, post-implementation): the new LINT001 rate-limit check fires on two pre-existing fixtures outside the original scope globs (`design/litmus/audit_hardened.strata`'s foreign-sourced `f_browse` flow, and `tests/system/test_cli_sys_audit.py`'s `_CLEAN_MODEL` fixture) as a direct, required consequence of wiring `evaluate_lint` into `frob sys audit`'s `evaluate_exhaustiveness` -- both received a minimal, mechanical `rate` declaration to stay green, per the ticket's own "expect cascading consequences per T-0150/T-0151 precedent" note.
+
 Operational design linting over the kernel model, as a new rule family alongside SYS100-102. INVESTIGATE FIRST: the scenario engine (node loss, rate surge, trust downgrade -- T-0073), Bound/capacity claims, and quantity grammar (rates, sizes) -- reuse their vocabulary. Rules (each loud, waivable only with reason, drift-locked in a rule registry): LINT: public/edge boundary accepting external flows without a declared rate limit; store consumed by flows whose declared rate exceeds the store's declared service rate without a caching/TTL declaration; node participating in a surge scenario without a capacity Bound claim; node holding a risky capability (exec/net per the may declarations from T-0150) without a declared kill-switch/flag mechanism; flow fan-in exceeding declared downstream capacity. Each rule needs a written justification of WHY the kernel can express it (or an honest OutOfScope-style entry if it cannot yet -- follow the threat catalog discipline); fire/discharge litmus fixtures from parsed surface; wired into frob sys audit output beside self-conformance. Apply to design/frob.strata itself and make it green honestly (declare real rate/caching/capacity facts or waive with reasons -- expect cascading consequences per T-0150/T-0151 precedent).
 
 <!-- ticket:T-0156 -->
@@ -2542,3 +2546,22 @@ setup docs like the serena/frob wiring; (5) reference arxiv priors on
 agent externalization/memory (2604.08224 externalization review;
 2604.11243 self-evolving knowledge wikis) in the design doc.
 ASCII only, no emojis.
+
+<!-- ticket:T-draft-47dc1469 -->
+```yaml
+id: T-draft-47dc1469
+title: add real kill-switch/feature-flag mechanism for exec/net capabilities (checker/core/stratamod/vet)
+state: queued
+kind: feature
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/process/**,src/frob/check/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0155's LINT004 rule (design lint family) fires honestly on design/frob.strata's checker/core/stratamod/vet nodes: each holds a risky (exec/net) may capability with no real, checked-in kill switch (env var / feature flag) an operator can flip live to disable it. T-0155 deliberately did not fabricate a flag=<id> attr naming a mechanism that does not exist (declare real facts or waive with reasons, T-0150/T-0151 precedent) -- this ticket is the follow-on product work to build the actual mechanism and then discharge LINT004 for real on design/frob.strata.

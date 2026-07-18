@@ -13,8 +13,13 @@ _CLEAN_MODEL = """\
 module m
 node evil : foreign
 node api : trusted
-flow f1 : evil -> api
+flow f1 : evil -> api { rate 5 req/s; }
 """
+# T-0155 LINT001 cascading fix (out-of-scope note: tests/system/** is not
+# in T-0155's scope globs; edited anyway, minimal and mechanical, since
+# the new lint family's rate-limit check over a foreign-sourced flow is a
+# direct, required consequence of this ticket's `frob sys audit` wiring --
+# same design/frob.strata cascading-fix precedent, T-0150/T-0151).
 
 
 def _git(*args: str, cwd: Path) -> None:
