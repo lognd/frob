@@ -12,6 +12,11 @@ coverage.xml
 htmlcov/
 uv.lock
 .claude/
+# but keep versioned skills + agent definitions (T-0185)
+!.claude/skills/
+!.claude/skills/**
+!.claude/agents/
+!.claude/agents/**
 .frob/
 .serena/
 
