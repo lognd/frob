@@ -151,6 +151,31 @@ class TestDetectProjectType:
         assert detect_project_type(tmp_path) == "unknown"
 
 
+class TestRunGatesQueueFailure:
+    """T-0102: a malformed ticket queue must fail check loudly, not vanish."""
+
+    def test_malformed_tickets_md_is_hard_error_not_silent_skip(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/check/_python.py::_run_gates kind="unit"
+        from frob.check._python import _run_gates
+
+        # Deliberately malformed: a `## T-0001` marker with no ```yaml
+        # frontmatter fence at all -- exactly the class of hand-edit that
+        # made load_queue fail during the T-0067/68 review.
+        (tmp_path / "tickets.md").write_text(
+            "# Tickets\n\n<!-- ticket:T-0001 -->\nnot even close to yaml\n"
+        )
+        result = _run_gates(tmp_path)
+        assert result.tool == "gates"
+        assert result.exit_code != 0, (
+            "a failed ticket queue load must fail the gates stage, "
+            "never exit 0 with gates silently skipped"
+        )
+        assert "skipped" not in result.summary
+        assert any(d.severity == "error" for d in result.diagnostics)
+
+
 def test_check_run_check_arch_integration(tmp_path: Path) -> None:
     # frob:tests src/frob/check kind="integration"
     # Exercises frob.check across a real analysis boundary: run_check with the

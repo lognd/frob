@@ -101,7 +101,9 @@ def _next_ticket_id(existing: dict[str, Ticket]) -> str:
     return f"T-{max_num + 1:04d}"
 
 
-def _ticket_from_spec(ticket_id: str, spec: TicketSpec) -> Ticket:
+def _ticket_from_spec(
+    ticket_id: str, spec: TicketSpec, evidence: tuple[str, ...]
+) -> Ticket:
     """Build a fresh QUEUED ticket from `spec`, applying the incident template."""
     body = spec.body
     if spec.kind == TicketKind.INCIDENT and not body.strip():
@@ -116,7 +118,7 @@ def _ticket_from_spec(ticket_id: str, spec: TicketSpec) -> Ticket:
         blocked_by=spec.blocked_by,
         parent=spec.parent,
         scope=spec.scope,
-        evidence=(),
+        evidence=evidence,
         attachments=(),
         acceptance=spec.acceptance,
         threat=spec.threat,
@@ -124,9 +126,18 @@ def _ticket_from_spec(ticket_id: str, spec: TicketSpec) -> Ticket:
     )
 
 
+# frob:ticket T-0102
 # frob:doc docs/modules/tickets.md#public-api
 def new_ticket(root: Path, spec: TicketSpec) -> Result[Ticket, TicketError]:
-    """Allocate the next sequential id and upsert the ticket into the store."""
+    """Allocate the next sequential id and upsert the ticket into the store.
+
+    Any `spec.evidence` entries are schema-validated (validate_evidence)
+    before the ticket is ever built, so a malformed entry cannot land via
+    `frob ticket new` either (T-0102 companion fix).
+    """
+    validated = _validate_evidence_list(spec.evidence)
+    if validated.is_err:
+        return Err(validated.danger_err)
     loaded = load_all(root)
     if loaded.is_err:
         return Err(loaded.danger_err)
@@ -135,7 +146,7 @@ def new_ticket(root: Path, spec: TicketSpec) -> Result[Ticket, TicketError]:
     if ticket_id in existing:
         _log.error("tickets: id collision allocating %s", ticket_id)
         return Err(TicketError.DuplicateId)
-    ticket = _ticket_from_spec(ticket_id, spec)
+    ticket = _ticket_from_spec(ticket_id, spec, validated.danger_ok)
     write_result = write_ticket(root, ticket)
     if write_result.is_err:
         return Err(write_result.danger_err)
@@ -241,6 +252,84 @@ def _load_one(root: Path, ticket_id: str) -> Result[Ticket, TicketError]:
         _log.warning("tickets: %s not found under %s", ticket_id, root)
         return Err(TicketError.NotFound)
     return Ok(ticket)
+
+
+_MAX_EVIDENCE_LEN = 300
+
+
+# frob:ticket T-0102
+# frob:doc docs/modules/tickets.md#public-api
+def validate_evidence(entry: str) -> Result[str, TicketError]:
+    """One evidence string's schema: non-empty, single-line, bounded length.
+
+    Writers (`new_ticket`, `add_evidence`) call this before a Ticket ever
+    reaches `write_ticket`, so a malformed entry is rejected in-process
+    instead of landing as broken YAML that only surfaces later when
+    `load_queue` (and therefore every `frob check` gate) fails to parse it
+    (T-0102 companion fix -- the vacuous-pass class started with a hand-
+    edited evidence block that bypassed this validation entirely).
+    """
+    stripped = entry.strip()
+    if not stripped:
+        _log.warning("tickets: rejected empty evidence entry")
+        return Err(TicketError.MalformedEvidence)
+    if "\n" in entry or "\r" in entry:
+        _log.warning("tickets: rejected multi-line evidence entry %r", entry)
+        return Err(TicketError.MalformedEvidence)
+    if len(stripped) > _MAX_EVIDENCE_LEN:
+        _log.warning(
+            "tickets: rejected evidence entry over %d chars", _MAX_EVIDENCE_LEN
+        )
+        return Err(TicketError.MalformedEvidence)
+    return Ok(stripped)
+
+
+def _validate_evidence_list(
+    entries: tuple[str, ...],
+) -> Result[tuple[str, ...], TicketError]:
+    """Validate every entry in `entries`, or the first schema failure."""
+    validated: list[str] = []
+    for entry in entries:
+        result = validate_evidence(entry)
+        if result.is_err:
+            return Err(result.danger_err)
+        validated.append(result.danger_ok)
+    return Ok(tuple(validated))
+
+
+# frob:ticket T-0102
+# frob:doc docs/modules/tickets.md#public-api
+def add_evidence(
+    root: Path, ticket_id: str, entries: tuple[str, ...]
+) -> Result[Ticket, TicketError]:
+    """Append validated evidence entries to a ticket and write it back.
+
+    The only in-process path for landing evidence on a ticket; routing it
+    through here (instead of hand-editing tickets.md) guarantees the write
+    is both schema-valid (validate_evidence) and syntactically valid YAML
+    (write_ticket always serializes via yaml.safe_dump), closing the gap
+    that let a malformed evidence block reach the ledger (T-0102).
+    """
+    validated = _validate_evidence_list(entries)
+    if validated.is_err:
+        return Err(validated.danger_err)
+    loaded = _load_one(root, ticket_id)
+    if loaded.is_err:
+        return Err(loaded.danger_err)
+    ticket = loaded.danger_ok
+    updated = ticket.model_copy(
+        update={"evidence": ticket.evidence + validated.danger_ok}
+    )
+    write_result = write_ticket(root, updated)
+    if write_result.is_err:
+        return Err(write_result.danger_err)
+    _log.info(
+        "tickets: %s gained %d evidence entr%s",
+        ticket_id,
+        len(validated.danger_ok),
+        "y" if len(validated.danger_ok) == 1 else "ies",
+    )
+    return Ok(updated)
 
 
 def _has_done_report(body: str) -> bool:
@@ -441,6 +530,7 @@ __all__ = [
     "TicketQueue",
     "TicketSpec",
     "TicketState",
+    "add_evidence",
     "attach",
     "doable",
     "load_queue",
@@ -450,4 +540,5 @@ __all__ = [
     "renumber",
     "record_failure",
     "transition",
+    "validate_evidence",
 ]

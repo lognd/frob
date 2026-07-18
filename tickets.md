@@ -3149,6 +3149,7 @@ scope:
 - src/frob/check/**
 - src/frob/gates/**
 - tests/**
+- tickets.md
 evidence: []
 attachments: []
 acceptance: []
@@ -3287,6 +3288,7 @@ scope:
 - src/frob/gates/**
 - src/frob/arch/**
 - docs/**
+- tickets.md
 evidence: []
 attachments: []
 acceptance: []
@@ -3298,7 +3300,7 @@ typani campaign gap report: frob:waive suppresses gates-channel rule ids only; a
 ```yaml
 id: T-0102
 title: frob check must FAIL, not silently pass, when the ticket queue fails to load
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-07-17'
@@ -3309,9 +3311,55 @@ scope:
 - src/frob/gates/**
 - src/frob/tickets/**
 - tests/**
-evidence: []
+- tickets.md
+evidence:
+- tests/unit/test_check.py::TestRunGatesQueueFailure::test_malformed_tickets_md_is_hard_error_not_silent_skip
+- tests/test_tickets.py::TestEvidenceValidation::test_add_evidence_rejects_malformed_entry_before_write
+- tests/test_tickets.py::TestEvidenceValidation::test_new_ticket_validates_evidence
 attachments: []
 acceptance: []
 threat: null
 ```
 Found during T-0067/68 review: a malformed evidence block in tickets.md made load_queue fail; frob check printed 'gates skipped: Ticket queue failed to load' and EXITED 0 -- every obligation gate silently vanished while reporting success (the vacuous-pass class again). A queue load failure must be a hard error with remedy text. Companion fix: frob ticket new/close should validate evidence schema on write so malformed entries cannot land at all.
+
+## Done report
+
+Changed: `_run_gates` in src/frob/check/_python.py now special-cases
+`GateError.QueueUnavailable` as a hard ERROR ToolResult (exit_code=1,
+remedy text), never a soft skip; all other GateError variants keep the
+existing soft-skip behavior. Companion fix: `validate_evidence` and
+`add_evidence` (src/frob/tickets/__init__.py) plus `TicketSpec.evidence`
+(src/frob/tickets/_models.py, new `MalformedEvidence` error) give an
+in-process, schema-validated path for evidence to land on a ticket, so a
+malformed entry can no longer be constructed via `new_ticket`. A CLI
+flag to drive `add_evidence` from `frob ticket close --evidence` would
+touch src/frob/__main__.py, src/frob/app/**, and docs/** -- all outside
+this ticket's scope; filed as a follow-up.
+Evidence: see evidence: list above (all collected, pytest --collect-only verified).
+Filed: T-0103 (CLI wiring for `frob ticket close --evidence`, outside T-0102 scope).
+Gates: `frob check --ticket T-0102` and plain `frob check` both exit 0
+(gates stage genuinely executes, no violations introduced).
+
+<!-- ticket:T-0103 -->
+```yaml
+id: T-0103
+title: Wire frob ticket new/close --evidence to tickets.add_evidence
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-17'
+blocked_by: []
+parent: null
+scope:
+- src/frob/__main__.py
+- src/frob/app/config.py
+- src/frob/app/ticket_runner.py
+- docs/modules/tickets.md
+- docs/commands/check.md
+- tests/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0102 added frob.tickets.validate_evidence/add_evidence (schema-validated, in-process path for landing ticket evidence) but left them unwired to the CLI because src/frob/__main__.py, src/frob/app/config.py, src/frob/app/ticket_runner.py, and docs/** are outside T-0102's declared scope (src/frob/check/**, src/frob/gates/**, src/frob/tickets/**, tests/**). Add --evidence (repeatable) to 'frob ticket new' and 'frob ticket close', wire through AppConfig.ticket_evidence, call add_evidence/TicketSpec.evidence, and document in docs/modules/tickets.md + docs/commands/check.md. This removes the last reason for agents to hand-edit the evidence: YAML block in tickets.md directly.

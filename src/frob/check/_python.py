@@ -261,6 +261,7 @@ def _error_count(violations) -> int:  # noqa: ANN001
 
 
 # frob:ticket T-0028
+# frob:ticket T-0102
 def _run_gates(
     root: Path,
     *,
@@ -268,19 +269,41 @@ def _run_gates(
     base: str | None = None,
     gates: frozenset[str] = frozenset(),
 ) -> ToolResult:
-    """Run frob.gates.run_gates as a check stage; a load failure is a soft skip
-    (git repo / tickets dir are not guaranteed to exist for every `frob check`
-    caller), but any ERROR-severity violation fails the stage like any other
-    tool."""
-    from frob.gates import GateConfig, run_gates
+    """Run frob.gates.run_gates as a check stage. Most load failures (git repo
+    / tickets dir not guaranteed to exist for every `frob check` caller) are a
+    soft skip, but a failure to load the ticket queue is a hard ERROR with
+    remedy text (T-0102): a malformed tickets.md must never silently vanish
+    every gate while still exiting 0 (the vacuous-pass class). Any
+    ERROR-severity violation from a successful run also fails the stage like
+    any other tool."""
+    from frob.gates import GateConfig, GateError, run_gates
 
     cfg = GateConfig(root=str(root), base=base or "main", ticket=ticket, gates=gates)
     result = run_gates(cfg)
     if result.is_err:
+        err = result.danger_err
+        if err is GateError.QueueUnavailable:
+            return ToolResult(
+                tool="gates",
+                exit_code=1,
+                diagnostics=[
+                    Diagnostic(
+                        file="tickets.md",
+                        severity="error",
+                        message=(
+                            "ticket queue failed to load: all gates were skipped. "
+                            "This is a hard failure, not a soft skip -- fix the "
+                            "malformed entry (check evidence: blocks and YAML "
+                            "syntax) and re-run `frob check`."
+                        ),
+                    )
+                ],
+                summary=("gates FAILED: ticket queue failed to load -- fix tickets.md"),
+            )
         return ToolResult(
             tool="gates",
             exit_code=0,
-            summary=f"gates skipped: {result.danger_err.value}",
+            summary=f"gates skipped: {err.value}",
         )
     report = result.danger_ok
     diags = [*_violation_diags(report.violations), *_waived_diags(report.waived)]

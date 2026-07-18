@@ -118,6 +118,7 @@ class TicketSpec(BaseModel):
     parent: str | None = None
     acceptance: tuple[str, ...] = ()
     threat: Stride | None = None
+    evidence: tuple[str, ...] = ()
     body: str = ""
 
 
@@ -148,5 +149,6 @@ class TicketError(ErrorSet):
     MalformedFrontmatter = "Ticket file failed schema validation"
     InvalidTransition = "State change not allowed by the state machine"
     MissingEvidence = "done requires evidence and a Done report"
+    MalformedEvidence = "evidence entry failed schema validation"
     BlockerOpen = "Cannot start: blocked_by contains open tickets"
     WriteFailed = "Atomic ticket write failed"

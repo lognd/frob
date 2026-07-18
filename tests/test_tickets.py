@@ -16,12 +16,14 @@ from frob.tickets import (
     TicketError,
     TicketKind,
     TicketState,
+    add_evidence,
     attach,
     doable,
     load_queue,
     new_ticket,
     record_failure,
     transition,
+    validate_evidence,
 )
 from frob.tickets._store import serialize_ticket
 
@@ -140,6 +142,74 @@ class TestNewTicket:
         result = new_ticket(tmp_path, spec)
         assert result.is_ok
         assert result.danger_ok.id == "T-0001"
+
+
+class TestEvidenceValidation:
+    """T-0102 companion fix: evidence is schema-validated at write time so a
+    malformed entry can never land via `frob ticket new`/`close`."""
+
+    def test_validate_evidence_accepts_plain_node_id(self) -> None:
+        # frob:tests src/frob/tickets/__init__.py::validate_evidence kind="unit"
+        result = validate_evidence("tests/test_foo.py::test_a")
+        assert result.is_ok
+        assert result.danger_ok == "tests/test_foo.py::test_a"
+
+    def test_validate_evidence_strips_whitespace(self) -> None:
+        result = validate_evidence("  tests/test_foo.py::test_a  ")
+        assert result.danger_ok == "tests/test_foo.py::test_a"
+
+    def test_validate_evidence_rejects_empty(self) -> None:
+        result = validate_evidence("   ")
+        assert result.is_err
+        assert result.danger_err is TicketError.MalformedEvidence
+
+    def test_validate_evidence_rejects_multiline(self) -> None:
+        # This is the exact shape of hand-edit that broke tickets.md YAML
+        # during the T-0067/68 review.
+        result = validate_evidence("tests/test_foo.py::test_a\nbogus: nested\n")
+        assert result.is_err
+        assert result.danger_err is TicketError.MalformedEvidence
+
+    def test_validate_evidence_rejects_over_length(self) -> None:
+        result = validate_evidence("x" * 400)
+        assert result.is_err
+        assert result.danger_err is TicketError.MalformedEvidence
+
+    def test_add_evidence_appends_and_round_trips(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/__init__.py::add_evidence kind="unit"
+        _write(tmp_path, _ticket(ticket_id="T-0001"))
+        result = add_evidence(tmp_path, "T-0001", ("tests/test_foo.py::test_a",))
+        assert result.is_ok
+        assert result.danger_ok.evidence == ("tests/test_foo.py::test_a",)
+        reloaded = load_queue(tmp_path)
+        assert reloaded.is_ok
+        assert reloaded.danger_ok.tickets["T-0001"].evidence == (
+            "tests/test_foo.py::test_a",
+        )
+
+    def test_add_evidence_rejects_malformed_entry_before_write(
+        self, tmp_path: Path
+    ) -> None:
+        _write(tmp_path, _ticket(ticket_id="T-0001"))
+        result = add_evidence(tmp_path, "T-0001", ("bad\nentry",))
+        assert result.is_err
+        assert result.danger_err is TicketError.MalformedEvidence
+        # nothing should have been written
+        reloaded = load_queue(tmp_path)
+        assert reloaded.danger_ok.tickets["T-0001"].evidence == ()
+
+    def test_new_ticket_validates_evidence(self, tmp_path: Path) -> None:
+        from frob.tickets import TicketSpec
+
+        spec = TicketSpec(
+            title="With evidence",
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            evidence=("bad\nentry",),
+        )
+        result = new_ticket(tmp_path, spec)
+        assert result.is_err
+        assert result.danger_err is TicketError.MalformedEvidence
 
 
 class TestStateMachine:
