@@ -2197,7 +2197,7 @@ Typani pilot: TEST001 (untested public symbol) fires on flow declarations inside
 id: T-0169
 title: capability conformance did not scan TS/JS in the logand.app pilot -- verify
   per-language wiring
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-07-18'
@@ -2214,6 +2214,69 @@ acceptance: []
 threat: null
 ```
 logand.app pilot reports browser-side capabilities could not be auto-verified, leaving permanent SYS101 warnings -- yet vet _capability HAS a typescript pattern table (.ts/.tsx/.js in _EXT_LANGUAGE). Investigate whether the conformance path (scan_directory_capabilities via _selfconform / sys audit) actually walks TS/JS files or silently skips them (wiring bug), or whether the pilot's code globs missed the frontend tree (doc/UX gap). Either way the fix must make TS scanning provably active -- this feeds directly into T-0158's coverage matrix, which should gain a live wiring assertion (language column proven active end-to-end through sys audit, not just patterns existing).
+
+## Done report
+
+Root cause: WIRING BUG, confirmed by repro. `_selfconform.py::check_self_conformance`
+handed `bind_code`'s Python-only `CodeBinding` (`_code_binding.py::_sorted_py_files`
+walks only `*.py`, by design -- it also backs Python-import conformance) straight to
+the capability-observation joins (`_observed_extended_kinds_by_node`,
+`_observed_all_kinds_by_node`). A `.ts`/`.js`/`.rs`/`.c-cpp` file was therefore never
+even a KEY in `binding.owner`, so `scan_file_capabilities` (which DOES have a
+typescript pattern table, `_EXT_LANGUAGE` in `_capability.py`) was simply never
+called on it. Repro: a `.ts` node file with `fetch(...)` + `localStorage.setItem(...)`
+under a `code=` glob produced ZERO SYS100 violations before the fix (only spurious
+SYS102 "unmodeled code", since bind_code saw 0 bound files); after the fix it
+correctly fires SYS100 for `fetch_url` and `client_storage`.
+
+Fix (both files in scope):
+- `src/frob/vet/_capability.py`: added public `SCANNED_LANGUAGES` (frozenset of
+  every language `_EXT_LANGUAGE` maps at least one extension to) so a drift-lock
+  test can assert self-conformance's scanned-language set equals
+  `_capability_registry.LANGUAGES` without hand-duplicating either list.
+- `src/frob/strata/_selfconform.py`: added `_sorted_capability_files` (walks every
+  file under root with a `language_for`-recognized extension) and
+  `_capability_binding` (extends `bind_code`'s Python-only `CodeBinding` with every
+  OTHER capability-scannable-language file, bound by the SAME `code=` glob
+  convention via `_node_code_globs`, reused not reimplemented; deny-by-default
+  `AmbiguousCodeBinding` on a multi-node glob match, same as `bind_code`).
+  `check_self_conformance` now builds this superset binding and passes it to
+  `_extended_kind_violations`/`_stale_design_violations` (SYS100-extended and
+  SYS101), so every registry-covered language is reconciled, not just Python.
+  `bind_code`'s raw Python-only binding is still used for `_core_undeclared_violations`
+  (delegates verbatim to THREAT004/`_effects.py`, out of scope, Python-import-
+  syntax-specific by design) and `_unmodeled_violations` (SYS102 is specifically
+  about `src/frob/` package-directory ownership, unrelated to capability language).
+
+Changed:
+  src/frob/vet/_capability.py::SCANNED_LANGUAGES
+  src/frob/strata/_selfconform.py::_sorted_capability_files
+  src/frob/strata/_selfconform.py::_capability_binding
+  src/frob/strata/_selfconform.py::_observed_extended_kinds_by_node (binding source changed)
+  src/frob/strata/_selfconform.py::_observed_all_kinds_by_node (binding source changed)
+  src/frob/strata/_selfconform.py::check_self_conformance (wires _capability_binding in)
+
+Evidence (frob:tests-bound, tests/unit/strata/test_selfconform.py):
+  TestNonPythonLanguageWiring.test_typescript_undeclared_capability_fires
+  TestNonPythonLanguageWiring.test_typescript_undeclared_capability_discharges_once_declared
+  TestNonPythonLanguageWiring.test_typescript_stale_design_fires
+  TestNonPythonLanguageWiring.test_sorted_capability_files_includes_typescript
+  TestLanguageCoverageDriftLock.test_scanned_languages_equals_registry_languages
+  TestLanguageCoverageDriftLock.test_language_for_is_consistent_with_scanned_languages
+All prior SYS100/SYS101/SYS102/drift-lock/real-gate-green tests in the same file
+still pass unmodified (16/16 total in tests/unit/strata/test_selfconform.py).
+
+Filed: none (fix stayed inside declared scope; T-0158's own coverage matrix and
+T-0181's `_capability_registry.py` were not touched).
+
+Gates: `uv run frob check` clean except the pre-existing campaign-wide TEST006
+coverage-stamp warning (never run `make coverage` per standing instruction).
+`uv run frob test --base main` PASS (python exit=0, 16.52s), including the real
+gate-green self-conformance test against `design/frob.strata` + the live repo tree.
+`ruff format --check .` clean.
+
+Not closing this ticket per workflow instructions (implementer records evidence and
+Done report; closing/verification is a separate step).
 
 <!-- ticket:T-0170 -->
 ```yaml
