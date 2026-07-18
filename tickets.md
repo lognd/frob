@@ -1026,3 +1026,100 @@ acceptance: []
 threat: null
 ```
 T-0155's LINT004 rule (design lint family) fires honestly on design/frob.strata's checker/core/stratamod/vet nodes: each holds a risky (exec/net) may capability with no real, checked-in kill switch (env var / feature flag) an operator can flip live to disable it. T-0155 deliberately did not fabricate a flag=<id> attr naming a mechanism that does not exist (declare real facts or waive with reasons, T-0150/T-0151 precedent) -- this ticket is the follow-on product work to build the actual mechanism and then discharge LINT004 for real on design/frob.strata.
+
+<!-- ticket:T-0201 -->
+```yaml
+id: T-0201
+title: 'selfconform self-match: pattern-catalog data files observed as live capabilities
+  -- main red'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/_selfconform.py
+- src/frob/strata/_effects.py
+- src/frob/vet/_capability.py
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0153+T-0181 interaction, invisible to both branches (TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant skips without strata_core natives, so it only runs on main): 5 SYS100 violations -- stratamod 'fs' x2 (_cve_fingerprint.py:120/:190 needle literals), stratamod 'deserialize'+'sql' (extended kinds from catalog needles), vet 'html_render' (T-0181 jinja2 needles in _capability_registry.py). Root cause: self-conformance scans pattern-catalog DATA files as if their needle literals exercise capabilities -- the exact T-0151 self-match class. Fix: a single shared self-match exclusion (registry + fingerprint catalog + any future pattern-table file) applied consistently in BOTH vet aggregation (_is_self_path, already done piecemeal) and the selfconform scan paths (THREAT004 core + extended kinds); one source of truth, not per-file patches. Drift-lock: a test asserting the exclusion list covers every module that defines needle tables (registry-of-pattern-files), plus the real-gate test back to green. Do NOT declare fake capabilities on stratamod/vet in design/frob.strata -- the nodes do not exercise these capabilities; excluding descriptive data is the honest fix.
+
+<!-- ticket:T-0202 -->
+```yaml
+id: T-0202
+title: 'frob check default output: stats summary, gate chatter to DEBUG, standardized
+  log format'
+state: queued
+kind: ux
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/logging/**
+- src/frob/app/**
+- src/frob/check/**
+- src/frob/graph/**
+- src/frob/gates/**
+- tests/**
+- docs/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+User report 2026-07-18: default frob check output is ~6K lines, mostly per-file/per-symbol debug chatter ('dispatching path=... to grammar=python', 'extracted 17 symbols...', 'digested TestGrammarRoundTrip: sig=... body=...', per-gate run_gates timing lines). These are DEBUG-level diagnostics printed at default verbosity. Fix: (1) audit every log call in graph build/digest/dispatch/gate-run paths and set honest levels -- per-file and per-symbol lines to DEBUG, per-stage one-line summaries to INFO; (2) default (non-verbose) output = the tool summary table plus violations only; -v restores current firehose, -vv adds true debug; (3) standardize the logging format across all modules per ~/.claude/refs/logging.md conventions (module logger + one formatter -- no mixed bare-print/log styles between gates, graph, vet, sys); (4) keep --json machine output untouched and clean (quiet_stdout_logs already guards it -- extend coverage if any new chatter leaks). Acceptance: default frob check on this repo emits under ~200 lines; every line above INFO is actionable.
+
+<!-- ticket:T-0203 -->
+```yaml
+id: T-0203
+title: 'perf_gate: silence UnsupportedLanguage skips for non-code files'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/perf/**
+- src/frob/gates/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+User report 2026-07-18: 'perf_gate: skipping unparsed docs/guides/agent-playbook.md: UnsupportedLanguage: File extension has no registered grammar' -- perf gate walks non-code files (markdown/json/toml) and logs a WARN-looking skip for each. Files with no registered grammar are not perf-scannable BY DESIGN: filter them out before the scan by extension (reuse the canonical language registry extension table from T-0129), log nothing at default verbosity (a single DEBUG-level count line at most). A skip message should be reserved for files that SHOULD parse but failed. Test: perf gate over a fixture tree with md/toml/json emits zero skip lines and scans only registered-grammar files.
+
+<!-- ticket:T-0204 -->
+```yaml
+id: T-0204
+title: 'standing warnings triage: exports (12+ per pkg), dup 64 groups, arch 197 warns,
+  perf 174'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/**
+- tests/**
+- frob.toml
+- docs/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+User directive 2026-07-18: the pass-line counters hide real debt -- frob-exports reports 12-253 public symbols missing from __init__.py per package (decide policy: export or demote to private, per package, no blanket waiver), frob-dup 64 duplicate groups (triage: real extraction candidates vs false pairs; feeds T-0187 tree), frob-arch 197 warnings + 123 suggestions (long-function/god-class residue post-calibration -- fix or waive with reasons), perf gate 174 violations (166 waived -- re-audit every waiver still holds after T-0161's heuristic fixes land; the 8 unwaived need real fixes). Deliverable: each family driven to a state where the summary line is HONEST -- zero unwaived findings or a written per-finding reason; no threshold-loosening without a disclosed decision. Split into child tickets per family if any single family exceeds a session of work -- this ticket is the umbrella and the accounting.
