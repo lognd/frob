@@ -567,6 +567,57 @@ class TestFingerprintScan:
 
         assert _is_self_path(_FINGERPRINT_CATALOG_PATH)
 
+    def test_self_pattern_exclusion_covers_every_needle_table_module(self) -> None:
+        # T-0201 drift-lock: a registry-of-pattern-files check. Any module
+        # under src/frob/ that DEFINES a literal needle table (a
+        # `needles=(...)` catalog-entry call, or a `needles: tuple[str, ...]`
+        # pydantic field on a catalog model -- the two literal shapes
+        # `_capability_registry.py::DANGEROUS_OPERATIONS` and
+        # `_cve_fingerprint.py::CVE_FINGERPRINTS` actually use) is the T-0151
+        # self-match class this ticket's root cause traces to: scanning that
+        # module's own file "observes" every capability its table stores as
+        # data, regardless of what the module's code does. This test fails
+        # loudly (a future catalog file must widen `is_self_pattern_path`'s
+        # exclusion set, not silently produce fresh SYS100/vet noise like
+        # T-0201 did for _cve_fingerprint.py) rather than let a new
+        # pattern-table file slip past both join paths unexcluded again.
+        # frob:tests src/frob/vet/_capability.py::is_self_pattern_path kind="unit"
+        import re
+
+        from frob.vet._capability import (
+            _FINGERPRINT_CATALOG_PATH,
+            _REGISTRY_PATH,
+            _SELF_PATH,
+            is_self_pattern_path,
+        )
+
+        root = Path(__file__).resolve().parents[1] / "src" / "frob"
+        needle_table_marker = re.compile(r"needles\s*=\s*\(|needles\s*:\s*tuple\[")
+        offenders: list[Path] = []
+        for path in root.rglob("*.py"):
+            text = path.read_text(encoding="utf-8", errors="replace")
+            if needle_table_marker.search(text) and not is_self_pattern_path(path):
+                offenders.append(path)
+
+        assert offenders == [], (
+            f"module(s) define a literal needle table but are not covered by "
+            f"is_self_pattern_path: {offenders} -- widen the exclusion set "
+            f"in frob.vet._capability"
+        )
+        # sanity: the exclusion set is exactly the three known catalog/
+        # scanner modules, not accidentally empty (which would make the
+        # `offenders == []` assertion above vacuously true).
+        assert {_SELF_PATH, _REGISTRY_PATH, _FINGERPRINT_CATALOG_PATH} == {
+            p.resolve()
+            for p in (
+                Path(__file__).resolve().parents[1] / "src/frob/vet/_capability.py",
+                Path(__file__).resolve().parents[1]
+                / "src/frob/vet/_capability_registry.py",
+                Path(__file__).resolve().parents[1]
+                / "src/frob/strata/_cve_fingerprint.py",
+            )
+        }
+
     def test_scan_directory_fingerprints_aggregates_across_files(
         self, tmp_path: Path
     ) -> None:

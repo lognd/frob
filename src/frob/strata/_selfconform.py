@@ -70,7 +70,11 @@ from typani.result import Err, Ok, Result
 
 from frob.excludes import is_skipped_dir
 from frob.logging import get_logger
-from frob.vet._capability import language_for, scan_file_capabilities
+from frob.vet._capability import (
+    is_self_pattern_path,
+    language_for,
+    scan_file_capabilities,
+)
 
 from ._code_binding import FOREIGN, CodeBinding, _node_code_globs, bind_code
 from ._effects import _KIND_MAP, _declared_kinds, check_capability_conformance
@@ -252,11 +256,17 @@ def _observed_extended_kinds_by_node(
     `scan_file_capabilities` observes across that node's `code=`-bound
     files (module docstring's SYS100 extended case). `binding` here is
     ALWAYS the T-0169 `_capability_binding` superset, never the raw
-    `.py`-only `bind_code` output -- see that function's docstring."""
+    `.py`-only `bind_code` output -- see that function's docstring. Skips
+    `is_self_pattern_path` files (T-0201): a pattern-catalog data file's
+    needle literals are not code exercising the capability, the same
+    self-match class `frob.vet._capability`'s own aggregation excludes."""
     per_node: dict[str, set[str]] = {}
     for rel in _sorted_owned_files(binding):
+        path = root / rel
+        if is_self_pattern_path(path):
+            continue
         owner = binding.owner[rel]
-        found = scan_file_capabilities(root / rel) & _EXTENDED_KINDS
+        found = scan_file_capabilities(path) & _EXTENDED_KINDS
         if found:
             per_node.setdefault(owner, set()).update(found)
     return {node_id: frozenset(kinds) for node_id, kinds in per_node.items()}
@@ -272,11 +282,19 @@ def _observed_all_kinds_by_node(
     SYS100) needs the full vocabulary regardless of THREAT004's scope.
     `binding` here is the T-0169 `_capability_binding` superset (see that
     function's docstring), so SYS101 stale-design also covers every
-    registry-scanned language, not just Python."""
+    registry-scanned language, not just Python. Skips `is_self_pattern_
+    path` files (T-0201), same self-match exclusion as `_observed_
+    extended_kinds_by_node` -- SYS101's declared-but-unobserved direction
+    must not see a pattern catalog's own literals as "observed" either, or
+    a real declaration gets masked by self-match noise on the OPPOSITE
+    side of the join."""
     per_node: dict[str, set[str]] = {}
     for rel in _sorted_owned_files(binding):
+        path = root / rel
+        if is_self_pattern_path(path):
+            continue
         owner = binding.owner[rel]
-        raw = scan_file_capabilities(root / rel)
+        raw = scan_file_capabilities(path)
         normalized = {_KIND_MAP.get(kind, kind) for kind in raw}
         if normalized:
             per_node.setdefault(owner, set()).update(normalized)
