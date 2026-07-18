@@ -28,27 +28,11 @@ from typani.result import Result
 from frob.gates._models import Severity, Violation, WaiverRef
 from frob.gitio import Diff
 from frob.graph import GraphSnapshot
+from frob.lang import language_for_extension
 from frob.logging import get_logger
 from frob.policy._models import PolicyError, PolicyKind, PolicyRule
 
 _log = get_logger(__name__)
-
-# Documented duplicate of frob.lang._EXTENSION_TABLE's extension -> language label
-# mapping (same posture as frob.graph._SOURCE_EXTENSIONS and
-# frob.testing._select._EXTENSION_LANGUAGE): frob.lang exposes only
-# supported_languages(), not the extension map itself.
-_EXTENSION_LANGUAGE: dict[str, str] = {
-    ".py": "python",
-    ".ts": "typescript",
-    ".tsx": "tsx",
-    ".rs": "rust",
-    ".c": "c",
-    ".h": "c",
-    ".cpp": "cpp",
-    ".hpp": "cpp",
-    ".cc": "cpp",
-    ".hh": "cpp",
-}
 
 # Import-syntax regexes, one per language label; deliberately line-based rather
 # than tree-sitter (a second grammar-driven pass per forbidden-import rule was
@@ -250,7 +234,7 @@ def _forbidden_import_violations(
     """Every import line in a `within`-matched file that imports `rule.module`."""
     violations: list[Violation] = []
     for rel_path in _files_under(root, snapshot, rule.within):
-        language = _EXTENSION_LANGUAGE.get(Path(rel_path).suffix.lower())
+        language = language_for_extension(Path(rel_path).suffix.lower())
         pattern = _IMPORT_PATTERNS.get(language or "")
         if pattern is None:
             continue

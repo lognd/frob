@@ -6,7 +6,13 @@ from pydantic import BaseModel
 from typani import Err, ErrorSet, Ok
 from typani.result import Result
 
-from frob.lang import RawSymbol, SymbolKind, iter_identifiers, parse_file
+from frob.lang import (
+    RawSymbol,
+    SymbolKind,
+    iter_identifiers,
+    parse_file,
+    supported_extensions,
+)
 
 
 # frob:doc docs/commands/xref.md#public-api
@@ -68,8 +74,25 @@ class XrefResult(BaseModel):
 
 _PY_EXTS = {".py"}
 _CPP_EXTS = {".c", ".cc", ".cpp", ".cxx", ".c++", ".h", ".hpp", ".hxx", ".h++"}
-_SOURCE_EXTS = _PY_EXTS | _CPP_EXTS
-_LANG_EXTS = {"python": _PY_EXTS, "c": _CPP_EXTS, "cpp": _CPP_EXTS}
+_STRATA_EXTS = {".strata"}
+# Extensions `iter_identifiers` can parse (tree-sitter-backed) -- files with
+# these go through `_search_parsed`; everything else `_collect_source_files`
+# gathers (e.g. `.strata`, which has no `iter_identifiers` support, T-0077's
+# docstring) falls back to plain-text search (T-0129). `_PY_EXTS`/`_CPP_EXTS`
+# predate T-0129 and carry a couple of cpp extensions (.c++/.hxx/.h++)
+# frob.lang's grammar table does not, so they are kept as explicit local
+# buckets rather than narrowed to `tree_sitter_extensions()`.
+_SOURCE_EXTS = frozenset(_PY_EXTS) | frozenset(_CPP_EXTS)
+_LANG_EXTS = {
+    "python": _PY_EXTS,
+    "c": _CPP_EXTS,
+    "cpp": _CPP_EXTS,
+    "strata": _STRATA_EXTS,
+}
+# Every extension xref will collect and search by default -- the canonical
+# `frob.lang` registry (T-0129), so any grammar frob.lang gains reaches
+# xref automatically (parsed if tree-sitter-backed, text-searched otherwise).
+_ALL_EXTS = supported_extensions() | _SOURCE_EXTS
 
 
 # frob:doc docs/commands/xref.md#public-api
@@ -106,12 +129,7 @@ def xref(
 
 
 def _collect_source_files(root: Path, lang: str | None) -> list[Path]:
-    if lang == "python":
-        exts = _PY_EXTS
-    elif lang in ("cpp", "c"):
-        exts = _CPP_EXTS
-    else:
-        exts = _SOURCE_EXTS
+    exts = _LANG_EXTS.get(lang, _ALL_EXTS) if lang is not None else _ALL_EXTS
 
     if root.is_file():
         return [root] if root.suffix.lower() in exts else []

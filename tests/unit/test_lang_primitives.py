@@ -17,10 +17,13 @@ from frob.lang import (
     cpp_function_nodes,
     extract_imports,
     iter_identifiers,
+    language_for_extension,
     node_text,
     raw_tree,
     resolve_local_import,
+    supported_extensions,
     symbol_tree,
+    tree_sitter_extensions,
 )
 from frob.lang._common import (
     child_text,
@@ -192,6 +195,29 @@ def test_iter_identifiers_tree_and_path(tmp_path: Path):
     path = tmp_path / "sample.py"
     path_ids = {name for name, _line in iter_identifiers(path).danger_ok}
     assert "greet" in path_ids
+
+
+def test_supported_extensions_includes_tree_sitter_and_strata():
+    # frob:tests src/frob/lang/__init__.py::supported_extensions kind="unit"
+    exts = supported_extensions()
+    assert ".py" in exts
+    assert ".strata" in exts
+
+
+def test_tree_sitter_extensions_excludes_strata():
+    # frob:tests src/frob/lang/__init__.py::tree_sitter_extensions kind="unit"
+    exts = tree_sitter_extensions()
+    assert ".py" in exts
+    assert ".strata" not in exts
+    assert exts < supported_extensions()
+
+
+def test_language_for_extension_covers_every_supported_extension():
+    # frob:tests src/frob/lang/__init__.py::language_for_extension kind="unit"
+    assert language_for_extension(".py") == "python"
+    assert language_for_extension(".PY") == "python"
+    assert language_for_extension(".strata") == "strata"
+    assert language_for_extension(".nope") is None
 
 
 def test_resolve_local_import_maps_to_repo_relative(tmp_path: Path):

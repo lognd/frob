@@ -88,6 +88,23 @@ class _Limits:
     max_file_lines: int
 
 
+def _has_tree_sitter_grammar(path: Path, rel: str) -> bool:
+    """Whether `path` has a tree-sitter grammar `raw_tree` can parse (T-0129).
+
+    `raw_tree` is a tree-sitter-only escape hatch (frob.lang docstring) --
+    languages like `.strata` with no tree-sitter grammar have nothing for
+    arch's structural walks to inspect, so callers should skip them silently
+    rather than calling `raw_tree` and logging a spurious "no grammar
+    registered" warning per file.
+    """
+    from frob.lang import tree_sitter_extensions
+
+    if path.suffix.lower() in tree_sitter_extensions():
+        return True
+    _log.debug("arch: %s has no tree-sitter grammar, skipping", rel)
+    return False
+
+
 def _analyze_one_file(
     path: Path,
     root: Path,
@@ -110,6 +127,9 @@ def _analyze_one_file(
         return
 
     _check_large_file(rel, raw.splitlines(), limits.max_file_lines, suggestions)
+
+    if not _has_tree_sitter_grammar(path, rel):
+        return
 
     parsed = raw_tree(path)
     if parsed.is_err:

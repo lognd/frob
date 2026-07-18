@@ -81,11 +81,63 @@ _SUPPORTED_LANGUAGES = frozenset(
     label for _grammar, label in _EXTENSION_TABLE.values()
 ) | {_STRATA_LANGUAGE}
 
+_SUPPORTED_EXTENSIONS = frozenset(_EXTENSION_TABLE) | {_STRATA_EXTENSION}
+
+# Extensions `parse_file` can turn into symbols/comments via tree-sitter's
+# `raw_tree`/`symbol_tree` escape hatches (T-0129) -- `.strata` is excluded
+# because it has no tree-sitter grammar; see `_STRATA_EXTENSION` above and
+# each escape hatch's own `.strata` handling for the precise boundary.
+_TREE_SITTER_EXTENSIONS = frozenset(_EXTENSION_TABLE)
+
 
 # frob:doc docs/modules/graph.md#public-api
 def supported_languages() -> frozenset[str]:
     """The set of `ParsedFile.language` labels `parse_file` can ever produce."""
     return _SUPPORTED_LANGUAGES
+
+
+# frob:doc docs/modules/graph.md#public-api
+# frob:ticket T-0129
+def supported_extensions() -> frozenset[str]:
+    """The canonical set of file extensions `parse_file` accepts (T-0129).
+
+    The single source of truth every `frob.lang` consumer (`frob.graph`,
+    `frob.outline`, `frob.xref`, `frob.testing`, `frob.policy`,
+    `frob.app.cycle_runner`, `frob.arch`) should filter files through
+    instead of hand-maintaining its own duplicate extension table -- see
+    docs/modules/lang.md#supported-extensions.
+    """
+    return _SUPPORTED_EXTENSIONS
+
+
+# frob:doc docs/modules/graph.md#public-api
+# frob:ticket T-0129
+def language_for_extension(ext: str) -> str | None:
+    """The `ParsedFile.language` label `parse_file` would produce for `ext`, or `None`.
+
+    The canonical extension-to-language mapping (T-0129) -- callers that
+    need to know a file's language label without parsing it (e.g.
+    `frob.testing._select`'s touched-set-to-test-suite mapping) should use
+    this instead of hand-copying `_EXTENSION_TABLE`'s entries.
+    """
+    ext = ext.lower()
+    if ext == _STRATA_EXTENSION:
+        return _STRATA_LANGUAGE
+    entry = _EXTENSION_TABLE.get(ext)
+    return entry[1] if entry is not None else None
+
+
+# frob:doc docs/modules/graph.md#public-api
+# frob:ticket T-0129
+def tree_sitter_extensions() -> frozenset[str]:
+    """Extensions `parse_file` routes through tree-sitter (excludes `.strata`, T-0129).
+
+    For consumers that specifically need the tree-sitter-only escape hatches
+    (`raw_tree`, `symbol_tree`, `extract_imports`, `iter_identifiers`), which
+    return `Err(UnsupportedLanguage)` for `.strata` -- see each function's
+    docstring and docs/modules/lang.md#supported-extensions.
+    """
+    return _TREE_SITTER_EXTENSIONS
 
 
 def _display_path(path: Path) -> str:

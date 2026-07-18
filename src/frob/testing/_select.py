@@ -11,27 +11,11 @@ from pathlib import PurePosixPath
 
 from frob.gitio import Diff, Hunk
 from frob.graph import EdgeKind, GraphSnapshot, SymbolRecord
+from frob.lang import language_for_extension
 from frob.logging import get_logger
 from frob.testing._models import SelectConfig, SelectionReport
 
 _log = get_logger(__name__)
-
-# Mirrors frob.lang._EXTENSION_TABLE's extension -> language-label mapping
-# (documented duplicate, same posture as frob.graph's _SOURCE_EXTENSIONS: adding a
-# public extension-listing API to frob.lang for these two callers was judged out of
-# scope). Test-file extensions map onto the SAME labels frob.lang.parse_file uses.
-_EXTENSION_LANGUAGE: dict[str, str] = {
-    ".py": "python",
-    ".ts": "typescript",
-    ".tsx": "typescript",
-    ".rs": "rust",
-    ".c": "c",
-    ".h": "c",
-    ".cpp": "cpp",
-    ".hpp": "cpp",
-    ".cc": "cpp",
-    ".hh": "cpp",
-}
 
 # The all-suite sentinel `run_selected` recognizes in a language's selected tuple:
 # render `all_command` instead of the placeholder-rendered `command`.
@@ -41,9 +25,13 @@ ALL_SENTINEL = "*"
 
 # frob:doc docs/modules/testing.md#public-api
 def extension_language(path: str) -> str | None:
-    """The `frob.lang` language label for `path`'s extension, or `None` if unknown."""
+    """The `frob.lang` language label for `path`'s extension, or `None` if unknown.
+
+    Routes through `frob.lang.language_for_extension` (T-0129) -- the
+    canonical extension registry -- rather than a locally hand-copied table.
+    """
     suffix = PurePosixPath(path).suffix.lower()
-    return _EXTENSION_LANGUAGE.get(suffix)
+    return language_for_extension(suffix)
 
 
 def _is_test_file(path: str) -> bool:

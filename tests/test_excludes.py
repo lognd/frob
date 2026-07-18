@@ -6,6 +6,8 @@ from pathlib import Path
 
 from frob.excludes import is_excluded, is_skipped_dir, load_exclude_globs
 
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+
 
 def test_builtin_skip_dirs():
     # frob:tests src/frob/excludes.py::is_skipped_dir
@@ -46,3 +48,21 @@ def test_dup_scanner_honors_exclude(tmp_path: Path):
     result = find_duplicates(tmp_path)
     hit_files = {frag.file for group in result.groups for frag in group.fragments}
     assert not any("generated" in f for f in hit_files)
+
+
+def test_repo_excludes_litmus_strata_from_obligation_surface():
+    """`design/litmus/**` is a T-0130 exclude, mirroring `tests/fixtures/**`.
+
+    Litmus `.strata` files are example models exercised by
+    `tests/unit/strata`'s parametrized suite, not maintained product
+    surface -- they must stay out of `frob.graph`'s COV001/TEST001
+    obligation scan (T-0129 made them graph-tracked; without this exclude
+    every public strata construct in them fails the doc/test gate) while
+    remaining directly parseable via explicit `frob outline`/`frob
+    xref`/`frob cycle` invocations, which never consult this exclude list.
+    """
+    # frob:tests src/frob/excludes.py::load_exclude_globs kind="unit"
+    globs = load_exclude_globs(_REPO_ROOT)
+    assert is_excluded("design/litmus/chirp.strata", globs)
+    assert is_excluded("design/litmus/payments.strata", globs)
+    assert not is_excluded("src/frob/graph/__init__.py", globs)

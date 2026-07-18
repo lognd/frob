@@ -1,7 +1,13 @@
 check_base = "main"
 
 [graph]
-exclude = ["tests/fixtures/**", ".claude/worktrees/**"]
+# design/litmus/**: strata litmus fixtures (T-0130) -- example models used
+# by tests/unit/strata's parametrized suite, not maintained product surface.
+# Same posture as tests/fixtures/**: still parseable by frob.lang and
+# visible to map/outline/xref/cycle when pointed at them explicitly (those
+# commands never consult this exclude list), just kept out of the
+# graph/dup/arch obligation surface COV001/TEST001 run over.
+exclude = ["tests/fixtures/**", "design/litmus/**", ".claude/worktrees/**"]
 
 [gates.severity]
 # COV001 (public symbol has an explicit frob:doc edge) and TEST001 (public

@@ -11,7 +11,15 @@ from frob.logging import get_logger
 _log = get_logger(__name__)
 
 _PY_EXTS = {".py"}
+# A superset of frob.lang's cpp extensions (adds .c++/.hxx/.h++, which
+# frob.lang's grammar table does not carry -- pre-existing behavior, kept
+# as-is rather than narrowed as part of T-0129).
 _CPP_EXTS = {".c", ".cc", ".cpp", ".cxx", ".c++", ".h", ".hpp", ".hxx", ".h++"}
+# extract_imports (called below) is a tree-sitter-only escape hatch with no
+# `.strata` analogue (frob.lang docstring), so cycle detection can only walk
+# import edges for languages tree-sitter actually parses (T-0129). `.strata`
+# files still become graph nodes via `graph.add_node` in `_process_path`
+# below -- they simply get no import edges, which is graceful, not a crash.
 
 
 # frob:doc docs/modules/app.md#runners

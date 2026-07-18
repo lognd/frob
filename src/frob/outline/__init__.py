@@ -6,7 +6,14 @@ from pydantic import BaseModel
 from typani import Err, ErrorSet, Ok
 from typani.result import Result
 
-from frob.lang import LangError, RawSymbol, SymbolKind, extract_imports, parse_file
+from frob.lang import (
+    LangError,
+    RawSymbol,
+    SymbolKind,
+    extract_imports,
+    parse_file,
+    supported_extensions,
+)
 
 
 # frob:doc docs/commands/outline.md#public-api
@@ -99,6 +106,20 @@ class ModuleOutline(BaseModel):
 
 _PY_EXTS = {".py"}
 _CPP_EXTS = {".c", ".cc", ".cpp", ".cxx", ".c++", ".h", ".hpp", ".hxx", ".h++"}
+# `.strata` has no import syntax `extract_imports` understands (T-0077's
+# docstring) -- outline still supports it as a third bucket (T-0129) so its
+# symbols show up; `_dedupe_imports` sees an always-empty `raw_imports` for
+# it and the cpp-style branch is a no-op.
+_STRATA_EXTS = frozenset({".strata"})
+# `.strata` in particular is drawn from `frob.lang.supported_extensions()`
+# (T-0129) rather than a fresh literal, since that is its single source of
+# truth; `_PY_EXTS`/`_CPP_EXTS` predate T-0077/T-0129 and intentionally
+# carry a couple of cpp extensions (.c++/.hxx/.h++) frob.lang's grammar
+# table does not, so they are kept as explicit local buckets rather than
+# narrowed to frob.lang's set.
+_OUTLINE_EXTS = (
+    frozenset(_PY_EXTS) | frozenset(_CPP_EXTS) | (_STRATA_EXTS & supported_extensions())
+)
 
 
 def _display_path(path: Path) -> Path:
@@ -121,6 +142,13 @@ def _parse_for_outline(
         return Err(OutlineError.ParseFailed)
     parsed = parsed_result.danger_ok
 
+    # `extract_imports` is a tree-sitter-only escape hatch with no `.strata`
+    # analogue (frob.lang docstring) -- skip the call for it rather than
+    # inviting its "no grammar registered" warning on every strata file
+    # (T-0129); `.strata` outlines simply carry no imports.
+    if path.suffix.lower() in _STRATA_EXTS:
+        return Ok((parsed, ()))
+
     imports_result = extract_imports(path)
     raw_imports = imports_result.danger_ok if imports_result.is_ok else ()
     return Ok((parsed, raw_imports))
@@ -129,7 +157,7 @@ def _parse_for_outline(
 # frob:doc docs/commands/outline.md#public-api
 def outline_file(path: Path) -> Result[ModuleOutline, OutlineError]:
     ext = path.suffix.lower()
-    if ext not in _PY_EXTS and ext not in _CPP_EXTS:
+    if ext not in _OUTLINE_EXTS:
         return Err(OutlineError.UnsupportedLanguage)
 
     parsed_pair = _parse_for_outline(path)

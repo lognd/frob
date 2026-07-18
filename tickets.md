@@ -5648,7 +5648,7 @@ T-0092 wired a cargo [[test.runner]] and collect_rust_tests for strata-core only
 ```yaml
 id: T-0129
 title: wire .strata into frob.graph/outline/xref/testing/policy/cycle scanners
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-18'
@@ -5662,9 +5662,110 @@ scope:
 - src/frob/policy/**
 - src/frob/app/cycle_runner.py
 - src/frob/arch/__init__.py
-evidence: []
+- src/frob/lang/__init__.py
+- tests/unit/test_lang_primitives.py
+evidence:
+- tests/unit/test_lang_primitives.py::test_supported_extensions_includes_tree_sitter_and_strata
+- tests/unit/test_lang_primitives.py::test_tree_sitter_extensions_excludes_strata
+- tests/unit/test_lang_primitives.py::test_language_for_extension_covers_every_supported_extension
 attachments: []
 acceptance: []
 threat: null
 ```
 T-0077 registered .strata as a frob.lang grammar (parse_file/supported_languages), but every consumer of frob.lang filters files through its own hand-maintained extension table/suffix check instead of frob.lang.supported_languages() -- frob.graph's _SOURCE_EXTENSIONS, frob.outline's outline_file suffix dispatch, frob.xref's _SOURCE_EXTS, frob.testing._select's _EXTENSION_LANGUAGE, frob.policy's own table, frob.app.cycle_runner's _PY_EXTS/_CPP_EXTS, and frob.arch's raw_tree call in _analyze_one_file (which has no extension guard at all and calls the tree-sitter-only raw_tree escape hatch on every collected file, including .strata -- this is why 'no grammar registered for extension .strata' warnings for design/litmus/*.strata persist in frob check even after T-0077). None of these are in T-0077's scope (src/frob/lang/**, src/frob/strata/**, tests/**). Add .strata to each table (or route arch's raw_tree call through parse_file with a skip for languages that have no Tree), so map/outline/xref/COV obligations actually reach .strata symbols end to end.
+
+Scope note (implementer, 2026-07-18): widened scope to include src/frob/lang/__init__.py + tests/unit/test_lang_primitives.py. The DRY fix this ticket asks for -- routing every consumer through frob.lang's canonical extension registry instead of seven hand-copied tables -- has no home unless frob.lang exposes one; supported_languages() alone (a label set, no extension) isn't enough. Added three small public functions there: supported_extensions(), tree_sitter_extensions(), language_for_extension() (docs/modules/graph.md#public-api anchors, frob:tests bound in tests/unit/test_lang_primitives.py). Re-run frob ticket sweep T-0129 after this scope edit before closing.
+## Done report
+
+Canonical extension registry added to frob.lang (supported_extensions,
+tree_sitter_extensions, language_for_extension); three hand-rolled
+tables eliminated (graph._SOURCE_EXTENSIONS, testing._select and
+policy _EXTENSION_LANGUAGE -- fixing policy's latent .tsx->"tsx"
+mismatch that never matched _IMPORT_PATTERNS); arch gates raw_tree on
+tree_sitter_extensions so .strata skips silently. outline/xref/
+cycle_runner tables kept as documented derivations because frob.lang's
+cpp table genuinely lacks .c++/.hxx/.h++ (reviewer-verified). outline
+gains a .strata bucket; xref collects .strata via plain-text fallback
+with --lang strata. Reviewer approved the code on merits (initial
+REJECT was for this missing ledger trail, completed at merge by the
+coordinator). Verified at merge: 23 tests in lang-primitives+excludes
+suites, full check exit 0.
+
+<!-- ticket:T-0130 -->
+```yaml
+id: T-0130
+title: 'design/litmus strata symbols: exclude from doc/test obligations'
+state: done
+kind: docs
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- frob.toml
+- tickets.md
+- tests/test_excludes.py
+evidence:
+- tests/test_excludes.py::test_repo_excludes_litmus_strata_from_obligation_surface
+- tests/test_excludes.py::test_load_and_match_globs
+- tests/test_excludes.py::test_dup_scanner_honors_exclude
+attachments: []
+acceptance: []
+threat: null
+```
+T-0129 wired .strata into frob.graph's source-extension scan (frob.lang.supported_extensions()), so design/litmus/*.strata symbols are now real graph nodes. frob check now reports ~93 COV001 (no frob:doc edge) and matching TEST001 violations for every public strata construct in chirp.strata/payments.strata/payments_hardened.strata/tube.strata -- these are litmus test fixtures (analogous to tests/fixtures/**, which IS excluded via frob.toml's [scan] exclude), not maintained application code. Either exclude design/litmus/** from graph/gates coverage obligations the same way tests/fixtures/** is excluded, or add frob:doc/frob:tests anchors to the litmus files if they are meant to carry real documentation. Filed instead of touched directly: frob.toml and design/litmus content are outside T-0129's declared scope (src/frob/graph/**, outline/**, xref/**, testing/**, policy/**, app/cycle_runner.py, arch/__init__.py).
+
+## Done report
+
+Changed:
+- frob.toml -- added "design/litmus/**" to `[graph].exclude`, mirroring the
+  existing `tests/fixtures/**` entry (same list, same load path:
+  `frob.excludes.load_exclude_globs`/`is_excluded`, shared by
+  frob.graph/frob.dup/frob.arch/frob.app.cycle_runner per T-0026).
+- tests/test_excludes.py -- added
+  `test_repo_excludes_litmus_strata_from_obligation_surface`, a regression
+  test asserting the real repo's frob.toml excludes `design/litmus/*.strata`
+  via `load_exclude_globs`/`is_excluded` (the same generic mechanism
+  `test_load_and_match_globs`/`test_dup_scanner_honors_exclude` already
+  cover with a synthetic tmp_path config).
+
+Mechanism chosen: the shared `[graph]` exclude leaf (frob.excludes), not a
+new "graph-tracked but obligation-free" concept -- that distinction does
+not exist in frob.graph today (a file is either walked into the graph, with
+full COV/TEST obligations, or it isn't). The honest fallback per the
+coordinator's instructions was taken: design/litmus is now excluded from
+graph build entirely, same as tests/fixtures/**. Tradeoff: design/litmus/*.strata
+symbols no longer appear via `frob map`/`frob graph build`'s repo-wide walk,
+and `frob xref --lang strata` with a directory root that includes
+design/litmus would also skip it if xref grows an exclude check later (it
+does not consult [graph] exclude today). Explicit single-file/single-dir
+invocations are unaffected because none of `outline_file` (single path,
+no directory walk), `xref()` (root can be a file; `_collect_source_files`
+has no exclude check), or `frob cycle design/litmus` (exclude globs are
+matched against paths relative to `scan_root`, which is `design/litmus`
+itself when passed explicitly, so `"design/litmus/**"` never matches) go
+through the exclude filter that now hides it from full-repo scans -- see
+docs/modules/lang.md and this report's Evidence for how each was
+independently re-verified below.
+
+Evidence: tests/test_excludes.py::test_repo_excludes_litmus_strata_from_obligation_surface,
+tests/test_excludes.py::test_load_and_match_globs,
+tests/test_excludes.py::test_dup_scanner_honors_exclude.
+Also manually re-verified (not pytest-bound, CLI smoke checks): `rm -rf .frob
+&& frob check --json --only gates` -> 96 diagnostics, exit 0, zero COV001/TEST001
+on any `design/litmus` path (Counter: PERF001/2/3/4, TEST002/3 only, all
+pre-existing); `frob outline design/litmus/chirp.strata`,
+`frob xref Node design/litmus/chirp.strata`, and `frob cycle design/litmus`
+all still show real symbols/results; `frob graph build` no longer touches
+`design/litmus/*.strata` (grep for the path in its stdout is empty) while
+still touching unrelated `tests/unit/strata/test_litmus_*.py` (a distinct,
+non-excluded path).
+
+Filed: none -- no further out-of-scope discoveries.
+Gates: `frob check` (unscoped, all tools) exits 0, 82 violations all
+pre-existing (14 waived, rest warn/info-severity carryover from before
+T-0129/T-0130). `frob check --ticket T-0130` reports only SCOPE001 on the
+T-0129 files still uncommitted in this same worktree (expected -- those are
+T-0129's scope, not T-0130's) plus tickets.md's own SCOPE001 (expected for
+any ticket that edits the ledger); no waiver needed for either since they
+are cross-ticket, not defects in T-0130 itself.

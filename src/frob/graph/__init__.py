@@ -12,12 +12,10 @@ tree-sitter node directly.
 the sqlite cache (`frob.graph.cache`), and a file whose hash is unchanged
 loads its symbols/edges back from the cache instead of being re-parsed.
 
-**Deviation from docs/modules/graph.md**: the source-extension table is a small,
-documented duplicate of `frob.lang`'s internal extension dispatch table
-(`.py .ts .tsx .rs .c .h .cpp .hpp .cc .hh`) -- `frob.lang` exposes only
-`supported_languages()` (a label set), not the extension mapping itself,
-and adding an extension-listing API to `frob.lang` for this one caller was
-judged out of scope for Phase 2.
+Source-file discovery filters through `frob.lang.supported_extensions()`
+(T-0129) -- the canonical extension registry -- rather than a hand-copied
+local table, so every grammar `frob.lang` gains (including `.strata`)
+reaches the graph automatically.
 """
 
 from __future__ import annotations
@@ -49,14 +47,11 @@ from frob.graph._models import (
 )
 from frob.graph.digest import compute_digests
 from frob.graph.dsl import markdown_anchors, parse_directives
-from frob.lang import LangError, ParsedFile, parse_file
+from frob.lang import LangError, ParsedFile, parse_file, supported_extensions
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
 
-_SOURCE_EXTENSIONS = frozenset(
-    {".py", ".ts", ".tsx", ".rs", ".c", ".h", ".cpp", ".hpp", ".cc", ".hh"}
-)
 _EXCLUDED_DIRS = frozenset(
     {".git", ".venv", "node_modules", "target", "build", "dist", "__pycache__", ".frob"}
 )
@@ -103,7 +98,7 @@ def _walk_source_files(root: Path, exclude_globs: tuple[str, ...] = ()) -> list[
         dirnames[:] = [d for d in dirnames if d not in _EXCLUDED_DIRS]
         for name in filenames:
             path = Path(dirpath) / name
-            if Path(name).suffix.lower() not in _SOURCE_EXTENSIONS:
+            if Path(name).suffix.lower() not in supported_extensions():
                 continue
             if exclude_globs and _is_excluded(_display_path(path, root), exclude_globs):
                 continue
