@@ -497,7 +497,11 @@ per grammar production:
   -- id, kind (endorse/declassify), flow_id, from_level, to_level, predicate.
 - `ClaimDecl` <!-- frob:describes src/frob/strata/_ast.py::ClaimDecl -->
   -- id, kind (noflow/reach/bound), src/dst or metric/target/limit, assumed,
-  owner, review.
+  owner, review. **Claim id (T-0138):** the claim-id position (only) also
+  accepts a STRING-quoted id alongside the bare IDENT form, so a discharge
+  claim naming a catalog obligation (`assert "weakness:CWE-79:web"
+  noflow(...)`) can carry the `:`/`-` characters IDENT cannot lex; no
+  other IDENT position in the grammar is loosened.
 - `RefineDecl` <!-- frob:describes src/frob/strata/_ast.py::RefineDecl -->
   -- target, nodes, flows, bind_to; see "Refinement" above for v0 semantics.
 

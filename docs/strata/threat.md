@@ -274,17 +274,17 @@ the unknown -- and says so.
   #frob-sys-audit) is the CI-ready checking counterpart: the full
   THREAT001-003 + COMPLIANCE001-002 conjunction against every configured
   view, exiting nonzero with named gaps. The vuln-litmus/hardened-twin
-  pair (`design/litmus/audit_vuln.strata` + `tests/unit/strata/test_
-  audit.py`) exercises at least one fired-undischarged obligation per
-  family (security CWE-89, quality CWE-639, compliance COPPA), refuted
-  then proved clean by its hardened twin. Scope note: the hardened twin
-  and the compliance-family obligation are `KernelModel` Python fixtures,
-  not `.strata` source, because of a real surface-grammar gap found while
-  building this litmus and filed as T-0137 (a `weakness:<cwe>:<node>` /
-  `compliance:<reg>:<target>` discharge claim id needs `:`/`-`, which
-  `strata-core/src/parse.rs::parse_claim`'s bare-IDENT claim id cannot
-  express) -- `strata-core/**` is outside T-0115's scope, so this is noted
-  and filed, not silently patched around.
+  pair (`design/litmus/audit_vuln.strata` + `design/litmus/audit_hardened.
+  strata`) exercises at least one fired-undischarged obligation per
+  security/quality family (CWE-89, CWE-639), refuted then proved clean by
+  its hardened twin -- both round-trip through the real parser (T-0138
+  added a STRING-quoted claim-id alternate so a `weakness:<cwe>:<node>`
+  discharge claim can be authored from `.strata` source). The compliance
+  family (COPPA) is still a `KernelModel` Python fixture in tests/unit/
+  strata/test_audit.py: a separate surface-grammar gap (no `.strata`
+  source can author a `subject:child`-tagged flow attr today) blocks that
+  leg specifically; `strata-core/**` grammar work for it is unscoped and
+  unfiled.
 
 Catalog data is ingested from the authoritative sources (MITRE CWE
 lists, NVD CVE->CWE), never hand-transcribed from memory -- the build

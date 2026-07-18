@@ -6,9 +6,10 @@ THREAT003 obligation in BOTH the security and quality families from one
 `may "sql"` capability declaration (docs/strata/threat.md#beyond-security-
 the-anti-pattern-families) -- the one piece of the T-0115 vuln-litmus that
 round-trips through the parser today (module docstring on the `.strata`
-file explains why the hardened twin and the compliance family live in
-tests/unit/strata/test_audit.py instead, T-0137). This golden is a
-permanent CI fixture.
+file explains where the hardened twin now lives -- `audit_hardened.
+strata`, T-0138 -- and why the compliance family still lives in
+tests/unit/strata/test_audit.py). This golden is a permanent CI
+fixture.
 """
 
 from __future__ import annotations

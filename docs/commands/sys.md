@@ -242,10 +242,14 @@ detail=...` line per violation, `PROVED` on a clean run.
 `may "sql"` capability fires an undischarged THREAT003 obligation in both
 the security (CWE-89) and quality (CWE-639) families -- refuted by `frob
 sys audit` with exactly those two named gaps (tests/unit/strata/test_
-litmus_audit_vuln.py, permanent CI golden). The compliance family and the
-hardened (all-clean) twin are built as `KernelModel` fixtures directly in
-tests/unit/strata/test_audit.py instead of a second `.strata` file: a real
-surface-grammar gap (T-0137, claim ids cannot contain `:`/`-`, so no
-`.strata` source can author a `weakness:<cwe>:<node>`-shaped discharge
-claim today) blocks a hardened `.strata` twin from round-tripping through
-the parser. See that test module's docstring for the full explanation.
+litmus_audit_vuln.py, permanent CI golden). `design/litmus/audit_hardened.
+strata` is its hardened twin: the SAME firing preconditions, both
+discharged as assumed `NoFlow` claims named `weakness:<cwe-id>:<node-id>`
+(tests/unit/strata/test_litmus_audit_hardened.py, permanent CI golden) --
+a STRING-quoted claim id, the alternate surface form T-0138 added
+alongside the pre-existing bare-IDENT form so a claim id can carry `:`/
+`-`. The compliance family is still built as a `KernelModel` fixture
+directly in tests/unit/strata/test_audit.py instead of a third `.strata`
+file: a separate surface-grammar gap (no `.strata` source can author a
+`subject:child`-tagged flow attr today) blocks that leg specifically. See
+that test module's docstring for the full explanation.

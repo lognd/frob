@@ -1,0 +1,32 @@
+// audit_hardened.strata -- the hardened twin of audit_vuln.strata (T-0138).
+//
+// SAME firing preconditions as audit_vuln.strata -- `web`'s `may "sql"`
+// capability fires the identical two THREAT003 obligations, CWE-89
+// (security, `std.cwe`, mitigation `parameterization`) and CWE-639
+// (quality, `std.perf`/`std.reliability`/`std.compat`'s `web-quality-
+// security-baseline` view, docs/strata/threat.md#beyond-security-the-
+// anti-pattern-families) -- but here BOTH are discharged as ASSUMED
+// NoFlow claims with owner+review, using the `weakness:<cwe-id>:<node-id>`
+// naming convention (`_threat.py::_discharge_claim_id`). Authoring this
+// discharge claim from `.strata` source text was BLOCKED until now: the
+// claim-id position was a bare IDENT and could not carry ':' or '-'
+// (T-0138, filed against the gap noted in audit_vuln.strata's docstring,
+// T-0132 precedent for the fix -- a STRING-quoted alternate claim-id
+// form). `evaluate_exhaustiveness` must PROVE this module clean: no
+// THREAT003 gaps against `web` in either family.
+//
+// tested end to end (parse -> elaborate -> evaluate_exhaustiveness) by
+// tests/unit/strata/test_litmus_audit_hardened.py; permanent CI golden.
+
+module audit_hardened
+
+node browser_kid : foreign { clearance Public; }
+node web : trusted {
+    clearance Internal;
+    may "sql";
+}
+
+flow f_browse : browser_kid -> web { label Public; }
+
+assume "weakness:CWE-89:web" noflow browser_kid -> web owner logan review "2026-10-01"
+assume "weakness:CWE-639:web" noflow browser_kid -> web owner logan review "2026-10-01"

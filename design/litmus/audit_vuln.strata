@@ -11,20 +11,18 @@
 // both as THREAT003 gaps against `web`.
 //
 // NOT a hardened twin here, and NOT a compliance-family obligation here:
-// both are BLOCKED by a real surface-grammar gap found while building this
-// litmus, filed as T-0137 (strata-core/src/parse.rs::parse_claim's claim
-// id is a bare IDENT -- no ':' or '-' allowed -- so a `weakness:CWE-89:
-// web`-shaped discharge claim, or a `subject:child`-tagged compliance
-// flow attr, cannot be authored from `.strata` source text at all today).
-// The full three-family vuln-litmus/hardened-twin pair this ticket
-// requires (security + quality + compliance, refuted then proved clean)
-// is therefore built as `KernelModel` fixtures directly in
-// tests/unit/strata/test_audit.py (`_vulnerable_model`/`_hardened_model`),
-// the SAME convention every existing `_threat.py`/`_compliance.py`
-// obligation test already uses -- this file exercises the ONE piece that
-// genuinely round-trips through the parser (`may` capability declaration,
-// T-0136), so surface support gets a permanent CI-checked parse-level
-// golden too.
+// the security+quality hardened twin now lives alongside this file as
+// `audit_hardened.strata` (T-0138 fixed the surface-grammar gap that
+// used to block it -- `strata-core/src/parse.rs::parse_claim`'s claim id
+// was a bare IDENT with no ':'/'-' allowed, so a `weakness:CWE-89:web`
+// -shaped discharge claim could not be authored from `.strata` source
+// text; the claim-id position now also accepts a STRING-quoted id). The
+// compliance-family (`subject:child`-tagged flow attr) leg is still
+// built as a `KernelModel` fixture directly in tests/unit/strata/
+// test_audit.py (`_vulnerable_model`/`_hardened_model`), the SAME
+// convention every existing `_threat.py`/`_compliance.py` obligation
+// test already uses -- that flow-attr grammar gap is a separate,
+// still-open surface-syntax limitation from this one.
 //
 // tested end to end (parse -> elaborate -> evaluate_exhaustiveness) by
 // tests/unit/strata/test_litmus_audit_vuln.py; permanent CI golden.

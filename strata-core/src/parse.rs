@@ -318,6 +318,29 @@ impl Parser {
         }
     }
 
+    /// Claim ids are normally a bare IDENT, but discharge claims that must
+    /// name a threat-catalog obligation (e.g. "weakness:CWE-79:web", see
+    /// std.cwe/std.threat) need ':' and '-', which IDENT cannot lex. Accept
+    /// a STRING-quoted claim id as an alternate surface form here (T-0138,
+    /// following the T-0132 precedent for `code`/`may` atoms) -- this is
+    /// the *only* place the grammar admits it; no other IDENT position is
+    /// loosened.
+    fn expect_ident_or_string(&mut self, what: &str) -> Result<String, ParseError> {
+        match &self.cur().kind {
+            TokKind::Ident(s) => {
+                let s = s.clone();
+                self.advance();
+                Ok(s)
+            }
+            TokKind::Str(s) => {
+                let s = s.clone();
+                self.advance();
+                Ok(s)
+            }
+            _ => self.err(format!("expected {}", what)),
+        }
+    }
+
     fn expect_symbol(&mut self, sym: char) -> Result<(), ParseError> {
         match self.cur().kind {
             TokKind::Symbol(c) if c == sym => {
@@ -1733,7 +1756,9 @@ impl Parser {
 
     fn parse_claim(&mut self, ast: &mut ModuleAst, kind: &str) -> Result<(), ParseError> {
         self.advance(); // 'assert' or 'assume'
-        let id = self.expect_ident("claim id")?;
+        // T-0138: claim id accepts bare IDENT or a STRING-quoted id so
+        // discharge claims can name catalog obligations containing ':'/'-'.
+        let id = self.expect_ident_or_string("claim id")?;
         let (body_kind, body) = self.parse_claim_body()?;
         let mut owner: Option<String> = None;
         let mut review: Option<String> = None;
@@ -1998,6 +2023,61 @@ mod tests {
         assert_eq!(v["claims"][0]["assumed"], true);
         assert_eq!(v["claims"][0]["owner"], "alice");
         assert_eq!(v["claims"][0]["review"], "2026-08-01");
+    }
+
+    #[test]
+    fn parses_string_quoted_claim_id() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0138: a discharge claim id naming a catalog obligation
+        // ("weakness:CWE-79:web") cannot lex as IDENT ('-'/':' are not
+        // ident chars) -- the claim-id position also accepts a
+        // STRING-quoted id.
+        let v = ok(r#"module m
+            assert "weakness:CWE-79:web" noflow evil -> api"#);
+        assert_eq!(v["claims"][0]["id"], "weakness:CWE-79:web");
+        assert_eq!(v["claims"][0]["kind"], "noflow");
+    }
+
+    #[test]
+    fn parses_string_quoted_claim_id_on_assume() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0138: quoted claim id alongside the owner/review assume tail.
+        let v = ok(r#"module m
+            assume "weakness:CWE-89:web" noflow evil -> api owner alice review "2026-08-01""#);
+        assert_eq!(v["claims"][0]["id"], "weakness:CWE-89:web");
+        assert_eq!(v["claims"][0]["assumed"], true);
+        assert_eq!(v["claims"][0]["owner"], "alice");
+        assert_eq!(v["claims"][0]["review"], "2026-08-01");
+    }
+
+    #[test]
+    fn bare_ident_claim_id_still_parses() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0138: the pre-existing bare-IDENT claim id form must keep
+        // working unchanged alongside the new quoted alternate.
+        let v = ok(r#"module m
+            assert c1 noflow evil -> api"#);
+        assert_eq!(v["claims"][0]["id"], "c1");
+    }
+
+    #[test]
+    fn error_unterminated_string_claim_id() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0138: an unterminated string in the claim-id position fails
+        // at the lexer with a real line/col, not a silent misparse.
+        let e = err("module m\nassert \"weakness:CWE-79:web noflow evil -> api");
+        assert_eq!(e["line"], 2);
+        assert!(e["message"].as_str().unwrap().contains("string"));
+    }
+
+    #[test]
+    fn error_malformed_claim_id_neither_ident_nor_string() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0138: a claim id that is neither IDENT nor STRING (e.g. a bare
+        // number) is still a parse error at the claim-id position.
+        let e = err("module m\nassert 123 noflow evil -> api");
+        assert_eq!(e["message"], "expected claim id");
+        assert_eq!(e["line"], 2);
     }
 
     #[test]
