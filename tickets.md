@@ -1512,6 +1512,34 @@ separate catalog (known-vulnerable usage shapes vs capability-granting
 operations). The T-0159 extension guide for this registry documents the
 add-an-operation recipe.
 
+Addendum 2 (user, 2026-07-18) -- EXHAUSTIVE and CLOSED-WORLD, IO-monad
+style: (1) the registry must cover the ENTIRE effectful surface of each
+language's builtins and standard library (python: every stdlib module
+that can touch process/fs/net/env/dynamic-code -- os, sys, subprocess,
+socket, http, urllib, ftplib, smtplib, pickle, marshal, shelve, ctypes,
+importlib, runpy, code, pty, signal, tempfile, shutil, pathlib-write,
+sqlite3, multiprocessing, asyncio subprocess/net, webbrowser, platform
+exec paths -- curated exhaustively, with pure modules explicitly listed
+as no-capability so exhaustiveness is checkable, not sampled). (2)
+CLOSED WORLD: every import/call into a third-party library must resolve
+to (a) a registry entry, (b) a VETTED library -- vet capability
+introspection over its installed source using THE SAME scanner engine
+(single implementation, no parallel matcher), cached per
+package+version -- or (c) LOUD FAILURE: 'unknown, unvetted, uninspected'
+is itself a violation. Effects only through accounted channels; the
+audit prints the accounting (N registry ops, M vetted libraries, K
+explicit no-capability entries, 0 unknown) so the exhaustiveness claim
+is a printed proof. (3) REAL-WORLD PRIORITY, from the 2026-07-18
+ten-repo dependency survey: python 3rd-party to cover first -- pydantic,
+httpx(6 repos), fastapi(5), numpy(4), cryptography(3), jinja2(3),
+python-dotenv(3), uvicorn(3), sqlalchemy, asyncpg, alembic, redis,
+boto3, stripe, anthropic, argon2-cffi, aiosmtpd, playwright, Pillow,
+requests-family; npm -- react/react-dom, vite/vitest, playwright,
+openapi-typescript, eslint tooling; cargo -- pyo3, serde/serde_json,
+tracing, libloading (dynamic loading -- dangerous), wasm-bindgen,
+crossbeam, thiserror. Libraries outside this list go through the vet
+path, not hand-registry entries.
+
 <!-- ticket:T-0159 -->
 ```yaml
 id: T-0159
@@ -1993,3 +2021,42 @@ with measured numbers; (c) the coordinator-attached harness usage block
 (subagent_tokens, tool_uses, duration per dispatch) is the ground truth
 to reconcile the per-call estimates against -- report both and the
 discrepancy.
+
+Addendum 2 (user, 2026-07-18) -- PER-TEST TIMING ANNOTATIONS: track
+per-test wall-clock as a Gaussian running estimate (Welford mean/sd/n,
+persisted in .frob telemetry keyed by pytest node id, fed by the
+existing test-run machinery). Write the estimate as a comment annotation
+on the test itself (e.g. `# frob:perf mean=12.4s sd=1.1 n=9` above the
+test def), updated ONLY when the new mean shifts beyond 2 sigma from
+the annotated value -- statistical update to avoid diff churn, never
+per-run rewrites. Consumption: frob test / frob check gain a fast mode
+that SKIPS tests whose annotated mean exceeds a configured threshold,
+and skipping is LOUD (summary names every skipped-slow test and its
+annotated cost); the full check always runs everything -- fast mode is
+an explicit opt-in, never the default for release/CI gates (vacuous-pass
+doctrine: a skipped test must be visible, and the full gate is the
+authority).
+
+<!-- ticket:T-0179 -->
+```yaml
+id: T-0179
+title: 'TTY-aware pretty output: colors and formatting across all frob commands'
+state: queued
+kind: ux
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/logging/**
+- src/frob/app/**
+- src/frob/check/**
+- tests/**
+- docs/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Bake consistent pretty formatting and color into frob's terminal output for TTYs, skipped cleanly when non-TTY. Build on the existing src/frob/logging/color.py should_color machinery -- single source of truth, honoring isatty, NO_COLOR, FORCE_COLOR, and a [tool.frob] override. Apply across the surfaces users actually read: frob check tool/gates summary (pass/fail coloring, aligned columns, per-gate timing dimmed), frob sys audit (PROVED green, GAP red, view sections), frob ticket list/doable (state-colored ids), frob vet reports (severity coloring), frob stats. HARD CONSTRAINT: non-TTY output must remain byte-stable plain text -- agents, CI, and this repo's own snapshot tests parse it; add tests locking both modes (force-color golden and plain golden) so pretty mode can never leak ANSI into piped output. No new heavyweight dependency without written justification (prefer hand-rolled ANSI via the existing color module over adding rich).
