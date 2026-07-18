@@ -1811,7 +1811,7 @@ Filed from sibling-repo pilot P2 (lograder/aprog-public/aprog-private, 2026-07-1
 ```yaml
 id: T-0212
 title: DOC002 slugger disagrees with GitHub anchor algorithm in both directions
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-18'
@@ -1831,7 +1831,9 @@ scope:
 - tests/**
 - docs/**
 - tickets.md
-evidence: []
+evidence:
+- tests/test_graph.py::TestSlugify::test_lowercases_and_strips_disallowed_punctuation
+- tests/test_graph.py::TestMarkdownAnchors::test_describes_edge_with_heading_slug_and_facet
 attachments: []
 acceptance: []
 threat: null
