@@ -246,14 +246,211 @@ CWE_CATALOG: tuple[WeaknessEntry, ...] = (
     ),
 )
 
+#: T-0143 (docs/strata/threat.md#the-catalog-stdcwe): the `cwe-top-25` view,
+#: transcribed from the 2023 MITRE CWE Top 25 Most Dangerous Software
+#: Weaknesses (https://cwe.mitre.org/top25/archive/2023/2023_top25_list.html,
+#: pinned release year 2023 -- staleness review against a newer release is
+#: the charter's obligation, docs/strata/threat.md#the-catalog-stdcwe "a
+#: versioned vocabulary pack ... pinned to a MITRE CWE release ... staleness
+#: past a review bound is a gate warning"). Eight of the 25 ids are already
+#: cataloged in `CWE_CATALOG` above (CWE-79/89/78/22/918/502/352/798) --
+#: reused here, not duplicated (charter: no duplication). The remaining 17
+#: split into ONE genuinely new obligation (`CWE_TOP_25_CATALOG`, below --
+#: `capability_kind` where the charter's instantiation semantics apply) and
+#: 16 honest `OutOfScopeEntry` rows (`CWE_TOP_25_OUT_OF_SCOPE`) whose
+#: preconditions the kernel model has no vocabulary for yet: memory-safety
+#: ids (no pointer/buffer/allocator/arithmetic-width model), a concurrency
+#: id (no synchronization/scheduling model), an authn/authz-boundary group
+#: (no endpoint/route + authn/authz predicate concept, same gap
+#: `SEC-ROUTE-AUTHZ-001` above already names), a file-upload id (no
+#: content-type-validation sink), a generic-input-validation id (no
+#: structural precondition, same "needs hand-written assert claims" class
+#: as CWE-840, docs/strata/threat.md#what-is-honestly-not-covered), and one
+#: duplicate-coverage id (CWE-77, the generic parent of CWE-78's already-
+#: cataloged OS-command instance -- disclosed as non-duplicated, the SAME
+#: discipline the module docstring above applies to stored XSS).
+# frob:doc docs/strata/threat.md#the-catalog-stdcwe
+# frob:ticket T-0143
+CWE_TOP_25_CATALOG: tuple[WeaknessEntry, ...] = (
+    WeaknessEntry(
+        id="CWE-94",
+        title="Improper Control of Generation of Code ('Code Injection')",
+        cite="https://cwe.mitre.org/data/definitions/94.html",
+        capability_kind="exec",  # reuses CWE-78's SAME exec capability join:
+        # the kernel model does not distinguish an OS-command sink from a
+        # code-eval sink, so both weaknesses fire on the same precondition,
+        # exactly the CWE-639/CWE-89 "sql" precedent above.
+        mitigation="code_execution_sandboxing",
+        rung=Rung.L4,
+    ),
+)
+
+#: T-0143: the 16 CWE Top 25 (2023) ids whose precondition the kernel
+#: cannot yet express, each with a SPECIFIC missing-concept reason (never a
+#: generic "not supported") -- see `CWE_TOP_25_CATALOG`'s comment above for
+#: the grouping this follows.
+# frob:doc docs/strata/threat.md#the-exhaustiveness-proof-the-point
+# frob:ticket T-0143
+CWE_TOP_25_OUT_OF_SCOPE: tuple[OutOfScopeEntry, ...] = (
+    OutOfScopeEntry(
+        id="CWE-787",
+        reason="out-of-bounds write needs a buffer/allocation/bounds model "
+        "the kernel has no vocabulary for -- it models data flow and trust, "
+        "not memory layout",
+    ),
+    OutOfScopeEntry(
+        id="CWE-416",
+        reason="use-after-free needs an allocator/object-lifetime model the "
+        "kernel does not carry -- no node/flow concept of allocation or "
+        "deallocation exists",
+    ),
+    OutOfScopeEntry(
+        id="CWE-20",
+        reason="improper input validation names no structural precondition "
+        "of its own (it is the generic parent of the specific sink-typed "
+        "injection ids already cataloged) -- needs a hand-written `assert` "
+        "claim per site, the same class as CWE-840, docs/strata/threat.md"
+        "#what-is-honestly-not-covered",
+    ),
+    OutOfScopeEntry(
+        id="CWE-125",
+        reason="out-of-bounds read needs the same buffer/bounds model "
+        "CWE-787 needs and the kernel does not carry",
+    ),
+    OutOfScopeEntry(
+        id="CWE-434",
+        reason="unrestricted dangerous file upload needs a file-upload sink "
+        "and a content-type-validation boundary predicate the kernel model "
+        "has no field for",
+    ),
+    OutOfScopeEntry(
+        id="CWE-862",
+        reason="missing authorization needs an endpoint/route concept and "
+        "an authz-boundary predicate the kernel model has no field for -- "
+        "the same gap SEC-ROUTE-AUTHZ-001 above already names",
+    ),
+    OutOfScopeEntry(
+        id="CWE-476",
+        reason="NULL pointer dereference needs a pointer/nullability model "
+        "the kernel does not carry -- it has no concept of a dereferenceable "
+        "reference at all",
+    ),
+    OutOfScopeEntry(
+        id="CWE-287",
+        reason="improper authentication needs a session/credential-"
+        "verification boundary concept the kernel model has no field for",
+    ),
+    OutOfScopeEntry(
+        id="CWE-190",
+        reason="integer overflow/wraparound needs a numeric-width/"
+        "arithmetic model the kernel does not carry -- it has no concept of "
+        "a bounded numeric type",
+    ),
+    OutOfScopeEntry(
+        id="CWE-77",
+        reason="generic command injection is the parent category of "
+        "CWE-78's already-cataloged OS-command instance, firing on the SAME "
+        "exec-capability precondition with no kernel-detectable distinction "
+        "-- a second entry would duplicate the identical fire path rather "
+        "than name a genuinely distinct obligation, the same non-"
+        "duplication disclosure this module applies to stored XSS",
+    ),
+    OutOfScopeEntry(
+        id="CWE-119",
+        reason="improper restriction of operations within a memory buffer's "
+        "bounds needs the same buffer/bounds model CWE-787/125 need and the "
+        "kernel does not carry",
+    ),
+    OutOfScopeEntry(
+        id="CWE-306",
+        reason="missing authentication for a critical function needs the "
+        "same endpoint/route + authn-boundary concept CWE-287/862 need and "
+        "the kernel does not carry",
+    ),
+    OutOfScopeEntry(
+        id="CWE-362",
+        reason="race condition needs a concurrency/synchronization/"
+        "scheduling model the kernel does not carry -- it has no concept of "
+        "interleaved execution or shared mutable state",
+    ),
+    OutOfScopeEntry(
+        id="CWE-269",
+        reason="improper privilege management needs a privilege/role model "
+        "the kernel does not carry -- trust levels are not a role/privilege "
+        "hierarchy",
+    ),
+    OutOfScopeEntry(
+        id="CWE-863",
+        reason="incorrect authorization needs the same endpoint/route + "
+        "authz-boundary concept CWE-862 needs and the kernel does not carry",
+    ),
+    OutOfScopeEntry(
+        id="CWE-276",
+        reason="incorrect default permissions needs a filesystem/resource "
+        "permission-mode model the kernel does not carry",
+    ),
+)
+
+#: T-0143: the full 25-id `cwe-top-25` membership, literal so THREAT001
+#: checks it against the CITED release regardless of which catalog tuples a
+#: caller passes (mirrors `owasp-top-10`'s derive-from-`CWE_CATALOG`
+#: convenience being unavailable here since this view spans two catalog
+#: tuples, docs/strata/threat.md#the-catalog-stdcwe).
+_CWE_TOP_25_IDS: frozenset[str] = frozenset(
+    {
+        "CWE-787",
+        "CWE-79",
+        "CWE-89",
+        "CWE-416",
+        "CWE-78",
+        "CWE-20",
+        "CWE-125",
+        "CWE-22",
+        "CWE-352",
+        "CWE-434",
+        "CWE-862",
+        "CWE-476",
+        "CWE-287",
+        "CWE-190",
+        "CWE-502",
+        "CWE-77",
+        "CWE-119",
+        "CWE-798",
+        "CWE-918",
+        "CWE-306",
+        "CWE-362",
+        "CWE-269",
+        "CWE-94",
+        "CWE-863",
+        "CWE-276",
+    }
+)
+
 #: Baseline VIEWS: the id set a selected view holds the catalog to. Phase A
 #: ships one view, the OWASP Top-10 subset actually cataloged above;
-#: `cwe-top-25`/`owasp-asvs`/`cwe-1000` are later-phase ingestion targets
-#: (phasing section, item A), not stubbed here so THREAT001 never lies
-#: about a view it cannot check.
+#: `owasp-asvs`/`cwe-1000` remain deliberately unstubbed -- see docs/
+#: strata/threat.md#the-catalog-stdcwe for the recorded decision (ASVS is a
+#: verification standard, not a weakness list; cwe-1000 is a ~900-entry
+#: research view where transcription without kernel preconditions would be
+#: out-of-scope spam) -- so THREAT001 never lies about a view it cannot
+#: check. `cwe-top-25` (T-0143) is intentionally NOT merged into this dict:
+#: `_audit.py::DEFAULT_SECURITY_VIEWS` iterates `tuple(VIEWS)` and checks
+#: every member against the bare `CWE_CATALOG` default -- exactly the
+#: `QUALITY_CATALOG`/`QUALITY_VIEWS` split's rationale above, reused here
+#: since `cwe-top-25` needs the combined `CWE_CATALOG + CWE_TOP_25_CATALOG`
+#: catalog, not the default alone (see `CWE_TOP_25_VIEWS` below).
 # frob:doc docs/strata/threat.md#the-catalog-stdcwe
 VIEWS: dict[str, frozenset[str]] = {
     "owasp-top-10": frozenset(entry.id for entry in CWE_CATALOG),
+}
+
+#: T-0143: `cwe-top-25`'s view table, kept separate from `VIEWS` (comment
+#: above) -- a caller checking the Top-25 baseline passes this explicitly,
+#: mirroring `QUALITY_VIEWS`'s convention exactly.
+# frob:doc docs/strata/threat.md#the-catalog-stdcwe
+# frob:ticket T-0143
+CWE_TOP_25_VIEWS: dict[str, frozenset[str]] = {
+    "cwe-top-25": _CWE_TOP_25_IDS,
 }
 
 # frob:doc docs/strata/threat.md#beyond-security-the-anti-pattern-families
@@ -957,6 +1154,9 @@ def evaluate_threats(
 
 __all__ = [
     "CWE_CATALOG",
+    "CWE_TOP_25_CATALOG",
+    "CWE_TOP_25_OUT_OF_SCOPE",
+    "CWE_TOP_25_VIEWS",
     "QUALITY_CATALOG",
     "QUALITY_OUT_OF_SCOPE",
     "QUALITY_VIEWS",

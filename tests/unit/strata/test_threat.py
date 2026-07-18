@@ -32,6 +32,9 @@ from frob.strata import (
 from frob.strata._effects import _may_kind
 from frob.strata._threat import (
     CWE_CATALOG,
+    CWE_TOP_25_CATALOG,
+    CWE_TOP_25_OUT_OF_SCOPE,
+    CWE_TOP_25_VIEWS,
     QUALITY_CATALOG,
     QUALITY_OUT_OF_SCOPE,
     QUALITY_VIEWS,
@@ -171,6 +174,142 @@ class TestQualityFamilies:
         assert len(QUALITY_OUT_OF_SCOPE) == 5
         for entry in QUALITY_OUT_OF_SCOPE:
             assert entry.reason
+
+
+# frob:ticket T-0143
+class TestCweTop25:
+    """T-0143 (docs/strata/threat.md#the-catalog-stdcwe): the `cwe-top-25`
+    view spans two catalog tuples (`CWE_CATALOG`'s 8 overlapping ids +
+    `CWE_TOP_25_CATALOG`'s 1 genuinely new obligation) plus 16 honest
+    `OutOfScopeEntry` rows -- these tests prove THREAT001 exhaustiveness
+    over the combined catalog and spot-check three new entries' data."""
+
+    # frob:tests src/frob/strata/_threat.py::check_catalog_completeness kind="unit"
+    # frob:ticket T-0143
+    def test_cwe_top_25_view_is_satisfied(self):
+        result = check_catalog_completeness(
+            "cwe-top-25",
+            catalog=CWE_CATALOG + CWE_TOP_25_CATALOG,
+            out_of_scope=CWE_TOP_25_OUT_OF_SCOPE,
+            views=CWE_TOP_25_VIEWS,
+        )
+        assert result.is_ok
+        assert result.danger_ok == ()
+
+    # frob:tests src/frob/strata/_threat.py::check_catalog_completeness kind="unit"
+    # frob:ticket T-0143
+    def test_cwe_top_25_view_has_25_members(self):
+        assert len(CWE_TOP_25_VIEWS["cwe-top-25"]) == 25
+
+    # frob:tests src/frob/strata/_threat.py::CWE_TOP_25_OUT_OF_SCOPE kind="unit"
+    # frob:ticket T-0143
+    def test_cwe_top_25_view_not_merged_into_default_views(self):
+        # T-0143: kept separate so `_audit.py::DEFAULT_SECURITY_VIEWS`
+        # (tuple(VIEWS)) never auto-scans it against the bare CWE_CATALOG
+        # default -- the same rationale QUALITY_VIEWS follows.
+        assert "cwe-top-25" not in VIEWS
+        assert "cwe-top-25" in CWE_TOP_25_VIEWS
+
+    # frob:tests src/frob/strata/_threat.py::CWE_TOP_25_OUT_OF_SCOPE kind="unit"
+    # frob:ticket T-0143
+    def test_missing_out_of_scope_entry_is_a_violation(self):
+        thin = tuple(e for e in CWE_TOP_25_OUT_OF_SCOPE if e.id != "CWE-787")
+        result = check_catalog_completeness(
+            "cwe-top-25",
+            catalog=CWE_CATALOG + CWE_TOP_25_CATALOG,
+            out_of_scope=thin,
+            views=CWE_TOP_25_VIEWS,
+        )
+        assert result.is_ok
+        violations = result.danger_ok
+        assert len(violations) == 1
+        assert violations[0].rule == "THREAT001"
+        assert violations[0].cwe == "CWE-787"
+
+    # frob:tests src/frob/strata/_threat.py::CWE_TOP_25_CATALOG kind="unit"
+    # frob:ticket T-0143
+    def test_cwe_top_25_catalog_never_leaks_into_owasp_top_10_view(self):
+        top25_only_ids = {e.id for e in CWE_TOP_25_CATALOG}
+        assert top25_only_ids.isdisjoint(VIEWS["owasp-top-10"])
+
+    # frob:tests src/frob/strata/_threat.py::CWE_TOP_25_OUT_OF_SCOPE kind="unit"
+    # frob:ticket T-0143
+    def test_out_of_scope_entries_have_specific_nonempty_reasons(self):
+        assert len(CWE_TOP_25_OUT_OF_SCOPE) == 16
+        for entry in CWE_TOP_25_OUT_OF_SCOPE:
+            assert entry.reason
+            assert len(entry.reason) > 20  # a specific reason, not a stub
+
+    # frob:tests src/frob/strata/_threat.py::CWE_TOP_25_CATALOG kind="unit"
+    # frob:ticket T-0143
+    def test_cwe_94_reuses_the_exec_capability_join(self):
+        entry = next(e for e in CWE_TOP_25_CATALOG if e.id == "CWE-94")
+        cwe_78 = next(e for e in CWE_CATALOG if e.id == "CWE-78")
+        assert entry.title == (
+            "Improper Control of Generation of Code ('Code Injection')"
+        )
+        assert entry.cite == "https://cwe.mitre.org/data/definitions/94.html"
+        assert entry.capability_kind == cwe_78.capability_kind == "exec"
+        # a distinct mitigation from CWE-78's -- not a title restatement
+        assert entry.mitigation == "code_execution_sandboxing"
+        assert entry.mitigation != cwe_78.mitigation
+
+    # frob:tests src/frob/strata/_threat.py::CWE_TOP_25_OUT_OF_SCOPE kind="unit"
+    # frob:ticket T-0143
+    def test_memory_safety_entries_name_the_missing_kernel_concept(self):
+        by_id = {e.id: e for e in CWE_TOP_25_OUT_OF_SCOPE}
+        assert (
+            "buffer" in by_id["CWE-787"].reason or "bounds" in by_id["CWE-787"].reason
+        )
+        assert (
+            "allocator" in by_id["CWE-416"].reason
+            or "lifetime" in by_id["CWE-416"].reason
+        )
+
+    # frob:tests src/frob/strata/_threat.py::CWE_TOP_25_OUT_OF_SCOPE kind="unit"
+    # frob:ticket T-0143
+    def test_cwe_77_discloses_duplicate_coverage_of_cwe_78(self):
+        entry = next(e for e in CWE_TOP_25_OUT_OF_SCOPE if e.id == "CWE-77")
+        assert "CWE-78" in entry.reason
+
+    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:ticket T-0143
+    def test_cwe_94_fires_and_discharges_on_exec_capability(self):
+        node = Node(id="Sandbox", trust="trusted", may=("exec",))
+        claim_id = _discharge_claim_id("CWE-94", "Sandbox")
+        model = KernelModel(
+            nodes=(node,),
+            claims=(
+                Claim(
+                    id=claim_id,
+                    body=NoFlow(src="foreign", dst="Sandbox"),
+                    required_rung=Rung.L4,
+                ),
+            ),
+        )
+        result = check_discharge_completeness(
+            model, catalog=CWE_CATALOG + CWE_TOP_25_CATALOG
+        )
+        assert result.is_ok
+        cwes = {v.cwe for v in result.danger_ok}
+        # CWE-78 also fires on the same "exec" capability and has no claim
+        # here -- CWE-94 must be absent from the violations (discharged),
+        # proving its OWN fired-obligation join works independently.
+        assert "CWE-94" not in cwes
+        assert "CWE-78" in cwes
+
+    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:ticket T-0143
+    def test_cwe_94_fires_and_is_undischarged_with_no_claim(self):
+        node = Node(id="Sandbox", trust="trusted", may=("exec",))
+        result = check_discharge_completeness(
+            model=KernelModel(nodes=(node,)), catalog=CWE_CATALOG + CWE_TOP_25_CATALOG
+        )
+        assert result.is_ok
+        violations = {v.cwe: v for v in result.danger_ok}
+        assert "CWE-94" in violations
+        assert violations["CWE-94"].node == "Sandbox"
+        assert violations["CWE-94"].rule == "THREAT003"
 
 
 class TestDischargeCompleteness:

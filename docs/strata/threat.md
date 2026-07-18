@@ -77,6 +77,62 @@ Entries are grouped into cited baseline VIEWS (`cwe-top-25`,
 `owasp-top-10`, `owasp-asvs`, `cwe-1000`). Selecting a view in `frob.toml`
 declares the baseline the exhaustiveness proof is measured against.
 
+**`cwe-top-25` (T-0143).** Pinned to the **2023** MITRE CWE Top 25 Most
+Dangerous Software Weaknesses release
+(cwe.mitre.org/top25/archive/2023/2023_top25_list.html). Staleness review
+applies per the charter's "pinned to a release ... staleness past a review
+bound is a gate warning" rule above -- when MITRE ships a newer Top 25, this
+pin should be re-verified and bumped, not silently left stale. Eight of the
+25 ids overlap the OWASP-cited core reframe entries already cataloged
+(CWE-79/89/78/22/918/502/352/798) and are reused, not duplicated. Of the
+remaining 17: one (CWE-94, code injection) gets a genuine new
+`WeaknessEntry` reusing CWE-78's `exec` capability join (the kernel does
+not distinguish an OS-command sink from a code-eval sink, so both fire on
+the same precondition -- the same pattern CWE-639 already uses for `sql`).
+The other 16 are honest `OutOfScopeEntry` rows, each naming the SPECIFIC
+kernel concept still missing: a memory-safety group (CWE-787/416/125/119/
+476/190 -- no pointer/buffer/allocator/arithmetic-width model), a
+concurrency id (CWE-362 -- no synchronization/scheduling model), an
+authn/authz-boundary group (CWE-862/863/306/287/269/276 -- no endpoint/
+route + authn/authz predicate concept, the same gap `SEC-ROUTE-AUTHZ-001`
+already names), a file-upload id (CWE-434 -- no content-type-validation
+sink), a generic-precondition id (CWE-20 -- no structural precondition of
+its own, same class as CWE-840 below), and one duplicate-coverage
+disclosure (CWE-77, the generic parent of CWE-78's already-cataloged
+OS-command instance -- a second entry would duplicate the identical fire
+path, the same non-duplication discipline the stored-XSS note above
+applies). `cwe-top-25`'s view table (`CWE_TOP_25_VIEWS`) is kept
+deliberately separate from the main `VIEWS` dict: `frob.strata._audit`'s
+`DEFAULT_SECURITY_VIEWS` iterates every `VIEWS` key against the bare
+`CWE_CATALOG` default, so merging `cwe-top-25` in would silently
+under-catalog it there -- the exact rationale `QUALITY_VIEWS` already
+follows for the performance/reliability/compat families.
+
+**`owasp-asvs` / `cwe-1000` decision (T-0143).** Deliberately kept
+unstubbed, not transcribed. ASVS (the OWASP Application Security
+Verification Standard) is a verification-CHECKLIST standard -- its items
+are testing/process requirements ("verify that...") rather than discrete
+weakness ids with a natural CWE-shaped precondition/mitigation pair; most
+ASVS items either restate CWEs already cataloged above under a different
+organizing scheme, or name a verification activity (code review, pen test
+cadence) with no flow precondition the closure engine can detect at all.
+Force-fitting ASVS into `WeaknessEntry`/`OutOfScopeEntry` rows would mean
+either silently duplicating existing CWE coverage under new ids, or
+padding the catalog with `capability_kind=None` citation-only stubs that
+add no exhaustiveness signal beyond what `owasp-top-10`/`cwe-top-25`
+already prove -- busywork, not more honesty. `cwe-1000` is MITRE's full
+research view of roughly 900 entries, the overwhelming majority far
+outside anything a design-level closure engine's precondition vocabulary
+can express (deeply platform/language-specific memory, protocol, and
+hardware weaknesses). Transcribing it wholesale would produce hundreds of
+near-identical `OutOfScopeEntry` rows citing the SAME handful of missing
+kernel concepts (memory model, concurrency model, endpoint/route model)
+already named above for the 16 Top-25 out-of-scope ids -- out-of-scope
+spam that would bury the genuinely actionable gaps rather than surface
+them. Both stay unstubbed so THREAT001 never lies about a view it cannot
+meaningfully check; this paragraph is the recorded WHY, not a silent
+gap.
+
 ## Capabilities drag in obligations
 
 A capability is a power the system wields, declared on a node and
