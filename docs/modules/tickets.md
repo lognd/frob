@@ -189,12 +189,11 @@ tool exists to prevent).
 `finalize_draft(root, draft_id)` is the callable finalize step: once a
 draft has actually landed on the default branch, it assigns the draft its
 real sequential id (against the then-current merged view) and rewrites the
-ledger plus every code reference via `renumber_one`. This is deliberately
-NOT wired to run automatically anywhere yet -- T-0176 (`frob ticket land`)
-is the queued ticket that will call it as part of an atomic merge/land
-step. Until T-0176 lands, finalizing a draft is a manual
-`frob ticket renumber <draft-id> <next-id>` (or a direct `finalize_draft`
-call from a script).
+ledger plus every code reference via `renumber_one`. `frob ticket land`
+(T-0176, see below) calls it automatically as part of an atomic merge/land
+step; outside of `land`, finalizing a draft is still a manual `frob ticket
+renumber <draft-id> <next-id>` (or a direct `finalize_draft` call from a
+script) -- for a worktree not going through `land` at all.
 
 ### Decision record: T-0162
 
@@ -251,6 +250,93 @@ caught after the fact by TICK001 rather than prevented. Finalize is
 assumed single-actor/serialized until T-0176 (`frob ticket land`)
 formalizes locking; do not rely on it as structurally impossible in
 concurrent automation.
+
+## `frob ticket land`
+
+<!-- frob:describes src/frob/tickets/_land.py::land -->
+<!-- frob:describes src/frob/tickets/_land.py::splice_ledger -->
+
+The landing procedure used to be manual coordinator surgery repeated per
+ticket: wip-commit in the worktree, merge main into it, a deletion-filter
+check, squash-apply onto main, a ledger splice on conflict, close, a
+conventional commit. `frob ticket land <id> --worktree <path> [--dry-run]`
+(`frob.tickets.land`) does the whole chain atomically:
+
+```python
+# frob/tickets/_land.py
+def land(root: Path, ticket_id: str, worktree: Path, *,
+         dry_run: bool = False) -> Result[LandReport, LandError]
+def splice_ledger(ours_text: str, theirs_text: str) -> Result[str, TicketError]
+    # Merge two tickets.md texts at the TICKET-ID level (newest state per
+    # id wins) instead of git's line-level textual merge.
+```
+
+Order of operations, and why it is this order:
+
+1. **Refuse on a dirty `root`** (`git status --porcelain` non-empty) --
+   `Err(DirtyMain)`, remedy: `git -C <root> status`, commit or stash.
+2. **Validate close preconditions in the worktree FIRST** (evidence
+   non-empty, a `## Done report` section) -- `Err(NotCloseable)` here means
+   NOTHING has been merged or committed anywhere yet. This ordering is the
+   whole point: closing is the step most likely to be forgotten, and it is
+   checked before any irreversible git operation, not after the merge has
+   already landed.
+3. **wip-commit** any uncommitted worktree changes (`wip: pre-land snapshot
+   for <id>`) so nothing an agent forgot to commit is silently dropped by
+   the merge that follows.
+4. **Merge main into the worktree** (`git merge --no-commit --no-ff`,
+   staged, not committed). Any conflict outside `tickets.md` aborts loudly
+   (`Err(MergeConflict)`, remedy: resolve manually in the worktree, commit,
+   retry). A `tickets.md` conflict is ALWAYS resolved via `splice_ledger`
+   (see below), never git's line-level algorithm, then the merge is
+   completed with a `merge <main> into worktree for landing <id>` commit.
+5. **Deletion-filter check** (the stale-base guard): `git diff <main>
+   --diff-filter=D --name-only` in the now-merged worktree -- every deleted
+   path must match the ticket's `scope` globs, or land refuses loudly
+   (`Err(UnownedDeletions)`, remedy: add the path(s) to scope if
+   intentional, or `git checkout <main> -- <path>` in the worktree if
+   accidental) and unwinds the merge (`git merge --abort`) first. This is
+   what catches a worktree branched from a stale main base that ends up,
+   relative to main's CURRENT tip, silently deleting a feature main already
+   landed.
+6. **`--dry-run` stops here**, unwinding the staged merge (`merge --abort`)
+   -- everything above this point has ACTUALLY run (real merge, real
+   splice, real deletion diff), so a clean dry run is a guarantee, not a
+   guess. Nothing below this point (finalize/close/squash-apply/commit) is
+   simulated, because nothing below it can fail for a reason the checks
+   above didn't already catch.
+7. **Finalize a draft id** (`finalize_draft`, T-0162's mechanism) if
+   `ticket_id` is a `T-draft-*` id -- against the worktree's now-merged
+   view, so the final id is allocated against current reality, not a stale
+   pre-merge snapshot.
+8. **Close** (`transition(..., DONE)`) in the worktree.
+9. **Squash-apply onto `root`**: `git merge --squash --no-commit
+   <worktree-branch>`. Any conflict outside `tickets.md` aborts loudly
+   (`Err(SquashConflict)`, remedy: resolve manually, commit, retry) and
+   resets `root` (`git reset --hard && git clean -fd`) back to exactly how
+   it was found. `tickets.md` is again ALWAYS resolved via `splice_ledger`
+   -- this is what makes the "main and the worktree each independently
+   appended a new ticket near the same line" case a clean merge instead of
+   a textual conflict requiring a human.
+10. **Commit** with a conventional-commit message template
+    (`<type>(tickets): land <final-id> <title>`, type derived from
+    `ticket.kind`; `feature`->`feat`, `bug`/`security`/`ux`/`incident`->
+    `fix`, `docs`->`docs`, `invariant`->`test`). ASCII only, no
+    `Co-Authored-By` line, matching repo convention.
+
+If close (step 8) fails or the final commit (step 10) fails, the merge
+commit already landed in the WORKTREE's own branch history (never in
+`root`/main) -- the log line names the exact undo (`git -C <worktree>
+reset --hard HEAD~1`) alongside the retry instruction, so a failed landing
+is always recoverable without touching main.
+
+`splice_ledger` never trusts git's line-level merge for `tickets.md`:
+it parses both ledger texts into id -> Ticket maps and unions them,
+picking the "newer" version on a genuine same-id divergence -- state-machine
+rank first (done/dropped > in-progress/blocked > planned > queued), then
+presence of a Done report, then evidence count, then the incoming side as
+the final deterministic tiebreak. A ticket id present on only one side is
+always kept.
 
 ## Clipboard capture
 
@@ -523,15 +609,15 @@ provisional-id mechanism is designed around that reality, not against it:
   exactly the discipline that fixed the T-0157 incident's ~100 stray
   references; doing it by hand is how that incident happened in the first
   place.
-- **Finalization is not an agent's job today.** A draft id is finalized to
-  its permanent sequential id only once it has actually landed on the
-  default branch, via `finalize_draft` -- which T-0176 (`frob ticket land`)
-  will call automatically as part of an atomic merge/land step. Until
-  T-0176 ships, an agent that lands its own worktree's changes onto main by
-  hand should call `frob ticket renumber <draft-id> <T-####>` right after
-  the merge, before closing out; `frob check`'s TICK002 rule will refuse to
-  pass silently if this is forgotten (draft ids are unwaivable on the
-  default branch).
+- **Finalization is automatic through `frob ticket land`.** A draft id is
+  finalized to its permanent sequential id only once it has actually
+  landed on the default branch, via `finalize_draft` -- `frob ticket land`
+  (T-0176) calls it automatically as part of its atomic merge/land step.
+  An agent landing its own worktree's changes onto main by hand (not via
+  `land`) should still call `frob ticket renumber <draft-id> <T-####>`
+  right after the merge, before closing out; `frob check`'s TICK002 rule
+  will refuse to pass silently if this is forgotten (draft ids are
+  unwaivable on the default branch).
 - **A draft id surviving a merge into the default branch is a hard-fail,
   not a warning.** `frob check` (TICK002) makes this loud on purpose --
   see "Why TICK001/TICK002 are unwaivable" above. Treat a TICK002 failure

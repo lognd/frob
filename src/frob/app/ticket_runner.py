@@ -1,5 +1,5 @@
-"""CLI wiring for `frob ticket new|list|show|doable|plan|start|sweep|attach|
-block|close|fail|evidence|archive` (docs/modules/tickets.md)."""
+"""CLI wiring for `frob ticket new|list|show|doable|plan|start|sweep|land|
+attach|block|close|fail|evidence|archive` (docs/modules/tickets.md)."""
 
 # frob:waive TEST005 reason="module line coverage 22.7%, debt T-0160"
 
@@ -29,6 +29,7 @@ def _ticket_dispatch_table() -> dict:
         "sweep": _sweep_cmd,
         "migrate": lambda root, _cfg: _migrate(root),
         "renumber": _renumber,
+        "land": _land,
         "attach": _attach,
         "block": _block,
         "close": _close,
@@ -48,7 +49,7 @@ def run(cfg: AppConfig) -> None:
     if handler is None:
         _log.error(
             "usage: frob ticket <new|list|show|doable|plan|start|sweep|"
-            "attach|block|close|fail|evidence|archive> ..."
+            "land|attach|block|close|fail|evidence|archive> ..."
         )
         sys.exit(1)
     handler(root, cfg)
@@ -284,6 +285,48 @@ def _renumber_one(root: Path, cfg: AppConfig) -> None:
     if report.files_changed:
         for f in report.files_changed:
             _log.info("  %s", f)
+
+
+# frob:ticket T-0176
+def _land(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket land <id> --worktree <path> [--dry-run]`: run the whole
+    merge-check-splice-close-commit chain via `frob.tickets.land`, reporting
+    every field of the resulting `LandReport` (or the exact `Err` + remedy
+    already logged by `land` itself) before exiting non-zero on failure."""
+    from frob.tickets import land
+
+    if cfg.ticket_id is None:
+        _log.error("frob ticket land requires <id>")
+        sys.exit(1)
+    if cfg.ticket_worktree is None:
+        _log.error("frob ticket land requires --worktree <path>")
+        sys.exit(1)
+
+    result = land(root, cfg.ticket_id, cfg.ticket_worktree, dry_run=cfg.ticket_dry_run)
+    if result.is_err:
+        _log.error("ticket land failed: %s", result.danger_err)
+        sys.exit(1)
+
+    report = result.danger_ok
+    if report.dry_run:
+        _log.info(
+            "land %s: DRY RUN clean -- merged=%s wip_committed=%s "
+            "(would finalize/close/squash-apply/commit onto %s)",
+            report.ticket_id,
+            report.merged_main_into_worktree,
+            report.wip_committed,
+            root,
+        )
+        return
+    _log.info(
+        "land %s: landed as %s at %s (%d file(s) changed)",
+        report.ticket_id,
+        report.final_id,
+        report.commit_sha,
+        len(report.files_changed),
+    )
+    for f in report.files_changed:
+        _log.info("  %s", f)
 
 
 def _plan(root: Path, cfg: AppConfig) -> None:

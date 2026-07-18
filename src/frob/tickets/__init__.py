@@ -18,10 +18,13 @@ from pathlib import Path
 from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
+from frob.tickets._land import land, splice_ledger
 from frob.tickets._models import (
     Attachment,
     AttachmentSource,
     FailureEntry,
+    LandError,
+    LandReport,
     Origin,
     RenumberReport,
     Stride,
@@ -883,6 +886,8 @@ __all__ = [
     "AttachmentSource",
     "ClipboardError",
     "FailureEntry",
+    "LandError",
+    "LandReport",
     "Origin",
     "Ticket",
     "TicketError",
@@ -894,6 +899,7 @@ __all__ = [
     "archive",
     "attach",
     "doable",
+    "land",
     "load_active",
     "load_queue",
     "Stride",
@@ -901,6 +907,7 @@ __all__ = [
     "new_ticket",
     "renumber",
     "record_failure",
+    "splice_ledger",
     "transition",
     "validate_evidence",
 ]
