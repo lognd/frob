@@ -1540,7 +1540,7 @@ New gate family: scan TRACKED files (git ls-files, never untracked/.env -- and a
 id: T-0158
 title: 'capability exhaustiveness matrix: every reserved kind provably detected in
   every supported language'
-state: queued
+state: in-progress
 kind: security
 origin: human
 created: '2026-07-18'
@@ -1548,12 +1548,39 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/vet/_capability.py
+- src/frob/vet/_capability_registry.py
 - src/frob/strata/**
+- src/frob/app/sys_runner.py
+- design/frob.strata
 - tests/**
 - docs/modules/vet.md
 - docs/strata/**
 - tickets.md
-evidence: []
+evidence:
+- tests/test_capability_registry.py::TestMatrixExhaustiveness::test_no_unexcused_empty_cells
+- tests/test_capability_registry.py::TestMatrixExhaustiveness::test_matrix_covers_every_kind_and_language
+- tests/test_capability_registry.py::TestMatrixExhaustiveness::test_every_operation_kind_and_language_registered
+- tests/test_capability_registry.py::TestMatrixExhaustiveness::test_every_excuse_kind_and_language_registered
+- tests/test_capability_registry.py::TestMatrixExhaustiveness::test_no_cell_is_both_patterned_and_excused
+- tests/test_capability_registry.py::TestValidateRegistryKinds::test_known_kinds_pass
+- tests/test_capability_registry.py::TestValidateRegistryKinds::test_unknown_kind_reported
+- tests/test_capability_registry.py::TestValidateRegistryKinds::test_every_threat_catalog_kind_is_registered
+- tests/test_capability_registry.py::test_fire_fixture_flags_capability
+- tests/test_capability_registry.py::test_fire_fixture_names_a_registry_entry
+- tests/test_capability_registry.py::TestNegativeFixtures::test_re_compile_is_not_eval
+- tests/test_capability_registry.py::TestNegativeFixtures::test_c_socket_header_alone_is_not_net
+- tests/test_vet.py::TestCapabilityScan::test_scan_file_operations_names_registry_entry
+- tests/test_vet.py::TestCapabilityScan::test_scan_file_operations_no_language
+- tests/test_vet.py::TestCapabilityScan::test_scan_file_operations_bare_compile
+- tests/test_vet.py::TestCapabilityScan::test_scan_file_operations_dotted_compile_not_matched
+- tests/test_vet.py::TestCapabilityScan::test_scan_file_operations_unreadable_file
+- tests/test_vet.py::TestCapabilityScan::test_c_source_exec_detected
+- tests/test_vet.py::TestCapabilityScan::test_language_for_known_and_unknown_extensions
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_parses_and_elaborates
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_every_claim_proves
+- tests/test_capability_registry.py::TestNoSilentNeedleRegression::test_every_pre_registry_needle_still_fires_somewhere
+- tests/test_capability_registry.py::TestNoSilentNeedleRegression::test_every_reclassified_needle_actually_still_fires_under_its_new_kind
+- tests/test_capability_registry.py::TestNoSilentNeedleRegression::test_popen_bare_call_still_flags_exec
 attachments: []
 acceptance: []
 threat: null
@@ -1611,6 +1638,46 @@ openapi-typescript, eslint tooling; cargo -- pyo3, serde/serde_json,
 tracing, libloading (dynamic loading -- dangerous), wasm-bindgen,
 crossbeam, thiserror. Libraries outside this list go through the vet
 path, not hand-registry entries.
+
+Scope extension (agent, 2026-07-18): the structured registry was split
+into a new module, `src/frob/vet/_capability_registry.py` -- outside the
+original `src/frob/vet/_capability.py`-only scope entry, but the single-
+source registry deliverable (1) is meaningless split across two files
+with no room to grow; `_capability.py` now imports and compiles from it.
+`design/frob.strata` and `src/frob/app/sys_runner.py` are added because
+the deliverables are cascading by design: new `DangerousOperation`
+entries change what `_capability.py` observes in this repo's OWN
+`src/frob/vet/**`/`src/frob/graph/**` trees (sql/fetch_url/deserialize
+newly patterned), which SYS100/THREAT002/THREAT003 catch against
+`design/frob.strata`'s `may` declarations (T-0150/T-0151 precedent this
+ticket explicitly names) -- fixing green honestly requires editing the
+design file, not narrowing the scanner. `sys_runner.py` gets deliverable
+(5)'s matrix-verdict print line beside the existing self-conformance
+print, the only call site `frob sys audit` has.
+title: 'extending frob: developer guides for every registry and extension point'
+state: queued
+kind: docs
+origin: human
+created: '2026-07-18'
+blocked_by:
+- T-0153
+- T-0154
+- T-0155
+- T-0157
+- T-0158
+parent: null
+scope:
+- docs/guides/**
+- docs/index.md
+- src/frob/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+A guide series under docs/guides/extending/ making every registry trivially extendable. INVENTORY FIRST: enumerate every registry/extension point in the codebase -- at minimum: gate rule families and their registration (COV/TEST/DRIFT/SCOPE/PRE/DOC/PERF/SYS/THREAT/COMPLIANCE/WAIVE), comment DSL directives (frob:ticket/tests/doc/waive/todo/invariant/channel/boundary/secret), threat catalog (WeaknessEntry/OutOfScopeEntry/views incl. the separate-views precedent), compliance regulations/views, capability registry + pattern tables + per-language matrix cells (T-0158), CVE fingerprints (T-0153), PII categories (T-0154), design-lint rules (T-0155), secrets-scan providers (T-0157), prover claim kinds, scenario kinds, strata surface grammar keywords (and the tmLanguage drift-lock), [[test.runner]] entries, language grammar handlers, sys export formats, litmus fixture mappings, benign capabilities, ticket kinds/states. ONE GUIDE PER REGISTRY on a common template: what it is and where it lives (file paths + symbol names); step-by-step 'add a new entry' recipe; WHICH DRIFT-LOCKS WILL FIRE when you add one and exactly what each demands (fixture, test, excuse entry, doc anchor, golden regen); a worked example diff; common mistakes (cite real session incidents where instructive, e.g. separate-views vs widening defaults, self-match false positives, stale-comment traps). ANTI-ROT MECHANISM (the point of doing this in frob): every guide is bound to its registry's code symbol with frob:doc anchors so the DOC gates flag drift when the registry changes; plus a completeness drift-lock test -- a machine-readable registry-of-registries (the inventory above) asserting every entry has a guide file and a live anchor, so ADDING A NEW REGISTRY without a guide fails the build. docs/index.md gains an Extending section linking every guide. Writing guides will require reading each registry's code carefully -- fix nothing beyond doc anchors; file tickets for any defect discovered while documenting.
 
 <!-- ticket:T-0159 -->
 ```yaml
@@ -2180,6 +2247,66 @@ acceptance: []
 threat: null
 ```
 Bake consistent pretty formatting and color into frob's terminal output for TTYs, skipped cleanly when non-TTY. Build on the existing src/frob/logging/color.py should_color machinery -- single source of truth, honoring isatty, NO_COLOR, FORCE_COLOR, and a [tool.frob] override. Apply across the surfaces users actually read: frob check tool/gates summary (pass/fail coloring, aligned columns, per-gate timing dimmed), frob sys audit (PROVED green, GAP red, view sections), frob ticket list/doable (state-colored ids), frob vet reports (severity coloring), frob stats. HARD CONSTRAINT: non-TTY output must remain byte-stable plain text -- agents, CI, and this repo's own snapshot tests parse it; add tests locking both modes (force-color golden and plain golden) so pretty mode can never leak ANSI into piped output. No new heavyweight dependency without written justification (prefer hand-rolled ANSI via the existing color module over adding rich).
+
+<!-- ticket:T-0180 -->
+```yaml
+id: T-0180
+title: 'closed-world unknown-import accounting: vetted-library cache engine (T-0158
+  addendum 2 remainder)'
+state: queued
+kind: security
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/vet/**,tests/**,docs/modules/vet.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0158 shipped the single-source dangerous-operations registry, the (kind x language) coverage matrix with 0 unexcused cells, and the sys-audit matrix-verdict proof line. NOT shipped (too large for one pass, explicitly deferred per T-0158's own escape valve): addendum 2 deliverable (2), full CLOSED WORLD accounting -- resolving every third-party import in a vetted dependency's source to (a) a registry entry, (b) a VETTED library (same scanner engine run over the installed third-party source, cached per package+version, e.g. reusing the frob.vet._cache.py sqlite pattern), or (c) a LOUD 'unknown, unvetted, uninspected' failure -- with the audit accounting line (N registry ops, M vetted libraries, K explicit no-capability entries, 0 unknown) T-0158's addendum 2 describes. T-0158's sys-audit line covers the (kind x language) MATRIX proof only, not this import-resolution closed-world proof. Needs: an import-graph walk per vetted package (python ast.parse imports at minimum), a resolution function classifying each imported name against DANGEROUS_OPERATIONS/registry libraries vs NO_CAPABILITY_MODULES vs unresolved, and a persistent per-package+version cache keyed like _cache.py's verdict cache.
+
+<!-- ticket:T-0181 -->
+```yaml
+id: T-0181
+title: survey-prioritized third-party python/npm/cargo dangerous-surface registry
+  entries (T-0158 addendum 2 remainder)
+state: queued
+kind: security
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/vet/_capability_registry.py,tests/**,docs/modules/vet.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0158 shipped python stdlib coverage (subprocess/os/pickle/marshal/shelve/ctypes/importlib/eval+compile/socket+http+urllib+requests/httpx/aiohttp/sqlite3/asyncio/pty/multiprocessing) plus the common third-party python net clients (requests/aiohttp/httpx) already folded into the base table. NOT shipped: the addendum 2 (3) REAL-WORLD PRIORITY list's remaining survey items -- pydantic, fastapi, numpy, cryptography, jinja2, python-dotenv, uvicorn, sqlalchemy, asyncpg, alembic, redis, boto3, stripe, anthropic, argon2-cffi, aiosmtpd, playwright, Pillow (python); react/react-dom, vite/vitest, playwright, openapi-typescript, eslint tooling (npm); pyo3, serde/serde_json, tracing, libloading, wasm-bindgen, crossbeam, thiserror (cargo). Each needs its own DangerousOperation entries (or an explicit 'no dangerous surface, pure library' NO_CAPABILITY-style entry) surveyed against its actual API surface, not guessed. Left for a dedicated per-library-survey pass; T-0158's Done report has the full reasoning for why this was cut, not silently dropped.
+
+<!-- ticket:T-0182 -->
+```yaml
+id: T-0182
+title: per-operation fire+negative fixture parametrization for the full DANGEROUS_OPERATIONS
+  table (T-0158 deliverable 3 remainder)
+state: queued
+kind: bug
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- tests/test_capability_registry.py
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0158's test_capability_registry.py::_FIRE_FIXTURES covers one representative fire fixture per patterned (kind, language) matrix cell (29 cells), proving the compiled _PATTERNS table fires at least once per cell. It does NOT give every one of the ~70 individual DANGEROUS_OPERATIONS entries (e.g. python has 4 separate exec-kind entries: subprocess, os.system/popen/exec*, os.spawn*, webbrowser.open -- only one fires today) its own dedicated fixture, which is what T-0158 deliverable (3)'s literal text asks for ('for every patterned cell, a minimal real code snippet' read loosely as cell-level, but the addendum's per-operation structure implies per-entry proof would be stronger). Left as a follow-up: parametrize directly over DANGEROUS_OPERATIONS entries (one needle-based fixture per entry) rather than the current per-cell sampling, so a new operation added to the registry without a matching fixture fails loudly (T-0145 drift-lock style) instead of silently riding on a sibling entry's cell-level fixture.
 
 <!-- ticket:T-0184 -->
 ```yaml

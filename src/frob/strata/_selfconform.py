@@ -95,11 +95,26 @@ SYS_UNMODELED_CODE = "SYS102"
 #: (module docstring: `design/frob.strata` models exactly this one tree).
 _PACKAGE_ROOT = "src/frob"
 
-#: The four vet capability kinds THREAT004's `_effects.py::_KIND_MAP` has
-#: no tier-2 analog for (module docstring's SYS100 gap statement) -- the
-#: ONLY kinds this module's own file-level scan needs to cover, since
-#: net/fs-write/exec are fully delegated to `check_capability_conformance`.
-_EXTENDED_KINDS = frozenset({"eval", "env", "ffi", "install-hook"})
+#: The vet capability kinds THREAT004's `_effects.py::_KIND_MAP` has no
+#: tier-2 analog for (module docstring's SYS100 gap statement) -- the ONLY
+#: kinds this module's own file-level scan needs to cover, since net/fs-
+#: write/exec are fully delegated to `check_capability_conformance`. T-0158
+#: adds `sql`/`deserialize`/`html_render`/`fetch_url`/`client_storage`: new
+#: `CAPABILITY_KINDS` the structured dangerous-operations registry patterns
+#: that likewise have no `_KIND_MAP` tier-2 analog.
+_EXTENDED_KINDS = frozenset(
+    {
+        "eval",
+        "env",
+        "ffi",
+        "install-hook",
+        "sql",
+        "deserialize",
+        "html_render",
+        "fetch_url",
+        "client_storage",
+    }
+)
 
 
 # frob:doc docs/strata/selfconform.md#the-three-rules

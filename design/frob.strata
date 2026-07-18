@@ -84,12 +84,18 @@ node cli : trusted {
 // parsing (tree-sitter walkers + the strata-core native module), the
 // symbol graph snapshot, and per-language digest extraction that every
 // other component reads.
+// T-0158: `may "sql"` added -- graph/cache.py's sqlite cache writer matches
+// the registry's python/sql DangerousOperation (string-formatted
+// cursor.execute), a real (if benign, parameterization-owned) observed
+// capability the new exhaustive registry now surfaces that the coarser
+// old pattern table never patterned.
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
 node graphlang : trusted {
     clearance Internal;
     code "src/frob/graph/**" "src/frob/lang/**" "src/frob/arch/**";
     may "eval";
     may "fs";
+    may "sql";
 }
 
 // gates: src/frob/gates/**. The obligation-graph rule engine (SYS/DRIFT/
@@ -173,17 +179,26 @@ node core : trusted {
 // vet: src/frob/vet/**. Dependency-vetting -- the ONE component that
 // crosses the trust boundary out to `registry` (network fetches for
 // publish dates, OSV advisories, popularity data).
+// T-0158: `may "deserialize"`/`may "fetch_url"`/`may "sql"` added -- the
+// new exhaustive dangerous-operations registry patterns pickle/marshal/
+// shelve (_cve.py/_containment.py NVD-cache handling), urlopen-shaped URL
+// fetches (_nvd.py/_registry.py), and string-formatted sqlite3 execute
+// (real observed capabilities the old coarser pattern table never
+// patterned, not new code).
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
 node vet : trusted {
     clearance Internal;
     code "src/frob/vet/**";
+    may "deserialize";
     may "env";
     may "eval";
     may "exec";
+    may "fetch_url";
     may "ffi";
     may "fs";
     may "install-hook";
     may "net";
+    may "sql";
 }
 
 // The ticket ledger: tickets.md + tickets/, git-tracked truth. No
@@ -370,3 +385,41 @@ assume "weakness:CWE-78:core" noflow registry -> core owner logan review "2026-1
 // scope, but honestly discharged here rather than left dangling.
 // frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
 assume "weakness:CWE-78:vet" noflow registry -> vet owner logan review "2026-10-15"
+
+// T-0158: `may "sql"` newly declared for graphlang/vet (the exhaustive
+// dangerous-operations registry now patterns sqlite3 string-formatted
+// execute() calls it never did before) drags in CWE-89 (SQLi) and CWE-639
+// (quality's reuse of the same sql capability join) discharge obligations
+// for both nodes. Each is discharged honestly below, not narrowed away:
+//
+// graphlang: the ONLY `execute(f"...")` call under graphlang's `code=`
+// glob is `src/frob/graph/cache.py::_ensure_schema`'s
+// `conn.execute(f"DROP TABLE IF EXISTS {table}")` -- `table` iterates a
+// FIXED, hardcoded tuple literal ("meta", "files", "symbols", "edges",
+// "malformed") defined two lines above the call site, never external
+// input; every OTHER `execute()` call in this file already uses `?`
+// parameter binding (verified by direct grep, T-0158 Done report).
+// frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
+assume "weakness:CWE-89:graphlang" noflow registry -> graphlang owner logan review "2026-10-15"
+// frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
+assume "weakness:CWE-639:graphlang" noflow registry -> graphlang owner logan review "2026-10-15"
+
+// vet: the ONLY file under vet's `code=` glob matching the scanner's sql/
+// fetch_url/deserialize needles is `src/frob/vet/_capability_registry.py`
+// itself -- its `DANGEROUS_OPERATIONS` table stores every needle
+// (`execute(f"`, `urllib.`, `pickle.load(`, ...) as literal string DATA,
+// the SAME scanner-self-match artifact T-0150/T-0151 already documented
+// for `_capability.py`'s old hand-written pattern tables (T-0158 replaced
+// those tables with this registry; the self-match class moved file but
+// did not change shape). Every REAL `execute()`/`urlopen()`/`pickle.
+// load()` call in `src/frob/vet/*.py` outside this one registry file
+// either uses `?` parameter binding (`_registry.py`, `_cache.py`) or does
+// not exist at all (verified by direct grep, T-0158 Done report).
+// frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
+assume "weakness:CWE-89:vet" noflow registry -> vet owner logan review "2026-10-15"
+// frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
+assume "weakness:CWE-639:vet" noflow registry -> vet owner logan review "2026-10-15"
+// frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
+assume "weakness:CWE-918:vet" noflow registry -> vet owner logan review "2026-10-15"
+// frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
+assume "weakness:CWE-502:vet" noflow registry -> vet owner logan review "2026-10-15"

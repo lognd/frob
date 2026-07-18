@@ -313,6 +313,51 @@ def test_parse_hook_command_scoped_npm_package() -> None:
 
 
 class TestCapabilityScan:
+    def test_scan_file_operations_names_registry_entry(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_operations kind="unit"
+        from frob.vet._capability import scan_file_operations
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("import subprocess\nsubprocess.run(['ls'])\n")
+        ops = scan_file_operations(pkg)
+        assert any(op.capability_kind == "exec" for op in ops)
+        matched = next(op for op in ops if op.capability_kind == "exec")
+        assert matched.library == "subprocess"
+        assert matched.safer_alternative
+
+    def test_scan_file_operations_no_language(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_operations kind="unit"
+        from frob.vet._capability import scan_file_operations
+
+        assert scan_file_operations(tmp_path / "foo.unknownext") == ()
+
+    def test_scan_file_operations_bare_compile(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_operations kind="unit"
+        from frob.vet._capability import scan_file_operations
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("code = compile(source, '<s>', 'exec')\n")
+        ops = scan_file_operations(pkg)
+        assert any(op.function_or_pattern.startswith("compile(") for op in ops)
+
+    def test_scan_file_operations_dotted_compile_not_matched(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_operations kind="unit"
+        from frob.vet._capability import scan_file_operations
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("import re\n_RE = re.compile(r'^x$')\n")
+        ops = scan_file_operations(pkg)
+        assert not any(op.function_or_pattern.startswith("compile(") for op in ops)
+
+    def test_scan_file_operations_unreadable_file(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_operations kind="unit"
+        from frob.vet._capability import scan_file_operations
+
+        missing = tmp_path / "gone.py"
+        assert scan_file_operations(missing) == ()
+
     def test_python_exec_and_net_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
         from frob.vet._capability import scan_file_capabilities
@@ -333,12 +378,15 @@ class TestCapabilityScan:
         capabilities = scan_file_capabilities(build_rs)
         assert "exec" in capabilities
 
-    def test_no_pattern_table_for_c(self, tmp_path: Path) -> None:
+    def test_c_source_exec_detected(self, tmp_path: Path) -> None:
+        # T-0158: C/C++ is now a first-class scanned language (the old
+        # blanket "honestly-empty" exemption is retired) -- system() is a
+        # patterned c-cpp/exec DangerousOperation.
         from frob.vet._capability import scan_file_capabilities
 
         c_file = tmp_path / "foo.c"
         c_file.write_text('int main() { system("ls"); return 0; }\n')
-        assert scan_file_capabilities(c_file) == frozenset()
+        assert "exec" in scan_file_capabilities(c_file)
 
     def test_decode_to_exec_same_function(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::decode_to_exec_signal kind="unit"
@@ -373,7 +421,9 @@ class TestCapabilityScan:
         assert language_for(tmp_path / "mod.py") == "python"
         assert language_for(tmp_path / "mod.rs") == "rust"
         assert language_for(tmp_path / "mod.ts") == "typescript"
-        assert language_for(tmp_path / "mod.c") is None
+        # T-0158: C/C++ is now a first-class "c-cpp" bucket, not None.
+        assert language_for(tmp_path / "mod.c") == "c-cpp"
+        assert language_for(tmp_path / "mod.unknownext") is None
 
     def test_scan_directory_capabilities_aggregates_across_files(
         self, tmp_path: Path

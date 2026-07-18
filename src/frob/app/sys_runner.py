@@ -58,6 +58,11 @@ from frob.strata._elaborate import elaborate
 from frob.strata._parse import parse_module
 from frob.tickets import load_all, new_ticket
 from frob.tickets._models import Origin, TicketSpec
+from frob.vet._capability_registry import (
+    CAPABILITY_KINDS,
+    LANGUAGES,
+    capability_matrix,
+)
 
 _log = get_logger(__name__)
 
@@ -358,6 +363,38 @@ def _print_selfconform_report(report: SelfConformReport) -> None:
         )
 
 
+# frob:ticket T-0158
+def _print_capability_matrix_report() -> bool:
+    """Print the T-0158 capability-coverage proof line beside self-
+    conformance: 'capability coverage: N kinds x M languages, K cells
+    patterned+proven, J excused with reasons, 0 unexcused' -- makes the
+    exhaustiveness claim (every reserved kind provably detected in every
+    supported language, or specifically excused) a printed, checkable
+    proof rather than folklore. Returns True iff there are zero unexcused
+    empty cells (the gate condition `_run_audit` must honor)."""
+    cells = capability_matrix()
+    patterned = sum(1 for c in cells if c.patterned)
+    excused = sum(1 for c in cells if c.excused and not c.patterned)
+    unexcused = [c for c in cells if not c.patterned and not c.excused]
+    _log.info(
+        "sys audit: capability coverage: %d kind(s) x %d language(s), "
+        "%d cell(s) patterned+proven, %d excused with reasons, %d unexcused",
+        len(CAPABILITY_KINDS),
+        len(LANGUAGES),
+        patterned,
+        excused,
+        len(unexcused),
+    )
+    for cell in unexcused:
+        _log.error(
+            "sys audit: MATRIX GAP capability_kind=%s language=%s -- "
+            "unpatterned and unexcused",
+            cell.capability_kind,
+            cell.language,
+        )
+    return not unexcused
+
+
 # frob:ticket T-0115
 # frob:ticket T-0150
 def _run_audit(cfg: AppConfig) -> None:
@@ -396,7 +433,8 @@ def _run_audit(cfg: AppConfig) -> None:
     report = audited.danger_ok
     _print_audit_report(report)
     _print_selfconform_report(selfconform.danger_ok)
-    if not report.proved or selfconform.danger_ok.violations:
+    matrix_proved = _print_capability_matrix_report()
+    if not report.proved or selfconform.danger_ok.violations or not matrix_proved:
         sys.exit(1)
 
 

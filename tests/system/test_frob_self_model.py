@@ -99,8 +99,14 @@ class TestFrobSelfModel:
         # weakness:CWE-78:<node>` discharge claims that declaring `may
         # "exec"` on checker/core/vet (measured honestly, T-0150 Done
         # report) drags in via THREAT003 (docs/strata/threat.md
-        # #capabilities-drag-in-obligations) = 6.
-        assert len(_model.claims) == 6
+        # #capabilities-drag-in-obligations) = 6. T-0158: the exhaustive
+        # dangerous-operations registry newly patterns sql/fetch_url/
+        # deserialize (measured honestly, T-0158 Done report), adding
+        # `may "sql"` to graphlang+vet and `may "fetch_url"`/
+        # `may "deserialize"` to vet, which drags in 6 more discharge
+        # claims (CWE-89 + CWE-639 for graphlang and vet each, plus
+        # CWE-918 and CWE-502 for vet) = 12.
+        assert len(_model.claims) == 12
 
     # frob:tests tests/system/test_frob_self_model.py::TestFrobSelfModel.test_every_claim_proves kind="e2e"
     def test_every_claim_proves(self, _model) -> None:
@@ -121,7 +127,7 @@ class TestFrobSelfModel:
         outcome = evaluate_claims(_model)
         assert outcome.is_ok, f"evaluate_claims failed: {outcome.err}"
         claim_results = outcome.danger_ok
-        assert len(claim_results) == 6
+        assert len(claim_results) == 12
         proved_ids = {
             "c_no_registry_ledger",
             "c_cache_derivable",
@@ -131,6 +137,14 @@ class TestFrobSelfModel:
             "weakness:CWE-78:checker",
             "weakness:CWE-78:core",
             "weakness:CWE-78:vet",
+            # T-0158: exhaustive registry additions (see test_parses_and_
+            # elaborates above for the full reasoning).
+            "weakness:CWE-89:graphlang",
+            "weakness:CWE-639:graphlang",
+            "weakness:CWE-89:vet",
+            "weakness:CWE-639:vet",
+            "weakness:CWE-918:vet",
+            "weakness:CWE-502:vet",
         }
         seen_ids: set[str] = set()
         for claim_result in claim_results:

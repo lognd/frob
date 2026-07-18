@@ -2,11 +2,23 @@
 (docs/modules/vet.md "Capability taxonomy" + "Mechanics").
 
 Detection is a per-language token/substring scan over `frob.lang`-parsed
-source (Python/JS-TS/Rust first-class, per docs/modules/vet.md); C/C++ is scanned
-honestly-empty (no idiomatic literal exists yet -- see docs/modules/vet.md
-"Python, Rust, C/C++"). A missing/unreadable file never crashes the scan;
-it degrades to an empty capability set plus a `source-unavailable`-shaped
-note (docs/modules/vet.md "Honest limits").
+source (Python/JS-TS/Rust/C-C++ -- T-0158 adds C/C++ as a first-class
+scanned language, retiring the old blanket "honestly-empty" exemption; see
+`frob.vet._capability_registry` for the per-(kind, language) matrix that
+now makes this claim checkable). A missing/unreadable file never crashes
+the scan; it degrades to an empty capability set plus a
+`source-unavailable`-shaped note (docs/modules/vet.md "Honest limits").
+
+T-0158: `_PATTERNS` below is no longer hand-maintained needle tuples --
+it is COMPILED from `frob.vet._capability_registry.DANGEROUS_OPERATIONS`,
+the single-source structured dangerous-operations registry (one entry per
+{language, library, function_or_pattern, capability_kind, cwe_links,
+rationale, safer_alternative, severity}). `scan_file_capabilities` keeps
+returning a bare `frozenset[str]` of capability kinds (its existing
+public contract); `scan_file_operations` is the new richer entry point
+that names WHICH registry entries fired, so an audit finding can cite
+the library/function/rationale/safer_alternative instead of a bare kind
+label.
 
 T-0151: a bare `"compile("` substring needle used to sit in the Python
 `eval` pattern table. It was meant to catch the `compile()` builtin used
@@ -40,6 +52,7 @@ on this file is unaffected and still shows the documented false positive.
 """
 
 # frob:ticket T-0151
+# frob:ticket T-0158
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -48,9 +61,12 @@ from pathlib import Path
 from frob.lang import parse_file
 from frob.logging import get_logger
 
+from ._capability_registry import DANGEROUS_OPERATIONS, DangerousOperation
+
 _log = get_logger(__name__)
 
-# extension -> language bucket used to pick a pattern table
+# extension -> language bucket used to pick a pattern table. T-0158 adds
+# C/C++ (previously scanned honestly-empty) as a first-class bucket.
 _EXT_LANGUAGE = {
     ".py": "python",
     ".ts": "typescript",
@@ -60,61 +76,41 @@ _EXT_LANGUAGE = {
     ".mjs": "typescript",
     ".cjs": "typescript",
     ".rs": "rust",
+    ".c": "c-cpp",
+    ".h": "c-cpp",
+    ".cc": "c-cpp",
+    ".cpp": "c-cpp",
+    ".cxx": "c-cpp",
+    ".hpp": "c-cpp",
+    ".hh": "c-cpp",
 }
+
+
+def _compile_patterns() -> dict[str, dict[str, tuple[str, ...]]]:
+    """Build the language -> capability -> needle-tuple table FROM the
+    single-source `DANGEROUS_OPERATIONS` registry (T-0158) -- this table is
+    now a derived cache, never hand-maintained data. An entry with no
+    `needles` (e.g. python `compile()`, handled by `_has_bare_compile_call`
+    below) contributes no needle but still counts toward the registry's
+    per-(kind, language) `operation_count`."""
+    table: dict[str, dict[str, list[str]]] = {}
+    for entry in DANGEROUS_OPERATIONS:
+        by_kind = table.setdefault(entry.language, {})
+        by_kind.setdefault(entry.capability_kind, [])
+        by_kind[entry.capability_kind].extend(entry.needles)
+    return {
+        language: {kind: tuple(needles) for kind, needles in by_kind.items()}
+        for language, by_kind in table.items()
+    }
+
 
 # capability -> substrings that, if present anywhere in the file's source
 # text, mark the capability observed. Deliberately coarse (recall over
 # precision): a false positive here just means an extra declaration line in
-# [vet.allow]; a false negative is a missed attack.
-_PATTERNS: dict[str, dict[str, tuple[str, ...]]] = {
-    "python": {
-        "exec": ("subprocess.", "os.system(", "os.popen(", "os.exec", "Popen("),
-        "eval": (
-            "eval(",
-            "exec(",
-            "__import__(",
-            "importlib.import_module(",
-        ),
-        "net": (
-            "socket.",
-            "urllib.",
-            "http.client",
-            "requests.",
-            "aiohttp.",
-            "httpx.",
-        ),
-        "fs-write": ("os.remove(", "shutil.rmtree(", "os.rename(", "open(", ".write("),
-        "env": ("os.environ", "os.getenv("),
-        "ffi": ("ctypes.", "import ctypes", "cffi"),
-        "install-hook": ("cmdclass",),
-    },
-    "typescript": {
-        "exec": ("child_process", "execSync(", "spawn(", "execFile("),
-        "eval": ("eval(", "new Function(", "vm.runInContext(", "vm.runInNewContext("),
-        "net": (
-            'require("http")',
-            "require('http')",
-            "fetch(",
-            "axios.",
-            "net.connect(",
-            "http.request(",
-            "https.request(",
-        ),
-        "fs-write": ("fs.writeFile", "fs.appendFile", "fs.unlink", "fs.rm("),
-        "env": ("process.env",),
-        "ffi": ("ffi-napi", "node-gyp", "napi"),
-        "install-hook": ("cmdclass",),  # unreachable in JS; kept for table symmetry
-    },
-    "rust": {
-        "exec": ("Command::new(",),
-        "eval": (),
-        "net": ("TcpStream", "reqwest::", "hyper::", "std::net::"),
-        "fs-write": ("File::create(", "fs::write(", "fs::remove_file("),
-        "env": ("std::env::var(", "std::env::vars("),
-        "ffi": ('extern "C"', "libc::"),
-        "install-hook": (),
-    },
-}
+# [vet.allow]; a false negative is a missed attack. COMPILED from
+# `_capability_registry.DANGEROUS_OPERATIONS` (T-0158) -- edit the registry,
+# not this table.
+_PATTERNS: dict[str, dict[str, tuple[str, ...]]] = _compile_patterns()
 
 
 def _has_bare_compile_call(text: str) -> bool:
@@ -142,16 +138,21 @@ _SPECIAL_CHECKS: dict[str, dict[str, tuple[Callable[[str], bool], ...]]] = {
     "python": {"eval": (_has_bare_compile_call,)},
 }
 
-# absolute path of this module's own source file -- excluded from directory
-# aggregation (T-0151: this file's _PATTERNS table stores every needle as a
-# literal string, so scanning it against itself trivially "observes" every
+# absolute paths of this module and the T-0158 registry it compiles
+# `_PATTERNS` from -- both excluded from directory aggregation (T-0151/
+# T-0158: `_capability_registry.DANGEROUS_OPERATIONS` stores every needle as
+# a literal string, same self-match class as this file's derived `_PATTERNS`
+# table, so scanning either against itself trivially "observes" every
 # capability regardless of what the code actually does).
 _SELF_PATH = Path(__file__).resolve()
+_REGISTRY_PATH = (Path(__file__).parent / "_capability_registry.py").resolve()
 
 
 # frob:doc docs/modules/vet.md#public-api
 def language_for(path: Path) -> str | None:
-    """The pattern-table bucket for `path`'s extension, or `None` (e.g. C/C++)."""
+    """The pattern-table bucket for `path`'s extension (T-0158: C/C++ is now
+    a first-class `"c-cpp"` bucket, not `None`), or `None` for an extension
+    with no registry-backed language at all."""
     return _EXT_LANGUAGE.get(path.suffix.lower())
 
 
@@ -189,6 +190,40 @@ def _matched_capabilities(
         if any(check(text) for check in checks):
             found.add(capability)
     return found
+
+
+# frob:doc docs/modules/vet.md#public-api
+# frob:ticket T-0158
+def scan_file_operations(path: Path) -> tuple[DangerousOperation, ...]:
+    """The specific `DANGEROUS_OPERATIONS` registry entries whose needle(s)
+    matched in `path`'s raw text -- the richer sibling of
+    `scan_file_capabilities` (T-0158 addendum 1) that lets a caller name
+    WHICH library/function fired, not just the bare capability kind. An
+    entry with no `needles` (bare-builtin `compile()`, matched only via
+    `_has_bare_compile_call`) is included when that special check hits."""
+    language = language_for(path)
+    if language is None:
+        return ()
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace")
+    except OSError as exc:
+        _log.warning("vet: could not read %s for operation scan: %s", path, exc)
+        return ()
+
+    matched: list[DangerousOperation] = []
+    # frob:waive PERF003 reason="flat scan of a fixed table, not a nested join"
+    for entry in DANGEROUS_OPERATIONS:
+        if entry.language != language:
+            continue
+        if entry.needles:
+            if any(needle in text for needle in entry.needles):
+                matched.append(entry)
+        elif entry.language == "python" and entry.function_or_pattern.startswith(
+            "compile("
+        ):
+            if _has_bare_compile_call(text):
+                matched.append(entry)
+    return tuple(matched)
 
 
 # frob:doc docs/modules/vet.md#public-api
@@ -273,13 +308,15 @@ def _is_test_path(path: Path) -> bool:
 
 
 def _is_self_path(path: Path) -> bool:
-    """True for this module's own source file (T-0151: excluded from directory
-    aggregation since its `_PATTERNS` table contains every needle as literal
-    data, guaranteeing a self-match unrelated to what the code does)."""
+    """True for this module's own source file or the T-0158 registry it
+    compiles `_PATTERNS` from (excluded from directory aggregation since
+    both contain every needle as literal data, guaranteeing a self-match
+    unrelated to what the code does)."""
     try:
-        return path.resolve() == _SELF_PATH
+        resolved = path.resolve()
     except OSError:
         return False
+    return resolved in (_SELF_PATH, _REGISTRY_PATH)
 
 
 def _aggregate_capabilities(
@@ -315,4 +352,5 @@ __all__ = [
     "language_for",
     "scan_directory_capabilities",
     "scan_file_capabilities",
+    "scan_file_operations",
 ]

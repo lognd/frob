@@ -244,6 +244,29 @@ DEFAULT_BENIGN_CAPABILITIES: tuple[BenignCapability, ...] = (
             "itself already flags, not a CWE-catalog weakness"
         ),
     ),
+    # T-0158: `deserialize`/`fetch_url` ARE mapped in `CWE_CATALOG` (CWE-502/
+    # CWE-918, the security family) but have NO `QUALITY_CATALOG` entry at
+    # all -- same "distinct family, distinct vocabulary" shape the module
+    # docstring already explains for `exec`/`net`/`fs` above. Without these
+    # two entries the QUALITY_CATALOG loop alone would flag both kinds as
+    # unmapped (THREAT002), even though the security loop already accounts
+    # for them via a real CWE with a real discharge obligation.
+    BenignCapability(
+        kind="deserialize",
+        reason=(
+            "already classified as CWE-502 in CWE_CATALOG (the security "
+            "family); QUALITY_CATALOG has no deserialization-mapped entry "
+            "at all -- this entry only affects the QUALITY_CATALOG loop"
+        ),
+    ),
+    BenignCapability(
+        kind="fetch_url",
+        reason=(
+            "already classified as CWE-918 in CWE_CATALOG (the security "
+            "family); QUALITY_CATALOG has no SSRF/fetch-mapped entry at "
+            "all -- this entry only affects the QUALITY_CATALOG loop"
+        ),
+    ),
 )
 
 
