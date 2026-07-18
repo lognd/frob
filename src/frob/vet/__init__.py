@@ -22,6 +22,14 @@ from frob.vet._containment import (
     find_importing_nodes,
     render_containment_report,
 )
+from frob.vet._cve import (
+    CveMatch,
+    CweDisposition,
+    CweLink,
+    MatchStatus,
+    link_cwe_ids,
+    match_dependencies_against_mirror,
+)
 from frob.vet._hook import check_package, parse_hook_command
 from frob.vet._models import (
     Dependency,
@@ -44,8 +52,12 @@ __all__ = [
     "UNVERIFIED",
     "ContainmentFinding",
     "ContainmentReport",
+    "CveMatch",
+    "CweDisposition",
+    "CweLink",
     "Dependency",
     "HookVerdict",
+    "MatchStatus",
     "NvdResult",
     "OsvAdvisory",
     "PackageVerdict",
@@ -59,6 +71,8 @@ __all__ = [
     "cve_ids",
     "fetch_cwe_for_cve",
     "find_importing_nodes",
+    "link_cwe_ids",
+    "match_dependencies_against_mirror",
     "parse_hook_command",
     "render_containment_report",
     "scan_tree",

@@ -203,6 +203,10 @@ class AppConfig(BaseModel):
     vet_path: Path | None = None
     vet_hook: str | None = None
     vet_json: bool = False
+    # T-0147: local cvelistV5 mirror root for CVE matching, from
+    # [tool.frob] in pyproject.toml (vet_cve_mirror key), CLI --cve-mirror
+    # override.
+    vet_cve_mirror: Path | None = None
 
     # release
     release_command: str | None = None  # stamp|check
@@ -326,6 +330,7 @@ class AppConfig(BaseModel):
             "ticket_attach_path",
             "test_path",
             "vet_path",
+            "vet_cve_mirror",
             "perf_path",
             "release_path",
             "stats_path",

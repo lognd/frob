@@ -746,6 +746,13 @@ def _add_vet_parser(sub) -> None:
         "(Claude Code PreToolUse hook mode)",
     )
     vet_p.add_argument("--json", dest="vet_json", action="store_true")
+    vet_p.add_argument(
+        "--cve-mirror",
+        dest="vet_cve_mirror",
+        metavar="DIR",
+        help="local cvelistV5 mirror root to match dependencies against "
+        "(overrides [tool.frob].vet_cve_mirror in pyproject.toml, T-0147)",
+    )
 
 
 def _add_perf_profile_parser(perf_sub) -> None:

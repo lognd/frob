@@ -182,6 +182,94 @@ All waivable per-site is meaningless here (there is no site); VET waivers
 live as reviewed `[vet.allow]` edits in a commit -- the declaration IS the
 waiver mechanism, and its diff is the audit trail.
 
+## CVE mirror matching (T-0147)
+
+Builds on `frob.cve` (T-0146, parser/models only, no network) with the
+matching and CWE-linkage step that module deliberately leaves to `frob
+vet`: a local `cvelistV5` mirror clone (`git clone
+https://github.com/CVEProject/cvelistV5`) matched against the project's
+resolved dependencies, with each hit's `problemTypes[].cweId`s cross-
+referenced against the strata threat catalog.
+
+**Configuration** -- the mirror root, not a `[vet]`/`frob.toml` setting
+like the rest of this module, since it names a local filesystem path
+outside the repo (same reasoning `AppConfig` already applies to every
+other path field it reads from `[tool.frob]`):
+
+```toml
+# pyproject.toml
+[tool.frob]
+vet_cve_mirror = "/path/to/cvelistV5"
+```
+
+```
+frob vet [path] --cve-mirror /path/to/cvelistV5   # CLI flag overrides pyproject.toml
+```
+
+**No mirror configured at all** (neither `[tool.frob].vet_cve_mirror` nor
+`--cve-mirror`): clean, silent no-op -- `frob vet` runs exactly as it did
+before this feature existed. **A mirror path IS configured but missing or
+unreadable**: `Err(VetError.CveMirrorInvalid)`, logged at ERROR and
+`sys.exit(1)` -- a loud typed failure, never an empty "0 CVEs found"
+result (vacuous-pass doctrine: silence must never be confusable between
+"nothing wrong" and "could not check").
+
+**Product matching**: a dependency's `name` is matched case-insensitively
+against each `affected[].product` string. This is an exact-string join,
+not a CPE-dictionary lookup -- real CVE records name products in vendor
+prose ("Apache Log4j2") that frequently differs from the package's
+registry name ("log4j-core"); a real CPE join is a follow-up, not yet
+built (undercounts rather than overclaims, consistent with the rest of
+this module's honesty posture).
+
+**Version-range semantics** (`Version.version`/`.lessThan`/
+`.lessThanOrEqual`/`.versionType`/`.status`, `Affected.defaultStatus`):
+- `lessThan`: half-open range `[version, lessThan)`.
+- `lessThanOrEqual`: closed range `[version, lessThanOrEqual]`.
+- neither: a single-version point match (`version` of `""`/`"0"` is the
+  schema's own "no lower bound" sentinel).
+- the LAST matching explicit range in `versions[]` wins (the schema's own
+  override-by-order convention); no explicit range matching falls back to
+  `defaultStatus`.
+- `versionType` gates whether a range is comparable at all: `"semver"`,
+  `"python"`, `"pep440"`, and unset (`""`) are compared via
+  `packaging.version.Version` (PEP440-ish, semver-ish -- NOT a strict
+  semver-spec parser); anything else (git commit hashes, `"custom"`,
+  `"rpm"`, ...) -- or a version string that fails to parse even under a
+  comparable type -- is `MatchStatus.INDETERMINATE` with a specific
+  reason, never silently treated as `UNAFFECTED` (vacuous-pass doctrine:
+  Log4Shell's own real record uses `versionType="custom"` with a
+  non-semver `lessThan`, and reports INDETERMINATE for exactly this
+  reason). `defaultStatus="unknown"` (or absent) with no explicit range
+  match is likewise `INDETERMINATE`, not `UNAFFECTED`.
+- the nested per-version `changes[]` sub-list (nonlinear affected/
+  unaffected flips within a single `versions[]` entry, which Log4Shell's
+  own record also carries) is NOT evaluated -- out of scope for this
+  slice, disclosed rather than silently approximated; the entry's own
+  top-level `version`/`lessThan`/`status` decide the verdict.
+
+**REJECTED records** are skipped with a log line, never matched (a
+rejected CVE names no real vulnerability).
+
+**CVSS**: the first `cvssV4_0` metric found across the record's CNA/ADP
+containers is preferred; falls back to the first `cvssV3_1` when no v4.0
+metric is present. `None`/`None` when the record carries neither.
+
+**CWE linkage**: every matched CVE's `problemTypes[].descriptions[].cweId`
+is cross-referenced against `frob.strata._threat.CWE_CATALOG +
+CWE_TOP_25_CATALOG` (a hit names the catalog entry's title and
+mitigation) and, failing that, `CWE_TOP_25_OUT_OF_SCOPE +
+QUALITY_OUT_OF_SCOPE` (a hit names the recorded reason); a CWE id in
+neither table is `UNMAPPED` (logged, never dropped).
+
+**Output**: `frob vet --cve-mirror ... [--json]` prints a `cve matches:`
+section (CVE id, status, CVSS score/severity, description summary, CWE
+linkage) after the normal package table, or a `cve_matches` array folded
+into the `--json` payload alongside the existing `VetReport` fields.
+Matches are reporting-only in this slice -- no new gate rule feeds them
+into `frob check`'s enforce/exit-code path yet (a `VET012`-shaped gate
+rule is a natural follow-up, not yet built).
+
 ## Mechanics
 
 - **Input**: the lockfiles frob already understands the shape of
@@ -357,6 +445,12 @@ gate enforcement.
 <!-- frob:describes src/frob/vet/_containment.py::UNVERIFIED -->
 <!-- frob:describes src/frob/vet/_containment.py::CONTAINED -->
 <!-- frob:describes src/frob/vet/_containment.py::UNMODELED -->
+<!-- frob:describes src/frob/vet/_cve.py::MatchStatus -->
+<!-- frob:describes src/frob/vet/_cve.py::CweDisposition -->
+<!-- frob:describes src/frob/vet/_cve.py::CweLink -->
+<!-- frob:describes src/frob/vet/_cve.py::CveMatch -->
+<!-- frob:describes src/frob/vet/_cve.py::link_cwe_ids -->
+<!-- frob:describes src/frob/vet/_cve.py::match_dependencies_against_mirror -->
 
 - `Dependency` -- one resolved (ecosystem, name, version[, resolved-URL])
   tuple read from a lockfile; the unit every rule operates on.
@@ -668,3 +762,46 @@ What landed on top of the lockfile-conformance MVP:
   capabilities`/`.signals` already flowed through `report.model_dump_json()`
   and the table printer's per-package notes column, so the new fields
   surface automatically with no runner changes.
+
+## Implementation notes (T-0147, CVE mirror matching)
+
+- **New module** `_cve.py`: `match_dependencies_against_mirror` walks a
+  mirror with `frob.cve.iter_mirror`, matches each dependency by
+  case-insensitive product name, evaluates version-range membership
+  (`_status_for_affected`/`_evaluate_entry`, `packaging.version` for
+  PEP440/semver-ish comparison), and links CWE ids into the strata threat
+  catalog (`link_cwe_ids`). See "CVE mirror matching" above for the full
+  semantics.
+- **Circular import**: `frob.strata` imports `frob.vet._capability`
+  (capability scanning feeds strata's effects model), so `_cve.py`
+  importing `frob.strata._threat` at module load time would deadlock the
+  import graph. `_cwe_catalog_index`/`_cwe_out_of_scope_index` import it
+  lazily (call time) instead -- the only place this module reaches outside
+  `frob.vet`/`frob.cve`.
+- **Config**: `AppConfig.vet_cve_mirror` (new field, `src/frob/app/
+  config.py`) plus `--cve-mirror` on the `vet` subparser (`src/frob/
+  __main__.py`) and the `_cve_matches_for` dispatch in `vet_runner.py` --
+  touched despite being outside this ticket's declared `src/frob/vet/**`/
+  `src/frob/cve/**` scope because the ticket's own "explicit CLI flag
+  override" requirement is unsatisfiable without CLI wiring; the scope
+  extension is recorded in T-0147's Done report.
+- **New `VetError` member**: `CveMirrorInvalid`, the loud typed failure for
+  a configured-but-missing/unreadable mirror.
+- **Gate integration**: NOT built in this slice -- `frob vet --cve-mirror`
+  reports matches (table/JSON) but does not add a new `VET`-numbered rule
+  to `VetReport.violations`, so a `frob check` run does not yet fail on a
+  live dependency CVE. A `VET012`-shaped rule (ERROR on `AFFECTED`, WARN
+  on `INDETERMINATE`) is the natural follow-up; the ticket's own text asks
+  for "report", not "gate", so this is a disclosed cut rather than a
+  silent one.
+- **Product matching**: exact case-insensitive string match against
+  `affected[].product`, not a CPE-dictionary join -- see "CVE mirror
+  matching" above for why (undercounts, never overclaims).
+- **Fixtures**: `tests/unit/cve/fixtures/vet_mirror/` is a second, small,
+  synthetic mirror (two records: one PUBLISHED with clean semver ranges,
+  one REJECTED) alongside the T-0146 real-record mirror -- none of the
+  T-0146 fixtures happen to carry a clean, comparable semver range (curl's
+  real record has two never-satisfiable ranges; Log4Shell's is
+  `versionType=custom`), and `tests/unit/cve/test_parser.py` asserts an
+  exact file count over the T-0146 mirror directory, so adding files there
+  would have broken it.

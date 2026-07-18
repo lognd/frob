@@ -645,7 +645,7 @@ Still not closed, still not committed.
 id: T-0147
 title: 'frob vet: match dependencies against a local cvelistV5 mirror, link CVEs to
   the threat catalog'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-18'
@@ -658,12 +658,50 @@ scope:
 - tests/unit/cve/**
 - docs/modules/vet.md
 - tickets.md
-evidence: []
+- src/frob/app/config.py
+- src/frob/app/vet_runner.py
+- src/frob/__main__.py
+evidence:
+- tests/unit/cve/test_vet_match.py::test_affected_within_clean_semver_range
+- tests/unit/cve/test_vet_match.py::test_unaffected_via_less_than_boundary
+- tests/unit/cve/test_vet_match.py::test_unaffected_via_default_status
+- tests/unit/cve/test_vet_match.py::test_indeterminate_versiontype_custom_never_silently_unaffected
+- tests/unit/cve/test_vet_match.py::test_indeterminate_default_status_unknown
+- tests/unit/cve/test_vet_match.py::test_rejected_record_skipped_never_matched
+- tests/unit/cve/test_vet_match.py::test_cwe_linkage_catalog_out_of_scope_and_unmapped
+- tests/unit/cve/test_vet_match.py::test_log4shell_end_to_end_cwe_linkage_via_mirror
+- tests/unit/cve/test_vet_match.py::test_missing_mirror_is_loud_typed_failure
+- tests/unit/cve/test_vet_match.py::test_no_dependencies_still_walks_mirror_cleanly
+- tests/unit/cve/test_vet_match.py::test_unconfigured_mirror_is_a_silent_no_op
 attachments: []
 acceptance: []
 threat: null
 ```
 Build on the T-0146 parser: frob vet gains CVE matching against a local cvelistV5 mirror directory (configured via [tool.frob] in pyproject.toml; explicit CLI flag override). Match project dependencies (name plus installed version) against affected[] product/version ranges honoring lessThan/lessThanOrEqual/versionType/status semantics; report CVE id, CVSS score/severity, and description. Link each CVE's problemTypes CWE ids to the strata threat catalog (CWE_CATALOG plus CWE_TOP_25_CATALOG) so a dependency CVE citing e.g. CWE-89 names the catalog entry and mitigation that covers it, and OutOfScopeEntry ids are reported as such. Loud typed failure when a mirror path is configured but missing or unreadable (vacuous-pass doctrine); clean no-op only when no mirror is configured. Tests: fixture mirror dir with a handful of real records; matching cases covering range semantics, rejected records skipped-with-log, and the CWE linkage.
+
+Scope note (added during implementation): the ticket's own "explicit CLI flag override" requirement for the mirror path is unsatisfiable without touching CLI wiring, which lives outside src/frob/vet/**/src/frob/cve/** -- src/frob/app/config.py (AppConfig.vet_cve_mirror field, [tool.frob] wiring), src/frob/app/vet_runner.py (--cve-mirror dispatch, output), and src/frob/__main__.py (the --cve-mirror argparse flag) were added to scope for this reason. No other files outside the original scope were touched.
+
+## Done report
+
+Changed:
+- src/frob/vet/_cve.py (new): MatchStatus, CweDisposition, CweLink, CveMatch, link_cwe_ids, match_dependencies_against_mirror, plus private helpers (_evaluate_entry, _status_for_affected, _product_matches, _best_cvss, _description_summary, _cwe_ids_of, _match_record_dependency, _cwe_catalog_index, _cwe_out_of_scope_index, _parse_comparable)
+- src/frob/vet/_models.py::VetError (added CveMirrorInvalid member)
+- src/frob/vet/__init__.py (re-exports new _cve.py symbols)
+- src/frob/app/config.py::AppConfig (added vet_cve_mirror field, wired into from_external's path-field loop) [scope extension, justified above]
+- src/frob/app/vet_runner.py::_cve_matches_for, _print_cve_table, _run_scan (CLI dispatch + table/JSON output) [scope extension]
+- src/frob/__main__.py::_add_vet_parser (--cve-mirror flag) [scope extension]
+- docs/modules/vet.md (new "CVE mirror matching (T-0147)" section, public-api anchors, Implementation notes)
+- tests/unit/cve/test_vet_match.py (new, 11 tests)
+- tests/unit/cve/fixtures/vet_mirror/cves/2024/1xxx/CVE-2024-1000.json, CVE-2024-1001.json (new synthetic fixtures; see docs/modules/vet.md Implementation notes for why a separate mirror from the T-0146 real-record one was needed)
+- tickets.md (this ticket's scope list + Done report)
+
+Evidence: 11 pytest node ids under tests/unit/cve/test_vet_match.py, recorded via `frob ticket evidence T-0147` (see this ticket's evidence: list above). Measured: `pytest tests/unit/cve/ tests/test_vet.py tests/test_vet_containment.py -q` -> 121 collected, 0 failures (121 = 76 + 22 + 12 + 11 across the four files, verified via --collect-only -q; the -q run itself shows dot-progress only, no summary line, under this repo's pytest-xdist config). `frob test --base main` selected touched-set python suite -> exit=0, 2.18s. `ruff check`/`ruff format --check`/`ty check` on every touched file -> clean. Manual CLI verification: `frob vet <dir> --cve-mirror <mirror>` (table and --json output) and the unconfigured/no-op and missing-mirror-loud-failure paths, all exercised by hand against a throwaway uv.lock fixture in /tmp, matching the automated test coverage.
+
+Filed: none (no out-of-scope work discovered beyond the three CLI-wiring files already declared above).
+
+Gates: `frob check --ticket T-0147` -- gates stage reports "pass, 87 violation(s), 67 waived" (0 unwaived violations attributable to this ticket's scope after: (1) 3 PERF001/PERF003 false-positive waivers added in this diff with specific reasons -- see src/frob/vet/_cve.py, src/frob/app/vet_runner.py, tests/unit/cve/test_vet_match.py; (2) SCOPE001/PRE001 cleared by extending T-0147's scope + `frob ticket sweep T-0147` per the justification above). The single remaining FAIL line (`ruff-format: 1 file would be reformatted`, tests/unit/cve/test_parser.py) is pre-existing on main -- verified independently by running `ruff format --check` against the main-branch copy of that file, which also fails; not touched by this diff, left for T-0148 (drive frob check gates to zero).
+
+Known cuts (disclosed, not silently dropped): no VET-numbered gate rule feeds CVE matches into `frob check`'s enforce/exit-code path yet (reporting-only this slice, `VET012`-shaped follow-up candidate); product matching is exact case-insensitive string match against `affected[].product`, not a real CPE-dictionary join (undercounts, documented in docs/modules/vet.md).
 
 <!-- ticket:T-0148 -->
 ```yaml

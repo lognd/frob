@@ -130,3 +130,7 @@ class VetError(ErrorSet):
     SourceUnavailable = "Package source not in local caches; rerun with --fetch"
     CacheCorrupt = "vet cache unreadable; delete .frob/vet.db to rebuild"
     ConfigMalformed = "frob.toml [vet]/[vet.allow] table is malformed"
+    CveMirrorInvalid = (
+        "CVE mirror path is configured but missing or unreadable "
+        "(T-0147, see docs/modules/vet.md)"
+    )

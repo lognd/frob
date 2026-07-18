@@ -8,13 +8,21 @@ a Claude Code PreToolUse hook to surface to the agent.
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
 from frob.app.config import AppConfig
 from frob.gates._models import Severity
 from frob.logging import get_logger
-from frob.vet import check_package, parse_hook_command, scan_tree
+from frob.vet import (
+    CveMatch,
+    Dependency,
+    check_package,
+    match_dependencies_against_mirror,
+    parse_hook_command,
+    scan_tree,
+)
 
 _log = get_logger(__name__)
 
@@ -50,6 +58,25 @@ def _run_hook(root: Path, command: str) -> None:
     sys.exit(0)
 
 
+def _cve_matches_for(report, cfg: AppConfig) -> tuple[CveMatch, ...]:
+    """T-0147: CVE mirror matches for `report`'s verdicts, or `()` when no
+    mirror is configured -- a silent no-op (docs/modules/vet.md "CVE mirror
+    matching"). A configured-but-unreadable mirror is a loud typed failure
+    (`sys.exit(1)`), never a silent empty result."""
+    if cfg.vet_cve_mirror is None:
+        _log.debug("vet: cve: no mirror configured ([tool.frob].vet_cve_mirror); skip")
+        return ()
+    deps = tuple(
+        Dependency(ecosystem=v.ecosystem, name=v.name, version=v.version)
+        for v in report.verdicts
+    )
+    result = match_dependencies_against_mirror(deps, cfg.vet_cve_mirror)
+    if result.is_err:
+        _log.error("vet: cve: %s", result.danger_err)
+        sys.exit(1)
+    return result.danger_ok
+
+
 def _run_scan(root: Path, cfg: AppConfig) -> None:
     """Full lockfile pass: table (or `--json`) output; exit 1 on ERROR when enforced."""
     result = scan_tree(root)
@@ -57,11 +84,16 @@ def _run_scan(root: Path, cfg: AppConfig) -> None:
         _log.error("vet: %s", result.danger_err)
         sys.exit(1)
     report = result.danger_ok
+    cve_matches = _cve_matches_for(report, cfg)
 
     if cfg.vet_json:
-        print(report.model_dump_json(indent=2))
+        payload = json.loads(report.model_dump_json())
+        payload["cve_matches"] = [m.model_dump(mode="json") for m in cve_matches]
+        print(json.dumps(payload, indent=2))
     else:
         _print_table(report)
+        if cve_matches:
+            _print_cve_table(cve_matches)
 
     for note in report.skipped:
         _log.warning("vet: %s", note)
@@ -104,6 +136,31 @@ def _print_table(report) -> None:
         print("violations:")
         for v in report.violations:
             print(f"  [{v.severity}] {v.rule} {v.file}: {v.message}")
+
+
+def _print_cve_table(matches: tuple[CveMatch, ...]) -> None:
+    """T-0147: per-match CVE id, CVSS, status, and CWE catalog linkage."""
+    # frob:waive PERF003 reason="flat print loop, matches x few links, not a join"
+    print()
+    print("cve matches:")
+    for m in matches:
+        cvss = (
+            f"{m.cvss_score}/{m.cvss_severity}"
+            if m.cvss_score is not None
+            else "unscored"
+        )
+        print(f"  {m.cve_id} [{m.status}] {m.dependency}@{m.version} cvss={cvss}")
+        if m.summary:
+            print(f"    {m.summary}")
+        for link in m.cwe_links:
+            if link.disposition == "catalog":
+                print(
+                    f"    {link.cwe_id}: {link.title} (mitigation: {link.mitigation})"
+                )
+            elif link.disposition == "out_of_scope":
+                print(f"    {link.cwe_id}: out of scope ({link.reason})")
+            else:
+                print(f"    {link.cwe_id}: unmapped")
 
 
 __all__ = ["run"]
