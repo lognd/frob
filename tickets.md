@@ -3223,7 +3223,7 @@ Filed: none.
 id: T-0253
 title: self-path exclusion breaks under non-editable installs -- global frob self-audit
   shows 36 false SYS100s
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-18'
@@ -3234,7 +3234,9 @@ scope:
 - src/frob/strata/**
 - tests/**
 - tickets.md
-evidence: []
+evidence:
+- tests/test_vet.py::TestFingerprintScan::test_self_pattern_exclusion_does_not_fire_when_vetting_a_dependency
+- tests/test_vet.py::TestFingerprintScan::test_self_pattern_exclusion_survives_a_foreign_install_copy
 attachments: []
 acceptance: []
 threat: null
