@@ -298,7 +298,7 @@ found while working T-0148: the gates sweep waived 93 PERF001-004 sites (14 PERF
 ```yaml
 id: T-0166
 title: store grammar rejects code/may despite surface.md implying support
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-07-18'
@@ -1802,7 +1802,7 @@ User mandate 2026-07-18 ('if it passes, it's safe'): extend T-0154 (PII flow pro
 id: T-0208
 title: vet obfuscation scan pathologically slow -- high_entropy_strings dominates,
   no progress/timeout
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-07-18'
@@ -2222,7 +2222,7 @@ Filed from sibling-repo pilot P1 (graphite/feldspar/lithos, 2026-07-18). P1 gap 
 ```yaml
 id: T-0227
 title: gitio treats untracked gitlink/directory as file (Errno 21 warning spam)
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-07-18'
