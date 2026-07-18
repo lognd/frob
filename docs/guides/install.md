@@ -24,6 +24,16 @@ silently invisible to coverage or xref) but each one fails to parse with
 not warning-spam. `frob-core`-only dup rungs (R3+) turn off; R1/R2 and every
 other `frob.dup` rung are pure Python and still run.
 
+`ruff` and `ty` (the tools `frob check`'s Python-language stage shells out
+to) are real `[project]` dependencies (T-0142), so a bare install is fully
+functional for Python repos out of the box -- no separate `pip install
+ruff ty` step needed. Should any check-stage tool still be missing from
+`PATH` (a non-Python stage's `cargo`/`clang-tidy`/`npx`, or a `ruff`/`ty`
+shadowed by a broken shim), the corresponding stage reports a typed
+failing `ToolResult` ("tool unavailable: `<name>` -- install it or use
+`make install-tool`") instead of crashing -- a missing tool is always a
+loud, visible failure in the `frob check` summary, never a silent skip.
+
 ## Full install (with natives)
 
 Native extensions have no published wheels (no PyPI project -- they are

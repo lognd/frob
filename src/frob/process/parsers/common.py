@@ -189,3 +189,26 @@ class ToolResult(BaseModel):
         # frob:doc docs/modules/process.md#public-api
         """The full structured result as JSON."""
         return self.model_dump_json(indent=2)
+
+
+# frob:doc docs/modules/process.md#public-api
+# frob:ticket T-0142
+def tool_unavailable_result(tool: str, binary: str) -> ToolResult:
+    """A missing `binary` on PATH is a FAILING `ToolResult`, never a silent
+    skip (vacuous-pass doctrine, T-0142): every `_run_*` check-stage helper
+    that spawns `binary` and catches `FileNotFoundError` should return this
+    instead of `None`/raising, so the gap is loud in `frob check` output
+    rather than an invisible missing stage."""
+    return ToolResult(
+        tool=tool,
+        exit_code=1,
+        diagnostics=[
+            Diagnostic(
+                severity="error",
+                message=(
+                    f"tool unavailable: {binary} -- install it or use make install-tool"
+                ),
+            )
+        ],
+        summary=f"tool unavailable: {binary}",
+    )

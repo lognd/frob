@@ -12,22 +12,35 @@ import subprocess
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from frob.process.parsers.common import Diagnostic, Severity, ToolResult
+from frob.process.parsers.common import (
+    Diagnostic,
+    Severity,
+    ToolResult,
+    tool_unavailable_result,
+)
 
 if TYPE_CHECKING:
     from frob.gates import Violation
 
 
+# frob:ticket T-0142
 def _run_ruff(root: Path, extra_args: list[str] | None) -> list[ToolResult]:
-    """ruff lint + ruff format --check, as two ToolResults."""
+    """ruff lint + ruff format --check, as two ToolResults. A missing
+    `ruff` binary (T-0142: bare-wheel installs may lack it) is a typed
+    failing ToolResult for both stages, never a raw FileNotFoundError."""
     from frob.process.parsers import parse_ruff_json
 
     out: list[ToolResult] = []
-    proc = subprocess.run(
-        ["ruff", "check", "--output-format", "json", str(root)],
-        capture_output=True,
-        text=True,
-    )
+    try:
+        proc = subprocess.run(
+            ["ruff", "check", "--output-format", "json", str(root)],
+            capture_output=True,
+            text=True,
+        )
+    except FileNotFoundError:
+        out.append(tool_unavailable_result("ruff-check", "ruff"))
+        out.append(tool_unavailable_result("ruff-format", "ruff"))
+        return out
     r = parse_ruff_json(proc.stdout, exit_code=proc.returncode)
     r.tool = "ruff-check"
     out.append(r)
@@ -36,12 +49,16 @@ def _run_ruff(root: Path, extra_args: list[str] | None) -> list[ToolResult]:
 
 
 def _ruff_format_result(root: Path) -> ToolResult:
-    """The `ruff format --check` outcome as one ToolResult."""
-    proc = subprocess.run(
-        ["ruff", "format", "--check", str(root)],
-        capture_output=True,
-        text=True,
-    )
+    """The `ruff format --check` outcome as one ToolResult, or a typed
+    failure (T-0142) if `ruff` is not on PATH."""
+    try:
+        proc = subprocess.run(
+            ["ruff", "format", "--check", str(root)],
+            capture_output=True,
+            text=True,
+        )
+    except FileNotFoundError:
+        return tool_unavailable_result("ruff-format", "ruff")
     if not proc.returncode:
         return ToolResult(
             tool="ruff-format", exit_code=0, summary="all files formatted"
@@ -65,8 +82,11 @@ def _ruff_format_result(root: Path) -> ToolResult:
     )
 
 
-def _run_ty(root: Path) -> ToolResult | None:
-    """ty type-check, honouring a local ty.toml's extra-paths."""
+# frob:ticket T-0142
+def _run_ty(root: Path) -> ToolResult:
+    """ty type-check, honouring a local ty.toml's extra-paths. A missing
+    `ty` binary (T-0142) is a typed failing ToolResult, never a silent
+    skip -- the previous `None` return vanished the stage entirely."""
     from frob.process.parsers import parse_ty
 
     scan = root if root.is_dir() else root.parent
@@ -86,7 +106,7 @@ def _run_ty(root: Path) -> ToolResult | None:
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True)
     except FileNotFoundError:
-        return None
+        return tool_unavailable_result("ty", "ty")
     r = parse_ty(proc.stdout + proc.stderr, exit_code=proc.returncode)
     r.tool = "ty"
     return r

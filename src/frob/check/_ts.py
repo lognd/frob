@@ -1,7 +1,9 @@
 """Per-tool runners for the TypeScript/npm check pipeline (tsc/eslint/prettier/vitest).
 
 Private helpers of `frob.check`; `run_check_ts` composes them. A missing
-`npx`/`node` is a soft skip with a clear note, never a crash.
+`npx`/`node` never crashes -- it is a typed failing `ToolResult` (T-0142:
+vacuous-pass doctrine, a missing tool must be a loud failure, not a silent
+skip that vanishes the whole stage from the report).
 """
 
 from __future__ import annotations
@@ -9,26 +11,16 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
-from frob.process.parsers.common import Diagnostic, ToolResult
+from frob.process.parsers.common import Diagnostic, ToolResult, tool_unavailable_result
 
 _TS_TIMEOUT_S = 300
 
 
+# frob:ticket T-0142
 def _missing_tool_result(tool: str, cmd: str) -> ToolResult:
-    """A missing `npx`/`node` is a soft skip, not a crash -- mirrors the way
-    run_check_cpp tolerates an absent clang-tidy, but with a clear note so
-    the gap is never silently invisible in the summary."""
-    return ToolResult(
-        tool=tool,
-        exit_code=0,
-        diagnostics=[
-            Diagnostic(
-                severity="note",
-                message=f"skipped: {cmd!r} not found on PATH (node/npm not installed?)",
-            )
-        ],
-        summary="skipped: tool not found",
-    )
+    """A missing `npx`/`node` (T-0142) is a typed failing ToolResult, not a
+    silent skip -- vacuous-pass doctrine: a gap must be loud in the summary."""
+    return tool_unavailable_result(tool, cmd)
 
 
 def _run_npx(
