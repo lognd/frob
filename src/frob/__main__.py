@@ -1,5 +1,5 @@
 # frob:waive TEST005 reason="module line coverage 0.0%, debt T-0160"
-# frob:waive SCOPE001 reason="T-0176 scope omitted this file, filed T-draft-4032e080"
+# frob:waive SCOPE001 reason="T-0176 scope omitted this file, filed T-0220"
 from __future__ import annotations
 
 import argparse

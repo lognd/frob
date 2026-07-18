@@ -638,7 +638,7 @@ logand.app pilot: check-gate violations have frob:waive with written reasons, bu
 ```yaml
 id: T-0176
 title: 'frob ticket land: one-command landing (merge-check-splice-close-commit)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-18'
@@ -1971,9 +1971,9 @@ threat: null
 ```
 Filed from sibling-repo pilot P2 (lograder/aprog-public/aprog-private, 2026-07-18). Pilot P2 aprog-private (gap 15): SEC001 flagged a fake Slack token but MISSED the sk-live-... key on the adjacent line (detection gap -- the miss matters more than any false positive), and the fake-marker heuristics missed obvious placeholder phrasing ('real-slack-token-here' contains no recognized fake word). Fix both directions: audit the provider table against the fixture file that produced the miss (why did sk-live- not match -- prefix table or format constraint?), and extend placeholder recognition ('...-here', 'your-', 'insert-', 'changeme') with fixtures. Coordinate with T-0190 (GitHub-unflaggable fixtures) so new fixtures satisfy both constraints.
 
-<!-- ticket:T-draft-4032e080 -->
+<!-- ticket:T-0220 -->
 ```yaml
-id: T-draft-4032e080
+id: T-0220
 title: 'T-0176 scope gap: src/frob/__main__.py missing from declared scope'
 state: queued
 kind: docs
