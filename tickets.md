@@ -1056,7 +1056,7 @@ T-0153+T-0181 interaction, invisible to both branches (TestRealGateGreen::test_r
 id: T-0202
 title: 'frob check default output: stats summary, gate chatter to DEBUG, standardized
   log format'
-state: queued
+state: in-progress
 kind: ux
 origin: human
 created: '2026-07-18'
