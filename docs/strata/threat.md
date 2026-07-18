@@ -224,6 +224,7 @@ matching); and the extraction gap outside the analyzable subset (same
 tier-2 result). The catalog proves coverage of the CITED baseline, not of
 the unknown -- and says so.
 
+<a id="phasing"></a>
 ## Phasing (epic T-0109)
 
 - **A (catalog + design-level obligations)**: `std.cwe` pack, `weakness`/
@@ -231,7 +232,13 @@ the unknown -- and says so.
   the model, the OWASP-Top-10 subset as data. Depends only on phases 0-2.
 - **B (capability completeness)**: THREAT002, sink taxonomy, the
   capability->obligation instantiation; the deny-by-default unclassified-
-  sink error at the model level.
+  sink error at the model level. SHIPPED (T-0112):
+  `check_capability_completeness` checks every `may`-declared capability
+  kind against the sink taxonomy (`WeaknessEntry.capability_kind`s the
+  catalog already names) or an explicit `BenignCapability` excuse; the
+  code-level half (joining `_effects.py`'s extracted net/fs/exec sinks
+  against this same taxonomy) stays phase C, since it needs the finer
+  capability grammar `_effects.py` itself defers.
 - **C (code binding)**: effect extraction of CWE-relevant sinks (joins
   T-0079), the "undeclared capability in code" error, mitigation
   chokepoint verification via the policy forms.

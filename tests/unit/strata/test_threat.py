@@ -4,7 +4,11 @@
 
 from __future__ import annotations
 
+import pytest
+from pydantic import ValidationError
+
 from frob.strata import (
+    BenignCapability,
     Claim,
     Flow,
     KernelModel,
@@ -12,6 +16,8 @@ from frob.strata import (
     NoFlow,
     OutOfScopeEntry,
     Rung,
+    WeaknessEntry,
+    check_capability_completeness,
     check_catalog_completeness,
     check_discharge_completeness,
     evaluate_threats,
@@ -209,6 +215,101 @@ class TestDischargeCompleteness:
         assert {v.cwe for v in result.danger_ok} == {"CWE-89"}
 
 
+class TestBenignCapability:
+    # frob:tests src/frob/strata/_threat.py::BenignCapability kind="unit"
+    def test_empty_reason_is_rejected(self):
+        with pytest.raises(ValidationError):
+            BenignCapability(kind="metrics", reason="")
+
+
+class TestCapabilityCompleteness:
+    # frob:tests src/frob/strata/_threat.py::check_capability_completeness kind="unit"
+    def test_known_capability_kind_is_classified(self):
+        node = Node(id="Web", trust="trusted", may=("html_render", "sql"))
+        result = check_capability_completeness(KernelModel(nodes=(node,)))
+        assert result.is_ok
+        assert result.danger_ok == ()
+
+    # frob:tests src/frob/strata/_threat.py::check_capability_completeness kind="unit"
+    def test_unknown_capability_kind_is_a_violation(self):
+        node = Node(id="Web", trust="trusted", may=("mystery_power",))
+        result = check_capability_completeness(KernelModel(nodes=(node,)))
+        assert result.is_ok
+        violations = result.danger_ok
+        assert len(violations) == 1
+        assert violations[0].rule == "THREAT002"
+        assert violations[0].capability == "mystery_power"
+        assert violations[0].node == "Web"
+        assert violations[0].cwe == ""
+
+    # frob:tests src/frob/strata/_threat.py::check_capability_completeness kind="unit"
+    def test_benign_capability_excuses_an_unknown_kind(self):
+        node = Node(id="Web", trust="trusted", may=("metrics",))
+        result = check_capability_completeness(
+            KernelModel(nodes=(node,)),
+            benign=(BenignCapability(kind="metrics", reason="no CWE weakness"),),
+        )
+        assert result.is_ok
+        assert result.danger_ok == ()
+
+    # frob:tests src/frob/strata/_threat.py::check_capability_completeness kind="unit"
+    def test_kind_scoped_may_atom_is_still_classified(self):
+        node = Node(id="Web", trust="trusted", may=("sql:orders_db",))
+        result = check_capability_completeness(KernelModel(nodes=(node,)))
+        assert result.is_ok
+        assert result.danger_ok == ()
+
+    # frob:tests src/frob/strata/_threat.py::check_capability_completeness kind="unit"
+    def test_no_capabilities_no_violations(self):
+        model = KernelModel(nodes=(Node(id="Api", trust="trusted"),))
+        result = check_capability_completeness(model)
+        assert result.is_ok
+        assert result.danger_ok == ()
+
+    # frob:tests src/frob/strata/_threat.py::check_capability_completeness kind="unit"
+    def test_multiple_unknown_kinds_each_violate(self):
+        node = Node(id="Web", trust="trusted", may=("foo", "bar"))
+        result = check_capability_completeness(KernelModel(nodes=(node,)))
+        assert result.is_ok
+        kinds = {v.capability for v in result.danger_ok}
+        assert kinds == {"foo", "bar"}
+
+    # frob:tests src/frob/strata/_threat.py::check_capability_completeness kind="unit"
+    def test_non_default_catalog_moves_the_taxonomy_with_it(self):
+        # A catalog with an extra bespoke entry must make its capability_kind
+        # a known sink for THREAT002 too -- the join is derived from the
+        # `catalog` argument, never a module-level default-catalog cache
+        # (structural single-source with `_fired_obligations`).
+        extra = WeaknessEntry(
+            id="CWE-000",
+            title="bespoke",
+            cite="https://example.invalid/CWE-000",
+            capability_kind="widget_render",
+            mitigation="widget_encoding",
+        )
+        catalog = (*CWE_CATALOG, extra)
+        node = Node(id="Web", trust="trusted", may=("widget_render",))
+        result = check_capability_completeness(
+            KernelModel(nodes=(node,)), catalog=catalog
+        )
+        assert result.is_ok
+        assert result.danger_ok == ()
+
+    # frob:tests src/frob/strata/_threat.py::check_capability_completeness kind="unit"
+    def test_thin_catalog_shrinks_the_taxonomy_with_it(self):
+        # Dropping CWE-79 from the catalog must make html_render unclassified
+        # for THREAT002 too -- same non-divergence guarantee in reverse.
+        thin_catalog = tuple(e for e in CWE_CATALOG if e.id != "CWE-79")
+        node = Node(id="Web", trust="trusted", may=("html_render",))
+        result = check_capability_completeness(
+            KernelModel(nodes=(node,)), catalog=thin_catalog
+        )
+        assert result.is_ok
+        violations = result.danger_ok
+        assert len(violations) == 1
+        assert violations[0].capability == "html_render"
+
+
 class TestEvaluateThreats:
     # frob:waive PERF003 reason="two set comprehensions over small fixtures, not a join"
     # frob:tests src/frob/strata/_threat.py::evaluate_threats kind="unit"
@@ -225,6 +326,27 @@ class TestEvaluateThreats:
     def test_clean_model_and_full_catalog_has_no_violations(self):
         model = KernelModel(nodes=(Node(id="Api", trust="trusted"),))
         report = evaluate_threats(model, "owasp-top-10")
+        assert report.is_ok
+        assert report.danger_ok.violations == ()
+
+    # frob:tests src/frob/strata/_threat.py::evaluate_threats kind="unit"
+    def test_unclassified_capability_reports_threat002(self):
+        node = Node(id="Web", trust="trusted", may=("mystery_power",))
+        model = KernelModel(nodes=(node,))
+        report = evaluate_threats(model, "owasp-top-10")
+        assert report.is_ok
+        rules = {v.rule for v in report.danger_ok.violations}
+        assert "THREAT002" in rules
+
+    # frob:tests src/frob/strata/_threat.py::evaluate_threats kind="unit"
+    def test_benign_capability_param_excuses_threat002(self):
+        node = Node(id="Web", trust="trusted", may=("metrics",))
+        model = KernelModel(nodes=(node,))
+        report = evaluate_threats(
+            model,
+            "owasp-top-10",
+            benign=(BenignCapability(kind="metrics", reason="no CWE weakness"),),
+        )
         assert report.is_ok
         assert report.danger_ok.violations == ()
 

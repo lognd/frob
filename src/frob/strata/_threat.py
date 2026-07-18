@@ -1,31 +1,38 @@
-"""strata obligation catalog phase A: `std.cwe` + weakness/capability grammar
-+ THREAT001/THREAT003 (docs/strata/threat.md, T-0109/T-0111).
+"""strata obligation catalog phases A+B: `std.cwe` + weakness/capability
+grammar + THREAT001/THREAT002/THREAT003 (docs/strata/threat.md,
+T-0109/T-0111/T-0112).
 
-Phase A is design-level only (docs/strata/threat.md#phasing): a CWE
-weakness is cataloged as structured data (never hand-transcribed --
-`WeaknessEntry.cite` names the authoritative source url), a capability
-kind on a `Node.may` atom auto-instantiates the weakness obligations the
-charter's capability table maps it to, and two of the three exhaustiveness
-conjuncts are checked:
+Phase A (T-0111, design-level only, docs/strata/threat.md#phasing): a CWE
+weakness is cataloged as structured data (`WeaknessEntry.cite` names the
+authoritative source url, never hand-transcribed); a capability kind on a
+`Node.may` atom auto-instantiates the weakness obligations the charter's
+capability table maps it to. THREAT001 (catalog completeness): every CWE
+id a selected baseline VIEW names has a catalog entry or an explicit
+`out_of_scope` entry. THREAT003 (discharge completeness): every FIRED
+obligation (a node declares the `may` kind that drags it in) has a
+corresponding `Claim`, evaluated at or above the catalog's required rung,
+never REFUTED, and -- if assumed -- owned with a review date.
 
-- THREAT001 (catalog completeness): every CWE id a selected baseline VIEW
-  names has a catalog entry or an explicit `out_of_scope` entry.
-- THREAT003 (discharge completeness): every FIRED weakness obligation (a
-  node declares the `may` capability kind that drags it in) has a
-  corresponding `Claim` in the model, evaluated at or above the catalog's
-  required rung, never REFUTED, and -- if assumed -- owned with a review
-  date.
+Phase B (T-0112, docs/strata/threat.md#phasing item B) adds THREAT002
+(precondition/capability completeness), still model-level: every
+capability kind a node declares via `may` is CLASSIFIED -- it names a
+sink the catalog recognizes (`_entries_by_capability_kind`, the same join
+`_fired_obligations` uses) or is explicitly excused by a `BenignCapability` entry,
+mirroring THREAT001's `OutOfScopeEntry`. Unclassified is a violation,
+deny-by-default (charter law 2) -- the "never forget" mechanism (threat.md
+#the-exhaustiveness-proof-the-point, item 2).
 
-THREAT002 (sink taxonomy / capability completeness, phase B) and the code-
-binding discharge join (phase C, T-0079) are out of scope here; this
-module's `may`-kind join reuses exactly the same `_may_kind` convention
-`_effects.py` already established so the two stay joinable later without
-rework.
+The code-level half ("every extracted sink is classified", joining
+`_effects.py`'s net/fs/exec `ObservedEffect`s against this taxonomy) is
+phase C (docs/strata/threat.md#phasing item C): it needs the finer
+capability grammar `_effects.py`'s own docstring already defers
+("destination-scoped ... needs a first-class capability grammar"). Noted
+as a scope cut, not silently dropped.
 """
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
@@ -75,6 +82,19 @@ class OutOfScopeEntry(BaseModel):
 
     id: str
     reason: str
+
+
+# frob:doc docs/strata/threat.md#phasing
+class BenignCapability(BaseModel):
+    """A `may` capability KIND explicitly excused from THREAT002's sink
+    taxonomy, with a reason -- mirrors `OutOfScopeEntry` for THREAT001
+    (docs/strata/threat.md#phasing item B); an unmapped kind must be
+    named here or THREAT002 fails closed on it."""
+
+    model_config = ConfigDict(frozen=True)
+
+    kind: str
+    reason: str = Field(min_length=1)
 
 
 # frob:doc docs/strata/threat.md#the-catalog-stdcwe
@@ -175,26 +195,39 @@ VIEWS: dict[str, frozenset[str]] = {
     "owasp-top-10": frozenset(entry.id for entry in CWE_CATALOG),
 }
 
-#: capability KIND (the `_effects.py::_may_kind` convention) -> the CWE ids
-#: its declaration auto-instantiates (docs/strata/threat.md#capabilities-
-#: drag-in-obligations).
-_CAPABILITY_OBLIGATIONS: dict[str, tuple[str, ...]] = {}
-for _entry in CWE_CATALOG:
-    if _entry.capability_kind is not None:
-        _CAPABILITY_OBLIGATIONS.setdefault(_entry.capability_kind, ())
-        _CAPABILITY_OBLIGATIONS[_entry.capability_kind] += (_entry.id,)
-del _entry
+
+def _entries_by_capability_kind(
+    catalog: tuple[WeaknessEntry, ...],
+) -> dict[str, tuple[WeaknessEntry, ...]]:
+    """capability KIND (the `_effects.py::_may_kind` convention) -> the
+    `catalog` entries its declaration auto-instantiates (docs/strata/
+    threat.md#capabilities-drag-in-obligations). The ONE home this join is
+    computed in: `_fired_obligations` (instantiation) and
+    `check_capability_completeness` (THREAT002's sink taxonomy) both call
+    this over the SAME `catalog` argument they were given, so a caller who
+    passes a non-default catalog can never see the two checks diverge
+    (charter: no duplication) -- there is no module-level cache keyed to
+    `CWE_CATALOG` to go stale against a different catalog."""
+    by_kind: dict[str, list[WeaknessEntry]] = {}
+    for entry in catalog:
+        if entry.capability_kind is not None:
+            by_kind.setdefault(entry.capability_kind, []).append(entry)
+    return {kind: tuple(entries) for kind, entries in by_kind.items()}
 
 
 # frob:doc docs/strata/threat.md#the-exhaustiveness-proof-the-point
 class ThreatViolation(BaseModel):
-    """One THREAT001/THREAT003 finding: a rule id, the CWE id, an optional
-    firing node, and a human detail -- never a silent gap."""
+    """One THREAT001/THREAT002/THREAT003 finding: a rule id, an optional
+    CWE id, an optional capability kind, an optional firing node, and a
+    human detail -- never a silent gap. THREAT002 sets `capability` and
+    leaves `cwe` empty (no CWE is implicated -- the capability itself is
+    unclassified); THREAT001/THREAT003 leave `capability` `None`."""
 
     model_config = ConfigDict(frozen=True)
 
-    rule: str  # "THREAT001" | "THREAT003"
-    cwe: str
+    rule: str  # "THREAT001" | "THREAT002" | "THREAT003"
+    cwe: str = ""
+    capability: str | None = None
     node: str | None = None
     detail: str = ""
 
@@ -252,15 +285,60 @@ def check_catalog_completeness(
     return Ok(tuple(violations))
 
 
+def _capability_violation(kind: str, node_id: str) -> ThreatViolation:
+    """THREAT002 violation helper: deny-by-default unclassified capability
+    kind (docs/strata/threat.md#phasing item B)."""
+    _log.warning(
+        "threat: THREAT002 capability %r on %s matches no sink taxonomy "
+        "entry and no BenignCapability excuse",
+        kind,
+        node_id,
+    )
+    return ThreatViolation(
+        rule="THREAT002",
+        capability=kind,
+        node=node_id,
+        detail=f"capability kind {kind!r} matches no std.cwe sink taxonomy "
+        "entry and no BenignCapability excuse",
+    )
+
+
+# frob:doc docs/strata/threat.md#phasing
+def check_capability_completeness(
+    model: KernelModel,
+    catalog: tuple[WeaknessEntry, ...] = CWE_CATALOG,
+    benign: tuple[BenignCapability, ...] = (),
+) -> Result[tuple[ThreatViolation, ...], StrataError]:
+    """THREAT002: every capability kind a node declares via a `may` atom is
+    classified -- it names a sink the `catalog` recognizes (its
+    `capability_kind`) or is explicitly excused by a `BenignCapability`;
+    an unclassified kind is a violation, deny-by-default (docs/strata/
+    threat.md#phasing item B). The model-level half of "every capability
+    ... is classified" (threat.md#the-exhaustiveness-proof-the-point,
+    item 2); the code-level half is phase C (module docstring).
+
+    "Classified" means: a `may` kind present in `_entries_by_capability_
+    kind(catalog)` -- the SAME join `_fired_obligations` computes over the
+    same `catalog` argument, so this can never diverge from what actually
+    fires (charter: no duplication)."""
+    known = frozenset(_entries_by_capability_kind(catalog))
+    excused = {entry.kind for entry in benign}
+
+    violations: list[ThreatViolation] = []
+    for node in sorted(model.nodes, key=lambda n: n.id):
+        kinds = sorted({_may_kind(atom) for atom in node.may})
+        for kind in kinds:
+            if kind not in known and kind not in excused:
+                violations.append(_capability_violation(kind, node.id))
+    return Ok(tuple(violations))
+
+
 def _fired_obligations(
     model: KernelModel, catalog: tuple[WeaknessEntry, ...]
 ) -> list[tuple[str, WeaknessEntry]]:
     """Every (node_id, WeaknessEntry) pair whose obligation fires: the node
     declares a `may` atom of the entry's `capability_kind`."""
-    by_kind: dict[str, list[WeaknessEntry]] = {}
-    for entry in catalog:
-        if entry.capability_kind is not None:
-            by_kind.setdefault(entry.capability_kind, []).append(entry)
+    by_kind = _entries_by_capability_kind(catalog)
 
     fired: list[tuple[str, WeaknessEntry]] = []
     for node in model.nodes:
@@ -372,21 +450,30 @@ def evaluate_threats(
     view: str,
     catalog: tuple[WeaknessEntry, ...] = CWE_CATALOG,
     out_of_scope: tuple[OutOfScopeEntry, ...] = (),
+    benign: tuple[BenignCapability, ...] = (),
 ) -> Result[ThreatReport, StrataError]:
-    """The strata-level threat-audit entrypoint: THREAT001 + THREAT003 over
-    `model` against the selected baseline `view` (docs/strata/threat.md
-    #the-exhaustiveness-proof-the-point). Gate wiring (`frob check`
-    surfacing this as a diagnostic) is a follow-up once T-0080's sys_gate
-    lands -- this function is the seam that follow-up calls into, kept
-    deliberately gate-agnostic (no `src/frob/gates` import here).
+    """The strata-level threat-audit entrypoint: THREAT001 + THREAT002 +
+    THREAT003 over `model` against the selected baseline `view` (docs/
+    strata/threat.md#the-exhaustiveness-proof-the-point). Gate wiring
+    (`frob check` surfacing this as a diagnostic) is a follow-up once
+    T-0080's sys_gate lands -- this function is the seam that follow-up
+    calls into, kept deliberately gate-agnostic (no `src/frob/gates`
+    import here).
     """
     catalog_violations = check_catalog_completeness(view, catalog, out_of_scope)
     if catalog_violations.is_err:
         return Err(catalog_violations.danger_err)
+    capability_violations = check_capability_completeness(model, catalog, benign)
+    if capability_violations.is_err:
+        return Err(capability_violations.danger_err)
     discharge_violations = check_discharge_completeness(model, catalog)
     if discharge_violations.is_err:
         return Err(discharge_violations.danger_err)
-    all_violations = (*catalog_violations.danger_ok, *discharge_violations.danger_ok)
+    all_violations = (
+        *catalog_violations.danger_ok,
+        *capability_violations.danger_ok,
+        *discharge_violations.danger_ok,
+    )
     _log.info(
         "threat: evaluated view=%r catalog=%d out_of_scope=%d -> %d violation(s)",
         view,
@@ -400,10 +487,12 @@ def evaluate_threats(
 __all__ = [
     "CWE_CATALOG",
     "VIEWS",
+    "BenignCapability",
     "OutOfScopeEntry",
     "ThreatReport",
     "ThreatViolation",
     "WeaknessEntry",
+    "check_capability_completeness",
     "check_catalog_completeness",
     "check_discharge_completeness",
     "evaluate_threats",
