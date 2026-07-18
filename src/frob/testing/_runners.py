@@ -55,6 +55,10 @@ class TestingError(ErrorSet):
         "cargo test needs a Python>=3.11 dev environment (PYO3_PYTHON + a "
         "discoverable libpython) that frob could not find"
     )
+    UnroutedItem = (
+        "A selected item's file does not fall under exactly one same-language "
+        "[[test.runner]] cwd (T-0128: multiple runners per language route by cwd)"
+    )
 
 
 def _excerpt(text: str, *, lines: int = _EXCERPT_LINES) -> str:
@@ -194,6 +198,41 @@ def _build_runner_argv(
 
 
 # frob:doc docs/modules/testing.md#rust-runner
+def _spec_owns_item(spec: RunnerSpec, item: str) -> bool:
+    """True if `item`'s file path falls under `spec.cwd` (T-0128: lets several
+    same-language runners -- e.g. frob-core and strata-core's cargo entries --
+    coexist, each scoped to its own crate directory). `cwd = "."` owns
+    everything, matching the pre-T-0128 single-runner-per-language behavior."""
+    if spec.cwd in (".", ""):
+        return True
+    file_part = item.split("::", 1)[0]
+    prefix = spec.cwd.rstrip("/") + "/"
+    return file_part == spec.cwd or file_part.startswith(prefix)
+
+
+# frob:doc docs/modules/testing.md#rust-runner
+def _route_items(
+    specs: list[RunnerSpec], items: tuple[str, ...]
+) -> Result[dict[int, tuple[str, ...]], TestingError]:
+    """Partition `items` across `specs` (same language) by owning `cwd`; `Err`
+    -- never a silent drop -- when an item matches zero or more than one
+    runner's `cwd` (T-0128)."""
+    buckets: dict[int, list[str]] = {i: [] for i in range(len(specs))}
+    for item in items:
+        owners = [i for i, spec in enumerate(specs) if _spec_owns_item(spec, item)]
+        if len(owners) != 1:
+            _log.error(
+                "run_selected: item %r matched %d [[test.runner]] cwd(s) for "
+                "language %r (want exactly 1); refusing to guess",
+                item,
+                len(owners),
+                specs[0].language if specs else "?",
+            )
+            return Err(TestingError.UnroutedItem)
+        buckets[owners[0]].append(item)
+    return Ok({i: tuple(v) for i, v in buckets.items()})
+
+
 def _python_version(python: str) -> tuple[int, int] | None:
     """`(major, minor)` for `python`'s interpreter, or `None` if it cannot run."""
     spawned = run_argv(
@@ -323,20 +362,56 @@ def _run_one_runner(
     )
 
 
+def _run_language(
+    specs: list[RunnerSpec], items: tuple[str, ...], root: Path
+) -> Result[list[RunnerOutcome], TestingError]:
+    """Every outcome for one language's selected `items`, routed across its
+    (possibly several, T-0128) runners; `ALL_SENTINEL` runs every spec's
+    `all_command` since a suite-wide fallback names no specific crate."""
+    if ALL_SENTINEL in items:
+        outcomes: list[RunnerOutcome] = []
+        for spec in specs:
+            outcome = _run_one_runner(spec, items, root)
+            if outcome.is_err:
+                return Err(outcome.danger_err)
+            outcomes.append(outcome.danger_ok)
+        return Ok(outcomes)
+
+    routed = _route_items(specs, items)
+    if routed.is_err:
+        return Err(routed.danger_err)
+    outcomes = []
+    for i, spec in enumerate(specs):
+        bucket = routed.danger_ok[i]
+        if not bucket:
+            continue
+        outcome = _run_one_runner(spec, bucket, root)
+        if outcome.is_err:
+            return Err(outcome.danger_err)
+        outcomes.append(outcome.danger_ok)
+    return Ok(outcomes)
+
+
 # frob:doc docs/modules/testing.md#public-api
 def run_selected(
     selection: SelectionReport, runners: tuple[RunnerSpec, ...], root: Path
 ) -> Result[TestRunReport, TestingError]:
-    """Spawn every runner whose language has a selection; nonzero exit is data."""
-    runners_by_lang = {spec.language: spec for spec in runners}
+    """Spawn every runner whose language has a selection; nonzero exit is data.
+    A language may map to several `[[test.runner]]` entries (T-0128, e.g. two
+    rust crates) -- each selected item is routed to the one runner whose `cwd`
+    owns its file, and an item owned by none or several is a hard error, not
+    a silently-dropped test."""
+    runners_by_lang: dict[str, list[RunnerSpec]] = {}
+    for spec in runners:
+        runners_by_lang.setdefault(spec.language, []).append(spec)
     outcomes: list[RunnerOutcome] = []
     ok = True
 
     for language, items in selection.selected.items():
         if not items:
             continue
-        spec = runners_by_lang.get(language)
-        if spec is None:
+        specs = runners_by_lang.get(language)
+        if not specs:
             _log.error(
                 "run_selected: language %r has selected tests but no runner -- "
                 "add a [[test.runner]] entry with language = %r to frob.toml at "
@@ -346,12 +421,13 @@ def run_selected(
             )
             return Err(TestingError.NoRunner)
 
-        outcome = _run_one_runner(spec, items, root)
-        if outcome.is_err:
-            return Err(outcome.danger_err)
-        outcomes.append(outcome.danger_ok)
-        if outcome.danger_ok.exit_code != 0:
-            ok = False
+        run = _run_language(specs, items, root)
+        if run.is_err:
+            return Err(run.danger_err)
+        for outcome in run.danger_ok:
+            outcomes.append(outcome)
+            if outcome.exit_code != 0:
+                ok = False
 
     return Ok(TestRunReport(selection=selection, outcomes=tuple(outcomes), ok=ok))
 

@@ -7,7 +7,7 @@ import sys
 import textwrap
 from pathlib import Path
 
-from typani import Err
+from typani import Err, Ok
 
 from frob.gitio import Diff, Hunk, ProcResult, working_diff
 from frob.graph import build_graph
@@ -639,6 +639,120 @@ class TestCargoEnv:
         result = run_selected(selection, (spec,), tmp_path)
         assert result.is_err
         assert result.danger_err == TestingError.CargoEnvUnavailable
+
+
+class TestMultipleRunnersPerLanguage:
+    """T-0128: two same-language `[[test.runner]]` entries (frob-core,
+    strata-core), routed by which entry's `cwd` owns the touched file."""
+
+    def _specs(self) -> tuple[RunnerSpec, RunnerSpec]:
+        core = RunnerSpec(
+            language="rust",
+            command=("cargo", "test", "--lib", "{filters}"),
+            all_command=("cargo", "test", "--lib"),
+            cwd="frob-core",
+        )
+        strata = RunnerSpec(
+            language="rust",
+            command=("cargo", "test", "--lib", "{filters}"),
+            all_command=("cargo", "test", "--lib"),
+            cwd="strata-core",
+        )
+        return core, strata
+
+    def _patch_env(self, monkeypatch) -> None:
+        import frob.testing._runners as runners_mod
+
+        monkeypatch.setattr(runners_mod, "_cargo_env", lambda: Ok({}))
+
+    def test_routes_each_crate_to_its_own_runner(self, monkeypatch, tmp_path) -> None:
+        # frob:tests src/frob/testing/_runners.py::run_selected
+        import frob.testing._runners as runners_mod
+        from frob.testing._models import SelectionReport
+
+        self._patch_env(monkeypatch)
+        seen: list[tuple[str, ...]] = []
+
+        def fake_run_argv(argv, *, cwd=None, timeout_s=300.0):
+            seen.append(tuple(argv))
+            return Ok(ProcResult(argv=tuple(argv), returncode=0, stdout="", stderr=""))
+
+        monkeypatch.setattr(runners_mod, "run_argv", fake_run_argv)
+        core, strata = self._specs()
+        selection = SelectionReport(
+            touched=(),
+            selected={
+                "rust": (
+                    "frob-core/src/dup_kernel.rs::tests.foo",
+                    "strata-core/src/parse.rs::tests.bar",
+                )
+            },
+            ripple=(),
+            unbound=(),
+            fallback="package",
+        )
+        result = run_selected(selection, (core, strata), tmp_path)
+        assert result.is_ok
+        report = result.danger_ok
+        assert report.ok
+        assert len(report.outcomes) == 2
+        joined = [" ".join(argv) for argv in seen]
+        assert any("tests::foo" in cmd for cmd in joined)
+        assert any("tests::bar" in cmd for cmd in joined)
+
+    def test_unowned_item_is_hard_error_not_vacuous_skip(
+        self, monkeypatch, tmp_path
+    ) -> None:
+        # frob:tests src/frob/testing/_runners.py::run_selected
+        import frob.testing._runners as runners_mod
+        from frob.testing._models import SelectionReport
+
+        self._patch_env(monkeypatch)
+        monkeypatch.setattr(
+            runners_mod,
+            "run_argv",
+            lambda *a, **k: Ok(ProcResult(argv=(), returncode=0, stdout="", stderr="")),
+        )
+        core, strata = self._specs()
+        selection = SelectionReport(
+            touched=(),
+            selected={"rust": ("neither-crate/src/lib.rs::tests.foo",)},
+            ripple=(),
+            unbound=(),
+            fallback="package",
+        )
+        result = run_selected(selection, (core, strata), tmp_path)
+        assert result.is_err
+        assert result.danger_err == TestingError.UnroutedItem
+
+    def test_all_sentinel_runs_every_same_language_runner(
+        self, monkeypatch, tmp_path
+    ) -> None:
+        # frob:tests src/frob/testing/_runners.py::run_selected
+        import frob.testing._runners as runners_mod
+        from frob.testing._models import SelectionReport
+        from frob.testing._select import ALL_SENTINEL
+
+        self._patch_env(monkeypatch)
+        seen: list[tuple[str, ...]] = []
+
+        def fake_run_argv(argv, *, cwd=None, timeout_s=300.0):
+            seen.append(tuple(argv))
+            return Ok(ProcResult(argv=tuple(argv), returncode=0, stdout="", stderr=""))
+
+        monkeypatch.setattr(runners_mod, "run_argv", fake_run_argv)
+        core, strata = self._specs()
+        selection = SelectionReport(
+            touched=(),
+            selected={"rust": (ALL_SENTINEL,)},
+            ripple=(),
+            unbound=(),
+            fallback="suite",
+        )
+        result = run_selected(selection, (core, strata), tmp_path)
+        assert result.is_ok
+        assert len(result.danger_ok.outcomes) == 2
+        assert len(seen) == 2
 
 
 class TestCollectRustTests:

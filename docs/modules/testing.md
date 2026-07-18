@@ -41,6 +41,12 @@ command = ["cargo", "test", "--lib", "{filters}"]    # {filters} -> name filters
 all_command = ["cargo", "test", "--lib"]
 cwd = "strata-core"    # one crate per runner entry -- see "Rust runner" below
 
+[[test.runner]]         # T-0128: a second same-language entry, cwd-scoped to
+language = "rust"        # its own crate -- see "Rust runner" below for how
+command = ["cargo", "test", "--lib", "{filters}"]     # routing between them
+all_command = ["cargo", "test", "--lib"]              # works.
+cwd = "frob-core"
+
 [[test.runner]]
 language = "typescript"
 command = ["npx", "vitest", "run", "{files}"]        # {files} -> test files
@@ -67,6 +73,24 @@ an explicit timeout and full logging (lithos procio discipline).
 
 ## Rust runner
 
+**Multiple runners per language (T-0128).** `frob-core` and `strata-core`
+are two independent PyO3 crates with no unifying workspace `Cargo.toml`
+(deliberately -- a workspace would couple their build/CI/maturin tooling for
+no selection-side benefit). `run_selected` therefore allows several
+`[[test.runner]]` entries to share `language = "rust"`, one per crate, each
+scoped by its own `cwd`. Selected rust symrefs already carry their
+root-relative file path (`frob-core/src/dup_kernel.rs::tests.foo`,
+`strata-core/src/parse.rs::tests.bar` -- `collect_rust_tests` discovers both
+crates generically), so routing an item to the right runner is a prefix
+match: an item is owned by the one entry whose `cwd` prefixes its file path
+(`cwd = "."` owns everything, preserving the single-runner-per-language
+behavior other languages still use). An item owned by zero or more than one
+same-language entry is `TestingError.UnroutedItem` -- a hard error, not a
+silently-dropped test, matching T-0102's vacuous-pass posture. When a
+language's selection is the `ALL_SENTINEL` (suite fallback fired, or
+`--all`), every same-language runner's `all_command` runs -- the sentinel
+names no specific crate, so all of them run.
+
 `cargo test` for a PyO3 crate (`frob-core`, `strata-core` -- both build with
 `extension-module` off, so linking needs libpython) needs two things cargo
 cannot infer on its own: `PYO3_PYTHON` pointing at an interpreter meeting the
@@ -92,11 +116,6 @@ Both the rust runner (`run_selected`) and rust test collection
    **before** spawning `cargo` at all -- never a silent skip, never an
    empty-but-successful test run (T-0102's vacuous-pass principle applies to
    the runner exactly as it does to the gates).
-
-Only `strata-core` has a `[[test.runner]]` entry today; `frob-core` is a
-second PyO3 crate under the identical constraint but needs its own runner
-entry (one entry per language means one crate per entry) -- filed as a
-follow-up rather than expanding this ticket's scope.
 
 ## Public API
 
@@ -140,6 +159,9 @@ def run_selected(selection: SelectionReport, runners: tuple[RunnerSpec, ...],
                  root: Path) -> Result[TestRunReport, TestingError]
     # Groups by language, renders placeholders, spawns runners, merges
     # per-runner outcomes; runner exit codes are data in the report.
+    # T-0128: a language may resolve to several runners (e.g. two rust
+    # crates); each selected item is routed to the one runner whose cwd
+    # owns its file (Err UnroutedItem if zero or more than one match).
 def load_runners(root: Path) -> Result[tuple[RunnerSpec, ...], TestingError]
 def collect_python_tests(root: Path) -> Result[CollectedTests, TestingError]
 
@@ -230,6 +252,7 @@ class TestingError(ErrorSet):
     SpawnFailed    = "Runner process could not be started or timed out"
     CollectFailed  = "pytest --collect-only failed"
     CargoEnvUnavailable = "cargo test needs a Python>=3.11 dev environment frob could not find"
+    UnroutedItem   = "A selected item's file matched zero or >1 same-language [[test.runner]] cwd"
 ```
 
 ## Git worktrees
