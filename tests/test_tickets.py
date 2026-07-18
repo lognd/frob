@@ -476,7 +476,9 @@ class TestEvidence:
     def test_parametrized_bare_name_matches(self, tmp_path: Path) -> None:
         _write(tmp_path, _ticket())
         collected = frozenset({"tests/test_x.py::test_a[case0]"})
-        result = add_evidence(tmp_path, "T-0001", ["tests/test_x.py::test_a"], collected)
+        result = add_evidence(
+            tmp_path, "T-0001", ["tests/test_x.py::test_a"], collected
+        )
         assert result.is_ok
         assert result.danger_ok.evidence == ("tests/test_x.py::test_a",)
 
@@ -537,9 +539,7 @@ class TestArchive:
             _ticket(ticket_id="T-0002", state=TicketState.DROPPED),
             "dropped",
         )
-        _write(
-            tmp_path, _ticket(ticket_id="T-0003", state=TicketState.QUEUED), "open"
-        )
+        _write(tmp_path, _ticket(ticket_id="T-0003", state=TicketState.QUEUED), "open")
         result = archive(tmp_path)
         assert result.is_ok
         assert result.danger_ok == 2
@@ -561,9 +561,7 @@ class TestArchive:
         assert second.danger_ok == 0
 
     def test_nothing_to_archive_is_zero(self, tmp_path: Path) -> None:
-        _write(
-            tmp_path, _ticket(ticket_id="T-0001", state=TicketState.QUEUED), "open"
-        )
+        _write(tmp_path, _ticket(ticket_id="T-0001", state=TicketState.QUEUED), "open")
         result = archive(tmp_path)
         assert result.is_ok
         assert result.danger_ok == 0
@@ -571,9 +569,7 @@ class TestArchive:
     def test_load_queue_merges_active_and_archive(self, tmp_path: Path) -> None:
         _write(tmp_path, _ticket(ticket_id="T-0001", state=TicketState.DONE), "done")
         archive(tmp_path)
-        _write(
-            tmp_path, _ticket(ticket_id="T-0002", state=TicketState.QUEUED), "open"
-        )
+        _write(tmp_path, _ticket(ticket_id="T-0002", state=TicketState.QUEUED), "open")
 
         merged = load_queue(tmp_path)
         assert merged.is_ok
@@ -592,7 +588,9 @@ class TestArchive:
 
         _write_ticket(
             tmp_path,
-            _ticket(ticket_id="T-0002", state=TicketState.QUEUED, blocked_by=("T-0001",)),
+            _ticket(
+                ticket_id="T-0002", state=TicketState.QUEUED, blocked_by=("T-0001",)
+            ),
         )
         planned = transition(tmp_path, "T-0002", TicketState.PLANNED)
         assert planned.is_ok

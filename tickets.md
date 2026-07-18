@@ -1430,8 +1430,8 @@ scope:
 - tests/unit/strata/**
 - design/litmus/**
 evidence:
-- tests/unit/strata/test_litmus_tube.py::TestTubeGoldens::test_payout_age_bound_refutes_on_the_approximate_counter_path
-- tests/unit/strata/test_litmus_chirp.py::TestChirpGoldens::test_hot_shard_refutes_where_mean_proves
+- tests/unit/strata/test_litmus_tube.py::TestTubeGoldens::test_payout_age_bound_refutes_off_the_approximate_counter_path
+- tests/unit/strata/test_litmus_chirp.py::TestChirpGoldens::test_hottest_shard_utilization_refutes_under_zipf_skew
 attachments: []
 acceptance:
 - GIVEN tube.strata and chirp.strata WHEN frob sys check runs THEN stampede, fanout-ceiling,

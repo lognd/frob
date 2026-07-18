@@ -576,9 +576,7 @@ def _add_ticket_lifecycle_parsers(ticket_sub) -> list:
         help="append pytest node ids to a ticket's structured evidence list",
     )
     ticket_evidence_p.add_argument("ticket_id", metavar="id")
-    ticket_evidence_p.add_argument(
-        "ticket_evidence_ids", metavar="node-id", nargs="+"
-    )
+    ticket_evidence_p.add_argument("ticket_evidence_ids", metavar="node-id", nargs="+")
 
     ticket_archive_p = ticket_sub.add_parser(
         "archive", help="move done/dropped tickets into tickets-archive.md"
