@@ -1,0 +1,383 @@
+{
+  "statements": [
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "checker",
+      "resource": "core",
+      "sid": "f_checker_core-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "checker",
+      "resource": "core",
+      "sid": "f_checker_core-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "checker",
+      "resource": "gates",
+      "sid": "f_checker_gates-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "checker",
+      "resource": "gates",
+      "sid": "f_checker_gates-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "checker",
+      "resource": "graphlang",
+      "sid": "f_checker_graphlang-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "checker",
+      "resource": "graphlang",
+      "sid": "f_checker_graphlang-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "cli",
+      "resource": "checker",
+      "sid": "f_cli_checker-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "cli",
+      "resource": "checker",
+      "sid": "f_cli_checker-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "cli",
+      "resource": "core",
+      "sid": "f_cli_core-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "cli",
+      "resource": "core",
+      "sid": "f_cli_core-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "cli",
+      "resource": "gates",
+      "sid": "f_cli_gates-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "cli",
+      "resource": "gates",
+      "sid": "f_cli_gates-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "cli",
+      "resource": "tickets_ledger",
+      "sid": "f_cli_tickets-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "cli",
+      "resource": "tickets_ledger",
+      "sid": "f_cli_tickets-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "cli",
+      "resource": "vet",
+      "sid": "f_cli_vet-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "cli",
+      "resource": "vet",
+      "sid": "f_cli_vet-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "core",
+      "resource": "gates",
+      "sid": "f_core_gates-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "core",
+      "resource": "gates",
+      "sid": "f_core_gates-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "core",
+      "resource": "graphlang",
+      "sid": "f_core_graphlang-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "core",
+      "resource": "graphlang",
+      "sid": "f_core_graphlang-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "core",
+      "resource": "tickets_ledger",
+      "sid": "f_core_tickets-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "core",
+      "resource": "tickets_ledger",
+      "sid": "f_core_tickets-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "gates",
+      "resource": "core",
+      "sid": "f_gates_core-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "gates",
+      "resource": "core",
+      "sid": "f_gates_core-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "gates",
+      "resource": "graphlang",
+      "sid": "f_gates_graphlang-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "gates",
+      "resource": "graphlang",
+      "sid": "f_gates_graphlang-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "gates",
+      "resource": "stratamod",
+      "sid": "f_gates_strata-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "gates",
+      "resource": "stratamod",
+      "sid": "f_gates_strata-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "gates",
+      "resource": "tickets_ledger",
+      "sid": "f_gates_tickets-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "gates",
+      "resource": "tickets_ledger",
+      "sid": "f_gates_tickets-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "graphlang",
+      "resource": "core",
+      "sid": "f_graphlang_core-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "graphlang",
+      "resource": "core",
+      "sid": "f_graphlang_core-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "cli",
+      "resource": "graphlang",
+      "sid": "f_parse-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "cli",
+      "resource": "graphlang",
+      "sid": "f_parse-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "registry",
+      "resource": "vet",
+      "sid": "f_registry_fetch-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "registry",
+      "resource": "vet",
+      "sid": "f_registry_fetch-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "stratamod",
+      "resource": "core",
+      "sid": "f_strata_core-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "stratamod",
+      "resource": "core",
+      "sid": "f_strata_core-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "stratamod",
+      "resource": "graphlang",
+      "sid": "f_strata_graphlang-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "stratamod",
+      "resource": "graphlang",
+      "sid": "f_strata_graphlang-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "stratamod",
+      "resource": "vet",
+      "sid": "f_strata_vet-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "stratamod",
+      "resource": "vet",
+      "sid": "f_strata_vet-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "tickets_ledger",
+      "resource": "core",
+      "sid": "f_tickets_core-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "tickets_ledger",
+      "resource": "core",
+      "sid": "f_tickets_core-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "vet",
+      "resource": "core",
+      "sid": "f_vet_core-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "vet",
+      "resource": "core",
+      "sid": "f_vet_core-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "vet",
+      "resource": "gates",
+      "sid": "f_vet_gates-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "vet",
+      "resource": "gates",
+      "sid": "f_vet_gates-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "vet",
+      "resource": "graphlang",
+      "sid": "f_vet_graphlang-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "vet",
+      "resource": "graphlang",
+      "sid": "f_vet_graphlang-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "graphlang",
+      "resource": "graph_cache",
+      "sid": "graph_cache__fill-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "graphlang",
+      "resource": "graph_cache",
+      "sid": "graph_cache__fill-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "graphlang",
+      "resource": "graph_cache",
+      "sid": "graph_cache__inval_f_parse-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "graphlang",
+      "resource": "graph_cache",
+      "sid": "graph_cache__inval_f_parse-write"
+    }
+  ],
+  "version": "2026-07-18"
+}

@@ -1,0 +1,192 @@
+{
+  "checker": {
+    "defaultAction": "SCMP_ACT_ERRNO",
+    "syscalls": [
+      {
+        "action": "SCMP_ACT_ALLOW",
+        "names": [
+          "brk",
+          "close",
+          "exit",
+          "exit_group",
+          "mmap",
+          "munmap",
+          "read",
+          "rt_sigreturn",
+          "write"
+        ]
+      }
+    ]
+  },
+  "cli": {
+    "defaultAction": "SCMP_ACT_ERRNO",
+    "syscalls": [
+      {
+        "action": "SCMP_ACT_ALLOW",
+        "names": [
+          "brk",
+          "close",
+          "exit",
+          "exit_group",
+          "mmap",
+          "munmap",
+          "read",
+          "rt_sigreturn",
+          "write"
+        ]
+      }
+    ]
+  },
+  "core": {
+    "defaultAction": "SCMP_ACT_ERRNO",
+    "syscalls": [
+      {
+        "action": "SCMP_ACT_ALLOW",
+        "names": [
+          "brk",
+          "close",
+          "exit",
+          "exit_group",
+          "mmap",
+          "munmap",
+          "read",
+          "rt_sigreturn",
+          "write"
+        ]
+      }
+    ]
+  },
+  "gates": {
+    "defaultAction": "SCMP_ACT_ERRNO",
+    "syscalls": [
+      {
+        "action": "SCMP_ACT_ALLOW",
+        "names": [
+          "brk",
+          "close",
+          "exit",
+          "exit_group",
+          "mmap",
+          "munmap",
+          "read",
+          "rt_sigreturn",
+          "write"
+        ]
+      }
+    ]
+  },
+  "graph_cache": {
+    "defaultAction": "SCMP_ACT_ERRNO",
+    "syscalls": [
+      {
+        "action": "SCMP_ACT_ALLOW",
+        "names": [
+          "brk",
+          "close",
+          "exit",
+          "exit_group",
+          "mmap",
+          "munmap",
+          "read",
+          "rt_sigreturn",
+          "write"
+        ]
+      }
+    ]
+  },
+  "graphlang": {
+    "defaultAction": "SCMP_ACT_ERRNO",
+    "syscalls": [
+      {
+        "action": "SCMP_ACT_ALLOW",
+        "names": [
+          "brk",
+          "close",
+          "exit",
+          "exit_group",
+          "mmap",
+          "munmap",
+          "read",
+          "rt_sigreturn",
+          "write"
+        ]
+      }
+    ]
+  },
+  "registry": {
+    "defaultAction": "SCMP_ACT_ERRNO",
+    "syscalls": [
+      {
+        "action": "SCMP_ACT_ALLOW",
+        "names": [
+          "brk",
+          "close",
+          "exit",
+          "exit_group",
+          "mmap",
+          "munmap",
+          "read",
+          "rt_sigreturn",
+          "write"
+        ]
+      }
+    ]
+  },
+  "stratamod": {
+    "defaultAction": "SCMP_ACT_ERRNO",
+    "syscalls": [
+      {
+        "action": "SCMP_ACT_ALLOW",
+        "names": [
+          "brk",
+          "close",
+          "exit",
+          "exit_group",
+          "mmap",
+          "munmap",
+          "read",
+          "rt_sigreturn",
+          "write"
+        ]
+      }
+    ]
+  },
+  "tickets_ledger": {
+    "defaultAction": "SCMP_ACT_ERRNO",
+    "syscalls": [
+      {
+        "action": "SCMP_ACT_ALLOW",
+        "names": [
+          "brk",
+          "close",
+          "exit",
+          "exit_group",
+          "mmap",
+          "munmap",
+          "read",
+          "rt_sigreturn",
+          "write"
+        ]
+      }
+    ]
+  },
+  "vet": {
+    "defaultAction": "SCMP_ACT_ERRNO",
+    "syscalls": [
+      {
+        "action": "SCMP_ACT_ALLOW",
+        "names": [
+          "brk",
+          "close",
+          "exit",
+          "exit_group",
+          "mmap",
+          "munmap",
+          "read",
+          "rt_sigreturn",
+          "write"
+        ]
+      }
+    ]
+  }
+}

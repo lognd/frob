@@ -1,0 +1,345 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: frob-strata-checker
+spec:
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: core
+  - to:
+    - podSelector:
+        matchLabels:
+          app: gates
+  - to:
+    - podSelector:
+        matchLabels:
+          app: graphlang
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: cli
+  podSelector:
+    matchLabels:
+      app: checker
+  policyTypes:
+  - Ingress
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: frob-strata-cli
+spec:
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: checker
+  - to:
+    - podSelector:
+        matchLabels:
+          app: core
+  - to:
+    - podSelector:
+        matchLabels:
+          app: gates
+  - to:
+    - podSelector:
+        matchLabels:
+          app: graphlang
+  - to:
+    - podSelector:
+        matchLabels:
+          app: tickets_ledger
+  - to:
+    - podSelector:
+        matchLabels:
+          app: vet
+  ingress: []
+  podSelector:
+    matchLabels:
+      app: cli
+  policyTypes:
+  - Ingress
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: frob-strata-core
+spec:
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: gates
+  - to:
+    - podSelector:
+        matchLabels:
+          app: graphlang
+  - to:
+    - podSelector:
+        matchLabels:
+          app: tickets_ledger
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: checker
+  - from:
+    - podSelector:
+        matchLabels:
+          app: cli
+  - from:
+    - podSelector:
+        matchLabels:
+          app: gates
+  - from:
+    - podSelector:
+        matchLabels:
+          app: graphlang
+  - from:
+    - podSelector:
+        matchLabels:
+          app: stratamod
+  - from:
+    - podSelector:
+        matchLabels:
+          app: tickets_ledger
+  - from:
+    - podSelector:
+        matchLabels:
+          app: vet
+  podSelector:
+    matchLabels:
+      app: core
+  policyTypes:
+  - Ingress
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: frob-strata-gates
+spec:
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: core
+  - to:
+    - podSelector:
+        matchLabels:
+          app: graphlang
+  - to:
+    - podSelector:
+        matchLabels:
+          app: stratamod
+  - to:
+    - podSelector:
+        matchLabels:
+          app: tickets_ledger
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: checker
+  - from:
+    - podSelector:
+        matchLabels:
+          app: cli
+  - from:
+    - podSelector:
+        matchLabels:
+          app: core
+  - from:
+    - podSelector:
+        matchLabels:
+          app: vet
+  podSelector:
+    matchLabels:
+      app: gates
+  policyTypes:
+  - Ingress
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: frob-strata-graph_cache
+spec:
+  egress: []
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: graphlang
+  podSelector:
+    matchLabels:
+      app: graph_cache
+  policyTypes:
+  - Ingress
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: frob-strata-graphlang
+spec:
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: core
+  - to:
+    - podSelector:
+        matchLabels:
+          app: graph_cache
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: checker
+  - from:
+    - podSelector:
+        matchLabels:
+          app: cli
+  - from:
+    - podSelector:
+        matchLabels:
+          app: core
+  - from:
+    - podSelector:
+        matchLabels:
+          app: gates
+  - from:
+    - podSelector:
+        matchLabels:
+          app: stratamod
+  - from:
+    - podSelector:
+        matchLabels:
+          app: vet
+  podSelector:
+    matchLabels:
+      app: graphlang
+  policyTypes:
+  - Ingress
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: frob-strata-registry
+spec:
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: vet
+  ingress: []
+  podSelector:
+    matchLabels:
+      app: registry
+  policyTypes:
+  - Ingress
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: frob-strata-stratamod
+spec:
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: core
+  - to:
+    - podSelector:
+        matchLabels:
+          app: graphlang
+  - to:
+    - podSelector:
+        matchLabels:
+          app: vet
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: gates
+  podSelector:
+    matchLabels:
+      app: stratamod
+  policyTypes:
+  - Ingress
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: frob-strata-tickets_ledger
+spec:
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: core
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: cli
+  - from:
+    - podSelector:
+        matchLabels:
+          app: core
+  - from:
+    - podSelector:
+        matchLabels:
+          app: gates
+  podSelector:
+    matchLabels:
+      app: tickets_ledger
+  policyTypes:
+  - Ingress
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: frob-strata-vet
+spec:
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: core
+  - to:
+    - podSelector:
+        matchLabels:
+          app: gates
+  - to:
+    - podSelector:
+        matchLabels:
+          app: graphlang
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: cli
+  - from:
+    - frob.strata/foreign-peer: registry
+  - from:
+    - podSelector:
+        matchLabels:
+          app: stratamod
+  podSelector:
+    matchLabels:
+      app: vet
+  policyTypes:
+  - Ingress
+  - Egress
