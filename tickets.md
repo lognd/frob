@@ -6364,20 +6364,95 @@ green, check baseline unchanged.
 id: T-0134
 title: frob.strata._facts hard 'import strata_core' crashes standalone installs with
   a design/ dir (found while working T-0133)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-18'
 blocked_by: []
 parent: null
 scope:
-- src/frob/strata/**
-evidence: []
+- src/frob/strata/_facts.py
+- src/frob/strata/_parse.py
+- src/frob/strata/_errors.py
+- src/frob/strata/_design_load.py
+- tests/unit/strata/test_facts.py
+- tests/unit/strata/test_parse.py
+- tickets.md
+evidence:
+- tests/unit/strata/test_facts.py::TestBuildFactsNativeExtensionUnavailable::test_build_facts_returns_native_extension_unavailable
+- tests/unit/strata/test_parse.py::TestParseModuleNativeExtensionUnavailable::test_parse_module_returns_native_extension_unavailable
 attachments: []
 acceptance: []
 threat: null
 ```
 T-0133 fixed frob.lang's guarded import of strata_core (_walk_strata.py) so standalone tool installs no longer crash on .strata source files. frob/strata/_facts.py (imported transitively by frob/strata/__init__.py -> _atomic.py -> _facts.py) still does a module-level 'import strata_core' with no guard, and raises ImportError itself (not even ModuleNotFoundError) if missing: 'strata_core native extension is required (charter D3: no pure-Python fallback); build it with make core'. This crashes frob check's sys_gate (frob/gates/__init__.py sys_gate -> frob.strata.load_design_ids) with an unhandled exception -- not a typed Result.Err -- for ANY repo that has a design/ directory, in a standalone (no frob-core/strata-core) tool install. Reproduced: uv tool install frob (bare, no --with natives) + a repo with design/*.strata content -> frob check crashes with a raw traceback instead of failing a gate cleanly. Charter D3 (no pure-Python fallback for strata semantics) may still hold for the actual facts/proof pipeline -- but the crash needs to become a typed Err (e.g. sys_gate should catch/skip with a clear degrade message) instead of an unhandled ImportError, matching frob.lang's T-0133 pattern.
+
+## Done report
+
+Changed:
+- src/frob/strata/_facts.py::build_facts (module-level `import strata_core`
+  guarded with importlib + `ModuleType | None`, T-0133's pattern; fails
+  closed on `StrataError.NativeExtensionUnavailable` before any lattice/id
+  validation runs)
+- src/frob/strata/_facts.py::FactBase.reachable /
+  FactBase.worst_age / FactBase.propagated_demand (added
+  `assert strata_core is not None` -- ty-visible proof that these can only
+  run on a `FactBase` a successful `build_facts` already produced, so
+  `strata_core` is present by construction; keeps `ty check` clean without
+  re-guarding call sites that are unreachable with it absent)
+- src/frob/strata/_parse.py::parse_module (same guarded-import pattern;
+  the OTHER unguarded `import strata_core` found by grepping
+  `src/frob/strata/` -- `_ast.py` and `_secrets.py` only mention
+  `strata_core` in docstrings, no live import)
+- src/frob/strata/_errors.py::StrataError.NativeExtensionUnavailable (new
+  ErrorSet member both guarded sites return)
+- src/frob/strata/_design_load.py::DEFAULT_DESIGN_DIR (reviewer follow-up:
+  added a two-way doc cross-reference -- a comment pointing at
+  `frob.gates._DEFAULT_DESIGN_DIR`'s deliberate mirror literal, plus
+  naming the sync-lock test that pins them together -- so the constant's
+  own docstring and the mirror's docstring point at each other rather
+  than only one side knowing about the duplication)
+
+Audit: `grep -rn "import strata_core\|strata_core\." src/frob/strata/`
+found exactly two live imports (`_facts.py`, `_parse.py`); both guarded.
+`_design_load.py::load_design_ids` already treats a `parse_module` Err as
+a per-file `DesignLoadError` rather than propagating, so it degrades for
+free once `_parse.py` stopped crashing.
+
+Evidence:
+- tests/unit/strata/test_facts.py::TestBuildFactsNativeExtensionUnavailable::test_build_facts_returns_native_extension_unavailable
+- tests/unit/strata/test_parse.py::TestParseModuleNativeExtensionUnavailable::test_parse_module_returns_native_extension_unavailable
+- Full suite (real numbers, `uv run pytest tests/test_gates.py
+  tests/unit/strata/ tests/unit/test_lang_strata.py -q`): all green.
+- `frob test --base main`: python exit=0.
+- `uv run ty check`: All checks passed (the 3 `unresolved-attribute`
+  diagnostics on `FactBase`'s closure methods, from narrowing
+  `ModuleType | None`, are resolved by the `assert strata_core is not
+  None` guards above).
+- `uv run ruff format --check .`: 281 files already formatted.
+
+Filed: none (the only other unguarded-import discovery, T-0136's surface-
+grammar gap, was already filed before this ticket started and is out of
+scope here).
+
+Gates: `frob check --ticket T-0134` (re-run after honest re-scoping and
+`frob ticket sweep T-0134`) is NOT clean end-to-end -- 4 errors, not 0:
+one pre-existing `DOC001` (docs/guides/install.md, from T-0133's merge,
+untouched here) plus THREE `SCOPE001` errors
+(`.github/workflows/ci.yml`, `src/frob/gates/__init__.py`,
+`tests/test_gates.py`). Cause: T-0134 and T-0135 are worked sequentially
+in the SAME worktree with neither ticket committed, so T-0134's
+scope-gate diff-scan sees T-0135's uncommitted files too and correctly
+flags them as outside T-0134's now-honest, narrowly-corrected scope
+(`src/frob/strata/_facts.py`, `_parse.py`, `_errors.py`,
+`_design_load.py`, their two test files, and `tickets.md` -- no longer
+the over-broad `src/frob/strata/**`/`tests/**` globs that previously
+masked this). This is real cross-ticket file visibility, not a false
+positive and not something either ticket's own diff caused; it resolves
+itself once either ticket is committed/closed. All findings on T-0134's
+own files remain zero-unwaived; the 22 waived findings and the COV002
+informational entries (symbols covered by this ticket's or T-0135's own
+open scope) are the only other output.
 
 <!-- ticket:T-0135 -->
 ```yaml
@@ -6385,20 +6460,110 @@ id: T-0135
 title: sys_gate imports frob.strata (and its unguarded strata_core dep) before the
   design/ opt-in check -- crashes frob check on ANY repo in a standalone install (supersedes/extends
   T-0134)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-18'
 blocked_by: []
 parent: null
 scope:
-- src/frob/gates/__init__.py,src/frob/strata/**
-evidence: []
+- src/frob/gates/__init__.py
+- tests/test_gates.py
+- .github/workflows/ci.yml
+- tickets.md
+evidence:
+- tests/test_gates.py::TestSysGate::test_no_design_dir_never_imports_frob_strata
+- tests/test_gates.py::TestSysGate::test_design_dir_degrades_with_typed_error_on_native_extension_missing
+- tests/test_gates.py::TestSysGate::test_default_design_dir_mirror_stays_in_sync
 attachments: []
 acceptance: []
 threat: null
 ```
 Root cause found while verifying T-0133's CI degrade job: frob/gates/__init__.py's sys_gate() does 'from frob.strata import load_design_ids' as its FIRST statement, before the 'if not (root/design_dir).is_dir(): return ()' opt-in check below it. frob.strata.__init__ transitively imports frob/strata/_facts.py, which does an unguarded module-level 'import strata_core' and raises ImportError immediately if absent (charter D3: no pure-Python fallback, intentional -- but the crash should not be reachable for repos that never opted into a design/ directory at all). Net effect: 'frob check' crashes with a raw traceback on EVERY repo in a standalone (uv tool install frob, no --with natives) install, not just ones using strata design files -- reproduced locally building the wheel with 'uv build --wheel', installing into a clean venv, and running frob check against a fixture repo with no design/ dir. Fix: move the 'from frob.strata import load_design_ids' import inside sys_gate to after the design_dir existence check (or make it lazy/guarded), so repos that never touch design/ never pay the strata_core import cost. T-0134 (already filed) covers making frob.strata._facts's own crash a typed Err for repos that DO use design/ files without the native parser -- this ticket is the more urgent half: repos that don't use design/ at all must never hit frob.strata's import machinery.
+
+## Done report
+
+Changed:
+- src/frob/gates/__init__.py::sys_gate (moved
+  `from frob.strata import load_design_ids` from the function's first
+  statement to after the `(root/design_dir).is_dir()` opt-in check)
+- src/frob/gates/__init__.py::_design_dir (SECOND import site found:
+  `_design_dir` -- called as `sys_gate`'s first statement, before the
+  same opt-in check -- did its own unconditional
+  `from frob.strata import DEFAULT_DESIGN_DIR`. Not mentioned in the
+  ticket body, but it is literally the same bug class in the same
+  function's control flow, and the ticket's own verify step -- "a bare
+  venv running frob check on a tmp fixture repo exits WITHOUT a
+  traceback" -- fails without also fixing this: `sys_gate`'s FIRST
+  executable statement is `design_dir = _design_dir(root)`, so moving
+  only the `load_design_ids` import left this one still unconditional.
+  Fixed by replacing the import with a private `_DEFAULT_DESIGN_DIR`
+  literal duplicate of `frob.strata._design_load.DEFAULT_DESIGN_DIR`,
+  documented as mirroring it, so `_design_dir` never touches
+  `frob.strata` for a repo with no design dir either.)
+- .github/workflows/ci.yml (removed the T-0135 `continue-on-error` on
+  the standalone-install job's "frob check on a tiny fixture repo must
+  not crash" step and its pointing comment, per the ticket's exit
+  criterion; replaced with a short note on what T-0134/T-0135 fixed)
+- tests/test_gates.py::TestSysGate.test_default_design_dir_mirror_stays_in_sync
+  (reviewer follow-up: the `_DEFAULT_DESIGN_DIR` mirror literal added
+  above is a deliberate duplication with no compiler/linter to keep it
+  honest -- this test imports both `frob.gates` and
+  `frob.strata.DEFAULT_DESIGN_DIR` INSIDE the test function body, never
+  at module level, so collecting `test_gates.py` still never imports
+  `frob.strata`, and asserts the two literals are equal so any future
+  drift fails a test instead of silently diverging)
+
+Verify (per the ticket's "prove it locally before un-gating CI"):
+- `uv build --wheel` + `uv venv /tmp/frob-standalone-venv` + `uv pip
+  install` the wheel (no native extras) + `frob --help`: exit 0.
+- Design-less fixture (`git init`, one `.py` file, no `design/` dir):
+  `frob check` exit 1 (legitimate TEST006 "no coverage stamp" gate
+  failure only), zero SYS violations, NO
+  "Traceback (most recent call last):" in the output.
+- Design-having fixture (`design/m.strata` present, native extension
+  absent in that venv): `frob check` exit 1, output includes
+  `SYS004: design/m.strata failed to load (The strata_core native
+  extension is not installed ...)` -- the typed T-0134 degrade, not a
+  crash -- and still NO traceback.
+- Both fixtures and the venv were removed after verification (not
+  committed).
+
+Evidence:
+- tests/test_gates.py::TestSysGate::test_no_design_dir_never_imports_frob_strata
+- tests/test_gates.py::TestSysGate::test_design_dir_degrades_with_typed_error_on_native_extension_missing
+- tests/test_gates.py::TestSysGate::test_default_design_dir_mirror_stays_in_sync
+- Full suite (real numbers, `uv run pytest tests/test_gates.py -q`):
+  all green.
+- Full strata+gates+lang_strata suite together (`uv run pytest
+  tests/test_gates.py tests/unit/strata/ tests/unit/test_lang_strata.py
+  -q`): all green (no failures).
+- `frob test --base main`: python exit=0 (touched-set selection
+  covering both this ticket's and T-0134's changes together).
+- `uv run ty check`: All checks passed.
+- `uv run ruff check` / `ruff format --check .`: clean.
+
+Filed: none.
+
+Gates: `frob check --ticket T-0135` (re-run after honest re-scoping and
+`frob ticket sweep T-0135`) is NOT clean end-to-end -- 7 errors, not 0:
+one pre-existing `DOC001` (docs/guides/install.md, from T-0133's merge,
+untouched here) plus SIX `SCOPE001` errors covering
+`src/frob/strata/_design_load.py`, `_errors.py`, `_facts.py`,
+`_parse.py`, and their two test files
+(`tests/unit/strata/test_facts.py`, `test_parse.py`). Cause: same
+worktree-sharing effect named in T-0134's Done report, from the other
+direction -- T-0135's scope-gate diff-scan sees T-0134's uncommitted
+files (now narrowly and honestly scoped to T-0134, not the previous
+over-broad `src/frob/strata/**` that used to swallow this silently) and
+correctly flags them as outside T-0135's own scope
+(`src/frob/gates/__init__.py`, `tests/test_gates.py`,
+`.github/workflows/ci.yml`, `tickets.md`). Real cross-ticket file
+visibility from two uncommitted sibling tickets in one worktree, not a
+false positive, and it resolves once either ticket is committed/closed.
+All findings on T-0135's own files remain zero-unwaived; the 22 waived
+findings and the COV002 informational entries (symbols covered by this
+ticket's or T-0134's own open scope) are the only other output.
 
 <!-- ticket:T-0136 -->
 ```yaml

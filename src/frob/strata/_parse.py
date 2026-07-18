@@ -8,9 +8,18 @@ into either a validated `Module` or a logged `StrataError.ParseFailed`.
 
 from __future__ import annotations
 
+import importlib
 import json
+from types import ModuleType
 
-import strata_core
+try:
+    strata_core: ModuleType | None = importlib.import_module("strata_core")
+except ImportError:  # pragma: no cover - environment-dependent
+    # Guarded the same way as frob.lang._walk_strata (T-0133) and
+    # frob.strata._facts (T-0134): a standalone tool install without the
+    # native extension degrades every parse to a typed Err instead of
+    # crashing at import time.
+    strata_core = None
 from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
@@ -29,7 +38,13 @@ def parse_module(text: str) -> Result[Module, StrataError]:
     parser (charter D3, amended); this function only bridges JSON to
     pydantic and turns a parse failure into a logged, typed error rather
     than a bare exception (fallible operation -> Result, per house rules).
+    Also degrades to a typed `StrataError.NativeExtensionUnavailable`
+    (rather than crashing) when the `strata_core` native extension is not
+    installed at all (T-0134).
     """
+    if strata_core is None:
+        _log.error("parse_module: strata_core native extension unavailable")
+        return Err(StrataError.NativeExtensionUnavailable)
     raw = strata_core.parse_source(text)
     payload = json.loads(raw)
     if "err" in payload:

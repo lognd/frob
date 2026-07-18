@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import sys
+
+import pytest
+
 from frob.strata import Module, StrataError, parse_module
 
 
@@ -147,3 +151,25 @@ class TestParseModule:
         assert len(module.flows) == 1
         assert len(module.boundaries) == 1
         assert len(module.claims) == 2
+
+
+class TestParseModuleNativeExtensionUnavailable:
+    """T-0134: a standalone tool install has no `strata_core` extension.
+
+    Monkeypatches the module-level `strata_core` binding to `None` -- the
+    same state a bare `uv tool install frob` leaves it in -- and checks
+    `parse_module` degrades to a typed `Err` instead of crashing with an
+    unhandled `ImportError`/`AttributeError`, matching the T-0133 pattern
+    for `frob.lang._walk_strata`.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _no_native_parser(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        parse_mod = sys.modules["frob.strata._parse"]
+        monkeypatch.setattr(parse_mod, "strata_core", None)
+
+    # frob:tests src/frob/strata/_parse.py::parse_module kind="unit"
+    def test_parse_module_returns_native_extension_unavailable(self):
+        result = parse_module("module m")
+        assert result.is_err
+        assert result.danger_err is StrataError.NativeExtensionUnavailable

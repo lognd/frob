@@ -1722,21 +1722,31 @@ _SYS_DIRECTIVE_KINDS: dict[EdgeKind, str] = {
 _SYS002_REQUIRED_KINDS: tuple[EdgeKind, ...] = (EdgeKind.BOUNDARY, EdgeKind.SECRET)
 
 
-def _design_dir(root: Path) -> str:
-    """`[strata].design_dir` from frob.toml, defaulting to `DEFAULT_DESIGN_DIR`."""
-    from frob.strata import DEFAULT_DESIGN_DIR
+#: Mirrors `frob.strata._design_load.DEFAULT_DESIGN_DIR`. Duplicated as a
+#: bare literal (rather than imported) so `_design_dir` -- called as
+#: `sys_gate`'s FIRST statement, before the opt-in existence check below --
+#: never touches `frob.strata` for a repo that has no design dir at all
+#: (T-0135: `frob.strata` transitively imports `_facts.py`, which needs the
+#: `strata_core` native extension, and a standalone tool install must not
+#: pay that cost, or risk that import failing, on every single repo).
+_DEFAULT_DESIGN_DIR = "design"
 
+
+def _design_dir(root: Path) -> str:
+    """`[strata].design_dir` from frob.toml, defaulting to `_DEFAULT_DESIGN_DIR`."""
     toml_path = root / "frob.toml"
     if not toml_path.exists():
-        return DEFAULT_DESIGN_DIR
+        return _DEFAULT_DESIGN_DIR
     try:
         with toml_path.open("rb") as fh:
             return (
-                tomllib.load(fh).get("strata", {}).get("design_dir", DEFAULT_DESIGN_DIR)
+                tomllib.load(fh)
+                .get("strata", {})
+                .get("design_dir", _DEFAULT_DESIGN_DIR)
             )
     except (OSError, tomllib.TOMLDecodeError) as exc:
         _log.warning("sys_gate: frob.toml unreadable: %s", exc)
-        return DEFAULT_DESIGN_DIR
+        return _DEFAULT_DESIGN_DIR
 
 
 def _sys004(design_ids) -> list[Violation]:  # noqa: ANN001
@@ -1909,15 +1919,21 @@ def sys_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 
     Opt-in via a `design/` (or `[strata].design_dir`) directory of `.strata`
     files existing, same posture as `decisions_gate`: a repo not yet using
-    strata sees nothing.
+    strata sees nothing. The `frob.strata` import is deferred until AFTER
+    this check (T-0135): `frob.strata` transitively imports `_facts.py`,
+    which needs the `strata_core` native extension, so a repo with no
+    `design/` dir at all must never pay that import cost -- a standalone
+    (`uv tool install frob`, no natives) install must not crash `frob
+    check` on every repo, only degrade (T-0134) on repos that actually
+    opted into `design/`.
     """
-    from frob.strata import load_design_ids
-
     root = Path(root)
     design_dir = _design_dir(root)
     if not (root / design_dir).is_dir():
         _log.debug("sys_gate: no %s/ directory, skipping", design_dir)
         return ()
+
+    from frob.strata import load_design_ids
 
     design_ids = load_design_ids(root, design_dir)
     violations = (

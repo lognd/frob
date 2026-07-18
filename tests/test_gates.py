@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import builtins
 import json
 import subprocess
 from datetime import date
 from pathlib import Path
+
+import pytest
 
 from frob.gates import (
     GateConfig,
@@ -1698,3 +1701,67 @@ class TestSysGate:
         violations = sys_gate(tmp_path, snapshot)
         assert _by_rule(violations, "SYS001") == []
         assert len(_by_rule(violations, "SYS004")) == 1
+
+    def test_default_design_dir_mirror_stays_in_sync(self) -> None:
+        """T-0135 review follow-up: the deliberate mirror literal must not drift.
+
+        `frob.gates._DEFAULT_DESIGN_DIR` is a bare string duplicate of
+        `frob.strata._design_load.DEFAULT_DESIGN_DIR` -- duplicated (not
+        imported) so `_design_dir` never touches `frob.strata` for a repo
+        with no design dir. Both imports happen INSIDE this test function
+        (never at module level) so this file itself never pays the
+        `frob.strata` import cost just by being collected; only this one
+        test -- which exists precisely to prove the two literals agree --
+        does.
+        """
+        import frob.gates as gates_mod
+        from frob.strata import DEFAULT_DESIGN_DIR
+
+        assert gates_mod._DEFAULT_DESIGN_DIR == DEFAULT_DESIGN_DIR
+
+    def test_no_design_dir_never_imports_frob_strata(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-0135: a repo with no design/ dir must never import frob.strata.
+
+        frob.strata transitively imports frob/strata/_facts.py, which needs
+        the strata_core native extension (T-0134 degrades that to a typed
+        Err, but the point of this ticket is a repo that never opted into
+        design/ at all should not even reach that machinery). Simulate the
+        standalone-install worst case by making `frob.strata` itself
+        unimportable, then confirm sys_gate on a design-less repo still
+        returns cleanly instead of propagating the ImportError.
+        """
+        real_import = builtins.__import__
+
+        def _blow_up_on_frob_strata(name, *args, **kwargs):
+            if name == "frob.strata" or name.startswith("frob.strata."):
+                raise ImportError("simulated: strata_core unavailable")
+            return real_import(name, *args, **kwargs)
+
+        monkeypatch.setattr(builtins, "__import__", _blow_up_on_frob_strata)
+        _write(tmp_path, "src/a.py", "def f(): pass\n")
+        snapshot = _snapshot(tmp_path)
+        assert sys_gate(tmp_path, snapshot) == ()
+
+    def test_design_dir_degrades_with_typed_error_on_native_extension_missing(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-0135: a repo WITH design/ must degrade (T-0134), never crash.
+
+        Monkeypatches frob.strata._parse's module-level `strata_core`
+        binding to None -- the state a bare `uv tool install frob` (no
+        natives) leaves it in -- and confirms sys_gate on a repo that DOES
+        have a design/ dir reports the parse failure as a typed SYS004
+        violation instead of raising an unhandled exception.
+        """
+        import frob.strata._parse as parse_mod
+
+        monkeypatch.setattr(parse_mod, "strata_core", None)
+        _write(tmp_path, "design/m.strata", _DESIGN_STRATA)
+        _write(tmp_path, "src/a.py", "def f(): pass\n")
+        snapshot = _snapshot(tmp_path)
+        violations = sys_gate(tmp_path, snapshot)
+        sys004 = _by_rule(violations, "SYS004")
+        assert len(sys004) == 1
+        assert sys004[0].file == "design/m.strata"

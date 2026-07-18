@@ -64,19 +64,12 @@ jobs:
           uv pip install --python /tmp/frob-standalone-venv/bin/python dist/*.whl
       - name: frob --help must not crash without native extensions
         run: /tmp/frob-standalone-venv/bin/frob --help
-      # KNOWN GAP (T-0135, filed while wiring up this job): sys_gate
-      # (src/frob/gates/__init__.py) imports frob.strata -- and therefore
-      # frob.strata._facts's own unguarded `import strata_core` (T-0134) --
-      # as its first statement, BEFORE the `design/`-directory opt-in check
-      # below it. That means this step currently fails on ANY fixture, with
-      # or without a design/ dir, until T-0135 lands: sys_gate crashes with
-      # a raw ImportError instead of a typed Err. Both bugs are outside
-      # T-0133's declared scope (src/frob/lang/**) -- fixing them here would
-      # be undeclared scope creep, so this step stays `continue-on-error`
-      # with the failure surfaced as a loud warning until T-0135 closes.
-      # Remove `continue-on-error` here the same change that closes T-0135.
+      # T-0135 moved sys_gate's `from frob.strata import load_design_ids`
+      # (and _design_dir's own `frob.strata` import) to after the
+      # design/-directory opt-in check, and T-0134 guarded frob.strata's
+      # remaining strata_core call sites to degrade to a typed Err instead
+      # of crashing -- so this step now hard-fails on any traceback.
       - name: frob check on a tiny fixture repo must not crash
-        continue-on-error: true
         run: |
           set -e
           fixture=/tmp/frob-standalone-fixture

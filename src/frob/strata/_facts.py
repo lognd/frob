@@ -14,15 +14,21 @@ fallback (charter D3 as amended; build with `make core`).
 
 from __future__ import annotations
 
+import importlib
 from dataclasses import dataclass, field
+from types import ModuleType
 
 try:
-    import strata_core
-except ImportError as exc:  # pragma: no cover - environment bug, not a code path
-    raise ImportError(
-        "strata_core native extension is required (charter D3: no pure-Python "
-        "fallback); build it with `make core`"
-    ) from exc
+    strata_core: ModuleType | None = importlib.import_module("strata_core")
+except ImportError:  # pragma: no cover - environment-dependent
+    # The native parser is a maturin-built extension present in dev venvs
+    # but not in standalone tool installs; degrade `build_facts` to a
+    # typed Err instead of crashing every `frob check` on a repo with a
+    # design/ dir (T-0133's guarded-import pattern, applied here for
+    # T-0134 -- charter D3's "no pure-Python fallback" still holds, it
+    # just now fails closed through Result instead of an unhandled
+    # ImportError).
+    strata_core = None
 from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
@@ -112,6 +118,10 @@ class FactBase:
         boundaries, which is what positive `reach` claims want.
         """
         # frob:doc docs/strata/kernel.md#fact-base
+        # A `FactBase` only ever exists via `build_facts`, which already
+        # fails closed on `strata_core is None` (T-0134) -- so by
+        # construction it is present here.
+        assert strata_core is not None
         edges = [
             (f.id, f.src, f.dst, bool(self.boundaries_on.get(f.id)))
             for f in self.flows.values()
@@ -130,6 +140,9 @@ class FactBase:
         claim evaluator turns into a refutation, never a silent clamp.
         """
         # frob:doc docs/strata/kernel.md#fact-base
+        # See `reachable`'s comment: `build_facts` already fails closed on
+        # a missing `strata_core` (T-0134), so it is present by construction.
+        assert strata_core is not None
         edges = []
         for flow in self.flows.values():
             hop = 0.0
@@ -170,6 +183,9 @@ class FactBase:
         silent clamp.
         """
         # frob:doc docs/strata/kernel.md#capacity-semantics
+        # See `reachable`'s comment: `build_facts` already fails closed on
+        # a missing `strata_core` (T-0134), so it is present by construction.
+        assert strata_core is not None
         edges = []
         for flow in self.flows.values():
             rate: float | None = None
@@ -299,7 +315,15 @@ def build_facts(model: KernelModel) -> Result[FactBase, StrataError]:
     Fails closed on the first structural error (duplicate ids, dangling
     references, unknown lattice levels, cyclic lattices); non-fatal
     findings land in `FactBase.diagnostics` so nothing is silently fine.
+    Fails closed just as hard, with a typed
+    `StrataError.NativeExtensionUnavailable`, if the `strata_core` native
+    extension is not installed (T-0134) -- every closure method below
+    assumes a successfully-built `FactBase` implies `strata_core` is
+    present, so this is the one gate that must catch its absence.
     """
+    if strata_core is None:
+        _log.error("build_facts: strata_core native extension unavailable")
+        return Err(StrataError.NativeExtensionUnavailable)
     for lattice in (model.trust, model.labels):
         if not _lattice_is_acyclic(lattice):
             _log.error("lattice %s has a cycle", lattice.name)

@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import sys
+
+import pytest
+
 from frob.strata import (
     Boundary,
     BoundaryDirection,
@@ -193,3 +197,30 @@ class TestClosure:
         )
         facts = build_facts(model).danger_ok
         assert facts.demand("api") == 102.0
+
+
+class TestBuildFactsNativeExtensionUnavailable:
+    """T-0134: a standalone tool install has no `strata_core` extension.
+
+    `build_facts` used to do a module-level `import strata_core` and raise
+    a bare `ImportError` on missing it -- crashing `frob check`'s sys_gate
+    for any repo with a `design/` dir in a standalone install. Monkeypatch
+    the module-level binding to `None` (the state a bare `uv tool install
+    frob` leaves it in) and confirm `build_facts` degrades to a typed
+    `Err` before touching any `strata_core` call, matching the T-0133
+    pattern already applied to `frob.lang._walk_strata`.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _no_native_parser(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        facts_mod = sys.modules["frob.strata._facts"]
+        monkeypatch.setattr(facts_mod, "strata_core", None)
+
+    # frob:tests src/frob/strata/_facts.py::build_facts kind="unit"
+    def test_build_facts_returns_native_extension_unavailable(self):
+        model = KernelModel(
+            nodes=(_node("a"), _node("b")), flows=(_flow("f1", "a", "b"),)
+        )
+        result = build_facts(model)
+        assert result.is_err
+        assert result.danger_err is StrataError.NativeExtensionUnavailable

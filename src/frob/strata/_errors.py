@@ -104,3 +104,10 @@ class StrataError(ErrorSet):
         "for the review/build/admit endorsement a deploy requires "
         "(docs/strata/surface.md#std-deploy, T-0083)"
     )
+    NativeExtensionUnavailable = (
+        "The strata_core native extension is not installed (a standalone "
+        "`uv tool install frob` with no natives) -- .strata parsing and "
+        "kernel-fact propagation degrade to this typed error instead of "
+        "crashing with an unhandled ImportError, matching frob.lang's "
+        "guarded-import pattern (T-0133, T-0134)"
+    )
