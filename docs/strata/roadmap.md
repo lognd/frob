@@ -48,15 +48,27 @@ vulnerability class:
   `design/litmus/payments_hardened.strata` (every remedy applied) are the
   surface-syntax twins of the phase-0 kernel-facts model, with goldens
   enforced in CI by `tests/unit/strata/test_litmus_surface.py`.
-- **tube.strata** (video platform; phase 2): cold-cache stampede unless
-  request coalescing is declared; `staleness unlimited` legal only on
-  immutable content-addressed blobs; CDN TLS termination as
-  declassification (session data must not ride the CDN path);
-  approximate view counter feeding a money-grade payout flow.
-- **chirp.strata** (timeline fanout; phase 2): materialized-timeline write
-  amplification under zipf skew -- the per-key ceiling failure whose forced
-  remedy is the fanout-on-write/read hybrid; hot-shard capacity checked at
-  the hottest key, not the mean.
+- **tube.strata** (video platform; phase 2, met T-0072): cold-cache
+  stampede shape (high-rate watch flow with fanout into a write path);
+  `staleness unlimited` legal only on the immutable content-addressed
+  origin blob (a commented-out mutable variant, and a hand-built naive
+  twin exercised directly in `tests/unit/strata/test_litmus_tube.py`,
+  show the illegal/unsafe cases); CDN TLS termination as declassification
+  (session data must not ride the CDN path -- proves only because
+  `tls_terminates_at_provider` adds the declassify boundary; the naive
+  twin without it refutes with the sessions -> origin -> edge witness);
+  a money-grade payout node fed only through a 5-minute-stale approximate
+  view-count cache, whose AGE bound refutes at 300.0s > 60.0s. Goldens
+  enforced in CI by `tests/unit/strata/test_litmus_tube.py`.
+- **chirp.strata** (timeline fanout; phase 2, met T-0072): a sharded hot
+  shard fed via a `fanout 5` write-amplification path off the `tweets`
+  store, with `skew zipf 1.5` -- the UTILIZATION bound refutes at the
+  hottest shard (89.8%) where a byte-for-byte mean-based twin (no `skew`
+  attr, identical demand/capacity) proves at 37.5%, the "averages lie"
+  golden; a third shard's utilization claim, PROVED today, flips to
+  REFUTED under `growth 10 %` compounding, saturating in 2 months --
+  inside the 24-month deny-by-default horizon. Goldens enforced in CI by
+  `tests/unit/strata/test_litmus_chirp.py`.
 
 Growth candidates (post-phase-5): a WhatsApp-shaped model (E2E encryption:
 `noflow(MessageBody -> Server)` with the server as a non-recipient) and a

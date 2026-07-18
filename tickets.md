@@ -2621,7 +2621,7 @@ rust-publicness rule.
 ```yaml
 id: T-0072
 title: strata tube + chirp litmus models + goldens
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-17'
@@ -2637,12 +2637,36 @@ scope:
 - design/litmus/**
 - design/litmus/**
 - tests/**
-evidence: []
+evidence:
+- tests/unit/strata/test_litmus_tube.py::TestTubeGoldens::test_payout_age_bound_refutes_off_the_approximate_counter_path
+- tests/unit/strata/test_litmus_chirp.py::TestChirpGoldens::test_hottest_shard_utilization_refutes_under_zipf_skew
+- tests/unit/strata/test_litmus_chirp.py::TestChirpGoldens::test_growth_horizon_flips_a_passing_utilization_to_refuted
 attachments: []
 acceptance: []
 threat: null
 ```
 Tube: stampede/cold-cache, immutable-TTL pairing, CDN declassification, payout-vs-approximate-counter. Chirp: fanout write ceiling under zipf skew forcing the hybrid. Phase-2 exit criterion.
+
+## Done report
+
+Changed: design/litmus/tube.strata, design/litmus/chirp.strata,
+tests/unit/strata/test_litmus_tube.py, test_litmus_chirp.py,
+docs/strata/roadmap.md (litmus section marked met).
+Evidence: see `evidence:` above; 10 tests total (6 tube + 4 chirp), all
+pytest node ids collected via `--collect-only`.
+Verified: pytest tests/unit/strata (96 passed), ruff format/check clean,
+ty check clean, frob graph build, sweep T-0072 last, frob check
+--ticket T-0072 exit 0, plain frob check exit 0.
+Gap found (not fixed, out of scope -- src/frob/strata/_infra.py is not
+in this ticket's scope): `store { capacity ... }` parses but
+`_infra.py::elaborate_infra` hardcodes `capacity=None` when desugaring a
+store to a Node, so a UTILIZATION claim can never target a store
+directly. chirp.strata routes capacity-bearing shards through `node`s
+fed from the `tweets` store instead; documented inline in the file. No
+ticket filed per mission instructions (worktree may not file tickets);
+noted here and in the agent report for the orchestrator to file.
+Filed: none (see gap note above).
+Gates: frob check --ticket T-0072 clean; plain frob check clean.
 
 <!-- ticket:T-0073 -->
 ```yaml
