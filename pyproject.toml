@@ -28,6 +28,10 @@ dependencies = [
     # match the dev group so the standalone wheel is fully functional.
     "ruff>=0.8",
     "ty>=0.0.1a8",
+    # T-0152: frob.vet._cve compares dependency versions via
+    # packaging.version at import time; without this a bare wheel install
+    # crashed every frob invocation with ModuleNotFoundError.
+    "packaging>=24",
 ]
 
 # Optional: `frob serve` (the MCP adapter) needs the mcp SDK; installing it

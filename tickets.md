@@ -909,3 +909,58 @@ acceptance: []
 threat: null
 ```
 Found while measuring real capabilities for T-0150's design/frob.strata may declarations: scan_file_capabilities/scan_directory_capabilities substring-matches _PATTERNS' own needle literals (e.g. "subprocess.", "compile(", "cmdclass") when scanning src/frob/vet/_capability.py itself, since those needles are stored as plain string data in that same file. This inflates vet's own observed capability set (T-0150 measured vet as declaring eval/exec/ffi/install-hook/env/net almost entirely from this one file matching itself) and would similarly inflate the scan of any OTHER file that happens to embed one of these substrings in a comment/string/docstring (T-0150's own _threat.py DEFAULT_BENIGN_CAPABILITIES reason strings tripped this exact false-positive during T-0150's rework, before rewording). Needs either: excluding the pattern-table-defining file itself from self-scanning, or a smarter match (e.g. AST-based real call-site detection instead of raw substring match), or a documented/accepted false-positive-rate note in docs/modules/vet.md. Out of scope for T-0150 (scope excludes src/frob/vet -- T-0147 concurrently edits it).
+
+<!-- ticket:T-0152 -->
+```yaml
+id: T-0152
+title: packaging is an undeclared runtime dependency -- bare frob install crashes
+  on import
+state: done
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- pyproject.toml
+- uv.lock
+- tests/unit/test_runtime_deps.py
+- tickets.md
+evidence:
+- tests/unit/test_runtime_deps.py::TestRuntimeDepsDeclared::test_every_unguarded_third_party_import_is_declared
+- tests/unit/test_runtime_deps.py::TestRuntimeDepsDeclared::test_packaging_regression_is_locked
+attachments: []
+acceptance: []
+threat: null
+```
+T-0147's src/frob/vet/_cve.py imports packaging.version at module level, but packaging was only in the dev dependency group -- a bare wheel install (uv tool install / pip install) crashed every frob invocation with ModuleNotFoundError: No module named 'packaging', found when reinstalling the global tool after T-0150 landed. Same defect class as T-0142. Fix: declare packaging>=24 in [project].dependencies; add a drift test asserting every top-level third-party import under src/frob/ resolves to a declared [project] dependency so the next undeclared import fails in CI instead of at install time. Coordinator hotfix: toolchain-blocking, fixed inline with ticket accounting rather than dispatched.
+
+## Done report
+
+Changed:
+- pyproject.toml: packaging>=24 added to [project].dependencies with a
+  T-0152 comment (was dev-group only; frob.vet._cve imports
+  packaging.version at module level, so every bare-wheel invocation
+  crashed with ModuleNotFoundError).
+- uv.lock: refreshed for the dependency move.
+- tests/unit/test_runtime_deps.py (new): drift-lock walking src/frob's
+  unguarded top-level imports via AST (module body only, so guarded/lazy
+  imports are exempt) and asserting each third-party name maps to a
+  declared [project] dependency; plus a pinned regression test for the
+  exact packaging/vet._cve incident. Optional extras (z3 via frob[smt])
+  and the local native crates are an explicit allow-list.
+
+Evidence: the two node ids attached via frob ticket evidence; both pass.
+
+Verification: reproduced the crash on the freshly reinstalled global
+tool (uv tool install via make install-tool -> ModuleNotFoundError:
+packaging on every invocation), applied the fix, reinstalled, and the
+global frob now runs clean: frob sys audit reports PROVED including
+self-conformance, frob --help exits 0.
+
+Process note: coordinator hotfix -- the broken global tool blocked all
+ledger operations, so this was fixed inline with ticket accounting
+(filed, started, evidenced, closed in order) rather than dispatched to
+an implementer; reviewed by the T-0148 sweep as a backstop.
+
+Filed: none.
