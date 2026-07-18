@@ -1986,7 +1986,7 @@ Typani pilot: frob sys audit <file.strata> misbehaves silently, appending a bogu
 id: T-0164
 title: COV002 demands per-declaration frob:ticket edges inside .strata files -- boilerplate
   x28
-state: queued
+state: in-progress
 kind: ux
 origin: agent
 created: '2026-07-18'
@@ -1997,12 +1997,42 @@ scope:
 - src/frob/lang/_walk_strata.py
 - tests/**
 - tickets.md
-evidence: []
+evidence:
+- tests/test_gates.py::TestCov002StrataModuleCoverage::test_module_level_ticket_edge_covers_nested_declaration
+- tests/test_gates.py::TestCov002StrataModuleCoverage::test_declaration_without_module_edge_still_fires
 attachments: []
 acceptance: []
 threat: null
 ```
 Typani pilot: COV002 required a frob:ticket directive on every strata declaration (module/node/flow/assert) individually -- ~28 copy-paste edges for one ticket with no granularity value. Design decision needed: either a module-level directive in a .strata file covers all its declarations (likely right -- a design file is one artifact), or document why per-declaration edges matter. Whichever way, kill the boilerplate.
+
+## Done report
+
+Design decision: a `.strata` file is one design artifact -- a single
+`frob:ticket` directive on the file's `module` declaration now covers every
+`node`/`flow`/`boundary`/`assert`/... nested under it for COV002 purposes,
+the same blast-radius reasoning `_scope_covers` already applies at the file
+level, one notch finer. Per-declaration edges are no longer demanded; a
+`.strata` file with no directive anywhere still fires COV002 normally (not
+a blanket exemption).
+
+Changed:
+- src/frob/gates/__init__.py::_strata_module_symref (new)
+- src/frob/gates/__init__.py::_covered_by_strata_module (new)
+- src/frob/gates/__init__.py::_cov002 (extended: checks strata-module
+  coverage before falling through to scope coverage)
+
+Evidence:
+- tests/test_gates.py::TestCov002StrataModuleCoverage::test_module_level_ticket_edge_covers_nested_declaration
+- tests/test_gates.py::TestCov002StrataModuleCoverage::test_declaration_without_module_edge_still_fires
+
+Filed: none (no out-of-scope work found; T-0165/T-0168 explicitly left
+untouched per instructions).
+
+Gates: `frob check --ticket T-0164` clean -- 0 errors, only the pre-existing
+TEST006 warn (no coverage stamp, unrelated to this change) and the usual
+repo-wide waived PERF/arch advisories. `pytest tests/test_gates.py` passes
+(all prior COV002 tests plus the 2 new ones).
 
 <!-- ticket:T-0165 -->
 ```yaml
