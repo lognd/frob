@@ -1101,7 +1101,6 @@ def _commit_exempts_file(
     subject = _commit_subject(root, sha)
     if subject.is_nothing:
         return False
-    # frob:waive PERF003 reason="one subject, few T-#### refs; bounded scan, not a join"
     for ref in _TICKET_REF_RE.findall(subject.danger_some):
         if ref == ticket.id:
             continue
@@ -1136,7 +1135,6 @@ def _scope_exempt_file(
     ticket A's committed work still shows up in ticket B's diff against `base`
     (T-0108). Working-tree-dirty hunks are never exempt: only prior commits
     naming a scoping ticket are."""
-    # frob:waive PERF003 reason="filter then check-all: two single-pass loops"
     hunks = tuple(h for h in diff.hunks if h.file == file)
     if not hunks:
         return False
@@ -2205,7 +2203,6 @@ def _claims_markers(root: Path) -> list[tuple[str, int, str]]:
     include, exclude, roots = _doclink_config(root)
     paths = _obligated_docs(root, include, exclude) | set(roots)
     found: list[tuple[str, int, str]] = []
-    # frob:waive PERF004 reason="one sort of the doc path set, not per-iteration"
     for rel in sorted(paths):
         path = root / rel
         try:

@@ -71,7 +71,6 @@ class TestSysPlanCli:
         assert (repo / "tickets.md").read_text() == ledger_after_first
         assert "nothing to plan" in out
 
-    # frob:waive PERF003 reason="one next() lookup plus one list comprehension, not a join"
     def test_dropped_ticket_is_not_recreated(self, tmp_path: Path) -> None:
         """A discharged obligation's ticket is dropped, not left open forever.
         Re-planning must never resurrect it -- a marker match suppresses

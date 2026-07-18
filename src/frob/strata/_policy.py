@@ -67,7 +67,6 @@ def _resolve_scope(
             _log.error("policy scope: unknown trust level %r", scope.value)
             return Err(StrataError.UnknownReference)
         ids: list[str] = []
-        # frob:waive PERF003 reason="sorted() runs once after this loop, not in it"
         for node in model.nodes:
             leq = model.trust.leq(scope.value, node.trust)
             if leq.is_err:

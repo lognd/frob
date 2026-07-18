@@ -171,7 +171,6 @@ def test_quantity_pattern_spot_check(text: str, should_match: bool):
     )
 
 
-# frob:waive PERF003 reason="two sibling next()-generator lookups over a small fixed grammar pattern list, each by distinct name; not a nested join"
 def test_string_pattern_terminates_at_end_of_line():
     """The string pattern must match a quoted literal on one line and must not
     span a newline, matching strata-core/src/parse.rs::lex (lines 131-151),

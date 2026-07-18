@@ -165,6 +165,108 @@ def test_perf004_does_not_fire_on_sort_outside_a_loop(tmp_path):
     assert not any(v.rule == "PERF004" for v in violations)
 
 
+def test_perf003_does_not_fire_on_sibling_comprehensions(tmp_path):
+    """PERF003 does not fire on two sibling comprehensions/generator
+    expressions plus an unrelated `==` -- T-0161's headline false-positive
+    class (comprehension `for` is not a loop statement)."""
+    # frob:ticket T-0161
+    # frob:tests src/frob/perf/_rules.py::perf_rules
+    src = (
+        "def check(records, expected):\n"
+        "    names = {r.name for r in records}\n"
+        "    valid = any(r.ok for r in records)\n"
+        "    assert len(names) == expected\n"
+        "    return valid\n"
+    )
+    path = _write(tmp_path, "mod.py", src)
+    parsed = parse_file(path).danger_ok
+    snapshot = _snapshot(tmp_path)
+    violations = perf_rules(snapshot, [parsed])
+    assert not any(v.rule == "PERF003" for v in violations)
+
+
+def test_perf003_does_not_fire_on_sibling_statement_loops(tmp_path):
+    """PERF003 does not fire on two sibling (not nested) statement-level
+    `for` loops, even with an unrelated `==` elsewhere in the function."""
+    # frob:ticket T-0161
+    # frob:tests src/frob/perf/_rules.py::perf_rules
+    src = (
+        "def summarize(a, b, total):\n"
+        "    out = []\n"
+        "    for x in a:\n"
+        "        out.append(x)\n"
+        "    for y in b:\n"
+        "        out.append(y)\n"
+        "    assert len(out) == total\n"
+        "    return out\n"
+    )
+    path = _write(tmp_path, "mod.py", src)
+    parsed = parse_file(path).danger_ok
+    snapshot = _snapshot(tmp_path)
+    violations = perf_rules(snapshot, [parsed])
+    assert not any(v.rule == "PERF003" for v in violations)
+
+
+def test_perf003_fires_on_nested_join_with_intervening_statement(tmp_path):
+    """PERF003 fires on a real nested equality join even when a setup
+    statement (an accumulator init, a guard, ...) sits between the outer
+    loop's header and the inner loop -- reviewer-caught round-2 regression
+    (T-0161): round 1's "inner loop must be the literal next token after
+    the outer colon" adjacency check silently missed this common shape."""
+    # frob:ticket T-0161
+    # frob:tests src/frob/perf/_rules.py::perf_rules
+    src = (
+        "def join(a, b):\n"
+        "    out = []\n"
+        "    for x in a:\n"
+        "        y0 = 0\n"
+        "        for y in b:\n"
+        "            if x == y:\n"
+        "                out.append(x)\n"
+        "    return out\n"
+    )
+    path = _write(tmp_path, "mod.py", src)
+    parsed = parse_file(path).danger_ok
+    snapshot = _snapshot(tmp_path)
+    violations = perf_rules(snapshot, [parsed])
+    assert any(v.rule == "PERF003" for v in violations)
+
+
+def test_perf004_does_not_fire_when_sorted_is_the_loop_iterable(tmp_path):
+    """PERF004 does not fire on `for x in sorted(data):` -- `sorted()` there
+    is the loop's own iterable, evaluated once, not resorted per
+    iteration."""
+    # frob:ticket T-0161
+    # frob:tests src/frob/perf/_rules.py::perf_rules
+    src = (
+        "def visit(paths):\n"
+        "    out = []\n"
+        "    for path in sorted(paths):\n"
+        "        out.append(path)\n"
+        "    return out\n"
+    )
+    path = _write(tmp_path, "mod.py", src)
+    parsed = parse_file(path).danger_ok
+    snapshot = _snapshot(tmp_path)
+    violations = perf_rules(snapshot, [parsed])
+    assert not any(v.rule == "PERF004" for v in violations)
+
+
+def test_perf004_does_not_fire_on_sorted_generator_no_preceding_loop(tmp_path):
+    """PERF004 does not fire on `sorted(x for x in y)` with no preceding
+    statement-level loop -- the generator's own `for` is bracket-depth
+    >= 1, not a loop statement, so it must not itself satisfy the loop
+    gate for its enclosing `sorted()` call."""
+    # frob:ticket T-0161
+    # frob:tests src/frob/perf/_rules.py::perf_rules
+    src = "def report(matched):\n    return sorted(m.id for m in matched)\n"
+    path = _write(tmp_path, "mod.py", src)
+    parsed = parse_file(path).danger_ok
+    snapshot = _snapshot(tmp_path)
+    violations = perf_rules(snapshot, [parsed])
+    assert not any(v.rule == "PERF004" for v in violations)
+
+
 def test_profile_command_and_load_artifact_round_trip(tmp_path):
     """`profile_command` writes an artifact `load_artifact` can read back."""
     # frob:ticket T-0021

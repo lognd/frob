@@ -48,7 +48,6 @@ def _empty_snapshot() -> GraphSnapshot:
 
 class TestPlanObligations:
     # frob:tests src/frob/strata/_plan.py::plan_obligations kind="unit"
-    # frob:waive PERF003 reason="two separate set/next comprehensions, not a join"
     def test_unrefined_frontier(self):
         result = plan_obligations(_model(_ABSTRACT_MODEL)).danger_ok
         markers = {t.marker for t in result.tickets}
@@ -83,7 +82,6 @@ class TestPlanObligations:
         assert f"{MARKER_PREFIX}b1:unbound" in markers
 
     # frob:tests src/frob/strata/_plan.py::plan_obligations kind="unit"
-    # frob:waive PERF003 reason="two separate set comprehensions, not a join"
     def test_idempotent_markers(self):
         model = _model(_ABSTRACT_MODEL)
         first = plan_obligations(model).danger_ok

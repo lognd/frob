@@ -104,7 +104,6 @@ class TestExportsFlags:
         r = run("exports", str(pkg), "--json")
         data = json.loads(r.stdout)
         all_symbols = [s for m in data["modules"] for s in m["symbols"]]
-        # frob:waive PERF001 reason="one membership check against a list built once in a two-clause comprehension over tiny fixture data, not a hot loop"
         assert "alpha" in all_symbols
 
 

@@ -81,7 +81,6 @@ _EXPORT_FORMATS = ("k8s", "seccomp", "iam")
 
 
 # frob:ticket T-0163
-# frob:waive PERF003 reason="two sibling single-pass ancestor walks, not a nested join"
 def _repo_root_for(file_path: Path) -> Path:
     """Best-effort repo root to suggest in `_resolve_design_root`'s error
     message: the nearest ancestor with a `frob.toml`/`.git`, else the

@@ -5,7 +5,6 @@ from __future__ import annotations
 from frob.bind import check, scan_bindings, scan_sources
 
 
-# frob:waive PERF003 reason="set comprehension over decls plus two sibling any() generators, each independent; not a nested join"
 def test_scan_bindings_finds_cpp_and_rust(tmp_path):
     # frob:tests src/frob/bind/__init__.py::scan_bindings kind="unit"
     (tmp_path / "glue.cpp").write_text(

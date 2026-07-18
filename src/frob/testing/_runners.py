@@ -156,7 +156,6 @@ def _expand_placeholder(
     placeholder: str, items: tuple[str, ...], language: str
 ) -> list[str]:
     """The argv fragment a single placeholder expands to for `items`."""
-    # frob:waive PERF003 reason="if-chain dispatch, one flat comprehension per branch"
     if placeholder == "{ids}":
         return [_to_node_id(item) for item in items]
     if placeholder == "{files}":

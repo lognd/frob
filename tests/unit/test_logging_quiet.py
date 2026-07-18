@@ -93,7 +93,6 @@ class TestQuietStdoutLogsReentrance:
 
     def test_threaded_stress_always_restores(self) -> None:
         # frob:tests src/frob/logging/quiet.py::quiet_stdout_logs kind="unit"
-        # frob:waive PERF003 reason="start-loop then join-loop plus a closing assert==, not a nested join"
         # Supplementary stress test: many threads entering/exiting
         # concurrently, real (non-mocked) scheduling.
         handler = _install_stdout_handler(logging.DEBUG)

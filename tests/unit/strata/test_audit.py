@@ -202,7 +202,6 @@ class TestVulnLitmus:
     gap per family."""
 
     # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness kind="unit"
-    # frob:waive PERF003 reason="three sibling any()-generators over report.gaps, each with its own == filter; not a nested join"
     def test_refutes_gap_per_family(self):
         model = _vulnerable_model()
         result = evaluate_exhaustiveness(model)

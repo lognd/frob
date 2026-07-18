@@ -109,7 +109,6 @@ class TestFixtureCoverageIsExhaustive:
         catalog_ids = {e.id for e in _UNION_CATALOG}
         assert set(_FIRING_FIXTURES) == catalog_ids
 
-    # frob:waive PERF003 reason="two set comprehensions over small fixtures, not a join"
     # frob:tests src/frob/strata/_threat.py::CWE_CATALOG kind="unit"
     # frob:ticket T-0145
     def test_unfired_ids_are_exactly_the_capability_kind_none_entries(self):
@@ -151,7 +150,6 @@ class TestOutOfScopeExemptionMatchesCatalogExactly:
         out_of_scope_ids = {e.id for e in CWE_TOP_25_OUT_OF_SCOPE}
         assert catalog_ids.isdisjoint(out_of_scope_ids)
 
-    # frob:waive PERF003 reason="two set comprehensions over small fixtures, not a join"
     # frob:tests src/frob/strata/_threat.py::CWE_TOP_25_OUT_OF_SCOPE kind="unit"
     # frob:ticket T-0145
     def test_out_of_scope_ids_cover_the_top_25_gap_exactly(self):

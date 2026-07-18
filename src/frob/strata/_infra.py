@@ -224,7 +224,6 @@ def _elaborate_cache(
         _log.error("cache %s: neither ttl nor staleness declared", decl.id)
         return Err(StrataError.MissingBound)
 
-    # frob:waive PERF003 reason="list comp plus separate loop below, not a join"
     writes_to_source = [f for f in base_flows if f.dst == decl.of]
     if writes_to_source and not decl.invalidate_on:
         _log.error(
@@ -412,7 +411,6 @@ def _sticky_balancer_diagnostics(
         if not decl.sticky:
             continue
         downstream_ids = downstream_by_src.get(decl.id, set())
-        # frob:waive PERF004 reason="distinct small per-balancer set, not repeated"
         for dst_id in sorted(downstream_ids):
             dst = nodes.get(dst_id)
             if dst is not None and _STATE_NONE in dst.attrs:

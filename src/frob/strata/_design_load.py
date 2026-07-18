@@ -101,7 +101,6 @@ def _strata_files(
     if not design_dir.is_dir():
         return []
     found = []
-    # frob:waive PERF004 reason="one sort of the file list, not per-iteration"
     for path in sorted(design_dir.rglob("*.strata")):
         rel = path.relative_to(root).as_posix()
         if exclude_globs and is_excluded(rel, exclude_globs):
@@ -133,7 +132,6 @@ def load_design_ids(root: Path, design_dir: str = DEFAULT_DESIGN_DIR) -> DesignI
     errors: list[DesignLoadError] = []
     models: list[KernelModel] = []
     exclude_globs = load_exclude_globs(root)
-    # frob:waive PERF003 reason="one flat scan over discovered design files, not a join"
     for path in _strata_files(root, root / design_dir, exclude_globs):
         rel = path.relative_to(root).as_posix()
         try:
@@ -204,8 +202,6 @@ def unbound_constructs(
         EdgeKind.SECRET: design_ids.secrets,
     }
     unbound: list[tuple[EdgeKind, str]] = []
-    # frob:waive PERF003 reason="outer loop is a handful of fixed kinds, not a join"
-    # frob:waive PERF004 reason="one sort per kind over a small construct-id set"
     for kind in kinds:
         for construct_id in sorted(ids_by_kind.get(kind, frozenset())):
             if construct_id not in bound[kind]:

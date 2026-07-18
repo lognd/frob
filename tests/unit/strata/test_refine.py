@@ -20,7 +20,6 @@ def _elaborate(text: str):
 
 class TestRefineHappyPath:
     # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
-    # frob:waive PERF003 reason="set comprehension plus sibling next()-generator lookups over the elaborated model, not a nested join"
     def test_flattens_abstract_node_and_rewires_outer_flow(self):
         text = """
         module m

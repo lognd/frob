@@ -238,7 +238,6 @@ def scan_file_operations(path: Path) -> tuple[DangerousOperation, ...]:
         return ()
 
     matched: list[DangerousOperation] = []
-    # frob:waive PERF003 reason="flat scan of a fixed table, not a nested join"
     for entry in DANGEROUS_OPERATIONS:
         if entry.language != language:
             continue
@@ -284,7 +283,6 @@ def scan_file_fingerprints(path: Path) -> tuple[CveFingerprint, ...]:
         and any(needle in text for needle in entry.needles)
     )
     if matched:
-        # frob:waive PERF004 reason="one sort for a single log call, not per-iteration"
         _log.info(
             "vet: %s: cve fingerprints matched: %s",
             path,

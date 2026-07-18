@@ -25,7 +25,6 @@ def _module(text: str):
 
 class TestAutoInjection:
     # frob:tests src/frob/strata/_packs.py::require_analyzable kind="unit"
-    # frob:waive PERF003 reason="two sibling any()-generators over caplog.records/policies, each with its own == filter; not a nested join"
     def test_trusted_component_without_pack_gets_it_injected(self, caplog):
         module = _module(
             """
@@ -108,7 +107,6 @@ class TestEnablesCascade:
         assert noflow.verdict is Verdict.PROVED
 
     # frob:tests src/frob/strata/_claims.py::evaluate_claims kind="unit"
-    # frob:waive PERF003 reason="two sibling next()-generator lookups over results plus a caplog any()-generator; not a nested join"
     def test_waived_pack_downgrades_noflow_but_not_bound(self, caplog):
         model, compiled = self._cascade_setup()
         with caplog.at_level(logging.WARNING):
@@ -150,7 +148,6 @@ class TestEnablesCascade:
         assert noflow.verdict is Verdict.PROVED
 
     # frob:tests src/frob/strata/_claims.py::evaluate_claims kind="unit"
-    # frob:waive PERF003 reason="a next()-generator lookup over results plus a caplog any()-generator; not a nested join"
     def test_waiving_a_nonexistent_policy_id_is_a_logged_no_op(self, caplog):
         model, compiled = self._cascade_setup()
         with caplog.at_level(logging.WARNING):

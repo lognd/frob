@@ -225,7 +225,6 @@ def test_json_process_method_line(py_src):
     data = json.loads(r.stdout)
     classes_by_name = {c["name"]: c for c in data["classes"]}
     myclass = classes_by_name["MyClass"]
-    # frob:waive PERF003 reason="two sibling dict comprehensions over fixture data plus a == in an unrelated assert, not a nested join"
     methods_by_name = {m["name"]: m for m in myclass["methods"]}
     process = methods_by_name["process"]
     assert process["line"] == 12

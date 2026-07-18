@@ -130,7 +130,6 @@ def _imported_names(path: Path) -> frozenset[str]:
     """Top-level module names one python file imports, best-effort -- a
     parse failure yields an empty set (never raises; this is a heuristic
     signal, not a gate)."""
-    # frob:waive PERF003 reason="one ast.walk pass, not a nested join"
     try:
         tree = ast.parse(path.read_text(encoding="utf-8", errors="replace"))
     except (SyntaxError, OSError) as exc:

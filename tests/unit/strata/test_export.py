@@ -144,7 +144,6 @@ class TestExportIam:
         doc = json.loads(export_iam(model))
         sids = {s["sid"] for s in doc["statements"]}
         assert sids == {"f1-read", "f1-write"}
-        # frob:waive PERF003 reason="set comprehension then assertion loop, not a join"
         for s in doc["statements"]:
             assert s["principal"] == "web"
             assert s["resource"] == "db"

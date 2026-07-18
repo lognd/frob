@@ -61,8 +61,6 @@ def _apply_remove(
     from source, but `evaluate_scenarios` is a public kernel API a caller
     may also drive with a hand-built `KernelModel`/`Scenario`.
     """
-    # frob:waive PERF003 reason="cascade scan over touched flows is inherent"
-    # frob:waive PERF004 reason="sorted() once per rewrite, for log order only"
     if rewrite.node_id not in {n.id for n in model.nodes}:
         _log.error(
             "scenario rewrite: remove target %r is not declared", rewrite.node_id

@@ -776,7 +776,6 @@ class TestCapabilityDiff:
 
 
 class TestEcosystemRules:
-    # frob:waive PERF003 reason="a set comprehension plus a sibling any() generator with == on rule name, not a nested join"
     def test_python_setup_py_cmdclass_flagged(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_ecosystem.py::python_rules kind="unit"
         from frob.gates._models import Severity
@@ -911,7 +910,6 @@ class TestScanTreeWithLocalSource:
         # REAL `frob vet` pipeline (scan_tree), not just via a direct
         # scan_file_fingerprints import -- proving the wiring, not just
         # the detector.
-        # frob:waive PERF001 reason="a list comprehension over one report's violations plus a sibling next()-generator over verdicts, not a hot loop"
         # frob:tests src/frob/vet/_scan.py::_scan_source kind="unit"
         from frob.vet._scan import scan_tree
 

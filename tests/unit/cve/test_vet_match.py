@@ -65,7 +65,6 @@ def test_unaffected_via_default_status() -> None:
     deps = (Dependency(ecosystem="pypi", name="libfoo", version="3.0.0"),)
     result = match_dependencies_against_mirror(deps, _SYNTHETIC_MIRROR)
     assert result.is_ok
-    # frob:waive PERF001 reason="one filter over a two-record fixture mirror's results, not a hot loop"
     matches = [m for m in result.danger_ok if m.cve_id == "CVE-2024-1000"]
     assert len(matches) == 1
     assert matches[0].status is MatchStatus.UNAFFECTED
@@ -126,7 +125,6 @@ def test_cwe_linkage_catalog_out_of_scope_and_unmapped() -> None:
     by_id = {link.cwe_id: link for link in links}
 
     assert by_id["CWE-502"].disposition is CweDisposition.CATALOG
-    # frob:waive PERF003 reason="one next() lookup over the small CWE_CATALOG tuple, not a nested join"
     catalog_entry = next(e for e in CWE_CATALOG if e.id == "CWE-502")
     assert by_id["CWE-502"].title == catalog_entry.title
     assert by_id["CWE-502"].mitigation == catalog_entry.mitigation
@@ -144,7 +142,6 @@ def test_log4shell_end_to_end_cwe_linkage_via_mirror() -> None:
     deps = (Dependency(ecosystem="maven", name="Apache Log4j2", version="2.14.1"),)
     result = match_dependencies_against_mirror(deps, _REAL_MIRROR)
     assert result.is_ok
-    # frob:waive PERF003 reason="one next() lookup over one mirror walk's small result list, not a nested join"
     match = next(m for m in result.danger_ok if m.cve_id == "CVE-2021-44228")
     dispositions = {link.cwe_id: link.disposition for link in match.cwe_links}
     assert dispositions["CWE-502"] is CweDisposition.CATALOG

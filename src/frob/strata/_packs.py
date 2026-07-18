@@ -75,7 +75,6 @@ def require_analyzable(module: Module) -> Result[Module, StrataError]:
     level name), never on the presence/absence of the pack itself.
     """
     has_trusted = False
-    # frob:waive PERF003 reason="loop plus separate any() scan, not a join"
     for node in module.nodes:
         leq = TRUST.leq("trusted", node.trust)
         if leq.is_err:

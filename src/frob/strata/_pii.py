@@ -206,7 +206,6 @@ def check_pii_boundary_protection(model: KernelModel) -> tuple[PiiViolation, ...
     nodes_by_id = {n.id: n for n in model.nodes}
     violations: list[PiiViolation] = []
     # frob:waive PERF004 reason="one sort for deterministic order, not per-iteration"
-    # frob:waive PERF003 reason="dict-comp build plus one flow loop, not a nested join"
     for flow in sorted(model.flows, key=lambda f: f.id):
         src = nodes_by_id.get(flow.src)
         dst = nodes_by_id.get(flow.dst)

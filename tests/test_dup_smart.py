@@ -88,7 +88,6 @@ class TestTouchedRefs:
 
 
 class TestGateRules:
-    # frob:waive PERF003 reason="flattening report.groups into pairs with a next()-generator equality filter; single-level nesting over small fixture data, not a cross join"
     def test_dup001_fires_when_one_side_touched(self, snapshot):
         report = find_clones(
             snapshot, DupConfig(min_tokens=5, threshold=0.85)
@@ -104,7 +103,6 @@ class TestGateRules:
         assert any(v.rule == "DUP001" for v in violations)
         assert all(v.severity.value == "error" for v in violations)
 
-    # frob:waive PERF003 reason="flattening report.groups into pairs with a next()-generator equality filter; single-level nesting over small fixture data, not a cross join"
     def test_dup002_fires_when_both_sides_touched(self, snapshot):
         report = find_clones(
             snapshot, DupConfig(min_tokens=5, threshold=0.85)

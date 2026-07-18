@@ -31,7 +31,6 @@ def FUZZ001(  # noqa: N802 - rule-id naming convention shared with frob.gates.in
     snapshot: GraphSnapshot, obligations: tuple[FuzzObligation, ...]
 ) -> tuple[Violation, ...]:
     """A fuzz-obligated function has no `kind="fuzz"` TESTS edge targeting it."""
-    # frob:waive PERF003 reason="set comp then a membership-tested loop, not a join"
     fuzz_targets = {
         edge.target
         for edge in snapshot.edges

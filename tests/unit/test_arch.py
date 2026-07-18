@@ -40,7 +40,6 @@ class TestGodClass:
         categories = {s.category for s in result.suggestions}
         assert "god-class" in categories
 
-    # frob:waive PERF003 reason="list comprehension over suggestions plus a sibling any() generator with a substring test; not a nested join"
     def test_big_class_names_the_class(self):
         root = FIXTURES / "arch_python" / "src"
         result = analyze_project(root)
@@ -66,7 +65,6 @@ class TestLongFunction:
         categories = {s.category for s in result.suggestions}
         assert "long-function" in categories
 
-    # frob:waive PERF003 reason="list comprehension over suggestions plus a sibling any() generator with a substring test; not a nested join"
     def test_long_func_names_the_function(self):
         root = FIXTURES / "arch_python" / "src"
         result = analyze_project(root)
@@ -92,7 +90,6 @@ class TestDeepNesting:
         categories = {s.category for s in result.suggestions}
         assert "deep-nesting" in categories
 
-    # frob:waive PERF003 reason="list comprehension over suggestions plus a sibling any() generator with a substring test; not a nested join"
     def test_deep_nest_names_the_function(self):
         root = FIXTURES / "arch_python" / "src"
         result = analyze_project(root)

@@ -100,7 +100,6 @@ class TestObservabilityFailClosed:
 
 class TestEndToEnd:
     # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
-    # frob:waive PERF003 reason="sibling next()-generator lookups over the elaborated model plus == assertions; not a nested join"
     def test_phases_operation_and_observe_together(self):
         text = """
         module m

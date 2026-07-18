@@ -143,7 +143,6 @@ def _print_table(report) -> None:
 
 def _print_cve_table(matches: tuple[CveMatch, ...]) -> None:
     """T-0147: per-match CVE id, CVSS, status, and CWE catalog linkage."""
-    # frob:waive PERF003 reason="flat print loop, matches x few links, not a join"
     print()
     print("cve matches:")
     for m in matches:

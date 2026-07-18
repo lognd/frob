@@ -153,7 +153,6 @@ def _block_ends(sorted_nodes: list[Node]) -> list[int]:
     ends = [span_of(n)[1] for n in sorted_nodes]
     starts = [span_of(n)[0] for n in sorted_nodes]
     trailing = [_is_trailing_comment(n) for n in sorted_nodes]
-    # frob:waive PERF003 reason="one linear backward scan, not a nested loop"
     block_end = [0] * len(sorted_nodes)
     for i in range(len(sorted_nodes) - 1, -1, -1):
         chains_forward = (

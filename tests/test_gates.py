@@ -580,7 +580,6 @@ class TestScopePrework:
         snap = _snapshot(tmp_path)
         ticket_b = _ticket(ticket_id="T-0002", scope=("src/b/**",))
 
-        # frob:waive PERF003 reason="two separate any() assertions, not a nested join"
         # Without root/queue (old behavior): false positive SCOPE001 on A's file.
         violations_no_context = scope_gate(diff, ticket_b, snap)
         assert any(v.file == "src/a/mod.py" for v in violations_no_context)

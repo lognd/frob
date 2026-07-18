@@ -211,7 +211,6 @@ def check_lint_cache_or_capacity(
     default (module docstring)."""
     violations: list[LintViolation] = []
     # frob:waive PERF004 reason="one sort for deterministic order, not per-iteration"
-    # frob:waive PERF003 reason="dict-comp build plus one node loop, not a nested join"
     for node in sorted(model.nodes, key=lambda n: n.id):
         if node.capacity is None:
             continue
@@ -358,7 +357,6 @@ def check_lint_fanin_capacity(
     exceeds `service_rate * replicas_max`."""
     violations: list[LintViolation] = []
     # frob:waive PERF004 reason="one sort for deterministic order, not per-iteration"
-    # frob:waive PERF003 reason="dict-comp build plus one node loop, not a nested join"
     for node in sorted(model.nodes, key=lambda n: n.id):
         if node.capacity is None:
             continue

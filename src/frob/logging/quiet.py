@@ -100,7 +100,6 @@ def quiet_stdout_logs() -> Iterator[None]:
         with _lock:
             _depth -= 1
             if _depth == 0 and _saved_levels is not None:
-                # frob:waive PERF003 reason="two single-pass loops, not nested"
                 for h, level in zip(stdout_handlers, _saved_levels, strict=True):
                     h.setLevel(level)
                 _saved_levels = None

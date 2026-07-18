@@ -45,7 +45,6 @@ def test_search(tmp_path):
     assert any("widget" in m.heading.lower() for m in matches)
 
 
-# frob:waive PERF003 reason="fixture-write helper loop plus sibling equality asserts over docs search results; not a nested join"
 def test_docs_module_integration(tmp_path):
     # frob:tests src/frob/docs kind="integration"
     # Exercises the docs surface together: docstring extraction over a real

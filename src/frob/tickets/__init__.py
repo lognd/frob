@@ -353,7 +353,6 @@ _SKIP_DIR_NAMES = frozenset(
 )
 
 
-# frob:waive PERF003 reason="single rglob loop, 'in' check vs small frozenset"
 def _tracked_files(root: Path) -> list[Path]:
     """Every git-tracked file under `root`, or (no git repo) every file not
     under a build/vendor/cache directory -- the search space `renumber_one`
@@ -412,8 +411,6 @@ def _scan_code_references(
 
 # frob:ticket T-0162
 # frob:doc docs/modules/tickets.md#public-api
-# frob:waive PERF003 reason="identity mapping comp plus two _apply_renumber calls"
-# frob:waive PERF004 reason="files_changed sorted once for the report, not per-loop"
 # frob:waive TEST005 reason="renumber_one 68.3% branch cover, debt T-0160"
 def renumber_one(
     root: Path, old_id: str, new_id: str, *, dry_run: bool = False

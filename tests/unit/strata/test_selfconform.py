@@ -39,7 +39,6 @@ class TestUndeclaredInterfaceCore:
     `check_capability_conformance` (docs/strata/selfconform.md#the-three-rules)."""
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
-    # frob:waive PERF003 reason="fixture-building tuple literals plus assertion generators over check results, not a nested join (covers all sites in this file)"
     def test_core_undeclared_interface_fires(self, tmp_path: Path):
         _write(
             tmp_path, "src/frob/widget/_io.py", "import requests\nrequests.get('x')\n"

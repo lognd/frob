@@ -322,7 +322,6 @@ def _file_violations(
 
 
 # frob:doc docs/strata/surface.md#code-binding-tier-2-v0-implementation
-# frob:waive PERF003 reason="dict-comp build plus owned-files loop, not nested"
 def check_import_conformance(
     model: KernelModel, binding: CodeBinding, root: Path
 ) -> ConformanceReport:

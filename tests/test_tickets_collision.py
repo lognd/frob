@@ -198,7 +198,6 @@ class TestSweepWorktreeCollisionIncident:
     rewrite `frob ticket renumber <old> <new>` promises, at a scale
     representative of that incident."""
 
-    # frob:waive PERF003 reason="one seeding loop plus a separate verification loop below, not a nested join"
     def test_renumber_one_rewrites_ledger_and_many_code_references(
         self, tmp_path: Path
     ) -> None:
@@ -265,7 +264,6 @@ class TestTick002GateUnwaivable:
     check` loudly and be unwaivable -- the finalize step exists precisely to
     prevent this, so silence here means the invariant quietly broke."""
 
-    # frob:waive PERF003 reason="two independent sorted()/next() generator asserts in this class, not a nested join"
     def test_draft_id_on_default_branch_is_a_violation(self, monkeypatch) -> None:
         # frob:tests src/frob/gates/__init__.py::tickets_gate kind="unit"
         monkeypatch.setattr("frob.gates.on_default_branch", lambda root: True)

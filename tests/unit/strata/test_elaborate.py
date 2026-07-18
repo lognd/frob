@@ -158,7 +158,6 @@ class TestElaborateSecretAndDeploy:
     # T-0136: `secret ID { ... }` / `on deploy { ... }` surface grammar
     # wiring onto the landed T-0082/T-0083 kernel constructs.
     # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
-    # frob:waive PERF003 reason="a set comprehension plus a separate any() assertion, not a nested join"
     def test_secret_desugars_to_issue_revoke_reads_and_readers_claim(self):
         text = """
         module m

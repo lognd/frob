@@ -385,7 +385,6 @@ def _unmodeled_violations(
     now fixed by using the same superset every other rule in this module
     uses."""
     prefix_owned: set[str] = set()
-    # frob:waive PERF003 reason="ownership loop, separate dirs loop below, not a join"
     for rel, owner in binding.owner.items():
         if owner == FOREIGN or not rel.startswith(f"{_PACKAGE_ROOT}/"):
             continue

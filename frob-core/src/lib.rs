@@ -48,7 +48,6 @@ fn r3_canonical_hash(tokens: Vec<String>) -> String {
 #[pyfunction]
 fn winnow_fingerprints(tokens: Vec<String>, k: usize, w: usize) -> Vec<u64> {
     // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
-    // frob:waive PERF003 reason="winnowing scans a sliding window over k-gram hashes; the per-window minimum scan is inherent to the winnowing algorithm"
     if k == 0 || tokens.len() < k {
         return Vec::new();
     }
@@ -142,7 +141,6 @@ fn candidate_pairs(fingerprint_sets: Vec<Vec<u64>>, min_shared: usize) -> Vec<(u
 #[pyfunction]
 fn tree_edit_similarity(a: Vec<u64>, b: Vec<u64>) -> (f64, Vec<(usize, usize)>) {
     // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
-    // frob:waive PERF003 reason="statement-sequence edit distance is an inherently O(n*m) dynamic program over the two hash sequences"
     let n = a.len();
     let m = b.len();
     if n == 0 && m == 0 {
@@ -283,7 +281,6 @@ fn zhang_shasha_distance(
     postorder_b: &[usize],
     lmd_b: &[usize],
 ) -> usize {
-    // frob:waive PERF003 reason="Zhang-Shasha tree edit distance is inherently O(n*m) over the two trees' postorder node sequences"
     let n = postorder_a.len();
     let m = postorder_b.len();
     if n == 0 && m == 0 {
@@ -394,7 +391,6 @@ fn apted_similarity(
 #[pyfunction]
 fn wl_hash(adjacency: Vec<(usize, usize)>, labels: Vec<String>, iterations: usize) -> u64 {
     // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
-    // frob:waive PERF003 reason="Weisfeiler-Lehman refinement re-aggregates every edge's neighbor labels each iteration; the edge loop is inherent to the graph kernel"
     let n = labels.len();
     if n == 0 {
         return 0;

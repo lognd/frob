@@ -349,7 +349,6 @@ def _validate_references(module: Module) -> Result[None, StrataError]:
     known_nodes |= {b.id for b in module.balancers}
     known_nodes |= {s.id for s in module.secrets}
     known_flows = {f.id for f in module.flows}
-    # frob:waive PERF003 reason="two separate single-pass loops, set checks, not a join"
     for boundary in module.boundaries:
         if boundary.flow_id not in known_flows:
             _log.error(

@@ -356,7 +356,6 @@ class TestCheckStampBaselineAndDelta:
         stamp = tmp_path / ".frob" / "baseline"
         assert stamp.exists()
 
-    # frob:waive PERF003 reason="two sibling 'for line in reported' generator asserts plus a != elsewhere, not a nested join"
     def test_delta_reports_only_new_violation(self, tmp_path):
         # frob:tests tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta.test_delta_reports_only_new_violation
         _git("init", "-q", "-b", "main", cwd=tmp_path)

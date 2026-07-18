@@ -55,7 +55,6 @@ class ExportsResult(BaseModel):
             lines.append(f"from {mod.module} import {', '.join(parts)}")
         lines.append("")
         if all_exported:
-            # frob:waive PERF004 reason="one sort of all_exported, not per-iteration"
             quoted = ", ".join(f'"{n}"' for n in sorted(all_exported))
             lines.append(f"__all__ = [{quoted}]")
         return "\n".join(lines)

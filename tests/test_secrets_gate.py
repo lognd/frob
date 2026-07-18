@@ -53,7 +53,6 @@ class TestRedact:
 
 
 class TestFindsTokens:
-    # frob:waive PERF001 reason="one `token not in out` assertion in TestRedact above, not a hot loop"
     def test_stripe_live_key_sec003(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_secrets.py::secrets_gate
         repo = tmp_path / "repo"
@@ -270,7 +269,6 @@ class TestDriftLock:
     silently untested."""
 
     # frob:tests src/frob/gates/_secrets.py::ALL_PROVIDERS
-    # frob:waive PERF003 reason="two sibling for-loops over _PATTERNS/_FIXTURES_BY_PROVIDER, each independent; not a nested join"
     def test_every_provider_has_a_fixture(self, tmp_path: Path) -> None:
         # The actual drift lock: every provider name in the live pattern
         # table must have a matching entry below, or this fails immediately

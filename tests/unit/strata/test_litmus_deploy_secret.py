@@ -85,7 +85,6 @@ class TestDeploySecretGoldens:
         assert result.quantifier is Quantifier.FORALL
 
     # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
-    # frob:waive PERF003 reason="a next() lookup plus a list-comp equality assert, not a nested join"
     def test_on_deploy_lands_on_worker_node(self):
         model = _load_model()
         worker_node = next(n for n in model.nodes if n.id == "worker")

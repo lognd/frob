@@ -817,7 +817,6 @@ class TestCapabilityCompleteness:
 
 
 class TestEvaluateThreats:
-    # frob:waive PERF003 reason="two set comprehensions over small fixtures, not a join"
     # frob:tests src/frob/strata/_threat.py::evaluate_threats kind="unit"
     def test_conjoins_catalog_and_discharge_violations(self):
         node = Node(id="Web", trust="trusted", may=("html_render",))
