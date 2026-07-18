@@ -9,6 +9,12 @@ forms below are the complete vocabulary in which such rules may be written
 
 ## The five forms
 
+<!-- frob:describes src/frob/strata/_ast.py::ForbidCall -->
+<!-- frob:describes src/frob/strata/_ast.py::ForbidImport -->
+<!-- frob:describes src/frob/strata/_ast.py::ConfineUse -->
+<!-- frob:describes src/frob/strata/_ast.py::AtCallRequire -->
+<!-- frob:describes src/frob/strata/_ast.py::Mediate -->
+
 | Form | Shape | Example |
 |---|---|---|
 | **Prohibition** | no occurrence of pattern P in scope S | `forbid call eval, exec` |
@@ -25,6 +31,9 @@ declarable). Structural rules quantify over frob graph symbols rather
 than raw tokens.
 
 ## Semantic scoping
+
+<!-- frob:describes src/frob/strata/_ast.py::ScopeSpec -->
+<!-- frob:describes src/frob/strata/_ast.py::PolicyDecl -->
 
 Policies attach to model entities, not paths:
 
@@ -43,6 +52,11 @@ it (a weakening is a refinement error).
 
 ## Compilation
 
+<!-- frob:describes src/frob/strata/_policy.py::compile_policies -->
+<!-- frob:describes src/frob/strata/_policy.py::CompiledPolicy -->
+<!-- frob:describes src/frob/strata/_policy.py::CompiledPolicies -->
+<!-- frob:describes src/frob/strata/_policy.py::CompiledPolicies.enabling -->
+
 Surface patterns (`call`, `import`, `attribute`, `decorator`, `arg`,
 `string`) compile to per-language tree-sitter queries across all
 `frob.lang` grammars; exotic cases drop to a raw per-language tree-sitter
@@ -51,6 +65,8 @@ query as the escape hatch. Mechanically this extends the existing
 resolution and `enables` bookkeeping rather than replacing it.
 
 ## Packs
+
+<!-- frob:describes src/frob/strata/_packs.py::require_analyzable -->
 
 Named, versioned bundles of policies:
 
@@ -64,6 +80,33 @@ Named, versioned bundles of policies:
 
 The base pack is self-defending: it contains the anti-aliasing rules that
 keep its own prohibitions sound.
+
+## v0 implementation
+
+What compiles now (T-0067/T-0068): the surface grammar for all five
+`policy_rule` forms and `SCOPESPEC` (`strata-core/src/parse.rs`), typed
+AST models with `enables`/`rationale` split out as policy-level metadata
+(`_ast.py::PolicyDecl`), and `compile_policies` (`_policy.py`) -- semantic
+scope resolution against the elaborated `KernelModel` (component name,
+or a trust/label lattice floor via `Lattice.leq`), producing a frozen
+`CompiledPolicies` handoff artifact per policy: resolved node ids, the
+typed rule set, and `enables` atoms.
+
+What does not compile yet: TIER-2 execution -- turning `rules` into actual
+per-language tree-sitter queries run over real source files -- is phase 4
+(T-0079/T-0080). `CompiledPolicies` is exactly the artifact that phase-4
+file scanning will consume; nothing here reads a file off disk.
+
+**Auto-inject amendment.** `docs/strata/policy.md#packs` above states
+`std.policy.analyzable` is mandatory for any `trusted` component. v0
+enforces that by auto-injecting the pack (`_packs.py::require_analyzable`)
+into a module that declares a trusted component without it, rather than
+failing the module -- logged at WARNING since it silently changes what is
+checked. Rationale: the pack is mandatory regardless of whether it is
+spelled out, so refusing to proceed without an explicit declaration would
+only add friction, not safety; declaring the policy id yourself is instead
+how you override individual pack members (the auto-inject step is a no-op
+once the id is already present).
 
 ## Honesty
 

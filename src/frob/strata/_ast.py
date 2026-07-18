@@ -11,7 +11,9 @@ invariant, and the kernel never has to know source syntax.
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict
+from typing import Any, Literal, cast
+
+from pydantic import BaseModel, ConfigDict, model_validator
 
 from ._models import Quantity
 
@@ -177,6 +179,126 @@ class BalancerDecl(BaseModel):
     sticky: bool = False
 
 
+# frob:doc docs/strata/policy.md#semantic-scoping
+class ScopeSpec(BaseModel):
+    """A policy's semantic scope: a component name, or a trust/label lattice floor."""
+
+    model_config = ConfigDict(frozen=True)
+
+    kind: str  # "component" | "trust" | "label" -- closed by the grammar
+    value: str
+
+
+# frob:doc docs/strata/policy.md#the-five-forms
+class ForbidCall(BaseModel):
+    """A parsed `forbid call IDENTLIST` policy rule (prohibition form)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    kind: Literal["forbid_call"] = "forbid_call"
+    idents: tuple[str, ...]
+
+
+# frob:doc docs/strata/policy.md#the-five-forms
+class ForbidImport(BaseModel):
+    """A parsed `forbid import IDENTLIST` policy rule (prohibition form)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    kind: Literal["forbid_import"] = "forbid_import"
+    idents: tuple[str, ...]
+
+
+# frob:doc docs/strata/policy.md#the-five-forms
+class ConfineUse(BaseModel):
+    """A parsed `confine use IDENT to STRING` policy rule (confinement form)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    kind: Literal["confine_use"] = "confine_use"
+    ident: str
+    home: str
+
+
+# frob:doc docs/strata/policy.md#the-five-forms
+class AtCallRequire(BaseModel):
+    """A parsed `at call IDENT require arg IDENT` rule (obligation-at-site form)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    kind: Literal["at_call_require_arg"] = "at_call_require_arg"
+    ident: str
+    arg: str
+
+
+# frob:doc docs/strata/policy.md#the-five-forms
+class Mediate(BaseModel):
+    """A parsed `mediate IDENT via STRING` policy rule (chokepoint form)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    kind: Literal["mediate"] = "mediate"
+    ident: str
+    mediator: str
+
+
+#: The typed union of syntactic policy_rule forms compiled by `_policy.py`;
+#: `enables`/`rationale` are policy-level metadata, not patterns, and are
+#: split out of the raw rule list before this union ever sees it (below).
+PolicyRule = ForbidCall | ForbidImport | ConfineUse | AtCallRequire | Mediate
+
+
+# frob:doc docs/strata/policy.md#semantic-scoping
+class PolicyDecl(BaseModel):
+    """A parsed `policy ID on SCOPESPEC { ... }` statement, one entry in a `Module`."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: str
+    scope: ScopeSpec
+    rules: tuple[PolicyRule, ...] = ()
+    enables: tuple[str, ...] = ()
+    rationale: tuple[str, ...] = ()
+
+    @model_validator(mode="before")
+    @classmethod
+    def _split_meta_rules(cls, data: object) -> object:
+        """Pull `enables`/`rationale` entries out of the parser's raw rule list.
+
+        WHY: the surface grammar treats `enables`/`rationale` as ordinary
+        policy_rule alternatives so they can be interleaved with the
+        pattern rules in source order (docs/strata/policy.md#the-five-
+        forms), but semantically they are policy metadata rather than
+        compiled patterns. This is the single place that performs the
+        split, before the typed `PolicyRule` union ever sees the list --
+        keeping every downstream consumer (`_policy.py`) working with an
+        already-separated `rules`/`enables`/`rationale` shape.
+        """
+        if not isinstance(data, dict):
+            return data
+        payload = cast("dict[str, Any]", data)
+        raw_rules = payload.get("rules")
+        if not isinstance(raw_rules, list):
+            return data
+        rules: list[Any] = []
+        enables: list[Any] = list(payload.get("enables") or ())
+        rationale: list[Any] = list(payload.get("rationale") or ())
+        for entry in raw_rules:
+            entry_kind = entry.get("kind") if isinstance(entry, dict) else None
+            if entry_kind == "enables":
+                enables.append(entry["atom"])
+            elif entry_kind == "rationale":
+                rationale.append(entry["text"])
+            else:
+                rules.append(entry)
+        return {
+            **payload,
+            "rules": rules,
+            "enables": tuple(enables),
+            "rationale": tuple(rationale),
+        }
+
+
 # frob:doc docs/strata/surface.md#parser
 class Module(BaseModel):
     """A whole parsed source file: exactly the shape the Rust parser emits."""
@@ -194,3 +316,4 @@ class Module(BaseModel):
     queues: tuple[QueueDecl, ...] = ()
     cdns: tuple[CdnDecl, ...] = ()
     balancers: tuple[BalancerDecl, ...] = ()
+    policies: tuple[PolicyDecl, ...] = ()

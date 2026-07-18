@@ -2409,7 +2409,7 @@ non-incomplete conservatism.
 ```yaml
 id: T-0067
 title: 'strata policy sublanguage: 5 forms, semantic scoping, tree-sitter compilation'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-17'
@@ -2426,18 +2426,44 @@ scope:
 - src/frob/strata/**
 - src/frob/policy/**
 - tests/**
-evidence: []
+evidence:
+- tests/unit/strata/test_policy.py::TestGrammarRoundTrip::test_forbid_call_round_trips
+- tests/unit/strata/test_policy.py::TestScopeResolution::test_trust_scope_resolves_via_lattice
+- tests/unit/strata/test_policy.py::TestScopeResolution::test_unknown_component_scope_fails_closed
 attachments: []
 acceptance: []
 threat: null
 ```
 forbid/confine/at-require/mediate/structural, scoped over the model (trust level, component, label) and resolved to files via code globs; compiles to per-language tree-sitter queries; extends existing POL machinery.
 
+## Done report
+
+Changed: strata-core/src/parse.rs (policy grammar, dotted idents, `>=`),
+src/frob/strata/_ast.py (ScopeSpec/ForbidCall/ForbidImport/ConfineUse/
+AtCallRequire/Mediate/PolicyRule/PolicyDecl, Module.policies), new
+src/frob/strata/_policy.py (CompiledPolicy/CompiledPolicies/
+compile_policies), src/frob/strata/__init__.py exports.
+Evidence: 65 cargo tests green (not listed per policy: COV003 cannot
+resolve cargo ids); 3 pytest node ids above out of 19 new tests, all
+green; full `tests/unit/strata` suite (154 tests) green.
+Filed: none.
+Correction (post-review): the evidence block originally used mapping
+syntax (`- pytest_node_id: ...`), which broke `frob ticket show`
+(MalformedFrontmatter) and made every subsequent `frob check` run
+against an unloadable queue -- the "gates clean" claim below was never
+actually verified. Fixed to plain string node ids; re-ran for real
+after `frob graph build` + `frob ticket sweep T-0067` (T-0068 swept
+last). `frob check --ticket T-0067` now actually executes the gates
+stage (clones/coverage/decisions/doclink/drift/fuzz/invariant/perf/
+policy/release/test all ran, exit 0, no skip) and shows `pass gates
+118 violation(s), 6 waived`. Plain `frob check` also exit 0, gates
+stage executed. ruff format/check and ty remain clean.
+
 <!-- ticket:T-0068 -->
 ```yaml
 id: T-0068
 title: strata std.policy.analyzable base pack + enables soundness cascade
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-07-17'
@@ -2453,12 +2479,43 @@ scope:
 - design/litmus/**
 - src/frob/strata/**
 - tests/**
-evidence: []
+evidence:
+- tests/unit/strata/test_packs.py::TestAutoInjection::test_trusted_component_without_pack_gets_it_injected
+- tests/unit/strata/test_packs.py::TestEnablesCascade::test_waived_pack_downgrades_noflow_but_not_bound
+- tests/unit/strata/test_packs.py::TestEnablesCascade::test_end_to_end_parse_elaborate_compile_evaluate
+- tests/unit/strata/test_packs.py::TestEnablesCascade::test_waiving_a_policy_that_enables_nothing_downgrades_nothing
+- tests/unit/strata/test_packs.py::TestEnablesCascade::test_waiving_a_nonexistent_policy_id_is_a_logged_no_op
 attachments: []
 acceptance: []
 threat: elevation-of-privilege
 ```
 Mandatory for trusted components: no eval/exec/dynamic import/reflection dispatch, FFI only via frob bind, anti-aliasing rules. Policies declare enables; waiving one downgrades every dependent claim PROVED -> ASSUMED automatically.
+
+## Done report
+
+Changed: new src/frob/strata/_packs.py (ANALYZABLE pack data,
+require_analyzable auto-inject seam), src/frob/strata/_elaborate.py
+(calls require_analyzable), src/frob/strata/_claims.py (evaluate_claims
+gains compiled_policies/waived_policies, enables-cascade downgrade
+logic), src/frob/strata/__init__.py exports, docs/strata/policy.md
+(v0 implementation + auto-inject amendment), docs/strata/evidence.md
+(v0 dependency rule).
+Evidence: 5 pytest node ids above out of 8 pack tests (2 added in
+review round 2: waiving a no-enables policy is a no-op; waiving a
+nonexistent policy id is a logged no-op, not a crash), all green;
+full `tests/unit/strata` suite green.
+Filed: none.
+Correction (post-review): the evidence block originally used mapping
+syntax (`- pytest_node_id: ...`), which broke `frob ticket show`
+(MalformedFrontmatter) and made every subsequent `frob check` run
+against an unloadable queue -- the "gates clean" claim below was never
+actually verified. Fixed to plain string node ids; re-ran for real
+after `frob graph build` + `frob ticket sweep T-0067` then
+`T-0068` (sweep last). `frob check --ticket T-0068` now actually
+executes the gates stage (clones/coverage/decisions/doclink/drift/
+fuzz/invariant/perf/policy/release/test all ran, exit 0, no skip) and
+shows `pass gates 118 violation(s), 6 waived`. Plain `frob check` also
+exit 0, gates stage executed. ruff format/check and ty remain clean.
 
 <!-- ticket:T-0069 -->
 ```yaml
@@ -3236,3 +3293,25 @@ acceptance: []
 threat: null
 ```
 typani campaign gap report: frob:waive suppresses gates-channel rule ids only; a waive on an arch long-function finding has no effect and fails silently. Either honor waivers in the arch/dup tool channels or make the waive command error when targeting an unwaivable channel.
+
+<!-- ticket:T-0102 -->
+```yaml
+id: T-0102
+title: frob check must FAIL, not silently pass, when the ticket queue fails to load
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-17'
+blocked_by: []
+parent: null
+scope:
+- src/frob/check/**
+- src/frob/gates/**
+- src/frob/tickets/**
+- tests/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Found during T-0067/68 review: a malformed evidence block in tickets.md made load_queue fail; frob check printed 'gates skipped: Ticket queue failed to load' and EXITED 0 -- every obligation gate silently vanished while reporting success (the vacuous-pass class again). A queue load failure must be a hard error with remedy text. Companion fix: frob ticket new/close should validate evidence schema on write so malformed entries cannot land at all.

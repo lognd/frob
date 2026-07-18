@@ -9,16 +9,24 @@ learn a surface vocabulary word (charter law 1).
 from __future__ import annotations
 
 from frob.strata._ast import (
+    AtCallRequire,
     BalancerDecl,
     BoundaryDecl,
     CacheDecl,
     CdnDecl,
     ClaimDecl,
+    ConfineUse,
     FlowDecl,
+    ForbidCall,
+    ForbidImport,
+    Mediate,
     Module,
     NodeDecl,
+    PolicyDecl,
+    PolicyRule,
     QueueDecl,
     RefineDecl,
+    ScopeSpec,
     StoreDecl,
 )
 from frob.strata._ast import (
@@ -58,12 +66,17 @@ from frob.strata._models import (
     SetTrust,
     Verdict,
 )
+from frob.strata._packs import ANALYZABLE, ANALYZABLE_POLICY_ID, require_analyzable
 from frob.strata._parse import parse_module
+from frob.strata._policy import CompiledPolicies, CompiledPolicy, compile_policies
 from frob.strata._report import render_report, summarize
 
 __all__ = [
+    "ANALYZABLE",
+    "ANALYZABLE_POLICY_ID",
     "LABELS",
     "TRUST",
+    "AtCallRequire",
     "BalancerDecl",
     "Boundary",
     "BoundaryDecl",
@@ -73,6 +86,9 @@ __all__ = [
     "Capacity",
     "CdnDecl",
     "ClaimDecl",
+    "CompiledPolicies",
+    "CompiledPolicy",
+    "ConfineUse",
     "FactBase",
     "Claim",
     "ClaimBody",
@@ -80,15 +96,20 @@ __all__ = [
     "Flow",
     "FlowCondition",
     "FlowDecl",
+    "ForbidCall",
+    "ForbidImport",
     "InfraExpansion",
     "KernelModel",
     "Lattice",
+    "Mediate",
     "Metric",
     "Module",
     "Node",
     "NodeDecl",
     "NoFlow",
     "Outcome",
+    "PolicyDecl",
+    "PolicyRule",
     "Quantifier",
     "Quantity",
     "QueueDecl",
@@ -99,16 +120,19 @@ __all__ = [
     "Rung",
     "ScaleRate",
     "Scenario",
+    "ScopeSpec",
     "SetTrust",
     "StoreDecl",
     "StrataError",
     "SurfaceCapacity",
     "Verdict",
     "build_facts",
+    "compile_policies",
     "elaborate",
     "elaborate_infra",
     "evaluate_claims",
     "parse_module",
     "render_report",
+    "require_analyzable",
     "summarize",
 ]

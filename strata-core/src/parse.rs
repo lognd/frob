@@ -177,7 +177,10 @@ fn lex(text: &str) -> Result<Vec<Token>, ParseError> {
             });
             continue;
         }
-        if matches!(c, ':' | '{' | '}' | ';' | '(' | ')' | '%' | '/' | '=' | '<') {
+        if matches!(
+            c,
+            ':' | '{' | '}' | ';' | '(' | ')' | '%' | '/' | '=' | '<' | '>' | '.' | ','
+        ) {
             advance!();
             toks.push(Token {
                 kind: TokKind::Symbol(c),
@@ -225,6 +228,7 @@ struct ModuleAst {
     queues: Vec<serde_json::Value>,
     cdns: Vec<serde_json::Value>,
     balancers: Vec<serde_json::Value>,
+    policies: Vec<serde_json::Value>,
 }
 
 impl Parser {
@@ -1015,6 +1019,148 @@ impl Parser {
         }
     }
 
+    fn expect_ge(&mut self) -> Result<(), ParseError> {
+        // '>=' is two raw chars, both lexed as individual Symbols; SCOPESPEC
+        // ("trust >= IDENT", "label >= IDENT") is the only user (parse.md
+        // #policy T-0067), same pairing trick as expect_le for '<='.
+        match self.cur().kind {
+            TokKind::Symbol('>') => {
+                self.advance();
+                self.expect_symbol('=')
+            }
+            _ => self.err("expected >="),
+        }
+    }
+
+    /// DOTTEDIDENT := IDENT ('.' IDENT)*, collapsed into one dotted string so
+    /// call/import targets like `importlib.import_module` round-trip as a
+    /// single atom (docs/strata/policy.md#the-five-forms, T-0067).
+    fn parse_dotted_ident(&mut self, what: &str) -> Result<String, ParseError> {
+        let mut s = self.expect_ident(what)?;
+        while self.at_symbol('.') {
+            self.advance();
+            let part = self.expect_ident("dotted identifier component")?;
+            s.push('.');
+            s.push_str(&part);
+        }
+        Ok(s)
+    }
+
+    /// IDENTLIST := DOTTEDIDENT (',' DOTTEDIDENT)*
+    fn parse_dotted_ident_list(&mut self, what: &str) -> Result<Vec<String>, ParseError> {
+        let mut list = vec![self.parse_dotted_ident(what)?];
+        while self.at_symbol(',') {
+            self.advance();
+            list.push(self.parse_dotted_ident(what)?);
+        }
+        Ok(list)
+    }
+
+    /// SCOPESPEC := "component" IDENT | "trust" ">=" IDENT | "label" ">=" IDENT
+    fn parse_scope_spec(&mut self) -> Result<serde_json::Value, ParseError> {
+        if self.at_keyword("component") {
+            self.advance();
+            let name = self.expect_ident("component name")?;
+            Ok(json!({"kind": "component", "value": name}))
+        } else if self.at_keyword("trust") {
+            self.advance();
+            self.expect_ge()?;
+            let level = self.expect_ident("trust level")?;
+            Ok(json!({"kind": "trust", "value": level}))
+        } else if self.at_keyword("label") {
+            self.advance();
+            self.expect_ge()?;
+            let level = self.expect_ident("label level")?;
+            Ok(json!({"kind": "label", "value": level}))
+        } else {
+            self.err("expected component, trust >=, or label >= scope")
+        }
+    }
+
+    /// policy_rule := "forbid" ("call" | "import") IDENTLIST
+    ///              | "confine" "use" DOTTEDIDENT "to" STRING
+    ///              | "at" "call" DOTTEDIDENT "require" "arg" IDENT
+    ///              | "mediate" DOTTEDIDENT "via" STRING
+    ///              | "enables" IDENT
+    ///              | "rationale" STRING
+    fn parse_policy_rule(&mut self) -> Result<serde_json::Value, ParseError> {
+        if self.at_keyword("forbid") {
+            self.advance();
+            if self.at_keyword("call") {
+                self.advance();
+                let idents = self.parse_dotted_ident_list("forbidden call target")?;
+                Ok(json!({"kind": "forbid_call", "idents": idents}))
+            } else if self.at_keyword("import") {
+                self.advance();
+                let idents = self.parse_dotted_ident_list("forbidden import target")?;
+                Ok(json!({"kind": "forbid_import", "idents": idents}))
+            } else {
+                self.err("expected call or import after forbid")
+            }
+        } else if self.at_keyword("confine") {
+            self.advance();
+            self.expect_keyword("use")?;
+            let ident = self.parse_dotted_ident("confined symbol")?;
+            self.expect_keyword("to")?;
+            let home = self.expect_string("confinement home path")?;
+            Ok(json!({"kind": "confine_use", "ident": ident, "home": home}))
+        } else if self.at_keyword("at") {
+            self.advance();
+            self.expect_keyword("call")?;
+            let ident = self.parse_dotted_ident("call site target")?;
+            self.expect_keyword("require")?;
+            self.expect_keyword("arg")?;
+            let arg = self.expect_ident("required argument name")?;
+            Ok(json!({"kind": "at_call_require_arg", "ident": ident, "arg": arg}))
+        } else if self.at_keyword("mediate") {
+            self.advance();
+            let ident = self.parse_dotted_ident("mediated capability")?;
+            self.expect_keyword("via")?;
+            let mediator = self.expect_string("mediator reference")?;
+            Ok(json!({"kind": "mediate", "ident": ident, "mediator": mediator}))
+        } else if self.at_keyword("enables") {
+            self.advance();
+            let atom = self.expect_ident("enabled atom")?;
+            Ok(json!({"kind": "enables", "atom": atom}))
+        } else if self.at_keyword("rationale") {
+            self.advance();
+            let text = self.expect_string("rationale text")?;
+            Ok(json!({"kind": "rationale", "text": text}))
+        } else {
+            self.err("unknown policy rule")
+        }
+    }
+
+    /// policy := "policy" IDENT "on" SCOPESPEC "{" policy_rule (";" policy_rule)* ";"? "}"
+    fn parse_policy(&mut self, ast: &mut ModuleAst) -> Result<(), ParseError> {
+        self.advance(); // 'policy'
+        // dotted so pack ids like `std.policy.analyzable` are legal policy
+        // ids (docs/strata/policy.md#packs, T-0068)
+        let id = self.parse_dotted_ident("policy id")?;
+        self.expect_keyword("on")?;
+        let scope = self.parse_scope_spec()?;
+        self.expect_symbol('{')?;
+        let mut rules: Vec<serde_json::Value> = Vec::new();
+        loop {
+            if self.at_symbol('}') {
+                break;
+            }
+            rules.push(self.parse_policy_rule()?);
+            if self.at_symbol(';') {
+                self.advance();
+            } else {
+                break;
+            }
+        }
+        self.expect_symbol('}')?;
+        ast.policies.push(json!({
+            "id": id,
+            "scope": scope,
+            "rules": rules,
+        }));
+        Ok(())
+    }
+
     fn expect_le(&mut self) -> Result<(), ParseError> {
         // '<=' is two raw chars neither of which is in the lexer's symbol
         // set; recognize them here off the *unconsumed* source is not
@@ -1067,7 +1213,7 @@ impl Parser {
             match kw.as_str() {
                 "module" => self.parse_module(&mut ast, &mut seen_module)?,
                 "node" | "flow" | "boundary" | "assert" | "assume" | "refine" | "store"
-                | "cache" | "queue" | "cdn" | "balancer" => {
+                | "cache" | "queue" | "cdn" | "balancer" | "policy" => {
                     if !seen_module {
                         return self.err("statement before module declaration");
                     }
@@ -1083,6 +1229,7 @@ impl Parser {
                         "queue" => self.parse_queue(&mut ast)?,
                         "cdn" => self.parse_cdn(&mut ast)?,
                         "balancer" => self.parse_balancer(&mut ast)?,
+                        "policy" => self.parse_policy(&mut ast)?,
                         _ => unreachable!(),
                     }
                 }
@@ -1593,6 +1740,140 @@ mod tests {
         // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
         let e = err("module m\nbalancer b { bogus x; }");
         assert_eq!(e["message"], "unknown balancer property");
+    }
+
+    #[test]
+    fn parses_policy_forbid_call_and_import() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok(r#"module m
+            policy NoDynamicCode on trust >= trusted {
+                forbid call eval, exec, importlib.import_module;
+                forbid import ctypes
+            }"#);
+        let p = &v["policies"][0];
+        assert_eq!(p["id"], "NoDynamicCode");
+        assert_eq!(p["scope"]["kind"], "trust");
+        assert_eq!(p["scope"]["value"], "trusted");
+        assert_eq!(p["rules"][0]["kind"], "forbid_call");
+        assert_eq!(p["rules"][0]["idents"][2], "importlib.import_module");
+        assert_eq!(p["rules"][1]["kind"], "forbid_import");
+        assert_eq!(p["rules"][1]["idents"][0], "ctypes");
+    }
+
+    #[test]
+    fn parses_policy_confine_use() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok(r#"module m
+            policy DbConfine on component Api {
+                confine use psycopg to "src/api/db.py"
+            }"#);
+        let r = &v["policies"][0]["rules"][0];
+        assert_eq!(r["kind"], "confine_use");
+        assert_eq!(r["ident"], "psycopg");
+        assert_eq!(r["home"], "src/api/db.py");
+    }
+
+    #[test]
+    fn parses_policy_at_call_require_arg() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok(r#"module m
+            policy TimeoutRequired on component Api {
+                at call subprocess.run require arg timeout
+            }"#);
+        let r = &v["policies"][0]["rules"][0];
+        assert_eq!(r["kind"], "at_call_require_arg");
+        assert_eq!(r["ident"], "subprocess.run");
+        assert_eq!(r["arg"], "timeout");
+    }
+
+    #[test]
+    fn parses_policy_mediate() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok(r#"module m
+            policy DbChokepoint on component Api {
+                mediate db.write via "db.py::TenantScopedSession"
+            }"#);
+        let r = &v["policies"][0]["rules"][0];
+        assert_eq!(r["kind"], "mediate");
+        assert_eq!(r["ident"], "db.write");
+        assert_eq!(r["mediator"], "db.py::TenantScopedSession");
+    }
+
+    #[test]
+    fn parses_policy_enables_and_rationale() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok(r#"module m
+            policy NoDynamicCode on trust >= trusted {
+                forbid call eval;
+                enables extraction_soundness;
+                rationale "static closure requires no dynamic dispatch"
+            }"#);
+        let rules = v["policies"][0]["rules"].as_array().unwrap();
+        assert_eq!(rules[1]["kind"], "enables");
+        assert_eq!(rules[1]["atom"], "extraction_soundness");
+        assert_eq!(rules[2]["kind"], "rationale");
+        assert_eq!(
+            rules[2]["text"],
+            "static closure requires no dynamic dispatch"
+        );
+    }
+
+    #[test]
+    fn parses_policy_label_scope() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok(r#"module m
+            policy NoPiiInLogs on label >= Pii {
+                forbid call logging.info
+            }"#);
+        assert_eq!(v["policies"][0]["scope"]["kind"], "label");
+        assert_eq!(v["policies"][0]["scope"]["value"], "Pii");
+    }
+
+    #[test]
+    fn parses_policy_bare_no_rules() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok("module m\npolicy Empty on component Api {}");
+        assert_eq!(v["policies"][0]["rules"].as_array().unwrap().len(), 0);
+    }
+
+    #[test]
+    fn error_policy_unknown_scope_keyword() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let e = err("module m\npolicy P on bogus X { forbid call eval }");
+        assert_eq!(e["message"], "expected component, trust >=, or label >= scope");
+    }
+
+    #[test]
+    fn error_policy_trust_scope_missing_ge() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let e = err("module m\npolicy P on trust trusted { forbid call eval }");
+        assert_eq!(e["message"], "expected >=");
+    }
+
+    #[test]
+    fn error_policy_unknown_rule() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let e = err("module m\npolicy P on component Api { bogus x }");
+        assert_eq!(e["message"], "unknown policy rule");
+    }
+
+    #[test]
+    fn error_policy_forbid_missing_call_or_import() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let e = err("module m\npolicy P on component Api { forbid eval }");
+        assert_eq!(e["message"], "expected call or import after forbid");
+    }
+
+    #[test]
+    fn dotted_ident_list_round_trips_multiple_dots() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok(r#"module m
+            policy P on component Api {
+                forbid call a.b.c, d
+            }"#);
+        let idents = v["policies"][0]["rules"][0]["idents"].as_array().unwrap();
+        assert_eq!(idents[0], "a.b.c");
+        assert_eq!(idents[1], "d");
     }
 
     #[test]

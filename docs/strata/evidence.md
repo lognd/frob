@@ -60,6 +60,8 @@ keep discharging claims.
 
 ## The enables cascade (soundness dependencies, mechanized)
 
+<!-- frob:describes src/frob/strata/_claims.py::evaluate_claims -->
+
 Some L4 policies are not hygiene but preconditions for other proofs:
 import-closure conformance is meaningless if code can `eval`; detection
 SLAs are meaningless if the error paths they watch stop logging. Policies
@@ -78,6 +80,29 @@ into the assumption ledger with owner and expiry. Exceptions remain
 possible; silent exceptions do not. The mandatory `std.policy.analyzable`
 pack (T-0068) is the root of most cascades: without it a component may not
 claim `trusted` at all.
+
+### v0 dependency rule
+
+`_claims.py::evaluate_claims` implements the mechanism above for exactly
+one soundness atom, `extraction_soundness`, with a fixed, hand-declared
+dependency rule (finer per-claim dependency inference is a later phase):
+
+- every `noflow` and `reach` claim's PROVED verdict depends on
+  `extraction_soundness` -- both are influence-path closures over the
+  model, and that closure is only as sound as the code's call/import graph
+  actually being what the model says it is;
+- `bound` claims never depend on it in v0 -- they are arithmetic over
+  declared quantities (rate, age, size, utilization), not path closures,
+  so nothing about dynamic dispatch touches their proof.
+
+When a policy id in `evaluate_claims`'s `waived_policies` both appears in
+`compiled_policies` and declares `enables extraction_soundness`, every
+PROVED `noflow`/`reach` verdict downgrades to ASSUMED with `detail =
+"soundness dependency extraction_soundness waived via <policy-id>"` (the
+lexicographically-first enabling policy id when several are waived) -- the
+verdict's `quantifier` is left unchanged (still `forall`), only the
+verdict itself moves, and the downgrade is logged at WARNING per affected
+claim.
 
 ## The assumption ledger
 

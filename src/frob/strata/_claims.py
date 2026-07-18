@@ -30,6 +30,8 @@ from ._models import (
     Reach,
     Verdict,
 )
+from ._packs import EXTRACTION_SOUNDNESS
+from ._policy import CompiledPolicies
 
 _log = get_logger(__name__)
 
@@ -363,21 +365,55 @@ def _eval_assumed(claim: Claim, today: _dt.date) -> ClaimResult:
     )
 
 
+def _cascade_detail(
+    compiled_policies: CompiledPolicies | None, waived_policies: frozenset[str]
+) -> str | None:
+    """The downgrade detail string when a waived policy enables extraction_soundness.
+
+    v0 dependency rule (docs/strata/evidence.md#the-enables-cascade): all
+    noflow and reach claims depend on `extraction_soundness`; bound claims
+    do not. Picking the lexicographically-first enabling policy id keeps
+    the detail deterministic when several waived policies enable the same
+    atom.
+    """
+    if compiled_policies is None or not waived_policies:
+        return None
+    enabling_ids = sorted(
+        p.id
+        for p in compiled_policies.policies
+        if p.id in waived_policies and EXTRACTION_SOUNDNESS in p.enables
+    )
+    if not enabling_ids:
+        return None
+    return f"soundness dependency {EXTRACTION_SOUNDNESS} waived via {enabling_ids[0]}"
+
+
 # frob:doc docs/strata/kernel.md#claim-evaluation
 def evaluate_claims(
-    model: KernelModel, *, today: _dt.date | None = None
+    model: KernelModel,
+    *,
+    today: _dt.date | None = None,
+    compiled_policies: CompiledPolicies | None = None,
+    waived_policies: frozenset[str] = frozenset(),
 ) -> Result[tuple[ClaimResult, ...], StrataError]:
     """Evaluate every claim in the model against the tier-1 closure.
 
     Fails closed on a malformed model or claim reference; otherwise every
     claim yields exactly one result, in declaration order, so a report can
-    never silently drop a claim.
+    never silently drop a claim. When `waived_policies` names an id in
+    `compiled_policies` that `enables extraction_soundness`, every PROVED
+    noflow/reach verdict downgrades to ASSUMED with a detail recording
+    which policy waiver caused it -- quantifier-preserving, logged at
+    WARNING per affected claim (docs/strata/evidence.md#the-enables-
+    cascade). Bound claims never depend on this atom in v0 and are never
+    downgraded by it.
     """
     facts_result = build_facts(model)
     if facts_result.is_err:
         return Err(facts_result.danger_err)
     facts = facts_result.danger_ok
     current = today or _dt.date.today()
+    cascade_detail = _cascade_detail(compiled_policies, waived_policies)
 
     results: list[ClaimResult] = []
     for claim in model.claims:
@@ -393,7 +429,19 @@ def evaluate_claims(
             outcome = _eval_bound(facts, claim, body, current)
         if outcome.is_err:
             return Err(outcome.danger_err)
-        results.append(outcome.danger_ok)
+        result = outcome.danger_ok
+        if (
+            cascade_detail is not None
+            and isinstance(body, NoFlow | Reach)
+            and result.verdict is Verdict.PROVED
+        ):
+            _log.warning(
+                "claim %s downgraded PROVED -> ASSUMED: %s", claim.id, cascade_detail
+            )
+            result = result.model_copy(
+                update={"verdict": Verdict.ASSUMED, "detail": cascade_detail}
+            )
+        results.append(result)
     _log.info(
         "evaluated %d claim(s): %s",
         len(results),

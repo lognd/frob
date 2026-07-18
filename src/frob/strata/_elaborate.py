@@ -33,6 +33,7 @@ from ._models import (
     NoFlow,
     Reach,
 )
+from ._packs import require_analyzable
 
 _log = get_logger(__name__)
 
@@ -367,6 +368,11 @@ def elaborate(module: Module) -> Result[KernelModel, StrataError]:
     duplicate node/flow ids, a boundary naming an unknown flow, or a
     bound claim naming an unknown target.
     """
+    normalized = require_analyzable(module)
+    if normalized.is_err:
+        return Err(normalized.danger_err)
+    module = normalized.danger_ok
+
     dupes_ok = _validate_no_duplicates(module)
     if dupes_ok.is_err:
         return Err(dupes_ok.danger_err)
