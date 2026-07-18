@@ -2054,7 +2054,7 @@ Confirmed twice (T-0150 review read parse_store directly: no code/may branch, fa
 ```yaml
 id: T-0167
 title: 'frob sys --help: add example invocations and directory-root convention'
-state: queued
+state: in-progress
 kind: docs
 origin: agent
 created: '2026-07-18'

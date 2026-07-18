@@ -901,8 +901,24 @@ def _add_sys_parser(sub) -> None:
     `sys_sub.add_parser` per verb as they land, never replace it. `audit`
     (T-0115) is the checking counterpart to `doc`."""
     # -- sys -------------------------------------------------------------------
+    # frob:ticket T-0167
+    sys_epilog = (
+        "examples:\n"
+        "  frob sys plan design/            plan a ticket tree from design/*.strata\n"
+        "  frob sys plan design/ --apply    write the planned tickets\n"
+        "  frob sys doc design/             render the threat-catalog audit matrix\n"
+        "  frob sys audit design/           check per-family exhaustiveness\n"
+        "  frob sys export design/frob.strata --format seccomp\n"
+        "\n"
+        "convention: <path> is a design root (default '.') containing one or\n"
+        "more *.strata design files, e.g. design/frob.strata -- not a single\n"
+        "source file. Point sys at the directory, not the file."
+    )
     sys_p = sub.add_parser(
-        "sys", help="strata design-model applications (plan, doc, export, ...)"
+        "sys",
+        help="strata design-model applications (plan, doc, export, ...)",
+        epilog=sys_epilog,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     sys_sub = sys_p.add_subparsers(dest="sys_command")
     sys_plan_p = sys_sub.add_parser(

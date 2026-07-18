@@ -1,12 +1,39 @@
 # frob sys
 
 Applications of the strata design model (`docs/strata/roadmap.md` "CLI
-surface (target)"). Three verbs today: `plan` (T-0084, obligation ->
-ticket compiler), `doc` (T-0085, threat-catalog audit matrix), and
-`export` (T-0086, k8s/seccomp/IAM config skeletons). `check`/`trace`/
-`capacity`/`threats` are later phase-5 tickets not yet landed on `main`
--- when they land, this doc and `src/frob/app/sys_runner.py` extend
-rather than get replaced.
+surface (target)"). Four verbs today: `plan` (T-0084, obligation ->
+ticket compiler), `doc` (T-0085, threat-catalog audit matrix), `export`
+(T-0086, k8s/seccomp/IAM config skeletons), and `audit` (T-0115, the
+checking counterpart to `doc`). `check`/`trace`/`capacity`/`threats` are
+later phase-5 tickets not yet landed on `main` -- when they land, this
+doc and `src/frob/app/sys_runner.py` extend rather than get replaced.
+
+## Quickstart (T-0167)
+
+Every `frob sys <verb>` (except `export`) takes a **design root**, not a
+single file: a directory (default `.`) containing one or more `.strata`
+design files under its `design/` subdirectory (or `[strata].design_dir`
+in `frob.toml`). Point the command at the repo root, not at
+`design/frob.strata` directly:
+
+```bash
+frob sys plan design/            # dry-run: print the would-be ticket tree
+frob sys plan design/ --apply    # write the planned tickets
+frob sys doc design/             # threat-catalog audit matrix (owasp-top-10)
+frob sys audit design/           # check per-family exhaustiveness, exit nonzero on gaps
+```
+
+`export` is the one exception: it takes a **path to a single `.strata`
+file** (default `design/frob.strata`), since a config skeleton is
+rendered from one elaborated `KernelModel`, not a directory of models:
+
+```bash
+frob sys export design/frob.strata --format seccomp
+```
+
+`frob sys --help` (and each verb's own `--help`) repeats this
+distinction inline as an epilog -- see `_add_sys_parser` in
+`src/frob/__main__.py`.
 
 ## `frob sys plan`
 
