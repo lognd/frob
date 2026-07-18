@@ -532,7 +532,7 @@ logand.app pilot: THREAT002 (capability kind matches no sink taxonomy entry) fir
 ```yaml
 id: T-0172
 title: managed marker for config-only infra nodes promised in surface.md but unimplemented
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-18'
