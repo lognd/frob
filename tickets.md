@@ -6,7 +6,7 @@ Central ledger managed by `frob ticket` -- one section per ticket.
 ```yaml
 id: T-0156
 title: 'release readiness: version, changelog, packaging, and the release gate'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-18'
