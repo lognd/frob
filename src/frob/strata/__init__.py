@@ -142,6 +142,7 @@ from frob.strata._threat import (
     check_capability_completeness,
     check_catalog_completeness,
     check_discharge_completeness,
+    check_effect_completeness,
     evaluate_threats,
 )
 
@@ -252,6 +253,7 @@ __all__ = [
     "check_capability_conformance",
     "check_catalog_completeness",
     "check_discharge_completeness",
+    "check_effect_completeness",
     "check_import_conformance",
     "compile_policies",
     "elaborate",
