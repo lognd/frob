@@ -615,7 +615,21 @@ def _add_ticket_progress_parsers(ticket_sub) -> list:
         "migrate", help="collapse legacy tickets/*.md into a single tickets.md ledger"
     )
     ticket_renumber_p = ticket_sub.add_parser(
-        "renumber", help="reassign ids to a contiguous T-0001.. sequence"
+        "renumber",
+        help="rewrite one ticket's id everywhere (with <old> <new>), or "
+        "reassign every id to a contiguous T-0001.. sequence (no args)",
+    )
+    ticket_renumber_p.add_argument(
+        "ticket_old_id", metavar="old", nargs="?", default=None
+    )
+    ticket_renumber_p.add_argument(
+        "ticket_new_id", metavar="new", nargs="?", default=None
+    )
+    ticket_renumber_p.add_argument(
+        "--dry-run",
+        dest="ticket_dry_run",
+        action="store_true",
+        help="report what renumber <old> <new> would change without writing",
     )
     return [
         ticket_plan_p,

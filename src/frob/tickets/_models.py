@@ -123,6 +123,22 @@ class TicketSpec(BaseModel):
 
 
 # frob:doc docs/modules/tickets.md#data-models
+# frob:ticket T-0162
+class RenumberReport(BaseModel):
+    """Outcome of `renumber_one`/`finalize_draft`: what changed (or would
+    change, under `--dry-run`) rewriting one ticket id everywhere."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    old_id: str
+    new_id: str
+    ledger_changed: bool
+    files_changed: tuple[str, ...]
+    occurrences: int
+    dry_run: bool
+
+
+# frob:doc docs/modules/tickets.md#data-models
 class TicketQueue(BaseModel):
     """The full set of tickets loaded from tickets/, keyed by id."""
 

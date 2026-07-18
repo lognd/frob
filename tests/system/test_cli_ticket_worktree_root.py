@@ -10,14 +10,25 @@ variant tried here (fresh worktree with no `.frob/`, worktree with its own
 `.frob/`, diverged `tickets.md` content) resolved correctly. These tests
 lock that behavior in so a future change to root resolution cannot silently
 regress it.
+
+T-0162 note: a linked worktree checks out its own branch, which is (by
+definition, since main can't be checked out twice) NOT the repo's default
+branch -- so `frob ticket new` from `wt` here mints a `T-draft-<hex>`
+provisional id, not a sequential `T-####` (the collision-proofing mechanism
+these tests now exercise incidentally). `_new_ticket_id` below extracts
+whatever id was actually minted instead of hardcoding `T-0001`, since the
+root-resolution behavior under test is orthogonal to id allocation.
 """
 
 from __future__ import annotations
 
+import re
 import subprocess
 from pathlib import Path
 
 from tests.system.conftest import run
+
+_CREATED_ID_RE = re.compile(r"created (T-\S+):")
 
 
 def _git(*args: str, cwd: Path) -> None:
@@ -41,6 +52,14 @@ def _init_repo_with_worktree(tmp_path: Path) -> tuple[Path, Path]:
     return main, wt
 
 
+def _new_ticket_id(cli_output: str) -> str:
+    """The id `frob ticket new` reports having created (`created T-####: ...`
+    or `created T-draft-<hex>: ...`) -- see module docstring's T-0162 note."""
+    m = _CREATED_ID_RE.search(cli_output)
+    assert m is not None, f"no 'created T-...' line in: {cli_output!r}"
+    return m.group(1)
+
+
 class TestTicketRootFromLinkedWorktree:
     def test_new_ticket_no_dot_frob_lands_in_worktree(self, tmp_path: Path) -> None:
         """First-ever invocation (no `.frob/` anywhere yet), cwd inside the
@@ -53,10 +72,10 @@ class TestTicketRootFromLinkedWorktree:
         r = run("ticket", "new", "--title", "wt thing", "--kind", "bug", cwd=wt)
         out = r.stdout + r.stderr
         assert r.returncode == 0, out
-        assert "T-0001" in out
+        new_id = _new_ticket_id(out)
 
-        assert "T-0001" in (wt / "tickets.md").read_text()
-        assert "T-0001" not in main.joinpath("tickets.md").read_text()
+        assert new_id in (wt / "tickets.md").read_text()
+        assert new_id not in main.joinpath("tickets.md").read_text()
 
     def test_ticket_new_with_dot_frob_in_worktree_only(self, tmp_path: Path) -> None:
         """A pre-existing `.frob/` inside the worktree (but not main) must
@@ -66,8 +85,9 @@ class TestTicketRootFromLinkedWorktree:
 
         r = run("ticket", "new", "--title", "wt thing 2", "--kind", "bug", cwd=wt)
         assert r.returncode == 0, r.stdout + r.stderr
-        assert "T-0001" in (wt / "tickets.md").read_text()
-        assert "T-0001" not in main.joinpath("tickets.md").read_text()
+        new_id = _new_ticket_id(r.stdout + r.stderr)
+        assert new_id in (wt / "tickets.md").read_text()
+        assert new_id not in main.joinpath("tickets.md").read_text()
 
     def test_ticket_show_reads_worktrees_own_ledger(self, tmp_path: Path) -> None:
         """With diverged tickets.md content between main and the worktree,
@@ -77,8 +97,9 @@ class TestTicketRootFromLinkedWorktree:
 
         r = run("ticket", "new", "--title", "wt-only", "--kind", "bug", cwd=wt)
         assert r.returncode == 0, r.stdout + r.stderr
+        new_id = _new_ticket_id(r.stdout + r.stderr)
 
-        r = run("ticket", "show", "T-0001", cwd=wt)
+        r = run("ticket", "show", new_id, cwd=wt)
         out = r.stdout + r.stderr
         assert r.returncode == 0, out
         assert "wt-only" in out
@@ -107,9 +128,10 @@ class TestTicketRootFromLinkedWorktree:
             cwd=wt,
         )
         assert r.returncode == 0, r.stdout + r.stderr
+        new_id = _new_ticket_id(r.stdout + r.stderr)
 
-        r = run("ticket", "start", "T-0001", cwd=wt)
+        r = run("ticket", "start", new_id, cwd=wt)
         assert r.returncode == 0, r.stdout + r.stderr
 
-        assert (wt / ".frob" / "prework" / "T-0001.json").exists()
+        assert (wt / ".frob" / "prework" / f"{new_id}.json").exists()
         assert not (main / ".frob").exists()

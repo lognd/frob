@@ -38,11 +38,20 @@ _log = get_logger(__name__)
 
 _FRONTMATTER_RE = re.compile(r"\A---\n(.*?\n)---\n(.*)\Z", re.DOTALL)
 _SLUG_RE = re.compile(r"[^a-z0-9]+")
-_TICKET_FILENAME_RE = re.compile(r"^T-(\d{4})-[a-z0-9-]+\.md$")
 
-# Single-file ledger: sections start at a `<!-- ticket:T-#### -->` marker.
+# frob:ticket T-0162
+# `_TICKET_ID_RE`'s alternation matches BOTH a final sequential id (T-####)
+# and a provisional draft id (T-draft-<8 hex chars>, T-0162's collision-proof
+# mechanism) -- every place an id appears in a filename/marker regex must
+# accept both forms, or a draft ticket silently disappears the moment it
+# round-trips through storage.
+_TICKET_ID_RE = r"T-(?:\d{4}|draft-[0-9a-f]{8})"
+_TICKET_FILENAME_RE = re.compile(rf"^({_TICKET_ID_RE})-[a-z0-9-]+\.md$")
+
+# Single-file ledger: sections start at a `<!-- ticket:T-#### -->` marker
+# (or `<!-- ticket:T-draft-<hex> -->` for a not-yet-finalized draft, T-0162).
 _LEDGER_NAME = "tickets.md"
-_LEDGER_MARKER_RE = re.compile(r"(?m)^<!-- ticket:(T-\d{4}) -->[ \t]*$")
+_LEDGER_MARKER_RE = re.compile(rf"(?m)^<!-- ticket:({_TICKET_ID_RE}) -->[ \t]*$")
 _YAML_FENCE_RE = re.compile(r"\A\s*```ya?ml\n(.*?\n)```[ \t]*\n?(.*)\Z", re.DOTALL)
 _LEDGER_HEADER = (
     "# Tickets\n\nCentral ledger managed by `frob ticket` -- one section per ticket.\n"
@@ -170,7 +179,7 @@ def _find_dir_path(root: Path, ticket_id: str) -> Path | None:
     """Locate the legacy file for a ticket id by scanning tickets/."""
     for p in _dir_glob(root):
         m = _TICKET_FILENAME_RE.match(p.name)
-        if m and f"T-{m.group(1)}" == ticket_id:
+        if m and m.group(1) == ticket_id:
             return p
     return None
 

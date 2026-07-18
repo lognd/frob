@@ -28,7 +28,7 @@ def _ticket_dispatch_table() -> dict:
         "start": _start,
         "sweep": _sweep_cmd,
         "migrate": lambda root, _cfg: _migrate(root),
-        "renumber": lambda root, _cfg: _renumber(root),
+        "renumber": _renumber,
         "attach": _attach,
         "block": _block,
         "close": _close,
@@ -225,7 +225,22 @@ def _migrate(root: Path) -> None:
         _log.info("migrated %d ticket(s) into tickets.md; removed tickets/*.md", n)
 
 
-def _renumber(root: Path) -> None:
+# frob:ticket T-0162
+def _renumber(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket renumber <old> <new> [--dry-run]` rewrites one ticket's id
+    everywhere (the first-class replacement for the old T-0157-incident sed);
+    `frob ticket renumber` with no args keeps the legacy full-contiguous
+    renumber (T-0012) for whole-ledger cleanup."""
+    if cfg.ticket_old_id is not None or cfg.ticket_new_id is not None:
+        _renumber_one(root, cfg)
+        return
+    if cfg.ticket_dry_run:
+        _log.error(
+            "frob ticket renumber --dry-run requires <old> <new> "
+            "(no dry-run mode for the whole-ledger form)"
+        )
+        sys.exit(1)
+
     # frob:ticket T-0012
     from frob.tickets import renumber
 
@@ -238,6 +253,37 @@ def _renumber(root: Path) -> None:
         _log.info("renumbered %d ticket(s)", n)
     else:
         _log.info("ids already contiguous")
+
+
+def _renumber_one(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket renumber <old> <new>`: rewrite one ticket's id in the
+    ledger(s) plus every frob: directive reference across the tracked tree."""
+    from frob.tickets import renumber_one
+
+    if cfg.ticket_old_id is None or cfg.ticket_new_id is None:
+        _log.error("frob ticket renumber requires both <old> and <new>, or neither")
+        sys.exit(1)
+
+    result = renumber_one(
+        root, cfg.ticket_old_id, cfg.ticket_new_id, dry_run=cfg.ticket_dry_run
+    )
+    if result.is_err:
+        _log.error("ticket renumber failed: %s", result.danger_err)
+        sys.exit(1)
+    report = result.danger_ok
+    verb = "would rewrite" if report.dry_run else "rewrote"
+    _log.info(
+        "%s %s -> %s: ledger_changed=%s, %d code file(s) / %d reference(s)",
+        verb,
+        report.old_id,
+        report.new_id,
+        report.ledger_changed,
+        len(report.files_changed),
+        report.occurrences,
+    )
+    if report.files_changed:
+        for f in report.files_changed:
+            _log.info("  %s", f)
 
 
 def _plan(root: Path, cfg: AppConfig) -> None:

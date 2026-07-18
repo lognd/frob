@@ -75,6 +75,9 @@ from frob.lang._models import ParsedFile
 from frob.logging import get_logger
 from frob.testing import CollectedTests, collect_python_tests, collect_rust_tests
 from frob.tickets import Ticket, TicketQueue, TicketState, load_queue
+from frob.tickets._provisional import is_draft_id, on_default_branch
+from frob.tickets._store import load_all as _tickets_load_all
+from frob.tickets._store import load_archive as _tickets_load_archive
 
 _log = get_logger(__name__)
 
@@ -379,6 +382,8 @@ _KNOWN_GATE_RULES = frozenset(
         "SYS002",
         "SYS003",
         "SYS004",
+        "TICK001",
+        "TICK002",
     }
 )
 
@@ -392,7 +397,18 @@ _KNOWN_GATE_RULES = frozenset(
 # table is a different, explicit, per-repo mechanism (visible in the
 # frob.toml diff, not a buried code comment) and is NOT blocked here --
 # only the same-repo `frob:waive` directive path is.
-_UNWAIVABLE_RULES = frozenset({"TEST008"})
+#
+# frob:ticket T-0162
+# TICK001/TICK002 join TEST008 for the identical reason: they exist
+# specifically to make the T-0162 ticket-id collision invariant's failure
+# modes loud. TICK001 (duplicate id active+archive) can already only be
+# reached if ledger loading itself becomes more permissive than today's
+# hard Err, and TICK002 (a draft id reaching the default branch) is exactly
+# the "finalize step got skipped" failure this whole mechanism exists to
+# catch -- a `frob:waive TICK002 reason="..."` sitting in the tree would
+# let a live collision risk sit there quietly forever. See the decision
+# record in docs/modules/tickets.md#decision-record-t-0162.
+_UNWAIVABLE_RULES = frozenset({"TEST008", "TICK001", "TICK002"})
 
 
 def _unwaivable_channel_rules() -> frozenset[str]:
@@ -1817,6 +1833,80 @@ def decisions_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]
 
 
 # ---------------------------------------------------------------------------
+# TICK001 / TICK002: ticket-id collision invariant (T-0162, decision record
+# in docs/modules/tickets.md#decision-record-t-0162)
+# ---------------------------------------------------------------------------
+
+
+# frob:ticket T-0162
+def _tick001_duplicate_ids(root: Path) -> tuple[Violation, ...]:
+    """TICK001: an id present in BOTH the active and archive ledgers.
+
+    Defense in depth, not the primary mechanism: `_load_merged` (frob.tickets)
+    already hard-Errs `run_gates` itself (GateError.QueueUnavailable) the
+    moment ledger loading sees this, which is louder than any Violation --
+    the whole `frob check` run refuses to produce a report at all. This rule
+    exists so that stays true even if a future change makes ledger loading
+    more permissive; see the decision record for why duplicate-id detection
+    is split this way instead of only living in one place.
+    """
+    active = _tickets_load_all(root)
+    archived = _tickets_load_archive(root)
+    if active.is_err or archived.is_err:
+        return ()
+    overlap = sorted(set(active.danger_ok) & set(archived.danger_ok))
+    return tuple(
+        Violation(
+            rule="TICK001",
+            severity=Severity.ERROR,
+            file="tickets.md",
+            line=0,
+            message=(
+                f"TICK001: {tid} exists in both tickets.md and "
+                f"tickets-archive.md -- resolve the collision (frob ticket "
+                f"renumber one of them) before the ledger can be trusted"
+            ),
+        )
+        for tid in overlap
+    )
+
+
+# frob:ticket T-0162
+def _tick002_draft_on_default(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
+    """TICK002: a T-draft-* provisional id still present while `root` is on
+    the default branch -- the finalize step (T-0162's provisional-id
+    mechanism; `frob ticket land`/T-0176 will call `finalize_draft`
+    automatically) was skipped, failed, or never run. A draft id reaching
+    the default branch means the collision-proofing this whole mechanism
+    exists for silently did not happen, so this rule is unwaivable
+    (`_UNWAIVABLE_RULES`) for the same reason TEST008 is.
+    """
+    if not on_default_branch(root):
+        return ()
+    return tuple(
+        Violation(
+            rule="TICK002",
+            severity=Severity.ERROR,
+            file="tickets.md",
+            line=0,
+            message=(
+                f"TICK002: draft id {tid} survived onto the default branch -- "
+                f"finalize it: `frob ticket renumber {tid} T-####` (or the "
+                f"land step, once T-0176 lands)"
+            ),
+        )
+        for tid in sorted(queue.tickets)
+        if is_draft_id(tid)
+    )
+
+
+# frob:doc docs/modules/tickets.md#decision-record-t-0162
+def tickets_gate(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
+    """TICK001/TICK002: the T-0162 ticket-id collision invariant gate."""
+    return _tick001_duplicate_ids(root) + _tick002_draft_on_default(root, queue)
+
+
+# ---------------------------------------------------------------------------
 # SYS001 / SYS002: strata directive <-> design binding (T-0080)
 # ---------------------------------------------------------------------------
 
@@ -2648,6 +2738,7 @@ _ALL_GATES = frozenset(
         "clones",
         "decisions",
         "sys",
+        "tickets",
     }
 )
 
@@ -2847,6 +2938,8 @@ def _build_jobs(
         jobs["decisions"] = lambda: decisions_gate(st.root, st.snapshot)
     if "sys" in selected:
         jobs["sys"] = lambda: sys_gate(st.root, st.snapshot)
+    if "tickets" in selected:
+        jobs["tickets"] = lambda: tickets_gate(st.root, st.queue)
     return jobs, skipped
 
 

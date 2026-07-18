@@ -1617,7 +1617,7 @@ found while working T-0148: the gates sweep waived 93 PERF001-004 sites (14 PERF
 ```yaml
 id: T-0162
 title: make ticket-id collision structurally impossible across checkouts and worktrees
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-18'
@@ -1627,15 +1627,63 @@ scope:
 - src/frob/tickets/**
 - src/frob/gates/**
 - src/frob/app/**
+- src/frob/__main__.py
 - tests/**
 - docs/modules/tickets.md
 - tickets.md
-evidence: []
+evidence:
+- tests/test_tickets_collision.py::TestPostArchiveReissueIncident::test_new_ticket_never_reissues_an_archived_id
+- tests/test_tickets_collision.py::TestTwoCheckoutConcurrentFilingIncident::test_two_worktrees_file_concurrently_no_collision
+- tests/test_tickets_collision.py::TestSweepWorktreeCollisionIncident::test_renumber_one_rewrites_ledger_and_many_code_references
+- tests/test_tickets_collision.py::TestSweepWorktreeCollisionIncident::test_dry_run_reports_without_writing
+- tests/test_tickets_collision.py::TestTick002GateUnwaivable::test_draft_id_on_default_branch_is_a_violation
+- tests/test_tickets_collision.py::TestTick002GateUnwaivable::test_tick002_is_unwaivable
+- tests/test_tickets_collision.py::TestTick002GateUnwaivable::test_no_violation_off_default_branch
 attachments: []
 acceptance: []
 threat: null
 ```
 Third collision incident in one day: (1) post-archive allocator reissued T-0001 (fixed by T-0140, active+archive max); (2) T-0144 reserved in one worktree while main allocated the same id (avoided by manual coordination); (3) a sweep worktree filed T-0157 while main independently assigned T-0157 to a different ticket, with ~102 code waiver comments referencing the collided id (fixed by manual sed renumber). Root cause: sequential max+1 allocation in independent checkouts that later merge -- the allocator cannot see sibling worktrees or unmerged branches, and coordination is manual. REQUIRED INVARIANT: two ledgers filed independently in ANY two checkouts/branches/worktrees must never merge into the same final id, with no human coordination. Design the mechanism (implementer chooses with a written decision record in docs/modules/tickets.md; candidates to evaluate): (a) PROVISIONAL IDS -- frob ticket new off the default branch mints a draft id (e.g. T-draft-<8-char content/branch hash>), and a frob ticket finalize/land step (run at merge/land time, or automatically by a gate) assigns the next sequential T-#### and atomically rewrites the ledger section AND every code directive referencing the draft id; final ids only ever minted against the default branch's merged view, making collision structurally impossible; (b) branch-tip scanning as defense-in-depth -- allocation also scans tickets.md at every local ref tip so sibling worktrees' filings are visible; (c) content-nonce tiebreak. Whatever the choice: a new gate rule must fail frob check loudly on duplicate ids ANYWHERE (active+archive+draft) and on draft ids that survived onto the default branch; plus frob ticket renumber <old> <new> as a first-class command doing the atomic ledger+code-reference rewrite (no more sed), with a dry-run mode; plus tests reproducing all three real incidents above and proving the invariant (two simulated checkouts file concurrently, merge, no collision, references intact). Update ~/.claude/refs-worthy docs in docs/modules/tickets.md including the agent workflow implications (agents file freely in worktrees, finalize happens at land).
+
+## Done report
+
+Changed:
+- src/frob/tickets/_provisional.py (new): on_default_branch, mint_draft_id, is_draft_id, DRAFT_PREFIX
+- src/frob/tickets/__init__.py: _allocate_ticket_id (new_ticket now mints a draft id off the default branch), renumber_one (new), finalize_draft (new)
+- src/frob/tickets/_models.py: RenumberReport (new)
+- src/frob/tickets/_store.py: _TICKET_ID_RE (marker/filename regexes now accept T-draft-<hex> alongside T-####, fixing a real bug found while writing the concurrent-worktree test -- draft ids silently vanished from the ledger without this)
+- src/frob/gates/__init__.py: tickets_gate, _tick001_duplicate_ids, _tick002_draft_on_default (TICK001/TICK002, both added to _UNWAIVABLE_RULES); "tickets" added to _ALL_GATES/_build_jobs/_KNOWN_GATE_RULES
+- src/frob/app/ticket_runner.py: _renumber now dispatches to _renumber_one (frob ticket renumber <old> <new> [--dry-run]) or the legacy whole-ledger renumber (no args)
+- src/frob/app/config.py, src/frob/__main__.py: CLI wiring for renumber <old> <new> --dry-run (scope extended to include __main__.py, the CLI wiring the ticket's own renumber requirement required)
+- tests/test_tickets_collision.py (new): reproduces all three incidents plus the concurrent-worktree invariant end-to-end (real git worktrees, real merge)
+- tests/system/test_cli_ticket_worktree_root.py: updated to assert against whatever id frob ticket new actually mints (a linked worktree is always off the default branch, so this suite now exercises draft-id minting incidentally)
+- docs/modules/tickets.md: "Provisional ids" + "Decision record: T-0162" sections, "Agent workflow implications (T-0162)" section, Design decisions/Integration points/CLI list updated
+
+Decision: provisional ids finalized at land (candidate a), with branch-tip
+scanning and content-nonce tiebreak folded in as design elements rather than
+separate mechanisms -- see docs/modules/tickets.md#decision-record-t-0162
+for the full comparison and why TICK001/TICK002 are unwaivable.
+
+Evidence: 7 tests in tests/test_tickets_collision.py (see evidence list above),
+covering: post-archive reissue (incident 1), two-worktree concurrent filing +
+real git merge + finalize (incident 2), renumber_one at ~100-reference scale
++ dry-run (incident 3), and TICK002 gate loud-fail/unwaivable-ness.
+Also verified: full tests/test_tickets.py, test_tickets_evidence_cli.py,
+unit/test_ticket_store.py, system/test_cli_ticket.py,
+system/test_cli_ticket_worktree_root.py all still pass; full `make coverage`
+suite passes; `frob sys audit` stays PROVED.
+
+Filed: none (no out-of-scope work found; the __main__.py CLI wiring was
+brought into scope on tickets.md itself rather than filed separately, since
+it is required by this ticket's own `frob ticket renumber <old> <new>`
+deliverable, not incidental discovery).
+
+Gates: `frob check --ticket T-0162` clean (0 gate violations, ruff/ty/exports/
+frob-arch all pass) after `make coverage`. TICK001/TICK002 gate rules added
+and verified against both a stray draft id (fails loudly, TICK002) and a
+clean queue (no violation). Not out of scope: T-0176 (`frob ticket land`)
+remains queued and unimplemented, as directed -- `finalize_draft` is the
+callable API it will invoke.
 
 <!-- ticket:T-0163 -->
 ```yaml

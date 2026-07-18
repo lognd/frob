@@ -82,8 +82,12 @@ attachments:
 <!-- frob:describes src/frob/tickets/clipboard.py::clipboard_has_image -->
 <!-- frob:describes src/frob/tickets/__init__.py::migrate -->
 <!-- frob:describes src/frob/tickets/__init__.py::renumber -->
+<!-- frob:describes src/frob/tickets/__init__.py::renumber_one -->
+<!-- frob:describes src/frob/tickets/__init__.py::finalize_draft -->
 <!-- frob:describes src/frob/tickets/__init__.py::archive -->
 <!-- frob:describes src/frob/tickets/__init__.py::load_active -->
+<!-- frob:describes src/frob/tickets/_provisional.py::on_default_branch -->
+<!-- frob:describes src/frob/tickets/_provisional.py::mint_draft_id -->
 
 ```python
 # frob/tickets/__init__.py
@@ -115,9 +119,21 @@ def add_evidence(root: Path, ticket_id: str, node_ids: Sequence[str],
 def migrate(root: Path) -> Result[int, TicketError]
     # Collapses legacy tickets/*.md files into the single tickets.md ledger.
 def renumber(root: Path) -> Result[int, TicketError]
-    # Reassigns ticket ids to a contiguous T-0001.. sequence, remapping
-    # every blocked_by/parent reference (the remedy for id collisions
-    # after a worktree merge).
+    # Reassigns EVERY ticket id to a contiguous T-0001.. sequence (whole-
+    # ledger cleanup); superseded for the single-id case by renumber_one.
+def renumber_one(root: Path, old_id: str, new_id: str, *,
+                  dry_run: bool = False) -> Result[RenumberReport, TicketError]
+    # Rewrites ONE ticket's id everywhere: its ledger section (active or
+    # archive) plus every blocked_by/parent reference across BOTH stores,
+    # plus every frob:ticket/frob:waive/frob:todo/frob:tests/frob:invariant/
+    # frob:doc directive line across the tracked tree that names it.
+    # `frob ticket renumber <old> <new>`'s implementation; --dry-run reports
+    # the same plan without writing. See "Provisional ids" below.
+def finalize_draft(root: Path, draft_id: str) -> Result[str, TicketError]
+    # Assigns draft_id its final T-#### id against the CURRENT merged view
+    # and rewrites everything via renumber_one; a no-op returning draft_id
+    # unchanged if it is already final. The callable finalize step T-0176
+    # (`frob ticket land`) will invoke at merge time.
 def archive(root: Path) -> Result[int, TicketError]
     # Moves every done/dropped ticket from the active store into
     # tickets-archive.md verbatim (same section format); idempotent.
@@ -140,6 +156,101 @@ queued -> planned -> in-progress -> done
 
 Any other transition is `Err(InvalidTransition)`. `done` and `dropped` are
 terminal. Cutting scope is `dropped` with a reason -- recorded, not deleted.
+
+## Provisional ids
+
+T-0162's collision-proofing mechanism. `frob ticket new` mints an id
+differently depending on which branch the checkout is on
+(`frob.tickets._provisional.on_default_branch`, backed by `frob.gitio`):
+
+- **On the default branch** (main/master, or wherever `origin/HEAD` points):
+  the next sequential `T-####`, exactly as before -- the merged
+  active+archive view is authoritative there, so sequential allocation is
+  safe.
+- **Off the default branch** (a feature branch, a linked worktree checked
+  out to its own branch -- git cannot check the same branch out twice, so
+  EVERY linked worktree is, by definition, off the default branch): a
+  provisional `T-draft-<8 hex chars>` id (`mint_draft_id`), never a
+  sequential one. Two checkouts filing independently each draw from this
+  disjoint, content-nonce id space -- collision probability per pair is
+  ~1/2^32, and the ledger's own duplicate-id load check still catches the
+  freak case loudly (see TICK001 below).
+- **Ambiguous** (no git repo, detached HEAD, git unavailable): treated as
+  default-branch, so non-git fixtures/CI-detached checkouts keep the old
+  sequential behavior unchanged -- drafts are minted only when a non-default
+  branch is POSITIVELY identified, never by default.
+
+A draft id round-trips through storage like any other id (the ledger
+marker/filename regexes accept `T-draft-<hex>` alongside `T-####` -- getting
+this wrong makes a draft ticket silently vanish from `frob ticket list` the
+moment it's written, which is exactly the "vacuous pass" class this whole
+tool exists to prevent).
+
+`finalize_draft(root, draft_id)` is the callable finalize step: once a
+draft has actually landed on the default branch, it assigns the draft its
+real sequential id (against the then-current merged view) and rewrites the
+ledger plus every code reference via `renumber_one`. This is deliberately
+NOT wired to run automatically anywhere yet -- T-0176 (`frob ticket land`)
+is the queued ticket that will call it as part of an atomic merge/land
+step. Until T-0176 lands, finalizing a draft is a manual
+`frob ticket renumber <draft-id> <next-id>` (or a direct `finalize_draft`
+call from a script).
+
+### Decision record: T-0162
+
+Three real collisions in one day (all sequential max+1 races across
+independent checkouts) forced the question of HOW to make id collision
+structurally impossible, not just less likely. Candidates considered:
+
+1. **Provisional ids, finalized at land** (CHOSEN). Off-default-branch
+   `new_ticket` mints a `T-draft-<hex>` id; sequential ids are only ever
+   minted against the default branch's merged view. Two checkouts filing
+   independently structurally cannot converge on the same final id -- there
+   is no shared mutable sequence for them to race on until one, precisely
+   defined, finalize step runs. Composes cleanly with the queued T-0176
+   land command: `finalize_draft` is the exact primitive it needs to call.
+   Cost: an id that appears in conversation/commits before finalize is not
+   the ticket's permanent name (mitigated -- `frob:ticket`/`frob:waive`
+   references written against a draft id are rewritten by the same
+   `renumber_one` that finalize uses, so nothing needs re-typing by hand).
+2. **Branch-tip scanning as defense-in-depth** (partially folded in, not a
+   separate mechanism). Making `_next_ticket_id` scan every local ref tip
+   (not just the active+archive files at HEAD) was considered as the
+   PRIMARY mechanism, but rejected on its own: it only sees refs the local
+   git object database already has (an agent's sibling worktree on an
+   unfetched remote branch is invisible), so it narrows the collision
+   window without closing it, and it makes every `new_ticket` call pay a
+   multi-ref git scan. Provisional ids close the window unconditionally and
+   pay no such cost on the common path (a single `rev-parse` +
+   `symbolic-ref`/`show-ref` check). Not implemented separately.
+3. **Content-nonce tiebreak** (folded into (1), not a distinct mechanism).
+   Rather than resolving a collision after the fact by hashing content,
+   choice (1)'s draft ids ARE content-nonces (`secrets.token_hex`) minted
+   up front -- the same idea, applied at allocation time instead of at
+   conflict-resolution time, so there is no conflict to resolve.
+
+**Why TICK001/TICK002 are unwaivable** (see `_UNWAIVABLE_RULES` in
+`frob.gates`, alongside TEST008): both rules exist specifically to make a
+silent break of the T-0162 invariant loud. TICK001 (an id in both active
+and archive) is mostly moot in practice -- `_load_merged`/`_parse_ledger`
+already hard-Err the whole `frob check` run before a gate violation could
+even be produced -- but is kept as an unwaivable gate rule as defense in
+depth against a future change that makes ledger loading more permissive.
+TICK002 (a `T-draft-*` id surviving onto the default branch) is the rule
+that actually matters: it means the finalize step was skipped, failed, or
+forgotten, which is precisely the "collision-proofing silently did not
+happen" failure mode this whole mechanism exists to prevent. A
+`frob:waive TICK002 reason="..."` sitting in the tree would let a live
+collision risk sit there quietly forever -- the same reasoning that makes
+TEST008 unwaivable.
+
+Residual assumption (reviewer, land note): `finalize_draft` and
+`renumber_one` take no cross-process lock -- two truly simultaneous
+finalize calls on the default branch could mint the same final id,
+caught after the fact by TICK001 rather than prevented. Finalize is
+assumed single-actor/serialized until T-0176 (`frob ticket land`)
+formalizes locking; do not rely on it as structurally impossible in
+concurrent automation.
 
 ## Clipboard capture
 
@@ -331,6 +442,12 @@ def atomic_write(path: Path, content: str | bytes) -> Result[None, TicketError]
   failed because Y" -- the useful slice of the memory-layer market, for free.
 - **Sequential ids with collision check** (`T-0042`). UUIDs rejected:
   unreadable in conversation and in `frob:ticket` directives.
+- **Provisional draft ids off the default branch, finalized at land**
+  (T-0162). Sequential allocation across independent checkouts/worktrees
+  cannot be made collision-safe without either coordination (rejected --
+  agents file tickets from worktrees constantly and must never need to ask
+  a human "is T-0157 taken?") or a disjoint id space per checkout until
+  merge. See "Decision record: T-0162" above for the full comparison.
 
 ## Dependencies
 
@@ -342,13 +459,19 @@ def atomic_write(path: Path, content: str | bytes) -> Result[None, TicketError]
 
 - `frob.gates`: scope gate reads `scope`, coverage gate reads `evidence`
   and joins `frob:ticket`/`frob:todo` edge targets against the queue.
+  `tickets_gate` (TICK001/TICK002, T-0162) checks the id-collision invariant
+  -- see "Decision record: T-0162" above.
 - CLI: `frob ticket new|list|show|doable|plan|start|sweep|migrate|renumber|
   attach|block|close|fail|evidence|archive`. `start` auto-plans a queued
   ticket (both legal steps); `sweep` re-records the pre-work sweep after a
-  scope change; `migrate` collapses a legacy dir into the ledger; `renumber`
-  reassigns ids to a contiguous T-0001.. sequence (the remedy for
-  worktree-merge id collisions, rewriting blocked_by/parent references);
-  `evidence <id> <pytest-node-id>...` validates each id against collected
+  scope change; `migrate` collapses a legacy dir into the ledger;
+  `renumber <old> <new> [--dry-run]` (T-0162) rewrites ONE ticket's id
+  everywhere -- ledger plus every code directive reference -- the
+  first-class replacement for the sed-by-hand that fixed the T-0157
+  incident's ~100 stray waiver references; `renumber` with NO arguments
+  keeps the older whole-ledger behavior (reassigns every id to a
+  contiguous T-0001.. sequence, T-0012); `evidence <id> <pytest-node-id>...`
+  validates each id against collected
   tests up front and appends to the structured evidence list (rejecting an
   unresolvable id with remedy text, instead of a typo silently surfacing
   later as COV003 after close); `archive` moves every done/dropped ticket
@@ -374,3 +497,43 @@ Ticket kinds: feature, bug, security, ux, docs, invariant, incident.
   ticket, so the security-auditor can organize sweeps by category.
 - Agents: planner emits ticket trees; implementer starts/closes tickets and
   writes done-reports; auditors file tickets with `origin: auditor`.
+
+## Agent workflow implications (T-0162)
+
+Agents file tickets from worktrees constantly -- a single working session
+can spawn several parallel worktrees, each filing its own tickets, with no
+opportunity (and no need) to coordinate with sibling sessions. T-0162's
+provisional-id mechanism is designed around that reality, not against it:
+
+- **Filing from a worktree/feature branch is always safe, unconditionally.**
+  `frob ticket new` off the default branch always mints a `T-draft-<hex>`
+  id and never touches sequential allocation, so nothing an agent does in
+  one worktree can collide with what any other agent or the human is doing
+  in a sibling worktree, main, or a not-yet-fetched remote branch. No
+  "check first," no "ask the human," no retry-on-conflict loop needed.
+- **A draft id is a real, usable ticket id in the meantime.** It resolves in
+  `frob ticket show`/`start`/`close`, participates in `blocked_by`/`parent`
+  edges, and works in `frob:ticket`/`frob:waive`/`frob:todo` directives
+  exactly like a final id -- an agent should use it immediately, not wait
+  for finalization before referencing it in code or in the Done report.
+- **Do not hand-renumber a draft id.** If a draft id looks awkward in
+  conversation, do NOT sed it or hand-edit the ledger -- use
+  `frob ticket renumber <draft-id> <new-id> [--dry-run]`, which is the only
+  path guaranteed to rewrite every directive reference atomically. This is
+  exactly the discipline that fixed the T-0157 incident's ~100 stray
+  references; doing it by hand is how that incident happened in the first
+  place.
+- **Finalization is not an agent's job today.** A draft id is finalized to
+  its permanent sequential id only once it has actually landed on the
+  default branch, via `finalize_draft` -- which T-0176 (`frob ticket land`)
+  will call automatically as part of an atomic merge/land step. Until
+  T-0176 ships, an agent that lands its own worktree's changes onto main by
+  hand should call `frob ticket renumber <draft-id> <T-####>` right after
+  the merge, before closing out; `frob check`'s TICK002 rule will refuse to
+  pass silently if this is forgotten (draft ids are unwaivable on the
+  default branch).
+- **A draft id surviving a merge into the default branch is a hard-fail,
+  not a warning.** `frob check` (TICK002) makes this loud on purpose --
+  see "Why TICK001/TICK002 are unwaivable" above. Treat a TICK002 failure
+  the same way as any other unwaivable gate failure: fix the root cause
+  (finalize the draft), never suppress it.

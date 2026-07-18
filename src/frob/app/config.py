@@ -189,6 +189,9 @@ class AppConfig(BaseModel):
     ticket_attach_path: Path | None = None
     ticket_json: bool = False
     ticket_evidence_ids: list[str] = []
+    ticket_old_id: str | None = None
+    ticket_new_id: str | None = None
+    ticket_dry_run: bool = False
 
     # test
     test_all: bool = False
@@ -297,6 +300,8 @@ class AppConfig(BaseModel):
             "ticket_by",
             "ticket_summary",
             "ticket_caption",
+            "ticket_old_id",
+            "ticket_new_id",
             "test_base",
             "test_fallback",
             "vet_hook",
@@ -448,6 +453,7 @@ class AppConfig(BaseModel):
             "perf_json",
             "perf_smells",
             "sys_apply",
+            "ticket_dry_run",
         ):
             if getattr(args, flag, False):
                 d[flag] = True

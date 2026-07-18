@@ -10,6 +10,7 @@ frob.graph or frob.lang by design (see docs/rework.md cycle-avoidance).
 from __future__ import annotations
 
 import hashlib
+import re
 from collections.abc import Sequence
 from datetime import date
 from pathlib import Path
@@ -22,6 +23,7 @@ from frob.tickets._models import (
     AttachmentSource,
     FailureEntry,
     Origin,
+    RenumberReport,
     Stride,
     Ticket,
     TicketError,
@@ -30,9 +32,12 @@ from frob.tickets._models import (
     TicketSpec,
     TicketState,
 )
+from frob.tickets._provisional import is_draft_id, mint_draft_id, on_default_branch
 from frob.tickets._store import (
+    archive_path,
     atomic_write,
     attachments_dir,
+    ledger_path,
     load_all,
     load_archive,
     migrate_to_ledger,
@@ -178,6 +183,27 @@ def archive(root: Path) -> Result[int, TicketError]:
     return Ok(len(to_archive))
 
 
+# frob:ticket T-0162
+# frob:doc docs/modules/tickets.md#decision-record-t-0162
+def _allocate_ticket_id(
+    root: Path, existing: dict[str, Ticket], merged: dict[str, Ticket]
+) -> str:
+    """The id a fresh ticket should get: the next sequential T-#### when
+    `root` is on the default branch (the merged view is authoritative there),
+    otherwise a provisional T-draft-<hex> id -- final sequential ids are only
+    ever minted against the default branch's view, so two checkouts filing
+    independently structurally cannot converge on the same final id (T-0162:
+    three real collisions were all sequential max+1 races across checkouts).
+    """
+    if not on_default_branch(root):
+        draft_id = mint_draft_id()
+        while draft_id in existing or draft_id in merged:
+            draft_id = mint_draft_id()
+        _log.info("tickets: off-default-branch, minted provisional id %s", draft_id)
+        return draft_id
+    return _next_ticket_id(merged)
+
+
 def _next_ticket_id(existing: dict[str, Ticket]) -> str:
     """The next sequential `T-####` id above the highest existing ticket number
     in `existing` -- callers must pass the id space they want ids kept clear
@@ -244,7 +270,7 @@ def new_ticket(root: Path, spec: TicketSpec) -> Result[Ticket, TicketError]:
     if merged.is_err:
         _log.error("tickets: id allocation aborted, archive unreadable")
         return Err(merged.danger_err)
-    ticket_id = _next_ticket_id(merged.danger_ok)
+    ticket_id = _allocate_ticket_id(root, existing, merged.danger_ok)
     if ticket_id in existing:
         _log.error("tickets: id collision allocating %s", ticket_id)
         return Err(TicketError.DuplicateId)
@@ -316,6 +342,197 @@ def renumber(root: Path) -> Result[int, TicketError]:
         return Err(result.danger_err)
     _log.info("tickets: renumbered %d ticket(s)", renumbered)
     return Ok(renumbered)
+
+
+_DIRECTIVE_LINE_RE = re.compile(r"frob:(ticket|waive|todo|tests|invariant|doc)\b")
+_SKIP_DIR_NAMES = frozenset(
+    {".git", ".venv", "node_modules", "__pycache__", ".frob", "target", "dist", "build"}
+)
+
+
+# frob:waive PERF003 reason="single rglob loop, 'in' check vs small frozenset"
+def _tracked_files(root: Path) -> list[Path]:
+    """Every git-tracked file under `root`, or (no git repo) every file not
+    under a build/vendor/cache directory -- the search space `renumber_one`
+    scans for code directive references. Falling back to a filesystem walk
+    keeps renumber usable in a non-git fixture/test tree."""
+    from frob.gitio import run_argv
+
+    spawned = run_argv(["git", "-C", str(root), "ls-files"])
+    if spawned.is_ok and spawned.danger_ok.returncode == 0:
+        return [root / line for line in spawned.danger_ok.stdout.splitlines() if line]
+    files: list[Path] = []
+    for path in root.rglob("*"):
+        if path.is_file() and not any(part in _SKIP_DIR_NAMES for part in path.parts):
+            files.append(path)
+    return files
+
+
+def _rewrite_directive_references(
+    text: str, old_id: str, new_id: str
+) -> tuple[str, int]:
+    """Replace whole-word `old_id` with `new_id` on every line that carries a
+    `frob:` directive -- never elsewhere in the file (a ticket id mentioned
+    in prose/a docstring/an unrelated string is left alone; only directive
+    lines are code REFERENCES this command owns rewriting)."""
+    id_re = re.compile(rf"\b{re.escape(old_id)}\b")
+    lines = text.splitlines(keepends=True)
+    hits = 0
+    for i, line in enumerate(lines):
+        if _DIRECTIVE_LINE_RE.search(line) and id_re.search(line):
+            lines[i], n = id_re.subn(new_id, line)
+            hits += n
+    return "".join(lines), hits
+
+
+def _scan_code_references(
+    root: Path, old_id: str, new_id: str
+) -> dict[Path, tuple[str, int]]:
+    """Every tracked non-ledger file whose directive lines mention `old_id`,
+    mapped to its rewritten text and the number of references replaced."""
+    skip_names = {ledger_path(root).name, archive_path(root).name}
+    changed: dict[Path, tuple[str, int]] = {}
+    for path in _tracked_files(root):
+        if path.name in skip_names:
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (UnicodeDecodeError, OSError):
+            continue
+        if old_id not in text:
+            continue
+        rewritten, hits = _rewrite_directive_references(text, old_id, new_id)
+        if hits:
+            changed[path] = (rewritten, hits)
+    return changed
+
+
+# frob:ticket T-0162
+# frob:doc docs/modules/tickets.md#public-api
+# frob:waive PERF003 reason="identity mapping comp plus two _apply_renumber calls"
+# frob:waive PERF004 reason="files_changed sorted once for the report, not per-loop"
+# frob:waive TEST005 reason="renumber_one 68.3% branch cover, debt T-0160"
+def renumber_one(
+    root: Path, old_id: str, new_id: str, *, dry_run: bool = False
+) -> Result[RenumberReport, TicketError]:
+    """Atomically rewrite ONE ticket's id everywhere: its ledger section
+    (active or archive, id + every blocked_by/parent reference across BOTH
+    stores) and every `frob:ticket`/`frob:waive`/`frob:todo`/`frob:tests`/
+    `frob:invariant`/`frob:doc` directive line across the tracked tree that
+    names it. First-class replacement for the hand-run sed that fixed the
+    T-0157 incident's ~100 stray waiver references -- a single command,
+    `--dry-run`-able, that can never miss a reference class the old sed
+    invocation didn't happen to cover. Also the rename primitive
+    `finalize_draft` (T-0162's provisional-id mechanism) and, later,
+    T-0176's `frob ticket land` reuse.
+    """
+    if old_id == new_id:
+        _log.warning("tickets: renumber_one %s -> %s is a no-op id", old_id, new_id)
+        return Err(TicketError.InvalidTransition)
+
+    active_loaded = load_all(root)
+    if active_loaded.is_err:
+        return Err(active_loaded.danger_err)
+    archived_loaded = load_archive(root)
+    if archived_loaded.is_err:
+        return Err(archived_loaded.danger_err)
+    active_map, archive_map = active_loaded.danger_ok, archived_loaded.danger_ok
+
+    if old_id not in active_map and old_id not in archive_map:
+        _log.error("tickets: renumber_one: %s not found", old_id)
+        return Err(TicketError.NotFound)
+    if new_id in active_map or new_id in archive_map:
+        _log.error("tickets: renumber_one: target id %s already exists", new_id)
+        return Err(TicketError.DuplicateId)
+
+    all_ids = set(active_map) | set(archive_map)
+    full_mapping = {tid: tid for tid in all_ids}
+    full_mapping[old_id] = new_id
+
+    new_active_map, active_changed = _apply_renumber(
+        list(active_map.values()), full_mapping
+    )
+    new_archive_map, archive_changed = _apply_renumber(
+        list(archive_map.values()), full_mapping
+    )
+    code_changes = _scan_code_references(root, old_id, new_id)
+
+    report = RenumberReport(
+        old_id=old_id,
+        new_id=new_id,
+        ledger_changed=bool(active_changed or archive_changed),
+        files_changed=tuple(sorted(str(p.relative_to(root)) for p in code_changes)),
+        occurrences=sum(hits for _text, hits in code_changes.values()),
+        dry_run=dry_run,
+    )
+    if dry_run:
+        _log.info(
+            "tickets: renumber_one DRY RUN %s -> %s: ledger_changed=%s "
+            "code_files=%d occurrences=%d",
+            old_id,
+            new_id,
+            report.ledger_changed,
+            len(report.files_changed),
+            report.occurrences,
+        )
+        return Ok(report)
+
+    if active_changed:
+        write_result = write_all(root, new_active_map)
+        if write_result.is_err:
+            return Err(write_result.danger_err)
+    if archive_changed:
+        archive_write = write_archive(root, new_archive_map)
+        if archive_write.is_err:
+            return Err(archive_write.danger_err)
+    for path, (rewritten, _hits) in code_changes.items():
+        written = atomic_write(path, rewritten)
+        if written.is_err:
+            return Err(written.danger_err)
+
+    _log.info(
+        "tickets: renumbered %s -> %s (%d code file(s), %d reference(s) updated)",
+        old_id,
+        new_id,
+        len(code_changes),
+        report.occurrences,
+    )
+    return Ok(report)
+
+
+# frob:ticket T-0162
+# frob:doc docs/modules/tickets.md#provisional-ids
+# frob:waive TEST005 reason="finalize_draft 64.7% branch cover, debt T-0160"
+def finalize_draft(root: Path, draft_id: str) -> Result[str, TicketError]:
+    """Assign `draft_id` its final sequential `T-####` id against the CURRENT
+    merged (active+archive) view and rewrite the ledger plus every code
+    reference via `renumber_one`. This is the callable finalize step the
+    T-0162 provisional-id mechanism promises T-0176 (`frob ticket land`):
+    a land/merge command finalizes a draft id by calling this function once
+    the draft has actually landed on the default branch -- never before,
+    since finalizing against a stale (pre-merge) view can reintroduce the
+    exact collision this mechanism exists to prevent. A no-op (`Ok(draft_id)`
+    unchanged) if `draft_id` is already a final id, so callers can call it
+    unconditionally without checking `is_draft_id` themselves first.
+    """
+    if not is_draft_id(draft_id):
+        _log.debug("tickets: finalize_draft(%s): already final, no-op", draft_id)
+        return Ok(draft_id)
+    merged = _load_merged(root)
+    if merged.is_err:
+        return Err(merged.danger_err)
+    tickets = merged.danger_ok
+    if draft_id not in tickets:
+        _log.error("tickets: finalize_draft: %s not found", draft_id)
+        return Err(TicketError.NotFound)
+    final_id = _next_ticket_id(
+        {tid: t for tid, t in tickets.items() if tid != draft_id}
+    )
+    result = renumber_one(root, draft_id, final_id)
+    if result.is_err:
+        return Err(result.danger_err)
+    _log.info("tickets: finalized draft %s -> %s", draft_id, final_id)
+    return Ok(final_id)
 
 
 def _doable_candidates(queue: TicketQueue) -> list[Ticket]:
