@@ -73,6 +73,7 @@ from frob.strata._code_binding import (
     ImportViolation,
     bind_code,
     check_import_conformance,
+    is_managed,
 )
 from frob.strata._compliance import (
     COMPLIANCE_CATALOG,
@@ -269,6 +270,7 @@ __all__ = [
     "Independent",
     "InfraExpansion",
     "KernelModel",
+    "is_managed",
     "Lattice",
     "Mediate",
     "Metric",

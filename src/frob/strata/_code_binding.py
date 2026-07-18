@@ -53,6 +53,24 @@ _CODE_PREFIX = "code="
 # frob:doc docs/strata/surface.md#code-binding-tier-2-v0-implementation
 FOREIGN = "__foreign__"
 
+#: Node attr marker for a `managed` node (T-0172, mirrors `_elaborate.py::
+#: _MANAGED_ATTR` -- kept as a local literal, not an import, for the same
+#: no-cycle reason `_infra.py`'s copy is: this module sits below
+#: `_elaborate.py` in the import graph). A managed node is external,
+#: pure-config infrastructure declared to have no scannable code; tier-2
+#: conformance is not required for it (docs/strata/surface.md
+#: #key-construct-semantics).
+_MANAGED_ATTR = "managed"
+
+
+# frob:doc docs/strata/surface.md#key-construct-semantics
+# frob:ticket T-0172
+def is_managed(node) -> bool:
+    """Whether `node` carries the `managed` attr (T-0172) -- external,
+    pure-config infrastructure exempt from tier-2 code-binding conformance
+    (docs/strata/surface.md#key-construct-semantics)."""
+    return _MANAGED_ATTR in node.attrs
+
 
 def _node_code_globs(node) -> tuple[str, ...]:
     """A node's declared `code=<glob>` attrs, in declaration order."""
@@ -304,19 +322,28 @@ def _file_violations(
 
 
 # frob:doc docs/strata/surface.md#code-binding-tier-2-v0-implementation
+# frob:waive PERF003 reason="dict-comp build plus one owned-files loop, not a nested join"
 def check_import_conformance(
     model: KernelModel, binding: CodeBinding, root: Path
 ) -> ConformanceReport:
     """Every in-repo python import crossing two differently-owned files with
     no declared `Flow` in that EXACT direction (importer's owner -> target's
     owner) between those owner node ids -- "undeclared cross-component
-    import" (T-0078)."""
+    import" (T-0078). A `managed` (T-0172) node's owned files are skipped
+    the SAME way `FOREIGN` files are: `managed` declares "no scannable code
+    here", so any file a stray `code=` glob still happens to bind to it
+    names a node with nothing to attest the crossing against either (docs/
+    strata/surface.md#key-construct-semantics: "no tier-2 conformance")."""
     declared_pairs = _declared_pairs(model)
+    nodes_by_id = {node.id: node for node in model.nodes}
     violations: list[ImportViolation] = []
     for rel in _sorted_owned_files(binding):
         owner = binding.owner[rel]
         if owner == FOREIGN:
             continue  # foreign code names no node to attest the crossing against
+        owner_node = nodes_by_id.get(owner)
+        if owner_node is not None and is_managed(owner_node):
+            continue  # T-0172: managed node, no tier-2 conformance
         violations.extend(_file_violations(rel, owner, binding, root, declared_pairs))
     return ConformanceReport(violations=tuple(violations))
 
@@ -328,4 +355,5 @@ __all__ = [
     "ImportViolation",
     "bind_code",
     "check_import_conformance",
+    "is_managed",
 ]

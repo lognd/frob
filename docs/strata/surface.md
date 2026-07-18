@@ -50,13 +50,14 @@ Comments are `//`; docs attach with `///` and are drift-checked once
 `.strata` joins `frob.lang` (T-0077).
 
 ### `node` grammar (implemented; T-0132 closes the `code=`/`may` gap,
-T-0136 adds `on deploy`, T-0154 adds `carries`)
+T-0136 adds `on deploy`, T-0154 adds `carries`, T-0172 adds `managed`)
 
 The construct actually implemented by `strata-core/src/parse.rs::parse_node`
 today is spelled `node`, not the future `component` shown in the sketch
-above (T-0059 renames it once `runs on`/`state`/`managed` land). Its
+above (T-0059 renames it once `runs on`/`state` land). Its
 grammar, extended by T-0132 to admit `code`/`may`, by T-0136 to admit
-`on deploy`, and by T-0154 to admit `carries`:
+`on deploy`, by T-0154 to admit `carries`, and by T-0172 to admit
+`managed`:
 
 ```
 node        := "node" IDENT ":" TRUST "abstract"? ("{" node_prop* "}")?
@@ -65,7 +66,7 @@ node_prop   := "clearance" IDENT | "attr" ATTRVAL | "residence" IDENT
              | "skew" "zipf" NUMBER | "errors_total"
              | "panics_contained_by" IDENT | "observe" observe_block
              | "code" STRING+ | "may" STRING | "on" "deploy" deploy_block
-             | "carries" STRING+
+             | "carries" STRING+ | "managed"
 deploy_block  := "{" deploy_prop (";" deploy_prop)* "}"
 deploy_prop   := "canary" "{" canary_stage ("," canary_stage)* "}"
                 | "endorsed_by" IDENT ("," IDENT)*
@@ -74,6 +75,25 @@ canary_stage  := IDENT "for" quantity
 ATTRVAL     := IDENT ("=" IDENT)?
 STRING      := '"' char* '"'   // no escapes in v0; '"' and newline forbidden
 ```
+
+**`managed` (T-0172):** a bare marker, same shape as `errors_total` --
+external, pure-config infrastructure (e.g. a Caddyfile-configured edge)
+declared to have no scannable code, so it needs no fake `code=` glob to be
+honestly modeled. `store` (below) accepts the identical bare `managed`
+marker for the same reason (`strata-core/src/parse.rs::parse_store`) --
+"component / store: nodes" (#key-construct-semantics), so both get it.
+Elaboration (`_elaborate.py::_elaborate_node`, `_infra.py::
+_elaborate_store`): one `"managed"` node attr, the same bare-marker
+convention `errors_total`/`abstract` already use (`_code_binding.py::
+is_managed` reads it back). Semantically: `check_import_conformance`
+(`_code_binding.py`) skips a managed node's owned files the same way it
+skips `FOREIGN` files -- "no tier-2 conformance" -- and a fired THREAT003
+weakness obligation on a managed node (`_threat.py::_check_one_discharge`)
+still needs a discharging claim proving a chokepoint shape and clearing the
+catalog rung, but is exempt from the boundary-KIND (`_mitigation_is_
+chokepoint`) proof a code-modeled node needs, the SAME exemption an
+`assume` claim already gets -- "obligations shift to config evidence or
+assumes."
 
 **`carries` (T-0154, docs/strata/threat.md#pii-declarations-std-pii-t-0154):**
 `STRING+` (tag+, at least one -- a bare `carries;` is a parse error,
@@ -157,6 +177,7 @@ the prover. Planned vocabularies and their owning tickets:
 User-defined vocabularies (custom desugaring) are deferred until the std
 set proves the mechanism.
 
+<a id="key-construct-semantics"></a>
 ## Key construct semantics (normative summaries)
 
 - **component / store**: nodes. `code` globs bind to source (legal only on
