@@ -401,7 +401,26 @@ class Independent(BaseModel):
     avoid: str
 
 
-ClaimBody = NoFlow | Reach | BoundClaim | Independent
+# frob:doc docs/strata/kernel.md#claim-forms-and-their-decision-procedures
+class SetEquality(BaseModel):
+    """Claim body: `readers(target) == expected`, an exact-set closure equality.
+
+    `readers(x) == S` (docs/strata/kernel.md#claim-forms-and-their-decision-
+    procedures): the forward influence closure from `target` (through
+    barriers, same traversal `reach` uses) must equal `expected` exactly --
+    not a subset, not a superset. Reserved for `std.secrets` (T-0082): a
+    credential's authorized reader set is declared once and the closure
+    engine, not a human, proves nobody extra can reach it and nobody
+    declared is unreachable.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    target: str
+    expected: tuple[str, ...]
+
+
+ClaimBody = NoFlow | Reach | BoundClaim | Independent | SetEquality
 
 
 # frob:doc docs/strata/kernel.md#data-models

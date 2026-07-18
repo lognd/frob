@@ -98,6 +98,61 @@ set proves the mechanism.
 - **scenario**: named rewrite + nested claims; crash contracts desugar to
   auto-generated scenarios.
 
+<a id="std-secrets"></a>
+## std.secrets: credentials as cache-of-authority (T-0082)
+
+<!-- frob:ticket T-0082 -->
+<!-- frob:describes src/frob/strata/_secrets.py::SecretSpec -->
+<!-- frob:describes src/frob/strata/_secrets.py::SecretExpansion -->
+<!-- frob:describes src/frob/strata/_secrets.py::elaborate_secret -->
+<!-- frob:describes src/frob/strata/_secrets.py::SECRET_LABEL -->
+
+A credential is modeled as exactly one more cache-of-authority
+(docs/strata/kernel.md#age-propagation-semantics): `issued_by` is the
+source of truth, `lifetime` is the same TTL bound a cache's `ttl`/
+`staleness` is, and the mandatory revocation edge is the same
+deny-by-default rule `std.infra`'s `invalidate_on` already enforces --
+"no cache without an invalidation edge" and "no credential without a
+revocation edge" are one rule, not two (docs/strata/charter.md). No new
+kernel primitive or age metric is added (charter law 1).
+
+`elaborate_secret(spec, known)` (`_secrets.py`) desugars a `SecretSpec` to:
+
+- a `Node` for the credential itself, at `Secret` clearance;
+- an **issue** flow (`issued_by -> secret`, `age = lifetime`) -- the same
+  age-bearing hop a cache's `fill` flow is;
+- a mandatory **revocation** edge (`issued_by -> secret`,
+  `attrs=("revocation",)`) -- absent, elaboration fails closed with
+  `StrataError.MissingRevocation`, mirroring `MissingInvalidation`;
+- one **reads** flow per `audience` member (`secret -> reader`) -- the
+  substrate the auto-generated `readers(secret) == audience` claim
+  (`SetEquality`, docs/strata/kernel.md#claim-forms-and-their-decision-
+  procedures) closes over, reusing the same forward closure `reach`
+  claims already use (`_claims.py::_eval_set_equality`).
+
+A caller wanting a bound on the credential's own age (`age(secret) <=
+some_limit`) asserts an ordinary `AGE` `bound` claim with
+`target=spec.id` -- no new claim form, per the same reasoning
+docs/strata/kernel.md#growth-horizons-saturation-dating-not-a-new-claim-
+form already documents for growth-awareness.
+
+**Secret-in-logs / secret-in-repo / secret-in-artifact** need no bespoke
+check: each is a `Secret`-labeled flow resting at a node whose
+`clearance` is below `Secret`, which `_facts.py::_structural_diagnostics`
+already flags generically for every label in the `Public < Internal <
+Pii < Secret` lattice (it was written for `Pii`; `Secret` is simply the
+lattice's top). This is the CWE-798/256 hardcoded/plaintext-credential
+precondition from docs/strata/threat.md's catalog, discharged by
+machinery that already existed before this ticket.
+
+**Deferred surface grammar (T-0134).** The `.strata` grammar's planned
+`secret X issued_by Y audience [...] lifetime T revoke T'` syntax (line 31
+and the table above) is not yet implemented in the `strata_core` Rust
+parser -- `std.secrets` is a Python-API vocabulary only until T-0134 wires
+a `SecretDecl` AST node and a `Module.secrets` field through
+`_elaborate.py`, the same deferral shape T-0132 established for surface
+syntax that outruns the parser.
+
 ## Refinement (hierarchical models)
 
 `abstract` components may omit internals and still participate in claims;

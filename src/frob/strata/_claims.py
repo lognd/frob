@@ -29,6 +29,7 @@ from ._models import (
     Quantifier,
     Quantity,
     Reach,
+    SetEquality,
     Verdict,
 )
 from ._packs import EXTRACTION_SOUNDNESS
@@ -239,6 +240,45 @@ def _eval_independent(
                     )
                 )
     return Ok(_proved(claim, f"no witness path shares a node with {body.avoid}"))
+
+
+def _eval_set_equality(
+    facts: FactBase, claim: Claim, body: SetEquality
+) -> Result[ClaimResult, StrataError]:
+    """`readers(target) == expected`: PROVED forall on an exact closure match.
+
+    Uses the same forward, barrier-respecting closure `reach` uses
+    (docs/strata/kernel.md#claim-forms-and-their-decision-procedures) --
+    `std.secrets`'s consuming case is exactly "every node this credential's
+    own flow chain reaches", so no new traversal is built here, only a set
+    comparison against it. REFUTED reports both directions of the mismatch
+    (extra readers the closure reaches but `expected` did not declare, and
+    missing readers `expected` declared but the closure never reaches) so a
+    counterexample is self-explanatory without re-deriving the closure.
+    """
+    if body.target not in facts.nodes:
+        _log.error("readers claim %s: unknown target %r", claim.id, body.target)
+        return Err(StrataError.UnknownReference)
+    for reader in body.expected:
+        if reader not in facts.nodes:
+            _log.error("readers claim %s: unknown expected reader %r", claim.id, reader)
+            return Err(StrataError.UnknownReference)
+    paths = facts.reachable(body.target, through_barriers=True)
+    actual = frozenset(paths) - {body.target}
+    expected = frozenset(body.expected)
+    if actual == expected:
+        return Ok(_proved(claim, f"readers({body.target}) == {sorted(expected)}"))
+    extra = sorted(actual - expected)
+    missing = sorted(expected - actual)
+    _log.info(
+        "readers claim %s refuted: target=%s extra=%s missing=%s",
+        claim.id,
+        body.target,
+        extra,
+        missing,
+    )
+    detail = f"readers({body.target}) mismatch: extra={extra} missing={missing}"
+    return Ok(_refuted(claim, detail, tuple(extra) + tuple(missing)))
 
 
 def _limit_in(limit: Quantity, dimension: str) -> Result[float, StrataError]:
@@ -456,11 +496,11 @@ def evaluate_claims(
     claim yields exactly one result, in declaration order, so a report can
     never silently drop a claim. When `waived_policies` names an id in
     `compiled_policies` that `enables extraction_soundness`, every PROVED
-    noflow/reach/independent verdict downgrades to ASSUMED with a detail recording
-    which policy waiver caused it -- quantifier-preserving, logged at
-    WARNING per affected claim (docs/strata/evidence.md#the-enables-
-    cascade). Bound claims never depend on this atom in v0 and are never
-    downgraded by it.
+    noflow/reach/independent/readers(set-equality) verdict downgrades to
+    ASSUMED with a detail recording which policy waiver caused it --
+    quantifier-preserving, logged at WARNING per affected claim
+    (docs/strata/evidence.md#the-enables-cascade). Bound claims never depend
+    on this atom in v0 and are never downgraded by it.
     """
     facts_result = build_facts(model)
     if facts_result.is_err:
@@ -481,6 +521,8 @@ def evaluate_claims(
             outcome = _eval_reach(facts, claim, body)
         elif isinstance(body, Independent):
             outcome = _eval_independent(facts, claim, body)
+        elif isinstance(body, SetEquality):
+            outcome = _eval_set_equality(facts, claim, body)
         else:
             outcome = _eval_bound(facts, claim, body, current)
         if outcome.is_err:
@@ -488,7 +530,7 @@ def evaluate_claims(
         result = outcome.danger_ok
         if (
             cascade_detail is not None
-            and isinstance(body, NoFlow | Reach | Independent)
+            and isinstance(body, NoFlow | Reach | Independent | SetEquality)
             and result.verdict is Verdict.PROVED
         ):
             _log.warning(

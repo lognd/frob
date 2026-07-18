@@ -85,6 +85,7 @@ artifact.
 <!-- frob:describes src/frob/strata/_models.py::Boundary -->
 <!-- frob:describes src/frob/strata/_models.py::Metric -->
 <!-- frob:describes src/frob/strata/_models.py::NoFlow -->
+<!-- frob:describes src/frob/strata/_models.py::SetEquality -->
 <!-- frob:describes src/frob/strata/_models.py::Reach -->
 <!-- frob:describes src/frob/strata/_models.py::BoundClaim -->
 <!-- frob:describes src/frob/strata/_models.py::Rung -->

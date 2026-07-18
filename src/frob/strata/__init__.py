@@ -116,6 +116,7 @@ from frob.strata._models import (
     Rung,
     ScaleRate,
     Scenario,
+    SetEquality,
     SetTrust,
     Verdict,
 )
@@ -124,6 +125,12 @@ from frob.strata._parse import parse_module
 from frob.strata._policy import CompiledPolicies, CompiledPolicy, compile_policies
 from frob.strata._report import render_report, summarize
 from frob.strata._scenarios import ScenarioResult, evaluate_scenarios
+from frob.strata._secrets import (
+    SECRET_LABEL,
+    SecretExpansion,
+    SecretSpec,
+    elaborate_secret,
+)
 from frob.strata._threat import (
     CWE_CATALOG,
     VIEWS,
@@ -144,6 +151,7 @@ __all__ = [
     "DEFAULT_DESIGN_DIR",
     "CWE_CATALOG",
     "LABELS",
+    "SECRET_LABEL",
     "TRUST",
     "VIEWS",
     "AdmitPhase",
@@ -226,6 +234,9 @@ __all__ = [
     "ScenarioDecl",
     "ScenarioResult",
     "ScopeSpec",
+    "SecretExpansion",
+    "SecretSpec",
+    "SetEquality",
     "SetTrust",
     "StoreDecl",
     "StrataError",
@@ -245,6 +256,7 @@ __all__ = [
     "compile_policies",
     "elaborate",
     "elaborate_infra",
+    "elaborate_secret",
     "evaluate_atomic_contracts",
     "evaluate_breach_contracts",
     "evaluate_claims",

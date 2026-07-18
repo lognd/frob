@@ -77,6 +77,14 @@ class StrataError(ErrorSet):
         "detection must land before revocation, else the compromise persists "
         "past its own contract (docs/strata/kernel.md#scenario, T-0076)"
     )
+    MissingRevocation = (
+        "A credential (std.secrets) has no revocation edge -- the same "
+        "deny-by-default rule as MissingInvalidation: credential revocation "
+        "and cache invalidation are the same age-collapse rule "
+        "(docs/strata/kernel.md#age-propagation-semantics, T-0082) -- no "
+        "credential without a revocation edge, no cache without an "
+        "invalidate_on edge"
+    )
     AmbiguousCodeBinding = (
         "A source file matches the `code=` glob of more than one node -- "
         "tier-2 code binding requires a partition, since two-way binding "
