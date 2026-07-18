@@ -1422,3 +1422,138 @@ acceptance: []
 threat: null
 ```
 Typani pilot: TEST001 (untested public symbol) fires on flow declarations inside design files, but what a passing test for a design-model flow MEANS is undefined -- frob's own self-model binds no tests to flows either. Decide and implement: either design-file declarations are exempt from TEST001 (their verification is the prover/audit, not pytest -- likely right), or define the discharge semantics precisely. Kill the semantically-confused warning class either way.
+
+<!-- ticket:T-0169 -->
+```yaml
+id: T-0169
+title: capability conformance did not scan TS/JS in the logand.app pilot -- verify
+  per-language wiring
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/_selfconform.py
+- src/frob/vet/_capability.py
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+logand.app pilot reports browser-side capabilities could not be auto-verified, leaving permanent SYS101 warnings -- yet vet _capability HAS a typescript pattern table (.ts/.tsx/.js in _EXT_LANGUAGE). Investigate whether the conformance path (scan_directory_capabilities via _selfconform / sys audit) actually walks TS/JS files or silently skips them (wiring bug), or whether the pilot's code globs missed the frontend tree (doc/UX gap). Either way the fix must make TS scanning provably active -- this feeds directly into T-0158's coverage matrix, which should gain a live wiring assertion (language column proven active end-to-end through sys audit, not just patterns existing).
+
+<!-- ticket:T-0170 -->
+```yaml
+id: T-0170
+title: kotlin capability-scanner column for android nodes
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/vet/_capability.py
+- tests/**
+- docs/modules/vet.md
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+logand.app has an android node; no Kotlin pattern table exists, so its capabilities cannot be verified. Add kotlin as a language column per the T-0158 matrix discipline: pattern tables for the reserved kinds where Kotlin idioms exist (net: OkHttp/HttpURLConnection/Retrofit; exec: Runtime.exec/ProcessBuilder; client_storage: SharedPreferences/Room; fs; eval: unusual -- excuse honestly), per-cell fire fixtures, .kt/.kts extension mapping. Sequence after T-0158 lands the matrix.
+
+<!-- ticket:T-0171 -->
+```yaml
+id: T-0171
+title: THREAT002 fires in quality views lacking the sink taxonomy security views have
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/**
+- tests/**
+- docs/strata/threat.md
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+logand.app pilot: THREAT002 (capability kind matches no sink taxonomy entry) fires against quality-family audit views because views do not share the capability-to-CWE mapping the security views carry -- the same signal that hit frob's own T-0150 work (DEFAULT_BENIGN_CAPABILITIES was the frob-repo patch, but external repos hit the raw gap). Decide the principled fix: the sink taxonomy and benign-capability excuse table should be single-sourced across view families, not re-declared per view; a capability genuinely irrelevant to a quality view must not demand a per-repo excuse. Regression-test against a fixture reproducing the pilot's shape.
+
+<!-- ticket:T-0172 -->
+```yaml
+id: T-0172
+title: managed marker for config-only infra nodes promised in surface.md but unimplemented
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- strata-core/src/parse.rs
+- src/frob/strata/**
+- docs/strata/surface.md
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+logand.app pilot: docs/strata/surface.md names a planned managed marker for pure-config infrastructure nodes (e.g. a Caddyfile-configured edge) but the grammar does not implement it, so config-only nodes cannot be honestly modeled without fake code bindings. Same doc-grammar drift class as T-0166. Either implement managed (parse -> elaborate -> conformance treats the node as having no scannable code by declaration, with the audit reporting it as managed rather than unmodeled) or correct surface.md; doc and grammar must agree.
+
+<!-- ticket:T-0173 -->
+```yaml
+id: T-0173
+title: sys audit output repeats identical WARNING blocks across all views
+state: queued
+kind: ux
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/app/sys_runner.py
+- src/frob/strata/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+logand.app pilot: the same WARNING blocks print once per configured view (8x duplication), burying the per-view differences that matter. Deduplicate: print shared findings once with a views-affected annotation, keep per-view sections for view-specific results only. Snapshot-test the output shape.
+
+<!-- ticket:T-0174 -->
+```yaml
+id: T-0174
+title: waiver mechanism for sys-audit findings (SYS/THREAT rules) analogous to frob:waive
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/**
+- design/**
+- docs/strata/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+logand.app pilot: check-gate violations have frob:waive with written reasons, but sys-audit findings (SYS100-102, THREAT002/003) have no waiver channel -- external repos must either fix immediately or live with permanent red, which pushes toward gaming the model instead of honest debt. Design the analog: an in-design waive/accept declaration (surface syntax on the node/claim, e.g. an accept clause with a mandatory reason string and optional ticket ref -- reuse the assume claim machinery where it already fits rather than a parallel channel), surfaced in audit output as WAIVED with the reason, counted separately, drift-locked so reasonless or stale waivers fail. Must satisfy the same discipline as frob:waive: narrowly scoped, reason mandatory, loud in output.
