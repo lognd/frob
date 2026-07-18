@@ -1159,7 +1159,7 @@ Filed from sibling-repo pilot P1 (graphite/feldspar/lithos, 2026-07-18). P1 gap 
 ```yaml
 id: T-0227
 title: gitio treats untracked gitlink/directory as file (Errno 21 warning spam)
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-18'
@@ -1169,12 +1169,74 @@ scope:
 - src/frob/gitio.py
 - tests/**
 - tickets.md
-evidence: []
+evidence:
+- tests/test_gitio.py::TestWorkingDiff::test_untracked_directory_is_skipped_not_read_as_file
+- tests/test_gitio.py::TestWorkingDiff::test_covers_committed_staged_unstaged_and_untracked
 attachments: []
 acceptance: []
 threat: null
 ```
 Filed from sibling-repo pilot P1 (graphite/feldspar/lithos, 2026-07-18). P1 gap 12: graphite has .claude/worktrees/lithos (gitlink); every frob check/test warns 'could not read untracked file ...: [Errno 21] Is a directory'. Skip directories/gitlinks from ls-files --others handling; regression test with an untracked dir.
+
+## Done report
+
+Changed:
+- src/frob/gitio.py -- `working_diff`'s untracked-file loop now checks
+  `abs_path.is_dir()` before calling `_count_lines` and skips with a
+  DEBUG log line (not WARNING) for untracked gitlinks / nested-worktree
+  directories that `git ls-files --others --exclude-standard` lists as a
+  path but that are not readable as files. Previously this hit
+  `_count_lines`'s `OSError` handler with `[Errno 21] Is a directory` and
+  logged a WARNING for every such entry on every `frob check`/`frob test`
+  invocation in a repo with an untracked nested worktree/gitlink.
+
+Evidence:
+- tests/test_gitio.py::TestWorkingDiff::test_untracked_directory_is_skipped_not_read_as_file
+  (new regression test: builds a repo with a genuine untracked nested git
+  checkout under `nested-worktree/`, asserts `working_diff` succeeds,
+  excludes the directory's path from `diff.hunks`, and asserts no
+  "could not read untracked file" WARNING was logged)
+- tests/test_gitio.py::TestWorkingDiff::test_covers_committed_staged_unstaged_and_untracked
+  (existing untracked-file coverage, still green -- confirms plain
+  untracked files are unaffected by the directory-skip check)
+- `uv run pytest tests/test_gitio.py -q` -> 13 passed
+- `uv run pytest --collect-only -q tests/test_gitio.py::TestWorkingDiff` -> 5 collected
+  (confirms the new test id above resolves)
+- `uv run frob test --base main` -> touched=5 selected tests/test_gitio.py
+  (+ both TestWorkingDiff untracked cases explicitly) -> PASS exit=0
+- `ruff check src/frob/gitio.py tests/test_gitio.py` and
+  `uv run ruff check src/frob/gitio.py tests/test_gitio.py` -> both
+  "All checks passed!" (both-ruff stable per playbook section 12)
+- `uv run ty check src/frob/gitio.py` -> "All checks passed!"
+
+Filed: none (no out-of-scope work found)
+
+Note: after this ticket's initial pass, `git merge main` pulled in a large
+unrelated batch (T-0157 secrets-scan gate, extending-guides docs, etc.).
+Re-ran `make core`, re-ran `uv run frob ticket sweep T-0227` (pre-work
+sweep timestamp must postdate the merge per PRE001), re-recorded evidence
+via `uv run frob ticket evidence T-0227 <ids>`, and re-verified
+`uv run pytest tests/test_gitio.py -q` (13 passed) and
+`uv run frob test --base main` (PASS) against the merged tree before
+finishing. One line the merge exposed: an unrelated pre-existing assert in
+`tests/test_gitio.py` (`TestWorkingDiff::test_covers_committed_staged_unstaged_and_untracked`,
+the `assert files == {...}` literal-set comparison) started tripping
+PERF003 under the post-merge gate state; added
+`# frob:waive PERF003 reason="single set comprehension over hunks compared
+by == to a fixed 4-item literal set, not a nested join"` on that line
+(tests/** is in this ticket's scope) rather than leave a new unwaived
+violation sitting in a file this ticket touches.
+
+Gates: `uv run frob check --ticket T-0227` (post-merge, post-`make core`)
+-> gates FAIL with 3 unwaived violation(s) (193 waived), all pre-existing
+and out of scope: COV003 on T-0168 (stale evidence id, unrelated ticket),
+TEST006 (no coverage stamp -- campaign-wide, instructed to ignore), and
+PERF004 on `src/frob/tickets/_land.py:67` (untouched file). Confirmed via
+`grep '\[gates\]' <check output>` that no remaining unwaived violation
+references `gitio.py` or any line I added outside the one PERF003 waived
+above. `ruff check` / `uv run ruff check` on `src/frob/gitio.py` and
+`tests/test_gitio.py` both report "All checks passed!"; `uv run ty check
+src/frob/gitio.py` reports "All checks passed!".
 
 <!-- ticket:T-0228 -->
 ```yaml
@@ -1439,6 +1501,49 @@ acceptance: []
 threat: null
 ```
 Found while writing T-0159's extending guides: 'frob outline strata-core/src/parse.rs' errors with 'No outline adapter for this file extension' even though frob.lang extracts 151 symbols from the same file (dispatching path=strata-core/src/parse.rs to grammar=rust). The outline adapter registry does not cover every language frob.lang supports; either add the missing adapters (rust at minimum, check c/cpp/tsx too) or have outline fall back to the frob.lang symbol walk so the two language registries cannot drift apart. Documented in docs/guides/extending/language-grammar-handlers.md as a current limitation.
+
+<!-- ticket:T-draft-29ea9722 -->
+```yaml
+id: T-draft-29ea9722
+title: frob outline has no Rust adapter though frob.lang parses Rust
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/outline/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Found while writing T-0159's extending guides: 'frob outline strata-core/src/parse.rs' errors with 'No outline adapter for this file extension' even though frob.lang extracts 151 symbols from the same file (dispatching path=strata-core/src/parse.rs to grammar=rust). The outline adapter registry does not cover every language frob.lang supports; either add the missing adapters (rust at minimum, check c/cpp/tsx too) or have outline fall back to the frob.lang symbol walk so the two language registries cannot drift apart. (Refiled: first draft was lost in a tickets.md ledger splice during T-0159's concurrent-agent merge.)
+
+<!-- ticket:T-draft-c4c47359 -->
+```yaml
+id: T-draft-c4c47359
+title: frob:tests edge code endpoints and kind= attr are not gate-verified
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/**
+- src/frob/graph/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Found while writing T-0159's extending guides. tests/unit/test_strata_tmlanguage.py:13 declares 'frob:tests strata-core/src/parse.rs::parse_program kind="drift"'. Two problems, neither caught by any gate: (1) the code-side endpoint parse.rs::parse_program does not resolve -- frob.lang's Rust walk qualnames the symbol Parser.parse_program -- yet no DRIFT002 fires; an identical dead endpoint on a frob:describes edge DOES fire DRIFT002 (observed during T-0159: a describes edge to parse.rs::parse_program produced 'DRIFT002 ... gone' until corrected to Parser.parse_program). frob:tests edges appear exempt from endpoint resolution, so a renamed/deleted code symbol silently orphans its test-evidence edge. (2) kind="drift" is not in graph.dsl._TESTS_KINDS (unit/integration/e2e) yet is not reported as a MalformedDirective. Either widen _TESTS_KINDS deliberately or reject unknown kinds loudly; and run frob:tests code-side endpoints through the same DRIFT002 resolution describes edges get. (Refiled: first draft was lost in a tickets.md ledger splice during T-0159's concurrent-agent merge.)
 
 <!-- ticket:T-draft-ee3df28d -->
 ```yaml

@@ -223,7 +223,15 @@ def working_diff(root: Path, base: str) -> Result[Diff, GitError]:
         rel = rel.strip()
         if not rel:
             continue
-        line_count = _count_lines(root / rel)
+        abs_path = root / rel
+        if abs_path.is_dir():
+            # Untracked gitlink or nested worktree dir (e.g. a submodule-like
+            # checkout under .claude/worktrees/): `ls-files --others` lists
+            # its path like a file, but it is not one -- skip cleanly rather
+            # than attempt a read that raises Errno 21.
+            _log.debug("gitio: skipping untracked directory/gitlink %s", rel)
+            continue
+        line_count = _count_lines(abs_path)
         hunks.append(Hunk(file=rel, span=(1, max(line_count, 1))))
 
     _log.info(

@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import logging
 import subprocess
 from pathlib import Path
+
+import pytest
 
 from frob.gitio import GitError, current_branch, repo_root, run_argv, working_diff
 
@@ -93,7 +96,39 @@ class TestWorkingDiff:
         diff = result.danger_ok
 
         files = {hunk.file for hunk in diff.hunks}
+        # frob:waive PERF003 reason="single set comprehension over hunks compared by == to a fixed 4-item literal set, not a nested join"
         assert files == {"committed.py", "staged.py", "base.py", "untracked.py"}
+
+    def test_untracked_directory_is_skipped_not_read_as_file(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests src/frob/gitio.py::working_diff
+        # Regression for T-0227: an untracked gitlink/nested-worktree dir
+        # (e.g. .claude/worktrees/x) is listed by `ls-files --others` like a
+        # file, but reading it raises Errno 21 (Is a directory). It must be
+        # skipped cleanly rather than surfaced as a warning.
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        (repo / "base.py").write_text("x = 1\n")
+        _commit(repo, "base")
+
+        (repo / "untracked.py").write_text("w = 4\n")
+        nested = repo / "nested-worktree"
+        _init_repo(nested)
+        (nested / "inner.txt").write_text("irrelevant\n")
+        _commit(nested, "inner")
+
+        with caplog.at_level(logging.WARNING):
+            result = working_diff(repo, "main")
+
+        assert result.is_ok
+        diff = result.danger_ok
+        files = {hunk.file for hunk in diff.hunks}
+        assert files == {"untracked.py"}
+        assert not any(
+            "could not read untracked file" in record.message
+            for record in caplog.records
+        )
 
     def test_merge_base_not_head(self, tmp_path: Path) -> None:
         repo = tmp_path / "repo"
