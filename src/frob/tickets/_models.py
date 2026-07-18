@@ -170,3 +170,40 @@ class TicketError(ErrorSet):
     BlockerOpen = "Cannot start: blocked_by contains open tickets"
     WriteFailed = "Atomic ticket write failed"
     UnknownEvidence = "Evidence id does not resolve to a collected test"
+
+
+# frob:ticket T-0176
+# frob:doc docs/modules/tickets.md#frob-ticket-land
+class LandError(ErrorSet):
+    """Fallible outcomes of `frob.tickets.land` (`frob ticket land`); every
+    variant corresponds to an abort path that names its own manual remedy
+    in the log line raised alongside it (T-0176)."""
+
+    DirtyMain = "root checkout has uncommitted changes"
+    NotFound = "ticket not found in the worktree's store"
+    NotCloseable = "ticket is missing evidence or a Done report"
+    GitFailed = "a required git operation failed"
+    MergeConflict = "merging main into the worktree produced real conflicts"
+    UnownedDeletions = "worktree deletes files outside the ticket's scope"
+    CloseFailed = "closing the ticket after merge failed"
+    SquashConflict = "squash-applying the worktree onto main produced real conflicts"
+    CommitFailed = "the final landing commit failed"
+
+
+# frob:ticket T-0176
+# frob:doc docs/modules/tickets.md#frob-ticket-land
+class LandReport(BaseModel):
+    """Outcome of one `land()` call: what happened (or, under `dry_run`,
+    what WOULD happen) landing `ticket_id` from a worktree onto main."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    ticket_id: str
+    final_id: str
+    dry_run: bool
+    wip_committed: bool
+    merged_main_into_worktree: bool
+    ledger_spliced: bool
+    unowned_deletions: tuple[str, ...] = ()
+    commit_sha: str | None = None
+    files_changed: tuple[str, ...] = ()
