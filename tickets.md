@@ -1481,6 +1481,172 @@ threat: null
 ```
 Found while writing T-0159's extending guides: 'frob outline strata-core/src/parse.rs' errors with 'No outline adapter for this file extension' even though frob.lang extracts 151 symbols from the same file (dispatching path=strata-core/src/parse.rs to grammar=rust). The outline adapter registry does not cover every language frob.lang supports; either add the missing adapters (rust at minimum, check c/cpp/tsx too) or have outline fall back to the frob.lang symbol walk so the two language registries cannot drift apart. (Refiled: first draft was lost in a tickets.md ledger splice during T-0159's concurrent-agent merge.)
 
+<!-- ticket:T-0239 -->
+```yaml
+id: T-0239
+title: graph/gates scan gitignored nested git worktrees -- 73 pct wasted work
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/graph/**
+- src/frob/lang/**
+- src/frob/excludes.py
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Filed from malmberg pilot P3 (/mnt/c, 2026-07-18). Malmberg pilot (HIGH): .claude/worktrees/agent-* checkouts made graph build scan 536 files/3007 symbols vs 144/925 real -- 73 pct of parse/gate work on stale copies; full check 9m47s -> 3m35s after manual exclude. Fix: skip gitignored paths and any directory containing a .git file/dir by DEFAULT (not per-repo config); regression fixture with a nested checkout.
+
+<!-- ticket:T-0240 -->
+```yaml
+id: T-0240
+title: frob ticket sweep unbounded on real scopes -- ignores excludes, walks venvs,
+  nonsense xref stems
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/tickets/**
+- src/frob/gates/**
+- src/frob/dup/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Filed from malmberg pilot P3 (/mnt/c, 2026-07-18). Malmberg pilot (HIGH): sweep on an 8-glob scope never completed on /mnt/c across 5 attempts (>13 min; /proc fd sampling showed it inside .claude/worktrees/*/.venv site-packages); identical repo on Linux fs: 5.2s. It ignores [graph] exclude; xref_hits derives nonsense symbols from glob stems (**, __init__, README); SIGINT prints bare KeyboardInterrupt. Also fold in: PRE001 catch-22 on slow mounts (scope edit demands re-sweep which is this unbounded op) and scope_digest env-sensitivity (hashes snapshot file-hashes so a sweep record cannot be transplanted between identical-content checkouts -- consider content-digest keying). Fix: honor excludes + gitignore, cap/skip venv trees, derive xref terms from real symbols only, clean interrupt message.
+
+<!-- ticket:T-0241 -->
+```yaml
+id: T-0241
+title: 'ticket scope parsing: comma-joined strings match nothing, dir/ prefixes dont
+  glob, ledger not implicit'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/tickets/**
+- src/frob/gates/**
+- tests/**
+- docs/modules/tickets.md
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Filed from malmberg pilot P3 (/mnt/c, 2026-07-18). Malmberg pilot (HIGH correctness -- same class as T-0181 round-1 incident): a scope entry 'a/,b/,c/' is treated as ONE fnmatch glob matching nothing -- SCOPE001 fired on every touched file and prior sweeps recorded against ZERO files (digest sha256 of empty; dup/xref vacuous pass). Also 'design/' does not match (needs design/**), and tickets.md itself is flagged out-of-scope though frob edits it on every ticket op. Fix: reject or split comma-joined entries at frob ticket new (loud validation), treat dir/ as dir/**, make tickets.md implicitly in-scope for every ticket. Regression tests for all three.
+
+<!-- ticket:T-0242 -->
+```yaml
+id: T-0242
+title: 'strata runner: frob test should invoke sys audit natively for touched .strata
+  files'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/testing/**
+- src/frob/strata/**
+- tests/**
+- docs/modules/testing.md
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Filed from malmberg pilot P3 (/mnt/c, 2026-07-18). Malmberg pilot: touching a .strata file breaks frob test with NoRunner (language strata has selected tests but no [[test.runner]]); workaround registering frob sys audit as runner demands a dummy {ids} placeholder (BadRunnerSpec otherwise). Fix: native strata selection path -- touched .strata invokes sys audit without per-repo runner config; placeholder validation should accept runners that take no ids. Relates T-0149 (closed, per-repo config path) -- this makes it zero-config.
+
+<!-- ticket:T-0243 -->
+```yaml
+id: T-0243
+title: cache.db not invalidated across frob/parser upgrades
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/graph/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Filed from malmberg pilot P3 (/mnt/c, 2026-07-18). Malmberg pilot (medium): a stale cache served 2830 symbols where a fresh parse of identical sources gave 3007 -- cache survived a frob upgrade with changed parser behavior. Include the frob version + grammar/parser fingerprint in the cache key so any upgrade invalidates cleanly. Regression: bump a fake version constant in test, assert cold rebuild.
+
+<!-- ticket:T-0244 -->
+```yaml
+id: T-0244
+title: 'embedded-code blind spot: JS/HTML inside python string literals invisible
+  to every scanner'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/vet/**
+- src/frob/strata/**
+- src/frob/lang/**
+- docs/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Filed from malmberg pilot P3 (/mnt/c, 2026-07-18). Malmberg pilot (design-level): the product dashboard is 5400 lines of inline HTML/JS inside a python module -- invisible to capability scanning even post-T-0169. Options to evaluate honestly: (a) detect large embedded html/script string literals and run the TS/JS needle pass over their content; (b) an explicit OutOfScope/managed-style marker declaring embedded-frontend content with a reason, so the blind spot is at least DECLARED not silent. Start with (b) (cheap, honest), spike (a).
+
+<!-- ticket:T-0245 -->
+```yaml
+id: T-0245
+title: 'mount-aware performance: per-file stat storms and sqlite contention on /mnt/c
+  (13-60x tax)'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/graph/**
+- src/frob/gates/**
+- src/frob/gitio.py
+- tests/**
+- docs/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Filed from malmberg pilot P3 (/mnt/c, 2026-07-18). Malmberg pilot dedicated /mnt/c findings: same content, same machine -- graph cold 7.4s vs 1.1s, warm up to 31s vs 0.5s, gates-only 19-47s vs 7.9s; ~0.5ms/stat under load (11.3k stats in 90s of sweep strace); sqlite commit 8.2ms vs 2.3ms; concurrent frob processes drove D-state stalls with no lock feedback. Fixes: batch directory walks (os.scandir reuse), cut redundant per-file stats (trust one snapshot pass), sqlite busy_timeout + a visible waiting-on-lock message, and a docs page on WSL-mount expectations. Acceptance: measured cold graph build on the malmberg /mnt/c checkout under 3s.
+
 <!-- ticket:T-draft-117dcdb8 -->
 ```yaml
 id: T-draft-117dcdb8
