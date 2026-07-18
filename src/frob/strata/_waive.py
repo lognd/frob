@@ -82,7 +82,7 @@ from ._models import KernelModel, Waiver
 
 _log = get_logger(__name__)
 
-# frob:doc docs/strata/waive.md#sub-targets-required-for-multi-instance-per-node-rule-families
+# frob:doc docs/strata/waive.md#sub-targets
 #: Rule families that can fire MORE THAN ONCE on the same node (once per
 #: capability kind, once per CWE) -- a bare-rule `waive` clause here would
 #: blanket-suppress every current and future finding of the rule on the
@@ -98,7 +98,7 @@ MULTI_INSTANCE_WAIVER_FAMILIES: frozenset[str] = frozenset(
 )
 
 
-# frob:doc docs/strata/waive.md#sub-targets-required-for-multi-instance-per-node-rule-families
+# frob:doc docs/strata/waive.md#sub-targets
 def split_waiver_rule(rule: str) -> tuple[str, str | None]:
     """Split a declared `waive` rule string into `(family, sub_target)` on
     the first `:` -- `"SYS100:fs-write"` -> `("SYS100", "fs-write")`,
@@ -111,7 +111,7 @@ def split_waiver_rule(rule: str) -> tuple[str, str | None]:
     return family.strip(), (sub_target or None)
 
 
-# frob:doc docs/strata/waive.md#sub-targets-required-for-multi-instance-per-node-rule-families
+# frob:doc docs/strata/waive.md#sub-targets
 def validate_waiver_fields(rule: str, reason: str) -> Result[None, StrataError]:
     """Reject a `waive` clause's `(rule, reason)` pair at elaborate time,
     fails closed: `reason` empty/whitespace-only (a blank reason is a

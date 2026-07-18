@@ -54,6 +54,8 @@ Findings with no single owning node (a catalog-completeness gap, a
 CVE-fingerprint catalog drift check) cannot be targeted by a `waive`
 clause -- there is no node to attach it to.
 
+<a id="sub-targets"></a>
+
 ## Sub-targets: required for multi-instance-per-node rule families
 
 `RULE_ID` alone is not always a fine enough key. **SYS100, SYS101,
