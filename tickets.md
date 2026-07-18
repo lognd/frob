@@ -1538,7 +1538,18 @@ requests-family; npm -- react/react-dom, vite/vitest, playwright,
 openapi-typescript, eslint tooling; cargo -- pyo3, serde/serde_json,
 tracing, libloading (dynamic loading -- dangerous), wasm-bindgen,
 crossbeam, thiserror. Libraries outside this list go through the vet
-path, not hand-registry entries.
+path, not hand-registry entries. (4) FASTAPI FIRST-CLASS (user):
+FastAPI's surface gets explicit registry entries, not just vet
+coverage -- route decorators (@app.get/post/put/delete/websocket,
+APIRouter equivalents) as net-ingress/endpoint markers, UploadFile as
+upload/fs sink, WebSocket endpoints, BackgroundTasks as deferred exec,
+StaticFiles mounts, TemplateResponse/Jinja2Templates as html_render,
+CORSMiddleware/middleware stack as boundary configuration, Depends
+chains as auth-boundary markers. These entries feed T-0155's design
+lint: a FastAPI route observed in code with no corresponding
+boundary/flow declared in the design is an undeclared public interface
+(the logand.app pilot's GithubRepoCard finding, but provable from
+scanning instead of luck).
 
 <!-- ticket:T-0159 -->
 ```yaml
