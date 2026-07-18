@@ -1289,3 +1289,136 @@ acceptance: []
 threat: null
 ```
 Third collision incident in one day: (1) post-archive allocator reissued T-0001 (fixed by T-0140, active+archive max); (2) T-0144 reserved in one worktree while main allocated the same id (avoided by manual coordination); (3) a sweep worktree filed T-0157 while main independently assigned T-0157 to a different ticket, with ~102 code waiver comments referencing the collided id (fixed by manual sed renumber). Root cause: sequential max+1 allocation in independent checkouts that later merge -- the allocator cannot see sibling worktrees or unmerged branches, and coordination is manual. REQUIRED INVARIANT: two ledgers filed independently in ANY two checkouts/branches/worktrees must never merge into the same final id, with no human coordination. Design the mechanism (implementer chooses with a written decision record in docs/modules/tickets.md; candidates to evaluate): (a) PROVISIONAL IDS -- frob ticket new off the default branch mints a draft id (e.g. T-draft-<8-char content/branch hash>), and a frob ticket finalize/land step (run at merge/land time, or automatically by a gate) assigns the next sequential T-#### and atomically rewrites the ledger section AND every code directive referencing the draft id; final ids only ever minted against the default branch's merged view, making collision structurally impossible; (b) branch-tip scanning as defense-in-depth -- allocation also scans tickets.md at every local ref tip so sibling worktrees' filings are visible; (c) content-nonce tiebreak. Whatever the choice: a new gate rule must fail frob check loudly on duplicate ids ANYWHERE (active+archive+draft) and on draft ids that survived onto the default branch; plus frob ticket renumber <old> <new> as a first-class command doing the atomic ledger+code-reference rewrite (no more sed), with a dry-run mode; plus tests reproducing all three real incidents above and proving the invariant (two simulated checkouts file concurrently, merge, no collision, references intact). Update ~/.claude/refs-worthy docs in docs/modules/tickets.md including the agent workflow implications (agents file freely in worktrees, finalize happens at land).
+
+<!-- ticket:T-0163 -->
+```yaml
+id: T-0163
+title: frob sys audit <file> appends bogus path segment instead of erroring
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/app/sys_runner.py
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Typani pilot: frob sys audit <file.strata> misbehaves silently, appending a bogus path segment; only frob sys audit . works. A file argument must either work (resolve to its containing design root) or fail loudly with a clear message naming the expected invocation. Vacuous-pass doctrine: silent path mangling is the worst outcome. Repro against typani's design/typani.strata layout.
+
+<!-- ticket:T-0164 -->
+```yaml
+id: T-0164
+title: COV002 demands per-declaration frob:ticket edges inside .strata files -- boilerplate
+  x28
+state: queued
+kind: ux
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/**
+- src/frob/lang/_walk_strata.py
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Typani pilot: COV002 required a frob:ticket directive on every strata declaration (module/node/flow/assert) individually -- ~28 copy-paste edges for one ticket with no granularity value. Design decision needed: either a module-level directive in a .strata file covers all its declarations (likely right -- a design file is one artifact), or document why per-declaration edges matter. Whichever way, kill the boilerplate.
+
+<!-- ticket:T-0165 -->
+```yaml
+id: T-0165
+title: 'DOC002 anchor errors: report the computed slug and suggest nearest valid anchor'
+state: queued
+kind: ux
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/**
+- src/frob/docs/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Typani pilot: DOC002 anchor-resolution failures forced manual guessing of GitHub-style slugs. The error must print the slug it computed, the anchors it found in the target file, and the nearest match (edit distance). Small change, large DX payoff for every frob:doc user.
+
+<!-- ticket:T-0166 -->
+```yaml
+id: T-0166
+title: store grammar rejects code/may despite surface.md implying support
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- strata-core/src/parse.rs
+- docs/strata/surface.md
+- src/frob/strata/**
+- tests/**
+- design/frob.strata
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Confirmed twice (T-0150 review read parse_store directly: no code/may branch, falls through to unknown-store-property; typani pilot reconfirmed): stores cannot carry code/may declarations though docs/strata/surface.md implies they can. T-0150 worked around it by folding tickets_ledger's code into the core node. Fix properly: implement code/may on store_prop in strata-core (mirroring parse_node), elaborate into the kernel, un-fold frob's own tickets_ledger workaround in design/frob.strata, and correct surface.md either way so doc and grammar agree.
+
+<!-- ticket:T-0167 -->
+```yaml
+id: T-0167
+title: 'frob sys --help: add example invocations and directory-root convention'
+state: queued
+kind: docs
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/__main__.py
+- docs/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Typani pilot: sys subcommand help gives no example invocation or the design-root directory convention -- the pilot reverse-engineered usage from frob.strata comments. Add epilog examples (plan/doc/audit/export against a design root) to the argparse help and a quickstart paragraph in docs.
+
+<!-- ticket:T-0168 -->
+```yaml
+id: T-0168
+title: TEST001 fires on flow declarations in .strata files -- undefined semantics
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/**
+- src/frob/lang/_walk_strata.py
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Typani pilot: TEST001 (untested public symbol) fires on flow declarations inside design files, but what a passing test for a design-model flow MEANS is undefined -- frob's own self-model binds no tests to flows either. Decide and implement: either design-file declarations are exempt from TEST001 (their verification is the prover/audit, not pytest -- likely right), or define the discharge semantics precisely. Kill the semantically-confused warning class either way.
