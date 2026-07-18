@@ -331,6 +331,121 @@ class TestNoSilentNeedleRegression:
         assert "exec" in scan_file_capabilities(path)
 
 
+# ---------------------------------------------------------------------------
+# per-operation fire+negative parametrization (T-0182, T-0158 deliverable 3
+# remainder): the `_FIRE_FIXTURES` tuple above is one representative
+# fixture per patterned (kind, language) cell (29 cells) -- it does NOT
+# give each of the ~70 individual `DANGEROUS_OPERATIONS` entries its own
+# dedicated proof. The tests below parametrize DIRECTLY over
+# `DANGEROUS_OPERATIONS` itself (not a hand-maintained fixture tuple), so a
+# new entry appended to the registry automatically gets its own fire
+# fixture generated from its own needle -- no fixture written means no
+# proof, and `frob check`'s coverage gate has nothing to bind, but the test
+# itself cannot silently "ride" on a sibling entry's cell-level fixture the
+# way `_FIRE_FIXTURES` can (T-0145 drift-lock style: a pattern with zero
+# entry-level firing evidence is as good as absent).
+# ---------------------------------------------------------------------------
+
+#: registry language -> the file extension `frob.vet._capability.language_for`
+#: buckets it under, so each generated fixture lands in the right pattern
+#: table.
+_LANG_EXT: dict[str, str] = {
+    "python": ".py",
+    "typescript": ".ts",
+    "rust": ".rs",
+    "c-cpp": ".c",
+}
+
+#: benign source per language guaranteed to contain none of this registry's
+#: needles -- the negative-fixture baseline every entry is checked against.
+_BENIGN_SOURCE: dict[str, str] = {
+    "python": "x = 1\n",
+    "typescript": "const x = 1;\n",
+    "rust": "let x: i32 = 1;\n",
+    "c-cpp": "int x = 1;\n",
+}
+
+
+def _fire_snippet(entry: DangerousOperation) -> str:
+    """Minimal source text that must fire `entry`: its own first needle
+    verbatim, or -- for the one no-needle registry entry (python bare
+    `compile()`, matched only via `_has_bare_compile_call`) -- a literal
+    bare builtin call. Raises if a future no-needle entry has no known
+    generation strategy, so a silently un-provable entry fails loudly
+    instead of being skipped."""
+    if entry.needles:
+        return entry.needles[0] + "\n"
+    if entry.language == "python" and entry.function_or_pattern.startswith("compile("):
+        return "compile(src, '<string>', 'eval')\n"
+    raise AssertionError(
+        f"no fire-snippet generation strategy for no-needle entry "
+        f"{entry.language}/{entry.library}/{entry.function_or_pattern!r} "
+        f"-- T-0182 fixture generator needs a case for it"
+    )
+
+
+_PER_OPERATION_IDS = tuple(
+    f"{i:03d}-{entry.language}-{entry.library}-{entry.function_or_pattern}"
+    for i, entry in enumerate(DANGEROUS_OPERATIONS)
+)
+
+
+class TestPerOperationFireFixtures:
+    """One needle-based fire fixture per `DANGEROUS_OPERATIONS` entry
+    (T-0182), generated from the entry itself rather than hand-maintained,
+    so an entry added to the registry without review gets proof for free
+    and a broken needle fails loudly instead of riding on a sibling
+    entry's cell-level fixture."""
+
+    @pytest.mark.parametrize("entry", DANGEROUS_OPERATIONS, ids=_PER_OPERATION_IDS)
+    # frob:tests src/frob/vet/_capability.py::scan_file_operations kind="unit"
+    def test_entry_fires_scan_file_operations(
+        self, tmp_path: Path, entry: DangerousOperation
+    ) -> None:
+        """`scan_file_operations` must name THIS exact registry entry (not
+        merely some entry sharing its kind) for a minimal snippet built
+        from the entry's own needle."""
+        path = tmp_path / ("m" + _LANG_EXT[entry.language])
+        path.write_text(_fire_snippet(entry))
+        ops = scan_file_operations(path)
+        assert entry in ops, (
+            f"{entry.language}/{entry.library}/{entry.function_or_pattern} "
+            f"did not fire via its own needle(s) {entry.needles!r}"
+        )
+
+    @pytest.mark.parametrize("entry", DANGEROUS_OPERATIONS, ids=_PER_OPERATION_IDS)
+    # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+    def test_entry_fires_scan_file_capabilities(
+        self, tmp_path: Path, entry: DangerousOperation
+    ) -> None:
+        """The bare-kind sibling entry point must also observe `entry`'s
+        `capability_kind` for the same minimal snippet."""
+        path = tmp_path / ("m" + _LANG_EXT[entry.language])
+        path.write_text(_fire_snippet(entry))
+        observed = scan_file_capabilities(path)
+        assert entry.capability_kind in observed, (
+            f"{entry.language}/{entry.library}/{entry.function_or_pattern} "
+            f"fired no capability via its own needle(s) {entry.needles!r}"
+        )
+
+    @pytest.mark.parametrize("entry", DANGEROUS_OPERATIONS, ids=_PER_OPERATION_IDS)
+    # frob:tests src/frob/vet/_capability.py::scan_file_operations kind="unit"
+    def test_entry_absent_from_benign_source(
+        self, tmp_path: Path, entry: DangerousOperation
+    ) -> None:
+        """Negative fixture: this entry must NOT fire against benign source
+        containing none of its needles -- proves the needle match is
+        discriminating, not vacuously true (T-0145 lesson applied per
+        entry, not just per cell)."""
+        path = tmp_path / ("m" + _LANG_EXT[entry.language])
+        path.write_text(_BENIGN_SOURCE[entry.language])
+        ops = scan_file_operations(path)
+        assert entry not in ops, (
+            f"{entry.language}/{entry.library}/{entry.function_or_pattern} "
+            f"fired against benign source with none of its needles present"
+        )
+
+
 class TestNegativeFixtures:
     """T-0151 lessons: dotted-call exclusions and self-match boundaries
     must stay locked, not just the positive fire side."""

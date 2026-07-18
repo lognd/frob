@@ -23,6 +23,10 @@ real.
   shared work surface, including the worktree-per-agent pattern.
 - `docs/guides/editors.md` -- syntax highlighting for `.strata` in VSCode
   and JetBrains IDEs via one drift-locked TextMate grammar.
+- `docs/guides/exhaustive-research.md` -- the frontier-loop for total-coverage
+  research (audit every module, read every paper): external pending/done
+  store instead of an in-context to-do list, plus the `.mcp.json` wiring for
+  `fetch`/`arxiv`.
 
 ## Module design docs
 

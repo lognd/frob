@@ -1968,7 +1968,7 @@ callable API it will invoke.
 ```yaml
 id: T-0163
 title: frob sys audit <file> appends bogus path segment instead of erroring
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-18'
@@ -1978,19 +1978,61 @@ scope:
 - src/frob/app/sys_runner.py
 - tests/**
 - tickets.md
-evidence: []
+evidence:
+- tests/system/test_cli_sys_audit.py::TestSysAuditCli::test_file_arg_fails
+- tests/system/test_cli_sys_audit.py::TestSysAuditCli::test_clean_model_exits_zero
+- tests/system/test_cli_sys_audit.py::TestSysAuditCli::test_undischarged_capability_exits_nonzero_with_named_gap
+- tests/system/test_cli_sys_audit.py::TestSysAuditCli::test_no_design_dir_is_a_noop
 attachments: []
 acceptance: []
 threat: null
 ```
 Typani pilot: frob sys audit <file.strata> misbehaves silently, appending a bogus path segment; only frob sys audit . works. A file argument must either work (resolve to its containing design root) or fail loudly with a clear message naming the expected invocation. Vacuous-pass doctrine: silent path mangling is the worst outcome. Repro against typani's design/typani.strata layout.
 
+## Done report
+
+Changed:
+- src/frob/app/sys_runner.py::_resolve_design_root (new)
+- src/frob/app/sys_runner.py::_repo_root_for (new)
+- src/frob/app/sys_runner.py::_run_plan (uses _resolve_design_root)
+- src/frob/app/sys_runner.py::_run_doc (uses _resolve_design_root)
+- src/frob/app/sys_runner.py::_run_audit (uses _resolve_design_root)
+
+Repro: `uv run frob sys audit design/frob.strata` silently joined
+`design_dir` onto the *file* path, producing a nonexistent
+`<file>/design`, finding zero models, and exiting 0 with "no design
+models under .../design/frob.strata/design" -- a vacuous PASS. Fixed
+by validating `cfg.sys_path` up front in `plan`/`doc`/`audit` (all three
+shared the identical bug via the same `root = (cfg.sys_path or
+Path(".")).resolve()` line): a file argument now exits 1 with
+`sys <cmd>: <path> is a file; pass the repo root directory instead
+(design files live under its [strata].design_dir, e.g. \`frob sys
+<cmd> <repo-root>\`)`, matching the sys-path convention documented in
+T-0167 (plan/doc/audit take the repo root; export takes a single
+.strata file).
+
+Evidence:
+- tests/system/test_cli_sys_audit.py::TestSysAuditCli::test_file_arg_fails (new regression test, T-0163)
+- tests/system/test_cli_sys_audit.py::TestSysAuditCli::test_clean_model_exits_zero
+- tests/system/test_cli_sys_audit.py::TestSysAuditCli::test_undischarged_capability_exits_nonzero_with_named_gap
+- tests/system/test_cli_sys_audit.py::TestSysAuditCli::test_no_design_dir_is_a_noop
+
+Filed: none
+
+Gates: `uv run frob check --ticket T-0163` -- 0 errors, 262 warnings
+(WARN, not FAIL). One pre-existing warning remains and is out of
+T-0163's scope: TEST006 "no coverage stamp found" -- this worktree has
+never run `make coverage`/produced `coverage.xml`; unrelated to this
+fix. `uv run frob test --base main` -- PASS, exit=0 (5 selected
+tests including the new regression test). `uv run pytest
+tests/system/test_cli_sys_audit.py -v` -- 4 passed.
+
 <!-- ticket:T-0164 -->
 ```yaml
 id: T-0164
 title: COV002 demands per-declaration frob:ticket edges inside .strata files -- boilerplate
   x28
-state: queued
+state: done
 kind: ux
 origin: agent
 created: '2026-07-18'
@@ -2001,12 +2043,42 @@ scope:
 - src/frob/lang/_walk_strata.py
 - tests/**
 - tickets.md
-evidence: []
+evidence:
+- tests/test_gates.py::TestCov002StrataModuleCoverage::test_module_level_ticket_edge_covers_nested_declaration
+- tests/test_gates.py::TestCov002StrataModuleCoverage::test_declaration_without_module_edge_still_fires
 attachments: []
 acceptance: []
 threat: null
 ```
 Typani pilot: COV002 required a frob:ticket directive on every strata declaration (module/node/flow/assert) individually -- ~28 copy-paste edges for one ticket with no granularity value. Design decision needed: either a module-level directive in a .strata file covers all its declarations (likely right -- a design file is one artifact), or document why per-declaration edges matter. Whichever way, kill the boilerplate.
+
+## Done report
+
+Design decision: a `.strata` file is one design artifact -- a single
+`frob:ticket` directive on the file's `module` declaration now covers every
+`node`/`flow`/`boundary`/`assert`/... nested under it for COV002 purposes,
+the same blast-radius reasoning `_scope_covers` already applies at the file
+level, one notch finer. Per-declaration edges are no longer demanded; a
+`.strata` file with no directive anywhere still fires COV002 normally (not
+a blanket exemption).
+
+Changed:
+- src/frob/gates/__init__.py::_strata_module_symref (new)
+- src/frob/gates/__init__.py::_covered_by_strata_module (new)
+- src/frob/gates/__init__.py::_cov002 (extended: checks strata-module
+  coverage before falling through to scope coverage)
+
+Evidence:
+- tests/test_gates.py::TestCov002StrataModuleCoverage::test_module_level_ticket_edge_covers_nested_declaration
+- tests/test_gates.py::TestCov002StrataModuleCoverage::test_declaration_without_module_edge_still_fires
+
+Filed: none (no out-of-scope work found; T-0165/T-0168 explicitly left
+untouched per instructions).
+
+Gates: `frob check --ticket T-0164` clean -- 0 errors, only the pre-existing
+TEST006 warn (no coverage stamp, unrelated to this change) and the usual
+repo-wide waived PERF/arch advisories. `pytest tests/test_gates.py` passes
+(all prior COV002 tests plus the 2 new ones).
 
 <!-- ticket:T-0165 -->
 ```yaml
@@ -2058,7 +2130,7 @@ Confirmed twice (T-0150 review read parse_store directly: no code/may branch, fa
 ```yaml
 id: T-0167
 title: 'frob sys --help: add example invocations and directory-root convention'
-state: queued
+state: done
 kind: docs
 origin: agent
 created: '2026-07-18'
@@ -2068,12 +2140,39 @@ scope:
 - src/frob/__main__.py
 - docs/**
 - tickets.md
-evidence: []
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 attachments: []
 acceptance: []
 threat: null
 ```
 Typani pilot: sys subcommand help gives no example invocation or the design-root directory convention -- the pilot reverse-engineered usage from frob.strata comments. Add epilog examples (plan/doc/audit/export against a design root) to the argparse help and a quickstart paragraph in docs.
+
+## Done report
+
+Changed:
+src/frob/__main__.py::_add_sys_parser (epilog with example invocations,
+RawDescriptionHelpFormatter)
+docs/commands/sys.md (Quickstart section)
+
+Convention documented after live verification: plan/doc/audit take the repo
+ROOT (default `.`) and the tool appends the configured design dir itself;
+export is the single exception taking one .strata file (default
+design/frob.strata) and errors on a directory argument. Every example
+invocation in the epilog/Quickstart was run directly in the worktree and its
+real output verified, including the negative cases (`sys plan design`
+reproducing the design/design lookup miss the old text would have caused;
+`sys export ... design` erroring on a directory). File-path behavior of
+`sys audit <file>` deliberately left undocumented: T-0163 owns making it a
+hard error.
+
+Evidence: tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+(frob test --base main, PASS)
+Filed: none
+Gates: frob check clean for this change; TEST006 coverage-stamp staleness is
+campaign-wide and re-stamped at release verification, not per-ticket.
+Review: one REJECT round (initial text documented passing design/ as the
+path, contradicting sys_runner's actual resolution); fixed and APPROVED.
 
 <!-- ticket:T-0168 -->
 ```yaml
@@ -2433,7 +2532,7 @@ T-0158 shipped python stdlib coverage (subprocess/os/pickle/marshal/shelve/ctype
 id: T-0182
 title: per-operation fire+negative fixture parametrization for the full DANGEROUS_OPERATIONS
   table (T-0158 deliverable 3 remainder)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-18'
@@ -2441,18 +2540,64 @@ blocked_by: []
 parent: null
 scope:
 - tests/test_capability_registry.py
-evidence: []
+evidence:
+- tests/test_capability_registry.py::TestPerOperationFireFixtures::test_entry_fires_scan_file_operations
+- tests/test_capability_registry.py::TestPerOperationFireFixtures::test_entry_fires_scan_file_capabilities
+- tests/test_capability_registry.py::TestPerOperationFireFixtures::test_entry_absent_from_benign_source
 attachments: []
 acceptance: []
 threat: null
 ```
 T-0158's test_capability_registry.py::_FIRE_FIXTURES covers one representative fire fixture per patterned (kind, language) matrix cell (29 cells), proving the compiled _PATTERNS table fires at least once per cell. It does NOT give every one of the ~70 individual DANGEROUS_OPERATIONS entries (e.g. python has 4 separate exec-kind entries: subprocess, os.system/popen/exec*, os.spawn*, webbrowser.open -- only one fires today) its own dedicated fixture, which is what T-0158 deliverable (3)'s literal text asks for ('for every patterned cell, a minimal real code snippet' read loosely as cell-level, but the addendum's per-operation structure implies per-entry proof would be stronger). Left as a follow-up: parametrize directly over DANGEROUS_OPERATIONS entries (one needle-based fixture per entry) rather than the current per-cell sampling, so a new operation added to the registry without a matching fixture fails loudly (T-0145 drift-lock style) instead of silently riding on a sibling entry's cell-level fixture.
 
+## Done report
+
+Changed:
+tests/test_capability_registry.py::TestPerOperationFireFixtures (new class)
+tests/test_capability_registry.py::_fire_snippet (new helper)
+tests/test_capability_registry.py::_LANG_EXT (new fixture data)
+tests/test_capability_registry.py::_BENIGN_SOURCE (new fixture data)
+tests/test_capability_registry.py::_PER_OPERATION_IDS (new fixture data)
+
+Approach: three tests are parametrized DIRECTLY over `DANGEROUS_OPERATIONS`
+itself (not a hand-maintained fixture tuple like the pre-existing
+`_FIRE_FIXTURES`), so a new registry entry automatically gets its own
+needle-based fire fixture with zero manual test authoring. `_fire_snippet`
+generates a minimal source file from the entry's own `needles[0]` (or, for
+the one no-needle entry -- python bare `compile()` -- a literal bare
+builtin call matched via `_has_bare_compile_call`); it raises loudly for
+any future no-needle entry it does not have a generation strategy for,
+rather than silently skipping it. Per entry: (1) `scan_file_operations`
+must name that EXACT entry object (identity via pydantic frozen-model
+equality, not just a shared capability_kind), (2) `scan_file_capabilities`
+must observe its `capability_kind`, (3) a negative fixture against
+per-language benign source (`_BENIGN_SOURCE`) proves the entry does NOT
+fire when none of its needles are present -- T-0145's "prove the negative
+too" lesson applied per-entry instead of per-cell. This covers all 71
+DANGEROUS_OPERATIONS entries (3 tests x 71 = 213 parametrized cases) as of
+this ticket, and any future addition is auto-covered.
+
+Evidence: 284 tests collected under tests/test_capability_registry.py, all
+pass (`uv run pytest tests/test_capability_registry.py -q`). Bound via
+`frob ticket evidence T-0182`:
+- tests/test_capability_registry.py::TestPerOperationFireFixtures::test_entry_fires_scan_file_operations
+- tests/test_capability_registry.py::TestPerOperationFireFixtures::test_entry_fires_scan_file_capabilities
+- tests/test_capability_registry.py::TestPerOperationFireFixtures::test_entry_absent_from_benign_source
+
+Filed: none (no out-of-scope defect found in src/frob/vet/** while writing
+fixtures; every DANGEROUS_OPERATIONS entry's needle(s) fired cleanly
+against a minimal snippet built from itself).
+
+Gates: `uv run pytest tests/test_capability_registry.py -q` clean (284
+passed). `uv run frob check` / `uv run frob test` results recorded
+separately by the coordinator per the review-gated close policy on this
+ticket.
+
 <!-- ticket:T-0184 -->
 ```yaml
 id: T-0184
 title: frob ticket close prints ERROR MissingEvidence but exits 0
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-18'
@@ -2463,18 +2608,43 @@ scope:
 - src/frob/tickets/**
 - tests/**
 - tickets.md
-evidence: []
+evidence:
+- tests/system/test_cli_ticket.py::TestTicketRoundTrip::test_close_without_evidence_fails
+- tests/system/test_cli_ticket.py::TestTicketRoundTrip::test_close_with_evidence_and_done_report_succeeds
 attachments: []
 acceptance: []
 threat: null
 ```
 During T-0154 land, the close CLI printed 'ERROR: close failed: MissingEvidence' yet exited 0, so a chained git commit ran and committed an unclosed ticket. A failed close MUST exit nonzero (vacuous-pass doctrine: a failure that reports success is the worst outcome). Audit all ticket_runner.py exit paths for the same print-error-return-zero pattern; add a CLI test asserting close on a ticket lacking evidence or a done report exits nonzero. Related: the same session saw sys audit print GAP lines but exit 0 once too -- sweep sys_runner.py and check_runner.py for the same class.
 
+## Done report
+
+Changed:
+tests/system/test_cli_ticket.py::TestTicketRoundTrip.test_close_without_evidence_fails
+(hardened: asserts MissingEvidence in output AND ledger stays in-progress)
+tests/system/test_cli_ticket.py::TestTicketRoundTrip.test_close_with_evidence_and_done_report_succeeds
+(new: success path exits 0 and ledger transitions to done)
+
+NON-REPRODUCTION, verified three ways: every close-failure path (no
+evidence, inline --evidence, evidence-without-done-report; via editable
+source AND the installed uv-tool binary) logs the error AND exits 1; the
+is_err -> sys.exit(1) guard in _close has existed since introducing commit
+31699b3 and every historical revision of the file; audit of
+ticket_runner.py, sys_runner.py, check_runner.py found no live
+print-error-exit-0 pattern. Reviewer independently traced the original
+T-0154 incident to a MANUAL ledger-splice commit (3dafd41), not a CLI
+close -- the observed exit-0 was shell masking, not a frob defect.
+
+Filed: none.
+Gates: frob check --ticket clean except campaign-wide TEST006 stamp
+staleness; frob test --base main PASS.
+Review: APPROVED (non-repro + regression hardening accepted).
+
 <!-- ticket:T-0185 -->
 ```yaml
 id: T-0185
 title: 'exhaustive-research agent: frontier-loop with external graph-knowledge store'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-18'
@@ -2546,6 +2716,50 @@ setup docs like the serena/frob wiring; (5) reference arxiv priors on
 agent externalization/memory (2604.08224 externalization review;
 2604.11243 self-evolving knowledge wikis) in the design doc.
 ASCII only, no emojis.
+
+<!-- ticket:T-0186 -->
+```yaml
+id: T-0186
+title: link docs/guides/exhaustive-research.md from docs/index.md
+state: in-progress
+kind: docs
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- docs/index.md
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0185 shipped docs/guides/exhaustive-research.md but docs/index.md is outside T-0185's declared scope, so DOC001 (doclink) cannot be satisfied without touching it. Add one bullet under 'Getting started' pointing at the new guide, matching the existing entries for install/quickstart/agentic-workflow/editors.
+
+<!-- ticket:T-0187 -->
+```yaml
+id: T-0187
+title: 'frob dup bleeding-edge: algorithm survey, reverse-templating abstraction,
+  exhaustiveness meta-test'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/dup/**
+- frob-core/**
+- tests/**
+- docs/modules/dup.md
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+User mandate 2026-07-18: frob dup does the basics (R1-R6 rungs: winnow, WL-hash, candidate_pairs, tree_edit in frob-core; statement-Levenshtein; co-occurrence CFG/DFG proxy) but must be bleeding-edge. Phase 1 RESEARCH (exhaustive-researcher): map the clone-detection state of the art against our implementation -- APTED exact tree edit distance, SourcererCC bag-of-tokens overlap, Oreo metrics-based type-3/4, NiCad normalization+abstraction, DECKARD characteristic vectors, learning-based (ASTNN, FA-AST GNN, CCLearner) with honest feasibility calls for a no-model-dependency tool, cross-language clone detection, and ANTI-UNIFICATION / reverse templating: report each clone group with its abstracted template plus per-instance bindings (the shared skeleton with holes), so the fix suggestion is the extracted function signature, not just 'these are similar'. Phase 2 DESIGN+TICKETS: planner converts the survey into an implementation ticket tree (rust-kernel work vs python orchestration split explicit). Phase 3 META-TEST: exhaustiveness drift-lock in the T-0158/T-0182 mold -- a registry of detectors/rungs/clone-types, parametrized litmus fixtures proving every (clone type 1-4 x supported language x rung) cell either fires on a minimal fixture pair or carries a written exclusion; adding a detector or claiming a clone type without a firing fixture fails the suite. Acceptance: survey doc committed, ticket tree filed, meta-test green over the CURRENT detector set before any new detector lands.
 
 <!-- ticket:T-draft-47dc1469 -->
 ```yaml
