@@ -823,11 +823,15 @@ confirmed present before this ticket's changes too). Deletion-filter
 check against main (`git diff main --diff-filter=D --name-only`) is
 empty.
 
-Merged main twice more during this fix round (T-0153/T-0181/T-0205 plus
-an archive rotation landed on main); both `tickets.md` conflicts were
+Merged main four times total during this fix round as it kept moving
+(T-0153/T-0181/T-0205, an archive rotation, T-0208..T-0219 filing, and
+T-0172's managed-marker feature); every `tickets.md` conflict was
 resolved by hand using the now-archive-aware `splice_ledger` itself
 (dogfooding the fix), confirmed no active/archive duplicate ids resulted
-(`frob ticket show T-0176` and the full ledger load both clean).
+each time (`frob ticket show T-0176` and the full ledger load both
+clean). Final state re-verified against main tip 47ce4e3: deletion-filter
+check empty, `frob test --base main` clean, `frob check --ticket T-0176`
+0 errors in-scope (same pre-existing T-0168 COV003, unrelated).
 
 <!-- ticket:T-0177 -->
 ```yaml
