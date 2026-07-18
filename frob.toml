@@ -61,3 +61,25 @@ language = "rust"
 command = ["cargo", "test", "--lib", "{filters}"]
 all_command = ["cargo", "test", "--lib"]
 cwd = "frob-core"
+
+[[test.runner]]
+# T-0149: `.strata` litmus fixtures (tests/unit/strata/litmus/*.strata) are
+# test DATA, not directly-runnable source -- there is no standalone strata
+# executor, they are exercised THROUGH tests/unit/strata's pytest suite
+# (e.g. test_litmus_cwe.py). No frob:tests directive binds an individual
+# .strata file as a TESTS-edge source (the DSL anchors to symbols, and a
+# design file's module decl is not one), so select_tests' `fallback =
+# "package"` always applies here and hands run_selected the touched file's
+# *directory* (e.g. tests/unit/strata/litmus) as the selected item. That
+# directory holds no python test files by itself, so this runner's command
+# names the real covering suite (tests/unit/strata) explicitly via
+# `{files}` and folds the fallback-selected directory in alongside it --
+# harmless (pytest collects zero extra items from a data-only dir) and
+# correct (the fixture's actual covering tests run either way). This is
+# strictly narrower than fallback = "suite" (which would run frob's ENTIRE
+# python suite for every touched .strata file); it stays scoped to the one
+# suite that binds strata design-language fixtures.
+language = "strata"
+command = ["uv", "run", "pytest", "-q", "tests/unit/strata", "{files}"]
+all_command = ["uv", "run", "pytest", "-q", "tests/unit/strata"]
+cwd = "."
