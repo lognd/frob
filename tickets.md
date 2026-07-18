@@ -323,7 +323,7 @@ Confirmed twice (T-0150 review read parse_store directly: no code/may branch, fa
 id: T-0169
 title: capability conformance did not scan TS/JS in the logand.app pilot -- verify
   per-language wiring
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-18'
@@ -334,7 +334,12 @@ scope:
 - src/frob/vet/_capability.py
 - tests/**
 - tickets.md
-evidence: []
+evidence:
+- tests/unit/strata/test_selfconform.py::TestCoreUndeclaredInterfaceNonPython::test_typescript_core_net_undeclared_fires
+- tests/unit/strata/test_selfconform.py::TestCoreUndeclaredInterfaceNonPython::test_typescript_core_net_discharges_once_declared
+- tests/unit/strata/test_selfconform.py::TestCoreUndeclaredInterfaceNonPython::test_rust_core_exec_undeclared_fires
+- tests/unit/strata/test_selfconform.py::TestCoreUndeclaredInterfaceNonPython::test_rust_core_exec_discharges_once_declared
+- tests/unit/strata/test_selfconform.py::TestLanguageCoverageDriftLock::test_scanned_languages_equals_registry_languages
 attachments: []
 acceptance: []
 threat: null
