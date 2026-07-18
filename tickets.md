@@ -2807,12 +2807,46 @@ scope:
 - docs/strata/waive.md
 - tests/**
 - editors/vscode-strata/**
+- tickets.md
 evidence: []
 attachments: []
 acceptance: []
 threat: null
 ```
 T-0166 (fix(tickets): land T-0166 store grammar rejects code/may despite surface.md implying support) added real code/may declarations to design/frob.strata's tickets_ledger store, including may "exec" with no kill switch -- this now fires a genuine LINT004 gap (frob sys audit exits 1) that T-0174's waive mechanism cannot suppress because the waive clause was only added to strata-core/src/parse.rs::parse_node, not parse_store (T-0174's declared scope did not include store grammar work). Extend waive to store the same way T-0166 extended code/may to store (parse_store, StoreDecl, _elaborate_store), then waive tickets_ledger's LINT004 with reason pointing at T-0200, mirroring checker/core/stratamod/vet's existing waivers. Until this lands, frob sys audit honestly reports this one named gap rather than silently or fictitiously passing.
+
+## Done report
+
+Changed:
+- strata-core/src/parse.rs::parse_store -- added the `waive RULE reason="..." [ticket="..."]` clause, byte-identical shape/behavior to `parse_node`'s T-0174 `waive` clause (mandatory `reason`, optional `ticket`, repeatable); `StoreAst`/`ast.stores` JSON now carries a `waives` array.
+- src/frob/strata/_ast.py::StoreDecl.waives -- new `tuple[WaiverDecl, ...] = ()` field, reusing the existing `WaiverDecl` model T-0174 added (no new model needed, `node`/`store` share the shape).
+- src/frob/strata/_infra.py::_elaborate_store -- desugars `decl.waives` straight to `Node.waives`, the same direct-mapping convention `_elaborate.py::_elaborate_node` uses; ALSO calls `_waive.py::validate_waiver_fields` per waiver and fails closed with `StrataError.MalformedWaiver` on a blank reason or a multi-instance family (SYS100/SYS101/THREAT002/THREAT003) with no sub-target.
+- design/frob.strata::tickets_ledger -- added `waive "LINT004" reason "no real kill switch around subprocess spawning yet -- T-0200 is the follow-on ticket to build one" ticket "T-0200";`, same reason text as `checker`/`core`'s existing exec waivers.
+- tests/unit/strata/litmus/waive_lint_store.strata (new), tests/unit/strata/test_litmus_waive_store.py (new) -- store-side mirror of T-0174's `waive_lint.strata`/`test_litmus_waive.py` litmus fixture: a matched waiver that discharges, a stale waiver that fails, and a wrong-sub-target waiver that does not suppress a different sub-target's finding, all on `store` declarations.
+- tests/unit/strata/test_infra.py::TestStoreWaivers (new class) -- store-side mirror of `test_elaborate.py::TestElaborateWaivers`'s negative-path coverage (empty reason, whitespace-only reason, multi-instance family with no sub-target all fail closed; multi-instance family with sub-target elaborates cleanly).
+
+Scope note (BLOCKER-adjacent, resolved in-scope): `_elaborate.py::_validate_waivers` (T-0174) only walks `module.nodes` -- it runs BEFORE `elaborate_infra`/`_elaborate_store` ever sees `module.stores`, so a store `waive` clause would have silently skipped the mandatory-non-blank-reason/sub-target check entirely if left alone. `_elaborate.py` is not in T-0250's declared scope, so rather than editing it, the same check (`_waive.py::validate_waiver_fields`, imported read-only) was added directly inside `_elaborate_store` (`src/frob/strata/_infra.py`, in scope) -- same error, same `StrataError.MalformedWaiver`, just enforced at the point a store is elaborated instead of the point a node is. Covered by `TestStoreWaivers` above.
+
+Evidence (all measured, commands run and output read in full):
+- `uv run pytest tests/unit/strata/test_litmus_waive_store.py tests/unit/strata/test_infra.py::TestStoreWaivers -o addopts="-v"` -- 9 passed:
+  `tests/unit/strata/test_litmus_waive_store.py::TestWaiveStoreLitmus::test_matched_store_waiver_suppresses_the_finding`
+  `tests/unit/strata/test_litmus_waive_store.py::TestWaiveStoreLitmus::test_matched_store_waiver_is_surfaced_in_waived_with_reason`
+  `tests/unit/strata/test_litmus_waive_store.py::TestWaiveStoreLitmus::test_stale_store_waiver_reported_as_syswaive002_gap`
+  `tests/unit/strata/test_litmus_waive_store.py::TestWaiveStoreLitmus::test_store_stale_fails`
+  `tests/unit/strata/test_litmus_waive_store.py::TestWaiveStoreLitmus::test_store_sub_target_waiver_does_not_suppress_a_different_sub_target`
+  `tests/unit/strata/test_infra.py::TestStoreWaivers::test_empty_reason_fails_closed`
+  `tests/unit/strata/test_infra.py::TestStoreWaivers::test_whitespace_only_reason_fails_closed`
+  `tests/unit/strata/test_infra.py::TestStoreWaivers::test_multi_instance_family_without_sub_target_fails_closed`
+  `tests/unit/strata/test_infra.py::TestStoreWaivers::test_multi_instance_family_with_sub_target_elaborates_cleanly`
+- `uv run pytest tests/unit/strata/test_litmus_waive_store.py tests/unit/strata/test_litmus_waive.py tests/unit/strata/test_infra.py tests/unit/test_strata_tmlanguage.py -q` -- all passed (existing node-side litmus + tmLanguage drift-lock unaffected; tmLanguage needed no edit, `waive`/`reason`/`ticket` are already shared keywords in `clause-keywords`, not per-construct).
+- `uv run frob test --base main` -- both selected suites PASS: `[PASS] python exit=0 2.13s`, `[PASS] strata exit=0 3.01s` (touched-set selection pulled in `test_frob_self_model.py`, `test_infra.py`, `test_litmus_waive_store.py`, `test_managed.py`, `test_pii.py`, `test_store_code_may.py` plus a full `tests/unit/strata` + the new litmus fixture strata run).
+- **Headline**: `uv run frob sys audit` -- `sys audit: PROVED (5 waived) -- zero UNWAIVED gaps across every configured view` / `sys audit: self-conformance PROVED -- zero SYS gaps` / `sys audit: capability coverage: 13 kind(s) x 4 language(s), 30 cell(s) patterned+proven, 22 excused with reasons, 0 unexcused`. The 5th WAIVED line, previously the unwaived gap this ticket exists to close: `WAIVED family=lint view=model rule=LINT004 target=tickets_ledger detail=node tickets_ledger holds risky capability kind(s) ['exec'] with no declared attr flag=<id> kill-switch -- WAIVED[LINT004]: 'no real kill switch around subprocess spawning yet -- T-0200 is the follow-on ticket to build one' (ticket T-0200)`.
+- `uv run frob check --delta --ticket T-0250` -- exit 0, `gates 3/3 new 3 violation(s), 27 waived` (the 3 are pre-existing debt unrelated to this ticket: `TEST006` no coverage stamp, `PERF004` at `src/frob/tickets/_land.py:75`, `PERF003` at `src/frob/vet/_obfuscation.py:77` -- same 3 the clean pre-change baseline stamp recorded); `ruff-check`/`ruff-format`/`ty` all pass.
+- `git diff main --diff-filter=D --stat` -- empty (no deletions, deletion-filter land rule clean).
+
+Filed: none -- the one out-of-scope-looking discovery (`_validate_waivers` not covering stores) was resolved inside the declared scope (`_infra.py`) rather than filed, per the note above; no new ticket needed.
+
+Gates: `uv run frob check --delta --ticket T-0250` clean (exit 0, 0 new violations beyond pre-existing baselined debt). `make core` rebuild required after the `parse.rs` grammar change and was run before any check/test/audit above. Note: `make core`/`frob check`/`frob test` invocations regenerate `frob-core/Cargo.lock` and `strata-core/Cargo.lock` with a trivial version-string diff (`0.1.0` <-> `0.2.0`) as a side effect of the maturin/cargo build -- these were `git checkout`-ed back to HEAD before finishing since they carry no real content change and are not part of this ticket's scope.
 
 <!-- ticket:T-0251 -->
 ```yaml

@@ -29,9 +29,10 @@ from frob.logging import get_logger
 from ._ast import BalancerDecl, CacheDecl, CdnDecl, Module, QueueDecl, StoreDecl
 from ._code_binding import _CODE_PREFIX
 from ._errors import StrataError
-from ._models import Boundary, BoundaryDirection, Flow, Node, Quantity
+from ._models import Boundary, BoundaryDirection, Flow, Node, Quantity, Waiver
 from ._models import Capacity as KernelCapacity
 from ._pii import _PII_PREFIX
+from ._waive import validate_waiver_fields
 
 _log = get_logger(__name__)
 
@@ -135,6 +136,34 @@ def _elaborate_store(decl: StoreDecl) -> Result[Node, StrataError]:
             replicas_max=decl.capacity.replicas_max,
         )
         _log.debug("store %s: declared capacity mapped through (T-0103)", decl.id)
+    # T-0250: `waive RULE reason="..." [ticket="..."]`+ desugars the SAME
+    # direct-mapping way `_elaborate.py::_elaborate_node` desugars them for
+    # `node` -- straight to `Node.waives`, so a store's declared waiver
+    # discharges a `frob sys audit` finding against it exactly like a
+    # node's would (`_waive.py` reads `Node.waives` generically off any
+    # elaborated `Node`, with no store/node distinction).
+    #
+    # `_elaborate.py::_validate_waivers` only walks `module.nodes` (it runs
+    # BEFORE `elaborate_infra`/`_elaborate_store` even sees `module.stores`,
+    # `_elaborate.py::elaborate`'s call order) -- a store's `waive` clause
+    # would silently skip the mandatory-non-blank-reason and multi-instance
+    # sub-target check `_validate_waivers` gives `node` unless this
+    # elaborator enforces it itself. Same check, same error, just run here
+    # instead, so the T-0174 "no way to elaborate a blank-reason waiver"
+    # guarantee (docs/strata/waive.md) holds for stores too.
+    for w in decl.waives:
+        checked = validate_waiver_fields(w.rule, w.reason)
+        if checked.is_err:
+            _log.error(
+                "store %s: malformed waive clause rule=%r reason=%r",
+                decl.id,
+                w.rule,
+                w.reason,
+            )
+            return Err(checked.danger_err)
+    waives = tuple(
+        Waiver(rule=w.rule, reason=w.reason, ticket=w.ticket) for w in decl.waives
+    )
     _log.debug("store %s -> node at trust %s, attrs=%s", decl.id, decl.trust, attrs)
     return Ok(
         Node(
@@ -145,6 +174,7 @@ def _elaborate_store(decl: StoreDecl) -> Result[Node, StrataError]:
             attrs=tuple(attrs),
             capacity=capacity,
             residence=decl.residence,
+            waives=waives,
         )
     )
 
