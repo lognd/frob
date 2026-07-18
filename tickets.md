@@ -1964,7 +1964,7 @@ callable API it will invoke.
 ```yaml
 id: T-0163
 title: frob sys audit <file> appends bogus path segment instead of erroring
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-18'
