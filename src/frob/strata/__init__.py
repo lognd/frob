@@ -89,6 +89,13 @@ from frob.strata._compliance import (
     evaluate_compliance,
 )
 from frob.strata._crash import CrashContractReport, evaluate_crash_contracts
+from frob.strata._cve_fingerprint import (
+    CVE_FINGERPRINT_VIEWS,
+    CVE_FINGERPRINTS,
+    CveFingerprint,
+    FingerprintViolation,
+    check_fingerprint_catalog_drift,
+)
 from frob.strata._deploy import DeployContractReport, evaluate_deploy_contracts
 from frob.strata._design_load import (
     DEFAULT_DESIGN_DIR,
@@ -219,6 +226,8 @@ __all__ = [
     "RISKY_CAPABILITY_KINDS",
     "UNBOUND_REQUIRED_KINDS",
     "COMPLIANCE_CATALOG",
+    "CVE_FINGERPRINT_VIEWS",
+    "CVE_FINGERPRINTS",
     "CWE_CATALOG",
     "DEFAULT_BENIGN_CAPABILITIES",
     "DEFAULT_COMPLIANCE_VIEWS",
@@ -258,6 +267,7 @@ __all__ = [
     "CompiledPolicies",
     "CompiledPolicy",
     "ConfineUse",
+    "CveFingerprint",
     "ConformanceReport",
     "CrashContract",
     "CrashContractReport",
@@ -275,6 +285,7 @@ __all__ = [
     "ClaimBody",
     "ClaimResult",
     "Flow",
+    "FingerprintViolation",
     "FlowCondition",
     "FlowDecl",
     "ForbidCall",
@@ -343,6 +354,7 @@ __all__ = [
     "check_capability_completeness",
     "check_capability_conformance",
     "check_catalog_completeness",
+    "check_fingerprint_catalog_drift",
     "check_discharge_completeness",
     "check_effect_completeness",
     "check_import_conformance",

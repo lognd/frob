@@ -399,6 +399,69 @@ adapter and 14-day cooldown; the join is the shared CWE id. A live CVE
 whose CWE obligation is undischarged is a high-severity finding; one whose
 obligation is discharged is defense-in-depth and reported as contained.
 
+<a id="cve-fingerprints-code-level-pattern-catalog-t-0153"></a>
+## CVE fingerprints: code-level pattern catalog (T-0153)
+
+Distinct from the section above: that join is dependency-VERSION-shaped
+("this pinned version has advisory CVE-XXXX"), useless for first-party
+code or a dependency with no filed advisory yet. `frob.strata.
+_cve_fingerprint.CveFingerprint` is a source-code NEEDLE for a canonical
+vulnerable-usage class -- `frob.vet._capability.scan_file_fingerprints`
+flags the SHAPE of the vulnerability directly in a file's text, following
+`scan_file_capabilities`'s recall-over-precision substring philosophy
+(module docstring, `src/frob/vet/_capability.py`) plus the T-0151 dot-
+exclusion lesson (a needle must not fire on a dotted method access that
+merely shares a name with a dangerous bare call).
+
+`CVE_FINGERPRINTS` (`src/frob/strata/_cve_fingerprint.py`) ships nine
+entries, each joined to an EXISTING `std.cwe` catalog id via `cwe_id` and
+cited by at least one REAL, independently-verified CVE -- `cve` is never
+hand-guessed from memory; every citation here was checked against a
+primary/vendor/NVD source at authoring time. `check_fingerprint_catalog_
+drift` (CVEFP001) fails loudly if a fingerprint names a `cwe_id` absent
+from the joined `CWE_CATALOG + CWE_TOP_25_CATALOG + QUALITY_CATALOG` --
+the same "an unjoined reference is an error, never a silent pass" rule
+`WeaknessEntry.capability_kind`'s join to `_effects.py::_may_kind` already
+follows. `CVE_FINGERPRINT_VIEWS['cve-fingerprint-catalog']` is a SEPARATE
+view table (never merged into `VIEWS`/`CWE_TOP_25_VIEWS`), following the
+same "no silent default-view widening" precedent those tables already set.
+
+**Curated, not exhaustive -- a disclosed cut, not a silent one.** Three of
+the ticket's suggested example classes are deliberately NOT shipped:
+TLS `verify=False` (CWE-295), weak-hash password storage (CWE-916), and
+XML external entities (CWE-611) have no `WeaknessEntry` in ANY catalog
+tuple yet, so a fingerprint citing any of the three would fail this
+module's OWN CVEFP001 drift-lock -- confirming they need a catalog
+addition (a separate, catalog-scoped ticket) before a fingerprint can
+honestly join them, rather than being force-fit around the drift-lock.
+JNDI-style lookup injection (the Log4Shell class) is Java/JNDI-specific
+with no equivalent construct in any of the four languages `frob.vet.
+_capability` scans (python/typescript/rust/c-cpp); a fingerprint with no
+genuine needle in a scanned language would be undetectable data, not a
+pattern-match capability, so it is omitted rather than shipped inert.
+
+**Wired into two operational paths, not test-only.** (1) `frob.vet.
+_capability.scan_directory_fingerprints` runs from `frob.vet._scan.
+_scan_source` the SAME way `scan_directory_capabilities` already does --
+a `frob vet` run over a dependency tree surfaces a VET006 finding (and a
+`"cve-fingerprint"` signal on the stored `PackageVerdict`) when a
+dependency's source matches a fingerprint's needle(s), independent of
+whether its pinned version has a filed osv advisory. (2)
+`check_fingerprint_catalog_drift` runs from `_audit.py::
+evaluate_exhaustiveness` every call (model-independent, like `_pii_gaps`
+-- reported under the fixed `cve-fingerprint:catalog` pseudo-view,
+mirroring PII001-004's fixed `"model"` view since a catalog-join property
+has no per-model baseline-view concept), so `frob sys audit` fails closed
+on a drifted `cwe_id` the same way THREAT001-003 already do for the
+security/quality families.
+
+**Self-match note (same class as T-0151/T-0158):** `_cve_fingerprint.py`
+stores every needle as a Python string literal, so scanning that file's
+OWN text would trivially "match" every fingerprint it defines regardless
+of what the file's code actually does; `scan_directory_capabilities`
+excludes it from aggregation the same way it already excludes `_capability.
+py`/`_capability_registry.py` (`_is_self_path`).
+
 <a id="litmus-coverage"></a>
 ## Litmus coverage: every catalog entry fires from real source (T-0145)
 

@@ -137,6 +137,8 @@ class SystemSpec(BaseModel):
 class TestPolicy(BaseModel):
     """The `[testing]` table: all test-obligation floors, each overridable."""
 
+    __test__: bool = False
+
     model_config = ConfigDict(frozen=True)
 
     min_unit_cases: int = 3
