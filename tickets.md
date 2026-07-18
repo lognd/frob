@@ -482,6 +482,8 @@ evidence:
 - tests/test_ticket_land.py::TestLedgerBothSidesAppend::test_both_sides_append_merges_cleanly
 - tests/test_ticket_land.py::TestDraftIdFinalization::test_draft_id_finalized_on_land
 - tests/system/test_cli_ticket_land.py::TestLandCLI::test_dry_run_reports_clean
+- tests/test_ticket_land.py::TestDraftFinalizeRewritesCodeAndLeavesWorktreeClean::test_code_directive_rewritten_and_worktree_clean_after_land
+- tests/test_ticket_land.py::TestArchiveResurrection::test_archived_id_never_resurrected
 attachments: []
 acceptance: []
 threat: null
@@ -581,6 +583,70 @@ rather than expanding T-0176's scope unilaterally.
 
 Gates: `uv run frob check --ticket T-0176` clean (0 errors); no other
 waivers introduced beyond the one SCOPE001 waiver named above.
+
+## Fix round (reviewer REJECT, addressed)
+
+Reviewer found two reproducible CRITICAL bugs, both fixed in
+src/frob/tickets/_land.py (commit 6aaa0e1):
+
+1. Draft-id finalization losing code rewrites. `finalize_draft` ->
+   `renumber_one` rewrites tickets.md AND every source file carrying a
+   `frob:ticket <draft-id>` directive, uncommitted, directly on the
+   worktree's working tree. The old `land` squashed onto main from the
+   worktree branch's LAST COMMIT, which predated those uncommitted
+   writes -- the ledger recovered only because `_splice_and_stage`
+   re-reads tickets.md off disk, but every OTHER rewritten code file
+   never reached main, and the worktree was left dirty even after a
+   "successful" land. Fix: `land` now commits finalize_draft's and
+   close's working-tree changes in the worktree (one
+   "finalize and close <id> for landing" commit) BEFORE the squash-apply,
+   so the squash's source (the branch's now-current tip) actually
+   contains everything, and the worktree ends up clean.
+2. Archive resurrection. `splice_ledger` only ever parsed the two active
+   `tickets.md` texts handed to it, never `tickets-archive.md` -- an id
+   main had already archived (moved out of the active ledger) after the
+   worktree's branch point would survive the ours/theirs union (present
+   on the worktree's still-active, stale side) and land straight back
+   into main's active ledger, resurrecting the exact active+archive
+   duplicate-id class this ticket's own 0bb02cf merge had to be
+   hand-resolved for. Fix: `splice_ledger` takes an `archived_ids`
+   parameter and drops any id in it from the merged result
+   unconditionally, from either side; `land` sources `archived_ids` from
+   main's `tickets-archive.md` (via the new `_archived_ids` helper) at
+   BOTH splice points (main-into-worktree, and the final squash-apply
+   splice onto main).
+
+New evidence (2 fixture tests, both reproduce the reviewer's exact repro
+before failing without the fix, and pass with it):
+- `TestDraftFinalizeRewritesCodeAndLeavesWorktreeClean::test_code_directive_rewritten_and_worktree_clean_after_land`
+  -- a draft-id ticket with a `frob:ticket <draft-id>` directive in a
+  real code file; asserts the landed file on main carries the FINAL id
+  (never the draft), and that both the worktree and its own copy of the
+  file are left completely clean/rewritten after land.
+- `TestArchiveResurrection::test_archived_id_never_resurrected` -- a
+  ticket archived on main strictly after the worktree branched (so the
+  worktree's own ledger still has it active); asserts land never
+  reintroduces it into main's active ledger and it remains present
+  exactly once, in the archive.
+
+Re-verification after the fix: full `uv run frob test . --all` passes
+except one PRE-EXISTING failure unrelated to this ticket
+(`tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant`,
+five SYS100 capability-declaration violations all against
+`src/frob/strata/_cve_fingerprint.py` and `vet`'s `sql`/`html_render`
+capabilities -- files this ticket never touches; confirmed present on
+main after merge, not introduced here). `uv run frob test . --base main`
+(touched-set) is clean. `uv run frob check --ticket T-0176` is 0 errors
+in-scope (the same pre-existing T-0168 COV003 as before the fix round,
+confirmed present before this ticket's changes too). Deletion-filter
+check against main (`git diff main --diff-filter=D --name-only`) is
+empty.
+
+Merged main twice more during this fix round (T-0153/T-0181/T-0205 plus
+an archive rotation landed on main); both `tickets.md` conflicts were
+resolved by hand using the now-archive-aware `splice_ledger` itself
+(dogfooding the fix), confirmed no active/archive duplicate ids resulted
+(`frob ticket show T-0176` and the full ledger load both clean).
 
 <!-- ticket:T-0177 -->
 ```yaml
