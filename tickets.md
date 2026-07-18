@@ -1286,7 +1286,7 @@ User report 2026-07-18: default frob check output is ~6K lines, mostly per-file/
 ```yaml
 id: T-0203
 title: 'perf_gate: silence UnsupportedLanguage skips for non-code files'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-07-18'
@@ -1385,18 +1385,20 @@ Fix: re-ran `uv run frob ticket sweep T-0203` (plain `frob ticket start`
 errors `InvalidTransition` on an already-in-progress ticket -- `sweep` is
 the correct refresh command) to record a fresh sweep
 (`dup_findings=165 xref_hits=4`), then re-ran `uv run frob check --ticket
-T-0203` clean of PRE001: the ticket-scoped run reports 15 non-waived
+T-0203` clean of PRE001: the ticket-scoped run reports 14 non-waived
 violations, none of them PRE001 and none touching this ticket's scope --
-11x COV003 on tickets T-0065/T-0148 (stale evidence ids on
+11x COV003 on ticket T-0065 (stale evidence ids on
 `tests/unit/strata/test_kernel_properties.py`, a file this ticket never
-touched), 1x COV003 on ticket T-0168 (same pattern on
+touched), 1x COV003 on T-0148, 1x COV003 on ticket T-0168 (same pattern on
 `tests/test_gates.py::TestConventionUnitBinding.test_test001_exempts_strata_flow_declarations`,
-pre-existing before this ticket's edits), 1x SYS004 (design/frob.strata
-failing to load because `strata_core` is unavailable inside the `frob
-check` subprocess -- the same worktree-natives artifact noted above), and
+pre-existing before this ticket's edits), and
 1x TEST006 (no coverage stamp; TEST006 is campaign-wide and explicitly out
 of scope per this ticket's dispatch instructions). No new violations
 appeared as a result of the sweep refresh.
+(Coordinator note at landing: the round-2 addendum originally listed a
+"1x SYS004" entry absent from the actual gate output -- the reviewer's
+re-run counted 14 violations with zero SYS004; enumeration corrected here
+per the reviewer's named remedy, same phantom-SYS004 pattern as T-0181.)
 
 Also confirming per reviewer request: the 2 `ty` diagnostics
 (`Found 2 diagnostics`) are exactly `error[unresolved-import]: Cannot
