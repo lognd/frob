@@ -318,6 +318,172 @@ threat: null
 ```
 Confirmed twice (T-0150 review read parse_store directly: no code/may branch, falls through to unknown-store-property; typani pilot reconfirmed): stores cannot carry code/may declarations though docs/strata/surface.md implies they can. T-0150 worked around it by folding tickets_ledger's code into the core node. Fix properly: implement code/may on store_prop in strata-core (mirroring parse_node), elaborate into the kernel, un-fold frob's own tickets_ledger workaround in design/frob.strata, and correct surface.md either way so doc and grammar agree.
 
+<!-- ticket:T-0169 -->
+```yaml
+id: T-0169
+title: capability conformance did not scan TS/JS in the logand.app pilot -- verify
+  per-language wiring
+state: done
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/_selfconform.py
+- src/frob/vet/_capability.py
+- tests/**
+- tickets.md
+evidence:
+- tests/unit/strata/test_selfconform.py::TestCoreUndeclaredInterfaceNonPython::test_typescript_core_net_undeclared_fires
+- tests/unit/strata/test_selfconform.py::TestCoreUndeclaredInterfaceNonPython::test_typescript_core_net_discharges_once_declared
+- tests/unit/strata/test_selfconform.py::TestCoreUndeclaredInterfaceNonPython::test_rust_core_exec_undeclared_fires
+- tests/unit/strata/test_selfconform.py::TestCoreUndeclaredInterfaceNonPython::test_rust_core_exec_discharges_once_declared
+- tests/unit/strata/test_selfconform.py::TestLanguageCoverageDriftLock::test_scanned_languages_equals_registry_languages
+attachments: []
+acceptance: []
+threat: null
+```
+logand.app pilot reports browser-side capabilities could not be auto-verified, leaving permanent SYS101 warnings -- yet vet _capability HAS a typescript pattern table (.ts/.tsx/.js in _EXT_LANGUAGE). Investigate whether the conformance path (scan_directory_capabilities via _selfconform / sys audit) actually walks TS/JS files or silently skips them (wiring bug), or whether the pilot's code globs missed the frontend tree (doc/UX gap). Either way the fix must make TS scanning provably active -- this feeds directly into T-0158's coverage matrix, which should gain a live wiring assertion (language column proven active end-to-end through sys audit, not just patterns existing).
+
+## Done report
+
+Root cause: WIRING BUG, confirmed by repro. `_selfconform.py::check_self_conformance`
+handed `bind_code`'s Python-only `CodeBinding` (`_code_binding.py::_sorted_py_files`
+walks only `*.py`, by design -- it also backs Python-import conformance) straight to
+EVERY join that reconciles observed vs. declared capabilities. A `.ts`/`.js`/`.rs`/
+`.c-cpp` file was therefore never even a KEY in `binding.owner`, so neither
+`scan_file_capabilities` (extended kinds/SYS101) NOR `check_capability_conformance`
+(core net/fs-write/exec kinds/SYS100) was ever called on it -- and the empty
+directory-ownership set also produced a spurious SYS102 "unmodeled code" for any
+directory whose only files were non-Python.
+
+FIX ROUND 1 (extended kinds + SYS101 only): added `_capability_binding`, a superset
+of `bind_code`'s binding covering every `language_for`-recognized extension, and
+wired it into `_extended_kind_violations`/`_stale_design_violations`. Repro at the
+time: a `.ts` file with `fetch(...)` + `localStorage.setItem(...)` went from 0
+violations to correctly firing SYS100 for `fetch_url`/`client_storage`.
+
+REVIEWER REJECT (round 1): correctly caught that `_core_undeclared_violations`
+(net/fs-write/exec, delegated to THREAT004's `check_capability_conformance`) and
+`_unmodeled_violations` (SYS102) were STILL being handed the raw Python-only
+`binding`, not the `_capability_binding` superset -- so a `.ts` `axios.get(...)`
+or `.rs` `Command::new(...).spawn()` still produced ZERO SYS100 and a SPURIOUS
+SYS102, i.e. the exact same class of bug survived for the raw net/exec/fs-write
+kinds the logand.app pilot most needs caught. My round-1 rationale ("Python-
+import-syntax-specific by design") was WRONG for this delegate: verified by
+reading `_effects.py::_line_effects`, which calls `language_for`/`_PATTERNS`
+directly -- there is no Python-specific parsing anywhere in
+`check_capability_conformance`'s path; only `bind_code` itself (the binding step,
+not the capability-conformance check) needs Python's import syntax specifically.
+
+FIX ROUND 2 (this round): `check_self_conformance` now passes `capability_binding`
+(the superset) to ALL FOUR joins -- `_core_undeclared_violations`,
+`_extended_kind_violations`, `_stale_design_violations`, AND `_unmodeled_violations`.
+`bind_code`'s raw Python-only binding is still computed and is still the ONLY input
+to `bind_code` itself (unrelated to this fix, stays Python-import-syntax-specific
+by design) and to `_capability_binding`'s own construction (it extends that binding,
+doesn't replace its Python-file entries). Repro confirmed both new cases: a `.ts`
+`axios.get(...)` fires SYS100 `net` with no spurious SYS102; a `.rs`
+`Command::new("ls").spawn()` fires SYS100 `exec` with no spurious SYS102. Design
+choices reconfirmed unchanged: `_PACKAGE_ROOT = "src/frob"` (SYS102 scope, still
+correct -- unrelated to language), and deny-by-default `AmbiguousCodeBinding` on a
+multi-node glob match (unchanged in `_capability_binding`).
+
+Fix (both files in scope):
+- `src/frob/vet/_capability.py`: added public `SCANNED_LANGUAGES` (frozenset of
+  every language `_EXT_LANGUAGE` maps at least one extension to) so a drift-lock
+  test can assert self-conformance's scanned-language set equals
+  `_capability_registry.LANGUAGES` without hand-duplicating either list.
+- `src/frob/strata/_selfconform.py`: added `_sorted_capability_files` (walks every
+  file under root with a `language_for`-recognized extension) and
+  `_capability_binding` (extends `bind_code`'s Python-only `CodeBinding` with every
+  OTHER capability-scannable-language file, bound by the SAME `code=` glob
+  convention via `_node_code_globs`, reused not reimplemented; deny-by-default
+  `AmbiguousCodeBinding` on a multi-node glob match, same as `bind_code`).
+  `check_self_conformance` builds this superset binding once and passes it to ALL
+  FOUR violation-collecting functions (`_core_undeclared_violations`,
+  `_extended_kind_violations`, `_stale_design_violations`, `_unmodeled_violations`),
+  so every registry-covered language is reconciled by every rule, not just
+  Python by some of them.
+
+Changed:
+  src/frob/vet/_capability.py::SCANNED_LANGUAGES
+  src/frob/strata/_selfconform.py::_sorted_capability_files
+  src/frob/strata/_selfconform.py::_capability_binding
+  src/frob/strata/_selfconform.py::_core_undeclared_violations (binding source changed, round 2)
+  src/frob/strata/_selfconform.py::_observed_extended_kinds_by_node (binding source changed, round 1)
+  src/frob/strata/_selfconform.py::_observed_all_kinds_by_node (binding source changed, round 1)
+  src/frob/strata/_selfconform.py::_unmodeled_violations (binding source changed, round 2)
+  src/frob/strata/_selfconform.py::check_self_conformance (wires _capability_binding into all four joins)
+
+Evidence (frob:tests-bound, tests/unit/strata/test_selfconform.py, 20 tests total):
+  TestNonPythonLanguageWiring.test_typescript_undeclared_capability_fires
+  TestNonPythonLanguageWiring.test_typescript_undeclared_capability_discharges_once_declared
+  TestNonPythonLanguageWiring.test_typescript_stale_design_fires
+  TestNonPythonLanguageWiring.test_sorted_capability_files_includes_typescript
+  TestCoreUndeclaredInterfaceNonPython.test_typescript_core_net_undeclared_fires
+  TestCoreUndeclaredInterfaceNonPython.test_typescript_core_net_discharges_once_declared
+  TestCoreUndeclaredInterfaceNonPython.test_rust_core_exec_undeclared_fires
+  TestCoreUndeclaredInterfaceNonPython.test_rust_core_exec_discharges_once_declared
+  TestLanguageCoverageDriftLock.test_scanned_languages_equals_registry_languages
+  TestLanguageCoverageDriftLock.test_language_for_is_consistent_with_scanned_languages
+The four new round-2 tests each assert both the SYS100 fire AND the absence of a
+SYS102 for the same directory (the spurious-misreport the reviewer flagged). All
+prior SYS100/SYS101/SYS102/drift-lock/real-gate-green tests in the same file still
+pass unmodified.
+
+POST-MERGE UPDATE (merging main a second time, after T-0181 closed): re-ran the
+full verification pass. `TestRealGateGreen::test_repo_design_and_declarations_are_
+self_conformant` (the real-repo-tree assertion) now FAILS: `SYS100 'html_render'
+observed but not declared` on the `vet` node. Root-caused and DELIBERATELY NOT
+fixed here: T-0181 added new `html_render` needles (`innerHTML`,
+`dangerouslySetInnerHTML`) as literal string DATA inside
+`src/frob/vet/_capability_registry.py` itself, so scanning that file's own text
+self-matches `html_render` -- the exact documented self-match false-positive class
+`vet.scan_directory_capabilities` already excludes via a private path check, but
+`_selfconform.py`'s file-level SYS100/SYS101 joins scan node-owned files directly
+and never got that exclusion. I prototyped exposing the exclusion to
+`_selfconform.py` and REVERTED it: doing so correctly kills the false SYS100, but
+then produces four NEW SYS101 "stale design" findings (eval/exec/deserialize/sql
+on `vet`) -- proving `design/frob.strata`'s `vet` node `may` list was silently
+calibrated against this same self-match noise as if it were real signal. Properly
+fixing this needs `design/frob.strata` changes (recalibrating `may` against
+genuine, non-self-match usage), which T-0169's `scope` explicitly excludes.
+CONFIRMED this failure is 100% pre-existing and independent of every change in
+this ticket: `git fetch`+checkout of unmodified `main` tip (3135c5c) and running
+`TestRealGateGreen` there directly reproduces the identical failure with zero of
+my changes present. Filed T-draft-e1beb2a8 (self-match + design recalibration)
+and T-draft-e1beb2a8's sibling T-draft-a8e0354d (the tickets-archive.md splice,
+below) to track both discoveries; this ticket's own diff does not touch
+`design/frob.strata` or the self-match exclusion.
+
+Filed:
+- T-draft-a8e0354d: `tickets-archive.md` stale T-0169 duplicate from an unrelated
+  ledger-conflict splice on `main` (see NOTE below).
+- T-draft-e1beb2a8: self-conformance `TestRealGateGreen` red on the real repo tree
+  (html_render self-match on `_capability_registry.py`; needs both a
+  `_selfconform.py`/`_capability.py` exclusion AND a `design/frob.strata` `may`
+  recalibration for the `vet` node).
+(fix itself stayed inside declared scope; T-0158's own coverage matrix and
+T-0181's `_capability_registry.py` were not touched by me.)
+
+Gates: `uv run frob check` -- the only non-waived findings are a pre-existing
+campaign-wide TEST006 coverage-stamp warning (never run `make coverage` per
+standing instruction) and a pre-existing COV003 on ticket T-0168's evidence id,
+confirmed present on merged `main` BEFORE this ticket's changes via `git stash`
+(unrelated to this ticket's scope). `uv run frob test --base main`: the python
+suite is RED specifically on `TestRealGateGreen`, confirmed pre-existing on
+unmodified `main` tip (see POST-MERGE UPDATE above) and NOT a regression from
+this ticket's diff -- every other selected test (all 20 in
+`test_selfconform.py` plus the vet hook-mode smoke test) passes, including all
+four round-2 core-path regression tests. `ruff format --check .` clean.
+
+Not closing this ticket per workflow instructions (implementer records evidence and
+Done report; closing/verification is a separate step).
+
+NOTE (ledger integrity, found while merging main, out of scope to fix here): `tickets-archive.md` on `main` (post-merge, unmodified by me -- outside this ticket's `scope`) contains a STALE, INCORRECT duplicate of this exact T-0169 block (`state: queued`, no Done report, no evidence) -- it was silently spliced into the archive by an unrelated ledger-conflict merge (same incident class the agent playbook's "ledger-conflict splice guidance" warns about), NOT a real close. This live `tickets.md` entry (in-progress, with the Done report above) is the authoritative one; the archive's stray copy needs a follow-up ticket (scope: tickets-archive.md) to delete it so a future `frob ticket` listing doesn't show two T-0169 records in conflicting states.
+
 <!-- ticket:T-0170 -->
 ```yaml
 id: T-0170
@@ -1056,7 +1222,7 @@ T-0153+T-0181 interaction, invisible to both branches (TestRealGateGreen::test_r
 id: T-0202
 title: 'frob check default output: stats summary, gate chatter to DEBUG, standardized
   log format'
-state: queued
+state: in-progress
 kind: ux
 origin: human
 created: '2026-07-18'
@@ -1238,3 +1404,54 @@ tests/test_gates.py::TestCoverageGate::test_waive002_honors_loaded_policy_rule_i
 tests/test_gates.py + tests/test_testing.py).
 
 Filed: none. Gates: ruff format stable on all three files.
+
+<!-- ticket:T-0206 -->
+```yaml
+id: T-0206
+title: tickets-archive.md has a stale duplicate T-0169 entry from a ledger-conflict
+  splice
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- tickets-archive.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Found while merging main into the T-0169 worktree: tickets-archive.md on main contains a T-0169 block with state=queued and no Done report/evidence, silently spliced in by an unrelated ledger-conflict merge (same incident class the agent playbook's ledger-conflict splice guidance warns about) -- NOT a real close. The authoritative T-0169 record is in tickets.md (in-progress, with a full Done report). Delete the stray tickets-archive.md duplicate so frob ticket listings don't show two T-0169 records in conflicting states. Also check tickets-archive.md for other stray splices from the same merge incident. (The branch's second draft, e1beb2a8 covering the html_render self-match, was dropped at landing as a duplicate of T-0201, which carries the same analysis and is already dispatched.)
+
+## Failure log
+- 2026-07-18 attempt 1: Premise stale on main: the stray queued-state T-0169 archive duplicate existed only in the T-0169 worktree's pre-archive ledger copy (branched at 1101c3e). Current main archive (rebuilt at 0b4ff16) has zero T-0169 entries and a cross-ledger id-duplicate grep is clean. Nothing to delete.
+
+<!-- ticket:T-0207 -->
+```yaml
+id: T-0207
+title: 'structural PII/secrets detection: waivable checks over data structures, schemas,
+  and env access'
+state: queued
+kind: security
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/**
+- src/frob/strata/**
+- src/frob/vet/**
+- src/frob/lang/**
+- design/frob.strata
+- tests/**
+- docs/**
+- frob.toml
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: info-disclosure
+```
+User mandate 2026-07-18 ('if it passes, it's safe'): extend T-0154 (PII flow proofs) and T-0157 (secrets token scan) with STRUCTURAL detection over data surfaces, every rule waivable via frob:waive with a written reason so zero-unwaived means every PII/secret surface is either declared or consciously waived. Detector families: (1) DATA-STRUCTURE FIELDS: pydantic/dataclass/TypedDict/attrs field names and types across supported languages (name keyword table: email, phone, ssn, dob, address, ip, password, token, api_key, secret, salt, card/pan/cvv...; type-based: EmailStr, SecretStr, and TS/rust equivalents) -- a detected PII-shaped field on a node without a matching T-0154 PII category declaration (or waiver) fires; declared-but-never-observed goes stale like SYS101. (2) DATABASE SCHEMA: CREATE TABLE / column DDL in migrations (alembic, raw SQL) and ORM models (sqlalchemy columns) scanned with the same keyword+type tables -- schema headers are the highest-value PII surface. (3) ENV/SECRET SOURCES: os.environ[...]/os.getenv/load_dotenv() call sites (and process.env, std::env::var) are secret-source observations that must map to declared strata secret nodes (T-0082 std.secrets) or be waived -- an unmapped env read fires. (4) EMAIL-SHAPE VALUES: detect email-shaped string literals in code/fixtures WITHOUT naive regex (user explicit: regex is bad for email matching) -- use a structural parse (local@domain.tld via a real address parser, e.g. email.utils/parseaddr semantics or the WHATWG algorithm) with the T-0157 fake-marker escape (frob:secret fake / placeholder shapes stay writable). (5) KEYWORD SWEEP: identifier/comment keyword hits at suggestion severity only (no hard fail on names alone). DISCIPLINE (non-negotiable, per registry precedent): single-source keyword/type registry (no duplication between detectors); litmus fire+discharge fixtures per detector (T-0145 style); per-entry parametrized drift-lock (T-0182 style) so a registry keyword without a firing fixture fails; exhaustiveness matrix (detector x language) with written exclusions for unpatterned cells (T-0158 style); self-match exclusion for the registry file itself designed in from day one (T-0201 lesson -- the keyword table must not detect itself); wire into frob check as a new gate family (PII0xx/SEC1xx) default-on at WARN for adoption, severity dial in frob.toml; sys audit gains the joined view (structural observations vs declared PII/secret model). Split into child tickets per detector family at plan time if needed; this is the umbrella.
