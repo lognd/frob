@@ -1525,7 +1525,7 @@ the reviewer.
 id: T-0202
 title: 'frob check default output: stats summary, gate chatter to DEBUG, standardized
   log format'
-state: in-progress
+state: done
 kind: ux
 origin: human
 created: '2026-07-18'
@@ -1541,7 +1541,11 @@ scope:
 - tests/**
 - docs/**
 - tickets.md
-evidence: []
+evidence:
+- tests/unit/test_logging_quiet.py::TestStdoutLogLevel::test_sets_and_restores_arbitrary_level
+- tests/unit/test_logging_quiet.py::TestStdoutLogLevel::test_restores_on_exception
+- tests/system/test_cli_check.py::TestCheckVerbosity::test_default_has_no_dispatch_or_digest_lines
+- tests/system/test_cli_check.py::TestCheckVerbosity::test_verbose_restores_dispatch_and_parse_lines
 attachments: []
 acceptance: []
 threat: null
