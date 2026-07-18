@@ -13,6 +13,7 @@ from typani.error_set import ErrorSet
 
 
 # frob:doc docs/modules/tickets.md#data-models
+# frob:doc docs/guides/extending/ticket-kinds-states.md#ticket-kinds-and-states
 class TicketState(StrEnum):
     """The six states a ticket can occupy in the queue state machine."""
 

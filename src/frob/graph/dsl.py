@@ -17,6 +17,7 @@ from frob.logging import get_logger
 
 _log = get_logger(__name__)
 
+# frob:doc docs/guides/extending/comment-dsl-directives.md#comment-dsl-directives
 _VERB_TABLE: dict[str, EdgeKind] = {
     "doc": EdgeKind.DOC,
     "uses-contract": EdgeKind.USES_CONTRACT,

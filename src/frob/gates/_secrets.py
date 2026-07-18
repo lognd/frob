@@ -75,6 +75,7 @@ _PLACEHOLDER_RUN_RE = re.compile(r"(x{4,}|\*{4,})", re.IGNORECASE)
 
 
 @dataclass(frozen=True)
+# frob:doc docs/guides/extending/secrets-scan-providers.md#secrets-scan-providers
 class _SecretPattern:
     """One provider's detection rule: what to match, how bad it is, and how
     much of the match is safe to print back in a violation message."""

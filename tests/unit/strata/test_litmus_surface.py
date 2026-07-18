@@ -54,6 +54,7 @@ def _results(model: KernelModel) -> dict[str, ClaimResult]:
     return {r.claim_id: r for r in evaluated}
 
 
+# frob:doc docs/guides/extending/litmus-fixtures.md#litmus-fixture-mappings
 class TestNaiveSurfaceGoldens:
     """payments.strata must reproduce every phase-0 kernel-facts golden finding."""
 

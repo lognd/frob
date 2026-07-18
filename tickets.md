@@ -225,7 +225,7 @@ Get frob into a releasable state once the gates-zero sweep and the three feature
 ```yaml
 id: T-0159
 title: 'extending frob: developer guides for every registry and extension point'
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-07-18'
@@ -242,12 +242,124 @@ scope:
 - src/frob/**
 - tests/**
 - tickets.md
-evidence: []
+evidence:
+- tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_every_row_has_a_guide_file
+- tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_every_row_anchor_file_exists_and_mentions_guide
+- tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_every_anchor_fragment_resolves_to_guide_h1
+- tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_no_orphan_guides
+- tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_probe_table_and_inventory_agree
+- tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_every_probe_still_matches_source
 attachments: []
 acceptance: []
 threat: null
 ```
 A guide series under docs/guides/extending/ making every registry trivially extendable. INVENTORY FIRST: enumerate every registry/extension point in the codebase -- at minimum: gate rule families and their registration (COV/TEST/DRIFT/SCOPE/PRE/DOC/PERF/SYS/THREAT/COMPLIANCE/WAIVE), comment DSL directives (frob:ticket/tests/doc/waive/todo/invariant/channel/boundary/secret), threat catalog (WeaknessEntry/OutOfScopeEntry/views incl. the separate-views precedent), compliance regulations/views, capability registry + pattern tables + per-language matrix cells (T-0158), CVE fingerprints (T-0153), PII categories (T-0154), design-lint rules (T-0155), secrets-scan providers (T-0157), prover claim kinds, scenario kinds, strata surface grammar keywords (and the tmLanguage drift-lock), [[test.runner]] entries, language grammar handlers, sys export formats, litmus fixture mappings, benign capabilities, ticket kinds/states. ONE GUIDE PER REGISTRY on a common template: what it is and where it lives (file paths + symbol names); step-by-step 'add a new entry' recipe; WHICH DRIFT-LOCKS WILL FIRE when you add one and exactly what each demands (fixture, test, excuse entry, doc anchor, golden regen); a worked example diff; common mistakes (cite real session incidents where instructive, e.g. separate-views vs widening defaults, self-match false positives, stale-comment traps). ANTI-ROT MECHANISM (the point of doing this in frob): every guide is bound to its registry's code symbol with frob:doc anchors so the DOC gates flag drift when the registry changes; plus a completeness drift-lock test -- a machine-readable registry-of-registries (the inventory above) asserting every entry has a guide file and a live anchor, so ADDING A NEW REGISTRY without a guide fails the build. docs/index.md gains an Extending section linking every guide. Writing guides will require reading each registry's code carefully -- fix nothing beyond doc anchors; file tickets for any defect discovered while documenting.
+
+## Done report (T-0159)
+
+Inventory table (registry -> guide -> anchor site), 19 registries total:
+
+| Registry | Guide | Anchor (`frob:doc`) |
+|---|---|---|
+| Gate rule families | `docs/guides/extending/gate-rule-families.md` | `src/frob/gates/_models.py::GateConfig` |
+| Comment DSL directives | `docs/guides/extending/comment-dsl-directives.md` | `src/frob/graph/dsl.py::_VERB_TABLE` |
+| Threat catalog | `docs/guides/extending/threat-catalog.md` | `src/frob/strata/_threat.py::WeaknessEntry` |
+| Benign capabilities | `docs/guides/extending/benign-capabilities.md` | `src/frob/strata/_threat.py::BenignCapability` |
+| Compliance registry | `docs/guides/extending/compliance-registry.md` | `src/frob/strata/_compliance.py::RegulationEntry` |
+| Capability registry | `docs/guides/extending/capability-registry.md` | `src/frob/vet/_capability_registry.py::DangerousOperation` |
+| CVE fingerprints | `docs/guides/extending/cve-fingerprints.md` | `src/frob/strata/_cve_fingerprint.py::CveFingerprint` |
+| PII categories | `docs/guides/extending/pii-categories.md` | `src/frob/strata/_pii.py::PiiViolation` |
+| Design-lint rules | `docs/guides/extending/design-lint-rules.md` | `src/frob/strata/_lint.py::LintViolation` |
+| Secrets-scan providers | `docs/guides/extending/secrets-scan-providers.md` | `src/frob/gates/_secrets.py::_SecretPattern` |
+| Prover claim kinds | `docs/guides/extending/prover-claim-kinds.md` | `src/frob/strata/_claims.py::evaluate_claims` |
+| Scenario kinds | `docs/guides/extending/scenario-kinds.md` | `src/frob/strata/_scenarios.py::ScenarioResult` |
+| Strata surface grammar + tmLanguage lock | `docs/guides/extending/strata-surface-grammar.md` | `tests/unit/test_strata_tmlanguage.py::test_construct_keywords_match_parser_bidirectionally` (anchor kept in-scope; `strata-core/src/parse.rs` is outside T-0159's scope glob, so the anchor lives on the drift-lock test that reads it, not on the parser file itself) |
+| `[[test.runner]]` entries | `docs/guides/extending/test-runner-entries.md` | `src/frob/testing/_models.py::RunnerSpec` |
+| Language grammar handlers | `docs/guides/extending/language-grammar-handlers.md` | `src/frob/lang/_extract.py::extract` (describes-anchor; `_WALKERS` itself is a private dict, not a resolvable symbol) |
+| sys export formats | `docs/guides/extending/sys-export-formats.md` | `src/frob/strata/_export.py::export_k8s_netpol` |
+| Litmus fixture mappings | `docs/guides/extending/litmus-fixtures.md` | `tests/unit/strata/test_litmus_surface.py::TestNaiveSurfaceGoldens` |
+| Ticket kinds/states | `docs/guides/extending/ticket-kinds-states.md` | `src/frob/tickets/_models.py::TicketState` |
+| Dup detector registry (R1-R7 rung ladder) | `docs/guides/extending/dup-detector-registry.md` | `src/frob/dup/_rules.py::DUP001` |
+
+Anti-rot mechanism: `docs/guides/extending/registry_of_registries.json` is
+the machine-readable inventory; `tests/unit/test_extending_guides_complete.py`
+(6 tests) asserts, for every row, that (1) the guide file exists, (2) the
+named anchor_file still defines anchor_symbol and carries a `frob:doc`
+edge into the guide, (3) the edge's `#fragment` resolves to a real heading
+slug or `<a id>` in the guide, (4) no orphan guide file is missing a row,
+and (5)/(6) a hard-coded `_REGISTRY_PROBES` table (independent of the
+JSON) still matches real source, so the JSON and the probe table can't
+silently drift from each other or from the codebase. `docs/index.md`
+gained an "Extending frob" section linking all 19 guides plus the README.
+
+Known gaps disclosed, not fixed (out of scope -- doc-anchors only): no
+`frob check` gate enforces "every prover claim kind / scenario rewrite
+kind / sys export format has a dispatch/registration arm" -- an unhandled
+variant fails at runtime, not at `frob check` time. Called out explicitly
+in `prover-claim-kinds.md`, `scenario-kinds.md`, `sys-export-formats.md`,
+and `docs/guides/extending/README.md`'s "Known gaps" section.
+
+Scope note: `strata-core/src/parse.rs` is outside this ticket's declared
+scope (`docs/guides/**`, `docs/index.md`, `src/frob/**`, `tests/**`,
+`tickets.md`); an in-progress draft anchor there was reverted
+(`git checkout -- strata-core/src/parse.rs`) once `frob check` flagged it
+as SCOPE001, and the strata-surface-grammar guide's anchor was moved to
+the in-scope tmLanguage drift-lock test instead, which is arguably the
+more correct anchor site anyway (it's the actual enforcement mechanism).
+
+Evidence: `tests/unit/test_extending_guides_complete.py`'s 6 collected
+tests, all green (`uv run pytest tests/unit/test_extending_guides_complete.py
+-v` -> 6 passed), plus `tests/unit/test_strata_tmlanguage.py` (12 tests,
+all green) since the strata-surface-grammar anchor lives there.
+`uv run frob test --base main` selected and ran the touched-set (python
+runner, exit=0, 6.84s) including both files above plus
+`tests/unit/strata/test_litmus_surface.py` and `src/frob/strata/**`.
+
+Gates: `uv run frob check --delta --ticket T-0159` after a fresh
+`frob graph build` and a re-run `frob ticket sweep T-0159` (post-merge)
+reports exactly one gate error, and it is pre-existing debt outside this
+ticket's scope: `COV003` on ticket `T-0168` (an unrelated ticket's stale
+evidence id, `tests/test_gates.py::TestConventionUnitBinding.
+test_test001_exempts_strata_flow_declarations`, does not resolve to a
+collected test) -- confirmed pre-existing via `git stash` + re-run before
+committing. `ruff check .` and `ruff format --check .` both clean.
+`tests/unit/strata/test_selfconform.py::TestRealGateGreen::
+test_repo_design_and_declarations_are_self_conformant` fails on 5
+pre-existing SYS100 findings (capabilities observed but undeclared in
+`design/frob.strata`, e.g. `_cve_fingerprint.py`'s `fs`/`sql` capabilities)
+-- confirmed pre-existing (same failure with this ticket's diff stashed
+out); not touched, out of scope.
+
+Filed while documenting (out-of-scope defects found, not fixed here):
+- T-draft-c4c47359: frob:tests edge code endpoints and kind= attr are not
+  gate-verified -- tests/unit/test_strata_tmlanguage.py:13 cites
+  `parse.rs::parse_program` (real qualname `Parser.parse_program`) with
+  `kind="drift"` (not in `_TESTS_KINDS`), and neither problem fires any
+  gate, while the identical dead endpoint on a frob:describes edge fires
+  DRIFT002. A silently-broken evidence edge, not a documented absence.
+- T-draft-29ea9722: `frob outline` has no Rust adapter though `frob.lang`
+  parses Rust (151 symbols from parse.rs) -- the outline adapter registry
+  and the language-walker registry can drift apart.
+Both drafts were first filed mid-ticket and lost in a tickets.md ledger
+splice during a concurrent-agent merge; refiled post-merge. The remaining
+"known gaps" above are documentation-level disclosures inside the guides
+(no gate claims to cover them and none is silently broken), so per the
+ticket's instruction they are disclosed, not ticketed.
+
+Waivers added by this ticket (all in
+tests/unit/test_extending_guides_complete.py, each with reason=): one
+PERF003 (fixed-size per-row anchor scan) and three PERF004 (sorted() only
+formatting tiny sets for assert messages) -- the new test file's only
+lexical-perf findings; no other waivers introduced.
+
+Deletion-filter (`git diff main --diff-filter=D --stat`): empty after the
+final `git merge main` (main had landed T-0176's `frob ticket land`,
+`_land.py`, and T-0172's `managed` marker since this worktree's base;
+merged clean, no deletions of already-landed work).
+
+Not closed per the parent dispatch's explicit instruction ("do not
+close"); left in state `in-progress` with this Done report and evidence
+list for the reviewer/closer.
 
 <!-- ticket:T-0160 -->
 ```yaml
@@ -2587,3 +2699,89 @@ acceptance: []
 threat: null
 ```
 Three consecutive reviews (T-0181, T-0203, T-0202) REJECTed solely or partly on a stale PRE001 pre-work sweep, caused not by implementer negligence but by main moving between implementation and review in a multi-agent loop -- any unrelated landing that touches a ticket's scope globs invalidates its recorded sweep. Fix: frob ticket land refreshes the sweep against the post-merge state automatically before close (it already validates evidence/done-report pre-merge; add sweep-refresh as a post-merge, pre-close step), and frob check --ticket's PRE001 message should say when the staleness is due to out-of-scope-agent drift (compare sweep tree hash provenance) vs a genuinely un-swept scope change. Tests: land a ticket whose sweep predates an unrelated main landing; assert land succeeds and the recorded sweep is fresh.
+
+<!-- ticket:T-draft-117dcdb8 -->
+```yaml
+id: T-draft-117dcdb8
+title: frob outline has no Rust adapter though frob.lang parses Rust
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/outline/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Found while writing T-0159's extending guides: 'frob outline strata-core/src/parse.rs' errors with 'No outline adapter for this file extension' even though frob.lang extracts 151 symbols from the same file (dispatching path=strata-core/src/parse.rs to grammar=rust). The outline adapter registry does not cover every language frob.lang supports; either add the missing adapters (rust at minimum, check c/cpp/tsx too) or have outline fall back to the frob.lang symbol walk so the two language registries cannot drift apart. Documented in docs/guides/extending/language-grammar-handlers.md as a current limitation.
+
+<!-- ticket:T-draft-29ea9722 -->
+```yaml
+id: T-draft-29ea9722
+title: frob outline has no Rust adapter though frob.lang parses Rust
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/outline/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Found while writing T-0159's extending guides: 'frob outline strata-core/src/parse.rs' errors with 'No outline adapter for this file extension' even though frob.lang extracts 151 symbols from the same file (dispatching path=strata-core/src/parse.rs to grammar=rust). The outline adapter registry does not cover every language frob.lang supports; either add the missing adapters (rust at minimum, check c/cpp/tsx too) or have outline fall back to the frob.lang symbol walk so the two language registries cannot drift apart. (Refiled: first draft was lost in a tickets.md ledger splice during T-0159's concurrent-agent merge.)
+
+<!-- ticket:T-draft-c4c47359 -->
+```yaml
+id: T-draft-c4c47359
+title: frob:tests edge code endpoints and kind= attr are not gate-verified
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/**
+- src/frob/graph/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Found while writing T-0159's extending guides. tests/unit/test_strata_tmlanguage.py:13 declares 'frob:tests strata-core/src/parse.rs::parse_program kind="drift"'. Two problems, neither caught by any gate: (1) the code-side endpoint parse.rs::parse_program does not resolve -- frob.lang's Rust walk qualnames the symbol Parser.parse_program -- yet no DRIFT002 fires; an identical dead endpoint on a frob:describes edge DOES fire DRIFT002 (observed during T-0159: a describes edge to parse.rs::parse_program produced 'DRIFT002 ... gone' until corrected to Parser.parse_program). frob:tests edges appear exempt from endpoint resolution, so a renamed/deleted code symbol silently orphans its test-evidence edge. (2) kind="drift" is not in graph.dsl._TESTS_KINDS (unit/integration/e2e) yet is not reported as a MalformedDirective. Either widen _TESTS_KINDS deliberately or reject unknown kinds loudly; and run frob:tests code-side endpoints through the same DRIFT002 resolution describes edges get. (Refiled: first draft was lost in a tickets.md ledger splice during T-0159's concurrent-agent merge.)
+
+<!-- ticket:T-draft-ee3df28d -->
+```yaml
+id: T-draft-ee3df28d
+title: frob:tests edge code endpoints and kind= attr are not gate-verified
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/**
+- src/frob/graph/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Found while writing T-0159's extending guides. tests/unit/test_strata_tmlanguage.py:13 declares 'frob:tests strata-core/src/parse.rs::parse_program kind="drift"'. Two problems, neither caught by any gate: (1) the code-side endpoint parse.rs::parse_program does not resolve -- frob.lang's Rust walk qualnames the symbol Parser.parse_program -- yet no DRIFT002 fires; an identical dead endpoint on a frob:describes edge DOES fire DRIFT002 (observed during T-0159: describes -> parse.rs::parse_program produced 'DRIFT002 ... gone' until corrected to Parser.parse_program). frob:tests edges appear exempt from endpoint resolution, so a renamed/deleted code symbol silently orphans its test-evidence edge. (2) kind="drift" is not in graph.dsl._TESTS_KINDS (unit/integration/e2e) yet is not reported as a MalformedDirective. Either widen _TESTS_KINDS deliberately or reject unknown kinds loudly; and run frob:tests code-side endpoints through the same DRIFT002 resolution describes edges get.

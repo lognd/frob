@@ -32,6 +32,35 @@ real.
   store instead of an in-context to-do list, plus the `.mcp.json` wiring for
   `fetch`/`arxiv`.
 
+## Extending frob
+
+One guide per registry/extension point, on a common template (what/where,
+add-an-entry recipe, which drift-locks fire, worked example, common
+mistakes). The machine-readable inventory is
+`docs/guides/extending/registry_of_registries.json`; the completeness
+drift-lock (`tests/unit/test_extending_guides_complete.py`) fails the build
+if a registry gains no guide. Start at `docs/guides/extending/README.md`.
+
+- `docs/guides/extending/gate-rule-families.md` -- adding a rule id to a gate family
+- `docs/guides/extending/comment-dsl-directives.md` -- adding a `frob:<verb>` directive
+- `docs/guides/extending/threat-catalog.md` -- weaknesses, out-of-scope entries, views
+- `docs/guides/extending/benign-capabilities.md` -- excusing a capability kind honestly
+- `docs/guides/extending/compliance-registry.md` -- regulations and views
+- `docs/guides/extending/capability-registry.md` -- dangerous operations, matrix cells, excuses
+- `docs/guides/extending/cve-fingerprints.md` -- code-level CVE pattern classes
+- `docs/guides/extending/pii-categories.md` -- the personal-data category set
+- `docs/guides/extending/design-lint-rules.md` -- operational lints LINT001-005
+- `docs/guides/extending/secrets-scan-providers.md` -- credential-shape patterns
+- `docs/guides/extending/prover-claim-kinds.md` -- claim kinds the prover evaluates
+- `docs/guides/extending/scenario-kinds.md` -- scenario rewrites and results
+- `docs/guides/extending/strata-surface-grammar.md` -- surface keywords + tmLanguage lock
+- `docs/guides/extending/test-runner-entries.md` -- `[[test.runner]]` entries
+- `docs/guides/extending/language-grammar-handlers.md` -- adding a source language
+- `docs/guides/extending/sys-export-formats.md` -- `frob sys export` formats
+- `docs/guides/extending/litmus-fixtures.md` -- the permanent litmus goldens
+- `docs/guides/extending/ticket-kinds-states.md` -- ticket kinds, states, strides
+- `docs/guides/extending/dup-detector-registry.md` -- the R1-R7 rung ladder, DUP001/DUP002
+
 ## Module design docs
 
 The four components that make up the enforcement layer:

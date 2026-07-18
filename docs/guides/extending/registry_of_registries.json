@@ -1,0 +1,138 @@
+{
+  "_comment": "Machine-readable inventory for T-0159's completeness drift-lock. Every entry MUST have a guide file under docs/guides/extending/ and a live frob:doc anchor at anchor_file#anchor_symbol_line. tests/unit/test_extending_guides_complete.py asserts this file, the guide files, and the anchors all agree -- add a row here and a guide file together whenever a new registry/extension point is added anywhere in the codebase.",
+  "registries": [
+    {
+      "id": "gate-rule-families",
+      "title": "Gate rule families",
+      "guide": "docs/guides/extending/gate-rule-families.md",
+      "anchor_file": "src/frob/gates/_models.py",
+      "anchor_symbol": "GateConfig"
+    },
+    {
+      "id": "comment-dsl-directives",
+      "title": "Comment DSL directives",
+      "guide": "docs/guides/extending/comment-dsl-directives.md",
+      "anchor_file": "src/frob/graph/dsl.py",
+      "anchor_symbol": "_VERB_TABLE"
+    },
+    {
+      "id": "threat-catalog",
+      "title": "Threat catalog (weaknesses, out-of-scope, benign capabilities)",
+      "guide": "docs/guides/extending/threat-catalog.md",
+      "anchor_file": "src/frob/strata/_threat.py",
+      "anchor_symbol": "WeaknessEntry"
+    },
+    {
+      "id": "compliance-registry",
+      "title": "Compliance regulations and views",
+      "guide": "docs/guides/extending/compliance-registry.md",
+      "anchor_file": "src/frob/strata/_compliance.py",
+      "anchor_symbol": "RegulationEntry"
+    },
+    {
+      "id": "capability-registry",
+      "title": "Capability registry, pattern tables, matrix cells",
+      "guide": "docs/guides/extending/capability-registry.md",
+      "anchor_file": "src/frob/vet/_capability_registry.py",
+      "anchor_symbol": "DangerousOperation"
+    },
+    {
+      "id": "cve-fingerprints",
+      "title": "CVE fingerprints",
+      "guide": "docs/guides/extending/cve-fingerprints.md",
+      "anchor_file": "src/frob/strata/_cve_fingerprint.py",
+      "anchor_symbol": "CveFingerprint"
+    },
+    {
+      "id": "pii-categories",
+      "title": "PII categories",
+      "guide": "docs/guides/extending/pii-categories.md",
+      "anchor_file": "src/frob/strata/_pii.py",
+      "anchor_symbol": "PiiViolation"
+    },
+    {
+      "id": "design-lint-rules",
+      "title": "Design-lint rules (LINT001-005)",
+      "guide": "docs/guides/extending/design-lint-rules.md",
+      "anchor_file": "src/frob/strata/_lint.py",
+      "anchor_symbol": "LintViolation"
+    },
+    {
+      "id": "secrets-scan-providers",
+      "title": "Secrets-scan providers",
+      "guide": "docs/guides/extending/secrets-scan-providers.md",
+      "anchor_file": "src/frob/gates/_secrets.py",
+      "anchor_symbol": "_SecretPattern"
+    },
+    {
+      "id": "prover-claim-kinds",
+      "title": "Prover claim kinds",
+      "guide": "docs/guides/extending/prover-claim-kinds.md",
+      "anchor_file": "src/frob/strata/_claims.py",
+      "anchor_symbol": "_SKEW_PREFIX"
+    },
+    {
+      "id": "scenario-kinds",
+      "title": "Scenario kinds",
+      "guide": "docs/guides/extending/scenario-kinds.md",
+      "anchor_file": "src/frob/strata/_scenarios.py",
+      "anchor_symbol": "ScenarioResult"
+    },
+    {
+      "id": "strata-surface-grammar",
+      "title": "Strata surface grammar keywords",
+      "guide": "docs/guides/extending/strata-surface-grammar.md",
+      "anchor_file": "tests/unit/test_strata_tmlanguage.py",
+      "anchor_symbol": "test_construct_keywords_match_parser_bidirectionally"
+    },
+    {
+      "id": "test-runner-entries",
+      "title": "[[test.runner]] entries",
+      "guide": "docs/guides/extending/test-runner-entries.md",
+      "anchor_file": "src/frob/testing/_models.py",
+      "anchor_symbol": "RunnerSpec"
+    },
+    {
+      "id": "language-grammar-handlers",
+      "title": "Language grammar handlers",
+      "guide": "docs/guides/extending/language-grammar-handlers.md",
+      "anchor_file": "src/frob/lang/_extract.py",
+      "anchor_symbol": "_WALKERS"
+    },
+    {
+      "id": "sys-export-formats",
+      "title": "sys export formats",
+      "guide": "docs/guides/extending/sys-export-formats.md",
+      "anchor_file": "src/frob/strata/_export.py",
+      "anchor_symbol": "export_k8s_netpol"
+    },
+    {
+      "id": "litmus-fixtures",
+      "title": "Litmus fixture mappings",
+      "guide": "docs/guides/extending/litmus-fixtures.md",
+      "anchor_file": "tests/unit/strata/test_litmus_surface.py",
+      "anchor_symbol": "TestNaiveSurfaceGoldens"
+    },
+    {
+      "id": "benign-capabilities",
+      "title": "Benign capabilities",
+      "guide": "docs/guides/extending/benign-capabilities.md",
+      "anchor_file": "src/frob/strata/_threat.py",
+      "anchor_symbol": "BenignCapability"
+    },
+    {
+      "id": "ticket-kinds-states",
+      "title": "Ticket kinds and states",
+      "guide": "docs/guides/extending/ticket-kinds-states.md",
+      "anchor_file": "src/frob/tickets/_models.py",
+      "anchor_symbol": "TicketState"
+    },
+    {
+      "id": "dup-detector-registry",
+      "title": "Dup detector registry (rung ladder)",
+      "guide": "docs/guides/extending/dup-detector-registry.md",
+      "anchor_file": "src/frob/dup/_rules.py",
+      "anchor_symbol": "DUP001"
+    }
+  ]
+}

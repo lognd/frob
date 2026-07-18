@@ -40,6 +40,7 @@ from ._policy import CompiledPolicies
 _log = get_logger(__name__)
 
 #: Node attr prefix for zipf skew (surface `skew zipf NUM`).
+# frob:doc docs/guides/extending/prover-claim-kinds.md#prover-claim-kinds
 _SKEW_PREFIX = "skew="
 #: Flow attr prefix for monthly compound growth (surface `growth NUM %`).
 _GROWTH_PREFIX = "growth="

@@ -79,6 +79,7 @@ CAPABILITY_KINDS: tuple[str, ...] = (
 
 
 # frob:doc docs/modules/vet.md#public-api
+# frob:doc docs/guides/extending/capability-registry.md#capability-registry
 class DangerousOperation(BaseModel):
     """One structured dangerous-operation entry (T-0158 addendum 1):
     a single builtin/stdlib/library function or literal pattern that

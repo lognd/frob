@@ -54,6 +54,7 @@ def _walk_tsx(root: Node) -> tuple[RawSymbol, ...]:
     return _walk_typescript(root)
 
 
+# frob:doc docs/guides/extending/language-grammar-handlers.md#language-grammar-handlers
 _WALKERS = {
     "python": _walk_python,
     "typescript": _walk_typescript,

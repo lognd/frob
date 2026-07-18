@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict
 
 
 # frob:doc docs/modules/testing.md#data-models
+# frob:doc docs/guides/extending/test-runner-entries.md#test-runner-entries
 class RunnerSpec(BaseModel):
     """One `[[test.runner]]` entry: how to invoke a language's test runner."""
 
