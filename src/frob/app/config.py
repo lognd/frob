@@ -41,6 +41,7 @@ class Subcommand(str, enum.Enum):
 
 # frob:doc docs/modules/app.md#config
 # frob:ticket T-0030
+# frob:ticket T-0085
 class AppConfig(BaseModel):
     # frob:ticket T-0021
     subcommand: Subcommand | None = None
@@ -233,14 +234,16 @@ class AppConfig(BaseModel):
     mutate_json: bool = False
 
     # sys
-    sys_command: str | None = None  # plan (more per roadmap phase 5)
+    sys_command: str | None = None  # plan, doc (more per roadmap phase 5)
     sys_path: Path | None = None
     sys_apply: bool = False
+    sys_view: str = "owasp-top-10"  # T-0085: `frob sys doc`'s baseline view
 
     @classmethod
     def from_external(cls, args: argparse.Namespace, file: Path) -> "AppConfig":
         # frob:doc docs/modules/app.md#config
         # frob:ticket T-0021
+        # frob:ticket T-0085
         # frob:ticket T-0030
         file_cfg: dict = {}
         if file.exists():
@@ -291,6 +294,7 @@ class AppConfig(BaseModel):
             "perf_command",
             "perf_ref",
             "sys_command",
+            "sys_view",
         ):
             val = getattr(args, field, None)
             if val is not None:

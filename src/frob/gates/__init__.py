@@ -363,6 +363,7 @@ _KNOWN_GATE_RULES = frozenset(
         "REL001",
         "DOC001",
         "DOC002",
+        "DOC003",
         "DUP001",
         "DUP002",
         "FUZZ001",
@@ -1888,8 +1889,140 @@ def _sys002(snapshot: GraphSnapshot, design_ids) -> list[Violation]:  # noqa: AN
     return violations
 
 
+_CLAIMS_RE = re.compile(r"<!--\s*frob:claims\s+(?P<view>\S+)\s*-->")
+_FENCE_RE = re.compile(r"^\s*(```+|~~~+)")
+_INLINE_CODE_SPAN_RE = re.compile(r"`[^`]*`")
+
+
+def _strip_inline_code_spans(line: str) -> str:
+    """Blank out every inline `code span` on `line` (paired single
+    backticks), preserving column positions so line/column reporting
+    elsewhere never has to know this ran. A directive quoted inside
+    backticks -- the natural way to DOCUMENT the directive in prose --
+    must never be mistaken for a live claim (reviewer-caught, T-0085
+    round 2)."""
+    return _INLINE_CODE_SPAN_RE.sub(lambda m: " " * len(m.group(0)), line)
+
+
+# frob:ticket T-0085
+def _claims_markers(root: Path) -> list[tuple[str, int, str]]:
+    """Every `<!-- frob:claims <view> -->` doc marker under the doclink
+    doc set (T-0085, docs/strata/threat.md#the-exhaustiveness-proof-the-
+    point): `(file, line, view)`, reusing `doclink_gate`'s own `include`/
+    `exclude`/`roots` config so the claims scan and the doc-obligation
+    scan never disagree about which files are docs (charter: no
+    duplication).
+
+    Fence- and inline-code-aware (reviewer-caught, T-0085 round 2): a
+    marker written to DOCUMENT the directive -- inside a fenced ```/~~~
+    block, or inside inline `backticks` on the same line -- is prose
+    ABOUT the directive, not a live claim, and must never be extracted.
+    Fence state is a simple line-by-line open/close toggle (a line
+    starting with three-or-more backticks or tildes, ignoring leading
+    whitespace, flips it); inline spans are blanked out before matching
+    so a marker can still be found elsewhere on the same line outside any
+    span. A single unmatched inline backtick that never closes on the
+    same line does not affect fence state -- CommonMark inline code spans
+    never cross a line boundary."""
+    include, exclude, roots = _doclink_config(root)
+    paths = _obligated_docs(root, include, exclude) | set(roots)
+    found: list[tuple[str, int, str]] = []
+    for rel in sorted(paths):
+        path = root / rel
+        try:
+            text = path.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        in_fence = False
+        for lineno, line in enumerate(text.splitlines(), start=1):
+            if _FENCE_RE.match(line) is not None:
+                in_fence = not in_fence
+                continue
+            if in_fence:
+                continue
+            match = _CLAIMS_RE.search(_strip_inline_code_spans(line))
+            if match is not None:
+                found.append((rel, lineno, match.group("view")))
+    return found
+
+
+# frob:ticket T-0085
+def _doc003_violation(rel: str, lineno: int, message: str) -> Violation:
+    """Build one DOC003 error `Violation` -- every failure mode is the same shape."""
+    return Violation(
+        rule="DOC003", severity=Severity.ERROR, file=rel, line=lineno, message=message
+    )
+
+
+# frob:ticket T-0085
+def _doc003_one_marker(model, rel: str, lineno: int, view: str) -> Violation | None:  # noqa: ANN001
+    """One `frob:claims <view>` marker's DOC003 outcome: `None` (proved),
+    an unknown-view error, or a not-proved error naming the failing
+    obligations."""
+    from frob.strata import audit_claim
+
+    result = audit_claim(model, view)
+    if result.is_err:
+        return _doc003_violation(
+            rel,
+            lineno,
+            f"DOC003: frob:claims {view!r} names an unknown baseline view "
+            f"({result.danger_err.value}); fix the view name",
+        )
+    audit = result.danger_ok
+    if audit.proved:
+        return None
+    named = "; ".join(
+        f"{v.rule} {v.cwe or v.capability or ''}: {v.detail}".strip()
+        for v in audit.violations
+    )
+    return _doc003_violation(
+        rel,
+        lineno,
+        f"DOC003: frob:claims {view!r} is not a PROVED exhaustiveness result "
+        f"against the design model -- failing obligation(s): {named}",
+    )
+
+
+# frob:ticket T-0085
+def _doc003(root: Path, design_ids) -> list[Violation]:  # noqa: ANN001
+    """DOC003: a `frob:claims <view>` doc marker whose view is not PROVED
+    (zero THREAT001/THREAT002/THREAT003 violations) against the current
+    design model is an error naming the failing obligations (docs/strata/
+    threat.md#the-exhaustiveness-proof-the-point: "a README claiming
+    'protected against the OWASP Top 10' must cite a PROVED exhaustiveness
+    result or it fails CI"). DOC002 is already taken (anchor resolution,
+    T-0127), hence DOC003 for the claims audit (charter drift noted in
+    docs/strata/threat.md).
+
+    Suppressed when any design file failed to load (same posture as
+    SYS001): a claim cannot be honestly evaluated against a partially
+    loaded model. Runs no doc I/O at all when no `frob:claims` marker
+    exists anywhere, so a repo not using the directive pays nothing."""
+    markers = _claims_markers(root)
+    if not markers:
+        return []
+    if design_ids.errors:
+        _log.debug(
+            "DOC003: suppressed, %d design file(s) failed to load",
+            len(design_ids.errors),
+        )
+        return []
+
+    from frob.strata import merge_models
+
+    model = merge_models(design_ids.models)
+    violations = [
+        v
+        for rel, lineno, view in markers
+        if (v := _doc003_one_marker(model, rel, lineno, view)) is not None
+    ]
+    return violations
+
+
 # frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-0080
+# frob:ticket T-0085
 # frob:tests tests/test_gates.py::TestSysGate.test_noop_no_design_dir
 # frob:tests tests/test_gates.py::TestSysGate.test_sys001_dangling
 # frob:tests tests/test_gates.py::TestSysGate.test_sys001_valid
@@ -1898,6 +2031,10 @@ def _sys002(snapshot: GraphSnapshot, design_ids) -> list[Violation]:  # noqa: AN
 # frob:tests tests/test_gates.py::TestSysGate.test_sys003_import
 # frob:tests tests/test_gates.py::TestSysGate.test_sys004_load_failure
 # frob:tests tests/test_gates.py::TestSysGate.test_sys004_suppresses_sys001
+# frob:tests tests/test_gates.py::TestSysGate.test_doc003_proved_claim_passes
+# frob:tests tests/test_gates.py::TestSysGate.test_doc003_refutes_names_obligations
+# frob:tests tests/test_gates.py::TestSysGate.test_doc003_unclaimed_view_ignored
+# frob:tests tests/test_gates.py::TestSysGate.test_doc003_unknown_view
 def sys_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """SYS001 (dangling directive), SYS002 (unbound boundary/secret), SYS003
     (undeclared cross-component import, tier-2 conformance), and SYS004 (a
@@ -1929,6 +2066,7 @@ def sys_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
         *_sys001(snapshot, design_ids),
         *_sys002(snapshot, design_ids),
         *_sys003(design_ids, root),
+        *_doc003(root, design_ids),
     )
     _log.info(
         "sys_gate: %d channel(s)/%d boundary(ies)/%d secret(s) in model, "

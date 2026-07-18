@@ -121,9 +121,21 @@ The exhaustiveness claim is the conjunction, reported as a matrix
 (`frob sys audit`): applicable weakness -> precondition present? ->
 mitigation -> evidence rung -> citation. It means exactly: exhaustive
 relative to the cited baseline, with every gap named, owned, and
-expiring. DOC002 (the claims audit) binds prose: a README claiming
-"protected against the OWASP Top 10" must cite a PROVED exhaustiveness
-result or it fails CI.
+expiring. The claims audit binds prose: a README claiming "protected
+against the OWASP Top 10" must cite a PROVED exhaustiveness result or it
+fails CI.
+
+**Charter drift (T-0085):** earlier phasing text in this document named
+this check DOC002. By the time T-0085 implemented it, DOC002 had already
+been taken by the doc-anchor-resolution gate (T-0127, `frob.gates.
+docanchor_gate`). The claims audit ships as **DOC003** instead; every
+other mention of "DOC002" in this file in connection with the claims
+audit is this same drift and should be read as DOC003. `frob:claims
+<view>` is the marker directive (docs/commands/sys.md#the-claims-audit-
+doc003); the check itself lives in `frob.gates.sys_gate` (opt-in on a
+`design/` directory existing, same posture as SYS001-004) rather than a
+standalone `docanchor`-family gate, since it needs the loaded design
+model, not just doc-to-doc anchor resolution.
 
 ## Beyond security: the anti-pattern families
 
@@ -192,9 +204,10 @@ days; we share with no third parties"). Model each as an `assert`: the
 design must not EXCEED the policy. A flow collecting a field the policy
 does not list, a retention longer than stated, or a third-party share the
 policy denies, all REFUTE -- so the published privacy policy and the
-actual system provably agree, and DOC002 binds the policy document to that
-proof. Overclaiming ("we never store X") and under-disclosing ("we share
-with Y but the policy is silent") are both build failures.
+actual system provably agree, and the claims audit (DOC003, charter drift
+note above) binds the policy document to that proof. Overclaiming ("we
+never store X") and under-disclosing ("we share with Y but the policy is
+silent") are both build failures.
 
 Exhaustiveness for compliance is per-regulation against a cited statute
 baseline: every obligation the selected regulations impose has an entry or
@@ -249,10 +262,16 @@ the unknown -- and says so.
   new precondition predicates (CORS wildcard, compression, batch-write,
   optimistic-render, route-authz) and their cited baselines. Reuses A-C
   machinery; adds no kernel.
-- **F (audit + docs)**: `frob sys audit` per-family exhaustiveness matrix,
-  DOC002 binding of security/quality prose, the litmus (a deliberately
+- **F (audit + docs)**: per-family exhaustiveness matrix + the claims
+  audit binding security/quality prose, the litmus (a deliberately
   vulnerable+unoptimized model whose every planted anti-pattern the audit
-  flags, with a hardened twin that discharges all families).
+  flags, with a hardened twin that discharges all families). SHIPPED
+  (T-0085) in part: `frob sys doc` renders the matrix
+  (`frob.strata._sysdoc.render_audit_matrix`, docs/commands/sys.md#frob-
+  sys-doc) and the claims audit (DOC003, charter drift note above) is
+  wired into `sys_gate`. The litmus (deliberately vulnerable + hardened
+  twin models) is not part of T-0085's scope; noted as a remaining cut,
+  not silently dropped.
 
 Catalog data is ingested from the authoritative sources (MITRE CWE
 lists, NVD CVE->CWE), never hand-transcribed from memory -- the build

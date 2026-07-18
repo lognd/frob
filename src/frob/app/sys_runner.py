@@ -28,6 +28,7 @@ from frob.strata import (
     PlannedTicket,
     load_design_ids,
     plan_obligations,
+    render_audit_matrix,
 )
 from frob.tickets import load_all, new_ticket
 from frob.tickets._models import Origin, TicketSpec
@@ -184,14 +185,43 @@ def _run_plan(cfg: AppConfig) -> None:
     _apply(root, new)
 
 
+# frob:ticket T-0085
+def _run_doc(cfg: AppConfig) -> None:
+    """`frob sys doc`: render the per-family threat-catalog audit matrix
+    (docs/strata/threat.md#the-exhaustiveness-proof-the-point) for
+    `cfg.sys_view` against every `.strata` design file under the repo's
+    design dir, and print it (deterministic markdown, T-0085)."""
+    root = (cfg.sys_path or Path(".")).resolve()
+    design_dir = _design_dir(root)
+    ids = load_design_ids(root, design_dir)
+    if ids.errors:
+        for error in ids.errors:
+            _log.error("sys doc: %s failed to load: %s", error.path, error.error)
+        sys.exit(1)
+    if not ids.models:
+        _log.info("sys doc: no design models under %s/%s", root, design_dir)
+        return
+
+    model = _merge_models(ids.models)
+    rendered = render_audit_matrix(model, cfg.sys_view)
+    if rendered.is_err:
+        _log.error("sys doc: %s", rendered.danger_err)
+        sys.exit(1)
+    print(rendered.danger_ok, end="")
+
+
 # frob:doc docs/modules/app.md#runners
 # frob:ticket T-0084
+# frob:ticket T-0085
 def run(cfg: AppConfig) -> None:
-    """Dispatch `frob sys <command>`; only `plan` exists today (roadmap
-    phase 5's `check`/`trace`/`capacity`/`threats`/`doc`/`export` are
-    later tickets)."""
+    """Dispatch `frob sys <command>`; `plan` and `doc` exist today (roadmap
+    phase 5's `check`/`trace`/`capacity`/`threats`/`export` are later
+    tickets)."""
     if cfg.sys_command == "plan":
         _run_plan(cfg)
         return
-    _log.error("usage: frob sys <plan> ...")
+    if cfg.sys_command == "doc":
+        _run_doc(cfg)
+        return
+    _log.error("usage: frob sys <plan|doc> ...")
     sys.exit(1)

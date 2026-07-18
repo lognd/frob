@@ -1,9 +1,10 @@
 # frob sys
 
 Strata design-model operations. Today: `frob sys plan`, the obligation ->
-ticket compiler (T-0084). Later phase-5 siblings per
-`docs/strata/roadmap.md` (`check`, `trace`, `capacity`, `threats`, `doc`,
-`export`) are separate future tickets, not implemented here.
+ticket compiler (T-0084), and `frob sys doc`, the threat-catalog audit
+matrix (T-0085). Later phase-5 siblings per `docs/strata/roadmap.md`
+(`check`, `trace`, `capacity`, `export`) are separate future tickets, not
+implemented here.
 
 ## `frob sys plan`
 
@@ -65,6 +66,51 @@ for ticket in result.tickets:
     print(ticket.marker, ticket.title)
 ```
 
+## `frob sys doc`
+
+Renders the per-family threat-catalog audit matrix (docs/strata/threat.md
+#the-exhaustiveness-proof-the-point) for a selected baseline view against
+every `.strata` design file under the repo's design dir: applicable
+weakness -> precondition present? -> mitigation -> evidence rung/status ->
+citation, grouped by `WeaknessEntry.family`, plus an out-of-scope section
+and a catalog-gaps (THREAT001) section when either is non-empty. Output is
+deterministic markdown to stdout.
+
+```bash
+frob sys doc                       # matrix for the owasp-top-10 view
+frob sys doc --view owasp-top-10   # explicit view
+frob sys doc /path/to/repo
+```
+
+<!-- frob:claims owasp-top-10 -->
+This command's own design model (`design/frob.strata`, T-0081
+self-hosting) claims the `owasp-top-10` exhaustiveness result above is
+PROVED -- the DOC003 gate (below) checks that claim on every `frob check`
+run, so this line can never silently drift from what the model actually
+proves.
+
+### The claims audit (DOC003)
+
+`frob:claims <view>` is a marker directive in any doc page: it asserts
+that `<view>`'s exhaustiveness result (docs/strata/threat.md, "the
+exhaustiveness proof is computed PER FAMILY against a cited baseline") is
+PROVED against the current design model. `frob check`'s `sys_gate`
+verifies every such marker: an unproved claim (a live THREAT001/002/003
+violation for that view) is a DOC003 error naming the failing
+obligation(s); an unknown view name is also a DOC003 error. DOC002 was
+already taken (anchor resolution, T-0127) by the time this landed, hence
+DOC003 for the claims audit -- see docs/strata/threat.md's charter-drift
+note. Suppressed, like SYS001, while any `.strata` design file fails to
+load.
+
+## Public API
+
+<!-- frob:describes src/frob/strata/_sysdoc.py::render_audit_matrix -->
+<!-- frob:describes src/frob/strata/_sysdoc.py::audit_claim -->
+<!-- frob:describes src/frob/strata/_sysdoc.py::ClaimAuditResult -->
+<!-- frob:describes src/frob/strata/_sysdoc.py::merge_models -->
+
 ## CLI wiring
 
 <!-- frob:describes src/frob/app/sys_runner.py::run -->
+<!-- frob:describes src/frob/app/sys_runner.py::_run_doc -->

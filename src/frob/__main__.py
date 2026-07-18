@@ -869,10 +869,11 @@ def _add_serve_parser(sub) -> None:
 
 
 # frob:ticket T-0084
+# frob:ticket T-0085
 def _add_sys_parser(sub) -> None:
-    """Register the `frob sys` subcommand group (`plan` today; `check`/`trace`/
-    `capacity`/`threats`/`doc`/`export` are later roadmap-phase-5 siblings,
-    docs/strata/roadmap.md)."""
+    """Register the `frob sys` subcommand group (`plan`/`doc` today;
+    `check`/`trace`/`capacity`/`threats`/`export` are later roadmap-phase-5
+    siblings, docs/strata/roadmap.md)."""
     # -- sys -------------------------------------------------------------------
     sys_p = sub.add_parser(
         "sys", help="strata design-model operations (obligation -> ticket plan, ...)"
@@ -888,6 +889,18 @@ def _add_sys_parser(sub) -> None:
         dest="sys_apply",
         action="store_true",
         help="write the planned tickets (default: dry-run, print the tree)",
+    )
+
+    sys_doc_p = sys_sub.add_parser(
+        "doc",
+        help="render the per-family threat-catalog audit matrix (T-0085)",
+    )
+    sys_doc_p.add_argument("sys_path", metavar="path", nargs="?", default=".")
+    sys_doc_p.add_argument(
+        "--view",
+        dest="sys_view",
+        default="owasp-top-10",
+        help="baseline view to render the matrix for (default: owasp-top-10)",
     )
 
 

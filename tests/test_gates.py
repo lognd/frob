@@ -1702,6 +1702,145 @@ class TestSysGate:
         assert _by_rule(violations, "SYS001") == []
         assert len(_by_rule(violations, "SYS004")) == 1
 
+    def test_doc003_proved_claim_passes(self, tmp_path: Path, monkeypatch) -> None:
+        """T-0085: a `frob:claims <view>` marker whose obligations are all
+        discharged produces no DOC003 violation."""
+        import frob.strata as strata_mod
+        from frob.strata import Claim, DesignIds, Node, NoFlow, Rung
+        from frob.strata._threat import _discharge_claim_id
+
+        node = Node(id="Web", trust="trusted", may=("html_render",))
+        claim_id = _discharge_claim_id("CWE-79", "Web")
+        model = strata_mod.KernelModel(
+            nodes=(node,),
+            claims=(
+                Claim(
+                    id=claim_id,
+                    body=NoFlow(src="foreign", dst="Web"),
+                    required_rung=Rung.L4,
+                ),
+            ),
+        )
+        _write(tmp_path, "design/.gitkeep", "")
+        _write(tmp_path, "README.md", "<!-- frob:claims owasp-top-10 -->\n")
+        monkeypatch.setattr(
+            strata_mod,
+            "load_design_ids",
+            lambda root, design_dir: DesignIds(models=(model,)),
+        )
+        snapshot = _snapshot(tmp_path)
+        assert _by_rule(sys_gate(tmp_path, snapshot), "DOC003") == []
+
+    def test_doc003_refutes_names_obligations(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """T-0085: an undischarged obligation for the claimed view is a
+        DOC003 error naming the failing obligation (the CWE id)."""
+        import frob.strata as strata_mod
+        from frob.strata import DesignIds, Node
+
+        model = strata_mod.KernelModel(
+            nodes=(Node(id="Web", trust="trusted", may=("html_render",)),)
+        )
+        _write(tmp_path, "design/.gitkeep", "")
+        _write(tmp_path, "README.md", "<!-- frob:claims owasp-top-10 -->\n")
+        monkeypatch.setattr(
+            strata_mod,
+            "load_design_ids",
+            lambda root, design_dir: DesignIds(models=(model,)),
+        )
+        snapshot = _snapshot(tmp_path)
+        doc003 = _by_rule(sys_gate(tmp_path, snapshot), "DOC003")
+        assert len(doc003) == 1
+        assert "CWE-79" in doc003[0].message
+        assert doc003[0].file == "README.md"
+        assert doc003[0].severity == Severity.ERROR
+
+    def test_doc003_unclaimed_view_ignored(self, tmp_path: Path, monkeypatch) -> None:
+        """T-0085: no `frob:claims` marker anywhere means DOC003 does not
+        even evaluate the model -- an unclaimed view is silent, by design."""
+        import frob.strata as strata_mod
+        from frob.strata import DesignIds, Node
+
+        model = strata_mod.KernelModel(
+            nodes=(Node(id="Web", trust="trusted", may=("html_render",)),)
+        )
+        _write(tmp_path, "design/.gitkeep", "")
+        _write(tmp_path, "README.md", "no claims marker here\n")
+        monkeypatch.setattr(
+            strata_mod,
+            "load_design_ids",
+            lambda root, design_dir: DesignIds(models=(model,)),
+        )
+        snapshot = _snapshot(tmp_path)
+        assert _by_rule(sys_gate(tmp_path, snapshot), "DOC003") == []
+
+    def test_doc003_unknown_view(self, tmp_path: Path, monkeypatch) -> None:
+        """T-0085: a `frob:claims` marker naming a view the catalog does
+        not ship is its own DOC003 error, not a silent pass."""
+        import frob.strata as strata_mod
+        from frob.strata import DesignIds
+
+        model = strata_mod.KernelModel()
+        _write(tmp_path, "design/.gitkeep", "")
+        _write(tmp_path, "README.md", "<!-- frob:claims no-such-view -->\n")
+        monkeypatch.setattr(
+            strata_mod,
+            "load_design_ids",
+            lambda root, design_dir: DesignIds(models=(model,)),
+        )
+        snapshot = _snapshot(tmp_path)
+        doc003 = _by_rule(sys_gate(tmp_path, snapshot), "DOC003")
+        assert len(doc003) == 1
+        assert "unknown baseline view" in doc003[0].message
+
+    def test_doc003_marker_in_fenced_block_ignored(self, tmp_path: Path) -> None:
+        """T-0085 round 2 (reviewer REJECT): a `frob:claims` marker inside a
+        ```-fenced block documents the directive, it does not claim
+        anything -- must not be extracted."""
+        import frob.gates as gates_mod
+
+        _write(
+            tmp_path,
+            "README.md",
+            "# Example\n\n```markdown\n<!-- frob:claims owasp-top-10 -->\n```\n",
+        )
+        assert gates_mod._claims_markers(tmp_path) == []
+
+    def test_doc003_marker_in_inline_code_ignored(self, tmp_path: Path) -> None:
+        """T-0085 round 2: a `frob:claims` marker inside inline `backticks`
+        on a prose line is a quotation, not a live claim."""
+        import frob.gates as gates_mod
+
+        _write(
+            tmp_path,
+            "README.md",
+            "Write `<!-- frob:claims owasp-top-10 -->` in any doc page.\n",
+        )
+        assert gates_mod._claims_markers(tmp_path) == []
+
+    def test_doc003_real_marker_with_fenced_example_extracts_once(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0085 round 2: a genuine top-level marker on a page that ALSO
+        shows a fenced example of the directive extracts exactly the real
+        one -- fence-awareness must not eat legitimate markers either."""
+        import frob.gates as gates_mod
+
+        _write(
+            tmp_path,
+            "README.md",
+            "<!-- frob:claims owasp-top-10 -->\n"
+            "\n"
+            "Example of the directive:\n"
+            "\n"
+            "```markdown\n"
+            "<!-- frob:claims owasp-top-10 -->\n"
+            "```\n",
+        )
+        markers = gates_mod._claims_markers(tmp_path)
+        assert markers == [("README.md", 1, "owasp-top-10")]
+
     def test_default_design_dir_mirror_stays_in_sync(self) -> None:
         """T-0135 review follow-up: the deliberate mirror literal must not drift.
 

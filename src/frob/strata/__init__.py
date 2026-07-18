@@ -147,6 +147,12 @@ from frob.strata._secrets import (
     SecretSpec,
     elaborate_secret,
 )
+from frob.strata._sysdoc import (
+    ClaimAuditResult,
+    audit_claim,
+    merge_models,
+    render_audit_matrix,
+)
 from frob.strata._threat import (
     CWE_CATALOG,
     VIEWS,
@@ -191,6 +197,7 @@ __all__ = [
     "CapabilityViolation",
     "Capacity",
     "CdnDecl",
+    "ClaimAuditResult",
     "ClaimDecl",
     "CodeBinding",
     "ComplianceReport",
@@ -273,6 +280,7 @@ __all__ = [
     "TrustDecl",
     "Verdict",
     "WeaknessEntry",
+    "audit_claim",
     "bind_code",
     "build_facts",
     "check_capability_completeness",
@@ -299,8 +307,10 @@ __all__ = [
     "extract_effects",
     "generate_fault_injection_cases",
     "load_design_ids",
+    "merge_models",
     "parse_module",
     "plan_obligations",
+    "render_audit_matrix",
     "render_report",
     "require_analyzable",
     "summarize",
