@@ -1,0 +1,126 @@
+// tube.strata -- video-platform litmus (phase 2 exit criterion, T-0072).
+//
+// Surface-syntax twin of the phase-2 std.infra + capacity feature set
+// (docs/strata/roadmap.md#the-litmus-program). Stresses:
+//   - cold-cache stampede shape: a high-rate watch flow with fanout into
+//     a write path, capacity declared with replicas.
+//   - the immutable-TTL pairing: `cdn ... { staleness unlimited; }` is
+//     legal ONLY because `origin` carries `immutable` (a commented-out
+//     mutable variant below shows the illegal case, StrataError.
+//     MutableUnbounded -- see tests/unit/strata/test_litmus_tube.py).
+//   - CDN TLS termination as declassification: `tls_terminates_at_provider`
+//     attaches a declassify boundary to the cdn's fill flow, which is the
+//     only thing that can stop the session-data taint path below.
+//   - a money-grade payout node fed only through an approximate,
+//     periodically-materialized view-count cache: an AGE bound REFUTES
+//     because the payout path's freshness is bounded by the cache ttl,
+//     not by anything faster.
+//   - capacity + utilization bounds on the watch-ingest node.
+//
+// tested end to end (parse -> elaborate -> evaluate_claims) by
+// tests/unit/strata/test_litmus_tube.py; these are permanent CI goldens.
+
+module tube
+
+node browser : foreign { clearance Public; }
+
+// The immutable, content-addressed origin blob store. `immutable` is what
+// makes `cdn edge of origin { staleness unlimited; }` below legal.
+store origin : trusted {
+    clearance Internal;
+    engine content_addressed;
+    immutable;
+    capacity 2000 req/s replicas 2..6;
+}
+
+// Commented-out MUTABLE variant of the same origin store: pairing it with
+// `staleness unlimited` is illegal (StrataError.MutableUnbounded), because
+// unbounded staleness over data that can change is a silent freshness
+// hole, not a cache-efficiency win. Do not uncomment both blocks at once
+// -- this is documentation, not a second module.
+//
+// store origin_mutable : trusted { clearance Internal; engine content_addressed; }
+// cdn edge_bad of origin_mutable {
+//     provider fastly : authenticated;
+//     staleness unlimited;
+// }
+
+// The CDN edge in front of the immutable origin. `staleness unlimited` is
+// legal here (immutable source); `tls_terminates_at_provider` marks that
+// Fastly -- not tube -- terminates TLS, which the elaborator turns into a
+// declassify boundary on `edge__fill` (Internal -> Public). That boundary
+// is the ONLY thing standing between session data and the CDN edge in the
+// noflow claim below.
+cdn edge of origin {
+    provider fastly : authenticated;
+    staleness unlimited;
+    hit 97 %;
+    tls_terminates_at_provider;
+}
+
+node watch_svc : trusted { clearance Internal; capacity 1000 req/s replicas 4..8; }
+
+// Approximate, high-throughput view counter: writes land here directly
+// off the hot watch path, with no freshness guarantee of its own.
+store view_counter : trusted { clearance Internal; }
+
+// The only materialized view of the counter: a 5-minute-stale cache. This
+// is deliberate -- there is no faster path from view events to a number
+// anywhere in this model, which is exactly what makes the payout AGE bound
+// below refute: money-grade freshness cannot be built on an approximate,
+// periodically-refreshed counter.
+cache view_agg of view_counter {
+    ttl 5 min;
+    hit 80 %;
+    invalidate_on f_view_write;
+}
+
+// Money-grade: creator payout, fed only through view_agg.
+node payout : trusted { clearance Secret; }
+
+// Session tokens. In this naive model they get written into the origin
+// blob store (a personalization-in-the-manifest antipattern), which means
+// they ride the exact same fill flow the CDN edge pulls from -- unless
+// that fill flow carries a declassify boundary, session data reaches the
+// CDN edge unendorsed. See b_ingress / the tls_terminates_at_provider
+// declassify above.
+store sessions : trusted { clearance Secret; }
+
+store meta_store : trusted { clearance Internal; }
+cache meta_cache of meta_store {
+    ttl 30 s;
+    hit 90 %;
+    invalidate_on f_meta_write;
+}
+
+// High-rate watch flow: every playback tick fans out into manifest +
+// segment + heartbeat sub-requests (fanout 3) on top of the declared
+// player rate.
+flow f_watch : browser -> watch_svc { label Public; rate 2000 req/s; fanout 3; }
+flow f_view_write : watch_svc -> view_counter { label Internal; }
+flow f_meta_write : watch_svc -> meta_store { label Internal; }
+flow f_payout_read : view_agg -> payout { label Internal; }
+
+// The mistake this litmus is designed to catch: session tokens written
+// straight into the CDN's origin.
+flow f_sess_personalize : sessions -> origin { label Secret; }
+
+boundary b_ingress endorse f_watch : foreign -> authenticated when "device_attested"
+
+// AGE: payout's only freshness path runs through the 5-minute view_agg
+// cache; 300s > 60s, REFUTED.
+assert c_payout_freshness bound age payout <= 60 s
+
+// noflow: session data must not reach the CDN edge. In THIS (naive-minus-
+// one) module the edge already declares `tls_terminates_at_provider`, so
+// the declassify boundary on edge__fill stops the taint closure at the
+// origin -> edge hop and this PROVES. Delete the
+// `tls_terminates_at_provider;` line above (or see the commented mutable
+// variant's sibling omission) to see it flip to REFUTED with the witness
+// path sessions -> origin -> edge -- exercised directly in
+// tests/unit/strata/test_litmus_tube.py via a hand-built naive twin.
+assert c_no_session_on_cdn noflow sessions -> edge
+
+// capacity / utilization: watch_svc demand is 2000 req/s * fanout 3 =
+// 6000/s against 1000 req/s * 8 replicas = 8000/s capacity -> 75%, PROVED.
+assert c_watch_capacity bound utilization watch_svc <= 80 %

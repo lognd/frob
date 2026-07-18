@@ -1,0 +1,98 @@
+// chirp.strata -- timeline-fanout litmus (phase 2 exit criterion, T-0072).
+//
+// Surface-syntax twin of the phase-2 capacity feature set
+// (docs/strata/roadmap.md#the-litmus-program). Stresses the
+// "averages-lie" golden: identical aggregate demand proves under a
+// mean-based ceiling and refutes under a zipf-skewed hottest-shard
+// ceiling, plus a growth-horizon claim that flips a passing utilization
+// to REFUTED once compound growth crosses the 24-month saturation
+// horizon.
+//
+// GAP (reported, not worked around): the `store` surface construct parses
+// a `capacity` prop (surface.md#std-infra), but `_infra.py::elaborate_infra`
+// hardcodes `capacity=None` when desugaring a store into a `Node`
+// (src/frob/strata/_infra.py:101), so a UTILIZATION claim against a store
+// always refutes "declares no capacity" regardless of the declared
+// capacity block. `_infra.py` is outside this ticket's scope
+// (docs/strata/**, tickets.md, strata-core/**, Makefile, .github/**,
+// design/litmus/**, tests/**), so this model routes capacity-bearing
+// shards through plain `node`s fed by the `tweets` store instead of
+// putting capacity directly on the store -- the store itself stays the
+// source of truth and the cache source, exactly as std.infra intends,
+// it just cannot ALSO carry a capacity claim target until that gap is
+// fixed. See the Done report for the filed-gap note.
+//
+// tested end to end (parse -> elaborate -> evaluate_claims) by
+// tests/unit/strata/test_litmus_chirp.py; these are permanent CI goldens.
+
+module chirp
+
+node author : foreign { clearance Public; }
+node api : trusted { clearance Internal; }
+
+// Source of truth for tweets (also the cache's source below). No capacity
+// block here -- see the GAP note above for why a capacity claim can't
+// target the store directly yet.
+store tweets : trusted { clearance Internal; }
+
+// The hot shard: fed from tweets via a `fanout 5` write-amplification
+// path (each tweet fans out to followers' shards), giving 150 req/s of
+// propagated demand -- tweets' own ingest demand (30 req/s, propagated
+// from f_ingest through f_tweet_write) times fanout 5. `skew zipf 1.5`
+// marks it as the sharded, hot-rank-1 resource, so the utilization claim
+// below checks the HOTTEST shard, not the mean.
+node tweets_hot : trusted {
+    clearance Internal;
+    capacity 100 req/s replicas 1..4;
+    skew zipf 1.5;
+}
+
+// The averages-lie twin: byte-for-byte the same capacity and the same
+// propagated demand (same source, same fanout), but with no `skew` attr,
+// so it falls back to the plain mean-based ceiling check.
+node tweets_mean : trusted {
+    clearance Internal;
+    capacity 100 req/s replicas 1..4;
+}
+
+// A third shard, sized so TODAY's utilization passes comfortably, but
+// `growth 10 %` compounds monthly demand growth on its write path fast
+// enough to cross the 80% limit inside the 24-month saturation horizon --
+// flipping what would otherwise be a clean PROVED into REFUTED with a
+// "saturates in N months" detail.
+node tweets_growth : trusted {
+    clearance Internal;
+    capacity 100 req/s replicas 1..1;
+}
+
+// The materialized timeline: a cache of the sharded store, invalidated by
+// the write that lands new tweets in the store.
+cache timeline of tweets {
+    ttl 30 s;
+    hit 90 %;
+    invalidate_on f_tweet_write;
+}
+
+flow f_ingest : author -> api { label Public; rate 30 req/s; }
+flow f_tweet_write : api -> tweets { label Internal; }
+flow f_fanout_hot : tweets -> tweets_hot { label Internal; fanout 5; }
+flow f_fanout_mean : tweets -> tweets_mean { label Internal; fanout 5; }
+flow f_fanout_growth : tweets -> tweets_growth { label Internal; rate 70 req/s; growth 10 %; }
+
+boundary b_ingest endorse f_ingest : foreign -> authenticated when "auth_token_verified"
+
+// UTILIZATION, hottest shard: demand 150/s, single-replica rate 100/s,
+// zipf alpha 1.5 over 4 shards concentrates load hard on rank 1 ->
+// REFUTED (the same numbers a mean check would call safe).
+assert c_hot_shard_utilization bound utilization tweets_hot <= 80 %
+
+// UTILIZATION, mean: same 150/s demand spread over 100/s * 4 replicas =
+// 400/s capacity -> 37.5%, PROVED. The averages-lie contrast with
+// c_hot_shard_utilization above is the golden.
+assert c_mean_shard_utilization bound utilization tweets_mean <= 80 %
+
+// UTILIZATION with growth: utilization0 = 70/100 = 70%, growth 10%/month
+// compounding crosses the 80% limit well inside the 24-month horizon ->
+// REFUTED with a "saturates in N months (YYYY-MM)" detail, not a bare
+// percentage.
+assert c_growth_shard_utilization bound utilization tweets_growth <= 80 %
