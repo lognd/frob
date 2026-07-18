@@ -97,6 +97,11 @@ obligation graph. Charter and component designs:
   outcome-conditioned frames, failure atomicity, crash contracts.
 - `docs/strata/roadmap.md` -- phases 0-5 with exit criteria, the litmus
   program, the ticket map (T-0047..T-0086).
+- `docs/strata/threat.md` -- the obligation catalog: CWE/CVE security
+  weaknesses plus performance, reliability, compatibility, and compliance
+  (COPPA/GDPR/HIPAA + privacy-policy-as-claims) anti-patterns as
+  conditional obligations with a three-part exhaustiveness proof
+  (epic T-0109).
 
 ## Per-command references
 

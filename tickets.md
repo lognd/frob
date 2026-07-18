@@ -3740,3 +3740,214 @@ acceptance: []
 threat: null
 ```
 Discovered while batching T-0102/T-0095/T-0101 on one branch with per-ticket commits: scope_gate diffs unconditionally against --base (default 'main'), so once ticket A commits a change to file X, every later ticket B on the same branch sees X in its diff and gets a false SCOPE001. Session workaround: explicit --base <prior-commit> per invocation -- fragile. Consider defaulting --ticket checks' base to the ticket's own prework-sweep commit. (Renumbered from branch-local T-0105 at merge.)
+
+<!-- ticket:T-0109 -->
+```yaml
+id: T-0109
+title: 'strata obligation catalog: CWE/CVE + quality anti-pattern auditing (epic)'
+state: queued
+kind: security
+origin: human
+created: '2026-07-17'
+blocked_by: []
+parent: null
+scope:
+- docs/strata/**
+- src/frob/strata/**
+- strata-core/**
+- src/frob/vet/**
+- tests/**
+- design/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Umbrella: make it impossible to forget a class of protection. CWE weaknesses + performance/reliability/compat anti-patterns as conditional obligations (precondition pattern fires -> cited mitigation discharges -> exhaustiveness proof over a cited baseline). Charter: docs/strata/threat.md. Reuses closure/boundaries/policy/lattice/evidence-ladder; no kernel primitive. CVE joins vet via shared CWE id. Catalog ingested from MITRE CWE + NVD, pinned + digest-verified, never hand-transcribed.
+
+<!-- ticket:T-0110 -->
+```yaml
+id: T-0110
+title: 'threat D: NVD CVE->CWE ingestion into vet + containment report'
+state: queued
+kind: security
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0113
+parent: T-0109
+scope:
+- src/frob/vet/**
+- src/frob/strata/**
+- tests/**
+- tickets.md
+- docs/**
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a dependency CVE mapping to CWE-89 WHEN the design's CWE-89 obligation is
+  discharged THEN vet reports 'contained in depth'; WHEN missing THEN 'live exposure'
+  high-severity
+threat: info-disclosure
+```
+CVE->CWE join via NVD on top of vet's osv-scanner adapter + cooldown; a vet CVE finding is enriched with its CWE and the design obligation's discharge state; live-exposure severity when the mapped obligation is undischarged. See threat.md phase D.
+
+<!-- ticket:T-0111 -->
+```yaml
+id: T-0111
+title: 'threat A: std.cwe catalog + weakness/capability grammar + THREAT001/003'
+state: queued
+kind: security
+origin: human
+created: '2026-07-17'
+blocked_by: []
+parent: T-0109
+scope:
+- docs/strata/**
+- src/frob/strata/**
+- strata-core/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance:
+- GIVEN an owasp-top-10 baseline WHEN a model omits a required weakness entry THEN
+  THREAT001 fails; WHEN a fired weakness has no mitigation THEN THREAT003 fails
+threat: null
+```
+weakness/capability/out-of-scope grammar; baseline views; std.cwe pack as cited data (OWASP Top 10 subset); precondition matcher over model flows; THREAT001 catalog-completeness + THREAT003 discharge-completeness. Design-level only. threat.md phase A.
+
+<!-- ticket:T-0112 -->
+```yaml
+id: T-0112
+title: 'threat B: capability->obligation instantiation + THREAT002 precondition completeness'
+state: queued
+kind: security
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0111
+parent: T-0109
+scope:
+- docs/strata/**
+- src/frob/strata/**
+- strata-core/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance:
+- GIVEN capability client_storage WHEN CWE-922 undischarged THEN it fires; GIVEN an
+  unclassified sink THEN THREAT002 errors
+threat: elevation-of-privilege
+```
+capabilities drag in weakness obligations (html_render->79/116, sql->89, client_storage->922/312, exec->78, deserialize->502, fetch_url->918); sink taxonomy; THREAT002 unclassified-sink deny-by-default error. threat.md phase B.
+
+<!-- ticket:T-0113 -->
+```yaml
+id: T-0113
+title: 'threat C: CWE-sink effect extraction + mitigation chokepoint verification'
+state: queued
+kind: security
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0112
+- T-0079
+parent: T-0109
+scope:
+- docs/strata/**
+- src/frob/strata/**
+- src/frob/lang/**
+- strata-core/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance:
+- GIVEN localStorage.setItem without a declared capability THEN it errors; GIVEN sql
+  not through the parameterized chokepoint THEN CWE-89 refutes
+threat: tampering
+```
+extend effect extraction (joins T-0079) to CWE sinks; undeclared-capability-in-code error; mitigation via policy chokepoint forms. threat.md phase C.
+
+<!-- ticket:T-0114 -->
+```yaml
+id: T-0114
+title: 'threat E: std.perf/reliability/compat anti-pattern families'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0113
+parent: T-0109
+scope:
+- docs/strata/**
+- src/frob/strata/**
+- strata-core/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance:
+- GIVEN Public immutable content served from origin not cdn THEN refutes; GIVEN a
+  large uncompressed structured flow THEN fires; GIVEN a synchronous over-budget single
+  dependency THEN refutes
+threat: null
+```
+quality families per the threat.md table: dynamic-ORM-scope, route-authz, stored-XSS multi-hop, CORS-wildcard, uncompressed-JSON, one-at-a-time-writes, single-dep-bottleneck, un-optimistic-render, non-static-hosting. Reuses A-C. threat.md phase E.
+
+<!-- ticket:T-0115 -->
+```yaml
+id: T-0115
+title: 'threat F: frob sys audit exhaustiveness matrix + DOC002 + vuln litmus'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0114
+parent: T-0109
+scope:
+- docs/strata/**
+- src/frob/strata/**
+- design/litmus/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a deliberately vulnerable+unoptimized litmus WHEN frob sys audit runs THEN
+  every planted anti-pattern is flagged per family; hardened twin discharges all;
+  overclaiming README fails DOC002
+threat: null
+```
+frob sys audit per-family exhaustiveness matrix; DOC002 binds security/quality prose to a PROVED audit; design/litmus/vulnerable.strata + hardened twin as goldens. threat.md phase F.
+
+<!-- ticket:T-0116 -->
+```yaml
+id: T-0116
+title: 'threat G: std.compliance -- COPPA/GDPR/HIPAA + privacy-policy-as-claims'
+state: queued
+kind: security
+origin: human
+created: '2026-07-17'
+blocked_by:
+- T-0111
+parent: T-0109
+scope:
+- docs/strata/**
+- src/frob/strata/**
+- strata-core/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a child-tagged collection flow with no consent boundary THEN COPPA refutes;
+  GIVEN eu-resident Pii with no deletion path THEN erasure refutes; GIVEN a flow collecting
+  a field the privacy policy omits THEN it refutes
+threat: info-disclosure
+```
+compliance family: data-subject tags (child/health/biometric/jurisdiction) on labels; regulation entries scoped by jurisdiction; obligations per the threat.md compliance table (COPPA age-gate, GDPR erasure=revocation-edge, retention=age-bound, lawful basis, HIPAA BAA, minimization); privacy-policy-as-assert reverse audit bound by DOC002; per-regulation exhaustiveness with legally-owned expiring assumes. Reuses closure/age-collapse/revocation-edge. threat.md compliance section.
