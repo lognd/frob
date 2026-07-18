@@ -2946,7 +2946,7 @@ Incident during T-0156 review: T-0166 landed a parse.rs grammar change and desig
 id: T-0250
 title: extend waive clause grammar to store nodes (tickets_ledger LINT004 gap from
   T-0166)
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-18'
@@ -2962,7 +2962,10 @@ scope:
 - tests/**
 - editors/vscode-strata/**
 - tickets.md
-evidence: []
+evidence:
+- tests/unit/strata/test_infra.py::TestStoreWaivers::test_multi_instance_family_with_sub_target_elaborates_cleanly
+- tests/unit/strata/test_infra.py::TestStoreWaivers::test_multi_instance_family_without_sub_target_fails_closed
+- tests/unit/strata/test_litmus_waive_store.py::TestWaiveStoreLitmus::test_matched_store_waiver_suppresses_the_finding
 attachments: []
 acceptance: []
 threat: null
