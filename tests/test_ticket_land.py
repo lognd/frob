@@ -25,7 +25,13 @@ from frob.tickets import (
 )
 from frob.tickets._land import land, splice_ledger
 from frob.tickets._models import LandError
-from frob.tickets._store import atomic_write, ledger_path, load_all, write_ticket
+from frob.tickets._store import (
+    atomic_write,
+    ledger_path,
+    load_all,
+    load_archive,
+    write_ticket,
+)
 
 
 def _run(argv: list[str], cwd: Path) -> subprocess.CompletedProcess:
@@ -294,6 +300,125 @@ class TestLedgerBothSidesAppend:
         assert final_id in landed.danger_ok
         assert main_tid in landed.danger_ok
         assert landed.danger_ok[final_id].state == TicketState.DONE
+
+
+class TestDraftFinalizeRewritesCodeAndLeavesWorktreeClean:
+    """Reviewer bug 1: `finalize_draft` rewrites tickets.md AND every code
+    file carrying a `frob:ticket <draft-id>` directive, uncommitted, in the
+    worktree -- but the old `land` squashed from the branch's last commit,
+    which predated those rewrites. A landed source file kept the dangling
+    draft id, and the worktree was left dirty after a "successful" land.
+    `land` must commit finalize/close's changes in the worktree BEFORE the
+    squash so both the ledger AND the rewritten code reach main, and the
+    worktree ends up clean."""
+
+    def test_code_directive_rewritten_and_worktree_clean_after_land(
+        self, repo: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::land kind="unit"
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-i", str(wt)], repo)
+
+        created = new_ticket(wt, _spec("Filed off-branch", scope=("src/thing2.py",)))
+        assert created.is_ok
+        draft_id = created.danger_ok.id
+        assert draft_id.startswith("T-draft-")
+        _make_closeable(wt, draft_id)
+        # A code file carrying a frob:ticket directive naming the DRAFT id --
+        # renumber_one (finalize_draft's rename primitive) must rewrite this
+        # reference, and that rewrite must actually reach main.
+        (wt / "src" / "thing2.py").write_text(
+            f"# frob:ticket {draft_id}\ndef f():\n    pass\n"
+        )
+        _commit_all(wt, "off-branch ticket with a code directive")
+
+        result = land(repo, draft_id, wt, dry_run=False)
+        assert result.is_ok, result.err
+        report = result.danger_ok
+        final_id = report.final_id
+        assert final_id != draft_id
+
+        # The landed file on MAIN must carry the FINAL id, never the draft.
+        landed_src = (repo / "src" / "thing2.py").read_text()
+        assert draft_id not in landed_src
+        assert f"frob:ticket {final_id}" in landed_src
+
+        # The worktree must be left completely clean -- finalize/close's
+        # writes were committed before the squash, not left dangling.
+        wt_status = _run(["git", "status", "--porcelain"], wt).stdout.strip()
+        assert wt_status == "", f"worktree left dirty: {wt_status!r}"
+
+        # And the worktree's own copy of the file must ALSO carry the final
+        # id (the commit-before-squash fix touches the worktree itself).
+        wt_src = (wt / "src" / "thing2.py").read_text()
+        assert draft_id not in wt_src
+        assert f"frob:ticket {final_id}" in wt_src
+
+
+class TestArchiveResurrection:
+    """Reviewer bug 2: `splice_ledger` only read active tickets.md, never
+    tickets-archive.md -- an id archived on main after the branch point
+    would survive the ours-union and land back into main's active ledger,
+    resurrecting a duplicate-id class a human previously had to resolve by
+    hand at merge time (T-0176's own 0bb02cf merge). `land` must never
+    reintroduce an already-archived id."""
+
+    def test_archived_id_never_resurrected(self, repo: Path) -> None:
+        # frob:tests src/frob/tickets/_land.py::splice_ledger kind="unit"
+        # Seed a ticket that exists (stale, still active) in the worktree's
+        # ledger view, then archive it on MAIN after the branch point --
+        # simulating a branch whose base predates the archive.
+        stale = new_ticket(repo, _spec("Will be archived"))
+        assert stale.is_ok
+        stale_id = stale.danger_ok.id
+        _commit_all(repo, "file the soon-to-be-archived ticket")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-j", str(wt)], repo)
+
+        # Main independently closes and archives it AFTER the worktree
+        # branched -- the worktree's tickets.md still has it as active.
+        assert transition(repo, stale_id, TicketState.PLANNED).is_ok
+        assert transition(repo, stale_id, TicketState.IN_PROGRESS).is_ok
+        loaded = load_all(repo)
+        stale_ticket = loaded.danger_ok[stale_id]
+        stale_ticket = stale_ticket.model_copy(
+            update={
+                "evidence": ("tests/test_x.py::test_ok",),
+                "body": stale_ticket.body + "\n## Done report\n\ndone\n",
+            }
+        )
+        assert write_ticket(repo, stale_ticket).is_ok
+        assert transition(repo, stale_id, TicketState.DONE).is_ok
+        from frob.tickets import archive
+
+        archived_count = archive(repo)
+        assert archived_count.is_ok and archived_count.danger_ok == 1
+        _commit_all(repo, "archive the stale ticket")
+
+        # Now land unrelated worktree work; the worktree's own tickets.md
+        # STILL carries stale_id as active (it branched before the archive).
+        created = new_ticket(wt, _spec("Unrelated land", scope=("src/unrelated2.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        (wt / "src" / "unrelated2.py").write_text("# unrelated\n")
+        _commit_all(wt, "unrelated worktree work")
+
+        result = land(repo, tid, wt, dry_run=False)
+        assert result.is_ok, result.err
+
+        active = load_all(repo)
+        assert active.is_ok
+        assert stale_id not in active.danger_ok, (
+            f"{stale_id} resurrected into the active ledger by land"
+        )
+
+        archived = load_archive(repo)
+        assert archived.is_ok
+        assert stale_id in archived.danger_ok
+        # Exactly once -- not duplicated across active+archive.
+        assert list(load_all(repo).danger_ok).count(stale_id) == 0
 
 
 class TestDraftIdFinalization:

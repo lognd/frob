@@ -25,7 +25,7 @@ from frob.gitio import current_branch, run_argv
 from frob.logging import get_logger
 from frob.tickets._models import LandError, LandReport, Ticket, TicketError, TicketState
 from frob.tickets._provisional import is_draft_id
-from frob.tickets._store import _parse_ledger, _render_ledger, ledger_path
+from frob.tickets._store import _parse_ledger, _render_ledger, archive_path, ledger_path
 
 _log = get_logger(__name__)
 
@@ -64,13 +64,27 @@ def _newer(a: Ticket, b: Ticket) -> Ticket:
 
 
 # frob:doc docs/modules/tickets.md#frob-ticket-land
-def splice_ledger(ours_text: str, theirs_text: str) -> Result[str, TicketError]:
+def splice_ledger(
+    ours_text: str,
+    theirs_text: str,
+    *,
+    archived_ids: frozenset[str] = frozenset(),
+) -> Result[str, TicketError]:
     """Merge two `tickets.md` ledger texts at the ticket-id level, keeping the
     newest state per section (`_newer`) instead of trusting git's line-level
     textual merge -- the fix for the "both sides append a new ticket near
     the same line" false-conflict class (T-0176), and the tiebreak for a
     genuine same-id divergence (e.g. one side closed a ticket the other
-    side is still mid-editing)."""
+    side is still mid-editing).
+
+    `archived_ids` (from main's `tickets-archive.md`, the only authoritative
+    archive) is excluded from the merged result unconditionally, from
+    EITHER side -- without this, a ticket main already archived reappears
+    in the active ledger the moment a stale branch (whose own tickets.md
+    still carries it as active, from before it was archived) lands,
+    resurrecting exactly the active/archive duplicate-id class a human
+    would otherwise have to hand-resolve at merge time (reviewer-caught,
+    T-0176)."""
     ours_parsed = _parse_ledger(ours_text)
     if ours_parsed.is_err:
         return Err(ours_parsed.danger_err)
@@ -85,6 +99,16 @@ def splice_ledger(ours_text: str, theirs_text: str) -> Result[str, TicketError]:
             merged[ticket_id] = ticket
         elif merged[ticket_id] != ticket:
             merged[ticket_id] = _newer(merged[ticket_id], ticket)
+
+    resurrected = archived_ids & set(merged)
+    for ticket_id in resurrected:
+        del merged[ticket_id]
+    if resurrected:
+        _log.info(
+            "tickets: land splice -- dropped %d already-archived id(s): %s",
+            len(resurrected),
+            sorted(resurrected),
+        )
     _log.info(
         "tickets: land splice -- ours=%d theirs=%d merged=%d",
         len(ours),
@@ -145,15 +169,43 @@ def _abort_merge(worktree: Path) -> None:
     run_argv(["git", "-C", str(worktree), "merge", "--abort"])
 
 
+def _archived_ids(root: Path) -> frozenset[str]:
+    """Every ticket id in `root`'s `tickets-archive.md` -- the authoritative
+    "already archived, must never re-enter the active ledger" set a splice
+    guards against (T-0176 reviewer fix). An unreadable/malformed archive
+    degrades to empty rather than blocking the land -- archive resurrection
+    is a correctness bug worth guarding against, not a reason to hard-fail
+    a landing whose archive happens to be unparseable for an unrelated
+    reason."""
+    path = archive_path(root)
+    if not path.exists():
+        return frozenset()
+    parsed = _parse_ledger(path.read_text(encoding="utf-8"))
+    if parsed.is_err:
+        _log.warning(
+            "land: %s unreadable (%s), archive-resurrection guard degraded to empty",
+            path,
+            parsed.danger_err,
+        )
+        return frozenset()
+    return frozenset(parsed.danger_ok)
+
+
 def _splice_and_stage(
-    checkout: Path, pre_text: str, incoming_text: str
+    checkout: Path,
+    pre_text: str,
+    incoming_text: str,
+    *,
+    archived_ids: frozenset[str] = frozenset(),
 ) -> Result[str, LandError]:
     """Write the id-level splice of `pre_text`/`incoming_text` to `checkout`'s
     tickets.md and `git add` it; overrides whatever git's own textual merge
     produced -- tickets.md is ALWAYS resolved via `splice_ledger`, never via
     git's line-level algorithm, so a both-sides-append never false-conflicts
-    and a same-id divergence always keeps the newest state (T-0176)."""
-    spliced = splice_ledger(pre_text, incoming_text)
+    and a same-id divergence always keeps the newest state (T-0176).
+    `archived_ids` excludes anything main has already archived from ever
+    re-entering the merged active ledger."""
+    spliced = splice_ledger(pre_text, incoming_text, archived_ids=archived_ids)
     if spliced.is_err:
         _log.error(
             "land: tickets.md splice failed (%s) -- resolve manually in %s",
@@ -215,7 +267,9 @@ def _merge_main_into_worktree(
         )
         return Err(LandError.MergeConflict)
 
-    spliced = _splice_and_stage(worktree, pre_text, main_text)
+    spliced = _splice_and_stage(
+        worktree, pre_text, main_text, archived_ids=_archived_ids(root)
+    )
     if spliced.is_err:
         _abort_merge(worktree)
         return Err(spliced.danger_err)
@@ -459,6 +513,34 @@ def land(
         )
         return Err(LandError.CloseFailed)
 
+    # finalize_draft (renumber_one) and transition/close both write directly
+    # to the worktree's working tree, UNCOMMITTED -- the squash-apply below
+    # reads from the branch's last COMMIT, which predates these writes. Left
+    # uncommitted, the finalize rewrite of every frob:ticket <draft-id>
+    # reference in code (not just the ledger) would never reach main, and
+    # the worktree would be left dirty after a successful land (reviewer
+    # repro, T-0176). Commit them now so the squash-apply below sees
+    # everything, and the worktree ends up clean.
+    finalize_dirty = _porcelain_dirty(worktree)
+    if finalize_dirty.is_err:
+        return Err(finalize_dirty.danger_err)
+    if finalize_dirty.danger_ok:
+        add = run_argv(["git", "-C", str(worktree), "add", "-A"])
+        if add.is_err or add.danger_ok.returncode != 0:
+            return Err(LandError.GitFailed)
+        finalize_commit = run_argv(
+            [
+                "git",
+                "-C",
+                str(worktree),
+                "commit",
+                "-m",
+                f"finalize and close {final_id} for landing",
+            ]
+        )
+        if finalize_commit.is_err or finalize_commit.danger_ok.returncode != 0:
+            return Err(LandError.GitFailed)
+
     branch = current_branch(worktree)
     if branch.is_err:
         return Err(LandError.GitFailed)
@@ -495,7 +577,9 @@ def land(
         return Err(LandError.SquashConflict)
 
     worktree_final_text = ledger_path(worktree).read_text(encoding="utf-8")
-    spliced = _splice_and_stage(root, root_pre_text, worktree_final_text)
+    spliced = _splice_and_stage(
+        root, root_pre_text, worktree_final_text, archived_ids=_archived_ids(root)
+    )
     if spliced.is_err:
         run_argv(["git", "-C", str(root), "reset", "--hard"])
         run_argv(["git", "-C", str(root), "clean", "-fd"])
