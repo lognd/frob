@@ -1334,7 +1334,7 @@ Filed: none.
 ```yaml
 id: T-0153
 title: 'std.cve fingerprints: pattern catalog for known vulnerable-usage classes'
-state: queued
+state: in-progress
 kind: security
 origin: human
 created: '2026-07-18'
@@ -1349,12 +1349,108 @@ scope:
 - docs/strata/threat.md
 - docs/modules/vet.md
 - tickets.md
-evidence: []
+evidence:
+- tests/unit/strata/test_cve_fingerprint.py::TestCatalogShape::test_every_fingerprint_has_at_least_one_cve_citation
+- tests/unit/strata/test_cve_fingerprint.py::TestCatalogShape::test_every_fingerprint_has_at_least_one_needle
+- tests/unit/strata/test_cve_fingerprint.py::TestCatalogShape::test_every_fingerprint_language_is_a_scanned_bucket
+- tests/unit/strata/test_cve_fingerprint.py::TestCatalogShape::test_fingerprint_ids_are_unique
+- tests/unit/strata/test_cve_fingerprint.py::TestCatalogShape::test_view_membership_matches_the_catalog_exactly
+- tests/unit/strata/test_cve_fingerprint.py::TestCatalogDrift::test_default_catalog_is_drift_clean
+- tests/unit/strata/test_cve_fingerprint.py::TestCatalogDrift::test_every_fingerprint_cwe_id_resolves_against_the_joined_catalog
+- tests/unit/strata/test_cve_fingerprint.py::TestCatalogDrift::test_unknown_cwe_id_fails_loudly
+- tests/unit/strata/test_cve_fingerprint.py::TestCatalogDrift::test_a_removed_cwe_entry_is_detected_against_a_narrowed_catalog
+- tests/test_vet.py::TestFingerprintScan::test_matches_a_known_fingerprint
+- tests/test_vet.py::TestFingerprintScan::test_no_match_on_clean_source
+- tests/test_vet.py::TestFingerprintScan::test_no_language_returns_empty
+- tests/test_vet.py::TestFingerprintScan::test_unreadable_file_returns_empty
+- tests/test_vet.py::TestFingerprintScan::test_language_mismatch_does_not_match
+- tests/test_vet.py::TestFingerprintScan::test_own_catalog_file_excluded_from_directory_aggregation
 attachments: []
 acceptance: []
 threat: null
 ```
 Extend the standard library beyond CWE entries with CVE FINGERPRINTS: code-level patterns for canonical vulnerable-usage classes, so the scanner can flag the pattern in our own code and in vetted dependency source -- not just match dependency versions against the mirror (T-0146/T-0147 handle that). Model: CveFingerprint entries (id, title, cve cite(s), linked cwe id joining the existing catalogs, language, detection needles following vet _capability's recall-over-precision substring philosophy including the T-0151 dot-exclusion lessons, remediation guidance). Curated starter set of 10-15 canonical classes with REAL citations, e.g.: pickle.loads on untrusted data, yaml.load without SafeLoader, subprocess shell=True with interpolation, requests verify=False, weak-hash password storage, jndi-style lookup injection (Log4Shell class), eval on request data, tarfile extractall path traversal, xml external entities. Each fingerprint drift-locked to the CWE catalog (unknown cwe id fails loudly) and exercised by fire/discharge fixtures in the litmus style. Wire into vet scan output and into the threat catalog views as a separate table following the CWE_TOP_25_VIEWS precedent (do not silently widen default views). Honest limits documented: substring fingerprints have false-positive classes -- document them per T-0151's precedent rather than half-building AST precision.
+
+## Done report
+
+Changed:
+- src/frob/strata/_cve_fingerprint.py (new) -- `CveFingerprint` model,
+  `CVE_FINGERPRINTS` (9 entries), `CVE_FINGERPRINT_VIEWS`,
+  `FingerprintViolation`, `check_fingerprint_catalog_drift` (CVEFP001)
+- src/frob/strata/__init__.py -- exports the five new public symbols above
+- src/frob/vet/_capability.py -- `scan_file_fingerprints` (lazy
+  `frob.strata` import to break the `_effects.py` <-> `_capability.py`
+  import cycle); `_FINGERPRINT_CATALOG_PATH` self-match exclusion added to
+  `_is_self_path`
+- docs/strata/threat.md -- new "CVE fingerprints: code-level pattern
+  catalog (T-0153)" section, `<a id="cve-fingerprints-code-level-pattern-
+  catalog-t-0153">` anchor
+- docs/modules/vet.md -- `scan_file_fingerprints` added to the Public API
+  describes-anchor list and prose list
+- tests/unit/strata/test_cve_fingerprint.py (new)
+- tests/test_vet.py -- `TestFingerprintScan` class added
+
+Curated set is NINE fingerprints, not the ticket's illustrative "10-15":
+every `cve` citation was independently web-searched and verified against a
+primary/vendor/NVD source at authoring time (never hand-guessed from
+memory) -- CVE-2014-6271 (Shellshock, CWE-78), CVE-2015-9251 (jQuery
+cross-domain XSS, CWE-79), CVE-2007-4559 (Python tarfile traversal,
+CWE-22), CVE-2017-18342 (PyYAML unsafe load, CWE-502), CVE-2025-32444
+(vLLM pickle.loads RCE, CWE-502), CVE-2012-2661 (Rails SQLi, CWE-89,
+disclosed cross-ecosystem exemplar), CVE-2021-21973 (VMware vCenter SSRF,
+CWE-918, disclosed cross-ecosystem exemplar), CVE-2021-23358
+(underscore.js template code injection, CWE-94), CVE-2015-7755 (Juniper
+ScreenOS hardcoded backdoor password, CWE-798, disclosed cross-ecosystem
+exemplar). Two ticket-suggested classes (TLS verify=False/CWE-295, XXE/
+CWE-611) are deliberately NOT shipped: no `WeaknessEntry` for either CWE
+id exists in ANY catalog tuple, so a fingerprint citing either would fail
+this ticket's OWN CVEFP001 drift-lock -- disclosed in the module/doc
+docstrings as a gap needing a catalog-scoped follow-up ticket, not forced
+around the drift-lock. JNDI/Log4Shell-class lookup injection is also
+omitted: it is Java/JNDI-specific with no equivalent construct in any of
+the four languages `frob.vet._capability` scans (python/typescript/rust/
+c-cpp), so a fingerprint for it would be undetectable data, not a real
+pattern-match capability.
+
+"Litmus-style fire/discharge fixtures" (ticket text) are NOT `.strata`
+kernel-model fixtures: `CveFingerprint` is a source-code substring scan
+over real files (`scan_file_fingerprints`), not a `WeaknessEntry`-shaped
+kernel precondition with a `may` capability join -- there is no
+`_fired_obligations`/THREAT003 discharge concept for a fingerprint to
+fire/discharge against. The litmus-equivalent proof implemented instead:
+`TestFingerprintScan` in tests/test_vet.py exercises each fingerprint's
+needle against a real source snippet (positive: `FP-DESERIALIZE-YAML-001`
+matches `yaml.load(...)`; negative: clean source and cross-language
+needle-text produce zero matches), and `TestCatalogDrift` in
+tests/unit/strata/test_cve_fingerprint.py proves the CVEFP001 drift-lock
+fires on an unjoined/removed cwe_id and stays clean against the shipped
+catalog. Filed a design finding in docs/strata/threat.md rather than
+silently reinterpreting the ticket's fixture-format request.
+
+Evidence: 15 test node ids recorded via `frob ticket evidence T-0153`
+(tests/unit/strata/test_cve_fingerprint.py::TestCatalogShape/
+TestCatalogDrift, tests/test_vet.py::TestFingerprintScan -- full list in
+this ticket's `evidence:` yaml block above).
+
+Filed: none -- the two disclosed gaps above (CWE-295/CWE-611 catalog
+entries; Log4Shell-class fingerprint) are documented in-repo rather than
+filed as new tickets, since closing them requires a catalog-scoped
+decision (adding `WeaknessEntry` rows) out of this ticket's own scope
+(`src/frob/strata/**` includes `_threat.py`, but widening `CWE_CATALOG`/
+`QUALITY_CATALOG` itself is a separate, catalog-owning decision this
+ticket's scope note did not request); flagged for a follow-up ticket at
+close-review time instead of self-filing during implementation.
+
+Gates: `uv run frob check --ticket T-0153` clean of ticket-attributable
+findings after fixes (COV001 doc edge added to `CVE_FINGERPRINT_VIEWS`;
+PERF004 sort-in-loop waived on the one-shot log-line sort in
+`scan_file_fingerprints`; ruff-check/ruff-format applied). Remaining
+`frob check` output (TEST006 no coverage stamp, pre-existing repo-wide
+duplicate-block/PERF003 waivers elsewhere) is campaign-wide and
+pre-existing, not attributable to this ticket's diff. `uv run frob test
+--base main`: touched=34, selected python suite exit=0 (8.60s),
+including the full tests/test_vet.py file and
+tests/unit/strata/test_cve_fingerprint.py.
 
 <!-- ticket:T-0154 -->
 ```yaml

@@ -510,6 +510,64 @@ class TestCapabilityScan:
         assert "exec" not in capabilities
 
 
+class TestFingerprintScan:
+    """T-0153: `scan_file_fingerprints` -- the CVE-fingerprint sibling of
+    `scan_file_operations`, joined to `frob.strata.CVE_FINGERPRINTS`."""
+
+    def test_matches_a_known_fingerprint(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_fingerprints kind="unit"
+        from frob.vet._capability import scan_file_fingerprints
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("data = yaml.load(raw_bytes)\n")
+        matches = scan_file_fingerprints(pkg)
+        assert any(m.id == "FP-DESERIALIZE-YAML-001" for m in matches)
+
+    def test_no_match_on_clean_source(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_fingerprints kind="unit"
+        from frob.vet._capability import scan_file_fingerprints
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("def add(a, b):\n    return a + b\n")
+        assert scan_file_fingerprints(pkg) == ()
+
+    def test_no_language_returns_empty(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_fingerprints kind="unit"
+        from frob.vet._capability import scan_file_fingerprints
+
+        assert scan_file_fingerprints(tmp_path / "foo.unknownext") == ()
+
+    def test_unreadable_file_returns_empty(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_fingerprints kind="unit"
+        from frob.vet._capability import scan_file_fingerprints
+
+        missing = tmp_path / "gone.py"
+        assert scan_file_fingerprints(missing) == ()
+
+    def test_language_mismatch_does_not_match(self, tmp_path: Path) -> None:
+        # a typescript-only fingerprint's needle appearing in a .py file
+        # must never match -- the language gate is enforced independently
+        # of the needle text.
+        # frob:tests src/frob/vet/_capability.py::scan_file_fingerprints kind="unit"
+        from frob.vet._capability import scan_file_fingerprints
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("x = 'new Function(\"return 1\")'\n")
+        matches = scan_file_fingerprints(pkg)
+        assert not any(m.id == "FP-CODEEVAL-TEMPLATE-001" for m in matches)
+
+    def test_own_catalog_file_excluded_from_directory_aggregation(self) -> None:
+        # T-0153 self-match note (docs/strata/threat.md#cve-fingerprints-
+        # code-level-pattern-catalog-t-0153): _cve_fingerprint.py stores
+        # every needle as literal data, so it must be excluded from
+        # scan_directory_capabilities the same way _capability_registry.py
+        # already is.
+        # frob:tests src/frob/vet/_capability.py::_is_self_path kind="unit"
+        from frob.vet._capability import _FINGERPRINT_CATALOG_PATH, _is_self_path
+
+        assert _is_self_path(_FINGERPRINT_CATALOG_PATH)
+
+
 class TestObfuscationEnsemble:
     def test_high_entropy_string_flagged(self) -> None:
         # frob:tests src/frob/vet/_obfuscation.py::scan_text_obfuscation kind="unit"

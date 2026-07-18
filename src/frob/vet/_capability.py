@@ -57,11 +57,15 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from frob.lang import parse_file
 from frob.logging import get_logger
 
 from ._capability_registry import DANGEROUS_OPERATIONS, DangerousOperation
+
+if TYPE_CHECKING:
+    from frob.strata import CveFingerprint
 
 _log = get_logger(__name__)
 
@@ -146,6 +150,13 @@ _SPECIAL_CHECKS: dict[str, dict[str, tuple[Callable[[str], bool], ...]]] = {
 # capability regardless of what the code actually does).
 _SELF_PATH = Path(__file__).resolve()
 _REGISTRY_PATH = (Path(__file__).parent / "_capability_registry.py").resolve()
+# T-0153: `frob.strata._cve_fingerprint` stores every `CveFingerprint.needles`
+# entry as a literal string too -- same self-match class as `_REGISTRY_PATH`
+# above, so its own file is excluded from directory aggregation on the same
+# grounds (module docstring's T-0151/T-0158 self-match note).
+_FINGERPRINT_CATALOG_PATH = (
+    Path(__file__).parent.parent / "strata" / "_cve_fingerprint.py"
+).resolve()
 
 
 # frob:doc docs/modules/vet.md#public-api
@@ -224,6 +235,46 @@ def scan_file_operations(path: Path) -> tuple[DangerousOperation, ...]:
             if _has_bare_compile_call(text):
                 matched.append(entry)
     return tuple(matched)
+
+
+# frob:doc docs/modules/vet.md#public-api
+# frob:ticket T-0153
+def scan_file_fingerprints(path: Path) -> tuple[CveFingerprint, ...]:
+    """The `frob.strata.CVE_FINGERPRINTS` entries whose needle(s) matched in
+    `path`'s raw text -- the CVE-fingerprint sibling of `scan_file_operations`
+    (T-0153): a fingerprint's `language` must match `path`'s scanned language
+    bucket AND at least one of its `needles` must appear in the file's text,
+    the SAME recall-over-precision substring philosophy `_matched_
+    capabilities` already uses (module docstring). Imports `frob.strata`
+    LAZILY (not at module scope): `frob.strata._effects` imports THIS module
+    for its own `_PATTERNS`/`language_for` join, so a top-level `frob.strata`
+    import here would be a genuine import cycle -- deferred until call time,
+    when both packages have finished initializing."""
+    from frob.strata import CVE_FINGERPRINTS
+
+    language = language_for(path)
+    if language is None:
+        return ()
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace")
+    except OSError as exc:
+        _log.warning("vet: could not read %s for fingerprint scan: %s", path, exc)
+        return ()
+
+    matched = tuple(
+        entry
+        for entry in CVE_FINGERPRINTS
+        if entry.language == language
+        and any(needle in text for needle in entry.needles)
+    )
+    if matched:
+        # frob:waive PERF004 reason="one sort of the matched entries for a single log call, not per-iteration"
+        _log.info(
+            "vet: %s: cve fingerprints matched: %s",
+            path,
+            sorted(entry.id for entry in matched),
+        )
+    return matched
 
 
 # frob:doc docs/modules/vet.md#public-api
@@ -308,15 +359,16 @@ def _is_test_path(path: Path) -> bool:
 
 
 def _is_self_path(path: Path) -> bool:
-    """True for this module's own source file or the T-0158 registry it
-    compiles `_PATTERNS` from (excluded from directory aggregation since
-    both contain every needle as literal data, guaranteeing a self-match
-    unrelated to what the code does)."""
+    """True for this module's own source file, the T-0158 registry it
+    compiles `_PATTERNS` from, or the T-0153 fingerprint catalog it matches
+    `scan_file_fingerprints` against (excluded from directory aggregation
+    since all three contain every needle as literal data, guaranteeing a
+    self-match unrelated to what the code does)."""
     try:
         resolved = path.resolve()
     except OSError:
         return False
-    return resolved in (_SELF_PATH, _REGISTRY_PATH)
+    return resolved in (_SELF_PATH, _REGISTRY_PATH, _FINGERPRINT_CATALOG_PATH)
 
 
 def _aggregate_capabilities(
@@ -352,5 +404,6 @@ __all__ = [
     "language_for",
     "scan_directory_capabilities",
     "scan_file_capabilities",
+    "scan_file_fingerprints",
     "scan_file_operations",
 ]

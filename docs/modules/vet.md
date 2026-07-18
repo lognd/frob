@@ -434,6 +434,7 @@ gate enforcement.
 <!-- frob:describes src/frob/vet/_lockfile.py::parse_lockfile -->
 <!-- frob:describes src/frob/vet/_capability.py::language_for -->
 <!-- frob:describes src/frob/vet/_capability.py::scan_file_capabilities -->
+<!-- frob:describes src/frob/vet/_capability.py::scan_file_fingerprints -->
 <!-- frob:describes src/frob/vet/_capability.py::decode_to_exec_signal -->
 <!-- frob:describes src/frob/vet/_capability.py::scan_directory_capabilities -->
 <!-- frob:describes src/frob/vet/_scan.py::scan_tree -->
@@ -515,6 +516,10 @@ gate enforcement.
   pattern-table bucket (or `None` for unsupported languages).
 - `scan_file_capabilities` -- capability tokens observed in one source
   file's raw text, via the per-language substring table.
+- `scan_file_fingerprints` -- T-0153: `frob.strata.CVE_FINGERPRINTS` entries
+  whose needle(s) matched in one source file's raw text (the CVE-fingerprint
+  sibling of `scan_file_operations`, docs/strata/threat.md#cve-fingerprints-
+  code-level-pattern-catalog-t-0153).
 - `decode_to_exec_signal` -- true when a decode-ish and an exec-ish token
   co-occur in the SAME function body (the highest-precision obfuscation
   signal).
