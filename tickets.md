@@ -714,7 +714,7 @@ Found while working T-0145: adding new .strata files under tests/unit/strata/lit
 id: T-0150
 title: 'self-conformance: vet capability scan of our own source must match design/frob.strata
   interfaces'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-18'
