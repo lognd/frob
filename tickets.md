@@ -1088,7 +1088,8 @@ state: queued
 kind: security
 origin: human
 created: '2026-07-18'
-blocked_by: []
+blocked_by:
+- T-0158
 parent: null
 scope:
 - src/frob/strata/**
@@ -1138,7 +1139,8 @@ state: queued
 kind: feature
 origin: human
 created: '2026-07-18'
-blocked_by: []
+blocked_by:
+- T-0154
 parent: null
 scope:
 - src/frob/strata/**
