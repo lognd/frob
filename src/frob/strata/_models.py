@@ -265,7 +265,7 @@ class DeployContract(BaseModel):
     rollback_budget: Quantity
 
 
-# frob:doc docs/strata/waive.md
+# frob:doc docs/strata/waive.md#surface-syntax
 class Waiver(BaseModel):
     """One `waive RULE reason="..." [ticket="..."]` declared on a node
     (T-0174): the surface analog of `frob:waive` for a `frob sys audit`
