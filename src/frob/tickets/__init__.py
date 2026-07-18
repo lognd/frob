@@ -10,6 +10,7 @@ frob.graph or frob.lang by design (see docs/rework.md cycle-avoidance).
 from __future__ import annotations
 
 import hashlib
+from collections.abc import Sequence
 from datetime import date
 from pathlib import Path
 
@@ -33,10 +34,12 @@ from frob.tickets._store import (
     atomic_write,
     attachments_dir,
     load_all,
+    load_archive,
     migrate_to_ledger,
     slugify,
     tickets_dir,
     write_all,
+    write_archive,
     write_ticket,
 )
 from frob.tickets.clipboard import ClipboardError, clipboard_image
@@ -72,15 +75,54 @@ _DONE_REPORT_HEADING = "## Done report"
 _FAILURE_LOG_HEADING = "## Failure log"
 
 
-# frob:invariant INV-004
 # frob:doc docs/modules/tickets.md#public-api
-def load_queue(root: Path) -> Result[TicketQueue, TicketError]:
-    """Load every ticket (single-file ledger or legacy dir); malformation is Err."""
+def load_active(root: Path) -> Result[TicketQueue, TicketError]:
+    """Load only the active store (single-file ledger or legacy dir), NOT the
+    archive -- the source `frob ticket list`/`doable` display against, so a
+    growing pile of done tickets in tickets-archive.md never bloats them
+    (T-0096)."""
     loaded = load_all(root)
     if loaded.is_err:
         return Err(loaded.danger_err)
     tickets = loaded.danger_ok
-    _log.debug("tickets: loaded %d ticket(s) under %s", len(tickets), root)
+    _log.debug("tickets: loaded %d active ticket(s) under %s", len(tickets), root)
+    return Ok(TicketQueue(tickets=tickets))
+
+
+def _load_merged(root: Path) -> Result[dict[str, Ticket], TicketError]:
+    """Active-store tickets plus archived tickets, id-collision checked.
+
+    The merge exists so id uniqueness and cross-references (blocked_by,
+    parent, frob:ticket directives) keep resolving correctly after a ticket
+    has been archived -- a done ticket referenced as a blocker must still
+    read as closed, not as an unknown/open blocker (T-0096)."""
+    active_loaded = load_all(root)
+    if active_loaded.is_err:
+        return Err(active_loaded.danger_err)
+    archived_loaded = load_archive(root)
+    if archived_loaded.is_err:
+        return Err(archived_loaded.danger_err)
+    active, archived = active_loaded.danger_ok, archived_loaded.danger_ok
+    overlap = set(active) & set(archived)
+    if overlap:
+        _log.error("tickets: id(s) %s present in both active and archive", overlap)
+        return Err(TicketError.DuplicateId)
+    return Ok({**archived, **active})
+
+
+# frob:invariant INV-004
+# frob:doc docs/modules/tickets.md#public-api
+def load_queue(root: Path) -> Result[TicketQueue, TicketError]:
+    """Load every ticket, active store AND archive merged (malformation in
+    either is a hard Err) -- the resolution source for blocker/parent
+    lookups and gate joins, so an archived ticket never looks unknown."""
+    merged = _load_merged(root)
+    if merged.is_err:
+        return Err(merged.danger_err)
+    tickets = merged.danger_ok
+    _log.debug(
+        "tickets: loaded %d ticket(s) (active+archive) under %s", len(tickets), root
+    )
     return Ok(TicketQueue(tickets=tickets))
 
 
@@ -88,6 +130,50 @@ def load_queue(root: Path) -> Result[TicketQueue, TicketError]:
 def migrate(root: Path) -> Result[int, TicketError]:
     """Collapse legacy tickets/*.md files into the single tickets.md ledger."""
     return migrate_to_ledger(root)
+
+
+# frob:doc docs/modules/tickets.md#public-api
+def archive(root: Path) -> Result[int, TicketError]:
+    """Move every done/dropped ticket from the active store into
+    tickets-archive.md, verbatim (same section format, still tracked and
+    greppable); the active ledger keeps only open work. Idempotent -- a
+    second call with nothing newly done/dropped moves nothing and returns
+    Ok(0). Returns the number of tickets moved."""
+    active_loaded = load_all(root)
+    if active_loaded.is_err:
+        return Err(active_loaded.danger_err)
+    active = active_loaded.danger_ok
+
+    to_archive = {
+        tid: t
+        for tid, t in active.items()
+        if t.state in (TicketState.DONE, TicketState.DROPPED)
+    }
+    if not to_archive:
+        _log.info("tickets: archive -- nothing to move")
+        return Ok(0)
+
+    archived_loaded = load_archive(root)
+    if archived_loaded.is_err:
+        return Err(archived_loaded.danger_err)
+    archived = archived_loaded.danger_ok
+
+    overlap = set(to_archive) & set(archived)
+    if overlap:
+        _log.error("tickets: archive id collision %s", overlap)
+        return Err(TicketError.DuplicateId)
+
+    archive_write = write_archive(root, {**archived, **to_archive})
+    if archive_write.is_err:
+        return Err(archive_write.danger_err)
+
+    keep = {tid: t for tid, t in active.items() if tid not in to_archive}
+    active_write = write_all(root, keep)
+    if active_write.is_err:
+        return Err(active_write.danger_err)
+
+    _log.info("tickets: archived %d ticket(s)", len(to_archive))
+    return Ok(len(to_archive))
 
 
 def _next_ticket_id(existing: dict[str, Ticket]) -> str:
@@ -299,39 +385,6 @@ def _validate_evidence_list(
 
 # frob:ticket T-0102
 # frob:doc docs/modules/tickets.md#public-api
-def add_evidence(
-    root: Path, ticket_id: str, entries: tuple[str, ...]
-) -> Result[Ticket, TicketError]:
-    """Append validated evidence entries to a ticket and write it back.
-
-    The only in-process path for landing evidence on a ticket; routing it
-    through here (instead of hand-editing tickets.md) guarantees the write
-    is both schema-valid (validate_evidence) and syntactically valid YAML
-    (write_ticket always serializes via yaml.safe_dump), closing the gap
-    that let a malformed evidence block reach the ledger (T-0102).
-    """
-    validated = _validate_evidence_list(entries)
-    if validated.is_err:
-        return Err(validated.danger_err)
-    loaded = _load_one(root, ticket_id)
-    if loaded.is_err:
-        return Err(loaded.danger_err)
-    ticket = loaded.danger_ok
-    updated = ticket.model_copy(
-        update={"evidence": ticket.evidence + validated.danger_ok}
-    )
-    write_result = write_ticket(root, updated)
-    if write_result.is_err:
-        return Err(write_result.danger_err)
-    _log.info(
-        "tickets: %s gained %d evidence entr%s",
-        ticket_id,
-        len(validated.danger_ok),
-        "y" if len(validated.danger_ok) == 1 else "ies",
-    )
-    return Ok(updated)
-
-
 def _has_done_report(body: str) -> bool:
     """Whether body contains a '## Done report' section heading."""
     return any(line.strip() == _DONE_REPORT_HEADING for line in body.splitlines())
@@ -371,7 +424,12 @@ def transition(
     root: Path, ticket_id: str, to: TicketState
 ) -> Result[Ticket, TicketError]:
     """Enforce the state machine; `done` also requires evidence and a Done report."""
-    loaded = load_all(root)
+    # Blocker resolution needs archived tickets too (a blocker archived
+    # after `done` must still read as closed, not unknown/open) -- the
+    # ticket being transitioned itself is always still in the active store
+    # (archived tickets are done/dropped, terminal, so a lookup that only
+    # ever finds one there fails the state machine correctly, T-0096).
+    loaded = _load_merged(root)
     if loaded.is_err:
         return Err(loaded.danger_err)
     queue = loaded.danger_ok
@@ -396,6 +454,73 @@ def transition(
     if write_result.is_err:
         return Err(write_result.danger_err)
     _log.info("tickets: %s transitioned %s -> %s", ticket_id, ticket.state, to)
+    return Ok(updated)
+
+
+def _matches_collected(evidence: str, collected: frozenset[str]) -> bool:
+    """Exact node-id membership, or bare-function match for parametrized tests
+    (`f` satisfies evidence when only `f[param]` variants were collected).
+    Mirrors frob.gates._evidence_collected -- deliberately duplicated (not
+    imported) so frob.tickets stays free of the frob.graph dependency that
+    module would pull in (docs/rework.md cycle-avoidance)."""
+    if evidence in collected:
+        return True
+    prefix = evidence + "["
+    return any(node.startswith(prefix) for node in collected)
+
+
+# frob:doc docs/modules/tickets.md#public-api
+def add_evidence(
+    root: Path,
+    ticket_id: str,
+    node_ids: Sequence[str],
+    collected: frozenset[str] | None = None,
+) -> Result[Ticket, TicketError]:
+    """Validate `node_ids` against `collected` pytest node ids and append the
+    resolvable ones to the ticket's structured evidence list; rejecting the
+    whole batch (Err(UnknownEvidence)) if any id is unresolvable, so a typo'd
+    id can never sneak into evidence and surface only at close time as
+    COV003 (the failure mode this command exists to close at write time).
+    `collected` is supplied by the caller (frob.testing.collect_python_tests)
+    rather than fetched here, keeping this library free of the frob.graph
+    dependency frob.testing pulls in. `collected=None` skips resolution
+    (schema validation still applies) -- the T-0102 in-process path where
+    no collector is available."""
+    validated = _validate_evidence_list(tuple(node_ids))
+    if validated.is_err:
+        return Err(validated.danger_err)
+    loaded = _load_one(root, ticket_id)
+    if loaded.is_err:
+        return Err(loaded.danger_err)
+    ticket = loaded.danger_ok
+
+    unresolved = (
+        []
+        if collected is None
+        else [nid for nid in node_ids if not _matches_collected(nid, collected)]
+    )
+    if unresolved:
+        _log.warning(
+            "tickets: %s evidence rejected, unresolved id(s) %s "
+            "(run `frob test --collect` to refresh, or fix the id)",
+            ticket_id,
+            unresolved,
+        )
+        return Err(TicketError.UnknownEvidence)
+
+    merged = ticket.evidence + tuple(
+        nid for nid in node_ids if nid not in ticket.evidence
+    )
+    updated = ticket.model_copy(update={"evidence": merged})
+    write_result = write_ticket(root, updated)
+    if write_result.is_err:
+        return Err(write_result.danger_err)
+    _log.info(
+        "tickets: %s recorded %d evidence id(s) (%d total)",
+        ticket_id,
+        len(node_ids),
+        len(updated.evidence),
+    )
     return Ok(updated)
 
 
@@ -531,8 +656,10 @@ __all__ = [
     "TicketSpec",
     "TicketState",
     "add_evidence",
+    "archive",
     "attach",
     "doable",
+    "load_active",
     "load_queue",
     "Stride",
     "migrate",

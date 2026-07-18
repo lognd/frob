@@ -21,9 +21,18 @@ Detection: `tickets.md` present -> single; else `tickets/*.md` -> dir; else
 in both modes.
 
 ```
-tickets.md                          the whole queue, one file
+tickets.md                          the active queue, open + recently-done work
+tickets-archive.md                  done/dropped tickets moved by `frob ticket archive`
 tickets/attachments/T-0042/01-mockup.png
 ```
+
+`frob ticket archive` moves every `done`/`dropped` ticket out of `tickets.md`
+into `tickets-archive.md` -- same section format, still tracked, still
+`grep ticket:T-` compatible -- so the active ledger stays a few hundred
+lines instead of growing forever. `load_queue` reads BOTH files (so
+blocked_by/parent references and gate joins keep resolving correctly after
+a ticket is archived); `frob ticket list`/`doable` read the active file
+only (`load_active`), so the archive never bloats them.
 
 A dir-mode ticket file = YAML `---` frontmatter + body; a ledger section is
 the same fields in a ```yaml fence. Both pydantic-validated, both strict.
@@ -68,16 +77,23 @@ attachments:
 <!-- frob:describes src/frob/tickets/__init__.py::transition -->
 <!-- frob:describes src/frob/tickets/__init__.py::record_failure -->
 <!-- frob:describes src/frob/tickets/__init__.py::attach -->
+<!-- frob:describes src/frob/tickets/__init__.py::add_evidence -->
 <!-- frob:describes src/frob/tickets/clipboard.py::clipboard_image -->
 <!-- frob:describes src/frob/tickets/clipboard.py::clipboard_has_image -->
 <!-- frob:describes src/frob/tickets/__init__.py::migrate -->
 <!-- frob:describes src/frob/tickets/__init__.py::renumber -->
+<!-- frob:describes src/frob/tickets/__init__.py::archive -->
+<!-- frob:describes src/frob/tickets/__init__.py::load_active -->
 
 ```python
 # frob/tickets/__init__.py
 def load_queue(root: Path) -> Result[TicketQueue, TicketError]
-    # Parses every tickets/*.md; any malformed file is a hard Err (the queue
-    # is a contract surface, not best-effort data).
+    # Active store AND tickets-archive.md merged (id-collision checked) --
+    # the resolution source for blocker/parent lookups and gate joins, so
+    # an archived (done/dropped) ticket never reads as unknown.
+def load_active(root: Path) -> Result[TicketQueue, TicketError]
+    # Active store ONLY, not the archive -- what `frob ticket list`/`doable`
+    # display against, so archived tickets never bloat them (T-0096).
 def new_ticket(root: Path, spec: TicketSpec) -> Result[Ticket, TicketError]
     # Allocates next id (T-####), writes file atomically.
 def doable(queue: TicketQueue) -> tuple[Ticket, ...]
@@ -90,12 +106,21 @@ def record_failure(root: Path, ticket_id: str, entry: FailureEntry) -> Result[Ti
 def attach(root: Path, ticket_id: str, source: AttachmentSource,
            caption: str) -> Result[Attachment, AttachError]
     # source is a file path or clipboard; stores under tickets/attachments/.
+def add_evidence(root: Path, ticket_id: str, node_ids: Sequence[str],
+                  collected: frozenset[str]) -> Result[Ticket, TicketError]
+    # Validates node_ids against `collected` (frob.testing.collect_python_tests
+    # node ids, supplied by the caller) and appends the resolvable ones;
+    # rejects the whole batch as Err(UnknownEvidence) if any id is
+    # unresolvable -- closes the COV003-after-close gap at write time.
 def migrate(root: Path) -> Result[int, TicketError]
     # Collapses legacy tickets/*.md files into the single tickets.md ledger.
 def renumber(root: Path) -> Result[int, TicketError]
     # Reassigns ticket ids to a contiguous T-0001.. sequence, remapping
     # every blocked_by/parent reference (the remedy for id collisions
     # after a worktree merge).
+def archive(root: Path) -> Result[int, TicketError]
+    # Moves every done/dropped ticket from the active store into
+    # tickets-archive.md verbatim (same section format); idempotent.
 
 # frob/tickets/clipboard.py
 def clipboard_image() -> Result[bytes, ClipboardError]
@@ -118,9 +143,19 @@ terminal. Cutting scope is `dropped` with a reason -- recorded, not deleted.
 
 ## Clipboard capture
 
-`frob ticket new` and `frob ticket attach` offer clipboard paste only when
-stdin is a TTY and `clipboard_has_image()` is true; non-interactive callers
-(agents, CI) must pass explicit file paths -- prompts never block automation.
+`frob ticket new` offers clipboard paste only when stdin is a TTY and
+`clipboard_has_image()` is true; non-interactive callers (agents, CI) must
+pass explicit file paths -- prompts never block automation.
+
+`frob ticket attach <id>` with no path argument means "read from the
+clipboard" -- but a non-interactive session (agent, CI) has no clipboard to
+paste from. Before attempting any clipboard backend, the CLI checks
+`sys.stdin.isatty()`; off a TTY it fails fast with `Err`-style remedy text
+("pass an explicit file path: frob ticket attach <id> <path>") instead of
+spawning a clipboard backend that can never produce an image (T-0098). This
+check lives in `frob.app.ticket_runner._attach`, not `frob.tickets.attach`
+-- the library function stays a pure "copy these bytes" primitive; the CLI
+is what decides whether to offer or refuse the clipboard.
 
 Backend probe order (first available wins):
 
@@ -207,6 +242,7 @@ class TicketError(ErrorSet):
     MissingEvidence     = "done requires evidence and a Done report"
     BlockerOpen         = "Cannot start: blocked_by contains open tickets"
     WriteFailed         = "Atomic ticket write failed"
+    UnknownEvidence     = "Evidence id does not resolve to a collected test"
 
 class ClipboardError(ErrorSet):
     NoBackend     = "No clipboard backend available on this platform"
@@ -221,6 +257,9 @@ AttachError = TicketError | ClipboardError
 <!-- frob:describes src/frob/tickets/_store.py::slugify -->
 <!-- frob:describes src/frob/tickets/_store.py::tickets_dir -->
 <!-- frob:describes src/frob/tickets/_store.py::ledger_path -->
+<!-- frob:describes src/frob/tickets/_store.py::archive_path -->
+<!-- frob:describes src/frob/tickets/_store.py::load_archive -->
+<!-- frob:describes src/frob/tickets/_store.py::write_archive -->
 <!-- frob:describes src/frob/tickets/_store.py::attachments_dir -->
 <!-- frob:describes src/frob/tickets/_store.py::store_mode -->
 <!-- frob:describes src/frob/tickets/_store.py::serialize_ticket -->
@@ -244,6 +283,13 @@ def tickets_dir(root: Path) -> Path
     # The legacy tickets/ directory (also holds attachments in single mode).
 def ledger_path(root: Path) -> Path
     # The single-file tickets.md ledger path at the repo root.
+def archive_path(root: Path) -> Path
+    # The tickets-archive.md path at the repo root (same ledger format).
+def load_archive(root: Path) -> Result[dict[str, Ticket], TicketError]
+    # Every ticket in tickets-archive.md (empty dict if it doesn't exist yet).
+def write_archive(root: Path, tickets: dict[str, Ticket]) -> Result[None, TicketError]
+    # Replaces tickets-archive.md wholesale (same ledger section format,
+    # distinct header).
 def attachments_dir(root: Path, ticket_id: str) -> Path
     # tickets/attachments/<id>/ for a given ticket (both storage modes).
 def store_mode(root: Path) -> str
@@ -297,11 +343,16 @@ def atomic_write(path: Path, content: str | bytes) -> Result[None, TicketError]
 - `frob.gates`: scope gate reads `scope`, coverage gate reads `evidence`
   and joins `frob:ticket`/`frob:todo` edge targets against the queue.
 - CLI: `frob ticket new|list|show|doable|plan|start|sweep|migrate|renumber|
-  attach|block|close|fail`. `start` auto-plans a queued ticket (both legal
-  steps); `sweep` re-records the pre-work sweep after a scope change;
-  `migrate` collapses a legacy dir into the ledger; `renumber` reassigns ids
-  to a contiguous T-0001.. sequence (the remedy for worktree-merge id
-  collisions, rewriting blocked_by/parent references).
+  attach|block|close|fail|evidence|archive`. `start` auto-plans a queued
+  ticket (both legal steps); `sweep` re-records the pre-work sweep after a
+  scope change; `migrate` collapses a legacy dir into the ledger; `renumber`
+  reassigns ids to a contiguous T-0001.. sequence (the remedy for
+  worktree-merge id collisions, rewriting blocked_by/parent references);
+  `evidence <id> <pytest-node-id>...` validates each id against collected
+  tests up front and appends to the structured evidence list (rejecting an
+  unresolvable id with remedy text, instead of a typo silently surfacing
+  later as COV003 after close); `archive` moves every done/dropped ticket
+  from the active ledger into `tickets-archive.md`, verbatim.
 
 Ticket kinds: feature, bug, security, ux, docs, invariant, incident.
 - `--kind incident` seeds a blameless-postmortem body template (Summary,

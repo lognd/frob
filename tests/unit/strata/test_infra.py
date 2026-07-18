@@ -342,3 +342,19 @@ class TestEndToEnd:
         assert result.verdict is Verdict.REFUTED
         assert result.quantifier is Quantifier.FORALL
         assert "60" in result.detail
+
+
+class TestStoreCapacity:
+    # frob:tests src/frob/strata/_infra.py::elaborate_infra kind="unit"
+    def test_store_capacity_maps_through_to_the_kernel_node(self):
+        from frob.strata import elaborate, parse_module
+
+        src = """module m
+store db : trusted { engine postgres; capacity 100 req/s replicas 2 .. 4 }
+"""
+        module = parse_module(src).danger_ok
+        model = elaborate(module).danger_ok
+        node = {n.id: n for n in model.nodes}["db"]
+        assert node.capacity is not None
+        assert node.capacity.service_rate.value == 100
+        assert node.capacity.replicas_max == 4

@@ -46,6 +46,15 @@ _LEDGER_HEADER = (
     "# Tickets\n\nCentral ledger managed by `frob ticket` -- one section per ticket.\n"
 )
 
+# Archive ledger: same format/marker/fence as the active ledger, rotated in
+# by `frob ticket archive` (T-0096) so the active file stays a few hundred
+# lines instead of growing forever with every done ticket.
+_ARCHIVE_NAME = "tickets-archive.md"
+_ARCHIVE_HEADER = (
+    "# Tickets archive\n\nDone/dropped tickets moved here by `frob ticket archive` "
+    "-- same format as tickets.md, still tracked and greppable.\n"
+)
+
 
 # frob:doc docs/modules/tickets.md#storage-internals
 def slugify(title: str) -> str:
@@ -64,6 +73,12 @@ def tickets_dir(root: Path) -> Path:
 def ledger_path(root: Path) -> Path:
     """The single-file `tickets.md` ledger path at the repo root."""
     return root / _LEDGER_NAME
+
+
+# frob:doc docs/modules/tickets.md#storage-internals
+def archive_path(root: Path) -> Path:
+    """The `tickets-archive.md` path at the repo root (same ledger format)."""
+    return root / _ARCHIVE_NAME
 
 
 # frob:doc docs/modules/tickets.md#storage-internals
@@ -193,9 +208,11 @@ def _parse_ledger(text: str) -> Result[dict[str, Ticket], TicketError]:
     return Ok(tickets)
 
 
-def _render_ledger(tickets: dict[str, Ticket]) -> str:
-    """Render an id -> Ticket map to ledger text, ordered by id."""
-    parts = [_LEDGER_HEADER]
+def _render_ledger(tickets: dict[str, Ticket], header: str = _LEDGER_HEADER) -> str:
+    """Render an id -> Ticket map to ledger text, ordered by id (same section
+    format for both the active ledger and the archive -- only the header
+    text differs)."""
+    parts = [header]
     ordered_ids = sorted(tickets)
     for ticket_id in ordered_ids:
         ticket = tickets[ticket_id]
@@ -234,6 +251,24 @@ def load_all(root: Path) -> Result[dict[str, Ticket], TicketError]:
             return Err(TicketError.DuplicateId)
         tickets[ticket.id] = ticket
     return Ok(tickets)
+
+
+# frob:doc docs/modules/tickets.md#storage-internals
+def load_archive(root: Path) -> Result[dict[str, Ticket], TicketError]:
+    """Every ticket in `tickets-archive.md` as an id -> Ticket map (empty if
+    the archive does not exist yet -- a fresh repo has never archived
+    anything)."""
+    path = archive_path(root)
+    if not path.exists():
+        return Ok({})
+    return _parse_ledger(path.read_text(encoding="utf-8"))
+
+
+# frob:doc docs/modules/tickets.md#storage-internals
+def write_archive(root: Path, tickets: dict[str, Ticket]) -> Result[None, TicketError]:
+    """Replace `tickets-archive.md` wholesale with `tickets` (same ledger
+    section format as the active file, distinct header)."""
+    return atomic_write(archive_path(root), _render_ledger(tickets, _ARCHIVE_HEADER))
 
 
 # frob:doc docs/modules/tickets.md#storage-internals

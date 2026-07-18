@@ -570,6 +570,17 @@ def _add_ticket_lifecycle_parsers(ticket_sub) -> list:
     )
     ticket_fail_p.add_argument("ticket_id", metavar="id")
     ticket_fail_p.add_argument("--summary", dest="ticket_summary", required=True)
+
+    ticket_evidence_p = ticket_sub.add_parser(
+        "evidence",
+        help="append pytest node ids to a ticket's structured evidence list",
+    )
+    ticket_evidence_p.add_argument("ticket_id", metavar="id")
+    ticket_evidence_p.add_argument("ticket_evidence_ids", metavar="node-id", nargs="+")
+
+    ticket_archive_p = ticket_sub.add_parser(
+        "archive", help="move done/dropped tickets into tickets-archive.md"
+    )
     return [
         ticket_plan_p,
         ticket_start_p,
@@ -580,6 +591,8 @@ def _add_ticket_lifecycle_parsers(ticket_sub) -> list:
         ticket_block_p,
         ticket_close_p,
         ticket_fail_p,
+        ticket_evidence_p,
+        ticket_archive_p,
     ]
 
 

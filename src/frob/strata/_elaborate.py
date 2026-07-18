@@ -19,6 +19,7 @@ from ._ast import BoundaryDecl, ClaimDecl, FlowDecl, Module, NodeDecl, RefineDec
 from ._errors import StrataError
 from ._infra import elaborate_infra
 from ._models import (
+    LABELS,
     TRUST,
     Boundary,
     BoundaryDirection,
@@ -27,10 +28,12 @@ from ._models import (
     Claim,
     ClaimBody,
     Flow,
+    FlowCondition,
     KernelModel,
     Metric,
     Node,
     NoFlow,
+    Outcome,
     Reach,
 )
 from ._packs import require_analyzable
@@ -40,15 +43,32 @@ _log = get_logger(__name__)
 #: Node attr marker for `is_abstract` nodes; refinement proper is T-0062.
 _ABSTRACT_ATTR = "abstract"
 
+#: Node attr marker for the `errors total` claim (T-0070).
+_ERRORS_TOTAL_ATTR = "errors_total"
+
+#: Node attr marker naming an operation's declared saga/tx coordinator (T-0069).
+_COORDINATOR_ATTR = "coordinator"
+
+#: The fixed observe-block log-class vocabulary (docs/strata/policy.md#packs, T-0070).
+_OBSERVE_LOG_CLASSES = frozenset(
+    {"error_paths", "state_transitions", "boundary_crossings", "crash_events"}
+)
+
 
 def _elaborate_node(decl: NodeDecl) -> Node:
-    """One `NodeDecl` -> one kernel `Node`; abstract nodes gain an attrs marker."""
+    """One `NodeDecl` -> one kernel `Node`; abstract/errors_total/panics -> attrs."""
     attrs = decl.attrs
     if decl.is_abstract:
         _log.debug(
             "node %s is abstract; marking attrs with %r", decl.id, _ABSTRACT_ATTR
         )
         attrs = (*attrs, _ABSTRACT_ATTR)
+    if decl.errors_total:
+        _log.debug("node %s declares errors_total", decl.id)
+        attrs = (*attrs, _ERRORS_TOTAL_ATTR)
+    if decl.panics_contained_by is not None:
+        _log.debug("node %s: panics contained by %s", decl.id, decl.panics_contained_by)
+        attrs = (*attrs, f"panics={decl.panics_contained_by}")
     capacity = None
     if decl.capacity is not None:
         capacity = Capacity(
@@ -177,6 +197,277 @@ def _validate_references(module: Module) -> Result[None, StrataError]:
             _log.error("claim %s references unknown target %r", claim.id, claim.target)
             return Err(StrataError.UnknownReference)
     return Ok(None)
+
+
+def _known_node_ids(module: Module) -> set[str]:
+    """Every declared node-shaped id: std.trust nodes plus every std.infra construct."""
+    ids = {n.id for n in module.nodes}
+    ids |= {s.id for s in module.stores}
+    ids |= {c.id for c in module.caches}
+    ids |= {q.id for q in module.queues}
+    ids |= {c.id for c in module.cdns}
+    ids |= {b.id for b in module.balancers}
+    return ids
+
+
+def _append_only_ids(module: Module) -> set[str]:
+    """Ids of every node/store carrying the `append_only` marker (audit-only rule)."""
+    ids = {n.id for n in module.nodes if "append_only" in n.attrs}
+    ids |= {s.id for s in module.stores if s.append_only}
+    return ids
+
+
+def _frame_target_base(target: str) -> str:
+    """Strip a frame target's `(...)` selector: `Balance(from)` -> `Balance`."""
+    idx = target.find("(")
+    return target[:idx] if idx != -1 else target
+
+
+def _validate_boundary_phases(module: Module) -> Result[None, StrataError]:
+    """Structural checks for every `boundary ... { phase_block* }` (T-0069, v0).
+
+    Fails closed: a `parse` phase declaring frame entries (admit/parse
+    frames must be empty -- effects before endorsement is exactly what the
+    six-phase contract exists to kill, docs/strata/boundary.md#the-six-
+    phases); an `effect`/`refuse` frame target that is not a declared node;
+    a `refuse` frame target that is not `append_only` (the audit-only
+    rule); a `record` audit target that is not declared; or a `refuse`
+    `respond` label that is not a level in the labels lattice.
+    """
+    known = _known_node_ids(module)
+    append_only = _append_only_ids(module)
+    labels = LABELS.elements()
+    for boundary in module.boundaries:
+        phases = boundary.phases
+        if phases is None:
+            continue
+        if phases.parse is not None and phases.parse.frame:
+            _log.error(
+                "boundary %s: parse phase frame must be empty, got %s",
+                boundary.id,
+                phases.parse.frame,
+            )
+            return Err(StrataError.FrameViolation)
+        if phases.effect is not None:
+            for target in phases.effect.frame:
+                base = _frame_target_base(target)
+                if base not in known:
+                    _log.error(
+                        "boundary %s: effect frame target %r is not declared",
+                        boundary.id,
+                        target,
+                    )
+                    return Err(StrataError.UnknownReference)
+        if phases.record is not None and phases.record.audit_to not in known:
+            _log.error(
+                "boundary %s: record audit target %r is not declared",
+                boundary.id,
+                phases.record.audit_to,
+            )
+            return Err(StrataError.UnknownReference)
+        if phases.refuse is not None:
+            if phases.refuse.respond not in labels:
+                _log.error(
+                    "boundary %s: refuse respond label %r is not in the labels "
+                    "lattice %s",
+                    boundary.id,
+                    phases.refuse.respond,
+                    sorted(labels),
+                )
+                return Err(StrataError.UnknownLevel)
+            for target in phases.refuse.frame:
+                base = _frame_target_base(target)
+                if base not in known:
+                    _log.error(
+                        "boundary %s: refuse frame target %r is not declared",
+                        boundary.id,
+                        target,
+                    )
+                    return Err(StrataError.UnknownReference)
+                if base not in append_only:
+                    _log.error(
+                        "boundary %s: refuse frame target %r is not append_only "
+                        "(refusal frame is audit-only)",
+                        boundary.id,
+                        target,
+                    )
+                    return Err(StrataError.FrameViolation)
+    return Ok(None)
+
+
+def _validate_operations(module: Module) -> Result[None, StrataError]:
+    """Structural checks for every `operation` statement (T-0069, v0).
+
+    Fails closed: `on`/`atomic via` naming an undeclared node; and the
+    strong-guarantee check -- a `modifies {} on Err` claim whose `atomic
+    via` node is neither the operation's own store (`on`, the single store
+    presumed to hold every Ok-frame target in v0's declared-structure
+    model) nor a node carrying the `coordinator` attr is a
+    `CrossStoreAtomicity` refusal, never a silent pass (docs/strata/
+    boundary.md#frames-and-failure-atomicity: "Distributed atomicity by
+    wishful thinking is a 'not possible' diagnostic, never a silent
+    acceptance.").
+    """
+    known = _known_node_ids(module)
+    coordinator_ids = {n.id for n in module.nodes if _COORDINATOR_ATTR in n.attrs}
+    for op in module.operations:
+        if op.on not in known:
+            _log.error("operation %s: on target %r is not declared", op.id, op.on)
+            return Err(StrataError.UnknownReference)
+        if op.atomic_via not in known:
+            _log.error(
+                "operation %s: atomic via %r is not declared", op.id, op.atomic_via
+            )
+            return Err(StrataError.UnknownReference)
+        if not op.modifies_err and op.atomic_via != op.on:
+            if op.atomic_via not in coordinator_ids:
+                _log.error(
+                    "operation %s: cross-store refusal -- atomic via %r is "
+                    "neither the single store %r holding every Ok-frame target "
+                    "nor a declared coordinator; distributed atomicity by "
+                    "wishful thinking is a 'not possible' diagnostic, never a "
+                    "silent acceptance",
+                    op.id,
+                    op.atomic_via,
+                    op.on,
+                )
+                return Err(StrataError.CrossStoreAtomicity)
+    return Ok(None)
+
+
+def _validate_observability(module: Module) -> Result[None, StrataError]:
+    """Structural checks for `panics_contained_by`/`observe` node properties (T-0070).
+
+    Fails closed: an unknown `panics_contained_by` supervisor or `observe
+    ... to` target; an `observe` log class outside the fixed vocabulary
+    {error_paths, state_transitions, boundary_crossings, crash_events}
+    (docs/strata/policy.md#packs). A node declaring `errors_total` with no
+    `observe` block is a non-fatal WARNING diagnostic ("errors_total
+    without observe"), not a hard error -- the ERR/OBS *gate* wiring into
+    `frob check` is phase 4 (T-0070 scope note).
+    """
+    known = _known_node_ids(module)
+    for decl in module.nodes:
+        if (
+            decl.panics_contained_by is not None
+            and decl.panics_contained_by not in known
+        ):
+            _log.error(
+                "node %s: panics_contained_by %r is not declared",
+                decl.id,
+                decl.panics_contained_by,
+            )
+            return Err(StrataError.UnknownReference)
+        if decl.observe is not None:
+            for log_class in decl.observe.log:
+                if log_class not in _OBSERVE_LOG_CLASSES:
+                    _log.error(
+                        "node %s: observe log class %r is not in the fixed "
+                        "vocabulary %s",
+                        decl.id,
+                        log_class,
+                        sorted(_OBSERVE_LOG_CLASSES),
+                    )
+                    return Err(StrataError.UnknownLogClass)
+            if decl.observe.to not in known:
+                _log.error(
+                    "node %s: observe target %r is not declared",
+                    decl.id,
+                    decl.observe.to,
+                )
+                return Err(StrataError.UnknownReference)
+        if decl.errors_total and decl.observe is None:
+            _log.warning("node %s: errors_total without observe", decl.id)
+    return Ok(None)
+
+
+def _elaborate_boundary_phase_flows(module: Module) -> tuple[Flow, ...]:
+    """Build the outcome-conditioned `effect`/`record` flows a phase block implies.
+
+    WHY these two phases only: `effect` frame targets become `Outcome.OK`-
+    conditioned flows from the boundary's underlying flow dst to each
+    target (docs/strata/kernel.md's one graph extension); `record`
+    generates one unconditioned audit flow labeled Internal. `admit`,
+    `parse`, `judge`, and `refuse` carry no flow of their own in v0 --
+    validation of their structural rules happens in
+    `_validate_boundary_phases`, which this function assumes already ran.
+    """
+    flows: list[Flow] = []
+    base_flow_dst = {f.id: f.dst for f in module.flows}
+    for boundary in module.boundaries:
+        phases = boundary.phases
+        if phases is None:
+            continue
+        src = base_flow_dst.get(boundary.flow_id)
+        if (
+            src is None
+        ):  # pragma: no cover -- `_validate_references` already fails closed
+            continue
+        if phases.effect is not None:
+            for target in phases.effect.frame:
+                base = _frame_target_base(target)
+                flows.append(
+                    Flow(
+                        id=f"{boundary.id}__effect_{base}",
+                        src=src,
+                        dst=base,
+                        condition=FlowCondition(outcome=Outcome.OK),
+                        attrs=("effect",),
+                    )
+                )
+        if phases.record is not None:
+            flows.append(
+                Flow(
+                    id=f"{boundary.id}__audit",
+                    src=src,
+                    dst=phases.record.audit_to,
+                    label="Internal",
+                    attrs=("audit",),
+                )
+            )
+    return tuple(flows)
+
+
+def _elaborate_operation_flows(module: Module) -> tuple[Flow, ...]:
+    """One outcome-conditioned `Flow` per `modifies` frame target (T-0069)."""
+    flows: list[Flow] = []
+    for op in module.operations:
+        for i, target in enumerate(op.modifies_ok):
+            flows.append(
+                Flow(
+                    id=f"{op.id}__ok_{i}",
+                    src=op.on,
+                    dst=_frame_target_base(target),
+                    condition=FlowCondition(outcome=Outcome.OK),
+                    attrs=("modifies",),
+                )
+            )
+        for i, target in enumerate(op.modifies_err):
+            flows.append(
+                Flow(
+                    id=f"{op.id}__err_{i}",
+                    src=op.on,
+                    dst=_frame_target_base(target),
+                    condition=FlowCondition(outcome=Outcome.ERR),
+                    attrs=("modifies",),
+                )
+            )
+    return tuple(flows)
+
+
+def _elaborate_observe_flows(module: Module) -> tuple[Flow, ...]:
+    """One Internal-labeled `Flow` per node's `observe { ... to IDENT }` block."""
+    return tuple(
+        Flow(
+            id=f"{decl.id}__obs",
+            src=decl.id,
+            dst=decl.observe.to,
+            label="Internal",
+            attrs=("observe",),
+        )
+        for decl in module.nodes
+        if decl.observe is not None
+    )
 
 
 def _rewire_endpoint(value: str, target: str, bind_to: str) -> str:
@@ -379,10 +670,24 @@ def elaborate(module: Module) -> Result[KernelModel, StrataError]:
     refs_ok = _validate_references(module)
     if refs_ok.is_err:
         return Err(refs_ok.danger_err)
+    phases_ok = _validate_boundary_phases(module)
+    if phases_ok.is_err:
+        return Err(phases_ok.danger_err)
+    operations_ok = _validate_operations(module)
+    if operations_ok.is_err:
+        return Err(operations_ok.danger_err)
+    observability_ok = _validate_observability(module)
+    if observability_ok.is_err:
+        return Err(observability_ok.danger_err)
 
+    extra_flows = (
+        *_elaborate_boundary_phase_flows(module),
+        *_elaborate_operation_flows(module),
+        *_elaborate_observe_flows(module),
+    )
     model = KernelModel(
         nodes=tuple(_elaborate_node(n) for n in module.nodes),
-        flows=tuple(_elaborate_flow(f) for f in module.flows),
+        flows=(*(_elaborate_flow(f) for f in module.flows), *extra_flows),
         boundaries=tuple(_elaborate_boundary(b) for b in module.boundaries),
         claims=tuple(_elaborate_claim(c) for c in module.claims),
     )

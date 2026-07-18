@@ -152,3 +152,4 @@ class TicketError(ErrorSet):
     MalformedEvidence = "evidence entry failed schema validation"
     BlockerOpen = "Cannot start: blocked_by contains open tickets"
     WriteFailed = "Atomic ticket write failed"
+    UnknownEvidence = "Evidence id does not resolve to a collected test"

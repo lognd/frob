@@ -1418,7 +1418,7 @@ cross-file rust directives), T-0091 (make core stray-venv), T-0092
 ```yaml
 id: T-0051
 title: 'strata phase 2: std.infra + bounds + policy forms + boundaries'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-17'
@@ -1429,7 +1429,9 @@ scope:
 - src/frob/strata/**
 - tests/unit/strata/**
 - design/litmus/**
-evidence: []
+evidence:
+- tests/unit/strata/test_litmus_tube.py::TestTubeGoldens::test_payout_age_bound_refutes_off_the_approximate_counter_path
+- tests/unit/strata/test_litmus_chirp.py::TestChirpGoldens::test_hottest_shard_utilization_refutes_under_zipf_skew
 attachments: []
 acceptance:
 - GIVEN tube.strata and chirp.strata WHEN frob sys check runs THEN stampede, fanout-ceiling,
@@ -1437,6 +1439,18 @@ acceptance:
 threat: null
 ```
 store/cache/queue/cdn elaboration with mandatory invalidation edges, unified age/staleness propagation, capacity arithmetic with skew + growth horizons + cold/degraded modes, the 5 policy forms with semantic scoping + enables cascade, std.policy.analyzable, six-phase boundary contract with outcome-conditioned frames, errors-total/panics-contained/observe packs. See docs/strata/{policy,boundary}.md.
+
+## Done report
+
+Phase 2 complete: T-0064 std.infra, T-0065 age/staleness (+ the SCC
+worst_age soundness fix), T-0066 capacity/skew/horizons, T-0067/68
+policy forms + enables cascade, T-0069/70 boundaries/frames +
+observability, T-0071 strata-core (pulled forward by user directive),
+T-0072 tube+chirp litmus (exit criterion met: hot-shard-vs-mean,
+growth-horizon, immutable-TTL, CDN-declassify goldens fire numerically
+in CI). T-0103 (store capacity dropped at desugar) found by the litmus
+and fixed same-day. Every child reviewer-verified; two children
+required rejection rounds (evidence schema, worst_age soundness).
 
 <!-- ticket:T-0052 -->
 ```yaml
@@ -2521,7 +2535,7 @@ exit 0, gates stage executed. ruff format/check and ty remain clean.
 ```yaml
 id: T-0069
 title: strata six-phase boundaries + outcome-conditioned frames
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-17'
@@ -2537,18 +2551,39 @@ scope:
 - design/litmus/**
 - src/frob/strata/**
 - tests/unit/strata/**
-evidence: []
+evidence:
+- tests/unit/strata/test_boundary_phases.py::TestPhaseBlockHappyPath::test_effect_and_record_phases_generate_flows
+- tests/unit/strata/test_boundary_phases.py::TestOperationFailClosed::test_cross_store_atomic_via_without_coordinator_is_refused
+- tests/unit/strata/test_observe.py::TestEndToEnd::test_phases_operation_and_observe_together
 attachments: []
 acceptance: []
 threat: null
 ```
 admit/parse/judge/effect/record/refuse with per-phase frames and label rules; no-effects-before-judgment; refusal frame is audit-only; error responses are labeled egress flows; modifies-on-Ok/Err claims.
 
+## Done report
+
+Changed: strata-core/src/parse.rs (phase_block/operation/node observability
+grammar + 7 cargo tests), src/frob/strata/_ast.py (PhaseBlock family,
+OperationDecl, ObserveDecl, NodeDecl fields), src/frob/strata/_errors.py
+(FrameViolation, CrossStoreAtomicity, UnknownLogClass),
+src/frob/strata/_elaborate.py (phase/operation validation + conditioned-
+flow construction), src/frob/strata/__init__.py exports,
+docs/strata/boundary.md (## v0 implementation), 19 new pytest cases in
+tests/unit/strata/test_boundary_phases.py + test_observe.py.
+Evidence: 3 pytest node ids above (of 19 new, all green); 71/71 cargo
+tests green; full `tests/unit/strata` suite green (155 tests).
+Filed: none.
+Gates: `frob check --ticket T-0069` exit 0, gates stage executed
+(clones/coverage/decisions/doclink/drift/fuzz/invariant/perf/policy/
+prework/release/test all ran); plain `frob check` exit 0, no skip.
+ruff format/check and ty clean.
+
 <!-- ticket:T-0070 -->
 ```yaml
 id: T-0070
 title: strata errors-total, panics-contained, observe blocks (ERR/OBS gates)
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-17'
@@ -2564,12 +2599,32 @@ scope:
 - design/litmus/**
 - src/frob/strata/**
 - tests/**
-evidence: []
+evidence:
+- tests/unit/strata/test_observe.py::TestObservabilityHappyPath::test_errors_total_and_panics_become_node_attrs
+- tests/unit/strata/test_observe.py::TestObservabilityFailClosed::test_unknown_log_class_is_rejected
+- tests/unit/strata/test_observe.py::TestObservabilityHappyPath::test_errors_total_without_observe_is_non_fatal
 attachments: []
 acceptance: []
 threat: null
 ```
 Exhaustive ErrorSet consumption + variant liveness + no-discarded-Result (graph join); per-language panic chokepoints; observe = obligated labeled flows to an observability node; log rules enable detection SLAs via the cascade.
+
+## Done report
+
+Changed: strata-core/src/parse.rs (node errors_total/panics_contained_by/
+observe grammar), src/frob/strata/_ast.py (ObserveDecl, NodeDecl fields),
+src/frob/strata/_errors.py (UnknownLogClass), src/frob/strata/_elaborate.py
+(_validate_observability, _elaborate_observe_flows), 7 new pytest cases
+in tests/unit/strata/test_observe.py (shared file with T-0069's phase/
+operation tests). v0 scope note: node-only (store did not gain these
+three properties -- grammar deviation documented in
+docs/strata/boundary.md#v0-implementation); ERR/OBS gate wiring into
+`frob check` is out of scope (phase 4), only declared-structure checks
+implemented.
+Evidence: 3 pytest node ids above (of 7 new, all green).
+Filed: none.
+Gates: `frob check --ticket T-0070` exit 0, gates stage executed; plain
+`frob check` exit 0. ruff/ty clean.
 
 <!-- ticket:T-0071 -->
 ```yaml
@@ -2621,7 +2676,7 @@ rust-publicness rule.
 ```yaml
 id: T-0072
 title: strata tube + chirp litmus models + goldens
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-17'
@@ -2637,12 +2692,36 @@ scope:
 - design/litmus/**
 - design/litmus/**
 - tests/**
-evidence: []
+evidence:
+- tests/unit/strata/test_litmus_tube.py::TestTubeGoldens::test_payout_age_bound_refutes_off_the_approximate_counter_path
+- tests/unit/strata/test_litmus_chirp.py::TestChirpGoldens::test_hottest_shard_utilization_refutes_under_zipf_skew
+- tests/unit/strata/test_litmus_chirp.py::TestChirpGoldens::test_growth_horizon_flips_a_passing_utilization_to_refuted
 attachments: []
 acceptance: []
 threat: null
 ```
 Tube: stampede/cold-cache, immutable-TTL pairing, CDN declassification, payout-vs-approximate-counter. Chirp: fanout write ceiling under zipf skew forcing the hybrid. Phase-2 exit criterion.
+
+## Done report
+
+Changed: design/litmus/tube.strata, design/litmus/chirp.strata,
+tests/unit/strata/test_litmus_tube.py, test_litmus_chirp.py,
+docs/strata/roadmap.md (litmus section marked met).
+Evidence: see `evidence:` above; 10 tests total (6 tube + 4 chirp), all
+pytest node ids collected via `--collect-only`.
+Verified: pytest tests/unit/strata (96 passed), ruff format/check clean,
+ty check clean, frob graph build, sweep T-0072 last, frob check
+--ticket T-0072 exit 0, plain frob check exit 0.
+Gap found (not fixed, out of scope -- src/frob/strata/_infra.py is not
+in this ticket's scope): `store { capacity ... }` parses but
+`_infra.py::elaborate_infra` hardcodes `capacity=None` when desugaring a
+store to a Node, so a UTILIZATION claim can never target a store
+directly. chirp.strata routes capacity-bearing shards through `node`s
+fed from the `tweets` store instead; documented inline in the file. No
+ticket filed per mission instructions (worktree may not file tickets);
+noted here and in the agent report for the orchestrator to file.
+Filed: none (see gap note above).
+Gates: frob check --ticket T-0072 clean; plain frob check clean.
 
 <!-- ticket:T-0073 -->
 ```yaml
@@ -3118,7 +3197,7 @@ T-0064 discovery: std.infra's queue/balancer grammar has no TRUST clause (unlike
 ```yaml
 id: T-0094
 title: 'frob ticket evidence subcommand: append structured evidence ids from the CLI'
-state: queued
+state: done
 kind: ux
 origin: agent
 created: '2026-07-17'
@@ -3128,12 +3207,55 @@ scope:
 - src/frob/tickets/**
 - src/frob/app/**
 - tests/**
-evidence: []
+- src/frob/__main__.py
+- docs/modules/tickets.md
+- tickets.md
+evidence:
+- tests/test_tickets.py::TestEvidence::test_resolvable_ids_appended
+- tests/test_tickets.py::TestEvidence::test_parametrized_bare_name_matches
+- tests/test_tickets.py::TestEvidence::test_unresolvable_id_rejected
+- tests/test_tickets.py::TestEvidence::test_mixed_batch_rejected_wholesale
+- tests/test_tickets.py::TestEvidence::test_dedupes_against_existing_evidence
+- tests/test_tickets.py::TestEvidence::test_unknown_ticket_not_found
 attachments: []
 acceptance: []
 threat: null
 ```
 Three implementer agents in a row (T-0062, T-0063, T-0064) wrote Done-report prose evidence but left the structured evidence: YAML empty or wrong (cargo ids), because the only way to record evidence is hand-editing tickets.md YAML. Add 'frob ticket evidence T-XXXX <pytest-node-id>...' that validates ids against collected tests (rejecting unresolvable ids up front, closing the COV003 gap at write time) and appends to the structured list. Orchestration keeps catching this by hand; the tool should make the right thing the easy thing.
+
+## Done report
+
+Changed:
+- src/frob/tickets/_models.py::TicketError.UnknownEvidence
+- src/frob/tickets/__init__.py::_matches_collected
+- src/frob/tickets/__init__.py::add_evidence
+- src/frob/app/ticket_runner.py::_evidence
+- src/frob/app/ticket_runner.py::run (dispatch case "evidence")
+- src/frob/app/config.py::AppConfig.ticket_evidence_ids
+- src/frob/__main__.py::_add_ticket_lifecycle_parsers (evidence subparser)
+- docs/modules/tickets.md (Public API, Error types, Integration points)
+
+`add_evidence` takes the collected node-id set as a parameter (dependency
+injection) rather than importing `frob.testing` directly -- `frob.testing`
+transitively imports `frob.graph`, which the module docstring explicitly
+disclaims (docs/rework.md cycle-avoidance). The CLI runner
+(`frob.app.ticket_runner._evidence`) is the one place that calls
+`frob.testing.collect_python_tests` and passes the result in. A batch with
+any unresolvable id is rejected wholesale (Err(UnknownEvidence)) rather than
+partially applied, so a typo can never sneak an unrelated id into evidence.
+Dogfooded: `uv run frob ticket evidence T-0094 <6 node ids>` recorded this
+ticket's own evidence below.
+
+Evidence: see structured `evidence:` list above (6 pytest node ids in
+tests/test_tickets.py::TestEvidence, recorded via the new command itself).
+Filed: none.
+Gates: `frob check --ticket T-0094 --only gates` clean (exit 0; remaining
+118 warn-level violations are pre-existing repo-wide PERF/ARCH debt outside
+this ticket's scope, unaffected by this change). Widened scope mid-ticket
+(recorded via `frob ticket sweep`) to include `src/frob/__main__.py`,
+`docs/modules/tickets.md`, and `tickets.md` -- all required to wire the CLI
+subcommand and document it per house rules, and not anticipated by the
+ticket's original scope.
 
 <!-- ticket:T-0095 -->
 ```yaml
@@ -3186,7 +3308,7 @@ Gates: `frob check --ticket T-0095 --base 05951ad` and plain
 ```yaml
 id: T-0096
 title: 'frob ticket archive: rotate done tickets out of the active ledger'
-state: queued
+state: done
 kind: ux
 origin: agent
 created: '2026-07-17'
@@ -3196,12 +3318,66 @@ scope:
 - src/frob/tickets/**
 - src/frob/app/**
 - tests/**
-evidence: []
+- src/frob/__main__.py
+- docs/modules/tickets.md
+- tickets.md
+- tickets-archive.md
+evidence:
+- tests/test_tickets.py::TestArchive::test_moves_done_and_dropped_only
+- tests/test_tickets.py::TestArchive::test_idempotent_second_run_moves_nothing
+- tests/test_tickets.py::TestArchive::test_nothing_to_archive_is_zero
+- tests/test_tickets.py::TestArchive::test_load_queue_merges_active_and_archive
+- tests/test_tickets.py::TestArchive::test_blocked_by_archived_ticket_resolves_closed
+- tests/unit/test_ticket_store.py::TestArchiveLedger::test_archive_path_at_root
+- tests/unit/test_ticket_store.py::TestArchiveLedger::test_load_archive_missing_file_is_empty
+- tests/unit/test_ticket_store.py::TestArchiveLedger::test_write_then_load_archive_round_trips
+- tests/unit/test_ticket_store.py::TestArchiveLedger::test_archive_format_matches_ledger_marker
 attachments: []
 acceptance: []
 threat: null
 ```
 tickets.md is 2100+ lines and grows with every done report; agents hand-edit it by string surgery (three evidence failures already) and re-read big chunks every mission. Add frob ticket archive moving done/dropped tickets verbatim to tickets-archive.md (same format, grep-compatible, still tracked); active ledger stays a few hundred lines. Single-file model preserved -- just two files by temperature. Complements T-0094 (evidence CLI).
+
+## Done report
+
+Changed:
+- src/frob/tickets/_store.py::archive_path
+- src/frob/tickets/_store.py::load_archive
+- src/frob/tickets/_store.py::write_archive
+- src/frob/tickets/_store.py::_render_ledger (header parameter)
+- src/frob/tickets/__init__.py::archive
+- src/frob/tickets/__init__.py::load_active (renamed from the old
+  active-only load_queue body)
+- src/frob/tickets/__init__.py::load_queue (redefined: now merges active +
+  archive via the new `_load_merged` helper)
+- src/frob/tickets/__init__.py::transition (blocker resolution now reads
+  `_load_merged`, so an archived blocker still resolves as closed)
+- src/frob/app/ticket_runner.py::_archive, `_list` switched to `load_active`
+- src/frob/app/config.py, src/frob/__main__.py (archive subparser)
+- docs/modules/tickets.md (Storage, Public API, Storage internals)
+
+`tickets-archive.md` is the same ledger section format as `tickets.md`,
+just a different header. `load_queue` merges both files (DuplicateId on an
+id collision between them) because blocked_by/parent references and gate
+joins must keep resolving after a ticket is archived -- a done ticket that
+becomes a blocker's target must still read as closed, not unknown/open
+(covered by test_blocked_by_archived_ticket_resolves_closed). `frob ticket
+list`/`doable` deliberately read the active file only (`load_active`), so
+the archive never bloats them back up -- the whole point of archiving.
+`archive()` is idempotent: a second run with nothing newly done/dropped
+returns Ok(0) and touches neither file.
+
+Evidence: see structured `evidence:` list above (9 pytest node ids across
+tests/test_tickets.py::TestArchive and
+tests/unit/test_ticket_store.py::TestArchiveLedger, recorded via `frob
+ticket evidence`).
+Filed: none.
+Gates: `frob check --ticket T-0096 --only gates` clean (exit 0; remaining
+118 warn-level violations are pre-existing repo-wide debt outside this
+ticket's scope). Widened scope mid-ticket (via `frob ticket sweep`) to
+include `src/frob/__main__.py`, `docs/modules/tickets.md`, `tickets.md`,
+and `tickets-archive.md` -- the CLI wiring, docs, and both ledger files this
+feature necessarily touches, not anticipated by the ticket's original scope.
 
 <!-- ticket:T-0097 -->
 ```yaml
@@ -3241,7 +3417,7 @@ README.md includes it above the H1. frob check exit 0.
 ```yaml
 id: T-0098
 title: frob ticket attach without path should error usefully outside a TTY
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-17'
@@ -3251,12 +3427,45 @@ scope:
 - src/frob/tickets/**
 - src/frob/app/**
 - tests/**
-evidence: []
+- docs/modules/tickets.md
+- tickets.md
+- src/frob/__main__.py
+evidence:
+- tests/system/test_cli_ticket.py::TestTicketAttachNonInteractive::test_attach_without_path_fails_fast_off_tty
 attachments: []
 acceptance: []
 threat: null
 ```
 Malmberg adoption agent gap report: frob ticket attach with no path argument attempts clipboard-image capture even in a non-interactive agent session, instead of failing fast with a clear message (or accepting a text note). Agents cannot paste from a clipboard; the command should detect no-TTY and error with remedy text.
+
+## Done report
+
+Changed:
+- src/frob/app/ticket_runner.py::_attach (stdin.isatty() check before any
+  clipboard attempt)
+- docs/modules/tickets.md (Clipboard capture)
+
+The check lives in the CLI runner, not `frob.tickets.attach` -- the library
+function stays a pure "copy these bytes from a path or the clipboard"
+primitive; the CLI is what decides whether the clipboard should even be
+offered. Non-TTY + no path now exits 1 immediately with remedy text
+("pass an explicit file path: frob ticket attach <id> <path>") instead of
+spawning a clipboard backend (wl-paste/xclip/powershell.exe/pngpaste) that
+can never produce an image in a headless agent session -- the actual
+adoption-agent gap report this ticket exists to close.
+
+Evidence: see structured `evidence:` list above (1 pytest node id,
+tests/system/test_cli_ticket.py::TestTicketAttachNonInteractive, an
+end-to-end subprocess test with a 10s timeout to catch a hang, recorded via
+`frob ticket evidence`).
+Filed: none.
+Gates: `frob check --ticket T-0098 --only gates` clean (exit 0; remaining
+118 warn-level violations are pre-existing repo-wide debt outside this
+ticket's scope). Widened scope mid-ticket (via `frob ticket sweep`) to
+include `docs/modules/tickets.md`, `tickets.md`, and `src/frob/__main__.py`
+-- the doc update this house rule requires, plus files already modified on
+this branch by the sibling T-0094/T-0096 tickets worked in the same
+session, not anticipated by the ticket's original scope.
 
 <!-- ticket:T-0099 -->
 ```yaml
@@ -3392,13 +3601,14 @@ flag to drive `add_evidence` from `frob ticket close --evidence` would
 touch src/frob/__main__.py, src/frob/app/**, and docs/** -- all outside
 this ticket's scope; filed as a follow-up.
 Evidence: see evidence: list above (all collected, pytest --collect-only verified).
-Filed: T-0103 (CLI wiring for `frob ticket close --evidence`, outside T-0102 scope).
+Filed: T-0106 (CLI wiring for `frob ticket close --evidence`; renumbered from
+branch-local T-0103 at merge -- id collision with the store-capacity bug).
 Gates: `frob check --ticket T-0102` and plain `frob check` both exit 0
 (gates stage genuinely executes, no violations introduced).
 
-<!-- ticket:T-0103 -->
+<!-- ticket:T-0106 -->
 ```yaml
-id: T-0103
+id: T-0106
 title: Wire frob ticket new/close --evidence to tickets.add_evidence
 state: queued
 kind: feature
@@ -3418,11 +3628,11 @@ attachments: []
 acceptance: []
 threat: null
 ```
-T-0102 added frob.tickets.validate_evidence/add_evidence (schema-validated, in-process path for landing ticket evidence) but left them unwired to the CLI because src/frob/__main__.py, src/frob/app/config.py, src/frob/app/ticket_runner.py, and docs/** are outside T-0102's declared scope (src/frob/check/**, src/frob/gates/**, src/frob/tickets/**, tests/**). Add --evidence (repeatable) to 'frob ticket new' and 'frob ticket close', wire through AppConfig.ticket_evidence, call add_evidence/TicketSpec.evidence, and document in docs/modules/tickets.md + docs/commands/check.md. This removes the last reason for agents to hand-edit the evidence: YAML block in tickets.md directly.
+T-0102 added frob.tickets.validate_evidence/add_evidence but left them unwired from the new/close CLI (out of scope). MERGE NOTE: the standalone `frob ticket evidence` subcommand (T-0094) landed in parallel and covers the append-after-the-fact path; this ticket's remaining value is only the `--evidence` convenience flags on new/close. Re-evaluate scope before starting; drop if T-0094's surface suffices.
 
-<!-- ticket:T-0104 -->
+<!-- ticket:T-0107 -->
 ```yaml
-id: T-0104
+id: T-0107
 title: Wire frob check --stamp-baseline/--delta CLI flags and docs
 state: queued
 kind: feature
@@ -3441,11 +3651,11 @@ attachments: []
 acceptance: []
 threat: null
 ```
-T-0095 added frob.gates.stamp_baseline/load_baseline/is_baseline_stale/delta_violations (src/frob/gates/_baseline.py) and threaded a delta: bool param through frob.check.run_check/_run_gates (src/frob/check/**), but left the --stamp-baseline and --delta CLI flags and docs/modules/gates.md and docs/commands/check.md documentation unwired because src/frob/__main__.py, src/frob/app/check_runner.py, and docs/** are outside T-0095's declared scope (src/frob/check/**, src/frob/gates/**, tests/**, tickets.md). Add --stamp-baseline (calls frob.gates.stamp_baseline with the gates report's violations, mirroring --stamp-coverage's wiring in check_runner.py) and --delta (threads delta=True into run_check) to 'frob check', and document the agent-workflow motivation (why --delta exists: token cost of re-reading ~100 pre-existing warn-level violations per check run) in docs/modules/gates.md and docs/commands/check.md.
+T-0095 added frob.gates.stamp_baseline/load_baseline/is_baseline_stale/delta_violations and threaded delta through run_check, but the --stamp-baseline/--delta CLI flags and docs remain unwired (outside T-0095 scope). Mirror --stamp-coverage's wiring in check_runner.py; document the agent-workflow motivation in docs/modules/gates.md + docs/commands/check.md. (Renumbered from branch-local T-0104 at merge.)
 
-<!-- ticket:T-0105 -->
+<!-- ticket:T-0108 -->
 ```yaml
-id: T-0105
+id: T-0108
 title: SCOPE001 flags files already committed by earlier tickets on the same branch
 state: queued
 kind: bug
@@ -3461,4 +3671,34 @@ attachments: []
 acceptance: []
 threat: null
 ```
-Discovered while batching T-0102/T-0095/T-0101 on one branch with per-ticket commits: scope_gate diffs unconditionally against --base (default 'main'), so once ticket A commits a change to file X, every later ticket B on the same branch (even with --base defaulted) sees X in its diff and gets a false SCOPE001 if X is outside B's declared scope -- even though B never touched X. Workaround used in this session: pass --base <previous-ticket-commit-sha> explicitly per check invocation. This is fragile (requires the caller to track commit shas) and easy to forget, silently reintroducing false positives. Consider: frob check --ticket should default --base to the ticket's own frob:ticket start commit/prework-sweep point rather than a fixed ref, or scope_gate should diff against the working tree's last commit when no explicit --base is given.
+Discovered while batching T-0102/T-0095/T-0101 on one branch with per-ticket commits: scope_gate diffs unconditionally against --base (default 'main'), so once ticket A commits a change to file X, every later ticket B on the same branch sees X in its diff and gets a false SCOPE001. Session workaround: explicit --base <prior-commit> per invocation -- fragile. Consider defaulting --ticket checks' base to the ticket's own prework-sweep commit. (Renumbered from branch-local T-0105 at merge.)
+
+<!-- ticket:T-0103 -->
+```yaml
+id: T-0103
+title: std.infra drops declared store capacity (UTILIZATION can never target a store)
+state: done
+kind: bug
+origin: agent
+created: '2026-07-17'
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/**
+- tests/unit/strata/**
+- docs/strata/**
+- tickets.md
+evidence:
+- tests/unit/strata/test_infra.py::TestStoreCapacity::test_store_capacity_maps_through_to_the_kernel_node
+attachments: []
+acceptance: []
+threat: null
+```
+T-0072 litmus gap report: store { capacity N unit replicas A..B } parses, but _infra.py::_elaborate_store hardcodes capacity=None, so utilization claims on stores always refute 'declares no capacity'. Map the surface capacity through to the kernel Node exactly as _elaborate.py does for NodeDecl.
+
+## Done report
+
+_infra.py::_elaborate_store now maps StoreDecl.capacity to the kernel
+Capacity exactly as _elaborate.py does for nodes (import aliased to
+KernelCapacity to avoid the surface-model clash). One regression test;
+all strata tests green; ruff/ty clean.

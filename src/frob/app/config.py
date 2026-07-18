@@ -183,6 +183,7 @@ class AppConfig(BaseModel):
     ticket_caption: str = ""
     ticket_attach_path: Path | None = None
     ticket_json: bool = False
+    ticket_evidence_ids: list[str] = []
 
     # test
     test_all: bool = False
@@ -349,6 +350,7 @@ class AppConfig(BaseModel):
             "ticket_scope",
             "ticket_blocked_by",
             "ticket_acceptance",
+            "ticket_evidence_ids",
             "test_lang",
             "perf_argv",
             "mutate_argv",
