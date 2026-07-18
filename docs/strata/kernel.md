@@ -251,6 +251,21 @@ source's own demand, scaled by `fanout` (default 1.0 when not declared).
 a thin wrapper over `FactBase.propagated_demand`, which also returns a
 witness.
 
+**Unresolvable rate: propagates, does not drop.** A flow can declare a
+`rate` that fails to resolve to a base value -- `Quantity.base_value()`
+returns `Err` (e.g. an unknown unit). `FactBase.propagated_demand` treats
+that hop exactly like a flow with no `rate` declared at all: it recurses
+into the source's own propagated demand instead of contributing 0 or the
+unresolvable number. This is a deliberate behavior shift (T-0066): an
+earlier version silently dropped such flows from the demand sum, which
+undercounts load through a model with a unit typo. The current rule fails
+toward overcounting (propagating) rather than undercounting (dropping),
+consistent with deny-by-default (charter law 2) -- a REFUTED verdict from
+an inflated demand is recoverable (fix the unit, or the claim), a PROVED
+verdict from a silently dropped flow is not. See
+`tests/unit/strata/test_capacity.py::TestPropagatedDemand::test_unresolvable_rate_propagates_upstream_demand`
+for the pinned example.
+
 **Cycle rule (v0, deliberately conservative).** A cycle of *undeclared-rate*
 flows is only a problem if something actually feeds it: `propagated_demand`
 treats a cycle as `+inf` (with the cycle as witness) exactly when it is

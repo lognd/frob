@@ -1161,12 +1161,24 @@ impl Parser {
         Ok(())
     }
 
-    /// queue := "queue" ID "{" queue_prop (";" queue_prop)* "}"?
+    /// queue := "queue" ID (":" TRUST)? "{" queue_prop (";" queue_prop)* "}"?
     /// queue_prop := "delivery" IDENT | "ordering" IDENT | "attr" ATTRVAL
     ///             | "clearance" IDENT
+    ///
+    /// WHY optional TRUST: T-0093 -- queue previously had no TRUST clause at
+    /// all and the elaborator hardcoded a `"trusted"` default
+    /// (docs/strata/surface.md#std-infra deviation note). The clause is
+    /// optional (not mandatory) so every existing `.strata` source without it
+    /// keeps parsing identically; the elaborator still defaults to
+    /// `"trusted"` when omitted.
     fn parse_queue(&mut self, ast: &mut ModuleAst) -> Result<(), ParseError> {
         self.advance(); // 'queue'
         let id = self.expect_ident("queue id")?;
+        let mut trust: Option<String> = None;
+        if self.at_symbol(':') {
+            self.advance();
+            trust = Some(self.expect_ident("trust level")?);
+        }
         let mut delivery: Option<String> = None;
         let mut ordering: Option<String> = None;
         let mut attrs: Vec<String> = Vec::new();
@@ -1202,6 +1214,7 @@ impl Parser {
         }
         ast.queues.push(json!({
             "id": id,
+            "trust": trust,
             "delivery": delivery,
             "ordering": ordering,
             "attrs": attrs,
@@ -1273,11 +1286,21 @@ impl Parser {
         Ok(())
     }
 
-    /// balancer := "balancer" ID "{" balancer_prop (";" balancer_prop)* "}"?
+    /// balancer := "balancer" ID (":" TRUST)? "{" balancer_prop (";" balancer_prop)* "}"?
     /// balancer_prop := "policy" IDENT | "sticky"
+    ///
+    /// WHY optional TRUST: T-0093, same rationale as `parse_queue` above --
+    /// balancer had no TRUST clause and defaulted to `"trusted"` in the
+    /// elaborator; the clause is optional to stay backward-compatible with
+    /// every existing `.strata` source.
     fn parse_balancer(&mut self, ast: &mut ModuleAst) -> Result<(), ParseError> {
         self.advance(); // 'balancer'
         let id = self.expect_ident("balancer id")?;
+        let mut trust: Option<String> = None;
+        if self.at_symbol(':') {
+            self.advance();
+            trust = Some(self.expect_ident("trust level")?);
+        }
         let mut policy: Option<String> = None;
         let mut sticky = false;
         if self.at_symbol('{') {
@@ -1305,6 +1328,7 @@ impl Parser {
         }
         ast.balancers.push(json!({
             "id": id,
+            "trust": trust,
             "policy": policy,
             "sticky": sticky,
         }));
@@ -2047,6 +2071,33 @@ mod tests {
     }
 
     #[test]
+    fn parses_queue_with_explicit_trust() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0093: queue may now declare an explicit TRUST clause.
+        let v = ok("module m\nqueue q : authenticated { delivery at_least_once; }");
+        let q = &v["queues"][0];
+        assert_eq!(q["id"], "q");
+        assert_eq!(q["trust"], "authenticated");
+        assert_eq!(q["delivery"], "at_least_once");
+    }
+
+    #[test]
+    fn parses_queue_without_trust_defaults_to_null() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0093: omitting TRUST keeps parsing (backward compatible); the
+        // elaborator (not the parser) supplies the "trusted" default.
+        let v = ok("module m\nqueue q { delivery at_least_once; }");
+        assert_eq!(v["queues"][0]["trust"], serde_json::Value::Null);
+    }
+
+    #[test]
+    fn parses_bare_queue_with_trust() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok("module m\nqueue q : authenticated");
+        assert_eq!(v["queues"][0]["trust"], "authenticated");
+    }
+
+    #[test]
     fn parses_cdn_with_all_properties() {
         // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
         let v = ok(r#"module m
@@ -2099,6 +2150,25 @@ mod tests {
         let v = ok("module m\nbalancer b");
         assert_eq!(v["balancers"][0]["policy"], serde_json::Value::Null);
         assert_eq!(v["balancers"][0]["sticky"], false);
+        assert_eq!(v["balancers"][0]["trust"], serde_json::Value::Null);
+    }
+
+    #[test]
+    fn parses_balancer_with_explicit_trust() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0093: balancer may now declare an explicit TRUST clause.
+        let v = ok("module m\nbalancer b : authenticated { policy round_robin; }");
+        let b = &v["balancers"][0];
+        assert_eq!(b["id"], "b");
+        assert_eq!(b["trust"], "authenticated");
+        assert_eq!(b["policy"], "round_robin");
+    }
+
+    #[test]
+    fn parses_bare_balancer_with_trust() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok("module m\nbalancer b : authenticated");
+        assert_eq!(v["balancers"][0]["trust"], "authenticated");
     }
 
     #[test]

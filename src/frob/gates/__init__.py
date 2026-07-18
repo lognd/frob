@@ -195,9 +195,72 @@ def _test_edges(snapshot: GraphSnapshot, kind: str) -> dict[str, list[Edge]]:
     return result
 
 
-def _valid_edges(edges: list[Edge], tests: CollectedTests) -> list[Edge]:
-    """Edges whose `src` (the test's own symref) is still a collected node id."""
-    return [e for e in edges if _symref_to_nodeid(e.src) in tests.node_ids]
+# Extensions frob parses but does not (yet) run/collect executed test
+# evidence for -- `collect_python_tests` only spawns pytest, so a rust/ts/c/
+# cpp `frob:tests` edge can never have its `src` land in `tests.node_ids`, no
+# matter which file the directive itself lives in (T-0090).
+_NATIVE_TEST_EXTENSIONS = frozenset(
+    {".rs", ".ts", ".tsx", ".c", ".h", ".cpp", ".hpp", ".cc", ".hh"}
+)
+
+
+def _is_native_test_src(src: str) -> bool:
+    """True if `src`'s file extension has no execution-based test collector
+    (see `_NATIVE_TEST_EXTENSIONS`); pytest is the only one frob runs."""
+    path = src.split("::", 1)[0]
+    return PurePosixPath(path).suffix.lower() in _NATIVE_TEST_EXTENSIONS
+
+
+def _is_native_test_symref(src: str) -> bool:
+    """True if `src`'s qualname follows a test-code convention this module
+    already trusts elsewhere: a `tests` module/namespace segment (rust's
+    `#[cfg(test)] mod tests { ... }`, mirroring `_is_test_file`'s "tests" dir
+    check) or a `test_`/`_test` leaf name (the C/C++/TS convention, mirroring
+    `_is_test_path`'s python check). Extension alone (`_is_native_test_src`)
+    only says "no execution collector exists"; this says "and it actually
+    looks like test code" -- required together so a plain `frob:tests`
+    directive on a non-test rust/ts/c/cpp file (e.g. the target's own
+    `lib.rs`) cannot rubber-stamp itself as evidence (T-0090 review)."""
+    _, _, qualname = src.partition("::")
+    if not qualname:
+        return False
+    parts = qualname.split(".")
+    leaf = parts[-1]
+    return "tests" in parts[:-1] or leaf.startswith("test_") or leaf.endswith("_test")
+
+
+def _valid_edges(
+    edges: list[Edge],
+    tests: CollectedTests,
+    snapshot: GraphSnapshot | None = None,
+) -> list[Edge]:
+    """Edges whose `src` is a collected pytest node id, or -- for a language
+    frob has no execution-based test collector for (T-0090, tracked toward
+    real execution evidence by T-0092) -- a `src` that both looks like test
+    code (`_is_native_test_symref`) and resolves to a real bound symbol in
+    `snapshot`.
+
+    The comment DSL binds a `frob:tests` directive to its enclosing/following
+    symbol regardless of which file it lives in relative to its target
+    (`frob.graph.dsl.parse_directives`), so a directive whose src is a genuine
+    rust/ts/c/cpp test function is structurally authoritative the moment it
+    exists; frob just cannot (yet) prove the test actually ran the way it can
+    for pytest via `collect_python_tests` (that gap is T-0092's scope, not
+    this one). `snapshot` is optional so existing callers that only ever see
+    python evidence are unaffected.
+    """
+    valid: list[Edge] = []
+    for e in edges:
+        if _symref_to_nodeid(e.src) in tests.node_ids:
+            valid.append(e)
+        elif (
+            snapshot is not None
+            and _is_native_test_src(e.src)
+            and _is_native_test_symref(e.src)
+            and e.src in snapshot.symbols
+        ):
+            valid.append(e)
+    return valid
 
 
 # frob:ticket T-0018
@@ -1008,10 +1071,11 @@ def _test001_002_one(
     unit_edges: dict[str, list[Edge]],
     tests: CollectedTests,
     cfg: TestPolicy,
+    snapshot: GraphSnapshot,
 ) -> Violation | None:
     """The TEST001/TEST002 verdict for one public function/method, or None."""
     edges = unit_edges.get(record.symref, [])
-    valid = _valid_edges(edges, tests)
+    valid = _valid_edges(edges, tests, snapshot)
     # An explicit frob:tests edge is authoritative -- judge it by its valid
     # (collected) count. Only when NO explicit edge exists does a
     # conventionally named test (test_<name>) count toward coverage (T-0018).
@@ -1064,7 +1128,7 @@ def _test001_002(
             or _is_test_file(record.id.path)
         ):
             continue
-        verdict = _test001_002_one(record, unit_edges, tests, cfg)
+        verdict = _test001_002_one(record, unit_edges, tests, cfg, snapshot)
         if verdict is not None:
             violations.append(verdict)
     return tuple(violations)
@@ -1111,7 +1175,7 @@ def _test003(
     ordered_packages = sorted(_public_packages(snapshot))
     violations: list[Violation] = []
     for package in ordered_packages:
-        valid = _valid_edges(_edges_for_package(all_pairs, package), tests)
+        valid = _valid_edges(_edges_for_package(all_pairs, package), tests, snapshot)
         if len(valid) < cfg.min_integration:
             _log.info(
                 "TEST003: %s has %d/%d integration edges",
@@ -1231,7 +1295,7 @@ def _test004(
     e2e_edges = _test_edges(snapshot, "e2e")
     violations: list[Violation] = []
     for system in systems:
-        valid = _valid_edges(e2e_edges.get(system.id, []), tests)
+        valid = _valid_edges(e2e_edges.get(system.id, []), tests, snapshot)
         if len(valid) < system.min_e2e:
             _log.info(
                 "TEST004: %s has %d/%d e2e edges", system.id, len(valid), system.min_e2e

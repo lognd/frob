@@ -262,6 +262,76 @@ class TestCheckStampCoverage:
         assert stamp.exists()
 
 
+class TestCheckStampBaselineAndDelta:
+    """`frob check --stamp-baseline`/`--delta` CLI round trip (T-0107)."""
+
+    def test_stamp_baseline_writes_stamp(self, tmp_path):
+        # frob:tests tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta.test_stamp_baseline_writes_stamp
+        _git("init", "-q", "-b", "main", cwd=tmp_path)
+        _git("config", "user.email", "test@example.com", cwd=tmp_path)
+        _git("config", "user.name", "Test", cwd=tmp_path)
+        (tmp_path / "pkg.py").write_text(
+            "def add(x: int, y: int) -> int:\n    return x + y\n"
+        )
+        _git("add", "-A", cwd=tmp_path)
+        _git("commit", "-q", "-m", "init", cwd=tmp_path)
+
+        r = run("check", str(tmp_path), "--stamp-baseline")
+        out = r.stdout + r.stderr
+        assert r.returncode == 0, out
+        stamp = tmp_path / ".frob" / "baseline"
+        assert stamp.exists()
+
+    def test_delta_reports_only_new_violation(self, tmp_path):
+        # frob:tests tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta.test_delta_reports_only_new_violation
+        _git("init", "-q", "-b", "main", cwd=tmp_path)
+        _git("config", "user.email", "test@example.com", cwd=tmp_path)
+        _git("config", "user.name", "Test", cwd=tmp_path)
+        (tmp_path / "pkg.py").write_text(
+            "def add(x: int, y: int) -> int:\n    return x + y\n"
+        )
+        _git("add", "-A", cwd=tmp_path)
+        _git("commit", "-q", "-m", "init", cwd=tmp_path)
+
+        stamp = run("check", str(tmp_path), "--stamp-baseline")
+        assert stamp.returncode == 0, stamp.stdout + stamp.stderr
+
+        # Undelta'd run still sees the pre-existing violation.
+        full = run("check", str(tmp_path), "--only", "gates")
+        assert "add" in (full.stdout + full.stderr)
+
+        # A genuinely new violation appears alongside the baselined one.
+        (tmp_path / "pkg2.py").write_text(
+            "def sub(x: int, y: int) -> int:\n    return x - y\n"
+        )
+
+        delta = run("check", str(tmp_path), "--only", "gates", "--delta")
+        out = delta.stdout + delta.stderr
+        assert delta.returncode != 0, out
+        # Reported diagnostic lines (as opposed to internal debug logging,
+        # which still names every violation while computing them) carry the
+        # "[gates]" tag -- that's the set `--delta` actually filters.
+        reported = [line for line in out.splitlines() if "[gates]" in line]
+        assert any("pkg2.py" in line for line in reported)
+        assert not any("pkg.py:" in line for line in reported)
+
+    def test_delta_falls_back_to_full_set_when_no_baseline(self, tmp_path):
+        # frob:tests tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta.test_delta_falls_back_to_full_set_when_no_baseline
+        _git("init", "-q", "-b", "main", cwd=tmp_path)
+        _git("config", "user.email", "test@example.com", cwd=tmp_path)
+        _git("config", "user.name", "Test", cwd=tmp_path)
+        (tmp_path / "pkg.py").write_text(
+            "def add(x: int, y: int) -> int:\n    return x + y\n"
+        )
+        _git("add", "-A", cwd=tmp_path)
+        _git("commit", "-q", "-m", "init", cwd=tmp_path)
+
+        r = run("check", str(tmp_path), "--only", "gates", "--delta")
+        out = r.stdout + r.stderr
+        assert r.returncode != 0, out
+        assert "TEST001" in out
+
+
 class TestFrobTomlCheckDefaults:
     def test_check_skip_from_frob_toml(self, tmp_path):
         """[check] skip in frob.toml disables stages without CLI flags."""

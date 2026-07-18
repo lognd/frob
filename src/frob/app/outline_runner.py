@@ -10,6 +10,20 @@ from frob.outline import outline_file
 _log = get_logger(__name__)
 
 
+def _fall_back_to_map(cfg: AppConfig, target) -> None:  # noqa: ANN001
+    """`frob outline <dir>`: delegate to `frob map` for a directory target."""
+    from frob.app.config import AppConfig as _Cfg
+    from frob.app.map_runner import run as map_run
+
+    map_cfg = _Cfg(
+        subcommand=cfg.subcommand,
+        map_path=target,
+        map_json=cfg.outline_json,
+        map_all=cfg.outline_all,
+    )
+    map_run(map_cfg)
+
+
 # frob:doc docs/modules/app.md#runners
 def run(cfg: AppConfig) -> None:
     if cfg.outline_file is None:
@@ -17,19 +31,8 @@ def run(cfg: AppConfig) -> None:
         sys.exit(1)
 
     target = cfg.outline_file
-
-    # Fall back to map when given a directory
     if target.is_dir():
-        from frob.app.config import AppConfig as _Cfg
-        from frob.app.map_runner import run as map_run
-
-        map_cfg = _Cfg(
-            subcommand=cfg.subcommand,
-            map_path=target,
-            map_json=cfg.outline_json,
-            map_all=cfg.outline_all,
-        )
-        map_run(map_cfg)
+        _fall_back_to_map(cfg, target)
         return
 
     ctx = quiet_stdout_logs() if cfg.outline_json else contextlib.nullcontext()

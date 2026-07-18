@@ -395,29 +395,6 @@ def _add_clique_edges(node_ids: list[int], adjacency: list[tuple[int, int]]) -> 
             adjacency.append((node_ids[a], node_ids[b]))
 
 
-_STATEMENT_NODE_LABELS = frozenset(
-    {
-        "expression_statement",
-        "if_statement",
-        "for_statement",
-        "while_statement",
-        "return_statement",
-        "with_statement",
-        "try_statement",
-        "pass_statement",
-        "break_statement",
-        "continue_statement",
-        "raise_statement",
-        "assert_statement",
-        "global_statement",
-        "nonlocal_statement",
-        "import_statement",
-        "import_from_statement",
-        "delete_statement",
-    }
-)
-
-
 def _find_block(node: Any) -> Any | None:
     """Depth-first search for the first `block` node (a Python function
     body's statement container) under `node`."""
@@ -447,16 +424,25 @@ def _real_dataflow_graph(
     built from `frob.lang`'s actual statement nodes, not a token heuristic.
 
     Two edge kinds, both real (not proxied):
-    - **def-use**: for an `expression_statement > assignment` node, targets
-      (children before the `=` leaf) are labeled "def", the right-hand side
-      (children after `=`) "use"; every identifier within one statement is
-      pairwise-connected (the co-occurrence idea R5's proxy already had,
-      now scoped to a real statement boundary instead of a keyword-guessed
-      chunk).
+    - **def-use**: for an `assignment` node (bare or `expression_statement`-
+      wrapped, see below), targets (children before the `=` leaf) are
+      labeled "def", the right-hand side (children after `=`) "use"; every
+      identifier within one statement is pairwise-connected (the
+      co-occurrence idea R5's proxy already had, now scoped to a real
+      statement boundary instead of a keyword-guessed chunk).
     - **control-flow**: a sequencing edge from the last identifier node of
       statement *i* to the first identifier node of statement *i+1* --
       real adjacent-statement execution order, which the old co-occurrence
       proxy had no notion of at all.
+
+    Every direct child of `block` is a statement (`frob.lang.export_tree`
+    mirrors tree-sitter-python's grammar as-is, and this grammar does not
+    wrap simple statements -- `assignment`, bare `call`, etc. -- in an
+    `expression_statement` node the way the docstring above once assumed;
+    T-0117 found that assumption silently dropped every assignment
+    statement from the graph, collapsing unrelated functions down to
+    identical single-node graphs and WL-hash-colliding them). No filtering
+    by statement-type label is needed or correct here.
 
     Returns `None` (caller falls back to `_build_dataflow_graph`) when no
     `block` node is found under `tree` (a non-function region, or a body
@@ -466,7 +452,7 @@ def _real_dataflow_graph(
     block = _find_block(tree)
     if block is None or not block.children:
         return None
-    statements = tuple(c for c in block.children if c.label in _STATEMENT_NODE_LABELS)
+    statements = block.children
     if not statements:
         return None
 
@@ -517,7 +503,15 @@ def _assignment_ids(assign: Any, labels: list[str]) -> list[int]:
 
 
 def _statement_ids(stmt: Any, labels: list[str]) -> list[int]:
-    """Node ids (with def/use labels appended to `labels`) for one statement."""
+    """Node ids (with def/use labels appended to `labels`) for one statement.
+
+    `assignment` is handled whether it's the statement itself (this
+    grammar's actual shape -- see `_real_dataflow_graph`'s docstring) or
+    wrapped one level under `expression_statement` (kept for robustness
+    against other tree-sitter grammar builds that do wrap it).
+    """
+    if stmt.label == "assignment":
+        return _assignment_ids(stmt, labels)
     if stmt.children and stmt.children[0].label == "assignment":
         return _assignment_ids(stmt.children[0], labels)
     return _labeled_ids(_leaf_labels(stmt), "use", labels)

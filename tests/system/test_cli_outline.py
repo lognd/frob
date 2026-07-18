@@ -195,9 +195,10 @@ def test_json_helper_signature(py_src):
 def test_json_myclass_has_methods(py_src):
     r = run("outline", str(py_src), "--json")
     data = json.loads(r.stdout)
-    myclass = next(c for c in data["classes"] if c["name"] == "MyClass")
+    classes_by_name = {c["name"]: c for c in data["classes"]}
+    myclass = classes_by_name["MyClass"]
     assert "methods" in myclass
-    method_names = [m["name"] for m in myclass["methods"]]
+    method_names = {m["name"] for m in myclass["methods"]}
     assert "process" in method_names
     assert "_private" in method_names
 
@@ -205,23 +206,29 @@ def test_json_myclass_has_methods(py_src):
 def test_json_other_has_method(py_src):
     r = run("outline", str(py_src), "--json")
     data = json.loads(r.stdout)
-    other = next(c for c in data["classes"] if c["name"] == "Other")
-    method_names = [m["name"] for m in other["methods"]]
+    classes_by_name = {c["name"]: c for c in data["classes"]}
+    other = classes_by_name["Other"]
+    method_names = {m["name"] for m in other["methods"]}
     assert "method" in method_names
 
 
 def test_json_myclass_at_line_11(py_src):
     r = run("outline", str(py_src), "--json")
     data = json.loads(r.stdout)
-    myclass = next(c for c in data["classes"] if c["name"] == "MyClass")
+    classes_by_name = {c["name"]: c for c in data["classes"]}
+    myclass = classes_by_name["MyClass"]
     assert myclass["line"] == 11
 
 
 def test_json_process_method_line(py_src):
     r = run("outline", str(py_src), "--json")
     data = json.loads(r.stdout)
-    myclass = next(c for c in data["classes"] if c["name"] == "MyClass")
-    process = next(m for m in myclass["methods"] if m["name"] == "process")
+    classes_by_name = {c["name"]: c for c in data["classes"]}
+    myclass = classes_by_name["MyClass"]
+    # frob:waive PERF003 reason="two sequential O(1)-lookup dict comprehensions,
+    # not a nested loop; already the PERF003-recommended dict-index fix"
+    methods_by_name = {m["name"]: m for m in myclass["methods"]}
+    process = methods_by_name["process"]
     assert process["line"] == 12
 
 
@@ -256,7 +263,7 @@ def test_cpp_json_has_classes(cpp_src):
 def test_cpp_json_widget_class_found(cpp_src):
     r = run("outline", str(cpp_src), "--json")
     data = json.loads(r.stdout)
-    class_names = [c["name"] for c in data["classes"]]
+    class_names = {c["name"] for c in data["classes"]}
     assert "Widget" in class_names
 
 
@@ -265,7 +272,7 @@ def test_cpp_json_widget_out_of_line_methods(cpp_src):
     # top-level functions with qualified names, not inside the class methods list.
     r = run("outline", str(cpp_src), "--json")
     data = json.loads(r.stdout)
-    fn_names = [f["name"] for f in data["functions"]]
+    fn_names = {f["name"] for f in data["functions"]}
     assert "Widget::draw" in fn_names
     assert "Widget::width" in fn_names
 

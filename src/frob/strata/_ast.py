@@ -288,11 +288,18 @@ class CacheDecl(BaseModel):
 
 # frob:doc docs/strata/surface.md#std-infra
 class QueueDecl(BaseModel):
-    """A parsed `queue` statement (std.infra): carries delivery/ordering semantics."""
+    """A parsed `queue` statement (std.infra): carries delivery/ordering semantics.
+
+    `trust` is optional (T-0093): the grammar now accepts `queue X : TRUST`;
+    when omitted the elaborator (`_infra.py::_elaborate_queue`) applies the
+    documented `"trusted"` default instead of the parser silently assuming
+    one (docs/strata/surface.md#std-infra).
+    """
 
     model_config = ConfigDict(frozen=True)
 
     id: str
+    trust: str | None = None
     delivery: str | None = None
     ordering: str | None = None
     attrs: tuple[str, ...] = ()
@@ -317,11 +324,18 @@ class CdnDecl(BaseModel):
 
 # frob:doc docs/strata/surface.md#std-infra
 class BalancerDecl(BaseModel):
-    """A parsed `balancer` statement (std.infra): a routing policy node."""
+    """A parsed `balancer` statement (std.infra): a routing policy node.
+
+    `trust` is optional (T-0093): the grammar now accepts `balancer X : TRUST`;
+    when omitted the elaborator (`_infra.py::_elaborate_balancer`) applies the
+    documented `"trusted"` default instead of the parser silently assuming
+    one (docs/strata/surface.md#std-infra).
+    """
 
     model_config = ConfigDict(frozen=True)
 
     id: str
+    trust: str | None = None
     policy: str | None = None
     sticky: bool = False
 

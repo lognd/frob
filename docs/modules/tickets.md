@@ -353,6 +353,16 @@ def atomic_write(path: Path, content: str | bytes) -> Result[None, TicketError]
   unresolvable id with remedy text, instead of a typo silently surfacing
   later as COV003 after close); `archive` moves every done/dropped ticket
   from the active ledger into `tickets-archive.md`, verbatim.
+- `new --evidence <id>...` and `close --evidence <id>...` (T-0106) route
+  through the same `add_evidence` validation as the standalone `evidence`
+  subcommand -- both are convenience flags, not a separate write path.
+  `new --evidence` appends evidence to the just-created ticket after
+  `new_ticket` succeeds; an unresolvable id there leaves the ticket
+  created (creation already happened) but exits nonzero with no evidence
+  attached. `close --evidence` applies evidence *before* the DONE
+  transition and, on any unresolvable id, refuses the transition
+  entirely -- a bad `--evidence` id can never close a ticket on
+  unvalidated evidence.
 
 Ticket kinds: feature, bug, security, ux, docs, invariant, incident.
 - `--kind incident` seeds a blameless-postmortem body template (Summary,

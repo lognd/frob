@@ -22,6 +22,8 @@ from tree_sitter_language_pack import get_parser
 from typani import Err, ErrorSet, Ok
 from typani.result import Result
 
+from frob.lang._common import child_by_field as _child_by_field
+from frob.lang._common import child_text as _child_text
 from frob.lang._common import export_tree as _export_tree
 from frob.lang._common import iter_cpp_functions as _iter_cpp_functions
 from frob.lang._extract import COMMENT_TYPES, extract
@@ -192,6 +194,22 @@ def cpp_function_nodes(tree: Tree) -> tuple[tuple[Node, str], ...]:
     return _iter_cpp_functions(tree.root_node)
 
 
+# frob:doc docs/modules/graph.md#public-api
+def child_by_field(node: Node, field: str) -> Node | None:
+    """`node.child_by_field_name(field)`, exposed so `frob.arch` and
+    `frob.dup._legacy`'s raw-node walks share one field-lookup call
+    instead of each keeping a local copy (see `frob.lang._common`)."""
+    return _child_by_field(node, field)
+
+
+# frob:doc docs/modules/graph.md#public-api
+def node_text(node: Node | None) -> str:
+    """Decode `node`'s own text, or '' if absent. Public alias of
+    `frob.lang._common.child_text` for callers doing raw node traversal
+    outside the extraction pipeline (`frob.arch`, `frob.dup._legacy`)."""
+    return _child_text(node)
+
+
 # frob:doc docs/modules/dup.md#public-api
 def symbol_tree(path: Path, span: tuple[int, int]) -> Result[TreeNode, LangError]:
     """The `TreeNode` subtree covering `span` (1-based, inclusive lines) in `path`.
@@ -256,9 +274,11 @@ __all__ = [
     "RawComment",
     "RawSymbol",
     "SymbolKind",
+    "child_by_field",
     "cpp_function_nodes",
     "extract_imports",
     "iter_identifiers",
+    "node_text",
     "parse_file",
     "raw_tree",
     "resolve_local_import",

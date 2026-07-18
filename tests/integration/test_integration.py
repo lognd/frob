@@ -66,6 +66,8 @@ def test_map_total_lines_matches_file_sum(mini_project):
     proj_map = map_project(mini_project)
     for node in proj_map.files:
         path = mini_project / node.path
+        # frob:waive PERF002 reason="each file's line count requires reading that
+        # file exactly once; there is no per-iteration cache to hoist this into"
         actual_lines = path.read_bytes().count(b"\n") + 1
         assert node.lines == actual_lines
 

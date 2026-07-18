@@ -60,6 +60,10 @@ paint(text: str, code: str, enabled: bool = True) -> str
     # Wraps `text` in the SGR `code` ANSI escape when `enabled`, otherwise
     # returns it verbatim; pairs with should_color().
 
+RED, GREEN, YELLOW, CYAN, BOLD, DIM
+    # The SGR codes callers pass as paint()'s `code` argument; the only
+    # palette frob's CLI output uses.
+
 # frob/logging/quiet.py
 quiet_stdout_logs() -> Iterator[None]
     # Context manager that raises stdout log handlers to WARNING for the

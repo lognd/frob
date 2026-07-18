@@ -73,11 +73,19 @@ def markdown_anchors(doc_path: str, text: str) -> tuple[Edge, ...]:
 
 
 def _enclosing_src(comment: RawComment, path: str) -> str:
-    """Binding target: enclosing symbol, else following symbol, else bare path."""
-    if comment.enclosing is not None:
-        return f"{path}::{comment.enclosing}"
+    """Binding target: following symbol, else enclosing symbol, else bare path.
+
+    `following` wins when both are set (T-0044): a directive placed directly
+    above a nested method or property must bind to that method, not to the
+    enclosing class whose span happens to contain the comment line. Only
+    when nothing follows within range does the comment fall back to
+    whatever symbol encloses it (e.g. a directive as the first line inside a
+    function body).
+    """
     if comment.following is not None:
         return f"{path}::{comment.following}"
+    if comment.enclosing is not None:
+        return f"{path}::{comment.enclosing}"
     return path
 
 

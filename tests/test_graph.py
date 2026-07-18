@@ -198,6 +198,140 @@ def foo() -> None:
         edges, _ = parse_directives(pf)
         assert edges[0].src == f"{pf.path}::foo"
 
+    def test_binds_to_nested_method_not_enclosing_class(self, tmp_path: Path) -> None:
+        # frob:ticket T-0044
+        src = """class Foo:
+    # frob:ticket T-0044
+    def bar(self) -> None:
+        pass
+"""
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, _ = parse_directives(pf)
+        assert edges[0].src == f"{pf.path}::Foo.bar"
+
+    def test_binds_three_stacked_directives_to_def(self, tmp_path: Path) -> None:
+        # frob:ticket T-0100
+        src = """# frob:ticket T-0100
+# frob:tests tests/a.py::foo kind="unit"
+# frob:doc docs/a.md#foo
+def foo() -> None:
+    pass
+"""
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        assert len(edges) == 3
+        for edge in edges:
+            assert edge.src == f"{pf.path}::foo"
+
+    def test_binds_five_stacked_directives_to_def(self, tmp_path: Path) -> None:
+        # frob:ticket T-0100
+        src = """# frob:ticket T-0100
+# frob:ticket T-0101
+# frob:ticket T-0102
+# frob:ticket T-0103
+# frob:ticket T-0104
+def foo() -> None:
+    pass
+"""
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        assert len(edges) == 5
+        for edge in edges:
+            assert edge.src == f"{pf.path}::foo"
+
+    def test_directive_binds_past_trailing_comment_on_def_line(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:ticket T-0100
+        #
+        # A trailing comment on the def line itself (e.g. `# noqa: ...`)
+        # must not be treated as a continuation of the directive's block --
+        # doing so pushes the following-window past the def and loses the
+        # binding entirely.
+        src = """# frob:ticket T-0100
+def foo():  # noqa: N802 - rule-id naming convention
+    pass
+"""
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        assert len(edges) == 1
+        assert edges[0].src == f"{pf.path}::foo"
+
+    def test_stacked_directives_bind_past_trailing_comment_on_def_line(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:ticket T-0100
+        src = """# frob:ticket T-0100
+# frob:tests tests/a.py::foo kind="unit"
+# frob:doc docs/a.md#foo
+def foo():  # noqa: N802 - rule-id naming convention
+    pass
+"""
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        assert len(edges) == 3
+        for edge in edges:
+            assert edge.src == f"{pf.path}::foo"
+
+    def test_directive_does_not_chain_upward_through_prior_trailing_comment(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:ticket T-0100
+        #
+        # The line above the directive has its own trailing comment (on a
+        # statement, not the def). That trailing comment must not extend
+        # the directive's block upward either -- the directive's binding to
+        # the def below is unaffected by what precedes it.
+        src = """x = 1  # a trailing comment on unrelated code
+# frob:ticket T-0100
+def foo() -> None:
+    pass
+"""
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        assert len(edges) == 1
+        assert edges[0].src == f"{pf.path}::foo"
+
+    def test_directive_separated_from_def_by_non_directive_comment(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:ticket T-0100
+        #
+        # A plain (non-frob:) comment directly between a directive and its
+        # def is part of the same contiguous comment block, so the
+        # directive still binds to the def below.
+        src = """# frob:ticket T-0100
+# a plain explanatory comment, not a directive
+def foo() -> None:
+    pass
+"""
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        assert len(edges) == 1
+        assert edges[0].src == f"{pf.path}::foo"
+
+    def test_directive_separated_from_def_by_blank_line(self, tmp_path: Path) -> None:
+        # frob:ticket T-0100
+        #
+        # A single blank line between the directive and its def is still
+        # within the following-window (2 lines), so it still binds.
+        src = """# frob:ticket T-0100
+
+def foo() -> None:
+    pass
+"""
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        assert len(edges) == 1
+        assert edges[0].src == f"{pf.path}::foo"
+
     def test_bare_file_when_no_binding(self, tmp_path: Path) -> None:
         src = "# frob:ticket T-0003\n\n\n\n\ndef far_away() -> None:\n    pass\n"
         pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok

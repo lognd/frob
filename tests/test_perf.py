@@ -194,13 +194,14 @@ def test_load_artifact_no_artifact_is_err(tmp_path):
     assert result.danger_err.name == "NoArtifact"
 
 
-def test_heat_joins_pstats_rows_onto_symbol_spans(tmp_path):
-    """`heat` attributes profiled time to the enclosing symbol and ranks by
-    cum_s desc."""
+def _init_hot_cold_workload(tmp_path: Path) -> None:
+    """Git-init `tmp_path` and drop a `workload.py` with a hot/cold function
+    pair -- the fixture shared by the heat-join test below."""
     # frob:ticket T-0021
-    # frob:tests src/frob/perf/_heat.py::heat
     subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
-    (tmp_path / "workload.py").write_text(
+    _write(
+        tmp_path,
+        "workload.py",
         "def hot():\n"
         "    total = 0\n"
         "    for i in range(200000):\n"
@@ -211,8 +212,16 @@ def test_heat_joins_pstats_rows_onto_symbol_spans(tmp_path):
         "    return 1\n"
         "\n"
         "hot()\n"
-        "cold()\n"
+        "cold()\n",
     )
+
+
+def test_heat_joins_pstats_rows_onto_symbol_spans(tmp_path):
+    """`heat` attributes profiled time to the enclosing symbol and ranks by
+    cum_s desc."""
+    # frob:ticket T-0021
+    # frob:tests src/frob/perf/_heat.py::heat
+    _init_hot_cold_workload(tmp_path)
     result = profile_command(["workload.py"], tmp_path)
     assert result.is_ok, result.err
     artifact = result.danger_ok
@@ -220,9 +229,9 @@ def test_heat_joins_pstats_rows_onto_symbol_spans(tmp_path):
     snapshot = _snapshot(tmp_path)
     report = heat(artifact, snapshot)
 
-    refs = [e.ref for e in report.entries]
-    assert "workload.py::hot" in refs
-    hot_entry = next(e for e in report.entries if e.ref == "workload.py::hot")
+    entries_by_ref = {entry.ref: entry for entry in report.entries}
+    assert "workload.py::hot" in entries_by_ref
+    hot_entry = entries_by_ref["workload.py::hot"]
     assert hot_entry.cum_s >= 0.0
     if len(report.entries) > 1:
         assert report.entries[0].cum_s >= report.entries[-1].cum_s

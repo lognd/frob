@@ -104,3 +104,6 @@ line-length = 88
 testpaths = ["tests"]
 addopts = "-q -n auto"
 pythonpath = ["."]
+markers = [
+    "slow: long-running system tests excluded from quick loops",
+]

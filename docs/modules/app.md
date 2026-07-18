@@ -182,6 +182,7 @@ directories once.
 <!-- frob:describes src/frob/excludes.py::load_exclude_globs -->
 <!-- frob:describes src/frob/excludes.py::is_excluded -->
 <!-- frob:describes src/frob/excludes.py::is_skipped_dir -->
+<!-- frob:describes src/frob/excludes.py::BUILTIN_SKIP_DIRS -->
 
 ```python
 # frob/excludes.py
@@ -195,3 +196,6 @@ is_skipped_dir(name: str) -> bool
     # True if a directory name is in the builtin always-pruned set
     # (__pycache__, .git, node_modules, ...), independent of frob.toml.
 ```
+
+`BUILTIN_SKIP_DIRS` is the frozenset backing `is_skipped_dir`: the
+always-pruned directory names, additive to whatever `frob.toml` declares.

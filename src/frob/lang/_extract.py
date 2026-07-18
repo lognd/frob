@@ -26,6 +26,7 @@ from frob.logging import get_logger
 _log = get_logger(__name__)
 
 
+# frob:doc docs/modules/lang.md#comment-extraction-and-binding
 COMMENT_TYPES: dict[str, frozenset[str]] = {
     "python": frozenset({"comment"}),
     "typescript": frozenset({"comment"}),
@@ -83,7 +84,15 @@ def _extract_comments(
     comment_types: frozenset[str],
     symbols: tuple[RawSymbol, ...],
 ) -> tuple[RawComment, ...]:
-    """Walk the whole tree for comment-typed leaves, then bind enclosing/following."""
+    """Walk the whole tree for comment-typed leaves, then bind enclosing/following.
+
+    Adjacent comment lines (no blank line between them) are one contiguous
+    block: every comment in the block resolves `following` against the
+    block's *last* line, not its own line (T-0100). Without this, a stack of
+    3+ directive comments above a def silently loses the topmost ones -- the
+    fixed 2-line lookahead from each comment's own end can no longer reach
+    the def once enough comments pile up in front of it.
+    """
     raw_nodes: list[Node] = []
 
     def walk(n: Node) -> None:
@@ -94,17 +103,63 @@ def _extract_comments(
             walk(child)
 
     walk(root)
+    # frob:waive PERF004 reason="one sort per file, not in a loop; walk() is recursion"
+    raw_nodes.sort(key=lambda n: span_of(n)[0])
+
+    block_end = _block_ends(raw_nodes)
 
     out: list[RawComment] = []
-    for node in raw_nodes:
+    for node, end in zip(raw_nodes, block_end, strict=True):
         span = span_of(node)
         text = strip_comment_delims(child_text(node))
         enclosing = _find_enclosing(span, symbols)
-        following = _find_following(span, symbols)
+        following = _find_following((span[0], end), symbols)
         out.append(
             RawComment(text=text, span=span, enclosing=enclosing, following=following)
         )
     return tuple(out)
+
+
+def _is_trailing_comment(node: Node) -> bool:
+    """True when `node` shares its source line with code (a trailing `# ...`).
+
+    A trailing comment -- `def foo():  # noqa: N802` -- is not a standalone
+    directive line: it starts after real code on the same row, so its own
+    line is really the *code's* line, not a comment line. Detected via the
+    node's previous tree sibling ending on the same row (T-0100): a
+    standalone comment's previous sibling, if any, ends on an earlier row.
+    """
+    prev = node.prev_sibling
+    return prev is not None and prev.end_point[0] == node.start_point[0]
+
+
+def _block_ends(sorted_nodes: list[Node]) -> list[int]:
+    """Last line of each node's contiguous (no-blank-line-gap) comment run.
+
+    Walked back-to-front so every comment in a stacked block inherits the
+    end line of the block's last member, letting `_find_following`'s window
+    reach the def below the whole block rather than just the nearest line.
+
+    A trailing comment (T-0100) never joins a block, in either direction: it
+    cannot be chained *into* (its own line already holds code -- often the
+    very def a directive above it is trying to bind to, so absorbing it
+    would push the following-window past the def) and, symmetrically, it
+    never extends a block backward through itself since it is excluded as a
+    valid chain target below.
+    """
+    ends = [span_of(n)[1] for n in sorted_nodes]
+    starts = [span_of(n)[0] for n in sorted_nodes]
+    trailing = [_is_trailing_comment(n) for n in sorted_nodes]
+    # frob:waive PERF003 reason="one linear backward scan, not a nested loop"
+    block_end = [0] * len(sorted_nodes)
+    for i in range(len(sorted_nodes) - 1, -1, -1):
+        chains_forward = (
+            i != len(sorted_nodes) - 1
+            and starts[i + 1] == ends[i] + 1
+            and not trailing[i + 1]
+        )
+        block_end[i] = block_end[i + 1] if chains_forward else ends[i]
+    return block_end
 
 
 def _find_enclosing(
@@ -123,7 +178,14 @@ def _find_enclosing(
 def _find_following(
     span: tuple[int, int], symbols: tuple[RawSymbol, ...]
 ) -> str | None:
-    """Symbol starting within 2 lines after the comment's end line, earliest first."""
+    """Symbol starting within 2 lines after `span`'s end line, earliest first.
+
+    `span[1]` is the comment's *block* end (T-0100), not necessarily its own
+    line -- see `_block_ends`. This is what lets a directive several lines
+    above a def still resolve, as long as every line between it and the def
+    is either another comment in the same contiguous block or a single
+    blank line.
+    """
     end = span[1]
     best: RawSymbol | None = None
     for sym in symbols:

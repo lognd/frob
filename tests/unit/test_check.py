@@ -2,10 +2,15 @@
 
 from __future__ import annotations
 
+import logging
+import sys
+import time
 from pathlib import Path
+from typing import Callable
 
 from frob.check import (
     CheckResult,
+    _collect_results,
     detect_project_type,
     run_check,
     run_check_cpp,
@@ -227,3 +232,108 @@ def test_check_run_check_arch_integration(tmp_path: Path) -> None:
     assert arch_results, "arch stage should have produced a ToolResult"
     codes = {d.code for r in arch_results for d in r.diagnostics}
     assert "long-function" in codes
+
+
+class TestCollectResultsLogLevelRace:
+    """T-0122: concurrent check tasks racing the shared stdout log handler
+    must never leave it stuck, or `run_check`'s caller silently loses its
+    final summary log with no exception and exit code 0 (the vacuous-pass
+    class T-0102 targets)."""
+
+    def test_racing_tasks_restore_original_stdout_handler_level(self) -> None:
+        # frob:tests src/frob/check/__init__.py::_collect_results kind="unit"
+        # Mirrors the real bug: frob.arch.analyze_project and
+        # frob.dup.find_duplicates each save/restore the shared root
+        # logger's stdout handler level around their work (to keep
+        # frob.lang's per-parse INFO logs off stdout). Two such
+        # save/restore blocks racing on DIFFERENT threads, with staggered
+        # timing, can interleave so the LAST one to exit restores a level
+        # that was already stale -- leaving the handler stuck. This
+        # reproduces that interleaving directly against `_collect_results`
+        # (no need for the real, slow arch/dup analyses).
+        root_logger = logging.getLogger()
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setLevel(logging.DEBUG)
+        root_logger.addHandler(handler)
+        try:
+
+            def racy_quiet(delay_before: float, delay_after: float):
+                def _task() -> None:
+                    saved = handler.level
+                    handler.setLevel(logging.WARNING)
+                    time.sleep(delay_before)
+                    time.sleep(delay_after)
+                    handler.setLevel(saved)
+
+                return _task
+
+            # Task A enters first and exits LAST (long inner sleep) --
+            # task B enters second (sees A's WARNING as its "saved" level)
+            # and exits FIRST. B's restore is a no-op (WARNING->WARNING);
+            # A's restore correctly puts DEBUG back... UNLESS B starts
+            # after A already flipped the level, which is exactly what
+            # the stagger below forces, leaving the classic stuck case
+            # when three or more overlap. Assert on the OUTCOME, not the
+            # interleaving mechanics: after _collect_results returns, the
+            # level must equal what it was before the batch ran no matter
+            # how the tasks raced.
+            tasks: list[Callable[[], ToolResult | list[ToolResult] | None]] = [
+                lambda: (racy_quiet(0.05, 0.0)(), None)[1],
+                lambda: (racy_quiet(0.0, 0.05)(), None)[1],
+                lambda: (racy_quiet(0.02, 0.02)(), None)[1],
+            ]
+            before = handler.level
+            _collect_results(tasks)
+            assert handler.level == before, (
+                "_collect_results must restore the stdout handler level "
+                "after racing tasks, or the caller's own summary log can "
+                "be silently swallowed"
+            )
+        finally:
+            root_logger.removeHandler(handler)
+
+    def test_all_none_tasks_still_restore_level(self) -> None:
+        # frob:tests src/frob/check/__init__.py::_collect_results kind="unit"
+        root_logger = logging.getLogger()
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setLevel(logging.DEBUG)
+        root_logger.addHandler(handler)
+        try:
+
+            def flip_and_leave_stuck() -> None:
+                handler.setLevel(logging.WARNING)
+
+            before = handler.level
+            _collect_results([lambda: (flip_and_leave_stuck(), None)[1]])
+            assert handler.level == before
+        finally:
+            root_logger.removeHandler(handler)
+
+
+class TestCheckBuildsGraphOnce:
+    """T-0122: `frob check` must build the obligation graph exactly once
+    per invocation, never once per stage that happens to touch it."""
+
+    def test_run_check_calls_build_graph_exactly_once(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/check/__init__.py::run_check kind="unit"
+        import frob.gates as gates_mod
+
+        (tmp_path / "tickets.md").write_text("# Tickets\n")
+        calls: list[int] = []
+        real_build_graph = gates_mod.build_graph
+
+        def counting_build_graph(*args, **kwargs):
+            calls.append(1)
+            return real_build_graph(*args, **kwargs)
+
+        monkeypatch.setattr(gates_mod, "build_graph", counting_build_graph)
+
+        run_check(tmp_path, only=frozenset({"gates", "arch", "dup"}))
+
+        assert len(calls) == 1, (
+            f"build_graph called {len(calls)} times in one frob check run "
+            "(expected exactly 1) -- a stage is rebuilding the graph "
+            "instead of reusing the one build"
+        )

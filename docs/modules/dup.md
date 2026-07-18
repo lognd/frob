@@ -140,7 +140,8 @@ rules:
   kernel is the duplication disease this module exists to kill. If
   `frob_core` is not importable, dup rungs R3+ return
   `Err(CoreUnavailable)` with the install command in the log; R1/R2 and
-  every non-dup frob feature keep working pure-Python.
+  every non-dup frob feature keep working pure-Python. `INSTALL_HINT` is
+  that logged command.
 - The crate is compute-only: it takes serialized token/tree/graph inputs
   and returns fingerprints/distances; all IO, caching policy, and git
   awareness stay in Python. This keeps the FFI surface data-in/data-out
@@ -338,6 +339,7 @@ DUP001 gate path.
 
 <a id="rust-core"></a>
 <!-- frob:describes frob.dup._core.core_available -->
+<!-- frob:describes frob.dup._core.INSTALL_HINT -->
 <!-- frob:describes frob.dup._core.r3_canonical_hash -->
 <!-- frob:describes frob.dup._core.winnow_fingerprints -->
 <!-- frob:describes frob.dup._core.candidate_pairs -->

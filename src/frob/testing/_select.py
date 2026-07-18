@@ -35,6 +35,7 @@ _EXTENSION_LANGUAGE: dict[str, str] = {
 
 # The all-suite sentinel `run_selected` recognizes in a language's selected tuple:
 # render `all_command` instead of the placeholder-rendered `command`.
+# frob:doc docs/modules/testing.md#public-api
 ALL_SENTINEL = "*"
 
 

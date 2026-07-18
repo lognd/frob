@@ -15,6 +15,36 @@ _CACHE_REL = Path(".frob") / "cache.db"
 _ALL_SENTINEL = "*"
 
 
+def _fuzz_models_and_digests(root: Path, snapshot, obs) -> tuple[list, dict[str, str]]:  # noqa: ANN001
+    """Derived pydantic models named by `obs`'s resolved param types, plus body
+    digests keyed by `module.qualname` (for `stamp_fuzz`'s drift check)."""
+    from pydantic import BaseModel
+
+    from frob.fuzz import resolve_param_types
+
+    models: list = []
+    digests: dict[str, str] = {}
+    for ob in obs:
+        for tp in resolve_param_types(root, ob.ref) or ():
+            if isinstance(tp, type) and issubclass(tp, BaseModel):
+                models.append(tp)
+                rec = snapshot.symbols.get(ob.ref)
+                if rec is not None:
+                    digests[f"{tp.__module__}.{tp.__qualname__}"] = rec.digests.body
+    return models, digests
+
+
+def _print_fuzz_results(results) -> list:  # noqa: ANN001
+    """Print one PASS/FALSIFIED line per fuzz result; return the falsified subset."""
+    falsified = [r for r in results if r.falsified]
+    for r in results:
+        mark = (
+            f"FALSIFIED: {r.falsified}" if r.falsified else f"{r.examples} examples ok"
+        )
+        print(f"  {r.ref}: {mark}")
+    return falsified
+
+
 # frob:ticket T-0002
 def _run_fuzz(root: Path) -> None:
     """`frob test --fuzz`: property-test the pydantic models in fuzz-obligated
@@ -22,16 +52,7 @@ def _run_fuzz(root: Path) -> None:
 
     v1 drives the DERIVED pydantic-model case (docs/modules/fuzz.md); non-model
     params are reported as skipped, not failed."""
-    from pydantic import BaseModel
-
-    from frob.fuzz import (
-        FuzzEnforce,
-        FuzzPolicy,
-        obligations,
-        resolve_param_types,
-        run_fuzz,
-        stamp_fuzz,
-    )
+    from frob.fuzz import FuzzEnforce, FuzzPolicy, obligations, run_fuzz, stamp_fuzz
     from frob.graph import build_graph, load_graph
 
     cache = root / _CACHE_REL
@@ -42,26 +63,13 @@ def _run_fuzz(root: Path) -> None:
     if not obs:
         print("frob test --fuzz: no obligated targets (add frob:invariant anchors)")
         return
-    models: list[type[BaseModel]] = []
-    digests: dict[str, str] = {}
-    for ob in obs:
-        for tp in resolve_param_types(root, ob.ref) or ():
-            if isinstance(tp, type) and issubclass(tp, BaseModel):
-                models.append(tp)
-                rec = snapshot.symbols.get(ob.ref)
-                if rec is not None:
-                    digests[f"{tp.__module__}.{tp.__qualname__}"] = rec.digests.body
+    models, digests = _fuzz_models_and_digests(root, snapshot, obs)
     if not models:
         print("frob test --fuzz: no derived pydantic-model params to fuzz (v1 scope)")
         return
 
     results = run_fuzz(tuple(models), budget_s=60, digests=digests)
-    falsified = [r for r in results if r.falsified]
-    for r in results:
-        mark = (
-            f"FALSIFIED: {r.falsified}" if r.falsified else f"{r.examples} examples ok"
-        )
-        print(f"  {r.ref}: {mark}")
+    falsified = _print_fuzz_results(results)
     stamped = stamp_fuzz(root, results)
     if stamped.is_err:
         _log.error("frob test --fuzz: stamp failed: %s", stamped.danger_err)
@@ -129,21 +137,21 @@ def _print_outcomes(test_run) -> None:
                 _log.info(outcome.stderr_tail)
 
 
-def run(cfg: AppConfig) -> None:
-    """Compute the touched set (or run everything with --all) and run the tests."""
+def _resolve_test_root(cfg: AppConfig) -> Path:
+    """The repo root `frob test` operates in, or exit(1) if not found."""
     from frob.gitio import repo_root
-    from frob.testing import load_runners, run_selected
 
     start = (cfg.test_path or Path(".")).resolve()
     root_result = repo_root(start)
     if root_result.is_err:
         _log.error("frob test: %s", root_result.danger_err)
         sys.exit(1)
-    root = root_result.danger_ok
+    return root_result.danger_ok
 
-    if cfg.test_fuzz:
-        _run_fuzz(root)
-        return
+
+def _loaded_runners(cfg: AppConfig, root: Path) -> tuple:
+    """`load_runners(root)`, filtered to `cfg.test_lang` and exit(1) on failure."""
+    from frob.testing import load_runners
 
     runners_result = load_runners(root)
     if runners_result.is_err:
@@ -152,7 +160,37 @@ def run(cfg: AppConfig) -> None:
     runners = runners_result.danger_ok
     if cfg.test_lang:
         runners = tuple(r for r in runners if r.language in cfg.test_lang)
+    return runners
 
+
+def _run_selected_and_report(cfg: AppConfig, report, runners, root: Path) -> None:
+    """Run the selected tests and report PASS/FAIL, exiting 1 on any failure."""
+    from frob.testing import run_selected
+
+    run_result = run_selected(report, runners, root)
+    if run_result.is_err:
+        _log.error("frob test: %s", run_result.danger_err)
+        sys.exit(1)
+    test_run = run_result.danger_ok
+
+    if cfg.test_json:
+        _log.info(test_run.model_dump_json(indent=2))
+    else:
+        _print_outcomes(test_run)
+
+    if not test_run.ok:
+        sys.exit(1)
+
+
+def run(cfg: AppConfig) -> None:
+    """Compute the touched set (or run everything with --all) and run the tests."""
+    root = _resolve_test_root(cfg)
+
+    if cfg.test_fuzz:
+        _run_fuzz(root)
+        return
+
+    runners = _loaded_runners(cfg, root)
     snapshot = _load_test_snapshot(root)
     report = _selection_report(cfg, root, snapshot, runners, cfg.test_base or "main")
 
@@ -170,16 +208,4 @@ def run(cfg: AppConfig) -> None:
             _log.info(report.model_dump_json(indent=2))
         return
 
-    run_result = run_selected(report, runners, root)
-    if run_result.is_err:
-        _log.error("frob test: %s", run_result.danger_err)
-        sys.exit(1)
-    test_run = run_result.danger_ok
-
-    if cfg.test_json:
-        _log.info(test_run.model_dump_json(indent=2))
-    else:
-        _print_outcomes(test_run)
-
-    if not test_run.ok:
-        sys.exit(1)
+    _run_selected_and_report(cfg, report, runners, root)

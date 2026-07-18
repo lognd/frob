@@ -12,7 +12,8 @@ from typing import cast
 from tree_sitter import Tree
 
 from frob.arch._models import ArchSuggestion
-from frob.arch._nodes import _child, _node_text
+from frob.lang import child_by_field as _child
+from frob.lang import node_text as _node_text
 
 
 def _check_long_functions(

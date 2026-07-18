@@ -80,6 +80,31 @@ class TestPropagatedDemand:
         assert facts.demand("b") == 15.0
 
     # frob:tests src/frob/strata/_facts.py::FactBase.propagated_demand kind="unit"
+    def test_unresolvable_rate_propagates_upstream_demand(self) -> None:
+        """A declared `rate` whose unit doesn't resolve (`base_value()`
+        errors) is treated the same as no declared rate at all: demand
+        recurses into the source's own propagated demand rather than being
+        dropped from the sum (T-0066/T-0099 -- see
+        docs/strata/kernel.md#capacity-semantics)."""
+        model = KernelModel(
+            nodes=(_node("src"), _node("a"), _node("b")),
+            flows=(
+                _flow("f1", "src", "a", rate=Quantity(value=10, unit="/s")),
+                _flow(
+                    "f2",
+                    "a",
+                    "b",
+                    rate=Quantity(value=5, unit="bogus-unit"),
+                ),
+            ),
+        )
+        facts = build_facts(model).danger_ok
+        # f2's rate fails to resolve (unknown unit), so it is treated as
+        # undeclared and propagates a's demand (10) rather than dropping
+        # to 0 or using the unresolvable 5.
+        assert facts.demand("b") == 10.0
+
+    # frob:tests src/frob/strata/_facts.py::FactBase.propagated_demand kind="unit"
     def test_sums_over_converging_paths(self) -> None:
         model = KernelModel(
             nodes=(_node("s1"), _node("s2"), _node("t")),

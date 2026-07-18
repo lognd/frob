@@ -6,6 +6,7 @@ data module under the large-file threshold; refresh via a future
 
 from __future__ import annotations
 
+# frob:doc docs/modules/vet.md#public-api
 NPM_TOP = frozenset(
     {
         "react",

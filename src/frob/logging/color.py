@@ -16,11 +16,17 @@ import os
 import sys
 from typing import IO
 
+# frob:doc docs/modules/logging.md#public-api
 RED = "31"
+# frob:doc docs/modules/logging.md#public-api
 GREEN = "32"
+# frob:doc docs/modules/logging.md#public-api
 YELLOW = "33"
+# frob:doc docs/modules/logging.md#public-api
 CYAN = "36"
+# frob:doc docs/modules/logging.md#public-api
 BOLD = "1"
+# frob:doc docs/modules/logging.md#public-api
 DIM = "2"
 
 

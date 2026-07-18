@@ -70,6 +70,7 @@ through the typed subprocess seam with an explicit timeout and full logging
 <!-- frob:describes src/frob/gitio.py::run_argv -->
 <!-- frob:describes src/frob/testing/_select.py::extension_language -->
 <!-- frob:describes src/frob/testing/_select.py::select_tests -->
+<!-- frob:describes src/frob/testing/_select.py::ALL_SENTINEL -->
 <!-- frob:describes src/frob/testing/_runners.py::run_selected -->
 <!-- frob:describes src/frob/testing/_runners.py::load_runners -->
 <!-- frob:describes src/frob/testing/_collect.py::collect_python_tests -->
@@ -104,6 +105,10 @@ def run_selected(selection: SelectionReport, runners: tuple[RunnerSpec, ...],
     # per-runner outcomes; runner exit codes are data in the report.
 def load_runners(root: Path) -> Result[tuple[RunnerSpec, ...], TestingError]
 def collect_python_tests(root: Path) -> Result[CollectedTests, TestingError]
+
+ALL_SENTINEL = "*"
+    # The all-suite marker in a language's selected-tests tuple; run_selected
+    # renders the runner's all_command instead of the per-file command.
     # pytest --collect-only cache (moved here from the gates design; the
     # TEST gates import it from frob.testing).
 ```

@@ -18,6 +18,7 @@ from frob.logging import get_logger
 
 _log = get_logger(__name__)
 
+# frob:doc docs/modules/dup.md#rust-core
 INSTALL_HINT = (
     "install with: uv pip install ./frob-core  (or: maturin develop, from frob-core/)"
 )

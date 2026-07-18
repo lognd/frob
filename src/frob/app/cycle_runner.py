@@ -37,48 +37,70 @@ def run(cfg: AppConfig) -> None:
             _log.info("  suggestion: extract shared symbols into a new module")
 
 
+def _add_file_edges(
+    graph: DependencyGraph, path: Path, rel: str, language: str, scan_root: Path
+) -> str | None:
+    """Add `path`'s import edges to `graph`; return a parse-error message, if any."""
+    result = extract_imports(path)
+    if result.is_err:
+        return f"parse error in {rel}: {result.danger_err}"
+    for spec in result.danger_ok:
+        resolved = resolve_local_import(
+            spec, language, file_dir=path.parent, root=scan_root
+        )
+        if resolved is not None:
+            graph.add_edge(rel, resolved)
+    return None
+
+
+def _process_path(
+    graph: DependencyGraph,
+    path: Path,
+    scan_root: Path,
+    lang: str | None,
+    exclude_globs,
+) -> str | None:
+    """Add one candidate path's node (and import edges, if in-scope) to `graph`."""
+    # frob:ticket T-0026
+    from frob.excludes import is_excluded, is_skipped_dir
+
+    if not path.is_file():
+        return None
+    ext = path.suffix.lower()
+    try:
+        rel_path = path.relative_to(scan_root)
+    except ValueError:
+        return None
+    if any(is_skipped_dir(part) for part in rel_path.parts):
+        return None
+    if exclude_globs and is_excluded(rel_path.as_posix(), exclude_globs):
+        return None
+    rel = str(rel_path)
+
+    graph.add_node(rel)
+
+    want_python = ext in _PY_EXTS and lang in (None, "python")
+    want_cpp = ext in _CPP_EXTS and lang in (None, "cpp", "c")
+    if not (want_python or want_cpp):
+        return None
+    language = "python" if want_python else "cpp"
+
+    return _add_file_edges(graph, path, rel, language, scan_root)
+
+
 def _build_graph(root: Path, lang: str | None) -> tuple[DependencyGraph, list[str]]:
     graph = DependencyGraph()
     errors: list[str] = []
 
-    # frob:ticket T-0026
-    from frob.excludes import is_excluded, is_skipped_dir, load_exclude_globs
+    from frob.excludes import load_exclude_globs
 
     files = [root] if root.is_file() else list(root.rglob("*"))
     scan_root = root.parent if root.is_file() else root
     exclude_globs = load_exclude_globs(scan_root)
 
     for path in files:
-        if not path.is_file():
-            continue
-        ext = path.suffix.lower()
-        try:
-            rel_path = path.relative_to(scan_root)
-        except ValueError:
-            continue
-        if any(is_skipped_dir(part) for part in rel_path.parts):
-            continue
-        if exclude_globs and is_excluded(rel_path.as_posix(), exclude_globs):
-            continue
-        rel = str(rel_path)
-
-        graph.add_node(rel)
-
-        want_python = ext in _PY_EXTS and lang in (None, "python")
-        want_cpp = ext in _CPP_EXTS and lang in (None, "cpp", "c")
-        if not (want_python or want_cpp):
-            continue
-        language = "python" if want_python else "cpp"
-
-        result = extract_imports(path)
-        if result.is_err:
-            errors.append(f"parse error in {rel}: {result.danger_err}")
-            continue
-        for spec in result.danger_ok:
-            resolved = resolve_local_import(
-                spec, language, file_dir=path.parent, root=scan_root
-            )
-            if resolved is not None:
-                graph.add_edge(rel, resolved)
+        error = _process_path(graph, path, scan_root, lang, exclude_globs)
+        if error is not None:
+            errors.append(error)
 
     return graph, errors

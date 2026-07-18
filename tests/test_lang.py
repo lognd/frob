@@ -44,6 +44,37 @@ class TestParsePython:
         top = _symbol(pf, "top_level")
         assert "decorator" in top.sig_tokens
 
+    def test_module_level_literal_const_extracted(self) -> None:
+        # frob:tests src/frob/lang/__init__.py::parse_file
+        # tree-sitter-language-pack's python grammar emits top-level
+        # `assignment` nodes as direct `module` children (no
+        # `expression_statement` wrapper), so this must not regress to
+        # only matching the wrapped form (T-0087).
+        pf = parse_file(_FIXTURES / "sample.py").danger_ok
+        const = _symbol(pf, "MAX_RETRIES")
+        assert const.kind == SymbolKind.CONST
+        assert const.public is True
+
+    def test_module_level_call_expression_const_extracted(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/lang/__init__.py::parse_file
+        # X = Foo(...) (a constructor call, not a literal) must also be
+        # extracted as a CONST symbol -- this was the T-0087 regression.
+        source = (
+            '"""mod docstring."""\n'
+            "class Lattice:\n"
+            "    def __init__(self, **kw):\n"
+            "        pass\n"
+            "\n"
+            "TRUST = Lattice(\n"
+            '    name="trust",\n'
+            "    order=(1, 2),\n"
+            ")\n"
+        )
+        pf = parse_file(_write(tmp_path, "consts.py", source)).danger_ok
+        const = _symbol(pf, "TRUST")
+        assert const.kind == SymbolKind.CONST
+        assert const.public is True
+
     def test_docstring_in_doc_text_and_excluded_from_body(self) -> None:
         pf = parse_file(_FIXTURES / "sample.py").danger_ok
         top = _symbol(pf, "top_level")

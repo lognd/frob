@@ -40,9 +40,9 @@ class TestRules:
         assert len(rules) == 1
         diff = Diff(base="x", hunks=())
         violations = policy_gate(rules, snap, diff)
-        assert any(v.rule == "POL-no-requests" for v in violations)
-        v = next(v for v in violations if v.rule == "POL-no-requests")
-        assert v.file == "src/frob/graph/x.py"
+        violations_by_rule = {v.rule: v for v in violations}
+        assert "POL-no-requests" in violations_by_rule
+        assert violations_by_rule["POL-no-requests"].file == "src/frob/graph/x.py"
 
     def test_forbidden_import_passes_outside_glob(self, tmp_path: Path) -> None:
         _write(tmp_path, "src/frob/other/x.py", "import requests\n")

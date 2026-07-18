@@ -104,6 +104,8 @@ frob check --base main                 # base ref for the drift/coverage diff (d
 frob check --only gates                # run only the gates stage (repeatable; any stage name)
 frob check --only ruff --only gates    # run ruff and gates only
 frob check --stamp-coverage            # record coverage.xml as the current stamp, then exit
+frob check --stamp-baseline            # record current gate violations as the delta baseline, then exit
+frob check --only gates --delta        # gates stage reports only violations new since that baseline
 ```
 
 `--only` accepts any stage name (`ruff`, `ty`, `cycle`, `dup`, `arch`, `bind`,
@@ -111,6 +113,30 @@ frob check --stamp-coverage            # record coverage.xml as the current stam
 (gates included). `--stamp-coverage` is how `make coverage` records
 `.frob/coverage-stamp` after `pytest --cov` runs; TEST006 compares the stamp
 against the live graph snapshot on later `frob check` runs.
+
+### Delta baseline (agent workflow)
+
+`frob check` prints every kept violation on every run -- useful for a human
+sweep, expensive for an agent driving one ticket to green, which reruns
+`frob check` several times per ticket and re-reads the same pile of
+pre-existing (ticketed, not new) warnings each time for no new signal.
+
+`--stamp-baseline` records the current gate violation set (rule + file +
+message fingerprint, plus a per-file content hash for staleness detection)
+to `.frob/baseline`. `--delta` then makes the gates stage report only
+violations absent from that stamp:
+
+```bash
+frob check --stamp-baseline            # once, e.g. at the start of a work session
+frob check --only gates --delta        # afterwards: only new violations
+```
+
+If the baseline is missing, or any file it covers has changed since the
+stamp, `--delta` degrades to the full (unfiltered) violation set with a
+warning diagnostic explaining why -- a stale baseline silently hiding a
+violation that moved back into the "new" set would be a worse failure mode
+than no baseline at all. `--delta` is agent-facing and opt-in only: the
+human-facing dial (every violation, always) is unchanged unless you pass it.
 
 ## Cycle severity
 

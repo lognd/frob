@@ -309,6 +309,11 @@ gate enforcement.
 <!-- frob:describes src/frob/vet/_obfuscation.py::hex_identifier_ratio_signal -->
 <!-- frob:describes src/frob/vet/_obfuscation.py::scan_text_obfuscation -->
 <!-- frob:describes src/frob/vet/_obfuscation.py::scan_directory_obfuscation -->
+<!-- frob:describes src/frob/vet/_popular_pypi.py::PYPI_TOP -->
+<!-- frob:describes src/frob/vet/_popular_cargo.py::CARGO_TOP -->
+<!-- frob:describes src/frob/vet/_popular_npm.py::NPM_TOP -->
+<!-- frob:describes src/frob/vet/_popular.py::ECOSYSTEM_POPULAR -->
+<!-- frob:describes src/frob/vet/_registry.py::LATEST_VERSION -->
 <!-- frob:describes src/frob/vet/_allow.py::load_vet_config -->
 <!-- frob:describes src/frob/vet/_typosquat.py::damerau_levenshtein -->
 <!-- frob:describes src/frob/vet/_typosquat.py::find_typosquat -->
@@ -377,6 +382,14 @@ gate enforcement.
   text blob (empty tuple means clean).
 - `scan_directory_obfuscation` -- union of obfuscation signals across every
   text-ish file under a source tree.
+- `PYPI_TOP` -- bundled top-PyPI package names, the VET-JS003-generalized
+  typosquat-distance baseline for the PyPI ecosystem.
+- `CARGO_TOP` -- bundled top-crates.io package names, same role for Rust.
+- `NPM_TOP` -- bundled top-npm package names, same role for JS/TS.
+- `ECOSYSTEM_POPULAR` -- `PYPI_TOP`/`NPM_TOP`/`CARGO_TOP` indexed by
+  ecosystem name, the lookup `find_typosquat` dispatches through.
+- `LATEST_VERSION` -- the sentinel version string meaning "resolve
+  whatever is newest" rather than a pinned version.
 - `load_vet_config` -- reads `frob.toml`'s `[vet]`/`[vet.allow]` tables;
   a missing table means advisory-only mode.
 - `damerau_levenshtein` -- OSA edit distance (insert/delete/substitute/

@@ -81,14 +81,9 @@ class TestPerfProfileAndHeat:
 class TestCheckOnlyPerf:
     # frob:ticket T-0021
 
-    def test_perf001_fixture_warns_but_check_exits_zero(self, tmp_path):
-        """`frob check --only gates` on a PERF001 fixture warns (default
-        severity) but still exits 0 -- PERF defaults to warn, not error.
-        Other gates (TEST001/TEST006/...) are satisfied first so the run
-        isolates PERF's own severity, per the existing
-        test_only_gates_passes_once_bound_and_tested pattern in
-        tests/system/test_cli_check.py."""
-        # frob:ticket T-0021
+    def _init_perf001_fixture_repo(self, tmp_path) -> None:
+        """A committed repo with one tested PERF001-tripping function, plus a
+        pre-stamped `coverage.xml` so the run isolates PERF's own severity."""
         _git("init", "-q", "-b", "main", cwd=tmp_path)
         _git("config", "user.email", "test@example.com", cwd=tmp_path)
         _git("config", "user.name", "Test", cwd=tmp_path)
@@ -112,6 +107,16 @@ class TestCheckOnlyPerf:
         )
         _git("add", "-A", cwd=tmp_path)
         _git("commit", "-q", "-m", "init", cwd=tmp_path)
+
+    def test_perf001_fixture_warns_but_check_exits_zero(self, tmp_path):
+        """`frob check --only gates` on a PERF001 fixture warns (default
+        severity) but still exits 0 -- PERF defaults to warn, not error.
+        Other gates (TEST001/TEST006/...) are satisfied first so the run
+        isolates PERF's own severity, per the existing
+        test_only_gates_passes_once_bound_and_tested pattern in
+        tests/system/test_cli_check.py."""
+        # frob:ticket T-0021
+        self._init_perf001_fixture_repo(tmp_path)
 
         stamp = run("check", str(tmp_path), "--stamp-coverage")
         assert stamp.returncode == 0, stamp.stdout + stamp.stderr

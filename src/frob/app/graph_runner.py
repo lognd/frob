@@ -58,6 +58,36 @@ def _load_snapshot(root: Path, cache: Path):
     return build_graph(root, cache)
 
 
+def _query_json_payload(ref: str, record, outgoing, incoming) -> dict:  # noqa: ANN001
+    """The `--json` payload for `frob graph query`."""
+    return {
+        "ref": ref,
+        "kind": record.kind.value,
+        "public": record.public,
+        "span": list(record.span),
+        "digests": record.digests.model_dump(),
+        "edges_from": [e.model_dump() for e in outgoing],
+        "edges_to": [e.model_dump() for e in incoming],
+    }
+
+
+def _render_query_lines(ref: str, record, outgoing, incoming) -> list[str]:  # noqa: ANN001
+    """Human-readable `frob graph query` report lines."""
+    lines = [
+        f"{ref}  kind={record.kind.value} public={record.public} "
+        f"span={record.span[0]}-{record.span[1]}",
+        f"  sig={record.digests.sig[:12]} body={record.digests.body[:12]} "
+        f"doc={record.digests.doc[:12]}",
+        "edges from:",
+    ]
+    for e in outgoing:
+        lines.append(f"  {e.kind.value} -> {e.target}  ({e.origin})")
+    lines.append("edges to:")
+    for e in incoming:
+        lines.append(f"  {e.src} -> {e.kind.value}  ({e.origin})")
+    return lines
+
+
 def _run_query(root: Path, cache: Path, cfg: AppConfig) -> None:
     from frob.graph import edges_from, edges_to, resolve
 
@@ -82,31 +112,11 @@ def _run_query(root: Path, cache: Path, cfg: AppConfig) -> None:
     if cfg.graph_json:
         import json
 
-        payload = {
-            "ref": cfg.graph_ref,
-            "kind": record.kind.value,
-            "public": record.public,
-            "span": list(record.span),
-            "digests": record.digests.model_dump(),
-            "edges_from": [e.model_dump() for e in outgoing],
-            "edges_to": [e.model_dump() for e in incoming],
-        }
+        payload = _query_json_payload(cfg.graph_ref, record, outgoing, incoming)
         _log.info(json.dumps(payload, indent=2))
         return
 
-    lines = [
-        f"{cfg.graph_ref}  kind={record.kind.value} public={record.public} "
-        f"span={record.span[0]}-{record.span[1]}",
-        f"  sig={record.digests.sig[:12]} body={record.digests.body[:12]} "
-        f"doc={record.digests.doc[:12]}",
-        "edges from:",
-    ]
-    for e in outgoing:
-        lines.append(f"  {e.kind.value} -> {e.target}  ({e.origin})")
-    lines.append("edges to:")
-    for e in incoming:
-        lines.append(f"  {e.src} -> {e.kind.value}  ({e.origin})")
-    _log.info("\n".join(lines))
+    _log.info("\n".join(_render_query_lines(cfg.graph_ref, record, outgoing, incoming)))
 
 
 def _acked_for(lock, ref: str) -> list:
@@ -158,9 +168,38 @@ def _render_why_lines(ref: str, acked: list, stale: list, dangling: list) -> lis
     return lines
 
 
+def _why_json_payload(snapshot, ref: str, acked, stale, dangling) -> dict:  # noqa: ANN001
+    """The `--json` payload for `frob graph why`."""
+    return {
+        "ref": ref,
+        "acked_facets": [e.facet for e in acked],
+        "stale": [s.model_dump() for s in stale],
+        "dangling": [d.model_dump() for d in dangling],
+        "is_edge_endpoint": _is_endpoint(snapshot, ref),
+    }
+
+
+def _why_drift_facts(root: Path, snapshot, ref: str):  # noqa: ANN201
+    """Load `frob.lock`, compute drift, and gather the acked/stale/dangling facts
+    for `ref`; exit(1) if the lock cannot be loaded."""
+    from frob.graph.lock import drift, load_lock
+
+    lock_result = load_lock(root / "frob.lock")
+    if lock_result.is_err:
+        _log.error("graph why: frob.lock: %s", lock_result.danger_err)
+        sys.exit(1)
+    lock = lock_result.danger_ok
+    report = drift(lock, snapshot)
+    return (
+        lock,
+        _acked_for(lock, ref),
+        _stale_for(report, ref),
+        _dangling_for(report, ref),
+    )
+
+
 def _run_why(root: Path, cache: Path, cfg: AppConfig) -> None:
     from frob.graph import resolve
-    from frob.graph.lock import drift, load_lock
 
     if cfg.graph_ref is None:
         _log.error("frob graph why requires <ref>")
@@ -177,28 +216,13 @@ def _run_why(root: Path, cache: Path, cfg: AppConfig) -> None:
         _log.error("graph why: %s: %s", cfg.graph_ref, resolved.danger_err)
         sys.exit(1)
 
-    lock_result = load_lock(root / "frob.lock")
-    if lock_result.is_err:
-        _log.error("graph why: frob.lock: %s", lock_result.danger_err)
-        sys.exit(1)
-    lock = lock_result.danger_ok
-    report = drift(lock, snapshot)
-
     ref = cfg.graph_ref
-    acked = _acked_for(lock, ref)
-    stale = _stale_for(report, ref)
-    dangling = _dangling_for(report, ref)
+    _lock, acked, stale, dangling = _why_drift_facts(root, snapshot, ref)
 
     if cfg.graph_json:
         import json
 
-        payload = {
-            "ref": ref,
-            "acked_facets": [e.facet for e in acked],
-            "stale": [s.model_dump() for s in stale],
-            "dangling": [d.model_dump() for d in dangling],
-            "is_edge_endpoint": _is_endpoint(snapshot, ref),
-        }
+        payload = _why_json_payload(snapshot, ref, acked, stale, dangling)
         _log.info(json.dumps(payload, indent=2))
         return
 

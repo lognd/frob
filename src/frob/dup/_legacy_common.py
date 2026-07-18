@@ -1,26 +1,14 @@
-"""Shared node/hash helpers for the legacy Type-1/Type-2 dup scan.
+"""Shared hash helper for the legacy Type-1/Type-2 dup scan.
 
-`_child`/`_node_text` are trivial `child_by_field_name`/decode one-liners;
-`_sha16` is the 16-hex-char body digest both language scanners key on.
+Raw node traversal (`child_by_field`/`node_text`) now lives in `frob.lang`
+(see `frob.lang.child_by_field`/`frob.lang.node_text`) so it is shared with
+`frob.arch` instead of duplicated here; only the dup-specific body digest
+stays local.
 """
 
 from __future__ import annotations
 
 import hashlib
-
-from tree_sitter import Node
-
-
-def _child(node: Node, field: str) -> Node | None:
-    """`node.child_by_field_name(field)` -- see the legacy module docstring."""
-    return node.child_by_field_name(field)
-
-
-def _node_text(node: Node | None) -> str:
-    """Decode `node`'s own text, or '' if absent (missing name = grammar bug)."""
-    if node is None or node.text is None:
-        return ""
-    return node.text.decode("utf-8", errors="replace")
 
 
 def _sha16(s: str) -> str:

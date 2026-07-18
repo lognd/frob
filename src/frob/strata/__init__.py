@@ -45,7 +45,20 @@ from frob.strata._ast import (
 from frob.strata._ast import (
     Capacity as SurfaceCapacity,
 )
+from frob.strata._atomic import (
+    AtomicContractReport,
+    FaultInjectionCase,
+    evaluate_atomic_contracts,
+    evaluate_saga_contracts,
+    generate_fault_injection_cases,
+)
+from frob.strata._breach import (
+    BlastRadius,
+    BreachContractReport,
+    evaluate_breach_contracts,
+)
 from frob.strata._claims import evaluate_claims
+from frob.strata._crash import CrashContractReport, evaluate_crash_contracts
 from frob.strata._elaborate import elaborate
 from frob.strata._errors import StrataError
 from frob.strata._facts import FactBase, build_facts
@@ -56,12 +69,15 @@ from frob.strata._models import (
     Boundary,
     BoundaryDirection,
     BoundClaim,
+    BreachContract,
     Capacity,
     Claim,
     ClaimBody,
     ClaimResult,
+    CrashContract,
     Flow,
     FlowCondition,
+    Independent,
     KernelModel,
     Lattice,
     Metric,
@@ -92,11 +108,15 @@ __all__ = [
     "TRUST",
     "AdmitPhase",
     "AtCallRequire",
+    "AtomicContractReport",
     "BalancerDecl",
+    "BlastRadius",
     "Boundary",
     "BoundaryDecl",
     "BoundaryDirection",
     "BoundClaim",
+    "BreachContract",
+    "BreachContractReport",
     "CacheDecl",
     "Capacity",
     "CdnDecl",
@@ -104,8 +124,11 @@ __all__ = [
     "CompiledPolicies",
     "CompiledPolicy",
     "ConfineUse",
+    "CrashContract",
+    "CrashContractReport",
     "EffectPhase",
     "FactBase",
+    "FaultInjectionCase",
     "Claim",
     "ClaimBody",
     "ClaimResult",
@@ -114,6 +137,7 @@ __all__ = [
     "FlowDecl",
     "ForbidCall",
     "ForbidImport",
+    "Independent",
     "InfraExpansion",
     "KernelModel",
     "Lattice",
@@ -158,8 +182,13 @@ __all__ = [
     "compile_policies",
     "elaborate",
     "elaborate_infra",
+    "evaluate_atomic_contracts",
+    "evaluate_breach_contracts",
     "evaluate_claims",
+    "evaluate_crash_contracts",
+    "evaluate_saga_contracts",
     "evaluate_scenarios",
+    "generate_fault_injection_cases",
     "parse_module",
     "render_report",
     "require_analyzable",

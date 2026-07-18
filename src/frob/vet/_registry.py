@@ -212,6 +212,7 @@ def fetch_publish_date(
     )
 
 
+# frob:doc docs/modules/vet.md#public-api
 LATEST_VERSION = _LATEST
 
 __all__ = ["LATEST_VERSION", "RegistryResult", "fetch_publish_date"]

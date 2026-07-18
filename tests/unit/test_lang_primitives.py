@@ -13,9 +13,11 @@ from __future__ import annotations
 from pathlib import Path
 
 from frob.lang import (
+    child_by_field,
     cpp_function_nodes,
     extract_imports,
     iter_identifiers,
+    node_text,
     raw_tree,
     resolve_local_import,
     symbol_tree,
@@ -105,6 +107,18 @@ def test_child_text_decodes_and_tolerates_none(tmp_path: Path):
     fn = next(n for n in tree.root_node.children if n.type == "function_definition")
     assert child_text(fn.child_by_field_name("name")) == "greet"
     assert child_text(None) == ""
+
+
+def test_child_by_field_and_node_text_public_wrappers(tmp_path: Path):
+    # frob:tests src/frob/lang/_common.py::child_by_field kind="unit"
+    # frob:tests src/frob/lang/__init__.py::child_by_field kind="unit"
+    # frob:tests src/frob/lang/__init__.py::node_text kind="unit"
+    tree, _src, _lang = _py_tree(tmp_path)
+    fn = next(n for n in tree.root_node.children if n.type == "function_definition")
+    name_node = child_by_field(fn, "name")
+    assert node_text(name_node) == "greet"
+    assert child_by_field(fn, "no-such-field") is None
+    assert node_text(None) == ""
 
 
 def test_leading_doc_comment_gathers_block(tmp_path: Path):

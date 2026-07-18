@@ -49,8 +49,8 @@ core: $(STAMP)
 	@command -v cargo >/dev/null 2>&1 || { \
 		echo "cargo not found; skipping frob-core (smart-dup R3+ disabled)"; \
 		exit 0; }
-	cd frob-core && uvx maturin develop --uv --release
-	cd strata-core && uvx maturin develop --uv --release
+	VIRTUAL_ENV=$(CURDIR)/.venv uvx maturin develop --uv --release -m frob-core/Cargo.toml
+	VIRTUAL_ENV=$(CURDIR)/.venv uvx maturin develop --uv --release -m strata-core/Cargo.toml
 
 # ---------- formatting & linting ----------
 

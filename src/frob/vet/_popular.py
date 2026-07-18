@@ -12,6 +12,7 @@ from frob.vet._popular_cargo import CARGO_TOP
 from frob.vet._popular_npm import NPM_TOP
 from frob.vet._popular_pypi import PYPI_TOP
 
+# frob:doc docs/modules/vet.md#public-api
 ECOSYSTEM_POPULAR = {
     "pypi": PYPI_TOP,
     "npm": NPM_TOP,

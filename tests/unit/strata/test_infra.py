@@ -184,6 +184,28 @@ class TestQueueDesugar:
         assert "ordering=fifo" in node.attrs
 
     # frob:tests src/frob/strata/_infra.py::elaborate_infra kind="unit"
+    def test_queue_no_trust_clause_defaults_to_trusted(self):
+        text = """
+        module m
+        queue q { delivery at_least_once; }
+        """
+        model = _elaborate(text).danger_ok
+        node = next(n for n in model.nodes if n.id == "q")
+        assert node.trust == "trusted"
+
+    # frob:tests src/frob/strata/_infra.py::elaborate_infra kind="unit"
+    def test_queue_explicit_trust_clause_wins_over_default(self):
+        # T-0093: queue may declare TRUST explicitly instead of the
+        # "trusted" default (docs/strata/surface.md#std-infra).
+        text = """
+        module m
+        queue q : authenticated { delivery at_least_once; }
+        """
+        model = _elaborate(text).danger_ok
+        node = next(n for n in model.nodes if n.id == "q")
+        assert node.trust == "authenticated"
+
+    # frob:tests src/frob/strata/_infra.py::elaborate_infra kind="unit"
     def test_queue_delivery_propagates_to_outbound_flows_and_fires_diagnostic(self):
         text = """
         module m
@@ -292,6 +314,19 @@ class TestBalancerDesugar:
         node = next(n for n in model.nodes if n.id == "b")
         assert "policy=round_robin" in node.attrs
         assert "sticky" in node.attrs
+        assert node.trust == "trusted"
+
+    # frob:tests src/frob/strata/_infra.py::elaborate_infra kind="unit"
+    def test_balancer_explicit_trust_clause_wins_over_default(self):
+        # T-0093: balancer may declare TRUST explicitly instead of the
+        # "trusted" default (docs/strata/surface.md#std-infra).
+        text = """
+        module m
+        balancer b : authenticated { policy round_robin; }
+        """
+        model = _elaborate(text).danger_ok
+        node = next(n for n in model.nodes if n.id == "b")
+        assert node.trust == "authenticated"
 
     # frob:tests src/frob/strata/_infra.py::elaborate_infra kind="unit"
     def test_sticky_balancer_stateless_downstream_is_diagnostic(self):

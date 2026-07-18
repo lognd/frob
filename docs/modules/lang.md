@@ -103,6 +103,9 @@ still have a `following` (a comment directly above a top-level function),
 or vice versa (a comment deep inside a function body with no symbol
 starting nearby).
 
+`COMMENT_TYPES` is the per-language table of tree-sitter comment node type
+names the walker treats as comment-typed leaves.
+
 ## Per-language walker notes
 
 Each language has its own recursive-descent walker in `_extract.py`

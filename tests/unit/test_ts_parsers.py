@@ -6,6 +6,29 @@ import json
 
 from frob.process.parsers import parse_eslint, parse_tsc
 
+_ESLINT_ERROR_AND_WARNING_PAYLOAD = [
+    {
+        "filePath": "/repo/src/App.tsx",
+        "messages": [
+            {
+                "ruleId": "no-unused-vars",
+                "severity": 2,
+                "line": 3,
+                "column": 7,
+                "message": "'x' is defined but never used.",
+            },
+            {
+                "ruleId": "react-hooks/exhaustive-deps",
+                "severity": 1,
+                "line": 10,
+                "column": 1,
+                "message": "missing dependency",
+            },
+        ],
+    }
+]
+"""One eslint file with one error and one warning message (for parse_eslint tests)."""
+
 
 class TestParseTsc:
     def test_clean_output(self):
@@ -64,31 +87,13 @@ class TestParseEslint:
         assert r.summary == "no issues"
 
     def test_errors_and_warnings(self):
-        payload = [
-            {
-                "filePath": "/repo/src/App.tsx",
-                "messages": [
-                    {
-                        "ruleId": "no-unused-vars",
-                        "severity": 2,
-                        "line": 3,
-                        "column": 7,
-                        "message": "'x' is defined but never used.",
-                    },
-                    {
-                        "ruleId": "react-hooks/exhaustive-deps",
-                        "severity": 1,
-                        "line": 10,
-                        "column": 1,
-                        "message": "missing dependency",
-                    },
-                ],
-            }
-        ]
-        r = parse_eslint(json.dumps(payload), exit_code=1)
+        r = parse_eslint(json.dumps(_ESLINT_ERROR_AND_WARNING_PAYLOAD), exit_code=1)
         assert len(r.diagnostics) == 2
-        errs = [d for d in r.diagnostics if d.severity == "error"]
-        warns = [d for d in r.diagnostics if d.severity == "warning"]
+        by_severity: dict[str, list] = {}
+        for d in r.diagnostics:
+            by_severity.setdefault(d.severity, []).append(d)
+        errs = by_severity.get("error", [])
+        warns = by_severity.get("warning", [])
         assert len(errs) == 1
         assert len(warns) == 1
         assert errs[0].code == "no-unused-vars"

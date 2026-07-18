@@ -85,38 +85,30 @@ class GitLogResult(BaseModel):
 
         return json.dumps(d, indent=2)
 
-    def as_text(self) -> str:
-        # frob:doc docs/commands/gitlog.md#public-api
-        if not self.commits:
-            return "no commits found"
-
-        # Group by type
+    def _grouped_by_type(
+        self,
+    ) -> tuple[dict[str, list[CommitEntry]], list[CommitEntry]]:
+        """Commits grouped by type, plus the breaking-change list."""
         groups: dict[str, list[CommitEntry]] = {}
         breaking: list[CommitEntry] = []
-
         for c in self.commits:
             if c.breaking:
                 breaking.append(c)
             groups.setdefault(c.type, []).append(c)
+        return groups, breaking
 
-        lines: list[str] = []
-
+    def _header_line(self) -> str:
+        """The `git log (...)  --  N commits` summary line."""
         hdr = f"git log ({self.granularity})"
         if self.since:
             hdr += f" since {self.since}"
         hdr += (
             f"  --  {len(self.commits)} commit{'s' if len(self.commits) != 1 else ''}"
         )
-        lines.append(hdr)
-        lines.append("")
+        return hdr
 
-        if breaking:
-            lines.append("### BREAKING CHANGES")
-            for c in breaking:
-                _append_entry(lines, c)
-            lines.append("")
-
-        # Order: feat, fix, perf, refactor, then others
+    def _type_section_order(self, groups: dict[str, list[CommitEntry]]) -> list[str]:
+        """Type keys in display order: the canonical order, then any leftover types."""
         order = [
             "feat",
             "fix",
@@ -130,8 +122,23 @@ class GitLogResult(BaseModel):
         ]
         seen = set(order)
         order += [k for k in groups if k not in seen]
+        return order
 
-        for t in order:
+    def as_text(self) -> str:
+        # frob:doc docs/commands/gitlog.md#public-api
+        if not self.commits:
+            return "no commits found"
+
+        groups, breaking = self._grouped_by_type()
+        lines: list[str] = [self._header_line(), ""]
+
+        if breaking:
+            lines.append("### BREAKING CHANGES")
+            for c in breaking:
+                _append_entry(lines, c)
+            lines.append("")
+
+        for t in self._type_section_order(groups):
             if t not in groups:
                 continue
             label = _TYPE_LABELS.get(t, t)
@@ -226,6 +233,60 @@ def _git_log_raw(
         return ""
 
 
+def _tag_from_refs(refs: str) -> str | None:
+    """The `tag:` ref name in a comma-separated `%D` refs string, if any."""
+    for ref in refs.split(","):
+        ref = ref.strip()
+        if ref.startswith("tag:"):
+            return ref[4:].strip()
+    return None
+
+
+def _conventional_commit_entry(
+    subject: str, sha: str, short_sha: str, body: str, tag: str | None
+) -> CommitEntry:
+    """A `CommitEntry` from `subject`'s conventional-commit match, or unknown-typed."""
+    m = _CC_PATTERN.match(subject)
+    if m is None:
+        return CommitEntry(
+            sha=sha,
+            short_sha=short_sha,
+            type="unknown",
+            scope=None,
+            breaking=False,
+            description=subject,
+            body=body,
+            tag=tag,
+            raw_subject=subject,
+        )
+    gd = m.groupdict()
+    return CommitEntry(
+        sha=sha,
+        short_sha=short_sha,
+        type=gd["type"].lower(),
+        scope=gd["scope"],
+        breaking=bool(gd["breaking"]),
+        description=gd["desc"].strip(),
+        body=body,
+        tag=tag,
+        raw_subject=subject,
+    )
+
+
+def _commit_entry_from_block(block: str) -> CommitEntry | None:
+    """One raw `%H\\n%h\\n%s\\n%D\\n%b` commit block as a `CommitEntry`, or `None`."""
+    lines = block.splitlines()
+    if len(lines) < 3:
+        return None
+    sha = lines[0].strip()
+    short_sha = lines[1].strip()
+    subject = lines[2].strip()
+    refs = lines[3].strip() if len(lines) > 3 else ""
+    body = "\n".join(lines[4:]).strip() if len(lines) > 4 else ""
+    tag = _tag_from_refs(refs)
+    return _conventional_commit_entry(subject, sha, short_sha, body, tag)
+
+
 def _parse_commits(raw: str) -> list[CommitEntry]:
     entries: list[CommitEntry] = []
     blocks = raw.split("---COMMIT---\n")
@@ -234,50 +295,9 @@ def _parse_commits(raw: str) -> list[CommitEntry]:
         if not block or "---END---" not in block:
             continue
         block = block.split("---END---")[0].strip()
-        lines = block.splitlines()
-        if len(lines) < 3:
-            continue
-        sha = lines[0].strip()
-        short_sha = lines[1].strip()
-        subject = lines[2].strip()
-        refs = lines[3].strip() if len(lines) > 3 else ""
-        body = "\n".join(lines[4:]).strip() if len(lines) > 4 else ""
-
-        # Extract tag from refs
-        tag: str | None = None
-        for ref in refs.split(","):
-            ref = ref.strip()
-            if ref.startswith("tag:"):
-                tag = ref[4:].strip()
-                break
-
-        m = _CC_PATTERN.match(subject)
-        if m:
-            gd = m.groupdict()
-            entry = CommitEntry(
-                sha=sha,
-                short_sha=short_sha,
-                type=gd["type"].lower(),
-                scope=gd["scope"],
-                breaking=bool(gd["breaking"]),
-                description=gd["desc"].strip(),
-                body=body,
-                tag=tag,
-                raw_subject=subject,
-            )
-        else:
-            entry = CommitEntry(
-                sha=sha,
-                short_sha=short_sha,
-                type="unknown",
-                scope=None,
-                breaking=False,
-                description=subject,
-                body=body,
-                tag=tag,
-                raw_subject=subject,
-            )
-        entries.append(entry)
+        entry = _commit_entry_from_block(block)
+        if entry is not None:
+            entries.append(entry)
     return entries
 
 

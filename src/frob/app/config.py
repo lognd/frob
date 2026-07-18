@@ -112,6 +112,8 @@ class AppConfig(BaseModel):
     check_base: str | None = None
     check_only: list[str] = []
     check_stamp_coverage: bool = False
+    check_stamp_baseline: bool = False
+    check_delta: bool = False
     # check (python)
     check_skip_ruff: bool = False
     check_skip_ty: bool = False
@@ -407,6 +409,8 @@ class AppConfig(BaseModel):
             "gitlog_all",
             "gitlog_json",
             "check_stamp_coverage",
+            "check_stamp_baseline",
+            "check_delta",
             "graph_json",
             "ticket_json",
             "test_all",

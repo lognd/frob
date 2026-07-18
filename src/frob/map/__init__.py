@@ -89,52 +89,51 @@ def _format_symbols(node: FileNode, max_symbols: int, include_private: bool) -> 
     return _public_symbols_summary(node.symbols, node.private_count, max_symbols)
 
 
-# frob:doc docs/commands/map.md#public-api
-def map_project(root: Path, depth: int | None = None) -> MapResult:
-    files: list[FileNode] = []
+def _file_node(root: Path, path: Path) -> FileNode:
+    """The `FileNode` (lines/tokens/symbols) for one file under `root`."""
+    rel = str(path.relative_to(root))
+    ext = path.suffix.lower()
 
-    root = root.resolve()
-    try:
-        display_root = str(root.relative_to(Path.cwd()))
-    except ValueError:
-        display_root = str(root)
-    all_paths = sorted(_collect_paths(root, depth))
-
-    for path in all_paths:
-        rel = str(path.relative_to(root))
-        ext = path.suffix.lower()
-
-        if ext in _SOURCE_EXTS:
-            result = outline_file(path)
-            if result.is_ok:
-                ol = result.danger_ok
-                pub_syms, priv_count = _symbols_from_outline(ol)
-                lines = ol.lines
-            else:
-                lines = _count_lines(path)
-                pub_syms, priv_count = [], 0
+    if ext in _SOURCE_EXTS:
+        result = outline_file(path)
+        if result.is_ok:
+            ol = result.danger_ok
+            pub_syms, priv_count = _symbols_from_outline(ol)
+            lines = ol.lines
         else:
             lines = _count_lines(path)
             pub_syms, priv_count = [], 0
+    else:
+        lines = _count_lines(path)
+        pub_syms, priv_count = [], 0
 
-        try:
-            tok = _estimate_tokens(path.read_bytes())
-        except Exception:
-            tok = 0
+    try:
+        tok = _estimate_tokens(path.read_bytes())
+    except Exception:
+        tok = 0
 
-        files.append(
-            FileNode(
-                path=rel,
-                lines=lines,
-                tokens=tok,
-                symbols=pub_syms,
-                private_count=priv_count,
-            )
-        )
+    return FileNode(
+        path=rel, lines=lines, tokens=tok, symbols=pub_syms, private_count=priv_count
+    )
+
+
+def _display_root(root: Path) -> str:
+    """`root` relative to the cwd when possible, else `root` unchanged."""
+    try:
+        return str(root.relative_to(Path.cwd()))
+    except ValueError:
+        return str(root)
+
+
+# frob:doc docs/commands/map.md#public-api
+def map_project(root: Path, depth: int | None = None) -> MapResult:
+    root = root.resolve()
+    all_paths = sorted(_collect_paths(root, depth))
+    files = [_file_node(root, path) for path in all_paths]
 
     total_lines = sum(f.lines for f in files)
     return MapResult(
-        root=display_root,
+        root=_display_root(root),
         total_files=len(files),
         total_lines=total_lines,
         files=files,

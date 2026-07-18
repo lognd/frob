@@ -97,6 +97,11 @@ channel waivable, delete the `ArchCategory` half of
 <!-- frob:describes src/frob/gates/__init__.py::fuzz_gate -->
 <!-- frob:describes src/frob/gates/__init__.py::doclink_gate -->
 <!-- frob:describes src/frob/gates/__init__.py::run_gates -->
+<!-- frob:describes src/frob/gates/_baseline.py::stamp_baseline -->
+<!-- frob:describes src/frob/gates/_baseline.py::load_baseline -->
+<!-- frob:describes src/frob/gates/_baseline.py::is_baseline_stale -->
+<!-- frob:describes src/frob/gates/_baseline.py::delta_violations -->
+<!-- frob:describes src/frob/gates/_baseline.py::violation_fingerprint -->
 
 - `load_stamp` -- the raw `.frob/coverage-stamp` document, or `None` if
   never stamped/unreadable; TEST006 compares it against live file hashes.
@@ -263,6 +268,24 @@ obligation. Coverage is recorded evidence: `make coverage` runs pytest-cov
 then `stamp_coverage`; `frob check` only reads the stamp and coverage.xml.
 A stale or missing stamp is itself a violation (TEST006) -- the gate never
 silently passes because tests were not run.
+
+## Delta baseline (agent workflow, T-0095/T-0107)
+
+`frob check` reports every kept violation on every run -- most of them
+pre-existing legacy debt (ticketed, not new), not signal for the agent
+driving one ticket to green. `stamp_baseline` records the current
+violation set's fingerprints (rule + file + message digest, via
+`violation_fingerprint`) plus a per-file content hash to `.frob/baseline`.
+`delta_violations` filters a later violation set down to fingerprints
+absent from that stamp; `is_baseline_stale` detects when any hashed file
+has changed since the stamp, the same staleness shape `stamp_coverage`
+uses for `.frob/coverage-stamp`.
+
+Wired at the CLI as `frob check --stamp-baseline` (record and exit) and
+`frob check --delta` (gates stage reports only new violations; see
+docs/commands/check.md). A missing or stale baseline degrades `--delta` to
+the full, unfiltered set with a warning -- this is an agent-facing filter
+only, opt-in, never a silent narrowing of the human-facing report.
 
 ## Data models
 

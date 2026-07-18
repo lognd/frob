@@ -60,6 +60,33 @@ def frob_doable_tickets(root: Path) -> Result[list[dict], ServeError]:
     return Ok([{"id": t.id, "title": t.title, "kind": t.kind.value} for t in tickets])
 
 
+def _stale_entries_as_dicts(report) -> list[dict]:  # noqa: ANN001
+    """DRIFT001 stale-ack entries from `report`, as JSON-able dicts."""
+    return [
+        {
+            "ref": s.entry.ref,
+            "facet": s.entry.facet,
+            "was": s.entry.digest,
+            "now": s.current,
+            "dependents": list(s.dependents),
+        }
+        for s in report.stale
+    ]
+
+
+def _dangling_entries_as_dicts(report) -> list[dict]:  # noqa: ANN001
+    """DRIFT002 dangling-edge entries from `report`, as JSON-able dicts."""
+    return [
+        {
+            "src": d.edge.src,
+            "kind": d.edge.kind.value,
+            "target": d.edge.target,
+            "candidates": list(d.candidates),
+        }
+        for d in report.dangling
+    ]
+
+
 # frob:doc docs/modules/serve.md#tools
 def frob_stale_docs(root: Path) -> Result[dict, ServeError]:
     """DRIFT001 stale acks and DRIFT002 dangling edges from the drift report."""
@@ -82,25 +109,8 @@ def frob_stale_docs(root: Path) -> Result[dict, ServeError]:
     )
     return Ok(
         {
-            "stale": [
-                {
-                    "ref": s.entry.ref,
-                    "facet": s.entry.facet,
-                    "was": s.entry.digest,
-                    "now": s.current,
-                    "dependents": list(s.dependents),
-                }
-                for s in report.stale
-            ],
-            "dangling": [
-                {
-                    "src": d.edge.src,
-                    "kind": d.edge.kind.value,
-                    "target": d.edge.target,
-                    "candidates": list(d.candidates),
-                }
-                for d in report.dangling
-            ],
+            "stale": _stale_entries_as_dicts(report),
+            "dangling": _dangling_entries_as_dicts(report),
         }
     )
 
@@ -128,6 +138,20 @@ def frob_check_scope(root: Path, ticket_id: str) -> Result[dict, ServeError]:
     )
 
 
+def _resolve_symref(
+    snapshot,
+    symref: str,
+    *,
+    caller: str,  # noqa: ANN001
+) -> Result:
+    """Resolve `symref` in `snapshot`, logging under `caller`'s name on failure."""
+    resolved = resolve(snapshot, symref)
+    if resolved.is_err:
+        _log.warning("serve: %s: %s: %s", caller, symref, resolved.danger_err)
+        return Err(ServeError.UnknownSymbol)
+    return resolved
+
+
 # frob:doc docs/modules/serve.md#tools
 def frob_graph_query(root: Path, symref: str) -> Result[dict, ServeError]:
     """Resolve `symref`; list outgoing/incoming edges, like `frob graph query`."""
@@ -137,10 +161,9 @@ def frob_graph_query(root: Path, symref: str) -> Result[dict, ServeError]:
         return Err(ServeError.GraphUnavailable)
     snapshot = snapshot_result.danger_ok
 
-    resolved = resolve(snapshot, symref)
+    resolved = _resolve_symref(snapshot, symref, caller="frob_graph_query")
     if resolved.is_err:
-        _log.warning("serve: frob_graph_query: %s: %s", symref, resolved.danger_err)
-        return Err(ServeError.UnknownSymbol)
+        return Err(resolved.danger_err)
     record = resolved.danger_ok
     outgoing = edges_from(snapshot, record.symref)
     incoming = edges_to(snapshot, record.symref)
@@ -177,10 +200,9 @@ def frob_doc_for(root: Path, symref: str) -> Result[dict, ServeError]:
         return Err(ServeError.GraphUnavailable)
     snapshot = snapshot_result.danger_ok
 
-    resolved = resolve(snapshot, symref)
+    resolved = _resolve_symref(snapshot, symref, caller="frob_doc_for")
     if resolved.is_err:
-        _log.warning("serve: frob_doc_for: %s: %s", symref, resolved.danger_err)
-        return Err(ServeError.UnknownSymbol)
+        return Err(resolved.danger_err)
     record = resolved.danger_ok
     doc_edges = _edges_by_kind_value(edges_from(snapshot, record.symref), "doc")
     described_by = _edges_by_kind_value(edges_to(snapshot, record.symref), "describes")

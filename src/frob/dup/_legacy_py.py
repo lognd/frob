@@ -12,7 +12,8 @@ from collections.abc import Iterator
 
 from tree_sitter import Node
 
-from frob.dup._legacy_common import _child, _node_text
+from frob.lang import child_by_field as _child
+from frob.lang import node_text as _node_text
 
 
 def _collect_locals_py(func_node: Node) -> set[str]:

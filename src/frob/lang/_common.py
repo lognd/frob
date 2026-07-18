@@ -156,6 +156,14 @@ def span_of(node: Node) -> tuple[int, int]:
 
 
 # frob:doc docs/modules/lang.md#primitives
+def child_by_field(node: Node, field: str) -> Node | None:
+    """`node.child_by_field_name(field)` -- a one-line convenience so every
+    per-language walker (`frob.arch`, `frob.dup._legacy`) shares the same
+    field-lookup call instead of each keeping its own copy."""
+    return node.child_by_field_name(field)
+
+
+# frob:doc docs/modules/lang.md#primitives
 def child_text(node: Node | None) -> str:
     """Decode a node's own text, or '' if the node is absent -- a programmer
     convenience for optional field lookups (missing name is a grammar bug,

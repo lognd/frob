@@ -78,14 +78,15 @@ def _load_snapshot(root: Path):  # noqa: ANN201
 
 
 # frob:ticket T-0021
+# frob:ticket T-0125
 def _heat(cfg: AppConfig) -> None:
     """`frob perf heat [--json] [--smells] [--top N] [--annotate FILE]`."""
     import contextlib
 
     if cfg.perf_json:
-        from frob.app.check_runner import _quiet_stdout_logs
+        from frob.logging import quiet_stdout_logs
 
-        ctx = _quiet_stdout_logs()
+        ctx = quiet_stdout_logs()
     else:
         ctx = contextlib.nullcontext()
 
@@ -134,22 +135,10 @@ def _print_heat_table(entries, unattributed_s: float) -> None:
     print(paint(f"unattributed: {unattributed_s:.3f}s", DIM, color))
 
 
-# frob:ticket T-0021
-def _heat_body(cfg: AppConfig) -> None:
-    """The actual `frob perf heat` body, run inside `_heat`'s optional
-    quiet-stdout-logs context so `--json` stays pure JSON on stdout."""
-    from frob.perf import HeatReport, heat, join_smells, load_artifact
-
-    root = (cfg.perf_path or Path(".")).resolve()
-
-    artifact_result = load_artifact(root, cfg.perf_ref)
-    if artifact_result.is_err:
-        _log.error("heat: %s", artifact_result.danger_err)
-        sys.exit(1)
-    artifact = artifact_result.danger_ok
-
-    snapshot = _load_snapshot(root)
-    report: HeatReport = heat(artifact, snapshot)
+def _ranked_heat_entries(cfg: AppConfig, root: Path, report, snapshot):  # noqa: ANN001, ANN201
+    """`report`'s entries, smell-joined/sorted and top-N'd per `cfg`; report is
+    replaced in place with the smell-joined version when `--smells` is set."""
+    from frob.perf import join_smells
 
     if cfg.perf_smells:
         from frob.gates import perf_gate
@@ -162,11 +151,11 @@ def _heat_body(cfg: AppConfig) -> None:
 
     if cfg.perf_top is not None:
         entries = entries[: cfg.perf_top]
+    return report, entries
 
-    if cfg.perf_annotate is not None:
-        _annotate(root, cfg.perf_annotate, report, snapshot)
-        return
 
+def _print_heat_result(cfg: AppConfig, entries, report) -> None:  # noqa: ANN001
+    """Render `entries`/`report` as `--json` or the default table, per `cfg`."""
     if cfg.perf_json:
         import json
 
@@ -176,8 +165,46 @@ def _heat_body(cfg: AppConfig) -> None:
         }
         print(json.dumps(payload, indent=2))
         return
-
     _print_heat_table(entries, report.unattributed_s)
+
+
+# frob:ticket T-0021
+def _heat_body(cfg: AppConfig) -> None:
+    """The actual `frob perf heat` body, run inside `_heat`'s optional
+    quiet-stdout-logs context so `--json` stays pure JSON on stdout."""
+    from frob.perf import HeatReport, heat, load_artifact
+
+    root = (cfg.perf_path or Path(".")).resolve()
+
+    artifact_result = load_artifact(root, cfg.perf_ref)
+    if artifact_result.is_err:
+        _log.error("heat: %s", artifact_result.danger_err)
+        sys.exit(1)
+    artifact = artifact_result.danger_ok
+
+    snapshot = _load_snapshot(root)
+    report: HeatReport = heat(artifact, snapshot)
+    report, entries = _ranked_heat_entries(cfg, root, report, snapshot)
+
+    if cfg.perf_annotate is not None:
+        _annotate(root, cfg.perf_annotate, report, snapshot)
+        return
+
+    _print_heat_result(cfg, entries, report)
+
+
+def _annotate_gutters(rel: str, report, snapshot) -> dict[int, str]:  # noqa: ANN001
+    """`{line: "cum_s/ncalls"}` for every heat entry whose symbol lives in `rel`."""
+    by_line: dict[int, str] = {}
+    for entry in report.entries:
+        symbol_file, _, _qualname = entry.ref.partition("::")
+        if symbol_file != rel:
+            continue
+        record = snapshot.symbols.get(entry.ref)
+        if record is None:
+            continue
+        by_line[record.span[0]] = f"{entry.cum_s:.3f}s/{entry.ncalls}x"
+    return by_line
 
 
 # frob:ticket T-0021
@@ -195,15 +222,7 @@ def _annotate(root: Path, file: Path, report, snapshot) -> None:  # noqa: ANN001
     except ValueError:
         rel = file.as_posix()
 
-    by_line: dict[int, str] = {}
-    for entry in report.entries:
-        symbol_file, _, _qualname = entry.ref.partition("::")
-        if symbol_file != rel:
-            continue
-        record = snapshot.symbols.get(entry.ref)
-        if record is None:
-            continue
-        by_line[record.span[0]] = f"{entry.cum_s:.3f}s/{entry.ncalls}x"
+    by_line = _annotate_gutters(rel, report, snapshot)
 
     try:
         text = file.read_text(encoding="utf-8")

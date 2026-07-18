@@ -80,16 +80,8 @@ def _store_cache(cache_path: Path, key: str, node_ids: frozenset[str]) -> None:
     )
 
 
-# frob:doc docs/modules/testing.md#public-api
-def collect_python_tests(root: Path) -> Result[CollectedTests, TestingError]:
-    """`uv run pytest --collect-only -q` node ids, cached on test-file content hash."""
-    key = _content_key(root)
-    cache_path = root / _CACHE_REL
-    cached = _load_cache(cache_path, key)
-    if cached is not None:
-        _log.debug("collect_python_tests: cache hit, %d node id(s)", len(cached))
-        return Ok(CollectedTests(node_ids=cached))
-
+def _run_collect_only(root: Path) -> Result[frozenset[str], TestingError]:
+    """Spawn `pytest --collect-only -q` and parse its stdout into node ids."""
     # -o addopts= neutralizes the project's own addopts: a configured -q
     # would stack with ours into -qq, which switches --collect-only from
     # node ids to per-file counts (and -n auto adds xdist noise) -- the
@@ -106,12 +98,29 @@ def collect_python_tests(root: Path) -> Result[CollectedTests, TestingError]:
             "collect_python_tests: pytest --collect-only exited %d", result.returncode
         )
         return Err(TestingError.CollectFailed)
-
-    node_ids = frozenset(
-        line.strip()
-        for line in result.stdout.splitlines()
-        if "::" in line and not line.startswith(" ")
+    return Ok(
+        frozenset(
+            line.strip()
+            for line in result.stdout.splitlines()
+            if "::" in line and not line.startswith(" ")
+        )
     )
+
+
+# frob:doc docs/modules/testing.md#public-api
+def collect_python_tests(root: Path) -> Result[CollectedTests, TestingError]:
+    """`uv run pytest --collect-only -q` node ids, cached on test-file content hash."""
+    key = _content_key(root)
+    cache_path = root / _CACHE_REL
+    cached = _load_cache(cache_path, key)
+    if cached is not None:
+        _log.debug("collect_python_tests: cache hit, %d node id(s)", len(cached))
+        return Ok(CollectedTests(node_ids=cached))
+
+    collected = _run_collect_only(root)
+    if collected.is_err:
+        return Err(collected.danger_err)
+    node_ids = collected.danger_ok
     _store_cache(cache_path, key, node_ids)
     _log.info("collect_python_tests: collected %d node id(s)", len(node_ids))
     return Ok(CollectedTests(node_ids=node_ids))

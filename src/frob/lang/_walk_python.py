@@ -98,8 +98,19 @@ def _class_symbol(
 
 
 def _const_symbol(node: Node) -> RawSymbol | None:
-    """A module-level SCREAMING_CASE constant `RawSymbol`, or None if not one."""
-    assign = node.named_children[0] if node.named_child_count else None
+    """A module-level SCREAMING_CASE constant `RawSymbol`, or None if not one.
+
+    `node` is either an `assignment` itself (the grammar shipped by
+    tree-sitter-language-pack emits top-level assignments as direct
+    `module` children) or an `expression_statement` wrapping one (older/
+    other grammar builds) -- both forms are accepted so a right-hand side
+    of any kind, literal or call expression (`X = Foo(...)`), is caught.
+    """
+    assign = (
+        node
+        if node.type == "assignment"
+        else (node.named_children[0] if node.named_child_count else None)
+    )
     if assign is None or assign.type != "assignment":
         return None
     left = assign.child_by_field_name("left")
@@ -139,7 +150,7 @@ def _visit(container: Node, stack: tuple[str, ...], symbols: list[RawSymbol]) ->
             name = child_text(node.child_by_field_name("name"))
             symbols.append(_class_symbol(node, sig_node, stack, name, body))
             _visit(body, (*stack, name), symbols)
-        elif node.type == "expression_statement" and not stack:
+        elif node.type in ("expression_statement", "assignment") and not stack:
             const = _const_symbol(node)
             if const is not None:
                 symbols.append(const)

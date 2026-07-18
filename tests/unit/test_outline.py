@@ -41,22 +41,23 @@ def test_py_outline_imports(py_file):
 
 def test_py_outline_functions(py_file):
     outline = outline_file(py_file).danger_ok
-    names = [f.name for f in outline.functions]
+    names = {f.name for f in outline.functions}
     assert "helper" in names
     assert "another" in names
 
 
 def test_py_outline_classes(py_file):
     outline = outline_file(py_file).danger_ok
-    names = [c.name for c in outline.classes]
+    names = {c.name for c in outline.classes}
     assert "MyClass" in names
     assert "Other" in names
 
 
 def test_py_outline_methods(py_file):
     outline = outline_file(py_file).danger_ok
-    cls = next(c for c in outline.classes if c.name == "MyClass")
-    method_names = [m.name for m in cls.methods]
+    classes_by_name = {c.name: c for c in outline.classes}
+    cls = classes_by_name["MyClass"]
+    method_names = {m.name for m in cls.methods}
     assert "process" in method_names
     assert "_private" in method_names
 
@@ -110,20 +111,21 @@ def test_cpp_outline_imports(cpp_file):
 
 def test_cpp_outline_functions(cpp_file):
     outline = outline_file(cpp_file).danger_ok
-    names = [f.name for f in outline.functions]
+    names = {f.name for f in outline.functions}
     assert "helper" in names
 
 
 def test_cpp_outline_classes(cpp_file):
     outline = outline_file(cpp_file).danger_ok
-    names = [c.name for c in outline.classes]
+    names = {c.name for c in outline.classes}
     assert "Engine" in names
 
 
 def test_cpp_outline_methods(cpp_file):
     outline = outline_file(cpp_file).danger_ok
-    cls = next(c for c in outline.classes if c.name == "Engine")
-    method_names = [m.name for m in cls.methods]
+    classes_by_name = {c.name: c for c in outline.classes}
+    cls = classes_by_name["Engine"]
+    method_names = {m.name for m in cls.methods}
     assert "run" in method_names
     assert "status" in method_names
 

@@ -56,3 +56,24 @@ class StrataError(ErrorSet):
         "{error_paths, state_transitions, boundary_crossings, crash_events} "
         "(docs/strata/policy.md#packs, T-0070)"
     )
+    MissingTimeout = (
+        "A flow into a node with an `on crash` contract has no declared "
+        "timeout -- the no-hang check: every synchronous caller of a "
+        "crashable component must declare a timeout, never silently block "
+        "forever (docs/strata/boundary.md"
+        "#crash-contracts-and-error-totality-adjacent-claims, T-0074)"
+    )
+    IncompatibleTimeout = (
+        "A flow's declared timeout is shorter than its crashable destination's "
+        "restart+retry bound -- the caller would give up before recovery can "
+        "plausibly complete, which is the same silent-hang class the no-hang "
+        "check exists to kill (docs/strata/boundary.md"
+        "#crash-contracts-and-error-totality-adjacent-claims, T-0074)"
+    )
+    IncompatibleContainmentBound = (
+        "A breach contract's detection SLA exceeds its revocation bound, or a "
+        "declared credential_age outlives the revocation window -- containment "
+        "must complete before the credential's own lifetime runs out, and "
+        "detection must land before revocation, else the compromise persists "
+        "past its own contract (docs/strata/kernel.md#scenario, T-0076)"
+    )

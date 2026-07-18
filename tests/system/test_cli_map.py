@@ -135,7 +135,7 @@ def test_json_contains_all_five_files(project):
     r = run("map", str(project), "--json")
     data = json.loads(r.stdout)
     paths = [f["path"] for f in data["files"]]
-    basenames = [Path(p).name for p in paths]
+    basenames = {Path(p).name for p in paths}
     assert "a.py" in basenames
     assert "b.py" in basenames
     assert "c.py" in basenames

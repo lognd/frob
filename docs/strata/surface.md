@@ -294,7 +294,7 @@ cache   ID "of" ID "{" cache_prop* "}"?
 cache_prop := "keyed_by" IDENT | "ttl" QUANTITY | "staleness" QUANTITY
             | "hit" NUM "%" | "policy" IDENT | "invalidate_on" IDENT
 
-queue   ID "{" queue_prop* "}"?
+queue   ID (":" TRUST)? "{" queue_prop* "}"?
 queue_prop := "delivery" IDENT | "ordering" IDENT | "attr" ATTRVAL
             | "clearance" IDENT
 
@@ -302,7 +302,7 @@ cdn     ID "of" ID "{" cdn_prop* "}"?
 cdn_prop := "provider" IDENT ":" TRUST | "staleness" (QUANTITY | "unlimited")
           | "hit" NUM "%" | "tls_terminates_at_provider"
 
-balancer ID "{" balancer_prop* "}"?
+balancer ID (":" TRUST)? "{" balancer_prop* "}"?
 balancer_prop := "policy" IDENT | "sticky"
 ```
 
@@ -323,9 +323,9 @@ type) gains no new field for these diagnostics -- see the seam note below.
 |---|---|
 | `store X : T { ... }` | `Node` X at trust T; `engine=<x>`/`immutable`/`append_only` become attrs; `rpo QUANTITY` becomes `rpo=<seconds>` (a time unit, or `UnitMismatch` -- docs/strata/kernel.md#age-propagation-semantics) |
 | `cache X of Y { ... }` | `Node` X at Y's trust/clearance; flow `X__fill` (Y -> X, age = the ttl/staleness bound); flow `X__inval_<F>` (Y -> X, age 0) per `invalidate_on F`; `hit=<v>`/`policy=<v>`/`keyed_by=<v>` attrs |
-| `queue X { ... }` | `Node` X (trust defaults to `"trusted"` -- see deviation below); `delivery=<x>`/`ordering=<x>` attrs; every outbound flow from X gains `delivery=<x>` |
+| `queue X [: T] { ... }` | `Node` X at trust T if declared, else `"trusted"` (see deviation below); `delivery=<x>`/`ordering=<x>` attrs; every outbound flow from X gains `delivery=<x>` |
 | `cdn X of Y { ... }` | `Node` X at the declared provider's trust, Y's clearance; flow `X__fill` (Y -> X, age = staleness, or no age when `unlimited` over an `immutable` Y); `provider=<x>`/`hit=<v>` attrs; `tls_terminates_at_provider` adds boundary `X__declassify` (declassify, Y's clearance -> `Public`, predicate `"tls_terminates_at_provider"`) on `X__fill` |
-| `balancer X { ... }` | `Node` X (trust defaults to `"trusted"`); `policy=<x>`/`sticky` attrs |
+| `balancer X [: T] { ... }` | `Node` X at trust T if declared, else `"trusted"`; `policy=<x>`/`sticky` attrs |
 
 ### The age collapse, applied
 
@@ -384,11 +384,12 @@ since that would require editing `_facts.py` (a kernel file, out of
 scope for T-0064) -- callers that need it programmatically call
 `elaborate_infra` directly, as `tests/unit/strata/test_infra.py` does.
 
-### Deviation: queue/balancer trust defaults to `"trusted"`
+### Deviation: queue/balancer trust defaults to `"trusted"` when undeclared
 
-The grammar above gives `store`/`cache`/`cdn` an explicit or inherited
-trust, but `queue` and `balancer` have no `TRUST` clause at all -- both
-default to `"trusted"` in `_infra.py`. This is a deliberate, documented
-default (not a silent one), tracked for a future grammar extension
-(`frob ticket new`, filed as a T-0064 discovery) that would let `queue`/
-`balancer` declare trust explicitly instead.
+`store`/`cache`/`cdn` have always had an explicit or inherited trust.
+`queue` and `balancer` gained an *optional* `TRUST` clause in T-0093
+(`queue X : T { ... }` / `balancer X : T { ... }`); when the clause is
+omitted, `_infra.py::_elaborate_queue`/`_elaborate_balancer` still default
+to `"trusted"`. This is a deliberate, documented default (not a silent
+one) -- the clause is optional rather than mandatory so every pre-T-0093
+`.strata` source keeps parsing and elaborating identically.

@@ -12,12 +12,11 @@ unrefined-frontier pattern in `_elaborate.py`, diagnostics here are logged
 at WARNING by the caller rather than folded into the kernel model, since
 `KernelModel` (a kernel type) may not grow a vocabulary-specific field.
 
-Deliberate deviation (documented, not silent): the grammar gives `queue`
-and `balancer` no `TRUST` clause (unlike `store`/`cache`/`cdn`, which all
-have one, declared or inherited). Both default to `"trusted"` here -- see
-docs/strata/surface.md#std-infra for the rationale and the follow-up
-ticket tracking a grammar extension to make this declared instead of
-defaulted.
+`queue` and `balancer` now accept an optional `TRUST` clause (T-0093,
+`queue X : TRUST { ... }` / `balancer X : TRUST { ... }`), matching
+`store`/`cache`/`cdn`. When the clause is omitted the elaborator still
+falls back to the documented `"trusted"` default below -- a declared
+deviation, not a silent one (docs/strata/surface.md#std-infra).
 """
 
 from __future__ import annotations
@@ -114,40 +113,54 @@ def _elaborate_store(decl: StoreDecl) -> Result[Node, StrataError]:
 
 
 def _elaborate_queue(decl: QueueDecl) -> Node:
-    """`queue` -> `Node`; delivery/ordering become attrs (trust default: module doc)."""
+    """`queue` -> `Node`; delivery/ordering become attrs, trust explicit or defaulted.
+
+    T-0093: `decl.trust` is `None` unless the source declares `queue X :
+    TRUST`, in which case it wins over the documented `"trusted"` default
+    (module docstring, docs/strata/surface.md#std-infra deviation note).
+    """
     attrs = list(decl.attrs)
     if decl.delivery is not None:
         attrs.append(f"delivery={decl.delivery}")
     if decl.ordering is not None:
         attrs.append(f"ordering={decl.ordering}")
-    _log.warning(
-        "queue %s: trust defaulted to %r -- no TRUST clause yet (T-0093)",
-        decl.id,
-        _INFRA_DEFAULT_TRUST,
-    )
-    _log.debug("queue %s -> node, attrs=%s", decl.id, attrs)
+    if decl.trust is None:
+        _log.warning(
+            "queue %s: trust defaulted to %r -- no TRUST clause declared (T-0093)",
+            decl.id,
+            _INFRA_DEFAULT_TRUST,
+        )
+    trust = decl.trust or _INFRA_DEFAULT_TRUST
+    _log.debug("queue %s -> node at trust %s, attrs=%s", decl.id, trust, attrs)
     return Node(
         id=decl.id,
-        trust=_INFRA_DEFAULT_TRUST,
+        trust=trust,
         clearance=decl.clearance or "Secret",
         attrs=tuple(attrs),
     )
 
 
 def _elaborate_balancer(decl: BalancerDecl) -> Node:
-    """`balancer` -> `Node`; policy/sticky become attrs (trust default: module doc)."""
+    """`balancer` -> `Node`; policy/sticky become attrs; trust is explicit or defaulted.
+
+    T-0093: `decl.trust` is `None` unless the source declares `balancer X :
+    TRUST`, in which case it wins over the documented `"trusted"` default
+    (module docstring, docs/strata/surface.md#std-infra deviation note).
+    """
     attrs: list[str] = []
     if decl.policy is not None:
         attrs.append(f"policy={decl.policy}")
     if decl.sticky:
         attrs.append("sticky")
-    _log.warning(
-        "balancer %s: trust defaulted to %r -- no TRUST clause yet (T-0093)",
-        decl.id,
-        _INFRA_DEFAULT_TRUST,
-    )
-    _log.debug("balancer %s -> node, attrs=%s", decl.id, attrs)
-    return Node(id=decl.id, trust=_INFRA_DEFAULT_TRUST, attrs=tuple(attrs))
+    if decl.trust is None:
+        _log.warning(
+            "balancer %s: trust defaulted to %r -- no TRUST clause declared (T-0093)",
+            decl.id,
+            _INFRA_DEFAULT_TRUST,
+        )
+    trust = decl.trust or _INFRA_DEFAULT_TRUST
+    _log.debug("balancer %s -> node at trust %s, attrs=%s", decl.id, trust, attrs)
+    return Node(id=decl.id, trust=trust, attrs=tuple(attrs))
 
 
 def _elaborate_cache(

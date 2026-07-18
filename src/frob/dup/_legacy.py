@@ -25,7 +25,7 @@ from pydantic import BaseModel
 from tree_sitter import Node
 from typani import ErrorSet
 
-from frob.dup._legacy_common import _child, _sha16
+from frob.dup._legacy_common import _sha16
 from frob.dup._legacy_cpp import (
     _collect_locals_cpp,
     _iter_functions_cpp,
@@ -36,6 +36,7 @@ from frob.dup._legacy_py import (
     _iter_functions_py,
     _serialize_py_body,
 )
+from frob.lang import child_by_field as _child
 from frob.logging import get_logger
 
 _log = get_logger(__name__)

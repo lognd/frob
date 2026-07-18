@@ -19,6 +19,7 @@ from frob.logging import get_logger
 _log = get_logger(__name__)
 
 # Always-pruned directory names, additive to the frob.toml globs.
+# frob:doc docs/modules/app.md#shared-exclude-glob-logic
 BUILTIN_SKIP_DIRS = frozenset(
     {
         "__pycache__",

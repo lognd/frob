@@ -22,6 +22,7 @@ from ._models import (
     BoundClaim,
     Claim,
     ClaimResult,
+    Independent,
     KernelModel,
     Metric,
     NoFlow,
@@ -42,7 +43,7 @@ _GROWTH_PREFIX = "growth="
 #: Deny-by-default saturation horizon (months); a PROVED utilization whose
 #: growth-projected saturation falls within this window is REFUTED instead
 #: (docs/strata/kernel.md#capacity-semantics).
-GROWTH_HORIZON_MONTHS = 24
+_GROWTH_HORIZON_MONTHS = 24
 
 
 def _node_skew(node) -> float | None:
@@ -187,6 +188,59 @@ def _eval_reach(
     )
 
 
+def _eval_independent(
+    facts: FactBase, claim: Claim, body: Independent
+) -> Result[ClaimResult, StrataError]:
+    """`independent(p, n)`: PROVED forall when no src->dst witness path touches
+    avoid's reach closure; REFUTED with the offending path on the first overlap
+    (docs/strata/kernel.md#claim-forms-and-their-decision-procedures, T-0076).
+
+    `avoid` itself is excluded from its own closure before comparing: a
+    recovery path is expected to terminate AT the node it recovers, so
+    `dst == avoid` (the common breach case) must not trivially refute
+    every claim -- what independence forbids is the path touching
+    anything ELSE `avoid` can also reach.
+    """
+    sources = _expand(facts, body.src)
+    if sources.is_err:
+        return Err(sources.danger_err)
+    targets = _expand(facts, body.dst)
+    if targets.is_err:
+        return Err(targets.danger_err)
+    avoided = _expand(facts, body.avoid)
+    if avoided.is_err:
+        return Err(avoided.danger_err)
+    sorted_targets = sorted(targets.danger_ok)  # hoisted above every loop below
+    avoid_roots = set(avoided.danger_ok)
+    avoid_nodes: set[str] = set()
+    for avoid_src in avoided.danger_ok:
+        avoid_nodes |= set(facts.reachable(avoid_src, through_barriers=True))
+    avoid_nodes -= avoid_roots
+    for src in sources.danger_ok:
+        paths = facts.reachable(src, through_barriers=True)
+        for dst in sorted_targets:
+            if dst not in paths:
+                continue
+            path = paths[dst]
+            shared = set(path[0::2]) & avoid_nodes
+            if shared:
+                offending = min(shared)  # deterministic without a per-iteration sort
+                _log.info(
+                    "independent %s refuted: path %s shares node %s with "
+                    "avoided closure %s",
+                    claim.id,
+                    path,
+                    offending,
+                    body.avoid,
+                )
+                return Ok(
+                    _refuted(
+                        claim, f"path shares node {offending} with {body.avoid}", path
+                    )
+                )
+    return Ok(_proved(claim, f"no witness path shares a node with {body.avoid}"))
+
+
 def _limit_in(limit: Quantity, dimension: str) -> Result[float, StrataError]:
     """The bound's limit in base units, refusing a limit of the wrong dimension."""
     dim = limit.dimension()
@@ -298,7 +352,7 @@ def _eval_bound(
                 growth_pct = g
         if growth_pct is not None:
             months = _months_to_saturation(utilization, limit.danger_ok, growth_pct)
-            if months is not None and months <= GROWTH_HORIZON_MONTHS:
+            if months is not None and months <= _GROWTH_HORIZON_MONTHS:
                 horizon = math.ceil(months)
                 sat_date = _add_months(today, horizon)
                 _log.warning(
@@ -402,7 +456,7 @@ def evaluate_claims(
     claim yields exactly one result, in declaration order, so a report can
     never silently drop a claim. When `waived_policies` names an id in
     `compiled_policies` that `enables extraction_soundness`, every PROVED
-    noflow/reach verdict downgrades to ASSUMED with a detail recording
+    noflow/reach/independent verdict downgrades to ASSUMED with a detail recording
     which policy waiver caused it -- quantifier-preserving, logged at
     WARNING per affected claim (docs/strata/evidence.md#the-enables-
     cascade). Bound claims never depend on this atom in v0 and are never
@@ -425,6 +479,8 @@ def evaluate_claims(
             outcome = _eval_noflow(facts, claim, body)
         elif isinstance(body, Reach):
             outcome = _eval_reach(facts, claim, body)
+        elif isinstance(body, Independent):
+            outcome = _eval_independent(facts, claim, body)
         else:
             outcome = _eval_bound(facts, claim, body, current)
         if outcome.is_err:
@@ -432,7 +488,7 @@ def evaluate_claims(
         result = outcome.danger_ok
         if (
             cascade_detail is not None
-            and isinstance(body, NoFlow | Reach)
+            and isinstance(body, NoFlow | Reach | Independent)
             and result.verdict is Verdict.PROVED
         ):
             _log.warning(

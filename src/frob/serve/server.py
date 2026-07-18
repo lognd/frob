@@ -34,6 +34,46 @@ def _require_mcp():  # noqa: ANN202
     return FastMCP
 
 
+def _unwrap(result):  # noqa: ANN001, ANN202
+    """A tool's `Result.danger_ok`, or raise `RuntimeError(err.value)` for MCP."""
+    if result.is_err:
+        raise RuntimeError(result.danger_err.value)
+    return result.danger_ok
+
+
+def _register_query_tools(server, root: Path) -> None:  # noqa: ANN001
+    """Register the doable-tickets/stale-docs/graph-query/doc-for read-only tools."""
+
+    @server.tool()
+    def frob_doable_tickets() -> list[dict]:
+        """List doable tickets (id/title/kind), oldest-first."""
+        return _unwrap(_tools.frob_doable_tickets(root))
+
+    @server.tool()
+    def frob_stale_docs() -> dict:
+        """DRIFT001 stale acks and DRIFT002 dangling edges from the drift report."""
+        return _unwrap(_tools.frob_stale_docs(root))
+
+    @server.tool()
+    def frob_graph_query(symref: str) -> dict:
+        """Resolve `symref` and list its outgoing/incoming obligation-graph edges."""
+        return _unwrap(_tools.frob_graph_query(root, symref))
+
+    @server.tool()
+    def frob_doc_for(symref: str) -> dict:
+        """The doc anchor and describes-edges resolved `symref` is documented by."""
+        return _unwrap(_tools.frob_doc_for(root, symref))
+
+
+def _register_scope_tool(server, root: Path) -> None:  # noqa: ANN001
+    """Register the `frob_check_scope` tool."""
+
+    @server.tool()
+    def frob_check_scope(ticket_id: str) -> dict:
+        """Whether the working diff stays within `ticket_id`'s declared scope."""
+        return _unwrap(_tools.frob_check_scope(root, ticket_id))
+
+
 # frob:doc docs/modules/serve.md#mcp-sdk
 def build_server(root: Path):  # noqa: ANN201
     """Construct a `FastMCP` server bound to `root`, every read-only tool registered."""
@@ -41,45 +81,8 @@ def build_server(root: Path):  # noqa: ANN201
     root = root.resolve()
     server = FastMCP("frob")
 
-    @server.tool()
-    def frob_doable_tickets() -> list[dict]:
-        """List doable tickets (id/title/kind), oldest-first."""
-        result = _tools.frob_doable_tickets(root)
-        if result.is_err:
-            raise RuntimeError(result.danger_err.value)
-        return result.danger_ok
-
-    @server.tool()
-    def frob_stale_docs() -> dict:
-        """DRIFT001 stale acks and DRIFT002 dangling edges from the drift report."""
-        result = _tools.frob_stale_docs(root)
-        if result.is_err:
-            raise RuntimeError(result.danger_err.value)
-        return result.danger_ok
-
-    @server.tool()
-    def frob_check_scope(ticket_id: str) -> dict:
-        """Whether the working diff stays within `ticket_id`'s declared scope."""
-        result = _tools.frob_check_scope(root, ticket_id)
-        if result.is_err:
-            raise RuntimeError(result.danger_err.value)
-        return result.danger_ok
-
-    @server.tool()
-    def frob_graph_query(symref: str) -> dict:
-        """Resolve `symref` and list its outgoing/incoming obligation-graph edges."""
-        result = _tools.frob_graph_query(root, symref)
-        if result.is_err:
-            raise RuntimeError(result.danger_err.value)
-        return result.danger_ok
-
-    @server.tool()
-    def frob_doc_for(symref: str) -> dict:
-        """The doc anchor and describes-edges resolved `symref` is documented by."""
-        result = _tools.frob_doc_for(root, symref)
-        if result.is_err:
-            raise RuntimeError(result.danger_err.value)
-        return result.danger_ok
+    _register_query_tools(server, root)
+    _register_scope_tool(server, root)
 
     _log.info("serve: built FastMCP server bound to %s with 5 tools", root)
     return server

@@ -38,26 +38,28 @@ class ModuleOutline(BaseModel):
     functions: list[FunctionOutline]
     classes: list[ClassOutline]
 
-    def as_text(self, include_private: bool = False) -> str:
-        # frob:doc docs/commands/outline.md#public-api
-        parts = [f"{self.path}  ({self.lines} lines)"]
-        if self.imports:
-            parts.append(f"  imports: {', '.join(self.imports)}")
-
-        hidden_fns = 0
+    def _functions_as_text(self, include_private: bool) -> tuple[list[str], int]:
+        """Function lines plus the count hidden for privacy."""
+        parts: list[str] = []
+        hidden = 0
         for fn in self.functions:
             if not include_private and fn.name.startswith("_"):
-                hidden_fns += 1
+                hidden += 1
                 continue
             line = f"  {fn.signature}  [L{fn.line}]"
             if fn.doc:
                 line += f"  -- {fn.doc}"
             parts.append(line)
+        return parts, hidden
 
+    def _classes_as_text(self, include_private: bool) -> tuple[list[str], int, int]:
+        """Class/method lines, count of hidden classes, and count of hidden methods."""
+        parts: list[str] = []
+        hidden_classes = 0
         hidden_methods = 0
         for cls in self.classes:
             if not include_private and cls.name.startswith("_"):
-                hidden_fns += 1
+                hidden_classes += 1
                 continue
             parts.append(f"  class {cls.name}  [L{cls.line}]")
             for m in cls.methods:
@@ -68,8 +70,23 @@ class ModuleOutline(BaseModel):
                 if m.doc:
                     line += f"  -- {m.doc}"
                 parts.append(line)
+        return parts, hidden_classes, hidden_methods
 
-        total_hidden = hidden_fns + hidden_methods
+    def as_text(self, include_private: bool = False) -> str:
+        # frob:doc docs/commands/outline.md#public-api
+        parts = [f"{self.path}  ({self.lines} lines)"]
+        if self.imports:
+            parts.append(f"  imports: {', '.join(self.imports)}")
+
+        fn_parts, hidden_fns = self._functions_as_text(include_private)
+        parts.extend(fn_parts)
+
+        cls_parts, hidden_classes, hidden_methods = self._classes_as_text(
+            include_private
+        )
+        parts.extend(cls_parts)
+
+        total_hidden = hidden_fns + hidden_classes + hidden_methods
         if total_hidden > 0:
             parts.append(f"  [{total_hidden} private -- use --all to show]")
 
@@ -84,17 +101,18 @@ _PY_EXTS = {".py"}
 _CPP_EXTS = {".c", ".cc", ".cpp", ".cxx", ".c++", ".h", ".hpp", ".hxx", ".h++"}
 
 
-# frob:doc docs/commands/outline.md#public-api
-def outline_file(path: Path) -> Result[ModuleOutline, OutlineError]:
+def _display_path(path: Path) -> Path:
+    """`path` relative to the cwd when possible, else `path` unchanged."""
     try:
-        display = path.relative_to(Path.cwd())
+        return path.relative_to(Path.cwd())
     except ValueError:
-        display = path
+        return path
 
-    ext = path.suffix.lower()
-    if ext not in _PY_EXTS and ext not in _CPP_EXTS:
-        return Err(OutlineError.UnsupportedLanguage)
 
+def _parse_for_outline(
+    path: Path,
+) -> Result[tuple, OutlineError]:
+    """Parse `path` and its imports; a single `OutlineError` on either failure."""
     parsed_result = parse_file(path)
     if parsed_result.is_err:
         err = parsed_result.danger_err
@@ -105,6 +123,19 @@ def outline_file(path: Path) -> Result[ModuleOutline, OutlineError]:
 
     imports_result = extract_imports(path)
     raw_imports = imports_result.danger_ok if imports_result.is_ok else ()
+    return Ok((parsed, raw_imports))
+
+
+# frob:doc docs/commands/outline.md#public-api
+def outline_file(path: Path) -> Result[ModuleOutline, OutlineError]:
+    ext = path.suffix.lower()
+    if ext not in _PY_EXTS and ext not in _CPP_EXTS:
+        return Err(OutlineError.UnsupportedLanguage)
+
+    parsed_pair = _parse_for_outline(path)
+    if parsed_pair.is_err:
+        return Err(parsed_pair.danger_err)
+    parsed, raw_imports = parsed_pair.danger_ok
     imports = _dedupe_imports(raw_imports, ext)
 
     try:
@@ -116,7 +147,7 @@ def outline_file(path: Path) -> Result[ModuleOutline, OutlineError]:
 
     return Ok(
         ModuleOutline(
-            path=str(display),
+            path=str(_display_path(path)),
             lines=lines,
             imports=imports,
             functions=functions,
@@ -185,6 +216,32 @@ def _function_outline(sym: RawSymbol, name: str | None = None) -> FunctionOutlin
     )
 
 
+def _find_matching_close_paren(
+    sig_tokens: tuple[str, ...], open_idx: int
+) -> int | None:
+    """Index of the `)` that closes the `(` at `open_idx`, or `None` if unbalanced."""
+    depth = 0
+    for i in range(open_idx, len(sig_tokens)):
+        if sig_tokens[i] == "(":
+            depth += 1
+        elif sig_tokens[i] == ")":
+            depth -= 1
+            if depth == 0:
+                return i
+    return None
+
+
+def _return_annotation(tail: tuple[str, ...]) -> str:
+    """The ` -> ret` suffix for a signature, given the tokens after its `)`."""
+    if not tail or tail[0] != "->":
+        return ""
+    ret_tokens = tail[1:]
+    # Stop the return annotation at the signature's closing colon, if any.
+    if ret_tokens and ret_tokens[-1] == ":":
+        ret_tokens = ret_tokens[:-1]
+    return " -> " + "".join(_spaced(ret_tokens))
+
+
 def _signature_from_tokens(name: str, sig_tokens: tuple[str, ...]) -> str:
     """Reconstruct `name(params) -> ret` from the leaf-token stream.
 
@@ -198,28 +255,12 @@ def _signature_from_tokens(name: str, sig_tokens: tuple[str, ...]) -> str:
         open_idx = sig_tokens.index("(")
     except ValueError:
         return f"{name}()"
-    depth = 0
-    close_idx = None
-    for i in range(open_idx, len(sig_tokens)):
-        if sig_tokens[i] == "(":
-            depth += 1
-        elif sig_tokens[i] == ")":
-            depth -= 1
-            if depth == 0:
-                close_idx = i
-                break
+    close_idx = _find_matching_close_paren(sig_tokens, open_idx)
     if close_idx is None:
         return f"{name}()"
 
     params = "".join(_spaced(sig_tokens[open_idx + 1 : close_idx]))
-    ret = ""
-    tail = sig_tokens[close_idx + 1 :]
-    if tail and tail[0] == "->":
-        ret_tokens = tail[1:]
-        # Stop the return annotation at the signature's closing colon, if any.
-        if ret_tokens and ret_tokens[-1] == ":":
-            ret_tokens = ret_tokens[:-1]
-        ret = " -> " + "".join(_spaced(ret_tokens))
+    ret = _return_annotation(sig_tokens[close_idx + 1 :])
     return f"{name}({params}){ret}"
 
 

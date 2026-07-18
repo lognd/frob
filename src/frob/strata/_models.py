@@ -62,11 +62,13 @@ class Lattice(BaseModel):
         return Ok(False)
 
 
+# frob:doc docs/strata/kernel.md#lattice-semantics
 TRUST = Lattice(
     name="trust",
     order=(("foreign", "authenticated"), ("authenticated", "trusted")),
 )
 
+# frob:doc docs/strata/kernel.md#lattice-semantics
 LABELS = Lattice(
     name="labels",
     order=(("Public", "Internal"), ("Internal", "Pii"), ("Pii", "Secret")),
@@ -158,6 +160,64 @@ class Capacity(BaseModel):
         return self.replicas_max == 1
 
 
+#: Flow attr marking at-least-once delivery; its dst must carry `_IDEMPOTENT`.
+#: Shared between `_facts.py` (the ordinary queue-delivery join) and
+#: `_crash.py` (the crash-retry join, T-0074) so both paths report the
+#: same diagnostic through the same code (charter law -- no duplication).
+_AT_LEAST_ONCE = "delivery=at_least_once"
+#: Node attr that discharges the at-least-once obligation.
+_IDEMPOTENT = "idempotent"
+
+
+# frob:doc docs/strata/boundary.md#crash-contracts-and-error-totality-adjacent-claims
+class CrashContract(BaseModel):
+    """A node's `on crash { restart within t; inflight fail retriable within t';
+    state recovered from X }` contract (docs/strata/boundary.md, T-0074).
+
+    `restart` is the recovery-time bound (component comes back within
+    `t`); `retry` is optional and, when present, means inflight requests
+    fail retriable rather than hanging forever -- this is the fact that
+    turns every synchronous caller into an at-least-once sender, which is
+    exactly the standard delivery-semantics join `_facts.py` already
+    checks. `recovers_from` optionally names the node/store state is
+    restored from on restart (validated as a real reference downstream,
+    `_crash.py`).
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    restart: Quantity
+    retry: Quantity | None = None
+    recovers_from: str | None = None
+
+
+# frob:doc docs/strata/kernel.md#scenario
+class BreachContract(BaseModel):
+    """A node's `on breach { detect within t; revoke within t'; recovers_via X }`
+    contract (docs/strata/kernel.md#scenario, T-0076).
+
+    `detect` and `revoke` are the containment SLA: how long a compromise
+    of this node may go unnoticed, and how long revoking its credentials
+    / access may take once detected -- both mandatory, since a detection
+    bound with no revocation bound (or vice versa) is half a containment
+    story. `credential_age` optionally bounds how long any credential
+    this node holds may live; a credential that outlives the revocation
+    window stays valid past containment, which `_breach.py` refuses
+    closed the same way the charter refuses any age without an
+    invalidation edge. `recovers_via` optionally names the node whose
+    path back to this one must be independent of this node's blast
+    radius (`_breach.py` auto-generates the `Independent` claim that
+    checks it).
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    detect: Quantity
+    revoke: Quantity
+    credential_age: Quantity | None = None
+    recovers_via: str | None = None
+
+
 # frob:doc docs/strata/kernel.md#data-models
 class Node(BaseModel):
     """A place that holds state or runs computation (component, store, principal...)."""
@@ -171,6 +231,8 @@ class Node(BaseModel):
     attrs: tuple[str, ...] = ()  # opaque node attributes, e.g. "idempotent"
     capacity: Capacity | None = None
     residence: str | None = None  # host/zone/region atom for scenario rewrites
+    crash: CrashContract | None = None  # `on crash { ... }` contract, T-0074
+    breach: BreachContract | None = None  # `on breach { ... }` contract, T-0076
 
 
 # frob:doc docs/strata/kernel.md#data-models
@@ -207,6 +269,7 @@ class Flow(BaseModel):
     transport: tuple[str, ...] = ()  # e.g. "tls>=1.3", "aead"
     attrs: tuple[str, ...] = ()  # e.g. "delivery=at_least_once"
     condition: FlowCondition | None = None
+    timeout: Quantity | None = None  # caller's declared timeout, T-0074 no-hang check
 
 
 # frob:doc docs/strata/kernel.md#data-models
@@ -274,7 +337,25 @@ class BoundClaim(BaseModel):
     limit: Quantity
 
 
-ClaimBody = NoFlow | Reach | BoundClaim
+# frob:doc docs/strata/kernel.md#claim-forms-and-their-decision-procedures
+class Independent(BaseModel):
+    """Claim body: the src->dst path shares no node with avoid's reach closure.
+
+    `independent(p, n)` (docs/strata/kernel.md#claim-forms-and-their-
+    decision-procedures): recovery-path independence for a breach --
+    `avoid` is typically the compromised node itself, so the claim is
+    "the path a recovery mechanism takes to reach back into this node
+    touches nothing this node's own compromise could already reach."
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    src: str
+    dst: str
+    avoid: str
+
+
+ClaimBody = NoFlow | Reach | BoundClaim | Independent
 
 
 # frob:doc docs/strata/kernel.md#data-models

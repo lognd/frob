@@ -27,6 +27,12 @@ def _write(root: Path, rel: str, text: str) -> Path:
     return path
 
 
+def _write_files(root: Path, files: dict[str, str]) -> None:
+    """Write several `{rel_path: text}` fixture files under `root` in one call."""
+    for rel, text in files.items():
+        _write(root, rel, text)
+
+
 def _git(root: Path, *args: str) -> None:
     subprocess.run(
         ["git", "-C", str(root), *args], check=True, capture_output=True, text=True
@@ -123,31 +129,24 @@ class TestSelect:
         assert "tests/test_pkg.py::test_package" in report.selected["python"]
 
     def test_one_hop_ripple(self, tmp_path: Path) -> None:
-        _write(
+        _write_files(
             tmp_path,
-            "src/contract.py",
-            """
-            def provide() -> int:
-                return 1
-            """,
-        )
-        _write(
-            tmp_path,
-            "src/consumer.py",
-            """
-            def use() -> int:
-                # frob:uses-contract src/contract.py::provide
-                return 1
-            """,
-        )
-        _write(
-            tmp_path,
-            "tests/test_consumer.py",
-            """
-            def test_use() -> None:
-                # frob:tests src/consumer.py::use
-                pass
-            """,
+            {
+                "src/contract.py": """
+                    def provide() -> int:
+                        return 1
+                    """,
+                "src/consumer.py": """
+                    def use() -> int:
+                        # frob:uses-contract src/contract.py::provide
+                        return 1
+                    """,
+                "tests/test_consumer.py": """
+                    def test_use() -> None:
+                        # frob:tests src/consumer.py::use
+                        pass
+                    """,
+            },
         )
         snapshot = build_graph(tmp_path, tmp_path / ".frob" / "cache.db").danger_ok
         diff = Diff(base="deadbeef", hunks=(Hunk(file="src/contract.py", span=(1, 2)),))
@@ -414,22 +413,19 @@ class TestWorktree:
     def test_select_and_run_in_linked_worktree(self, tmp_path: Path) -> None:
         repo = tmp_path / "repo"
         _init_repo(repo)
-        _write(
+        _write_files(
             repo,
-            "src/foo.py",
-            """
-            def widget() -> int:
-                return 1
-            """,
-        )
-        _write(
-            repo,
-            "tests/test_foo.py",
-            """
-            def test_widget() -> None:
-                # frob:tests src/foo.py::widget
-                assert True
-            """,
+            {
+                "src/foo.py": """
+                    def widget() -> int:
+                        return 1
+                    """,
+                "tests/test_foo.py": """
+                    def test_widget() -> None:
+                        # frob:tests src/foo.py::widget
+                        assert True
+                    """,
+            },
         )
         _commit(repo, "init")
 
@@ -452,13 +448,26 @@ class TestWorktree:
         assert "tests/test_foo.py::test_widget" in report.selected["python"]
 
 
+def _stub_collect_only(monkeypatch, collect_mod) -> list[tuple]:
+    """Stub `collect_mod.run_argv` to return two fixed node ids; return the call log."""
+    from typani import Ok
+
+    calls: list[tuple] = []
+
+    def fake_run_argv(argv, *, cwd=None, timeout_s=300.0):
+        calls.append(tuple(argv))
+        stdout = "tests/test_thing.py::test_a\ntests/test_thing.py::test_b\n"
+        return Ok(ProcResult(argv=tuple(argv), returncode=0, stdout=stdout, stderr=""))
+
+    monkeypatch.setattr(collect_mod, "run_argv", fake_run_argv)
+    return calls
+
+
 class TestCollectPythonTests:
     def test_parses_node_ids_and_caches_on_content_hash(
         self, tmp_path: Path, monkeypatch
     ) -> None:
         # frob:tests src/frob/testing/_collect.py::collect_python_tests
-        from typani import Ok
-
         import frob.testing._collect as collect_mod
 
         _write(
@@ -472,17 +481,7 @@ class TestCollectPythonTests:
                 assert True
             """,
         )
-
-        calls: list[tuple] = []
-
-        def fake_run_argv(argv, *, cwd=None, timeout_s=300.0):
-            calls.append(tuple(argv))
-            stdout = "tests/test_thing.py::test_a\ntests/test_thing.py::test_b\n"
-            return Ok(
-                ProcResult(argv=tuple(argv), returncode=0, stdout=stdout, stderr="")
-            )
-
-        monkeypatch.setattr(collect_mod, "run_argv", fake_run_argv)
+        calls = _stub_collect_only(monkeypatch, collect_mod)
 
         result = collect_mod.collect_python_tests(tmp_path)
         assert result.is_ok

@@ -280,6 +280,55 @@ def _candidate_files(
     return sorted(_matching_files(root, snapshot, globs))
 
 
+def _compile_pattern_query(rule: PolicyRule, query_text: str) -> tuple | None:
+    """`(parser, query)` for `rule`'s language/query text, or `None` if unusable."""
+    try:
+        lang = get_language(rule.language)  # type: ignore[arg-type]
+        parser = get_parser(rule.language)  # type: ignore[arg-type]
+        query = tree_sitter.Query(lang, query_text)
+    except (LookupError, ValueError, tree_sitter.QueryError) as exc:
+        _log.warning("policy: %s query unusable at scan time: %s", rule.id, exc)
+        return None
+    return parser, query
+
+
+def _file_pattern_violations(
+    rule: PolicyRule,
+    rel_path: str,
+    root: Path,
+    parser,
+    query,  # noqa: ANN001
+) -> list[Violation]:
+    """Every match of `query` against one file, as `Violation`s for `rule`."""
+    try:
+        source = (root / rel_path).read_bytes()
+    except OSError as exc:
+        _log.warning("policy: could not read %s: %s", rel_path, exc)
+        return []
+    tree = parser.parse(source)
+    cursor = tree_sitter.QueryCursor(query)
+    captures = cursor.captures(tree.root_node)
+    violations: list[Violation] = []
+    for nodes in captures.values():
+        for node in nodes:
+            line = node.start_point[0] + 1
+            _log.debug("policy: %s matched at %s:%d", rule.id, rel_path, line)
+            violations.append(
+                Violation(
+                    rule=rule.id,
+                    severity=_severity(rule),
+                    file=rel_path,
+                    line=line,
+                    message=(
+                        f"{rule.id}: {rel_path}:{line} matches banned pattern "
+                        f"({rule.reason or 'forbidden by policy'}); "
+                        f'add: frob:waive {rule.id} reason="..." if intentional'
+                    ),
+                )
+            )
+    return violations
+
+
 def _pattern_violations(
     rule: PolicyRule, root: Path, snapshot: GraphSnapshot
 ) -> tuple[Violation, ...]:
@@ -287,43 +336,14 @@ def _pattern_violations(
     query_text = _resolve_query_text(root, rule)
     if query_text is None:
         return ()
-    lang = None
-    parser = None
-    try:
-        lang = get_language(rule.language)  # type: ignore[arg-type]
-        parser = get_parser(rule.language)  # type: ignore[arg-type]
-        query = tree_sitter.Query(lang, query_text)
-    except (LookupError, ValueError, tree_sitter.QueryError) as exc:
-        _log.warning("policy: %s query unusable at scan time: %s", rule.id, exc)
+    compiled = _compile_pattern_query(rule, query_text)
+    if compiled is None:
         return ()
+    parser, query = compiled
 
     violations: list[Violation] = []
     for rel_path in _candidate_files(root, snapshot, rule.globs or ("**/*",)):
-        try:
-            source = (root / rel_path).read_bytes()
-        except OSError as exc:
-            _log.warning("policy: could not read %s: %s", rel_path, exc)
-            continue
-        tree = parser.parse(source)
-        cursor = tree_sitter.QueryCursor(query)
-        captures = cursor.captures(tree.root_node)
-        for _name, nodes in captures.items():
-            for node in nodes:
-                line = node.start_point[0] + 1
-                _log.debug("policy: %s matched at %s:%d", rule.id, rel_path, line)
-                violations.append(
-                    Violation(
-                        rule=rule.id,
-                        severity=_severity(rule),
-                        file=rel_path,
-                        line=line,
-                        message=(
-                            f"{rule.id}: {rel_path}:{line} matches banned pattern "
-                            f"({rule.reason or 'forbidden by policy'}); "
-                            f'add: frob:waive {rule.id} reason="..." if intentional'
-                        ),
-                    )
-                )
+        violations.extend(_file_pattern_violations(rule, rel_path, root, parser, query))
     return tuple(violations)
 
 

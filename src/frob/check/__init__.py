@@ -11,6 +11,8 @@ their `frob:doc`/`frob:tests` bindings keep their `__init__.py` symref.
 from __future__ import annotations
 
 import concurrent.futures
+import logging
+import sys
 from pathlib import Path
 from typing import Callable
 
@@ -36,7 +38,10 @@ from frob.check._python import (
     _run_ty,
 )
 from frob.check._ts import _run_eslint, _run_prettier, _run_tsc, _run_vitest
+from frob.logging import get_logger
 from frob.process.parsers.common import Diagnostic, ToolResult
+
+_log = get_logger(__name__)
 
 # The python-mode tool stages --only may name (gate names are accepted too
 # and resolved through frob.gates._ALL_GATES at call time).
@@ -229,10 +234,20 @@ def _python_tasks(
     return tasks
 
 
-def _collect_results(
+def _stdout_log_handlers() -> list[logging.StreamHandler]:
+    """Every root-logger `StreamHandler` currently writing to `sys.stdout`."""
+    root_logger = logging.getLogger()
+    return [
+        h
+        for h in root_logger.handlers
+        if isinstance(h, logging.StreamHandler) and h.stream is sys.stdout
+    ]
+
+
+def _run_tasks_concurrently(
     tasks: list[Callable[[], ToolResult | list[ToolResult] | None]],
 ) -> list[ToolResult]:
-    """Run `tasks` in parallel and flatten their results, dropping Nones."""
+    """Run `tasks` in a `ThreadPoolExecutor` and flatten results, dropping Nones."""
     results: list[ToolResult] = []
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = [executor.submit(fn) for fn in tasks]
@@ -245,6 +260,54 @@ def _collect_results(
             else:
                 results.append(val)
     return results
+
+
+def _restore_stdout_log_levels(
+    handlers: list[logging.StreamHandler], saved_levels: list[int]
+) -> None:
+    """Force every handler back to its pre-batch level (T-0122).
+
+    Guards against `_run_tasks_concurrently`'s tasks racing the shared,
+    process-global stdout log handler and leaving it stuck (see
+    `_collect_results`'s docstring for the full mechanism)."""
+    for h, level in zip(handlers, saved_levels, strict=True):
+        if h.level != level:
+            _log.warning(
+                "_collect_results: stdout log handler %r left at %s after "
+                "concurrent check tasks raced (T-0122); restoring to %s",
+                h,
+                logging.getLevelName(h.level),
+                logging.getLevelName(level),
+            )
+        h.setLevel(level)
+
+
+def _collect_results(
+    tasks: list[Callable[[], ToolResult | list[ToolResult] | None]],
+) -> list[ToolResult]:
+    """Run `tasks` in parallel and flatten their results, dropping Nones.
+
+    T-0122: some check-stage tools (`frob.arch.analyze_project`,
+    `frob.dup.find_duplicates`) briefly raise the shared, process-global
+    stdout log handler to WARNING while they run, to keep `frob.lang`'s
+    per-parse INFO/DEBUG logging off stdout. That save/restore is not
+    thread-safe: two of these tasks racing inside this same
+    `ThreadPoolExecutor` can interleave their enter/exit so the handler is
+    left stuck at WARNING after every future has *returned* -- silently
+    swallowing the caller's own INFO-level summary log with no exception
+    and no trace (reproduced: `frob check` exiting 0 with no printed
+    summary at all, 4/5 runs under load). Rather than touch the racy
+    tools (out of this ticket's scope), save the stdout handler levels
+    before the batch and force-restore them after, so `run_check`'s
+    caller always gets a printed summary regardless of how the tasks
+    raced with each other.
+    """
+    stdout_handlers = _stdout_log_handlers()
+    saved_levels = [h.level for h in stdout_handlers]
+    try:
+        return _run_tasks_concurrently(tasks)
+    finally:
+        _restore_stdout_log_levels(stdout_handlers, saved_levels)
 
 
 # frob:ticket T-0028

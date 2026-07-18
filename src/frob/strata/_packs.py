@@ -23,11 +23,13 @@ _log = get_logger(__name__)
 
 #: The mandatory base pack's policy id; matched by id for auto-inject and
 #: for override detection (docs/strata/policy.md#packs).
+# frob:doc docs/strata/policy.md#packs
 ANALYZABLE_POLICY_ID = "std.policy.analyzable"
 
 #: The soundness atom every base-pack rule enables (docs/strata/evidence.md
 #: #the-enables-cascade): confinement/chokepoint L4 proofs are meaningless
 #: without it.
+# frob:doc docs/strata/evidence.md#the-enables-cascade
 EXTRACTION_SOUNDNESS = "extraction_soundness"
 
 # frob:doc docs/strata/policy.md#packs

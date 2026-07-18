@@ -58,6 +58,31 @@ def _validate_placeholder(command: tuple[str, ...]) -> str | None:
     return found[0]
 
 
+def _parse_runner_entry(entry: dict) -> RunnerSpec | None:
+    """One `[[test.runner]]` table as a `RunnerSpec`, or `None` if malformed."""
+    try:
+        command = tuple(entry["command"])
+        all_command = tuple(entry["all_command"])
+        language = entry["language"]
+    except KeyError as exc:
+        _log.error("load_runners: runner entry missing field %s", exc)
+        return None
+    if _validate_placeholder(command) is None:
+        _log.error(
+            "load_runners: runner for %r has zero or multiple placeholders: %s",
+            language,
+            command,
+        )
+        return None
+    return RunnerSpec(
+        language=language,
+        command=command,
+        all_command=all_command,
+        cwd=entry.get("cwd", "."),
+        timeout_s=entry.get("timeout_s", 900.0),
+    )
+
+
 # frob:doc docs/modules/testing.md#public-api
 def load_runners(root: Path) -> Result[tuple[RunnerSpec, ...], TestingError]:
     """Parse `frob.toml`'s `[[test.runner]]` entries; missing file/table is `Ok(())`."""
@@ -79,29 +104,10 @@ def load_runners(root: Path) -> Result[tuple[RunnerSpec, ...], TestingError]:
 
     specs: list[RunnerSpec] = []
     for entry in entries:
-        try:
-            command = tuple(entry["command"])
-            all_command = tuple(entry["all_command"])
-            language = entry["language"]
-        except KeyError as exc:
-            _log.error("load_runners: runner entry missing field %s", exc)
+        spec = _parse_runner_entry(entry)
+        if spec is None:
             return Err(TestingError.BadRunnerSpec)
-        if _validate_placeholder(command) is None:
-            _log.error(
-                "load_runners: runner for %r has zero or multiple placeholders: %s",
-                language,
-                command,
-            )
-            return Err(TestingError.BadRunnerSpec)
-        specs.append(
-            RunnerSpec(
-                language=language,
-                command=command,
-                all_command=all_command,
-                cwd=entry.get("cwd", "."),
-                timeout_s=entry.get("timeout_s", 900.0),
-            )
-        )
+        specs.append(spec)
     _log.info("load_runners: %d runner(s) loaded from %s", len(specs), toml_path)
     return Ok(tuple(specs))
 
@@ -141,6 +147,56 @@ def _render_command(spec: RunnerSpec, items: tuple[str, ...]) -> tuple[str, ...]
     return tuple(argv)
 
 
+def _build_runner_argv(
+    spec: RunnerSpec, items: tuple[str, ...]
+) -> Result[list[str], TestingError]:
+    """The argv for `spec` given a selected item set, honoring the all-tests sentinel"""
+    if ALL_SENTINEL in items:
+        return Ok(list(spec.all_command))
+    argv = list(_render_command(spec, items) or ())
+    if not argv:
+        _log.error(
+            "run_selected: runner for %r has no usable placeholder", spec.language
+        )
+        return Err(TestingError.BadRunnerSpec)
+    return Ok(argv)
+
+
+def _run_one_runner(
+    spec: RunnerSpec, items: tuple[str, ...], root: Path
+) -> Result[RunnerOutcome, TestingError]:
+    """Render and spawn a single runner's argv, timed into a `RunnerOutcome`."""
+    built = _build_runner_argv(spec, items)
+    if built.is_err:
+        return Err(built.danger_err)
+    argv = built.danger_ok
+
+    cwd = root / spec.cwd
+    start = time.monotonic()
+    spawned = run_argv(argv, cwd=cwd, timeout_s=spec.timeout_s)
+    duration = time.monotonic() - start
+    if spawned.is_err:
+        _log.error("run_selected: %s runner failed to spawn/timeout", spec.language)
+        return Err(TestingError.SpawnFailed)
+    result = spawned.danger_ok
+    _log.info(
+        "run_selected: %s exit=%d duration=%.2fs",
+        spec.language,
+        result.returncode,
+        duration,
+    )
+    return Ok(
+        RunnerOutcome(
+            language=spec.language,
+            argv=tuple(argv),
+            exit_code=result.returncode,
+            duration_s=duration,
+            stdout_tail=_excerpt(result.stdout),
+            stderr_tail=_excerpt(result.stderr),
+        )
+    )
+
+
 # frob:doc docs/modules/testing.md#public-api
 def run_selected(
     selection: SelectionReport, runners: tuple[RunnerSpec, ...], root: Path
@@ -164,43 +220,12 @@ def run_selected(
             )
             return Err(TestingError.NoRunner)
 
-        use_all = ALL_SENTINEL in items
-        argv = (
-            list(spec.all_command)
-            if use_all
-            else list(_render_command(spec, items) or ())
-        )
-        if not use_all and not argv:
-            _log.error(
-                "run_selected: runner for %r has no usable placeholder", language
-            )
-            return Err(TestingError.BadRunnerSpec)
-
-        cwd = root / spec.cwd
-        start = time.monotonic()
-        spawned = run_argv(argv, cwd=cwd, timeout_s=spec.timeout_s)
-        duration = time.monotonic() - start
-        if spawned.is_err:
-            _log.error("run_selected: %s runner failed to spawn/timeout", language)
-            return Err(TestingError.SpawnFailed)
-        result = spawned.danger_ok
-        outcome = RunnerOutcome(
-            language=language,
-            argv=tuple(argv),
-            exit_code=result.returncode,
-            duration_s=duration,
-            stdout_tail=_excerpt(result.stdout),
-            stderr_tail=_excerpt(result.stderr),
-        )
-        outcomes.append(outcome)
-        if result.returncode != 0:
+        outcome = _run_one_runner(spec, items, root)
+        if outcome.is_err:
+            return Err(outcome.danger_err)
+        outcomes.append(outcome.danger_ok)
+        if outcome.danger_ok.exit_code != 0:
             ok = False
-        _log.info(
-            "run_selected: %s exit=%d duration=%.2fs",
-            language,
-            result.returncode,
-            duration,
-        )
 
     return Ok(TestRunReport(selection=selection, outcomes=tuple(outcomes), ok=ok))
 

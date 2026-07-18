@@ -28,14 +28,18 @@ from typani.result import Err, Ok, Result
 from frob.logging import get_logger
 
 from ._errors import StrataError
-from ._models import Boundary, Flow, KernelModel, Lattice, Node
+from ._models import (
+    _AT_LEAST_ONCE,
+    _IDEMPOTENT,
+    Boundary,
+    Flow,
+    KernelModel,
+    Lattice,
+    Node,
+)
 
 _log = get_logger(__name__)
 
-#: Flow attr marking at-least-once delivery; its dst must carry _IDEMPOTENT.
-_AT_LEAST_ONCE = "delivery=at_least_once"
-#: Node attr that discharges the at-least-once obligation.
-_IDEMPOTENT = "idempotent"
 #: Flow attr prefix for the demand-propagation multiplier (surface `fanout NUM`).
 _FANOUT_PREFIX = "fanout="
 
@@ -154,10 +158,16 @@ class FactBase:
         declared rate, if any, else the propagated demand at its source)
         times the flow's `fanout` attr (default 1.0) -- load ADDS across
         converging paths, unlike `worst_age`, which MAXES
-        (docs/strata/kernel.md#capacity-semantics). A positive-rate cycle
-        (undeclared-rate flows in a loop, fed by some declared-rate source,
-        reaching `node_id`) is unbounded: `+inf` with the cycle as witness,
-        never a silent clamp (deny-by-default, charter law 2).
+        (docs/strata/kernel.md#capacity-semantics). A flow whose `rate` is
+        declared but fails to resolve (`Quantity.base_value()` errors, e.g.
+        an unknown unit) is treated identically to a flow with no `rate` at
+        all: it PROPAGATES into its source's own demand rather than being
+        dropped from the sum. This fails toward overcounting load, not
+        undercounting it (deny-by-default, charter law 2) -- see T-0066/
+        T-0099. A positive-rate cycle (undeclared- or unresolvable-rate
+        flows in a loop, fed by some declared-rate source, reaching
+        `node_id`) is unbounded: `+inf` with the cycle as witness, never a
+        silent clamp.
         """
         # frob:doc docs/strata/kernel.md#capacity-semantics
         edges = []

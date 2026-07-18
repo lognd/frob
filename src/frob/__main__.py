@@ -92,34 +92,29 @@ def _add_xref_parser(sub) -> None:
 
 
 # frob:ticket T-0030
-def _add_parse_parser(sub) -> None:
-    """Register the `frob parse` subcommand and its arguments."""
-    # -- parse ---------------------------------------------------------------
-    parse_p = sub.add_parser(
-        "parse",
-        help="parse tool output (pytest/ruff/ty/clang/junit) into compact summary",
-    )
-    parse_p.add_argument(
-        "parse_tool",
-        metavar="tool",
-        choices=[
-            "pytest",
-            "ruff",
-            "ty",
-            "clang",
-            "clang++",
-            "gcc",
-            "g++",
-            "junit",
-            "gtest",
-            "catch2",
-            "cargo",
-            "clang-tidy",
-            "valgrind",
-            "tsc",
-            "eslint",
-        ],
-    )
+_PARSE_TOOL_CHOICES = [
+    "pytest",
+    "ruff",
+    "ty",
+    "clang",
+    "clang++",
+    "gcc",
+    "g++",
+    "junit",
+    "gtest",
+    "catch2",
+    "cargo",
+    "clang-tidy",
+    "valgrind",
+    "tsc",
+    "eslint",
+]
+"""Tool names accepted by `frob parse <tool>`, shared with its parser and tests."""
+
+
+def _add_parse_input_args(parse_p) -> None:
+    """Register `frob parse`'s tool/input/exit-code positional and option args."""
+    parse_p.add_argument("parse_tool", metavar="tool", choices=_PARSE_TOOL_CHOICES)
     parse_p.add_argument(
         "parse_input", metavar="file", nargs="?", help="input file (default: stdin)"
     )
@@ -131,6 +126,10 @@ def _add_parse_parser(sub) -> None:
         metavar="N",
         help="exit code the tool returned (affects pass/fail)",
     )
+
+
+def _add_parse_output_args(parse_p) -> None:
+    """Register `frob parse`'s output-shaping flags (json/verbose/passthrough)."""
     parse_p.add_argument("--json", dest="parse_json", action="store_true")
     parse_p.add_argument(
         "--verbose",
@@ -144,6 +143,18 @@ def _add_parse_parser(sub) -> None:
         action="store_true",
         help="exit non-zero if the tool failed (useful in pipelines)",
     )
+
+
+# frob:ticket T-0030
+def _add_parse_parser(sub) -> None:
+    """Register the `frob parse` subcommand and its arguments."""
+    # -- parse ---------------------------------------------------------------
+    parse_p = sub.add_parser(
+        "parse",
+        help="parse tool output (pytest/ruff/ty/clang/junit) into compact summary",
+    )
+    _add_parse_input_args(parse_p)
+    _add_parse_output_args(parse_p)
 
 
 # frob:ticket T-0030
@@ -289,11 +300,8 @@ def _add_bind_parser(sub) -> None:
     bind_p.add_argument("--json", dest="bind_json", action="store_true")
 
 
-# frob:ticket T-0030
-# frob:ticket T-0030
-def _add_check_skip_args(check_p) -> None:
-    """Register `frob check`'s per-language stage-skip flags."""
-    # Python-specific
+def _add_check_skip_args_python(check_p) -> None:
+    """Register `frob check`'s Python-toolchain stage-skip flags."""
     check_p.add_argument("--skip-ruff", dest="check_skip_ruff", action="store_true")
     check_p.add_argument("--skip-ty", dest="check_skip_ty", action="store_true")
     check_p.add_argument("--skip-arch", dest="check_skip_arch", action="store_true")
@@ -304,7 +312,10 @@ def _add_check_skip_args(check_p) -> None:
         "--skip-exports", dest="check_skip_exports", action="store_true"
     )
     check_p.add_argument("--skip-gates", dest="check_skip_gates", action="store_true")
-    # C++ specific
+
+
+def _add_check_skip_args_cpp(check_p) -> None:
+    """Register `frob check`'s C++-toolchain stage-skip flags."""
     check_p.add_argument("--build-dir", dest="check_build_dir", metavar="DIR")
     check_p.add_argument("--skip-build", dest="check_skip_build", action="store_true")
     check_p.add_argument(
@@ -313,13 +324,15 @@ def _add_check_skip_args(check_p) -> None:
     check_p.add_argument(
         "--skip-clang-format", dest="check_skip_clang_format", action="store_true"
     )
-    # Rust specific
+
+
+def _add_check_skip_args_rust_ts(check_p) -> None:
+    """Register `frob check`'s Rust- and TypeScript-toolchain stage-skip flags."""
     check_p.add_argument(
         "--skip-cargo-check", dest="check_skip_cargo_check", action="store_true"
     )
     check_p.add_argument("--skip-clippy", dest="check_skip_clippy", action="store_true")
     check_p.add_argument("--skip-fmt", dest="check_skip_fmt", action="store_true")
-    # TypeScript specific
     check_p.add_argument("--skip-tsc", dest="check_skip_tsc", action="store_true")
     check_p.add_argument("--skip-eslint", dest="check_skip_eslint", action="store_true")
     check_p.add_argument(
@@ -328,16 +341,15 @@ def _add_check_skip_args(check_p) -> None:
 
 
 # frob:ticket T-0030
-def _add_check_parser(sub) -> None:
-    """Register the `frob check` subcommand and its arguments."""
-    # -- check ---------------------------------------------------------------
-    check_p = sub.add_parser(
-        "check",
-        help=(
-            "aggregate quality gate: ruff, ty, frob cycle/dup/arch/bind/exports; "
-            "errors first, easy to hand to subagents"
-        ),
-    )
+def _add_check_skip_args(check_p) -> None:
+    """Register `frob check`'s per-language stage-skip flags."""
+    _add_check_skip_args_python(check_p)
+    _add_check_skip_args_cpp(check_p)
+    _add_check_skip_args_rust_ts(check_p)
+
+
+def _add_check_scope_args(check_p) -> None:
+    """Register `frob check`'s path/type/valgrind/skip-tests scoping args."""
     check_p.add_argument("check_path", metavar="path", nargs="?", default=".")
     check_p.add_argument(
         "--type",
@@ -352,7 +364,10 @@ def _add_check_parser(sub) -> None:
         help="run valgrind memcheck on test binary",
     )
     check_p.add_argument("--skip-tests", dest="check_skip_tests", action="store_true")
-    _add_check_skip_args(check_p)
+
+
+def _add_check_selection_args(check_p) -> None:
+    """Register `frob check`'s ticket/base/only/stamp-coverage/baseline/delta args."""
     check_p.add_argument("--json", dest="check_json", action="store_true")
     check_p.add_argument("--ticket", dest="check_ticket", metavar="ID")
     check_p.add_argument("--base", dest="check_base", metavar="REF")
@@ -369,6 +384,57 @@ def _add_check_parser(sub) -> None:
         dest="check_stamp_coverage",
         action="store_true",
         help="record coverage.xml as the current coverage stamp and exit",
+    )
+    check_p.add_argument(
+        "--stamp-baseline",
+        dest="check_stamp_baseline",
+        action="store_true",
+        help="record the current gate violations as the delta baseline and exit",
+    )
+    check_p.add_argument(
+        "--delta",
+        dest="check_delta",
+        action="store_true",
+        help=(
+            "gates stage reports only violations new since the stamped "
+            "baseline (see --stamp-baseline); a missing/stale baseline "
+            "degrades to the full set with a warning"
+        ),
+    )
+
+
+# frob:ticket T-0030
+def _add_check_parser(sub) -> None:
+    """Register the `frob check` subcommand and its arguments."""
+    # -- check ---------------------------------------------------------------
+    check_p = sub.add_parser(
+        "check",
+        help=(
+            "aggregate quality gate: ruff, ty, frob cycle/dup/arch/bind/exports; "
+            "errors first, easy to hand to subagents"
+        ),
+    )
+    _add_check_scope_args(check_p)
+    _add_check_skip_args(check_p)
+    _add_check_selection_args(check_p)
+
+
+def _add_gitlog_range_args(gitlog_p) -> None:
+    """Register `frob gitlog`'s commit-range selection flags (since/until/limit)."""
+    gitlog_p.add_argument(
+        "--since",
+        dest="gitlog_since",
+        metavar="TAG_OR_DATE",
+        help="start from tag (e.g. v1.0.0) or date (e.g. 2024-01-01)",
+    )
+    gitlog_p.add_argument("--until", dest="gitlog_until", metavar="TAG_OR_DATE")
+    gitlog_p.add_argument(
+        "--limit",
+        "-n",
+        dest="gitlog_limit",
+        type=int,
+        metavar="N",
+        help="max number of commits to fetch",
     )
 
 
@@ -393,21 +459,7 @@ def _add_gitlog_parser(sub) -> None:
         default="user",
         help="major=breaking only | user=feat+fix | full=all | changelog=release notes",
     )
-    gitlog_p.add_argument(
-        "--since",
-        dest="gitlog_since",
-        metavar="TAG_OR_DATE",
-        help="start from tag (e.g. v1.0.0) or date (e.g. 2024-01-01)",
-    )
-    gitlog_p.add_argument("--until", dest="gitlog_until", metavar="TAG_OR_DATE")
-    gitlog_p.add_argument(
-        "--limit",
-        "-n",
-        dest="gitlog_limit",
-        type=int,
-        metavar="N",
-        help="max number of commits to fetch",
-    )
+    _add_gitlog_range_args(gitlog_p)
     gitlog_p.add_argument(
         "--all",
         dest="gitlog_all",
@@ -455,11 +507,8 @@ def _add_ack_parser(sub) -> None:
     ack_p.add_argument("--path", dest="ack_path", metavar="DIR", default=".")
 
 
-# frob:ticket T-0030
-# frob:ticket T-0030
-def _add_ticket_new_parser(ticket_sub) -> None:
-    """Register `frob ticket new` and its (many) creation flags."""
-    ticket_new_p = ticket_sub.add_parser("new", help="create a new ticket")
+def _add_ticket_new_identity_args(ticket_new_p) -> None:
+    """Register `frob ticket new`'s title/kind/acceptance/threat classification args."""
     ticket_new_p.add_argument("--title", dest="ticket_title", required=True)
     ticket_new_p.add_argument(
         "--kind",
@@ -488,6 +537,10 @@ def _add_ticket_new_parser(ticket_sub) -> None:
         ],
         help="STRIDE category for a kind=security ticket",
     )
+
+
+def _add_ticket_new_graph_args(ticket_new_p) -> None:
+    """Register `frob ticket new`'s origin/scope/blocked-by/parent graph-edge args."""
     ticket_new_p.add_argument(
         "--origin",
         dest="ticket_origin",
@@ -501,9 +554,25 @@ def _add_ticket_new_parser(ticket_sub) -> None:
         "--blocked-by", dest="ticket_blocked_by", action="append", default=[]
     )
     ticket_new_p.add_argument("--parent", dest="ticket_parent")
+
+
+# frob:ticket T-0030
+def _add_ticket_new_parser(ticket_sub) -> None:
+    """Register `frob ticket new` and its (many) creation flags."""
+    ticket_new_p = ticket_sub.add_parser("new", help="create a new ticket")
+    _add_ticket_new_identity_args(ticket_new_p)
+    _add_ticket_new_graph_args(ticket_new_p)
     ticket_new_p.add_argument("--body", dest="ticket_body", default="")
     ticket_new_p.add_argument("--json", dest="ticket_json", action="store_true")
     ticket_new_p.add_argument("--path", dest="ticket_path", metavar="DIR", default=".")
+    ticket_new_p.add_argument(
+        "--evidence",
+        dest="ticket_evidence_ids",
+        action="append",
+        default=[],
+        metavar="NODE-ID",
+        help="pytest node id to record as evidence on the new ticket (repeatable)",
+    )
 
 
 # frob:ticket T-0030
@@ -524,9 +593,8 @@ def _add_ticket_query_parsers(ticket_sub) -> list:
     return [ticket_list_p, ticket_show_p, ticket_doable_p]
 
 
-# frob:ticket T-0030
-def _add_ticket_lifecycle_parsers(ticket_sub) -> list:
-    """Register the state-transition ticket subcommands (plan/start/close/...)."""
+def _add_ticket_progress_parsers(ticket_sub) -> list:
+    """Register the state-only ticket transitions: plan/start/sweep/migrate/renumber."""
     ticket_plan_p = ticket_sub.add_parser("plan", help="transition queued -> planned")
     ticket_plan_p.add_argument("ticket_id", metavar="id")
 
@@ -548,7 +616,17 @@ def _add_ticket_lifecycle_parsers(ticket_sub) -> list:
     ticket_renumber_p = ticket_sub.add_parser(
         "renumber", help="reassign ids to a contiguous T-0001.. sequence"
     )
+    return [
+        ticket_plan_p,
+        ticket_start_p,
+        ticket_sweep_p,
+        ticket_migrate_p,
+        ticket_renumber_p,
+    ]
 
+
+def _add_ticket_attach_and_lifecycle_end_parsers(ticket_sub) -> list:
+    """Register `attach`/`block`/`close`: the non-evidence closeout subcommands."""
     ticket_attach_p = ticket_sub.add_parser(
         "attach", help="attach a file or clipboard image to a ticket"
     )
@@ -564,7 +642,19 @@ def _add_ticket_lifecycle_parsers(ticket_sub) -> list:
 
     ticket_close_p = ticket_sub.add_parser("close", help="transition to done")
     ticket_close_p.add_argument("ticket_id", metavar="id")
+    ticket_close_p.add_argument(
+        "--evidence",
+        dest="ticket_evidence_ids",
+        action="append",
+        default=[],
+        metavar="NODE-ID",
+        help="pytest node id to record as evidence before closing (repeatable)",
+    )
+    return [ticket_attach_p, ticket_block_p, ticket_close_p]
 
+
+def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
+    """Register `fail`/`evidence`/`archive`: the remaining closeout subcommands."""
     ticket_fail_p = ticket_sub.add_parser(
         "fail", help="record a failed attempt in the failure log"
     )
@@ -581,19 +671,22 @@ def _add_ticket_lifecycle_parsers(ticket_sub) -> list:
     ticket_archive_p = ticket_sub.add_parser(
         "archive", help="move done/dropped tickets into tickets-archive.md"
     )
-    return [
-        ticket_plan_p,
-        ticket_start_p,
-        ticket_sweep_p,
-        ticket_migrate_p,
-        ticket_renumber_p,
-        ticket_attach_p,
-        ticket_block_p,
-        ticket_close_p,
-        ticket_fail_p,
-        ticket_evidence_p,
-        ticket_archive_p,
-    ]
+    return [ticket_fail_p, ticket_evidence_p, ticket_archive_p]
+
+
+def _add_ticket_closeout_parsers(ticket_sub) -> list:
+    """Register the ticket closeout subcommands: attach/block/close/fail/evidence."""
+    return _add_ticket_attach_and_lifecycle_end_parsers(
+        ticket_sub
+    ) + _add_ticket_fail_evidence_archive_parsers(ticket_sub)
+
+
+# frob:ticket T-0030
+def _add_ticket_lifecycle_parsers(ticket_sub) -> list:
+    """Register the state-transition ticket subcommands (plan/start/close/...)."""
+    return _add_ticket_progress_parsers(ticket_sub) + _add_ticket_closeout_parsers(
+        ticket_sub
+    )
 
 
 # frob:ticket T-0030
@@ -655,15 +748,8 @@ def _add_vet_parser(sub) -> None:
     vet_p.add_argument("--json", dest="vet_json", action="store_true")
 
 
-# frob:ticket T-0030
-def _add_perf_parser(sub) -> None:
-    """Register the `frob perf` subcommand and its arguments."""
-    # -- perf ------------------------------------------------------------------
-    perf_p = sub.add_parser(
-        "perf", help="profile a command/test suite and inspect its heat-map"
-    )
-    perf_sub = perf_p.add_subparsers(dest="perf_command")
-
+def _add_perf_profile_parser(perf_sub) -> None:
+    """Register `frob perf profile`, which runs a command/test suite under cProfile."""
     perf_profile_p = perf_sub.add_parser(
         "profile", help="run a command under cProfile, storing an artifact"
     )
@@ -681,6 +767,9 @@ def _add_perf_parser(sub) -> None:
         help="command to run under cProfile, after --",
     )
 
+
+def _add_perf_heat_parser(perf_sub) -> None:
+    """Register `frob perf heat`, which renders the stored profile as a heat-map."""
     perf_heat_p = perf_sub.add_parser(
         "heat", help="render the profiled heat-map, ranked by cumulative time"
     )
@@ -700,6 +789,18 @@ def _add_perf_parser(sub) -> None:
         metavar="FILE",
         help="print FILE with per-line hit/time gutters",
     )
+
+
+# frob:ticket T-0030
+def _add_perf_parser(sub) -> None:
+    """Register the `frob perf` subcommand and its arguments."""
+    # -- perf ------------------------------------------------------------------
+    perf_p = sub.add_parser(
+        "perf", help="profile a command/test suite and inspect its heat-map"
+    )
+    perf_sub = perf_p.add_subparsers(dest="perf_command")
+    _add_perf_profile_parser(perf_sub)
+    _add_perf_heat_parser(perf_sub)
 
 
 # frob:ticket T-0030

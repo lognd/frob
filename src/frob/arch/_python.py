@@ -17,7 +17,8 @@ from typing import cast
 from tree_sitter import Node, Tree
 
 from frob.arch._models import ArchSuggestion
-from frob.arch._nodes import _child, _node_text
+from frob.lang import child_by_field as _child
+from frob.lang import node_text as _node_text
 from frob.logging import get_logger
 
 _log = get_logger(__name__)

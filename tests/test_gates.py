@@ -703,6 +703,64 @@ class TestTestGate:
         assert "TEST002" in rule_ids
         assert "TEST001" not in rule_ids
 
+    def test_test002_satisfied_by_rust_directive_bound_cross_file(
+        self, tmp_path: Path
+    ) -> None:
+        """Regression for T-0090: a `frob:tests` directive living in a
+        different rust file than its target symbol must still count as unit
+        evidence, even though `CollectedTests` (pytest-only) never sees the
+        rust test's node id."""
+        from typani.option import Nothing
+
+        _write(
+            tmp_path,
+            "strata-core/src/lib.rs",
+            "pub fn parse_source(x: &str) -> i32 {\n    0\n}\n",
+        )
+        _write(
+            tmp_path,
+            "strata-core/src/parse.rs",
+            '// frob:tests strata-core/src/lib.rs::parse_source kind="unit"\n'
+            "#[test]\n"
+            "fn test_parse_basic() {\n"
+            "    assert_eq!(1, 1);\n"
+            "}\n",
+        )
+        snap = _snapshot(tmp_path)
+        # No rust test collector exists yet -- CollectedTests is pytest-only,
+        # so this deliberately stays empty to prove the fix does not depend
+        # on the src ever landing in tests.node_ids.
+        tests = CollectedTests(node_ids=frozenset())
+        cfg = TestPolicy(min_unit_cases=1)
+        violations = run_test_gate(snap, (), Nothing(), tests, cfg)
+        rule_ids = _rules(violations)
+        assert "TEST002" not in rule_ids
+        assert "TEST001" not in rule_ids
+
+    def test_test002_rust_directive_from_non_test_symbol_does_not_satisfy(
+        self, tmp_path: Path
+    ) -> None:
+        """Regression for the T-0090 review finding: a `frob:tests` directive
+        whose `src` is a real symbol but NOT test code (no `tests` module
+        segment, no `test_`/`_test` leaf name) must not count as evidence --
+        extension alone (`.rs`) is not enough, or any non-test rust/ts/c/cpp
+        symbol could rubber-stamp coverage for anything it names."""
+        from typani.option import Nothing
+
+        _write(
+            tmp_path,
+            "strata-core/src/lib.rs",
+            "pub fn parse_source(x: &str) -> i32 {\n    0\n}\n\n"
+            '// frob:tests strata-core/src/lib.rs::parse_source kind="unit"\n'
+            "pub fn unrelated_helper(x: &str) -> i32 {\n    0\n}\n",
+        )
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(node_ids=frozenset())
+        cfg = TestPolicy(min_unit_cases=1)
+        violations = run_test_gate(snap, (), Nothing(), tests, cfg)
+        rule_ids = _rules(violations)
+        assert "TEST002" in rule_ids
+
     def test_test003_interface_without_integration(self, tmp_path: Path) -> None:
         from typani.option import Nothing
 
