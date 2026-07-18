@@ -899,3 +899,23 @@ acceptance: []
 threat: null
 ```
 T-0155's LINT004 rule (design lint family) fires honestly on design/frob.strata's checker/core/stratamod/vet nodes: each holds a risky (exec/net) may capability with no real, checked-in kill switch (env var / feature flag) an operator can flip live to disable it. T-0155 deliberately did not fabricate a flag=<id> attr naming a mechanism that does not exist (declare real facts or waive with reasons, T-0150/T-0151 precedent) -- this ticket is the follow-on product work to build the actual mechanism and then discharge LINT004 for real on design/frob.strata.
+
+<!-- ticket:T-draft-7ed834be -->
+```yaml
+id: T-draft-7ed834be
+title: 'SYS100 self-conformance broken: vet node missing declared html_render capability
+  (T-0181 fallout)'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- design/frob.strata,src/frob/vet/_capability_registry.py,tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0181 (survey-prioritized third-party dangerous-surface registry entries) added an html_render-detecting pattern to src/frob/vet/_capability_registry.py, observed in src/frob/vet/*.py files bound to the 'vet' node in design/frob.strata, but design/frob.strata's vet node may list was not updated to declare html_render. tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant now fails with SYS100 ('vet' node, html_render observed but not declared). Discovered while working T-0172 (unrelated managed-marker ticket, out of this ticket's scope) after merging main twice mid-session; not caused by T-0172's changes -- design/frob.strata and _capability_registry.py are untouched by T-0172. Fix: either add html_render to design/frob.strata's vet node may list (if the observed pattern is a genuine, intentional capability) or add a BenignCapability excuse if it's a false-positive substring match -- verify which against the actual T-0181 diff before picking.
