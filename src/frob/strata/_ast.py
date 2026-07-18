@@ -349,6 +349,12 @@ class StoreDecl(BaseModel):
     # `may "CAPABILITY"`, T-0166; lands directly on the elaborated `Node`'s
     # `may` field, same as `node`'s `may` clause (T-0132).
     may: tuple[str, ...] = ()
+    # `waive RULE reason="..." [ticket="..."]`+, T-0250; elaborated straight
+    # to Node.waives, same direct-mapping convention `node`'s T-0174 waive
+    # clause uses -- a store is a node too (docs/strata/surface.md
+    # #key-construct-semantics), so a `frob sys audit` finding against a
+    # store needs the same in-design waiver escape hatch.
+    waives: tuple[WaiverDecl, ...] = ()
 
 
 # frob:doc docs/strata/surface.md#std-infra

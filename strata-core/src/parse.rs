@@ -1304,6 +1304,7 @@ impl Parser {
         let mut is_managed = false;
         let mut code: Vec<String> = Vec::new();
         let mut may: Vec<String> = Vec::new();
+        let mut waives: Vec<serde_json::Value> = Vec::new();
         if self.at_symbol('{') {
             self.advance();
             loop {
@@ -1326,6 +1327,32 @@ impl Parser {
                     while matches!(self.cur().kind, TokKind::Str(_)) {
                         code.push(self.expect_string("code glob")?);
                     }
+                } else if self.at_keyword("waive") {
+                    // T-0250: `waive RULE reason="..." [ticket="T-XXXX"]` --
+                    // same shape and same mandatory-reason rule as
+                    // parse_node's T-0174 waive clause; a store is a node
+                    // too (docs/strata/surface.md#key-construct-semantics),
+                    // so a `frob sys audit` finding against a store
+                    // (SYS100-102/THREAT002-003/LINT004) needs the same
+                    // in-design waiver escape hatch. `reason` is mandatory
+                    // at parse time (law 2: no fabricated/implicit
+                    // waivers) -- a `waive` clause with no reason is a hard
+                    // parse error, never a silent pass. Repeatable: a store
+                    // may waive more than one rule.
+                    self.advance();
+                    let rule = self.expect_string("waive rule id")?;
+                    self.expect_keyword("reason")?;
+                    let reason = self.expect_string("waive reason")?;
+                    let mut ticket: Option<String> = None;
+                    if self.at_keyword("ticket") {
+                        self.advance();
+                        ticket = Some(self.expect_string("waive ticket ref")?);
+                    }
+                    waives.push(json!({
+                        "rule": rule,
+                        "reason": reason,
+                        "ticket": ticket,
+                    }));
                 } else if self.at_keyword("may") {
                     // T-0166: `may CAPABILITY` -- same STRING-quoted
                     // capability atom shape T-0132 gave `node`. Lands
@@ -1401,6 +1428,7 @@ impl Parser {
             "is_managed": is_managed,
             "code": code,
             "may": may,
+            "waives": waives,
         }));
         Ok(())
     }

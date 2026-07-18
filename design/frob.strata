@@ -265,6 +265,12 @@ store tickets_ledger : trusted {
     may "env";
     may "exec";
     may "fs";
+    // T-0166 LINT004: `may "exec"` is a risky capability with no real kill
+    // switch today -- an honest gap, same posture as checker/core/
+    // stratamod/vet above; waived (T-0250, extending T-0174's node-only
+    // waive clause to store) pending T-0200's real kill-switch mechanism,
+    // same reason.
+    waive "LINT004" reason "no real kill switch around subprocess spawning yet -- T-0200 is the follow-on ticket to build one" ticket "T-0200";
 }
 
 // The `.frob/` symbol-graph cache (`frob.graph`'s snapshot cache): derived

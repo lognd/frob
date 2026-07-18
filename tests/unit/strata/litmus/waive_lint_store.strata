@@ -1,0 +1,50 @@
+// waive_lint_store.strata -- T-0250 litmus: the store-side mirror of
+// waive_lint.strata (T-0174), proving `waive` on a `store` declaration
+// discharges/rejects the same way `waive` on a `node` declaration does --
+// parsed by `parse_store` (not `parse_node`), elaborated by
+// `_elaborate_store` (not `_elaborate_node`), all proven end to end
+// (parse -> elaborate -> evaluate_exhaustiveness) with no hand-built
+// KernelModel/Waiver value:
+//
+// - store_waived holds `may "exec"` with no declared kill-switch attr
+//   (fires LINT004, same shape as waive_lint.strata's node_waived) AND
+//   declares `waive "LINT004" reason "..." ticket "T-0200"` -- the finding
+//   must be suppressed (moved to AuditReport.waived), never appear in
+//   AuditReport.gaps.
+// - store_stale declares `attr flag=store_stale_kill_switch` (so LINT004
+//   does NOT fire for it) AND ALSO declares `waive "LINT004" reason
+//   "..."` -- a waiver with nothing to waive. It must surface as a NEW
+//   SYSWAIVE002 gap (family "waiver"), proving the drift-lock holds for
+//   stores too.
+// - store_multi holds `may "exec"` (CWE-78) and `may "sql"` (CWE-89),
+//   BOTH undischarged -- two THREAT003 findings on the SAME store, one
+//   per CWE. It declares ONLY `waive "THREAT003:CWE-78" reason "..."` --
+//   CWE-78 must be waived, but CWE-89 MUST STILL FIRE as an unwaived gap
+//   -- the wrong-sub-target-does-not-discharge case, on a store this time.
+//
+// tested end to end by tests/unit/strata/test_litmus_waive_store.py.
+
+module waive_lint_store
+
+store store_waived : trusted {
+    clearance Internal;
+    engine git_tracked;
+    may "exec";
+    waive "LINT004" reason "no kill switch yet, tracked in T-0200" ticket "T-0200";
+}
+
+store store_stale : trusted {
+    clearance Internal;
+    engine git_tracked;
+    may "exec";
+    attr flag=store_stale_kill_switch;
+    waive "LINT004" reason "stale waiver litmus fixture -- never actually fires";
+}
+
+store store_multi : trusted {
+    clearance Internal;
+    engine git_tracked;
+    may "exec";
+    may "sql";
+    waive "THREAT003:CWE-78" reason "os-command discharge tracked separately, litmus fixture";
+}
