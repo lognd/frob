@@ -1986,7 +1986,7 @@ Typani pilot: frob sys audit <file.strata> misbehaves silently, appending a bogu
 id: T-0164
 title: COV002 demands per-declaration frob:ticket edges inside .strata files -- boilerplate
   x28
-state: in-progress
+state: done
 kind: ux
 origin: agent
 created: '2026-07-18'
