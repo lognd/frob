@@ -55,7 +55,9 @@ on this file is unaffected and still shows the documented false positive.
 # frob:ticket T-0158
 from __future__ import annotations
 
+import re
 from collections.abc import Callable
+from functools import lru_cache
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -157,6 +159,97 @@ _REGISTRY_PATH = (Path(__file__).parent / "_capability_registry.py").resolve()
 _FINGERPRINT_CATALOG_PATH = (
     Path(__file__).parent.parent / "strata" / "_cve_fingerprint.py"
 ).resolve()
+
+# T-0253: `_SELF_PATH`/`_REGISTRY_PATH`/`_FINGERPRINT_CATALOG_PATH` above are
+# identity anchors for THIS running package's own files -- correct only when
+# the scanned tree and the running package are the SAME checkout (editable
+# install: `uv run frob ...`). Under a non-editable global install (`uv tool
+# install frob`), the running package's files resolve to a `site-packages`
+# copy, so identity comparison against a SCANNED tree that is frob's own
+# repo checkout never matches and every pattern-catalog needle self-matches
+# again (36 false SYS100s under `frob sys audit` vs. 0 under `uv run frob
+# sys audit`).
+#
+# Round 1 fix (REJECTED on review): matching by bare PATH SUFFIX (the last
+# three path components: package dir / subpackage / filename) with no
+# further check. That closed the false-positive but opened a real hole:
+# `is_self_pattern_path` is reached from `scan_directory_capabilities`/
+# `scan_directory_fingerprints`, the SAME public entrypoints `frob vet` uses
+# to scan a VENDORED/THIRD-PARTY dependency tree. A malicious dependency
+# that places a file at a path ending in `frob/vet/_capability.py` (trivial:
+# nest it under any vendor path, or name the package `frob` outright) would
+# be silently excluded from capability scanning by suffix alone --
+# `is_self_pattern_path` cannot tell "we are auditing frob's own checkout"
+# from "we are vetting someone else's tree that happens to mimic frob's
+# layout" using the scanned PATH alone.
+#
+# Round 2 fix (this one): the suffix match stays as the within-frob file
+# check, but it is only REACHABLE when a separate SCAN-TARGET discriminator,
+# `_is_frob_repo_root`, says the tree actually being scanned is frob's own
+# repository -- not the running package's install location (round 1's
+# mistake), not the scanned FILE's path alone (round 1 REJECT's mistake),
+# but the scanned tree's ROOT identity: `root/pyproject.toml` declares
+# `name = "frob"` AND the root also has the `frob-core`/`strata-core` Rust
+# crate directories this monorepo actually ships. Requiring both the name
+# and the crate directories raises the forgery bar well past "name a PyPI
+# package frob" -- a typosquat sdist would also need to vendor two dummy
+# top-level directories with those exact names purely to fool this check,
+# and gains nothing from doing so since `frob vet`'s dependency scan target
+# is the DEPENDENCY's own extracted source root, not frob's repo root,
+# in every real invocation. Self-conformance (`_selfconform.py`/
+# `_effects.py`) always passes frob's own repo root as `root` by
+# construction (self-conformance audits ITS OWN tree), so the discriminator
+# is a no-op there; `frob vet` scanning a dependency passes that
+# dependency's own source root, which is never frob's repo, so the
+# discriminator (correctly) refuses the exclusion and the file gets scanned
+# like any other.
+_SELF_PATTERN_SUFFIXES: tuple[tuple[str, ...], ...] = (
+    ("frob", "vet", "_capability.py"),
+    ("frob", "vet", "_capability_registry.py"),
+    ("frob", "strata", "_cve_fingerprint.py"),
+)
+
+#: `[project]`-table `name = "frob"` line, tomllib-free (matches this
+#: module's existing "cheap substring/regex over parsing" posture) --
+#: see `_is_frob_repo_root`.
+_FROB_PROJECT_NAME_RE = re.compile(r'(?m)^\s*name\s*=\s*"frob"\s*$')
+
+
+@lru_cache(maxsize=32)
+def _is_frob_repo_root(root: Path) -> bool:
+    """True if `root` (resolved) is frob's OWN repository checkout -- the
+    scan-target discriminator `is_self_pattern_path` gates its suffix match
+    on (T-0253 REJECT round). Requires ALL of: a `pyproject.toml` at `root`
+    declaring `name = "frob"`, plus the `frob-core`/`strata-core` Rust crate
+    directories this monorepo actually ships alongside it -- name alone is
+    forgeable by a typosquat PyPI package; the crate directories are not
+    something a dependency being vetted would have any reason to carry.
+
+    Deliberately checks `root` ITSELF only, never an ancestor: `frob vet`
+    locates a Python dependency's source under `<project-root>/.venv/lib/
+    */site-packages/<name>` (`frob.vet._source.locate_pypi_source`), so
+    when frob vets its OWN dependencies, every dependency's located source
+    lives NESTED under frob's own repo root. Walking upward from that
+    nested path would climb straight back to frob's own `pyproject.toml`/
+    `frob-core`/`strata-core` and wrongly classify every one of frob's own
+    third-party dependencies as "self" too -- turning the exclusion into a
+    scanner-wide bypass for frob's own dependency tree, a strictly worse
+    hole than the one this discriminator exists to close. Every real caller
+    (self-conformance's `root`, `frob vet`'s located dependency `source_dir`)
+    already passes the exact directory that should be checked; the exact
+    directory is what this checks. Cached per resolved root: called once
+    per file in a directory walk, and the answer cannot change mid-walk."""
+    resolved = root.resolve()
+    pyproject = resolved / "pyproject.toml"
+    if not pyproject.is_file():
+        return False
+    try:
+        text = pyproject.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return False
+    if not _FROB_PROJECT_NAME_RE.search(text):
+        return False
+    return (resolved / "frob-core").is_dir() and (resolved / "strata-core").is_dir()
 
 
 # frob:doc docs/modules/vet.md#public-api
@@ -374,7 +467,8 @@ def _is_test_path(path: Path) -> bool:
 
 # frob:doc docs/modules/vet.md#public-api
 # frob:ticket T-0201
-def is_self_pattern_path(path: Path) -> bool:
+# frob:ticket T-0253
+def is_self_pattern_path(path: Path, root: Path | None = None) -> bool:
     """True for this module's own source file, the T-0158 registry it
     compiles `_PATTERNS` from, or the T-0153 fingerprint catalog it matches
     `scan_file_fingerprints` against (excluded from directory aggregation
@@ -387,19 +481,58 @@ def is_self_pattern_path(path: Path) -> bool:
     in whichever join path forgot to exclude it. This was T-0201's root
     cause: `_selfconform.py`'s extended-kind/all-kind scans and
     `_effects.py`'s line-effect scan all predated this export and had no
-    exclusion of their own."""
+    exclusion of their own.
+
+    T-0253 round 1 (REJECTED): matched by `_SELF_PATTERN_SUFFIXES` (package-
+    relative path suffix) alone, with no scan-target check. That closed the
+    non-editable-install false positive but opened a real evasion hole: a
+    malicious dependency placing a file at a path ending in
+    `frob/vet/_capability.py` would be silently excluded from `frob vet`'s
+    capability scan too, since suffix matching cannot distinguish "this is
+    frob auditing itself" from "this is frob vetting someone else's tree
+    that happens to mimic frob's layout."
+
+    T-0253 round 2 (this version): `root` is now the caller's scan-target
+    discriminator -- the suffix match only fires when `_is_frob_repo_root
+    (root)` says `root` IS frob's own repository checkout (its own
+    `pyproject.toml` name plus its `frob-core`/`strata-core` crate
+    directories), never based on `path` alone and never based on where the
+    RUNNING package's own files happen to live (round 0's bug, identity
+    comparison against `_SELF_PATH` et al., which broke under a non-
+    editable global install). `root` defaults to `None`, which ALWAYS
+    fails the discriminator (fail-closed, deny-by-default, matching this
+    codebase's charter posture elsewhere) -- a caller that omits `root`
+    gets "never exclude, always scan" rather than a crash, so this stays
+    source-compatible with any caller written against the pre-T-0253
+    one-argument signature while still closing the evasion hole for every
+    real caller in this repo (all of which pass `root` explicitly).
+    Self-conformance callers (`_selfconform.py`/`_effects.py`) always pass
+    frob's own repo root by construction, so this is a no-op there; `frob
+    vet` scanning a dependency passes that dependency's own source root,
+    which is never frob's repo, so the exclusion correctly never fires and
+    the file is scanned like any other."""
+    if root is None or not _is_frob_repo_root(root):
+        return False
     try:
         resolved = path.resolve()
     except OSError:
         return False
-    return resolved in (_SELF_PATH, _REGISTRY_PATH, _FINGERPRINT_CATALOG_PATH)
+    parts = resolved.parts
+    return any(
+        len(parts) >= len(suffix) and parts[-len(suffix) :] == suffix
+        for suffix in _SELF_PATTERN_SUFFIXES
+    )
 
 
-def _is_self_path(path: Path) -> bool:
+def _is_self_path(path: Path, source_dir: Path) -> bool:
     """Private alias for `is_self_pattern_path` (T-0201) kept so this
     module's own two pre-existing call sites did not need a rename in the
-    same diff as the export; new callers should use the public name."""
-    return is_self_pattern_path(path)
+    same diff as the export; new callers should use the public name.
+    `source_dir` (T-0253) is the scan-target discriminator: the directory
+    walk's own root, threaded straight through -- see `is_self_pattern_path`
+    for why the exclusion must be gated on this rather than on `path`
+    alone."""
+    return is_self_pattern_path(path, source_dir)
 
 
 def _aggregate_capabilities(
@@ -421,7 +554,7 @@ def _aggregate_capabilities(
                     max_files,
                 )
                 break
-            if _is_test_path(path) or _is_self_path(path):
+            if _is_test_path(path) or _is_self_path(path, source_dir):
                 continue
             capabilities |= scan_file_capabilities(path)
             if not decode_to_exec_hit:
@@ -474,7 +607,7 @@ def _aggregate_fingerprints(
                     max_files,
                 )
                 break
-            if _is_test_path(path) or _is_self_path(path):
+            if _is_test_path(path) or _is_self_path(path, source_dir):
                 continue
             matched.update(scan_file_fingerprints(path))
             scanned += 1

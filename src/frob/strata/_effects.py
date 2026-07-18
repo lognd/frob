@@ -113,8 +113,12 @@ def _line_effects(path: Path, root: Path) -> list[ObservedEffect]:
     literals are not code exercising the effect, the same self-match class
     `frob.vet._capability`'s own directory aggregation already excludes --
     without this, `_cve_fingerprint.py`'s `CveFingerprint.needles` table
-    trivially "observes" every fs needle it stores as a literal string."""
-    if is_self_pattern_path(path):
+    trivially "observes" every fs needle it stores as a literal string.
+    `root` (T-0253) doubles as `is_self_pattern_path`'s scan-target
+    discriminator: self-conformance always passes frob's own repo root
+    here, so the exclusion fires exactly when it always has for this
+    caller."""
+    if is_self_pattern_path(path, root):
         return []
     language = language_for(path)
     if language is None:

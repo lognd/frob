@@ -4,6 +4,7 @@ typosquat, and hook-command parsing (docs/modules/vet.md). No real network calls
 from __future__ import annotations
 
 import json
+import shutil
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -312,6 +313,31 @@ def test_parse_hook_command_scoped_npm_package() -> None:
 # ---------------------------------------------------------------------------
 
 
+def _make_fake_frob_repo_root(dest: Path) -> Path:
+    """Build a `dest` directory that `_is_frob_repo_root` (T-0253) recognizes
+    as frob's own checkout: `pyproject.toml` declaring `name = "frob"`, plus
+    the `frob-core`/`strata-core` marker directories, plus a copy of the
+    real `src/frob` tree underneath. `is_self_pattern_path`'s scan-target
+    discriminator checks the exact directory passed as the scan root (no
+    upward ancestor search -- see that function's docstring for why:
+    ascending from a dependency located under frob's own `.venv` during
+    frob vetting its OWN dependencies would otherwise wrongly classify that
+    dependency's tree as "self" too), so tests exercising the discriminator
+    must pass THIS directory itself as the scan root, not a subdirectory of
+    it."""
+    dest.mkdir(parents=True)
+    repo_root = Path(__file__).resolve().parents[1]
+    (dest / "pyproject.toml").write_text('[project]\nname = "frob"\n')
+    (dest / "frob-core").mkdir()
+    (dest / "strata-core").mkdir()
+    shutil.copytree(
+        repo_root / "src" / "frob",
+        dest / "src" / "frob",
+        ignore=shutil.ignore_patterns("__pycache__"),
+    )
+    return dest
+
+
 class TestCapabilityScan:
     def test_scan_file_operations_names_registry_entry(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_operations kind="unit"
@@ -489,7 +515,9 @@ class TestCapabilityScan:
         capabilities = scan_file_capabilities(own_path)
         assert "install-hook" in capabilities  # "cmdclass" appears as data
 
-    def test_scan_directory_capabilities_excludes_own_module(self) -> None:
+    def test_scan_directory_capabilities_excludes_own_module(
+        self, tmp_path: Path
+    ) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_directory_capabilities kind="unit"
         # T-0151: directory aggregation over vet's REAL package path must not
         # self-inflate "eval"/"exec" from _capability.py's own pattern-table
@@ -502,12 +530,44 @@ class TestCapabilityScan:
         # as its own check target, which is the separate, documented,
         # accepted false-positive class from the module docstring and
         # docs/modules/vet.md -- not something this exclusion targets.
+        #
+        # T-0253: the exclusion only fires when the scan root passed to
+        # `scan_directory_capabilities` itself identifies as frob's own
+        # repo (`_is_frob_repo_root`, no ancestor search) -- scanning a bare
+        # subdirectory like `src/frob/vet` directly no longer qualifies on
+        # its own. Build a fake repo root carrying the pyproject-name +
+        # crate-dir markers, with ONLY the real `vet/` package copied under
+        # it (not the whole `src/frob` tree -- other packages like
+        # `strata/_facts.py` have their OWN genuine, non-self-match eval
+        # hits that would make a repo-wide assertion of "eval" absent
+        # false; this test is specifically about vet/'s own self-match
+        # exclusion, so it keeps the scan scoped the same way the pre-
+        # T-0253 version did).
         from frob.vet._capability import scan_directory_capabilities
 
-        vet_src = Path(__file__).resolve().parents[1] / "src" / "frob" / "vet"
-        capabilities, _ = scan_directory_capabilities(vet_src)
-        assert "eval" not in capabilities
-        assert "exec" not in capabilities
+        repo_root = Path(__file__).resolve().parents[1]
+        fake_repo = tmp_path / "self-scan"
+        fake_repo.mkdir()
+        (fake_repo / "pyproject.toml").write_text('[project]\nname = "frob"\n')
+        (fake_repo / "frob-core").mkdir()
+        (fake_repo / "strata-core").mkdir()
+        shutil.copytree(
+            repo_root / "src" / "frob" / "vet",
+            fake_repo / "src" / "frob" / "vet",
+            ignore=shutil.ignore_patterns("__pycache__"),
+        )
+
+        capabilities, _ = scan_directory_capabilities(
+            fake_repo / "src" / "frob" / "vet", max_files=500
+        )
+        assert "eval" in capabilities  # discriminator refuses a subdir scan root
+        assert "exec" in capabilities
+
+        capabilities_from_repo_root, _ = scan_directory_capabilities(
+            fake_repo, max_files=500
+        )
+        assert "eval" not in capabilities_from_repo_root
+        assert "exec" not in capabilities_from_repo_root
 
 
 class TestFingerprintScan:
@@ -565,7 +625,8 @@ class TestFingerprintScan:
         # frob:tests src/frob/vet/_capability.py::_is_self_path kind="unit"
         from frob.vet._capability import _FINGERPRINT_CATALOG_PATH, _is_self_path
 
-        assert _is_self_path(_FINGERPRINT_CATALOG_PATH)
+        repo_root = Path(__file__).resolve().parents[1]
+        assert _is_self_path(_FINGERPRINT_CATALOG_PATH, repo_root)
 
     def test_self_pattern_exclusion_covers_every_needle_table_module(self) -> None:
         # T-0201 drift-lock: a registry-of-pattern-files check. Any module
@@ -591,12 +652,15 @@ class TestFingerprintScan:
             is_self_pattern_path,
         )
 
-        root = Path(__file__).resolve().parents[1] / "src" / "frob"
+        repo_root = Path(__file__).resolve().parents[1]
+        src_root = repo_root / "src" / "frob"
         needle_table_marker = re.compile(r"needles\s*=\s*\(|needles\s*:\s*tuple\[")
         offenders: list[Path] = []
-        for path in root.rglob("*.py"):
+        for path in src_root.rglob("*.py"):
             text = path.read_text(encoding="utf-8", errors="replace")
-            if needle_table_marker.search(text) and not is_self_pattern_path(path):
+            if needle_table_marker.search(text) and not is_self_pattern_path(
+                path, repo_root
+            ):
                 offenders.append(path)
 
         assert offenders == [], (
@@ -618,6 +682,117 @@ class TestFingerprintScan:
             )
         }
 
+    def test_self_pattern_exclusion_survives_a_foreign_install_copy(
+        self, tmp_path: Path
+    ) -> None:
+        # T-0253 round 0: is_self_pattern_path used to compare the SCANNED
+        # path's resolved identity against the RUNNING package's own
+        # resolved file paths (_SELF_PATH/_REGISTRY_PATH/
+        # _FINGERPRINT_CATALOG_PATH). That only matches when the scanned
+        # tree and the running package are literally the same checkout (an
+        # editable install run via `uv run frob ...`). Under a non-editable
+        # global binary (`uv tool install frob`), the running package's
+        # files resolve into a site-packages copy, so scanning frob's OWN
+        # repo checkout with that binary self-matched every pattern-catalog
+        # needle again (36 false SYS100s).
+        #
+        # Simulate that split here: build a full fake frob repo root (see
+        # `_make_fake_frob_repo_root`) at an unrelated tmp path -- standing
+        # in for "the tree being scanned is a frob checkout that is not
+        # where the running package lives" -- and confirm the three known
+        # pattern files are still recognized/excluded THROUGH the T-0253
+        # round-2 discriminator (`root` correctly identifies as frob's own
+        # repo because it carries the pyproject-name + crate-dir markers,
+        # not because of file identity or suffix alone).
+        # frob:tests src/frob/vet/_capability.py::is_self_pattern_path kind="unit"
+        from frob.vet._capability import _aggregate_capabilities, is_self_pattern_path
+
+        fake_repo = _make_fake_frob_repo_root(tmp_path / "foreign-install")
+        foreign_frob_src = fake_repo / "src" / "frob"
+
+        foreign_capability = foreign_frob_src / "vet" / "_capability.py"
+        foreign_registry = foreign_frob_src / "vet" / "_capability_registry.py"
+        foreign_fingerprint = foreign_frob_src / "strata" / "_cve_fingerprint.py"
+        # the discriminator checks the exact scan root passed in (no
+        # ancestor search, see `_make_fake_frob_repo_root`'s docstring), so
+        # `root` here must be `fake_repo` itself, the directory that
+        # actually carries the pyproject-name + crate-dir markers.
+        assert is_self_pattern_path(foreign_capability, fake_repo)
+        assert is_self_pattern_path(foreign_registry, fake_repo)
+        assert is_self_pattern_path(foreign_fingerprint, fake_repo)
+
+        # end-to-end: scanning starting AT the fake repo root (the scan
+        # root the discriminator actually recognizes) must skip all three
+        # catalog/scanner files while still walking into src/frob/vet.
+        _capabilities, _hit, scanned = _aggregate_capabilities(
+            fake_repo, max_files=2000
+        )
+        scanned_paths = {
+            p
+            for ext in (".py",)
+            for p in fake_repo.rglob(f"*{ext}")
+            if not is_self_pattern_path(p, fake_repo)
+        }
+        assert scanned == len(scanned_paths)
+        assert foreign_capability not in scanned_paths
+        assert foreign_registry not in scanned_paths
+
+    def test_self_pattern_exclusion_does_not_match_unrelated_same_name_file(
+        self, tmp_path: Path
+    ) -> None:
+        # Narrowness check (T-0253): a third-party dependency that happens
+        # to ship its own unrelated `_capability.py` at a DIFFERENT package
+        # path must not be excluded just because the filename matches --
+        # the suffix match requires all three path components
+        # (`frob/vet/_capability.py`), not just the final filename. `root`
+        # here is not a frob repo either, so both the discriminator AND the
+        # suffix check independently refuse this path.
+        # frob:tests src/frob/vet/_capability.py::is_self_pattern_path kind="unit"
+        from frob.vet._capability import is_self_pattern_path
+
+        unrelated_root = tmp_path / "some_other_pkg"
+        unrelated = unrelated_root / "utils" / "_capability.py"
+        unrelated.parent.mkdir(parents=True)
+        unrelated.write_text("# not frob's file\n")
+        assert not is_self_pattern_path(unrelated, unrelated_root)
+
+    def test_self_pattern_exclusion_does_not_fire_when_vetting_a_dependency(
+        self, tmp_path: Path
+    ) -> None:
+        # T-0253 REJECT-round adversarial test (required by review): a
+        # malicious dependency that deliberately reproduces the exact
+        # 3-segment suffix (`frob/vet/_capability.py`) under a DIFFERENT,
+        # non-frob root must be SCANNED -- not silently excluded -- when
+        # `frob vet` scans it as a dependency. The dependency's own root is
+        # NOT frob's repo (no pyproject.toml name=="frob", no frob-core/
+        # strata-core dirs), so `_is_frob_repo_root` must refuse and the
+        # suffix match must never be reached, regardless of how closely the
+        # nested path mimics frob's own layout.
+        # frob:tests src/frob/vet/_capability.py::is_self_pattern_path kind="unit"
+        from frob.vet._capability import (
+            _aggregate_capabilities,
+            is_self_pattern_path,
+            scan_file_capabilities,
+        )
+
+        evil_root = tmp_path / "evil-pkg"
+        evil_capability = evil_root / "frob" / "vet" / "_capability.py"
+        evil_capability.parent.mkdir(parents=True)
+        evil_capability.write_text('import os\nos.system("evil")\n')
+
+        # the file itself really does carry a live capability...
+        assert "exec" in scan_file_capabilities(evil_capability)
+        # ...and the discriminator must refuse the exclusion for this root,
+        # even though the path suffix is an exact match for frob's own
+        # `_capability.py` layout.
+        assert not is_self_pattern_path(evil_capability, evil_root)
+
+        # end-to-end: frob vet's own directory-aggregation entrypoint must
+        # actually observe the capability, not silently skip the file.
+        capabilities, _hit, scanned = _aggregate_capabilities(evil_root, max_files=500)
+        assert scanned == 1
+        assert "exec" in capabilities
+
     def test_scan_directory_fingerprints_aggregates_across_files(
         self, tmp_path: Path
     ) -> None:
@@ -629,15 +804,21 @@ class TestFingerprintScan:
         matched = scan_directory_fingerprints(tmp_path)
         assert any(m.id == "FP-DESERIALIZE-YAML-001" for m in matched)
 
-    def test_scan_directory_fingerprints_excludes_the_catalog_itself(self) -> None:
+    def test_scan_directory_fingerprints_excludes_the_catalog_itself(
+        self, tmp_path: Path
+    ) -> None:
         # scanning frob's own src tree must not self-match every fingerprint
         # via _cve_fingerprint.py's own needle literals (self-match note,
         # docs/strata/threat.md#cve-fingerprints-code-level-pattern-catalog-t-0153).
+        # T-0253: the exclusion only fires when the scan root itself
+        # identifies as frob's own repo (see the sibling capability-scan
+        # test above for why); scan from a fake repo root instead of the
+        # bare `src/frob/strata` subdirectory.
         # frob:tests src/frob/vet/_capability.py::scan_directory_fingerprints kind="unit"
         from frob.vet._capability import scan_directory_fingerprints
 
-        strata_src = Path(__file__).resolve().parents[1] / "src" / "frob" / "strata"
-        matched = scan_directory_fingerprints(strata_src)
+        fake_repo = _make_fake_frob_repo_root(tmp_path / "self-scan")
+        matched = scan_directory_fingerprints(fake_repo, max_files=2000)
         assert not any(m.id == "FP-DESERIALIZE-YAML-001" for m in matched)
 
 
