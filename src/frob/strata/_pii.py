@@ -88,6 +88,7 @@ PII_CATEGORIES: frozenset[str] = frozenset(
 
 
 # frob:doc docs/strata/threat.md#pii-declarations-std-pii-t-0154
+# frob:doc docs/guides/extending/pii-categories.md#pii-categories
 class PiiViolation(BaseModel):
     """One PII001-004 finding: a rule id, the firing target (node or flow
     id), and a human detail. Mirrors `_compliance.py::ComplianceViolation`'s

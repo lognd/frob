@@ -103,6 +103,7 @@ _INFRA_LOAD_EXEMPT_ATTRS = frozenset({"fill", "invalidation"})
 
 
 # frob:doc docs/strata/threat.md#operational-design-lints-std-lint-t-0155
+# frob:doc docs/guides/extending/design-lint-rules.md#design-lint-rules-lint001-005
 class LintViolation(BaseModel):
     """One LINT001-005 finding: a rule id, the firing target (node/flow/
     scenario id), and a human detail. Mirrors `_pii.py::PiiViolation`'s

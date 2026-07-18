@@ -111,6 +111,7 @@ _RUNG_ORDER: tuple[Rung, ...] = (Rung.L1, Rung.L2, Rung.L3, Rung.L4, Rung.L5)
 
 
 # frob:doc docs/strata/threat.md#the-catalog-stdcwe
+# frob:doc docs/guides/extending/threat-catalog.md#threat-catalog
 class WeaknessEntry(BaseModel):
     """One `std.cwe` catalog entry: a conditional obligation predicated on
     a capability being present in the model (docs/strata/threat.md#the-
@@ -146,6 +147,7 @@ class OutOfScopeEntry(BaseModel):
 
 
 # frob:doc docs/strata/threat.md#phasing
+# frob:doc docs/guides/extending/benign-capabilities.md#benign-capabilities
 class BenignCapability(BaseModel):
     """A `may` capability KIND explicitly excused from THREAT002's sink
     taxonomy, with a reason -- mirrors `OutOfScopeEntry` for THREAT001

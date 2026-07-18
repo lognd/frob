@@ -63,6 +63,7 @@ _log = get_logger(__name__)
 
 
 # frob:doc docs/strata/threat.md#cve-fingerprints-code-level-pattern-catalog-t-0153
+# frob:doc docs/guides/extending/cve-fingerprints.md#cve-fingerprints
 class CveFingerprint(BaseModel):
     """One `std.cve` fingerprint: a code-level pattern for a canonical
     vulnerable-usage class, joined to the `std.cwe` catalog by `cwe_id` and

@@ -66,6 +66,7 @@ _REVOCATION_ATTR = "revocation"
 
 
 # frob:doc docs/strata/threat.md#compliance-regulatory-obligations-std-compliance
+# frob:doc docs/guides/extending/compliance-registry.md#compliance-registry
 class RegulationEntry(BaseModel):
     """One `std.compliance` catalog entry: a conditional regulatory duty,
     scoped to the jurisdictions it binds (docs/strata/threat.md#compliance,

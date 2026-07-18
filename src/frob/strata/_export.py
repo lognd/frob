@@ -105,6 +105,7 @@ def _netpol_peer(nodes: dict[str, Node], peer_id: str) -> dict:
 
 
 # frob:doc docs/commands/sys.md#frob-sys-export
+# frob:doc docs/guides/extending/sys-export-formats.md#sys-export-formats
 def export_k8s_netpol(model: KernelModel) -> str:
     """Render one deny-by-default k8s `NetworkPolicy` YAML document per
     component `Node`: ingress only from nodes with a declared `Flow` into

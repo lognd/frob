@@ -36,6 +36,7 @@ _log = get_logger(__name__)
 
 
 # frob:doc docs/strata/kernel.md#scenario
+# frob:doc docs/guides/extending/scenario-kinds.md#scenario-kinds
 class ScenarioResult(BaseModel):
     """One scenario's claim results, in declaration order (never drops a claim)."""
 

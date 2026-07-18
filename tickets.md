@@ -225,7 +225,7 @@ Get frob into a releasable state once the gates-zero sweep and the three feature
 ```yaml
 id: T-0159
 title: 'extending frob: developer guides for every registry and extension point'
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-07-18'

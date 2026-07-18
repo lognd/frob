@@ -33,6 +33,7 @@ def _waiver_hint(rule: str) -> str:
 
 
 # frob:doc docs/modules/dup.md#gate-integration
+# frob:doc docs/guides/extending/dup-detector-registry.md#dup-detector-registry
 def DUP001(
     report: CloneReport, touched: frozenset[str], threshold: float
 ) -> tuple[Violation, ...]:

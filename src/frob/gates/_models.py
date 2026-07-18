@@ -98,6 +98,7 @@ class GateReport(BaseModel):
 
 
 # frob:doc docs/modules/gates.md#data-models
+# frob:doc docs/guides/extending/gate-rule-families.md#gate-rule-families
 class GateConfig(BaseModel):
     """Everything `run_gates` needs to load state and select which gates run."""
 
