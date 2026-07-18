@@ -40,7 +40,7 @@ from pathlib import Path
 from pydantic import BaseModel, ConfigDict
 
 from frob.logging import get_logger
-from frob.vet._capability import _PATTERNS, language_for
+from frob.vet._capability import _PATTERNS, is_self_pattern_path, language_for
 
 from ._code_binding import FOREIGN, CodeBinding
 from ._models import KernelModel, Node
@@ -108,7 +108,14 @@ def _declared_kinds(node: Node) -> frozenset[str]:
 def _line_effects(path: Path, root: Path) -> list[ObservedEffect]:
     """Every net/fs/exec effect needle match in `path`, one per (line, kind)
     pair matched, `path`-relative-to-`root` in the `file` field so reports
-    read the same way `_code_binding.py`'s violations do."""
+    read the same way `_code_binding.py`'s violations do. Excludes
+    `is_self_pattern_path` (T-0201): a pattern-catalog data file's needle
+    literals are not code exercising the effect, the same self-match class
+    `frob.vet._capability`'s own directory aggregation already excludes --
+    without this, `_cve_fingerprint.py`'s `CveFingerprint.needles` table
+    trivially "observes" every fs needle it stores as a literal string."""
+    if is_self_pattern_path(path):
+        return []
     language = language_for(path)
     if language is None:
         return []

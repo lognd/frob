@@ -193,29 +193,38 @@ node core : trusted {
 // vet: src/frob/vet/**. Dependency-vetting -- the ONE component that
 // crosses the trust boundary out to `registry` (network fetches for
 // publish dates, OSV advisories, popularity data).
-// T-0158: `may "deserialize"`/`may "fetch_url"`/`may "sql"` added -- the
-// new exhaustive dangerous-operations registry patterns pickle/marshal/
-// shelve (_cve.py/_containment.py NVD-cache handling), urlopen-shaped URL
-// fetches (_nvd.py/_registry.py), and string-formatted sqlite3 execute
-// (real observed capabilities the old coarser pattern table never
-// patterned, not new code).
-// T-0155 LINT004: `may "exec"`/`may "net"` are risky capabilities with no
-// real kill switch today -- an honest gap, same posture as `checker`
-// above (module docstring precedent).
+// T-0158: `may "fetch_url"` added -- urlopen-shaped URL fetches
+// (_nvd.py/_registry.py), a real observed capability the old coarser
+// pattern table never patterned, not new code.
+// T-0201: `may "deserialize"`/`may "eval"`/`may "exec"`/`may "sql"`
+// REMOVED. A T-0150-round-2 prototype (reverted at the time) first showed
+// these four only ever fired via `_capability.py`/`_capability_registry.py`/
+// `_cve_fingerprint.py` scanning THEIR OWN needle-literal tables -- the
+// T-0151 self-match class, not real vet code exercising the capability
+// (`_pickle_violation` in `_ecosystem.py` DETECTS shipped pickle files by
+// extension, it never itself calls `pickle.load`; `conn.execute(...)` in
+// `_cache.py`/`_nvd.py`/`_registry.py` is parameterized, not the
+// string-formatted `execute(f"...")` shape the `sql` needle patterns for;
+// no `eval`/`exec` call exists anywhere under `src/frob/vet/**` outside
+// the excluded catalog files). Once T-0201's shared `is_self_pattern_path`
+// exclusion (`frob.vet._capability`) is applied consistently in BOTH vet
+// aggregation and every `frob.strata._selfconform`/`_effects` join path,
+// a clean self-conformance scan confirms zero real sites for these four --
+// they were never genuinely exercised capabilities, so removing them is
+// the honest fix, not a coverage regression.
+// T-0155 LINT004: `may "net"` is a risky capability with no real kill
+// switch today -- an honest gap, same posture as `checker` above (module
+// docstring precedent).
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
 node vet : trusted {
     clearance Internal;
     code "src/frob/vet/**";
-    may "deserialize";
     may "env";
-    may "eval";
-    may "exec";
     may "fetch_url";
     may "ffi";
     may "fs";
     may "install-hook";
     may "net";
-    may "sql";
 }
 
 // The ticket ledger: tickets.md + tickets/, git-tracked truth. No

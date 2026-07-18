@@ -374,17 +374,34 @@ def _is_test_path(path: Path) -> bool:
     return "test" in path.parts or "tests" in path.parts
 
 
-def _is_self_path(path: Path) -> bool:
+# frob:doc docs/modules/vet.md#public-api
+# frob:ticket T-0201
+def is_self_pattern_path(path: Path) -> bool:
     """True for this module's own source file, the T-0158 registry it
     compiles `_PATTERNS` from, or the T-0153 fingerprint catalog it matches
     `scan_file_fingerprints` against (excluded from directory aggregation
     since all three contain every needle as literal data, guaranteeing a
-    self-match unrelated to what the code does)."""
+    self-match unrelated to what the code does). Public (T-0201): the
+    SINGLE shared self-match exclusion -- vet's own directory aggregation
+    below AND every `frob.strata._selfconform`/`_effects` join path must
+    call this same function rather than keep parallel private copies, or a
+    future pattern-catalog file re-introduces the T-0151 self-match class
+    in whichever join path forgot to exclude it. This was T-0201's root
+    cause: `_selfconform.py`'s extended-kind/all-kind scans and
+    `_effects.py`'s line-effect scan all predated this export and had no
+    exclusion of their own."""
     try:
         resolved = path.resolve()
     except OSError:
         return False
     return resolved in (_SELF_PATH, _REGISTRY_PATH, _FINGERPRINT_CATALOG_PATH)
+
+
+def _is_self_path(path: Path) -> bool:
+    """Private alias for `is_self_pattern_path` (T-0201) kept so this
+    module's own two pre-existing call sites did not need a rename in the
+    same diff as the export; new callers should use the public name."""
+    return is_self_pattern_path(path)
 
 
 def _aggregate_capabilities(
@@ -469,6 +486,7 @@ def _aggregate_fingerprints(
 __all__ = [
     "SCANNED_LANGUAGES",
     "decode_to_exec_signal",
+    "is_self_pattern_path",
     "language_for",
     "scan_directory_capabilities",
     "scan_directory_fingerprints",
