@@ -458,7 +458,7 @@ class CoverageError(ErrorSet):
 - **Test obligations verify existence, quantity, and measured reach -- not
   quality.** Counts and coverage floors are gameable proxies (assert-free
   tests pass them); the honest quality oracle is mutation testing, which is
-  deferred post-0.1.0 and recorded in TODO.md. A `pattern` policy rule
+  tracked in the ticket ledger (mutation testing shipped as `frob mutate`). A `pattern` policy rule
   banning assert-free test functions ships as a first defense.
 - **Interfaces are derived, not declared.** Any package whose public
   symbols another package imports owes integration tests; deriving this

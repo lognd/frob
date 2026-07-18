@@ -159,4 +159,4 @@ half of the stack and forgotten).
 
 Post-0.2.0: `frob serve` (MCP adapter).
 
-See `TODO.md` for the dispatchable checklist.
+See `tickets.md` (`frob ticket doable`) for the dispatchable queue.

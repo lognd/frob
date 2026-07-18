@@ -134,6 +134,6 @@ usage is inseparable from the data model they operate on.
 
 ## Planned / tracked work
 
-- `TODO.md` -- the dispatchable checklist: phase status, deferred items
-  (`frob ticket renumber`, mutation testing, `frob serve`), and anything
+- `tickets.md` -- the dispatchable queue (`frob ticket doable`): open work,
+  blockers, and anything
   recorded as explicitly cut scope.

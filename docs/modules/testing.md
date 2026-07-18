@@ -289,8 +289,7 @@ first-class target, not an afterthought:
   own view and merge through git. Known seam: two worktrees can allocate
   the same sequential ticket id (T-0043 twice); `load_queue` detects the
   collision post-merge as `DuplicateId` (the gate fails loudly), and a
-  `frob ticket renumber` remedy is deferred post-0.1.0 (recorded in
-  TODO.md).
+  `frob ticket renumber` remedy is tracked as ticket T-0162.
 
 ## Design decisions
 

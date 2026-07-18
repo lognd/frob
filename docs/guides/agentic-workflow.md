@@ -174,8 +174,8 @@ This is a first-class target, not an afterthought (see `docs/modules/testing.md`
   their own view and merge through git like any other change. The one known
   seam: two worktrees can allocate the same sequential ticket id
   concurrently -- `frob ticket list` surfaces the collision as
-  `DuplicateId` post-merge, and a `frob ticket renumber` remedy is deferred
-  post-0.1.0 (see `TODO.md`).
+  `DuplicateId` post-merge; the structural fix (collision-proof allocation
+  plus a first-class `frob ticket renumber`) is tracked as ticket T-0162.
 
 ---
 
