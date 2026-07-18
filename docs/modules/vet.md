@@ -477,8 +477,10 @@ dropped.
 <!-- frob:describes src/frob/vet/_lockfile.py::parse_lockfile -->
 <!-- frob:describes src/frob/vet/_capability.py::language_for -->
 <!-- frob:describes src/frob/vet/_capability.py::scan_file_capabilities -->
+<!-- frob:describes src/frob/vet/_capability.py::scan_file_fingerprints -->
 <!-- frob:describes src/frob/vet/_capability.py::decode_to_exec_signal -->
 <!-- frob:describes src/frob/vet/_capability.py::scan_directory_capabilities -->
+<!-- frob:describes src/frob/vet/_capability.py::scan_directory_fingerprints -->
 <!-- frob:describes src/frob/vet/_scan.py::scan_tree -->
 <!-- frob:describes src/frob/vet/_lifecycle.py::scan_lifecycle_scripts -->
 <!-- frob:describes src/frob/vet/_obfuscation.py::high_entropy_strings -->
@@ -558,11 +560,19 @@ dropped.
   pattern-table bucket (or `None` for unsupported languages).
 - `scan_file_capabilities` -- capability tokens observed in one source
   file's raw text, via the per-language substring table.
+- `scan_file_fingerprints` -- T-0153: `frob.strata.CVE_FINGERPRINTS` entries
+  whose needle(s) matched in one source file's raw text (the CVE-fingerprint
+  sibling of `scan_file_operations`, docs/strata/threat.md#cve-fingerprints-
+  code-level-pattern-catalog-t-0153).
 - `decode_to_exec_signal` -- true when a decode-ish and an exec-ish token
   co-occur in the SAME function body (the highest-precision obfuscation
   signal).
 - `scan_directory_capabilities` -- aggregates capability tokens and the
   decode-to-exec signal across every scannable file under a source tree.
+- `scan_directory_fingerprints` -- T-0153: aggregates `scan_file_
+  fingerprints` matches across every scannable file under a source tree;
+  called from `_scan.py::_scan_source` (VET006), the same call site
+  `scan_directory_capabilities` already runs from.
 - `scan_tree` -- the full-lockfile `frob vet` pass: allow conformance,
   quarantine, typosquat, capability/obfuscation scan, and the osv adapter.
 - `scan_lifecycle_scripts` -- packages under `node_modules` declaring

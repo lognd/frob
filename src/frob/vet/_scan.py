@@ -12,12 +12,16 @@ from __future__ import annotations
 import hashlib
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from typani import Err, Ok
 from typani.result import Result
 
 from frob.gates._models import Severity, Violation
 from frob.logging import get_logger
+
+if TYPE_CHECKING:
+    from frob.strata import CveFingerprint
 from frob.vet import (
     _cache,
     _capability,
@@ -144,6 +148,24 @@ def _vet004_violation(
     )
 
 
+def _vet006_violation(
+    dep: Dependency, lockfile_name: str, matches: tuple[CveFingerprint, ...]
+) -> Violation:
+    """VET006 (T-0153): one or more `frob.strata.CVE_FINGERPRINTS` needles
+    matched in this dependency's source -- a code-level "this LOOKS LIKE a
+    canonical vulnerable-usage class" signal, distinct from VET005's
+    dependency-VERSION-shaped osv advisory join (docs/strata/threat.md
+    #cve-fingerprints-code-level-pattern-catalog-t-0153)."""
+    names = ", ".join(sorted(f"{m.id} ({m.cwe_id})" for m in matches))
+    return Violation(
+        rule="VET006",
+        severity=Severity.WARN,
+        file=lockfile_name,
+        line=0,
+        message=f"{dep.name}@{dep.version}: cve fingerprint match(es): {names}",
+    )
+
+
 def _vet002_violation(
     dep: Dependency, cfg: VetConfig, lockfile_name: str, capabilities: set[str]
 ) -> Violation | None:
@@ -224,6 +246,16 @@ def _scan_source(
     signals.extend(obfuscation_signals)
     if obfuscation_signals or decode_to_exec:
         violations.append(_vet004_violation(dep, lockfile_name, signals))
+
+    # T-0153: CVE fingerprint scan -- surfaces a VET006 finding (and a
+    # "cve-fingerprint" signal, persisted onto the stored PackageVerdict
+    # below) when a dependency's source matches a canonical vulnerable-
+    # usage-class needle, independent of whether the dependency's PINNED
+    # VERSION has a filed osv advisory (VET005's join).
+    fingerprint_matches = _capability.scan_directory_fingerprints(source_dir)
+    if fingerprint_matches:
+        signals.append("cve-fingerprint")
+        violations.append(_vet006_violation(dep, lockfile_name, fingerprint_matches))
 
     for maybe in (
         _vet002_violation(dep, cfg, lockfile_name, capabilities),
