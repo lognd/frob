@@ -796,23 +796,67 @@ def _bound_to_open_ticket(
     return False
 
 
+def _strata_module_symref(record_id_path: str, qualname: str) -> str | None:
+    """The owning `module`'s symref for a `.strata` declaration's `qualname`.
+
+    `_walk_strata.py` qualifies every non-module declaration as
+    `<module_name>.<ident>` (one level of nesting, never deeper); this
+    strips the trailing `.<ident>` to recover the module's own symref, or
+    returns `None` for a bare (module-less, or the module decl itself)
+    qualname that has nothing to strip.
+    """
+    if not record_id_path.endswith(".strata"):
+        return None
+    if "." not in qualname:
+        return None
+    module_qualname = qualname.rsplit(".", 1)[0]
+    return f"{record_id_path}::{module_qualname}"
+
+
+def _covered_by_strata_module(
+    snapshot: GraphSnapshot, queue: TicketQueue, symref: str
+) -> bool:
+    """True if a `.strata` declaration's owning `module` carries the
+    `frob:ticket` edge, so each nested `node`/`flow`/`assert`/... need not
+    repeat it.
+
+    A `.strata` file is one design artifact (T-0164): a single directive on
+    the `module` block covers everything nested under it, the same
+    blast-radius reasoning `_scope_covers` already applies at the file
+    level, just one notch finer so a `.strata` file sharing a ticket with
+    unrelated files does not have to bind every declaration by hand.
+    """
+    record = snapshot.symbols[symref]
+    module_symref = _strata_module_symref(record.id.path, record.id.qualname)
+    if module_symref is None or module_symref not in snapshot.symbols:
+        return False
+    return _bound_to_open_ticket(snapshot, queue, module_symref)
+
+
 def _cov002(
     snapshot: GraphSnapshot, queue: TicketQueue, diff: Diff
 ) -> tuple[Violation, ...]:
     """COV002: a changed symbol is accounted for by neither a `frob:ticket`
     edge to an open ticket NOR an open ticket whose declared `scope` covers
-    its file.
+    its file NOR (for `.strata` declarations only) its owning `module`.
 
     Scope coverage means a cohesive refactor is acknowledged once (the
     ticket's scope glob) instead of demanding a per-symbol directive on
     every function it touches -- the same blast-radius the scope gate
-    already enforces, read the other direction.
+    already enforces, read the other direction. `.strata` module coverage
+    (T-0164) applies that same reasoning one level down: a `.strata` file
+    is one design artifact, so a `frob:ticket` on its `module` declaration
+    covers every `node`/`flow`/`assert`/... nested inside it instead of
+    demanding a copy-pasted directive per declaration.
     """
     open_scopes = _open_scopes(queue)
     touched = sorted(_touched_symrefs(diff, snapshot))
     violations: list[Violation] = []
     for symref in touched:
         if _bound_to_open_ticket(snapshot, queue, symref):
+            continue
+        if _covered_by_strata_module(snapshot, queue, symref):
+            _log.debug("COV002: %s covered by its .strata module's ticket edge", symref)
             continue
         record = snapshot.symbols[symref]
         if _scope_covers(record.id.path, open_scopes):

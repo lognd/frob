@@ -1514,6 +1514,107 @@ class TestCov002ScopeCoverage:
         assert not [v for v in report.violations if v.rule == "COV002"]
 
 
+class TestCov002StrataModuleCoverage:
+    # frob:ticket T-0164
+    """COV002 must not demand a per-declaration `frob:ticket` edge inside a
+    `.strata` file -- one edge on the owning `module` covers every `node`/
+    `flow`/`assert`/... nested inside it (T-0164)."""
+
+    def _init_repo(self, tmp_path: Path) -> None:
+        """Shared git scaffolding for the COV002 strata-module tests."""
+        import subprocess
+
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        subprocess.run(["git", "config", "user.email", "t@t"], cwd=tmp_path, check=True)
+        subprocess.run(["git", "config", "user.name", "t"], cwd=tmp_path, check=True)
+
+    # frob:tests tests/test_gates.py::TestCov002StrataModuleCoverage.test_module_level_ticket_edge_covers_nested_declaration
+    def test_module_level_ticket_edge_covers_nested_declaration(
+        self, tmp_path: Path
+    ) -> None:
+        """A `frob:ticket` directive on `module m` covers a changed nested
+        `node` declaration -- no per-declaration edge required."""
+        import subprocess
+
+        from frob.gates import GateConfig, run_gates
+        from frob.tickets import (
+            Origin,
+            TicketKind,
+            TicketSpec,
+            TicketState,
+            new_ticket,
+            transition,
+        )
+
+        self._init_repo(tmp_path)
+        (tmp_path / "design").mkdir()
+        base = (
+            "// frob:ticket T-9001\n"
+            "module m\n"
+            "node client : foreign { clearance Public; }\n"
+        )
+        _write(tmp_path, "design/m.strata", base)
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(["git", "commit", "-qm", "base"], cwd=tmp_path, check=True)
+        subprocess.run(["git", "branch", "-M", "main"], cwd=tmp_path, check=True)
+
+        t = new_ticket(
+            tmp_path,
+            TicketSpec(
+                title="strata module coverage",
+                kind=TicketKind.FEATURE,
+                origin=Origin.AGENT,
+            ),
+        ).danger_ok
+        # rewrite T-9001's id in-place so the fixture's frob:ticket directive
+        # resolves to a real open ticket without hard-coding new_ticket's id.
+        strata_path = tmp_path / "design" / "m.strata"
+        strata_path.write_text(
+            base.replace("T-9001", t.id).replace(
+                "node client : foreign { clearance Public; }",
+                "node client : foreign { clearance Internal; }",
+            ),
+            encoding="utf-8",
+        )
+        transition(tmp_path, t.id, TicketState.PLANNED)
+        transition(tmp_path, t.id, TicketState.IN_PROGRESS)
+
+        report = run_gates(
+            GateConfig(root=str(tmp_path), base="main", gates=frozenset({"coverage"}))
+        ).danger_ok
+        assert not [v for v in report.violations if v.rule == "COV002"]
+
+    # frob:tests tests/test_gates.py::TestCov002StrataModuleCoverage.test_declaration_without_module_edge_still_fires
+    def test_declaration_without_module_edge_still_fires(self, tmp_path: Path) -> None:
+        """No `frob:ticket` anywhere in the `.strata` file -> COV002 still
+        fires on the changed nested declaration (the escape hatch is not a
+        blanket exemption for `.strata` files)."""
+        import subprocess
+
+        from frob.gates import GateConfig, run_gates
+
+        self._init_repo(tmp_path)
+        (tmp_path / "design").mkdir()
+        _write(
+            tmp_path,
+            "design/m.strata",
+            "module m\nnode client : foreign { clearance Public; }\n",
+        )
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(["git", "commit", "-qm", "base"], cwd=tmp_path, check=True)
+        subprocess.run(["git", "branch", "-M", "main"], cwd=tmp_path, check=True)
+        _write(
+            tmp_path,
+            "design/m.strata",
+            "module m\nnode client : foreign { clearance Internal; }\n",
+        )
+
+        report = run_gates(
+            GateConfig(root=str(tmp_path), base="main", gates=frozenset({"coverage"}))
+        ).danger_ok
+        assert any(v.rule == "COV002" for v in report.violations)
+
+
 class TestGatesDegradeWithoutDiff:
     def test_diff_independent_gates_run_without_git(self, tmp_path):
         """A repo with no valid base (fresh, no commits) must still run the
