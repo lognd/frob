@@ -32,7 +32,123 @@ _log = get_logger(__name__)
 _ENTROPY_THRESHOLD = 4.5
 _MIN_STRING_LEN = 24
 
-_STRING_RE = re.compile(r"""(['"])((?:\\.|(?!\1).)*)\1""", re.DOTALL)
+# T-0208: `high_entropy_strings` used to scan with a regex whose alternation
+# `(?:\\.|(?!\1).)*` catastrophically backtracks on real files -- a 9.6KB
+# fixture (blib2to3/pgen2/conv.py, stdlib-adjacent, nothing adversarial in
+# it) profiled at ~90ms in the regex alone vs ~0.3ms for the entropy math
+# over the same matches, and the pilot-repo profile that filed this ticket
+# showed 82 of 120 profiled seconds inside this function across 785 calls.
+# `_iter_string_literals` below replaces it with a single left-to-right scan
+# (no backtracking, no lookahead) that is O(len(text)) by construction.
+#
+# T-0208 review round 2: a 4096-char truncation of the CONTENT fed to the
+# entropy check (rather than just the returned/logged snippet) is WRONG,
+# not just a perf tradeoff -- Shannon entropy is a property of the whole
+# sample, and truncating a real hit can pull its score back under
+# threshold. Measured on a real file (cryptography's pkcs7.py, a
+# mismatched-quote span, not even a real payload): entropy(full 7575-char
+# span) = 4.602 (fires, matches the old regex), entropy(same span
+# truncated to 4096) = 4.472 (silent -- a genuine detection loss, not the
+# disclosed "truncating a base64 blob still trips on its opening bytes"
+# case that reasoning assumed). `_iter_string_literals` therefore no
+# longer truncates content: the O(n) argument for the underlying scan
+# does not depend on a length cap -- every successful (closing) literal's
+# scan consumes its own span once and the outer loop never revisits those
+# characters, so total scan work across ALL successful literals in a file
+# is bounded by `len(text)` regardless of how any single literal's length
+# is distributed; only a FAILED open needs to be O(1) (the
+# `last_single`/`last_double` reject below already guarantees that). What
+# remains is a pure memory/DoS safety ceiling, `_MAX_CANDIDATE_LEN`,
+# raised to 1MB so it is never reached by a real source string and only
+# guards against a single-file OOM from an adversarial multi-hundred-MB
+# "string". The candidate-COUNT cap remains a distinct, still-needed
+# safety valve against files with huge numbers of small quoted tokens
+# (generated data tables).
+_MAX_CANDIDATE_LEN = 1_000_000
+_MAX_CANDIDATES_PER_FILE = 4000
+
+# Files above this size are skipped for the (whole) obfuscation scan (DEBUG
+# note, not silent) -- past this size a file is a data/vendor blob, not
+# something a hand-obfuscated payload hides inside inconspicuously
+# (docs/modules/vet.md "Honest limits").
+_MAX_SCAN_BYTES = 2 * 1024 * 1024
+
+
+def _iter_string_literals(text: str) -> list[str]:
+    """Single-pass, backtracking-free scan for `'...'`/`"..."` literal
+    bodies (single-char delimiters only, matching the prior regex's scope).
+    Escapes (`\\x`) are skipped as a pair. Entropy is computed over the
+    FULL literal, never truncated (review round 2 -- see the T-0208 note
+    above: truncating changes the entropy score and can hide a real hit).
+    `_MAX_CANDIDATE_LEN` is a 1MB memory-safety ceiling, not a normal-path
+    cap; the file is capped at `_MAX_CANDIDATES_PER_FILE` literals.
+
+    UNTERMINATED CANDIDATES (review round 1 caught this): a quote char with
+    no matching close anywhere later in the file is NOT a literal -- it
+    matches the OLD regex's actual behavior (a failed match attempt at that
+    start position, retried one char later), not "run to end of text".
+    Treating it as a literal was an undisclosed behavior change: after a
+    mismatched-quote region consumes the file's last `'`, the old regex
+    gives up on that open quote and correctly re-syncs on the next
+    docstring's triple-quote; the old (buggy) version of this function instead
+    swallowed that docstring into one giant unterminated "literal",
+    silently DROPPING it from the entropy check -- a detection gap, not a
+    disclosed false-positive tradeoff.
+
+    Detecting "no closing quote anywhere later" naively (scan-to-EOF, then
+    discard and retry one char over) reintroduces the exact quadratic
+    blowup T-0208 fixed, for a file with many trailing unmatched quote
+    chars. Fixed with an O(1) reject: `last_single`/`last_double` are each
+    quote type's LAST raw occurrence in the text, computed once; if a
+    candidate opens at or after that position, it can never close and is
+    rejected without scanning -- one linear pre-pass plus O(1) per
+    rejection keeps the whole function O(len(text))."""
+    n = len(text)
+    literals: list[str] = []
+    last_single = text.rfind("'")
+    last_double = text.rfind('"')
+    i = 0
+    while i < n and len(literals) < _MAX_CANDIDATES_PER_FILE:
+        ch = text[i]
+        if ch not in ("'", '"'):
+            i += 1
+            continue
+        quote = ch
+        last_occurrence = last_single if quote == "'" else last_double
+        if last_occurrence <= i:
+            # No further occurrence of `quote` exists anywhere later in
+            # the file -- this candidate cannot close. Fail in O(1),
+            # matching the old regex's "no match at this start position".
+            i += 1
+            continue
+        j = i + 1
+        start = j
+        end = None
+        while j < n:
+            c = text[j]
+            if c == "\\":
+                j += 2
+                continue
+            if c == quote:
+                end = j
+                break
+            if j - start >= _MAX_CANDIDATE_LEN:
+                end = j
+                break
+            j += 1
+        if end is None:
+            # The raw last-occurrence pre-check said a `quote` exists
+            # later, but every one of them was consumed as the second
+            # half of a `\\.` escape pair before we reached it -- still
+            # "cannot close", just discovered by the careful scan instead
+            # of the fast pre-check. Same fail-and-retry-one-char-over
+            # outcome.
+            i += 1
+            continue
+        literals.append(text[start:end])
+        i = (end + 1) if end < n and text[end] == quote else max(end, i + 1)
+    return literals
+
 
 # Trojan Source (CVE-2021-42574) bidi overrides + zero-width characters.
 # Written as codepoints (not literal glyphs) to keep this file pure ASCII.
@@ -69,10 +185,11 @@ def _shannon_entropy(s: str) -> float:
 # frob:doc docs/modules/vet.md#public-api
 def high_entropy_strings(text: str) -> tuple[str, ...]:
     """String literals whose Shannon entropy exceeds the baseline -- likely
-    base64/hex/packed payloads rather than legitimate code strings."""
+    base64/hex/packed payloads rather than legitimate code strings. O(len(text))
+    single-pass scan (T-0208 -- see the module-level note on the regex this
+    replaced)."""
     hits = []
-    for match in _STRING_RE.finditer(text):
-        literal = match.group(2)
+    for literal in _iter_string_literals(text):
         if len(literal) < _MIN_STRING_LEN:
             continue
         entropy = _shannon_entropy(literal)
@@ -153,6 +270,19 @@ def _collect_dir_signals(source_dir: Path, max_files: int) -> set[str]:
             )
             break
         if not path.is_file() or path.suffix.lower() not in _SCANNABLE_SUFFIXES:
+            continue
+        try:
+            if path.stat().st_size > _MAX_SCAN_BYTES:
+                _log.debug(
+                    "vet: skipping %s for obfuscation scan: %d bytes exceeds "
+                    "%d-byte cap (T-0208)",
+                    path,
+                    path.stat().st_size,
+                    _MAX_SCAN_BYTES,
+                )
+                continue
+        except OSError as exc:
+            _log.warning("vet: could not stat %s for obfuscation scan: %s", path, exc)
             continue
         try:
             text = path.read_text(encoding="utf-8", errors="replace")

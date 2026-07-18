@@ -10,6 +10,8 @@ over every dependency in the project's lockfile.
 from __future__ import annotations
 
 import hashlib
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FutureTimeoutError
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -370,6 +372,31 @@ def _process_dependency(
     return violations, verdict
 
 
+def _timeout_verdict(
+    dep: Dependency, lockfile_name: str
+) -> tuple[Violation, PackageVerdict]:
+    """T-0208: an honest TIMEOUT outcome for a dependency whose per-package
+    budget expired -- never silently dropped from the report. WARN, not
+    ERROR: a timeout means "not fully checked", not "found bad"."""
+    violation = Violation(
+        rule="VET-TIMEOUT",
+        severity=Severity.WARN,
+        file=lockfile_name,
+        line=0,
+        message=(
+            f"{dep.name}@{dep.version}: per-package scan budget exceeded; "
+            f"verdict incomplete"
+        ),
+    )
+    verdict = PackageVerdict(
+        name=dep.name,
+        version=dep.version,
+        ecosystem=dep.ecosystem,
+        signals=("timeout",),
+    )
+    return violation, verdict
+
+
 def _scan_dependencies(
     deps: tuple[Dependency, ...],
     root: Path,
@@ -377,19 +404,123 @@ def _scan_dependencies(
     cfg: VetConfig,
     cache_path: Path,
     fetch: bool,
+    *,
+    timeout: float | None = None,
+    jobs: int = 1,
 ) -> tuple[list[Violation], list[PackageVerdict]]:
-    """Run every per-dependency check over `deps`, collecting violations/verdicts."""
+    """Run every per-dependency check over `deps`, collecting violations/verdicts.
+
+    `timeout` (T-0208), if set, bounds each package's `_process_dependency`
+    call in its own thread; on expiry the package gets an honest TIMEOUT
+    verdict (`_timeout_verdict`) instead of being silently skipped -- the
+    thread itself is abandoned (Python cannot preempt a running thread) and
+    the scan moves on. `jobs` > 1 runs packages concurrently in a thread
+    pool: this is DISCLOSED as best-effort, not fully isolated -- the sqlite
+    verdict cache (`_cache.py`) and the registry publish-date disk cache
+    (`_registry.py`) both open short-lived per-call connections with no
+    explicit cross-process/cross-thread locking beyond sqlite's own busy
+    handling (already tolerant of a failed connect/write, logged and
+    dropped, never fatal -- see `_cache._connect`). Under concurrent writes
+    a verdict cache write can silently lose a race and be overwritten by
+    another thread's write for the same key; this does not corrupt the
+    cache or crash the scan, it just means the "most recent" write wins
+    non-deterministically. `jobs=1` (the default) has none of this risk.
+    Progress is logged at INFO as each package completes: `M/N name`."""
     violations: list[Violation] = []
     verdicts: list[PackageVerdict] = []
     allow = dict(cfg.allow)
-    for dep in deps:
-        is_new = dep.name not in allow
-        dep_violations, verdict = _process_dependency(
-            dep, root, lockfile, cfg, cache_path, is_new, fetch
-        )
-        violations.extend(dep_violations)
-        verdicts.append(verdict)
+    total = len(deps)
+
+    if jobs <= 1:
+        for i, dep in enumerate(deps, start=1):
+            _log.info("vet: package %d/%d %s", i, total, dep.name)
+            is_new = dep.name not in allow
+            dep_violations, verdict = _run_with_timeout(
+                dep, root, lockfile, cfg, cache_path, is_new, fetch, timeout
+            )
+            violations.extend(dep_violations)
+            verdicts.append(verdict)
+        return violations, verdicts
+
+    with ThreadPoolExecutor(max_workers=jobs) as pool:
+        futures = [
+            (
+                dep,
+                pool.submit(
+                    _run_with_timeout,
+                    dep,
+                    root,
+                    lockfile,
+                    cfg,
+                    cache_path,
+                    dep.name not in allow,
+                    fetch,
+                    timeout,
+                ),
+            )
+            for dep in deps
+        ]
+        for i, (dep, fut) in enumerate(futures, start=1):
+            dep_violations, verdict = fut.result()
+            _log.info("vet: package %d/%d %s", i, total, dep.name)
+            violations.extend(dep_violations)
+            verdicts.append(verdict)
     return violations, verdicts
+
+
+def _run_with_timeout(
+    dep: Dependency,
+    root: Path,
+    lockfile: Path,
+    cfg: VetConfig,
+    cache_path: Path,
+    is_new: bool,
+    fetch: bool,
+    timeout: float | None,
+) -> tuple[list[Violation], PackageVerdict]:
+    """`_process_dependency`, bounded by `timeout` seconds when set. On
+    expiry returns `_timeout_verdict` (T-0208) rather than raising or
+    silently dropping the package.
+
+    CORRECTNESS NOTE (review round 1 caught this): a `with
+    ThreadPoolExecutor(...)` block's `__exit__` calls `shutdown(wait=True)`
+    unconditionally, including when the body returns early on a timeout --
+    so a naive `with pool: ... except FutureTimeoutError: return ...`
+    still blocks the caller for the FULL underlying task duration, not
+    `timeout`, defeating the entire point of this function. The pool is
+    therefore constructed WITHOUT a `with` and explicitly
+    `shutdown(wait=False)` on the timeout path so this function returns
+    within ~`timeout` wall-clock as promised. The consequence: the
+    abandoned worker thread is not joined and keeps running in the
+    background for as long as `_process_dependency` takes (Python cannot
+    preempt a running thread) -- for network calls this is typically
+    seconds; for a pathological scan it could be the original hang,
+    just no longer blocking the rest of the run. This is the same
+    disclosed trade-off as `_scan_dependencies`' docstring, made
+    concrete here."""
+    if timeout is None:
+        return _process_dependency(dep, root, lockfile, cfg, cache_path, is_new, fetch)
+
+    pool = ThreadPoolExecutor(max_workers=1)
+    fut = pool.submit(
+        _process_dependency, dep, root, lockfile, cfg, cache_path, is_new, fetch
+    )
+    try:
+        result = fut.result(timeout=timeout)
+    except FutureTimeoutError:
+        _log.warning(
+            "vet: %s/%s@%s: exceeded %.1fs per-package timeout; "
+            "recording TIMEOUT verdict (worker thread abandoned, not joined)",
+            dep.ecosystem,
+            dep.name,
+            dep.version,
+            timeout,
+        )
+        pool.shutdown(wait=False)
+        violation, verdict = _timeout_verdict(dep, lockfile.name)
+        return [violation], verdict
+    pool.shutdown(wait=False)
+    return result
 
 
 def _lifecycle_violations(
@@ -448,9 +579,19 @@ def _osv_violations(
 
 # frob:doc docs/modules/vet.md#public-api
 # frob:waive TEST005 reason="scan_tree 84.0% branch cover, debt T-0160"
-def scan_tree(root: Path, *, fetch: bool = True) -> Result[VetReport, VetError]:
+def scan_tree(
+    root: Path,
+    *,
+    fetch: bool = True,
+    timeout: float | None = None,
+    jobs: int = 1,
+) -> Result[VetReport, VetError]:
     """Full-lockfile vet pass: allow conformance, quarantine, typosquat,
-    JS lifecycle scripts, and the optional osv-scanner adapter."""
+    JS lifecycle scripts, and the optional osv-scanner adapter. `timeout`
+    (T-0208) bounds each package's scan in seconds; on expiry that package
+    gets an honest VET-TIMEOUT verdict, never a silent skip. `jobs` > 1 runs
+    packages concurrently -- see `_scan_dependencies`'s docstring for the
+    shared-cache risk this discloses before you raise it above 1."""
     lockfile = find_lockfile(root)
     if lockfile is None:
         _log.warning(
@@ -472,7 +613,7 @@ def scan_tree(root: Path, *, fetch: bool = True) -> Result[VetReport, VetError]:
         _log.info("vet: no [vet] section; advisory-only mode")
 
     violations, verdicts = _scan_dependencies(
-        deps, root, lockfile, cfg, cache_path, fetch
+        deps, root, lockfile, cfg, cache_path, fetch, timeout=timeout, jobs=jobs
     )
     skipped: list[str] = []
 

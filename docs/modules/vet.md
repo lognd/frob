@@ -286,6 +286,24 @@ rule is a natural follow-up, not yet built).
   the store like the dup verdict cache.
 - **Transitive**: the whole resolved tree is vetted, not just direct deps
   (attacks enter through transitive edges).
+- **Progress and bounding (T-0208)**: `_scan_dependencies` logs one INFO
+  line per package as it completes (`vet: package M/N name`) so a
+  full-lockfile run is observable instead of a silent multi-minute hang.
+  `scan_tree(root, *, timeout=..., jobs=...)` takes an optional
+  per-package `timeout` in seconds -- on expiry the package gets an
+  honest `VET-TIMEOUT` (WARN) verdict with a `"timeout"` signal, never a
+  silent drop from the report -- and an optional `jobs` to scan packages
+  concurrently in a thread pool. `jobs > 1` is disclosed as best-effort:
+  the sqlite verdict cache (`.frob/vet.db`) and the registry publish-date
+  disk cache open short-lived per-call connections with no explicit
+  cross-thread locking beyond sqlite's own busy handling, so a concurrent
+  verdict write can lose a race to another thread's write for the same
+  key non-deterministically (never a crash or corruption, just "most
+  recent write wins" under contention); `jobs=1` (the default) has none
+  of this risk. Wiring `--timeout`/`--jobs` CLI flags through
+  `app/vet_runner.py`/`__main__.py` is a follow-up (out of T-0208's
+  declared scope, which is `src/frob/vet/**` only -- see T-0110's
+  `--containment` precedent above for the same pattern).
 - **Advisories (VET005)**: delegated to the osv-scanner adapter (see
   External tool adapters below) -- OSV.dev aggregates GitHub Advisory DB,
   PyPA, RustSec, and npm under one package-keyed schema, and osv-scanner
@@ -405,6 +423,76 @@ install-hook anything -- that is the accepted false-positive class this
 paragraph documents, exercised by
 `TestCapabilityScan::test_capability_module_self_scan_documented_false_positive`
 in `tests/test_vet.py`.
+
+High-entropy string scan (T-0208): `high_entropy_strings` finds quoted
+literal bodies with a single left-to-right scan (matching quote chars
+only, no AST) -- an apostrophe inside a comment or docstring that has no
+matching close before the next same-type quote elsewhere in the file will
+be read as the boundary, occasionally producing a multi-hundred-char
+"literal" spanning several real statements. This is an ACCEPTED,
+pre-existing false-positive class inherited from the regex this scan
+replaced; the T-0208 change fixed the scan's WORST-CASE TIME (the old
+regex's `(?:\\.|(?!\1).)*` alternation backtracks catastrophically over
+exactly these long mismatched-quote spans -- 82 of 120 profiled seconds
+in one pilot repo, from 785 calls), not its precision.
+
+Two safety valves bound worst-case work per file: a file caps at 4000
+candidate literals (`_MAX_CANDIDATES_PER_FILE`), and a single candidate
+has a 1MB memory ceiling (`_MAX_CANDIDATE_LEN`) purely to stop an
+adversarial multi-hundred-MB "string" from an OOM -- it is not a
+normal-path truncation and is never expected to fire on a real source
+file. Entropy is ALWAYS computed over the full closed literal, never a
+truncated prefix: an earlier version of this fix truncated the content
+fed to the entropy check at 4096 chars for perf, which is WRONG, not
+just a tradeoff -- Shannon entropy is a property of the whole sample, and
+truncating a real hit can pull its score back under threshold. Measured
+on a real file (cryptography's `pkcs7.py`, a mismatched-quote span, not
+even a genuine payload): `entropy(full 7575-char span) = 4.602` (fires,
+matches the old regex), `entropy(same span truncated to 4096) = 4.472`
+(silent -- a real detection loss). The scan's O(n) bound does not need a
+length cap: every successful (closing) literal's inner scan consumes its
+own span exactly once and the outer loop never revisits those
+characters, so total scan work across ALL successful literals in a file
+is bounded by `len(text)` regardless of how any single literal's length
+is distributed -- the only thing that needs to stay O(1) is a FAILED
+open, handled by the `last_single`/`last_double` reject described next.
+Files over 2MB are skipped for the whole obfuscation scan (DEBUG-logged,
+not silent) -- past that size a file reads as a data/vendor blob rather
+than something a hand-obfuscated payload hides inside inconspicuously.
+
+One correctness fix and one full-corpus verification, both from review
+round 2 (a single-file sample is not evidence; see the T-0208 Done report
+for the methodology and full numbers this paragraph summarizes):
+1. **Unterminated candidates.** A quote character with no matching close
+   anywhere later in the file is NOT a literal (matches the old regex: a
+   failed match attempt at that start position, retried one character
+   later) -- an earlier version of this fix incorrectly ran such a
+   candidate to end-of-file and scored it, which could swallow a
+   following real string (e.g. the next docstring) into one bogus
+   "literal" and drop it from the entropy check entirely. Fixed via an
+   O(1) per-position reject (`last_single`/`last_double`: each quote
+   type's last raw occurrence in the file, computed once) so a file with
+   many trailing unmatched quote characters stays linear rather than
+   reintroducing the T-0208 blowup through the back door.
+2. **Full-corpus verification, not a sample.** Old-vs-new compared over
+   every `.py` file under this repo's own `.venv/lib/python3.11/
+   site-packages` (1475 files) with the old (pathological) implementation
+   bounded by a 3s-per-file SIGALRM budget so a handful of genuinely
+   intractable files (7 of 1475 -- real files, e.g.
+   `cryptography/hazmat/primitives/keywrap.py`,
+   `pygments/lexers/c_like.py` -- where the OLD regex itself does not
+   finish in 3s; this IS the pathology T-0208 exists to fix, not a gap in
+   the comparison) don't block comparing the other 1468. Of 1468 compared:
+   1 file diverges, and it is the disclosed `_MAX_CANDIDATES_PER_FILE`
+   cap (a builtins-list file with exactly 4000+ tiny quoted tokens; the
+   4000th candidate cuts off one specific late literal, but two earlier
+   ones in the same file already trip the entropy threshold under both
+   old and new, so the file's aggregate `high-entropy-string` signal is
+   unaffected). Zero files flip from fired-old/silent-new (the one class
+   of divergence that would be a real detection loss) after fix #1 and
+   the entropy-truncation fix above -- before those two fixes, the same
+   corpus check found 14/105 divergent files in `pydantic` alone and 4
+   genuine fired-old/silent-new losses corpus-wide.
 
 Prior art is embraced, not reimplemented: GuardDog, pip-audit/osv-scanner,
 OpenSSF Scorecard, and sigstore run as adapters (see above). frob's

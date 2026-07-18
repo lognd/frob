@@ -937,6 +937,51 @@ class TestScanTreeWithLocalSource:
         assert "cve-fingerprint" in verdict.signals
 
 
+class TestScanTreeTimeout:
+    # frob:tests src/frob/vet/_scan.py::_run_with_timeout kind="unit"
+    def test_slow_package_returns_within_timeout_not_task_duration(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-0208 review round 1: a naive `with ThreadPoolExecutor(...)`
+        around the timeout-bound call blocks in `__exit__` (shutdown(wait=
+        True)) until the abandoned task finishes, silently defeating the
+        timeout -- only the verdict label would change, wall time would
+        not. Assert an upper bound on wall time (a few multiples of the
+        configured timeout, well under the task's real 3s duration) so a
+        regression back to that shape is caught by a measurement, not an
+        inspection."""
+        import time
+
+        from frob.vet import _scan
+
+        (tmp_path / "uv.lock").write_text(
+            '[[package]]\nname = "slow-pkg"\nversion = "1.0.0"\n'
+        )
+        (tmp_path / "frob.toml").write_text(
+            "[vet]\nenforce = true\n\n[vet.allow]\nslow-pkg = true\n"
+        )
+
+        def _slow_process_dependency(*args, **kwargs):
+            time.sleep(3.0)
+            raise AssertionError("should have been abandoned at the timeout")
+
+        monkeypatch.setattr(_scan, "_process_dependency", _slow_process_dependency)
+
+        t0 = time.monotonic()
+        result = _scan.scan_tree(tmp_path, fetch=False, timeout=0.2)
+        elapsed = time.monotonic() - t0
+
+        assert result.is_ok
+        assert elapsed < 1.5, (
+            f"scan_tree took {elapsed:.2f}s with timeout=0.2 -- "
+            f"the timeout is not actually bounding wall time"
+        )
+        report = result.danger_ok
+        assert any(v.rule == "VET-TIMEOUT" for v in report.violations)
+        verdict = next(v for v in report.verdicts if v.name == "slow-pkg")
+        assert "timeout" in verdict.signals
+
+
 # ---------------------------------------------------------------------------
 # lifecycle scripts
 # ---------------------------------------------------------------------------
