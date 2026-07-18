@@ -7219,7 +7219,7 @@ ticket's or T-0134's own open scope) are the only other output.
 id: T-0136
 title: 'strata surface grammar: on deploy / secret constructs unreachable from .strata
   source text'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-18'
@@ -7238,3 +7238,17 @@ acceptance: []
 threat: null
 ```
 Found while implementing T-0083 (std.deploy) and T-0082 (std.secrets). Same class of gap as T-0132 (code=/may unreachable): strata-core's lexer/parser have no block syntax for a canary-stage list, endorsement-chain id list, or the secret construct's issued-by/audience/lifetime clauses, so DeployContract/CanaryStage and elaborate_secret are reachable only from hand-built KernelModels today. Wire `on deploy { canary { ... }; endorsed_by ...; rollback within t }` and `secret ID { issued_by ...; audience { ... }; lifetime t }` through parse.rs -> _ast.py -> _elaborate.py, keeping every existing litmus golden byte-identical. Consolidates the surface-grammar follow-ups filed separately by the T-0082 and T-0083 implementations; do together with (or immediately after) T-0132 since the attr-value lexing work overlaps.
+
+## Done report
+
+Building on T-0132's string-valued attr tokens, the secret construct
+(issued_by/audience/lifetime/revoke) and the on-deploy node block
+(canary stages, endorsed_by chain, rollback within) parse from .strata
+source and elaborate through the landed elaborate_secret (T-0082) and
+DeployContract/CanaryStage (T-0083) machinery with no duplicated
+validation; malformed blocks (missing lifetime, missing rollback) fail
+closed with line/col diagnostics. Existing litmus goldens
+byte-identical; new design/litmus/deploy_secret.strata litmus
+exercises both constructs end-to-end. Reviewer APPROVED (contingent on
+T-0132's trail, completed at merge). Verified on main: 378 strata
+tests green after make core, 6 new rust tests in the crate.
