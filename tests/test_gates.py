@@ -1845,6 +1845,68 @@ class TestOptInGates:
         violations = perf_gate(tmp_path, snap)
         assert any(v.rule == "PERF001" for v in violations)
 
+    def test_perf_gate_silences_unscannable_files(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::perf_gate
+        # T-0203: non-code files (md/toml/json) have no registered tree-sitter
+        # grammar and are unscannable by design -- perf_gate must filter them
+        # out by extension before ever calling parse_file, so no
+        # UnsupportedLanguage skip line is emitted for any of them.
+        from frob.gates import perf_gate
+
+        _write(tmp_path, "src/a.py", "def scan(x):\n    return x\n")
+        _write(tmp_path, "docs/guides/agent-playbook.md", "# Playbook\n\nSome text.\n")
+        _write(tmp_path, "pyproject.toml", "[project]\nname = 'x'\n")
+        _write(tmp_path, "data.json", '{"key": "value"}\n')
+        snap = _snapshot(tmp_path)
+
+        with caplog.at_level("DEBUG", logger="frob.gates"):
+            violations = perf_gate(tmp_path, snap)
+
+        assert violations == ()
+        assert not any("skipping unparsed" in rec.message for rec in caplog.records)
+        assert not any("UnsupportedLanguage" in rec.message for rec in caplog.records)
+
+    def test_perf_gate_still_reports_genuine_parse_failure(
+        self,
+        tmp_path: Path,
+        caplog: pytest.LogCaptureFixture,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::perf_gate
+        # T-0203: a file with a registered grammar (.py) that still fails to
+        # parse is a real failure, not a by-design skip -- it must still get
+        # a visible skip message. tree-sitter's python grammar is too
+        # error-tolerant to reliably produce a genuine ParseFailed from
+        # source text alone (T-0203 investigation), so `parse_file` is
+        # patched at the `frob.gates` import site to return the Err this
+        # code path exists to surface.
+        from typani import Err
+
+        from frob.lang import LangError
+        from frob.lang import parse_file as real_parse_file
+
+        _write(tmp_path, "src/broken.py", "def scan(x):\n    return x\n")
+        snap = _snapshot(tmp_path)
+
+        def _fake_parse_file(path: Path):
+            if path.name == "broken.py":
+                return Err(LangError.ParseFailed)
+            return real_parse_file(path)
+
+        monkeypatch.setattr("frob.lang.parse_file", _fake_parse_file)
+
+        from frob.gates import perf_gate
+
+        with caplog.at_level("DEBUG", logger="frob.gates"):
+            perf_gate(tmp_path, snap)
+
+        assert any(
+            "skipping unparsed" in rec.message and "src/broken.py" in rec.message
+            for rec in caplog.records
+        )
+
 
 class TestScopeDigest:
     def test_digest_is_stable_and_scope_sensitive(self, tmp_path: Path) -> None:
