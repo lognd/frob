@@ -708,3 +708,31 @@ acceptance: []
 threat: null
 ```
 Found while working T-0145: adding new .strata files under tests/unit/strata/litmus/ (or anywhere) makes frob test --base main fail with NoRunner: 'language strata has selected tests but no runner -- add a [[test.runner]] entry'. frob.toml has runners for python and rust only; strata surface files (.strata) are a distinct language frob.lang/frob.testing classifies but there is no [[test.runner]] entry (and likely no sensible native pytest-equivalent for a .strata file standalone -- it is exercised THROUGH the python tests that parse it, e.g. test_litmus_cwe.py). Needs either: (1) a [[test.runner]] entry that maps .strata files to the python test files that bind them (frob:tests directives already exist on the fixtures' consuming test modules), or (2) frob.testing/select_tests excluding .strata from touched-set language classification entirely since it is data, not directly-runnable source. Verified reproducing: touching tests/unit/strata/litmus/*.strata and running 'frob test --base main' errors NoRunner before running any tests.
+
+<!-- ticket:T-0150 -->
+```yaml
+id: T-0150
+title: 'self-conformance: vet capability scan of our own source must match design/frob.strata
+  interfaces'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/**
+- src/frob/app/sys_runner.py
+- src/frob/app/config.py
+- src/frob/app/__main__.py
+- design/frob.strata
+- tests/unit/strata/**
+- docs/strata/**
+- frob.toml
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+frob vet already introspects dependencies for capability use (scan_directory_capabilities in src/frob/vet/_capability.py: exec/eval/network/fs/... per-language token scan). Point that same machinery at OUR OWN src/ tree and reconcile against the self-hosted strata design, so the interfaces recorded in design/frob.strata are provably in sync with what the code actually does. Reuse scan_directory_capabilities READ-ONLY (import it; do not modify src/frob/vet -- T-0147 is concurrently editing that package). Mechanism: a node-to-source-path mapping (investigate whether the kernel/surface already supports binding a node to a code path; if not, add the smallest principled mapping -- e.g. a [tool.frob]/frob.toml table or a strata clause -- and document the decision). Conformance rules, all loud (vacuous-pass doctrine): (1) capability observed in a mapped path but not declared on the mapped node = violation (undeclared interface); (2) capability declared on a node with zero observed sites in its mapped paths = violation (stale design); (3) source directories under src/ with no node mapping = violation (unmodeled code), no silent exemption; test paths excluded per _is_test_path precedent. Surface as a new SYS-family gate rule id wired into frob sys audit (follow the THREAT/SYS rule registration precedent) and run against design/frob.strata in our own gates. Expect the first honest run to FAIL until design/frob.strata is updated to declare reality -- updating the design to match observed capabilities (or waiving with written reasons) is part of this ticket. Tests: fixture design+source trees for each rule firing and discharging; drift-lock so an unmapped capability kind in the scanner vocabulary fails loudly rather than being silently ignored.
