@@ -1,15 +1,32 @@
-"""CLI wiring for `frob sys plan` -- obligation -> ticket compiler (T-0084,
-docs/strata/roadmap.md phase 5, docs/commands/sys.md).
+"""CLI wiring for `frob sys` -- strata design-model applications
+(docs/strata/roadmap.md phase 5, docs/commands/sys.md).
 
-Loads every `.strata` design file under the repo's design dir, computes
-the obligation frontier (`frob.strata.plan_obligations`), diffs it against
-markers already present in the ticket ledger, and either prints the
-would-be tree (default, dry-run) or writes it (`--apply`). The dry-run/
-apply split plus the marker-diff idempotency check both live here rather
-than in `frob.strata._plan` -- that module stays a pure model -> tickets
-compiler with no I/O of its own (T-0084 scope note: `frob.tickets` is
-read-only reuse from this runner's point of view, never mutated by
+Three verbs today: `plan` (T-0084, obligation -> ticket compiler), `doc`
+(T-0085, threat-catalog audit matrix), and `export` (T-0086, k8s/seccomp/
+IAM config skeletons). `check`/`trace`/`capacity`/`threats` are later
+phase-5 tickets, not yet landed -- `run` below should grow one more `if
+cfg.sys_command == "..."` branch per verb as they land, never a parallel
+dispatch mechanism.
+
+`plan` loads every `.strata` design file under the repo's design dir,
+computes the obligation frontier (`frob.strata.plan_obligations`), diffs
+it against markers already present in the ticket ledger, and either
+prints the would-be tree (default, dry-run) or writes it (`--apply`). The
+dry-run/apply split plus the marker-diff idempotency check both live here
+rather than in `frob.strata._plan` -- that module stays a pure model ->
+tickets compiler with no I/O of its own (T-0084 scope note: `frob.tickets`
+is read-only reuse from this runner's point of view, never mutated by
 `_plan.py` itself).
+
+`doc` renders the per-family threat-catalog audit matrix
+(`frob.strata.render_audit_matrix`) for a chosen view against every
+loaded design model and prints it as deterministic markdown (T-0085).
+
+`export` parses+elaborates a single `.strata` file (default
+`design/frob.strata`) and renders one of three deterministic
+runtime-enforcement config skeletons from its `KernelModel`
+(`frob.strata._export`) -- see that module's docstring for the k8s/
+seccomp/IAM mapping semantics.
 """
 
 from __future__ import annotations
@@ -21,6 +38,7 @@ from pathlib import Path
 from frob.app.config import AppConfig
 from frob.graph import GraphSnapshot, build_graph, load_graph
 from frob.logging import get_logger
+from frob.logging.quiet import quiet_stdout_logs
 from frob.strata import (
     DEFAULT_DESIGN_DIR,
     MARKER_PREFIX,
@@ -30,12 +48,25 @@ from frob.strata import (
     plan_obligations,
     render_audit_matrix,
 )
+from frob.strata._elaborate import elaborate
+from frob.strata._parse import parse_module
 from frob.tickets import load_all, new_ticket
 from frob.tickets._models import Origin, TicketSpec
 
 _log = get_logger(__name__)
 
 _CACHE_REL = Path(".frob") / "cache.db"
+
+#: `frob sys export --format` choice -> exporter callable, keyed to avoid a
+#: duplicated if/elif chain (charter law "no duplication") and so the
+#: CLI's supported format set and the exporter registry can never drift
+#: apart.
+_EXPORT_FORMATS = ("k8s", "seccomp", "iam")
+
+
+# ---------------------------------------------------------------------------
+# plan (T-0084)
+# ---------------------------------------------------------------------------
 
 
 def _design_dir(root: Path) -> str:
@@ -185,6 +216,72 @@ def _run_plan(cfg: AppConfig) -> None:
     _apply(root, new)
 
 
+# ---------------------------------------------------------------------------
+# export (T-0086)
+# ---------------------------------------------------------------------------
+
+
+def _load_export_model(design_path: Path) -> KernelModel | None:
+    """Parse+elaborate the single `.strata` file at `design_path` into a
+    `KernelModel`, or None with an error already logged."""
+    text = design_path.read_text()
+    # Parsing/elaborating a design logs at INFO on every construct (LOG
+    # EVERYTHING convention); `frob sys export` prints a machine-readable
+    # payload to stdout, so those lines are muted for the duration exactly
+    # like `check_runner`/`map_runner` already do for their own `--json`
+    # paths (docs/modules/logging.md#public-api).
+    with quiet_stdout_logs():
+        parsed = parse_module(text)
+        if parsed.is_err:
+            _log.error("frob sys export: parse failed: %s", parsed.danger_err)
+            return None
+        elaborated = elaborate(parsed.danger_ok)
+        if elaborated.is_err:
+            _log.error("frob sys export: elaborate failed: %s", elaborated.danger_err)
+            return None
+        return elaborated.danger_ok
+
+
+def _run_export(cfg: AppConfig) -> None:
+    """`frob sys export --format k8s|seccomp|iam <design.strata>`: load one
+    `.strata` design file, run the matching exporter, print its
+    deterministic output."""
+    fmt = cfg.sys_export_format
+    if fmt not in _EXPORT_FORMATS:
+        _log.error(
+            "frob sys export: --format must be one of %s", ", ".join(_EXPORT_FORMATS)
+        )
+        sys.exit(1)
+    design_path = cfg.sys_export_path or Path(DEFAULT_DESIGN_DIR) / "frob.strata"
+    if design_path.is_dir():
+        _log.error(
+            "frob sys export: %s is a directory; pass a single .strata file",
+            design_path,
+        )
+        sys.exit(1)
+    if not design_path.exists():
+        _log.error("frob sys export: %s does not exist", design_path)
+        sys.exit(1)
+
+    model = _load_export_model(design_path)
+    if model is None:
+        sys.exit(1)
+
+    from frob.strata._export import export_iam, export_k8s_netpol, export_seccomp
+
+    renderer = {
+        "k8s": export_k8s_netpol,
+        "seccomp": export_seccomp,
+        "iam": export_iam,
+    }[fmt]
+    print(renderer(model))
+
+
+# ---------------------------------------------------------------------------
+# doc (T-0085)
+# ---------------------------------------------------------------------------
+
+
 # frob:ticket T-0085
 def _run_doc(cfg: AppConfig) -> None:
     """`frob sys doc`: render the per-family threat-catalog audit matrix
@@ -213,15 +310,20 @@ def _run_doc(cfg: AppConfig) -> None:
 # frob:doc docs/modules/app.md#runners
 # frob:ticket T-0084
 # frob:ticket T-0085
+# frob:ticket T-0086
 def run(cfg: AppConfig) -> None:
-    """Dispatch `frob sys <command>`; `plan` and `doc` exist today (roadmap
-    phase 5's `check`/`trace`/`capacity`/`threats`/`export` are later
-    tickets)."""
+    """Dispatch `frob sys <command>`: `plan` (T-0084), `doc` (T-0085), and
+    `export` (T-0086) exist today; roadmap phase 5's `check`/`trace`/
+    `capacity`/`threats` are later tickets -- extend this dispatch, never
+    replace it."""
     if cfg.sys_command == "plan":
         _run_plan(cfg)
         return
     if cfg.sys_command == "doc":
         _run_doc(cfg)
         return
-    _log.error("usage: frob sys <plan|doc> ...")
+    if cfg.sys_command == "export":
+        _run_export(cfg)
+        return
+    _log.error("usage: frob sys <plan|doc|export> ...")
     sys.exit(1)
