@@ -28,3 +28,14 @@ I would prefer to have some sort of embedded language in comments or whatnot acr
 to record what needs to be done and some way to statically check it so that NO MATTER WHAT it is impossible to "be
 a lazy developer". Can you help me think through some potential features to add to this tool so that it is impossible
 to not have a PERFECT codebase?
+
+---
+
+# Agent playbook
+
+Every agent working a ticket in a worktree here MUST read
+`docs/guides/agent-playbook.md` first (worktree warm-up, scope/evidence/gate
+discipline, the deletion-filter land rule, ledger-conflict splice guidance)
+before starting work, and again before writing a Done report. It is the
+canonical home for process lessons this repo has already paid for once --
+do not re-derive them from scratch per dispatch.

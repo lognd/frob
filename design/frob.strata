@@ -120,6 +120,14 @@ node gates : trusted {
 // check orchestration: src/frob/check/**. Runs the gate suite plus the
 // process-spawned tool integrations (ruff/mypy/pytest via `frob.process`)
 // and folds results into one exit code.
+// T-0155 LINT004: `may "exec"` is a risky capability with no real,
+// checked-in kill switch today (`src/frob/process/**` has no env-var/
+// feature-flag gate around subprocess spawning) -- an HONEST LINT004 gap,
+// not fabricated to force green (module docstring precedent: T-0150/
+// T-0151, "declare real facts or waive with reasons"). Left firing in
+// `frob sys audit`'s named-gap output rather than a fictitious `flag=`
+// attr; adding the real kill switch is follow-on product work, filed
+// separately (see this ticket's Done report).
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
 node checker : trusted {
     clearance Internal;
@@ -134,6 +142,9 @@ node checker : trusted {
 // capability pattern tables (`_effects.py` reuses `frob.vet._capability`).
 // `code` covers only the python half (`strata-core/**`'s rust source is
 // outside `bind_code`'s `*.py` walk, T-0078 scope).
+// T-0155 LINT004: `may "net"` is a risky capability with no real kill
+// switch today -- an honest gap, same posture as `checker` above (module
+// docstring precedent).
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
 node stratamod : trusted {
     clearance Internal;
@@ -159,6 +170,9 @@ node stratamod : trusted {
 // that does not carve into independently-owned components the way
 // gates/check/strata/vet do; modeling each one separately would not
 // change any claim in this file, only inflate the flow count.
+// T-0155 LINT004: `may "exec"` is a risky capability with no real kill
+// switch today -- an honest gap, same posture as `checker` above (module
+// docstring precedent).
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
 node core : trusted {
     clearance Internal;
@@ -185,6 +199,9 @@ node core : trusted {
 // fetches (_nvd.py/_registry.py), and string-formatted sqlite3 execute
 // (real observed capabilities the old coarser pattern table never
 // patterned, not new code).
+// T-0155 LINT004: `may "exec"`/`may "net"` are risky capabilities with no
+// real kill switch today -- an honest gap, same posture as `checker`
+// above (module docstring precedent).
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
 node vet : trusted {
     clearance Internal;
@@ -238,9 +255,14 @@ cache graph_cache of graphlang {
 // -- flows ---------------------------------------------------------------
 
 // vet's one network-facing edge (src/frob/vet/_registry.py::
-// _result_from_network, _osv.py, _popular_*.py).
+// _result_from_network, _osv.py, _popular_*.py). T-0155 LINT001: a
+// public/edge boundary accepting external (foreign-trust) flows needs a
+// declared rate limit; `_registry.py`'s own client throttles registry
+// lookups well under 1 req/s in steady state (per-dependency lookups,
+// not a hot path), so 1 req/s is an honest, conservative declared bound,
+// not an aspirational one.
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
-flow f_registry_fetch : registry -> vet { label Public; }
+flow f_registry_fetch : registry -> vet { label Public; rate 1 req/s; }
 
 // cli dispatches into every other component (src/frob/app/app.py::
 // _dispatch_table + the runner modules under src/frob/app/).

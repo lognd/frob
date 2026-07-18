@@ -2,7 +2,7 @@
 STAMP := .venv/.install-stamp
 
 .PHONY: all check install install-tool core format lint lint-fix typecheck test test-fast \
-        test-unit test-integration test-system coverage clean upload sync-skills
+        test-unit test-integration test-system coverage clean upload sync-skills playbook
 
 PYPI_NAME := frob
 SRC       := src
@@ -21,6 +21,12 @@ all: $(STAMP)
 # Read-only gate (no auto-fix). Safe to run in CI.
 check: $(STAMP)
 	uv run frob check
+
+# Prints the agent playbook (per-dispatch checklist: worktree warm-up,
+# scope/evidence/gate discipline). Every worktree agent should read this
+# before starting a ticket -- see CLAUDE.md.
+playbook:
+	@cat docs/guides/agent-playbook.md
 
 coverage: $(STAMP)
 	uv run pytest --cov=src/frob --cov-branch --cov-report=xml -q

@@ -18,6 +18,7 @@ is decomposed into small private helpers alongside it.
 
 from __future__ import annotations
 
+import difflib
 import fnmatch
 import hashlib
 import re
@@ -1374,7 +1375,18 @@ def _test001_002_one(
 def _test001_002(
     snapshot: GraphSnapshot, tests: CollectedTests, cfg: TestPolicy
 ) -> tuple[Violation, ...]:
-    """TEST001 (no unit edge) and TEST002 (fewer than min_unit_cases valid edges)."""
+    """TEST001 (no unit edge) and TEST002 (fewer than min_unit_cases valid edges).
+
+    `.strata` design-file declarations (`flow`, `operation`, `scenario` --
+    mapped to `SymbolKind.FUNCTION`/`METHOD` by `_walk_strata.py`'s
+    best-effort analogy) are exempt (T-0168): a "unit test" for a design
+    construct has no defined meaning -- pytest cannot exercise a `flow`,
+    only strata's own prover/audit machinery (`frob sys audit`,
+    self-conformance) verifies it means what it claims. Demanding a
+    `frob:tests` edge here would be a semantically confused warning class,
+    consistent with T-0164's COV002 precedent that a `.strata` file is one
+    design artifact governed by design-level gates, not pytest bindings.
+    """
     unit_edges = _test_edges(snapshot, "unit")
     violations: list[Violation] = []
     for record in snapshot.symbols.values():
@@ -1382,6 +1394,7 @@ def _test001_002(
             not record.public
             or record.kind not in (SymbolKind.FUNCTION, SymbolKind.METHOD)
             or _is_test_file(record.id.path)
+            or record.id.path.endswith(".strata")
         ):
             continue
         verdict = _test001_002_one(record, unit_edges, tests, cfg, snapshot)
@@ -2687,6 +2700,24 @@ def _doc_anchor_slugs(path: Path) -> Option[set[str]]:
     return Some(slugs)
 
 
+# frob:doc docs/modules/gates.md#public-api
+def _anchor_mismatch_message(
+    target: str, docfile: str, slug: str, slugs: set[str]
+) -> str:
+    """Build the DOC002 unresolved-anchor message: the computed slug, the
+    anchors actually found in the target file, and the nearest match by
+    edit distance (via `difflib.get_close_matches`) so a `frob:doc` author
+    does not have to guess a GitHub-style slug by hand."""
+    found = ", ".join(sorted(slugs)) if slugs else "(none)"
+    nearest = difflib.get_close_matches(slug, slugs, n=1, cutoff=0.0)
+    suggestion = f"; did you mean #{nearest[0]}?" if nearest else ""
+    return (
+        f"DOC002: frob:doc anchor {target!r} does not resolve; computed "
+        f"slug #{slug} does not match any anchor in {docfile} "
+        f"(found: {found}){suggestion}"
+    )
+
+
 def _docanchor_violation(rule_file: str, line: int, message: str) -> Violation:
     """Build one DOC002 error `Violation` -- every failure mode is the same shape."""
     return Violation(
@@ -2746,8 +2777,7 @@ def docanchor_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]
                 _docanchor_violation(
                     origin_file,
                     line,
-                    f"DOC002: frob:doc anchor {target!r} does not resolve; no "
-                    f"heading or <a id> matches #{slug} in {docfile}",
+                    _anchor_mismatch_message(target, docfile, slug, slugs.danger_some),
                 )
             )
     _log.info("docanchor: %d violation(s)", len(violations))
