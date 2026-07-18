@@ -326,6 +326,68 @@ EXPLICITLY ZERO (frob models design/ticket/code text, not personal data)
 as a checked assertion (zero `pii=` attrs on every node, `evaluate_pii`
 clean) rather than letting the zero case hold silently by omission.
 
+## Operational design lints (`std.lint`, T-0155)
+
+`std.pii` (above) proves a MODELING-shape obligation family (does a
+node's own `carries` fact stay consistent with the rest of the model);
+`std.lint` proves an OPERATIONAL family instead: caching, resource
+bounds, rate-limiting, and kill-switch rules over the SAME kernel facts
+`Node.capacity` (T-0103), `Flow.rate`, `std.infra`'s `cache` construct
+(`_infra.py`), the scenario engine's `ScaleRate` rewrite (T-0073), and
+`Node.may` capability kinds (`_effects.py::_may_kind`, T-0150) already
+carry. Zero new kernel primitive (charter law 1) -- every LINT rule is a
+JOIN, and the one new surface vocabulary word (a kill-switch reference)
+reuses the grammar's already-existing generic `attr IDENT=IDENT` node
+property (`flag=<id>`), the SAME attr-desugar convention `code=`/`pii=`
+established (T-0132/T-0154), not a new keyword.
+
+| Rule | Fires when | Discharge |
+|---|---|---|
+| LINT001 (undeclared rate limit) | a flow sourced from a `foreign`-trust node has no declared `rate` | declare `rate` on the flow -- no claim override; a missing rate is a missing FACT, not an assumable risk (the PII001 no-override shape) |
+| LINT002 (store overload, caching-escapable) | a node's declared `capacity.service_rate` is exceeded by its non-infra inbound flows' combined rate, with no `cache` construct declared over it | declare a `cache X of <node>` (`_infra.py`), OR raise `capacity`, OR lower the flow(s)' declared rate |
+| LINT003 (surge scenario with no capacity bound) | a `Scenario` with a `ScaleRate` rewrite nests no `BoundClaim` (RATE or UTILIZATION) targeting the scaled flow or either endpoint | nest an `assert`/`assume bound rate|utilization ... <= ...` claim inside the same scenario -- structural presence only, asserted or assumed both count |
+| LINT004 (risky capability, no kill switch) | a node holds a `may` atom of kind `exec`/`net` (`RISKY_CAPABILITY_KINDS`) with no declared `attr flag=<id>` | declare `attr flag=<id>;` naming the real feature-flag/kill-switch identifier an operator flips live |
+| LINT005 (fan-in exceeding capacity, unconditional) | a node's declared `capacity` (`service_rate * replicas_max`) is exceeded by its TOTAL inbound flow rate, regardless of caching | raise `capacity` (service rate or `replicas_max`), or reduce the fan-in -- no caching escape (module docstring: caching relieves repeated reads of a source of truth, not a compute sink's raw fan-in) |
+
+LINT002 and LINT005 are deliberately NOT the same check under two names:
+LINT002 is narrower and caching-escapable (a store-shaped node's overload
+is relieved once a cache sits in front of it); LINT005 is the
+caching-agnostic baseline (a node with no possible cache construct over
+it -- a queue consumer, a balancer target -- still needs enough replica
+headroom to absorb its fan-in). A model can fail LINT002 and pass LINT005
+(cache-covered, but the cached node itself sits below its callers'
+declared rate) or vice versa (no cache, but `replicas_max` headroom
+absorbs the fan-in) -- the exact LINT002-vs-LINT005 relationship
+`_lint.py`'s module docstring spells out is the same PII003/GDPR-RETENTION
+precedent this catalog already establishes (above).
+
+**Litmus pair**: `tests/unit/strata/litmus/lint_vuln.strata` fires all
+five rules from one small model (a foreign-sourced unrated flow, an
+overloaded `may "exec"` store with no cache/kill-switch, and an unbounded
+surge scenario); `lint_hardened.strata` discharges every one of them (a
+declared rate, a `cache` construct, a nested bound claim, an `attr
+flag=<id>`, and widened `replicas_max`) -- both round-trip through the
+real parser (`tests/unit/strata/test_litmus_lint.py`), the same T-0145/
+T-0154 discipline established.
+
+**Wired into `frob sys audit`**: `_audit.py::evaluate_exhaustiveness`
+joins `_lint.py::evaluate_lint` in under a fixed `lint:model` view (LINT
+rules have no baseline-view/catalog-completeness concept, the same fixed-
+view shape `pii:model` uses), so every LINT001-005 finding surfaces
+alongside self-conformance/PII/compliance in one audit report.
+
+**Self-model honesty note (T-0155, "make it green honestly")**:
+`design/frob.strata`'s `f_registry_fetch` now declares a real, honestly
+conservative `rate 1 req/s` (LINT001 discharged). `checker`/`core`/
+`stratamod`/`vet` each hold a risky (`exec`/`net`) capability with
+**no real kill switch in the codebase today** -- rather than fabricate a
+`flag=<id>` attr that names a mechanism that does not exist,
+`design/frob.strata` leaves LINT004 firing on these four nodes as an
+HONEST, named gap in `frob sys audit`'s output (the T-0150/T-0151
+"declare real facts or waive with reasons" precedent this ticket's own
+body cites); building the actual kill-switch infrastructure is filed as
+separate follow-on product work, not silently faked here.
+
 ## CVE: threat intelligence joined to the proof
 
 CWE is the design side; CVE is the dependency side, enriching `frob vet`.
@@ -336,6 +398,69 @@ CWE-89 obligation is [discharged -> contained in depth / assumed / missing
 adapter and 14-day cooldown; the join is the shared CWE id. A live CVE
 whose CWE obligation is undischarged is a high-severity finding; one whose
 obligation is discharged is defense-in-depth and reported as contained.
+
+<a id="cve-fingerprints-code-level-pattern-catalog-t-0153"></a>
+## CVE fingerprints: code-level pattern catalog (T-0153)
+
+Distinct from the section above: that join is dependency-VERSION-shaped
+("this pinned version has advisory CVE-XXXX"), useless for first-party
+code or a dependency with no filed advisory yet. `frob.strata.
+_cve_fingerprint.CveFingerprint` is a source-code NEEDLE for a canonical
+vulnerable-usage class -- `frob.vet._capability.scan_file_fingerprints`
+flags the SHAPE of the vulnerability directly in a file's text, following
+`scan_file_capabilities`'s recall-over-precision substring philosophy
+(module docstring, `src/frob/vet/_capability.py`) plus the T-0151 dot-
+exclusion lesson (a needle must not fire on a dotted method access that
+merely shares a name with a dangerous bare call).
+
+`CVE_FINGERPRINTS` (`src/frob/strata/_cve_fingerprint.py`) ships nine
+entries, each joined to an EXISTING `std.cwe` catalog id via `cwe_id` and
+cited by at least one REAL, independently-verified CVE -- `cve` is never
+hand-guessed from memory; every citation here was checked against a
+primary/vendor/NVD source at authoring time. `check_fingerprint_catalog_
+drift` (CVEFP001) fails loudly if a fingerprint names a `cwe_id` absent
+from the joined `CWE_CATALOG + CWE_TOP_25_CATALOG + QUALITY_CATALOG` --
+the same "an unjoined reference is an error, never a silent pass" rule
+`WeaknessEntry.capability_kind`'s join to `_effects.py::_may_kind` already
+follows. `CVE_FINGERPRINT_VIEWS['cve-fingerprint-catalog']` is a SEPARATE
+view table (never merged into `VIEWS`/`CWE_TOP_25_VIEWS`), following the
+same "no silent default-view widening" precedent those tables already set.
+
+**Curated, not exhaustive -- a disclosed cut, not a silent one.** Three of
+the ticket's suggested example classes are deliberately NOT shipped:
+TLS `verify=False` (CWE-295), weak-hash password storage (CWE-916), and
+XML external entities (CWE-611) have no `WeaknessEntry` in ANY catalog
+tuple yet, so a fingerprint citing any of the three would fail this
+module's OWN CVEFP001 drift-lock -- confirming they need a catalog
+addition (a separate, catalog-scoped ticket) before a fingerprint can
+honestly join them, rather than being force-fit around the drift-lock.
+JNDI-style lookup injection (the Log4Shell class) is Java/JNDI-specific
+with no equivalent construct in any of the four languages `frob.vet.
+_capability` scans (python/typescript/rust/c-cpp); a fingerprint with no
+genuine needle in a scanned language would be undetectable data, not a
+pattern-match capability, so it is omitted rather than shipped inert.
+
+**Wired into two operational paths, not test-only.** (1) `frob.vet.
+_capability.scan_directory_fingerprints` runs from `frob.vet._scan.
+_scan_source` the SAME way `scan_directory_capabilities` already does --
+a `frob vet` run over a dependency tree surfaces a VET006 finding (and a
+`"cve-fingerprint"` signal on the stored `PackageVerdict`) when a
+dependency's source matches a fingerprint's needle(s), independent of
+whether its pinned version has a filed osv advisory. (2)
+`check_fingerprint_catalog_drift` runs from `_audit.py::
+evaluate_exhaustiveness` every call (model-independent, like `_pii_gaps`
+-- reported under the fixed `cve-fingerprint:catalog` pseudo-view,
+mirroring PII001-004's fixed `"model"` view since a catalog-join property
+has no per-model baseline-view concept), so `frob sys audit` fails closed
+on a drifted `cwe_id` the same way THREAT001-003 already do for the
+security/quality families.
+
+**Self-match note (same class as T-0151/T-0158):** `_cve_fingerprint.py`
+stores every needle as a Python string literal, so scanning that file's
+OWN text would trivially "match" every fingerprint it defines regardless
+of what the file's code actually does; `scan_directory_capabilities`
+excludes it from aggregation the same way it already excludes `_capability.
+py`/`_capability_registry.py` (`_is_self_path`).
 
 <a id="litmus-coverage"></a>
 ## Litmus coverage: every catalog entry fires from real source (T-0145)

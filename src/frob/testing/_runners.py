@@ -47,6 +47,8 @@ _ENV_PROBE_TIMEOUT_S = 10.0
 class TestingError(ErrorSet):
     """Failure values `frob.testing`'s executing functions can return."""
 
+    __test__: bool = False
+
     NoRunner = "A language has selected tests but no [[test.runner]]"
     BadRunnerSpec = "Runner entry failed validation or has no placeholder"
     SpawnFailed = "Runner process could not be started or timed out"

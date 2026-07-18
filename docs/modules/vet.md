@@ -413,6 +413,49 @@ advisory output), version-escalation diffs as the primary signal,
 cross-language capability sets via one grammar stack, offline-first, and
 gate enforcement.
 
+## Third-party library survey (T-0181)
+
+T-0158 addendum 2's priority survey list of python/npm/cargo third-party
+libraries, surveyed against each library's REAL API surface (not guessed)
+and dispositioned as either new `DangerousOperation` entries in
+`src/frob/vet/_capability_registry.py::DANGEROUS_OPERATIONS`, or an
+explicit pure-library verdict with no dangerous surface. Every
+ticket-listed library appears exactly once below, so none is silently
+dropped.
+
+| ecosystem | library | disposition | reasoning |
+|---|---|---|---|
+| python | pydantic | pure | validation/serialization library; no exec/eval/net/fs primitive of its own |
+| python | fastapi | pure | routing/DI framework over Starlette; dangerous surface (raw HTML, static file serving) lives in app-authored handlers or Starlette itself, already covered by the generic entries |
+| python | numpy | patterned | `numpy.load(..., allow_pickle=True)` -- deserialize/CWE-502 |
+| python | cryptography | pure | crypto primitives; weak-algorithm misuse is not a capability this scanner's taxonomy models |
+| python | jinja2 | patterned | `Template()`/`from_string()` SSTI (eval/CWE-1336); `autoescape=False` (html_render/CWE-79) |
+| python | python-dotenv | patterned | `load_dotenv(` -- env |
+| python | uvicorn | patterned | `uvicorn.run(` -- net (binds/serves a socket) |
+| python | sqlalchemy | patterned | `sqlalchemy.text(` with string-formatted SQL -- sql/CWE-89 |
+| python | asyncpg | patterned | `asyncpg.connect(` -- net |
+| python | alembic | pure | migration execution is by-design running trusted migration code/DDL; no additional API-level pattern distinct from the exec/sql surfaces already covered |
+| python | redis | pure (this pass) | connection/command surface is generic net-adjacent; the Lua `EVAL` idiom has no client-name-independent literal substring to pattern without unacceptable false-positive risk -- tracked as a gap, not claimed covered |
+| python | boto3 | patterned | `boto3.client(`/`boto3.resource(` -- net (cloud credentials) |
+| python | stripe | patterned | `stripe.api_key` -- net (payment API, live secret key) |
+| python | anthropic | patterned | `anthropic.Anthropic(` -- net (API key) |
+| python | argon2-cffi | pure | password-hashing primitive; a defensive tool, not a dangerous-operation surface |
+| python | aiosmtpd | patterned | `aiosmtpd.controller.Controller(` -- net (inbound SMTP server) |
+| python | playwright | patterned | `sync_playwright(`/`async_playwright(` browser launch (exec); `page.evaluate(` (eval/CWE-95) |
+| python | Pillow | patterned | `ImageMath.eval(` -- eval/CWE-95; decompression-bomb DoS has no matching capability_kind in this registry, tracked as a gap |
+| npm | react / react-dom | pure | `dangerouslySetInnerHTML` is already patterned under typescript/html_render; no other dangerous surface |
+| npm | vite / vitest | pure | build/test tooling; config files are trusted-author code by design, no additional runtime API pattern |
+| npm | playwright | patterned | `chromium.launch(`/`firefox.launch(`/`webkit.launch(` (exec); `page.evaluate(` (eval/CWE-95) |
+| npm | openapi-typescript | pure | build-time code generator; no runtime dangerous surface |
+| npm | eslint tooling | pure | static-analysis tooling; no runtime dangerous API surface for consumers |
+| cargo | pyo3 | patterned | `pyo3::`/`Python::with_gil(` -- ffi (embeds/calls the Python interpreter) |
+| cargo | serde / serde_json | pure | type-directed (de)serialization, not string-eval-based (already excused at the matrix-cell level: see `CAPABILITY_MATRIX_EXCUSES` rust/deserialize) |
+| cargo | tracing | pure | structured logging/instrumentation; no dangerous surface |
+| cargo | libloading | already covered | patterned under rust/ffi since T-0158 (`libloading::`) |
+| cargo | wasm-bindgen | patterned | `wasm_bindgen::`/`#[wasm_bindgen]` -- ffi (Rust/JS wasm boundary) |
+| cargo | crossbeam | pure | concurrency primitives; no dangerous surface |
+| cargo | thiserror | pure | error-derive macro; no dangerous surface |
+
 ## Public API
 
 <!-- frob:describes src/frob/vet/_models.py::Dependency -->
@@ -434,8 +477,10 @@ gate enforcement.
 <!-- frob:describes src/frob/vet/_lockfile.py::parse_lockfile -->
 <!-- frob:describes src/frob/vet/_capability.py::language_for -->
 <!-- frob:describes src/frob/vet/_capability.py::scan_file_capabilities -->
+<!-- frob:describes src/frob/vet/_capability.py::scan_file_fingerprints -->
 <!-- frob:describes src/frob/vet/_capability.py::decode_to_exec_signal -->
 <!-- frob:describes src/frob/vet/_capability.py::scan_directory_capabilities -->
+<!-- frob:describes src/frob/vet/_capability.py::scan_directory_fingerprints -->
 <!-- frob:describes src/frob/vet/_scan.py::scan_tree -->
 <!-- frob:describes src/frob/vet/_lifecycle.py::scan_lifecycle_scripts -->
 <!-- frob:describes src/frob/vet/_obfuscation.py::high_entropy_strings -->
@@ -515,11 +560,19 @@ gate enforcement.
   pattern-table bucket (or `None` for unsupported languages).
 - `scan_file_capabilities` -- capability tokens observed in one source
   file's raw text, via the per-language substring table.
+- `scan_file_fingerprints` -- T-0153: `frob.strata.CVE_FINGERPRINTS` entries
+  whose needle(s) matched in one source file's raw text (the CVE-fingerprint
+  sibling of `scan_file_operations`, docs/strata/threat.md#cve-fingerprints-
+  code-level-pattern-catalog-t-0153).
 - `decode_to_exec_signal` -- true when a decode-ish and an exec-ish token
   co-occur in the SAME function body (the highest-precision obfuscation
   signal).
 - `scan_directory_capabilities` -- aggregates capability tokens and the
   decode-to-exec signal across every scannable file under a source tree.
+- `scan_directory_fingerprints` -- T-0153: aggregates `scan_file_
+  fingerprints` matches across every scannable file under a source tree;
+  called from `_scan.py::_scan_source` (VET006), the same call site
+  `scan_directory_capabilities` already runs from.
 - `scan_tree` -- the full-lockfile `frob vet` pass: allow conformance,
   quarantine, typosquat, capability/obfuscation scan, and the osv adapter.
 - `scan_lifecycle_scripts` -- packages under `node_modules` declaring

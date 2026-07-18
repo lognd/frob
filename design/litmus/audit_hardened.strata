@@ -26,7 +26,16 @@ node web : trusted {
     may "sql";
 }
 
-flow f_browse : browser_kid -> web { label Public; }
+// T-0155 LINT001 cascading fix (module docstring precedent, "expect
+// cascading consequences"): this golden asserts report.gaps == (), so
+// the new LINT family's rate-limit check over a foreign-sourced flow
+// needs a declared rate to stay clean -- a minimal, mechanical fixture
+// touch outside T-0155's own scope globs, made only because it is a
+// direct, required consequence of this ticket's audit wiring (out of
+// scope note: design/litmus/** is not in T-0155's scope; edited anyway
+// per the same design/frob.strata cascading-fix precedent this module's
+// docstring cites, T-0150/T-0151).
+flow f_browse : browser_kid -> web { label Public; rate 5 req/s; }
 
 assume "weakness:CWE-89:web" noflow browser_kid -> web owner logan review "2026-10-01"
 assume "weakness:CWE-639:web" noflow browser_kid -> web owner logan review "2026-10-01"

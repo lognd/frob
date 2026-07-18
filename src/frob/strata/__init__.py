@@ -88,6 +88,13 @@ from frob.strata._compliance import (
     evaluate_compliance,
 )
 from frob.strata._crash import CrashContractReport, evaluate_crash_contracts
+from frob.strata._cve_fingerprint import (
+    CVE_FINGERPRINT_VIEWS,
+    CVE_FINGERPRINTS,
+    CveFingerprint,
+    FingerprintViolation,
+    check_fingerprint_catalog_drift,
+)
 from frob.strata._deploy import DeployContractReport, evaluate_deploy_contracts
 from frob.strata._design_load import (
     DEFAULT_DESIGN_DIR,
@@ -109,6 +116,18 @@ from frob.strata._errors import StrataError
 from frob.strata._export import export_iam, export_k8s_netpol, export_seccomp
 from frob.strata._facts import FactBase, build_facts
 from frob.strata._infra import InfraExpansion, elaborate_infra
+from frob.strata._lint import (
+    RISKY_CAPABILITY_KINDS,
+    LintReport,
+    LintViolation,
+    check_lint_cache_or_capacity,
+    check_lint_fanin_capacity,
+    check_lint_kill_switch,
+    check_lint_rate_limit,
+    check_lint_surge_capacity_bound,
+    evaluate_lint,
+    node_flag_ids,
+)
 from frob.strata._models import (
     LABELS,
     TRUST,
@@ -203,8 +222,11 @@ __all__ = [
     "ANALYZABLE_POLICY_ID",
     "DEFAULT_DESIGN_DIR",
     "MARKER_PREFIX",
+    "RISKY_CAPABILITY_KINDS",
     "UNBOUND_REQUIRED_KINDS",
     "COMPLIANCE_CATALOG",
+    "CVE_FINGERPRINT_VIEWS",
+    "CVE_FINGERPRINTS",
     "CWE_CATALOG",
     "DEFAULT_BENIGN_CAPABILITIES",
     "DEFAULT_COMPLIANCE_VIEWS",
@@ -244,6 +266,7 @@ __all__ = [
     "CompiledPolicies",
     "CompiledPolicy",
     "ConfineUse",
+    "CveFingerprint",
     "ConformanceReport",
     "CrashContract",
     "CrashContractReport",
@@ -261,6 +284,7 @@ __all__ = [
     "ClaimBody",
     "ClaimResult",
     "Flow",
+    "FingerprintViolation",
     "FlowCondition",
     "FlowDecl",
     "ForbidCall",
@@ -328,6 +352,7 @@ __all__ = [
     "check_capability_completeness",
     "check_capability_conformance",
     "check_catalog_completeness",
+    "check_fingerprint_catalog_drift",
     "check_discharge_completeness",
     "check_effect_completeness",
     "check_import_conformance",
@@ -357,14 +382,23 @@ __all__ = [
     "load_design_ids",
     "merge_models",
     "PII_CATEGORIES",
+    "LintReport",
+    "LintViolation",
     "PiiReport",
     "PiiViolation",
+    "check_lint_cache_or_capacity",
+    "check_lint_fanin_capacity",
+    "check_lint_kill_switch",
+    "check_lint_rate_limit",
+    "check_lint_surge_capacity_bound",
     "check_pii_boundary_protection",
     "check_pii_catalog",
     "check_pii_retention_erasure",
     "check_pii_undeclared_flow",
+    "evaluate_lint",
     "evaluate_pii",
     "node_carries_pii",
+    "node_flag_ids",
     "node_pii_tags",
     "parse_module",
     "plan_obligations",

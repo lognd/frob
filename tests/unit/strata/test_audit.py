@@ -31,6 +31,7 @@ from frob.strata import (
     KernelModel,
     Node,
     NoFlow,
+    Quantity,
     Rung,
 )
 from frob.strata._audit import (
@@ -85,6 +86,22 @@ class TestExhaustiveness:
         assert result.is_err
 
     # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness kind="unit"
+    def test_cve_fingerprint_catalog_checked_every_call(self):
+        """T-0153: `evaluate_exhaustiveness` runs `check_fingerprint_catalog_
+        drift` (CVEFP001) under the fixed `cve-fingerprint:catalog` pseudo-
+        view every call, model-independent -- same wiring shape as
+        `pii:model` below."""
+        model = KernelModel(nodes=(Node(id="api", trust="trusted"),))
+        result = evaluate_exhaustiveness(model)
+        assert result.is_ok
+        report = result.danger_ok
+        assert "cve-fingerprint:catalog" in report.views_checked
+        # the shipped CVE_FINGERPRINTS catalog is drift-clean by construction
+        # (test_cve_fingerprint.py::TestCatalogDrift proves this directly);
+        # here we prove the OPERATIONAL path surfaces zero gaps for it too.
+        assert not [g for g in report.gaps if g.family == "cve-fingerprint"]
+
+    # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness kind="unit"
     def test_pii_gap_reported(self):
         """T-0154: `evaluate_exhaustiveness` joins `_pii.py::evaluate_pii` in
         under the fixed `pii:model` view; a PII-carrying node with no
@@ -101,6 +118,25 @@ class TestExhaustiveness:
         pii_gaps = [g for g in report.gaps if g.family == "pii"]
         assert len(pii_gaps) == 1
         assert pii_gaps[0].rule == "PII003"
+
+    # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness kind="unit"
+    def test_lint_gap_reported(self):
+        """T-0155: `evaluate_exhaustiveness` joins `_lint.py::evaluate_lint`
+        in under the fixed `lint:model` view; a foreign-sourced flow with
+        no declared rate surfaces as a `family="lint"` gap, same as every
+        other family's join."""
+        kid = _foreign("kid")
+        api = Node(id="api", trust="trusted")
+        flow = Flow(id="f_open", src="kid", dst="api", label="Public")
+        model = KernelModel(nodes=(kid, api), flows=(flow,))
+        result = evaluate_exhaustiveness(model)
+        assert result.is_ok
+        report = result.danger_ok
+        assert not report.proved
+        assert "lint:model" in report.views_checked
+        lint_gaps = [g for g in report.gaps if g.family == "lint"]
+        assert len(lint_gaps) == 1
+        assert lint_gaps[0].rule == "LINT001"
 
 
 def _vulnerable_model() -> KernelModel:
@@ -139,6 +175,9 @@ def _hardened_model() -> KernelModel:
         dst="store",
         label="Pii",
         attrs=("subject:child",),
+        # T-0155 LINT001: a foreign-sourced flow needs a declared rate to
+        # stay clean under the new lint family (module-level scope note).
+        rate=Quantity(value=5, unit="req/s"),
     )
     age_gate = Boundary(
         id="b_age_gate",
