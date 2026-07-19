@@ -16,8 +16,8 @@ from typani.result import Result
 from frob.excludes import is_excluded, is_skipped_dir, load_exclude_globs
 from frob.gitio import GitError, ProcResult, run_argv
 from frob.logging import get_logger
-from frob.testing._models import CollectedTests
-from frob.testing._runners import TestingError, _cargo_env, _env_overlay
+from frob.testing._models import CollectedTests, RunnerSpec
+from frob.testing._runners import TestingError, _cargo_env, _env_overlay, load_runners
 
 _log = get_logger(__name__)
 
@@ -80,9 +80,19 @@ def _find_test_files(root: Path) -> list[Path]:
 
 
 def _content_key(root: Path) -> str:
-    """Sha256 over every test file's `(relpath, sha256)` pair -- the cache key."""
+    """Sha256 over every test file's `(relpath, sha256)` pair -- the cache
+    key. Includes nested `language = "python"` `[[test.runner]] cwd`
+    directories (T-0317) even when `[graph].exclude` keeps them out of
+    `_find_test_files(root)`'s own walk -- their content is now part of
+    what `collect_python_tests` collects, so it must be part of what
+    invalidates the cache."""
     hasher = hashlib.sha256()
-    for path in _find_test_files(root):
+    all_files = list(_find_test_files(root))
+    for cwd_rel in _python_runner_cwds(root):
+        nested_root = root / cwd_rel
+        if nested_root.is_dir():
+            all_files.extend(_find_test_files(nested_root))
+    for path in sorted(set(all_files)):
         try:
             digest = hashlib.sha256(path.read_bytes()).hexdigest()
         except OSError as exc:
@@ -116,22 +126,28 @@ def _store_cache(cache_path: Path, key: str, node_ids: frozenset[str]) -> None:
     )
 
 
-def _run_collect_only(root: Path) -> Result[frozenset[str], TestingError]:
-    """Spawn `pytest --collect-only -q` and parse its stdout into node ids."""
+def _run_collect_only(cwd: Path) -> Result[frozenset[str], TestingError]:
+    """Spawn `pytest --collect-only -q` in `cwd` and parse its stdout into
+    node ids relative to `cwd` (the caller reroots them if `cwd` is not the
+    repo root, T-0317)."""
     # -o addopts= neutralizes the project's own addopts: a configured -q
     # would stack with ours into -qq, which switches --collect-only from
     # node ids to per-file counts (and -n auto adds xdist noise) -- the
     # evidence oracle would silently see an empty set (observed: INV001
     # false positives on every invariant).
     argv = ("uv", "run", "pytest", "--collect-only", "-q", "-o", "addopts=")
-    spawned = run_argv(argv, cwd=root, timeout_s=_COLLECT_TIMEOUT_S)
+    spawned = run_argv(argv, cwd=cwd, timeout_s=_COLLECT_TIMEOUT_S)
     if spawned.is_err:
-        _log.error("collect_python_tests: pytest --collect-only failed to spawn")
+        _log.error(
+            "collect_python_tests: pytest --collect-only failed to spawn in %s", cwd
+        )
         return Err(TestingError.CollectFailed)
     result = spawned.danger_ok
     if result.returncode not in (0, _NO_TESTS_COLLECTED_EXIT):
         _log.error(
-            "collect_python_tests: pytest --collect-only exited %d", result.returncode
+            "collect_python_tests: pytest --collect-only exited %d in %s",
+            result.returncode,
+            cwd,
         )
         return Err(TestingError.CollectFailed)
     return Ok(
@@ -143,9 +159,84 @@ def _run_collect_only(root: Path) -> Result[frozenset[str], TestingError]:
     )
 
 
+def _reroot_node_ids(node_ids: frozenset[str], cwd_rel: str) -> frozenset[str]:
+    """Node ids collected inside a nested `[[test.runner]] cwd` (relative to
+    that cwd) rejoined onto `cwd_rel` so they read as the same root-relative
+    `path::qualname` symref the graph and `frob:tests` directives use
+    (T-0317). `cwd_rel = "."` (the outer collection's own runner) is a
+    no-op."""
+    if cwd_rel in (".", ""):
+        return node_ids
+    prefix = cwd_rel.rstrip("/")
+    return frozenset(f"{prefix}/{node_id}" for node_id in node_ids)
+
+
+def _python_runner_cwds(root: Path) -> list[str]:
+    """Every distinct nested `cwd` a `language = "python"` `[[test.runner]]`
+    entry declares (T-0317): `frob.toml` already tells `run_selected` which
+    directory owns which tests (each has its own venv/interpreter/deps, e.g.
+    a nested project importing packages the outer repo's `.venv` never
+    installs) -- collection must consult the same config, or a nested
+    project's node ids are simply never visited and every `frob:tests`
+    directive inside it is permanently unresolvable. `cwd = "."` (the outer
+    tree itself) is excluded since `collect_python_tests` already covers it
+    directly."""
+    runners = load_runners(root)
+    if runners.is_err:
+        _log.warning(
+            "collect_python_tests: could not load [[test.runner]] entries, "
+            "collecting outer tree only"
+        )
+        return []
+    seen: set[str] = set()
+    cwds: list[str] = []
+    for spec in runners.danger_ok:
+        if not _is_nested_python_runner(spec):
+            continue
+        if spec.cwd not in seen:
+            seen.add(spec.cwd)
+            cwds.append(spec.cwd)
+    return cwds
+
+
+def _is_nested_python_runner(spec: RunnerSpec) -> bool:
+    """True if `spec` is a `language = "python"` runner scoped to a real
+    subdirectory (not the outer tree, `cwd = "."`)."""
+    return spec.language == "python" and spec.cwd not in (".", "")
+
+
+def _collect_nested_python(
+    root: Path, cwd_rel: str
+) -> Result[frozenset[str], TestingError]:
+    """`_run_collect_only` inside `root / cwd_rel`, node ids rerooted onto
+    `cwd_rel` (T-0317). A nested project directory that does not exist is
+    logged and treated as empty rather than a hard `Err` -- a stale
+    `[[test.runner]] cwd` must not take down collection for every OTHER
+    project in the repo."""
+    nested_root = root / cwd_rel
+    if not nested_root.is_dir():
+        _log.warning(
+            "collect_python_tests: [[test.runner]] cwd %r does not exist under %s",
+            cwd_rel,
+            root,
+        )
+        return Ok(frozenset())
+    collected = _run_collect_only(nested_root)
+    if collected.is_err:
+        return collected
+    return Ok(_reroot_node_ids(collected.danger_ok, cwd_rel))
+
+
 # frob:doc docs/modules/testing.md#public-api
 def collect_python_tests(root: Path) -> Result[CollectedTests, TestingError]:
-    """`uv run pytest --collect-only -q` node ids, cached on test-file content hash."""
+    """`uv run pytest --collect-only -q` node ids for the outer tree, UNIONED
+    with the same collection run inside every nested `language = "python"`
+    `[[test.runner]] cwd` (T-0317) -- each such directory typically has its
+    own venv/deps, so a plain outer-tree collection never visits (and can
+    never resolve `frob:tests` evidence for) tests living there. Cached on
+    the outer tree's test-file content hash; a nested-cwd collection failure
+    degrades to a warning plus that project's tests being absent from the
+    result, rather than failing the whole call."""
     key = _content_key(root)
     cache_path = root / _CACHE_REL
     cached = _load_cache(cache_path, key)
@@ -156,10 +247,24 @@ def collect_python_tests(root: Path) -> Result[CollectedTests, TestingError]:
     collected = _run_collect_only(root)
     if collected.is_err:
         return Err(collected.danger_err)
-    node_ids = collected.danger_ok
-    _store_cache(cache_path, key, node_ids)
-    _log.info("collect_python_tests: collected %d node id(s)", len(node_ids))
-    return Ok(CollectedTests(node_ids=node_ids))
+    node_ids = set(collected.danger_ok)
+
+    for cwd_rel in _python_runner_cwds(root):
+        nested = _collect_nested_python(root, cwd_rel)
+        if nested.is_err:
+            _log.warning(
+                "collect_python_tests: nested collection failed for cwd %r (%s); "
+                "its tests are absent from this pass' evidence oracle",
+                cwd_rel,
+                nested.danger_err,
+            )
+            continue
+        node_ids |= nested.danger_ok
+
+    frozen = frozenset(node_ids)
+    _store_cache(cache_path, key, frozen)
+    _log.info("collect_python_tests: collected %d node id(s)", len(frozen))
+    return Ok(CollectedTests(node_ids=frozen))
 
 
 # ---------------------------------------------------------------------------
