@@ -3193,7 +3193,7 @@ Filed from sibling-repo pilot P1 (graphite/feldspar/lithos, 2026-07-18). P1 gap 
 id: T-0231
 title: 'small CLI/UX batch: --version flag, sys plan dry-run label, DOC001 hint for
   missing docs root'
-state: in-progress
+state: done
 kind: ux
 origin: agent
 created: '2026-07-18'
@@ -4309,3 +4309,25 @@ acceptance: []
 threat: null
 ```
 Found while working T-0191: frob_core::candidate_pairs can hand back (i, i) when a symbol's own R4 winnowed-fingerprint set collides with itself past the shared-token floor -- observed for real on this repo's own dup cache module (DUP002 reported get_verdict as its own clone). T-0191 guarded the one Python-side consumer (_r4_groups in src/frob/dup/_pipeline.py) with an i==j/a==b skip, but the kernel itself still emits self-pairs, so any OTHER caller of candidate_pairs inherits the same footgun unless it also guards. Fix at the kernel (skip i==j in the Rust candidate-pair emission) so every caller gets it for free.
+
+<!-- ticket:T-0269 -->
+```yaml
+id: T-0269
+title: invalid frob:tests kind='system' shipped in test_cli_check.py:237 -- malformed
+  directive silently dropped
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- tests/**
+- src/frob/graph/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0231 review found a pre-existing malformed frob:tests directive at tests/system/test_cli_check.py:237 using kind='system' (valid kinds: unit/integration/e2e per _TESTS_KINDS). It parses malformed and is silently dropped -- the bound symbol has no real test edge. Landed via commit 289f2c68 (T-0229). Fix: kind='integration' (or extend _TESTS_KINDS to include 'system' if that taxonomy is intended -- decide, since T-0225 also touches the design-vs-code test-kind question). Also: this class only surfaces on full frob check, not --ticket -- covered by T-0265's scoping fix but this is the concrete instance to clean up. Grep the whole repo for other kind='system'/invalid-kind directives while here.
