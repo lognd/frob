@@ -1,0 +1,25 @@
+// host_isolation_vuln.strata -- T-0256 litmus: two service users sharing
+// a writable filesystem path AND a listening port, with no declared Flow
+// bridging them -- the shared-user VULN shape HOST001 must fire on
+// (shared-writable-path, cross-user-socket, shared-group) and HOST002
+// must fire on (sudoers, the always-unprovable honest gap).
+//
+// tested end to end by tests/unit/strata/test_litmus_host_isolation.py.
+
+module host_isolation_vuln
+
+node api : trusted {
+    clearance Internal;
+    runs_as "svc-a";
+    unit;
+    owns "/var/lib/shared" "0664";
+    listens 9000;
+}
+
+node worker : trusted {
+    clearance Internal;
+    runs_as "svc-b";
+    unit;
+    owns "/var/lib/shared" "0664";
+    listens 9000;
+}

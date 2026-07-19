@@ -119,6 +119,17 @@ from frob.strata._errors import StrataError
 from frob.strata._export import export_iam, export_k8s_netpol, export_seccomp
 from frob.strata._facts import FactBase, build_facts
 from frob.strata._host import HostManifest, HostOwns, HostPlatform, host_manifest_for
+from frob.strata._host_isolation import (
+    COMPROMISED_OWNER_CATALOG,
+    COMPROMISED_OWNER_OUT_OF_SCOPE,
+    COMPROMISED_OWNER_VIEWS,
+    HOST_MULTI_INSTANCE_WAIVER_FAMILIES,
+    HostIsolationViolation,
+    evaluate_host_isolation_waived,
+    evaluate_lateral_isolation,
+    evaluate_vertical_isolation,
+    host_movement_flows,
+)
 from frob.strata._infra import InfraExpansion, elaborate_infra
 from frob.strata._lint import (
     RISKY_CAPABILITY_KINDS,
@@ -135,6 +146,7 @@ from frob.strata._lint import (
 from frob.strata._models import (
     LABELS,
     TRUST,
+    AddFlow,
     Boundary,
     BoundaryDirection,
     BoundClaim,
@@ -185,7 +197,11 @@ from frob.strata._pii import (
 from frob.strata._plan import MARKER_PREFIX, PlannedTicket, PlanResult, plan_obligations
 from frob.strata._policy import CompiledPolicies, CompiledPolicy, compile_policies
 from frob.strata._report import render_report, summarize
-from frob.strata._scenarios import ScenarioResult, evaluate_scenarios
+from frob.strata._scenarios import (
+    ScenarioResult,
+    build_compromised_user_scenario,
+    evaluate_scenarios,
+)
 from frob.strata._secrets import (
     SECRET_LABEL,
     SecretExpansion,
@@ -237,6 +253,10 @@ __all__ = [
     "RISKY_CAPABILITY_KINDS",
     "UNBOUND_REQUIRED_KINDS",
     "COMPLIANCE_CATALOG",
+    "COMPROMISED_OWNER_CATALOG",
+    "COMPROMISED_OWNER_OUT_OF_SCOPE",
+    "COMPROMISED_OWNER_VIEWS",
+    "HOST_MULTI_INSTANCE_WAIVER_FAMILIES",
     "CVE_FINGERPRINT_VIEWS",
     "CVE_FINGERPRINTS",
     "CWE_CATALOG",
@@ -255,6 +275,7 @@ __all__ = [
     "AdmitPhase",
     "AuditReport",
     "AtCallRequire",
+    "AddFlow",
     "AtomicContractReport",
     "BalancerDecl",
     "BenignCapability",
@@ -292,6 +313,7 @@ __all__ = [
     "FactBase",
     "FamilyGap",
     "FaultInjectionCase",
+    "HostIsolationViolation",
     "HostManifest",
     "HostOwns",
     "HostPlatform",
@@ -395,15 +417,20 @@ __all__ = [
     "evaluate_crash_contracts",
     "evaluate_deploy_contracts",
     "evaluate_exhaustiveness",
+    "evaluate_host_isolation_waived",
+    "evaluate_lateral_isolation",
     "evaluate_saga_contracts",
     "evaluate_scenarios",
     "evaluate_threats",
+    "evaluate_vertical_isolation",
     "export_iam",
     "export_k8s_netpol",
     "export_seccomp",
     "extract_effects",
+    "build_compromised_user_scenario",
     "generate_fault_injection_cases",
     "host_manifest_for",
+    "host_movement_flows",
     "load_design_ids",
     "merge_models",
     "PII_CATEGORIES",
