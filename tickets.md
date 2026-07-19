@@ -2230,7 +2230,7 @@ section 11.4).
 ```yaml
 id: T-0213
 title: COV001 short message says 'undocumented' for symbols that have docstrings
-state: in-progress
+state: done
 kind: ux
 origin: agent
 created: '2026-07-18'
@@ -2240,7 +2240,8 @@ scope:
 - src/frob/gates/**
 - tests/**
 - tickets.md
-evidence: []
+evidence:
+- tests/test_gates.py::TestCoverageGate::test_cov001_message_wording_for_docstring_without_doc_edge
 attachments: []
 acceptance: []
 threat: null
