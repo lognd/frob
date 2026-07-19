@@ -579,6 +579,20 @@ def _match_waiver(
     `violation.rule in _UNWAIVABLE_RULES` (currently just TEST008) short-
     circuits to `None` regardless of any matching `frob:waive` edge --
     by construction, not by omission; see `_UNWAIVABLE_RULES`'s comment.
+
+    T-0276: a THIRD mode covers package/system-level violations (TEST003/
+    TEST004, whose `violation.file` is an interface id like
+    `crates/foo/src` or a system id, never a real single file) -- a
+    waiver written in any file living under that package prefix also
+    counts. Without this, such a violation's waiver could never match
+    ANYTHING: no real source file's path is ever literally equal to a
+    directory-shaped interface id, so the plain file-scoped comparison
+    below always failed by construction (found while investigating why a
+    `frob:waive TEST003 reason="..."` sitting in a rust integration test
+    file reported `0 waived` in feldspar's adoption sweep -- traced to
+    this, not to any check_type-based exclusion of `.rs` directives,
+    which does not exist: `frob.graph.build_graph`/`_load_tests` are
+    check_type-agnostic).
     """
     if violation.rule in _UNWAIVABLE_RULES:
         return None
@@ -588,9 +602,13 @@ def _match_waiver(
             if waiver.src == violation.symref:
                 return waiver
         return None
+    package_prefix = violation.file.rstrip("/") + "/"
     for waiver in candidates:
-        if waiver.src == violation.file or waiver.src.split("::", 1)[0] == (
-            violation.file
+        waiver_file = waiver.src.split("::", 1)[0]
+        if (
+            waiver.src == violation.file
+            or waiver_file == violation.file
+            or waiver_file.startswith(package_prefix)
         ):
             return waiver
     return None

@@ -1004,6 +1004,40 @@ class TestTestGate:
         # a bare-prefix collision must not false-positive
         assert not _node_id_collected("tests/test_x.py::test_dens", ids)
 
+    def test_test003_waiver_in_a_file_under_the_package_matches(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0276: TEST003's `violation.file` is a PACKAGE interface id
+        (e.g. `crates/feldspar-core/src`), never a real single file --
+        found while investigating why a `frob:waive TEST003 reason="..."`
+        written in a rust integration test file reported `0 waived` in
+        feldspar's adoption sweep. Root cause was NOT check_type gating
+        `.rs` directives (disproven directly: build_graph/_load_tests are
+        check_type-agnostic) -- it was that `_match_waiver`'s file-scoped
+        comparison required the waiver's own file to be LITERALLY EQUAL
+        to the package id string, which no real file path (always has an
+        extension) can ever be. A waiver written in any file living
+        under that package directory must now match."""
+        from typani.option import Nothing
+
+        from frob.gates import _apply_waivers  # noqa: PLC0415
+
+        _write(
+            tmp_path,
+            "src/frob/pkg/a.py",
+            '# frob:waive TEST003 reason="covered elsewhere"\n'
+            "def helper(x):\n"
+            "    return x\n",
+        )
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(node_ids=frozenset())
+        violations = run_test_gate(snap, (), Nothing(), tests, TestPolicy())
+        assert any(v.rule == "TEST003" for v in violations)
+
+        kept, waived = _apply_waivers(violations, snap)
+        assert not any(v.rule == "TEST003" for v in kept)
+        assert any(v.rule == "TEST003" for v in waived)
+
     def test_test004_system_below_min_e2e(self, tmp_path: Path) -> None:
         from typani.option import Nothing
 
