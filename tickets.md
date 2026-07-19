@@ -8201,6 +8201,8 @@ evidence:
 - tests/unit/strata/test_host.py kind="unit"
 - tests/unit/strata/test_host_isolation.py kind="unit"
 - tests/unit/strata/test_infra.py kind="unit"
+- tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
+- tests/unit/strata/test_krb.py::TestTrustChainReachability::test_non_transitive_chain_currently_over_reaches_known_gap
 attachments: []
 acceptance:
 - given `frob arch .`, when scoped to src/frob/strata/_export.py, _facts.py, _host.py,
@@ -8213,6 +8215,23 @@ acceptance:
   all pass with no behavior change
 threat: null
 ```
+
+## Done report
+
+Landed via merge c8d8107. The initial agent narrative below described a
+5-file slice, but the delivered work (worktree HEAD 187947a) drove ALL of
+src/frob/strata/** long-functions to zero across ~29 files -- verified on
+merged main: `frob arch . | grep -c 'long-function.*src/frob/strata'` = 0
+(repo total 158 -> 84). Reviewer APPROVE (independent execution): behavior
+preservation traced through the security-critical exhaustiveness/crash/
+compliance/lint/reachability paths, every touched frob: directive confirmed
+still bound to its intended public symbol (no T-0297 wrong-symbol rebind),
+all 6 ty-regression repairs verified faithful type-narrowing (not logic
+changes), public API unchanged, `pytest tests/unit/strata tests/system`,
+`TestRealGateGreen`, and litmus all green, COV001 clean. Cargo direct-invoke
+build failure is the known worktree-natives interpreter artifact, not a
+regression (`make core` + pytest exercise the natives end-to-end and pass).
+
 Investigated/implemented 2026-07-19 (worktree agent-a2f9677333642e99d, commits ec02bb7,
 4e131bf): scoped to 5 files only (_export.py, _facts.py, _host.py, _host_isolation.py,
 _infra.py) per dispatch -- the other strata files in the original ~74-warning survey
