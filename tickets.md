@@ -5130,7 +5130,7 @@ T-0254 Windows pillar. Generalize the HostManifest (T-0255, Linux/systemd-first)
 ```yaml
 id: T-0262
 title: 'std.krb: Kerberos/AD domain trust, SPNs, and delegation as first-class strata'
-state: queued
+state: in-progress
 kind: security
 origin: human
 created: '2026-07-18'
@@ -5144,12 +5144,146 @@ scope:
 - docs/strata/**
 - tests/**
 - tickets.md
-evidence: []
+- CHANGELOG.md
+- pyproject.toml
+- .frob-release.json
+- strata-core/Cargo.lock
+- frob-core/Cargo.lock
+- uv.lock
+evidence:
+- tests/unit/test_strata_tmlanguage.py::test_clause_keywords_covered_by_grammar
+- tests/unit/strata/test_krb.py::TestKrbAttrs::test_desugars
+- tests/unit/strata/test_krb.py::TestKrbAttrs::test_no_clauses_desugars_to_empty
+- tests/unit/strata/test_krb.py::TestKrbManifest::test_reads
+- tests/unit/strata/test_krb.py::TestKrbManifest::test_node_with_no_krb_attrs_returns_none
+- tests/unit/strata/test_krb.py::TestKrbTrustFlows::test_sync
+- tests/unit/strata/test_krb.py::TestKrbTrustFlows::test_two_way_synthesizes_reverse_edge_too
+- tests/unit/strata/test_krb.py::TestKrbTrustFlows::test_no_trusts_synthesizes_nothing
+- tests/unit/strata/test_krb.py::TestFlowAuthVia::test_read
+- tests/unit/strata/test_krb.py::TestFlowAuthVia::test_flow_with_no_krb_attrs_returns_none
+- tests/unit/strata/test_litmus_krb.py::TestKrbDeclaredLitmus::test_declared_manifest_round_trips_every_field
+- tests/unit/strata/test_litmus_krb.py::TestKrbDeclaredLitmus::test_two_way_transitive_trust_synthesizes_both_directions
+- tests/unit/strata/test_litmus_krb.py::TestKrbDeclaredLitmus::test_flow_authenticates_via_reads_ticket_kind
+- tests/unit/strata/test_litmus_krb.py::TestKrbDeclaredLitmus::test_kdc_node_manifest_has_no_delegation
+- tests/unit/strata/test_litmus_krb.py::TestKrbUndeclaredLitmus::test_undeclared_node_has_no_manifest
 attachments: []
 acceptance: []
 threat: elevation-of-privilege
 ```
 T-0254 auth pillar. Model the Kerberos/Active-Directory layer that sits between OS principals and the backend so domain auth becomes provable architecture. New std.krb vocabulary: a realm/domain and its KDC as trust-lattice nodes; a service principal name (SPN) bound to a service account (the runs_as / windows service account from T-0255/T-0261); an authenticates-via edge (a flow crosses a Kerberos boundary -- ticket-granting, service-ticket); and DELEGATION as an explicit, typed declaration -- none | constrained target=<spn-set> | rbcd | unconstrained. Delegation is the crown-jewel modeling target because it is the classic movement vector. Domain trusts (one-way/two-way, transitive) join the lattice so cross-realm reachability is model-checked. Elaborate into the KernelModel so existing flow/noflow/reach machinery applies to ticket flows. This ticket is the MODEL + vocabulary only; the delegation-abuse obligations live in T-0263. Grammar + tmLanguage drift-lock, litmus, docs/strata/krb.md. std.krb must compose with both linux (MIT/Heimdal keytabs) and windows (AD) host backends.
+
+## Done report
+
+Changed:
+- `strata-core/src/parse.rs::parse_node` -- new node clauses `realm "NAME"`,
+  `kdc`, `spn "SPN"`+, `delegation none|constrained|rbcd|unconstrained
+  [target "SPN"]*`, `trusts IDENT [direction "one-way"|"two-way"]
+  [transitive]`+, emitted as `krb_realm`/`krb_is_kdc`/`krb_spns`/
+  `krb_delegation`/`krb_delegation_targets`/`krb_trusts` JSON fields.
+- `strata-core/src/parse.rs::parse_flow` -- new flow clause
+  `authenticates_via tgt|st`, desugars to a `krb_ticket=<kind>` attr.
+- `src/frob/strata/_ast.py::NodeDecl` -- new `krb_realm`/`krb_is_kdc`/
+  `krb_spns`/`krb_delegation`/`krb_delegation_targets`/`krb_trusts` fields.
+- `src/frob/strata/_ast.py::KrbTrustDecl` (new) -- typed
+  target/direction/transitive AST model for a `trusts` clause.
+- `src/frob/strata/_krb.py` (new module) -- `KrbDelegationKind`,
+  `KrbTrust`, `KrbManifest`, `krb_attrs` (desugar), `krb_manifest_for`
+  (node read-back), `krb_trust_flows` (domain-trust `Flow` synthesis),
+  `flow_authenticates_via` (flow read-back).
+- `src/frob/strata/_elaborate.py::_elaborate_node` -- calls `krb_attrs`
+  the same way `host_attrs` is called.
+- `src/frob/strata/_elaborate.py::_elaborate_module` -- calls
+  `krb_trust_flows(elaborated_nodes)` and folds the result into
+  `extra_flows` so domain trusts join the reachability closure.
+- `src/frob/strata/_elaborate.py::_validate_krb` (new) -- fails closed on
+  an unknown `delegation` kind, a `target` clause under a non-constrained
+  delegation kind, or a `trusts` clause naming an undeclared node.
+- `src/frob/strata/__init__.py` -- exports `KrbTrustDecl`,
+  `KrbDelegationKind`, `KrbManifest`, `KrbTrust`, `krb_manifest_for`,
+  `krb_trust_flows`, `flow_authenticates_via`.
+- `editors/vscode-strata/syntaxes/strata.tmLanguage.json` -- added
+  `authenticates_via`, `delegation`, `direction`, `kdc`, `realm`, `spn`,
+  `target`, `transitive`, `trusts` to the clause-keywords pattern
+  (`ticket` was already present).
+- `docs/strata/krb.md` (new) -- full vocabulary, elaboration, platform-
+  neutrality, and scope-boundary documentation.
+- `tests/unit/strata/test_krb.py` (new), `tests/unit/strata/
+  test_litmus_krb.py` (new), `tests/unit/strata/litmus/
+  krb_declared.strata` (new), `tests/unit/strata/litmus/
+  krb_undeclared.strata` (new).
+- `CHANGELOG.md` -- new `[0.9.0] - unreleased` section (public-API bump,
+  REL001) with the T-0262 entry.
+- `pyproject.toml`, `.frob-release.json`, `strata-core/Cargo.lock`,
+  `frob-core/Cargo.lock`, `uv.lock` -- version bump 0.8.0 -> 0.9.0 and
+  `frob release stamp` artifact (all four consequences of the version
+  bump, not independent edits).
+- `tickets.md` -- this Done report; T-0262's `scope` list widened to
+  include `CHANGELOG.md`/`pyproject.toml`/`.frob-release.json`/
+  `strata-core/Cargo.lock`/`frob-core/Cargo.lock`/`uv.lock` (all fired
+  SCOPE001 as release-mechanics files outside the original glob list;
+  extended per the gate's own remedy message, not silently worked
+  around), followed by a re-run of `frob ticket sweep T-0262`.
+
+Scope cuts disclosed (see docs/strata/krb.md#scope-boundary):
+- No `store`-level std.krb clauses (`std.host` extended `runs_as`/`unit`/
+  `owns`/`listens` to `parse_store` too; this ticket adds `realm`/`kdc`/
+  `spn`/`delegation`/`trusts` to `parse_node` only). A domain-joined
+  datastore cannot declare std.krb facts today -- follow-up work, not
+  filed as a separate ticket in this pass (small, well-precedented).
+- No delegation-abuse obligations (explicitly T-0263's scope per the
+  ticket body).
+- No generator/deploy-time mechanism (kinit, keytab provisioning,
+  gMSA install) -- mirrors `std.host`'s own manifest-only cut.
+
+Version: bumped `pyproject.toml` 0.8.0 -> 0.9.0 (new `[0.9.0] -
+unreleased` CHANGELOG section, not folded into the existing 0.8.0
+section) because `frob release check` reported `since 0.8.0: minor
+change -> need >= 0.9.0` for the new `frob.strata._krb`/`_ast.KrbTrustDecl`
+public surface; `frob release stamp` run afterward (`.frob-release.json`
+now records 886 public symbols at 0.9.0).
+
+Evidence (fresh `pytest --collect-only -q -o addopts=""` pass, all 15
+ids confirmed collected and passing):
+- tests/unit/test_strata_tmlanguage.py::test_clause_keywords_covered_by_grammar
+- tests/unit/strata/test_krb.py::TestKrbAttrs::test_desugars
+- tests/unit/strata/test_krb.py::TestKrbAttrs::test_no_clauses_desugars_to_empty
+- tests/unit/strata/test_krb.py::TestKrbManifest::test_reads
+- tests/unit/strata/test_krb.py::TestKrbManifest::test_node_with_no_krb_attrs_returns_none
+- tests/unit/strata/test_krb.py::TestKrbTrustFlows::test_sync
+- tests/unit/strata/test_krb.py::TestKrbTrustFlows::test_two_way_synthesizes_reverse_edge_too
+- tests/unit/strata/test_krb.py::TestKrbTrustFlows::test_no_trusts_synthesizes_nothing
+- tests/unit/strata/test_krb.py::TestFlowAuthVia::test_read
+- tests/unit/strata/test_krb.py::TestFlowAuthVia::test_flow_with_no_krb_attrs_returns_none
+- tests/unit/strata/test_litmus_krb.py::TestKrbDeclaredLitmus::test_declared_manifest_round_trips_every_field
+- tests/unit/strata/test_litmus_krb.py::TestKrbDeclaredLitmus::test_two_way_transitive_trust_synthesizes_both_directions
+- tests/unit/strata/test_litmus_krb.py::TestKrbDeclaredLitmus::test_flow_authenticates_via_reads_ticket_kind
+- tests/unit/strata/test_litmus_krb.py::TestKrbDeclaredLitmus::test_kdc_node_manifest_has_no_delegation
+- tests/unit/strata/test_litmus_krb.py::TestKrbUndeclaredLitmus::test_undeclared_node_has_no_manifest
+
+Also ran (green, not attached as ticket evidence since it's the repo's
+existing self-conformance gate check, not new coverage this ticket
+added): `tests/unit/strata/test_selfconform.py::TestRealGateGreen`.
+
+Filed: none -- the store-level std.krb cut above is disclosed rather
+than filed as a new ticket (small precedented follow-up); no other
+out-of-scope work was found.
+
+Gates:
+- `uv run frob check --ticket T-0262` (after the scope widening and a
+  fresh `frob ticket sweep T-0262`): 0 errors, 5 warnings, 27 waived.
+- `uv run frob check` (full, unscoped): 0 errors, 5 warnings, 27 waived,
+  0 DRIFT002, `ruff-check` no issues, `ruff-format` all files formatted,
+  `ty` no issues.
+- Full `uv run pytest` (repo-wide, `-q`): all green except one
+  PRE-EXISTING, unrelated flaky test
+  (`tests/test_vet.py::TestSourceLocation::test_locate_pypi_source_missing_returns_none`,
+  a `FileNotFoundError` racing a real `~/.cache/uv` temp dir scan on
+  this machine -- reran in isolation and it passed; not touched by this
+  ticket's diff).
+- `git diff main --diff-filter=D --stat`: empty.
+
+Ticket left OPEN (not closed) for reviewer per the review-gated flow --
+`frob ticket close T-0262` was intentionally not run.
 
 <!-- ticket:T-0263 -->
 ```yaml

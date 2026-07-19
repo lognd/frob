@@ -35,6 +35,7 @@ from ._code_binding import _CODE_PREFIX
 from ._errors import StrataError
 from ._host import host_attrs
 from ._infra import elaborate_infra
+from ._krb import KrbDelegationKind, krb_attrs, krb_trust_flows
 from ._models import (
     LABELS,
     TRUST,
@@ -147,6 +148,21 @@ def _elaborate_node(decl: NodeDecl) -> Node:
         # host_attrs`, the one shared encoding for both callers).
         _log.debug("node %s declares %d std.host attr(s)", decl.id, len(host))
         attrs = (*attrs, *host)
+    krb = krb_attrs(
+        realm=decl.krb_realm,
+        is_kdc=decl.krb_is_kdc,
+        spns=decl.krb_spns,
+        delegation=decl.krb_delegation,
+        delegation_targets=decl.krb_delegation_targets,
+        trusts=tuple((t.target, t.direction, t.transitive) for t in decl.krb_trusts),
+    )
+    if krb:
+        # T-0262: std.krb -- realm/kdc/spn/delegation/trusts desugar to
+        # attrs the SAME way std.host's clauses do just above
+        # (`_krb.py::krb_attrs`, the one shared encoding for this
+        # vocabulary).
+        _log.debug("node %s declares %d std.krb attr(s)", decl.id, len(krb))
+        attrs = (*attrs, *krb)
     capacity = None
     if decl.capacity is not None:
         capacity = Capacity(
@@ -592,6 +608,49 @@ def _validate_observability(module: Module) -> Result[None, StrataError]:
     return Ok(None)
 
 
+def _validate_krb(module: Module) -> Result[None, StrataError]:
+    """Structural checks for std.krb node properties (T-0262).
+
+    Fails closed (law 2): a `delegation` kind outside the fixed vocabulary
+    {none, constrained, rbcd, unconstrained}; a `target` clause on any
+    delegation kind OTHER than `constrained` (a target spn-set is only
+    meaningful there -- silently accepting it under `rbcd`/`unconstrained`
+    would let a stray clause pass through unexamined); or a `trusts` clause
+    naming a node id that is not declared, mirroring `panics_contained_by`'s
+    dangling-reference check just above.
+    """
+    known = _known_node_ids(module)
+    for decl in module.nodes:
+        if decl.krb_delegation is not None:
+            try:
+                KrbDelegationKind(decl.krb_delegation)
+            except ValueError:
+                _log.error(
+                    "node %s: delegation kind %r is not in the fixed vocabulary %s",
+                    decl.id,
+                    decl.krb_delegation,
+                    [k.value for k in KrbDelegationKind],
+                )
+                return Err(StrataError.UnknownLogClass)
+        if decl.krb_delegation_targets and decl.krb_delegation != "constrained":
+            _log.error(
+                "node %s: delegation target(s) declared but delegation kind "
+                "is %r, not 'constrained'",
+                decl.id,
+                decl.krb_delegation,
+            )
+            return Err(StrataError.UnknownReference)
+        for trust in decl.krb_trusts:
+            if trust.target not in known:
+                _log.error(
+                    "node %s: trusts target %r is not declared",
+                    decl.id,
+                    trust.target,
+                )
+                return Err(StrataError.UnknownReference)
+    return Ok(None)
+
+
 def _elaborate_boundary_phase_flows(module: Module) -> tuple[Flow, ...]:
     """Build the outcome-conditioned `effect`/`record` flows a phase block implies.
 
@@ -893,17 +952,28 @@ def elaborate(module: Module) -> Result[KernelModel, StrataError]:
     observability_ok = _validate_observability(module)
     if observability_ok.is_err:
         return Err(observability_ok.danger_err)
+    krb_ok = _validate_krb(module)
+    if krb_ok.is_err:
+        return Err(krb_ok.danger_err)
     scenarios_ok = _validate_scenarios(module)
     if scenarios_ok.is_err:
         return Err(scenarios_ok.danger_err)
 
+    elaborated_nodes = tuple(_elaborate_node(n) for n in module.nodes)
     extra_flows = (
         *_elaborate_boundary_phase_flows(module),
         *_elaborate_operation_flows(module),
         *_elaborate_observe_flows(module),
+        # T-0262: std.krb domain trusts join the reachability lattice as
+        # synthesized Flow edges, same "desugar into an existing kernel
+        # primitive" convention the three sources above already use
+        # (charter law 1) -- see `_krb.py::krb_trust_flows` module
+        # docstring for why this happens here and not as a scenario
+        # rewrite.
+        *krb_trust_flows(elaborated_nodes),
     )
     model = KernelModel(
-        nodes=tuple(_elaborate_node(n) for n in module.nodes),
+        nodes=elaborated_nodes,
         flows=(*(_elaborate_flow(f) for f in module.flows), *extra_flows),
         boundaries=tuple(_elaborate_boundary(b) for b in module.boundaries),
         claims=tuple(_elaborate_claim(c) for c in module.claims),

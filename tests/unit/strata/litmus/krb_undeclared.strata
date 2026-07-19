@@ -1,0 +1,14 @@
+// krb_undeclared.strata -- the twin of krb_declared.strata (T-0262): no
+// std.krb clause at all. `krb_manifest_for` must return None, not an
+// empty-but-present manifest, for a node that never opted into std.krb --
+// distinguishing "no Kerberos-layer facts" from "a Kerberos layer
+// declared with nothing set" (mirrors host_undeclared.strata's contract
+// for `host_manifest_for`).
+//
+// tested end to end by tests/unit/strata/test_litmus_krb.py.
+
+module krb_undeclared
+
+node app : trusted {
+    clearance Internal;
+}

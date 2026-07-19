@@ -21,6 +21,7 @@ from frob.strata._ast import (
     FlowDecl,
     ForbidCall,
     ForbidImport,
+    KrbTrustDecl,
     Mediate,
     Module,
     NodeDecl,
@@ -137,6 +138,14 @@ from frob.strata._host_isolation import (
     host_movement_flows,
 )
 from frob.strata._infra import InfraExpansion, elaborate_infra
+from frob.strata._krb import (
+    KrbDelegationKind,
+    KrbManifest,
+    KrbTrust,
+    flow_authenticates_via,
+    krb_manifest_for,
+    krb_trust_flows,
+)
 from frob.strata._lint import (
     RISKY_CAPABILITY_KINDS,
     LintReport,
@@ -337,6 +346,7 @@ __all__ = [
     "InfraExpansion",
     "KernelModel",
     "is_managed",
+    "KrbTrustDecl",
     "Lattice",
     "Mediate",
     "Metric",
@@ -437,6 +447,12 @@ __all__ = [
     "generate_fault_injection_cases",
     "host_manifest_for",
     "host_movement_flows",
+    "flow_authenticates_via",
+    "krb_manifest_for",
+    "krb_trust_flows",
+    "KrbDelegationKind",
+    "KrbManifest",
+    "KrbTrust",
     "node_allowed_syscalls",
     "node_may_kinds",
     "load_design_ids",
