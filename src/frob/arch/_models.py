@@ -27,6 +27,16 @@ class ArchSuggestion(BaseModel):
     severity: ArchSeverity
     message: str
     detail: str | None = None
+    # T-0289: set for checks that are about exactly one symbol (currently
+    # long-function) so `frob.gates`' ARCH001 job can bind a `frob:waive`
+    # directive to the precise function (`path::qualname`) instead of the
+    # whole file, and so a `ceiling=` waiver can compare against `metric`.
+    symref: str | None = None
+    # T-0289: the raw measured value the finding is about (e.g. a
+    # long-function's line count) -- lets a reasoned waiver's `ceiling=N`
+    # re-fire once the function outgrows the ceiling, instead of muting it
+    # permanently.
+    metric: int | None = None
 
 
 # frob:doc docs/modules/arch.md#arch-result

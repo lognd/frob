@@ -280,10 +280,15 @@ def test_check_run_check_arch_integration(tmp_path: Path) -> None:
     # Exercises frob.check across a real analysis boundary: run_check with the
     # arch stage drives frob.arch.analyze_project over a real source tree and
     # aggregates its diagnostics into a CheckResult. A file with a deliberately
-    # over-long function must surface a frob-arch diagnostic, proving the
+    # over-long AND structurally complex function (T-0289: a merely long-but-
+    # flat body like a linear `x0 = 0; x1 = 1; ...` block no longer fires,
+    # by design) must surface a frob-arch diagnostic, proving the
     # orchestration wiring reaches the analyzer and back, not a stub.
-    long_body = "\n".join(f"    x{i} = {i}" for i in range(80))
-    (tmp_path / "big.py").write_text(f"def huge():\n{long_body}\n    return x0\n")
+    branches = "\n".join(
+        f"    if items[{i}] and total:\n        total += items[{i}]" for i in range(30)
+    )
+    body = f"def huge(items):\n    total = 0\n{branches}\n    return total\n"
+    (tmp_path / "big.py").write_text(body)
 
     result = run_check(tmp_path, only=frozenset({"arch"}))
     assert isinstance(result, CheckResult)
