@@ -8205,7 +8205,7 @@ threat: null
 ```yaml
 id: T-0296
 title: 'arch: core-commands long-function burndown to zero'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-19'
