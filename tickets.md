@@ -463,7 +463,7 @@ transitioned to `in-progress` by `frob ticket start`; reviewer closes.
 id: T-0195
 title: 'reverse-templating report: CloneTemplate/CloneBinding models, extraction-signature
   synthesis in DUP001 messages'
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-07-18'
@@ -2338,3 +2338,99 @@ acceptance:
 threat: null
 ```
 Follow-up from T-0214 (reviewer-recommended, not blocking). T-0214 closed the exploitable COV002 grace bypass by requiring the bound DONE tickets own <!-- ticket:T-#### --> marker line to fall inside the diffs tickets.md hunk. That closes the easy/invisible case (unrelated ticket close elsewhere in the commit). Residual narrow gap: marker-in-hunk is a PROXY for "closing" -- it does not verify a state TRANSITION, so any edit to a stale DONE tickets own entry that touches its marker line (typo fix in its Done report, evidence append, reformat) grants grace to a bound-but-uncovered stale symbol. Narrow + visible in diff review, hence not blocking, but should be tightened: compare the tickets state in the diffs BEFORE vs AFTER tickets.md (open-before / done-after) rather than mere marker-span overlap. Requires diffing ledger state pre/post within the gate.
+
+<!-- ticket:T-0321 -->
+```yaml
+id: T-0321
+title: 'frob daemon epic: warm shared project server (compute-once, serve-many, push-not-poll)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-19'
+blocked_by: []
+parent: null
+scope:
+- src/frob/serve/**,src/frob/**,docs/**,tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Expands T-0177 into a long-lived per-project daemon that holds warm, incrementally-maintained state (obligation graph + per-symbol digests, test collection, coverage, dup analysis, gate results) and serves it to all clients (agents, make, MCP, CI) via single-flight execution + a content-addressed result cache. Root cause it solves (observed live over a long multi-agent session): N parallel agents each redundantly recompute the same expensive state (make core, make coverage ~5min each, frob check 114s stages, ticket sweep dup-scan ~90s) in isolated worktrees with no sharing, and background-then-stall on make coverage. Children: (a) warm graph + FS-watch incremental invalidation by digest; (b) single-flight coverage/collection keyed by source digest, shared across worktrees with identical content; (c) local unix-socket JSON-RPC query protocol; (d) frob CLI auto-proxies to the daemon if running, else in-process (make targets become thin shims); (e) subscribe/push events (coverage-fresh, graph-changed) -- the stall-killer; (f) resource leases/semaphores (coverage=1 writer). MCP becomes one frontend over the same core. See the design discussion 2026-07-19.
+
+<!-- ticket:T-0322 -->
+```yaml
+id: T-0322
+title: 'coverage --wait / push contract: agents block on a socket recv, never background-and-stall'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-19'
+blocked_by: []
+parent: null
+scope:
+- src/frob/app/**,src/frob/testing/**,src/frob/serve/**,tests/**,tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+THE stall-killer, extractable before the full daemon. Observed: implementer agents run make coverage in the background and stall waiting for a Monitor notification they cannot act on -- work done, uncommitted, looping 'waiting for coverage'; coordinator had to take over ~5 agents this session. Provide a blocking-until-fresh coverage/test contract (a foreground  that blocks on completion, backed by single-flight so concurrent callers share one run) so an agent gets a definitive fresh-or-failed result inline instead of babysitting a detached job. Interim (pre-daemon): a proper foreground make-coverage wrapper + single-flight file lock so 6 agents don't each run the full suite.
+
+<!-- ticket:T-0323 -->
+```yaml
+id: T-0323
+title: 'git merge driver for tickets.md: auto splice_ledger via .gitattributes'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-19'
+blocked_by: []
+parent: null
+scope:
+- .gitattributes,src/frob/tickets/**,docs/**,tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Every worktree merge both-sides-appends tickets.md and conflicts; the coordinator ran splice_ledger by hand ~8 times this session, and the evidence: yaml field kept getting clobbered (re-recorded evidence on ~5 tickets). Register a git merge driver (frob tickets merge-driver) wired via .gitattributes so  auto-resolves both-sides-append conflicts with splice_ledger (dedupe by id, archive-aware, preserve evidence). Eliminates manual splicing AND the evidence-lost-in-merge class. Consider also storing evidence in a merge-robust form so it survives.
+
+<!-- ticket:T-0324 -->
+```yaml
+id: T-0324
+title: evidence/COV003 resolution must accept parametrized node ids (file::Class::method[param])
+state: queued
+kind: bug
+origin: human
+created: '2026-07-19'
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/**,src/frob/testing/**,tests/**,tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+frob ticket evidence and COV003 reject a specific parametrized case id like ...test_x[015-python-...] (UnknownEvidence), only the bracket-less base resolves. Hit repeatedly this session (T-0222 auto-generated fixture evidence). T-0307 fixed parametrized COUNTING but evidence RESOLUTION of a [param] id is a separate path -- make it resolve a bracketed param id to its collected node. Pairs with T-0298 (file/dir-level evidence).
+
+<!-- ticket:T-0325 -->
+```yaml
+id: T-0325
+title: 'doc-drift digest graph: warm ''what code/docs must update when X changes''
+  query (the north-star)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-19'
+blocked_by: []
+parent: null
+scope:
+- src/frob/graph/**,src/frob/serve/**,docs/**,tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+The user's original vision (CLAUDE.md): every function/class/etc. carries a digest in .frob/, every doc is connected, and frob answers -- without running a test, like a static type-checker for docs -- 'X's digest changed, here is the transitively-affected doc + code set that must be reviewed/updated.' Only practical if the graph is kept WARM (frob daemon epic). Query surface: graph.affects(symbol) -> impacted docs+symbols; a gate that fails when a touched symbol's dependents' digests weren't acked. This is the same project as the daemon; file so the digest-graph work is tracked as its own deliverable.
