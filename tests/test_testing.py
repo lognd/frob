@@ -608,6 +608,113 @@ class TestCollectPythonTests:
         assert len(calls) == 1
 
 
+class TestCollectPythonTestsNestedRunner:
+    def test_nested_test_runner_cwd_is_collected_and_rerooted(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_python_tests
+        # T-0317: a [[test.runner]] pointed at a nested subdir project must
+        # have its node ids collected (not just run) -- the outer-tree-only
+        # collection pass never visits it, so evidence bound inside it is
+        # otherwise permanently unresolvable.
+        import frob.testing._collect as collect_mod
+
+        _write(
+            tmp_path,
+            "frob.toml",
+            """
+            [[test.runner]]
+            language = "python"
+            command = ["uv", "run", "pytest", "-q", "{ids}"]
+            all_command = ["uv", "run", "pytest", "-q"]
+            cwd = "."
+
+            [[test.runner]]
+            language = "python"
+            command = ["uv", "run", "pytest", "-q", "{ids}"]
+            all_command = ["uv", "run", "pytest", "-q"]
+            cwd = "nested"
+            """,
+        )
+        _write(
+            tmp_path,
+            "tests/test_outer.py",
+            """
+            def test_outer() -> None:
+                assert True
+            """,
+        )
+        _write(
+            tmp_path,
+            "nested/tests/test_inner.py",
+            """
+            def test_inner() -> None:
+                assert True
+            """,
+        )
+
+        calls: list[tuple[tuple[str, ...], Path | None]] = []
+
+        def fake_run_argv(argv, *, cwd=None, timeout_s=300.0):
+            calls.append((tuple(argv), cwd))
+            if cwd == tmp_path / "nested":
+                stdout = "tests/test_inner.py::test_inner\n"
+            else:
+                stdout = "tests/test_outer.py::test_outer\n"
+            return Ok(
+                ProcResult(argv=tuple(argv), returncode=0, stdout=stdout, stderr="")
+            )
+
+        monkeypatch.setattr(collect_mod, "run_argv", fake_run_argv)
+
+        result = collect_mod.collect_python_tests(tmp_path)
+        assert result.is_ok
+        node_ids = result.danger_ok.node_ids
+        assert node_ids == frozenset(
+            {
+                "tests/test_outer.py::test_outer",
+                "nested/tests/test_inner.py::test_inner",
+            }
+        )
+        # one spawn for the outer tree, one for the nested runner's own cwd
+        assert len(calls) == 2
+        nested_calls = [c for c in calls if c[1] == tmp_path / "nested"]
+        assert len(nested_calls) == 1
+
+    def test_missing_nested_runner_dir_degrades_to_empty_not_err(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_python_tests
+        import frob.testing._collect as collect_mod
+
+        _write(
+            tmp_path,
+            "frob.toml",
+            """
+            [[test.runner]]
+            language = "python"
+            command = ["uv", "run", "pytest", "-q", "{ids}"]
+            all_command = ["uv", "run", "pytest", "-q"]
+            cwd = "does-not-exist"
+            """,
+        )
+        _write(
+            tmp_path,
+            "tests/test_outer.py",
+            """
+            def test_outer() -> None:
+                assert True
+            """,
+        )
+        calls = _stub_collect_only(monkeypatch, collect_mod)
+
+        result = collect_mod.collect_python_tests(tmp_path)
+        assert result.is_ok
+        # only the outer-tree spawn happens; the missing nested cwd is
+        # skipped rather than erroring the whole collection
+        assert len(calls) == 1
+
+
 class TestRustFilterPlaceholder:
     def test_to_rust_filter_strips_path_and_rejoins_dots(self) -> None:
         # frob:tests src/frob/testing/_runners.py::_to_rust_filter
