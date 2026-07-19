@@ -9546,7 +9546,7 @@ FROBLEMS (lograder, aprog-public, feldspar): a frob:tests binding on a @pytest.m
 id: T-0308
 title: capability scanner matches inside comments/strings + unbounded substrings (net,
   ffi/napi)
-state: queued
+state: done
 kind: bug
 origin: auditor
 created: '2026-07-19'
@@ -9554,19 +9554,41 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/vet/**,tests/**,docs/modules/vet.md,tickets.md
-evidence: []
+evidence:
+- tests/test_vet.py::TestCapabilityScan::test_comment_only_needle_does_not_fire
+- tests/test_vet.py::TestCapabilityScan::test_real_code_needle_still_fires_alongside_comment
+- tests/test_capability_registry.py::TestNegativeFixtures::test_openapi_generated_ts_is_not_ffi
+- tests/test_capability_registry.py::TestNegativeFixtures::test_real_napi_import_still_fires_ffi
 attachments: []
 acceptance: []
 threat: null
 ```
 FROBLEMS (graphite, aprog-public): scan_file_capabilities pattern-matches over comment/string text, not just executable code, and uses unbounded substring matches. (1) net/fetch_url fired from a '# ...requests.get(url)...' COMMENT in aprog-public starter.py (no real net call). (2) ffi fired on the plain word 'openapi' because the ffi needle is a bare substring 'napi' (o-p-e-n-napi) in openapi-typescript codegen. Both forced repos to declare capabilities they don't have + discharge bogus CWE obligations via assume/waive. Fix: (a) give the scanner comment/string awareness (do not match inside #-comments / string literals where the language allows cheap detection), (b) word-boundary the needles (napi, etc.). Litmus per needle: a commented-out requests.get and the word openapi must NOT fire.
 
+## Done report
+ALREADY RESOLVED by prior frob work -- the sibling-repo FROBLEMS entries
+were written 2026-07-18, before these landed. (a) Comment-awareness shipped
+via T-0209: `_capability.py::_comment_byte_spans` (frob.lang raw_tree +
+COMMENT_TYPES) and `_needle_hits_outside_comments` exclude any needle fully
+inside a tree-sitter COMMENT node, for python `#` and `//`,`/* */` for
+TS/JS/rust/C/C++, applied in scan_file_capabilities/operations/fingerprints.
+(b) Word-boundary needles shipped via T-0305/T-0019: the TS `ffi` needle no
+longer carries a bare `napi` substring; `_has_word_boundary_napi` requires
+non-identifier bytes on both sides, so `openapi` never fires while
+`require('napi')`/`ffi-napi` still do. Audited the full ~150-needle table --
+every short needle is paren-terminated (`eval(`,`open(`) or dotted/hyphenated
+(`os.exec`,`ffi-napi`); no other bare-fragment-of-a-common-word risk.
+Verified all four litmus scenarios pass on current main (comment-only
+requests.get -> no net; openapi(ts) -> no ffi; real requests.get -> net;
+real napi import -> ffi). Locked by the evidence tests above. No source
+change needed; closing as resolved-by-T-0209/T-0305/T-0019.
+
 <!-- ticket:T-0309 -->
 ```yaml
 id: T-0309
 title: 'DSL: a trailing ''# noqa''/#-led tail on a directive line silently drops the
   directive'
-state: queued
+state: in-progress
 kind: bug
 origin: auditor
 created: '2026-07-19'
@@ -9645,7 +9667,7 @@ FROBLEMS (aprog-private): LINT004's detail string says 'node <id> holds risky ca
 id: T-0313
 title: COV001 frob:doc binder only inspects the nearest preceding comment line, not
   the whole block
-state: queued
+state: in-progress
 kind: bug
 origin: auditor
 created: '2026-07-19'
