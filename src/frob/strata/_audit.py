@@ -19,7 +19,16 @@ security family's global `VIEWS`, so `evaluate_threats` -- which always
 resolves against the module-global `VIEWS` -- cannot be reused as-is for
 the quality family; `_evaluate_family` is the SAME three-call assembly
 `evaluate_threats` itself performs, just parameterized on which view table
-to resolve against)."""
+to resolve against).
+
+T-0280: HOST001/HOST002 movement-impossibility proofs and the compromised-
+user blast-radius scenario (`_host_isolation.py::evaluate_host_isolation_
+waived`, `_scenarios.py::build_compromised_user_scenario`, both ALREADY
+SHIPPED and sound, T-0256) are wired into `evaluate_exhaustiveness` the
+SAME zero-new-detection way -- `_host_isolation_gap`/`_blast_radius_gaps`
+are pure adapters, mirroring `_lint_gaps`/`_pii_gaps`. Before this, neither
+function had a caller reaching them from `frob sys audit`, so a real repo
+had no way to run the proof without a hand-written harness."""
 
 from __future__ import annotations
 
@@ -35,9 +44,16 @@ from ._cve_fingerprint import (
     check_fingerprint_catalog_drift,
 )
 from ._errors import StrataError
+from ._host import host_manifest_for
+from ._host_isolation import HostIsolationViolation, evaluate_host_isolation_waived
 from ._lint import LintViolation, evaluate_lint
-from ._models import KernelModel
+from ._models import KernelModel, Verdict
 from ._pii import PiiViolation, evaluate_pii
+from ._scenarios import (
+    ScenarioResult,
+    build_compromised_user_scenario,
+    evaluate_scenarios,
+)
 from ._selfconform import (
     SYS_STALE_DESIGN,
     SYS_UNDECLARED_INTERFACE,
@@ -61,6 +77,19 @@ from ._threat import (
 from ._waive import STALE_WAIVER_RULE, apply_waivers, stale_detail
 
 _log = get_logger(__name__)
+
+#: HOST001/HOST002 own their waiver channel exactly like SYS100-102
+#: (`_selfconform.py`'s `SYS_*` constants): `evaluate_host_isolation_waived`
+#: already runs each finding through `_waive.py::apply_waivers` scoped to
+#: its own rule family (`_host_isolation.py` module docstring's
+#: `HOST_MULTI_INSTANCE_WAIVER_FAMILIES` precedent) BEFORE this module ever
+#: sees a result, so this module's OWN generic `apply_waivers` pass over
+#: `gaps` must exclude both rule ids here too -- otherwise a HOST001/
+#: HOST002 waiver clause, already correctly matched inside `evaluate_host_
+#: isolation_waived`, would be re-evaluated against a `gaps` list that no
+#: longer contains the (now-suppressed) finding, and get misreported STALE
+#: a second time (T-0280).
+_HOST_RULE_IDS = frozenset({"HOST001", "HOST002"})
 
 #: Default configured views per family -- every view each family's catalog
 #: ships, so a default `frob sys audit` run proves exhaustiveness against
@@ -236,6 +265,55 @@ def _fingerprint_gaps(
     )
 
 
+def _host_isolation_gap(v: HostIsolationViolation) -> FamilyGap:
+    """Adapt one `_host_isolation.py::HostIsolationViolation` (HOST001
+    lateral or HOST002 vertical) into a `FamilyGap`, reported under the
+    fixed `"model"` view -- the same fixed-view shape `_lint_gaps`/
+    `_pii_gaps` use (HOST001/HOST002 are structural per-model joins, not a
+    catalog-completeness check like THREAT001). `target` names the
+    implicated service user (not a node id) since a user may be declared
+    by more than one node (`evaluate_host_isolation_waived`'s own
+    `target_of` docstring) -- callers waiving a HOST finding still write
+    the clause on a NODE, matched inside `evaluate_host_isolation_waived`
+    before this adapter ever runs, so `target` here is for report
+    readability only, not a second waiver-matching key."""
+    detail = v.detail or (f"user={v.user}" + (f" peer={v.peer}" if v.peer else ""))
+    return FamilyGap(
+        family="host",
+        view="model",
+        rule=v.rule,
+        detail=detail,
+        target=v.user,
+        sub_target=v.sub_target,
+    )
+
+
+def _blast_radius_gaps(
+    user: str, scenario_result: ScenarioResult
+) -> tuple[FamilyGap, ...]:
+    """Adapt one compromised-user scenario's REFUTED claims
+    (`_scenarios.py::build_compromised_user_scenario`) into `FamilyGap`s
+    under the fixed `"blast-radius"` view: a refuted `blast-radius:<user>:
+    <node>` claim means the compromise reached OUTSIDE that user's own
+    manifest slice -- exactly the failure HOST001/HOST002's structural
+    proofs exist to prevent (T-0280). PROVED/EVIDENCED/ASSUMED claims
+    contribute no gap; only REFUTED does, matching every other adapter in
+    this module reporting failures, not passes."""
+    return tuple(
+        FamilyGap(
+            family="host",
+            view="blast-radius",
+            rule="HOST-BLAST",
+            detail=result.detail
+            or f"compromised user {user!r} blast radius reaches beyond its "
+            f"own nodes (claim {result.claim_id})",
+            target=user,
+        )
+        for result in scenario_result.results
+        if result.verdict == Verdict.REFUTED
+    )
+
+
 def _evaluate_family(
     model: KernelModel,
     view: str,
@@ -275,6 +353,9 @@ def _evaluate_family(
 # frob:tests tests/unit/strata/test_audit.py::TestHardenedLitmus.test_hardened_clean
 # frob:tests tests/unit/strata/test_audit.py::TestExhaustiveness.test_pii_gap_reported
 # frob:tests tests/unit/strata/test_audit.py::TestExhaustiveness.test_lint_gap_reported
+# frob:tests tests/unit/strata/test_audit.py::TestHostWiring.test_shared_model_gaps
+# frob:tests tests/unit/strata/test_audit.py::TestHostWiring.test_hardened_model_proved
+# frob:tests tests/unit/strata/test_audit.py::TestHostWiring.test_no_runs_as_no_gaps
 # frob:waive TEST005 reason="Err branches need a deep StrataError; debt T-0160"
 def evaluate_exhaustiveness(
     model: KernelModel,
@@ -339,6 +420,52 @@ def evaluate_exhaustiveness(
     gaps.extend(_fingerprint_gaps(fingerprint_report.danger_ok))
     checked.append("cve-fingerprint:catalog")
 
+    # T-0280: HOST001 (lateral) + HOST002 (vertical) movement-impossibility
+    # proofs, folded in exactly like every other family above -- these were
+    # previously built and sound (T-0256) but had ZERO caller reaching them
+    # from `frob sys audit`, so a real repo could never see the verdict.
+    # `evaluate_host_isolation_waived` already applies HOST001/HOST002's OWN
+    # waiver channel internally (module docstring precedent, same as
+    # `check_self_conformance` owning SYS100-102's channel) -- `.kept` is
+    # already post-waiver, so it is folded straight into `gaps` here rather
+    # than re-run through this function's own `apply_waivers` call below
+    # (`_HOST_RULE_IDS` excludes both rule ids from that call's `in_scope`
+    # for exactly this reason).
+    host_report = evaluate_host_isolation_waived(model)
+    if host_report.is_err:
+        return Err(host_report.danger_err)
+    host001_applied, host002_applied = host_report.danger_ok
+    for host_applied in (host001_applied, host002_applied):
+        gaps.extend(_host_isolation_gap(v) for v in host_applied.kept)
+    checked.append("host:model")
+
+    # T-0280: one auto-generated compromised-user red-team scenario per
+    # `runs_as` service user declared anywhere in `model` -- the SAME
+    # "desugar to an auto-generated scenario, then reuse `evaluate_
+    # scenarios`" shape `_crash.py::_generate_crash_scenarios` already uses
+    # for `on crash` contracts, so a real repo proves (or refutes) blast-
+    # radius containment with zero manual scenario authoring.
+    users = sorted(
+        {
+            manifest.runs_as
+            for node in model.nodes
+            if (manifest := host_manifest_for(node)) is not None
+        }
+    )
+    for user in users:
+        scenario = build_compromised_user_scenario(
+            model, user, f"compromised-user:{user}"
+        )
+        if scenario.is_err:
+            return Err(scenario.danger_err)
+        scenario_model = model.model_copy(update={"scenarios": (scenario.danger_ok,)})
+        scenario_results = evaluate_scenarios(scenario_model)
+        if scenario_results.is_err:
+            return Err(scenario_results.danger_err)
+        for scenario_result in scenario_results.danger_ok:
+            gaps.extend(_blast_radius_gaps(user, scenario_result))
+        checked.append(f"host:blast-radius:{user}")
+
     # T-0174: apply every node's `waive` clause against this run's full gap
     # set before reporting -- a matched waiver moves its gap into `waived`
     # (still visible, never dropped); a waiver that matched nothing is
@@ -356,15 +483,22 @@ def evaluate_exhaustiveness(
         # single-instance-per-node and leaves `sub_target` `None`.
         sub_target_of=lambda g: g.sub_target,
         # T-0174: this call sees every THREAT/LINT/PII/compliance/
-        # CVE-fingerprint finding -- everything EXCEPT SYS100-102, which
-        # `check_self_conformance` owns (apply_waivers' `in_scope`
-        # docstring). Excluding the SYS rule ids here (rather than
-        # enumerating every rule this call DOES own) keeps this predicate
-        # correct as new gap-producing rule families are added -- a new
-        # rule id is in scope here by default, exactly like `gaps` itself
-        # already is.
+        # CVE-fingerprint finding -- everything EXCEPT SYS100-102 (owned by
+        # `check_self_conformance`) and HOST001/HOST002 (owned by
+        # `evaluate_host_isolation_waived`, T-0280) -- each of those owns
+        # its own waiver channel (apply_waivers' `in_scope` docstring).
+        # Excluding those rule ids here (rather than enumerating every rule
+        # this call DOES own) keeps this predicate correct as new
+        # gap-producing rule families are added -- a new rule id is in
+        # scope here by default, exactly like `gaps` itself already is.
         in_scope=lambda rule: (
-            rule not in (SYS_UNDECLARED_INTERFACE, SYS_STALE_DESIGN, SYS_UNMODELED_CODE)
+            rule
+            not in (
+                SYS_UNDECLARED_INTERFACE,
+                SYS_STALE_DESIGN,
+                SYS_UNMODELED_CODE,
+                *_HOST_RULE_IDS,
+            )
         ),
     )
     final_gaps = list(applied.kept)
@@ -378,6 +512,23 @@ def evaluate_exhaustiveness(
                 target=stale.node,
             )
         )
+    # T-0280: HOST001/HOST002's OWN waiver-application pass (inside
+    # `evaluate_host_isolation_waived`) already computed its own waived/
+    # stale sets -- fold them in here so the audit report's `waived` and
+    # `gaps` (via the "waiver" family stale entries) stay complete, without
+    # asking the generic `apply_waivers` call above to redo work its
+    # `in_scope` predicate deliberately excludes.
+    for host_applied in (host001_applied, host002_applied):
+        for stale in host_applied.stale:
+            final_gaps.append(
+                FamilyGap(
+                    family="waiver",
+                    view="model",
+                    rule=STALE_WAIVER_RULE,
+                    detail=stale_detail(stale),
+                    target=stale.node,
+                )
+            )
     # T-0174: fold the waiver's reason/ticket into the reported gap's
     # `detail` -- `report.waived` must show WHY, never just THAT (module
     # docstring's "loud in output" requirement, mirrors `frob.gates`'s
@@ -399,6 +550,23 @@ def evaluate_exhaustiveness(
         )
         for wf in applied.waived
     )
+    # T-0280: HOST001/HOST002 findings suppressed by `evaluate_host_
+    # isolation_waived`'s OWN waiver pass -- adapted + detail-folded the
+    # identical way `waived_gaps` above folds every other family's.
+    host_waived_gaps = tuple(
+        _host_isolation_gap(wf.finding).model_copy(
+            update={
+                "detail": (
+                    f"{_host_isolation_gap(wf.finding).detail} -- "
+                    f"WAIVED[{wf.waiver.rule}]: {wf.waiver.reason!r}"
+                    + (f" (ticket {wf.waiver.ticket})" if wf.waiver.ticket else "")
+                )
+            }
+        )
+        for host_applied in (host001_applied, host002_applied)
+        for wf in host_applied.waived
+    )
+    waived_gaps = waived_gaps + host_waived_gaps
 
     _log.info(
         "audit: evaluated views=%d -> %d gap(s), %d waived, %d stale waiver(s)",
