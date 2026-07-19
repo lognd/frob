@@ -17,6 +17,23 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.11.0] - unreleased
+
+Public-API surface changes since 0.10.0 (mechanical semver via REL001). Per
+semver section 4, breaking changes while in 0.x bump the MINOR (0.10 -> 0.11),
+not to 1.0.0 -- REL001 now enforces this (a breaking change no longer forces
+a premature 1.0.0).
+
+- T-0222: `ffi` capability needle for compiled-extension imports
+  (`importlib.machinery.ExtensionFileLoader`).
+- T-0289: complexity-aware long-function arch rule + `arch_gate`/ARCH001
+  reasoned per-function override.
+- T-0195: dup template report (`build_group_template`, `CloneTemplate`,
+  `CloneBinding`, `CloneMatchGroup`); `CloneReport.groups` retyped.
+- T-0179: `frob.app._style` CLI-presentation helpers (private module).
+- release: `required_version` -- a breaking change in 0.x bumps the minor,
+  not the major (semver section 4).
+
 ## [0.10.0] - unreleased
 
 Public-API surface changes since 0.9.0 (mechanical semver via REL001):

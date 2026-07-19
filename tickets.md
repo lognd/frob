@@ -2499,3 +2499,28 @@ acceptance: []
 threat: null
 ```
 The user's original vision (CLAUDE.md): every function/class/etc. carries a digest in .frob/, every doc is connected, and frob answers -- without running a test, like a static type-checker for docs -- 'X's digest changed, here is the transitively-affected doc + code set that must be reviewed/updated.' Only practical if the graph is kept WARM (frob daemon epic). Query surface: graph.affects(symbol) -> impacted docs+symbols; a gate that fails when a touched symbol's dependents' digests weren't acked. This is the same project as the daemon; file so the digest-graph work is tracked as its own deliverable.
+
+<!-- ticket:T-0326 -->
+```yaml
+id: T-0326
+title: 'REL001: breaking change in 0.x must bump minor, not force 1.0.0 (semver section
+  4)'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-19'
+blocked_by: []
+parent: null
+scope:
+- src/frob/release/**,tests/**,tickets.md
+evidence: []
+attachments: []
+acceptance:
+- given a repo at 0.y.z, when a breaking public-API change is made, then REL001 requires
+  0.(y+1).0 (minor bump), NOT >= 1.0.0 -- staying in 0.x per semver section 4 (initial
+  development)
+- given a repo at >=1.0.0, when a breaking change is made, then REL001 still requires
+  a major bump
+threat: null
+```
+Hit live 2026-07-19: accumulated public-API changes since the 0.10.0 stamp (T-0179/0195/0222/0289) made frob release check demand '>= 1.0.0', which conflicts with the user's explicit policy (stay 0.x until zero tickets/warnings/errors, then deliberately cut 1.0.0). required_version mapped any MAJOR/breaking bump to {major+1}.0.0 unconditionally. Fix: when previous major==0, a breaking change bumps the MINOR (0.y -> 0.(y+1)); only at >=1.0.0 does breaking bump the major. Fixed + tested (test_breaking_change_in_0x_bumps_minor_not_to_1_0_0); repo re-stamped 0.10.0 -> 0.11.0.

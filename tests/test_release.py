@@ -86,6 +86,16 @@ def test_required_version_and_satisfies():
     assert not satisfies("1.9.9", "2.0.0")
 
 
+def test_breaking_change_in_0x_bumps_minor_not_to_1_0_0():
+    # semver section 4: in 0.y.z a breaking change bumps the MINOR, it must
+    # NOT force 1.0.0 -- committing to 1.0.0 is a deliberate stability choice.
+    assert required_version("0.10.0", BumpClass.MAJOR).danger_ok == "0.11.0"
+    assert required_version("0.1.0", BumpClass.MAJOR).danger_ok == "0.2.0"
+    assert required_version("0.10.0", BumpClass.MINOR).danger_ok == "0.11.0"
+    # once at >=1.0.0, a breaking change DOES bump the major
+    assert required_version("1.0.0", BumpClass.MAJOR).danger_ok == "2.0.0"
+
+
 def test_release_gate_flags_missing_bump(tmp_path):
     # frob:tests src/frob/gates/__init__.py::release_gate
     # frob:tests src/frob/release kind="integration"

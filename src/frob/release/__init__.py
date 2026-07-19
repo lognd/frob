@@ -148,6 +148,14 @@ def required_version(previous: str, bump: BumpClass) -> Result[str, ReleaseError
         return Err(ReleaseError.BadVersion)
     major, minor, patch = parsed
     if bump == BumpClass.MAJOR:
+        # semver spec section 4: "Major version zero (0.y.z) is for initial
+        # development. Anything MAY change at any time." So a BREAKING change
+        # while still in 0.x bumps the MINOR (0.y -> 0.(y+1)), it does NOT
+        # force 1.0.0 -- committing to 1.0.0 is a deliberate API-stability
+        # decision, not something a breaking change should mandate. Only once
+        # you are already at >=1.0.0 does a breaking change bump the major.
+        if major == 0:
+            return Ok(f"0.{minor + 1}.0")
         return Ok(f"{major + 1}.0.0")
     if bump == BumpClass.MINOR:
         return Ok(f"{major}.{minor + 1}.0")
