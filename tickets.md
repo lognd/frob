@@ -8120,3 +8120,28 @@ acceptance:
 threat: null
 ```
 Hit live 2026-07-19 while closing T-0282: COV003 says "run: frob test --collect to refresh" but `frob test` has no --collect option (argparse rejects it). Root cause of the false COV003 was a stale .frob/pytest-collect.json cache after a merge added new evidence tests; the cache did refresh on the next collection pass, but the user-facing hint points at a nonexistent flag. Fix: either implement `frob test --collect` (force a collection-cache rebuild without running tests) -- the cleaner option, since there is a genuine need to refresh the cache on demand -- or correct the hint to whatever the real refresh path is. Prefer adding the flag.
+
+<!-- ticket:T-0293 -->
+```yaml
+id: T-0293
+title: evidence recording must normalize/reject Class.method vs Class::method separator
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-19'
+blocked_by: []
+parent: null
+scope:
+- src/frob/tickets/**,src/frob/gates/__init__.py,src/frob/testing/**,tests/**,tickets.md
+evidence: []
+attachments: []
+acceptance:
+- given evidence recorded as file::Class.method (dot before method), when it is stored,
+  then it is either normalized to the canonical pytest file::Class::method form or
+  rejected at record time with a clear message -- never silently stored to fail COV003
+  downstream
+- 'given the canonical :: form, when resolved against collected node ids, then it
+  matches (regression: the T-0282/T-0217 dot-form evidence that slipped past)'
+threat: null
+```
+Bit twice (2026-07-19): T-0282 and T-0217 both had evidence stored as tests/...py::Class.method with a DOT between class and method, which never resolves against pytest node ids (Class::method) and surfaces only as a late, confusing COV003 at check time. The recording path (frob ticket evidence / Done-report evidence capture) must canonicalize to :: (or reject) at write time. Cheapest sound fix: normalize a single-dot-before-final-segment in a ::-qualified test id to ::, OR validate against the collected manifest at record time and refuse an unresolvable id. Pairs with T-0292 (COV003 hint bug) -- same gate, both about making COV003 failures self-explanatory and hard to create.
