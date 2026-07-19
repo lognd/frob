@@ -5130,7 +5130,7 @@ T-0254 Windows pillar. Generalize the HostManifest (T-0255, Linux/systemd-first)
 ```yaml
 id: T-0262
 title: 'std.krb: Kerberos/AD domain trust, SPNs, and delegation as first-class strata'
-state: in-progress
+state: done
 kind: security
 origin: human
 created: '2026-07-18'
@@ -5383,6 +5383,7 @@ created: '2026-07-18'
 blocked_by:
 - T-0256
 - T-0262
+- T-0282
 parent: T-0254
 scope:
 - src/frob/strata/**
@@ -7327,9 +7328,9 @@ threat: null
 ```
 T-0260 malmberg pilot findings (batched, all in the deploy generator; each needs a fixture+fix): (5) a user shared across a node and a store (media_store+ingest both runs_as malmberg-ingest) emits the useradd guard block TWICE in install.sh -- dedup service-user creation by distinct runs_as identity. (6) listens PORT drives status.sh /dev/tcp health probes but is never materialized into the unit (no .socket, no IPAddressAllow/SocketBindAllow) -- emit network hardening or at least document the port in the unit. (7) status.sh probes 127.0.0.1 for ALL units incl. ones on other hosts (malmberg display is a separate host) -> always reports remote port closed; std.host has no host/placement vocabulary to partition artifacts per host -- design a /placement construct or partition status per declared host (bigger, may split out). (8) may 'net' unconditionally adds CAP_NET_BIND_SERVICE even when all declared listens ports are >=1024 (unprivileged) -- only add it when a listens port is <1024. (4) frob deploy generate floods stdout with per-node 'host manifest runs_as=...' DEBUG lines (repeated per consumer pass) -- route through the logger at DEBUG, mute stdout like check_runner/map_runner (T-0202 class). (10, doc) waive clauses parse but elaborate(...).danger_ok exposes no waivers attribute (read via separate _waive channel) -- add a doc note on reading waivers back from a parsed model. Item 7 (host/placement vocabulary) may warrant its own ticket if it grows.
 
-<!-- ticket:T-draft-f9f9fe96 -->
+<!-- ticket:T-0282 -->
 ```yaml
-id: T-draft-f9f9fe96
+id: T-0282
 title: 'strata_core::reachable: terminal-edge support for non-transitive flow chains'
 state: queued
 kind: security
