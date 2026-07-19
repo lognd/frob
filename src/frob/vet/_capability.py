@@ -441,39 +441,44 @@ def scan_file_operations(path: Path) -> tuple[DangerousOperation, ...]:
         return ()
 
     comment_spans = _comment_byte_spans(path)
-    matched: list[DangerousOperation] = []
-    for entry in DANGEROUS_OPERATIONS:
-        if entry.language != language:
-            continue
-        if entry.needles:
-            if any(
-                _needle_hits_outside_comments(
-                    raw, needle.encode("utf-8"), comment_spans
-                )
-                for needle in entry.needles
-            ):
-                matched.append(entry)
-        elif entry.language == "python" and entry.function_or_pattern.startswith(
-            "compile("
-        ):
-            if _has_bare_compile_call(raw, comment_spans):
-                matched.append(entry)
+    matched = [
+        entry
+        for entry in DANGEROUS_OPERATIONS
+        if entry.language == language
+        and _operation_entry_matches(entry, raw, comment_spans)
+    ]
     return tuple(matched)
 
 
+def _operation_entry_matches(
+    entry: DangerousOperation, raw: bytes, comment_spans: tuple[ByteSpan, ...]
+) -> bool:
+    """Whether one `DANGEROUS_OPERATIONS` entry's needle(s) (or bare-compile
+    special check) hit in `raw` outside `comment_spans`."""
+    if entry.needles:
+        return any(
+            _needle_hits_outside_comments(raw, needle.encode("utf-8"), comment_spans)
+            for needle in entry.needles
+        )
+    if entry.language == "python" and entry.function_or_pattern.startswith("compile("):
+        return _has_bare_compile_call(raw, comment_spans)
+    return False
+
+
+# The CVE-fingerprint sibling of `scan_file_operations` (T-0153): a
+# fingerprint's `language` must match `path`'s scanned language bucket AND
+# at least one of its `needles` must appear in the file's text, the SAME
+# recall-over-precision substring philosophy `_matched_capabilities`
+# already uses (module docstring). Imports `frob.strata` LAZILY (not at
+# module scope): `frob.strata._effects` imports THIS module for its own
+# `_PATTERNS`/`language_for` join, so a top-level `frob.strata` import
+# here would be a genuine import cycle -- deferred until call time, when
+# both packages have finished initializing.
 # frob:doc docs/modules/vet.md#public-api
 # frob:ticket T-0153
 def scan_file_fingerprints(path: Path) -> tuple[CveFingerprint, ...]:
     """The `frob.strata.CVE_FINGERPRINTS` entries whose needle(s) matched in
-    `path`'s raw text -- the CVE-fingerprint sibling of `scan_file_operations`
-    (T-0153): a fingerprint's `language` must match `path`'s scanned language
-    bucket AND at least one of its `needles` must appear in the file's text,
-    the SAME recall-over-precision substring philosophy `_matched_
-    capabilities` already uses (module docstring). Imports `frob.strata`
-    LAZILY (not at module scope): `frob.strata._effects` imports THIS module
-    for its own `_PATTERNS`/`language_for` join, so a top-level `frob.strata`
-    import here would be a genuine import cycle -- deferred until call time,
-    when both packages have finished initializing."""
+    `path`'s raw text."""
     from frob.strata import CVE_FINGERPRINTS
 
     language = language_for(path)
@@ -585,52 +590,54 @@ def _is_test_path(path: Path) -> bool:
     return "test" in path.parts or "tests" in path.parts
 
 
+# True for this module's own source file, the T-0158 registry it compiles
+# `_PATTERNS` from, or the T-0153 fingerprint catalog it matches
+# `scan_file_fingerprints` against (excluded from directory aggregation
+# since all three contain every needle as literal data, guaranteeing a
+# self-match unrelated to what the code does). Public (T-0201): the
+# SINGLE shared self-match exclusion -- vet's own directory aggregation
+# below AND every `frob.strata._selfconform`/`_effects` join path must
+# call this same function rather than keep parallel private copies, or a
+# future pattern-catalog file re-introduces the T-0151 self-match class
+# in whichever join path forgot to exclude it. This was T-0201's root
+# cause: `_selfconform.py`'s extended-kind/all-kind scans and
+# `_effects.py`'s line-effect scan all predated this export and had no
+# exclusion of their own.
+#
+# T-0253 round 1 (REJECTED): matched by `_SELF_PATTERN_SUFFIXES` (package-
+# relative path suffix) alone, with no scan-target check. That closed the
+# non-editable-install false positive but opened a real evasion hole: a
+# malicious dependency placing a file at a path ending in
+# `frob/vet/_capability.py` would be silently excluded from `frob vet`'s
+# capability scan too, since suffix matching cannot distinguish "this is
+# frob auditing itself" from "this is frob vetting someone else's tree
+# that happens to mimic frob's layout."
+#
+# T-0253 round 2 (this version): `root` is now the caller's scan-target
+# discriminator -- the suffix match only fires when `_is_frob_repo_root
+# (root)` says `root` IS frob's own repository checkout (its own
+# `pyproject.toml` name plus its `frob-core`/`strata-core` crate
+# directories), never based on `path` alone and never based on where the
+# RUNNING package's own files happen to live (round 0's bug, identity
+# comparison against `_SELF_PATH` et al., which broke under a non-
+# editable global install). `root` defaults to `None`, which ALWAYS
+# fails the discriminator (fail-closed, deny-by-default, matching this
+# codebase's charter posture elsewhere) -- a caller that omits `root`
+# gets "never exclude, always scan" rather than a crash, so this stays
+# source-compatible with any caller written against the pre-T-0253
+# one-argument signature while still closing the evasion hole for every
+# real caller in this repo (all of which pass `root` explicitly).
+# Self-conformance callers (`_selfconform.py`/`_effects.py`) always pass
+# frob's own repo root by construction, so this is a no-op there; `frob
+# vet` scanning a dependency passes that dependency's own source root,
+# which is never frob's repo, so the exclusion correctly never fires and
+# the file is scanned like any other.
 # frob:doc docs/modules/vet.md#public-api
 # frob:ticket T-0201
 # frob:ticket T-0253
 def is_self_pattern_path(path: Path, root: Path | None = None) -> bool:
-    """True for this module's own source file, the T-0158 registry it
-    compiles `_PATTERNS` from, or the T-0153 fingerprint catalog it matches
-    `scan_file_fingerprints` against (excluded from directory aggregation
-    since all three contain every needle as literal data, guaranteeing a
-    self-match unrelated to what the code does). Public (T-0201): the
-    SINGLE shared self-match exclusion -- vet's own directory aggregation
-    below AND every `frob.strata._selfconform`/`_effects` join path must
-    call this same function rather than keep parallel private copies, or a
-    future pattern-catalog file re-introduces the T-0151 self-match class
-    in whichever join path forgot to exclude it. This was T-0201's root
-    cause: `_selfconform.py`'s extended-kind/all-kind scans and
-    `_effects.py`'s line-effect scan all predated this export and had no
-    exclusion of their own.
-
-    T-0253 round 1 (REJECTED): matched by `_SELF_PATTERN_SUFFIXES` (package-
-    relative path suffix) alone, with no scan-target check. That closed the
-    non-editable-install false positive but opened a real evasion hole: a
-    malicious dependency placing a file at a path ending in
-    `frob/vet/_capability.py` would be silently excluded from `frob vet`'s
-    capability scan too, since suffix matching cannot distinguish "this is
-    frob auditing itself" from "this is frob vetting someone else's tree
-    that happens to mimic frob's layout."
-
-    T-0253 round 2 (this version): `root` is now the caller's scan-target
-    discriminator -- the suffix match only fires when `_is_frob_repo_root
-    (root)` says `root` IS frob's own repository checkout (its own
-    `pyproject.toml` name plus its `frob-core`/`strata-core` crate
-    directories), never based on `path` alone and never based on where the
-    RUNNING package's own files happen to live (round 0's bug, identity
-    comparison against `_SELF_PATH` et al., which broke under a non-
-    editable global install). `root` defaults to `None`, which ALWAYS
-    fails the discriminator (fail-closed, deny-by-default, matching this
-    codebase's charter posture elsewhere) -- a caller that omits `root`
-    gets "never exclude, always scan" rather than a crash, so this stays
-    source-compatible with any caller written against the pre-T-0253
-    one-argument signature while still closing the evasion hole for every
-    real caller in this repo (all of which pass `root` explicitly).
-    Self-conformance callers (`_selfconform.py`/`_effects.py`) always pass
-    frob's own repo root by construction, so this is a no-op there; `frob
-    vet` scanning a dependency passes that dependency's own source root,
-    which is never frob's repo, so the exclusion correctly never fires and
-    the file is scanned like any other."""
+    """True for this module's own source file, or the T-0158/T-0153 pattern
+    catalogs it compiles from, when `root` is frob's own repo checkout."""
     if root is None or not _is_frob_repo_root(root):
         return False
     try:

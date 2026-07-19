@@ -14,7 +14,7 @@ from typani import Err, Ok
 from typani.result import Result
 
 from frob.excludes import is_excluded, is_skipped_dir, load_exclude_globs
-from frob.gitio import run_argv
+from frob.gitio import GitError, ProcResult, run_argv
 from frob.logging import get_logger
 from frob.testing._models import CollectedTests
 from frob.testing._runners import TestingError, _cargo_env, _env_overlay
@@ -189,17 +189,22 @@ def _find_crates(root: Path) -> list[Path]:
         dirnames[:] = _prune_dirnames(Path(dirpath), root, dirnames, exclude_globs)
         if "Cargo.toml" in filenames:
             manifest_dir = Path(dirpath)
-            classified = _classify_manifest(manifest_dir / "Cargo.toml")
-            if classified is None:
+            should_append, should_prune = _classify_crate_dir(manifest_dir)
+            if should_append:
                 found.append(manifest_dir)
-                dirnames[:] = []
-                continue
-            has_package, has_workspace = classified
-            if has_package:
-                found.append(manifest_dir)
-            if not has_workspace:
+            if should_prune:
                 dirnames[:] = []
     return sorted(found)
+
+
+def _classify_crate_dir(manifest_dir: Path) -> tuple[bool, bool]:
+    """`(should_append_as_crate, should_prune_children)` for a directory
+    holding a `Cargo.toml`, per `_find_crates`'s package/workspace rules."""
+    classified = _classify_manifest(manifest_dir / "Cargo.toml")
+    if classified is None:
+        return True, True
+    has_package, has_workspace = classified
+    return has_package, not has_workspace
 
 
 def _rust_content_key(root: Path) -> str:
@@ -277,6 +282,14 @@ def _run_cargo_test_list(
             cwd=crate_dir,
             timeout_s=_COLLECT_TIMEOUT_S,
         )
+    return _cargo_list_result(spawned, crate_dir)
+
+
+def _cargo_list_result(
+    spawned: Result[ProcResult, GitError], crate_dir: Path
+) -> Result[list[str], TestingError]:
+    """Turn a spawned `cargo test --list` invocation into parsed test paths,
+    or `Err` on spawn/exit failure."""
     if spawned.is_err:
         _log.error("collect_rust_tests: cargo failed to spawn in %s", crate_dir)
         return Err(TestingError.CollectFailed)

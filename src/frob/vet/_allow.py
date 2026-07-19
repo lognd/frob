@@ -57,6 +57,12 @@ def load_vet_config(root: Path) -> VetConfig:
         _log.info("vet: no [vet] section in %s; advisory-only mode", toml_path)
         return VetConfig(present=False)
 
+    return _build_vet_config(vet)
+
+
+def _build_vet_config(vet: dict[str, object]) -> VetConfig:
+    """Assemble a present `VetConfig` from a parsed `[vet]` table and log
+    the resulting settings."""
     allow = _parse_allow(vet.get("allow", {}))
 
     cfg = VetConfig(

@@ -68,20 +68,25 @@ def _ruff_format_result(root: Path) -> ToolResult:
     msg = (proc.stdout + proc.stderr).strip()
     reformat = [ln for ln in msg.splitlines() if "Would reformat" in ln]
     n = len(reformat)
-    diags = [
+    return ToolResult(
+        tool="ruff-format",
+        exit_code=proc.returncode,
+        diagnostics=_reformat_diagnostics(reformat),
+        summary=f"{n} file{'s' if n != 1 else ''} would be reformatted",
+    )
+
+
+def _reformat_diagnostics(reformat_lines: list[str]) -> list[Diagnostic]:
+    """One warning `Diagnostic` per `ruff format --check` "Would reformat"
+    line."""
+    return [
         Diagnostic(
             file=ln.replace("Would reformat ", "").strip(),
             severity="warning",
             message="needs formatting",
         )
-        for ln in reformat
+        for ln in reformat_lines
     ]
-    return ToolResult(
-        tool="ruff-format",
-        exit_code=proc.returncode,
-        diagnostics=diags,
-        summary=f"{n} file{'s' if n != 1 else ''} would be reformatted",
-    )
 
 
 # frob:ticket T-0142
@@ -336,31 +341,41 @@ def _run_gates(
     cfg = GateConfig(root=str(root), base=base or "main", ticket=ticket, gates=gates)
     result = run_gates(cfg)
     if result.is_err:
-        err = result.danger_err
-        if err is GateError.QueueUnavailable:
-            return ToolResult(
-                tool="gates",
-                exit_code=1,
-                diagnostics=[
-                    Diagnostic(
-                        file="tickets.md",
-                        severity="error",
-                        message=(
-                            "ticket queue failed to load: all gates were skipped. "
-                            "This is a hard failure, not a soft skip -- fix the "
-                            "malformed entry (check evidence: blocks and YAML "
-                            "syntax) and re-run `frob check`."
-                        ),
-                    )
-                ],
-                summary=("gates FAILED: ticket queue failed to load -- fix tickets.md"),
-            )
+        return _gates_error_result(result.danger_err, GateError)
+    return _gates_success_result(result.danger_ok, root=root, delta=delta)
+
+
+def _gates_error_result(err, gate_error_cls) -> ToolResult:  # noqa: ANN001
+    """The `ToolResult` for a failed `run_gates` call: a hard ERROR if the
+    ticket queue itself failed to load, else a soft skip."""
+    if err is gate_error_cls.QueueUnavailable:
         return ToolResult(
             tool="gates",
-            exit_code=0,
-            summary=f"gates skipped: {err.value}",
+            exit_code=1,
+            diagnostics=[
+                Diagnostic(
+                    file="tickets.md",
+                    severity="error",
+                    message=(
+                        "ticket queue failed to load: all gates were skipped. "
+                        "This is a hard failure, not a soft skip -- fix the "
+                        "malformed entry (check evidence: blocks and YAML "
+                        "syntax) and re-run `frob check`."
+                    ),
+                )
+            ],
+            summary=("gates FAILED: ticket queue failed to load -- fix tickets.md"),
         )
-    report = result.danger_ok
+    return ToolResult(
+        tool="gates",
+        exit_code=0,
+        summary=f"gates skipped: {err.value}",
+    )
+
+
+def _gates_success_result(report, *, root: Path, delta: bool) -> ToolResult:  # noqa: ANN001
+    """The `ToolResult` for a successful `run_gates` report: delta-filtering,
+    diagnostics, and the error/warning/waived summary line."""
     violations, delta_note = (
         _apply_delta(root, report.violations)
         if delta
@@ -373,6 +388,18 @@ def _run_gates(
     if delta_note is not None:
         diags.append(Diagnostic(severity="warning", message=delta_note))
     n_err = _error_count(violations)
+    summary = _gates_summary(violations, report, n_err=n_err, delta=delta)
+    return ToolResult(
+        tool="gates",
+        exit_code=1 if n_err > 0 else 0,
+        diagnostics=diags,
+        summary=f"{summary}  [{_timing_str(report.stats)}]",
+    )
+
+
+def _gates_summary(violations, report, *, n_err: int, delta: bool) -> str:  # noqa: ANN001
+    """The error/warning/waived count summary line for a gates run,
+    prefixed with the new-vs-total count when `delta` filtering applied."""
     n_warn = len(violations) - n_err
     # T-0228: never collapse errors and warnings into one bare "violation(s)"
     # count -- that reads as alarming (or as a failure) even on a passing
@@ -386,12 +413,7 @@ def _run_gates(
     summary = ", ".join(parts)
     if delta:
         summary = f"{len(violations)}/{len(report.violations)} new  " + summary
-    return ToolResult(
-        tool="gates",
-        exit_code=1 if n_err > 0 else 0,
-        diagnostics=diags,
-        summary=f"{summary}  [{_timing_str(report.stats)}]",
-    )
+    return summary
 
 
 def _apply_delta(
@@ -422,15 +444,7 @@ def _apply_delta(
 def _run_bind(root: Path) -> ToolResult | None:
     """Verify BIND comment markers, if any exist in the tree."""
     scan = root if root.is_dir() else root.parent
-    has_bind = False
-    for path in scan.rglob("*.py"):
-        try:
-            if b"# BIND" in path.read_bytes():
-                has_bind = True
-                break
-        except Exception:
-            pass
-    if not has_bind:
+    if not _has_bind_markers(scan):
         return None
 
     try:
@@ -441,10 +455,7 @@ def _run_bind(root: Path) -> ToolResult | None:
         return None
 
     result = verify_bindings(scan)
-    diags = [
-        Diagnostic(file=m.file, line=m.line, severity="error", message=m.message)
-        for m in getattr(result, "mismatches", [])
-    ]
+    diags = _bind_mismatch_diagnostics(result)
     n = len(diags)
     return ToolResult(
         tool="frob-bind",
@@ -454,6 +465,25 @@ def _run_bind(root: Path) -> ToolResult | None:
         if diags
         else "all bindings verified",
     )
+
+
+def _has_bind_markers(scan: Path) -> bool:
+    """Whether any `.py` file under `scan` contains a `# BIND` marker."""
+    for path in scan.rglob("*.py"):
+        try:
+            if b"# BIND" in path.read_bytes():
+                return True
+        except Exception:
+            pass
+    return False
+
+
+def _bind_mismatch_diagnostics(result) -> list[Diagnostic]:  # noqa: ANN001
+    """One error `Diagnostic` per BIND mismatch reported by `verify_bindings`."""
+    return [
+        Diagnostic(file=m.file, line=m.line, severity="error", message=m.message)
+        for m in getattr(result, "mismatches", [])
+    ]
 
 
 def _missing_exports(init_src: str, modules) -> list[str]:  # noqa: ANN001
@@ -494,6 +524,14 @@ def _exports_for_package(init_file: Path, scan: Path) -> ToolResult | None:
     missing = _missing_exports(init_src, er.modules)
     if not missing:
         return None
+    return _unexported_symbols_result(init_file, pkg_dir, scan, missing)
+
+
+def _unexported_symbols_result(
+    init_file: Path, pkg_dir: Path, scan: Path, missing: list[str]
+) -> ToolResult:
+    """The `ToolResult` reporting `missing` un-exported public symbols for
+    one package's `__init__.py`."""
     diags = [
         Diagnostic(
             file=str(init_file.relative_to(scan)),

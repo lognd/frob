@@ -96,6 +96,14 @@ def _extract_comments(
     fixed 2-line lookahead from each comment's own end can no longer reach
     the def once enough comments pile up in front of it.
     """
+    raw_nodes = _collect_comment_nodes(root, comment_types)
+    block_end = _block_ends(raw_nodes)
+    return _bind_comments(raw_nodes, block_end, symbols)
+
+
+def _collect_comment_nodes(root: Node, comment_types: frozenset[str]) -> list[Node]:
+    """Depth-first collect comment-typed leaves under `root`, sorted by
+    start line."""
     raw_nodes: list[Node] = []
 
     def walk(n: Node) -> None:
@@ -108,9 +116,16 @@ def _extract_comments(
     walk(root)
     # frob:waive PERF004 reason="one sort per file, not in a loop; walk() is recursion"
     raw_nodes.sort(key=lambda n: span_of(n)[0])
+    return raw_nodes
 
-    block_end = _block_ends(raw_nodes)
 
+def _bind_comments(
+    raw_nodes: list[Node],
+    block_end: list[int],
+    symbols: tuple[RawSymbol, ...],
+) -> tuple[RawComment, ...]:
+    """Pair each comment node with its block end line and resolve its
+    enclosing/following symbol bindings."""
     out: list[RawComment] = []
     for node, end in zip(raw_nodes, block_end, strict=True):
         span = span_of(node)

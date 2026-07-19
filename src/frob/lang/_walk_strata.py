@@ -233,12 +233,20 @@ def walk_strata(
     lines = source.splitlines()
     symbols = _extract_symbols(lines)
     comments = _extract_comments(lines, symbols)
-    declared = _declared_count(parsed["ok"])
+    _check_declared_count_drift(symbols, parsed["ok"])
+    _log.debug("strata walk: %d symbols, %d comments", len(symbols), len(comments))
+    return Ok((symbols, comments))
+
+
+def _check_declared_count_drift(
+    symbols: tuple[RawSymbol, ...], parsed_ok: dict
+) -> None:
+    """Log a warning if the regex-derived symbol count disagrees with
+    strata-core's declared-id count (a cheap drift check, see walk_strata)."""
+    declared = _declared_count(parsed_ok)
     if len(symbols) != declared:
         _log.warning(
             "strata header-regex symbol count (%d) != strata-core declared count (%d)",
             len(symbols),
             declared,
         )
-    _log.debug("strata walk: %d symbols, %d comments", len(symbols), len(comments))
-    return Ok((symbols, comments))

@@ -76,6 +76,26 @@ def run_osv_scan(lockfile: Path) -> tuple[OsvAdvisory, ...] | None:
         _log.info("vet: %s not on PATH; VET005 skipped", _BINARY)
         return None
 
+    stdout = _run_osv_scanner(lockfile)
+    if stdout is None:
+        return None
+    if not stdout.strip():
+        return ()
+
+    try:
+        data = json.loads(stdout)
+    except json.JSONDecodeError as exc:
+        _log.warning("vet: osv-scanner output unparseable: %s", exc)
+        return None
+
+    advisories = _advisories_from_data(data)
+    _log.info("vet: osv-scanner reported %d advisory finding(s)", len(advisories))
+    return tuple(advisories)
+
+
+def _run_osv_scanner(lockfile: Path) -> str | None:
+    """Invoke `osv-scanner` against `lockfile`, returning stdout text, or
+    `None` on spawn failure or a crashed (non-zero, empty-output) run."""
     argv = (_BINARY, "--lockfile", str(lockfile), "--format", "json")
     spawned = run_argv(argv, timeout_s=60.0)
     if spawned.is_err:
@@ -84,25 +104,14 @@ def run_osv_scan(lockfile: Path) -> tuple[OsvAdvisory, ...] | None:
     result = spawned.danger_ok
     # osv-scanner exits non-zero when it finds vulnerabilities; only a parse
     # failure or crash (empty stdout) is a real adapter failure.
-    if not result.stdout.strip():
-        if result.returncode != 0:
-            _log.warning(
-                "vet: osv-scanner exited %d with no output: %s",
-                result.returncode,
-                result.stderr,
-            )
-            return None
-        return ()
-
-    try:
-        data = json.loads(result.stdout)
-    except json.JSONDecodeError as exc:
-        _log.warning("vet: osv-scanner output unparseable: %s", exc)
+    if not result.stdout.strip() and result.returncode != 0:
+        _log.warning(
+            "vet: osv-scanner exited %d with no output: %s",
+            result.returncode,
+            result.stderr,
+        )
         return None
-
-    advisories = _advisories_from_data(data)
-    _log.info("vet: osv-scanner reported %d advisory finding(s)", len(advisories))
-    return tuple(advisories)
+    return result.stdout
 
 
 def _fixed_version(vuln: dict) -> str | None:

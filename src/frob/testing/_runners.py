@@ -20,7 +20,7 @@ from pathlib import Path
 from typani import Err, ErrorSet, Ok
 from typani.result import Result
 
-from frob.gitio import run_argv
+from frob.gitio import GitError, ProcResult, run_argv
 from frob.logging import get_logger
 from frob.testing._models import (
     RunnerOutcome,
@@ -333,22 +333,26 @@ def _run_one_runner(
         return Err(built.danger_err)
     argv = built.danger_ok
 
-    env_overlay: dict[str, str] = {}
-    if spec.language == "rust":
-        env_result = _cargo_env()
-        if env_result.is_err:
-            _log.error(
-                "run_selected: rust env unavailable, refusing to spawn cargo "
-                "rather than let it fail vacuously"
-            )
-            return Err(env_result.danger_err)
-        env_overlay = env_result.danger_ok
+    overlay_result = _runner_env_overlay(spec)
+    if overlay_result.is_err:
+        return Err(overlay_result.danger_err)
 
     cwd = root / spec.cwd
     start = time.monotonic()
-    with _env_overlay(env_overlay):
+    with _env_overlay(overlay_result.danger_ok):
         spawned = run_argv(argv, cwd=cwd, timeout_s=spec.timeout_s)
     duration = time.monotonic() - start
+    return _runner_outcome(spec, argv, spawned, duration)
+
+
+def _runner_outcome(
+    spec: RunnerSpec,
+    argv: list[str],
+    spawned: Result[ProcResult, GitError],
+    duration: float,
+) -> Result[RunnerOutcome, TestingError]:
+    """Turn a spawned runner invocation into a `RunnerOutcome`, or `Err` on
+    spawn/timeout failure."""
     if spawned.is_err:
         _log.error("run_selected: %s runner failed to spawn/timeout", spec.language)
         return Err(TestingError.SpawnFailed)
@@ -369,6 +373,21 @@ def _run_one_runner(
             stderr_tail=_excerpt(result.stderr),
         )
     )
+
+
+def _runner_env_overlay(spec: RunnerSpec) -> Result[dict[str, str], TestingError]:
+    """The env overlay to spawn `spec` under: PyO3 env for rust runners,
+    empty otherwise; `Err` if rust env resolution fails."""
+    if spec.language != "rust":
+        return Ok({})
+    env_result = _cargo_env()
+    if env_result.is_err:
+        _log.error(
+            "run_selected: rust env unavailable, refusing to spawn cargo "
+            "rather than let it fail vacuously"
+        )
+        return Err(env_result.danger_err)
+    return Ok(env_result.danger_ok)
 
 
 def _run_language(
@@ -432,26 +451,47 @@ def run_selected(
     for language, items in selection.selected.items():
         if not items:
             continue
-        specs = runners_by_lang.get(language)
-        if not specs:
-            _log.error(
-                "run_selected: language %r has selected tests but no runner -- "
-                "add a [[test.runner]] entry with language = %r to frob.toml at "
-                "the repo root (see docs/modules/testing.md)",
-                language,
-                language,
-            )
-            return Err(TestingError.NoRunner)
-
-        run = _run_language(specs, items, root)
+        run = _run_one_language_selection(language, items, runners_by_lang, root)
         if run.is_err:
             return Err(run.danger_err)
-        for outcome in run.danger_ok:
-            outcomes.append(outcome)
-            if outcome.exit_code != 0 and not _is_neutral_outcome(outcome):
-                ok = False
+        ok = _fold_language_outcomes(run.danger_ok, outcomes) and ok
 
     return Ok(TestRunReport(selection=selection, outcomes=tuple(outcomes), ok=ok))
+
+
+def _run_one_language_selection(
+    language: str,
+    items: tuple[str, ...],
+    runners_by_lang: dict[str, list[RunnerSpec]],
+    root: Path,
+) -> Result[list[RunnerOutcome], TestingError]:
+    """Resolve `language`'s runner specs and run its selected `items`, or
+    `Err(NoRunner)` if no `[[test.runner]]` entry declares that language."""
+    specs = runners_by_lang.get(language)
+    if not specs:
+        _log.error(
+            "run_selected: language %r has selected tests but no runner -- "
+            "add a [[test.runner]] entry with language = %r to frob.toml at "
+            "the repo root (see docs/modules/testing.md)",
+            language,
+            language,
+        )
+        return Err(TestingError.NoRunner)
+    return _run_language(specs, items, root)
+
+
+def _fold_language_outcomes(
+    language_outcomes: list[RunnerOutcome], outcomes: list[RunnerOutcome]
+) -> bool:
+    """Append `language_outcomes` onto `outcomes` in place; return whether
+    all of them were non-failing (a neutral pytest zero-selection exit
+    counts as passing, per `_is_neutral_outcome`)."""
+    ok = True
+    for outcome in language_outcomes:
+        outcomes.append(outcome)
+        if outcome.exit_code != 0 and not _is_neutral_outcome(outcome):
+            ok = False
+    return ok
 
 
 __all__ = ["TestingError", "load_runners", "run_selected"]

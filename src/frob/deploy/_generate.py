@@ -55,7 +55,7 @@ from frob.strata import (
     node_allowed_syscalls,
     node_may_kinds,
 )
-from frob.strata._host import host_manifest_for
+from frob.strata._host import HostOwns, host_manifest_for
 
 _log = get_logger(__name__)
 
@@ -243,33 +243,38 @@ def _install_owns_block(manifest: HostManifest) -> str:
     if not manifest.owns:
         return ""
     owner = manifest.runs_as or "root"
-    lines: list[str] = []
-    for entry in manifest.owns:
-        path = entry.path
-        mode = entry.mode
-        lines.append(
-            f'desired_mode="{mode}"\n'
-            f'if [ ! -e "{path}" ]; then\n'
-            f'    mkdir -p "{path}"\n'
-            f'    echo "created {path}"\n'
-            "fi\n"
-            f'current_owner="$(stat -c "%U" "{path}")"\n'
-            f'if [ "$current_owner" != "{owner}" ]; then\n'
-            f'    chown "{owner}":"{owner}" "{path}"\n'
-            f'    echo "chowned {path} to {owner}"\n'
-            "fi\n"
-            # `stat -c "%a"` prints without a leading zero (e.g. "644"),
-            # while a declared mode commonly carries one ("0644") -- both
-            # sides are stripped of leading zeros before comparison so
-            # the two octal spellings of the same mode never look like a
-            # drift and re-trigger `chmod` on every idempotent re-run.
-            f'current_mode="$(stat -c "%a" "{path}")"\n'
-            f'if [ "${{current_mode#0}}" != "${{desired_mode#0}}" ]; then\n'
-            f'    chmod "{mode}" "{path}"\n'
-            f'    echo "chmoded {path} to {mode}"\n'
-            "fi\n"
-        )
+    lines = [_owns_check_block(entry, owner) for entry in manifest.owns]
     return "\n".join(lines)
+
+
+def _owns_check_block(entry: HostOwns, owner: str) -> str:
+    """One `owns` entry's check-then-apply mkdir/chown/chmod block.
+
+    `stat -c "%a"` prints without a leading zero (e.g. "644"), while a
+    declared mode commonly carries one ("0644") -- both sides are
+    stripped of leading zeros before comparison so the two octal
+    spellings of the same mode never look like a drift and re-trigger
+    `chmod` on every idempotent re-run.
+    """
+    path = entry.path
+    mode = entry.mode
+    return (
+        f'desired_mode="{mode}"\n'
+        f'if [ ! -e "{path}" ]; then\n'
+        f'    mkdir -p "{path}"\n'
+        f'    echo "created {path}"\n'
+        "fi\n"
+        f'current_owner="$(stat -c "%U" "{path}")"\n'
+        f'if [ "$current_owner" != "{owner}" ]; then\n'
+        f'    chown "{owner}":"{owner}" "{path}"\n'
+        f'    echo "chowned {path} to {owner}"\n'
+        "fi\n"
+        f'current_mode="$(stat -c "%a" "{path}")"\n'
+        f'if [ "${{current_mode#0}}" != "${{desired_mode#0}}" ]; then\n'
+        f'    chmod "{mode}" "{path}"\n'
+        f'    echo "chmoded {path} to {mode}"\n'
+        "fi\n"
+    )
 
 
 def _install_unit_block(entry: ManifestEntry) -> str:
@@ -284,6 +289,15 @@ def _install_unit_block(entry: ManifestEntry) -> str:
     unit_name = _unit_name(entry.node_id)
     body = _render_unit_file(entry)
     body_digest = hashlib.sha256(body.encode("utf-8")).hexdigest()
+    return _unit_write_block(
+        unit_path, unit_name, body_digest, body
+    ) + _unit_enable_start_block(unit_name)
+
+
+def _unit_write_block(
+    unit_path: str, unit_name: str, body_digest: str, body: str
+) -> str:
+    """Check-then-apply hash-compared unit-file write block."""
     return (
         f'desired_hash="{body_digest}"\n'
         f'if [ -f "{unit_path}" ]; then\n'
@@ -300,6 +314,12 @@ def _install_unit_block(entry: ManifestEntry) -> str:
         "else\n"
         f'    echo "unit {unit_name} already up to date"\n'
         "fi\n"
+    )
+
+
+def _unit_enable_start_block(unit_name: str) -> str:
+    """Check-then-apply `systemctl enable`/`start` block for `unit_name`."""
+    return (
         f'if ! systemctl is-enabled --quiet "{unit_name}" 2>/dev/null; then\n'
         f'    systemctl enable "{unit_name}"\n'
         f'    echo "enabled {unit_name}"\n'
