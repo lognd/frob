@@ -146,6 +146,27 @@ def _build_import_graph(scan_root: Path):  # noqa: ANN202
     return graph
 
 
+# frob:ticket T-0228
+def _severity_counts_summary(diags: list[Diagnostic], *, no_issues: str) -> str:
+    """`"N error(s), M warning(s)"` over `diags`' severities, honest at a glance.
+
+    T-0228: a stage that only found warn-class findings must never be
+    reported with a bare, alarming-looking count ("987 violation(s)") on a
+    PASSING run -- error and warning counts are always split so the reader
+    can tell severity from the summary line alone, without opening the
+    diagnostics. Zero-count categories are omitted; `no_issues` covers the
+    fully-clean case.
+    """
+    n_err = sum(1 for d in diags if d.severity == "error")
+    n_warn = sum(1 for d in diags if d.severity == "warning")
+    parts = []
+    if n_err:
+        parts.append(f"{n_err} error{'s' if n_err != 1 else ''}")
+    if n_warn:
+        parts.append(f"{n_warn} warning{'s' if n_warn != 1 else ''}")
+    return ", ".join(parts) if parts else no_issues
+
+
 def _cycle_severity(n_nodes: int) -> Severity:
     """2-node mutual imports are info, 3-5 a minor cycle, 6+ structural."""
     if n_nodes <= 2:
@@ -174,12 +195,14 @@ def _run_cycle(root: Path) -> ToolResult:
     scan_root = root if root.is_dir() else root.parent
     cycles = find_cycles(_build_import_graph(scan_root))
     diags = _cycle_diags(cycles)
-    n = len(cycles)
     return ToolResult(
         tool="frob-cycle",
         exit_code=1 if any(d.severity == "error" for d in diags) else 0,
         diagnostics=diags,
-        summary=f"{n} cycle{'s' if n != 1 else ''} found" if cycles else "no cycles",
+        # T-0228: split by severity -- a run with only info/warning-class
+        # cycles must never render as a bare, alarming "N cycle(s) found"
+        # on a passing stage.
+        summary=_severity_counts_summary(diags, no_issues="no cycles"),
     )
 
 
@@ -350,7 +373,17 @@ def _run_gates(
     if delta_note is not None:
         diags.append(Diagnostic(severity="warning", message=delta_note))
     n_err = _error_count(violations)
-    summary = f"{len(violations)} violation(s), {len(report.waived)} waived"
+    n_warn = len(violations) - n_err
+    # T-0228: never collapse errors and warnings into one bare "violation(s)"
+    # count -- that reads as alarming (or as a failure) even on a passing
+    # gate run where every finding is warn-class. Always split, and always
+    # report the waived count as its own term.
+    parts = [
+        f"{n_err} error{'s' if n_err != 1 else ''}",
+        f"{n_warn} warning{'s' if n_warn != 1 else ''}",
+        f"{len(report.waived)} waived",
+    ]
+    summary = ", ".join(parts)
     if delta:
         summary = f"{len(violations)}/{len(report.violations)} new  " + summary
     return ToolResult(
