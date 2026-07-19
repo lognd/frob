@@ -1815,6 +1815,117 @@ class TestOptInGates:
         violations = dup_gate(tmp_path, snap, diff)
         assert violations == ()
 
+    # Bodies padded past DupConfig's default min_tokens=40 floor (dup_gate's
+    # frob.toml reader only exposes enforce/threshold, not min_tokens, so
+    # the fixture must clear the real default rather than a lowered one).
+    _DUP_CLONE_SOURCE = (
+        "def compute_total(items):\n"
+        "    total = 0\n"
+        "    for item in items:\n"
+        "        total = total + item\n"
+        "        if total > 1000:\n"
+        "            total = 1000\n"
+        "        total = total - 0\n"
+        "        total = total + 0\n"
+        "        total = total - 0\n"
+        "        total = total + 0\n"
+        "        total = total - 0\n"
+        "    return total\n"
+        "\n"
+        "\n"
+        "def compute_sum(values):\n"
+        "    total = 0\n"
+        "    for value in values:\n"
+        "        total = total + value\n"
+        "        if total > 1000:\n"
+        "            total = 1000\n"
+        "        total = total - 0\n"
+        "        total = total + 0\n"
+        "        total = total - 0\n"
+        "        total = total + 0\n"
+        "        total = total - 0\n"
+        "    return total\n"
+    )
+
+    def test_dup_gate_fires_on_planted_clone_when_enabled(self, tmp_path: Path) -> None:
+        """T-0191: [dup].enforce=true wires the smart R1-R5 pipeline into the
+        gate -- a planted alpha-renamed clone (compute_total/compute_sum,
+        identical after R3 canonicalization) must fail the gate when one
+        side is touched."""
+        # frob:tests src/frob/gates/__init__.py::dup_gate
+        from frob.dup import _core as dup_core
+        from frob.gates import dup_gate
+
+        if not dup_core.core_available():
+            pytest.skip("frob-core native extension not installed")
+        _write(tmp_path, "src/a.py", self._DUP_CLONE_SOURCE)
+        _write(
+            tmp_path,
+            "frob.toml",
+            "[dup]\nenforce = true\nthreshold = 0.8\n",
+        )
+        snap = _snapshot(tmp_path)
+        # compute_total is the first symbol in the file (lines 1-12).
+        diff = Diff(base="main", hunks=(Hunk(file="src/a.py", span=(1, 12)),))
+        violations = dup_gate(tmp_path, snap, diff)
+        assert any(v.rule == "DUP001" for v in violations), violations
+
+    def test_dup_gate_planted_clone_waived_passes(self, tmp_path: Path) -> None:
+        """T-0191: a `frob:waive DUP001 reason=...` directive on the touched
+        clone suppresses the violation via the normal waiver path -- the
+        gate itself still reports it (waiving happens post-gate), but
+        `_apply_waivers` removes it from the kept set with a reason."""
+        from frob.dup import _core as dup_core
+        from frob.gates import _apply_waivers, dup_gate
+
+        if not dup_core.core_available():
+            pytest.skip("frob-core native extension not installed")
+        waived_source = (
+            "def compute_total(items):\n"
+            '    # frob:waive DUP001 reason="known clone, tracked in T-0191 fixture"\n'
+            "    total = 0\n"
+            "    for item in items:\n"
+            "        total = total + item\n"
+            "        if total > 1000:\n"
+            "            total = 1000\n"
+            "        total = total - 0\n"
+            "        total = total + 0\n"
+            "        total = total - 0\n"
+            "        total = total + 0\n"
+            "        total = total - 0\n"
+            "    return total\n"
+            "\n"
+            "\n"
+            "def compute_sum(values):\n"
+            "    total = 0\n"
+            "    for value in values:\n"
+            "        total = total + value\n"
+            "        if total > 1000:\n"
+            "            total = 1000\n"
+            "        total = total - 0\n"
+            "        total = total + 0\n"
+            "        total = total - 0\n"
+            "        total = total + 0\n"
+            "        total = total - 0\n"
+            "    return total\n"
+        )
+        _write(tmp_path, "src/a.py", waived_source)
+        _write(
+            tmp_path,
+            "frob.toml",
+            "[dup]\nenforce = true\nthreshold = 0.8\n",
+        )
+        snap = _snapshot(tmp_path)
+        diff = Diff(base="main", hunks=(Hunk(file="src/a.py", span=(1, 13)),))
+        violations = dup_gate(tmp_path, snap, diff)
+        assert any(v.rule == "DUP001" for v in violations), violations
+
+        kept, waived = _apply_waivers(violations, snap)
+        assert _first_rule(kept, "DUP001") is None
+        waived_dup001 = _first_rule(waived, "DUP001")
+        assert waived_dup001 is not None
+        assert waived_dup001.waived is not None
+
     def test_fuzz_gate_off_by_default(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/__init__.py::fuzz_gate
         # frob:tests src/frob/fuzz kind="integration"
