@@ -1290,7 +1290,7 @@ instructions (review-gated) -- left in-progress for reviewer.
 ```yaml
 id: T-0223
 title: THREAT003 CWE-78 discharge impossible in foreign-less library models
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-18'
