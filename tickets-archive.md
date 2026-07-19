@@ -10854,27 +10854,6 @@ Filed: none (no out-of-scope work found).
 Gates: `frob check --ticket T-0168` and `frob test --base main` to be
 recorded post-merge in this same Done report update if either surfaces
 findings; otherwise this text stands as final.
-```yaml
-id: T-0169
-title: capability conformance did not scan TS/JS in the logand.app pilot -- verify
-  per-language wiring
-state: queued
-kind: bug
-origin: agent
-created: '2026-07-18'
-blocked_by: []
-parent: null
-scope:
-- src/frob/strata/_selfconform.py
-- src/frob/vet/_capability.py
-- tests/**
-- tickets.md
-evidence: []
-attachments: []
-acceptance: []
-threat: null
-```
-logand.app pilot reports browser-side capabilities could not be auto-verified, leaving permanent SYS101 warnings -- yet vet _capability HAS a typescript pattern table (.ts/.tsx/.js in _EXT_LANGUAGE). Investigate whether the conformance path (scan_directory_capabilities via _selfconform / sys audit) actually walks TS/JS files or silently skips them (wiring bug), or whether the pilot's code globs missed the frontend tree (doc/UX gap). Either way the fix must make TS scanning provably active -- this feeds directly into T-0158's coverage matrix, which should gain a live wiring assertion (language column proven active end-to-end through sys audit, not just patterns existing).
 
 <!-- ticket:T-0169 -->
 ```yaml
