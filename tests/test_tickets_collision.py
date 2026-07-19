@@ -304,3 +304,34 @@ class TestTick002GateUnwaivable:
         queue = TicketQueue(tickets={draft.id: draft})
         violations = tickets_gate(Path("."), queue)
         assert violations == ()
+
+
+class TestRealLedgerIntegrity:
+    """The committed ledger files must never carry a duplicate ticket id --
+    the recurring failure mode of both-sides-append merge splices (T-0206's
+    stray T-0169, plus the TICK002 draft-dup incident). The dict-keyed
+    loaders silently collapse a dup (last id wins), so this asserts against
+    the raw `id:` lines to catch what a loader would hide."""
+
+    @staticmethod
+    def _ledger_ids(path: Path) -> list[str]:
+        import re
+
+        if not path.exists():
+            return []
+        return re.findall(r"^id: (T-[\w-]+)$", path.read_text(), re.MULTILINE)
+
+    def test_no_duplicate_ids_within_or_across_ledgers(self) -> None:
+        from collections import Counter
+
+        root = Path(__file__).resolve().parents[1]
+        active = self._ledger_ids(root / "tickets.md")
+        archive = self._ledger_ids(root / "tickets-archive.md")
+        active_dups = sorted(i for i, n in Counter(active).items() if n > 1)
+        archive_dups = sorted(i for i, n in Counter(archive).items() if n > 1)
+        cross = sorted(set(active) & set(archive))
+        assert active_dups == [], f"duplicate ids in tickets.md: {active_dups}"
+        assert archive_dups == [], (
+            f"duplicate ids in tickets-archive.md: {archive_dups}"
+        )
+        assert cross == [], f"ids present in BOTH active and archive: {cross}"
