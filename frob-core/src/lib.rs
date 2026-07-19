@@ -632,24 +632,67 @@ fn exact_regions(
     let lcp = kasai_lcp(&global, &sa);
 
     let mut raw: Vec<(usize, usize, usize, usize, usize)> = Vec::new();
-    for i in 1..sa.len() {
-        let l = lcp[i];
-        if l < min_len {
-            continue;
-        }
-        let pos_a = sa[i - 1];
-        let pos_b = sa[i];
-        let (Some(da), Some(db)) = (doc_of[pos_a], doc_of[pos_b]) else {
-            // A sentinel-starting suffix can only match another suffix for
-            // zero tokens (its very first "token" is a unique negative id
-            // no real token shares) -- l < min_len already filtered this
-            // out whenever min_len >= 1, this is a defensive belt-and-
-            // braces check, not a reachable path in practice.
-            continue;
-        };
-        raw.push((da, offset_of[pos_a], db, offset_of[pos_b], l));
+    for (lo, hi) in lcp_runs(&lcp, min_len) {
+        emit_run_pairs(&sa, &doc_of, &offset_of, lo, hi, &lcp, min_len, &mut raw);
     }
     merge_diagonals(raw)
+}
+
+/// Maximal `[lo, hi]` (inclusive, both indices into `sa`/`lcp`) SA-index
+/// ranges such that every consecutive pair inside the range has
+/// `lcp >= min_len` -- i.e. every suffix in `sa[lo..=hi]` shares a common
+/// prefix of at least `min_len` tokens with every other suffix in the same
+/// range (LCP is a "staircase": for a sorted suffix array, the shared
+/// prefix length between ANY two suffixes in a range is the MINIMUM
+/// `lcp[k]` for `k` strictly between them, so bounding every adjacent gap
+/// bounds every pairwise gap too). This is what lets `exact_regions` emit
+/// every occurrence pair of a block repeated 3+ times, not just
+/// SA-adjacent ones (the bug T-0193's reviewer caught: only comparing
+/// `(sa[i-1], sa[i])` silently drops `(sa[i-2], sa[i])` and further-apart
+/// pairs within the same run).
+fn lcp_runs(lcp: &[usize], min_len: usize) -> Vec<(usize, usize)> {
+    let n = lcp.len();
+    let mut runs: Vec<(usize, usize)> = Vec::new();
+    let mut run_start: Option<usize> = None;
+    for i in 1..n {
+        if lcp[i] >= min_len {
+            if run_start.is_none() {
+                run_start = Some(i - 1);
+            }
+        } else if let Some(start) = run_start.take() {
+            runs.push((start, i - 1));
+        }
+    }
+    if let Some(start) = run_start {
+        runs.push((start, n - 1));
+    }
+    runs
+}
+
+/// Emit every occurrence pair `(sa[i], sa[j])`, `i < j`, within one
+/// `lcp_runs` range `[lo, hi]` -- the shared length reported is the
+/// minimum `lcp[k]` for `k` in `(lo, hi]`, which every pair in the range
+/// is guaranteed to share (see `lcp_runs`'s doc comment). O(k^2) in the
+/// run size `k`; runs are bounded by how many times one block repeats in
+/// the corpus, not by corpus size, so this stays cheap in practice.
+fn emit_run_pairs(
+    sa: &[usize],
+    doc_of: &[Option<usize>],
+    offset_of: &[usize],
+    lo: usize,
+    hi: usize,
+    lcp: &[usize],
+    min_len: usize,
+    out: &mut Vec<(usize, usize, usize, usize, usize)>,
+) {
+    let run_len = lcp[lo + 1..=hi].iter().copied().min().unwrap_or(min_len);
+    for i in lo..=hi {
+        let Some(da) = doc_of[sa[i]] else { continue };
+        for j in (i + 1)..=hi {
+            let Some(db) = doc_of[sa[j]] else { continue };
+            out.push((da, offset_of[sa[i]], db, offset_of[sa[j]], run_len));
+        }
+    }
 }
 
 #[cfg(test)]
@@ -872,6 +915,89 @@ mod tests {
         assert!(regions.is_empty());
         let regions = exact_regions(vec![vec!["a".into()]], 0);
         assert!(regions.is_empty());
+    }
+
+    /// True if `regions` contains a pair naming exactly `(doc_x, doc_y)`
+    /// (either order) with `length >= min_len` -- the shape a caller of
+    /// `exact_regions` actually cares about, not exact offsets.
+    fn has_pair(
+        regions: &[(usize, usize, usize, usize, usize)],
+        doc_x: usize,
+        doc_y: usize,
+        min_len: usize,
+    ) -> bool {
+        regions.iter().any(|&(da, _, db, _, l)| {
+            l >= min_len && ((da == doc_x && db == doc_y) || (da == doc_y && db == doc_x))
+        })
+    }
+
+    #[test]
+    fn exact_regions_three_identical_documents_reports_all_three_pairs() {
+        // frob:tests frob-core/src/lib.rs::exact_regions kind="unit"
+        // Regression for the reviewer-caught bug (T-0193 round 2): only
+        // SA-adjacent suffix pairs were compared, so a block repeated in
+        // 3+ documents silently dropped non-adjacent occurrence pairs --
+        // e.g. (doc0, doc2) when doc1's matching suffix sorted between
+        // them in the suffix array.
+        let block: Vec<String> = ["a", "b", "c", "d"].iter().map(|s| s.to_string()).collect();
+        let docs = vec![block.clone(), block.clone(), block.clone()];
+        let regions = exact_regions(docs, 2);
+        assert!(has_pair(&regions, 0, 1, 4), "missing (doc0, doc1): {regions:?}");
+        assert!(has_pair(&regions, 0, 2, 4), "missing (doc0, doc2): {regions:?}");
+        assert!(has_pair(&regions, 1, 2, 4), "missing (doc1, doc2): {regions:?}");
+    }
+
+    #[test]
+    fn exact_regions_four_way_shared_block_reports_every_pair() {
+        // frob:tests frob-core/src/lib.rs::exact_regions kind="unit"
+        let block: Vec<String> = (0..6).map(|i| format!("w{i}")).collect();
+        let docs = vec![block.clone(), block.clone(), block.clone(), block.clone()];
+        let regions = exact_regions(docs, 3);
+        for x in 0..4 {
+            for y in (x + 1)..4 {
+                assert!(has_pair(&regions, x, y, 6), "missing ({x}, {y}): {regions:?}");
+            }
+        }
+    }
+
+    #[test]
+    fn exact_regions_mixed_case_two_nested_shared_regions() {
+        // frob:tests frob-core/src/lib.rs::exact_regions kind="unit"
+        // Three documents share region A ("p q r s"); only two of those
+        // three (doc0, doc1) additionally share a second region B
+        // ("m n o", immediately following A) that doc2 does not have at
+        // all. Both groupings must come out correctly -- A across all
+        // three pairs, and doc0/doc1's match must extend past A's length
+        // (proving B was actually captured, not just A reported again).
+        let region_a: Vec<&str> = vec!["p", "q", "r", "s"];
+        let region_b: Vec<&str> = vec!["m", "n", "o"];
+        let mk = |extra: &[&str]| -> Vec<String> {
+            region_a
+                .iter()
+                .chain(extra.iter())
+                .map(|s| s.to_string())
+                .collect()
+        };
+        let doc0 = mk(&region_b);
+        let doc1 = mk(&region_b);
+        let doc2 = mk(&["x", "y", "z"]); // no region B
+        let regions = exact_regions(vec![doc0, doc1, doc2], 3);
+
+        // Region A (length 4) ties all three documents together.
+        assert!(has_pair(&regions, 0, 1, 4), "missing region-A (doc0,doc1): {regions:?}");
+        assert!(has_pair(&regions, 0, 2, 4), "missing region-A (doc0,doc2): {regions:?}");
+        assert!(has_pair(&regions, 1, 2, 4), "missing region-A (doc1,doc2): {regions:?}");
+
+        // Region B (length 3) only ties doc0/doc1 -- and specifically at
+        // length >= 3+4=7 they must share more than just region A alone,
+        // proving region B was actually found (not merely region A
+        // reported twice under a coincidentally-passing length check).
+        assert!(
+            regions
+                .iter()
+                .any(|&(da, _, db, _, l)| (da == 0 && db == 1) && l >= 7),
+            "expected a doc0/doc1 match covering both region A and B: {regions:?}"
+        );
     }
 
     #[test]
