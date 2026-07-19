@@ -27,6 +27,16 @@ _COLLECT_TIMEOUT_S = 300.0
 _NO_TESTS_COLLECTED_EXIT = 5
 _CARGO_TEST_LINE_RE = re.compile(r"^(?P<path>[\w:]+): test$")
 
+# cargo's own wording (stable across recent toolchains) when `--lib` is
+# passed to a crate that declares no library target (e.g. a `cargo-fuzz`
+# harness crate: bin-only, no `src/lib.rs`). This is a crate SHAPE, not a
+# broken build -- `cargo test --lib -- --list` exits 101 for it exactly the
+# same way it would for a genuine compile error, so the two must be told
+# apart by message text (T-0301: a lib-less crate anywhere in the workspace
+# was silently failing the ENTIRE collection, unvalidating every rust
+# binding repo-wide).
+_NO_LIB_TARGET_RE = re.compile(r"no library targets found in package")
+
 
 def _prune_dirnames(
     dirpath: Path, root: Path, dirnames: list[str], exclude_globs: tuple[str, ...]
@@ -289,12 +299,24 @@ def _cargo_list_result(
     spawned: Result[ProcResult, GitError], crate_dir: Path
 ) -> Result[list[str], TestingError]:
     """Turn a spawned `cargo test --list` invocation into parsed test paths,
-    or `Err` on spawn/exit failure."""
+    or `Err` on spawn/exit failure. A crate with no library target (T-0301,
+    e.g. a `cargo-fuzz` bin-only harness crate) is a crate SHAPE, not a
+    broken build: `cargo test --lib -- --list` exits nonzero for it exactly
+    the way a genuine compile error would, so this is detected by cargo's
+    own "no library targets found" wording and SKIPPED (an empty test list,
+    logged at INFO) rather than failing the whole collection -- a real
+    compile error still returns `Err` unchanged."""
     if spawned.is_err:
         _log.error("collect_rust_tests: cargo failed to spawn in %s", crate_dir)
         return Err(TestingError.CollectFailed)
     result = spawned.danger_ok
     if result.returncode != 0:
+        if _NO_LIB_TARGET_RE.search(result.stderr):
+            _log.info(
+                "collect_rust_tests: %s has no library target, skipping (T-0301)",
+                crate_dir,
+            )
+            return Ok([])
         _log.error(
             "collect_rust_tests: cargo test --list exited %d in %s: %s",
             result.returncode,

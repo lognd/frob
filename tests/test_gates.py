@@ -1082,6 +1082,29 @@ class TestTestGate:
         )
         assert any(v.rule == "TEST005" and v.file == record.id.path for v in violations)
 
+    def test_test005_skips_test_file_symbols(self, tmp_path: Path) -> None:
+        # T-0301: TEST005's per-symbol branch floor must skip test-file
+        # symbols exactly like TEST001/TEST002 (_is_test_file) -- a test
+        # fixture measured below the floor must not fire, matching the
+        # existing skip other TEST rules already apply.
+        from typani.option import Some
+
+        from frob.gates import CoverageData
+
+        _write(tmp_path, "tests/test_a.py", "def helper(x):\n    return x\n")
+        snap = _snapshot(tmp_path)
+        record = snap.symbols["tests/test_a.py::helper"]
+        coverage = CoverageData(
+            source_sha="x", symbol_branch={record.symref: 40.0}, module_line={}
+        )
+        tests = CollectedTests(node_ids=frozenset())
+        violations = run_test_gate(
+            snap, (), Some(coverage), tests, TestPolicy(unit_branch_cov=90)
+        )
+        assert not any(
+            v.rule == "TEST005" and v.file == record.id.path for v in violations
+        )
+
     def test_test005_module_line_floor(self, tmp_path: Path) -> None:
         from typani.option import Some
 

@@ -965,6 +965,100 @@ class TestCollectRustTests:
         assert result.is_ok
         assert result.danger_ok.node_ids == frozenset()
 
+    def test_collect_rust_tests_skips_lib_less_crate(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # T-0301: a crate with no library target (a cargo-fuzz-shaped
+        # bin-only harness) must be SKIPPED with an INFO log, not fail the
+        # whole collection -- `cargo test --lib -- --list` exits nonzero for
+        # it exactly like a genuine compile error would, so this is only
+        # detected by cargo's own "no library targets found" wording.
+        from typani import Ok
+
+        import frob.testing._collect as collect_mod
+
+        self._write_crate(tmp_path)
+        _write(
+            tmp_path,
+            "libless/Cargo.toml",
+            """
+            [package]
+            name = "libless"
+            version = "0.1.0"
+            """,
+        )
+        _write(tmp_path, "libless/src/main.rs", "fn main() {}\n")
+
+        monkeypatch.setattr(
+            collect_mod,
+            "_cargo_env",
+            lambda: Ok({"PYO3_PYTHON": "/usr/bin/python3.12"}),
+        )
+
+        def fake_run_argv(argv, *, cwd=None, timeout_s=300.0):
+            if str(cwd).endswith("libless"):
+                return Ok(
+                    ProcResult(
+                        argv=tuple(argv),
+                        returncode=101,
+                        stdout="",
+                        stderr="error: no library targets found in package `libless`\n",
+                    )
+                )
+            stdout = (
+                "parse::tests::error_unknown_metric: test\n"
+                "tests::reachable_returns_witness_paths: test\n"
+                "\n2 tests, 0 benchmarks\n"
+            )
+            return Ok(
+                ProcResult(argv=tuple(argv), returncode=0, stdout=stdout, stderr="")
+            )
+
+        monkeypatch.setattr(collect_mod, "run_argv", fake_run_argv)
+
+        result = collect_mod.collect_rust_tests(tmp_path)
+        assert result.is_ok
+        assert result.danger_ok.node_ids == frozenset(
+            {
+                "crate/src/parse.rs::tests::error_unknown_metric",
+                "crate/src/lib.rs::tests::reachable_returns_witness_paths",
+            }
+        )
+
+    def test_collect_rust_tests_still_errs_on_genuine_compile_error(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # T-0301: a crate that fails to compile (not merely lib-less) must
+        # still fail the whole collection -- only the specific "no library
+        # targets found" wording is treated as a skip.
+        from typani import Ok
+
+        import frob.testing._collect as collect_mod
+
+        self._write_crate(tmp_path)
+        monkeypatch.setattr(
+            collect_mod,
+            "_cargo_env",
+            lambda: Ok({"PYO3_PYTHON": "/usr/bin/python3.12"}),
+        )
+
+        def fake_run_argv(argv, *, cwd=None, timeout_s=300.0):
+            return Ok(
+                ProcResult(
+                    argv=tuple(argv),
+                    returncode=101,
+                    stdout="",
+                    stderr="error: could not compile `crate` (lib test) due to 1 "
+                    "previous error\n",
+                )
+            )
+
+        monkeypatch.setattr(collect_mod, "run_argv", fake_run_argv)
+
+        result = collect_mod.collect_rust_tests(tmp_path)
+        assert result.is_err
+        assert result.danger_err == TestingError.CollectFailed
+
     def test_collect_rust_tests_err_when_env_unavailable(
         self, tmp_path: Path, monkeypatch
     ) -> None:

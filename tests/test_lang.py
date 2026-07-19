@@ -284,6 +284,76 @@ class TestParseTsRustCppC:
         directive_comment = next(c for c in pf.comments if "frob:doc" in c.text)
         assert directive_comment.following == "BelowAttrs"
 
+    def test_rust_directive_binds_above_one_line_rustdoc(self, tmp_path: Path) -> None:
+        """T-0301 (feldspar/lithos escalation): a single-line `///` rustdoc
+        comment between a `// frob:doc` directive and the item was already
+        reported to bind correctly -- kept as a guard against regressing it
+        while fixing the multi-line case below."""
+        source = (
+            "// frob:doc docs/x.md#anchor\n/// One doc line.\npub fn one_line() {}\n"
+        )
+        pf = parse_file(_write(tmp_path, "one_line_doc.rs", source)).danger_ok
+        directive_comment = next(c for c in pf.comments if "frob:doc" in c.text)
+        assert directive_comment.following == "one_line"
+
+    def test_rust_directive_binds_above_multiline_rustdoc(self, tmp_path: Path) -> None:
+        """T-0301: a `// frob:doc` directive placed above a MULTI-line `///`
+        rustdoc block must still bind to the item below (feldspar/lithos
+        escalation, tickets.md T-0012 Done report): `_is_trailing_comment`
+        compared raw tree-sitter `end_point` values, which for a rust
+        `///` line-comment node bleed into column 0 of the FOLLOWING line
+        (a lexer artifact `span_of` already folds back but this helper
+        didn't) -- so every doc-comment line whose predecessor was ALSO a
+        doc-comment line was misclassified as "trailing", truncating
+        `_block_ends`'s backward chain after the block's second line and
+        starving `find_following_symbol`'s 2-line window once 3+ content
+        lines separated the directive from the item."""
+        source = (
+            "// frob:doc docs/x.md#anchor\n"
+            "/// Line one.\n"
+            "/// Line two.\n"
+            "/// Line three.\n"
+            "pub fn three_lines() {}\n"
+        )
+        pf = parse_file(_write(tmp_path, "multiline_doc.rs", source)).danger_ok
+        directive_comment = next(c for c in pf.comments if "frob:doc" in c.text)
+        assert directive_comment.following == "three_lines"
+
+    def test_rust_directive_binds_above_zero_line_rustdoc(self, tmp_path: Path) -> None:
+        """T-0301: no rustdoc block at all (directive directly above the
+        item) must keep working -- the zero-line case in the escalation's
+        three-length matrix (1-line, 3-line, 0-line)."""
+        source = "// frob:doc docs/x.md#anchor\npub fn zero_lines() {}\n"
+        pf = parse_file(_write(tmp_path, "zero_line_doc.rs", source)).danger_ok
+        directive_comment = next(c for c in pf.comments if "frob:doc" in c.text)
+        assert directive_comment.following == "zero_lines"
+
+    def test_rust_directive_binds_regardless_of_indentation_mismatch(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0301 (Bug C): binding is purely line-adjacency based
+        (`find_enclosing_symbol`/`find_following_symbol` compare `RawSymbol`
+        line spans only, never `start_point`'s column) -- a directive at a
+        DIFFERENT indentation than the multi-line rustdoc block and item it
+        binds to must still resolve. This locks the honest rule investigated
+        for Bug C: indentation is deliberately never part of the binding
+        decision, and no separate indentation-comparison defect was found
+        once Bug C's root cause was traced (it was Bug B's `_is_trailing_comment`
+        artifact, not an indentation issue) -- this test is the regression
+        guard for that finding, not new indentation-aware logic."""
+        source = (
+            "impl Widget {\n"
+            "// frob:doc docs/x.md#anchor\n"
+            "    /// Line one.\n"
+            "    /// Line two.\n"
+            "    /// Line three.\n"
+            "    pub fn indented_method(&self) {}\n"
+            "}\n"
+        )
+        pf = parse_file(_write(tmp_path, "indent_mismatch.rs", source)).danger_ok
+        directive_comment = next(c for c in pf.comments if "frob:doc" in c.text)
+        assert directive_comment.following == "Widget.indented_method"
+
     def test_cpp(self) -> None:
         pf = parse_file(_FIXTURES / "sample.cpp").danger_ok
         assert pf.language == "cpp"

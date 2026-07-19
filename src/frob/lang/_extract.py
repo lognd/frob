@@ -138,6 +138,25 @@ def _bind_comments(
     return tuple(out)
 
 
+def _effective_end_row(node: Node) -> int:
+    """0-based end row `node` actually occupies, with the tree-sitter
+    trailing-newline artifact folded back (the same rule `span_of` applies,
+    T-0301): some comment nodes -- a rust `///` line comment is the
+    reproducing case -- report `end_point` at column 0 of the FOLLOWING
+    line rather than ending on their own row. Comparing raw `end_point[0]`
+    values (as `_is_trailing_comment` used to) treats every doc-comment
+    line whose predecessor is ALSO a doc-comment line as "trailing" (the
+    artifact makes the predecessor's raw end row equal this node's start
+    row), which silently truncated `_block_ends`'s backward chain after the
+    first line of any 3+-line `///` block -- exactly the escalation this
+    fixes (a `// frob:doc` placed above a multi-line rustdoc block failing
+    to bind; single-line rustdoc happened to have only one such comparison
+    and so looked fine). Reuses `span_of`'s own fold rule (1-based inclusive
+    end line) rather than re-deriving it, so the artifact-correction logic
+    lives in exactly one place."""
+    return span_of(node)[1] - 1
+
+
 def _is_trailing_comment(node: Node) -> bool:
     """True when `node` shares its source line with code (a trailing `# ...`).
 
@@ -146,9 +165,13 @@ def _is_trailing_comment(node: Node) -> bool:
     line is really the *code's* line, not a comment line. Detected via the
     node's previous tree sibling ending on the same row (T-0100): a
     standalone comment's previous sibling, if any, ends on an earlier row.
+    Both sides are compared via `_effective_end_row`/`start_point`, never
+    raw `end_point` (T-0301) -- see `_effective_end_row` for why a raw
+    comparison misfires whenever the previous sibling is itself a
+    doc-comment line.
     """
     prev = node.prev_sibling
-    return prev is not None and prev.end_point[0] == node.start_point[0]
+    return prev is not None and _effective_end_row(prev) == node.start_point[0]
 
 
 def _block_ends(sorted_nodes: list[Node]) -> list[int]:

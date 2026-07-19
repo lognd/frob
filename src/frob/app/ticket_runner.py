@@ -674,8 +674,22 @@ def _apply_evidence(root: Path, ticket_id: str, node_ids: list[str]):
     --evidence` so all three routes go through identical validation --
     never through an ad hoc, unvalidated write. Returns the `add_evidence`
     Result unchanged so callers (e.g. `_close`) can refuse to transition
-    state on failure."""
-    from frob.testing import collect_python_tests
+    state on failure.
+
+    T-0301 (feldspar T-0015 escalation): a `--evidence` id must resolve
+    against the union of every collected oracle the repo's `[[test.runner]]`
+    entries declare, not pytest alone -- a rust node id IS collected (via
+    `collect_rust_tests`, into `.frob/cargo-collect.json`) whenever
+    `frob.toml` declares a `language = "rust"` runner, so it must be part of
+    the same oracle set pytest ids validate against. Rust collection is
+    attempted only when a rust runner is actually configured (repos with no
+    rust runner never pay a `cargo` invocation here), and a rust-collection
+    failure degrades to a WARNING plus python-only validation rather than
+    blocking evidence recording outright -- an unrelated cargo/pyo3
+    environment problem must not stop a purely-python ticket's evidence
+    from being recorded (same resilience posture as T-0144's `make core`
+    guidance elsewhere in this module)."""
+    from frob.testing import collect_python_tests, collect_rust_tests, load_runners
     from frob.tickets import add_evidence
 
     collected = collect_python_tests(root)
@@ -685,7 +699,21 @@ def _apply_evidence(root: Path, ticket_id: str, node_ids: list[str]):
         )
         return collected
 
-    result = add_evidence(root, ticket_id, node_ids, collected.danger_ok.node_ids)
+    collected_ids = set(collected.danger_ok.node_ids)
+
+    runners = load_runners(root)
+    if runners.is_ok and any(spec.language == "rust" for spec in runners.danger_ok):
+        rust_collected = collect_rust_tests(root)
+        if rust_collected.is_err:
+            _log.warning(
+                "ticket evidence: rust collection failed (%s); validating "
+                "against pytest ids only for this call",
+                rust_collected.danger_err,
+            )
+        else:
+            collected_ids |= rust_collected.danger_ok.node_ids
+
+    result = add_evidence(root, ticket_id, node_ids, frozenset(collected_ids))
     _log_evidence_result(ticket_id, result)
     return result
 

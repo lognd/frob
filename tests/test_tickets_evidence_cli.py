@@ -189,3 +189,109 @@ class TestTicketCloseEvidence:
             "tests/x.py::test_a",
             "tests/x.py::test_b",
         )
+
+
+class TestTicketEvidenceRustOracle:
+    """T-0301 (feldspar T-0015 escalation): `--evidence` ids must resolve
+    against the union of every collected oracle a repo's `[[test.runner]]`
+    entries declare, not pytest alone -- a rust node id collected via
+    `collect_rust_tests` (cached at `.frob/cargo-collect.json`) must
+    validate the same way a pytest node id does."""
+
+    def _write_rust_runner_toml(self, tmp_path: Path) -> None:
+        (tmp_path / "frob.toml").write_text(
+            "[[test.runner]]\n"
+            'language = "rust"\n'
+            'command = ["cargo", "test", "--lib", "{filters}"]\n'
+            'all_command = ["cargo", "test", "--lib"]\n'
+            'cwd = "."\n',
+            encoding="utf-8",
+        )
+
+    def test_rust_node_id_from_fake_cargo_collect_cache_resolves(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        _patch_collect(monkeypatch, frozenset())
+        self._write_rust_runner_toml(tmp_path)
+
+        import frob.testing as testing_mod
+
+        rust_node_id = "crates/feldspar-core/src/symbolic.rs::tests::solves"
+        monkeypatch.setattr(
+            testing_mod,
+            "collect_rust_tests",
+            lambda root: Ok(CollectedTests(node_ids=frozenset({rust_node_id}))),
+        )
+
+        cfg = AppConfig(
+            ticket_command="new",
+            ticket_title="rust evidence",
+            ticket_kind="feature",
+            ticket_path=tmp_path,
+            ticket_evidence_ids=[rust_node_id],
+        )
+        _new(tmp_path, cfg)
+
+        queue = load_queue(tmp_path).danger_ok
+        ticket = queue.tickets["T-0001"]
+        assert ticket.evidence == (rust_node_id,)
+
+    def test_no_rust_runner_declared_never_collects_rust(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # No frob.toml at all here -- load_runners is Ok(()), so
+        # collect_rust_tests must never even be attempted (no unnecessary
+        # cargo invocation for repos with no rust runner configured).
+        _patch_collect(monkeypatch, frozenset({"tests/x.py::test_a"}))
+
+        import frob.testing as testing_mod
+
+        def _boom(root):  # noqa: ANN001, ANN202
+            raise AssertionError("collect_rust_tests must not be called")
+
+        monkeypatch.setattr(testing_mod, "collect_rust_tests", _boom)
+
+        cfg = AppConfig(
+            ticket_command="new",
+            ticket_title="python only",
+            ticket_kind="feature",
+            ticket_path=tmp_path,
+            ticket_evidence_ids=["tests/x.py::test_a"],
+        )
+        _new(tmp_path, cfg)
+
+        queue = load_queue(tmp_path).danger_ok
+        assert queue.tickets["T-0001"].evidence == ("tests/x.py::test_a",)
+
+    def test_rust_collection_failure_degrades_to_python_only(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
+    ) -> None:
+        # A rust-collection failure (e.g. no PyO3 dev env) must not block
+        # evidence recording for an unrelated python id -- it degrades to
+        # python-only validation with a warning, not a hard failure.
+        from typani import Err
+
+        from frob.testing import TestingError
+
+        _patch_collect(monkeypatch, frozenset({"tests/x.py::test_a"}))
+        self._write_rust_runner_toml(tmp_path)
+
+        import frob.testing as testing_mod
+
+        monkeypatch.setattr(
+            testing_mod,
+            "collect_rust_tests",
+            lambda root: Err(TestingError.CargoEnvUnavailable),
+        )
+
+        cfg = AppConfig(
+            ticket_command="new",
+            ticket_title="degraded rust collection",
+            ticket_kind="feature",
+            ticket_path=tmp_path,
+            ticket_evidence_ids=["tests/x.py::test_a"],
+        )
+        _new(tmp_path, cfg)
+
+        queue = load_queue(tmp_path).danger_ok
+        assert queue.tickets["T-0001"].evidence == ("tests/x.py::test_a",)

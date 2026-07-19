@@ -1755,12 +1755,18 @@ def _test004(
 def _test005_symbols(
     snapshot: GraphSnapshot, data: CoverageData, cfg: TestPolicy
 ) -> list[Violation]:
-    """TEST005 per-symbol branch-coverage floor."""
+    """TEST005 per-symbol branch-coverage floor.
+
+    Skips test-file symbols exactly like TEST001/TEST002 do (T-0301): a
+    test-file helper/fixture is not a public interface TEST005's floor is
+    meant to police, and measuring it forced env-gated test fixtures into
+    noise waivers just to stay green (lithos FROBLEMS 2026-07-19)."""
     violations: list[Violation] = []
     for record in snapshot.symbols.values():
-        if not record.public or record.kind not in (
-            SymbolKind.FUNCTION,
-            SymbolKind.METHOD,
+        if (
+            not record.public
+            or record.kind not in (SymbolKind.FUNCTION, SymbolKind.METHOD)
+            or _is_test_file(record.id.path)
         ):
             continue
         pct = data.symbol_branch.get(record.symref)

@@ -8992,3 +8992,159 @@ acceptance: []
 threat: null
 ```
 T-0294 fixed the DSL parser's trailing-prose rejection, which un-masked two frob:todo T-0002 directives in src/frob/fuzz/_run.py:30 and src/frob/fuzz/_arbitrary.py:41 (process-global registry scoping; wall-clock budget_s). T-0002 (frob.fuzz generators + FUZZ gates Phase 8) is dropped, so TODO001 now correctly fires: these TODOs are not bound to an open ticket. Either reopen T-0002's scope in a live ticket and rebind, or file focused successor tickets per TODO and rebind. Filed rather than fixed in T-0294 to stay within that ticket's declared DSL-parser scope (this is a ticket-graph bookkeeping fix, not a parser fix).
+
+<!-- ticket:T-0301 -->
+```yaml
+id: T-0301
+title: Fix 5 lithos/feldspar adoption-campaign frob bugs
+state: done
+kind: bug
+origin: agent
+created: '2026-07-19'
+blocked_by: []
+parent: null
+scope:
+- src/frob/app/ticket_runner.py
+- src/frob/testing/_collect.py
+- src/frob/lang/_extract.py
+- src/frob/gates/__init__.py
+- tests/test_tickets_evidence_cli.py
+- tests/test_testing.py
+- tests/test_lang.py
+- tests/test_gates.py
+evidence:
+- tests/test_lang.py::TestParseTsRustCppC::test_rust_directive_binds_above_multiline_rustdoc
+- tests/test_lang.py::TestParseTsRustCppC::test_rust_directive_binds_regardless_of_indentation_mismatch
+- tests/test_gates.py::TestTestGate::test_test005_skips_test_file_symbols
+- tests/test_testing.py::TestCollectRustTests::test_collect_rust_tests_skips_lib_less_crate
+- tests/test_testing.py::TestCollectRustTests::test_collect_rust_tests_still_errs_on_genuine_compile_error
+- tests/test_tickets_evidence_cli.py::TestTicketEvidenceRustOracle::test_rust_node_id_from_fake_cargo_collect_cache_resolves
+- tests/test_tickets_evidence_cli.py::TestTicketEvidenceRustOracle::test_no_rust_runner_declared_never_collects_rust
+- tests/test_tickets_evidence_cli.py::TestTicketEvidenceRustOracle::test_rust_collection_failure_degrades_to_python_only
+- frob-core/src/lib.rs::tests::wl_hash_empty_graph_is_zero
+attachments: []
+acceptance:
+- Given a repo with a rust [[test.runner]] entry, when --evidence names a collected
+  cargo test id, then it resolves instead of rejecting the batch
+- Given a // frob:doc placed above a multi-line /// rustdoc block, when the graph
+  is built, then the directive binds to the item below
+- Given a directive at a different indentation than the item/rustdoc it binds to,
+  when the graph is built, then binding still succeeds (indentation is never part
+  of the binding decision)
+- Given a public test-file symbol below the branch-coverage floor, when TEST005 runs,
+  then it is skipped like TEST001/TEST002 already skip it
+- Given a lib-less crate (no [lib]/src/lib.rs) anywhere in the workspace, when rust
+  test collection runs, then that crate is skipped with an INFO log and collection
+  still succeeds for the rest of the workspace
+threat: null
+```
+## Description
+
+Five bugs surfaced during the lithos/feldspar/graphite frob-adoption
+campaign (documented in those repos' FROBLEMS.md/tickets.md escalation
+notes, read read-only from this session):
+
+A. `frob ticket evidence`/`close --evidence` validated `--evidence` ids
+   against pytest collection only (`_apply_evidence` in
+   `src/frob/app/ticket_runner.py`), even though `collect_rust_tests`
+   already collects rust node ids into `.frob/cargo-collect.json`
+   whenever a repo's `frob.toml` declares a `language = "rust"`
+   `[[test.runner]]` entry -- a real rust node id could never resolve
+   (feldspar T-0015 escalation).
+
+B. A `// frob:doc` directive placed above a MULTI-line `///` rustdoc
+   block failed to bind to the item below (single-line rustdoc worked).
+   Root cause: `_is_trailing_comment` (src/frob/lang/_extract.py)
+   compared raw tree-sitter `end_point` values; a rust `///` line-comment
+   node's `end_point` bleeds into column 0 of the FOLLOWING line (a lexer
+   artifact `span_of` already folds back but this helper didn't), so
+   every doc-comment line whose predecessor was ALSO a doc-comment line
+   was misclassified as "trailing", truncating `_block_ends`'s backward
+   chain after the block's second line.
+
+C. Investigated as a possibly separate "indentation mismatch" bug.
+   Binding (`find_enclosing_symbol`/`find_following_symbol`) compares
+   `RawSymbol` line spans only, never column -- indentation was never
+   part of the binding decision in any of the five grammars, verified by
+   constructing dedented/indented repros in python and rust both before
+   and after fixing B. No separate defect was found: bug C's symptom was
+   entirely explained by bug B's root cause. The honest rule (indentation
+   is deliberately irrelevant to binding) is now locked by a regression
+   test rather than by new indentation-aware logic.
+
+D. TEST005's per-symbol branch-coverage floor
+   (`_test005_symbols`) measured test-file symbols, unlike TEST001/
+   TEST002 which already skip them via `_is_test_file` -- forcing
+   env-gated test fixtures into noise waivers just to stay green.
+
+E. Rust test collection (`_run_cargo_list`/`_cargo_list_result` in
+   `src/frob/testing/_collect.py`) failed the WHOLE collection (`Err`)
+   when any single crate in the workspace had no library target (e.g. a
+   `cargo-fuzz` bin-only harness crate) -- `cargo test --lib -- --list`
+   exits 101 for that shape exactly like it would for a genuine compile
+   error, silently unvalidating every rust binding repo-wide.
+
+## Plan
+
+1. A: union `collect_python_tests` + `collect_rust_tests` (only when a
+   rust runner is configured) in `_apply_evidence`; degrade to
+   python-only with a warning on rust-collection failure so an unrelated
+   cargo/pyo3 problem never blocks a purely-python ticket's evidence.
+2. B: fix `_is_trailing_comment` to compare artifact-corrected end rows
+   (reusing `span_of`'s existing fold rule) instead of raw `end_point`.
+3. C: add regression tests locking indentation-agnostic binding; no
+   separate code change (see Description).
+4. D: skip `_is_test_file` symbols in `_test005_symbols`, mirroring
+   TEST001/TEST002.
+5. E: detect cargo's "no library targets found in package" wording in
+   `_cargo_list_result` and skip that crate (INFO log, empty test list)
+   instead of returning `Err`; a genuine compile error still `Err`s.
+
+## Done report
+
+All five fixes landed with regression tests (below), `frob check`
+green (0 errors, 3 pre-existing unrelated warnings, 204 waived), `cargo
+test` green in both frob-core (23 tests) and strata-core (111 tests),
+full `pytest` suite green.
+
+A: `_apply_evidence` (src/frob/app/ticket_runner.py) now loads
+`[[test.runner]]` via `load_runners`, and if any entry declares
+`language = "rust"`, calls `collect_rust_tests` and unions its node ids
+into the validation set; a rust-collection failure logs a WARNING and
+falls back to python-only validation rather than blocking the call.
+Tests: `tests/test_tickets_evidence_cli.py::TestTicketEvidenceRustOracle`
+(fake cargo-collect via a monkeypatched `collect_rust_tests`, a
+no-rust-runner-declared guard proving cargo is never invoked
+unnecessarily, and a rust-collection-failure degrade-to-python-only
+case).
+
+B: `_is_trailing_comment` (src/frob/lang/_extract.py) now compares
+`_effective_end_row` (`span_of(node)[1] - 1`) instead of raw
+`node.prev_sibling.end_point[0]`. Tests:
+`tests/test_lang.py::TestParseTsRustCppC` (one-line/multi-line/zero-line
+rustdoc-block matrix, all binding to the item below).
+
+C: same test class,
+`test_rust_directive_binds_regardless_of_indentation_mismatch` -- a
+dedented directive above an indented multi-line rustdoc block and
+indented item, confirming indentation never affects binding once B is
+fixed. NO separate code change (see Description) -- flagging this
+explicitly since the dispatching agent asked for a design decision and
+the honest answer is "no new logic was warranted."
+
+D: `_test005_symbols` (src/frob/gates/__init__.py) now skips
+`_is_test_file(record.id.path)` symbols. Test:
+`tests/test_gates.py::TestTestGate.test_test005_skips_test_file_symbols`.
+
+E: `_cargo_list_result` (src/frob/testing/_collect.py) now matches
+`_NO_LIB_TARGET_RE` against stderr and returns `Ok([])` with an INFO log
+for that specific case; unmatched nonzero exits still `Err`. Tests:
+`tests/test_testing.py::TestCollectRustTests::test_collect_rust_tests_skips_lib_less_crate`
+and `::test_collect_rust_tests_still_errs_on_genuine_compile_error`.
+
+DESIGN-CHANGE FLAG: none of these five fixes changed frob's public
+contracts, CLI surface, or data shapes -- all are internal bug fixes
+(a validation oracle gained a second source, a comment-binding
+heuristic was corrected, a gate rule's skip-list gained one more
+consistent entry, a collector gained one more recognized error shape).
+No design change to flag.
