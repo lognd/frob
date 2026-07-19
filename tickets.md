@@ -1915,7 +1915,7 @@ the new timeout test) exit=0, 5.09s. Deletion-filter (`git diff main
 ```yaml
 id: T-0209
 title: capability scanner matches needles inside comments and strings
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-18'
@@ -1926,12 +1926,45 @@ scope:
 - src/frob/lang/**
 - tests/**
 - tickets.md
-evidence: []
+evidence:
+- tests/test_vet.py::TestCapabilityScan::test_comment_only_needle_does_not_fire
+- tests/test_vet.py::TestCapabilityScan::test_real_code_needle_still_fires_alongside_comment
+- tests/test_vet.py::TestCapabilityScan::test_string_literal_needle_still_fires
+- tests/test_vet.py::TestCapabilityScan::test_capability_module_self_scan_documented_false_positive
+- tests/test_vet.py::TestCapabilityScan::test_re_compile_alone_does_not_report_eval
+- tests/test_vet.py::TestCapabilityScan::test_bare_compile_call_still_reports_eval
+- tests/test_vet.py::TestCapabilityScan::test_genuine_eval_still_detected
+- tests/test_vet.py::TestCapabilityScan::test_scan_directory_capabilities_excludes_own_module
 attachments: []
 acceptance: []
 threat: null
 ```
 Filed from sibling-repo pilot P2 (lograder/aprog-public/aprog-private, 2026-07-18). Pilot P2 aprog-public: SYS100 reported capability net observed at assignments/api-harvester/assets/starter.py:22 -- that line is COMMENT text describing requests.get; the assignment forbids real network imports. Forced a false may declaration dragging bogus CWE-918 obligations -- corrupts the security posture the model attests (medium-high). Fix: consult tree-sitter comment/string spans (already produced by frob.lang) before substring matching; needle hits fully inside comment spans are dropped (string literals are subtler -- keep string hits for languages where code-in-string is an exec vector, e.g. eval payloads, but drop pure-comment hits everywhere). Litmus: comment-only fixture must NOT fire; code fixture still fires; the T-0151/T-0201 self-match tests stay green. Note duplicate-line issue too: the same site was reported twice (pilot gap 12) -- dedupe observations by (file,line,kind) while in there.
+
+## Done report
+
+Changed:
+- src/frob/vet/_capability.py::_comment_byte_spans (new)
+- src/frob/vet/_capability.py::_fully_in_any_span (new)
+- src/frob/vet/_capability.py::_needle_hits_outside_comments (new)
+- src/frob/vet/_capability.py::_has_bare_compile_call (signature changed: bytes + comment_spans, T-0151 behavior preserved)
+- src/frob/vet/_capability.py::_matched_capabilities (bytes-based, comment-filtered)
+- src/frob/vet/_capability.py::scan_file_capabilities (reads bytes, passes comment spans)
+- src/frob/vet/_capability.py::scan_file_operations (reads bytes, passes comment spans)
+- src/frob/vet/_capability.py::scan_file_fingerprints (reads bytes, passes comment spans -- same false-positive class, same file, fixed for consistency)
+- src/frob/lang/__init__.py::__all__ (added COMMENT_TYPES export -- needed by _capability.py's tree-sitter comment-span walk)
+
+Fix: every needle hit in `_capability.py`'s substring scan (`scan_file_capabilities`/`scan_file_operations`/`scan_file_fingerprints`) is now checked against tree-sitter COMMENT node byte-spans for the same file (`frob.lang.raw_tree` + `frob.lang.COMMENT_TYPES`); a hit fully contained in a comment span is dropped. STRING literals are deliberately left unfiltered (documented in the module docstring's new T-0209 section): distinguishing a genuine string-embedded exec vector from pure prose needs per-registry-entry judgment this substring scanner does not have, and leaving strings alone keeps the locked self-scan false positive (`test_capability_module_self_scan_documented_false_positive`, which fires on `"cmdclass"`/`"os.environ"` inside this module's own docstring -- a string/comment-text node, not a `#`-comment node) unchanged. Comment-span filtering degrades to the pre-T-0209 unfiltered scan (empty span tuple) for any file `frob.lang` cannot parse or has no grammar for (e.g. `.js`/`.jsx`/`.mjs`/`.cjs`, which this module's own `typescript` bucket accepts but `frob.lang._EXTENSION_TABLE` does not).
+
+Dedupe investigation (pilot gap 12, "same site reported twice"): `_capability.py`'s own return shapes have no duplicate to dedupe in this ticket's scope -- `scan_file_capabilities` returns a bare `frozenset[str]` (no per-line entries, dedupe is structural), and `scan_file_operations`/`scan_file_fingerprints` each visit `DANGEROUS_OPERATIONS`/`CVE_FINGERPRINTS` once and append an entry at most once per file (verified no duplicate registry rows: 89 entries, 0 duplicate (language, capability_kind, function_or_pattern) triples). The duplicate-observation symptom traces to `src/frob/strata/_selfconform.py`'s SYS100 join instead (`_core_undeclared_violations` + `_extended_kind_violations` can each independently flag the same capability on the same node), which is outside this ticket's scope glob -- filed as a new ticket (T-draft-bd948483, will renumber on land) rather than silently expanded into.
+
+Litmus verified manually: a `#`-comment-only file mentioning `requests.get` does NOT report `net`; the same needle in real code still reports `net`; a needle appearing in both a comment AND real code in the same file still reports (comment occurrence does not mask the real one).
+
+Evidence: tests/test_vet.py::TestCapabilityScan::test_comment_only_needle_does_not_fire, tests/test_vet.py::TestCapabilityScan::test_real_code_needle_still_fires_alongside_comment, tests/test_vet.py::TestCapabilityScan::test_string_literal_needle_still_fires, tests/test_vet.py::TestCapabilityScan::test_capability_module_self_scan_documented_false_positive, tests/test_vet.py::TestCapabilityScan::test_re_compile_alone_does_not_report_eval, tests/test_vet.py::TestCapabilityScan::test_bare_compile_call_still_reports_eval, tests/test_vet.py::TestCapabilityScan::test_genuine_eval_still_detected, tests/test_vet.py::TestCapabilityScan::test_scan_directory_capabilities_excludes_own_module (all 8 pass; full tests/test_vet.py + tests/test_capability_registry.py + tests/test_lang.py + tests/unit/strata/test_selfconform.py + tests/unit/strata/test_effects.py + tests/unit/strata/test_cve_fingerprint.py green)
+
+Filed: T-draft-bd948483 (SYS100 core+extended duplicate-observation dedupe, out of this ticket's scope)
+
+Gates: `frob check --delta --ticket T-0209 --json` reports 0/7 new violations (baseline stamped from a dirty working tree in this pass -- see note below); `frob test --base main` selects the touched-set (test_vet.py, test_capability_registry.py, test_lang.py, test_cli_vet.py hook test) and passes, exit=0. `ruff check`/`ty check` clean on all three changed files. NOTE: this worktree already carried unrelated uncommitted changes for another ticket (T-0231-shaped: src/frob/__main__.py, src/frob/app/sys_runner.py, src/frob/gates/__init__.py, tests/integration/test_interfaces.py, tests/system/test_cli_sys_plan.py, tests/test_gates.py, and a `state: in-progress` edit to T-0231 in tickets.md) present before this ticket's work began; none of those files were touched by this ticket and this Done report's commit stages only T-0209's own files plus this tickets.md entry.
 
 <!-- ticket:T-0210 -->
 ```yaml
@@ -2230,7 +2263,7 @@ section 11.4).
 ```yaml
 id: T-0213
 title: COV001 short message says 'undocumented' for symbols that have docstrings
-state: queued
+state: done
 kind: ux
 origin: agent
 created: '2026-07-18'
@@ -2240,12 +2273,47 @@ scope:
 - src/frob/gates/**
 - tests/**
 - tickets.md
-evidence: []
+evidence:
+- tests/test_gates.py::TestCoverageGate::test_cov001_message_wording_for_docstring_without_doc_edge
 attachments: []
 acceptance: []
 threat: null
 ```
 Filed from sibling-repo pilot P2 (lograder/aprog-public/aprog-private, 2026-07-18). Pilot P2 lograder: COV001 flags DeveloperException/StaffException which HAVE docstrings -- rule means 'no frob:doc edge'; long-form message is correct, short line is wrong and misleads adopters into thinking docstrings satisfy it. Align the short message with the long form.
+
+## Done report
+
+Changed:
+src/frob/gates/__init__.py::_cov001 (the `_log.debug` short-form message
+line 779, changed from `"COV001: %s undocumented"` to
+`"COV001: %s public with no frob:doc edge"` to match the accurate
+long-form Violation.message already emitted a few lines below). The
+long-form message was already correct and untouched.
+tests/test_gates.py::TestCoverageGate.test_cov001_message_wording_for_docstring_without_doc_edge
+(new regression test)
+
+Evidence:
+tests/test_gates.py::TestCoverageGate::test_cov001_message_wording_for_docstring_without_doc_edge
+-- asserts COV001 still fires for a symbol carrying a docstring but no
+frob:doc edge, and that the violation message contains "no frob:doc edge"
+and does not contain "undocumented".
+`uv run pytest tests/test_gates.py -k cov001 -q` -- 3 passed (existing
+test_cov001_undocumented_public_symbol, existing
+test_cov001_passes_when_documented, new
+test_cov001_message_wording_for_docstring_without_doc_edge).
+`uv run frob test --base main` -- selection touched=5 ripple=0,
+`uv run pytest -q tests/test_gates.py tests/test_gates.py::test_gates_run_gates_integration`
+exit=0 duration=6.73s.
+
+Filed: none
+
+Gates: `uv run frob check --stamp-baseline` then
+`uv run frob check --delta --ticket T-0213` -- gates 0/8 new, 0 errors,
+0 warnings, 27 waived (pre-existing, all waived). SCOPE001 initially
+fired on `frob-core/Cargo.lock` and `strata-core/Cargo.lock` (native
+`make core` build noise, not source changes); reverted both files with
+`git checkout -- frob-core/Cargo.lock strata-core/Cargo.lock` before the
+final delta run, which came back clean.
 
 <!-- ticket:T-0214 -->
 ```yaml
@@ -3184,10 +3252,23 @@ No new violations from this ticket's changes.
 REL001 disclosure: adding `--version` is new public CLI surface, which
 tripped REL001 (public API changed since 0.3.0, needs >=0.4.0 + a
 CHANGELOG entry + `.frob-release.json` stamp). Per this ticket's explicit
-authorization, bumped pyproject.toml to 0.4.0, added a CHANGELOG.md
-[0.4.0] entry, and ran `frob release stamp` -- disclosing here since this
-is normally out of a small CLI-fix ticket's remit, but the gate
-hard-blocked without it.
+authorization, bumped pyproject.toml to 0.4.0 and ran `frob release
+stamp` -- disclosing here since this is normally out of a small CLI-fix
+ticket's remit, but the gate hard-blocked without it. `main` independently
+bumped to 0.4.0 for T-0209/T-0212/T-0253 in the interim; after merging
+main, reconciled by folding T-0231's CHANGELOG line into the single
+existing `[0.4.0]` section (no competing section) rather than re-bumping.
+
+Round 2 (reviewer fix): corrected the `_print_dry_run` frob:tests
+directive from an invalid `kind="system"` (silently dropped as
+malformed, leaving no real graph edge) to `kind="integration"`; merged
+`main` (T-0209/T-0212/T-0253, already at 0.4.0) and reconciled the
+CHANGELOG conflict by keeping main's `[0.4.0]` section and appending the
+T-0231 line to it; reverted worktree contamination
+(`src/frob/vet/_capability.py`, `src/frob/lang/__init__.py`,
+`tests/test_vet.py`) that had leaked in from an unrelated concurrent
+stash and already landed via T-0209 on main -- worktree is now clean of
+anything not this ticket's.
 
 <!-- ticket:T-0232 -->
 ```yaml
@@ -4118,30 +4199,9 @@ threat: elevation-of-privilege
 ```
 T-0254: the red-team Kerberos playbook as demanded, provable obligations extending T-0256's movement-impossibility family. KRB001 unconstrained delegation: any node declaring delegation unconstrained is a hard finding (it lets a compromised service impersonate ANY user to ANY service -- the worst lateral+vertical vector) -- must be re-declared constrained/rbcd or waived with a written accepted-risk reason and sub-target. KRB002 Kerberoasting exposure: an SPN bound to a principal whose credential class is a human-memorable/user password (not a machine account or gMSA) is roastable -- demand gMSA/machine-account or a waiver. KRB003 constrained-delegation blast radius: for a node with constrained delegation, prove the target SPN set does not transitively reach a higher-trust principal (S4U2Proxy chaining) -- reachability over the SPN graph, counterexample trace on failure. KRB004 cross-realm containment: a one-way/transitive trust must not create an undeclared path from a low-trust realm to a high-trust service. Each rule joins a separate compromised-domain-principal threat view (WeaknessEntry rows: CWE-522/CWE-269/CWE-284 class) per the separate-view precedent, NOT widening defaults. Reuse the T-0073 scenario engine for a compromised-service-account scenario whose closure shows the Kerberos blast radius. Litmus: an unconstrained-delegation + roastable-SPN vuln model fires KRB001/002; a gMSA + constrained + non-chaining hardened model discharges all four.
 
-<!-- ticket:T-draft-56694d02 -->
+<!-- ticket:T-0264 -->
 ```yaml
-id: T-draft-56694d02
-title: 'docs(dup): correct stale DUP001/DUP002 unwired claim in dup-sota-survey.md
-  sec 0'
-state: queued
-kind: bug
-origin: human
-created: '2026-07-18'
-blocked_by: []
-parent: null
-scope:
-- docs/modules/dup-sota-survey.md
-- tickets.md
-evidence: []
-attachments: []
-acceptance: []
-threat: null
-```
-T-0191's Done report: dup-sota-survey.md section 0 says DUP001/DUP002 are 'pure rule functions but NOT wired into frob.gates.__init__' -- stale since a3eef8d8 (2026-07-17), one day before the survey landed. dup_gate already calls the real smart find_clones pipeline and is registered as the opt-in 'clones' gate. Correct section 0's claim to describe the actual state (wired, opt-in via [dup].enforce, connection-pooled as of T-0191) so a future reader does not re-investigate an already-closed gap. (Note: T-draft-2a3adb6d, the T-0253 release-stamp follow-up, was resolved during T-0253's landing -- coordinator stamped 0.3.0 in that motion -- so it is dropped here.)
-
-<!-- ticket:T-draft-beb2b5da -->
-```yaml
-id: T-draft-beb2b5da
+id: T-0264
 title: 'frob deploy generate windows: PowerShell/DSC install/status/uninstall from
   the manifest, drift-locked'
 state: queued
@@ -4165,9 +4225,74 @@ threat: null
 ```
 T-0254 Windows generation. The T-0257 generator gains a windows target emitting idempotent PowerShell (check-then-apply, same contract as the bash target): install creates the service account/gMSA, registers the Windows Service with its hardening (service SID type, required-privileges, deny-logon rights), applies the NTFS ACLs exactly from the manifest, opens the declared firewall ports / creates named pipes, and configures the SPN + delegation setting from std.krb (setspn / the delegation flags) when a krb model is present. status queries SCM state + health. uninstall removes exactly the manifest set (service, account, ACL grants, firewall rules, SPN registration) leaving no artifacts. Same DEPLOY001 digest-header drift-lock as bash. Scripts must be PSScriptAnalyzer-clean and depend only on in-box modules (no PSGallery). The conformance gate (T-0258) and VM audit (T-0259) must handle the PowerShell mutation surface too -- coordinate the manifest abstraction so those tickets' parsers are platform-tagged, not bash-only; if T-0258/T-0259 landed bash-only, file follow-ups for their windows extension rather than expanding scope here.
 
-<!-- ticket:T-draft-f9131f3e -->
+<!-- ticket:T-0265 -->
 ```yaml
-id: T-draft-f9131f3e
+id: T-0265
+title: self-referential frob:tests directive on a test function passes --ticket check
+  but fails full DRIFT002
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/**
+- src/frob/graph/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Recurring: implementer agents put a 'frob:tests <self>' directive above their own new test function; the target does not resolve as a graph qualname so full frob check fires DRIFT002, but frob check --delta --ticket (what agents+reviewers run) does NOT surface it -- so it lands and reddens main (happened for T-0213, T-0216; coordinator removed 3). Two fixes: (1) frob check --ticket should include the drift gate for edges the ticket's own diff ADDS (a new frob:tests directive in the diff must be validated even under --ticket scoping); (2) the graph should REJECT or warn on a frob:tests directive whose target is the annotated symbol itself (a test testing itself is meaningless) at directive-parse time, not silently store a dangling edge. Add a check-scoping regression + a self-edge rejection test.
+
+<!-- ticket:T-0266 -->
+```yaml
+id: T-0266
+title: SYS100 core+extended can report the same undeclared-capability site twice
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/_selfconform.py
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Filed while working T-0209 (re-filed after a ledger-conflict drop). check_self_conformance's SYS100 join: _core_undeclared_violations (THREAT004 delegate, line=0) and _extended_kind_violations (T-0169 eval/env/ffi slice, real line via _effects.py) can each independently emit a SYS100 for the same (node, capability_kind), so one observed-but-undeclared capability surfaces as two findings. Dedupe by (node, capability_kind) [or (file,line,kind) once core tracks a line] before returning; regression fixture with one capability both paths flag.
+
+<!-- ticket:T-0267 -->
+```yaml
+id: T-0267
+title: 'docs(dup): correct stale DUP001/DUP002 unwired claim in dup-sota-survey.md
+  sec 0'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- docs/modules/dup-sota-survey.md
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0191's Done report: dup-sota-survey.md section 0 says DUP001/DUP002 are 'pure rule functions but NOT wired into frob.gates.__init__' -- stale since a3eef8d8 (2026-07-17), one day before the survey landed. dup_gate already calls the real smart find_clones pipeline and is registered as the opt-in 'clones' gate. Correct section 0's claim to describe the actual state (wired, opt-in via [dup].enforce, connection-pooled as of T-0191) so a future reader does not re-investigate an already-closed gap. (Note: T-draft-2a3adb6d, the T-0253 release-stamp follow-up, was resolved during T-0253's landing -- coordinator stamped 0.3.0 in that motion -- so it is dropped here.)
+
+<!-- ticket:T-0268 -->
+```yaml
+id: T-0268
 title: 'fix(frob-core): candidate_pairs can return a self-pair (i, i)'
 state: queued
 kind: bug

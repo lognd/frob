@@ -250,6 +250,29 @@ class TestCoverageGate:
         violations = coverage_gate(snap, queue, diff, tests)
         assert any(v.rule == "COV001" for v in violations)
 
+    def test_cov001_message_wording_for_docstring_without_doc_edge(
+        self, tmp_path: Path
+    ) -> None:
+        # T-0213: a symbol with a docstring but no `frob:doc` edge must still
+        # be flagged (a docstring alone does not satisfy COV001), and the
+        # violation message must say so accurately -- not "undocumented",
+        # which misleads adopters into thinking the docstring should have
+        # been enough.
+        _write(
+            tmp_path,
+            "src/a.py",
+            'def helper(x):\n    """Docstring present, but no frob:doc edge."""\n    return x\n',
+        )
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(snap, queue, diff, tests)
+        cov001 = [v for v in violations if v.rule == "COV001" and "helper" in v.message]
+        assert len(cov001) == 1
+        assert "no frob:doc edge" in cov001[0].message
+        assert "undocumented" not in cov001[0].message
+
     def test_cov001_passes_when_documented(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/__init__.py::coverage_gate
         _write(tmp_path, "src/a.py", _WIDGET_PY)

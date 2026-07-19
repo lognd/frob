@@ -49,6 +49,32 @@ eaten. As a narrow, cheap mitigation for the worst instance of this class,
 directory-level aggregation (it is the one file guaranteed to contain
 every needle as literal data); `scan_file_capabilities` called directly
 on this file is unaffected and still shows the documented false positive.
+
+T-0209: pilot P2 (aprog-public) hit a sharper instance of the same self-
+match class -- a needle (`requests.get`) appearing only inside a `#`
+COMMENT describing forbidden network calls, in a file whose actual code
+never makes one. A substring scan cannot tell "this text is prose" from
+"this text is code" on its own, so every needle hit is now checked
+against `frob.lang`'s tree-sitter COMMENT node spans (`raw_tree` +
+`COMMENT_TYPES`) for the same file; a hit fully contained inside a
+comment span is dropped as documentation, not an observation. STRING
+literals are deliberately NOT filtered the same way: a needle inside a
+string can be a genuine exec vector in some languages/capabilities (an
+`eval`-shaped payload assembled as a string literal, a JS
+`Function("...")` body) and pure prose in others, and telling those apart
+needs per-registry-entry judgment this cheap substring scanner does not
+have. Leaving string hits unfiltered keeps the "recall over precision"
+posture (a false positive costs an extra `[vet.allow]` line; a false
+negative on a real string-embedded payload is a missed attack) and keeps
+the locked self-scan false positive
+(`test_capability_module_self_scan_documented_false_positive`, which
+fires on `"cmdclass"`/`"os.environ"` appearing only in this module's own
+DOCSTRING -- a string node, not a comment node) unchanged. Comment-span
+filtering only applies to languages `frob.lang` can parse; an unparseable
+file (or an extension `frob.lang` has no grammar for at all, e.g. the
+`.js`/`.jsx`/`.mjs`/`.cjs` extensions this module's own `typescript`
+bucket accepts) degrades to the pre-T-0209 unfiltered scan for that one
+file rather than erroring.
 """
 
 # frob:ticket T-0151
@@ -61,7 +87,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from frob.lang import parse_file
+from frob.lang import COMMENT_TYPES, parse_file, raw_tree
 from frob.logging import get_logger
 
 from ._capability_registry import DANGEROUS_OPERATIONS, DangerousOperation
@@ -119,28 +145,97 @@ def _compile_patterns() -> dict[str, dict[str, tuple[str, ...]]]:
 _PATTERNS: dict[str, dict[str, tuple[str, ...]]] = _compile_patterns()
 
 
-def _has_bare_compile_call(text: str) -> bool:
+ByteSpan = tuple[int, int]
+
+
+def _comment_byte_spans(path: Path) -> tuple[ByteSpan, ...]:
+    """Byte-range spans of every tree-sitter COMMENT node in `path` (T-0209).
+
+    Backs the comment-exclusion filter every needle match below is checked
+    against: a needle occurrence fully inside one of these spans is prose
+    describing an operation, not the operation itself. Returns an empty
+    tuple (never filters anything -- degrades to the pre-T-0209 unfiltered
+    scan for that file) when `frob.lang` has no grammar for `path`'s
+    extension at all, or when the file fails to parse; comment-span
+    filtering is a precision layer on top of the substring scan, never a
+    prerequisite for it."""
+    parsed = raw_tree(path)
+    if parsed.is_err:
+        return ()
+    tree, _source, language_label = parsed.danger_ok
+    comment_types = COMMENT_TYPES.get(language_label)
+    if not comment_types:
+        return ()
+
+    spans: list[ByteSpan] = []
+
+    def walk(node) -> None:  # noqa: ANN001 -- tree_sitter.Node, avoided at type level here
+        if node.type in comment_types:
+            spans.append((node.start_byte, node.end_byte))
+            return
+        for child in node.children:
+            walk(child)
+
+    walk(tree.root_node)
+    return tuple(spans)
+
+
+def _fully_in_any_span(start: int, end: int, spans: tuple[ByteSpan, ...]) -> bool:
+    """True if the byte range `[start, end)` is fully covered by one span in
+    `spans` (T-0209: the comment-containment test every needle hit passes
+    through before it counts as an observation)."""
+    return any(
+        span_start <= start and end <= span_end for span_start, span_end in spans
+    )
+
+
+def _needle_hits_outside_comments(
+    haystack: bytes, needle: bytes, comment_spans: tuple[ByteSpan, ...]
+) -> bool:
+    """True if `needle` occurs in `haystack` at least once outside every span
+    in `comment_spans` (T-0209). Every occurrence is checked, not just the
+    first -- a needle can appear once in a comment and again in real code,
+    and the comment occurrence must not mask the real one."""
+    start = 0
+    while True:
+        idx = haystack.find(needle, start)
+        if idx == -1:
+            return False
+        end = idx + len(needle)
+        if not _fully_in_any_span(idx, end, comment_spans):
+            return True
+        start = idx + 1
+
+
+def _has_bare_compile_call(text: bytes, comment_spans: tuple[ByteSpan, ...]) -> bool:
     """True if `compile(` appears as a bare builtin call, not a dotted method
     access like `re.compile(`/`ast.compile(` (T-0151: the builtin turning a
     code string into a code object is eval-adjacent; `re.compile(` is not,
-    and was the entire source of this scanner's cross-file false positives)."""
-    needle = "compile("
+    and was the entire source of this scanner's cross-file false positives),
+    AND that occurrence is not fully inside a comment span (T-0209: same
+    comment-exclusion every other needle now gets)."""
+    needle = b"compile("
     idx = 0
     while True:
         idx = text.find(needle, idx)
         if idx == -1:
             return False
-        prev = text[idx - 1] if idx > 0 else ""
-        if prev != "." and not (prev.isalnum() or prev == "_"):
+        end = idx + len(needle)
+        prev = text[idx - 1 : idx] if idx > 0 else b""
+        is_bare = prev != b"." and not (prev.isalnum() or prev == b"_")
+        if is_bare and not _fully_in_any_span(idx, end, comment_spans):
             return True
         idx += len(needle)
 
 
-# language -> capability -> extra callable(text) -> bool, applied ON TOP of
-# the plain substring needles above for needles that need one bit more
-# context than "does this substring appear anywhere" (T-0151: `compile(`
-# as a bare builtin call vs. `re.compile(`/`x.compile(` method access).
-_SPECIAL_CHECKS: dict[str, dict[str, tuple[Callable[[str], bool], ...]]] = {
+# language -> capability -> extra callable(text, comment_spans) -> bool,
+# applied ON TOP of the plain substring needles above for needles that need
+# one bit more context than "does this substring appear anywhere" (T-0151:
+# `compile(` as a bare builtin call vs. `re.compile(`/`x.compile(` method
+# access; T-0209: `comment_spans` lets the check apply the same
+# comment-exclusion the plain needles get).
+_SpecialCheck = Callable[[bytes, tuple[ByteSpan, ...]], bool]
+_SPECIAL_CHECKS: dict[str, dict[str, tuple[_SpecialCheck, ...]]] = {
     "python": {"eval": (_has_bare_compile_call,)},
 }
 
@@ -279,35 +374,45 @@ def language_for(path: Path) -> str | None:
 # frob:doc docs/modules/vet.md#public-api
 # frob:waive TEST005 reason="scan_file_capabilities 76.9% branch cover, debt T-0160"
 def scan_file_capabilities(path: Path) -> frozenset[str]:
-    """Capability tokens observed in one source file's raw text."""
+    """Capability tokens observed in one source file's raw text (T-0209:
+    needle hits fully inside a tree-sitter comment span are excluded --
+    see module docstring)."""
     language = language_for(path)
     if language is None:
         _log.debug("vet: no capability pattern table for %s; treating as opaque", path)
         return frozenset()
     table = _PATTERNS[language]
     try:
-        text = path.read_text(encoding="utf-8", errors="replace")
+        raw = path.read_bytes()
     except OSError as exc:
         _log.warning("vet: could not read %s for capability scan: %s", path, exc)
         return frozenset()
 
-    found = _matched_capabilities(text, table, language)
+    comment_spans = _comment_byte_spans(path)
+    found = _matched_capabilities(raw, table, language, comment_spans)
     if found:
         _log.info("vet: %s: capabilities observed: %s", path, sorted(found))
     return frozenset(found)
 
 
 def _matched_capabilities(
-    text: str, table: dict[str, tuple[str, ...]], language: str
+    text: bytes,
+    table: dict[str, tuple[str, ...]],
+    language: str,
+    comment_spans: tuple[ByteSpan, ...],
 ) -> set[str]:
-    """Capability tokens whose needle set appears anywhere in `text`, plus
-    any `_SPECIAL_CHECKS` hit for that language/capability (T-0151)."""
+    """Capability tokens whose needle set appears anywhere in `text` outside
+    a comment span (T-0209), plus any `_SPECIAL_CHECKS` hit for that
+    language/capability (T-0151)."""
     found: set[str] = set()
     for capability, needles in table.items():
-        if any(needle in text for needle in needles):
+        if any(
+            _needle_hits_outside_comments(text, needle.encode("utf-8"), comment_spans)
+            for needle in needles
+        ):
             found.add(capability)
     for capability, checks in _SPECIAL_CHECKS.get(language, {}).items():
-        if any(check(text) for check in checks):
+        if any(check(text, comment_spans) for check in checks):
             found.add(capability)
     return found
 
@@ -316,31 +421,42 @@ def _matched_capabilities(
 # frob:ticket T-0158
 def scan_file_operations(path: Path) -> tuple[DangerousOperation, ...]:
     """The specific `DANGEROUS_OPERATIONS` registry entries whose needle(s)
-    matched in `path`'s raw text -- the richer sibling of
-    `scan_file_capabilities` (T-0158 addendum 1) that lets a caller name
-    WHICH library/function fired, not just the bare capability kind. An
-    entry with no `needles` (bare-builtin `compile()`, matched only via
-    `_has_bare_compile_call`) is included when that special check hits."""
+    matched in `path`'s raw text outside a comment span (T-0209) -- the
+    richer sibling of `scan_file_capabilities` (T-0158 addendum 1) that
+    lets a caller name WHICH library/function fired, not just the bare
+    capability kind. An entry with no `needles` (bare-builtin `compile()`,
+    matched only via `_has_bare_compile_call`) is included when that
+    special check hits. Each registry entry appears at most once in the
+    result, in registry order -- a dedupe-by-construction that also
+    dedupes what a caller reports per (file, entry): the loop below visits
+    every `DANGEROUS_OPERATIONS` entry exactly once and appends it at most
+    once, so the same entry can never show up twice for the same file."""
     language = language_for(path)
     if language is None:
         return ()
     try:
-        text = path.read_text(encoding="utf-8", errors="replace")
+        raw = path.read_bytes()
     except OSError as exc:
         _log.warning("vet: could not read %s for operation scan: %s", path, exc)
         return ()
 
+    comment_spans = _comment_byte_spans(path)
     matched: list[DangerousOperation] = []
     for entry in DANGEROUS_OPERATIONS:
         if entry.language != language:
             continue
         if entry.needles:
-            if any(needle in text for needle in entry.needles):
+            if any(
+                _needle_hits_outside_comments(
+                    raw, needle.encode("utf-8"), comment_spans
+                )
+                for needle in entry.needles
+            ):
                 matched.append(entry)
         elif entry.language == "python" and entry.function_or_pattern.startswith(
             "compile("
         ):
-            if _has_bare_compile_call(text):
+            if _has_bare_compile_call(raw, comment_spans):
                 matched.append(entry)
     return tuple(matched)
 
@@ -364,16 +480,20 @@ def scan_file_fingerprints(path: Path) -> tuple[CveFingerprint, ...]:
     if language is None:
         return ()
     try:
-        text = path.read_text(encoding="utf-8", errors="replace")
+        raw = path.read_bytes()
     except OSError as exc:
         _log.warning("vet: could not read %s for fingerprint scan: %s", path, exc)
         return ()
 
+    comment_spans = _comment_byte_spans(path)
     matched = tuple(
         entry
         for entry in CVE_FINGERPRINTS
         if entry.language == language
-        and any(needle in text for needle in entry.needles)
+        and any(
+            _needle_hits_outside_comments(raw, needle.encode("utf-8"), comment_spans)
+            for needle in entry.needles
+        )
     )
     if matched:
         _log.info(

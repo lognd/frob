@@ -496,6 +496,51 @@ class TestCapabilityScan:
         pkg.write_text("eval(user_input)\n")
         assert "eval" in scan_file_capabilities(pkg)
 
+    def test_comment_only_needle_does_not_fire(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0209: pilot P2 -- a needle appearing only inside a `#` comment
+        # describing forbidden network calls must not be reported as an
+        # observation. The file's actual code never calls requests.get.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "starter.py"
+        pkg.write_text(
+            "# starter.py\n"
+            "# Do not use requests.get() for real network calls here.\n"
+            "def main():\n"
+            "    pass\n"
+        )
+        assert "net" not in scan_file_capabilities(pkg)
+
+    def test_real_code_needle_still_fires_alongside_comment(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0209: the comment-exclusion filter must not mask a genuine
+        # needle hit elsewhere in real code, even when the same needle also
+        # appears in a comment in the same file.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "real.py"
+        pkg.write_text(
+            "# calls requests.get under the hood\n"
+            "import requests\n"
+            "requests.get('http://example.com')\n"
+        )
+        assert "net" in scan_file_capabilities(pkg)
+
+    def test_string_literal_needle_still_fires(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0209: only COMMENT spans are filtered -- a needle inside a string
+        # literal (not a comment) is deliberately left unfiltered (module
+        # docstring's T-0209 note: distinguishing exec-vector strings from
+        # prose strings needs per-registry judgment this scanner lacks).
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "stringy.py"
+        pkg.write_text("cmd = 'requests.get(\"http://x\")'\n")
+        assert "net" in scan_file_capabilities(pkg)
+
     def test_capability_module_self_scan_documented_false_positive(self) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
         # T-0151: `_capability.py` stores every needle as literal string data,

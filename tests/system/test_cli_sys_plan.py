@@ -49,7 +49,7 @@ class TestSysPlanCli:
         assert (repo / "tickets.md").read_text() == "# Tickets\n"
 
     def test_dry_run_names_apply_flag_in_label(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/app/sys_runner.py::_print_dry_run kind="system"
+        # frob:tests src/frob/app/sys_runner.py::_print_dry_run kind="integration"
         # T-0231: the output must explicitly say DRY RUN and name --apply,
         # not just report a ticket count with no indication of dry-run-ness.
         repo = _init_repo(tmp_path)
