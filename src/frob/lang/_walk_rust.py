@@ -55,6 +55,38 @@ def _rust_public(node: Node, in_pyo3_impl: bool = False) -> bool:
     return in_pyo3_impl or _rust_has_pub(node) or _rust_pyo3_export(node)
 
 
+def _symbol_span(node: Node) -> tuple[int, int]:
+    """`span_of(node)` widened backward over any directly preceding
+    `#[...]` attribute stack (T-0278: a `// frob:doc`/`// frob:tests`
+    comment placed above a stack of 2+ attribute lines, e.g.
+    `#[derive(Debug)]` / `#[serde(...)]`, silently failed to bind).
+
+    Rust's grammar keeps each `attribute_item` as its own SIBLING node
+    directly before the item it decorates -- unlike python's
+    `decorated_definition`, which wraps the whole decorator stack plus
+    the def into one node whose span already starts at the first
+    decorator (`_walk_python.py::_effective_node`). A rust item's own
+    span therefore starts at the `pub fn`/`pub struct`/... keyword line,
+    never at a preceding attribute. `find_following_symbol` only looks
+    within 2 lines past a comment (block)'s end line
+    (`frob.lang._common`), so a directive sitting above a single
+    attribute line still binds (1 line gap) but above 2+ stacked
+    attribute lines does not (comment.py-still-correct math: `frob:doc`
+    above two `#[...]` lines above the item puts the item's un-widened
+    span 3+ lines below the comment). Widening the span used for
+    comment-binding purposes ONLY (not `sig_tokens`, which still hashes
+    `node` itself, unaffected) fixes this the same way `_effective_node`
+    does for python, while leaving the below-all-attributes placement
+    (the workaround already used in lithos/feldspar) still valid --
+    it is unaffected since it was never broken."""
+    start_node = node
+    sib = node.prev_sibling
+    while sib is not None and sib.type == "attribute_item":
+        start_node = sib
+        sib = sib.prev_sibling
+    return (span_of(start_node)[0], span_of(node)[1])
+
+
 def _function_symbol(
     node: Node, stack: tuple[str, ...], in_impl: bool, in_pyo3_impl: bool, doc: str
 ) -> RawSymbol:
@@ -66,7 +98,7 @@ def _function_symbol(
         qualname=".".join((*stack, name)),
         kind=SymbolKind.METHOD if in_impl else SymbolKind.FUNCTION,
         public=_rust_public(node, in_pyo3_impl),
-        span=span_of(node),
+        span=_symbol_span(node),
         sig_tokens=leaf_tokens(node, _COMMENT_TYPES, skip),
         body_tokens=leaf_tokens(body, _COMMENT_TYPES) if body else (),
         doc_text=doc,
@@ -82,7 +114,7 @@ def _named_symbol(
         qualname=".".join((*stack, name)),
         kind=kind,
         public=_rust_public(node),
-        span=span_of(node),
+        span=_symbol_span(node),
         sig_tokens=leaf_tokens(node, _COMMENT_TYPES),
         body_tokens=(),
         doc_text=doc,

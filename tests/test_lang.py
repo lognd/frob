@@ -218,6 +218,74 @@ class TestParseTsRustCppC:
         assert _symbol(pf, "Widget.exported_method").public is True
         assert _symbol(pf, "my_core").public is True
 
+    def test_rust_directive_binds_above_stacked_attributes(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0278 (Bug D): a `// frob:doc`/`// frob:tests` comment placed
+        above a stack of 2+ attribute lines (`#[derive(...)]`,
+        `#[serde(...)]`) on a pub item must still associate with that
+        item -- rust's grammar keeps each attribute as its own sibling
+        node before the item (unlike python's `decorated_definition`
+        wrapper), so the item's own span used to start at the item
+        keyword line, more than 2 lines below a 2+-attribute stack's
+        comment (`frob.lang._common.find_following_symbol`'s window)."""
+        source = (
+            "// frob:doc docs/x.md#anchor\n"
+            "#[derive(Debug)]\n"
+            "#[serde(rename = \"x\")]\n"
+            "pub struct TwoAttrs {\n"
+            "    pub a: i32,\n"
+            "}\n"
+        )
+        pf = parse_file(_write(tmp_path, "two_attrs.rs", source)).danger_ok
+        directive_comment = next(
+            c for c in pf.comments if "frob:doc" in c.text
+        )
+        assert directive_comment.following == "TwoAttrs"
+
+    def test_rust_directive_binds_above_single_attribute(
+        self, tmp_path: Path
+    ) -> None:
+        """The 1-attribute case (already worked, kept as a guard against
+        regressing it while fixing the 2+-attribute case)."""
+        source = (
+            "// frob:doc docs/x.md#anchor\n"
+            "#[derive(Debug)]\n"
+            "pub struct OneAttr {\n"
+            "    pub a: i32,\n"
+            "}\n"
+        )
+        pf = parse_file(_write(tmp_path, "one_attr.rs", source)).danger_ok
+        directive_comment = next(c for c in pf.comments if "frob:doc" in c.text)
+        assert directive_comment.following == "OneAttr"
+
+    def test_rust_directive_binds_directly_above_keyword_no_attrs(
+        self, tmp_path: Path
+    ) -> None:
+        """The plain, no-attribute case must keep working."""
+        source = "// frob:doc docs/x.md#anchor\npub struct NoAttrs {\n    pub a: i32,\n}\n"
+        pf = parse_file(_write(tmp_path, "no_attrs.rs", source)).danger_ok
+        directive_comment = next(c for c in pf.comments if "frob:doc" in c.text)
+        assert directive_comment.following == "NoAttrs"
+
+    def test_rust_directive_binds_below_attributes_workaround_placement(
+        self, tmp_path: Path
+    ) -> None:
+        """The lithos/feldspar WORKAROUND placement (directive below all
+        attributes, directly above the item keyword) must keep binding
+        after this fix -- it was never broken, and must not regress."""
+        source = (
+            "#[derive(Debug)]\n"
+            '#[serde(rename = "x")]\n'
+            "// frob:doc docs/x.md#anchor\n"
+            "pub struct BelowAttrs {\n"
+            "    pub a: i32,\n"
+            "}\n"
+        )
+        pf = parse_file(_write(tmp_path, "below_attrs.rs", source)).danger_ok
+        directive_comment = next(c for c in pf.comments if "frob:doc" in c.text)
+        assert directive_comment.following == "BelowAttrs"
+
     def test_cpp(self) -> None:
         pf = parse_file(_FIXTURES / "sample.cpp").danger_ok
         assert pf.language == "cpp"
