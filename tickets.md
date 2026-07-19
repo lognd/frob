@@ -2471,7 +2471,7 @@ conflict, resolved by git itself, no manual splice needed); re-ran
 ```yaml
 id: T-0216
 title: graph build never names the malformed file
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-18'
@@ -2482,7 +2482,9 @@ scope:
 - src/frob/lang/**
 - tests/**
 - tickets.md
-evidence: []
+evidence:
+- tests/test_graph.py::TestMalformedFileVisibility::test_cache_hit_rebuild_still_names_malformed_file
+- tests/test_graph.py::TestMalformedFileVisibility::test_fresh_build_names_malformed_file
 attachments: []
 acceptance: []
 threat: null
