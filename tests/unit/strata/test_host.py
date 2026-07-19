@@ -7,7 +7,11 @@ parse -> elaborate coverage lives in `test_litmus_host.py`.
 
 from __future__ import annotations
 
+import pytest
+from pydantic import ValidationError
+
 from frob.strata._host import (
+    HostManifest,
     HostOwns,
     HostPlatform,
     host_attrs,
@@ -65,3 +69,67 @@ class TestHostManifest:
     def test_node_with_no_host_attrs_returns_none(self):
         node = Node(id="api", trust="trusted", attrs=("code=src/**",))
         assert host_manifest_for(node) is None
+
+
+class TestHostOwnsModeValidation:
+    """T-0270 (deferred from T-0255): `owns` MODE well-formedness."""
+
+    # frob:tests src/frob/strata/_host.py::HostOwns._validate_mode kind="unit"
+    def test_valid_octal_mode_accepted(self):
+        assert HostOwns(path="/etc/api", mode="0644").mode == "0644"
+        assert HostOwns(path="/var/lib/api", mode="0755").mode == "0755"
+
+    # frob:tests src/frob/strata/_host.py::HostOwns._validate_mode kind="unit"
+    def test_setuid_four_digit_mode_accepted(self):
+        assert HostOwns(path="/usr/bin/x", mode="4755").mode == "4755"
+
+    # frob:tests src/frob/strata/_host.py::HostOwns._validate_mode kind="unit"
+    def test_non_octal_mode_rejected(self):
+        with pytest.raises(ValidationError):
+            HostOwns(path="/etc/api", mode="rwx")
+
+    # frob:tests src/frob/strata/_host.py::HostOwns._validate_mode kind="unit"
+    def test_out_of_range_digit_mode_rejected(self):
+        with pytest.raises(ValidationError):
+            HostOwns(path="/etc/api", mode="999")
+
+    # frob:tests src/frob/strata/_host.py::host_manifest_for kind="unit"
+    def test_bad_mode_in_manifest_attrs_raises(self):
+        node = Node(
+            id="api",
+            trust="trusted",
+            attrs=("owns=/etc/api:999",),
+        )
+        with pytest.raises(ValidationError):
+            host_manifest_for(node)
+
+
+class TestHostManifestListensValidation:
+    """T-0270 (deferred from T-0255): `listens` PORT well-formedness."""
+
+    # frob:tests src/frob/strata/_host.py::HostManifest._validate_listens kind="unit"
+    def test_valid_port_accepted(self):
+        manifest = HostManifest(platform=HostPlatform.LINUX_SYSTEMD, listens=(8080,))
+        assert manifest.listens == (8080,)
+
+    # frob:tests src/frob/strata/_host.py::HostManifest._validate_listens kind="unit"
+    def test_out_of_range_port_rejected(self):
+        with pytest.raises(ValidationError):
+            HostManifest(platform=HostPlatform.LINUX_SYSTEMD, listens=(70000,))
+
+    # frob:tests src/frob/strata/_host.py::HostManifest._validate_listens kind="unit"
+    def test_zero_port_rejected(self):
+        with pytest.raises(ValidationError):
+            HostManifest(platform=HostPlatform.LINUX_SYSTEMD, listens=(0,))
+
+    # frob:tests src/frob/strata/_host.py::host_manifest_for kind="unit"
+    def test_bad_port_in_manifest_attrs_raises(self):
+        node = Node(id="api", trust="trusted", attrs=("listens=70000",))
+        with pytest.raises(ValidationError):
+            host_manifest_for(node)
+
+    # frob:tests src/frob/strata/_host.py::host_manifest_for kind="unit"
+    def test_non_numeric_port_in_manifest_attrs_raises(self):
+        node = Node(id="api", trust="trusted", attrs=("listens=abc",))
+        with pytest.raises(ValueError, match="not a valid integer"):
+            host_manifest_for(node)
