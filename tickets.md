@@ -7781,6 +7781,98 @@ threat: null
 ```
 User-reported (2026-07-19): the single-line frob:<verb> ... reason="..." DSL structurally collides with the ruff 88-col limit -- a self-explaining waiver reason routinely overflows, forcing the reason to be truncated to fit (just happened with the PERF004 waiver in _audit.py, shortened twice to squeeze under 88). Fix at the DSL level, not per-comment. Design: support backslash line-continuation. In parse_directives (src/frob/graph/dsl.py:183-195), before dispatching to _parse_line, fold any physical comment line whose stripped content ends in a trailing backslash into the following comment line (strip the backslash, join with a single space or empty -- pick empty so reasons control their own spacing; document the choice). Works uniformly across # , // , and /* */ comment bodies since it operates on comment.text.splitlines(). Keep lineno = start_line + offset of the FIRST line of a folded run. _LINE_RE / _ATTR_RE unchanged (they see the already-joined logical line). Add tests: continuation inside reason=, continuation with trailing backslash on the last line (dangling -> treat literally or malformed, decide + test), CRLF safety, and a multi-line frob:tests to prove it is verb-agnostic not waive-specific. Update comment-dsl-directives.md with the continuation syntax and a worked long-reason example.
 
+<!-- ticket:T-0287 -->
+```yaml
+id: T-0287
+title: 'dup: type-generalizing anti-unification (holes bind types, propose generics)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-19'
+blocked_by:
+- T-0194
+- T-0195
+parent: null
+scope:
+- frob-core/**,src/frob/dup/**,tests/**,docs/modules/dup.md,tickets.md
+evidence: []
+attachments: []
+acceptance:
+- given two functions identical modulo a type (e.g. sort(list[int]) vs sort(list[str]),
+  or a C++ overload set differing only in element type), when dup triage runs anti-unification,
+  then the divergence is bound as a TYPE hole (not an opaque value hole) and the group
+  is reported as "generalizable over type T" with the concrete instantiations listed
+- 'given a type-generalizable group, when the template report renders, then it proposes
+  the language-correct generic abstraction: Python def f[T](...), C++ template<typename
+  T>, Rust fn f<T>, TS function f<T> -- one suggested signature, not raw $holes'
+- given a hole that binds inconsistent types across the two sides (not a single consistent
+  T), then it is NOT reported as type-generalizable (no false generic proposal)
+threat: null
+```
+Extends the Plotkin lgg kernel (T-0194) and template report (T-0195). Today anti-unification emits value-holes at any divergence. Many real duplicate pairs differ ONLY in a type: identical algorithm over int vs str, an overload set, a monomorphized-by-hand family. The kernel must classify a hole: if both sides at a divergence are TYPE nodes (annotation, template arg, generic param, cast target) that unify to a single consistent type variable across the whole template, mark it a TYPE hole and record the per-side instantiation. The report then proposes the real fix -- a generic/templated function -- instead of a bare hole template. This is the "reverse templating / abstraction" the user asked for: dup should not just say "these are similar", it should hand back the generic signature that unifies them. Cross-language: each lang backend maps a TYPE hole to its own generics syntax. Consistency guard: a hole whose two sides need DIFFERENT type variables (no single T works) stays a value hole -- do not emit a bogus generic.
+
+<!-- ticket:T-0288 -->
+```yaml
+id: T-0288
+title: 'dup: helper-inlining / call-graph-aware triage (see through arch-forced splits)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-19'
+blocked_by: []
+parent: null
+scope:
+- src/frob/dup/**,tests/**,docs/modules/dup.md,tickets.md
+evidence: []
+attachments: []
+acceptance:
+- given two functions whose shared logic was each extracted into differently-named
+  PRIVATE helpers (per frob arch small-helper pressure), when dup triage compares
+  them, then it resolves the private/module-local helper calls and compares over the
+  inlined (or call-graph-closure) body, and still reports the pair as duplicate
+- given a private helper called from exactly one site, when triage inlines for comparison,
+  then the inlining is bounded (depth + total-node ceiling) and NEVER follows public
+  API calls or recurses infinitely (recursion/cycle guard)
+- given a cluster of near-identical tiny helpers created by over-splitting, when dup
+  runs, then those helpers themselves are reported as a dup group (the inverse failure
+  mode -- arch-forced fragmentation producing duplicate helpers)
+threat: null
+```
+Directly motivated by the arch<->dup tension the user raised: frob arch enforces many small private helpers, which (a) HIDES Type-3/4 duplication -- two functions with the same logic split into differently-named helpers now hash/compare as different call skeletons -- and (b) CREATES duplication -- over-splitting spawns families of near-identical one-line helpers. dup currently compares whole bodies (_r1_hash/_r2_hash and the region/anti-unify passes all operate on a single symbol body), so it is blind to logic that lives one call-hop away. Fix: before structural comparison, resolve calls to PRIVATE (leading-underscore / module-local, not re-exported) helpers and splice their bodies into the comparison unit -- a bounded call-graph closure, depth-limited, cycle-guarded, public-API-stopping, node-count-capped (fall back to un-inlined body past the cap). This makes dup measure the ACTUAL logic, not the arch-imposed decomposition. Pair (b): also run a dup pass over the helper population itself so over-splitting is caught. Keep inlining a triage-only view (do not rewrite source); report spans point at the real helper definitions.
+
+<!-- ticket:T-0289 -->
+```yaml
+id: T-0289
+title: 'arch: per-function reasoned override + complexity-aware long-function'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-19'
+blocked_by: []
+parent: null
+scope:
+- src/frob/arch/**,src/frob/graph/dsl.py,src/frob/gates/**,tests/**,docs/modules/arch.md,tickets.md
+evidence: []
+attachments: []
+acceptance:
+- 'given a genuinely atomic long function (big match/case, dispatch table, literal
+  data, flat sequential pipeline) with low nesting/cyclomatic complexity, when frob
+  arch runs, then it is NOT flagged (complexity-aware: long AND complex fires; long-but-flat
+  does not)'
+- given a long function the author must keep long, when it carries a reasoned in-code
+  directive (frob:waive ARCH001 reason="...", or frob:arch allow-long reason="..."
+  ceiling=N), then the finding is WAIVED (counted in the waived tally, auditable),
+  and an override without a reason is rejected exactly like a reasoned-less frob:waive
+- given a per-function override with a justified ceiling N, when the function later
+  grows beyond N, then the waiver stops covering it and it re-fires (bounded, not
+  a blank check)
+- given the escape hatch, then it lives at the code (in-comment directive travelling
+  with the function), NOT as a qualname-keyed table in frob.toml, and raising the
+  GLOBAL max_function_lines is not introduced as the sanctioned way to silence findings
+threat: null
+```
+User asked my opinion on per-function arch overrides. Opinion, recorded as the design: YES, worth having, but only if built the frob way. (1) Overrides belong AT THE CODE as reasoned frob:waive-style directives, not in central config -- a qualname table in frob.toml rots silently on rename and hides the exception from the reader; an in-comment waiver travels with the function and justifies the exception at its site, matching every other frob waiver. (2) It must be a WAIVER (counted, auditable, reason-required), never a silent mute -- an un-reasoned override is rejected like a reason-less frob:waive. (3) Prefer a justified CEILING bump over a boolean allow-long: a 45-line match waived to 50 still re-fires if it balloons to 200, keeping the exception honest. (4) Do NOT sanction raising the global threshold -- that is exactly the lazy-developer escape the tool exists to prevent. (5) MOST valuable half: make the heuristic complexity-aware so the bulk of false positives never fire -- a long-but-FLAT function (one match/dict-literal, shallow nesting, low cyclomatic) is not the smell the rule targets; only long-AND-complex is. Auto-exempt flat, require a reasoned waiver for the complex-but-justified residue. This also relieves the arch<->dup tension (T-0288): stop forcing atomic bodies to shatter into helpers that then hide/duplicate.
+
 <!-- ticket:T-draft-1fae8bfb -->
 ```yaml
 id: T-draft-1fae8bfb
