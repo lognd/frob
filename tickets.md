@@ -10001,7 +10001,7 @@ FROBLEMS (aprog-public): 'uv tool install frob' does not pull the strata_core Ru
 id: T-0317
 title: test collector must honor per-tree [[test.runner]] cwd/project when COLLECTING,
   not just running
-state: queued
+state: in-progress
 kind: feature
 origin: auditor
 created: '2026-07-19'
