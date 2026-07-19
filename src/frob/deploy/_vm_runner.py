@@ -1,16 +1,20 @@
-"""VM orchestration half of `frob deploy audit --vm` (T-0259) -- the ONLY
-part of this feature not covered by the normal unit test suite
-(`_audit.py`'s module docstring). Deliberately thin: a sequence of
-`VBoxManage`/`ssh` subprocess calls that fill in `_audit.StateCapture`
-values and drive the sequence spec, then hand everything to
-`_audit.build_attestation` (pure, fully unit-tested) for the actual
-proofs. Nothing in this module re-implements diffing or proof logic --
-if you're tempted to compare two states here, that logic belongs in
-`_audit.py` instead.
+"""VM orchestration half of `frob deploy audit --vm` (T-0259). Deliberately
+thin: a sequence of `VBoxManage`/`ssh` subprocess calls that fill in
+`_audit.StateCapture` values and drive the sequence spec, then hand
+everything to `_audit.build_attestation` (pure, fully unit-tested) for the
+actual proofs. Nothing in this module re-implements diffing or proof
+logic -- if you're tempted to compare two states here, that logic belongs
+in `_audit.py` instead.
 
 Graceful degrade (module requirement, T-0259 ticket body): when
 `VBoxManage` is not on `PATH`, `run_vm_audit` returns `AuditRunResult`
 with `status="skipped"` and a clear reason -- it never fabricates a pass.
+
+Unit-tested (T-0293) with `subprocess.run` faked at this module's
+boundary (`tests/unit/deploy/test_vm_runner.py::TestFullSequence`) --
+this proves the SEQUENCE and each helper's own control flow, never
+real `VBoxManage`/ssh/guest behavior, which stays exercised only by an
+actual `frob deploy audit --vm` run against a live guest.
 """
 
 from __future__ import annotations
