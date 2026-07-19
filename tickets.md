@@ -182,7 +182,7 @@ authority).
 ```yaml
 id: T-0179
 title: 'TTY-aware pretty output: colors and formatting across all frob commands'
-state: in-progress
+state: done
 kind: ux
 origin: human
 created: '2026-07-18'
@@ -195,12 +195,18 @@ scope:
 - tests/**
 - docs/**
 - tickets.md
-evidence: []
+evidence:
+- tests/unit/test_app_style.py::test_ticket_list_json_never_has_ansi_even_with_force_color
+- tests/unit/test_app_style.py::test_stats_json_never_has_ansi
 attachments: []
 acceptance: []
 threat: null
 ```
 Bake consistent pretty formatting and color into frob's terminal output for TTYs, skipped cleanly when non-TTY. Build on the existing src/frob/logging/color.py should_color machinery -- single source of truth, honoring isatty, NO_COLOR, FORCE_COLOR, and a [tool.frob] override. Apply across the surfaces users actually read: frob check tool/gates summary (pass/fail coloring, aligned columns, per-gate timing dimmed), frob sys audit (PROVED green, GAP red, view sections), frob ticket list/doable (state-colored ids), frob vet reports (severity coloring), frob stats. HARD CONSTRAINT: non-TTY output must remain byte-stable plain text -- agents, CI, and this repo's own snapshot tests parse it; add tests locking both modes (force-color golden and plain golden) so pretty mode can never leak ANSI into piped output. No new heavyweight dependency without written justification (prefer hand-rolled ANSI via the existing color module over adding rich).
+
+
+## Done report
+TTY-aware coloring via shared src/frob/app/_style.py (reuses frob.logging.color.should_color/paint -- no duplicated isatty). style_ticket_id/state/ok/fail/warn/header/rule wrap existing strings in the stats/sys/ticket/vet runners; colors only when stdout is a TTY, NO_COLOR unset, and not --json. CRITICAL property (reviewer-verified by test AND manual grep): piped/non-TTY and --json output are byte-identical to before, ZERO ANSI -- json branches return before any style_* call. Content/exit-codes unchanged; vet table padding computed on unpainted width. Long frob:tests directive lines carry `# noqa: E501` (dogfoods T-0309). Reviewer APPROVED (ANSI-leak dispositive check passed). Landed by surgical file-extract from d838a4e (the reviewed commit) since the review left the worktree branch with a stray merge/dirty state; main's app runners were unchanged since the base so the extract is exact.
 
 <!-- ticket:T-0180 -->
 ```yaml
