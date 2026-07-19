@@ -4331,3 +4331,27 @@ acceptance: []
 threat: null
 ```
 T-0231 review found a pre-existing malformed frob:tests directive at tests/system/test_cli_check.py:237 using kind='system' (valid kinds: unit/integration/e2e per _TESTS_KINDS). It parses malformed and is silently dropped -- the bound symbol has no real test edge. Landed via commit 289f2c68 (T-0229). Fix: kind='integration' (or extend _TESTS_KINDS to include 'system' if that taxonomy is intended -- decide, since T-0225 also touches the design-vs-code test-kind question). Also: this class only surfaces on full frob check, not --ticket -- covered by T-0265's scoping fix but this is the concrete instance to clean up. Grep the whole repo for other kind='system'/invalid-kind directives while here.
+
+<!-- ticket:T-0270 -->
+```yaml
+id: T-0270
+title: 'std.host manifest: validate owns MODE and listens PORT (deferred from T-0255)'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: T-0254
+scope:
+- strata-core/src/parse.rs
+- src/frob/strata/_host.py
+- src/frob/strata/**
+- tests/**
+- docs/strata/host.md
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0255 deliberately left HostOwns.mode (str) and HostManifest.listens (int) UNVALIDATED -- a bogus mode ('999'/'rwx') or out-of-range port is stored raw. T-0255's reviewer confirmed this is a correct deferral (mode-as-opaque-string is intentional so a Windows ACL/SDDL string fits the same field later -- platform-tagged validation belongs here, not in the manifest schema). Implement per-platform validation: LINUX_SYSTEMD validates octal mode (0-7 triples, optional setuid bits) and port in 1-65535; WINDOWS (when T-0261 lands) validates SDDL/ACL shape. Validation fires at elaborate time (MalformedHost error, fail-closed), NOT parse time (keep the grammar platform-agnostic). Litmus: bogus mode/port rejected per platform, valid ones pass. T-0255 added frob:todo T-0270 anchors at the two fields -- this ticket discharges them.
