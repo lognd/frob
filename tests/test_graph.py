@@ -535,7 +535,6 @@ class TestMalformedFileVisibility:
     def test_fresh_build_names_malformed_file(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
-        # frob:tests tests/test_graph.py::TestMalformedFileVisibility::test_fresh_build_names_malformed_file
         root = self._tree_with_malformed_directive(tmp_path)
         cache = root / ".frob" / "cache.db"
         with caplog.at_level("WARNING"):
@@ -548,7 +547,6 @@ class TestMalformedFileVisibility:
     def test_cache_hit_rebuild_still_names_malformed_file(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
-        # frob:tests tests/test_graph.py::TestMalformedFileVisibility::test_cache_hit_rebuild_still_names_malformed_file
         root = self._tree_with_malformed_directive(tmp_path)
         cache = root / ".frob" / "cache.db"
         build_graph(root, cache).danger_ok
