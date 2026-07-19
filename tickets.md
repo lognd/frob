@@ -7082,3 +7082,27 @@ sys audit: checked 11 view(s): security:owasp-top-10, quality:web-performance-ba
 sys audit: PROVED (5 waived) -- zero UNWAIVED gaps across every configured view
 sys audit: self-conformance PROVED -- zero SYS gaps
 sys audit: capability coverage: 13 kind(s) x 4 language(s), 30 cell(s) patterned+proven, 22 excused with reasons, 0 unexcused on a shared-writable-path model exits nonzero with HOST001. ACCEPTANCE: a real repo (malmberg) can run one command and see its isolation proved or its gaps named. This is the highest-priority deploy ticket.
+
+<!-- ticket:T-0281 -->
+```yaml
+id: T-0281
+title: 'deploy generate polish: dedup shared runs_as useradd, listens unit hardening,
+  multi-host status, CAP_NET_BIND over-grant, DEBUG flood'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-19'
+blocked_by: []
+parent: T-0254
+scope:
+- src/frob/deploy/**
+- src/frob/strata/**
+- tests/**
+- docs/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0260 malmberg pilot findings (batched, all in the deploy generator; each needs a fixture+fix): (5) a user shared across a node and a store (media_store+ingest both runs_as malmberg-ingest) emits the useradd guard block TWICE in install.sh -- dedup service-user creation by distinct runs_as identity. (6) listens PORT drives status.sh /dev/tcp health probes but is never materialized into the unit (no .socket, no IPAddressAllow/SocketBindAllow) -- emit network hardening or at least document the port in the unit. (7) status.sh probes 127.0.0.1 for ALL units incl. ones on other hosts (malmberg display is a separate host) -> always reports remote port closed; std.host has no host/placement vocabulary to partition artifacts per host -- design a /placement construct or partition status per declared host (bigger, may split out). (8) may 'net' unconditionally adds CAP_NET_BIND_SERVICE even when all declared listens ports are >=1024 (unprivileged) -- only add it when a listens port is <1024. (4) frob deploy generate floods stdout with per-node 'host manifest runs_as=...' DEBUG lines (repeated per consumer pass) -- route through the logger at DEBUG, mute stdout like check_runner/map_runner (T-0202 class). (10, doc) waive clauses parse but elaborate(...).danger_ok exposes no waivers attribute (read via separate _waive channel) -- add a doc note on reading waivers back from a parsed model. Item 7 (host/placement vocabulary) may warrant its own ticket if it grows.
