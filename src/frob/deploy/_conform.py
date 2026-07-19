@@ -28,16 +28,39 @@ bidirectionally against the EXACT set `HostManifest` declares:
   `mkdir`/`chown`/`chmod`'d) or incomplete uninstall (a declared
   `runs_as` user never `userdel`'d).
 
-Extraction is STRUCTURED, not a blind grep: each regex is anchored to
-the exact check-then-apply command shapes `_generate.py` emits (one
-quoted target per mutating command, always the LAST quoted argument on
-the line), so heredoc unit-file bodies (`ReadWritePaths=...`,
-`Description=...`, unquoted `systemd` directives) never false-positive
-as mutations. Reused for BOTH `install.sh` and `uninstall.sh`
-independently -- a tamper that only touches one script (e.g. removing
-uninstall's `userdel` while leaving install untouched) is caught at the
-script it actually touched, not blurred into a single install+uninstall
-union.
+Extraction is GENUINE SHELL TOKENIZATION, not a quoting-shaped grep
+(the round-1 regex mistake -- reviewer REJECT, see the fix note below).
+Each physical line (after joining backslash-newline continuations) is
+tokenized with `shlex` in POSIX mode with `punctuation_chars` enabled,
+split into simple commands on `;`/`&&`/`||`/`|`/`&`/`(`/`)` and shell
+keyword boundaries (`if`/`then`/`else`/`elif`/`fi`/`do`/`done`/`while`/
+`until`/`case`/`esac`), and each simple command's real verb is resolved
+by basename-of-argv[0] AFTER stripping leading environment-variable
+assignments and known wrapper commands (`env`/`sudo`/`nice`/`nohup`/
+`exec`/`command`/`time`); `eval "..."` is handled by re-tokenizing its
+concatenated argument as a fresh command line. This means quoting style
+(bare word, single-quoted, double-quoted), a full binary path
+(`/usr/sbin/useradd`), a `;`-prefixed compound (`true; useradd ...`),
+an `env`/`eval` wrapper, and a line-continued target ALL resolve to the
+same `(kind, target)` regardless of surface form -- the round-1 version
+required a literal command name at line start plus a double-quoted
+target on the SAME line, which every one of those shapes evaded
+silently. Heredoc BODY lines (unit-file content between `cat > ... <<
+'EOF'` and the closing marker) are still walked per-line like any other
+line -- they are inert (never executed, only ever written as literal
+data), so this can only ever add a spurious extra match, never hide a
+real mutation; the module docstring flags this as the one honestly
+narrower-than-total scope cut left, and it is FAIL-CLOSED-shaped, not
+fail-open. A line the tokenizer cannot parse at all (an unterminated
+quote, e.g.) is NOT silently dropped -- it is recorded as one
+`kind="parse-error"` mutation, which can never match a declared
+manifest entry, so it always surfaces as a DEPLOY002 rather than
+vanishing.
+
+Reused for BOTH `install.sh` and `uninstall.sh` independently -- a
+tamper that only touches one script (e.g. removing uninstall's
+`userdel` while leaving install untouched) is caught at the script it
+actually touched, not blurred into a single install+uninstall union.
 
 Wired into `frob check` the same "extra stage, not `frob.gates`'s
 pluggable job table" shape DEPLOY001 already uses (`src/frob/gates/**`
@@ -48,6 +71,7 @@ stays out of this ticket's `scope`) -- `frob.app.check_runner` calls
 from __future__ import annotations
 
 import re
+import shlex
 from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict
@@ -59,39 +83,62 @@ from ._generate import ManifestEntry, _unit_name, sorted_manifest_entries
 
 _log = get_logger(__name__)
 
-#: One mutating-command shape -> a compiled regex whose SOLE capture
-#: group is the mutation's target (the last quoted argument on the
-#: line) -- the ONE table `extract_mutation_surface` walks, so adding a
-#: new recognized command shape never means touching the extraction
-#: loop itself, only this table.
-_RE_USERADD = re.compile(r'^\s*useradd\b.*"([^"]+)"\s*$')
-_RE_USERDEL = re.compile(r'^\s*userdel\s+"([^"]+)"')
-_RE_GROUPADD = re.compile(r'^\s*groupadd\b.*"([^"]+)"\s*$')
-_RE_GROUPDEL = re.compile(r'^\s*groupdel\s+"([^"]+)"')
-_RE_MKDIR = re.compile(r'^\s*mkdir\s+-p\s+"([^"]+)"')
-_RE_CHOWN = re.compile(r'^\s*chown\s+"[^"]*":"[^"]*"\s+"([^"]+)"')
-_RE_CHMOD = re.compile(r'^\s*chmod\s+"[^"]+"\s+"([^"]+)"')
-_RE_INSTALL = re.compile(r'^\s*install\b.*\s"([^"]+)"\s*$')
-_RE_CP = re.compile(r'^\s*cp\b.*\s"([^"]+)"\s*$')
-_RE_RM = re.compile(r'^\s*rm\s+-r?f\s+"([^"]+)"')
-_RE_CAT_HEREDOC = re.compile(r'^\s*cat\s+>\s+"([^"]+)"\s+<<')
-_RE_SYSTEMCTL = re.compile(r'^\s*systemctl\s+(?:enable|disable|start|stop)\s+"([^"]+)"')
+#: Verbs that end a simple command's argument list and start a new one
+#: -- `shlex`'s `punctuation_chars` mode returns each of these as its
+#: own token (multi-char operators like `&&`/`||` stay grouped), so a
+#: membership test is enough; no separate multi-char handling needed.
+_COMMAND_SEPARATORS = frozenset({";", "&&", "||", "|", "&", "(", ")"})
 
-#: (kind, regex) pairs classified directly (kind is unambiguous from the
-#: command itself) -- `_RE_RM`/`_RE_CAT_HEREDOC` are handled separately
-#: below since their kind depends on the TARGET path, not the command.
-_DIRECT_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
-    ("user", _RE_USERADD),
-    ("user", _RE_USERDEL),
-    ("group", _RE_GROUPADD),
-    ("group", _RE_GROUPDEL),
-    ("path", _RE_MKDIR),
-    ("path", _RE_CHOWN),
-    ("path", _RE_CHMOD),
-    ("path", _RE_INSTALL),
-    ("path", _RE_CP),
-    ("unit", _RE_SYSTEMCTL),
+#: Shell compound-statement keywords that also end a simple command
+#: (the token itself is never a real command to resolve, only a
+#: boundary) -- covers the `if ... ; then ...; fi` check-then-apply
+#: shape `_generate.py` renders without requiring a full shell grammar.
+_COMMAND_KEYWORDS = frozenset(
+    {"if", "then", "else", "elif", "fi", "do", "done", "while", "until", "case", "esac"}
 )
+
+#: Commands that merely forward to a REAL command named later in the
+#: same simple command -- stripped (along with their own leading `-`
+#: flags) before verb resolution, so `env useradd "x"` and
+#: `sudo useradd "x"` resolve to the same `useradd` mutation a bare
+#: `useradd "x"` would.
+_WRAPPER_COMMANDS = frozenset(
+    {"env", "sudo", "nice", "nohup", "exec", "command", "time"}
+)
+
+#: `NAME=value` leading assignment shape (`FOO=bar useradd ...`) --
+#: skipped the same way a wrapper command is, since it never names the
+#: command actually being run.
+_ASSIGN_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
+
+#: Verb -> `MutationTarget.kind` for the single-target-is-the-last-
+#: positional-argument shape (`useradd NAME`, `mkdir -p PATH`, `chown
+#: OWNER:OWNER PATH`, ...) -- covers every verb except `rm` (target
+#: kind depends on the path, `_classify_path`), `systemctl` (target is
+#: NOT the last arg when a unit name is followed by more flags), and
+#: `cat` (target is the `>` redirect, not a positional argument).
+_LAST_POSITIONAL_KIND: dict[str, str] = {
+    "useradd": "user",
+    "userdel": "user",
+    "groupadd": "group",
+    "groupdel": "group",
+    "mkdir": "path",
+    "install": "path",
+    "cp": "path",
+    "chown": "path",
+    "chmod": "path",
+}
+
+#: `systemctl` subverbs this module treats as mutating (module
+#: docstring's list) -- other subverbs (`daemon-reload`, `is-active`,
+#: ...) are read-only/non-mutating and deliberately produce no target.
+_SYSTEMCTL_MUTATING_SUBVERBS = frozenset({"enable", "disable", "start", "stop"})
+
+#: The one sentinel `MutationTarget` a script line frob cannot tokenize
+#: at all becomes -- deliberately matches NOTHING a `HostManifest` could
+#: ever declare, so an unparseable script always surfaces as DEPLOY002
+#: (fail-closed) instead of silently vanishing from the extracted set.
+_PARSE_ERROR_TARGET = "unparseable script line(s) present"
 
 
 # frob:doc docs/strata/host.md#deploy002deploy003-conformance
@@ -122,38 +169,192 @@ def _classify_path(path: str) -> MutationTarget:
     return MutationTarget(kind="path", target=path)
 
 
+class _TokenizeError(Exception):
+    """One physical script line failed to tokenize as shell (e.g. an
+    unterminated quote) -- caught by `extract_mutation_surface` and
+    turned into the fail-closed `_PARSE_ERROR_TARGET` sentinel, never
+    silently swallowed."""
+
+
+def _tokenize_line(line: str) -> list[str]:
+    """Real shell-word tokenization of one physical line via `shlex`
+    (POSIX mode, `punctuation_chars` enabled so `;`/`&&`/`||`/`|`/`&`/
+    `(`/`)`/`>`/`<<` surface as their own tokens instead of being
+    swallowed into adjacent words) -- the ONE place a line becomes
+    tokens, so every extraction path below sees the same shell-word
+    boundaries a real shell would, not a regex's idea of one. Raises
+    `_TokenizeError` on malformed shell (unbalanced quote) rather than
+    ever returning a silently-empty token list for it."""
+    try:
+        lexer = shlex.shlex(line, posix=True, punctuation_chars=True)
+        lexer.whitespace_split = True
+        return list(lexer)
+    except ValueError as exc:
+        raise _TokenizeError(str(exc)) from exc
+
+
+def _split_commands(tokens: list[str]) -> list[list[str]]:
+    """Split one line's tokens into simple commands on `_COMMAND_
+    SEPARATORS` (`;`/`&&`/`||`/`|`/`&`/`(`/`)`) and `_COMMAND_KEYWORDS`
+    boundaries (`if`/`then`/`fi`/...) -- so `true; useradd "x"` and
+    `if ...; then useradd "x"; fi` each yield a standalone `["useradd",
+    "x"]` command, the same as a bare `useradd "x"` line would."""
+    commands: list[list[str]] = []
+    current: list[str] = []
+    for tok in tokens:
+        if tok in _COMMAND_SEPARATORS or tok in _COMMAND_KEYWORDS:
+            if current:
+                commands.append(current)
+            current = []
+            continue
+        current.append(tok)
+    if current:
+        commands.append(current)
+    return commands
+
+
+def _is_redirect_op(tok: str) -> bool:
+    """A token made ENTIRELY of `>`/`<`/`&` characters (`>`, `>>`, `<`,
+    `<<`, `>&`, `&>`, ...) -- a shell redirection operator, never a real
+    positional argument."""
+    return bool(tok) and all(c in "><&" for c in tok)
+
+
+def _clean_positional_args(tokens: list[str]) -> list[str]:
+    """A command's real positional arguments: drop `-`-prefixed flags,
+    drop redirection operators AND the target token immediately after
+    one (`>/dev/null`, `2>&1`, ...), and drop a bare digit token that is
+    itself immediately followed by a redirection operator (the `2` in
+    `2>&1`, which `shlex` tokenizes as three separate tokens). Used for
+    every verb whose real target is its LAST positional argument."""
+    cleaned: list[str] = []
+    i = 0
+    n = len(tokens)
+    while i < n:
+        tok = tokens[i]
+        if tok.isdigit() and i + 1 < n and _is_redirect_op(tokens[i + 1]):
+            i += 3 if i + 2 < n else 2
+            continue
+        if _is_redirect_op(tok):
+            i += 2 if i + 1 < n else 1
+            continue
+        if tok.startswith("-") and tok != "-":
+            i += 1
+            continue
+        cleaned.append(tok)
+        i += 1
+    return cleaned
+
+
+def _resolve_command(tokens: list[str]) -> tuple[str, int] | None:
+    """Resolve a simple command's REAL verb: skip leading `NAME=value`
+    assignments and `_WRAPPER_COMMANDS` (plus their own `-` flags), then
+    return `(basename-of-argv[0], index-of-argv[0])` -- basename so a
+    full path (`/usr/sbin/useradd`) resolves the same as a bare
+    `useradd`. `None` when the command list is empty or is entirely
+    assignments/wrappers with no real command after them."""
+    i = 0
+    n = len(tokens)
+    while i < n:
+        tok = tokens[i]
+        if _ASSIGN_RE.match(tok):
+            i += 1
+            continue
+        base = tok.rsplit("/", 1)[-1]
+        if base in _WRAPPER_COMMANDS:
+            i += 1
+            while i < n and tokens[i].startswith("-"):
+                i += 1
+            continue
+        return base, i
+    return None
+
+
+def _mutation_for_command(tokens: list[str]) -> set[MutationTarget]:
+    """The `MutationTarget` set (0 or 1 members, except `eval` which may
+    recurse into several) one simple command's tokens produce, after
+    verb resolution (`_resolve_command`). `eval` re-tokenizes its own
+    concatenated argument as a fresh command line (bash's own eval
+    semantics: all remaining arguments are joined with spaces and
+    re-parsed) so `eval "useradd x"` and `eval useradd x` both resolve
+    exactly like a bare `useradd x` would."""
+    resolved = _resolve_command(tokens)
+    if resolved is None:
+        return set()
+    base, start = resolved
+
+    if base == "eval":
+        remainder = tokens[start + 1 :]
+        if not remainder:
+            return set()
+        joined = " ".join(remainder)
+        try:
+            sub_tokens = _tokenize_line(joined)
+        except _TokenizeError:
+            return {MutationTarget(kind="parse-error", target=_PARSE_ERROR_TARGET)}
+        result: set[MutationTarget] = set()
+        for sub_command in _split_commands(sub_tokens):
+            result |= _mutation_for_command(sub_command)
+        return result
+
+    args = tokens[start + 1 :]
+
+    if base in _LAST_POSITIONAL_KIND:
+        cleaned = _clean_positional_args(args)
+        if not cleaned:
+            return set()
+        return {MutationTarget(kind=_LAST_POSITIONAL_KIND[base], target=cleaned[-1])}
+
+    if base == "rm":
+        cleaned = _clean_positional_args(args)
+        if not cleaned:
+            return set()
+        return {_classify_path(cleaned[-1])}
+
+    if base == "systemctl":
+        cleaned = _clean_positional_args(args)
+        if len(cleaned) < 2 or cleaned[0] not in _SYSTEMCTL_MUTATING_SUBVERBS:
+            return set()
+        unit = cleaned[-1].rsplit("/", 1)[-1]
+        return {MutationTarget(kind="unit", target=unit)}
+
+    if base == "cat":
+        for i, tok in enumerate(args):
+            if tok == ">" and i + 1 < len(args):
+                return {_classify_path(args[i + 1])}
+        return set()
+
+    return set()
+
+
 # frob:doc docs/strata/host.md#deploy002deploy003-conformance
 # frob:tests tests/unit/deploy/test_conform.py::TestExtract.test_install kind="unit"
 # frob:tests tests/unit/deploy/test_conform.py::TestExtract.test_no_heredoc kind="unit"
+# frob:tests tests/unit/deploy/test_conform.py::TestEvasion.test_bare_word kind="unit"
+# frob:tests tests/unit/deploy/test_conform.py::TestEvasion.test_eval_wrap kind="unit"
+# frob:tests tests/unit/deploy/test_conform.py::TestEvasion.test_line_cont kind="unit"
 def extract_mutation_surface(text: str) -> frozenset[MutationTarget]:
-    """Parse one script's text into its full `MutationTarget` set: every
-    `useradd`/`groupadd`/`userdel`/`groupdel`/`mkdir`/`install`/`cp`/
-    `chown`/`chmod`/`rm -f`/`rm -rf`/`systemctl enable|disable|start|
-    stop`/unit-file heredoc-write line, matched against the exact
-    check-then-apply command shapes `_generate.py` renders (module
-    docstring) -- STRUCTURED extraction, not a blind grep: a heredoc unit
-    file's own unquoted `systemd` directive lines (`ReadWritePaths=...`,
-    `Description=...`) never match any pattern here, so they are never
-    mistaken for a script-level mutation."""
+    """Parse one script's text into its full `MutationTarget` set via
+    GENUINE shell tokenization (module docstring, `_tokenize_line`/
+    `_split_commands`/`_resolve_command`/`_mutation_for_command`) --
+    every `useradd`/`groupadd`/`userdel`/`groupdel`/`mkdir`/`install`/
+    `cp`/`chown`/`chmod`/`rm -f`/`rm -rf`/`systemctl enable|disable|
+    start|stop`/unit-file heredoc-write mutation resolves to its
+    `(kind, target)` regardless of quoting style, full binary path,
+    `;`-prefixed compound, `env`/`eval` wrapper, or line-continued
+    target -- ordinary shell idioms an anchored-regex-with-quoting-
+    requirement misses (the round-1 mistake this module was rewritten
+    to fix)."""
+    joined = text.replace("\\\n", " ")
     targets: set[MutationTarget] = set()
-    for line in text.splitlines():
-        matched = False
-        for kind, pattern in _DIRECT_PATTERNS:
-            m = pattern.match(line)
-            if m:
-                targets.add(MutationTarget(kind=kind, target=m.group(1)))
-                matched = True
-                break
-        if matched:
+    for line in joined.splitlines():
+        try:
+            tokens = _tokenize_line(line)
+        except _TokenizeError:
+            targets.add(MutationTarget(kind="parse-error", target=_PARSE_ERROR_TARGET))
             continue
-        m = _RE_RM.match(line)
-        if m:
-            targets.add(_classify_path(m.group(1)))
-            continue
-        m = _RE_CAT_HEREDOC.match(line)
-        if m:
-            targets.add(_classify_path(m.group(1)))
-            continue
+        for command in _split_commands(tokens):
+            targets |= _mutation_for_command(command)
     return frozenset(targets)
 
 

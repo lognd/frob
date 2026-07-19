@@ -81,6 +81,86 @@ class TestExtract:
             assert "ReadWritePaths" not in target.target
 
 
+class TestEvasion:
+    """The reviewer's REJECT battery on round 1's line-regex-with-a-
+    quoting-requirement extractor: every one of these is ORDINARY,
+    non-exotic shell and every one is an evasion a genuine tokenizer
+    must NOT miss. Each fires DEPLOY002 via a real `useradd`/`systemctl`
+    target that a red-team tamper would use to smuggle a user/unit past
+    the checker."""
+
+    # frob:tests src/frob/deploy/_conform.py::extract_mutation_surface kind="unit"
+    def test_bare_word(self):
+        # useradd evil            (no quotes)
+        surface = extract_mutation_surface("useradd evil\n")
+        assert MutationTarget(kind="user", target="evil") in surface
+
+    # frob:tests src/frob/deploy/_conform.py::extract_mutation_surface kind="unit"
+    def test_single_quoted(self):
+        # useradd 'evil'          (single quotes)
+        surface = extract_mutation_surface("useradd 'evil'\n")
+        assert MutationTarget(kind="user", target="evil") in surface
+
+    # frob:tests src/frob/deploy/_conform.py::extract_mutation_surface kind="unit"
+    def test_systemctl_bare(self):
+        # systemctl enable evil.service (unquoted)
+        surface = extract_mutation_surface("systemctl enable evil.service\n")
+        assert MutationTarget(kind="unit", target="evil.service") in surface
+
+    # frob:tests src/frob/deploy/_conform.py::extract_mutation_surface kind="unit"
+    def test_full_path(self):
+        # /usr/sbin/useradd "evil" (full binary path)
+        surface = extract_mutation_surface('/usr/sbin/useradd "evil"\n')
+        assert MutationTarget(kind="user", target="evil") in surface
+
+    # frob:tests src/frob/deploy/_conform.py::extract_mutation_surface kind="unit"
+    def test_semicolon(self):
+        # true; useradd "evil"     (;-prefixed compound)
+        surface = extract_mutation_surface('true; useradd "evil"\n')
+        assert MutationTarget(kind="user", target="evil") in surface
+
+    # frob:tests src/frob/deploy/_conform.py::extract_mutation_surface kind="unit"
+    def test_env_wrapper(self):
+        # env useradd "evil"      (wrapper)
+        surface = extract_mutation_surface('env useradd "evil"\n')
+        assert MutationTarget(kind="user", target="evil") in surface
+
+    # frob:tests src/frob/deploy/_conform.py::extract_mutation_surface kind="unit"
+    def test_eval_wrap(self):
+        # eval "useradd evil"      (wrapper)
+        surface = extract_mutation_surface('eval "useradd evil"\n')
+        assert MutationTarget(kind="user", target="evil") in surface
+
+    # frob:tests src/frob/deploy/_conform.py::extract_mutation_surface kind="unit"
+    def test_line_cont(self):
+        # useradd \<newline>"evil" (line-continued target)
+        surface = extract_mutation_surface('useradd \\\n    "evil"\n')
+        assert MutationTarget(kind="user", target="evil") in surface
+
+    # frob:tests src/frob/deploy/_conform.py::extract_mutation_surface kind="unit"
+    def test_compound_and(self):
+        # true && useradd "evil"  (&& compound, not in the reviewer's
+        # explicit list but the same class of evasion as ';')
+        surface = extract_mutation_surface('true && useradd "evil"\n')
+        assert MutationTarget(kind="user", target="evil") in surface
+
+    # frob:tests src/frob/deploy/_conform.py::deploy_conformance_violations kind="unit"
+    def test_evasion_fires_through_full_check(self, tmp_path):
+        # End-to-end: an evasion shape hand-appended to a real generated
+        # install.sh must still fire DEPLOY002 through the public
+        # `deploy_conformance_violations` entry point, not just the
+        # unit-level extractor.
+        _write_design(tmp_path)
+        deploy_dir = _write_clean_deploy(tmp_path)
+        install_path = deploy_dir / "install.sh"
+        tampered = install_path.read_text() + "\ntrue; useradd evil-backdoor\n"
+        install_path.write_text(tampered)
+
+        violations = deploy_conformance_violations(tmp_path)
+        codes = {(v.code, v.kind, v.target) for v in violations}
+        assert ("DEPLOY002", "user", "evil-backdoor") in codes
+
+
 class TestExpected:
     # frob:tests src/frob/deploy/_conform.py::expected_mutation_surface kind="unit"
     def test_from_host(self):

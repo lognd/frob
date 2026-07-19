@@ -4722,6 +4722,105 @@ T-0254 child 4. Hand edits to deploy scripts must be DETECTABLE through the chec
 
 ## Done report
 
+**Round 2 (reviewer REJECT fix).** Round 1's Done report below is kept
+for the file list and the DEPLOY003/shared-`_load_current_model`/litmus-
+structure work, which the reviewer confirmed was fine. This preamble
+records what round 2 actually changed, since it is the security-relevant
+part.
+
+Round 1 REJECTED: `extract_mutation_surface` was a per-line regex
+requiring a LITERAL command name at line start plus a DOUBLE-QUOTED
+target on the SAME line -- despite the round-1 docstring's "structured
+extraction, not naive grep" framing, it was, in the reviewer's words,
+"a naive grep with a quoting requirement". Every one of these ORDINARY
+shapes evaded it silently (DEPLOY002 reported clean): `useradd evil`
+(no quotes), `useradd 'evil'` (single quotes), `systemctl enable
+evil.service` (unquoted), `/usr/sbin/useradd "evil"` (full binary
+path), `true; useradd "evil"` (`;`-prefixed compound), `env useradd
+"evil"`/`eval "useradd evil"` (wrapper), and a line-continued target.
+For a red-team tamper detector this is worse than not running it --
+a reviewer trusting "DEPLOY002: clean" would be misled.
+
+**Fix**: `extract_mutation_surface` (`src/frob/deploy/_conform.py`) was
+rewritten from regex to GENUINE shell tokenization: `shlex` (POSIX mode,
+`punctuation_chars` enabled) tokenizes each physical line (after joining
+`\`-newline continuations), tokens are split into simple commands on
+`;`/`&&`/`||`/`|`/`&`/`(`/`)` and shell keyword boundaries (`if`/`then`/
+`fi`/...), and each simple command's real verb is resolved via
+basename-of-argv[0] after stripping leading `NAME=value` assignments and
+wrapper commands (`env`/`sudo`/`nice`/`nohup`/`exec`/`command`/`time`);
+`eval "..."` re-tokenizes its own concatenated argument as a fresh
+command line (mirrors bash's actual eval semantics). New helpers:
+`_tokenize_line`, `_split_commands`, `_resolve_command`,
+`_clean_positional_args` (drops flags and redirection targets so `2>&1`
+noise never masquerades as a real positional argument),
+`_mutation_for_command`, plus the `_TokenizeError` fail-closed path: a
+line that cannot be tokenized at all (e.g. an unterminated quote) is
+NOT dropped -- it becomes a `kind="parse-error"` sentinel target that
+can never match a declared manifest entry, so it always surfaces as
+DEPLOY002 rather than silently vanishing.
+
+New regression tests, `tests/unit/deploy/test_conform.py::TestEvasion`
+(9 cases): every one of the reviewer's battery items
+(`test_bare_word`, `test_single_quoted`, `test_systemctl_bare`,
+`test_full_path`, `test_semicolon`, `test_env_wrapper`,
+`test_eval_wrap`, `test_line_cont`) plus one not in the explicit list
+but the same evasion class (`test_compound_and`, `&&`), plus an
+end-to-end check (`test_evasion_fires_through_full_check`) that hand-
+appends `true; useradd evil-backdoor` to a REAL generated `install.sh`
+and asserts DEPLOY002 fires through the public
+`deploy_conformance_violations` entry point, not just the unit-level
+extractor. All 9 evasion cases now fire; the full `tests/unit/deploy/`
+suite (28 tests, extraction + expected-surface + conformance + evasion)
+passes.
+
+Module docstring corrected to not overclaim: it now says "GENUINE SHELL
+TOKENIZATION, not a quoting-shaped grep (the round-1 regex mistake --
+reviewer REJECT...)" and explicitly names the one still-honest scope
+cut left -- heredoc BODY lines (unit-file content between `cat > ... <<
+'EOF'` and its closing marker) are still walked per physical line like
+any other line, since they are inert (never executed, only ever written
+as literal data to a file), so this can only ever add a spurious extra
+match, never hide a real mutation (fail-closed-shaped, not fail-open).
+This is NOT evasion-proof against a hypothetical shell feature this
+tokenizer does not model (e.g. `$()`/backtick command substitution
+executing a smuggled command as part of building an argument string,
+or a deeply obfuscated base64-decode-and-eval chain) -- it closes the
+reviewer's full ORDINARY-shell battery, which was the actual gap found,
+not a claim of exhaustive shell-Turing-completeness coverage.
+
+`_load_current_model`, DEPLOY003, and the litmus test structure are
+unchanged from round 1 (the reviewer found no issue with them).
+
+Round 2 evidence (observed via `uv run pytest tests/unit/deploy/ -q` --
+28 passed):
+- `tests/unit/deploy/test_conform.py::TestEvasion::test_bare_word`
+- `tests/unit/deploy/test_conform.py::TestEvasion::test_single_quoted`
+- `tests/unit/deploy/test_conform.py::TestEvasion::test_systemctl_bare`
+- `tests/unit/deploy/test_conform.py::TestEvasion::test_full_path`
+- `tests/unit/deploy/test_conform.py::TestEvasion::test_semicolon`
+- `tests/unit/deploy/test_conform.py::TestEvasion::test_env_wrapper`
+- `tests/unit/deploy/test_conform.py::TestEvasion::test_eval_wrap`
+- `tests/unit/deploy/test_conform.py::TestEvasion::test_line_cont`
+- `tests/unit/deploy/test_conform.py::TestEvasion::test_compound_and`
+- `tests/unit/deploy/test_conform.py::TestEvasion::test_evasion_fires_through_full_check`
+- `tests/unit/strata/test_selfconform.py::TestRealGateGreen` (re-ran
+  green after the rewrite, via `uv run pytest tests/unit/strata/
+  test_selfconform.py -k TestRealGateGreen -q`)
+
+Round 2 gates: merged `main` first (tip moved to `07bd928`, verified via
+`git log --oneline -1` after merge); full `uv run frob check` (not
+`--ticket`) -- 0 errors, 5 pre-existing warnings, 27 pre-existing
+waived; `DRIFT002`: 0. `uv run frob check --ticket T-0258` -- 0 errors
+(re-swept via `frob ticket sweep T-0258` after the scope extension).
+`git diff main --diff-filter=D --stat` empty. `frob-core/Cargo.lock`/
+`strata-core/Cargo.lock` build churn from `make core` reverted again
+before finishing.
+
+---
+
+## Round 1 Done report
+
 Changed:
 - `src/frob/deploy/_conform.py` (NEW): `MutationTarget`,
   `extract_mutation_surface`, `expected_mutation_surface`,
