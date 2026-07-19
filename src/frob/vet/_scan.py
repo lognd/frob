@@ -579,6 +579,8 @@ def _osv_violations(
 
 # frob:doc docs/modules/vet.md#public-api
 # frob:waive TEST005 reason="scan_tree 84.0% branch cover, debt T-0160"
+# frob:tests tests/test_vet.py::TestScanTreeLockArg.test_scan_tree_lockfile_arg
+# frob:tests tests/test_vet.py::TestScanTreeLockArg.test_scan_tree_unsupp_err
 def scan_tree(
     root: Path,
     *,
@@ -607,18 +609,23 @@ def scan_tree(
     deps = parsed.danger_ok
     _log.info("vet: scanning %d dependency(ies) from %s", len(deps), lockfile)
 
-    cfg = load_vet_config(root)
-    cache_path = root / _CACHE_REL
+    # T-0221: `root` may itself be a lockfile path (find_lockfile returns it
+    # directly). Project-relative lookups (config, cache) need the
+    # containing directory, never the lockfile path itself.
+    project_root = root if root.is_dir() else lockfile.parent
+
+    cfg = load_vet_config(project_root)
+    cache_path = project_root / _CACHE_REL
     if not cfg.present:
         _log.info("vet: no [vet] section; advisory-only mode")
 
     violations, verdicts = _scan_dependencies(
-        deps, root, lockfile, cfg, cache_path, fetch, timeout=timeout, jobs=jobs
+        deps, project_root, lockfile, cfg, cache_path, fetch, timeout=timeout, jobs=jobs
     )
     skipped: list[str] = []
 
     if lockfile.name in ("package-lock.json", "pnpm-lock.yaml"):
-        lc_violations, lc_skipped = _lifecycle_violations(root, cfg)
+        lc_violations, lc_skipped = _lifecycle_violations(project_root, cfg)
         violations.extend(lc_violations)
         skipped.extend(lc_skipped)
 
