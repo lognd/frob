@@ -8187,7 +8187,7 @@ Investigated 2026-07-19: the 13 "malformed directive" warnings are NOT sloppy co
 ```yaml
 id: T-0295
 title: 'arch: strata long-function burndown to zero'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-19'
@@ -8215,7 +8215,6 @@ acceptance:
   all pass with no behavior change
 threat: null
 ```
-
 ## Done report
 
 Landed via merge c8d8107. The initial agent narrative below described a
