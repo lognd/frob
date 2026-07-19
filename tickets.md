@@ -9735,7 +9735,7 @@ FROBLEMS (aprog-public, graphite, lograder): _selfconform file-discovery honors 
 ```yaml
 id: T-0311
 title: TEST005 reports wrong file path when make coverage uses multiple --cov roots
-state: in-progress
+state: done
 kind: bug
 origin: auditor
 created: '2026-07-19'
