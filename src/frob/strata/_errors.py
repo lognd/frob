@@ -129,3 +129,11 @@ class StrataError(ErrorSet):
         "naming a principal that does not exist in the model is a dangling "
         "reference by a different name, not a valid partial declaration"
     )
+    MalformedBenignConfig = (
+        "A repo's `frob.toml` [[strata.benign_capabilities]] table is "
+        "invalid -- an entry missing `kind`, missing or blank `reason` "
+        "(same discipline as MalformedWaiver: an unreasoned excuse is a "
+        "functional bypass, not a written debt record), or the file/table "
+        "failed to parse at all (docs/strata/threat.md#per-repo-benign-"
+        "capability-declarations, T-0017 graphite adoption)"
+    )

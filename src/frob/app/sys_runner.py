@@ -42,6 +42,7 @@ from frob.graph import GraphSnapshot, build_graph, load_graph
 from frob.logging import get_logger
 from frob.logging.quiet import quiet_stdout_logs
 from frob.strata import (
+    DEFAULT_BENIGN_CAPABILITIES,
     DEFAULT_DESIGN_DIR,
     MARKER_PREFIX,
     AuditReport,
@@ -51,6 +52,7 @@ from frob.strata import (
     check_self_conformance,
     evaluate_exhaustiveness,
     load_design_ids,
+    load_repo_benign_capabilities,
     plan_obligations,
     render_audit_matrix,
 )
@@ -549,8 +551,20 @@ def _load_audit_model(root: Path) -> KernelModel | None:
 def _evaluate_audit(model: KernelModel, root: Path):  # noqa: ANN201
     """Run the THREAT001-003/COMPLIANCE001-002 exhaustiveness conjunction
     plus the SYS100-102 self-conformance check against `model`, exiting 1
-    (already logged) if either evaluation itself errors."""
-    audited = evaluate_exhaustiveness(model)
+    (already logged) if either evaluation itself errors. T-0017 (graphite
+    adoption): `benign` is `DEFAULT_BENIGN_CAPABILITIES` PLUS whatever this
+    repo declares in `frob.toml`'s `[[strata.benign_capabilities]]` -- a
+    consuming repo's genuinely-benign, non-tier-2 `may` kind (e.g.
+    `html_render`/`client_storage` on a browser-only node) no longer needs a
+    `waive "THREAT002:<kind>"` naming a gap frob itself must patch; it can
+    declare the excuse in its own frob.toml instead."""
+    repo_benign = load_repo_benign_capabilities(root)
+    if repo_benign.is_err:
+        _log.error("sys audit: %s", repo_benign.danger_err)
+        sys.exit(1)
+    benign = DEFAULT_BENIGN_CAPABILITIES + repo_benign.danger_ok
+
+    audited = evaluate_exhaustiveness(model, benign=benign)
     if audited.is_err:
         _log.error("sys audit: %s", audited.danger_err)
         sys.exit(1)

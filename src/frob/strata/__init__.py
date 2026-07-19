@@ -251,6 +251,7 @@ from frob.strata._threat import (
     check_discharge_completeness,
     check_effect_completeness,
     evaluate_threats,
+    load_repo_benign_capabilities,
 )
 from frob.strata._waive import (
     STALE_WAIVER_RULE,
@@ -456,6 +457,7 @@ __all__ = [
     "node_allowed_syscalls",
     "node_may_kinds",
     "load_design_ids",
+    "load_repo_benign_capabilities",
     "merge_models",
     "PII_CATEGORIES",
     "LintReport",

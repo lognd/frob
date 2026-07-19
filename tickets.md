@@ -9224,3 +9224,223 @@ Gates:
 
 Not closing this ticket -- leaving for reviewer per the review-gated
 workflow (playbook section 11).
+
+<!-- ticket:T-0303 -->
+```yaml
+id: T-0303
+title: Per-repo BenignCapability declaration channel (graphite T-0017)
+state: done
+kind: feature
+origin: agent
+created: '2026-07-19'
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/_threat.py
+- src/frob/strata/_errors.py
+- src/frob/strata/__init__.py
+- src/frob/app/sys_runner.py
+- docs/strata/threat.md
+- docs/guides/extending/benign-capabilities.md
+- tests/unit/strata/test_threat.py
+evidence:
+- tests/unit/strata/test_threat.py::TestLoadRepoBenignCapabilities::test_missing_frob_toml_is_ok_empty
+- tests/unit/strata/test_threat.py::TestLoadRepoBenignCapabilities::test_missing_strata_table_is_ok_empty
+- tests/unit/strata/test_threat.py::TestLoadRepoBenignCapabilities::test_declared_entry_is_loaded
+- tests/unit/strata/test_threat.py::TestLoadRepoBenignCapabilities::test_missing_reason_is_malformed
+- tests/unit/strata/test_threat.py::TestLoadRepoBenignCapabilities::test_blank_reason_is_malformed
+- tests/unit/strata/test_threat.py::TestLoadRepoBenignCapabilities::test_unparseable_toml_is_malformed
+- tests/unit/strata/test_threat.py::TestLoadRepoBenignCapabilities::test_repo_declared_excuse_resolves_threat002
+attachments: []
+acceptance:
+- A repo can declare [[strata.benign_capabilities]] entries in frob.toml with kind+reason,
+  merged with DEFAULT_BENIGN_CAPABILITIES by frob sys audit
+- A missing frob.toml or missing table is Ok(()); a malformed entry (missing kind/reason,
+  blank reason, unparseable TOML) is Err(StrataError.MalformedBenignConfig)
+threat: null
+```
+graphite's frob-adoption sweep (its FROBLEMS.md/tickets T-0017) found THREAT002 fires for a repo's genuinely benign, non-tier-2 may capability kind (html_render/client_storage under a QUALITY_CATALOG-only view) with no excuse mechanism except patching frob's own DEFAULT_BENIGN_CAPABILITIES tuple. Adds a per-repo frob.toml [[strata.benign_capabilities]] array-of-tables channel, chosen over a .strata grammar addition because the excuse is repo configuration (which catalog gaps this repo accepts) not a claim about node behavior, matching [graph].exclude/[vet.allow]/[[policy.*]]'s existing register in frob.toml.
+
+## Done report
+
+Added `load_repo_benign_capabilities(root)` in `src/frob/strata/_threat.py`:
+reads `frob.toml`'s `[[strata.benign_capabilities]]` array of tables (the
+same array-of-tables shape `[[policy.*]]` already uses); missing
+file/table is `Ok(())`; a malformed entry (missing `kind`/blank `reason`,
+unparseable TOML) is `Err(StrataError.MalformedBenignConfig)` (new
+`StrataError` member, `_errors.py`). Wired into `frob sys audit` via
+`src/frob/app/sys_runner.py::_evaluate_audit`, which now merges
+`DEFAULT_BENIGN_CAPABILITIES + load_repo_benign_capabilities(root)`
+before calling `evaluate_exhaustiveness`. Exported from
+`frob.strata.__init__`. Documented: new "Per-repo benign-capability
+declarations" section in `docs/strata/threat.md` (design rationale: TOML
+config chosen over a `.strata` grammar addition -- the excuse is repo
+configuration about which catalog gaps are accepted, not a model-level
+claim about a node's behavior, matching `[graph].exclude`/`[vet.allow]`/
+`[[policy.*]]`'s existing register) and a new "Per-repo declarations"
+section in `docs/guides/extending/benign-capabilities.md` with a worked
+TOML example.
+
+Evidence: recorded via `frob ticket evidence` (7 ids in the ticket's
+`evidence:` list above), collected from a fresh `pytest --collect-only`
+pass.
+
+Filed: none (closeable within the declared scope).
+
+Gates:
+- `uv run pytest tests/unit/strata/test_threat.py -q`: all green.
+- `uv run pytest -q` (full repo): all green.
+- `uv run frob check --stamp-baseline`: `gates 0 errors, 0 warnings, 204
+  waived` -- clean baseline stamped (0 violations over 26012 files).
+- `uv run frob sys audit`: `sys audit: PROVED (5 waived) -- zero UNWAIVED
+  gaps across every configured view`; `sys audit: self-conformance
+  PROVED -- zero SYS gaps`.
+- `git diff main --diff-filter=D --stat`: empty (deletion-filter clean).
+
+<!-- ticket:T-0304 -->
+```yaml
+id: T-0304
+title: 'vet capability scanner: fs-read/fs-write split for read-only nodes (graphite
+  T-0018)'
+state: done
+kind: feature
+origin: agent
+created: '2026-07-19'
+blocked_by: []
+parent: null
+scope:
+- src/frob/vet/_capability_registry.py
+- src/frob/strata/_selfconform.py
+- src/frob/strata/_threat.py
+- design/frob.strata
+- docs/strata/selfconform.md
+- docs/modules/vet.md
+- tests/unit/strata/test_selfconform.py
+- tests/test_capability_registry.py
+evidence:
+- tests/unit/strata/test_selfconform.py::TestStaleDesign::test_legacy_fs_declaration_discharges_on_read_only_observation
+- tests/unit/strata/test_selfconform.py::TestStaleDesign::test_fs_read_declaration_discharges_on_read_only_observation
+- tests/unit/strata/test_selfconform.py::TestStaleDesign::test_fs_read_declaration_stays_stale_when_only_writes_observed
+- tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
+attachments: []
+acceptance:
+- A new fs-read capability kind is patterned in python/typescript/rust/c-cpp, added
+  to _EXTENDED_KINDS, and given a DEFAULT_BENIGN_CAPABILITIES excuse
+- A pre-existing bare may 'fs' declaration is not marked SYS101-stale when only fs-read
+  (read-only) observations exist; a node declaring may 'fs-read' specifically stays
+  stale if only writes are observed
+threat: null
+```
+graphite's frob-adoption sweep found SYS101 firing 'declared but never observed' for a node node core declaring may 'fs' for genuinely-real read-only access (Path.read_text()/json.loads(), no writes) -- the scanner only ever emitted the write-derived fs kind. Adds a distinct fs-read kind plus a one-directional backward-compat alias (_alias_legacy_fs_observations) so a pre-existing bare 'fs' declaration is not called stale by a read-only observation, while a node declaring 'fs-read' specifically gets the honest, narrower signal.
+
+## Done report
+
+Added a new `fs-read` `CAPABILITY_KINDS` entry (`src/frob/vet/
+_capability_registry.py`), patterned for real in all four scanned
+languages (Python `Path.read_text`/`read_bytes`/`json.load`; TypeScript
+`fs.readFile`/`readFileSync`; Rust `fs::read_to_string`/`fs::read`; C/C++
+`fread`/`fgets`) -- `capability_matrix()` shows 0 unexcused empty cells.
+Added `fs-read` to `_selfconform.py::_EXTENDED_KINDS` so SYS100/SYS101
+see it like any other extended kind, no `_effects.py::_KIND_MAP` change
+needed. Added a matching `fs-read` `DEFAULT_BENIGN_CAPABILITIES` entry in
+`_threat.py` so THREAT002 does not independently flag it. Implemented
+`_selfconform.py::_alias_legacy_fs_observations`: a one-directional
+backward-compat alias so a pre-existing bare `may "fs"` declaration is
+not marked SYS101-stale by a read-only observation (added to SYS101's
+`declared - observed` join only, deliberately NOT to SYS100's
+`observed - declared` join, which would otherwise report both `fs-read`
+and its `fs` alias as separately undeclared for one real observation). A
+node declaring `may "fs-read"` specifically is unaffected either way.
+Required updating `design/frob.strata` itself (frob's own self-
+conformance model): added `may "fs-read";` to 7 nodes/store (cli,
+graphlang, gates, checker, stratamod, core, vet, tickets_ledger) plus
+`may "fs";` to stratamod (a new real write site in
+`load_repo_benign_capabilities`'s `frob.toml` read, T-0303). Documented:
+new "`fs-read`/`fs-write`: the read-only filesystem signal" section in
+`docs/strata/selfconform.md`; taxonomy table + implementation-notes line
+updated in `docs/modules/vet.md`.
+
+Evidence: recorded via `frob ticket evidence` (4 ids in the ticket's
+`evidence:` list above), including the real-gate integration test
+(`TestRealGateGreen::test_repo_design_and_declarations_are_self_
+conformant`) run against `design/frob.strata` + the real `src/frob/`
+tree.
+
+Filed: none (closeable within the declared scope).
+
+Gates:
+- `uv run pytest tests/unit/strata/test_selfconform.py
+  tests/test_capability_registry.py tests/unit/strata/test_lint.py -q`:
+  all green.
+- `uv run pytest -q` (full repo): all green.
+- `uv run frob check --stamp-baseline`: clean (see T-0303's Done report,
+  same run).
+- `uv run frob sys audit`: `self-conformance PROVED -- zero SYS gaps`;
+  `capability coverage: 14 kind(s) x 4 language(s), 34 cell(s)
+  patterned+proven, 22 excused with reasons, 0 unexcused`.
+- `git diff main --diff-filter=D --stat`: empty (deletion-filter clean).
+
+<!-- ticket:T-0305 -->
+```yaml
+id: T-0305
+title: 'typescript ffi scanner: word-boundary napi match, fixes openapi false positive
+  (graphite T-0019)'
+state: done
+kind: bug
+origin: agent
+created: '2026-07-19'
+blocked_by: []
+parent: null
+scope:
+- src/frob/vet/_capability.py
+- src/frob/vet/_capability_registry.py
+- tests/test_capability_registry.py
+evidence:
+- tests/test_capability_registry.py::TestNegativeFixtures::test_openapi_generated_ts_is_not_ffi
+- tests/test_capability_registry.py::TestNegativeFixtures::test_real_napi_import_still_fires_ffi
+- tests/test_capability_registry.py::TestNoSilentNeedleRegression::test_every_pre_registry_needle_still_fires_somewhere
+- tests/test_capability_registry.py::TestNoSilentNeedleRegression::test_every_reclassified_needle_actually_still_fires_under_its_new_kind
+attachments: []
+acceptance:
+- scan_file_capabilities does not report ffi for source containing only the word openapi/OpenAPI
+  (no real node-ffi/ffi-napi usage)
+- scan_file_capabilities still reports ffi for a real napi-based native addon import
+threat: null
+```
+graphite's frob-adoption sweep found SYS100 firing on capability ffi for node browser sourced from frontend/src/api/api.generated.ts and client.ts -- both openapi-typescript codegen with zero real FFI. Root cause: the bare substring needle 'napi' also matches inside the ordinary word 'openapi' (o-p-e-n-[napi]). Fixed by moving 'napi' out of the plain needle table into an identifier-boundary special check (_has_word_boundary_napi, mirroring the existing T-0151 _has_bare_compile_call precedent for the same needle-is-a-substring-of-an-unrelated-word bug class), plus a regression test using the graphite api.generated.ts fixture shape verbatim.
+
+## Done report
+
+Removed the bare `"napi"` plain needle from the typescript `ffi`
+`node-ffi` `DangerousOperation` entry (`src/frob/vet/
+_capability_registry.py`) and added `_has_word_boundary_napi` (`src/frob/
+vet/_capability.py`), an identifier-boundary special check registered in
+`_SPECIAL_CHECKS["typescript"]["ffi"]` -- mirrors the existing T-0151
+`_has_bare_compile_call` precedent for the same "needle is a substring of
+an unrelated word" bug class. `napi` still fires for `require('napi')`,
+`ffi-napi`, `ffi_napi`, etc. (non-identifier or absent boundary on both
+sides) but never for `openapi`/`OpenAPI` (preceding byte is
+alphanumeric). Updated the `_RECLASSIFIED_NEEDLES` drift-lock table in
+`tests/test_capability_registry.py` with an honest entry recording the
+move (not a silent drop), plus a check that the `typescript/ffi` special
+check is actually registered.
+
+Verified directly against a reproduction of graphite's exact case: a
+minimal fixture shaped like `frontend/src/api/api.generated.ts`
+(openapi-typescript codegen header, `OpenAPI` type, `ApiClient` class, no
+FFI) no longer observes `ffi`; a real `napi`-based import still does.
+
+Evidence: recorded via `frob ticket evidence` (4 ids in the ticket's
+`evidence:` list above).
+
+Filed: none (closeable within the declared scope).
+
+Gates:
+- `uv run pytest tests/test_capability_registry.py -q`: all green (580+
+  cases, including the full `TestPerOperationFireFixtures`/
+  `TestNoSilentNeedleRegression` parametrized suites).
+- `uv run pytest -q` (full repo): all green.
+- `uv run frob check --stamp-baseline`: clean (see T-0303's Done report,
+  same run).
+- `uv run frob sys audit`: `capability coverage: ... 0 unexcused`.
+- `git diff main --diff-filter=D --stat`: empty (deletion-filter clean).

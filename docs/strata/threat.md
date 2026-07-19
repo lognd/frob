@@ -527,6 +527,55 @@ this suite's catalog union (`CWE_CATALOG + CWE_TOP_25_CATALOG`) does not
 cover -- no id can silently escape both the fixture table and the
 out-of-scope list.
 
+<a id="per-repo-benign-capability-declarations"></a>
+## Per-repo benign-capability declarations (T-0017, graphite adoption)
+
+`DEFAULT_BENIGN_CAPABILITIES` (`_threat.py`, docs/guides/extending/
+benign-capabilities.md) is frob's own built-in excuse tuple, bridging the
+vet scanner's tier-2 vocabulary (net/fs/fs-read/eval/env/ffi/
+install-hook) against the CWE-sink-shaped catalog vocabulary. A
+consuming repo can have a DIFFERENT, genuinely benign gap: a real `may`
+capability (`html_render`, `client_storage`, ...) that IS classified
+under `CWE_CATALOG` but has no `QUALITY_CATALOG` analog (or vice versa),
+specific to how that repo actually uses the kind. Before T-0017 the only
+excuse mechanism was patching frob's own Python source -- a downstream
+repo cannot edit `DEFAULT_BENIGN_CAPABILITIES` and had no choice but to
+`waive "THREAT002:<kind>"`, which names a frob design gap as the reason
+rather than a fact about the repo's own model.
+
+**Design choice.** Two homes were considered: a `.strata` surface
+construct (a `benign "kind" reason "..."` clause on the model, alongside
+`waive`/`assume`), or a `frob.toml` `[[strata.benign_capabilities]]`
+array-of-tables (mirroring `[[policy.*]]`). The TOML table was chosen:
+a benign-capability excuse is a statement about which catalog gaps THIS
+REPO accepts as out of scope for a given (kind, family) pair -- repo
+configuration, not a claim about what any one node in the model DOES.
+Every other "this repo accepts/excludes X" declaration already lives in
+`frob.toml` (`[graph].exclude`, `[vet.allow]`, `[[policy.*]]`); a
+`.strata` clause would duplicate that register on the model side for no
+new expressiveness (a repo's benign-capability set is not scoped to one
+node, and does not need the closure engine's flow/boundary machinery the
+way `waive`/`assume` do -- those name a SPECIFIC finding on a SPECIFIC
+node, not a whole-repo vocabulary bridge). Strata's charter law 2 (deny-
+by-default, declared excuses WITH REASONS) is honored the same way
+`BenignCapability`'s own `Field(min_length=1)` already enforces it for
+the built-in tuple: every declared entry requires `kind` and a non-blank
+`reason`, or `frob sys audit` fails closed with `StrataError.
+MalformedBenignConfig`.
+
+**Loader.** `load_repo_benign_capabilities(root)` (`_threat.py`) reads
+`[[strata.benign_capabilities]]`; `frob sys audit`'s wiring
+(`src/frob/app/sys_runner.py::_evaluate_audit`) merges
+`DEFAULT_BENIGN_CAPABILITIES + repo_declared` before calling
+`evaluate_exhaustiveness` -- repo entries are ADDITIONAL excuses on top
+of the built-in tier-2 bridge, never a replacement for it. See
+[Benign capabilities](../guides/extending/benign-capabilities.md
+#per-repo-declarations) for the recipe and worked TOML example. A repo
+that previously carried a `waive "THREAT002:<kind>"` workaround should
+replace it with a first-class `[[strata.benign_capabilities]]` entry
+naming the SAME reason -- the excuse becomes a declared, checkable fact
+rather than a suppression of an unaddressed gap.
+
 ## What is honestly not covered
 
 Stated and enforced as assumptions: zero-day weakness classes not yet in

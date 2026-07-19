@@ -75,9 +75,10 @@ code-level half phase B deferred, in two independent pieces:
 
 from __future__ import annotations
 
+import tomllib
 from pathlib import Path
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
@@ -211,6 +212,17 @@ DEFAULT_BENIGN_CAPABILITIES: tuple[BenignCapability, ...] = (
         ),
     ),
     BenignCapability(
+        kind="fs-read",
+        reason=(
+            "T-0018 (graphite adoption): tier-2 filesystem-read capability, "
+            "the read-only sibling of the fs-write-derived 'fs' kind above "
+            "(frob.vet._capability_registry, split so a read-only node is "
+            "not forced to declare a write-shaped capability it does not "
+            "have); no CWE_CATALOG entry targets local filesystem reads as a "
+            "sink on their own, same rationale as 'fs' above"
+        ),
+    ),
+    BenignCapability(
         kind="eval",
         reason=(
             "vet dependency-vetting signal (compile/eval/__import__ literal "
@@ -270,6 +282,74 @@ DEFAULT_BENIGN_CAPABILITIES: tuple[BenignCapability, ...] = (
         ),
     ),
 )
+
+
+# frob:doc docs/strata/threat.md#per-repo-benign-capability-declarations
+# frob:doc docs/guides/extending/benign-capabilities.md#per-repo-declarations
+# frob:ticket T-0017
+def load_repo_benign_capabilities(
+    root: Path,
+) -> Result[tuple[BenignCapability, ...], StrataError]:
+    """T-0017 (graphite adoption): the per-repo `.strata`-consuming-repo
+    excuse channel `DEFAULT_BENIGN_CAPABILITIES` alone could not provide --
+    a consuming repo genuinely has a capability kind (`html_render`,
+    `client_storage`, ...) that maps to no `CWE_CATALOG`/`QUALITY_CATALOG`
+    sink in ITS model, but the only excuse mechanism was this module's own
+    hardcoded Python tuple, which no downstream repo can edit. Reads
+    `frob.toml`'s `[[strata.benign_capabilities]]` array of tables (the same
+    array-of-tables shape `frob.policy`'s `[[policy.*]]` already uses for
+    repo-declared rules) -- each entry needs `kind` and a non-blank `reason`
+    (deny-by-default, charter law 2: an excuse without a written reason is
+    not honest). Returns `Ok(())` for a missing `frob.toml` or a missing
+    `[strata]`/`benign_capabilities` table (no repo-declared excuses is a
+    valid, common case, not an error) and `Err(StrataError.
+    MalformedBenignConfig)` for a present-but-invalid table (unparseable
+    TOML, or an entry missing `kind`/`reason`) -- fails closed rather than
+    silently dropping a malformed entry, the same posture `_load_policy`'s
+    sibling loaders take. Callers combine the result with
+    `DEFAULT_BENIGN_CAPABILITIES` (repo entries are ADDITIONAL excuses, never
+    a replacement for the built-in tier-2 vocabulary excuses) before passing
+    `benign=` to `evaluate_exhaustiveness`."""
+    toml_path = root / "frob.toml"
+    if not toml_path.exists():
+        _log.info("load_repo_benign_capabilities: no frob.toml at %s", toml_path)
+        return Ok(())
+    try:
+        with toml_path.open("rb") as handle:
+            doc = tomllib.load(handle)
+    except (OSError, tomllib.TOMLDecodeError) as exc:
+        _log.error(
+            "load_repo_benign_capabilities: could not parse %s: %s", toml_path, exc
+        )
+        return Err(StrataError.MalformedBenignConfig)
+
+    entries = doc.get("strata", {}).get("benign_capabilities", [])
+    if not isinstance(entries, list):
+        _log.error(
+            "load_repo_benign_capabilities: [strata.benign_capabilities] must "
+            "be an array of tables, got %s",
+            type(entries).__name__,
+        )
+        return Err(StrataError.MalformedBenignConfig)
+
+    excuses: list[BenignCapability] = []
+    for entry in entries:
+        try:
+            excuses.append(BenignCapability(kind=entry["kind"], reason=entry["reason"]))
+        except (KeyError, TypeError, ValidationError) as exc:
+            _log.error(
+                "load_repo_benign_capabilities: malformed entry in %s: %s",
+                toml_path,
+                exc,
+            )
+            return Err(StrataError.MalformedBenignConfig)
+
+    _log.info(
+        "load_repo_benign_capabilities: loaded %d repo-declared excuse(s) from %s",
+        len(excuses),
+        toml_path,
+    )
+    return Ok(tuple(excuses))
 
 
 # frob:doc docs/strata/threat.md#the-catalog-stdcwe
@@ -1430,4 +1510,5 @@ __all__ = [
     "check_discharge_completeness",
     "check_effect_completeness",
     "evaluate_threats",
+    "load_repo_benign_capabilities",
 ]

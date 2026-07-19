@@ -30,6 +30,7 @@ from frob.strata import (
     evaluate_threats,
 )
 from frob.strata._effects import _may_kind
+from frob.strata._errors import StrataError
 from frob.strata._threat import (
     CWE_CATALOG,
     CWE_TOP_25_CATALOG,
@@ -40,6 +41,7 @@ from frob.strata._threat import (
     QUALITY_VIEWS,
     VIEWS,
     _discharge_claim_id,
+    load_repo_benign_capabilities,
 )
 
 
@@ -726,6 +728,96 @@ class TestBenignCapability:
     def test_empty_reason_is_rejected(self):
         with pytest.raises(ValidationError):
             BenignCapability(kind="metrics", reason="")
+
+
+class TestLoadRepoBenignCapabilities:
+    # frob:tests src/frob/strata/_threat.py::load_repo_benign_capabilities kind="unit"
+    def test_missing_frob_toml_is_ok_empty(self, tmp_path: Path):
+        result = load_repo_benign_capabilities(tmp_path)
+        assert result.is_ok
+        assert result.danger_ok == ()
+
+    # frob:tests src/frob/strata/_threat.py::load_repo_benign_capabilities kind="unit"
+    def test_missing_strata_table_is_ok_empty(self, tmp_path: Path):
+        _write(tmp_path, "frob.toml", '[graph]\nexclude = ["build/**"]\n')
+        result = load_repo_benign_capabilities(tmp_path)
+        assert result.is_ok
+        assert result.danger_ok == ()
+
+    # frob:tests src/frob/strata/_threat.py::load_repo_benign_capabilities kind="unit"
+    def test_declared_entry_is_loaded(self, tmp_path: Path):
+        _write(
+            tmp_path,
+            "frob.toml",
+            "[[strata.benign_capabilities]]\n"
+            'kind = "html_render"\n'
+            'reason = "browser node renders trusted static assets only"\n',
+        )
+        result = load_repo_benign_capabilities(tmp_path)
+        assert result.is_ok
+        excuses = result.danger_ok
+        assert len(excuses) == 1
+        assert excuses[0] == BenignCapability(
+            kind="html_render",
+            reason="browser node renders trusted static assets only",
+        )
+
+    # frob:tests src/frob/strata/_threat.py::load_repo_benign_capabilities kind="unit"
+    def test_missing_reason_is_malformed(self, tmp_path: Path):
+        _write(
+            tmp_path,
+            "frob.toml",
+            '[[strata.benign_capabilities]]\nkind = "html_render"\n',
+        )
+        result = load_repo_benign_capabilities(tmp_path)
+        assert result.is_err
+        assert result.danger_err == StrataError.MalformedBenignConfig
+
+    # frob:tests src/frob/strata/_threat.py::load_repo_benign_capabilities kind="unit"
+    def test_blank_reason_is_malformed(self, tmp_path: Path):
+        _write(
+            tmp_path,
+            "frob.toml",
+            '[[strata.benign_capabilities]]\nkind = "html_render"\nreason = ""\n',
+        )
+        result = load_repo_benign_capabilities(tmp_path)
+        assert result.is_err
+        assert result.danger_err == StrataError.MalformedBenignConfig
+
+    # frob:tests src/frob/strata/_threat.py::load_repo_benign_capabilities kind="unit"
+    def test_unparseable_toml_is_malformed(self, tmp_path: Path):
+        _write(tmp_path, "frob.toml", "not valid toml [[[")
+        result = load_repo_benign_capabilities(tmp_path)
+        assert result.is_err
+        assert result.danger_err == StrataError.MalformedBenignConfig
+
+    # frob:tests src/frob/strata/_threat.py::load_repo_benign_capabilities kind="unit"
+    def test_repo_declared_excuse_resolves_threat002(self, tmp_path: Path):
+        # End-to-end reproduction of the graphite T-0017 gap: `client_
+        # storage` IS classified under CWE_CATALOG (CWE-922/312) but has NO
+        # QUALITY_CATALOG sink entry -- THREAT002 under a quality view
+        # would flag it with no way to excuse it except patching frob's own
+        # DEFAULT_BENIGN_CAPABILITIES. A repo-declared entry resolves it
+        # without touching frob's source, same merge shape
+        # sys_runner._evaluate_audit wires (DEFAULT_BENIGN_CAPABILITIES +
+        # load_repo_benign_capabilities).
+        _write(
+            tmp_path,
+            "frob.toml",
+            "[[strata.benign_capabilities]]\n"
+            'kind = "client_storage"\n'
+            'reason = "no QUALITY_CATALOG sink for this repo\'s usage"\n',
+        )
+        loaded = load_repo_benign_capabilities(tmp_path)
+        assert loaded.is_ok
+        node = Node(id="Browser", trust="trusted", may=("client_storage",))
+        result = check_capability_completeness(
+            KernelModel(nodes=(node,)),
+            catalog=QUALITY_CATALOG,
+            benign=loaded.danger_ok,
+        )
+        assert result.is_ok
+        assert result.danger_ok == ()
 
 
 class TestCapabilityCompleteness:

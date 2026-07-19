@@ -66,6 +66,55 @@ BenignCapability(
   wrong vocabulary -- this is exactly why `DEFAULT_BENIGN_CAPABILITIES`
   exists: to bridge the gap until the two vocabularies are reconciled.
 
+## Per-repo declarations
+
+<a id="per-repo-declarations"></a>
+
+T-0017 (graphite adoption): `DEFAULT_BENIGN_CAPABILITIES` above is a
+hardcoded Python tuple living in frob's OWN source -- a consuming repo
+with a genuinely benign, non-tier-2 `may` kind (e.g. `html_render`/
+`client_storage` on a browser-only node, unmapped under a `QUALITY_
+CATALOG`-only view) had no way to say so without either waiving THREAT002
+by name (naming a gap frob itself must patch, not a real repo-specific
+fact) or patching frob's own module. `load_repo_benign_capabilities`
+(`src/frob/strata/_threat.py`) closes that gap: it reads `frob.toml`'s
+`[[strata.benign_capabilities]]` array of tables -- the SAME array-of-
+tables shape `frob.policy`'s `[[policy.*]]` rules already use, chosen
+over inventing a new `.strata` surface construct (a `benign "kind" reason
+"..."` grammar addition) because the excuse is repo-CONFIGURATION, not a
+design-model FACT about a node -- it says nothing about what a node does,
+only which catalog gaps this repo accepts, the same register `[graph].
+exclude`/`[vet.allow]`/`[[policy.*]]` already occupy in `frob.toml`. See
+[Threat catalog](threat-catalog.md#per-repo-benign-capability-declarations)
+for the full design rationale.
+
+```toml
+# frob.toml
+[[strata.benign_capabilities]]
+kind = "html_render"
+reason = "browser node renders trusted static assets only, no template injection surface"
+
+[[strata.benign_capabilities]]
+kind = "client_storage"
+reason = "no QUALITY_CATALOG sink for this repo's usage (already CWE-922/312-classified under the security family)"
+```
+
+Each entry needs BOTH `kind` and a non-blank `reason` -- deny-by-default,
+same discipline `BenignCapability`'s own `Field(min_length=1)` enforces
+for the built-in tuple. A missing `frob.toml`, or a `[strata]` table with
+no `benign_capabilities` key, is `Ok(())` (no repo-declared excuses is
+the common, valid case); a malformed entry (missing `kind`/`reason`,
+blank `reason`, unparseable TOML) is `Err(StrataError.
+MalformedBenignConfig)` -- `frob sys audit` exits 1 rather than silently
+dropping it. `frob sys audit`'s wiring (`src/frob/app/sys_runner.py::
+_evaluate_audit`) merges `DEFAULT_BENIGN_CAPABILITIES + repo_declared`
+before calling `evaluate_exhaustiveness` -- repo entries are ADDITIONAL
+excuses, never a replacement for the built-in tier-2 vocabulary bridge.
+A `waive "THREAT002:<kind>"` a repo carried as a workaround before this
+channel existed should be replaced by a first-class
+`[[strata.benign_capabilities]]` entry with the same reason -- the excuse
+becomes a declared, checkable fact instead of a suppression.
+
 ## See also
 
 - [Threat catalog](threat-catalog.md)
