@@ -216,6 +216,65 @@ class TestRunGatesDelta:
         assert any("stale" in d.message for d in result.diagnostics)
 
 
+class TestSummarySeverityHonesty:
+    """T-0228: a passing gate must never render its warn-class findings as a
+    bare, alarming 'violation(s)' count -- every summary line splits into
+    errors/warnings (and waived, for gates)."""
+
+    def test_warn_only_gate_summary_splits_errors_and_warnings(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/check/_python.py::_run_gates kind="unit"
+        from typani import Ok
+
+        from frob.check._python import _run_gates
+        from frob.gates import GateReport, GateStats, Severity, Violation
+
+        report = GateReport(
+            violations=(
+                Violation(
+                    rule="R1",
+                    severity=Severity.WARN,
+                    file="a.py",
+                    line=1,
+                    message="warn finding",
+                ),
+            ),
+            waived=(),
+            stats=GateStats(),
+        )
+        monkeypatch.setattr(
+            "frob.gates.run_gates",
+            lambda cfg: Ok(report),  # noqa: ARG005
+        )
+        (tmp_path / "tickets.md").write_text("# Tickets\n")
+        result = _run_gates(tmp_path)
+
+        assert result.exit_code == 0, "warn-only findings must not fail the stage"
+        assert "violation" not in result.summary, (
+            "warn-class findings on a passing gate must never be labeled "
+            f"'violation(s)': got {result.summary!r}"
+        )
+        assert "1 warning" in result.summary
+        assert "0 error" in result.summary
+        assert "0 waived" in result.summary
+
+    def test_cycle_summary_splits_by_severity(self) -> None:
+        # frob:tests src/frob/check/_python.py::_run_cycle kind="unit"
+        from frob.check._python import _severity_counts_summary
+        from frob.process.parsers.common import Diagnostic
+
+        diags = [Diagnostic(severity="warning", message="import cycle: a -> b -> c")]
+        summary = _severity_counts_summary(diags, no_issues="no cycles")
+
+        assert "violation" not in summary
+        assert "found" not in summary, (
+            "a bare 'N cycle(s) found' phrasing reads as alarming even when "
+            "the finding is only warn-class"
+        )
+        assert summary == "1 warning"
+
+
 def test_check_run_check_arch_integration(tmp_path: Path) -> None:
     # frob:tests src/frob/check kind="integration"
     # Exercises frob.check across a real analysis boundary: run_check with the
