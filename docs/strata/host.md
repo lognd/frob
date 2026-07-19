@@ -55,7 +55,9 @@ node api : trusted {
   applies.
 - `owns "PATH" "MODE"` -- a filesystem path this node's service user
   owns, with an explicit octal mode. Both STRING (PATH carries `/`, MODE
-  is an opaque atom). Repeatable: a node may own more than one path.
+  is an opaque atom -- the grammar itself is platform-agnostic; see
+  #hostmanifest below for where MODE is validated). Repeatable: a node
+  may own more than one path.
 - `listens PORT` -- a TCP/UDP port this node's unit binds a socket to.
   NUMBER, matching `capacity`'s replicas-bound convention. Repeatable.
 
@@ -96,6 +98,33 @@ class HostManifest(BaseModel):
     owns: tuple[HostOwns, ...]  # HostOwns(path, mode)
     listens: tuple[int, ...]
 ```
+
+### MODE/PORT validation (T-0270, deferred from T-0255)
+
+`strata-core/src/parse.rs`'s grammar keeps `owns`' MODE and `listens`'
+PORT platform-agnostic atoms (a string, a number) -- the surface grammar
+has no notion of "which OS". Validation instead fires at elaborate/
+read-back time in `_host.py`, where the platform IS known
+(`HostPlatform.LINUX_SYSTEMD` today):
+
+- `HostOwns.mode` is validated (a pydantic `field_validator`) to be 3-4
+  octal digits (`0-7`), matching `chmod`'s own shape -- `"0644"`/`"0755"`
+  pass, `"999"` (out-of-range digits) and `"rwx"` (non-octal) are
+  rejected. A 4-digit mode (`"4755"`) is how a setuid path is declared
+  (#the-honest-gap above) and is accepted.
+- `HostManifest.listens` is validated (a pydantic `field_validator`) to
+  have every PORT in `1-65535`; a non-numeric PORT atom (`listens=abc`)
+  is rejected with a plain `ValueError` before the range check ever
+  runs.
+
+Both fail closed: a malformed MODE or PORT raises (`pydantic.
+ValidationError` for a bad MODE/out-of-range PORT, `ValueError` for a
+non-numeric PORT) out of `host_manifest_for` rather than being silently
+stored and trusted by a downstream consumer (T-0256/T-0257/T-0258/
+T-0259). `mode` stays a bare `str` field (not a stricter octal-int
+type) even after validation -- it is still platform-opaque by design, so
+a future Windows ACL/SDDL string (T-0261) gets its own validator on the
+SAME field, not a type change.
 
 Returns `None` when the node declares no std.host construct at all --
 distinguishing "no OS-layer facts" from "an OS-layer declared with

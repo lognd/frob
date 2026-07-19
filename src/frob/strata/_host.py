@@ -37,9 +37,10 @@ T-0257's job, not this manifest's.
 
 from __future__ import annotations
 
+import re
 from enum import StrEnum
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 
 from frob.logging import get_logger
 
@@ -60,6 +61,21 @@ _OWNS_PREFIX = "owns="
 #: `listens=<port>` attr prefix, one per declared `listens` entry.
 _LISTENS_PREFIX = "listens="
 
+#: Well-formed LINUX_SYSTEMD `owns` MODE: 3-4 octal digits (0-7), matching
+#: `chmod`'s own permission-string shape -- a 4th digit carries setuid/
+#: setgid/sticky (docs/strata/host.md#the-honest-gap: a 4-digit
+#: `owns "PATH" "4755"` mode is how HOST002 sees a setuid path, with no
+#: separate grammar needed). T-0270 (deferred from T-0255): a MODE that
+#: does not match this is rejected at `HostOwns` construction time, not
+#: silently stored.
+_MODE_RE = re.compile(r"[0-7]{3,4}")
+
+#: Valid TCP/UDP port range a `listens` PORT must fall in. T-0270
+#: (deferred from T-0255): out-of-range or non-numeric PORTs are rejected
+#: at `HostManifest` construction time, not silently stored.
+_MIN_PORT = 1
+_MAX_PORT = 65535
+
 
 # frob:doc docs/strata/host.md#hostmanifest
 class HostPlatform(StrEnum):
@@ -76,19 +92,37 @@ class HostPlatform(StrEnum):
 class HostOwns(BaseModel):
     """One `owns=<path>:<mode>` desugared attr, read back as a typed path/mode pair.
 
-    `mode` is INTENTIONALLY a bare, unvalidated string, not a stricter
-    octal-int type: it is platform-opaque by design (POSIX octal today,
-    e.g. `"0644"`; a Windows ACL/SDDL string once T-0261 lands), so the
-    generic string here is deliberate genericity, not an oversight.
+    `mode` stays a bare string, not a stricter octal-int type: it is
+    platform-opaque by design (POSIX octal today, e.g. `"0644"`; a Windows
+    ACL/SDDL string once T-0261 lands), so the generic string type here is
+    deliberate genericity, not an oversight. T-0270: on `HostPlatform.
+    LINUX_SYSTEMD` (the only platform this module elaborates today), the
+    STRING'S SHAPE is still validated -- 3-4 octal digits, `_MODE_RE` --
+    at construction time, so a bogus mode (`"999"`, `"rwx"`) fails closed
+    instead of being stored raw. A future Windows SDDL string gets its own
+    platform-tagged validator when T-0261 lands, not a relaxation of this
+    one.
     """
 
     model_config = ConfigDict(frozen=True)
 
     path: str
-    # frob:todo T-0270
-    # unvalidated: no octal-format check today (see class docstring for
-    # why this stays a bare string across platforms).
     mode: str
+
+    @field_validator("mode")
+    @classmethod
+    def _validate_mode(cls, value: str) -> str:
+        """Reject an `owns` MODE that is not 3-4 well-formed octal digits
+        (e.g. `0644`, `0755`, or 4-digit `4755` for a setuid bit) -- a
+        non-octal (`rwx`) or out-of-range (`999`) mode is a malformed
+        manifest, not a silently-accepted one (T-0270, deferred from
+        T-0255)."""
+        if _MODE_RE.fullmatch(value) is None:
+            raise ValueError(
+                f"owns MODE {value!r} is not well-formed octal permissions "
+                "(expected 3-4 digits, each 0-7, e.g. '0644' or '0755')"
+            )
+        return value
 
 
 # frob:doc docs/strata/host.md#hostmanifest
@@ -107,11 +141,27 @@ class HostManifest(BaseModel):
     runs_as: str | None = None
     is_unit: bool = False
     owns: tuple[HostOwns, ...] = ()
-    # frob:todo T-0270
-    # unvalidated: no range/privileged-port check today (e.g. rejecting
-    # <1024 without CAP_NET_BIND_SERVICE context, or a duplicate-port
-    # check across nodes sharing a host).
+    # T-0270 (deferred from T-0255): each PORT is validated to fall in
+    # 1-65535 at construction time (`_validate_listens` below). Still
+    # open, deliberately NOT this ticket's scope: a privileged-port
+    # (<1024, CAP_NET_BIND_SERVICE) check, and a duplicate-port check
+    # across nodes sharing a host -- both are cross-manifest concerns,
+    # not a single manifest's well-formedness.
     listens: tuple[int, ...] = ()
+
+    @field_validator("listens")
+    @classmethod
+    def _validate_listens(cls, value: tuple[int, ...]) -> tuple[int, ...]:
+        """Reject any `listens` PORT outside the valid TCP/UDP range
+        1-65535 -- an out-of-range port (e.g. `70000`) is a malformed
+        manifest, not a silently-accepted one (T-0270, deferred from
+        T-0255)."""
+        for port in value:
+            if not _MIN_PORT <= port <= _MAX_PORT:
+                raise ValueError(
+                    f"listens PORT {port} is out of range {_MIN_PORT}-{_MAX_PORT}"
+                )
+        return value
 
 
 # frob:doc docs/strata/host.md#surface-grammar
@@ -168,7 +218,16 @@ def _parse_host_attrs(node: Node) -> _ParsedHostAttrs:
             parsed.owns.append(HostOwns(path=path, mode=mode))
             parsed.declared = True
         elif attr.startswith(_LISTENS_PREFIX):
-            parsed.listens.append(int(attr[len(_LISTENS_PREFIX) :]))
+            port_str = attr[len(_LISTENS_PREFIX) :]
+            try:
+                port = int(port_str)
+            except ValueError as exc:
+                # T-0270: a non-numeric PORT (e.g. "abc") fails closed with
+                # a clear message, not a raw int()-parse traceback.
+                raise ValueError(
+                    f"listens PORT {port_str!r} is not a valid integer"
+                ) from exc
+            parsed.listens.append(port)
             parsed.declared = True
     return parsed
 
@@ -183,6 +242,16 @@ def host_manifest_for(node: Node) -> HostManifest | None:
     host-layer facts has no manifest to generate from, distinct from an
     empty-but-present one. Mirrors `_pii.py::node_pii_tags`'s attr
     read-back shape.
+
+    T-0270 (deferred from T-0255): this is elaborate/read-back time, not
+    `strata-core/src/parse.rs`'s grammar-parse time -- MODE/PORT stay
+    platform-agnostic atoms through the grammar, and are only validated
+    here where the platform (`HostPlatform.LINUX_SYSTEMD`) is known.
+    Raises `pydantic.ValidationError` (via `HostOwns`/`HostManifest`'s
+    field validators) or a plain `ValueError` (non-numeric PORT) for a
+    malformed MODE/PORT -- fails closed rather than silently storing
+    bogus OS-layer facts a downstream consumer (T-0256/T-0257/T-0258/
+    T-0259) would otherwise trust.
     """
     parsed = _parse_host_attrs(node)
     if not parsed.declared:

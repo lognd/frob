@@ -1668,7 +1668,7 @@ T-0231 review found a pre-existing malformed frob:tests directive at tests/syste
 ```yaml
 id: T-0270
 title: 'std.host manifest: validate owns MODE and listens PORT (deferred from T-0255)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-07-18'
