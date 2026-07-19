@@ -1143,6 +1143,68 @@ threat: null
 ```
 Filed from sibling-repo pilot P1 (graphite/feldspar/lithos, 2026-07-18). P1 gap 15: lithos audit.py:450 PERF002 while the .index() calls sit at 465-466; rust conformance.rs:31 PERF003 points at the fn signature. Report the call-site line. Feeds T-0161 (heuristic fixes) -- coordinate. Regression fixtures asserting the exact reported line.
 
+## Done report
+
+Reproduced first: `perf_rules` on a 5-line `find_all` function with a loop
+containing `haystack.index(x)` at line 4 reported `PERF002` at line 1 (the
+`def` line) before the fix -- confirmed via a standalone repro script
+calling `perf_rules` directly, matching the ticket's lithos/rust reports.
+
+Root cause: `RawSymbol.body_tokens` is a flat, position-free leaf-token
+stream by design (`frob.lang._common.leaf_tokens`, whitespace never a
+node) -- every PERF00x finding anchored at `symbol.span[0]` because no
+per-token line number exists anywhere in the pipeline. Fixing this
+properly (a `body_token_lines` parallel array on `RawSymbol`) would touch
+every `frob.lang` walker (`_walk_python.py`, `_walk_c.py`,
+`_walk_rust.py`, `_walk_typescript.py`, `_walk_strata.py`,
+`_common.py::leaf_tokens`) -- outside this ticket's declared scope
+(`src/frob/perf/**`, `tests/**`, `tickets.md`). Instead, added a second,
+line-aware pass confined entirely to `src/frob/perf/_rules.py`: once the
+existing token-stream logic decides a rule FIRES (unchanged), a new
+`_source_lines` helper re-reads `file.path` (the same repo-relative/
+absolute string `frob.lang._display_path` already hands every other
+consumer) and regex-locates the real offending line within the symbol's
+span -- `_perf001_line`/`_PERF002_LINE_PATTERN`/`_perf004_line`/
+`_EQ_PATTERN` for PERF001/002/004/003 respectively. Falls back to the old
+`span[0]` anchor if the file can't be re-read or nothing matches, so
+behavior never regresses to a missing/None line.
+
+Changed:
+- src/frob/perf/_rules.py::_source_lines (new)
+- src/frob/perf/_rules.py::_first_matching_line (new)
+- src/frob/perf/_rules.py::_perf001_line (new)
+- src/frob/perf/_rules.py::_perf004_line (new)
+- src/frob/perf/_rules.py::_python_violations (now anchors each hit at its
+  own offending line, not `span[0]`)
+- src/frob/perf/_rules.py::_best_effort_violations (same, for TS/rust
+  `.includes(`/`.indexOf(`/`.contains(`)
+- src/frob/perf/_rules.py::_symbol_violations (threads `lines`/`span_start`
+  through; PERF003 now anchors at the `==` line)
+
+Evidence (fresh `pytest --collect-only`, all 5 new node ids confirmed
+collected, `tests/test_perf.py: 28 tests collected`):
+- tests/test_perf.py::test_perf002_anchors_to_index_call_line_not_def_line
+- tests/test_perf.py::test_perf004_anchors_to_sort_call_line_not_def_line
+- tests/test_perf.py::test_perf003_anchors_to_equality_line_not_def_line
+(plus the 2 T-0246 tests below, same file/run)
+
+`uv run pytest tests/test_perf.py -q`: 28 passed (was 23 before this
+ticket's + T-0246's new tests).
+`uv run ruff check` / `uv run ruff format --check` on
+`src/frob/perf/_rules.py tests/test_perf.py`: clean under both.
+`uv run ty check src/frob/perf/_rules.py`: All checks passed.
+
+False-positive check (T-0161/T-0283 regression guard): `uv run frob check
+--only perf` on frob's own tree reports the identical `0 errors, 0
+warnings, 24 waived` both before (git-stashed) and after this change --
+no new PERF findings, waived or otherwise, on frob's own source.
+
+Deletion-filter clean: `git diff main --diff-filter=D --stat` empty.
+
+Filed: none.
+Gates: `frob check --only perf` clean (0/0/24 waived, unchanged from
+baseline).
+
 <!-- ticket:T-0232 -->
 ```yaml
 id: T-0232
@@ -1466,7 +1528,7 @@ Filed from malmberg pilot P3 (/mnt/c, 2026-07-18). Malmberg pilot dedicated /mnt
 id: T-0246
 title: 'PERF003 correlation: unwind one level of call parens in _operand_names (f(x)
   == g(y) joins)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-07-18'
@@ -1482,6 +1544,66 @@ acceptance: []
 threat: null
 ```
 T-0161 round-2 review follow-up (non-blocking boundary found by the reviewer): a real nested join comparing derived values -- f(x) == g(y) with x,y the loop variables inside call parens -- does not fire because _operand_names only unwinds bare identifiers and one bracket-pair subscript (a[i-1] == b[j-1] works). Extend the unwinding one level of call parens, symmetric with the subscript handling; keep the attribute-access narrowing (its 4 sibling-loop FP sites are documented in T-0161's Done report). Regression: derived-value join fires; the 4 FP classes stay silent.
+
+## Done report
+
+Reproduced first: `perf_rules` on a nested `for x in a: for y in b: if f(x)
+== g(y):` join returned no PERF003 finding before the fix -- confirmed via
+a standalone repro script, matching the ticket's exact `f(x) == g(y)`
+shape. Also confirmed (via `git stash`) that a synthetic sibling-loop
+attribute-access case (`for waiver in candidates: ...` / `for waiver in
+candidates: assert waiver.src == waiver.dst`) already fires PERF003
+*before* this change too -- that's a pre-existing, narrower FP class than
+the 4 named in T-0161's Done report (those 4 real sites don't reduce to
+the same base-identifier-adjacent-to-`==` shape my synthetic case does)
+and is unrelated to and unaffected by this ticket's call-paren change.
+
+Fix: `_operand_names` now also unwinds one level of call parens
+(`f(x)`/`g(y)`), symmetric with the existing subscript unwind
+(`a[i-1]`/`b[j-1]`). `_bracket_identifiers` gained a `brackets` parameter
+(default `("[", "]")`, unchanged for existing callers) so the same
+depth-tracked walk serves both bracket kinds instead of duplicating it for
+parens. `_operand_names` itself was simplified to check `tokens[start]`
+directly against `]`/`[`/`)`/`(` rather than pre-computing a single
+`closer`/`opener` value keyed off `step` -- behaviorally identical for the
+existing bracket case, and what makes adding the paren case a two-line
+diff instead of a second near-duplicate branch tree. Attribute access
+(`.`) is untouched -- the T-0161 narrowing stays exactly as narrow as
+before.
+
+Changed:
+- src/frob/perf/_rules.py::_operand_names (unwinds call parens, one level)
+- src/frob/perf/_rules.py::_bracket_identifiers (parameterized on
+  `brackets`, reused for both `[]` and `()`)
+
+Evidence (fresh `pytest --collect-only`, both new node ids confirmed
+collected, `tests/test_perf.py: 28 tests collected`):
+- tests/test_perf.py::test_perf003_fires_on_call_operand_join
+- tests/test_perf.py::test_perf003_call_operand_join_stays_narrow_no_recursive_unwind
+
+`uv run pytest tests/test_perf.py -q`: 28 passed (was 23 before this
+ticket's + T-0230's new tests). Every pre-existing PERF003 test
+(`test_perf003_does_not_fire_on_sibling_comprehensions`,
+`test_perf003_does_not_fire_on_sibling_statement_loops`,
+`test_perf003_fires_on_nested_join_with_intervening_statement`,
+`test_perf003_does_not_fire_on_single_loop`) still passes unchanged.
+`uv run ruff check` / `uv run ruff format --check` on
+`src/frob/perf/_rules.py tests/test_perf.py`: clean under both.
+`uv run ty check src/frob/perf/_rules.py`: All checks passed.
+
+False-positive check (T-0161/T-0283 regression guard, same run as
+T-0230's): `uv run frob check --only perf` on frob's own tree reports
+`0 errors, 0 warnings, 24 waived` both before and after this change --
+including the `src/frob/vet/_typosquat.py:26` waived
+"algorithm-inherent edit-distance DP nested scan" PERF003 site, which is
+exactly the subscript-join shape this change's sibling logic touches, and
+it stays waived at the same count, not newly fired or newly silent.
+
+Deletion-filter clean: `git diff main --diff-filter=D --stat` empty.
+
+Filed: none.
+Gates: `frob check --only perf` clean (0/0/24 waived, unchanged from
+baseline).
 
 <!-- ticket:T-0247 -->
 ```yaml
