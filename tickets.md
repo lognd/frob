@@ -2505,7 +2505,7 @@ The user's original vision (CLAUDE.md): every function/class/etc. carries a dige
 id: T-0326
 title: 'REL001: breaking change in 0.x must bump minor, not force 1.0.0 (semver section
   4)'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-19'
@@ -2528,4 +2528,3 @@ Hit live 2026-07-19: accumulated public-API changes since the 0.10.0 stamp (T-01
 
 ## Done report
 required_version (src/frob/release/__init__.py): when previous major==0, a MAJOR/breaking bump now returns 0.(minor+1).0 instead of 1.0.0 (semver s4). Only at >=1.0.0 does breaking bump major. Test test_breaking_change_in_0x_bumps_minor_not_to_1_0_0 locks 0.10.0->0.11.0, 0.1.0->0.2.0, and 1.0.0->2.0.0. Repo re-stamped 0.10.0->0.11.0, CHANGELOG [0.11.0] added; frob release check = OK. Unblocks staying in 0.x while accumulating changes toward the deliberate 1.0.0 at zero-everything.
-
