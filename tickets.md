@@ -8098,3 +8098,25 @@ untouched by this ticket, landed via the main merge, out of scope).
 ledger-conflict splice against the newer main tip (d900bd5). Cargo.lock:
 no churn (`make core` no-op rebuild). No non-ASCII characters. Not closing
 this ticket -- leaving for the reviewer per the review-gated workflow.
+
+<!-- ticket:T-0292 -->
+```yaml
+id: T-0292
+title: COV003 remediation hint references nonexistent 'frob test --collect' flag
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-19'
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/__init__.py,src/frob/gates/invariants.py,tests/**,tickets.md
+evidence: []
+attachments: []
+acceptance:
+- given a COV003 evidence-resolution failure, when the error message prints its remediation
+  hint, then the suggested command is one that actually exists (frob test has no --collect
+  flag today); either add the flag or change the hint to the real refresh path
+threat: null
+```
+Hit live 2026-07-19 while closing T-0282: COV003 says "run: frob test --collect to refresh" but `frob test` has no --collect option (argparse rejects it). Root cause of the false COV003 was a stale .frob/pytest-collect.json cache after a merge added new evidence tests; the cache did refresh on the next collection pass, but the user-facing hint points at a nonexistent flag. Fix: either implement `frob test --collect` (force a collection-cache rebuild without running tests) -- the cleaner option, since there is a genuine need to refresh the cache on demand -- or correct the hint to whatever the real refresh path is. Prefer adding the flag.
