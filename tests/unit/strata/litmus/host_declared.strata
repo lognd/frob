@@ -1,0 +1,21 @@
+// host_declared.strata -- T-0255 litmus: a node declares the full
+// std.host vocabulary (runs_as/unit/owns/listens). No proofs exist yet
+// for std.host (T-0255 is manifest-only, T-0256/T-0257 are the
+// generator/proof follow-ups) -- this fixture instead round-trips
+// parse -> elaborate -> host_manifest_for, proving the attr-desugar
+// convention survives the real strata_core parser, not just a
+// hand-built KernelModel.
+//
+// tested end to end by tests/unit/strata/test_litmus_host.py.
+
+module host_declared
+
+node api : trusted {
+    clearance Internal;
+    runs_as "api-svc";
+    unit;
+    owns "/etc/api" "0644";
+    owns "/var/lib/api" "0750";
+    listens 8080;
+    listens 8443;
+}

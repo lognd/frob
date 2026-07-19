@@ -93,6 +93,21 @@ class WaiverDecl(BaseModel):
     ticket: str | None = None
 
 
+# frob:doc docs/strata/host.md#surface-grammar
+class OwnsDecl(BaseModel):
+    """A parsed `owns "PATH" "MODE"` clause inside a `node`/`store` block
+    (T-0255, docs/strata/host.md): a filesystem path this node's service
+    user owns, with an explicit octal permission mode. Both fields are
+    STRING in the grammar (PATH carries `/`, MODE is an opaque atom), so
+    both stay `str` here rather than a stricter type -- mode-format
+    validation is the elaborator's job (`_host.py`), not the AST's."""
+
+    model_config = ConfigDict(frozen=True)
+
+    path: str
+    mode: str
+
+
 # frob:doc docs/strata/surface.md#parser
 class NodeDecl(BaseModel):
     """A parsed `node` statement, one entry in a `Module`."""
@@ -125,6 +140,18 @@ class NodeDecl(BaseModel):
     # `FamilyGap`/`SelfConformViolation` match needs, not an opaque attr
     # string).
     waives: tuple[WaiverDecl, ...] = ()
+    # `runs_as "svc-name"`, T-0255 (std.host); elaborated to a
+    # `runs_as=<name>` attr and read back by `_host.py::host_manifest_for`.
+    runs_as: str | None = None
+    # `unit` bare marker, T-0255; elaborated to a `"unit"` attr, same
+    # bare-marker convention `managed`/`errors_total` use.
+    is_unit: bool = False
+    # `owns "PATH" "MODE"`+, T-0255; elaborated to `owns=<path>:<mode>`
+    # attrs, one per entry (same per-atom desugar `code`/`carries` use).
+    owns: tuple[OwnsDecl, ...] = ()
+    # `listens PORT`+, T-0255; elaborated to `listens=<port>` attrs, one
+    # per port.
+    listens: tuple[int, ...] = ()
 
 
 # frob:doc docs/strata/surface.md#parser
@@ -355,6 +382,13 @@ class StoreDecl(BaseModel):
     # #key-construct-semantics), so a `frob sys audit` finding against a
     # store needs the same in-design waiver escape hatch.
     waives: tuple[WaiverDecl, ...] = ()
+    # `runs_as`/`unit`/`owns`/`listens`, T-0255 (std.host); same shape and
+    # same attr-desugar convention as `node`'s (a store is a node too,
+    # docs/strata/surface.md#key-construct-semantics).
+    runs_as: str | None = None
+    is_unit: bool = False
+    owns: tuple[OwnsDecl, ...] = ()
+    listens: tuple[int, ...] = ()
 
 
 # frob:doc docs/strata/surface.md#stdinfra

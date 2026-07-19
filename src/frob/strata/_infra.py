@@ -29,6 +29,7 @@ from frob.logging import get_logger
 from ._ast import BalancerDecl, CacheDecl, CdnDecl, Module, QueueDecl, StoreDecl
 from ._code_binding import _CODE_PREFIX
 from ._errors import StrataError
+from ._host import host_attrs
 from ._models import Boundary, BoundaryDirection, Flow, Node, Quantity, Waiver
 from ._models import Capacity as KernelCapacity
 from ._pii import _PII_PREFIX
@@ -113,6 +114,17 @@ def _elaborate_store(decl: StoreDecl) -> Result[Node, StrataError]:
         # T-0172: config-only infra store -- no `code=` glob expected.
         _log.debug("store %s is managed; marking attrs with %r", decl.id, _MANAGED_ATTR)
         attrs.append(_MANAGED_ATTR)
+    host = host_attrs(
+        runs_as=decl.runs_as,
+        is_unit=decl.is_unit,
+        owns=tuple((o.path, o.mode) for o in decl.owns),
+        listens=decl.listens,
+    )
+    if host:
+        # T-0255: std.host -- same shared `_host.py::host_attrs` encoding
+        # `_elaborate.py::_elaborate_node` uses for `node`.
+        _log.debug("store %s declares %d std.host attr(s)", decl.id, len(host))
+        attrs.extend(host)
     if decl.rpo is not None:
         dimension = decl.rpo.dimension()
         if dimension.is_err:
