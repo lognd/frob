@@ -50,15 +50,15 @@ detection THREAT004 already runs.
     conformance` (THREAT004) -- `_selfconform.py::_core_undeclared_
     violations` just relabels its `CapabilityViolation`s as SYS100. Zero
     new detection for this slice.
-  - eval/env/ffi/install-hook: NEW code
+  - eval/env/ffi/install-hook/fs-read: NEW code
     (`_selfconform.py::_extended_kind_violations`). **Gap statement:**
     `_effects.py::_KIND_MAP` is scoped, by its own docstring (T-0079), to
     net/fs-write/exec only -- "eval/env/ffi/install-hook are vet-specific
     dependency-vetting signals with no `may`-capability analog yet" -- so
-    THREAT004 structurally cannot see these four kinds no matter what
+    THREAT004 structurally cannot see these kinds no matter what
     `may` declares. `frob.vet._capability.scan_file_capabilities` (already
     imported READ-ONLY by `_effects.py` for the other three kinds) is
-    reused directly for these four, joined against `Node.may` via
+    reused directly for these, joined against `Node.may` via
     `_effects.py::_declared_kinds` (reused, not reimplemented).
 - **SYS101 stale design.** A `may` capability declared for a node with
   zero observed sites anywhere in that node's `code=`-bound files, over
@@ -81,16 +81,57 @@ detection THREAT004 already runs.
 
 ## Kind-space drift-lock
 
-The net/fs-write/exec vs. eval/env/ffi/install-hook split
+The net/fs-write/exec vs. eval/env/ffi/install-hook/fs-read split
 (`_selfconform.py::_EXTENDED_KINDS`) is the one fact this module hardcodes
 that could silently rot if `_effects.py::_KIND_MAP` ever grows a fourth
 key. `tests/unit/strata/test_selfconform.py::
 TestExtendedKindsDriftLock::test_extended_kinds_is_disjoint_from_kind_map`
 asserts `_EXTENDED_KINDS` and `_KIND_MAP`'s keys are disjoint and their
 union covers every kind `vet._capability._PATTERNS` actually defines --
-if `_KIND_MAP` (THREAT004's scope) ever grows, or `_PATTERNS` grows an
-eighth kind neither set accounts for, that test fails first, loudly, in
+if `_KIND_MAP` (THREAT004's scope) ever grows, or `_PATTERNS` grows a
+kind neither set accounts for, that test fails first, loudly, in
 review.
+
+<a id="fs-read-fs-write"></a>
+## `fs-read`/`fs-write`: the read-only filesystem signal (T-0018, graphite adoption)
+
+Before T-0018 the vet scanner had exactly one filesystem kind: `fs`
+(normalized from the scanner's `fs-write`, `_effects.py::_KIND_MAP`). A
+node whose code only ever READS local files (config loads via `Path.
+read_text()`/`json.load()`, no writes anywhere) could declare `may "fs"`
+and SYS101 would still fire "declared but never observed" -- the scanner
+never emitted the write-derived `fs` kind for a read-only site, forcing a
+`waive "SYS101:fs"` naming a real capability the waiver reason had to
+apologize for.
+
+`fs-read` is a genuinely NEW, separate `CAPABILITY_KINDS` entry (`frob.
+vet._capability_registry`), patterned for real in all four scanned
+languages (Python `Path.read_text`/`read_bytes`/`json.load`; TypeScript
+`fs.readFile`/`readFileSync`; Rust `fs::read_to_string`/`fs::read`; C/C++
+`fread`/`fgets`) and added to `_EXTENDED_KINDS` alongside eval/env/ffi/
+install-hook -- SYS100 and SYS101 see it exactly like any other extended
+kind, no `_effects.py::_KIND_MAP` change needed. `DEFAULT_BENIGN_
+CAPABILITIES` gained a matching `fs-read` entry so THREAT002 does not
+independently flag it (same "no CWE_CATALOG sink for local filesystem
+access on its own" reasoning as the existing `fs` entry).
+
+**Backward compatibility.** A pre-existing `may "fs"` declaration
+predates the split and meant "any real filesystem access" -- it must not
+go stale just because the only real access turns out to be reads.
+`_selfconform.py::_alias_legacy_fs_observations` implements this: SYS101's
+declared-vs-observed join (`_stale_design_violations`, via `_observed_
+all_kinds_by_node`) adds a bare `fs` alias to a node's observed set
+whenever `fs-read` is observed there. This is deliberately
+ONE-DIRECTIONAL and scoped to SYS101's `declared - observed` side only --
+NOT applied to SYS100's `observed - declared` side
+(`_extended_kind_violations`/`_core_undeclared_violations`), which would
+otherwise report both `fs-read` and its `fs` alias as separately
+undeclared for the SAME single read observation, a redundant duplicate
+finding for one real capability. A node that declares `may "fs-read"`
+specifically (the more honest, narrower signal for a genuinely read-only
+component) is unaffected by the alias either way -- it already matches
+the raw `fs-read` observation directly, and stays stale if only writes
+are ever observed (the alias never runs in that direction).
 
 ## Waiving a SYS100-102 finding (T-0174)
 

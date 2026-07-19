@@ -67,6 +67,19 @@ CAPABILITY_KINDS: tuple[str, ...] = (
     #: CAPABILITIES` excuses THAT normalized spelling, not the raw scanner
     #: token, so both live in this registry.
     "fs",
+    #: T-0018 (graphite adoption): a node whose code ONLY reads local
+    #: filesystem state (config loads, e.g. `Path.read_text()`/
+    #: `json.loads()`) could never satisfy SYS101 declaring `may "fs"` --
+    #: the scanner only ever emitted the write-derived "fs"/"fs-write"
+    #: kinds, forcing a `waive "SYS101:fs"` for genuinely-real read-only
+    #: access. `fs-read` is a NEW, separate observed kind (not an alias of
+    #: "fs"); `frob.strata._selfconform`'s SYS101 join treats a bare `may
+    #: "fs"` declaration as backward-compatibly satisfied by EITHER
+    #: observed kind (a pre-existing "fs" declaration should not go stale
+    #: just because the only real access turns out to be reads), while a
+    #: node that declares `may "fs-read"` specifically gets the honest,
+    #: narrower signal (docs/strata/selfconform.md#fs-read-fs-write).
+    "fs-read",
     "env",
     "ffi",
     "install-hook",
@@ -504,6 +517,30 @@ DANGEROUS_OPERATIONS: tuple[DangerousOperation, ...] = (
         ("write_text(", "write_bytes(", ".unlink("),
         ("CWE-22",),
     ),
+    # -- python: fs-read (T-0018, graphite adoption) ------------------------
+    _op(
+        "python",
+        "pathlib",
+        "Path.read_text/read_bytes",
+        "fs-read",
+        "reads local filesystem state (e.g. a config file)",
+        "validate the source path is inside an expected root before reading",
+        "low",
+        ("read_text(", "read_bytes("),
+        (),
+    ),
+    _op(
+        "python",
+        "builtins/json",
+        "open() (read mode) / json.load",
+        "fs-read",
+        "reads local filesystem state via the builtin file API or the json "
+        "stdlib module",
+        "validate the source path is inside an expected root before reading",
+        "low",
+        ("json.load(",),
+        (),
+    ),
     _op(
         "python",
         "tempfile",
@@ -786,13 +823,32 @@ DANGEROUS_OPERATIONS: tuple[DangerousOperation, ...] = (
     ),
     _op(
         "typescript",
+        "fs",
+        "fs.readFile/readFileSync",
+        "fs-read",
+        "reads local filesystem state",
+        "validate the source path is inside an expected root before reading",
+        "low",
+        ("fs.readFile", "readFileSync("),
+        (),
+    ),
+    _op(
+        "typescript",
         "node-ffi",
         "ffi-napi/node-gyp/napi native bindings",
         "ffi",
         "loads and calls into native code via a node addon",
         "avoid loading native addons from untrusted or writable paths",
         "high",
-        ("ffi-napi", "node-gyp", "napi"),
+        # T-0019 (graphite adoption): bare "napi" is deliberately NOT a plain
+        # needle here -- it is also a substring of the ordinary English/API
+        # word "openapi" ("o-p-e-n-[napi]"), which fired on openapi-typescript
+        # codegen (api.generated.ts) with zero real node-ffi/ffi-napi usage.
+        # "napi" is still detected, but only via the identifier-boundary
+        # `_has_word_boundary_napi` special check in `frob.vet._capability`
+        # (mirrors T-0151's `_has_bare_compile_call` precedent for the same
+        # "needle is a substring of an unrelated word" class of bug).
+        ("ffi-napi", "node-gyp"),
         (),
     ),
     # install-hook has no idiomatic JS/TS packaging-hook equivalent to
@@ -902,6 +958,18 @@ DANGEROUS_OPERATIONS: tuple[DangerousOperation, ...] = (
         ("File::create(", "fs::write(", "fs::remove_file("),
         ("CWE-22",),
     ),
+    # -- rust: fs-read (T-0018, graphite adoption) --------------------------
+    _op(
+        "rust",
+        "std::fs",
+        "fs::read_to_string/fs::read",
+        "fs-read",
+        "reads local filesystem state",
+        "validate the source path is inside an expected root before reading",
+        "low",
+        ("fs::read_to_string(", "fs::read("),
+        (),
+    ),
     # -- rust: env -----------------------------------------------------------
     _op(
         "rust",
@@ -948,6 +1016,18 @@ DANGEROUS_OPERATIONS: tuple[DangerousOperation, ...] = (
         "high",
         ("execl(", "execv(", "execve(", "execvp("),
         ("CWE-78",),
+    ),
+    # -- c/c++: fs-read (T-0018, graphite adoption) ----------------------------
+    _op(
+        "c-cpp",
+        "libc",
+        "fread()/fgets()",
+        "fs-read",
+        "reads local filesystem state",
+        "validate the source path is inside an expected root before reading",
+        "low",
+        ("fread(", "fgets("),
+        (),
     ),
     # -- c/c++: ffi (dynamic loading) ------------------------------------------
     _op(

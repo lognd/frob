@@ -78,6 +78,7 @@ node cli : trusted {
     code "src/frob/app/**" "src/frob/__main__.py";
     may "eval";
     may "fs";
+    may "fs-read";
 }
 
 // graph+lang: src/frob/graph/**, src/frob/lang/**, src/frob/arch/**. Owns
@@ -95,6 +96,7 @@ node graphlang : trusted {
     code "src/frob/graph/**" "src/frob/lang/**" "src/frob/arch/**";
     may "eval";
     may "fs";
+    may "fs-read";
     may "sql";
 }
 
@@ -115,6 +117,7 @@ node gates : trusted {
     clearance Internal;
     code "src/frob/gates/**";
     may "fs";
+    may "fs-read";
 }
 
 // check orchestration: src/frob/check/**. Runs the gate suite plus the
@@ -136,6 +139,7 @@ node checker : trusted {
     code "src/frob/check/**";
     may "exec";
     may "fs";
+    may "fs-read";
     waive "LINT004" reason "no real kill switch around subprocess spawning yet -- T-0200 is the follow-on ticket to build one" ticket "T-0200";
 }
 
@@ -154,6 +158,12 @@ node stratamod : trusted {
     code "src/frob/strata/**";
     may "eval";
     may "ffi";
+    // T-0017 (graphite adoption): `load_repo_benign_capabilities`
+    // (`_threat.py`) reads a consuming repo's `frob.toml` -- a real,
+    // observed `fs`/`fs-read` site (`Path.open("rb")`/`tomllib.load`),
+    // not previously exercised anywhere else in this package.
+    may "fs";
+    may "fs-read";
     may "net";
     waive "LINT004" reason "no real kill switch around net calls yet -- T-0200 is the follow-on ticket to build one" ticket "T-0200";
 }
@@ -194,6 +204,7 @@ node core : trusted {
     may "eval";
     may "exec";
     may "fs";
+    may "fs-read";
     waive "LINT004" reason "no real kill switch around subprocess spawning yet -- T-0200 is the follow-on ticket to build one" ticket "T-0200";
 }
 
@@ -230,6 +241,7 @@ node vet : trusted {
     may "fetch_url";
     may "ffi";
     may "fs";
+    may "fs-read";
     may "install-hook";
     may "net";
     waive "LINT004" reason "no real kill switch around net calls yet -- T-0200 is the follow-on ticket to build one" ticket "T-0200";
@@ -265,6 +277,7 @@ store tickets_ledger : trusted {
     may "env";
     may "exec";
     may "fs";
+    may "fs-read";
     // T-0166 LINT004: `may "exec"` is a risky capability with no real kill
     // switch today -- an honest gap, same posture as checker/core/
     // stratamod/vet above; waived (T-0250, extending T-0174's node-only

@@ -119,6 +119,11 @@ _EXTENDED_KINDS = frozenset(
         "html_render",
         "fetch_url",
         "client_storage",
+        #: T-0018 (graphite adoption): read-only filesystem access, split
+        #: from `fs`/`fs-write` so a node that only ever reads is not
+        #: forced into a `waive "SYS101:fs"` (module docstring below,
+        #: `_alias_legacy_fs_observations`).
+        "fs-read",
     }
 )
 
@@ -333,7 +338,32 @@ def _observed_all_kinds_by_node(
         normalized = {_KIND_MAP.get(kind, kind) for kind in raw}
         if normalized:
             per_node.setdefault(owner, set()).update(normalized)
-    return {node_id: frozenset(kinds) for node_id, kinds in per_node.items()}
+    return {
+        node_id: _alias_legacy_fs_observations(frozenset(kinds))
+        for node_id, kinds in per_node.items()
+    }
+
+
+# frob:doc docs/strata/selfconform.md#fs-read-fs-write
+def _alias_legacy_fs_observations(observed: frozenset[str]) -> frozenset[str]:
+    """T-0018 (graphite adoption) backward compatibility: a pre-existing
+    `may "fs"` declaration predates the `fs-read`/`fs-write` split and meant
+    "any real filesystem access". If `observed` contains `fs-read` (a
+    read-only node), also report bare `fs` as observed so SYS101's
+    `declared - observed` join does not call an existing `may "fs"`
+    declaration stale just because the only real access turns out to be
+    reads rather than writes. Deliberately one-directional and confined to
+    SYS101's declared-vs-observed side only (`_stale_design_violations`) --
+    NOT applied to SYS100's observed-vs-declared side
+    (`_extended_kind_violations`/`_core_undeclared_violations`), which would
+    otherwise report both `fs-read` and its `fs` alias as separately
+    undeclared for the same single read observation, a redundant duplicate
+    finding for one real capability. A node that declares `may "fs-read"`
+    specifically is unaffected either way: it already matches the raw
+    `fs-read` observation with no aliasing needed."""
+    if "fs-read" in observed and "fs" not in observed:
+        return observed | {"fs"}
+    return observed
 
 
 def _extended_kind_violations(

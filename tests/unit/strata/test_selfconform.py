@@ -166,6 +166,89 @@ class TestStaleDesign:
         assert result.is_ok
         assert not any(v.rule == SYS_STALE_DESIGN for v in result.danger_ok.violations)
 
+    # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    def test_legacy_fs_declaration_discharges_on_read_only_observation(
+        self, tmp_path: Path
+    ):
+        """T-0018 (graphite adoption): graphite's `node core` declares
+        `may "fs"` for genuinely-real read-only filesystem access
+        (`Path.read_text()`/`json.loads()`, no writes anywhere) and SYS101
+        fired "declared but never observed" because the scanner only ever
+        emitted the write-derived `fs` kind. A pre-existing bare `may "fs"`
+        declaration must be backward-compatibly satisfied by a read-only
+        observation now that `fs-read` is a distinct, real kind."""
+        _write(
+            tmp_path,
+            "src/frob/widget/_io.py",
+            "from pathlib import Path\nPath('x').read_text()\n",
+        )
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="widget",
+                    trust="trusted",
+                    attrs=("code=src/frob/widget/**",),
+                    may=("fs",),
+                ),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        assert not any(v.rule == SYS_STALE_DESIGN for v in result.danger_ok.violations)
+
+    # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    def test_fs_read_declaration_discharges_on_read_only_observation(
+        self, tmp_path: Path
+    ):
+        """A node that declares the new, more honest `may "fs-read"` (rather
+        than the legacy bare `fs`) is satisfied directly by a read-only
+        observation too."""
+        _write(
+            tmp_path,
+            "src/frob/widget/_io.py",
+            "from pathlib import Path\nPath('x').read_text()\n",
+        )
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="widget",
+                    trust="trusted",
+                    attrs=("code=src/frob/widget/**",),
+                    may=("fs-read",),
+                ),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        assert not any(v.rule == SYS_STALE_DESIGN for v in result.danger_ok.violations)
+
+    # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    def test_fs_read_declaration_stays_stale_when_only_writes_observed(
+        self, tmp_path: Path
+    ):
+        """The alias is one-directional: `fs-read` declared but only a
+        write observed must still be stale (a real distinction, not a
+        blanket merge of the two kinds)."""
+        _write(
+            tmp_path,
+            "src/frob/widget/_io.py",
+            "from pathlib import Path\nPath('x').write_text('y')\n",
+        )
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="widget",
+                    trust="trusted",
+                    attrs=("code=src/frob/widget/**",),
+                    may=("fs-read",),
+                ),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        hit = [v for v in result.danger_ok.violations if v.rule == SYS_STALE_DESIGN]
+        assert any(v.node == "widget" and "fs-read" in v.detail for v in hit)
+
 
 class TestUnmodeledCode:
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"

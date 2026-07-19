@@ -29,6 +29,7 @@ immediately.
 | eval | eval/exec/compile/Function()/importlib dynamic import |
 | net | socket/http/urllib/reqwest/fetch/net:: usage |
 | fs-write | writes outside the package's own tree/tempdirs |
+| fs-read | reads local filesystem state (config loads, no mutation) -- T-0018, graphite adoption, docs/strata/selfconform.md#fs-read-fs-write |
 | env | os.environ/process.env/std::env reads |
 | ffi | ctypes/cffi/NAPI/unsafe extern |
 | native | compiled artifacts in the wheel/crate (opaque to scanning) |
@@ -873,8 +874,8 @@ What landed on top of the lockfile-conformance MVP:
 
 - **Capability scan** (`_capability.py`): per-language substring scan over
   `frob.lang`-parsed source, dispatched by extension. Python, TypeScript/JS,
-  and Rust each get a pattern table for exec/eval/net/fs-write/env/ffi/
-  install-hook. C/C++ intentionally return an empty capability set (no
+  and Rust each get a pattern table for exec/eval/net/fs-write/fs-read/
+  env/ffi/install-hook. C/C++ intentionally return an empty capability set (no
   idiomatic literal exists yet) rather than a false claim of coverage.
   `decode_to_exec_signal` uses `frob.lang` symbol extraction so a decode
   call and an exec/eval call must land in the SAME function body to count
