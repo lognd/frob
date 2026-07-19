@@ -1442,6 +1442,58 @@ class TestCoverageLoad:
         assert record.symref in data.symbol_branch
         assert data.root_join_ok
 
+    def test_multi_root_resolves_each_class_to_its_real_root(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_coverage.py::load_coverage
+        # T-0311: two <source> roots declared (a `--cov=scripts --cov=tests`
+        # style run); a class filename that exists under ONLY ONE of them
+        # must resolve to that root, never to the OTHER declared root just
+        # because it happened to win the aggregate per-report vote (e.g. by
+        # having more matching classes, or by declaration order on a tie).
+        _write(tmp_path, "scripts/actgen/core.py", "def helper(x):\n    return x\n")
+        _write(tmp_path, "tests/actgen/other.py", "def other(x):\n    return x\n")
+        snap = _snapshot(tmp_path)
+        record = snap.symbols["scripts/actgen/core.py::helper"]
+        start = record.span[0]
+        other_record = snap.symbols["tests/actgen/other.py::other"]
+        other_start = other_record.span[0]
+        xml = f"""<?xml version="1.0"?>
+<coverage>
+  <sources>
+    <source>{(tmp_path / "tests").resolve()}</source>
+    <source>{(tmp_path / "scripts").resolve()}</source>
+  </sources>
+  <packages>
+    <package>
+      <classes>
+        <class filename="actgen/core.py" line-rate="0.0">
+          <lines>
+            <line number="{start}" hits="0" branch="false"/>
+          </lines>
+        </class>
+        <class filename="actgen/other.py" line-rate="1.0">
+          <lines>
+            <line number="{other_start}" hits="1" branch="false"/>
+          </lines>
+        </class>
+      </classes>
+    </package>
+  </packages>
+</coverage>
+"""
+        (tmp_path / "coverage.xml").write_text(xml)
+        result = load_coverage(tmp_path, snap)
+        assert result.is_ok
+        data = result.danger_ok
+        # The 0%-covered class must be labeled under "scripts/", the root
+        # it actually lives under -- not "tests/" (a different declared
+        # root that also happens to contain an "actgen/" subdirectory).
+        assert "scripts/actgen/core.py" in data.module_line
+        assert "tests/actgen/core.py" not in data.module_line
+        assert data.module_line["scripts/actgen/core.py"] == 0.0
+        assert "tests/actgen/other.py" in data.module_line
+
     def test_zero_join_is_loud_not_silent(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_coverage.py::load_coverage
         # Every candidate root -- the declared <source> AND the bare

@@ -9693,7 +9693,7 @@ FROBLEMS (aprog-public, graphite, lograder): _selfconform file-discovery honors 
 ```yaml
 id: T-0311
 title: TEST005 reports wrong file path when make coverage uses multiple --cov roots
-state: queued
+state: in-progress
 kind: bug
 origin: auditor
 created: '2026-07-19'
@@ -9701,12 +9701,61 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/gates/_coverage.py,tests/**,tickets.md
-evidence: []
+evidence:
+- tests/test_gates.py::TestCoverageLoad::test_multi_root_resolves_each_class_to_its_real_root
 attachments: []
-acceptance: []
+acceptance:
+- Given a coverage.xml with two declared source roots and a class filename that
+  exists as a real repo path under only one of them, when load_coverage resolves
+  it, then the class is labeled under the root it actually exists under, not the
+  other declared root
 threat: null
 ```
 FROBLEMS (aprog-private): with 'pytest --cov=scripts --cov=tests' (two roots), coverage.xml records filename='actgen/core.py' (rooted under scripts) but TEST005 reports it as 'tests/actgen/core.py' -- the coverage-XML-to-repo-path resolver picks the wrong root (last-declared/alphabetically-last?) for files whose package-relative path doesn't disambiguate. The 0%-coverage finding is correct; only the displayed path is wrong, and it misleads an agent opening the file. Fix: resolve each coverage filename against the actual root it exists under (stat each candidate root+relpath), not a single guessed root. Test: multi-root coverage.xml resolves each file to the root it truly lives under.
+
+## Done report
+
+Changed:
+- src/frob/gates/_coverage.py::_resolve_class_root (new)
+- src/frob/gates/_coverage.py::_build_class_maps (now resolves PER CLASS
+  against `known_paths` instead of joining every class under one
+  per-report "winning root")
+- src/frob/gates/_coverage.py::_parse_classes (threads candidate_roots +
+  known_paths through to _build_class_maps)
+
+Root cause: `_select_join_root` computed a single aggregate-scored
+"winning root" for the WHOLE coverage.xml report, then `_build_class_maps`
+joined every `<class filename=...>` under that one root. With two declared
+`<source>` roots (e.g. `scripts` and `tests`) whose subtrees each contain a
+same-named package-relative path (`actgen/...`), a class that actually
+lives under `scripts/` could still get labeled `tests/...` if `tests`
+happened to win the aggregate per-report vote (more matching classes
+elsewhere, or a tie broken by declaration order) -- the win was global,
+not per-file. Fix: for each class, try each candidate root IN ORDER and
+pick the first whose joined path is in `known_paths` (which only ever
+contains paths to files that genuinely exist, per `_known_repo_paths`);
+only fall back to the old aggregate `winning_root` when a class matches
+none of the candidates (the existing TEST008 unjoined-root path, left
+unchanged).
+
+Evidence: `tests/test_gates.py::TestCoverageLoad::test_multi_root_resolves_each_class_to_its_real_root`
+-- two declared `<source>` roots (`tests`, `scripts`, declared in THAT
+order so the old code's tie-break would have picked `tests`), a 0%-covered
+class `actgen/core.py` that exists only under `scripts/`, and a second
+class `actgen/other.py` that exists only under `tests/`; asserts the first
+resolves to `scripts/actgen/core.py` (not `tests/actgen/core.py`) and the
+second to `tests/actgen/other.py`. Collected node id confirmed via
+`uv run pytest tests/test_gates.py --collect-only -o addopts=""`.
+Full existing `TestCoverageLoad` suite (30 tests, incl. the T-0148
+single-root, repo-relative, multi-source-one-joins, and zero-join-is-loud
+cases) still green: `uv run pytest tests/test_gates.py -k Coverage -q`.
+
+Filed: none
+
+Gates: `make coverage` + `uv run frob check` -> Tool summary `gates 0
+errors, 0 warnings, 204 waived`; ruff-check/ruff-format/ty all pass (both
+`uv run ruff`/`uv run ty` and bare `ruff`/`ty`); `git diff main
+--diff-filter=D --stat` empty.
 
 <!-- ticket:T-0312 -->
 ```yaml
@@ -9788,7 +9837,7 @@ FROBLEMS (lithos W2b): 'frob check --only gates python/regolith/realizer' resolv
 id: T-0315
 title: TEST005 branch-coverage floor applies to test-file symbols (fixtures/helpers)
   -- should skip like TEST001
-state: queued
+state: in-progress
 kind: bug
 origin: auditor
 created: '2026-07-19'
@@ -9796,12 +9845,54 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/gates/_coverage.py,tests/**,tickets.md
-evidence: []
+evidence:
+- tests/test_gates.py::TestTestGate::test_test005_skips_test_file_symbols
 attachments: []
-acceptance: []
+acceptance:
+- Given a public test-file symbol below the branch-coverage floor, when TEST005
+  runs, then it is skipped like TEST001/TEST002 already skip it
 threat: null
 ```
 FROBLEMS (lithos): TEST001/TEST002 skip symbols in test files (gates._is_test_file), but TEST005's per-symbol branch floor applies to test-file fixtures/helpers too. Environment-gated fixture branches (e.g. tool-unavailable fallbacks) can never reach the floor in CI without the tool, forcing pure-noise per-site waivers. Fix: TEST005 should skip test files exactly like TEST001/002 (reuse gates._is_test_file). Likely removes several of frob's own 180 T-0160 waivers too. Test: a test-file fixture with a gated branch does not produce TEST005.
+
+## Done report
+
+Changed: none in this ticket's scope -- see disclosure below.
+
+This ticket is a DUPLICATE of T-0301 (state: done, same repo, same day),
+whose Description item D fixed exactly this bug: `_test005_symbols` in
+`src/frob/gates/__init__.py` (line ~1798) already skips
+`_is_test_file(record.id.path)` symbols, with the comment "Skips test-file
+symbols exactly like TEST001/TEST002 do (T-0301)". This landed on `main` in
+commit `51c62cf fix(tickets,lang,gates,testing): union evidence oracles,
+fix doc-comment binding, skip test-file TEST005, skip lib-less rust crates
+(T-0301)`, present at this worktree's merge base (tip b16a018).
+
+Note the actual fix lives in `src/frob/gates/__init__.py`, NOT
+`src/frob/gates/_coverage.py` -- outside this ticket's declared scope
+either way, and moot since it is already shipped.
+
+Evidence the fix is in place and green:
+`tests/test_gates.py::TestTestGate::test_test005_skips_test_file_symbols`
+(pre-existing, added under T-0301) -- collected and passing:
+`uv run pytest tests/test_gates.py -k test005 -q` -> 4 passed, none
+failing.
+
+TEST005 waiver count: `uv run frob check` after `make coverage` in this
+same worktree session shows 180 TEST005-rule findings in the waived list
+(`grep -c TEST005` on the check output), all still test-file-independent
+per-module/per-symbol debt waivers from T-0160 -- i.e. the count this
+ticket worried about is already at its post-T-0301 floor, not increased by
+anything done here.
+
+Filed: none (no new work found beyond the duplicate).
+
+Gates: N/A -- no source change in this ticket's scope. `frob check`
+overall clean per the T-0311 Done report above (same check run covers
+both tickets: 0 errors, 0 warnings, 204 waived).
+
+Recommendation: close as duplicate of T-0301, or waive/drop -- leaving to
+reviewer per this worktree's non-closing instruction.
 
 <!-- ticket:T-0316 -->
 ```yaml
