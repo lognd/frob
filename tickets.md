@@ -10067,7 +10067,7 @@ file_symbols locks it. No further change needed; closing as resolved-by-T-0301.
 id: T-0316
 title: 'packaging: bare ''uv tool install frob'' does not install the strata_core
   native extension'
-state: in-progress
+state: done
 kind: bug
 origin: auditor
 created: '2026-07-19'
@@ -10075,7 +10075,10 @@ blocked_by: []
 parent: null
 scope:
 - pyproject.toml,docs/**,tickets.md
-evidence: []
+evidence:
+- tests/system/test_cli_native_missing.py::TestNativeMissingFailsLoud::test_sys_audit_fails_loud_when_strata_present
+- tests/system/test_cli_native_missing.py::TestNativeMissingFailsLoud::test_check_fails_loud_with_sys004_when_strata_present
+- tests/system/test_cli_native_missing.py::TestNativeMissingFailsLoud::test_check_unaffected_when_no_strata_files
 attachments: []
 acceptance: []
 threat: null
@@ -10135,7 +10138,7 @@ the manually-added wheel"), and give a copy-pasteable `python3 -c "import
 strata_core, frob_core"` verification snippet plus the `make install-tool`
 remediation.
 
-Filed: T-0317 ("packaging: frob doctor subcommand to verify+remediate
+Filed: T-0319 ("packaging: frob doctor subcommand to verify+remediate
 missing native extensions") -- a real `frob doctor` CLI surface for the
 verification snippet above, and re-evaluating a real PyPI publish of
 strata-core/frob-core as the true long-term fix (needs PyPI project
@@ -10200,9 +10203,9 @@ threat: null
 ```
 FROBLEMS (feldspar L3): a '// frob:tests <crate>/src kind=integration' comment directly above a 'proptest! { ... }' block does not bind for TEST003 -- proptest! expands to multiple #[test] fns at compile time that do not exist as literal AST nodes at the comment site (v0.6.0 fixed attribute-stack placement above a plain #[test] fn, not macro blocks). Lower priority (rare); related to T-0307 multi-case counting. Fix: recognize a frob:tests comment above a proptest!/parametrizing macro block and resolve it against the cargo-test-collected expanded case ids for that file. Test: frob:tests above a proptest! block satisfies TEST003.
 
-<!-- ticket:T-draft-c5db257b -->
+<!-- ticket:T-0319 -->
 ```yaml
-id: T-draft-c5db257b
+id: T-0319
 title: 'packaging: frob doctor subcommand to verify+remediate missing native extensions'
 state: queued
 kind: feature
