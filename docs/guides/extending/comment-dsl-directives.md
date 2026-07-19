@@ -13,6 +13,55 @@ values via `_VERB_TABLE` in `src/frob/graph/dsl.py`. Current verbs: `doc`,
 only ever sees the bare `frob:...` text regardless of `#`, `//`, or
 `/* */` origin.
 
+## Multi-line directives (backslash continuation)
+
+A directive can span multiple physical comment lines by ending each line
+but the last with a trailing backslash (`\`); `parse_directives` folds
+the run into one logical line before dispatching to `_parse_line`
+(`_fold_continuations` in `src/frob/graph/dsl.py`, T-0286). This exists
+because a self-explaining `frob:waive ... reason="..."` routinely collides
+with the 88-column ruff limit, forcing reasons to be truncated to fit --
+continuation removes that pressure.
+
+Mechanics:
+
+- Detection is on the right-stripped line: a line continues if, after
+  trailing whitespace is removed, the last character is `\`.
+- Only the trailing `\` is removed; joining uses the **empty string**, not
+  a space -- a continuation that wants a space at the join point must put
+  it before the backslash. A line ending `...that \` keeps the space when
+  folded onto the next line; a line ending `...that\` does not.
+- The reported line number and symbol binding (`src`) for a folded
+  directive are always the FIRST physical line of the run, never a
+  continuation line -- this holds for both well-formed edges and
+  `MalformedDirective`s.
+- Works uniformly for `#`, `//`, and `/* */` comments. Stacked `#`/`//`
+  lines are separate `RawComment`s per physical line (`frob.lang` does not
+  merge adjacent line comments into one span), so folding operates on a
+  flattened, file-ordered stream of physical lines rather than within a
+  single comment's text -- a continuation only folds if the next physical
+  line is immediately adjacent (`lineno + 1`); a gap breaks the run.
+- A trailing backslash on the LAST physical line available to continue
+  into (end of file, or the next line isn't adjacent) is a **dangling
+  backslash**, and is treated LITERALLY -- left in place, unfolded, not
+  reported as malformed. A lone trailing `\` is content, not necessarily a
+  broken continuation.
+- CRLF-safe: a trailing `\r` before the line break is stripped along with
+  the backslash handling, so Windows-style line endings never leak a
+  stray `\r` into the folded text.
+
+Worked example -- a waive reason too long for one 88-column line:
+
+```python
+# frob:waive PERF004 reason="benchmarked against the naive loop; the \
+# comprehension form is 3x faster here and the rule's general heuristic \
+# doesn't apply to this hot path"
+```
+
+This parses as a single `waive` edge targeting `PERF004` with
+`reason` equal to the full concatenated sentence (no extra spaces at the
+join points because each continued line ends with a space before its `\`).
+
 ## Add-an-entry recipe (new verb)
 
 1. Add the `EdgeKind` member in `src/frob/graph/_models.py`.
