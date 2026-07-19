@@ -68,6 +68,34 @@ def write_lock(lock: LockFile, path: Path) -> Result[Unit, LockError]
     # facet), indent=2, trailing newline.
 ```
 
+## Call graph
+
+<!-- frob:describes src/frob/graph/callgraph.py::CallGraph -->
+<!-- frob:describes src/frob/graph/callgraph.py::build_call_graph -->
+<!-- frob:describes src/frob/graph/callgraph.py::closure -->
+
+`frob.graph.callgraph` is a SEPARATE, reusable substrate from the obligation
+graph above -- caller-symref to callee-symref edges resolved from
+`frob.lang.RawSymbol.body_tokens` (best-effort, name-based call scanning),
+not from comment directives. Built once so more than one consumer can share
+it (T-0288's dup helper-inlining triage today; T-0290's recursion detection
+is the next planned consumer) rather than each re-deriving call resolution.
+
+- `build_call_graph(root, paths)` -- parses every file in `paths` (typically
+  one package/directory) and records an edge for every call resolved to a
+  PRIVATE (leading-underscore) or same-file callee. A call to a PUBLIC
+  symbol is never recorded as an edge at all -- that is what makes
+  `closure` stop at the public-API boundary for free, with no separate
+  bookkeeping.
+- `closure(graph, start, *, max_depth, max_nodes)` -- bounded BFS from
+  `start`: depth-limited, node-count-capped, cycle-guarded (a visited set
+  handles mutual recursion), breadth-first order. Returns the reachable
+  private-callee symrefs, `start` excluded.
+
+Resolution is best-effort (flat token stream, no scope/overload
+disambiguation) -- a triage aid, matching the rest of `frob.dup`'s posture,
+not a soundness guarantee.
+
 ## Comment DSL
 
 <!-- frob:describes src/frob/graph/dsl.py::parse_directives -->

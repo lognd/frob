@@ -105,6 +105,41 @@ with reason") -- never an advisory report.
    introduces a symbol whose best match against a PRE-EXISTING symbol
    exceeds `[dup].threshold`.
 
+## Helper-inlining triage (T-0288)
+
+`frob arch` pushes toward many small private helpers; that is good
+architecture and bad news for R1-R5, which all compare whole symbol
+bodies -- two functions with identical logic split into differently-named
+private helpers now hash/compare as different call skeletons. Two fixes,
+both triage-only (source is never rewritten; every `ClonePair.region` still
+points at the real symbol's real span):
+
+1. **Call-graph-aware inlining.** Before fingerprinting, `_body_tokens_for_symbol`
+   resolves the symbol's calls to PRIVATE (leading-underscore, module-local,
+   never re-exported) helpers via `frob.graph.callgraph` and splices their
+   `body_tokens` into the comparison unit -- a bounded closure:
+   depth-limited (`DupConfig.inline_max_depth`, default 3), node-count-capped
+   (`DupConfig.inline_max_nodes`, default 12), cycle-guarded (a visited set;
+   mutual recursion never loops), and PUBLIC-API-stopping (`build_call_graph`
+   never records an edge to a public callee, so the closure has nothing to
+   walk past one). `DupConfig.min_tokens` is checked AFTER inlining, so a
+   thin call-site wrapper whose real logic lives one hop away is measured
+   by that real logic, not by the wrapper's own token count. Disable with
+   `[dup].inline_calls = false`.
+2. **Helper-population pass.** Over-splitting spawns families of
+   near-identical TINY private helpers, which the whole-symbol `min_tokens`
+   default (40) would otherwise silently skip entirely. `find_helper_clones`
+   restricts the snapshot to private/module-local FUNCTION/METHOD symbols
+   and reruns the full rung ladder with `DupConfig.helper_min_tokens`
+   (default 8) in place of `min_tokens`, so an over-split family is caught
+   on its own terms.
+
+The call-graph substrate itself (`frob.graph.callgraph`) is a standalone,
+reusable module -- not dup-specific -- so future arch work (recursion
+detection, T-0290) consumes the same call-resolution logic rather than
+re-deriving it. See docs/modules/graph.md's "Call graph" section for its
+API.
+
 ## Caching (content-addressed + LRU)
 
 Two layers, one rule each:
@@ -538,6 +573,11 @@ check for tiny int/bool functions (`z3-solver`, optional).
 **`touched_refs`**: symrefs in a `GraphSnapshot` whose span overlaps a
 `Diff` hunk -- the "new side" restriction `find_clones` uses for the
 DUP001 gate path.
+
+<!-- frob:describes frob.dup._pipeline.find_helper_clones -->
+**`find_helper_clones`**: see "Helper-inlining triage" above -- the
+dedicated dup pass over the private-helper population, at
+`DupConfig.helper_min_tokens` instead of `DupConfig.min_tokens`.
 
 <a id="rust-core"></a>
 <!-- frob:describes frob.dup._core.core_available -->

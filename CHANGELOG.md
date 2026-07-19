@@ -24,6 +24,12 @@ semver section 4, breaking changes while in 0.x bump the MINOR (0.10 -> 0.11),
 not to 1.0.0 -- REL001 now enforces this (a breaking change no longer forces
 a premature 1.0.0).
 
+- T-0288: `frob.graph.callgraph` (`CallGraph`, `build_call_graph`,
+  `closure`) -- a shared interprocedural call-graph substrate; dup's
+  `find_clones` now inlines bounded PRIVATE-helper call closures before
+  fingerprinting (`DupConfig.inline_calls`/`inline_max_depth`/
+  `inline_max_nodes`), plus a dedicated `find_helper_clones` population
+  pass (`DupConfig.helper_min_tokens`) for over-split tiny-helper families.
 - T-0222: `ffi` capability needle for compiled-extension imports
   (`importlib.machinery.ExtensionFileLoader`).
 - T-0289: complexity-aware long-function arch rule + `arch_gate`/ARCH001
