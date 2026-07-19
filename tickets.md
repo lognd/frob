@@ -4212,9 +4212,9 @@ threat: null
 ```
 Filed while working T-0209 (re-filed after a ledger-conflict drop). check_self_conformance's SYS100 join: _core_undeclared_violations (THREAT004 delegate, line=0) and _extended_kind_violations (T-0169 eval/env/ffi slice, real line via _effects.py) can each independently emit a SYS100 for the same (node, capability_kind), so one observed-but-undeclared capability surfaces as two findings. Dedupe by (node, capability_kind) [or (file,line,kind) once core tracks a line] before returning; regression fixture with one capability both paths flag.
 
-<!-- ticket:T-draft-56694d02 -->
+<!-- ticket:T-0267 -->
 ```yaml
-id: T-draft-56694d02
+id: T-0267
 title: 'docs(dup): correct stale DUP001/DUP002 unwired claim in dup-sota-survey.md
   sec 0'
 state: queued
@@ -4233,9 +4233,9 @@ threat: null
 ```
 T-0191's Done report: dup-sota-survey.md section 0 says DUP001/DUP002 are 'pure rule functions but NOT wired into frob.gates.__init__' -- stale since a3eef8d8 (2026-07-17), one day before the survey landed. dup_gate already calls the real smart find_clones pipeline and is registered as the opt-in 'clones' gate. Correct section 0's claim to describe the actual state (wired, opt-in via [dup].enforce, connection-pooled as of T-0191) so a future reader does not re-investigate an already-closed gap. (Note: T-draft-2a3adb6d, the T-0253 release-stamp follow-up, was resolved during T-0253's landing -- coordinator stamped 0.3.0 in that motion -- so it is dropped here.)
 
-<!-- ticket:T-draft-f9131f3e -->
+<!-- ticket:T-0268 -->
 ```yaml
-id: T-draft-f9131f3e
+id: T-0268
 title: 'fix(frob-core): candidate_pairs can return a self-pair (i, i)'
 state: queued
 kind: bug
