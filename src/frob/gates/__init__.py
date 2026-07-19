@@ -776,7 +776,7 @@ def _cov001(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
             continue
         if _is_test_path(record.id.path):
             continue
-        _log.debug("COV001: %s undocumented", record.symref)
+        _log.debug("COV001: %s public with no frob:doc edge", record.symref)
         violations.append(
             Violation(
                 rule="COV001",
