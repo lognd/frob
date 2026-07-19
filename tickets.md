@@ -5055,3 +5055,89 @@ acceptance: []
 threat: null
 ```
 T-0193 review finding (non-blocking, feature is off by default): emit_run_pairs is unbounded O(k^2) in run size -- reviewer demonstrated 2000 identical 20-token docs => 1,999,000 pairs in 17.5s, no cap/guard/warning. A real monorepo with thousands of near-identical generated/boilerplate symbols sharing a block >= region_min_tokens would hit multi-second-to-worse pair emission. Add a run-size guard BEFORE anyone flips [dup].region_kernel=true in a real frob.toml: options -- skip/report-truncated beyond some k with a WARN, or downgrade to reporting only the top-N longest matches per run, or cap total pairs with an honest 'truncated at N' signal (never silently drop without a signal, T-0193-recall-bug lesson). Regression: a large-k fixture completes under a time/pair bound and emits the truncation signal.
+
+<!-- ticket:T-0274 -->
+```yaml
+id: T-0274
+title: 'fix(graph): file-walking surfaces must consult [graph].exclude'
+state: done
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/testing/_collect.py
+- src/frob/strata/_code_binding.py
+- src/frob/strata/_selfconform.py
+- tests/**
+evidence:
+- tests/test_testing.py::TestFindCrates::test_find_crates_honors_graph_exclude
+- tests/test_testing.py::TestFindCrates::test_walk_test_files_honors_graph_exclude
+- tests/unit/strata/test_code_binding.py::TestBindCode::test_graph_exclude_dir_is_never_bound_even_when_glob_matches
+- tests/unit/strata/test_selfconform.py::TestNonPythonLanguageWiring::test_sorted_capability_files_honors_graph_exclude
+attachments: []
+acceptance: []
+threat: null
+```
+Coordinator-reported bug class: two live file-walking surfaces never
+consulted `[graph].exclude` (`frob.excludes.load_exclude_globs`/
+`is_excluded`), the single home docs/strata/surface.md/T-0080 REJECT
+round 1 says every walker must consult. Instance 1: `_find_crates`
+(T-0271, this same session) descended into
+`/home/logan/projects/lithos/.claude/worktrees/**` stale agent
+checkouts even though lithos's frob.toml lists that glob under
+`[graph].exclude`. Instance 2: graphite FROBLEMS.md 2026-07-18 #1 --
+`frob.strata._selfconform`'s capability-binding walk
+(`_sorted_capability_files`) and `_code_binding.bind_code`'s `.py`
+walk both only consulted the built-in skip-dir set, never
+`[graph].exclude`, so a repo's declared-excluded bundled-frontend
+build directory still got attributed to a Python `code=`-globbed
+node.
+
+## Done report
+
+Fix: added a shared `_prune_dirnames` helper in
+`src/frob/testing/_collect.py` (used by both `_walk_test_files` and
+`_find_crates`) that drops a child directory name if it is either in
+the built-in skip set (`frob.excludes.is_skipped_dir`) OR matches
+`[graph].exclude` (`frob.excludes.load_exclude_globs`/`is_excluded`),
+replacing the old local `_EXCLUDED_DIRS` frozenset entirely. Applied
+the same per-file exclude check to `bind_code` (`_code_binding.py`)
+and `_sorted_capability_files` (`_selfconform.py`), both of which
+already imported `is_skipped_dir` from `frob.excludes` but never
+`load_exclude_globs`/`is_excluded`.
+
+Tests added: `TestFindCrates::test_find_crates_honors_graph_exclude`
+and `::test_walk_test_files_honors_graph_exclude`
+(`tests/test_testing.py`, a stale `.claude/worktrees/agent-x/**`
+crate/test-file fixture with a matching `[graph].exclude` glob must be
+pruned before its own `Cargo.toml`/test file is ever inspected);
+`TestBindCode::test_graph_exclude_dir_is_never_bound_even_when_glob_matches`
+(`tests/unit/strata/test_code_binding.py`) and
+`TestNonPythonLanguageWiring::test_sorted_capability_files_honors_graph_exclude`
+(`tests/unit/strata/test_selfconform.py`), both reproducing the exact
+graphite FROBLEMS.md shape (bundled build dir under a `code=`-globbed
+directory) directly against the file-walk function, not just the
+end-to-end gate.
+
+All 4 new tests pass; full repo suite `uv run pytest tests/ -q -n
+auto` green after the change (confirmed twice, once before and once
+after a `make core` native-extension rebuild this session needed
+anyway for an unrelated stale-`.venv` reason).
+
+NOTE (incident, not part of the fix): this repo is being worked
+concurrently by other agents/sessions committing directly to this
+same `main` checkout (HEAD advanced by 9 unrelated commits --
+T-0217/T-0193/T-0256/T-0273-adjacent work -- while this ticket's edits
+were in progress, uninvolved with this ticket), and at one point ALL
+of this ticket's uncommitted working-tree edits (across
+`_collect.py`, `_code_binding.py`, `_selfconform.py`, and three test
+files) were silently wiped back to a clean `HEAD` between tool calls,
+with no error surfaced. Redone from scratch this round and committed
+immediately after landing to minimize further exposure. Flagging this
+loudly per the dispatch's report-design-gaps instruction: dispatching
+multiple agents onto the SAME non-worktree checkout is unsafe for
+uncommitted work; a git worktree per agent (as this repo's own
+playbook already prescribes for OTHER dispatches) would have
+prevented this.

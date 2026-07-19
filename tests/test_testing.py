@@ -1064,6 +1064,51 @@ class TestFindCrates:
         assert found == [tmp_path]  # old behavior: append + prune, no descent
         assert any("_find_crates" in msg for msg in caplog.messages)
 
+    def test_find_crates_honors_graph_exclude(self, tmp_path: Path) -> None:
+        # T-0274: a walker that doesn't consult [graph].exclude is exactly
+        # the desync docs/strata/surface.md warns against -- a stale agent
+        # worktree checkout (lithos's .claude/worktrees/**) must be pruned
+        # before its own Cargo.toml is ever inspected.
+        # frob:tests src/frob/testing/_collect.py::collect_rust_tests
+        from frob.testing._collect import _find_crates
+
+        self._member_crate(tmp_path, "crates/a", "a")
+        self._member_crate(tmp_path, ".claude/worktrees/agent-x/crates/b", "b")
+        _write(
+            tmp_path,
+            "frob.toml",
+            """
+            [graph]
+            exclude = [".claude/worktrees/**"]
+            """,
+        )
+
+        found = _find_crates(tmp_path)
+        assert found == [tmp_path / "crates/a"]
+
+    def test_walk_test_files_honors_graph_exclude(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_python_tests
+        from frob.testing._collect import _find_test_files
+
+        _write(tmp_path, "tests/test_real.py", "def test_x(): pass\n")
+        _write(
+            tmp_path,
+            ".claude/worktrees/agent-x/tests/test_stale.py",
+            "def test_x(): pass\n",
+        )
+        _write(
+            tmp_path,
+            "frob.toml",
+            """
+            [graph]
+            exclude = [".claude/worktrees/**"]
+            """,
+        )
+
+        found = _find_test_files(tmp_path)
+        rels = {p.relative_to(tmp_path).as_posix() for p in found}
+        assert rels == {"tests/test_real.py"}
+
 
 class TestIntegrationTestCollection:
     """T-0271: `cargo test --lib` never lists `tests/*.rs` integration

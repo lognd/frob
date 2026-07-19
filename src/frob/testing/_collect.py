@@ -13,6 +13,7 @@ from pathlib import Path
 from typani import Err, Ok
 from typani.result import Result
 
+from frob.excludes import is_excluded, is_skipped_dir, load_exclude_globs
 from frob.gitio import run_argv
 from frob.logging import get_logger
 from frob.testing._models import CollectedTests
@@ -22,19 +23,39 @@ _log = get_logger(__name__)
 
 _CACHE_REL = Path(".frob") / "pytest-collect.json"
 _RUST_CACHE_REL = Path(".frob") / "cargo-collect.json"
-_EXCLUDED_DIRS = frozenset(
-    {".git", ".venv", "node_modules", "target", "build", "dist", ".frob"}
-)
 _COLLECT_TIMEOUT_S = 300.0
 _NO_TESTS_COLLECTED_EXIT = 5
 _CARGO_TEST_LINE_RE = re.compile(r"^(?P<path>[\w:]+): test$")
 
 
+def _prune_dirnames(
+    dirpath: Path, root: Path, dirnames: list[str], exclude_globs: tuple[str, ...]
+) -> list[str]:
+    """`dirnames` filtered to drop built-in-skipped names AND any child
+    whose root-relative POSIX path matches `[graph].exclude` (T-0274: a
+    file-walking surface that does not consult frob.excludes is exactly
+    the desync that module exists to prevent -- docs/strata/surface.md).
+    Shared by every `os.walk`-based collector in this module so the rule
+    lives once."""
+    rel_dir = dirpath.relative_to(root)
+    kept: list[str] = []
+    for name in dirnames:
+        if is_skipped_dir(name):
+            continue
+        rel_child = (rel_dir / name).as_posix()
+        if exclude_globs and is_excluded(rel_child, exclude_globs):
+            continue
+        kept.append(name)
+    return kept
+
+
 def _walk_test_files(root: Path) -> list[Path]:
-    """Unordered `test_*.py` / `*_test.py` files under `root`, exclusions pruned."""
+    """Unordered `test_*.py` / `*_test.py` files under `root`, exclusions
+    pruned (built-in skip set AND `[graph].exclude`, T-0274)."""
+    exclude_globs = load_exclude_globs(root)
     found: list[Path] = []
     for dirpath, dirnames, filenames in os.walk(root):
-        dirnames[:] = [d for d in dirnames if d not in _EXCLUDED_DIRS]
+        dirnames[:] = _prune_dirnames(Path(dirpath), root, dirnames, exclude_globs)
         for name in filenames:
             if name.startswith("test_") and name.endswith(".py"):
                 found.append(Path(dirpath) / name)
@@ -157,11 +178,15 @@ def _find_crates(root: Path) -> list[Path]:
     "crate". A manifest with both tables is a crate AND a workspace root
     (appended, then descended). A manifest with neither table, or one that
     fails to parse, keeps the old append-and-prune behavior (with a
-    warning) so degenerate cases do not regress."""
+    warning) so degenerate cases do not regress. Also honors `[graph]
+    exclude` (T-0274) -- an excluded directory (e.g. stale agent
+    worktrees under `.claude/worktrees/**`) is pruned before its
+    `Cargo.toml`, if any, is ever inspected."""
     # frob:waive PERF004 reason="one sort of the final result list, not per-iteration"
+    exclude_globs = load_exclude_globs(root)
     found: list[Path] = []
     for dirpath, dirnames, filenames in os.walk(root):
-        dirnames[:] = [d for d in dirnames if d not in _EXCLUDED_DIRS]
+        dirnames[:] = _prune_dirnames(Path(dirpath), root, dirnames, exclude_globs)
         if "Cargo.toml" in filenames:
             manifest_dir = Path(dirpath)
             classified = _classify_manifest(manifest_dir / "Cargo.toml")

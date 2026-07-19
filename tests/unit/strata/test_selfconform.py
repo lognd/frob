@@ -292,6 +292,21 @@ class TestNonPythonLanguageWiring:
         found = _sorted_capability_files(tmp_path)
         assert any(p.suffix == ".ts" for p in found)
 
+    # frob:tests src/frob/strata/_selfconform.py::_sorted_capability_files kind="unit"
+    def test_sorted_capability_files_honors_graph_exclude(self, tmp_path: Path):
+        """T-0274: a [graph].exclude dir (e.g. bundled frontend build
+        output) must be pruned the same way bind_code's walk is, not just
+        the built-in skip-dir set -- graphite FROBLEMS.md 2026-07-18 #1."""
+        _write(tmp_path, "server/static/bundle.js", "fetch('x');\n")
+        _write(tmp_path, "server/routes.ts", "fetch('x');\n")
+        (tmp_path / "frob.toml").write_text(
+            '[graph]\nexclude = ["server/static/**"]\n', encoding="utf-8"
+        )
+        found = _sorted_capability_files(tmp_path)
+        rels = {p.relative_to(tmp_path).as_posix() for p in found}
+        assert "server/routes.ts" in rels
+        assert "server/static/bundle.js" not in rels
+
 
 class TestCoreUndeclaredInterfaceNonPython:
     """REVIEWER-CAUGHT REJECT ROUND (T-0169): the extended-kinds/SYS101

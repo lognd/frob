@@ -33,7 +33,7 @@ from pathlib import Path
 from pydantic import BaseModel, ConfigDict
 from typani.result import Err, Ok, Result
 
-from frob.excludes import is_skipped_dir
+from frob.excludes import is_excluded, is_skipped_dir, load_exclude_globs
 from frob.lang import resolve_local_import
 from frob.logging import get_logger
 
@@ -120,7 +120,10 @@ def bind_code(model: KernelModel, root: Path) -> Result[CodeBinding, StrataError
     """Partition every `.py` file under `root` by the node whose `code=`
     glob matches it; a file matched by no node is `FOREIGN`, a file matched
     by more than one node is `Err(StrataError.AmbiguousCodeBinding)` (deny
-    by default -- see module docstring)."""
+    by default -- see module docstring). Honors `[graph] exclude` (T-0274)
+    in addition to the built-in skip-dir set, so a repo-declared excluded
+    directory (e.g. a bundled frontend build under a `code=`-globbed
+    directory) is never misattributed to a node."""
     globs: list[tuple[str, str]] = [
         (node.id, glob) for node in model.nodes for glob in _node_code_globs(node)
     ]
@@ -128,12 +131,15 @@ def bind_code(model: KernelModel, root: Path) -> Result[CodeBinding, StrataError
         _log.info("code binding: no node declares a code= glob; binding is empty")
         return Ok(CodeBinding(owner={}))
 
+    exclude_globs = load_exclude_globs(root)
     owner: dict[str, str] = {}
     for path in _sorted_py_files(root):
         rel_path = path.relative_to(root)
         if any(is_skipped_dir(part) for part in rel_path.parts):
             continue
         rel = rel_path.as_posix()
+        if exclude_globs and is_excluded(rel, exclude_globs):
+            continue
         owned = _bind_one(rel, globs)
         if owned.is_err:
             return Err(owned.danger_err)

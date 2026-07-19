@@ -68,7 +68,7 @@ from pathlib import Path
 from pydantic import BaseModel, ConfigDict
 from typani.result import Err, Ok, Result
 
-from frob.excludes import is_skipped_dir
+from frob.excludes import is_excluded, is_skipped_dir, load_exclude_globs
 from frob.logging import get_logger
 from frob.vet._capability import (
     is_self_pattern_path,
@@ -212,17 +212,21 @@ def _sorted_owned_files(binding: CodeBinding) -> list[str]:
 
 def _sorted_capability_files(root: Path) -> list[Path]:
     """Every file under `root` whose extension `vet._capability.language_for`
-    recognizes (i.e. has a capability pattern table), skip-dir-filtered, in
-    deterministic path order (T-0169: the multi-language superset of
-    `bind_code`'s `.py`-only walk -- `bind_code` itself stays Python-only
-    since it also powers import-conformance, which is Python-syntax-
-    specific; capability *observation* has no such constraint)."""
+    recognizes (i.e. has a capability pattern table), skip-dir- AND
+    `[graph].exclude`-filtered (T-0274), in deterministic path order
+    (T-0169: the multi-language superset of `bind_code`'s `.py`-only walk
+    -- `bind_code` itself stays Python-only since it also powers import-
+    conformance, which is Python-syntax-specific; capability *observation*
+    has no such constraint)."""
+    exclude_globs = load_exclude_globs(root)
     found: list[Path] = []
     for path in sorted(root.rglob("*")):
         if not path.is_file() or language_for(path) is None:
             continue
         rel_path = path.relative_to(root)
         if any(is_skipped_dir(part) for part in rel_path.parts):
+            continue
+        if exclude_globs and is_excluded(rel_path.as_posix(), exclude_globs):
             continue
         found.append(path)
     return found

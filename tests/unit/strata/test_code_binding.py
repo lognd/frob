@@ -45,6 +45,28 @@ class TestBindCode:
         assert owner["scripts/one_off.py"] == FOREIGN
 
     # frob:tests src/frob/strata/_code_binding.py::bind_code kind="unit"
+    def test_graph_exclude_dir_is_never_bound_even_when_glob_matches(
+        self, tmp_path: Path
+    ):
+        # T-0274: a file under a [graph].exclude dir must never be
+        # attributed to a node, even if its code= glob would otherwise
+        # match it (graphite FROBLEMS.md 2026-07-18 #1: bundled frontend
+        # build output misattributed to the `server` node).
+        _write(tmp_path, "server/routes.py", "x = 1\n")
+        _write(tmp_path, "server/static/bundle.py", "x = 1\n")
+        (tmp_path / "frob.toml").write_text(
+            '[graph]\nexclude = ["server/static/**"]\n', encoding="utf-8"
+        )
+        model = KernelModel(
+            nodes=(Node(id="Server", trust="trusted", attrs=("code=server/**",)),)
+        )
+        result = bind_code(model, tmp_path)
+        assert result.is_ok
+        owner = result.danger_ok.owner
+        assert owner["server/routes.py"] == "Server"
+        assert "server/static/bundle.py" not in owner
+
+    # frob:tests src/frob/strata/_code_binding.py::bind_code kind="unit"
     def test_no_code_glob_declared_yields_empty_binding(self, tmp_path: Path):
         _write(tmp_path, "api/handler.py", "x = 1\n")
         model = KernelModel(nodes=(Node(id="Api", trust="trusted"),))
