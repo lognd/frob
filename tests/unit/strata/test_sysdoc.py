@@ -71,6 +71,44 @@ class TestRenderAuditMatrix:
         assert "| CWE-79 |" in text
 
     # frob:tests src/frob/strata/_sysdoc.py::render_audit_matrix kind="unit"
+    # frob:tests src/frob/strata/_sysdoc.py::_assumed_cwes kind="unit"
+    def test_assumed_discharge_renders_distinct_from_proved(self):
+        """T-0224 regression: a claim resting on an `assumed` discharge must
+        never render PROVED -- it must carry a distinct ASSUMED label even
+        though it clears THREAT003 with zero violations, same as a
+        closure-proved claim does."""
+        proved_node = Node(id="Web", trust="trusted", may=("html_render",))
+        assumed_node = Node(id="DB", trust="trusted", may=("sql",))
+        proved_claim = Claim(
+            id=_discharge_claim_id("CWE-79", "Web"),
+            body=NoFlow(src="foreign", dst="Web"),
+            required_rung=Rung.L4,
+        )
+        assumed_claim = Claim(
+            id=_discharge_claim_id("CWE-89", "DB"),
+            body=NoFlow(src="foreign", dst="DB"),
+            required_rung=Rung.L4,
+            assumed=True,
+            owner="alice",
+            review="2099-01-01",
+        )
+        model = KernelModel(
+            nodes=(proved_node, assumed_node), claims=(proved_claim, assumed_claim)
+        )
+        result = render_audit_matrix(model, "owasp-top-10")
+        assert result.is_ok
+        text = result.danger_ok
+        assert "PROVED (L4)" in text
+        assert "ASSUMED (L4)" in text
+        # the assumed row must never be printed as PROVED
+        assert "| CWE-89 |" in text
+        cwe89_line = next(
+            line for line in text.splitlines() if line.startswith("| CWE-89 |")
+        )
+        assert "PROVED" not in cwe89_line
+        assert "ASSUMED (L4)" in cwe89_line
+
+    # frob:tests src/frob/strata/_sysdoc.py::render_audit_matrix kind="unit"
     def test_undischarged_obligation_renders_failing(self):
         model = KernelModel(
             nodes=(Node(id="Web", trust="trusted", may=("html_render",)),)
