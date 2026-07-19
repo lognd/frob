@@ -113,10 +113,16 @@ from frob.strata._effects import (
     ObservedEffect,
     check_capability_conformance,
     extract_effects,
+    node_may_kinds,
 )
 from frob.strata._elaborate import elaborate
 from frob.strata._errors import StrataError
-from frob.strata._export import export_iam, export_k8s_netpol, export_seccomp
+from frob.strata._export import (
+    export_iam,
+    export_k8s_netpol,
+    export_seccomp,
+    node_allowed_syscalls,
+)
 from frob.strata._facts import FactBase, build_facts
 from frob.strata._host import HostManifest, HostOwns, HostPlatform, host_manifest_for
 from frob.strata._host_isolation import (
@@ -431,6 +437,8 @@ __all__ = [
     "generate_fault_injection_cases",
     "host_manifest_for",
     "host_movement_flows",
+    "node_allowed_syscalls",
+    "node_may_kinds",
     "load_design_ids",
     "merge_models",
     "PII_CATEGORIES",

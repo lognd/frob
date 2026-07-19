@@ -37,6 +37,7 @@ class Subcommand(str, enum.Enum):
     serve = "serve"
     mutate = "mutate"
     sys = "sys"
+    deploy = "deploy"
 
 
 # frob:doc docs/modules/app.md#config
@@ -256,6 +257,13 @@ class AppConfig(BaseModel):
     sys_export_format: str | None = None
     sys_export_path: Path | None = None
 
+    # deploy (T-0257: `frob deploy generate` -- install/status/uninstall
+    # bash compiled from std.host HostManifest facts)
+    deploy_command: str | None = None  # generate (more per deploy epic T-0254)
+    deploy_path: Path | None = None
+    deploy_out_dir: Path | None = None
+    deploy_check: bool = False
+
     # frob:waive TEST005 reason="from_external 87.2% branch cover, debt T-0160"
     @classmethod
     def from_external(cls, args: argparse.Namespace, file: Path) -> "AppConfig":
@@ -317,6 +325,7 @@ class AppConfig(BaseModel):
             "sys_command",
             "sys_view",
             "sys_export_format",
+            "deploy_command",
         ):
             val = getattr(args, field, None)
             if val is not None:
@@ -353,6 +362,8 @@ class AppConfig(BaseModel):
             "serve_path",
             "sys_path",
             "sys_export_path",
+            "deploy_path",
+            "deploy_out_dir",
         ):
             val = getattr(args, path_field, None)
             if val is not None:
@@ -462,6 +473,7 @@ class AppConfig(BaseModel):
             "perf_smells",
             "sys_apply",
             "ticket_dry_run",
+            "deploy_check",
         ):
             if getattr(args, flag, False):
                 d[flag] = True

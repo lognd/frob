@@ -1032,6 +1032,53 @@ def _add_sys_parser(sub) -> None:
     sys_audit_p.add_argument("sys_path", metavar="path", nargs="?", default=".")
 
 
+def _add_deploy_parser(sub) -> None:
+    """Register the `frob deploy` subcommand group: `generate` (T-0257) is
+    the only verb today -- extend with one more `deploy_sub.add_parser`
+    per verb as later deploy-epoch (T-0254) tickets add them, never
+    replace this dispatch."""
+    # -- deploy ------------------------------------------------------------
+    deploy_epilog = (
+        "examples:\n"
+        "  frob deploy generate                 write deploy/*.sh from the design\n"
+        "  frob deploy generate --check          verify committed scripts are current\n"
+        "  frob deploy generate /path/to/repo   generate for a different repo root\n"
+        "\n"
+        "convention: <path> (default '.') is the REPO ROOT -- the command\n"
+        "appends the configured design dir itself (default 'design/', or\n"
+        "[strata].design_dir in frob.toml) and reads every *.strata file\n"
+        "under it, compiling std.host HostManifest facts (T-0255) into\n"
+        "deploy/install.sh, deploy/status.sh, deploy/uninstall.sh."
+    )
+    deploy_p = sub.add_parser(
+        "deploy",
+        help="compile std.host manifests into install/status/uninstall bash",
+        epilog=deploy_epilog,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    deploy_sub = deploy_p.add_subparsers(dest="deploy_command")
+    deploy_generate_p = deploy_sub.add_parser(
+        "generate",
+        help="write deploy/install.sh, deploy/status.sh, deploy/uninstall.sh",
+    )
+    deploy_generate_p.add_argument(
+        "deploy_path", metavar="path", nargs="?", default="."
+    )
+    deploy_generate_p.add_argument(
+        "--out-dir",
+        dest="deploy_out_dir",
+        default=None,
+        help="directory to write the generated scripts into (default: deploy/)",
+    )
+    deploy_generate_p.add_argument(
+        "--check",
+        dest="deploy_check",
+        action="store_true",
+        help="verify committed scripts already match regeneration; no writes, "
+        "exit 1 on any mismatch",
+    )
+
+
 def _frob_version() -> str:
     """Resolve the installed `frob` package version from metadata (falls
     back to 'unknown' if run from an environment where the distribution
@@ -1083,6 +1130,7 @@ def _build_parser() -> argparse.ArgumentParser:
     _add_stats_parser(sub)
     _add_serve_parser(sub)
     _add_sys_parser(sub)
+    _add_deploy_parser(sub)
     return p
 
 

@@ -9,7 +9,12 @@ import json
 import yaml
 
 from frob.strata import Flow, KernelModel, Node
-from frob.strata._export import export_iam, export_k8s_netpol, export_seccomp
+from frob.strata._export import (
+    export_iam,
+    export_k8s_netpol,
+    export_seccomp,
+    node_allowed_syscalls,
+)
 
 
 def _node(nid: str, trust: str = "trusted", **kw) -> Node:
@@ -86,6 +91,16 @@ class TestExportK8sNetpol:
             flows=(_flow("f1", "a", "b"), _flow("f2", "b", "c")),
         )
         assert export_k8s_netpol(model) == export_k8s_netpol(model)
+
+
+class TestNodeSyscalls:
+    # frob:tests src/frob/strata/_export.py::node_allowed_syscalls kind="unit"
+    def test_base(self) -> None:
+        node = _node("worker", may=("exec",))
+        allowed = node_allowed_syscalls(node)
+        assert "execve" in allowed
+        assert "read" in allowed  # baseline
+        assert "socket" not in allowed
 
 
 class TestExportSeccomp:
