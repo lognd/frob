@@ -40,7 +40,7 @@ from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
 
-from ._ast import Module
+from ._ast import Module, OperationDecl
 from ._elaborate import _COORDINATOR_ATTR
 from ._errors import StrataError
 from ._facts import build_facts
@@ -174,20 +174,27 @@ def generate_fault_injection_cases(
                 op.id,
             )
             continue
-        for variant in error_set:
-            cases.append(
-                FaultInjectionCase(
-                    id=f"{op.id}__fault_{variant.name}",
-                    operation_id=op.id,
-                    error_variant=variant.name,
-                    assertion=(
-                        f"state digest unchanged when {op.on} raises "
-                        f"{error_set.__name__}.{variant.name}"
-                    ),
-                )
-            )
+        cases.extend(_fault_cases_for_operation(op, error_set))
     _log.info("generated %d fault-injection case(s)", len(cases))
     return tuple(cases)
+
+
+def _fault_cases_for_operation(
+    op: OperationDecl, error_set: type[ErrorSet]
+) -> list[FaultInjectionCase]:
+    """One `FaultInjectionCase` per variant of `error_set`, in declaration order."""
+    return [
+        FaultInjectionCase(
+            id=f"{op.id}__fault_{variant.name}",
+            operation_id=op.id,
+            error_variant=variant.name,
+            assertion=(
+                f"state digest unchanged when {op.on} raises "
+                f"{error_set.__name__}.{variant.name}"
+            ),
+        )
+        for variant in error_set
+    ]
 
 
 # frob:doc docs/strata/boundary.md#frames-and-failure-atomicity
