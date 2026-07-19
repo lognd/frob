@@ -181,27 +181,29 @@ def _core_undeclared_violations(
     raw net/fs-write/exec effects reach SYS100 exactly like a `.py`
     file's do."""
     conformance = check_capability_conformance(model, binding, root)
-    found = []
-    for violation in conformance.violations:
-        _log.warning(
-            "selfconform: SYS100 (via THREAT004) %s:%d %s effect on %s",
-            violation.file,
-            violation.line,
-            violation.kind,
-            violation.component,
-        )
-        found.append(
-            SelfConformViolation(
-                rule=SYS_UNDECLARED_INTERFACE,
-                node=violation.component,
-                detail=(
-                    f"capability {violation.kind!r} observed at "
-                    f"{violation.file}:{violation.line} but not declared"
-                ),
-                capability=violation.kind,
-            )
-        )
-    return found
+    return [_core_undeclared_violation(v) for v in conformance.violations]
+
+
+def _core_undeclared_violation(violation) -> SelfConformViolation:  # noqa: ANN001
+    """Build the SYS100 finding for one THREAT004 conformance violation,
+    split out of `_core_undeclared_violations` purely to keep its loop
+    body short."""
+    _log.warning(
+        "selfconform: SYS100 (via THREAT004) %s:%d %s effect on %s",
+        violation.file,
+        violation.line,
+        violation.kind,
+        violation.component,
+    )
+    return SelfConformViolation(
+        rule=SYS_UNDECLARED_INTERFACE,
+        node=violation.component,
+        detail=(
+            f"capability {violation.kind!r} observed at "
+            f"{violation.file}:{violation.line} but not declared"
+        ),
+        capability=violation.kind,
+    )
 
 
 def _sorted_owned_files(binding: CodeBinding) -> list[str]:
@@ -254,20 +256,32 @@ def _capability_binding(
         if path.suffix.lower() == ".py":
             continue  # already bound by `bind_code`
         rel = path.relative_to(root).as_posix()
-        matched = {node_id for node_id, glob in globs if fnmatch.fnmatch(rel, glob)}
-        if len(matched) > 1:
-            _log.error(
-                "capability binding: %s matched by multiple nodes %s",
-                rel,
-                tuple(sorted(matched)),
-            )
-            return Err(StrataError.AmbiguousCodeBinding)
-        owner[rel] = next(iter(matched)) if matched else FOREIGN
+        bound_id = _match_capability_owner(rel, globs)
+        if bound_id.is_err:
+            return Err(bound_id.danger_err)
+        owner[rel] = bound_id.danger_ok
     bound = sum(1 for v in owner.values() if v != FOREIGN) - sum(
         1 for v in binding.owner.values() if v != FOREIGN
     )
     _log.info("capability binding: %d additional non-python file(s) bound", bound)
     return Ok(CodeBinding(owner=owner))
+
+
+def _match_capability_owner(
+    rel: str, globs: list[tuple[str, str]]
+) -> Result[str, StrataError]:
+    """The owning node id for `rel` against `globs` (`(node_id, glob)`
+    pairs), `FOREIGN` if none match, deny-by-default on ambiguity -- split
+    out of `_capability_binding` purely to keep its loop body short."""
+    matched = {node_id for node_id, glob in globs if fnmatch.fnmatch(rel, glob)}
+    if len(matched) > 1:
+        _log.error(
+            "capability binding: %s matched by multiple nodes %s",
+            rel,
+            tuple(sorted(matched)),
+        )
+        return Err(StrataError.AmbiguousCodeBinding)
+    return Ok(next(iter(matched)) if matched else FOREIGN)
 
 
 def _observed_extended_kinds_by_node(
@@ -438,49 +452,86 @@ def check_self_conformance(
     glob, then SYS100/SYS101/SYS102 reconcile that partition against
     `Node.may` (module docstring: SYS100's net/fs-write/exec slice
     delegates to THREAT004 outright; the rest is new code with a written
-    gap statement each). ALL THREE rules -- SYS100 core, SYS100-extended,
-    and SYS101 -- run over `_capability_binding`'s superset (T-0169), not
-    `bind_code`'s raw `.py`-only partition: `check_capability_conformance`
-    (SYS100 core's delegate) is language-generic (`_effects.py::
-    _line_effects` uses `language_for`/`_PATTERNS`, no Python-specific
-    parsing), so restricting it to the Python-only binding was itself part
-    of the same wiring bug this ticket fixes, not a deliberate scope cut
-    (see `_core_undeclared_violations`'s docstring for the reviewer-caught
-    correction). SYS102 also uses the superset for its ownership check, so
-    a directory claimed by a node's `code=` glob only through a non-Python
-    file no longer misreports as unmodeled (see `_unmodeled_violations`'s
-    docstring). `bind_code`'s raw Python-only binding is still computed
-    and still the ONLY input to `bind_code` itself (which stays Python-
-    import-syntax-specific by design, unrelated to this fix) -- it is
-    simply no longer handed to any of SYS100/SYS101/SYS102's joins.
-    `Err` propagates `bind_code`'s (or `_capability_binding`'s)
-    `AmbiguousCodeBinding` unchanged -- deny by default, never a silent
-    partial scan."""
+    gap statement each). ALL THREE rules run over `_capability_binding`'s
+    superset (T-0169), not `bind_code`'s raw `.py`-only partition:
+    `check_capability_conformance` (SYS100 core's delegate) is language-
+    generic (`_effects.py::_line_effects` uses `language_for`/`_PATTERNS`,
+    no Python-specific parsing), so restricting it to the Python-only
+    binding was itself part of the same wiring bug this ticket fixes (see
+    `_core_undeclared_violations`'s docstring). SYS102 also uses the
+    superset for its ownership check, so a directory claimed only through
+    a non-Python file no longer misreports as unmodeled (see
+    `_unmodeled_violations`'s docstring). `bind_code`'s raw Python-only
+    binding remains the ONLY input to `bind_code` itself (Python-import-
+    syntax-specific by design) -- it is simply no longer handed to any
+    SYS100/SYS101/SYS102 join. `Err` propagates `bind_code`'s (or
+    `_capability_binding`'s) `AmbiguousCodeBinding` unchanged -- deny by
+    default, never a silent partial scan."""
+    bound_binding = _bind_conformance_inputs(model, root)
+    if bound_binding.is_err:
+        return Err(bound_binding.danger_err)
+    capability_binding = bound_binding.danger_ok
+
+    violations = _collect_sys_violations(model, capability_binding, root)
+    applied = _apply_sys_waivers(model, violations)
+    return Ok(_finalize_self_conform_report(applied, root))
+
+
+def _finalize_self_conform_report(applied, root: Path) -> SelfConformReport:  # noqa: ANN001
+    """Fold stale-waiver findings + waived-violation details and log the
+    summary, split out of `check_self_conformance` purely to keep that
+    function's body short."""
+    kept = list(applied.kept)
+    kept.extend(_stale_waiver_violations(applied))
+    waived_violations = _fold_waived_violations(applied)
+    _log.info(
+        "selfconform: %d violation(s), %d waived, %d stale waiver(s) found under %s",
+        len(kept),
+        len(waived_violations),
+        len(applied.stale),
+        root,
+    )
+    return SelfConformReport(violations=tuple(kept), waived=waived_violations)
+
+
+def _bind_conformance_inputs(
+    model: KernelModel, root: Path
+) -> Result[CodeBinding, StrataError]:
+    """`bind_code` then `_capability_binding`, in order -- the two fallible
+    binding steps `check_self_conformance` needs before any SYS rule can
+    run, split out purely to keep that function's body short."""
     bound = bind_code(model, root)
     if bound.is_err:
         return Err(bound.danger_err)
-    binding = bound.danger_ok
-
-    capability_bound = _capability_binding(model, binding, root)
+    capability_bound = _capability_binding(model, bound.danger_ok, root)
     if capability_bound.is_err:
         return Err(capability_bound.danger_err)
-    capability_binding = capability_bound.danger_ok
+    return Ok(capability_bound.danger_ok)
 
+
+def _collect_sys_violations(
+    model: KernelModel, capability_binding: CodeBinding, root: Path
+) -> list[SelfConformViolation]:
+    """Every SYS100/SYS100-extended/SYS101/SYS102 finding, in that order,
+    for `check_self_conformance`."""
     violations = _core_undeclared_violations(model, capability_binding, root)
     violations.extend(_extended_kind_violations(model, capability_binding, root))
     violations.extend(_stale_design_violations(model, capability_binding, root))
     violations.extend(_unmodeled_violations(root, capability_binding))
+    return violations
 
-    # T-0174: apply every node's `waive` clause against these SYS100-102
-    # findings before reporting -- a matched waiver moves its finding into
-    # `waived` (still visible, never dropped); a waiver that matched
-    # nothing is STALE and becomes a new SYSWAIVE002 violation so drift
-    # (the waived condition no longer firing) fails the audit rather than
-    # silently going stale forever (`_waive.py` module docstring).
-    _sys_rules = frozenset(
+
+def _apply_sys_waivers(model: KernelModel, violations: list[SelfConformViolation]):  # noqa: ANN201
+    """Apply every node's `waive` clause to `violations` (T-0174): a
+    matched waiver moves its finding into `waived` (still visible, never
+    dropped); a waiver that matched nothing is STALE and becomes a new
+    SYSWAIVE002 violation so drift fails the audit rather than silently
+    going stale forever (`_waive.py` module docstring). Split out of
+    `check_self_conformance` purely to keep that function's body short."""
+    sys_rules = frozenset(
         (SYS_UNDECLARED_INTERFACE, SYS_STALE_DESIGN, SYS_UNMODELED_CODE)
     )
-    applied = apply_waivers(
+    return apply_waivers(
         model,
         violations,
         rule_of=lambda v: v.rule,
@@ -495,27 +546,33 @@ def check_self_conformance(
         # `evaluate_exhaustiveness`'s pass, not this one (apply_waivers'
         # `in_scope` docstring: staleness must be judged only against
         # waivers this caller can actually match).
-        in_scope=lambda rule: rule in _sys_rules,
+        in_scope=lambda rule: rule in sys_rules,
     )
-    kept = list(applied.kept)
-    for stale in applied.stale:
-        kept.append(
-            SelfConformViolation(
-                rule=STALE_WAIVER_RULE,
-                node=stale.node,
-                detail=stale_detail(stale),
-            )
+
+
+def _stale_waiver_violations(applied) -> list[SelfConformViolation]:  # noqa: ANN001
+    """One `STALE_WAIVER_RULE` finding per stale waiver in `applied`, for
+    `check_self_conformance`."""
+    return [
+        SelfConformViolation(
+            rule=STALE_WAIVER_RULE, node=stale.node, detail=stale_detail(stale)
         )
-    # T-0174: fold the waiver's reason/ticket into the reported violation's
-    # `detail` -- `report.waived` must show WHY, never just THAT (module
-    # docstring's "loud in output" requirement, mirrors `frob.gates`'s
-    # `WaiverRef`-annotated `Violation.waived`).
-    # T-0174 REJECT round: fold `wf.waiver.rule` (the RAW declared string,
-    # e.g. "SYS100:fs-write") into the printed detail, not just
-    # `wf.finding.rule` (the bare family) -- a reader must be able to see
-    # the exact sub-target a waiver named, never just that SOME waiver on
-    # this rule matched (module docstring's "no blanket waivers").
-    waived_violations = tuple(
+        for stale in applied.stale
+    ]
+
+
+def _fold_waived_violations(applied) -> tuple[SelfConformViolation, ...]:  # noqa: ANN001
+    """Fold each waiver's reason/ticket into its matched violation's
+    `detail` -- `report.waived` must show WHY, never just THAT (module
+    docstring's "loud in output" requirement, mirrors `frob.gates`'s
+    `WaiverRef`-annotated `Violation.waived`). T-0174 REJECT round: folds
+    `wf.waiver.rule` (the RAW declared string, e.g. "SYS100:fs-write")
+    into the printed detail, not just `wf.finding.rule` (the bare family)
+    -- a reader must see the exact sub-target a waiver named, never just
+    that SOME waiver on this rule matched (module docstring's "no blanket
+    waivers"). Split out of `check_self_conformance` purely to keep that
+    function's body short."""
+    return tuple(
         wf.finding.model_copy(
             update={
                 "detail": (
@@ -527,15 +584,6 @@ def check_self_conformance(
         )
         for wf in applied.waived
     )
-
-    _log.info(
-        "selfconform: %d violation(s), %d waived, %d stale waiver(s) found under %s",
-        len(kept),
-        len(waived_violations),
-        len(applied.stale),
-        root,
-    )
-    return Ok(SelfConformReport(violations=tuple(kept), waived=waived_violations))
 
 
 __all__ = [

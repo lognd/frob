@@ -62,6 +62,18 @@ ANALYZABLE: tuple[PolicyDecl, ...] = (
 )
 
 
+def _module_has_trusted_node(module: Module) -> Result[bool, StrataError]:
+    """Whether any of `module`'s nodes are at/above `"trusted"` in the
+    trust lattice, for `require_analyzable`'s auto-inject decision."""
+    for node in module.nodes:
+        leq = TRUST.leq("trusted", node.trust)
+        if leq.is_err:
+            return Err(leq.danger_err)
+        if leq.danger_ok:
+            return Ok(True)
+    return Ok(False)
+
+
 # frob:doc docs/strata/policy.md#packs
 def require_analyzable(module: Module) -> Result[Module, StrataError]:
     """Auto-inject `std.policy.analyzable` when a trusted node lacks it.
@@ -74,14 +86,10 @@ def require_analyzable(module: Module) -> Result[Module, StrataError]:
     a node's trust level cannot be checked against the lattice (unknown
     level name), never on the presence/absence of the pack itself.
     """
-    has_trusted = False
-    for node in module.nodes:
-        leq = TRUST.leq("trusted", node.trust)
-        if leq.is_err:
-            return Err(leq.danger_err)
-        if leq.danger_ok:
-            has_trusted = True
-            break
+    has_trusted_r = _module_has_trusted_node(module)
+    if has_trusted_r.is_err:
+        return Err(has_trusted_r.danger_err)
+    has_trusted = has_trusted_r.danger_ok
 
     already_present = any(p.id == ANALYZABLE_POLICY_ID for p in module.policies)
     if has_trusted and not already_present:

@@ -115,6 +115,26 @@ def _bind_one(rel: str, globs: list[tuple[str, str]]) -> Result[str, StrataError
     return Ok(next(iter(matched)) if matched else FOREIGN)
 
 
+def _bind_all_files(
+    root: Path, globs: list[tuple[str, str]], exclude_globs: tuple[str, ...]
+) -> Result[dict[str, str], StrataError]:
+    """Every non-skipped, non-excluded `.py` file under `root`, bound to its
+    owner (or `FOREIGN`), in deterministic path order."""
+    owner: dict[str, str] = {}
+    for path in _sorted_py_files(root):
+        rel_path = path.relative_to(root)
+        if any(is_skipped_dir(part) for part in rel_path.parts):
+            continue
+        rel = rel_path.as_posix()
+        if exclude_globs and is_excluded(rel, exclude_globs):
+            continue
+        owned = _bind_one(rel, globs)
+        if owned.is_err:
+            return Err(owned.danger_err)
+        owner[rel] = owned.danger_ok
+    return Ok(owner)
+
+
 # frob:doc docs/strata/surface.md#code-binding-tier-2-v0-implementation
 def bind_code(model: KernelModel, root: Path) -> Result[CodeBinding, StrataError]:
     """Partition every `.py` file under `root` by the node whose `code=`
@@ -132,18 +152,10 @@ def bind_code(model: KernelModel, root: Path) -> Result[CodeBinding, StrataError
         return Ok(CodeBinding(owner={}))
 
     exclude_globs = load_exclude_globs(root)
-    owner: dict[str, str] = {}
-    for path in _sorted_py_files(root):
-        rel_path = path.relative_to(root)
-        if any(is_skipped_dir(part) for part in rel_path.parts):
-            continue
-        rel = rel_path.as_posix()
-        if exclude_globs and is_excluded(rel, exclude_globs):
-            continue
-        owned = _bind_one(rel, globs)
-        if owned.is_err:
-            return Err(owned.danger_err)
-        owner[rel] = owned.danger_ok
+    owned_result = _bind_all_files(root, globs, exclude_globs)
+    if owned_result.is_err:
+        return Err(owned_result.danger_err)
+    owner = owned_result.danger_ok
 
     bound = sum(1 for v in owner.values() if v != FOREIGN)
     _log.info("code binding: %d file(s) bound, %d foreign", bound, len(owner) - bound)

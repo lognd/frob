@@ -112,26 +112,7 @@ def _apply_remove(
             "scenario rewrite: remove target %r is not declared", rewrite.node_id
         )
         return Err(StrataError.UnknownReference)
-    doomed_flow_ids = {
-        f.id
-        for f in model.flows
-        if f.src == rewrite.node_id or f.dst == rewrite.node_id
-    }
-    for flow_id in sorted(doomed_flow_ids):
-        _log.info(
-            "scenario rewrite: removing node %s cascades to flow %s",
-            rewrite.node_id,
-            flow_id,
-        )
-    doomed_boundary_ids = {
-        b.id for b in model.boundaries if b.flow_id in doomed_flow_ids
-    }
-    for boundary_id in sorted(doomed_boundary_ids):
-        _log.info(
-            "scenario rewrite: removing node %s cascades to boundary %s",
-            rewrite.node_id,
-            boundary_id,
-        )
+    doomed_flow_ids, doomed_boundary_ids = _remove_cascade_ids(model, rewrite.node_id)
     _log.info("scenario rewrite: removed node %s", rewrite.node_id)
     return Ok(
         model.model_copy(
@@ -144,6 +125,29 @@ def _apply_remove(
             }
         )
     )
+
+
+def _remove_cascade_ids(model: KernelModel, node_id: str) -> tuple[set[str], set[str]]:
+    """The `(flow_ids, boundary_ids)` that removing `node_id` cascades to
+    (its flows, then boundaries on those flows), logged at INFO for
+    `_apply_remove`'s auditable-blast-radius contract."""
+    doomed_flow_ids = {
+        f.id for f in model.flows if f.src == node_id or f.dst == node_id
+    }
+    for flow_id in sorted(doomed_flow_ids):
+        _log.info(
+            "scenario rewrite: removing node %s cascades to flow %s", node_id, flow_id
+        )
+    doomed_boundary_ids = {
+        b.id for b in model.boundaries if b.flow_id in doomed_flow_ids
+    }
+    for boundary_id in sorted(doomed_boundary_ids):
+        _log.info(
+            "scenario rewrite: removing node %s cascades to boundary %s",
+            node_id,
+            boundary_id,
+        )
+    return doomed_flow_ids, doomed_boundary_ids
 
 
 def _apply_scale(
@@ -161,27 +165,32 @@ def _apply_scale(
         if flow.id != rewrite.flow_id:
             continue
         found = True
-        if flow.rate is None:
-            _log.error(
-                "scenario rewrite: scale target %r has no declared rate",
-                rewrite.flow_id,
-            )
-            return Err(StrataError.UnratedFlow)
-        new_rate = flow.rate.model_copy(
-            update={"value": flow.rate.value * rewrite.factor}
-        )
-        _log.info(
-            "scenario rewrite: scaling flow %s rate %s -> %s (factor %s)",
-            rewrite.flow_id,
-            flow.rate.value,
-            new_rate.value,
-            rewrite.factor,
-        )
-        flows[i] = flow.model_copy(update={"rate": new_rate})
+        scaled = _scale_flow(flow, rewrite.factor)
+        if scaled.is_err:
+            return Err(scaled.danger_err)
+        flows[i] = scaled.danger_ok
     if not found:
         _log.error("scenario rewrite: scale target %r is not declared", rewrite.flow_id)
         return Err(StrataError.UnknownReference)
     return Ok(model.model_copy(update={"flows": tuple(flows)}))
+
+
+def _scale_flow(flow, factor: float) -> Result[object, StrataError]:  # noqa: ANN001
+    """Return `flow` with its rate multiplied by `factor`, failing closed
+    (`UnratedFlow`) if it has no declared rate -- `_apply_scale`'s
+    per-flow rewrite step."""
+    if flow.rate is None:
+        _log.error("scenario rewrite: scale target %r has no declared rate", flow.id)
+        return Err(StrataError.UnratedFlow)
+    new_rate = flow.rate.model_copy(update={"value": flow.rate.value * factor})
+    _log.info(
+        "scenario rewrite: scaling flow %s rate %s -> %s (factor %s)",
+        flow.id,
+        flow.rate.value,
+        new_rate.value,
+        factor,
+    )
+    return Ok(flow.model_copy(update={"rate": new_rate}))
 
 
 def _apply_trust(
@@ -307,6 +316,14 @@ def evaluate_scenarios(
     return Ok(tuple(results))
 
 
+def _no_runs_as_error(user: str) -> StrataError:
+    """Log and return the `UnknownReference` error for a compromised-user
+    scenario naming no `runs_as` node, for
+    `build_compromised_user_scenario`."""
+    _log.error("scenario: compromised-user scenario for %r names no runs_as node", user)
+    return StrataError.UnknownReference
+
+
 # frob:doc docs/strata/host.md#movement-impossibility-proofs
 # frob:tests tests/unit/strata/test_host_isolation.py::test_blast_radius kind="unit"
 def build_compromised_user_scenario(
@@ -321,48 +338,33 @@ def build_compromised_user_scenario(
     proves (or refutes) that the compromise's blast radius is EXACTLY
     that user's own slice, no wider.
 
-    The scenario's rewrites ALSO include an `AddFlow` per
-    `_host_isolation.py::host_movement_flows`-derived edge (module
-    docstring's REJECT-round fix): without these, the `NoFlow` claims
-    above would be proved purely over the base model's declared app-flow
-    graph, blind to filesystem/OS movement HOST001 already detects --
-    the exact vacuity a review round caught. With them, a shared
-    writable path (or shared reachable socket) with NO declared `Flow`
-    correctly REFUTES the blast-radius claim instead of vacuously
+    The rewrites ALSO include an `AddFlow` per `_host_isolation.py::
+    host_movement_flows`-derived edge (module docstring's REJECT-round
+    fix): without these the `NoFlow` claims above would be proved purely
+    over the declared app-flow graph, blind to filesystem/OS movement
+    HOST001 already detects -- the exact vacuity a review round caught.
+    With them, a shared writable path or reachable socket with NO
+    declared `Flow` correctly REFUTES the claim instead of vacuously
     proving it.
 
     Fails closed (`StrataError.UnknownReference`) when `user` names no
-    `runs_as` declared anywhere in `model` -- a scenario with zero
-    rewrites would vacuously "prove" every claim (nothing was compromised
-    at all), which would misreport as a genuine isolation proof rather
-    than a typo'd user name (charter law 2, deny-by-default)."""
-    user_nodes = sorted(
-        node.id
-        for node in model.nodes
-        if (manifest := host_manifest_for(node)) is not None
-        and manifest.runs_as == user
-    )
+    `runs_as` declared anywhere in `model` -- zero rewrites would
+    vacuously "prove" every claim, misreporting a typo'd user name as a
+    genuine isolation proof (charter law 2, deny-by-default)."""
+    user_nodes = _compromised_user_nodes(model, user)
     if not user_nodes:
-        _log.error(
-            "scenario: compromised-user scenario for %r names no runs_as node", user
-        )
-        return Err(StrataError.UnknownReference)
+        return Err(_no_runs_as_error(user))
+    return Ok(_build_blast_radius_scenario(model, user, user_nodes, scenario_id))
 
-    movement_rewrites: tuple[Rewrite, ...] = tuple(
-        AddFlow(flow=flow) for flow in host_movement_flows(model)
-    )
-    trust_rewrites: tuple[Rewrite, ...] = tuple(
-        SetTrust(node_id=node_id, level=_COMPROMISED_TRUST) for node_id in user_nodes
-    )
-    rewrites = movement_rewrites + trust_rewrites
-    outside = sorted(node.id for node in model.nodes if node.id not in user_nodes)
-    claims = tuple(
-        Claim(
-            id=f"blast-radius:{user}:{node_id}",
-            body=NoFlow(src=_COMPROMISED_TRUST, dst=node_id),
-        )
-        for node_id in outside
-    )
+
+def _build_blast_radius_scenario(
+    model: KernelModel, user: str, user_nodes: list[str], scenario_id: str
+) -> Scenario:
+    """Assemble and log the built `Scenario` from the compromised slice,
+    split out of `build_compromised_user_scenario` purely to keep that
+    function's body short."""
+    movement_rewrites, rewrites = _blast_radius_rewrites(model, user_nodes)
+    claims = _blast_radius_claims(model, user, user_nodes)
     _log.info(
         "scenario: built compromised-user scenario %s for %r (%d node(s) "
         "compromised, %d movement flow(s), %d blast-radius claim(s))",
@@ -372,4 +374,47 @@ def build_compromised_user_scenario(
         len(movement_rewrites),
         len(claims),
     )
-    return Ok(Scenario(id=scenario_id, rewrites=rewrites, claims=claims))
+    return Scenario(id=scenario_id, rewrites=rewrites, claims=claims)
+
+
+def _compromised_user_nodes(model: KernelModel, user: str) -> list[str]:
+    """Every node id whose `runs_as` (`_host.py::host_manifest_for`)
+    matches `user`, sorted -- the compromised slice for
+    `build_compromised_user_scenario`."""
+    return sorted(
+        node.id
+        for node in model.nodes
+        if (manifest := host_manifest_for(node)) is not None
+        and manifest.runs_as == user
+    )
+
+
+def _blast_radius_rewrites(
+    model: KernelModel, user_nodes: list[str]
+) -> tuple[tuple[Rewrite, ...], tuple[Rewrite, ...]]:
+    """The `(movement_rewrites, all_rewrites)` pair for
+    `build_compromised_user_scenario`: movement `AddFlow`s
+    (`_host_isolation.py::host_movement_flows`) plus a `SetTrust` per
+    compromised node."""
+    movement_rewrites: tuple[Rewrite, ...] = tuple(
+        AddFlow(flow=flow) for flow in host_movement_flows(model)
+    )
+    trust_rewrites: tuple[Rewrite, ...] = tuple(
+        SetTrust(node_id=node_id, level=_COMPROMISED_TRUST) for node_id in user_nodes
+    )
+    return movement_rewrites, movement_rewrites + trust_rewrites
+
+
+def _blast_radius_claims(
+    model: KernelModel, user: str, user_nodes: list[str]
+) -> tuple[Claim, ...]:
+    """One `NoFlow` blast-radius `Claim` per node outside the compromised
+    slice, for `build_compromised_user_scenario`."""
+    outside = sorted(node.id for node in model.nodes if node.id not in user_nodes)
+    return tuple(
+        Claim(
+            id=f"blast-radius:{user}:{node_id}",
+            body=NoFlow(src=_COMPROMISED_TRUST, dst=node_id),
+        )
+        for node_id in outside
+    )

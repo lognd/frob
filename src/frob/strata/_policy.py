@@ -63,31 +63,10 @@ def _resolve_scope(
         return Ok((scope.value,))
 
     if scope.kind == "trust":
-        if scope.value not in model.trust.elements():
-            _log.error("policy scope: unknown trust level %r", scope.value)
-            return Err(StrataError.UnknownReference)
-        ids: list[str] = []
-        for node in model.nodes:
-            leq = model.trust.leq(scope.value, node.trust)
-            if leq.is_err:
-                return Err(leq.danger_err)
-            if leq.danger_ok:
-                ids.append(node.id)
-        return Ok(tuple(sorted(ids)))
+        return _resolve_trust_scope(scope.value, model)
 
     if scope.kind == "label":
-        if scope.value not in model.labels.elements():
-            _log.error("policy scope: unknown label level %r", scope.value)
-            return Err(StrataError.UnknownReference)
-        ids = []
-        # frob:waive PERF004 reason="sorted() runs once after this loop, not in it"
-        for node in model.nodes:
-            leq = model.labels.leq(scope.value, node.clearance)
-            if leq.is_err:
-                return Err(leq.danger_err)
-            if leq.danger_ok:
-                ids.append(node.id)
-        return Ok(tuple(sorted(ids)))
+        return _resolve_label_scope(scope.value, model)
 
     # The grammar's SCOPESPEC vocabulary is closed to component/trust/label
     # (strata-core/src/parse.rs::parse_scope_spec); an AST built any other
@@ -95,6 +74,43 @@ def _resolve_scope(
     # here rather than silently resolving to an empty/unscoped policy.
     _log.error("policy scope: unknown scope kind %r", scope.kind)
     return Err(StrataError.UnknownReference)
+
+
+def _resolve_trust_scope(
+    value: str, model: KernelModel
+) -> Result[tuple[str, ...], StrataError]:
+    """Resolve a `trust`-kind `ScopeSpec` to sorted node ids at/above `value`
+    in the trust lattice, for `_resolve_scope`."""
+    if value not in model.trust.elements():
+        _log.error("policy scope: unknown trust level %r", value)
+        return Err(StrataError.UnknownReference)
+    ids: list[str] = []
+    for node in model.nodes:
+        leq = model.trust.leq(value, node.trust)
+        if leq.is_err:
+            return Err(leq.danger_err)
+        if leq.danger_ok:
+            ids.append(node.id)
+    return Ok(tuple(sorted(ids)))
+
+
+def _resolve_label_scope(
+    value: str, model: KernelModel
+) -> Result[tuple[str, ...], StrataError]:
+    """Resolve a `label`-kind `ScopeSpec` to sorted node ids at/above `value`
+    in the label lattice, for `_resolve_scope`."""
+    if value not in model.labels.elements():
+        _log.error("policy scope: unknown label level %r", value)
+        return Err(StrataError.UnknownReference)
+    ids: list[str] = []
+    # frob:waive PERF004 reason="sorted() runs once after this loop, not in it"
+    for node in model.nodes:
+        leq = model.labels.leq(value, node.clearance)
+        if leq.is_err:
+            return Err(leq.danger_err)
+        if leq.danger_ok:
+            ids.append(node.id)
+    return Ok(tuple(sorted(ids)))
 
 
 # frob:doc docs/strata/policy.md#compilation
