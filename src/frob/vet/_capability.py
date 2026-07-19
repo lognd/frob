@@ -207,6 +207,41 @@ def _needle_hits_outside_comments(
         start = idx + 1
 
 
+def _is_identifier_byte(byte: bytes) -> bool:
+    """True if the single byte `byte` (`b""` at a string boundary) is part of
+    an identifier -- alphanumeric or underscore. Shared by `_has_word_
+    boundary_napi`'s left/right boundary tests."""
+    return bool(byte) and (byte.isalnum() or byte == b"_")
+
+
+def _has_word_boundary_napi(text: bytes, comment_spans: tuple[ByteSpan, ...]) -> bool:
+    """True if `napi` appears as its own identifier token (not embedded in a
+    longer identifier), outside any comment span (T-0019, graphite adoption:
+    the plain substring needle `"napi"` matched inside the ordinary word
+    `"openapi"` -- every hit in graphite's `api.generated.ts`/`client.ts` was
+    `o-p-e-n-[napi]`, openapi-typescript codegen, zero real node-ffi/ffi-napi
+    usage). A hit only counts when neither the preceding nor the following
+    byte is an identifier character, e.g. `require('napi')`, `napi-rs`,
+    `ffi_napi` are still caught (non-identifier or absent boundary on both
+    sides), but `openapi`/`OpenAPI` never match (preceding byte `e` is
+    alphanumeric). Mirrors T-0151's `_has_bare_compile_call` precedent for
+    the same "needle is a substring of an unrelated word" false-positive
+    class."""
+    needle = b"napi"
+    idx = 0
+    while True:
+        idx = text.find(needle, idx)
+        if idx == -1:
+            return False
+        end = idx + len(needle)
+        prev = text[idx - 1 : idx] if idx > 0 else b""
+        nxt = text[end : end + 1]
+        is_boundary = not _is_identifier_byte(prev) and not _is_identifier_byte(nxt)
+        if is_boundary and not _fully_in_any_span(idx, end, comment_spans):
+            return True
+        idx += 1
+
+
 def _has_bare_compile_call(text: bytes, comment_spans: tuple[ByteSpan, ...]) -> bool:
     """True if `compile(` appears as a bare builtin call, not a dotted method
     access like `re.compile(`/`ast.compile(` (T-0151: the builtin turning a
@@ -237,6 +272,9 @@ def _has_bare_compile_call(text: bytes, comment_spans: tuple[ByteSpan, ...]) -> 
 _SpecialCheck = Callable[[bytes, tuple[ByteSpan, ...]], bool]
 _SPECIAL_CHECKS: dict[str, dict[str, tuple[_SpecialCheck, ...]]] = {
     "python": {"eval": (_has_bare_compile_call,)},
+    # T-0019: "napi" needs identifier-boundary matching so it does not fire
+    # inside the unrelated word "openapi" -- see _has_word_boundary_napi.
+    "typescript": {"ffi": (_has_word_boundary_napi,)},
 }
 
 # absolute paths of this module and the T-0158 registry it compiles
