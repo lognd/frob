@@ -3052,6 +3052,13 @@ def docanchor_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]
     or an explicit `<a id="...">` anchor in that file -- the second form is
     how docs/modules/dup.md and docs/modules/arch.md give several models a
     stable anchor under one heading.
+
+    `root` here must be the repo root, not a scoped check path (T-0314):
+    `<file>` in a `frob:doc` directive is always repo-relative text, so a
+    scoped `frob check <subdir>` run that fed the scoped subdir in as
+    `root` rebased every target path and reported a spurious DOC002 on
+    every directive. `run_gates` passes `st.repo_root` here for exactly
+    this reason -- see `_GateInputs.repo_root`.
     """
     root = Path(root)
     slug_cache: dict[str, Option[set[str]]] = {}
@@ -3193,9 +3200,18 @@ _ALL_GATES = frozenset(
 
 @dataclass(frozen=True)
 class _GateInputs:
-    """All loaded state the pure gates consume, assembled once by `run_gates`."""
+    """All loaded state the pure gates consume, assembled once by `run_gates`.
+
+    `root` is the (possibly scoped) path `cfg.root` names -- it filters which
+    files a gate scans/reports on. `repo_root` (T-0314) is always the git/frob
+    root regardless of scoping: any directive whose target is a repo-relative
+    path (e.g. a `frob:doc docs/x.md#anchor` target file) must resolve against
+    `repo_root`, never `root` -- a scoped `frob check <subdir>` run must not
+    rebase repo-relative path text just because the scanned set shrank.
+    """
 
     root: Path
+    repo_root: Path
     cfg: GateConfig
     snapshot: GraphSnapshot
     queue: TicketQueue
@@ -3335,6 +3351,24 @@ def _load_required_state(
     )
 
 
+def _repo_root_for(root: Path) -> Path:
+    """The git/frob root for `root` (T-0314): `frob.gitio.repo_root`, falling
+    back to `root` itself when `root` is not inside a git repo (e.g. a
+    synthetic test fixture) so callers always get a usable path, never a
+    Result to unwrap."""
+    from frob.gitio import repo_root as git_repo_root
+
+    result = git_repo_root(root)
+    if result.is_err:
+        _log.debug(
+            "run_gates: repo_root(%s) unavailable (%s); falling back to root itself",
+            root,
+            result.danger_err,
+        )
+        return root
+    return result.danger_ok
+
+
 def _assemble_gate_inputs(root: Path, cfg: GateConfig, required: tuple) -> _GateInputs:
     """Build the full `_GateInputs` from `_load_required_state`'s mandatory
     state plus the remaining optional/derived loads (coverage, test policy,
@@ -3348,6 +3382,7 @@ def _assemble_gate_inputs(root: Path, cfg: GateConfig, required: tuple) -> _Gate
     ticket, sweep = _resolve_ticket(root, cfg, queue)
     return _GateInputs(
         root=root,
+        repo_root=_repo_root_for(root),
         cfg=cfg,
         snapshot=snapshot,
         queue=queue,
@@ -3391,7 +3426,11 @@ def _build_jobs(
         ),
         "policy": lambda: policy_gate(st.rules, st.snapshot, st.diff),
         "doclink": lambda: doclink_gate(st.root, st.snapshot),
-        "docanchor": lambda: docanchor_gate(st.root, st.snapshot),
+        # T-0314: docanchor resolves frob:doc <file>#<anchor> targets, which
+        # are repo-relative path text -- always against repo_root, never the
+        # (possibly scoped) st.root, so `frob check <subdir>` reports the
+        # same DOC002 result as the unscoped run.
+        "docanchor": lambda: docanchor_gate(st.repo_root, st.snapshot),
         "perf": lambda: perf_gate(st.root, st.snapshot),
         "fuzz": lambda: fuzz_gate(st.root, st.snapshot),
         "release": lambda: release_gate(st.root, st.snapshot),
