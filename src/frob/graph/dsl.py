@@ -177,8 +177,10 @@ def _parse_line(
 # frob:ticket T-0286
 # frob:tests tests/unit/graph/test_dsl.py::TestContinuation.\
 # test_long_reason_continues_across_lines
+# frob:tests tests/unit/graph/test_dsl.py::TestContinuation.\
+# test_unrelated_directives_on_consecutive_lines_do_not_fold
 def _fold_continuations(
-    lines: list[tuple[int, str, str]],
+    lines: list[tuple[int, str, str, int]],
 ) -> list[tuple[str, int, str]]:
     r"""Fold physical comment lines ending in a trailing backslash into the
     line that follows, returning `(logical_text, lineno, src)` triples where
@@ -187,16 +189,37 @@ def _fold_continuations(
     the start of the continuation, never a continuation line (T-0286).
 
     `lines` is the file's comment text flattened to one entry per physical
-    line, in file order, each tagged with its absolute line number and
-    resolved symbol binding (`_enclosing_src`). Single-line `#`/`//`
+    line, in file order, each tagged with its absolute line number, resolved
+    symbol binding (`_enclosing_src`), and the identity of the originating
+    `RawComment` (its index in `parsed.comments`). Single-line `#`/`//`
     comments are separate `RawComment`s per physical line (`frob.lang`'s
-    extractor does not merge adjacent line comments into one span), so
-    folding must operate across `RawComment` boundaries, not just within
-    one block comment's multi-line `text` -- flattening first is what makes
-    that uniform. Folding requires the next entry's `lineno` to be exactly
-    one more than the current line's -- a gap (blank line, unrelated code
-    between comments) breaks the run, matching how the DSL already treats
-    non-adjacent comment lines as unrelated.
+    extractor does not merge adjacent line comments into one span, and even
+    a genuine multi-line continuation inside ONE logical directive is
+    extracted as several single-physical-line `RawComment`s), so folding
+    must operate across `RawComment` boundaries, not just within one block
+    comment's multi-line `text` -- flattening first is what makes that
+    uniform, and it means `comment_id` on its own cannot gate a fold (a
+    legitimate continuation run is several distinct `RawComment`s).
+
+    Folding requires the next entry's `lineno` to be exactly one more than
+    the current line's, AND the next entry's own text must NOT itself begin
+    a fresh `frob:<verb> ...` directive -- a gap (blank line, unrelated code
+    between comments) breaks the run, and so does landing on a line that is
+    plainly the start of an independent directive rather than free-text
+    continuation content. This is what a genuine continuation line always
+    satisfies (its text is prose/attribute fragments, e.g. `long so it
+    would overflow...` or `kind="integration"`, never `frob:<verb>`) and
+    what the reviewer's T-0286 corruption repro violates: `# frob:ticket
+    T-0002` on the physical line right after `# frob:ticket T-0001\` is
+    itself a complete, independently-parseable directive, so it must be
+    treated as its own comment run rather than swallowed into the previous
+    line. (Line-number adjacency and `_enclosing_src` binding are NOT
+    reliable discriminators here -- `frob.lang`'s following/enclosing
+    heuristic can legitimately resolve two textually-unrelated comments to
+    the same symbol, as the repro does when a trailing inline comment's
+    "following" lookup reaches past its own statement into the next
+    symbol -- so the fold guard must inspect the candidate line's own
+    shape, not just its position or binding.)
 
     Detection is on the RIGHT-stripped line (trailing whitespace ignored, so
     both a trailing backslash with and without preceding whitespace
@@ -207,21 +230,22 @@ def _fold_continuations(
     when folded; a line ending `that\` does not).
 
     A trailing backslash on the LAST physical line available to continue
-    into (end of file, or the next line is not adjacent) is treated
-    LITERALLY: it is left in place unfolded rather than reported as
-    malformed, since a lone trailing backslash is content, not necessarily
-    evidence of a broken continuation.
+    into (end of file, next line not adjacent, or next line is itself a
+    fresh directive) is treated LITERALLY: it is left in place unfolded
+    rather than reported as malformed, since a lone trailing backslash is
+    content, not necessarily evidence of a broken continuation.
     """
     folded: list[tuple[str, int, str]] = []
     i = 0
     n = len(lines)
     while i < n:
-        lineno, text, src = lines[i]
+        lineno, text, src, _comment_id = lines[i]
         head = text.rstrip("\r")
         while (
             head.rstrip().endswith("\\")
             and i + 1 < n
             and lines[i + 1][0] == lines[i][0] + 1
+            and _LINE_RE.match(lines[i + 1][1].strip()) is None
         ):
             head = head.rstrip()[:-1]
             i += 1
@@ -238,13 +262,13 @@ def parse_directives(
     """Extract every `frob:` directive in `parsed.comments` into edges and errors."""
     edges: list[Edge] = []
     malformed: list[MalformedDirective] = []
-    flat: list[tuple[int, str, str]] = []
-    for comment in parsed.comments:
+    flat: list[tuple[int, str, str, int]] = []
+    for comment_id, comment in enumerate(parsed.comments):
         src = _enclosing_src(comment, parsed.path)
         start_line = comment.span[0]
         physical = comment.text.splitlines() or [comment.text]
         flat.extend(
-            (start_line + offset, raw_line, src)
+            (start_line + offset, raw_line, src, comment_id)
             for offset, raw_line in enumerate(physical)
         )
     for logical_line, lineno, src in _fold_continuations(flat):

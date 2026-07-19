@@ -149,3 +149,27 @@ class TestContinuation:
         assert len(edges) == 1
         assert edges[0].target == "tests/a.py::test_foo"
         assert edges[0].attrs["kind"] == "integration"
+
+    def test_unrelated_directives_on_consecutive_lines_do_not_fold(
+        self, tmp_path: Path
+    ) -> None:
+        # Reviewer-reported corruption bug (T-0286): two directives on
+        # DIFFERENT symbols that happen to sit on physically consecutive
+        # lines -- the first coincidentally ending in a trailing backslash
+        # -- must NOT be folded together just because the line numbers are
+        # adjacent. Folding is only valid within a single originating
+        # comment run; here the two comments belong to different
+        # `RawComment`s bound to different symbols (class A vs class B), so
+        # both must parse as independent, correct edges.
+        src = (
+            "class A:\n"
+            "    x = 1  # frob:ticket T-0001\\\n"
+            "class B:  # frob:ticket T-0002\n"
+            "    y = 2\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        assert len(edges) == 2
+        targets = {edge.target for edge in edges}
+        assert targets == {"T-0001\\", "T-0002"}
