@@ -2853,3 +2853,107 @@ acceptance: []
 threat: null
 ```
 T-0195's reverse-templating report (frob.dup._template.build_group_template) renders CloneBinding.source_text and CloneTemplate.skeleton_text as a structural label(child,...) skeleton, not literal source characters, because frob.lang.TreeNode (docs/modules/lang.md) carries only a label + children, no source span/text. Add a span (or byte offsets) field to TreeNode, threaded through frob.lang.symbol_tree's _export_tree, so frob.dup._template can render exact source snippets and (per docs/modules/dup-sota-survey.md sec 4) reuse a real identifier name across instances that agree on it in CloneTemplate.suggested_signature, instead of always naming holes hole_N.
+
+<!-- ticket:T-0328 -->
+```yaml
+id: T-0328
+title: 'capability scanner: import/binding-aware symbol resolution, not evadable substring
+  needles'
+state: queued
+kind: security
+origin: human
+created: '2026-07-19'
+blocked_by: []
+parent: null
+scope:
+- src/frob/vet/_capability.py,src/frob/vet/_capability_registry.py,tests/**,docs/modules/vet.md,tickets.md
+evidence: []
+attachments: []
+acceptance:
+- given 'import subprocess as sp' then 'sp.run(x)', when scanned, then exec is observed
+  (alias resolved to subprocess.run) -- currently MISSED
+- given 'from subprocess import run' then 'run(x)', when scanned, then exec is observed
+  (from-import resolved) -- currently MISSED
+- given 'from os import system as e' then 'e(x)', when scanned, then exec is observed
+  (NOT eval) -- currently WRONG kind
+- given a LOCAL binding shadowing an import (a class method or var named 'run', a
+  param 'system'), when scanned, then the dangerous kind is NOT observed -- scope-aware,
+  no false positive
+- given re-export chains and attribute access on a shadowed name (x.subprocess.run
+  where subprocess is an unrelated attribute), then it does not falsely fire
+threat: elevation-of-privilege
+```
+CONFIRMED live 2026-07-19: frob.vet._capability is fundamentally a lexical substring/needle matcher (even after T-0308 comment/word-boundary hardening). It only matches the LITERAL qualified form in the registry needle (e.g. 'subprocess.run('), so it is EVADED by ordinary Python: 'import subprocess as sp; sp.run()' -> MISSED; 'from subprocess import run; run()' -> MISSED; 'from os import system as e; e()' -> reported 'eval' not 'exec'. This is an ELEVATION-OF-PRIVILEGE soundness hole -- a node can genuinely exec/net/ffi while the scanner observes nothing, so SYS100 never flags the undeclared capability, and a developer (lazy OR malicious) dodges the 'may' declaration just by aliasing an import. FIX: replace/augment the lexical match with real import/binding-aware resolution using the existing tree-sitter parse (frob.lang). Per language: (1) build the module's IMPORT/BINDING TABLE -- import X, import X as Y, from X import Z, from X import Z as W (python); the analogous forms for TS (import {x} from, import * as, require), rust (use path::to::item, use ... as), c/c++ (#include is coarse -- keep needles there but note the limit). (2) For each call/attribute site, resolve the leftmost name through the binding table (and enclosing scope) to its ORIGIN, reconstruct the fully-qualified target (sp.run -> subprocess.run; run -> subprocess.run), and match the registry by RESOLVED IDENTITY (module + attribute path), not raw text. (3) SCOPE-AWARENESS is mandatory to avoid FALSE POSITIVES: a local binding (param, assignment, class method, nested def) SHADOWS an import of the same name -- 'Job().run()' or a param 'system' must NOT resolve to the dangerous symbol. The registry likely needs a resolvable (library, symbol) key alongside the display needle. Python is the priority (highest coverage); design the resolver so TS/rust plug in. Keep the comment/string-exclusion + word-boundary guards. LITMUS: every evasion case above now detected; every shadowing case NOT detected; no new false positive on frob's own tree (frob check --only sys / capability tests unchanged); the exhaustiveness meta-test still green. This is the 'actually parse the symbols and see if they refer to what they match' upgrade.
+
+<!-- ticket:T-0329 -->
+```yaml
+id: T-0329
+title: 'EPIC arch multi-language: normalized code model + Rust/TypeScript/Kotlin adapters'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-19'
+blocked_by: []
+parent: null
+scope:
+- src/frob/arch/**,src/frob/lang/**,tests/**,docs/modules/arch.md,tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+frob arch today has per-language walkers (_python.py, _cpp.py) only. To extend cleanly (not N copies of each check), introduce a NORMALIZED CODE MODEL: a language-agnostic view (module, class, function, method, param, branch, loop, call, import, override, field-access, return, raise/throw, catch) that each language adapter maps its tree-sitter grammar onto. Checks are written ONCE against the model; adapters supply per-grammar node-type maps. Then add adapters for TypeScript, Rust, Kotlin (Kotlin needs tree-sitter-kotlin added to frob.lang; ts/rust/cpp/c already parse via tree-sitter-language-pack). Language-specific checks (Rust must_use/ownership, TS any/strict-null) live in per-language extensions on top of the shared model. Acceptance: an arch check written once fires correctly across python+ts+rust+kotlin on equivalent code; Kotlin grammar wired; the existing python/cpp checks refactored onto the model with no regression. Children: normalized-model, ts-adapter, rust-adapter, kotlin-grammar+adapter.
+
+<!-- ticket:T-0330 -->
+```yaml
+id: T-0330
+title: EPIC arch SOLID + senior-designer checks (static proxies for real design principles)
+state: queued
+kind: feature
+origin: human
+created: '2026-07-19'
+blocked_by: []
+parent: null
+scope:
+- src/frob/arch/**,src/frob/graph/**,tests/**,docs/modules/arch.md,tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Encode what a senior software designer knows (SOLID, ArjanCodes, Logan-Smith type-driven design, logging, fallibility) as STATIC checks over parsed source -- each with a concrete, non-hacky static proxy (subjective principles get objective detectable smells). CATALOG (each becomes a child ticket, ARCH1xx family):
+SRP/cohesion: LCOM4 low-cohesion class (methods partition into disjoint field-usage components); god-module (unrelated exports); mixed-concern function (I/O capability + pure compute + formatting in one body).
+OCP: type-dispatch smell (N+ isinstance/type==/tag switch on one variable -> polymorphism); non-exhaustive enum match.
+LSP (Liskov): override raises NotImplementedError; override signature incompatible (narrower params / different-or-wider return = variance violation); override strengthens a precondition (adds assert/raise base lacks) or weakens a postcondition; override no-ops a value-returning base method.
+ISP: fat interface (ABC/Protocol/trait whose implementers stub most methods with raise NotImplementedError/pass); client using only a subset of a wide injected interface.
+DIP: LAYERING CONTRACT -- a declared allowed-module-dependency graph (import-linter style), violation = a high layer importing a low/concrete module across the boundary; concrete-collaborator construction inside a method instead of injection (no DI).
+Type-driven (Logan Smith): make-illegal-states-unrepresentable (bool flag + validation -> enum/newtype); primitive obsession (many raw str/int params for a domain concept); parse-dont-validate (validates then returns the same unrefined type); boolean/flag parameter (public fn bool param switching behavior -> split).
+Logging (CLAUDE.md 'log everything worth logging'): unlogged error path (except/raise/return-Err with no log in it); unlogged boundary (public entry / subprocess / net / fs site with no surrounding log); print()-as-diagnostics.
+Fallibility (typani Result / Rust must_use): unhandled Result (Result-returning call as a bare statement, value discarded); swallowed exception (bare except / except Exception: pass); raises a recoverable error where the signature returns T not Result[T,E]; over-broad except; re-raise losing context.
+Other smells: mutable default argument; feature envy (method uses another object more than self); data clumps (same 3+ params passed together repeatedly); magic numbers/strings in logic; module dependency CYCLES; dead private code (unreferenced private symbol); deep inheritance (DIT); temporal coupling (_initialized-flag guard).
+Every check names its static proxy, severity, and the ARCHxxx id; each is waivable via the ARCH001-style reasoned override (T-0289). MUST coincide with strata (see the systems epic): logging-IN-CODE is arch; observability-OF-FLOW is strata -- no overlap.
+
+<!-- ticket:T-0331 -->
+```yaml
+id: T-0331
+title: 'EPIC strata senior-systems checks: reliability/observability/consistency/distributed
+  (complete, not hacky)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-19'
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/**,strata-core/**,tests/**,docs/strata/**,tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Complete the system-design linter with what a senior systems/reliability engineer checks -- over the .strata MODEL (nodes/flows/boundaries/stores), each a real static obligation, SYS2xx/REL2xx family. CATALOG:
+Reliability: TIMEOUT on every remote/cross-boundary flow (unbounded hang otherwise); RETRY must declare exponential backoff+jitter, and no retry on a non-idempotent op; IDEMPOTENCY key required on a mutating op reachable by a retryable flow (duplicate effects); CIRCUIT BREAKER / bulkhead per external dependency (extends LINT004 kill-switch); FALLBACK / graceful degradation declared for a CRITICAL dependency; HEALTH liveness+readiness on every service node; SPOF -- a node with inbound critical flows and replicas_max=1/no redundancy; BACKPRESSURE bounded intake on queues/consumers (extends LINT003 surge / LINT005 capacity).
+Observability: every boundary flow emits metrics+traces+logs; CORRELATION/trace-id propagated across a flow chain (distributed tracing); golden-signal SLOs (latency/traffic/errors/saturation) + error budget declared per service.
+Data/consistency: SINGLE SOURCE OF TRUTH (two nodes writing one store = hazard; extends SYS003 hub); transactional boundary on multi-write ops; MESSAGE SCHEMA VERSION on events/queues (backward-compat); exactly-once vs at-least-once declared on queues; retention/TTL on PII stores (ties T-0207).
+Distributed: SYNC CALL-CHAIN DEPTH bound (cascading latency/failure; uses reachability incl. non-transitive T-0282); distributed txn across services requires saga/compensation; no shared mutable state across service boundaries; clock/ordering assumptions (T-0282).
+Each is a strata surface addition (new node/flow attrs) + a checker + litmus + docs, deny-by-default with a reasoned waive channel (T-0174). COINCIDENCE with arch: strata reasons over the MODEL (flows/nodes); arch reasons over CODE (functions). Where they touch (observability, error handling), the code check BACKS the system claim via the capability/binding graph -- one obligation, checked at the right level, never duplicated.
