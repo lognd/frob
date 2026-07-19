@@ -1,0 +1,37 @@
+// library_exec_no_foreign_discharges.strata -- T-0223 litmus: a
+// foreign-less LIBRARY model (no node in the model is declared `trust
+// foreign`) whose only node declares `may "exec"`. CWE-78's THREAT003
+// obligation still FIRES (`_fired_obligations` joins on the capability
+// alone, docs/strata/threat.md#capabilities-drag-in-obligations) but
+// discharges CLEANLY via the EXISTING chokepoint machinery:
+// `_discharges_as_chokepoint` accepts a `NoFlow(src="foreign",
+// dst=node_id)` claim naming the `foreign` TRUST LEVEL directly (not a
+// specific node), and `_claims.py::_expand` resolves that to
+// `facts.nodes_at("foreign")` -- the empty tuple here, since no node
+// carries that trust. `_eval_noflow`'s witness search then has no `src`
+// to iterate at all, so it proves the `NoFlow` FORALL vacuously (no
+// unendorsed influence path exists, because there is no foreign source in
+// the model to originate one): "no foreign source -> no injection path ->
+// obligation discharged by absence," proven by the SAME closure walk
+// every other NoFlow claim uses -- no new discharge channel needed
+// (docs/strata/threat.md#library-mode-discharge-by-absence).
+//
+// This is a REAL (non-`assume`) `assert` claim, not a human-owned TCB
+// entry: the vacuous PROVED verdict is the closure engine's own finding
+// over THIS model, so it automatically re-refutes the moment a real
+// foreign source is added and reaches `runner` with no boundary --
+// library_exec_foreign_reaches_still_fires.strata proves that half, with
+// the identical claim shape, so THREAT003 is never weakened for a model
+// that DOES have a real injection path.
+//
+// tested end to end (parse -> elaborate -> check_discharge_completeness)
+// by tests/unit/strata/test_threat.py::TestLibraryModeForeignlessDischarge.
+
+module library_exec_no_foreign_discharges
+
+node runner : trusted {
+    clearance Internal;
+    may "exec";
+}
+
+assert "weakness:CWE-78:runner" noflow foreign -> runner
