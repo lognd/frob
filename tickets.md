@@ -2398,7 +2398,9 @@ scope:
 - pyproject.toml
 - uv.lock
 - .frob-release.json
-evidence: []
+evidence:
+- tests/test_dup_inline.py::TestHelperInliningLitmus::test_split_helpers_detected_with_inlining
+- tests/test_dup_inline.py::TestSharedHelperNotDuplication::test_shared_helper_not_flagged_at_threshold_0_7
 attachments: []
 acceptance:
 - given two functions whose shared logic was each extracted into differently-named
