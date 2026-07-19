@@ -9647,7 +9647,7 @@ FROBLEMS (aprog-private): with 'pytest --cov=scripts --cov=tests' (two roots), c
 id: T-0312
 title: LINT004 remedy text says 'attr flag=<id>' but the real/only escape is a 'waive'
   statement
-state: queued
+state: done
 kind: bug
 origin: auditor
 created: '2026-07-19'
@@ -9655,12 +9655,27 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/strata/_lint.py,tests/**,docs/strata/threat.md,tickets.md
-evidence: []
+evidence:
+- tests/unit/strata/test_lint.py::TestLintKillSwitch::test_risky_capability_with_no_flag_is_lint004
 attachments: []
 acceptance: []
 threat: null
 ```
 FROBLEMS (aprog-private): LINT004's detail string says 'node <id> holds risky capability kind(s) [...] with no declared attr flag=<id> kill-switch', implying the fix is a strata 'attr flag=<id>;' declaration -- but 'attr flag' is not implemented/documented anywhere (grep -rn 'attr flag' docs/ is empty); the actual working escape is a 'waive "LINT004" reason ... ticket ...;' statement. Fix the message to name the real remedy (waive), or implement attr flag if intended. Trivial message/doc fix. Test: LINT004 detail names the waive escape.
+
+## Done report
+Investigated: the FROBLEM's premise is now stale. `attr flag=<id>` IS a real,
+implemented LINT004 discharge -- `_lint.py::check_lint_kill_switch` clears a
+node when `node_flag_ids(node)` is non-empty, the strata grammar parses the
+generic `attr flag=<id>;` node property, and it is documented at
+docs/strata/threat.md:349 ("declare `attr flag=<id>;` naming the real
+kill-switch") with the `waive` alternative explained at 389-394 (used when no
+real kill-switch exists yet). The docs post-date the 2026-07-18 FROBLEM. So
+the message was not wrong -- but its residual, valid concern (a repo without a
+kill-switch yet was misled toward the flag-only remedy) is addressed: the
+LINT004 detail now names BOTH escapes (`attr flag=<id>` OR `waive "LINT004"
+... ticket ...`). Evidence test asserts the detail contains both. No grammar/
+check change needed.
 
 <!-- ticket:T-0313 -->
 ```yaml
