@@ -9654,7 +9654,7 @@ change needed; closing as resolved-by-T-0209/T-0305/T-0019.
 id: T-0309
 title: 'DSL: a trailing ''# noqa''/#-led tail on a directive line silently drops the
   directive'
-state: in-progress
+state: done
 kind: bug
 origin: auditor
 created: '2026-07-19'
@@ -9790,7 +9790,7 @@ check change needed.
 id: T-0313
 title: COV001 frob:doc binder only inspects the nearest preceding comment line, not
   the whole block
-state: in-progress
+state: done
 kind: bug
 origin: auditor
 created: '2026-07-19'
