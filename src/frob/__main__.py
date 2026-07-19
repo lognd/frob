@@ -1032,11 +1032,30 @@ def _add_sys_parser(sub) -> None:
     sys_audit_p.add_argument("sys_path", metavar="path", nargs="?", default=".")
 
 
+def _frob_version() -> str:
+    """Resolve the installed `frob` package version from metadata (falls
+    back to 'unknown' if run from an environment where the distribution
+    is not registered, e.g. a raw source checkout)."""
+    from importlib.metadata import PackageNotFoundError, version
+
+    try:
+        return version("frob")
+    except PackageNotFoundError:
+        return "unknown"
+
+
 def _build_parser() -> argparse.ArgumentParser:
     # frob:ticket T-0021
+    # frob:ticket T-0231
     p = argparse.ArgumentParser(
         prog="frob",
         description="Developer workflow tools -- optimized for agentic use",
+    )
+    p.add_argument(
+        "--version",
+        action="version",
+        version=f"frob {_frob_version()}",
+        help="print the installed frob version and exit",
     )
     sub = p.add_subparsers(dest="subcommand")
 

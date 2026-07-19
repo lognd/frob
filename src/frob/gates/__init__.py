@@ -2681,8 +2681,29 @@ def _crawl_reachable(
     return linked
 
 
+def _doclink_root_hint(root: Path, roots: list[str]) -> str:
+    """Build the DOC001 'link it from X' hint against a root that actually exists.
+
+    Blindly naming `roots[0]` (default `docs/index.md`) is wrong in repos
+    that never created a docs index -- the hint pointed at a path that did
+    not exist (T-0231, observed 256x in a sibling repo with no
+    docs/index.md). Prefer the first configured root that exists on disk;
+    if none do, suggest creating the first configured root instead of
+    pretending it is already there.
+    """
+    for candidate in roots:
+        if (root / candidate).exists():
+            return f"link it from {candidate}"
+    if roots:
+        return (
+            f"link it from {roots[0]} (create it -- no configured docs root exists yet)"
+        )
+    return "link it from a docs root (none configured -- see [gates.docs].roots)"
+
+
 # frob:ticket T-0021
 # frob:ticket T-0028
+# frob:ticket T-0231
 # frob:doc docs/modules/gates.md#public-api
 def doclink_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """DOC001: a doc file nothing links to is an error -- orphan docs rot.
@@ -2703,6 +2724,7 @@ def doclink_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     linked = _crawl_reachable(root, roots, _linked_from_edges(snapshot), obligated)
     orphans = sorted(obligated - linked - set(roots))
 
+    link_hint = _doclink_root_hint(root, roots)
     violations = [
         Violation(
             rule="DOC001",
@@ -2712,7 +2734,7 @@ def doclink_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
             message=(
                 f"DOC001: {orphan} is linked from nowhere; add a "
                 f"frob:describes anchor, reference it with frob:doc, or "
-                f"link it from {roots[0]}"
+                f"{link_hint}"
             ),
         )
         for orphan in orphans
