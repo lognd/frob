@@ -65,12 +65,20 @@ def _build_vet_config(vet: dict[str, object]) -> VetConfig:
     the resulting settings."""
     allow = _parse_allow(vet.get("allow", {}))
 
+    # `[vet]` values arrive from parsed TOML as `object`; narrow each to the
+    # field's type, falling back to the default on a wrong-typed value rather
+    # than crashing the whole `frob` invocation on a malformed config line.
+    raw_days = vet.get("quarantine_days", 14)
+    raw_url = vet.get("registry_base_url")
+
     cfg = VetConfig(
         present=True,
         enforce=bool(vet.get("enforce", False)),
         osv=bool(vet.get("osv", False)),
-        quarantine_days=int(vet.get("quarantine_days", 14)),
-        registry_base_url=vet.get("registry_base_url"),
+        quarantine_days=int(raw_days)
+        if isinstance(raw_days, (int, float, str))
+        else 14,
+        registry_base_url=raw_url if isinstance(raw_url, str) else None,
         allow=allow,
     )
     _log.info(

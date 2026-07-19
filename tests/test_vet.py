@@ -195,6 +195,22 @@ jinja2 = ["sandboxed template compilation, reviewed"]
         assert cfg.allow["requests"] is True
         assert cfg.allow["jinja2"] == ("sandboxed template compilation, reviewed",)
 
+    def test_wrong_typed_scalars_fall_back_to_defaults(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_allow.py::load_vet_config kind="unit"
+        # A malformed `[vet]` scalar (wrong TOML type) must degrade to the
+        # field default, never crash the whole `frob` invocation.
+        (tmp_path / "frob.toml").write_text(
+            """
+[vet]
+quarantine_days = ["not", "an", "int"]
+registry_base_url = 42
+"""
+        )
+        cfg = load_vet_config(tmp_path)
+        assert cfg.present is True
+        assert cfg.quarantine_days == 14
+        assert cfg.registry_base_url is None
+
 
 # ---------------------------------------------------------------------------
 # quarantine logic (monkeypatched registry)
