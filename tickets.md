@@ -1468,7 +1468,8 @@ state: queued
 kind: bug
 origin: agent
 created: '2026-07-18'
-blocked_by: []
+blocked_by:
+- T-0321
 parent: null
 scope:
 - src/frob/graph/**
@@ -2005,7 +2006,8 @@ state: queued
 kind: bug
 origin: human
 created: '2026-07-18'
-blocked_by: []
+blocked_by:
+- T-0321
 parent: null
 scope:
 - src/frob/graph/**,src/frob/gates/**
@@ -2357,6 +2359,39 @@ acceptance: []
 threat: null
 ```
 Expands T-0177 into a long-lived per-project daemon that holds warm, incrementally-maintained state (obligation graph + per-symbol digests, test collection, coverage, dup analysis, gate results) and serves it to all clients (agents, make, MCP, CI) via single-flight execution + a content-addressed result cache. Root cause it solves (observed live over a long multi-agent session): N parallel agents each redundantly recompute the same expensive state (make core, make coverage ~5min each, frob check 114s stages, ticket sweep dup-scan ~90s) in isolated worktrees with no sharing, and background-then-stall on make coverage. Children: (a) warm graph + FS-watch incremental invalidation by digest; (b) single-flight coverage/collection keyed by source digest, shared across worktrees with identical content; (c) local unix-socket JSON-RPC query protocol; (d) frob CLI auto-proxies to the daemon if running, else in-process (make targets become thin shims); (e) subscribe/push events (coverage-fresh, graph-changed) -- the stall-killer; (f) resource leases/semaphores (coverage=1 writer). MCP becomes one frontend over the same core. See the design discussion 2026-07-19.
+
+
+## Integration / replacement map (2026-07-19 -- surveyed all subcommands + queue)
+The daemon is a warm SUBSTRATE under most read/analysis subcommands, not a new silo.
+
+SUBCOMMANDS -> daemon relationship:
+- Warm GRAPH QUERIES (served instantly from the warm graph, zero recompute):
+  outline, map, xref, parse, graph, exports, bind, docs, stats -- become thin daemon reads.
+- Warm ANALYSIS (incremental, single-flight, cached by digest): dup, arch, perf, vet.
+- Warm GATE eval (touched-set, the expensive path): check, sys, test, ticket(sweep/doable/evidence).
+- FRONTENDS over one core: `serve` (MCP) becomes ONE frontend; the unix-socket JSON-RPC API is
+  another; the `frob` CLI proxies to the daemon if running (make targets stay thin shims).
+- One-shot / orthogonal (stay plain CLI; may read from daemon): scaffold, cycle, release, mutate,
+  gitlog, ack, deploy.
+
+EXISTING TICKETS the daemon SUBSUMES or de-risks (fold in as children/deps of this epic):
+- T-0177 (incremental gate eval over warm graph) -- the SEED; this epic generalizes it. SUPERSEDES.
+- T-0245 (stat storms + sqlite contention on /mnt/c, 13-60x tax) -- warm in-memory state + a single
+  sqlite owner eliminate the re-stat/contention entirely. SUBSUMED (or its standalone fix becomes the
+  daemon's storage layer).
+- T-0243 (cache.db not invalidated across frob/parser upgrades) -- daemon owns cache lifecycle
+  (digest + tool-version keyed). INTEGRATED.
+- T-0279 (frob:tests direction disagrees: fresh dsl parse vs stale graph cache) -- daemon keeps the
+  graph always-fresh, so the entire stale-cache class disappears. INTEGRATED.
+- T-0180 (vetted-library cache engine) -- daemon holds the vet cache warm. INTEGRATED.
+- T-0242 (frob test -> native sys audit on touched .strata) -- daemon touched-set orchestration. CHILD.
+- T-0322 (coverage --wait / single-flight) + T-0324 (parametrized evidence) -- steps toward the daemon;
+  0322 is the stall-killer extractable first. T-0292/T-0298 (evidence/collection resolution) become
+  trivial once collection is warm. RELATED.
+- T-0178 (agentic time profiling) -- the daemon is the natural instrumentation point. RELATED.
+- T-0325 (doc-drift digest graph) -- the daemon's HEADLINE query (what code/docs must update when X
+  changes); only practical warm. CHILD.
+- T-0323 (git merge driver for tickets.md) -- INDEPENDENT of the daemon; do first regardless.
 
 <!-- ticket:T-0322 -->
 ```yaml
