@@ -517,6 +517,33 @@ class TestBuildIncremental:
         assert third.stats.parsed == 1
         assert third.stats.cache_hits == 1
 
+    def test_cache_hit_build_reports_real_edge_count(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/__init__.py::build_graph
+        """T-0218: an all-cache-hit rebuild must report the loaded graph's
+        actual edge count, not 0 -- the build summary is always derived from
+        `len(snapshot.edges)` (the fully reassembled graph loaded from the
+        db), never from a fresh-parse-only counter, so a cache hit must not
+        zero it out."""
+        root = tmp_path
+        _write(
+            root,
+            "src/a.py",
+            '"""Module docstring."""\n\n\n'
+            "def foo() -> None:\n"
+            "    # frob:doc docs/x.md#foo\n"
+            "    pass\n",
+        )
+        cache = root / ".frob" / "cache.db"
+        first = build_graph(root, cache).danger_ok
+        assert first.stats.parsed == 1
+        assert len(first.edges) > 0
+
+        second = build_graph(root, cache).danger_ok
+        assert second.stats.parsed == 0
+        assert second.stats.cache_hits == 1
+        assert len(second.edges) == len(first.edges)
+        assert len(second.edges) > 0
+
 
 class TestMalformedFileVisibility:
     """T-0216: `malformed=N` in the build summary must never be a dead end --
