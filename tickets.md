@@ -1385,7 +1385,7 @@ substantive change.
 id: T-0193
 title: 'R1.5 exact-region kernel: generalized suffix automaton over normalized token
   stream'
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-07-18'
@@ -1402,7 +1402,9 @@ scope:
 - pyproject.toml
 - .frob-release.json
 - uv.lock
-evidence: []
+evidence:
+- tests/test_dup_region.py::TestRegionKernelFindsPartialClone::test_enabled_finds_shared_region_between_otherwise_different_functions
+- tests/test_dup_region.py::TestRegionKernelOffByDefault::test_whole_symbol_rungs_miss_the_partial_clone
 attachments: []
 acceptance: []
 threat: null
