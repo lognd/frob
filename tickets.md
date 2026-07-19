@@ -3975,7 +3975,7 @@ User mandate 2026-07-19: a frob deploy utility built into strata. The threat mod
 id: T-0255
 title: 'std.host: OS-layer modeling -- service users, units, ownership, ports as first-class
   strata'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-18'
