@@ -2695,7 +2695,7 @@ T-0176's scope listed src/frob/tickets/**, src/frob/app/**, tests/**, docs/modul
 ```yaml
 id: T-0221
 title: frob vet <lockfile> misparses path arg and exits 0 on ERROR
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-18'
