@@ -105,6 +105,18 @@ def _declared_kinds(node: Node) -> frozenset[str]:
     return frozenset(_may_kind(atom) for atom in node.may)
 
 
+# frob:doc docs/strata/surface.md#code-binding-tier-2-v0-implementation
+# frob:tests tests/unit/strata/test_effects.py::TestNodeMayKinds.test_kinds kind="unit"
+def node_may_kinds(node: Node) -> frozenset[str]:
+    """Public alias of `_declared_kinds`: every capability KIND `node`
+    declares via its `may` atoms. Exposed for `frob.deploy` (T-0257),
+    which derives a generated systemd unit's `CapabilityBoundingSet=`
+    from the SAME kind join `export_seccomp`'s `SystemCallFilter=`
+    already uses (`_export.py::node_allowed_syscalls`) -- one join, two
+    renderings, never a duplicated `may`-kind derivation."""
+    return _declared_kinds(node)
+
+
 def _line_effects(path: Path, root: Path) -> list[ObservedEffect]:
     """Every net/fs/exec effect needle match in `path`, one per (line, kind)
     pair matched, `path`-relative-to-`root` in the `file` field so reports
@@ -223,4 +235,5 @@ __all__ = [
     "ObservedEffect",
     "check_capability_conformance",
     "extract_effects",
+    "node_may_kinds",
 ]

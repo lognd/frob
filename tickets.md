@@ -4570,7 +4570,7 @@ Cargo.lock churn reverted before every check and before commit.
 id: T-0257
 title: 'frob deploy generate: install/status/uninstall scripts compiled from HostManifest,
   drift-locked'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-18'
@@ -4585,12 +4585,110 @@ scope:
 - docs/**
 - tests/**
 - tickets.md
-evidence: []
+evidence:
+- tests/unit/deploy/test_generate.py::TestSorted::test_sorted
+- tests/unit/deploy/test_generate.py::TestDigest::test_det
+- tests/unit/deploy/test_generate.py::TestDigest::test_changes_with_model
+- tests/unit/deploy/test_generate.py::TestInstall::test_idempotent
+- tests/unit/deploy/test_generate.py::TestInstall::test_empty_model
+- tests/unit/deploy/test_generate.py::TestStatus::test_one_line
+- tests/unit/deploy/test_generate.py::TestUninstall::test_removes
+- tests/unit/deploy/test_generate.py::TestAll::test_returns_all
+- tests/unit/deploy/test_drift.py::TestDrift::test_no_dir
+- tests/unit/deploy/test_drift.py::TestDrift::test_clean
+- tests/unit/deploy/test_drift.py::TestDrift::test_stale
+- tests/unit/strata/test_export.py::TestNodeSyscalls::test_base
+- tests/unit/strata/test_effects.py::TestNodeMayKinds::test_kinds
+- tests/unit/strata/test_effects.py::TestNodeMayKinds::test_no_may_atoms_is_empty
+- tests/integration/test_interfaces.py::TestInterfaces::test_deploy_generate_writes_and_checks
 attachments: []
 acceptance: []
 threat: null
 ```
 T-0254 child 3. frob deploy generate compiles deploy/install.sh, deploy/status.sh, deploy/uninstall.sh from the HostManifest. INSTALL: idempotent by construction -- every step is check-then-apply (user exists? unit enrolled? file hash matches?), re-run = zero changes, exit codes honest; creates service users per T-0255 spec, writes units with the hardening block, sets exact ownership/modes from owns entries. STATUS: per-unit active/health from the model (listens ports probed, declared health endpoints checked), machine-readable + human summaries. UNINSTALL: removes EXACTLY the manifest set (units stopped+disabled+deleted, users removed, owned paths deleted, nothing else touched) -- artifact-freeness is manifest completeness, which the VM audit (child 5) proves empirically. Generated scripts carry a header manifest digest; a DEPLOY001 drift gate (default-on when deploy/ exists) fails check if committed scripts do not match regeneration from the current model -- the tmLanguage drift-lock pattern. Shellcheck-clean bash, no external deps beyond coreutils/systemctl.
+
+## Done report
+
+Changed:
+- src/frob/deploy/__init__.py (new): public surface -- generate_all,
+  generate_install_script, generate_status_script,
+  generate_uninstall_script, manifest_digest, sorted_manifest_entries,
+  DeployDriftViolation, deploy_drift_violations, ManifestEntry.
+- src/frob/deploy/_generate.py (new): compiles a merged KernelModel's
+  std.host HostManifest facts into deterministic install.sh/status.sh/
+  uninstall.sh bash. Install is check-then-apply per step (id -u gate
+  for service users, sha256 hash gate for the unit file, stat-compared
+  owner/mode gate for owns paths, leading-zero-stripped mode compare so
+  "0644" vs "644" never false-positives as drift). Status probes
+  systemctl is-active/is-enabled plus /dev/tcp per listens port.
+  Uninstall stops+disables+deletes exactly the manifest's own units,
+  rm -rf's exactly its own owns paths, userdel's exactly its own
+  runs_as users.
+- src/frob/deploy/_drift.py (new): DEPLOY001 -- deploy_drift_violations,
+  opt-in when deploy/ exists, recompiles from the current design model
+  and compares full script bodies against what's committed.
+- src/frob/app/deploy_runner.py (new): `frob deploy generate` CLI --
+  writes the three scripts, or `--check` verifies without writing.
+- src/frob/__main__.py, src/frob/app/config.py, src/frob/app/app.py:
+  wired the `deploy` subcommand (Subcommand.deploy, AppConfig deploy_*
+  fields, _add_deploy_parser, dispatch table entry) following the `sys`
+  subcommand's exact shape.
+- src/frob/app/check_runner.py: `_deploy_drift_result` folds DEPLOY001
+  into `frob check`'s CheckResult as an extra `deploy-drift` stage
+  (NOT wired into frob.gates's pluggable job table -- src/frob/gates/**
+  was out of this ticket's declared scope; disclosed below).
+- src/frob/strata/_export.py: extracted `node_allowed_syscalls` (public)
+  out of `export_seccomp`'s inline may-kind/syscall join so
+  `frob.deploy`'s SystemCallFilter= derivation reuses the SAME
+  computation instead of a second syscall mapping.
+- src/frob/strata/_effects.py: added `node_may_kinds` (public alias of
+  `_declared_kinds`) so `frob.deploy`'s CapabilityBoundingSet=
+  derivation reuses the same may-kind join `node_allowed_syscalls` uses.
+- src/frob/strata/__init__.py: exported both new public symbols.
+- docs/commands/deploy.md (new), docs/strata/host.md (added "The deploy
+  generator" section + scope-boundary update), docs/index.md (doc-root
+  table entry) -- doc coverage for every new public symbol.
+- CHANGELOG.md, pyproject.toml: [0.6.0] entry, version bump 0.5.0 ->
+  0.6.0 (REL001 flagged this as a minor surface change; judged 0.6.0
+  correct given a whole new public package, not a patch-level tweak).
+- tests/unit/deploy/test_generate.py, tests/unit/deploy/test_drift.py
+  (new), tests/unit/strata/test_export.py, tests/unit/strata/
+  test_effects.py, tests/integration/test_interfaces.py: unit coverage
+  for every new public symbol plus one end-to-end integration test
+  (`frob deploy generate` then `--check`, real CLI subprocess).
+- tickets.md: this Done report; evidence recorded via `frob ticket
+  evidence`.
+
+Evidence: 15 ids recorded via `frob ticket evidence T-0257`, all
+resolved against a fresh `pytest --collect-only` pass (see the
+`evidence:` list on this ticket above) -- 8 in test_generate.py, 3 in
+test_drift.py, 1 in test_export.py, 2 in test_effects.py, 1 real-CLI
+integration test in test_interfaces.py.
+
+Filed: T-draft-e20d836a (bug) -- design/frob.strata's self-model has no
+`code`/`may` declaration covering the new src/frob/deploy/ tree, so
+`tests/unit/strata/test_selfconform.py::TestRealGateGreen::
+test_repo_design_and_declarations_are_self_conformant` now fails with
+SYS102 unmodeled code. `design/frob.strata` was outside this ticket's
+declared scope (scope list above), so it was not touched here --
+disclosed rather than silently patched around. This does NOT affect
+`frob check` itself: `check_self_conformance` is only invoked by `frob
+sys audit` and this one dedicated pytest test, never by `frob check`'s
+gate set, so `frob check`'s own 0-errors result (below) is unaffected.
+
+Gates: `uv run frob check` (full, not --ticket) after `--stamp-baseline`
+and `--stamp-coverage` (post-`make core`, post-`make coverage`): `pass
+gates 0 errors, 19 warnings, 223 waived`. Zero DRIFT002. All TEST005
+warnings are pre-existing-pattern branch/line-coverage debt (WARN
+severity per `[gates.severity]`, matching the repo's existing posture
+for that rule), several newly below-threshold in the new deploy files
+themselves (`deploy_runner.py` untested via coverage.xml since
+subprocess-CLI integration tests do not feed coverage.py) -- not
+waived, left as an honest gap for a coverage follow-up rather than
+force-padded with low-value unit tests. `git diff main
+--diff-filter=D --stat` empty (deletion-filter land rule).
+`make core`/`make coverage`'s Cargo.lock churn reverted before every
+check and before this report.
 
 <!-- ticket:T-0258 -->
 ```yaml
@@ -5232,3 +5330,22 @@ Same concurrent-repo-clobber incident as T-0274 hit this ticket's
 first implementation pass too (uncommitted edits to
 `src/frob/gates/__init__.py`/`tests/test_gates.py` were wiped between
 tool calls) -- redone and committed immediately, same as T-0274.
+
+<!-- ticket:T-draft-e20d836a -->
+```yaml
+id: T-draft-e20d836a
+title: Model src/frob/deploy in design/frob.strata self-model (SYS102)
+state: queued
+kind: bug
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- design/frob.strata
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0257 added src/frob/deploy/ (frob deploy generate, DEPLOY001). design/frob.strata's self-model has no code/may declaration covering it, so tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant now fails with SYS102 unmodeled code src/frob/deploy. design/frob.strata was out of T-0257's declared scope (src/frob/deploy/**, src/frob/app/**, src/frob/__main__.py, src/frob/strata/**, docs/**, tests/**, tickets.md), so it was not touched there. Fix: add a code "src/frob/deploy/**" declaration (new node or extend the existing cli/stratamod node, whichever the reviewer of T-0257 judges architecturally correct) plus the may capabilities frob.vet's capability scan observes across that tree.

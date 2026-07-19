@@ -17,6 +17,24 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.6.0] - unreleased
+
+Public-API surface changes since 0.5.0 (mechanical semver via REL001):
+
+- T-0257: `frob deploy generate` -- new `frob.deploy` package
+  (`generate_all`, `generate_install_script`, `generate_status_script`,
+  `generate_uninstall_script`, `manifest_digest`,
+  `sorted_manifest_entries`, `deploy_drift_violations`,
+  `DeployDriftViolation`, `ManifestEntry`) compiling `std.host`
+  `HostManifest` facts (T-0255) into idempotent Linux/systemd
+  install/status/uninstall bash, plus the `DEPLOY001` drift check
+  (wired into `frob check` as an extra `deploy-drift` stage) and the
+  `frob deploy generate [--check] [--out-dir]` CLI verb. Also adds
+  `frob.strata.node_allowed_syscalls`/`node_may_kinds` (public exports
+  of previously-private `_export.py`/`_effects.py` helpers, reused by
+  the new generator for `SystemCallFilter=`/`CapabilityBoundingSet=` so
+  neither mapping is duplicated).
+
 ## [0.5.0] - unreleased
 
 Public-API surface changes since 0.4.0 (mechanical semver via REL001):

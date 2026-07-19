@@ -151,3 +151,32 @@ class TestInterfaces:
 
         res = frob_stale_docs(project)
         assert res.is_ok or res.is_err
+
+    def test_deploy_generate_writes_and_checks(self, project: Path) -> None:
+        # frob:tests src/frob/deploy kind="integration"
+        # T-0257: `frob deploy generate` end to end over the real CLI --
+        # write the three scripts from a design model, then verify
+        # `--check` reports clean against what was just written (the
+        # DEPLOY001 drift comparison exercised through its own CLI, not
+        # just the library function).
+        design = project / "design"
+        design.mkdir()
+        (design / "svc.strata").write_text(
+            "module svc\n\n"
+            "node api : trusted {\n"
+            "    clearance Internal;\n"
+            '    runs_as "api-svc";\n'
+            "    unit;\n"
+            '    owns "/etc/api" "0644";\n'
+            "    listens 8080;\n"
+            "}\n"
+        )
+        result = _frob(["deploy", "generate"], cwd=project)
+        assert result.returncode == 0, result.stderr
+        deploy_dir = project / "deploy"
+        assert (deploy_dir / "install.sh").exists()
+        assert (deploy_dir / "status.sh").exists()
+        assert (deploy_dir / "uninstall.sh").exists()
+
+        check = _frob(["deploy", "generate", "--check"], cwd=project)
+        assert check.returncode == 0, check.stderr

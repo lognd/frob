@@ -13,6 +13,7 @@ from frob.strata import (
     bind_code,
     check_capability_conformance,
     extract_effects,
+    node_may_kinds,
 )
 
 
@@ -20,6 +21,18 @@ def _write(root: Path, rel: str, source: str) -> None:
     path = root / rel
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(source, encoding="utf-8")
+
+
+class TestNodeMayKinds:
+    # frob:tests src/frob/strata/_effects.py::node_may_kinds kind="unit"
+    def test_kinds(self):
+        node = Node(id="n", trust="trusted", may=("net.out:stripe.com", "exec:*"))
+        assert node_may_kinds(node) == frozenset({"net", "exec"})
+
+    # frob:tests src/frob/strata/_effects.py::node_may_kinds kind="unit"
+    def test_no_may_atoms_is_empty(self):
+        node = Node(id="n", trust="trusted")
+        assert node_may_kinds(node) == frozenset()
 
 
 class TestExtractEffects:

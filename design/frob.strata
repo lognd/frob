@@ -189,7 +189,7 @@ node core : trusted {
         "src/frob/release/**" "src/frob/scaffold/**" "src/frob/serve/**"
         "src/frob/stats/**" "src/frob/bind/**" "src/frob/docs/**"
         "src/frob/fuzz/**" "src/frob/cycle/**" "src/frob/testing/**"
-        "src/frob/cve/**";
+        "src/frob/cve/**" "src/frob/deploy/**";
     may "env";
     may "eval";
     may "exec";

@@ -79,6 +79,21 @@ def _sorted_node_ids(model: KernelModel) -> list[str]:
     return sorted(node.id for node in model.nodes)
 
 
+# frob:doc docs/commands/sys.md#frob-sys-export
+# frob:tests tests/unit/strata/test_export.py::TestNodeSyscalls.test_base kind="unit"
+def node_allowed_syscalls(node: Node) -> frozenset[str]:
+    """Baseline + may-capability-derived allowed syscall set for one node
+    (`_SECCOMP_KIND_MAP`) -- the ONE computation `export_seccomp` and
+    `frob.deploy`'s systemd `SystemCallFilter` derivation (T-0257) both
+    reuse, so a generated seccomp profile and a generated unit's
+    `SystemCallFilter` can never desync (charter law: no duplication)."""
+    kinds = {_may_kind(atom) for atom in node.may}
+    allowed = set(_SECCOMP_BASELINE)
+    for kind in kinds:
+        allowed |= set(_SECCOMP_KIND_MAP.get(kind, ()))
+    return frozenset(allowed)
+
+
 def _node_by_id(model: KernelModel) -> dict[str, Node]:
     """`Node.id -> Node` lookup, built once per export call."""
     return {node.id: node for node in model.nodes}
@@ -149,10 +164,7 @@ def export_seccomp(model: KernelModel) -> str:
     coarse -- documented in the module docstring, not a real syscall audit."""
     profiles: dict[str, dict] = {}
     for node in sorted(model.nodes, key=lambda n: n.id):
-        kinds = {_may_kind(atom) for atom in node.may}
-        allowed = set(_SECCOMP_BASELINE)
-        for kind in kinds:
-            allowed |= set(_SECCOMP_KIND_MAP.get(kind, ()))
+        allowed = node_allowed_syscalls(node)
         # frob:waive PERF004 reason="distinct allowed set per node, cannot hoist"
         profiles[node.id] = {
             "defaultAction": "SCMP_ACT_ERRNO",

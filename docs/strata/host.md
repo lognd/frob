@@ -200,20 +200,44 @@ correctly REFUTES (`tests/unit/strata/test_host_isolation.py::
 test_blast_radius_refutes_over_shared_writable_path_with_no_declared_flow`);
 the disjoint hardened model still discharges (`test_blast_radius`).
 
+## The deploy generator
+
+<!-- frob:ticket T-0257 -->
+
+`frob deploy generate` (`docs/commands/deploy.md`, `src/frob/deploy/`)
+compiles every node/store's `HostManifest` into three Linux/systemd bash
+scripts -- `install.sh` (idempotent by construction: every step is
+check-then-apply), `status.sh` (per-unit active/enabled state plus a
+listen-port probe), and `uninstall.sh` (removes EXACTLY the manifest's
+own units/users/owned paths). A generated unit's `CapabilityBoundingSet=`
+and `SystemCallFilter=` are BOTH derived from the same `may`-capability
+kind join `src/frob/strata/_export.py::export_seccomp` already uses for
+its seccomp profiles (`node_allowed_syscalls`, `node_may_kinds`) -- one
+join, two renderings, never a second independently maintained mapping.
+
+Every generated script's header carries a manifest digest; once a
+`deploy/` directory exists, `frob check` runs an opt-in DEPLOY001 drift
+check comparing the committed scripts against a fresh regeneration from
+the current model (`docs/commands/deploy.md#deploy001-the-drift-lock`).
+Full detail, including the honest OS-users-vs.-trust-lattice scope cut
+this generator inherits unchanged from this ticket, lives in
+`docs/commands/deploy.md`.
+
 ## Scope boundary (what is NOT built here)
 
-- No generator: `HostManifest` -> actual `useradd`/`systemd` unit file /
-  filesystem `chmod`/`chown` script is T-0257.
 - No conformance checker (declared manifest vs. what a running host
   actually has) -- T-0258.
 - No VM auditor -- T-0259.
 - No second `HostPlatform` member (windows) -- T-0261; the discriminator
-  is designed for it, but only linux/systemd is implemented here.
+  is designed for it, but only linux/systemd is implemented here
+  (T-0257's generator is the same linux/systemd-only scope).
 - No OS-group / sudoers grammar (T-draft-7b5b5541, filed by T-0256) --
   the honest gap #the-honest-gap above.
 
 ## See also
 
+- `docs/commands/deploy.md` -- `frob deploy generate`, DEPLOY001, and the
+  T-0257 scope/honesty notes.
 - `docs/strata/surface.md#node-grammar` -- the node/store grammar this
   vocabulary extends.
 - `docs/strata/surface.md#key-construct-semantics` -- "a store is a node

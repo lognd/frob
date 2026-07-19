@@ -17,6 +17,12 @@ from frob.check import (
 from frob.logging import get_logger, quiet_stdout_logs, stdout_log_level
 from frob.process.parsers.common import Diagnostic, ToolResult
 
+#: DEPLOY001's severity literal, matching `Diagnostic.severity`'s type
+#: (`frob.process.parsers.common.Severity`) without importing it just for
+#: this one string -- the same pragmatic inline-literal precedent
+#: `_skip_note_result` below already uses for its own diagnostic.
+_DEPLOY001_SEVERITY = "error"
+
 _log = get_logger(__name__)
 
 
@@ -242,6 +248,44 @@ def _run_all_detected(cfg: AppConfig, root: Path, types: list[str]) -> CheckResu
     return CheckResult(path=str(root), results=results)
 
 
+def _deploy_drift_result(root: Path) -> ToolResult | None:
+    """DEPLOY001: `deploy/{install,status,uninstall}.sh` vs. regeneration
+    from the current design model (`frob.deploy.deploy_drift_violations`,
+    T-0257). Not wired into `frob.gates`'s pluggable job table (that
+    module is out of this ticket's `scope`) -- instead this runs as one
+    more extra stage `run()` folds into `CheckResult`, the same shape
+    ruff/ty/arch/cycle/dup/bind/exports already use in
+    `_dispatch_check_python`. Opt-in on `deploy/` existing (module
+    docstring's posture); returns `None` (no stage at all, not merely a
+    clean one) when `deploy/` is absent, so a repo that has never opted
+    into the deploy epic sees no `deploy-drift` line at all."""
+    if not (root / "deploy").is_dir():
+        return None
+    from frob.deploy import deploy_drift_violations
+
+    violations = deploy_drift_violations(root)
+    diagnostics = [
+        Diagnostic(
+            file=v.file,
+            severity=_DEPLOY001_SEVERITY,
+            code="DEPLOY001",
+            message=v.message,
+        )
+        for v in violations
+    ]
+    summary = (
+        f"{len(violations)} deploy script(s) out of date"
+        if violations
+        else "deploy scripts current"
+    )
+    return ToolResult(
+        tool="deploy-drift",
+        exit_code=1 if violations else 0,
+        diagnostics=diagnostics,
+        summary=summary,
+    )
+
+
 def _run_stamp_coverage(root: Path) -> None:
     """`frob check --stamp-coverage`: record coverage.xml as the current stamp."""
     from frob.gates import stamp_coverage
@@ -357,5 +401,11 @@ def run(cfg: AppConfig) -> None:
                         *(_skip_note_result(lang, project_type) for lang in others),
                     ],
                 )
+
+        deploy_result = _deploy_drift_result(root)
+        if deploy_result is not None:
+            result = CheckResult(
+                path=result.path, results=[*result.results, deploy_result]
+            )
 
     _report_check_result(cfg, result)
