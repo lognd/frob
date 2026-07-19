@@ -7420,7 +7420,7 @@ T-0260 malmberg pilot findings (batched, all in the deploy generator; each needs
 ```yaml
 id: T-0282
 title: 'strata_core::reachable: terminal-edge support for non-transitive flow chains'
-state: in-progress
+state: done
 kind: security
 origin: agent
 created: '2026-07-19'
@@ -7988,9 +7988,9 @@ threat: null
 ```
 User vision (2026-07-19): frob perf does nothing with recursion today (PERF001-004 are lexical loop smells only). Recursion is a control-flow hazard that must be either statically reasoned about or rejected. NORTH STAR (user, verbatim intent): "you should not be able to write bad code (logically similar or copied); it will be flagged" -- extend that to control flow: no recursion whose termination/depth cannot be statically bounded may pass unreasoned. DESIGN, three layers: (1) DETECT -- build a static call graph, find recursive SCCs incl. mutual recursion (frob-core, reuse for T-0288/T-0289). (2) PROVE-OR-ERROR -- termination is undecidable in general, so be SOUND not complete: prove the decidable fragment (structural descent on a well-founded argument; strictly-decreasing bounded integer measure to a guarded base case), and ERROR on everything unproven. The escape is a REASONED directive (frob:invariant terminates reason=... measure=...), auditable like any waiver -- consistent with the T-0289 arch-override philosophy (prove it, or justify it at the code; never silent). (3) DEPTH/STACK SAFETY -- tail-call detection (user example: Python has no TCO, so tail recursion over runtime-sized input is a stack-overflow/DoS bug): flag tail recursion with a rewrite-as-loop suggestion, and require a proven depth bound; recursion whose depth scales with input and has no bound is an error. CONSISTENCY: this shares the interprocedural call-graph substrate with dup helper-inlining (T-0288) and arch complexity-awareness (T-0289) -- one call-graph facility feeds dup (see through helpers), arch (complexity, mutual-recursion-via-helpers), and this (termination/depth). Unify the escape-hatch philosophy across arch/perf/recursion: the tool proves what it can, and every unprovable residue must carry a reasoned, counted directive -- that is what makes "you cannot write bad code silently" actually hold.
 
-<!-- ticket:T-draft-1fae8bfb -->
+<!-- ticket:T-0291 -->
 ```yaml
-id: T-draft-1fae8bfb
+id: T-0291
 title: 'arch: gates+app long-function/god-class burndown to zero'
 state: done
 kind: bug
