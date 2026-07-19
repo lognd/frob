@@ -350,6 +350,60 @@ class TestStaleDesign:
         hit = [v for v in result.danger_ok.violations if v.rule == SYS_STALE_DESIGN]
         assert any(v.node == "widget" and "fs-read" in v.detail for v in hit)
 
+    # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    def test_stale_design_skips_node_fully_within_graph_exclude(self, tmp_path: Path):
+        """T-0310: a node whose ENTIRE `code=` glob resolves only to
+        `[graph].exclude`'d paths (aprog-public's activities/slidegen/
+        content shape) has no file capability observation could ever see --
+        SYS101 'declared but never observed' is a category error for it,
+        not real design drift, and must NOT fire no matter what `may` it
+        declares."""
+        _write(tmp_path, "src/frob/widget/excluded/_io.py", "x = 1\n")
+        (tmp_path / "frob.toml").write_text(
+            '[graph]\nexclude = ["src/frob/widget/excluded/**"]\n', encoding="utf-8"
+        )
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="widget",
+                    trust="trusted",
+                    attrs=("code=src/frob/widget/excluded/**",),
+                    may=("net",),
+                ),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        assert not any(v.rule == SYS_STALE_DESIGN for v in result.danger_ok.violations)
+
+    # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    def test_stale_design_still_fires_when_node_has_non_excluded_file(
+        self, tmp_path: Path
+    ):
+        """The T-0310 skip must NOT weaken SYS101 for a node that has at
+        least one observable (non-excluded) file: a genuinely-undeclared-
+        vs-observed mismatch on that file must still fire, exactly as
+        before -- only the fully-excluded case is skipped."""
+        _write(tmp_path, "src/frob/widget/excluded/_io.py", "x = 1\n")
+        _write(tmp_path, "src/frob/widget/_main.py", "x = 1\n")
+        (tmp_path / "frob.toml").write_text(
+            '[graph]\nexclude = ["src/frob/widget/excluded/**"]\n', encoding="utf-8"
+        )
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="widget",
+                    trust="trusted",
+                    attrs=("code=src/frob/widget/**",),
+                    may=("net",),
+                ),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        hit = [v for v in result.danger_ok.violations if v.rule == SYS_STALE_DESIGN]
+        assert any(v.node == "widget" and "net" in v.detail for v in hit)
+
 
 class TestUnmodeledCode:
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"

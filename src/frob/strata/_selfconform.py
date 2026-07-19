@@ -411,15 +411,70 @@ def _extended_kind_violations(
     return found
 
 
+# frob:doc docs/strata/selfconform.md#sys101-fully-excluded-nodes
+# frob:ticket T-0310
+def _fully_excluded_node_ids(model: KernelModel, root: Path) -> frozenset[str]:
+    """Node ids whose ENTIRE `code=` glob set resolves to `[graph].exclude`'d
+    paths (T-0310, docs/strata/selfconform.md#sys101-fully-excluded-nodes):
+    SYS101's 'declared but never observed' is a category error for such a
+    node -- capability observation already skips excluded files (this
+    module's `_sorted_capability_files`/`_capability_binding`, T-0274), so
+    there is provably no file, excluded or not, observation could EVER see.
+    A node qualifies only if its glob matches at least one REAL (skip-dir-
+    filtered) file AND every such match is excluded -- a glob matching
+    nothing at all is a different, pre-existing case (e.g. a typo'd glob)
+    left to fire SYS101 unchanged, since that is genuine potential drift,
+    not a structurally-unobservable node. Uses the SAME exclude source
+    (`load_exclude_globs`/`is_excluded`) `_sorted_capability_files` already
+    uses for observation, so observation and this skip cannot diverge."""
+    exclude_globs = load_exclude_globs(root)
+    if not exclude_globs:
+        return frozenset()
+    all_files: list[str] = []
+    for path in sorted(root.rglob("*")):
+        if not path.is_file():
+            continue
+        rel_path = path.relative_to(root)
+        if any(is_skipped_dir(part) for part in rel_path.parts):
+            continue
+        all_files.append(rel_path.as_posix())
+    fully_excluded: set[str] = set()
+    for node in model.nodes:
+        globs = _node_code_globs(node)
+        if not globs:
+            continue
+        matched = [
+            rel for rel in all_files if any(fnmatch.fnmatch(rel, g) for g in globs)
+        ]
+        if not matched:
+            continue  # glob matches nothing at all -- unaffected, not this fix's target
+        if all(is_excluded(rel, exclude_globs) for rel in matched):
+            fully_excluded.add(node.id)
+            _log.info(
+                "selfconform: SYS101 skip: node %s code= glob resolves entirely "
+                "to graph-excluded paths (%d file(s)); capability declarations "
+                "unverifiable",
+                node.id,
+                len(matched),
+            )
+    return frozenset(fully_excluded)
+
+
 def _stale_design_violations(
     model: KernelModel, binding: CodeBinding, root: Path
 ) -> list[SelfConformViolation]:
     """SYS101 over every kind (net/fs/exec included) -- new code, since no
     shipped join checks this direction (module docstring's SYS101 gap
-    statement)."""
+    statement). T-0310: skips any node in `_fully_excluded_node_ids` --
+    a node whose entire code-glob set is graph-excluded has nothing
+    observable, so 'declared but never observed' is a category error, not
+    real design drift (docs/strata/selfconform.md#sys101-fully-excluded-nodes)."""
     observed_by_node = _observed_all_kinds_by_node(binding, root)
+    skip_nodes = _fully_excluded_node_ids(model, root)
     found: list[SelfConformViolation] = []
     for node in model.nodes:
+        if node.id in skip_nodes:
+            continue
         declared = _declared_kinds(node)
         observed = observed_by_node.get(node.id, frozenset())
         # frob:waive PERF004 reason="distinct small per-node diff set, not repeated"

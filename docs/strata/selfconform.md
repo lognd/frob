@@ -69,6 +69,35 @@ detection THREAT004 already runs.
   the reverse; `_threat.py::check_effect_completeness`'s docstring
   confirms THREAT004 is "the code-level `undeclared capability in code is
   an error` kicker", again one-directional.
+  <a id="sys101-fully-excluded-nodes"></a>
+  **Fully-excluded-node skip (T-0310).** SYS101's "declared but never
+  observed" join is a category error for a node whose ENTIRE `code=`
+  glob set resolves to `[graph].exclude`'d paths (T-0274): capability
+  *observation* already skips excluded files (module docstring above,
+  `_sorted_capability_files`), so such a node has provably zero files
+  observation could EVER see, excluded or not, forever -- there is
+  nothing "stale" about a design that structurally cannot be checked.
+  `_selfconform.py::_fully_excluded_node_ids` computes, once per audit,
+  which node ids match this: every real (skip-dir-filtered) file the
+  node's `code=` globs match is excluded, AND at least one such file
+  exists (a glob matching NOTHING at all is a different, pre-existing
+  case -- e.g. a typo'd glob or genuinely empty directory -- and still
+  fires SYS101 as before, unchanged by this fix). `_stale_design_
+  violations` skips any node in that set entirely (no SYS101 finding for
+  ANY of its declared capabilities) and logs an INFO line naming the
+  node and file count, so the skip is not silently invisible. A node
+  with even one NON-excluded observable file is unaffected: SYS101
+  still fires normally for any genuinely-unobserved declared capability
+  on that node -- only the fully-excluded case is skipped. This does not
+  change SYS100 (observed-but-undeclared): the inverse graphite finding
+  (`bind_code`/capability binding over-attributing bundled-JS effects to
+  a server node by walking raw FS) was ALREADY reconciled by T-0274 --
+  `_sorted_capability_files` and `_capability_binding` both honor
+  `[graph].exclude`, the SAME exclude source `_fully_excluded_node_ids`
+  reuses, so observation and the SYS101 skip are provably consistent
+  with each other; there is no separate over-attribution path left to
+  fix here.
+
 - **SYS102 unmodeled code.** A `src/frob/` top-level directory whose files
   (if any) are ALL `FOREIGN` to `bind_code`'s partition -- no node's
   `code=` glob claims it at all. Entirely NEW code (`_selfconform.py::
