@@ -1915,7 +1915,7 @@ the new timeout test) exit=0, 5.09s. Deletion-filter (`git diff main
 ```yaml
 id: T-0209
 title: capability scanner matches needles inside comments and strings
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-07-18'
@@ -1926,12 +1926,45 @@ scope:
 - src/frob/lang/**
 - tests/**
 - tickets.md
-evidence: []
+evidence:
+- tests/test_vet.py::TestCapabilityScan::test_comment_only_needle_does_not_fire
+- tests/test_vet.py::TestCapabilityScan::test_real_code_needle_still_fires_alongside_comment
+- tests/test_vet.py::TestCapabilityScan::test_string_literal_needle_still_fires
+- tests/test_vet.py::TestCapabilityScan::test_capability_module_self_scan_documented_false_positive
+- tests/test_vet.py::TestCapabilityScan::test_re_compile_alone_does_not_report_eval
+- tests/test_vet.py::TestCapabilityScan::test_bare_compile_call_still_reports_eval
+- tests/test_vet.py::TestCapabilityScan::test_genuine_eval_still_detected
+- tests/test_vet.py::TestCapabilityScan::test_scan_directory_capabilities_excludes_own_module
 attachments: []
 acceptance: []
 threat: null
 ```
 Filed from sibling-repo pilot P2 (lograder/aprog-public/aprog-private, 2026-07-18). Pilot P2 aprog-public: SYS100 reported capability net observed at assignments/api-harvester/assets/starter.py:22 -- that line is COMMENT text describing requests.get; the assignment forbids real network imports. Forced a false may declaration dragging bogus CWE-918 obligations -- corrupts the security posture the model attests (medium-high). Fix: consult tree-sitter comment/string spans (already produced by frob.lang) before substring matching; needle hits fully inside comment spans are dropped (string literals are subtler -- keep string hits for languages where code-in-string is an exec vector, e.g. eval payloads, but drop pure-comment hits everywhere). Litmus: comment-only fixture must NOT fire; code fixture still fires; the T-0151/T-0201 self-match tests stay green. Note duplicate-line issue too: the same site was reported twice (pilot gap 12) -- dedupe observations by (file,line,kind) while in there.
+
+## Done report
+
+Changed:
+- src/frob/vet/_capability.py::_comment_byte_spans (new)
+- src/frob/vet/_capability.py::_fully_in_any_span (new)
+- src/frob/vet/_capability.py::_needle_hits_outside_comments (new)
+- src/frob/vet/_capability.py::_has_bare_compile_call (signature changed: bytes + comment_spans, T-0151 behavior preserved)
+- src/frob/vet/_capability.py::_matched_capabilities (bytes-based, comment-filtered)
+- src/frob/vet/_capability.py::scan_file_capabilities (reads bytes, passes comment spans)
+- src/frob/vet/_capability.py::scan_file_operations (reads bytes, passes comment spans)
+- src/frob/vet/_capability.py::scan_file_fingerprints (reads bytes, passes comment spans -- same false-positive class, same file, fixed for consistency)
+- src/frob/lang/__init__.py::__all__ (added COMMENT_TYPES export -- needed by _capability.py's tree-sitter comment-span walk)
+
+Fix: every needle hit in `_capability.py`'s substring scan (`scan_file_capabilities`/`scan_file_operations`/`scan_file_fingerprints`) is now checked against tree-sitter COMMENT node byte-spans for the same file (`frob.lang.raw_tree` + `frob.lang.COMMENT_TYPES`); a hit fully contained in a comment span is dropped. STRING literals are deliberately left unfiltered (documented in the module docstring's new T-0209 section): distinguishing a genuine string-embedded exec vector from pure prose needs per-registry-entry judgment this substring scanner does not have, and leaving strings alone keeps the locked self-scan false positive (`test_capability_module_self_scan_documented_false_positive`, which fires on `"cmdclass"`/`"os.environ"` inside this module's own docstring -- a string/comment-text node, not a `#`-comment node) unchanged. Comment-span filtering degrades to the pre-T-0209 unfiltered scan (empty span tuple) for any file `frob.lang` cannot parse or has no grammar for (e.g. `.js`/`.jsx`/`.mjs`/`.cjs`, which this module's own `typescript` bucket accepts but `frob.lang._EXTENSION_TABLE` does not).
+
+Dedupe investigation (pilot gap 12, "same site reported twice"): `_capability.py`'s own return shapes have no duplicate to dedupe in this ticket's scope -- `scan_file_capabilities` returns a bare `frozenset[str]` (no per-line entries, dedupe is structural), and `scan_file_operations`/`scan_file_fingerprints` each visit `DANGEROUS_OPERATIONS`/`CVE_FINGERPRINTS` once and append an entry at most once per file (verified no duplicate registry rows: 89 entries, 0 duplicate (language, capability_kind, function_or_pattern) triples). The duplicate-observation symptom traces to `src/frob/strata/_selfconform.py`'s SYS100 join instead (`_core_undeclared_violations` + `_extended_kind_violations` can each independently flag the same capability on the same node), which is outside this ticket's scope glob -- filed as a new ticket (T-draft-bd948483, will renumber on land) rather than silently expanded into.
+
+Litmus verified manually: a `#`-comment-only file mentioning `requests.get` does NOT report `net`; the same needle in real code still reports `net`; a needle appearing in both a comment AND real code in the same file still reports (comment occurrence does not mask the real one).
+
+Evidence: tests/test_vet.py::TestCapabilityScan::test_comment_only_needle_does_not_fire, tests/test_vet.py::TestCapabilityScan::test_real_code_needle_still_fires_alongside_comment, tests/test_vet.py::TestCapabilityScan::test_string_literal_needle_still_fires, tests/test_vet.py::TestCapabilityScan::test_capability_module_self_scan_documented_false_positive, tests/test_vet.py::TestCapabilityScan::test_re_compile_alone_does_not_report_eval, tests/test_vet.py::TestCapabilityScan::test_bare_compile_call_still_reports_eval, tests/test_vet.py::TestCapabilityScan::test_genuine_eval_still_detected, tests/test_vet.py::TestCapabilityScan::test_scan_directory_capabilities_excludes_own_module (all 8 pass; full tests/test_vet.py + tests/test_capability_registry.py + tests/test_lang.py + tests/unit/strata/test_selfconform.py + tests/unit/strata/test_effects.py + tests/unit/strata/test_cve_fingerprint.py green)
+
+Filed: T-draft-bd948483 (SYS100 core+extended duplicate-observation dedupe, out of this ticket's scope)
+
+Gates: `frob check --delta --ticket T-0209 --json` reports 0/7 new violations (baseline stamped from a dirty working tree in this pass -- see note below); `frob test --base main` selects the touched-set (test_vet.py, test_capability_registry.py, test_lang.py, test_cli_vet.py hook test) and passes, exit=0. `ruff check`/`ty check` clean on all three changed files. NOTE: this worktree already carried unrelated uncommitted changes for another ticket (T-0231-shaped: src/frob/__main__.py, src/frob/app/sys_runner.py, src/frob/gates/__init__.py, tests/integration/test_interfaces.py, tests/system/test_cli_sys_plan.py, tests/test_gates.py, and a `state: in-progress` edit to T-0231 in tickets.md) present before this ticket's work began; none of those files were touched by this ticket and this Done report's commit stages only T-0209's own files plus this tickets.md entry.
 
 <!-- ticket:T-0210 -->
 ```yaml
@@ -3160,7 +3193,7 @@ Filed from sibling-repo pilot P1 (graphite/feldspar/lithos, 2026-07-18). P1 gap 
 id: T-0231
 title: 'small CLI/UX batch: --version flag, sys plan dry-run label, DOC001 hint for
   missing docs root'
-state: queued
+state: in-progress
 kind: ux
 origin: agent
 created: '2026-07-18'
