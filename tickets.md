@@ -8481,6 +8481,31 @@ threat: null
 ```
 Surfaced by reviewer 2026-07-19 during the core-commands arch burndown: extracting a helper directly above an existing def silently rebinds that defs frob: directives onto the new (private) helper. COV001 does NOT catch this -- it only checks a directive is attached to a resolvable symbol, not the semantically-intended one. So a frob:waive TEST005 or frob:tests evidence binding can silently start describing the wrong function (misrepresenting coverage debt / test evidence) and every gate stays green. This bit TWICE (scan_tree, renumber_one) and was only caught by manual review. Candidate detections: (a) a directive whose target is a PRIVATE (_underscore) symbol when the same directive kind/anchor previously bound a public symbol in that file (git-diff-aware), (b) a frob:tests binding whose named test function bodies do not actually exercise the bound symbol (call-graph reachability -- ties into the shared call-graph substrate of T-0288/T-0290), (c) a frob:doc #public-api anchor on a private helper. This is core to the north star: a displaced obligation is worse than a behavior bug because it is silent. See [[static-quality-vision]].
 
+<!-- ticket:T-0298 -->
+```yaml
+id: T-0298
+title: 'COV003: resolve file-level and directory-level evidence (any collected test
+  under the path)'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-19'
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/__init__.py,src/frob/testing/**,tests/**,docs/modules/gates.md,tickets.md
+evidence: []
+attachments: []
+acceptance:
+- given ticket evidence naming a whole test FILE (tests/test_vet.py) or a DIRECTORY
+  (tests/unit/deploy), when COV003 resolves it, then it resolves iff the collected
+  manifest contains at least one node under that path -- not an error
+- given evidence that resolves to no collected test at any granularity (typo, deleted
+  file), then COV003 still errors (the real failure is preserved)
+threat: null
+```
+Root cause of a 25-error main-red incident 2026-07-19: both arch-burndown agents recorded file-level evidence (tests/test_vet.py, tests/unit/deploy) and one embedded a kind="unit" attr into the id, none of which resolve because COV003 only matches node-level file::Class::method against the collected manifest. For a refactor touching ~20 files, "this whole test file passes" is a reasonable and natural evidence granularity; forcing one node-id per file is what led both agents (and me at close) to record unresolvable ids. Make file- and directory-level evidence first-class: resolve iff >=1 collected node lives under the path. Complements T-0293 (reject/normalize a genuinely-unresolvable id at RECORD time) and T-0292 (fix the bogus "frob test --collect" hint) -- together these make COV003 both lenient where it should be and strict where it must be. Until this lands, evidence MUST be node-level file::Class::method.
+
 <!-- ticket:T-draft-1fae8bfb -->
 ```yaml
 id: T-draft-1fae8bfb
