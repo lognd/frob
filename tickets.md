@@ -2393,6 +2393,36 @@ EXISTING TICKETS the daemon SUBSUMES or de-risks (fold in as children/deps of th
   changes); only practical warm. CHILD.
 - T-0323 (git merge driver for tickets.md) -- INDEPENDENT of the daemon; do first regardless.
 
+
+## Client-interface design constraints (HARD requirements: no init/deinit, impossible to misuse)
+The daemon is a TRANSPARENT ACCELERATOR, never a thing the user/agent manages. Non-negotiable:
+
+1. NO lifecycle commands in the happy path. There is NO `frob daemon start` / `stop` / `init` a
+   client must run first. You just run `frob <cmd>` (or `make check`, or an MCP call) and it works.
+   (A `frob daemon status`/`stop` MAY exist for debugging, but nothing REQUIRES them.)
+2. TRANSPARENT AUTOSTART: the first query that could benefit spawns the daemon if none is running,
+   via an atomic single-instance guard (flock/socket-bind on a .frob/ lockfile) so racing clients
+   resolve to exactly one daemon -- never an "already running" error, never two daemons.
+3. AUTO-SHUTDOWN on idle (N min) and on project-dir removal. No orphaned processes; nothing to clean
+   up. Killing the daemon at any moment loses NOTHING (all durable state is content-addressed on disk).
+4. CORRECTNESS MUST NOT DEPEND ON THE DAEMON (the #1 safety invariant): a daemon-served result MUST
+   equal the in-process result, always -- the daemon only makes it FASTER. Enforce with single-flight
+   + digest-keyed cache + FS-watch invalidation, and a property/differential test that daemon-answer
+   == cold-answer for every query type. A stale-cache-served-as-fresh is the cardinal failure -- attack
+   it in review (races, watch-miss, clock skew) like a security bug.
+5. TRANSPARENT FALLBACK: if the daemon is unreachable / crashed / a STALE frob VERSION (post-upgrade)
+   / times out, the client SILENTLY falls back to in-process computation (and best-effort restarts a
+   fresh daemon). The client NEVER hangs and NEVER surfaces a daemon error for a normal command.
+6. SELF-HEALING VERSION SKEW: on a frob/parser upgrade the client detects the running daemon's version
+   mismatch and the daemon self-replaces (ties to T-0243/T-0279) -- no manual restart, no stale cache.
+7. ZERO required config; opt-OUT only (e.g. FROB_NO_DAEMON=1 forces in-process). Works on a fresh clone
+   with no setup step -- this is exactly the 'no awkward setup step' the frob owner wants everywhere.
+
+Acceptance: a fresh clone runs `frob check` with the daemon auto-managed end-to-end, no init/deinit
+command ever issued; kill -9 the daemon mid-use -> next command transparently succeeds (respawn or
+in-process); daemon-answer == cold-answer differential test green for every served query; FROB_NO_DAEMON=1
+fully bypasses it with identical results.
+
 <!-- ticket:T-0322 -->
 ```yaml
 id: T-0322
