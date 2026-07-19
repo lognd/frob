@@ -33,6 +33,7 @@ from frob.strata import (
     NoFlow,
     Quantity,
     Rung,
+    Waiver,
 )
 from frob.strata._audit import (
     AuditReport,
@@ -241,3 +242,117 @@ class TestHardenedLitmus:
         report = result.danger_ok
         assert report.proved
         assert report.gaps == ()
+
+
+def _shared_two_user_model() -> KernelModel:
+    """Two service users sharing a writable path and a listening port, no
+    declared `Flow` between them -- the HOST001/HOST002/blast-radius VULN
+    shape (`test_host_isolation.py::_shared_user_model`'s convention),
+    reused here to prove T-0280's CLI-level wiring: `evaluate_
+    exhaustiveness` alone, with zero hand-written harness, must surface
+    HOST001/HOST002/HOST-BLAST for this model."""
+    api = Node(
+        id="api",
+        trust="trusted",
+        attrs=(
+            "runs_as=svc-a",
+            "unit",
+            "owns=/var/lib/shared:0664",
+            "listens=9000",
+        ),
+    )
+    worker = Node(
+        id="worker",
+        trust="trusted",
+        attrs=(
+            "runs_as=svc-b",
+            "unit",
+            "owns=/var/lib/shared:0664",
+            "listens=9000",
+        ),
+    )
+    return KernelModel(nodes=(api, worker))
+
+
+def _isolated_hardened_two_user_model() -> KernelModel:
+    """Two service users with disjoint owns/listens and explicit waivers
+    for the two structurally-unprovable sub-targets (shared-group,
+    sudoers) -- the HOST001/HOST002 HARDENED shape (`test_host_isolation.
+    py::_isolated_hardened_model`'s convention) that discharges cleanly,
+    including the blast-radius scenario claims."""
+    api = Node(
+        id="api",
+        trust="trusted",
+        attrs=("runs_as=svc-a", "unit", "owns=/etc/api:0640", "listens=8080"),
+        waives=(
+            Waiver(
+                rule="HOST001:shared-group",
+                reason="no group grammar yet, T-draft-7b5b5541",
+            ),
+            Waiver(
+                rule="HOST002:sudoers",
+                reason="no sudoers grammar yet, T-draft-7b5b5541",
+            ),
+        ),
+    )
+    worker = Node(
+        id="worker",
+        trust="trusted",
+        attrs=("runs_as=svc-b", "unit", "owns=/etc/worker:0640", "listens=8081"),
+        waives=(
+            Waiver(
+                rule="HOST002:sudoers",
+                reason="no sudoers grammar yet, T-draft-7b5b5541",
+            ),
+        ),
+    )
+    return KernelModel(nodes=(api, worker))
+
+
+class TestHostWiring:
+    """T-0280: HOST001/HOST002 movement proofs + the compromised-user
+    blast-radius scenario were built and sound (T-0256) but had ZERO
+    caller reaching them from `frob sys audit` -- these tests exercise
+    `evaluate_exhaustiveness` (the same entrypoint `frob sys audit`
+    dispatches to, `test_interfaces.py::TestInterfaces.
+    test_main_cli_dispatches`) directly, with no hand-written harness, to
+    prove the wiring closes the CLI-reachability gap."""
+
+    def test_shared_model_gaps(self):
+        model = _shared_two_user_model()
+        result = evaluate_exhaustiveness(model)
+        assert result.is_ok
+        report = result.danger_ok
+        assert not report.proved
+
+        rules = {g.rule for g in report.gaps}
+        assert "HOST001" in rules
+        assert "HOST002" in rules
+        assert "HOST-BLAST" in rules
+        assert "host:model" in report.views_checked
+        assert "host:blast-radius:svc-a" in report.views_checked
+        assert "host:blast-radius:svc-b" in report.views_checked
+
+    def test_hardened_model_proved(self):
+        model = _isolated_hardened_two_user_model()
+        result = evaluate_exhaustiveness(model)
+        assert result.is_ok
+        report = result.danger_ok
+        assert report.proved
+        assert report.gaps == ()
+        waived_rules = {(g.rule, g.sub_target) for g in report.waived}
+        assert ("HOST001", "shared-group") in waived_rules
+        assert ("HOST002", "sudoers") in waived_rules
+
+    def test_no_runs_as_no_gaps(self):
+        """A model with no `runs_as` service users (e.g. `design/frob.
+        strata`'s own self-audit model) declares no HOST001/HOST002/
+        blast-radius obligation at all -- confirms T-0280's wiring adds
+        zero regression for models outside its scope."""
+        model = KernelModel(nodes=(Node(id="solo", trust="trusted"),))
+        result = evaluate_exhaustiveness(model)
+        assert result.is_ok
+        report = result.danger_ok
+        assert report.proved
+        assert "host:model" in report.views_checked
+        assert not any(v.startswith("host:blast-radius:") for v in report.views_checked)

@@ -200,6 +200,22 @@ correctly REFUTES (`tests/unit/strata/test_host_isolation.py::
 test_blast_radius_refutes_over_shared_writable_path_with_no_declared_flow`);
 the disjoint hardened model still discharges (`test_blast_radius`).
 
+### CLI reachability (T-0280)
+
+`frob sys audit` (`_audit.py::evaluate_exhaustiveness`) folds HOST001/
+HOST002 into its normal `FamilyGap` stream under the fixed `"host"`
+family/`"model"` view -- `evaluate_host_isolation_waived`'s own T-0174
+waiver channel is honored as-is (its `.kept` is already post-waiver, its
+`.waived`/`.stale` are folded straight into the report). Additionally, one
+`build_compromised_user_scenario` is auto-generated and evaluated PER
+`runs_as` service user (the same "desugar to an auto-generated scenario"
+shape `_crash.py` uses for `on crash` contracts) -- a refuted blast-radius
+claim surfaces as a `HOST-BLAST` gap under the `"blast-radius"` view. A
+real repo now sees the full isolation verdict (proved or gaps named) from
+one command; before this, neither function had any caller reaching them
+from the CLI at all (a hand-written harness was the only way to invoke
+them).
+
 ## The deploy generator
 
 <!-- frob:ticket T-0257 -->

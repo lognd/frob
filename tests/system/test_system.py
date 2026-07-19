@@ -293,3 +293,89 @@ def test_arch_max_function_lines_flag():
     r = run("arch", str(FIXTURES / "arch_python"), "--max-function-lines", "200")
     assert r.returncode == 0
     assert "long-function" not in r.stdout
+
+
+# ---------------------------------------------------------------------------
+# frob sys audit -- T-0280: HOST001/HOST002 movement proofs + the
+# compromised-user blast-radius scenario were sound (T-0256) but had ZERO
+# caller reaching them from any CLI command -- these two tests exercise the
+# REAL `frob sys audit` subprocess entrypoint against a minimal repo (own
+# frob.toml + design/*.strata), proving a real repo now sees the isolation
+# verdict with one command, not a hand-written harness.
+# ---------------------------------------------------------------------------
+
+_SHARED_USER_STRATA = """\
+module fixture_shared
+
+node api : trusted {
+    clearance Internal;
+    runs_as "svc-a";
+    unit;
+    owns "/var/lib/shared" "0664";
+    listens 9000;
+}
+
+node worker : trusted {
+    clearance Internal;
+    runs_as "svc-b";
+    unit;
+    owns "/var/lib/shared" "0664";
+    listens 9000;
+}
+"""
+
+_HARDENED_TWO_USER_STRATA = """\
+module fixture_hardened
+
+node api : trusted {
+    clearance Internal;
+    runs_as "svc-a";
+    unit;
+    owns "/etc/api" "0640";
+    listens 8080;
+    waive "HOST001:shared-group" reason "no group grammar yet, T-draft-7b5b5541";
+    waive "HOST002:sudoers" reason "no sudoers grammar yet, T-draft-7b5b5541";
+}
+
+node worker : trusted {
+    clearance Internal;
+    runs_as "svc-b";
+    unit;
+    owns "/etc/worker" "0640";
+    listens 8081;
+    waive "HOST002:sudoers" reason "no sudoers grammar yet, T-draft-7b5b5541";
+}
+"""
+
+
+def _write_design_repo(tmp_path: Path, strata_source: str) -> Path:
+    """A minimal repo root `frob sys audit` can walk: a bare `frob.toml`
+    (default `[strata].design_dir` = `design`) plus one `.strata` fixture."""
+    (tmp_path / "frob.toml").write_text("", encoding="utf-8")
+    design_dir = tmp_path / "design"
+    design_dir.mkdir()
+    (design_dir / "fixture.strata").write_text(strata_source, encoding="utf-8")
+    return tmp_path
+
+
+def test_sys_audit_shared_writable_two_user_model_exits_nonzero_with_host001(
+    tmp_path,
+):
+    repo = _write_design_repo(tmp_path, _SHARED_USER_STRATA)
+    r = run("sys", "audit", str(repo))
+    assert r.returncode != 0
+    assert "HOST001" in r.stderr
+
+
+def test_sys_audit_hardened_waived_two_user_model_proved(tmp_path):
+    repo = _write_design_repo(tmp_path, _HARDENED_TWO_USER_STRATA)
+    r = run("sys", "audit", str(repo))
+    # "GAP"/"HOST001"/"HOST002" only ever print via `_log.error` when
+    # `report.proved` is False (`_print_audit_report`) -- a clean exit
+    # code PLUS the absence of any GAP line is the CLI-observable proof
+    # this model discharges, matching the returncode-is-truth convention
+    # every other test in this file uses (`sys audit`'s "PROVED" line is
+    # `_log.info`, filtered out under this CLI's default log level, so it
+    # is not asserted on directly).
+    assert r.returncode == 0
+    assert "GAP" not in r.stderr
