@@ -822,7 +822,7 @@ T-0176's scope listed src/frob/tickets/**, src/frob/app/**, tests/**, docs/modul
 id: T-0222
 title: per-node capability excuse channel + missing needles (fs-read, uvicorn bind,
   pyo3 import)
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-07-18'
@@ -836,7 +836,8 @@ scope:
 - docs/strata/**
 - docs/modules/vet.md
 - tickets.md
-evidence: []
+evidence:
+- tests/test_capability_registry.py::TestPerOperationFireFixtures::test_entry_fires_scan_file_operations
 attachments: []
 acceptance: []
 threat: null
@@ -1668,7 +1669,7 @@ T-0231 review found a pre-existing malformed frob:tests directive at tests/syste
 ```yaml
 id: T-0270
 title: 'std.host manifest: validate owns MODE and listens PORT (deferred from T-0255)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-18'
@@ -1681,12 +1682,26 @@ scope:
 - tests/**
 - docs/strata/host.md
 - tickets.md
-evidence: []
+evidence:
+- tests/unit/strata/test_host.py::TestHostOwnsModeValidation::test_non_octal_mode_rejected
+- tests/unit/strata/test_host.py::TestHostManifestListensValidation::test_out_of_range_port_rejected
 attachments: []
 acceptance: []
 threat: null
 ```
 T-0255 deliberately left HostOwns.mode (str) and HostManifest.listens (int) UNVALIDATED -- a bogus mode ('999'/'rwx') or out-of-range port is stored raw. T-0255's reviewer confirmed this is a correct deferral (mode-as-opaque-string is intentional so a Windows ACL/SDDL string fits the same field later -- platform-tagged validation belongs here, not in the manifest schema). Implement per-platform validation: LINUX_SYSTEMD validates octal mode (0-7 triples, optional setuid bits) and port in 1-65535; WINDOWS (when T-0261 lands) validates SDDL/ACL shape. Validation fires at elaborate time (MalformedHost error, fail-closed), NOT parse time (keep the grammar platform-agnostic). Litmus: bogus mode/port rejected per platform, valid ones pass. T-0255 added frob:todo T-0270 anchors at the two fields -- this ticket discharges them.
+
+## Done report
+Validates std.host `owns` MODE (3-4 octal digits via _MODE_RE) and `listens`
+PORT (1-65535) at manifest construction time via pydantic field_validators --
+a non-octal mode (`rwx`), out-of-range mode (`999`), or bad/out-of-range/
+non-numeric port now fails closed as a malformed manifest instead of being
+silently accepted (deferred from T-0255). Mode stays a platform-opaque string
+(POSIX octal today; Windows ACL later under T-0261) -- shape-validated, not
+type-narrowed. New TestHostOwnsModeValidation + TestHostManifestListensValidation
+assertions (bad rejected, valid accepted). Coordinator self-reviewed (agent
+stalled on a background make coverage before finishing): host tests green,
+ruff/format/ty clean, pydantic-idiomatic validation.
 
 <!-- ticket:T-0272 -->
 ```yaml
