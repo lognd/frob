@@ -342,6 +342,31 @@ DANGEROUS_OPERATIONS: tuple[DangerousOperation, ...] = (
         ("cffi",),
         (),
     ),
+    # T-0222 (sibling-pilot P1 gap 5): a compiled/native extension import
+    # (a pyo3-built .so, a plain C-extension module) is real FFI surface
+    # that ctypes/cffi's needles above never see -- `import strata_core`
+    # (this very repo's own native binding) is ordinary Python import
+    # syntax, indistinguishable by substring from a pure-Python import.
+    # `importlib.machinery.ExtensionFileLoader` is the one unambiguous
+    # stdlib literal naming "this is a compiled extension module loader"
+    # (used by CPython's own import machinery, and by any code that loads
+    # a `.so`/`.pyd` extension module explicitly) -- narrow, no known
+    # false-positive class (unlike a bare `.so`/`.pyd` substring, which
+    # would fire on prose mentioning shared-library files).
+    _op(
+        "python",
+        "importlib",
+        "importlib.machinery.ExtensionFileLoader",
+        "ffi",
+        "explicitly loads a compiled/native extension module (.so/.pyd), "
+        "the same native-code memory-safety boundary as ctypes/cffi",
+        "prefer the ordinary import system for known-trusted packages; "
+        "only use ExtensionFileLoader directly for a vetted, pinned "
+        "native extension path",
+        "high",
+        ("ExtensionFileLoader",),
+        (),
+    ),
     # -- python: net -----------------------------------------------------------
     _op(
         "python",

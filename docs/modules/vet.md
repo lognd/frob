@@ -31,7 +31,7 @@ immediately.
 | fs-write | writes outside the package's own tree/tempdirs |
 | fs-read | reads local filesystem state (config loads, no mutation) -- T-0018, graphite adoption, docs/strata/selfconform.md#fs-read-fs-write |
 | env | os.environ/process.env/std::env reads |
-| ffi | ctypes/cffi/NAPI/unsafe extern |
+| ffi | ctypes/cffi/NAPI/unsafe extern/`importlib.machinery.ExtensionFileLoader` (T-0222: explicit compiled/native extension module loading -- a bare `import <native-module>` is scanner-invisible, so this stdlib literal is the narrow, unambiguous signal) |
 | native | compiled artifacts in the wheel/crate (opaque to scanning) |
 | install-hook | setup.py/build.rs/postinstall scripts containing any of the above |
 | obfuscation | decode-then-eval chains, high-entropy string blobs, minified-source-in-sdist mismatch |
@@ -544,6 +544,27 @@ dropped.
 | cargo | wasm-bindgen | patterned | `wasm_bindgen::`/`#[wasm_bindgen]` -- ffi (Rust/JS wasm boundary) |
 | cargo | crossbeam | pure | concurrency primitives; no dangerous surface |
 | cargo | thiserror | pure | error-derive macro; no dangerous surface |
+
+### T-0222: socket/uvicorn "bind" observability (investigation, no new kind)
+
+Sibling-pilot P1 gap 5 asked for a `bind`/`listen` capability needle so a
+server that binds a port is observable. Investigation found this already
+patterned, not missing: `uvicorn.run(` (row above) and the c-cpp
+`socket()/connect()/bind()` entry both already fire `net` -- the tier-2
+`may` vocabulary (`frob.strata._effects._KIND_MAP`) delegates only
+`net`/`fs`/`exec`, so a distinct `bind` kind would duplicate `net` rather
+than add a new discharge shape (the exact anti-pattern
+[Benign capabilities](../guides/extending/benign-capabilities.md#common-
+mistakes) warns against -- "confusing this vocabulary with the threat
+catalog's"). No new kind added. The one real gap this pass closes is
+narrower: Python's low-level `from socket import socket` import idiom
+(no `socket.` substring) is still scanner-invisible under the existing
+`socket.socket/create_connection` needle -- left as a known, documented
+gap (not claimed fixed) since a bare `.bind(`/`.listen(` needle would
+collide with unrelated APIs (`tkinter.Widget.bind`, SQLAlchemy's
+`Engine.bind`) with no cheap discriminator, the same false-positive-risk
+discipline `_capability.py`'s module docstring already documents for
+`compile(`/`napi`.
 
 ## Public API
 
