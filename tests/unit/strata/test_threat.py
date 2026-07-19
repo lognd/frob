@@ -723,6 +723,55 @@ class TestMitigationKindChokepoint:
         assert result.danger_ok == ()
 
 
+def _load_litmus_model(filename: str) -> KernelModel:
+    """Parse+elaborate one `.strata` fixture under `litmus/` end to end
+    (test_managed.py's `_load_model` precedent -- real `strata_core`
+    parser, never a hand-built `KernelModel`, for the library-mode-
+    discharge litmus pair below)."""
+    from frob.strata import elaborate, parse_module
+
+    text = (Path(__file__).resolve().parent / "litmus" / filename).read_text(
+        encoding="utf-8"
+    )
+    module = parse_module(text)
+    assert module.is_ok, module.danger_err
+    elaborated = elaborate(module.danger_ok)
+    assert elaborated.is_ok, elaborated.danger_err
+    return elaborated.danger_ok
+
+
+class TestLibraryModeForeignlessDischarge:
+    """T-0223 (docs/strata/threat.md#library-mode-discharge-by-absence): a
+    foreign-less library model can discharge a CWE-78 `exec` obligation by
+    naming the `foreign` TRUST LEVEL directly in a `NoFlow(src="foreign",
+    dst=<node>)` claim -- with no foreign-trust node in the model,
+    `_claims.py::_expand` resolves `"foreign"` to the empty node set, so
+    the claim's witness search is vacuously empty and the `NoFlow` is
+    PROVED by absence, not by a modeled chokepoint. The SAME claim shape
+    still fires (REFUTED) the moment a real foreign source reaches the
+    sink with no boundary -- no weakening for a model with a genuine
+    injection path (library_exec_foreign_reaches_still_fires.strata)."""
+
+    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:ticket T-0223
+    def test_foreign_less_library_model_discharges_cwe_78_by_absence(self):
+        model = _load_litmus_model("library_exec_no_foreign_discharges.strata")
+        result = check_discharge_completeness(model)
+        assert result.is_ok
+        assert result.danger_ok == ()
+
+    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:ticket T-0223
+    def test_real_foreign_source_reaching_the_sink_still_fires(self):
+        model = _load_litmus_model("library_exec_foreign_reaches_still_fires.strata")
+        result = check_discharge_completeness(model)
+        assert result.is_ok
+        violations = {(v.cwe, v.node): v for v in result.danger_ok}
+        assert ("CWE-78", "runner") in violations
+        assert violations[("CWE-78", "runner")].rule == "THREAT003"
+        assert "REFUTED" in violations[("CWE-78", "runner")].detail
+
+
 class TestBenignCapability:
     # frob:tests src/frob/strata/_threat.py::BenignCapability kind="unit"
     def test_empty_reason_is_rejected(self):

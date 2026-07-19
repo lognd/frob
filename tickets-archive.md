@@ -14208,8 +14208,8 @@ scope:
 - tests/**
 - tickets.md
 evidence:
-- tests/test_gates.py::TestCoverageGate.test_cov002_done_ticket_covers_own_closing_diff
-- tests/test_gates.py::TestCoverageGate.test_cov002_done_ticket_without_grace_still_fires
+- tests/test_gates.py::TestCoverageGate::test_cov002_done_ticket_covers_own_closing_diff
+- tests/test_gates.py::TestCoverageGate::test_cov002_done_ticket_without_grace_still_fires
 attachments: []
 acceptance: []
 threat: null
@@ -14303,14 +14303,14 @@ Changed (addendum):
 - src/frob/gates/__init__.py::_ticket_marker_in_diff_hunk -- new helper,
   reads `tickets.md` at `snapshot.root` and checks the bound ticket's
   marker line falls within a touched hunk span
-- tests/test_gates.py::TestCoverageGate.test_cov002_done_ticket_covers_own_closing_diff
+- tests/test_gates.py::TestCoverageGate::test_cov002_done_ticket_covers_own_closing_diff
   -- updated to write a real `tickets.md` via `write_ticket` and target the
   hunk span at the actual marker line, so the grace path is exercised for
   real instead of by an unchecked `(1, 1)` stub span
 - tests/test_gates.py::TestCoverageGate -- new
   `_marker_line` helper (finds a ticket's marker line number in
   `tickets.md` for building a precise `Hunk` span)
-- tests/test_gates.py::TestCoverageGate.test_cov002_stale_done_ticket_unrelated_tickets_md_touch_still_fires
+- tests/test_gates.py::TestCoverageGate::test_cov002_stale_done_ticket_unrelated_tickets_md_touch_still_fires
   -- new abuse-case regression: stale `DONE` T-0001 bound to `helper`,
   diff's `tickets.md` hunk only covers unrelated `DONE` T-0002's marker ->
   COV002 still fires. Confirmed this test FAILS on the pre-addendum code
