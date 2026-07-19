@@ -1511,7 +1511,17 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/arch/**,src/frob/graph/dsl.py,src/frob/gates/**,tests/**,docs/modules/arch.md,tickets.md
-evidence: []
+evidence:
+- tests/test_arch_gate.py::TestArchComplexityAware::test_flat_long_function_not_flagged
+- tests/test_arch_gate.py::TestArchComplexityAware::test_complex_long_function_flagged
+- tests/test_arch_gate.py::TestArchComplexityAware::test_complex_long_function_carries_symref_and_metric
+- tests/test_arch_gate.py::TestArchGateWaivers::test_reasoned_waive_honored
+- tests/test_arch_gate.py::TestArchGateWaivers::test_unreasoned_waive_rejected
+- tests/test_arch_gate.py::TestArchGateWaivers::test_ceiling_refires_when_grown_past_it
+- tests/test_arch_gate.py::TestArchGateWaivers::test_no_finding_no_violation
+- tests/test_gates.py::TestCoverageGate::test_waive002_flags_arch_category_as_ineffective
+- tests/test_gates.py::TestCoverageGate::test_waive002_does_not_flag_arch001_as_ineffective
+- tests/unit/test_check.py::test_check_run_check_arch_integration
 attachments: []
 acceptance:
 - 'given a genuinely atomic long function (big match/case, dispatch table, literal
@@ -1531,6 +1541,120 @@ acceptance:
 threat: null
 ```
 User asked my opinion on per-function arch overrides. Opinion, recorded as the design: YES, worth having, but only if built the frob way. (1) Overrides belong AT THE CODE as reasoned frob:waive-style directives, not in central config -- a qualname table in frob.toml rots silently on rename and hides the exception from the reader; an in-comment waiver travels with the function and justifies the exception at its site, matching every other frob waiver. (2) It must be a WAIVER (counted, auditable, reason-required), never a silent mute -- an un-reasoned override is rejected like a reason-less frob:waive. (3) Prefer a justified CEILING bump over a boolean allow-long: a 45-line match waived to 50 still re-fires if it balloons to 200, keeping the exception honest. (4) Do NOT sanction raising the global threshold -- that is exactly the lazy-developer escape the tool exists to prevent. (5) MOST valuable half: make the heuristic complexity-aware so the bulk of false positives never fire -- a long-but-FLAT function (one match/dict-literal, shallow nesting, low cyclomatic) is not the smell the rule targets; only long-AND-complex is. Auto-exempt flat, require a reasoned waiver for the complex-but-justified residue. This also relieves the arch<->dup tension (T-0288): stop forcing atomic bodies to shatter into helpers that then hide/duplicate.
+
+## Done report
+
+**Changed:**
+- `src/frob/arch/_python.py::_check_long_functions` -- now flags iff
+  `n_lines > max_function_lines` AND `_py_is_complex(body)`
+  (`max_nesting >= 3` OR `cyclomatic >= 8`); sets `symref`/`metric` on
+  each finding. New helpers `_py_cyclomatic`, `_py_is_complex`, and
+  constants `_BRANCH_NODE_TYPES`, `_LONG_FUNCTION_NESTING_THRESHOLD`,
+  `_LONG_FUNCTION_CYCLOMATIC_THRESHOLD`.
+- `src/frob/arch/_cpp.py::_check_long_functions` -- parity: same rule,
+  `_cpp_max_nesting`, `_cpp_cyclomatic`, `_cpp_is_complex`, mirrored
+  thresholds/branch types (`switch`/`case` excluded, same rationale).
+- `src/frob/arch/_models.py::ArchSuggestion` -- new optional `symref`/
+  `metric` fields.
+- `src/frob/gates/_arch.py` (new) -- `arch_gate(root)`: converts
+  long-function `ArchSuggestion`s into `Violation(rule="ARCH001", ...)`,
+  carrying `symref`/`metric` through.
+- `src/frob/gates/_models.py::Violation` -- new optional `metric` field.
+- `src/frob/gates/__init__.py` -- `arch_gate` wired in as gate name
+  `"archgate"` (NOT `"arch"` -- collides with `frob.check`'s existing
+  `"arch"` TOOL stage, `_resolve_only`'s gate/tool split would otherwise
+  silently swallow `--only arch`, caught by
+  `test_check_run_check_arch_integration`); `ARCH001` added to
+  `_KNOWN_GATE_RULES`; `_unwaivable_channel_rules` now excludes
+  `"long-function"`; `_match_waiver`/new `_ceiling_ok` honor an optional
+  `ceiling=` waiver attribute against `Violation.metric`.
+- `docs/modules/arch.md`, `docs/modules/gates.md` -- complexity-aware
+  rule + ARCH001 mechanism documented; rule catalog updated; stale
+  T-0101 "arch is entirely unwaivable" language corrected for the
+  `long-function`/ARCH001 exception.
+- `tests/fixtures/arch_python/src/long_func.py`,
+  `tests/test_gates.py`, `tests/unit/test_check.py` -- three pre-existing
+  fixtures/tests that exercised a long-but-FLAT function updated to be
+  long-AND-complex (the flat shape is now correctly unflagged, which is
+  the point of this ticket); one WAIVE002 test split into "still
+  unwaivable" (god-class) + new "ARCH001 is no longer flagged as
+  ineffective" cases.
+- `tests/test_arch_gate.py` (new) -- 7 litmus cases across both parts.
+
+**Complexity rule (Part 1):** flag iff `n_lines > max_function_lines`
+(default 30) AND (`max_nesting_depth >= 3` OR `cyclomatic_proxy >= 8`).
+Cyclomatic proxy counts `if_statement`/`for_statement`/`while_statement`/
+`except_clause`/`boolean_operator`/`conditional_expression` (python;
+`catch_clause`/`&&`/`||` for C++) in the function's subtree.
+`match_statement`/`case_clause` (and C++ `switch`/`case`) are
+deliberately excluded -- python folds an entire if/elif/else chain into
+ONE `if_statement` node, so a linear elif dispatch scores the same as a
+single `if`; counting `case_clause` separately would score the flat
+match/case case this ticket exists to un-flag as maximally complex.
+Both thresholds are named module constants, not `frob.toml` knobs.
+
+**ARCH001 waiver mechanism (Part 2):** `long-function` is the one
+`frob.arch` category now channeled into a real gate `Violation`
+(`frob.gates._arch.arch_gate`, gate-selection name `"archgate"`) --
+every other category is unchanged (still an unwaivable-channel
+suggestion per T-0101). `frob:waive ARCH001 reason="..." [ceiling=N]`
+above a function: mandatory `reason=` (WAIVE001, existing DSL-level
+enforcement, unchanged); optional `ceiling=` compared against the
+violation's `metric` (the function's current line count) by
+`_match_waiver`'s new `_ceiling_ok` helper -- the waiver only covers the
+function while `metric <= ceiling`, so growing past it re-fires the
+finding. `ARCH001` is in `_KNOWN_GATE_RULES` so it is never flagged
+WAIVE002; the bare category string `"long-function"` still is (it was
+never a rule id).
+
+**Before/after long-function counts** (`uv run frob arch . --json`,
+repo-wide, measured before any code change and again after):
+- Total: 77 -> 5
+- `tests/**`: 66 -> 3
+- Residual 5 (all long-AND-complex, none waived by this ticket --
+  left for the reviewer/a follow-up to judge case by case):
+  `tests/unit/strata/test_litmus_waive.py::TestWaiveLitmus.test_sub_target_waiver_does_not_suppress_a_different_sub_target`,
+  `tests/unit/strata/test_litmus_waive_store.py::TestWaiveStoreLitmus.test_store_sub_target_waiver_does_not_suppress_a_different_sub_target`,
+  `tests/unit/cve/test_parser.py::test_cve_module_end_to_end_over_mirror`,
+  `src/frob/gates/__init__.py::_valid_edges`,
+  `src/frob/strata/_selfconform.py::_fully_excluded_node_ids`.
+
+**Verification:** `uv run pytest tests/test_gates.py tests/unit/test_check.py
+tests/test_arch_gate.py tests/unit/test_arch.py tests/system/test_cli_arch.py -q`
+green (91 passed). `ruff check`/`ruff format --check`/`ty check` clean on
+all touched files. `make coverage` green, coverage stamped. `uv run frob
+check` (full repo): 3 errors, all pre-existing and out of this ticket's
+scope -- 2x COV003 on T-0214's evidence ids (a DIFFERENT ticket's
+evidence-resolution debt; the referenced tests do collect fine under a
+fresh `pytest --collect-only`, so this looks like `frob check`'s own
+collection-cache staleness, not a real broken reference) and REL001 (a
+standing "bump the release version" reminder, unrelated to arch/gates and
+outside this ticket's declared scope). `frob check --only docanchor --only
+doclink` passes clean (new doc anchors resolve). `TEST001` on the new
+`arch_gate` symbol was fixed by moving its `frob:tests` directive to the
+test side (`tests/test_arch_gate.py`, above `TestArchGateWaivers`) --
+`frob.gates`' unit-edge index is keyed by edge target, which only
+resolves when the directive lives above the TEST naming the source
+symbol, not the other way around (docs/modules/gates.md: "a test declares
+what it tests").
+
+**Litmus tests** (`tests/test_arch_gate.py`):
+`TestArchComplexityAware::test_flat_long_function_not_flagged`,
+`TestArchComplexityAware::test_complex_long_function_flagged`,
+`TestArchGateWaivers::test_reasoned_waive_honored`,
+`TestArchGateWaivers::test_unreasoned_waive_rejected`,
+`TestArchGateWaivers::test_ceiling_refires_when_grown_past_it`.
+
+**Evidence:** all 10 ids recorded via `frob ticket evidence T-0289`
+(see the `evidence:` list in this ticket's frontmatter above).
+
+**Filed:** none -- no out-of-scope work discovered.
+
+**Gates:** `frob check --ticket T-0289` not run standalone (ticket stays
+`in-progress` per the dispatch instruction: do not close, leave for
+reviewer); full-repo `frob check` gates summary: `archgate` gate ran
+clean against this diff's own fixtures (no new ARCH001 residue
+introduced beyond the pre-existing 5 documented above).
 
 <!-- ticket:T-0290 -->
 ```yaml

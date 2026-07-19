@@ -48,6 +48,7 @@ declaration).
 | SEC003 | secrets | a git-tracked file contains a live Stripe secret key (`sk_live_...`) or a private-key PEM header -- unwaivable, see `_UNWAIVABLE_RULES` |
 | WAIVE001 | (always on) | a `frob:waive` directive is missing `reason="..."` |
 | WAIVE002 | (always on) | a `frob:waive` targets a rule id that can never be matched -- see "Waive boundary" below |
+| ARCH001 | arch | `frob.arch`'s complexity-aware long-function check (docs/modules/arch.md) still flags a function after its flat-body filter -- the one `frob.arch` category channeled into a real gate `Violation`, waivable with a reasoned `frob:waive ARCH001 reason="..." [ceiling=N]` (T-0289) |
 
 Severity: `error` (exit 1) or `warn`; per-rule default overridable via the
 `[gates.severity]` table in `frob.toml` (`COV001 = "warn"`), applied as a
@@ -56,29 +57,35 @@ rule produced by any of the gates above is waivable at a site via
 `frob:waive RULE-ID reason="..."`; waivers are listed in every report, so a
 waiver is visible debt, never silence.
 
-### Waive boundary (T-0101)
+### Waive boundary (T-0101, revised T-0289)
 
 `frob:waive` only ever suppresses entries in a `GateReport`'s `violations`
 tuple -- `_apply_waivers` matches a waiver's target against `Violation.rule`
-and can never see anything that isn't a `Violation`. Two `frob check` tool
-stages produce diagnostics a different way and were never reachable:
+and can never see anything that isn't a `Violation`. `frob check`'s
+`frob-arch` tool stage calls `frob.arch.analyze_project` directly and
+wraps its `ArchSuggestion`s straight into `Diagnostic`s, bypassing
+`frob.gates` entirely -- `god-class`, `high-coupling`, `deep-nesting`,
+`abstraction-opportunity`, and `large-file` are still only reachable that
+way, so a `frob:waive` naming one of those categories is flagged as
+**WAIVE002** (ineffective).
 
-- **`frob-arch`** (`long-function`, `god-class`, `high-coupling`,
-  `deep-nesting`, `abstraction-opportunity`, `large-file`): `frob.check`
-  calls `frob.arch.analyze_project` directly and wraps its
-  `ArchSuggestion`s straight into `Diagnostic`s, bypassing `frob.gates`
-  entirely.
-- Any rule id that is simply a typo or a rule that was never registered.
+`long-function` is the ONE exception (T-0289): `frob.gates._arch.arch_gate`
+now runs `analyze_project` a second time inside the `archgate` GATE (a
+distinct `frob check`/`run_gates` selection name from the `frob-arch` TOOL
+stage above -- do not conflate the two) and turns every `long-function`
+suggestion into a real `ARCH001` `Violation`, symref-bound to the exact
+function. `ARCH001` is in `frob.gates._KNOWN_GATE_RULES`, so
+`frob:waive ARCH001 reason="..." [ceiling=N]` is a real, effective,
+auditable waiver -- not flagged by WAIVE002 -- while
+`frob:waive long-function reason="..."` (the bare category name) still is,
+since that string was never a rule id `_apply_waivers` could match.
 
-Rather than silently doing nothing (the bug this ticket exists to close)
-or growing the waiver-matching machinery into `frob.check`'s Diagnostic
-pipeline (a bigger surface change than the problem warrants), a `frob:waive`
-naming one of these is flagged as **WAIVE002**: a loud, always-on WARN
-listing the waiver as ineffective and why. `frob.gates._KNOWN_GATE_RULES`
+Any rule id that is simply a typo or a rule that was never registered is
+also flagged as WAIVE002 the same way. `frob.gates._KNOWN_GATE_RULES`
 (plus the run's loaded `[policy]` rule ids) is the whitelist; anything
-outside it is presumed unwaivable. If a future change makes the arch
-channel waivable, delete the `ArchCategory` half of
-`_unwaivable_channel_rules` and this note.
+outside it is presumed unwaivable. If a future change makes another arch
+category waivable, remove it from `_unwaivable_channel_rules`'s returned
+set the same way `long-function` was removed, and update this note.
 
 ## Public API
 
