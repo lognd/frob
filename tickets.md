@@ -10355,7 +10355,7 @@ Gates: `frob check --delta --ticket T-0317` clean (0 new errors/warnings)
 id: T-0318
 title: rust proptest! macro block is not a valid frob:tests binding target (expands
   to tests, not literal AST)
-state: in-progress
+state: done
 kind: bug
 origin: auditor
 created: '2026-07-19'
