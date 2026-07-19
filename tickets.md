@@ -10254,7 +10254,7 @@ Gates: `frob check --delta` clean (0 new violations); `frob check --ticket T-031
 id: T-0317
 title: test collector must honor per-tree [[test.runner]] cwd/project when COLLECTING,
   not just running
-state: in-progress
+state: done
 kind: feature
 origin: auditor
 created: '2026-07-19'
