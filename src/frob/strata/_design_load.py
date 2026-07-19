@@ -125,6 +125,7 @@ def _load_all_design_files(
         if error is not None:
             errors.append(error)
             continue
+        assert model is not None
         models.append(model)
         channels.update(flow.id for flow in model.flows)
         boundaries.update(boundary.id for boundary in model.boundaries)

@@ -22,6 +22,7 @@ from ._errors import StrataError
 from ._facts import FactBase, build_facts
 from ._models import (
     BoundClaim,
+    Capacity,
     Claim,
     ClaimResult,
     Independent,
@@ -459,7 +460,7 @@ def _eval_bound_utilization(
         return Err(rate.danger_err)
     demand = facts.demand(body.target)
     utilization_result = _node_utilization(
-        claim, node, rate.danger_ok, demand, limit.danger_ok
+        claim, node, node.capacity, rate.danger_ok, demand, limit.danger_ok
     )
     if utilization_result.is_err:
         return Err(utilization_result.danger_err)
@@ -476,7 +477,12 @@ def _eval_bound_utilization(
 
 
 def _node_utilization(
-    claim: Claim, node: Node, single_rate: float, demand: float, limit: float
+    claim: Claim,
+    node: Node,
+    capacity: Capacity,
+    single_rate: float,
+    demand: float,
+    limit: float,
 ) -> Result[tuple[ClaimResult | None, float, str], StrataError]:
     """The node's utilization percent (skew-aware if `_node_skew` applies),
     plus its ok-detail string, or an early REFUTED for a zero/over ceiling."""
@@ -484,25 +490,25 @@ def _node_utilization(
     if skew_alpha is not None:
         if single_rate <= 0:
             return Ok((_refuted(claim, f"{node.id} has zero service ceiling"), 0.0, ""))
-        hottest_share = _zipf_hottest_share(skew_alpha, node.capacity.replicas_max)
+        hottest_share = _zipf_hottest_share(skew_alpha, capacity.replicas_max)
         utilization = 100.0 * demand * hottest_share / single_rate
         over_detail = (
             f"utilization {utilization:.1f}% > {limit}% "
             f"at hottest-shard share {hottest_share:.4f} "
-            f"(zipf alpha={skew_alpha}, {node.capacity.replicas_max} shards)"
+            f"(zipf alpha={skew_alpha}, {capacity.replicas_max} shards)"
         )
         ok_detail = (
             f"utilization {utilization:.1f}% <= {limit}% "
             f"at hottest-shard share {hottest_share:.4f}"
         )
     else:
-        ceiling = single_rate * node.capacity.replicas_max
+        ceiling = single_rate * capacity.replicas_max
         if ceiling <= 0:
             return Ok((_refuted(claim, f"{node.id} has zero service ceiling"), 0.0, ""))
         utilization = 100.0 * demand / ceiling
         over_detail = (
             f"utilization {utilization:.1f}% > {limit}% "
-            f"at max replicas {node.capacity.replicas_max}"
+            f"at max replicas {capacity.replicas_max}"
         )
         ok_detail = f"utilization {utilization:.1f}% <= {limit}%"
     if utilization > limit:

@@ -24,6 +24,7 @@ from ._ast import (
     FlowDecl,
     Module,
     NodeDecl,
+    OperationDecl,
     RefineDecl,
     RemoveDecl,
     ScaleDecl,
@@ -268,7 +269,7 @@ def _validate_scenario_trust_rewrite(
     scenario: ScenarioDecl,
     rewrite: TrustDecl,
     known_nodes: set[str],
-    trust_levels: object,
+    trust_levels: frozenset[str],
 ) -> Result[None, StrataError]:
     """A `TrustDecl` rewrite's target/level check; see `_validate_scenario_rewrite`."""
     if rewrite.node_id not in known_nodes:
@@ -293,7 +294,7 @@ def _validate_scenario_rewrite(
     rewrite: RemoveDecl | ScaleDecl | TrustDecl,
     known_nodes: set[str],
     known_flows: set[str],
-    trust_levels: object,
+    trust_levels: frozenset[str],
 ) -> Result[None, StrataError]:
     """One scenario rewrite's target/level check; see `_validate_scenarios`."""
     if isinstance(rewrite, RemoveDecl):
@@ -565,7 +566,10 @@ def _validate_refuse_frame_targets(
 
 
 def _validate_boundary_phase_refuse(
-    boundary: BoundaryDecl, known: set[str], append_only: set[str], labels: object
+    boundary: BoundaryDecl,
+    known: set[str],
+    append_only: set[str],
+    labels: frozenset[str],
 ) -> Result[None, StrataError]:
     """`refuse` respond label and frame targets; see `_validate_boundary_phases`."""
     phases = boundary.phases
@@ -586,7 +590,10 @@ def _validate_boundary_phase_refuse(
 
 
 def _validate_one_boundary_phases(
-    boundary: BoundaryDecl, known: set[str], append_only: set[str], labels: object
+    boundary: BoundaryDecl,
+    known: set[str],
+    append_only: set[str],
+    labels: frozenset[str],
 ) -> Result[None, StrataError]:
     """All four phase checks for one boundary, in fail-closed order."""
     for checked in (
@@ -624,7 +631,7 @@ def _validate_boundary_phases(module: Module) -> Result[None, StrataError]:
 
 
 def _validate_one_operation(
-    op: object, known: set[str], coordinator_ids: set[str]
+    op: OperationDecl, known: set[str], coordinator_ids: set[str]
 ) -> Result[None, StrataError]:
     """One `operation` statement's structural checks; see `_validate_operations`."""
     if op.on not in known:

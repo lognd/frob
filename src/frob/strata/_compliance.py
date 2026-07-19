@@ -51,8 +51,8 @@ from typani.result import Err, Ok, Result
 from frob.logging import get_logger
 
 from ._errors import StrataError
-from ._facts import build_facts
-from ._models import BoundaryDirection, KernelModel, Quantity
+from ._facts import FactBase, build_facts
+from ._models import BoundaryDirection, Flow, KernelModel, Node, Quantity
 
 _log = get_logger(__name__)
 
@@ -291,7 +291,7 @@ def _claim_override(
     return True, None
 
 
-def _coppa_boundary_violation(flow: object) -> ComplianceViolation:
+def _coppa_boundary_violation(flow: Flow) -> ComplianceViolation:
     """The COMPLIANCE002 violation for a COPPA flow with no age-gate boundary."""
     _log.warning(
         "compliance: COPPA fired on flow %s (%s -> %s), no age-gate boundary",
@@ -311,7 +311,7 @@ def _coppa_boundary_violation(flow: object) -> ComplianceViolation:
 
 def _coppa_flow_violations(
     model: KernelModel,
-    flow: object,
+    flow: Flow,
     boundary_flows: set[str],
     node_ids: set[str],
 ) -> tuple[ComplianceViolation, ...]:
@@ -378,7 +378,7 @@ def _revoked_nodes(model: KernelModel) -> set[str]:
 
 
 def _erasure_node_violations(
-    model: KernelModel, node: object, revoked_nodes: set[str]
+    model: KernelModel, node: Node, revoked_nodes: set[str]
 ) -> tuple[ComplianceViolation, ...]:
     """GDPR-ERASURE per-node check body: 0-2 violations for one node."""
     if not (_has_jurisdiction(node.attrs, "eu-resident") and node.clearance):
@@ -421,7 +421,7 @@ def _check_erasure(model: KernelModel) -> tuple[ComplianceViolation, ...]:
     return tuple(violations)
 
 
-def _retention_dim_violation(node: object, limit: Quantity) -> ComplianceViolation:
+def _retention_dim_violation(node: Node, limit: Quantity) -> ComplianceViolation:
     """The COMPLIANCE002 violation for a non-time retention bound unit."""
     return ComplianceViolation(
         rule="COMPLIANCE002",
@@ -433,7 +433,7 @@ def _retention_dim_violation(node: object, limit: Quantity) -> ComplianceViolati
 
 
 def _retention_age_violation(
-    node: object, base: object, limit: Quantity
+    node: Node, base: FactBase, limit: Quantity
 ) -> ComplianceViolation | None:
     """The COMPLIANCE002 violation when `node`'s worst-case age exceeds `limit`."""
     age, _path = base.worst_age(node.id)
@@ -456,7 +456,7 @@ def _retention_age_violation(
 
 
 def _retention_node_violations(
-    model: KernelModel, node: object, base: object
+    model: KernelModel, node: Node, base: FactBase
 ) -> tuple[ComplianceViolation, ...]:
     """GDPR-RETENTION per-node check body: 0-2 violations for one node."""
     if not (_has_jurisdiction(node.attrs, "eu-resident") and node.clearance):
@@ -501,7 +501,7 @@ def _check_retention(
 
 
 def _lawful_basis_flow_violations(
-    model: KernelModel, flow: object, nodes_by_id: dict[str, object]
+    model: KernelModel, flow: Flow, nodes_by_id: dict[str, Node]
 ) -> tuple[ComplianceViolation, ...]:
     """GDPR-BASIS per-flow check body: 0-2 violations for one flow."""
     if not _pii_or_above(model, flow.label):
@@ -545,7 +545,7 @@ def _check_lawful_basis(model: KernelModel) -> tuple[ComplianceViolation, ...]:
 
 
 def _baa_flow_violations(
-    model: KernelModel, flow: object, nodes_by_id: dict[str, object]
+    model: KernelModel, flow: Flow, nodes_by_id: dict[str, Node]
 ) -> tuple[ComplianceViolation, ...]:
     """HIPAA-BAA per-flow check body: 0-2 violations for one flow."""
     if not _has_subject_tag(flow.attrs, "health"):
@@ -590,7 +590,7 @@ def _check_baa(model: KernelModel) -> tuple[ComplianceViolation, ...]:
 
 
 def _minimization_flow_violations(
-    model: KernelModel, flow: object, outbound: set[str]
+    model: KernelModel, flow: Flow, outbound: set[str]
 ) -> tuple[ComplianceViolation, ...]:
     """MINIMIZATION per-flow check body: 0-2 violations for one flow."""
     if not _pii_or_above(model, flow.label):
@@ -695,7 +695,7 @@ def _flow_field(flow_attrs: tuple[str, ...]) -> str | None:
 
 
 def _privacy_policy_flow_violation(
-    model: KernelModel, flow: object, policy: PrivacyPolicy
+    model: KernelModel, flow: Flow, policy: PrivacyPolicy
 ) -> ComplianceViolation | None:
     """COMPLIANCE003 per-flow check body: at most one violation for one flow."""
     if not _pii_or_above(model, flow.label):

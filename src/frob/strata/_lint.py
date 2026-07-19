@@ -228,6 +228,7 @@ def _check_lint002_node(
         and f.rate is not None
         and not (set(f.attrs) & _INFRA_LOAD_EXEMPT_ATTRS)
     ]
+    assert node.capacity is not None
     if not inbound:
         return Ok(None)
     total_r = _sum_flow_rates(inbound)
@@ -250,6 +251,7 @@ def _lint002_violation(
     """Build the LINT002 `LintViolation` for a node whose inbound load
     exceeds its declared service rate with no cache -- split out of
     `_check_lint002_node` purely to keep that function's body short."""
+    assert node.capacity is not None
     _log.warning(
         "lint: LINT002 node %s inbound rate %.4f exceeds service rate "
         "%.4f with no cache",
@@ -386,6 +388,7 @@ def _check_lint005_node(
     violate, else the `LintViolation` -- factored out of
     `check_lint_fanin_capacity` so that loop stays a thin dispatcher."""
     inbound = [f for f in model.flows if f.dst == node.id and f.rate is not None]
+    assert node.capacity is not None
     if not inbound:
         return Ok(None)
     total_r = _sum_flow_rates(inbound)
@@ -405,6 +408,7 @@ def _lint005_violation(node: Node, total: float, headroom: float) -> LintViolati
     """Build the LINT005 `LintViolation` for a node whose fan-in exceeds
     its capacity headroom -- split out of `_check_lint005_node` purely to
     keep that function's body short."""
+    assert node.capacity is not None
     _log.warning(
         "lint: LINT005 node %s fan-in rate %.4f exceeds capacity headroom %.4f",
         node.id,

@@ -37,6 +37,7 @@ from ._facts import build_facts
 from ._models import (
     _AT_LEAST_ONCE,
     CrashContract,
+    Flow,
     KernelModel,
     Node,
     RemoveNode,
@@ -99,8 +100,9 @@ def _validate_recovery_sources(
     return Ok(None)
 
 
-def _validate_no_hang_flow(flow: object, node: Node) -> Result[None, StrataError]:
+def _validate_no_hang_flow(flow: Flow, node: Node) -> Result[None, StrataError]:
     """No-hang check body for one flow into one crashable `node`."""
+    assert node.crash is not None
     bound = _crash_bound_seconds(node.crash)
     if bound.is_err:
         return Err(bound.danger_err)
