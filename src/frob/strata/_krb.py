@@ -241,6 +241,16 @@ def krb_trust_flows(nodes: tuple[Node, ...]) -> tuple[Flow, ...]:
     dangling-reference validation catches every `Flow.src`/`Flow.dst` the
     SAME way it already catches a `flow` statement's own dangling src/dst,
     so this function does not need its own duplicate check (charter law 5).
+
+    KNOWN GAP (T-draft-f9f9fe96, caught in review): the synthesized
+    `Flow`'s `attrs` carry no signal distinguishing `trust.transitive`
+    True from False -- `KrbTrust.transitive` round-trips through
+    `krb_manifest_for` correctly, but `FactBase.reachable`'s shared BFS
+    (`strata-core/src/lib.rs`) has no terminal-edge concept to enforce
+    "reachable directly, not chainable" for a non-transitive trust, so a
+    chain of non-transitive one-way trusts currently reaches just as far
+    as a chain of transitive ones. See docs/strata/krb.md#known-gap-
+    transitive-is-recorded-not-yet-enforced-t-draft-f9f9fe96.
     """
     known_ids = {n.id for n in nodes}
     flows: list[Flow] = []

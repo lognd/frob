@@ -122,3 +122,10 @@ class StrataError(ErrorSet):
         "crashing with an unhandled ImportError, matching frob.lang's "
         "guarded-import pattern (T-0133, T-0134)"
     )
+    MalformedKrb = (
+        "A node's std.krb clauses are structurally inconsistent -- a "
+        "declared `spn` with no `runs_as` service account on the SAME node "
+        "to bind it to (docs/strata/krb.md#surface-grammar, T-0262): an SPN "
+        "naming a principal that does not exist in the model is a dangling "
+        "reference by a different name, not a valid partial declaration"
+    )

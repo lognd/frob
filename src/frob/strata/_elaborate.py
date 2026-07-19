@@ -615,12 +615,24 @@ def _validate_krb(module: Module) -> Result[None, StrataError]:
     {none, constrained, rbcd, unconstrained}; a `target` clause on any
     delegation kind OTHER than `constrained` (a target spn-set is only
     meaningful there -- silently accepting it under `rbcd`/`unconstrained`
-    would let a stray clause pass through unexamined); or a `trusts` clause
+    would let a stray clause pass through unexamined); a `trusts` clause
     naming a node id that is not declared, mirroring `panics_contained_by`'s
-    dangling-reference check just above.
+    dangling-reference check just above; or a `spn` declared with no
+    `runs_as` on the SAME node to bind it to (review finding, T-0262
+    round 2) -- an SPN is meaningless without the service-account principal
+    it names, so this is a dangling reference by a different name, not a
+    valid partial declaration.
     """
     known = _known_node_ids(module)
     for decl in module.nodes:
+        if decl.krb_spns and decl.runs_as is None:
+            _log.error(
+                "node %s: declares spn(s) %s but no runs_as service account "
+                "to bind them to",
+                decl.id,
+                decl.krb_spns,
+            )
+            return Err(StrataError.MalformedKrb)
         if decl.krb_delegation is not None:
             try:
                 KrbDelegationKind(decl.krb_delegation)
