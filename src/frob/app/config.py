@@ -259,10 +259,19 @@ class AppConfig(BaseModel):
 
     # deploy (T-0257: `frob deploy generate` -- install/status/uninstall
     # bash compiled from std.host HostManifest facts)
-    deploy_command: str | None = None  # generate (more per deploy epic T-0254)
+    deploy_command: str | None = None  # generate|audit per deploy epic T-0254
     deploy_path: Path | None = None
     deploy_out_dir: Path | None = None
     deploy_check: bool = False
+
+    # deploy audit (T-0259: `frob deploy audit --vm <name>` -- VirtualBox
+    # snapshot-diff harness, NOT run by `make check`)
+    deploy_vm: str | None = None
+    deploy_ssh_host: str | None = None
+    deploy_ssh_user: str = "root"
+    deploy_ssh_key: Path | None = None
+    deploy_base_snapshot: str = "base"
+    deploy_audit_output: Path | None = None
 
     # frob:waive TEST005 reason="from_external 87.2% branch cover, debt T-0160"
     @classmethod
@@ -326,6 +335,10 @@ class AppConfig(BaseModel):
             "sys_view",
             "sys_export_format",
             "deploy_command",
+            "deploy_vm",
+            "deploy_ssh_host",
+            "deploy_ssh_user",
+            "deploy_base_snapshot",
         ):
             val = getattr(args, field, None)
             if val is not None:
@@ -364,6 +377,8 @@ class AppConfig(BaseModel):
             "sys_export_path",
             "deploy_path",
             "deploy_out_dir",
+            "deploy_ssh_key",
+            "deploy_audit_output",
         ):
             val = getattr(args, path_field, None)
             if val is not None:
