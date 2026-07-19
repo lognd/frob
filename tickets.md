@@ -3127,6 +3127,87 @@ declared scope (`src/frob/gates/_secrets.py`, `tests/**`, `tickets.md`).
 
 Not closing per dispatch instructions -- leaving for reviewer.
 
+## Done report (round 2 -- security bypass fix)
+
+**Reviewer-found bypass:** round 1's `_PLACEHOLDER_PHRASE_RE` was
+`.search()`'d as a bare SUBSTRING test against the whole token, and
+`_looks_fake` gated the entire SEC001 detection path unconditionally. A
+real-shaped, high-entropy `sk-live-` token that merely CONTAINS `your-`,
+`insert-`, or `-here` anywhere -- e.g. a live key naming a tenant
+"your-company" -- was silently suppressed: zero violations, debug log
+"generic-live-key match ... placeholder, skipping". An attacker (or a
+tenant genuinely named `your...`) could evade SEC001 entirely by choosing
+a credential name that happens to contain one of those three fragments.
+Reproduced against the pre-round-2 worktree code before fixing (see
+verification below).
+
+**Fix -- anchored-or-entropy-gated phrase suppression**
+(`src/frob/gates/_secrets.py`): a phrase match now suppresses ONLY when
+one of two guards holds, never on the bare substring alone:
+1. `_KNOWN_TEMPLATE_SHAPE_RE` -- a whole-token structural anchor,
+   `^[a-z0-9]{2,10}-(your|insert)-[a-z-]+-here$`, matched with
+   `fullmatch` against the ENTIRE token (not `.search()`). Catches
+   `xoxb-your-slack-token-here`, `sk-insert-api-key-here`, etc.
+2. `_looks_low_entropy(token)` AND `_PLACEHOLDER_PHRASE_RE.search(token)`
+   -- the phrase must also be sitting inside token text with NO digits
+   anywhere (`_looks_low_entropy` returns `not any(c.isdigit() for c in
+   token)`). A real secret's non-prefix portion is machine-generated
+   noise and virtually always mixes in digits; a human template
+   (`insert-your-real-token`) is plain lowercase words and hyphens, no
+   digits at all.
+
+Net rule: a token is placeholder-fake via the phrase path only if it is a
+known whole-token template shape, OR it is digit-free AND contains the
+phrase. A high-entropy, digit-bearing, real-shaped token is NEVER
+suppressed by phrase content alone, regardless of what substrings it
+happens to contain. `_looks_fake`'s docstring and the `_PLACEHOLDER_PHRASE_RE`
+comment block now document this explicitly so the substring trap cannot
+be silently reintroduced.
+
+Out of scope, left alone per dispatch instructions: the single-word
+`_PLACEHOLDER_WORDS` check (`fake`/`changeme`/`example`/`placeholder`)
+still does a bare substring `in` test and has the same theoretical
+substring-embedding weakness (e.g. a live key named "...fakecompany...").
+The dispatch explicitly named only the phrase-regex bypass for this
+round; the word-list's own approved detection behavior (T-0157) was not
+touched. Not filing a new ticket for it -- noting here for the reviewer's
+awareness since it is the same class of gap.
+
+**Mandatory adversarial regression tests added**
+(`tests/test_secrets_gate.py::TestFakeMarking`):
+- `test_placeholder_phrase_your_does_not_suppress_high_entropy_token` --
+  `sk-live-your-company` + 16 digits fires SEC001.
+- `test_placeholder_phrase_insert_does_not_suppress_high_entropy_token` --
+  `sk-live-insert` + 20 digits fires SEC001.
+- `test_placeholder_phrase_here_does_not_suppress_high_entropy_token` --
+  `sk-live-here` + 20 digits + `abcd` fires SEC001.
+
+**Confirmed bypass-then-fix:** stashed only `src/frob/gates/_secrets.py`
+(keeping the new tests), reran the three new tests against the
+pre-round-2 source -- `test_placeholder_phrase_your_does_not_suppress_high_entropy_token`
+FAILED (`assert 0 == 1`, log line `generic-live-key match ...
+placeholder, skipping`), confirming the bypass reproduces exactly as the
+reviewer described. Restored the round-2 fix and reran: all three pass,
+along with the full `tests/test_secrets_gate.py` suite (58 passed,
+including `TestGateIsGreenOnItself::test_repo_is_clean` and
+`test_secrets_module_source_is_clean`, and the pre-existing round-1
+whole-token placeholder tests `test_placeholder_phrase_your_dash_here_is_not_flagged`
+/ `test_placeholder_phrase_insert_dash_is_not_flagged`, still suppressed
+correctly via the `_KNOWN_TEMPLATE_SHAPE_RE`/low-entropy paths).
+
+**Gates:** `uv run pytest tests/test_secrets_gate.py -q` -- 58 passed.
+`uv run ruff check .`, `uv run ruff format --check .`, `uv run ty check`
+all clean. `uv run frob check` (full repo, unscoped): `gates 0 errors, 1
+warning, 24 waived` -- same single pre-existing `TEST006` warning as
+round 1, no new secrets-gate violations, no new waivers added.
+
+Evidence stays node-level (see the three new test node ids above, plus
+round 1's evidence list, unchanged).
+
+Filed: none -- fix fully addressable within this ticket's declared scope.
+
+Not closing -- reviewer.
+
 <!-- ticket:T-0220 -->
 ```yaml
 id: T-0220

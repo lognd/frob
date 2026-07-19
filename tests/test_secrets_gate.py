@@ -252,6 +252,59 @@ class TestFakeMarking:
         assert len(violations) == 1
         assert violations[0].rule == "SEC001"
 
+    def test_placeholder_phrase_your_does_not_suppress_high_entropy_token(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_secrets.py::secrets_gate
+        # T-0219 round 2 (reviewer-reproduced bypass): a real-shaped,
+        # high-entropy `sk-live-` token that merely CONTAINS `your-` as a
+        # substring (e.g. naming a tenant "your-company") must still fire
+        # SEC001 -- the old bare `.search()` phrase check silently dropped
+        # this. Runtime-constructed, same discipline as the other
+        # real-shaped-token tests above.
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        token = "sk-live-your-company" + "".join(str(n % 10) for n in range(16))
+        (repo / "config.py").write_text(f'X = "{token}"\n')
+        _commit(repo)
+
+        violations = secrets_gate(repo)
+        matches = [v for v in violations if v.rule == "SEC001"]
+        assert len(matches) == 1
+
+    def test_placeholder_phrase_insert_does_not_suppress_high_entropy_token(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_secrets.py::secrets_gate
+        # Same bypass class, `insert-` fragment embedded in a real-shaped,
+        # digit-bearing token.
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        token = "sk-live-insert" + "".join(str(n % 10) for n in range(20))
+        (repo / "config.py").write_text(f'X = "{token}"\n')
+        _commit(repo)
+
+        violations = secrets_gate(repo)
+        matches = [v for v in violations if v.rule == "SEC001"]
+        assert len(matches) == 1
+
+    def test_placeholder_phrase_here_does_not_suppress_high_entropy_token(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_secrets.py::secrets_gate
+        # Same bypass class, `-here` fragment embedded in a real-shaped,
+        # digit-bearing token (not the exact `-here` template tail, just a
+        # substring appearing mid-token).
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        token = "sk-live-here" + "".join(str(n % 10) for n in range(20)) + "abcd"
+        (repo / "config.py").write_text(f'X = "{token}"\n')
+        _commit(repo)
+
+        violations = secrets_gate(repo)
+        matches = [v for v in violations if v.rule == "SEC001"]
+        assert len(matches) == 1
+
 
 class TestTrackedEnvFile:
     def test_env_file_sec002(self, tmp_path: Path) -> None:

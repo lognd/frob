@@ -76,7 +76,27 @@ _PLACEHOLDER_RUN_RE = re.compile(r"(x{4,}|\*{4,})", re.IGNORECASE)
 #: fixture like `xoxb-your-slack-token-here` reads as an obvious template
 #: to a human but contains none of `_PLACEHOLDER_WORDS`. Matched
 #: case-insensitively against the token text, same as `_PLACEHOLDER_WORDS`.
+#:
+#: BYPASS FIX (T-0219 review round 2): this regex alone is a `.search()`
+#: substring test -- a real, high-entropy token that merely CONTAINS
+#: `your-`/`insert-`/`-here` anywhere (e.g. a live key naming a tenant
+#: "your-company") used to suppress SEC001 unconditionally. It is now only
+#: ever consulted through `_looks_fake`, gated by EITHER
+#: `_KNOWN_TEMPLATE_SHAPE_RE` (a whole-token structural anchor) OR
+#: `_looks_low_entropy` (the phrase must be sitting inside human-written
+#: template text, not real secret noise). Never call `.search()` on this
+#: pattern directly to decide fakeness again -- go through `_looks_fake`.
 _PLACEHOLDER_PHRASE_RE = re.compile(r"(-here\b|\byour-|\binsert-)", re.IGNORECASE)
+#: Whole-token ANCHOR (T-0219 bypass fix): a known template *shape* --
+#: short provider-ish prefix, then `your-`/`insert-`, then more words,
+#: ending in `-here` -- matched with `fullmatch` against the ENTIRE token,
+#: never a substring. Catches `xoxb-your-slack-token-here`,
+#: `sk-insert-api-key-here`, etc. without needing every placeholder word
+#: enumerated, and without ever matching a token that has anything else
+#: (digits, unrelated suffix) tacked on after the template.
+_KNOWN_TEMPLATE_SHAPE_RE = re.compile(
+    r"^[a-z0-9]{2,10}-(your|insert)-[a-z-]+-here$", re.IGNORECASE
+)
 
 
 @dataclass(frozen=True)
@@ -400,15 +420,43 @@ def redact(token: str, display_prefix: str) -> str:
     return f"{display_prefix}... ({len(token)} chars)"
 
 
+def _looks_low_entropy(token: str) -> bool:
+    """True if `token` reads as human-written template prose rather than a
+    machine-generated secret (T-0219 bypass fix). A real secret's non-prefix
+    portion is random noise -- it almost always mixes in digits and does not
+    read as dictionary words. A template like `your-slack-token-here` or
+    `insert-your-real-token` is pure lowercase letters and hyphens, no
+    digits at all. Any digit present is treated as decisive evidence of
+    real secret-shaped content, so `_PLACEHOLDER_PHRASE_RE` can never
+    suppress a live-looking `sk-live-your-`-prefixed token with a numeric
+    tail through this path -- only `_KNOWN_TEMPLATE_SHAPE_RE`'s stricter
+    whole-token anchor
+    could, and that anchor requires the token to END in `-here` with
+    nothing else appended, which a live key with a numeric suffix never
+    does."""
+    return not any(char.isdigit() for char in token)
+
+
 def _looks_fake(token: str) -> bool:
     """True if `token` itself is an obvious placeholder shape (T-0157:
-    XXXX/**** runs or the literal words fake/changeme/example/placeholder;
-    T-0219: also obvious placeholder PHRASING -- a `-here` tail, or a
-    `your-`/`insert-` fragment, e.g. `xoxb-your-slack-token-here`),
-    independent of any `frob:secret-fake` marker on the surrounding line."""
+    XXXX/**** runs or the literal words fake/changeme/example/placeholder).
+
+    T-0219 round 1 added obvious placeholder PHRASING (`-here` tail, or a
+    `your-`/`insert-` fragment) but matched it as a bare substring against
+    the whole token -- round 2 (this version) closes the resulting bypass:
+    a phrase match now only counts as fake when the token is EITHER a
+    known whole-token template shape (`_KNOWN_TEMPLATE_SHAPE_RE`, fullmatch)
+    OR low-entropy human text containing the phrase (`_looks_low_entropy`).
+    A high-entropy, real-shaped token (digits present, doesn't fullmatch
+    the template shape) is NEVER suppressed by phrase content alone, no
+    matter what substrings it happens to contain.
+
+    Independent of any `frob:secret-fake` marker on the surrounding line."""
     if _PLACEHOLDER_RUN_RE.search(token):
         return True
-    if _PLACEHOLDER_PHRASE_RE.search(token):
+    if _KNOWN_TEMPLATE_SHAPE_RE.fullmatch(token):
+        return True
+    if _looks_low_entropy(token) and _PLACEHOLDER_PHRASE_RE.search(token):
         return True
     lowered = token.lower()
     return any(word in lowered for word in _PLACEHOLDER_WORDS)
