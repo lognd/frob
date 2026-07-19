@@ -9520,3 +9520,242 @@ Verification against the live repro (read-only, after reinstalling the
 global binary from this fix): lithos's `frob sys audit .` no longer fires
 SYS100 for `fs-read` on any of the six previously-affected nodes
 (rust_core, regolith_py, stdlib_records, tooling, demos, vscode_ext).
+
+<!-- ticket:T-0307 -->
+```yaml
+id: T-0307
+title: 'capability/test binder: parametrized (and multi-case) tests do not count toward
+  TEST001/002/003'
+state: queued
+kind: bug
+origin: auditor
+created: '2026-07-19'
+blocked_by: []
+parent: null
+scope:
+- src/frob/testing/**,src/frob/gates/__init__.py,tests/**,tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+FROBLEMS (lograder, aprog-public, feldspar): a frob:tests binding on a @pytest.mark.parametrize'd function satisfies TEST001 but TEST002/TEST003 report 0 collected cases -- collected node id test_x[CMake] does not match the bound function name test_x, so parametrized variants (and proptest!-expanded rust tests) do not count. All three repos worked around it by writing non-parametrized twin tests. Fix: the case counter must map a collected node id back to its bound function by stripping the [param] suffix (and handle rust cargo test list ids), so each param id counts as a case. Add litmus: a parametrized python test + a rust proptest! block each satisfy TEST002/003 for their bound symbol.
+
+<!-- ticket:T-0308 -->
+```yaml
+id: T-0308
+title: capability scanner matches inside comments/strings + unbounded substrings (net,
+  ffi/napi)
+state: queued
+kind: bug
+origin: auditor
+created: '2026-07-19'
+blocked_by: []
+parent: null
+scope:
+- src/frob/vet/**,tests/**,docs/modules/vet.md,tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+FROBLEMS (graphite, aprog-public): scan_file_capabilities pattern-matches over comment/string text, not just executable code, and uses unbounded substring matches. (1) net/fetch_url fired from a '# ...requests.get(url)...' COMMENT in aprog-public starter.py (no real net call). (2) ffi fired on the plain word 'openapi' because the ffi needle is a bare substring 'napi' (o-p-e-n-napi) in openapi-typescript codegen. Both forced repos to declare capabilities they don't have + discharge bogus CWE obligations via assume/waive. Fix: (a) give the scanner comment/string awareness (do not match inside #-comments / string literals where the language allows cheap detection), (b) word-boundary the needles (napi, etc.). Litmus per needle: a commented-out requests.get and the word openapi must NOT fire.
+
+<!-- ticket:T-0309 -->
+```yaml
+id: T-0309
+title: 'DSL: a trailing ''# noqa''/#-led tail on a directive line silently drops the
+  directive'
+state: queued
+kind: bug
+origin: auditor
+created: '2026-07-19'
+blocked_by: []
+parent: null
+scope:
+- src/frob/graph/dsl.py,tests/unit/graph/test_dsl.py,docs/modules/graph.md,tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+FROBLEMS (lithos W2b): appending '  # noqa: E501' to a frob:tests/frob:waive directive (to satisfy ruff 88-col on a long symref) makes _parse_attrs leftover non-empty -> MalformedDirective, edge dropped, only a debug log. ~50 directives silently regressed to unbound. A directive sharing a physical line with a linter-suppression comment is a reasonable pattern once a repo enforces both. Fix: _parse_attrs should strip a trailing '#'-led tail (noqa or any comment) from leftover before the emptiness check. Same subsystem as T-0286/T-0294. Test: 'frob:waive RULE reason="x"  # noqa: E501' parses to a valid waive edge.
+
+<!-- ticket:T-0310 -->
+```yaml
+id: T-0310
+title: SYS101 fires unfixably on nodes whose entire code glob resolves to [graph].exclude'd
+  paths
+state: queued
+kind: bug
+origin: auditor
+created: '2026-07-19'
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/_selfconform.py,src/frob/strata/_host_isolation.py,tests/**,docs/strata/**,tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+FROBLEMS (aprog-public, graphite, lograder): _selfconform file-discovery honors [graph].exclude (T-0274), which is correct, but a node whose code glob resolves ENTIRELY to excluded paths can never have any declared 'may' capability observed -> SYS101 'declared but never observed' fires permanently, unfixable by touching content (no non-excluded file exists to add a site to). Repos waived per-capability. Also graphite reported the INVERSE (bind_code over-attributing bundled-JS capabilities to a server node because it walked raw FS) -- the two must be reconciled into one coherent exclude-aware observation rule. Fix: SYS101 should skip (or explicitly annotate) a node whose entire code-glob set is excluded -- nothing can ever be observed there. Litmus: a node globbing only excluded paths yields no SYS101.
+
+<!-- ticket:T-0311 -->
+```yaml
+id: T-0311
+title: TEST005 reports wrong file path when make coverage uses multiple --cov roots
+state: queued
+kind: bug
+origin: auditor
+created: '2026-07-19'
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/_coverage.py,tests/**,tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+FROBLEMS (aprog-private): with 'pytest --cov=scripts --cov=tests' (two roots), coverage.xml records filename='actgen/core.py' (rooted under scripts) but TEST005 reports it as 'tests/actgen/core.py' -- the coverage-XML-to-repo-path resolver picks the wrong root (last-declared/alphabetically-last?) for files whose package-relative path doesn't disambiguate. The 0%-coverage finding is correct; only the displayed path is wrong, and it misleads an agent opening the file. Fix: resolve each coverage filename against the actual root it exists under (stat each candidate root+relpath), not a single guessed root. Test: multi-root coverage.xml resolves each file to the root it truly lives under.
+
+<!-- ticket:T-0312 -->
+```yaml
+id: T-0312
+title: LINT004 remedy text says 'attr flag=<id>' but the real/only escape is a 'waive'
+  statement
+state: queued
+kind: bug
+origin: auditor
+created: '2026-07-19'
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/_lint.py,tests/**,docs/strata/threat.md,tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+FROBLEMS (aprog-private): LINT004's detail string says 'node <id> holds risky capability kind(s) [...] with no declared attr flag=<id> kill-switch', implying the fix is a strata 'attr flag=<id>;' declaration -- but 'attr flag' is not implemented/documented anywhere (grep -rn 'attr flag' docs/ is empty); the actual working escape is a 'waive "LINT004" reason ... ticket ...;' statement. Fix the message to name the real remedy (waive), or implement attr flag if intended. Trivial message/doc fix. Test: LINT004 detail names the waive escape.
+
+<!-- ticket:T-0313 -->
+```yaml
+id: T-0313
+title: COV001 frob:doc binder only inspects the nearest preceding comment line, not
+  the whole block
+state: queued
+kind: bug
+origin: auditor
+created: '2026-07-19'
+blocked_by: []
+parent: null
+scope:
+- src/frob/graph/dsl.py,tests/unit/graph/test_dsl.py,tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+FROBLEMS (aprog-public): a node with '// frob:doc ...' followed by two '// frob:ticket ...' lines directly above 'node X : trusted {' fired COV001 as if no frob:doc edge existed; nodes with exactly ONE frob:ticket line after frob:doc passed. Reordering so frob:doc is the LAST comment line immediately above the symbol fixed it. Strongly suggests the doc-edge binder only inspects the single nearest preceding comment line, not the whole contiguous comment block (off-by-one in _enclosing_src / RawComment.following lookback). Same subsystem as T-0286/T-0294/T-0309. Fix: bind a frob:doc directive found ANYWHERE in the contiguous comment block above a symbol, regardless of other directive lines between it and the symbol. Test: frob:doc followed by 2 frob:ticket lines above a node still yields the doc edge.
+
+<!-- ticket:T-0314 -->
+```yaml
+id: T-0314
+title: frob check <subdir> resolves frob:doc target files relative to the scoped path,
+  not repo root
+state: queued
+kind: bug
+origin: auditor
+created: '2026-07-19'
+blocked_by: []
+parent: null
+scope:
+- src/frob/app/check_runner.py,src/frob/gates/**,tests/**,tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+FROBLEMS (lithos W2b): 'frob check --only gates python/regolith/realizer' resolves every 'frob:doc docs/modules/x.md#anchor' target relative to the scoped root (python/regolith/realizer) instead of the repo root the path text is relative to -> every frob:doc came back DOC002 'target file does not exist', while the identical directives are clean under unscoped 'frob check .'. Root cause named: check_runner.py::_dispatch_check_python root = cfg.check_path or Path('.') feeding _doc_anchor_slugs(root / docfile). Fix: frob:doc doc-file targets must resolve against the REPO ROOT (git/frob root), not the scoped check path; the scoped path should filter which findings are reported, not rebase directive path resolution. Test: a scoped gates run yields the same DOC002 result as the unscoped run for the same directive.
+
+<!-- ticket:T-0315 -->
+```yaml
+id: T-0315
+title: TEST005 branch-coverage floor applies to test-file symbols (fixtures/helpers)
+  -- should skip like TEST001
+state: queued
+kind: bug
+origin: auditor
+created: '2026-07-19'
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/_coverage.py,tests/**,tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+FROBLEMS (lithos): TEST001/TEST002 skip symbols in test files (gates._is_test_file), but TEST005's per-symbol branch floor applies to test-file fixtures/helpers too. Environment-gated fixture branches (e.g. tool-unavailable fallbacks) can never reach the floor in CI without the tool, forcing pure-noise per-site waivers. Fix: TEST005 should skip test files exactly like TEST001/002 (reuse gates._is_test_file). Likely removes several of frob's own 180 T-0160 waivers too. Test: a test-file fixture with a gated branch does not produce TEST005.
+
+<!-- ticket:T-0316 -->
+```yaml
+id: T-0316
+title: 'packaging: bare ''uv tool install frob'' does not install the strata_core
+  native extension'
+state: queued
+kind: bug
+origin: auditor
+created: '2026-07-19'
+blocked_by: []
+parent: null
+scope:
+- pyproject.toml,docs/**,tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+FROBLEMS (aprog-public): 'uv tool install frob' does not pull the strata_core Rust wheel as a dependency -- it must be uv pip installed by hand into frob's tool venv. Without it every .strata file fails NativeExtensionUnavailable, frob sys audit degrades to SYS004 (still exits 0, so it silently goes dark), and design/** COV/SYS checks stop running. Bit mid-campaign when a reinstall wiped the manually-added wheel. This is the 'awkward setup step' the frob owner wants remediated. Fix: declare strata_core (and frob_core) as proper distributable dependencies of the frob wheel, or ship them as bundled native extensions, so a fresh 'uv tool install frob' yields full .strata support with no manual step. If truly can't auto-install, fail LOUDLY (nonzero, clear message) rather than silently degrading. Coordinate with the same native-build story make core uses.
+
+<!-- ticket:T-0317 -->
+```yaml
+id: T-0317
+title: test collector must honor per-tree [[test.runner]] cwd/project when COLLECTING,
+  not just running
+state: queued
+kind: feature
+origin: auditor
+created: '2026-07-19'
+blocked_by: []
+parent: null
+scope:
+- src/frob/testing/**,tests/**,docs/**,tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+FROBLEMS (aprog-public): frob's test collector runs in the OUTER repo environment, so frob:tests evidence ids inside a nested project (slidegen/tests, imports pptx/PIL) cannot be collected -- collection fails there and the binding is unresolvable, forcing an outer-repo proxy test as evidence. frob.toml [[test.runner]] already exists and honors cwd/project when RUNNING; the collector must honor it when COLLECTING too (run pytest --collect-only in each runner's cwd/venv and union the node ids). Enables real evidence for nested-project tests. Test: a [[test.runner]] pointed at a nested project collects that project's node ids.
+
+<!-- ticket:T-0318 -->
+```yaml
+id: T-0318
+title: rust proptest! macro block is not a valid frob:tests binding target (expands
+  to tests, not literal AST)
+state: queued
+kind: bug
+origin: auditor
+created: '2026-07-19'
+blocked_by: []
+parent: null
+scope:
+- src/frob/testing/**,tests/**,tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+FROBLEMS (feldspar L3): a '// frob:tests <crate>/src kind=integration' comment directly above a 'proptest! { ... }' block does not bind for TEST003 -- proptest! expands to multiple #[test] fns at compile time that do not exist as literal AST nodes at the comment site (v0.6.0 fixed attribute-stack placement above a plain #[test] fn, not macro blocks). Lower priority (rare); related to T-0307 multi-case counting. Fix: recognize a frob:tests comment above a proptest!/parametrizing macro block and resolve it against the cargo-test-collected expanded case ids for that file. Test: frob:tests above a proptest! block satisfies TEST003.
