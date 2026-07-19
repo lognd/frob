@@ -38,7 +38,10 @@ enough to catch real secrets is also loose enough to fire on all of those,
 which is the exact "dishonest gate" T-0151 documents -- so it is left out
 rather than half-built. A future ticket could revisit this with a properly
 tuned, context-aware entropy pass; until then the pattern table is the
-whole detector.
+whole detector. (`_looks_low_entropy`, added T-0219, is NOT that fallback:
+it never fires a violation, only narrows an existing phrase-based
+SUPPRESSION so it can't be bypassed -- a different, much lower-stakes use
+of entropy than a detection trigger would be.)
 
 Also honest about: this scanner is line-oriented (each tracked line is
 matched independently), so a token that has been line-wrapped -- split
@@ -50,7 +53,9 @@ silent omission.
 # frob:ticket T-0157
 from __future__ import annotations
 
+import math
 import re
+from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -420,21 +425,62 @@ def redact(token: str, display_prefix: str) -> str:
     return f"{display_prefix}... ({len(token)} chars)"
 
 
+#: Shannon-entropy floor (bits/char over alnum chars) below which a
+#: digit-free, single-case token is judged "human template prose" rather
+#: than a real secret's random tail (T-0219 round 3 bypass fix). Calibrated
+#: against the repo's own fixtures: `xoxb-insert-your-real-token` (an
+#: existing, intentionally-suppressed legit placeholder) sits at ~3.64
+#: bits/char; the reviewer's adversarial digit-free "real" tokens -- an
+#: `sk-live-insert-` prefix glued to a near-unique-letter run (~4.32
+#: bits/char) -- and any mixed-case token sit well above 3.7. The gap
+#: between "repeats a handful of English words" and "near-unique alphabet
+#: run" is wide enough that 3.7 is a conservative cut: it never needs to
+#: be exact, only to never let a genuinely random-looking token read as
+#: low.
+_LOW_ENTROPY_BITS_PER_CHAR = 3.7
+
+
 def _looks_low_entropy(token: str) -> bool:
     """True if `token` reads as human-written template prose rather than a
-    machine-generated secret (T-0219 bypass fix). A real secret's non-prefix
-    portion is random noise -- it almost always mixes in digits and does not
-    read as dictionary words. A template like `your-slack-token-here` or
-    `insert-your-real-token` is pure lowercase letters and hyphens, no
-    digits at all. Any digit present is treated as decisive evidence of
-    real secret-shaped content, so `_PLACEHOLDER_PHRASE_RE` can never
-    suppress a live-looking `sk-live-your-`-prefixed token with a numeric
-    tail through this path -- only `_KNOWN_TEMPLATE_SHAPE_RE`'s stricter
-    whole-token anchor
-    could, and that anchor requires the token to END in `-here` with
-    nothing else appended, which a live key with a numeric suffix never
-    does."""
-    return not any(char.isdigit() for char in token)
+    machine-generated secret (T-0219 round 3: replaces the round-2 binary
+    "has no digits" check, which let a digit-free but high-entropy
+    real-shaped token -- an `sk-live-your-` prefix glued to a mixed-case
+    random tail -- still slip past).
+
+    Three independent, conservative gates, ALL of which must hold before a
+    token is ever called low-entropy -- failing any one means "not low",
+    i.e. the security-safe direction (never suppress on uncertainty):
+
+    1. No digit anywhere. A digit is decisive evidence of real secret-shaped
+       content regardless of what else is true.
+    2. Single case (all-lowercase or all-uppercase letters, no mixing). A
+       real generated token frequently mixes case; hand-typed template
+       phrases like `your-slack-token-here` never do.
+    3. Real Shannon entropy over the token's alnum characters, in bits per
+       character, below `_LOW_ENTROPY_BITS_PER_CHAR`. English template
+       phrases repeat a small set of common letters (low entropy); a
+       machine-generated token -- even a digit-free, single-case one built
+       from a wide alphabet run -- has a much flatter, higher-entropy
+       character distribution.
+
+    Only reached by `_looks_fake` when `_PLACEHOLDER_PHRASE_RE` already
+    matched a phrase fragment (`your-`/`insert-`/`-here`) in the token, so
+    this never runs against arbitrary unrelated secrets."""
+    if any(char.isdigit() for char in token):
+        return False
+    has_upper = any(char.isupper() for char in token)
+    has_lower = any(char.islower() for char in token)
+    if has_upper and has_lower:
+        return False
+    alnum = [char for char in token if char.isalnum()]
+    if not alnum:
+        return False
+    counts = Counter(alnum)
+    total = len(alnum)
+    entropy = -sum(
+        (count / total) * math.log2(count / total) for count in counts.values()
+    )
+    return entropy < _LOW_ENTROPY_BITS_PER_CHAR
 
 
 def _looks_fake(token: str) -> bool:

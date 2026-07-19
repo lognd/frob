@@ -305,6 +305,63 @@ class TestFakeMarking:
         matches = [v for v in violations if v.rule == "SEC001"]
         assert len(matches) == 1
 
+    def test_digit_free_mixed_case_your_token_still_fires(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_secrets.py::secrets_gate
+        # T-0219 round 3 (reviewer-reproduced live bypass): round 2's
+        # `_looks_low_entropy` was `not any(c.isdigit() for c in token)` --
+        # a binary "has no digits" check, not a real entropy measure. A
+        # digit-free, high-entropy, real-shaped token containing `your-`
+        # was silently suppressed regardless of how random it looked.
+        # Runtime-constructed (mixed-case run glued on, never a contiguous
+        # literal in this file's own source) so this file's own self-scan
+        # stays clean while still exercising the exact bypass shape.
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        tail = "XKCDplmqrstuvwxyz" + "ABCD"
+        token = "sk-live-your-" + tail
+        (repo / "config.py").write_text(f'X = "{token}"\n')
+        _commit(repo)
+
+        violations = secrets_gate(repo)
+        matches = [v for v in violations if v.rule == "SEC001"]
+        assert len(matches) == 1
+
+    def test_digit_free_insert_alphabet_run_still_fires(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_secrets.py::secrets_gate
+        # Same round-3 bypass class: digit-free, single-case, but a wide
+        # near-unique-letter run -- real Shannon entropy reads this as
+        # high, unlike the round-2 binary digit check which suppressed it
+        # outright just for containing `insert-`.
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        tail = "abcdefgh" + "qrstuvwxyz"
+        token = "sk-live-insert-" + tail
+        (repo / "config.py").write_text(f'X = "{token}"\n')
+        _commit(repo)
+
+        violations = secrets_gate(repo)
+        matches = [v for v in violations if v.rule == "SEC001"]
+        assert len(matches) == 1
+
+    def test_digit_free_mixed_case_here_tail_still_fires(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_secrets.py::secrets_gate
+        # Same round-3 bypass class, `-here` tail variant: mixed-case,
+        # digit-free, and structurally close to `_KNOWN_TEMPLATE_SHAPE_RE`
+        # (ends in `-here`) but does NOT fullmatch it (second segment is
+        # `live`, not `your`/`insert`), so this token can only be wrongly
+        # suppressed via `_looks_low_entropy` -- which the mixed-case gate
+        # and entropy floor must both refuse.
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        tail = "abcd" + "XYZQRSTUVW"
+        token = "sk-live-" + tail + "-here"
+        (repo / "config.py").write_text(f'X = "{token}"\n')
+        _commit(repo)
+
+        violations = secrets_gate(repo)
+        matches = [v for v in violations if v.rule == "SEC001"]
+        assert len(matches) == 1
+
 
 class TestTrackedEnvFile:
     def test_env_file_sec002(self, tmp_path: Path) -> None:
