@@ -15,9 +15,12 @@ from typani import ErrorSet
 
 __all__ = [
     "AntiUnifyTemplate",
+    "CloneBinding",
+    "CloneMatchGroup",
     "CloneRegion",
     "ClonePair",
     "CloneReport",
+    "CloneTemplate",
     "DupConfig",
     "DupError",
     "DupStats",
@@ -79,13 +82,73 @@ class DupStats(BaseModel):
     pairs_verified: int = 0
 
 
+# frob:doc docs/modules/dup.md#clone-binding
+class CloneBinding(BaseModel):
+    """One hole's concrete side in a `CloneTemplate`: which member, which subtree.
+
+    `source_text` is a structural skeleton rendering of the bound subtree
+    (`label(child, child, ...)`), not literal source text -- `frob.lang.TreeNode`
+    (docs/modules/lang.md) does not carry source spans/text today, so the
+    report shows the bound subtree's shape rather than its exact characters.
+    See docs/modules/dup.md's "Reverse-templating report" section for why.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    hole: int
+    region: CloneRegion
+    source_text: str
+
+
+# frob:doc docs/modules/dup.md#clone-template
+class CloneTemplate(BaseModel):
+    """A clone group's generalized skeleton: shared structure plus per-hole bindings.
+
+    `skeleton_text` is the anti-unified template (docs/modules/dup.md's
+    "Anti-unification (Plotkin lgg)" section) rendered as readable
+    `label(child, ...)` text with `$hole_N` at each divergence point.
+    `bindings` holds one tuple of `CloneBinding` per distinct group member,
+    in the same order every member's binding list uses the same hole ids
+    (`build_group_template`'s per-member re-anti-unification against the
+    folded template keeps hole numbering stable across members -- see
+    `frob.dup._template`). `suggested_signature` is advisory text embedded
+    in DUP001's message, never an auto-applied patch (every other frob gate
+    is conformance-only; this one is no different).
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    skeleton_text: str
+    holes: tuple[int, ...] = ()
+    bindings: tuple[tuple[CloneBinding, ...], ...] = ()
+    suggested_signature: str = ""
+
+
+# frob:doc docs/modules/dup.md#clone-group
+class CloneMatchGroup(BaseModel):
+    """One clone group: its region-pairs plus an optional reverse-templating report.
+
+    `template` is `None` whenever anti-unification could not produce a
+    meaningful generalization for this group -- a member's subtree could
+    not be recovered, `frob_core` is not installed, or the hole-ceiling
+    sanity check tripped (docs/modules/dup-sota-survey.md sec 4). Callers
+    fall back to the plain `pairs` with no synthesized report in that case,
+    never a low-value near-all-holes template.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    pairs: tuple[ClonePair, ...] = ()
+    template: CloneTemplate | None = None
+
+
 # frob:doc docs/modules/dup.md#clone-report
 class CloneReport(BaseModel):
     """The whole result of one `find_clones` call: grouped pairs plus stats."""
 
     model_config = ConfigDict(frozen=True)
 
-    groups: tuple[tuple[ClonePair, ...], ...] = ()
+    groups: tuple[CloneMatchGroup, ...] = ()
     stats: DupStats = DupStats()
 
 

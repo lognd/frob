@@ -108,6 +108,7 @@ from typani.result import Result
 
 from frob.dup import _cache, _core
 from frob.dup._models import (
+    CloneMatchGroup,
     ClonePair,
     CloneRegion,
     CloneReport,
@@ -116,6 +117,7 @@ from frob.dup._models import (
     DupStats,
     ProbeVerdict,
 )
+from frob.dup._template import build_group_template
 from frob.gitio import Diff
 from frob.graph._models import GraphSnapshot
 from frob.logging import get_logger
@@ -1061,21 +1063,31 @@ def find_clones(
 
 
 def _clone_report(state: _FpState, groups: list[tuple[ClonePair, ...]]) -> CloneReport:
-    """Assemble the final `CloneReport` (groups + run stats) and log the summary."""
+    """Assemble the final `CloneReport` (groups + run stats) and log the summary.
+
+    Each group's `template` is best-effort: `build_group_template` never
+    raises, returning `None` when reverse-templating is not possible for
+    that group (docs/modules/dup.md's "Reverse-templating report" section)
+    -- a missing template never blocks the report itself.
+    """
     stats = DupStats(
         fingerprinted=state.fingerprinted,
         cache_hits=state.cache_hits,
         pairs_verified=state.pairs_verified,
     )
+    clone_groups = tuple(
+        CloneMatchGroup(pairs=group, template=build_group_template(state.root, group))
+        for group in groups
+    )
     _log.info(
         "find_clones: %d group(s), %d pair(s) verified, %d symbol(s) fingerprinted, "
         "%d cache hit(s)",
-        len(groups),
+        len(clone_groups),
         state.pairs_verified,
         state.fingerprinted,
         state.cache_hits,
     )
-    return CloneReport(groups=tuple(groups), stats=stats)
+    return CloneReport(groups=clone_groups, stats=stats)
 
 
 def _all_rung_groups(

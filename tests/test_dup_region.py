@@ -46,7 +46,7 @@ def _r1_5_pairs(report):
     return [
         (p.left.ref, p.right.ref, p)
         for group in report.groups
-        for p in group
+        for p in group.pairs
         if p.rung == "r1.5"
     ]
 
@@ -56,7 +56,7 @@ def _whole_symbol_pairs(report):
     return [
         (p.left.ref, p.right.ref, p)
         for group in report.groups
-        for p in group
+        for p in group.pairs
         if p.rung in ("r1", "r2", "r3")
     ]
 
