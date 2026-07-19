@@ -188,6 +188,7 @@ class GroupedGap(BaseModel):
 
 
 # frob:doc docs/strata/threat.md#the-exhaustiveness-proof-the-point
+# frob:tests tests/unit/strata/test_audit.py::TestGroupGaps.test_group_gaps_by_view
 def group_gaps_by_view(gaps: tuple[FamilyGap, ...]) -> tuple[GroupedGap, ...]:
     """Collapse `gaps` into `GroupedGap`s: entries that are verbatim-
     identical on (family, rule, detail, target, sub_target) -- differing

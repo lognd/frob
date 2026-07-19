@@ -311,7 +311,7 @@ def _isolated_hardened_two_user_model() -> KernelModel:
     return KernelModel(nodes=(api, worker))
 
 
-class TestGroupGapsByView:
+class TestGroupGaps:
     """T-0173: `frob sys audit` was printing an IDENTICAL WARNING block once
     per configured view whenever the same underlying gap held under every
     view in that family -- `_vulnerable_model`'s undischarged CWE-639 fires
@@ -321,8 +321,8 @@ class TestGroupGapsByView:
     fires under `owasp-top-10`) stays its own single-view group -- and the
     underlying `report.gaps` count (the verdict) must stay untouched."""
 
-    # frob:tests tests/unit/strata/test_audit.py::TestGroupGapsByView.test_no_verbatim_duplicate_blocks kind="unit"
-    def test_no_verbatim_duplicate_blocks(self):
+    # frob:tests tests/unit/strata/test_audit.py::TestGroupGaps.test_group_gaps_by_view kind="unit"
+    def test_group_gaps_by_view(self):
         model = _vulnerable_model()
         result = evaluate_exhaustiveness(model)
         assert result.is_ok
