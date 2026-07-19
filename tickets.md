@@ -8299,7 +8299,7 @@ Bit twice (2026-07-19): T-0282 and T-0217 both had evidence stored as tests/...p
 id: T-0294
 title: 'DSL parser: eliminate 13 malformed-directive false positives (secret-fake
   marker, kinds, trailing prose)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-19'
@@ -8974,6 +8974,25 @@ Gates: `uv run frob check --only coverage` clean of COV001 (0 hits) on
 the touched files; `uv run frob arch .` clean of `long-function` on all
 9 scoped src/ areas.
 
+<!-- ticket:T-0300 -->
+```yaml
+id: T-0300
+title: Rebind frob.fuzz deferred-work TODOs off dropped T-0002
+state: queued
+kind: bug
+origin: human
+created: '2026-07-19'
+blocked_by: []
+parent: null
+scope:
+- src/frob/fuzz/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0294 fixed the DSL parser's trailing-prose rejection, which un-masked two frob:todo T-0002 directives in src/frob/fuzz/_run.py:30 and src/frob/fuzz/_arbitrary.py:41 (process-global registry scoping; wall-clock budget_s). T-0002 (frob.fuzz generators + FUZZ gates Phase 8) is dropped, so TODO001 now correctly fires: these TODOs are not bound to an open ticket. Either reopen T-0002's scope in a live ticket and rebind, or file focused successor tickets per TODO and rebind. Filed rather than fixed in T-0294 to stay within that ticket's declared DSL-parser scope (this is a ticket-graph bookkeeping fix, not a parser fix).
+
 <!-- ticket:T-draft-1fae8bfb -->
 ```yaml
 id: T-draft-1fae8bfb
@@ -9084,22 +9103,3 @@ untouched by this ticket, landed via the main merge, out of scope).
 ledger-conflict splice against the newer main tip (d900bd5). Cargo.lock:
 no churn (`make core` no-op rebuild). No non-ASCII characters. Not closing
 this ticket -- leaving for the reviewer per the review-gated workflow.
-
-<!-- ticket:T-draft-9b07cab7 -->
-```yaml
-id: T-draft-9b07cab7
-title: Rebind frob.fuzz deferred-work TODOs off dropped T-0002
-state: queued
-kind: bug
-origin: human
-created: '2026-07-19'
-blocked_by: []
-parent: null
-scope:
-- src/frob/fuzz/**
-evidence: []
-attachments: []
-acceptance: []
-threat: null
-```
-T-0294 fixed the DSL parser's trailing-prose rejection, which un-masked two frob:todo T-0002 directives in src/frob/fuzz/_run.py:30 and src/frob/fuzz/_arbitrary.py:41 (process-global registry scoping; wall-clock budget_s). T-0002 (frob.fuzz generators + FUZZ gates Phase 8) is dropped, so TODO001 now correctly fires: these TODOs are not bound to an open ticket. Either reopen T-0002's scope in a live ticket and rebind, or file focused successor tickets per TODO and rebind. Filed rather than fixed in T-0294 to stay within that ticket's declared DSL-parser scope (this is a ticket-graph bookkeeping fix, not a parser fix).

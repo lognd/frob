@@ -27,7 +27,7 @@ from frob.logging import get_logger
 
 _log = get_logger(__name__)
 
-# frob:todo T-draft-9b07cab7
+# frob:todo T-0300
 # budget_s currently maps to a fixed max_examples count, not true wall-clock;
 # hypothesis's own `deadline`/`settings(max_examples=...)` gives a
 # per-example ceiling, not a whole-run wall-clock budget. A real wall-clock
