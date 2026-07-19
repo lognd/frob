@@ -7834,7 +7834,7 @@ No Cargo.lock churn.
 ```yaml
 id: T-0286
 title: 'comment DSL: multi-line reason= via backslash continuation'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-19'
