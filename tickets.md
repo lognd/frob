@@ -6163,7 +6163,7 @@ Found while working T-0259: a fresh frob.graph.dsl.parse_directives call on a fr
 id: T-0280
 title: 'CRITICAL: HOST001/HOST002 movement proofs + compromised-user scenario are
   unreachable from any CLI command'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-07-19'
@@ -6177,7 +6177,10 @@ scope:
 - tests/**
 - docs/**
 - tickets.md
-evidence: []
+evidence:
+- tests/unit/strata/test_audit.py::TestHostWiring::test_shared_model_gaps
+- tests/system/test_system.py::test_sys_audit_shared_writable_two_user_model_exits_nonzero_with_host001
+- tests/unit/strata/test_audit.py::TestHostWiring::test_hardened_model_proved
 attachments: []
 acceptance: []
 threat: elevation-of-privilege
