@@ -101,3 +101,75 @@ the standalone binary before it ships (the T-0077 hard-import bug T-0133
 fixes was exactly this: `import strata_core` at module scope in
 `frob.lang._walk_strata`, uncaught until someone ran the standalone tool
 outside a dev checkout).
+
+## Loud failure when `.strata` is used without natives (T-0316)
+
+A repo that has never opted into `design/**` (no `.strata` files) is
+completely unaffected by a missing `strata_core` -- `frob.gates.sys_gate`
+never even imports `frob.strata` for such a repo (T-0135's opt-in check
+runs first). But a repo that DOES have `.strata` files under its
+`[strata].design_dir` and is missing the native extension must never look
+like a clean pass. Two surfaces enforce this:
+
+- `frob check`: `sys_gate` reports the load failure as its own `SYS004`
+  ERROR-severity `Violation` naming the file and the exact
+  `NativeExtensionUnavailable` message (`src/frob/gates/__init__.py`'s
+  `_sys004`) -- this fails the `gates` tool and the overall `frob check`
+  exit code, it does not silently degrade to a 0-violation pass.
+- `frob sys audit` / `frob sys plan` / `frob sys doc`: `_load_audit_model`
+  (and its `plan`/`doc` siblings in `src/frob/app/sys_runner.py`) log the
+  same typed error per failing design file and `sys.exit(1)` -- they never
+  print a report and exit 0 on a load failure.
+
+Both paths are covered end-to-end (a real subprocess `python -m frob ...`
+invocation, not just a monkeypatched unit test) by
+`tests/system/test_cli_native_missing.py`, which shadows the real
+`strata_core` extension via `PYTHONPATH` with
+`tests/fixtures/fake_no_native/strata_core.py` (a module whose only body is
+`raise ImportError(...)`) to reproduce exactly what a natives-less `uv tool
+install frob` sees. It asserts: (1) a repo with `.strata` under `design/`
+exits nonzero from both `frob check` and `frob sys audit` and names
+`SYS004`/`NativeExtensionUnavailable` in the output; (2) a repo with no
+`design/` dir at all exits 0 unaffected -- the T-0135 opt-in guarantee, not
+just the loud-failure one.
+
+## Detecting a stripped native install (the "reinstall wiped my wheel"
+gotcha)
+
+`uv tool install --force --reinstall . --with ./strata-core --with
+./frob-core` (`make install-tool`) is a one-shot install: the `--with`
+local-path deps are resolved and installed alongside `frob` into that tool
+venv AT THAT MOMENT. A later plain `uv tool upgrade frob` or `uv tool
+install --force --reinstall frob` (no `--with` flags) reinstalls only the
+pure-Python `frob` distribution into the same venv and does NOT re-add the
+`--with` extras -- it silently strips `strata_core`/`frob_core` back out,
+regressing to the bare-install posture with no warning at install time.
+This is the exact failure mode the T-0316 FROBLEMS report describes
+("bit mid-campaign when a reinstall wiped the manually-added wheel").
+
+Until `frob-core`/`strata-core` are published as real wheels (see "Why not
+`pip install \"frob[strata]\"`?" above -- still out of scope, tracked as a
+follow-up ticket), there is no install-time guard against this: `uv tool
+upgrade`/`uv tool install --force --reinstall` on a bare `frob` spec is a
+valid way to ask for exactly that (upgrade `frob`, natives excluded), so
+frob cannot distinguish "the user wants natives gone" from "the user forgot
+`--with`" at install time. The check that CAN and does catch it is the
+loud-failure guarantee above: the next `frob check`/`frob sys audit` run
+against a repo with `.strata` files fails immediately with a named
+`SYS004`/`NativeExtensionUnavailable`, rather than silently going quiet --
+treat that failure as the signal to re-run `make install-tool`, not a
+regression to chase in application code.
+
+To check natives are present without waiting to hit that gate, from any
+directory:
+
+```bash
+python3 -c "import strata_core, frob_core" \
+  && echo "natives present" || echo "natives MISSING -- run: make install-tool"
+```
+
+(there is no dedicated `frob doctor` subcommand yet; the plain Python
+import check above is the same thing `frob` itself would run, and needs no
+new code to be trustworthy today. Filed as a follow-up ticket, T-0317, for
+a proper `frob doctor`/postinstall-verification subcommand that wraps this
+check and prints the same remediation frob's own gates already print.)
