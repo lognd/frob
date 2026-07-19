@@ -324,6 +324,48 @@ class TestCheckGatesStage:
         assert r.returncode == 0, out
 
 
+class TestCheckDocAnchorScopedVsUnscoped:
+    # frob:tests tests/system/test_cli_check.py::TestCheckDocAnchorScopedVsUnscoped.test_scoped_docanchor_matches_unscoped kind="e2e"
+    def test_scoped_docanchor_matches_unscoped(self, tmp_path):
+        """T-0314 litmus: a `frob:doc docs/x.md#anchor` directive whose target
+        lives at the repo root must resolve identically whether `frob check`
+        runs unscoped (`.`) or scoped to the directive's own subdir
+        (`pkg/sub`). Before the fix, `_dispatch_check_python` fed the scoped
+        subdir in as the docanchor gate's resolution root, so `root / docfile`
+        (`pkg/sub/docs/x.md`) never existed and DOC002 fired on a directive
+        that is actually clean -- reproduced here by asserting DOC002 is
+        absent from BOTH runs, not just the unscoped one."""
+        _git("init", "-q", "-b", "main", cwd=tmp_path)
+        _git("config", "user.email", "test@example.com", cwd=tmp_path)
+        _git("config", "user.name", "Test", cwd=tmp_path)
+
+        (tmp_path / "docs").mkdir()
+        (tmp_path / "docs" / "x.md").write_text("# Doc\n\n## Widget\n\nBody.\n")
+
+        sub = tmp_path / "pkg" / "sub"
+        sub.mkdir(parents=True)
+        (sub / "__init__.py").write_text("")
+        (sub / "mod.py").write_text(
+            "# frob:doc docs/x.md#widget\n"
+            "def widget() -> int:\n"
+            '    """A widget."""\n'
+            "    return 1\n"
+        )
+        _git("add", "-A", cwd=tmp_path)
+        _git("commit", "-q", "-m", "init", cwd=tmp_path)
+
+        unscoped = run("check", str(tmp_path), "--only", "docanchor")
+        scoped = run("check", str(sub), "--only", "docanchor")
+
+        unscoped_out = unscoped.stdout + unscoped.stderr
+        scoped_out = scoped.stdout + scoped.stderr
+
+        assert "DOC002" not in unscoped_out, unscoped_out
+        assert "DOC002" not in scoped_out, scoped_out
+        assert unscoped.returncode == 0, unscoped_out
+        assert scoped.returncode == 0, scoped_out
+
+
 class TestCheckStampCoverage:
     def test_stamp_coverage_writes_stamp(self, tmp_path):
         (tmp_path / "coverage.xml").write_text(
