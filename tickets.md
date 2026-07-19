@@ -1915,7 +1915,7 @@ the new timeout test) exit=0, 5.09s. Deletion-filter (`git diff main
 ```yaml
 id: T-0209
 title: capability scanner matches needles inside comments and strings
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-18'
