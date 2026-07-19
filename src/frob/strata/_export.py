@@ -178,6 +178,28 @@ def export_seccomp(model: KernelModel) -> str:
     return json.dumps(profiles, indent=2, sort_keys=True)
 
 
+def _iam_statements_for_flow(flow) -> list[dict]:
+    """The write+read IAM statement pair one `Flow` contributes to the
+    document -- the coarsest honest mapping (module docstring on
+    `export_iam` explains why direction is the only available signal)."""
+    return [
+        {
+            "sid": f"{flow.id}-write",
+            "effect": "Allow",
+            "principal": flow.src,
+            "action": "write",
+            "resource": flow.dst,
+        },
+        {
+            "sid": f"{flow.id}-read",
+            "effect": "Allow",
+            "principal": flow.src,
+            "action": "read",
+            "resource": flow.dst,
+        },
+    ]
+
+
 # frob:doc docs/commands/sys.md#frob-sys-export
 def export_iam(model: KernelModel) -> str:
     """Render one generic, provider-agnostic IAM policy document (JSON, sorted
@@ -192,24 +214,7 @@ def export_iam(model: KernelModel) -> str:
     statements: list[dict] = []
     # frob:waive PERF004 reason="sorted() is the loop's iterable, called once"
     for flow in sorted(model.flows, key=lambda f: f.id):
-        statements.append(
-            {
-                "sid": f"{flow.id}-write",
-                "effect": "Allow",
-                "principal": flow.src,
-                "action": "write",
-                "resource": flow.dst,
-            }
-        )
-        statements.append(
-            {
-                "sid": f"{flow.id}-read",
-                "effect": "Allow",
-                "principal": flow.src,
-                "action": "read",
-                "resource": flow.dst,
-            }
-        )
+        statements.extend(_iam_statements_for_flow(flow))
     document = {
         "version": "2026-07-18",
         "statements": sorted(statements, key=lambda s: s["sid"]),
