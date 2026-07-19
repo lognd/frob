@@ -44,6 +44,7 @@ from ._models import (
     Independent,
     KernelModel,
     Node,
+    Quantity,
     Scenario,
     SetTrust,
 )
@@ -111,37 +112,48 @@ def _validate_containment_bounds(
     contract that cannot actually contain anything.
     """
     for node in breachable.values():
-        contract = node.breach
-        assert contract is not None
-        detect_ok = contract.detect.leq(contract.revoke)
-        if detect_ok.is_err:
-            return Err(detect_ok.danger_err)
-        if not detect_ok.danger_ok:
-            _log.error(
-                "node %s: detection SLA %s%s exceeds revocation bound %s%s (T-0076)",
-                node.id,
-                contract.detect.value,
-                contract.detect.unit,
-                contract.revoke.value,
-                contract.revoke.unit,
-            )
-            return Err(StrataError.IncompatibleContainmentBound)
-        if contract.credential_age is None:
-            continue
-        age_ok = contract.credential_age.leq(contract.revoke)
-        if age_ok.is_err:
-            return Err(age_ok.danger_err)
-        if not age_ok.danger_ok:
-            _log.error(
-                "node %s: credential_age %s%s outlives revocation bound %s%s (T-0076)",
-                node.id,
-                contract.credential_age.value,
-                contract.credential_age.unit,
-                contract.revoke.value,
-                contract.revoke.unit,
-            )
-            return Err(StrataError.IncompatibleContainmentBound)
+        node_ok = _validate_one_containment_bound(node)
+        if node_ok.is_err:
+            return Err(node_ok.danger_err)
     return Ok(None)
+
+
+def _check_bound_leq_revoke(
+    node: Node, verb: str, label: str, bound: Quantity, revoke: Quantity
+) -> Result[None, StrataError]:
+    """Fail closed unless `bound` <= `revoke`; logs which contract field failed."""
+    ok = bound.leq(revoke)
+    if ok.is_err:
+        return Err(ok.danger_err)
+    if not ok.danger_ok:
+        _log.error(
+            "node %s: %s %s%s %s revocation bound %s%s (T-0076)",
+            node.id,
+            label,
+            bound.value,
+            bound.unit,
+            verb,
+            revoke.value,
+            revoke.unit,
+        )
+        return Err(StrataError.IncompatibleContainmentBound)
+    return Ok(None)
+
+
+def _validate_one_containment_bound(node: Node) -> Result[None, StrataError]:
+    """`detect` <= `revoke`, and `credential_age` <= `revoke` if declared."""
+    contract = node.breach
+    assert contract is not None
+    detect_ok = _check_bound_leq_revoke(
+        node, "exceeds", "detection SLA", contract.detect, contract.revoke
+    )
+    if detect_ok.is_err:
+        return detect_ok
+    if contract.credential_age is None:
+        return Ok(None)
+    return _check_bound_leq_revoke(
+        node, "outlives", "credential_age", contract.credential_age, contract.revoke
+    )
 
 
 def _compute_blast_radii(
@@ -188,29 +200,41 @@ def _generate_breach_scenarios(
     (docs/strata/kernel.md#scenario, T-0076).
     """
     node_ids = sorted(breachable)
-    scenarios: list[Scenario] = []
-    for node_id in node_ids:
-        contract = breachable[node_id].breach
-        assert contract is not None
-        claims = model.claims
-        if contract.recovers_via is not None:
-            claims = (
-                *claims,
-                Claim(
-                    id=f"{node_id}__recovery_independent",
-                    body=Independent(
-                        src=contract.recovers_via, dst=node_id, avoid=node_id
-                    ),
-                ),
-            )
-        scenarios.append(
-            Scenario(
-                id=f"{node_id}__breach",
-                rewrites=(SetTrust(node_id=node_id, level=_BREACH_TRUST_LEVEL),),
-                claims=claims,
-            )
+    return tuple(
+        _breach_scenario_for_node(model, node_id, breachable[node_id])
+        for node_id in node_ids
+    )
+
+
+def _breach_scenario_for_node(model: KernelModel, node_id: str, node: Node) -> Scenario:
+    """One trust-downgrade `Scenario` for `node_id`, with recovery-independence
+    claim appended when `recovers_via` is declared."""
+    contract = node.breach
+    assert contract is not None
+    claims = model.claims
+    if contract.recovers_via is not None:
+        claims = (
+            *claims,
+            Claim(
+                id=f"{node_id}__recovery_independent",
+                body=Independent(src=contract.recovers_via, dst=node_id, avoid=node_id),
+            ),
         )
-    return tuple(scenarios)
+    return Scenario(
+        id=f"{node_id}__breach",
+        rewrites=(SetTrust(node_id=node_id, level=_BREACH_TRUST_LEVEL),),
+        claims=claims,
+    )
+
+
+def _validate_breach_preconditions(
+    model: KernelModel, breachable: dict[str, Node]
+) -> Result[None, StrataError]:
+    """Recovery-target references, then containment-bound consistency, in order."""
+    recovery_ok = _validate_recovery_via(model, breachable)
+    if recovery_ok.is_err:
+        return Err(recovery_ok.danger_err)
+    return _validate_containment_bounds(breachable)
 
 
 # frob:doc docs/strata/kernel.md#scenario
@@ -237,13 +261,24 @@ def evaluate_breach_contracts(
         _log.info("evaluate_breach_contracts: no breach contracts declared")
         return Ok(BreachContractReport(scenario_results=(), blast_radii=()))
 
-    recovery_ok = _validate_recovery_via(model, breachable)
-    if recovery_ok.is_err:
-        return Err(recovery_ok.danger_err)
-    bounds_ok = _validate_containment_bounds(breachable)
-    if bounds_ok.is_err:
-        return Err(bounds_ok.danger_err)
+    preconditions_ok = _validate_breach_preconditions(model, breachable)
+    if preconditions_ok.is_err:
+        return Err(preconditions_ok.danger_err)
 
+    return _compute_and_evaluate_breach_report(
+        model, breachable, today, compiled_policies, waived_policies
+    )
+
+
+def _compute_and_evaluate_breach_report(
+    model: KernelModel,
+    breachable: dict[str, Node],
+    today: _dt.date | None,
+    compiled_policies: CompiledPolicies | None,
+    waived_policies: frozenset[str],
+) -> Result[BreachContractReport, StrataError]:
+    """Blast radii over the original model, then the generated breach
+    scenarios evaluated, assembled into the final report."""
     blast_radii = _compute_blast_radii(model, breachable)
     if blast_radii.is_err:
         return Err(blast_radii.danger_err)
