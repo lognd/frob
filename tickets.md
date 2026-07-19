@@ -2537,6 +2537,84 @@ just applied as a substitution walk instead of a reachable-set walk.
 for a future consumer (T-0290) that wants the reachable set rather than
 an in-place splice.
 
+## Round 2: reviewer-rejected FALSE POSITIVE fix (shared-helper inflation)
+
+Reviewer reproduced a real FP in the helper-inlining triage: two
+UNRELATED functions (distinct own-logic) that both call the SAME shared
+private helper were being reported as a clone pair once inlining spliced
+the shared helper's body into both sides, letting the shared text (not
+either caller's own logic) drive the similarity score above threshold.
+Repro (`tests/fixtures/dup_inline/src/mod_c.py`, `_validate` called by
+both `handle_shipping` and `handle_greeting`): `inline_calls=False` -> 0
+groups (bodies too small to clear `min_tokens=40` un-inlined, so never
+even compared -- correct); `inline_calls=True` -> 1 group at similarity
+0.7083333333333333, both at the default threshold (0.85) and at 0.7 --
+a false positive, since the two callers' only commonality is calling the
+same helper (code reuse), not near-identical logic of their own.
+
+Core distinction: sharing a helper is normal code reuse, not
+duplication. Only DIFFERENTLY-NAMED, near-identical helpers
+(`_finalize_a`/`_finalize_b`, the original litmus) are split-duplication.
+
+Fix (approach (a) from the reviewer's brief -- do not let a helper both
+sides call inflate similarity, rather than trying to discount/normalize
+its contribution after the fact): `_pipeline.py` now computes, per
+package directory and cached on `_FpState.caller_counts_by_dir`, a
+`{callee_symref: caller_count}` map over `CallGraph.calls`
+(`_caller_counts`). `_substitute_calls` only inlines a callee whose
+caller count is `<= 1` -- a private helper reached by more than one
+caller anywhere in the package is left as an opaque, un-substituted call
+token on every side, so it contributes ordinary "same call" weight, not
+duplicated-body weight. A helper with exactly one caller still gets
+inlined and recursively expanded, which is exactly what the true
+positive needs: two differently-named, each-singly-called helpers with
+near-identical bodies still get spliced in and compared.
+
+Chosen over option (b) (discount/normalize shared-subtree contribution
+after inlining, require a residual floor) because (a) is simpler to
+reason about and directly encodes the "shared = reuse, not dup" rule at
+the point inlining decides what to expand, rather than trying to
+retroactively separate "shared" from "own" tokens inside an already-
+merged stream.
+
+Verification (this round, `frob_core` present):
+- `tests/test_dup_inline.py::TestSharedHelperNotDuplication::test_shared_helper_not_flagged_at_default_threshold`
+  and `::test_shared_helper_not_flagged_at_threshold_0_7` (new adversarial
+  regression, reviewer's exact repro shape): confirmed FAILING against
+  the pre-fix `_pipeline.py` (reproduces the FP at 0.708 similarity, both
+  default threshold 0.85 and 0.7), PASSING after the fix.
+- `test_split_helpers_detected_with_inlining` (the original true
+  positive, `_finalize_a`/`_finalize_b` singly-called differently-named
+  twins) still green -- the fix does not regress detection.
+- `uv run pytest tests/test_dup_inline.py tests/test_dup_smart.py
+  tests/test_dup_rungs.py -q`: all green.
+- `frob dup src --json` group count on frob's own tree: 14 groups before
+  and after the fix (compared by temporarily reverting only
+  `_pipeline.py` via `git stash`/`git checkout --`) -- no false-positive
+  or false-negative delta introduced by the fix on this repo's own
+  clones.
+- `ruff check src/ tests/`, `ruff format --check` (touched files), `ty
+  check src/`: all clean.
+- `make coverage` (foreground): full suite green, coverage stamped
+  (`source_sha=c3b0d6ff`).
+
+Reconcile note (reviewer): `_substitute_calls` reimplements
+`frob.graph.callgraph.closure`'s bounds (depth cap, node budget, cycle
+guard) rather than calling `closure` directly -- documented in a comment
+directly above `_substitute_calls` in `_pipeline.py`: `closure` returns a
+flat, precomputed BFS symref order, while `_substitute_calls` needs
+interleaved TOKEN splicing where which callee to expand next depends on
+where its call-span lands inside the already-substituted token stream of
+its caller, and each splice consumes the shared budget before the next
+call site is even scanned -- not something `closure`'s return shape
+supports without changing it. Left as a note (not a forced reuse) per
+the reviewer's "if not cheap" fallback; `callgraph.py` itself is
+untouched this round.
+
+Not touched this round (per dispatch instructions): `callgraph.py` /
+`closure` bounds themselves -- those passed review and are out of scope
+for this FP fix.
+
 <!-- ticket:T-0289 -->
 ```yaml
 id: T-0289

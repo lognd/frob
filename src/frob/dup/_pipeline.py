@@ -396,6 +396,25 @@ def _call_graph_for_path(state: _FpState, path: str) -> CallGraph:
     return graph
 
 
+def _caller_counts(state: _FpState, path: str, graph: CallGraph) -> dict[str, int]:
+    """`{callee_symref: number-of-distinct-callers}` for `graph`, cached per
+    directory (T-0288 shared-helper false-positive fix). A callee reached by
+    more than one caller is CODE REUSE, not duplication: two unrelated
+    functions calling the same private helper must not have that helper's
+    body inflate their similarity. See `_substitute_calls`, which refuses to
+    inline any callee with a count > 1 here."""
+    directory = str(Path(path).parent)
+    cached = state.caller_counts_by_dir.get(directory)
+    if cached is not None:
+        return cached
+    counts: dict[str, int] = defaultdict(int)
+    for callees in graph.calls.values():
+        for callee_symref in set(callees):
+            counts[callee_symref] += 1
+    state.caller_counts_by_dir[directory] = counts
+    return counts
+
+
 def _callee_name_map(graph: CallGraph, caller_symref: str) -> dict[str, str]:
     """`{short_call_name: callee_symref}` for one caller's recorded PRIVATE
     callees (see `build_call_graph`)."""
@@ -416,6 +435,18 @@ def _callee_tokens(state: _FpState, callee_symref: str) -> tuple[str, ...] | Non
     return state.tokens_by_path[callee_path].get(callee_qualname)
 
 
+# NOTE (T-0288 reviewer reconcile, re: T-0290 reuse): `_substitute_calls`
+# bounds its walk the same shape as `frob.graph.callgraph.closure` (depth
+# cap, node budget, cycle guard via `visited`), but cannot delegate to
+# `closure` directly -- `closure` returns a flat, already-decided BFS order
+# of symrefs, whereas this function does interleaved TOKEN splicing:
+# which callee to expand next depends on where its call-span sits inside
+# the *already-substituted* token stream of its caller, and each splice
+# consumes shared `budget` before the next call site is even scanned. That
+# requires re-walking token-by-token, not just following a precomputed
+# node list. Reusing `closure`'s bounds isn't cheap without changing its
+# return shape, so the bounding constants (depth/nodes) are intentionally
+# kept independent here; left as a note rather than a forced reuse.
 def _substitute_calls(
     state: _FpState,
     path: str,
@@ -436,6 +467,17 @@ def _substitute_calls(
     Public callees never appear in `graph.calls` at all (see
     `build_call_graph`), so this walk stops at the public-API boundary
     automatically -- no separate check needed here.
+
+    SHARED-HELPER GUARD (T-0288 false-positive fix): a callee reached by
+    more than one caller anywhere in `graph` (`_caller_counts`) is left as
+    an opaque, un-substituted call on every side, never inlined. Sharing a
+    helper is normal code reuse, not duplication -- inlining it into two
+    unrelated callers would make the *shared helper's* body dominate their
+    similarity instead of their own (distinct) logic. Only a private
+    helper with exactly one caller gets inlined, which is exactly the case
+    that matters for split-duplication detection: two differently-named,
+    each-singly-called helpers with near-identical bodies still get
+    expanded and compared.
     """
     if depth >= state.cfg.inline_max_depth or budget[0] <= 0:
         return tokens
@@ -443,6 +485,7 @@ def _substitute_calls(
     name_map = _callee_name_map(graph, caller_symref)
     if not name_map:
         return tokens
+    caller_counts = _caller_counts(state, path, graph)
     out: list[str] = []
     i = 0
     n = len(tokens)
@@ -454,6 +497,7 @@ def _substitute_calls(
             and tokens[i + 1] == "("
             and tok in name_map
             and name_map[tok] not in visited
+            and caller_counts.get(name_map[tok], 0) <= 1
         ):
             callee_symref = name_map[tok]
             paren_depth = 1
@@ -728,6 +772,7 @@ class _FpState:
     digest_by_ref: dict[str, str] = field(default_factory=dict)
     fp_by_ref: dict[str, tuple[int, ...]] = field(default_factory=dict)
     callgraph_by_dir: dict[str, CallGraph] = field(default_factory=dict)
+    caller_counts_by_dir: dict[str, dict[str, int]] = field(default_factory=dict)
 
 
 def _r3_fingerprint(

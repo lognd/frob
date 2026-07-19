@@ -81,6 +81,49 @@ class TestHelperInliningLitmus:
         )
 
 
+class TestSharedHelperNotDuplication:
+    """T-0288 reviewer-reproduced false positive: two UNRELATED functions
+    (distinct own-logic -- different var names, different arithmetic) that
+    both call the SAME shared private helper (`_validate` in
+    tests/fixtures/dup_inline/src/mod_c.py) must never be reported as a
+    clone pair, at any threshold that would otherwise catch it. Sharing a
+    helper is normal code reuse; only DIFFERENTLY-NAMED, near-identical
+    helpers (`_finalize_a`/`_finalize_b`, covered above) are split-
+    duplication."""
+
+    def test_shared_helper_not_flagged_at_default_threshold(self, snapshot):
+        # frob:tests tests/test_dup_inline.py::TestSharedHelperNotDuplication.test_shared_helper_not_flagged_at_default_threshold
+        result = find_clones(snapshot, DupConfig(inline_calls=True))
+        assert result.is_ok, result.err
+        refs = _pair_refs(result.danger_ok)
+        matched = {
+            r
+            for r in refs
+            if any("handle_shipping" in x for x in r)
+            and any("handle_greeting" in x for x in r)
+        }
+        assert not matched, (
+            "handle_shipping/handle_greeting share only the _validate "
+            f"helper (code reuse, not duplication) -- must not be flagged, got {refs}"
+        )
+
+    def test_shared_helper_not_flagged_at_threshold_0_7(self, snapshot):
+        # frob:tests tests/test_dup_inline.py::TestSharedHelperNotDuplication.test_shared_helper_not_flagged_at_threshold_0_7
+        result = find_clones(snapshot, DupConfig(threshold=0.7, inline_calls=True))
+        assert result.is_ok, result.err
+        refs = _pair_refs(result.danger_ok)
+        matched = {
+            r
+            for r in refs
+            if any("handle_shipping" in x for x in r)
+            and any("handle_greeting" in x for x in r)
+        }
+        assert not matched, (
+            "reviewer-reproduced FP: shared-helper inlining pushed "
+            f"similarity to 0.708 at threshold=0.7, got {refs}"
+        )
+
+
 class TestHelperPop:
     def test_tiny_helpers(self, snapshot):
         # frob:tests src/frob/dup/_pipeline.py::find_helper_clones kind="unit"
