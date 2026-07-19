@@ -81,9 +81,9 @@ class TestHelperInliningLitmus:
         )
 
 
-class TestHelperPopulationLitmus:
-    def test_near_identical_tiny_helpers_caught(self, snapshot):
-        # frob:tests tests/test_dup_inline.py::TestHelperPopulationLitmus.test_near_identical_tiny_helpers_caught
+class TestHelperPop:
+    def test_tiny_helpers(self, snapshot):
+        # frob:tests src/frob/dup/_pipeline.py::find_helper_clones kind="unit"
         result = find_helper_clones(snapshot, DupConfig(threshold=0.7))
         assert result.is_ok, result.err
         refs = _pair_refs(result.danger_ok)
@@ -91,7 +91,7 @@ class TestHelperPopulationLitmus:
         assert matched, f"expected a _clamp_* clone pair, got {refs}"
 
     def test_helper_pass_excludes_public_symbols(self, snapshot):
-        # frob:tests tests/test_dup_inline.py::TestHelperPopulationLitmus.test_helper_pass_excludes_public_symbols
+        # frob:tests tests/test_dup_inline.py::TestHelperPop.test_helper_pass_excludes_public_symbols
         result = find_helper_clones(snapshot, DupConfig(threshold=0.7))
         assert result.is_ok, result.err
         refs = _pair_refs(result.danger_ok)
@@ -102,8 +102,8 @@ class TestHelperPopulationLitmus:
 
 
 class TestCallGraphBounds:
-    def test_resolves_intra_file_private_call(self):
-        # frob:tests tests/test_dup_inline.py::TestCallGraphBounds.test_resolves_intra_file_private_call
+    def test_call_edge(self):
+        # frob:tests src/frob/graph/callgraph.py::build_call_graph kind="unit"
         graph = build_call_graph(FIXTURE_ROOT, ["src/mod_a.py"])
         callees = graph.calls.get("src/mod_a.py::process_orders", ())
         assert "src/mod_a.py::_finalize_a" in callees

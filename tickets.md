@@ -2309,7 +2309,16 @@ created: '2026-07-19'
 blocked_by: []
 parent: null
 scope:
-- src/frob/dup/**,src/frob/graph/callgraph.py,tests/**,docs/modules/dup.md,docs/modules/graph.md,tickets.md
+- src/frob/dup/**
+- src/frob/graph/callgraph.py
+- tests/**
+- docs/modules/dup.md
+- docs/modules/graph.md
+- tickets.md
+- CHANGELOG.md
+- pyproject.toml
+- uv.lock
+- .frob-release.json
 evidence: []
 attachments: []
 acceptance:
