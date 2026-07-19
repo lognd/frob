@@ -439,6 +439,35 @@ class TestUnmodeledCode:
         )
 
 
+class TestUnmodeledCodeMissingPackageRoot:
+    """T-0211: `_PACKAGE_ROOT` ("src/frob") is frob's own layout -- a repo
+    with no `src/frob/` at all (i.e. every non-frob repo) must not have
+    SYS102 fire, and must not emit a WARNING-level log about it (sibling-
+    repo pilot P2 found this warning firing on every audit run of every
+    non-frob repo, reading as "the self-conformance proof is vacuous" even
+    though the other checks genuinely ran)."""
+
+    # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    def test_missing_package_root_produces_no_warning(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ):
+        """A repo with no `src/frob/` directory at all gets zero SYS102
+        violations and zero WARNING-level selfconform log records --
+        frob's package-root assumption must not leak into generic repos."""
+        _write(tmp_path, "src/other/_io.py", "x = 1\n")
+        model = KernelModel(
+            nodes=(Node(id="other", trust="trusted", attrs=("code=src/other/**",)),)
+        )
+        with caplog.at_level("DEBUG", logger="frob"):
+            result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        assert not any(
+            v.rule == SYS_UNMODELED_CODE for v in result.danger_ok.violations
+        )
+        warnings = [r for r in caplog.records if r.levelno >= 30]
+        assert not any("selfconform" in r.getMessage() for r in warnings), warnings
+
+
 class TestNonPythonLanguageWiring:
     """T-0169: the logand.app pilot found `frob sys audit` never scanned
     TS/JS at all -- `bind_code` walks only `.py` (T-0078, correctly, since
