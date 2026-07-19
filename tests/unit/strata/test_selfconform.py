@@ -126,6 +126,107 @@ class TestUndeclaredInterfaceExtended:
         )
 
 
+class TestUndeclaredInterfaceFsReadAlias:
+    """T-0304 follow-up: the `fs`/`fs-read` backward-compat alias only
+    covered SYS101 (stale design); SYS100 (undeclared interface) still
+    fired for a broader `may "fs"` declaration against a read-only
+    observation, since `fs-read` is only ever matched against `_EXTENDED_
+    KINDS & declared` and a bare `fs` declaration is not itself an
+    extended kind. This class exercises the SYS100 direction directly
+    (docs/strata/selfconform.md#fs-read-fs-write)."""
+
+    # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    def test_broad_fs_declaration_discharges_read_only_observation(
+        self, tmp_path: Path
+    ):
+        """A node that declares the legacy, broader `may "fs"` must not
+        fire SYS100 for a real read-only observation: `fs` is a superset
+        of `fs-read` and already covers it (live repro: lithos's
+        rust_core/regolith_py/stdlib_records/tooling/demos/vscode_ext all
+        declare `may "fs"` and all six fired SYS100 for `fs-read` before
+        this fix)."""
+        _write(
+            tmp_path,
+            "src/frob/widget/_io.py",
+            "from pathlib import Path\nPath('x').read_text()\n",
+        )
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="widget",
+                    trust="trusted",
+                    attrs=("code=src/frob/widget/**",),
+                    may=("fs",),
+                ),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        assert not any(
+            v.rule == SYS_UNDECLARED_INTERFACE and v.capability == "fs-read"
+            for v in result.danger_ok.violations
+        )
+
+    # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    def test_narrow_fs_read_declaration_does_not_cover_fs_read(self, tmp_path: Path):
+        """A node that already declares `may "fs-read"` directly is
+        unaffected by the alias (it never needed it): a read-only
+        observation is discharged with no SYS100 finding, same as
+        before this fix."""
+        _write(
+            tmp_path,
+            "src/frob/widget/_io.py",
+            "from pathlib import Path\nPath('x').read_text()\n",
+        )
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="widget",
+                    trust="trusted",
+                    attrs=("code=src/frob/widget/**",),
+                    may=("fs-read",),
+                ),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        assert not any(
+            v.rule == SYS_UNDECLARED_INTERFACE and v.capability == "fs-read"
+            for v in result.danger_ok.violations
+        )
+
+    # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    def test_fs_read_only_declaration_still_fires_on_fs_write_observation(
+        self, tmp_path: Path
+    ):
+        """Asymmetry check (the point of the split, module docstring):
+        a node declaring ONLY the narrower `may "fs-read"` must still
+        fire (via THREAT004's core delegate) when a real fs-write-class
+        effect is observed -- narrower declarations never cover broader
+        observations, only the reverse."""
+        _write(
+            tmp_path,
+            "src/frob/widget/_io.py",
+            "from pathlib import Path\nPath('x').write_text('y')\n",
+        )
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="widget",
+                    trust="trusted",
+                    attrs=("code=src/frob/widget/**",),
+                    may=("fs-read",),
+                ),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        hit = [
+            v for v in result.danger_ok.violations if v.rule == SYS_UNDECLARED_INTERFACE
+        ]
+        assert any(v.node == "widget" and v.capability == "fs" for v in hit)
+
+
 class TestStaleDesign:
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
     def test_stale_design_fires(self, tmp_path: Path):

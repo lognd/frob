@@ -369,13 +369,29 @@ def _alias_legacy_fs_observations(observed: frozenset[str]) -> frozenset[str]:
 def _extended_kind_violations(
     model: KernelModel, binding: CodeBinding, root: Path
 ) -> list[SelfConformViolation]:
-    """SYS100 for eval/env/ffi/install-hook -- the one slice
+    """SYS100 for eval/env/ffi/install-hook (+ `fs-read`) -- the slice
     `check_capability_conformance` structurally cannot see (module
-    docstring's SYS100 gap statement)."""
+    docstring's SYS100 gap statement). T-0304 follow-up (SYS100 direction
+    of the `fs`/`fs-read` split, `_alias_legacy_fs_observations`'s sibling
+    on THIS side of the join): a bare `may "fs"` declaration predates the
+    split and means "any real filesystem access", so it is a SUPERSET of
+    `fs-read` and must cover an observed `fs-read` with no finding -- a
+    node that only ever reads should not have to narrow its own broader
+    `may "fs"` down to `may "fs-read"` just to silence SYS100. This is
+    deliberately one-directional and confined to `fs-read` specifically:
+    a node declaring `may "fs-read"` only does NOT cover an observed
+    fs-write-class effect (that join lives in `_core_undeclared_
+    violations`/THREAT004, which already requires `may "fs"` for a
+    fs-write observation and correctly still fires when only `fs-read`
+    is declared) -- narrower declarations never cover broader
+    observations, only the reverse."""
     observed_by_node = _observed_extended_kinds_by_node(binding, root)
     found: list[SelfConformViolation] = []
     for node in model.nodes:
-        declared = _declared_kinds(node) & _EXTENDED_KINDS
+        full_declared = _declared_kinds(node)
+        declared = full_declared & _EXTENDED_KINDS
+        if "fs" in full_declared:
+            declared = declared | {"fs-read"}
         observed = observed_by_node.get(node.id, frozenset())
         # frob:waive PERF004 reason="distinct small per-node diff set, not repeated"
         for kind in sorted(observed - declared):
