@@ -7420,7 +7420,7 @@ T-0260 malmberg pilot findings (batched, all in the deploy generator; each needs
 ```yaml
 id: T-0282
 title: 'strata_core::reachable: terminal-edge support for non-transitive flow chains'
-state: queued
+state: in-progress
 kind: security
 origin: agent
 created: '2026-07-19'
