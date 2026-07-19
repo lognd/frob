@@ -267,6 +267,119 @@ def test_perf004_does_not_fire_on_sorted_generator_no_preceding_loop(tmp_path):
     assert not any(v.rule == "PERF004" for v in violations)
 
 
+def test_perf002_anchors_to_index_call_line_not_def_line(tmp_path):
+    """T-0230: a PERF002 finding anchors to the actual `.index()` call
+    site's line, not the enclosing `def` line -- the sibling-repo pilot
+    gap (lithos audit.py:450 PERF002 while the `.index()` calls sit at
+    465-466)."""
+    # frob:ticket T-0230
+    # frob:tests src/frob/perf/_rules.py::perf_rules
+    src = (
+        "def find_all(items, haystack):\n"
+        "    out = []\n"
+        "    for x in items:\n"
+        "        out.append(haystack.index(x))\n"
+        "    return out\n"
+    )
+    path = _write(tmp_path, "mod.py", src)
+    parsed = parse_file(path).danger_ok
+    snapshot = _snapshot(tmp_path)
+    violations = perf_rules(snapshot, [parsed])
+    hit = next(v for v in violations if v.rule == "PERF002")
+    assert hit.line == 4
+
+
+def test_perf004_anchors_to_sort_call_line_not_def_line(tmp_path):
+    """T-0230: a PERF004 sorted-in-loop finding anchors to the `sorted()`
+    call line, not the enclosing `def` line."""
+    # frob:ticket T-0230
+    # frob:tests src/frob/perf/_rules.py::perf_rules
+    src = (
+        "def rank(rounds, data):\n"
+        "    out = []\n"
+        "    for r in rounds:\n"
+        "        out.append(sorted(data))\n"
+        "    return out\n"
+    )
+    path = _write(tmp_path, "mod.py", src)
+    parsed = parse_file(path).danger_ok
+    snapshot = _snapshot(tmp_path)
+    violations = perf_rules(snapshot, [parsed])
+    hit = next(v for v in violations if v.rule == "PERF004")
+    assert hit.line == 4
+
+
+def test_perf003_anchors_to_equality_line_not_def_line(tmp_path):
+    """T-0230: a PERF003 finding anchors to the `==` comparison's line, not
+    the enclosing `def` line (the rust conformance.rs:31-pointing-at-the-
+    fn-signature gap from the same pilot report)."""
+    # frob:ticket T-0230
+    # frob:tests src/frob/perf/_rules.py::perf_rules
+    src = (
+        "def join(a, b):\n"
+        "    out = []\n"
+        "    for x in a:\n"
+        "        for y in b:\n"
+        "            if x == y:\n"
+        "                out.append(x)\n"
+        "    return out\n"
+    )
+    path = _write(tmp_path, "mod.py", src)
+    parsed = parse_file(path).danger_ok
+    snapshot = _snapshot(tmp_path)
+    violations = perf_rules(snapshot, [parsed])
+    hit = next(v for v in violations if v.rule == "PERF003")
+    assert hit.line == 5
+
+
+def test_perf003_fires_on_call_operand_join(tmp_path):
+    """T-0246: a real nested join comparing DERIVED values -- `f(x) ==
+    g(y)` with `x`/`y` the loop variables inside call parens -- is now
+    correlated and fires, extending `_operand_names`'s one-level unwind
+    from subscripts to call parens."""
+    # frob:ticket T-0246
+    # frob:tests src/frob/perf/_rules.py::perf_rules
+    src = (
+        "def join(a, b):\n"
+        "    out = []\n"
+        "    for x in a:\n"
+        "        for y in b:\n"
+        "            if f(x) == g(y):\n"
+        "                out.append(x)\n"
+        "    return out\n"
+    )
+    path = _write(tmp_path, "mod.py", src)
+    parsed = parse_file(path).danger_ok
+    snapshot = _snapshot(tmp_path)
+    violations = perf_rules(snapshot, [parsed])
+    assert any(v.rule == "PERF003" for v in violations)
+
+
+def test_perf003_call_operand_join_stays_narrow_no_recursive_unwind(tmp_path):
+    """T-0246: the call-paren unwind stops at one level -- an unrelated
+    trailing `==` after two sibling (non-nested) loops, where the outer
+    loop's own bound variable is buried two calls deep on the far side,
+    must not spuriously correlate (the same false-positive discipline the
+    subscript unwind already keeps, applied to the new call-paren path)."""
+    # frob:ticket T-0246
+    # frob:tests src/frob/perf/_rules.py::perf_rules
+    src = (
+        "def summarize(a, b, total):\n"
+        "    out = []\n"
+        "    for x in a:\n"
+        "        out.append(x)\n"
+        "    for y in b:\n"
+        "        out.append(y)\n"
+        "    assert len(out) == f(g(total))\n"
+        "    return out\n"
+    )
+    path = _write(tmp_path, "mod.py", src)
+    parsed = parse_file(path).danger_ok
+    snapshot = _snapshot(tmp_path)
+    violations = perf_rules(snapshot, [parsed])
+    assert not any(v.rule == "PERF003" for v in violations)
+
+
 def test_profile_command_and_load_artifact_round_trip(tmp_path):
     """`profile_command` writes an artifact `load_artifact` can read back."""
     # frob:ticket T-0021

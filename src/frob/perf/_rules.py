@@ -26,7 +26,9 @@ tokens carry no type information to lean on for the other two languages.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Sequence
+from pathlib import Path
 
 from frob.gates._models import Severity, Violation
 from frob.graph import GraphSnapshot
@@ -56,6 +58,85 @@ _FOR_KEYWORD = "for"
 
 _OPENERS = frozenset({"(", "[", "{"})
 _CLOSERS = frozenset({")", "]", "}"})
+
+# T-0230: `body_tokens` is position-free by contract (module docstring) --
+# these patterns drive a second, line-aware pass over the raw source text
+# to recover the OFFENDING statement's real line, instead of always
+# anchoring a finding at the enclosing symbol's `span[0]` (the `def`/`fn`
+# line). The token stream still decides WHETHER a rule fires (unchanged);
+# these patterns only decide WHERE to point the finding once it has.
+_PERF002_LINE_PATTERN = re.compile(r"\.(?:index|count)\(")
+_PERF004_SORT_CALL_PATTERN = re.compile(r"\bsorted\(|\.sort\(")
+_PERF004_FOR_IN_SORTED_PATTERN = re.compile(r"\bfor\b.+\bin\s+sorted\(")
+_EQ_PATTERN = re.compile(r"==")
+_INCLUDES_PATTERN = re.compile(r"\.includes\(")
+_INDEXOF_PATTERN = re.compile(r"\.indexOf\(")
+_CONTAINS_PATTERN = re.compile(r"\.contains\(")
+
+
+# frob:ticket T-0230
+def _source_lines(path: str, span: tuple[int, int]) -> tuple[str, ...]:
+    """Raw source lines covering `span` (1-based inclusive), re-read from
+    `path` -- `()` if the file cannot be opened (moved/deleted since parse,
+    or `path` not resolvable from the current working directory), in which
+    case every caller below falls back to `span[0]`, the old enclosing-def
+    anchor. `ParsedFile.path` is the same repo-relative/absolute string
+    `frob.lang._display_path` already hands every other consumer, so this
+    re-read is consistent with how the rest of the tool treats it."""
+    try:
+        text = Path(path).read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return ()
+    start, end = span
+    return tuple(text.splitlines())[start - 1 : end]
+
+
+# frob:ticket T-0230
+def _first_matching_line(
+    lines: tuple[str, ...], span_start: int, patterns: Sequence[re.Pattern[str]]
+) -> int:
+    """1-based absolute line number of the first line in `lines` (offset
+    from `span_start`) matching any of `patterns`, or `span_start` itself
+    if `lines` is empty or nothing matches -- the safe fallback to the old
+    anchor-at-`def` behavior."""
+    for offset, line in enumerate(lines):
+        if any(p.search(line) for p in patterns):
+            return span_start + offset
+    return span_start
+
+
+# frob:ticket T-0230
+def _perf001_line(
+    tokens: tuple[str, ...], lines: tuple[str, ...], span_start: int
+) -> int:
+    """Line of the first `<x> in <list-name>` membership test, restricted
+    to list-kind names (`_container_kinds`) and skipping `for ... in
+    <name>:` loop-header lines, which share the same `in <name>` shape but
+    are not a membership test."""
+    names = [name for name, kind in _container_kinds(tokens).items() if kind == "list"]
+    if not names:
+        return span_start
+    pattern = re.compile(r"\bin\s+(?:" + "|".join(re.escape(n) for n in names) + r")\b")
+    for offset, line in enumerate(lines):
+        if line.strip().startswith("for "):
+            continue
+        if pattern.search(line):
+            return span_start + offset
+    return span_start
+
+
+# frob:ticket T-0230
+def _perf004_line(lines: tuple[str, ...], span_start: int) -> int:
+    """Line of the first `sorted(`/`.sort(` call that is not itself a
+    `for ... in sorted(...):` loop-iterable header (excluded from firing in
+    the first place by `_perf004_python`, and excluded here from line
+    selection for the same reason)."""
+    for offset, line in enumerate(lines):
+        if _PERF004_SORT_CALL_PATTERN.search(
+            line
+        ) and not _PERF004_FOR_IN_SORTED_PATTERN.search(line):
+            return span_start + offset
+    return span_start
 
 
 # frob:ticket T-0161
@@ -302,6 +383,7 @@ def _perf003_inner_equality_hit(
 
 
 # frob:ticket T-0161
+# frob:ticket T-0246
 def _operand_names(tokens: tuple[str, ...], start: int, step: int) -> frozenset[str]:
     """Identifier(s) making up the `==` operand adjacent to `tokens[start]`,
     walking outward in `step` direction (-1 = leftward, +1 = rightward).
@@ -310,35 +392,51 @@ def _operand_names(tokens: tuple[str, ...], start: int, step: int) -> frozenset[
     (`a[i - 1] == b[j - 1]`) is unwound one bracket pair so the index
     identifier (`i`) still counts -- this is what a real DP/edit-distance
     nested loop's join condition usually looks like, not a bare name
-    comparison. Deliberately NOT extended to attribute access
+    comparison. A call expression (`f(x) == g(y)`) is unwound one level of
+    call parens the same way (T-0246) -- a real nested join comparing
+    DERIVED values (`f(x) == g(y)` with `x`/`y` the loop variables) is
+    lexically identical to the subscript shape modulo the bracket
+    character, so it gets the same one-level unwind, symmetric with the
+    subscript handling above. Deliberately NOT extended to attribute access
     (`waiver.src == ...`): two sibling (non-nested) loops that happen to
     reuse the same loop variable name and each end in `<var>.attr ==
     something` (T-0161 round 2's reviewer-caught false-positive class,
     e.g. `for waiver in candidates: ... for waiver in candidates: ...`)
     would otherwise satisfy this check for both loops despite not being
-    nested at all -- subscript unwinding stays narrow on purpose."""
+    nested at all -- subscript/call unwinding both stay narrow on purpose,
+    stopping at the first bracket/paren pair rather than descending
+    further (e.g. `f(g(x)) == y` only unwinds to `g`/`x`'s outer call, not
+    recursively into `g(x)`)."""
     n = len(tokens)
     if not (0 <= start < n):
         return frozenset()
-    closer = "]" if step == -1 else None
-    opener = "[" if step == 1 else None
     tok = tokens[start]
-    if tok == closer:
+    if tok == "]":
         return _bracket_identifiers(tokens, start - 1, -1)
-    if tok == opener:
+    if tok == "[":
         return _bracket_identifiers(tokens, start + 1, 1)
+    if tok == ")":
+        return _bracket_identifiers(tokens, start - 1, -1, brackets=("(", ")"))
+    if tok == "(":
+        return _bracket_identifiers(tokens, start + 1, 1, brackets=("(", ")"))
     if tok.isidentifier():
         return frozenset({tok})
     return frozenset()
 
 
+# frob:ticket T-0246
 def _bracket_identifiers(
-    tokens: tuple[str, ...], start: int, step: int
+    tokens: tuple[str, ...],
+    start: int,
+    step: int,
+    brackets: tuple[str, str] = ("[", "]"),
 ) -> frozenset[str]:
-    """Identifiers inside one bracket pair, walking from `start` in `step`
+    """Identifiers inside one `brackets` pair (default `[`/`]`, or `(`/`)`
+    for T-0246's call-paren unwind), walking from `start` in `step`
     direction until the matching bracket closes (depth back to 0)."""
     n = len(tokens)
-    open_tok, close_tok = ("[", "]") if step == 1 else ("]", "[")
+    open_b, close_b = brackets
+    open_tok, close_tok = (open_b, close_b) if step == 1 else (close_b, open_b)
     depth = 1
     i = start
     names: set[str] = set()
@@ -443,20 +541,31 @@ def _violation(rule: str, file: str, line: int, extra: str) -> Violation:
 
 
 # frob:ticket T-0021
+# frob:ticket T-0230
 def _python_violations(
-    tokens: tuple[str, ...], depths: tuple[int, ...], path: str, line: int
+    tokens: tuple[str, ...],
+    depths: tuple[int, ...],
+    path: str,
+    span_start: int,
+    lines: tuple[str, ...],
 ) -> list[Violation]:
-    """PERF001/002/004 hits for a python function body (all four rules)."""
+    """PERF001/002/004 hits for a python function body (all four rules),
+    each anchored at its own offending statement's line (T-0230), not the
+    enclosing `def` line -- `span_start` is only the fallback when `lines`
+    can't locate the real one."""
     hits: list[Violation] = []
     if _perf001_python(tokens, depths):
+        line = _perf001_line(tokens, lines, span_start)
         hits.append(
             _violation("PERF001", path, line, "membership test over a list in a loop")
         )
     if _perf002_python(tokens, depths):
+        line = _first_matching_line(lines, span_start, (_PERF002_LINE_PATTERN,))
         hits.append(
             _violation("PERF002", path, line, ".index()/.count() call in a loop")
         )
     if _perf004_python(tokens, depths):
+        line = _perf004_line(lines, span_start)
         hits.append(
             _violation("PERF004", path, line, "sorted()/.sort() call in a loop")
         )
@@ -464,35 +573,51 @@ def _python_violations(
 
 
 # frob:ticket T-0021
+# frob:ticket T-0230
 def _best_effort_violations(
     tokens: tuple[str, ...],
     depths: tuple[int, ...],
     language: str,
     path: str,
-    line: int,
+    span_start: int,
+    lines: tuple[str, ...],
 ) -> list[Violation]:
-    """PERF001/002 hits for a non-python (typescript/rust) function body."""
+    """PERF001/002 hits for a non-python (typescript/rust) function body,
+    each anchored at the actual `.includes(`/`.indexOf(`/`.contains(` call
+    site (T-0230) rather than the enclosing function/fn line."""
     hits: list[Violation] = []
     if _perf001_best_effort(tokens, depths, language):
+        pattern = _INCLUDES_PATTERN if language == "typescript" else _CONTAINS_PATTERN
+        line = _first_matching_line(lines, span_start, (pattern,))
         hits.append(_violation("PERF001", path, line, "membership test in a loop"))
     if _perf002_best_effort(tokens, depths, language):
+        line = _first_matching_line(lines, span_start, (_INDEXOF_PATTERN,))
         hits.append(_violation("PERF002", path, line, "linear index lookup in a loop"))
     return hits
 
 
 # frob:ticket T-0021
+# frob:ticket T-0230
 def _symbol_violations(file: ParsedFile, symbol: RawSymbol) -> tuple[Violation, ...]:
-    """Every PERF001..PERF004 hit inside one function/method symbol."""
+    """Every PERF001..PERF004 hit inside one function/method symbol, each
+    anchored at its own offending statement's real line (T-0230) via a
+    line-aware re-read of the source (`_source_lines`), not always at the
+    enclosing symbol's `span[0]` -- the position `body_tokens` alone cannot
+    recover (module docstring)."""
     if symbol.kind not in _FUNCTION_KINDS:
         return ()
     tokens = symbol.body_tokens
     depths = _bracket_depths(tokens)
-    line = symbol.span[0]
+    span_start = symbol.span[0]
+    lines = _source_lines(file.path, symbol.span)
     if file.language == "python":
-        hits = _python_violations(tokens, depths, file.path, line)
+        hits = _python_violations(tokens, depths, file.path, span_start, lines)
     else:
-        hits = _best_effort_violations(tokens, depths, file.language, file.path, line)
+        hits = _best_effort_violations(
+            tokens, depths, file.language, file.path, span_start, lines
+        )
     if _perf003(tokens, depths):
+        line = _first_matching_line(lines, span_start, (_EQ_PATTERN,))
         hits.append(
             _violation(
                 "PERF003", file.path, line, "nested loops with an equality comparison"
