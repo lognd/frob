@@ -28,6 +28,7 @@ from frob.app._style import (
     style_fail,
     style_header,
     style_ok,
+    style_rule,
     style_state,
     style_ticket_id,
     style_warn,
@@ -59,13 +60,18 @@ def test_style_state_palette():
     assert style_state("nonexistent-state", True) == "nonexistent-state"
 
 
+# frob:tests src/frob/app/_style.py::style_ok kind="unit"
+# frob:tests src/frob/app/_style.py::style_fail kind="unit"
+# frob:tests src/frob/app/_style.py::style_warn kind="unit"
+# frob:tests src/frob/app/_style.py::style_header kind="unit"
+# frob:tests src/frob/app/_style.py::style_rule kind="unit"
 def test_style_colors_verbatim_off():
-    # frob:tests tests/unit/test_app_style.py::test_style_colors_verbatim_off kind="unit"
     for fn, text in (
         (style_ok, "PROVED"),
         (style_fail, "GAP"),
         (style_warn, "WAIVED"),
         (style_header, "frob stats"),
+        (style_rule, "THREAT002"),
     ):
         assert fn(text, False) == text
         assert _ESC in fn(text, True)

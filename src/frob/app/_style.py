@@ -37,7 +37,6 @@ STATE_STYLE = {
 
 # frob:ticket T-0179
 # frob:doc docs/modules/app.md#shared-styling-helper-t-0179
-# frob:tests tests/unit/test_app_style.py::test_style_ticket_id_paints kind="unit"
 def style_ticket_id(ticket_id: str, color: bool) -> str:
     """A ticket id (`T-0042`) bolded -- a stable anchor across every listing."""
     return paint(ticket_id, BOLD, color)
@@ -45,7 +44,6 @@ def style_ticket_id(ticket_id: str, color: bool) -> str:
 
 # frob:ticket T-0179
 # frob:doc docs/modules/app.md#shared-styling-helper-t-0179
-# frob:tests tests/unit/test_app_style.py::test_style_state_palette kind="unit"
 def style_state(state: str, color: bool) -> str:
     """A ticket state word colored per `STATE_STYLE`; unrecognized states
     pass through unchanged rather than guessing a color."""
@@ -57,7 +55,6 @@ def style_state(state: str, color: bool) -> str:
 
 # frob:ticket T-0179
 # frob:doc docs/modules/app.md#shared-styling-helper-t-0179
-# frob:tests tests/unit/test_app_style.py::test_style_colors_verbatim_off kind="unit"
 def style_ok(text: str, color: bool) -> str:
     """Green -- a passed check, PROVED verdict, or clean result."""
     return paint(text, GREEN, color)
@@ -65,7 +62,6 @@ def style_ok(text: str, color: bool) -> str:
 
 # frob:ticket T-0179
 # frob:doc docs/modules/app.md#shared-styling-helper-t-0179
-# frob:tests tests/unit/test_app_style.py::test_style_colors_verbatim_off kind="unit"
 def style_fail(text: str, color: bool) -> str:
     """Red -- a failed check, GAP, or error condition."""
     return paint(text, RED, color)
@@ -73,7 +69,6 @@ def style_fail(text: str, color: bool) -> str:
 
 # frob:ticket T-0179
 # frob:doc docs/modules/app.md#shared-styling-helper-t-0179
-# frob:tests tests/unit/test_app_style.py::test_style_colors_verbatim_off kind="unit"
 def style_warn(text: str, color: bool) -> str:
     """Yellow -- a WARNED/waived item."""
     return paint(text, YELLOW, color)
@@ -81,7 +76,6 @@ def style_warn(text: str, color: bool) -> str:
 
 # frob:ticket T-0179
 # frob:doc docs/modules/app.md#shared-styling-helper-t-0179
-# frob:tests tests/unit/test_app_style.py::test_style_colors_verbatim_off kind="unit"
 def style_header(text: str, color: bool) -> str:
     """Bold -- a section header."""
     return paint(text, BOLD, color)
@@ -89,7 +83,6 @@ def style_header(text: str, color: bool) -> str:
 
 # frob:ticket T-0179
 # frob:doc docs/modules/app.md#shared-styling-helper-t-0179
-# frob:tests tests/unit/test_app_style.py::test_style_ticket_id_paints kind="unit"
 def style_rule(rule_id: str, color: bool) -> str:
     """A rule/gate id (e.g. `THREAT002`) subtly highlighted in cyan."""
     return paint(rule_id, CYAN, color)
