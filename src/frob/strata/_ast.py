@@ -108,6 +108,21 @@ class OwnsDecl(BaseModel):
     mode: str
 
 
+# frob:doc docs/strata/krb.md#surface-grammar
+class KrbTrustDecl(BaseModel):
+    """A parsed `trusts IDENT [direction "..."] [transitive]` clause (T-0262,
+    docs/strata/krb.md): one domain trust edge from the declaring realm node
+    to `target`, another realm node's id. `direction` defaults to
+    `"one-way"` (the safer default per charter law 2 -- a trust must be
+    explicitly widened to two-way, never silently assumed bidirectional)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    target: str
+    direction: str = "one-way"
+    transitive: bool = False
+
+
 # frob:doc docs/strata/surface.md#parser
 class NodeDecl(BaseModel):
     """A parsed `node` statement, one entry in a `Module`."""
@@ -152,6 +167,32 @@ class NodeDecl(BaseModel):
     # `listens PORT`+, T-0255; elaborated to `listens=<port>` attrs, one
     # per port.
     listens: tuple[int, ...] = ()
+    # `realm "NAME"`, T-0262 (std.krb); elaborated to a `krb_realm=<name>`
+    # attr. Not store-scoped in this pass -- see `_krb.py` module docstring
+    # for the deferred store-symmetry cut.
+    krb_realm: str | None = None
+    # `kdc` bare marker, T-0262; elaborated to a `"krb_kdc"` attr, same
+    # bare-marker convention `managed`/`unit` use.
+    krb_is_kdc: bool = False
+    # `spn "SPN"`+, T-0262; elaborated to `krb_spn=<value>` attrs, one per
+    # entry (same per-atom desugar `code`/`carries` use).
+    krb_spns: tuple[str, ...] = ()
+    # `delegation none|constrained|rbcd|unconstrained`, T-0262; elaborated
+    # to a `krb_delegation=<kind>` attr. The kind's closed vocabulary is
+    # validated at elaboration time, not by the parser (mirrors
+    # `observe`'s log classes).
+    krb_delegation: str | None = None
+    # `target "SPN"`* following `delegation`, T-0262; elaborated to
+    # `krb_delegation_target=<spn>` attrs, one per entry. Only meaningful
+    # when `krb_delegation == "constrained"`; the elaborator checks this,
+    # not the parser (law 2: no silent drop of an out-of-context clause).
+    krb_delegation_targets: tuple[str, ...] = ()
+    # `trusts IDENT [direction "..."] [transitive]`*, T-0262; elaborated to
+    # both a `krb_trust=<target>:<direction>:<transitive>` attr AND a
+    # synthesized `Flow` edge so cross-realm reachability is
+    # model-checkable by the existing reach/noflow machinery
+    # (`_elaborate.py::_elaborate_module`).
+    krb_trusts: tuple[KrbTrustDecl, ...] = ()
 
 
 # frob:doc docs/strata/surface.md#parser

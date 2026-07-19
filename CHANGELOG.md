@@ -17,6 +17,29 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.9.0] - unreleased
+
+Public-API surface changes since 0.8.0 (mechanical semver via REL001):
+
+- T-0262: `std.krb` -- Kerberos/AD domain trust, SPNs, and delegation as
+  first-class strata (deploy epic T-0254's auth pillar, built on T-0255's
+  `HostManifest`/`runs_as`). New grammar (`strata-core/src/parse.rs`):
+  node clauses `realm "NAME"`, `kdc`, `spn "SPN"`+, `delegation
+  none|constrained|rbcd|unconstrained [target "SPN"]*`, `trusts IDENT
+  [direction "one-way"|"two-way"] [transitive]`+, and a flow clause
+  `authenticates_via tgt|st`. New `frob.strata._krb` (pure, fully unit-
+  and litmus-tested): `KrbManifest`, `KrbDelegationKind`, `KrbTrust`,
+  `krb_attrs`, `krb_manifest_for`, `krb_trust_flows`,
+  `flow_authenticates_via`. New `frob.strata._ast.KrbTrustDecl`. Domain
+  trusts desugar to a synthesized `Flow` at elaboration time
+  (`_elaborate.py::_elaborate_module`) so the existing reach/noflow
+  closure model-checks cross-realm reachability with no new kernel
+  primitive (charter law 1). MODEL + VOCABULARY ONLY: delegation-abuse
+  obligations are T-0263, out of scope here. tmLanguage grammar synced
+  (`editors/vscode-strata/syntaxes/strata.tmLanguage.json`);
+  `docs/strata/krb.md` documents the vocabulary and its scope cuts (no
+  store-level clauses, no generator).
+
 ## [0.8.0] - unreleased
 
 Public-API surface changes since 0.7.0 (mechanical semver via REL001):

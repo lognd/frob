@@ -491,6 +491,7 @@
     "src/frob/strata/_ast.py::FlowDecl": "1d838fe648186852fb8f99c3d4d6ac450acf77d5df42326ce9b6ec04ef83266f",
     "src/frob/strata/_ast.py::ForbidCall": "b7e47f754994f3e1fcb112d661506f9a7761974d3e79f7dac9f6e485143cd4f7",
     "src/frob/strata/_ast.py::ForbidImport": "bc9c5796618b390ae043cc1756bc63a7c97ae2b23ec379c3d5c0cbc5d07a2fe4",
+    "src/frob/strata/_ast.py::KrbTrustDecl": "9b2bdd84a30d56d992dc22706dc1f37956103bf601a8dc7c0b3a3934c6ec2406",
     "src/frob/strata/_ast.py::Mediate": "986c55c1494c883334819b1bf7e591c9c697fa12f69a269f20a89b6bf7f1193d",
     "src/frob/strata/_ast.py::Module": "24df940d4e0334bb4564141eae66f0e8b282d4f8d4fc81a1c237010c4154312c",
     "src/frob/strata/_ast.py::NodeDecl": "ef9cca606190e4a14db03829599052eafbd51e2668ff078a29ad155cbf41a058",
@@ -596,6 +597,13 @@
     "src/frob/strata/_host_isolation.py::host_movement_flows": "4974b141d0ffd5c8f56c2aafe3f49c8e0cad1493e83d354fef771f6fea8664c4",
     "src/frob/strata/_infra.py::InfraExpansion": "e34d676c1abd870a25d500b86c42384eb317860e0ba9de1f3a3f8c0e5691e061",
     "src/frob/strata/_infra.py::elaborate_infra": "273b7d74e6a8e17a9e608b8758a417d88d1bc9938e42c7233a6da5050c46f4fa",
+    "src/frob/strata/_krb.py::KrbDelegationKind": "63e137f7aca7006864e0a233130159cca250da83d5b903e3008c27b083674ac1",
+    "src/frob/strata/_krb.py::KrbManifest": "c31500a835db3f0814acd4ea86786fad55db65e3cc34323fd10fa9e1161d9a2f",
+    "src/frob/strata/_krb.py::KrbTrust": "4fa442c9ae2a87d46a1c03911fddd6a5642c036274ac0249598f0bf67df50e9b",
+    "src/frob/strata/_krb.py::flow_authenticates_via": "5d1e1cab3c37c0fd86291f733f090c50358c6aa7eff222494b1d28af478cd018",
+    "src/frob/strata/_krb.py::krb_attrs": "8d7fd92e3928338250a34055e726eb87f167144571bcc4df9555fcf1c71f0996",
+    "src/frob/strata/_krb.py::krb_manifest_for": "66541bccbcad2e9a27043b92ec440d5fb7527cecdf065069327c5ca8bde947de",
+    "src/frob/strata/_krb.py::krb_trust_flows": "a5d0379d2d0da1c1b4073234cfb571a0690ff6b056392341ac8995c97bd63e4c",
     "src/frob/strata/_lint.py::LintReport": "ff97433f585e76b3a4d9bed9ab02eb84381c1d4add382a21955af74d59adc3be",
     "src/frob/strata/_lint.py::LintViolation": "86f21bd089427de5da7bbf2aac69671f02acd7393475936ca6b2c4f0aa2b5a35",
     "src/frob/strata/_lint.py::RISKY_CAPABILITY_KINDS": "5b64a4148a2a6c66de3dc8654a0d79f94291d81a6dfeadd65719a0da8845c123",
@@ -879,5 +887,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.8.0"
+  "version": "0.9.0"
 }

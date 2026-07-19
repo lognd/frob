@@ -457,6 +457,12 @@ impl Parser {
         let mut is_unit = false;
         let mut owns: Vec<serde_json::Value> = Vec::new();
         let mut listens: Vec<i64> = Vec::new();
+        let mut krb_realm: Option<String> = None;
+        let mut krb_is_kdc = false;
+        let mut krb_spns: Vec<String> = Vec::new();
+        let mut krb_delegation: Option<String> = None;
+        let mut krb_delegation_targets: Vec<String> = Vec::new();
+        let mut krb_trusts: Vec<serde_json::Value> = Vec::new();
         if self.at_symbol('{') {
             self.advance();
             loop {
@@ -469,6 +475,77 @@ impl Parser {
                 } else if self.at_keyword("attr") {
                     self.advance();
                     attrs.push(self.parse_attrval()?);
+                } else if self.at_keyword("realm") {
+                    // T-0262: `realm "REALM.NAME"` -- names the Kerberos
+                    // realm/AD domain this node participates in or, paired
+                    // with `kdc`, represents (docs/strata/krb.md). STRING,
+                    // not IDENT, since a realm name commonly carries `.`
+                    // (same `runs_as`/`code` precedent). At most one per
+                    // node; a repeated clause overwrites, mirroring
+                    // `clearance`.
+                    self.advance();
+                    krb_realm = Some(self.expect_string("realm name")?);
+                } else if self.at_keyword("kdc") {
+                    // T-0262: bare marker -- this node is the Key
+                    // Distribution Center for its `realm` (docs/strata/
+                    // krb.md). Mirrors `unit`'s bare-marker shape.
+                    self.advance();
+                    krb_is_kdc = true;
+                } else if self.at_keyword("spn") {
+                    // T-0262: `spn "SPN/value@REALM"`+ -- one or more
+                    // service principal names bound to this node's
+                    // `runs_as` service account (T-0255's principal,
+                    // docs/strata/krb.md). STRING, repeatable, same shape
+                    // as `code`/`carries`.
+                    self.advance();
+                    krb_spns.push(self.expect_string("spn value")?);
+                    while matches!(self.cur().kind, TokKind::Str(_)) {
+                        krb_spns.push(self.expect_string("spn value")?);
+                    }
+                } else if self.at_keyword("delegation") {
+                    // T-0262: `delegation none|constrained|rbcd|unconstrained
+                    // [target "SPN"]*` -- the crown-jewel lateral-movement
+                    // modeling target (docs/strata/krb.md). The kind is an
+                    // IDENT drawn from a closed vocabulary (validated at
+                    // elaboration time, mirroring how `boundary`'s
+                    // endorse/declassify kind is grammar-fixed but other
+                    // closed-vocabulary clauses like `observe`'s log
+                    // classes defer validation to the elaborator); `target`
+                    // is only meaningful for `constrained` but the parser
+                    // accepts it unconditionally and leaves that check to
+                    // the elaborator (law 2: no silent drop, but also no
+                    // parser-level coupling between two clauses' shapes).
+                    self.advance();
+                    krb_delegation = Some(self.expect_ident("delegation kind")?);
+                    while self.at_keyword("target") {
+                        self.advance();
+                        krb_delegation_targets.push(self.expect_string("delegation target spn")?);
+                    }
+                } else if self.at_keyword("trusts") {
+                    // T-0262: `trusts IDENT [direction "one-way"|"two-way"]
+                    // [transitive]` -- a domain trust from this realm node
+                    // to another (docs/strata/krb.md). IDENT is the target
+                    // realm node's id (a dangling/non-realm reference is an
+                    // elaboration-time check, not a parser one, matching
+                    // `panics_contained_by`'s precedent). Repeatable: a
+                    // realm may trust more than one other realm.
+                    self.advance();
+                    let target = self.expect_ident("trusts target realm node id")?;
+                    let mut direction = "one-way".to_string();
+                    if self.at_keyword("direction") {
+                        self.advance();
+                        direction = self.expect_string("trust direction")?;
+                    }
+                    let mut transitive = false;
+                    if self.at_keyword("transitive") {
+                        self.advance();
+                        transitive = true;
+                    }
+                    krb_trusts.push(json!({
+                        "target": target,
+                        "direction": direction,
+                        "transitive": transitive,
+                    }));
                 } else if self.at_keyword("runs_as") {
                     // T-0255: `runs_as "svc-name"` -- names the dedicated
                     // OS service user the deploy generator creates for
@@ -691,6 +768,12 @@ impl Parser {
             "is_unit": is_unit,
             "owns": owns,
             "listens": listens,
+            "krb_realm": krb_realm,
+            "krb_is_kdc": krb_is_kdc,
+            "krb_spns": krb_spns,
+            "krb_delegation": krb_delegation,
+            "krb_delegation_targets": krb_delegation_targets,
+            "krb_trusts": krb_trusts,
         }));
         Ok(())
     }
@@ -897,6 +980,19 @@ impl Parser {
                     let n = self.expect_number("growth percent")?;
                     self.expect_symbol('%')?;
                     attrs.push(format!("growth={}", n));
+                } else if self.at_keyword("authenticates_via") {
+                    // T-0262: `authenticates_via tgt|st` -- marks this flow
+                    // as crossing a Kerberos authentication boundary
+                    // (ticket-granting or service-ticket exchange,
+                    // docs/strata/krb.md). Desugars to a flow attr
+                    // "krb_ticket=<kind>" -- no new kernel primitive
+                    // (charter law 1); the existing flow/noflow/reach
+                    // machinery already walks this edge, the attr just
+                    // tags it as a Kerberos crossing for std.krb-aware
+                    // obligations (T-0263) to key off later.
+                    self.advance();
+                    let kind = self.expect_ident("authenticates_via ticket kind")?;
+                    attrs.push(format!("krb_ticket={}", kind));
                 } else {
                     return self.err("unknown flow property");
                 }

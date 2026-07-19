@@ -1,0 +1,44 @@
+// krb_declared.strata -- T-0262 litmus: the full std.krb vocabulary --
+// realm/kdc trust-lattice nodes, an SPN bound to a runs_as service
+// account, a typed delegation declaration, a two-way transitive domain
+// trust, and a flow crossing a Kerberos boundary (authenticates_via).
+// MODEL + VOCABULARY only (T-0262 scope): no delegation-abuse obligation
+// fires here -- that is T-0263's job. This fixture instead round-trips
+// parse -> elaborate -> krb_manifest_for/krb_trust_flows/
+// flow_authenticates_via, proving the attr-desugar convention AND the
+// synthesized cross-realm Flow edge survive the real strata_core parser,
+// not just a hand-built KernelModel.
+//
+// tested end to end by tests/unit/strata/test_litmus_krb.py.
+
+module krb_declared
+
+node corp_kdc : trusted {
+    clearance Internal;
+    realm "CORP.EXAMPLE";
+    kdc;
+    trusts partner_kdc direction "two-way" transitive;
+}
+
+node partner_kdc : trusted {
+    clearance Internal;
+    realm "PARTNER.EXAMPLE";
+    kdc;
+}
+
+node app : trusted {
+    clearance Internal;
+    realm "CORP.EXAMPLE";
+    runs_as "app-svc";
+    spn "HTTP/app.corp.example@CORP.EXAMPLE";
+    delegation constrained target "HTTP/backend.corp.example@CORP.EXAMPLE";
+}
+
+node backend : trusted {
+    clearance Internal;
+    realm "PARTNER.EXAMPLE";
+}
+
+flow app_to_backend: app -> backend {
+    authenticates_via st;
+}
