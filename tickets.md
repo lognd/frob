@@ -9149,11 +9149,11 @@ heuristic was corrected, a gate rule's skip-list gained one more
 consistent entry, a collector gained one more recognized error shape).
 No design change to flag.
 
-<!-- ticket:T-draft-d86ea451 -->
+<!-- ticket:T-0302 -->
 ```yaml
-id: T-draft-d86ea451
+id: T-0302
 title: close 3 TEST005 branch-coverage gaps on security-critical functions
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-19'
