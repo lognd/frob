@@ -371,7 +371,9 @@ def build_facts(model: KernelModel) -> Result[FactBase, StrataError]:
     return Ok(facts)
 
 
-def _validate_build_facts_preconditions(model: KernelModel) -> Result[None, StrataError]:
+def _validate_build_facts_preconditions(
+    model: KernelModel,
+) -> Result[None, StrataError]:
     """Every fail-closed check `build_facts` must clear before indexing,
     run in order: native extension present, lattices acyclic, ids valid,
     levels valid, quantities non-negative. Order matters -- the first

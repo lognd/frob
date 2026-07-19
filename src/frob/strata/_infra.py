@@ -81,7 +81,10 @@ def _elaborate_store(decl: StoreDecl) -> Result[Node, StrataError]:
     if waives_result.is_err:
         return Err(waives_result.danger_err)
     _log.debug(
-        "store %s -> node at trust %s, attrs=%s", decl.id, decl.trust, attrs_result.danger_ok
+        "store %s -> node at trust %s, attrs=%s",
+        decl.id,
+        decl.trust,
+        attrs_result.danger_ok,
     )
     return Ok(
         Node(
@@ -291,7 +294,7 @@ def _elaborate_balancer(decl: BalancerDecl) -> Node:
     return Node(id=decl.id, trust=trust, attrs=tuple(attrs))
 
 
-def _cache_bound(decl: CacheDecl) -> Result[object, StrataError]:
+def _cache_bound(decl: CacheDecl) -> Result[Quantity, StrataError]:
     """The ttl/staleness age bound a `cache` collapses to a single
     `Quantity` -- one bound, not two independent ones (charter D-age-
     collapse). Fails closed if both are declared and disagree, or if
@@ -415,7 +418,7 @@ def _elaborate_cache(
 
 
 def _cache_node_and_fill_flow(
-    decl: CacheDecl, source: Node, bound: object
+    decl: CacheDecl, source: Node, bound: Quantity
 ) -> tuple[Node, Flow]:
     """The `Node` + fill `Flow` a `cache` desugars to, given its resolved
     source-of-truth `Node` and age `bound` (see `_elaborate_cache`)."""
@@ -467,12 +470,14 @@ def _elaborate_cdn(
     if age_result.is_err:
         return Err(age_result.danger_err)
 
-    node, fill_flow = _cdn_node_and_fill_flow(decl, source, age_result.danger_ok)
+    node, fill_flow = _cdn_node_and_fill_flow(
+        decl, source, decl.provider_trust, age_result.danger_ok
+    )
     boundaries = _cdn_boundaries(decl, source, fill_flow)
     return Ok((node, fill_flow, boundaries))
 
 
-def _cdn_age(decl: CdnDecl, source: Node) -> Result[object | None, StrataError]:
+def _cdn_age(decl: CdnDecl, source: Node) -> Result[Quantity | None, StrataError]:
     """The fill-flow age for a `cdn`: `None` (age=0, unbounded) if
     `staleness unlimited` over an `immutable` source, else the declared
     `staleness`. Fails closed on unlimited staleness over a mutable
@@ -498,15 +503,19 @@ def _cdn_age(decl: CdnDecl, source: Node) -> Result[object | None, StrataError]:
     return Err(StrataError.MissingBound)
 
 
-def _cdn_node_and_fill_flow(decl: CdnDecl, source: Node, age: object | None) -> tuple[Node, Flow]:
-    """The `Node` + fill `Flow` a `cdn` desugars to (see `_elaborate_cdn`)."""
+def _cdn_node_and_fill_flow(
+    decl: CdnDecl, source: Node, provider_trust: str, age: Quantity | None
+) -> tuple[Node, Flow]:
+    """The `Node` + fill `Flow` a `cdn` desugars to (see `_elaborate_cdn`).
+    `provider_trust` is passed narrowed (non-`None`) by the caller, which
+    already fails closed on a missing provider trust."""
     node_attrs: list[str] = [f"provider={decl.provider}"]
     if decl.hit is not None:
         node_attrs.append(f"hit={decl.hit}")
 
     node = Node(
         id=decl.id,
-        trust=decl.provider_trust,
+        trust=provider_trust,
         clearance=source.clearance,
         attrs=tuple(node_attrs),
     )
@@ -521,7 +530,9 @@ def _cdn_node_and_fill_flow(decl: CdnDecl, source: Node, age: object | None) -> 
     return node, fill_flow
 
 
-def _cdn_boundaries(decl: CdnDecl, source: Node, fill_flow: Flow) -> tuple[Boundary, ...]:
+def _cdn_boundaries(
+    decl: CdnDecl, source: Node, fill_flow: Flow
+) -> tuple[Boundary, ...]:
     """The declassify `Boundary` a `cdn`'s `tls_terminates_at_provider`
     clause desugars to, or `()` if the clause is absent."""
     if not decl.tls_terminates_at_provider:
@@ -596,7 +607,6 @@ def _sticky_balancer_diagnostics(
     return tuple(findings)
 
 
-# frob:doc docs/strata/surface.md#stdinfra
 def _elaborate_simple_infra_nodes(module: Module) -> Result[list[Node], StrataError]:
     """`store`/`queue`/`balancer` -> `Node`s, in that order -- the
     fallible-then-infallible constructs `elaborate_infra` elaborates
@@ -669,6 +679,7 @@ def _elaborate_all_infra_nodes(
     return Ok((new_nodes, new_flows, new_boundaries))
 
 
+# frob:doc docs/strata/surface.md#stdinfra
 def elaborate_infra(
     module: Module,
     nodes: tuple[Node, ...],
@@ -695,7 +706,9 @@ def elaborate_infra(
     all_nodes = (*nodes, *new_nodes)
     all_boundaries = (*boundaries, *new_boundaries)
     return Ok(
-        _finish_infra_expansion(module, all_nodes, all_flows, all_boundaries, diagnostics)
+        _finish_infra_expansion(
+            module, all_nodes, all_flows, all_boundaries, diagnostics
+        )
     )
 
 

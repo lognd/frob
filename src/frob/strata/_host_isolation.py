@@ -332,9 +332,7 @@ def _lateral_pair_violations(
         _shared_writable_path_violations(user_a, nodes_a, user_b, nodes_b, manifests)
     )
     violations.extend(
-        _shared_socket_violations(
-            model, user_a, nodes_a, user_b, nodes_b, manifests
-        )
+        _shared_socket_violations(model, user_a, nodes_a, user_b, nodes_b, manifests)
     )
     violations.append(_shared_group_violation(user_a, user_b))
     return violations
@@ -679,9 +677,7 @@ def _vertical_user_violations(
     violations: list[HostIsolationViolation] = []
     violations.extend(_setuid_violations(user, owns))
     violations.append(_sudoers_violation(user))
-    violations.extend(
-        _root_unit_writable_violations(user, owns, root_nodes, manifests)
-    )
+    violations.extend(_root_unit_writable_violations(user, owns, root_nodes, manifests))
     violations.extend(
         _higher_trust_write_violations(
             model, trust_by_node, user, user_nodes, owns, manifests
@@ -817,9 +813,7 @@ def evaluate_host_isolation_waived(
     if vertical.is_err:
         return Err(vertical.danger_err)
 
-    by_user = _nodes_by_user(
-        {n.id: n for n in model.nodes}, _manifests_by_node(model)
-    )
+    by_user = _nodes_by_user({n.id: n for n in model.nodes}, _manifests_by_node(model))
     host001, host002 = _apply_host_waivers(
         model, lateral.danger_ok, vertical.danger_ok, by_user
     )
