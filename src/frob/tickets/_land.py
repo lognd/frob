@@ -112,6 +112,7 @@ def splice_ledger(
     for ticket_id in resurrected:
         del merged[ticket_id]
     if resurrected:
+        # frob:waive PERF004 reason="runs once after the loop above, not inside it"
         _log.info(
             "tickets: land splice -- dropped %d already-archived id(s): %s",
             len(resurrected),
