@@ -1,15 +1,31 @@
 """CLI wiring for `frob deploy` -- compile `std.host` `HostManifest` facts
-into Linux/systemd install/status/uninstall bash (T-0257).
+into Linux/systemd install/status/uninstall bash (T-0257), plus the
+empirical VirtualBox snapshot-diff audit (`audit`, T-0259, deploy epic
+T-0254 child 5).
 
-One verb today: `generate`. Loads every `.strata` design file under the
-repo's design dir (same `load_design_ids`/`merge_models` pattern
-`frob.app.sys_runner` already uses for `plan`/`doc`/`audit`), renders the
-three scripts via `frob.deploy.generate_all`, and writes them to
-`cfg.deploy_out_dir` (default `deploy/`) -- printing a dry-run diff
-summary instead when `--check` is passed, so CI can verify the committed
-scripts are current without mutating the tree (the same check the
-DEPLOY001 drift gate performs during `frob check`, exposed here as a
-standalone command for a pre-commit hook or manual verification).
+`generate`: loads every `.strata` design file under the repo's design dir
+(same `load_design_ids`/`merge_models` pattern `frob.app.sys_runner`
+already uses for `plan`/`doc`/`audit`), renders the three scripts via
+`frob.deploy.generate_all`, and writes them to `cfg.deploy_out_dir`
+(default `deploy/`) -- printing a dry-run diff summary instead when
+`--check` is passed, so CI can verify the committed scripts are current
+without mutating the tree (the same check the DEPLOY001 drift gate
+performs during `frob check`, exposed here as a standalone command for a
+pre-commit hook or manual verification).
+
+`audit --vm <name>`: NOT run by `make check` (expensive, requires a real
+VirtualBox guest). Loads the same merged design model, derives the
+expected mutation surface from it (`frob.deploy.expected_mutation_surface`,
+T-0258 -- never re-derived here), and drives
+`frob.deploy.run_vm_audit`'s sequence spec (`frob.deploy._audit`'s module
+docstring: restore snapshot -> CHECK C0 -> install -> CHECK C1 -> install
+again -> CHECK C1' -> uninstall -> CHECK C2). Writes the resulting
+`AuditAttestation` as JSON to `cfg.deploy_audit_output` (default
+`deploy-audit-attestation.json`) and exits 0 (all proofs held), 1 (ran,
+at least one proof or status assertion failed), or 2 (`VBoxManage` not
+on `PATH` -- SKIPPED, never a fabricated pass, module docstring's
+graceful-degrade requirement) so `--evidence-cmd` (T-0215) can never
+record a skip as a pass.
 """
 
 from __future__ import annotations
@@ -19,12 +35,27 @@ import tomllib
 from pathlib import Path
 
 from frob.app.config import AppConfig
-from frob.deploy import generate_all
+from frob.deploy import (
+    VmAuditConfig,
+    expected_mutation_surface,
+    generate_all,
+    run_vm_audit,
+    sorted_manifest_entries,
+)
 from frob.logging import get_logger
 from frob.strata import DEFAULT_DESIGN_DIR, KernelModel, load_design_ids
 from frob.strata._sysdoc import merge_models
 
 _log = get_logger(__name__)
+
+#: `run` (below) dispatches on `cfg.deploy_command`; every recognized verb
+#: is listed here so the usage message (module-level fallback) never
+#: silently drifts from what `run` actually accepts.
+_USAGE = (
+    "usage: frob deploy generate [--check] [path]\n"
+    "       frob deploy audit --vm <name> [--ssh-host H] [--ssh-user U] "
+    "--ssh-key KEY [--base-snapshot NAME] [--output PATH] [path]"
+)
 
 
 def _design_dir(root: Path) -> str:
@@ -102,12 +133,84 @@ def _run_generate(cfg: AppConfig) -> None:
         _log.info("deploy generate: wrote %s", path)
 
 
+def _run_audit(cfg: AppConfig) -> None:
+    """`frob deploy audit --vm <name> [path]`: drive the T-0259 VM
+    snapshot-diff harness against a live VirtualBox guest and write the
+    resulting attestation JSON. Exits 0 (passed), 1 (ran, a proof or
+    status assertion failed), or 2 (`VBoxManage` absent -- SKIPPED,
+    module docstring's graceful-degrade requirement)."""
+    if not cfg.deploy_vm:
+        _log.error("deploy audit: --vm <name> is required")
+        sys.exit(1)
+    if not cfg.deploy_ssh_host:
+        _log.error("deploy audit: --ssh-host is required")
+        sys.exit(1)
+    if not cfg.deploy_ssh_key:
+        _log.error("deploy audit: --ssh-key is required")
+        sys.exit(1)
+
+    root = (cfg.deploy_path or Path(".")).resolve()
+    model = _load_model(root)
+    if model is None:
+        sys.exit(1)
+
+    entries = sorted_manifest_entries(model)
+    expected_targets = expected_mutation_surface(entries)
+    expected_paths = tuple(sorted({o.path for e in entries for o in e.manifest.owns}))
+    expected_units = tuple(
+        sorted(t.target for t in expected_targets if t.kind == "unit")
+    )
+
+    deploy_dir = root / (cfg.deploy_out_dir or Path("deploy"))
+    vm_cfg = VmAuditConfig(
+        vm_name=cfg.deploy_vm,
+        base_snapshot=cfg.deploy_base_snapshot,
+        ssh_host=cfg.deploy_ssh_host,
+        ssh_user=cfg.deploy_ssh_user,
+        ssh_key_path=cfg.deploy_ssh_key,
+        deploy_dir=deploy_dir,
+        expected_paths=expected_paths,
+        expected_units=expected_units,
+        expected_targets=expected_targets,
+    )
+
+    result = run_vm_audit(vm_cfg)
+    output_path = root / (
+        cfg.deploy_audit_output or Path("deploy-audit-attestation.json")
+    )
+
+    if result.status == "skipped":
+        _log.warning("deploy audit: SKIPPED -- %s", result.reason)
+        sys.exit(2)
+
+    assert result.attestation is not None  # narrows for the type checker
+    output_path.write_text(result.attestation.to_json(), encoding="utf-8")
+    _log.info("deploy audit: wrote attestation to %s", output_path)
+
+    if result.attestation.passed:
+        _log.info("deploy audit: PASSED (vm=%s)", cfg.deploy_vm)
+        return
+    _log.error(
+        "deploy audit: FAILED (vm=%s) idempotence=%s artifact_freeness=%s "
+        "install_exactness=%s",
+        cfg.deploy_vm,
+        result.attestation.idempotence_holds,
+        result.attestation.artifact_freeness_holds,
+        result.attestation.install_exactness_holds,
+    )
+    sys.exit(1)
+
+
 # frob:doc docs/modules/app.md#runners
 def run(cfg: AppConfig) -> None:
-    """Dispatch `frob deploy <command>`: `generate` (T-0257) is the only
-    verb today."""
+    """Dispatch `frob deploy <command>`: `generate` (T-0257) writes the
+    three scripts; `audit` (T-0259) drives the VM snapshot-diff harness
+    against a live guest."""
     if cfg.deploy_command == "generate":
         _run_generate(cfg)
         return
-    _log.error("usage: frob deploy generate [--check] [path]")
+    if cfg.deploy_command == "audit":
+        _run_audit(cfg)
+        return
+    _log.error(_USAGE)
     sys.exit(1)

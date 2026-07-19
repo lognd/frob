@@ -1033,8 +1033,8 @@ def _add_sys_parser(sub) -> None:
 
 
 def _add_deploy_parser(sub) -> None:
-    """Register the `frob deploy` subcommand group: `generate` (T-0257) is
-    the only verb today -- extend with one more `deploy_sub.add_parser`
+    """Register the `frob deploy` subcommand group: `generate` (T-0257)
+    and `audit` (T-0259) -- extend with one more `deploy_sub.add_parser`
     per verb as later deploy-epoch (T-0254) tickets add them, never
     replace this dispatch."""
     # -- deploy ------------------------------------------------------------
@@ -1043,6 +1043,11 @@ def _add_deploy_parser(sub) -> None:
         "  frob deploy generate                 write deploy/*.sh from the design\n"
         "  frob deploy generate --check          verify committed scripts are current\n"
         "  frob deploy generate /path/to/repo   generate for a different repo root\n"
+        "  frob deploy audit --vm my-vm --ssh-host 10.0.2.15 --ssh-key ~/.ssh/id_rsa\n"
+        "                                        empirically prove artifact-free\n"
+        "                                        install/uninstall against a live\n"
+        "                                        VirtualBox guest (NOT run by\n"
+        "                                        `frob check`; needs VBoxManage)\n"
         "\n"
         "convention: <path> (default '.') is the REPO ROOT -- the command\n"
         "appends the configured design dir itself (default 'design/', or\n"
@@ -1076,6 +1081,40 @@ def _add_deploy_parser(sub) -> None:
         action="store_true",
         help="verify committed scripts already match regeneration; no writes, "
         "exit 1 on any mismatch",
+    )
+
+    deploy_audit_p = deploy_sub.add_parser(
+        "audit",
+        help="VirtualBox snapshot-diff harness proving artifact-free "
+        "install/uninstall (T-0259, expensive -- NOT run by `frob check`)",
+    )
+    deploy_audit_p.add_argument("deploy_path", metavar="path", nargs="?", default=".")
+    deploy_audit_p.add_argument(
+        "--vm", dest="deploy_vm", required=True, help="VirtualBox guest name"
+    )
+    deploy_audit_p.add_argument(
+        "--ssh-host", dest="deploy_ssh_host", required=True, help="guest ssh host"
+    )
+    deploy_audit_p.add_argument(
+        "--ssh-user",
+        dest="deploy_ssh_user",
+        default="root",
+        help="guest ssh user (default: root)",
+    )
+    deploy_audit_p.add_argument(
+        "--ssh-key", dest="deploy_ssh_key", required=True, help="ssh private key path"
+    )
+    deploy_audit_p.add_argument(
+        "--base-snapshot",
+        dest="deploy_base_snapshot",
+        default="base",
+        help="snapshot to restore before CHECK C0 (default: base)",
+    )
+    deploy_audit_p.add_argument(
+        "--output",
+        dest="deploy_audit_output",
+        default=None,
+        help="attestation JSON output path (default: deploy-audit-attestation.json)",
     )
 
 

@@ -2,7 +2,8 @@
 STAMP := .venv/.install-stamp
 
 .PHONY: all check install install-tool core format lint lint-fix typecheck test test-fast \
-        test-unit test-integration test-system coverage clean upload sync-skills playbook
+        test-unit test-integration test-system coverage clean upload sync-skills playbook \
+        deploy-audit
 
 PYPI_NAME := frob
 SRC       := src
@@ -31,6 +32,18 @@ playbook:
 coverage: $(STAMP)
 	uv run pytest --cov=src/frob --cov-branch --cov-report=xml -q
 	uv run frob check --stamp-coverage
+
+# VirtualBox snapshot-diff harness proving artifact-free install/uninstall
+# (T-0259, deploy epic T-0254 child 5). NOT part of `check`/`all` -- it
+# needs a real VBoxManage guest (FROB_VM/FROB_VM_SSH_HOST/FROB_VM_SSH_KEY
+# env vars, or pass args directly: `make deploy-audit ARGS="--vm ... "`).
+# Degrades to a clear SKIPPED (exit 2) when VBoxManage is not installed.
+deploy-audit: $(STAMP)
+	uv run frob deploy audit \
+		--vm "$${FROB_VM:?set FROB_VM or pass --vm via ARGS}" \
+		--ssh-host "$${FROB_VM_SSH_HOST:?set FROB_VM_SSH_HOST}" \
+		--ssh-key "$${FROB_VM_SSH_KEY:?set FROB_VM_SSH_KEY}" \
+		$(ARGS)
 
 # ---------- install (stamp-guarded) ----------
 

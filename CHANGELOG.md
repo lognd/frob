@@ -17,6 +17,29 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.8.0] - unreleased
+
+Public-API surface changes since 0.7.0 (mechanical semver via REL001):
+
+- T-0259: `frob deploy audit --vm <name>` -- VirtualBox snapshot-diff
+  harness proving artifact-free install/uninstall against a live guest
+  (deploy epic T-0254 child 5, NOT run by `frob check`/`make check`).
+  New `frob.deploy._audit` (pure, fully unit-tested): `StateCapture`,
+  `FileFact`, `StateDiff`, `diff_states`, `idempotence_holds`,
+  `artifact_freeness_holds`, `install_exactness_holds`,
+  `assert_not_installed`, `assert_healthy`, `CheckpointResult`,
+  `AuditAttestation`, `build_attestation`, `ALLOWLIST_PATTERNS` -- the
+  four proofs (idempotence, artifact-freeness, install-exactness, and
+  the per-checkpoint `status.sh` health assertions) plus attestation
+  JSON. New `frob.deploy._vm_runner` (the one VM-gated, untested-in-CI
+  sliver, deliberately kept thin): `VmAuditConfig`, `AuditRunResult`,
+  `run_vm_audit`, `vboxmanage_available` -- drives restore-snapshot ->
+  CHECK C0 -> install -> CHECK C1 -> install again -> CHECK C1' ->
+  uninstall -> CHECK C2, and degrades to a clear `status="skipped"`
+  (never a fabricated pass) when `VBoxManage` is not on `PATH`. New
+  `frob deploy audit` CLI verb (`src/frob/app/deploy_runner.py`,
+  `src/frob/__main__.py`) and `make deploy-audit` Makefile target.
+
 ## [0.7.0] - unreleased
 
 Public-API surface changes since 0.6.0 (mechanical semver via REL001):
