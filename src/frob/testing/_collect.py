@@ -7,6 +7,7 @@ import hashlib
 import json
 import os
 import re
+import tomllib
 from pathlib import Path
 
 from typani import Err, Ok
@@ -135,16 +136,44 @@ def collect_python_tests(root: Path) -> Result[CollectedTests, TestingError]:
 # ---------------------------------------------------------------------------
 
 
+def _classify_manifest(manifest_path: Path) -> tuple[bool, bool] | None:
+    """`(has_package, has_workspace)` for a `Cargo.toml`, or `None` if it
+    cannot be read/parsed (caller falls back to conservative old behavior)."""
+    try:
+        doc = tomllib.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, tomllib.TOMLDecodeError) as exc:
+        _log.warning("_find_crates: could not parse %s: %s", manifest_path, exc)
+        return None
+    return ("package" in doc, "workspace" in doc)
+
+
 def _find_crates(root: Path) -> list[Path]:
-    """Directories holding a `Cargo.toml`, exclusions pruned, not descending
-    into a found crate's own subtree (no nested-manifest workspaces here)."""
+    """Directories holding a real crate manifest (`[package]` table),
+    exclusions pruned. A cargo VIRTUAL WORKSPACE root (`[workspace]` table,
+    no `[package]` table -- e.g. this repo's own top-level `Cargo.toml` is
+    not one, but a workspace umbrella like lithos's or feldspar's is) is
+    descended into rather than treated as a crate, so member crates under
+    it are discovered instead of being collapsed into one bogus root
+    "crate". A manifest with both tables is a crate AND a workspace root
+    (appended, then descended). A manifest with neither table, or one that
+    fails to parse, keeps the old append-and-prune behavior (with a
+    warning) so degenerate cases do not regress."""
     # frob:waive PERF004 reason="one sort of the final result list, not per-iteration"
     found: list[Path] = []
     for dirpath, dirnames, filenames in os.walk(root):
         dirnames[:] = [d for d in dirnames if d not in _EXCLUDED_DIRS]
         if "Cargo.toml" in filenames:
-            found.append(Path(dirpath))
-            dirnames[:] = []
+            manifest_dir = Path(dirpath)
+            classified = _classify_manifest(manifest_dir / "Cargo.toml")
+            if classified is None:
+                found.append(manifest_dir)
+                dirnames[:] = []
+                continue
+            has_package, has_workspace = classified
+            if has_package:
+                found.append(manifest_dir)
+            if not has_workspace:
+                dirnames[:] = []
     return sorted(found)
 
 
@@ -201,10 +230,14 @@ def _parse_cargo_list(stdout: str) -> list[str]:
     return paths
 
 
-def _run_cargo_list(crate_dir: Path) -> Result[list[str], TestingError]:
-    """Spawn `cargo test --lib -- --list` in one crate, PyO3 env resolved first
-    (never silently skipped -- a missing dev environment is `Err`, not an
-    empty test list masquerading as "this crate has no tests")."""
+def _run_cargo_test_list(
+    crate_dir: Path, target_argv: list[str]
+) -> Result[list[str], TestingError]:
+    """Spawn `cargo test <target_argv> -- --list` in one crate, PyO3 env
+    resolved first (never silently skipped -- a missing dev environment is
+    `Err`, not an empty test list masquerading as "this crate has no
+    tests"). `target_argv` selects `--lib` for the crate's unit tests or
+    `--test <stem>` for one `tests/<stem>.rs` integration binary."""
     env_result = _cargo_env()
     if env_result.is_err:
         _log.error(
@@ -215,7 +248,7 @@ def _run_cargo_list(crate_dir: Path) -> Result[list[str], TestingError]:
         return Err(env_result.danger_err)
     with _env_overlay(env_result.danger_ok):
         spawned = run_argv(
-            ["cargo", "test", "--lib", "--", "--list"],
+            ["cargo", "test", *target_argv, "--", "--list"],
             cwd=crate_dir,
             timeout_s=_COLLECT_TIMEOUT_S,
         )
@@ -234,8 +267,42 @@ def _run_cargo_list(crate_dir: Path) -> Result[list[str], TestingError]:
     return Ok(_parse_cargo_list(result.stdout))
 
 
+def _run_cargo_list(crate_dir: Path) -> Result[list[str], TestingError]:
+    """Spawn `cargo test --lib -- --list` in one crate (the crate's own
+    unit tests, e.g. `#[cfg(test)] mod tests` blocks under `src/`)."""
+    return _run_cargo_test_list(crate_dir, ["--lib"])
+
+
+def _find_integration_test_files(crate_dir: Path) -> list[Path]:
+    """Every `tests/*.rs` integration-test binary file directly under one
+    crate, sorted -- `cargo test --lib` never lists these (T-0271), so
+    they need their own `cargo test --test <stem>` invocation."""
+    tests_dir = crate_dir / "tests"
+    if not tests_dir.is_dir():
+        return []
+    return sorted(tests_dir.glob("*.rs"))
+
+
+def _integration_module_path_to_symref(
+    root: Path, crate_dir: Path, test_file: Path, module_path: str
+) -> str:
+    """A `cargo test --test <stem> -- --list` module path as a `path::qualname`
+    symref against the integration binary's own `tests/<stem>.rs` file.
+    Integration binaries are their own crate root, so for the common flat
+    case (no submodules under the binary) the whole `module_path` IS the
+    qualname against `tests/<stem>.rs` directly. KNOWN APPROXIMATION: a
+    `tests/<stem>/` submodule tree (`tests/<stem>/mod.rs` plus siblings) is
+    not resolved file-by-file the way `_module_path_to_symref` resolves
+    `src/` -- every path from that binary still anchors to
+    `tests/<stem>.rs`, with the full module path as qualname."""
+    rel = test_file.relative_to(root).as_posix()
+    return f"{rel}::{module_path}"
+
+
 def _collect_rust_uncached(root: Path) -> Result[frozenset[str], TestingError]:
-    """`cargo test --lib -- --list` node ids across every discovered crate."""
+    """`cargo test --lib -- --list` node ids for every crate's unit tests,
+    plus `cargo test --test <stem> -- --list` node ids for every crate's
+    `tests/*.rs` integration binaries, across every discovered crate."""
     node_ids: set[str] = set()
     for crate_dir in _find_crates(root):
         listed = _run_cargo_list(crate_dir)
@@ -243,14 +310,29 @@ def _collect_rust_uncached(root: Path) -> Result[frozenset[str], TestingError]:
             return Err(listed.danger_err)
         for module_path in listed.danger_ok:
             node_ids.add(_module_path_to_symref(root, crate_dir, module_path))
+
+        for test_file in _find_integration_test_files(crate_dir):
+            stem = test_file.stem
+            listed_integration = _run_cargo_test_list(crate_dir, ["--test", stem])
+            if listed_integration.is_err:
+                return Err(listed_integration.danger_err)
+            for module_path in listed_integration.danger_ok:
+                node_ids.add(
+                    _integration_module_path_to_symref(
+                        root, crate_dir, test_file, module_path
+                    )
+                )
     return Ok(frozenset(node_ids))
 
 
 # frob:doc docs/modules/testing.md#public-api
 def collect_rust_tests(root: Path) -> Result[CollectedTests, TestingError]:
-    """`cargo test --lib -- --list` node ids for every crate under `root`
-    (`Cargo.toml` discovery, cached on rust source content hash); `Err` --
-    never a fabricated empty pass -- when the PyO3 dev environment cannot be
+    """`cargo test --lib -- --list` node ids (unit tests) plus
+    `cargo test --test <stem> -- --list` node ids (`tests/*.rs` integration
+    binaries) for every crate under `root` (`Cargo.toml` discovery --
+    virtual workspace roots are descended into rather than treated as one
+    crate, T-0271 -- cached on rust source content hash); `Err` -- never a
+    fabricated empty pass -- when the PyO3 dev environment cannot be
     resolved (T-0092)."""
     key = _rust_content_key(root)
     cache_path = root / _RUST_CACHE_REL

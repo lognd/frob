@@ -978,3 +978,128 @@ class TestCollectRustTests:
         result = collect_mod.collect_rust_tests(tmp_path)
         assert result.is_err
         assert result.danger_err == TestingError.CargoEnvUnavailable
+
+
+class TestFindCrates:
+    """T-0271: a cargo virtual workspace root (`[workspace]`, no
+    `[package]`) must be descended into, not collapsed into one bogus
+    root "crate"."""
+
+    def _workspace_root(self, root: Path) -> None:
+        _write(
+            root,
+            "Cargo.toml",
+            """
+            [workspace]
+            members = ["crates/a", "crates/b"]
+            resolver = "2"
+            """,
+        )
+
+    def _member_crate(self, root: Path, rel: str, name: str) -> None:
+        _write(
+            root,
+            f"{rel}/Cargo.toml",
+            f"""
+            [package]
+            name = "{name}"
+            version = "0.1.0"
+            """,
+        )
+        _write(root, f"{rel}/src/lib.rs", "pub fn noop() {}\n")
+
+    def test_virtual_workspace_root_descends_to_members(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_rust_tests
+        from frob.testing._collect import _find_crates
+
+        self._workspace_root(tmp_path)
+        self._member_crate(tmp_path, "crates/a", "a")
+        self._member_crate(tmp_path, "crates/b", "b")
+
+        found = _find_crates(tmp_path)
+        assert found == sorted([tmp_path / "crates/a", tmp_path / "crates/b"])
+        assert tmp_path not in found
+
+    def test_root_package_with_nested_workspace_members(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_rust_tests
+        from frob.testing._collect import _find_crates
+
+        _write(
+            tmp_path,
+            "Cargo.toml",
+            """
+            [package]
+            name = "root-crate"
+            version = "0.1.0"
+
+            [workspace]
+            members = ["crates/a"]
+            """,
+        )
+        _write(tmp_path, "src/lib.rs", "pub fn noop() {}\n")
+        self._member_crate(tmp_path, "crates/a", "a")
+
+        found = _find_crates(tmp_path)
+        assert found == sorted([tmp_path, tmp_path / "crates/a"])
+
+    def test_plain_single_crate_unchanged(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_rust_tests
+        from frob.testing._collect import _find_crates
+
+        self._member_crate(tmp_path, ".", "solo")
+        found = _find_crates(tmp_path)
+        assert found == [tmp_path]
+
+    def test_unparseable_manifest_keeps_old_behavior_and_warns(
+        self, tmp_path: Path, caplog
+    ) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_rust_tests
+        from frob.testing._collect import _find_crates
+
+        _write(tmp_path, "Cargo.toml", "this is not [ valid toml")
+        _write(tmp_path, "nested/Cargo.toml", "[package]\nname = 1 2 3 bad")
+
+        with caplog.at_level("WARNING"):
+            found = _find_crates(tmp_path)
+        assert found == [tmp_path]  # old behavior: append + prune, no descent
+        assert any("_find_crates" in msg for msg in caplog.messages)
+
+
+class TestIntegrationTestCollection:
+    """T-0271: `cargo test --lib` never lists `tests/*.rs` integration
+    binaries, so `frob:tests` edges into a crate's tests/ files could
+    never validate either -- verify the symref mapping directly."""
+
+    def test_integration_module_path_to_symref_flat_case(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_rust_tests
+        from frob.testing._collect import _integration_module_path_to_symref
+
+        crate_dir = tmp_path / "crates" / "a"
+        test_file = _write(
+            tmp_path,
+            "crates/a/tests/foo.rs",
+            """
+            #[test]
+            fn end_to_end_smoke() {}
+            """,
+        )
+        assert (
+            _integration_module_path_to_symref(
+                tmp_path, crate_dir, test_file, "end_to_end_smoke"
+            )
+            == "crates/a/tests/foo.rs::end_to_end_smoke"
+        )
+
+    def test_find_integration_test_files_lists_and_skips_missing_dir(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_rust_tests
+        from frob.testing._collect import _find_integration_test_files
+
+        crate_dir = tmp_path / "crates" / "a"
+        assert _find_integration_test_files(crate_dir) == []
+
+        _write(tmp_path, "crates/a/tests/foo.rs", "#[test]\nfn t() {}\n")
+        _write(tmp_path, "crates/a/tests/bar.rs", "#[test]\nfn t() {}\n")
+        found = _find_integration_test_files(crate_dir)
+        assert found == sorted([crate_dir / "tests/foo.rs", crate_dir / "tests/bar.rs"])
