@@ -242,15 +242,14 @@ def krb_trust_flows(nodes: tuple[Node, ...]) -> tuple[Flow, ...]:
     SAME way it already catches a `flow` statement's own dangling src/dst,
     so this function does not need its own duplicate check (charter law 5).
 
-    KNOWN GAP (T-draft-f9f9fe96, caught in review): the synthesized
-    `Flow`'s `attrs` carry no signal distinguishing `trust.transitive`
-    True from False -- `KrbTrust.transitive` round-trips through
-    `krb_manifest_for` correctly, but `FactBase.reachable`'s shared BFS
-    (`strata-core/src/lib.rs`) has no terminal-edge concept to enforce
-    "reachable directly, not chainable" for a non-transitive trust, so a
-    chain of non-transitive one-way trusts currently reaches just as far
-    as a chain of transitive ones. See docs/strata/krb.md#known-gap-
-    transitive-is-recorded-not-yet-enforced-t-draft-f9f9fe96.
+    T-0282: a trust with `transitive=False` gets the `krb_no_transit` attr
+    on its synthesized `Flow`, which `FactBase.reachable` (`_facts.py`)
+    reads to mark the edge non-transitive at the kernel boundary
+    (`strata-core/src/lib.rs::reachable`'s terminal-edge support) -- the
+    edge's `dst` is reachable directly but the BFS does not chain past it,
+    so a chain of non-transitive one-way trusts no longer over-reaches the
+    way a chain of transitive ones correctly does (docs/strata/krb.md
+    #domain-trust-lattice).
     """
     known_ids = {n.id for n in nodes}
     flows: list[Flow] = []
@@ -259,10 +258,11 @@ def krb_trust_flows(nodes: tuple[Node, ...]) -> tuple[Flow, ...]:
         if manifest is None:
             continue
         for trust in manifest.trusts:
-            flow_id = f"{_TRUST_FLOW_ID_PREFIX}{node.id}:{trust.target}"
-            flows.append(
-                Flow(id=flow_id, src=node.id, dst=trust.target, attrs=("krb_trust",))
+            attrs = (
+                ("krb_trust",) if trust.transitive else ("krb_trust", "krb_no_transit")
             )
+            flow_id = f"{_TRUST_FLOW_ID_PREFIX}{node.id}:{trust.target}"
+            flows.append(Flow(id=flow_id, src=node.id, dst=trust.target, attrs=attrs))
             if trust.direction == "two-way" and trust.target in known_ids:
                 # Synthesize the reverse edge too so a single declaration
                 # on ONE side of a two-way trust is enough (docs/strata/
@@ -274,7 +274,7 @@ def krb_trust_flows(nodes: tuple[Node, ...]) -> tuple[Flow, ...]:
                         id=reverse_id,
                         src=trust.target,
                         dst=node.id,
-                        attrs=("krb_trust",),
+                        attrs=attrs,
                     )
                 )
     _log.debug("krb_trust_flows: synthesized %d trust edge(s)", len(flows))

@@ -125,10 +125,11 @@ Because these are ordinary `Flow` facts, the EXISTING `noflow`/`reach`
 claim machinery walks them with zero changes: `assert x: noflow
 corp_realm_node -> untrusted_partner` (say, an unlisted or since-revoked
 partner) proves/refutes over the SAME closure the rest of the kernel
-already computes. **Caveat:** today the closure walks EVERY synthesized
-trust flow as fully transitive regardless of the declared `transitive`
-value -- see #known-gap-transitive-is-recorded-not-yet-enforced-t-draft-
-f9f9fe96 below for what that means for multi-hop chains.
+already computes. A trust declared WITHOUT `transitive` gets the
+`krb_no_transit` attr on its synthesized `Flow` (T-0282), which
+`FactBase.reachable` reads into a terminal-edge flag the shared kernel BFS
+(`strata-core/src/lib.rs::reachable`) enforces -- see #domain-trust-
+lattice below for the full multi-hop semantics.
 
 ## KrbManifest
 
@@ -173,36 +174,38 @@ the lattice" (T-0254's spec language) means exactly this: cross-realm
 reachability answers come from the SAME `FactBase.reachable` closure walk
 every other `noflow`/`reach` claim already uses, not a bespoke traversal.
 
-### Known gap: `transitive` is recorded, not yet enforced (T-draft-f9f9fe96)
+### Non-transitive trusts are terminal edges (T-0282)
 
 `KrbTrust.transitive` is a real, typed field, and `direction`/`transitive`
 both round-trip through parse -> elaborate -> `krb_manifest_for` exactly
-as declared. **What it does NOT yet do is change how `FactBase.reachable`
-walks the synthesized trust `Flow`s.** `strata_core::reachable` (the
-shared Rust BFS every `noflow`/`reach` claim in the kernel uses) has no
-concept of a "terminal" edge that can be reached in one hop but not
-walked past -- every `Flow` it sees, krb-trust-synthesized or not, is
-fully transitive today. Concretely: a chain of realm nodes `a --trusts-->
-b --trusts--> c`, with NEITHER trust declared `transitive`, currently
-yields `reach(a, c) = True` over the general closure -- the SAME
-multi-hop chaining a genuinely `transitive` trust is supposed to produce,
-with no behavioral distinction. This was caught in review (T-0262 round
-2) via the reviewer's own reproduction and is NOT fixed in this ticket:
-doing so correctly requires extending `strata_core::reachable`'s `Edge`
-type with a terminal-edge concept in `strata-core/src/lib.rs` -- a change
-to the SHARED kernel primitive every claim in the system walks, well
-outside T-0262's declared scope (`strata-core/src/parse.rs` only) and too
-wide a blast radius to bundle into this ticket's vocabulary work. Tracked
-as `T-draft-f9f9fe96` (renumbered on land), scoped to `strata-core/src/
-lib.rs`, `_facts.py`, `_krb.py`, and the kernel-property hypothesis
-oracle in `tests/unit/strata/test_kernel_properties.py`.
+as declared. It also changes how `FactBase.reachable` walks the
+synthesized trust `Flow`s: `strata_core::reachable` (the shared Rust BFS
+every `noflow`/`reach` claim in the kernel uses) has a terminal-edge
+concept in its `Edge` type (`strata-core/src/lib.rs`, 5th field
+`transitive`) -- an edge with `transitive=false` discovers its `dst` (one
+hop is always correct) but is never enqueued for further expansion, so it
+cannot become a middle link in a longer chain. `_krb.py::krb_trust_flows`
+puts the `krb_no_transit` attr on a trust's synthesized `Flow` exactly
+when `KrbTrust.transitive` is `False`; `_facts.py::FactBase.reachable`
+reads that attr into the kernel's `transitive` edge field.
 
-**Until that lands, do not rely on `transitive=False` to bound cross-realm
-reachability.** Any T-0263/T-0264 containment reasoning over krb trust
-chains must treat every declared trust as transitive until this gap
-closes -- `direction` (one-way vs. two-way, which trust flows get
-synthesized) is honored correctly today; only the "stop the chain at a
-non-transitive hop" behavior is not.
+Concretely: a chain of realm nodes `a --trusts--> b --trusts--> c`, with
+BOTH trusts declared `transitive`, yields `reach(a, c) = True` (correct,
+unchanged multi-hop chaining). The SAME chain with NEITHER trust declared
+`transitive` yields `reach(a, c) = False` -- `b` is reachable directly
+(single-hop reach through a non-transitive edge is always correct) but the
+chain stops there. This was caught in review (T-0262 round 2) via the
+reviewer's own reproduction, tracked and closed as T-0282 -- see
+`tests/unit/strata/test_krb.py::TestTrustChainReachability` for the
+permanent regression coverage and `tests/unit/strata/test_facts.py::
+TestClosure.test_krb_no_transit_attr_stops_chaining_past_that_hop` /
+`strata-core/src/lib.rs::tests::non_transitive_edge_is_a_terminal_hop` for
+the kernel-level coverage.
+
+`direction` (one-way vs. two-way, which trust flows get synthesized) and
+`transitive` (whether a trust chains past its own hop) are both honored
+correctly today -- any T-0263/T-0264 containment reasoning over krb trust
+chains may rely on `transitive=False` to bound cross-realm reachability.
 
 ## Scope boundary (what is NOT built here)
 

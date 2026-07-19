@@ -88,11 +88,19 @@ class TestKrbManifest:
 class TestKrbTrustFlows:
     # frob:tests src/frob/strata/_krb.py::krb_trust_flows kind="unit"
     def test_sync(self):
+        # T-0282: transitive=False synthesizes the krb_no_transit attr too,
+        # which _facts.py::FactBase.reachable reads into the kernel's
+        # terminal-edge flag.
         a = Node(id="a", trust="trusted", attrs=("krb_trust=b:one-way:False",))
         b = Node(id="b", trust="trusted", attrs=())
         flows = krb_trust_flows((a, b))
         assert flows == (
-            Flow(id="krb-trust:a:b", src="a", dst="b", attrs=("krb_trust",)),
+            Flow(
+                id="krb-trust:a:b",
+                src="a",
+                dst="b",
+                attrs=("krb_trust", "krb_no_transit"),
+            ),
         )
 
     # frob:tests src/frob/strata/_krb.py::krb_trust_flows kind="unit"
@@ -166,21 +174,19 @@ def _reach(src_text: str, start: str) -> dict[str, tuple[str, ...]]:
 
 class TestTrustChainReachability:
     """Reviewer's exact reproduction (T-0262 round 2, review-verified sound
-    for direction/two-way synthesis but NOT for the `transitive` flag) --
-    a three-realm one-way trust chain `a --trusts--> b --trusts--> c`.
+    for direction/two-way synthesis but NOT originally for the `transitive`
+    flag) -- a three-realm one-way trust chain `a --trusts--> b --trusts-->
+    c`.
 
-    KNOWN GAP (T-draft-f9f9fe96, docs/strata/krb.md#known-gap-transitive-
-    is-recorded-not-yet-enforced-t-draft-f9f9fe96): `KrbTrust.transitive`
-    round-trips correctly through the AST/manifest, but the synthesized
-    `Flow`s carry no signal `FactBase.reachable`'s shared BFS can use to
-    stop a non-transitive hop from chaining -- so BOTH tests below observe
-    `reach(a, c) is True` today. The all-transitive case is the CORRECT
-    kernel behavior (transitive trusts SHOULD chain). The all-non-
-    transitive case is the DISCLOSED BUG: it should refute once
-    T-draft-f9f9fe96's terminal-edge support lands in `strata-core/src/
-    lib.rs` -- this test is a trip-wire, not an endorsement: when that
-    ticket lands, this assertion must flip to `is False` (do not just
-    delete it).
+    FIXED (T-0282, docs/strata/krb.md#domain-trust-lattice): `KrbTrust.
+    transitive` now round-trips all the way to the kernel -- a non-
+    transitive trust's synthesized `Flow` carries `krb_no_transit`, which
+    `FactBase.reachable` reads into the terminal-edge flag `strata-core/
+    src/lib.rs::reachable`'s BFS enforces. The all-transitive case is the
+    CORRECT kernel behavior (transitive trusts SHOULD chain, unchanged).
+    The all-non-transitive case is the FORMER BUG, now fixed: `reach(a, c)`
+    is `False`. This is a permanent regression test (not just an
+    endorsement) -- it must stay `is False`.
     """
 
     _CHAIN_TEMPLATE = """
@@ -209,10 +215,11 @@ node c: trusted {{
         assert "b" in paths
         assert "c" in paths
 
-    # KNOWN GAP trip-wire -- see class docstring. Currently `is True`
-    # (the bug); must become `is False` once T-draft-f9f9fe96 lands.
+    # Permanent regression test -- see class docstring. T-0282 flipped this
+    # from `is True` (the disclosed bug) to `is False` (the fix); it must
+    # stay `is False` going forward.
     def test_non_transitive_chain_currently_over_reaches_known_gap(self):
         src = self._CHAIN_TEMPLATE.format(a_transitive="", b_transitive="")
         paths = _reach(src, "a")
         assert "b" in paths  # single-hop reach is always correct
-        assert "c" in paths  # BUG: should be absent once terminal edges land
+        assert "c" not in paths  # FIXED: terminal edges stop the chain
