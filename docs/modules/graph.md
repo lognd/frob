@@ -84,6 +84,12 @@ Directives live in ordinary comments in any supported language (`#`, `//`,
 per comment line. A directive binds to the innermost enclosing symbol (or
 the symbol immediately following it, for preceding-line comments).
 
+A directive line ending in a trailing backslash (`\`) continues onto the
+next physical comment line -- folded before parsing, joined with the empty
+string, reported at the FIRST physical line's number (T-0286); see
+`docs/guides/extending/comment-dsl-directives.md#multi-line-directives-backslash-continuation`
+for the full mechanics (dangling-backslash and CRLF handling included).
+
 | Directive | Meaning (edge created) |
 |---|---|
 | `frob:doc docs/modules/graph.md#lock` | enclosing symbol is described by that doc anchor |

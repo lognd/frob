@@ -174,25 +174,88 @@ def _parse_line(
 
 
 # frob:doc docs/modules/graph.md#comment-dsl
+# frob:ticket T-0286
+# frob:tests tests/unit/graph/test_dsl.py::TestContinuation.\
+# test_long_reason_continues_across_lines
+def _fold_continuations(
+    lines: list[tuple[int, str, str]],
+) -> list[tuple[str, int, str]]:
+    r"""Fold physical comment lines ending in a trailing backslash into the
+    line that follows, returning `(logical_text, lineno, src)` triples where
+    `lineno`/`src` are always the FIRST physical line of the run -- so a
+    folded directive's reported line number and symbol binding are always
+    the start of the continuation, never a continuation line (T-0286).
+
+    `lines` is the file's comment text flattened to one entry per physical
+    line, in file order, each tagged with its absolute line number and
+    resolved symbol binding (`_enclosing_src`). Single-line `#`/`//`
+    comments are separate `RawComment`s per physical line (`frob.lang`'s
+    extractor does not merge adjacent line comments into one span), so
+    folding must operate across `RawComment` boundaries, not just within
+    one block comment's multi-line `text` -- flattening first is what makes
+    that uniform. Folding requires the next entry's `lineno` to be exactly
+    one more than the current line's -- a gap (blank line, unrelated code
+    between comments) breaks the run, matching how the DSL already treats
+    non-adjacent comment lines as unrelated.
+
+    Detection is on the RIGHT-stripped line (trailing whitespace ignored, so
+    both a trailing backslash with and without preceding whitespace
+    continue); only the trailing backslash itself is removed, and any
+    whitespace before it is kept -- lines are joined with the empty string,
+    so a continuation that wants a space at the join point must put it
+    before the backslash (a line ending `that \` keeps the trailing space
+    when folded; a line ending `that\` does not).
+
+    A trailing backslash on the LAST physical line available to continue
+    into (end of file, or the next line is not adjacent) is treated
+    LITERALLY: it is left in place unfolded rather than reported as
+    malformed, since a lone trailing backslash is content, not necessarily
+    evidence of a broken continuation.
+    """
+    folded: list[tuple[str, int, str]] = []
+    i = 0
+    n = len(lines)
+    while i < n:
+        lineno, text, src = lines[i]
+        head = text.rstrip("\r")
+        while (
+            head.rstrip().endswith("\\")
+            and i + 1 < n
+            and lines[i + 1][0] == lines[i][0] + 1
+        ):
+            head = head.rstrip()[:-1]
+            i += 1
+            head += lines[i][1].rstrip("\r")
+        folded.append((head, lineno, src))
+        i += 1
+    return folded
+
+
+# frob:doc docs/modules/graph.md#comment-dsl
 def parse_directives(
     parsed: ParsedFile,
 ) -> tuple[tuple[Edge, ...], tuple[MalformedDirective, ...]]:
     """Extract every `frob:` directive in `parsed.comments` into edges and errors."""
     edges: list[Edge] = []
     malformed: list[MalformedDirective] = []
+    flat: list[tuple[int, str, str]] = []
     for comment in parsed.comments:
         src = _enclosing_src(comment, parsed.path)
         start_line = comment.span[0]
-        for offset, raw_line in enumerate(comment.text.splitlines() or [comment.text]):
-            stripped = raw_line.strip()
-            if not stripped.startswith("frob:"):
-                continue
-            lineno = start_line + offset
-            result = _parse_line(stripped, path=parsed.path, lineno=lineno, src=src)
-            if isinstance(result, Edge):
-                edges.append(result)
-            else:
-                malformed.append(result)
+        physical = comment.text.splitlines() or [comment.text]
+        flat.extend(
+            (start_line + offset, raw_line, src)
+            for offset, raw_line in enumerate(physical)
+        )
+    for logical_line, lineno, src in _fold_continuations(flat):
+        stripped = logical_line.strip()
+        if not stripped.startswith("frob:"):
+            continue
+        result = _parse_line(stripped, path=parsed.path, lineno=lineno, src=src)
+        if isinstance(result, Edge):
+            edges.append(result)
+        else:
+            malformed.append(result)
     if malformed:
         _log.warning("%s: %d malformed directive(s)", parsed.path, len(malformed))
     _log.debug("%s: parsed %d directive edge(s)", parsed.path, len(edges))
