@@ -193,6 +193,68 @@ doc003); the check itself lives in `frob.gates.sys_gate` (opt-in on a
 standalone `docanchor`-family gate, since it needs the loaded design
 model, not just doc-to-doc anchor resolution.
 
+<a id="library-mode-discharge-by-absence"></a>
+## Library-mode discharge by absence (T-0223)
+
+A capability-bearing obligation (CWE-78/exec, CWE-89/sql, CWE-79/
+html_render, ...) fires purely off the node's declared capability
+(`_fired_obligations` joins on `capability_kind` alone, no reachability
+precondition, see "Capabilities drag in obligations" above). That is
+correct for a SERVICE model, where some other node is genuinely
+`trust foreign` and the closure can show a real path (or its absence) to
+the sink. It is a trap for a LIBRARY model: a repo with no ingress node at
+all -- no HTTP/CLI/RPC boundary is modeled, because the "caller" is
+whoever imports the library, not a node this model has any business
+naming. Filed from a real sibling-repo pilot (P1 gap 8, feldspar): the
+obligation fired, the obvious discharge shapes (an `assume`, a boundary)
+felt like lying about a mitigation that does not exist, and `frob sys plan
+--apply` kept minting tickets that looked permanently unclosable.
+
+**The obligation IS honestly dischargeable, by the EXISTING chokepoint
+machinery, with no code or claim-form change needed** -- this was a
+documentation/discoverability gap, not a missing mechanism (T-0223
+verification: `check_discharge_completeness` already returns `Ok(())` for
+this exact shape end to end through the real parser). Write the
+discharging claim naming the `foreign` TRUST LEVEL directly, not a
+specific node:
+
+```
+assert "weakness:CWE-78:runner" noflow foreign -> runner
+```
+
+`_claims.py::_expand` resolves the bare `foreign` reference to
+`facts.nodes_at("foreign")` -- every node in THIS model declared
+`trust foreign`. In a library model with none, that is the empty tuple,
+so `_eval_noflow`'s witness search has no source to iterate at all: the
+`NoFlow` is PROVED **FORALL over the empty set**, the ordinary vacuous-
+truth reading of "no foreign source reaches `runner`" when the model
+contains no foreign source, period. No new discharge channel, no
+special-cased "library mode" flag -- "no foreign input source -> no
+injection path -> obligation vacuously satisfied" falls straight out of
+the same `NoFlow` evaluation every other discharging claim in this
+catalog already uses (charter: no duplication). `_discharges_as_chokepoint`
+already accepts `src="foreign"` naming the trust level directly (not just
+a specific foreign-trust node) -- see its docstring.
+
+This is a REAL `assert`, not an `assume`: it is not a human claiming a
+mitigation exists, it is the closure engine's own finding that this
+model's current shape has no foreign source at all. That is also why it
+is sound, not a blanket weakening -- the moment a node with `trust
+foreign` and an unendorsed flow into the sink is added to the SAME model,
+the SAME claim re-evaluates and REFUTES, and THREAT003 fires exactly as
+if no claim existed (`library_exec_foreign_reaches_still_fires.strata`,
+below). A library repo that later grows a real ingress node (a CLI
+wrapper, an embedded server) loses the vacuous discharge automatically --
+there is nothing to remember to revisit.
+
+**Litmus proof** (`tests/unit/strata/litmus/`, T-0223,
+`test_threat.py::TestLibraryModeForeignlessDischarge`):
+`library_exec_no_foreign_discharges.strata` (no foreign node anywhere,
+discharges cleanly) and `library_exec_foreign_reaches_still_fires.strata`
+(same node, same claim shape, but a real `foreign` node with an
+unendorsed flow into the sink -- still fires REFUTED), run end to end
+through `parse_module -> elaborate -> check_discharge_completeness`.
+
 ## Beyond security: the anti-pattern families
 
 A catalog entry has a `family` -- `security` (CWE-cited), `performance`,

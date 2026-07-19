@@ -1,0 +1,32 @@
+// library_exec_foreign_reaches_still_fires.strata -- the "no weakening"
+// twin of library_exec_no_foreign_discharges.strata (T-0223). SAME node
+// (`runner`, `may "exec"`) and the SAME discharging claim SHAPE (`assert
+// "weakness:CWE-78:runner" noflow foreign -> runner`), but this model
+// DOES declare a `foreign`-trust node (`caller`) with a real, unendorsed
+// flow into `runner`. `_claims.py::_expand` now resolves `foreign` to
+// `("caller",)` instead of the empty tuple, so `_eval_noflow`'s witness
+// search finds the real `caller -> f_invoke -> runner` path and REFUTES
+// the claim -- THREAT003 fires exactly as it would with no claim at all.
+//
+// Proves the library-mode discharge-by-absence mechanism
+// (library_exec_no_foreign_discharges.strata) is sound, not a blanket
+// weakening: writing `noflow foreign -> <node>` only discharges when the
+// model genuinely has no foreign source reaching the sink; the moment one
+// exists with no boundary in the way, the SAME claim is REFUTED and the
+// obligation fires, deny-by-default (docs/strata/threat.md#library-mode-
+// discharge-by-absence).
+//
+// tested end to end (parse -> elaborate -> check_discharge_completeness)
+// by tests/unit/strata/test_threat.py::TestLibraryModeForeignlessDischarge.
+
+module library_exec_foreign_reaches_still_fires
+
+node caller : foreign { clearance Public; }
+node runner : trusted {
+    clearance Internal;
+    may "exec";
+}
+
+flow f_invoke : caller -> runner { label Public; }
+
+assert "weakness:CWE-78:runner" noflow foreign -> runner
