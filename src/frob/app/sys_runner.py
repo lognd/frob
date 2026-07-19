@@ -37,6 +37,7 @@ import sys
 import tomllib
 from pathlib import Path
 
+from frob.app._style import style_fail, style_ok, style_rule, style_warn
 from frob.app.config import AppConfig
 from frob.graph import GraphSnapshot, build_graph, load_graph
 from frob.logging import get_logger
@@ -69,6 +70,28 @@ from frob.vet._capability_registry import (
 _log = get_logger(__name__)
 
 _CACHE_REL = Path(".frob") / "cache.db"
+
+
+def _stdout_color() -> bool:
+    """should_color(stdout) for `sys audit`'s INFO-level lines (T-0179)."""
+    import sys as _sys
+
+    from frob.logging.color import should_color
+
+    return should_color(_sys.stdout)
+
+
+def _stderr_color() -> bool:
+    """should_color(stderr) for `sys audit`'s WARNING/ERROR-level lines
+    (T-0179) -- `frob.logging.config.toml` routes those to stderr, a
+    separate stream whose own TTY-ness must be checked independently of
+    stdout's."""
+    import sys as _sys
+
+    from frob.logging.color import should_color
+
+    return should_color(_sys.stderr)
+
 
 #: `frob sys export --format` choice -> exporter callable, keyed to avoid a
 #: duplicated if/elif chain (charter law "no duplication") and so the
@@ -390,12 +413,14 @@ def _log_waived_gaps(report: AuditReport) -> None:
     """Log every waived gap (T-0174: ALWAYS printed, proved or not -- a
     waiver must never make a run look silent, `_waive.py`'s "loud in
     output" requirement)."""
+    color = _stderr_color()
     for waived in report.waived:
         _log.warning(
-            "sys audit: WAIVED family=%s view=%s rule=%s target=%s detail=%s",
+            "sys audit: %s family=%s view=%s rule=%s target=%s detail=%s",
+            style_warn("WAIVED", color),
             waived.family,
             waived.view,
-            waived.rule,
+            style_rule(waived.rule, color),
             waived.target,
             waived.detail,
         )
@@ -405,26 +430,33 @@ def _log_proved_summary(report: AuditReport) -> None:
     """Log the PROVED summary line, carrying the waived count inline
     (T-0174 REJECT round: a separate WARNING line is lost under grep/
     quiet-mode filtering, so the count must ride the summary itself)."""
+    color = _stdout_color()
     if report.waived:
         _log.info(
-            "sys audit: PROVED (%d waived) -- zero UNWAIVED gaps across "
+            "sys audit: %s (%d waived) -- zero UNWAIVED gaps across "
             "every configured view",
+            style_ok("PROVED", color),
             len(report.waived),
         )
     else:
-        _log.info("sys audit: PROVED -- zero gaps across every configured view")
+        _log.info(
+            "sys audit: %s -- zero gaps across every configured view",
+            style_ok("PROVED", color),
+        )
 
 
 def _log_gaps(report: AuditReport) -> None:
     """Log every named gap, one per line (CI-parseable, no ambiguity about
     which conjunction member failed)."""
+    color = _stderr_color()
     _log.error("sys audit: %d gap(s) found", len(report.gaps))
     for gap in report.gaps:
         _log.error(
-            "sys audit: GAP family=%s view=%s rule=%s detail=%s",
+            "sys audit: %s family=%s view=%s rule=%s detail=%s",
+            style_fail("GAP", color),
             gap.family,
             gap.view,
-            gap.rule,
+            style_rule(gap.rule, color),
             gap.detail,
         )
 
@@ -452,10 +484,12 @@ def _print_audit_report(report: AuditReport) -> None:
 def _log_waived_selfconform(report: SelfConformReport) -> None:
     """Log every waived self-conformance violation (T-0174: ALWAYS printed,
     matching `_print_audit_report`'s "loud in output" WAIVED line)."""
+    color = _stderr_color()
     for waived in report.waived:
         _log.warning(
-            "sys audit: WAIVED family=sys rule=%s node=%s detail=%s",
-            waived.rule,
+            "sys audit: %s family=sys rule=%s node=%s detail=%s",
+            style_warn("WAIVED", color),
+            style_rule(waived.rule, color),
             waived.node,
             waived.detail,
         )
@@ -465,22 +499,28 @@ def _log_selfconform_proved(report: SelfConformReport) -> None:
     """Log the self-conformance PROVED summary line, carrying the waived
     count inline (T-0174 REJECT round: same honesty fix as
     `_print_audit_report`)."""
+    color = _stdout_color()
     if report.waived:
         _log.info(
-            "sys audit: self-conformance PROVED (%d waived) -- zero UNWAIVED SYS gaps",
+            "sys audit: self-conformance %s (%d waived) -- zero UNWAIVED SYS gaps",
+            style_ok("PROVED", color),
             len(report.waived),
         )
     else:
-        _log.info("sys audit: self-conformance PROVED -- zero SYS gaps")
+        _log.info(
+            "sys audit: self-conformance %s -- zero SYS gaps", style_ok("PROVED", color)
+        )
 
 
 def _log_selfconform_violations(report: SelfConformReport) -> None:
     """Log every self-conformance violation, one per line."""
+    color = _stderr_color()
     _log.error("sys audit: %d self-conformance gap(s) found", len(report.violations))
     for violation in report.violations:
         _log.error(
-            "sys audit: GAP family=sys rule=%s node=%s detail=%s",
-            violation.rule,
+            "sys audit: %s family=sys rule=%s node=%s detail=%s",
+            style_fail("GAP", color),
+            style_rule(violation.rule, color),
             violation.node,
             violation.detail,
         )
@@ -520,10 +560,12 @@ def _print_capability_matrix_report() -> bool:
         excused,
         len(unexcused),
     )
+    color = _stderr_color()
     for cell in unexcused:
         _log.error(
-            "sys audit: MATRIX GAP capability_kind=%s language=%s -- "
+            "sys audit: MATRIX %s capability_kind=%s language=%s -- "
             "unpatterned and unexcused",
+            style_fail("GAP", color),
             cell.capability_kind,
             cell.language,
         )

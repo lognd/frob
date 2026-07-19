@@ -9,12 +9,23 @@ import sys
 from datetime import date
 from pathlib import Path
 
+from frob.app._style import style_state, style_ticket_id
 from frob.app.config import AppConfig
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
 
 _CACHE_REL = Path(".frob") / "cache.db"
+
+
+def _stdout_color() -> bool:
+    """Whether ticket-listing lines (routed to stdout via `_log.info`,
+    `frob.logging.config.toml`'s below-WARNING handler) should carry ANSI
+    color -- T-0179's single should_color(stdout) check, evaluated once per
+    call site rather than duplicated per print."""
+    from frob.logging.color import should_color
+
+    return should_color(sys.stdout)
 
 
 def _ticket_dispatch_table() -> dict:
@@ -155,8 +166,15 @@ def _list(root: Path, cfg: AppConfig) -> None:
     if not tickets:
         _log.info("no tickets")
         return
+    color = _stdout_color()
     for t in tickets:
-        _log.info("%s  [%s]  %s  (%s)", t.id, t.state.value, t.title, t.kind.value)
+        _log.info(
+            "%s  [%s]  %s  (%s)",
+            style_ticket_id(t.id, color),
+            style_state(t.state.value, color),
+            t.title,
+            t.kind.value,
+        )
 
 
 def _show(root: Path, cfg: AppConfig) -> None:
@@ -178,10 +196,11 @@ def _show(root: Path, cfg: AppConfig) -> None:
         _log.info(ticket.model_dump_json(indent=2))
         return
 
+    color = _stdout_color()
     _log.info(
         "%s  [%s]  %s  (%s)\nblocked_by=%s scope=%s\n\n%s",
-        ticket.id,
-        ticket.state.value,
+        style_ticket_id(ticket.id, color),
+        style_state(ticket.state.value, color),
         ticket.title,
         ticket.kind.value,
         list(ticket.blocked_by),
@@ -208,8 +227,9 @@ def _doable(root: Path, cfg: AppConfig) -> None:
     if not tickets:
         _log.info("nothing doable")
         return
+    color = _stdout_color()
     for t in tickets:
-        _log.info("%s  %s  (%s)", t.id, t.title, t.kind.value)
+        _log.info("%s  %s  (%s)", style_ticket_id(t.id, color), t.title, t.kind.value)
 
 
 def _migrate(root: Path) -> None:

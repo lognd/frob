@@ -14,6 +14,7 @@ import json
 import sys
 from pathlib import Path
 
+from frob.app._style import style_fail, style_ok, style_rule
 from frob.app.config import AppConfig
 from frob.gates._models import Severity
 from frob.logging import get_logger
@@ -115,6 +116,10 @@ def _run_scan(root: Path, cfg: AppConfig) -> None:
 
 def _print_table(report) -> None:
     """Compact (package, ecosystem, verdict, notes) table for terminal output."""
+    from frob.logging.color import should_color
+
+    color = should_color(sys.stdout)
+
     by_name: dict[str, list[str]] = {}
     for v in report.violations:
         for verdict in report.verdicts:
@@ -130,9 +135,14 @@ def _print_table(report) -> None:
     print("-" * len(header))
     for verdict in report.verdicts:
         notes = by_name.get(verdict.name, [])
+        # Padding is computed on the PLAIN status word so column alignment
+        # is identical whether or not ANSI codes wrap it (T-0179): the
+        # escape sequence adds bytes but no visible width.
         status = "FAIL" if notes else "ok"
+        painted = style_fail(status, color) if notes else style_ok(status, color)
+        pad = " " * max(0, 10 - len(status))
         print(
-            f"{verdict.name:<30} {verdict.ecosystem:<10} {status:<10} "
+            f"{verdict.name:<30} {verdict.ecosystem:<10} {painted}{pad} "
             f"{', '.join(notes)}"
         )
 
@@ -140,7 +150,7 @@ def _print_table(report) -> None:
         print()
         print("violations:")
         for v in report.violations:
-            print(f"  [{v.severity}] {v.rule} {v.file}: {v.message}")
+            print(f"  [{v.severity}] {style_rule(v.rule, color)} {v.file}: {v.message}")
 
 
 def _print_cve_table(matches: tuple[CveMatch, ...]) -> None:

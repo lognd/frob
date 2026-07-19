@@ -7,6 +7,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+from frob.app._style import style_header, style_warn
 from frob.app.config import AppConfig
 from frob.logging import get_logger
 
@@ -32,12 +33,16 @@ def run(cfg: AppConfig) -> None:
         print(report.model_dump_json(indent=2))
         return
 
+    from frob.logging.color import should_color
+
+    color = should_color(sys.stdout)
     t = report.tickets
     c = report.commits
+    blocked = style_warn(str(t.blocked), color) if t.blocked else str(t.blocked)
     lines = [
-        "frob stats",
+        style_header("frob stats", color),
         "",
-        f"tickets: {t.total} total  ({t.doable} doable, {t.blocked} blocked)",
+        f"tickets: {t.total} total  ({t.doable} doable, {blocked} blocked)",
         f"  by state: {_fmt(t.by_state)}",
         f"  by kind:  {_fmt(t.by_kind)}",
         f"  failure-log entries: {t.failure_entries}",

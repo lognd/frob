@@ -132,6 +132,35 @@ semantics live in `AppConfig` and in each subcommand's own docs page.
 - `map_runner.run` -- runs `frob.map.map_project` over `cfg.map_path`
   (docs/commands/map.md).
 
+## Shared styling helper (T-0179)
+
+`frob.app._style` centralizes ANSI-color decisions for every runner's
+human-facing output -- one palette, not ad hoc `paint()` calls scattered
+per runner. Every function is a pure text -> text transform; the caller
+always computes `color` from `frob.logging.color.should_color(stream)`
+(the correct stream for the line -- stdout for INFO/DEBUG, stderr for
+WARNING+) and passes it in, so `--json`/non-TTY output never gains an
+escape code.
+
+<!-- frob:describes src/frob/app/_style.py::STATE_STYLE -->
+<!-- frob:describes src/frob/app/_style.py::style_ticket_id -->
+<!-- frob:describes src/frob/app/_style.py::style_state -->
+<!-- frob:describes src/frob/app/_style.py::style_ok -->
+<!-- frob:describes src/frob/app/_style.py::style_fail -->
+<!-- frob:describes src/frob/app/_style.py::style_warn -->
+<!-- frob:describes src/frob/app/_style.py::style_header -->
+<!-- frob:describes src/frob/app/_style.py::style_rule -->
+
+- `STATE_STYLE` -- ticket-state -> SGR code map (`done`=green,
+  `in_progress`=cyan, `planned`=yellow, `queued`/`dropped`=dim,
+  `blocked`/`failed`=red).
+- `style_ticket_id` -- bolds a ticket id (`T-0042`).
+- `style_state` -- colors a ticket state word per `STATE_STYLE`.
+- `style_ok` / `style_fail` / `style_warn` -- green/red/yellow for
+  passed/failed/waived text (PROVED, GAP, WAIVED, FAIL/ok table cells).
+- `style_header` -- bold section headers.
+- `style_rule` -- cyan-highlights a rule/gate id (e.g. `THREAT002`).
+
 ## frob.docs library
 
 The `frob docs` subcommand is backed by `frob.docs`, a small doc-search
