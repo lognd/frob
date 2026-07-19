@@ -69,3 +69,68 @@ class TestDrift:
         violations = deploy_drift_violations(tmp_path)
         assert len(violations) == 1
         assert violations[0].file == "deploy/install.sh"
+
+    # frob:tests src/frob/deploy/_drift.py::deploy_drift_violations kind="unit"
+    def test_no_model_loads(self, tmp_path):
+        """deploy/ exists but no `.strata` design file loads anywhere ->
+        `_current_model_output` returns None -> clean (nothing to check
+        against), exercising the `fresh is None` branch."""
+        deploy_dir = tmp_path / "deploy"
+        deploy_dir.mkdir()
+        (deploy_dir / "install.sh").write_text("# whatever\n")
+        assert deploy_drift_violations(tmp_path) == ()
+
+    # frob:tests src/frob/deploy/_drift.py::deploy_drift_violations kind="unit"
+    def test_partial_committed(self, tmp_path):
+        """Only one of the three generated filenames is committed -- the
+        other two hit the `not committed_path.exists()` continue branch,
+        and the committed one still gets checked for drift."""
+        _write_design(tmp_path)
+        deploy_dir = tmp_path / "deploy"
+        deploy_dir.mkdir()
+        rendered = generate_all(_model())
+        (deploy_dir / "status.sh").write_text(rendered["status.sh"])
+        violations = deploy_drift_violations(tmp_path)
+        assert violations == ()
+
+    # frob:tests src/frob/deploy/_drift.py::deploy_drift_violations kind="unit"
+    def test_malformed_strata_file_yields_no_model(self, tmp_path):
+        """A `.strata` file that fails to parse makes `load_design_ids`
+        report `.errors`, so `_load_current_model` returns None and drift
+        checking is skipped clean -- exercises the `ids.errors` branch."""
+        design = tmp_path / "design"
+        design.mkdir()
+        (design / "broken.strata").write_text("this is not valid strata !!\n")
+        deploy_dir = tmp_path / "deploy"
+        deploy_dir.mkdir()
+        (deploy_dir / "install.sh").write_text("# whatever\n")
+        assert deploy_drift_violations(tmp_path) == ()
+
+    # frob:tests src/frob/deploy/_drift.py::deploy_drift_violations kind="unit"
+    def test_bad_frob_toml_falls_back_to_default_design_dir(self, tmp_path):
+        """An unparseable `frob.toml` makes `_design_dir` catch
+        `TOMLDecodeError` and fall back to `DEFAULT_DESIGN_DIR` -- the
+        design still loads from the default location so the drift check
+        stays functional despite the bad toml."""
+        (tmp_path / "frob.toml").write_text("this = is [ not valid toml\n")
+        _write_design(tmp_path)
+        deploy_dir = tmp_path / "deploy"
+        deploy_dir.mkdir()
+        for filename, content in generate_all(_model()).items():
+            (deploy_dir / filename).write_text(content)
+        assert deploy_drift_violations(tmp_path) == ()
+
+    # frob:tests src/frob/deploy/_drift.py::deploy_drift_violations kind="unit"
+    def test_custom_design_dir_from_frob_toml(self, tmp_path):
+        """`[strata].design_dir` in `frob.toml` is honored -- covers the
+        `toml_path.exists()` true branch and the custom-value read in
+        `_design_dir`."""
+        (tmp_path / "frob.toml").write_text('[strata]\ndesign_dir = "custom_design"\n')
+        design = tmp_path / "custom_design"
+        design.mkdir()
+        (design / "fixture.strata").write_text(_STRATA_SRC)
+        deploy_dir = tmp_path / "deploy"
+        deploy_dir.mkdir()
+        for filename, content in generate_all(_model()).items():
+            (deploy_dir / filename).write_text(content)
+        assert deploy_drift_violations(tmp_path) == ()

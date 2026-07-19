@@ -10,6 +10,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from frob.deploy._conform import (
+    _PARSE_ERROR_TARGET,
     MutationTarget,
     deploy_conformance_violations,
     expected_mutation_surface,
@@ -65,6 +66,15 @@ class TestExtract:
         assert MutationTarget(kind="user", target="api-svc") in surface
         assert MutationTarget(kind="path", target="/etc/api") in surface
         assert MutationTarget(kind="unit", target="frob-deploy-api.service") in surface
+
+    # frob:tests src/frob/deploy/_conform.py::extract_mutation_surface kind="unit"
+    def test_unterminated_quote_is_parse_error(self):
+        # A line that cannot be tokenized as shell at all (unbalanced
+        # quote) must NOT be silently dropped -- it becomes the
+        # fail-closed parse-error sentinel, exercising the
+        # `_TokenizeError` except branch.
+        surface = extract_mutation_surface('useradd "unterminated\n')
+        assert MutationTarget(kind="parse-error", target=_PARSE_ERROR_TARGET) in surface
 
     # frob:tests src/frob/deploy/_conform.py::extract_mutation_surface kind="unit"
     def test_no_heredoc(self):
@@ -208,6 +218,27 @@ class TestConform:
             v.file != "deploy/uninstall.sh" or v.target == "rogue-backdoor"
             for v in violations
         )
+
+    # frob:tests src/frob/deploy/_conform.py::deploy_conformance_violations kind="unit"
+    def test_no_model_loads(self, tmp_path):
+        """deploy/ exists but no design model loads at all -> `model is
+        None` short-circuit branch, clean."""
+        deploy_dir = tmp_path / "deploy"
+        deploy_dir.mkdir()
+        (deploy_dir / "install.sh").write_text("# whatever\n")
+        assert deploy_conformance_violations(tmp_path) == ()
+
+    # frob:tests src/frob/deploy/_conform.py::deploy_conformance_violations kind="unit"
+    def test_partial_committed(self, tmp_path):
+        """Only install.sh is committed -- uninstall.sh hits the `not
+        path.exists()` continue branch and is skipped entirely."""
+        _write_design(tmp_path)
+        deploy_dir = tmp_path / "deploy"
+        deploy_dir.mkdir()
+        rendered = generate_all(_model())
+        (deploy_dir / "install.sh").write_text(rendered["install.sh"])
+        violations = deploy_conformance_violations(tmp_path)
+        assert violations == ()
 
     # frob:tests src/frob/deploy/_conform.py::deploy_conformance_violations kind="unit"
     def test_missing_003(self, tmp_path):

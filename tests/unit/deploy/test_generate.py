@@ -92,6 +92,40 @@ class TestStatus:
         assert "frob-deploy-api.service" in script
         assert "port=8080" in script
 
+    # frob:tests src/frob/deploy/_generate.py::generate_status_script kind="unit"
+    def test_no_units_declared(self):
+        """No manifests at all -> `unit_entries` is empty -> the
+        "no units declared" short-circuit branch."""
+        script = generate_status_script(KernelModel())
+        assert "no units declared" in script
+
+    # frob:tests src/frob/deploy/_generate.py::generate_status_script kind="unit"
+    def test_manifest_present_but_not_a_unit(self):
+        """A manifest exists (non-empty `entries`) but declares no `unit`
+        clause, so `unit_entries` still ends up empty -- a DIFFERENT path
+        to the same short-circuit than the fully-empty-model case above."""
+        model = KernelModel(
+            nodes=(Node(id="cfg", trust="trusted", attrs=("owns=/etc/cfg:0644",)),)
+        )
+        script = generate_status_script(model)
+        assert "no units declared" in script
+
+    # frob:tests src/frob/deploy/_generate.py::generate_status_script kind="unit"
+    def test_unit_with_no_listens_ports(self):
+        """A unit with no `listens` ports skips the port-probe loop body
+        entirely -- covers the empty-`listens` branch distinctly from
+        `test_one_line`'s port-bearing case."""
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="worker", trust="trusted", attrs=("runs_as=worker-svc", "unit")
+                ),
+            )
+        )
+        script = generate_status_script(model)
+        assert "frob-deploy-worker.service" in script
+        assert "port" not in script
+
 
 class TestUninstall:
     # frob:tests src/frob/deploy/_generate.py::generate_uninstall_script kind="unit"
@@ -102,6 +136,28 @@ class TestUninstall:
         assert 'userdel "api-svc"' in script
         # nothing outside the declared node's own paths/users appears
         assert "db" not in script
+
+    # frob:tests src/frob/deploy/_generate.py::generate_uninstall_script kind="unit"
+    def test_empty_model(self):
+        """No host manifests declared at all -> the "nothing to
+        uninstall" short-circuit branch."""
+        script = generate_uninstall_script(KernelModel())
+        assert "nothing to uninstall" in script
+
+    # frob:tests src/frob/deploy/_generate.py::generate_uninstall_script kind="unit"
+    def test_node_with_no_unit_no_owns_no_runs_as(self):
+        """A declared manifest with none of unit/owns/runs_as set exercises
+        the false branch of every per-block `if` in
+        `_uninstall_unit_block`/`_uninstall_owns_block`/
+        `_uninstall_user_block` -- each block renders to an empty string."""
+        model = KernelModel(
+            nodes=(Node(id="bare", trust="trusted", attrs=("listens=9999",)),)
+        )
+        script = generate_uninstall_script(model)
+        assert "--- bare ---" in script
+        assert "systemctl stop" not in script
+        assert "userdel" not in script
+        assert "rm -rf" not in script
 
 
 class TestAll:
