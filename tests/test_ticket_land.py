@@ -164,6 +164,34 @@ class TestSpliceLedger:
         assert "state: planned" in spliced.danger_ok
         assert "state: queued" not in spliced.danger_ok
 
+    # frob:tests src/frob/tickets/_land.py::splice_ledger kind="unit"
+    def test_malformed_ours_propagates_as_err(self, tmp_path: Path) -> None:
+        """A malformed `ours_text` (a ticket marker with no ```yaml
+        frontmatter) must surface `_parse_ledger`'s error unchanged --
+        `splice_ledger` never silently drops the ours side."""
+        malformed_ours = "# Tickets\n\n<!-- ticket:T-0001 -->\nno frontmatter here\n"
+
+        valid = new_ticket(tmp_path, _spec("Theirs"))
+        assert valid.is_ok
+        theirs_text = ledger_path(tmp_path).read_text()
+
+        spliced = splice_ledger(malformed_ours, theirs_text)
+        assert spliced.is_err
+
+    # frob:tests src/frob/tickets/_land.py::splice_ledger kind="unit"
+    def test_malformed_theirs_propagates_as_err(self, tmp_path: Path) -> None:
+        """A malformed `theirs_text` must ALSO surface as `Err` -- the
+        second `_parse_ledger` call's error path is exercised
+        independently of the first (both sides are fallible)."""
+        valid = new_ticket(tmp_path, _spec("Ours"))
+        assert valid.is_ok
+        ours_text = ledger_path(tmp_path).read_text()
+
+        malformed_theirs = "# Tickets\n\n<!-- ticket:T-0002 -->\nno frontmatter here\n"
+
+        spliced = splice_ledger(ours_text, malformed_theirs)
+        assert spliced.is_err
+
 
 class TestLand:
     """`frob.tickets.land` against real fixture repos."""
