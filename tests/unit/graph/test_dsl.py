@@ -11,8 +11,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from frob.graph.dsl import _RESERVED_MARKER_VERBS, parse_directives
+from frob.graph.dsl import _RESERVED_MARKER_VERBS, _resolve_block_srcs, parse_directives
 from frob.lang import parse_file
+from frob.lang._models import ParsedFile, RawComment, RawSymbol, SymbolKind
 
 
 def _write(root: Path, rel: str, text: str) -> Path:
@@ -206,3 +207,147 @@ class TestReservedMarkerVerbs:
         assert not edges
         assert len(malformed) == 1
         assert "unknown verb" in malformed[0].reason
+
+
+class TestNoqaTail:
+    """A directive sharing a physical line with a linter-suppression comment
+    (`# noqa: ...`) must still parse, not be dropped as malformed (T-0309)."""
+
+    def test_waive_with_trailing_noqa_parses(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/dsl.py::_parse_attrs
+        src = (
+            "def foo() -> None:\n"
+            '    # frob:waive RULE-1 reason="x"  # noqa: E501\n'
+            "    pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        assert len(edges) == 1
+        assert edges[0].target == "RULE-1"
+        assert edges[0].attrs["reason"] == "x"
+
+    def test_tests_with_trailing_bare_noqa_binds(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/dsl.py::_parse_attrs
+        src = (
+            "def foo() -> None:\n"
+            '    # frob:tests path::Sym kind="unit"  # noqa\n'
+            "    pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        assert len(edges) == 1
+        assert edges[0].target == "path::Sym"
+        assert edges[0].attrs["kind"] == "unit"
+
+    def test_hash_inside_quoted_value_is_preserved(self, tmp_path: Path) -> None:
+        # A '#' inside a quoted attribute value is content, not a comment
+        # tail -- it must survive into the parsed attribute unchanged, even
+        # though the same character would be stripped as a noqa tail if it
+        # appeared outside the quotes.
+        src = (
+            "def foo() -> None:\n"
+            '    # frob:waive RULE-1 reason="uses #hashtag"\n'
+            "    pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        assert len(edges) == 1
+        assert edges[0].attrs["reason"] == "uses #hashtag"
+
+
+class TestBlockBinding:
+    """A `frob:doc` (or any) directive found anywhere in a contiguous
+    comment block above a symbol must bind to that symbol, regardless of
+    how many other directive lines sit between it and the symbol (T-0313)."""
+
+    def test_doc_before_two_ticket_lines_still_binds_via_generic_walker(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/dsl.py::parse_directives
+        # Regression proof at the real-language-walker level: the generic
+        # tree-sitter path (python here) already block-widens `following`
+        # correctly, so this must pass both before and after T-0313 -- it
+        # guards against a future regression in either layer.
+        src = (
+            "class A:\n"
+            "    # frob:doc docs/x.md#y\n"
+            "    # frob:ticket T-0001\n"
+            "    # frob:ticket T-0002\n"
+            "    def foo(self) -> None:\n"
+            "        pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        doc_edges = [e for e in edges if e.kind.value == "doc"]
+        assert len(doc_edges) == 1
+        assert doc_edges[0].src.endswith("::A.foo")
+
+    def test_narrow_following_window_propagates_backward_through_run(self) -> None:
+        # frob:tests src/frob/graph/dsl.py::_resolve_block_srcs
+        # Reproduces the actual reported failure mode: a walker (like
+        # frob.lang._walk_strata) that resolves `following` against each
+        # comment's OWN line, not the whole stacked block's end line. Only
+        # the comment on the line directly above the symbol resolves
+        # `following` on its own; the two lines further up must inherit
+        # that binding via backward propagation through the unbroken run.
+        symbols = (
+            RawSymbol(
+                qualname="FooNode",
+                kind=SymbolKind.CLASS,
+                public=True,
+                span=(4, 6),
+                sig_tokens=(),
+                body_tokens=(),
+                doc_text="",
+            ),
+        )
+        comments = (
+            RawComment(
+                text="frob:doc docs/x.md#y", span=(1, 1), enclosing=None, following=None
+            ),
+            RawComment(
+                text="frob:ticket T-0001", span=(2, 2), enclosing=None, following=None
+            ),
+            RawComment(
+                text="frob:ticket T-0002",
+                span=(3, 3),
+                enclosing=None,
+                following="FooNode",
+            ),
+        )
+        pf = ParsedFile(
+            path="a.strata",
+            language="strata",
+            symbols=symbols,
+            comments=comments,
+            content_hash="x",
+        )
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        assert len(edges) == 3
+        assert all(e.src == "a.strata::FooNode" for e in edges)
+
+    def test_gap_still_breaks_propagation(self) -> None:
+        # frob:tests src/frob/graph/dsl.py::_resolve_block_srcs
+        # A genuine gap (non-adjacent line number) between two comments
+        # must NOT be bridged by propagation -- only an unbroken
+        # line-adjacent run may inherit a resolved `following` binding.
+        comments = (
+            RawComment(
+                text="frob:doc docs/x.md#y", span=(1, 1), enclosing=None, following=None
+            ),
+            # a gap here (blank/code line at 2-4) breaks the run
+            RawComment(
+                text="frob:ticket T-0002",
+                span=(5, 5),
+                enclosing=None,
+                following="FooNode",
+            ),
+        )
+        resolved = _resolve_block_srcs(comments, "a.strata")
+        assert resolved[1] == "a.strata::FooNode"
+        assert resolved[0] == "a.strata"  # bare path: no enclosing, no propagation

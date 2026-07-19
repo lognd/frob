@@ -9596,12 +9596,54 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/graph/dsl.py,tests/unit/graph/test_dsl.py,docs/modules/graph.md,tickets.md
-evidence: []
+evidence:
+- tests/unit/graph/test_dsl.py::TestNoqaTail::test_waive_with_trailing_noqa_parses
+- tests/unit/graph/test_dsl.py::TestNoqaTail::test_tests_with_trailing_bare_noqa_binds
+- tests/unit/graph/test_dsl.py::TestNoqaTail::test_hash_inside_quoted_value_is_preserved
 attachments: []
 acceptance: []
 threat: null
 ```
 FROBLEMS (lithos W2b): appending '  # noqa: E501' to a frob:tests/frob:waive directive (to satisfy ruff 88-col on a long symref) makes _parse_attrs leftover non-empty -> MalformedDirective, edge dropped, only a debug log. ~50 directives silently regressed to unbound. A directive sharing a physical line with a linter-suppression comment is a reasonable pattern once a repo enforces both. Fix: _parse_attrs should strip a trailing '#'-led tail (noqa or any comment) from leftover before the emptiness check. Same subsystem as T-0286/T-0294. Test: 'frob:waive RULE reason="x"  # noqa: E501' parses to a valid waive edge.
+
+## Done report
+
+Changed: src/frob/graph/dsl.py::_parse_attrs
+
+`_parse_attrs` computed `leftover = _ATTR_RE.sub("", attr_text).strip()` and
+reported any non-empty leftover as a `MalformedDirective`, with no
+allowance for a trailing linter-suppression comment (`# noqa: E501` or
+similar) sharing the physical line with a `frob:waive`/`frob:tests`/etc
+directive. Fix: after the existing `_ATTR_RE.sub` pass, `leftover =
+leftover.split("#", 1)[0].strip()` -- cuts a trailing '#'-led tail before
+the emptiness check.
+
+Quoted-value safety: `_ATTR_RE` (`(\w+)\s*=\s*"([^"]*)"`) is applied FIRST
+via `.sub("", attr_text)`, so any `key="value with #stuff"` attribute --
+including one whose value contains a literal `#` -- is fully consumed and
+removed from `attr_text` before `leftover` is computed. A '#' that
+survives into `leftover` was therefore never inside a quoted value; only a
+genuine trailing comment tail (or genuinely malformed leftover text before
+one) can reach the `.split("#", 1)` cut. Verified directly:
+`reason="uses #hashtag"` with no trailing noqa parses with
+`attrs["reason"] == "uses #hashtag"` unchanged (test
+`test_hash_inside_quoted_value_is_preserved`).
+
+Evidence:
+- tests/unit/graph/test_dsl.py::TestNoqaTail::test_waive_with_trailing_noqa_parses
+- tests/unit/graph/test_dsl.py::TestNoqaTail::test_tests_with_trailing_bare_noqa_binds
+- tests/unit/graph/test_dsl.py::TestNoqaTail::test_hash_inside_quoted_value_is_preserved
+
+Filed: none
+
+Gates: `uv run pytest tests/unit/graph/test_dsl.py tests/test_graph.py -q`
+-- 265 passed (combined with T-0313's tests, same run/file). `uv run ruff
+check` and `ruff check` (both PATH and project-pinned) clean on
+src/frob/graph/dsl.py and tests/unit/graph/test_dsl.py. `uv run ruff
+format --check` clean after one auto-format pass. `uv run ty check` clean.
+`uv run frob check --only coverage` -- 0 errors, 0 warnings (COV001=0).
+`uv run frob check --delta` after `make coverage` -- `0/0 new` violations.
+`git diff main --diff-filter=D --stat` empty (deletion-filter clean).
 
 <!-- ticket:T-0310 -->
 ```yaml
@@ -9675,12 +9717,84 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/graph/dsl.py,tests/unit/graph/test_dsl.py,tickets.md
-evidence: []
+evidence:
+- tests/unit/graph/test_dsl.py::TestBlockBinding::test_doc_before_two_ticket_lines_still_binds_via_generic_walker
+- tests/unit/graph/test_dsl.py::TestBlockBinding::test_narrow_following_window_propagates_backward_through_run
+- tests/unit/graph/test_dsl.py::TestBlockBinding::test_gap_still_breaks_propagation
 attachments: []
 acceptance: []
 threat: null
 ```
 FROBLEMS (aprog-public): a node with '// frob:doc ...' followed by two '// frob:ticket ...' lines directly above 'node X : trusted {' fired COV001 as if no frob:doc edge existed; nodes with exactly ONE frob:ticket line after frob:doc passed. Reordering so frob:doc is the LAST comment line immediately above the symbol fixed it. Strongly suggests the doc-edge binder only inspects the single nearest preceding comment line, not the whole contiguous comment block (off-by-one in _enclosing_src / RawComment.following lookback). Same subsystem as T-0286/T-0294/T-0309. Fix: bind a frob:doc directive found ANYWHERE in the contiguous comment block above a symbol, regardless of other directive lines between it and the symbol. Test: frob:doc followed by 2 frob:ticket lines above a node still yields the doc edge.
+
+## Done report
+
+Changed: src/frob/graph/dsl.py::_resolve_block_srcs (new), src/frob/graph/dsl.py::parse_directives
+
+Root cause: the generic tree-sitter comment path (`frob.lang._extract`)
+already block-widens `RawComment.following` correctly via `_block_ends` --
+python/rust/C/TS reproductions of "frob:doc then 2 frob:ticket lines above
+a def" already bound correctly under that path (confirmed by direct repro
+before any fix). The `.strata` walker (`frob.lang._walk_strata`,
+out-of-scope for this ticket) is a different, narrower binder:
+`_extract_comments` calls `find_following_symbol(span, symbols)` with
+`span = (idx+1, idx+1)` -- the comment's OWN single line, never widened to
+the block's end line -- so a directive several lines above the symbol,
+with other directive lines between it and the symbol, can fail to resolve
+`following` even though a directive on the line directly above the symbol
+resolves fine. Because the true root cause sits in a walker file outside
+this ticket's declared scope (`src/frob/graph/dsl.py` only), the fix is a
+scope-respecting compensating mechanism entirely inside `dsl.py`: a new
+`_resolve_block_srcs(comments, path)` groups the comments in a `ParsedFile`
+into maximal RUNS of line-number-adjacent comments (in reverse/bottom-up
+order) and, for any comment whose own `following` is `None`, propagates
+the nearest ALREADY-RESOLVED `following` binding from later in the same
+unbroken run backward onto it. A comment whose own `following` DOES
+resolve is always left as-is (source of truth for its own line); a gap
+(non-adjacent line number) breaks the run and falls back to the previous
+enclosing/bare-path behavior exactly as before. `parse_directives` now
+calls this once per file and looks up each comment's `src` from the
+returned dict instead of calling `_enclosing_src` inline per comment.
+
+This fix works language-agnostically (it does not special-case strata) and
+is order-independent within a block by construction: verified directly
+against a synthetic `ParsedFile` reproducing the narrow-following-window
+symptom (`test_narrow_following_window_propagates_backward_through_run`,
+following=None on lines 1-2, following='FooNode' resolved only on line 3
+-- all three directives bind to `a.strata::FooNode` after the fix). A
+genuine gap between comments still correctly fails to propagate
+(`test_gap_still_breaks_propagation`). The generic-walker case (python,
+already correct before this ticket) is also covered as a standing
+regression guard (`test_doc_before_two_ticket_lines_still_binds_via_generic_walker`).
+
+Note for future ticket: the true fix location for `.strata` files
+specifically -- widening `find_following_symbol`'s span in
+`frob.lang._walk_strata._extract_comments` the way the generic
+tree-sitter path already does via `_block_ends` -- is out of this
+ticket's scope (`src/frob/lang/**` is not in `scope`). This ticket's
+dsl.py-level propagation fixes the observable symptom (COV001 false
+positive) for every walker, including strata, without touching lang code,
+but a walker-level fix would be the more direct remedy if `frob.lang` is
+ever in scope for a follow-up.
+
+Evidence:
+- tests/unit/graph/test_dsl.py::TestBlockBinding::test_doc_before_two_ticket_lines_still_binds_via_generic_walker
+- tests/unit/graph/test_dsl.py::TestBlockBinding::test_narrow_following_window_propagates_backward_through_run
+- tests/unit/graph/test_dsl.py::TestBlockBinding::test_gap_still_breaks_propagation
+
+Filed: none
+
+Gates: `uv run pytest tests/unit/graph/test_dsl.py tests/test_graph.py -q`
+-- 265 passed (combined with T-0309's tests, same run/file); also ran
+`tests/unit/test_parse.py`, `tests/unit/test_lang_primitives.py`,
+`tests/unit/test_lang_strata.py` together with the above -- 265 passed
+total, no regressions in T-0286/T-0294 continuation/reserved-marker
+coverage. `uv run ruff check` and `ruff check` (both PATH and
+project-pinned) clean. `uv run ruff format --check` clean after one
+auto-format pass. `uv run ty check` clean. `uv run frob check --only
+coverage` -- 0 errors, 0 warnings (COV001=0). `uv run frob check --delta`
+after `make coverage` -- `0/0 new` violations. `git diff main
+--diff-filter=D --stat` empty (deletion-filter clean).
 
 <!-- ticket:T-0314 -->
 ```yaml

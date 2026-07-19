@@ -134,6 +134,15 @@ def _parse_attrs(
     """Parse and validate `key="value"` attributes for `verb`, per-verb rules."""
     attrs = dict(_ATTR_RE.findall(attr_text))
     leftover = _ATTR_RE.sub("", attr_text).strip()
+    # T-0309: a directive can legitimately share a physical line with a
+    # linter-suppression comment (a ruff `noqa` marker, say) once a repo
+    # enforces both frob and a linter's line-length rule. Strip a trailing
+    # '#'-led tail from `leftover` before judging it non-empty. This is safe
+    # against a '#' inside a quoted attribute value (e.g. reason="uses
+    # #hashtag"): `_ATTR_RE.sub` above has already consumed any such quoted
+    # value in full (the regex's `"[^"]*"` group matches through the closing
+    # quote), so a '#' that survives into `leftover` was never inside quotes.
+    leftover = leftover.split("#", 1)[0].strip()
     if leftover:
         return MalformedDirective(
             file=path, line=lineno, reason=f"bad attribute syntax: {leftover!r}"
@@ -271,6 +280,53 @@ def _fold_continuations(
     return folded
 
 
+def _resolve_block_srcs(comments: tuple[RawComment, ...], path: str) -> dict[int, str]:
+    """Bind each comment (by its index into `comments`) to a symbol src,
+    propagating a resolved `following` binding BACKWARD through an unbroken
+    run of line-adjacent comments whose own `following` did not resolve
+    (T-0313).
+
+    Some walkers resolve `RawComment.following` against a narrow lookahead
+    window measured from each comment's OWN line rather than the whole
+    stacked comment block's end line (`frob.lang._walk_strata` is one --
+    see its `_extract_comments`, which calls `find_following_symbol` with
+    the comment's own single-line span instead of a block-widened one the
+    way `frob.lang._extract`'s generic tree-sitter path does via
+    `_block_ends`). That means a directive several lines above the symbol
+    it stacks with -- with other directive/comment lines between it and
+    the symbol -- can fail to resolve a `following` binding even though a
+    directive on the line directly above the symbol succeeds. Nothing
+    about a directive's position within a contiguous, gap-free comment
+    block changes which symbol the whole block belongs to, so the nearest
+    RESOLVED `following` binding within the same unbroken line-adjacent
+    run is the correct binding for every comment above it in that run. A
+    comment whose own `following` DOES resolve is always left as its own
+    source of truth; propagation only fills in where a walker's per-line
+    resolution failed. A gap (non-adjacent line number) breaks the run and
+    stops propagation, same as `_enclosing_src`'s existing enclosing/path
+    fallback would apply on its own.
+    """
+    order = sorted(range(len(comments)), key=lambda i: comments[i].span[0])
+    resolved: dict[int, str] = {}
+    carry_start: int | None = None
+    carry_src: str | None = None
+    for idx in reversed(order):
+        comment = comments[idx]
+        if comment.following is not None:
+            src = f"{path}::{comment.following}"
+        elif carry_src is not None and comment.span[1] + 1 == carry_start:
+            src = carry_src
+        else:
+            resolved[idx] = _enclosing_src(comment, path)
+            carry_start = None
+            carry_src = None
+            continue
+        resolved[idx] = src
+        carry_start = comment.span[0]
+        carry_src = src
+    return resolved
+
+
 # frob:doc docs/modules/graph.md#comment-dsl
 def parse_directives(
     parsed: ParsedFile,
@@ -279,8 +335,9 @@ def parse_directives(
     edges: list[Edge] = []
     malformed: list[MalformedDirective] = []
     flat: list[tuple[int, str, str, int]] = []
+    block_srcs = _resolve_block_srcs(parsed.comments, parsed.path)
     for comment_id, comment in enumerate(parsed.comments):
-        src = _enclosing_src(comment, parsed.path)
+        src = block_srcs[comment_id]
         start_line = comment.span[0]
         physical = comment.text.splitlines() or [comment.text]
         flat.extend(
