@@ -52,6 +52,7 @@ from frob.strata import (
     SelfConformReport,
     check_self_conformance,
     evaluate_exhaustiveness,
+    group_gaps_by_view,
     load_design_ids,
     load_repo_benign_capabilities,
     plan_obligations,
@@ -412,14 +413,16 @@ def _run_doc(cfg: AppConfig) -> None:
 def _log_waived_gaps(report: AuditReport) -> None:
     """Log every waived gap (T-0174: ALWAYS printed, proved or not -- a
     waiver must never make a run look silent, `_waive.py`'s "loud in
-    output" requirement)."""
+    output" requirement). T-0173: gaps that are verbatim-identical across
+    multiple views are grouped by `group_gaps_by_view` and printed ONCE
+    with every affected view named, instead of once per view."""
     color = _stderr_color()
-    for waived in report.waived:
+    for waived in group_gaps_by_view(report.waived):
         _log.warning(
-            "sys audit: %s family=%s view=%s rule=%s target=%s detail=%s",
+            "sys audit: %s family=%s views=%s rule=%s target=%s detail=%s",
             style_warn("WAIVED", color),
             waived.family,
-            waived.view,
+            ",".join(waived.views),
             style_rule(waived.rule, color),
             waived.target,
             waived.detail,
@@ -447,15 +450,19 @@ def _log_proved_summary(report: AuditReport) -> None:
 
 def _log_gaps(report: AuditReport) -> None:
     """Log every named gap, one per line (CI-parseable, no ambiguity about
-    which conjunction member failed)."""
+    which conjunction member failed). T-0173: verbatim-identical gaps that
+    fired under multiple views are grouped by `group_gaps_by_view` and
+    printed ONCE with every affected view named, instead of once per view
+    -- the underlying `report.gaps` count (used for the summary line and
+    exit code) is unaffected, only the printed block count changes."""
     color = _stderr_color()
     _log.error("sys audit: %d gap(s) found", len(report.gaps))
-    for gap in report.gaps:
+    for gap in group_gaps_by_view(report.gaps):
         _log.error(
-            "sys audit: %s family=%s view=%s rule=%s detail=%s",
+            "sys audit: %s family=%s views=%s rule=%s detail=%s",
             style_fail("GAP", color),
             gap.family,
-            gap.view,
+            ",".join(gap.views),
             style_rule(gap.rule, color),
             gap.detail,
         )

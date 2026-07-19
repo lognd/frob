@@ -36,8 +36,10 @@ from frob.strata import (
     Waiver,
 )
 from frob.strata._audit import (
+    DEFAULT_QUALITY_VIEWS,
     AuditReport,
     evaluate_exhaustiveness,
+    group_gaps_by_view,
 )
 from frob.strata._threat import _discharge_claim_id
 
@@ -307,6 +309,66 @@ def _isolated_hardened_two_user_model() -> KernelModel:
         ),
     )
     return KernelModel(nodes=(api, worker))
+
+
+class TestGroupGaps:
+    """T-0173: `frob sys audit` was printing an IDENTICAL WARNING block once
+    per configured view whenever the same underlying gap held under every
+    view in that family -- `_vulnerable_model`'s undischarged CWE-639 fires
+    on all three `DEFAULT_QUALITY_VIEWS` views identically. `group_gaps_by_
+    view` must collapse that into ONE group naming every affected view,
+    while a genuinely single-view gap (the security CWE-89 gap, which only
+    fires under `owasp-top-10`) stays its own single-view group -- and the
+    underlying `report.gaps` count (the verdict) must stay untouched."""
+
+    # frob:tests tests/unit/strata/test_audit.py::TestGroupGaps.test_group_gaps_by_view kind="unit"
+    def test_group_gaps_by_view(self):
+        model = _vulnerable_model()
+        result = evaluate_exhaustiveness(model)
+        assert result.is_ok
+        report = result.danger_ok
+
+        # the raw gap set is untouched -- the verdict-affecting count.
+        # (1 security CWE-89 + 3 quality CWE-639, one per DEFAULT_QUALITY_
+        # VIEWS view + 4 compliance COPPA, one per DEFAULT_COMPLIANCE_VIEWS
+        # view + 1 lint LINT001 -- measured via `pytest -s` on this model.)
+        assert len(report.gaps) == 9
+
+        grouped = group_gaps_by_view(report.gaps)
+
+        # no two groups render an identical (family, rule, detail) block --
+        # that is exactly the bug: the same content printed N times.
+        blocks = [(g.family, g.rule, g.detail) for g in grouped]
+        assert len(blocks) == len(set(blocks)), (
+            "duplicate verbatim block in grouped output"
+        )
+
+        # the CWE-639 quality gap fired under all 3 configured quality
+        # views -- it must collapse into ONE group naming all three.
+        quality_group = next(
+            g for g in grouped if g.family == "quality" and "CWE-639" in g.detail
+        )
+        assert set(quality_group.views) == set(DEFAULT_QUALITY_VIEWS)
+        assert len(quality_group.views) == len(DEFAULT_QUALITY_VIEWS)
+
+        # the CWE-89 security gap is genuinely single-view -- it must NOT
+        # be collapsed away or merged with anything else.
+        security_group = next(
+            g for g in grouped if g.family == "security" and "CWE-89" in g.detail
+        )
+        assert security_group.views == ("owasp-top-10",)
+
+        # the compliance COPPA gap fired under all 4 configured compliance
+        # views -- it must also collapse into ONE group.
+        compliance_group = next(g for g in grouped if g.family == "compliance")
+        assert len(compliance_group.views) == 4
+
+        # the full set of genuinely distinct gaps is preserved: security,
+        # quality, compliance, and lint groups are all still present, and
+        # grouping shrank the 9 raw gaps down to exactly 4 printed blocks.
+        families = {g.family for g in grouped}
+        assert families == {"security", "quality", "compliance", "lint"}
+        assert len(grouped) == 4
 
 
 class TestHostWiring:
