@@ -518,6 +518,51 @@ class TestBuildIncremental:
         assert third.stats.cache_hits == 1
 
 
+class TestMalformedFileVisibility:
+    """T-0216: `malformed=N` in the build summary must never be a dead end --
+    every malformed file's path has to be findable in WARN-level output, on
+    a fresh parse and on an all-cache-hit rebuild alike."""
+
+    def _tree_with_malformed_directive(self, tmp_path: Path) -> Path:
+        _write(tmp_path, "src/good.py", "def foo() -> None:\n    pass\n")
+        _write(
+            tmp_path,
+            "src/bad_directive.py",
+            "def broken() -> None:\n    # frob:ticket\n    pass\n",
+        )
+        return tmp_path
+
+    def test_fresh_build_names_malformed_file(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests tests/test_graph.py::TestMalformedFileVisibility::test_fresh_build_names_malformed_file
+        root = self._tree_with_malformed_directive(tmp_path)
+        cache = root / ".frob" / "cache.db"
+        with caplog.at_level("WARNING"):
+            snapshot = build_graph(root, cache).danger_ok
+        assert len(snapshot.malformed) == 1
+        assert any(
+            "src/bad_directive.py" in record.getMessage() for record in caplog.records
+        )
+
+    def test_cache_hit_rebuild_still_names_malformed_file(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests tests/test_graph.py::TestMalformedFileVisibility::test_cache_hit_rebuild_still_names_malformed_file
+        root = self._tree_with_malformed_directive(tmp_path)
+        cache = root / ".frob" / "cache.db"
+        build_graph(root, cache).danger_ok
+
+        caplog.clear()
+        with caplog.at_level("WARNING"):
+            snapshot = build_graph(root, cache).danger_ok
+        assert snapshot.stats.parsed == 0
+        assert len(snapshot.malformed) == 1
+        assert any(
+            "src/bad_directive.py" in record.getMessage() for record in caplog.records
+        )
+
+
 class TestExclude:
     """`[graph] exclude` in frob.toml is additive to the built-in dir excludes."""
 
