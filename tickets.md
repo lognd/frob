@@ -318,7 +318,7 @@ GH013 push protection rejects main: the Stripe fixture at tests/test_secrets_gat
 ```yaml
 id: T-0194
 title: 'anti_unify kernel: Plotkin lgg over (labels,parents) node arrays'
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-07-18'
