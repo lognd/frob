@@ -99,6 +99,36 @@ def _validate_recovery_sources(
     return Ok(None)
 
 
+def _validate_no_hang_flow(flow: object, node: Node) -> Result[None, StrataError]:
+    """No-hang check body for one flow into one crashable `node`."""
+    bound = _crash_bound_seconds(node.crash)
+    if bound.is_err:
+        return Err(bound.danger_err)
+    if flow.timeout is None:
+        _log.error(
+            "flow %s: no timeout declared calling crashable node %s "
+            "(no-hang check, T-0074)",
+            flow.id,
+            node.id,
+        )
+        return Err(StrataError.MissingTimeout)
+    timeout_base = flow.timeout.base_value()
+    if timeout_base.is_err:
+        return Err(timeout_base.danger_err)
+    if timeout_base.danger_ok < bound.danger_ok:
+        _log.error(
+            "flow %s: timeout %s%s is shorter than crashable node %s's "
+            "restart+retry bound %.3fs (no-hang check, T-0074)",
+            flow.id,
+            flow.timeout.value,
+            flow.timeout.unit,
+            node.id,
+            bound.danger_ok,
+        )
+        return Err(StrataError.IncompatibleTimeout)
+    return Ok(None)
+
+
 def _validate_no_hang(
     model: KernelModel, crashable: dict[str, Node]
 ) -> Result[None, StrataError]:
@@ -116,31 +146,9 @@ def _validate_no_hang(
             continue
         if _ASYNC_ATTR in flow.attrs:
             continue
-        bound = _crash_bound_seconds(node.crash)
-        if bound.is_err:
-            return Err(bound.danger_err)
-        if flow.timeout is None:
-            _log.error(
-                "flow %s: no timeout declared calling crashable node %s "
-                "(no-hang check, T-0074)",
-                flow.id,
-                node.id,
-            )
-            return Err(StrataError.MissingTimeout)
-        timeout_base = flow.timeout.base_value()
-        if timeout_base.is_err:
-            return Err(timeout_base.danger_err)
-        if timeout_base.danger_ok < bound.danger_ok:
-            _log.error(
-                "flow %s: timeout %s%s is shorter than crashable node %s's "
-                "restart+retry bound %.3fs (no-hang check, T-0074)",
-                flow.id,
-                flow.timeout.value,
-                flow.timeout.unit,
-                node.id,
-                bound.danger_ok,
-            )
-            return Err(StrataError.IncompatibleTimeout)
+        result = _validate_no_hang_flow(flow, node)
+        if result.is_err:
+            return result
     return Ok(None)
 
 
@@ -197,6 +205,47 @@ def _generate_crash_scenarios(
     )
 
 
+def _crash_scenario_results(
+    model: KernelModel,
+    crashable: dict[str, Node],
+    *,
+    today: _dt.date | None,
+    compiled_policies: CompiledPolicies | None,
+    waived_policies: frozenset[str],
+) -> Result[tuple[tuple[Scenario, ...], tuple[ScenarioResult, ...]], StrataError]:
+    """Generate + evaluate the auto-generated crash scenarios for `crashable`."""
+    generated = _generate_crash_scenarios(model, crashable)
+    scenario_model = model.model_copy(update={"scenarios": generated})
+    scenarios = evaluate_scenarios(
+        scenario_model,
+        today=today,
+        compiled_policies=compiled_policies,
+        waived_policies=waived_policies,
+    )
+    if scenarios.is_err:
+        return Err(scenarios.danger_err)
+    return Ok((generated, scenarios.danger_ok))
+
+
+def _crash_diagnostics(
+    model: KernelModel, crashable: dict[str, Node]
+) -> Result[tuple[str, ...], StrataError]:
+    """Recovery-source + no-hang validation, then the retry-idempotency join's
+    diagnostics -- the first three steps of `evaluate_crash_contracts`, in order."""
+    recovery_ok = _validate_recovery_sources(model, crashable)
+    if recovery_ok.is_err:
+        return Err(recovery_ok.danger_err)
+    no_hang_ok = _validate_no_hang(model, crashable)
+    if no_hang_ok.is_err:
+        return Err(no_hang_ok.danger_err)
+
+    joined = _join_retry_idempotency(model, crashable)
+    facts = build_facts(joined)
+    if facts.is_err:
+        return Err(facts.danger_err)
+    return Ok(facts.danger_ok.diagnostics)
+
+
 # frob:doc docs/strata/boundary.md#crash-contracts-and-error-totality-adjacent-claims
 def evaluate_crash_contracts(
     model: KernelModel,
@@ -220,39 +269,56 @@ def evaluate_crash_contracts(
     if not crashable:
         _log.info("evaluate_crash_contracts: no crash contracts declared")
         return Ok(CrashContractReport(scenario_results=(), diagnostics=()))
-
-    recovery_ok = _validate_recovery_sources(model, crashable)
-    if recovery_ok.is_err:
-        return Err(recovery_ok.danger_err)
-    no_hang_ok = _validate_no_hang(model, crashable)
-    if no_hang_ok.is_err:
-        return Err(no_hang_ok.danger_err)
-
-    joined = _join_retry_idempotency(model, crashable)
-    facts = build_facts(joined)
-    if facts.is_err:
-        return Err(facts.danger_err)
-    diagnostics = facts.danger_ok.diagnostics
-
-    generated = _generate_crash_scenarios(model, crashable)
-    scenario_model = model.model_copy(update={"scenarios": generated})
-    scenarios = evaluate_scenarios(
-        scenario_model,
+    return _evaluate_crashable_contracts(
+        model,
+        crashable,
         today=today,
         compiled_policies=compiled_policies,
         waived_policies=waived_policies,
     )
-    if scenarios.is_err:
-        return Err(scenarios.danger_err)
 
+
+def _evaluate_crashable_contracts(
+    model: KernelModel,
+    crashable: dict[str, Node],
+    *,
+    today: _dt.date | None,
+    compiled_policies: CompiledPolicies | None,
+    waived_policies: frozenset[str],
+) -> Result[CrashContractReport, StrataError]:
+    """The non-empty-`crashable` path of `evaluate_crash_contracts`: run the
+    diagnostics steps, then the scenario evaluation, then assemble the report."""
+    diagnostics_out = _crash_diagnostics(model, crashable)
+    if diagnostics_out.is_err:
+        return Err(diagnostics_out.danger_err)
+    diagnostics = diagnostics_out.danger_ok
+
+    scenario_out = _crash_scenario_results(
+        model,
+        crashable,
+        today=today,
+        compiled_policies=compiled_policies,
+        waived_policies=waived_policies,
+    )
+    if scenario_out.is_err:
+        return Err(scenario_out.danger_err)
+    generated, scenario_results = scenario_out.danger_ok
+    return Ok(_build_crash_report(crashable, generated, scenario_results, diagnostics))
+
+
+def _build_crash_report(
+    crashable: dict[str, Node],
+    generated: tuple[Scenario, ...],
+    scenario_results: tuple[ScenarioResult, ...],
+    diagnostics: tuple[str, ...],
+) -> CrashContractReport:
+    """Log the final crash-contract counts and assemble the report."""
     _log.info(
         "evaluated %d crash contract(s): %d scenario(s), %d diagnostic(s)",
         len(crashable),
         len(generated),
         len(diagnostics),
     )
-    return Ok(
-        CrashContractReport(
-            scenario_results=scenarios.danger_ok, diagnostics=diagnostics
-        )
+    return CrashContractReport(
+        scenario_results=scenario_results, diagnostics=diagnostics
     )

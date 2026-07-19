@@ -291,6 +291,53 @@ def _claim_override(
     return True, None
 
 
+def _coppa_boundary_violation(flow: object) -> ComplianceViolation:
+    """The COMPLIANCE002 violation for a COPPA flow with no age-gate boundary."""
+    _log.warning(
+        "compliance: COPPA fired on flow %s (%s -> %s), no age-gate boundary",
+        flow.id,
+        flow.src,
+        flow.dst,
+    )
+    return ComplianceViolation(
+        rule="COMPLIANCE002",
+        regulation="COPPA",
+        target=flow.id,
+        detail=f"collection flow {flow.id} ({flow.src} -> {flow.dst}) "
+        "from an under-13/unknown-age subject reaches a Pii store "
+        "with no age-gate/parental-consent boundary",
+    )
+
+
+def _coppa_flow_violations(
+    model: KernelModel,
+    flow: object,
+    boundary_flows: set[str],
+    node_ids: set[str],
+) -> tuple[ComplianceViolation, ...]:
+    """COPPA per-flow check body: 0-2 violations for one flow (malformed
+    override, then missing age-gate boundary), in that order."""
+    if not (
+        _has_subject_tag(flow.attrs, "child")
+        or _has_subject_tag(flow.attrs, "unknown-age")
+    ):
+        return ()
+    if not _pii_or_above(model, flow.label):
+        return ()
+    if flow.dst not in node_ids:
+        return ()
+    claim_id = f"compliance:COPPA:{flow.id}"
+    overridden, malformed = _claim_override(model, claim_id)
+    violations: list[ComplianceViolation] = []
+    if malformed is not None:
+        violations.append(malformed)
+    if overridden:
+        return tuple(violations)
+    if flow.id not in boundary_flows:
+        violations.append(_coppa_boundary_violation(flow))
+    return tuple(violations)
+
+
 def _check_coppa(model: KernelModel) -> tuple[ComplianceViolation, ...]:
     """COPPA: a collection flow tagged `subject:child`/`subject:unknown-age`
     into a Pii-or-above store with no ENDORSE `Boundary` on that flow is
@@ -314,38 +361,51 @@ def _check_coppa(model: KernelModel) -> tuple[ComplianceViolation, ...]:
     node_ids = {n.id for n in model.nodes}
     violations: list[ComplianceViolation] = []
     for flow in sorted(model.flows, key=lambda f: f.id):
-        if not (
-            _has_subject_tag(flow.attrs, "child")
-            or _has_subject_tag(flow.attrs, "unknown-age")
-        ):
-            continue
-        if not _pii_or_above(model, flow.label):
-            continue
-        if flow.dst not in node_ids:
-            continue
-        claim_id = f"compliance:COPPA:{flow.id}"
-        overridden, malformed = _claim_override(model, claim_id)
-        if malformed is not None:
-            violations.append(malformed)
-        if overridden:
-            continue
-        if flow.id not in boundary_flows:
-            _log.warning(
-                "compliance: COPPA fired on flow %s (%s -> %s), no age-gate boundary",
-                flow.id,
-                flow.src,
-                flow.dst,
+        violations.extend(_coppa_flow_violations(model, flow, boundary_flows, node_ids))
+    return tuple(violations)
+
+
+def _revoked_nodes(model: KernelModel) -> set[str]:
+    """Node ids touched by a flow carrying the revocation attr (one pass
+    over flows, so the caller's node loop stays a plain membership test --
+    charter: no accidental O(nodes*flows))."""
+    revoked_nodes: set[str] = set()
+    for flow in model.flows:
+        if _REVOCATION_ATTR in flow.attrs:
+            revoked_nodes.add(flow.src)
+            revoked_nodes.add(flow.dst)
+    return revoked_nodes
+
+
+def _erasure_node_violations(
+    model: KernelModel, node: object, revoked_nodes: set[str]
+) -> tuple[ComplianceViolation, ...]:
+    """GDPR-ERASURE per-node check body: 0-2 violations for one node."""
+    if not (_has_jurisdiction(node.attrs, "eu-resident") and node.clearance):
+        return ()
+    if not _pii_or_above(model, node.clearance):
+        return ()
+    claim_id = f"compliance:GDPR-ERASURE:{node.id}"
+    overridden, malformed = _claim_override(model, claim_id)
+    violations: list[ComplianceViolation] = []
+    if malformed is not None:
+        violations.append(malformed)
+    if overridden:
+        return tuple(violations)
+    if node.id not in revoked_nodes:
+        _log.warning(
+            "compliance: GDPR-ERASURE fired on store %s, no revocation edge",
+            node.id,
+        )
+        violations.append(
+            ComplianceViolation(
+                rule="COMPLIANCE002",
+                regulation="GDPR-ERASURE",
+                target=node.id,
+                detail=f"eu-resident Pii store {node.id} has no declared "
+                "deletion/revocation path",
             )
-            violations.append(
-                ComplianceViolation(
-                    rule="COMPLIANCE002",
-                    regulation="COPPA",
-                    target=flow.id,
-                    detail=f"collection flow {flow.id} ({flow.src} -> {flow.dst}) "
-                    "from an under-13/unknown-age subject reaches a Pii store "
-                    "with no age-gate/parental-consent boundary",
-                )
-            )
+        )
     return tuple(violations)
 
 
@@ -354,41 +414,72 @@ def _check_erasure(model: KernelModel) -> tuple[ComplianceViolation, ...]:
     no flow carrying `attrs=("revocation", ...)` touching it -- the SAME
     revocation-edge convention `_secrets.py::_secret_flows` establishes
     (docs/strata/threat.md#compliance)."""
-    # One pass over flows builds the revoked-node set; the node loop below
-    # is then a plain membership test, not a nested scan (charter: no
-    # accidental O(nodes*flows)).
-    revoked_nodes: set[str] = set()
-    for flow in model.flows:
-        if _REVOCATION_ATTR in flow.attrs:
-            revoked_nodes.add(flow.src)
-            revoked_nodes.add(flow.dst)
-
+    revoked_nodes = _revoked_nodes(model)
     violations: list[ComplianceViolation] = []
     for node in sorted(model.nodes, key=lambda n: n.id):
-        if not (_has_jurisdiction(node.attrs, "eu-resident") and node.clearance):
-            continue
-        if not _pii_or_above(model, node.clearance):
-            continue
-        claim_id = f"compliance:GDPR-ERASURE:{node.id}"
-        overridden, malformed = _claim_override(model, claim_id)
-        if malformed is not None:
-            violations.append(malformed)
-        if overridden:
-            continue
-        if node.id not in revoked_nodes:
-            _log.warning(
-                "compliance: GDPR-ERASURE fired on store %s, no revocation edge",
-                node.id,
-            )
-            violations.append(
-                ComplianceViolation(
-                    rule="COMPLIANCE002",
-                    regulation="GDPR-ERASURE",
-                    target=node.id,
-                    detail=f"eu-resident Pii store {node.id} has no declared "
-                    "deletion/revocation path",
-                )
-            )
+        violations.extend(_erasure_node_violations(model, node, revoked_nodes))
+    return tuple(violations)
+
+
+def _retention_dim_violation(node: object, limit: Quantity) -> ComplianceViolation:
+    """The COMPLIANCE002 violation for a non-time retention bound unit."""
+    return ComplianceViolation(
+        rule="COMPLIANCE002",
+        regulation="GDPR-RETENTION",
+        target=node.id,
+        detail=f"{node.id} retention bound {limit.value}{limit.unit} "
+        "is not a time unit",
+    )
+
+
+def _retention_age_violation(
+    node: object, base: object, limit: Quantity
+) -> ComplianceViolation | None:
+    """The COMPLIANCE002 violation when `node`'s worst-case age exceeds `limit`."""
+    age, _path = base.worst_age(node.id)
+    limit_base = limit.base_value().danger_ok
+    if age == float("inf") or age > limit_base:
+        _log.warning(
+            "compliance: GDPR-RETENTION fired on store %s, worst age %s > limit %s",
+            node.id,
+            age,
+            limit_base,
+        )
+        return ComplianceViolation(
+            rule="COMPLIANCE002",
+            regulation="GDPR-RETENTION",
+            target=node.id,
+            detail=f"{node.id} worst-case age {age}s exceeds declared "
+            f"retention {limit_base}s",
+        )
+    return None
+
+
+def _retention_node_violations(
+    model: KernelModel, node: object, base: object
+) -> tuple[ComplianceViolation, ...]:
+    """GDPR-RETENTION per-node check body: 0-2 violations for one node."""
+    if not (_has_jurisdiction(node.attrs, "eu-resident") and node.clearance):
+        return ()
+    if not _pii_or_above(model, node.clearance):
+        return ()
+    limit = _retention_limit(node.attrs)
+    if limit is None:
+        return ()  # no declared bound: nothing to check yet (structural cut)
+    claim_id = f"compliance:GDPR-RETENTION:{node.id}"
+    overridden, malformed = _claim_override(model, claim_id)
+    violations: list[ComplianceViolation] = []
+    if malformed is not None:
+        violations.append(malformed)
+    if overridden:
+        return tuple(violations)
+    dim = limit.dimension()
+    if dim.is_err or dim.danger_ok != "time":
+        violations.append(_retention_dim_violation(node, limit))
+        return tuple(violations)
+    age_violation = _retention_age_violation(node, base, limit)
+    if age_violation is not None:
+        violations.append(age_violation)
     return tuple(violations)
 
 
@@ -405,50 +496,41 @@ def _check_retention(
 
     violations: list[ComplianceViolation] = []
     for node in sorted(model.nodes, key=lambda n: n.id):
-        if not (_has_jurisdiction(node.attrs, "eu-resident") and node.clearance):
-            continue
-        if not _pii_or_above(model, node.clearance):
-            continue
-        limit = _retention_limit(node.attrs)
-        if limit is None:
-            continue  # no declared bound: nothing to check yet (structural cut)
-        claim_id = f"compliance:GDPR-RETENTION:{node.id}"
-        overridden, malformed = _claim_override(model, claim_id)
-        if malformed is not None:
-            violations.append(malformed)
-        if overridden:
-            continue
-        dim = limit.dimension()
-        if dim.is_err or dim.danger_ok != "time":
-            violations.append(
-                ComplianceViolation(
-                    rule="COMPLIANCE002",
-                    regulation="GDPR-RETENTION",
-                    target=node.id,
-                    detail=f"{node.id} retention bound {limit.value}{limit.unit} "
-                    "is not a time unit",
-                )
-            )
-            continue
-        age, _path = base.worst_age(node.id)
-        limit_base = limit.base_value().danger_ok
-        if age == float("inf") or age > limit_base:
-            _log.warning(
-                "compliance: GDPR-RETENTION fired on store %s, worst age %s > limit %s",
-                node.id,
-                age,
-                limit_base,
-            )
-            violations.append(
-                ComplianceViolation(
-                    rule="COMPLIANCE002",
-                    regulation="GDPR-RETENTION",
-                    target=node.id,
-                    detail=f"{node.id} worst-case age {age}s exceeds declared "
-                    f"retention {limit_base}s",
-                )
-            )
+        violations.extend(_retention_node_violations(model, node, base))
     return Ok(tuple(violations))
+
+
+def _lawful_basis_flow_violations(
+    model: KernelModel, flow: object, nodes_by_id: dict[str, object]
+) -> tuple[ComplianceViolation, ...]:
+    """GDPR-BASIS per-flow check body: 0-2 violations for one flow."""
+    if not _pii_or_above(model, flow.label):
+        return ()
+    dst = nodes_by_id.get(flow.dst)
+    if dst is None or not _has_jurisdiction(dst.attrs, "eu-resident"):
+        return ()
+    claim_id = f"compliance:GDPR-BASIS:{flow.id}"
+    overridden, malformed = _claim_override(model, claim_id)
+    violations: list[ComplianceViolation] = []
+    if malformed is not None:
+        violations.append(malformed)
+    if overridden:
+        return tuple(violations)
+    has_basis = any(attr.startswith(_BASIS_PREFIX) for attr in flow.attrs)
+    if not has_basis:
+        _log.warning(
+            "compliance: GDPR-BASIS fired on flow %s, no declared basis", flow.id
+        )
+        violations.append(
+            ComplianceViolation(
+                rule="COMPLIANCE002",
+                regulation="GDPR-BASIS",
+                target=flow.id,
+                detail=f"flow {flow.id} collects eu-resident Pii into {dst.id} "
+                "with no declared lawful basis",
+            )
+        )
+    return tuple(violations)
 
 
 def _check_lawful_basis(model: KernelModel) -> tuple[ComplianceViolation, ...]:
@@ -458,31 +540,41 @@ def _check_lawful_basis(model: KernelModel) -> tuple[ComplianceViolation, ...]:
     nodes_by_id = {n.id: n for n in model.nodes}
     violations: list[ComplianceViolation] = []
     for flow in sorted(model.flows, key=lambda f: f.id):
-        if not _pii_or_above(model, flow.label):
-            continue
-        dst = nodes_by_id.get(flow.dst)
-        if dst is None or not _has_jurisdiction(dst.attrs, "eu-resident"):
-            continue
-        claim_id = f"compliance:GDPR-BASIS:{flow.id}"
-        overridden, malformed = _claim_override(model, claim_id)
-        if malformed is not None:
-            violations.append(malformed)
-        if overridden:
-            continue
-        has_basis = any(attr.startswith(_BASIS_PREFIX) for attr in flow.attrs)
-        if not has_basis:
-            _log.warning(
-                "compliance: GDPR-BASIS fired on flow %s, no declared basis", flow.id
+        violations.extend(_lawful_basis_flow_violations(model, flow, nodes_by_id))
+    return tuple(violations)
+
+
+def _baa_flow_violations(
+    model: KernelModel, flow: object, nodes_by_id: dict[str, object]
+) -> tuple[ComplianceViolation, ...]:
+    """HIPAA-BAA per-flow check body: 0-2 violations for one flow."""
+    if not _has_subject_tag(flow.attrs, "health"):
+        return ()
+    dst = nodes_by_id.get(flow.dst)
+    if dst is None:
+        return ()
+    claim_id = f"compliance:HIPAA-BAA:{flow.id}"
+    overridden, malformed = _claim_override(model, claim_id)
+    violations: list[ComplianceViolation] = []
+    if malformed is not None:
+        violations.append(malformed)
+    if overridden:
+        return tuple(violations)
+    if _COVERED_PARTY not in dst.attrs:
+        _log.warning(
+            "compliance: HIPAA-BAA fired on flow %s -> %s, no BAA attestation",
+            flow.id,
+            dst.id,
+        )
+        violations.append(
+            ComplianceViolation(
+                rule="COMPLIANCE002",
+                regulation="HIPAA-BAA",
+                target=flow.id,
+                detail=f"health-tagged flow {flow.id} reaches {dst.id}, which "
+                "declares no covered-party/BAA attestation",
             )
-            violations.append(
-                ComplianceViolation(
-                    rule="COMPLIANCE002",
-                    regulation="GDPR-BASIS",
-                    target=flow.id,
-                    detail=f"flow {flow.id} collects eu-resident Pii into {dst.id} "
-                    "with no declared lawful basis",
-                )
-            )
+        )
     return tuple(violations)
 
 
@@ -493,32 +585,42 @@ def _check_baa(model: KernelModel) -> tuple[ComplianceViolation, ...]:
     nodes_by_id = {n.id: n for n in model.nodes}
     violations: list[ComplianceViolation] = []
     for flow in sorted(model.flows, key=lambda f: f.id):
-        if not _has_subject_tag(flow.attrs, "health"):
-            continue
-        dst = nodes_by_id.get(flow.dst)
-        if dst is None:
-            continue
-        claim_id = f"compliance:HIPAA-BAA:{flow.id}"
-        overridden, malformed = _claim_override(model, claim_id)
-        if malformed is not None:
-            violations.append(malformed)
-        if overridden:
-            continue
-        if _COVERED_PARTY not in dst.attrs:
-            _log.warning(
-                "compliance: HIPAA-BAA fired on flow %s -> %s, no BAA attestation",
-                flow.id,
-                dst.id,
+        violations.extend(_baa_flow_violations(model, flow, nodes_by_id))
+    return tuple(violations)
+
+
+def _minimization_flow_violations(
+    model: KernelModel, flow: object, outbound: set[str]
+) -> tuple[ComplianceViolation, ...]:
+    """MINIMIZATION per-flow check body: 0-2 violations for one flow."""
+    if not _pii_or_above(model, flow.label):
+        return ()
+    field = _flow_field(flow.attrs)
+    if field is None:
+        return ()
+    claim_id = f"compliance:MINIMIZATION:{flow.id}"
+    overridden, malformed = _claim_override(model, claim_id)
+    violations: list[ComplianceViolation] = []
+    if malformed is not None:
+        violations.append(malformed)
+    if overridden:
+        return tuple(violations)
+    if flow.dst not in outbound:
+        _log.warning(
+            "compliance: MINIMIZATION fired on flow %s, field %r never read",
+            flow.id,
+            field,
+        )
+        violations.append(
+            ComplianceViolation(
+                rule="COMPLIANCE002",
+                regulation="MINIMIZATION",
+                target=flow.id,
+                detail=f"flow {flow.id} collects field {field!r} into "
+                f"{flow.dst}, which has no downstream read flow -- drop "
+                "the field or justify with an assume",
             )
-            violations.append(
-                ComplianceViolation(
-                    rule="COMPLIANCE002",
-                    regulation="HIPAA-BAA",
-                    target=flow.id,
-                    detail=f"health-tagged flow {flow.id} reaches {dst.id}, which "
-                    "declares no covered-party/BAA attestation",
-                )
-            )
+        )
     return tuple(violations)
 
 
@@ -533,33 +635,7 @@ def _check_minimization(model: KernelModel) -> tuple[ComplianceViolation, ...]:
     outbound = {flow.src for flow in model.flows}
     violations: list[ComplianceViolation] = []
     for flow in sorted(model.flows, key=lambda f: f.id):
-        if not _pii_or_above(model, flow.label):
-            continue
-        field = _flow_field(flow.attrs)
-        if field is None:
-            continue
-        claim_id = f"compliance:MINIMIZATION:{flow.id}"
-        overridden, malformed = _claim_override(model, claim_id)
-        if malformed is not None:
-            violations.append(malformed)
-        if overridden:
-            continue
-        if flow.dst not in outbound:
-            _log.warning(
-                "compliance: MINIMIZATION fired on flow %s, field %r never read",
-                flow.id,
-                field,
-            )
-            violations.append(
-                ComplianceViolation(
-                    rule="COMPLIANCE002",
-                    regulation="MINIMIZATION",
-                    target=flow.id,
-                    detail=f"flow {flow.id} collects field {field!r} into "
-                    f"{flow.dst}, which has no downstream read flow -- drop "
-                    "the field or justify with an assume",
-                )
-            )
+        violations.extend(_minimization_flow_violations(model, flow, outbound))
     return tuple(violations)
 
 
@@ -618,6 +694,32 @@ def _flow_field(flow_attrs: tuple[str, ...]) -> str | None:
     return None
 
 
+def _privacy_policy_flow_violation(
+    model: KernelModel, flow: object, policy: PrivacyPolicy
+) -> ComplianceViolation | None:
+    """COMPLIANCE003 per-flow check body: at most one violation for one flow."""
+    if not _pii_or_above(model, flow.label):
+        return None
+    field = _flow_field(flow.attrs)
+    if field is None:
+        return None
+    if field not in policy.collected_fields:
+        _log.warning(
+            "compliance: COMPLIANCE003 flow %s collects field %r, policy %s omits it",
+            flow.id,
+            field,
+            policy.id,
+        )
+        return ComplianceViolation(
+            rule="COMPLIANCE003",
+            regulation="PRIVACY-POLICY",
+            target=flow.id,
+            detail=f"flow {flow.id} collects field {field!r}, which "
+            f"privacy policy {policy.id!r} does not declare",
+        )
+    return None
+
+
 # frob:doc docs/strata/threat.md#compliance-regulatory-obligations-stdcompliance
 # frob:waive TEST005 reason="check_privacy_policy 81.8% branch cover, debt T-0160"
 def check_privacy_policy(
@@ -632,28 +734,9 @@ def check_privacy_policy(
     beyond what the model actually declares."""
     violations: list[ComplianceViolation] = []
     for flow in sorted(model.flows, key=lambda f: f.id):
-        if not _pii_or_above(model, flow.label):
-            continue
-        field = _flow_field(flow.attrs)
-        if field is None:
-            continue
-        if field not in policy.collected_fields:
-            _log.warning(
-                "compliance: COMPLIANCE003 flow %s collects field %r, "
-                "policy %s omits it",
-                flow.id,
-                field,
-                policy.id,
-            )
-            violations.append(
-                ComplianceViolation(
-                    rule="COMPLIANCE003",
-                    regulation="PRIVACY-POLICY",
-                    target=flow.id,
-                    detail=f"flow {flow.id} collects field {field!r}, which "
-                    f"privacy policy {policy.id!r} does not declare",
-                )
-            )
+        violation = _privacy_policy_flow_violation(model, flow, policy)
+        if violation is not None:
+            violations.append(violation)
     return tuple(violations)
 
 

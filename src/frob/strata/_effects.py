@@ -117,6 +117,22 @@ def node_may_kinds(node: Node) -> frozenset[str]:
     return _declared_kinds(node)
 
 
+def _needle_matches(
+    rel: str, text: str, table: dict[str, tuple[str, ...]]
+) -> list[ObservedEffect]:
+    """Every (line, kind, needle) substring match of `table` against `text`,
+    `rel` filled into the `file` field on each `ObservedEffect`."""
+    found: list[ObservedEffect] = []
+    for lineno, line in enumerate(text.splitlines(), start=1):
+        for vet_kind, kind in _KIND_MAP.items():
+            for needle in table.get(vet_kind, ()):
+                if needle in line:
+                    found.append(
+                        ObservedEffect(file=rel, line=lineno, kind=kind, needle=needle)
+                    )
+    return found
+
+
 def _line_effects(path: Path, root: Path) -> list[ObservedEffect]:
     """Every net/fs/exec effect needle match in `path`, one per (line, kind)
     pair matched, `path`-relative-to-`root` in the `file` field so reports
@@ -143,15 +159,7 @@ def _line_effects(path: Path, root: Path) -> list[ObservedEffect]:
         return []
 
     rel = path.relative_to(root).as_posix()
-    found: list[ObservedEffect] = []
-    for lineno, line in enumerate(text.splitlines(), start=1):
-        for vet_kind, kind in _KIND_MAP.items():
-            for needle in table.get(vet_kind, ()):
-                if needle in line:
-                    found.append(
-                        ObservedEffect(file=rel, line=lineno, kind=kind, needle=needle)
-                    )
-    return found
+    return _needle_matches(rel, text, table)
 
 
 def _sorted_owned_files(binding: CodeBinding) -> list[str]:

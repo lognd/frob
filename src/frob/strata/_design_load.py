@@ -110,6 +110,54 @@ def _strata_files(
     return found
 
 
+def _load_all_design_files(
+    root: Path, paths: list[Path]
+) -> tuple[set[str], set[str], set[str], list[DesignLoadError], list[KernelModel]]:
+    """Load+merge every `.strata` file in `paths`; per-file failures collect
+    into the returned errors list rather than aborting the whole load."""
+    channels: set[str] = set()
+    boundaries: set[str] = set()
+    secrets: set[str] = set()
+    errors: list[DesignLoadError] = []
+    models: list[KernelModel] = []
+    for path in paths:
+        model, error = _load_one_design_file(root, path)
+        if error is not None:
+            errors.append(error)
+            continue
+        models.append(model)
+        channels.update(flow.id for flow in model.flows)
+        boundaries.update(boundary.id for boundary in model.boundaries)
+        secrets.update(node.id for node in model.nodes if node.clearance == "Secret")
+    return channels, boundaries, secrets, errors, models
+
+
+def _load_one_design_file(
+    root: Path, path: Path
+) -> tuple[KernelModel, None] | tuple[None, DesignLoadError]:
+    """Read+parse+elaborate one `.strata` file; returns `(model, None)` on
+    success or `(None, error)` on any failure, never raising."""
+    rel = path.relative_to(root).as_posix()
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        _log.warning("load_design_ids: could not read %s: %s", rel, exc)
+        return None, DesignLoadError(path=rel, error=StrataError.ParseFailed)
+    parsed = parse_module(text)
+    if parsed.is_err:
+        _log.warning("load_design_ids: %s failed to parse: %s", rel, parsed.danger_err)
+        return None, DesignLoadError(path=rel, error=parsed.danger_err)
+    elaborated = elaborate(parsed.danger_ok)
+    if elaborated.is_err:
+        _log.warning(
+            "load_design_ids: %s failed to elaborate: %s",
+            rel,
+            elaborated.danger_err,
+        )
+        return None, DesignLoadError(path=rel, error=elaborated.danger_err)
+    return elaborated.danger_ok, None
+
+
 # frob:doc docs/strata/surface.md#directives-t-0080
 # frob:ticket T-0080
 # frob:tests tests/unit/strata/test_design_load.py::TestLoadIds.test_merges_ids
@@ -126,41 +174,9 @@ def load_design_ids(root: Path, design_dir: str = DEFAULT_DESIGN_DIR) -> DesignI
     every other file's valid constructs from the gate.
     """
     root = Path(root)
-    channels: set[str] = set()
-    boundaries: set[str] = set()
-    secrets: set[str] = set()
-    errors: list[DesignLoadError] = []
-    models: list[KernelModel] = []
     exclude_globs = load_exclude_globs(root)
-    for path in _strata_files(root, root / design_dir, exclude_globs):
-        rel = path.relative_to(root).as_posix()
-        try:
-            text = path.read_text(encoding="utf-8")
-        except OSError as exc:
-            _log.warning("load_design_ids: could not read %s: %s", rel, exc)
-            errors.append(DesignLoadError(path=rel, error=StrataError.ParseFailed))
-            continue
-        parsed = parse_module(text)
-        if parsed.is_err:
-            _log.warning(
-                "load_design_ids: %s failed to parse: %s", rel, parsed.danger_err
-            )
-            errors.append(DesignLoadError(path=rel, error=parsed.danger_err))
-            continue
-        elaborated = elaborate(parsed.danger_ok)
-        if elaborated.is_err:
-            _log.warning(
-                "load_design_ids: %s failed to elaborate: %s",
-                rel,
-                elaborated.danger_err,
-            )
-            errors.append(DesignLoadError(path=rel, error=elaborated.danger_err))
-            continue
-        model = elaborated.danger_ok
-        models.append(model)
-        channels.update(flow.id for flow in model.flows)
-        boundaries.update(boundary.id for boundary in model.boundaries)
-        secrets.update(node.id for node in model.nodes if node.clearance == "Secret")
+    paths = _strata_files(root, root / design_dir, exclude_globs)
+    channels, boundaries, secrets, errors, models = _load_all_design_files(root, paths)
 
     _log.info(
         "load_design_ids: %d channel(s), %d boundary(ies), %d secret(s), %d error(s)",
