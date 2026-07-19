@@ -82,6 +82,24 @@ class TestSysPlanCli:
         assert (repo / "tickets.md").read_text() == ledger_after_first
         assert "nothing to plan" in out
 
+    def test_threat_pre_discharge_count_never_reads_as_contradicting_output(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/strata/_threat.py::evaluate_threats kind="integration"
+        # T-0217: `_frontier_threats` only turns THREAT003 violations into
+        # obligation tickets; `evaluate_threats`'s pre-discharge count spans
+        # catalog/capability/discharge completeness too, so it can be
+        # nonzero while zero threat obligation tickets are planned. The old
+        # "threat: evaluated ... -> N violation(s)" wording made that look
+        # like a contradiction next to the rest of this output. The exact
+        # old phrase must never appear.
+        repo = _init_repo(tmp_path)
+        r = run("sys", "plan", cwd=repo)
+        out = r.stdout + r.stderr
+        assert r.returncode == 0, out
+        assert "-> 0 violation(s)" not in out
+        assert "threat: evaluated view=" not in out
+
     def test_dropped_ticket_is_not_recreated(self, tmp_path: Path) -> None:
         """A discharged obligation's ticket is dropped, not left open forever.
         Re-planning must never resurrect it -- a marker match suppresses

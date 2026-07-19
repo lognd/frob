@@ -1273,8 +1273,20 @@ def evaluate_threats(
         *discharge_violations.danger_ok,
         *effect_violations,
     )
-    _log.info(
-        "threat: evaluated view=%r catalog=%d out_of_scope=%d -> %d violation(s)",
+    # T-0217: this is the RAW pre-discharge obligation count across all four
+    # completeness checks (catalog/capability/discharge/effect) -- callers
+    # such as `frob sys plan` only turn THREAT003 violations into obligation
+    # tickets, and `frob sys doc` renders a per-CWE PROVED/ASSUMED matrix
+    # from a DIFFERENT reduction of this same data. At INFO level this line
+    # printed right before a "0 obligation ticket(s)" / "PROVED" summary and
+    # read as contradictory (a nonzero count next to a zero/clean verdict)
+    # even though nothing was wrong -- the two numbers answer different
+    # questions. Demoted to DEBUG so default-verbosity output only shows the
+    # post-discharge verdict; `-v`/`-vv` still surface this detail.
+    _log.debug(
+        "threat: obligations evaluated view=%r catalog=%d out_of_scope=%d -> "
+        "%d pre-discharge obligation(s) (not all become tickets; see caller's "
+        "own post-discharge count/verdict)",
         view,
         len(catalog),
         len(out_of_scope),

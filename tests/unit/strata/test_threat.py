@@ -879,6 +879,33 @@ class TestEvaluateThreats:
         assert report.is_ok
         assert report.danger_ok.violations == ()
 
+    # frob:tests src/frob/strata/_threat.py::evaluate_threats kind="unit"
+    def test_pre_discharge_count_log_is_honest_and_debug_level(self, caplog):
+        # T-0217: the pre-discharge count logged here is NOT a live-violation
+        # count -- callers (e.g. `frob sys plan`'s obligation-ticket compiler)
+        # only turn a subset (THREAT003) into obligations, so a raw
+        # "-> N violation(s)" line printed right before a "0 obligation
+        # ticket(s)" / PROVED summary read as contradictory even when
+        # nothing was wrong. The log must (a) not use the misleading
+        # "violation(s)" wording and (b) log at DEBUG, not INFO, so a
+        # caller narrowing stdout to INFO/WARNING (as `frob check`'s `-v`
+        # dial does, T-0202) does not surface it by default.
+        node = Node(id="Web", trust="trusted", may=("html_render",))
+        thin_catalog = tuple(e for e in CWE_CATALOG if e.id != "CWE-89")
+        model = KernelModel(nodes=(node,))
+        with caplog.at_level("DEBUG", logger="frob.strata._threat"):
+            report = evaluate_threats(model, "owasp-top-10", catalog=thin_catalog)
+        assert report.is_ok
+        assert report.danger_ok.violations != ()
+        threat_records = [
+            r for r in caplog.records if r.message.startswith("threat: obligations")
+        ]
+        assert len(threat_records) == 1
+        record = threat_records[0]
+        assert record.levelname == "DEBUG"
+        assert "violation(s)" not in record.message
+        assert "pre-discharge obligation(s)" in record.message
+
 
 class TestCheckEffectCompleteness:
     """Phase C (T-0113, docs/strata/threat.md#phasing item C): the code-level
