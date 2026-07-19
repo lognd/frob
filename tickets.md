@@ -7785,7 +7785,7 @@ User-reported (2026-07-19): the single-line frob:<verb> ... reason="..." DSL str
 ```yaml
 id: T-draft-1fae8bfb
 title: 'arch: gates+app long-function/god-class burndown to zero'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-19'
