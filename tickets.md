@@ -7351,9 +7351,9 @@ threat: elevation-of-privilege
 ```
 T-0262 round-2 review finding (reviewer-reproduced): std.krb's non-transitive domain trusts (trusts IDENT direction "..."  -- no transitive marker) are recorded as typed metadata (KrbTrust.transitive=False) but the shared strata_core::reachable BFS (strata-core/src/lib.rs) has no concept of a non-transitive/terminal edge -- every synthesized Flow is walked identically regardless of the transitive flag, so a chain of non-transitive one-way trusts a-->b-->c wrongly yields reach(a,c)=True today. This is a genuine kernel-level gap: strata_core::reachable's Edge tuple and BFS loop would need a new terminal-edge concept (discover the direct dst via a terminal edge, but do not enqueue it into the BFS frontier for further expansion), which is a change to the SHARED reachable() primitive every noflow/reach claim in the kernel uses -- out of scope for T-0262 (parse.rs only) and too wide-blast-radius to bundle into that ticket's std.krb vocabulary work. Fix: extend the Edge type in strata-core/src/lib.rs with a 5th bool field (terminal), thread it through _facts.py::FactBase.reachable's edge construction (read a new flow attr, e.g. krb_no_transit, off krb_trust_flows-synthesized Flows), and add the property tests test_kernel_properties.py already has infrastructure for (hypothesis oracle). Until this lands, docs/strata/krb.md and _krb.py honestly disclose that transitive is recorded but not yet enforced by the reach engine.
 
-<!-- ticket:T-draft-349ca4cb -->
+<!-- ticket:T-0283 -->
 ```yaml
-id: T-draft-349ca4cb
+id: T-0283
 title: 'perf: drive 4 remaining PERF findings to zero (fix or reasoned waive)'
 state: in-progress
 kind: bug
@@ -7373,7 +7373,6 @@ attachments: []
 acceptance: []
 threat: null
 ```
-
 ## Done report
 
 Changed:
