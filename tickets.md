@@ -1856,7 +1856,7 @@ Directly motivated by the arch<->dup tension the user raised: frob arch enforces
 ```yaml
 id: T-0289
 title: 'arch: per-function reasoned override + complexity-aware long-function'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-19'
@@ -1864,7 +1864,11 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/arch/**,src/frob/graph/dsl.py,src/frob/gates/**,tests/**,docs/modules/arch.md,tickets.md
-evidence: []
+evidence:
+- tests/test_arch_gate.py::TestArchComplexityAware::test_flat_long_function_not_flagged
+- tests/test_arch_gate.py::TestArchComplexityAware::test_complex_long_function_flagged
+- tests/test_arch_gate.py::TestArchGateWaivers::test_reasoned_waive_honored
+- tests/test_arch_gate.py::TestArchGateWaivers::test_unreasoned_waive_rejected
 attachments: []
 acceptance:
 - 'given a genuinely atomic long function (big match/case, dispatch table, literal
@@ -1884,6 +1888,10 @@ acceptance:
 threat: null
 ```
 User asked my opinion on per-function arch overrides. Opinion, recorded as the design: YES, worth having, but only if built the frob way. (1) Overrides belong AT THE CODE as reasoned frob:waive-style directives, not in central config -- a qualname table in frob.toml rots silently on rename and hides the exception from the reader; an in-comment waiver travels with the function and justifies the exception at its site, matching every other frob waiver. (2) It must be a WAIVER (counted, auditable, reason-required), never a silent mute -- an un-reasoned override is rejected like a reason-less frob:waive. (3) Prefer a justified CEILING bump over a boolean allow-long: a 45-line match waived to 50 still re-fires if it balloons to 200, keeping the exception honest. (4) Do NOT sanction raising the global threshold -- that is exactly the lazy-developer escape the tool exists to prevent. (5) MOST valuable half: make the heuristic complexity-aware so the bulk of false positives never fire -- a long-but-FLAT function (one match/dict-literal, shallow nesting, low cyclomatic) is not the smell the rule targets; only long-AND-complex is. Auto-exempt flat, require a reasoned waiver for the complex-but-justified residue. This also relieves the arch<->dup tension (T-0288): stop forcing atomic bodies to shatter into helpers that then hide/duplicate.
+
+
+## Done report
+Complexity-aware long-function: flags iff n_lines>max AND complex, where complex = nesting depth>=3 OR cyclomatic>=8 (arch/_python.py, _cpp.py mirrored; named constants). match/case arms are flat (dispatch tables exempt) but real nested if/for inside a case still counts. Repo long-function count ~60 (12 in src/frob) -> 5 (2 in src/frob, both genuinely nested: gates/__init__.py, strata/_selfconform.py); the ~55 exempted are flat setup/guard-clause bodies incl. the test files. ARCH001 reasoned override: `# frob:waive ARCH001 reason="..."` (optional ceiling=N, re-fires past N) suppresses+counts a long-function finding via the generic waiver machinery; un-reasoned rejected like any waive; only long-function is waivable (other arch categories stay unwaivable); no frob.toml qualname table, no global threshold change. Reviewer APPROVED (over-exemption check passed: no complex long fn slips through; litmus non-vacuous). Clears the ~58 test-file long-function warning class per user decision.
 
 <!-- ticket:T-0290 -->
 ```yaml
