@@ -12,7 +12,11 @@ from pathlib import Path
 
 import pytest
 
-from frob.vet._capability import scan_file_capabilities, scan_file_operations
+from frob.vet._capability import (
+    is_self_pattern_path,
+    scan_file_capabilities,
+    scan_file_operations,
+)
 from frob.vet._capability_registry import (
     CAPABILITY_KINDS,
     CAPABILITY_MATRIX_EXCUSES,
@@ -461,3 +465,94 @@ class TestNegativeFixtures:
         path = tmp_path / "m.c"
         path.write_text("#include <sys/socket.h>\n")
         assert "net" not in scan_file_capabilities(path)
+
+
+def _make_frob_repo_root(root: Path) -> None:
+    """Build a directory tree that `_is_frob_repo_root` accepts: a
+    `pyproject.toml` declaring `name = "frob"` plus the `frob-core`/
+    `strata-core` crate directories the real monorepo ships alongside it."""
+    (root / "pyproject.toml").write_text('[project]\nname = "frob"\n')
+    (root / "frob-core").mkdir()
+    (root / "strata-core").mkdir()
+
+
+class TestIsSelfPatternPath:
+    """T-0253: `is_self_pattern_path`'s foreign-vs-self discriminator --
+    the suffix match only fires when `root` is frob's OWN repo checkout,
+    never based on `path` alone."""
+
+    # frob:tests src/frob/vet/_capability.py::is_self_pattern_path kind="unit"
+    def test_root_none_always_returns_false(self, tmp_path: Path) -> None:
+        # Fail-closed default: omitting `root` means "never exclude,
+        # always scan", even for a path that would otherwise match a
+        # self-pattern suffix.
+        _make_frob_repo_root(tmp_path)
+        path = tmp_path / "frob" / "vet" / "_capability.py"
+        path.parent.mkdir(parents=True)
+        path.write_text("")
+        assert is_self_pattern_path(path) is False
+
+    # frob:tests src/frob/vet/_capability.py::is_self_pattern_path kind="unit"
+    def test_root_not_frob_repo_returns_false(self, tmp_path: Path) -> None:
+        # `root` lacks pyproject.toml / crate dirs -- a foreign dependency
+        # root that happens to mimic frob's package layout must still be
+        # scanned, not silently excluded (the T-0253 round-1 evasion hole).
+        foreign_root = tmp_path / "foreign"
+        path = foreign_root / "frob" / "vet" / "_capability.py"
+        path.parent.mkdir(parents=True)
+        path.write_text("")
+        assert is_self_pattern_path(path, foreign_root) is False
+
+    # frob:tests src/frob/vet/_capability.py::is_self_pattern_path kind="unit"
+    def test_frob_repo_root_with_matching_suffix_returns_true(
+        self, tmp_path: Path
+    ) -> None:
+        _make_frob_repo_root(tmp_path)
+        path = tmp_path / "frob" / "vet" / "_capability.py"
+        path.parent.mkdir(parents=True)
+        path.write_text("")
+        assert is_self_pattern_path(path, tmp_path) is True
+
+    # frob:tests src/frob/vet/_capability.py::is_self_pattern_path kind="unit"
+    def test_frob_repo_root_with_non_matching_path_returns_false(
+        self, tmp_path: Path
+    ) -> None:
+        # Same (valid) root, but a path that isn't one of the three
+        # self-pattern-catalog files -- must not be excluded.
+        _make_frob_repo_root(tmp_path)
+        path = tmp_path / "frob" / "vet" / "_source.py"
+        path.parent.mkdir(parents=True)
+        path.write_text("")
+        assert is_self_pattern_path(path, tmp_path) is False
+
+    # frob:tests src/frob/vet/_capability.py::is_self_pattern_path kind="unit"
+    def test_short_path_shorter_than_suffix_returns_false(self, tmp_path: Path) -> None:
+        # `len(parts) >= len(suffix)` guard: a resolved path with fewer
+        # path components than the longest self-pattern suffix must not
+        # raise or false-positive via a negative slice.
+        _make_frob_repo_root(tmp_path)
+        path = tmp_path / "_capability.py"
+        path.write_text("")
+        assert is_self_pattern_path(path, tmp_path) is False
+
+    # frob:tests src/frob/vet/_capability.py::is_self_pattern_path kind="unit"
+    def test_path_resolve_oserror_returns_false(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # `path.resolve()` failing (e.g. a filesystem-level error walking
+        # a broken symlink) must fail closed rather than propagate.
+        _make_frob_repo_root(tmp_path)
+        path = tmp_path / "frob" / "vet" / "_capability.py"
+        real_resolve = Path.resolve
+
+        # Only the scanned FILE's resolve() should fail here -- `root`'s
+        # own resolve() (inside `_is_frob_repo_root`) must still succeed
+        # so this exercises `is_self_pattern_path`'s own try/except rather
+        # than an unrelated failure in the discriminator it calls first.
+        def _selective_oserror(self: Path, strict: bool = False) -> Path:
+            if self == path:
+                raise OSError("simulated resolve failure")
+            return real_resolve(self, strict)
+
+        monkeypatch.setattr(Path, "resolve", _selective_oserror)
+        assert is_self_pattern_path(path, tmp_path) is False

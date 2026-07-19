@@ -39,6 +39,35 @@ class TestFingerprintRoundTrip:
         assert _cache.get_fingerprint(tmp_path, "digestB", "r3") == ["hash-value"]
         assert _cache.get_fingerprint(tmp_path, "digestB", "r4fp") == [1, 2, 3]
 
+    # frob:tests src/frob/dup/_cache.py::put_fingerprint kind="unit"
+    def test_same_digest_and_rung_overwrites_prior_payload(self, tmp_path: Path):
+        # INSERT OR REPLACE cache-hit path: re-putting the same (digest,
+        # rung) key must replace the stored payload, not error or duplicate
+        # the row.
+        first = _cache.put_fingerprint(tmp_path, "digestC", "r3", ("old",))
+        assert first.is_ok, first.err
+        second = _cache.put_fingerprint(tmp_path, "digestC", "r3", ("new", "payload"))
+        assert second.is_ok, second.err
+        assert _cache.get_fingerprint(tmp_path, "digestC", "r3") == ["new", "payload"]
+
+    # frob:tests src/frob/dup/_cache.py::put_fingerprint kind="unit"
+    def test_connect_error_is_propagated_without_writing(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # When `_connect` fails (e.g. a corrupt cache DB), `put_fingerprint`
+        # must short-circuit on the Err branch and return it mapped to
+        # Unit, rather than dereferencing a connection that doesn't exist.
+        from typani import Err
+
+        from frob.dup._models import DupError
+
+        monkeypatch.setattr(_cache, "_connect", lambda root: Err(DupError.CacheCorrupt))
+        result = _cache.put_fingerprint(tmp_path, "digestD", "r3", ("x",))
+        assert result.is_err
+        assert result.err == DupError.CacheCorrupt
+        # No connection was ever opened/cached for this root.
+        assert _cache._db_path(tmp_path).resolve() not in _cache._conn_cache
+
 
 class TestVerdictRoundTrip:
     def test_put_then_get_returns_same_payload(self, tmp_path: Path):
