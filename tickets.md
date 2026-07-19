@@ -7950,6 +7950,44 @@ threat: null
 ```
 User asked my opinion on per-function arch overrides. Opinion, recorded as the design: YES, worth having, but only if built the frob way. (1) Overrides belong AT THE CODE as reasoned frob:waive-style directives, not in central config -- a qualname table in frob.toml rots silently on rename and hides the exception from the reader; an in-comment waiver travels with the function and justifies the exception at its site, matching every other frob waiver. (2) It must be a WAIVER (counted, auditable, reason-required), never a silent mute -- an un-reasoned override is rejected like a reason-less frob:waive. (3) Prefer a justified CEILING bump over a boolean allow-long: a 45-line match waived to 50 still re-fires if it balloons to 200, keeping the exception honest. (4) Do NOT sanction raising the global threshold -- that is exactly the lazy-developer escape the tool exists to prevent. (5) MOST valuable half: make the heuristic complexity-aware so the bulk of false positives never fire -- a long-but-FLAT function (one match/dict-literal, shallow nesting, low cyclomatic) is not the smell the rule targets; only long-AND-complex is. Auto-exempt flat, require a reasoned waiver for the complex-but-justified residue. This also relieves the arch<->dup tension (T-0288): stop forcing atomic bodies to shatter into helpers that then hide/duplicate.
 
+<!-- ticket:T-0290 -->
+```yaml
+id: T-0290
+title: 'recursion static analysis: prove-terminating-or-error, tail-call + depth-bound
+  gate'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-19'
+blocked_by: []
+parent: null
+scope:
+- frob-core/**,src/frob/perf/**,src/frob/arch/**,src/frob/graph/dsl.py,src/frob/gates/**,tests/**,docs/modules/perf.md,tickets.md
+evidence: []
+attachments: []
+acceptance:
+- given any function, when analysis runs, then a static call graph is built and every
+  recursive SCC (direct AND mutual recursion) is identified -- purely static, no execution
+- 'given a structurally-recursive function (each recursive call is on a provably-smaller
+  argument along a well-founded order: list tail, tree child, n-1 on a non-negative
+  int, or a strictly-decreasing bounded integer measure toward a guarded base case),
+  when the termination checker runs, then it is PROVEN-TERMINATING and passes silently'
+- given a recursion the checker CANNOT prove terminating, then it is an ERROR (not
+  a warning) -- the author must either refactor into a provable form, or attach a
+  reasoned directive (frob:invariant terminates reason="..." with an optional measure),
+  which is counted/auditable exactly like every other frob waiver; an UNREASONED unprovable
+  recursion can never pass
+- given a tail-recursive function in a language without guaranteed TCO (Python especially),
+  when detected, then it is flagged with a rewrite-as-loop suggestion AND requires
+  a provable depth bound -- unbounded recursion depth that scales with runtime input
+  size (stack-overflow / DoS surface) is an error unless a bound is proven or reasoned-waived
+- given the arch<->dup<->recursion consistency requirement, then the call graph is
+  a SHARED interprocedural substrate reused by T-0288 (dup helper-inlining) and T-0289
+  (arch complexity-awareness) -- built once, not three times
+threat: null
+```
+User vision (2026-07-19): frob perf does nothing with recursion today (PERF001-004 are lexical loop smells only). Recursion is a control-flow hazard that must be either statically reasoned about or rejected. NORTH STAR (user, verbatim intent): "you should not be able to write bad code (logically similar or copied); it will be flagged" -- extend that to control flow: no recursion whose termination/depth cannot be statically bounded may pass unreasoned. DESIGN, three layers: (1) DETECT -- build a static call graph, find recursive SCCs incl. mutual recursion (frob-core, reuse for T-0288/T-0289). (2) PROVE-OR-ERROR -- termination is undecidable in general, so be SOUND not complete: prove the decidable fragment (structural descent on a well-founded argument; strictly-decreasing bounded integer measure to a guarded base case), and ERROR on everything unproven. The escape is a REASONED directive (frob:invariant terminates reason=... measure=...), auditable like any waiver -- consistent with the T-0289 arch-override philosophy (prove it, or justify it at the code; never silent). (3) DEPTH/STACK SAFETY -- tail-call detection (user example: Python has no TCO, so tail recursion over runtime-sized input is a stack-overflow/DoS bug): flag tail recursion with a rewrite-as-loop suggestion, and require a proven depth bound; recursion whose depth scales with input and has no bound is an error. CONSISTENCY: this shares the interprocedural call-graph substrate with dup helper-inlining (T-0288) and arch complexity-awareness (T-0289) -- one call-graph facility feeds dup (see through helpers), arch (complexity, mutual-recursion-via-helpers), and this (termination/depth). Unify the escape-hatch philosophy across arch/perf/recursion: the tool proves what it can, and every unprovable residue must carry a reasoned, counted directive -- that is what makes "you cannot write bad code silently" actually hold.
+
 <!-- ticket:T-draft-1fae8bfb -->
 ```yaml
 id: T-draft-1fae8bfb
