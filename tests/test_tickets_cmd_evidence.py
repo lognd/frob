@@ -10,6 +10,7 @@ from datetime import date
 from pathlib import Path
 
 import pytest
+from typani.result import Err, Result
 
 from frob.app.config import AppConfig
 from frob.app.ticket_runner import _close, _evidence, _start
@@ -437,3 +438,55 @@ class TestKindConsistencyAtClose:
         ticket = _raw_ticket(kind=TicketKind.DOCS, evidence=(entry,))
         result = _validate_closeable(ticket)
         assert result.is_ok
+
+
+class TestRunCmdEvidenceLaunchFailure:
+    """`run_cmd_evidence`'s OSError branch: a command that fails to launch
+    entirely (not just a nonzero exit) also folds to EvidenceCmdFailed."""
+
+    def test_oserror_on_launch_is_evidence_cmd_failed(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/tickets/__init__.py::run_cmd_evidence
+        import frob.tickets as tickets_mod
+
+        def _raise(*_args: object, **_kwargs: object) -> None:
+            raise OSError("exec format error")
+
+        monkeypatch.setattr(tickets_mod.subprocess, "run", _raise)
+        result = run_cmd_evidence("whatever")
+        assert result.is_err
+        assert result.danger_err == TicketError.EvidenceCmdFailed
+
+
+class TestAddCmdEvidenceLoadAndWriteFailures:
+    """`add_cmd_evidence`'s error propagation paths that don't depend on
+    the kind gate or the command itself: ticket-not-found on load, and a
+    downstream write failure after a successful command run."""
+
+    def test_ticket_not_found_propagates_load_error(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/__init__.py::add_cmd_evidence
+        from frob.tickets import add_cmd_evidence
+
+        result = add_cmd_evidence(tmp_path, "T-9999", "printf ok")
+        assert result.is_err
+        assert result.danger_err == TicketError.NotFound
+
+    def test_write_failure_propagates(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/tickets/__init__.py::add_cmd_evidence
+        import frob.tickets as tickets_mod
+        from frob.tickets import add_cmd_evidence
+
+        _seed_ticket(tmp_path, kind=TicketKind.DOCS)
+
+        def _fail_write(
+            *_args: object, **_kwargs: object
+        ) -> Result[object, TicketError]:
+            return Err(TicketError.WriteFailed)
+
+        monkeypatch.setattr(tickets_mod, "write_ticket", _fail_write)
+        result = add_cmd_evidence(tmp_path, "T-0001", "printf ok")
+        assert result.is_err
+        assert result.danger_err == TicketError.WriteFailed

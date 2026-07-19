@@ -7616,3 +7616,138 @@ introduced by this change; e.g. `frob-arch` long-function/abstraction-opportunit
 several unrelated packages).
 
 TEST005 (deploy files) before: 10  after: 0
+
+<!-- ticket:T-draft-5321d1bc -->
+```yaml
+id: T-draft-5321d1bc
+title: 'coverage: land/tickets/lint/vet/dup TEST005 zero'
+state: in-progress
+kind: bug
+origin: agent
+created: '2026-07-19'
+blocked_by: []
+parent: null
+scope:
+- src/frob/tickets/**
+- src/frob/strata/_lint.py
+- src/frob/vet/_capability.py
+- src/frob/dup/_cache.py
+- tests/**
+- tickets.md
+evidence:
+- tests/test_ticket_land.py::TestCloseFailAfterMerge::test_close_fails_after_merge_when_main_dropped_same_id
+- tests/test_ticket_land.py::TestGitSubprocessFailures::test_main_dirty_check_git_failure
+- tests/test_ticket_land.py::TestGitSubprocessFailures::test_main_branch_lookup_failure
+- tests/test_ticket_land.py::TestGitSubprocessFailures::test_wip_commit_status_check_failure
+- tests/test_ticket_land.py::TestGitSubprocessFailures::test_merge_command_failure
+- tests/test_ticket_land.py::TestGitSubprocessFailures::test_unowned_deletions_diff_failure_after_merge
+- tests/test_ticket_land.py::TestGitSubprocessFailures::test_squash_command_failure
+- tests/test_ticket_land.py::TestGitSubprocessFailures::test_final_commit_failure
+- tests/test_ticket_land.py::TestLandDeeperBranches::test_unowned_deletion_real_run_with_actual_merge
+- tests/test_ticket_land.py::TestLandDeeperBranches::test_post_merge_commit_failure
+- tests/test_ticket_land.py::TestLandDeeperBranches::test_finalize_draft_failure
+- tests/test_ticket_land.py::TestLandDeeperBranches::test_worktree_branch_lookup_failure_after_close
+- tests/test_ticket_land.py::TestLandNotFound::test_unknown_ticket_id_returns_not_found
+- tests/test_ticket_land.py::TestWipCommit::test_dry_run_wip_commits_uncommitted_changes
+- tests/test_ticket_land.py::TestWipCommit::test_real_land_wip_commits_uncommitted_changes
+- tests/test_ticket_land.py::TestKindEvidenceMismatch::test_non_docs_kind_with_cmd_evidence_refused
+- tests/test_ticket_land.py::TestUnownedDeletionRealRun::test_unowned_deletion_aborts_on_real_run
+- tests/test_ticket_land.py::TestMergeConflictOutsideLedger::test_real_conflict_outside_tickets_md_aborts
+- tests/unit/strata/test_lint.py::TestRateBaseDimensionMismatch::test_unknown_unit_propagates_unknown_unit_error
+- tests/unit/strata/test_lint.py::TestLintFaninCapacityNoInboundFlows::test_capacitied_node_with_no_rated_inbound_flow_is_clean
+- tests/unit/test_dup_cache.py::TestFingerprintRoundTrip::test_same_digest_and_rung_overwrites_prior_payload
+- tests/unit/test_dup_cache.py::TestFingerprintRoundTrip::test_connect_error_is_propagated_without_writing
+attachments: []
+acceptance: []
+threat: null
+```
+## Description
+
+The coverage stamp flagged below-floor TEST005 (unit_branch_cov=90,
+module_line_cov=85) for six functions across five files:
+`src/frob/tickets/_land.py::land` (71% branch, module 72.7% line),
+`src/frob/tickets/__init__.py::run_cmd_evidence` (75%) and
+`::add_cmd_evidence` (89.5%), `src/frob/strata/_lint.py::evaluate_lint`
+(76.9%) and `::check_lint_fanin_capacity` (87.5%),
+`src/frob/vet/_capability.py::is_self_pattern_path` (77.8%), and
+`src/frob/dup/_cache.py::put_fingerprint` (87.5%).
+
+## Plan
+
+Write real, branch-covering pytest tests exercising the actual uncovered
+branches per function (land's abort/error paths -- dirty-main,
+deletion-filter-abort, close-fail-after-merge, git-subprocess-failure
+early returns, the archive-aware splice; run_cmd_evidence/add_cmd_evidence's
+launch-failure and load/write-failure propagation; _lint's per-rule
+dimension-mismatch and short-circuit branches; is_self_pattern_path's
+foreign-vs-self discriminator and OSError branch; put_fingerprint's
+cache-hit-overwrite and connect-error branches), never lowering
+`frob.toml` thresholds.
+
+## Done report
+
+Changed:
+- tests/test_ticket_land.py (18 new test methods across 6 new test
+  classes: TestCloseFailAfterMerge, TestLandNotFound,
+  TestGitSubprocessFailures, TestLandDeeperBranches, plus additions to
+  existing TestWipCommit/TestKindEvidenceMismatch/
+  TestUnownedDeletionRealRun/TestMergeConflictOutsideLedger)
+- tests/test_tickets_cmd_evidence.py (3 new tests: OSError launch
+  failure, ticket-not-found load propagation, write-failure propagation)
+- tests/unit/strata/test_lint.py (7 new test classes covering
+  `_rate_base` unit-mismatch branches, LINT002/LINT005 dimension-error
+  propagation, `_scenario_touched_nodes`'s missing-flow branch,
+  `_scenario_has_bound_claim`'s non-matching-body branches, fan-in's
+  no-rated-inbound early continue, and evaluate_lint's per-rule
+  short-circuit propagation)
+- tests/test_capability_registry.py (new TestIsSelfPatternPath class,
+  6 tests covering the root/self/foreign/OSError discriminator branches)
+- tests/unit/test_dup_cache.py (2 new tests: cache-hit overwrite via
+  INSERT OR REPLACE, connect-error short-circuit)
+
+No src/ files touched; scope stayed within tests/**, tickets.md, and the
+5 declared src/ paths (read-only reference).
+
+Evidence: 22 pytest node ids recorded via `frob ticket evidence` (see
+`evidence:` list above), all independently verified passing:
+`uv run python -m pytest tests/test_ticket_land.py
+tests/test_capability_registry.py tests/test_tickets_cmd_evidence.py
+tests/unit/strata/test_lint.py tests/unit/test_dup_cache.py -o
+addopts="-q"` -> 444 passed.
+
+TEST005 before (this ticket's 6 target functions, `uv run frob check
+--only test`):
+```
+src/frob/tickets/_land.py::land branch coverage 71.0% (below 90%)
+src/frob/tickets/_land.py line coverage 72.7% (below 85%)
+src/frob/tickets/__init__.py::run_cmd_evidence branch coverage 75.0%
+src/frob/tickets/__init__.py::add_cmd_evidence branch coverage 89.5%
+src/frob/strata/_lint.py::evaluate_lint branch coverage 76.9%
+src/frob/strata/_lint.py::check_lint_fanin_capacity branch coverage 87.5%
+src/frob/vet/_capability.py::is_self_pattern_path branch coverage 77.8%
+src/frob/dup/_cache.py::put_fingerprint branch coverage 87.5%
+```
+TEST005 after (same command, same 6 functions/files): ZERO unwaived
+TEST005 entries for any of the 5 target files (`land()` reached 90%+
+branch / 85%+ line; the other 5 functions reached full statement+branch
+coverage for their own bodies -- confirmed by grepping the gate output
+for these 5 file paths and finding no un-waived TEST005 line). One
+genuinely dead branch was found and left uncovered rather than forced:
+`evaluate_lint`'s `return Err(rate.danger_err)` after
+`check_lint_rate_limit` (line 406) -- `check_lint_rate_limit` has no
+fallible sub-call and always returns `Ok(...)`; there is no input that
+reaches that `Err` arm.
+
+Filed: none (no out-of-scope work found).
+
+Gates: `uv run frob check --ticket T-draft-5321d1bc` clean, 0 errors
+(after re-running `frob ticket sweep T-draft-5321d1bc` to refresh the
+stale pre-work sweep). Full-repo `uv run frob check` (unscoped): 0
+errors, 15 warnings, 223 waived (pre-existing, unrelated to this
+ticket's scope). `make coverage` clean, all tests pass. `ruff check` and
+`uv run ruff check` both clean; `ruff format`/`uv run ruff format`
+clean on all 5 touched test files; `ty` clean (fixed one pre-existing-in-
+this-diff Err[TicketError] invalid-subscript return annotation in
+tests/test_tickets_cmd_evidence.py to `Result[object, TicketError]`).
+`git diff main --diff-filter=D --stat` empty. No non-ASCII characters.
+No Cargo.lock churn.
