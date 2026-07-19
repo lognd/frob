@@ -873,7 +873,17 @@ def _r4_groups(
         return []
     r4_group: list[ClonePair] = []
     for i, j in candidates_result.danger_ok:
+        if i == j:
+            # T-0191: unlike _bucket_pairs' range(i+1, len(members)) (which
+            # structurally cannot self-pair), frob_core.candidate_pairs can
+            # hand back (i, i) when a symbol's own fingerprint set collides
+            # with itself past _R4_MIN_SHARED -- observed for real on this
+            # repo's dup cache module post-refactor. Skip rather than
+            # report a symbol as its own clone.
+            continue
         a, b = r4_refs[i], r4_refs[j]
+        if a == b:
+            continue
         if touched is not None and a not in touched and b not in touched:
             continue
         if frozenset((a, b)) in seen_pairs:
