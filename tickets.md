@@ -3168,3 +3168,45 @@ Observability: every boundary flow emits metrics+traces+logs; CORRELATION/trace-
 Data/consistency: SINGLE SOURCE OF TRUTH (two nodes writing one store = hazard; extends SYS003 hub); transactional boundary on multi-write ops; MESSAGE SCHEMA VERSION on events/queues (backward-compat); exactly-once vs at-least-once declared on queues; retention/TTL on PII stores (ties T-0207).
 Distributed: SYNC CALL-CHAIN DEPTH bound (cascading latency/failure; uses reachability incl. non-transitive T-0282); distributed txn across services requires saga/compensation; no shared mutable state across service boundaries; clock/ordering assumptions (T-0282).
 Each is a strata surface addition (new node/flow attrs) + a checker + litmus + docs, deny-by-default with a reasoned waive channel (T-0174). COINCIDENCE with arch: strata reasons over the MODEL (flows/nodes); arch reasons over CODE (functions). Where they touch (observability, error handling), the code check BACKS the system claim via the capability/binding graph -- one obligation, checked at the right level, never duplicated.
+
+## PROVABILITY CONSTRAINT (user, 2026-07-19 -- non-negotiable)
+strata's job is NOT model-only lint. Its purpose is to PROVE the actual CODE conforms to
+the .strata system design, the way a type-checker proves code matches its types. The
+existing bridge is capability self-conformance (SYS100 undeclared-capability-in-code,
+SYS101 declared-but-never-observed, SYS102 unmodeled-code). EVERY new systems obligation
+here MUST preserve this: an obligation is satisfied ONLY by one of --
+  (a) PROOF AGAINST CODE: the code is analyzed and shown to match the declared property
+      (e.g. a flow declaring timeout=T must have an actual timeout arg at the real call
+      site; a node declaring a fallback must have the fallback path in code; a declared
+      retry-backoff must match the code's retry loop; declared observability must have the
+      instrumentation). This reuses arch's code analysis + the capability/binding graph.
+  (b) PROOF AGAINST MODEL: the kernel model-checks it structurally (reach/noflow/isolation).
+  (c) EXPLICIT REASONED DISCHARGE: an assume/waive (T-0174) with a written reason + ticket,
+      when the code cannot be statically shown -- NEVER a silent pass.
+NO obligation may be satisfied by bare declaration in the .strata file alone. FOUNDATIONAL
+DEPENDENCY: proof-against-code is only sound if the code analysis is sound -- an evadable
+scanner (grep) makes SYS100 unsound (exec via an alias slips the proof). So T-0328
+(import/binding-aware resolution) underpins this whole epic; the code<->model proof is only
+as trustworthy as the resolver. This is the arch<->strata coincidence in full: arch analyzes
+code STRUCTURE; strata PROVES code CONFORMS to the declared system model, USING arch's
+analysis + the capability graph as the evidence.
+
+<!-- ticket:T-0332 -->
+```yaml
+id: T-0332
+title: 'design-pattern recommender: hallmark->pattern + anti-pattern->escape registry
+  (advisory)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-19'
+blocked_by: []
+parent: T-0330
+scope:
+- src/frob/arch/**,tests/**,docs/modules/arch.md,tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Positive complement to the SOLID smell catalog (T-0330). An exhaustive PATTERN REGISTRY (structured like the capability registry -- pattern x hallmark x language matrix, covered-or-excused): each entry = a HALLMARK detector (the before-shape), the recommended PATTERN (GoF + modern), the FORCE/tension it resolves, a refactoring sketch, languages. Two directions: HALLMARK->PATTERN (N-arm isinstance/type-switch -> Strategy/polymorphism; growing if-chain on a state field -> State machine; scattered ConcreteX() construction -> Factory/DI; telescoping optional ctor params -> Builder; manual callback lists -> Observer; repeated wrap+delegate -> Decorator; incompatible-interface bridging -> Adapter; expensive-object reuse -> Flyweight/pool) and ANTI-PATTERN->ESCAPE (god object -> SRP decompose; anemic domain model -> move behavior to data; stringly-typed -> newtype; poltergeist/lava-flow -> delete; sequential coupling -> explicit state). CRITICAL DESIGN (do it right, avoid cargo-culting): (1) RECOMMENDATIONS not errors -- advisory/suggestion severity only, forcing a pattern is itself over-engineering; the user said 'recommended'. (2) STRONG-HALLMARK-ONLY / high precision -- recommend only on an unambiguous structural signal; a noisy recommender trains users to ignore it; the library itself must NOT recommend when the code is already simple. (3) PAIRS WITH the SOLID smells -- reuse the same hallmark detectors: the smell is the diagnosis, the pattern is the prescription (one detector, two outputs: 'violates OCP' + 'consider Strategy'). (4) WAIVABLE with a reason so a repo records deliberate exceptions. (5) each recommendation names the FORCE + a concrete sketch, never a bare 'use Strategy'.
