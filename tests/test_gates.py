@@ -990,6 +990,73 @@ class TestTestGate:
         violations = run_test_gate(snap, (), Nothing(), tests, TestPolicy())
         assert "TEST003" not in _rules(violations)
 
+    def test_test002_parametrized_test_counts_each_case(self, tmp_path: Path) -> None:
+        """T-0307 litmus: a `frob:tests` directive bound to a
+        `@pytest.mark.parametrize`-decorated test with 3 cases must count
+        as 3 collected unit cases, not 1. Before the fix, `_valid_edges`
+        returned one Edge per directive and `_test001_002_one` used
+        `len(valid)` as the case count -- so a parametrized test with any
+        number of collected `[case-id]` variants always reported exactly 1
+        case, silently failing to clear `min_unit_cases > 1` no matter how
+        many cases actually ran (lograder/aprog-public/feldspar all hit
+        this and worked around it with dishonest non-parametrized twin
+        tests). `min_unit_cases=3` here would fail pre-fix (effective=1)
+        and passes post-fix (effective=3, one per collected case id)."""
+        from typani.option import Nothing
+
+        _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
+        test_source = (
+            "@pytest.mark.parametrize('x', [1, 2, 3])\n"
+            "def test_helper(x):\n"
+            '    # frob:tests src/frob/pkg/a.py::helper kind="unit"\n'
+            "    assert True\n"
+        )
+        _write(tmp_path, "tests/test_a.py", test_source)
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(
+            node_ids=frozenset(
+                {
+                    "tests/test_a.py::test_helper[1]",
+                    "tests/test_a.py::test_helper[2]",
+                    "tests/test_a.py::test_helper[3]",
+                }
+            )
+        )
+        cfg = TestPolicy(min_unit_cases=3)
+        violations = run_test_gate(snap, (), Nothing(), tests, cfg)
+        rule_ids = _rules(violations)
+        assert "TEST002" not in rule_ids
+        assert "TEST001" not in rule_ids
+
+    def test_case_count_direct(self) -> None:
+        """Direct unit coverage of `_case_count` (T-0307): a valid edge's
+        collected cases are counted individually (parametrize expansions),
+        and a validated edge with no execution-based match (native
+        structural fallback) still counts as exactly one case."""
+        from frob.gates import _case_count
+        from frob.graph import Edge, EdgeKind
+
+        ids = frozenset(
+            {
+                "tests/test_x.py::test_density[1]",
+                "tests/test_x.py::test_density[2]",
+                "tests/test_x.py::test_density[3]",
+            }
+        )
+        tests = CollectedTests(node_ids=ids)
+        edge = Edge(
+            kind=EdgeKind.TESTS,
+            src="tests/test_x.py::test_density",
+            target="src/frob/pkg/a.py::helper",
+            origin="tests/test_x.py:1",
+        )
+        assert _case_count([edge], tests) == 3
+
+        # An edge with no matching collected id at all (structural
+        # fallback territory) still contributes exactly one case.
+        empty_tests = CollectedTests(node_ids=frozenset())
+        assert _case_count([edge], empty_tests) == 1
+
     def test_node_id_collected_direct(self) -> None:
         """Direct unit coverage of `_node_id_collected` itself, independent
         of the gate machinery around it."""

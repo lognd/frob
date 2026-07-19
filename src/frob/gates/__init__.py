@@ -327,6 +327,40 @@ def _valid_edges(
     return valid
 
 
+# frob:ticket T-0307
+def _case_count(valid_edges: list[Edge], tests: CollectedTests) -> int:
+    """Total collected case count for edges already validated by `_valid_edges`.
+
+    `_valid_edges` answers "does this directive have any execution
+    evidence at all" (one bool per edge), which is right for TEST001 but
+    wrong for TEST002/TEST003's minimum-case counts: a `frob:tests`
+    directive bound to a `@pytest.mark.parametrize`-decorated function (or
+    a cargo test macro that expands similarly) validates via exactly one
+    prefix match in `_node_id_collected`, so `len(valid_edges)` reports 1
+    case no matter how many parametrize variants actually collected --
+    undercounting a genuinely well-tested symbol and forcing three sibling
+    repos (lograder, aprog-public, feldspar) to write dishonest
+    non-parametrized twin tests to clear the gate (T-0307). This instead
+    re-counts each edge's *actual* collected node ids: the exact node id
+    if present, plus every `base[case-id]` parametrize expansion, each
+    counted as its own case. An edge with no execution-based node-id match
+    at all (the ts/c/cpp structural fallback in `_valid_edges`, which has
+    no pytest/cargo evidence to expand) still counts as exactly one case,
+    matching its previous `len(valid_edges)` contribution.
+    """
+    total = 0
+    for edge in valid_edges:
+        base = _symref_to_nodeid(edge.src)
+        prefix = f"{base}["
+        matches = sum(
+            1
+            for node_id in tests.node_ids
+            if node_id == base or node_id.startswith(prefix)
+        )
+        total += matches if matches else 1
+    return total
+
+
 # frob:ticket T-0018
 def _inferred_unit_cases(symref: str, tests: CollectedTests) -> int:
     """Count collected tests that cover `symref` by NAMING CONVENTION.
@@ -1467,7 +1501,13 @@ def _test001_002_one(
     # An explicit frob:tests edge is authoritative -- judge it by its valid
     # (collected) count. Only when NO explicit edge exists does a
     # conventionally named test (test_<name>) count toward coverage (T-0018).
-    effective = len(valid) if edges else _inferred_unit_cases(record.symref, tests)
+    # T-0307: count actual collected cases (parametrize expansions), not
+    # edges -- len(valid) undercounts a parametrized test to 1.
+    effective = (
+        _case_count(valid, tests)
+        if edges
+        else _inferred_unit_cases(record.symref, tests)
+    )
     if effective == 0 and not edges:
         return _test001_no_unit_test(record)
     if effective < cfg.min_unit_cases:
@@ -1602,12 +1642,15 @@ def _test003_check_package(
     """The TEST003 `Violation` for one interface `package`, or None when it
     already has at least `cfg.min_integration` valid edges."""
     valid = _valid_edges(_edges_for_package(all_pairs, package), tests, snapshot)
-    if len(valid) >= cfg.min_integration:
+    # T-0307: count actual collected cases (parametrize expansions), not
+    # edges -- a parametrized integration test must count each case.
+    count = _case_count(valid, tests)
+    if count >= cfg.min_integration:
         return None
     _log.debug(
         "TEST003: %s has %d/%d integration edges",
         package,
-        len(valid),
+        count,
         cfg.min_integration,
     )
     return Violation(
@@ -1616,7 +1659,7 @@ def _test003_check_package(
         file=package,
         line=0,
         message=(
-            f"TEST003: interface {package} has {len(valid)} integration "
+            f"TEST003: interface {package} has {count} integration "
             f"test(s), below min_integration={cfg.min_integration}; "
             f'add: frob:tests {package} kind="integration"'
         ),
