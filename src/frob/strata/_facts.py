@@ -117,6 +117,14 @@ class FactBase:
         declared trust/label change point and stops taint (the endorsement
         semantics of docs/strata/kernel.md); with True the closure ignores
         boundaries, which is what positive `reach` claims want.
+
+        A flow carrying the `krb_no_transit` attr (synthesized by
+        `_krb.py::krb_trust_flows` for a `trusts ... ` clause with no
+        `transitive` marker, docs/strata/krb.md#domain-trust-lattice) is a
+        TERMINAL edge in the kernel's BFS (`strata-core/src/lib.rs::
+        reachable`): its `dst` is reachable directly but the closure does
+        not chain past it -- fixes T-0282's disclosed gap where a chain of
+        non-transitive trusts wrongly reached as far as a transitive one.
         """
         # frob:doc docs/strata/kernel.md#fact-base
         # A `FactBase` only ever exists via `build_facts`, which already
@@ -124,7 +132,13 @@ class FactBase:
         # construction it is present here.
         assert strata_core is not None
         edges = [
-            (f.id, f.src, f.dst, bool(self.boundaries_on.get(f.id)))
+            (
+                f.id,
+                f.src,
+                f.dst,
+                bool(self.boundaries_on.get(f.id)),
+                "krb_no_transit" not in f.attrs,
+            )
             for f in self.flows.values()
         ]
         raw = strata_core.reachable(edges, src, through_barriers)

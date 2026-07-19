@@ -1,7 +1,7 @@
 """Typed surface of the strata-core kernels (docs/strata/kernel.md)."""
 
 def reachable(
-    edges: list[tuple[str, str, str, bool]],
+    edges: list[tuple[str, str, str, bool, bool]],
     src: str,
     through_barriers: bool,
 ) -> dict[str, list[str]]: ...

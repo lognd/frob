@@ -16,9 +16,17 @@ use std::collections::{HashMap, HashSet, VecDeque};
 mod parse;
 
 /// One directed edge of the influence graph, flattened for the boundary:
-/// (flow_id, src, dst, barrier) where `barrier` marks a flow carrying any
-/// endorse/declassify boundary (a declared trust/label change point).
-type Edge = (String, String, String, bool);
+/// (flow_id, src, dst, barrier, transitive) where `barrier` marks a flow
+/// carrying any endorse/declassify boundary (a declared trust/label change
+/// point), and `transitive` marks whether the edge may be used as a MIDDLE
+/// link in a longer chain (`_facts.py::FactBase.reachable` only emits
+/// `false` for flows explicitly marked non-transitive, e.g. `std.krb`'s
+/// non-transitive domain trusts, docs/strata/krb.md#domain-trust-lattice).
+/// A non-transitive edge can still be the LAST hop of a path (its `dst` is
+/// reachable), it just cannot be extended past -- see `reachable`'s BFS
+/// below, which only enqueues a node for further expansion when it was
+/// reached via a transitive edge.
+type Edge = (String, String, String, bool, bool);
 
 /// BIND: reachable
 ///
@@ -26,7 +34,12 @@ type Edge = (String, String, String, bool);
 /// prover -- every noflow/reach claim walks it. Deterministic BFS over
 /// lexicographically sorted out-edges so witness paths are reproducible
 /// across runs and languages; first discovery wins, matching the
-/// original Python semantics.
+/// original Python semantics. A non-transitive edge (`edge.4 == false`,
+/// docs/strata/kernel.md#strata-core) is a TERMINAL hop: its destination is
+/// discovered (added to `paths`) but never enqueued into `frontier`, so no
+/// further edge can chain off it -- this is the fix for T-0282/T-0262's
+/// disclosed gap where a chain of non-transitive trusts wrongly reached as
+/// far as a chain of transitive ones.
 #[pyfunction]
 fn reachable(
     edges: Vec<Edge>,
@@ -58,7 +71,12 @@ fn reachable(
                     path.push(edge.0.clone());
                     path.push(edge.2.clone());
                     paths.insert(edge.2.clone(), path);
-                    frontier.push_back(edge.2.clone());
+                    if edge.4 {
+                        // Transitive: dst may extend the chain further.
+                        frontier.push_back(edge.2.clone());
+                    }
+                    // Non-transitive: dst is reached (an endpoint) but is
+                    // NOT enqueued -- it cannot become a middle link.
                 }
             }
         }
@@ -643,7 +661,11 @@ mod tests {
     use super::*;
 
     fn edge(f: &str, s: &str, d: &str, barrier: bool) -> Edge {
-        (f.to_string(), s.to_string(), d.to_string(), barrier)
+        (f.to_string(), s.to_string(), d.to_string(), barrier, true)
+    }
+
+    fn nontransitive_edge(f: &str, s: &str, d: &str) -> Edge {
+        (f.to_string(), s.to_string(), d.to_string(), false, false)
     }
 
     #[test]
@@ -654,6 +676,40 @@ mod tests {
             vec![edge("f1", "a", "b", false), edge("f2", "b", "c", false)],
             "a".to_string(),
             false,
+        );
+        assert_eq!(paths["c"], vec!["a", "f1", "b", "f2", "c"]);
+    }
+
+    #[test]
+    fn non_transitive_edge_is_a_terminal_hop() {
+        // frob:tests strata-core/src/lib.rs::reachable kind="unit"
+        //
+        // T-0282: a --(non-transitive)--> b --(non-transitive)--> c must
+        // reach b (single hop, always correct) but NOT c (chaining past a
+        // non-transitive edge is the disclosed gap this ticket fixes).
+        let paths = reachable(
+            vec![
+                nontransitive_edge("f1", "a", "b"),
+                nontransitive_edge("f2", "b", "c"),
+            ],
+            "a".to_string(),
+            true,
+        );
+        assert!(paths.contains_key("b"));
+        assert!(!paths.contains_key("c"));
+    }
+
+    #[test]
+    fn non_transitive_edge_may_still_be_the_final_hop_of_a_mixed_chain() {
+        // frob:tests strata-core/src/lib.rs::reachable kind="unit"
+        //
+        // a --(transitive)--> b --(non-transitive)--> c: c IS reachable
+        // (the non-transitive edge is the LAST hop, which is allowed) but
+        // nothing past c is, since c was never enqueued.
+        let paths = reachable(
+            vec![edge("f1", "a", "b", false), nontransitive_edge("f2", "b", "c")],
+            "a".to_string(),
+            true,
         );
         assert_eq!(paths["c"], vec!["a", "f1", "b", "f2", "c"]);
     }

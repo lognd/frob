@@ -148,6 +148,23 @@ class TestClosure:
         assert paths["c"] == ("a", "f1", "b", "f2", "c")
 
     # frob:tests src/frob/strata/_facts.py::FactBase.reachable kind="unit"
+    def test_krb_no_transit_attr_stops_chaining_past_that_hop(self):
+        # T-0282: a flow tagged krb_no_transit is a terminal edge -- its
+        # dst is reachable directly, but the closure must not chain past
+        # it to extend the path any further.
+        model = KernelModel(
+            nodes=(_node("a"), _node("b"), _node("c")),
+            flows=(
+                _flow("f1", "a", "b", attrs=("krb_trust", "krb_no_transit")),
+                _flow("f2", "b", "c"),
+            ),
+        )
+        facts = build_facts(model).danger_ok
+        paths = facts.reachable("a")
+        assert "b" in paths
+        assert "c" not in paths
+
+    # frob:tests src/frob/strata/_facts.py::FactBase.reachable kind="unit"
     def test_boundaries_stop_taint_unless_asked_otherwise(self):
         model = KernelModel(
             nodes=(_node("evil", trust="foreign"), _node("api")),

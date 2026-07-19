@@ -47,21 +47,25 @@ def _node_ids(n: int) -> tuple[str, ...]:
 @st.composite
 def _plain_edges(
     draw: st.DrawFn,
-) -> tuple[tuple[str, ...], list[tuple[str, str, str, bool]]]:
+) -> tuple[tuple[str, ...], list[tuple[str, str, str, bool, bool]]]:
     """A random directed graph (cycles allowed) up to 12 nodes / 25 flows.
 
     Edges reference node indices (not ids directly) so hypothesis can shrink
-    toward small node counts; each edge carries a random barrier flag.
+    toward small node counts; each edge carries a random barrier flag and
+    (T-0282) a random transitive flag -- a non-transitive edge's `dst` is
+    reachable but the closure must not chain past it (strata-core/src/
+    lib.rs::reachable's terminal-edge support).
     """
     n = draw(st.integers(min_value=1, max_value=12))
     nodes = _node_ids(n)
     num_edges = draw(st.integers(min_value=0, max_value=25))
-    edges: list[tuple[str, str, str, bool]] = []
+    edges: list[tuple[str, str, str, bool, bool]] = []
     for i in range(num_edges):
         src = draw(st.sampled_from(nodes))
         dst = draw(st.sampled_from(nodes))
         barrier = draw(st.booleans())
-        edges.append((f"f{i}", src, dst, barrier))
+        transitive = draw(st.booleans())
+        edges.append((f"f{i}", src, dst, barrier, transitive))
     return nodes, edges
 
 
@@ -118,12 +122,17 @@ def _cyclic_edges(
 # frob:waive PERF004 reason="one sort per adjacency list to make BFS traversal order deterministic, not resorted per iteration; oracle only runs over hypothesis-generated small graphs"
 def _bfs_oracle(
     nodes: tuple[str, ...],
-    edges: list[tuple[str, str, str, bool]],
+    edges: list[tuple[str, str, str, bool, bool]],
     src: str,
     through_barriers: bool,
 ) -> dict[str, tuple[str, ...]]:
-    """Pure-Python BFS reference for `strata_core.reachable`."""
-    outgoing: dict[str, list[tuple[str, str, str, bool]]] = {}
+    """Pure-Python BFS reference for `strata_core.reachable`.
+
+    T-0282: a non-transitive edge (`transitive=False`) discovers its `dst`
+    but does not enqueue it for further expansion -- it can be the LAST hop
+    of a witness path, never a middle link.
+    """
+    outgoing: dict[str, list[tuple[str, str, str, bool, bool]]] = {}
     for e in edges:
         outgoing.setdefault(e[1], []).append(e)
     for outs in outgoing.values():
@@ -134,12 +143,13 @@ def _bfs_oracle(
     while frontier:
         nxt_frontier: list[str] = []
         for current in frontier:
-            for flow_id, _s, d, barrier in outgoing.get(current, ()):
+            for flow_id, _s, d, barrier, transitive in outgoing.get(current, ()):
                 if not through_barriers and barrier:
                     continue
                 if d not in paths:
                     paths[d] = (*paths[current], flow_id, d)
-                    nxt_frontier.append(d)
+                    if transitive:
+                        nxt_frontier.append(d)
         frontier = nxt_frontier
     return paths
 
@@ -175,6 +185,7 @@ def test_reachable_matches_bfs_oracle(graph, through_barriers) -> None:
 
     edges_by_id = {e[0]: (e[1], e[2]) for e in edges}
     barrier_by_id = {e[0]: e[3] for e in edges}
+    transitive_by_id = {e[0]: e[4] for e in edges}
     for node, path in got.items():
         path = tuple(path)
         _assert_valid_witness(path, edges_by_id, src)
@@ -182,6 +193,11 @@ def test_reachable_matches_bfs_oracle(graph, through_barriers) -> None:
         if not through_barriers:
             for flow_id in path[1::2]:
                 assert not barrier_by_id[flow_id]
+        # T-0282: a non-transitive edge may only be the LAST hop of any
+        # witness path -- it never has a further edge chained past it.
+        flow_hops = path[1::2]
+        for flow_id in flow_hops[:-1]:
+            assert transitive_by_id[flow_id]
 
 
 def _longest_path_to_target(
