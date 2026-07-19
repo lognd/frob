@@ -4705,15 +4705,108 @@ scope:
 - src/frob/deploy/**
 - src/frob/gates/**
 - src/frob/strata/**
+- src/frob/app/**
 - tests/**
 - docs/**
 - tickets.md
+- CHANGELOG.md
+- pyproject.toml
+- .frob-release.json
+- uv.lock
 evidence: []
 attachments: []
 acceptance: []
 threat: tampering
 ```
 T-0254 child 4. Hand edits to deploy scripts must be DETECTABLE through the checker even when someone bypasses regeneration: parse the committed scripts' mutation surface (useradd/groupadd/install/cp/mkdir/chown/chmod/systemctl/rm invocations and their targets -- structured extraction, not naive grep, honoring the generated check-then-apply shapes) and verify bidirectionally against HostManifest: DEPLOY002 = script mutation not declared in the manifest (the red-team-relevant direction: a smuggled extra user/path/unit fails check); DEPLOY003 = manifest entry no mutation implements (incomplete install/uninstall). Fire/discharge litmus incl. a tampered-script fixture. This is the tie that makes the scripts part of the provable architecture rather than artifacts beside it.
+
+## Done report
+
+Changed:
+- `src/frob/deploy/_conform.py` (NEW): `MutationTarget`,
+  `extract_mutation_surface`, `expected_mutation_surface`,
+  `ConformanceViolation`, `deploy_conformance_violations`. Structured
+  (regex-anchored to `_generate.py`'s exact check-then-apply command
+  shapes, never a blind grep) extraction of a committed script's mutation
+  surface -- `useradd`/`groupadd`/`userdel`/`groupdel`/`mkdir`/`install`/
+  `cp`/`chown`/`chmod`/`rm -f`/`rm -rf`/`systemctl enable|disable|start|
+  stop`/unit-file heredoc writes, each mapped to a `(kind, target)` pair
+  -- compared bidirectionally, per-script (`install.sh` and
+  `uninstall.sh` independently), against the current design model's
+  `HostManifest`-derived expected surface: DEPLOY002 = script mutation
+  with no manifest declaration; DEPLOY003 = manifest declaration with no
+  implementing script mutation.
+- `src/frob/deploy/_drift.py`: extracted `_load_current_model` out of
+  `_current_model_output` (design-dir read + merge, previously inlined)
+  so DEPLOY001 and DEPLOY002/DEPLOY003 share the ONE model-loading path
+  instead of duplicating it.
+- `src/frob/deploy/__init__.py`: exports the new `_conform.py` public
+  surface.
+- `src/frob/app/check_runner.py`: new `_deploy_conformance_result`,
+  wired into `_dispatch_check`'s flow the same "extra stage beyond
+  `frob.gates`'s job table" shape `_deploy_drift_result` (DEPLOY001)
+  already uses -- opt-in on `deploy/` existing.
+- `tests/unit/deploy/test_conform.py` (NEW): extraction unit tests
+  (including a heredoc-body-is-never-a-mutation regression), the
+  manifest-derived expected-surface test, and the litmus quartet: no
+  `deploy/` dir -> clean; a real `frob deploy generate` output -> clean
+  both directions; a hand-appended rogue `useradd` in `install.sh` ->
+  DEPLOY002 fires on exactly that target, `uninstall.sh` stays clean; a
+  hand-removed `userdel` line from `uninstall.sh` -> DEPLOY003 fires
+  for the now-unimplemented `("user", "api-svc")` manifest entry.
+- `docs/strata/host.md`: new "DEPLOY002/DEPLOY003: conformance" section
+  (`#deploy002deploy003-conformance`); updated the "Scope boundary"
+  bullet that previously (inaccurately, after this ticket landed)
+  described T-0258 as a live-host checker -- reworded to point at
+  T-0259's VM auditor, since T-0258 turned out to be the committed-
+  script<->manifest structural check, not a live-host one.
+- `docs/commands/deploy.md`: new "DEPLOY002/DEPLOY003: bidirectional
+  conformance" section, `See also` entry for `_conform.py`.
+- `CHANGELOG.md`: new `[0.7.0] - unreleased` section (REL001 demanded
+  >=0.7.0 after `frob release stamp` computed the new public surface,
+  per the agent-playbook's "0.6.0 stays unless a bigger surface, then
+  disclose" rule -- disclosed here) carrying the T-0258 public API
+  entry; the prior T-0257 entry stays under `[0.6.0]`.
+- `pyproject.toml`: version 0.6.0 -> 0.7.0 (REL001-driven).
+- `.frob-release.json`: `frob release stamp` re-run at 0.7.0 (857 public
+  symbols stamped).
+
+Evidence (observed via `uv run pytest tests/unit/deploy/ -q` -- 18
+passed, and `uv run frob test --base main` -- selected + ran the same
+10 node ids, `exit=0`):
+- `tests/unit/deploy/test_conform.py::TestExtract::test_install`
+- `tests/unit/deploy/test_conform.py::TestExtract::test_no_heredoc`
+- `tests/unit/deploy/test_conform.py::TestExpected::test_from_host`
+- `tests/unit/deploy/test_conform.py::TestConform::test_no_dir`
+- `tests/unit/deploy/test_conform.py::TestConform::test_clean_pass`
+- `tests/unit/deploy/test_conform.py::TestConform::test_extra_002`
+- `tests/unit/deploy/test_conform.py::TestConform::test_missing_003`
+- `tests/unit/strata/test_selfconform.py::TestRealGateGreen` (self-
+  conformance over the changed `src/frob/deploy/**`/`src/frob/app/
+  check_runner.py`, ran green via `uv run pytest tests/unit/strata/
+  test_selfconform.py -k TestRealGateGreen -q`)
+
+Filed: none. No out-of-scope work found. SCOPE001 fired for
+`src/frob/app/check_runner.py` (the `frob check` wiring point, same
+DEPLOY001-precedent shape T-0257 used `src/frob/app/**` scope for) plus
+`CHANGELOG.md`/`pyproject.toml`/`.frob-release.json`/`uv.lock` (the
+REL001-driven version bump's own touch set) -- extended T-0258's
+declared `scope` to add `src/frob/app/**`, `CHANGELOG.md`,
+`pyproject.toml`, `.frob-release.json`, `uv.lock` (playbook section 4:
+scope extension via `tickets.md`, not silently folded in).
+
+Gates: `uv run frob check` (full, not `--ticket`) -- 0 errors, 5
+warnings (pre-existing, unrelated to this ticket's files), 27 waived
+(all pre-existing). `ruff-format` reports 1 file needing reformatting
+(`tests/test_lang.py`) -- pre-existing from the `main` merge (T-0182's
+rust directive fix, commit `1e64899`), not touched by this ticket, left
+as-is. `DRIFT002`: 0 (confirmed clean in the full `frob check` output).
+`git diff main --diff-filter=D --stat` is empty (deletion-filter land
+rule, section 9 of the playbook). `frob-core/Cargo.lock`/`strata-core/
+Cargo.lock` churn from `make core` reverted before finishing (`git
+checkout -- frob-core/Cargo.lock strata-core/Cargo.lock`); `uv.lock`'s
+one-line `frob` version bump (0.6.0 -> 0.7.0) kept, since it tracks the
+legitimate `pyproject.toml` bump.
 
 <!-- ticket:T-0259 -->
 ```yaml

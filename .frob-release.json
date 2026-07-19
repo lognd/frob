@@ -122,6 +122,11 @@
     "src/frob/cycle/graph.py::DependencyGraph.neighbors": "1f4e7fd7b937d4ae4693e79858efc9910f263dd682507f7d8739dbca82d8d053",
     "src/frob/cycle/graph.py::DependencyGraph.nodes": "eb929d792388a9a6d92675244793c5e88f5b1906b2a6f9fe404d23af93016116",
     "src/frob/cycle/graph.py::find_cycles": "1e81dc867f79460507892a3c7b741e785e1d9bcf1363d3468aa8d155c2608f58",
+    "src/frob/deploy/_conform.py::ConformanceViolation": "4a925e19966811caf87131cfa41573e5732b8e1da98dffd0a383af2f704c2dbb",
+    "src/frob/deploy/_conform.py::MutationTarget": "bc2a48ceadd61bd400b19ccc39f4370ce2c2500285c8aa7736454d8aed2f1e41",
+    "src/frob/deploy/_conform.py::deploy_conformance_violations": "2d4fa4cf47e0049cefaf76184684b7ecc790a5fe01319b643f5e92b667fccc2e",
+    "src/frob/deploy/_conform.py::expected_mutation_surface": "68587a1c01e7552d7a99697d723f025265648c7f337997f898cf93aa643b77c2",
+    "src/frob/deploy/_conform.py::extract_mutation_surface": "822a9858aef5d172851067475588c4ac329320c7488c1fc13f3c2ebd731fcd00",
     "src/frob/deploy/_drift.py::DeployDriftViolation": "3ef774337594c0fe0867b6bef43e152cb9ac67aab205b70c7e58efdd4d5a994b",
     "src/frob/deploy/_drift.py::deploy_drift_violations": "141f6578ced6041d1222aa6b6e627dad02619442c6fa9fd1d5cad256c37271c2",
     "src/frob/deploy/_generate.py::DIGEST_HEADER_PREFIX": "5d1d163a61e9b7631c8cbd675690048a1e9b7497ef608a300aaae43fb53974d6",
@@ -853,5 +858,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.6.0"
+  "version": "0.7.0"
 }

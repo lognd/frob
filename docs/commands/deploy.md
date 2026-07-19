@@ -59,6 +59,28 @@ regenerated for -- fails `frob check` with the exact filename named.
 (useful for a pre-commit hook without pulling in the rest of `frob
 check`).
 
+## DEPLOY002/DEPLOY003: bidirectional conformance
+
+`frob.deploy.deploy_conformance_violations` (wired into `frob check` as
+an extra `deploy-conformance` stage, same non-`frob.gates` shape
+DEPLOY001 uses) parses each committed `deploy/install.sh`/`uninstall.sh`
+into its actual MUTATION SURFACE (structured `useradd`/`groupadd`/
+`userdel`/`groupdel`/`mkdir`/`install`/`cp`/`chown`/`chmod`/`rm -f`/
+`rm -rf`/`systemctl enable|disable|start|stop`/unit-heredoc extraction,
+anchored to `_generate.py`'s exact check-then-apply command shapes) and
+compares it BIDIRECTIONALLY against the current model's `HostManifest`
+set:
+
+- **DEPLOY002** -- the script mutates something the manifest does not
+  declare (a smuggled extra user/path/unit). Fires even if DEPLOY001's
+  digest still matches, so hand-appending one rogue command after a
+  clean regeneration does not slip past `frob check`.
+- **DEPLOY003** -- the manifest declares something no script mutation
+  implements (an incomplete install or uninstall).
+
+Full design narrative: `docs/strata/host.md#deploy002deploy003-
+conformance`.
+
 ## Scope and honesty notes
 
 - Builds on `HostManifest`/`host_manifest_for` (T-0255,
@@ -86,5 +108,7 @@ check`).
   `generate_install_script`, `generate_status_script`,
   `generate_uninstall_script`, `manifest_digest`.
 - `src/frob/deploy/_drift.py` -- `deploy_drift_violations` (DEPLOY001).
+- `src/frob/deploy/_conform.py` -- `deploy_conformance_violations`
+  (DEPLOY002/DEPLOY003).
 - `src/frob/app/deploy_runner.py` -- the `frob deploy generate` CLI
   entry point.
