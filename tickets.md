@@ -9931,7 +9931,7 @@ after `make coverage` -- `0/0 new` violations. `git diff main
 id: T-0314
 title: frob check <subdir> resolves frob:doc target files relative to the scoped path,
   not repo root
-state: in-progress
+state: done
 kind: bug
 origin: auditor
 created: '2026-07-19'
