@@ -131,6 +131,31 @@ def _symref_to_nodeid(symref: str) -> str:
     return f"{path}::{qualname.replace('.', '::')}"
 
 
+# frob:ticket T-0275
+def _node_id_collected(base_node_id: str, node_ids: frozenset[str]) -> bool:
+    """True if `base_node_id` was collected, either verbatim or as a
+    `@pytest.mark.parametrize`-expanded id.
+
+    `pytest --collect-only` never emits the bare `path::func` id for a
+    parametrized test -- every collected id carries a `[case-id]` suffix
+    (e.g. `path::func[water-293.15-...]`), one per parametrize case, and
+    the bare id is never itself a member of the collected set. A
+    `frob:tests` directive's src resolves to the bare id regardless of
+    whether the bound function happens to be parametrized (the comment
+    DSL has no reason to know or care), so an exact-membership check
+    alone can never validate a directive bound to a parametrized test --
+    the same directive placed above a plain, undecorated `def` validates
+    fine, which is what made this look like a decorator-attachment bug
+    (feldspar FROBLEMS.md 2026-07-18, `test_library_thermo.py`) until
+    traced to the actual mismatch: parametrize-suffix expansion, not
+    comment-to-symbol binding (`frob.lang._extract` already resolves the
+    binding correctly in both cases -- proven directly, not assumed)."""
+    if base_node_id in node_ids:
+        return True
+    prefix = f"{base_node_id}["
+    return any(node_id.startswith(prefix) for node_id in node_ids)
+
+
 def _site_from_edge_origin(origin: str) -> tuple[str, int]:
     """Best-effort `(file, line)` split of an edge's `path:line` origin string."""
     file_part, sep, line_part = origin.rpartition(":")
@@ -290,7 +315,7 @@ def _valid_edges(
     """
     valid: list[Edge] = []
     for e in edges:
-        if _symref_to_nodeid(e.src) in tests.node_ids:
+        if _node_id_collected(_symref_to_nodeid(e.src), tests.node_ids):
             valid.append(e)
         elif (
             snapshot is not None
@@ -1546,7 +1571,7 @@ def _pair_covered(
     for target, edge in all_pairs:
         if not (target == provider or target.startswith(prefix)):
             continue
-        if _symref_to_nodeid(edge.src) not in tests.node_ids:
+        if not _node_id_collected(_symref_to_nodeid(edge.src), tests.node_ids):
             continue
         test_path = edge.src.split("::", 1)[0]
         if consumer_leaf in PurePosixPath(test_path).parts or (

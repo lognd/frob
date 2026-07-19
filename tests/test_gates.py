@@ -951,6 +951,59 @@ class TestTestGate:
         violations = run_test_gate(snap, (), Nothing(), tests, TestPolicy())
         assert any(v.rule == "TEST003" for v in violations)
 
+    def test_test003_satisfied_by_parametrized_test_node_id(
+        self, tmp_path: Path
+    ) -> None:
+        """Root-cause regression (feldspar FROBLEMS.md 2026-07-18,
+        `test_library_thermo.py`): a `frob:tests` directive bound to a
+        `@pytest.mark.parametrize`-decorated test looked like a broken
+        comment-to-decorator attachment, but `frob.lang._extract` already
+        resolves that binding correctly -- the real mismatch is that
+        `pytest --collect-only` never emits the bare `path::func` node id
+        for a parametrized test, only per-case `path::func[case-id]`
+        ids, so an exact `in tests.node_ids` membership check could never
+        validate a directive whose src is the bare (unparametrized)
+        symref. `_node_id_collected` must accept any collected id that is
+        the base id itself OR a `[...]`-suffixed parametrized expansion
+        of it."""
+        from typani.option import Nothing
+
+        _write(tmp_path, "src/frob/pkg/thermo.py", "def helper(x):\n    return x\n")
+        test_source = (
+            '# frob:tests src/frob/pkg/thermo.py kind="integration"\n'
+            "@pytest.mark.parametrize('x', [1, 2])\n"
+            "def test_density(x):\n"
+            "    assert True\n"
+        )
+        _write(tmp_path, "tests/test_thermo.py", test_source)
+        snap = _snapshot(tmp_path)
+        # Exactly what pytest --collect-only emits for a parametrized test:
+        # bracketed per-case ids, never the bare function name.
+        tests = CollectedTests(
+            node_ids=frozenset(
+                {
+                    "tests/test_thermo.py::test_density[1]",
+                    "tests/test_thermo.py::test_density[2]",
+                }
+            )
+        )
+        violations = run_test_gate(snap, (), Nothing(), tests, TestPolicy())
+        assert "TEST003" not in _rules(violations)
+
+    def test_node_id_collected_direct(self) -> None:
+        """Direct unit coverage of `_node_id_collected` itself, independent
+        of the gate machinery around it."""
+        from frob.gates import _node_id_collected
+
+        ids = frozenset(
+            {"tests/test_x.py::test_density[1]", "tests/test_x.py::test_density[2]"}
+        )
+        assert _node_id_collected("tests/test_x.py::test_density", ids)
+        assert _node_id_collected("tests/test_x.py::test_density[1]", ids)
+        assert not _node_id_collected("tests/test_x.py::test_other", ids)
+        # a bare-prefix collision must not false-positive
+        assert not _node_id_collected("tests/test_x.py::test_dens", ids)
+
     def test_test004_system_below_min_e2e(self, tmp_path: Path) -> None:
         from typani.option import Nothing
 
