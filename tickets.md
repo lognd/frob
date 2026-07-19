@@ -8187,7 +8187,7 @@ Investigated 2026-07-19: the 13 "malformed directive" warnings are NOT sloppy co
 ```yaml
 id: T-0295
 title: 'arch: strata long-function burndown to zero'
-state: in-review
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-07-19'
@@ -8207,7 +8207,7 @@ acceptance:
   _host_isolation.py, _infra.py, then zero long-function warnings remain (measured;
   see Done report for before/after counts)
 - given `frob check --only coverage`, when run after the change, then 0 COV001/errors
-  (one displacement caught and fixed: `elaborate_infra`'s frob:doc directive had
+  (one displacement caught and fixed -- `elaborate_infra`'s frob:doc directive had
   landed on a newly-inserted helper above it)
 - given `uv run pytest tests/unit/strata -k "export or facts or host or infra"`, then
   all pass with no behavior change
