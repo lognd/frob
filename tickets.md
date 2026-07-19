@@ -9716,7 +9716,7 @@ format --check` clean after one auto-format pass. `uv run ty check` clean.
 id: T-0310
 title: SYS101 fires unfixably on nodes whose entire code glob resolves to [graph].exclude'd
   paths
-state: in-progress
+state: done
 kind: bug
 origin: auditor
 created: '2026-07-19'
@@ -9736,7 +9736,6 @@ attachments: []
 acceptance: []
 threat: null
 ```
-
 ## Done report
 
 Changed:
