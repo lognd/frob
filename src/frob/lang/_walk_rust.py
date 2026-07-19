@@ -20,6 +20,25 @@ from frob.lang._models import RawSymbol, SymbolKind
 
 _COMMENT_TYPES = frozenset({"line_comment", "block_comment"})
 
+# Test-generating macros: a `frob:tests` comment placed directly above one
+# of these `<name>! { ... }` blocks (T-0318) needs a bindable symbol at the
+# comment site even though the macro's expansion (one #[test] fn per case,
+# synthesized at compile time) never exists as literal `function_item` AST
+# nodes for `_visit` to see -- tree-sitter parses everything inside the
+# macro's braces as an opaque `token_tree`, not structured items (verified
+# directly: a `proptest! { #[test] fn foo(...) {...} }` block's body is one
+# `token_tree` node, no `function_item` descendants at all). Extensible: add
+# a macro name here to make it a recognized test-generator; anything not in
+# this set is left alone (a `vec!`/`assert!`/etc. macro must never bind).
+_TEST_MACRO_NAMES = frozenset({"proptest", "prop_compose"})
+
+# The synthesized qualname suffix a test-macro symbol carries -- a literal
+# `!` is never valid inside a real rust identifier, so `qualname.endswith`
+# this marker unambiguously flags "this symbol is a macro-expansion stand-in,
+# resolve its TESTS edges at file/module granularity" (gates/__init__.py's
+# `_macro_symbol_file`) without needing a sixth `SymbolKind` bucket.
+_MACRO_SYMBOL_SUFFIX = "!"
+
 # PyO3 export attributes: an item carrying one of these is the crate's
 # actual Python-facing public surface even without a `pub` keyword, so it
 # must count as public for coverage/doc obligations. (`#[pymethods]` marks
@@ -121,6 +140,34 @@ def _named_symbol(
     )
 
 
+def _rust_test_macro_name(node: Node) -> str | None:
+    """The macro's name if `node` is a `<name>! {...}` invocation of a
+    recognized test-generating macro (`_TEST_MACRO_NAMES`), else None."""
+    if node.type != "macro_invocation":
+        return None
+    name = child_text(node.child_by_field_name("macro"))
+    return name if name in _TEST_MACRO_NAMES else None
+
+
+def _macro_symbol(
+    node: Node, stack: tuple[str, ...], doc: str, macro_name: str
+) -> RawSymbol:
+    """A bindable stand-in `RawSymbol` for a test-generating macro block
+    (T-0318): its qualname carries `_MACRO_SYMBOL_SUFFIX` so gates can tell
+    it apart from a real fn and resolve its `frob:tests` edges against any
+    cargo-collected case under the same file/module, since the macro's own
+    expanded `#[test]` fns have no literal AST node to bind precisely to."""
+    return RawSymbol(
+        qualname=".".join((*stack, f"{macro_name}{_MACRO_SYMBOL_SUFFIX}")),
+        kind=SymbolKind.FUNCTION,
+        public=False,
+        span=_symbol_span(node),
+        sig_tokens=leaf_tokens(node, _COMMENT_TYPES),
+        body_tokens=(),
+        doc_text=doc,
+    )
+
+
 def _visit(
     container: Node,
     stack: tuple[str, ...],
@@ -144,6 +191,8 @@ def _visit(
             _recurse_impl(node, stack, symbols)
         elif node.type == "mod_item":
             _recurse_mod(node, stack, symbols, in_impl)
+        elif (macro_name := _rust_test_macro_name(node)) is not None:
+            symbols.append(_macro_symbol(node, stack, doc, macro_name))
 
 
 def _recurse_trait(
@@ -183,7 +232,9 @@ def _recurse_mod(
 
 
 def _walk_rust(root: Node) -> tuple[RawSymbol, ...]:
-    """Every rust symbol (functions, structs, traits, enums, types, consts)."""
+    """Every rust symbol (functions, structs, traits, enums, types, consts,
+    plus a non-public stand-in per recognized test-generating macro block --
+    see `_macro_symbol`)."""
     symbols: list[RawSymbol] = []
     _visit(root, (), symbols, in_impl=False)
     return tuple(symbols)

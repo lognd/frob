@@ -990,6 +990,49 @@ class TestTestGate:
         violations = run_test_gate(snap, (), Nothing(), tests, TestPolicy())
         assert "TEST003" not in _rules(violations)
 
+    def test_test003_satisfied_by_proptest_macro_block(self, tmp_path: Path) -> None:
+        """T-0318 litmus (feldspar): a `frob:tests` comment sitting directly
+        above a `proptest! { ... }` block must satisfy TEST003. proptest's
+        expansion synthesizes real `#[test]` fns at compile time (one per
+        `fn` inside the macro's braces), which `cargo test --list` collects
+        under THEIR OWN names -- never under a `proptest`-named node id --
+        and tree-sitter parses the macro's braces as one opaque `token_tree`
+        with no `function_item` descendants at all, so the directive has no
+        literal AST node to bind to without `_walk_rust.py` emitting a
+        stand-in symbol for the macro block itself (`_macro_symbol`).
+        `_macro_symbol_file`/`_macro_file_collected` then resolve that
+        stand-in's TESTS edge at file granularity: satisfied because the
+        file has >=1 real collected case, not because any node id matches
+        the stand-in's own synthesized qualname (which never collects)."""
+        from typani.option import Nothing
+
+        _write(
+            tmp_path,
+            "strata-core/src/lib.rs",
+            "pub fn parse_source(x: &str) -> i32 {\n    0\n}\n",
+        )
+        _write(
+            tmp_path,
+            "strata-core/tests/prop_parse.rs",
+            '// frob:tests strata-core/src/lib.rs kind="integration"\n'
+            "proptest! {\n"
+            "    #[test]\n"
+            "    fn prop_parse_roundtrip(x in 0..100u32) {\n"
+            "        assert!(x < 100);\n"
+            "    }\n"
+            "}\n",
+        )
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(
+            node_ids=frozenset(
+                {
+                    "strata-core/tests/prop_parse.rs::prop_parse_roundtrip",
+                }
+            )
+        )
+        violations = run_test_gate(snap, (), Nothing(), tests, TestPolicy())
+        assert "TEST003" not in _rules(violations)
+
     def test_test002_parametrized_test_counts_each_case(self, tmp_path: Path) -> None:
         """T-0307 litmus: a `frob:tests` directive bound to a
         `@pytest.mark.parametrize`-decorated test with 3 cases must count

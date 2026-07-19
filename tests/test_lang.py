@@ -218,6 +218,40 @@ class TestParseTsRustCppC:
         assert _symbol(pf, "Widget.exported_method").public is True
         assert _symbol(pf, "my_core").public is True
 
+    def test_rust_directive_binds_above_proptest_macro_block(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0318: a `frob:tests` comment above a `proptest! { ... }` block
+        must bind to a real symbol at that site, not fall through to the
+        bare-file-path fallback -- `_walk_rust.py::_macro_symbol` emits a
+        non-public stand-in `RawSymbol` (qualname suffixed `!`, e.g.
+        `proptest!`) for recognized test-generating macros so the existing
+        comment-to-following-symbol mechanism (`find_following_symbol`) has
+        something to attach to, exactly as it does for a plain `#[test]` fn."""
+        source = (
+            '// frob:tests crate/src kind="integration"\n'
+            "proptest! {\n"
+            "    #[test]\n"
+            "    fn prop_roundtrip(x in 0..100u32) {\n"
+            "        assert!(x < 100);\n"
+            "    }\n"
+            "}\n"
+        )
+        pf = parse_file(_write(tmp_path, "prop.rs", source)).danger_ok
+        directive_comment = next(c for c in pf.comments if "frob:tests" in c.text)
+        assert directive_comment.following == "proptest!"
+        macro_symbol = _symbol(pf, "proptest!")
+        assert macro_symbol.kind == SymbolKind.FUNCTION
+        assert macro_symbol.public is False
+
+    def test_rust_non_test_macro_does_not_bind(self, tmp_path: Path) -> None:
+        """A macro invocation NOT in `_TEST_MACRO_NAMES` (e.g. `vec!`) must
+        never emit a bindable symbol -- only recognized test-generating
+        macros get the T-0318 stand-in treatment."""
+        source = "fn helper() {\n    let _ = vec![1, 2, 3];\n}\n"
+        pf = parse_file(_write(tmp_path, "novec.rs", source)).danger_ok
+        assert not any(s.qualname.endswith("!") for s in pf.symbols)
+
     def test_rust_directive_binds_above_stacked_attributes(
         self, tmp_path: Path
     ) -> None:
