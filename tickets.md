@@ -2759,7 +2759,7 @@ unintended deletions).
 id: T-0217
 title: sys plan/doc log raw pre-discharge threat counts that contradict the PROVED
   verdict
-state: in-progress
+state: done
 kind: ux
 origin: agent
 created: '2026-07-18'
@@ -2770,7 +2770,9 @@ scope:
 - src/frob/app/sys_runner.py
 - tests/**
 - tickets.md
-evidence: []
+evidence:
+- tests/unit/strata/test_threat.py::TestEvaluateThreats::test_pre_discharge_count_log_is_honest_and_debug_level
+- tests/system/test_cli_sys_plan.py::TestSysPlanCli::test_threat_pre_discharge_count_never_reads_as_contradicting_output
 attachments: []
 acceptance: []
 threat: null
