@@ -7617,11 +7617,11 @@ several unrelated packages).
 
 TEST005 (deploy files) before: 10  after: 0
 
-<!-- ticket:T-draft-5321d1bc -->
+<!-- ticket:T-0285 -->
 ```yaml
-id: T-draft-5321d1bc
+id: T-0285
 title: 'coverage: land/tickets/lint/vet/dup TEST005 zero'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-19'
@@ -7657,6 +7657,7 @@ evidence:
 - tests/unit/strata/test_lint.py::TestLintFaninCapacityNoInboundFlows::test_capacitied_node_with_no_rated_inbound_flow_is_clean
 - tests/unit/test_dup_cache.py::TestFingerprintRoundTrip::test_same_digest_and_rung_overwrites_prior_payload
 - tests/unit/test_dup_cache.py::TestFingerprintRoundTrip::test_connect_error_is_propagated_without_writing
+- tests/test_capability_registry.py::TestIsSelfPatternPath::test_root_not_frob_repo_returns_false
 attachments: []
 acceptance: []
 threat: null
