@@ -431,26 +431,14 @@ def _real_dataflow_graph(
     """R5 (real): a def-use adjacency plus sequential control-flow edges
     built from `frob.lang`'s actual statement nodes, not a token heuristic.
 
-    Two edge kinds, both real (not proxied):
-    - **def-use**: for an `assignment` node (bare or `expression_statement`-
-      wrapped, see below), targets (children before the `=` leaf) are
-      labeled "def", the right-hand side (children after `=`) "use"; every
-      identifier within one statement is pairwise-connected (the
-      co-occurrence idea R5's proxy already had, now scoped to a real
-      statement boundary instead of a keyword-guessed chunk).
-    - **control-flow**: a sequencing edge from the last identifier node of
-      statement *i* to the first identifier node of statement *i+1* --
-      real adjacent-statement execution order, which the old co-occurrence
-      proxy had no notion of at all.
-
+    See `_statement_sequence_graph` for the def-use/control-flow edge rules.
     Every direct child of `block` is a statement (`frob.lang.export_tree`
-    mirrors tree-sitter-python's grammar as-is, and this grammar does not
-    wrap simple statements -- `assignment`, bare `call`, etc. -- in an
-    `expression_statement` node the way the docstring above once assumed;
-    T-0117 found that assumption silently dropped every assignment
-    statement from the graph, collapsing unrelated functions down to
-    identical single-node graphs and WL-hash-colliding them). No filtering
-    by statement-type label is needed or correct here.
+    mirrors tree-sitter-python's grammar as-is and does not wrap simple
+    statements -- `assignment`, bare `call`, etc. -- in an
+    `expression_statement` node; T-0117 found the opposite assumption
+    silently dropped every assignment statement, collapsing unrelated
+    functions to identical single-node graphs and WL-hash-colliding them).
+    No filtering by statement-type label is needed or correct here.
 
     Returns `None` (caller falls back to `_build_dataflow_graph`) when no
     `block` node is found under `tree` (a non-function region, or a body
@@ -463,7 +451,22 @@ def _real_dataflow_graph(
     statements = block.children
     if not statements:
         return None
+    return _statement_sequence_graph(statements)
 
+
+def _statement_sequence_graph(
+    statements: list[Any],
+) -> tuple[tuple[tuple[int, int], ...], tuple[str, ...]]:
+    """Def-use cliques per statement plus sequencing edges between them, in order.
+
+    Two edge kinds, both real (not proxied): **def-use** -- for an
+    `assignment` node (bare or `expression_statement`-wrapped), targets
+    (children before the `=` leaf) are labeled "def", the right-hand side
+    "use", and every identifier within one statement is pairwise-connected;
+    **control-flow** -- a sequencing edge from the last identifier node of
+    statement *i* to the first identifier node of statement *i+1*, real
+    adjacent-statement execution order the old co-occurrence proxy lacked.
+    """
     labels: list[str] = []
     adjacency: list[tuple[int, int]] = []
     prev_last_idx: int | None = None
@@ -644,6 +647,18 @@ def _r5_fingerprint(
     return result.danger_ok
 
 
+def _body_tokens_for_symbol(state: _FpState, record: Any) -> tuple[str, ...] | None:
+    """`record`'s body tokens, parsing (and caching) its file if not already loaded.
+    `None` when the body is missing or under `cfg.min_tokens`."""
+    path = record.id.path
+    if path not in state.tokens_by_path:
+        state.tokens_by_path[path] = _parsed_symbols_by_path(state.root, path)
+    body_tokens = state.tokens_by_path[path].get(record.id.qualname)
+    if not body_tokens or len(body_tokens) < state.cfg.min_tokens:
+        return None
+    return body_tokens
+
+
 def _fingerprint_symbol(state: _FpState, symref: str, record: Any) -> None:
     """Fingerprint one snapshot symbol into every rung bucket on `state`.
 
@@ -651,11 +666,8 @@ def _fingerprint_symbol(state: _FpState, symref: str, record: Any) -> None:
     match a pre-existing, untouched one. Bodies below `cfg.min_tokens` are
     skipped. An R3 kernel error skips the symbol's remaining rungs.
     """
-    path = record.id.path
-    if path not in state.tokens_by_path:
-        state.tokens_by_path[path] = _parsed_symbols_by_path(state.root, path)
-    body_tokens = state.tokens_by_path[path].get(record.id.qualname)
-    if not body_tokens or len(body_tokens) < state.cfg.min_tokens:
+    body_tokens = _body_tokens_for_symbol(state, record)
+    if body_tokens is None:
         return
     state.fingerprinted += 1
     state.body_tokens_by_ref[symref] = body_tokens
@@ -879,25 +891,39 @@ def _r4_groups(
         return []
     r4_group: list[ClonePair] = []
     for i, j in candidates_result.danger_ok:
-        if i == j:
-            # T-0191: unlike _bucket_pairs' range(i+1, len(members)) (which
-            # structurally cannot self-pair), frob_core.candidate_pairs can
-            # hand back (i, i) when a symbol's own fingerprint set collides
-            # with itself past _R4_MIN_SHARED -- observed for real on this
-            # repo's dup cache module post-refactor. Skip rather than
-            # report a symbol as its own clone.
-            continue
-        a, b = r4_refs[i], r4_refs[j]
-        if a == b:
-            continue
-        if touched is not None and a not in touched and b not in touched:
-            continue
-        if frozenset((a, b)) in seen_pairs:
-            continue
-        pair = _r4_verify_pair(state, a, b, snapshot, seen_pairs)
+        pair = _r4_candidate_pair(state, r4_refs, i, j, snapshot, touched, seen_pairs)
         if pair is not None:
             r4_group.append(pair)
     return [tuple(r4_group)] if r4_group else []
+
+
+def _r4_candidate_pair(
+    state: _FpState,
+    r4_refs: list[str],
+    i: int,
+    j: int,
+    snapshot: GraphSnapshot,
+    touched: frozenset[str] | None,
+    seen_pairs: set[frozenset[str]],
+) -> ClonePair | None:
+    """One `_core.candidate_pairs` index pair, filtered and verified into a
+    `ClonePair` (or `None`)."""
+    if i == j:
+        # T-0191: unlike _bucket_pairs' range(i+1, len(members)) (which
+        # structurally cannot self-pair), frob_core.candidate_pairs can
+        # hand back (i, i) when a symbol's own fingerprint set collides
+        # with itself past _R4_MIN_SHARED -- observed for real on this
+        # repo's dup cache module post-refactor. Skip rather than
+        # report a symbol as its own clone.
+        return None
+    a, b = r4_refs[i], r4_refs[j]
+    if a == b:
+        return None
+    if touched is not None and a not in touched and b not in touched:
+        return None
+    if frozenset((a, b)) in seen_pairs:
+        return None
+    return _r4_verify_pair(state, a, b, snapshot, seen_pairs)
 
 
 def _region_line_span(
@@ -928,11 +954,9 @@ def _region_groups(
     token stream.
 
     Off by default (`cfg.region_kernel_enabled`, docs/modules/dup.md's
-    `[dup].region_kernel` knob) -- an opt-in on top of `[dup].enforce`
-    itself, so a default `frob check` never pays for the extra suffix-array
-    pass. Unlike R1/R2 (whole-body hashing, `_r1_hash`/`_r2_hash`), this
-    finds a copy-pasted sub-region living inside two otherwise-different
-    symbol bodies -- the exact-match case R1/R2 structurally cannot see.
+    `[dup].region_kernel` knob), an opt-in on top of `[dup].enforce` itself.
+    Unlike R1/R2 (whole-body hashing), finds a copy-pasted sub-region living
+    inside two otherwise-different symbol bodies.
     """
     if not cfg.region_kernel_enabled:
         return []
@@ -944,32 +968,52 @@ def _region_groups(
     if result.is_err:
         _log.debug("find_clones: r1.5 exact-region kernel unavailable")
         return []
-    group: list[ClonePair] = []
-    for da, oa, db, ob, length in result.danger_ok:
-        a, b = refs[da], refs[db]
-        if a == b:
-            continue
-        if touched is not None and a not in touched and b not in touched:
-            continue
-        if frozenset((a, b)) in seen_pairs:
-            continue
-        seen_pairs.add(frozenset((a, b)))
-        state.pairs_verified += 1
-        left_span = _region_line_span(
-            snapshot.symbols[a].span, oa, length, len(normalized_docs[da])
-        )
-        right_span = _region_line_span(
-            snapshot.symbols[b].span, ob, length, len(normalized_docs[db])
-        )
-        group.append(
-            ClonePair(
-                left=CloneRegion(ref=a, span=left_span),
-                right=CloneRegion(ref=b, span=right_span),
-                similarity=1.0,
-                rung="r1.5",
+    group: list[ClonePair] = [
+        pair
+        for pair in (
+            _region_candidate_pair(
+                state, snapshot, refs, normalized_docs, touched, seen_pairs, hit
             )
+            for hit in result.danger_ok
         )
+        if pair is not None
+    ]
     return [tuple(group)] if group else []
+
+
+def _region_candidate_pair(
+    state: _FpState,
+    snapshot: GraphSnapshot,
+    refs: list[str],
+    normalized_docs: tuple[tuple[str, ...], ...],
+    touched: frozenset[str] | None,
+    seen_pairs: set[frozenset[str]],
+    hit: tuple[int, int, int, int, int],
+) -> ClonePair | None:
+    """One `_core.exact_regions` hit `(da, oa, db, ob, length)`, filtered and
+    turned into an r1.5 `ClonePair` (or `None`)."""
+    da, oa, db, ob, length = hit
+    a, b = refs[da], refs[db]
+    if a == b:
+        return None
+    if touched is not None and a not in touched and b not in touched:
+        return None
+    if frozenset((a, b)) in seen_pairs:
+        return None
+    seen_pairs.add(frozenset((a, b)))
+    state.pairs_verified += 1
+    left_span = _region_line_span(
+        snapshot.symbols[a].span, oa, length, len(normalized_docs[da])
+    )
+    right_span = _region_line_span(
+        snapshot.symbols[b].span, ob, length, len(normalized_docs[db])
+    )
+    return ClonePair(
+        left=CloneRegion(ref=a, span=left_span),
+        right=CloneRegion(ref=b, span=right_span),
+        similarity=1.0,
+        rung="r1.5",
+    )
 
 
 def _r5_groups(
@@ -1008,17 +1052,16 @@ def find_clones(
         return Err(DupError.CoreUnavailable)
 
     touched = touched_refs(snapshot, diff) if diff is not None else None
-
     state = _FpState(root=Path(snapshot.root), cfg=cfg)
     for symref, record in snapshot.symbols.items():
         _fingerprint_symbol(state, symref, record)
 
-    seen_pairs: set[frozenset[str]] = set()
-    groups = _hash_rung_groups(state, snapshot, touched, seen_pairs)
-    groups += _region_groups(state, snapshot, touched, seen_pairs, cfg)
-    groups += _r4_groups(state, snapshot, touched, seen_pairs)
-    groups += _r5_groups(state, snapshot, touched, seen_pairs)
+    groups = _all_rung_groups(state, snapshot, touched, cfg)
+    return Ok(_clone_report(state, groups))
 
+
+def _clone_report(state: _FpState, groups: list[tuple[ClonePair, ...]]) -> CloneReport:
+    """Assemble the final `CloneReport` (groups + run stats) and log the summary."""
     stats = DupStats(
         fingerprinted=state.fingerprinted,
         cache_hits=state.cache_hits,
@@ -1032,7 +1075,23 @@ def find_clones(
         state.fingerprinted,
         state.cache_hits,
     )
-    return Ok(CloneReport(groups=tuple(groups), stats=stats))
+    return CloneReport(groups=tuple(groups), stats=stats)
+
+
+def _all_rung_groups(
+    state: _FpState,
+    snapshot: GraphSnapshot,
+    touched: frozenset[str] | None,
+    cfg: DupConfig,
+) -> list[tuple[ClonePair, ...]]:
+    """Every clone group across the R1-R5 ladder, in rung order (R1/R2/R3,
+    R1.5, R4, R5)."""
+    seen_pairs: set[frozenset[str]] = set()
+    groups = _hash_rung_groups(state, snapshot, touched, seen_pairs)
+    groups += _region_groups(state, snapshot, touched, seen_pairs, cfg)
+    groups += _r4_groups(state, snapshot, touched, seen_pairs)
+    groups += _r5_groups(state, snapshot, touched, seen_pairs)
+    return groups
 
 
 _builtin_generators_registered = False
@@ -1101,22 +1160,50 @@ def probe_equivalence(
 ) -> Result[ProbeVerdict, DupError]:
     """R6: observational-equivalence probing for effect-free candidate pairs.
 
-    Refuses (`Err(NotPure)`) unless both `a` and `b` pass the conservative
-    token-based purity heuristic AND both load as importable Python
-    callables (see the module docstring's R6 deviation notes). Draws
-    inputs from `frob.fuzz`'s Arbitrary generators keyed on `a`'s
-    parameter type hints (falls back to `Err(NoGenerator)` when a
-    parameter's type has no resolvable generator, when a parameter is
-    var-args or keyword-only -- see `_probe_strategies` -- or when `b`
-    cannot be called with `a`'s positional arity -- see
-    `_probe_arity_compatible`) and compares outputs for up to `budget_s`
-    seconds. These refusals exist because both sides are called
-    positionally (`_call_safe`), and a pair the prober cannot legitimately
-    call that way must never fall through to a verdict: `_call_safe`
-    collapses matching exceptions to a comparable sentinel, so an
-    uncallable pair that both raise `TypeError` would otherwise score as
-    a vacuous `equivalent=True`.
+    Refuses (`Err(NotPure)`/`Err(NoGenerator)`) unless both `a` and `b` pass
+    the purity heuristic, load as importable callables, and `a`'s
+    parameters all have a resolvable Arbitrary generator that `b` also
+    accepts positionally -- see `_probe_setup`. Compares outputs for up to
+    `budget_s` seconds; both sides are always called positionally
+    (`_call_safe`), since a pair the prober cannot legitimately call that
+    way must never fall through to a vacuous `equivalent=True` verdict.
     """
+    setup = _probe_setup(a, b, snapshot)
+    if setup.is_err:
+        return Err(setup.danger_err)
+    fn_a, fn_b, strategies = setup.danger_ok
+
+    verdict = _run_probe_cases(fn_a, fn_b, strategies, budget_s)
+    return Ok(_probe_verdict(a, b, verdict))
+
+
+def _probe_verdict(
+    a: str, b: str, verdict: tuple[bool, int, dict[str, str] | None]
+) -> ProbeVerdict:
+    """Log and package a `_run_probe_cases` result as the final `ProbeVerdict`."""
+    equivalent, cases_run, counterexample = verdict
+    _log.info(
+        "probe_equivalence: %s vs %s -- equivalent=%s cases_run=%d",
+        a,
+        b,
+        equivalent,
+        cases_run,
+    )
+    return ProbeVerdict(
+        left=a,
+        right=b,
+        equivalent=equivalent,
+        cases_run=cases_run,
+        counterexample=counterexample,
+    )
+
+
+def _probe_setup(
+    a: str, b: str, snapshot: GraphSnapshot
+) -> Result[tuple[Any, Any, dict[str, Any]], DupError]:
+    """Resolve `a`/`b` to callables and `a`'s Arbitrary strategies, verifying
+    `b` accepts the same positional arity -- everything `probe_equivalence`
+    needs before it can actually run cases."""
     callables = _probe_callables(a, b, snapshot)
     if callables.is_err:
         return Err(callables.danger_err)
@@ -1135,26 +1222,7 @@ def probe_equivalence(
             len(strategies),
         )
         return Err(DupError.NoGenerator)
-
-    equivalent, cases_run, counterexample = _run_probe_cases(
-        fn_a, fn_b, strategies, budget_s
-    )
-    _log.info(
-        "probe_equivalence: %s vs %s -- equivalent=%s cases_run=%d",
-        a,
-        b,
-        equivalent,
-        cases_run,
-    )
-    return Ok(
-        ProbeVerdict(
-            left=a,
-            right=b,
-            equivalent=equivalent,
-            cases_run=cases_run,
-            counterexample=counterexample,
-        )
-    )
+    return Ok((fn_a, fn_b, strategies))
 
 
 def _probe_callables(
@@ -1190,22 +1258,9 @@ def _probe_strategies(fn_a: Any) -> Result[dict[str, Any], DupError]:
     """Arbitrary generators for `fn_a`'s parameters, keyed by name.
 
     `Err(NoGenerator)` for var-args, keyword-only params, an unannotated
-    parameter, or a type with no resolvable generator; `Err(NotPure)` if
-    the signature is uninspectable.
-
-    KEYWORD_ONLY is rejected for the same reason VAR_POSITIONAL/
-    VAR_KEYWORD are: `_run_probe_cases` calls both `fn_a` and `fn_b`
-    positionally (`_call_safe`'s docstring explains why -- renamed clones
-    have differently-named parameters, so keyword binding by `fn_a`'s
-    names would call `fn_b` with the wrong names). A keyword-only
-    parameter can never legitimately be supplied positionally, so probing
-    it would always raise `TypeError` on the very first case -- and
-    because `_call_safe` maps matching exceptions to a comparable
-    sentinel, two functions that are NOT equivalent but both reject
-    positional calling would score `equivalent=True` on every case (the
-    vacuous-pass bug this guard exists to close, T-0041 reviewer repro).
-    A pair the prober cannot legitimately call this way must be an
-    explicit refusal, never a verdict.
+    parameter, or a type with no resolvable generator (see
+    `_probe_param_strategy` for why KEYWORD_ONLY is rejected -- T-0041's
+    vacuous-pass bug); `Err(NotPure)` if the signature is uninspectable.
     """
     import inspect
 
@@ -1220,20 +1275,44 @@ def _probe_strategies(fn_a: Any) -> Result[dict[str, Any], DupError]:
 
     strategies: dict[str, Any] = {}
     for name, param in sig.parameters.items():
-        if param.kind in (
-            inspect.Parameter.VAR_POSITIONAL,
-            inspect.Parameter.VAR_KEYWORD,
-            inspect.Parameter.KEYWORD_ONLY,
-        ):
-            return Err(DupError.NoGenerator)
-        annotation = param.annotation
-        if annotation is inspect.Parameter.empty:
-            return Err(DupError.NoGenerator)
-        gen_result = resolve(annotation)
+        gen_result = _probe_param_strategy(param, resolve)
         if gen_result.is_err:
-            return Err(DupError.NoGenerator)
+            return Err(gen_result.danger_err)
         strategies[name] = gen_result.danger_ok
     return Ok(strategies)
+
+
+def _probe_param_strategy(param: Any, resolve: Any) -> Result[Any, DupError]:
+    """One parameter's Arbitrary generator, or `Err(NoGenerator)` for
+    var-args/keyword-only/unannotated/unresolvable -- see `_probe_strategies`.
+
+    KEYWORD_ONLY is rejected for the same reason VAR_POSITIONAL/VAR_KEYWORD
+    are: `_run_probe_cases` calls both `fn_a` and `fn_b` positionally
+    (renamed clones have differently-named parameters, so keyword binding
+    by `fn_a`'s names would call `fn_b` with the wrong names). A
+    keyword-only parameter can never legitimately be supplied positionally,
+    so probing it would always raise `TypeError` on the first case -- and
+    because `_call_safe` maps matching exceptions to a comparable sentinel,
+    two functions that are NOT equivalent but both reject positional
+    calling would score `equivalent=True` on every case (the vacuous-pass
+    bug this guard exists to close, T-0041 reviewer repro). A pair the
+    prober cannot legitimately call this way must be an explicit refusal,
+    never a verdict."""
+    import inspect
+
+    if param.kind in (
+        inspect.Parameter.VAR_POSITIONAL,
+        inspect.Parameter.VAR_KEYWORD,
+        inspect.Parameter.KEYWORD_ONLY,
+    ):
+        return Err(DupError.NoGenerator)
+    annotation = param.annotation
+    if annotation is inspect.Parameter.empty:
+        return Err(DupError.NoGenerator)
+    gen_result = resolve(annotation)
+    if gen_result.is_err:
+        return Err(DupError.NoGenerator)
+    return Ok(gen_result.danger_ok)
 
 
 def _probe_arity_compatible(fn_b: Any, n_positional: int) -> bool:
@@ -1303,19 +1382,29 @@ def _run_probe_cases(
         while (
             equivalent and cases_run < max_cases and time.monotonic() - start < budget_s
         ):
-            kwargs = {name: strategy.example() for name, strategy in strategies.items()}
-            args = tuple(kwargs.values())
             cases_run += 1
-            result_a = _call_safe(fn_a, args)
-            result_b = _call_safe(fn_b, args)
-            if result_a != result_b:
+            counterexample = _probe_one_case(fn_a, fn_b, strategies)
+            if counterexample is not None:
                 equivalent = False
-                counterexample = {
-                    **{k: repr(v) for k, v in kwargs.items()},
-                    "left_result": repr(result_a),
-                    "right_result": repr(result_b),
-                }
     return equivalent, cases_run, counterexample
+
+
+def _probe_one_case(
+    fn_a: Any, fn_b: Any, strategies: dict[str, Any]
+) -> dict[str, str] | None:
+    """Draw one case from `strategies` and call both callables with it;
+    `None` if they agree, else the counterexample dict."""
+    kwargs = {name: strategy.example() for name, strategy in strategies.items()}
+    args = tuple(kwargs.values())
+    result_a = _call_safe(fn_a, args)
+    result_b = _call_safe(fn_b, args)
+    if result_a == result_b:
+        return None
+    return {
+        **{k: repr(v) for k, v in kwargs.items()},
+        "left_result": repr(result_a),
+        "right_result": repr(result_b),
+    }
 
 
 # R7 (opt-in, bounded-SMT): the AST node types `_smt_translate` accepts.
@@ -1334,6 +1423,26 @@ def _smt_translate(node: Any, z3: Any, env: dict[str, Any]) -> Any:
     names/`if`-expressions/`not`/unary-minus -- the caller converts that
     into `Err(SmtUnsupported)`, never silently drops the term.
     """
+    import ast as _ast
+
+    if isinstance(node, _ast.IfExp):
+        return z3.If(
+            _smt_translate(node.test, z3, env),
+            _smt_translate(node.body, z3, env),
+            _smt_translate(node.orelse, z3, env),
+        )
+    handled = _smt_translate_simple(node, z3, env)
+    if handled is not _SMT_UNHANDLED:
+        return handled
+    raise ValueError(f"unsupported node {type(node).__name__}")
+
+
+_SMT_UNHANDLED = object()
+
+
+def _smt_translate_simple(node: Any, z3: Any, env: dict[str, Any]) -> Any:
+    """The non-`IfExp` cases of `_smt_translate`: literals, names, unary/binary/bool
+    ops, and comparisons. Returns the `_SMT_UNHANDLED` sentinel for anything else."""
     import ast as _ast
 
     if isinstance(node, _ast.Constant) and isinstance(node.value, bool):
@@ -1356,13 +1465,7 @@ def _smt_translate(node: Any, z3: Any, env: dict[str, Any]) -> Any:
         and len(node.comparators) == 1
     ):
         return _smt_compare(node, z3, env)
-    if isinstance(node, _ast.IfExp):
-        return z3.If(
-            _smt_translate(node.test, z3, env),
-            _smt_translate(node.body, z3, env),
-            _smt_translate(node.orelse, z3, env),
-        )
-    raise ValueError(f"unsupported node {type(node).__name__}")
+    return _SMT_UNHANDLED
 
 
 def _smt_unaryop(node: Any, z3: Any, env: dict[str, Any]) -> Any:
@@ -1434,9 +1537,27 @@ def _smt_function_expr(source: str, z3: Any) -> tuple[Any, list[Any]] | None:
     if fn.body[0].value is None:
         return None
 
+    bound = _smt_bind_params(fn.args.args, z3)
+    if bound is None:
+        return None
+    env, params = bound
+
+    try:
+        expr = _smt_translate(fn.body[0].value, z3, env)
+    except ValueError as exc:
+        _log.debug("probe_smt_equivalence: unsupported subset (%s)", exc)
+        return None
+    return expr, params
+
+
+def _smt_bind_params(
+    args: list[Any], z3: Any
+) -> tuple[dict[str, Any], list[Any]] | None:
+    """Z3 int/bool consts for each `int`/`bool`-annotated argument, `None` if
+    any argument's annotation is outside that bounded subset."""
     env: dict[str, Any] = {}
     params: list[Any] = []
-    for arg in fn.args.args:
+    for arg in args:
         ann = getattr(arg.annotation, "id", None)
         if ann == "int":
             const = z3.Int(arg.arg)
@@ -1446,13 +1567,7 @@ def _smt_function_expr(source: str, z3: Any) -> tuple[Any, list[Any]] | None:
             return None
         env[arg.arg] = const
         params.append(const)
-
-    try:
-        expr = _smt_translate(fn.body[0].value, z3, env)
-    except ValueError as exc:
-        _log.debug("probe_smt_equivalence: unsupported subset (%s)", exc)
-        return None
-    return expr, params
+    return env, params
 
 
 # frob:doc docs/modules/dup.md#rung-r7
@@ -1505,14 +1620,10 @@ def _smt_parse_pair(
     if fn_a is None or fn_b is None:
         return Err(DupError.SmtUnsupported)
 
-    import inspect
-    import textwrap
-
-    try:
-        src_a = textwrap.dedent(inspect.getsource(fn_a))
-        src_b = textwrap.dedent(inspect.getsource(fn_b))
-    except (OSError, TypeError):
+    sources = _smt_dedented_sources(fn_a, fn_b)
+    if sources is None:
         return Err(DupError.SmtUnsupported)
+    src_a, src_b = sources
 
     parsed_a = _smt_function_expr(src_a, z3)
     parsed_b = _smt_function_expr(src_b, z3)
@@ -1521,6 +1632,21 @@ def _smt_parse_pair(
     if len(parsed_a[1]) != len(parsed_b[1]):
         return Err(DupError.SmtUnsupported)
     return Ok((parsed_a, parsed_b))
+
+
+def _smt_dedented_sources(fn_a: Any, fn_b: Any) -> tuple[str, str] | None:
+    """Dedented `inspect.getsource` for both callables, or `None` if either
+    is unreadable (builtin, C extension, source file gone, ...)."""
+    import inspect
+    import textwrap
+
+    try:
+        return (
+            textwrap.dedent(inspect.getsource(fn_a)),
+            textwrap.dedent(inspect.getsource(fn_b)),
+        )
+    except (OSError, TypeError):
+        return None
 
 
 def _smt_solve(
@@ -1541,8 +1667,13 @@ def _smt_solve(
     subst = list(zip(params_b, params_a, strict=True))
     expr_b_over_a = z3.substitute(expr_b, *subst) if subst else expr_b
     solver.add(expr_a != expr_b_over_a)
-    verdict = solver.check()
+    return _smt_verdict_for_check(a, b, solver, solver.check(), params_a, z3)
 
+
+def _smt_verdict_for_check(
+    a: str, b: str, solver: Any, verdict: Any, params_a: list[Any], z3: Any
+) -> Result[ProbeVerdict, DupError]:
+    """Turn a `solver.check()` result into the `probe_smt_equivalence` verdict."""
     if verdict == z3.unsat:
         _log.info("probe_smt_equivalence: %s vs %s -- proved equivalent", a, b)
         return Ok(ProbeVerdict(left=a, right=b, equivalent=True, cases_run=0))

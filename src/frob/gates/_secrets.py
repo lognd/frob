@@ -425,38 +425,43 @@ def _scan_line(lines: list[str], index: int) -> list[tuple[_SecretPattern, str]]
     return hits
 
 
+def _secret_violation(
+    pattern: _SecretPattern, token: str, rel_path: str, index: int
+) -> Violation:
+    """The SEC001 `Violation` for one real-looking-token hit at 1-based `index + 1`."""
+    redacted = redact(token, pattern.display_prefix)
+    _log.warning(
+        "%s: %s (%s) real-looking token at %s:%d",
+        pattern.rule,
+        pattern.provider,
+        pattern.label,
+        rel_path,
+        index + 1,
+    )
+    return Violation(
+        rule=pattern.rule,
+        severity=pattern.severity,
+        file=rel_path,
+        line=index + 1,
+        message=(
+            f"{pattern.rule}: {pattern.provider} ({pattern.label}) "
+            f"real-looking credential at {rel_path}:{index + 1} -- "
+            f"{redacted}; if this "
+            f"is a deliberate test fixture, mark it fake (placeholder "
+            f"XXXX/**** tail, the word fake/changeme/example/placeholder "
+            f"in the token, or a `frob:secret-fake` comment on this line "
+            f"or the line above), otherwise rotate and remove it"
+        ),
+    )
+
+
 def _scan_text(rel_path: str, text: str) -> list[Violation]:
     """SEC001 violations for every real-looking token found in `text`."""
     lines = text.splitlines()
     violations: list[Violation] = []
     for index in range(len(lines)):
         for pattern, token in _scan_line(lines, index):
-            redacted = redact(token, pattern.display_prefix)
-            _log.warning(
-                "%s: %s (%s) real-looking token at %s:%d",
-                pattern.rule,
-                pattern.provider,
-                pattern.label,
-                rel_path,
-                index + 1,
-            )
-            violations.append(
-                Violation(
-                    rule=pattern.rule,
-                    severity=pattern.severity,
-                    file=rel_path,
-                    line=index + 1,
-                    message=(
-                        f"{pattern.rule}: {pattern.provider} ({pattern.label}) "
-                        f"real-looking credential at {rel_path}:{index + 1} -- "
-                        f"{redacted}; if this "
-                        f"is a deliberate test fixture, mark it fake (placeholder "
-                        f"XXXX/**** tail, the word fake/changeme/example/placeholder "
-                        f"in the token, or a `frob:secret-fake` comment on this line "
-                        f"or the line above), otherwise rotate and remove it"
-                    ),
-                )
-            )
+            violations.append(_secret_violation(pattern, token, rel_path, index))
     return violations
 
 

@@ -236,22 +236,14 @@ def _perf003(tokens: tuple[str, ...], depths: tuple[int, ...]) -> bool:
     own body then contains an `==` comparison that actually involves the
     OUTER loop's bound variable -- the O(n*m) nested-equality-join shape.
 
-    Relaxing the "inner loop is the very next token" adjacency check (round
-    1's fix) to "anywhere later, allowing intervening statements" reopens
-    the false positive it was there to prevent: two SIBLING statement-level
-    loops (not nested) are lexically indistinguishable from "outer loop,
-    one setup statement, inner loop" once adjacency is relaxed -- both are
-    just "for ... : <stuff> for ... : <stuff>" with no block-end marker in
-    this position-free token stream (`docs/modules/perf.md`'s documented
-    cut: no line numbers, no INDENT/DEDENT). The added guard is the outer
-    loop's own bound variable (the identifier right after `for`) must be
-    one operand of the `==` found in the candidate inner loop's body --
-    real equality joins compare the outer element against something from
-    the inner iteration (`if x == y`); an unrelated trailing `==` after
-    two sibling loops (`assert len(out) == total`) almost never involves
-    the outer loop's own loop variable by name. `while` loops have no
-    bound variable to check and fall back to the round-1 behavior (`==`
-    anywhere in the inner body) -- an accepted, lower-volume gap."""
+    Relaxing the adjacency check to "anywhere later, allowing intervening
+    statements" reopens the false-positive risk it was there to prevent
+    (two sibling, non-nested loops are lexically indistinguishable from
+    "outer loop, setup statement, inner loop" in this position-free token
+    stream); see `_perf003_inner_equality_hit` for the added guard that
+    closes it. `while` loops have no bound variable to check and fall back
+    to "`==` anywhere in the inner body" -- an accepted, lower-volume gap.
+    """
     n = len(tokens)
     for outer in range(n):
         if tokens[outer] not in _LOOP_TOKENS or depths[outer] != 0:
@@ -259,28 +251,53 @@ def _perf003(tokens: tuple[str, ...], depths: tuple[int, ...]) -> bool:
         colon = _header_colon_index(tokens, depths, outer)
         if colon is None or colon + 1 >= n:
             continue
-        outer_var = (
-            tokens[outer + 1]
-            if tokens[outer] == "for"
-            and outer + 1 < n
-            and tokens[outer + 1].isidentifier()
-            else None
-        )
-        inner = _next_statement_loop(tokens, depths, colon + 1)
-        if inner is None:
+        outer_var = _perf003_outer_var(tokens, outer, n)
+        if _perf003_inner_equality_hit(tokens, depths, colon, outer_var):
+            return True
+    return False
+
+
+def _perf003_outer_var(tokens: tuple[str, ...], outer: int, n: int) -> str | None:
+    """The `for` loop's own bound variable name (the identifier right after
+    `for`), or `None` for a `while` loop / malformed header."""
+    if tokens[outer] == "for" and outer + 1 < n and tokens[outer + 1].isidentifier():
+        return tokens[outer + 1]
+    return None
+
+
+def _perf003_inner_equality_hit(
+    tokens: tuple[str, ...],
+    depths: tuple[int, ...],
+    outer_colon: int,
+    outer_var: str | None,
+) -> bool:
+    """True if a nested statement-level loop after `outer_colon` has a body
+    `==` that involves `outer_var` (or, when `outer_var` is None, any `==`
+    at all -- the `while`-loop fallback described on `_perf003`).
+
+    The outer loop's own bound variable must be one operand of the `==`
+    found in the candidate inner loop's body -- real equality joins compare
+    the outer element against something from the inner iteration
+    (`if x == y`); an unrelated trailing `==` after two sibling loops
+    (`assert len(out) == total`) almost never involves the outer loop's own
+    loop variable by name. This is `_perf003`'s guard against the
+    false-positive class its relaxed adjacency check reopened."""
+    n = len(tokens)
+    inner = _next_statement_loop(tokens, depths, outer_colon + 1)
+    if inner is None:
+        return False
+    inner_colon = _header_colon_index(tokens, depths, inner)
+    if inner_colon is None:
+        return False
+    for j in range(inner_colon + 1, n):
+        if tokens[j] != "==":
             continue
-        inner_colon = _header_colon_index(tokens, depths, inner)
-        if inner_colon is None:
-            continue
-        for j in range(inner_colon + 1, n):
-            if tokens[j] != "==":
-                continue
-            if outer_var is None:
-                return True
-            if _operand_names(tokens, j - 1, -1) & {outer_var} or _operand_names(
-                tokens, j + 1, 1
-            ) & {outer_var}:
-                return True
+        if outer_var is None:
+            return True
+        if _operand_names(tokens, j - 1, -1) & {outer_var} or _operand_names(
+            tokens, j + 1, 1
+        ) & {outer_var}:
+            return True
     return False
 
 
@@ -307,39 +324,35 @@ def _operand_names(tokens: tuple[str, ...], start: int, step: int) -> frozenset[
     opener = "[" if step == 1 else None
     tok = tokens[start]
     if tok == closer:
-        # walk backward to the matching '[' and collect identifiers inside
-        depth = 1
-        i = start - 1
-        names: set[str] = set()
-        while i >= 0 and depth > 0:
-            if tokens[i] == "]":
-                depth += 1
-            elif tokens[i] == "[":
-                depth -= 1
-                if depth == 0:
-                    break
-            elif tokens[i].isidentifier():
-                names.add(tokens[i])
-            i -= 1
-        return frozenset(names)
+        return _bracket_identifiers(tokens, start - 1, -1)
     if tok == opener:
-        depth = 1
-        i = start + 1
-        names = set()
-        while i < n and depth > 0:
-            if tokens[i] == "[":
-                depth += 1
-            elif tokens[i] == "]":
-                depth -= 1
-                if depth == 0:
-                    break
-            elif tokens[i].isidentifier():
-                names.add(tokens[i])
-            i += 1
-        return frozenset(names)
+        return _bracket_identifiers(tokens, start + 1, 1)
     if tok.isidentifier():
         return frozenset({tok})
     return frozenset()
+
+
+def _bracket_identifiers(
+    tokens: tuple[str, ...], start: int, step: int
+) -> frozenset[str]:
+    """Identifiers inside one bracket pair, walking from `start` in `step`
+    direction until the matching bracket closes (depth back to 0)."""
+    n = len(tokens)
+    open_tok, close_tok = ("[", "]") if step == 1 else ("]", "[")
+    depth = 1
+    i = start
+    names: set[str] = set()
+    while 0 <= i < n and depth > 0:
+        if tokens[i] == open_tok:
+            depth += 1
+        elif tokens[i] == close_tok:
+            depth -= 1
+            if depth == 0:
+                break
+        elif tokens[i].isidentifier():
+            names.add(tokens[i])
+        i += step
+    return frozenset(names)
 
 
 # frob:ticket T-0021

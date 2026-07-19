@@ -142,25 +142,12 @@ def _parse_classes(
     """`(module_line%, per-file line-hit maps, join_ok, roots_tried)`.
 
     Cobertura `<class filename="...">` attributes are relative to whatever
-    `--cov=` target produced the report (e.g. `app/ack_runner.py` for this
-    repo's `pytest --cov=src/frob`) -- NOT necessarily repo-relative, which
-    is what every other path in `frob.graph` is (`src/frob/app/ack_runner.py`),
-    and thus what every `frob:waive`/`frob:doc`/etc directive binds against
-    and what `_symbol_branch` below joins on via `record.id.path`.
-
-    This gate ships in and runs against many sibling repos with different
-    package roots, so a single hardcoded prefix silently reproduces T-0148's
-    original zero-match bug in every repo but this one. Instead: read the
-    `<sources><source>` root(s) Cobertura itself declares, try joining each
-    class filename against each one (PRIMARY), score each root by how many
-    classes it actually resolves to a known repo path, and use the
-    highest-scoring root. If no `<source>` entry scores (missing, or none
-    resolve), fall back to the bare filename as-is (FALLBACK -- covers
-    repos whose coverage config already emits repo-relative paths). If
-    BOTH strategies resolve zero classes while there were classes to
-    resolve and known paths to resolve against, that is reported via the
-    `join_ok=False` return value rather than silently producing an empty
-    map -- `frob.gates`' TEST008 turns that into a loud violation.
+    `--cov=` target produced the report, NOT necessarily repo-relative
+    (what every `frob:waive`/`frob:doc`/etc directive binds against, and
+    what `_symbol_branch` below joins on). This gate ships in many sibling
+    repos with different package roots, so a single hardcoded prefix would
+    silently reproduce T-0148's zero-match bug everywhere but this one --
+    see `_select_join_root` for the root-scoring strategy that replaces it.
     """
     classes = tuple(
         (class_el.get("filename", ""), class_el)
@@ -176,6 +163,25 @@ def _parse_classes(
     # FALLBACK: bare filename, i.e. coverage.xml already repo-relative.
     candidate_roots.append("")
 
+    winning_root, join_ok = _select_join_root(classes, candidate_roots, known_paths)
+    module_line, hits_by_class_line = _build_class_maps(classes, winning_root)
+    return module_line, hits_by_class_line, join_ok, tuple(candidate_roots)
+
+
+def _select_join_root(
+    classes: tuple[tuple[str, ET.Element], ...],
+    candidate_roots: list[str],
+    known_paths: frozenset[str],
+) -> tuple[str, bool]:
+    """The best-scoring candidate root and whether any root actually joined.
+
+    Scores each candidate root (declared `<source>`s, PRIMARY, plus a bare-
+    filename FALLBACK) by how many classes it resolves to a known repo
+    path, and picks the highest scorer. `join_ok=False` when every root
+    scores zero despite having classes/known paths to resolve against --
+    `frob.gates`' TEST008 turns that into a loud violation rather than a
+    silently empty map.
+    """
     join_ok = True
     winning_root = candidate_roots[-1]  # bare filename until proven otherwise
     if classes and known_paths:
@@ -195,7 +201,14 @@ def _parse_classes(
                 len(candidate_roots),
                 candidate_roots,
             )
+    return winning_root, join_ok
 
+
+def _build_class_maps(
+    classes: tuple[tuple[str, ET.Element], ...], winning_root: str
+) -> tuple[dict[str, float], dict[str, dict[int, tuple[int, int]]]]:
+    """`(module_line%, per-file line-hit maps)` keyed by `winning_root`-joined
+    filename."""
     module_line: dict[str, float] = {}
     hits_by_class_line: dict[str, dict[int, tuple[int, int]]] = {}
     for raw_filename, class_el in classes:
@@ -207,7 +220,7 @@ def _parse_classes(
             except ValueError:
                 pass
         hits_by_class_line[filename] = _parse_class_lines(class_el)
-    return module_line, hits_by_class_line, join_ok, tuple(candidate_roots)
+    return module_line, hits_by_class_line
 
 
 def _symbol_branch(
@@ -231,12 +244,10 @@ def _symbol_branch(
     return symbol_branch
 
 
-# frob:doc docs/modules/gates.md#public-api
-def load_coverage(
-    root: Path, snapshot: GraphSnapshot | None = None
-) -> Result[CoverageData, CoverageError]:
-    """Parse `coverage.xml` (Cobertura), mapping line hits onto symbol spans."""
-    xml_path = root / _COVERAGE_XML
+def _load_coverage_xml(
+    xml_path: Path,
+) -> Result[tuple[str, ET.ElementTree[ET.Element]], CoverageError]:
+    """`(source_sha, parsed_tree)` for `xml_path`, or the load/parse error."""
     if not xml_path.exists():
         _log.warning("load_coverage: no coverage.xml at %s", xml_path)
         return Err(CoverageError.Missing)
@@ -248,6 +259,19 @@ def load_coverage(
     except ET.ParseError as exc:
         _log.error("load_coverage: %s malformed: %s", xml_path, exc)
         return Err(CoverageError.Malformed)
+    return Ok((source_sha, tree))
+
+
+# frob:doc docs/modules/gates.md#public-api
+def load_coverage(
+    root: Path, snapshot: GraphSnapshot | None = None
+) -> Result[CoverageData, CoverageError]:
+    """Parse `coverage.xml` (Cobertura), mapping line hits onto symbol spans."""
+    xml_path = root / _COVERAGE_XML
+    loaded = _load_coverage_xml(xml_path)
+    if loaded.is_err:
+        return Err(loaded.danger_err)
+    source_sha, tree = loaded.danger_ok
 
     known_paths = _known_repo_paths(root, snapshot)
     module_line, hits_by_class_line, join_ok, tried_roots = _parse_classes(

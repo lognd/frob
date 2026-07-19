@@ -148,6 +148,40 @@ def _count_mutations(tree: ast.AST) -> int:
     return counter._seen
 
 
+def _first_lineno(tree: ast.AST) -> int:
+    """The lineno of the first node in `tree` that has one, else `0`."""
+    for node in ast.walk(tree):
+        node_line = getattr(node, "lineno", None)
+        if isinstance(node_line, int):
+            return node_line
+    return 0
+
+
+def _mutation_at(
+    source: str, i: int, file: str
+) -> Result[_Mutation | None, MutateError]:
+    """Apply single-point mutation `i` to a fresh parse of `source`;
+    `Ok(None)` if mutation point `i` doesn't apply."""
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return Err(MutateError.ParseFailed)
+    mutator = _Mutator(i)
+    mutator.visit(tree)
+    applied = mutator.applied
+    if applied is None:
+        return Ok(None)
+    ast.fix_missing_locations(tree)
+    return Ok(
+        _Mutation(
+            source=ast.unparse(tree),
+            mutant=Mutant(
+                file=file, line=_first_lineno(tree), description=str(applied)
+            ),
+        )
+    )
+
+
 # frob:doc docs/modules/mutate.md#public-api
 # frob:waive TEST005 reason="generate_mutants 88.0% branch cover, debt T-0160"
 def generate_mutants(
@@ -161,28 +195,12 @@ def generate_mutants(
     total = _count_mutations(base)
     mutations: list[_Mutation] = []
     for i in range(total):
-        try:
-            tree = ast.parse(source)
-        except SyntaxError:
-            return Err(MutateError.ParseFailed)
-        mutator = _Mutator(i)
-        mutator.visit(tree)
-        applied = mutator.applied
-        if applied is None:
-            continue
-        ast.fix_missing_locations(tree)
-        line = 0
-        for node in ast.walk(tree):
-            node_line = getattr(node, "lineno", None)
-            if isinstance(node_line, int):
-                line = node_line
-                break
-        mutations.append(
-            _Mutation(
-                source=ast.unparse(tree),
-                mutant=Mutant(file=file, line=line, description=str(applied)),
-            )
-        )
+        result = _mutation_at(source, i, file)
+        if result.is_err:
+            return Err(result.danger_err)
+        mutation = result.danger_ok
+        if mutation is not None:
+            mutations.append(mutation)
     return Ok(tuple(mutations))
 
 
@@ -197,8 +215,6 @@ def run_mutations(
     The file is restored after every mutant (and on any error), so a crashed
     run never leaves a mutated source behind.
     """
-    import subprocess
-
     target = root / file if not file.is_absolute() else file
     if not target.exists():
         return Err(MutateError.NoSource)
@@ -207,26 +223,8 @@ def run_mutations(
     if generated.is_err:
         return Err(generated.danger_err)
     mutants = generated.danger_ok
-    killed = 0
-    survivors: list[Mutant] = []
     try:
-        for mutation in mutants:
-            target.write_text(mutation.source, encoding="utf-8")
-            try:
-                proc = subprocess.run(
-                    list(test_argv),
-                    cwd=root,
-                    capture_output=True,
-                    timeout=timeout_s,
-                )
-            except subprocess.TimeoutExpired:
-                killed += 1  # a mutant that hangs the tests is caught
-                continue
-            if proc.returncode != 0:
-                killed += 1
-            else:
-                _log.info("mutate: SURVIVOR %s", mutation.mutant.description)
-                survivors.append(mutation.mutant)
+        killed, survivors = _run_mutants(target, mutants, test_argv, root, timeout_s)
     finally:
         target.write_text(original, encoding="utf-8")
     _log.info(
@@ -238,6 +236,41 @@ def run_mutations(
     return Ok(
         MutationResult(total=len(mutants), killed=killed, survivors=tuple(survivors))
     )
+
+
+def _run_mutants(
+    target: Path,
+    mutants: tuple[_Mutation, ...],
+    test_argv: tuple[str, ...],
+    root: Path,
+    timeout_s: float,
+) -> tuple[int, list[Mutant]]:
+    """Write and test each mutant in turn: `(killed_count, surviving_mutants)`.
+
+    Caller is responsible for restoring `target`'s original content afterward.
+    """
+    import subprocess
+
+    killed = 0
+    survivors: list[Mutant] = []
+    for mutation in mutants:
+        target.write_text(mutation.source, encoding="utf-8")
+        try:
+            proc = subprocess.run(
+                list(test_argv),
+                cwd=root,
+                capture_output=True,
+                timeout=timeout_s,
+            )
+        except subprocess.TimeoutExpired:
+            killed += 1  # a mutant that hangs the tests is caught
+            continue
+        if proc.returncode != 0:
+            killed += 1
+        else:
+            _log.info("mutate: SURVIVOR %s", mutation.mutant.description)
+            survivors.append(mutation.mutant)
+    return killed, survivors
 
 
 __all__ = [
