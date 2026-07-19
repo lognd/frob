@@ -4112,6 +4112,32 @@ T-0254: the red-team Kerberos playbook as demanded, provable obligations extendi
 <!-- ticket:T-0264 -->
 ```yaml
 id: T-0264
+title: 'frob deploy generate windows: PowerShell/DSC install/status/uninstall from
+  the manifest, drift-locked'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-18'
+blocked_by:
+- T-0257
+- T-0261
+parent: T-0254
+scope:
+- src/frob/deploy/**
+- src/frob/app/**
+- docs/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0254 Windows generation. The T-0257 generator gains a windows target emitting idempotent PowerShell (check-then-apply, same contract as the bash target): install creates the service account/gMSA, registers the Windows Service with its hardening (service SID type, required-privileges, deny-logon rights), applies the NTFS ACLs exactly from the manifest, opens the declared firewall ports / creates named pipes, and configures the SPN + delegation setting from std.krb (setspn / the delegation flags) when a krb model is present. status queries SCM state + health. uninstall removes exactly the manifest set (service, account, ACL grants, firewall rules, SPN registration) leaving no artifacts. Same DEPLOY001 digest-header drift-lock as bash. Scripts must be PSScriptAnalyzer-clean and depend only on in-box modules (no PSGallery). The conformance gate (T-0258) and VM audit (T-0259) must handle the PowerShell mutation surface too -- coordinate the manifest abstraction so those tickets' parsers are platform-tagged, not bash-only; if T-0258/T-0259 landed bash-only, file follow-ups for their windows extension rather than expanding scope here.
+
+<!-- ticket:T-0265 -->
+```yaml
+id: T-0265
 title: self-referential frob:tests directive on a test function passes --ticket check
   but fails full DRIFT002
 state: queued
@@ -4152,32 +4178,6 @@ acceptance: []
 threat: null
 ```
 T-0191's Done report: dup-sota-survey.md section 0 says DUP001/DUP002 are 'pure rule functions but NOT wired into frob.gates.__init__' -- stale since a3eef8d8 (2026-07-17), one day before the survey landed. dup_gate already calls the real smart find_clones pipeline and is registered as the opt-in 'clones' gate. Correct section 0's claim to describe the actual state (wired, opt-in via [dup].enforce, connection-pooled as of T-0191) so a future reader does not re-investigate an already-closed gap. (Note: T-draft-2a3adb6d, the T-0253 release-stamp follow-up, was resolved during T-0253's landing -- coordinator stamped 0.3.0 in that motion -- so it is dropped here.)
-
-<!-- ticket:T-draft-beb2b5da -->
-```yaml
-id: T-draft-beb2b5da
-title: 'frob deploy generate windows: PowerShell/DSC install/status/uninstall from
-  the manifest, drift-locked'
-state: queued
-kind: feature
-origin: human
-created: '2026-07-18'
-blocked_by:
-- T-0257
-- T-0261
-parent: T-0254
-scope:
-- src/frob/deploy/**
-- src/frob/app/**
-- docs/**
-- tests/**
-- tickets.md
-evidence: []
-attachments: []
-acceptance: []
-threat: null
-```
-T-0254 Windows generation. The T-0257 generator gains a windows target emitting idempotent PowerShell (check-then-apply, same contract as the bash target): install creates the service account/gMSA, registers the Windows Service with its hardening (service SID type, required-privileges, deny-logon rights), applies the NTFS ACLs exactly from the manifest, opens the declared firewall ports / creates named pipes, and configures the SPN + delegation setting from std.krb (setspn / the delegation flags) when a krb model is present. status queries SCM state + health. uninstall removes exactly the manifest set (service, account, ACL grants, firewall rules, SPN registration) leaving no artifacts. Same DEPLOY001 digest-header drift-lock as bash. Scripts must be PSScriptAnalyzer-clean and depend only on in-box modules (no PSGallery). The conformance gate (T-0258) and VM audit (T-0259) must handle the PowerShell mutation surface too -- coordinate the manifest abstraction so those tickets' parsers are platform-tagged, not bash-only; if T-0258/T-0259 landed bash-only, file follow-ups for their windows extension rather than expanding scope here.
 
 <!-- ticket:T-draft-f9131f3e -->
 ```yaml
