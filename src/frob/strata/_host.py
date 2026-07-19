@@ -74,11 +74,20 @@ class HostPlatform(StrEnum):
 
 # frob:doc docs/strata/host.md#hostmanifest
 class HostOwns(BaseModel):
-    """One `owns=<path>:<mode>` desugared attr, read back as a typed path/mode pair."""
+    """One `owns=<path>:<mode>` desugared attr, read back as a typed path/mode pair.
+
+    `mode` is INTENTIONALLY a bare, unvalidated string, not a stricter
+    octal-int type: it is platform-opaque by design (POSIX octal today,
+    e.g. `"0644"`; a Windows ACL/SDDL string once T-0261 lands), so the
+    generic string here is deliberate genericity, not an oversight.
+    """
 
     model_config = ConfigDict(frozen=True)
 
     path: str
+    # frob:todo T-0270
+    # unvalidated: no octal-format check today (see class docstring for
+    # why this stays a bare string across platforms).
     mode: str
 
 
@@ -98,6 +107,10 @@ class HostManifest(BaseModel):
     runs_as: str | None = None
     is_unit: bool = False
     owns: tuple[HostOwns, ...] = ()
+    # frob:todo T-0270
+    # unvalidated: no range/privileged-port check today (e.g. rejecting
+    # <1024 without CAP_NET_BIND_SERVICE context, or a duplicate-port
+    # check across nodes sharing a host).
     listens: tuple[int, ...] = ()
 
 

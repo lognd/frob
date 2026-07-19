@@ -31,6 +31,8 @@ Public-API surface changes since 0.2.0 (mechanical semver via REL001):
   "DRY RUN (no tickets created; pass --apply to compile)"; DOC001's orphan
   hint resolves an actually-existing configured docs root instead of
   blindly naming `docs/index.md` in repos that never created one.
+- T-0255: new public `frob.strata` std.host manifest symbols
+  (`HostManifest`/`HostOwns`/`HostPlatform`/`host_manifest_for`/`OwnsDecl`).
 
 ## [0.2.0] - unreleased
 
