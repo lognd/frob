@@ -1126,7 +1126,7 @@ Filed from sibling-repo pilot P1 (graphite/feldspar/lithos, 2026-07-18). P1 gap 
 ```yaml
 id: T-0230
 title: PERF00x findings anchor to enclosing def line, not the offending statement
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-18'
@@ -1136,7 +1136,9 @@ scope:
 - src/frob/perf/**
 - tests/**
 - tickets.md
-evidence: []
+evidence:
+- tests/test_perf.py::test_perf002_anchors_to_index_call_line_not_def_line
+- tests/test_perf.py::test_perf004_anchors_to_sort_call_line_not_def_line
 attachments: []
 acceptance: []
 threat: null
@@ -1528,7 +1530,7 @@ Filed from malmberg pilot P3 (/mnt/c, 2026-07-18). Malmberg pilot dedicated /mnt
 id: T-0246
 title: 'PERF003 correlation: unwind one level of call parens in _operand_names (f(x)
   == g(y) joins)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-18'
@@ -1538,7 +1540,9 @@ scope:
 - src/frob/perf/**
 - tests/**
 - tickets.md
-evidence: []
+evidence:
+- tests/test_perf.py::test_perf003_fires_on_call_operand_join
+- tests/test_perf.py::test_perf003_call_operand_join_stays_narrow_no_recursive_unwind
 attachments: []
 acceptance: []
 threat: null
