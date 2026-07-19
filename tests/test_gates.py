@@ -311,6 +311,45 @@ class TestCoverageGate:
         violations = coverage_gate(snap, queue, diff, tests)
         assert not any(v.rule == "COV002" for v in violations)
 
+    def test_cov002_done_ticket_covers_own_closing_diff(self, tmp_path: Path) -> None:
+        """T-0214: closing the covering ticket in the same uncommitted diff
+        that edits the symbol it covers must not turn into a COV002 hard
+        error -- the catch-22 this ticket fixes. `tickets.md` being touched
+        in the same `diff` as the symbol is the grace-window signal."""
+        source = "def helper(x):\n    # frob:ticket T-0001\n    return x\n"
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        record = snap.symbols["src/a.py::helper"]
+        diff = Diff(
+            base="x",
+            hunks=(
+                Hunk(file="src/a.py", span=record.span),
+                Hunk(file="tickets.md", span=(1, 1)),
+            ),
+        )
+        queue = TicketQueue(tickets={"T-0001": _ticket(state=TicketState.DONE)})
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(snap, queue, diff, tests)
+        assert not any(v.rule == "COV002" for v in violations)
+
+    def test_cov002_done_ticket_without_grace_still_fires(self, tmp_path: Path) -> None:
+        """A `DONE` ticket whose close already landed as a separate commit
+        (so `tickets.md` is no longer part of this diff) must NOT cover a
+        later, genuinely unrelated touch to the same symbol -- the grace
+        window in test_cov002_done_ticket_covers_own_closing_diff
+        must not weaken COV002 for a real coverage gap."""
+        source = "def helper(x):\n    # frob:ticket T-0001\n    return x\n"
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        record = snap.symbols["src/a.py::helper"]
+        diff = Diff(base="x", hunks=(Hunk(file="src/a.py", span=record.span),))
+        queue = TicketQueue(tickets={"T-0001": _ticket(state=TicketState.DONE)})
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(snap, queue, diff, tests)
+        v = _first_rule(violations, "COV002")
+        assert v is not None
+        assert "frob ticket new" in v.message
+
     def test_cov003_done_ticket_missing_evidence(self, tmp_path: Path) -> None:
         snap = _snapshot(tmp_path)
         queue = TicketQueue(

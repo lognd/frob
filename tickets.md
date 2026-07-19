@@ -2560,7 +2560,7 @@ final delta run, which came back clean.
 ```yaml
 id: T-0214
 title: COV002 close-before-commit catch-22 turns covered changes into hard errors
-state: queued
+state: in-progress
 kind: ux
 origin: agent
 created: '2026-07-18'
@@ -2572,12 +2572,72 @@ scope:
 - docs/**
 - tests/**
 - tickets.md
-evidence: []
+evidence:
+- tests/test_gates.py::TestCoverageGate.test_cov002_done_ticket_covers_own_closing_diff
+- tests/test_gates.py::TestCoverageGate.test_cov002_done_ticket_without_grace_still_fires
 attachments: []
 acceptance: []
 threat: null
 ```
 Filed from sibling-repo pilot P2 (lograder/aprog-public/aprog-private, 2026-07-18). Pilot P2 aprog-public: closing the covering ticket while its strata file is still uncommitted turned every symbol in the file into 'changed with no open ticket' (30 hard errors) which vanish after commit. Either honor recently-done tickets' frob:ticket references for working-tree changes (grace window until commit) or make frob ticket close warn when the covering scope still has uncommitted changes, and document commit-then-close ordering in the playbook. Relates to T-0176 land (which enforces the safe order mechanically).
+
+## Done report
+
+Reproduced first: with a symbol carrying `# frob:ticket T-0001` and
+`T-0001` set to `state: done`, `_bound_to_open_ticket` only checked
+`ticket.state in _OPEN_STATES` -- DONE is explicitly excluded from
+`_OPEN_STATES` -- so the edge stopped covering the symbol the instant the
+ticket closed. COV002 (`_cov002_check_symref`) then fired a hard error on
+every symbol still carrying that now-dead edge, with no other account for
+the change, regardless of whether the close and the symbol edit are part
+of the very same uncommitted diff. That is the catch-22: `frob ticket
+close` requires evidence that the change exists, but closing immediately
+un-covers the still-uncommitted change it just closed against.
+
+Root cause: `_bound_to_open_ticket` (src/frob/gates/__init__.py) had no
+notion of "this DONE transition and this symbol edit are landing
+together." Fix: added an optional `diff` parameter -- a ticket in `DONE`
+state now also counts as covering if `tickets.md` itself is a touched file
+in the same `diff` (the close's own write to the ledger). This is a
+same-diff grace window, not a general DONE-ticket exemption: once the
+close lands as its own separate commit, `tickets.md` drops out of the diff
+base again and a DONE ticket's edge stops covering, so a genuinely later
+and unrelated touch to the same symbol is still caught by COV002 exactly
+as before (locked by
+`test_cov002_done_ticket_without_grace_still_fires`).
+
+Changed:
+- src/frob/gates/__init__.py::_bound_to_open_ticket -- diff param, DONE +
+  tickets.md-in-diff grace window
+- src/frob/gates/__init__.py::_covered_by_strata_module -- threads diff
+  through to _bound_to_open_ticket
+- src/frob/gates/__init__.py::_cov002 -- passes diff into
+  _cov002_check_symref
+- src/frob/gates/__init__.py::_cov002_check_symref -- diff param, passes
+  through to both coverage checks
+- docs/modules/gates.md -- COV002 table row + new design-decision bullet
+  documenting the grace window and why it does not weaken genuine gaps
+- tests/test_gates.py::TestCoverageGate -- two new litmus tests (below)
+
+Evidence:
+- tests/test_gates.py::TestCoverageGate::test_cov002_done_ticket_covers_own_closing_diff
+  (the catch-22 scenario: DONE ticket + tickets.md in diff -> COV002 clean)
+- tests/test_gates.py::TestCoverageGate::test_cov002_done_ticket_without_grace_still_fires
+  (the genuine-gap regression lock: DONE ticket + tickets.md NOT in diff ->
+  COV002 still fires)
+- Full `tests/test_gates.py` (136 collected, all pass) and `make coverage`
+  (full suite green) run clean.
+
+Gates: `uv run frob check --stamp-baseline` (1 pre-existing violation,
+unrelated to this change) then `uv run frob check --delta` after `make
+coverage` -> `gates 0/1 new  0 errors, 0 warnings, 204 waived`, all tool
+summary rows `pass`. `ruff check`/`uv run ruff check`, `ruff format
+--check`/`uv run ruff format --check`, and `uv run ty check` all clean on
+the touched files.
+
+Filed: none.
+
+Not closing -- leaving in-progress for reviewer per the review-gated flow.
 
 <!-- ticket:T-0215 -->
 ```yaml

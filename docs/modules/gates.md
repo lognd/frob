@@ -15,7 +15,7 @@ declaration).
 | DRIFT001 | drift | acked digest moved without re-ack (`frob ack`) |
 | DRIFT002 | drift | edge endpoint no longer resolves (rename/delete) |
 | COV001 | coverage | public symbol has no `doc` edge (docstring counts via `doc` facet only if policy says so) |
-| COV002 | coverage | changed symbol has neither a `frob:ticket` edge to an open ticket NOR an open ticket whose `scope` glob covers its file (so one scoped ticket accounts for a whole refactor, not a per-symbol directive) |
+| COV002 | coverage | changed symbol has neither a `frob:ticket` edge to an open ticket NOR an open ticket whose `scope` glob covers its file (so one scoped ticket accounts for a whole refactor, not a per-symbol directive). A `frob:ticket` edge to a ticket that just closed to `DONE` in this same uncommitted diff (`tickets.md` itself touched) also counts -- T-0214's grace window, see design decisions below |
 | COV003 | coverage | ticket in state done with evidence ids that do not resolve to collected tests |
 | COV004 | coverage | attachment sha256 mismatch or file missing |
 | TODO001 | coverage | `frob:todo` (or bare TODO/FIXME comment) not bound to an open ticket |
@@ -471,6 +471,17 @@ class CoverageError(ErrorSet):
   requires editing `frob.toml` in a reviewed commit.
 - **Bare TODO/FIXME comments are violations** (TODO001). The habit the
   system replaces must not survive alongside it.
+- **COV002 has a same-diff grace window for a ticket that just closed**
+  (T-0214). Without it, closing the covering ticket while its edit is still
+  uncommitted is a catch-22: the ticket moves out of `_OPEN_STATES`
+  immediately, so every symbol it was covering becomes a hard "changed with
+  no open ticket" error before the user has a chance to commit. The
+  narrowest honest fix: a `DONE` ticket's `frob:ticket` edge still counts
+  if `tickets.md` itself is part of the current diff -- i.e. the close and
+  the covered edit are landing together as one change, not two. Once the
+  close lands as its own commit and drops out of the diff, the grace window
+  closes and a genuinely later, unrelated touch to the same symbol is
+  caught exactly as before.
 - **pytest collection is the evidence oracle** for test node ids, cached in
   `.frob/` keyed on test-file hashes; running tests is `make test`'s job,
   existence is the gate's job.
