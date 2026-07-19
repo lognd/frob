@@ -292,6 +292,19 @@ def build_graph(root: Path, cache: Path) -> Result[GraphSnapshot, BuildError]:
         conn.close()
 
 
+# frob:ticket T-0216
+def _log_malformed_files(malformed: tuple[MalformedDirective, ...]) -> None:
+    """WARN-log every malformed directive's file:line + parse error (T-0216):
+    the aggregate `malformed=N` build-summary count alone gives no way to
+    find which file to fix. Runs on every build, including all-cache-hit
+    rebuilds, where the per-file warning in `dsl.parse_directives` never
+    fires because cached malformed rows are loaded, not re-parsed."""
+    for item in malformed:
+        _log.warning(
+            "malformed directive: %s:%d: %s", item.file, item.line, item.reason
+        )
+
+
 def _finalize_build(
     conn, root: Path, parsed_count: int, cache_hits: int
 ) -> GraphSnapshot:
@@ -300,6 +313,7 @@ def _finalize_build(
     conn.commit()
     stats = BuildStats(parsed=parsed_count, cache_hits=cache_hits)
     snapshot = _cache.load_all(conn, stats=stats)
+    _log_malformed_files(snapshot.malformed)
     _log.info(
         "build_graph: done, parsed=%d hits=%d symbols=%d edges=%d malformed=%d",
         parsed_count,
