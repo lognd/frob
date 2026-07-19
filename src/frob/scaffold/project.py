@@ -306,6 +306,42 @@ def list_project_types() -> list[str]:
     return list(_MANIFESTS.keys())
 
 
+def _resolve_manifest_paths(
+    entries: list[_ManifestEntry], env: Environment, ctx: dict, output_dir: Path
+) -> Result[list[tuple[_ManifestEntry, Path]], ScaffoldError]:
+    """Render each entry's output-path template against `ctx`, joined under
+    `output_dir`."""
+    resolved: list[tuple[_ManifestEntry, Path]] = []
+    for entry in entries:
+        try:
+            out_rel = env.from_string(entry.output).render(ctx)
+        except Exception:
+            return Err(ScaffoldError.RenderFailed)
+        resolved.append((entry, output_dir / out_rel))
+    return Ok(resolved)
+
+
+def _write_manifest_entries(
+    resolved: list[tuple[_ManifestEntry, Path]], env: Environment, ctx: dict
+) -> Result[list[Path], ScaffoldError]:
+    """Render each entry's template body and write it to its resolved path."""
+    written: list[Path] = []
+    for entry, out_path in resolved:
+        try:
+            tmpl = env.get_template(entry.template)
+        except TemplateNotFound:
+            return Err(ScaffoldError.TemplateNotFound)
+        try:
+            content = tmpl.render(ctx)
+        except TemplateSyntaxError:
+            return Err(ScaffoldError.RenderFailed)
+
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(content)
+        written.append(out_path)
+    return Ok(written)
+
+
 # frob:doc docs/commands/scaffold.md#public-api
 # frob:waive TEST005 reason="render_project 74.2% branch cover, debt T-0160"
 def render_project(
@@ -324,35 +360,16 @@ def render_project(
     )
     ctx = {"project": {"name": name, "type": project_type}}
 
-    entries = _MANIFESTS[project_type]
-
-    resolved: list[tuple[_ManifestEntry, Path]] = []
-    for entry in entries:
-        try:
-            out_rel = env.from_string(entry.output).render(ctx)
-        except Exception:
-            return Err(ScaffoldError.RenderFailed)
-        out_path = output_dir / out_rel
-        resolved.append((entry, out_path))
+    resolved_result = _resolve_manifest_paths(
+        _MANIFESTS[project_type], env, ctx, output_dir
+    )
+    if resolved_result.is_err:
+        return Err(resolved_result.danger_err)
+    resolved = resolved_result.danger_ok
 
     if not force:
         for _, out_path in resolved:
             if out_path.exists():
                 return Err(ScaffoldError.OutputExists)
 
-    written: list[Path] = []
-    for entry, out_path in resolved:
-        try:
-            tmpl = env.get_template(entry.template)
-        except TemplateNotFound:
-            return Err(ScaffoldError.TemplateNotFound)
-        try:
-            content = tmpl.render(ctx)
-        except TemplateSyntaxError:
-            return Err(ScaffoldError.RenderFailed)
-
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        out_path.write_text(content)
-        written.append(out_path)
-
-    return Ok(written)
+    return _write_manifest_entries(resolved, env, ctx)

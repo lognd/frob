@@ -61,6 +61,32 @@ class StatsReport(BaseModel):
     commits: CommitStats
 
 
+def _has_open_blocker(t, queue: TicketQueue, open_states: set) -> bool:
+    """True if any of `t`'s `blocked_by` ids is missing or still open."""
+    return any(
+        (b := queue.tickets.get(bid)) is None or b.state in open_states
+        for bid in t.blocked_by
+    )
+
+
+def _blocked_and_doable_counts(
+    tickets: list, queue: TicketQueue, open_states: set
+) -> tuple[int, int]:
+    """`(blocked, doable)` counts over `tickets` per the queue's blocker graph."""
+    blocked = sum(
+        1
+        for t in tickets
+        if _has_open_blocker(t, queue, open_states) and t.state in open_states
+    )
+    doable = sum(
+        1
+        for t in tickets
+        if t.state in (TicketState.QUEUED, TicketState.PLANNED)
+        and not _has_open_blocker(t, queue, open_states)
+    )
+    return blocked, doable
+
+
 # frob:doc docs/modules/stats.md#public-api
 def ticket_stats(queue: TicketQueue) -> TicketStats:
     """Compute queue-health counts from a loaded ticket queue (pure)."""
@@ -70,24 +96,7 @@ def ticket_stats(queue: TicketQueue) -> TicketStats:
     open_states = {
         s for s in TicketState if s not in (TicketState.DONE, TicketState.DROPPED)
     }
-    blocked = sum(
-        1
-        for t in tickets
-        if any(
-            (b := queue.tickets.get(bid)) is None or b.state in open_states
-            for bid in t.blocked_by
-        )
-        and t.state in open_states
-    )
-    doable = sum(
-        1
-        for t in tickets
-        if t.state in (TicketState.QUEUED, TicketState.PLANNED)
-        and not any(
-            (b := queue.tickets.get(bid)) is None or b.state in open_states
-            for bid in t.blocked_by
-        )
-    )
+    blocked, doable = _blocked_and_doable_counts(tickets, queue, open_states)
     failures = sum(len(_FAILURE_LINE_RE.findall(t.body)) for t in tickets)
     return TicketStats(
         total=len(tickets),
@@ -99,10 +108,10 @@ def ticket_stats(queue: TicketQueue) -> TicketStats:
     )
 
 
-# frob:doc docs/modules/stats.md#public-api
-# frob:waive TEST005 reason="commit_stats 80.0% branch cover, debt T-0160"
-def commit_stats(root: Path, window_days: int = 30) -> Result[CommitStats, GitError]:
-    """Count commits in the last `window_days` by conventional-commit type."""
+def _recent_commit_subjects(
+    root: Path, window_days: int
+) -> Result[list[str], GitError]:
+    """`git log` subjects (non-empty) from the last `window_days`."""
     spawned = run_argv(
         [
             "git",
@@ -121,7 +130,17 @@ def commit_stats(root: Path, window_days: int = 30) -> Result[CommitStats, GitEr
     if result.returncode != 0:
         _log.warning("stats: git log failed rc=%d", result.returncode)
         return Err(GitError.GitFailed)
-    subjects = [line for line in result.stdout.splitlines() if line.strip()]
+    return Ok([line for line in result.stdout.splitlines() if line.strip()])
+
+
+# frob:doc docs/modules/stats.md#public-api
+# frob:waive TEST005 reason="commit_stats 80.0% branch cover, debt T-0160"
+def commit_stats(root: Path, window_days: int = 30) -> Result[CommitStats, GitError]:
+    """Count commits in the last `window_days` by conventional-commit type."""
+    subjects_result = _recent_commit_subjects(root, window_days)
+    if subjects_result.is_err:
+        return Err(subjects_result.danger_err)
+    subjects = subjects_result.danger_ok
     by_type: Counter[str] = Counter()
     for subject in subjects:
         match = _CONVENTIONAL_RE.match(subject)

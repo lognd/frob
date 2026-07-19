@@ -91,6 +91,20 @@ def _frontmatter_dict(path: Path) -> Result[dict, InvariantError]:
     return Ok(raw)
 
 
+def _validate_invariant_shape(
+    invariant: Invariant, path: Path
+) -> Result[None, InvariantError]:
+    """Post-construction checks `Invariant`'s own pydantic validation doesn't
+    cover: id format, non-empty statement."""
+    if _ID_RE.match(invariant.id) is None:
+        _log.warning("load_invariants: %s has bad id %r", path, invariant.id)
+        return Err(InvariantError.Malformed)
+    if not invariant.statement:
+        _log.warning("load_invariants: %s has empty statement", path)
+        return Err(InvariantError.Malformed)
+    return Ok(None)
+
+
 def _build_invariant(
     raw: dict, path: Path, root: Path
 ) -> Result[Invariant, InvariantError]:
@@ -119,12 +133,9 @@ def _build_invariant(
         _log.warning("load_invariants: %s failed validation: %s", path, exc)
         return Err(InvariantError.Malformed)
 
-    if _ID_RE.match(invariant.id) is None:
-        _log.warning("load_invariants: %s has bad id %r", path, invariant.id)
-        return Err(InvariantError.Malformed)
-    if not invariant.statement:
-        _log.warning("load_invariants: %s has empty statement", path)
-        return Err(InvariantError.Malformed)
+    shape = _validate_invariant_shape(invariant, path)
+    if shape.is_err:
+        return Err(shape.danger_err)
     return Ok(invariant)
 
 

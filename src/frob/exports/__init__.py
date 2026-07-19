@@ -65,6 +65,31 @@ class ExportsResult(BaseModel):
         return self.model_dump_json(indent=2)
 
 
+def _module_exports(
+    py_file: Path, *, pkg_name: str, include_private: bool
+) -> ModuleExports | None:
+    """The public (or all, if `include_private`) symbols outlined from one
+    module file, or `None` if unparseable/empty."""
+    result = outline_file(py_file)
+    if result.is_err:
+        return None
+    ol = result.danger_ok
+
+    symbols: list[str] = []
+    for fn in ol.functions:
+        if not include_private and fn.name.startswith("_"):
+            continue
+        symbols.append(fn.name)
+    for cls in ol.classes:
+        if not include_private and cls.name.startswith("_"):
+            continue
+        symbols.append(cls.name)
+
+    if not symbols:
+        return None
+    return ModuleExports(module=f"{pkg_name}.{py_file.stem}", symbols=symbols)
+
+
 # frob:doc docs/commands/exports.md#public-api
 def exports_package(
     pkg_dir: Path,
@@ -84,27 +109,12 @@ def exports_package(
 
     modules: list[ModuleExports] = []
     for py_file in py_files:
-        mod_name = py_file.stem
-        if mod_name in exclude:
+        if py_file.stem in exclude:
             continue
-        result = outline_file(py_file)
-        if result.is_err:
-            continue
-        ol = result.danger_ok
-
-        symbols: list[str] = []
-        for fn in ol.functions:
-            if not include_private and fn.name.startswith("_"):
-                continue
-            symbols.append(fn.name)
-        for cls in ol.classes:
-            if not include_private and cls.name.startswith("_"):
-                continue
-            symbols.append(cls.name)
-
-        if symbols:
-            modules.append(
-                ModuleExports(module=f"{pkg_name}.{mod_name}", symbols=symbols)
-            )
+        mod = _module_exports(
+            py_file, pkg_name=pkg_name, include_private=include_private
+        )
+        if mod is not None:
+            modules.append(mod)
 
     return Ok(ExportsResult(package_dir=str(pkg_dir), modules=modules))

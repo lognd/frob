@@ -215,11 +215,31 @@ def working_diff(root: Path, base: str) -> Result[Diff, GitError]:
     )
     if untracked_result.is_err:
         return Err(untracked_result.danger_err)
+    hunks: list[Hunk] = _tracked_hunks(per_file)
+    hunks.extend(_untracked_hunks(root, untracked_result.danger_ok))
+
+    _log.info(
+        "gitio: working_diff(base=%r): merge-base=%s, %d hunk(s)",
+        base,
+        mb,
+        len(hunks),
+    )
+    return Ok(Diff(base=mb, hunks=tuple(hunks)))
+
+
+def _tracked_hunks(per_file: dict[str, list[tuple[int, int]]]) -> list[Hunk]:
+    """Flatten the per-file span map from `_parse_unified_diff` into `Hunk`s."""
     hunks: list[Hunk] = []
     for file, spans in per_file.items():
         for start, end in spans:
             hunks.append(Hunk(file=file, span=(start, end)))
-    for rel in untracked_result.danger_ok.splitlines():
+    return hunks
+
+
+def _untracked_hunks(root: Path, listing: str) -> list[Hunk]:
+    """One whole-file `Hunk` per untracked path in `git ls-files --others` output."""
+    hunks: list[Hunk] = []
+    for rel in listing.splitlines():
         rel = rel.strip()
         if not rel:
             continue
@@ -233,14 +253,7 @@ def working_diff(root: Path, base: str) -> Result[Diff, GitError]:
             continue
         line_count = _count_lines(abs_path)
         hunks.append(Hunk(file=rel, span=(1, max(line_count, 1))))
-
-    _log.info(
-        "gitio: working_diff(base=%r): merge-base=%s, %d hunk(s)",
-        base,
-        mb,
-        len(hunks),
-    )
-    return Ok(Diff(base=mb, hunks=tuple(hunks)))
+    return hunks
 
 
 def _count_lines(path: Path) -> int:

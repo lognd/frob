@@ -150,20 +150,13 @@ def _dedupe_symbols(rel_path: str, parsed: ParsedFile) -> tuple[SymbolRecord, ..
     return tuple(by_ref.values())
 
 
-# frob:ticket T-0133
-def _process_source_file(
-    conn, root: Path, path: Path, on_disk_hash: str
+def _parse_source_file_fresh(
+    conn, rel_path: str, path: Path, on_disk_hash: str
 ) -> tuple[
     bool, tuple[SymbolRecord, ...], tuple[Edge, ...], tuple[MalformedDirective, ...]
 ]:
-    """Parse (or load) one source file: `(was_parsed, symbols, edges, malformed)`."""
-    rel_path = _display_path(path, root)
-    cached_hash = _cache.get_file_hash(conn, rel_path)
-    if cached_hash == on_disk_hash:
-        _log.debug("cache hit: %s", rel_path)
-        symbols, edges, malformed = _cache.load_file_data(conn, rel_path)
-        return False, symbols, edges, malformed
-
+    """Parse one uncached source file and store the result:
+    `(True, symbols, edges, malformed)`."""
     parsed_result = parse_file(path)
     if parsed_result.is_err:
         err = parsed_result.danger_err
@@ -192,6 +185,22 @@ def _process_source_file(
         malformed=malformed,
     )
     return True, symbols, edges, malformed
+
+
+# frob:ticket T-0133
+def _process_source_file(
+    conn, root: Path, path: Path, on_disk_hash: str
+) -> tuple[
+    bool, tuple[SymbolRecord, ...], tuple[Edge, ...], tuple[MalformedDirective, ...]
+]:
+    """Parse (or load) one source file: `(was_parsed, symbols, edges, malformed)`."""
+    rel_path = _display_path(path, root)
+    cached_hash = _cache.get_file_hash(conn, rel_path)
+    if cached_hash == on_disk_hash:
+        _log.debug("cache hit: %s", rel_path)
+        symbols, edges, malformed = _cache.load_file_data(conn, rel_path)
+        return False, symbols, edges, malformed
+    return _parse_source_file_fresh(conn, rel_path, path, on_disk_hash)
 
 
 def _process_doc_file(conn, root: Path, path: Path, on_disk_hash: str) -> bool:
