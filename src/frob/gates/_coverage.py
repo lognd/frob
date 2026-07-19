@@ -164,7 +164,9 @@ def _parse_classes(
     candidate_roots.append("")
 
     winning_root, join_ok = _select_join_root(classes, candidate_roots, known_paths)
-    module_line, hits_by_class_line = _build_class_maps(classes, winning_root)
+    module_line, hits_by_class_line = _build_class_maps(
+        classes, winning_root, candidate_roots, known_paths
+    )
     return module_line, hits_by_class_line, join_ok, tuple(candidate_roots)
 
 
@@ -204,15 +206,51 @@ def _select_join_root(
     return winning_root, join_ok
 
 
+def _resolve_class_root(
+    raw_filename: str, candidate_roots: list[str], known_paths: frozenset[str]
+) -> str | None:
+    """The first `candidate_roots` entry `raw_filename` actually resolves
+    under, or `None` if it matches no known repo path under any of them.
+
+    T-0311: a package-relative `raw_filename` (e.g. `actgen/core.py`) can be
+    ambiguous between multiple `--cov` roots when neither root's joined path
+    disambiguates it on its own -- a single per-report "winning root" (as
+    `_select_join_root` computes for TEST008 signaling) can then mislabel a
+    file that actually lives under a DIFFERENT root than the one that won
+    the aggregate vote. Resolving PER CLASS against `known_paths` (which is
+    only ever populated with paths to files that genuinely exist -- graph
+    symbols or a filesystem walk, see `_known_repo_paths`) picks the root
+    this specific file truly exists under, independent of how other classes
+    in the same report happened to score.
+    """
+    for root in candidate_roots:
+        if _join_candidate(root, raw_filename) in known_paths:
+            return root
+    return None
+
+
 def _build_class_maps(
-    classes: tuple[tuple[str, ET.Element], ...], winning_root: str
+    classes: tuple[tuple[str, ET.Element], ...],
+    winning_root: str,
+    candidate_roots: list[str],
+    known_paths: frozenset[str],
 ) -> tuple[dict[str, float], dict[str, dict[int, tuple[int, int]]]]:
-    """`(module_line%, per-file line-hit maps)` keyed by `winning_root`-joined
-    filename."""
+    """`(module_line%, per-file line-hit maps)` keyed by the per-class-resolved
+    filename.
+
+    Each class is joined against the specific candidate root it actually
+    resolves under (`_resolve_class_root`); `winning_root` (the aggregate
+    per-report scorer's pick) is only a fallback for classes that resolve
+    under none of the candidates, matching the pre-T-0311 behavior for the
+    join-failure case TEST008 already reports loudly.
+    """
     module_line: dict[str, float] = {}
     hits_by_class_line: dict[str, dict[int, tuple[int, int]]] = {}
     for raw_filename, class_el in classes:
-        filename = _join_candidate(winning_root, raw_filename)
+        class_root = _resolve_class_root(raw_filename, candidate_roots, known_paths)
+        filename = _join_candidate(
+            class_root if class_root is not None else winning_root, raw_filename
+        )
         line_rate = class_el.get("line-rate")
         if line_rate is not None:
             try:
