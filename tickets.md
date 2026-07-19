@@ -4109,6 +4109,29 @@ threat: elevation-of-privilege
 ```
 T-0254: the red-team Kerberos playbook as demanded, provable obligations extending T-0256's movement-impossibility family. KRB001 unconstrained delegation: any node declaring delegation unconstrained is a hard finding (it lets a compromised service impersonate ANY user to ANY service -- the worst lateral+vertical vector) -- must be re-declared constrained/rbcd or waived with a written accepted-risk reason and sub-target. KRB002 Kerberoasting exposure: an SPN bound to a principal whose credential class is a human-memorable/user password (not a machine account or gMSA) is roastable -- demand gMSA/machine-account or a waiver. KRB003 constrained-delegation blast radius: for a node with constrained delegation, prove the target SPN set does not transitively reach a higher-trust principal (S4U2Proxy chaining) -- reachability over the SPN graph, counterexample trace on failure. KRB004 cross-realm containment: a one-way/transitive trust must not create an undeclared path from a low-trust realm to a high-trust service. Each rule joins a separate compromised-domain-principal threat view (WeaknessEntry rows: CWE-522/CWE-269/CWE-284 class) per the separate-view precedent, NOT widening defaults. Reuse the T-0073 scenario engine for a compromised-service-account scenario whose closure shows the Kerberos blast radius. Litmus: an unconstrained-delegation + roastable-SPN vuln model fires KRB001/002; a gMSA + constrained + non-chaining hardened model discharges all four.
 
+<!-- ticket:T-0264 -->
+```yaml
+id: T-0264
+title: self-referential frob:tests directive on a test function passes --ticket check
+  but fails full DRIFT002
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/**
+- src/frob/graph/**
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Recurring: implementer agents put a 'frob:tests <self>' directive above their own new test function; the target does not resolve as a graph qualname so full frob check fires DRIFT002, but frob check --delta --ticket (what agents+reviewers run) does NOT surface it -- so it lands and reddens main (happened for T-0213, T-0216; coordinator removed 3). Two fixes: (1) frob check --ticket should include the drift gate for edges the ticket's own diff ADDS (a new frob:tests directive in the diff must be validated even under --ticket scoping); (2) the graph should REJECT or warn on a frob:tests directive whose target is the annotated symbol itself (a test testing itself is meaningless) at directive-parse time, not silently store a dangling edge. Add a check-scoping regression + a self-edge rejection test.
+
 <!-- ticket:T-draft-56694d02 -->
 ```yaml
 id: T-draft-56694d02
