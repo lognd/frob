@@ -75,7 +75,7 @@ logand.app pilot: THREAT002 (capability kind matches no sink taxonomy entry) fir
 ```yaml
 id: T-0173
 title: sys audit output repeats identical WARNING blocks across all views
-state: in-progress
+state: done
 kind: ux
 origin: agent
 created: '2026-07-18'
@@ -86,7 +86,8 @@ scope:
 - src/frob/strata/**
 - tests/**
 - tickets.md
-evidence: []
+evidence:
+- tests/unit/strata/test_audit.py::TestGroupGaps::test_group_gaps_by_view
 attachments: []
 acceptance: []
 threat: null
