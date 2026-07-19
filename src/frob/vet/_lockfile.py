@@ -29,8 +29,16 @@ _LOCKFILE_NAMES = (
 
 
 # frob:doc docs/modules/vet.md#public-api
+# frob:tests tests/test_vet.py::TestLockfileParsers.test_find_lockfile_direct
+# frob:tests tests/test_vet.py::TestLockfileParsers.test_find_lockfile_bad_name
 def find_lockfile(root: Path) -> Path | None:
-    """The first supported lockfile found directly under `root`, or `None`."""
+    """`root` itself if it is already a supported lockfile path (T-0221 --
+    `frob vet uv.lock` must not be misread as "look for uv.lock under
+    ./uv.lock/"), else the first supported lockfile found directly under
+    `root` as a directory, or `None` if neither resolves."""
+    if root.is_file() and root.name in _LOCKFILE_NAMES:
+        _log.debug("vet: using lockfile path directly %s", root)
+        return root
     for name in _LOCKFILE_NAMES:
         candidate = root / name
         if candidate.exists():

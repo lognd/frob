@@ -31,6 +31,8 @@ _log = get_logger(__name__)
 
 # frob:doc docs/modules/app.md#runners
 # frob:waive TEST005 reason="run 25.0% branch cover, debt T-0160"
+# frob:tests tests/test_vet.py::TestVetRunnerLockArg.test_run_lockfile_arg
+# frob:tests tests/test_vet.py::TestVetRunnerLockArg.test_run_unsupp_nonzero
 def run(cfg: AppConfig) -> None:
     """Dispatch to hook mode (`--hook`) or a full lockfile scan."""
     root = (cfg.vet_path or Path(".")).resolve()
