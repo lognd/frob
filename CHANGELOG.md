@@ -17,6 +17,23 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.7.0] - unreleased
+
+Public-API surface changes since 0.6.0 (mechanical semver via REL001):
+
+- T-0258: `frob deploy`'s bidirectional conformance check -- new
+  `frob.deploy.deploy_conformance_violations`, `ConformanceViolation`,
+  `extract_mutation_surface`, `expected_mutation_surface`,
+  `MutationTarget` (`_conform.py`): structured extraction of committed
+  `deploy/install.sh`/`uninstall.sh`'s actual mutation surface
+  (`useradd`/`groupadd`/`userdel`/`groupdel`/`mkdir`/`install`/`cp`/
+  `chown`/`chmod`/`rm -f`/`rm -rf`/`systemctl enable|disable|start|
+  stop`/unit-heredoc writes), compared bidirectionally against the
+  current `HostManifest` set as `DEPLOY002` (script mutation not
+  declared in the manifest) and `DEPLOY003` (manifest entry no
+  mutation implements), wired into `frob check` as an extra
+  `deploy-conformance` stage alongside `DEPLOY001`.
+
 ## [0.6.0] - unreleased
 
 Public-API surface changes since 0.5.0 (mechanical semver via REL001):

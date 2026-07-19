@@ -223,11 +223,58 @@ Full detail, including the honest OS-users-vs.-trust-lattice scope cut
 this generator inherits unchanged from this ticket, lives in
 `docs/commands/deploy.md`.
 
+## DEPLOY002/DEPLOY003: conformance
+
+<!-- frob:ticket T-0258 -->
+
+DEPLOY001 (above) catches a hand-edit by byte-diffing a committed script
+against a fresh regeneration -- but that check is only as strong as its
+digest header: an operator (or an attacker with commit access) can hand-
+append or hand-remove a step and never re-run `frob deploy generate`
+again, and DEPLOY001 still fires, but only ever says "does not match
+regeneration", never WHY. `frob.deploy._conform` (`src/frob/deploy/
+_conform.py`) gives the structural why by parsing each committed script's
+actual MUTATION SURFACE -- the STRUCTURED set of `useradd`/`groupadd`/
+`userdel`/`groupdel`/`mkdir`/`install`/`cp`/`chown`/`chmod`/`rm -f`/
+`rm -rf`/`systemctl enable|disable|start|stop`/unit-file-heredoc
+invocations and their exact targets, extracted by anchoring to the exact
+check-then-apply shapes `_generate.py` renders (never a blind grep --
+heredoc unit-file bodies' unquoted `systemd` directives never false-
+positive as a mutation) -- and comparing it bidirectionally against the
+EXACT set `HostManifest` declares:
+
+- **DEPLOY002** (extra mutation, not declared): the script performs a
+  mutation the manifest does not declare -- a smuggled extra user, path,
+  or unit. This is the red-team-relevant direction: it fires even when
+  the rest of the script is byte-identical to a real regeneration, so
+  bypassing `frob deploy generate` and hand-appending one rogue
+  `useradd` still fails `frob check`.
+- **DEPLOY003** (manifest entry, no mutation implements it): a declared
+  `runs_as`/`owns`/`unit` entry that the script implements no mutation
+  for -- an incomplete install (a declared `owns` path never `mkdir`/
+  `chown`/`chmod`'d) or incomplete uninstall (a declared service user
+  never `userdel`'d).
+
+`install.sh` and `uninstall.sh` are each checked independently against
+the SAME declared set, so a tamper isolated to one script (e.g. removing
+uninstall's `userdel` while leaving install untouched) is reported
+against the script it actually touched. This is the tie that makes the
+committed scripts part of the provable architecture rather than
+artifacts sitting beside it: a `HostManifest` change with no matching
+script edit fails DEPLOY003, and a script edit with no matching
+`HostManifest` change fails DEPLOY002, regardless of whether DEPLOY001's
+digest happens to still line up.
+
+Wired into `frob check` the same "extra stage, not `frob.gates`'s
+pluggable job table" shape DEPLOY001 uses (`frob.app.check_runner.
+_deploy_conformance_result`). Opt-in on `deploy/` existing, same posture
+as DEPLOY001.
+
 ## Scope boundary (what is NOT built here)
 
-- No conformance checker (declared manifest vs. what a running host
-  actually has) -- T-0258.
-- No VM auditor -- T-0259.
+- No live-host conformance checker (declared manifest vs. what a
+  RUNNING host actually has, as opposed to the committed scripts) -- 
+  T-0259's VM auditor.
 - No second `HostPlatform` member (windows) -- T-0261; the discriminator
   is designed for it, but only linux/systemd is implemented here
   (T-0257's generator is the same linux/systemd-only scope).

@@ -17,11 +17,13 @@ from frob.check import (
 from frob.logging import get_logger, quiet_stdout_logs, stdout_log_level
 from frob.process.parsers.common import Diagnostic, ToolResult
 
-#: DEPLOY001's severity literal, matching `Diagnostic.severity`'s type
-#: (`frob.process.parsers.common.Severity`) without importing it just for
-#: this one string -- the same pragmatic inline-literal precedent
-#: `_skip_note_result` below already uses for its own diagnostic.
+#: DEPLOY001/DEPLOY002/DEPLOY003's severity literal, matching
+#: `Diagnostic.severity`'s type (`frob.process.parsers.common.Severity`)
+#: without importing it just for this one string -- the same pragmatic
+#: inline-literal precedent `_skip_note_result` below already uses for
+#: its own diagnostic.
 _DEPLOY001_SEVERITY = "error"
+_DEPLOY_CONFORM_SEVERITY = "error"
 
 _log = get_logger(__name__)
 
@@ -286,6 +288,41 @@ def _deploy_drift_result(root: Path) -> ToolResult | None:
     )
 
 
+def _deploy_conformance_result(root: Path) -> ToolResult | None:
+    """DEPLOY002/DEPLOY003: committed `deploy/install.sh`/`uninstall.sh`
+    mutation surface vs. the current design model's `HostManifest` set
+    (`frob.deploy.deploy_conformance_violations`, T-0258). Same "extra
+    stage beyond `frob.gates`'s job table" shape `_deploy_drift_result`
+    already uses (`src/frob/gates/**` stays out of this ticket's `scope`
+    too). Opt-in on `deploy/` existing; returns `None` (no stage) when the
+    directory is absent."""
+    if not (root / "deploy").is_dir():
+        return None
+    from frob.deploy import deploy_conformance_violations
+
+    violations = deploy_conformance_violations(root)
+    diagnostics = [
+        Diagnostic(
+            file=v.file,
+            severity=_DEPLOY_CONFORM_SEVERITY,
+            code=v.code,
+            message=v.message,
+        )
+        for v in violations
+    ]
+    summary = (
+        f"{len(violations)} deploy conformance violation(s)"
+        if violations
+        else "deploy scripts conform to HostManifest"
+    )
+    return ToolResult(
+        tool="deploy-conformance",
+        exit_code=1 if violations else 0,
+        diagnostics=diagnostics,
+        summary=summary,
+    )
+
+
 def _run_stamp_coverage(root: Path) -> None:
     """`frob check --stamp-coverage`: record coverage.xml as the current stamp."""
     from frob.gates import stamp_coverage
@@ -406,6 +443,12 @@ def run(cfg: AppConfig) -> None:
         if deploy_result is not None:
             result = CheckResult(
                 path=result.path, results=[*result.results, deploy_result]
+            )
+        deploy_conform_result = _deploy_conformance_result(root)
+        if deploy_conform_result is not None:
+            result = CheckResult(
+                path=result.path,
+                results=[*result.results, deploy_conform_result],
             )
 
     _report_check_result(cfg, result)

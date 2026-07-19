@@ -22,10 +22,14 @@ already uses for ruff/ty/arch/cycle/dup/bind/exports.
 from __future__ import annotations
 
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict
 
 from frob.logging import get_logger
+
+if TYPE_CHECKING:
+    from frob.strata import KernelModel
 
 _log = get_logger(__name__)
 
@@ -68,15 +72,15 @@ def _design_dir(root: Path) -> str:
     return data.get("strata", {}).get("design_dir", DEFAULT_DESIGN_DIR)
 
 
-def _current_model_output(root: Path) -> dict[str, str] | None:
-    """Regenerate `{filename: content}` from every `.strata` design file
-    under the repo's design dir, or `None` (with a logged error) if no
-    design model loads at all -- a `deploy/` dir with no design behind it
-    cannot be checked against anything, so DEPLOY001 has nothing to say."""
+def _load_current_model(root: Path) -> "KernelModel | None":
+    """Load and merge every `.strata` design file under the repo's design
+    dir into one `KernelModel`, or `None` (with a logged error) if no
+    design model loads at all. Shared by DEPLOY001 (`_current_model_
+    output` below) and DEPLOY002/DEPLOY003 (`_conform.py`) so the design-
+    dir read + merge happen in exactly ONE place, never duplicated
+    per-gate."""
     from frob.strata import load_design_ids
     from frob.strata._sysdoc import merge_models
-
-    from ._generate import generate_all
 
     design_dir = _design_dir(root)
     ids = load_design_ids(root, design_dir)
@@ -87,7 +91,19 @@ def _current_model_output(root: Path) -> dict[str, str] | None:
     if not ids.models:
         _log.debug("deploy drift: no design models under %s/%s", root, design_dir)
         return None
-    model = merge_models(ids.models)
+    return merge_models(ids.models)
+
+
+def _current_model_output(root: Path) -> dict[str, str] | None:
+    """Regenerate `{filename: content}` from the current design model
+    (`_load_current_model`), or `None` if no model loads -- a `deploy/`
+    dir with no design behind it cannot be checked against anything, so
+    DEPLOY001 has nothing to say."""
+    from ._generate import generate_all
+
+    model = _load_current_model(root)
+    if model is None:
+        return None
     return generate_all(model)
 
 
