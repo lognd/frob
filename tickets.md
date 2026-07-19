@@ -1937,7 +1937,7 @@ Filed from sibling-repo pilot P2 (lograder/aprog-public/aprog-private, 2026-07-1
 ```yaml
 id: T-0210
 title: frob test package-fallback treats pytest exit 5 (no tests collected) as FAIL
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-18'
