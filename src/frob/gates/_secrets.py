@@ -72,6 +72,11 @@ _FAKE_MARKER = "frob:secret-fake"
 #: must still fire).
 _PLACEHOLDER_WORDS = ("fake", "changeme", "example", "placeholder")
 _PLACEHOLDER_RUN_RE = re.compile(r"(x{4,}|\*{4,})", re.IGNORECASE)
+#: Placeholder PHRASES (as opposed to single words above) -- T-0219: a
+#: fixture like `xoxb-your-slack-token-here` reads as an obvious template
+#: to a human but contains none of `_PLACEHOLDER_WORDS`. Matched
+#: case-insensitively against the token text, same as `_PLACEHOLDER_WORDS`.
+_PLACEHOLDER_PHRASE_RE = re.compile(r"(-here\b|\byour-|\binsert-)", re.IGNORECASE)
 
 
 @dataclass(frozen=True)
@@ -188,6 +193,21 @@ _PATTERNS: tuple[_SecretPattern, ...] = (
         "critical",
         r"sk-proj-[A-Za-z0-9_-]{20,}",
         "sk-proj-",
+    ),
+    # T-0219: a hyphenated `sk-live-...` shape (distinct from Stripe's
+    # underscore `sk_live_` above) was silently missed -- the old
+    # `openai-legacy` entry below requires 20+ alnum-ONLY chars right after
+    # `sk-`, and `live-` breaks that run at its first hyphen, so a real
+    # `sk-live-<hex>` token never matched ANY pattern in the table. Ordered
+    # before `openai-legacy` (longer, more specific prefix) per this table's
+    # most-specific-first discipline.
+    _pat(
+        "generic-live-key",
+        "SEC001",
+        Severity.ERROR,
+        "critical",
+        r"sk-live-[A-Za-z0-9-]{16,}",
+        "sk-live-",
     ),
     _pat(
         "openai-legacy",
@@ -382,9 +402,13 @@ def redact(token: str, display_prefix: str) -> str:
 
 def _looks_fake(token: str) -> bool:
     """True if `token` itself is an obvious placeholder shape (T-0157:
-    XXXX/**** runs or the literal words fake/changeme/example/placeholder),
+    XXXX/**** runs or the literal words fake/changeme/example/placeholder;
+    T-0219: also obvious placeholder PHRASING -- a `-here` tail, or a
+    `your-`/`insert-` fragment, e.g. `xoxb-your-slack-token-here`),
     independent of any `frob:secret-fake` marker on the surrounding line."""
     if _PLACEHOLDER_RUN_RE.search(token):
+        return True
+    if _PLACEHOLDER_PHRASE_RE.search(token):
         return True
     lowered = token.lower()
     return any(word in lowered for word in _PLACEHOLDER_WORDS)

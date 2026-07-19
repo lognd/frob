@@ -126,6 +126,29 @@ class TestFindsTokens:
         assert any(v.rule == "SEC003" for v in kept)
         assert not any(v.rule == "SEC003" for v in waived)
 
+    def test_generic_live_key_adjacent_to_other_content_sec001(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_secrets.py::secrets_gate
+        # T-0219: a hyphenated `sk-live-...` token immediately abutted by
+        # other characters (quote + trailing prose, no whitespace boundary)
+        # was silently missed pre-fix -- `openai-legacy`'s `sk-[A-Za-z0-9]{
+        # 20,}` breaks at the first hyphen in "live-", so no pattern in the
+        # table ever claimed the span. Runtime-constructed (never a
+        # contiguous literal in this file's own source), same discipline as
+        # `test_stripe_live_key_sec003` above.
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        token = "sk-live-" + "d" * 24
+        (repo / "config.py").write_text(f'X = "{token}" # trailing note\n')
+        _commit(repo)
+
+        violations = secrets_gate(repo)
+        matches = [v for v in violations if "generic-live-key" in v.message]
+        assert len(matches) == 1
+        assert matches[0].rule == "SEC001"
+        assert "d" * 24 not in matches[0].message
+
     def test_stripe_test_key_is_low_severity_warn(self, tmp_path: Path) -> None:
         repo = tmp_path / "repo"
         _init_repo(repo)
@@ -179,6 +202,55 @@ class TestFakeMarking:
 
         violations = secrets_gate(repo)
         assert violations == ()
+
+    def test_placeholder_phrase_your_dash_here_is_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_secrets.py::secrets_gate
+        # T-0219: a doc-example token like `xoxb-your-slack-token-here`
+        # reads as an obvious template to a human but contains none of the
+        # single-word `_PLACEHOLDER_WORDS` (fake/changeme/example/
+        # placeholder) -- pre-fix, this fired a false-positive SEC001.
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        (repo / "README.md").write_text("SLACK_TOKEN=xoxb-your-slack-token-here\n")
+        _commit(repo)
+
+        violations = secrets_gate(repo)
+        assert violations == ()
+
+    def test_placeholder_phrase_insert_dash_is_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_secrets.py::secrets_gate
+        # Same T-0219 phrase-recognition fix, `insert-` variant.
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        (repo / "README.md").write_text("SLACK_TOKEN=xoxb-insert-your-real-token\n")
+        _commit(repo)
+
+        violations = secrets_gate(repo)
+        assert violations == ()
+
+    def test_placeholder_phrase_does_not_suppress_real_looking_token(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_secrets.py::secrets_gate
+        # Regression guard: the new phrase heuristic must stay scoped to
+        # `-here`/`your-`/`insert-` fragments -- a real-shaped slack token
+        # with none of those fragments must still fire (T-0157's original
+        # "the miss matters more than any false positive" posture).
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        # Runtime-constructed (never a contiguous literal in this file's own
+        # source), same discipline as `test_stripe_live_key_sec003` above.
+        token = "xoxb-" + "".join(str(n % 10) for n in range(20))
+        (repo / "notes.txt").write_text(token + "\n")
+        _commit(repo)
+
+        violations = secrets_gate(repo)
+        assert len(violations) == 1
+        assert violations[0].rule == "SEC001"
 
 
 class TestTrackedEnvFile:
@@ -312,6 +384,7 @@ _FIXTURES_BY_PROVIDER: dict[str, str] = {
     "stripe-secret-test": "sk_test_" + "a" * 24,
     "stripe-publishable-test": "pk_test_" + "a" * 24,
     "openai-project": "sk-proj-" + "a" * 24,
+    "generic-live-key": "sk-live-" + "a" * 24,
     "openai-legacy": "sk-" + "a" * 24,
     "aws-access-key-id": "AKIA" + "A" * 16,
     "github": "ghp_" + "a" * 36,

@@ -3038,7 +3038,7 @@ Not closing per dispatch instructions -- leaving for reviewer.
 ```yaml
 id: T-0219
 title: secrets scan misses adjacent sk-live key and placeholder-phrase fakes
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-07-18'
@@ -3054,6 +3054,78 @@ acceptance: []
 threat: null
 ```
 Filed from sibling-repo pilot P2 (lograder/aprog-public/aprog-private, 2026-07-18). Pilot P2 aprog-private (gap 15): SEC001 flagged a fake Slack token but MISSED the sk-live-... key on the adjacent line (detection gap -- the miss matters more than any false positive), and the fake-marker heuristics missed obvious placeholder phrasing ('real-slack-token-here' contains no recognized fake word). Fix both directions: audit the provider table against the fixture file that produced the miss (why did sk-live- not match -- prefix table or format constraint?), and extend placeholder recognition ('...-here', 'your-', 'insert-', 'changeme') with fixtures. Coordinate with T-0190 (GitHub-unflaggable fixtures) so new fixtures satisfy both constraints.
+
+## Done report
+
+**Root cause, miss 1 (sk-live- adjacent):** confirmed both misses reproduce
+on main (6164712) before any fix -- `_scan_text` returned `[]` for a
+`sk-live-<24 hex>` token embedded in `X = "sk-live-...." # trailing note`
+and for `xoxb-your-slack-token-here`. Miss 1's root cause is a FORMAT
+CONSTRAINT, not a missing prefix-table entry per se: the existing
+`openai-legacy` pattern `sk-[A-Za-z0-9]{20,}` requires 20+ contiguous
+alnum-ONLY chars right after `sk-`; `sk-live-...` has a hyphen 4 chars in
+(`live-`), which breaks that run before it reaches the 20-char floor, so
+NO pattern in `_PATTERNS` ever claimed the span (this is also why
+"adjacency" mattered in the ticket title -- the token never matched
+regardless of what surrounds it). Fix: added a new, more-specific
+`generic-live-key` pattern (`sk-live-[A-Za-z0-9-]{16,}`, `SEC001`,
+critical) ordered before `openai-legacy` per the file's most-specific-
+prefix-first discipline (`src/frob/gates/_secrets.py` `_PATTERNS`).
+
+**Root cause, miss 2 (placeholder phrase):** `_looks_fake` only checked
+single WORDS (`fake`/`changeme`/`example`/`placeholder`) and an
+XXXX/**** run; a phrase like `xoxb-your-slack-token-here` matches the real
+Slack regex and contains none of those words, so it fired a false-
+positive SEC001 despite being an obvious template. Fix: added
+`_PLACEHOLDER_PHRASE_RE` (`-here`, `your-`, `insert-`, case-insensitive)
+checked in `_looks_fake` alongside the existing word list.
+
+**Litmus tests added** (`tests/test_secrets_gate.py`):
+- `TestFindsTokens.test_generic_live_key_adjacent_to_other_content_sec001`
+  -- miss 1, now caught.
+- `TestFakeMarking.test_placeholder_phrase_your_dash_here_is_not_flagged`
+  -- miss 2 (`-here`/`your-` phrase), now correctly ignored.
+- `TestFakeMarking.test_placeholder_phrase_insert_dash_is_not_flagged` --
+  miss 2, `insert-` variant.
+- `TestFakeMarking.test_placeholder_phrase_does_not_suppress_real_looking_token`
+  -- regression guard: a real-shaped Slack token with none of the new
+  phrase fragments still fires (the phrase heuristic must stay scoped, not
+  swallow real detections).
+- `generic-live-key` added to `_FIXTURES_BY_PROVIDER` (drift-lock
+  requirement, `TestDriftLock.test_every_provider_has_a_fixture` and the
+  parametrized `test_provider_has_a_registered_fixture`).
+
+**No false positives introduced:** `tests/test_secrets_gate.py` full
+suite, 52 passed (`uv run pytest tests/test_secrets_gate.py -q`), including
+`TestGateIsGreenOnItself.test_repo_is_clean`,
+`test_this_test_file_is_clean`, and `test_secrets_module_source_is_clean`
+(the module's own source and this test file, self-scanned by the real
+gate, stay clean) and all existing `frob:secret-fake`-marked fixtures
+(T-0157/T-0294) still discharge correctly -- unchanged, still passing.
+
+**Evidence:**
+- `tests/test_secrets_gate.py::TestFindsTokens::test_generic_live_key_adjacent_to_other_content_sec001`
+- `tests/test_secrets_gate.py::TestFakeMarking::test_placeholder_phrase_your_dash_here_is_not_flagged`
+- `tests/test_secrets_gate.py::TestFakeMarking::test_placeholder_phrase_insert_dash_is_not_flagged`
+- `tests/test_secrets_gate.py::TestFakeMarking::test_placeholder_phrase_does_not_suppress_real_looking_token`
+- `tests/test_secrets_gate.py::TestDriftLock::test_every_provider_has_a_fixture`
+- `tests/test_secrets_gate.py::TestGateIsGreenOnItself::test_repo_is_clean`
+
+**Gates:** `uv run frob check --ticket T-0219` clean: 0 errors, 1 warning
+(pre-existing `TEST006` "no coverage stamp found", unrelated to this
+change), 24 waived (all pre-existing). `uv run ruff check` and
+`uv run ruff format --check` clean on both touched files; `uv run ty
+check` clean. `uv run frob test --base main` selected and ran
+`tests/test_gates.py::test_gates_run_gates_integration` +
+`tests/test_secrets_gate.py`, exit=0. Full-repo `uv run frob check`
+(unscoped): `gates 0 errors, 1 warning, 24 waived` -- same pre-existing
+`TEST006` warning, no new secrets-gate or other violations. Deletion-
+filter (`git diff main --diff-filter=D --stat`) empty.
+
+Filed: none -- both misses were fully addressable within this ticket's
+declared scope (`src/frob/gates/_secrets.py`, `tests/**`, `tickets.md`).
+
+Not closing per dispatch instructions -- leaving for reviewer.
 
 <!-- ticket:T-0220 -->
 ```yaml
