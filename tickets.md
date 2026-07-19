@@ -4133,7 +4133,7 @@ both the PATH `ruff` and `uv run ruff`; `ty check` clean. Deletion filter
 id: T-0256
 title: 'movement-impossibility proofs: lateral/vertical isolation claims + red-team
   threat entries'
-state: in-progress
+state: done
 kind: security
 origin: human
 created: '2026-07-18'
@@ -4769,9 +4769,9 @@ tool upgrade frob`): see the coordinator-facing final report for the
 before/after TEST001 counts and sample crate-prefixed node ids from
 `.frob/cargo-collect.json`.
 
-<!-- ticket:T-draft-7b5b5541 -->
+<!-- ticket:T-0272 -->
 ```yaml
-id: T-draft-7b5b5541
+id: T-0272
 title: 'std.host: OS-group and sudoers-grant vocabulary'
 state: queued
 kind: feature
