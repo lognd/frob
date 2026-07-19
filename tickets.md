@@ -1010,7 +1010,7 @@ Filed from sibling-repo pilot P1 (graphite/feldspar/lithos, 2026-07-18). P1 gap 
 ```yaml
 id: T-0230
 title: PERF00x findings anchor to enclosing def line, not the offending statement
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-07-18'
