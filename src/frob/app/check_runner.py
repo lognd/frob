@@ -266,6 +266,12 @@ def _deploy_drift_result(root: Path) -> ToolResult | None:
     from frob.deploy import deploy_drift_violations
 
     violations = deploy_drift_violations(root)
+    return _deploy_drift_tool_result(violations)
+
+
+def _deploy_drift_tool_result(violations) -> ToolResult:  # noqa: ANN001
+    """Wrap DEPLOY001 `violations` (possibly empty) as the `deploy-drift`
+    stage's `ToolResult`."""
     diagnostics = [
         Diagnostic(
             file=v.file,
@@ -301,6 +307,12 @@ def _deploy_conformance_result(root: Path) -> ToolResult | None:
     from frob.deploy import deploy_conformance_violations
 
     violations = deploy_conformance_violations(root)
+    return _deploy_conformance_tool_result(violations)
+
+
+def _deploy_conformance_tool_result(violations) -> ToolResult:  # noqa: ANN001
+    """Wrap DEPLOY002/DEPLOY003 `violations` (possibly empty) as the
+    `deploy-conformance` stage's `ToolResult`."""
     diagnostics = [
         Diagnostic(
             file=v.file,
@@ -384,71 +396,104 @@ def _report_check_result(cfg: AppConfig, result) -> None:  # noqa: ANN001
         sys.exit(1)
 
 
+def _run_auto_detected_stages(cfg: AppConfig, root: Path) -> CheckResult:
+    """`check_type` unset: run every detected project-type stage
+    (`_run_all_detected`), logging which ones on a polyglot repo (T-0229)."""
+    detected = _detected_types(root) or [detect_project_type(root)]
+    if len(detected) > 1:
+        _log.info(
+            "polyglot repo: running every detected stage (%s) -- "
+            "pin check_type in frob.toml or pass --type to run "
+            "just one",
+            "/".join(detected),
+        )
+    return _run_all_detected(cfg, root, detected)
+
+
+def _run_pinned_stage(cfg: AppConfig, root: Path) -> CheckResult:
+    """`check_type` pinned: run just that stage, appending a `SKIPPED: ...`
+    note (T-0022) for every other detected language on a polyglot repo."""
+    assert cfg.check_type is not None  # narrows for the type checker; caller-guaranteed
+    project_type = cfg.check_type
+    others = [t for t in _detected_types(root) if t != project_type]
+    # frob:ticket T-0022
+    _warn_if_polyglot(root, project_type, others)
+    result = _dispatch_check(cfg, root, project_type)
+    if others:
+        result = CheckResult(
+            path=result.path,
+            results=[
+                *result.results,
+                *(_skip_note_result(lang, project_type) for lang in others),
+            ],
+        )
+    return result
+
+
+def _append_deploy_stages(root: Path, result: CheckResult) -> CheckResult:
+    """Fold the opt-in `deploy-drift`/`deploy-conformance` stages (each
+    `None` when `deploy/` is absent) onto `result`."""
+    deploy_result = _deploy_drift_result(root)
+    if deploy_result is not None:
+        result = CheckResult(path=result.path, results=[*result.results, deploy_result])
+    deploy_conform_result = _deploy_conformance_result(root)
+    if deploy_conform_result is not None:
+        result = CheckResult(
+            path=result.path,
+            results=[*result.results, deploy_conform_result],
+        )
+    return result
+
+
+def _handle_stamp_modes(root: Path, cfg: AppConfig) -> bool:
+    """Run `--stamp-coverage`/`--stamp-baseline` and return True when one
+    fired, so `run` can return immediately instead of running any stage."""
+    if cfg.check_stamp_coverage:
+        _run_stamp_coverage(root)
+        return True
+    if cfg.check_stamp_baseline:
+        _run_stamp_baseline(root, cfg)
+        return True
+    return False
+
+
+def _stdout_log_ctx(cfg: AppConfig):  # noqa: ANN201
+    """The stdout-logging context `run` executes every stage under (T-0202):
+    forced quiet for `--json` so the payload stays clean, otherwise gated by
+    `-v`/`-vv`."""
+    if cfg.check_json:
+        return quiet_stdout_logs()
+    return stdout_log_level(_verbosity_to_level(cfg.check_verbose))
+
+
+def _run_all_stages(cfg: AppConfig, root: Path) -> CheckResult:
+    """Run the auto-detected or pinned project-type stage(s) plus the
+    opt-in deploy stages, under `run`'s stdout-logging context."""
+    with _stdout_log_ctx(cfg):
+        cfg = _apply_frob_toml_defaults(cfg, root)
+        # frob:ticket T-0229
+        if cfg.check_type is None:
+            result = _run_auto_detected_stages(cfg, root)
+        else:
+            result = _run_pinned_stage(cfg, root)
+        return _append_deploy_stages(root, result)
+
+
 # frob:doc docs/modules/app.md#runners
 # frob:waive TEST005 reason="run 0.0% branch cover, debt T-0160"
 def run(cfg: AppConfig) -> None:
+    """`frob check [--type T] [--json] [--stamp-coverage|--stamp-baseline]`:
+    run every applicable stage (ruff/ty/arch/cycle/dup/bind/exports plus the
+    opt-in deploy stages) and report combined violations, exiting 1 on any
+    error."""
     root = cfg.check_path or Path(".")
 
     if not root.exists():
         _log.error("path does not exist: %s", root)
         sys.exit(1)
 
-    if cfg.check_stamp_coverage:
-        _run_stamp_coverage(root)
+    if _handle_stamp_modes(root, cfg):
         return
 
-    if cfg.check_stamp_baseline:
-        _run_stamp_baseline(root, cfg)
-        return
-
-    # T-0202: --json always forces stdout logs quiet (payload must stay
-    # clean); otherwise the stdout handler level is gated by -v/-vv so
-    # default output is the summary/violations table with no log chatter.
-    _ctx = (
-        quiet_stdout_logs()
-        if cfg.check_json
-        else stdout_log_level(_verbosity_to_level(cfg.check_verbose))
-    )
-
-    with _ctx:
-        cfg = _apply_frob_toml_defaults(cfg, root)
-        auto_detected = cfg.check_type is None
-        # frob:ticket T-0229
-        if auto_detected:
-            detected = _detected_types(root) or [detect_project_type(root)]
-            if len(detected) > 1:
-                _log.info(
-                    "polyglot repo: running every detected stage (%s) -- "
-                    "pin check_type in frob.toml or pass --type to run "
-                    "just one",
-                    "/".join(detected),
-                )
-            result = _run_all_detected(cfg, root, detected)
-        else:
-            project_type = cfg.check_type
-            others = [t for t in _detected_types(root) if t != project_type]
-            # frob:ticket T-0022
-            _warn_if_polyglot(root, project_type, others)
-            result = _dispatch_check(cfg, root, project_type)
-            if others:
-                result = CheckResult(
-                    path=result.path,
-                    results=[
-                        *result.results,
-                        *(_skip_note_result(lang, project_type) for lang in others),
-                    ],
-                )
-
-        deploy_result = _deploy_drift_result(root)
-        if deploy_result is not None:
-            result = CheckResult(
-                path=result.path, results=[*result.results, deploy_result]
-            )
-        deploy_conform_result = _deploy_conformance_result(root)
-        if deploy_conform_result is not None:
-            result = CheckResult(
-                path=result.path,
-                results=[*result.results, deploy_conform_result],
-            )
-
+    result = _run_all_stages(cfg, root)
     _report_check_result(cfg, result)

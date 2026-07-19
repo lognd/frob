@@ -288,13 +288,9 @@ def _renumber_one(root: Path, cfg: AppConfig) -> None:
 
 
 # frob:ticket T-0176
-def _land(root: Path, cfg: AppConfig) -> None:
-    """`frob ticket land <id> --worktree <path> [--dry-run]`: run the whole
-    merge-check-splice-close-commit chain via `frob.tickets.land`, reporting
-    every field of the resulting `LandReport` (or the exact `Err` + remedy
-    already logged by `land` itself) before exiting non-zero on failure."""
-    from frob.tickets import land
-
+def _require_land_args(cfg: AppConfig) -> None:
+    """Exit 1 (with a logged reason) unless `frob ticket land`'s required
+    `<id>`/`--worktree <path>` args are both present."""
     if cfg.ticket_id is None:
         _log.error("frob ticket land requires <id>")
         sys.exit(1)
@@ -302,12 +298,10 @@ def _land(root: Path, cfg: AppConfig) -> None:
         _log.error("frob ticket land requires --worktree <path>")
         sys.exit(1)
 
-    result = land(root, cfg.ticket_id, cfg.ticket_worktree, dry_run=cfg.ticket_dry_run)
-    if result.is_err:
-        _log.error("ticket land failed: %s", result.danger_err)
-        sys.exit(1)
 
-    report = result.danger_ok
+def _report_land_result(root: Path, report) -> None:  # noqa: ANN001
+    """Log every field of a `LandReport`: the dry-run summary line, or the
+    landed commit plus each changed file."""
     if report.dry_run:
         _log.info(
             "land %s: DRY RUN clean -- merged=%s wip_committed=%s "
@@ -327,6 +321,25 @@ def _land(root: Path, cfg: AppConfig) -> None:
     )
     for f in report.files_changed:
         _log.info("  %s", f)
+
+
+def _land(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket land <id> --worktree <path> [--dry-run]`: run the whole
+    merge-check-splice-close-commit chain via `frob.tickets.land`, reporting
+    every field of the resulting `LandReport` (or the exact `Err` + remedy
+    already logged by `land` itself) before exiting non-zero on failure."""
+    from frob.tickets import land
+
+    _require_land_args(cfg)
+    assert cfg.ticket_id is not None  # narrows for the type checker; enforced above
+    assert cfg.ticket_worktree is not None
+
+    result = land(root, cfg.ticket_id, cfg.ticket_worktree, dry_run=cfg.ticket_dry_run)
+    if result.is_err:
+        _log.error("ticket land failed: %s", result.danger_err)
+        sys.exit(1)
+
+    _report_land_result(root, result.danger_ok)
 
 
 def _plan(root: Path, cfg: AppConfig) -> None:
@@ -673,13 +686,20 @@ def _apply_evidence(root: Path, ticket_id: str, node_ids: list[str]):
         return collected
 
     result = add_evidence(root, ticket_id, node_ids, collected.danger_ok.node_ids)
+    _log_evidence_result(ticket_id, result)
+    return result
+
+
+def _log_evidence_result(ticket_id: str, result) -> None:  # noqa: ANN001
+    """Log `add_evidence`'s outcome: the failure reason + remedy, or the
+    ticket's resulting evidence id count."""
     if result.is_err:
         _log.error(
             "ticket evidence failed: %s (run `frob test --collect` to refresh "
             "collected tests, or fix the id)",
             result.danger_err,
         )
-        return result
+        return
 
     ticket = result.danger_ok
     _log.info(
@@ -688,7 +708,6 @@ def _apply_evidence(root: Path, ticket_id: str, node_ids: list[str]):
         len(ticket.evidence),
         list(ticket.evidence),
     )
-    return result
 
 
 # frob:ticket T-0215
