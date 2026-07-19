@@ -253,7 +253,6 @@ class TestCoverageGate:
     def test_cov001_message_wording_for_docstring_without_doc_edge(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests tests/test_gates.py::TestCoverageGate::test_cov001_message_wording_for_docstring_without_doc_edge
         # T-0213: a symbol with a docstring but no `frob:doc` edge must still
         # be flagged (a docstring alone does not satisfy COV001), and the
         # violation message must say so accurately -- not "undocumented",
