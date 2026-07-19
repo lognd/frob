@@ -235,6 +235,12 @@ class TestLintKillSwitch:
         assert len(violations) == 1
         assert violations[0].rule == "LINT004"
         assert violations[0].target == "api"
+        # T-0312: the detail must name BOTH real remedies (declaring an
+        # `attr flag=<id>` kill-switch, or waiving LINT004 with a ticket),
+        # so a repo without a real kill-switch yet is not misled into
+        # thinking `attr flag` is the only -- or a nonexistent -- escape.
+        assert "attr flag=<id>" in violations[0].detail
+        assert 'waive "LINT004"' in violations[0].detail
 
     # frob:tests src/frob/strata/_lint.py::check_lint_kill_switch kind="unit"
     def test_risky_capability_with_flag_is_clean(self):

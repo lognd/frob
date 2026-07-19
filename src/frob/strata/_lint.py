@@ -375,7 +375,9 @@ def check_lint_kill_switch(model: KernelModel) -> tuple[LintViolation, ...]:
                 rule="LINT004",
                 target=node.id,
                 detail=f"node {node.id} holds risky capability kind(s) {kinds} "
-                "with no declared attr flag=<id> kill-switch",
+                "with no declared attr flag=<id> kill-switch -- declare "
+                "`attr flag=<id>;` naming a real kill-switch, or `waive "
+                '"LINT004" reason "..." ticket "T-...";` until one lands',
             )
         )
     return tuple(violations)
