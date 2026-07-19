@@ -89,6 +89,21 @@ class TestLockfileParsers:
     def test_find_lockfile_none(self, tmp_path: Path) -> None:
         assert find_lockfile(tmp_path) is None
 
+    def test_find_lockfile_direct(self, tmp_path: Path) -> None:
+        """T-0221: `frob vet uv.lock` passes the lockfile itself as `root`;
+        it must resolve directly, not be misread as a directory to search
+        under (which would look for uv.lock/uv.lock)."""
+        lockfile = tmp_path / "uv.lock"
+        lockfile.write_text(UV_LOCK)
+        assert find_lockfile(lockfile) == lockfile
+
+    def test_find_lockfile_bad_name(self, tmp_path: Path) -> None:
+        """A file path that isn't one of the supported lockfile names is not
+        silently accepted just because it exists."""
+        path = tmp_path / "yarn.lock"
+        path.write_text("{}")
+        assert find_lockfile(path) is None
+
     def test_parse_uv_lock(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_lockfile.py::parse_lockfile kind="unit"
         path = tmp_path / "uv.lock"
@@ -1062,6 +1077,72 @@ class TestEcosystemRules:
         )
         violation = _ecosystem.npm_non_registry_rule(dep, "package-lock.json")
         assert violation is None
+
+
+class TestScanTreeLockArg:
+    def test_scan_tree_lockfile_arg(self, tmp_path: Path) -> None:
+        """T-0221 regression: `scan_tree(<path to a lockfile file>)` must vet
+        that lockfile, not treat it as a directory root and fail to find
+        anything under it."""
+        from frob.vet._scan import scan_tree
+
+        lockfile = tmp_path / "uv.lock"
+        lockfile.write_text(UV_LOCK)
+
+        result = scan_tree(lockfile, fetch=False)
+        assert result.is_ok
+        report = result.danger_ok
+        assert len(report.verdicts) == 2
+
+    def test_scan_tree_unsupp_err(self, tmp_path: Path) -> None:
+        """T-0221 regression: an unresolvable lockfile is a typed Err, not a
+        silent empty-ok report -- callers (the CLI) rely on this to exit
+        nonzero rather than gate-poisoning with a vacuous pass."""
+        from frob.vet._models import VetError
+        from frob.vet._scan import scan_tree
+
+        empty_dir = tmp_path / "empty"
+        empty_dir.mkdir()
+
+        result = scan_tree(empty_dir, fetch=False)
+        assert result.is_err
+        assert result.danger_err is VetError.LockfileUnsupported
+
+
+class TestVetRunnerLockArg:
+    def test_run_lockfile_arg(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """T-0221 regression: `frob vet <path/to/uv.lock>` (CLI entry point)
+        vets that lockfile rather than misreading the path as a directory
+        root and reporting no supported lockfile."""
+        from frob.app.config import AppConfig
+        from frob.app.vet_runner import run
+
+        lockfile = tmp_path / "uv.lock"
+        lockfile.write_text(UV_LOCK)
+
+        cfg = AppConfig(vet_path=lockfile)
+        with pytest.raises(SystemExit) as exc_info:
+            run(cfg)
+        assert exc_info.value.code == 0
+        out = capsys.readouterr().out
+        assert "requests" in out
+
+    def test_run_unsupp_nonzero(self, tmp_path: Path) -> None:
+        """T-0221 regression: a LockfileUnsupported Err must not be a silent
+        exit-0 -- that is the same vacuous-pass class as T-0184 and poisons
+        any gate relying on `frob vet`'s exit code."""
+        from frob.app.config import AppConfig
+        from frob.app.vet_runner import run
+
+        empty_dir = tmp_path / "empty"
+        empty_dir.mkdir()
+
+        cfg = AppConfig(vet_path=empty_dir)
+        with pytest.raises(SystemExit) as exc_info:
+            run(cfg)
+        assert exc_info.value.code != 0
 
 
 class TestScanTreeWithLocalSource:
