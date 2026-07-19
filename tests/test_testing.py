@@ -394,6 +394,75 @@ class TestRunners:
         assert report.ok is False
         assert report.outcomes[0].exit_code == 1
 
+    def test_pytest_exit_5_no_tests_collected_is_neutral_not_fail(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/testing/_runners.py::run_selected
+        # frob:tests src/frob/testing/_runners.py::_is_neutral_outcome
+        # T-0210: a package-fallback selection landing on a package with a
+        # source edit but zero tests must degrade to the same neutral
+        # outcome the empty-selection path prints, not [FAIL].
+        from frob.testing._models import SelectionReport
+
+        script = tmp_path / "no_tests.py"
+        script.write_text("import sys\nsys.exit(5)\n")
+        spec = RunnerSpec(
+            language="python",
+            command=(
+                sys.executable,
+                str(script),
+                "{files}",
+            ),
+            all_command=(
+                sys.executable,
+                str(script),
+            ),
+        )
+        selection = SelectionReport(
+            touched=(),
+            selected={"python": ("dummy",)},
+            ripple=(),
+            unbound=(),
+            fallback="package",
+        )
+        result = run_selected(selection, (spec,), tmp_path)
+        assert result.is_ok
+        report = result.danger_ok
+        assert report.ok is True
+        assert report.outcomes[0].exit_code == 5
+
+    def test_package_fallback_with_zero_tests_is_ok_end_to_end(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/testing/_runners.py::run_selected
+        # T-0210 regression: a real fixture package with a source edit and
+        # zero tests, selected via fallback="package" and run through the
+        # real `pytest` runner, must come back ok=True (pytest's genuine
+        # exit 5), not ok=False.
+        from frob.testing._models import SelectionReport
+
+        pkg = tmp_path / "activities" / "git-heist"
+        pkg.mkdir(parents=True)
+        (pkg / "core.py").write_text("def widget() -> int:\n    return 1\n")
+
+        spec = RunnerSpec(
+            language="python",
+            command=(sys.executable, "-m", "pytest", "{files}"),
+            all_command=(sys.executable, "-m", "pytest"),
+        )
+        selection = SelectionReport(
+            touched=(str(pkg / "core.py"),),
+            selected={"python": (str(pkg),)},
+            ripple=(),
+            unbound=(str(pkg / "core.py"),),
+            fallback="package",
+        )
+        result = run_selected(selection, (spec,), tmp_path)
+        assert result.is_ok
+        report = result.danger_ok
+        assert report.outcomes[0].exit_code == 5
+        assert report.ok is True
+
     def test_spawn_failed_nonexistent_binary(self, tmp_path: Path) -> None:
         from frob.testing._models import SelectionReport
 

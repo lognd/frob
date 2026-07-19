@@ -35,6 +35,13 @@ _log = get_logger(__name__)
 _PLACEHOLDERS = ("{ids}", "{files}", "{filters}", "{regex}")
 _EXCERPT_LINES = 40
 
+# pytest's own exit code for "collection ran clean but selected zero tests"
+# (distinct from exit 1+, a genuine failure/error). A package-fallback
+# selection that lands on a source-only package with no tests hits this --
+# T-0210: that must degrade to the same neutral outcome the empty-selection
+# path in `frob.app.test_runner` already prints, not a reported [FAIL].
+_PYTEST_NO_TESTS_COLLECTED = 5
+
 # pyo3's abi3-py311 feature (frob-core, strata-core) pins a floor: any
 # interpreter frob offers `cargo test` as PYO3_PYTHON must be at least this,
 # or the build fails deep inside pyo3-build-config with a cryptic message.
@@ -394,6 +401,19 @@ def _run_language(
     return Ok(outcomes)
 
 
+def _is_neutral_outcome(outcome: RunnerOutcome) -> bool:
+    """True if `outcome` is pytest's "collection ran, selected zero tests"
+    exit (5) rather than a genuine failure -- the package-fallback path
+    (T-0210) can legitimately land on a package with source but no tests,
+    which must read the same as the empty-selection path's neutral pass,
+    not [FAIL]. Internal helper (not re-exported from `frob.testing`):
+    consulted by `run_selected` here and by `frob.app.test_runner`'s status
+    line directly from this module."""
+    return (
+        outcome.language == "python" and outcome.exit_code == _PYTEST_NO_TESTS_COLLECTED
+    )
+
+
 # frob:doc docs/modules/testing.md#public-api
 def run_selected(
     selection: SelectionReport, runners: tuple[RunnerSpec, ...], root: Path
@@ -428,7 +448,7 @@ def run_selected(
             return Err(run.danger_err)
         for outcome in run.danger_ok:
             outcomes.append(outcome)
-            if outcome.exit_code != 0:
+            if outcome.exit_code != 0 and not _is_neutral_outcome(outcome):
                 ok = False
 
     return Ok(TestRunReport(selection=selection, outcomes=tuple(outcomes), ok=ok))
