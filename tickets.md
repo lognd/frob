@@ -8431,6 +8431,34 @@ in output.
 
 `git diff main --diff-filter=D --stat` is empty (deletion-filter clean).
 
+Reviewer re-check finding (post-approval, fixed in same worktree): the
+`frob:tests` directive on `TestExtendedKindsDriftLock::
+test_extended_kinds_is_disjoint_from_kind_map` had been retargeted from the
+unresolvable module constant `_EXTENDED_KINDS` to
+`_selfconform.py::_observed_extended_kinds_by_node` to satisfy DRIFT002, but
+the bound test never called that function -- a hollow binding satisfying
+the gate mechanically without exercising the symbol. Fix path taken:
+PREFERRED option -- strengthened the test suite so the binding is honest.
+Added a sibling test,
+`test_observed_extended_kinds_by_node_only_ever_yields_extended_kinds`, that
+writes a real `eval(x)` needle to a tmp file, builds a `CodeBinding` over
+it, calls `_observed_extended_kinds_by_node` directly, and asserts its
+output is both non-empty and a subset of `_EXTENDED_KINDS` disjoint from
+`_KIND_MAP` -- i.e. it exercises the exact `& _EXTENDED_KINDS` intersection
+behavior the drift-lock constants describe. `_observed_extended_kinds_by_node`
+computes "every node id -> the union of `_EXTENDED_KINDS` capabilities
+`scan_file_capabilities` observes across that node's `code=`-bound files",
+so it is the actual consumer of the disjointness invariant, not an
+unrelated symbol -- no extractor ticket needed. Re-verified: `uv run pytest
+tests/unit/strata/test_selfconform.py -q` all pass (26 tests, was 25);
+`uv run frob check --only coverage` reports DRIFT002 and COV001 absent from
+output (0 hits); full `uv run frob check` still reports 0 malformed-
+directive warnings and "0 errors, 4 warnings, 205 waived" (the 4 warnings
+are the same pre-existing waived-adjacent PERF/arch items, no new ones);
+`ty` still reports the same 2 pre-existing `src/frob/vet/_allow.py:72-73`
+diagnostics, confirmed unrelated to this file; `ruff check` and `ruff
+format --check` clean. Not closing -- left for re-review per dispatch.
+
 <!-- ticket:T-0295 -->
 ```yaml
 id: T-0295
