@@ -7532,11 +7532,11 @@ frob check --ticket T-draft-349ca4cb` PRE001 cleared via `frob ticket
 sweep T-draft-349ca4cb` after the code edits. Deletion filter (`git diff
 main --diff-filter=D --stat`) is empty -- no files deleted.
 
-<!-- ticket:T-draft-a00ce7ec -->
+<!-- ticket:T-0284 -->
 ```yaml
-id: T-draft-a00ce7ec
+id: T-0284
 title: 'coverage: deploy modules to TEST005 zero'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-19'
@@ -7547,7 +7547,9 @@ scope:
 - src/frob/app/deploy_runner.py
 - tests/**
 - tickets.md
-evidence: []
+evidence:
+- tests/unit/deploy/test_vm_runner.py::TestFullSequence::test_run_vm_audit_runs_full_sequence
+- tests/unit/deploy/test_deploy_runner.py::TestGenerate::test_generate_writes_files
 attachments: []
 acceptance: []
 threat: null
