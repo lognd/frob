@@ -47,7 +47,7 @@ class TestFindClones:
         refs = {
             frozenset((p.left.ref, p.right.ref))
             for group in report.groups
-            for p in group
+            for p in group.pairs
         }
         matched = {
             r
@@ -95,7 +95,7 @@ class TestGateRules:
         clone_ref = next(
             p.left.ref
             for group in report.groups
-            for p in group
+            for p in group.pairs
             if "compute_total" in p.left.ref
         )
         touched = frozenset({clone_ref})
@@ -110,7 +110,7 @@ class TestGateRules:
         pair = next(
             p
             for group in report.groups
-            for p in group
+            for p in group.pairs
             if "compute_total" in p.left.ref or "compute_total" in p.right.ref
         )
         touched = frozenset({pair.left.ref, pair.right.ref})

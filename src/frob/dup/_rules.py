@@ -10,7 +10,7 @@ composing these into the gate's `Violation` tuple.
 
 from __future__ import annotations
 
-from frob.dup._models import ClonePair, CloneRegion, CloneReport
+from frob.dup._models import ClonePair, CloneRegion, CloneReport, CloneTemplate
 from frob.gates._models import Severity, Violation
 from frob.logging import get_logger
 
@@ -32,6 +32,34 @@ def _waiver_hint(rule: str) -> str:
     return f'waive with: frob:waive {rule} reason="..."'
 
 
+def _extraction_hint(template: CloneTemplate | None) -> str:
+    """DUP001's message suffix naming the synthesized extraction, or "" if none.
+
+    `None` means `build_group_template` could not produce a meaningful
+    generalization for this group (docs/modules/dup.md's "Reverse-
+    templating report" section) -- DUP001 falls back to naming only the
+    similarity/rung in that case, same as before this ticket.
+    """
+    if template is None:
+        return ""
+    return f"; candidate extraction: {template.suggested_signature}"
+
+
+def _dup001_message(
+    new_side: CloneRegion,
+    old_side: CloneRegion,
+    pair: ClonePair,
+    template: CloneTemplate | None,
+) -> str:
+    """DUP001's full message: sides, similarity/rung, extraction hint, waiver form."""
+    return (
+        f"{new_side.ref} duplicates pre-existing {old_side.ref} "
+        f"({pair.similarity:.0%} similar, rung={pair.rung})"
+        f"{_extraction_hint(template)}; "
+        f"extract into a shared helper or {_waiver_hint('DUP001')}"
+    )
+
+
 # frob:doc docs/modules/dup.md#gate-integration
 # frob:doc docs/guides/extending/dup-detector-registry.md#dup-detector-registry
 def DUP001(
@@ -41,11 +69,14 @@ def DUP001(
 
     Error severity: the diff introduces a duplicate of something that
     already existed before it, which is exactly what "extract into a
-    shared helper" fixes.
+    shared helper" fixes. The message names the suggested extraction
+    signature when the group's reverse-templating report succeeded
+    (`CloneMatchGroup.template`) -- the violation hands the fix, not just
+    a percentage, per docs/modules/dup-sota-survey.md sec 4.
     """
     violations: list[Violation] = []
     for group in report.groups:
-        for pair in group:
+        for pair in group.pairs:
             new_side, old_side = _new_and_old_side(pair, touched)
             if new_side is None or old_side is None:
                 continue
@@ -57,11 +88,7 @@ def DUP001(
                     severity=Severity.ERROR,
                     file=_ref_path(new_side.ref),
                     line=_ref_line(new_side.span),
-                    message=(
-                        f"{new_side.ref} duplicates pre-existing {old_side.ref} "
-                        f"({pair.similarity:.0%} similar, rung={pair.rung}); "
-                        f"extract into a shared helper or {_waiver_hint('DUP001')}"
-                    ),
+                    message=_dup001_message(new_side, old_side, pair, group.template),
                 )
             )
     _log.info("DUP001: %d violation(s)", len(violations))
@@ -81,7 +108,7 @@ def DUP002(
     """
     violations: list[Violation] = []
     for group in report.groups:
-        for pair in group:
+        for pair in group.pairs:
             if pair.left.ref not in touched or pair.right.ref not in touched:
                 continue
             if pair.similarity < threshold:

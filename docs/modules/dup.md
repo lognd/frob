@@ -149,8 +149,12 @@ class ClonePair(BaseModel):     # frozen
     rung: str                   # "r1" | "r2" | "r1.5" | "r3" | "r4" | "r5" | "r6"
     alignment: tuple[tuple[int, int], ...]   # matched line pairs
 
+class CloneMatchGroup(BaseModel):   # frozen
+    pairs: tuple[ClonePair, ...]
+    template: CloneTemplate | None    # None when reverse-templating didn't apply
+
 class CloneReport(BaseModel):   # frozen
-    groups: tuple[tuple[ClonePair, ...], ...]
+    groups: tuple[CloneMatchGroup, ...]
     stats: DupStats             # fingerprinted, cache_hits, pairs_verified
 
 def anti_unify(labels_a, parents_a, labels_b, parents_b,
@@ -164,6 +168,22 @@ class AntiUnifyTemplate(BaseModel):   # frozen
     parents: tuple[int, ...]          # same node-array shape as apted_similarity's input
     bindings_a: tuple[tuple[int, int], ...]   # (hole_id, a-side node index)
     bindings_b: tuple[tuple[int, int], ...]   # (hole_id, b-side node index)
+
+def build_group_template(root: Path, pairs: tuple[ClonePair, ...],
+                         ) -> CloneTemplate | None
+    # Reverse-templating report over a clone group's distinct members
+    # (see "Reverse-templating report" below); never raises.
+
+class CloneBinding(BaseModel):   # frozen -- one hole's concrete side
+    hole: int
+    region: CloneRegion
+    source_text: str            # structural skeleton of the bound subtree
+
+class CloneTemplate(BaseModel):   # frozen -- a group's generalized report
+    skeleton_text: str           # readable template, "$hole_N" at divergence
+    holes: tuple[int, ...]
+    bindings: tuple[tuple[CloneBinding, ...], ...]   # one tuple per member
+    suggested_signature: str     # advisory extraction signature text
 
 class DupError(ErrorSet):
     CoreUnavailable      = "frob-core native extension is not installed"
@@ -286,13 +306,66 @@ Python shim (`frob.dup._core.anti_unify`) turns `ok == False` into
 
 This is the foundation T-0195 (reverse-templating report:
 `CloneTemplate`/`CloneBinding` models, extraction-signature synthesis in
-DUP001 messages) and T-0287 (type-hole generalization) build on; neither is
-implemented by this kernel itself.
+DUP001 messages, described below) and T-0287 (type-hole generalization)
+build on.
+
+## Reverse-templating report
+
+<a id="reverse-templating-report"></a>
+<!-- frob:describes frob.dup._template.build_group_template -->
+<!-- frob:describes frob.dup.CloneTemplate -->
+<!-- frob:describes frob.dup.CloneBinding -->
+<!-- frob:describes frob.dup.CloneMatchGroup -->
+
+T-0195 (docs/modules/dup-sota-survey.md sec 4): a synthesis stage over the
+`anti_unify` kernel that turns a clone group's already-detected `ClonePair`s
+into a human-readable report -- "these N functions share this template,
+differing only at these holes" -- rather than just a similarity percentage.
+No new detection; `frob.dup._pipeline._clone_report` calls
+`build_group_template` once per group and attaches the result as
+`CloneMatchGroup.template`, `None` when reverse-templating did not apply.
+
+**Multi-member groups (fold, not just pairwise)**: `build_group_template`
+finds every distinct `CloneRegion` referenced across a group's pairs, then
+folds Plotkin lgg across them incrementally -- member 0 lgg member 1, that
+result lgg member 2, and so on. The fold works because `$hole_N` placeholder
+labels never collide with a real node label, so folding a hole against real
+structure keeps it a hole (correctly narrowing the shared skeleton as more
+members disagree at that position, never re-widening it). Per-member
+bindings are then recovered by re-anti-unifying the final folded template
+against each member individually: the folded template's shared nodes match
+every member's tree exactly (they came from structure every member shares),
+and its hole positions are visited in the same deterministic preorder order
+each time `anti_unify` runs the same left-hand template against a new
+right-hand tree, so hole ids line up identically across every member without
+threading state through the fold by hand. A 2-member group is the trivial
+case of this same fold (one iteration).
+
+**Readable rendering, not literal source**: `CloneTemplate.skeleton_text`
+and `CloneBinding.source_text` render `label(child, child, ...)` from the
+`(labels, parents)` node arrays -- a structural skeleton, not the literal
+source characters. `frob.lang.TreeNode` (docs/modules/lang.md) does not
+carry source spans/text today, so exact source-text extraction (and the
+survey's "reuse the identifier when both instances agree on a name" nicety)
+is out of scope here; see T-0195's Done report in tickets.md for the filed
+follow-up. `CloneTemplate.suggested_signature` is therefore always
+`hole_N`-named parameters, never a guessed real identifier -- advisory text
+embedded in DUP001's message, never an auto-applied patch, consistent with
+every other frob gate being conformance-only.
+
+**Failure is silent-to-None, never raised**: any recovery failure --
+a member's subtree unavailable (unparseable file, stale span), `frob_core`
+not installed, or the hole-ceiling sanity check tripping at any fold step
+-- makes `build_group_template` return `None`. Callers report the group's
+plain `pairs` with no template in that case, per the survey's "Err back to
+a plain ClonePair report with no template rather than emitting noise" rule.
 
 ## Gate integration
 
 - DUP001 (error): diff introduces a clone of a pre-existing symbol at or
   above threshold. Message names the existing symref, similarity, rung,
+  the group's suggested extraction signature when `CloneMatchGroup.template`
+  is present (`; candidate extraction: def _extracted(hole_0, ...): ...`),
   and the waiver form (`frob:waive DUP001 reason="..."`).
 - DUP002 (warn): clones internal to the diff itself (two new copies).
 - The pre-work sweep (`frob ticket start`) reuses the same pipeline
@@ -507,9 +580,17 @@ See "Gate integration" above for what DUP001/DUP002 report.
 <!-- frob:describes frob.dup.DupConfig -->
 <a id="probe-verdict"></a>
 <!-- frob:describes frob.dup.ProbeVerdict -->
+<a id="clone-group"></a>
+<!-- frob:describes frob.dup.CloneMatchGroup -->
+<a id="clone-binding"></a>
+<!-- frob:describes frob.dup.CloneBinding -->
+<a id="clone-template"></a>
+<!-- frob:describes frob.dup.CloneTemplate -->
 See the "Public API" code block above for `DupError`/`CloneRegion`/
-`ClonePair`/`CloneReport`/`DupStats`/`DupConfig`/`ProbeVerdict` field
-shapes.
+`ClonePair`/`CloneMatchGroup`/`CloneReport`/`DupStats`/`DupConfig`/
+`ProbeVerdict`/`CloneBinding`/`CloneTemplate` field shapes, and
+"Reverse-templating report" above for `CloneMatchGroup.template`,
+`CloneBinding`, and `CloneTemplate` semantics.
 
 <a id="caching"></a>
 <!-- frob:describes frob.dup._cache.get_fingerprint -->

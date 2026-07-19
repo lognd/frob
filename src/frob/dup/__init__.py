@@ -19,9 +19,12 @@ from frob.dup._core import anti_unify, core_available
 from frob.dup._legacy import CloneGroup, CodeFragment, DupResult, find_duplicates
 from frob.dup._models import (
     AntiUnifyTemplate,
+    CloneBinding,
+    CloneMatchGroup,
     ClonePair,
     CloneRegion,
     CloneReport,
+    CloneTemplate,
     DupConfig,
     DupError,
     DupStats,
@@ -29,15 +32,19 @@ from frob.dup._models import (
 )
 from frob.dup._pipeline import find_clones, probe_equivalence, touched_refs
 from frob.dup._rules import DUP001, DUP002
+from frob.dup._template import build_group_template
 
 __all__ = [
     "DUP001",
     "DUP002",
     "AntiUnifyTemplate",
+    "CloneBinding",
     "CloneGroup",
+    "CloneMatchGroup",
     "ClonePair",
     "CloneRegion",
     "CloneReport",
+    "CloneTemplate",
     "CodeFragment",
     "DupConfig",
     "DupError",
@@ -45,6 +52,7 @@ __all__ = [
     "DupStats",
     "ProbeVerdict",
     "anti_unify",
+    "build_group_template",
     "core_available",
     "find_clones",
     "find_duplicates",
