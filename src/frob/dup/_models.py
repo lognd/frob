@@ -161,6 +161,18 @@ class DupConfig(BaseModel):
     default so a default `frob check` never pays the extra suffix-array
     pass, even when `[dup].enforce` is already on. Set `[dup].region_kernel
     = true` in frob.toml to opt in.
+
+    `inline_calls` gates helper-inlining triage (T-0288, docs/modules/dup.md's
+    "Helper-inlining triage" section): before fingerprinting, a symbol's
+    body is spliced with the bodies of the PRIVATE helpers it calls (a
+    bounded `frob.graph.callgraph` closure), so arch-forced small-helper
+    splits do not hide Type-3/4 duplication. `inline_max_depth` /
+    `inline_max_nodes` bound that closure (cycle-guarded, public-API
+    stopping, falls back to the un-inlined body past the cap).
+    `helper_min_tokens` is the (lower) `min_tokens` floor `find_helper_clones`
+    uses for its dedicated pass over the private-helper population, so
+    families of near-identical TINY helpers -- themselves usually below the
+    whole-symbol `min_tokens` default -- are not silently skipped.
     """
 
     model_config = ConfigDict(frozen=True)
@@ -170,6 +182,10 @@ class DupConfig(BaseModel):
     cache_entries: int = 200_000
     region_kernel_enabled: bool = False
     region_min_tokens: int = 15
+    inline_calls: bool = True
+    inline_max_depth: int = 3
+    inline_max_nodes: int = 12
+    helper_min_tokens: int = 8
 
 
 # frob:doc docs/modules/dup.md#anti-unification-plotkin-lgg

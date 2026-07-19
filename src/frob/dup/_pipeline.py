@@ -119,7 +119,8 @@ from frob.dup._models import (
 )
 from frob.dup._template import build_group_template
 from frob.gitio import Diff
-from frob.graph._models import GraphSnapshot
+from frob.graph._models import GraphSnapshot, SymbolKind
+from frob.graph.callgraph import CallGraph, build_call_graph
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
@@ -366,6 +367,145 @@ def _parsed_symbols_by_path(root: Path, path: str) -> dict[str, tuple[str, ...]]
     return {s.qualname: s.body_tokens for s in result.danger_ok.symbols}
 
 
+def _package_paths(root: Path, path: str) -> tuple[str, ...]:
+    """Every language-supported file sitting next to `path` (same directory),
+    repo-root-relative POSIX, `path` itself included -- the file set
+    `build_call_graph` resolves intra-package private-helper calls over."""
+    from frob.lang import supported_extensions
+
+    directory = (root / path).parent
+    if not directory.is_dir():
+        return (path,)
+    exts = supported_extensions()
+    found = [
+        (directory / name).relative_to(root).as_posix()
+        for name in sorted(directory.iterdir())
+        if (directory / name).is_file() and (directory / name).suffix.lower() in exts
+    ]
+    return tuple(found) or (path,)
+
+
+def _call_graph_for_path(state: _FpState, path: str) -> CallGraph:
+    """The (cached) intra-package call graph for `path`'s directory."""
+    directory = str(Path(path).parent)
+    cached = state.callgraph_by_dir.get(directory)
+    if cached is not None:
+        return cached
+    graph = build_call_graph(state.root, _package_paths(state.root, path))
+    state.callgraph_by_dir[directory] = graph
+    return graph
+
+
+def _callee_name_map(graph: CallGraph, caller_symref: str) -> dict[str, str]:
+    """`{short_call_name: callee_symref}` for one caller's recorded PRIVATE
+    callees (see `build_call_graph`)."""
+    result: dict[str, str] = {}
+    for callee_symref in graph.calls.get(caller_symref, ()):
+        short = callee_symref.split("::", 1)[1].rsplit(".", 1)[-1]
+        result[short] = callee_symref
+    return result
+
+
+def _callee_tokens(state: _FpState, callee_symref: str) -> tuple[str, ...] | None:
+    """`callee_symref`'s body tokens, parsing (and caching) its file on first use."""
+    callee_path, callee_qualname = callee_symref.split("::", 1)
+    if callee_path not in state.tokens_by_path:
+        state.tokens_by_path[callee_path] = _parsed_symbols_by_path(
+            state.root, callee_path
+        )
+    return state.tokens_by_path[callee_path].get(callee_qualname)
+
+
+def _substitute_calls(
+    state: _FpState,
+    path: str,
+    caller_symref: str,
+    tokens: list[str],
+    visited: frozenset[str],
+    budget: list[int],
+    depth: int,
+) -> list[str]:
+    """IN-PLACE call-splicing: replace each resolved `name(...)` call span with
+    the callee's own (recursively substituted) body tokens.
+
+    Bounded: `depth >= inline_max_depth` or `budget[0] <= 0` stops
+    substituting further and returns `tokens` unchanged past that point --
+    the documented "fall back to the un-inlined body past the cap"
+    behavior. Cycle-guarded via `visited` (a symref already on the current
+    call chain is left as an un-substituted call, never re-entered).
+    Public callees never appear in `graph.calls` at all (see
+    `build_call_graph`), so this walk stops at the public-API boundary
+    automatically -- no separate check needed here.
+    """
+    if depth >= state.cfg.inline_max_depth or budget[0] <= 0:
+        return tokens
+    graph = _call_graph_for_path(state, path)
+    name_map = _callee_name_map(graph, caller_symref)
+    if not name_map:
+        return tokens
+    out: list[str] = []
+    i = 0
+    n = len(tokens)
+    while i < n:
+        tok = tokens[i]
+        if (
+            budget[0] > 0
+            and i + 1 < n
+            and tokens[i + 1] == "("
+            and tok in name_map
+            and name_map[tok] not in visited
+        ):
+            callee_symref = name_map[tok]
+            paren_depth = 1
+            j = i + 2
+            while j < n and paren_depth > 0:
+                if tokens[j] == "(":
+                    paren_depth += 1
+                elif tokens[j] == ")":
+                    paren_depth -= 1
+                j += 1
+            callee_tokens = _callee_tokens(state, callee_symref)
+            if callee_tokens:
+                budget[0] -= 1
+                callee_path = callee_symref.split("::", 1)[0]
+                substituted = _substitute_calls(
+                    state,
+                    callee_path,
+                    callee_symref,
+                    list(callee_tokens),
+                    visited | {callee_symref},
+                    budget,
+                    depth + 1,
+                )
+                out.extend(substituted)
+                i = j
+                continue
+        out.append(tok)
+        i += 1
+    return out
+
+
+def _inline_private_calls(
+    state: _FpState, symref: str, body_tokens: tuple[str, ...]
+) -> tuple[str, ...]:
+    """Splice bounded call-graph-closure PRIVATE-helper bodies into `body_tokens`.
+
+    Triage-only: reported spans continue to point at the real helper
+    definitions (`ClonePair.region` is built from `SymbolRecord.span`, never
+    touched here) -- this only changes what gets hashed/compared. Falls
+    back to `body_tokens` unchanged when inlining is disabled or the
+    symbol has no private callees.
+    """
+    if not state.cfg.inline_calls:
+        return body_tokens
+    path = symref.split("::", 1)[0]
+    budget = [state.cfg.inline_max_nodes]
+    substituted = _substitute_calls(
+        state, path, symref, list(body_tokens), frozenset({symref}), budget, depth=0
+    )
+    return tuple(substituted)
+
+
 def _build_dataflow_graph(
     chunks: tuple[tuple[str, ...], ...],
 ) -> tuple[tuple[tuple[int, int], ...], tuple[str, ...]]:
@@ -587,6 +727,7 @@ class _FpState:
     body_tokens_by_ref: dict[str, tuple[str, ...]] = field(default_factory=dict)
     digest_by_ref: dict[str, str] = field(default_factory=dict)
     fp_by_ref: dict[str, tuple[int, ...]] = field(default_factory=dict)
+    callgraph_by_dir: dict[str, CallGraph] = field(default_factory=dict)
 
 
 def _r3_fingerprint(
@@ -650,13 +791,21 @@ def _r5_fingerprint(
 
 
 def _body_tokens_for_symbol(state: _FpState, record: Any) -> tuple[str, ...] | None:
-    """`record`'s body tokens, parsing (and caching) its file if not already loaded.
-    `None` when the body is missing or under `cfg.min_tokens`."""
+    """`record`'s body tokens (private-helper-inlined, T-0288), parsing/caching
+    its file if not already loaded. `None` when the body is missing or the
+    INLINED token count is under `cfg.min_tokens` -- inlining runs before the
+    threshold check so a symbol whose logic was split into private helpers
+    is measured by its real logic size, not the arch-forced call-site size.
+    """
     path = record.id.path
     if path not in state.tokens_by_path:
         state.tokens_by_path[path] = _parsed_symbols_by_path(state.root, path)
-    body_tokens = state.tokens_by_path[path].get(record.id.qualname)
-    if not body_tokens or len(body_tokens) < state.cfg.min_tokens:
+    raw_tokens = state.tokens_by_path[path].get(record.id.qualname)
+    if not raw_tokens:
+        return None
+    symref = f"{path}::{record.id.qualname}"
+    body_tokens = _inline_private_calls(state, symref, raw_tokens)
+    if len(body_tokens) < state.cfg.min_tokens:
         return None
     return body_tokens
 
@@ -1060,6 +1209,42 @@ def find_clones(
 
     groups = _all_rung_groups(state, snapshot, touched, cfg)
     return Ok(_clone_report(state, groups))
+
+
+def _is_private_helper(record: Any) -> bool:
+    """True for a FUNCTION/METHOD symbol whose short name is `_`-prefixed
+    (private/module-local, not re-exported) -- the population `find_helper_clones`
+    scans."""
+    short = record.id.qualname.rsplit(".", 1)[-1]
+    return (
+        record.kind in (SymbolKind.FUNCTION, SymbolKind.METHOD)
+        and not record.public
+        and short.startswith("_")
+    )
+
+
+# frob:doc docs/modules/dup.md#pipeline
+def find_helper_clones(
+    snapshot: GraphSnapshot, cfg: DupConfig
+) -> Result[CloneReport, DupError]:
+    """Dedicated dup pass over the PRIVATE-helper population (T-0288, pair (b)).
+
+    Arch-forced over-splitting spawns families of near-identical tiny
+    private helpers -- often below the whole-symbol `cfg.min_tokens`
+    default, so `find_clones` alone would never compare them. This restricts
+    the snapshot to private/module-local FUNCTION/METHOD symbols and reruns
+    the same rung ladder with `cfg.helper_min_tokens` (a much lower floor)
+    in place of `cfg.min_tokens`, so over-splitting is itself caught, not
+    just the calls-inlined comparison `find_clones` now also does.
+    """
+    helper_symbols = {
+        symref: record
+        for symref, record in snapshot.symbols.items()
+        if _is_private_helper(record)
+    }
+    helper_snapshot = snapshot.model_copy(update={"symbols": helper_symbols})
+    helper_cfg = cfg.model_copy(update={"min_tokens": cfg.helper_min_tokens})
+    return find_clones(helper_snapshot, helper_cfg)
 
 
 def _clone_report(state: _FpState, groups: list[tuple[ClonePair, ...]]) -> CloneReport:

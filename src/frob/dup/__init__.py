@@ -30,7 +30,12 @@ from frob.dup._models import (
     DupStats,
     ProbeVerdict,
 )
-from frob.dup._pipeline import find_clones, probe_equivalence, touched_refs
+from frob.dup._pipeline import (
+    find_clones,
+    find_helper_clones,
+    probe_equivalence,
+    touched_refs,
+)
 from frob.dup._rules import DUP001, DUP002
 from frob.dup._template import build_group_template
 
@@ -56,6 +61,7 @@ __all__ = [
     "core_available",
     "find_clones",
     "find_duplicates",
+    "find_helper_clones",
     "get_fingerprint",
     "get_verdict",
     "probe_equivalence",

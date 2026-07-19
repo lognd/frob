@@ -2302,14 +2302,14 @@ Extends the Plotkin lgg kernel (T-0194) and template report (T-0195). Today anti
 ```yaml
 id: T-0288
 title: 'dup: helper-inlining / call-graph-aware triage (see through arch-forced splits)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-19'
 blocked_by: []
 parent: null
 scope:
-- src/frob/dup/**,tests/**,docs/modules/dup.md,tickets.md
+- src/frob/dup/**,src/frob/graph/callgraph.py,tests/**,docs/modules/dup.md,docs/modules/graph.md,tickets.md
 evidence: []
 attachments: []
 acceptance:
