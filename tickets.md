@@ -4935,3 +4935,27 @@ acceptance: []
 threat: null
 ```
 T-0256's HOST001 (shared-group sub-target) and HOST002 (sudoers sub-target) cannot structurally prove these two sub-targets because std.host (T-0255) carries no OS-group or sudoers-grant grammar -- both ALWAYS fire (deny-by-default, honest gap) until an explicit waive is written or this ticket adds the grammar. Add: a repeatable 'group "NAME"' owns-adjacent clause (desugars to a group=NAME attr, mirroring runs_as) and a 'sudoers "RULE"' clause (desugars to sudoers=RULE, repeatable) to strata-core/src/parse.rs's parse_node/parse_store, HostManifest gains group: tuple[str,...] and sudoers: tuple[str,...] fields (_host.py), then HOST001's shared-group and HOST002's sudoers sub-targets in _host_isolation.py derive real findings instead of the always-fire placeholder.
+
+<!-- ticket:T-0273 -->
+```yaml
+id: T-0273
+title: 'dup exact_regions: O(k^2) pair emission needs a run-size guard before [dup].region_kernel
+  ships enabled'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: T-0187
+scope:
+- frob-core/**
+- src/frob/dup/**
+- tests/**
+- docs/modules/dup.md
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0193 review finding (non-blocking, feature is off by default): emit_run_pairs is unbounded O(k^2) in run size -- reviewer demonstrated 2000 identical 20-token docs => 1,999,000 pairs in 17.5s, no cap/guard/warning. A real monorepo with thousands of near-identical generated/boilerplate symbols sharing a block >= region_min_tokens would hit multi-second-to-worse pair emission. Add a run-size guard BEFORE anyone flips [dup].region_kernel=true in a real frob.toml: options -- skip/report-truncated beyond some k with a WARN, or downgrade to reporting only the top-N longest matches per run, or cap total pairs with an honest 'truncated at N' signal (never silently drop without a signal, T-0193-recall-bug lesson). Regression: a large-k fixture completes under a time/pair bound and emits the truncation signal.
