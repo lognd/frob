@@ -4915,7 +4915,7 @@ legitimate `pyproject.toml` bump.
 id: T-0259
 title: 'frob deploy audit --vm: VirtualBox snapshot-diff harness proving artifact-free
   uninstall'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-18'
@@ -4929,7 +4929,10 @@ scope:
 - docs/**
 - tests/**
 - tickets.md
-evidence: []
+evidence:
+- tests/unit/deploy/test_audit.py::TestProofs::test_af_fails
+- tests/unit/deploy/test_audit.py::TestProofs::test_ie_extra
+- tests/unit/deploy/test_vm_runner.py::TestAvail::test_run_vm_audit_skips_cleanly
 attachments: []
 acceptance: []
 threat: null
@@ -5914,9 +5917,9 @@ explicit requirement).
 All 4 new tests plus the full existing `TestParseTsRustCppC` class
 pass (9/9). Full repo suite result in the final aggregate report.
 
-<!-- ticket:T-draft-3f15bc51 -->
+<!-- ticket:T-0279 -->
 ```yaml
-id: T-draft-3f15bc51
+id: T-0279
 title: frob:tests directive src/target direction disagrees between fresh dsl parse
   and stale graph cache
 state: queued
