@@ -1503,7 +1503,7 @@ Directly motivated by the arch<->dup tension the user raised: frob arch enforces
 ```yaml
 id: T-0289
 title: 'arch: per-function reasoned override + complexity-aware long-function'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-19'

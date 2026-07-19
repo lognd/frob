@@ -576,11 +576,12 @@ class TestCoverageGate:
         assert violations == ()
 
     def test_waive002_flags_arch_category_as_ineffective(self, tmp_path: Path) -> None:
-        # T-0101: a waiver on an arch category (e.g. long-function) can
-        # never be matched by _apply_waivers -- WAIVE002 must say so loudly
-        # rather than silently doing nothing.
+        # T-0101: a waiver on an arch category with no gate channel (e.g.
+        # god-class) can never be matched by _apply_waivers -- WAIVE002 must
+        # say so loudly rather than silently doing nothing. long-function is
+        # NOT in this set as of T-0289 -- see the next test.
         source = (
-            'def helper(x):\n    # frob:waive long-function reason="huge but ok"\n'
+            'def helper(x):\n    # frob:waive god-class reason="huge but ok"\n'
             "    return x\n"
         )
         _write(tmp_path, "src/a.py", source)
@@ -592,6 +593,24 @@ class TestCoverageGate:
         assert v is not None
         assert v.severity == Severity.WARN
         assert "frob-arch" in v.message
+
+    def test_waive002_does_not_flag_arch001_as_ineffective(
+        self, tmp_path: Path
+    ) -> None:
+        # T-0289: long-function is channeled into a real ARCH001 Violation
+        # (frob.gates._arch.arch_gate), so a `frob:waive ARCH001
+        # reason="..."` is a real, effective directive -- WAIVE002 must NOT
+        # flag it, unlike the still-unwaivable arch categories above.
+        source = (
+            'def helper(x):\n    # frob:waive ARCH001 reason="justified"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        from frob.gates import _waive002_violations  # noqa: PLC0415
+
+        violations = _waive002_violations(snap, frozenset())
+        assert _first_rule(violations, "WAIVE002") is None
 
     def test_waive002_flags_unknown_rule_id_as_ineffective(
         self, tmp_path: Path

@@ -33,6 +33,46 @@ _NESTING_TYPES = frozenset(
     }
 )
 
+# T-0289: the long-function rule must be complexity-aware, not just line-count
+# aware -- a long-but-FLAT function (linear setup+asserts, a big match/case,
+# a literal dispatch table) is not the smell the rule targets; only
+# long-AND-complex fires. `_BRANCH_NODE_TYPES` is a cheap McCabe-style
+# decision-point proxy computed off the existing tree-sitter parse (no new
+# dependency): `if_statement` (python's grammar folds an entire if/elif/else
+# chain into ONE `if_statement` node with `elif_clause` children, so a long
+# elif dispatch chain scores the same as a single `if`, deliberately -- see
+# below), `for_statement`/`while_statement` (loops), `except_clause`
+# (exception branches), `boolean_operator` (`and`/`or` short-circuit
+# branches), and `conditional_expression` (the ternary `a if b else c`).
+# `match_statement`/`case_clause` are deliberately EXCLUDED: a match/case is
+# the canonical flat-dispatch shape this rule must NOT punish, and (unlike
+# python's if/elif folding) each `case_clause` is tree-sitter's own separate
+# node, so counting them would make the exact "big match/case" case the
+# ticket calls out score as maximally complex -- the opposite of intent.
+_BRANCH_NODE_TYPES = frozenset(
+    {
+        "if_statement",
+        "for_statement",
+        "while_statement",
+        "except_clause",
+        "boolean_operator",
+        "conditional_expression",
+    }
+)
+
+#: Nesting depth (`_py_max_nesting`) at or above which a long function counts
+#: as structurally complex enough to fire the long-function rule (T-0289).
+#: Not a `frob.toml` knob -- see the ticket's design note on why per-function
+#: complexity escapes stay at-the-code (`frob:waive ARCH001`), not global.
+_LONG_FUNCTION_NESTING_THRESHOLD = 3
+
+#: Cyclomatic-proxy count (`_py_cyclomatic`) at or above which a long
+#: function counts as structurally complex enough to fire (T-0289). Chosen
+#: empirically: a flat function with a handful of top-level guard clauses or
+#: a linear assert block sits well under this; a function with real nested
+#: decision logic clears it.
+_LONG_FUNCTION_CYCLOMATIC_THRESHOLD = 8
+
 
 def _iter_py_functions(
     node: Node, class_prefix: str = ""
@@ -64,17 +104,45 @@ def _py_function_line_count(func_node: Node) -> int:
     return body.end_point[0] - body.start_point[0] + 1
 
 
+def _py_cyclomatic(node: Node) -> int:
+    """Cheap cyclomatic-complexity proxy: count of `_BRANCH_NODE_TYPES` nodes
+    in `node`'s subtree (T-0289). Deliberately excludes match/case -- see
+    `_BRANCH_NODE_TYPES`'s module-level comment for why."""
+    count = 1 if node.type in _BRANCH_NODE_TYPES else 0
+    for c in node.children:
+        count += _py_cyclomatic(c)
+    return count
+
+
+def _py_is_complex(body: Node) -> bool:
+    """Whether a function body is structurally complex enough for the
+    long-function rule to fire (T-0289): deep nesting OR a high cyclomatic
+    proxy. A long-but-FLAT function (linear setup+asserts, a big match/case,
+    a literal dispatch table) fails both and must not be flagged."""
+    return (
+        _py_max_nesting(body) >= _LONG_FUNCTION_NESTING_THRESHOLD
+        or _py_cyclomatic(body) >= _LONG_FUNCTION_CYCLOMATIC_THRESHOLD
+    )
+
+
 def _check_long_functions(
     tree: object,
     rel: str,
     max_function_lines: int,
     out: list[ArchSuggestion],
 ) -> None:
-    """Flag every python function whose body exceeds `max_function_lines`."""
+    """Flag python functions that are BOTH longer than `max_function_lines`
+    AND structurally complex (`_py_is_complex`, T-0289) -- a long-but-flat
+    function no longer fires. Each finding carries a `symref`/`metric` so
+    `frob.gates`' ARCH001 job can match a `frob:waive ARCH001` directive to
+    the exact function and honor an optional `ceiling=` re-fire threshold."""
     t: Tree = cast("Tree", tree)
     for func, prefix, fname in _iter_py_functions(t.root_node):
         n_lines = _py_function_line_count(func)
         if n_lines <= max_function_lines:
+            continue
+        body = _child(func, "body")
+        if body is not None and not _py_is_complex(body):
             continue
         out.append(
             ArchSuggestion(
@@ -86,6 +154,8 @@ def _check_long_functions(
                     f"function `{prefix}{fname}` has"
                     f" {n_lines} lines (threshold: {max_function_lines})"
                 ),
+                symref=f"{rel}::{prefix}{fname}",
+                metric=n_lines,
             )
         )
 

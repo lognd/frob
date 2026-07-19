@@ -35,6 +35,7 @@ from typani.option import Nothing, Option, Some
 from typani.result import Result
 
 from frob.excludes import is_excluded, load_exclude_globs
+from frob.gates._arch import arch_gate
 from frob.gates._baseline import (
     delta_violations,
     is_baseline_stale,
@@ -526,6 +527,10 @@ _KNOWN_GATE_RULES = frozenset(
         "SEC003",
         "TICK001",
         "TICK002",
+        # T-0289: long-function is the one frob-arch category channeled into
+        # a real gate Violation (see frob.gates._arch's module docstring for
+        # why only this one, not the whole ArchCategory surface).
+        "ARCH001",
     }
 )
 
@@ -579,12 +584,21 @@ def _unwaivable_channel_rules() -> frozenset[str]:
     a bigger surface change than a WARN justifies today. Instead, a waiver
     that names one of `frob.arch`'s categories is flagged as ineffective
     rather than silently doing nothing.
+
+    T-0289 narrows this: `long-function` is EXCLUDED here because
+    `frob.gates._arch.arch_gate` now channels it into real `Violation`s
+    (rule id `ARCH001`, not the bare category name `long-function`) that
+    DO go through `_apply_waivers` -- a `frob:waive long-function
+    reason="..."` still can't match anything (the rule id is `ARCH001`,
+    not the category string), so it correctly stays flagged here, but the
+    correct directive (`frob:waive ARCH001 reason="..."`) is no longer
+    ineffective. Every other arch category is unchanged.
     """
     from typing import get_args
 
     from frob.arch._models import ArchCategory
 
-    return frozenset(get_args(ArchCategory))
+    return frozenset(get_args(ArchCategory)) - {"long-function"}
 
 
 def _waive002_violations(
@@ -679,17 +693,45 @@ def _waive002_violation_for(edge: Edge, arch_categories: frozenset[str]) -> Viol
 # this, not to any check_type-based exclusion of `.rs` directives,
 # which does not exist: `frob.graph.build_graph`/`_load_tests` are
 # check_type-agnostic).
+# T-0289: a waiver may carry `ceiling="N"` (currently only meaningful for
+# ARCH001) -- a reasoned "this long function is justified up to N lines"
+# escape that re-fires once the function outgrows N, instead of muting the
+# finding permanently. `_ceiling_ok` is generic (any rule whose Violation
+# sets `metric` can use it), not ARCH001-specific, so a future rule with the
+# same "reasoned up to a measured bound" shape does not need its own
+# matching path.
+def _ceiling_ok(waiver: Edge, violation: Violation) -> bool:
+    """Whether `waiver` still covers `violation` given its optional
+    `ceiling=` attribute: always true when no ceiling is set (or the
+    violation carries no `metric` to compare); otherwise true only while
+    `violation.metric <= ceiling`."""
+    ceiling_text = waiver.attrs.get("ceiling")
+    if ceiling_text is None or violation.metric is None:
+        return True
+    try:
+        ceiling = int(ceiling_text)
+    except ValueError:
+        # Malformed ceiling value: fail open to "still waived" rather than
+        # a crash -- WAIVE002-style validation of the attribute's shape is
+        # a separate concern from matching, and a garbled ceiling is not
+        # reason to un-suppress a violation the author clearly meant to
+        # waive.
+        return True
+    return violation.metric <= ceiling
+
+
 def _match_waiver(
     violation: Violation, waivers_by_rule: dict[str, list[Edge]]
 ) -> Edge | None:
     """The first WAIVE edge whose site matches `violation` (symbol-exact,
-    file-scoped, or package-prefix -- see the comment above), or None."""
+    file-scoped, or package-prefix -- see the comment above) AND whose
+    optional `ceiling=` still covers it (`_ceiling_ok`), or None."""
     if violation.rule in _UNWAIVABLE_RULES:
         return None
     candidates = waivers_by_rule.get(violation.rule, ())
     if violation.symref is not None:
         for waiver in candidates:
-            if waiver.src == violation.symref:
+            if waiver.src == violation.symref and _ceiling_ok(waiver, violation):
                 return waiver
         return None
     package_prefix = violation.file.rstrip("/") + "/"
@@ -699,7 +741,7 @@ def _match_waiver(
             waiver.src == violation.file
             or waiver_file == violation.file
             or waiver_file.startswith(package_prefix)
-        ):
+        ) and _ceiling_ok(waiver, violation):
             return waiver
     return None
 
@@ -3304,6 +3346,7 @@ _ALL_GATES = frozenset(
         "sys",
         "secrets",
         "tickets",
+        "archgate",
     }
 )
 
@@ -3549,6 +3592,7 @@ def _build_jobs(
         "sys": lambda: sys_gate(st.root, st.snapshot),
         "secrets": lambda: secrets_gate(st.root),
         "tickets": lambda: tickets_gate(st.root, st.queue),
+        "archgate": lambda: arch_gate(st.root),
     }
     selected_jobs = {name: job for name, job in jobs.items() if name in selected}
     ticket_jobs, skipped = _build_ticket_scoped_jobs(selected, st)
@@ -3676,6 +3720,7 @@ __all__ = [
     "Violation",
     "WaiverRef",
     "active_ticket",
+    "arch_gate",
     "coverage_gate",
     "delta_violations",
     "drift_gate",

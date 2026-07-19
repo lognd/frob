@@ -73,6 +73,12 @@ class Violation(BaseModel):
     # PERF, TEST006, ...), where a file-level waiver is the correct and
     # intentional precision, not a shortcut.
     symref: str | None = None
+    # T-0289: the raw measured value the violation is about (currently only
+    # ARCH001's function line count). Lets `_match_waiver` honor a waiver's
+    # `ceiling=N` attribute -- a `frob:waive ARCH001 reason="..." ceiling=50`
+    # only suppresses while `metric <= 50`; grow the function past 50 lines
+    # and the waiver stops matching, so the exception can't silently rot.
+    metric: int | None = None
 
 
 # frob:doc docs/modules/gates.md#data-models

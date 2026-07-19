@@ -4,7 +4,31 @@ from __future__ import annotations
 
 
 def configure_pipeline(config: dict) -> dict:
-    """Build a pipeline configuration from raw config dict."""
+    """Build a pipeline configuration from raw config dict.
+
+    Deliberately long AND structurally complex (nested try/for/if, T-0289)
+    so it keeps triggering frob-arch's complexity-aware long-function rule
+    -- a plain flat long function (see `simple_python`'s fixtures) must not.
+    """
+    overrides = config.get("overrides", {})
+    for key, value in overrides.items():
+        try:
+            if value and isinstance(value, dict):
+                config[key] = value
+        except (KeyError, TypeError):
+            continue
+    if config.get("flag_01"):
+        config["a"] = 1
+    if config.get("flag_02"):
+        config["b"] = 2
+    if config.get("flag_03"):
+        config["c"] = 3
+    if config.get("flag_04"):
+        config["d"] = 4
+    if config.get("flag_05"):
+        config["e"] = 5
+    if config.get("flag_06") and config.get("flag_07"):
+        config["f"] = 6
     step_01 = config.get("step_01", "default")
     step_02 = config.get("step_02", "default")
     step_03 = config.get("step_03", "default")
