@@ -2580,7 +2580,7 @@ Filed from sibling-repo pilot P1 (graphite/feldspar/lithos, 2026-07-18). P1 gap 
 ```yaml
 id: T-0224
 title: frob sys doc matrix prints PROVED (L4) for claims that were only ASSUMED
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-18'
