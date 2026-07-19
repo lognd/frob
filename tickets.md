@@ -10363,6 +10363,8 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/testing/**
+- src/frob/lang/_walk_rust.py
+- src/frob/gates/__init__.py
 - tests/**
 - tickets.md
 evidence: []
