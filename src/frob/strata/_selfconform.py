@@ -497,10 +497,26 @@ def _stale_design_violations(
 
 def _top_level_dirs(root: Path) -> list[str]:
     """Every immediate, non-skipped subdirectory name of `root / _PACKAGE_ROOT`
-    (module docstring's SYS102 unit of "unmodeled code"), in sorted order."""
+    (module docstring's SYS102 unit of "unmodeled code"), in sorted order.
+    T-0211: `_PACKAGE_ROOT` ("src/frob") is frob's OWN package layout, not a
+    general convention -- SYS102 only makes sense when auditing frob's own
+    repo (module docstring: `design/frob.strata` models exactly this one
+    tree). Every OTHER repo running `frob sys audit` structurally lacks
+    `src/frob/` by design, not by drift, so that absence is an expected,
+    silent no-op (empty SYS102 finding set) here -- previously this logged
+    at WARNING unconditionally, which fired in every non-frob repo on every
+    audit run and read as "the self-conformance proof is vacuous" even
+    though the other checks (SYS100/SYS101/exhaustiveness) genuinely ran
+    (filed from sibling-repo pilot P2, tickets.md T-0211). DEBUG here (not
+    silence outright) still leaves a trace for anyone diagnosing frob's own
+    SYS102 detection, without alarming operators of unrelated repos."""
     package_root = root / _PACKAGE_ROOT
     if not package_root.is_dir():
-        _log.warning("selfconform: %s does not exist", package_root)
+        _log.debug(
+            "selfconform: %s does not exist -- not the frob repo (or repo "
+            "root mismatch); skipping SYS102 unmodeled-code check",
+            package_root,
+        )
         return []
     return sorted(
         entry.name
