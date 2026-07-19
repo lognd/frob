@@ -33,6 +33,13 @@ Public-API surface changes since 0.2.0 (mechanical semver via REL001):
   blindly naming `docs/index.md` in repos that never created one.
 - T-0255: new public `frob.strata` std.host manifest symbols
   (`HostManifest`/`HostOwns`/`HostPlatform`/`host_manifest_for`/`OwnsDecl`).
+- T-0256: new public `frob.strata` movement-impossibility symbols --
+  `HostIsolationViolation`, `evaluate_lateral_isolation` (HOST001),
+  `evaluate_vertical_isolation` (HOST002), `evaluate_host_isolation_waived`,
+  `HOST_MULTI_INSTANCE_WAIVER_FAMILIES`, `COMPROMISED_OWNER_CATALOG`,
+  `COMPROMISED_OWNER_OUT_OF_SCOPE`, `COMPROMISED_OWNER_VIEWS`, and
+  `build_compromised_user_scenario` (the compromised-service-owner
+  red-team scenario builder).
 
 ## [0.2.0] - unreleased
 

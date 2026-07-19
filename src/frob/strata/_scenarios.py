@@ -8,7 +8,17 @@ report what breaks"). This module owns exactly the rewrite step; claim
 re-evaluation is delegated to the existing `evaluate_claims` machinery in
 `_claims.py` so a scenario's claims are proved/refuted/assumed by the
 same code path as ordinary claims, not a parallel one that could drift.
-"""
+
+`build_compromised_user_scenario` (T-0256, docs/strata/host.md#movement-
+impossibility-proofs) is the compromised-service-owner red-team scenario
+HOST001/HOST002 (`_host_isolation.py`) need: it REUSES this module's
+existing `SetTrust` rewrite (compromise is already "a node's trust
+downgrades to foreign", the SAME primitive component compromise already
+uses, charter: no new kernel primitive) and generates the scenario's
+`NoFlow(src="foreign", dst=<every node outside the user's manifest
+slice>)` claims -- proving the compromised user's blast radius is
+EXACTLY its own `HostManifest` slice, no new closure primitive, no new
+Scenario/Rewrite variant."""
 
 from __future__ import annotations
 
@@ -21,9 +31,12 @@ from frob.logging import get_logger
 
 from ._claims import evaluate_claims
 from ._errors import StrataError
+from ._host import host_manifest_for
 from ._models import (
+    Claim,
     ClaimResult,
     KernelModel,
+    NoFlow,
     RemoveNode,
     Rewrite,
     ScaleRate,
@@ -33,6 +46,13 @@ from ._models import (
 from ._policy import CompiledPolicies
 
 _log = get_logger(__name__)
+
+#: The trust level a compromised node's `SetTrust` rewrite downgrades to
+#: -- the SAME `"foreign"` level `_threat.py::_FOREIGN_TRUST` and
+#: `NoFlow.src == "foreign"`'s expansion already recognize model-wide
+#: (`_claims.py`'s src expansion), so a compromised-owner scenario's
+#: blast-radius claims need no bespoke trust level of their own.
+_COMPROMISED_TRUST = "foreign"
 
 
 # frob:doc docs/strata/kernel.md#scenario
@@ -230,3 +250,57 @@ def evaluate_scenarios(
         )
     _log.info("evaluated %d scenario(s)", len(results))
     return Ok(tuple(results))
+
+
+# frob:doc docs/strata/host.md#movement-impossibility-proofs
+# frob:tests tests/unit/strata/test_host_isolation.py::test_blast_radius kind="unit"
+def build_compromised_user_scenario(
+    model: KernelModel, user: str, scenario_id: str
+) -> Result[Scenario, StrataError]:
+    """Build the compromised-service-owner red-team `Scenario` (T-0256):
+    every node declaring `runs_as=<user>` (`_host.py::host_manifest_for`)
+    is downgraded to `SetTrust(node_id, "foreign")` -- the SAME rewrite
+    component compromise already uses, reused rather than a new Rewrite
+    kind (module docstring) -- and one `NoFlow(src="foreign", dst=<node>)`
+    claim is asserted for EVERY node NOT in the user's manifest slice,
+    so `evaluate_scenarios` re-checking this scenario proves (or refutes)
+    that the compromise's blast radius is EXACTLY that user's own slice,
+    no wider.
+
+    Fails closed (`StrataError.UnknownReference`) when `user` names no
+    `runs_as` declared anywhere in `model` -- a scenario with zero
+    rewrites would vacuously "prove" every claim (nothing was compromised
+    at all), which would misreport as a genuine isolation proof rather
+    than a typo'd user name (charter law 2, deny-by-default)."""
+    user_nodes = sorted(
+        node.id
+        for node in model.nodes
+        if (manifest := host_manifest_for(node)) is not None
+        and manifest.runs_as == user
+    )
+    if not user_nodes:
+        _log.error(
+            "scenario: compromised-user scenario for %r names no runs_as node", user
+        )
+        return Err(StrataError.UnknownReference)
+
+    rewrites: tuple[Rewrite, ...] = tuple(
+        SetTrust(node_id=node_id, level=_COMPROMISED_TRUST) for node_id in user_nodes
+    )
+    outside = sorted(node.id for node in model.nodes if node.id not in user_nodes)
+    claims = tuple(
+        Claim(
+            id=f"blast-radius:{user}:{node_id}",
+            body=NoFlow(src=_COMPROMISED_TRUST, dst=node_id),
+        )
+        for node_id in outside
+    )
+    _log.info(
+        "scenario: built compromised-user scenario %s for %r (%d node(s) "
+        "compromised, %d blast-radius claim(s))",
+        scenario_id,
+        user,
+        len(user_nodes),
+        len(claims),
+    )
+    return Ok(Scenario(id=scenario_id, rewrites=rewrites, claims=claims))

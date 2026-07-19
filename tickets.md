@@ -4072,7 +4072,7 @@ both the PATH `ruff` and `uv run ruff`; `ty check` clean. Deletion filter
 id: T-0256
 title: 'movement-impossibility proofs: lateral/vertical isolation claims + red-team
   threat entries'
-state: queued
+state: in-progress
 kind: security
 origin: human
 created: '2026-07-18'
@@ -4085,12 +4085,130 @@ scope:
 - design/**
 - tests/**
 - tickets.md
-evidence: []
+- CHANGELOG.md
+- .frob-release.json
+evidence:
+- tests/unit/strata/test_host_isolation.py::TestLateralIsolation::test_skips_below_two_users
+- tests/unit/strata/test_host_isolation.py::TestLateralIsolation::test_shared_writable_path_and_socket_fire
+- tests/unit/strata/test_host_isolation.py::TestLateralIsolation::test_declared_flow_discharges_cross_user_socket
+- tests/unit/strata/test_host_isolation.py::TestLateralIsolation::test_isolated_paths_do_not_fire_shared_writable_path
+- tests/unit/strata/test_host_isolation.py::TestVerticalIsolation::test_skips_with_no_users
+- tests/unit/strata/test_host_isolation.py::TestVerticalIsolation::test_setuid_owned_path_fires
+- tests/unit/strata/test_host_isolation.py::TestVerticalIsolation::test_sudoers_always_fires_as_honest_gap
+- tests/unit/strata/test_host_isolation.py::TestVerticalIsolation::test_root_unit_path_writable_by_user_fires
+- tests/unit/strata/test_host_isolation.py::TestVerticalIsolation::test_write_to_higher_trust_path_fires
+- tests/unit/strata/test_host_isolation.py::TestHostIsolationWaivers::test_vuln_model_fires_unwaived
+- tests/unit/strata/test_host_isolation.py::TestHostIsolationWaivers::test_hardened_model_discharges_with_waivers
+- tests/unit/strata/test_host_isolation.py::TestCompromisedOwnerCatalog::test_catalog_completeness_over_own_view
+- tests/unit/strata/test_host_isolation.py::TestCompromisedOwnerCatalog::test_default_owasp_view_unaffected
+- tests/unit/strata/test_host_isolation.py::TestCompromisedUserScenario::test_unknown_user_fails_closed
+- tests/unit/strata/test_host_isolation.py::test_blast_radius
+- tests/unit/strata/test_litmus_host_isolation.py::TestHostIsolationVulnLitmus::test_shared_user_model_fires_host001_and_host002
+- tests/unit/strata/test_litmus_host_isolation.py::TestHostIsolationHardenedLitmus::test_isolated_model_discharges
 attachments: []
 acceptance: []
 threat: elevation-of-privilege
 ```
 T-0254 child 2. The red-team scenario as first-class obligations: when a model declares 2+ runs_as users, LATERAL claims are DEMANDED (HOST001: for every service-user pair, prove NoFlow/no shared writable paths/no shared group membership/no socket reachable across users unless a declared flow exists -- derived from HostManifest intersection, not hand-written per pair) and VERTICAL claims demanded per user (HOST002: no sudoers grant, no setuid binary owned, no root-run unit executing user-writable paths, no write access to any path a higher-trust unit reads -- each either proven from the manifest or an explicit waive with sub-target per T-0174 discipline). New WeaknessEntry rows for the compromised-service-owner class joining the threat catalog views (separate view per precedent, not widening defaults). Litmus: shared-user vuln model fires HOST001/002; isolated hardened model discharges. A compromised-user scenario kind (reuse the T-0073 scenario engine: mark user compromised, closure shows blast radius = exactly that user's manifest slice, claim asserts it).
+
+## Done report
+
+Changed:
+- src/frob/strata/_host_isolation.py (new) -- `HostIsolationViolation`,
+  `evaluate_lateral_isolation` (HOST001), `evaluate_vertical_isolation`
+  (HOST002), `evaluate_host_isolation_waived`,
+  `HOST_MULTI_INSTANCE_WAIVER_FAMILIES`, `COMPROMISED_OWNER_CATALOG`,
+  `COMPROMISED_OWNER_OUT_OF_SCOPE`, `COMPROMISED_OWNER_VIEWS`.
+- src/frob/strata/_scenarios.py -- `build_compromised_user_scenario`
+  (compromised-service-owner red-team scenario builder, reusing the
+  existing `SetTrust` rewrite, no new Rewrite kind).
+- src/frob/strata/__init__.py -- exports for all of the above.
+- docs/strata/host.md -- new "Movement-impossibility proofs" section
+  (sub-sections: the honest gap, waiver discipline, compromised-owner
+  threat catalog, compromised-user scenario); corrected a pre-existing
+  T-0256/T-0257 mislabeling (earlier drafts called T-0256 "the
+  generator" and T-0257 "flow proofs" -- `tickets.md` ships the opposite
+  assignment; doc now matches the ledger).
+- tests/unit/strata/test_host_isolation.py (new, 15 tests),
+  tests/unit/strata/test_litmus_host_isolation.py (new, 2 tests),
+  tests/unit/strata/litmus/host_isolation_vuln.strata (new),
+  tests/unit/strata/litmus/host_isolation_hardened.strata (new).
+- CHANGELOG.md -- new-public-symbol line under the existing `[0.4.0]`
+  section (REL001; version stays 0.4.0 per dispatch instruction).
+- .frob-release.json -- `frob release stamp` output for the new public
+  API surface (REL001 clearance).
+- tickets.md -- this ticket's scope extended to cover CHANGELOG.md and
+  .frob-release.json (SCOPE001 fired on both; extended rather than
+  worked around).
+
+Design notes / honest disclosures:
+- HOST001/HOST002 sub-targets are ALL derived from `HostManifest`
+  (`_host.py`, T-0255) -- no hand-written per-pair/per-user table.
+  `setuid` reads the existing 4-digit octal `owns` mode (no grammar
+  change). `shared-group` and `sudoers` structurally CANNOT be derived
+  -- `std.host`'s grammar (`strata-core/src/parse.rs`) has no OS-group
+  or sudoers vocabulary, and `strata-core/**` is outside this ticket's
+  declared scope. Per T-0174's deny-by-default waive discipline, both
+  sub-targets UNCONDITIONALLY fire until explicitly waived
+  (`waive "HOST001:shared-group" reason="..."` /
+  `waive "HOST002:sudoers" reason="..."`) or the grammar lands. Filed
+  T-draft-7b5b5541 (off-default-branch provisional id; the coordinator's
+  ticket-numbering step will assign the permanent id on merge) for that
+  grammar addition.
+- HOST001 pair findings attribute to the alphabetically-earlier user of
+  the pair (deterministic sort order) -- one `waive` clause on that
+  user's node discharges the pair finding; a duplicate on the peer's
+  node correctly reports STALE (`_waive.py`'s drift-lock). Documented in
+  `evaluate_host_isolation_waived`'s `target_of` docstring and in
+  `docs/strata/host.md#waiver-discipline`.
+- `evaluate_host_isolation_waived` runs two SEPARATE `apply_waivers`
+  calls (one per rule family) with `in_scope` narrowed to exactly the
+  family being checked -- an earlier draft used the union
+  `HOST_MULTI_INSTANCE_WAIVER_FAMILIES` for both calls and
+  double-reported a HOST002 waiver as STALE inside the HOST001
+  application (caught by the hardened-model unit test before commit).
+- `COMPROMISED_OWNER_CATALOG` (CWE-284/269/522) joins a SEPARATE
+  `compromised-owner-baseline` view, never `_threat.py::CWE_CATALOG`/
+  `VIEWS` -- verified `check_catalog_completeness("owasp-top-10")`
+  still passes unaffected (`TestCompromisedOwnerCatalog::
+  test_default_owasp_view_unaffected`).
+- `build_compromised_user_scenario` reuses the existing `SetTrust`
+  rewrite (compromise = trust downgrade to `"foreign"`, the same
+  primitive component compromise already uses) and asserts one
+  `NoFlow(src="foreign", dst=<node>)` claim per node outside the
+  compromised user's manifest slice; `evaluate_scenarios` re-checking it
+  proves every such claim (verified in `test_blast_radius`). Fails
+  closed (`UnknownReference`) on an unknown `runs_as` user name.
+- HOST001/HOST002 are evaluated as standalone strata functions, NOT
+  wired into `frob check`/a gate rule -- matching `_threat.py::
+  evaluate_threats`'s own documented precedent ("gate wiring is a
+  follow-up... this function is the seam that follow-up calls into").
+  Gate wiring is a natural T-0258 (conformance checker) or follow-up
+  ticket concern, not silently done here beyond declared scope.
+- `evaluate_host_isolation_waived`'s two `is_err` short-circuit branches
+  (lines ~495/498) are structurally unreachable today (`evaluate_
+  lateral_isolation`/`evaluate_vertical_isolation` never return `Err` in
+  the current implementation) -- kept for `Result`-signature consistency
+  with every other `evaluate_*` in this package; this is why
+  `frob check`'s TEST005 reports 87.5% branch coverage on that function
+  (a WARNING, not an ERROR; disclosed rather than silently accepted).
+
+Evidence: 17 pytest node ids recorded via `frob ticket evidence T-0256`
+(command output confirms `T-0256 recorded 17 evidence id(s) (17 total)`),
+all independently verified passing via
+`uv run pytest tests/unit/strata/test_host_isolation.py
+tests/unit/strata/test_litmus_host_isolation.py -v -o addopts=""`
+(`17 passed`).
+
+Filed: T-draft-7b5b5541 ("std.host: OS-group and sudoers-grant
+vocabulary" -- scope `strata-core/src/parse.rs`, `src/frob/strata/**`,
+`docs/strata/**`, `tests/**`).
+
+Gates: `uv run frob check --ticket T-0256` clean (0 errors, 12 warnings,
+226 waived). `uv run frob check` (full, unscoped) clean (0 errors, 0
+DRIFT002, 12 warnings). `git diff main --diff-filter=D --stat` empty
+(deletion-filter land rule, section 9 of the playbook). `make core`'s
+Cargo.lock churn reverted before every check/commit per dispatch rule 3.
 
 <!-- ticket:T-0257 -->
 ```yaml
@@ -4427,3 +4545,25 @@ acceptance: []
 threat: null
 ```
 T-0255 deliberately left HostOwns.mode (str) and HostManifest.listens (int) UNVALIDATED -- a bogus mode ('999'/'rwx') or out-of-range port is stored raw. T-0255's reviewer confirmed this is a correct deferral (mode-as-opaque-string is intentional so a Windows ACL/SDDL string fits the same field later -- platform-tagged validation belongs here, not in the manifest schema). Implement per-platform validation: LINUX_SYSTEMD validates octal mode (0-7 triples, optional setuid bits) and port in 1-65535; WINDOWS (when T-0261 lands) validates SDDL/ACL shape. Validation fires at elaborate time (MalformedHost error, fail-closed), NOT parse time (keep the grammar platform-agnostic). Litmus: bogus mode/port rejected per platform, valid ones pass. T-0255 added frob:todo T-0270 anchors at the two fields -- this ticket discharges them.
+
+<!-- ticket:T-draft-7b5b5541 -->
+```yaml
+id: T-draft-7b5b5541
+title: 'std.host: OS-group and sudoers-grant vocabulary'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- strata-core/src/parse.rs
+- src/frob/strata/**
+- docs/strata/**
+- tests/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0256's HOST001 (shared-group sub-target) and HOST002 (sudoers sub-target) cannot structurally prove these two sub-targets because std.host (T-0255) carries no OS-group or sudoers-grant grammar -- both ALWAYS fire (deny-by-default, honest gap) until an explicit waive is written or this ticket adds the grammar. Add: a repeatable 'group "NAME"' owns-adjacent clause (desugars to a group=NAME attr, mirroring runs_as) and a 'sudoers "RULE"' clause (desugars to sudoers=RULE, repeatable) to strata-core/src/parse.rs's parse_node/parse_store, HostManifest gains group: tuple[str,...] and sudoers: tuple[str,...] fields (_host.py), then HOST001's shared-group and HOST002's sudoers sub-targets in _host_isolation.py derive real findings instead of the always-fire placeholder.
