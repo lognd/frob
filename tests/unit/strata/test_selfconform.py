@@ -25,6 +25,7 @@ from frob.strata import (
 )
 from frob.strata._code_binding import CodeBinding
 from frob.strata._effects import _KIND_MAP
+from frob.strata._errors import StrataError
 from frob.strata._selfconform import (
     _EXTENDED_KINDS,
     _observed_extended_kinds_by_node,
@@ -638,3 +639,25 @@ class TestRealGateGreen:
         assert result.is_ok, result.err
         violations = result.danger_ok.violations
         assert violations == (), [(v.rule, v.node, v.detail) for v in violations]
+
+
+class TestBindingErrorPropagation:
+    """`check_self_conformance` must propagate `bind_code`'s error
+    unchanged (deny by default, never a silent partial scan) --
+    docstring's `Err` clause."""
+
+    # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    def test_ambiguous_code_binding_propagates_as_err(self, tmp_path: Path):
+        """Two nodes whose `code=` globs both match the same file make
+        `bind_code` return `Err(AmbiguousCodeBinding)`; that must surface
+        unchanged from `check_self_conformance`, not be swallowed."""
+        _write(tmp_path, "src/frob/widget/_io.py", "x = 1\n")
+        model = KernelModel(
+            nodes=(
+                Node(id="a", trust="trusted", attrs=("code=src/frob/widget/**",)),
+                Node(id="b", trust="trusted", attrs=("code=src/frob/widget/**",)),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_err
+        assert result.danger_err == StrataError.AmbiguousCodeBinding

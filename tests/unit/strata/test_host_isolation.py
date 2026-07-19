@@ -7,6 +7,10 @@ End-to-end parse -> elaborate coverage lives in
 
 from __future__ import annotations
 
+from typani.result import Err
+
+from frob.strata import _host_isolation
+from frob.strata._errors import StrataError
 from frob.strata._host_isolation import (
     COMPROMISED_OWNER_CATALOG,
     COMPROMISED_OWNER_VIEWS,
@@ -193,6 +197,32 @@ class TestHostIsolationWaivers:
         assert h2.kept == ()
         assert h1.stale == ()
         assert h2.stale == ()
+
+    # frob:tests src/frob/strata/_host_isolation.py::evaluate_host_isolation_waived kind="unit"
+    def test_propagates_lateral_isolation_error(self, monkeypatch):
+        """HOST001's delegate failing must short-circuit before HOST002
+        ever runs -- deny by default, never a silent partial result."""
+        monkeypatch.setattr(
+            _host_isolation,
+            "evaluate_lateral_isolation",
+            lambda model: Err(StrataError.UnknownReference),
+        )
+        result = evaluate_host_isolation_waived(_shared_user_model())
+        assert result.is_err
+        assert result.danger_err == StrataError.UnknownReference
+
+    # frob:tests src/frob/strata/_host_isolation.py::evaluate_host_isolation_waived kind="unit"
+    def test_propagates_vertical_isolation_error(self, monkeypatch):
+        """HOST002's delegate failing must propagate even when HOST001
+        succeeded -- the second fallible step is not silently ignored."""
+        monkeypatch.setattr(
+            _host_isolation,
+            "evaluate_vertical_isolation",
+            lambda model: Err(StrataError.UnknownReference),
+        )
+        result = evaluate_host_isolation_waived(_shared_user_model())
+        assert result.is_err
+        assert result.danger_err == StrataError.UnknownReference
 
 
 class TestCompromisedOwnerCatalog:
