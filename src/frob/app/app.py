@@ -57,39 +57,49 @@ def _import_runner_modules() -> dict[str, Callable[[AppConfig], None]]:
     }
 
 
+_SUBCOMMAND_RUNNER_NAMES: dict[Subcommand, str] = {
+    Subcommand.scaffold: "scaffold_runner",
+    Subcommand.cycle: "cycle_runner",
+    Subcommand.outline: "outline_runner",
+    Subcommand.map: "map_runner",
+    Subcommand.xref: "xref_runner",
+    Subcommand.parse: "parse_runner",
+    Subcommand.dup: "dup_runner",
+    Subcommand.arch: "arch_runner",
+    Subcommand.docs: "docs_runner",
+    Subcommand.exports: "exports_runner",
+    Subcommand.check: "check_runner",
+    Subcommand.gitlog: "gitlog_runner",
+    Subcommand.graph: "graph_runner",
+    Subcommand.ack: "ack_runner",
+    Subcommand.ticket: "ticket_runner",
+    Subcommand.test: "test_runner",
+    Subcommand.vet: "vet_runner",
+    Subcommand.perf: "perf_runner",
+    Subcommand.release: "release_runner",
+    Subcommand.stats: "stats_runner",
+    Subcommand.serve: "serve_runner",
+    Subcommand.mutate: "mutate_runner",
+    Subcommand.sys: "sys_runner",
+    Subcommand.deploy: "deploy_runner",
+}
+"""Every subcommand handled by a uniform `*_runner.run(AppConfig)` entry point,
+mapped to the runner module name that serves it. `bind` is excluded: it takes
+a raw argv rather than an `AppConfig`, so `_dispatch_table` wires it up
+separately."""
+
+
 # frob:ticket T-0021
 def _dispatch_table() -> dict[Subcommand, Callable[[AppConfig], None]]:
     """Map each subcommand to the runner entry point that handles it."""
     from frob.app import bind_runner
 
     r = _import_runner_modules()
-    return {
-        Subcommand.scaffold: r["scaffold_runner"],
-        Subcommand.cycle: r["cycle_runner"],
-        Subcommand.outline: r["outline_runner"],
-        Subcommand.map: r["map_runner"],
-        Subcommand.xref: r["xref_runner"],
-        Subcommand.parse: r["parse_runner"],
-        Subcommand.dup: r["dup_runner"],
-        Subcommand.arch: r["arch_runner"],
-        Subcommand.docs: r["docs_runner"],
-        Subcommand.bind: lambda _cfg: bind_runner.run([]),
-        Subcommand.exports: r["exports_runner"],
-        Subcommand.check: r["check_runner"],
-        Subcommand.gitlog: r["gitlog_runner"],
-        Subcommand.graph: r["graph_runner"],
-        Subcommand.ack: r["ack_runner"],
-        Subcommand.ticket: r["ticket_runner"],
-        Subcommand.test: r["test_runner"],
-        Subcommand.vet: r["vet_runner"],
-        Subcommand.perf: r["perf_runner"],
-        Subcommand.release: r["release_runner"],
-        Subcommand.stats: r["stats_runner"],
-        Subcommand.serve: r["serve_runner"],
-        Subcommand.mutate: r["mutate_runner"],
-        Subcommand.sys: r["sys_runner"],
-        Subcommand.deploy: r["deploy_runner"],
+    table: dict[Subcommand, Callable[[AppConfig], None]] = {
+        subcommand: r[name] for subcommand, name in _SUBCOMMAND_RUNNER_NAMES.items()
     }
+    table[Subcommand.bind] = lambda _cfg: bind_runner.run([])
+    return table
 
 
 # frob:doc docs/modules/app.md#entry-point

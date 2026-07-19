@@ -307,17 +307,18 @@ def _load_export_model(design_path: Path) -> KernelModel | None:
         return elaborated.danger_ok
 
 
-def _run_export(cfg: AppConfig) -> None:
-    """`frob sys export --format k8s|seccomp|iam <design.strata>`: load one
-    `.strata` design file, run the matching exporter, print its
-    deterministic output."""
-    fmt = cfg.sys_export_format
+def _require_export_format(fmt: str | None) -> None:
+    """Exit 1 (with a logged reason) unless `fmt` is one of `_EXPORT_FORMATS`."""
     if fmt not in _EXPORT_FORMATS:
         _log.error(
             "frob sys export: --format must be one of %s", ", ".join(_EXPORT_FORMATS)
         )
         sys.exit(1)
-    design_path = cfg.sys_export_path or Path(DEFAULT_DESIGN_DIR) / "frob.strata"
+
+
+def _require_export_design_path(design_path: Path) -> None:
+    """Exit 1 (with a logged reason) unless `design_path` is an existing,
+    non-directory `.strata` file."""
     if design_path.is_dir():
         _log.error(
             "frob sys export: %s is a directory; pass a single .strata file",
@@ -327,6 +328,17 @@ def _run_export(cfg: AppConfig) -> None:
     if not design_path.exists():
         _log.error("frob sys export: %s does not exist", design_path)
         sys.exit(1)
+
+
+def _run_export(cfg: AppConfig) -> None:
+    """`frob sys export --format k8s|seccomp|iam <design.strata>`: load one
+    `.strata` design file, run the matching exporter, print its
+    deterministic output."""
+    fmt = cfg.sys_export_format
+    _require_export_format(fmt)
+    assert fmt is not None  # narrows for the type checker; enforced above
+    design_path = cfg.sys_export_path or Path(DEFAULT_DESIGN_DIR) / "frob.strata"
+    _require_export_design_path(design_path)
 
     model = _load_export_model(design_path)
     if model is None:
@@ -372,6 +384,49 @@ def _run_doc(cfg: AppConfig) -> None:
     print(rendered.danger_ok, end="")
 
 
+def _log_waived_gaps(report: AuditReport) -> None:
+    """Log every waived gap (T-0174: ALWAYS printed, proved or not -- a
+    waiver must never make a run look silent, `_waive.py`'s "loud in
+    output" requirement)."""
+    for waived in report.waived:
+        _log.warning(
+            "sys audit: WAIVED family=%s view=%s rule=%s target=%s detail=%s",
+            waived.family,
+            waived.view,
+            waived.rule,
+            waived.target,
+            waived.detail,
+        )
+
+
+def _log_proved_summary(report: AuditReport) -> None:
+    """Log the PROVED summary line, carrying the waived count inline
+    (T-0174 REJECT round: a separate WARNING line is lost under grep/
+    quiet-mode filtering, so the count must ride the summary itself)."""
+    if report.waived:
+        _log.info(
+            "sys audit: PROVED (%d waived) -- zero UNWAIVED gaps across "
+            "every configured view",
+            len(report.waived),
+        )
+    else:
+        _log.info("sys audit: PROVED -- zero gaps across every configured view")
+
+
+def _log_gaps(report: AuditReport) -> None:
+    """Log every named gap, one per line (CI-parseable, no ambiguity about
+    which conjunction member failed)."""
+    _log.error("sys audit: %d gap(s) found", len(report.gaps))
+    for gap in report.gaps:
+        _log.error(
+            "sys audit: GAP family=%s view=%s rule=%s detail=%s",
+            gap.family,
+            gap.view,
+            gap.rule,
+            gap.detail,
+        )
+
+
 # frob:ticket T-0115
 def _print_audit_report(report: AuditReport) -> None:
     """Print `frob sys audit`'s machine-usable summary: which views were
@@ -384,54 +439,17 @@ def _print_audit_report(report: AuditReport) -> None:
         len(report.views_checked),
         ", ".join(report.views_checked),
     )
-    # T-0174: waived gaps are ALWAYS printed, proved or not -- a waiver is
-    # never allowed to make a run look silent (module docstring's "loud in
-    # output" requirement, `_waive.py`).
-    for waived in report.waived:
-        _log.warning(
-            "sys audit: WAIVED family=%s view=%s rule=%s target=%s detail=%s",
-            waived.family,
-            waived.view,
-            waived.rule,
-            waived.target,
-            waived.detail,
-        )
+    _log_waived_gaps(report)
     if report.proved:
-        # T-0174 REJECT round: the summary line itself must carry the
-        # waived count -- a separate WARNING line is lost under grep/
-        # quiet-mode filtering (reviewer-confirmed live), so "PROVED"
-        # alone would read as "nothing to see here" even with active
-        # waivers propping the result up. "PROVED" (no waivers) stays
-        # exactly as before; "PROVED (N waived)" whenever any exist.
-        if report.waived:
-            _log.info(
-                "sys audit: PROVED (%d waived) -- zero UNWAIVED gaps across "
-                "every configured view",
-                len(report.waived),
-            )
-        else:
-            _log.info("sys audit: PROVED -- zero gaps across every configured view")
+        _log_proved_summary(report)
         return
-    _log.error("sys audit: %d gap(s) found", len(report.gaps))
-    for gap in report.gaps:
-        _log.error(
-            "sys audit: GAP family=%s view=%s rule=%s detail=%s",
-            gap.family,
-            gap.view,
-            gap.rule,
-            gap.detail,
-        )
+    _log_gaps(report)
 
 
 # frob:ticket T-0150
-def _print_selfconform_report(report: SelfConformReport) -> None:
-    """Print `frob sys audit`'s self-conformance summary (T-0150): every
-    SYS100 (undeclared interface)/SYS101 (stale design)/SYS102 (unmodeled
-    code) violation, one per line, matching `_print_audit_report`'s
-    CI-parseable style."""
-    # T-0174: waived violations are ALWAYS printed, matching
-    # `_print_audit_report`'s "loud in output" WAIVED line (never silent
-    # just because the run happens to be otherwise clean).
+def _log_waived_selfconform(report: SelfConformReport) -> None:
+    """Log every waived self-conformance violation (T-0174: ALWAYS printed,
+    matching `_print_audit_report`'s "loud in output" WAIVED line)."""
     for waived in report.waived:
         _log.warning(
             "sys audit: WAIVED family=sys rule=%s node=%s detail=%s",
@@ -439,18 +457,23 @@ def _print_selfconform_report(report: SelfConformReport) -> None:
             waived.node,
             waived.detail,
         )
-    if not report.violations:
-        # T-0174 REJECT round: same honesty fix as `_print_audit_report`
-        # -- the summary line must carry the waived count itself.
-        if report.waived:
-            _log.info(
-                "sys audit: self-conformance PROVED (%d waived) -- zero "
-                "UNWAIVED SYS gaps",
-                len(report.waived),
-            )
-        else:
-            _log.info("sys audit: self-conformance PROVED -- zero SYS gaps")
-        return
+
+
+def _log_selfconform_proved(report: SelfConformReport) -> None:
+    """Log the self-conformance PROVED summary line, carrying the waived
+    count inline (T-0174 REJECT round: same honesty fix as
+    `_print_audit_report`)."""
+    if report.waived:
+        _log.info(
+            "sys audit: self-conformance PROVED (%d waived) -- zero UNWAIVED SYS gaps",
+            len(report.waived),
+        )
+    else:
+        _log.info("sys audit: self-conformance PROVED -- zero SYS gaps")
+
+
+def _log_selfconform_violations(report: SelfConformReport) -> None:
+    """Log every self-conformance violation, one per line."""
     _log.error("sys audit: %d self-conformance gap(s) found", len(report.violations))
     for violation in report.violations:
         _log.error(
@@ -459,6 +482,18 @@ def _print_selfconform_report(report: SelfConformReport) -> None:
             violation.node,
             violation.detail,
         )
+
+
+def _print_selfconform_report(report: SelfConformReport) -> None:
+    """Print `frob sys audit`'s self-conformance summary (T-0150): every
+    SYS100 (undeclared interface)/SYS101 (stale design)/SYS102 (unmodeled
+    code) violation, one per line, matching `_print_audit_report`'s
+    CI-parseable style."""
+    _log_waived_selfconform(report)
+    if not report.violations:
+        _log_selfconform_proved(report)
+        return
+    _log_selfconform_violations(report)
 
 
 # frob:ticket T-0158
@@ -495,18 +530,10 @@ def _print_capability_matrix_report() -> bool:
 
 # frob:ticket T-0115
 # frob:ticket T-0150
-def _run_audit(cfg: AppConfig) -> None:
-    """`frob sys audit`: evaluate the full three-part exhaustiveness
-    conjunction (THREAT001-003 for security/quality, COMPLIANCE001-002 for
-    compliance, docs/strata/threat.md#the-exhaustiveness-proof-the-point)
-    for every `.strata` design file under the repo's design dir against
-    EVERY configured baseline view, PLUS the SYS100-102 self-conformance
-    check (T-0150: vet's own capability scanner pointed at OUR src/ tree,
-    reconciled against `[strata.code_map]`/`[strata.capability_map]` in
-    frob.toml) -- and exit nonzero with a named-gap summary when any part
-    fails -- the CI-ready checking counterpart to `frob sys doc`'s
-    human-facing matrix rendering (T-0115)."""
-    root = _resolve_design_root(cfg, "audit")
+def _load_audit_model(root: Path) -> KernelModel | None:
+    """Load+merge every `.strata` design file under `root`'s design dir for
+    `frob sys audit`, or `None` (already logged) when there are none. Exits
+    1 on any load error -- `sys audit` cannot proceed on a partial model."""
     design_dir = _design_dir(root)
     ids = load_design_ids(root, design_dir)
     if ids.errors:
@@ -515,9 +542,14 @@ def _run_audit(cfg: AppConfig) -> None:
         sys.exit(1)
     if not ids.models:
         _log.info("sys audit: no design models under %s/%s", root, design_dir)
-        return
+        return None
+    return _merge_models(ids.models)
 
-    model = _merge_models(ids.models)
+
+def _evaluate_audit(model: KernelModel, root: Path):  # noqa: ANN201
+    """Run the THREAT001-003/COMPLIANCE001-002 exhaustiveness conjunction
+    plus the SYS100-102 self-conformance check against `model`, exiting 1
+    (already logged) if either evaluation itself errors."""
     audited = evaluate_exhaustiveness(model)
     if audited.is_err:
         _log.error("sys audit: %s", audited.danger_err)
@@ -528,11 +560,32 @@ def _run_audit(cfg: AppConfig) -> None:
         _log.error("sys audit: self-conformance: %s", selfconform.danger_err)
         sys.exit(1)
 
-    report = audited.danger_ok
+    return audited.danger_ok, selfconform.danger_ok
+
+
+# `frob sys audit` is the CI-ready checking counterpart to `frob sys doc`'s
+# human-facing matrix rendering (T-0115): it evaluates the full three-part
+# exhaustiveness conjunction (THREAT001-003 for security/quality,
+# COMPLIANCE001-002 for compliance, docs/strata/threat.md
+# #the-exhaustiveness-proof-the-point) for every `.strata` design file under
+# the repo's design dir against EVERY configured baseline view, PLUS the
+# SYS100-102 self-conformance check (T-0150: vet's own capability scanner
+# pointed at OUR src/ tree, reconciled against `[strata.code_map]`/
+# `[strata.capability_map]` in frob.toml).
+def _run_audit(cfg: AppConfig) -> None:
+    """`frob sys audit`: run the full exhaustiveness + self-conformance
+    check (see the comment above) and exit nonzero with a named-gap
+    summary when any part fails."""
+    root = _resolve_design_root(cfg, "audit")
+    model = _load_audit_model(root)
+    if model is None:
+        return
+
+    report, selfconform = _evaluate_audit(model, root)
     _print_audit_report(report)
-    _print_selfconform_report(selfconform.danger_ok)
+    _print_selfconform_report(selfconform)
     matrix_proved = _print_capability_matrix_report()
-    if not report.proved or selfconform.danger_ok.violations or not matrix_proved:
+    if not report.proved or selfconform.violations or not matrix_proved:
         sys.exit(1)
 
 

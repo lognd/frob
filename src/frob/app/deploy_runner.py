@@ -36,6 +36,7 @@ from pathlib import Path
 
 from frob.app.config import AppConfig
 from frob.deploy import (
+    AuditRunResult,
     VmAuditConfig,
     expected_mutation_surface,
     generate_all,
@@ -93,6 +94,43 @@ def _load_model(root: Path) -> KernelModel | None:
     return merge_models(ids.models)
 
 
+def _mismatched_generated_files(out_dir: Path, rendered: dict[str, str]) -> list[str]:
+    """Filenames in `rendered` that are missing from `out_dir` or whose
+    on-disk content no longer matches (drives `--check`'s exit-1 report)."""
+    mismatched: list[str] = []
+    for filename, content in sorted(rendered.items()):
+        path = out_dir / filename
+        if not path.exists() or path.read_text(encoding="utf-8") != content:
+            mismatched.append(filename)
+    return mismatched
+
+
+def _run_generate_check(out_dir: Path, rendered: dict[str, str]) -> None:
+    """`frob deploy generate --check`: verify the committed scripts already
+    match `rendered`, exiting 1 (no writes) on any mismatch."""
+    mismatched = _mismatched_generated_files(out_dir, rendered)
+    if mismatched:
+        for filename in mismatched:
+            _log.error(
+                "deploy generate --check: %s missing or stale -- run "
+                "`frob deploy generate` to regenerate",
+                filename,
+            )
+        sys.exit(1)
+    _log.info("deploy generate --check: all %d file(s) current", len(rendered))
+
+
+def _write_generated_files(out_dir: Path, rendered: dict[str, str]) -> None:
+    """Write every rendered script to `out_dir`, executable, creating the
+    directory as needed."""
+    out_dir.mkdir(parents=True, exist_ok=True)
+    for filename, content in sorted(rendered.items()):
+        path = out_dir / filename
+        path.write_text(content, encoding="utf-8")
+        path.chmod(0o755)
+        _log.info("deploy generate: wrote %s", path)
+
+
 def _run_generate(cfg: AppConfig) -> None:
     """`frob deploy generate [--check] [path]`: write `install.sh`/
     `status.sh`/`uninstall.sh` to `deploy/` (or `--check` to verify the
@@ -106,39 +144,15 @@ def _run_generate(cfg: AppConfig) -> None:
     out_dir = root / (cfg.deploy_out_dir or Path("deploy"))
 
     if cfg.deploy_check:
-        mismatched: list[str] = []
-        for filename, content in sorted(rendered.items()):
-            path = out_dir / filename
-            if not path.exists():
-                mismatched.append(filename)
-                continue
-            if path.read_text(encoding="utf-8") != content:
-                mismatched.append(filename)
-        if mismatched:
-            for filename in mismatched:
-                _log.error(
-                    "deploy generate --check: %s missing or stale -- run "
-                    "`frob deploy generate` to regenerate",
-                    filename,
-                )
-            sys.exit(1)
-        _log.info("deploy generate --check: all %d file(s) current", len(rendered))
+        _run_generate_check(out_dir, rendered)
         return
 
-    out_dir.mkdir(parents=True, exist_ok=True)
-    for filename, content in sorted(rendered.items()):
-        path = out_dir / filename
-        path.write_text(content, encoding="utf-8")
-        path.chmod(0o755)
-        _log.info("deploy generate: wrote %s", path)
+    _write_generated_files(out_dir, rendered)
 
 
-def _run_audit(cfg: AppConfig) -> None:
-    """`frob deploy audit --vm <name> [path]`: drive the T-0259 VM
-    snapshot-diff harness against a live VirtualBox guest and write the
-    resulting attestation JSON. Exits 0 (passed), 1 (ran, a proof or
-    status assertion failed), or 2 (`VBoxManage` absent -- SKIPPED,
-    module docstring's graceful-degrade requirement)."""
+def _require_audit_flags(cfg: AppConfig) -> None:
+    """Exit 1 (with a logged reason) unless every flag `frob deploy audit`
+    requires (`--vm`, `--ssh-host`, `--ssh-key`) is present."""
     if not cfg.deploy_vm:
         _log.error("deploy audit: --vm <name> is required")
         sys.exit(1)
@@ -149,20 +163,25 @@ def _run_audit(cfg: AppConfig) -> None:
         _log.error("deploy audit: --ssh-key is required")
         sys.exit(1)
 
-    root = (cfg.deploy_path or Path(".")).resolve()
-    model = _load_model(root)
-    if model is None:
-        sys.exit(1)
 
+def _build_vm_audit_config(
+    cfg: AppConfig, root: Path, model: KernelModel
+) -> VmAuditConfig:
+    """Derive the expected mutation surface from `model` and assemble the
+    `VmAuditConfig` `run_vm_audit` drives the VM snapshot-diff harness with."""
+    # Narrows for the type checker; caller (`_run_audit`) already enforced
+    # via `_require_audit_flags` that these are all present.
+    assert cfg.deploy_vm is not None
+    assert cfg.deploy_ssh_host is not None
+    assert cfg.deploy_ssh_key is not None
     entries = sorted_manifest_entries(model)
     expected_targets = expected_mutation_surface(entries)
     expected_paths = tuple(sorted({o.path for e in entries for o in e.manifest.owns}))
     expected_units = tuple(
         sorted(t.target for t in expected_targets if t.kind == "unit")
     )
-
     deploy_dir = root / (cfg.deploy_out_dir or Path("deploy"))
-    vm_cfg = VmAuditConfig(
+    return VmAuditConfig(
         vm_name=cfg.deploy_vm,
         base_snapshot=cfg.deploy_base_snapshot,
         ssh_host=cfg.deploy_ssh_host,
@@ -174,31 +193,54 @@ def _run_audit(cfg: AppConfig) -> None:
         expected_targets=expected_targets,
     )
 
-    result = run_vm_audit(vm_cfg)
+
+def _report_audit_result(cfg: AppConfig, root: Path, result: AuditRunResult) -> None:
+    """Write the attestation (when present) and log/exit according to
+    `result.status`/`.attestation.passed` -- exits 0 (passed), 1 (failed),
+    or 2 (skipped, `VBoxManage` absent)."""
+    r = result
     output_path = root / (
         cfg.deploy_audit_output or Path("deploy-audit-attestation.json")
     )
 
-    if result.status == "skipped":
-        _log.warning("deploy audit: SKIPPED -- %s", result.reason)
+    if r.status == "skipped":
+        _log.warning("deploy audit: SKIPPED -- %s", r.reason)
         sys.exit(2)
 
-    assert result.attestation is not None  # narrows for the type checker
-    output_path.write_text(result.attestation.to_json(), encoding="utf-8")
+    assert r.attestation is not None  # narrows for the type checker
+    output_path.write_text(r.attestation.to_json(), encoding="utf-8")
     _log.info("deploy audit: wrote attestation to %s", output_path)
 
-    if result.attestation.passed:
+    if r.attestation.passed:
         _log.info("deploy audit: PASSED (vm=%s)", cfg.deploy_vm)
         return
     _log.error(
         "deploy audit: FAILED (vm=%s) idempotence=%s artifact_freeness=%s "
         "install_exactness=%s",
         cfg.deploy_vm,
-        result.attestation.idempotence_holds,
-        result.attestation.artifact_freeness_holds,
-        result.attestation.install_exactness_holds,
+        r.attestation.idempotence_holds,
+        r.attestation.artifact_freeness_holds,
+        r.attestation.install_exactness_holds,
     )
     sys.exit(1)
+
+
+def _run_audit(cfg: AppConfig) -> None:
+    """`frob deploy audit --vm <name> [path]`: drive the T-0259 VM
+    snapshot-diff harness against a live VirtualBox guest and write the
+    resulting attestation JSON. Exits 0 (passed), 1 (ran, a proof or
+    status assertion failed), or 2 (`VBoxManage` absent -- SKIPPED,
+    module docstring's graceful-degrade requirement)."""
+    _require_audit_flags(cfg)
+
+    root = (cfg.deploy_path or Path(".")).resolve()
+    model = _load_model(root)
+    if model is None:
+        sys.exit(1)
+
+    vm_cfg = _build_vm_audit_config(cfg, root, model)
+    result = run_vm_audit(vm_cfg)
+    _report_audit_result(cfg, root, result)
 
 
 # frob:doc docs/modules/app.md#runners

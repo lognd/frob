@@ -27,6 +27,7 @@ import tomllib
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
+from typing import TypeVar
 
 from pydantic import ValidationError
 from typani import Err, Ok
@@ -61,7 +62,6 @@ from frob.gates._secrets import secrets_gate
 from frob.gates.invariants import Invariant, InvariantError, load_invariants
 from frob.gitio import Diff, Hunk, current_branch, run_argv, working_diff
 from frob.graph import (
-    BuildError,
     Edge,
     EdgeKind,
     GraphSnapshot,
@@ -516,84 +516,90 @@ def _waive002_violations(
     if _waive_edges(snapshot) == ():
         return ()
     arch_categories = _unwaivable_channel_rules()
-    violations: list[Violation] = []
-    for edge in _waive_edges(snapshot):
-        if edge.target in known:
-            continue
-        file = edge.src.split("::", 1)[0]
-        if edge.target in arch_categories:
-            detail = (
-                f"'{edge.target}' is a frob-arch category, not a gates rule id; "
-                f"the frob-arch check stage does not consult frob:waive"
-            )
-        else:
-            detail = f"'{edge.target}' is not a recognized gate or policy rule id"
-        _log.warning(
-            "WAIVE002: %s waives %s, which is ineffective: %s",
-            edge.src,
-            edge.target,
-            detail,
-        )
-        violations.append(
-            Violation(
-                rule="WAIVE002",
-                severity=Severity.WARN,
-                file=file,
-                line=0,
-                message=(
-                    f"WAIVE002: frob:waive on {edge.src} targeting "
-                    f"'{edge.target}' is ineffective -- {detail}"
-                ),
-            )
-        )
-    return tuple(violations)
+    return tuple(
+        _waive002_violation_for(edge, arch_categories)
+        for edge in _waive_edges(snapshot)
+        if edge.target not in known
+    )
 
 
+def _waive002_violation_for(edge: Edge, arch_categories: frozenset[str]) -> Violation:
+    """The single WAIVE002 `Violation` (already logged) for one ineffective
+    `frob:waive` edge -- distinguishing the frob-arch-category case (whose
+    stage never consults `frob:waive` at all) from an unrecognized rule id."""
+    file = edge.src.split("::", 1)[0]
+    if edge.target in arch_categories:
+        detail = (
+            f"'{edge.target}' is a frob-arch category, not a gates rule id; "
+            f"the frob-arch check stage does not consult frob:waive"
+        )
+    else:
+        detail = f"'{edge.target}' is not a recognized gate or policy rule id"
+    _log.warning(
+        "WAIVE002: %s waives %s, which is ineffective: %s",
+        edge.src,
+        edge.target,
+        detail,
+    )
+    return Violation(
+        rule="WAIVE002",
+        severity=Severity.WARN,
+        file=file,
+        line=0,
+        message=(
+            f"WAIVE002: frob:waive on {edge.src} targeting "
+            f"'{edge.target}' is ineffective -- {detail}"
+        ),
+    )
+
+
+# _match_waiver has three matching modes, chosen by `violation.symref`/
+# `violation.rule` -- this comment (not the docstring) carries the
+# historical detail so frob-arch's long-function line count reflects
+# the code, not the explanation:
+#
+# - `violation.symref is not None` (currently only TEST005's per-symbol
+#   branch-coverage check): the violation is about exactly one symbol,
+#   so only an EXACT `waiver.src == violation.symref` counts -- a
+#   `frob:waive` placed above a *different* symbol, or bare at file
+#   top, does not match. Without this, placement above a specific
+#   symbol is cosmetic: `frob.graph.dsl`'s `_enclosing_src` still binds
+#   a `path::qualname` edge, but the old file-prefix comparison below
+#   stripped the `::qualname` back off before comparing, so one
+#   directive anywhere in a file silently waived every violation of
+#   that rule in the whole file (the blanket-waiver bug T-0148's
+#   review caught empirically: 102 file-top waivers absorbing 195
+#   distinct findings).
+# - `violation.symref is None` (every other rule, plus TEST005's own
+#   per-module line-coverage and per-system checks, which have no
+#   single symbol to bind to): the original file-scoped match -- a
+#   waiver's `src` symbol/file equals the violation's `file` (either
+#   the bare path or a `path::qualname` symref rooted at that path).
+#   This is the CORRECT precision for those checks, not a shortcut:
+#   one module-line violation per file has exactly one natural site.
+#
+# `violation.rule in _UNWAIVABLE_RULES` (currently just TEST008) short-
+# circuits to `None` regardless of any matching `frob:waive` edge --
+# by construction, not by omission; see `_UNWAIVABLE_RULES`'s comment.
+#
+# T-0276: a THIRD mode covers package/system-level violations (TEST003/
+# TEST004, whose `violation.file` is an interface id like
+# `crates/foo/src` or a system id, never a real single file) -- a
+# waiver written in any file living under that package prefix also
+# counts. Without this, such a violation's waiver could never match
+# ANYTHING: no real source file's path is ever literally equal to a
+# directory-shaped interface id, so the plain file-scoped comparison
+# below always failed by construction (found while investigating why a
+# `frob:waive TEST003 reason="..."` sitting in a rust integration test
+# file reported `0 waived` in feldspar's adoption sweep -- traced to
+# this, not to any check_type-based exclusion of `.rs` directives,
+# which does not exist: `frob.graph.build_graph`/`_load_tests` are
+# check_type-agnostic).
 def _match_waiver(
     violation: Violation, waivers_by_rule: dict[str, list[Edge]]
 ) -> Edge | None:
-    """The first WAIVE edge whose site matches `violation`, or None.
-
-    Two modes, chosen by whether `violation.symref` is set (T-0148):
-
-    - `violation.symref is not None` (currently only TEST005's per-symbol
-      branch-coverage check): the violation is about exactly one symbol,
-      so only an EXACT `waiver.src == violation.symref` counts -- a
-      `frob:waive` placed above a *different* symbol, or bare at file
-      top, does not match. Without this, placement above a specific
-      symbol is cosmetic: `frob.graph.dsl`'s `_enclosing_src` still binds
-      a `path::qualname` edge, but the old file-prefix comparison below
-      stripped the `::qualname` back off before comparing, so one
-      directive anywhere in a file silently waived every violation of
-      that rule in the whole file (the blanket-waiver bug T-0148's
-      review caught empirically: 102 file-top waivers absorbing 195
-      distinct findings).
-    - `violation.symref is None` (every other rule, plus TEST005's own
-      per-module line-coverage and per-system checks, which have no
-      single symbol to bind to): the original file-scoped match -- a
-      waiver's `src` symbol/file equals the violation's `file` (either
-      the bare path or a `path::qualname` symref rooted at that path).
-      This is the CORRECT precision for those checks, not a shortcut:
-      one module-line violation per file has exactly one natural site.
-
-    `violation.rule in _UNWAIVABLE_RULES` (currently just TEST008) short-
-    circuits to `None` regardless of any matching `frob:waive` edge --
-    by construction, not by omission; see `_UNWAIVABLE_RULES`'s comment.
-
-    T-0276: a THIRD mode covers package/system-level violations (TEST003/
-    TEST004, whose `violation.file` is an interface id like
-    `crates/foo/src` or a system id, never a real single file) -- a
-    waiver written in any file living under that package prefix also
-    counts. Without this, such a violation's waiver could never match
-    ANYTHING: no real source file's path is ever literally equal to a
-    directory-shaped interface id, so the plain file-scoped comparison
-    below always failed by construction (found while investigating why a
-    `frob:waive TEST003 reason="..."` sitting in a rust integration test
-    file reported `0 waived` in feldspar's adoption sweep -- traced to
-    this, not to any check_type-based exclusion of `.rs` directives,
-    which does not exist: `frob.graph.build_graph`/`_load_tests` are
-    check_type-agnostic).
-    """
+    """The first WAIVE edge whose site matches `violation` (symbol-exact,
+    file-scoped, or package-prefix -- see the comment above), or None."""
     if violation.rule in _UNWAIVABLE_RULES:
         return None
     candidates = waivers_by_rule.get(violation.rule, ())
@@ -923,31 +929,44 @@ def _cov002(
     """
     open_scopes = _open_scopes(queue)
     touched = sorted(_touched_symrefs(diff, snapshot))
-    violations: list[Violation] = []
-    for symref in touched:
-        if _bound_to_open_ticket(snapshot, queue, symref):
-            continue
-        if _covered_by_strata_module(snapshot, queue, symref):
-            _log.debug("COV002: %s covered by its .strata module's ticket edge", symref)
-            continue
-        record = snapshot.symbols[symref]
-        if _scope_covers(record.id.path, open_scopes):
-            _log.debug("COV002: %s covered by an open ticket's scope", symref)
-            continue
-        _log.debug("COV002: %s changed with no open ticket", symref)
-        violations.append(
-            Violation(
-                rule="COV002",
-                severity=Severity.ERROR,
-                file=record.id.path,
-                line=record.span[0],
-                message=(
-                    f"COV002: {symref} changed with no frob:ticket edge to an open "
-                    f"ticket; run: frob ticket new, then add: frob:ticket <id>"
-                ),
-            )
-        )
+    violations = [
+        v
+        for symref in touched
+        for v in (_cov002_check_symref(snapshot, queue, symref, open_scopes),)
+        if v is not None
+    ]
     return tuple(violations)
+
+
+def _cov002_check_symref(
+    snapshot: GraphSnapshot,
+    queue: TicketQueue,
+    symref: str,
+    open_scopes: list[tuple[str, tuple[str, ...]]],
+) -> Violation | None:
+    """The COV002 `Violation` for one touched `symref`, or None when it is
+    accounted for by a direct ticket edge, its `.strata` module's edge, or
+    an open ticket's scope."""
+    if _bound_to_open_ticket(snapshot, queue, symref):
+        return None
+    if _covered_by_strata_module(snapshot, queue, symref):
+        _log.debug("COV002: %s covered by its .strata module's ticket edge", symref)
+        return None
+    record = snapshot.symbols[symref]
+    if _scope_covers(record.id.path, open_scopes):
+        _log.debug("COV002: %s covered by an open ticket's scope", symref)
+        return None
+    _log.debug("COV002: %s changed with no open ticket", symref)
+    return Violation(
+        rule="COV002",
+        severity=Severity.ERROR,
+        file=record.id.path,
+        line=record.span[0],
+        message=(
+            f"COV002: {symref} changed with no frob:ticket edge to an open "
+            f"ticket; run: frob ticket new, then add: frob:ticket <id>"
+        ),
+    )
 
 
 def _cov003(queue: TicketQueue, tests: CollectedTests) -> tuple[Violation, ...]:
@@ -962,33 +981,41 @@ def _cov003(queue: TicketQueue, tests: CollectedTests) -> tuple[Violation, ...]:
     for ticket in queue.tickets.values():
         if ticket.state != TicketState.DONE:
             continue
-        for evidence in ticket.evidence:
-            if _evidence_valid_for_ticket(evidence, ticket, tests):
-                continue
-            _log.debug("COV003: %s evidence %s not collected", ticket.id, evidence)
-            if is_cmd_evidence(evidence):
-                message = (
-                    f"COV003: {ticket.id} evidence {evidence!r} is cmd: evidence "
-                    f"but kind={ticket.kind.value!r} is not in "
-                    f"{allowed_kinds}; fix the ticket's kind or replace with "
-                    f"pytest --evidence node ids"
-                )
-            else:
-                message = (
-                    f"COV003: {ticket.id} evidence {evidence!r} does not resolve "
-                    f"to a collected test; run: frob test --collect to refresh, "
-                    f"or fix the evidence id"
-                )
-            violations.append(
-                Violation(
-                    rule="COV003",
-                    severity=Severity.ERROR,
-                    file=f"tickets/{ticket.id}",
-                    line=0,
-                    message=message,
-                )
-            )
+        violations.extend(
+            _cov003_evidence_violation(ticket, evidence, allowed_kinds)
+            for evidence in ticket.evidence
+            if not _evidence_valid_for_ticket(evidence, ticket, tests)
+        )
     return tuple(violations)
+
+
+def _cov003_evidence_violation(
+    ticket, evidence: str, allowed_kinds: list[str]
+) -> Violation:  # noqa: ANN001
+    """The COV003 `Violation` for one of `ticket`'s evidence ids that
+    already failed `_evidence_valid_for_ticket` -- a cmd: entry on a
+    kind-disallowed ticket, or a pytest node id that never collected."""
+    _log.debug("COV003: %s evidence %s not collected", ticket.id, evidence)
+    if is_cmd_evidence(evidence):
+        message = (
+            f"COV003: {ticket.id} evidence {evidence!r} is cmd: evidence "
+            f"but kind={ticket.kind.value!r} is not in "
+            f"{allowed_kinds}; fix the ticket's kind or replace with "
+            f"pytest --evidence node ids"
+        )
+    else:
+        message = (
+            f"COV003: {ticket.id} evidence {evidence!r} does not resolve "
+            f"to a collected test; run: frob test --collect to refresh, "
+            f"or fix the evidence id"
+        )
+    return Violation(
+        rule="COV003",
+        severity=Severity.ERROR,
+        file=f"tickets/{ticket.id}",
+        line=0,
+        message=message,
+    )
 
 
 def _cov004(queue: TicketQueue) -> tuple[Violation, ...]:
@@ -1062,27 +1089,33 @@ def _todo001_bare(snapshot: GraphSnapshot, diff: Diff) -> list[Violation]:
         if parsed.is_err:
             continue
         for comment in parsed.danger_ok.comments:
-            for offset, line_text in enumerate(
-                comment.text.splitlines() or [comment.text]
-            ):
-                if line_text.strip().startswith("frob:"):
-                    continue
-                if _TODO_RE.search(line_text) is None:
-                    continue
-                lineno = comment.span[0] + offset
-                _log.debug("TODO001: bare TODO/FIXME at %s:%d", file, lineno)
-                violations.append(
-                    Violation(
-                        rule="TODO001",
-                        severity=Severity.WARN,
-                        file=file,
-                        line=lineno,
-                        message=(
-                            f"TODO001: bare TODO/FIXME at {file}:{lineno}; bind it: "
-                            f"frob:todo <ticket-id>"
-                        ),
-                    )
-                )
+            violations.extend(_todo001_bare_comment(file, comment))
+    return violations
+
+
+def _todo001_bare_comment(file: str, comment) -> list[Violation]:  # noqa: ANN001
+    """Every bare (not `frob:`-prefixed) TODO/FIXME line inside one comment,
+    as TODO001 `Violation`s."""
+    violations: list[Violation] = []
+    for offset, line_text in enumerate(comment.text.splitlines() or [comment.text]):
+        if line_text.strip().startswith("frob:"):
+            continue
+        if _TODO_RE.search(line_text) is None:
+            continue
+        lineno = comment.span[0] + offset
+        _log.debug("TODO001: bare TODO/FIXME at %s:%d", file, lineno)
+        violations.append(
+            Violation(
+                rule="TODO001",
+                severity=Severity.WARN,
+                file=file,
+                line=lineno,
+                message=(
+                    f"TODO001: bare TODO/FIXME at {file}:{lineno}; bind it: "
+                    f"frob:todo <ticket-id>"
+                ),
+            )
+        )
     return violations
 
 
@@ -1249,35 +1282,49 @@ def scope_gate(
         )
         return ()
     touched = sorted(_touched_files(diff))
-    violations: list[Violation] = []
-    for file in touched:
-        if any(fnmatch.fnmatch(file, glob) for glob in ticket.scope):
-            continue
-        if (
-            root is not None
-            and queue is not None
-            and _scope_exempt_file(root, file, diff, ticket, queue)
-        ):
-            _log.debug(
-                "SCOPE001: %s exempt for %s (committed under another ticket's scope)",
-                file,
-                ticket.id,
-            )
-            continue
-        _log.debug("SCOPE001: %s outside %s's scope", file, ticket.id)
-        violations.append(
-            Violation(
-                rule="SCOPE001",
-                severity=Severity.ERROR,
-                file=file,
-                line=0,
-                message=(
-                    f"SCOPE001: {file} is outside {ticket.id}'s declared scope; "
-                    f"extend the ticket's scope or open a new ticket for this file"
-                ),
-            )
-        )
+    violations = [
+        v
+        for file in touched
+        for v in (_scope_gate_check_file(file, ticket, diff, root, queue),)
+        if v is not None
+    ]
     return tuple(violations)
+
+
+def _scope_gate_check_file(
+    file: str,
+    ticket: Ticket,
+    diff: Diff,
+    root: Path | None,
+    queue: TicketQueue | None,
+) -> Violation | None:
+    """The SCOPE001 `Violation` for one touched `file`, or None when it
+    matches `ticket.scope` or is exempt (already committed under another
+    ticket's own scope, T-0108)."""
+    if any(fnmatch.fnmatch(file, glob) for glob in ticket.scope):
+        return None
+    if (
+        root is not None
+        and queue is not None
+        and _scope_exempt_file(root, file, diff, ticket, queue)
+    ):
+        _log.debug(
+            "SCOPE001: %s exempt for %s (committed under another ticket's scope)",
+            file,
+            ticket.id,
+        )
+        return None
+    _log.debug("SCOPE001: %s outside %s's scope", file, ticket.id)
+    return Violation(
+        rule="SCOPE001",
+        severity=Severity.ERROR,
+        file=file,
+        line=0,
+        message=(
+            f"SCOPE001: {file} is outside {ticket.id}'s declared scope; "
+            f"extend the ticket's scope or open a new ticket for this file"
+        ),
+    )
 
 
 def _pre001(ticket: Ticket, message: str) -> tuple[Violation, ...]:
@@ -1421,39 +1468,49 @@ def _test001_002_one(
     # (collected) count. Only when NO explicit edge exists does a
     # conventionally named test (test_<name>) count toward coverage (T-0018).
     effective = len(valid) if edges else _inferred_unit_cases(record.symref, tests)
-    leaf = _snake(record.id.qualname.rsplit(".", 1)[-1])
     if effective == 0 and not edges:
-        _log.debug("TEST001: %s has no unit edge or convention match", record.symref)
-        return Violation(
-            rule="TEST001",
-            severity=Severity.ERROR,
-            file=record.id.path,
-            line=record.span[0],
-            message=(
-                f"TEST001: {record.symref} is public with no unit test; "
-                f'add: frob:tests {record.symref} kind="unit" '
-                f"(or name a test test_{leaf})"
-            ),
-        )
+        return _test001_no_unit_test(record)
     if effective < cfg.min_unit_cases:
-        _log.debug(
-            "TEST002: %s has %d/%d unit cases",
-            record.symref,
-            effective,
-            cfg.min_unit_cases,
-        )
-        return Violation(
-            rule="TEST002",
-            severity=Severity.WARN,
-            file=record.id.path,
-            line=record.span[0],
-            message=(
-                f"TEST002: {record.symref} has {effective} collected unit "
-                f"case(s), below min_unit_cases={cfg.min_unit_cases}; "
-                f'add more: frob:tests {record.symref} kind="unit"'
-            ),
-        )
+        return _test002_below_min(record, effective, cfg)
     return None
+
+
+def _test001_no_unit_test(record) -> Violation:  # noqa: ANN001
+    """TEST001: `record` is public with no unit edge or convention match."""
+    _log.debug("TEST001: %s has no unit edge or convention match", record.symref)
+    leaf = _snake(record.id.qualname.rsplit(".", 1)[-1])
+    return Violation(
+        rule="TEST001",
+        severity=Severity.ERROR,
+        file=record.id.path,
+        line=record.span[0],
+        message=(
+            f"TEST001: {record.symref} is public with no unit test; "
+            f'add: frob:tests {record.symref} kind="unit" '
+            f"(or name a test test_{leaf})"
+        ),
+    )
+
+
+def _test002_below_min(record, effective: int, cfg: TestPolicy) -> Violation:  # noqa: ANN001
+    """TEST002: `record` has fewer collected unit cases than `cfg.min_unit_cases`."""
+    _log.debug(
+        "TEST002: %s has %d/%d unit cases",
+        record.symref,
+        effective,
+        cfg.min_unit_cases,
+    )
+    return Violation(
+        rule="TEST002",
+        severity=Severity.WARN,
+        file=record.id.path,
+        line=record.span[0],
+        message=(
+            f"TEST002: {record.symref} has {effective} collected unit "
+            f"case(s), below min_unit_cases={cfg.min_unit_cases}; "
+            f'add more: frob:tests {record.symref} kind="unit"'
+        ),
+    )
 
 
 def _test001_002(
@@ -1526,30 +1583,44 @@ def _test003(
     """
     all_pairs = _flatten_edges(_test_edges(snapshot, "integration"))
     ordered_packages = sorted(_public_packages(snapshot))
-    violations: list[Violation] = []
-    for package in ordered_packages:
-        valid = _valid_edges(_edges_for_package(all_pairs, package), tests, snapshot)
-        if len(valid) < cfg.min_integration:
-            _log.debug(
-                "TEST003: %s has %d/%d integration edges",
-                package,
-                len(valid),
-                cfg.min_integration,
-            )
-            violations.append(
-                Violation(
-                    rule="TEST003",
-                    severity=Severity.WARN,
-                    file=package,
-                    line=0,
-                    message=(
-                        f"TEST003: interface {package} has {len(valid)} integration "
-                        f"test(s), below min_integration={cfg.min_integration}; "
-                        f'add: frob:tests {package} kind="integration"'
-                    ),
-                )
-            )
+    violations = [
+        v
+        for package in ordered_packages
+        for v in (_test003_check_package(package, all_pairs, tests, cfg, snapshot),)
+        if v is not None
+    ]
     return tuple(violations)
+
+
+def _test003_check_package(
+    package: str,
+    all_pairs: list[tuple[str, Edge]],
+    tests: CollectedTests,
+    cfg: TestPolicy,
+    snapshot: GraphSnapshot,
+) -> Violation | None:
+    """The TEST003 `Violation` for one interface `package`, or None when it
+    already has at least `cfg.min_integration` valid edges."""
+    valid = _valid_edges(_edges_for_package(all_pairs, package), tests, snapshot)
+    if len(valid) >= cfg.min_integration:
+        return None
+    _log.debug(
+        "TEST003: %s has %d/%d integration edges",
+        package,
+        len(valid),
+        cfg.min_integration,
+    )
+    return Violation(
+        rule="TEST003",
+        severity=Severity.WARN,
+        file=package,
+        line=0,
+        message=(
+            f"TEST003: interface {package} has {len(valid)} integration "
+            f"test(s), below min_integration={cfg.min_integration}; "
+            f'add: frob:tests {package} kind="integration"'
+        ),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -1614,26 +1685,38 @@ def _test007_pairs(
         return ()
     all_pairs = _flatten_edges(_test_edges(snapshot, "integration"))
     ordered_pairs = sorted(_uses_contract_pairs(snapshot))
-    violations: list[Violation] = []
-    for consumer, provider in ordered_pairs:
-        if _pair_covered(_consumer_leaf(consumer), provider, all_pairs, tests):
-            continue
-        _log.debug("TEST007: %s -> %s boundary untested", consumer, provider)
-        violations.append(
-            Violation(
-                rule="TEST007",
-                severity=Severity.WARN,
-                file=consumer,
-                line=0,
-                message=(
-                    f"TEST007: the {consumer} -> {provider} dependency has no "
-                    f"integration test covering that boundary; add an "
-                    f"integration test in {consumer} with frob:tests {provider} "
-                    f'kind="integration"'
-                ),
-            )
-        )
+    violations = [
+        v
+        for consumer, provider in ordered_pairs
+        for v in (_test007_check_pair(consumer, provider, all_pairs, tests),)
+        if v is not None
+    ]
     return tuple(violations)
+
+
+def _test007_check_pair(
+    consumer: str,
+    provider: str,
+    all_pairs: list[tuple[str, Edge]],
+    tests: CollectedTests,
+) -> Violation | None:
+    """The TEST007 `Violation` for one `(consumer, provider)` dependency
+    pair, or None when the boundary is already covered."""
+    if _pair_covered(_consumer_leaf(consumer), provider, all_pairs, tests):
+        return None
+    _log.debug("TEST007: %s -> %s boundary untested", consumer, provider)
+    return Violation(
+        rule="TEST007",
+        severity=Severity.WARN,
+        file=consumer,
+        line=0,
+        message=(
+            f"TEST007: the {consumer} -> {provider} dependency has no "
+            f"integration test covering that boundary; add an "
+            f"integration test in {consumer} with frob:tests {provider} "
+            f'kind="integration"'
+        ),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -1682,27 +1765,30 @@ def _test005_symbols(
             continue
         pct = data.symbol_branch.get(record.symref)
         if pct is not None and pct < cfg.unit_branch_cov:
-            _log.debug(
-                "TEST005: %s branch cov %.1f%% < %d%%",
-                record.symref,
-                pct,
-                cfg.unit_branch_cov,
-            )
-            violations.append(
-                Violation(
-                    rule="TEST005",
-                    severity=Severity.WARN,
-                    file=record.id.path,
-                    line=record.span[0],
-                    message=(
-                        f"TEST005: {record.symref} branch coverage {pct:.1f}% below "
-                        f"unit_branch_cov={cfg.unit_branch_cov}%; add tests, then: "
-                        f"make coverage"
-                    ),
-                    symref=record.symref,
-                )
-            )
+            violations.append(_test005_symbol_violation(record, pct, cfg))
     return violations
+
+
+def _test005_symbol_violation(record, pct: float, cfg: TestPolicy) -> Violation:  # noqa: ANN001
+    """A single TEST005 per-symbol branch-coverage-floor violation."""
+    _log.debug(
+        "TEST005: %s branch cov %.1f%% < %d%%",
+        record.symref,
+        pct,
+        cfg.unit_branch_cov,
+    )
+    return Violation(
+        rule="TEST005",
+        severity=Severity.WARN,
+        file=record.id.path,
+        line=record.span[0],
+        message=(
+            f"TEST005: {record.symref} branch coverage {pct:.1f}% below "
+            f"unit_branch_cov={cfg.unit_branch_cov}%; add tests, then: "
+            f"make coverage"
+        ),
+        symref=record.symref,
+    )
 
 
 def _test005_modules(data: CoverageData, cfg: TestPolicy) -> list[Violation]:
@@ -1744,44 +1830,47 @@ def _test005_systems(
             continue
         avg = sum(relevant) / len(relevant)
         if avg < cfg.system_line_cov:
-            _log.debug(
-                "TEST005: system %s line cov %.1f%% < %d%%",
-                system.id,
-                avg,
-                cfg.system_line_cov,
-            )
-            violations.append(
-                Violation(
-                    rule="TEST005",
-                    severity=Severity.WARN,
-                    file=f"[[system]] {system.id}",
-                    line=0,
-                    message=(
-                        f"TEST005: system {system.id} line coverage {avg:.1f}% below "
-                        f"system_line_cov={cfg.system_line_cov}%; add tests, then: "
-                        f"make coverage"
-                    ),
-                )
-            )
+            violations.append(_test005_system_violation(system, avg, cfg))
     return violations
 
 
+def _test005_system_violation(
+    system: SystemSpec, avg: float, cfg: TestPolicy
+) -> Violation:
+    """A single TEST005 per-system aggregate line-coverage-floor violation."""
+    _log.debug(
+        "TEST005: system %s line cov %.1f%% < %d%%",
+        system.id,
+        avg,
+        cfg.system_line_cov,
+    )
+    return Violation(
+        rule="TEST005",
+        severity=Severity.WARN,
+        file=f"[[system]] {system.id}",
+        line=0,
+        message=(
+            f"TEST005: system {system.id} line coverage {avg:.1f}% below "
+            f"system_line_cov={cfg.system_line_cov}%; add tests, then: "
+            f"make coverage"
+        ),
+    )
+
+
 # frob:ticket T-0148
+# TEST008 catches a silent-death condition: `_coverage.py::_parse_classes`
+# tries every `<sources><source>` root Cobertura declared, then a
+# bare-filename fallback, before giving up -- `data.root_join_ok` is only
+# False when every one of those strategies resolved zero `<class>`
+# filenames against a real path. Without this check TEST005 would just
+# report "0 modules measured" and every consumer of `CoverageData` would
+# quietly treat this repo as having no coverage at all, rather than a real
+# "nothing to report" state -- so it is always an ERROR: this gate ships in
+# many sibling repos with different package layouts, and a hardcoded or
+# wrong root here must fail loudly, never degrade to a quiet zero.
 def _test008_unjoined_root(data: CoverageData) -> tuple[Violation, ...]:
     """TEST008: coverage.xml carried real data but NONE of it joined to a
-    known repo path.
-
-    `_coverage.py::_parse_classes` tries every `<sources><source>` root
-    Cobertura declared, then a bare-filename fallback, before giving up --
-    `data.root_join_ok` is only False when every one of those strategies
-    resolved zero `<class>` filenames against a real path. That is a
-    silent-death condition (TEST005 would otherwise just report "0
-    modules measured" and every consumer of `CoverageData` would quietly
-    treat this repo as having no coverage at all) rather than a real
-    "nothing to report" state, so it is always an ERROR: this gate ships
-    in many sibling repos with different package layouts, and a hardcoded
-    or wrong root here must fail loudly, never degrade to a quiet zero.
-    """
+    known repo path (see the comment above)."""
     if data.root_join_ok:
         return ()
     tried = ", ".join(r or "(bare filename)" for r in data.attempted_roots)
@@ -1809,7 +1898,23 @@ def _test005(
     cfg: TestPolicy,
 ) -> tuple[Violation, ...]:
     """TEST005: measured coverage below a per-symbol, per-module, or
-    per-system floor.
+    per-system floor (see `_exclude_filtered_coverage` for why the raw
+    `coverage.xml` data is re-filtered before use)."""
+    if coverage.is_nothing:
+        return ()
+    data = _exclude_filtered_coverage(coverage.danger_some, snapshot)
+    return (
+        *_test008_unjoined_root(data),
+        *_test005_symbols(snapshot, data, cfg),
+        *_test005_modules(data, cfg),
+        *_test005_systems(systems, data, cfg),
+    )
+
+
+def _exclude_filtered_coverage(
+    data: CoverageData, snapshot: GraphSnapshot
+) -> CoverageData:
+    """Re-filter `data` against `[graph] exclude`.
 
     `coverage.xml` is produced straight from whatever `pytest --cov`
     walked, so it does not honor `[graph] exclude` (T-0148) the way
@@ -1821,31 +1926,23 @@ def _test005(
     (`frob.excludes`), keeps TEST005 measuring only this package's own
     maintained modules.
     """
-    if coverage.is_nothing:
-        return ()
-    data = coverage.danger_some
     exclude_globs = load_exclude_globs(Path(snapshot.root))
-    if exclude_globs:
-        data = CoverageData(
-            source_sha=data.source_sha,
-            symbol_branch={
-                symref: pct
-                for symref, pct in data.symbol_branch.items()
-                if not is_excluded(symref.split("::", 1)[0], exclude_globs)
-            },
-            module_line={
-                path: pct
-                for path, pct in data.module_line.items()
-                if not is_excluded(path, exclude_globs)
-            },
-            root_join_ok=data.root_join_ok,
-            attempted_roots=data.attempted_roots,
-        )
-    return (
-        *_test008_unjoined_root(data),
-        *_test005_symbols(snapshot, data, cfg),
-        *_test005_modules(data, cfg),
-        *_test005_systems(systems, data, cfg),
+    if not exclude_globs:
+        return data
+    return CoverageData(
+        source_sha=data.source_sha,
+        symbol_branch={
+            symref: pct
+            for symref, pct in data.symbol_branch.items()
+            if not is_excluded(symref.split("::", 1)[0], exclude_globs)
+        },
+        module_line={
+            path: pct
+            for path, pct in data.module_line.items()
+            if not is_excluded(path, exclude_globs)
+        },
+        root_join_ok=data.root_join_ok,
+        attempted_roots=data.attempted_roots,
     )
 
 
@@ -2153,29 +2250,36 @@ def _sys001(snapshot: GraphSnapshot, design_ids) -> list[Violation]:  # noqa: AN
         EdgeKind.BOUNDARY: design_ids.boundaries,
         EdgeKind.SECRET: design_ids.secrets,
     }
-    violations: list[Violation] = []
-    for edge in snapshot.edges:
-        if edge.kind not in _SYS_DIRECTIVE_KINDS:
-            continue
-        if edge.target in valid[edge.kind]:
-            continue
-        file, line = _site_from_edge_origin(edge.origin)
-        _log.debug("SYS001: %s -> %s not in design model", edge.src, edge.target)
-        violations.append(
-            Violation(
-                rule="SYS001",
-                severity=Severity.ERROR,
-                file=file,
-                line=line,
-                message=(
-                    f"SYS001: frob:{edge.kind.value} {edge.target} at {edge.src} "
-                    f"does not name a {_SYS_DIRECTIVE_KINDS[edge.kind]} construct "
-                    f"in the loaded design model; fix the id or add it to the "
-                    f".strata design"
-                ),
-            )
-        )
-    return violations
+    return [
+        v
+        for edge in snapshot.edges
+        if edge.kind in _SYS_DIRECTIVE_KINDS
+        for v in (_sys001_check_edge(edge, valid),)
+        if v is not None
+    ]
+
+
+def _sys001_check_edge(
+    edge: Edge, valid: dict[EdgeKind, frozenset[str]]
+) -> Violation | None:
+    """The SYS001 `Violation` for one `frob:channel/boundary/secret` edge,
+    or None when its target resolves in the loaded design model."""
+    if edge.target in valid[edge.kind]:
+        return None
+    file, line = _site_from_edge_origin(edge.origin)
+    _log.debug("SYS001: %s -> %s not in design model", edge.src, edge.target)
+    return Violation(
+        rule="SYS001",
+        severity=Severity.ERROR,
+        file=file,
+        line=line,
+        message=(
+            f"SYS001: frob:{edge.kind.value} {edge.target} at {edge.src} "
+            f"does not name a {_SYS_DIRECTIVE_KINDS[edge.kind]} construct "
+            f"in the loaded design model; fix the id or add it to the "
+            f".strata design"
+        ),
+    )
 
 
 def _sys003_one_model(model, root: Path) -> list[Violation]:  # noqa: ANN001
@@ -2290,21 +2394,29 @@ def _claims_markers(root: Path) -> list[tuple[str, int, str]]:
     paths = _obligated_docs(root, include, exclude) | set(roots)
     found: list[tuple[str, int, str]] = []
     for rel in sorted(paths):
-        path = root / rel
-        try:
-            text = path.read_text(encoding="utf-8", errors="replace")
-        except OSError:
+        found.extend(_claims_markers_in_file(root, rel))
+    return found
+
+
+def _claims_markers_in_file(root: Path, rel: str) -> list[tuple[str, int, str]]:
+    """Every live (non-fenced, non-inline-code) `frob:claims` marker in one
+    doc file, as `(rel, line, view)` triples."""
+    path = root / rel
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return []
+    found: list[tuple[str, int, str]] = []
+    in_fence = False
+    for lineno, line in enumerate(text.splitlines(), start=1):
+        if _FENCE_RE.match(line) is not None:
+            in_fence = not in_fence
             continue
-        in_fence = False
-        for lineno, line in enumerate(text.splitlines(), start=1):
-            if _FENCE_RE.match(line) is not None:
-                in_fence = not in_fence
-                continue
-            if in_fence:
-                continue
-            match = _CLAIMS_RE.search(_strip_inline_code_spans(line))
-            if match is not None:
-                found.append((rel, lineno, match.group("view")))
+        if in_fence:
+            continue
+        match = _CLAIMS_RE.search(_strip_inline_code_spans(line))
+        if match is not None:
+            found.append((rel, lineno, match.group("view")))
     return found
 
 
@@ -2347,20 +2459,18 @@ def _doc003_one_marker(model, rel: str, lineno: int, view: str) -> Violation | N
 
 
 # frob:ticket T-0085
+# DOC003: a `frob:claims <view>` doc marker whose view is not PROVED (zero
+# THREAT001/THREAT002/THREAT003 violations) against the current design
+# model is an error naming the failing obligations (docs/strata/threat.md
+# #the-exhaustiveness-proof-the-point: "a README claiming 'protected
+# against the OWASP Top 10' must cite a PROVED exhaustiveness result or it
+# fails CI"). DOC002 is already taken (anchor resolution, T-0127), hence
+# DOC003 for the claims audit (charter drift noted in docs/strata/threat.md).
 def _doc003(root: Path, design_ids) -> list[Violation]:  # noqa: ANN001
-    """DOC003: a `frob:claims <view>` doc marker whose view is not PROVED
-    (zero THREAT001/THREAT002/THREAT003 violations) against the current
-    design model is an error naming the failing obligations (docs/strata/
-    threat.md#the-exhaustiveness-proof-the-point: "a README claiming
-    'protected against the OWASP Top 10' must cite a PROVED exhaustiveness
-    result or it fails CI"). DOC002 is already taken (anchor resolution,
-    T-0127), hence DOC003 for the claims audit (charter drift noted in
-    docs/strata/threat.md).
-
-    Suppressed when any design file failed to load (same posture as
-    SYS001): a claim cannot be honestly evaluated against a partially
-    loaded model. Runs no doc I/O at all when no `frob:claims` marker
-    exists anywhere, so a repo not using the directive pays nothing."""
+    """DOC003: see the comment above. Suppressed when any design file
+    failed to load (same posture as SYS001) -- a claim cannot be honestly
+    evaluated against a partially loaded model. Runs no doc I/O at all when
+    no `frob:claims` marker exists anywhere."""
     markers = _claims_markers(root)
     if not markers:
         return []
@@ -2397,23 +2507,22 @@ def _doc003(root: Path, design_ids) -> list[Violation]:  # noqa: ANN001
 # frob:tests tests/test_gates.py::TestSysGate.test_doc003_refutes_names_obligations
 # frob:tests tests/test_gates.py::TestSysGate.test_doc003_unclaimed_view_ignored
 # frob:tests tests/test_gates.py::TestSysGate.test_doc003_unknown_view
+# sys_gate is opt-in via a `design/` (or `[strata].design_dir`) directory of
+# `.strata` files existing, same posture as `decisions_gate`: a repo not yet
+# using strata sees nothing. The `frob.strata` import is deferred until
+# AFTER the directory check (T-0135): `frob.strata` transitively imports
+# `_facts.py`, which needs the `strata_core` native extension, so a repo
+# with no `design/` dir at all must never pay that import cost -- a
+# standalone (`uv tool install frob`, no natives) install must not crash
+# `frob check` on every repo, only degrade (T-0134) on repos that actually
+# opted into `design/`.
 def sys_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """SYS001 (dangling directive), SYS002 (unbound boundary/secret), SYS003
     (undeclared cross-component import, tier-2 conformance), and SYS004 (a
     `.strata` design file failed to parse/elaborate -- suppresses SYS001
     for the whole run since ids are merged across files with no per-file
-    provenance).
-
-    Opt-in via a `design/` (or `[strata].design_dir`) directory of `.strata`
-    files existing, same posture as `decisions_gate`: a repo not yet using
-    strata sees nothing. The `frob.strata` import is deferred until AFTER
-    this check (T-0135): `frob.strata` transitively imports `_facts.py`,
-    which needs the `strata_core` native extension, so a repo with no
-    `design/` dir at all must never pay that import cost -- a standalone
-    (`uv tool install frob`, no natives) install must not crash `frob
-    check` on every repo, only degrade (T-0134) on repos that actually
-    opted into `design/`.
-    """
+    provenance). See the comment above for the opt-in/deferred-import
+    posture."""
     root = Path(root)
     design_dir = _design_dir(root)
     if not (root / design_dir).is_dir():
@@ -2430,6 +2539,13 @@ def sys_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
         *_sys003(design_ids, root),
         *_doc003(root, design_ids),
     )
+    _log_sys_gate_summary(design_ids, violations)
+    return violations
+
+
+def _log_sys_gate_summary(design_ids, violations: tuple[Violation, ...]) -> None:  # noqa: ANN001
+    """Log `sys_gate`'s per-run summary: construct counts, violation count,
+    and design load error count."""
     _log.info(
         "sys_gate: %d channel(s)/%d boundary(ies)/%d secret(s) in model, "
         "%d violation(s), %d design load error(s)",
@@ -2439,7 +2555,6 @@ def sys_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
         len(violations),
         len(design_ids.errors),
     )
-    return violations
 
 
 def _dup_config(root: Path) -> tuple[bool, float, bool]:
@@ -2479,8 +2594,7 @@ def dup_gate(root: Path, snapshot: GraphSnapshot, diff) -> tuple[Violation, ...]
     silent until a repo turns it on. If enforce is on but frob-core is
     absent, emits one advisory note rather than failing.
     """
-    from frob.dup import DUP001, DUP002, DupConfig, core_available, find_clones
-    from frob.dup import touched_refs as _touched
+    from frob.dup import core_available
 
     root = Path(root)
     enforce, threshold, region_kernel = _dup_config(root)
@@ -2490,6 +2604,23 @@ def dup_gate(root: Path, snapshot: GraphSnapshot, diff) -> tuple[Violation, ...]
     if not core_available():
         _log.warning("dup_gate: frob-core not installed; DUP rules skipped")
         return ()
+
+    violations = _dup_gate_violations(snapshot, diff, threshold, region_kernel)
+    _log.info("dup_gate: %d clone violation(s)", len(violations))
+    return violations
+
+
+def _dup_gate_violations(
+    snapshot: GraphSnapshot,
+    diff,
+    threshold: float,
+    region_kernel: bool,  # noqa: ANN001
+) -> tuple[Violation, ...]:
+    """Run `find_clones` and return the DUP001/DUP002 violations against
+    the diff's touched refs, or empty (already logged) if clone-finding
+    itself fails."""
+    from frob.dup import DUP001, DUP002, DupConfig, find_clones
+    from frob.dup import touched_refs as _touched
 
     report_result = find_clones(
         snapshot,
@@ -2501,12 +2632,10 @@ def dup_gate(root: Path, snapshot: GraphSnapshot, diff) -> tuple[Violation, ...]
         return ()
     report = report_result.danger_ok
     touched = _touched(snapshot, diff)
-    violations = (
+    return (
         *DUP001(report, touched, threshold),
         *DUP002(report, touched, threshold),
     )
-    _log.info("dup_gate: %d clone violation(s)", len(violations))
-    return tuple(violations)
 
 
 def _current_version(root: Path) -> str | None:
@@ -2576,29 +2705,34 @@ def release_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     if manifest_result.is_err:
         _log.debug("release_gate: no manifest, skipping")
         return ()
-    manifest = manifest_result.danger_ok
 
     current_version = _current_version(root)
     if current_version is None:
         _log.debug("release_gate: no detectable project version, skipping")
         return ()
 
-    bump, violations = _rel001_version(manifest, snapshot, current_version)
+    bump, violations = _rel001_version(
+        manifest_result.danger_ok, snapshot, current_version
+    )
     if bump != 0 and not _changelog_mentions(root, current_version):
-        violations.append(
-            Violation(
-                rule="REL001",
-                severity=Severity.ERROR,
-                file="CHANGELOG.md",
-                line=0,
-                message=(
-                    f"REL001: no CHANGELOG.md entry for {current_version}; the "
-                    f"public API changed and needs a release note"
-                ),
-            )
-        )
+        violations.append(_rel001_missing_changelog(current_version))
     _log.info("release_gate: bump=%s, %d violation(s)", bump.name, len(violations))
     return tuple(violations)
+
+
+def _rel001_missing_changelog(current_version: str) -> Violation:
+    """REL001: the public API changed but CHANGELOG.md has no entry for
+    `current_version`."""
+    return Violation(
+        rule="REL001",
+        severity=Severity.ERROR,
+        file="CHANGELOG.md",
+        line=0,
+        message=(
+            f"REL001: no CHANGELOG.md entry for {current_version}; the "
+            f"public API changed and needs a release note"
+        ),
+    )
 
 
 def _fuzz_enforce(root: Path):  # noqa: ANN202
@@ -2627,16 +2761,7 @@ def fuzz_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     it stays silent until [fuzz].enforce is set -- the warn-first adoption
     posture.
     """
-    from frob.fuzz import (
-        FUZZ001,
-        FUZZ002,
-        FUZZ003,
-        FuzzEnforce,
-        FuzzPolicy,
-        load_fuzz_stamp,
-        obligations,
-        resolve_param_types,
-    )
+    from frob.fuzz import FuzzEnforce, FuzzPolicy, obligations
 
     root = Path(root)
     enforce = _fuzz_enforce(root)
@@ -2645,15 +2770,30 @@ def fuzz_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
         return ()
 
     obs = obligations(snapshot, FuzzPolicy(enforce=enforce))
+    violations = _fuzz_gate_violations(root, snapshot, obs)
+    _log.info("fuzz_gate: %d obligation(s), %d violation(s)", len(obs), len(violations))
+    return violations
+
+
+def _fuzz_gate_violations(
+    root: Path, snapshot: GraphSnapshot, obs
+) -> tuple[Violation, ...]:  # noqa: ANN001
+    """FUZZ001/002/003 for the resolved fuzz `obs` obligations."""
+    from frob.fuzz import (
+        FUZZ001,
+        FUZZ002,
+        FUZZ003,
+        load_fuzz_stamp,
+        resolve_param_types,
+    )
+
     param_types = {ob.ref: resolve_param_types(root, ob.ref) for ob in obs}
     stamp = load_fuzz_stamp(root)
-    violations = (
+    return (
         *FUZZ001(snapshot, obs),
         *FUZZ002(obs, param_types),
         *FUZZ003(snapshot, obs, stamp),
     )
-    _log.info("fuzz_gate: %d obligation(s), %d violation(s)", len(obs), len(violations))
-    return tuple(violations)
 
 
 _MD_LINK_RE = re.compile(r"\]\(([^)#\s]+)")
@@ -2781,22 +2921,24 @@ def doclink_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     orphans = sorted(obligated - linked - set(roots))
 
     link_hint = _doclink_root_hint(root, roots)
-    violations = [
-        Violation(
-            rule="DOC001",
-            severity=Severity.ERROR,
-            file=orphan,
-            line=0,
-            message=(
-                f"DOC001: {orphan} is linked from nowhere; add a "
-                f"frob:describes anchor, reference it with frob:doc, or "
-                f"{link_hint}"
-            ),
-        )
-        for orphan in orphans
-    ]
+    violations = tuple(_doc001_orphan(orphan, link_hint) for orphan in orphans)
     _log.info("doclink: %d obligated, %d orphaned", len(obligated), len(violations))
-    return tuple(violations)
+    return violations
+
+
+def _doc001_orphan(orphan: str, link_hint: str) -> Violation:
+    """DOC001: `orphan` is a doc file linked from nowhere."""
+    return Violation(
+        rule="DOC001",
+        severity=Severity.ERROR,
+        file=orphan,
+        line=0,
+        message=(
+            f"DOC001: {orphan} is linked from nowhere; add a "
+            f"frob:describes anchor, reference it with frob:doc, or "
+            f"{link_hint}"
+        ),
+    )
 
 
 _ANCHOR_ID_RE = re.compile(r'<a\s+id="([^"]+)"')
@@ -2863,67 +3005,61 @@ def docanchor_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]
     stable anchor under one heading.
     """
     root = Path(root)
-    violations: list[Violation] = []
     slug_cache: dict[str, Option[set[str]]] = {}
-    for edge in snapshot.edges:
-        if edge.kind != EdgeKind.DOC:
-            continue
-        origin_file, _, lineno_text = edge.origin.rpartition(":")
-        line = int(lineno_text) if lineno_text.isdigit() else 0
-        origin_file = origin_file or edge.origin
-        target = edge.target
-        if "#" not in target:
-            violations.append(
-                _docanchor_violation(
-                    origin_file,
-                    line,
-                    f"DOC002: frob:doc target {target!r} has no #anchor; "
-                    f"use <file>#<slug>",
-                )
-            )
-            continue
-        docfile, slug = target.split("#", 1)
-        if docfile not in slug_cache:
-            slug_cache[docfile] = _doc_anchor_slugs(root / docfile)
-        slugs = slug_cache[docfile]
-        if slugs.is_nothing:
-            violations.append(
-                _docanchor_violation(
-                    origin_file,
-                    line,
-                    f"DOC002: frob:doc target file {docfile!r} does not exist",
-                )
-            )
-        elif slug not in slugs.danger_some:
-            violations.append(
-                _docanchor_violation(
-                    origin_file,
-                    line,
-                    _anchor_mismatch_message(target, docfile, slug, slugs.danger_some),
-                )
-            )
+    violations = [
+        v
+        for edge in snapshot.edges
+        if edge.kind == EdgeKind.DOC
+        for v in (_docanchor_check_edge(root, edge, slug_cache),)
+        if v is not None
+    ]
     _log.info("docanchor: %d violation(s)", len(violations))
     return tuple(violations)
 
 
-# frob:doc docs/modules/perf.md#integration-points
-# frob:ticket T-0021
-# frob:ticket T-0203
-# frob:waive TEST005 reason="perf_gate 85.7% branch cover, debt T-0160"
-def perf_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
-    """PERF001..PERF004, run at the policy/gates stage per docs/modules/perf.md's
-    Integration points. Parses every source file in `snapshot.file_hashes`
-    that carries a registered tree-sitter grammar (`frob.lang.tree_sitter_extensions`,
-    the canonical T-0129 extension table -- not a hand-copied duplicate);
-    files with no registered grammar are unscannable by design and are
-    filtered out before parsing, so they never reach `parse_file` and never
-    produce an UnsupportedLanguage skip line (T-0203). A file whose
-    extension SHOULD parse but fails still gets a visible skip message.
-    Hands the parsed set to `frob.perf.perf_rules` (same posture as
-    `frob.policy`'s `_pattern_violations`: gates does the IO, `perf_rules`
-    stays pure)."""
-    from frob.lang import parse_file, tree_sitter_extensions
-    from frob.perf import perf_rules
+def _docanchor_check_edge(
+    root: Path, edge: Edge, slug_cache: dict[str, Option[set[str]]]
+) -> Violation | None:
+    """The DOC002 `Violation` for one `frob:doc` edge, or None when its
+    `<file>#<slug>` target resolves. `slug_cache` memoizes `_doc_anchor_slugs`
+    per doc file across the whole gate run."""
+    origin_file, _, lineno_text = edge.origin.rpartition(":")
+    line = int(lineno_text) if lineno_text.isdigit() else 0
+    origin_file = origin_file or edge.origin
+    target = edge.target
+    if "#" not in target:
+        return _docanchor_violation(
+            origin_file,
+            line,
+            f"DOC002: frob:doc target {target!r} has no #anchor; use <file>#<slug>",
+        )
+    docfile, slug = target.split("#", 1)
+    if docfile not in slug_cache:
+        slug_cache[docfile] = _doc_anchor_slugs(root / docfile)
+    slugs = slug_cache[docfile]
+    if slugs.is_nothing:
+        return _docanchor_violation(
+            origin_file,
+            line,
+            f"DOC002: frob:doc target file {docfile!r} does not exist",
+        )
+    if slug not in slugs.danger_some:
+        return _docanchor_violation(
+            origin_file,
+            line,
+            _anchor_mismatch_message(target, docfile, slug, slugs.danger_some),
+        )
+    return None
+
+
+def _perf_gate_candidate_paths(snapshot: GraphSnapshot) -> list[str]:
+    """Every `snapshot.file_hashes` path with a registered tree-sitter
+    grammar (`frob.lang.tree_sitter_extensions`, the canonical T-0129
+    extension table -- not a hand-copied duplicate); files with no
+    registered grammar are unscannable by design and are filtered out here
+    so they never reach `parse_file` and never produce an
+    UnsupportedLanguage skip line (T-0203)."""
+    from frob.lang import tree_sitter_extensions
 
     scannable_extensions = tree_sitter_extensions()
     ordered_paths = sorted(snapshot.file_hashes)
@@ -2938,6 +3074,36 @@ def perf_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
             "perf_gate: %d file(s) filtered out (no registered grammar)",
             skipped_unscannable,
         )
+    return candidate_paths
+
+
+# frob:doc docs/modules/perf.md#integration-points
+# frob:ticket T-0021
+# frob:ticket T-0203
+# frob:waive TEST005 reason="perf_gate 85.7% branch cover, debt T-0160"
+def perf_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
+    """PERF001..PERF004, run at the policy/gates stage per docs/modules/perf.md's
+    Integration points. Parses every scannable source file (see
+    `_perf_gate_candidate_paths`) and hands the parsed set to
+    `frob.perf.perf_rules` (same posture as `frob.policy`'s
+    `_pattern_violations`: gates does the IO, `perf_rules` stays pure). A
+    file whose extension SHOULD parse but fails still gets a visible skip
+    message."""
+    from frob.perf import perf_rules
+
+    candidate_paths = _perf_gate_candidate_paths(snapshot)
+    parsed = _perf_gate_parse_files(root, candidate_paths)
+    violations = perf_rules(snapshot, parsed)
+    _log.info(
+        "perf_gate: %d file(s) scanned, %d violation(s)", len(parsed), len(violations)
+    )
+    return violations
+
+
+def _perf_gate_parse_files(root: Path, candidate_paths: list[str]) -> list[ParsedFile]:
+    """Parse every scannable candidate path, skipping (with a logged
+    warning) any that fails to parse."""
+    from frob.lang import parse_file
 
     parsed: list[ParsedFile] = []
     for rel_path in candidate_paths:
@@ -2948,11 +3114,7 @@ def perf_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
             )
             continue
         parsed.append(result.danger_ok)
-    violations = perf_rules(snapshot, parsed)
-    _log.info(
-        "perf_gate: %d file(s) scanned, %d violation(s)", len(parsed), len(violations)
-    )
-    return violations
+    return parsed
 
 
 _CACHE_REL = Path(".frob") / "cache.db"
@@ -3061,64 +3223,106 @@ def _resolve_ticket(
     return ticket, sweep
 
 
-def _load_inputs(cfg: GateConfig) -> Result[_GateInputs, GateError]:
-    """Load every piece of state the gates need, or the first hard failure."""
+_T = TypeVar("_T")
+_E = TypeVar("_E")
+
+
+def _require(
+    result: Result[_T, _E], step: str, err: GateError
+) -> Result[_T, GateError]:
+    """Log+map one `_load_required_state` step's failure to `err`, or pass
+    its `danger_ok` value through unchanged, preserving `result`'s Ok type."""
+    if result.is_err:
+        _log.error("run_gates: %s failed: %s", step, result.danger_err)
+        return Err(err)
+    return Ok(result.danger_ok)
+
+
+def _load_graph_queue_lock(
+    root: Path,
+) -> Result[tuple[GraphSnapshot, TicketQueue, LockFile], GateError]:
+    """Load the graph snapshot, ticket queue, and lock file -- the first
+    third of `_load_required_state`'s mandatory loads."""
+    build = _require(
+        build_graph(root, root / _CACHE_REL), "graph build", GateError.GraphUnavailable
+    )
+    if build.is_err:
+        return Err(build.danger_err)
+    queue = _require(load_queue(root), "ticket queue load", GateError.QueueUnavailable)
+    if queue.is_err:
+        return Err(queue.danger_err)
+    lock = _require(
+        load_lock(root / "frob.lock"), "lock load", GateError.ConfigMalformed
+    )
+    if lock.is_err:
+        return Err(lock.danger_err)
+    return Ok((build.danger_ok, queue.danger_ok, lock.danger_ok))
+
+
+def _load_required_state(
+    root: Path,
+) -> Result[
+    tuple[GraphSnapshot, TicketQueue, LockFile, tuple[Invariant, ...], list], GateError
+]:
+    """Load the gates' mandatory state -- graph, ticket queue, lock,
+    invariants, policy -- or the first hard failure."""
     from frob.policy import load_policy
 
-    root = Path(cfg.root)
-    build_result: Result[GraphSnapshot, BuildError] = build_graph(
-        root, root / _CACHE_REL
-    )
-    if build_result.is_err:
-        _log.error("run_gates: graph build failed: %s", build_result.danger_err)
-        return Err(GateError.GraphUnavailable)
-    queue_result = load_queue(root)
-    if queue_result.is_err:
-        _log.error("run_gates: ticket queue load failed: %s", queue_result.danger_err)
-        return Err(GateError.QueueUnavailable)
-    lock_result = load_lock(root / "frob.lock")
-    if lock_result.is_err:
-        _log.error("run_gates: lock load failed: %s", lock_result.danger_err)
-        return Err(GateError.ConfigMalformed)
-    invariants_result = load_invariants(root)
-    if invariants_result.is_err:
-        _log.error(
-            "run_gates: invariants load failed: %s", invariants_result.danger_err
-        )
-        return Err(GateError.ConfigMalformed)
-    policy_result = load_policy(root)
-    if policy_result.is_err:
-        _log.error("run_gates: policy load failed: %s", policy_result.danger_err)
-        return Err(GateError.ConfigMalformed)
+    first = _load_graph_queue_lock(root)
+    if first.is_err:
+        return Err(first.danger_err)
+    build_ok, queue_ok, lock_ok = first.danger_ok
 
-    snapshot = build_result.danger_ok
-    queue = queue_result.danger_ok
-    rules = policy_result.danger_ok
+    invariants = _require(
+        load_invariants(root), "invariants load", GateError.ConfigMalformed
+    )
+    if invariants.is_err:
+        return Err(invariants.danger_err)
+    policy = _require(load_policy(root), "policy load", GateError.ConfigMalformed)
+    if policy.is_err:
+        return Err(policy.danger_err)
+    return Ok(
+        (build_ok, queue_ok, lock_ok, invariants.danger_ok, list(policy.danger_ok))
+    )
+
+
+def _assemble_gate_inputs(root: Path, cfg: GateConfig, required: tuple) -> _GateInputs:
+    """Build the full `_GateInputs` from `_load_required_state`'s mandatory
+    state plus the remaining optional/derived loads (coverage, test policy,
+    active ticket)."""
+    snapshot, queue, lock, invariants, rules = required
     coverage_result = load_coverage(root, snapshot)
     coverage: Option[CoverageData] = (
         Some(coverage_result.danger_ok) if coverage_result.is_ok else Nothing()
     )
     test_policy, systems = _load_test_config(root)
     ticket, sweep = _resolve_ticket(root, cfg, queue)
-    return Ok(
-        _GateInputs(
-            root=root,
-            cfg=cfg,
-            snapshot=snapshot,
-            queue=queue,
-            lock=lock_result.danger_ok,
-            diff=_load_diff(root, cfg.base),
-            tests=_load_tests(root),
-            invariants=invariants_result.danger_ok,
-            rules=tuple(rules),
-            rule_ids=frozenset(r.id for r in rules),
-            coverage=coverage,
-            test_policy=test_policy,
-            systems=systems,
-            ticket=ticket,
-            sweep=sweep,
-        )
+    return _GateInputs(
+        root=root,
+        cfg=cfg,
+        snapshot=snapshot,
+        queue=queue,
+        lock=lock,
+        diff=_load_diff(root, cfg.base),
+        tests=_load_tests(root),
+        invariants=invariants,
+        rules=tuple(rules),
+        rule_ids=frozenset(r.id for r in rules),
+        coverage=coverage,
+        test_policy=test_policy,
+        systems=systems,
+        ticket=ticket,
+        sweep=sweep,
     )
+
+
+def _load_inputs(cfg: GateConfig) -> Result[_GateInputs, GateError]:
+    """Load every piece of state the gates need, or the first hard failure."""
+    root = Path(cfg.root)
+    required = _load_required_state(root)
+    if required.is_err:
+        return Err(required.danger_err)
+    return Ok(_assemble_gate_inputs(root, cfg, required.danger_ok))
 
 
 def _build_jobs(
@@ -3127,14 +3331,40 @@ def _build_jobs(
     """Map each selected gate name to a zero-arg job over the loaded state."""
     from frob.policy import policy_gate
 
+    jobs: dict[str, Callable[[], tuple[Violation, ...]]] = {
+        "drift": lambda: drift_gate(st.snapshot, st.lock),
+        "coverage": lambda: coverage_gate(st.snapshot, st.queue, st.diff, st.tests),
+        "invariant": lambda: invariant_gate(
+            st.invariants, st.snapshot, st.tests, st.rule_ids
+        ),
+        "test": lambda: test_gate(
+            st.snapshot, st.systems, st.coverage, st.tests, st.test_policy
+        ),
+        "policy": lambda: policy_gate(st.rules, st.snapshot, st.diff),
+        "doclink": lambda: doclink_gate(st.root, st.snapshot),
+        "docanchor": lambda: docanchor_gate(st.root, st.snapshot),
+        "perf": lambda: perf_gate(st.root, st.snapshot),
+        "fuzz": lambda: fuzz_gate(st.root, st.snapshot),
+        "release": lambda: release_gate(st.root, st.snapshot),
+        "clones": lambda: dup_gate(st.root, st.snapshot, st.diff),
+        "decisions": lambda: decisions_gate(st.root, st.snapshot),
+        "sys": lambda: sys_gate(st.root, st.snapshot),
+        "secrets": lambda: secrets_gate(st.root),
+        "tickets": lambda: tickets_gate(st.root, st.queue),
+    }
+    selected_jobs = {name: job for name, job in jobs.items() if name in selected}
+    ticket_jobs, skipped = _build_ticket_scoped_jobs(selected, st)
+    selected_jobs.update(ticket_jobs)
+    return selected_jobs, skipped
+
+
+def _build_ticket_scoped_jobs(
+    selected: frozenset[str], st: _GateInputs
+) -> tuple[dict[str, Callable[[], tuple[Violation, ...]]], list[str]]:
+    """`scope`/`prework` jobs: both need `st.ticket`, so both are skipped
+    (not run, not failed) rather than registered when no ticket is active."""
     jobs: dict[str, Callable[[], tuple[Violation, ...]]] = {}
     skipped: list[str] = []
-    if "drift" in selected:
-        jobs["drift"] = lambda: drift_gate(st.snapshot, st.lock)
-    if "coverage" in selected:
-        jobs["coverage"] = lambda: coverage_gate(
-            st.snapshot, st.queue, st.diff, st.tests
-        )
     if "scope" in selected:
         scope_ticket = st.ticket
         if scope_ticket is not None:
@@ -3149,36 +3379,6 @@ def _build_jobs(
             jobs["prework"] = lambda: prework_gate(pre_ticket, st.snapshot, st.sweep)
         else:
             skipped.append("prework")
-    if "invariant" in selected:
-        jobs["invariant"] = lambda: invariant_gate(
-            st.invariants, st.snapshot, st.tests, st.rule_ids
-        )
-    if "test" in selected:
-        jobs["test"] = lambda: test_gate(
-            st.snapshot, st.systems, st.coverage, st.tests, st.test_policy
-        )
-    if "policy" in selected:
-        jobs["policy"] = lambda: policy_gate(st.rules, st.snapshot, st.diff)
-    if "doclink" in selected:
-        jobs["doclink"] = lambda: doclink_gate(st.root, st.snapshot)
-    if "docanchor" in selected:
-        jobs["docanchor"] = lambda: docanchor_gate(st.root, st.snapshot)
-    if "perf" in selected:
-        jobs["perf"] = lambda: perf_gate(st.root, st.snapshot)
-    if "fuzz" in selected:
-        jobs["fuzz"] = lambda: fuzz_gate(st.root, st.snapshot)
-    if "release" in selected:
-        jobs["release"] = lambda: release_gate(st.root, st.snapshot)
-    if "clones" in selected:
-        jobs["clones"] = lambda: dup_gate(st.root, st.snapshot, st.diff)
-    if "decisions" in selected:
-        jobs["decisions"] = lambda: decisions_gate(st.root, st.snapshot)
-    if "sys" in selected:
-        jobs["sys"] = lambda: sys_gate(st.root, st.snapshot)
-    if "secrets" in selected:
-        jobs["secrets"] = lambda: secrets_gate(st.root)
-    if "tickets" in selected:
-        jobs["tickets"] = lambda: tickets_gate(st.root, st.queue)
     return jobs, skipped
 
 
@@ -3228,6 +3428,19 @@ def run_gates(cfg: GateConfig) -> Result[GateReport, GateError]:
     st = inputs_result.danger_ok
 
     jobs, skipped = _build_jobs(selected, st)
+    report = _assemble_gate_report(cfg, st, jobs, skipped, start_all)
+    return Ok(report)
+
+
+def _assemble_gate_report(
+    cfg: GateConfig,
+    st: _GateInputs,
+    jobs: dict[str, Callable[[], tuple[Violation, ...]]],
+    skipped: list[str],
+    start_all: float,
+) -> GateReport:
+    """Run `jobs`, fold in the WAIVE001/WAIVE002 self-checks, apply waivers
+    and severity overrides, and log the run's final tally."""
     all_violations: list[Violation] = [
         *_waive001_violations(st.snapshot),
         *_waive002_violations(st.snapshot, st.rule_ids),
@@ -3246,7 +3459,7 @@ def run_gates(cfg: GateConfig) -> Result[GateReport, GateError]:
         len(waived),
         skipped,
     )
-    return Ok(GateReport(violations=kept, waived=waived, stats=stats))
+    return GateReport(violations=kept, waived=waived, stats=stats)
 
 
 __all__ = [
