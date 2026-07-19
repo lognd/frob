@@ -39,6 +39,17 @@ _LINE_RE = re.compile(r"^frob:(?P<verb>\S+)(?:\s+(?P<rest>.*))?$")
 _ATTR_RE = re.compile(r'(\w+)\s*=\s*"([^"]*)"')
 _TESTS_KINDS = frozenset({"unit", "integration", "e2e"})
 
+#: Verbs that are intentional `frob:<verb>` literal markers owned by a
+#: DIFFERENT subsystem (never routed through `_VERB_TABLE`, never turned
+#: into a graph edge) -- the DSL parser must recognize and silently skip
+#: them rather than reporting "unknown verb", or the two subsystems'
+#: vocabularies drift out of agreement (T-0294). Each entry names its owner
+#: so a future reader knows where the marker's contract actually lives.
+#: - "secret-fake": owned by `frob.gates._secrets._FAKE_MARKER` -- a
+#:   fixture-discharge token scanned directly out of tracked-file text,
+#:   deliberately never a graph edge (see that module's docstring, T-0157).
+_RESERVED_MARKER_VERBS = frozenset({"secret-fake"})
+
 _DESCRIBES_RE = re.compile(
     r"<!--\s*frob:describes\s+(?P<symref>\S+)(?:\s+(?P<facet>sig|body|doc))?\s*-->"
 )
@@ -142,8 +153,10 @@ def _parse_attrs(
 
 def _parse_line(
     line: str, *, path: str, lineno: int, src: str
-) -> Edge | MalformedDirective:
-    """Parse one `frob:...` comment line into an `Edge` or a `MalformedDirective`."""
+) -> Edge | MalformedDirective | None:
+    """Parse one `frob:...` comment line into an `Edge`, a `MalformedDirective`,
+    or `None` for a reserved marker verb (`_RESERVED_MARKER_VERBS`) that another
+    subsystem owns and the DSL parser must silently ignore."""
     origin = f"{path}:{lineno}"
     match = _LINE_RE.match(line)
     if match is None:
@@ -153,6 +166,9 @@ def _parse_line(
 
     verb = match.group("verb")
     rest = (match.group("rest") or "").strip()
+
+    if verb in _RESERVED_MARKER_VERBS:
+        return None
 
     kind = _VERB_TABLE.get(verb)
     if kind is None:
@@ -276,6 +292,8 @@ def parse_directives(
         if not stripped.startswith("frob:"):
             continue
         result = _parse_line(stripped, path=parsed.path, lineno=lineno, src=src)
+        if result is None:
+            continue
         if isinstance(result, Edge):
             edges.append(result)
         else:

@@ -23,8 +23,13 @@ from frob.strata import (
     Waiver,
     check_self_conformance,
 )
+from frob.strata._code_binding import CodeBinding
 from frob.strata._effects import _KIND_MAP
-from frob.strata._selfconform import _EXTENDED_KINDS, _sorted_capability_files
+from frob.strata._selfconform import (
+    _EXTENDED_KINDS,
+    _observed_extended_kinds_by_node,
+    _sorted_capability_files,
+)
 from frob.strata._waive import STALE_WAIVER_RULE
 from frob.vet._capability import _PATTERNS, SCANNED_LANGUAGES, language_for
 from frob.vet._capability_registry import LANGUAGES
@@ -431,7 +436,7 @@ class TestCoreUndeclaredInterfaceNonPython:
 
 
 class TestLanguageCoverageDriftLock:
-    # frob:tests src/frob/strata/_selfconform.py::_sorted_capability_files kind="drift"
+    # frob:tests src/frob/strata/_selfconform.py::_sorted_capability_files kind="unit"
     def test_scanned_languages_equals_registry_languages(self):
         """T-0169 drift lock: the set of languages self-conformance (and
         `vet`) actually reach via `language_for`/`_EXT_LANGUAGE` must equal
@@ -462,7 +467,7 @@ class TestLanguageCoverageDriftLock:
 
 
 class TestExtendedKindsDriftLock:
-    # frob:tests src/frob/strata/_selfconform.py::_EXTENDED_KINDS kind="drift"
+    # frob:tests src/frob/strata/_selfconform.py::_observed_extended_kinds_by_node kind="unit"
     def test_extended_kinds_is_disjoint_from_kind_map(self):
         """`_EXTENDED_KINDS` (SYS100's new-code slice) and `_KIND_MAP`'s keys
         (THREAT004's delegated slice) must never overlap -- a shared kind
@@ -475,6 +480,26 @@ class TestExtendedKindsDriftLock:
             kind for table in _PATTERNS.values() for kind in table
         )
         assert _EXTENDED_KINDS | frozenset(_KIND_MAP.keys()) == all_pattern_kinds
+
+    def test_observed_extended_kinds_by_node_only_ever_yields_extended_kinds(
+        self, tmp_path: Path
+    ):
+        """`_observed_extended_kinds_by_node` intersects its raw scan against
+        `_EXTENDED_KINDS` (the `& _EXTENDED_KINDS` in its body) -- exercise it
+        against a real file containing an `eval(` needle (a `_KIND_MAP`-
+        disjoint kind per the test above) and confirm the observed set is
+        both non-empty and a subset of `_EXTENDED_KINDS`, never leaking a
+        `_KIND_MAP` kind through. Ties the drift-lock constants to the
+        function that actually consumes them, not just to each other."""
+        src = tmp_path / "danger.py"
+        src.write_text("def f(x):\n    return eval(x)\n")
+        binding = CodeBinding(owner={"danger.py": "node.danger"})
+
+        observed = _observed_extended_kinds_by_node(binding, tmp_path)
+
+        assert observed == {"node.danger": frozenset({"eval"})}
+        assert observed["node.danger"] <= _EXTENDED_KINDS
+        assert observed["node.danger"].isdisjoint(_KIND_MAP.keys())
 
 
 class TestWaiverChannel:

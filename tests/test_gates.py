@@ -1247,7 +1247,8 @@ class TestCoverageLoad:
         snap = _snapshot(tmp_path)
         record = snap.symbols["src/frob/pkg/a.py::helper"]
         start = record.span[0]
-        # frob:ticket T-0148: Cobertura `<class filename>` attrs are
+        # frob:ticket T-0148
+        # Cobertura `<class filename>` attrs are
         # relative to whatever `--cov=` target produced the report (e.g.
         # "pkg/a.py" for a `--cov=src/frob` run), not repo-relative --
         # load_coverage re-roots them using the `<sources><source>` entry

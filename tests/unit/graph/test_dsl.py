@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from frob.graph.dsl import parse_directives
+from frob.graph.dsl import _RESERVED_MARKER_VERBS, parse_directives
 from frob.lang import parse_file
 
 
@@ -173,3 +173,36 @@ class TestContinuation:
         assert len(edges) == 2
         targets = {edge.target for edge in edges}
         assert targets == {"T-0001\\", "T-0002"}
+
+
+class TestReservedMarkerVerbs:
+    """Verbs another subsystem owns as a literal marker (T-0294) must parse
+    to neither an edge nor a `MalformedDirective` -- the DSL parser silently
+    ignores them rather than reporting "unknown verb"."""
+
+    def test_secret_fake_is_silently_skipped(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/dsl.py::parse_directives
+        assert "secret-fake" in _RESERVED_MARKER_VERBS
+        src = (
+            "def foo() -> None:\n"
+            "    # frob:secret-fake\n"
+            '    token = "sk-fake-1234567890"\n'
+            "    return token\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not edges
+        assert not malformed
+
+    def test_unreserved_unknown_verb_still_reports_malformed(
+        self, tmp_path: Path
+    ) -> None:
+        # Control case: an ordinary unregistered verb (not in
+        # `_RESERVED_MARKER_VERBS`) must still be reported, so the reserved
+        # list is an explicit allowlist, not a general parser laxness.
+        src = "def foo() -> None:\n    # frob:not-a-real-verb target\n    pass\n"
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not edges
+        assert len(malformed) == 1
+        assert "unknown verb" in malformed[0].reason

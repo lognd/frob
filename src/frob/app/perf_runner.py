@@ -61,8 +61,9 @@ def _profile(cfg: AppConfig) -> None:
         f"profiled {' '.join(argv)!r} -> "
         f"sha={artifact.sha} total_s={artifact.total_s:.3f} workload={status}"
     )
-    # frob:ticket T-0027 -- propagate the workload's failure to the caller
-    # so `frob perf profile -- pytest ...` fails CI when the run failed.
+    # frob:ticket T-0027
+    # Propagate the workload's failure to the caller so `frob perf profile
+    # -- pytest ...` fails CI when the run failed.
     if artifact.exit_code != 0:
         sys.exit(artifact.exit_code)
 

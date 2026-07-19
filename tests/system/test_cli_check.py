@@ -234,7 +234,7 @@ class TestCheckErrors:
 
 class TestCheckTicketScopedAlwaysReportsOnFailure:
     def test_ticket_scoped_nonzero_exit_has_diagnostic_output(self, tmp_path):
-        # frob:tests src/frob/app/check_runner.py::run kind="system"
+        # frob:tests src/frob/app/check_runner.py::run kind="e2e"
         # T-0124: `frob check --ticket <id>` must never exit nonzero with no
         # diagnostic/summary output -- regression guard for the swallowed-
         # failure symptom reported against T-0075 (root-caused as already
