@@ -8182,3 +8182,21 @@ acceptance:
 threat: null
 ```
 Investigated 2026-07-19: the 13 "malformed directive" warnings are NOT sloppy comments -- they are a DSL-parser robustness gap in three classes. (1) frob:secret-fake is an INTENTIONAL cross-subsystem literal marker (src/frob/gates/_secrets.py:15,66 -- "unregistered marker, the literal substring frob:secret-fake"); the secrets gate scans for it to discharge a fixture token, but graph/dsl.py::parse_directives treats frob:<anything> as a directive and warns "unknown verb secret-fake". Fix: reserve secret-fake (and audit for any other intentional literal markers) as a known no-op verb the parser skips silently -- the two subsystems must agree on the vocabulary. (2) Three real frob:tests directives use kind=drift/system, outside the unit/integration/e2e enum -- correct them (a drift-lock conformance test is unit; a CLI system test is e2e). (3) Seven directives carry same-line explanatory prose (frob:ticket T-0027 -- propagate...; frob:todo T-0002 registry is process-global...) that the attr parser rejects; this is the SAME ergonomic gap as T-0286 (multi-line/prose-tolerant reasons), hence blocked_by T-0286 -- once prose/continuation is tolerated, split or annotate these. NOTE scope collision: fuzz/_arbitrary.py and fuzz/_run.py are also touched by the in-flight core-commands arch burndown -- sequence this ticket AFTER that merges, or coordinate, to avoid a conflict. This is the right fix: papering the warnings over by mangling test comments would hide a real parser/secrets-gate vocabulary disagreement.
+
+<!-- ticket:T-0295 -->
+```yaml
+id: T-0295
+title: 'arch: strata long-function burndown to zero'
+state: in-progress
+kind: bug
+origin: agent
+created: '2026-07-19'
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/**,tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
