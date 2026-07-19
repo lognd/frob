@@ -74,6 +74,7 @@ class TestArchComplexityAware:
 
 
 class TestArchGateWaivers:
+    # frob:tests src/frob/gates/_arch.py::arch_gate kind="unit"
     def test_reasoned_waive_honored(self, tmp_path):
         src = _complex_long_source(
             "complex_long",

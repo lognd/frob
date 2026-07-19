@@ -18,7 +18,7 @@ has no `elif language == "..."` branch for them yet.
 
 | Category | Signal | Severity |
 |---|---|---|
-| `long-function` | a function/method body longer than `max_function_lines` | warning |
+| `long-function` | a function/method body longer than `max_function_lines` AND structurally complex (see below) | warning |
 | `god-class` | a class with more than `max_class_methods` methods | warning |
 | `high-coupling` | a file with more than `max_local_imports` distinct local module imports (via `frob.lang.extract_imports`/`resolve_local_import`) | suggestion |
 | `deep-nesting` | a function whose `if`/`for`/`while`/`try`/`with` nesting exceeds `max_nesting_depth` | suggestion |
@@ -27,7 +27,70 @@ has no `elif language == "..."` branch for them yet.
 
 All thresholds are `analyze_project` keyword arguments with the defaults
 shown in the Public API section below; there is no `frob.toml` table for
-`frob.arch` yet (a `frob:todo` follow-up if this module grows a gate).
+`frob.arch` (deliberately -- see below and T-0289's design note in
+tickets-archive.md: per-function overrides belong at the code as reasoned
+waivers, not a central escape-hatch table).
+
+### `long-function` is complexity-aware (T-0289)
+
+A function LONG but FLAT (linear setup+asserts, a big `match`/`case`
+dispatch, a literal dispatch table) is not the smell this rule targets --
+only long-AND-complex fires. `frob.arch._python`/`_cpp` compute a cheap
+structural-complexity proxy off the existing tree-sitter parse (no new
+dependency):
+
+- **max nesting depth** of `if`/`for`/`while`/`try`/`with` control
+  structures (the same walk `deep-nesting` already does).
+- **cyclomatic proxy**: a count of branch/loop/except/boolean-op nodes
+  (`if_statement`, `for_statement`, `while_statement`, `except_clause`,
+  `boolean_operator`, `conditional_expression` for python;
+  `catch_clause`/`&&`/`||` substituted for C++). `match_statement`/
+  `case_clause` (python) and `switch_statement`/`case_statement` (C++)
+  are deliberately EXCLUDED -- a big match/case is flat dispatch, not the
+  decision complexity this rule targets, and (unlike python's if/elif,
+  which folds into one `if_statement` node) each `case_clause` is its own
+  tree-sitter node, so counting them would score the canonical flat case
+  as maximally complex.
+
+The rule: **flag iff `n_lines > max_function_lines` AND (`max_nesting >=
+3` OR `cyclomatic >= 8`)**. Both thresholds are named module constants
+(`_LONG_FUNCTION_NESTING_THRESHOLD`, `_LONG_FUNCTION_CYCLOMATIC_THRESHOLD`
+in `frob.arch._python`/`_cpp`), not `frob.toml` knobs -- a global
+threshold bump is exactly the lazy-developer escape this tool exists to
+prevent; see the per-function override below for the honest way to
+justify a real exception.
+
+### ARCH001: a reasoned per-function override (T-0289)
+
+`long-function` is the one `frob.arch` category channeled into a real
+gate `Violation` (`frob.gates._arch.arch_gate`, rule id `ARCH001`) --
+every other category stays an advisory, unwaivable-channel suggestion
+(see `frob.gates._unwaivable_channel_rules`'s docstring, T-0101). A
+long-AND-complex function that is genuinely justified takes the same
+reasoned, auditable waiver every other gate rule does:
+
+```python
+# frob:waive ARCH001 reason="one big dispatch table, splitting it hides more than it reveals" ceiling="120"
+def configure_all_the_things(...):
+    ...
+```
+
+- `reason=` is mandatory -- an unreasoned `frob:waive ARCH001` is
+  rejected exactly like any other rule (`WAIVE001`), not silently
+  ignored.
+- `ceiling=` is optional and re-fires the finding once the function
+  outgrows it: `frob.gates.Violation` carries the function's current
+  line count as `metric`, and `frob.gates._match_waiver`'s `_ceiling_ok`
+  helper only honors the waiver while `metric <= ceiling` -- a waived
+  120-line function that balloons to 400 lines fires again, keeping the
+  exception honest instead of a permanent mute. No `ceiling=` means the
+  waiver covers the function at any size (the same behavior every other
+  `frob:waive` directive has).
+- No qualname table in `frob.toml` -- the waiver lives at the function it
+  excuses, travels with a rename (bound via `frob.graph.dsl`'s
+  following/enclosing resolution, the same as every other directive), and
+  disappears the moment someone deletes the function it's no longer
+  attached to.
 
 ## Parsing
 
@@ -73,6 +136,13 @@ class ArchSuggestion(BaseModel):
     severity: ArchSeverity   # "warning" | "suggestion" | "info"
     message: str
     detail: str | None = None
+    # T-0289: set for checks about exactly one symbol (currently
+    # long-function) so frob.gates._arch.arch_gate can bind a
+    # `frob:waive ARCH001` directive to the precise function.
+    symref: str | None = None
+    # T-0289: the raw measured value (a long-function's line count) --
+    # lets a waiver's `ceiling=N` re-fire once the function outgrows it.
+    metric: int | None = None
 ```
 
 <a id="arch-result"></a>

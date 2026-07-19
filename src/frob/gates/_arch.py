@@ -30,10 +30,6 @@ _ARCH_LONG_FUNCTION_CATEGORY = "long-function"
 
 
 # frob:doc docs/modules/gates.md#rule-catalog
-# frob:tests tests/test_arch_gate.py::TestArchGateWaivers.test_reasoned_waive_honored
-# frob:tests tests/test_arch_gate.py::TestArchGateWaivers.test_unreasoned_waive_rejected
-# frob:tests tests/test_arch_gate.py::TestArchGateWaivers.\
-# test_ceiling_refires_when_grown_past_it
 def arch_gate(root: Path) -> tuple[Violation, ...]:
     """ARCH001: one `Violation` per long-AND-complex python/C++ function
     `frob.arch.analyze_project` still flags after its complexity filter
