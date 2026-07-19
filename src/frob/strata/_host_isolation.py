@@ -239,6 +239,82 @@ def _declared_flow_between(
     )
 
 
+def _shared_writable_path_violations(
+    user_a: str,
+    nodes_a: list[str],
+    user_b: str,
+    nodes_b: list[str],
+    manifests: dict[str, HostManifest],
+) -> list[HostIsolationViolation]:
+    """HOST001 shared-writable-path findings for one user pair -- every
+    path both users own where at least one owner mode is writable."""
+    owns_a = _owns_by_user(nodes_a, manifests)
+    owns_b = _owns_by_user(nodes_b, manifests)
+    # frob:waive PERF004 reason="differs per pair, fresh work not a re-sort"
+    shared_writable = sorted(
+        path
+        for path in (set(owns_a) & set(owns_b))
+        if _mode_owner_writable(owns_a[path].mode)
+        or _mode_owner_writable(owns_b[path].mode)
+    )
+    return [
+        HostIsolationViolation(
+            rule="HOST001",
+            sub_target=_SUB_SHARED_WRITABLE_PATH,
+            user=user_a,
+            peer=user_b,
+            detail=f"users {user_a!r} and {user_b!r} both own writable path "
+            f"{path!r} -- a compromise of either reaches the other's data",
+        )
+        for path in shared_writable
+    ]
+
+
+def _shared_socket_violations(
+    model: KernelModel,
+    user_a: str,
+    nodes_a: list[str],
+    user_b: str,
+    nodes_b: list[str],
+    manifests: dict[str, HostManifest],
+) -> list[HostIsolationViolation]:
+    """HOST001 cross-user-socket finding for one user pair, unless a
+    declared `Flow` already bridges them (the documented escape hatch)."""
+    ports_a = _listens_by_user(nodes_a, manifests)
+    ports_b = _listens_by_user(nodes_b, manifests)
+    shared_ports = sorted(ports_a & ports_b)
+    if not shared_ports or _declared_flow_between(model, nodes_a, nodes_b):
+        return []
+    return [
+        HostIsolationViolation(
+            rule="HOST001",
+            sub_target=_SUB_CROSS_USER_SOCKET,
+            user=user_a,
+            peer=user_b,
+            detail=f"users {user_a!r} and {user_b!r} both listen on port(s) "
+            f"{shared_ports} with no declared Flow between their nodes -- "
+            "an undeclared cross-user socket path",
+        )
+    ]
+
+
+def _shared_group_violation(user_a: str, user_b: str) -> HostIsolationViolation:
+    """HOST001 shared-group honest-gap finding -- always fires, since
+    std.host carries no OS-group vocabulary to disprove it (frob:todo
+    T-draft-7b5b5541)."""
+    return HostIsolationViolation(
+        rule="HOST001",
+        sub_target=_SUB_SHARED_GROUP,
+        user=user_a,
+        peer=user_b,
+        detail="std.host carries no OS-group vocabulary "
+        "(frob:todo T-draft-7b5b5541) -- "
+        f"whether {user_a!r} and {user_b!r} share a group cannot be "
+        "structurally proved false; waive with a reason or await the "
+        "group grammar",
+    )
+
+
 def _lateral_pair_violations(
     model: KernelModel,
     user_a: str,
@@ -252,57 +328,30 @@ def _lateral_pair_violations(
     path, cross-user socket unless a declared flow bridges them, and the
     always-fires shared-group honest gap (module docstring)."""
     violations: list[HostIsolationViolation] = []
-
-    owns_a = _owns_by_user(nodes_a, manifests)
-    owns_b = _owns_by_user(nodes_b, manifests)
-    # frob:waive PERF004 reason="differs per pair, fresh work not a re-sort"
-    shared_writable = sorted(
-        path
-        for path in (set(owns_a) & set(owns_b))
-        if _mode_owner_writable(owns_a[path].mode)
-        or _mode_owner_writable(owns_b[path].mode)
+    violations.extend(
+        _shared_writable_path_violations(user_a, nodes_a, user_b, nodes_b, manifests)
     )
-    for path in shared_writable:
-        violations.append(
-            HostIsolationViolation(
-                rule="HOST001",
-                sub_target=_SUB_SHARED_WRITABLE_PATH,
-                user=user_a,
-                peer=user_b,
-                detail=f"users {user_a!r} and {user_b!r} both own writable path "
-                f"{path!r} -- a compromise of either reaches the other's data",
-            )
-        )
-
-    ports_a = _listens_by_user(nodes_a, manifests)
-    ports_b = _listens_by_user(nodes_b, manifests)
-    shared_ports = sorted(ports_a & ports_b)
-    if shared_ports and not _declared_flow_between(model, nodes_a, nodes_b):
-        violations.append(
-            HostIsolationViolation(
-                rule="HOST001",
-                sub_target=_SUB_CROSS_USER_SOCKET,
-                user=user_a,
-                peer=user_b,
-                detail=f"users {user_a!r} and {user_b!r} both listen on port(s) "
-                f"{shared_ports} with no declared Flow between their nodes -- "
-                "an undeclared cross-user socket path",
-            )
-        )
-
-    violations.append(
-        HostIsolationViolation(
-            rule="HOST001",
-            sub_target=_SUB_SHARED_GROUP,
-            user=user_a,
-            peer=user_b,
-            detail="std.host carries no OS-group vocabulary "
-            "(frob:todo T-draft-7b5b5541) -- "
-            f"whether {user_a!r} and {user_b!r} share a group cannot be "
-            "structurally proved false; waive with a reason or await the "
-            "group grammar",
-        )
+    violations.extend(
+        _shared_socket_violations(model, user_a, nodes_a, user_b, nodes_b, manifests)
     )
+    violations.append(_shared_group_violation(user_a, user_b))
+    return violations
+
+
+def _all_lateral_pair_violations(
+    model: KernelModel, users: list[str], by_user: dict[str, list[str]], manifests
+) -> list[HostIsolationViolation]:
+    """`_lateral_pair_violations` over every distinct unordered user pair,
+    in the deterministic (sorted-users, i<j) order `evaluate_lateral_
+    isolation` requires for a reproducible run."""
+    violations: list[HostIsolationViolation] = []
+    for i, user_a in enumerate(users):
+        for user_b in users[i + 1 :]:
+            violations.extend(
+                _lateral_pair_violations(
+                    model, user_a, by_user[user_a], user_b, by_user[user_b], manifests
+                )
+            )
     return violations
 
 
@@ -329,20 +378,101 @@ def evaluate_lateral_isolation(
         )
         return Ok(())
 
-    violations: list[HostIsolationViolation] = []
-    for i, user_a in enumerate(users):
-        for user_b in users[i + 1 :]:
-            violations.extend(
-                _lateral_pair_violations(
-                    model, user_a, by_user[user_a], user_b, by_user[user_b], manifests
-                )
-            )
+    violations = _all_lateral_pair_violations(model, users, by_user, manifests)
     _log.info(
         "host_isolation: HOST001 evaluated %d user pair(s) -> %d violation(s)",
         len(users) * (len(users) - 1) // 2,
         len(violations),
     )
     return Ok(tuple(violations))
+
+
+def _writable_path_flow_pair(
+    node_a: str, node_b: str, path: str, seq: int
+) -> tuple[list[Flow], int]:
+    """The one bidirectional `Flow` pair for a single shared writable
+    path (see `_writable_path_movement_flows`)."""
+    flows: list[Flow] = []
+    seq += 1
+    flows.append(
+        Flow(
+            id=f"host-movement:{seq}:{path}:{node_a}->{node_b}",
+            src=node_a,
+            dst=node_b,
+            attrs=(f"host_movement={_SUB_SHARED_WRITABLE_PATH}",),
+        )
+    )
+    seq += 1
+    flows.append(
+        Flow(
+            id=f"host-movement:{seq}:{path}:{node_b}->{node_a}",
+            src=node_b,
+            dst=node_a,
+            attrs=(f"host_movement={_SUB_SHARED_WRITABLE_PATH}",),
+        )
+    )
+    return flows, seq
+
+
+def _writable_path_movement_flows(
+    node_a: str,
+    nodes_a: list[str],
+    node_b: str,
+    nodes_b: list[str],
+    manifests: dict[str, HostManifest],
+    seq: int,
+) -> tuple[list[Flow], int]:
+    """Bidirectional synthetic `Flow`s for every shared writable path
+    between the two users' node lists (see `_movement_flows_for_pair`)."""
+    owns_a = _owns_by_user(nodes_a, manifests)
+    owns_b = _owns_by_user(nodes_b, manifests)
+    shared_writable = sorted(
+        path
+        for path in (set(owns_a) & set(owns_b))
+        if _mode_owner_writable(owns_a[path].mode)
+        or _mode_owner_writable(owns_b[path].mode)
+    )
+    flows: list[Flow] = []
+    for path in shared_writable:
+        pair_flows, seq = _writable_path_flow_pair(node_a, node_b, path, seq)
+        flows.extend(pair_flows)
+    return flows, seq
+
+
+def _shared_port_movement_flows(
+    node_a: str,
+    nodes_a: list[str],
+    node_b: str,
+    nodes_b: list[str],
+    manifests: dict[str, HostManifest],
+    seq: int,
+) -> tuple[list[Flow], int]:
+    """Bidirectional synthetic `Flow`s if the two users share a listening
+    port (see `_movement_flows_for_pair`)."""
+    ports_a = _listens_by_user(nodes_a, manifests)
+    ports_b = _listens_by_user(nodes_b, manifests)
+    if not (ports_a & ports_b):
+        return [], seq
+    flows: list[Flow] = []
+    seq += 1
+    flows.append(
+        Flow(
+            id=f"host-movement:{seq}:port:{node_a}->{node_b}",
+            src=node_a,
+            dst=node_b,
+            attrs=(f"host_movement={_SUB_CROSS_USER_SOCKET}",),
+        )
+    )
+    seq += 1
+    flows.append(
+        Flow(
+            id=f"host-movement:{seq}:port:{node_b}->{node_a}",
+            src=node_b,
+            dst=node_a,
+            attrs=(f"host_movement={_SUB_CROSS_USER_SOCKET}",),
+        )
+    )
+    return flows, seq
 
 
 def _movement_flows_for_pair(
@@ -362,57 +492,16 @@ def _movement_flows_for_pair(
     which side WRITES and which side READS the shared resource, so both
     directions are added -- deny-by-default, never assuming a direction
     that happens to make a claim look safer (charter law 2)."""
-    owns_a = _owns_by_user(nodes_a, manifests)
-    owns_b = _owns_by_user(nodes_b, manifests)
-    shared_writable = sorted(
-        path
-        for path in (set(owns_a) & set(owns_b))
-        if _mode_owner_writable(owns_a[path].mode)
-        or _mode_owner_writable(owns_b[path].mode)
-    )
     node_a, node_b = nodes_a[0], nodes_b[0]
     flows: list[Flow] = []
-    for path in shared_writable:
-        seq += 1
-        flows.append(
-            Flow(
-                id=f"host-movement:{seq}:{path}:{node_a}->{node_b}",
-                src=node_a,
-                dst=node_b,
-                attrs=(f"host_movement={_SUB_SHARED_WRITABLE_PATH}",),
-            )
-        )
-        seq += 1
-        flows.append(
-            Flow(
-                id=f"host-movement:{seq}:{path}:{node_b}->{node_a}",
-                src=node_b,
-                dst=node_a,
-                attrs=(f"host_movement={_SUB_SHARED_WRITABLE_PATH}",),
-            )
-        )
-
-    ports_a = _listens_by_user(nodes_a, manifests)
-    ports_b = _listens_by_user(nodes_b, manifests)
-    if ports_a & ports_b:
-        seq += 1
-        flows.append(
-            Flow(
-                id=f"host-movement:{seq}:port:{node_a}->{node_b}",
-                src=node_a,
-                dst=node_b,
-                attrs=(f"host_movement={_SUB_CROSS_USER_SOCKET}",),
-            )
-        )
-        seq += 1
-        flows.append(
-            Flow(
-                id=f"host-movement:{seq}:port:{node_b}->{node_a}",
-                src=node_b,
-                dst=node_a,
-                attrs=(f"host_movement={_SUB_CROSS_USER_SOCKET}",),
-            )
-        )
+    path_flows, seq = _writable_path_movement_flows(
+        node_a, nodes_a, node_b, nodes_b, manifests, seq
+    )
+    flows.extend(path_flows)
+    port_flows, seq = _shared_port_movement_flows(
+        node_a, nodes_a, node_b, nodes_b, manifests, seq
+    )
+    flows.extend(port_flows)
     return flows, seq
 
 
@@ -441,6 +530,20 @@ def host_movement_flows(model: KernelModel) -> tuple[Flow, ...]:
     manifests = _manifests_by_node(model)
     by_user = _nodes_by_user(nodes_by_id, manifests)
     users = sorted(by_user)
+    flows = _all_movement_flows(users, by_user, manifests)
+    _log.info(
+        "host_isolation: derived %d host-movement flow(s) over %d user pair(s)",
+        len(flows),
+        len(users) * (len(users) - 1) // 2,
+    )
+    return tuple(flows)
+
+
+def _all_movement_flows(
+    users: list[str], by_user: dict[str, list[str]], manifests: dict[str, HostManifest]
+) -> list[Flow]:
+    """`_movement_flows_for_pair` over every distinct unordered user pair,
+    threading the sequence counter across pairs (see `host_movement_flows`)."""
     flows: list[Flow] = []
     seq = 0
     for i, user_a in enumerate(users):
@@ -449,12 +552,7 @@ def host_movement_flows(model: KernelModel) -> tuple[Flow, ...]:
                 user_a, by_user[user_a], user_b, by_user[user_b], manifests, seq
             )
             flows.extend(pair_flows)
-    _log.info(
-        "host_isolation: derived %d host-movement flow(s) over %d user pair(s)",
-        len(flows),
-        len(users) * (len(users) - 1) // 2,
-    )
-    return tuple(flows)
+    return flows
 
 
 def _root_run_nodes(
@@ -471,47 +569,45 @@ def _root_run_nodes(
     )
 
 
-def _vertical_user_violations(
-    model: KernelModel,
-    trust_by_node: dict[str, str],
-    user: str,
-    user_nodes: list[str],
-    manifests: dict[str, HostManifest],
-    root_nodes: list[str],
+def _setuid_violations(
+    user: str, owns: dict[str, HostOwns]
 ) -> list[HostIsolationViolation]:
-    """Every HOST002 sub-target finding for one service user, DERIVED from
-    that user's `HostManifest` slice plus the model's root-run units and
-    trust lattice (module docstring)."""
-    violations: list[HostIsolationViolation] = []
-    owns = _owns_by_user(user_nodes, manifests)
-
-    for path in sorted(owns):
-        if _mode_has_setuid(owns[path].mode):
-            violations.append(
-                HostIsolationViolation(
-                    rule="HOST002",
-                    sub_target=_SUB_SETUID,
-                    user=user,
-                    detail=f"user {user!r} owns setuid path {path!r} (mode "
-                    f"{owns[path].mode!r}) -- privilege escalation on compromise",
-                )
-            )
-
-    violations.append(
+    """HOST002 setuid-path findings for one user's owned paths."""
+    return [
         HostIsolationViolation(
             rule="HOST002",
-            sub_target=_SUB_SUDOERS,
+            sub_target=_SUB_SETUID,
             user=user,
-            detail="std.host carries no sudoers vocabulary "
-            "(frob:todo T-draft-7b5b5541) -- "
-            f"whether {user!r} holds a sudoers grant cannot be structurally "
-            "proved false; waive with a reason or await the grammar",
+            detail=f"user {user!r} owns setuid path {path!r} (mode "
+            f"{owns[path].mode!r}) -- privilege escalation on compromise",
         )
+        for path in sorted(owns)
+        if _mode_has_setuid(owns[path].mode)
+    ]
+
+
+def _sudoers_violation(user: str) -> HostIsolationViolation:
+    """HOST002 sudoers honest-gap finding -- always fires, since std.host
+    carries no sudoers vocabulary to disprove it (frob:todo T-draft-7b5b5541)."""
+    return HostIsolationViolation(
+        rule="HOST002",
+        sub_target=_SUB_SUDOERS,
+        user=user,
+        detail="std.host carries no sudoers vocabulary "
+        "(frob:todo T-draft-7b5b5541) -- "
+        f"whether {user!r} holds a sudoers grant cannot be structurally "
+        "proved false; waive with a reason or await the grammar",
     )
 
+
+def _root_unit_writable_violations(
+    user: str, owns: dict[str, HostOwns], root_nodes: list[str], manifests
+) -> list[HostIsolationViolation]:
+    """HOST002 findings where `user` writably owns a path a root-run unit
+    also owns (a plant-then-root-executes vector)."""
+    violations: list[HostIsolationViolation] = []
     for root_id in root_nodes:
-        root_owns = manifests[root_id].owns
-        for entry in root_owns:
+        for entry in manifests[root_id].owns:
             user_entry = owns.get(entry.path)
             if user_entry is not None and _mode_owner_writable(user_entry.mode):
                 violations.append(
@@ -525,7 +621,21 @@ def _vertical_user_violations(
                         "content a root-run unit later executes/reads",
                     )
                 )
+    return violations
 
+
+def _higher_trust_write_violations(
+    model: KernelModel,
+    trust_by_node: dict[str, str],
+    user: str,
+    user_nodes: list[str],
+    owns: dict[str, HostOwns],
+    manifests: dict[str, HostManifest],
+) -> list[HostIsolationViolation]:
+    """HOST002 findings where `user` writably owns a path also owned by a
+    strictly-higher-trust node (a corrupt-input-for-a-more-trusted-reader
+    vector)."""
+    violations: list[HostIsolationViolation] = []
     user_trust = trust_by_node.get(user_nodes[0])
     for node_id, node_trust in sorted(trust_by_node.items()):
         if node_id in user_nodes or user_trust is None:
@@ -549,6 +659,30 @@ def _vertical_user_violations(
                         "corrupt input a more-trusted node reads",
                     )
                 )
+    return violations
+
+
+def _vertical_user_violations(
+    model: KernelModel,
+    trust_by_node: dict[str, str],
+    user: str,
+    user_nodes: list[str],
+    manifests: dict[str, HostManifest],
+    root_nodes: list[str],
+) -> list[HostIsolationViolation]:
+    """Every HOST002 sub-target finding for one service user, DERIVED from
+    that user's `HostManifest` slice plus the model's root-run units and
+    trust lattice (module docstring)."""
+    owns = _owns_by_user(user_nodes, manifests)
+    violations: list[HostIsolationViolation] = []
+    violations.extend(_setuid_violations(user, owns))
+    violations.append(_sudoers_violation(user))
+    violations.extend(_root_unit_writable_violations(user, owns, root_nodes, manifests))
+    violations.extend(
+        _higher_trust_write_violations(
+            model, trust_by_node, user, user_nodes, owns, manifests
+        )
+    )
     return violations
 
 
@@ -586,6 +720,74 @@ def evaluate_vertical_isolation(
     return Ok(tuple(violations))
 
 
+def _host_isolation_target_of(
+    by_user: dict[str, list[str]], v: HostIsolationViolation
+) -> str | None:
+    """A HOST001/HOST002 finding waives against the node(s) declaring
+    the implicated user -- the FIRST node id `_nodes_by_user` recorded
+    for that `runs_as` (a `waive` clause on ANY of a user's nodes
+    excuses that user's findings, matching `owns`'s "a user may
+    declare more than one node" shape).
+
+    A HOST001 PAIR finding is attributed to `v.user` only (the
+    alphabetically-earlier user of the pair, per `evaluate_lateral_
+    isolation`'s sorted iteration) -- ONE `waive` clause on that
+    user's node discharges the pair finding; a matching `waive`
+    clause also placed on the peer (`v.peer`) user's node correctly
+    reports STALE (`_waive.py`'s drift-lock), since no HOST001
+    finding is ever generated attributed to the peer for the same
+    pair. This is intentional, not a gap: a pair has exactly one
+    canonical owner for waiver purposes, chosen deterministically, so
+    a caller never has two different valid places to write the same
+    waiver (which would itself be a "which one is authoritative"
+    ambiguity, charter: no duplication)."""
+    candidates = by_user.get(v.user, ())
+    return candidates[0] if candidates else None
+
+
+# Each call's `in_scope` names ONLY the rule family it is checking --
+# not the union `HOST_MULTI_INSTANCE_WAIVER_FAMILIES` -- exactly the
+# `_waive.py::apply_waivers` "each caller passes an `in_scope`
+# predicate naming exactly the rule ids it owns" contract
+# (`_audit.py`/`_selfconform.py`'s SYS-only vs THREAT/LINT-only split
+# is the same precedent): a `HOST002:sudoers` waiver considered by
+# THIS call's HOST001 pass would otherwise be reported STALE here too
+# (it fires nothing HOST001-shaped), double-counting one waiver as
+# two different findings across the two returned `WaiverApplication`s.
+def _apply_host_waivers(
+    model: KernelModel,
+    lateral_violations: tuple[HostIsolationViolation, ...],
+    vertical_violations: tuple[HostIsolationViolation, ...],
+    by_user: dict[str, list[str]],
+) -> tuple[
+    WaiverApplication[HostIsolationViolation], WaiverApplication[HostIsolationViolation]
+]:
+    """Run HOST001 and HOST002 findings each through `apply_waivers`,
+    scoped to their own rule family only (see `evaluate_host_isolation_
+    waived` for why `in_scope` must not use the union of both families)."""
+
+    def target_of(v: HostIsolationViolation) -> str | None:
+        return _host_isolation_target_of(by_user, v)
+
+    host001 = apply_waivers(
+        model,
+        lateral_violations,
+        rule_of=_rule_of,
+        target_of=target_of,
+        sub_target_of=_sub_target_of,
+        in_scope=lambda family: family == "HOST001",
+    )
+    host002 = apply_waivers(
+        model,
+        vertical_violations,
+        rule_of=_rule_of,
+        target_of=target_of,
+        sub_target_of=_sub_target_of,
+        in_scope=lambda family: family == "HOST002",
+    )
+    return host001, host002
+
+
 # frob:doc docs/strata/host.md#movement-impossibility-proofs
 def evaluate_host_isolation_waived(
     model: KernelModel,
@@ -611,56 +813,9 @@ def evaluate_host_isolation_waived(
     if vertical.is_err:
         return Err(vertical.danger_err)
 
-    nodes_by_id = {n.id: n for n in model.nodes}
-    manifests = _manifests_by_node(model)
-    by_user = _nodes_by_user(nodes_by_id, manifests)
-
-    def target_of(v: HostIsolationViolation) -> str | None:
-        """A HOST001/HOST002 finding waives against the node(s) declaring
-        the implicated user -- the FIRST node id `_nodes_by_user` recorded
-        for that `runs_as` (a `waive` clause on ANY of a user's nodes
-        excuses that user's findings, matching `owns`'s "a user may
-        declare more than one node" shape).
-
-        A HOST001 PAIR finding is attributed to `v.user` only (the
-        alphabetically-earlier user of the pair, per `evaluate_lateral_
-        isolation`'s sorted iteration) -- ONE `waive` clause on that
-        user's node discharges the pair finding; a matching `waive`
-        clause also placed on the peer (`v.peer`) user's node correctly
-        reports STALE (`_waive.py`'s drift-lock), since no HOST001
-        finding is ever generated attributed to the peer for the same
-        pair. This is intentional, not a gap: a pair has exactly one
-        canonical owner for waiver purposes, chosen deterministically, so
-        a caller never has two different valid places to write the same
-        waiver (which would itself be a "which one is authoritative"
-        ambiguity, charter: no duplication)."""
-        candidates = by_user.get(v.user, ())
-        return candidates[0] if candidates else None
-
-    # Each call's `in_scope` names ONLY the rule family it is checking --
-    # not the union `HOST_MULTI_INSTANCE_WAIVER_FAMILIES` -- exactly the
-    # `_waive.py::apply_waivers` "each caller passes an `in_scope`
-    # predicate naming exactly the rule ids it owns" contract
-    # (`_audit.py`/`_selfconform.py`'s SYS-only vs THREAT/LINT-only split
-    # is the same precedent): a `HOST002:sudoers` waiver considered by
-    # THIS call's HOST001 pass would otherwise be reported STALE here too
-    # (it fires nothing HOST001-shaped), double-counting one waiver as
-    # two different findings across the two returned `WaiverApplication`s.
-    host001 = apply_waivers(
-        model,
-        lateral.danger_ok,
-        rule_of=_rule_of,
-        target_of=target_of,
-        sub_target_of=_sub_target_of,
-        in_scope=lambda family: family == "HOST001",
-    )
-    host002 = apply_waivers(
-        model,
-        vertical.danger_ok,
-        rule_of=_rule_of,
-        target_of=target_of,
-        sub_target_of=_sub_target_of,
-        in_scope=lambda family: family == "HOST002",
+    by_user = _nodes_by_user({n.id: n for n in model.nodes}, _manifests_by_node(model))
+    host001, host002 = _apply_host_waivers(
+        model, lateral.danger_ok, vertical.danger_ok, by_user
     )
     return Ok((host001, host002))
 

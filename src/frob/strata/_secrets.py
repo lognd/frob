@@ -141,22 +141,33 @@ def _validate_secret_bounds(spec: SecretSpec) -> Result[Quantity, StrataError]:
         return Err(StrataError.MissingRevocation)
     revoke = spec.revoke
     for field_name, quantity in (("lifetime", spec.lifetime), ("revoke", revoke)):
-        dimension = quantity.dimension()
-        if dimension.is_err:
-            _log.error(
-                "secret %s: %s has unknown unit %r", spec.id, field_name, quantity.unit
-            )
-            return Err(dimension.danger_err)
-        if dimension.danger_ok != "time":
-            _log.error(
-                "secret %s: %s %s%s is not a time unit",
-                spec.id,
-                field_name,
-                quantity.value,
-                quantity.unit,
-            )
-            return Err(StrataError.UnitMismatch)
+        checked = _check_time_dimension(spec.id, field_name, quantity)
+        if checked.is_err:
+            return Err(checked.danger_err)
     return Ok(revoke)
+
+
+def _check_time_dimension(
+    spec_id: str, field_name: str, quantity: Quantity
+) -> Result[None, StrataError]:
+    """`quantity` must dimension to `"time"`, for `_validate_secret_bounds`'s
+    `lifetime`/`revoke` checks."""
+    dimension = quantity.dimension()
+    if dimension.is_err:
+        _log.error(
+            "secret %s: %s has unknown unit %r", spec_id, field_name, quantity.unit
+        )
+        return Err(dimension.danger_err)
+    if dimension.danger_ok != "time":
+        _log.error(
+            "secret %s: %s %s%s is not a time unit",
+            spec_id,
+            field_name,
+            quantity.value,
+            quantity.unit,
+        )
+        return Err(StrataError.UnitMismatch)
+    return Ok(None)
 
 
 def _secret_flows(spec: SecretSpec) -> tuple[Flow, ...]:
@@ -167,7 +178,16 @@ def _secret_flows(spec: SecretSpec) -> tuple[Flow, ...]:
     `_validate_secret_bounds` before this is ever called; one reads flow
     per `audience` member is the substrate `readers()` closes over.
     """
-    issue_flow = Flow(
+    return (
+        _secret_issue_flow(spec),
+        _secret_revoke_flow(spec),
+        *_secret_read_flows(spec),
+    )
+
+
+def _secret_issue_flow(spec: SecretSpec) -> Flow:
+    """The `issue` flow one `SecretSpec` desugars to, for `_secret_flows`."""
+    return Flow(
         id=f"{spec.id}__issue",
         src=spec.issued_by,
         dst=spec.id,
@@ -175,7 +195,12 @@ def _secret_flows(spec: SecretSpec) -> tuple[Flow, ...]:
         age=spec.lifetime,
         attrs=("issue",),
     )
-    revoke_flow = Flow(
+
+
+def _secret_revoke_flow(spec: SecretSpec) -> Flow:
+    """The mandatory `revocation` flow one `SecretSpec` desugars to, for
+    `_secret_flows`."""
+    return Flow(
         id=f"{spec.id}__revoke",
         src=spec.issued_by,
         dst=spec.id,
@@ -183,7 +208,11 @@ def _secret_flows(spec: SecretSpec) -> tuple[Flow, ...]:
         age=Quantity(value=0.0, unit="s"),
         attrs=("revocation",),
     )
-    read_flows = tuple(
+
+
+def _secret_read_flows(spec: SecretSpec) -> tuple[Flow, ...]:
+    """One `reads` flow per `audience` member, for `_secret_flows`."""
+    return tuple(
         Flow(
             id=f"{spec.id}__reads_{reader}",
             src=spec.id,
@@ -193,7 +222,6 @@ def _secret_flows(spec: SecretSpec) -> tuple[Flow, ...]:
         )
         for reader in spec.audience
     )
-    return (issue_flow, revoke_flow, *read_flows)
 
 
 # frob:doc docs/strata/surface.md#std-secrets
@@ -215,20 +243,25 @@ def elaborate_secret(
     like any other node's worst-case staleness
     (docs/strata/kernel.md#age-propagation-semantics).
     """
+    validated = _validate_and_log_secret(spec, known)
+    if validated.is_err:
+        return Err(validated.danger_err)
+    return Ok(_secret_expansion(spec, validated.danger_ok))
+
+
+def _validate_and_log_secret(
+    spec: SecretSpec, known: dict[str, Node]
+) -> Result[Node, StrataError]:
+    """Validate `spec`'s refs and bounds, log the elaborated summary, and
+    return its resolved issuer -- split out of `elaborate_secret` purely to
+    keep that function's body short."""
     refs = _validate_secret_refs(spec, known)
     if refs.is_err:
         return Err(refs.danger_err)
-    issuer = refs.danger_ok
     bounds = _validate_secret_bounds(spec)
     if bounds.is_err:
         return Err(bounds.danger_err)
     revoke = bounds.danger_ok
-
-    node = Node(id=spec.id, trust=issuer.trust, clearance=SECRET_LABEL)
-    readers_claim = Claim(
-        id=f"{spec.id}__readers",
-        body=SetEquality(target=spec.id, expected=spec.audience),
-    )
     _log.info(
         "elaborated secret %s: issuer=%s audience=%d lifetime=%s%s revoke=%s%s",
         spec.id,
@@ -239,6 +272,18 @@ def elaborate_secret(
         revoke.value,
         revoke.unit,
     )
-    return Ok(
-        SecretExpansion(node=node, flows=_secret_flows(spec), claims=(readers_claim,))
+    return Ok(refs.danger_ok)
+
+
+def _secret_expansion(spec: SecretSpec, issuer: Node) -> SecretExpansion:
+    """Assemble the `SecretExpansion` (node, flows, readers claim) for a
+    validated `SecretSpec`, split out of `elaborate_secret` purely to keep
+    that function's body short."""
+    node = Node(id=spec.id, trust=issuer.trust, clearance=SECRET_LABEL)
+    readers_claim = Claim(
+        id=f"{spec.id}__readers",
+        body=SetEquality(target=spec.id, expected=spec.audience),
+    )
+    return SecretExpansion(
+        node=node, flows=_secret_flows(spec), claims=(readers_claim,)
     )

@@ -267,6 +267,32 @@ def _validate_levels(model: KernelModel) -> Result[None, StrataError]:
     return Ok(None)
 
 
+def _flow_has_negative_quantity(flow) -> bool:
+    """Whether any of `flow`'s age/rate/size is a negative base value --
+    the per-flow check `_validate_nonnegative_quantities` runs over every
+    declared `Flow`."""
+    for field_name, quantity in (
+        ("age", flow.age),
+        ("rate", flow.rate),
+        ("size", flow.size),
+    ):
+        if quantity is None:
+            continue
+        base = quantity.base_value()
+        if base.is_err:
+            continue  # unknown unit is reported by other validation paths
+        if base.danger_ok < 0.0:
+            _log.error(
+                "flow %s: %s %s%s is negative",
+                flow.id,
+                field_name,
+                quantity.value,
+                quantity.unit,
+            )
+            return True
+    return False
+
+
 def _validate_nonnegative_quantities(model: KernelModel) -> Result[None, StrataError]:
     """Flow age/rate/size must be non-negative.
 
@@ -279,26 +305,30 @@ def _validate_nonnegative_quantities(model: KernelModel) -> Result[None, StrataE
     this is enforced here, fail closed.
     """
     for flow in model.flows:
-        for field_name, quantity in (
-            ("age", flow.age),
-            ("rate", flow.rate),
-            ("size", flow.size),
-        ):
-            if quantity is None:
-                continue
-            base = quantity.base_value()
-            if base.is_err:
-                continue  # unknown unit is reported by other validation paths
-            if base.danger_ok < 0.0:
-                _log.error(
-                    "flow %s: %s %s%s is negative",
-                    flow.id,
-                    field_name,
-                    quantity.value,
-                    quantity.unit,
-                )
-                return Err(StrataError.NegativeQuantity)
+        if _flow_has_negative_quantity(flow):
+            return Err(StrataError.NegativeQuantity)
     return Ok(None)
+
+
+def _flow_structural_findings(
+    model: KernelModel, flow, nodes: dict[str, Node]
+) -> list[str]:
+    """The at-least-once/idempotency and clearance findings one `Flow`
+    contributes to `_structural_diagnostics`."""
+    findings: list[str] = []
+    dst = nodes[flow.dst]
+    if _AT_LEAST_ONCE in flow.attrs and _IDEMPOTENT not in dst.attrs:
+        findings.append(
+            f"flow {flow.id}: at-least-once delivery into {dst.id} "
+            f"which is not declared idempotent"
+        )
+    clearance_ok = model.labels.leq(flow.label, dst.clearance)
+    if clearance_ok.is_ok and not clearance_ok.danger_ok:
+        findings.append(
+            f"flow {flow.id}: payload label {flow.label} exceeds "
+            f"clearance {dst.clearance} of {dst.id}"
+        )
+    return findings
 
 
 def _structural_diagnostics(
@@ -307,20 +337,7 @@ def _structural_diagnostics(
     """Deny-by-default well-formedness findings that are not fatal to indexing."""
     findings: list[str] = []
     for flow in model.flows:
-        if _AT_LEAST_ONCE in flow.attrs:
-            dst = nodes[flow.dst]
-            if _IDEMPOTENT not in dst.attrs:
-                findings.append(
-                    f"flow {flow.id}: at-least-once delivery into {dst.id} "
-                    f"which is not declared idempotent"
-                )
-        dst = nodes[flow.dst]
-        clearance_ok = model.labels.leq(flow.label, dst.clearance)
-        if clearance_ok.is_ok and not clearance_ok.danger_ok:
-            findings.append(
-                f"flow {flow.id}: payload label {flow.label} exceeds "
-                f"clearance {dst.clearance} of {dst.id}"
-            )
+        findings.extend(_flow_structural_findings(model, flow, nodes))
     for finding in findings:
         _log.warning("structural: %s", finding)
     return tuple(findings)
@@ -339,6 +356,28 @@ def build_facts(model: KernelModel) -> Result[FactBase, StrataError]:
     assumes a successfully-built `FactBase` implies `strata_core` is
     present, so this is the one gate that must catch its absence.
     """
+    fail_closed = _validate_build_facts_preconditions(model)
+    if fail_closed.is_err:
+        return Err(fail_closed.danger_err)
+
+    facts = _index_facts(model)
+    _log.info(
+        "fact base built: %d node(s), %d flow(s), %d boundary(ies), %d diagnostic(s)",
+        len(facts.nodes),
+        len(facts.flows),
+        len(model.boundaries),
+        len(facts.diagnostics),
+    )
+    return Ok(facts)
+
+
+def _validate_build_facts_preconditions(
+    model: KernelModel,
+) -> Result[None, StrataError]:
+    """Every fail-closed check `build_facts` must clear before indexing,
+    run in order: native extension present, lattices acyclic, ids valid,
+    levels valid, quantities non-negative. Order matters -- the first
+    failing check's `StrataError` is the one `build_facts` returns."""
     if strata_core is None:
         _log.error("build_facts: strata_core native extension unavailable")
         return Err(StrataError.NativeExtensionUnavailable)
@@ -355,7 +394,13 @@ def build_facts(model: KernelModel) -> Result[FactBase, StrataError]:
     nonneg_ok = _validate_nonnegative_quantities(model)
     if nonneg_ok.is_err:
         return Err(nonneg_ok.danger_err)
+    return Ok(None)
 
+
+def _index_facts(model: KernelModel) -> FactBase:
+    """Build the `FactBase` indices (nodes/flows/outgoing/boundaries) once
+    structural validation has already passed -- the pure indexing step
+    `build_facts` delegates to after every fail-closed check clears."""
     nodes = {n.id: n for n in model.nodes}
     flows = {f.id: f for f in model.flows}
     outgoing: dict[str, list[str]] = {}
@@ -365,7 +410,7 @@ def build_facts(model: KernelModel) -> Result[FactBase, StrataError]:
     for boundary in model.boundaries:
         boundaries_on.setdefault(boundary.flow_id, []).append(boundary)
 
-    facts = FactBase(
+    return FactBase(
         model=model,
         nodes=nodes,
         flows=flows,
@@ -373,11 +418,3 @@ def build_facts(model: KernelModel) -> Result[FactBase, StrataError]:
         boundaries_on={k: tuple(v) for k, v in boundaries_on.items()},
         diagnostics=_structural_diagnostics(model, nodes),
     )
-    _log.info(
-        "fact base built: %d node(s), %d flow(s), %d boundary(ies), %d diagnostic(s)",
-        len(nodes),
-        len(flows),
-        len(model.boundaries),
-        len(facts.diagnostics),
-    )
-    return Ok(facts)

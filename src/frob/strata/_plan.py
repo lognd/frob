@@ -107,42 +107,64 @@ def _frontier_unrefined(model: KernelModel) -> list[PlannedTicket]:
     for node in model.nodes:
         if "abstract" not in node.attrs:
             continue
-        scope = _node_scope(node)
-        parent = _marker(node.id, "unrefined")
-        child = _marker(node.id, "refine")
-        out.append(
-            PlannedTicket(
-                marker=parent,
-                title=f"Refine abstract component {node.id}",
-                kind=TicketKind.FEATURE,
-                body=(
-                    f"{parent}\n\n"
-                    f"Component `{node.id}` is on the unrefined frontier: it has "
-                    "no matching `refine` block, so implementation cannot begin "
-                    "on it (docs/strata/surface.md#refinement-hierarchical-"
-                    "models). This is the planning frontier, per surface.md."
-                ),
-                scope=scope,
-            )
-        )
-        out.append(
-            PlannedTicket(
-                marker=child,
-                title=f"Decompose {node.id} via refine block",
-                kind=TicketKind.FEATURE,
-                body=(
-                    f"{child}\n\n"
-                    f"Write `refine {node.id} into {{ ... binds {node.id} = ... }}` "
-                    "satisfying faithfulness: no new external surface, no trust "
-                    "laundering, budget distribution "
-                    "(docs/strata/surface.md#v0-semantics)."
-                ),
-                scope=scope,
-                parent_marker=parent,
-                blocked_by_markers=(parent,),
-            )
-        )
+        out.extend(_unrefined_frontier_pair(node))
     return out
+
+
+def _unrefined_frontier_pair(node) -> tuple[PlannedTicket, PlannedTicket]:  # noqa: ANN001
+    """The parent+child `PlannedTicket` pair for one unrefined `abstract`
+    node, split out of `_frontier_unrefined` purely to keep its loop body
+    short."""
+    scope = _node_scope(node)
+    parent = _marker(node.id, "unrefined")
+    child = _marker(node.id, "refine")
+    return (
+        _unrefined_parent_ticket(node, parent, scope),
+        _unrefined_child_ticket(node, parent, child, scope),
+    )
+
+
+def _unrefined_parent_ticket(  # noqa: ANN001
+    node, marker: str, scope: tuple[str, ...]
+) -> PlannedTicket:
+    """The parent `PlannedTicket` for one unrefined `abstract` node."""
+    return PlannedTicket(
+        marker=marker,
+        title=f"Refine abstract component {node.id}",
+        kind=TicketKind.FEATURE,
+        body=(
+            f"{marker}\n\n"
+            f"Component `{node.id}` is on the unrefined frontier: it has "
+            "no matching `refine` block, so implementation cannot begin "
+            "on it (docs/strata/surface.md#refinement-hierarchical-"
+            "models). This is the planning frontier, per surface.md."
+        ),
+        scope=scope,
+    )
+
+
+def _unrefined_child_ticket(
+    node,  # noqa: ANN001
+    parent_marker: str,
+    marker: str,
+    scope: tuple[str, ...],
+) -> PlannedTicket:
+    """The child `PlannedTicket` for one unrefined `abstract` node."""
+    return PlannedTicket(
+        marker=marker,
+        title=f"Decompose {node.id} via refine block",
+        kind=TicketKind.FEATURE,
+        body=(
+            f"{marker}\n\n"
+            f"Write `refine {node.id} into {{ ... binds {node.id} = ... }}` "
+            "satisfying faithfulness: no new external surface, no trust "
+            "laundering, budget distribution "
+            "(docs/strata/surface.md#v0-semantics)."
+        ),
+        scope=scope,
+        parent_marker=parent_marker,
+        blocked_by_markers=(parent_marker,),
+    )
 
 
 # frob:doc docs/strata/surface.md#refinement-hierarchical-models

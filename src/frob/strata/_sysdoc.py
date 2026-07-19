@@ -165,35 +165,100 @@ def render_audit_matrix(
         _log.error("sysdoc: unknown baseline view %r", view)
         return Err(StrataError.UnknownReference)
 
+    checked = _check_matrix_completeness(model, view, catalog, out_of_scope, views)
+    if checked.is_err:
+        return Err(checked.danger_err)
+    catalog_gaps, discharge = checked.danger_ok
+
+    entries, excused = _matrix_entries(catalog, out_of_scope, members)
+    return Ok(
+        _render_matrix_text(model, view, entries, excused, catalog_gaps, discharge)
+    )
+
+
+def _render_matrix_text(
+    model: KernelModel,
+    view: str,
+    entries: list[WeaknessEntry],
+    excused: list[OutOfScopeEntry],
+    catalog_gaps: tuple[ThreatViolation, ...],
+    discharge: tuple[ThreatViolation, ...],
+) -> str:
+    """Assemble and log the final matrix text from its sections, split out
+    of `render_audit_matrix` purely to keep that function's body short."""
+    lines = _family_table_lines(model, entries, discharge)
+    lines.extend(_excused_lines(excused))
+    lines.extend(_catalog_gap_lines(catalog_gaps))
+    text = "\n".join([f"# Audit matrix -- view {view!r}", "", *lines]).rstrip() + "\n"
+    _log.info(
+        "sysdoc: rendered matrix view=%r entries=%d families=%d gaps=%d",
+        view,
+        len(entries),
+        len({e.family for e in entries}),
+        len(catalog_gaps),
+    )
+    return text
+
+
+def _check_matrix_completeness(
+    model: KernelModel,
+    view: str,
+    catalog: tuple[WeaknessEntry, ...],
+    out_of_scope: tuple[OutOfScopeEntry, ...],
+    views: dict[str, frozenset[str]] | None,
+) -> Result[
+    tuple[tuple[ThreatViolation, ...], tuple[ThreatViolation, ...]], StrataError
+]:
+    """The `(catalog_gaps, discharge_violations)` pair `render_audit_matrix`
+    needs before it can render a single row, split out purely to keep that
+    function's body short."""
     catalog_gaps = check_catalog_completeness(view, catalog, out_of_scope, views)
     if catalog_gaps.is_err:
         return Err(catalog_gaps.danger_err)
     discharge = check_discharge_completeness(model, catalog)
     if discharge.is_err:
         return Err(discharge.danger_err)
+    return Ok((catalog_gaps.danger_ok, discharge.danger_ok))
 
-    declared = _declared_capability_kinds(model)
-    assumed = _assumed_cwes(model)
-    by_cwe: dict[str, list[ThreatViolation]] = {}
-    for violation in discharge.danger_ok:
-        by_cwe.setdefault(violation.cwe, []).append(violation)
 
+def _matrix_entries(
+    catalog: tuple[WeaknessEntry, ...],
+    out_of_scope: tuple[OutOfScopeEntry, ...],
+    members: frozenset[str],
+) -> tuple[list[WeaknessEntry], list[OutOfScopeEntry]]:
+    """The `(entries, excused)` pair for `view`'s member CWEs, sorted --
+    split out of `render_audit_matrix` purely to keep that function's body
+    short."""
     # frob:waive PERF004 reason="sorts once per call, not per loop iteration"
     entries = sorted(
         (e for e in catalog if e.id in members), key=lambda e: (e.family, e.id)
     )
     excused = sorted((e for e in out_of_scope if e.id in members), key=lambda e: e.id)
+    return entries, excused
 
-    lines: list[str] = [f"# Audit matrix -- view {view!r}", ""]
+
+def _family_table_lines(
+    model: KernelModel,
+    entries: list[WeaknessEntry],
+    discharge: tuple[ThreatViolation, ...],
+) -> list[str]:
+    """The `## <family>` table sections for every family in `entries`, for
+    `render_audit_matrix`."""
+    declared = _declared_capability_kinds(model)
+    assumed = _assumed_cwes(model)
+    by_cwe: dict[str, list[ThreatViolation]] = {}
+    for violation in discharge:
+        by_cwe.setdefault(violation.cwe, []).append(violation)
 
     entries_by_family: dict[str, list[WeaknessEntry]] = {}
     for entry in entries:
         entries_by_family.setdefault(entry.family, []).append(entry)
-    families = sorted(entries_by_family)
-    for family in families:
+
+    lines: list[str] = []
+    header = ("CWE", "title", "precondition", "mitigation", "status", "citation")
+    for family in sorted(entries_by_family):
         lines.append(f"## {family}")
         lines.append("")
-        header = ("CWE", "title", "precondition", "mitigation", "status", "citation")
         lines.append(_md_row(header))
         lines.append(_md_row(("---", "---", "---", "---", "---", "---")))
         for entry in entries_by_family[family]:
@@ -202,32 +267,30 @@ def render_audit_matrix(
             )
             lines.append(_md_row(row))
         lines.append("")
+    return lines
 
-    if excused:
-        lines.append("## out-of-scope")
-        lines.append("")
-        lines.append(_md_row(("CWE", "reason")))
-        lines.append(_md_row(("---", "---")))
-        for entry in excused:
-            lines.append(_md_row((entry.id, entry.reason)))
-        lines.append("")
 
-    if catalog_gaps.danger_ok:
-        lines.append("## catalog gaps (THREAT001)")
-        lines.append("")
-        for gap in sorted(catalog_gaps.danger_ok, key=lambda v: v.cwe):
-            lines.append(f"- {gap.cwe}: {gap.detail}")
-        lines.append("")
+def _excused_lines(excused: list[OutOfScopeEntry]) -> list[str]:
+    """The `## out-of-scope` table section, empty when `excused` is empty,
+    for `render_audit_matrix`."""
+    if not excused:
+        return []
+    lines = ["## out-of-scope", "", _md_row(("CWE", "reason")), _md_row(("---", "---"))]
+    lines.extend(_md_row((entry.id, entry.reason)) for entry in excused)
+    lines.append("")
+    return lines
 
-    text = "\n".join(lines).rstrip() + "\n"
-    _log.info(
-        "sysdoc: rendered matrix view=%r entries=%d families=%d gaps=%d",
-        view,
-        len(entries),
-        len(families),
-        len(catalog_gaps.danger_ok),
-    )
-    return Ok(text)
+
+def _catalog_gap_lines(catalog_gaps: tuple[ThreatViolation, ...]) -> list[str]:
+    """The `## catalog gaps (THREAT001)` section, empty when there are no
+    gaps, for `render_audit_matrix`."""
+    if not catalog_gaps:
+        return []
+    lines = ["## catalog gaps (THREAT001)", ""]
+    sorted_gaps = sorted(catalog_gaps, key=lambda v: v.cwe)
+    lines.extend(f"- {gap.cwe}: {gap.detail}" for gap in sorted_gaps)
+    lines.append("")
+    return lines
 
 
 # frob:doc docs/strata/threat.md#the-exhaustiveness-proof-the-point

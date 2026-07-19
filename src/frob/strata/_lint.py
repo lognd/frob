@@ -158,6 +158,20 @@ def _rate_base(quantity_owner: str, value: Quantity) -> Result[float, StrataErro
     return value.base_value()
 
 
+def _sum_flow_rates(flows: list) -> Result[float, StrataError]:
+    """Sum a list of flows' rates in their base rate unit, shared by
+    LINT002/LINT005's inbound-load summation (charter law 5: no
+    duplication) -- fails closed on the first mis-dimensioned quantity."""
+    total = 0.0
+    for flow in flows:
+        assert flow.rate is not None  # callers filter this
+        base = _rate_base(flow.id, flow.rate)
+        if base.is_err:
+            return Err(base.danger_err)
+        total += base.danger_ok
+    return Ok(total)
+
+
 # frob:doc docs/strata/threat.md#operational-design-lints-stdlint-t-0155
 def check_lint_rate_limit(
     model: KernelModel,
@@ -201,6 +215,60 @@ def _cache_covers(model: KernelModel, node_id: str) -> bool:
     return any(f.src == node_id and "fill" in f.attrs for f in model.flows)
 
 
+def _check_lint002_node(
+    model: KernelModel, node: Node
+) -> Result[LintViolation | None, StrataError]:
+    """LINT002 check for one capacitated node: `None` if it does not
+    violate, else the `LintViolation` -- factored out of
+    `check_lint_cache_or_capacity` so that loop stays a thin dispatcher."""
+    inbound = [
+        f
+        for f in model.flows
+        if f.dst == node.id
+        and f.rate is not None
+        and not (set(f.attrs) & _INFRA_LOAD_EXEMPT_ATTRS)
+    ]
+    assert node.capacity is not None
+    if not inbound:
+        return Ok(None)
+    total_r = _sum_flow_rates(inbound)
+    if total_r.is_err:
+        return Err(total_r.danger_err)
+    total = total_r.danger_ok
+    service = _rate_base(node.id, node.capacity.service_rate)
+    if service.is_err:
+        return Err(service.danger_err)
+    if total <= service.danger_ok:
+        return Ok(None)
+    if _cache_covers(model, node.id):
+        return Ok(None)
+    return Ok(_lint002_violation(node, inbound, total, service.danger_ok))
+
+
+def _lint002_violation(
+    node: Node, inbound: list, total: float, service: float
+) -> LintViolation:
+    """Build the LINT002 `LintViolation` for a node whose inbound load
+    exceeds its declared service rate with no cache -- split out of
+    `_check_lint002_node` purely to keep that function's body short."""
+    assert node.capacity is not None
+    _log.warning(
+        "lint: LINT002 node %s inbound rate %.4f exceeds service rate "
+        "%.4f with no cache",
+        node.id,
+        total,
+        service,
+    )
+    return LintViolation(
+        rule="LINT002",
+        target=node.id,
+        detail=f"node {node.id} declared service rate "
+        f"{node.capacity.service_rate.value}{node.capacity.service_rate.unit} "
+        f"is exceeded by inbound flow(s) {[f.id for f in inbound]} with no "
+        "cache/TTL declared over it",
+    )
+
+
 # frob:doc docs/strata/threat.md#operational-design-lints-stdlint-t-0155
 def check_lint_cache_or_capacity(
     model: KernelModel,
@@ -214,46 +282,11 @@ def check_lint_cache_or_capacity(
     for node in sorted(model.nodes, key=lambda n: n.id):
         if node.capacity is None:
             continue
-        inbound = [
-            f
-            for f in model.flows
-            if f.dst == node.id
-            and f.rate is not None
-            and not (set(f.attrs) & _INFRA_LOAD_EXEMPT_ATTRS)
-        ]
-        if not inbound:
-            continue
-        total = 0.0
-        for flow in inbound:
-            assert flow.rate is not None  # filtered above
-            base = _rate_base(flow.id, flow.rate)
-            if base.is_err:
-                return Err(base.danger_err)
-            total += base.danger_ok
-        service = _rate_base(node.id, node.capacity.service_rate)
-        if service.is_err:
-            return Err(service.danger_err)
-        if total <= service.danger_ok:
-            continue
-        if _cache_covers(model, node.id):
-            continue
-        _log.warning(
-            "lint: LINT002 node %s inbound rate %.4f exceeds service rate "
-            "%.4f with no cache",
-            node.id,
-            total,
-            service.danger_ok,
-        )
-        violations.append(
-            LintViolation(
-                rule="LINT002",
-                target=node.id,
-                detail=f"node {node.id} declared service rate "
-                f"{node.capacity.service_rate.value}{node.capacity.service_rate.unit} "
-                f"is exceeded by inbound flow(s) {[f.id for f in inbound]} with no "
-                "cache/TTL declared over it",
-            )
-        )
+        result = _check_lint002_node(model, node)
+        if result.is_err:
+            return Err(result.danger_err)
+        if result.danger_ok is not None:
+            violations.append(result.danger_ok)
     return Ok(tuple(violations))
 
 
@@ -348,6 +381,50 @@ def check_lint_kill_switch(model: KernelModel) -> tuple[LintViolation, ...]:
     return tuple(violations)
 
 
+def _check_lint005_node(
+    node: Node, model: KernelModel
+) -> Result[LintViolation | None, StrataError]:
+    """LINT005 check for one capacitated node: `None` if it does not
+    violate, else the `LintViolation` -- factored out of
+    `check_lint_fanin_capacity` so that loop stays a thin dispatcher."""
+    inbound = [f for f in model.flows if f.dst == node.id and f.rate is not None]
+    assert node.capacity is not None
+    if not inbound:
+        return Ok(None)
+    total_r = _sum_flow_rates(inbound)
+    if total_r.is_err:
+        return Err(total_r.danger_err)
+    total = total_r.danger_ok
+    service = _rate_base(node.id, node.capacity.service_rate)
+    if service.is_err:
+        return Err(service.danger_err)
+    headroom = service.danger_ok * node.capacity.replicas_max
+    if total <= headroom:
+        return Ok(None)
+    return Ok(_lint005_violation(node, total, headroom))
+
+
+def _lint005_violation(node: Node, total: float, headroom: float) -> LintViolation:
+    """Build the LINT005 `LintViolation` for a node whose fan-in exceeds
+    its capacity headroom -- split out of `_check_lint005_node` purely to
+    keep that function's body short."""
+    assert node.capacity is not None
+    _log.warning(
+        "lint: LINT005 node %s fan-in rate %.4f exceeds capacity headroom %.4f",
+        node.id,
+        total,
+        headroom,
+    )
+    return LintViolation(
+        rule="LINT005",
+        target=node.id,
+        detail=f"node {node.id} total inbound rate {total} exceeds declared "
+        f"capacity headroom {headroom} ({node.capacity.service_rate.value}"
+        f"{node.capacity.service_rate.unit} x {node.capacity.replicas_max} "
+        "replicas)",
+    )
+
+
 # frob:doc docs/strata/threat.md#operational-design-lints-stdlint-t-0155
 def check_lint_fanin_capacity(
     model: KernelModel,
@@ -360,38 +437,11 @@ def check_lint_fanin_capacity(
     for node in sorted(model.nodes, key=lambda n: n.id):
         if node.capacity is None:
             continue
-        inbound = [f for f in model.flows if f.dst == node.id and f.rate is not None]
-        if not inbound:
-            continue
-        total = 0.0
-        for flow in inbound:
-            assert flow.rate is not None  # filtered above
-            base = _rate_base(flow.id, flow.rate)
-            if base.is_err:
-                return Err(base.danger_err)
-            total += base.danger_ok
-        service = _rate_base(node.id, node.capacity.service_rate)
-        if service.is_err:
-            return Err(service.danger_err)
-        headroom = service.danger_ok * node.capacity.replicas_max
-        if total <= headroom:
-            continue
-        _log.warning(
-            "lint: LINT005 node %s fan-in rate %.4f exceeds capacity headroom %.4f",
-            node.id,
-            total,
-            headroom,
-        )
-        violations.append(
-            LintViolation(
-                rule="LINT005",
-                target=node.id,
-                detail=f"node {node.id} total inbound rate {total} exceeds declared "
-                f"capacity headroom {headroom} ({node.capacity.service_rate.value}"
-                f"{node.capacity.service_rate.unit} x {node.capacity.replicas_max} "
-                "replicas)",
-            )
-        )
+        result = _check_lint005_node(node, model)
+        if result.is_err:
+            return Err(result.danger_err)
+        if result.danger_ok is not None:
+            violations.append(result.danger_ok)
     return Ok(tuple(violations))
 
 

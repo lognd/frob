@@ -63,7 +63,7 @@ from frob.logging import get_logger
 
 from ._compliance import _REVOCATION_ATTR, _retention_limit
 from ._errors import StrataError
-from ._models import LABELS, KernelModel, Node
+from ._models import LABELS, Flow, KernelModel, Node
 
 _log = get_logger(__name__)
 
@@ -221,25 +221,30 @@ def check_pii_boundary_protection(model: KernelModel) -> tuple[PiiViolation, ...
             violations.append(malformed)
         if overridden:
             continue
-        _log.warning(
-            "pii: PII002 flow %s (%s -> %s) carries pii across trust "
-            "boundary %s -> %s with no declared protection",
-            flow.id,
-            flow.src,
-            flow.dst,
-            src.trust,
-            dst.trust,
-        )
-        violations.append(
-            PiiViolation(
-                rule="PII002",
-                target=flow.id,
-                detail=f"flow {flow.id} carries pii from {src.id} ({src.trust}) "
-                f"to {dst.id} ({dst.trust}) with no declared protection -- "
-                f"assume {claim_id!r} with owner+review to discharge",
-            )
-        )
+        violations.append(_pii002_violation(flow, src, dst, claim_id))
     return tuple(violations)
+
+
+def _pii002_violation(flow: Flow, src: Node, dst: Node, claim_id: str) -> PiiViolation:
+    """Build the PII002 `LintViolation`-shaped finding for an unprotected
+    pii-carrying boundary crossing, split out of
+    `check_pii_boundary_protection` purely to keep its loop body short."""
+    _log.warning(
+        "pii: PII002 flow %s (%s -> %s) carries pii across trust "
+        "boundary %s -> %s with no declared protection",
+        flow.id,
+        flow.src,
+        flow.dst,
+        src.trust,
+        dst.trust,
+    )
+    return PiiViolation(
+        rule="PII002",
+        target=flow.id,
+        detail=f"flow {flow.id} carries pii from {src.id} ({src.trust}) "
+        f"to {dst.id} ({dst.trust}) with no declared protection -- "
+        f"assume {claim_id!r} with owner+review to discharge",
+    )
 
 
 # frob:doc docs/strata/threat.md#pii-declarations-stdpii-t-0154
@@ -253,12 +258,7 @@ def check_pii_retention_erasure(model: KernelModel) -> tuple[PiiViolation, ...]:
     `carries` alone -- no jurisdiction tag required, since a `carries`
     declaration is itself a stronger, structural signal than clearance
     label."""
-    revoked_nodes: set[str] = set()
-    for flow in model.flows:
-        if _REVOCATION_ATTR in flow.attrs:
-            revoked_nodes.add(flow.src)
-            revoked_nodes.add(flow.dst)
-
+    revoked_nodes = _revocation_target_nodes(model)
     violations: list[PiiViolation] = []
     # frob:waive PERF004 reason="one sort for deterministic order, not per-iteration"
     for node in sorted(model.nodes, key=lambda n: n.id):
@@ -268,20 +268,36 @@ def check_pii_retention_erasure(model: KernelModel) -> tuple[PiiViolation, ...]:
         has_erasure = node.id in revoked_nodes
         if has_retention or has_erasure:
             continue
-        _log.warning(
-            "pii: PII003 node %s carries pii with no retention bound or "
-            "erasure/revocation path",
-            node.id,
-        )
-        violations.append(
-            PiiViolation(
-                rule="PII003",
-                target=node.id,
-                detail=f"node {node.id} carries {node_pii_tags(node)} with no "
-                "declared retention= bound and no revocation-edge flow",
-            )
-        )
+        violations.append(_pii003_violation(node))
     return tuple(violations)
+
+
+def _pii003_violation(node: Node) -> PiiViolation:
+    """Build the PII003 finding for a pii-carrying node with no retention
+    bound or erasure path, split out of `check_pii_retention_erasure`
+    purely to keep its loop body short."""
+    _log.warning(
+        "pii: PII003 node %s carries pii with no retention bound or "
+        "erasure/revocation path",
+        node.id,
+    )
+    return PiiViolation(
+        rule="PII003",
+        target=node.id,
+        detail=f"node {node.id} carries {node_pii_tags(node)} with no "
+        "declared retention= bound and no revocation-edge flow",
+    )
+
+
+def _revocation_target_nodes(model: KernelModel) -> set[str]:
+    """Every node id touched by a `_REVOCATION_ATTR` flow, for
+    `check_pii_retention_erasure`'s erasure-path detection."""
+    revoked_nodes: set[str] = set()
+    for flow in model.flows:
+        if _REVOCATION_ATTR in flow.attrs:
+            revoked_nodes.add(flow.src)
+            revoked_nodes.add(flow.dst)
+    return revoked_nodes
 
 
 # frob:doc docs/strata/threat.md#pii-declarations-stdpii-t-0154

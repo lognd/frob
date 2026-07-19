@@ -24,6 +24,7 @@ from ._ast import (
     FlowDecl,
     Module,
     NodeDecl,
+    OperationDecl,
     RefineDecl,
     RemoveDecl,
     ScaleDecl,
@@ -104,11 +105,8 @@ def _elaborate_deploy(decl: DeployDecl) -> DeployContract:
     )
 
 
-def _elaborate_node(decl: NodeDecl) -> Node:
-    """One `NodeDecl` -> one kernel `Node`; abstract/managed/errors_total/panics/code
-    -> attrs, may -> Node.may directly (T-0132), deploy -> Node.deploy directly
-    (T-0136)."""
-    attrs = decl.attrs
+def _node_marker_attrs(decl: NodeDecl, attrs: tuple[str, ...]) -> tuple[str, ...]:
+    """Append abstract/managed/errors_total/panics/code/carries markers to `attrs`."""
     if decl.is_abstract:
         _log.debug(
             "node %s is abstract; marking attrs with %r", decl.id, _ABSTRACT_ATTR
@@ -136,6 +134,11 @@ def _elaborate_node(decl: NodeDecl) -> Node:
         # (`_pii.py::node_pii_tags` reads this back).
         _log.debug("node %s carries %d pii tag(s)", decl.id, len(decl.carries))
         attrs = (*attrs, *(f"{_PII_PREFIX}{tag}" for tag in decl.carries))
+    return attrs
+
+
+def _node_host_krb_attrs(decl: NodeDecl, attrs: tuple[str, ...]) -> tuple[str, ...]:
+    """Append std.host/std.krb desugared attrs to `attrs`."""
     host = host_attrs(
         runs_as=decl.runs_as,
         is_unit=decl.is_unit,
@@ -163,6 +166,21 @@ def _elaborate_node(decl: NodeDecl) -> Node:
         # vocabulary).
         _log.debug("node %s declares %d std.krb attr(s)", decl.id, len(krb))
         attrs = (*attrs, *krb)
+    return attrs
+
+
+def _node_declared_attrs(decl: NodeDecl) -> tuple[str, ...]:
+    """Desugar a `NodeDecl`'s abstract/managed/errors_total/panics/code/carries/
+    std.host/std.krb clauses into `Node.attrs`, in declaration order."""
+    attrs = _node_marker_attrs(decl, decl.attrs)
+    return _node_host_krb_attrs(decl, attrs)
+
+
+def _elaborate_node(decl: NodeDecl) -> Node:
+    """One `NodeDecl` -> one kernel `Node`; abstract/managed/errors_total/panics/code
+    -> attrs, may -> Node.may directly (T-0132), deploy -> Node.deploy directly
+    (T-0136)."""
+    attrs = _node_declared_attrs(decl)
     capacity = None
     if decl.capacity is not None:
         capacity = Capacity(
@@ -247,6 +265,62 @@ def _elaborate_claim(decl: ClaimDecl) -> Claim:
     )
 
 
+def _validate_scenario_trust_rewrite(
+    scenario: ScenarioDecl,
+    rewrite: TrustDecl,
+    known_nodes: set[str],
+    trust_levels: frozenset[str],
+) -> Result[None, StrataError]:
+    """A `TrustDecl` rewrite's target/level check; see `_validate_scenario_rewrite`."""
+    if rewrite.node_id not in known_nodes:
+        _log.error(
+            "scenario %s: trust target %r is not declared", scenario.id, rewrite.node_id
+        )
+        return Err(StrataError.UnknownReference)
+    if rewrite.level not in trust_levels:
+        # frob:waive PERF004 reason="runs only on the fail-closed err path"
+        _log.error(
+            "scenario %s: trust level %r is not in the trust lattice %s",
+            scenario.id,
+            rewrite.level,
+            sorted(trust_levels),
+        )
+        return Err(StrataError.UnknownLevel)
+    return Ok(None)
+
+
+def _validate_scenario_rewrite(
+    scenario: ScenarioDecl,
+    rewrite: RemoveDecl | ScaleDecl | TrustDecl,
+    known_nodes: set[str],
+    known_flows: set[str],
+    trust_levels: frozenset[str],
+) -> Result[None, StrataError]:
+    """One scenario rewrite's target/level check; see `_validate_scenarios`."""
+    if isinstance(rewrite, RemoveDecl):
+        if rewrite.node_id not in known_nodes:
+            _log.error(
+                "scenario %s: remove target %r is not declared",
+                scenario.id,
+                rewrite.node_id,
+            )
+            return Err(StrataError.UnknownReference)
+    elif isinstance(rewrite, ScaleDecl):
+        if rewrite.flow_id not in known_flows:
+            _log.error(
+                "scenario %s: scale target %r is not declared",
+                scenario.id,
+                rewrite.flow_id,
+            )
+            return Err(StrataError.UnknownReference)
+    else:
+        assert isinstance(rewrite, TrustDecl)
+        return _validate_scenario_trust_rewrite(
+            scenario, rewrite, known_nodes, trust_levels
+        )
+    return Ok(None)
+
+
 def _validate_scenarios(module: Module) -> Result[None, StrataError]:
     """Every scenario rewrite target must resolve; every trust level must be known.
 
@@ -260,40 +334,11 @@ def _validate_scenarios(module: Module) -> Result[None, StrataError]:
     trust_levels = TRUST.elements()
     for scenario in module.scenarios:
         for rewrite in scenario.rewrites:
-            if isinstance(rewrite, RemoveDecl):
-                if rewrite.node_id not in known_nodes:
-                    _log.error(
-                        "scenario %s: remove target %r is not declared",
-                        scenario.id,
-                        rewrite.node_id,
-                    )
-                    return Err(StrataError.UnknownReference)
-            elif isinstance(rewrite, ScaleDecl):
-                if rewrite.flow_id not in known_flows:
-                    _log.error(
-                        "scenario %s: scale target %r is not declared",
-                        scenario.id,
-                        rewrite.flow_id,
-                    )
-                    return Err(StrataError.UnknownReference)
-            else:
-                assert isinstance(rewrite, TrustDecl)
-                if rewrite.node_id not in known_nodes:
-                    _log.error(
-                        "scenario %s: trust target %r is not declared",
-                        scenario.id,
-                        rewrite.node_id,
-                    )
-                    return Err(StrataError.UnknownReference)
-                if rewrite.level not in trust_levels:
-                    # frob:waive PERF004 reason="runs only on the fail-closed err path"
-                    _log.error(
-                        "scenario %s: trust level %r is not in the trust lattice %s",
-                        scenario.id,
-                        rewrite.level,
-                        sorted(trust_levels),
-                    )
-                    return Err(StrataError.UnknownLevel)
+            checked = _validate_scenario_rewrite(
+                scenario, rewrite, known_nodes, known_flows, trust_levels
+            )
+            if checked.is_err:
+                return checked
     return Ok(None)
 
 
@@ -404,13 +449,7 @@ def _validate_references(module: Module) -> Result[None, StrataError]:
     (docs/strata/surface.md#std-infra), not something only desugaring
     computes.
     """
-    known_nodes = {n.id for n in module.nodes}
-    known_nodes |= {s.id for s in module.stores}
-    known_nodes |= {c.id for c in module.caches}
-    known_nodes |= {q.id for q in module.queues}
-    known_nodes |= {c.id for c in module.cdns}
-    known_nodes |= {b.id for b in module.balancers}
-    known_nodes |= {s.id for s in module.secrets}
+    known_nodes = _known_node_ids(module)
     known_flows = {f.id for f in module.flows}
     for boundary in module.boundaries:
         if boundary.flow_id not in known_flows:
@@ -450,6 +489,124 @@ def _frame_target_base(target: str) -> str:
     return target[:idx] if idx != -1 else target
 
 
+def _validate_boundary_phase_parse(boundary: BoundaryDecl) -> Result[None, StrataError]:
+    """`parse` phase frame entries are forbidden; see `_validate_boundary_phases`."""
+    phases = boundary.phases
+    assert phases is not None
+    if phases.parse is not None and phases.parse.frame:
+        _log.error(
+            "boundary %s: parse phase frame must be empty, got %s",
+            boundary.id,
+            phases.parse.frame,
+        )
+        return Err(StrataError.FrameViolation)
+    return Ok(None)
+
+
+def _validate_boundary_phase_effect(
+    boundary: BoundaryDecl, known: set[str]
+) -> Result[None, StrataError]:
+    """`effect` frame targets must be declared; see `_validate_boundary_phases`."""
+    phases = boundary.phases
+    assert phases is not None
+    if phases.effect is not None:
+        for target in phases.effect.frame:
+            base = _frame_target_base(target)
+            if base not in known:
+                _log.error(
+                    "boundary %s: effect frame target %r is not declared",
+                    boundary.id,
+                    target,
+                )
+                return Err(StrataError.UnknownReference)
+    return Ok(None)
+
+
+def _validate_boundary_phase_record(
+    boundary: BoundaryDecl, known: set[str]
+) -> Result[None, StrataError]:
+    """`record` audit target must be declared; see `_validate_boundary_phases`."""
+    phases = boundary.phases
+    assert phases is not None
+    if phases.record is not None and phases.record.audit_to not in known:
+        _log.error(
+            "boundary %s: record audit target %r is not declared",
+            boundary.id,
+            phases.record.audit_to,
+        )
+        return Err(StrataError.UnknownReference)
+    return Ok(None)
+
+
+def _validate_refuse_frame_targets(
+    boundary: BoundaryDecl,
+    frame: tuple[str, ...],
+    known: set[str],
+    append_only: set[str],
+) -> Result[None, StrataError]:
+    """Each `refuse` frame target must be declared and `append_only`."""
+    for target in frame:
+        base = _frame_target_base(target)
+        if base not in known:
+            _log.error(
+                "boundary %s: refuse frame target %r is not declared",
+                boundary.id,
+                target,
+            )
+            return Err(StrataError.UnknownReference)
+        if base not in append_only:
+            _log.error(
+                "boundary %s: refuse frame target %r is not append_only "
+                "(refusal frame is audit-only)",
+                boundary.id,
+                target,
+            )
+            return Err(StrataError.FrameViolation)
+    return Ok(None)
+
+
+def _validate_boundary_phase_refuse(
+    boundary: BoundaryDecl,
+    known: set[str],
+    append_only: set[str],
+    labels: frozenset[str],
+) -> Result[None, StrataError]:
+    """`refuse` respond label and frame targets; see `_validate_boundary_phases`."""
+    phases = boundary.phases
+    assert phases is not None
+    if phases.refuse is None:
+        return Ok(None)
+    if phases.refuse.respond not in labels:
+        _log.error(
+            "boundary %s: refuse respond label %r is not in the labels lattice %s",
+            boundary.id,
+            phases.refuse.respond,
+            sorted(labels),
+        )
+        return Err(StrataError.UnknownLevel)
+    return _validate_refuse_frame_targets(
+        boundary, phases.refuse.frame, known, append_only
+    )
+
+
+def _validate_one_boundary_phases(
+    boundary: BoundaryDecl,
+    known: set[str],
+    append_only: set[str],
+    labels: frozenset[str],
+) -> Result[None, StrataError]:
+    """All four phase checks for one boundary, in fail-closed order."""
+    for checked in (
+        _validate_boundary_phase_parse(boundary),
+        _validate_boundary_phase_effect(boundary, known),
+        _validate_boundary_phase_record(boundary, known),
+        _validate_boundary_phase_refuse(boundary, known, append_only, labels),
+    ):
+        if checked.is_err:
+            return checked
+    return Ok(None)
+
+
 def _validate_boundary_phases(module: Module) -> Result[None, StrataError]:
     """Structural checks for every `boundary ... { phase_block* }` (T-0069, v0).
 
@@ -465,60 +622,37 @@ def _validate_boundary_phases(module: Module) -> Result[None, StrataError]:
     append_only = _append_only_ids(module)
     labels = LABELS.elements()
     for boundary in module.boundaries:
-        phases = boundary.phases
-        if phases is None:
+        if boundary.phases is None:
             continue
-        if phases.parse is not None and phases.parse.frame:
+        checked = _validate_one_boundary_phases(boundary, known, append_only, labels)
+        if checked.is_err:
+            return checked
+    return Ok(None)
+
+
+def _validate_one_operation(
+    op: OperationDecl, known: set[str], coordinator_ids: set[str]
+) -> Result[None, StrataError]:
+    """One `operation` statement's structural checks; see `_validate_operations`."""
+    if op.on not in known:
+        _log.error("operation %s: on target %r is not declared", op.id, op.on)
+        return Err(StrataError.UnknownReference)
+    if op.atomic_via not in known:
+        _log.error("operation %s: atomic via %r is not declared", op.id, op.atomic_via)
+        return Err(StrataError.UnknownReference)
+    if not op.modifies_err and op.atomic_via != op.on:
+        if op.atomic_via not in coordinator_ids:
             _log.error(
-                "boundary %s: parse phase frame must be empty, got %s",
-                boundary.id,
-                phases.parse.frame,
+                "operation %s: cross-store refusal -- atomic via %r is "
+                "neither the single store %r holding every Ok-frame target "
+                "nor a declared coordinator; distributed atomicity by "
+                "wishful thinking is a 'not possible' diagnostic, never a "
+                "silent acceptance",
+                op.id,
+                op.atomic_via,
+                op.on,
             )
-            return Err(StrataError.FrameViolation)
-        if phases.effect is not None:
-            for target in phases.effect.frame:
-                base = _frame_target_base(target)
-                if base not in known:
-                    _log.error(
-                        "boundary %s: effect frame target %r is not declared",
-                        boundary.id,
-                        target,
-                    )
-                    return Err(StrataError.UnknownReference)
-        if phases.record is not None and phases.record.audit_to not in known:
-            _log.error(
-                "boundary %s: record audit target %r is not declared",
-                boundary.id,
-                phases.record.audit_to,
-            )
-            return Err(StrataError.UnknownReference)
-        if phases.refuse is not None:
-            if phases.refuse.respond not in labels:
-                _log.error(
-                    "boundary %s: refuse respond label %r is not in the labels "
-                    "lattice %s",
-                    boundary.id,
-                    phases.refuse.respond,
-                    sorted(labels),
-                )
-                return Err(StrataError.UnknownLevel)
-            for target in phases.refuse.frame:
-                base = _frame_target_base(target)
-                if base not in known:
-                    _log.error(
-                        "boundary %s: refuse frame target %r is not declared",
-                        boundary.id,
-                        target,
-                    )
-                    return Err(StrataError.UnknownReference)
-                if base not in append_only:
-                    _log.error(
-                        "boundary %s: refuse frame target %r is not append_only "
-                        "(refusal frame is audit-only)",
-                        boundary.id,
-                        target,
-                    )
-                    return Err(StrataError.FrameViolation)
+            return Err(StrataError.CrossStoreAtomicity)
     return Ok(None)
 
 
@@ -538,27 +672,40 @@ def _validate_operations(module: Module) -> Result[None, StrataError]:
     known = _known_node_ids(module)
     coordinator_ids = {n.id for n in module.nodes if _COORDINATOR_ATTR in n.attrs}
     for op in module.operations:
-        if op.on not in known:
-            _log.error("operation %s: on target %r is not declared", op.id, op.on)
-            return Err(StrataError.UnknownReference)
-        if op.atomic_via not in known:
+        checked = _validate_one_operation(op, known, coordinator_ids)
+        if checked.is_err:
+            return checked
+    return Ok(None)
+
+
+def _validate_node_observability(
+    decl: NodeDecl, known: set[str]
+) -> Result[None, StrataError]:
+    """One node's panics/observe checks; see `_validate_observability`."""
+    if decl.panics_contained_by is not None and decl.panics_contained_by not in known:
+        _log.error(
+            "node %s: panics_contained_by %r is not declared",
+            decl.id,
+            decl.panics_contained_by,
+        )
+        return Err(StrataError.UnknownReference)
+    if decl.observe is not None:
+        for log_class in decl.observe.log:
+            if log_class not in _OBSERVE_LOG_CLASSES:
+                _log.error(
+                    "node %s: observe log class %r is not in the fixed vocabulary %s",
+                    decl.id,
+                    log_class,
+                    sorted(_OBSERVE_LOG_CLASSES),
+                )
+                return Err(StrataError.UnknownLogClass)
+        if decl.observe.to not in known:
             _log.error(
-                "operation %s: atomic via %r is not declared", op.id, op.atomic_via
+                "node %s: observe target %r is not declared", decl.id, decl.observe.to
             )
             return Err(StrataError.UnknownReference)
-        if not op.modifies_err and op.atomic_via != op.on:
-            if op.atomic_via not in coordinator_ids:
-                _log.error(
-                    "operation %s: cross-store refusal -- atomic via %r is "
-                    "neither the single store %r holding every Ok-frame target "
-                    "nor a declared coordinator; distributed atomicity by "
-                    "wishful thinking is a 'not possible' diagnostic, never a "
-                    "silent acceptance",
-                    op.id,
-                    op.atomic_via,
-                    op.on,
-                )
-                return Err(StrataError.CrossStoreAtomicity)
+    if decl.errors_total and decl.observe is None:
+        _log.warning("node %s: errors_total without observe", decl.id)
     return Ok(None)
 
 
@@ -575,36 +722,55 @@ def _validate_observability(module: Module) -> Result[None, StrataError]:
     """
     known = _known_node_ids(module)
     for decl in module.nodes:
-        if (
-            decl.panics_contained_by is not None
-            and decl.panics_contained_by not in known
-        ):
+        checked = _validate_node_observability(decl, known)
+        if checked.is_err:
+            return checked
+    return Ok(None)
+
+
+def _validate_node_krb_delegation(decl: NodeDecl) -> Result[None, StrataError]:
+    """`delegation` kind/target checks; see `_validate_node_krb`."""
+    if decl.krb_delegation is not None:
+        try:
+            KrbDelegationKind(decl.krb_delegation)
+        except ValueError:
             _log.error(
-                "node %s: panics_contained_by %r is not declared",
+                "node %s: delegation kind %r is not in the fixed vocabulary %s",
                 decl.id,
-                decl.panics_contained_by,
+                decl.krb_delegation,
+                [k.value for k in KrbDelegationKind],
+            )
+            return Err(StrataError.UnknownLogClass)
+    if decl.krb_delegation_targets and decl.krb_delegation != "constrained":
+        _log.error(
+            "node %s: delegation target(s) declared but delegation kind "
+            "is %r, not 'constrained'",
+            decl.id,
+            decl.krb_delegation,
+        )
+        return Err(StrataError.UnknownReference)
+    return Ok(None)
+
+
+def _validate_node_krb(decl: NodeDecl, known: set[str]) -> Result[None, StrataError]:
+    """One node's std.krb checks; see `_validate_krb`."""
+    if decl.krb_spns and decl.runs_as is None:
+        _log.error(
+            "node %s: declares spn(s) %s but no runs_as service account "
+            "to bind them to",
+            decl.id,
+            decl.krb_spns,
+        )
+        return Err(StrataError.MalformedKrb)
+    delegation_ok = _validate_node_krb_delegation(decl)
+    if delegation_ok.is_err:
+        return delegation_ok
+    for trust in decl.krb_trusts:
+        if trust.target not in known:
+            _log.error(
+                "node %s: trusts target %r is not declared", decl.id, trust.target
             )
             return Err(StrataError.UnknownReference)
-        if decl.observe is not None:
-            for log_class in decl.observe.log:
-                if log_class not in _OBSERVE_LOG_CLASSES:
-                    _log.error(
-                        "node %s: observe log class %r is not in the fixed "
-                        "vocabulary %s",
-                        decl.id,
-                        log_class,
-                        sorted(_OBSERVE_LOG_CLASSES),
-                    )
-                    return Err(StrataError.UnknownLogClass)
-            if decl.observe.to not in known:
-                _log.error(
-                    "node %s: observe target %r is not declared",
-                    decl.id,
-                    decl.observe.to,
-                )
-                return Err(StrataError.UnknownReference)
-        if decl.errors_total and decl.observe is None:
-            _log.warning("node %s: errors_total without observe", decl.id)
     return Ok(None)
 
 
@@ -625,42 +791,40 @@ def _validate_krb(module: Module) -> Result[None, StrataError]:
     """
     known = _known_node_ids(module)
     for decl in module.nodes:
-        if decl.krb_spns and decl.runs_as is None:
-            _log.error(
-                "node %s: declares spn(s) %s but no runs_as service account "
-                "to bind them to",
-                decl.id,
-                decl.krb_spns,
-            )
-            return Err(StrataError.MalformedKrb)
-        if decl.krb_delegation is not None:
-            try:
-                KrbDelegationKind(decl.krb_delegation)
-            except ValueError:
-                _log.error(
-                    "node %s: delegation kind %r is not in the fixed vocabulary %s",
-                    decl.id,
-                    decl.krb_delegation,
-                    [k.value for k in KrbDelegationKind],
-                )
-                return Err(StrataError.UnknownLogClass)
-        if decl.krb_delegation_targets and decl.krb_delegation != "constrained":
-            _log.error(
-                "node %s: delegation target(s) declared but delegation kind "
-                "is %r, not 'constrained'",
-                decl.id,
-                decl.krb_delegation,
-            )
-            return Err(StrataError.UnknownReference)
-        for trust in decl.krb_trusts:
-            if trust.target not in known:
-                _log.error(
-                    "node %s: trusts target %r is not declared",
-                    decl.id,
-                    trust.target,
-                )
-                return Err(StrataError.UnknownReference)
+        checked = _validate_node_krb(decl, known)
+        if checked.is_err:
+            return checked
     return Ok(None)
+
+
+def _boundary_phase_flows_for(boundary: BoundaryDecl, src: str) -> list[Flow]:
+    """This boundary's `effect`/`record` flows, given its underlying flow's dst."""
+    flows: list[Flow] = []
+    phases = boundary.phases
+    assert phases is not None
+    if phases.effect is not None:
+        for target in phases.effect.frame:
+            base = _frame_target_base(target)
+            flows.append(
+                Flow(
+                    id=f"{boundary.id}__effect_{base}",
+                    src=src,
+                    dst=base,
+                    condition=FlowCondition(outcome=Outcome.OK),
+                    attrs=("effect",),
+                )
+            )
+    if phases.record is not None:
+        flows.append(
+            Flow(
+                id=f"{boundary.id}__audit",
+                src=src,
+                dst=phases.record.audit_to,
+                label="Internal",
+                attrs=("audit",),
+            )
+        )
+    return flows
 
 
 def _elaborate_boundary_phase_flows(module: Module) -> tuple[Flow, ...]:
@@ -677,36 +841,14 @@ def _elaborate_boundary_phase_flows(module: Module) -> tuple[Flow, ...]:
     flows: list[Flow] = []
     base_flow_dst = {f.id: f.dst for f in module.flows}
     for boundary in module.boundaries:
-        phases = boundary.phases
-        if phases is None:
+        if boundary.phases is None:
             continue
         src = base_flow_dst.get(boundary.flow_id)
         if (
             src is None
         ):  # pragma: no cover -- `_validate_references` already fails closed
             continue
-        if phases.effect is not None:
-            for target in phases.effect.frame:
-                base = _frame_target_base(target)
-                flows.append(
-                    Flow(
-                        id=f"{boundary.id}__effect_{base}",
-                        src=src,
-                        dst=base,
-                        condition=FlowCondition(outcome=Outcome.OK),
-                        attrs=("effect",),
-                    )
-                )
-        if phases.record is not None:
-            flows.append(
-                Flow(
-                    id=f"{boundary.id}__audit",
-                    src=src,
-                    dst=phases.record.audit_to,
-                    label="Internal",
-                    attrs=("audit",),
-                )
-            )
+        flows.extend(_boundary_phase_flows_for(boundary, src))
     return tuple(flows)
 
 
@@ -757,6 +899,44 @@ def _rewire_endpoint(value: str, target: str, bind_to: str) -> str:
     return bind_to if value == target else value
 
 
+def _rewrite_flow_claim_for_refine(
+    claim: Claim, body: NoFlow | Reach, refine: RefineDecl
+) -> Claim:
+    """Rewrite a `NoFlow`/`Reach` claim's src/dst; see `_rewrite_claim_for_refine`."""
+    if body.src != refine.target and body.dst != refine.target:
+        return claim
+    new_body = type(body)(
+        src=_rewire_endpoint(body.src, refine.target, refine.bind_to),
+        dst=_rewire_endpoint(body.dst, refine.target, refine.bind_to),
+    )
+    _log.info(
+        "refine %s: rewriting claim %s endpoint(s) %s -> %s to bind_to %s",
+        refine.target,
+        claim.id,
+        body.src,
+        body.dst,
+        refine.bind_to,
+    )
+    return claim.model_copy(update={"body": new_body})
+
+
+def _rewrite_bound_claim_for_refine(
+    claim: Claim, body: BoundClaim, refine: RefineDecl
+) -> Claim:
+    """Rewrite a `BoundClaim`'s target; see `_rewrite_claim_for_refine`."""
+    if body.target != refine.target:
+        return claim
+    _log.info(
+        "refine %s: rewriting claim %s target to bind_to %s",
+        refine.target,
+        claim.id,
+        refine.bind_to,
+    )
+    return claim.model_copy(
+        update={"body": body.model_copy(update={"target": refine.bind_to})}
+    )
+
+
 def _rewrite_claim_for_refine(claim: Claim, refine: RefineDecl) -> Claim:
     """Rewrite one claim's endpoints/target from a refine's abstraction id to `bind_to`.
 
@@ -768,31 +948,134 @@ def _rewrite_claim_for_refine(claim: Claim, refine: RefineDecl) -> Claim:
     """
     body = claim.body
     if isinstance(body, NoFlow | Reach):
-        if body.src == refine.target or body.dst == refine.target:
-            new_body = type(body)(
-                src=_rewire_endpoint(body.src, refine.target, refine.bind_to),
-                dst=_rewire_endpoint(body.dst, refine.target, refine.bind_to),
-            )
-            _log.info(
-                "refine %s: rewriting claim %s endpoint(s) %s -> %s to bind_to %s",
+        return _rewrite_flow_claim_for_refine(claim, body, refine)
+    if isinstance(body, BoundClaim):
+        return _rewrite_bound_claim_for_refine(claim, body, refine)
+    return claim
+
+
+def _check_refine_no_external_surface(
+    refine: RefineDecl, inner_flows: list[Flow], inner_ids: set[str]
+) -> Result[None, StrataError]:
+    """Faithfulness check 1: no inner flow endpoint escapes the refined assembly."""
+    for flow in inner_flows:
+        if flow.src not in inner_ids or flow.dst not in inner_ids:
+            _log.error(
+                "refine %r: inner flow %r (%s -> %s) touches an id outside the "
+                "refined assembly (new external surface)",
                 refine.target,
-                claim.id,
-                body.src,
-                body.dst,
+                flow.id,
+                flow.src,
+                flow.dst,
+            )
+            return Err(StrataError.RefinementViolation)
+    return Ok(None)
+
+
+def _check_refine_no_trust_laundering(
+    refine: RefineDecl, target: Node, inner_nodes: list[Node]
+) -> Result[None, StrataError]:
+    """Faithfulness check 2: no inner node sits below the abstraction's trust."""
+    for inner in inner_nodes:
+        leq = TRUST.leq(target.trust, inner.trust)
+        if leq.is_err:
+            return Err(leq.danger_err)
+        if not leq.danger_ok:
+            _log.error(
+                "refine %r: inner node %r trust %r is below abstraction trust "
+                "%r (trust laundering)",
+                refine.target,
+                inner.id,
+                inner.trust,
+                target.trust,
+            )
+            return Err(StrataError.RefinementViolation)
+    return Ok(None)
+
+
+def _rewire_flows_for_refine(refine: RefineDecl, flows: list[Flow]) -> None:
+    """Rewire every flow endpoint naming `refine.target` to `bind_to`, in place."""
+    for i, flow in enumerate(flows):
+        if flow.src == refine.target or flow.dst == refine.target:
+            new_src = _rewire_endpoint(flow.src, refine.target, refine.bind_to)
+            new_dst = _rewire_endpoint(flow.dst, refine.target, refine.bind_to)
+            _log.info(
+                "refine %s: rewiring flow %s %s -> %s to bind_to %s",
+                refine.target,
+                flow.id,
+                flow.src,
+                flow.dst,
                 refine.bind_to,
             )
-            return claim.model_copy(update={"body": new_body})
-    elif isinstance(body, BoundClaim) and body.target == refine.target:
-        _log.info(
-            "refine %s: rewriting claim %s target to bind_to %s",
+            flows[i] = flow.model_copy(update={"src": new_src, "dst": new_dst})
+
+
+def _refine_target_node(
+    refine: RefineDecl, nodes: dict[str, Node]
+) -> Result[Node, StrataError]:
+    """The refine's abstract target node, or a `RefinementViolation` error."""
+    target = nodes.get(refine.target)
+    if target is None:
+        _log.error("refine target %r is not declared in the module", refine.target)
+        return Err(StrataError.RefinementViolation)
+    if _ABSTRACT_ATTR not in target.attrs:
+        _log.error("refine target %r is not declared abstract", refine.target)
+        return Err(StrataError.RefinementViolation)
+    return Ok(target)
+
+
+def _commit_refine(
+    refine: RefineDecl,
+    inner_nodes: list[Node],
+    inner_flows: list[Flow],
+    nodes: dict[str, Node],
+    flows: list[Flow],
+    claims: list[Claim],
+) -> None:
+    """Splice inner nodes/flows into `nodes`/`flows` and rewire outer flows/claims."""
+    del nodes[refine.target]
+    for inner in inner_nodes:
+        nodes[inner.id] = inner
+    flows.extend(inner_flows)
+
+    _rewire_flows_for_refine(refine, flows)
+
+    for i, claim in enumerate(claims):
+        claims[i] = _rewrite_claim_for_refine(claim, refine)
+
+
+def _check_refine_faithfulness(
+    refine: RefineDecl,
+    target: Node,
+    inner_nodes: list[Node],
+    inner_flows: list[Flow],
+    inner_ids: set[str],
+) -> Result[None, StrataError]:
+    """Faithfulness checks 1 and 2 (external surface, trust laundering), in order.
+
+    Faithfulness check 3, budget distribution (parent bounds must cover the
+    concrete paths), is DEFERRED to phase 2 -- see docs/strata/surface.md
+    #v0-semantics. No check is performed here for it.
+    """
+    surface_ok = _check_refine_no_external_surface(refine, inner_flows, inner_ids)
+    if surface_ok.is_err:
+        return surface_ok
+    return _check_refine_no_trust_laundering(refine, target, inner_nodes)
+
+
+def _check_refine_bind_to(
+    refine: RefineDecl, inner_ids: set[str]
+) -> Result[None, StrataError]:
+    """`bind_to` must name one of the refine's own inner node ids."""
+    if refine.bind_to not in inner_ids:
+        _log.error(
+            "refine %r: bind_to %r is not one of the inner node ids %s",
             refine.target,
-            claim.id,
             refine.bind_to,
+            sorted(inner_ids),
         )
-        return claim.model_copy(
-            update={"body": body.model_copy(update={"target": refine.bind_to})}
-        )
-    return claim
+        return Err(StrataError.RefinementViolation)
+    return Ok(None)
 
 
 def _apply_refine(
@@ -811,85 +1094,62 @@ def _apply_refine(
     flow and claim endpoint naming the abstraction is rewired to `bind_to`
     so the flattened model has no dangling reference to the removed id.
     """
-    target = nodes.get(refine.target)
-    if target is None:
-        _log.error("refine target %r is not declared in the module", refine.target)
-        return Err(StrataError.RefinementViolation)
-    if _ABSTRACT_ATTR not in target.attrs:
-        _log.error("refine target %r is not declared abstract", refine.target)
-        return Err(StrataError.RefinementViolation)
+    resolved = _refine_target_node(refine, nodes)
+    if resolved.is_err:
+        return Err(resolved.danger_err)
+    target = resolved.danger_ok
 
     inner_nodes = [_elaborate_node(n) for n in refine.nodes]
     inner_flows = [_elaborate_flow(f) for f in refine.flows]
     inner_ids = {n.id for n in inner_nodes}
 
-    # Faithfulness check 1: no new external surface -- every inner flow's
-    # endpoints must both stay inside the refined assembly.
-    for flow in inner_flows:
-        if flow.src not in inner_ids or flow.dst not in inner_ids:
-            _log.error(
-                "refine %r: inner flow %r (%s -> %s) touches an id outside the "
-                "refined assembly (new external surface)",
-                refine.target,
-                flow.id,
-                flow.src,
-                flow.dst,
-            )
-            return Err(StrataError.RefinementViolation)
+    checked = _check_refine_preconditions(
+        refine, target, inner_nodes, inner_flows, inner_ids
+    )
+    if checked.is_err:
+        return checked
 
-    # Faithfulness check 2: no trust laundering -- every inner node must sit
-    # at or above the abstraction's declared trust in the trust lattice.
-    for inner in inner_nodes:
-        leq = TRUST.leq(target.trust, inner.trust)
-        if leq.is_err:
-            return Err(leq.danger_err)
-        if not leq.danger_ok:
-            _log.error(
-                "refine %r: inner node %r trust %r is below abstraction trust "
-                "%r (trust laundering)",
-                refine.target,
-                inner.id,
-                inner.trust,
-                target.trust,
-            )
-            return Err(StrataError.RefinementViolation)
-
-    # Faithfulness check 3, budget distribution (parent bounds must cover
-    # the concrete paths), is DEFERRED to phase 2 -- see
-    # docs/strata/surface.md#v0-semantics. No check is performed here.
-
-    if refine.bind_to not in inner_ids:
-        _log.error(
-            "refine %r: bind_to %r is not one of the inner node ids %s",
-            refine.target,
-            refine.bind_to,
-            sorted(inner_ids),
-        )
-        return Err(StrataError.RefinementViolation)
-
-    del nodes[refine.target]
-    for inner in inner_nodes:
-        nodes[inner.id] = inner
-    flows.extend(inner_flows)
-
-    for i, flow in enumerate(flows):
-        if flow.src == refine.target or flow.dst == refine.target:
-            new_src = _rewire_endpoint(flow.src, refine.target, refine.bind_to)
-            new_dst = _rewire_endpoint(flow.dst, refine.target, refine.bind_to)
-            _log.info(
-                "refine %s: rewiring flow %s %s -> %s to bind_to %s",
-                refine.target,
-                flow.id,
-                flow.src,
-                flow.dst,
-                refine.bind_to,
-            )
-            flows[i] = flow.model_copy(update={"src": new_src, "dst": new_dst})
-
-    for i, claim in enumerate(claims):
-        claims[i] = _rewrite_claim_for_refine(claim, refine)
-
+    _commit_refine(refine, inner_nodes, inner_flows, nodes, flows, claims)
     return Ok(None)
+
+
+def _check_refine_preconditions(
+    refine: RefineDecl,
+    target: Node,
+    inner_nodes: list[Node],
+    inner_flows: list[Flow],
+    inner_ids: set[str],
+) -> Result[None, StrataError]:
+    """Faithfulness (1, 2) then `bind_to` checks, in the order `_apply_refine` needs."""
+    faithful = _check_refine_faithfulness(
+        refine, target, inner_nodes, inner_flows, inner_ids
+    )
+    if faithful.is_err:
+        return faithful
+    return _check_refine_bind_to(refine, inner_ids)
+
+
+def _apply_all_refines(
+    module: Module,
+    nodes: dict[str, Node],
+    flows: list[Flow],
+    claims: list[Claim],
+) -> Result[None, StrataError]:
+    """Apply every `refine` block in declaration order, in place; first-error-wins."""
+    for refine in module.refines:
+        applied = _apply_refine(refine, nodes, flows, claims)
+        if applied.is_err:
+            return Err(applied.danger_err)
+    return Ok(None)
+
+
+def _log_unrefined_frontier(nodes: dict[str, Node]) -> None:
+    """WARNING per still-abstract node with no refine block (planning signal)."""
+    for node in nodes.values():
+        if _ABSTRACT_ATTR in node.attrs:
+            _log.warning(
+                "unrefined frontier: node %r is abstract with no refine block", node.id
+            )
 
 
 def _elaborate_refines(
@@ -908,16 +1168,11 @@ def _elaborate_refines(
     flows: list[Flow] = list(model.flows)
     claims: list[Claim] = list(model.claims)
 
-    for refine in module.refines:
-        applied = _apply_refine(refine, nodes, flows, claims)
-        if applied.is_err:
-            return Err(applied.danger_err)
+    applied = _apply_all_refines(module, nodes, flows, claims)
+    if applied.is_err:
+        return Err(applied.danger_err)
 
-    for node in nodes.values():
-        if _ABSTRACT_ATTR in node.attrs:
-            _log.warning(
-                "unrefined frontier: node %r is abstract with no refine block", node.id
-            )
+    _log_unrefined_frontier(nodes)
 
     return Ok(
         model.model_copy(
@@ -928,6 +1183,139 @@ def _elaborate_refines(
             }
         )
     )
+
+
+def _run_elaborate_validators(module: Module) -> Result[None, StrataError]:
+    """Run every cross-declaration validator in the fixed order `elaborate` requires.
+
+    First-error-wins: the exact same order as the inline sequence this
+    replaces (duplicates, waivers, references, boundary phases, operations,
+    observability, krb, scenarios) -- that order is what determines which
+    error surfaces first on a module with more than one fault.
+    """
+    for validator in (
+        _validate_no_duplicates,
+        _validate_waivers,
+        _validate_references,
+        _validate_boundary_phases,
+        _validate_operations,
+        _validate_observability,
+        _validate_krb,
+        _validate_scenarios,
+    ):
+        checked = validator(module)
+        if checked.is_err:
+            return checked
+    return Ok(None)
+
+
+def _build_base_kernel_model(module: Module) -> KernelModel:
+    """Elaborate every top-level construct into the pre-infra/secrets/refine model."""
+    elaborated_nodes = tuple(_elaborate_node(n) for n in module.nodes)
+    extra_flows = (
+        *_elaborate_boundary_phase_flows(module),
+        *_elaborate_operation_flows(module),
+        *_elaborate_observe_flows(module),
+        # T-0262: std.krb domain trusts join the reachability lattice as
+        # synthesized Flow edges, same "desugar into an existing kernel
+        # primitive" convention the three sources above already use
+        # (charter law 1) -- see `_krb.py::krb_trust_flows` module
+        # docstring for why this happens here and not as a scenario
+        # rewrite.
+        *krb_trust_flows(elaborated_nodes),
+    )
+    return KernelModel(
+        nodes=elaborated_nodes,
+        flows=(*(_elaborate_flow(f) for f in module.flows), *extra_flows),
+        boundaries=tuple(_elaborate_boundary(b) for b in module.boundaries),
+        claims=tuple(_elaborate_claim(c) for c in module.claims),
+        scenarios=tuple(_elaborate_scenario(s) for s in module.scenarios),
+    )
+
+
+def _expand_model_infra(
+    module: Module, model: KernelModel
+) -> Result[KernelModel, StrataError]:
+    """Run `elaborate_infra` and fold its node/flow/boundary expansion into `model`."""
+    infra = elaborate_infra(module, model.nodes, model.flows, model.boundaries)
+    if infra.is_err:
+        return Err(infra.danger_err)
+    expansion = infra.danger_ok
+    for diagnostic in expansion.diagnostics:
+        _log.warning("std.infra diagnostic: %s", diagnostic)
+    return Ok(
+        model.model_copy(
+            update={
+                "nodes": expansion.nodes,
+                "flows": expansion.flows,
+                "boundaries": expansion.boundaries,
+            }
+        )
+    )
+
+
+def _expand_model_secrets(
+    module: Module, model: KernelModel
+) -> Result[KernelModel, StrataError]:
+    """Elaborate `module.secrets`, folding node/flow/claim expansion into `model`."""
+    known_nodes = {n.id: n for n in model.nodes}
+    secrets = _elaborate_secrets(module.secrets, known_nodes)
+    if secrets.is_err:
+        return Err(secrets.danger_err)
+    secret_expansions = secrets.danger_ok
+    if not secret_expansions:
+        return Ok(model)
+    _log.info("elaborated %d secret(s) (T-0136)", len(secret_expansions))
+    return Ok(
+        model.model_copy(
+            update={
+                "nodes": (
+                    *model.nodes,
+                    *(e.node for e in secret_expansions),
+                ),
+                "flows": (
+                    *model.flows,
+                    *(f for e in secret_expansions for f in e.flows),
+                ),
+                "claims": (
+                    *model.claims,
+                    *(c for e in secret_expansions for c in e.claims),
+                ),
+            }
+        )
+    )
+
+
+def _elaborate_expanded_model(
+    module: Module, model: KernelModel
+) -> Result[KernelModel, StrataError]:
+    """Run the infra -> secrets -> refine expansion stages over the base `model`."""
+    infra_expanded = _expand_model_infra(module, model)
+    if infra_expanded.is_err:
+        return Err(infra_expanded.danger_err)
+    model = infra_expanded.danger_ok
+
+    secrets_expanded = _expand_model_secrets(module, model)
+    if secrets_expanded.is_err:
+        return Err(secrets_expanded.danger_err)
+    model = secrets_expanded.danger_ok
+
+    return _elaborate_refines(module, model)
+
+
+def _log_elaborated_module(module: Module, model: KernelModel) -> KernelModel:
+    """INFO-log the elaborated module's shape and return `model` unchanged."""
+    _log.info(
+        "elaborated module %s: %d node(s), %d flow(s), %d boundary(ies), %d claim(s), "
+        "%d refine(s)",
+        module.name,
+        len(model.nodes),
+        len(model.flows),
+        len(model.boundaries),
+        len(model.claims),
+        len(module.refines),
+    )
+    return model
 
 
 # frob:doc docs/strata/surface.md#elaborator
@@ -946,102 +1334,13 @@ def elaborate(module: Module) -> Result[KernelModel, StrataError]:
         return Err(normalized.danger_err)
     module = normalized.danger_ok
 
-    dupes_ok = _validate_no_duplicates(module)
-    if dupes_ok.is_err:
-        return Err(dupes_ok.danger_err)
-    waivers_ok = _validate_waivers(module)
-    if waivers_ok.is_err:
-        return Err(waivers_ok.danger_err)
-    refs_ok = _validate_references(module)
-    if refs_ok.is_err:
-        return Err(refs_ok.danger_err)
-    phases_ok = _validate_boundary_phases(module)
-    if phases_ok.is_err:
-        return Err(phases_ok.danger_err)
-    operations_ok = _validate_operations(module)
-    if operations_ok.is_err:
-        return Err(operations_ok.danger_err)
-    observability_ok = _validate_observability(module)
-    if observability_ok.is_err:
-        return Err(observability_ok.danger_err)
-    krb_ok = _validate_krb(module)
-    if krb_ok.is_err:
-        return Err(krb_ok.danger_err)
-    scenarios_ok = _validate_scenarios(module)
-    if scenarios_ok.is_err:
-        return Err(scenarios_ok.danger_err)
+    validated = _run_elaborate_validators(module)
+    if validated.is_err:
+        return Err(validated.danger_err)
 
-    elaborated_nodes = tuple(_elaborate_node(n) for n in module.nodes)
-    extra_flows = (
-        *_elaborate_boundary_phase_flows(module),
-        *_elaborate_operation_flows(module),
-        *_elaborate_observe_flows(module),
-        # T-0262: std.krb domain trusts join the reachability lattice as
-        # synthesized Flow edges, same "desugar into an existing kernel
-        # primitive" convention the three sources above already use
-        # (charter law 1) -- see `_krb.py::krb_trust_flows` module
-        # docstring for why this happens here and not as a scenario
-        # rewrite.
-        *krb_trust_flows(elaborated_nodes),
-    )
-    model = KernelModel(
-        nodes=elaborated_nodes,
-        flows=(*(_elaborate_flow(f) for f in module.flows), *extra_flows),
-        boundaries=tuple(_elaborate_boundary(b) for b in module.boundaries),
-        claims=tuple(_elaborate_claim(c) for c in module.claims),
-        scenarios=tuple(_elaborate_scenario(s) for s in module.scenarios),
-    )
+    model = _build_base_kernel_model(module)
 
-    infra = elaborate_infra(module, model.nodes, model.flows, model.boundaries)
-    if infra.is_err:
-        return Err(infra.danger_err)
-    expansion = infra.danger_ok
-    for diagnostic in expansion.diagnostics:
-        _log.warning("std.infra diagnostic: %s", diagnostic)
-    model = model.model_copy(
-        update={
-            "nodes": expansion.nodes,
-            "flows": expansion.flows,
-            "boundaries": expansion.boundaries,
-        }
-    )
-
-    known_nodes = {n.id: n for n in model.nodes}
-    secrets = _elaborate_secrets(module.secrets, known_nodes)
-    if secrets.is_err:
-        return Err(secrets.danger_err)
-    secret_expansions = secrets.danger_ok
-    if secret_expansions:
-        _log.info("elaborated %d secret(s) (T-0136)", len(secret_expansions))
-        model = model.model_copy(
-            update={
-                "nodes": (
-                    *model.nodes,
-                    *(e.node for e in secret_expansions),
-                ),
-                "flows": (
-                    *model.flows,
-                    *(f for e in secret_expansions for f in e.flows),
-                ),
-                "claims": (
-                    *model.claims,
-                    *(c for e in secret_expansions for c in e.claims),
-                ),
-            }
-        )
-
-    refined = _elaborate_refines(module, model)
+    refined = _elaborate_expanded_model(module, model)
     if refined.is_err:
         return Err(refined.danger_err)
-    model = refined.danger_ok
-    _log.info(
-        "elaborated module %s: %d node(s), %d flow(s), %d boundary(ies), %d claim(s), "
-        "%d refine(s)",
-        module.name,
-        len(model.nodes),
-        len(model.flows),
-        len(model.boundaries),
-        len(model.claims),
-        len(module.refines),
-    )
-    return Ok(model)
+    return Ok(_log_elaborated_module(module, refined.danger_ok))

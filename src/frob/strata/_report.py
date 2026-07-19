@@ -47,6 +47,44 @@ def _tag(result: ClaimResult, *, color: bool) -> str:
     return paint(padded, code, color)
 
 
+def _claim_lines(ordered: list[ClaimResult], *, color: bool) -> list[str]:
+    """One report line per claim (verdict tag, id, quantifier, detail), plus
+    a witness-path line under any refutation -- the per-claim body of
+    `render_report`."""
+    lines: list[str] = []
+    for result in ordered:
+        tag = _tag(result, color=color)
+        lines.append(
+            f"{tag} {result.claim_id} [{result.quantifier.value}] -- {result.detail}"
+        )
+        if result.verdict is Verdict.REFUTED and result.counterexample:
+            lines.append(f"  path: {' -> '.join(result.counterexample)}")
+    return lines
+
+
+def _summary_lines(results: tuple[ClaimResult, ...]) -> list[str]:
+    """The blank-line-prefixed summary count line for `render_report`."""
+    counts = summarize(results)
+    return [
+        "",
+        f"{len(results)} claim(s): {counts[Verdict.PROVED.value]} proved, "
+        f"{counts[Verdict.REFUTED.value]} refuted, "
+        f"{counts[Verdict.ASSUMED.value]} assumed, "
+        f"{counts[Verdict.EVIDENCED.value]} evidenced",
+    ]
+
+
+def _assumption_ledger_lines(ordered: list[ClaimResult]) -> list[str]:
+    """The optional `## Assumption ledger` section for `render_report`,
+    empty when no claim was ASSUMED."""
+    assumed = [r for r in ordered if r.verdict is Verdict.ASSUMED]
+    if not assumed:
+        return []
+    lines = ["", "## Assumption ledger"]
+    lines.extend(f"  {result.claim_id}: {result.detail}" for result in assumed)
+    return lines
+
+
 # frob:doc docs/strata/kernel.md#verdict-report
 def render_report(results: tuple[ClaimResult, ...], *, color: bool = False) -> str:
     """The deterministic plain-text verdict report for one evaluation run.
@@ -58,30 +96,9 @@ def render_report(results: tuple[ClaimResult, ...], *, color: bool = False) -> s
     (`frob.logging.color`); a caller opts in only for a TTY.
     """
     ordered = _sorted(results)
-    lines: list[str] = []
-    for result in ordered:
-        tag = _tag(result, color=color)
-        lines.append(
-            f"{tag} {result.claim_id} [{result.quantifier.value}] -- {result.detail}"
-        )
-        if result.verdict is Verdict.REFUTED and result.counterexample:
-            lines.append(f"  path: {' -> '.join(result.counterexample)}")
-
-    counts = summarize(results)
-    lines.append("")
-    lines.append(
-        f"{len(results)} claim(s): {counts[Verdict.PROVED.value]} proved, "
-        f"{counts[Verdict.REFUTED.value]} refuted, "
-        f"{counts[Verdict.ASSUMED.value]} assumed, "
-        f"{counts[Verdict.EVIDENCED.value]} evidenced"
-    )
-
-    assumed = [r for r in ordered if r.verdict is Verdict.ASSUMED]
-    if assumed:
-        lines.append("")
-        lines.append("## Assumption ledger")
-        for result in assumed:
-            lines.append(f"  {result.claim_id}: {result.detail}")
+    lines: list[str] = list(_claim_lines(ordered, color=color))
+    lines.extend(_summary_lines(results))
+    lines.extend(_assumption_ledger_lines(ordered))
 
     report = "\n".join(lines)
     _log.debug(

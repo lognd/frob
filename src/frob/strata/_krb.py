@@ -173,40 +173,9 @@ def krb_manifest_for(node: Node) -> KrbManifest | None:
     mirrors `_host.py::host_manifest_for`'s "no attrs, no manifest" contract
     exactly (distinct from an empty-but-present one).
     """
-    realm: str | None = None
-    is_kdc = False
-    spns: list[str] = []
-    delegation: KrbDelegationKind | None = None
-    delegation_targets: list[str] = []
-    trusts: list[KrbTrust] = []
-    declared = False
-    for attr in node.attrs:
-        if attr.startswith(_REALM_PREFIX):
-            realm = attr[len(_REALM_PREFIX) :]
-            declared = True
-        elif attr == _KDC_ATTR:
-            is_kdc = True
-            declared = True
-        elif attr.startswith(_SPN_PREFIX):
-            spns.append(attr[len(_SPN_PREFIX) :])
-            declared = True
-        elif attr.startswith(_DELEGATION_PREFIX):
-            delegation = KrbDelegationKind(attr[len(_DELEGATION_PREFIX) :])
-            declared = True
-        elif attr.startswith(_DELEGATION_TARGET_PREFIX):
-            delegation_targets.append(attr[len(_DELEGATION_TARGET_PREFIX) :])
-            declared = True
-        elif attr.startswith(_TRUST_PREFIX):
-            target, _, rest = attr[len(_TRUST_PREFIX) :].partition(":")
-            direction, _, transitive_s = rest.partition(":")
-            trusts.append(
-                KrbTrust(
-                    target=target,
-                    direction=direction,
-                    transitive=transitive_s == "True",
-                )
-            )
-            declared = True
+    realm, is_kdc, spns, delegation, delegation_targets, trusts, declared = (
+        _parse_krb_node_attrs(node.attrs)
+    )
     if not declared:
         return None
     _log.debug(
@@ -225,6 +194,56 @@ def krb_manifest_for(node: Node) -> KrbManifest | None:
         delegation=delegation,
         delegation_targets=tuple(delegation_targets),
         trusts=tuple(trusts),
+    )
+
+
+def _parse_krb_node_attrs(
+    attrs: tuple[str, ...],
+) -> tuple[
+    str | None,
+    bool,
+    list[str],
+    KrbDelegationKind | None,
+    list[str],
+    list[KrbTrust],
+    bool,
+]:
+    """Parse a node's raw attrs into std.krb manifest fields for `krb_manifest_for`."""
+    realm: str | None = None
+    is_kdc = False
+    spns: list[str] = []
+    delegation: KrbDelegationKind | None = None
+    delegation_targets: list[str] = []
+    trusts: list[KrbTrust] = []
+    declared = False
+    for attr in attrs:
+        if attr.startswith(_REALM_PREFIX):
+            realm = attr[len(_REALM_PREFIX) :]
+            declared = True
+        elif attr == _KDC_ATTR:
+            is_kdc = True
+            declared = True
+        elif attr.startswith(_SPN_PREFIX):
+            spns.append(attr[len(_SPN_PREFIX) :])
+            declared = True
+        elif attr.startswith(_DELEGATION_PREFIX):
+            delegation = KrbDelegationKind(attr[len(_DELEGATION_PREFIX) :])
+            declared = True
+        elif attr.startswith(_DELEGATION_TARGET_PREFIX):
+            delegation_targets.append(attr[len(_DELEGATION_TARGET_PREFIX) :])
+            declared = True
+        elif attr.startswith(_TRUST_PREFIX):
+            trusts.append(_parse_krb_trust_attr(attr))
+            declared = True
+    return realm, is_kdc, spns, delegation, delegation_targets, trusts, declared
+
+
+def _parse_krb_trust_attr(attr: str) -> KrbTrust:
+    """Parse one `krb_trust=<target>:<direction>:<transitive>` attr."""
+    target, _, rest = attr[len(_TRUST_PREFIX) :].partition(":")
+    direction, _, transitive_s = rest.partition(":")
+    return KrbTrust(
+        target=target, direction=direction, transitive=transitive_s == "True"
     )
 
 
@@ -254,31 +273,36 @@ def krb_trust_flows(nodes: tuple[Node, ...]) -> tuple[Flow, ...]:
     known_ids = {n.id for n in nodes}
     flows: list[Flow] = []
     for node in nodes:
-        manifest = krb_manifest_for(node)
-        if manifest is None:
-            continue
-        for trust in manifest.trusts:
-            attrs = (
-                ("krb_trust",) if trust.transitive else ("krb_trust", "krb_no_transit")
-            )
-            flow_id = f"{_TRUST_FLOW_ID_PREFIX}{node.id}:{trust.target}"
-            flows.append(Flow(id=flow_id, src=node.id, dst=trust.target, attrs=attrs))
-            if trust.direction == "two-way" and trust.target in known_ids:
-                # Synthesize the reverse edge too so a single declaration
-                # on ONE side of a two-way trust is enough (docs/strata/
-                # krb.md#domain-trust-lattice) -- no requirement that the
-                # target realm node redeclare the same trust back.
-                reverse_id = f"{_TRUST_FLOW_ID_PREFIX}{trust.target}:{node.id}"
-                flows.append(
-                    Flow(
-                        id=reverse_id,
-                        src=trust.target,
-                        dst=node.id,
-                        attrs=attrs,
-                    )
-                )
+        flows.extend(_krb_trust_flows_for_node(node, known_ids))
     _log.debug("krb_trust_flows: synthesized %d trust edge(s)", len(flows))
     return tuple(flows)
+
+
+def _krb_trust_flows_for_node(node: Node, known_ids: set[str]) -> list[Flow]:
+    """Synthesize the trust-edge `Flow`(s) for one node's declared `trusts`."""
+    manifest = krb_manifest_for(node)
+    if manifest is None:
+        return []
+    flows: list[Flow] = []
+    for trust in manifest.trusts:
+        attrs = ("krb_trust",) if trust.transitive else ("krb_trust", "krb_no_transit")
+        flow_id = f"{_TRUST_FLOW_ID_PREFIX}{node.id}:{trust.target}"
+        flows.append(Flow(id=flow_id, src=node.id, dst=trust.target, attrs=attrs))
+        if trust.direction == "two-way" and trust.target in known_ids:
+            # Synthesize the reverse edge too so a single declaration
+            # on ONE side of a two-way trust is enough (docs/strata/
+            # krb.md#domain-trust-lattice) -- no requirement that the
+            # target realm node redeclare the same trust back.
+            reverse_id = f"{_TRUST_FLOW_ID_PREFIX}{trust.target}:{node.id}"
+            flows.append(
+                Flow(
+                    id=reverse_id,
+                    src=trust.target,
+                    dst=node.id,
+                    attrs=attrs,
+                )
+            )
+    return flows
 
 
 # frob:doc docs/strata/krb.md#surface-grammar

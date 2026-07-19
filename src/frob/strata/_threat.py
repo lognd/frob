@@ -972,51 +972,56 @@ def _claim_holds(model: KernelModel, claim: Claim) -> bool:
     return False
 
 
+# Whether the boundaries carrying `entry`'s EXACT required mitigation
+# (`_matching_boundary_ids`) are, by themselves, sufficient to make
+# `claim`'s `NoFlow` hold -- i.e. the catalog-correct mitigation is a
+# genuine chokepoint, not merely one boundary among several (of possibly
+# unrelated kinds) that happen to also block a path (docs/strata/
+# threat.md#phasing item C, review round 2). This comment (not the
+# docstring) carries the explanation so frob-arch's long-function line
+# count reflects the code, not the essay (same pattern as gates/
+# __init__.py's `_match_waiver`).
+#
+# Vacuous-path short-circuit FIRST: if `claim` already holds with EVERY
+# boundary removed (`_restricted_to_boundaries(model, frozenset(),
+# claim)`), no path from the claim's source to its sink exists in the
+# closure AT ALL -- the `NoFlow` is proved by absence of a flow, not by
+# any boundary, so there is nothing for a mitigation to be a chokepoint
+# ON. Requiring a matching boundary in this case would reject models
+# that were already correctly PROVED before phase C's tightening
+# (`_check_one_discharge`'s pre-T-0113 fixtures declare no flows/
+# boundaries at all) -- a real regression, not the reviewer-flagged gap.
+#
+# Otherwise, re-evaluates the SAME claim (`_claim_holds`, so the SAME
+# `_eval_noflow`/`reachable` closure walk `_discharges_as_chokepoint`'s
+# round-1 shape check already leans on) over a model copy with every
+# OTHER boundary removed (`_restricted_to_boundaries`) -- no new closure
+# primitive, no new `strata_core` call.
+#
+# Quantifier: this is "the matching boundaries alone cut the closure the
+# SAME `NoFlow` walk already computes" -- sound (a PROVED result here
+# means the matching boundaries really do interpose on every path
+# `reachable` traverses, since removing MORE boundaries can only ADD
+# reachability, never remove it) but not maximal: a path blocked ONLY by
+# a non-matching boundary (with no matching boundary anywhere on it) is
+# invisible to per-path attribution, since `FactBase.reachable` reports
+# reachability, not which specific boundary blocked which specific path
+# (docs/strata/kernel.md#fact-base). If EVERY path happens to carry a
+# matching boundary, this proves True exactly; if only SOME paths do
+# while others are saved solely by a non-matching boundary, this proves
+# False (the restricted-model NoFlow is REFUTED, since removing the
+# non-matching boundary that had been covering that path reopens it) --
+# which is the conservative, deny-by-default direction (charter law 2).
+# No unsound acceptance is possible; the disclosed gap is precision, not
+# soundness: a model needing a per-path (rather than per-model)
+# mitigation-kind proof is out of v0's scope, noted here and in
+# threat.md rather than silently assumed away.
 def _mitigation_is_chokepoint(
     model: KernelModel, entry: WeaknessEntry, claim: Claim
 ) -> bool:
-    """Whether the boundaries carrying `entry`'s EXACT required mitigation
-    (`_matching_boundary_ids`) are, by themselves, sufficient to make
-    `claim`'s `NoFlow` hold -- i.e. the catalog-correct mitigation is a
-    genuine chokepoint, not merely one boundary among several (of possibly
-    unrelated kinds) that happen to also block a path (docs/strata/
-    threat.md#phasing item C, review round 2).
-
-    Vacuous-path short-circuit FIRST: if `claim` already holds with EVERY
-    boundary removed (`_restricted_to_boundaries(model, frozenset(),
-    claim)`), no path from the claim's source to its sink exists in the
-    closure AT ALL -- the `NoFlow` is proved by absence of a flow, not by
-    any boundary, so there is nothing for a mitigation to be a chokepoint
-    ON. Requiring a matching boundary in this case would reject models
-    that were already correctly PROVED before phase C's tightening
-    (`_check_one_discharge`'s pre-T-0113 fixtures declare no flows/
-    boundaries at all) -- a real regression, not the reviewer-flagged gap.
-
-    Otherwise, re-evaluates the SAME claim (`_claim_holds`, so the SAME
-    `_eval_noflow`/`reachable` closure walk `_discharges_as_chokepoint`'s
-    round-1 shape check already leans on) over a model copy with every
-    OTHER boundary removed (`_restricted_to_boundaries`) -- no new closure
-    primitive, no new `strata_core` call.
-
-    Quantifier: this is "the matching boundaries alone cut the closure the
-    SAME `NoFlow` walk already computes" -- sound (a PROVED result here
-    means the matching boundaries really do interpose on every path
-    `reachable` traverses, since removing MORE boundaries can only ADD
-    reachability, never remove it) but not maximal: a path blocked ONLY by
-    a non-matching boundary (with no matching boundary anywhere on it) is
-    invisible to per-path attribution, since `FactBase.reachable` reports
-    reachability, not which specific boundary blocked which specific path
-    (docs/strata/kernel.md#fact-base). If EVERY path happens to carry a
-    matching boundary, this proves True exactly; if only SOME paths do
-    while others are saved solely by a non-matching boundary, this proves
-    False (the restricted-model NoFlow is REFUTED, since removing the
-    non-matching boundary that had been covering that path reopens it) --
-    which is the conservative, deny-by-default direction (charter law 2).
-    No unsound acceptance is possible; the disclosed gap is precision, not
-    soundness: a model needing a per-path (rather than per-model)
-    mitigation-kind proof is out of v0's scope, noted here and in
-    threat.md rather than silently assumed away.
-    """
+    """Whether the catalog-correct mitigation for `entry` is a genuine
+    chokepoint for `claim`, not merely one boundary among several that
+    happens to also block a path -- see the comment above this def."""
     if _claim_holds(_restricted_to_boundaries(model, frozenset(), claim), claim):
         return True
     matching = _matching_boundary_ids(model, entry)
@@ -1025,46 +1030,18 @@ def _mitigation_is_chokepoint(
     return _claim_holds(_restricted_to_boundaries(model, matching, claim), claim)
 
 
-def _check_one_discharge(
+def _check_discharge_shape_and_rung(
     entry: WeaknessEntry,
     node_id: str,
-    claims_by_id: dict[str, Claim],
-    results_by_id: dict[str, ClaimResult],
+    claim: Claim,
+    claim_id: str,
     nodes_by_id: dict[str, Node],
-    model: KernelModel,
 ) -> ThreatViolation | None:
-    """One fired obligation's discharge check: present, shaped as a proven
-    mitigation chokepoint of the CORRECT kind, not REFUTED, at or above the
-    catalog's required rung, and -- if assumed -- owned with a review date
-    (docs/strata/threat.md#the-exhaustiveness-proof-the-point, item 3;
-    chokepoint shape + mitigation-kind check added phase C, docs/strata/
-    threat.md#phasing item C).
-
-    The mitigation-kind check (`_mitigation_is_chokepoint`) is skipped for
-    an `assumed` claim, exactly like the REFUTED check above it: an assumed
-    claim is a human-owned TCB entry never run through the closure at all
-    (`_claims.py::evaluate_claims` short-circuits assumed claims to the
-    `ASSUMED` verdict before touching `_eval_noflow`), so there is no
-    closure-derived proof to inspect for boundary kind -- the owner/review
-    gate a few lines up is the only accountability an assume gets, same as
-    every other claim form in this module.
-
-    It is ALSO skipped when `node_id` names a `managed` node (T-0172,
-    `_code_binding.py::is_managed`): a managed node is external, pure-config
-    infrastructure declared to have no scannable code, so there is no
-    tier-2 code-modeled boundary for `_mitigation_is_chokepoint` to inspect
-    either -- "no tier-2 conformance; obligations shift to config evidence
-    or assumes" (docs/strata/surface.md#key-construct-semantics). The claim
-    still has to exist, prove a chokepoint shape (`_discharges_as_chokepoint`
-    above), and clear the catalog rung -- only the boundary-KIND proof is
-    exempted, same as an assume gets.
-    """
-    claim_id = _discharge_claim_id(entry.id, node_id)
-    claim = claims_by_id.get(claim_id)
-    if claim is None:
-        return _discharge_violation(
-            entry, node_id, f"no claim {claim_id!r} discharges this obligation"
-        )
+    """First two `_check_one_discharge` gates: `claim` must prove a
+    mitigation-chokepoint SHAPE (`_discharges_as_chokepoint`) and must be
+    evaluated at or above the catalog's required rung -- split out of
+    `_check_one_discharge` so its long-function line count reflects the
+    per-gate logic, not one 40-line if-chain (frob-arch long-function)."""
     if not _discharges_as_chokepoint(nodes_by_id, node_id, claim):
         return _discharge_violation(
             entry,
@@ -1079,6 +1056,21 @@ def _check_one_discharge(
             f"claim {claim_id!r} required_rung {claim.required_rung.value} "
             f"below catalog rung {entry.rung.value}",
         )
+    return None
+
+
+def _check_discharge_assumed_and_refuted(
+    entry: WeaknessEntry,
+    node_id: str,
+    claim: Claim,
+    claim_id: str,
+    results_by_id: dict[str, ClaimResult],
+) -> ThreatViolation | None:
+    """Middle two `_check_one_discharge` gates: an `assumed` claim must
+    carry an owner/review date, and a claim with a resolved verdict must
+    not be REFUTED -- see `_check_one_discharge`'s comment for why the
+    mitigation-kind check (which follows this pair) skips assumed claims
+    entirely rather than living in this same helper."""
     if claim.assumed and (claim.owner is None or claim.review is None):
         return _discharge_violation(
             entry,
@@ -1090,6 +1082,39 @@ def _check_one_discharge(
         return _discharge_violation(
             entry, node_id, f"claim {claim_id!r} is REFUTED: {result.detail}"
         )
+    return None
+
+
+# The mitigation-kind check (`_mitigation_is_chokepoint`) is skipped for
+# an `assumed` claim, exactly like the REFUTED check above it: an assumed
+# claim is a human-owned TCB entry never run through the closure at all
+# (`_claims.py::evaluate_claims` short-circuits assumed claims to the
+# `ASSUMED` verdict before touching `_eval_noflow`), so there is no
+# closure-derived proof to inspect for boundary kind -- the owner/review
+# gate a few lines up is the only accountability an assume gets, same as
+# every other claim form in this module.
+#
+# It is ALSO skipped when `node_id` names a `managed` node (T-0172,
+# `_code_binding.py::is_managed`): a managed node is external, pure-config
+# infrastructure declared to have no scannable code, so there is no
+# tier-2 code-modeled boundary for `_mitigation_is_chokepoint` to inspect
+# either -- "no tier-2 conformance; obligations shift to config evidence
+# or assumes" (docs/strata/surface.md#key-construct-semantics). The claim
+# still has to exist, prove a chokepoint shape (`_discharges_as_chokepoint`
+# above), and clear the catalog rung -- only the boundary-KIND proof is
+# exempted, same as an assume gets.
+def _check_discharge_mitigation_kind(
+    entry: WeaknessEntry,
+    node_id: str,
+    claim: Claim,
+    claim_id: str,
+    nodes_by_id: dict[str, Node],
+    model: KernelModel,
+) -> ThreatViolation | None:
+    """Last `_check_one_discharge` gate: for a non-assumed claim on a
+    non-managed node, the proven chokepoint must be of the catalog's
+    required mitigation KIND (`_mitigation_is_chokepoint`) -- see the
+    comment above this def for why assumed/managed claims skip it."""
     node = nodes_by_id.get(node_id)
     node_is_managed = node is not None and is_managed(node)
     if (
@@ -1105,6 +1130,45 @@ def _check_one_discharge(
             f"{entry.mitigation!r} is sufficient alone to block every path",
         )
     return None
+
+
+def _check_one_discharge(
+    entry: WeaknessEntry,
+    node_id: str,
+    claims_by_id: dict[str, Claim],
+    results_by_id: dict[str, ClaimResult],
+    nodes_by_id: dict[str, Node],
+    model: KernelModel,
+) -> ThreatViolation | None:
+    """One fired obligation's discharge check: present, shaped as a proven
+    mitigation chokepoint of the CORRECT kind, not REFUTED, at or above the
+    catalog's required rung, and -- if assumed -- owned with a review date
+    (docs/strata/threat.md#the-exhaustiveness-proof-the-point, item 3;
+    chokepoint shape + mitigation-kind check added phase C, docs/strata/
+    threat.md#phasing item C). The four gates run in this exact order via
+    `_check_discharge_shape_and_rung`, `_check_discharge_assumed_and_refuted`,
+    and `_check_discharge_mitigation_kind` -- see each helper's docstring/
+    comment for what it checks and why.
+    """
+    claim_id = _discharge_claim_id(entry.id, node_id)
+    claim = claims_by_id.get(claim_id)
+    if claim is None:
+        return _discharge_violation(
+            entry, node_id, f"no claim {claim_id!r} discharges this obligation"
+        )
+    violation = _check_discharge_shape_and_rung(
+        entry, node_id, claim, claim_id, nodes_by_id
+    )
+    if violation is not None:
+        return violation
+    violation = _check_discharge_assumed_and_refuted(
+        entry, node_id, claim, claim_id, results_by_id
+    )
+    if violation is not None:
+        return violation
+    return _check_discharge_mitigation_kind(
+        entry, node_id, claim, claim_id, nodes_by_id, model
+    )
 
 
 # frob:doc docs/strata/threat.md#the-exhaustiveness-proof-the-point
@@ -1128,12 +1192,10 @@ def check_discharge_completeness(
         _log.info("threat: THREAT003 no fired obligations (no matching capabilities)")
         return Ok(())
 
-    claims_by_id = {claim.id: claim for claim in model.claims}
-    nodes_by_id = {node.id: node for node in model.nodes}
-    results = evaluate_claims(model)
-    if results.is_err:
-        return Err(results.danger_err)
-    results_by_id = {r.claim_id: r for r in results.danger_ok}
+    indexed = _index_claims_and_results(model)
+    if indexed.is_err:
+        return Err(indexed.danger_err)
+    claims_by_id, nodes_by_id, results_by_id = indexed.danger_ok
 
     violations: list[ThreatViolation] = []
     for node_id, entry in sorted(fired, key=lambda pair: (pair[1].id, pair[0])):
@@ -1143,6 +1205,24 @@ def check_discharge_completeness(
         if violation is not None:
             violations.append(violation)
     return Ok(tuple(violations))
+
+
+def _index_claims_and_results(
+    model: KernelModel,
+) -> Result[
+    tuple[dict[str, Claim], dict[str, Node], dict[str, ClaimResult]], StrataError
+]:
+    """Build the three id-keyed lookups `check_discharge_completeness` needs
+    per fired obligation (claims, nodes, evaluated results) -- split out so
+    that function's line count reflects the per-obligation loop, not the
+    one-time index setup (frob-arch long-function)."""
+    claims_by_id = {claim.id: claim for claim in model.claims}
+    nodes_by_id = {node.id: node for node in model.nodes}
+    results = evaluate_claims(model)
+    if results.is_err:
+        return Err(results.danger_err)
+    results_by_id = {r.claim_id: r for r in results.danger_ok}
+    return Ok((claims_by_id, nodes_by_id, results_by_id))
 
 
 def _undeclared_sink_violation(violation: CapabilityViolation) -> ThreatViolation:
@@ -1227,6 +1307,47 @@ def check_effect_completeness(
     return Ok(undeclared + unclassified)
 
 
+def _run_all_completeness_checks(
+    model: KernelModel,
+    view: str,
+    catalog: tuple[WeaknessEntry, ...],
+    out_of_scope: tuple[OutOfScopeEntry, ...],
+    benign: tuple[BenignCapability, ...],
+    binding: CodeBinding | None,
+    root: Path | None,
+) -> Result[tuple[ThreatViolation, ...], StrataError]:
+    """Run THREAT001+002 (catalog/capability), THREAT003 (discharge), and --
+    when both `binding` and `root` are given -- THREAT004+005 (effect), in
+    that exact order, short-circuiting on the first `Err` -- split out of
+    `evaluate_threats` so its own line count reflects the entrypoint seam,
+    not the four-check sequence (frob-arch long-function)."""
+    catalog_violations = check_catalog_completeness(view, catalog, out_of_scope)
+    if catalog_violations.is_err:
+        return Err(catalog_violations.danger_err)
+    capability_violations = check_capability_completeness(model, catalog, benign)
+    if capability_violations.is_err:
+        return Err(capability_violations.danger_err)
+    discharge_violations = check_discharge_completeness(model, catalog)
+    if discharge_violations.is_err:
+        return Err(discharge_violations.danger_err)
+    effect_violations: tuple[ThreatViolation, ...] = ()
+    if binding is not None and root is not None:
+        effects_result = check_effect_completeness(
+            model, binding, root, catalog, benign
+        )
+        if effects_result.is_err:
+            return Err(effects_result.danger_err)
+        effect_violations = effects_result.danger_ok
+    return Ok(
+        (
+            *catalog_violations.danger_ok,
+            *capability_violations.danger_ok,
+            *discharge_violations.danger_ok,
+            *effect_violations,
+        )
+    )
+
+
 # frob:doc docs/strata/threat.md#the-exhaustiveness-proof-the-point
 # frob:waive TEST005 reason="evaluate_threats 83.3% branch cover, debt T-0160"
 def evaluate_threats(
@@ -1250,39 +1371,34 @@ def evaluate_threats(
     lands -- this function is the seam that follow-up calls into, kept
     deliberately gate-agnostic (no `src/frob/gates` import here).
     """
-    catalog_violations = check_catalog_completeness(view, catalog, out_of_scope)
-    if catalog_violations.is_err:
-        return Err(catalog_violations.danger_err)
-    capability_violations = check_capability_completeness(model, catalog, benign)
-    if capability_violations.is_err:
-        return Err(capability_violations.danger_err)
-    discharge_violations = check_discharge_completeness(model, catalog)
-    if discharge_violations.is_err:
-        return Err(discharge_violations.danger_err)
-    effect_violations: tuple[ThreatViolation, ...] = ()
-    if binding is not None and root is not None:
-        effects_result = check_effect_completeness(
-            model, binding, root, catalog, benign
-        )
-        if effects_result.is_err:
-            return Err(effects_result.danger_err)
-        effect_violations = effects_result.danger_ok
-    all_violations = (
-        *catalog_violations.danger_ok,
-        *capability_violations.danger_ok,
-        *discharge_violations.danger_ok,
-        *effect_violations,
+    all_violations_result = _run_all_completeness_checks(
+        model, view, catalog, out_of_scope, benign, binding, root
     )
-    # T-0217: this is the RAW pre-discharge obligation count across all four
-    # completeness checks (catalog/capability/discharge/effect) -- callers
-    # such as `frob sys plan` only turn THREAT003 violations into obligation
-    # tickets, and `frob sys doc` renders a per-CWE PROVED/ASSUMED matrix
-    # from a DIFFERENT reduction of this same data. At INFO level this line
-    # printed right before a "0 obligation ticket(s)" / "PROVED" summary and
-    # read as contradictory (a nonzero count next to a zero/clean verdict)
-    # even though nothing was wrong -- the two numbers answer different
-    # questions. Demoted to DEBUG so default-verbosity output only shows the
-    # post-discharge verdict; `-v`/`-vv` still surface this detail.
+    if all_violations_result.is_err:
+        return Err(all_violations_result.danger_err)
+    all_violations = all_violations_result.danger_ok
+    _log_pre_discharge_obligation_count(view, catalog, out_of_scope, all_violations)
+    return Ok(ThreatReport(violations=all_violations))
+
+
+# T-0217: this is the RAW pre-discharge obligation count across all four
+# completeness checks (catalog/capability/discharge/effect) -- callers
+# such as `frob sys plan` only turn THREAT003 violations into obligation
+# tickets, and `frob sys doc` renders a per-CWE PROVED/ASSUMED matrix
+# from a DIFFERENT reduction of this same data. At INFO level this line
+# printed right before a "0 obligation ticket(s)" / "PROVED" summary and
+# read as contradictory (a nonzero count next to a zero/clean verdict)
+# even though nothing was wrong -- the two numbers answer different
+# questions. Demoted to DEBUG so default-verbosity output only shows the
+# post-discharge verdict; `-v`/`-vv` still surface this detail.
+def _log_pre_discharge_obligation_count(
+    view: str,
+    catalog: tuple[WeaknessEntry, ...],
+    out_of_scope: tuple[OutOfScopeEntry, ...],
+    all_violations: tuple[ThreatViolation, ...],
+) -> None:
+    """DEBUG-level log of `evaluate_threats`'s raw pre-discharge obligation
+    count -- see the comment above this def for why it is DEBUG, not INFO."""
     _log.debug(
         "threat: obligations evaluated view=%r catalog=%d out_of_scope=%d -> "
         "%d pre-discharge obligation(s) (not all become tickets; see caller's "
@@ -1292,7 +1408,6 @@ def evaluate_threats(
         len(out_of_scope),
         len(all_violations),
     )
-    return Ok(ThreatReport(violations=all_violations))
 
 
 __all__ = [

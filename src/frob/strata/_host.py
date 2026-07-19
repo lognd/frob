@@ -139,6 +139,40 @@ def host_attrs(
     return tuple(attrs)
 
 
+class _ParsedHostAttrs:
+    """Mutable accumulator for `_parse_host_attrs` -- one pass over
+    `node.attrs`, fields filled in the same order the attrs are read."""
+
+    def __init__(self) -> None:
+        self.runs_as: str | None = None
+        self.is_unit = False
+        self.owns: list[HostOwns] = []
+        self.listens: list[int] = []
+        self.declared = False
+
+
+def _parse_host_attrs(node: Node) -> _ParsedHostAttrs:
+    """Single pass over `node.attrs`, splitting each std.host-prefixed attr
+    into `_ParsedHostAttrs` fields -- the parse step `host_manifest_for`
+    reads back into a typed `HostManifest`."""
+    parsed = _ParsedHostAttrs()
+    for attr in node.attrs:
+        if attr.startswith(_RUNS_AS_PREFIX):
+            parsed.runs_as = attr[len(_RUNS_AS_PREFIX) :]
+            parsed.declared = True
+        elif attr == _UNIT_ATTR:
+            parsed.is_unit = True
+            parsed.declared = True
+        elif attr.startswith(_OWNS_PREFIX):
+            path, _, mode = attr[len(_OWNS_PREFIX) :].partition(":")
+            parsed.owns.append(HostOwns(path=path, mode=mode))
+            parsed.declared = True
+        elif attr.startswith(_LISTENS_PREFIX):
+            parsed.listens.append(int(attr[len(_LISTENS_PREFIX) :]))
+            parsed.declared = True
+    return parsed
+
+
 # frob:doc docs/strata/host.md#hostmanifest
 # frob:tests tests/unit/strata/test_host.py::TestHostManifest.test_reads kind="unit"
 def host_manifest_for(node: Node) -> HostManifest | None:
@@ -150,39 +184,21 @@ def host_manifest_for(node: Node) -> HostManifest | None:
     empty-but-present one. Mirrors `_pii.py::node_pii_tags`'s attr
     read-back shape.
     """
-    runs_as: str | None = None
-    is_unit = False
-    owns: list[HostOwns] = []
-    listens: list[int] = []
-    declared = False
-    for attr in node.attrs:
-        if attr.startswith(_RUNS_AS_PREFIX):
-            runs_as = attr[len(_RUNS_AS_PREFIX) :]
-            declared = True
-        elif attr == _UNIT_ATTR:
-            is_unit = True
-            declared = True
-        elif attr.startswith(_OWNS_PREFIX):
-            path, _, mode = attr[len(_OWNS_PREFIX) :].partition(":")
-            owns.append(HostOwns(path=path, mode=mode))
-            declared = True
-        elif attr.startswith(_LISTENS_PREFIX):
-            listens.append(int(attr[len(_LISTENS_PREFIX) :]))
-            declared = True
-    if not declared:
+    parsed = _parse_host_attrs(node)
+    if not parsed.declared:
         return None
     _log.debug(
         "node %s: host manifest runs_as=%r unit=%s owns=%d listens=%d",
         node.id,
-        runs_as,
-        is_unit,
-        len(owns),
-        len(listens),
+        parsed.runs_as,
+        parsed.is_unit,
+        len(parsed.owns),
+        len(parsed.listens),
     )
     return HostManifest(
         platform=HostPlatform.LINUX_SYSTEMD,
-        runs_as=runs_as,
-        is_unit=is_unit,
-        owns=tuple(owns),
-        listens=tuple(listens),
+        runs_as=parsed.runs_as,
+        is_unit=parsed.is_unit,
+        owns=tuple(parsed.owns),
+        listens=tuple(parsed.listens),
     )
