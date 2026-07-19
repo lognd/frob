@@ -2560,7 +2560,7 @@ final delta run, which came back clean.
 ```yaml
 id: T-0214
 title: COV002 close-before-commit catch-22 turns covered changes into hard errors
-state: in-progress
+state: done
 kind: ux
 origin: agent
 created: '2026-07-18'
@@ -10749,3 +10749,28 @@ acceptance: []
 threat: null
 ```
 Follow-up from T-0316: no install-time guard exists against a plain 'uv tool upgrade frob' (or 'uv tool install --force --reinstall frob' without --with) silently stripping the strata_core/frob_core native extensions that 'make install-tool' added. T-0316 documents a manual 'python3 -c "import strata_core, frob_core"' check plus the loud SYS004/NativeExtensionUnavailable failure gates already provide as the honest fallback. This ticket is to build a real 'frob doctor' (or 'frob --version --verbose') subcommand that runs that same check, reports native-extension presence/version, and prints the exact 'make install-tool' remediation -- so the check is a first-class CLI surface instead of a paragraph in docs/guides/install.md. Also re-evaluate publishing strata-core/frob-core as real PyPI wheels (docs/guides/install.md 'Why not pip install frob[strata]?' section) as the actual long-term fix; that publish step needs PyPI project ownership/CI credentials this environment does not have, so it stays a separate decision, not blocking the doctor subcommand.
+
+<!-- ticket:T-0320 -->
+```yaml
+id: T-0320
+title: 'COV002 grace: require an actual open->done ticket transition, not just marker-in-hunk'
+state: queued
+kind: bug
+origin: auditor
+created: '2026-07-19'
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/__init__.py,tests/**,tickets.md
+evidence: []
+attachments: []
+acceptance:
+- given a symbol bound to an ALREADY-DONE (stale) ticket and a diff that edits that
+  same ticket entry for a non-close reason (typo fix / evidence append touching its
+  marker line), when COV002 runs, then grace is NOT granted (it still fires) -- grace
+  requires the ticket to transition open->done in THIS diff
+- given a ticket genuinely closing in this diff (open before, done after), then grace
+  is granted (catch-22 stays fixed)
+threat: null
+```
+Follow-up from T-0214 (reviewer-recommended, not blocking). T-0214 closed the exploitable COV002 grace bypass by requiring the bound DONE tickets own <!-- ticket:T-#### --> marker line to fall inside the diffs tickets.md hunk. That closes the easy/invisible case (unrelated ticket close elsewhere in the commit). Residual narrow gap: marker-in-hunk is a PROXY for "closing" -- it does not verify a state TRANSITION, so any edit to a stale DONE tickets own entry that touches its marker line (typo fix in its Done report, evidence append, reformat) grants grace to a bound-but-uncovered stale symbol. Narrow + visible in diff review, hence not blocking, but should be tightened: compare the tickets state in the diffs BEFORE vs AFTER tickets.md (open-before / done-after) rather than mere marker-span overlap. Requires diffing ledger state pre/post within the gate.
