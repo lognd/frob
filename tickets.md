@@ -2859,7 +2859,7 @@ src/frob/gitio.py` reports "All checks passed!".
 ```yaml
 id: T-0228
 title: check summary conflates errors and warnings ('pass ... 987 violation(s)')
-state: in-progress
+state: done
 kind: ux
 origin: agent
 created: '2026-07-18'
@@ -2871,7 +2871,9 @@ scope:
 - src/frob/gates/**
 - tests/**
 - tickets.md
-evidence: []
+evidence:
+- tests/unit/test_check.py::TestSummarySeverityHonesty::test_warn_only_gate_summary_splits_errors_and_warnings
+- tests/unit/test_check.py::TestSummarySeverityHonesty::test_cycle_summary_splits_by_severity
 attachments: []
 acceptance: []
 threat: null
