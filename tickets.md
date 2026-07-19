@@ -2225,7 +2225,7 @@ part of this fix).
 ```yaml
 id: T-0211
 title: selfconform warns '<repo>/src/frob does not exist' in every non-frob repo
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-18'
@@ -2235,7 +2235,8 @@ scope:
 - src/frob/strata/_selfconform.py
 - tests/**
 - tickets.md
-evidence: []
+evidence:
+- tests/unit/strata/test_selfconform.py::TestUnmodeledCodeMissingPackageRoot::test_missing_package_root_produces_no_warning
 attachments: []
 acceptance: []
 threat: null
