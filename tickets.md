@@ -3208,6 +3208,94 @@ Filed: none -- fix fully addressable within this ticket's declared scope.
 
 Not closing -- reviewer.
 
+## Done report (round 3 -- entropy-proxy bypass fix)
+
+**Reviewer-found bypass (live-reproduced):** round 2's
+`_looks_low_entropy(token)` was `return not any(char.isdigit() for char in
+token)` -- a binary "has no digits" check, not a real entropy measure. A
+digit-free, high-entropy, real-shaped token containing a placeholder-
+phrase fragment (`your-`/`insert-`/`-here`) was still silently suppressed
+regardless of how random the rest of it looked: 0 violations confirmed for
+an `sk-live-your-` prefix glued to a mixed-case run, an `sk-live-insert-`
+prefix glued to a near-unique-letter alphabet run, and an `sk-live-`
+prefix glued to a mixed-case run ending in `-here` (see the three new
+adversarial test cases below for the exact fragments).
+
+**Fix -- real entropy/diversity measure, security-safe by construction**
+(`src/frob/gates/_secrets.py`): replaced `_looks_low_entropy` with three
+independent, conservative gates, ALL of which must hold before a token is
+ever classified low-entropy -- failing any single one keeps it
+high/unsuppressed, the security-safe default when uncertain:
+1. No digit anywhere (unchanged from round 2, still decisive on its own
+   for "not low").
+2. Single case only (all-lowercase or all-uppercase letters). Mixed case
+   is rejected outright before entropy is even computed -- a real
+   generated token frequently mixes case, a hand-typed template phrase
+   never does.
+3. Real Shannon entropy over the token's alnum characters, bits/char,
+   below a calibrated `_LOW_ENTROPY_BITS_PER_CHAR = 3.7` floor.
+
+Calibration against this repo's own fixtures: the existing legit-
+suppressed placeholder `xoxb-insert-your-real-token` sits at ~3.64
+bits/char (below the floor, still correctly suppressed, no regression);
+the reviewer's adversarial `sk-live-insert-` token (a near-unique-letter
+run, essentially no character repeats) sits at ~4.32
+bits/char (above the floor, correctly now fires); any mixed-case token
+never reaches the entropy calculation at all. `_KNOWN_TEMPLATE_SHAPE_RE`
+(the whole-token `fullmatch` anchor from round 2, confirmed sound by the
+reviewer) is unchanged and remains the primary path for the canonical
+`prefix-your/insert-words-here` shape; the entropy gate now only matters
+for phrase fragments that don't fullmatch that anchor (no `-here` tail, or
+a non-`your`/`insert` middle segment, as in all three of the reviewer's
+adversarial tokens).
+
+**Mandatory adversarial regression tests added**
+(`tests/test_secrets_gate.py::TestFakeMarking`), all digit-free and
+runtime-constructed (concatenated fragments, never a contiguous literal in
+this file's own source) so the addition itself stays clean under
+`TestGateIsGreenOnItself`:
+- `test_digit_free_mixed_case_your_token_still_fires` -- `sk-live-your-` +
+  `XKCDplmqrstuvwxyzABCD` (mixed case) fires SEC001.
+- `test_digit_free_insert_alphabet_run_still_fires` -- `sk-live-insert-` +
+  `abcdefghqrstuvwxyz` (near-unique-letter run, all-lowercase) fires
+  SEC001.
+- `test_digit_free_mixed_case_here_tail_still_fires` -- `sk-live-` +
+  `abcdXYZQRSTUVW` + `-here` (mixed case, structurally close to but does
+  NOT fullmatch `_KNOWN_TEMPLATE_SHAPE_RE` since the middle segment is
+  `live` not `your`/`insert`) fires SEC001.
+
+**Confirmed bypass-then-fix:** stashed only `src/frob/gates/_secrets.py`
+(keeping the new tests), reran the three new tests against the
+pre-round-3 source -- all three FAILED (`assert 0 == 1`, log line
+`generic-live-key match ... placeholder, skipping`), confirming each of
+the reviewer's three tokens reproduces the exact live bypass described.
+Restored the round-3 fix and reran: all three pass, along with the full
+`tests/test_secrets_gate.py` suite (61 passed), including
+`TestGateIsGreenOnItself::test_repo_is_clean` and
+`test_secrets_module_source_is_clean`, and every prior round 1/2
+adversarial and legit-suppression test unchanged and still green (no
+regressions).
+
+Also reworded the module docstring's `_looks_low_entropy`-adjacent example
+tokens (previously literal, self-scan-tripping strings) into non-
+contiguous doc phrasing, since the new fix's own commentary needed to
+reference example token shapes without becoming a false positive against
+this module's own self-scan.
+
+**Gates:** `uv run pytest tests/test_secrets_gate.py -q` -- 61 passed.
+`uv run ruff check .`, `uv run ruff format --check .` (after `ruff
+format`), `uv run ty check src/frob/gates/_secrets.py` all clean. `make
+coverage` then `uv run frob check` (full repo, unscoped): `gates 0 errors,
+1 warning, 204 waived` -- same single pre-existing warning, no new
+violations, no new secrets-gate waivers.
+
+Committed in worktree `.claude/worktrees/agent-aaa45dc8342d35cc0`
+(branch `worktree-agent-aaa45dc8342d35cc0`), sha `6cea368`.
+
+Filed: none -- fix fully addressable within this ticket's declared scope.
+
+Not closing -- reviewer.
+
 <!-- ticket:T-0220 -->
 ```yaml
 id: T-0220
