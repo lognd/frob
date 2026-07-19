@@ -397,6 +397,7 @@ def resolve_local_import(
 
 
 __all__ = [
+    "COMMENT_TYPES",
     "LangError",
     "ParsedFile",
     "RawComment",
