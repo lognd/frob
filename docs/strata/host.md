@@ -177,11 +177,28 @@ CWE_CATALOG`/`VIEWS`, the same separate-view precedent
 
 `_scenarios.py::build_compromised_user_scenario` builds the red-team
 scenario itself: every node declaring `runs_as=<user>` is downgraded via
-the EXISTING `SetTrust` rewrite (no new Rewrite kind), and one
-`NoFlow(src="foreign", dst=<node>)` claim is asserted per node OUTSIDE
-the user's manifest slice -- `evaluate_scenarios` re-checking this
-scenario proves the compromise's blast radius is exactly that user's own
-slice, no wider.
+the EXISTING `SetTrust` rewrite, and one `NoFlow(src="foreign",
+dst=<node>)` claim is asserted per node OUTSIDE the user's manifest
+slice -- `evaluate_scenarios` re-checking this scenario proves the
+compromise's blast radius is exactly that user's own slice, no wider.
+
+**Review-round fix (vacuity):** a `NoFlow` claim is only ever proved or
+refuted over `_facts.py::FactBase.reachable`'s DECLARED-`Flow` closure --
+it has no dependency on `HostManifest` ownership by itself. Two users
+sharing a writable path with NO declared app `Flow` between them would
+make HOST001 correctly fire (`shared-writable-path`) while the SAME
+model's blast-radius claim vacuously reported PROVED -- false assurance,
+caught in review. The fix: `_host_isolation.py::host_movement_flows`
+derives the SAME sharing relations HOST001 detects (shared writable
+path, shared reachable socket) as synthetic `Flow` facts, and the
+scenario builder wraps each in the new `AddFlow` rewrite (`_models.py`)
+so the closure sees them too. `AddFlow` is scenario-scoped only -- it
+never mutates the base `KernelModel`'s own declared flows, and reuses
+the existing `Flow` fact shape (charter law 1: no new `strata_core`
+closure primitive). The shared-writable-path adversarial case now
+correctly REFUTES (`tests/unit/strata/test_host_isolation.py::
+test_blast_radius_refutes_over_shared_writable_path_with_no_declared_flow`);
+the disjoint hardened model still discharges (`test_blast_radius`).
 
 ## Scope boundary (what is NOT built here)
 

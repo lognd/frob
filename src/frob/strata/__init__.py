@@ -128,6 +128,7 @@ from frob.strata._host_isolation import (
     evaluate_host_isolation_waived,
     evaluate_lateral_isolation,
     evaluate_vertical_isolation,
+    host_movement_flows,
 )
 from frob.strata._infra import InfraExpansion, elaborate_infra
 from frob.strata._lint import (
@@ -145,6 +146,7 @@ from frob.strata._lint import (
 from frob.strata._models import (
     LABELS,
     TRUST,
+    AddFlow,
     Boundary,
     BoundaryDirection,
     BoundClaim,
@@ -273,6 +275,7 @@ __all__ = [
     "AdmitPhase",
     "AuditReport",
     "AtCallRequire",
+    "AddFlow",
     "AtomicContractReport",
     "BalancerDecl",
     "BenignCapability",
@@ -427,6 +430,7 @@ __all__ = [
     "build_compromised_user_scenario",
     "generate_fault_injection_cases",
     "host_manifest_for",
+    "host_movement_flows",
     "load_design_ids",
     "merge_models",
     "PII_CATEGORIES",

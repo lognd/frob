@@ -13,6 +13,7 @@ from frob.strata._host_isolation import (
     evaluate_host_isolation_waived,
     evaluate_lateral_isolation,
     evaluate_vertical_isolation,
+    host_movement_flows,
 )
 from frob.strata._models import Flow, KernelModel, Node, Waiver
 from frob.strata._scenarios import build_compromised_user_scenario, evaluate_scenarios
@@ -240,3 +241,51 @@ def test_blast_radius():
     assert len(scenario_result.results) == 1  # one other node: worker
     for claim_result in scenario_result.results:
         assert claim_result.verdict.value == "proved"
+
+
+# frob:tests src/frob/strata/_host_isolation.py::host_movement_flows kind="unit"
+def test_movement_flows():
+    """`host_movement_flows` derives a bidirectional synthetic Flow pair
+    over a shared writable path -- the fact HOST001 already detects,
+    materialized so the closure can see it too (module docstring's
+    REJECT-round fix)."""
+    api = Node(
+        id="api", trust="trusted", attrs=("runs_as=svc-a", "unit", "owns=/x:0664")
+    )
+    worker = Node(
+        id="worker", trust="trusted", attrs=("runs_as=svc-b", "unit", "owns=/x:0664")
+    )
+    flows = host_movement_flows(KernelModel(nodes=(api, worker)))
+    pairs = {(f.src, f.dst) for f in flows}
+    assert ("api", "worker") in pairs
+    assert ("worker", "api") in pairs
+
+
+# frob:tests src/frob/strata/_scenarios.py::build_compromised_user_scenario kind="unit"
+def test_blast_radius_refutes_over_shared_writable_path_with_no_declared_flow():
+    """The reviewer's exact T-0256 REJECT-round adversarial case: two
+    users share a writable path with NO declared app Flow between them.
+    Before the fix, `NoFlow` was proved purely over the declared-flow
+    graph (vacuously PROVED, false assurance -- HOST001 fires on the SAME
+    model). After the fix (`host_movement_flows` wired into the scenario
+    via `AddFlow`), the blast-radius claim correctly REFUTES: the
+    compromise of `svc-a` CAN reach `worker` through the shared path."""
+    api = Node(
+        id="api",
+        trust="trusted",
+        attrs=("runs_as=svc-a", "unit", "owns=/var/lib/shared:0664"),
+    )
+    worker = Node(
+        id="worker",
+        trust="trusted",
+        attrs=("runs_as=svc-b", "unit", "owns=/var/lib/shared:0664"),
+    )
+    model = KernelModel(nodes=(api, worker))
+    scenario = build_compromised_user_scenario(model, "svc-a", "compromise-svc-a")
+    assert scenario.is_ok
+    model_with_scenario = model.model_copy(update={"scenarios": (scenario.danger_ok,)})
+    results = evaluate_scenarios(model_with_scenario).danger_ok
+    assert len(results) == 1
+    scenario_result = results[0]
+    assert len(scenario_result.results) == 1
+    assert scenario_result.results[0].verdict.value == "refuted"

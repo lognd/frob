@@ -498,7 +498,28 @@ class SetTrust(BaseModel):
     level: str
 
 
-Rewrite = RemoveNode | ScaleRate | SetTrust
+# frob:doc docs/strata/host.md#movement-impossibility-proofs
+class AddFlow(BaseModel):
+    """Scenario rewrite: materialize an additional `Flow` fact into the
+    rewritten model's closure (T-0256).
+
+    General-purpose (not host-specific despite the doc anchor above): any
+    scenario that needs the reachability closure to see a counterfactual
+    edge -- e.g. `_host_isolation.py::host_movement_flows`'s
+    HostManifest-derived filesystem/OS movement vectors (shared writable
+    path, shared reachable socket) a compromised-user scenario needs the
+    `NoFlow` walk to account for, since `_facts.py::FactBase.reachable`
+    only ever walks DECLARED `Flow` edges -- uses this rewrite to inject
+    that edge before the closure is built, rather than the closure engine
+    growing bespoke non-Flow movement semantics (charter law 1: no new
+    kernel primitive; this reuses the existing Flow fact shape)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    flow: Flow
+
+
+Rewrite = RemoveNode | ScaleRate | SetTrust | AddFlow
 
 
 # frob:doc docs/strata/kernel.md#data-models

@@ -4166,6 +4166,8 @@ evidence:
 - tests/unit/strata/test_host_isolation.py::test_blast_radius
 - tests/unit/strata/test_litmus_host_isolation.py::TestHostIsolationVulnLitmus::test_shared_user_model_fires_host001_and_host002
 - tests/unit/strata/test_litmus_host_isolation.py::TestHostIsolationHardenedLitmus::test_isolated_model_discharges
+- tests/unit/strata/test_host_isolation.py::test_movement_flows
+- tests/unit/strata/test_host_isolation.py::test_blast_radius_refutes_over_shared_writable_path_with_no_declared_flow
 attachments: []
 acceptance: []
 threat: elevation-of-privilege
@@ -4174,33 +4176,81 @@ T-0254 child 2. The red-team scenario as first-class obligations: when a model d
 
 ## Done report
 
-Changed:
+**Round 2 (reviewer REJECT fix).** Round 1's Done report below is kept
+for the file list; this preamble records what round 2 actually changed
+and why, since it is the security-relevant part.
+
+Round 1 REJECTED on two grounds:
+
+1. CRITICAL VACUITY: `build_compromised_user_scenario`'s blast-radius
+   `NoFlow` claims were proved purely over `_facts.py::FactBase.
+   reachable`'s DECLARED-`Flow` closure, with no dependency on
+   `HostManifest` ownership. Two users sharing a writable path with no
+   declared app `Flow` between them made HOST001 correctly fire
+   (`shared-writable-path`) while the SAME model's blast-radius claim
+   vacuously reported PROVED -- false assurance, the exact movement this
+   ticket exists to prove impossible, silently unproven.
+2. Two `ty` errors (`_host_isolation.py:496,499`, invalid-return-type):
+   `# type: ignore[return-value]` does not suppress `ty`; round 1's Done
+   report claimed a clean check that was not actually clean.
+
+Fix for (1), option (a) from the reviewer (wire manifest-sharing into
+the closure, not narrow the claim): new `_host_isolation.py::
+host_movement_flows` derives the SAME sharing relations HOST001 detects
+(shared writable path, shared reachable socket) as synthetic `Flow`
+facts; new `_models.py::AddFlow` (a fourth `Rewrite` variant, reusing
+the existing `Flow` shape -- no new `strata_core` closure primitive) 
+materializes each one into the scenario's rewritten model; 
+`build_compromised_user_scenario` now emits one `AddFlow` rewrite per 
+derived edge, BEFORE the `SetTrust` downgrades. Verified against the
+reviewer's exact adversarial case (`tests/unit/strata/
+test_host_isolation.py::
+test_blast_radius_refutes_over_shared_writable_path_with_no_declared_flow`):
+two users sharing `/var/lib/shared` writably with no declared `Flow` --
+the blast-radius claim now REFUTES (previously wrongly PROVED); the
+disjoint hardened model (`test_blast_radius`) still discharges
+(PROVED). `test_movement_flows` covers `host_movement_flows` directly.
+
+Fix for (2): the two early-return branches in `evaluate_host_isolation_
+waived` now `return Err(lateral.danger_err)` / `return
+Err(vertical.danger_err)` (constructing the correctly-typed `Result`
+value) instead of returning the mistyped `Result[tuple[HostIsolation
+Violation, ...], StrataError]` object with an ineffective `# type:
+ignore`. `uv run ty check src/frob/strata/` now reports "All checks
+passed!" (verified below).
+
+Changed (cumulative, round 1 + round 2):
 - src/frob/strata/_host_isolation.py (new) -- `HostIsolationViolation`,
   `evaluate_lateral_isolation` (HOST001), `evaluate_vertical_isolation`
-  (HOST002), `evaluate_host_isolation_waived`,
-  `HOST_MULTI_INSTANCE_WAIVER_FAMILIES`, `COMPROMISED_OWNER_CATALOG`,
-  `COMPROMISED_OWNER_OUT_OF_SCOPE`, `COMPROMISED_OWNER_VIEWS`.
+  (HOST002), `evaluate_host_isolation_waived`, `host_movement_flows`
+  (round 2), `HOST_MULTI_INSTANCE_WAIVER_FAMILIES`,
+  `COMPROMISED_OWNER_CATALOG`, `COMPROMISED_OWNER_OUT_OF_SCOPE`,
+  `COMPROMISED_OWNER_VIEWS`.
+- src/frob/strata/_models.py -- new `AddFlow` `Rewrite` variant (round 2).
 - src/frob/strata/_scenarios.py -- `build_compromised_user_scenario`
-  (compromised-service-owner red-team scenario builder, reusing the
-  existing `SetTrust` rewrite, no new Rewrite kind).
-- src/frob/strata/__init__.py -- exports for all of the above.
+  (reuses the existing `SetTrust` rewrite; round 2 additionally emits
+  `AddFlow` rewrites for `host_movement_flows`'s edges), `_apply_add_flow`
+  + `_apply_rewrite` dispatch for the new variant.
+- src/frob/strata/__init__.py -- exports for all of the above (`AddFlow`,
+  `host_movement_flows` added round 2).
 - docs/strata/host.md -- new "Movement-impossibility proofs" section
   (sub-sections: the honest gap, waiver discipline, compromised-owner
   threat catalog, compromised-user scenario); corrected a pre-existing
-  T-0256/T-0257 mislabeling (earlier drafts called T-0256 "the
-  generator" and T-0257 "flow proofs" -- `tickets.md` ships the opposite
-  assignment; doc now matches the ledger).
-- tests/unit/strata/test_host_isolation.py (new, 15 tests),
-  tests/unit/strata/test_litmus_host_isolation.py (new, 2 tests),
-  tests/unit/strata/litmus/host_isolation_vuln.strata (new),
-  tests/unit/strata/litmus/host_isolation_hardened.strata (new).
+  T-0256/T-0257 mislabeling; round 2 added the "Review-round fix
+  (vacuity)" paragraph under compromised-user scenario.
+- tests/unit/strata/test_host_isolation.py (19 tests total -- 15 round 1
+  + `test_movement_flows` and
+  `test_blast_radius_refutes_over_shared_writable_path_with_no_declared_flow`
+  round 2), tests/unit/strata/test_litmus_host_isolation.py (2 tests),
+  tests/unit/strata/litmus/host_isolation_vuln.strata,
+  tests/unit/strata/litmus/host_isolation_hardened.strata.
 - CHANGELOG.md -- new-public-symbol line under the existing `[0.4.0]`
-  section (REL001; version stays 0.4.0 per dispatch instruction).
-- .frob-release.json -- `frob release stamp` output for the new public
-  API surface (REL001 clearance).
+  section, updated round 2 for `AddFlow`/`host_movement_flows` (REL001;
+  version stays 0.4.0 per dispatch instruction).
+- .frob-release.json -- re-stamped round 2 (`frob release stamp`) for
+  the additional public symbols.
 - tickets.md -- this ticket's scope extended to cover CHANGELOG.md and
-  .frob-release.json (SCOPE001 fired on both; extended rather than
-  worked around).
+  .frob-release.json (SCOPE001 fired on both, round 1).
 
 Design notes / honest disclosures:
 - HOST001/HOST002 sub-targets are ALL derived from `HostManifest`
@@ -4233,43 +4283,46 @@ Design notes / honest disclosures:
   `VIEWS` -- verified `check_catalog_completeness("owasp-top-10")`
   still passes unaffected (`TestCompromisedOwnerCatalog::
   test_default_owasp_view_unaffected`).
-- `build_compromised_user_scenario` reuses the existing `SetTrust`
-  rewrite (compromise = trust downgrade to `"foreign"`, the same
-  primitive component compromise already uses) and asserts one
-  `NoFlow(src="foreign", dst=<node>)` claim per node outside the
-  compromised user's manifest slice; `evaluate_scenarios` re-checking it
-  proves every such claim (verified in `test_blast_radius`). Fails
-  closed (`UnknownReference`) on an unknown `runs_as` user name.
+- `host_movement_flows` is computed over EVERY distinct service-user
+  pair in the model (not scoped to the one compromised user), so a
+  multi-hop movement path through a third user's shared resource stays
+  visible to the closure -- sound (more edges only tighten a `NoFlow`
+  proof, never loosen it), disclosed as not maximal (a movement vector
+  this function does not model, e.g. process-level ptrace/IPC, is still
+  invisible; only filesystem-ownership and socket-port sharing are
+  covered, matching HOST001's own detection surface exactly -- no wider
+  claim is made).
+- `AddFlow` is scenario-scoped only (`_apply_add_flow` copies the model,
+  never mutates the base `KernelModel`'s declared flows) and fails
+  closed (`StrataError.DuplicateId`) on a flow-id collision.
 - HOST001/HOST002 are evaluated as standalone strata functions, NOT
   wired into `frob check`/a gate rule -- matching `_threat.py::
   evaluate_threats`'s own documented precedent ("gate wiring is a
   follow-up... this function is the seam that follow-up calls into").
   Gate wiring is a natural T-0258 (conformance checker) or follow-up
   ticket concern, not silently done here beyond declared scope.
-- `evaluate_host_isolation_waived`'s two `is_err` short-circuit branches
-  (lines ~495/498) are structurally unreachable today (`evaluate_
-  lateral_isolation`/`evaluate_vertical_isolation` never return `Err` in
-  the current implementation) -- kept for `Result`-signature consistency
-  with every other `evaluate_*` in this package; this is why
-  `frob check`'s TEST005 reports 87.5% branch coverage on that function
-  (a WARNING, not an ERROR; disclosed rather than silently accepted).
 
-Evidence: 17 pytest node ids recorded via `frob ticket evidence T-0256`
-(command output confirms `T-0256 recorded 17 evidence id(s) (17 total)`),
-all independently verified passing via
+Evidence: 19 pytest node ids recorded via `frob ticket evidence T-0256`
+(command output confirms `T-0256 recorded 19 id(s)` across the two
+`frob ticket evidence` calls -- 17 round 1 + 2 round 2), all
+independently verified passing via
 `uv run pytest tests/unit/strata/test_host_isolation.py
 tests/unit/strata/test_litmus_host_isolation.py -v -o addopts=""`
-(`17 passed`).
+(`19 passed`). Full repo `uv run pytest -q` also green.
 
 Filed: T-draft-7b5b5541 ("std.host: OS-group and sudoers-grant
 vocabulary" -- scope `strata-core/src/parse.rs`, `src/frob/strata/**`,
 `docs/strata/**`, `tests/**`).
 
-Gates: `uv run frob check --ticket T-0256` clean (0 errors, 12 warnings,
-226 waived). `uv run frob check` (full, unscoped) clean (0 errors, 0
-DRIFT002, 12 warnings). `git diff main --diff-filter=D --stat` empty
-(deletion-filter land rule, section 9 of the playbook). `make core`'s
-Cargo.lock churn reverted before every check/commit per dispatch rule 3.
+Gates (round 2, REAL state): merged `main` (T-0221 landed, tip
+6079e51 pre-recommit) before this round's work. `uv run ty check
+src/frob/strata/` -> "All checks passed!" (0 errors; round 1's 2
+invalid-return-type errors gone). `uv run frob check --ticket T-0256`
+-> 0 errors, 12 warnings, 223 waived. `uv run frob check` (full,
+unscoped) -> 0 errors, 0 DRIFT002, 12 warnings, `ty` tool-summary line
+reads "pass ty no issues". `git diff main --diff-filter=D --stat`
+empty (deletion-filter land rule). `make core`/`make coverage`'s
+Cargo.lock churn reverted before every check and before commit.
 
 <!-- ticket:T-0257 -->
 ```yaml

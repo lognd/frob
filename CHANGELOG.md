@@ -37,9 +37,14 @@ Public-API surface changes since 0.2.0 (mechanical semver via REL001):
   `HostIsolationViolation`, `evaluate_lateral_isolation` (HOST001),
   `evaluate_vertical_isolation` (HOST002), `evaluate_host_isolation_waived`,
   `HOST_MULTI_INSTANCE_WAIVER_FAMILIES`, `COMPROMISED_OWNER_CATALOG`,
-  `COMPROMISED_OWNER_OUT_OF_SCOPE`, `COMPROMISED_OWNER_VIEWS`, and
+  `COMPROMISED_OWNER_OUT_OF_SCOPE`, `COMPROMISED_OWNER_VIEWS`,
+  `host_movement_flows`, `AddFlow` (new `Rewrite` variant), and
   `build_compromised_user_scenario` (the compromised-service-owner
-  red-team scenario builder).
+  red-team scenario builder; its blast-radius `NoFlow` claims are proved
+  over the declared-flow graph PLUS `host_movement_flows`'s
+  HostManifest-derived filesystem/socket sharing edges, closing a
+  review-round vacuity gap where a shared writable path with no declared
+  app `Flow` would otherwise vacuously prove the claim).
 
 ## [0.2.0] - unreleased
 

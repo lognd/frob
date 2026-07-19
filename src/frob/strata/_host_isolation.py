@@ -59,13 +59,13 @@ obligation set it did not ask for.
 from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict
-from typani.result import Ok, Result
+from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
 
 from ._errors import StrataError
 from ._host import HostManifest, HostOwns, host_manifest_for
-from ._models import KernelModel, Node, Rung
+from ._models import Flow, KernelModel, Node, Rung
 from ._threat import OutOfScopeEntry, WeaknessEntry
 from ._waive import (
     WaiverApplication,
@@ -344,6 +344,118 @@ def evaluate_lateral_isolation(
     return Ok(tuple(violations))
 
 
+def _movement_flows_for_pair(
+    user_a: str,
+    nodes_a: list[str],
+    user_b: str,
+    nodes_b: list[str],
+    manifests: dict[str, HostManifest],
+    seq: int,
+) -> tuple[list[Flow], int]:
+    """Every synthetic host-movement `Flow` for one (user_a, user_b) pair:
+    bidirectional edges over a shared writable path and over a shared
+    listening port -- the SAME sharing relations `_lateral_pair_
+    violations` detects for HOST001, materialized as real `Flow` facts
+    here instead of a `HostIsolationViolation` (module docstring's
+    `host_movement_flows`). Bidirectional: ownership alone does not tell
+    which side WRITES and which side READS the shared resource, so both
+    directions are added -- deny-by-default, never assuming a direction
+    that happens to make a claim look safer (charter law 2)."""
+    owns_a = _owns_by_user(nodes_a, manifests)
+    owns_b = _owns_by_user(nodes_b, manifests)
+    shared_writable = sorted(
+        path
+        for path in (set(owns_a) & set(owns_b))
+        if _mode_owner_writable(owns_a[path].mode)
+        or _mode_owner_writable(owns_b[path].mode)
+    )
+    node_a, node_b = nodes_a[0], nodes_b[0]
+    flows: list[Flow] = []
+    for path in shared_writable:
+        seq += 1
+        flows.append(
+            Flow(
+                id=f"host-movement:{seq}:{path}:{node_a}->{node_b}",
+                src=node_a,
+                dst=node_b,
+                attrs=(f"host_movement={_SUB_SHARED_WRITABLE_PATH}",),
+            )
+        )
+        seq += 1
+        flows.append(
+            Flow(
+                id=f"host-movement:{seq}:{path}:{node_b}->{node_a}",
+                src=node_b,
+                dst=node_a,
+                attrs=(f"host_movement={_SUB_SHARED_WRITABLE_PATH}",),
+            )
+        )
+
+    ports_a = _listens_by_user(nodes_a, manifests)
+    ports_b = _listens_by_user(nodes_b, manifests)
+    if ports_a & ports_b:
+        seq += 1
+        flows.append(
+            Flow(
+                id=f"host-movement:{seq}:port:{node_a}->{node_b}",
+                src=node_a,
+                dst=node_b,
+                attrs=(f"host_movement={_SUB_CROSS_USER_SOCKET}",),
+            )
+        )
+        seq += 1
+        flows.append(
+            Flow(
+                id=f"host-movement:{seq}:port:{node_b}->{node_a}",
+                src=node_b,
+                dst=node_a,
+                attrs=(f"host_movement={_SUB_CROSS_USER_SOCKET}",),
+            )
+        )
+    return flows, seq
+
+
+# frob:doc docs/strata/host.md#movement-impossibility-proofs
+# frob:tests tests/unit/strata/test_host_isolation.py::test_movement_flows kind="unit"
+def host_movement_flows(model: KernelModel) -> tuple[Flow, ...]:
+    """Materialize HOST001's HostManifest-derived sharing relations
+    (shared writable path, shared reachable socket) as real `Flow` facts
+    -- the fix for the reviewer-found T-0256 REJECT-round vacuity gap:
+    `_facts.py::FactBase.reachable` walks ONLY declared `Flow` edges, so
+    a `NoFlow` claim over the bare declared-app-flow graph is blind to
+    filesystem/OS movement vectors HOST001 itself already detects. A
+    caller building a scenario whose closure must account for these
+    vectors (`build_compromised_user_scenario`, `_scenarios.py`) wraps
+    each returned `Flow` in an `AddFlow` rewrite so the scenario's
+    rewritten model's closure sees them -- the base `KernelModel`'s own
+    declared flows are left untouched (this is a scenario-scoped
+    counterfactual fact, not a permanent model mutation).
+
+    Computed over EVERY distinct service-user pair in `model`
+    (independent of which user a caller later marks compromised) so a
+    multi-hop movement path through a THIRD user's shared resource is
+    still visible to the closure -- sound (more edges only tighten a
+    `NoFlow` proof, never loosen it), not scoped to any one pair."""
+    nodes_by_id = {n.id: n for n in model.nodes}
+    manifests = _manifests_by_node(model)
+    by_user = _nodes_by_user(nodes_by_id, manifests)
+    users = sorted(by_user)
+    flows: list[Flow] = []
+    seq = 0
+    for i, user_a in enumerate(users):
+        for user_b in users[i + 1 :]:
+            pair_flows, seq = _movement_flows_for_pair(
+                user_a, by_user[user_a], user_b, by_user[user_b], manifests, seq
+            )
+            flows.extend(pair_flows)
+    _log.info(
+        "host_isolation: derived %d host-movement flow(s) over %d user pair(s)",
+        len(flows),
+        len(users) * (len(users) - 1) // 2,
+    )
+    return tuple(flows)
+
+
 def _root_run_nodes(
     nodes_by_id: dict[str, Node], manifests: dict[str, HostManifest]
 ) -> list[str]:
@@ -493,10 +605,10 @@ def evaluate_host_isolation_waived(
     docstring's `HOST_MULTI_INSTANCE_WAIVER_FAMILIES`)."""
     lateral = evaluate_lateral_isolation(model)
     if lateral.is_err:
-        return lateral  # type: ignore[return-value]
+        return Err(lateral.danger_err)
     vertical = evaluate_vertical_isolation(model)
     if vertical.is_err:
-        return vertical  # type: ignore[return-value]
+        return Err(vertical.danger_err)
 
     nodes_by_id = {n.id: n for n in model.nodes}
     manifests = _manifests_by_node(model)
