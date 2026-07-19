@@ -38,8 +38,9 @@ try:
 except ImportError:  # pragma: no cover - exercised only where hypothesis is absent
     HYPOTHESIS_AVAILABLE = False
 
-# frob:todo T-0002 registry is process-global; a future multi-project host
-# (frob serving several repos in one process) would need this scoped per-run.
+# frob:todo T-draft-9b07cab7
+# Registry is process-global; a future multi-project host (frob serving
+# several repos in one process) would need this scoped per-run.
 _REGISTRY: dict[type, object] = {}
 
 

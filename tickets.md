@@ -8299,7 +8299,7 @@ Bit twice (2026-07-19): T-0282 and T-0217 both had evidence stored as tests/...p
 id: T-0294
 title: 'DSL parser: eliminate 13 malformed-directive false positives (secret-fake
   marker, kinds, trailing prose)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-07-19'
@@ -8308,7 +8308,13 @@ blocked_by:
 parent: null
 scope:
 - src/frob/graph/dsl.py,src/frob/gates/_secrets.py,tests/**,src/frob/fuzz/**,src/frob/app/perf_runner.py,docs/modules/graph.md,tickets.md
-evidence: []
+evidence:
+- tests/unit/graph/test_dsl.py::TestReservedMarkerVerbs::test_secret_fake_is_silently_skipped
+- tests/unit/graph/test_dsl.py::TestReservedMarkerVerbs::test_unreserved_unknown_verb_still_reports_malformed
+- tests/system/test_cli_check.py::TestCheckTicketScopedAlwaysReportsOnFailure::test_ticket_scoped_nonzero_exit_has_diagnostic_output
+- tests/unit/strata/test_selfconform.py::TestExtendedKindsDriftLock::test_extended_kinds_is_disjoint_from_kind_map
+- tests/test_dup_rungs.py::TestR6Probing::test_fires_on_equivalent_functions_with_renamed_multi_arg_params
+- tests/test_gates.py::TestCoverageLoad::test_parses_line_to_symbol_span
 attachments: []
 acceptance:
 - given the intentional frob:secret-fake fixture marker (_secrets.py _FAKE_MARKER,
@@ -8330,6 +8336,100 @@ acceptance:
 threat: null
 ```
 Investigated 2026-07-19: the 13 "malformed directive" warnings are NOT sloppy comments -- they are a DSL-parser robustness gap in three classes. (1) frob:secret-fake is an INTENTIONAL cross-subsystem literal marker (src/frob/gates/_secrets.py:15,66 -- "unregistered marker, the literal substring frob:secret-fake"); the secrets gate scans for it to discharge a fixture token, but graph/dsl.py::parse_directives treats frob:<anything> as a directive and warns "unknown verb secret-fake". Fix: reserve secret-fake (and audit for any other intentional literal markers) as a known no-op verb the parser skips silently -- the two subsystems must agree on the vocabulary. (2) Three real frob:tests directives use kind=drift/system, outside the unit/integration/e2e enum -- correct them (a drift-lock conformance test is unit; a CLI system test is e2e). (3) Seven directives carry same-line explanatory prose (frob:ticket T-0027 -- propagate...; frob:todo T-0002 registry is process-global...) that the attr parser rejects; this is the SAME ergonomic gap as T-0286 (multi-line/prose-tolerant reasons), hence blocked_by T-0286 -- once prose/continuation is tolerated, split or annotate these. NOTE scope collision: fuzz/_arbitrary.py and fuzz/_run.py are also touched by the in-flight core-commands arch burndown -- sequence this ticket AFTER that merges, or coordinate, to avoid a conflict. This is the right fix: papering the warnings over by mangling test comments would hide a real parser/secrets-gate vocabulary disagreement.
+
+## Done report
+
+Changed:
+- src/frob/graph/dsl.py::_RESERVED_MARKER_VERBS (new constant)
+- src/frob/graph/dsl.py::_parse_line
+- src/frob/graph/dsl.py::parse_directives
+- tests/system/test_cli_check.py (kind="system" -> kind="e2e")
+- tests/unit/strata/test_selfconform.py (2x kind="drift" -> kind="unit"; also
+  retargeted the second directive's symbol, see below)
+- src/frob/app/perf_runner.py (trailing prose moved off the frob:ticket line)
+- src/frob/fuzz/_arbitrary.py (trailing prose moved off the frob:todo line;
+  T-0002 rebind, see below)
+- src/frob/fuzz/_run.py (trailing prose moved off the frob:todo line; T-0002
+  rebind, see below)
+- tests/test_dup_rungs.py (3x trailing prose moved off frob:ticket lines)
+- tests/test_gates.py (trailing prose moved off frob:ticket line; also fixed
+  a stray colon on `T-0148:` that was folding into the target)
+- tests/unit/graph/test_dsl.py::TestReservedMarkerVerbs (new test class, 2 tests)
+
+Class 1 (frob:secret-fake): added `_RESERVED_MARKER_VERBS` (owner-commented,
+pointing at `_secrets.py::_FAKE_MARKER`) and taught `_parse_line`/
+`parse_directives` to return/skip `None` for a reserved verb -- no edge, no
+`MalformedDirective`. Audited the codebase for other intentional literal
+`frob:` markers (grepped for "literal substring"/"unregistered marker"/
+"graph-invisible" across src/); `frob:secret-fake` is the only one, so the
+reserved set has exactly one member for now.
+
+Class 2 (invalid kind): `tests/system/test_cli_check.py:237` `kind="system"`
+-> `kind="e2e"` (CLI system test). `tests/unit/strata/test_selfconform.py:434`
+`kind="drift"` -> `kind="unit"` (drift-lock conformance test, target already
+resolved). `tests/unit/strata/test_selfconform.py:465` `kind="drift"` ->
+`kind="unit"`, AND retargeted the directive from
+`_selfconform.py::_EXTENDED_KINDS` to
+`_selfconform.py::_observed_extended_kinds_by_node` -- `_EXTENDED_KINDS` is a
+module-level constant, which `frob.lang`'s Python extractor does not surface
+as a resolvable symbol (verified via `parse_file(...).symbols` returning no
+match), so once the directive stopped being globally malformed it produced a
+NEW DRIFT002 ("no longer resolves") against a target that in fact never
+resolved. `_observed_extended_kinds_by_node` is the function that consumes
+`_EXTENDED_KINDS` and is what the test's docstring actually exercises.
+
+Class 3 (trailing prose): all 7 directives fixed by moving the explanatory
+prose to the following plain-comment line(s), leaving the directive line as
+bare `frob:<verb> <target> [attrs]` -- the simplest sound fix named in the
+ticket, no parser change needed since T-0286 already landed
+backslash-continuation (which this class deliberately does not use, since
+the prose isn't a continuation of the target/attrs). Verified each directive
+still binds to its intended ticket/todo target after the edit (spot-checked
+via `frob check` graph-build: all 7 sites produce a valid edge, zero of
+their prior "bad attribute syntax" warnings remain).
+
+Reserved-marker constant: `_RESERVED_MARKER_VERBS` in
+src/frob/graph/dsl.py, `frozenset({"secret-fake"})`, with a docstring-comment
+pointing at `_secrets.py::_FAKE_MARKER` as the owner.
+
+Side effect filed as a new ticket, not fixed in scope here: fixing Class 3's
+prose for `fuzz/_run.py:30` and `fuzz/_arbitrary.py:41` turned their
+`frob:todo T-0002` directives from malformed (invisible to TODO001) into
+valid edges -- and T-0002 is `dropped`, so TODO001 correctly started firing
+("not bound to an open ticket"). Filed T-draft-9b07cab7 ("Rebind frob.fuzz
+deferred-work TODOs off dropped T-0002") and rebound both directives to it
+(off-default-branch worktree mints provisional ids; this id will resolve to
+a real T-#### once landed against main) rather than silently reopening
+T-0002's scope inside this DSL-parser ticket.
+
+Evidence (node-level, recorded via `frob ticket evidence T-0294`):
+- tests/unit/graph/test_dsl.py::TestReservedMarkerVerbs::test_secret_fake_is_silently_skipped
+- tests/unit/graph/test_dsl.py::TestReservedMarkerVerbs::test_unreserved_unknown_verb_still_reports_malformed
+- tests/system/test_cli_check.py::TestCheckTicketScopedAlwaysReportsOnFailure::test_ticket_scoped_nonzero_exit_has_diagnostic_output
+- tests/unit/strata/test_selfconform.py::TestExtendedKindsDriftLock::test_extended_kinds_is_disjoint_from_kind_map
+- tests/test_dup_rungs.py::TestR6Probing::test_fires_on_equivalent_functions_with_renamed_multi_arg_params
+- tests/test_gates.py::TestCoverageLoad::test_parses_line_to_symbol_span
+
+Filed: T-draft-9b07cab7 (frob.fuzz TODO rebind, see above; will mint a real
+T-#### id once this worktree lands against main).
+
+Gates: after `make coverage` re-stamp, `uv run frob check` reports 0
+malformed-directive warnings (grep for "malformed directive:" against full
+output: 0 hits, was 13 before this change) and `gates` tool summary is
+"0 errors, 3 warnings, 205 waived" -- the 3 remaining warnings are
+pre-existing TEST005 branch-coverage warnings on files this ticket does not
+touch (`_selfconform.py::check_self_conformance`,
+`_host_isolation.py::evaluate_host_isolation_waived`,
+`_land.py::splice_ledger`), confirmed present on a clean `git stash` of main
+tip 4302bb5 before this change. `ty` reports the same 2 pre-existing
+diagnostics in `src/frob/vet/_allow.py:72-73` both before and after this
+change (confirmed via `git stash`/`git stash pop` A-B comparison) -- out of
+this ticket's declared scope, not touched. `ruff check` and
+`ruff format --check` both clean over `src/` and `tests/`.
+`uv run frob check --only coverage`: TODO001 clear (0), COV001 not present
+in output.
+
+`git diff main --diff-filter=D --stat` is empty (deletion-filter clean).
 
 <!-- ticket:T-0295 -->
 ```yaml
@@ -8956,3 +9056,22 @@ untouched by this ticket, landed via the main merge, out of scope).
 ledger-conflict splice against the newer main tip (d900bd5). Cargo.lock:
 no churn (`make core` no-op rebuild). No non-ASCII characters. Not closing
 this ticket -- leaving for the reviewer per the review-gated workflow.
+
+<!-- ticket:T-draft-9b07cab7 -->
+```yaml
+id: T-draft-9b07cab7
+title: Rebind frob.fuzz deferred-work TODOs off dropped T-0002
+state: queued
+kind: bug
+origin: human
+created: '2026-07-19'
+blocked_by: []
+parent: null
+scope:
+- src/frob/fuzz/**
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0294 fixed the DSL parser's trailing-prose rejection, which un-masked two frob:todo T-0002 directives in src/frob/fuzz/_run.py:30 and src/frob/fuzz/_arbitrary.py:41 (process-global registry scoping; wall-clock budget_s). T-0002 (frob.fuzz generators + FUZZ gates Phase 8) is dropped, so TODO001 now correctly fires: these TODOs are not bound to an open ticket. Either reopen T-0002's scope in a live ticket and rebind, or file focused successor tickets per TODO and rebind. Filed rather than fixed in T-0294 to stay within that ticket's declared DSL-parser scope (this is a ticket-graph bookkeeping fix, not a parser fix).

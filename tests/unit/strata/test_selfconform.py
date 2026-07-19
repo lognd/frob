@@ -431,7 +431,7 @@ class TestCoreUndeclaredInterfaceNonPython:
 
 
 class TestLanguageCoverageDriftLock:
-    # frob:tests src/frob/strata/_selfconform.py::_sorted_capability_files kind="drift"
+    # frob:tests src/frob/strata/_selfconform.py::_sorted_capability_files kind="unit"
     def test_scanned_languages_equals_registry_languages(self):
         """T-0169 drift lock: the set of languages self-conformance (and
         `vet`) actually reach via `language_for`/`_EXT_LANGUAGE` must equal
@@ -462,7 +462,7 @@ class TestLanguageCoverageDriftLock:
 
 
 class TestExtendedKindsDriftLock:
-    # frob:tests src/frob/strata/_selfconform.py::_EXTENDED_KINDS kind="drift"
+    # frob:tests src/frob/strata/_selfconform.py::_observed_extended_kinds_by_node kind="unit"
     def test_extended_kinds_is_disjoint_from_kind_map(self):
         """`_EXTENDED_KINDS` (SYS100's new-code slice) and `_KIND_MAP`'s keys
         (THREAT004's delegated slice) must never overlap -- a shared kind
