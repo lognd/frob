@@ -75,6 +75,7 @@ from frob.graph.lock import drift as _graph_drift
 from frob.graph.lock import load_lock
 from frob.lang import SymbolKind
 from frob.lang._models import ParsedFile
+from frob.lang._walk_rust import _MACRO_SYMBOL_SUFFIX
 from frob.logging import get_logger
 from frob.testing import CollectedTests, collect_python_tests, collect_rust_tests
 from frob.tickets import Ticket, TicketQueue, TicketState, load_queue
@@ -153,6 +154,40 @@ def _node_id_collected(base_node_id: str, node_ids: frozenset[str]) -> bool:
     if base_node_id in node_ids:
         return True
     prefix = f"{base_node_id}["
+    return any(node_id.startswith(prefix) for node_id in node_ids)
+
+
+# frob:ticket T-0318
+def _macro_symbol_file(src: str) -> str | None:
+    """The file path `src` names, if `src` is a T-0318 test-macro stand-in
+    symbol (`_walk_rust.py::_macro_symbol` mints a qualname whose leaf
+    segment ends with `_MACRO_SYMBOL_SUFFIX`, e.g. `path::tests.proptest!`)
+    -- else None.
+
+    A `frob:tests` directive placed above a `proptest! { ... }` block binds
+    to this stand-in (real AST node, real span) rather than falling through
+    to the bare-file-path fallback, but the stand-in still cannot be matched
+    node-id-exact against `cargo test --list` output: proptest's expansion
+    synthesizes one real `#[test]` fn per case at compile time, each under
+    its OWN name (`fn test_foo(...)` inside the macro's token tree), never
+    under a `proptest!`-named node id. `_node_id_collected`'s exact/prefix
+    match can therefore never see them. The only association frob CAN prove
+    without parsing the macro's opaque token tree for `fn` names (a much
+    larger, separately-scoped effort) is coarser: "this file's macro block
+    is satisfied if the file has at least one collected case at all" --
+    file-granularity, not case-exact. Callers use this to switch from
+    node-id matching to a same-file collected-id check."""
+    path, sep, qualname = src.partition("::")
+    if not sep or not qualname:
+        return None
+    leaf = qualname.rsplit(".", 1)[-1]
+    return path if leaf.endswith(_MACRO_SYMBOL_SUFFIX) else None
+
+
+def _macro_file_collected(file_path: str, node_ids: frozenset[str]) -> bool:
+    """True if any cargo-collected node id belongs to `file_path` (T-0318
+    file-granularity satisfaction for a test-macro stand-in symbol)."""
+    prefix = f"{file_path}::"
     return any(node_id.startswith(prefix) for node_id in node_ids)
 
 
@@ -315,7 +350,11 @@ def _valid_edges(
     """
     valid: list[Edge] = []
     for e in edges:
-        if _node_id_collected(_symref_to_nodeid(e.src), tests.node_ids):
+        macro_file = _macro_symbol_file(e.src)
+        if macro_file is not None:
+            if _macro_file_collected(macro_file, tests.node_ids):
+                valid.append(e)
+        elif _node_id_collected(_symref_to_nodeid(e.src), tests.node_ids):
             valid.append(e)
         elif (
             snapshot is not None
@@ -350,6 +389,17 @@ def _case_count(valid_edges: list[Edge], tests: CollectedTests) -> int:
     """
     total = 0
     for edge in valid_edges:
+        macro_file = _macro_symbol_file(edge.src)
+        if macro_file is not None:
+            # T-0318: a macro stand-in has no exact/prefix node id of its
+            # own (proptest's expansion names each case after its OWN fn,
+            # never after the macro) -- count every collected case under
+            # the same file instead, `_valid_edges` already proved >=1.
+            file_prefix = f"{macro_file}::"
+            total += sum(
+                1 for node_id in tests.node_ids if node_id.startswith(file_prefix)
+            )
+            continue
         base = _symref_to_nodeid(edge.src)
         prefix = f"{base}["
         matches = sum(
