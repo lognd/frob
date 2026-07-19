@@ -357,7 +357,7 @@ def _evaluate_family(
 # frob:tests tests/unit/strata/test_audit.py::TestHostWiring.test_hardened_model_proved
 # frob:tests tests/unit/strata/test_audit.py::TestHostWiring.test_no_runs_as_no_gaps
 # frob:waive TEST005 reason="Err branches need a deep StrataError; debt T-0160"
-# frob:waive PERF004 reason="sorted() computes the loop's iterable once before the for-loop, not a re-sort per iteration (T-0283 class)"
+# frob:waive PERF004 reason="sorted() builds the loop iterable once, not a re-sort (T-0283)"
 def evaluate_exhaustiveness(
     model: KernelModel,
     *,
