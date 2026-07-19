@@ -40,6 +40,7 @@
     "design/frob.strata::frob.stratamod": "718f95fa5d51e66ab4efd81e473db052984fad1d05feeffa0857af3df8ec964c",
     "design/frob.strata::frob.tickets_ledger": "f2dc39549ec5c2c88afb3478af4236e290c909afde5658eb143d6353590c3b3e",
     "design/frob.strata::frob.vet": "8fbee6718ef9bc758edf072acd16ca686515454c4236bda210ffb6fc9314a49a",
+    "frob-core/src/lib.rs::anti_unify": "250c316f1e354ccfa7eb2c15b7c81887390ceba0c0267eda767d1414b0fb2436",
     "frob-core/src/lib.rs::apted_similarity": "95d1bce5fb9af591d93b2c30b679b89c0fb3e09d7facd093a11c8f53a2067bcd",
     "frob-core/src/lib.rs::candidate_pairs": "936d9e31fe10e085edc3798d04670e5456a3b28c7f60f9e2f5650d5ca778438c",
     "frob-core/src/lib.rs::exact_regions": "421eded7e53e349c332ccd1e0229e4b997b1d4926bd5fd7c6458c8c933d63ffe",
@@ -171,6 +172,7 @@
     "src/frob/dup/_cache.py::put_fingerprint": "7fbd76dde95e7ec172afe95d2e6f380c6c294cb801e3013484ffaf28dbc3c67e",
     "src/frob/dup/_cache.py::put_verdict": "41bd85313a2fb145ed21cf397ebad0244641199f46488b90f107fbcf9c341da7",
     "src/frob/dup/_core.py::INSTALL_HINT": "aed1c596316e08812b1308b0b01d3f84aa84d3a55630a82b2032b89d3f1e3814",
+    "src/frob/dup/_core.py::anti_unify": "fdfc07ab4c90f4fd732078bd58f54cd4ac54d518cb95a9f75aeb0c18acacc48c",
     "src/frob/dup/_core.py::apted_similarity": "0e5595c99ce6679eb3b5d1b2dc5aab6ec1795b7b98a61f3ef35b920719b02fc9",
     "src/frob/dup/_core.py::candidate_pairs": "0f8cbd1fcae1539c3f706801ad10c9985381f6b80df23ab752ef14386c4586c2",
     "src/frob/dup/_core.py::core_available": "5c74242e33b3e6987b7193b1c2f3297d06017a5bea67cfe26d552a1d131ccc79",
@@ -187,6 +189,7 @@
     "src/frob/dup/_legacy.py::DupResult.as_text": "172dd4d365ee80aaeb22db8a426cfe5fe2ad5b39de7e8b75834a087a19975f51",
     "src/frob/dup/_legacy.py::DupResult.total_clones": "9cb437d6d3b64007324f725cf57ab978848e41bb73a7e62f2416767e7d3e6f7c",
     "src/frob/dup/_legacy.py::find_duplicates": "1076e3590ebc728eb20ecc1cca28f598a8e53434f42d9f9beee60c38603644d7",
+    "src/frob/dup/_models.py::AntiUnifyTemplate": "68af225bf83ebf4e7bfc1cb91187656997e16714f6ecbae353cc2ad93d3e1472",
     "src/frob/dup/_models.py::ClonePair": "b69bf6edde2e3d56c173eba2092819d21c0ac3dbf27e6d070713663d4653b7ff",
     "src/frob/dup/_models.py::CloneRegion": "bcc96bef0f2d77b1b79a2399265359fc5e212012ee321221bc46e7b225b2664e",
     "src/frob/dup/_models.py::CloneReport": "8583983c9ac7a21be5558c7e2fe4fcc979defb7aa5cee591d64484ffb40e926b",
@@ -888,5 +891,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.9.0"
+  "version": "0.10.0"
 }

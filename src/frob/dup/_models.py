@@ -14,6 +14,7 @@ from pydantic import BaseModel, ConfigDict
 from typani import ErrorSet
 
 __all__ = [
+    "AntiUnifyTemplate",
     "CloneRegion",
     "ClonePair",
     "CloneReport",
@@ -39,6 +40,9 @@ class DupError(ErrorSet):
     NoGenerator = "no frob.fuzz Arbitrary generator for a probe parameter"
     SmtUnavailable = "z3-solver not installed; install with: uv pip install frob[smt]"
     SmtUnsupported = "function body is outside R7's bounded int/bool subset"
+    HoleCeilingExceeded = (
+        "anti-unification template is >50% holes; not a meaningful generalization"
+    )
 
 
 # frob:doc docs/modules/dup.md#clone-region
@@ -103,6 +107,29 @@ class DupConfig(BaseModel):
     cache_entries: int = 200_000
     region_kernel_enabled: bool = False
     region_min_tokens: int = 15
+
+
+# frob:doc docs/modules/dup.md#anti-unification-plotkin-lgg
+class AntiUnifyTemplate(BaseModel):
+    """Plotkin lgg output: a generalized node array plus per-side hole bindings.
+
+    `labels`/`parents` are the template in the same `(labels, parents)`
+    node-array shape `apted_similarity` consumes -- shared nodes keep their
+    original label, divergence points carry a `$hole_N` placeholder.
+    `bindings_a`/`bindings_b` each hold one `(hole_id, node_index)` pair per
+    hole, naming which concrete subtree (in the corresponding input tree's
+    node-index space) that hole generalizes over. Only ever constructed for
+    a template that passed the hole-ceiling sanity check (frob.dup._core's
+    `anti_unify`); a >50%-holes result is `Err(DupError.HoleCeilingExceeded)`
+    instead, never a low-value `AntiUnifyTemplate`.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    labels: tuple[str, ...]
+    parents: tuple[int, ...]
+    bindings_a: tuple[tuple[int, int], ...] = ()
+    bindings_b: tuple[tuple[int, int], ...] = ()
 
 
 # frob:doc docs/modules/dup.md#probe-verdict

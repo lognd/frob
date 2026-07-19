@@ -17,6 +17,28 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.10.0] - unreleased
+
+Public-API surface changes since 0.9.0 (mechanical semver via REL001):
+
+- T-0194: anti-unification kernel (Plotkin least-general-generalization)
+  over the `(labels, parents)` node-array representation
+  `apted_similarity` already consumes -- the foundation of the dup-engine
+  reverse-templating chain (T-0195 template report, T-0287
+  type-generalization). New `frob-core/src/lib.rs::anti_unify`: a
+  lockstep top-down walk emitting shared nodes where two trees agree and
+  a fresh `$hole_N` at each divergence (label mismatch or arity
+  mismatch), never recursing into a hole's diverging subtrees.
+  Deterministic left-to-right/top-down hole numbering. HOLE-CEILING
+  sanity: a template that is >50% holes carries no real generalization
+  value, so the kernel returns a false-ok sentinel (never raises across
+  the PyO3 boundary) that the Python shim turns into
+  `Err(DupError.HoleCeilingExceeded)`, letting the caller fall back to a
+  plain (non-generalized) clone pair. New Python surface:
+  `frob.dup._core.anti_unify`, `frob.dup.AntiUnifyTemplate` (frozen
+  pydantic model: `labels`, `parents`, `bindings_a`, `bindings_b`), and
+  `DupError.HoleCeilingExceeded`, all re-exported from `frob.dup`.
+
 ## [0.9.0] - unreleased
 
 Public-API surface changes since 0.8.0 (mechanical semver via REL001):

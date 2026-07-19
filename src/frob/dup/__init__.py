@@ -15,9 +15,10 @@ Two entry points coexist during the re-platform:
 from __future__ import annotations
 
 from frob.dup._cache import get_fingerprint, get_verdict, put_fingerprint, put_verdict
-from frob.dup._core import core_available
+from frob.dup._core import anti_unify, core_available
 from frob.dup._legacy import CloneGroup, CodeFragment, DupResult, find_duplicates
 from frob.dup._models import (
+    AntiUnifyTemplate,
     ClonePair,
     CloneRegion,
     CloneReport,
@@ -32,6 +33,7 @@ from frob.dup._rules import DUP001, DUP002
 __all__ = [
     "DUP001",
     "DUP002",
+    "AntiUnifyTemplate",
     "CloneGroup",
     "ClonePair",
     "CloneRegion",
@@ -42,6 +44,7 @@ __all__ = [
     "DupResult",
     "DupStats",
     "ProbeVerdict",
+    "anti_unify",
     "core_available",
     "find_clones",
     "find_duplicates",

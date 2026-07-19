@@ -35,6 +35,7 @@ def test_frob_core_module_registers_exported_kernels():
         "candidate_pairs",
         "tree_edit_similarity",
         "apted_similarity",
+        "anti_unify",
         "wl_hash",
         "exact_regions",
     ):
@@ -98,6 +99,68 @@ class TestAptedSimilarity:
         assert result.danger_ok == pytest.approx(0.0)
 
 
+class TestAntiUnify:
+    def test_identical_trees_zero_holes(self):
+        # frob:tests src/frob/dup/_core.py::anti_unify kind="unit"
+        # frob:tests frob-core/src/lib.rs::anti_unify kind="unit"
+        labels = ("def", "return", "name")
+        parents = (-1, 0, 0)
+        result = _core.anti_unify(labels, parents, labels, parents)
+        assert result.is_ok
+        tpl = result.danger_ok
+        assert tpl.labels == labels
+        assert tpl.parents == parents
+        assert tpl.bindings_a == ()
+        assert tpl.bindings_b == ()
+
+    def test_two_near_identical_trees_bind_one_hole(self):
+        # frob:tests src/frob/dup/_core.py::anti_unify kind="unit"
+        # Trees differing in exactly one leaf ("x" vs "y") -- template
+        # keeps the shared "def"/"return" shape and binds one hole to the
+        # two diverging leaves.
+        labels_a = ("def", "return", "x")
+        parents_a = (-1, 0, 0)
+        labels_b = ("def", "return", "y")
+        parents_b = (-1, 0, 0)
+        result = _core.anti_unify(labels_a, parents_a, labels_b, parents_b)
+        assert result.is_ok
+        tpl = result.danger_ok
+        assert tpl.labels == ("def", "return", "$hole_0")
+        assert tpl.bindings_a == ((0, 2),)
+        assert tpl.bindings_b == ((0, 2),)
+
+    def test_arity_divergence_is_a_hole_not_a_crash(self):
+        # frob:tests src/frob/dup/_core.py::anti_unify kind="unit"
+        labels_a = ("root", "shared", "mid", "a")
+        parents_a = (-1, 0, 0, 2)
+        labels_b = ("root", "shared", "mid", "a", "b")
+        parents_b = (-1, 0, 0, 2, 2)
+        result = _core.anti_unify(labels_a, parents_a, labels_b, parents_b)
+        assert result.is_ok
+        tpl = result.danger_ok
+        assert tpl.labels == ("root", "shared", "$hole_0")
+
+    def test_wildly_different_trees_exceed_hole_ceiling(self):
+        # frob:tests src/frob/dup/_core.py::anti_unify kind="unit"
+        labels_a = ("def", "x", "y")
+        parents_a = (-1, 0, 0)
+        labels_b = ("class", "p", "q", "r")
+        parents_b = (-1, 0, 0, 0)
+        result = _core.anti_unify(labels_a, parents_a, labels_b, parents_b)
+        assert result.err == DupError.HoleCeilingExceeded
+
+    def test_deterministic_across_repeated_calls(self):
+        # frob:tests src/frob/dup/_core.py::anti_unify kind="unit"
+        labels_a = ("root", "s1", "dA1", "s2", "dA2")
+        parents_a = (-1, 0, 0, 0, 0)
+        labels_b = ("root", "s1", "dB1", "s2", "dB2")
+        parents_b = (-1, 0, 0, 0, 0)
+        first = _core.anti_unify(labels_a, parents_a, labels_b, parents_b)
+        second = _core.anti_unify(labels_a, parents_a, labels_b, parents_b)
+        assert first.is_ok and second.is_ok
+        assert first.danger_ok == second.danger_ok
+
+
 class TestWlHash:
     def test_relabeled_isomorphic_graphs_collide(self):
         # frob:tests src/frob/dup/_core.py::wl_hash kind="unit"
@@ -155,5 +218,6 @@ def test_core_unavailable_path_is_err_not_exception(monkeypatch: pytest.MonkeyPa
     assert _core.candidate_pairs(((1,),), 1).err == DupError.CoreUnavailable
     assert _core.tree_edit_similarity((1,), (1,)).err == DupError.CoreUnavailable
     assert _core.apted_similarity((), (), (), ()).err == DupError.CoreUnavailable
+    assert _core.anti_unify((), (), (), ()).err == DupError.CoreUnavailable
     assert _core.wl_hash((), (), 1).err == DupError.CoreUnavailable
     assert _core.exact_regions((("a",), ("a",)), 1).err == DupError.CoreUnavailable

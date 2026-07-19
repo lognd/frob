@@ -13,7 +13,7 @@ from functools import lru_cache
 from typani import Err, Ok
 from typani.result import Result
 
-from frob.dup._models import DupError
+from frob.dup._models import AntiUnifyTemplate, DupError
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
@@ -111,6 +111,42 @@ def apted_similarity(
     )
 
 
+# frob:doc docs/modules/dup.md#anti-unification-plotkin-lgg
+def anti_unify(
+    labels_a: tuple[str, ...],
+    parents_a: tuple[int, ...],
+    labels_b: tuple[str, ...],
+    parents_b: tuple[int, ...],
+) -> Result[AntiUnifyTemplate, DupError]:
+    """Plotkin lgg: lockstep anti-unification template + per-side hole bindings.
+
+    `labels_*`/`parents_*` are the same `(labels, parents)` node-array pair
+    `apted_similarity` consumes. A hole-ceiling failure (template >50%
+    `$hole_N` placeholders -- too little shared structure to be a
+    meaningful generalization) comes back as
+    `Err(DupError.HoleCeilingExceeded)`; the caller falls back to treating
+    the pair as a plain (non-generalized) clone pair, per
+    docs/modules/dup-sota-survey.md section 4.
+    """
+    if not core_available():
+        return Err(DupError.CoreUnavailable)
+    import frob_core
+
+    ok, tpl_labels, tpl_parents, bindings_a, bindings_b = frob_core.anti_unify(
+        list(labels_a), list(parents_a), list(labels_b), list(parents_b)
+    )
+    if not ok:
+        return Err(DupError.HoleCeilingExceeded)
+    return Ok(
+        AntiUnifyTemplate(
+            labels=tuple(tpl_labels),
+            parents=tuple(tpl_parents),
+            bindings_a=tuple(tuple(p) for p in bindings_a),
+            bindings_b=tuple(tuple(p) for p in bindings_b),
+        )
+    )
+
+
 # frob:doc docs/modules/dup.md#rung-r1-5
 def exact_regions(
     documents: tuple[tuple[str, ...], ...], min_len: int
@@ -146,6 +182,7 @@ def wl_hash(
 
 __all__ = [
     "INSTALL_HINT",
+    "anti_unify",
     "apted_similarity",
     "candidate_pairs",
     "core_available",
