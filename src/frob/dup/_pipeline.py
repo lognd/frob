@@ -5,6 +5,12 @@ Implements docs/modules/dup.md's `find_clones` across the full rung ladder:
 - R1 (exact token hash) and R2 (alpha-renamed token hash) are pure Python,
   always available -- they operate directly on `frob.lang`'s
   `RawSymbol.body_tokens`.
+- R1.5 (exact repeated-region discovery via a generalized suffix array,
+  `_region_groups`) needs `frob_core` AND is off by default even when R3+
+  is enabled -- see `DupConfig.region_kernel_enabled` / `[dup].region_kernel`
+  in frob.toml. R1/R2 hash whole symbol bodies, so a copy-pasted block
+  sitting inside two otherwise-different symbols is invisible to them; R1.5
+  closes that gap without waiting for R4's probabilistic winnowing.
 - R3 (canonicalized subtree hash), R4 (winnowed fingerprints + candidate
   discovery + statement-alignment verification), and R5 (Weisfeiler-Lehman
   dataflow-graph hashing) all need the `frob_core` native extension. Per
@@ -894,6 +900,78 @@ def _r4_groups(
     return [tuple(r4_group)] if r4_group else []
 
 
+def _region_line_span(
+    span: tuple[int, int], start: int, length: int, total_tokens: int
+) -> tuple[int, int]:
+    """The approximate line subrange for a `[start, start+length)` token
+    window inside a symbol spanning `span`, via the same proportional
+    index/total interpolation `_line_for_statement_index` uses for
+    statement indices -- there is no per-token line map (`body_tokens` is a
+    flat leaf-token tuple), so this is a documented approximation, not an
+    exact mapping."""
+    lo = _line_for_statement_index(span, start, total_tokens)
+    hi = _line_for_statement_index(
+        span, min(start + length - 1, total_tokens - 1), total_tokens
+    )
+    return (min(lo, hi), max(lo, hi))
+
+
+def _region_groups(
+    state: _FpState,
+    snapshot: GraphSnapshot,
+    touched: frozenset[str] | None,
+    seen_pairs: set[frozenset[str]],
+    cfg: DupConfig,
+) -> list[tuple[ClonePair, ...]]:
+    """R1.5: exact repeated-region clone groups via the frob_core generalized
+    suffix-array kernel over every fingerprinted symbol's R2-normalized
+    token stream.
+
+    Off by default (`cfg.region_kernel_enabled`, docs/modules/dup.md's
+    `[dup].region_kernel` knob) -- an opt-in on top of `[dup].enforce`
+    itself, so a default `frob check` never pays for the extra suffix-array
+    pass. Unlike R1/R2 (whole-body hashing, `_r1_hash`/`_r2_hash`), this
+    finds a copy-pasted sub-region living inside two otherwise-different
+    symbol bodies -- the exact-match case R1/R2 structurally cannot see.
+    """
+    if not cfg.region_kernel_enabled:
+        return []
+    refs = list(state.body_tokens_by_ref)
+    if len(refs) < 2:
+        return []
+    normalized_docs = tuple(_r2_normalize(state.body_tokens_by_ref[r]) for r in refs)
+    result = _core.exact_regions(normalized_docs, cfg.region_min_tokens)
+    if result.is_err:
+        _log.debug("find_clones: r1.5 exact-region kernel unavailable")
+        return []
+    group: list[ClonePair] = []
+    for da, oa, db, ob, length in result.danger_ok:
+        a, b = refs[da], refs[db]
+        if a == b:
+            continue
+        if touched is not None and a not in touched and b not in touched:
+            continue
+        if frozenset((a, b)) in seen_pairs:
+            continue
+        seen_pairs.add(frozenset((a, b)))
+        state.pairs_verified += 1
+        left_span = _region_line_span(
+            snapshot.symbols[a].span, oa, length, len(normalized_docs[da])
+        )
+        right_span = _region_line_span(
+            snapshot.symbols[b].span, ob, length, len(normalized_docs[db])
+        )
+        group.append(
+            ClonePair(
+                left=CloneRegion(ref=a, span=left_span),
+                right=CloneRegion(ref=b, span=right_span),
+                similarity=1.0,
+                rung="r1.5",
+            )
+        )
+    return [tuple(group)] if group else []
+
+
 def _r5_groups(
     state: _FpState,
     snapshot: GraphSnapshot,
@@ -937,6 +1015,7 @@ def find_clones(
 
     seen_pairs: set[frozenset[str]] = set()
     groups = _hash_rung_groups(state, snapshot, touched, seen_pairs)
+    groups += _region_groups(state, snapshot, touched, seen_pairs, cfg)
     groups += _r4_groups(state, snapshot, touched, seen_pairs)
     groups += _r5_groups(state, snapshot, touched, seen_pairs)
 

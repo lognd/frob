@@ -429,6 +429,229 @@ fn wl_hash(adjacency: Vec<(usize, usize)>, labels: Vec<String>, iterations: usiz
     acc
 }
 
+/// Token-id/document-index bookkeeping for `exact_regions`: `global` is the
+/// concatenation of every document's token ids with a unique per-document
+/// sentinel appended after each one (so no suffix can match across a
+/// document boundary); `doc_of[i]`/`offset_of[i]` recover which document and
+/// local token offset global position `i` came from (`doc_of[i] == None` at
+/// a sentinel position).
+fn flatten_documents(documents: &[Vec<String>]) -> (Vec<i64>, Vec<Option<usize>>, Vec<usize>) {
+    let mut token_ids: HashMap<&str, i64> = HashMap::new();
+    let mut next_id: i64 = 0;
+    let mut global: Vec<i64> = Vec::new();
+    let mut doc_of: Vec<Option<usize>> = Vec::new();
+    let mut offset_of: Vec<usize> = Vec::new();
+    for (doc_idx, doc) in documents.iter().enumerate() {
+        for (tok_idx, tok) in doc.iter().enumerate() {
+            let id = *token_ids.entry(tok.as_str()).or_insert_with(|| {
+                let v = next_id;
+                next_id += 1;
+                v
+            });
+            global.push(id);
+            doc_of.push(Some(doc_idx));
+            offset_of.push(tok_idx);
+        }
+        // Unique negative sentinel per document -- real token ids are >= 0,
+        // so a sentinel can never equal (or be lexicographically confused
+        // with) a real token id, and two different documents' sentinels
+        // never collide with each other either.
+        global.push(-1 - doc_idx as i64);
+        doc_of.push(None);
+        offset_of.push(0);
+    }
+    (global, doc_of, offset_of)
+}
+
+/// Suffix array of `s` via the classic O(n log^2 n) rank-doubling
+/// algorithm (Manber-Myers). `s` may contain any `i64` values (not just
+/// `0..alphabet_size`) -- ranks are recomputed from the current ordering
+/// each round rather than assuming a bounded alphabet, so the negative
+/// sentinel ids from `flatten_documents` work unmodified.
+fn build_suffix_array(s: &[i64]) -> Vec<usize> {
+    let n = s.len();
+    if n == 0 {
+        return Vec::new();
+    }
+    let mut sa: Vec<usize> = (0..n).collect();
+    let mut rank: Vec<i64> = s.to_vec();
+    let mut tmp: Vec<i64> = vec![0; n];
+    let key = |i: usize, rank: &[i64], k: usize| -> (i64, i64) {
+        let hi = rank[i];
+        let lo = if i + k < n { rank[i + k] } else { i64::MIN };
+        (hi, lo)
+    };
+    let mut k = 1usize;
+    loop {
+        sa.sort_unstable_by_key(|&i| key(i, &rank, k));
+        tmp[sa[0]] = 0;
+        for i in 1..n {
+            let prev_key = key(sa[i - 1], &rank, k);
+            let cur_key = key(sa[i], &rank, k);
+            tmp[sa[i]] = tmp[sa[i - 1]] + if cur_key > prev_key { 1 } else { 0 };
+        }
+        rank.copy_from_slice(&tmp);
+        if rank[sa[n - 1]] as usize == n - 1 || k >= n {
+            break;
+        }
+        k <<= 1;
+    }
+    sa
+}
+
+/// Kasai's O(n) LCP-array construction: `lcp[i]` is the length of the
+/// longest common prefix between the suffixes at `sa[i]` and `sa[i-1]`
+/// (`lcp[0]` is unused/`0`, there is no predecessor).
+fn kasai_lcp(s: &[i64], sa: &[usize]) -> Vec<usize> {
+    let n = s.len();
+    if n == 0 {
+        return Vec::new();
+    }
+    let mut rank = vec![0usize; n];
+    for (i, &p) in sa.iter().enumerate() {
+        rank[p] = i;
+    }
+    let mut lcp = vec![0usize; n];
+    let mut h = 0usize;
+    for i in 0..n {
+        if rank[i] > 0 {
+            let j = sa[rank[i] - 1];
+            while i + h < n && j + h < n && s[i + h] == s[j + h] {
+                h += 1;
+            }
+            lcp[rank[i]] = h;
+            if h > 0 {
+                h -= 1;
+            }
+        } else {
+            h = 0;
+        }
+    }
+    lcp
+}
+
+/// Collapse raw adjacent-SA-pair matches into maximal repeated regions.
+///
+/// Two matches `(da, oa, db, ob, l)` lie on the same "diagonal" of the
+/// `(doc_a offset, doc_b offset)` alignment grid when `oa - ob` is constant
+/// -- exactly the condition for them to be different windows onto the same
+/// underlying repeat. Grouping by `(da, db, diagonal)` and merging
+/// overlapping/touching `[oa, oa+l)` intervals on that diagonal recovers
+/// the single maximal region a generalized suffix automaton would report
+/// directly, instead of one entry per SA-adjacent sub-window.
+fn merge_diagonals(
+    raw: Vec<(usize, usize, usize, usize, usize)>,
+) -> Vec<(usize, usize, usize, usize, usize)> {
+    let canon: Vec<(usize, usize, usize, usize, usize)> = raw
+        .into_iter()
+        .map(|(da, oa, db, ob, l)| {
+            if (da, oa) <= (db, ob) {
+                (da, oa, db, ob, l)
+            } else {
+                (db, ob, da, oa, l)
+            }
+        })
+        .collect();
+
+    let mut groups: HashMap<(usize, usize, i64), Vec<(usize, usize)>> = HashMap::new();
+    for (da, oa, db, ob, l) in canon {
+        let diag = oa as i64 - ob as i64;
+        groups.entry((da, db, diag)).or_default().push((oa, l));
+    }
+
+    let mut out: Vec<(usize, usize, usize, usize, usize)> = Vec::new();
+    for ((da, db, diag), mut intervals) in groups {
+        intervals.sort_unstable();
+        let (mut cur_start, first_len) = intervals[0];
+        let mut cur_end = cur_start + first_len;
+        for &(s, l) in intervals.iter().skip(1) {
+            let e = s + l;
+            if s <= cur_end {
+                cur_end = cur_end.max(e);
+            } else {
+                out.push((
+                    da,
+                    cur_start,
+                    db,
+                    (cur_start as i64 - diag) as usize,
+                    cur_end - cur_start,
+                ));
+                cur_start = s;
+                cur_end = e;
+            }
+        }
+        out.push((
+            da,
+            cur_start,
+            db,
+            (cur_start as i64 - diag) as usize,
+            cur_end - cur_start,
+        ));
+    }
+    out.sort_unstable();
+    out
+}
+
+/// R1.5: exact repeated-region discovery via a generalized suffix array
+/// over the whole corpus's (already-normalized, caller's choice of
+/// abstraction) token stream.
+///
+/// WHY: R1/R2 (`_r1_hash`/`_r2_hash` in `frob.dup._pipeline`) hash whole
+/// symbol bodies, so a copy-pasted block sitting inside two otherwise-
+/// different functions is invisible to them -- neither whole-body hash
+/// collides. A suffix array + LCP pass over the concatenated corpus finds
+/// *every* maximal exact-token-match region of length `>= min_len`,
+/// anywhere in any document, in one O(n log^2 n) pass (suffix-automaton-
+/// equivalent recall, suffix-array-simple implementation -- see
+/// docs/modules/dup-sota-survey.md section 16 for why either data
+/// structure is acceptable here). `documents[i]` is one symbol's token
+/// stream (index `i` is the caller's document id, threaded back through
+/// the returned tuples); `min_len` is a token-count floor below which a
+/// match is not reported (mirrors R4's `min_shared`/`min_tokens` floors --
+/// keeps trivial single-token "matches" out of the result).
+///
+/// Returns `(doc_a, start_a, doc_b, start_b, length)` tuples: doc `doc_a`
+/// at token offset `start_a` and doc `doc_b` at token offset `start_b`
+/// share an exact `length`-token run. `doc_a <= doc_b` (and `start_a <=
+/// start_b` when `doc_a == doc_b`) by construction -- callers get each
+/// region pair once, not twice.
+#[pyfunction]
+fn exact_regions(
+    documents: Vec<Vec<String>>,
+    min_len: usize,
+) -> Vec<(usize, usize, usize, usize, usize)> {
+    // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
+    if documents.is_empty() || min_len == 0 {
+        return Vec::new();
+    }
+    let (global, doc_of, offset_of) = flatten_documents(&documents);
+    if global.is_empty() {
+        return Vec::new();
+    }
+    let sa = build_suffix_array(&global);
+    let lcp = kasai_lcp(&global, &sa);
+
+    let mut raw: Vec<(usize, usize, usize, usize, usize)> = Vec::new();
+    for i in 1..sa.len() {
+        let l = lcp[i];
+        if l < min_len {
+            continue;
+        }
+        let pos_a = sa[i - 1];
+        let pos_b = sa[i];
+        let (Some(da), Some(db)) = (doc_of[pos_a], doc_of[pos_b]) else {
+            // A sentinel-starting suffix can only match another suffix for
+            // zero tokens (its very first "token" is a unique negative id
+            // no real token shares) -- l < min_len already filtered this
+            // out whenever min_len >= 1, this is a defensive belt-and-
+            // braces check, not a reachable path in practice.
+            continue;
+        };
+        raw.push((da, offset_of[pos_a], db, offset_of[pos_b], l));
+    }
+    merge_diagonals(raw)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -566,6 +789,103 @@ mod tests {
         let sim = apted_similarity(Vec::new(), Vec::new(), Vec::new(), Vec::new());
         assert!((sim - 1.0).abs() < 1e-9);
     }
+
+    #[test]
+    fn exact_regions_finds_shared_block_inside_different_functions() {
+        // frob:tests frob-core/src/lib.rs::exact_regions kind="unit"
+        // Two otherwise-different token streams sharing one 6-token block
+        // in the middle -- the exact shape R1/R2 (whole-body hashing)
+        // cannot see, since neither whole body is identical or an alpha-
+        // rename of the other.
+        let shared = vec!["if", "x", ">", "0", "return", "x"];
+        let doc_a: Vec<String> = ["def", "foo", "("]
+            .iter()
+            .chain(shared.iter())
+            .chain(["else", "return", "0"].iter())
+            .map(|s| s.to_string())
+            .collect();
+        let doc_b: Vec<String> = ["def", "bar", "(", "y", ")"]
+            .iter()
+            .chain(shared.iter())
+            .chain(["print", "y"].iter())
+            .map(|s| s.to_string())
+            .collect();
+        let regions = exact_regions(vec![doc_a.clone(), doc_b.clone()], shared.len());
+        assert_eq!(regions.len(), 1);
+        let (da, oa, db, ob, l) = regions[0];
+        assert_eq!(da, 0);
+        assert_eq!(db, 1);
+        assert_eq!(l, shared.len());
+        assert_eq!(&doc_a[oa..oa + l], shared.as_slice());
+        assert_eq!(&doc_b[ob..ob + l], shared.as_slice());
+    }
+
+    #[test]
+    fn exact_regions_below_min_len_reports_nothing() {
+        let shared = vec!["a", "b", "c"];
+        let doc_a: Vec<String> = shared.iter().map(|s| s.to_string()).collect();
+        let doc_b: Vec<String> = shared.iter().map(|s| s.to_string()).collect();
+        let regions = exact_regions(vec![doc_a, doc_b], 10);
+        assert!(regions.is_empty());
+    }
+
+    #[test]
+    fn exact_regions_no_match_across_wholly_different_documents() {
+        let doc_a: Vec<String> = vec!["a".into(), "b".into(), "c".into(), "d".into()];
+        let doc_b: Vec<String> = vec!["w".into(), "x".into(), "y".into(), "z".into()];
+        let regions = exact_regions(vec![doc_a, doc_b], 2);
+        assert!(regions.is_empty());
+    }
+
+    #[test]
+    fn exact_regions_does_not_match_across_document_boundary() {
+        // The sentinel between documents must prevent a suffix straddling
+        // the boundary from being reported as a match with anything.
+        let doc_a: Vec<String> = vec!["p".into(), "q".into(), "r".into()];
+        let doc_b: Vec<String> = vec!["r".into(), "s".into(), "t".into()];
+        let regions = exact_regions(vec![doc_a, doc_b], 1);
+        // "r" alone (length 1) legitimately matches (doc0 offset 2, doc1
+        // offset 0) -- but nothing longer, since "r","s" (from b) never
+        // equals a real 2-token run present in doc_a.
+        for (_, _, _, _, l) in &regions {
+            assert!(*l <= 1);
+        }
+    }
+
+    #[test]
+    fn exact_regions_merges_overlapping_suffix_pairs_into_one_maximal_region() {
+        // A longer shared block should be reported once, at full length --
+        // not fragmented into many overlapping shorter sub-matches (one
+        // per SA-adjacent suffix pair), which is what merge_diagonals
+        // exists to collapse.
+        let shared: Vec<String> = (0..12).map(|i| format!("t{i}")).collect();
+        let doc_a = shared.clone();
+        let doc_b = shared.clone();
+        let regions = exact_regions(vec![doc_a, doc_b], 3);
+        assert_eq!(regions.len(), 1);
+        assert_eq!(regions[0].4, shared.len());
+    }
+
+    #[test]
+    fn exact_regions_empty_input_is_empty_output() {
+        let regions = exact_regions(Vec::new(), 1);
+        assert!(regions.is_empty());
+        let regions = exact_regions(vec![vec!["a".into()]], 0);
+        assert!(regions.is_empty());
+    }
+
+    #[test]
+    fn suffix_array_and_kasai_lcp_agree_on_a_hand_checked_case() {
+        // s = "banana" as token ids in alphabetical order (a=0,b=1,n=2), so
+        // numeric comparison order matches the well-known string result.
+        let s: Vec<i64> = vec![1, 0, 2, 0, 2, 0];
+        let sa = build_suffix_array(&s);
+        // Suffixes sorted lexicographically: a<a<a n<n na<na b -> standard
+        // "banana" suffix array (0-indexed): [5,3,1,0,4,2]
+        assert_eq!(sa, vec![5, 3, 1, 0, 4, 2]);
+        let lcp = kasai_lcp(&s, &sa);
+        assert_eq!(lcp, vec![0, 1, 3, 0, 0, 2]);
+    }
 }
 
 #[pymodule]
@@ -577,5 +897,6 @@ fn frob_core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(tree_edit_similarity, m)?)?;
     m.add_function(wrap_pyfunction!(apted_similarity, m)?)?;
     m.add_function(wrap_pyfunction!(wl_hash, m)?)?;
+    m.add_function(wrap_pyfunction!(exact_regions, m)?)?;
     Ok(())
 }

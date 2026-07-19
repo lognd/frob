@@ -16,6 +16,7 @@ reimplemented in TypeScript is still a clone.
 |---|---|---|---|
 | R1 | exact token hash | copy-paste | trivial |
 | R2 | alpha-renamed token hash | rename-only clones | trivial |
+| R1.5 | generalized suffix array + LCP over the corpus's normalized token stream (a `frob-core` Rust kernel); off by default even when R3+ is enabled | exact repeated SUB-REGIONS: a copy-pasted block sitting inside two otherwise-different symbols, invisible to R1/R2's whole-body hashing | opt-in (`[dup].region_kernel`); Rust kernel |
 | R3 | canonicalized-AST subtree hash: alpha-rename, literal abstraction, commutative-operand ordering, control-flow normalization (for/while desugar, early-return vs if-else) | restructured dressing, same shape (PyCharm's level) | cheap |
 | R4 | winnowed fingerprints (Moss) + Deckard-style characteristic vectors under LSH; candidate pairs verified by real tree edit distance (Zhang-Shasha, a `frob-core` Rust kernel over actual node structure) | gapped/near-miss clones, statements inserted or deleted, within-statement restructuring | moderate; Rust kernel |
 | R5 | Weisfeiler-Lehman graph-kernel hashing over a real def-use/control-flow graph built from `frob.lang`'s statement nodes | reordered-but-dataflow-identical logic (beyond PyCharm) | moderate; Rust kernel |
@@ -28,6 +29,44 @@ bounded subset (see `frob.dup._pipeline._smt_translate`'s accepted node
 set) -- it is a formal proof only within that subset, not a general
 equivalence checker; anything outside the subset is refused
 (`Err(SmtUnsupported)`), never silently approximated.
+
+## R1.5: exact-region kernel (T-0193)
+
+<a id="rung-r1-5"></a>
+
+R1/R2 hash WHOLE symbol bodies (`frob.dup._pipeline._r1_hash`/`_r2_hash`),
+so a copy-pasted block sitting inside two otherwise-different functions is
+invisible to them -- neither whole-body hash collides when the
+surrounding code differs. R1.5 closes that gap with a generalized suffix
+array (Manber-Myers rank-doubling construction) plus Kasai's LCP array
+over the WHOLE corpus's concatenated, R2-normalized token stream (one
+"document" per fingerprinted symbol, a unique per-document sentinel
+between documents so no match crosses a symbol boundary) --
+`frob_core.exact_regions` (`frob-core/src/lib.rs`), wired through
+`frob.dup._core.exact_regions` and `frob.dup._pipeline._region_groups`.
+This finds every MAXIMAL exact-token-match region of length
+`>= [dup].region_min_tokens` in one pass -- a strict superset of R1/R2's
+exact-match recall, extended to sub-symbol regions, without waiting for
+R4's probabilistic winnowing to happen to catch the same block.
+
+**Off by default, independent of `[dup].enforce`.** Turning on the
+whole-symbol rung ladder (`[dup].enforce = true`) does not by itself pay
+for the extra suffix-array pass -- both `[dup].enforce` AND
+`[dup].region_kernel = true` must be set for R1.5 to run in the gate path
+(`frob.gates.dup_gate`'s `_dup_config`). This keeps a default `frob check`
+exactly as fast as before this rung existed.
+
+```toml
+[dup]
+enforce = true
+region_kernel = true    # opt-in: also off by default
+region_min_tokens = 15  # floor below which a region match is not reported
+```
+
+Reported `ClonePair`s use `rung="r1.5"`, `similarity=1.0` (every match is
+exact by construction), and a narrowed `CloneRegion` span covering just
+the matched token window -- not the whole symbol, same posture as R4's
+region-narrowing.
 
 ## Granularity: regions, not just functions
 
@@ -107,7 +146,7 @@ class ClonePair(BaseModel):     # frozen
     left: CloneRegion
     right: CloneRegion
     similarity: float           # 0..1 from the verifying rung
-    rung: str                   # "r3" | "r4" | "r5" | "r6"
+    rung: str                   # "r1" | "r2" | "r1.5" | "r3" | "r4" | "r5" | "r6"
     alignment: tuple[tuple[int, int], ...]   # matched line pairs
 
 class CloneReport(BaseModel):   # frozen
@@ -124,9 +163,11 @@ class DupError(ErrorSet):
 
 ```toml
 [dup]
-threshold = 0.85        # DUP001 similarity floor
-min_tokens = 40         # ignore trivial bodies
-cache_entries = 200000  # LRU cap on pairwise verdicts
+threshold = 0.85          # DUP001 similarity floor
+min_tokens = 40           # ignore trivial bodies
+cache_entries = 200000    # LRU cap on pairwise verdicts
+region_kernel = false     # R1.5 exact-region kernel opt-in (needs enforce=true too)
+region_min_tokens = 15    # R1.5 floor below which a region match is not reported
 ```
 
 ## Rust core (frob-core)
@@ -157,6 +198,7 @@ rules:
 <!-- frob:describes frob-core/src/lib.rs::tree_edit_similarity -->
 <!-- frob:describes frob-core/src/lib.rs::apted_similarity -->
 <!-- frob:describes frob-core/src/lib.rs::wl_hash -->
+<!-- frob:describes frob-core/src/lib.rs::exact_regions -->
 <!-- frob:describes frob-core/src/lib.rs::frob_core -->
 
 Every `#[pyfunction]`/`#[pymodule]` item is the crate's Python-facing public
@@ -177,6 +219,9 @@ descriptions above.
   structure (parent-index arrays), normalized to a similarity score.
 - `wl_hash` -- R5 Weisfeiler-Lehman graph-kernel hash over a def-use/control
   -flow graph, collapsing reordered-but-dataflow-identical logic.
+- `exact_regions` -- R1.5 generalized-suffix-array + LCP pass over the
+  corpus's concatenated normalized token stream, returning every maximal
+  exact-match region of length `>= min_len` across (or within) documents.
 - `frob_core` -- the `#[pymodule]` registration entry that exports the above
   to Python.
 

@@ -33,6 +33,11 @@ Public-API surface changes since 0.2.0 (mechanical semver via REL001):
   blindly naming `docs/index.md` in repos that never created one.
 - T-0255: new public `frob.strata` std.host manifest symbols
   (`HostManifest`/`HostOwns`/`HostPlatform`/`host_manifest_for`/`OwnsDecl`).
+- T-0193: R1.5 exact-region dup kernel -- new public `frob_core.exact_regions`
+  (generalized suffix array + LCP over a normalized token corpus) and
+  `frob.dup._core.exact_regions`; `DupConfig` gained `region_kernel_enabled`
+  and `region_min_tokens` fields (`[dup].region_kernel`/`region_min_tokens`
+  in frob.toml). Off by default, independent of `[dup].enforce`.
 
 ## [0.2.0] - unreleased
 

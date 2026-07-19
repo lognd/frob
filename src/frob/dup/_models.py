@@ -87,13 +87,22 @@ class CloneReport(BaseModel):
 
 # frob:doc docs/modules/dup.md#dup-config
 class DupConfig(BaseModel):
-    """The `[dup]` table in frob.toml (docs/modules/dup.md's config block)."""
+    """The `[dup]` table in frob.toml (docs/modules/dup.md's config block).
+
+    `region_kernel_enabled` gates the R1.5 exact-region kernel
+    independently of the whole-symbol rungs (R1-R5): it is `False` by
+    default so a default `frob check` never pays the extra suffix-array
+    pass, even when `[dup].enforce` is already on. Set `[dup].region_kernel
+    = true` in frob.toml to opt in.
+    """
 
     model_config = ConfigDict(frozen=True)
 
     threshold: float = 0.85
     min_tokens: int = 40
     cache_entries: int = 200_000
+    region_kernel_enabled: bool = False
+    region_min_tokens: int = 15
 
 
 # frob:doc docs/modules/dup.md#probe-verdict

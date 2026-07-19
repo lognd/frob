@@ -1385,7 +1385,7 @@ substantive change.
 id: T-0193
 title: 'R1.5 exact-region kernel: generalized suffix automaton over normalized token
   stream'
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-07-18'
@@ -1397,13 +1397,119 @@ scope:
 - src/frob/dup/**
 - tests/**
 - docs/modules/dup.md
-- tickets.md
+- CHANGELOG.md
+- src/frob/gates/__init__.py
+- pyproject.toml
+- .frob-release.json
+- uv.lock
 evidence: []
 attachments: []
 acceptance: []
 threat: null
 ```
 Survey item 16 ADOPT: R1/R2 hash whole symbol bodies only, so partial copy-paste regions inside otherwise-different functions are invisible today. New frob-core kernel; region output feeds the existing CloneRegion model; cargo tests + python-side fixtures.
+
+Scope widened mid-implementation (round 1): `CHANGELOG.md` (REL001's remediation for the
+new public `frob_core.exact_regions`/`frob.dup._core.exact_regions` exports and
+`DupConfig` fields) and `src/frob/gates/__init__.py` (the `[dup].region_kernel`/
+`region_min_tokens` knob has to be read and threaded into `DupConfig` somewhere, and
+`dup_gate`/`_dup_config` in `frob.gates` is that one call site -- the ticket's Plan
+implies this wiring but the original scope globs did not cover it). `pyproject.toml`
+(REL001's version bump, 0.4.0 -> 0.5.0, for the same new public-API surface);
+`.frob-release.json`/`uv.lock` (mechanical side effects of `frob release stamp`
+and the version bump, not hand-edited).
+
+## Done report
+
+Changed:
+- frob-core/src/lib.rs::flatten_documents
+- frob-core/src/lib.rs::build_suffix_array
+- frob-core/src/lib.rs::kasai_lcp
+- frob-core/src/lib.rs::merge_diagonals
+- frob-core/src/lib.rs::exact_regions
+- src/frob/dup/_core.py::exact_regions
+- src/frob/dup/_models.py::DupConfig (new fields: region_kernel_enabled, region_min_tokens)
+- src/frob/dup/_pipeline.py::_region_line_span
+- src/frob/dup/_pipeline.py::_region_groups
+- src/frob/dup/_pipeline.py::find_clones (wired _region_groups into the rung ladder)
+- src/frob/gates/__init__.py::_dup_config (now also reads [dup].region_kernel)
+- src/frob/gates/__init__.py::dup_gate (threads region_kernel_enabled into DupConfig)
+- docs/modules/dup.md (new R1.5 rung row + dedicated section + config block +
+  frob-core kernel list + rung-string comment)
+- CHANGELOG.md ([0.4.0] entry per REL001 remediation instructions)
+- pyproject.toml (version 0.4.0 -> 0.5.0, REL001's mechanical bump)
+- .frob-release.json, uv.lock (mechanical outputs of `frob release stamp` /
+  the version bump)
+- tests/fixtures/dup_region/src/mod_a.py, mod_b.py (new fixture)
+- tests/test_dup_region.py (new)
+- tests/unit/test_dup_core.py (TestExactRegions + exact_regions cases added
+  to test_frob_core_module_registers_exported_kernels and
+  test_core_unavailable_path_is_err_not_exception)
+
+Evidence:
+- Cargo (frob-core, `cargo test`, LD_LIBRARY_PATH pointed at the uv-managed
+  CPython 3.11.15's libpython): 20 passed, 0 failed -- 7 new for this
+  ticket: `exact_regions_finds_shared_block_inside_different_functions`,
+  `exact_regions_below_min_len_reports_nothing`,
+  `exact_regions_no_match_across_wholly_different_documents`,
+  `exact_regions_does_not_match_across_document_boundary`,
+  `exact_regions_merges_overlapping_suffix_pairs_into_one_maximal_region`,
+  `exact_regions_empty_input_is_empty_output`,
+  `suffix_array_and_kasai_lcp_agree_on_a_hand_checked_case`.
+- Pytest, collected via `pytest --collect-only` and then run green:
+  - `tests/unit/test_dup_core.py::TestExactRegions::test_finds_shared_block_inside_different_documents`
+  - `tests/unit/test_dup_core.py::TestExactRegions::test_below_min_len_finds_nothing`
+  - `tests/unit/test_dup_core.py::TestExactRegions::test_no_shared_tokens_finds_nothing`
+  - `tests/unit/test_dup_core.py::test_core_unavailable_path_is_err_not_exception`
+    (extended to cover `exact_regions`)
+  - `tests/unit/test_dup_core.py::test_frob_core_module_registers_exported_kernels`
+    (extended to assert `exact_regions` is exported)
+  - `tests/test_dup_region.py::TestRegionKernelOffByDefault::test_disabled_by_default_finds_no_region_pairs`
+  - `tests/test_dup_region.py::TestRegionKernelOffByDefault::test_whole_symbol_rungs_miss_the_partial_clone`
+    (demonstrates R1/R2/R3 whole-body hashing structurally misses the
+    planted partial clone)
+  - `tests/test_dup_region.py::TestRegionKernelFindsPartialClone::test_enabled_finds_shared_region_between_otherwise_different_functions`
+    (demonstrates R1.5 finds it, exact similarity=1.0, narrowed sub-symbol span)
+  - `tests/test_dup_region.py::TestRegionKernelFindsPartialClone::test_min_len_floor_excludes_too_short_a_region`
+  - Full targeted run: `pytest tests/test_dup_smart.py tests/test_dup_rungs.py
+    tests/test_dup_region.py tests/unit/test_dup_core.py tests/unit/test_dup.py
+    tests/unit/test_dup_smt.py tests/unit/test_dup_cache.py tests/test_gates.py`
+    -- all green (no failures).
+- `frob:tests`/`frob:doc` directives bound in-source (non-self-referential,
+  `kind="unit"`/`kind="integration"`) per the playbook's evidence-recording
+  rules; `<!-- frob:describes frob-core/src/lib.rs::exact_regions -->` added
+  to docs/modules/dup.md's kernel-surface anchor block.
+
+Filed: none. All work landed inside declared (and mid-implementation-widened,
+see above) scope; no out-of-scope discoveries required a new ticket.
+
+Gates:
+- `frob check --ticket T-0193`: 0 errors, 55 warnings, 236 waived -- clean.
+- `frob check` (full, unscoped): 0 errors, 0 DRIFT002, 55 warnings, 236
+  waived, `ruff-format all files formatted`, `ty no issues`,
+  `frob-cycle no cycles` -- clean.
+- Pre-existing baseline debt (confirmed via `frob check --stamp-baseline`
+  on a clean `git stash -u` of this branch before touching anything, which
+  showed the identical 3 violations): `TEST006` (`.frob/coverage-stamp`
+  missing -- `make coverage` independently fails on a full run in this
+  fresh worktree with dozens of unrelated `tests/unit/strata/*` failures,
+  a known worktree-natives environment artifact per this repo's memory
+  notes, not something introduced here), `PERF004` at
+  `src/frob/tickets/_land.py:75`, `PERF003` at
+  `src/frob/vet/_obfuscation.py:77` -- none of these three files are in
+  T-0193's scope and none were touched by this ticket; left un-waived
+  in-source (no scoped file to attach a `frob:waive` to) and reported here
+  instead, per the instruction to disclose genuinely-out-of-scope findings
+  rather than force a waiver into a file this ticket cannot touch. The many
+  `TEST005` warnings across `src/frob/strata/**` etc. are the downstream
+  effect of the same missing coverage stamp (branch-coverage checks
+  degrade to a near-zero reading repo-wide without `coverage.xml`) --
+  pre-existing, `TEST005` is a WARN-severity gate here
+  (`severity_overrides`), not blocking `frob check`'s pass/fail.
+
+Deletion-filter land check (docs/guides/agent-playbook.md section 9):
+`git diff main --diff-filter=D --stat` is empty -- no files were reverted or
+dropped by this branch relative to `main` (verified after the final commit).
 
 <!-- ticket:T-0194 -->
 ```yaml

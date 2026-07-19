@@ -111,6 +111,27 @@ def apted_similarity(
     )
 
 
+# frob:doc docs/modules/dup.md#rung-r1-5
+def exact_regions(
+    documents: tuple[tuple[str, ...], ...], min_len: int
+) -> Result[tuple[tuple[int, int, int, int, int], ...], DupError]:
+    """R1.5: exact repeated-region discovery via a generalized suffix array
+    over `documents`' concatenated (already-normalized) token streams.
+
+    Each returned `(doc_a, start_a, doc_b, start_b, length)` names two
+    token-offset windows -- one per document index into `documents` --
+    that match exactly for `length` tokens. Unlike R1/R2 (whole-body
+    hashing), this finds copy-pasted sub-regions inside otherwise-different
+    documents; see docs/modules/dup.md's rung table.
+    """
+    if not core_available():
+        return Err(DupError.CoreUnavailable)
+    import frob_core
+
+    docs = [list(d) for d in documents]
+    return Ok(tuple(tuple(r) for r in frob_core.exact_regions(docs, min_len)))
+
+
 # frob:doc docs/modules/dup.md#rung-r5
 def wl_hash(
     adjacency: tuple[tuple[int, int], ...], labels: tuple[str, ...], iterations: int
@@ -128,6 +149,7 @@ __all__ = [
     "apted_similarity",
     "candidate_pairs",
     "core_available",
+    "exact_regions",
     "r3_canonical_hash",
     "tree_edit_similarity",
     "wl_hash",
