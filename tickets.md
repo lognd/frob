@@ -9526,7 +9526,7 @@ SYS100 for `fs-read` on any of the six previously-affected nodes
 id: T-0307
 title: 'capability/test binder: parametrized (and multi-case) tests do not count toward
   TEST001/002/003'
-state: in-progress
+state: done
 kind: bug
 origin: auditor
 created: '2026-07-19'
@@ -9534,7 +9534,9 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/testing/**,src/frob/gates/__init__.py,tests/**,tickets.md
-evidence: []
+evidence:
+- tests/test_gates.py::TestTestGate::test_test002_parametrized_test_counts_each_case
+- tests/test_gates.py::TestTestGate::test_case_count_direct
 attachments: []
 acceptance: []
 threat: null
