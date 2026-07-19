@@ -122,9 +122,20 @@ def _selection_report(cfg: AppConfig, root: Path, snapshot, runners, base: str):
 
 
 def _print_outcomes(test_run) -> None:
-    """Log a PASS/FAIL line per runner outcome, with tails on failure."""
+    """Log a PASS/NEUTRAL/FAIL line per runner outcome, with tails on failure.
+    NEUTRAL (T-0210) is pytest exit 5 -- collection ran clean but selected
+    zero tests, e.g. a package-fallback selection landing on a source-only
+    package -- reported distinctly from a genuine [FAIL] rather than folded
+    into it."""
+    from frob.testing._runners import _is_neutral_outcome
+
     for outcome in test_run.outcomes:
-        status = "PASS" if outcome.exit_code == 0 else "FAIL"
+        if outcome.exit_code == 0:
+            status = "PASS"
+        elif _is_neutral_outcome(outcome):
+            status = "NEUTRAL"
+        else:
+            status = "FAIL"
         _log.info(
             "[%s] %s  exit=%d  %.2fs",
             status,
@@ -132,7 +143,7 @@ def _print_outcomes(test_run) -> None:
             outcome.exit_code,
             outcome.duration_s,
         )
-        if outcome.exit_code != 0:
+        if status == "FAIL":
             if outcome.stdout_tail:
                 _log.info(outcome.stdout_tail)
             if outcome.stderr_tail:
