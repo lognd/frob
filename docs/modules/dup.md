@@ -153,10 +153,23 @@ class CloneReport(BaseModel):   # frozen
     groups: tuple[tuple[ClonePair, ...], ...]
     stats: DupStats             # fingerprinted, cache_hits, pairs_verified
 
+def anti_unify(labels_a, parents_a, labels_b, parents_b,
+              ) -> Result[AntiUnifyTemplate, DupError]
+    # Plotkin lgg over the same (labels, parents) node arrays
+    # apted_similarity consumes; Err(HoleCeilingExceeded) when the
+    # generalized template would be >50% $hole_N placeholders.
+
+class AntiUnifyTemplate(BaseModel):   # frozen
+    labels: tuple[str, ...]           # template node labels; "$hole_N" at divergence
+    parents: tuple[int, ...]          # same node-array shape as apted_similarity's input
+    bindings_a: tuple[tuple[int, int], ...]   # (hole_id, a-side node index)
+    bindings_b: tuple[tuple[int, int], ...]   # (hole_id, b-side node index)
+
 class DupError(ErrorSet):
-    CoreUnavailable = "frob-core native extension is not installed"
-    NotPure         = "Probe target has effects; observational probing refused"
-    CacheCorrupt    = "dup cache unreadable; delete .frob/dup.db to rebuild"
+    CoreUnavailable      = "frob-core native extension is not installed"
+    NotPure              = "Probe target has effects; observational probing refused"
+    CacheCorrupt         = "dup cache unreadable; delete .frob/dup.db to rebuild"
+    HoleCeilingExceeded  = "anti-unification template is >50% holes; not a meaningful generalization"
 ```
 
 `frob.toml`:
@@ -197,6 +210,7 @@ rules:
 <!-- frob:describes frob-core/src/lib.rs::candidate_pairs -->
 <!-- frob:describes frob-core/src/lib.rs::tree_edit_similarity -->
 <!-- frob:describes frob-core/src/lib.rs::apted_similarity -->
+<!-- frob:describes frob-core/src/lib.rs::anti_unify -->
 <!-- frob:describes frob-core/src/lib.rs::wl_hash -->
 <!-- frob:describes frob-core/src/lib.rs::exact_regions -->
 <!-- frob:describes frob-core/src/lib.rs::frob_core -->
@@ -217,6 +231,10 @@ descriptions above.
   aligned index pairs, used for the near-miss floor and region narrowing.
 - `apted_similarity` -- R4 Zhang-Shasha tree-edit distance over real subtree
   structure (parent-index arrays), normalized to a similarity score.
+- `anti_unify` -- Plotkin least-general-generalization over the same node
+  arrays: a lockstep top-down walk emitting shared nodes where two trees
+  agree and `$hole_N` at each divergence; see the "Anti-unification
+  (Plotkin lgg)" section below.
 - `wl_hash` -- R5 Weisfeiler-Lehman graph-kernel hash over a def-use/control
   -flow graph, collapsing reordered-but-dataflow-identical logic.
 - `exact_regions` -- R1.5 generalized-suffix-array + LCP pass over the
@@ -224,6 +242,52 @@ descriptions above.
   exact-match region of length `>= min_len` across (or within) documents.
 - `frob_core` -- the `#[pymodule]` registration entry that exports the above
   to Python.
+
+## Anti-unification (Plotkin lgg)
+
+<a id="anti-unification-plotkin-lgg"></a>
+<!-- frob:describes frob.dup._core.anti_unify -->
+<!-- frob:describes frob.dup.AntiUnifyTemplate -->
+
+`anti_unify` (T-0194, docs/modules/dup-sota-survey.md section 4, item 17)
+is the anti-unification kernel: given two `(labels, parents)` node arrays
+-- the same representation `apted_similarity` already consumes, from
+`frob.lang.symbol_tree` + `_common.flatten_tree` -- it produces the
+least-general generalization (Plotkin 1970): a template that keeps every
+node the two trees agree on and replaces each point of disagreement with a
+fresh `$hole_N` placeholder.
+
+**Algorithm**: a lockstep top-down walk of both trees, in the crate's
+`anti_unify_core` (Rust, `frob-core/src/lib.rs`). At each position `(a,
+b)`: if the labels match AND the child counts match, keep the shared node
+and recurse pairwise into children (source order, same as `build_postorder`
+uses); otherwise -- different label, or different arity -- emit `$hole_N`
+at this position, record `(N, a)` in `bindings_a` and `(N, b)` in
+`bindings_b`, and stop recursing (everything under a hole is exactly what
+differs per-instance, so it belongs to the binding, not the template). Hole
+numbers are assigned in preorder emission order, so the same input pair
+always produces the same template -- deterministic and stable across runs.
+
+**HOLE-CEILING sanity**: if the resulting template is more than 50% `$hole_N`
+nodes by count, `anti_unify` returns `Err(DupError.HoleCeilingExceeded)`
+instead of a template -- too little shared structure survived for the
+result to be a meaningful generalization, and the caller should fall back
+to treating the pair as a plain (non-generalized) clone match rather than
+emit a near-useless "template" that is almost all holes. Both-empty inputs
+generalize to an empty, zero-hole template; exactly-one-empty input always
+exceeds the ceiling (nothing shared).
+
+**PyO3 boundary**: matching every other kernel in this crate, `anti_unify`
+never raises across the FFI boundary -- the `#[pyfunction]` wrapper returns
+`(ok: bool, template_labels, template_parents, bindings_a, bindings_b)`; the
+Python shim (`frob.dup._core.anti_unify`) turns `ok == False` into
+`Err(DupError.HoleCeilingExceeded)` and `ok == True` into
+`Ok(AntiUnifyTemplate(...))`.
+
+This is the foundation T-0195 (reverse-templating report:
+`CloneTemplate`/`CloneBinding` models, extraction-signature synthesis in
+DUP001 messages) and T-0287 (type-hole generalization) build on; neither is
+implemented by this kernel itself.
 
 ## Gate integration
 

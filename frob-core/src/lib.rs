@@ -376,6 +376,198 @@ fn apted_similarity(
     1.0 - (dist as f64 / max_len as f64)
 }
 
+/// Children-index lists for a parent-index array, in source (array) order --
+/// same construction `build_postorder` uses, factored out so `anti_unify`
+/// can walk lockstep without paying for postorder/keyroots bookkeeping it
+/// does not need.
+fn children_lists(parents: &[i64]) -> (Vec<Vec<usize>>, usize) {
+    let n = parents.len();
+    let mut children: Vec<Vec<usize>> = vec![Vec::new(); n];
+    let mut root = 0usize;
+    for (i, &p) in parents.iter().enumerate() {
+        if p < 0 {
+            root = i;
+        } else {
+            children[p as usize].push(i);
+        }
+    }
+    (children, root)
+}
+
+/// Failure modes for `anti_unify_core`: only the hole-ceiling sanity check
+/// today (item 17/T-0194's ADOPT clause) -- a template that is mostly holes
+/// carries no real generalization value, so the caller should fall back to
+/// treating the pair as a plain (non-generalized) clone match.
+#[derive(Debug, PartialEq, Eq)]
+enum AntiUnifyErr {
+    /// Generalized template is >50% `$hole_N` placeholders by node count.
+    HoleCeilingExceeded,
+}
+
+/// Plotkin lgg output: the generalized node array (shared labels plus
+/// `$hole_N` placeholders at each divergence) and, per hole, the pair of
+/// concrete subtree roots it generalizes -- one index into `parents_a`'s
+/// node space, one into `parents_b`'s.
+#[derive(Debug)]
+struct Template {
+    labels: Vec<String>,
+    parents: Vec<i64>,
+    /// `(hole_id, node_index_in_a)`, one entry per hole, in hole order.
+    bindings_a: Vec<(usize, usize)>,
+    /// `(hole_id, node_index_in_b)`, one entry per hole, in hole order.
+    bindings_b: Vec<(usize, usize)>,
+}
+
+/// Recursive lockstep walk: at `(a, b)`, emit a shared node and recurse into
+/// children pairwise when labels AND arity agree; otherwise emit a fresh
+/// `$hole_N` at this position, bind it to `(a, b)`, and do not recurse --
+/// everything under a hole is exactly what differs per-instance, so it
+/// belongs to the binding, not the template.
+#[allow(clippy::too_many_arguments)]
+fn anti_unify_walk(
+    a: usize,
+    b: usize,
+    parent_out: i64,
+    children_a: &[Vec<usize>],
+    children_b: &[Vec<usize>],
+    labels_a: &[String],
+    labels_b: &[String],
+    out_labels: &mut Vec<String>,
+    out_parents: &mut Vec<i64>,
+    bindings_a: &mut Vec<(usize, usize)>,
+    bindings_b: &mut Vec<(usize, usize)>,
+    hole_counter: &mut usize,
+) {
+    let kids_a = &children_a[a];
+    let kids_b = &children_b[b];
+    if labels_a[a] == labels_b[b] && kids_a.len() == kids_b.len() {
+        let idx = out_labels.len() as i64;
+        out_labels.push(labels_a[a].clone());
+        out_parents.push(parent_out);
+        for k in 0..kids_a.len() {
+            anti_unify_walk(
+                kids_a[k],
+                kids_b[k],
+                idx,
+                children_a,
+                children_b,
+                labels_a,
+                labels_b,
+                out_labels,
+                out_parents,
+                bindings_a,
+                bindings_b,
+                hole_counter,
+            );
+        }
+    } else {
+        let hole_id = *hole_counter;
+        *hole_counter += 1;
+        out_labels.push(format!("$hole_{hole_id}"));
+        out_parents.push(parent_out);
+        bindings_a.push((hole_id, a));
+        bindings_b.push((hole_id, b));
+    }
+}
+
+/// Anti-unification core (Plotkin 1970 least-general-generalization): the
+/// pure algorithm, independent of the PyO3 boundary, so cargo tests can
+/// assert on `Err` directly (docs/modules/dup-sota-survey.md section 4).
+/// Both-empty inputs generalize to an empty template with zero holes;
+/// exactly-one-empty is a maximal-divergence case (nothing shared) and
+/// always exceeds the hole ceiling below.
+fn anti_unify_core(
+    labels_a: &[String],
+    parents_a: &[i64],
+    labels_b: &[String],
+    parents_b: &[i64],
+) -> Result<Template, AntiUnifyErr> {
+    if labels_a.is_empty() && labels_b.is_empty() {
+        return Ok(Template {
+            labels: Vec::new(),
+            parents: Vec::new(),
+            bindings_a: Vec::new(),
+            bindings_b: Vec::new(),
+        });
+    }
+    if labels_a.is_empty() || labels_b.is_empty() {
+        return Err(AntiUnifyErr::HoleCeilingExceeded);
+    }
+
+    let (children_a, root_a) = children_lists(parents_a);
+    let (children_b, root_b) = children_lists(parents_b);
+
+    let mut out_labels = Vec::new();
+    let mut out_parents = Vec::new();
+    let mut bindings_a = Vec::new();
+    let mut bindings_b = Vec::new();
+    let mut hole_counter = 0usize;
+
+    anti_unify_walk(
+        root_a,
+        root_b,
+        -1,
+        &children_a,
+        &children_b,
+        labels_a,
+        labels_b,
+        &mut out_labels,
+        &mut out_parents,
+        &mut bindings_a,
+        &mut bindings_b,
+        &mut hole_counter,
+    );
+
+    let hole_count = out_labels
+        .iter()
+        .filter(|l| l.starts_with("$hole_"))
+        .count();
+    // HOLE-CEILING sanity: >50% holes means too little shared structure to
+    // be a meaningful generalization -- fall back to a plain clone pair.
+    if hole_count * 2 > out_labels.len() {
+        return Err(AntiUnifyErr::HoleCeilingExceeded);
+    }
+
+    Ok(Template {
+        labels: out_labels,
+        parents: out_parents,
+        bindings_a,
+        bindings_b,
+    })
+}
+
+/// Plotkin lgg over the `(labels, parents)` node-array representation
+/// `apted_similarity` already consumes (docs/modules/dup-sota-survey.md
+/// section 4, T-0194). Lockstep top-down walk: where labels and arity
+/// agree, keep the shared node and recurse; on divergence, emit a fresh
+/// `$hole_N` and bind it to the two diverging subtrees without recursing
+/// into them. Returns `(ok, template_labels, template_parents, bindings_a,
+/// bindings_b)` rather than raising -- this crate's data-in/data-out
+/// contract (see module doc) never lets a Rust exception cross the PyO3
+/// boundary, so a hole-ceiling failure (`ok == false`) is a plain sentinel
+/// value, not a Python exception; all four arrays are empty in that case.
+#[pyfunction]
+fn anti_unify(
+    labels_a: Vec<String>,
+    parents_a: Vec<i64>,
+    labels_b: Vec<String>,
+    parents_b: Vec<i64>,
+) -> (
+    bool,
+    Vec<String>,
+    Vec<i64>,
+    Vec<(usize, usize)>,
+    Vec<(usize, usize)>,
+) {
+    // frob:doc docs/modules/dup.md#anti-unification-plotkin-lgg
+    match anti_unify_core(&labels_a, &parents_a, &labels_b, &parents_b) {
+        Ok(t) => (true, t.labels, t.parents, t.bindings_a, t.bindings_b),
+        Err(AntiUnifyErr::HoleCeilingExceeded) => {
+            (false, Vec::new(), Vec::new(), Vec::new(), Vec::new())
+        }
+    }
+}
+
 /// R5: Weisfeiler-Lehman graph-kernel hash over a def-use/control adjacency.
 ///
 /// `adjacency` is an edge list `(u, v)` over node indices `0..labels.len()`
@@ -834,6 +1026,134 @@ mod tests {
     }
 
     #[test]
+    fn anti_unify_identical_trees_has_zero_holes() {
+        // frob:tests frob-core/src/lib.rs::anti_unify_core kind="unit"
+        let labels = vec!["def".into(), "return".into(), "name".into()];
+        let parents = vec![-1i64, 0, 0];
+        let tpl = anti_unify_core(&labels, &parents, &labels, &parents).unwrap();
+        assert_eq!(tpl.labels, labels);
+        assert_eq!(tpl.parents, parents);
+        assert!(tpl.bindings_a.is_empty());
+        assert!(tpl.bindings_b.is_empty());
+    }
+
+    #[test]
+    fn anti_unify_single_leaf_divergence_binds_one_hole() {
+        // frob:tests frob-core/src/lib.rs::anti_unify_core kind="unit"
+        // Tree A: def -> [return, x]   Tree B: def -> [return, y]
+        // Two near-identical trees differing in one leaf: the shared
+        // "def"/"return" shape is kept, the leaf becomes $hole_0 bound
+        // to (x's index, y's index).
+        let labels_a = vec!["def".into(), "return".into(), "x".into()];
+        let parents_a = vec![-1i64, 0, 0];
+        let labels_b = vec!["def".into(), "return".into(), "y".into()];
+        let parents_b = vec![-1i64, 0, 0];
+        let tpl = anti_unify_core(&labels_a, &parents_a, &labels_b, &parents_b).unwrap();
+        assert_eq!(tpl.labels, vec!["def", "return", "$hole_0"]);
+        assert_eq!(tpl.parents, vec![-1i64, 0, 0]);
+        assert_eq!(tpl.bindings_a, vec![(0usize, 2usize)]);
+        assert_eq!(tpl.bindings_b, vec![(0usize, 2usize)]);
+    }
+
+    #[test]
+    fn anti_unify_arity_mismatch_becomes_a_hole_not_a_crash() {
+        // frob:tests frob-core/src/lib.rs::anti_unify_core kind="unit"
+        // Tree A: root -> [shared, mid -> [a]]
+        // Tree B: root -> [shared, mid -> [a, b]]
+        // root and the leading "shared" child match; "mid"'s child count
+        // differs (1 vs 2) so *that* subtree becomes a hole -- without
+        // panicking/crashing -- while the surrounding shared shape stays.
+        let labels_a = vec!["root".into(), "shared".into(), "mid".into(), "a".into()];
+        let parents_a = vec![-1i64, 0, 0, 2];
+        let labels_b = vec![
+            "root".into(),
+            "shared".into(),
+            "mid".into(),
+            "a".into(),
+            "b".into(),
+        ];
+        let parents_b = vec![-1i64, 0, 0, 2, 2];
+        let tpl = anti_unify_core(&labels_a, &parents_a, &labels_b, &parents_b).unwrap();
+        assert_eq!(tpl.labels, vec!["root", "shared", "$hole_0"]);
+        assert_eq!(tpl.bindings_a, vec![(0usize, 2usize)]);
+        assert_eq!(tpl.bindings_b, vec![(0usize, 2usize)]);
+    }
+
+    #[test]
+    fn anti_unify_wildly_different_trees_exceeds_hole_ceiling() {
+        // frob:tests frob-core/src/lib.rs::anti_unify_core kind="unit"
+        // HOLE-CEILING sanity: two trees sharing nothing generalize to a
+        // single root-level hole, which is 100% holes -- Err, not a
+        // useless one-hole "template".
+        let labels_a = vec!["def".into(), "x".into(), "y".into()];
+        let parents_a = vec![-1i64, 0, 0];
+        let labels_b = vec!["class".into(), "p".into(), "q".into(), "r".into()];
+        let parents_b = vec![-1i64, 0, 0, 0];
+        let err = anti_unify_core(&labels_a, &parents_a, &labels_b, &parents_b).unwrap_err();
+        assert_eq!(err, AntiUnifyErr::HoleCeilingExceeded);
+    }
+
+    #[test]
+    fn anti_unify_empty_vs_empty_is_empty_template() {
+        let tpl = anti_unify_core(&[], &[], &[], &[]).unwrap();
+        assert!(tpl.labels.is_empty());
+        assert!(tpl.bindings_a.is_empty());
+    }
+
+    #[test]
+    fn anti_unify_deterministic_hole_numbering() {
+        // frob:tests frob-core/src/lib.rs::anti_unify_core kind="unit"
+        // Same input run twice must number holes identically -- left-to-
+        // right, top-down (preorder emission order), so the template is
+        // stable/testable across runs.
+        // root -> [s1, dA1, s2, dA2] / root -> [s1, dB1, s2, dB2]:
+        // two divergent leaves interleaved with two shared ones, keeping
+        // the hole ratio at 40% (under the ceiling) while still exercising
+        // multi-hole numbering order.
+        let labels_a = vec![
+            "root".into(),
+            "s1".into(),
+            "dA1".into(),
+            "s2".into(),
+            "dA2".into(),
+        ];
+        let parents_a = vec![-1i64, 0, 0, 0, 0];
+        let labels_b = vec![
+            "root".into(),
+            "s1".into(),
+            "dB1".into(),
+            "s2".into(),
+            "dB2".into(),
+        ];
+        let parents_b = vec![-1i64, 0, 0, 0, 0];
+        let first = anti_unify_core(&labels_a, &parents_a, &labels_b, &parents_b).unwrap();
+        let second = anti_unify_core(&labels_a, &parents_a, &labels_b, &parents_b).unwrap();
+        assert_eq!(first.labels, second.labels);
+        assert_eq!(first.bindings_a, second.bindings_a);
+        assert_eq!(first.bindings_b, second.bindings_b);
+        assert_eq!(first.labels, vec!["root", "s1", "$hole_0", "s2", "$hole_1"]);
+        assert_eq!(first.bindings_a, vec![(0usize, 2usize), (1usize, 4usize)]);
+        assert_eq!(first.bindings_b, vec![(0usize, 2usize), (1usize, 4usize)]);
+    }
+
+    #[test]
+    fn anti_unify_pyfunction_wraps_hole_ceiling_as_false_sentinel() {
+        // The #[pyfunction] boundary never raises for a hole-ceiling
+        // failure -- confirms the (ok, ...) sentinel tuple shape.
+        let labels_a = vec!["def".into(), "x".into(), "y".into()];
+        let parents_a = vec![-1i64, 0, 0];
+        let labels_b = vec!["class".into(), "p".into(), "q".into(), "r".into()];
+        let parents_b = vec![-1i64, 0, 0, 0];
+        let (ok, labels, parents, bindings_a, bindings_b) =
+            anti_unify(labels_a, parents_a, labels_b, parents_b);
+        assert!(!ok);
+        assert!(labels.is_empty());
+        assert!(parents.is_empty());
+        assert!(bindings_a.is_empty());
+        assert!(bindings_b.is_empty());
+    }
+
+    #[test]
     fn exact_regions_finds_shared_block_inside_different_functions() {
         // frob:tests frob-core/src/lib.rs::exact_regions kind="unit"
         // Two otherwise-different token streams sharing one 6-token block
@@ -1022,6 +1342,7 @@ fn frob_core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(candidate_pairs, m)?)?;
     m.add_function(wrap_pyfunction!(tree_edit_similarity, m)?)?;
     m.add_function(wrap_pyfunction!(apted_similarity, m)?)?;
+    m.add_function(wrap_pyfunction!(anti_unify, m)?)?;
     m.add_function(wrap_pyfunction!(wl_hash, m)?)?;
     m.add_function(wrap_pyfunction!(exact_regions, m)?)?;
     Ok(())
