@@ -4694,7 +4694,7 @@ check and before this report.
 ```yaml
 id: T-0258
 title: 'deploy conformance: script<->manifest bidirectional verification (DEPLOY gates)'
-state: in-progress
+state: done
 kind: security
 origin: human
 created: '2026-07-18'
@@ -4713,7 +4713,10 @@ scope:
 - pyproject.toml
 - .frob-release.json
 - uv.lock
-evidence: []
+evidence:
+- tests/unit/deploy/test_conform.py::TestEvasion::test_bare_word
+- tests/unit/deploy/test_conform.py::TestEvasion::test_evasion_fires_through_full_check
+- tests/unit/deploy/test_conform.py::TestEvasion::test_env_wrapper
 attachments: []
 acceptance: []
 threat: tampering
