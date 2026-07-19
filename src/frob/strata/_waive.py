@@ -207,6 +207,36 @@ def _declared_waivers(model: KernelModel) -> list[tuple[str, Waiver]]:
     return [(node.id, waiver) for node in model.nodes for waiver in node.waives]
 
 
+# Split `findings` into kept/waived against every node's `waive` clauses
+# declared in `model`, then compute which declared waivers are STALE
+# (matched zero findings) -- the one seam every SYS100-102/THREAT002-003/
+# LINT004 caller shares (module docstring: no per-family duplicate).
+# `rule_of`/`target_of`/`sub_target_of` extract the (rule, node,
+# sub-target-or-None) key from whatever finding shape the caller has
+# (`SelfConformViolation.node`/`.capability`, `FamilyGap.target`/
+# `.sub_target`, ...) since those families share no common base class. A
+# waiver matches iff its `(node, family, sub_target)` triple exactly equals
+# a finding's `(target_of(finding), rule_of(finding),
+# sub_target_of(finding))` -- narrow, never a substring/prefix match
+# (module docstring's "no blanket waivers"). For a
+# `MULTI_INSTANCE_WAIVER_FAMILIES` rule, `sub_target_of` MUST return the
+# finding's actual capability kind / CWE id (never `None`) or it can never
+# match any waiver on that family (which, by `_validate_waiver_decl`,
+# always carries a sub-target) -- a caller returning `None` there is a
+# caller bug, not a valid "no sub-target" finding.
+#
+# `in_scope` is MANDATORY, not a convenience default: `Node.waives` is
+# model-global, but `check_self_conformance` (SYS100-102) and
+# `evaluate_exhaustiveness` (THREAT/LINT/PII/compliance/CVE-fingerprint)
+# each only see THEIR OWN slice of `findings` -- a LINT004 waiver run
+# through `check_self_conformance`'s SYS-only `findings` would (correctly)
+# match nothing and be misreported STALE, even though it is genuinely
+# effective in the OTHER caller's pass. Each caller passes an `in_scope`
+# predicate naming exactly the rule ids it owns so staleness is judged
+# only against the waivers actually addressable in this call; a waiver
+# naming a rule id neither caller owns (a typo) is judged stale by
+# whichever `in_scope` is broad enough to admit it -- never silently
+# invisible to both.
 # frob:doc docs/strata/waive.md#implementation
 # frob:tests tests/unit/strata/test_litmus_waive.py::TestWaiveLitmus.test_stale_fails
 # frob:tests tests/unit/strata/test_selfconform.py::TestWaiverChannel.test_stale
@@ -219,47 +249,40 @@ def apply_waivers(
     sub_target_of: Callable[[_F], str | None],
     in_scope: Callable[[str], bool],
 ) -> WaiverApplication[_F]:
-    """Split `findings` into kept/waived against every node's `waive`
-    clauses declared in `model`, then compute which declared waivers are
-    STALE (matched zero findings) -- the one seam every SYS100-102/
-    THREAT002-003/LINT004 caller shares (module docstring: no per-family
-    duplicate). `rule_of`/`target_of`/`sub_target_of` extract the (rule,
-    node, sub-target-or-None) key from whatever finding shape the caller
-    has (`SelfConformViolation.node`/`.capability`, `FamilyGap.target`/
-    `.sub_target`, ...) since those families share no common base class.
-    A waiver matches iff its `(node, family, sub_target)` triple exactly
-    equals a finding's `(target_of(finding), rule_of(finding),
-    sub_target_of(finding))` -- narrow, never a substring/prefix match
-    (module docstring's "no blanket waivers"). For a
-    `MULTI_INSTANCE_WAIVER_FAMILIES` rule, `sub_target_of` MUST return the
-    finding's actual capability kind / CWE id (never `None`) or it can
-    never match any waiver on that family (which, by `_validate_waiver_
-    decl`, always carries a sub-target) -- a caller returning `None` there
-    is a caller bug, not a valid "no sub-target" finding.
-
-    `in_scope` is MANDATORY, not a convenience default: `Node.waives` is
-    model-global, but `check_self_conformance` (SYS100-102) and
-    `evaluate_exhaustiveness` (THREAT/LINT/PII/compliance/CVE-fingerprint)
-    each only see THEIR OWN slice of `findings` -- a LINT004 waiver run
-    through `check_self_conformance`'s SYS-only `findings` would
-    (correctly) match nothing and be misreported STALE, even though it is
-    genuinely effective in the OTHER caller's pass. Each caller passes an
-    `in_scope` predicate naming exactly the rule ids it owns so staleness
-    is judged only against the waivers actually addressable in this call;
-    a waiver naming a rule id neither caller owns (a typo) is judged stale
-    by whichever `in_scope` is broad enough to admit it -- never silently
-    invisible to both."""
+    """Split findings into kept/waived, then compute which waivers are stale."""
     declared = [
         (node_id, w)
         for node_id, w in _declared_waivers(model)
         if in_scope(split_waiver_rule(w.rule)[0])
     ]
-    # T-0174 perf: index `declared` by (node, family, sub_target) once
-    # rather than rescanning it per finding -- `findings` and `declared`
-    # are each O(n), a per-finding linear scan would make matching O(n*m).
-    by_key: dict[tuple[str, str, str | None], Waiver] = {
-        (node_id, *split_waiver_rule(w.rule)): w for node_id, w in declared
-    }
+    by_key = _index_declared_waivers(declared)
+    kept, waived, matched_keys = _split_kept_and_waived(
+        findings, by_key, rule_of, target_of, sub_target_of
+    )
+    stale = _stale_waivers(declared, matched_keys)
+    return WaiverApplication(kept=tuple(kept), waived=tuple(waived), stale=tuple(stale))
+
+
+def _index_declared_waivers(
+    declared: list[tuple[str, Waiver]],
+) -> dict[tuple[str, str, str | None], Waiver]:
+    """Index `declared` by (node, family, sub_target) once.
+
+    T-0174 perf: rather than rescanning it per finding -- `findings` and
+    `declared` are each O(n), a per-finding linear scan would make matching
+    O(n*m)."""
+    return {(node_id, *split_waiver_rule(w.rule)): w for node_id, w in declared}
+
+
+def _split_kept_and_waived(
+    findings: Sequence[_F],
+    by_key: dict[tuple[str, str, str | None], Waiver],
+    rule_of: Callable[[_F], str],
+    target_of: Callable[[_F], str | None],
+    sub_target_of: Callable[[_F], str | None],
+) -> tuple[list[_F], list[WaivedFinding[_F]], set[tuple[str, str, str | None]]]:
+    """Every finding into kept or waived against `by_key`, plus the set of
+    waiver keys that matched at least one finding."""
     kept: list[_F] = []
     waived: list[WaivedFinding[_F]] = []
     matched_keys: set[tuple[str, str, str | None]] = set()
@@ -271,28 +294,43 @@ def apply_waivers(
         if match is None:
             kept.append(finding)
             continue
-        key = (target or "", rule, sub_target)
-        matched_keys.add(key)
-        _log.info(
-            "waive: %s finding on %s (sub_target=%s) waived (reason=%r ticket=%s)",
-            rule,
-            target,
-            sub_target,
-            match.reason,
-            match.ticket,
-        )
-        waived.append(
-            WaivedFinding(
-                finding=finding,
-                waiver=WaiverMatch(
-                    node=target or "",
-                    rule=match.rule,
-                    reason=match.reason,
-                    ticket=match.ticket,
-                ),
-            )
-        )
+        matched_keys.add((target or "", rule, sub_target))
+        waived.append(_waived_finding(finding, rule, target, sub_target, match))
+    return kept, waived, matched_keys
 
+
+def _waived_finding(
+    finding: _F,
+    rule: str,
+    target: str | None,
+    sub_target: str | None,
+    match: Waiver,
+) -> WaivedFinding[_F]:
+    """One finding paired with the `Waiver` that matched it, logged."""
+    _log.info(
+        "waive: %s finding on %s (sub_target=%s) waived (reason=%r ticket=%s)",
+        rule,
+        target,
+        sub_target,
+        match.reason,
+        match.ticket,
+    )
+    return WaivedFinding(
+        finding=finding,
+        waiver=WaiverMatch(
+            node=target or "",
+            rule=match.rule,
+            reason=match.reason,
+            ticket=match.ticket,
+        ),
+    )
+
+
+def _stale_waivers(
+    declared: list[tuple[str, Waiver]],
+    matched_keys: set[tuple[str, str, str | None]],
+) -> list[WaiverMatch]:
+    """Every declared waiver whose key never matched a finding."""
     stale: list[WaiverMatch] = []
     for node_id, waiver in declared:
         family, sub_target = split_waiver_rule(waiver.rule)
@@ -315,8 +353,7 @@ def apply_waivers(
                 ticket=waiver.ticket,
             )
         )
-
-    return WaiverApplication(kept=tuple(kept), waived=tuple(waived), stale=tuple(stale))
+    return stale
 
 
 __all__ = [
