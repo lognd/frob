@@ -75,7 +75,7 @@ logand.app pilot: THREAT002 (capability kind matches no sink taxonomy entry) fir
 ```yaml
 id: T-0173
 title: sys audit output repeats identical WARNING blocks across all views
-state: queued
+state: in-progress
 kind: ux
 origin: agent
 created: '2026-07-18'
@@ -92,6 +92,83 @@ acceptance: []
 threat: null
 ```
 logand.app pilot: the same WARNING blocks print once per configured view (8x duplication), burying the per-view differences that matter. Deduplicate: print shared findings once with a views-affected annotation, keep per-view sections for view-specific results only. Snapshot-test the output shape.
+
+## Done report
+
+Reproduced: yes, before the fix. `frob sys audit` over the T-0115 vuln-
+litmus model (`may "sql"` capability, `subject:child` collection flow into
+a Pii store, no discharge claims) printed the identical CWE-639 WARNING
+block once per `DEFAULT_QUALITY_VIEWS` view (3x, same family/rule/detail)
+and the identical COPPA WARNING block once per `DEFAULT_COMPLIANCE_VIEWS`
+view (4x) -- 9 raw gaps rendered as 9 near-duplicate blocks even though
+only 4 are genuinely distinct (security, quality, compliance, lint).
+
+Fix location: `src/frob/strata/_audit.py` (report-generation module) --
+NOT `src/frob/app/sys_runner.py`'s output logic, per dispatch. Added
+`GroupedGap` (BaseModel) and `group_gaps_by_view(gaps) -> tuple[GroupedGap,
+...]`, which collapses `FamilyGap`s that are verbatim-identical on
+`(family, rule, detail, target, sub_target)` -- differing only in `view`
+-- into one group carrying every view it fired under, order-preserving on
+first occurrence. `AuditReport.gaps`/`waived` are left completely
+untouched (the verdict/`proved` property and waiver matching still
+evaluate the full, ungrouped set) -- this is a presentation-layer
+transform only, applied at print time.
+
+`src/frob/app/sys_runner.py` changes are mechanical wiring only: `_log_
+gaps` and `_log_waived_gaps` now iterate `group_gaps_by_view(report.gaps)`
+/ `group_gaps_by_view(report.waived)` instead of the raw tuples, and print
+`views=<comma-joined>` instead of a single `view=`. No new logic lives in
+sys_runner.py; the dedup decision is entirely in `_audit.py`.
+
+Verified manually against a real repro repo (sql-capability model, same
+shape as `test_undischarged_capability_exits_nonzero_with_named_gap`):
+before the fix, `frob sys audit` printed the CWE-639 block 3 times
+identically; after the fix it prints once as `GAP family=quality
+views=web-performance-baseline,reliability-baseline,web-quality-security-
+baseline rule=THREAT003 detail=...`, while the single-view CWE-89 security
+gap and the LINT001 gap remain their own distinct blocks. `audit: evaluated
+views=12 -> 5 gap(s)` (the verdict-affecting count) was unchanged before
+and after.
+
+Litmus test added: `tests/unit/strata/test_audit.py::
+TestGroupGapsByView::test_no_verbatim_duplicate_blocks` -- runs
+`evaluate_exhaustiveness` over the existing `_vulnerable_model()` fixture,
+asserts `len(report.gaps) == 9` (verdict-affecting count unchanged),
+asserts no two `group_gaps_by_view` blocks render an identical `(family,
+rule, detail)` tuple, asserts the CWE-639 quality gap collapses into one
+group naming all 3 `DEFAULT_QUALITY_VIEWS`, asserts the COPPA compliance
+gap collapses into one group naming all 4 `DEFAULT_COMPLIANCE_VIEWS`,
+asserts the CWE-89 security gap stays single-view (`("owasp-top-10",)`,
+not merged with anything), and asserts the 9 raw gaps collapse to exactly
+4 printed groups (security, quality, compliance, lint) -- proving distinct
+gaps are preserved while verbatim repeats collapse.
+
+Evidence:
+- `tests/unit/strata/test_audit.py::TestGroupGapsByView::
+  test_no_verbatim_duplicate_blocks` -- PASS (`uv run pytest tests/unit/
+  strata/test_audit.py -q`: 11 passed)
+- `uv run pytest tests/unit/strata/ tests/system/test_cli_sys_audit.py -q`
+  -- 578 passed
+- `uv run pytest tests/unit/strata/test_selfconform.py -q -k
+  TestRealGateGreen` -- 1 passed
+- `uv run ruff check` + `uv run ruff format --check` on all touched files
+  -- clean
+- `make typecheck` (`uv run ty check src/`) -- "All checks passed!"
+
+Filed: none -- no out-of-scope discoveries. The self-conformance report
+(`SelfConformReport`, `_log_selfconform_violations`) has no per-view
+dimension (single pass, no view loop), so it was not touched and does not
+need this treatment.
+
+Gates: not run to completion in-worktree (foreground `make coverage` /
+`uv run frob check` left for the coordinator per dispatch instructions);
+`frob check --ticket T-0173` was not re-run after this Done report was
+written. Deletion-filter clean: `git diff main --diff-filter=D --stat`
+empty.
+
+Worktree: `.claude/worktrees/agent-a41fd191d37eb038b`, branch tip after
+this work is a commit on top of `66fe627` (main's tip at worktree
+warm-up; `git merge main` reported already up to date).
 
 <!-- ticket:T-0177 -->
 ```yaml

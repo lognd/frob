@@ -61,7 +61,9 @@ from frob.strata._audit import (
     DEFAULT_SECURITY_VIEWS,
     AuditReport,
     FamilyGap,
+    GroupedGap,
     evaluate_exhaustiveness,
+    group_gaps_by_view,
 )
 from frob.strata._breach import (
     BlastRadius,
@@ -290,6 +292,7 @@ __all__ = [
     "VIEWS",
     "AdmitPhase",
     "AuditReport",
+    "GroupedGap",
     "AtCallRequire",
     "AddFlow",
     "AtomicContractReport",
@@ -434,6 +437,7 @@ __all__ = [
     "evaluate_crash_contracts",
     "evaluate_deploy_contracts",
     "evaluate_exhaustiveness",
+    "group_gaps_by_view",
     "evaluate_host_isolation_waived",
     "evaluate_lateral_isolation",
     "evaluate_saga_contracts",

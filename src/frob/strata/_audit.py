@@ -166,6 +166,56 @@ class AuditReport(BaseModel):
         return not self.gaps
 
 
+# frob:doc docs/strata/threat.md#the-exhaustiveness-proof-the-point
+class GroupedGap(BaseModel):
+    """One dedup group of `FamilyGap`s that are verbatim-identical except
+    for `view` (T-0173: `frob sys audit` was printing an IDENTICAL WARNING
+    block once per configured view whenever the same underlying gap held
+    under every view, burying the genuinely per-view differences under
+    repeated noise). `views` names every view the group fired under, in
+    first-seen order; the underlying `AuditReport.gaps`/`waived` tuples are
+    left untouched so `proved` and waiver matching keep evaluating the full,
+    ungrouped gap set -- this is a presentation-layer collapse only."""
+
+    model_config = ConfigDict(frozen=True)
+
+    family: str
+    rule: str
+    detail: str
+    target: str | None = None
+    sub_target: str | None = None
+    views: tuple[str, ...] = ()
+
+
+# frob:doc docs/strata/threat.md#the-exhaustiveness-proof-the-point
+def group_gaps_by_view(gaps: tuple[FamilyGap, ...]) -> tuple[GroupedGap, ...]:
+    """Collapse `gaps` into `GroupedGap`s: entries that are verbatim-
+    identical on (family, rule, detail, target, sub_target) -- differing
+    only in `view` -- are merged into one group carrying every view it
+    fired under (T-0173). Order-preserving on first occurrence; a gap that
+    fires under only one view still yields a single-view group, so
+    genuinely distinct per-view gaps are never collapsed together."""
+    order: list[tuple[str, str, str, str | None, str | None]] = []
+    seen: dict[tuple[str, str, str, str | None, str | None], list[str]] = {}
+    for gap in gaps:
+        key = (gap.family, gap.rule, gap.detail, gap.target, gap.sub_target)
+        if key not in seen:
+            seen[key] = []
+            order.append(key)
+        seen[key].append(gap.view)
+    return tuple(
+        GroupedGap(
+            family=family,
+            rule=rule,
+            detail=detail,
+            target=target,
+            sub_target=sub_target,
+            views=tuple(seen[(family, rule, detail, target, sub_target)]),
+        )
+        for family, rule, detail, target, sub_target in order
+    )
+
+
 def _threat_violation_sub_target(v: ThreatViolation) -> str | None:
     """THREAT002/THREAT003's multi-instance-per-node sub-target: the
     capability kind THREAT002 fired for, or the CWE id THREAT003 fired
