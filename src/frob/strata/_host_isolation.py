@@ -255,6 +255,7 @@ def _lateral_pair_violations(
 
     owns_a = _owns_by_user(nodes_a, manifests)
     owns_b = _owns_by_user(nodes_b, manifests)
+    # frob:waive PERF004 reason="differs per pair, fresh work not a re-sort"
     shared_writable = sorted(
         path
         for path in (set(owns_a) & set(owns_b))

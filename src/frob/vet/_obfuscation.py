@@ -74,6 +74,7 @@ _MAX_CANDIDATES_PER_FILE = 4000
 _MAX_SCAN_BYTES = 2 * 1024 * 1024
 
 
+# frob:waive PERF003 reason="two-pointer scan not a join; each char visited once, O(n)"
 def _iter_string_literals(text: str) -> list[str]:
     """Single-pass, backtracking-free scan for `'...'`/`"..."` literal
     bodies (single-char delimiters only, matching the prior regex's scope).
