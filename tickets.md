@@ -2897,7 +2897,7 @@ from before this change, not newly introduced, and unchanged by this diff.
 ```yaml
 id: T-0218
 title: graph build reports edges=0 on cache-hit runs while the loaded graph has edges
-state: queued
+state: in-progress
 kind: ux
 origin: agent
 created: '2026-07-18'
