@@ -677,10 +677,6 @@ def _osv_violations(
     return violations, []
 
 
-# frob:doc docs/modules/vet.md#public-api
-# frob:waive TEST005 reason="scan_tree 84.0% branch cover, debt T-0160"
-# frob:tests tests/test_vet.py::TestScanTreeLockArg.test_scan_tree_lockfile_arg
-# frob:tests tests/test_vet.py::TestScanTreeLockArg.test_scan_tree_unsupp_err
 def _collect_supplementary_findings(
     project_root: Path, lockfile: Path, cfg: VetConfig, violations: list[Violation]
 ) -> list[str]:
@@ -731,6 +727,9 @@ def _resolve_lockfile_and_deps(
 
 
 # frob:doc docs/modules/vet.md#public-api
+# frob:waive TEST005 reason="scan_tree 84.0% branch cover, debt T-0160"
+# frob:tests tests/test_vet.py::TestScanTreeLockArg.test_scan_tree_lockfile_arg
+# frob:tests tests/test_vet.py::TestScanTreeLockArg.test_scan_tree_unsupp_err
 def scan_tree(
     root: Path,
     *,

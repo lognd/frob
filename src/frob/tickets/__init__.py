@@ -430,9 +430,6 @@ def _scan_code_references(
     return changed
 
 
-# frob:ticket T-0162
-# frob:doc docs/modules/tickets.md#public-api
-# frob:waive TEST005 reason="renumber_one 68.3% branch cover, debt T-0160"
 def _load_and_validate_renumber_ids(
     root: Path, old_id: str, new_id: str
 ) -> Result[tuple[dict[str, Ticket], dict[str, Ticket]], TicketError]:
@@ -547,6 +544,8 @@ def _log_renumber_dry_run(old_id: str, new_id: str, report: RenumberReport) -> N
 # `finalize_draft` (T-0162's provisional-id mechanism) and, later,
 # T-0176's `frob ticket land` reuse.
 # frob:doc docs/modules/tickets.md#public-api
+# frob:ticket T-0162
+# frob:waive TEST005 reason="renumber_one 68.3% branch cover, debt T-0160"
 def renumber_one(
     root: Path, old_id: str, new_id: str, *, dry_run: bool = False
 ) -> Result[RenumberReport, TicketError]:
