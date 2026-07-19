@@ -2789,11 +2789,11 @@ Changed:
   out_of_scope=%d -> %d pre-discharge obligation(s) (not all become
   tickets; see caller's own post-discharge count/verdict)", ...)`, plus an
   inline comment explaining why (T-0217).
-- tests/unit/strata/test_threat.py::TestEvaluateThreats.test_pre_discharge_count_log_is_honest_and_debug_level
+- tests/unit/strata/test_threat.py::TestEvaluateThreats::test_pre_discharge_count_log_is_honest_and_debug_level
   (new) -- caplog-based unit regression: asserts the log record's level is
   DEBUG, the message does not contain the misleading "violation(s)"
   wording, and does contain "pre-discharge obligation(s)".
-- tests/system/test_cli_sys_plan.py::TestSysPlanCli.test_threat_pre_discharge_count_never_reads_as_contradicting_output
+- tests/system/test_cli_sys_plan.py::TestSysPlanCli::test_threat_pre_discharge_count_never_reads_as_contradicting_output
   (new) -- CLI-level regression: runs `frob sys plan` against the existing
   `_MODEL` fixture and asserts the exact old contradictory substrings
   ("-> 0 violation(s)", "threat: evaluated view=") never appear in
@@ -7438,10 +7438,10 @@ evidence:
 - strata-core/src/lib.rs::tests::non_transitive_edge_is_a_terminal_hop
 - strata-core/src/lib.rs::tests::non_transitive_edge_may_still_be_the_final_hop_of_a_mixed_chain
 - strata-core/src/lib.rs::tests::reachable_returns_witness_paths
-- tests/unit/strata/test_facts.py::TestClosure.test_krb_no_transit_attr_stops_chaining_past_that_hop
-- tests/unit/strata/test_krb.py::TestTrustChainReachability.test_non_transitive_chain_currently_over_reaches_known_gap
-- tests/unit/strata/test_krb.py::TestTrustChainReachability.test_transitive_chain_reaches_across_both_hops
-- tests/unit/strata/test_krb.py::TestKrbTrustFlows.test_sync
+- tests/unit/strata/test_facts.py::TestClosure::test_krb_no_transit_attr_stops_chaining_past_that_hop
+- tests/unit/strata/test_krb.py::TestTrustChainReachability::test_non_transitive_chain_currently_over_reaches_known_gap
+- tests/unit/strata/test_krb.py::TestTrustChainReachability::test_transitive_chain_reaches_across_both_hops
+- tests/unit/strata/test_krb.py::TestKrbTrustFlows::test_sync
 - tests/unit/strata/test_kernel_properties.py::test_reachable_matches_bfs_oracle
 attachments: []
 acceptance: []
