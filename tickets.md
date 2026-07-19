@@ -2789,11 +2789,11 @@ Changed:
   out_of_scope=%d -> %d pre-discharge obligation(s) (not all become
   tickets; see caller's own post-discharge count/verdict)", ...)`, plus an
   inline comment explaining why (T-0217).
-- tests/unit/strata/test_threat.py::TestEvaluateThreats::test_pre_discharge_count_log_is_honest_and_debug_level
+- tests/unit/strata/test_threat.py::TestEvaluateThreats.test_pre_discharge_count_log_is_honest_and_debug_level
   (new) -- caplog-based unit regression: asserts the log record's level is
   DEBUG, the message does not contain the misleading "violation(s)"
   wording, and does contain "pre-discharge obligation(s)".
-- tests/system/test_cli_sys_plan.py::TestSysPlanCli::test_threat_pre_discharge_count_never_reads_as_contradicting_output
+- tests/system/test_cli_sys_plan.py::TestSysPlanCli.test_threat_pre_discharge_count_never_reads_as_contradicting_output
   (new) -- CLI-level regression: runs `frob sys plan` against the existing
   `_MODEL` fixture and asserts the exact old contradictory substrings
   ("-> 0 violation(s)", "threat: evaluated view=") never appear in
@@ -8200,3 +8200,284 @@ attachments: []
 acceptance: []
 threat: null
 ```
+
+<!-- ticket:T-draft-1fae8bfb -->
+```yaml
+id: T-draft-1fae8bfb
+title: 'arch: gates+app long-function/god-class burndown to zero'
+state: done
+kind: bug
+origin: agent
+created: '2026-07-19'
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/__init__.py
+- src/frob/app/**
+- tickets.md
+evidence:
+- tests/test_gates.py::TestSysGate::test_sys001_dangling
+- tests/unit/test_check.py::TestCheckBuildsGraphOnce::test_run_check_calls_build_graph_exactly_once
+- tests/system/test_cli_check.py::TestCheckSkipFlags::test_json_output
+- tests/system/test_cli_check.py::TestCheckGatesStage::test_only_gates_passes_once_bound_and_tested
+attachments: []
+acceptance: []
+threat: null
+```
+## Description
+
+`frob arch analyze .` (repo-wide) reported ~278 long-function (>threshold
+lines, `frob.arch._python._check_long_functions`, default
+`max_function_lines=30` -- frob.toml has no `[arch]` override) warnings
+repo-wide. This ticket's slice: drive the long-function warnings in
+`src/frob/gates/__init__.py` and `src/frob/app/**` to zero via genuine
+extraction, without changing behavior or lowering the threshold.
+
+## Plan
+
+Filter `uv run frob arch .` output to the slice's two paths, extract one
+cohesive private helper per over-long function (named for what it does),
+re-run `frob arch .` after each file to confirm 0 remaining, keep the
+touched-area pytest suites green throughout, then a final full
+`uv run frob check` pass.
+
+## Done report
+
+Changed (every function extracted; each new helper carries a one-line
+docstring, no behavior change):
+
+src/frob/app/app.py::_dispatch_table (extracted `_SUBCOMMAND_RUNNER_NAMES` module dict)
+src/frob/app/deploy_runner.py::_run_generate (extracted `_mismatched_generated_files`, `_run_generate_check`, `_write_generated_files`)
+src/frob/app/deploy_runner.py::_run_audit (extracted `_require_audit_flags`, `_build_vm_audit_config`, `_report_audit_result`)
+src/frob/app/check_runner.py::_deploy_drift_result (extracted `_deploy_drift_tool_result`)
+src/frob/app/check_runner.py::_deploy_conformance_result (extracted `_deploy_conformance_tool_result`)
+src/frob/app/check_runner.py::run (extracted `_handle_stamp_modes`, `_stdout_log_ctx`, `_run_all_stages`, `_run_auto_detected_stages`, `_run_pinned_stage`, `_append_deploy_stages`)
+src/frob/app/ticket_runner.py::_land (extracted `_require_land_args`, `_report_land_result`)
+src/frob/app/ticket_runner.py::_apply_evidence (extracted `_log_evidence_result`)
+src/frob/app/sys_runner.py::_run_export (extracted `_require_export_format`, `_require_export_design_path`)
+src/frob/app/sys_runner.py::_print_audit_report (extracted `_log_waived_gaps`, `_log_proved_summary`, `_log_gaps`)
+src/frob/app/sys_runner.py::_print_selfconform_report (extracted `_log_waived_selfconform`, `_log_selfconform_proved`, `_log_selfconform_violations`)
+src/frob/app/sys_runner.py::_run_audit (extracted `_load_audit_model`, `_evaluate_audit`)
+src/frob/gates/__init__.py::_waive002_violations (extracted `_waive002_violation_for`)
+src/frob/gates/__init__.py::_match_waiver (moved historical rationale from docstring to a leading comment; logic unchanged)
+src/frob/gates/__init__.py::_cov002 (extracted `_cov002_check_symref`)
+src/frob/gates/__init__.py::_cov003 (extracted `_cov003_evidence_violation`)
+src/frob/gates/__init__.py::_todo001_bare (extracted `_todo001_bare_comment`)
+src/frob/gates/__init__.py::scope_gate (extracted `_scope_gate_check_file`)
+src/frob/gates/__init__.py::_test001_002_one (extracted `_test001_no_unit_test`, `_test002_below_min`)
+src/frob/gates/__init__.py::_test003 (extracted `_test003_check_package`)
+src/frob/gates/__init__.py::_test007_pairs (extracted `_test007_check_pair`)
+src/frob/gates/__init__.py::_test005_symbols (extracted `_test005_symbol_violation`)
+src/frob/gates/__init__.py::_test005_systems (extracted `_test005_system_violation`)
+src/frob/gates/__init__.py::_test008_unjoined_root (moved rationale to leading comment)
+src/frob/gates/__init__.py::_test005 (extracted `_exclude_filtered_coverage`)
+src/frob/gates/__init__.py::_sys001 (extracted `_sys001_check_edge`)
+src/frob/gates/__init__.py::_claims_markers (extracted `_claims_markers_in_file`)
+src/frob/gates/__init__.py::_doc003 (moved rationale to leading comment)
+src/frob/gates/__init__.py::sys_gate (extracted `_log_sys_gate_summary`; moved rationale to leading comment)
+src/frob/gates/__init__.py::dup_gate (extracted `_dup_gate_violations`)
+src/frob/gates/__init__.py::release_gate (extracted `_rel001_missing_changelog`)
+src/frob/gates/__init__.py::fuzz_gate (extracted `_fuzz_gate_violations`)
+src/frob/gates/__init__.py::doclink_gate (extracted `_doc001_orphan`)
+src/frob/gates/__init__.py::docanchor_gate (extracted `_docanchor_check_edge`)
+src/frob/gates/__init__.py::perf_gate (extracted `_perf_gate_candidate_paths`, `_perf_gate_parse_files`)
+src/frob/gates/__init__.py::_load_inputs (extracted `_load_required_state`, `_load_graph_queue_lock`, `_require`, `_assemble_gate_inputs`)
+src/frob/gates/__init__.py::_build_jobs (extracted `_build_ticket_scoped_jobs`)
+src/frob/gates/__init__.py::run_gates (extracted `_assemble_gate_report`)
+
+Residual: none -- both files report 0 long-function warnings after this
+pass (`frob-arch`'s remaining `large-file`/`abstraction-opportunity`
+findings on these files are separate categories, out of this ticket's
+declared scope: only long-function/god-class was targeted, no god-class
+findings existed in this slice to begin with).
+
+Evidence: `uv run pytest tests/test_gates.py tests/unit/test_check.py
+tests/system/test_cli_check.py tests/system tests/test_tickets_collision.py
+tests/test_tickets_cmd_evidence.py tests/test_tickets_evidence_cli.py
+tests/test_ticket_land.py tests/test_tickets.py tests/unit/test_ticket_store.py
+tests/unit/deploy tests/unit/strata/test_deploy.py` -> all green (full
+system suite plus every touched-module unit suite). 4 pytest node ids
+recorded via `frob ticket evidence` (see `evidence:` above).
+
+Gates: `uv run frob arch .` filtered to
+`src/frob/gates/__init__.py`/`src/frob/app/**`: BEFORE 36 long-function
+warnings (26 in gates/__init__.py, 10 across app/**); AFTER 0 in both.
+`uv run frob check` (full, post-merge-to-d900bd5): `ruff-check`/`ruff-
+format`/`ty`/`gates` all 0 errors on the touched slice; the run's overall
+exit 1 is a single pre-existing E501 in `src/frob/strata/_audit.py`
+(confirmed via `git diff main -- src/frob/strata/_audit.py` empty --
+untouched by this ticket, landed via the main merge, out of scope).
+`git diff main --diff-filter=D --stat` empty after resolving the
+ledger-conflict splice against the newer main tip (d900bd5). Cargo.lock:
+no churn (`make core` no-op rebuild). No non-ASCII characters. Not closing
+this ticket -- leaving for the reviewer per the review-gated workflow.
+
+<!-- ticket:T-draft-aadebb25 -->
+```yaml
+id: T-draft-aadebb25
+title: 'arch: core-commands long-function burndown to zero'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-19'
+blocked_by: []
+parent: null
+scope:
+- src/frob/vet/**
+- src/frob/tickets/**
+- src/frob/check/**
+- src/frob/__main__.py
+- src/frob/deploy/**
+- src/frob/fuzz/**
+- src/frob/lang/**
+- src/frob/testing/**
+- tickets.md
+evidence:
+- tests/test_vet.py
+- tests/test_vet_containment.py
+- tests/test_tickets.py
+- tests/test_tickets_cmd_evidence.py
+- tests/test_tickets_collision.py
+- tests/test_tickets_evidence_cli.py
+- tests/test_ticket_land.py
+- tests/unit/test_ticket_store.py
+- tests/unit/test_check.py
+- tests/unit/test_check_tool_unavailable.py
+- tests/unit/deploy
+- tests/test_testing.py
+- tests/test_lang.py
+- tests/unit/test_lang_primitives.py
+- tests/unit/test_lang_strata.py
+- tests/test_fuzz.py
+- tests/system/test_cli_vet.py
+- tests/system/test_cli_ticket.py
+- tests/system/test_cli_sys_plan.py
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+- tests/unit/strata/test_selfconform.py::TestRealGateGreen
+attachments: []
+acceptance: []
+threat: null
+```
+## Description
+
+`frob arch .` reported ~70 long-function (>threshold lines,
+`frob.arch._python._check_long_functions`, default
+`max_function_lines=30`) warnings across
+`src/frob/vet/**`, `src/frob/tickets/**`, `src/frob/check/**`,
+`src/frob/__main__.py`, `src/frob/deploy/**`, `src/frob/fuzz/**`,
+`src/frob/lang/**`, `src/frob/testing/**`. This ticket's slice: drive
+those to zero via behavior-preserving extraction, no threshold or config
+changes, no public API change.
+
+## Plan
+
+Filter `uv run frob arch .` to the scoped subtrees, extract cohesive
+private helpers per over-long function (or, where the function was long
+only because of an oversized rationale docstring, move that prose to a
+leading comment above the def), re-run `frob arch .` after each pass to
+converge on 0 in every subtree, keep the touched-area pytest suites
+green, then a final full `uv run frob check` after `make coverage`.
+
+## Done report
+
+Before/after long-function counts (`uv run frob arch .` filtered per
+subtree):
+
+- src/frob/vet/**: 20 -> 0
+- src/frob/tickets/**: 13 -> 0
+- src/frob/check/**: 8 -> 0
+- src/frob/__main__.py: 7 -> 0
+- src/frob/deploy/**: 9 -> 0
+- src/frob/fuzz/**: 6 -> 0
+- src/frob/lang/**: 3 -> 0
+- src/frob/testing/**: 4 -> 0
+
+Total: 70 -> 0 (repo-wide `uv run frob arch .` full output separately
+confirms zero `long-function` matches under any of the eight scoped
+globs).
+
+Method: extraction only (one cohesive, purpose-named `_leading_underscore`
+helper per over-long function; a few functions were long only due to an
+oversized historical-rationale docstring and were fixed by relocating
+that prose to a leading `#` comment above the `def`, per the dispatch
+instructions -- no documented invariant/guarantee text was dropped, only
+relocated). No public top-level `def`/`class`/`__all__` entry changed.
+No behavior change: every extracted helper receives/returns exactly what
+the inline code used, preserving early-return order, short-circuit order,
+Result/exception propagation, and mutate-vs-copy semantics.
+
+Regressions caught and fixed during verification (not present in the
+final diff):
+- `_apply_renumber_mapping`/`_persist_renumber`/`_build_renumber_report`
+  in `src/frob/tickets/__init__.py`: `int` vs `bool` typing mismatch from
+  `_apply_renumber`'s real `int` return type -- fixed by typing the
+  threaded parameters `int` throughout (ty-clean).
+- `src/frob/testing/_collect.py`/`_runners.py`: new `_cargo_list_result`/
+  `_runner_outcome` helpers were typed `Result[object, object]` /
+  `tuple[str, ...]`, which ty's invariant-generics rule rejected against
+  the real `Result[ProcResult, GitError]` / `list[str]` callers pass --
+  fixed with the real types.
+- `src/frob/fuzz/_arbitrary.py`: `_field_strategies_for`'s
+  `Result[dict[str, Any], FuzzError]` was returned bare from
+  `Result[object, FuzzError]`-typed callers -- fixed by re-wrapping the
+  `Err` explicitly instead of returning the narrower Result object.
+- `src/frob/fuzz/_signatures.py`: `_resolve_callable`/`_resolve_hints`/
+  `_annotated_types_for_target` were typed `object` where
+  `inspect.signature`/`typing.get_type_hints` need a callable -- fixed
+  with `Callable[..., object]`.
+- `src/frob/vet/_hook.py`: extracting the not-None check into
+  `_unverified_lookup_verdict` broke ty's None-narrowing on
+  `lookup.published_at` at the call site -- fixed with an explicit
+  `assert lookup.published_at is not None` plus a comment explaining why.
+- `src/frob/lang/_walk_strata.py`: `_check_declared_count_drift`'s
+  `parsed_ok` parameter was typed `object` where `_declared_count` needs
+  `dict` -- fixed with the real type.
+- `src/frob/check/__init__.py`: `_cpp_post_build_tasks`'s narrower
+  `Callable[[], ToolResult | None]` return type didn't match
+  `_run_tasks_concurrently`'s `Callable[[], ToolResult | list[ToolResult]
+  | None]` parameter (list invariance) -- fixed by widening the helper's
+  return type to match.
+- `src/frob/deploy/_conform.py`: `_deploy002_extras`/`_deploy003_misses`
+  were typed to take `set[MutationTarget]` but callers pass the
+  `frozenset[MutationTarget]` result of a set-difference -- fixed with
+  the real type.
+- Five `# frob:doc`/`# frob:invariant`/`# frob:tests` directive comments
+  (on `scan_tree`, `build_containment_report`,
+  `match_dependencies_against_mirror`, `renumber_one`, `transition`,
+  `add_cmd_evidence`) were caught by an `Edit` that inserted a new helper
+  function directly above the original `def`, leaving the directive
+  attached to the wrong (private, non-obligated) function -- caught by
+  `frob check`'s COV001 gate going from 0 to 6 errors, fixed by moving
+  each directive back onto its original public function. This is the
+  concrete reason the gate re-run (not just `frob arch`) matters as a
+  verification step for this kind of mechanical extraction.
+
+Verification:
+- `uv run frob arch .` filtered to the eight scoped globs: 0
+  `long-function` matches (was 70).
+- `uv run ruff check` and `uv run ruff format --check` on every touched
+  file: clean, under both the project-pinned `uv run ruff` (0.14.x) and
+  the PATH `ruff` (0.14.10).
+- `uv run ty check` on every touched file: 2 pre-existing diagnostics on
+  `src/frob/vet/_allow.py:72-73` (`int(vet.get(...))` /
+  `vet.get("registry_base_url")` against an `object`-typed dict value) --
+  confirmed identical on `main` via `git show main:src/frob/vet/_allow.py`
+  (same lines, untouched logic, only relocated into a helper function by
+  this ticket); zero new ty diagnostics.
+- `uv run pytest` on every touched-package test file (listed under
+  `evidence:` above): all green, no skips beyond pre-existing ones.
+- `make coverage` (full suite + branch coverage + `frob check
+  --stamp-coverage`): green, 389 files stamped.
+- `uv run frob check .` (full repo, post-coverage-stamp): `pass ruff-
+  check`, `pass ruff-format`, `pass gates` (0 errors, 3 warnings, 221
+  waived -- all 3 warnings and all waivers pre-exist, unrelated to this
+  slice); `FAIL ty` is exactly the 2 pre-existing `_allow.py`
+  diagnostics above (confirmed via diff against `main`, not introduced by
+  this ticket).
+- `git diff main --diff-filter=D --stat`: empty (no deletions outside
+  scope).
+- Cargo.lock: no churn (no Rust source touched by this ticket).
+- No non-ASCII characters introduced.
+
+Not closing this ticket -- leaving for the reviewer per the review-gated
+workflow (playbook section 11).

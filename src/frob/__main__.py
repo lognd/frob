@@ -178,6 +178,11 @@ def _add_dup_parser(sub) -> None:
         help="minimum function body size to consider (default: 6)",
     )
     dup_p.add_argument("--json", dest="dup_json", action="store_true")
+    _add_dup_probe_argument(dup_p)
+
+
+def _add_dup_probe_argument(dup_p) -> None:
+    """Register `frob dup`'s `--probe` flag."""
     dup_p.add_argument(
         "--probe",
         dest="dup_probe",
@@ -395,6 +400,11 @@ def _add_check_selection_args(check_p) -> None:
         action="store_true",
         help="record coverage.xml as the current coverage stamp and exit",
     )
+    _add_check_delta_and_verbose_args(check_p)
+
+
+def _add_check_delta_and_verbose_args(check_p) -> None:
+    """Register `frob check`'s `--stamp-baseline`/`--delta`/`-v` args."""
     check_p.add_argument(
         "--stamp-baseline",
         dest="check_stamp_baseline",
@@ -635,6 +645,20 @@ def _add_ticket_progress_parsers(ticket_sub) -> list:
     ticket_migrate_p = ticket_sub.add_parser(
         "migrate", help="collapse legacy tickets/*.md into a single tickets.md ledger"
     )
+    ticket_renumber_p = _add_ticket_renumber_parser(ticket_sub)
+    ticket_land_p = _add_ticket_land_parser(ticket_sub)
+    return [
+        ticket_plan_p,
+        ticket_start_p,
+        ticket_sweep_p,
+        ticket_migrate_p,
+        ticket_renumber_p,
+        ticket_land_p,
+    ]
+
+
+def _add_ticket_renumber_parser(ticket_sub):
+    """Register `frob ticket renumber` and return its subparser."""
     ticket_renumber_p = ticket_sub.add_parser(
         "renumber",
         help="rewrite one ticket's id everywhere (with <old> <new>), or "
@@ -652,7 +676,11 @@ def _add_ticket_progress_parsers(ticket_sub) -> list:
         action="store_true",
         help="report what renumber <old> <new> would change without writing",
     )
+    return ticket_renumber_p
 
+
+def _add_ticket_land_parser(ticket_sub):
+    """Register `frob ticket land` and return its subparser."""
     ticket_land_p = ticket_sub.add_parser(
         "land",
         help="one-command landing: merge-check-splice-close-commit "
@@ -672,14 +700,7 @@ def _add_ticket_progress_parsers(ticket_sub) -> list:
         action="store_true",
         help="run every check and git operation landing would, then unwind it",
     )
-    return [
-        ticket_plan_p,
-        ticket_start_p,
-        ticket_sweep_p,
-        ticket_migrate_p,
-        ticket_renumber_p,
-        ticket_land_p,
-    ]
+    return ticket_land_p
 
 
 def _add_ticket_attach_and_lifecycle_end_parsers(ticket_sub) -> list:
@@ -697,6 +718,12 @@ def _add_ticket_attach_and_lifecycle_end_parsers(ticket_sub) -> list:
     ticket_block_p.add_argument("ticket_id", metavar="id")
     ticket_block_p.add_argument("--by", dest="ticket_by", required=True)
 
+    ticket_close_p = _add_ticket_close_parser(ticket_sub)
+    return [ticket_attach_p, ticket_block_p, ticket_close_p]
+
+
+def _add_ticket_close_parser(ticket_sub):
+    """Register `frob ticket close` and return its subparser."""
     ticket_close_p = ticket_sub.add_parser("close", help="transition to done")
     ticket_close_p.add_argument("ticket_id", metavar="id")
     ticket_close_p.add_argument(
@@ -715,7 +742,7 @@ def _add_ticket_attach_and_lifecycle_end_parsers(ticket_sub) -> list:
         "exit status and an output digest as evidence before closing -- "
         "docs-kind tickets only, code kinds still require --evidence node ids",
     )
-    return [ticket_attach_p, ticket_block_p, ticket_close_p]
+    return ticket_close_p
 
 
 def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
@@ -962,29 +989,37 @@ def _add_sys_parser(sub) -> None:
     (T-0115) is the checking counterpart to `doc`."""
     # -- sys -------------------------------------------------------------------
     # frob:ticket T-0167
-    sys_epilog = (
-        "examples:\n"
-        "  frob sys plan                    plan a ticket tree (dry-run)\n"
-        "  frob sys plan --apply             write the planned tickets\n"
-        "  frob sys plan /path/to/repo      plan a different repo root\n"
-        "  frob sys doc                     render the threat-catalog audit matrix\n"
-        "  frob sys audit                   check per-family exhaustiveness\n"
-        "  frob sys export --format seccomp design/frob.strata\n"
-        "\n"
-        "convention: for plan/doc/audit, <path> (default '.') is the REPO\n"
-        "ROOT -- the command appends the configured design dir itself\n"
-        "(default 'design/', or [strata].design_dir in frob.toml) and reads\n"
-        "every *.strata file under it. export is the exception: it takes a\n"
-        "path to ONE *.strata file (default 'design/frob.strata'), not a\n"
-        "root or a directory."
-    )
     sys_p = sub.add_parser(
         "sys",
         help="strata design-model applications (plan, doc, export, ...)",
-        epilog=sys_epilog,
+        epilog=_SYS_EPILOG,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     sys_sub = sys_p.add_subparsers(dest="sys_command")
+    _add_sys_plan_and_export_parsers(sys_sub)
+    _add_sys_doc_and_audit_parsers(sys_sub)
+
+
+_SYS_EPILOG = (
+    "examples:\n"
+    "  frob sys plan                    plan a ticket tree (dry-run)\n"
+    "  frob sys plan --apply             write the planned tickets\n"
+    "  frob sys plan /path/to/repo      plan a different repo root\n"
+    "  frob sys doc                     render the threat-catalog audit matrix\n"
+    "  frob sys audit                   check per-family exhaustiveness\n"
+    "  frob sys export --format seccomp design/frob.strata\n"
+    "\n"
+    "convention: for plan/doc/audit, <path> (default '.') is the REPO\n"
+    "ROOT -- the command appends the configured design dir itself\n"
+    "(default 'design/', or [strata].design_dir in frob.toml) and reads\n"
+    "every *.strata file under it. export is the exception: it takes a\n"
+    "path to ONE *.strata file (default 'design/frob.strata'), not a\n"
+    "root or a directory."
+)
+
+
+def _add_sys_plan_and_export_parsers(sys_sub) -> None:
+    """Register `frob sys plan` and `frob sys export`."""
     sys_plan_p = sys_sub.add_parser(
         "plan",
         help="compile the obligation frontier into a ticket tree (idempotent)",
@@ -1012,6 +1047,9 @@ def _add_sys_parser(sub) -> None:
         help="path to a .strata design file (default: design/frob.strata)",
     )
 
+
+def _add_sys_doc_and_audit_parsers(sys_sub) -> None:
+    """Register `frob sys doc` and `frob sys audit`."""
     sys_doc_p = sys_sub.add_parser(
         "doc",
         help="render the per-family threat-catalog audit matrix (T-0085)",
@@ -1038,30 +1076,38 @@ def _add_deploy_parser(sub) -> None:
     per verb as later deploy-epoch (T-0254) tickets add them, never
     replace this dispatch."""
     # -- deploy ------------------------------------------------------------
-    deploy_epilog = (
-        "examples:\n"
-        "  frob deploy generate                 write deploy/*.sh from the design\n"
-        "  frob deploy generate --check          verify committed scripts are current\n"
-        "  frob deploy generate /path/to/repo   generate for a different repo root\n"
-        "  frob deploy audit --vm my-vm --ssh-host 10.0.2.15 --ssh-key ~/.ssh/id_rsa\n"
-        "                                        empirically prove artifact-free\n"
-        "                                        install/uninstall against a live\n"
-        "                                        VirtualBox guest (NOT run by\n"
-        "                                        `frob check`; needs VBoxManage)\n"
-        "\n"
-        "convention: <path> (default '.') is the REPO ROOT -- the command\n"
-        "appends the configured design dir itself (default 'design/', or\n"
-        "[strata].design_dir in frob.toml) and reads every *.strata file\n"
-        "under it, compiling std.host HostManifest facts (T-0255) into\n"
-        "deploy/install.sh, deploy/status.sh, deploy/uninstall.sh."
-    )
     deploy_p = sub.add_parser(
         "deploy",
         help="compile std.host manifests into install/status/uninstall bash",
-        epilog=deploy_epilog,
+        epilog=_DEPLOY_EPILOG,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     deploy_sub = deploy_p.add_subparsers(dest="deploy_command")
+    _add_deploy_generate_parser(deploy_sub)
+    _add_deploy_audit_parser(deploy_sub)
+
+
+_DEPLOY_EPILOG = (
+    "examples:\n"
+    "  frob deploy generate                 write deploy/*.sh from the design\n"
+    "  frob deploy generate --check          verify committed scripts are current\n"
+    "  frob deploy generate /path/to/repo   generate for a different repo root\n"
+    "  frob deploy audit --vm my-vm --ssh-host 10.0.2.15 --ssh-key ~/.ssh/id_rsa\n"
+    "                                        empirically prove artifact-free\n"
+    "                                        install/uninstall against a live\n"
+    "                                        VirtualBox guest (NOT run by\n"
+    "                                        `frob check`; needs VBoxManage)\n"
+    "\n"
+    "convention: <path> (default '.') is the REPO ROOT -- the command\n"
+    "appends the configured design dir itself (default 'design/', or\n"
+    "[strata].design_dir in frob.toml) and reads every *.strata file\n"
+    "under it, compiling std.host HostManifest facts (T-0255) into\n"
+    "deploy/install.sh, deploy/status.sh, deploy/uninstall.sh."
+)
+
+
+def _add_deploy_generate_parser(deploy_sub) -> None:
+    """Register `frob deploy generate`."""
     deploy_generate_p = deploy_sub.add_parser(
         "generate",
         help="write deploy/install.sh, deploy/status.sh, deploy/uninstall.sh",
@@ -1083,6 +1129,9 @@ def _add_deploy_parser(sub) -> None:
         "exit 1 on any mismatch",
     )
 
+
+def _add_deploy_audit_parser(deploy_sub) -> None:
+    """Register `frob deploy audit`."""
     deploy_audit_p = deploy_sub.add_parser(
         "audit",
         help="VirtualBox snapshot-diff harness proving artifact-free "
@@ -1092,6 +1141,11 @@ def _add_deploy_parser(sub) -> None:
     deploy_audit_p.add_argument(
         "--vm", dest="deploy_vm", required=True, help="VirtualBox guest name"
     )
+    _add_deploy_audit_ssh_and_output_args(deploy_audit_p)
+
+
+def _add_deploy_audit_ssh_and_output_args(deploy_audit_p) -> None:
+    """Register `frob deploy audit`'s ssh/snapshot/output args."""
     deploy_audit_p.add_argument(
         "--ssh-host", dest="deploy_ssh_host", required=True, help="guest ssh host"
     )
@@ -1144,7 +1198,13 @@ def _build_parser() -> argparse.ArgumentParser:
         help="print the installed frob version and exit",
     )
     sub = p.add_subparsers(dest="subcommand")
+    _add_analysis_subparsers(sub)
+    _add_workflow_subparsers(sub)
+    return p
 
+
+def _add_analysis_subparsers(sub) -> None:
+    """Register the code-analysis subcommand group: scaffold through bind."""
     _add_scaffold_parser(sub)
     _add_cycle_parser(sub)
     _add_outline_parser(sub)
@@ -1156,6 +1216,10 @@ def _build_parser() -> argparse.ArgumentParser:
     _add_docs_parser(sub)
     _add_exports_parser(sub)
     _add_bind_parser(sub)
+
+
+def _add_workflow_subparsers(sub) -> None:
+    """Register the workflow/CI subcommand group: check through deploy."""
     _add_check_parser(sub)
     _add_gitlog_parser(sub)
     _add_graph_parser(sub)
@@ -1170,7 +1234,6 @@ def _build_parser() -> argparse.ArgumentParser:
     _add_serve_parser(sub)
     _add_sys_parser(sub)
     _add_deploy_parser(sub)
-    return p
 
 
 # frob:doc docs/modules/app.md#entry-point

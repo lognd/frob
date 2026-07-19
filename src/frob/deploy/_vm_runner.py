@@ -154,20 +154,42 @@ def _restore_base_snapshot(cfg: VmAuditConfig) -> None:
     _vboxmanage("startvm", cfg.vm_name, "--type", "headless")
 
 
+# Only the manifest-declared paths/units are captured individually (a
+# full-disk walk is not practical over ssh); artifact-freeness still
+# catches an UNEXPECTED path because `diff_states` compares the two
+# captures' `filesystem` dicts key-for-key, and any path
+# install.sh/uninstall.sh touched outside `expected_paths` would make S0
+# and S2 differ in whichever surviving artifact IS in both captures' path
+# sets, or -- for a path fully outside what either snapshot enumerates --
+# is out of this capture strategy's reach, a documented scope cut (see
+# docs/commands/deploy.md#state-capture).
 def _capture_state(cfg: VmAuditConfig, label: str) -> StateCapture:
     """One CHECK's state half: ssh in and hash/stat every
     `cfg.expected_paths` entry, read `/etc/passwd`+`/etc/group`, read
     every `cfg.expected_units` unit file body, list the enabled-unit set,
-    and list listening sockets (`ss -tln`). Only the manifest-declared
-    paths/units are captured individually (a full-disk walk is not
-    practical over ssh); artifact-freeness still catches an UNEXPECTED
-    path because `diff_states` compares the two captures' `filesystem`
-    dicts key-for-key, and any path install.sh/uninstall.sh touched
-    outside `expected_paths` would make S0 and S2 differ in whichever
-    surviving artifact IS in both captures' path sets, or -- for a path
-    fully outside what either snapshot enumerates -- is out of this
-    capture strategy's reach, a documented scope cut (see
-    docs/commands/deploy.md#state-capture)."""
+    and list listening sockets (`ss -tln`)."""
+    filesystem = _capture_filesystem_facts(cfg)
+    passwd = tuple(_ssh(cfg, "cat /etc/passwd").splitlines())
+    group = tuple(_ssh(cfg, "cat /etc/group").splitlines())
+    unit_files = _capture_unit_files(cfg)
+    enabled = _ssh_nonblank_lines(
+        cfg, "systemctl list-unit-files --state=enabled --no-legend 2>/dev/null"
+    )
+    sockets = _ssh_nonblank_lines(cfg, "ss -tln 2>/dev/null | tail -n +2")
+
+    return StateCapture(
+        label=label,
+        filesystem=filesystem,
+        passwd=passwd,
+        group=group,
+        unit_files=unit_files,
+        enabled_units=enabled,
+        listening_sockets=sockets,
+    )
+
+
+def _capture_filesystem_facts(cfg: VmAuditConfig) -> dict[str, FileFact]:
+    """Hash/stat every `cfg.expected_paths` entry present on the guest."""
     filesystem: dict[str, FileFact] = {}
     for path in cfg.expected_paths:
         stat_out = _ssh(
@@ -183,10 +205,11 @@ def _capture_state(cfg: VmAuditConfig, label: str) -> StateCapture:
         digest = lines[0] if len(lines) > 1 else hashlib.sha256(b"").hexdigest()
         owner, group, mode = lines[-1].split()
         filesystem[path] = FileFact(sha256=digest, owner=owner, group=group, mode=mode)
+    return filesystem
 
-    passwd = tuple(_ssh(cfg, "cat /etc/passwd").splitlines())
-    group = tuple(_ssh(cfg, "cat /etc/group").splitlines())
 
+def _capture_unit_files(cfg: VmAuditConfig) -> dict[str, str]:
+    """Every `cfg.expected_units` unit file body present on the guest."""
     unit_files: dict[str, str] = {}
     for unit in cfg.expected_units:
         body = _ssh(
@@ -195,28 +218,13 @@ def _capture_state(cfg: VmAuditConfig, label: str) -> StateCapture:
         )
         if body.strip() != "MISSING":
             unit_files[unit] = body
+    return unit_files
 
-    enabled = tuple(
-        line.strip()
-        for line in _ssh(
-            cfg, "systemctl list-unit-files --state=enabled --no-legend 2>/dev/null"
-        ).splitlines()
-        if line.strip()
-    )
-    sockets = tuple(
-        line.strip()
-        for line in _ssh(cfg, "ss -tln 2>/dev/null | tail -n +2").splitlines()
-        if line.strip()
-    )
 
-    return StateCapture(
-        label=label,
-        filesystem=filesystem,
-        passwd=passwd,
-        group=group,
-        unit_files=unit_files,
-        enabled_units=enabled,
-        listening_sockets=sockets,
+def _ssh_nonblank_lines(cfg: VmAuditConfig, command: str) -> tuple[str, ...]:
+    """Run `command` over ssh and return its non-blank, stripped output lines."""
+    return tuple(
+        line.strip() for line in _ssh(cfg, command).splitlines() if line.strip()
     )
 
 
@@ -252,11 +260,48 @@ def run_vm_audit(cfg: VmAuditConfig) -> AuditRunResult:
 
     started_at = datetime.now(UTC)
     _restore_base_snapshot(cfg)
+    _stage_scripts(cfg)
+
+    c0, s0, c1, s1, c1_prime, s1_prime, c2, s2 = _run_checkpoint_sequence(cfg)
+
+    attestation = build_attestation(
+        vm_name=cfg.vm_name,
+        base_snapshot=cfg.base_snapshot,
+        started_at=started_at,
+        checkpoints=(c0, c1, c1_prime, c2),
+        s0=s0,
+        s1=s1,
+        s1_prime=s1_prime,
+        s2=s2,
+        expected_surface=cfg.expected_targets,
+    )
+    return AuditRunResult(status="ran", attestation=attestation)
+
+
+def _stage_scripts(cfg: VmAuditConfig) -> None:
+    """Create the remote workdir, copy install/status/uninstall scripts to
+    the guest, and make them executable."""
     _ssh(cfg, f"mkdir -p {cfg.remote_workdir}")
     for script in ("install.sh", "status.sh", "uninstall.sh"):
         _scp_to_guest(cfg, cfg.deploy_dir / script, f"{cfg.remote_workdir}/{script}")
     _ssh(cfg, f"chmod +x {cfg.remote_workdir}/*.sh")
 
+
+def _run_checkpoint_sequence(
+    cfg: VmAuditConfig,
+) -> tuple[
+    CheckpointResult,
+    StateCapture,
+    CheckpointResult,
+    StateCapture,
+    CheckpointResult,
+    StateCapture,
+    CheckpointResult,
+    StateCapture,
+]:
+    """Drive C0 -> install -> C1 -> install again -> C1' -> uninstall -> C2,
+    returning each checkpoint's (status-assertion, state-capture) pair in
+    sequence order."""
     c0 = _run_status_and_assert(cfg, "C0", expect_installed=False)
     s0 = _capture_state(cfg, "S0")
 
@@ -272,15 +317,4 @@ def run_vm_audit(cfg: VmAuditConfig) -> AuditRunResult:
     c2 = _run_status_and_assert(cfg, "C2", expect_installed=False)
     s2 = _capture_state(cfg, "S2")
 
-    attestation = build_attestation(
-        vm_name=cfg.vm_name,
-        base_snapshot=cfg.base_snapshot,
-        started_at=started_at,
-        checkpoints=(c0, c1, c1_prime, c2),
-        s0=s0,
-        s1=s1,
-        s1_prime=s1_prime,
-        s2=s2,
-        expected_surface=cfg.expected_targets,
-    )
-    return AuditRunResult(status="ran", attestation=attestation)
+    return c0, s0, c1, s1, c1_prime, s1_prime, c2, s2

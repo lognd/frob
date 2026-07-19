@@ -14,7 +14,7 @@ from collections.abc import Mapping
 from frob.fuzz._arbitrary import resolve
 from frob.fuzz._models import FuzzObligation
 from frob.gates._models import Severity, Violation
-from frob.graph._models import EdgeKind, GraphSnapshot
+from frob.graph._models import EdgeKind, GraphSnapshot, SymbolRecord
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
@@ -77,26 +77,36 @@ def FUZZ002(  # noqa: N802 - rule-id naming convention shared with frob.gates.in
         if types is None:
             _log.debug("FUZZ002: %s could not be introspected; skipping", ob.ref)
             continue
-        for tp in types:
-            if resolve(tp).is_ok:
-                continue
-            file, line = _split_ref(ob.ref)
-            _log.debug("FUZZ002: %s param type %r has no generator", ob.ref, tp)
-            violations.append(
-                Violation(
-                    rule="FUZZ002",
-                    severity=Severity.ERROR,
-                    file=file,
-                    line=line,
-                    message=(
-                        f"FUZZ002: {ob.ref} has a parameter of type {tp!r} with no "
-                        f"generator -- derive it (pydantic BaseModel), declare a "
-                        f"__fuzz__() classmethod, or register(tp, strategy) in "
-                        f"tests/strategies.py"
-                    ),
-                )
-            )
+        violations.extend(_ungenerated_param_violations(ob, types))
     return tuple(violations)
+
+
+def _ungenerated_param_violations(
+    ob: FuzzObligation, types: tuple[type, ...]
+) -> list[Violation]:
+    """FUZZ002 violations for each of `ob`'s param `types` with no
+    resolvable generator."""
+    violations: list[Violation] = []
+    for tp in types:
+        if resolve(tp).is_ok:
+            continue
+        file, line = _split_ref(ob.ref)
+        _log.debug("FUZZ002: %s param type %r has no generator", ob.ref, tp)
+        violations.append(
+            Violation(
+                rule="FUZZ002",
+                severity=Severity.ERROR,
+                file=file,
+                line=line,
+                message=(
+                    f"FUZZ002: {ob.ref} has a parameter of type {tp!r} with no "
+                    f"generator -- derive it (pydantic BaseModel), declare a "
+                    f"__fuzz__() classmethod, or register(tp, strategy) in "
+                    f"tests/strategies.py"
+                ),
+            )
+        )
+    return violations
 
 
 # frob:doc docs/modules/fuzz.md#public-api
@@ -115,37 +125,43 @@ def FUZZ003(  # noqa: N802 - rule-id naming convention shared with frob.gates.in
         if record is None:
             _log.debug("FUZZ003: %s not in snapshot; skipping", ob.ref)
             continue
-        stamped_digest = recorded.get(ob.ref)
-        file, line = _split_ref(ob.ref)
-        if stamped_digest is None:
-            _log.debug("FUZZ003: %s has no fuzz stamp", ob.ref)
-            violations.append(
-                Violation(
-                    rule="FUZZ003",
-                    severity=Severity.ERROR,
-                    file=file,
-                    line=line,
-                    message=(
-                        f"FUZZ003: {ob.ref} has never been fuzzed; run "
-                        f"`frob test --fuzz` to record a stamp"
-                    ),
-                )
-            )
-        elif stamped_digest != record.digests.body:
-            _log.debug("FUZZ003: %s stamp is stale", ob.ref)
-            violations.append(
-                Violation(
-                    rule="FUZZ003",
-                    severity=Severity.ERROR,
-                    file=file,
-                    line=line,
-                    message=(
-                        f"FUZZ003: {ob.ref}'s fuzz stamp is stale (body changed since "
-                        f"the last `frob test --fuzz` run)"
-                    ),
-                )
-            )
+        violation = _stamp_violation(ob, record, recorded.get(ob.ref))
+        if violation is not None:
+            violations.append(violation)
     return tuple(violations)
+
+
+def _stamp_violation(
+    ob: FuzzObligation, record: SymbolRecord, stamped_digest: str | None
+) -> Violation | None:
+    """A FUZZ003 violation if `ob`'s fuzz stamp is missing or stale against
+    `record`'s current body digest, else None."""
+    file, line = _split_ref(ob.ref)
+    if stamped_digest is None:
+        _log.debug("FUZZ003: %s has no fuzz stamp", ob.ref)
+        return Violation(
+            rule="FUZZ003",
+            severity=Severity.ERROR,
+            file=file,
+            line=line,
+            message=(
+                f"FUZZ003: {ob.ref} has never been fuzzed; run "
+                f"`frob test --fuzz` to record a stamp"
+            ),
+        )
+    if stamped_digest != record.digests.body:
+        _log.debug("FUZZ003: %s stamp is stale", ob.ref)
+        return Violation(
+            rule="FUZZ003",
+            severity=Severity.ERROR,
+            file=file,
+            line=line,
+            message=(
+                f"FUZZ003: {ob.ref}'s fuzz stamp is stale (body changed since "
+                f"the last `frob test --fuzz` run)"
+            ),
+        )
+    return None
 
 
 __all__ = ["FUZZ001", "FUZZ002", "FUZZ003"]

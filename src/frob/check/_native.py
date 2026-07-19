@@ -121,13 +121,8 @@ def _run_clang_format(root: Path) -> ToolResult | None:
     if not src_files:
         return None
 
-    try:
-        proc = subprocess.run(
-            ["clang-format", "--dry-run", "--Werror"] + [str(f) for f in src_files],
-            capture_output=True,
-            text=True,
-        )
-    except FileNotFoundError:
+    proc = _spawn_clang_format(src_files)
+    if proc is None:
         return tool_unavailable_result("clang-format", "clang-format")
     if not proc.returncode:
         return ToolResult(
@@ -140,13 +135,31 @@ def _run_clang_format(root: Path) -> ToolResult | None:
         if "warning:" in ln or "error:" in ln
     ]
     n = len(needs_format)
-    diags = [Diagnostic(severity="warning", message=ln.strip()) for ln in needs_format]
+    diags = _clang_format_diagnostics(needs_format)
     return ToolResult(
         tool="clang-format",
         exit_code=proc.returncode,
         diagnostics=diags,
         summary=f"{n} file{'s' if n != 1 else ''} need formatting",
     )
+
+
+def _spawn_clang_format(src_files: list[Path]) -> subprocess.CompletedProcess | None:
+    """Run `clang-format --dry-run --Werror` over `src_files`; `None` if
+    the binary is not on PATH."""
+    try:
+        return subprocess.run(
+            ["clang-format", "--dry-run", "--Werror"] + [str(f) for f in src_files],
+            capture_output=True,
+            text=True,
+        )
+    except FileNotFoundError:
+        return None
+
+
+def _clang_format_diagnostics(needs_format: list[str]) -> list[Diagnostic]:
+    """One warning `Diagnostic` per clang-format dry-run finding line."""
+    return [Diagnostic(severity="warning", message=ln.strip()) for ln in needs_format]
 
 
 def _ctest_cmd(build_dir: Path, *, valgrind: bool) -> list[str]:
@@ -175,6 +188,12 @@ def _run_ctest(build_dir: Path, *, valgrind: bool = False) -> ToolResult | None:
     except FileNotFoundError:
         return tool_unavailable_result("ctest", "ctest")
 
+    return _ctest_result(build_dir, proc)
+
+
+def _ctest_result(build_dir: Path, proc: subprocess.CompletedProcess) -> ToolResult:
+    """Parse a finished ctest invocation's report, preferring the JUnit
+    file it wrote and falling back to parsing its text output."""
     junit_file = build_dir / "results.xml"
     if junit_file.exists():
         from frob.process.parsers import parse_junit_xml

@@ -166,6 +166,14 @@ def archive(root: Path) -> Result[int, TicketError]:
         _log.info("tickets: archive -- nothing to move")
         return Ok(0)
 
+    return _write_archived_and_active(root, active, to_archive)
+
+
+def _write_archived_and_active(
+    root: Path, active: dict[str, Ticket], to_archive: dict[str, Ticket]
+) -> Result[int, TicketError]:
+    """Merge `to_archive` into the archive file and drop it from the active
+    ledger, in that order; `Err(DuplicateId)` on an id already archived."""
     archived_loaded = load_archive(root)
     if archived_loaded.is_err:
         return Err(archived_loaded.danger_err)
@@ -268,6 +276,21 @@ def new_ticket(root: Path, spec: TicketSpec) -> Result[Ticket, TicketError]:
     validated = _validate_evidence_list(spec.evidence)
     if validated.is_err:
         return Err(validated.danger_err)
+    ticket_id_result = _allocate_and_check_ticket_id(root)
+    if ticket_id_result.is_err:
+        return Err(ticket_id_result.danger_err)
+    ticket_id = ticket_id_result.danger_ok
+    ticket = _ticket_from_spec(ticket_id, spec, validated.danger_ok)
+    write_result = write_ticket(root, ticket)
+    if write_result.is_err:
+        return Err(write_result.danger_err)
+    _log.info("tickets: created %s", ticket_id)
+    return Ok(ticket)
+
+
+def _allocate_and_check_ticket_id(root: Path) -> Result[str, TicketError]:
+    """Load the active+archived ticket state and allocate a fresh id,
+    erroring on an archive-load failure or an id collision."""
     loaded = load_all(root)
     if loaded.is_err:
         return Err(loaded.danger_err)
@@ -280,12 +303,7 @@ def new_ticket(root: Path, spec: TicketSpec) -> Result[Ticket, TicketError]:
     if ticket_id in existing:
         _log.error("tickets: id collision allocating %s", ticket_id)
         return Err(TicketError.DuplicateId)
-    ticket = _ticket_from_spec(ticket_id, spec, validated.danger_ok)
-    write_result = write_ticket(root, ticket)
-    if write_result.is_err:
-        return Err(write_result.danger_err)
-    _log.info("tickets: created %s", ticket_id)
-    return Ok(ticket)
+    return Ok(ticket_id)
 
 
 _INCIDENT_TEMPLATE = (
@@ -412,23 +430,11 @@ def _scan_code_references(
     return changed
 
 
-# frob:ticket T-0162
-# frob:doc docs/modules/tickets.md#public-api
-# frob:waive TEST005 reason="renumber_one 68.3% branch cover, debt T-0160"
-def renumber_one(
-    root: Path, old_id: str, new_id: str, *, dry_run: bool = False
-) -> Result[RenumberReport, TicketError]:
-    """Atomically rewrite ONE ticket's id everywhere: its ledger section
-    (active or archive, id + every blocked_by/parent reference across BOTH
-    stores) and every `frob:ticket`/`frob:waive`/`frob:todo`/`frob:tests`/
-    `frob:invariant`/`frob:doc` directive line across the tracked tree that
-    names it. First-class replacement for the hand-run sed that fixed the
-    T-0157 incident's ~100 stray waiver references -- a single command,
-    `--dry-run`-able, that can never miss a reference class the old sed
-    invocation didn't happen to cover. Also the rename primitive
-    `finalize_draft` (T-0162's provisional-id mechanism) and, later,
-    T-0176's `frob ticket land` reuse.
-    """
+def _load_and_validate_renumber_ids(
+    root: Path, old_id: str, new_id: str
+) -> Result[tuple[dict[str, Ticket], dict[str, Ticket]], TicketError]:
+    """Load the active+archive ledgers and validate `old_id`/`new_id` are
+    renumber-able: not equal, `old_id` present, `new_id` free."""
     if old_id == new_id:
         _log.warning("tickets: renumber_one %s -> %s is a no-op id", old_id, new_id)
         return Err(TicketError.InvalidTransition)
@@ -447,39 +453,20 @@ def renumber_one(
     if new_id in active_map or new_id in archive_map:
         _log.error("tickets: renumber_one: target id %s already exists", new_id)
         return Err(TicketError.DuplicateId)
+    return Ok((active_map, archive_map))
 
-    all_ids = set(active_map) | set(archive_map)
-    full_mapping = {tid: tid for tid in all_ids}
-    full_mapping[old_id] = new_id
 
-    new_active_map, active_changed = _apply_renumber(
-        list(active_map.values()), full_mapping
-    )
-    new_archive_map, archive_changed = _apply_renumber(
-        list(archive_map.values()), full_mapping
-    )
-    code_changes = _scan_code_references(root, old_id, new_id)
-
-    report = RenumberReport(
-        old_id=old_id,
-        new_id=new_id,
-        ledger_changed=bool(active_changed or archive_changed),
-        files_changed=tuple(sorted(str(p.relative_to(root)) for p in code_changes)),
-        occurrences=sum(hits for _text, hits in code_changes.values()),
-        dry_run=dry_run,
-    )
-    if dry_run:
-        _log.info(
-            "tickets: renumber_one DRY RUN %s -> %s: ledger_changed=%s "
-            "code_files=%d occurrences=%d",
-            old_id,
-            new_id,
-            report.ledger_changed,
-            len(report.files_changed),
-            report.occurrences,
-        )
-        return Ok(report)
-
+def _persist_renumber(
+    root: Path,
+    *,
+    new_active_map: dict[str, Ticket],
+    active_changed: int,
+    new_archive_map: dict[str, Ticket],
+    archive_changed: int,
+    code_changes: dict[Path, tuple[str, int]],
+) -> Result[None, TicketError]:
+    """Write back the renumbered active/archive ledgers (if changed) and
+    every rewritten code-reference file."""
     if active_changed:
         write_result = write_all(root, new_active_map)
         if write_result.is_err:
@@ -492,7 +479,128 @@ def renumber_one(
         written = atomic_write(path, rewritten)
         if written.is_err:
             return Err(written.danger_err)
+    return Ok(None)
 
+
+def _apply_renumber_mapping(
+    active_map: dict[str, Ticket],
+    archive_map: dict[str, Ticket],
+    old_id: str,
+    new_id: str,
+) -> tuple[dict[str, Ticket], int, dict[str, Ticket], int]:
+    """Build the id-rename mapping (`old_id -> new_id`, every other id
+    fixed) and apply it to both the active and archive ticket maps."""
+    all_ids = set(active_map) | set(archive_map)
+    full_mapping = {tid: tid for tid in all_ids}
+    full_mapping[old_id] = new_id
+
+    new_active_map, active_changed = _apply_renumber(
+        list(active_map.values()), full_mapping
+    )
+    new_archive_map, archive_changed = _apply_renumber(
+        list(archive_map.values()), full_mapping
+    )
+    return new_active_map, active_changed, new_archive_map, archive_changed
+
+
+def _build_renumber_report(
+    root: Path,
+    old_id: str,
+    new_id: str,
+    active_changed: int,
+    archive_changed: int,
+    code_changes: dict[Path, tuple[str, int]],
+    dry_run: bool,
+) -> RenumberReport:
+    """Assemble the `RenumberReport` for a rename, from the computed
+    ledger-changed flags and code-reference scan results."""
+    return RenumberReport(
+        old_id=old_id,
+        new_id=new_id,
+        ledger_changed=bool(active_changed or archive_changed),
+        files_changed=tuple(sorted(str(p.relative_to(root)) for p in code_changes)),
+        occurrences=sum(hits for _text, hits in code_changes.values()),
+        dry_run=dry_run,
+    )
+
+
+def _log_renumber_dry_run(old_id: str, new_id: str, report: RenumberReport) -> None:
+    """Log the DRY RUN summary line for `renumber_one`."""
+    _log.info(
+        "tickets: renumber_one DRY RUN %s -> %s: ledger_changed=%s "
+        "code_files=%d occurrences=%d",
+        old_id,
+        new_id,
+        report.ledger_changed,
+        len(report.files_changed),
+        report.occurrences,
+    )
+
+
+# First-class replacement for the hand-run sed that fixed the T-0157
+# incident's ~100 stray waiver references -- a single command,
+# `--dry-run`-able, that can never miss a reference class the old sed
+# invocation didn't happen to cover. Also the rename primitive
+# `finalize_draft` (T-0162's provisional-id mechanism) and, later,
+# T-0176's `frob ticket land` reuse.
+# frob:doc docs/modules/tickets.md#public-api
+# frob:ticket T-0162
+# frob:waive TEST005 reason="renumber_one 68.3% branch cover, debt T-0160"
+def renumber_one(
+    root: Path, old_id: str, new_id: str, *, dry_run: bool = False
+) -> Result[RenumberReport, TicketError]:
+    """Atomically rewrite ONE ticket's id everywhere: its ledger section
+    (active or archive, id + every blocked_by/parent reference across BOTH
+    stores) and every `frob:ticket`/`frob:waive`/`frob:todo`/`frob:tests`/
+    `frob:invariant`/`frob:doc` directive line across the tracked tree that
+    names it."""
+    loaded = _load_and_validate_renumber_ids(root, old_id, new_id)
+    if loaded.is_err:
+        return Err(loaded.danger_err)
+    active_map, archive_map = loaded.danger_ok
+    new_active_map, active_changed, new_archive_map, archive_changed = (
+        _apply_renumber_mapping(active_map, archive_map, old_id, new_id)
+    )
+    code_changes = _scan_code_references(root, old_id, new_id)
+    report = _build_renumber_report(
+        root, old_id, new_id, active_changed, archive_changed, code_changes, dry_run
+    )
+    if dry_run:
+        _log_renumber_dry_run(old_id, new_id, report)
+        return Ok(report)
+
+    persisted = _persist_renumber(
+        root,
+        new_active_map=new_active_map,
+        active_changed=active_changed,
+        new_archive_map=new_archive_map,
+        archive_changed=archive_changed,
+        code_changes=code_changes,
+    )
+    return _finish_renumber(persisted, old_id, new_id, code_changes, report)
+
+
+def _finish_renumber(
+    persisted: Result[None, TicketError],
+    old_id: str,
+    new_id: str,
+    code_changes: dict[Path, tuple[str, int]],
+    report: RenumberReport,
+) -> Result[RenumberReport, TicketError]:
+    """Propagate a persist failure, else log completion and return the report."""
+    if persisted.is_err:
+        return Err(persisted.danger_err)
+    _log_renumber_done(old_id, new_id, code_changes, report)
+    return Ok(report)
+
+
+def _log_renumber_done(
+    old_id: str,
+    new_id: str,
+    code_changes: dict[Path, tuple[str, int]],
+    report: RenumberReport,
+) -> None:
+    """Log the completed-rename summary line for `renumber_one`."""
     _log.info(
         "tickets: renumbered %s -> %s (%d code file(s), %d reference(s) updated)",
         old_id,
@@ -500,7 +608,6 @@ def renumber_one(
         len(code_changes),
         report.occurrences,
     )
-    return Ok(report)
 
 
 # frob:ticket T-0162
@@ -646,44 +753,48 @@ def _transition_guard(
             )
             return Err(TicketError.BlockerOpen)
     if to == TicketState.DONE:
-        if not ticket.evidence or not _has_done_report(ticket.body):
-            _log.warning(
-                "tickets: %s cannot close, missing evidence or Done report",
-                ticket.id,
-            )
-            return Err(TicketError.MissingEvidence)
-        # T-0215 review round 2: a cmd: entry is only ever valid evidence on
-        # a docs-kind ticket (COV003 mirrors this at check time). Re-check
-        # HERE too, not just at add_cmd_evidence write time -- a ticket's
-        # kind can be hand-edited after evidence was recorded, or a cmd:
-        # entry can be hand-pasted directly into the ledger, either of
-        # which would otherwise slip a code-kind ticket through close on
-        # unverifiable evidence.
-        if ticket.kind not in CMD_EVIDENCE_ALLOWED_KINDS and any(
-            is_cmd_evidence(e) for e in ticket.evidence
-        ):
-            _log.warning(
-                "tickets: %s is kind=%s but carries cmd: evidence, only "
-                "allowed for kind in %s",
-                ticket.id,
-                ticket.kind,
-                sorted(k.value for k in CMD_EVIDENCE_ALLOWED_KINDS),
-            )
-            return Err(TicketError.EvidenceKindNotAllowed)
+        return _done_transition_guard(ticket)
     return Ok(None)
 
 
-# frob:invariant INV-002
-# frob:doc docs/modules/tickets.md#public-api
-def transition(
-    root: Path, ticket_id: str, to: TicketState
-) -> Result[Ticket, TicketError]:
-    """Enforce the state machine; `done` also requires evidence and a Done report."""
-    # Blocker resolution needs archived tickets too (a blocker archived
-    # after `done` must still read as closed, not unknown/open) -- the
-    # ticket being transitioned itself is always still in the active store
-    # (archived tickets are done/dropped, terminal, so a lookup that only
-    # ever finds one there fails the state machine correctly, T-0096).
+# T-0215 review round 2: a cmd: entry is only ever valid evidence on a
+# docs-kind ticket (COV003 mirrors this at check time). Re-check HERE too,
+# not just at add_cmd_evidence write time -- a ticket's kind can be
+# hand-edited after evidence was recorded, or a cmd: entry can be
+# hand-pasted directly into the ledger, either of which would otherwise
+# slip a code-kind ticket through close on unverifiable evidence.
+def _done_transition_guard(ticket: Ticket) -> Result[None, TicketError]:
+    """Enforce DONE-transition preconditions: evidence + Done report present,
+    and no cmd: evidence on a kind that disallows it."""
+    if not ticket.evidence or not _has_done_report(ticket.body):
+        _log.warning(
+            "tickets: %s cannot close, missing evidence or Done report",
+            ticket.id,
+        )
+        return Err(TicketError.MissingEvidence)
+    if ticket.kind not in CMD_EVIDENCE_ALLOWED_KINDS and any(
+        is_cmd_evidence(e) for e in ticket.evidence
+    ):
+        _log.warning(
+            "tickets: %s is kind=%s but carries cmd: evidence, only "
+            "allowed for kind in %s",
+            ticket.id,
+            ticket.kind,
+            sorted(k.value for k in CMD_EVIDENCE_ALLOWED_KINDS),
+        )
+        return Err(TicketError.EvidenceKindNotAllowed)
+    return Ok(None)
+
+
+# Blocker resolution needs archived tickets too (a blocker archived after
+# `done` must still read as closed, not unknown/open) -- the ticket being
+# transitioned itself is always still in the active store (archived
+# tickets are done/dropped, terminal, so a lookup that only ever finds one
+# there fails the state machine correctly, T-0096).
+def _load_ticket_and_queue(
+    root: Path, ticket_id: str
+) -> Result[tuple[Ticket, dict[str, Ticket]], TicketError]:
+    """Load the merged active+archive queue and look up `ticket_id` in it."""
     loaded = _load_merged(root)
     if loaded.is_err:
         return Err(loaded.danger_err)
@@ -692,6 +803,19 @@ def transition(
     if ticket is None:
         _log.warning("tickets: %s not found under %s", ticket_id, root)
         return Err(TicketError.NotFound)
+    return Ok((ticket, queue))
+
+
+# frob:invariant INV-002
+# frob:doc docs/modules/tickets.md#public-api
+def transition(
+    root: Path, ticket_id: str, to: TicketState
+) -> Result[Ticket, TicketError]:
+    """Enforce the state machine; `done` also requires evidence and a Done report."""
+    loaded = _load_ticket_and_queue(root, ticket_id)
+    if loaded.is_err:
+        return Err(loaded.danger_err)
+    ticket, queue = loaded.danger_ok
 
     allowed = _TRANSITIONS.get(ticket.state, frozenset())
     if to not in allowed:
@@ -749,6 +873,18 @@ def add_evidence(
         return Err(loaded.danger_err)
     ticket = loaded.danger_ok
 
+    resolution = _check_evidence_resolution(ticket_id, node_ids, collected)
+    if resolution.is_err:
+        return Err(resolution.danger_err)
+
+    return _append_evidence_and_write(root, ticket, ticket_id, node_ids)
+
+
+def _check_evidence_resolution(
+    ticket_id: str, node_ids: Sequence[str], collected: frozenset[str] | None
+) -> Result[None, TicketError]:
+    """`Err(UnknownEvidence)` if any of `node_ids` fails to resolve against
+    `collected`; `collected=None` skips resolution entirely."""
     unresolved = (
         []
         if collected is None
@@ -762,7 +898,14 @@ def add_evidence(
             unresolved,
         )
         return Err(TicketError.UnknownEvidence)
+    return Ok(None)
 
+
+def _append_evidence_and_write(
+    root: Path, ticket: Ticket, ticket_id: str, node_ids: Sequence[str]
+) -> Result[Ticket, TicketError]:
+    """Merge new `node_ids` into `ticket.evidence` (deduplicated) and write
+    the updated ticket."""
     merged = ticket.evidence + tuple(
         nid for nid in node_ids if nid not in ticket.evidence
     )
@@ -793,6 +936,19 @@ def run_cmd_evidence(command: str) -> Result[str, TicketError]:
     same command run twice against the same repo state records the same
     entry instead of appending a new one every time.
     """
+    completed = _run_evidence_command(command)
+    if completed.is_err:
+        return Err(completed.danger_err)
+    digest = hashlib.sha256(completed.danger_ok.stdout.encode("utf-8")).hexdigest()[:12]
+    entry = f"cmd:{command} exit=0 sha256={digest}"
+    return validate_evidence(entry)
+
+
+def _run_evidence_command(
+    command: str,
+) -> Result[subprocess.CompletedProcess, TicketError]:
+    """Spawn `command` through the shell; `Err(EvidenceCmdFailed)` if it
+    fails to launch or exits nonzero."""
     try:
         completed = subprocess.run(
             command,
@@ -812,9 +968,23 @@ def run_cmd_evidence(command: str) -> Result[str, TicketError]:
             completed.stderr[-500:],
         )
         return Err(TicketError.EvidenceCmdFailed)
-    digest = hashlib.sha256(completed.stdout.encode("utf-8")).hexdigest()[:12]
-    entry = f"cmd:{command} exit=0 sha256={digest}"
-    return validate_evidence(entry)
+    return Ok(completed)
+
+
+def _check_cmd_evidence_kind(
+    ticket_id: str, kind: TicketKind
+) -> Result[None, TicketError]:
+    """`Err(EvidenceKindNotAllowed)` unless `kind` is in
+    `CMD_EVIDENCE_ALLOWED_KINDS`."""
+    if kind not in CMD_EVIDENCE_ALLOWED_KINDS:
+        _log.warning(
+            "tickets: %s is kind=%s, cmd evidence only allowed for kind in %s",
+            ticket_id,
+            kind,
+            sorted(k.value for k in CMD_EVIDENCE_ALLOWED_KINDS),
+        )
+        return Err(TicketError.EvidenceKindNotAllowed)
+    return Ok(None)
 
 
 # frob:doc docs/modules/tickets.md#public-api
@@ -837,14 +1007,9 @@ def add_cmd_evidence(
         return Err(loaded.danger_err)
     ticket = loaded.danger_ok
 
-    if ticket.kind not in CMD_EVIDENCE_ALLOWED_KINDS:
-        _log.warning(
-            "tickets: %s is kind=%s, cmd evidence only allowed for kind in %s",
-            ticket_id,
-            ticket.kind,
-            sorted(k.value for k in CMD_EVIDENCE_ALLOWED_KINDS),
-        )
-        return Err(TicketError.EvidenceKindNotAllowed)
+    kind_check = _check_cmd_evidence_kind(ticket_id, ticket.kind)
+    if kind_check.is_err:
+        return Err(kind_check.danger_err)
 
     recorded = run_cmd_evidence(command)
     if recorded.is_err:

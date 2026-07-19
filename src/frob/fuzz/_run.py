@@ -57,12 +57,26 @@ def _run_one(tp: type[BaseModel], policy: FuzzPolicy, digest: str) -> FuzzResult
             ref=ref, body_digest=digest, examples=0, falsified="no generator"
         )
 
+    count, falsified = _drive_strategy(resolved.danger_ok, tp, policy, ref)
+    if falsified is not None:
+        return FuzzResult(
+            ref=ref, body_digest=digest, examples=count, falsified=falsified
+        )
+
+    _log.info("run_fuzz: %s -> %d example(s), no falsification", ref, count)
+    return FuzzResult(ref=ref, body_digest=digest, examples=count, falsified=None)
+
+
+def _drive_strategy(
+    strategy: object, tp: type[BaseModel], policy: FuzzPolicy, ref: str
+) -> tuple[int, str | None]:
+    """Run hypothesis's real engine over `strategy`; return (examples drawn,
+    falsification reason or None)."""
     from typing import Any, cast
 
     from hypothesis import HealthCheck, given, settings
-    from hypothesis.errors import Unsatisfiable
 
-    strategy = cast(Any, resolved.danger_ok)
+    typed_strategy = cast(Any, strategy)
     count = 0
 
     def _property(instance: BaseModel) -> None:
@@ -71,27 +85,32 @@ def _run_one(tp: type[BaseModel], policy: FuzzPolicy, digest: str) -> FuzzResult
         assert isinstance(instance, tp)
 
     max_examples = _examples_for_budget(policy.budget_s)
-    test_fn = given(strategy)(
+    test_fn = given(typed_strategy)(
         settings(
             max_examples=max_examples,
             deadline=None,
             suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow],
         )(_property)
     )
+    return _run_property_test(test_fn, ref, policy, lambda: count)
+
+
+def _run_property_test(test_fn, ref: str, policy: FuzzPolicy, get_count):  # noqa: ANN001
+    """Execute a built hypothesis `test_fn`, translating its outcome into
+    (examples drawn, falsification reason or None)."""
+    from hypothesis.errors import Unsatisfiable
+
     try:
         test_fn()
     except Unsatisfiable as exc:
         _log.warning("run_fuzz: %s exceeded max_reject_rate: %s", ref, exc)
         reason = f"rejection rate too high (max={policy.max_reject_rate}): {exc}"
-        return FuzzResult(ref=ref, body_digest=digest, examples=count, falsified=reason)
+        return get_count(), reason
     except AssertionError as exc:  # pragma: no cover - _property never fails logically
         _log.error("run_fuzz: %s falsified: %s", ref, exc)
-        return FuzzResult(
-            ref=ref, body_digest=digest, examples=count, falsified=repr(exc)
-        )
+        return get_count(), repr(exc)
 
-    _log.info("run_fuzz: %s -> %d example(s), no falsification", ref, count)
-    return FuzzResult(ref=ref, body_digest=digest, examples=count, falsified=None)
+    return get_count(), None
 
 
 # frob:doc docs/modules/fuzz.md#public-api

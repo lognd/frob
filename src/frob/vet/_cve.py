@@ -142,37 +142,33 @@ def link_cwe_ids(cwe_ids: tuple[str, ...]) -> tuple[CweLink, ...]:
     dropped) -- order-stable over `cwe_ids`."""
     catalog = _cwe_catalog_index()
     out_of_scope = _cwe_out_of_scope_index()
-    links: list[CweLink] = []
-    for cwe_id in cwe_ids:
-        catalog_hit = catalog.get(cwe_id)
-        if catalog_hit is not None:
-            title, mitigation = catalog_hit
-            links.append(
-                CweLink(
-                    cwe_id=cwe_id,
-                    disposition=CweDisposition.CATALOG,
-                    title=title,
-                    mitigation=mitigation,
-                )
-            )
-            continue
-        oos_reason = out_of_scope.get(cwe_id)
-        if oos_reason is not None:
-            links.append(
-                CweLink(
-                    cwe_id=cwe_id,
-                    disposition=CweDisposition.OUT_OF_SCOPE,
-                    reason=oos_reason,
-                )
-            )
-            continue
-        _log.info(
-            "vet: cve: %s is not in the threat catalog or out-of-scope tables; "
-            "unmapped",
-            cwe_id,
+    return tuple(_link_one_cwe(cwe_id, catalog, out_of_scope) for cwe_id in cwe_ids)
+
+
+def _link_one_cwe(
+    cwe_id: str, catalog: dict[str, tuple[str, str]], out_of_scope: dict[str, str]
+) -> CweLink:
+    """One `CweLink` for `cwe_id`: CATALOG hit, OUT_OF_SCOPE hit, or
+    UNMAPPED (logged) if neither table names it."""
+    catalog_hit = catalog.get(cwe_id)
+    if catalog_hit is not None:
+        title, mitigation = catalog_hit
+        return CweLink(
+            cwe_id=cwe_id,
+            disposition=CweDisposition.CATALOG,
+            title=title,
+            mitigation=mitigation,
         )
-        links.append(CweLink(cwe_id=cwe_id, disposition=CweDisposition.UNMAPPED))
-    return tuple(links)
+    oos_reason = out_of_scope.get(cwe_id)
+    if oos_reason is not None:
+        return CweLink(
+            cwe_id=cwe_id, disposition=CweDisposition.OUT_OF_SCOPE, reason=oos_reason
+        )
+    _log.info(
+        "vet: cve: %s is not in the threat catalog or out-of-scope tables; unmapped",
+        cwe_id,
+    )
+    return CweLink(cwe_id=cwe_id, disposition=CweDisposition.UNMAPPED)
 
 
 def _parse_comparable(value: str) -> PkgVersion | None:
@@ -214,6 +210,14 @@ def _evaluate_entry(dep_version: str, entry: Version) -> tuple[str, str]:
                 f"range lower bound {entry.version!r} does not parse",
             )
 
+    return _range_match_outcome(dep_v, lower, entry)
+
+
+def _range_match_outcome(
+    dep_v: PkgVersion, lower: PkgVersion | None, entry: Version
+) -> tuple[str, str]:
+    """The `("match"|"no-match"|"indeterminate", reason)` outcome once
+    `dep_v`/`lower` have parsed, from `entry`'s upper-bound fields."""
     if entry.lessThan is not None:
         upper = _parse_comparable(entry.lessThan)
         if upper is None:
@@ -260,20 +264,31 @@ def _status_for_affected(
             )
 
     if matched_status is not None:
-        if matched_status == "affected":
-            return MatchStatus.AFFECTED, matched_reason
-        if matched_status == "unaffected":
-            return MatchStatus.UNAFFECTED, matched_reason
-        return (
-            MatchStatus.INDETERMINATE,
-            f"matched range status={matched_status!r} is neither "
-            f"affected nor unaffected",
-        )
+        return _status_from_matched(matched_status, matched_reason)
 
     if indeterminate_reasons:
         return MatchStatus.INDETERMINATE, "; ".join(indeterminate_reasons)
 
-    default = affected.defaultStatus
+    return _status_from_default(affected.defaultStatus)
+
+
+def _status_from_matched(
+    matched_status: str, matched_reason: str
+) -> tuple[MatchStatus, str]:
+    """The `(MatchStatus, reason)` for an explicit matched range's status string."""
+    if matched_status == "affected":
+        return MatchStatus.AFFECTED, matched_reason
+    if matched_status == "unaffected":
+        return MatchStatus.UNAFFECTED, matched_reason
+    return (
+        MatchStatus.INDETERMINATE,
+        f"matched range status={matched_status!r} is neither affected nor unaffected",
+    )
+
+
+def _status_from_default(default: str | None) -> tuple[MatchStatus, str]:
+    """The `(MatchStatus, reason)` fallback when no explicit range covers
+    the installed version, from `affected.defaultStatus`."""
     if default == "affected":
         return (
             MatchStatus.AFFECTED,
@@ -344,14 +359,12 @@ def _description_summary(record: CveRecord, *, max_len: int = 240) -> str:
     return ""
 
 
-def _match_record_dependency(
+def _scan_containers_for_dependency(
     record: CveRecord, dep: Dependency
-) -> tuple[MatchStatus, str] | None:
-    """`dep` against every `affected[]` entry (CNA + ADP) whose product
-    name matches; `None` when no entry names this dependency at all. Any
-    matching entry saying `AFFECTED` wins outright; failing that, any
-    `INDETERMINATE` wins over a clean `UNAFFECTED` -- never silently
-    downgraded (vacuous-pass doctrine)."""
+) -> tuple[bool, bool, bool, list[str]]:
+    """Scan every CNA/ADP container's `affected[]` for a product-name match
+    against `dep`; returns `(any_affected, any_indeterminate,
+    matched_product, reasons)`."""
     any_affected = False
     any_indeterminate = False
     matched_product = False
@@ -367,6 +380,20 @@ def _match_record_dependency(
                 any_affected = True
             elif status is MatchStatus.INDETERMINATE:
                 any_indeterminate = True
+    return any_affected, any_indeterminate, matched_product, reasons
+
+
+def _match_record_dependency(
+    record: CveRecord, dep: Dependency
+) -> tuple[MatchStatus, str] | None:
+    """`dep` against every `affected[]` entry (CNA + ADP) whose product
+    name matches; `None` when no entry names this dependency at all. Any
+    matching entry saying `AFFECTED` wins outright; failing that, any
+    `INDETERMINATE` wins over a clean `UNAFFECTED` -- never silently
+    downgraded (vacuous-pass doctrine)."""
+    any_affected, any_indeterminate, matched_product, reasons = (
+        _scan_containers_for_dependency(record, dep)
+    )
 
     if not matched_product:
         return None
@@ -377,6 +404,64 @@ def _match_record_dependency(
     return MatchStatus.UNAFFECTED, "; ".join(reasons)
 
 
+def _matches_for_record(
+    record: CveRecord, deps: tuple[Dependency, ...]
+) -> list[CveMatch]:
+    """One `CveMatch` per `deps` entry `record` names as affected/unaffected/
+    indeterminate."""
+    matches: list[CveMatch] = []
+    for dep in deps:
+        outcome = _match_record_dependency(record, dep)
+        if outcome is None:
+            continue
+        status, reason = outcome
+        score, severity = _best_cvss(record)
+        match = CveMatch(
+            cve_id=record.cveMetadata.cveId,
+            dependency=dep.name,
+            version=dep.version,
+            ecosystem=dep.ecosystem,
+            status=status,
+            reason=reason,
+            cvss_score=score,
+            cvss_severity=severity,
+            summary=_description_summary(record),
+            cwe_links=link_cwe_ids(_cwe_ids_of(record)),
+        )
+        matches.append(match)
+        _log.info(
+            "vet: cve: %s vs %s@%s -> %s",
+            record.cveMetadata.cveId,
+            dep.name,
+            dep.version,
+            status,
+        )
+    return matches
+
+
+def _usable_mirror_record(
+    path: Path, result: Result[CveRecord, CveError], mirror_root: Path
+) -> Result[CveRecord | None, VetError]:
+    """One `iter_mirror` entry's usable record, or `None` to skip (a parse
+    failure or a REJECTED record); `Err` only for an invalid mirror path."""
+    if result.is_err:
+        if result.danger_err is CveError.MirrorPathInvalid:
+            _log.error("vet: cve: mirror path configured but invalid: %s", mirror_root)
+            return Err(VetError.CveMirrorInvalid)
+        _log.warning("vet: cve: record %s failed to parse: %s", path, result.danger_err)
+        return Ok(None)
+
+    record = result.danger_ok
+    if record.cveMetadata.state is CveState.REJECTED:
+        _log.info("vet: cve: skipping REJECTED record %s", record.cveMetadata.cveId)
+        return Ok(None)
+    return Ok(record)
+
+
+# A configured-but-missing/unreadable mirror is a loud `Err
+# (VetError.CveMirrorInvalid)` -- vacuous-pass doctrine: this function is
+# only ever called when a mirror IS configured, so failing to read it
+# must never look like "zero CVEs found".
 # frob:doc docs/modules/vet.md#public-api
 # frob:waive TEST005 reason="match_deps_against_mirror 88.9% branch cover, debt T-0160"
 def match_dependencies_against_mirror(
@@ -384,59 +469,17 @@ def match_dependencies_against_mirror(
 ) -> Result[tuple[CveMatch, ...], VetError]:
     """Walk `mirror_root` (a local cvelistV5 clone, `frob.cve.iter_mirror`
     layout) and match every `deps` entry against every `PUBLISHED` record's
-    `affected[]` products. `REJECTED` records are skipped with a log line.
-    A configured-but-missing/unreadable mirror is a loud `Err
-    (VetError.CveMirrorInvalid)` -- vacuous-pass doctrine: this function is
-    only ever called when a mirror IS configured, so failing to read it
-    must never look like "zero CVEs found"."""
+    `affected[]` products. `REJECTED` records are skipped with a log line."""
     matches: list[CveMatch] = []
     try:
         for path, result in iter_mirror(mirror_root):
-            if result.is_err:
-                if result.danger_err is CveError.MirrorPathInvalid:
-                    _log.error(
-                        "vet: cve: mirror path configured but invalid: %s",
-                        mirror_root,
-                    )
-                    return Err(VetError.CveMirrorInvalid)
-                _log.warning(
-                    "vet: cve: record %s failed to parse: %s", path, result.danger_err
-                )
+            record_result = _usable_mirror_record(path, result, mirror_root)
+            if record_result.is_err:
+                return Err(record_result.danger_err)
+            record = record_result.danger_ok
+            if record is None:
                 continue
-
-            record = result.danger_ok
-            if record.cveMetadata.state is CveState.REJECTED:
-                _log.info(
-                    "vet: cve: skipping REJECTED record %s", record.cveMetadata.cveId
-                )
-                continue
-
-            for dep in deps:
-                outcome = _match_record_dependency(record, dep)
-                if outcome is None:
-                    continue
-                status, reason = outcome
-                score, severity = _best_cvss(record)
-                match = CveMatch(
-                    cve_id=record.cveMetadata.cveId,
-                    dependency=dep.name,
-                    version=dep.version,
-                    ecosystem=dep.ecosystem,
-                    status=status,
-                    reason=reason,
-                    cvss_score=score,
-                    cvss_severity=severity,
-                    summary=_description_summary(record),
-                    cwe_links=link_cwe_ids(_cwe_ids_of(record)),
-                )
-                matches.append(match)
-                _log.info(
-                    "vet: cve: %s vs %s@%s -> %s",
-                    record.cveMetadata.cveId,
-                    dep.name,
-                    dep.version,
-                    status,
-                )
+            matches.extend(_matches_for_record(record, deps))
     except OSError as exc:
         _log.error("vet: cve: mirror %s unreadable: %s", mirror_root, exc)
         return Err(VetError.CveMirrorInvalid)

@@ -235,9 +235,32 @@ def _scan_source(
     """Capability + obfuscation + VET002/VET003 + ecosystem scan of a located
     dependency source. Returns `(capabilities, signals, violations)` and stores
     the fresh verdict for future escalation diffs."""
+    artifact_hash = _artifact_hash(source_dir)
+    capabilities, signals, violations = _capability_and_fingerprint_signals(
+        dep, source_dir, lockfile_name
+    )
+
+    for maybe in (
+        _vet002_violation(dep, cfg, lockfile_name, capabilities),
+        _vet003_violation(
+            dep, cache_path, lockfile_name, capabilities, signals, artifact_hash
+        ),
+    ):
+        if maybe is not None:
+            violations.append(maybe)
+
+    violations.extend(_ecosystem_rules(dep, source_dir, lockfile_name))
+    _store_verdict_if_hashed(dep, cache_path, artifact_hash, capabilities, signals)
+    return capabilities, signals, violations
+
+
+def _capability_and_fingerprint_signals(
+    dep: Dependency, source_dir: Path, lockfile_name: str
+) -> tuple[set[str], list[str], list[Violation]]:
+    """Capability, obfuscation, and CVE-fingerprint scan of `source_dir`
+    (VET004/VET006's inputs)."""
     signals: list[str] = []
     violations: list[Violation] = []
-    artifact_hash = _artifact_hash(source_dir)
 
     observed, decode_to_exec = _capability.scan_directory_capabilities(source_dir)
     capabilities = set(observed)
@@ -258,34 +281,42 @@ def _scan_source(
     if fingerprint_matches:
         signals.append("cve-fingerprint")
         violations.append(_vet006_violation(dep, lockfile_name, fingerprint_matches))
-
-    for maybe in (
-        _vet002_violation(dep, cfg, lockfile_name, capabilities),
-        _vet003_violation(
-            dep, cache_path, lockfile_name, capabilities, signals, artifact_hash
-        ),
-    ):
-        if maybe is not None:
-            violations.append(maybe)
-
-    if dep.ecosystem == "pypi":
-        violations.extend(_ecosystem.python_rules(dep, source_dir, lockfile_name))
-    elif dep.ecosystem == "cargo":
-        violations.extend(_ecosystem.rust_rules(dep, source_dir, lockfile_name))
-
-    if artifact_hash:
-        _cache.store_verdict(
-            cache_path,
-            PackageVerdict(
-                name=dep.name,
-                version=dep.version,
-                ecosystem=dep.ecosystem,
-                artifact_hash=artifact_hash,
-                capabilities=frozenset(capabilities),
-                signals=tuple(signals),
-            ),
-        )
     return capabilities, signals, violations
+
+
+def _ecosystem_rules(
+    dep: Dependency, source_dir: Path, lockfile_name: str
+) -> list[Violation]:
+    """Ecosystem-specific rule violations (pypi/cargo) for `dep`."""
+    if dep.ecosystem == "pypi":
+        return list(_ecosystem.python_rules(dep, source_dir, lockfile_name))
+    if dep.ecosystem == "cargo":
+        return list(_ecosystem.rust_rules(dep, source_dir, lockfile_name))
+    return []
+
+
+def _store_verdict_if_hashed(
+    dep: Dependency,
+    cache_path: Path,
+    artifact_hash: str,
+    capabilities: set[str],
+    signals: list[str],
+) -> None:
+    """Persist the fresh `PackageVerdict` for future escalation diffs, if
+    `source_dir` produced a real artifact hash."""
+    if not artifact_hash:
+        return
+    _cache.store_verdict(
+        cache_path,
+        PackageVerdict(
+            name=dep.name,
+            version=dep.version,
+            ecosystem=dep.ecosystem,
+            artifact_hash=artifact_hash,
+            capabilities=frozenset(capabilities),
+            signals=tuple(signals),
+        ),
+    )
 
 
 def _prehook_violations(
@@ -333,23 +364,37 @@ def _process_dependency(
     if v001 is not None:
         violations.append(v001)
 
-    source_dir = _source.locate_source(root, dep.ecosystem, dep.name, dep.version)
-    if source_dir is None:
-        signals.append("source-unavailable")
-        _log.info(
-            "vet: %s/%s@%s: source unavailable locally; empty capability set",
-            dep.ecosystem,
-            dep.name,
-            dep.version,
-        )
-    else:
-        caps, src_signals, src_violations = _scan_source(
-            dep, source_dir, lockfile.name, cfg, cache_path
-        )
-        capabilities |= caps
-        signals.extend(src_signals)
-        violations.extend(src_violations)
+    _scan_located_source(
+        dep, root, lockfile, cfg, cache_path, capabilities, signals, violations
+    )
+    _apply_npm_and_prehook_checks(
+        dep, root, cfg, cache_path, lockfile, is_new, fetch, violations, signals
+    )
 
+    verdict = PackageVerdict(
+        name=dep.name,
+        version=dep.version,
+        ecosystem=dep.ecosystem,
+        capabilities=frozenset(capabilities),
+        signals=tuple(signals),
+    )
+    return violations, verdict
+
+
+def _apply_npm_and_prehook_checks(
+    dep: Dependency,
+    root: Path,
+    cfg: VetConfig,
+    cache_path: Path,
+    lockfile: Path,
+    is_new: bool,
+    fetch: bool,
+    violations: list[Violation],
+    signals: list[str],
+) -> None:
+    """Fold the npm non-registry rule and (for new deps, when fetching)
+    prehook quarantine/typosquat violations into `violations`/`signals`,
+    in place."""
     if dep.ecosystem == "npm":
         js_violation = _ecosystem.npm_non_registry_rule(dep, lockfile.name)
         if js_violation is not None:
@@ -362,14 +407,35 @@ def _process_dependency(
         violations.extend(pre_violations)
         signals.extend(pre_signals)
 
-    verdict = PackageVerdict(
-        name=dep.name,
-        version=dep.version,
-        ecosystem=dep.ecosystem,
-        capabilities=frozenset(capabilities),
-        signals=tuple(signals),
+
+def _scan_located_source(
+    dep: Dependency,
+    root: Path,
+    lockfile: Path,
+    cfg: VetConfig,
+    cache_path: Path,
+    capabilities: set[str],
+    signals: list[str],
+    violations: list[Violation],
+) -> None:
+    """Locate `dep`'s source and, if found, scan it, folding results (in
+    place) into `capabilities`/`signals`/`violations`."""
+    source_dir = _source.locate_source(root, dep.ecosystem, dep.name, dep.version)
+    if source_dir is None:
+        signals.append("source-unavailable")
+        _log.info(
+            "vet: %s/%s@%s: source unavailable locally; empty capability set",
+            dep.ecosystem,
+            dep.name,
+            dep.version,
+        )
+        return
+    caps, src_signals, src_violations = _scan_source(
+        dep, source_dir, lockfile.name, cfg, cache_path
     )
-    return violations, verdict
+    capabilities |= caps
+    signals.extend(src_signals)
+    violations.extend(src_violations)
 
 
 def _timeout_verdict(
@@ -426,22 +492,58 @@ def _scan_dependencies(
     cache or crash the scan, it just means the "most recent" write wins
     non-deterministically. `jobs=1` (the default) has none of this risk.
     Progress is logged at INFO as each package completes: `M/N name`."""
+    allow = dict(cfg.allow)
+    if jobs <= 1:
+        return _scan_dependencies_sequential(
+            deps, root, lockfile, cfg, cache_path, fetch, timeout, allow
+        )
+    return _scan_dependencies_parallel(
+        deps, root, lockfile, cfg, cache_path, fetch, timeout, allow, jobs
+    )
+
+
+def _scan_dependencies_sequential(
+    deps: tuple[Dependency, ...],
+    root: Path,
+    lockfile: Path,
+    cfg: VetConfig,
+    cache_path: Path,
+    fetch: bool,
+    timeout: float | None,
+    allow: dict[str, tuple[str, ...] | bool],
+) -> tuple[list[Violation], list[PackageVerdict]]:
+    """`_scan_dependencies`'s `jobs<=1` path: one package at a time."""
     violations: list[Violation] = []
     verdicts: list[PackageVerdict] = []
-    allow = dict(cfg.allow)
     total = len(deps)
+    for i, dep in enumerate(deps, start=1):
+        _log.info("vet: package %d/%d %s", i, total, dep.name)
+        is_new = dep.name not in allow
+        dep_violations, verdict = _run_with_timeout(
+            dep, root, lockfile, cfg, cache_path, is_new, fetch, timeout
+        )
+        violations.extend(dep_violations)
+        verdicts.append(verdict)
+    return violations, verdicts
 
-    if jobs <= 1:
-        for i, dep in enumerate(deps, start=1):
-            _log.info("vet: package %d/%d %s", i, total, dep.name)
-            is_new = dep.name not in allow
-            dep_violations, verdict = _run_with_timeout(
-                dep, root, lockfile, cfg, cache_path, is_new, fetch, timeout
-            )
-            violations.extend(dep_violations)
-            verdicts.append(verdict)
-        return violations, verdicts
 
+def _scan_dependencies_parallel(
+    deps: tuple[Dependency, ...],
+    root: Path,
+    lockfile: Path,
+    cfg: VetConfig,
+    cache_path: Path,
+    fetch: bool,
+    timeout: float | None,
+    allow: dict[str, tuple[str, ...] | bool],
+    jobs: int,
+) -> tuple[list[Violation], list[PackageVerdict]]:
+    """`_scan_dependencies`'s `jobs>1` path: a thread pool of best-effort
+    concurrent per-package scans (see `_scan_dependencies`'s docstring for
+    the concurrency-safety disclosure)."""
+    violations: list[Violation] = []
+    verdicts: list[PackageVerdict] = []
+    total = len(deps)
     with ThreadPoolExecutor(max_workers=jobs) as pool:
         futures = [
             (
@@ -468,6 +570,21 @@ def _scan_dependencies(
     return violations, verdicts
 
 
+# CORRECTNESS NOTE (review round 1 caught this): a `with
+# ThreadPoolExecutor(...)` block's `__exit__` calls `shutdown(wait=True)`
+# unconditionally, including when the body returns early on a timeout --
+# so a naive `with pool: ... except FutureTimeoutError: return ...` still
+# blocks the caller for the FULL underlying task duration, not `timeout`,
+# defeating the entire point of this function. The pool is therefore
+# constructed WITHOUT a `with` and explicitly `shutdown(wait=False)` on
+# the timeout path so this function returns within ~`timeout` wall-clock
+# as promised. The consequence: the abandoned worker thread is not joined
+# and keeps running in the background for as long as `_process_dependency`
+# takes (Python cannot preempt a running thread) -- for network calls this
+# is typically seconds; for a pathological scan it could be the original
+# hang, just no longer blocking the rest of the run. This is the same
+# disclosed trade-off as `_scan_dependencies`' docstring, made concrete
+# here.
 def _run_with_timeout(
     dep: Dependency,
     root: Path,
@@ -480,24 +597,7 @@ def _run_with_timeout(
 ) -> tuple[list[Violation], PackageVerdict]:
     """`_process_dependency`, bounded by `timeout` seconds when set. On
     expiry returns `_timeout_verdict` (T-0208) rather than raising or
-    silently dropping the package.
-
-    CORRECTNESS NOTE (review round 1 caught this): a `with
-    ThreadPoolExecutor(...)` block's `__exit__` calls `shutdown(wait=True)`
-    unconditionally, including when the body returns early on a timeout --
-    so a naive `with pool: ... except FutureTimeoutError: return ...`
-    still blocks the caller for the FULL underlying task duration, not
-    `timeout`, defeating the entire point of this function. The pool is
-    therefore constructed WITHOUT a `with` and explicitly
-    `shutdown(wait=False)` on the timeout path so this function returns
-    within ~`timeout` wall-clock as promised. The consequence: the
-    abandoned worker thread is not joined and keeps running in the
-    background for as long as `_process_dependency` takes (Python cannot
-    preempt a running thread) -- for network calls this is typically
-    seconds; for a pathological scan it could be the original hang,
-    just no longer blocking the rest of the run. This is the same
-    disclosed trade-off as `_scan_dependencies`' docstring, made
-    concrete here."""
+    silently dropping the package."""
     if timeout is None:
         return _process_dependency(dep, root, lockfile, cfg, cache_path, is_new, fetch)
 
@@ -577,23 +677,28 @@ def _osv_violations(
     return violations, []
 
 
-# frob:doc docs/modules/vet.md#public-api
-# frob:waive TEST005 reason="scan_tree 84.0% branch cover, debt T-0160"
-# frob:tests tests/test_vet.py::TestScanTreeLockArg.test_scan_tree_lockfile_arg
-# frob:tests tests/test_vet.py::TestScanTreeLockArg.test_scan_tree_unsupp_err
-def scan_tree(
+def _collect_supplementary_findings(
+    project_root: Path, lockfile: Path, cfg: VetConfig, violations: list[Violation]
+) -> list[str]:
+    """Fold JS-lifecycle (if applicable) and osv-scanner violations into
+    `violations` in place; return the combined skipped-note list."""
+    skipped: list[str] = []
+    if lockfile.name in ("package-lock.json", "pnpm-lock.yaml"):
+        lc_violations, lc_skipped = _lifecycle_violations(project_root, cfg)
+        violations.extend(lc_violations)
+        skipped.extend(lc_skipped)
+
+    osv_violations, osv_skipped = _osv_violations(lockfile, cfg)
+    violations.extend(osv_violations)
+    skipped.extend(osv_skipped)
+    return skipped
+
+
+def _resolve_lockfile_and_deps(
     root: Path,
-    *,
-    fetch: bool = True,
-    timeout: float | None = None,
-    jobs: int = 1,
-) -> Result[VetReport, VetError]:
-    """Full-lockfile vet pass: allow conformance, quarantine, typosquat,
-    JS lifecycle scripts, and the optional osv-scanner adapter. `timeout`
-    (T-0208) bounds each package's scan in seconds; on expiry that package
-    gets an honest VET-TIMEOUT verdict, never a silent skip. `jobs` > 1 runs
-    packages concurrently -- see `_scan_dependencies`'s docstring for the
-    shared-cache risk this discloses before you raise it above 1."""
+) -> Result[tuple[Path, tuple[Dependency, ...], Path, VetConfig, Path], VetError]:
+    """Locate `root`'s lockfile, parse its dependencies, and resolve the
+    project root + `[vet]` config + cache path `scan_tree` needs."""
     lockfile = find_lockfile(root)
     if lockfile is None:
         _log.warning(
@@ -618,20 +723,35 @@ def scan_tree(
     cache_path = project_root / _CACHE_REL
     if not cfg.present:
         _log.info("vet: no [vet] section; advisory-only mode")
+    return Ok((lockfile, deps, project_root, cfg, cache_path))
+
+
+# frob:doc docs/modules/vet.md#public-api
+# frob:waive TEST005 reason="scan_tree 84.0% branch cover, debt T-0160"
+# frob:tests tests/test_vet.py::TestScanTreeLockArg.test_scan_tree_lockfile_arg
+# frob:tests tests/test_vet.py::TestScanTreeLockArg.test_scan_tree_unsupp_err
+def scan_tree(
+    root: Path,
+    *,
+    fetch: bool = True,
+    timeout: float | None = None,
+    jobs: int = 1,
+) -> Result[VetReport, VetError]:
+    """Full-lockfile vet pass: allow conformance, quarantine, typosquat,
+    JS lifecycle scripts, and the optional osv-scanner adapter. `timeout`
+    (T-0208) bounds each package's scan in seconds; on expiry that package
+    gets an honest VET-TIMEOUT verdict, never a silent skip. `jobs` > 1 runs
+    packages concurrently -- see `_scan_dependencies`'s docstring for the
+    shared-cache risk this discloses before you raise it above 1."""
+    resolved = _resolve_lockfile_and_deps(root)
+    if resolved.is_err:
+        return Err(resolved.danger_err)
+    lockfile, deps, project_root, cfg, cache_path = resolved.danger_ok
 
     violations, verdicts = _scan_dependencies(
         deps, project_root, lockfile, cfg, cache_path, fetch, timeout=timeout, jobs=jobs
     )
-    skipped: list[str] = []
-
-    if lockfile.name in ("package-lock.json", "pnpm-lock.yaml"):
-        lc_violations, lc_skipped = _lifecycle_violations(project_root, cfg)
-        violations.extend(lc_violations)
-        skipped.extend(lc_skipped)
-
-    osv_violations, osv_skipped = _osv_violations(lockfile, cfg)
-    violations.extend(osv_violations)
-    skipped.extend(osv_skipped)
+    skipped = _collect_supplementary_findings(project_root, lockfile, cfg, violations)
 
     report = VetReport(
         verdicts=tuple(verdicts),

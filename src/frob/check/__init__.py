@@ -109,21 +109,9 @@ class CheckResult(BaseModel):
         # frob:doc docs/commands/check.md#public-api
         """Human-readable report: errors, then warnings, then notes, then a
         per-tool summary table."""
-        from frob.logging.color import BOLD, DIM, GREEN, RED, YELLOW, paint
+        from frob.logging.color import BOLD, GREEN, RED, YELLOW, paint
 
-        err = self.total_errors
-        warn = self.total_warnings
-        status = "FAIL" if err > 0 else ("WARN" if warn > 0 else "PASS")
-        status_code = {"FAIL": RED, "WARN": YELLOW, "PASS": GREEN}[status]
-        errs = f"{err} error{'s' if err != 1 else ''}"
-        warns = f"{warn} warning{'s' if warn != 1 else ''}"
-        header_status = paint(f"[{status}]", f"{BOLD};{status_code}", color)
-        lines: list[str] = [
-            f"frob check {self.path}  {header_status}  "
-            f"{paint(errs, RED if err else DIM, color)}  "
-            f"{paint(warns, YELLOW if warn else DIM, color)}",
-            "",
-        ]
+        lines: list[str] = [self._header_line(color), ""]
 
         buckets = _bucket_diags(self.results)
         lines.extend(
@@ -142,6 +130,23 @@ class CheckResult(BaseModel):
             icon = paint("pass", GREEN, color) if ok else paint("FAIL", RED, color)
             lines.append(f"  {icon}  {r.tool:<22}  {r.summary}")
         return "\n".join(lines)
+
+    def _header_line(self, color: bool) -> str:
+        """The single-line status/error/warning-count header for `as_text`."""
+        from frob.logging.color import BOLD, DIM, GREEN, RED, YELLOW, paint
+
+        err = self.total_errors
+        warn = self.total_warnings
+        status = "FAIL" if err > 0 else ("WARN" if warn > 0 else "PASS")
+        status_code = {"FAIL": RED, "WARN": YELLOW, "PASS": GREEN}[status]
+        errs = f"{err} error{'s' if err != 1 else ''}"
+        warns = f"{warn} warning{'s' if warn != 1 else ''}"
+        header_status = paint(f"[{status}]", f"{BOLD};{status_code}", color)
+        return (
+            f"frob check {self.path}  {header_status}  "
+            f"{paint(errs, RED if err else DIM, color)}  "
+            f"{paint(warns, YELLOW if warn else DIM, color)}"
+        )
 
     # frob:waive TEST005 reason="CheckResult.as_json 50.0% branch cover, debt T-0160"
     def as_json(self) -> str:
@@ -195,6 +200,30 @@ def _resolve_only(
         return gate_only, only, unknown
     adjusted = (frozenset(only) - gate_only) | {"gates"} if gate_only else only
     return gate_only, adjusted, frozenset()
+
+
+def _python_skip_flags(
+    *,
+    skip_ruff: bool,
+    skip_ty: bool,
+    skip_arch: bool,
+    skip_cycle: bool,
+    skip_dup: bool,
+    skip_bind: bool,
+    skip_exports: bool,
+    skip_gates: bool,
+) -> dict[str, bool]:
+    """The per-tool skip-flag mapping `_python_tasks` consults."""
+    return {
+        "ruff": skip_ruff,
+        "ty": skip_ty,
+        "cycle": skip_cycle,
+        "dup": skip_dup,
+        "arch": skip_arch,
+        "bind": skip_bind,
+        "exports": skip_exports,
+        "gates": skip_gates,
+    }
 
 
 def _python_tasks(
@@ -339,20 +368,43 @@ def run_check(
     since `.frob/baseline` (see `frob.gates.stamp_baseline`/`delta_violations`) --
     an agent-facing signal-only mode; every other tool is unaffected.
     """
+    skips = _python_skip_flags(
+        skip_ruff=skip_ruff,
+        skip_ty=skip_ty,
+        skip_arch=skip_arch,
+        skip_cycle=skip_cycle,
+        skip_dup=skip_dup,
+        skip_bind=skip_bind,
+        skip_exports=skip_exports,
+        skip_gates=skip_gates,
+    )
+    return _run_check_with_skips(
+        root,
+        skips=skips,
+        ruff_args=ruff_args,
+        only=only,
+        ticket=ticket,
+        base=base,
+        delta=delta,
+    )
+
+
+def _run_check_with_skips(
+    root: Path,
+    *,
+    skips: dict[str, bool],
+    ruff_args: list[str] | None,
+    only: frozenset[str] | None,
+    ticket: str | None,
+    base: str | None,
+    delta: bool,
+) -> CheckResult:
+    """`run_check`'s task-selection and execution tail, once its many
+    `skip_*` flags have been collapsed into `skips`."""
     gate_only, only, unknown = _resolve_only(only)
     if unknown:
         return _unknown_only_result(root, unknown)
 
-    skips = {
-        "ruff": skip_ruff,
-        "ty": skip_ty,
-        "cycle": skip_cycle,
-        "dup": skip_dup,
-        "arch": skip_arch,
-        "bind": skip_bind,
-        "exports": skip_exports,
-        "gates": skip_gates,
-    }
     tasks = _python_tasks(
         root,
         only=only,
@@ -393,7 +445,29 @@ def run_check_cpp(
         if r.exit_code != 0:
             skip_tests = True
 
-    post_build: list[Callable[[], ToolResult | None]] = []
+    post_build = _cpp_post_build_tasks(
+        root,
+        bdir,
+        skip_clang_tidy=skip_clang_tidy,
+        skip_clang_format=skip_clang_format,
+        skip_tests=skip_tests,
+        valgrind=valgrind,
+    )
+    results.extend(_run_tasks_concurrently(post_build))
+    return CheckResult(path=str(root), results=results)
+
+
+def _cpp_post_build_tasks(
+    root: Path,
+    bdir: Path,
+    *,
+    skip_clang_tidy: bool,
+    skip_clang_format: bool,
+    skip_tests: bool,
+    valgrind: bool,
+) -> list[Callable[[], ToolResult | list[ToolResult] | None]]:
+    """The enabled post-build job callables for a CMake C/C++ check run."""
+    post_build: list[Callable[[], ToolResult | list[ToolResult] | None]] = []
     if not skip_clang_tidy:
         post_build.append(lambda: _run_clang_tidy_cmake(root, bdir))
     if not skip_clang_format:
@@ -401,15 +475,7 @@ def run_check_cpp(
     if not skip_tests:
         _valgrind = valgrind
         post_build.append(lambda: _run_ctest(bdir, valgrind=_valgrind))
-
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        futures = [executor.submit(fn) for fn in post_build]
-        for future in futures:
-            r = future.result()
-            if r is not None:
-                results.append(r)
-
-    return CheckResult(path=str(root), results=results)
+    return post_build
 
 
 # ---------------------------------------------------------------------------

@@ -83,18 +83,10 @@ def _derived_strategy(tp: type[BaseModel]) -> Result[object, FuzzError]:
         _log.warning("resolve: %s has unresolvable type hints: %s", tp, exc)
         return Err(FuzzError.NoGenerator)
 
-    field_strategies: dict[str, Any] = {}
-    for name in tp.model_fields:
-        annotation = hints.get(name)
-        if annotation is None:
-            _log.warning("resolve: %s.%s has no resolvable annotation", tp, name)
-            return Err(FuzzError.NoGenerator)
-        resolved = _field_strategy(annotation)
-        if resolved.is_err:
-            return resolved
-        field_strategies[name] = resolved.danger_ok
-
-    combined = _st.fixed_dictionaries(field_strategies)
+    field_strategies = _field_strategies_for(tp, hints)
+    if field_strategies.is_err:
+        return Err(field_strategies.danger_err)
+    combined = _st.fixed_dictionaries(field_strategies.danger_ok)
 
     @_st.composite
     def _validated(draw: Any) -> BaseModel:
@@ -109,6 +101,24 @@ def _derived_strategy(tp: type[BaseModel]) -> Result[object, FuzzError]:
             raise AssertionError("unreachable: reject() always raises")  # noqa: TRY003
 
     return Ok(_validated())
+
+
+def _field_strategies_for(
+    tp: type[BaseModel], hints: dict[str, Any]
+) -> Result[dict[str, Any], FuzzError]:
+    """Per-field hypothesis strategies for `tp`'s pydantic fields, or the
+    first field's `Err` if any field lacks a resolvable annotation/strategy."""
+    field_strategies: dict[str, Any] = {}
+    for name in tp.model_fields:
+        annotation = hints.get(name)
+        if annotation is None:
+            _log.warning("resolve: %s.%s has no resolvable annotation", tp, name)
+            return Err(FuzzError.NoGenerator)
+        resolved = _field_strategy(annotation)
+        if resolved.is_err:
+            return Err(resolved.danger_err)
+        field_strategies[name] = resolved.danger_ok
+    return Ok(field_strategies)
 
 
 # frob:doc docs/modules/fuzz.md#public-api
@@ -127,7 +137,12 @@ def resolve(tp: type) -> Result[object, FuzzError]:
     if not HYPOTHESIS_AVAILABLE:
         _log.error("resolve: hypothesis is not installed; cannot generate for %s", tp)
         return Err(FuzzError.NoGenerator)
+    return _resolve_cascade(tp)
 
+
+def _resolve_cascade(tp: type) -> Result[object, FuzzError]:
+    """Try declared -> pydantic-derived -> registered strategies for `tp`
+    in order, logging which source hit (or that all missed)."""
     declared = _declared_strategy(tp)
     if declared is not None:
         _log.debug("resolve: %s -> declared __fuzz__()", tp)

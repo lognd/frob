@@ -188,6 +188,44 @@ def _undischarged_pairs(
     )
 
 
+def _first_live_pair(
+    ordered_nodes: list[str],
+    known_cwes: tuple[str, ...],
+    undischarged: frozenset[tuple[str, str]],
+) -> tuple[str, str] | None:
+    """The first `(node_id, cwe)` pair (in `ordered_nodes`/`known_cwes`
+    order) present in `undischarged`, or None if none is."""
+    for node_id in ordered_nodes:
+        for cwe in known_cwes:
+            if (node_id, cwe) in undischarged:
+                return (node_id, cwe)
+    return None
+
+
+def _unmodeled_finding(
+    advisory: OsvAdvisory,
+    cve_id: str,
+    cwe_ids_for_cve: tuple[str, ...],
+    node_ids: frozenset[str],
+) -> ContainmentFinding:
+    """The UNMODELED `ContainmentFinding` for a CVE with no importing node
+    or no catalog-recognized CWE."""
+    detail = (
+        "no bound node imports this dependency"
+        if not node_ids
+        else f"no catalog entry for {cwe_ids_for_cve}"
+    )
+    return ContainmentFinding(
+        cve_id=cve_id,
+        package=advisory.package,
+        version=advisory.version,
+        fixed_version=advisory.fixed_version,
+        cwe_ids=cwe_ids_for_cve,
+        state=UNMODELED,
+        detail=detail,
+    )
+
+
 def _finding_for_pair(
     advisory: OsvAdvisory,
     cve_id: str,
@@ -200,48 +238,44 @@ def _finding_for_pair(
     classifying `state` from the joined node set and THREAT003 result."""
     known_cwes = tuple(cwe for cwe in cwe_ids_for_cve if cwe in catalog_by_id)
     if not node_ids or not known_cwes:
-        detail = (
-            "no bound node imports this dependency"
-            if not node_ids
-            else f"no catalog entry for {cwe_ids_for_cve}"
-        )
-        return ContainmentFinding(
-            cve_id=cve_id,
-            package=advisory.package,
-            version=advisory.version,
-            fixed_version=advisory.fixed_version,
-            cwe_ids=cwe_ids_for_cve,
-            state=UNMODELED,
-            detail=detail,
-        )
+        return _unmodeled_finding(advisory, cve_id, cwe_ids_for_cve, node_ids)
 
     # Deterministic: sorted node/cwe pair order, first LIVE pair wins (a
     # live exposure on ANY covering node is reported, never averaged away).
     # frob:waive PERF004 reason="one sort, reused below, not per-iteration"
     ordered_nodes = sorted(node_ids)
-    live_pair = None
-    for node_id in ordered_nodes:
-        for cwe in known_cwes:
-            if (node_id, cwe) in undischarged:
-                live_pair = (node_id, cwe)
-                break
-        if live_pair:
-            break
+    live_pair = _first_live_pair(ordered_nodes, known_cwes, undischarged)
 
     if live_pair is not None:
-        node_id, cwe = live_pair
-        return ContainmentFinding(
-            cve_id=cve_id,
-            package=advisory.package,
-            version=advisory.version,
-            fixed_version=advisory.fixed_version,
-            cwe_ids=known_cwes,
-            node_id=node_id,
-            state=LIVE,
-            detail=f"{cwe} obligation on {node_id} is undischarged",
-        )
+        return _live_finding(advisory, cve_id, known_cwes, live_pair)
+    return _contained_finding(advisory, cve_id, known_cwes, ordered_nodes[0])
 
-    node_id = ordered_nodes[0]
+
+def _live_finding(
+    advisory: OsvAdvisory,
+    cve_id: str,
+    known_cwes: tuple[str, ...],
+    live_pair: tuple[str, str],
+) -> ContainmentFinding:
+    """The LIVE `ContainmentFinding` for an undischarged `(node_id, cwe)` pair."""
+    node_id, cwe = live_pair
+    return ContainmentFinding(
+        cve_id=cve_id,
+        package=advisory.package,
+        version=advisory.version,
+        fixed_version=advisory.fixed_version,
+        cwe_ids=known_cwes,
+        node_id=node_id,
+        state=LIVE,
+        detail=f"{cwe} obligation on {node_id} is undischarged",
+    )
+
+
+def _contained_finding(
+    advisory: OsvAdvisory, cve_id: str, known_cwes: tuple[str, ...], node_id: str
+) -> ContainmentFinding:
+    """The CONTAINED `ContainmentFinding` when every covering node
+    discharges its obligations."""
     return ContainmentFinding(
         cve_id=cve_id,
         package=advisory.package,
@@ -254,6 +288,53 @@ def _finding_for_pair(
     )
 
 
+# frob:doc docs/modules/vet.md#public-api
+def _findings_for_advisory(
+    advisory: OsvAdvisory,
+    node_ids: frozenset[str],
+    catalog_by_id: dict[str, WeaknessEntry],
+    undischarged: frozenset[tuple[str, str]],
+    cache_path: Path,
+    base_url: str | None,
+    fetch: bool,
+) -> list[ContainmentFinding]:
+    """One `ContainmentFinding` per CVE id on `advisory`'s package: UNVERIFIED
+    if the CVE->CWE lookup fails, else `_finding_for_pair`'s join result."""
+    findings: list[ContainmentFinding] = []
+    for cve_id in cve_ids(advisory):
+        lookup = fetch_cwe_for_cve(
+            cve_id,
+            cache_path=cache_path,
+            base_url=base_url,
+            fetch=fetch,
+        )
+        if not lookup.ok:
+            findings.append(
+                ContainmentFinding(
+                    cve_id=cve_id,
+                    package=advisory.package,
+                    version=advisory.version,
+                    fixed_version=advisory.fixed_version,
+                    state=UNVERIFIED,
+                    detail=lookup.note or "CWE mapping could not be verified",
+                )
+            )
+            continue
+        findings.append(
+            _finding_for_pair(
+                advisory, cve_id, lookup.cwe_ids, node_ids, catalog_by_id, undischarged
+            )
+        )
+    return findings
+
+
+# `fetch=False` restricts lookups to `.frob/vet.db`'s existing cache
+# (offline CI / tests) -- a cache miss under `fetch=False`, a network
+# failure, or an unparseable NVD response degrades to `UNVERIFIED` for
+# that CVE rather than blocking or silently reading as `UNMODELED` ("we
+# could not check" must never be read as "there is nothing here"), same
+# offline-first posture as every other vet network adapter
+# (docs/modules/vet.md VET011).
 # frob:doc docs/modules/vet.md#public-api
 def build_containment_report(
     advisories: tuple[OsvAdvisory, ...],
@@ -270,15 +351,7 @@ def build_containment_report(
     against `model`'s CWE obligations via NVD CVE->CWE data
     (docs/strata/threat.md "CVE: threat intelligence joined to the proof").
     `catalog` defaults to `frob.strata.CWE_CATALOG` (resolved lazily, see
-    `_strata()`) when omitted.
-
-    `fetch=False` restricts lookups to `.frob/vet.db`'s existing cache
-    (offline CI / tests) -- a cache miss under `fetch=False`, a network
-    failure, or an unparseable NVD response degrades to `UNVERIFIED` for
-    that CVE rather than blocking or silently reading as `UNMODELED`
-    ("we could not check" must never be read as "there is nothing here"),
-    same offline-first posture as every other vet network adapter
-    (docs/modules/vet.md VET011)."""
+    `_strata()`) when omitted."""
     if catalog is None:
         catalog = _strata().CWE_CATALOG
     catalog_by_id = _catalog_by_id(catalog)
@@ -287,35 +360,17 @@ def build_containment_report(
 
     for advisory in advisories:
         node_ids = find_importing_nodes(binding, root, advisory.package)
-        for cve_id in cve_ids(advisory):
-            lookup = fetch_cwe_for_cve(
-                cve_id,
-                cache_path=cache_path,
-                base_url=base_url,
-                fetch=fetch,
+        findings.extend(
+            _findings_for_advisory(
+                advisory,
+                node_ids,
+                catalog_by_id,
+                undischarged,
+                cache_path,
+                base_url,
+                fetch,
             )
-            if not lookup.ok:
-                findings.append(
-                    ContainmentFinding(
-                        cve_id=cve_id,
-                        package=advisory.package,
-                        version=advisory.version,
-                        fixed_version=advisory.fixed_version,
-                        state=UNVERIFIED,
-                        detail=lookup.note or "CWE mapping could not be verified",
-                    )
-                )
-                continue
-            findings.append(
-                _finding_for_pair(
-                    advisory,
-                    cve_id,
-                    lookup.cwe_ids,
-                    node_ids,
-                    catalog_by_id,
-                    undischarged,
-                )
-            )
+        )
 
     # frob:waive PERF004 reason="one sort of the final findings list, not per-iteration"
     findings.sort(key=lambda f: (f.cve_id, f.package))

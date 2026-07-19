@@ -164,6 +164,13 @@ def parse_hook_command(command: str) -> tuple[str, tuple[tuple[str, str], ...]] 
     if tool not in _INSTALL_TOOLS:
         return None
 
+    return _parse_install_tokens(tool, tokens, idx)
+
+
+def _parse_install_tokens(
+    tool: str, tokens: list[str], idx: int
+) -> tuple[str, tuple[tuple[str, str], ...]] | None:
+    """Resolve `tool`'s install form and collect its package tokens."""
     resolved = _resolve_install_form(tool, tokens, idx)
     if resolved is None:
         return None
@@ -176,18 +183,11 @@ def parse_hook_command(command: str) -> tuple[str, tuple[tuple[str, str], ...]] 
     return ecosystem, tuple(packages)
 
 
-def _quarantine_verdict(
-    ecosystem: str, name: str, version: str, cfg: VetConfig, cache_path: Path
-) -> HookVerdict:
-    """Registry publish-date verdict: unverified / not-found / quarantine / ok."""
-    lookup_version = version or _registry.LATEST_VERSION
-    lookup = _registry.fetch_publish_date(
-        ecosystem,
-        name,
-        lookup_version,
-        cache_path=cache_path,
-        base_url=cfg.registry_base_url,
-    )
+def _unverified_lookup_verdict(
+    ecosystem: str, name: str, lookup: _registry.RegistryResult
+) -> HookVerdict | None:
+    """An `unverified` `HookVerdict` if the publish-date lookup failed or
+    found nothing, else None (caller proceeds to the age check)."""
     if not lookup.ok:
         msg = f"{name}: could not verify publish date"
         _log.warning("vet: hook: %s", msg)
@@ -208,9 +208,41 @@ def _quarantine_verdict(
             message=msg,
             blocked=False,
         )
+    return None
 
+
+def _quarantine_verdict(
+    ecosystem: str, name: str, version: str, cfg: VetConfig, cache_path: Path
+) -> HookVerdict:
+    """Registry publish-date verdict: unverified / not-found / quarantine / ok."""
+    lookup_version = version or _registry.LATEST_VERSION
+    lookup = _registry.fetch_publish_date(
+        ecosystem,
+        name,
+        lookup_version,
+        cache_path=cache_path,
+        base_url=cfg.registry_base_url,
+    )
+    unverified = _unverified_lookup_verdict(ecosystem, name, lookup)
+    if unverified is not None:
+        return unverified
+
+    # Narrowing: _unverified_lookup_verdict already returned None-verdict for
+    # a None published_at, so this is always set here.
+    assert lookup.published_at is not None  # noqa: S101
     age_days = (datetime.now(UTC) - lookup.published_at.astimezone(UTC)).days
-    if age_days < cfg.quarantine_days:
+    return _age_based_verdict(ecosystem, name, lookup, age_days, cfg.quarantine_days)
+
+
+def _age_based_verdict(
+    ecosystem: str,
+    name: str,
+    lookup: _registry.RegistryResult,
+    age_days: int,
+    quarantine_days: int,
+) -> HookVerdict:
+    """quarantine vs ok, once a real publish age is known."""
+    if age_days < quarantine_days:
         msg = (
             f"{name}@{lookup.resolved_version}: quarantined: published "
             f"{age_days} day(s) ago; add to [vet.allow] after review"

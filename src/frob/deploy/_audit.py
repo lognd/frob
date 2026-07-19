@@ -203,40 +203,13 @@ def diff_states(before: StateCapture, after: StateCapture) -> StateDiff:
     routine every proof (`idempotence_holds`/`artifact_freeness_holds`/
     `install_exactness_holds`) calls, so all three ever see the same
     notion of "changed" (module docstring)."""
-    before_fs = {p: f for p, f in before.filesystem.items() if not _is_allowlisted(p)}
-    after_fs = {p: f for p, f in after.filesystem.items() if not _is_allowlisted(p)}
-    added_paths = tuple(sorted(set(after_fs) - set(before_fs)))
-    removed_paths = tuple(sorted(set(before_fs) - set(after_fs)))
-    changed_paths = tuple(
-        sorted(p for p in set(before_fs) & set(after_fs) if before_fs[p] != after_fs[p])
+    added_paths, removed_paths, changed_paths = _fs_diff(before, after)
+    added_units, removed_units, changed_units = _units_diff(before, after)
+    passwd_added, passwd_removed, group_added, group_removed = _accounts_diff(
+        before, after
     )
-
-    added_units = tuple(sorted(set(after.unit_files) - set(before.unit_files)))
-    removed_units = tuple(sorted(set(before.unit_files) - set(after.unit_files)))
-    changed_units = tuple(
-        sorted(
-            u
-            for u in set(before.unit_files) & set(after.unit_files)
-            if before.unit_files[u] != after.unit_files[u]
-        )
-    )
-
-    passwd_added = tuple(sorted(set(after.passwd) - set(before.passwd)))
-    passwd_removed = tuple(sorted(set(before.passwd) - set(after.passwd)))
-    group_added = tuple(sorted(set(after.group) - set(before.group)))
-    group_removed = tuple(sorted(set(before.group) - set(after.group)))
-
-    enabled_added = tuple(sorted(set(after.enabled_units) - set(before.enabled_units)))
-    enabled_removed = tuple(
-        sorted(set(before.enabled_units) - set(after.enabled_units))
-    )
-
-    sockets_added = tuple(
-        sorted(set(after.listening_sockets) - set(before.listening_sockets))
-    )
-    sockets_removed = tuple(
-        sorted(set(before.listening_sockets) - set(after.listening_sockets))
-    )
+    enabled_added, enabled_removed = _enabled_units_diff(before, after)
+    sockets_added, sockets_removed = _sockets_diff(before, after)
 
     return StateDiff(
         added_paths=added_paths,
@@ -254,6 +227,71 @@ def diff_states(before: StateCapture, after: StateCapture) -> StateDiff:
         sockets_added=sockets_added,
         sockets_removed=sockets_removed,
     )
+
+
+def _fs_diff(
+    before: StateCapture, after: StateCapture
+) -> tuple[tuple[str, ...], tuple[str, ...], tuple[str, ...]]:
+    """Allowlist-filtered `(added, removed, changed)` filesystem paths."""
+    before_fs = {p: f for p, f in before.filesystem.items() if not _is_allowlisted(p)}
+    after_fs = {p: f for p, f in after.filesystem.items() if not _is_allowlisted(p)}
+    added_paths = tuple(sorted(set(after_fs) - set(before_fs)))
+    removed_paths = tuple(sorted(set(before_fs) - set(after_fs)))
+    changed_paths = tuple(
+        sorted(p for p in set(before_fs) & set(after_fs) if before_fs[p] != after_fs[p])
+    )
+    return added_paths, removed_paths, changed_paths
+
+
+def _units_diff(
+    before: StateCapture, after: StateCapture
+) -> tuple[tuple[str, ...], tuple[str, ...], tuple[str, ...]]:
+    """`(added, removed, changed)` systemd unit files."""
+    added_units = tuple(sorted(set(after.unit_files) - set(before.unit_files)))
+    removed_units = tuple(sorted(set(before.unit_files) - set(after.unit_files)))
+    changed_units = tuple(
+        sorted(
+            u
+            for u in set(before.unit_files) & set(after.unit_files)
+            if before.unit_files[u] != after.unit_files[u]
+        )
+    )
+    return added_units, removed_units, changed_units
+
+
+def _accounts_diff(
+    before: StateCapture, after: StateCapture
+) -> tuple[tuple[str, ...], tuple[str, ...], tuple[str, ...], tuple[str, ...]]:
+    """`(passwd_added, passwd_removed, group_added, group_removed)`."""
+    passwd_added = tuple(sorted(set(after.passwd) - set(before.passwd)))
+    passwd_removed = tuple(sorted(set(before.passwd) - set(after.passwd)))
+    group_added = tuple(sorted(set(after.group) - set(before.group)))
+    group_removed = tuple(sorted(set(before.group) - set(after.group)))
+    return passwd_added, passwd_removed, group_added, group_removed
+
+
+def _enabled_units_diff(
+    before: StateCapture, after: StateCapture
+) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    """`(added, removed)` enabled systemd units."""
+    enabled_added = tuple(sorted(set(after.enabled_units) - set(before.enabled_units)))
+    enabled_removed = tuple(
+        sorted(set(before.enabled_units) - set(after.enabled_units))
+    )
+    return enabled_added, enabled_removed
+
+
+def _sockets_diff(
+    before: StateCapture, after: StateCapture
+) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    """`(added, removed)` listening sockets."""
+    sockets_added = tuple(
+        sorted(set(after.listening_sockets) - set(before.listening_sockets))
+    )
+    sockets_removed = tuple(
+        sorted(set(before.listening_sockets) - set(after.listening_sockets))
+    )
+    return sockets_added, sockets_removed
 
 
 # frob:doc docs/commands/deploy.md#the-four-proofs

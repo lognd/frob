@@ -72,6 +72,14 @@ def _newer(a: Ticket, b: Ticket) -> Ticket:
 
 
 # frob:doc docs/modules/tickets.md#frob-ticket-land
+# `archived_ids` (from main's `tickets-archive.md`, the only authoritative
+# archive) is excluded from the merged result unconditionally, from
+# EITHER side -- without this, a ticket main already archived reappears
+# in the active ledger the moment a stale branch (whose own tickets.md
+# still carries it as active, from before it was archived) lands,
+# resurrecting exactly the active/archive duplicate-id class a human
+# would otherwise have to hand-resolve at merge time (reviewer-caught,
+# T-0176).
 def splice_ledger(
     ours_text: str,
     theirs_text: str,
@@ -83,16 +91,7 @@ def splice_ledger(
     textual merge -- the fix for the "both sides append a new ticket near
     the same line" false-conflict class (T-0176), and the tiebreak for a
     genuine same-id divergence (e.g. one side closed a ticket the other
-    side is still mid-editing).
-
-    `archived_ids` (from main's `tickets-archive.md`, the only authoritative
-    archive) is excluded from the merged result unconditionally, from
-    EITHER side -- without this, a ticket main already archived reappears
-    in the active ledger the moment a stale branch (whose own tickets.md
-    still carries it as active, from before it was archived) lands,
-    resurrecting exactly the active/archive duplicate-id class a human
-    would otherwise have to hand-resolve at merge time (reviewer-caught,
-    T-0176)."""
+    side is still mid-editing)."""
     ours_parsed = _parse_ledger(ours_text)
     if ours_parsed.is_err:
         return Err(ours_parsed.danger_err)
@@ -101,13 +100,36 @@ def splice_ledger(
         return Err(theirs_parsed.danger_err)
     ours, theirs = ours_parsed.danger_ok, theirs_parsed.danger_ok
 
+    merged = _merge_ledger_tickets(ours, theirs)
+    _drop_resurrected_ids(merged, archived_ids)
+    _log.info(
+        "tickets: land splice -- ours=%d theirs=%d merged=%d",
+        len(ours),
+        len(theirs),
+        len(merged),
+    )
+    return Ok(_render_ledger(merged))
+
+
+def _merge_ledger_tickets(
+    ours: dict[str, Ticket], theirs: dict[str, Ticket]
+) -> dict[str, Ticket]:
+    """Union `ours`/`theirs` by ticket id, keeping the newer state
+    (`_newer`) on any id present in both with a genuine divergence."""
     merged: dict[str, Ticket] = dict(ours)
     for ticket_id, ticket in theirs.items():
         if ticket_id not in merged:
             merged[ticket_id] = ticket
         elif merged[ticket_id] != ticket:
             merged[ticket_id] = _newer(merged[ticket_id], ticket)
+    return merged
 
+
+def _drop_resurrected_ids(
+    merged: dict[str, Ticket], archived_ids: frozenset[str]
+) -> None:
+    """Delete from `merged`, in place, any id already present in
+    `archived_ids` (see `splice_ledger`'s resurrection-prevention doc)."""
     resurrected = archived_ids & set(merged)
     for ticket_id in resurrected:
         del merged[ticket_id]
@@ -118,13 +140,6 @@ def splice_ledger(
             len(resurrected),
             sorted(resurrected),
         )
-    _log.info(
-        "tickets: land splice -- ours=%d theirs=%d merged=%d",
-        len(ours),
-        len(theirs),
-        len(merged),
-    )
-    return Ok(_render_ledger(merged))
 
 
 def _porcelain_dirty(root: Path) -> Result[bool, LandError]:
@@ -177,6 +192,12 @@ def _validate_closeable(ticket: Ticket) -> Result[None, LandError]:
             ticket.id,
         )
         return Err(LandError.NotCloseable)
+    return _validate_evidence_kind_consistency(ticket)
+
+
+def _validate_evidence_kind_consistency(ticket: Ticket) -> Result[None, LandError]:
+    """`Err(NotCloseable)` if `ticket`'s kind disallows cmd: evidence but it
+    carries some anyway (see `_validate_closeable`'s T-0215 doc)."""
     if ticket.kind not in CMD_EVIDENCE_ALLOWED_KINDS and any(
         is_cmd_evidence(e) for e in ticket.evidence
     ):
@@ -250,6 +271,12 @@ def _splice_and_stage(
     return Ok(spliced.danger_ok)
 
 
+def _read_ledger_text_or_empty(checkout: Path) -> str:
+    """`tickets.md`'s text under `checkout`, or `""` if it does not exist."""
+    path = ledger_path(checkout)
+    return path.read_text(encoding="utf-8") if path.exists() else ""
+
+
 def _merge_main_into_worktree(
     root: Path, worktree: Path, ticket: Ticket, main_branch: str
 ) -> Result[bool, LandError]:
@@ -257,16 +284,8 @@ def _merge_main_into_worktree(
     conflict via `splice_ledger`; any OTHER conflicted file aborts loudly.
     Returns whether a merge actually happened (False = worktree was already
     up to date with main, a no-op)."""
-    pre_text = (
-        ledger_path(worktree).read_text(encoding="utf-8")
-        if ledger_path(worktree).exists()
-        else ""
-    )
-    main_text = (
-        ledger_path(root).read_text(encoding="utf-8")
-        if ledger_path(root).exists()
-        else ""
-    )
+    pre_text = _read_ledger_text_or_empty(worktree)
+    main_text = _read_ledger_text_or_empty(root)
 
     merged = run_argv(
         ["git", "-C", str(worktree), "merge", "--no-commit", "--no-ff", main_branch]
@@ -279,6 +298,24 @@ def _merge_main_into_worktree(
     ):
         return Ok(False)
 
+    conflict_check = _check_only_tickets_conflicted(worktree, ticket, main_branch)
+    if conflict_check.is_err:
+        return Err(conflict_check.danger_err)
+
+    spliced = _splice_and_stage(
+        worktree, pre_text, main_text, archived_ids=_archived_ids(root)
+    )
+    if spliced.is_err:
+        _abort_merge(worktree)
+        return Err(spliced.danger_err)
+    return Ok(True)
+
+
+def _check_only_tickets_conflicted(
+    worktree: Path, ticket: Ticket, main_branch: str
+) -> Result[None, LandError]:
+    """`Err(MergeConflict)` (aborting the merge) if anything besides
+    tickets.md is conflicted after `_merge_main_into_worktree`'s merge."""
     conflicted = _conflicted_files(worktree)
     if conflicted - {"tickets.md"}:
         _abort_merge(worktree)
@@ -296,14 +333,7 @@ def _merge_main_into_worktree(
             worktree,
         )
         return Err(LandError.MergeConflict)
-
-    spliced = _splice_and_stage(
-        worktree, pre_text, main_text, archived_ids=_archived_ids(root)
-    )
-    if spliced.is_err:
-        _abort_merge(worktree)
-        return Err(spliced.danger_err)
-    return Ok(True)
+    return Ok(None)
 
 
 def _unowned_deletions(
@@ -350,6 +380,11 @@ def _wip_commit(
             "land: %s would wip-commit uncommitted changes in %s", ticket_id, worktree
         )
         return Ok(True)
+    return _do_wip_commit(worktree, ticket_id)
+
+
+def _do_wip_commit(worktree: Path, ticket_id: str) -> Result[bool, LandError]:
+    """`git add -A && git commit` a WIP snapshot in `worktree`."""
     add = run_argv(["git", "-C", str(worktree), "add", "-A"])
     if add.is_err or add.danger_ok.returncode != 0:
         return Err(LandError.GitFailed)
@@ -390,23 +425,48 @@ def _commit_message(ticket: Ticket, final_id: str) -> str:
 
 # frob:ticket T-0176
 # frob:doc docs/modules/tickets.md#frob-ticket-land
+# `dry_run` runs every check and every git mutation the real run would
+# (merge, splice, deletion-check) then unwinds it via
+# `merge --abort`/`reset --hard`, so a clean dry run is a real guarantee,
+# not a guess (T-0176).
 def land(
     root: Path, ticket_id: str, worktree: Path, *, dry_run: bool = False
 ) -> Result[LandReport, LandError]:
-    """Land `ticket_id` from `worktree` onto `root`'s current branch: refuse
-    on a dirty main, wip-commit the worktree, merge main into it (splicing
-    tickets.md at the id level), abort loudly on any real conflict or an
-    unowned deletion (naming the exact manual remedy), finalize a draft id,
-    close the ticket (evidence + Done-report validated FIRST, before any of
-    the above), squash-apply the worktree onto main, and commit with a
-    conventional-commit message. `dry_run` runs every check and every git
-    mutation the real run would (merge, splice, deletion-check) then
-    unwinds it via `merge --abort`/`reset --hard`, so a clean dry run is a
-    real guarantee, not a guess (T-0176)."""
-    from frob.tickets import _load_one, finalize_draft, transition
-
+    """Land `ticket_id` from `worktree` onto `root`'s current branch:
+    precheck, wip-commit + merge + deletion-check, finalize + close, then
+    squash-apply onto main with a conventional-commit message."""
     root, worktree = root.resolve(), worktree.resolve()
 
+    precheck = _land_precheck(root, worktree, ticket_id)
+    if precheck.is_err:
+        return Err(precheck.danger_err)
+    ticket, main_branch_name = precheck.danger_ok
+
+    stage = _land_merge_stage(
+        root, worktree, ticket, ticket_id, main_branch_name, dry_run
+    )
+    if stage.is_err:
+        return Err(stage.danger_err)
+    wip_committed, did_merge, dry_run_report = stage.danger_ok
+    if dry_run_report is not None:
+        return Ok(dry_run_report)
+
+    finalized = _land_finalize_and_close(
+        worktree, ticket_id, did_merge, main_branch_name
+    )
+    if finalized.is_err:
+        return Err(finalized.danger_err)
+    final_id = finalized.danger_ok
+
+    return _land_squash_apply(
+        root, worktree, ticket, ticket_id, final_id, wip_committed, did_merge
+    )
+
+
+def _refuse_if_main_dirty(
+    root: Path, worktree: Path, ticket_id: str
+) -> Result[None, LandError]:
+    """`Err(DirtyMain)` if `root` has any uncommitted change."""
     main_dirty = _porcelain_dirty(root)
     if main_dirty.is_err:
         return Err(main_dirty.danger_err)
@@ -422,6 +482,20 @@ def land(
             worktree,
         )
         return Err(LandError.DirtyMain)
+    return Ok(None)
+
+
+def _land_precheck(
+    root: Path, worktree: Path, ticket_id: str
+) -> Result[tuple[Ticket, str], LandError]:
+    """Refuse on a dirty main, load+validate the worktree's ticket is
+    closeable, and resolve main's current branch name -- everything `land`
+    must check BEFORE any git mutation."""
+    from frob.tickets import _load_one
+
+    dirty_check = _refuse_if_main_dirty(root, worktree, ticket_id)
+    if dirty_check.is_err:
+        return Err(dirty_check.danger_err)
 
     loaded = _load_one(worktree, ticket_id)
     if loaded.is_err:
@@ -429,15 +503,28 @@ def land(
         return Err(LandError.NotFound)
     ticket = loaded.danger_ok
 
-    precheck = _validate_closeable(ticket)
-    if precheck.is_err:
-        return Err(precheck.danger_err)
+    validated = _validate_closeable(ticket)
+    if validated.is_err:
+        return Err(validated.danger_err)
 
     main_branch = current_branch(root)
     if main_branch.is_err:
         return Err(LandError.GitFailed)
-    main_branch_name = main_branch.danger_ok
+    return Ok((ticket, main_branch.danger_ok))
 
+
+def _land_merge_stage(
+    root: Path,
+    worktree: Path,
+    ticket: Ticket,
+    ticket_id: str,
+    main_branch_name: str,
+    dry_run: bool,
+) -> Result[tuple[bool, bool, LandReport | None], LandError]:
+    """wip-commit, merge main into the worktree, and check for unowned
+    deletions; returns `(wip_committed, did_merge, dry_run_report)` where
+    `dry_run_report` is the early-return report for a clean dry run, else
+    `None`."""
     wip = _wip_commit(worktree, ticket_id, dry_run=dry_run)
     if wip.is_err:
         return Err(wip.danger_err)
@@ -448,6 +535,60 @@ def land(
         return Err(merged.danger_err)
     did_merge = merged.danger_ok
 
+    unowned_check = _check_unowned_deletions(
+        root, worktree, ticket, ticket_id, main_branch_name, did_merge
+    )
+    if unowned_check.is_err:
+        return Err(unowned_check.danger_err)
+
+    if not dry_run:
+        return Ok((wip_committed, did_merge, None))
+
+    report = _dry_run_report(
+        worktree, ticket_id, main_branch_name, wip_committed, did_merge
+    )
+    return Ok((wip_committed, did_merge, report))
+
+
+def _dry_run_report(
+    worktree: Path,
+    ticket_id: str,
+    main_branch_name: str,
+    wip_committed: bool,
+    did_merge: bool,
+) -> LandReport:
+    """Abort any staged merge and build the early-return `LandReport` for a
+    clean dry run."""
+    if did_merge:
+        _abort_merge(worktree)
+    _log.info(
+        "land: %s dry-run clean -- would merge=%s, would close, would "
+        "squash-apply onto %s",
+        ticket_id,
+        did_merge,
+        main_branch_name,
+    )
+    return LandReport(
+        ticket_id=ticket_id,
+        final_id=ticket_id,
+        dry_run=True,
+        wip_committed=wip_committed,
+        merged_main_into_worktree=did_merge,
+        ledger_spliced=did_merge,
+        unowned_deletions=(),
+    )
+
+
+def _check_unowned_deletions(
+    root: Path,
+    worktree: Path,
+    ticket: Ticket,
+    ticket_id: str,
+    main_branch_name: str,
+    did_merge: bool,
+) -> Result[None, LandError]:
+    """`Err(UnownedDeletions)` (aborting the merge first) if the worktree
+    deletes any file outside `ticket.scope`."""
     unowned = _unowned_deletions(root, worktree, ticket.scope, main_branch_name)
     if unowned.is_err:
         if did_merge:
@@ -472,29 +613,14 @@ def land(
             worktree,
         )
         return Err(LandError.UnownedDeletions)
+    return Ok(None)
 
-    if dry_run:
-        if did_merge:
-            _abort_merge(worktree)
-        _log.info(
-            "land: %s dry-run clean -- would merge=%s, would close, would "
-            "squash-apply onto %s",
-            ticket_id,
-            did_merge,
-            main_branch_name,
-        )
-        return Ok(
-            LandReport(
-                ticket_id=ticket_id,
-                final_id=ticket_id,
-                dry_run=True,
-                wip_committed=wip_committed,
-                merged_main_into_worktree=did_merge,
-                ledger_spliced=did_merge,
-                unowned_deletions=(),
-            )
-        )
 
+def _land_finalize_and_close(
+    worktree: Path, ticket_id: str, did_merge: bool, main_branch_name: str
+) -> Result[str, LandError]:
+    """Commit the merge (if any), finalize a draft id, close the ticket,
+    and commit those writes too -- returns the ticket's final id."""
     if did_merge:
         commit = run_argv(
             [
@@ -509,23 +635,59 @@ def land(
         if commit.is_err or commit.danger_ok.returncode != 0:
             return Err(LandError.GitFailed)
 
-    final_id = ticket_id
-    if is_draft_id(ticket_id):
-        finalized = finalize_draft(worktree, ticket_id)
-        if finalized.is_err:
-            _log.error(
-                "land: %s draft finalize failed after merge landed in the "
-                "worktree only (main untouched) -- inspect %s, retry "
-                "`frob ticket land %s --worktree %s`, or "
-                "`git -C %s reset --hard HEAD~1` to undo the merge commit",
-                ticket_id,
-                worktree,
-                ticket_id,
-                worktree,
-                worktree,
-            )
-            return Err(LandError.GitFailed)
-        final_id = finalized.danger_ok
+    finalized = _finalize_and_close_ticket(worktree, ticket_id)
+    if finalized.is_err:
+        return Err(finalized.danger_err)
+    final_id = finalized.danger_ok
+
+    committed = _commit_finalize_writes(worktree, final_id)
+    if committed.is_err:
+        return Err(committed.danger_err)
+    return Ok(final_id)
+
+
+def _finalize_and_close_ticket(
+    worktree: Path, ticket_id: str
+) -> Result[str, LandError]:
+    """Finalize a draft id (if `ticket_id` is one) and transition it to
+    DONE; returns the ticket's final id."""
+    final_id_result = _finalize_draft_id(worktree, ticket_id)
+    if final_id_result.is_err:
+        return Err(final_id_result.danger_err)
+    final_id = final_id_result.danger_ok
+
+    return _close_finalized_ticket(worktree, ticket_id, final_id)
+
+
+def _finalize_draft_id(worktree: Path, ticket_id: str) -> Result[str, LandError]:
+    """`finalize_draft` if `ticket_id` is a draft id; else `ticket_id`
+    unchanged."""
+    from frob.tickets import finalize_draft
+
+    if not is_draft_id(ticket_id):
+        return Ok(ticket_id)
+    finalized = finalize_draft(worktree, ticket_id)
+    if finalized.is_err:
+        _log.error(
+            "land: %s draft finalize failed after merge landed in the "
+            "worktree only (main untouched) -- inspect %s, retry "
+            "`frob ticket land %s --worktree %s`, or "
+            "`git -C %s reset --hard HEAD~1` to undo the merge commit",
+            ticket_id,
+            worktree,
+            ticket_id,
+            worktree,
+            worktree,
+        )
+        return Err(LandError.GitFailed)
+    return Ok(finalized.danger_ok)
+
+
+def _close_finalized_ticket(
+    worktree: Path, ticket_id: str, final_id: str
+) -> Result[str, LandError]:
+    """Transition `final_id` to DONE."""
+    from frob.tickets import transition
 
     closed = transition(worktree, final_id, TicketState.DONE)
     if closed.is_err:
@@ -542,52 +704,47 @@ def land(
             worktree,
         )
         return Err(LandError.CloseFailed)
+    return Ok(final_id)
 
-    # finalize_draft (renumber_one) and transition/close both write directly
-    # to the worktree's working tree, UNCOMMITTED -- the squash-apply below
-    # reads from the branch's last COMMIT, which predates these writes. Left
-    # uncommitted, the finalize rewrite of every frob:ticket <draft-id>
-    # reference in code (not just the ledger) would never reach main, and
-    # the worktree would be left dirty after a successful land (reviewer
-    # repro, T-0176). Commit them now so the squash-apply below sees
-    # everything, and the worktree ends up clean.
+
+# finalize_draft (renumber_one) and transition/close both write directly to
+# the worktree's working tree, UNCOMMITTED -- the squash-apply below reads
+# from the branch's last COMMIT, which predates these writes. Left
+# uncommitted, the finalize rewrite of every frob:ticket <draft-id>
+# reference in code (not just the ledger) would never reach main, and the
+# worktree would be left dirty after a successful land (reviewer repro,
+# T-0176). Commit them now so the squash-apply below sees everything, and
+# the worktree ends up clean.
+def _commit_finalize_writes(worktree: Path, final_id: str) -> Result[None, LandError]:
+    """Commit any working-tree changes finalize/close made, if any."""
     finalize_dirty = _porcelain_dirty(worktree)
     if finalize_dirty.is_err:
         return Err(finalize_dirty.danger_err)
-    if finalize_dirty.danger_ok:
-        add = run_argv(["git", "-C", str(worktree), "add", "-A"])
-        if add.is_err or add.danger_ok.returncode != 0:
-            return Err(LandError.GitFailed)
-        finalize_commit = run_argv(
-            [
-                "git",
-                "-C",
-                str(worktree),
-                "commit",
-                "-m",
-                f"finalize and close {final_id} for landing",
-            ]
-        )
-        if finalize_commit.is_err or finalize_commit.danger_ok.returncode != 0:
-            return Err(LandError.GitFailed)
-
-    branch = current_branch(worktree)
-    if branch.is_err:
+    if not finalize_dirty.danger_ok:
+        return Ok(None)
+    add = run_argv(["git", "-C", str(worktree), "add", "-A"])
+    if add.is_err or add.danger_ok.returncode != 0:
         return Err(LandError.GitFailed)
-    branch_name = branch.danger_ok
-
-    root_pre_text = (
-        ledger_path(root).read_text(encoding="utf-8")
-        if ledger_path(root).exists()
-        else ""
+    finalize_commit = run_argv(
+        [
+            "git",
+            "-C",
+            str(worktree),
+            "commit",
+            "-m",
+            f"finalize and close {final_id} for landing",
+        ]
     )
-
-    squash = run_argv(
-        ["git", "-C", str(root), "merge", "--squash", "--no-commit", branch_name]
-    )
-    if squash.is_err:
+    if finalize_commit.is_err or finalize_commit.danger_ok.returncode != 0:
         return Err(LandError.GitFailed)
+    return Ok(None)
 
+
+def _check_squash_conflicted(
+    root: Path, worktree: Path, final_id: str, branch_name: str
+) -> Result[None, LandError]:
+    """`Err(SquashConflict)` (unwinding the squash) if anything besides
+    tickets.md is conflicted after the squash merge."""
     conflicted_root = _conflicted_files(root)
     if conflicted_root - {"tickets.md"}:
         run_argv(["git", "-C", str(root), "reset", "--hard"])
@@ -605,6 +762,26 @@ def land(
             worktree,
         )
         return Err(LandError.SquashConflict)
+    return Ok(None)
+
+
+def _squash_and_splice_ledger(
+    root: Path, worktree: Path, final_id: str, branch_name: str
+) -> Result[None, LandError]:
+    """`git merge --squash --no-commit` the worktree's finalized `branch_name`
+    onto `root`, then splice tickets.md; unwinds the squash on any
+    non-tickets.md conflict or splice failure."""
+    root_pre_text = _read_ledger_text_or_empty(root)
+
+    squash = run_argv(
+        ["git", "-C", str(root), "merge", "--squash", "--no-commit", branch_name]
+    )
+    if squash.is_err:
+        return Err(LandError.GitFailed)
+
+    conflict_check = _check_squash_conflicted(root, worktree, final_id, branch_name)
+    if conflict_check.is_err:
+        return Err(conflict_check.danger_err)
 
     worktree_final_text = ledger_path(worktree).read_text(encoding="utf-8")
     spliced = _splice_and_stage(
@@ -614,22 +791,12 @@ def land(
         run_argv(["git", "-C", str(root), "reset", "--hard"])
         run_argv(["git", "-C", str(root), "clean", "-fd"])
         return Err(spliced.danger_err)
+    return Ok(None)
 
-    message = _commit_message(ticket, final_id)
-    commit = run_argv(["git", "-C", str(root), "commit", "-m", message])
-    if commit.is_err or commit.danger_ok.returncode != 0:
-        _log.error(
-            "land: %s squash-apply staged onto %s but the final commit "
-            "failed -- inspect `git -C %s status`, commit manually with a "
-            "conventional-commit message, or `git -C %s reset --hard` to "
-            "unwind the staged squash",
-            final_id,
-            root,
-            root,
-            root,
-        )
-        return Err(LandError.CommitFailed)
 
+def _land_commit_details(root: Path) -> tuple[str | None, tuple[str, ...]]:
+    """The just-made HEAD commit's sha and changed-file list, best-effort
+    (`None`/`()` if the git calls fail)."""
     sha = run_argv(["git", "-C", str(root), "rev-parse", "HEAD"])
     sha_str = (
         sha.danger_ok.stdout.strip()
@@ -656,7 +823,56 @@ def land(
         if stat.is_ok and stat.danger_ok.returncode == 0
         else ()
     )
+    return sha_str, files
 
+
+def _commit_squash_apply(
+    root: Path, ticket: Ticket, final_id: str
+) -> Result[None, LandError]:
+    """Commit the staged squash-apply with a conventional-commit message."""
+    commit = run_argv(
+        ["git", "-C", str(root), "commit", "-m", _commit_message(ticket, final_id)]
+    )
+    if commit.is_err or commit.danger_ok.returncode != 0:
+        _log.error(
+            "land: %s squash-apply staged onto %s but the final commit "
+            "failed -- inspect `git -C %s status`, commit manually with a "
+            "conventional-commit message, or `git -C %s reset --hard` to "
+            "unwind the staged squash",
+            final_id,
+            root,
+            root,
+            root,
+        )
+        return Err(LandError.CommitFailed)
+    return Ok(None)
+
+
+def _land_squash_apply(
+    root: Path,
+    worktree: Path,
+    ticket: Ticket,
+    ticket_id: str,
+    final_id: str,
+    wip_committed: bool,
+    did_merge: bool,
+) -> Result[LandReport, LandError]:
+    """Squash-apply the worktree's finalized branch onto `root`, splice
+    tickets.md, commit, and build the final `LandReport`."""
+    branch = current_branch(worktree)
+    if branch.is_err:
+        return Err(LandError.GitFailed)
+    branch_name = branch.danger_ok
+
+    squashed = _squash_and_splice_ledger(root, worktree, final_id, branch_name)
+    if squashed.is_err:
+        return Err(squashed.danger_err)
+
+    committed = _commit_squash_apply(root, ticket, final_id)
+    if committed.is_err:
+        return Err(committed.danger_err)
+
+    sha_str, files = _land_commit_details(root)
     _log.info("land: %s landed as %s onto %s at %s", ticket_id, final_id, root, sha_str)
     return Ok(
         LandReport(

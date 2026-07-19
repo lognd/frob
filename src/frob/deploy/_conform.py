@@ -284,21 +284,31 @@ def _mutation_for_command(tokens: list[str]) -> set[MutationTarget]:
     base, start = resolved
 
     if base == "eval":
-        remainder = tokens[start + 1 :]
-        if not remainder:
-            return set()
-        joined = " ".join(remainder)
-        try:
-            sub_tokens = _tokenize_line(joined)
-        except _TokenizeError:
-            return {MutationTarget(kind="parse-error", target=_PARSE_ERROR_TARGET)}
-        result: set[MutationTarget] = set()
-        for sub_command in _split_commands(sub_tokens):
-            result |= _mutation_for_command(sub_command)
-        return result
+        return _mutation_for_eval(tokens, start)
 
-    args = tokens[start + 1 :]
+    return _mutation_for_base(base, tokens[start + 1 :])
 
+
+def _mutation_for_eval(tokens: list[str], start: int) -> set[MutationTarget]:
+    """`eval`'s remaining args, re-tokenized and re-resolved as a fresh
+    command line (see `_mutation_for_command`'s eval docs)."""
+    remainder = tokens[start + 1 :]
+    if not remainder:
+        return set()
+    joined = " ".join(remainder)
+    try:
+        sub_tokens = _tokenize_line(joined)
+    except _TokenizeError:
+        return {MutationTarget(kind="parse-error", target=_PARSE_ERROR_TARGET)}
+    result: set[MutationTarget] = set()
+    for sub_command in _split_commands(sub_tokens):
+        result |= _mutation_for_command(sub_command)
+    return result
+
+
+def _mutation_for_base(base: str, args: list[str]) -> set[MutationTarget]:
+    """The `MutationTarget` set a non-`eval` resolved verb `base` with
+    argument tokens `args` produces."""
     if base in _LAST_POSITIONAL_KIND:
         cleaned = _clean_positional_args(args)
         if not cleaned:
@@ -409,7 +419,17 @@ def _script_conformance(
     laundered through a combined install+uninstall union."""
     found = extract_mutation_surface(text)
     violations: list[ConformanceViolation] = []
-    for mt in sorted(found - declared, key=lambda t: (t.kind, t.target)):
+    violations.extend(_deploy002_extras(filename, found - declared))
+    violations.extend(_deploy003_misses(filename, declared - found))
+    return violations
+
+
+def _deploy002_extras(
+    filename: str, extras: frozenset[MutationTarget]
+) -> list[ConformanceViolation]:
+    """DEPLOY002 violations: script mutations not declared in the manifest."""
+    violations: list[ConformanceViolation] = []
+    for mt in sorted(extras, key=lambda t: (t.kind, t.target)):
         _log.error(
             "deploy conformance: deploy/%s mutates %s %r, not declared in "
             "HostManifest (DEPLOY002)",
@@ -430,7 +450,16 @@ def _script_conformance(
                 ),
             )
         )
-    for mt in sorted(declared - found, key=lambda t: (t.kind, t.target)):
+    return violations
+
+
+def _deploy003_misses(
+    filename: str, misses: frozenset[MutationTarget]
+) -> list[ConformanceViolation]:
+    """DEPLOY003 violations: manifest declarations no script mutation
+    implements."""
+    violations: list[ConformanceViolation] = []
+    for mt in sorted(misses, key=lambda t: (t.kind, t.target)):
         _log.error(
             "deploy conformance: HostManifest declares %s %r but deploy/%s "
             "implements no mutation for it (DEPLOY003)",
@@ -478,7 +507,21 @@ def deploy_conformance_violations(root: Path) -> tuple[ConformanceViolation, ...
 
     entries = sorted_manifest_entries(model)
     declared = expected_mutation_surface(entries)
+    violations = _conformance_for_scripts(deploy_dir, declared)
 
+    _log.info(
+        "deploy conformance: checked %d declared mutation target(s), %d violation(s)",
+        len(declared),
+        len(violations),
+    )
+    return tuple(violations)
+
+
+def _conformance_for_scripts(
+    deploy_dir: Path, declared: frozenset[MutationTarget]
+) -> list[ConformanceViolation]:
+    """DEPLOY002/DEPLOY003 violations across every committed install/uninstall
+    script under `deploy_dir`, skipping any not present."""
     violations: list[ConformanceViolation] = []
     for filename in ("install.sh", "uninstall.sh"):
         path = deploy_dir / filename
@@ -487,13 +530,7 @@ def deploy_conformance_violations(root: Path) -> tuple[ConformanceViolation, ...
             continue
         text = path.read_text(encoding="utf-8")
         violations.extend(_script_conformance(filename, text, declared))
-
-    _log.info(
-        "deploy conformance: checked %d declared mutation target(s), %d violation(s)",
-        len(declared),
-        len(violations),
-    )
-    return tuple(violations)
+    return violations
 
 
 __all__ = [

@@ -17,6 +17,7 @@ import importlib
 import inspect
 import sys
 import typing
+from collections.abc import Callable
 from pathlib import Path, PurePosixPath
 
 from frob.logging import get_logger
@@ -62,6 +63,42 @@ def resolve_param_types(root: Path, ref: str) -> tuple[type, ...] | None:
     not resolve to a callable, or any annotation cannot be evaluated --
     never raises.
     """
+    parsed_ref = _parse_python_ref(ref)
+    if parsed_ref is None:
+        return None
+    path_str, qualname = parsed_ref
+
+    module = _import_ref_module(root, path_str)
+    if module is None:
+        return None
+    target = _resolve_callable(module, qualname)
+    if target is None:
+        return None
+
+    hints = _resolve_hints(target, ref)
+    if hints is None:
+        return None
+    return _annotated_types_for_target(target, hints, ref)
+
+
+def _annotated_types_for_target(
+    target: Callable[..., object], hints: dict[str, type], ref: str
+) -> tuple[type, ...] | None:
+    """`target`'s inspectable signature, resolved into annotated param
+    types via `hints`; `None` if `target` has no inspectable signature."""
+    try:
+        sig = inspect.signature(target)
+    except (TypeError, ValueError) as exc:
+        _log.warning(
+            "resolve_param_types: %s has no inspectable signature: %s", ref, exc
+        )
+        return None
+    return _annotated_param_types(sig, hints)
+
+
+def _parse_python_ref(ref: str) -> tuple[str, str] | None:
+    """Split `ref` into `(path_str, qualname)`, or `None` if malformed or
+    not a Python target."""
     try:
         path_str, qualname = ref.split("::", 1)
     except ValueError:
@@ -70,7 +107,36 @@ def resolve_param_types(root: Path, ref: str) -> tuple[type, ...] | None:
     if not path_str.endswith(".py"):
         _log.debug("resolve_param_types: %s is not a Python target", ref)
         return None
+    return path_str, qualname
 
+
+def _resolve_callable(module: object, qualname: str) -> Callable[..., object] | None:
+    """The callable `module.qualname` resolves to, or `None` (with a
+    warning) if it does not resolve to a callable."""
+    target = _resolve_attr(module, qualname)
+    if target is None or not callable(target):
+        _log.warning(
+            "resolve_param_types: %s has no callable %s",
+            getattr(module, "__name__", module),
+            qualname,
+        )
+        return None
+    return target
+
+
+def _resolve_hints(target: Callable[..., object], ref: str) -> dict[str, type] | None:
+    """`typing.get_type_hints(target)`, or `None` (with a warning) if
+    hints cannot be resolved."""
+    try:
+        return typing.get_type_hints(target)
+    except Exception as exc:  # noqa: BLE001 - forward refs/missing imports fail arbitrarily
+        _log.warning("resolve_param_types: %s hints unresolvable: %s", ref, exc)
+        return None
+
+
+def _import_ref_module(root: Path, path_str: str) -> object | None:
+    """Import the module backing source file `path_str`, temporarily adding
+    `root/src` to `sys.path` if needed; `None` on any derivation/import failure."""
     module_name = _module_name(path_str)
     if module_name is None:
         _log.warning(
@@ -83,7 +149,7 @@ def resolve_param_types(root: Path, ref: str) -> tuple[type, ...] | None:
     if added:
         sys.path.insert(0, src_dir)
     try:
-        module = importlib.import_module(module_name)
+        return importlib.import_module(module_name)
     except Exception as exc:  # noqa: BLE001 - best-effort introspection, never crashes
         _log.warning("resolve_param_types: could not import %s: %s", module_name, exc)
         return None
@@ -91,27 +157,12 @@ def resolve_param_types(root: Path, ref: str) -> tuple[type, ...] | None:
         if added and src_dir in sys.path:
             sys.path.remove(src_dir)
 
-    target = _resolve_attr(module, qualname)
-    if target is None or not callable(target):
-        _log.warning(
-            "resolve_param_types: %s has no callable %s", module_name, qualname
-        )
-        return None
 
-    try:
-        hints = typing.get_type_hints(target)
-    except Exception as exc:  # noqa: BLE001 - forward refs/missing imports fail arbitrarily
-        _log.warning("resolve_param_types: %s hints unresolvable: %s", ref, exc)
-        return None
-
-    try:
-        sig = inspect.signature(target)
-    except (TypeError, ValueError) as exc:
-        _log.warning(
-            "resolve_param_types: %s has no inspectable signature: %s", ref, exc
-        )
-        return None
-
+def _annotated_param_types(
+    sig: inspect.Signature, hints: dict[str, type]
+) -> tuple[type, ...]:
+    """The resolved annotation types of `sig`'s non-self/cls parameters that
+    have one."""
     types: list[type] = []
     for name in sig.parameters:
         if name in _SELF_PARAMS:

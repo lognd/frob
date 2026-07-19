@@ -126,6 +126,20 @@ def deploy_drift_violations(root: Path) -> tuple[DeployDriftViolation, ...]:
     if fresh is None:
         return ()
 
+    violations = _drift_for_files(deploy_dir, fresh)
+    _log.info(
+        "deploy drift: checked %d generated file(s), %d violation(s)",
+        len(_GENERATED_FILENAMES),
+        len(violations),
+    )
+    return tuple(violations)
+
+
+def _drift_for_files(
+    deploy_dir: Path, fresh: dict[str, str]
+) -> list[DeployDriftViolation]:
+    """DEPLOY001 violations across every committed generated file under
+    `deploy_dir`, skipping any not present."""
     violations: list[DeployDriftViolation] = []
     for filename in _GENERATED_FILENAMES:
         committed_path = deploy_dir / filename
@@ -148,12 +162,7 @@ def deploy_drift_violations(root: Path) -> tuple[DeployDriftViolation, ...]:
                     ),
                 )
             )
-    _log.info(
-        "deploy drift: checked %d generated file(s), %d violation(s)",
-        len(_GENERATED_FILENAMES),
-        len(violations),
-    )
-    return tuple(violations)
+    return violations
 
 
 __all__ = [

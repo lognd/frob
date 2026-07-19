@@ -106,6 +106,23 @@ def _const_symbol(node: Node) -> RawSymbol | None:
     other grammar builds) -- both forms are accepted so a right-hand side
     of any kind, literal or call expression (`X = Foo(...)`), is caught.
     """
+    name = _const_assignment_name(node)
+    if name is None:
+        return None
+    return RawSymbol(
+        qualname=name,
+        kind=SymbolKind.CONST,
+        public=not name.startswith("_"),
+        span=span_of(node),
+        sig_tokens=leaf_tokens(node, _COMMENT_TYPES),
+        body_tokens=(),
+        doc_text="",
+    )
+
+
+def _const_assignment_name(node: Node) -> str | None:
+    """The SCREAMING_CASE target name of a module-level constant assignment
+    `node`, or None if it doesn't match that shape."""
     assign = (
         node
         if node.type == "assignment"
@@ -121,15 +138,7 @@ def _const_symbol(node: Node) -> RawSymbol | None:
         return None
     if not name.replace("_", "").isupper():
         return None
-    return RawSymbol(
-        qualname=name,
-        kind=SymbolKind.CONST,
-        public=not name.startswith("_"),
-        span=span_of(node),
-        sig_tokens=leaf_tokens(node, _COMMENT_TYPES),
-        body_tokens=(),
-        doc_text="",
-    )
+    return name
 
 
 def _visit(container: Node, stack: tuple[str, ...], symbols: list[RawSymbol]) -> None:

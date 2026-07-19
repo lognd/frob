@@ -74,81 +74,93 @@ _MAX_CANDIDATES_PER_FILE = 4000
 _MAX_SCAN_BYTES = 2 * 1024 * 1024
 
 
+# Escapes (`\\x`) are skipped as a pair. Entropy is computed over the FULL
+# literal, never truncated (review round 2 -- see the T-0208 note above:
+# truncating changes the entropy score and can hide a real hit).
+# `_MAX_CANDIDATE_LEN` is a 1MB memory-safety ceiling, not a normal-path
+# cap; the file is capped at `_MAX_CANDIDATES_PER_FILE` literals.
+#
+# UNTERMINATED CANDIDATES (review round 1 caught this): a quote char with
+# no matching close anywhere later in the file is NOT a literal -- it
+# matches the OLD regex's actual behavior (a failed match attempt at that
+# start position, retried one char later), not "run to end of text".
+# Treating it as a literal was an undisclosed behavior change: after a
+# mismatched-quote region consumes the file's last `'`, the old regex
+# gives up on that open quote and correctly re-syncs on the next
+# docstring's triple-quote; the old (buggy) version of this function
+# instead swallowed that docstring into one giant unterminated "literal",
+# silently DROPPING it from the entropy check -- a detection gap, not a
+# disclosed false-positive tradeoff.
+#
+# Detecting "no closing quote anywhere later" naively (scan-to-EOF, then
+# discard and retry one char over) reintroduces the exact quadratic
+# blowup T-0208 fixed, for a file with many trailing unmatched quote
+# chars. Fixed with an O(1) reject: `last_single`/`last_double` are each
+# quote type's LAST raw occurrence in the text, computed once; if a
+# candidate opens at or after that position, it can never close and is
+# rejected without scanning -- one linear pre-pass plus O(1) per
+# rejection keeps the whole function O(len(text)).
 # frob:waive PERF003 reason="two-pointer scan not a join; each char visited once, O(n)"
 def _iter_string_literals(text: str) -> list[str]:
     """Single-pass, backtracking-free scan for `'...'`/`"..."` literal
-    bodies (single-char delimiters only, matching the prior regex's scope).
-    Escapes (`\\x`) are skipped as a pair. Entropy is computed over the
-    FULL literal, never truncated (review round 2 -- see the T-0208 note
-    above: truncating changes the entropy score and can hide a real hit).
-    `_MAX_CANDIDATE_LEN` is a 1MB memory-safety ceiling, not a normal-path
-    cap; the file is capped at `_MAX_CANDIDATES_PER_FILE` literals.
-
-    UNTERMINATED CANDIDATES (review round 1 caught this): a quote char with
-    no matching close anywhere later in the file is NOT a literal -- it
-    matches the OLD regex's actual behavior (a failed match attempt at that
-    start position, retried one char later), not "run to end of text".
-    Treating it as a literal was an undisclosed behavior change: after a
-    mismatched-quote region consumes the file's last `'`, the old regex
-    gives up on that open quote and correctly re-syncs on the next
-    docstring's triple-quote; the old (buggy) version of this function instead
-    swallowed that docstring into one giant unterminated "literal",
-    silently DROPPING it from the entropy check -- a detection gap, not a
-    disclosed false-positive tradeoff.
-
-    Detecting "no closing quote anywhere later" naively (scan-to-EOF, then
-    discard and retry one char over) reintroduces the exact quadratic
-    blowup T-0208 fixed, for a file with many trailing unmatched quote
-    chars. Fixed with an O(1) reject: `last_single`/`last_double` are each
-    quote type's LAST raw occurrence in the text, computed once; if a
-    candidate opens at or after that position, it can never close and is
-    rejected without scanning -- one linear pre-pass plus O(1) per
-    rejection keeps the whole function O(len(text))."""
+    bodies (single-char delimiters only, matching the prior regex's scope)."""
     n = len(text)
     literals: list[str] = []
     last_single = text.rfind("'")
     last_double = text.rfind('"')
     i = 0
     while i < n and len(literals) < _MAX_CANDIDATES_PER_FILE:
-        ch = text[i]
-        if ch not in ("'", '"'):
-            i += 1
-            continue
-        quote = ch
-        last_occurrence = last_single if quote == "'" else last_double
-        if last_occurrence <= i:
-            # No further occurrence of `quote` exists anywhere later in
-            # the file -- this candidate cannot close. Fail in O(1),
-            # matching the old regex's "no match at this start position".
-            i += 1
-            continue
-        j = i + 1
-        start = j
-        end = None
-        while j < n:
-            c = text[j]
-            if c == "\\":
-                j += 2
-                continue
-            if c == quote:
-                end = j
-                break
-            if j - start >= _MAX_CANDIDATE_LEN:
-                end = j
-                break
-            j += 1
-        if end is None:
-            # The raw last-occurrence pre-check said a `quote` exists
-            # later, but every one of them was consumed as the second
-            # half of a `\\.` escape pair before we reached it -- still
-            # "cannot close", just discovered by the careful scan instead
-            # of the fast pre-check. Same fail-and-retry-one-char-over
-            # outcome.
-            i += 1
-            continue
-        literals.append(text[start:end])
-        i = (end + 1) if end < n and text[end] == quote else max(end, i + 1)
+        i, literal = _consume_one_candidate(text, i, n, last_single, last_double)
+        if literal is not None:
+            literals.append(literal)
     return literals
+
+
+def _consume_one_candidate(
+    text: str, i: int, n: int, last_single: int, last_double: int
+) -> tuple[int, str | None]:
+    """Advance past `text[i]`: either a matched literal body (returned) and
+    the index just past its closing quote, or a rejected candidate/
+    non-quote char and `i + 1`."""
+    ch = text[i]
+    if ch not in ("'", '"'):
+        return i + 1, None
+    quote = ch
+    last_occurrence = last_single if quote == "'" else last_double
+    if last_occurrence <= i:
+        # No further occurrence of `quote` exists anywhere later in the
+        # file -- this candidate cannot close. Fail in O(1), matching the
+        # old regex's "no match at this start position".
+        return i + 1, None
+    start = i + 1
+    end = _scan_literal_end(text, quote, start, n)
+    if end is None:
+        # The raw last-occurrence pre-check said a `quote` exists later,
+        # but every one of them was consumed as the second half of a
+        # `\\.` escape pair before we reached it -- still "cannot close",
+        # just discovered by the careful scan instead of the fast
+        # pre-check. Same fail-and-retry-one-char-over outcome.
+        return i + 1, None
+    next_i = (end + 1) if end < n and text[end] == quote else max(end, i + 1)
+    return next_i, text[start:end]
+
+
+def _scan_literal_end(text: str, quote: str, start: int, n: int) -> int | None:
+    """The index of `quote`'s closing occurrence starting from `start`
+    (escape-pair-aware, capped at `_MAX_CANDIDATE_LEN`), or `None` if it
+    never closes within that cap."""
+    j = start
+    while j < n:
+        c = text[j]
+        if c == "\\":
+            j += 2
+            continue
+        if c == quote:
+            return j
+        if j - start >= _MAX_CANDIDATE_LEN:
+            return j
+        j += 1
+    return None
 
 
 # Trojan Source (CVE-2021-42574) bidi overrides + zero-width characters.
@@ -272,27 +284,35 @@ def _collect_dir_signals(source_dir: Path, max_files: int) -> set[str]:
             break
         if not path.is_file() or path.suffix.lower() not in _SCANNABLE_SUFFIXES:
             continue
-        try:
-            if path.stat().st_size > _MAX_SCAN_BYTES:
-                _log.debug(
-                    "vet: skipping %s for obfuscation scan: %d bytes exceeds "
-                    "%d-byte cap (T-0208)",
-                    path,
-                    path.stat().st_size,
-                    _MAX_SCAN_BYTES,
-                )
-                continue
-        except OSError as exc:
-            _log.warning("vet: could not stat %s for obfuscation scan: %s", path, exc)
-            continue
-        try:
-            text = path.read_text(encoding="utf-8", errors="replace")
-        except OSError as exc:
-            _log.warning("vet: could not read %s for obfuscation scan: %s", path, exc)
+        text = _read_scannable_text(path)
+        if text is None:
             continue
         signals |= set(scan_text_obfuscation(text))
         scanned += 1
     return signals
+
+
+def _read_scannable_text(path: Path) -> str | None:
+    """`path`'s text if it's under `_MAX_SCAN_BYTES` and readable, else
+    `None` (logged)."""
+    try:
+        if path.stat().st_size > _MAX_SCAN_BYTES:
+            _log.debug(
+                "vet: skipping %s for obfuscation scan: %d bytes exceeds "
+                "%d-byte cap (T-0208)",
+                path,
+                path.stat().st_size,
+                _MAX_SCAN_BYTES,
+            )
+            return None
+    except OSError as exc:
+        _log.warning("vet: could not stat %s for obfuscation scan: %s", path, exc)
+        return None
+    try:
+        return path.read_text(encoding="utf-8", errors="replace")
+    except OSError as exc:
+        _log.warning("vet: could not read %s for obfuscation scan: %s", path, exc)
+        return None
 
 
 __all__ = [
