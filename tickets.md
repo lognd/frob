@@ -7355,7 +7355,7 @@ T-0262 round-2 review finding (reviewer-reproduced): std.krb's non-transitive do
 ```yaml
 id: T-0283
 title: 'perf: drive 4 remaining PERF findings to zero (fix or reasoned waive)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-19'
@@ -7368,7 +7368,8 @@ scope:
 - src/frob/deploy/_generate.py
 - tests/**
 - tickets.md
-evidence: []
+evidence:
+- tests/unit/deploy/test_generate.py::TestSorted::test_sorted
 attachments: []
 acceptance: []
 threat: null
