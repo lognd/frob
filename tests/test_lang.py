@@ -232,20 +232,16 @@ class TestParseTsRustCppC:
         source = (
             "// frob:doc docs/x.md#anchor\n"
             "#[derive(Debug)]\n"
-            "#[serde(rename = \"x\")]\n"
+            '#[serde(rename = "x")]\n'
             "pub struct TwoAttrs {\n"
             "    pub a: i32,\n"
             "}\n"
         )
         pf = parse_file(_write(tmp_path, "two_attrs.rs", source)).danger_ok
-        directive_comment = next(
-            c for c in pf.comments if "frob:doc" in c.text
-        )
+        directive_comment = next(c for c in pf.comments if "frob:doc" in c.text)
         assert directive_comment.following == "TwoAttrs"
 
-    def test_rust_directive_binds_above_single_attribute(
-        self, tmp_path: Path
-    ) -> None:
+    def test_rust_directive_binds_above_single_attribute(self, tmp_path: Path) -> None:
         """The 1-attribute case (already worked, kept as a guard against
         regressing it while fixing the 2+-attribute case)."""
         source = (
@@ -263,7 +259,9 @@ class TestParseTsRustCppC:
         self, tmp_path: Path
     ) -> None:
         """The plain, no-attribute case must keep working."""
-        source = "// frob:doc docs/x.md#anchor\npub struct NoAttrs {\n    pub a: i32,\n}\n"
+        source = (
+            "// frob:doc docs/x.md#anchor\npub struct NoAttrs {\n    pub a: i32,\n}\n"
+        )
         pf = parse_file(_write(tmp_path, "no_attrs.rs", source)).danger_ok
         directive_comment = next(c for c in pf.comments if "frob:doc" in c.text)
         assert directive_comment.following == "NoAttrs"
