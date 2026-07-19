@@ -189,10 +189,19 @@ def _existing_markers(root: Path) -> frozenset[str]:
 
 
 def _print_dry_run(new: list[PlannedTicket]) -> None:
-    """Print the would-be ticket tree without writing anything (dry-run default)."""
+    """Print the would-be ticket tree without writing anything (dry-run
+    default). Names `--apply` explicitly in the label so the dry-run
+    nature of the output -- and how to escape it -- is never ambiguous
+    (T-0231: the prior "compiled N obligation ticket(s)" line alone gave
+    no indication nothing had been written)."""
     if not new:
         _log.info("sys plan: model unchanged, nothing to plan")
         return
+    _log.info(
+        "sys plan: DRY RUN (no tickets created; pass --apply to compile) -- "
+        "%d obligation ticket(s) would be created",
+        len(new),
+    )
     for ticket in new:
         indent = "  " if ticket.parent_marker else ""
         _log.info(

@@ -1421,6 +1421,25 @@ class TestDoclinkGate:
         violations = doclink_gate(root, build_graph(root, cache).danger_ok)
         assert {v.file for v in violations} == {"docs/brand_new.md"}
 
+    def test_orphan_hint_does_not_point_at_missing_docs_root(self, tmp_path):
+        # frob:tests src/frob/gates/__init__.py::doclink_gate kind="unit"
+        # T-0231: default roots=["docs/index.md", "README.md"] but neither
+        # exists in this repo (sibling-repo "lithos" precedent, 256 hits) --
+        # the hint must not blindly name docs/index.md as if it were there.
+        from frob.gates import doclink_gate
+        from frob.graph import build_graph
+
+        root = tmp_path / "repo"
+        (root / "docs").mkdir(parents=True)
+        (root / "docs" / "orphan.md").write_text("# Orphan\n", encoding="utf-8")
+
+        snap = build_graph(root, root / ".frob" / "cache.db").danger_ok
+        violations = doclink_gate(root, snap)
+        assert len(violations) == 1
+        message = violations[0].message
+        assert "docs/index.md" not in message or "create it" in message
+        assert "no configured docs root exists" in message or "create it" in message
+
 
 class TestDocanchorGate:
     def _snap(self, root: Path):

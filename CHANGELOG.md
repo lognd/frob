@@ -26,6 +26,11 @@ Public-API surface changes since 0.2.0 (mechanical semver via REL001):
   discriminator closing a capability-scan evasion hole).
 - T-0209: `frob.lang.COMMENT_TYPES` made public (capability scanner drops
   needle hits inside comment spans).
+- T-0231: `frob --version` prints the installed package version instead of
+  an argparse error; `frob sys plan` (no `--apply`) labels its output
+  "DRY RUN (no tickets created; pass --apply to compile)"; DOC001's orphan
+  hint resolves an actually-existing configured docs root instead of
+  blindly naming `docs/index.md` in repos that never created one.
 
 ## [0.2.0] - unreleased
 
