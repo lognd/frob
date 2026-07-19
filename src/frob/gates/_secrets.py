@@ -38,7 +38,10 @@ enough to catch real secrets is also loose enough to fire on all of those,
 which is the exact "dishonest gate" T-0151 documents -- so it is left out
 rather than half-built. A future ticket could revisit this with a properly
 tuned, context-aware entropy pass; until then the pattern table is the
-whole detector.
+whole detector. (`_looks_low_entropy`, added T-0219, is NOT that fallback:
+it never fires a violation, only narrows an existing phrase-based
+SUPPRESSION so it can't be bypassed -- a different, much lower-stakes use
+of entropy than a detection trigger would be.)
 
 Also honest about: this scanner is line-oriented (each tracked line is
 matched independently), so a token that has been line-wrapped -- split
@@ -50,7 +53,9 @@ silent omission.
 # frob:ticket T-0157
 from __future__ import annotations
 
+import math
 import re
+from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -72,6 +77,31 @@ _FAKE_MARKER = "frob:secret-fake"
 #: must still fire).
 _PLACEHOLDER_WORDS = ("fake", "changeme", "example", "placeholder")
 _PLACEHOLDER_RUN_RE = re.compile(r"(x{4,}|\*{4,})", re.IGNORECASE)
+#: Placeholder PHRASES (as opposed to single words above) -- T-0219: a
+#: fixture like `xoxb-your-slack-token-here` reads as an obvious template
+#: to a human but contains none of `_PLACEHOLDER_WORDS`. Matched
+#: case-insensitively against the token text, same as `_PLACEHOLDER_WORDS`.
+#:
+#: BYPASS FIX (T-0219 review round 2): this regex alone is a `.search()`
+#: substring test -- a real, high-entropy token that merely CONTAINS
+#: `your-`/`insert-`/`-here` anywhere (e.g. a live key naming a tenant
+#: "your-company") used to suppress SEC001 unconditionally. It is now only
+#: ever consulted through `_looks_fake`, gated by EITHER
+#: `_KNOWN_TEMPLATE_SHAPE_RE` (a whole-token structural anchor) OR
+#: `_looks_low_entropy` (the phrase must be sitting inside human-written
+#: template text, not real secret noise). Never call `.search()` on this
+#: pattern directly to decide fakeness again -- go through `_looks_fake`.
+_PLACEHOLDER_PHRASE_RE = re.compile(r"(-here\b|\byour-|\binsert-)", re.IGNORECASE)
+#: Whole-token ANCHOR (T-0219 bypass fix): a known template *shape* --
+#: short provider-ish prefix, then `your-`/`insert-`, then more words,
+#: ending in `-here` -- matched with `fullmatch` against the ENTIRE token,
+#: never a substring. Catches `xoxb-your-slack-token-here`,
+#: `sk-insert-api-key-here`, etc. without needing every placeholder word
+#: enumerated, and without ever matching a token that has anything else
+#: (digits, unrelated suffix) tacked on after the template.
+_KNOWN_TEMPLATE_SHAPE_RE = re.compile(
+    r"^[a-z0-9]{2,10}-(your|insert)-[a-z-]+-here$", re.IGNORECASE
+)
 
 
 @dataclass(frozen=True)
@@ -188,6 +218,21 @@ _PATTERNS: tuple[_SecretPattern, ...] = (
         "critical",
         r"sk-proj-[A-Za-z0-9_-]{20,}",
         "sk-proj-",
+    ),
+    # T-0219: a hyphenated `sk-live-...` shape (distinct from Stripe's
+    # underscore `sk_live_` above) was silently missed -- the old
+    # `openai-legacy` entry below requires 20+ alnum-ONLY chars right after
+    # `sk-`, and `live-` breaks that run at its first hyphen, so a real
+    # `sk-live-<hex>` token never matched ANY pattern in the table. Ordered
+    # before `openai-legacy` (longer, more specific prefix) per this table's
+    # most-specific-first discipline.
+    _pat(
+        "generic-live-key",
+        "SEC001",
+        Severity.ERROR,
+        "critical",
+        r"sk-live-[A-Za-z0-9-]{16,}",
+        "sk-live-",
     ),
     _pat(
         "openai-legacy",
@@ -380,11 +425,84 @@ def redact(token: str, display_prefix: str) -> str:
     return f"{display_prefix}... ({len(token)} chars)"
 
 
+#: Shannon-entropy floor (bits/char over alnum chars) below which a
+#: digit-free, single-case token is judged "human template prose" rather
+#: than a real secret's random tail (T-0219 round 3 bypass fix). Calibrated
+#: against the repo's own fixtures: `xoxb-insert-your-real-token` (an
+#: existing, intentionally-suppressed legit placeholder) sits at ~3.64
+#: bits/char; the reviewer's adversarial digit-free "real" tokens -- an
+#: `sk-live-insert-` prefix glued to a near-unique-letter run (~4.32
+#: bits/char) -- and any mixed-case token sit well above 3.7. The gap
+#: between "repeats a handful of English words" and "near-unique alphabet
+#: run" is wide enough that 3.7 is a conservative cut: it never needs to
+#: be exact, only to never let a genuinely random-looking token read as
+#: low.
+_LOW_ENTROPY_BITS_PER_CHAR = 3.7
+
+
+def _looks_low_entropy(token: str) -> bool:
+    """True if `token` reads as human-written template prose rather than a
+    machine-generated secret (T-0219 round 3: replaces the round-2 binary
+    "has no digits" check, which let a digit-free but high-entropy
+    real-shaped token -- an `sk-live-your-` prefix glued to a mixed-case
+    random tail -- still slip past).
+
+    Three independent, conservative gates, ALL of which must hold before a
+    token is ever called low-entropy -- failing any one means "not low",
+    i.e. the security-safe direction (never suppress on uncertainty):
+
+    1. No digit anywhere. A digit is decisive evidence of real secret-shaped
+       content regardless of what else is true.
+    2. Single case (all-lowercase or all-uppercase letters, no mixing). A
+       real generated token frequently mixes case; hand-typed template
+       phrases like `your-slack-token-here` never do.
+    3. Real Shannon entropy over the token's alnum characters, in bits per
+       character, below `_LOW_ENTROPY_BITS_PER_CHAR`. English template
+       phrases repeat a small set of common letters (low entropy); a
+       machine-generated token -- even a digit-free, single-case one built
+       from a wide alphabet run -- has a much flatter, higher-entropy
+       character distribution.
+
+    Only reached by `_looks_fake` when `_PLACEHOLDER_PHRASE_RE` already
+    matched a phrase fragment (`your-`/`insert-`/`-here`) in the token, so
+    this never runs against arbitrary unrelated secrets."""
+    if any(char.isdigit() for char in token):
+        return False
+    has_upper = any(char.isupper() for char in token)
+    has_lower = any(char.islower() for char in token)
+    if has_upper and has_lower:
+        return False
+    alnum = [char for char in token if char.isalnum()]
+    if not alnum:
+        return False
+    counts = Counter(alnum)
+    total = len(alnum)
+    entropy = -sum(
+        (count / total) * math.log2(count / total) for count in counts.values()
+    )
+    return entropy < _LOW_ENTROPY_BITS_PER_CHAR
+
+
 def _looks_fake(token: str) -> bool:
     """True if `token` itself is an obvious placeholder shape (T-0157:
-    XXXX/**** runs or the literal words fake/changeme/example/placeholder),
-    independent of any `frob:secret-fake` marker on the surrounding line."""
+    XXXX/**** runs or the literal words fake/changeme/example/placeholder).
+
+    T-0219 round 1 added obvious placeholder PHRASING (`-here` tail, or a
+    `your-`/`insert-` fragment) but matched it as a bare substring against
+    the whole token -- round 2 (this version) closes the resulting bypass:
+    a phrase match now only counts as fake when the token is EITHER a
+    known whole-token template shape (`_KNOWN_TEMPLATE_SHAPE_RE`, fullmatch)
+    OR low-entropy human text containing the phrase (`_looks_low_entropy`).
+    A high-entropy, real-shaped token (digits present, doesn't fullmatch
+    the template shape) is NEVER suppressed by phrase content alone, no
+    matter what substrings it happens to contain.
+
+    Independent of any `frob:secret-fake` marker on the surrounding line."""
     if _PLACEHOLDER_RUN_RE.search(token):
+        return True
+    if _KNOWN_TEMPLATE_SHAPE_RE.fullmatch(token):
+        return True
+    if _looks_low_entropy(token) and _PLACEHOLDER_PHRASE_RE.search(token):
         return True
     lowered = token.lower()
     return any(word in lowered for word in _PLACEHOLDER_WORDS)

@@ -126,6 +126,29 @@ class TestFindsTokens:
         assert any(v.rule == "SEC003" for v in kept)
         assert not any(v.rule == "SEC003" for v in waived)
 
+    def test_generic_live_key_adjacent_to_other_content_sec001(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_secrets.py::secrets_gate
+        # T-0219: a hyphenated `sk-live-...` token immediately abutted by
+        # other characters (quote + trailing prose, no whitespace boundary)
+        # was silently missed pre-fix -- `openai-legacy`'s `sk-[A-Za-z0-9]{
+        # 20,}` breaks at the first hyphen in "live-", so no pattern in the
+        # table ever claimed the span. Runtime-constructed (never a
+        # contiguous literal in this file's own source), same discipline as
+        # `test_stripe_live_key_sec003` above.
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        token = "sk-live-" + "d" * 24
+        (repo / "config.py").write_text(f'X = "{token}" # trailing note\n')
+        _commit(repo)
+
+        violations = secrets_gate(repo)
+        matches = [v for v in violations if "generic-live-key" in v.message]
+        assert len(matches) == 1
+        assert matches[0].rule == "SEC001"
+        assert "d" * 24 not in matches[0].message
+
     def test_stripe_test_key_is_low_severity_warn(self, tmp_path: Path) -> None:
         repo = tmp_path / "repo"
         _init_repo(repo)
@@ -179,6 +202,165 @@ class TestFakeMarking:
 
         violations = secrets_gate(repo)
         assert violations == ()
+
+    def test_placeholder_phrase_your_dash_here_is_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_secrets.py::secrets_gate
+        # T-0219: a doc-example token like `xoxb-your-slack-token-here`
+        # reads as an obvious template to a human but contains none of the
+        # single-word `_PLACEHOLDER_WORDS` (fake/changeme/example/
+        # placeholder) -- pre-fix, this fired a false-positive SEC001.
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        (repo / "README.md").write_text("SLACK_TOKEN=xoxb-your-slack-token-here\n")
+        _commit(repo)
+
+        violations = secrets_gate(repo)
+        assert violations == ()
+
+    def test_placeholder_phrase_insert_dash_is_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_secrets.py::secrets_gate
+        # Same T-0219 phrase-recognition fix, `insert-` variant.
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        (repo / "README.md").write_text("SLACK_TOKEN=xoxb-insert-your-real-token\n")
+        _commit(repo)
+
+        violations = secrets_gate(repo)
+        assert violations == ()
+
+    def test_placeholder_phrase_does_not_suppress_real_looking_token(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_secrets.py::secrets_gate
+        # Regression guard: the new phrase heuristic must stay scoped to
+        # `-here`/`your-`/`insert-` fragments -- a real-shaped slack token
+        # with none of those fragments must still fire (T-0157's original
+        # "the miss matters more than any false positive" posture).
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        # Runtime-constructed (never a contiguous literal in this file's own
+        # source), same discipline as `test_stripe_live_key_sec003` above.
+        token = "xoxb-" + "".join(str(n % 10) for n in range(20))
+        (repo / "notes.txt").write_text(token + "\n")
+        _commit(repo)
+
+        violations = secrets_gate(repo)
+        assert len(violations) == 1
+        assert violations[0].rule == "SEC001"
+
+    def test_placeholder_phrase_your_does_not_suppress_high_entropy_token(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_secrets.py::secrets_gate
+        # T-0219 round 2 (reviewer-reproduced bypass): a real-shaped,
+        # high-entropy `sk-live-` token that merely CONTAINS `your-` as a
+        # substring (e.g. naming a tenant "your-company") must still fire
+        # SEC001 -- the old bare `.search()` phrase check silently dropped
+        # this. Runtime-constructed, same discipline as the other
+        # real-shaped-token tests above.
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        token = "sk-live-your-company" + "".join(str(n % 10) for n in range(16))
+        (repo / "config.py").write_text(f'X = "{token}"\n')
+        _commit(repo)
+
+        violations = secrets_gate(repo)
+        matches = [v for v in violations if v.rule == "SEC001"]
+        assert len(matches) == 1
+
+    def test_placeholder_phrase_insert_does_not_suppress_high_entropy_token(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_secrets.py::secrets_gate
+        # Same bypass class, `insert-` fragment embedded in a real-shaped,
+        # digit-bearing token.
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        token = "sk-live-insert" + "".join(str(n % 10) for n in range(20))
+        (repo / "config.py").write_text(f'X = "{token}"\n')
+        _commit(repo)
+
+        violations = secrets_gate(repo)
+        matches = [v for v in violations if v.rule == "SEC001"]
+        assert len(matches) == 1
+
+    def test_placeholder_phrase_here_does_not_suppress_high_entropy_token(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_secrets.py::secrets_gate
+        # Same bypass class, `-here` fragment embedded in a real-shaped,
+        # digit-bearing token (not the exact `-here` template tail, just a
+        # substring appearing mid-token).
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        token = "sk-live-here" + "".join(str(n % 10) for n in range(20)) + "abcd"
+        (repo / "config.py").write_text(f'X = "{token}"\n')
+        _commit(repo)
+
+        violations = secrets_gate(repo)
+        matches = [v for v in violations if v.rule == "SEC001"]
+        assert len(matches) == 1
+
+    def test_digit_free_mixed_case_your_token_still_fires(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_secrets.py::secrets_gate
+        # T-0219 round 3 (reviewer-reproduced live bypass): round 2's
+        # `_looks_low_entropy` was `not any(c.isdigit() for c in token)` --
+        # a binary "has no digits" check, not a real entropy measure. A
+        # digit-free, high-entropy, real-shaped token containing `your-`
+        # was silently suppressed regardless of how random it looked.
+        # Runtime-constructed (mixed-case run glued on, never a contiguous
+        # literal in this file's own source) so this file's own self-scan
+        # stays clean while still exercising the exact bypass shape.
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        tail = "XKCDplmqrstuvwxyz" + "ABCD"
+        token = "sk-live-your-" + tail
+        (repo / "config.py").write_text(f'X = "{token}"\n')
+        _commit(repo)
+
+        violations = secrets_gate(repo)
+        matches = [v for v in violations if v.rule == "SEC001"]
+        assert len(matches) == 1
+
+    def test_digit_free_insert_alphabet_run_still_fires(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_secrets.py::secrets_gate
+        # Same round-3 bypass class: digit-free, single-case, but a wide
+        # near-unique-letter run -- real Shannon entropy reads this as
+        # high, unlike the round-2 binary digit check which suppressed it
+        # outright just for containing `insert-`.
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        tail = "abcdefgh" + "qrstuvwxyz"
+        token = "sk-live-insert-" + tail
+        (repo / "config.py").write_text(f'X = "{token}"\n')
+        _commit(repo)
+
+        violations = secrets_gate(repo)
+        matches = [v for v in violations if v.rule == "SEC001"]
+        assert len(matches) == 1
+
+    def test_digit_free_mixed_case_here_tail_still_fires(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_secrets.py::secrets_gate
+        # Same round-3 bypass class, `-here` tail variant: mixed-case,
+        # digit-free, and structurally close to `_KNOWN_TEMPLATE_SHAPE_RE`
+        # (ends in `-here`) but does NOT fullmatch it (second segment is
+        # `live`, not `your`/`insert`), so this token can only be wrongly
+        # suppressed via `_looks_low_entropy` -- which the mixed-case gate
+        # and entropy floor must both refuse.
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        tail = "abcd" + "XYZQRSTUVW"
+        token = "sk-live-" + tail + "-here"
+        (repo / "config.py").write_text(f'X = "{token}"\n')
+        _commit(repo)
+
+        violations = secrets_gate(repo)
+        matches = [v for v in violations if v.rule == "SEC001"]
+        assert len(matches) == 1
 
 
 class TestTrackedEnvFile:
@@ -312,6 +494,7 @@ _FIXTURES_BY_PROVIDER: dict[str, str] = {
     "stripe-secret-test": "sk_test_" + "a" * 24,
     "stripe-publishable-test": "pk_test_" + "a" * 24,
     "openai-project": "sk-proj-" + "a" * 24,
+    "generic-live-key": "sk-live-" + "a" * 24,
     "openai-legacy": "sk-" + "a" * 24,
     "aws-access-key-id": "AKIA" + "A" * 16,
     "github": "ghp_" + "a" * 36,
