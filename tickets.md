@@ -2969,7 +2969,7 @@ from before this change, not newly introduced, and unchanged by this diff.
 ```yaml
 id: T-0218
 title: graph build reports edges=0 on cache-hit runs while the loaded graph has edges
-state: in-progress
+state: done
 kind: ux
 origin: agent
 created: '2026-07-18'
@@ -2979,7 +2979,8 @@ scope:
 - src/frob/graph/**
 - tests/**
 - tickets.md
-evidence: []
+evidence:
+- tests/test_graph.py::TestBuildIncremental::test_cache_hit_build_reports_real_edge_count
 attachments: []
 acceptance: []
 threat: null
