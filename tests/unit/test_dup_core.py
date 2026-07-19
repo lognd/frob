@@ -36,6 +36,7 @@ def test_frob_core_module_registers_exported_kernels():
         "tree_edit_similarity",
         "apted_similarity",
         "wl_hash",
+        "exact_regions",
     ):
         assert callable(getattr(frob_core, name))
 
@@ -116,6 +117,34 @@ class TestWlHash:
         assert result.danger_ok == 0
 
 
+class TestExactRegions:
+    def test_finds_shared_block_inside_different_documents(self):
+        # frob:tests src/frob/dup/_core.py::exact_regions kind="unit"
+        # frob:tests frob-core/src/lib.rs::exact_regions kind="unit"
+        shared = ("if", "x", ">", "0", "return", "x")
+        doc_a = ("def", "foo", "(", *shared, "else", "return", "0")
+        doc_b = ("def", "bar", "(", "y", ")", *shared, "print", "y")
+        result = _core.exact_regions((doc_a, doc_b), len(shared))
+        assert result.is_ok
+        regions = result.danger_ok
+        assert len(regions) == 1
+        doc_a_idx, start_a, doc_b_idx, start_b, length = regions[0]
+        assert (doc_a_idx, doc_b_idx, length) == (0, 1, len(shared))
+        assert doc_a[start_a : start_a + length] == shared
+        assert doc_b[start_b : start_b + length] == shared
+
+    def test_below_min_len_finds_nothing(self):
+        shared = ("a", "b", "c")
+        result = _core.exact_regions((shared, shared), 10)
+        assert result.is_ok
+        assert result.danger_ok == ()
+
+    def test_no_shared_tokens_finds_nothing(self):
+        result = _core.exact_regions((("a", "b"), ("x", "y")), 1)
+        assert result.is_ok
+        assert result.danger_ok == ()
+
+
 def test_core_unavailable_path_is_err_not_exception(monkeypatch: pytest.MonkeyPatch):
     """The no-silent-fallback rule: a missing extension is a Result error,
     never a raised exception, for every _core function."""
@@ -127,3 +156,4 @@ def test_core_unavailable_path_is_err_not_exception(monkeypatch: pytest.MonkeyPa
     assert _core.tree_edit_similarity((1,), (1,)).err == DupError.CoreUnavailable
     assert _core.apted_similarity((), (), (), ()).err == DupError.CoreUnavailable
     assert _core.wl_hash((), (), 1).err == DupError.CoreUnavailable
+    assert _core.exact_regions((("a",), ("a",)), 1).err == DupError.CoreUnavailable

@@ -2399,21 +2399,30 @@ def sys_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     return violations
 
 
-def _dup_config(root: Path) -> tuple[bool, float]:
-    """`([dup].enforce, [dup].threshold)` from frob.toml, defaulting to off/0.85."""
+def _dup_config(root: Path) -> tuple[bool, float, bool]:
+    """`([dup].enforce, [dup].threshold, [dup].region_kernel)` from frob.toml,
+    defaulting to off/0.85/off.
+
+    `region_kernel` gates the R1.5 exact-region kernel (`frob.dup.
+    DupConfig.region_kernel_enabled`) independently of `enforce` -- turning
+    on the whole-symbol rung ladder does not by itself pay for the extra
+    suffix-array pass; both knobs must be true for R1.5 to run in the gate
+    path.
+    """
     toml_path = root / "frob.toml"
     if not toml_path.exists():
-        return False, 0.85
+        return False, 0.85, False
     try:
         with toml_path.open("rb") as fh:
             dup_cfg = tomllib.load(fh).get("dup", {})
         return (
             bool(dup_cfg.get("enforce", False)),
             float(dup_cfg.get("threshold", 0.85)),
+            bool(dup_cfg.get("region_kernel", False)),
         )
     except (OSError, tomllib.TOMLDecodeError, ValueError) as exc:
         _log.warning("dup_gate: frob.toml unreadable: %s", exc)
-        return False, 0.85
+        return False, 0.85, False
 
 
 # frob:doc docs/modules/gates.md#public-api
@@ -2431,7 +2440,7 @@ def dup_gate(root: Path, snapshot: GraphSnapshot, diff) -> tuple[Violation, ...]
     from frob.dup import touched_refs as _touched
 
     root = Path(root)
-    enforce, threshold = _dup_config(root)
+    enforce, threshold, region_kernel = _dup_config(root)
     if not enforce:
         _log.debug("dup_gate: [dup].enforce off, skipping")
         return ()
@@ -2439,7 +2448,11 @@ def dup_gate(root: Path, snapshot: GraphSnapshot, diff) -> tuple[Violation, ...]
         _log.warning("dup_gate: frob-core not installed; DUP rules skipped")
         return ()
 
-    report_result = find_clones(snapshot, DupConfig(threshold=threshold), diff=diff)
+    report_result = find_clones(
+        snapshot,
+        DupConfig(threshold=threshold, region_kernel_enabled=region_kernel),
+        diff=diff,
+    )
     if report_result.is_err:
         _log.warning("dup_gate: find_clones failed: %s", report_result.danger_err)
         return ()
