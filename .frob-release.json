@@ -198,9 +198,12 @@
     "src/frob/dup/_legacy.py::DupResult.total_clones": "9cb437d6d3b64007324f725cf57ab978848e41bb73a7e62f2416767e7d3e6f7c",
     "src/frob/dup/_legacy.py::find_duplicates": "1076e3590ebc728eb20ecc1cca28f598a8e53434f42d9f9beee60c38603644d7",
     "src/frob/dup/_models.py::AntiUnifyTemplate": "68af225bf83ebf4e7bfc1cb91187656997e16714f6ecbae353cc2ad93d3e1472",
+    "src/frob/dup/_models.py::CloneBinding": "ca29f531102a1f8894b07667e9695755d5f047594d37ecf2e1014eb1a96e9d2b",
+    "src/frob/dup/_models.py::CloneMatchGroup": "b6cd1d8aad470993431c39f1f1974868193f9ff72930174951f799a042b3393f",
     "src/frob/dup/_models.py::ClonePair": "b69bf6edde2e3d56c173eba2092819d21c0ac3dbf27e6d070713663d4653b7ff",
     "src/frob/dup/_models.py::CloneRegion": "bcc96bef0f2d77b1b79a2399265359fc5e212012ee321221bc46e7b225b2664e",
     "src/frob/dup/_models.py::CloneReport": "8583983c9ac7a21be5558c7e2fe4fcc979defb7aa5cee591d64484ffb40e926b",
+    "src/frob/dup/_models.py::CloneTemplate": "aa703759958aee957eef0e1995a0773f9d9fbe45c0867bd460f1f815b914d3d3",
     "src/frob/dup/_models.py::DupConfig": "6c0d60607769131fa74a87e1216f5804eb12e50dccbb5820e3fb9e8871ec0c70",
     "src/frob/dup/_models.py::DupError": "0252357417db93aff891dbf97f3ac7c24f5ff1d84ae2e3cd3eeaabc4dc20c608",
     "src/frob/dup/_models.py::DupStats": "d19c0a8e57c6da3f2ceed1fc28a4d5acc5643acc71895022c0bb74988e0e573b",
@@ -211,6 +214,7 @@
     "src/frob/dup/_pipeline.py::touched_refs": "452ae8547270cf4474d617838f95bc2b7d673ade2bd7a536e0412b05606a7551",
     "src/frob/dup/_rules.py::DUP001": "6165ee1b857f003776a57ba42485843c688daa2ae6c13fefc9aa6e9eb0851883",
     "src/frob/dup/_rules.py::DUP002": "9b940607fe9b7d7eb8ccec313575b126df8b49a603e8a8071f839897352a94ec",
+    "src/frob/dup/_template.py::build_group_template": "c3dd160df1d4341c702f5bc9f6921a2c9cd08c7d02911a110d58c1ed55a860c4",
     "src/frob/excludes.py::BUILTIN_SKIP_DIRS": "40dd975baefe46fc3d78d809f90604a1da253cfa11a46ce91fb4c6c9538aa6f4",
     "src/frob/excludes.py::is_excluded": "ffc284498f89cd8d3580a7253b343903818ae8dcd373b9ca30d0f6e796db9be6",
     "src/frob/excludes.py::is_skipped_dir": "af2ba7ef182f8a86d922a8ebb17a766e99db08d5c97b06cec228d118a465cb02",
@@ -536,7 +540,9 @@
     "src/frob/strata/_audit.py::DEFAULT_QUALITY_VIEWS": "c6782b913f89d831c25fc12131bf2d43dec745db62b6fd6110952f12fbc55b0c",
     "src/frob/strata/_audit.py::DEFAULT_SECURITY_VIEWS": "2b72dd340c38c09a47daa2fdda0c813f0b9652d6b6a5e569a94bb5d6cee35c25",
     "src/frob/strata/_audit.py::FamilyGap": "d5f4b90bb3965702875dd199dd86236d771a10b36c10f3a7c0212bca272aef59",
+    "src/frob/strata/_audit.py::GroupedGap": "4c94d88e9099fe3a2fcf71e9032846c78aa21c6546a4a3f3ef5bef80751a17d1",
     "src/frob/strata/_audit.py::evaluate_exhaustiveness": "8de4f37269ec8ee5805cc52751571fbc4e26be2220156f18c04c5adba5d1b985",
+    "src/frob/strata/_audit.py::group_gaps_by_view": "ec5c8107b0cba9cca8b6ea58cbedc628fabeda36e84090b58938e542a6a41705",
     "src/frob/strata/_breach.py::BlastRadius": "e62a952f52ac0a9015315386a42f209a3a42d7b61e62bd55fefa2bd86997ae76",
     "src/frob/strata/_breach.py::BreachContractReport": "8bf3bbf4b2e40087cf8b40d9d8c8c3377837fbcfe31af0435ed609d2bd86d82c",
     "src/frob/strata/_breach.py::evaluate_breach_contracts": "abd8e30822cda6ed1665d3fc33c31248527a19a2a682f1decc46843ba4fafa6a",
@@ -900,5 +906,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.11.0"
+  "version": "0.12.0"
 }
