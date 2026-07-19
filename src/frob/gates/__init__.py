@@ -947,14 +947,70 @@ def _ticket_edges(snapshot: GraphSnapshot, symref: str) -> list[Edge]:
     return [e for e in edges_from(snapshot, symref) if e.kind == EdgeKind.TICKET]
 
 
+# frob:ticket T-0214
+# frob:tests tests/test_gates.py::TestCoverageGate.test_cov002_done_ticket_covers_own_closing_diff  # noqa: E501
+# frob:tests tests/test_gates.py::TestCoverageGate.test_cov002_done_ticket_without_grace_still_fires  # noqa: E501
+# frob:tests tests/test_gates.py::TestCoverageGate.test_cov002_stale_done_ticket_unrelated_tickets_md_touch_still_fires  # noqa: E501
 def _bound_to_open_ticket(
-    snapshot: GraphSnapshot, queue: TicketQueue, symref: str
+    snapshot: GraphSnapshot, queue: TicketQueue, symref: str, diff: Diff | None = None
 ) -> bool:
-    """True if `symref` has a `frob:ticket` edge to an open ticket."""
+    """True if `symref` has a `frob:ticket` edge to an open ticket, OR (T-0214
+    grace window) to a ticket whose OWN close is landing to `DONE` within
+    this same uncommitted `diff`'s `tickets.md` hunk(s).
+
+    Closing the covering ticket and landing the symbol edit it covers is one
+    logical change; if THIS ticket's `<!-- ticket:T-#### -->` marker falls
+    inside a touched `tickets.md` hunk, the close has not yet become a
+    separate, already-landed commit, so it is not a genuine coverage gap for
+    COV002 to flag -- see `_cov002`'s docstring. A bare "tickets.md is
+    touched somewhere in the diff" is not enough: that would grant grace to
+    any already-`DONE` ticket's stale edge whenever the diff happens to
+    close a *different* ticket, which is a bypass, not a catch-22 fix (see
+    `_ticket_marker_in_diff_hunk`). Once the close lands as its own commit
+    (tickets.md drops out of the diff, or the hunk no longer spans this
+    ticket's marker), a `DONE` ticket's edge stops counting here, same as
+    before, so a truly unrelated later touch to the symbol is still caught.
+    """
     for edge in _ticket_edges(snapshot, symref):
         ticket = queue.tickets.get(edge.target)
-        if ticket is not None and ticket.state in _OPEN_STATES:
+        if ticket is None:
+            continue
+        if ticket.state in _OPEN_STATES:
             return True
+        if (
+            diff is not None
+            and ticket.state == TicketState.DONE
+            and _ticket_marker_in_diff_hunk(snapshot.root, diff, ticket.id)
+        ):
+            return True
+    return False
+
+
+def _ticket_marker_in_diff_hunk(root: str, diff: Diff, ticket_id: str) -> bool:
+    """True if `tickets.md`'s `<!-- ticket:<ticket_id> -->` marker line falls
+    inside one of `diff`'s `tickets.md` hunk spans.
+
+    This is the T-0214-bypass fix: COV002 grace must be scoped to the
+    specific ticket whose close is actually present in this diff's ledger
+    hunk, not merely to "some" hunk existing in `tickets.md" -- otherwise a
+    symbol bound to an unrelated, already-`DONE` ticket rides along on any
+    other ticket's close and never gets flagged.
+    """
+    tickets_md_hunks = [h for h in diff.hunks if h.file == "tickets.md"]
+    if not tickets_md_hunks:
+        return False
+    tickets_md_path = Path(root) / "tickets.md"
+    if not tickets_md_path.is_file():
+        return False
+    marker = f"<!-- ticket:{ticket_id} -->"
+    lines = tickets_md_path.read_text(encoding="utf-8").splitlines()
+    for hunk in tickets_md_hunks:
+        start, end = hunk.span
+        for lineno in range(max(1, start), end + 1):
+            if lineno - 1 >= len(lines):
+                break
+            if marker in lines[lineno - 1]:
+                return True
     return False
 
 
@@ -976,7 +1032,7 @@ def _strata_module_symref(record_id_path: str, qualname: str) -> str | None:
 
 
 def _covered_by_strata_module(
-    snapshot: GraphSnapshot, queue: TicketQueue, symref: str
+    snapshot: GraphSnapshot, queue: TicketQueue, symref: str, diff: Diff
 ) -> bool:
     """True if a `.strata` declaration's owning `module` carries the
     `frob:ticket` edge, so each nested `node`/`flow`/`assert`/... need not
@@ -992,7 +1048,7 @@ def _covered_by_strata_module(
     module_symref = _strata_module_symref(record.id.path, record.id.qualname)
     if module_symref is None or module_symref not in snapshot.symbols:
         return False
-    return _bound_to_open_ticket(snapshot, queue, module_symref)
+    return _bound_to_open_ticket(snapshot, queue, module_symref, diff)
 
 
 def _cov002(
@@ -1009,14 +1065,16 @@ def _cov002(
     (T-0164) applies that same reasoning one level down: a `.strata` file
     is one design artifact, so a `frob:ticket` on its `module` declaration
     covers every `node`/`flow`/`assert`/... nested inside it instead of
-    demanding a copy-pasted directive per declaration.
+    demanding a copy-pasted directive per declaration. A closed ticket also
+    covers its own closing diff (T-0214): see `_bound_to_open_ticket`'s
+    grace-window docstring for why that is not a genuine gap.
     """
     open_scopes = _open_scopes(queue)
     touched = sorted(_touched_symrefs(diff, snapshot))
     violations = [
         v
         for symref in touched
-        for v in (_cov002_check_symref(snapshot, queue, symref, open_scopes),)
+        for v in (_cov002_check_symref(snapshot, queue, symref, open_scopes, diff),)
         if v is not None
     ]
     return tuple(violations)
@@ -1027,13 +1085,15 @@ def _cov002_check_symref(
     queue: TicketQueue,
     symref: str,
     open_scopes: list[tuple[str, tuple[str, ...]]],
+    diff: Diff,
 ) -> Violation | None:
     """The COV002 `Violation` for one touched `symref`, or None when it is
-    accounted for by a direct ticket edge, its `.strata` module's edge, or
-    an open ticket's scope."""
-    if _bound_to_open_ticket(snapshot, queue, symref):
+    accounted for by a direct ticket edge (open, or `DONE` within this same
+    uncommitted diff -- T-0214), its `.strata` module's edge, or an open
+    ticket's scope."""
+    if _bound_to_open_ticket(snapshot, queue, symref, diff):
         return None
-    if _covered_by_strata_module(snapshot, queue, symref):
+    if _covered_by_strata_module(snapshot, queue, symref, diff):
         _log.debug("COV002: %s covered by its .strata module's ticket edge", symref)
         return None
     record = snapshot.symbols[symref]

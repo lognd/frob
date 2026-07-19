@@ -121,6 +121,18 @@ def _write_ticket(root: Path, ticket: Ticket) -> None:
     write_ticket(root, ticket).danger_ok
 
 
+def _marker_line(root: Path, ticket_id: str) -> int:
+    """The 1-indexed line number of `ticket_id`'s `<!-- ticket:... -->`
+    marker in `root/tickets.md`, for building a `Hunk` span that targets
+    exactly that ticket's ledger entry."""
+    marker = f"<!-- ticket:{ticket_id} -->"
+    lines = (root / "tickets.md").read_text(encoding="utf-8").splitlines()
+    for i, line in enumerate(lines, start=1):
+        if marker in line:
+            return i
+    raise AssertionError(f"marker for {ticket_id} not found in tickets.md")
+
+
 _WIDGET_PY = '''class Widget:
     """A widget."""
 
@@ -310,6 +322,88 @@ class TestCoverageGate:
         tests = CollectedTests(node_ids=frozenset())
         violations = coverage_gate(snap, queue, diff, tests)
         assert not any(v.rule == "COV002" for v in violations)
+
+    def test_cov002_done_ticket_covers_own_closing_diff(self, tmp_path: Path) -> None:
+        """T-0214: closing the covering ticket in the same uncommitted diff
+        that edits the symbol it covers must not turn into a COV002 hard
+        error -- the catch-22 this ticket fixes. THIS ticket's own
+        `<!-- ticket:T-0001 -->` marker falling inside the touched
+        `tickets.md` hunk span is the grace-window signal (not merely
+        `tickets.md` being touched anywhere)."""
+        source = "def helper(x):\n    # frob:ticket T-0001\n    return x\n"
+        _write(tmp_path, "src/a.py", source)
+        ticket = _ticket(state=TicketState.DONE)
+        _write_ticket(tmp_path, ticket)
+        marker_line = _marker_line(tmp_path, "T-0001")
+        snap = _snapshot(tmp_path)
+        record = snap.symbols["src/a.py::helper"]
+        diff = Diff(
+            base="x",
+            hunks=(
+                Hunk(file="src/a.py", span=record.span),
+                Hunk(file="tickets.md", span=(marker_line, marker_line)),
+            ),
+        )
+        queue = TicketQueue(tickets={"T-0001": ticket})
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(snap, queue, diff, tests)
+        assert not any(v.rule == "COV002" for v in violations)
+
+    def test_cov002_done_ticket_without_grace_still_fires(self, tmp_path: Path) -> None:
+        """A `DONE` ticket whose close already landed as a separate commit
+        (so `tickets.md` is no longer part of this diff) must NOT cover a
+        later, genuinely unrelated touch to the same symbol -- the grace
+        window in test_cov002_done_ticket_covers_own_closing_diff
+        must not weaken COV002 for a real coverage gap."""
+        source = "def helper(x):\n    # frob:ticket T-0001\n    return x\n"
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        record = snap.symbols["src/a.py::helper"]
+        diff = Diff(base="x", hunks=(Hunk(file="src/a.py", span=record.span),))
+        queue = TicketQueue(tickets={"T-0001": _ticket(state=TicketState.DONE)})
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(snap, queue, diff, tests)
+        v = _first_rule(violations, "COV002")
+        assert v is not None
+        assert "frob ticket new" in v.message
+
+    def test_cov002_stale_done_ticket_unrelated_tickets_md_touch_still_fires(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0214 bypass regression (reviewer-reproduced): a symbol bound via
+        `frob:ticket` to an OLD, already-`DONE` ticket (T-0001, closed long
+        ago, not part of this diff) must still fire COV002 even when the
+        diff's `tickets.md` hunk touches a *different*, unrelated ticket
+        (T-0002). Grace must be scoped to the specific ticket whose own
+        marker is in the touched hunk -- "tickets.md was touched somewhere"
+        is not sufficient, or every stale DONE ticket edge would silently
+        pass coverage forever."""
+        source = "def helper(x):\n    # frob:ticket T-0001\n    return x\n"
+        _write(tmp_path, "src/a.py", source)
+        stale_ticket = _ticket(ticket_id="T-0001", state=TicketState.DONE)
+        _write_ticket(tmp_path, stale_ticket)
+        unrelated_ticket = _ticket(ticket_id="T-0002", state=TicketState.DONE)
+        _write_ticket(tmp_path, unrelated_ticket)
+        marker_line = _marker_line(tmp_path, "T-0002")
+        snap = _snapshot(tmp_path)
+        record = snap.symbols["src/a.py::helper"]
+        diff = Diff(
+            base="x",
+            hunks=(
+                Hunk(file="src/a.py", span=record.span),
+                # tickets.md is touched, but only T-0002's hunk -- T-0001's
+                # own marker is nowhere in this diff.
+                Hunk(file="tickets.md", span=(marker_line, marker_line)),
+            ),
+        )
+        queue = TicketQueue(
+            tickets={"T-0001": stale_ticket, "T-0002": unrelated_ticket}
+        )
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(snap, queue, diff, tests)
+        v = _first_rule(violations, "COV002")
+        assert v is not None
+        assert "frob ticket new" in v.message
 
     def test_cov003_done_ticket_missing_evidence(self, tmp_path: Path) -> None:
         snap = _snapshot(tmp_path)
