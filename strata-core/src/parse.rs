@@ -453,6 +453,10 @@ impl Parser {
         let mut carries: Vec<String> = Vec::new();
         let mut is_managed = false;
         let mut waives: Vec<serde_json::Value> = Vec::new();
+        let mut runs_as: Option<String> = None;
+        let mut is_unit = false;
+        let mut owns: Vec<serde_json::Value> = Vec::new();
+        let mut listens: Vec<i64> = Vec::new();
         if self.at_symbol('{') {
             self.advance();
             loop {
@@ -465,6 +469,44 @@ impl Parser {
                 } else if self.at_keyword("attr") {
                     self.advance();
                     attrs.push(self.parse_attrval()?);
+                } else if self.at_keyword("runs_as") {
+                    // T-0255: `runs_as "svc-name"` -- names the dedicated
+                    // OS service user the deploy generator creates for
+                    // this node (docs/strata/host.md). STRING, not IDENT,
+                    // since a service-user name commonly carries `-`
+                    // (same `code`/`may` precedent). At most one per node;
+                    // a repeated clause overwrites, mirroring `clearance`.
+                    self.advance();
+                    runs_as = Some(self.expect_string("runs_as service user name")?);
+                } else if self.at_keyword("unit") {
+                    // T-0255: bare marker -- this node's process is
+                    // modeled as a systemd unit (docs/strata/host.md).
+                    // Hardening directives are DERIVED by the generator
+                    // (T-0256) from the rest of the model (may
+                    // capabilities, owns, listens); this marker only
+                    // records that the binding applies.
+                    self.advance();
+                    is_unit = true;
+                } else if self.at_keyword("owns") {
+                    // T-0255: `owns "PATH" "MODE"` -- a filesystem path
+                    // this node's service user owns, with an explicit
+                    // octal mode (docs/strata/host.md). Both STRING: PATH
+                    // carries `/` (not a valid ident char) and MODE is
+                    // quoted for the same "opaque atom" reason `code`/
+                    // `may` use STRING. Repeatable: a node may own more
+                    // than one path.
+                    self.advance();
+                    let path = self.expect_string("owns path")?;
+                    let mode = self.expect_string("owns mode")?;
+                    owns.push(json!({"path": path, "mode": mode}));
+                } else if self.at_keyword("listens") {
+                    // T-0255: `listens PORT` -- a TCP/UDP port this node's
+                    // unit binds a socket to (docs/strata/host.md).
+                    // NUMBER, not STRING: a port is a plain integer with
+                    // no non-ident characters, matching `capacity`'s
+                    // replicas bounds convention. Repeatable.
+                    self.advance();
+                    listens.push(self.expect_int("listens port")?);
                 } else if self.at_keyword("residence") {
                     self.advance();
                     residence = Some(self.expect_ident("residence atom")?);
@@ -645,6 +687,10 @@ impl Parser {
             "carries": carries,
             "is_managed": is_managed,
             "waives": waives,
+            "runs_as": runs_as,
+            "is_unit": is_unit,
+            "owns": owns,
+            "listens": listens,
         }));
         Ok(())
     }
@@ -1305,6 +1351,10 @@ impl Parser {
         let mut code: Vec<String> = Vec::new();
         let mut may: Vec<String> = Vec::new();
         let mut waives: Vec<serde_json::Value> = Vec::new();
+        let mut runs_as: Option<String> = None;
+        let mut is_unit = false;
+        let mut owns: Vec<serde_json::Value> = Vec::new();
+        let mut listens: Vec<i64> = Vec::new();
         if self.at_symbol('{') {
             self.advance();
             loop {
@@ -1317,6 +1367,26 @@ impl Parser {
                 } else if self.at_keyword("attr") {
                     self.advance();
                     attrs.push(self.parse_attrval()?);
+                } else if self.at_keyword("runs_as") {
+                    // T-0255: same shape as `node`'s `runs_as` -- a store
+                    // is a node too (docs/strata/surface.md
+                    // #key-construct-semantics).
+                    self.advance();
+                    runs_as = Some(self.expect_string("runs_as service user name")?);
+                } else if self.at_keyword("unit") {
+                    // T-0255: same bare marker as `node`'s `unit`.
+                    self.advance();
+                    is_unit = true;
+                } else if self.at_keyword("owns") {
+                    // T-0255: same `owns "PATH" "MODE"` shape as `node`.
+                    self.advance();
+                    let path = self.expect_string("owns path")?;
+                    let mode = self.expect_string("owns mode")?;
+                    owns.push(json!({"path": path, "mode": mode}));
+                } else if self.at_keyword("listens") {
+                    // T-0255: same `listens PORT` shape as `node`.
+                    self.advance();
+                    listens.push(self.expect_int("listens port")?);
                 } else if self.at_keyword("code") {
                     // T-0166: `code GLOB+` -- same STRING+ shape T-0132 gave
                     // `node` (parse_node); a store is a node too
@@ -1429,6 +1499,10 @@ impl Parser {
             "code": code,
             "may": may,
             "waives": waives,
+            "runs_as": runs_as,
+            "is_unit": is_unit,
+            "owns": owns,
+            "listens": listens,
         }));
         Ok(())
     }
@@ -2499,6 +2573,64 @@ mod tests {
                 managed;
             }"#);
         assert_eq!(v["stores"][0]["is_managed"], true);
+    }
+
+    #[test]
+    fn parses_node_host_manifest_clauses() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0255: std.host vocabulary -- runs_as/unit/owns/listens on a
+        // node (docs/strata/host.md).
+        let v = ok(r#"module m
+            node api : trusted {
+                runs_as "api-svc";
+                unit;
+                owns "/etc/api" "0644";
+                owns "/var/lib/api" "0750";
+                listens 8080;
+                listens 8443;
+            }"#);
+        let n = &v["nodes"][0];
+        assert_eq!(n["runs_as"], "api-svc");
+        assert_eq!(n["is_unit"], true);
+        assert_eq!(n["owns"][0]["path"], "/etc/api");
+        assert_eq!(n["owns"][0]["mode"], "0644");
+        assert_eq!(n["owns"][1]["path"], "/var/lib/api");
+        assert_eq!(n["owns"][1]["mode"], "0750");
+        assert_eq!(n["listens"][0], 8080);
+        assert_eq!(n["listens"][1], 8443);
+    }
+
+    #[test]
+    fn parses_node_without_host_manifest_defaults_empty() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0255: pre-existing sources with no std.host clause must still
+        // elaborate -- runs_as null, is_unit false, owns/listens empty.
+        let v = ok("module m\nnode api : trusted");
+        let n = &v["nodes"][0];
+        assert!(n["runs_as"].is_null());
+        assert_eq!(n["is_unit"], false);
+        assert_eq!(n["owns"].as_array().unwrap().len(), 0);
+        assert_eq!(n["listens"].as_array().unwrap().len(), 0);
+    }
+
+    #[test]
+    fn parses_store_host_manifest_clauses() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0255: same std.host vocabulary on `store` -- a store is a
+        // node too (docs/strata/surface.md#key-construct-semantics).
+        let v = ok(r#"module m
+            store cache_db : trusted {
+                runs_as "cache-svc";
+                unit;
+                owns "/var/lib/cache_db" "0700";
+                listens 6379;
+            }"#);
+        let s = &v["stores"][0];
+        assert_eq!(s["runs_as"], "cache-svc");
+        assert_eq!(s["is_unit"], true);
+        assert_eq!(s["owns"][0]["path"], "/var/lib/cache_db");
+        assert_eq!(s["owns"][0]["mode"], "0700");
+        assert_eq!(s["listens"][0], 6379);
     }
 
     #[test]

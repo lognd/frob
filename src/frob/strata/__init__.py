@@ -26,6 +26,7 @@ from frob.strata._ast import (
     NodeDecl,
     ObserveDecl,
     OperationDecl,
+    OwnsDecl,
     ParsePhase,
     PhaseBlock,
     PolicyDecl,
@@ -117,6 +118,7 @@ from frob.strata._elaborate import elaborate
 from frob.strata._errors import StrataError
 from frob.strata._export import export_iam, export_k8s_netpol, export_seccomp
 from frob.strata._facts import FactBase, build_facts
+from frob.strata._host import HostManifest, HostOwns, HostPlatform, host_manifest_for
 from frob.strata._infra import InfraExpansion, elaborate_infra
 from frob.strata._lint import (
     RISKY_CAPABILITY_KINDS,
@@ -290,6 +292,9 @@ __all__ = [
     "FactBase",
     "FamilyGap",
     "FaultInjectionCase",
+    "HostManifest",
+    "HostOwns",
+    "HostPlatform",
     "Claim",
     "ClaimBody",
     "ClaimResult",
@@ -314,6 +319,7 @@ __all__ = [
     "ObservedEffect",
     "ObserveDecl",
     "OperationDecl",
+    "OwnsDecl",
     "Outcome",
     "OutOfScopeEntry",
     "OutOfScopeRegulation",
@@ -397,6 +403,7 @@ __all__ = [
     "export_seccomp",
     "extract_effects",
     "generate_fault_injection_cases",
+    "host_manifest_for",
     "load_design_ids",
     "merge_models",
     "PII_CATEGORIES",

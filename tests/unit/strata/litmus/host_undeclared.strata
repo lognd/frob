@@ -1,0 +1,13 @@
+// host_undeclared.strata -- the twin of host_declared.strata (T-0255):
+// no std.host clause at all. `host_manifest_for` must return None, not
+// an empty-but-present manifest, for a node that never opted into
+// std.host -- distinguishing "no OS-layer facts" from "an OS-layer
+// declared with nothing set".
+//
+// tested end to end by tests/unit/strata/test_litmus_host.py.
+
+module host_undeclared
+
+node api : trusted {
+    clearance Internal;
+}

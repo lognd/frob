@@ -33,6 +33,7 @@ from ._ast import (
 )
 from ._code_binding import _CODE_PREFIX
 from ._errors import StrataError
+from ._host import host_attrs
 from ._infra import elaborate_infra
 from ._models import (
     LABELS,
@@ -134,6 +135,18 @@ def _elaborate_node(decl: NodeDecl) -> Node:
         # (`_pii.py::node_pii_tags` reads this back).
         _log.debug("node %s carries %d pii tag(s)", decl.id, len(decl.carries))
         attrs = (*attrs, *(f"{_PII_PREFIX}{tag}" for tag in decl.carries))
+    host = host_attrs(
+        runs_as=decl.runs_as,
+        is_unit=decl.is_unit,
+        owns=tuple((o.path, o.mode) for o in decl.owns),
+        listens=decl.listens,
+    )
+    if host:
+        # T-0255: std.host -- runs_as/unit/owns/listens desugar to attrs
+        # the SAME way as `_infra.py::_elaborate_store` (`_host.py::
+        # host_attrs`, the one shared encoding for both callers).
+        _log.debug("node %s declares %d std.host attr(s)", decl.id, len(host))
+        attrs = (*attrs, *host)
     capacity = None
     if decl.capacity is not None:
         capacity = Capacity(
