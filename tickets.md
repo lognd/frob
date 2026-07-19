@@ -182,7 +182,7 @@ authority).
 ```yaml
 id: T-0179
 title: 'TTY-aware pretty output: colors and formatting across all frob commands'
-state: queued
+state: in-progress
 kind: ux
 origin: human
 created: '2026-07-18'
@@ -538,7 +538,7 @@ User mandate 2026-07-18 ('if it passes, it's safe'): extend T-0154 (PII flow pro
 ```yaml
 id: T-0219
 title: secrets scan misses adjacent sk-live key and placeholder-phrase fakes
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-18'
@@ -548,7 +548,9 @@ scope:
 - src/frob/gates/_secrets.py
 - tests/**
 - tickets.md
-evidence: []
+evidence:
+- tests/test_secrets_gate.py::TestFindsTokens::test_generic_live_key_adjacent_to_other_content_sec001
+- tests/test_secrets_gate.py::TestFakeMarking::test_digit_free_mixed_case_your_token_still_fires
 attachments: []
 acceptance: []
 threat: null
@@ -1744,7 +1746,7 @@ Directly motivated by the arch<->dup tension the user raised: frob arch enforces
 ```yaml
 id: T-0289
 title: 'arch: per-function reasoned override + complexity-aware long-function'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-19'
