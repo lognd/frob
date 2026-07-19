@@ -950,20 +950,26 @@ def _ticket_edges(snapshot: GraphSnapshot, symref: str) -> list[Edge]:
 # frob:ticket T-0214
 # frob:tests tests/test_gates.py::TestCoverageGate.test_cov002_done_ticket_covers_own_closing_diff  # noqa: E501
 # frob:tests tests/test_gates.py::TestCoverageGate.test_cov002_done_ticket_without_grace_still_fires  # noqa: E501
+# frob:tests tests/test_gates.py::TestCoverageGate.test_cov002_stale_done_ticket_unrelated_tickets_md_touch_still_fires  # noqa: E501
 def _bound_to_open_ticket(
     snapshot: GraphSnapshot, queue: TicketQueue, symref: str, diff: Diff | None = None
 ) -> bool:
     """True if `symref` has a `frob:ticket` edge to an open ticket, OR (T-0214
-    grace window) to a ticket that closed to `DONE` within this same
-    uncommitted `diff`.
+    grace window) to a ticket whose OWN close is landing to `DONE` within
+    this same uncommitted `diff`'s `tickets.md` hunk(s).
 
     Closing the covering ticket and landing the symbol edit it covers is one
-    logical change; if `tickets.md` is itself touched by `diff` the close has
-    not yet become a separate, already-landed commit, so it is not a genuine
-    coverage gap for COV002 to flag -- see `_cov002`'s docstring. Once the
-    close lands as its own commit (tickets.md drops out of the diff), a
-    `DONE` ticket's edge stops counting here, same as before, so a truly
-    unrelated later touch to the symbol is still caught.
+    logical change; if THIS ticket's `<!-- ticket:T-#### -->` marker falls
+    inside a touched `tickets.md` hunk, the close has not yet become a
+    separate, already-landed commit, so it is not a genuine coverage gap for
+    COV002 to flag -- see `_cov002`'s docstring. A bare "tickets.md is
+    touched somewhere in the diff" is not enough: that would grant grace to
+    any already-`DONE` ticket's stale edge whenever the diff happens to
+    close a *different* ticket, which is a bypass, not a catch-22 fix (see
+    `_ticket_marker_in_diff_hunk`). Once the close lands as its own commit
+    (tickets.md drops out of the diff, or the hunk no longer spans this
+    ticket's marker), a `DONE` ticket's edge stops counting here, same as
+    before, so a truly unrelated later touch to the symbol is still caught.
     """
     for edge in _ticket_edges(snapshot, symref):
         ticket = queue.tickets.get(edge.target)
@@ -974,9 +980,37 @@ def _bound_to_open_ticket(
         if (
             diff is not None
             and ticket.state == TicketState.DONE
-            and "tickets.md" in _touched_files(diff)
+            and _ticket_marker_in_diff_hunk(snapshot.root, diff, ticket.id)
         ):
             return True
+    return False
+
+
+def _ticket_marker_in_diff_hunk(root: str, diff: Diff, ticket_id: str) -> bool:
+    """True if `tickets.md`'s `<!-- ticket:<ticket_id> -->` marker line falls
+    inside one of `diff`'s `tickets.md` hunk spans.
+
+    This is the T-0214-bypass fix: COV002 grace must be scoped to the
+    specific ticket whose close is actually present in this diff's ledger
+    hunk, not merely to "some" hunk existing in `tickets.md" -- otherwise a
+    symbol bound to an unrelated, already-`DONE` ticket rides along on any
+    other ticket's close and never gets flagged.
+    """
+    tickets_md_hunks = [h for h in diff.hunks if h.file == "tickets.md"]
+    if not tickets_md_hunks:
+        return False
+    tickets_md_path = Path(root) / "tickets.md"
+    if not tickets_md_path.is_file():
+        return False
+    marker = f"<!-- ticket:{ticket_id} -->"
+    lines = tickets_md_path.read_text(encoding="utf-8").splitlines()
+    for hunk in tickets_md_hunks:
+        start, end = hunk.span
+        for lineno in range(max(1, start), end + 1):
+            if lineno - 1 >= len(lines):
+                break
+            if marker in lines[lineno - 1]:
+                return True
     return False
 
 

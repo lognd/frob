@@ -2639,6 +2639,62 @@ Filed: none.
 
 Not closing -- leaving in-progress for reviewer per the review-gated flow.
 
+### Addendum: reviewer-found bypass fixed
+
+Reviewer reproduced a bypass in the grace window above: `_bound_to_open_ticket`
+only checked (a) the bound ticket is `DONE` and (b) `tickets.md` is touched
+*somewhere* in the diff -- it never verified that THIS bound ticket's own
+close is what's in the `tickets.md` hunk. A symbol `frob:ticket`-bound to
+any old, already-`DONE` ticket rode along on an unrelated `tickets.md` edit
+(e.g. a different ticket closing, or any other ledger touch) and silently
+passed COV002 with zero real coverage. Reproduced: `helper` bound to a
+stale `DONE` `T-0001`, diff touches `src/a.py` + a `tickets.md` hunk that
+only contains `T-0002`'s marker -> COV002 incorrectly clean pre-fix.
+
+Fix: replaced the "`tickets.md` touched anywhere" check with
+`_ticket_marker_in_diff_hunk(root, diff, ticket_id)`
+(src/frob/gates/__init__.py) -- it reads `tickets.md` from `snapshot.root`
+and confirms THIS ticket's own `<!-- ticket:T-#### -->` marker line falls
+inside one of the diff's `tickets.md` hunk spans, not merely that some hunk
+exists in that file. Grace now requires the specific ticket's own close to
+be present in the diff's ledger hunk; a stale `DONE` ticket whose marker is
+outside every touched span (or whose file doesn't exist yet, or when
+`tickets.md` isn't touched at all) gets no grace and COV002 fires as normal.
+
+Changed (addendum):
+- src/frob/gates/__init__.py::_bound_to_open_ticket -- grace condition now
+  calls `_ticket_marker_in_diff_hunk` instead of the bare
+  `"tickets.md" in _touched_files(diff)` check
+- src/frob/gates/__init__.py::_ticket_marker_in_diff_hunk -- new helper,
+  reads `tickets.md` at `snapshot.root` and checks the bound ticket's
+  marker line falls within a touched hunk span
+- tests/test_gates.py::TestCoverageGate.test_cov002_done_ticket_covers_own_closing_diff
+  -- updated to write a real `tickets.md` via `write_ticket` and target the
+  hunk span at the actual marker line, so the grace path is exercised for
+  real instead of by an unchecked `(1, 1)` stub span
+- tests/test_gates.py::TestCoverageGate -- new
+  `_marker_line` helper (finds a ticket's marker line number in
+  `tickets.md` for building a precise `Hunk` span)
+- tests/test_gates.py::TestCoverageGate.test_cov002_stale_done_ticket_unrelated_tickets_md_touch_still_fires
+  -- new abuse-case regression: stale `DONE` T-0001 bound to `helper`,
+  diff's `tickets.md` hunk only covers unrelated `DONE` T-0002's marker ->
+  COV002 still fires. Confirmed this test FAILS on the pre-addendum code
+  (`git stash` of the `_bound_to_open_ticket`/`_ticket_marker_in_diff_hunk`
+  edit, reproducing the bypass) and PASSES after.
+
+Evidence (addendum): `uv run pytest tests/test_gates.py -q -k
+TestCoverageGate` all 25 green (23 pre-existing + this addendum's new
+test), including the two original T-0214 litmus tests still passing
+unmodified in behavior (`test_cov002_done_ticket_without_grace_still_fires`
+untouched; `test_cov002_done_ticket_covers_own_closing_diff` updated to use
+a real ledger file, same assertion). `uv run pytest tests/test_gates.py -q`
+full file green. `uv run ruff check`, `uv run ruff format --check`, `uv run
+ty check` all clean on `src/frob/gates/__init__.py` and
+`tests/test_gates.py`. `uv run frob check --only coverage` clean, 0
+errors/0 warnings.
+
+Gates (addendum): all green per above. Still not closing -- reviewer.
+
 <!-- ticket:T-0215 -->
 ```yaml
 id: T-0215
