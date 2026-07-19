@@ -9716,7 +9716,7 @@ format --check` clean after one auto-format pass. `uv run ty check` clean.
 id: T-0310
 title: SYS101 fires unfixably on nodes whose entire code glob resolves to [graph].exclude'd
   paths
-state: queued
+state: in-progress
 kind: bug
 origin: auditor
 created: '2026-07-19'
@@ -9902,7 +9902,7 @@ FROBLEMS (lithos W2b): 'frob check --only gates python/regolith/realizer' resolv
 id: T-0315
 title: TEST005 branch-coverage floor applies to test-file symbols (fixtures/helpers)
   -- should skip like TEST001
-state: queued
+state: done
 kind: bug
 origin: auditor
 created: '2026-07-19'
@@ -9910,12 +9910,22 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/gates/_coverage.py,tests/**,tickets.md
-evidence: []
+evidence:
+- tests/test_gates.py::TestTestGate::test_test005_skips_test_file_symbols
 attachments: []
 acceptance: []
 threat: null
 ```
 FROBLEMS (lithos): TEST001/TEST002 skip symbols in test files (gates._is_test_file), but TEST005's per-symbol branch floor applies to test-file fixtures/helpers too. Environment-gated fixture branches (e.g. tool-unavailable fallbacks) can never reach the floor in CI without the tool, forcing pure-noise per-site waivers. Fix: TEST005 should skip test files exactly like TEST001/002 (reuse gates._is_test_file). Likely removes several of frob's own 180 T-0160 waivers too. Test: a test-file fixture with a gated branch does not produce TEST005.
+
+## Done report
+ALREADY RESOLVED on main by T-0301 (commit 51c62cf): `_test005_symbols` in
+src/frob/gates/__init__.py now skips a record when `_is_test_file(record.id
+.path)` -- the exact fix this ticket asks for, reusing the same _is_test_file
+predicate TEST001/002 use. The lithos FROBLEM (2026-07-19) was written before
+T-0301 landed. Verified on current main: the per-symbol TEST005 loop guards on
+_is_test_file, and tests/test_gates.py::TestTestGate::test_test005_skips_test_
+file_symbols locks it. No further change needed; closing as resolved-by-T-0301.
 
 <!-- ticket:T-0316 -->
 ```yaml
