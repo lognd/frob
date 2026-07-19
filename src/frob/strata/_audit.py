@@ -74,7 +74,14 @@ from ._threat import (
     check_catalog_completeness,
     check_discharge_completeness,
 )
-from ._waive import STALE_WAIVER_RULE, apply_waivers, stale_detail
+from ._waive import (
+    STALE_WAIVER_RULE,
+    WaivedFinding,
+    WaiverApplication,
+    WaiverMatch,
+    apply_waivers,
+    stale_detail,
+)
 
 _log = get_logger(__name__)
 
@@ -347,6 +354,135 @@ def _evaluate_family(
     )
 
 
+def _threat_and_quality_gaps(
+    model: KernelModel,
+    security_views: tuple[str, ...],
+    quality_views: tuple[str, ...],
+    benign: tuple[BenignCapability, ...],
+) -> Result[tuple[list[FamilyGap], list[str]], StrataError]:
+    """THREAT001-003 gaps for every security then quality view, in order."""
+    gaps: list[FamilyGap] = []
+    checked: list[str] = []
+
+    for view in security_views:
+        report = _evaluate_family(model, view, CWE_CATALOG, (), benign, VIEWS)
+        if report.is_err:
+            return Err(report.danger_err)
+        gaps.extend(_threat_gaps("security", view, report.danger_ok))
+        checked.append(f"security:{view}")
+
+    for view in quality_views:
+        report = _evaluate_family(
+            model, view, QUALITY_CATALOG, QUALITY_OUT_OF_SCOPE, benign, QUALITY_VIEWS
+        )
+        if report.is_err:
+            return Err(report.danger_err)
+        gaps.extend(_threat_gaps("quality", view, report.danger_ok))
+        checked.append(f"quality:{view}")
+
+    return Ok((gaps, checked))
+
+
+def _compliance_pii_lint_fingerprint_gaps(
+    model: KernelModel, compliance_views: tuple[str, ...]
+) -> Result[tuple[list[FamilyGap], list[str]], StrataError]:
+    """COMPLIANCE001-002, PII, lint, and CVE-fingerprint gaps, in order."""
+    gaps: list[FamilyGap] = []
+    checked: list[str] = []
+
+    for view in compliance_views:
+        compliance_report = evaluate_compliance(model, view)
+        if compliance_report.is_err:
+            return Err(compliance_report.danger_err)
+        gaps.extend(_compliance_gaps(view, compliance_report.danger_ok.violations))
+        checked.append(f"compliance:{view}")
+
+    pii_report = evaluate_pii(model)
+    if pii_report.is_err:
+        return Err(pii_report.danger_err)
+    gaps.extend(_pii_gaps(pii_report.danger_ok.violations))
+    checked.append("pii:model")
+
+    lint_report = evaluate_lint(model)
+    if lint_report.is_err:
+        return Err(lint_report.danger_err)
+    gaps.extend(_lint_gaps(lint_report.danger_ok.violations))
+    checked.append("lint:model")
+
+    fingerprint_report = check_fingerprint_catalog_drift(CVE_FINGERPRINTS)
+    if fingerprint_report.is_err:
+        return Err(fingerprint_report.danger_err)
+    gaps.extend(_fingerprint_gaps(fingerprint_report.danger_ok))
+    checked.append("cve-fingerprint:catalog")
+
+    return Ok((gaps, checked))
+
+
+def _host_isolation_and_blast_radius_gaps(
+    model: KernelModel,
+) -> Result[
+    tuple[
+        list[FamilyGap],
+        list[str],
+        WaiverApplication[HostIsolationViolation],
+        WaiverApplication[HostIsolationViolation],
+    ],
+    StrataError,
+]:
+    """HOST001/HOST002 gaps plus one compromised-user blast-radius scenario per
+    `runs_as` service user, in order (T-0280)."""
+    gaps: list[FamilyGap] = []
+    checked: list[str] = []
+
+    host_report = evaluate_host_isolation_waived(model)
+    if host_report.is_err:
+        return Err(host_report.danger_err)
+    host001_applied, host002_applied = host_report.danger_ok
+    for host_applied in (host001_applied, host002_applied):
+        gaps.extend(_host_isolation_gap(v) for v in host_applied.kept)
+    checked.append("host:model")
+
+    blast_result = _blast_radius_gaps_per_user(model)
+    if blast_result.is_err:
+        return Err(blast_result.danger_err)
+    blast_gaps, blast_checked = blast_result.danger_ok
+    gaps.extend(blast_gaps)
+    checked.extend(blast_checked)
+
+    return Ok((gaps, checked, host001_applied, host002_applied))
+
+
+def _blast_radius_gaps_per_user(
+    model: KernelModel,
+) -> Result[tuple[list[FamilyGap], list[str]], StrataError]:
+    """One compromised-user blast-radius scenario per `runs_as`
+    service user, in order."""
+    gaps: list[FamilyGap] = []
+    checked: list[str] = []
+    users = sorted(
+        {
+            manifest.runs_as
+            for node in model.nodes
+            if (manifest := host_manifest_for(node)) is not None
+        }
+    )
+    for user in users:
+        scenario = build_compromised_user_scenario(
+            model, user, f"compromised-user:{user}"
+        )
+        if scenario.is_err:
+            return Err(scenario.danger_err)
+        scenario_model = model.model_copy(update={"scenarios": (scenario.danger_ok,)})
+        scenario_results = evaluate_scenarios(scenario_model)
+        if scenario_results.is_err:
+            return Err(scenario_results.danger_err)
+        for scenario_result in scenario_results.danger_ok:
+            gaps.extend(_blast_radius_gaps(user, scenario_result))
+        checked.append(f"host:blast-radius:{user}")
+
+    return Ok((gaps, checked))
+
+
 # frob:doc docs/strata/threat.md#the-exhaustiveness-proof-the-point
 # frob:tests tests/unit/strata/test_audit.py::TestExhaustiveness.test_clean_proved
 # frob:tests tests/unit/strata/test_audit.py::TestVulnLitmus.test_refutes_gap_per_family
@@ -377,50 +513,76 @@ def evaluate_exhaustiveness(
     unknown view name in any family propagates as
     `Err(StrataError.UnknownReference)` rather than being silently
     skipped, matching every other exhaustiveness check in this package."""
+    all_result = _collect_all_family_gaps(
+        model, security_views, quality_views, compliance_views, benign
+    )
+    if all_result.is_err:
+        return Err(all_result.danger_err)
+    gaps, checked, host001_applied, host002_applied = all_result.danger_ok
+
+    return _apply_exhaustiveness_waivers(
+        model, gaps, checked, host001_applied, host002_applied
+    )
+
+
+def _collect_all_family_gaps(
+    model: KernelModel,
+    security_views: tuple[str, ...],
+    quality_views: tuple[str, ...],
+    compliance_views: tuple[str, ...],
+    benign: tuple[BenignCapability, ...],
+) -> Result[
+    tuple[
+        list[FamilyGap],
+        list[str],
+        WaiverApplication[HostIsolationViolation],
+        WaiverApplication[HostIsolationViolation],
+    ],
+    StrataError,
+]:
+    """Every family's gaps (threat/quality, compliance/pii/lint/
+    fingerprint, host), in order."""
     gaps: list[FamilyGap] = []
     checked: list[str] = []
 
-    for view in security_views:
-        report = _evaluate_family(model, view, CWE_CATALOG, (), benign, VIEWS)
-        if report.is_err:
-            return Err(report.danger_err)
-        gaps.extend(_threat_gaps("security", view, report.danger_ok))
-        checked.append(f"security:{view}")
+    family_result = _threat_and_quality_gaps(
+        model, security_views, quality_views, benign
+    )
+    if family_result.is_err:
+        return Err(family_result.danger_err)
+    family_gaps, family_checked = family_result.danger_ok
+    gaps.extend(family_gaps)
+    checked.extend(family_checked)
 
-    for view in quality_views:
-        report = _evaluate_family(
-            model, view, QUALITY_CATALOG, QUALITY_OUT_OF_SCOPE, benign, QUALITY_VIEWS
-        )
-        if report.is_err:
-            return Err(report.danger_err)
-        gaps.extend(_threat_gaps("quality", view, report.danger_ok))
-        checked.append(f"quality:{view}")
+    other_result = _compliance_pii_lint_fingerprint_gaps(model, compliance_views)
+    if other_result.is_err:
+        return Err(other_result.danger_err)
+    other_gaps, other_checked = other_result.danger_ok
+    gaps.extend(other_gaps)
+    checked.extend(other_checked)
 
-    for view in compliance_views:
-        compliance_report = evaluate_compliance(model, view)
-        if compliance_report.is_err:
-            return Err(compliance_report.danger_err)
-        gaps.extend(_compliance_gaps(view, compliance_report.danger_ok.violations))
-        checked.append(f"compliance:{view}")
+    host_section = _host_family_gaps_section(model)
+    if host_section.is_err:
+        return Err(host_section.danger_err)
+    host_gaps, host_checked, host001_applied, host002_applied = host_section.danger_ok
+    gaps.extend(host_gaps)
+    checked.extend(host_checked)
 
-    pii_report = evaluate_pii(model)
-    if pii_report.is_err:
-        return Err(pii_report.danger_err)
-    gaps.extend(_pii_gaps(pii_report.danger_ok.violations))
-    checked.append("pii:model")
+    return Ok((gaps, checked, host001_applied, host002_applied))
 
-    lint_report = evaluate_lint(model)
-    if lint_report.is_err:
-        return Err(lint_report.danger_err)
-    gaps.extend(_lint_gaps(lint_report.danger_ok.violations))
-    checked.append("lint:model")
 
-    fingerprint_report = check_fingerprint_catalog_drift(CVE_FINGERPRINTS)
-    if fingerprint_report.is_err:
-        return Err(fingerprint_report.danger_err)
-    gaps.extend(_fingerprint_gaps(fingerprint_report.danger_ok))
-    checked.append("cve-fingerprint:catalog")
-
+def _host_family_gaps_section(
+    model: KernelModel,
+) -> Result[
+    tuple[
+        list[FamilyGap],
+        list[str],
+        WaiverApplication[HostIsolationViolation],
+        WaiverApplication[HostIsolationViolation],
+    ],
+    StrataError,
+]:
+    """HOST001/HOST002 + blast-radius gaps, folded in like every other family."""
     # T-0280: HOST001 (lateral) + HOST002 (vertical) movement-impossibility
     # proofs, folded in exactly like every other family above -- these were
     # previously built and sound (T-0256) but had ZERO caller reaching them
@@ -432,87 +594,18 @@ def evaluate_exhaustiveness(
     # than re-run through this function's own `apply_waivers` call below
     # (`_HOST_RULE_IDS` excludes both rule ids from that call's `in_scope`
     # for exactly this reason).
-    host_report = evaluate_host_isolation_waived(model)
-    if host_report.is_err:
-        return Err(host_report.danger_err)
-    host001_applied, host002_applied = host_report.danger_ok
-    for host_applied in (host001_applied, host002_applied):
-        gaps.extend(_host_isolation_gap(v) for v in host_applied.kept)
-    checked.append("host:model")
+    return _host_isolation_and_blast_radius_gaps(model)
 
-    # T-0280: one auto-generated compromised-user red-team scenario per
-    # `runs_as` service user declared anywhere in `model` -- the SAME
-    # "desugar to an auto-generated scenario, then reuse `evaluate_
-    # scenarios`" shape `_crash.py::_generate_crash_scenarios` already uses
-    # for `on crash` contracts, so a real repo proves (or refutes) blast-
-    # radius containment with zero manual scenario authoring.
-    users = sorted(
-        {
-            manifest.runs_as
-            for node in model.nodes
-            if (manifest := host_manifest_for(node)) is not None
-        }
-    )
-    for user in users:
-        scenario = build_compromised_user_scenario(
-            model, user, f"compromised-user:{user}"
-        )
-        if scenario.is_err:
-            return Err(scenario.danger_err)
-        scenario_model = model.model_copy(update={"scenarios": (scenario.danger_ok,)})
-        scenario_results = evaluate_scenarios(scenario_model)
-        if scenario_results.is_err:
-            return Err(scenario_results.danger_err)
-        for scenario_result in scenario_results.danger_ok:
-            gaps.extend(_blast_radius_gaps(user, scenario_result))
-        checked.append(f"host:blast-radius:{user}")
 
-    # T-0174: apply every node's `waive` clause against this run's full gap
-    # set before reporting -- a matched waiver moves its gap into `waived`
-    # (still visible, never dropped); a waiver that matched nothing is
-    # STALE and becomes a new SYSWAIVE002 gap under the "waiver" family so
-    # drift fails the exhaustiveness conjunction rather than silently
-    # going stale forever (`_waive.py` module docstring).
-    applied = apply_waivers(
-        model,
-        gaps,
-        rule_of=lambda g: g.rule,
-        target_of=lambda g: g.target,
-        # T-0174 REJECT round: THREAT002/THREAT003 fire once per
-        # capability kind/CWE per node -- `FamilyGap.sub_target` already
-        # carries it (`_threat_gaps`); every other family here is
-        # single-instance-per-node and leaves `sub_target` `None`.
-        sub_target_of=lambda g: g.sub_target,
-        # T-0174: this call sees every THREAT/LINT/PII/compliance/
-        # CVE-fingerprint finding -- everything EXCEPT SYS100-102 (owned by
-        # `check_self_conformance`) and HOST001/HOST002 (owned by
-        # `evaluate_host_isolation_waived`, T-0280) -- each of those owns
-        # its own waiver channel (apply_waivers' `in_scope` docstring).
-        # Excluding those rule ids here (rather than enumerating every rule
-        # this call DOES own) keeps this predicate correct as new
-        # gap-producing rule families are added -- a new rule id is in
-        # scope here by default, exactly like `gaps` itself already is.
-        in_scope=lambda rule: (
-            rule
-            not in (
-                SYS_UNDECLARED_INTERFACE,
-                SYS_STALE_DESIGN,
-                SYS_UNMODELED_CODE,
-                *_HOST_RULE_IDS,
-            )
-        ),
-    )
+def _final_gaps_with_stale(
+    applied: WaiverApplication[FamilyGap],
+    host001_applied: WaiverApplication[HostIsolationViolation],
+    host002_applied: WaiverApplication[HostIsolationViolation],
+) -> list[FamilyGap]:
+    """`applied.kept` plus a "waiver" family gap for every stale
+    waiver, own + host families."""
     final_gaps = list(applied.kept)
-    for stale in applied.stale:
-        final_gaps.append(
-            FamilyGap(
-                family="waiver",
-                view="model",
-                rule=STALE_WAIVER_RULE,
-                detail=stale_detail(stale),
-                target=stale.node,
-            )
-        )
+    final_gaps.extend(_stale_waiver_gaps(applied.stale))
     # T-0280: HOST001/HOST002's OWN waiver-application pass (inside
     # `evaluate_host_isolation_waived`) already computed its own waived/
     # stale sets -- fold them in here so the audit report's `waived` and
@@ -520,16 +613,31 @@ def evaluate_exhaustiveness(
     # asking the generic `apply_waivers` call above to redo work its
     # `in_scope` predicate deliberately excludes.
     for host_applied in (host001_applied, host002_applied):
-        for stale in host_applied.stale:
-            final_gaps.append(
-                FamilyGap(
-                    family="waiver",
-                    view="model",
-                    rule=STALE_WAIVER_RULE,
-                    detail=stale_detail(stale),
-                    target=stale.node,
-                )
-            )
+        final_gaps.extend(_stale_waiver_gaps(host_applied.stale))
+    return final_gaps
+
+
+def _stale_waiver_gaps(stale_waivers: tuple[WaiverMatch, ...]) -> list[FamilyGap]:
+    """A "waiver" family `FamilyGap` for every stale waiver in `stale_waivers`."""
+    return [
+        FamilyGap(
+            family="waiver",
+            view="model",
+            rule=STALE_WAIVER_RULE,
+            detail=stale_detail(stale),
+            target=stale.node,
+        )
+        for stale in stale_waivers
+    ]
+
+
+def _waived_gaps_with_host(
+    applied: WaiverApplication[FamilyGap],
+    host001_applied: WaiverApplication[HostIsolationViolation],
+    host002_applied: WaiverApplication[HostIsolationViolation],
+) -> tuple[FamilyGap, ...]:
+    """Every waived gap with the waiver's reason/ticket folded into
+    `detail`, own + host families."""
     # T-0174: fold the waiver's reason/ticket into the reported gap's
     # `detail` -- `report.waived` must show WHY, never just THAT (module
     # docstring's "loud in output" requirement, mirrors `frob.gates`'s
@@ -539,35 +647,84 @@ def evaluate_exhaustiveness(
     # `wf.finding.rule` (the bare family) -- a reader must be able to see
     # the exact sub-target a waiver named, never just that SOME waiver on
     # this rule matched (module docstring's "no blanket waivers").
-    waived_gaps = tuple(
-        wf.finding.model_copy(
-            update={
-                "detail": (
-                    f"{wf.finding.detail} -- WAIVED[{wf.waiver.rule}]: "
-                    f"{wf.waiver.reason!r}"
-                    + (f" (ticket {wf.waiver.ticket})" if wf.waiver.ticket else "")
-                )
-            }
-        )
-        for wf in applied.waived
-    )
+    waived_gaps = tuple(_waived_detail(wf.finding, wf) for wf in applied.waived)
     # T-0280: HOST001/HOST002 findings suppressed by `evaluate_host_
     # isolation_waived`'s OWN waiver pass -- adapted + detail-folded the
     # identical way `waived_gaps` above folds every other family's.
     host_waived_gaps = tuple(
-        _host_isolation_gap(wf.finding).model_copy(
-            update={
-                "detail": (
-                    f"{_host_isolation_gap(wf.finding).detail} -- "
-                    f"WAIVED[{wf.waiver.rule}]: {wf.waiver.reason!r}"
-                    + (f" (ticket {wf.waiver.ticket})" if wf.waiver.ticket else "")
-                )
-            }
-        )
+        _waived_detail(_host_isolation_gap(wf.finding), wf)
         for host_applied in (host001_applied, host002_applied)
         for wf in host_applied.waived
     )
-    waived_gaps = waived_gaps + host_waived_gaps
+    return waived_gaps + host_waived_gaps
+
+
+def _waived_detail(finding: FamilyGap, wf: WaivedFinding) -> FamilyGap:
+    """`finding` with the waiver's reason/ticket folded into
+    `detail` (module docstring)."""
+    return finding.model_copy(
+        update={
+            "detail": (
+                f"{finding.detail} -- WAIVED[{wf.waiver.rule}]: {wf.waiver.reason!r}"
+                + (f" (ticket {wf.waiver.ticket})" if wf.waiver.ticket else "")
+            )
+        }
+    )
+
+
+def _apply_gap_waivers(
+    model: KernelModel, gaps: list[FamilyGap]
+) -> WaiverApplication[FamilyGap]:
+    """Apply every node's `waive` clause against `gaps`, excluding
+    rules that own their own channel."""
+    # T-0174: apply every node's `waive` clause against this run's full gap
+    # set before reporting -- a matched waiver moves its gap into `waived`
+    # (still visible, never dropped); a waiver that matched nothing is
+    # STALE and becomes a new SYSWAIVE002 gap under the "waiver" family so
+    # drift fails the exhaustiveness conjunction rather than silently
+    # going stale forever (`_waive.py` module docstring).
+    return apply_waivers(
+        model,
+        gaps,
+        rule_of=lambda g: g.rule,
+        target_of=lambda g: g.target,
+        sub_target_of=lambda g: g.sub_target,
+        in_scope=_gap_rule_in_scope,
+    )
+
+
+def _gap_rule_in_scope(rule: str) -> bool:
+    """Excludes rule ids that own their own waiver channel
+    (SYS100-102, HOST001/HOST002)."""
+    # T-0174: this predicate sees every THREAT/LINT/PII/compliance/
+    # CVE-fingerprint finding -- everything EXCEPT SYS100-102 (owned by
+    # `check_self_conformance`) and HOST001/HOST002 (owned by
+    # `evaluate_host_isolation_waived`, T-0280) -- each of those owns
+    # its own waiver channel (apply_waivers' `in_scope` docstring).
+    # Excluding those rule ids here (rather than enumerating every rule
+    # this call DOES own) keeps this predicate correct as new
+    # gap-producing rule families are added -- a new rule id is in
+    # scope here by default, exactly like `gaps` itself already is.
+    return rule not in (
+        SYS_UNDECLARED_INTERFACE,
+        SYS_STALE_DESIGN,
+        SYS_UNMODELED_CODE,
+        *_HOST_RULE_IDS,
+    )
+
+
+def _apply_exhaustiveness_waivers(
+    model: KernelModel,
+    gaps: list[FamilyGap],
+    checked: list[str],
+    host001_applied: WaiverApplication[HostIsolationViolation],
+    host002_applied: WaiverApplication[HostIsolationViolation],
+) -> Result[AuditReport, StrataError]:
+    """Apply every node's `waive` clause to `gaps`, fold host
+    waivers/stale, assemble the report."""
+    applied = _apply_gap_waivers(model, gaps)
+    final_gaps = _final_gaps_with_stale(applied, host001_applied, host002_applied)
+    waived_gaps = _waived_gaps_with_host(applied, host001_applied, host002_applied)
 
     _log.info(
         "audit: evaluated views=%d -> %d gap(s), %d waived, %d stale waiver(s)",
