@@ -8196,13 +8196,9 @@ parent: null
 scope:
 - src/frob/strata/**,tickets.md
 evidence:
-- tests/unit/strata/test_export.py kind="unit"
-- tests/unit/strata/test_facts.py kind="unit"
-- tests/unit/strata/test_host.py kind="unit"
-- tests/unit/strata/test_host_isolation.py kind="unit"
-- tests/unit/strata/test_infra.py kind="unit"
 - tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
 - tests/unit/strata/test_krb.py::TestTrustChainReachability::test_non_transitive_chain_currently_over_reaches_known_gap
+- tests/unit/strata/test_facts.py::TestClosure::test_krb_no_transit_attr_stops_chaining_past_that_hop
 attachments: []
 acceptance:
 - given `frob arch .`, when scoped to src/frob/strata/_export.py, _facts.py, _host.py,
@@ -8323,27 +8319,14 @@ scope:
 - src/frob/testing/**
 - tickets.md
 evidence:
-- tests/test_vet.py
-- tests/test_vet_containment.py
-- tests/test_tickets.py
-- tests/test_tickets_cmd_evidence.py
-- tests/test_tickets_collision.py
-- tests/test_tickets_evidence_cli.py
-- tests/test_ticket_land.py
-- tests/unit/test_ticket_store.py
-- tests/unit/test_check.py
-- tests/unit/test_check_tool_unavailable.py
-- tests/unit/deploy
-- tests/test_testing.py
-- tests/test_lang.py
-- tests/unit/test_lang_primitives.py
-- tests/unit/test_lang_strata.py
-- tests/test_fuzz.py
-- tests/system/test_cli_vet.py
-- tests/system/test_cli_ticket.py
-- tests/system/test_cli_sys_plan.py
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
-- tests/unit/strata/test_selfconform.py::TestRealGateGreen
+- tests/test_vet.py::TestAllowConfig::test_no_frob_toml_is_advisory_only
+- tests/test_tickets.py::TestArchive::test_blocked_by_archived_ticket_resolves_closed
+- tests/unit/test_check.py::TestCheckBuildsGraphOnce::test_run_check_calls_build_graph_exactly_once
+- tests/unit/deploy/test_audit.py::TestAttest::test_all_green
+- tests/test_testing.py::TestCargoEnv::test_cargo_env_err_when_no_qualifying_interpreter
+- tests/test_lang.py::TestErrors::test_supported_languages
+- tests/test_fuzz.py::TestFuzz001::test_flags_obligated_symbol_with_no_fuzz_test
 attachments: []
 acceptance: []
 threat: null
