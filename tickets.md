@@ -1080,7 +1080,7 @@ GH013 push protection rejects main: the Stripe fixture at tests/test_secrets_gat
 id: T-0191
 title: wire DUP001/DUP002 smart-dup rules into frob check gates -- pipeline currently
   inert
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-18'
@@ -1094,7 +1094,9 @@ scope:
 - tests/**
 - docs/modules/dup.md
 - tickets.md
-evidence: []
+evidence:
+- tests/test_gates.py::TestOptInGates::test_dup_gate_fires_on_planted_clone_when_enabled
+- tests/test_gates.py::TestOptInGates::test_dup_gate_planted_clone_waived_passes
 attachments: []
 acceptance: []
 threat: null
@@ -3816,6 +3818,27 @@ threat: elevation-of-privilege
 ```
 T-0254: the red-team Kerberos playbook as demanded, provable obligations extending T-0256's movement-impossibility family. KRB001 unconstrained delegation: any node declaring delegation unconstrained is a hard finding (it lets a compromised service impersonate ANY user to ANY service -- the worst lateral+vertical vector) -- must be re-declared constrained/rbcd or waived with a written accepted-risk reason and sub-target. KRB002 Kerberoasting exposure: an SPN bound to a principal whose credential class is a human-memorable/user password (not a machine account or gMSA) is roastable -- demand gMSA/machine-account or a waiver. KRB003 constrained-delegation blast radius: for a node with constrained delegation, prove the target SPN set does not transitively reach a higher-trust principal (S4U2Proxy chaining) -- reachability over the SPN graph, counterexample trace on failure. KRB004 cross-realm containment: a one-way/transitive trust must not create an undeclared path from a low-trust realm to a high-trust service. Each rule joins a separate compromised-domain-principal threat view (WeaknessEntry rows: CWE-522/CWE-269/CWE-284 class) per the separate-view precedent, NOT widening defaults. Reuse the T-0073 scenario engine for a compromised-service-account scenario whose closure shows the Kerberos blast radius. Litmus: an unconstrained-delegation + roastable-SPN vuln model fires KRB001/002; a gMSA + constrained + non-chaining hardened model discharges all four.
 
+<!-- ticket:T-draft-56694d02 -->
+```yaml
+id: T-draft-56694d02
+title: 'docs(dup): correct stale DUP001/DUP002 unwired claim in dup-sota-survey.md
+  sec 0'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- docs/modules/dup-sota-survey.md
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0191's Done report: dup-sota-survey.md section 0 says DUP001/DUP002 are 'pure rule functions but NOT wired into frob.gates.__init__' -- stale since a3eef8d8 (2026-07-17), one day before the survey landed. dup_gate already calls the real smart find_clones pipeline and is registered as the opt-in 'clones' gate. Correct section 0's claim to describe the actual state (wired, opt-in via [dup].enforce, connection-pooled as of T-0191) so a future reader does not re-investigate an already-closed gap. (Note: T-draft-2a3adb6d, the T-0253 release-stamp follow-up, was resolved during T-0253's landing -- coordinator stamped 0.3.0 in that motion -- so it is dropped here.)
+
 <!-- ticket:T-draft-beb2b5da -->
 ```yaml
 id: T-draft-beb2b5da
@@ -3841,27 +3864,6 @@ acceptance: []
 threat: null
 ```
 T-0254 Windows generation. The T-0257 generator gains a windows target emitting idempotent PowerShell (check-then-apply, same contract as the bash target): install creates the service account/gMSA, registers the Windows Service with its hardening (service SID type, required-privileges, deny-logon rights), applies the NTFS ACLs exactly from the manifest, opens the declared firewall ports / creates named pipes, and configures the SPN + delegation setting from std.krb (setspn / the delegation flags) when a krb model is present. status queries SCM state + health. uninstall removes exactly the manifest set (service, account, ACL grants, firewall rules, SPN registration) leaving no artifacts. Same DEPLOY001 digest-header drift-lock as bash. Scripts must be PSScriptAnalyzer-clean and depend only on in-box modules (no PSGallery). The conformance gate (T-0258) and VM audit (T-0259) must handle the PowerShell mutation surface too -- coordinate the manifest abstraction so those tickets' parsers are platform-tagged, not bash-only; if T-0258/T-0259 landed bash-only, file follow-ups for their windows extension rather than expanding scope here.
-
-<!-- ticket:T-draft-56694d02 -->
-```yaml
-id: T-draft-56694d02
-title: 'docs(dup): correct stale DUP001/DUP002 unwired claim in dup-sota-survey.md
-  sec 0'
-state: queued
-kind: bug
-origin: human
-created: '2026-07-18'
-blocked_by: []
-parent: null
-scope:
-- docs/modules/dup-sota-survey.md
-- tickets.md
-evidence: []
-attachments: []
-acceptance: []
-threat: null
-```
-T-0191's Done report: dup-sota-survey.md section 0 says DUP001/DUP002 are 'pure rule functions but NOT wired into frob.gates.__init__' -- stale since a3eef8d8 (2026-07-17), one day before the survey landed. dup_gate already calls the real smart find_clones pipeline and is registered as the opt-in 'clones' gate. Correct section 0's claim to describe the actual state (wired, opt-in via [dup].enforce, connection-pooled as of T-0191) so a future reader does not re-investigate an already-closed gap. (Note: T-draft-2a3adb6d, the T-0253 release-stamp follow-up, was resolved during T-0253's landing -- coordinator stamped 0.3.0 in that motion -- so it is dropped here.)
 
 <!-- ticket:T-draft-f9131f3e -->
 ```yaml
