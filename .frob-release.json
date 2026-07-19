@@ -127,6 +127,7 @@
     "src/frob/docs/__init__.py::find_docs_dir": "86a2b5c70f18a427793381ec67cef5a084ee7627318a9eae1ab81f7b30526a13",
     "src/frob/docs/__init__.py::overview": "7bdf5ce56bde94213fb2153e67eeb8d07e37a102b43fc7a97b44bf033ad36029",
     "src/frob/docs/__init__.py::search": "b3a9ed0fac89851d01ca88da07cfc6eaa69d3a67189fca0e5a5c30d167042890",
+    "src/frob/dup/_cache.py::close_all": "a0528fd2257f7871804ece9468affeeb5d3a91102800fe78f292b84ecea69e76",
     "src/frob/dup/_cache.py::get_fingerprint": "13d3a6a454e05691e443e7d8dc6ed772d0242112249fd8e098171317edde0f44",
     "src/frob/dup/_cache.py::get_verdict": "d8ef14a6a2df2d90d5587f8c97cc41ff1a9e4268d5aa8799df7f520c26e2df52",
     "src/frob/dup/_cache.py::put_fingerprint": "7fbd76dde95e7ec172afe95d2e6f380c6c294cb801e3013484ffaf28dbc3c67e",
@@ -820,5 +821,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.3.0"
+  "version": "0.4.0"
 }

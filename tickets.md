@@ -1915,7 +1915,7 @@ the new timeout test) exit=0, 5.09s. Deletion-filter (`git diff main
 ```yaml
 id: T-0209
 title: capability scanner matches needles inside comments and strings
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-18'
@@ -1926,12 +1926,45 @@ scope:
 - src/frob/lang/**
 - tests/**
 - tickets.md
-evidence: []
+evidence:
+- tests/test_vet.py::TestCapabilityScan::test_comment_only_needle_does_not_fire
+- tests/test_vet.py::TestCapabilityScan::test_real_code_needle_still_fires_alongside_comment
+- tests/test_vet.py::TestCapabilityScan::test_string_literal_needle_still_fires
+- tests/test_vet.py::TestCapabilityScan::test_capability_module_self_scan_documented_false_positive
+- tests/test_vet.py::TestCapabilityScan::test_re_compile_alone_does_not_report_eval
+- tests/test_vet.py::TestCapabilityScan::test_bare_compile_call_still_reports_eval
+- tests/test_vet.py::TestCapabilityScan::test_genuine_eval_still_detected
+- tests/test_vet.py::TestCapabilityScan::test_scan_directory_capabilities_excludes_own_module
 attachments: []
 acceptance: []
 threat: null
 ```
 Filed from sibling-repo pilot P2 (lograder/aprog-public/aprog-private, 2026-07-18). Pilot P2 aprog-public: SYS100 reported capability net observed at assignments/api-harvester/assets/starter.py:22 -- that line is COMMENT text describing requests.get; the assignment forbids real network imports. Forced a false may declaration dragging bogus CWE-918 obligations -- corrupts the security posture the model attests (medium-high). Fix: consult tree-sitter comment/string spans (already produced by frob.lang) before substring matching; needle hits fully inside comment spans are dropped (string literals are subtler -- keep string hits for languages where code-in-string is an exec vector, e.g. eval payloads, but drop pure-comment hits everywhere). Litmus: comment-only fixture must NOT fire; code fixture still fires; the T-0151/T-0201 self-match tests stay green. Note duplicate-line issue too: the same site was reported twice (pilot gap 12) -- dedupe observations by (file,line,kind) while in there.
+
+## Done report
+
+Changed:
+- src/frob/vet/_capability.py::_comment_byte_spans (new)
+- src/frob/vet/_capability.py::_fully_in_any_span (new)
+- src/frob/vet/_capability.py::_needle_hits_outside_comments (new)
+- src/frob/vet/_capability.py::_has_bare_compile_call (signature changed: bytes + comment_spans, T-0151 behavior preserved)
+- src/frob/vet/_capability.py::_matched_capabilities (bytes-based, comment-filtered)
+- src/frob/vet/_capability.py::scan_file_capabilities (reads bytes, passes comment spans)
+- src/frob/vet/_capability.py::scan_file_operations (reads bytes, passes comment spans)
+- src/frob/vet/_capability.py::scan_file_fingerprints (reads bytes, passes comment spans -- same false-positive class, same file, fixed for consistency)
+- src/frob/lang/__init__.py::__all__ (added COMMENT_TYPES export -- needed by _capability.py's tree-sitter comment-span walk)
+
+Fix: every needle hit in `_capability.py`'s substring scan (`scan_file_capabilities`/`scan_file_operations`/`scan_file_fingerprints`) is now checked against tree-sitter COMMENT node byte-spans for the same file (`frob.lang.raw_tree` + `frob.lang.COMMENT_TYPES`); a hit fully contained in a comment span is dropped. STRING literals are deliberately left unfiltered (documented in the module docstring's new T-0209 section): distinguishing a genuine string-embedded exec vector from pure prose needs per-registry-entry judgment this substring scanner does not have, and leaving strings alone keeps the locked self-scan false positive (`test_capability_module_self_scan_documented_false_positive`, which fires on `"cmdclass"`/`"os.environ"` inside this module's own docstring -- a string/comment-text node, not a `#`-comment node) unchanged. Comment-span filtering degrades to the pre-T-0209 unfiltered scan (empty span tuple) for any file `frob.lang` cannot parse or has no grammar for (e.g. `.js`/`.jsx`/`.mjs`/`.cjs`, which this module's own `typescript` bucket accepts but `frob.lang._EXTENSION_TABLE` does not).
+
+Dedupe investigation (pilot gap 12, "same site reported twice"): `_capability.py`'s own return shapes have no duplicate to dedupe in this ticket's scope -- `scan_file_capabilities` returns a bare `frozenset[str]` (no per-line entries, dedupe is structural), and `scan_file_operations`/`scan_file_fingerprints` each visit `DANGEROUS_OPERATIONS`/`CVE_FINGERPRINTS` once and append an entry at most once per file (verified no duplicate registry rows: 89 entries, 0 duplicate (language, capability_kind, function_or_pattern) triples). The duplicate-observation symptom traces to `src/frob/strata/_selfconform.py`'s SYS100 join instead (`_core_undeclared_violations` + `_extended_kind_violations` can each independently flag the same capability on the same node), which is outside this ticket's scope glob -- filed as a new ticket (T-draft-bd948483, will renumber on land) rather than silently expanded into.
+
+Litmus verified manually: a `#`-comment-only file mentioning `requests.get` does NOT report `net`; the same needle in real code still reports `net`; a needle appearing in both a comment AND real code in the same file still reports (comment occurrence does not mask the real one).
+
+Evidence: tests/test_vet.py::TestCapabilityScan::test_comment_only_needle_does_not_fire, tests/test_vet.py::TestCapabilityScan::test_real_code_needle_still_fires_alongside_comment, tests/test_vet.py::TestCapabilityScan::test_string_literal_needle_still_fires, tests/test_vet.py::TestCapabilityScan::test_capability_module_self_scan_documented_false_positive, tests/test_vet.py::TestCapabilityScan::test_re_compile_alone_does_not_report_eval, tests/test_vet.py::TestCapabilityScan::test_bare_compile_call_still_reports_eval, tests/test_vet.py::TestCapabilityScan::test_genuine_eval_still_detected, tests/test_vet.py::TestCapabilityScan::test_scan_directory_capabilities_excludes_own_module (all 8 pass; full tests/test_vet.py + tests/test_capability_registry.py + tests/test_lang.py + tests/unit/strata/test_selfconform.py + tests/unit/strata/test_effects.py + tests/unit/strata/test_cve_fingerprint.py green)
+
+Filed: T-draft-bd948483 (SYS100 core+extended duplicate-observation dedupe, out of this ticket's scope)
+
+Gates: `frob check --delta --ticket T-0209 --json` reports 0/7 new violations (baseline stamped from a dirty working tree in this pass -- see note below); `frob test --base main` selects the touched-set (test_vet.py, test_capability_registry.py, test_lang.py, test_cli_vet.py hook test) and passes, exit=0. `ruff check`/`ty check` clean on all three changed files. NOTE: this worktree already carried unrelated uncommitted changes for another ticket (T-0231-shaped: src/frob/__main__.py, src/frob/app/sys_runner.py, src/frob/gates/__init__.py, tests/integration/test_interfaces.py, tests/system/test_cli_sys_plan.py, tests/test_gates.py, and a `state: in-progress` edit to T-0231 in tickets.md) present before this ticket's work began; none of those files were touched by this ticket and this Done report's commit stages only T-0209's own files plus this tickets.md entry.
 
 <!-- ticket:T-0210 -->
 ```yaml
@@ -3160,7 +3193,7 @@ Filed from sibling-repo pilot P1 (graphite/feldspar/lithos, 2026-07-18). P1 gap 
 id: T-0231
 title: 'small CLI/UX batch: --version flag, sys plan dry-run label, DOC001 hint for
   missing docs root'
-state: queued
+state: done
 kind: ux
 origin: agent
 created: '2026-07-18'
@@ -3173,12 +3206,69 @@ scope:
 - src/frob/strata/**
 - tests/**
 - tickets.md
-evidence: []
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_version_flag_prints_version_and_exits_zero
+- tests/system/test_cli_sys_plan.py::TestSysPlanCli::test_dry_run_names_apply_flag_in_label
+- tests/test_gates.py::TestDoclinkGate::test_orphan_hint_does_not_point_at_missing_docs_root
 attachments: []
 acceptance: []
 threat: null
 ```
 Filed from sibling-repo pilot P1 (graphite/feldspar/lithos, 2026-07-18). P1 gaps 16/17/18 batched: (a) frob --version -> argparse error; add version output from package metadata. (b) frob sys plan without --apply prints 'compiled 1 obligation ticket(s)' with no dry-run label and no --apply mention -- say DRY RUN and name the flag. (c) DOC001 hint says 'link it from docs/index.md' in repos with no docs/index.md (lithos x256) -- resolve the configured/existing docs root or suggest creating one. Three small fixes, one ticket, tests each.
+
+## Done report
+
+Changed:
+- src/frob/__main__.py::_frob_version (new) -- resolves `frob --version`
+  from package metadata (`importlib.metadata.version("frob")`)
+- src/frob/__main__.py::_build_parser -- registers `--version`
+- src/frob/app/sys_runner.py::_print_dry_run -- prints
+  "DRY RUN (no tickets created; pass --apply to compile)" plus the count,
+  naming --apply explicitly, before the dry-run ticket-tree listing
+- src/frob/gates/__init__.py::_doclink_root_hint (new) -- resolves the
+  DOC001 orphan-doc hint against a docs root that actually exists on
+  disk, falling back to "create it" / "none configured" instead of
+  blindly naming docs/index.md
+- src/frob/gates/__init__.py::doclink_gate -- uses the new hint helper
+
+Evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_version_flag_prints_version_and_exits_zero
+- tests/system/test_cli_sys_plan.py::TestSysPlanCli::test_dry_run_names_apply_flag_in_label
+- tests/test_gates.py::TestDoclinkGate::test_orphan_hint_does_not_point_at_missing_docs_root
+- Full suite: `uv run pytest tests/ -q -n auto` -- all pass (no failures)
+- `uv run ruff check` / `uv run ruff format --check` -- clean (both PATH
+  ruff and `uv run ruff`)
+- `uv run ty check src/` -- no issues
+
+Filed: none (no out-of-scope work discovered)
+
+Gates: `uv run frob check` -- 2 remaining ERROR-severity violations, both
+pre-existing and unrelated to this ticket, verified present on bare
+`main` (591502e) before any of this ticket's changes:
+- DRIFT002 x2 at tests/test_graph.py:538,551 (TestMalformedFileVisibility
+  stale `.`-vs-`::` qualname refs, predates T-0231, left from T-0216)
+No new violations from this ticket's changes.
+
+REL001 disclosure: adding `--version` is new public CLI surface, which
+tripped REL001 (public API changed since 0.3.0, needs >=0.4.0 + a
+CHANGELOG entry + `.frob-release.json` stamp). Per this ticket's explicit
+authorization, bumped pyproject.toml to 0.4.0 and ran `frob release
+stamp` -- disclosing here since this is normally out of a small CLI-fix
+ticket's remit, but the gate hard-blocked without it. `main` independently
+bumped to 0.4.0 for T-0209/T-0212/T-0253 in the interim; after merging
+main, reconciled by folding T-0231's CHANGELOG line into the single
+existing `[0.4.0]` section (no competing section) rather than re-bumping.
+
+Round 2 (reviewer fix): corrected the `_print_dry_run` frob:tests
+directive from an invalid `kind="system"` (silently dropped as
+malformed, leaving no real graph edge) to `kind="integration"`; merged
+`main` (T-0209/T-0212/T-0253, already at 0.4.0) and reconciled the
+CHANGELOG conflict by keeping main's `[0.4.0]` section and appending the
+T-0231 line to it; reverted worktree contamination
+(`src/frob/vet/_capability.py`, `src/frob/lang/__init__.py`,
+`tests/test_vet.py`) that had leaked in from an unrelated concurrent
+stash and already landed via T-0209 on main -- worktree is now clean of
+anything not this ticket's.
 
 <!-- ticket:T-0232 -->
 ```yaml
@@ -4230,9 +4320,30 @@ threat: null
 ```
 Recurring: implementer agents put a 'frob:tests <self>' directive above their own new test function; the target does not resolve as a graph qualname so full frob check fires DRIFT002, but frob check --delta --ticket (what agents+reviewers run) does NOT surface it -- so it lands and reddens main (happened for T-0213, T-0216; coordinator removed 3). Two fixes: (1) frob check --ticket should include the drift gate for edges the ticket's own diff ADDS (a new frob:tests directive in the diff must be validated even under --ticket scoping); (2) the graph should REJECT or warn on a frob:tests directive whose target is the annotated symbol itself (a test testing itself is meaningless) at directive-parse time, not silently store a dangling edge. Add a check-scoping regression + a self-edge rejection test.
 
-<!-- ticket:T-draft-56694d02 -->
+<!-- ticket:T-0266 -->
 ```yaml
-id: T-draft-56694d02
+id: T-0266
+title: SYS100 core+extended can report the same undeclared-capability site twice
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/_selfconform.py
+- tests/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Filed while working T-0209 (re-filed after a ledger-conflict drop). check_self_conformance's SYS100 join: _core_undeclared_violations (THREAT004 delegate, line=0) and _extended_kind_violations (T-0169 eval/env/ffi slice, real line via _effects.py) can each independently emit a SYS100 for the same (node, capability_kind), so one observed-but-undeclared capability surfaces as two findings. Dedupe by (node, capability_kind) [or (file,line,kind) once core tracks a line] before returning; regression fixture with one capability both paths flag.
+
+<!-- ticket:T-0267 -->
+```yaml
+id: T-0267
 title: 'docs(dup): correct stale DUP001/DUP002 unwired claim in dup-sota-survey.md
   sec 0'
 state: queued
@@ -4251,9 +4362,9 @@ threat: null
 ```
 T-0191's Done report: dup-sota-survey.md section 0 says DUP001/DUP002 are 'pure rule functions but NOT wired into frob.gates.__init__' -- stale since a3eef8d8 (2026-07-17), one day before the survey landed. dup_gate already calls the real smart find_clones pipeline and is registered as the opt-in 'clones' gate. Correct section 0's claim to describe the actual state (wired, opt-in via [dup].enforce, connection-pooled as of T-0191) so a future reader does not re-investigate an already-closed gap. (Note: T-draft-2a3adb6d, the T-0253 release-stamp follow-up, was resolved during T-0253's landing -- coordinator stamped 0.3.0 in that motion -- so it is dropped here.)
 
-<!-- ticket:T-draft-f9131f3e -->
+<!-- ticket:T-0268 -->
 ```yaml
-id: T-draft-f9131f3e
+id: T-0268
 title: 'fix(frob-core): candidate_pairs can return a self-pair (i, i)'
 state: queued
 kind: bug
@@ -4270,3 +4381,49 @@ acceptance: []
 threat: null
 ```
 Found while working T-0191: frob_core::candidate_pairs can hand back (i, i) when a symbol's own R4 winnowed-fingerprint set collides with itself past the shared-token floor -- observed for real on this repo's own dup cache module (DUP002 reported get_verdict as its own clone). T-0191 guarded the one Python-side consumer (_r4_groups in src/frob/dup/_pipeline.py) with an i==j/a==b skip, but the kernel itself still emits self-pairs, so any OTHER caller of candidate_pairs inherits the same footgun unless it also guards. Fix at the kernel (skip i==j in the Rust candidate-pair emission) so every caller gets it for free.
+
+<!-- ticket:T-0269 -->
+```yaml
+id: T-0269
+title: invalid frob:tests kind='system' shipped in test_cli_check.py:237 -- malformed
+  directive silently dropped
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: null
+scope:
+- tests/**
+- src/frob/graph/**
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0231 review found a pre-existing malformed frob:tests directive at tests/system/test_cli_check.py:237 using kind='system' (valid kinds: unit/integration/e2e per _TESTS_KINDS). It parses malformed and is silently dropped -- the bound symbol has no real test edge. Landed via commit 289f2c68 (T-0229). Fix: kind='integration' (or extend _TESTS_KINDS to include 'system' if that taxonomy is intended -- decide, since T-0225 also touches the design-vs-code test-kind question). Also: this class only surfaces on full frob check, not --ticket -- covered by T-0265's scoping fix but this is the concrete instance to clean up. Grep the whole repo for other kind='system'/invalid-kind directives while here.
+
+<!-- ticket:T-0270 -->
+```yaml
+id: T-0270
+title: 'std.host manifest: validate owns MODE and listens PORT (deferred from T-0255)'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-18'
+blocked_by: []
+parent: T-0254
+scope:
+- strata-core/src/parse.rs
+- src/frob/strata/_host.py
+- src/frob/strata/**
+- tests/**
+- docs/strata/host.md
+- tickets.md
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0255 deliberately left HostOwns.mode (str) and HostManifest.listens (int) UNVALIDATED -- a bogus mode ('999'/'rwx') or out-of-range port is stored raw. T-0255's reviewer confirmed this is a correct deferral (mode-as-opaque-string is intentional so a Windows ACL/SDDL string fits the same field later -- platform-tagged validation belongs here, not in the manifest schema). Implement per-platform validation: LINUX_SYSTEMD validates octal mode (0-7 triples, optional setuid bits) and port in 1-65535; WINDOWS (when T-0261 lands) validates SDDL/ACL shape. Validation fires at elaborate time (MalformedHost error, fail-closed), NOT parse time (keep the grammar platform-agnostic). Litmus: bogus mode/port rejected per platform, valid ones pass. T-0255 added frob:todo T-0270 anchors at the two fields -- this ticket discharges them.

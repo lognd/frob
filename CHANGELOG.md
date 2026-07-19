@@ -17,6 +17,21 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.4.0] - unreleased
+
+Public-API surface changes since 0.2.0 (mechanical semver via REL001):
+
+- T-0212: new public `frob.graph.dedupe_slug`; GitHub-compatible anchor slugger.
+- T-0253: `frob.vet.is_self_pattern_path` gained a `root` param (scan-target
+  discriminator closing a capability-scan evasion hole).
+- T-0209: `frob.lang.COMMENT_TYPES` made public (capability scanner drops
+  needle hits inside comment spans).
+- T-0231: `frob --version` prints the installed package version instead of
+  an argparse error; `frob sys plan` (no `--apply`) labels its output
+  "DRY RUN (no tickets created; pass --apply to compile)"; DOC001's orphan
+  hint resolves an actually-existing configured docs root instead of
+  blindly naming `docs/index.md` in repos that never created one.
+
 ## [0.2.0] - unreleased
 
 Ticket list frozen at the T-0156 landing commit; T-0174 (sys-audit waiver
