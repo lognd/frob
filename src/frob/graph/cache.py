@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+import time
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
@@ -44,7 +45,15 @@ _log = get_logger(__name__)
 # wild to discard whatever it holds and reparse once under the current,
 # canonical dsl.py+gates.py pairing, rather than trusting rows written
 # under an unknown historical version of that pairing forever.
-_SCHEMA_VERSION = 2
+# frob:ticket T-0245
+# Bumped 2 -> 3: the `files` table gains `mtime_ns`/`size` columns (T-0245):
+# a mount-filesystem stat is one syscall vs. the open+read+close of a full
+# content hash, so build_graph and load_graph can trust an unchanged
+# (mtime_ns, size) pair and skip reading file bytes entirely for the common
+# "nothing changed" case -- the per-file stat storm this ticket exists to
+# cut. A cache.db written under schema 2 has no such columns, so this must
+# invalidate it same as any other shape change.
+_SCHEMA_VERSION = 3
 
 # frob:ticket T-0243
 # Packages whose behavior changes the shape of the parsed graph: the frob
@@ -93,7 +102,12 @@ def _compute_fingerprint() -> str:
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
-CREATE TABLE IF NOT EXISTS files (path TEXT PRIMARY KEY, content_hash TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS files (
+    path TEXT PRIMARY KEY,
+    content_hash TEXT NOT NULL,
+    mtime_ns INTEGER NOT NULL DEFAULT 0,
+    size INTEGER NOT NULL DEFAULT 0
+);
 CREATE TABLE IF NOT EXISTS symbols (
     symref TEXT PRIMARY KEY,
     path TEXT NOT NULL,
@@ -125,11 +139,43 @@ CREATE TABLE IF NOT EXISTS malformed (
 
 
 # frob:ticket T-0029
+# frob:ticket T-0245
+_LOCK_POLL_SECONDS = 2.0
+_LOCK_TOTAL_TIMEOUT_SECONDS = 30.0
+
+
 def _open(path: Path) -> sqlite3.Connection:
     """A cache connection with a busy timeout so concurrent builds wait
     rather than raising `disk I/O error` (T-0029: two agents building the
-    same worktree cache collided; sqlite's default is no wait at all)."""
-    conn = sqlite3.connect(str(path), timeout=30.0)
+    same worktree cache collided; sqlite's default is no wait at all).
+
+    T-0245: the malmberg pilot reported concurrent frob processes on /mnt/c
+    stalling in D-state with no lock feedback -- a silent 30s blind wait is
+    indistinguishable from a hang. Connecting in short polls instead of one
+    flat `timeout=30.0` call lets us log a visible "waiting on cache lock"
+    line the first time a poll actually blocks, while keeping the same
+    30s overall budget.
+    """
+    deadline = time.monotonic() + _LOCK_TOTAL_TIMEOUT_SECONDS
+    warned = False
+    while True:
+        try:
+            conn = sqlite3.connect(str(path), timeout=_LOCK_POLL_SECONDS)
+            break
+        except sqlite3.OperationalError as exc:
+            remaining = deadline - time.monotonic()
+            if "locked" not in str(exc).lower() or remaining <= 0:
+                raise
+            if not warned:
+                _log.warning(
+                    "cache: waiting on lock at %s (another frob process is "
+                    "writing the cache; up to %.0fs)",
+                    path,
+                    _LOCK_TOTAL_TIMEOUT_SECONDS,
+                )
+                warned = True
+            else:
+                _log.debug("cache: still waiting on lock at %s", path)
     # These pragmas can touch page structure, so on a non-sqlite file they
     # raise here -- swallow it and let connect()'s schema SELECT be the one
     # place that detects corruption and triggers recreate (T-0019/T-0029).
@@ -360,6 +406,41 @@ def get_file_hash(conn: sqlite3.Connection, file_path: str) -> str | None:
     return row[0] if row is not None else None
 
 
+# frob:ticket T-0245
+# frob:doc docs/modules/graph.md#cache
+def get_file_meta(
+    conn: sqlite3.Connection, file_path: str
+) -> tuple[str, int, int] | None:
+    """`(content_hash, mtime_ns, size)` for `file_path`, or `None` if never stored.
+
+    The stat pair lets callers skip a full content read when the file's
+    on-disk (mtime_ns, size) has not moved since the last build (T-0245) --
+    a single `os.stat` syscall instead of open+read+close per file.
+    """
+    cur = conn.execute(
+        "SELECT content_hash, mtime_ns, size FROM files WHERE path = ?", (file_path,)
+    )
+    row = cur.fetchone()
+    return (row[0], row[1], row[2]) if row is not None else None
+
+
+# frob:ticket T-0245
+# frob:doc docs/modules/graph.md#cache
+def touch_file_stat(
+    conn: sqlite3.Connection, file_path: str, *, mtime_ns: int, size: int
+) -> None:
+    """Update only the stored (mtime_ns, size) for `file_path` (content unchanged).
+
+    Used when a file's mtime moved (e.g. a re-checkout or `touch`) but its
+    content hash did not: cheaper than a full `store_file_data` re-insert of
+    symbols/edges/malformed, which are already correct (T-0245).
+    """
+    conn.execute(
+        "UPDATE files SET mtime_ns = ?, size = ? WHERE path = ?",
+        (mtime_ns, size, file_path),
+    )
+
+
 def _store_symbols(
     conn: sqlite3.Connection, file_path: str, symbols: tuple[SymbolRecord, ...]
 ) -> None:
@@ -423,6 +504,8 @@ def store_file_data(
     *,
     file_path: str,
     content_hash: str,
+    mtime_ns: int = 0,
+    size: int = 0,
     symbols: tuple[SymbolRecord, ...],
     edges: tuple[Edge, ...],
     malformed: tuple[MalformedDirective, ...],
@@ -430,11 +513,19 @@ def store_file_data(
     """Replace all rows derived from `file_path` (delete-then-insert, one
     transaction step -- caller commits; see T-0402 G12: this never calls
     `conn.commit()` itself, only `_finalize_build` does, once, for the
-    whole build)."""
+    whole build).
+
+    `mtime_ns`/`size` (T-0245) are the stat pair a later build can trust
+    instead of re-reading the file's bytes; default to 0 for callers (tests,
+    mainly) that only care about content-hash behavior.
+    """
     conn.execute(
-        "INSERT INTO files (path, content_hash) VALUES (?, ?) "
-        "ON CONFLICT(path) DO UPDATE SET content_hash = excluded.content_hash",
-        (file_path, content_hash),
+        "INSERT INTO files (path, content_hash, mtime_ns, size) VALUES (?, ?, ?, ?) "
+        "ON CONFLICT(path) DO UPDATE SET "
+        "content_hash = excluded.content_hash, "
+        "mtime_ns = excluded.mtime_ns, "
+        "size = excluded.size",
+        (file_path, content_hash, mtime_ns, size),
     )
     _store_symbols(conn, file_path, symbols)
     _store_edges(conn, file_path, edges)
@@ -520,9 +611,11 @@ def load_all(
 __all__ = [
     "connect",
     "get_file_hash",
+    "get_file_meta",
     "get_root",
     "load_all",
     "load_file_data",
     "set_root",
     "store_file_data",
+    "touch_file_stat",
 ]

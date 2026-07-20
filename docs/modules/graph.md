@@ -335,6 +335,8 @@ tree -- safe to delete at any time (see Design decisions below).
 <!-- frob:describes src/frob/graph/cache.py::set_root -->
 <!-- frob:describes src/frob/graph/cache.py::get_root -->
 <!-- frob:describes src/frob/graph/cache.py::get_file_hash -->
+<!-- frob:describes src/frob/graph/cache.py::get_file_meta -->
+<!-- frob:describes src/frob/graph/cache.py::touch_file_stat -->
 <!-- frob:describes src/frob/graph/cache.py::store_file_data -->
 <!-- frob:describes src/frob/graph/cache.py::load_file_data -->
 <!-- frob:describes src/frob/graph/cache.py::load_all -->
@@ -357,8 +359,14 @@ def get_root(conn: sqlite3.Connection) -> str | None
 def get_file_hash(conn: sqlite3.Connection, file_path: str) -> str | None
     # The cached content hash for one file, or None if never stored --
     # the check build_graph uses to decide whether to re-parse a file.
-def store_file_data(conn, *, file_path, content_hash, symbols, edges,
-                    malformed) -> None
+def get_file_meta(conn, file_path: str) -> tuple[str, int, int] | None
+    # (content_hash, mtime_ns, size) for one file (T-0245) -- the stat pair
+    # build_graph/load_graph check first, before reading any file bytes.
+def touch_file_stat(conn, file_path: str, *, mtime_ns: int, size: int) -> None
+    # Refreshes only the stored stat for a file whose content hash did not
+    # actually change (T-0245) -- cheaper than a full store_file_data call.
+def store_file_data(conn, *, file_path, content_hash, mtime_ns=0, size=0,
+                    symbols, edges, malformed) -> None
     # Replaces every row derived from one file (delete-then-insert, one
     # commit) -- the write side of per-file incrementality.
 def load_file_data(conn: sqlite3.Connection, file_path: str) -> tuple[...]
@@ -366,6 +374,27 @@ def load_file_data(conn: sqlite3.Connection, file_path: str) -> tuple[...]
 def load_all(conn: sqlite3.Connection, *, stats=None) -> GraphSnapshot
     # Reassembles the full GraphSnapshot from every row currently in the db.
 ```
+
+### Mount-filesystem performance (T-0245)
+
+On a latency-heavy mount (WSL's `/mnt/c` via 9p, network shares), each
+syscall round-trip costs far more than on a native filesystem -- a pilot
+run measured ~0.5ms per `stat` under concurrent load. `build_graph` and
+`load_graph` used to read every tracked file's full bytes on every single
+invocation just to detect "nothing changed"; that is an open+read+close
+per file, every gate run. Both now check a stored `(mtime_ns, size)` pair
+first (`get_file_meta` / the `files` table's `mtime_ns`/`size` columns,
+schema 2) -- a single `os.stat` per file -- and only fall back to a full
+content-hash read when that stat pair has actually moved. A `touch` with
+no real edit still avoids a reparse (`touch_file_stat` refreshes just the
+stat so the fast path applies again next time). `build_graph` also walks
+the tree once (`_walk_repo_files`) instead of a separate source-file
+`os.walk` plus a `docs/**` `rglob` that re-walked the same subtree.
+`frob.graph.cache._open`'s lock wait now polls in short (2s) increments
+instead of one blind 30s `sqlite3.connect(timeout=...)` call, logging a
+`cache: waiting on lock at ...` warning the first time a poll actually
+blocks, so a concurrent-writer stall is visible instead of looking like a
+hang.
 
 ## Design decisions
 

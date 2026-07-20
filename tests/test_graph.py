@@ -518,6 +518,37 @@ def foo() -> None:
         _edges, malformed = parse_directives(pf)
         assert len(malformed) == 1
 
+    def test_self_referential_tests_directive_is_malformed(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0265: a `frob:tests` directive whose target is the annotated
+        symbol itself is rejected at parse time, never turned into a
+        (dangling-or-not) edge."""
+        path = _write(tmp_path, "a.py", "def test_self() -> None:\n    pass\n")
+        path.write_text(
+            f"def test_self() -> None:\n    # frob:tests {path}::test_self\n    pass\n"
+        )
+        pf = parse_file(path).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not edges
+        assert len(malformed) == 1
+        assert "itself" in malformed[0].reason
+
+    def test_tests_directive_pointing_elsewhere_still_parses(
+        self, tmp_path: Path
+    ) -> None:
+        """A `frob:tests` directive pointing at a genuinely different
+        symbol is unaffected by the self-reference rejection (T-0265)."""
+        path = _write(tmp_path, "a.py", "def foo() -> None:\n    pass\n")
+        path.write_text(
+            f"def foo() -> None:\n    # frob:tests {path}::test_foo\n    pass\n"
+        )
+        pf = parse_file(path).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        assert len(edges) == 1
+        assert edges[0].target == f"{path}::test_foo"
+
 
 class TestMarkdownAnchors:
     def test_describes_edge_with_heading_slug_and_facet(self) -> None:
@@ -635,6 +666,28 @@ class TestBuildIncremental:
         third = build_graph(root, cache).danger_ok
         assert third.stats.parsed == 1
         assert third.stats.cache_hits == 1
+
+    def test_touch_without_edit_skips_reparse(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/__init__.py::build_graph
+        """T-0245: a `touch` that moves a file's mtime but not its content
+        must still be reported as a cache hit -- the stat-first fast path
+        falls back to a content hash on the stat mismatch, and a hash match
+        there must skip the reparse, only refreshing the stored stat."""
+        import os
+        import time
+
+        root = self._tree(tmp_path)
+        cache = root / ".frob" / "cache.db"
+        build_graph(root, cache).danger_ok
+
+        target = root / "src" / "a.py"
+        st = target.stat()
+        time.sleep(0.01)
+        os.utime(target, ns=(st.st_atime_ns + 1_000_000, st.st_mtime_ns + 1_000_000))
+
+        second = build_graph(root, cache).danger_ok
+        assert second.stats.parsed == 0
+        assert second.stats.cache_hits == 2
 
     def test_fingerprint_bump_rebuilds(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -778,14 +831,16 @@ class TestExclude:
     def test_walk_source_files_prunes_before_descent(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """`_walk_source_files` never calls `os.walk` into an excluded
+        """`_walk_repo_files` never calls `os.walk` into an excluded
         subtree -- directory pruning happens via `dirnames[:]` before the
         walk descends, not by filtering files after a full traversal
         (T-0239's actual perf bug: filtering post-walk still pays the full
-        `os.walk`/stat cost of every excluded subtree)."""
+        `os.walk`/stat cost of every excluded subtree). T-0245 merged the
+        old `_walk_source_files`/`_walk_doc_files` pair into one combined
+        walk; this still exercises the source-file half of it."""
         import os as os_mod
 
-        from frob.graph import _walk_source_files
+        from frob.graph import _walk_repo_files
 
         _write(tmp_path, "src/a.py", "x = 1\n")
         excluded_dir = tmp_path / "tests" / "fixtures"
@@ -800,7 +855,7 @@ class TestExclude:
                 yield dirpath, dirnames, filenames
 
         monkeypatch.setattr("frob.graph.os.walk", _counting_walk)
-        found = _walk_source_files(tmp_path, exclude_globs=("tests/fixtures/**",))
+        found, _docs = _walk_repo_files(tmp_path, exclude_globs=("tests/fixtures/**",))
 
         found_rel = {p.relative_to(tmp_path).as_posix() for p in found}
         assert found_rel == {"src/a.py"}
@@ -916,6 +971,27 @@ class TestLoadGraph:
         result = load_graph(tmp_path / ".frob" / "cache.db")
         assert result.is_err
         assert result.danger_err == GraphError.CacheCorrupt
+
+    def test_touch_without_edit_is_not_stale(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/__init__.py::load_graph
+        """T-0245: a `touch` that moves mtime without changing content must
+        not report CacheStale -- load_graph's stat-first check falls back to
+        a full content hash on any stat mismatch, and a hash match there
+        must still count as fresh."""
+        import os
+        import time
+
+        _write(tmp_path, "src/a.py", "def foo() -> None:\n    pass\n")
+        cache = tmp_path / ".frob" / "cache.db"
+        build_graph(tmp_path, cache).danger_ok
+
+        target = tmp_path / "src" / "a.py"
+        st = target.stat()
+        time.sleep(0.01)
+        os.utime(target, ns=(st.st_atime_ns + 1_000_000, st.st_mtime_ns + 1_000_000))
+
+        result = load_graph(cache)
+        assert result.is_ok
 
     def test_load_graph_success_returns_snapshot(self, tmp_path: Path) -> None:
         # frob:tests src/frob/graph/__init__.py::load_graph
@@ -1139,9 +1215,7 @@ class TestCorruptCacheRecovery:
             ).fetchone()
         finally:
             conn.close()
-        from frob.graph.cache import _SCHEMA_VERSION
-
-        assert row is not None and row[0] == str(_SCHEMA_VERSION)
+        assert row is not None and row[0] == str(graph_cache._SCHEMA_VERSION)
 
 
 class TestDuplicateSymrefs:
@@ -1241,6 +1315,39 @@ class TestCacheModule:
             assert snapshot.root == str(tmp_path)
             assert "src/a.py::foo" in snapshot.symbols
             assert snapshot.file_hashes["src/a.py"] == "deadbeef"
+        finally:
+            conn.close()
+
+    def test_get_file_meta_and_touch_file_stat(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/cache.py::get_file_meta
+        # frob:tests src/frob/graph/cache.py::touch_file_stat
+        """T-0245: get_file_meta returns the stored (content_hash, mtime_ns,
+        size) stat pair, and touch_file_stat can refresh just the stat
+        (a `touch` with no real edit) without disturbing the content hash or
+        the symbols/edges/malformed rows already stored for the file."""
+        from frob.graph import cache as _cache
+
+        conn = _cache.connect(tmp_path / ".frob" / "cache.db")
+        try:
+            assert _cache.get_file_meta(conn, "src/a.py") is None
+            _cache.store_file_data(
+                conn,
+                file_path="src/a.py",
+                content_hash="deadbeef",
+                mtime_ns=100,
+                size=42,
+                symbols=(),
+                edges=(),
+                malformed=(),
+            )
+            conn.commit()
+            assert _cache.get_file_meta(conn, "src/a.py") == ("deadbeef", 100, 42)
+
+            _cache.touch_file_stat(conn, "src/a.py", mtime_ns=200, size=42)
+            conn.commit()
+            assert _cache.get_file_meta(conn, "src/a.py") == ("deadbeef", 200, 42)
+            # content hash is untouched by a stat-only refresh
+            assert _cache.get_file_hash(conn, "src/a.py") == "deadbeef"
         finally:
             conn.close()
 

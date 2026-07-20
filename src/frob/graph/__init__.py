@@ -78,6 +78,23 @@ def _content_hash(path: Path) -> str | None:
         return None
 
 
+# frob:ticket T-0245
+def _stat_key(path: Path) -> tuple[int, int] | None:
+    """`(mtime_ns, size)` for `path` via a single `os.stat`, or `None` unreadable.
+
+    One syscall vs. the open+read+close a content hash needs (T-0245); on a
+    latency-heavy mount (WSL9p `/mnt/c`, network shares) this is the
+    difference between a per-file stat and a per-file full read, and it is
+    the cheap check `build_graph`/`load_graph` try first.
+    """
+    try:
+        st = path.stat()
+        return st.st_mtime_ns, st.st_size
+    except OSError as exc:
+        _log.warning("could not stat %s: %s", path, exc)
+        return None
+
+
 def _display_path(path: Path, root: Path) -> str:
     """Repo-root-relative POSIX path for `path`."""
     return path.relative_to(root).as_posix()
@@ -95,19 +112,28 @@ _should_prune_dir = _excludes._should_prune_dir  # noqa: SLF001
 
 
 # frob:ticket T-0239
+# frob:ticket T-0245
 # frob:tests tests/test_graph.py::TestExclude.test_nested_git_worktree_pruned_without_config  # noqa: E501
 # frob:tests tests/test_graph.py::TestExclude.test_walk_source_files_prunes_before_descent  # noqa: E501
-def _walk_source_files(root: Path, exclude_globs: tuple[str, ...] = ()) -> list[Path]:
-    """Every source file under `root` with a recognized extension.
+def _walk_repo_files(
+    root: Path, exclude_globs: tuple[str, ...] = ()
+) -> tuple[list[Path], list[Path]]:
+    """`(source_files, doc_files)` in one `os.walk` pass over `root`.
 
-    Excluded directories -- the builtin skip set, `[graph] exclude` globs,
-    and nested git worktree checkouts -- are pruned from `dirnames` BEFORE
-    `os.walk` descends into them (T-0239: filtering files after the walk
-    still pays the full traversal/stat cost of every excluded subtree, which
-    measured as ~73pct of wasted work on a repo with stale
-    `.claude/worktrees/agent-*` checkouts).
+    Two things folded into one walk: excluded directories -- the builtin
+    skip set, `[graph] exclude` globs, and nested git worktree checkouts --
+    are pruned from `dirnames` BEFORE `os.walk` descends into them (T-0239:
+    filtering files after the walk still pays the full traversal/stat cost
+    of every excluded subtree). And source files and `docs/**/*.md` files
+    are classified from the SAME walk (T-0245) instead of a full
+    `os.walk(root)` for source files plus a separate walk of `docs/` for
+    doc files -- on a mount filesystem each `os.scandir` per directory is a
+    syscall, and `docs/` was being walked twice.
     """
-    found: list[Path] = []
+    docs_dir = root / "docs"
+    source_files: list[Path] = []
+    doc_files: list[Path] = []
+    exts = supported_extensions()
     for dirpath, dirnames, filenames in os.walk(root):
         dir_path = Path(dirpath)
         dirnames[:] = [
@@ -115,45 +141,22 @@ def _walk_source_files(root: Path, exclude_globs: tuple[str, ...] = ()) -> list[
             for d in dirnames
             if not _should_prune_dir(dir_path / d, root, exclude_globs)
         ]
+        under_docs = dir_path == docs_dir or docs_dir in dir_path.parents
         for name in filenames:
             path = dir_path / name
-            if Path(name).suffix.lower() not in supported_extensions():
+            suffix = Path(name).suffix.lower()
+            is_source = suffix in exts
+            is_doc = under_docs and suffix == ".md"
+            if not is_source and not is_doc:
                 continue
             if exclude_globs and _is_excluded(_display_path(path, root), exclude_globs):
                 continue
-            found.append(path)
-    return found
-
-
-# frob:ticket T-0239
-def _walk_doc_files(root: Path, exclude_globs: tuple[str, ...] = ()) -> list[Path]:
-    """Every `docs/**/*.md` file under `root`, excluded directories pruned.
-
-    Uses a manual `os.walk` (not `Path.rglob`, which cannot prune subtrees
-    mid-traversal) so a nested worktree checkout or excluded glob under
-    `docs/` is skipped before it is descended into -- same T-0239 fix as
-    `_walk_source_files`.
-    """
-    docs_dir = root / "docs"
-    if not docs_dir.is_dir():
-        return []
-    found: list[Path] = []
-    for dirpath, dirnames, filenames in os.walk(docs_dir):
-        dir_path = Path(dirpath)
-        dirnames[:] = [
-            d
-            for d in dirnames
-            if not _should_prune_dir(dir_path / d, root, exclude_globs)
-        ]
-        for name in filenames:
-            if not name.endswith(".md"):
-                continue
-            path = dir_path / name
-            if exclude_globs and _is_excluded(_display_path(path, root), exclude_globs):
-                continue
-            found.append(path)
+            if is_source:
+                source_files.append(path)
+            if is_doc:
+                doc_files.append(path)
     # frob:waive PERF004 reason="runs once after the os.walk loop, not per iteration"
-    return sorted(found)
+    return source_files, sorted(doc_files)
 
 
 def _symbol_record(rel_path: str, symbol) -> SymbolRecord:  # noqa: ANN001
@@ -187,7 +190,7 @@ def _dedupe_symbols(rel_path: str, parsed: ParsedFile) -> tuple[SymbolRecord, ..
 
 
 def _parse_source_file_fresh(
-    conn, rel_path: str, path: Path, on_disk_hash: str
+    conn, rel_path: str, path: Path, on_disk_hash: str, stat_key: tuple[int, int]
 ) -> tuple[
     bool, tuple[SymbolRecord, ...], tuple[Edge, ...], tuple[MalformedDirective, ...]
 ]:
@@ -216,6 +219,8 @@ def _parse_source_file_fresh(
         conn,
         file_path=rel_path,
         content_hash=on_disk_hash,
+        mtime_ns=stat_key[0],
+        size=stat_key[1],
         symbols=symbols,
         edges=edges,
         malformed=malformed,
@@ -224,27 +229,65 @@ def _parse_source_file_fresh(
 
 
 # frob:ticket T-0133
+# frob:ticket T-0245
 def _process_source_file(
-    conn, root: Path, path: Path, on_disk_hash: str
+    conn, root: Path, path: Path, stat_key: tuple[int, int]
 ) -> tuple[
     bool, tuple[SymbolRecord, ...], tuple[Edge, ...], tuple[MalformedDirective, ...]
 ]:
-    """Parse (or load) one source file: `(was_parsed, symbols, edges, malformed)`."""
+    """Parse (or load) one source file: `(was_parsed, symbols, edges, malformed)`.
+
+    Stat-first (T-0245): if `stat_key` (mtime_ns, size) matches what was
+    stored last build, trust it and load straight from cache -- no file read
+    at all. Only when the stat pair has moved does this fall back to a full
+    content hash, and even then a hash match (a `touch` with no edit) still
+    skips the reparse, just refreshing the stored stat.
+    """
     rel_path = _display_path(path, root)
-    cached_hash = _cache.get_file_hash(conn, rel_path)
-    if cached_hash == on_disk_hash:
-        _log.debug("cache hit: %s", rel_path)
+    meta = _cache.get_file_meta(conn, rel_path)
+    if meta is not None:
+        cached_hash, cached_mtime_ns, cached_size = meta
+        if (cached_mtime_ns, cached_size) == stat_key:
+            _log.debug("stat cache hit: %s", rel_path)
+            symbols, edges, malformed = _cache.load_file_data(conn, rel_path)
+            return False, symbols, edges, malformed
+    else:
+        cached_hash = None
+    on_disk_hash = _content_hash(path)
+    if on_disk_hash is None:
+        return True, (), (), ()
+    if on_disk_hash == cached_hash:
+        # mtime moved but content did not (e.g. a checkout/touch): refresh
+        # the stat so the next build takes the fast path again, but skip
+        # the reparse -- the stored symbols/edges/malformed are still correct.
+        _log.debug("content unchanged despite stat move: %s", rel_path)
+        _cache.touch_file_stat(conn, rel_path, mtime_ns=stat_key[0], size=stat_key[1])
         symbols, edges, malformed = _cache.load_file_data(conn, rel_path)
         return False, symbols, edges, malformed
-    return _parse_source_file_fresh(conn, rel_path, path, on_disk_hash)
+    return _parse_source_file_fresh(conn, rel_path, path, on_disk_hash, stat_key)
 
 
-def _process_doc_file(conn, root: Path, path: Path, on_disk_hash: str) -> bool:
-    """Parse (or cache-skip) one markdown file for `frob:describes` anchors."""
+# frob:ticket T-0245
+def _process_doc_file(conn, root: Path, path: Path, stat_key: tuple[int, int]) -> bool:
+    """Parse (or cache-skip) one markdown file for `frob:describes` anchors.
+
+    Same stat-first fast path as `_process_source_file` (T-0245).
+    """
     rel_path = _display_path(path, root)
-    cached_hash = _cache.get_file_hash(conn, rel_path)
-    if cached_hash == on_disk_hash:
-        _log.debug("cache hit: %s", rel_path)
+    meta = _cache.get_file_meta(conn, rel_path)
+    if meta is not None:
+        cached_hash, cached_mtime_ns, cached_size = meta
+        if (cached_mtime_ns, cached_size) == stat_key:
+            _log.debug("stat cache hit: %s", rel_path)
+            return False
+    else:
+        cached_hash = None
+    on_disk_hash = _content_hash(path)
+    if on_disk_hash is None:
+        return True
+    if on_disk_hash == cached_hash:
+        _log.debug("content unchanged despite stat move: %s", rel_path)
+        _cache.touch_file_stat(conn, rel_path, mtime_ns=stat_key[0], size=stat_key[1])
         return False
     try:
         text = path.read_text(encoding="utf-8")
@@ -262,6 +305,8 @@ def _process_doc_file(conn, root: Path, path: Path, on_disk_hash: str) -> bool:
         conn,
         file_path=rel_path,
         content_hash=on_disk_hash,
+        mtime_ns=stat_key[0],
+        size=stat_key[1],
         symbols=(),
         edges=edges,
         malformed=(),
@@ -277,11 +322,11 @@ def _ingest_source_files(
     parsed_count = 0
     cache_hits = 0
     for path in source_files:
-        on_disk = _content_hash(path)
-        if on_disk is None:
+        stat_key = _stat_key(path)
+        if stat_key is None:
             continue
         seen_paths.add(_display_path(path, root))
-        was_parsed, *_ = _process_source_file(conn, root, path, on_disk)
+        was_parsed, *_ = _process_source_file(conn, root, path, stat_key)
         if was_parsed:
             parsed_count += 1
         else:
@@ -297,11 +342,11 @@ def _ingest_doc_files(
     parsed_count = 0
     cache_hits = 0
     for path in doc_files:
-        on_disk = _content_hash(path)
-        if on_disk is None:
+        stat_key = _stat_key(path)
+        if stat_key is None:
             continue
         seen_paths.add(_display_path(path, root))
-        if _process_doc_file(conn, root, path, on_disk):
+        if _process_doc_file(conn, root, path, stat_key):
             parsed_count += 1
         else:
             cache_hits += 1
@@ -328,8 +373,7 @@ def build_graph(root: Path, cache: Path) -> Result[GraphSnapshot, BuildError]:
     conn = _cache.connect(cache)
     try:
         exclude_globs = _load_exclude_globs(root)
-        source_files = _walk_source_files(root, exclude_globs)
-        doc_files = _walk_doc_files(root, exclude_globs)
+        source_files, doc_files = _walk_repo_files(root, exclude_globs)
 
         src_seen, src_parsed, src_hits = _ingest_source_files(conn, root, source_files)
         doc_seen, doc_parsed, doc_hits = _ingest_doc_files(conn, root, doc_files)
@@ -378,11 +422,25 @@ def _finalize_build(
 
 
 # frob:ticket T-0361
+# frob:ticket T-0245
 def _first_stale_cached_file(conn: sqlite3.Connection, root: Path) -> str | None:
-    """The first cached file path whose on-disk content hash no longer
-    matches the cache's stored hash, or `None` if every cached file still
-    matches; split out of `load_graph`'s staleness-check loop (T-0361)."""
-    for path, stored_hash in conn.execute("SELECT path, content_hash FROM files"):
+    """The first cached file path whose on-disk state no longer matches the
+    cache, or `None` if every cached file still matches; split out of
+    `load_graph`'s staleness-check loop (T-0361).
+
+    Stat-first (T-0245): a matching `(mtime_ns, size)` trusts the cache with
+    one `os.stat` per file; only a stat mismatch pays for a full content
+    read to confirm the bytes actually moved (a `touch` alone should not
+    force `CacheStale`). This is the hot path every gate invocation runs
+    through, so it is where the mount-filesystem per-file cost (T-0245:
+    0.5ms/stat under load) matters most.
+    """
+    for path, stored_hash, stored_mtime_ns, stored_size in conn.execute(
+        "SELECT path, content_hash, mtime_ns, size FROM files"
+    ):
+        stat_key = _stat_key(root / path)
+        if stat_key is not None and stat_key == (stored_mtime_ns, stored_size):
+            continue
         current = _content_hash(root / path)
         if current != stored_hash:
             return path
@@ -405,10 +463,8 @@ def _first_added_file(
     staleness shape `_first_stale_cached_file`'s hash-only loop cannot see.
     """
     cached = {row[0] for row in conn.execute("SELECT path FROM files")}
-    on_disk = _walk_source_files(root, exclude_globs) + _walk_doc_files(
-        root, exclude_globs
-    )
-    for path in on_disk:
+    source_files, doc_files = _walk_repo_files(root, exclude_globs)
+    for path in source_files + doc_files:
         rel_path = _display_path(path, root)
         if rel_path not in cached:
             return rel_path
