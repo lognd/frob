@@ -212,3 +212,28 @@ def tool_unavailable_result(tool: str, binary: str) -> ToolResult:
         ],
         summary=f"tool unavailable: {binary}",
     )
+
+
+# frob:doc docs/modules/process.md#public-api
+# frob:ticket T-0200
+def tool_disabled_result(tool: str, flag_env: str) -> ToolResult:
+    """A `ProcessGuardError.ExecDisabled` refusal (`frob.process._guard.
+    guarded_subprocess_run`) is a FAILING `ToolResult` naming the exact env
+    var an operator flipped, mirroring `tool_unavailable_result`'s
+    loud-not-silent doctrine (T-0142) for the kill-switch case (T-0200):
+    a disabled tool stage is a visible failure in `frob check` output, not
+    a silently skipped stage."""
+    return ToolResult(
+        tool=tool,
+        exit_code=1,
+        diagnostics=[
+            Diagnostic(
+                severity="error",
+                message=(
+                    f"exec capability disabled via {flag_env} -- unset it "
+                    "to re-enable this check stage"
+                ),
+            )
+        ],
+        summary=f"exec disabled via {flag_env}",
+    )

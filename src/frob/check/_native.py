@@ -11,7 +11,13 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
-from frob.process.parsers.common import Diagnostic, ToolResult, tool_unavailable_result
+from frob.process._guard import EXEC_KILL_SWITCH_ENV, guarded_subprocess_run
+from frob.process.parsers.common import (
+    Diagnostic,
+    ToolResult,
+    tool_disabled_result,
+    tool_unavailable_result,
+)
 
 _CPP_EXCLUDED_DIRS = {"build", ".venv", "third_party", "extern"}
 
@@ -35,7 +41,7 @@ def _cmake_configure(root: Path, build_dir: Path) -> ToolResult | None:
     A missing `cmake` binary (T-0142) is a typed failing ToolResult, never
     a raw FileNotFoundError."""
     try:
-        cfg = subprocess.run(
+        run_result = guarded_subprocess_run(
             ["cmake", str(root), "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"],
             cwd=str(build_dir),
             capture_output=True,
@@ -43,6 +49,9 @@ def _cmake_configure(root: Path, build_dir: Path) -> ToolResult | None:
         )
     except FileNotFoundError:
         return tool_unavailable_result("cmake-configure", "cmake")
+    if run_result.is_err:
+        return tool_disabled_result("cmake-configure", EXEC_KILL_SWITCH_ENV)
+    cfg = run_result.danger_ok
     if cfg.returncode == 0:
         return None
     return ToolResult(
@@ -67,7 +76,7 @@ def _run_cmake_build(root: Path, build_dir: Path) -> ToolResult:
     if configure_failure is not None:
         return configure_failure
     try:
-        proc = subprocess.run(
+        run_result = guarded_subprocess_run(
             ["cmake", "--build", ".", "--", "-j4"],
             cwd=str(build_dir),
             capture_output=True,
@@ -75,6 +84,9 @@ def _run_cmake_build(root: Path, build_dir: Path) -> ToolResult:
         )
     except FileNotFoundError:
         return tool_unavailable_result("cmake-build", "cmake")
+    if run_result.is_err:
+        return tool_disabled_result("cmake-build", EXEC_KILL_SWITCH_ENV)
+    proc = run_result.danger_ok
     r = parse_clang(
         proc.stdout + proc.stderr, exit_code=proc.returncode, tool="cmake-build"
     )
@@ -102,7 +114,7 @@ def _run_clang_tidy_cmake(root: Path, build_dir: Path) -> ToolResult | None:
         return None
 
     try:
-        proc = subprocess.run(
+        run_result = guarded_subprocess_run(
             ["clang-tidy", f"-p={build_dir}", "--quiet"]
             + [str(f) for f in src_files[:50]],
             capture_output=True,
@@ -110,6 +122,9 @@ def _run_clang_tidy_cmake(root: Path, build_dir: Path) -> ToolResult | None:
         )
     except FileNotFoundError:
         return tool_unavailable_result("clang-tidy", "clang-tidy")
+    if run_result.is_err:
+        return tool_disabled_result("clang-tidy", EXEC_KILL_SWITCH_ENV)
+    proc = run_result.danger_ok
     return parse_clang_tidy(proc.stdout + proc.stderr, exit_code=proc.returncode)
 
 
@@ -121,9 +136,12 @@ def _run_clang_format(root: Path) -> ToolResult | None:
     if not src_files:
         return None
 
-    proc = _spawn_clang_format(src_files)
-    if proc is None:
+    run_result = _spawn_clang_format(src_files)
+    if run_result is None:
         return tool_unavailable_result("clang-format", "clang-format")
+    if run_result.is_err:
+        return tool_disabled_result("clang-format", EXEC_KILL_SWITCH_ENV)
+    proc = run_result.danger_ok
     if not proc.returncode:
         return ToolResult(
             tool="clang-format", exit_code=0, summary="all files formatted"
@@ -144,11 +162,13 @@ def _run_clang_format(root: Path) -> ToolResult | None:
     )
 
 
-def _spawn_clang_format(src_files: list[Path]) -> subprocess.CompletedProcess | None:
-    """Run `clang-format --dry-run --Werror` over `src_files`; `None` if
-    the binary is not on PATH."""
+def _spawn_clang_format(src_files: list[Path]):  # noqa: ANN201
+    """Run `clang-format --dry-run --Werror` over `src_files` via the exec
+    kill switch (T-0200); `None` if the binary is not on PATH, else the
+    guarded `Result` (`Err(ProcessGuardError.ExecDisabled)` when the kill
+    switch is flipped, `Ok(subprocess.CompletedProcess)` otherwise)."""
     try:
-        return subprocess.run(
+        return guarded_subprocess_run(
             ["clang-format", "--dry-run", "--Werror"] + [str(f) for f in src_files],
             capture_output=True,
             text=True,
@@ -179,7 +199,7 @@ def _run_ctest(build_dir: Path, *, valgrind: bool = False) -> ToolResult | None:
         return None
 
     try:
-        proc = subprocess.run(
+        run_result = guarded_subprocess_run(
             _ctest_cmd(build_dir, valgrind=valgrind),
             capture_output=True,
             text=True,
@@ -187,8 +207,10 @@ def _run_ctest(build_dir: Path, *, valgrind: bool = False) -> ToolResult | None:
         )
     except FileNotFoundError:
         return tool_unavailable_result("ctest", "ctest")
+    if run_result.is_err:
+        return tool_disabled_result("ctest", EXEC_KILL_SWITCH_ENV)
 
-    return _ctest_result(build_dir, proc)
+    return _ctest_result(build_dir, run_result.danger_ok)
 
 
 def _ctest_result(build_dir: Path, proc: subprocess.CompletedProcess) -> ToolResult:
@@ -224,7 +246,7 @@ def _run_cargo(
     from frob.process.parsers import parse_cargo
 
     try:
-        proc = subprocess.run(
+        run_result = guarded_subprocess_run(
             ["cargo", subcmd, "--message-format", "json"] + (extra or []),
             capture_output=True,
             text=True,
@@ -232,6 +254,9 @@ def _run_cargo(
         )
     except FileNotFoundError:
         return tool_unavailable_result(f"cargo-{subcmd}", "cargo")
+    if run_result.is_err:
+        return tool_disabled_result(f"cargo-{subcmd}", EXEC_KILL_SWITCH_ENV)
+    proc = run_result.danger_ok
     return parse_cargo(
         proc.stdout + proc.stderr, exit_code=proc.returncode, tool=f"cargo-{subcmd}"
     )
@@ -241,7 +266,7 @@ def _run_cargo_fmt_check(root: Path) -> ToolResult | None:
     """`cargo fmt --check`, a warning per offending line. A missing
     `cargo` binary (T-0142) is a typed failing ToolResult."""
     try:
-        proc = subprocess.run(
+        run_result = guarded_subprocess_run(
             ["cargo", "fmt", "--check"],
             capture_output=True,
             text=True,
@@ -249,6 +274,9 @@ def _run_cargo_fmt_check(root: Path) -> ToolResult | None:
         )
     except FileNotFoundError:
         return tool_unavailable_result("cargo-fmt", "cargo")
+    if run_result.is_err:
+        return tool_disabled_result("cargo-fmt", EXEC_KILL_SWITCH_ENV)
+    proc = run_result.danger_ok
     if proc.returncode == 0:
         return ToolResult(tool="cargo-fmt", exit_code=0, summary="all files formatted")
     lines = (proc.stdout + proc.stderr).strip().splitlines()
@@ -290,7 +318,7 @@ def _run_cargo_valgrind(root: Path) -> ToolResult | None:
     from frob.process.parsers import parse_valgrind
 
     try:
-        build_proc = subprocess.run(
+        build_result = guarded_subprocess_run(
             ["cargo", "test", "--no-run", "--message-format", "json"],
             capture_output=True,
             text=True,
@@ -298,11 +326,14 @@ def _run_cargo_valgrind(root: Path) -> ToolResult | None:
         )
     except FileNotFoundError:
         return tool_unavailable_result("cargo-test(valgrind)", "cargo")
+    if build_result.is_err:
+        return tool_disabled_result("cargo-test(valgrind)", EXEC_KILL_SWITCH_ENV)
+    build_proc = build_result.danger_ok
     binary = _find_test_binary_from_cargo_json(build_proc.stdout)
     if binary is None:
         return None
     try:
-        proc = subprocess.run(
+        run_result = guarded_subprocess_run(
             ["valgrind", "--leak-check=full", "--error-exitcode=1", str(binary)],
             capture_output=True,
             text=True,
@@ -310,6 +341,9 @@ def _run_cargo_valgrind(root: Path) -> ToolResult | None:
         )
     except FileNotFoundError:
         return tool_unavailable_result("cargo-test(valgrind)", "valgrind")
+    if run_result.is_err:
+        return tool_disabled_result("cargo-test(valgrind)", EXEC_KILL_SWITCH_ENV)
+    proc = run_result.danger_ok
     r = parse_valgrind(proc.stdout + proc.stderr, exit_code=proc.returncode)
     r.tool = "cargo-test(valgrind)"
     return r
@@ -325,7 +359,7 @@ def _run_cargo_test(root: Path, *, valgrind: bool = False) -> ToolResult | None:
             vg = _run_cargo_valgrind(root)
             if vg is not None:
                 return vg
-        proc = subprocess.run(
+        run_result = guarded_subprocess_run(
             ["cargo", "test"],
             capture_output=True,
             text=True,
@@ -333,6 +367,9 @@ def _run_cargo_test(root: Path, *, valgrind: bool = False) -> ToolResult | None:
         )
     except FileNotFoundError:
         return tool_unavailable_result("cargo-test", "cargo")
+    if run_result.is_err:
+        return tool_disabled_result("cargo-test", EXEC_KILL_SWITCH_ENV)
+    proc = run_result.danger_ok
     return parse_cargo(
         proc.stdout + proc.stderr, exit_code=proc.returncode, tool="cargo-test"
     )

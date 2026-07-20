@@ -10,15 +10,16 @@ parallel.
 
 from __future__ import annotations
 
-import subprocess
 import threading
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from frob.process._guard import EXEC_KILL_SWITCH_ENV, guarded_subprocess_run
 from frob.process.parsers.common import (
     Diagnostic,
     Severity,
     ToolResult,
+    tool_disabled_result,
     tool_unavailable_result,
 )
 
@@ -35,7 +36,7 @@ def _run_ruff(root: Path, extra_args: list[str] | None) -> list[ToolResult]:
 
     out: list[ToolResult] = []
     try:
-        proc = subprocess.run(
+        run_result = guarded_subprocess_run(
             ["ruff", "check", "--output-format", "json", str(root)],
             capture_output=True,
             text=True,
@@ -44,6 +45,11 @@ def _run_ruff(root: Path, extra_args: list[str] | None) -> list[ToolResult]:
         out.append(tool_unavailable_result("ruff-check", "ruff"))
         out.append(tool_unavailable_result("ruff-format", "ruff"))
         return out
+    if run_result.is_err:
+        out.append(tool_disabled_result("ruff-check", EXEC_KILL_SWITCH_ENV))
+        out.append(tool_disabled_result("ruff-format", EXEC_KILL_SWITCH_ENV))
+        return out
+    proc = run_result.danger_ok
     r = parse_ruff_json(proc.stdout, exit_code=proc.returncode)
     r.tool = "ruff-check"
     out.append(r)
@@ -55,13 +61,16 @@ def _ruff_format_result(root: Path) -> ToolResult:
     """The `ruff format --check` outcome as one ToolResult, or a typed
     failure (T-0142) if `ruff` is not on PATH."""
     try:
-        proc = subprocess.run(
+        run_result = guarded_subprocess_run(
             ["ruff", "format", "--check", str(root)],
             capture_output=True,
             text=True,
         )
     except FileNotFoundError:
         return tool_unavailable_result("ruff-format", "ruff")
+    if run_result.is_err:
+        return tool_disabled_result("ruff-format", EXEC_KILL_SWITCH_ENV)
+    proc = run_result.danger_ok
     if not proc.returncode:
         return ToolResult(
             tool="ruff-format", exit_code=0, summary="all files formatted"
@@ -112,9 +121,12 @@ def _run_ty(root: Path) -> ToolResult:
             pass
 
     try:
-        proc = subprocess.run(cmd, capture_output=True, text=True)
+        run_result = guarded_subprocess_run(cmd, capture_output=True, text=True)
     except FileNotFoundError:
         return tool_unavailable_result("ty", "ty")
+    if run_result.is_err:
+        return tool_disabled_result("ty", EXEC_KILL_SWITCH_ENV)
+    proc = run_result.danger_ok
     r = parse_ty(proc.stdout + proc.stderr, exit_code=proc.returncode)
     r.tool = "ty"
     return r

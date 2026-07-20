@@ -11,6 +11,14 @@ Usage:
     print(result.as_json())   # full structured data
 """
 
+from frob.process._guard import (
+    EXEC_KILL_SWITCH_ENV,
+    NET_KILL_SWITCH_ENV,
+    ProcessGuardError,
+    exec_enabled,
+    guarded_subprocess_run,
+    net_enabled,
+)
 from frob.process.parsers import (
     Diagnostic,
     TestCase,
@@ -31,4 +39,10 @@ __all__ = [
     "Diagnostic",
     "TestCase",
     "ToolResult",
+    "EXEC_KILL_SWITCH_ENV",
+    "NET_KILL_SWITCH_ENV",
+    "ProcessGuardError",
+    "exec_enabled",
+    "guarded_subprocess_run",
+    "net_enabled",
 ]

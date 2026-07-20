@@ -130,16 +130,17 @@ node gates : trusted {
 // check orchestration: src/frob/check/**. Runs the gate suite plus the
 // process-spawned tool integrations (ruff/mypy/pytest via `frob.process`)
 // and folds results into one exit code.
-// T-0155 LINT004: `may "exec"` is a risky capability with no real,
-// checked-in kill switch today (`src/frob/process/**` has no env-var/
-// feature-flag gate around subprocess spawning) -- an HONEST LINT004 gap,
-// not fabricated to force green (module docstring precedent: T-0150/
-// T-0151, "declare real facts or waive with reasons"). T-0200 (the
-// follow-on ticket to build the real kill switch) has not landed yet, so
-// this stays an open debt -- waived honestly with the `waive` clause below
-// (T-0174) rather than left as permanent unwaivable red: `frob sys audit`
-// now surfaces it as WAIVED with this reason instead of silently or
-// fictitiously green.
+// T-0200 (closing T-0155's honest LINT004 gap): `may "exec"` now has a
+// REAL, checked-in kill switch -- `frob.process._guard.
+// guarded_subprocess_run` (`src/frob/process/_guard.py`), an env-var-gated
+// wrapper every `_run_*` tool runner in `src/frob/check/_python.py`/
+// `_native.py`/`_ts.py` calls instead of `subprocess.run` directly.
+// Setting `FROB_DISABLE_EXEC=1` genuinely stops every process this
+// component spawns (`tests/unit/test_process_guard.py`), live and without
+// a redeploy -- this is no longer an aspirational claim (T-0150/T-0151
+// discipline: `attr flag=<id>` names an identifier that is real, not a
+// mechanism that does not exist), so the T-0174 `waive "LINT004"` is
+// retired in favor of the real declaration below.
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
 node checker : trusted {
     clearance Internal;
@@ -147,7 +148,7 @@ node checker : trusted {
     may "exec";
     may "fs";
     may "fs-read";
-    waive "LINT004" reason "no real kill switch around subprocess spawning yet -- T-0200 is the follow-on ticket to build one" ticket "T-0200";
+    attr flag=frob_check_exec_kill_switch;
 }
 
 // strata itself: src/frob/strata/**, strata-core/**. Parses/elaborates/

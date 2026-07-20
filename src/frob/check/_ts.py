@@ -13,9 +13,22 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
-from frob.process.parsers.common import Diagnostic, ToolResult, tool_unavailable_result
+from frob.process._guard import EXEC_KILL_SWITCH_ENV, guarded_subprocess_run
+from frob.process.parsers.common import (
+    Diagnostic,
+    ToolResult,
+    tool_disabled_result,
+    tool_unavailable_result,
+)
 
 _TS_TIMEOUT_S = 300
+
+#: Sentinel `_run_npx` returns instead of a `CompletedProcess` when the
+#: exec kill switch (T-0200, `frob.process._guard`) is flipped -- distinct
+#: from `None` (missing `npx`/timeout) so every `_run_*` caller can render
+#: a disabled-capability message instead of a misleading "tool
+#: unavailable" one.
+_NPX_DISABLED = object()
 
 
 # frob:ticket T-0142
@@ -25,16 +38,16 @@ def _missing_tool_result(tool: str, cmd: str) -> ToolResult:
     return tool_unavailable_result(tool, cmd)
 
 
-def _run_npx(
-    root: Path, args: list[str], tool: str
-) -> subprocess.CompletedProcess | None:
-    """Run an `npx ...` command in root; returns None if npx is missing."""
+def _run_npx(root: Path, args: list[str], tool: str):  # noqa: ANN201
+    """Run an `npx ...` command in root via the exec kill switch (T-0200).
+    Returns `None` if npx is missing/times out, `_NPX_DISABLED` if the
+    kill switch is flipped, else the finished `CompletedProcess`."""
     import shutil
 
     if shutil.which("npx") is None:
         return None
     try:
-        return subprocess.run(
+        run_result = guarded_subprocess_run(
             ["npx"] + args,
             cwd=str(root),
             capture_output=True,
@@ -45,6 +58,9 @@ def _run_npx(
         return None
     except subprocess.TimeoutExpired:
         return None
+    if run_result.is_err:
+        return _NPX_DISABLED
+    return run_result.danger_ok
 
 
 def _run_tsc(root: Path) -> ToolResult:
@@ -54,6 +70,8 @@ def _run_tsc(root: Path) -> ToolResult:
     proc = _run_npx(root, ["tsc", "--noEmit"], "tsc")
     if proc is None:
         return _missing_tool_result("tsc", "npx")
+    if proc is _NPX_DISABLED:
+        return tool_disabled_result("tsc", EXEC_KILL_SWITCH_ENV)
     r = parse_tsc(proc.stdout + proc.stderr, exit_code=proc.returncode)
     r.tool = "tsc"
     return r
@@ -66,6 +84,8 @@ def _run_eslint(root: Path) -> ToolResult:
     proc = _run_npx(root, ["eslint", ".", "--format", "json"], "eslint")
     if proc is None:
         return _missing_tool_result("eslint", "npx")
+    if proc is _NPX_DISABLED:
+        return tool_disabled_result("eslint", EXEC_KILL_SWITCH_ENV)
     r = parse_eslint(proc.stdout, exit_code=proc.returncode)
     r.tool = "eslint"
     return r
@@ -76,6 +96,8 @@ def _run_prettier(root: Path) -> ToolResult:
     proc = _run_npx(root, ["prettier", "--check", "."], "prettier")
     if proc is None:
         return _missing_tool_result("prettier", "npx")
+    if proc is _NPX_DISABLED:
+        return tool_disabled_result("prettier", EXEC_KILL_SWITCH_ENV)
     if not proc.returncode:
         return ToolResult(tool="prettier", exit_code=0, summary="all files formatted")
     unformatted = [
@@ -133,6 +155,8 @@ def _run_vitest(root: Path) -> ToolResult:
     proc = _run_npx(root, ["vitest", "run", "--reporter", "json"], "vitest")
     if proc is None:
         return _missing_tool_result("vitest", "npx")
+    if proc is _NPX_DISABLED:
+        return tool_disabled_result("vitest", EXEC_KILL_SWITCH_ENV)
 
     tests = _parse_vitest_report(proc.stdout)
     n_failed = sum(1 for t in tests if not t.passed and not t.skipped)

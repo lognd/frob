@@ -30,6 +30,14 @@ case a tool by name.
 <!-- frob:describes src/frob/process/parsers/common.py::ToolResult.failed_tests -->
 <!-- frob:describes src/frob/process/parsers/common.py::ToolResult.as_text -->
 <!-- frob:describes src/frob/process/parsers/common.py::ToolResult.as_json -->
+<!-- frob:describes src/frob/process/parsers/common.py::tool_unavailable_result -->
+<!-- frob:describes src/frob/process/parsers/common.py::tool_disabled_result -->
+<!-- frob:describes src/frob/process/_guard.py::EXEC_KILL_SWITCH_ENV -->
+<!-- frob:describes src/frob/process/_guard.py::NET_KILL_SWITCH_ENV -->
+<!-- frob:describes src/frob/process/_guard.py::ProcessGuardError -->
+<!-- frob:describes src/frob/process/_guard.py::exec_enabled -->
+<!-- frob:describes src/frob/process/_guard.py::net_enabled -->
+<!-- frob:describes src/frob/process/_guard.py::guarded_subprocess_run -->
 
 ```python
 # frob/process/parsers/common.py -- the shared result shapes every parser below produces
@@ -95,7 +103,42 @@ def parse_clang_tidy(stdout: str, exit_code: int = 0) -> ToolResult
     # clang-tidy diagnostic text into a ToolResult.
 def parse_ty(stdout: str, exit_code: int = 0) -> ToolResult
     # `ty check` diagnostic text (ANSI or plain) into a ToolResult.
+def tool_unavailable_result(tool: str, binary: str) -> ToolResult
+    # A missing tool binary as a failing ToolResult (T-0142 vacuous-pass doctrine).
+def tool_disabled_result(tool: str, flag_env: str) -> ToolResult
+    # An exec-kill-switch refusal as a failing ToolResult (T-0200), naming the env var.
 ```
+
+## Kill switch (T-0200)
+
+`frob.process._guard` is the real, checked-in kill-switch/feature-flag
+mechanism behind `design/frob.strata`'s `checker` node `attr
+flag=frob_check_exec_kill_switch;` declaration -- an env-var-gated wrapper
+around `subprocess.run` that every `frob.check` tool runner
+(`_python.py`/`_native.py`/`_ts.py`) calls instead of `subprocess.run`
+directly, so an operator can disable process spawning live, with no
+redeploy.
+
+```python
+# frob/process/_guard.py -- exec/net kill switches
+EXEC_KILL_SWITCH_ENV = "FROB_DISABLE_EXEC"
+NET_KILL_SWITCH_ENV = "FROB_DISABLE_NET"   # mechanism built; no real net call site wired yet (T-0200 scope)
+
+class ProcessGuardError(ErrorSet):
+    ExecDisabled  # exec capability disabled via kill switch
+
+def exec_enabled() -> bool
+    # False exactly when FROB_DISABLE_EXEC is set truthy ("1"/"true"/"yes"/"on").
+def net_enabled() -> bool
+    # False exactly when FROB_DISABLE_NET is set truthy.
+def guarded_subprocess_run(args, **kwargs) -> Result[subprocess.CompletedProcess, ProcessGuardError]
+    # subprocess.run(args, **kwargs), gated by exec_enabled(); Err(ExecDisabled) without spawning when disabled.
+```
+
+Set `FROB_DISABLE_EXEC=1` in the environment to stop every `frob check`
+tool-runner subprocess (ruff/ty/cmake/cargo/clang-tidy/clang-format/ctest/
+npx-driven tsc/eslint/prettier/vitest) without a redeploy or code change;
+unset it (or leave it unset) to re-enable.
 
 ## Dependencies
 
