@@ -1406,7 +1406,7 @@ T-0254 Windows generation. The T-0257 generator gains a windows target emitting 
 id: T-0265
 title: self-referential frob:tests directive on a test function passes --ticket check
   but fails full DRIFT002
-state: in-progress
+state: queued
 kind: bug
 origin: agent
 created: '2026-07-18'
