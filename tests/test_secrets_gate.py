@@ -168,6 +168,97 @@ class TestFindsTokens:
         assert matches[0].severity == Severity.WARN
 
 
+class TestProviderParityT0427:
+    """T-0427: new providers added toward `docs/design/secrets-pii-corpus.md`
+    A.4 parity -- one end-to-end fire test per new pattern, beyond the
+    drift-lock's own generic coverage."""
+
+    def test_aws_bedrock_key_flagged_sec001(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_secrets.py::secrets_gate
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        token = "ABSK" + "d" * 109
+        (repo / "config.py").write_text(f'BEDROCK_KEY = "{token}"\n')
+        _commit(repo)
+
+        violations = secrets_gate(repo)
+        matches = [v for v in violations if "aws-bedrock-api-key" in v.message]
+        assert len(matches) == 1
+        assert matches[0].severity == Severity.ERROR
+        assert "d" * 109 not in matches[0].message
+
+    def test_discord_bot_token_flagged_sec001(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_secrets.py::secrets_gate
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        token = "N" + "d" * 24 + "." + "e" * 6 + "." + "f" * 27
+        (repo / "bot.py").write_text(f'DISCORD_TOKEN = "{token}"\n')
+        _commit(repo)
+
+        violations = secrets_gate(repo)
+        matches = [v for v in violations if "discord-bot-token" in v.message]
+        assert len(matches) == 1
+        assert matches[0].severity == Severity.ERROR
+
+    def test_mongodb_atlas_uri_flagged_sec001(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_secrets.py::secrets_gate
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        # Runtime-constructed (never a contiguous literal in this file's own
+        # source), same discipline as test_stripe_live_key_sec003 above.
+        uri = "mongodb+srv://" + "dbuser:s3cretpw@cluster0.mongo-prod.net/db"
+        (repo / "settings.py").write_text(f'MONGO_URI = "{uri}"\n')
+        _commit(repo)
+
+        violations = secrets_gate(repo)
+        matches = [v for v in violations if "mongodb-atlas-uri" in v.message]
+        assert len(matches) == 1
+        assert "s3cretpw" not in matches[0].message
+        # The generic basic-auth-url pattern must NOT double-claim the same
+        # span -- mongodb-atlas-uri is ordered first as the more specific
+        # pattern (table ordering discipline).
+        assert not any("basic-auth-url" in v.message for v in violations)
+
+    def test_hashicorp_vault_service_token_flagged_sec001(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_secrets.py::secrets_gate
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        token = "hvs." + "d" * 24
+        (repo / "config.py").write_text(f'VAULT_TOKEN = "{token}"\n')
+        _commit(repo)
+
+        violations = secrets_gate(repo)
+        matches = [v for v in violations if "hashicorp-vault-service" in v.message]
+        assert len(matches) == 1
+
+    def test_hashicorp_vault_batch_token_flagged_sec001(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_secrets.py::secrets_gate
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        token = "hvb." + "d" * 24
+        (repo / "config.py").write_text(f'VAULT_TOKEN = "{token}"\n')
+        _commit(repo)
+
+        violations = secrets_gate(repo)
+        matches = [v for v in violations if "hashicorp-vault-batch" in v.message]
+        assert len(matches) == 1
+
+    def test_basic_auth_url_flagged_sec001_warn(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_secrets.py::secrets_gate
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        # Runtime-constructed, same discipline as above.
+        url = "https://" + "dbuser:s3cretpw@svc.internal/path"
+        (repo / "notes.txt").write_text(f"connect to {url}\n")
+        _commit(repo)
+
+        violations = secrets_gate(repo)
+        matches = [v for v in violations if "basic-auth-url" in v.message]
+        assert len(matches) == 1
+        assert matches[0].severity == Severity.WARN
+        assert "s3cretpw" not in matches[0].message
+
+
 class TestFakeMarking:
     # frob:waive DUP001 reason="parallel secrets-gate case table: \
     # independent fire/no-fire cases sharing an arrange-act scaffold; \
@@ -540,6 +631,7 @@ _FIXTURES_BY_PROVIDER: dict[str, str] = {
     "generic-live-key": "sk-live-" + "a" * 24,
     "openai-legacy": "sk-" + "a" * 24,
     "aws-access-key-id": "AKIA" + "A" * 16,
+    "aws-bedrock-api-key": "ABSK" + "a" * 109,
     "github": "ghp_" + "a" * 36,
     "github-fine-grained": "github_pat_" + "a" * 24,
     "gitlab": "glpat-" + "a" * 24,
@@ -553,6 +645,11 @@ _FIXTURES_BY_PROVIDER: dict[str, str] = {
     "npm": "npm_" + "a" * 36,
     "pypi": "pypi-" + "a" * 52,
     "huggingface": "hf_" + "a" * 34,
+    "discord-bot-token": "M" + "a" * 24 + "." + "b" * 6 + "." + "c" * 27,
+    "mongodb-atlas-uri": "mongodb+srv://" + "user:pass@cluster0.mongo-prod.net/db",
+    "hashicorp-vault-service": "hvs." + "a" * 24,
+    "hashicorp-vault-batch": "hvb." + "a" * 24,
+    "basic-auth-url": "https://" + "user:pass@svc.internal/path",
     "plaid": "plaid_secret = " + "a" * 30,
     # Literal PEM header below -- self-scan would otherwise match this dict
     # entry's own source text (unlike every other entry above, there is no

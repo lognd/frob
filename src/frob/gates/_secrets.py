@@ -24,12 +24,16 @@ line MUST go through it -- this is the whole point of the gate; a leaked
 scanner is worse than no scanner.
 
 Providers deliberately covered by a real, testable pattern (T-0157's
-per-provider mandate): Anthropic, OpenAI, Stripe (live+test, secret+
-restricted+publishable+webhook), AWS access key ids, GitHub, GitLab, Slack,
-Google, Twilio, SendGrid, Square, Braintree/PayPal (via Braintree's fixed
-`access_token$production$` shape -- see `_PATTERNS` comment for why bare
-PayPal secrets are NOT patterned), npm, PyPI, HuggingFace, Plaid (context-
-gated, see comment), PEM private-key headers, and a JWT header heuristic.
+per-provider mandate; extended toward provider-format parity by T-0427):
+Anthropic, OpenAI, Stripe (live+test, secret+restricted+publishable+
+webhook), AWS access key ids, AWS Bedrock long-lived API keys, GitHub,
+GitLab, Slack, Google, Twilio, SendGrid, Square, Braintree/PayPal (via
+Braintree's fixed `access_token$production$` shape -- see `_PATTERNS`
+comment for why bare PayPal secrets are NOT patterned), npm, PyPI,
+HuggingFace, Discord bot tokens, MongoDB Atlas connection URIs, HashiCorp
+Vault service/batch tokens, generic basic-auth-in-URL credentials, Plaid
+(context-gated, see comment), PEM private-key headers, and a JWT header
+heuristic.
 
 Deliberately OMITTED: a generic Shannon-entropy fallback. This repo alone
 carries content-hash digests, git shas, UUIDs, and base64 test fixtures
@@ -38,7 +42,20 @@ enough to catch real secrets is also loose enough to fire on all of those,
 which is the exact "dishonest gate" T-0151 documents -- so it is left out
 rather than half-built. A future ticket could revisit this with a properly
 tuned, context-aware entropy pass; until then the pattern table is the
-whole detector. (`_looks_low_entropy`, added T-0219, is NOT that fallback:
+whole detector. Same reasoning excludes several more `docs/design/
+secrets-pii-corpus.md` A.4 rows even after T-0427's parity pass: AWS
+secret access keys (40-char no-prefix base64), Azure Storage Account keys
+(88-char no-prefix base64) and Azure AD/Entra client secrets (opaque,
+context-only), and the generic keyword+entropy "API key" rule -- all
+tagged "entropy-heuristic + contextual" in that corpus, none has a fixed,
+matchable prefix, and generic-shaped `_scan_line` matching would be the
+same false-positive class this module already declines. GCP service-
+account JSON keys are NOT separately patterned either: the structural
+signal that actually distinguishes the JSON blob (its embedded PEM
+`private_key` field) already fires the existing `private-key-pem` pattern
+line-by-line, so a dedicated whole-document JSON pattern would be a
+redundant detector for the same underlying leak. (`_looks_low_entropy`,
+added T-0219, is NOT that fallback:
 it never fires a violation, only narrows an existing phrase-based
 SUPPRESSION so it can't be bypassed -- a different, much lower-stakes use
 of entropy than a detection trigger would be.)
@@ -250,6 +267,20 @@ _PATTERNS: tuple[_SecretPattern, ...] = (
         r"A(?:KIA|SIA)[0-9A-Z]{16}",
         "AKIA/ASIA",
     ),
+    # T-0427 provider-format parity pass (docs/design/secrets-pii-corpus.md
+    # A.4 row "AWS Bedrock long-lived API key"): fixed `ABSK` prefix, unlike
+    # the entropy/contextual-only AWS secret access key (deliberately NOT
+    # added -- see the "Deliberately OMITTED" section of this module's
+    # docstring; a 40-char no-prefix base64 string is exactly the dishonest
+    # entropy-fallback class this module declines to ship).
+    _pat(
+        "aws-bedrock-api-key",
+        "SEC001",
+        Severity.ERROR,
+        "critical",
+        r"ABSK[A-Za-z0-9+/]{109,}=*",
+        "ABSK",
+    ),
     _pat(
         "github",
         "SEC001",
@@ -362,6 +393,52 @@ _PATTERNS: tuple[_SecretPattern, ...] = (
         r"hf_[A-Za-z0-9]{34}",
         "hf_",
     ),
+    # T-0427 (docs/design/secrets-pii-corpus.md A.4 "Discord bot token"):
+    # the historical three-segment shape gitleaks/detect-secrets/GitHub all
+    # name -- `[MN]` lead byte, base-ID segment, fixed 6-char timestamp
+    # segment, 27+ char HMAC segment.
+    _pat(
+        "discord-bot-token",
+        "SEC001",
+        Severity.ERROR,
+        "critical",
+        r"[MN][A-Za-z0-9]{23,25}\.[\w-]{6}\.[\w-]{27,}",
+        "<discord-bot-token>",
+    ),
+    # T-0427 (A.4 "MongoDB Atlas connection URI w/ credentials"): structural
+    # match on the URI shape itself -- the password segment is opaque (any
+    # charset), so this is "exact-pattern-matchable (structural)" per the
+    # corpus tag, not an entropy check on the credential.
+    _pat(
+        "mongodb-atlas-uri",
+        "SEC001",
+        Severity.ERROR,
+        "high",
+        r"mongodb(?:\+srv)?://[^\s:/@]+:[^\s@/]+@[^\s/]+",
+        "mongodb(+srv)://...:...@",
+    ),
+    # T-0427 (A.4 "HashiCorp Vault token"): current-generation service and
+    # batch token prefixes. The legacy `s.` prefix is deliberately NOT
+    # patterned here -- two literal characters is indistinguishable from
+    # ordinary prose/code (`s.` appears constantly as a coincidental
+    # substring) and would be exactly the false-positive-heavy class this
+    # module avoids; documented gap, not a silent omission.
+    _pat(
+        "hashicorp-vault-service",
+        "SEC001",
+        Severity.ERROR,
+        "high",
+        r"hvs\.[A-Za-z0-9_-]{20,}",
+        "hvs.",
+    ),
+    _pat(
+        "hashicorp-vault-batch",
+        "SEC001",
+        Severity.ERROR,
+        "high",
+        r"hvb\.[A-Za-z0-9_-]{20,}",
+        "hvb.",
+    ),
     # Plaid has no fixed prefix either (secrets are bare 30-char hex); gated
     # on the line also mentioning "plaid" (case-insensitive) to keep the
     # false-positive class to "a hex-ish string near the word plaid" rather
@@ -389,6 +466,32 @@ _PATTERNS: tuple[_SecretPattern, ...] = (
         "critical",
         r"-----BEGIN (?:RSA |EC |DSA |OPENSSH |)PRIVATE KEY-----",
         "-----BEGIN ... PRIVATE KEY-----",
+    ),
+    # T-0427 (A.4 "Basic-auth in URL"): generic scheme, colon-slash-slash,
+    # user, colon, password, at-sign, host credential-in-URL shape (detect-
+    # secrets `BasicAuthDetector`). (Written out in prose above, not as one
+    # contiguous example string, so this comment does not self-trip the
+    # very pattern it describes -- see `TestGateIsGreenOnItself` below.)
+    # Deliberately LAST among the URL-shaped patterns (ordering discipline
+    # at top of this table) -- `mongodb-atlas-uri` above is a strict subset
+    # of this shape and must claim its span first, or every Mongo URI would
+    # double-report under both providers.
+    #
+    # Host segment requires an embedded dot (`[^\s/@]+\.[^\s/@]+`) rather
+    # than a bare `[^\s/]+` -- T-0427 discovery: the un-anchored version
+    # matched `docs/design/secrets-pii-corpus.md`'s own prose row
+    # documenting this exact provider format (a placeholder literal
+    # ending in the single word "host", no dot), a real false positive on
+    # an existing tracked file rather than a fixture. Requiring a dotted
+    # hostname keeps the pattern honest for real URLs (which always have
+    # one) while no longer tripping on bare descriptive placeholder words.
+    _pat(
+        "basic-auth-url",
+        "SEC001",
+        Severity.WARN,
+        "medium",
+        r"[a-zA-Z][a-zA-Z0-9+.-]*://[^\s:/@]+:[^\s@/]+@[^\s/@]+\.[^\s/@]+",
+        "<scheme>://...:...@",
     ),
     # JWTs are frequently non-secret (public ID tokens, doc examples, test
     # fixtures embedding a third-party sample) -- "low" label / WARN, a

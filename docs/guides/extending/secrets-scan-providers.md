@@ -19,8 +19,27 @@ every_provider_has_a_fixture` by name -- one of the few drift-locks in
 this codebase that names its own enforcing test in a comment.
 
 Providers covered at time of writing (per the module docstring's "per-
-provider mandate," T-0157): Anthropic, OpenAI, Stripe (live+test,
-secret+publishable).
+provider mandate," T-0157, extended toward provider-format parity by
+T-0427): Anthropic, OpenAI, Stripe (live+test, secret+restricted+
+publishable+webhook), AWS access key ids, AWS Bedrock long-lived API keys,
+GitHub (PAT + fine-grained), GitLab, Slack, Google, Twilio, SendGrid,
+Square, Braintree, npm, PyPI, HuggingFace, Discord bot tokens, MongoDB
+Atlas connection URIs, HashiCorp Vault service/batch tokens, generic
+basic-auth-in-URL credentials, Plaid (context-gated), PEM private-key
+headers, and a JWT structural heuristic -- see `_PATTERNS` in the source
+for the full, current, authoritative list; this page names highlights, not
+a duplicate enumeration to keep in sync by hand.
+
+Deliberately NOT patterned, and not planned without a dedicated ticket
+revisiting the entropy-fallback decision (`_secrets.py`'s module
+docstring, "Deliberately OMITTED" section): AWS secret access keys, Azure
+Storage Account keys, Azure AD/Entra client secrets, and the generic
+keyword+entropy "API key" rule -- none has a fixed, matchable prefix, so a
+pattern for any of them degenerates into exactly the noisy entropy
+fallback this scanner declines to ship. GCP service-account JSON keys are
+also not separately patterned: the PEM `private_key` field embedded in
+that JSON already trips `private-key-pem`, so a dedicated whole-document
+pattern would be redundant.
 
 ## Add-an-entry recipe
 
@@ -71,6 +90,24 @@ def test_github_token_flagged(self) -> None:
 - **Conflating `gates/_secrets.py` with `strata/_secrets.py`.** They are
   unrelated modules that happen to share a name stem; grep the full path
   before editing.
+- **A structural/URL-shaped pattern (no fixed provider prefix) matching
+  its own describing prose.** T-0427: an un-anchored `basic-auth-url`
+  pattern (`scheme://user:pass@host`) matched the literal placeholder text
+  in this codebase's own `docs/design/secrets-pii-corpus.md` row
+  describing that exact format -- a real false positive on an existing
+  tracked file, not a fixture. Run `TestGateIsGreenOnItself::
+  test_repo_is_clean` against a NEW structural pattern before considering
+  it done; if it fires on real repo content, tighten the pattern (e.g.
+  requiring a dotted hostname) rather than marking the hit `frob:secret-
+  fake` by hand -- a hand-marked false positive just moves the same bug to
+  the next tracked file that happens to match.
+- **Two patterns matching the same shape without ordering.** A new
+  structural pattern that is a strict superset of an existing one (e.g.
+  `basic-auth-url` vs. `mongodb-atlas-uri`, both `scheme://user:pass@host`
+  shapes) must be added AFTER the more specific pattern in `_PATTERNS`
+  (this table's documented most-specific-first ordering discipline) or
+  every hit under the specific provider double-reports under the generic
+  one too.
 
 ## See also
 
