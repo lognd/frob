@@ -79,6 +79,10 @@ node cli : trusted {
     may "eval";
     may "fs";
     may "fs-read";
+    // T-0178: frob.app.telemetry reads FROB_NO_TELEMETRY/FROB_STATS_AGENTIC
+    // (os.environ.get) to opt out of/into the non-gated agentic telemetry
+    // stream and its `--agentic` report trigger.
+    may "env";
 }
 
 // graph+lang: src/frob/graph/**, src/frob/lang/**, src/frob/arch/**. Owns

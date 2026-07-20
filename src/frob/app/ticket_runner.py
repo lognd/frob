@@ -138,6 +138,10 @@ def _new(root: Path, cfg: AppConfig) -> None:
         sys.exit(1)
     ticket = result.danger_ok
     _log.info("created %s: %s", ticket.id, ticket.title)
+    # frob:ticket T-0178
+    from frob.app.telemetry import record_ticket_event
+
+    record_ticket_event(root, ticket_id=ticket.id, event="created")
 
     if cfg.ticket_evidence_ids:
         added = _apply_evidence(root, ticket.id, cfg.ticket_evidence_ids)
@@ -700,6 +704,10 @@ def _start(root: Path, cfg: AppConfig) -> None:
     if transitioned.is_err:
         _log.error("ticket start failed: %s", transitioned.danger_err)
         sys.exit(1)
+    # frob:ticket T-0178
+    from frob.app.telemetry import record_ticket_event
+
+    record_ticket_event(root, ticket_id=cfg.ticket_id, event="started")
 
     _run_sweep(root, transitioned.danger_ok)
 
@@ -963,6 +971,10 @@ def _close(root: Path, cfg: AppConfig) -> None:
         _log.error(_close_failure_hint(cfg.ticket_id, ticket.state, result.danger_err))
         sys.exit(1)
     _log.info("%s closed (done)", cfg.ticket_id)
+    # frob:ticket T-0178
+    from frob.app.telemetry import record_ticket_event
+
+    record_ticket_event(root, ticket_id=cfg.ticket_id, event="done")
 
 
 def _fail(root: Path, cfg: AppConfig) -> None:

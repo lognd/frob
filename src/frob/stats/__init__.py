@@ -17,6 +17,15 @@ from typani.result import Err, Ok, Result
 
 from frob.gitio import GitError, run_argv
 from frob.logging import get_logger
+from frob.stats._agentic import (
+    AgenticReport,
+    CategoryTime,
+    RetreadCandidate,
+    TicketCycleTime,
+    TimeSink,
+    ToolTokens,
+    agentic_report,
+)
 from frob.tickets import TicketQueue, TicketState, load_queue
 
 _log = get_logger(__name__)
@@ -175,9 +184,16 @@ def collect(root: Path, window_days: int = 30) -> Result[StatsReport, GitError]:
 
 
 __all__ = [
+    "AgenticReport",
+    "CategoryTime",
     "CommitStats",
+    "RetreadCandidate",
     "StatsReport",
+    "TicketCycleTime",
     "TicketStats",
+    "TimeSink",
+    "ToolTokens",
+    "agentic_report",
     "collect",
     "commit_stats",
     "ticket_stats",

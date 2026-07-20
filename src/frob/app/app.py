@@ -126,4 +126,15 @@ class App:
                 " ..."
             )
             sys.exit(1)
-        handler(self._cfg)
+        # frob:ticket T-0178
+        from pathlib import Path
+
+        from frob.app.telemetry import timed_call
+
+        root = Path(".").resolve()
+        timed_call(
+            root,
+            subcommand=subcommand.value if subcommand else "",
+            args_head=" ".join(sys.argv[1:])[:512],
+            fn=lambda: handler(self._cfg),
+        )

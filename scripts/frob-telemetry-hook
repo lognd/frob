@@ -1,0 +1,176 @@
+#!/usr/bin/env python3
+"""Claude Code PostToolUse hook: append one telemetry event per harness
+tool invocation to the SAME `.frob/telemetry.jsonl` stream `frob`'s own
+CLI-entry timing hook writes (T-0178 deliverable 3). Hooks fire for
+subagent tool calls too, so implementer/reviewer dispatch rounds are
+covered without a per-tool shim in this repo's agent tooling.
+
+Wiring (project `.claude/settings.json`):
+
+    {
+      "hooks": {
+        "PostToolUse": [
+          {
+            "matcher": "*",
+            "hooks": [
+              {"type": "command", "command": "scripts/frob-telemetry-hook"}
+            ]
+          }
+        ]
+      }
+    }
+
+Reads one JSON object on stdin (the harness's PostToolUse payload: at
+minimum `tool_name`, `tool_input`, `tool_response`, and usually
+`duration_ms`); writes nothing to stdout on success (a hook that prints is
+treated as feedback to the agent, which this is not). Exits 0 always --
+telemetry must never be able to fail a tool call.
+
+Optional PATH-shim mode: outside the Claude Code harness (e.g. profiling
+a plain shell session), invoke this script directly with
+`--tool NAME --duration-ms N --input TEXT [--output TEXT] [--exit N]`
+to append an equivalent event by hand or from a wrapper script.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import sys
+from datetime import UTC, datetime
+from pathlib import Path
+
+_NO_TELEMETRY_ENV = "FROB_NO_TELEMETRY"
+_TELEMETRY_REL = Path(".frob") / "telemetry.jsonl"
+
+
+def _is_disabled() -> bool:
+    """Mirrors `frob.app.telemetry.is_disabled` -- kept as a standalone
+    literal check (not imported) so this script keeps working even when
+    invoked from a shell where the `frob` package is not importable."""
+    value = os.environ.get(_NO_TELEMETRY_ENV, "")
+    return value.strip().lower() not in ("", "0", "false")
+
+
+def _iso_now() -> str:
+    """Same ISO-8601-with-Z shape as `frob.app.telemetry.iso_now`."""
+    return datetime.now(UTC).isoformat(timespec="milliseconds").replace("+00:00", "Z")
+
+
+def _estimate_tokens(text: str) -> int:
+    """`len(text) / 4` heuristic, matching `frob.app.telemetry.estimate_tokens`."""
+    return max(0, len(text) // 4)
+
+
+def _redact(text: str) -> str:
+    """Best-effort secret redaction via `frob.gates._secrets`, degrading to
+    the raw text (never crashing the hook) when `frob` is not importable
+    from wherever this script is invoked -- e.g. the PATH-shim mode running
+    outside a `frob`-installed environment."""
+    try:
+        from frob.app.telemetry import redact_command
+
+        return redact_command(text)
+    except Exception:
+        return text
+
+
+def _repo_root() -> Path:
+    """Nearest ancestor of cwd containing `.git`, else cwd -- telemetry for
+    a tool call invoked from a subdirectory still lands in the repo's own
+    `.frob/`, matching where `frob`'s CLI hook writes."""
+    here = Path.cwd().resolve()
+    for candidate in (here, *here.parents):
+        if (candidate / ".git").exists():
+            return candidate
+    return here
+
+
+def _append(root: Path, record: dict) -> None:
+    if _is_disabled():
+        return
+    path = root / _TELEMETRY_REL
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(record, sort_keys=True))
+            fh.write("\n")
+    except OSError:
+        pass  # telemetry must never fail the tool call it is observing
+
+
+def _event_from_hook_payload(payload: object) -> dict | None:
+    """Build one `kind=\"tool\"` telemetry record from a PostToolUse JSON
+    payload; tolerant of missing fields since the harness's exact payload
+    shape is not a contract this script controls. `None` when `payload`
+    parsed as valid JSON but is not an object (e.g. stdin was `[1,2,3]` or
+    `\"hi\"` or `5`) -- `.get(...)` on those raises `AttributeError`, which
+    would violate this script's own "exits 0 always" contract."""
+    if not isinstance(payload, dict):
+        return None
+    tool_name = str(payload.get("tool_name", "unknown"))
+    tool_input = payload.get("tool_input", {})
+    tool_response = payload.get("tool_response", "")
+    input_head = _redact(json.dumps(tool_input, default=str)[:512])
+    output_text = (
+        tool_response
+        if isinstance(tool_response, str)
+        else json.dumps(tool_response, default=str)
+    )
+    return {
+        "iso_ts": _iso_now(),
+        "kind": "tool",
+        "tool": tool_name,
+        "input_head": input_head,
+        "duration_ms": payload.get("duration_ms"),
+        "output_tokens_est": _estimate_tokens(output_text),
+    }
+
+
+def _event_from_shim_args(args: argparse.Namespace) -> dict:
+    """Build the same shape from explicit `--tool`/`--duration-ms`/... flags
+    (the PATH-shim mode for profiling outside the harness)."""
+    return {
+        "iso_ts": _iso_now(),
+        "kind": "tool",
+        "tool": args.tool,
+        "input_head": _redact((args.input or "")[:512]),
+        "duration_ms": args.duration_ms,
+        "output_tokens_est": _estimate_tokens(args.output or ""),
+        "exit": args.exit_code,
+    }
+
+
+def main() -> int:
+    """Entry point: hook mode (JSON on stdin, no flags) or shim mode
+    (`--tool ...` flags). Always exits 0."""
+    parser = argparse.ArgumentParser(add_help=True)
+    parser.add_argument("--tool")
+    parser.add_argument("--duration-ms", type=float, dest="duration_ms")
+    parser.add_argument("--input")
+    parser.add_argument("--output")
+    parser.add_argument("--exit", type=int, dest="exit_code", default=0)
+    args, _unknown = parser.parse_known_args()
+
+    root = _repo_root()
+
+    if args.tool:
+        _append(root, _event_from_shim_args(args))
+        return 0
+
+    raw = sys.stdin.read()
+    if not raw.strip():
+        return 0
+    try:
+        payload = json.loads(raw)
+    except json.JSONDecodeError:
+        return 0
+    event = _event_from_hook_payload(payload)
+    if event is not None:
+        _append(root, event)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
