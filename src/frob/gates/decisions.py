@@ -29,7 +29,7 @@ _AD_ID_RE = re.compile(r"^AD-\d{3}$")
 
 
 # frob:doc docs/modules/decisions.md#data-models
-class DecisionStatus(StrEnum):
+class _DecisionStatus(StrEnum):
     """The lifecycle state of an ADR."""
 
     PROPOSED = "proposed"
@@ -46,7 +46,7 @@ class Decision(BaseModel):
 
     id: str
     title: str
-    status: DecisionStatus
+    status: _DecisionStatus
     superseded_by: str | None = None
 
 
@@ -135,7 +135,7 @@ def _dec002(decisions: tuple[Decision, ...], anchored: set[str]) -> list:
 
     violations = []
     for decision in decisions:
-        if decision.status != DecisionStatus.ACCEPTED or decision.id in anchored:
+        if decision.status != _DecisionStatus.ACCEPTED or decision.id in anchored:
             continue
         violations.append(
             Violation(
@@ -175,7 +175,7 @@ def decision_gate(decisions: tuple[Decision, ...], snapshot: GraphSnapshot) -> t
 __all__ = [
     "Decision",
     "DecisionError",
-    "DecisionStatus",
+    "_DecisionStatus",
     "decision_gate",
     "decisions_dir",
     "load_decisions",

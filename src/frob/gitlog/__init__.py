@@ -6,8 +6,6 @@ Groups by type and optionally filters to only major changes, only user-visible
 changes (feat+fix), or full history.
 """
 
-# frob:waive TEST005 reason="module line coverage 79.2%, debt T-0160"
-
 from __future__ import annotations
 
 import re
@@ -68,7 +66,6 @@ class GitLogResult(BaseModel):
     granularity: GranularityLevel
     commits: list[CommitEntry]
 
-    # frob:waive TEST005 reason="GitLogResult.groups 42.9% branch cover, debt T-0160"
     @property
     # frob:doc docs/commands/gitlog.md#public-api
     def groups(self) -> dict[str, list[CommitEntry]]:
@@ -80,7 +77,6 @@ class GitLogResult(BaseModel):
             result.setdefault(c.type, []).append(c)
         return result
 
-    # frob:waive TEST005 reason="GitLogResult.as_json 20.0% branch cover, debt T-0160"
     def as_json(self) -> str:
         # frob:doc docs/commands/gitlog.md#public-api
         d = self.model_dump()
@@ -128,7 +124,6 @@ class GitLogResult(BaseModel):
         order += [k for k in groups if k not in seen]
         return order
 
-    # frob:waive TEST005 reason="GitLogResult.as_text 73.7% branch cover, debt T-0160"
     def as_text(self) -> str:
         # frob:doc docs/commands/gitlog.md#public-api
         if not self.commits:

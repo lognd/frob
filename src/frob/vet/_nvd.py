@@ -3,7 +3,7 @@ joined to the proof" -- phase D, T-0110) with a 7d sqlite cache in the
 same `.frob/vet.db` `_registry.py` already writes to.
 
 Network calls: 5s timeout, degrade to `ok=False` on any failure -- the
-SAME offline-first posture `_registry.py::fetch_publish_date` establishes
+SAME offline-first posture `_registry.py::_fetch_publish_date` establishes
 for VET011 (docs/modules/vet.md VET011): an unreachable/unparseable NVD
 response is reported as "could not verify", never treated as "no CWEs",
 so a live CVE can never silently read as contained for lack of a network
@@ -60,6 +60,9 @@ def _cache_key(cve_id: str) -> str:
     return f"nvd:{cve_id}"
 
 
+# frob:waive DUP001 reason="documented deliberate split: same shape as \
+# _registry.py::_cache_get, kept separate since the two caches key \
+# different id spaces and expire on different TTLs (see module docstring)"
 def _cache_get(db_path: Path, key: str) -> str | None:
     """Cached JSON body for `key`, or `None` on miss/expiry/unreadable db
     (same shape as `_registry.py::_cache_get`, kept separate since the two
@@ -87,6 +90,10 @@ def _cache_get(db_path: Path, key: str) -> str | None:
     return value
 
 
+# frob:waive DUP001 reason="mirrors _registry.py::_cache_set (same \
+# check-then-apply sqlite write shape as _cache_get above); the two \
+# caches are independent artifacts with different TTLs, not worth \
+# forcing into one abstraction"
 def _cache_set(db_path: Path, key: str, value: str) -> None:
     """Best-effort cache write; failures are logged, never raised."""
     try:

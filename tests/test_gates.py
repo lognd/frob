@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import builtins
 import json
+import os
 import subprocess
 from datetime import date
 from pathlib import Path
@@ -16,6 +17,7 @@ from frob.gates import (
     Severity,
     SystemSpec,
     TestPolicy,
+    Violation,
     active_ticket,
     coverage_gate,
     delta_violations,
@@ -36,13 +38,33 @@ from frob.gates import (
 from frob.gates import (
     test_gate as run_test_gate,
 )
-from frob.gates.invariants import Criticality, InvariantError, load_invariants
+from frob.gates.invariants import InvariantError, _Criticality, load_invariants
 from frob.gitio import Diff, Hunk, working_diff
 from frob.graph import build_graph
 from frob.graph._models import LockEntry, LockFile
 from frob.testing import CollectedTests
 from frob.tickets import Origin, Ticket, TicketKind, TicketQueue, TicketState
 from frob.tickets._store import write_ticket
+
+
+# frob:ticket T-0415
+def _module_level_process_violation(root: Path, tag: str) -> tuple[Violation, ...]:
+    """Picklable process-pool test gate (T-0415): a module-level function
+    (required -- `ProcessPoolExecutor` cannot pickle a local closure) that
+    returns one `Violation` whose message embeds the worker's own pid, so a
+    test can prove the job actually executed in a separate process rather
+    than merely running serially in-process."""
+    import os
+
+    return (
+        Violation(
+            rule="TESTPROC",
+            severity=Severity.WARN,
+            file=str(root),
+            line=1,
+            message=f"{tag}:{os.getpid()}",
+        ),
+    )
 
 
 def _write(root: Path, rel: str, text: str) -> Path:
@@ -253,14 +275,86 @@ class TestBaselineDelta:
 
 
 class TestCoverageGate:
+    def test_cov001_broken_doc_edge_does_not_suppress_finding(
+        self, tmp_path: Path
+    ) -> None:
+        # T-0233: a frob:doc edge pointing at a nonexistent anchor must not
+        # count as "documented" for COV001 -- before the fix, any frob:doc
+        # edge (broken or not) satisfied _documented_srcs and silently
+        # suppressed the COV001 finding for that symbol.
+        _write(
+            tmp_path,
+            "src/a.py",
+            "class Widget:\n"
+            '    """A widget."""\n\n'
+            "    def render(self, value: int) -> str:\n"
+            '        """Render the widget."""\n'
+            "        # frob:doc docs/x.md#nonexistent-anchor\n"
+            "        return str(value)\n",
+        )
+        _write(tmp_path, "docs/x.md", "# Widget\n")
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        render_cov001 = [
+            v for v in violations if v.rule == "COV001" and "Widget.render" in v.message
+        ]
+        assert render_cov001 != []
+
     def test_cov001_undocumented_public_symbol(self, tmp_path: Path) -> None:
         _write(tmp_path, "src/a.py", "def helper(x):\n    return x\n")
         snap = _snapshot(tmp_path)
         queue = TicketQueue(tickets={})
         diff = Diff(base="x", hunks=())
         tests = CollectedTests(node_ids=frozenset())
-        violations = coverage_gate(snap, queue, diff, tests)
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert any(v.rule == "COV001" for v in violations)
+
+    # frob:tests src/frob/gates/__init__.py::_cov003_evidence_violation
+    # frob:ticket T-0292
+    def test_cov003_remediation_hint_names_no_nonexistent_flag(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0292: the COV003 message used to tell users to run
+        `frob test --collect`, a flag `frob test` has never accepted
+        (argparse would reject it). The hint must not name any `frob test`
+        flag other than ones `_add_test_parser` actually registers."""
+        import argparse
+        import re
+
+        from frob.__main__ import _add_test_parser
+
+        parser = argparse.ArgumentParser()
+        sub = parser.add_subparsers()
+        _add_test_parser(sub)
+        test_parser = sub.choices["test"]
+        real_flags = {
+            opt for action in test_parser._actions for opt in action.option_strings
+        }
+
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(
+            tickets={
+                "T-0002": _ticket(
+                    ticket_id="T-0002",
+                    state=TicketState.DONE,
+                    evidence=("tests/test_x.py::test_missing",),
+                )
+            }
+        )
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        v = _first_rule(violations, "COV003")
+        assert v is not None
+        sorted_real_flags = sorted(real_flags)
+        for flag in re.findall(r"--[a-z][a-z-]*", v.message):
+            assert flag in real_flags, (
+                f"COV003 message references {flag!r}, which is not a real "
+                f"`frob test` flag: {sorted_real_flags}"
+            )
 
     def test_cov001_message_wording_for_docstring_without_doc_edge(
         self, tmp_path: Path
@@ -279,7 +373,7 @@ class TestCoverageGate:
         queue = TicketQueue(tickets={})
         diff = Diff(base="x", hunks=())
         tests = CollectedTests(node_ids=frozenset())
-        violations = coverage_gate(snap, queue, diff, tests)
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         cov001 = [v for v in violations if v.rule == "COV001" and "helper" in v.message]
         assert len(cov001) == 1
         assert "no frob:doc edge" in cov001[0].message
@@ -287,18 +381,48 @@ class TestCoverageGate:
 
     def test_cov001_passes_when_documented(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/__init__.py::coverage_gate
+        # T-0233: _WIDGET_PY's frob:doc edge must actually resolve (docs/x.md
+        # with a #widget anchor) or COV001 now correctly fires on it too.
         _write(tmp_path, "src/a.py", _WIDGET_PY)
+        _write(tmp_path, "docs/x.md", "# Widget\n")
         snap = _snapshot(tmp_path)
         queue = TicketQueue(tickets={})
         diff = Diff(base="x", hunks=())
         tests = CollectedTests(node_ids=frozenset())
-        violations = coverage_gate(snap, queue, diff, tests)
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         # only the method carries a frob:doc edge; the enclosing class is
         # still undocumented, so only assert on the documented symbol
         render_cov001 = [
             v for v in violations if v.rule == "COV001" and "Widget.render" in v.message
         ]
         assert render_cov001 == []
+
+    def test_cov001_exempts_generated_file_with_marker(self, tmp_path: Path) -> None:
+        # T-0234: a file carrying a recognized generated-file marker (here,
+        # this repo's own "# generated by: ..." convention) must not draw a
+        # COV001 finding -- nobody hand-documents machine-generated code.
+        _write(
+            tmp_path,
+            "src/a.py",
+            "# generated by: frob exports src/a\ndef helper(x):\n    return x\n",
+        )
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert not any(v.rule == "COV001" and "helper" in v.message for v in violations)
+
+    def test_cov001_still_fires_without_generated_marker(self, tmp_path: Path) -> None:
+        # Control for test_cov001_exempts_generated_file_with_marker: an
+        # otherwise-identical file with no marker still owes COV001.
+        _write(tmp_path, "src/a.py", "def helper(x):\n    return x\n")
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert any(v.rule == "COV001" and "helper" in v.message for v in violations)
 
     def test_cov002_unticketed_diff_hunk(self, tmp_path: Path) -> None:
         _write(tmp_path, "src/a.py", "def helper(x):\n    return x\n")
@@ -307,7 +431,7 @@ class TestCoverageGate:
         diff = Diff(base="x", hunks=(Hunk(file="src/a.py", span=record.span),))
         queue = TicketQueue(tickets={})
         tests = CollectedTests(node_ids=frozenset())
-        violations = coverage_gate(snap, queue, diff, tests)
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         v = _first_rule(violations, "COV002")
         assert v is not None
         assert "frob ticket new" in v.message
@@ -320,7 +444,7 @@ class TestCoverageGate:
         diff = Diff(base="x", hunks=(Hunk(file="src/a.py", span=record.span),))
         queue = TicketQueue(tickets={"T-0001": _ticket(state=TicketState.IN_PROGRESS)})
         tests = CollectedTests(node_ids=frozenset())
-        violations = coverage_gate(snap, queue, diff, tests)
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert not any(v.rule == "COV002" for v in violations)
 
     def test_cov002_done_ticket_covers_own_closing_diff(self, tmp_path: Path) -> None:
@@ -346,7 +470,7 @@ class TestCoverageGate:
         )
         queue = TicketQueue(tickets={"T-0001": ticket})
         tests = CollectedTests(node_ids=frozenset())
-        violations = coverage_gate(snap, queue, diff, tests)
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert not any(v.rule == "COV002" for v in violations)
 
     def test_cov002_done_ticket_without_grace_still_fires(self, tmp_path: Path) -> None:
@@ -362,7 +486,7 @@ class TestCoverageGate:
         diff = Diff(base="x", hunks=(Hunk(file="src/a.py", span=record.span),))
         queue = TicketQueue(tickets={"T-0001": _ticket(state=TicketState.DONE)})
         tests = CollectedTests(node_ids=frozenset())
-        violations = coverage_gate(snap, queue, diff, tests)
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         v = _first_rule(violations, "COV002")
         assert v is not None
         assert "frob ticket new" in v.message
@@ -400,7 +524,7 @@ class TestCoverageGate:
             tickets={"T-0001": stale_ticket, "T-0002": unrelated_ticket}
         )
         tests = CollectedTests(node_ids=frozenset())
-        violations = coverage_gate(snap, queue, diff, tests)
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         v = _first_rule(violations, "COV002")
         assert v is not None
         assert "frob ticket new" in v.message
@@ -418,8 +542,61 @@ class TestCoverageGate:
         )
         diff = Diff(base="x", hunks=())
         tests = CollectedTests(node_ids=frozenset())
-        violations = coverage_gate(snap, queue, diff, tests)
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert any(v.rule == "COV003" for v in violations)
+
+    def test_cov003_names_unbuilt_native_as_remedy(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/__init__.py::_missing_native_remedy kind="unit"
+        # T-0333: when a declared native is unbuilt, its importorskip-gated
+        # tests never collect, so bound evidence cannot resolve -- the COV003
+        # message must name the native and its build command, not blame the id.
+        from frob.testing import NativeSpec
+
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(
+            tickets={
+                "T-0002": _ticket(
+                    ticket_id="T-0002",
+                    state=TicketState.DONE,
+                    evidence=("tests/unit/strata/test_kernel.py::test_prop",),
+                )
+            }
+        )
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(
+            node_ids=frozenset(),
+            missing_natives=(NativeSpec(name="strata_core", build_cmd="make core"),),
+        )
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        cov003 = [v for v in violations if v.rule == "COV003"]
+        assert cov003
+        assert "strata_core" in cov003[0].message
+        assert "make core" in cov003[0].message
+        # and it must NOT point at the nonexistent flag it used to
+        assert "frob test --collect to refresh" not in cov003[0].message
+
+    def test_cov003_honest_remedy_when_no_native_missing(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/__init__.py::_cov003_evidence_violation kind="unit"
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(
+            tickets={
+                "T-0002": _ticket(
+                    ticket_id="T-0002",
+                    state=TicketState.DONE,
+                    evidence=("tests/test_x.py::test_missing",),
+                )
+            }
+        )
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        cov003 = [v for v in violations if v.rule == "COV003"]
+        assert cov003
+        # T-0292: the hint must NOT name the nonexistent `frob test --collect`
+        # flag; it names the real content-hash auto-refresh + cache-file
+        # fallback instead.
+        assert "--collect" not in cov003[0].message
+        assert "refreshes automatically" in cov003[0].message
 
     def test_cov003_passes_when_evidence_collected(self, tmp_path: Path) -> None:
         snap = _snapshot(tmp_path)
@@ -433,7 +610,7 @@ class TestCoverageGate:
         )
         diff = Diff(base="x", hunks=())
         tests = CollectedTests(node_ids=frozenset({node}))
-        violations = coverage_gate(snap, queue, diff, tests)
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert not any(v.rule == "COV003" for v in violations)
 
     def test_cov003_passes_for_rust_evidence_id(self, tmp_path: Path) -> None:
@@ -453,7 +630,7 @@ class TestCoverageGate:
         )
         diff = Diff(base="x", hunks=())
         tests = CollectedTests(node_ids=frozenset({node}))
-        violations = coverage_gate(snap, queue, diff, tests)
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert not any(v.rule == "COV003" for v in violations)
 
     def test_load_tests_merges_python_and_rust_node_ids(
@@ -509,8 +686,84 @@ class TestCoverageGate:
         )
         diff = Diff(base="x", hunks=())
         tests = CollectedTests(node_ids=frozenset())
-        violations = coverage_gate(snap, queue, diff, tests)
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert any(v.rule == "COV004" for v in violations)
+
+    def test_cov005_directive_rebound_to_private_symbol_flags(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0297: extracting a private helper directly above `foo` and
+        landing `foo`'s trailing `frob:ticket` on the new helper instead
+        must fire COV005 -- the directive is now bound to `_foo_impl`
+        (private) where it bound `foo` (public) at HEAD."""
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def foo(x):\n    # frob:ticket T-0001\n    return x\n",
+        )
+        _git_init(tmp_path)
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def _foo_impl(x):\n"
+            "    # frob:ticket T-0001\n"
+            "    return x\n"
+            "\n"
+            "\n"
+            "def foo(x):\n"
+            "    return _foo_impl(x)\n",
+        )
+        snap = _snapshot(tmp_path)
+        record = snap.symbols["src/a.py::_foo_impl"]
+        diff = Diff(base="HEAD", hunks=(Hunk(file="src/a.py", span=record.span),))
+        queue = TicketQueue(tickets={"T-0001": _ticket(state=TicketState.IN_PROGRESS)})
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        v = _first_rule(violations, "COV005")
+        assert v is not None
+        assert v.severity == Severity.ERROR
+        assert "_foo_impl" in v.message
+        assert "T-0001" in v.message
+
+    def test_cov005_same_symbol_no_rebind_is_clean(self, tmp_path: Path) -> None:
+        """A directive that stays bound to the same (still public) symbol
+        across the diff must not fire COV005, even though the body changed."""
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def foo(x):\n    # frob:ticket T-0001\n    return x\n",
+        )
+        _git_init(tmp_path)
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def foo(x):\n    # frob:ticket T-0001\n    return x + 1\n",
+        )
+        snap = _snapshot(tmp_path)
+        record = snap.symbols["src/a.py::foo"]
+        diff = Diff(base="HEAD", hunks=(Hunk(file="src/a.py", span=record.span),))
+        queue = TicketQueue(tickets={"T-0001": _ticket(state=TicketState.IN_PROGRESS)})
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert not any(v.rule == "COV005" for v in violations)
+
+    def test_cov005_no_old_blob_is_clean(self, tmp_path: Path) -> None:
+        """A brand-new (never-committed) file has no "before" to compare
+        against `diff.base`, so COV005 must not fire on it (only COV001
+        covers a new file's own missing-doc obligation)."""
+        _git_init(tmp_path)
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def _foo_impl(x):\n    # frob:ticket T-0001\n    return x\n",
+        )
+        snap = _snapshot(tmp_path)
+        record = snap.symbols["src/a.py::_foo_impl"]
+        diff = Diff(base="HEAD", hunks=(Hunk(file="src/a.py", span=record.span),))
+        queue = TicketQueue(tickets={"T-0001": _ticket(state=TicketState.IN_PROGRESS)})
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert not any(v.rule == "COV005" for v in violations)
 
     def test_todo001_unbound_directive(self, tmp_path: Path) -> None:
         source = "def helper(x):\n    # frob:todo T-9999\n    return x\n"
@@ -519,7 +772,7 @@ class TestCoverageGate:
         queue = TicketQueue(tickets={})
         diff = Diff(base="x", hunks=())
         tests = CollectedTests(node_ids=frozenset())
-        violations = coverage_gate(snap, queue, diff, tests)
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert any(v.rule == "TODO001" for v in violations)
 
     def test_todo001_bare_comment_in_touched_file(self, tmp_path: Path) -> None:
@@ -529,7 +782,7 @@ class TestCoverageGate:
         queue = TicketQueue(tickets={})
         diff = Diff(base="x", hunks=(Hunk(file="src/a.py", span=(1, 3)),))
         tests = CollectedTests(node_ids=frozenset())
-        violations = coverage_gate(snap, queue, diff, tests)
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert any(v.rule == "TODO001" and "bare TODO" in v.message for v in violations)
 
     def test_waiver_suppresses_and_reports(self, tmp_path: Path) -> None:
@@ -544,7 +797,7 @@ class TestCoverageGate:
         queue = TicketQueue(tickets={})
         diff = Diff(base="x", hunks=())
         tests = CollectedTests(node_ids=frozenset())
-        violations = coverage_gate(snap, queue, diff, tests)
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert _first_rule(violations, "COV001") is not None
 
         from frob.gates import _apply_waivers  # noqa: PLC0415 - internal, test-only
@@ -679,6 +932,33 @@ class TestScopePrework:
         snap = _snapshot(tmp_path)
         ticket = _ticket(scope=())
         diff = Diff(base="x", hunks=(Hunk(file="src/anything.py", span=(1, 1)),))
+        assert scope_gate(diff, ticket, snap) == ()
+
+    def test_scope001_comma_joined_entry_splits_and_matches(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::scope_gate
+        # T-0241: a single 'a/,b/,c/' scope entry used to become one fnmatch
+        # pattern that matched nothing; the Ticket model now splits it.
+        snap = _snapshot(tmp_path)
+        ticket = _ticket(scope=("src/a/**,src/b/**",))
+        diff = Diff(base="x", hunks=(Hunk(file="src/b/f.py", span=(1, 1)),))
+        assert scope_gate(diff, ticket, snap) == ()
+
+    def test_scope001_dir_prefix_globs_recursively(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/__init__.py::scope_gate
+        # T-0241: a bare 'design/' scope entry now matches anything under it.
+        snap = _snapshot(tmp_path)
+        ticket = _ticket(scope=("design/",))
+        diff = Diff(base="x", hunks=(Hunk(file="design/sub/f.py", span=(1, 1)),))
+        assert scope_gate(diff, ticket, snap) == ()
+
+    def test_scope001_ledger_implicitly_in_scope(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/__init__.py::scope_gate
+        # T-0241: tickets.md is always implicitly in every ticket's scope.
+        snap = _snapshot(tmp_path)
+        ticket = _ticket(scope=("src/a/**",))
+        diff = Diff(base="x", hunks=(Hunk(file="tickets.md", span=(1, 1)),))
         assert scope_gate(diff, ticket, snap) == ()
 
     def test_scope001_exempts_file_committed_by_earlier_ticket(
@@ -830,6 +1110,56 @@ class TestScopePrework:
         assert loaded == sweep
 
 
+class TestPreworkSweepBounds:
+    """T-0240: the sweep's xref half used to call `xref(symbol, root)` --
+    ALWAYS the full repo root, ignoring the per-pattern scan path it had
+    already computed -- and derived its search term from a raw glob-syntax
+    stem (`Path(pattern).stem`), producing nonsense terms like `"**"`. Both
+    made `frob ticket start`/`sweep` unbounded and slow on real scopes.
+    These pin the fix: excludes/skip-dirs are honored (reusing
+    `frob.excludes`, not a second copy of the rule) and every xref hit is a
+    real, graph-known symbol name."""
+
+    def test_sweep_ticket_honors_graph_excludes(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_prework.py::sweep_ticket
+        (tmp_path / "frob.toml").write_text('[graph]\nexclude = ["vendor/**"]\n')
+        _write(tmp_path, "vendor/big.py", "def vendored_widget():\n    pass\n")
+        _write(tmp_path, "src/keep.py", "def kept_widget():\n    pass\n")
+        ticket = _ticket(state=TicketState.IN_PROGRESS, scope=("vendor/**", "src/**"))
+
+        from frob.gates._prework import sweep_ticket
+
+        result = sweep_ticket(tmp_path, ticket)
+        assert result.is_ok
+        sweep = result.danger_ok
+        assert "vendored_widget" not in sweep.xref_hits
+        assert "kept_widget" in sweep.xref_hits
+
+    def test_sweep_ticket_skips_builtin_skip_dirs(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_prework.py::sweep_ticket
+        _write(tmp_path, ".venv/pkg/mod.py", "def hidden_widget():\n    pass\n")
+        ticket = _ticket(state=TicketState.IN_PROGRESS, scope=(".venv/pkg/**",))
+
+        from frob.gates._prework import sweep_ticket
+
+        result = sweep_ticket(tmp_path, ticket)
+        assert result.is_ok
+        assert result.danger_ok.xref_hits == ()
+
+    def test_sweep_ticket_xref_hits_are_real_symbols(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_prework.py::sweep_ticket
+        _write(tmp_path, "src/mod.py", "def real_widget():\n    pass\n")
+        ticket = _ticket(state=TicketState.IN_PROGRESS, scope=("src/**",))
+
+        from frob.gates._prework import sweep_ticket
+
+        result = sweep_ticket(tmp_path, ticket)
+        assert result.is_ok
+        sweep = result.danger_ok
+        assert sweep.xref_hits == ("real_widget",)
+        assert "**" not in sweep.xref_hits
+
+
 class TestActiveTicket:
     def test_explicit_flag_wins(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/__init__.py::active_ticket
@@ -864,7 +1194,7 @@ class TestInvariantGate:
 
         snap = _snapshot(tmp_path)
         inv = Invariant(
-            id="INV-001", statement="x", criticality=Criticality.HIGH, evidence=()
+            id="INV-001", statement="x", criticality=_Criticality.HIGH, evidence=()
         )
         tests = CollectedTests(node_ids=frozenset())
         violations = invariant_gate((inv,), snap, tests)
@@ -877,7 +1207,7 @@ class TestInvariantGate:
         inv = Invariant(
             id="INV-001",
             statement="x",
-            criticality=Criticality.HIGH,
+            criticality=_Criticality.HIGH,
             evidence=("tests/test_x.py::test_y",),
         )
         tests = CollectedTests(node_ids=frozenset())
@@ -893,7 +1223,7 @@ class TestInvariantGate:
 
         node = "tests/test_x.py::test_y"
         inv = Invariant(
-            id="INV-001", statement="x", criticality=Criticality.HIGH, evidence=(node,)
+            id="INV-001", statement="x", criticality=_Criticality.HIGH, evidence=(node,)
         )
         tests = CollectedTests(node_ids=frozenset({node}))
         violations = invariant_gate((inv,), snap, tests)
@@ -905,7 +1235,7 @@ class TestInvariantGate:
         snap = _snapshot(tmp_path)
         node = "tests/test_x.py::test_y"
         inv = Invariant(
-            id="INV-001", statement="x", criticality=Criticality.HIGH, evidence=(node,)
+            id="INV-001", statement="x", criticality=_Criticality.HIGH, evidence=(node,)
         )
         tests = CollectedTests(node_ids=frozenset({node}))
         violations = invariant_gate((inv,), snap, tests)
@@ -918,7 +1248,7 @@ class TestInvariantGate:
         inv = Invariant(
             id="INV-001",
             statement="x",
-            criticality=Criticality.HIGH,
+            criticality=_Criticality.HIGH,
             evidence=("POL-thing",),
         )
         tests = CollectedTests(node_ids=frozenset())
@@ -963,8 +1293,114 @@ class TestInvariantLoad:
         assert result.danger_ok[0].id == "INV-007"
         assert result.danger_ok[0].evidence == ("tests/test_lock.py::test_atomic",)
 
+    def test_unreadable_file_is_malformed(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """An `OSError` reading the invariant file is `Err(Malformed)`, not
+        a crash -- proves `_frontmatter_dict`'s read-failure branch."""
+        (tmp_path / "invariants").mkdir()
+        (tmp_path / "invariants" / "INV-001.md").write_text(
+            "---\nid: INV-001\nstatement: x\ncriticality: high\nevidence: []\n---\n"
+        )
+        real_read_text = Path.read_text
+
+        def _boom(self: Path, *a, **kw):  # noqa: ANN001, ANN002, ANN003
+            if self.name == "INV-001.md":
+                raise OSError("permission denied")
+            return real_read_text(self, *a, **kw)
+
+        monkeypatch.setattr(Path, "read_text", _boom)
+        result = load_invariants(tmp_path)
+        assert result.is_err
+        assert result.danger_err == InvariantError.Malformed
+
+    # frob:waive DUP001 reason="parallel test methods within test_gates.py \
+    # (6 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
+    def test_no_frontmatter_block_is_malformed(self, tmp_path: Path) -> None:
+        """A file with no `---`-delimited frontmatter block at all is
+        `Err(Malformed)` -- proves the no-match regex branch."""
+        (tmp_path / "invariants").mkdir()
+        (tmp_path / "invariants" / "INV-001.md").write_text("just prose, no yaml\n")
+        result = load_invariants(tmp_path)
+        assert result.is_err
+        assert result.danger_err == InvariantError.Malformed
+
+    # frob:waive DUP001 reason="parallel test methods within test_gates.py \
+    # (6 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
+    def test_bad_yaml_frontmatter_is_malformed(self, tmp_path: Path) -> None:
+        """Unparseable YAML inside the frontmatter block is `Err(Malformed)`
+        -- proves the `yaml.YAMLError` branch."""
+        (tmp_path / "invariants").mkdir()
+        (tmp_path / "invariants" / "INV-001.md").write_text(
+            "---\nid: [unterminated\n---\nprose\n"
+        )
+        result = load_invariants(tmp_path)
+        assert result.is_err
+        assert result.danger_err == InvariantError.Malformed
+
+    # frob:waive DUP001 reason="parallel test methods within test_gates.py \
+    # (6 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
+    def test_non_mapping_frontmatter_is_malformed(self, tmp_path: Path) -> None:
+        """A frontmatter block that parses to a YAML scalar/list, not a
+        mapping, is `Err(Malformed)` -- proves the not-a-dict branch."""
+        (tmp_path / "invariants").mkdir()
+        (tmp_path / "invariants" / "INV-001.md").write_text(
+            "---\n- one\n- two\n---\nprose\n"
+        )
+        result = load_invariants(tmp_path)
+        assert result.is_err
+        assert result.danger_err == InvariantError.Malformed
+
+    # frob:waive DUP001 reason="parallel test methods within test_gates.py \
+    # (6 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
+    def test_empty_statement_is_malformed(self, tmp_path: Path) -> None:
+        """An empty `statement` field fails `_validate_invariant_shape`'s
+        non-empty check."""
+        (tmp_path / "invariants").mkdir()
+        (tmp_path / "invariants" / "INV-001.md").write_text(
+            "---\nid: INV-001\nstatement: ''\ncriticality: high\nevidence: []\n---\n"
+        )
+        result = load_invariants(tmp_path)
+        assert result.is_err
+        assert result.danger_err == InvariantError.Malformed
+
+    # frob:waive DUP001 reason="parallel test methods within test_gates.py \
+    # (6 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
+    def test_evidence_not_a_list_is_malformed(self, tmp_path: Path) -> None:
+        """A non-list `evidence` field is `Err(Malformed)` -- proves
+        `_build_invariant`'s evidence-shape branch."""
+        (tmp_path / "invariants").mkdir()
+        (tmp_path / "invariants" / "INV-001.md").write_text(
+            "---\nid: INV-001\nstatement: x\ncriticality: high\nevidence: notalist\n---\n"
+        )
+        result = load_invariants(tmp_path)
+        assert result.is_err
+        assert result.danger_err == InvariantError.Malformed
+
+    # frob:waive DUP001 reason="parallel test methods within test_gates.py \
+    # (6 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
+    def test_bad_criticality_is_malformed(self, tmp_path: Path) -> None:
+        """A `criticality` value outside the `_Criticality` enum is
+        `Err(Malformed)` -- proves the criticality-membership branch."""
+        (tmp_path / "invariants").mkdir()
+        (tmp_path / "invariants" / "INV-001.md").write_text(
+            "---\nid: INV-001\nstatement: x\ncriticality: catastrophic\nevidence: []\n---\n"
+        )
+        result = load_invariants(tmp_path)
+        assert result.is_err
+        assert result.danger_err == InvariantError.Malformed
+
 
 class TestTestGate:
+    # frob:waive DUP001 reason="parallel test methods within test_gates.py \
+    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
     def test_test001_public_symbol_no_unit_edge(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/__init__.py::test_gate
         from typani.option import Nothing
@@ -1055,6 +1491,49 @@ class TestTestGate:
         rule_ids = _rules(violations)
         assert "TEST002" in rule_ids
 
+    def test_test001_002_explicit_unit_edge_honored_regardless_of_test_name(
+        self, tmp_path: Path
+    ) -> None:
+        """Regression for T-0336 (root-caused while adding
+        `tests/test_graph.py::TestGeneratedSource` for T-0234's
+        `is_generated_source`): `_test_edges` used to index unit TESTS
+        edges by `edge.target` only, but the directive convention used
+        throughout this codebase for "written directly above the source
+        function, naming its covering test" (`docs/modules/testing.md`)
+        binds `src` to the source symbol and `target` to the test id --
+        `record.symref` (the source) can then only ever match `edge.src`,
+        never `edge.target`, so a target-only index can structurally never
+        find it. `zebra_helper` is deliberately tested by
+        `test_alpha_omega_case`, a name that shares no token with
+        `zebra_helper` -- `_inferred_unit_cases`' naming-convention fallback
+        cannot match it, so TEST001/002 can only stay clean here via the
+        explicit `frob:tests ... kind="unit"` edge being both found
+        (`_unit_test_edges` indexing `edge.src`) and honored as real
+        execution evidence (`_valid_edges` checking `edge.target` too)."""
+        from typani.option import Nothing
+
+        source = (
+            '# frob:tests tests/test_a.py::test_alpha_omega_case kind="unit"\n'
+            "def zebra_helper(x):\n    return x\n"
+        )
+        _write(tmp_path, "src/frob/pkg/a.py", source)
+        _write(
+            tmp_path,
+            "tests/test_a.py",
+            "def test_alpha_omega_case():\n    assert True\n",
+        )
+        snap = _snapshot(tmp_path)
+        node = "tests/test_a.py::test_alpha_omega_case"
+        tests = CollectedTests(node_ids=frozenset({node}))
+        cfg = TestPolicy(min_unit_cases=1)
+        violations = run_test_gate(snap, (), Nothing(), tests, cfg)
+        rule_ids = _rules(violations)
+        assert "TEST001" not in rule_ids
+        assert "TEST002" not in rule_ids
+
+    # frob:waive DUP001 reason="parallel test methods within test_gates.py \
+    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
     def test_test003_interface_without_integration(self, tmp_path: Path) -> None:
         from typani.option import Nothing
 
@@ -1063,6 +1542,20 @@ class TestTestGate:
         tests = CollectedTests(node_ids=frozenset())
         violations = run_test_gate(snap, (), Nothing(), tests, TestPolicy())
         assert any(v.rule == "TEST003" for v in violations)
+
+    # frob:tests tests/test_gates.py::TestTestGate.test_test003_exempts_strata_design_files kind="unit"
+    def test_test003_exempts_strata_design_files(self, tmp_path: Path) -> None:
+        """T-0225: `design/*.strata` must not be counted as a TEST003
+        "interface package" -- it owns no pytest surface, so
+        "0 integration tests" is a category error, not a real gap. The
+        design-file obligation is TEST009's e2e floor instead."""
+        from typani.option import Nothing
+
+        _write(tmp_path, "design/m.strata", _DESIGN_STRATA)
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(node_ids=frozenset())
+        violations = run_test_gate(snap, (), Nothing(), tests, TestPolicy())
+        assert not any(v.rule == "TEST003" and v.file == "design" for v in violations)
 
     def test_test003_satisfied_by_parametrized_test_node_id(
         self, tmp_path: Path
@@ -1435,6 +1928,66 @@ class TestTestGate:
         assert any(v.rule == "TEST008" for v in kept)
         assert not any(v.rule == "TEST008" for v in waived)
 
+    def test_test011_fires_on_stale_mtime(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/__init__.py::_test011_freshness
+        from typani.option import Some
+
+        from frob.gates import CoverageData
+
+        snap = _snapshot(tmp_path)
+        coverage = CoverageData(
+            source_sha="x",
+            symbol_branch={},
+            module_line={},
+            stale_by_mtime=True,
+            module_join_fraction=1.0,
+        )
+        tests = CollectedTests(node_ids=frozenset())
+        violations = run_test_gate(snap, (), Some(coverage), tests, TestPolicy())
+        test011 = [v for v in violations if v.rule == "TEST011"]
+        assert len(test011) == 1
+        assert test011[0].severity == Severity.WARN
+        assert "predates" in test011[0].message
+
+    def test_test011_fires_on_low_join_fraction(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/__init__.py::_test011_freshness
+        from typani.option import Some
+
+        from frob.gates import CoverageData
+
+        snap = _snapshot(tmp_path)
+        coverage = CoverageData(
+            source_sha="x",
+            symbol_branch={},
+            module_line={},
+            stale_by_mtime=False,
+            module_join_fraction=0.1,
+        )
+        tests = CollectedTests(node_ids=frozenset())
+        violations = run_test_gate(snap, (), Some(coverage), tests, TestPolicy())
+        test011 = [v for v in violations if v.rule == "TEST011"]
+        assert len(test011) == 1
+        assert test011[0].severity == Severity.WARN
+        assert "deflated" in test011[0].message
+
+    def test_test011_silent_when_fresh_and_fully_joined(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/__init__.py::_test011_freshness
+        from typani.option import Some
+
+        from frob.gates import CoverageData
+
+        snap = _snapshot(tmp_path)
+        coverage = CoverageData(
+            source_sha="x",
+            symbol_branch={},
+            module_line={},
+            stale_by_mtime=False,
+            module_join_fraction=1.0,
+        )
+        tests = CollectedTests(node_ids=frozenset())
+        violations = run_test_gate(snap, (), Some(coverage), tests, TestPolicy())
+        assert not any(v.rule == "TEST011" for v in violations)
+
     def test_test006_missing_stamp(self, tmp_path: Path) -> None:
         snap = _snapshot(tmp_path)
         from frob.gates import _test006  # noqa: PLC0415
@@ -1487,6 +2040,9 @@ class TestCoverageLoad:
         result = load_coverage(tmp_path)
         assert result.is_err
 
+    # frob:waive DUP001 reason="parallel test methods within test_gates.py \
+    # (3 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
     def test_parses_line_to_symbol_span(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_coverage.py::load_coverage
         _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
@@ -1528,6 +2084,90 @@ class TestCoverageLoad:
         assert record.symref in data.symbol_branch
         assert data.root_join_ok
 
+    def test_load_coverage_flags_stale_by_mtime(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_coverage.py::load_coverage
+        # T-0464: a coverage.xml written BEFORE the source it claims to
+        # measure must be flagged, since `source_sha` alone (the sha of
+        # coverage.xml itself) cannot detect this -- it always looks
+        # "fresh" relative to its own content.
+        _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
+        snap = _snapshot(tmp_path)
+        xml = (
+            '<?xml version="1.0"?><coverage><sources>'
+            f"<source>{(tmp_path / 'src/frob').resolve()}</source>"
+            "</sources><packages><package><classes>"
+            '<class filename="pkg/a.py" line-rate="1.0">'
+            '<lines><line number="1" hits="1" branch="false"/></lines>'
+            "</class></classes></package></packages></coverage>"
+        )
+        xml_path = tmp_path / "coverage.xml"
+        xml_path.write_text(xml)
+        # Back-date coverage.xml so it predates the source file above.
+        old = (tmp_path / "src/frob/pkg/a.py").stat().st_mtime - 3600
+        os.utime(xml_path, (old, old))
+        result = load_coverage(tmp_path, snap)
+        assert result.is_ok
+        assert result.danger_ok.stale_by_mtime
+
+    def test_load_coverage_fresh_by_mtime(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_coverage.py::load_coverage
+        _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
+        snap = _snapshot(tmp_path)
+        xml = (
+            '<?xml version="1.0"?><coverage><sources>'
+            f"<source>{(tmp_path / 'src/frob').resolve()}</source>"
+            "</sources><packages><package><classes>"
+            '<class filename="pkg/a.py" line-rate="1.0">'
+            '<lines><line number="1" hits="1" branch="false"/></lines>'
+            "</class></classes></package></packages></coverage>"
+        )
+        (tmp_path / "coverage.xml").write_text(xml)  # written after the source
+        result = load_coverage(tmp_path, snap)
+        assert result.is_ok
+        assert not result.danger_ok.stale_by_mtime
+
+    def test_load_coverage_module_join_fraction_deflated(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_coverage.py::load_coverage
+        # T-0464: coverage.xml that only measured one of two known modules
+        # (the fingerprint of dropped subprocess coverage) must report a
+        # module_join_fraction below 1.0, even though root_join_ok is True
+        # (SOME data did join).
+        _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
+        _write(tmp_path, "src/frob/pkg/b.py", "def other(x):\n    return x\n")
+        snap = _snapshot(tmp_path)
+        xml = (
+            '<?xml version="1.0"?><coverage><sources>'
+            f"<source>{(tmp_path / 'src/frob').resolve()}</source>"
+            "</sources><packages><package><classes>"
+            '<class filename="pkg/a.py" line-rate="1.0">'
+            '<lines><line number="1" hits="1" branch="false"/></lines>'
+            "</class></classes></package></packages></coverage>"
+        )
+        (tmp_path / "coverage.xml").write_text(xml)
+        result = load_coverage(tmp_path, snap)
+        assert result.is_ok
+        assert result.danger_ok.module_join_fraction == 0.5
+
+    def test_load_coverage_module_join_fraction_full(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_coverage.py::load_coverage
+        _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
+        snap = _snapshot(tmp_path)
+        xml = (
+            '<?xml version="1.0"?><coverage><sources>'
+            f"<source>{(tmp_path / 'src/frob').resolve()}</source>"
+            "</sources><packages><package><classes>"
+            '<class filename="pkg/a.py" line-rate="1.0">'
+            '<lines><line number="1" hits="1" branch="false"/></lines>'
+            "</class></classes></package></packages></coverage>"
+        )
+        (tmp_path / "coverage.xml").write_text(xml)
+        result = load_coverage(tmp_path, snap)
+        assert result.is_ok
+        assert result.danger_ok.module_join_fraction == 1.0
+
+    # frob:waive DUP001 reason="parallel test methods within test_gates.py \
+    # (3 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
     def test_joins_via_repo_relative_source(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_coverage.py::load_coverage
         # A non-frob layout: package lives at the repo root, no `src/`
@@ -1563,6 +2203,9 @@ class TestCoverageLoad:
         assert record.symref in data.symbol_branch
         assert data.root_join_ok
 
+    # frob:waive DUP001 reason="parallel test methods within test_gates.py \
+    # (3 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
     def test_multi_source_picks_the_root_that_joins(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_coverage.py::load_coverage
         # Multiple <source> entries (a monorepo-style coverage run) --
@@ -1723,6 +2366,191 @@ class TestRunGates:
         report = result.danger_ok
         assert "scope" in report.stats.skipped
         assert "prework" in report.stats.skipped
+
+
+class TestRunJobsTimingAttribution:
+    """T-0232: `_run_jobs` must attribute each job its OWN cost, not a
+    number smeared across every job sharing the thread pool."""
+
+    def test_cpu_bound_neighbor_does_not_inflate_a_cheap_jobs_timing(self) -> None:
+        # frob:tests src/frob/gates/__init__.py::_run_jobs
+        # frob:tests src/frob/gates/__init__.py::_timed_job
+        """Pin the regression this ticket was filed against: run one
+        deliberately CPU-heavy job (busy-loops, holds the GIL) alongside
+        several genuinely cheap jobs on the same `ThreadPoolExecutor`, as
+        `_run_jobs` does for real gates. Wall-clock timing (the old
+        behavior) would have every cheap job's *elapsed* converge toward
+        the heavy job's -- the exact "secrets=39.71s sys=39.71s
+        tickets=39.69s" symptom this ticket reports. CPU-time attribution
+        must not: each cheap job's own reported cost stays small and
+        distinct from the heavy job's, regardless of how long the run
+        takes in total.
+        """
+        from collections.abc import Callable
+
+        from frob.gates import _run_jobs
+
+        def heavy() -> tuple[Violation, ...]:
+            # Pure-Python busy work: holds the GIL, no I/O yields.
+            total = 0
+            for i in range(30_000_000):
+                total += i
+            return ()
+
+        def cheap() -> tuple[Violation, ...]:
+            return ()
+
+        jobs: dict[str, Callable[[], tuple[Violation, ...]]] = {
+            "heavy": heavy,
+            "cheap_a": cheap,
+            "cheap_b": cheap,
+            "cheap_c": cheap,
+        }
+        _, _, timing = _run_jobs(jobs)
+
+        assert timing["heavy"] > 0.05
+        for name in ("cheap_a", "cheap_b", "cheap_c"):
+            # A cheap job's OWN cpu time stays near zero; under the old
+            # wall-clock scheme this would have been pulled up toward
+            # timing["heavy"] by GIL contention.
+            assert timing[name] < timing["heavy"] / 2, (
+                f"{name} timing {timing[name]:.3f}s was pulled toward the "
+                f"heavy job's {timing['heavy']:.3f}s -- attribution is "
+                "shared/wrong again"
+            )
+
+
+class TestProcessPoolGates:
+    """T-0415: CPU-bound gates (archgate, sys, clones, perf, pii_structural,
+    secrets -- docs/audits/perf.md H3) run in a `ProcessPoolExecutor`
+    instead of the shared thread pool, so the GIL no longer serializes
+    them. `_run_combined_jobs` must (a) actually dispatch process jobs to a
+    worker process, and (b) merge results back in `_CANONICAL_GATE_ORDER`
+    regardless of pool/completion order, so output stays deterministic."""
+
+    def test_process_job_runs_in_a_separate_process(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/__init__.py::_run_combined_jobs
+        # frob:tests src/frob/gates/__init__.py::_run_process_gate
+        import os
+
+        from frob.gates import _ProcessJob, _run_combined_jobs
+
+        process_jobs = {
+            "archgate": _ProcessJob(
+                _module_level_process_violation, (tmp_path, "archgate")
+            ),
+            "sys": _ProcessJob(_module_level_process_violation, (tmp_path, "sys")),
+        }
+        violations, counts, timing = _run_combined_jobs({}, process_jobs)
+        assert counts["archgate"] == 1
+        assert counts["sys"] == 1
+        assert "archgate" in timing
+        assert "sys" in timing
+        pids = {v.message.split(":")[1] for v in violations}
+        assert str(os.getpid()) not in pids, (
+            "process-pool job ran in the parent process, not a worker -- "
+            "no real parallelism"
+        )
+
+    def test_combined_jobs_merge_in_canonical_order(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/__init__.py::_run_combined_jobs
+        """Merge order must follow `_CANONICAL_GATE_ORDER` (drift before
+        sys before archgate), not submission or completion order across
+        the two pools -- this is what keeps `frob check` output byte-
+        identical to the pre-T-0415 single-pool run."""
+        from collections.abc import Callable
+
+        from frob.gates import _ProcessJob, _run_combined_jobs
+
+        def cheap_thread() -> tuple[Violation, ...]:
+            return (
+                Violation(
+                    rule="A",
+                    severity=Severity.WARN,
+                    file="x",
+                    line=1,
+                    message="thread-drift",
+                ),
+            )
+
+        thread_jobs: dict[str, Callable[[], tuple[Violation, ...]]] = {
+            "drift": cheap_thread
+        }
+        process_jobs = {
+            "sys": _ProcessJob(_module_level_process_violation, (tmp_path, "sys")),
+            "archgate": _ProcessJob(
+                _module_level_process_violation, (tmp_path, "archgate")
+            ),
+        }
+        violations, _, _ = _run_combined_jobs(thread_jobs, process_jobs)
+        assert violations[0].rule == "A"
+        tags = [v.message.split(":")[0] for v in violations[1:]]
+        # _CANONICAL_GATE_ORDER places "sys" before "archgate".
+        assert tags == ["sys", "archgate"]
+
+    def test_run_gates_output_is_identical_across_repeated_runs(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::run_gates
+        """End-to-end determinism proof (T-0415 constraint 2): selecting a
+        mix of thread-pool and process-pool gates and running `run_gates`
+        twice on the same tree must produce byte-identical violation
+        tuples (same content, same order) despite the process pool's
+        results arriving in whatever order the OS schedules them."""
+        _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
+        _git_init(tmp_path)
+        selected = frozenset({"drift", "coverage", "sys", "archgate", "secrets"})
+        cfg = GateConfig(root=str(tmp_path), base="main", gates=selected)
+
+        first = run_gates(cfg)
+        second = run_gates(cfg)
+        assert first.is_ok
+        assert second.is_ok
+        report1 = first.danger_ok
+        report2 = second.danger_ok
+        assert report1.violations == report2.violations
+        assert report1.stats.counts == report2.stats.counts
+
+    def test_combined_parallel_path_matches_fully_serial_path(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::_run_combined_jobs
+        # frob:tests src/frob/gates/__init__.py::_build_jobs
+        """T-0415's explicit correctness requirement: the parallel path
+        (thread pool + process pool via `_run_combined_jobs`) must produce
+        the same violation SET as calling every job function serially,
+        in-process, one at a time -- no double-work, no dropped results,
+        no reordering-induced content drift. Compares as a sorted
+        multiset (rule, file, line, message) since a purely serial
+        for-loop naturally visits jobs in dict order, which already
+        matches `_CANONICAL_GATE_ORDER` for `_build_jobs`'s output, but
+        the assertion is written order-independent to test content, not
+        incidental iteration order."""
+        _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
+        _git_init(tmp_path)
+        selected = frozenset({"drift", "coverage", "sys", "archgate", "secrets"})
+        cfg = GateConfig(root=str(tmp_path), base="main", gates=selected)
+
+        from frob.gates import _build_jobs, _load_inputs, _run_combined_jobs
+
+        inputs = _load_inputs(cfg)
+        assert inputs.is_ok
+        st = inputs.danger_ok
+        thread_jobs, process_jobs, _skipped = _build_jobs(selected, st)
+
+        parallel_violations, _, _ = _run_combined_jobs(thread_jobs, process_jobs)
+
+        serial_violations: list[Violation] = [
+            v for job in thread_jobs.values() for v in job()
+        ] + [v for pj in process_jobs.values() for v in pj.func(*pj.args)]
+
+        def key(v: Violation) -> tuple:
+            return (v.rule, v.file, v.line, v.message)
+
+        parallel_sorted = sorted(parallel_violations, key=key)
+        serial_sorted = sorted(serial_violations, key=key)
+        assert parallel_sorted == serial_sorted
+        assert len(parallel_violations) == len(serial_violations)
 
 
 class TestSeverityOverrides:
@@ -2156,6 +2984,141 @@ class TestConventionUnitBinding:
             for v in violations
         )
 
+    # frob:tests tests/test_gates.py::TestConventionUnitBinding.test_test009_fires_on_unbound_design_file kind="unit"
+    def test_test009_fires_on_unbound_design_file(self, tmp_path):
+        """T-0225: a `.strata` design file with no `frob:tests kind="e2e"`
+        edge owes TEST009 -- the e2e-binding obligation that replaces the
+        TEST003 package check design files were wrongly held to."""
+        from typani.option import Nothing
+
+        from frob.gates._models import TestPolicy
+        from frob.testing import CollectedTests
+
+        _write(tmp_path, "design/m.strata", _DESIGN_STRATA)
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(node_ids=frozenset())
+        violations = run_test_gate(snap, (), Nothing(), tests, TestPolicy())
+        assert any(
+            v.rule == "TEST009" and v.file == "design/m.strata" for v in violations
+        )
+
+    # frob:tests tests/test_gates.py::TestConventionUnitBinding.test_test009_exempts_test_fixture_strata kind="unit"
+    def test_test009_exempts_test_fixture_strata(self, tmp_path):
+        """T-0225 follow-up: a `.strata` file under a tests dir (a litmus /
+        parser fixture) is test DATA, not a deployable design model, so it
+        does NOT owe a TEST009 e2e binding -- `_design_files` excludes it via
+        `_is_test_file`, killing the ~70-warning fixture flood."""
+        from typani.option import Nothing
+
+        from frob.gates._models import TestPolicy
+        from frob.testing import CollectedTests
+
+        _write(tmp_path, "tests/unit/strata/litmus/fixture.strata", _DESIGN_STRATA)
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(node_ids=frozenset())
+        violations = run_test_gate(snap, (), Nothing(), tests, TestPolicy())
+        assert not any(v.rule == "TEST009" for v in violations)
+
+    # frob:tests tests/test_gates.py::TestConventionUnitBinding.test_test009_satisfied_by_e2e_edge kind="unit"
+    def test_test009_satisfied_by_e2e_edge(self, tmp_path):
+        """T-0225: a `frob:tests ... kind="e2e"` edge bound to the design
+        file's module (or one of its declared ids) and backed by a
+        collected test node id satisfies TEST009."""
+        from typani.option import Nothing
+
+        from frob.gates._models import TestPolicy
+        from frob.testing import CollectedTests
+
+        _write(tmp_path, "design/m.strata", _DESIGN_STRATA)
+        _write(
+            tmp_path,
+            "tests/test_m_e2e.py",
+            '# frob:tests design/m.strata::m.f_login kind="e2e"\n'
+            "def test_login_flow_e2e():\n"
+            "    assert True\n",
+        )
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(
+            node_ids=frozenset({"tests/test_m_e2e.py::test_login_flow_e2e"})
+        )
+        violations = run_test_gate(snap, (), Nothing(), tests, TestPolicy())
+        assert not any(
+            v.rule == "TEST009" and v.file == "design/m.strata" for v in violations
+        )
+
+
+class TestTest010KindValidation:
+    """T-0237: a `frob:tests` directive's `kind=` attribute is not
+    gate-verified -- `frob.graph.dsl` already refuses to turn an invalid
+    `kind=` into an edge at all (a `MalformedDirective`, never silently
+    defaulted), but nothing surfaced that as a reported violation until
+    TEST010."""
+
+    # frob:tests tests/test_gates.py::TestTest010KindValidation.test_invalid_kind_reported kind="unit"
+    def test_invalid_kind_reported(self, tmp_path: Path) -> None:
+        from typani.option import Nothing
+
+        _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
+        _write(
+            tmp_path,
+            "tests/test_a.py",
+            "def test_helper():\n"
+            '    # frob:tests src/frob/pkg/a.py::helper kind="drift"\n'
+            "    assert True\n",
+        )
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(node_ids=frozenset())
+        violations = run_test_gate(snap, (), Nothing(), tests, TestPolicy())
+        v = _first_rule(violations, "TEST010")
+        assert v is not None
+        assert v.severity == Severity.ERROR
+        assert v.file == "tests/test_a.py"
+        assert "drift" in v.message
+
+    # frob:tests tests/test_gates.py::TestTest010KindValidation.test_valid_kind_not_reported kind="unit"
+    def test_valid_kind_not_reported(self, tmp_path: Path) -> None:
+        from typani.option import Nothing
+
+        _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
+        _write(
+            tmp_path,
+            "tests/test_a.py",
+            "def test_helper():\n"
+            '    # frob:tests src/frob/pkg/a.py::helper kind="unit"\n'
+            "    assert True\n",
+        )
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(node_ids=frozenset({"tests/test_a.py::test_helper"}))
+        violations = run_test_gate(snap, (), Nothing(), tests, TestPolicy())
+        assert "TEST010" not in _rules(violations)
+
+    # frob:tests tests/test_gates.py::TestTest010KindValidation.test_dangling_tests_endpoint_still_caught_by_drift002 kind="unit"
+    def test_dangling_tests_endpoint_still_caught_by_drift002(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0237's other reported gap -- a `frob:tests` edge whose CODE-side
+        endpoint no longer resolves -- turns out to already be caught by the
+        existing, edge-kind-agnostic DRIFT002 mechanism (`_vanished_endpoint`
+        checks every edge's `src`/`target`, not just `frob:describes`); this
+        pins that down as a regression guard rather than adding a duplicate
+        TESTS-specific resolver."""
+        from frob.gates import drift_gate
+        from frob.graph._models import LockFile
+
+        _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
+        _write(
+            tmp_path,
+            "tests/test_a.py",
+            "def test_helper():\n"
+            '    # frob:tests src/frob/pkg/a.py::gone kind="unit"\n'
+            "    assert True\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = drift_gate(snap, LockFile())
+        v = _first_rule(violations, "DRIFT002")
+        assert v is not None
+        assert "src/frob/pkg/a.py::gone" in v.message
+
 
 class TestPairLevelIntegration:
     def _snap_with_dep(self, tmp_path):
@@ -2493,6 +3456,9 @@ def test_gates_run_gates_integration(tmp_path: Path) -> None:
         "def undocumented(x):\n"
         "    return x\n",
     )
+    # T-0233: the frob:doc edge above must actually resolve, or COV001 now
+    # correctly flags `documented` too.
+    _write(tmp_path, "docs/pkg.md", "# Api\n")
     _git_init(tmp_path)
     cfg = GateConfig(
         root=str(tmp_path), base="main", gates=frozenset({"drift", "coverage"})
@@ -2634,6 +3600,34 @@ class TestSysGate:
         assert _by_rule(violations, "SYS001") == []
         assert len(_by_rule(violations, "SYS004")) == 1
 
+    def test_sys004_names_stale_native_as_likely_remedy(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # T-0347 (T-0248 follow-up, T-0166 incident precedent): a `.strata`
+        # load failure caused by a grammar-ahead-of-native mismatch must
+        # name `make core` as the likely remedy, not just say "fix the
+        # .strata file" -- that message alone sent a reviewer chasing a
+        # nonexistent syntax error during T-0166.
+        import frob.strata as strata_mod
+        from frob.strata import StaleNative
+        from frob.testing._models import NativeSpec
+
+        _write(tmp_path, "design/bad.strata", "this is not valid strata {{{")
+        _write(tmp_path, "src/a.py", "def f(): pass\n")
+        fake_stale = StaleNative(
+            spec=NativeSpec(name="strata_core", build_cmd="make core"),
+            source_dir="strata-core",
+            artifact_mtime=1.0,
+            source_mtime=2.0,
+        )
+        monkeypatch.setattr(strata_mod, "stale_natives", lambda root: (fake_stale,))
+        snapshot = _snapshot(tmp_path)
+        violations = sys_gate(tmp_path, snapshot)
+        sys004 = _by_rule(violations, "SYS004")
+        assert len(sys004) == 1
+        assert "make core" in sys004[0].message
+        assert "strata_core" in sys004[0].message
+
     def test_doc003_proved_claim_passes(self, tmp_path: Path, monkeypatch) -> None:
         """T-0085: a `frob:claims <view>` marker whose obligations are all
         discharged produces no DOC003 violation."""
@@ -2726,6 +3720,9 @@ class TestSysGate:
         assert len(doc003) == 1
         assert "unknown baseline view" in doc003[0].message
 
+    # frob:waive DUP001 reason="parallel test methods within test_gates.py \
+    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
     def test_doc003_marker_in_fenced_block_ignored(self, tmp_path: Path) -> None:
         """T-0085 round 2 (reviewer REJECT): a `frob:claims` marker inside a
         ```-fenced block documents the directive, it does not claim
@@ -2739,6 +3736,9 @@ class TestSysGate:
         )
         assert gates_mod._claims_markers(tmp_path) == []
 
+    # frob:waive DUP001 reason="parallel test methods within test_gates.py \
+    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
     def test_doc003_marker_in_inline_code_ignored(self, tmp_path: Path) -> None:
         """T-0085 round 2: a `frob:claims` marker inside inline `backticks`
         on a prose line is a quotation, not a live claim."""
@@ -2836,3 +3836,82 @@ class TestSysGate:
         sys004 = _by_rule(violations, "SYS004")
         assert len(sys004) == 1
         assert sys004[0].file == "design/m.strata"
+
+
+def _complex_function_source(fn_name: str) -> str:
+    """A python module with one function long enough to trip the 30-line
+    default `max_function_lines` but short enough to stay under the
+    calibrated 60-line threshold (T-0373), and structurally complex enough
+    (>=8 branches) to pass `_py_is_complex`'s cyclomatic-proxy filter."""
+    lines = [f"def {fn_name}(cfg):", "    result = {}"]
+    for i in range(8):
+        lines.append(f'    if cfg.get("flag_{i}"):')
+        lines.append(f'        result["k{i}"] = {i}')
+    for i in range(20):
+        lines.append(f'    step_{i} = cfg.get("step_{i}", "default")')
+    lines.append("    return result, " + ", ".join(f"step_{i}" for i in range(20)))
+    return "\n".join(lines) + "\n"
+
+
+class TestArchGateThresholds:
+    """T-0373: arch_gate reads its long-function threshold from frob.toml's
+    [arch] table (via frob.app.config.load_arch_config) instead of always
+    using frob.arch.analyze_project's own conservative 30-line default."""
+
+    def test_arch_gate_uses_calibrated_default_not_library_default(
+        self, tmp_path: Path
+    ) -> None:
+        """No frob.toml at all: `frob.arch.analyze_project`'s own bare
+        30-line default still flags the ~39-line complex function, but
+        `arch_gate` -- which threads `load_arch_config`'s calibrated
+        60-line default through -- does not. Proof the gate no longer
+        silently uses `analyze_project`'s conservative defaults."""
+        from frob.arch import analyze_project
+        from frob.gates._arch import arch_gate
+
+        _write(tmp_path, "src/mod.py", _complex_function_source("do_work"))
+
+        raw_result = analyze_project(tmp_path / "src")
+        assert "long-function" in {s.category for s in raw_result.suggestions}
+
+        violations = arch_gate(tmp_path)
+        assert not _by_rule(violations, "ARCH001")
+
+    def test_arch001_respects_explicit_frob_toml_override(self, tmp_path: Path) -> None:
+        """A frob.toml [arch] max_function_lines=20 override (well below
+        both the library's 30-line default and the calibrated 60-line
+        default) still fires ARCH001 -- proof arch_gate actually reads
+        frob.toml, not just a hardcoded calibrated constant."""
+        from frob.gates._arch import arch_gate
+
+        _write(tmp_path, "src/mod.py", _complex_function_source("do_work"))
+        _write(tmp_path, "frob.toml", "[arch]\nmax_function_lines = 20\n")
+        violations = arch_gate(tmp_path)
+        assert _by_rule(violations, "ARCH001")
+
+
+class TestGateOrderSetEquality:
+    """T-0438: `_CANONICAL_GATE_ORDER` (T-0415's deterministic merge order)
+    and `_ALL_GATES` (the set of every selectable gate name) must name the
+    exact same gates. If a new gate is added to one but not the other, a
+    gate could silently drop from `frob check` output (missing from the
+    canonical order means it never gets merged back in) or `run_gates`
+    could reject a gate name that was never made orderable -- either way a
+    quiet accounting bug, not a loud one, without this set-equality pin."""
+
+    def test_canonical_gate_order_matches_all_gates(self) -> None:
+        # frob:tests src/frob/gates/__init__.py::_merge_canonical_order
+        # (the consumer of _CANONICAL_GATE_ORDER whose correctness this
+        # set-equality invariant protects; the two constants are module-level
+        # data the graph does not track as symbols, so bind to the function)
+        from frob.gates import _ALL_GATES, _CANONICAL_GATE_ORDER
+
+        assert set(_CANONICAL_GATE_ORDER) == _ALL_GATES, (
+            "_CANONICAL_GATE_ORDER and _ALL_GATES have drifted apart -- "
+            "every gate in _ALL_GATES must appear exactly once in "
+            "_CANONICAL_GATE_ORDER so merge order stays deterministic and "
+            "no gate silently drops from frob check output"
+        )
+        assert len(_CANONICAL_GATE_ORDER) == len(set(_CANONICAL_GATE_ORDER)), (
+            "_CANONICAL_GATE_ORDER contains a duplicate gate name"
+        )

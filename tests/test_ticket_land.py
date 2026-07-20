@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import subprocess
 from collections.abc import Callable, Sequence
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -19,7 +20,9 @@ import pytest
 from typani.result import Err, Ok
 
 import frob.tickets._land as _land_mod
+from frob.gates import PreworkSweep, load_prework, record_prework, scope_digest
 from frob.gitio import GitError, ProcResult, run_argv
+from frob.graph import build_graph
 from frob.tickets import (
     Origin,
     TicketKind,
@@ -282,6 +285,56 @@ class TestLand:
         # git mutation, so main and the worktree are exactly as found.
         assert _run(["git", "status", "--porcelain"], repo).stdout.strip() == ""
         assert _run(["git", "status", "--porcelain"], wt).stdout.strip() == ""
+
+
+class TestWarnIfNativeStale:
+    """T-0248: `land` warns loudly (without blocking) when the just-landed
+    tree's native source outpaces its own built extension -- the T-0166
+    review incident class."""
+
+    def test_real_land_logs_stale_native_warning(
+        self,
+        repo: Path,
+        caplog: pytest.LogCaptureFixture,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::_warn_if_native_stale kind="unit"
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-native", str(wt)], repo)
+        created = new_ticket(wt, _spec("Grammar change", scope=("src/grammar.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        (wt / "src" / "grammar.py").write_text("# grammar change\n")
+        _commit_all(wt, "grammar change")
+
+        monkeypatch.setattr(
+            "frob.strata._native_staleness.stale_native_warning",
+            lambda root: "STALE NATIVE: fake grammar-ahead-of-native fixture",
+        )
+
+        with caplog.at_level("WARNING", logger="frob.tickets._land"):
+            result = land(repo, tid, wt, dry_run=False)
+
+        assert result.is_ok, result.err
+        assert any("STALE NATIVE" in record.message for record in caplog.records)
+
+    def test_real_land_no_warning_when_native_fresh(
+        self, repo: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::_warn_if_native_stale kind="unit"
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-native-fresh", str(wt)], repo)
+        created = new_ticket(wt, _spec("Non-native change", scope=("src/other.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        (wt / "src" / "other.py").write_text("# unrelated change\n")
+        _commit_all(wt, "unrelated change")
+
+        result = land(repo, tid, wt, dry_run=False)
+        assert result.is_ok, result.err
+        assert not any("STALE NATIVE" in r.message for r in caplog.records)
 
 
 class TestCloseFailAfterMerge:
@@ -1005,3 +1058,185 @@ class TestLandDeeperBranches:
         result = land(repo, tid, wt, dry_run=False)
         assert result.is_err
         assert result.danger_err == LandError.GitFailed
+
+
+class TestPreworkSweepRefresh:
+    """T-0236: an unrelated main landing that touches a ticket's scope globs
+    moves its recorded pre-work sweep's scope digest out from under it --
+    three consecutive reviews (T-0181, T-0203, T-0202) REJECTed solely or
+    partly on this stale-PRE001 churn. `land` must refresh the sweep
+    post-merge, pre-close so a ticket left in-progress after a landing
+    failure (or a reviewer's `frob check --ticket` run in the interim)
+    never sees a sweep stale for a reason outside the ticket's own control."""
+
+    def test_land_refreshes_stale_sweep_after_unrelated_main_change(
+        self, repo: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::_refresh_prework_sweep kind="unit"
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-sweep", str(wt)], repo)
+
+        created = new_ticket(wt, _spec("Sweep refresh", scope=("src/feature.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+
+        # Record a deliberately stale sweep -- this mirrors what `frob
+        # ticket start` recorded before main moved.
+        stale = PreworkSweep(
+            date=date.today(), dup_findings=0, xref_hits=(), digest="stale-digest"
+        )
+        assert record_prework(wt, tid, stale).is_ok
+
+        # main lands an UNRELATED commit that happens to touch the ticket's
+        # scoped file -- the drift class this ticket is about.
+        (repo / "src" / "feature.py").write_text("# landed feature, updated\n")
+        _commit_all(repo, "unrelated main-side edit to a scope-owned file")
+
+        result = land(repo, tid, wt, dry_run=False)
+        assert result.is_ok, result.err
+
+        # The sweep recorded in the worktree during land's post-merge,
+        # pre-close refresh must reflect the POST-merge tree, not the stale
+        # one recorded before `land` ran.
+        refreshed = load_prework(wt, tid)
+        assert refreshed is not None
+        assert refreshed.digest != "stale-digest"
+
+        graph = build_graph(wt, wt / ".frob" / "cache.db")
+        assert graph.is_ok
+        assert refreshed.digest == scope_digest(("src/feature.py",), graph.danger_ok)
+
+    def test_sweep_refresh_failure_does_not_block_landing(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::_refresh_prework_sweep kind="unit"
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-sweep-fail", str(wt)], repo)
+
+        created = new_ticket(wt, _spec("Sweep refresh failure", scope=("src/x.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        (wt / "src" / "x.py").write_text("# x\n")
+        _commit_all(wt, "add x")
+
+        import frob.gates as gates_mod
+        from frob.gates._models import GateError
+
+        monkeypatch.setattr(
+            gates_mod, "sweep_ticket", lambda *a, **k: Err(GateError.WriteFailed)
+        )
+
+        # `land` must still succeed -- the sweep refresh is best-effort and
+        # is not what gates landing (close's own evidence/Done-report checks
+        # are).
+        result = land(repo, tid, wt, dry_run=False)
+        assert result.is_ok, result.err
+
+
+class TestLandCompleteness:
+    """T-0463: `land` must bring the worktree's COMPLETE changeset (tracked
+    edits + untracked new files + deletions), not just what a `git diff
+    HEAD` patch would see, and must assert this BEFORE committing -- the
+    root cause of the T-0448 `docs/modules/render.md` loss was a surgical
+    git-diff/patch land that silently dropped an untracked file with no
+    error."""
+
+    def test_land_brings_tracked_edit_untracked_new_file_and_deletion(
+        self, repo: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::_assert_land_complete kind="unit"
+        # frob:tests src/frob/tickets/_land.py::_worktree_full_changeset kind="unit"
+        # `doomed.py` must exist BEFORE the worktree branches, so its
+        # deletion has a real net effect relative to main (a file created
+        # and deleted within the same branch history nets to "no change"
+        # against main and would not exercise the deletion path at all).
+        (repo / "src" / "doomed.py").write_text("# present before branch\n")
+        _commit_all(repo, "add doomed.py (present before branch)")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-complete", str(wt)], repo)
+        created = new_ticket(
+            wt,
+            _spec(
+                "Complete changeset",
+                scope=("src/feature.py", "src/brand_new.py", "src/doomed.py"),
+            ),
+        )
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+
+        # (a) a tracked EDIT to a file main already has. (b) an uncommitted
+        # DELETION of a file main already has -- exercises the wip-commit's
+        # `git add -A` staging a deletion.
+        (wt / "src" / "feature.py").write_text("# tracked edit\n")
+        (wt / "src" / "doomed.py").unlink()
+
+        # (c) an UNTRACKED new file, left uncommitted at land time -- the
+        # exact T-0448 incident class.
+        (wt / "src" / "brand_new.py").write_text("# brand new, never committed\n")
+
+        result = land(repo, tid, wt, dry_run=False)
+        assert result.is_ok, result.err
+        report = result.danger_ok
+
+        assert (repo / "src" / "feature.py").read_text() == "# tracked edit\n"
+        assert (repo / "src" / "brand_new.py").exists()
+        assert not (repo / "src" / "doomed.py").exists()
+
+        # The completeness assertion actually ran and saw all three paths,
+        # and every one of them landed in the final commit.
+        assert "src/feature.py" in report.worktree_changeset
+        assert "src/brand_new.py" in report.worktree_changeset
+        assert "src/doomed.py" in report.worktree_changeset
+        for path in report.worktree_changeset:
+            assert path in report.files_changed
+
+    def test_incomplete_land_fails_loudly_and_commits_nothing(
+        self,
+        repo: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::_assert_land_complete kind="unit"
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-incomplete", str(wt)], repo)
+        created = new_ticket(wt, _spec("Incomplete", scope=("src/gadget2.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        (wt / "src" / "gadget2.py").write_text("# gadget2\n")
+        _commit_all(wt, "add gadget2")
+
+        before_main_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+
+        # Simulate a dropped file: the worktree "changed" a path the
+        # squash-apply never actually staged (the T-0448 incident, forced
+        # deterministically instead of relying on a real patch-based land
+        # to reproduce it).
+        real_changeset = _land_mod._worktree_full_changeset
+
+        def _fake_changeset(worktree: Path, main_branch_name: str) -> Any:
+            result = real_changeset(worktree, main_branch_name)
+            if result.is_err:
+                return result
+            return Ok(result.danger_ok | {"src/phantom_dropped.py"})
+
+        monkeypatch.setattr(_land_mod, "_worktree_full_changeset", _fake_changeset)
+
+        with caplog.at_level("ERROR", logger="frob.tickets._land"):
+            result = land(repo, tid, wt, dry_run=False)
+
+        assert result.is_err
+        assert result.danger_err == LandError.IncompleteLand
+        assert "src/phantom_dropped.py" in caplog.text
+
+        # The commit must never have happened, and the squash must have
+        # been fully unwound -- root is exactly as found, not partially
+        # staged or partially committed.
+        assert (
+            _run(["git", "rev-parse", "HEAD"], repo).stdout.strip() == before_main_sha
+        )
+        assert _run(["git", "status", "--porcelain"], repo).stdout.strip() == ""

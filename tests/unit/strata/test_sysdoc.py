@@ -125,7 +125,11 @@ class TestRenderAuditMatrix:
             KernelModel(),
             "owasp-top-10",
             catalog=thin,
-            out_of_scope=(OutOfScopeEntry(id="CWE-79", reason="no html_render yet"),),
+            out_of_scope=(
+                OutOfScopeEntry(
+                    id="CWE-79", reason="no html_render yet", caught_by="test fixture"
+                ),
+            ),
         )
         assert result.is_ok
         text = result.danger_ok

@@ -1,13 +1,19 @@
+# frob:waive SCOPE001 reason="T-0319 scope comma-joined, matches nothing (T-0241 bug)"
+# frob:waive SCOPE001 reason="T-0458 needs new AppConfig dest fields for done-report's CLI flags; T-0455's formal scope protocol is queued, not built -- ad-hoc waive per existing T-0176/T-0220 precedent"  # noqa: E501
 from __future__ import annotations
 
 import argparse
 import enum
 import tomllib
 from pathlib import Path
+from typing import Literal
 
 from pydantic import BaseModel
 
 from frob.gitlog import GranularityLevel
+from frob.logging import get_logger
+
+_log = get_logger(__name__)
 
 
 # frob:doc docs/modules/app.md#config
@@ -38,6 +44,8 @@ class Subcommand(str, enum.Enum):
     mutate = "mutate"
     sys = "sys"
     deploy = "deploy"
+    doctor = "doctor"
+    clean = "clean"
 
 
 # frob:doc docs/modules/app.md#config
@@ -47,6 +55,11 @@ class Subcommand(str, enum.Enum):
 class AppConfig(BaseModel):
     # frob:ticket T-0021
     subcommand: Subcommand | None = None
+
+    # global output-layer flags (T-0448): resolved once into a
+    # `frob.render.Renderer` per invocation, never re-read per command.
+    color: Literal["auto", "always", "never"] | None = None
+    no_color: bool = False
 
     # scaffold
     scaffold_command: str | None = None
@@ -192,16 +205,34 @@ class AppConfig(BaseModel):
     ticket_caption: str = ""
     ticket_attach_path: Path | None = None
     ticket_json: bool = False
+    # frob:waive SCOPE001 reason="T-0453 scope omitted this file; doable --show-blocked/--ignore-lease need AppConfig fields, T-0176/T-0220 precedent, no frob ticket scope command yet (T-0455)"  # noqa: E501
+    ticket_show_blocked: bool = False
+    ticket_ignore_lease: bool = False
     ticket_evidence_ids: list[str] = []
     ticket_evidence_cmd: str | None = None
     ticket_old_id: str | None = None
     ticket_new_id: str | None = None
     ticket_dry_run: bool = False
     ticket_worktree: Path | None = None
+    # frob:ticket T-0458
+    # `frob ticket done-report <id> (--why TEXT | --why-file PATH)` --
+    # TEXT of "-" (or --why-file omitted with neither given) reads stdin,
+    # so `frob ticket done-report T-#### -` works as documented.
+    ticket_why: str | None = None
+    ticket_why_file: Path | None = None
+    ticket_base_ref: str = "main"
+    # frob:waive SCOPE001 reason="T-0323 scope omitted this file, filed T-draft-bc39c17f"  # noqa: E501
+    # T-0323: `frob ticket merge-driver %O %A %B` -- git's merge-driver
+    # protocol passes base/ours/theirs as temp file paths; ours (%A) is
+    # both read and overwritten with the splice result.
+    ticket_merge_base: Path | None = None
+    ticket_merge_ours: Path | None = None
+    ticket_merge_theirs: Path | None = None
 
     # test
     test_all: bool = False
     test_fuzz: bool = False
+    test_collect: bool = False
     test_base: str | None = None
     test_lang: list[str] = []
     test_fallback: str | None = None
@@ -216,6 +247,11 @@ class AppConfig(BaseModel):
     # [tool.frob] in pyproject.toml (vet_cve_mirror key), CLI --cve-mirror
     # override.
     vet_cve_mirror: Path | None = None
+    # T-0251: per-package scan timeout (seconds) and worker concurrency,
+    # plumbed through to `scan_tree` (T-0208). `None`/1 preserve the
+    # pre-existing untimed, single-worker behavior.
+    vet_timeout: float | None = None
+    vet_jobs: int | None = None
 
     # release
     release_command: str | None = None  # stamp|check
@@ -226,6 +262,16 @@ class AppConfig(BaseModel):
     stats_path: Path | None = None
     stats_days: int | None = None
     stats_json: bool = False
+
+    # doctor
+    doctor_json: bool = False
+
+    # clean (T-0457: tiered, artifact-only workspace cleanup)
+    clean_path: Path | None = None
+    clean_all: bool = False
+    clean_deep: bool = False
+    clean_yes: bool = False
+    clean_json: bool = False
 
     # perf
     perf_command: str | None = None  # profile|heat
@@ -292,7 +338,12 @@ class AppConfig(BaseModel):
         if sub is not None:
             d["subcommand"] = Subcommand(sub)
 
+        no_color = getattr(args, "no_color", None)
+        if no_color is not None:
+            d["no_color"] = no_color
+
         for field in (
+            "color",
             "scaffold_command",
             "scaffold_type",
             "scaffold_name",
@@ -325,6 +376,8 @@ class AppConfig(BaseModel):
             "ticket_old_id",
             "ticket_new_id",
             "ticket_evidence_cmd",
+            "ticket_why",
+            "ticket_base_ref",
             "test_base",
             "test_fallback",
             "vet_hook",
@@ -363,6 +416,10 @@ class AppConfig(BaseModel):
             "ticket_path",
             "ticket_attach_path",
             "ticket_worktree",
+            "ticket_merge_base",
+            "ticket_merge_ours",
+            "ticket_merge_theirs",
+            "ticket_why_file",
             "test_path",
             "vet_path",
             "vet_cve_mirror",
@@ -379,6 +436,7 @@ class AppConfig(BaseModel):
             "deploy_out_dir",
             "deploy_ssh_key",
             "deploy_audit_output",
+            "clean_path",
         ):
             val = getattr(args, path_field, None)
             if val is not None:
@@ -394,6 +452,7 @@ class AppConfig(BaseModel):
             "perf_top",
             "stats_days",
             "check_verbose",
+            "vet_jobs",
         ):
             val = getattr(args, int_field, None)
             if val is not None:
@@ -403,6 +462,12 @@ class AppConfig(BaseModel):
         parse_ec = getattr(args, "parse_exit_code", None)
         if parse_ec is not None:
             d["parse_exit_code"] = int(parse_ec)
+
+        # Float fields
+        for float_field in ("vet_timeout",):
+            val = getattr(args, float_field, None)
+            if val is not None:
+                d[float_field] = val
 
         # Multi-value list fields
         exports_exclude = getattr(args, "exports_exclude", None)
@@ -477,11 +542,15 @@ class AppConfig(BaseModel):
             "check_delta",
             "graph_json",
             "ticket_json",
+            "ticket_show_blocked",
+            "ticket_ignore_lease",
             "test_all",
             "test_fuzz",
+            "test_collect",
             "test_json",
             "vet_json",
             "stats_json",
+            "doctor_json",
             "mutate_json",
             "perf_tests",
             "perf_json",
@@ -489,6 +558,10 @@ class AppConfig(BaseModel):
             "sys_apply",
             "ticket_dry_run",
             "deploy_check",
+            "clean_all",
+            "clean_deep",
+            "clean_yes",
+            "clean_json",
         ):
             if getattr(args, flag, False):
                 d[flag] = True
@@ -499,3 +572,68 @@ class AppConfig(BaseModel):
     def from_args(cls, args: argparse.Namespace) -> "AppConfig":
         # frob:doc docs/modules/app.md#config
         return cls.from_external(args, Path("pyproject.toml"))
+
+
+#: The calibrated arch thresholds (T-0373): `frob.arch.analyze_project`'s
+#: own keyword defaults (30/12/8/4/500) are conservative fallbacks for
+#: library callers with no `frob.toml` in scope; a real repo's `[arch]`
+#: table -- or, absent one, these values -- is what `frob check`'s ARCH
+#: stage and `frob arch` should actually enforce.
+# frob:doc docs/modules/arch.md#frob-toml-arch-config
+# frob:ticket T-0373
+ARCH_DEFAULT_MAX_FUNCTION_LINES = 60
+# frob:doc docs/modules/arch.md#frob-toml-arch-config
+# frob:ticket T-0373
+ARCH_DEFAULT_MAX_CLASS_METHODS = 12
+# frob:doc docs/modules/arch.md#frob-toml-arch-config
+# frob:ticket T-0373
+ARCH_DEFAULT_MAX_LOCAL_IMPORTS = 8
+# frob:doc docs/modules/arch.md#frob-toml-arch-config
+# frob:ticket T-0373
+ARCH_DEFAULT_MAX_NESTING_DEPTH = 4
+# frob:doc docs/modules/arch.md#frob-toml-arch-config
+# frob:ticket T-0373
+ARCH_DEFAULT_MAX_FILE_LINES = 800
+
+
+# frob:doc docs/modules/arch.md#frob-toml-arch-config
+# frob:ticket T-0373
+# frob:tests tests/unit/test_config.py::test_reads_override
+# frob:tests tests/unit/test_config.py::test_missing_toml_defaults
+# frob:tests tests/unit/test_config.py::test_missing_section_defaults
+# frob:tests tests/unit/test_config.py::test_partial_override
+# frob:tests tests/unit/test_config.py::test_malformed_toml_defaults
+def load_arch_config(root: Path) -> dict[str, int]:
+    """The `[arch]` table from `root/frob.toml` (`max_function_lines`,
+    `max_class_methods`, `max_local_imports`, `max_nesting_depth`,
+    `max_file_lines`), defaulting every unset key to the calibrated values
+    above -- the fix for T-0373: `frob.arch.analyze_project`'s own
+    keyword defaults were reaching `frob check`'s ARCH gate unchanged,
+    silently overriding the user's already-disclosed calibration decision
+    (large-file at 500, long-function at 30) instead of honoring it.
+
+    Returns a plain kwargs dict ready to splat into `analyze_project(root,
+    **load_arch_config(root))`. A missing or malformed `frob.toml` (or a
+    missing `[arch]` table) is not an error -- it just means "use the
+    calibrated defaults", same posture as `frob.gates._dup_config` and
+    every other per-section frob.toml reader in this codebase.
+    """
+    defaults = {
+        "max_function_lines": ARCH_DEFAULT_MAX_FUNCTION_LINES,
+        "max_class_methods": ARCH_DEFAULT_MAX_CLASS_METHODS,
+        "max_local_imports": ARCH_DEFAULT_MAX_LOCAL_IMPORTS,
+        "max_nesting_depth": ARCH_DEFAULT_MAX_NESTING_DEPTH,
+        "max_file_lines": ARCH_DEFAULT_MAX_FILE_LINES,
+    }
+    toml_path = root / "frob.toml"
+    if not toml_path.exists():
+        return defaults
+    try:
+        with toml_path.open("rb") as fh:
+            arch_cfg = tomllib.load(fh).get("arch", {})
+        return {
+            key: int(arch_cfg.get(key, default)) for key, default in defaults.items()
+        }
+    except (OSError, tomllib.TOMLDecodeError, ValueError, TypeError) as exc:
+        _log.warning("load_arch_config: frob.toml unreadable, using defaults: %s", exc)
+        return defaults

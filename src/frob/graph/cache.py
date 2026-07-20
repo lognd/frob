@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
 from frob.graph._models import (
@@ -28,7 +29,67 @@ from frob.logging import get_logger
 
 _log = get_logger(__name__)
 
-_SCHEMA_VERSION = 1
+# frob:ticket T-0279
+# Bumped 1 -> 2: a cache.db written before the T-0336 gates.py fix (which
+# taught `frob.gates` to treat a `frob:tests` edge's src/target endpoints
+# per the either-direction convention, T-0137) can carry rows whose shape
+# was never re-validated against that convention -- `_check_fingerprint`
+# only catches a PACKAGE VERSION change, not a same-version code fix inside
+# a dev/editable install (`_FINGERPRINT_PACKAGES` reads `importlib.metadata`
+# versions, which do not move between commits absent an explicit version
+# bump). `dsl.py`'s fresh-parse construction (`src`=attached symbol,
+# `target`=directive argument, always) and `cache.py`'s store/load
+# (identity passthrough, no field swap) already agree with each other --
+# this bump exists purely to force every existing `.frob/cache.db` in the
+# wild to discard whatever it holds and reparse once under the current,
+# canonical dsl.py+gates.py pairing, rather than trusting rows written
+# under an unknown historical version of that pairing forever.
+_SCHEMA_VERSION = 2
+
+# frob:ticket T-0243
+# Packages whose behavior changes the shape of the parsed graph: the frob
+# distribution itself (extraction/digest logic) plus every tree-sitter
+# grammar/runtime package it parses source with. Bumping any of these can
+# silently change symbol/edge output for identical source bytes -- see the
+# T-0243 malmberg pilot incident (2830 vs 3007 symbols from a stale cache
+# after a frob upgrade). Extend this tuple whenever a new grammar package
+# is added to `frob.lang`.
+# frob:ticket T-0402
+# G6: "strata-core" was missing here -- a strata-core native-extension
+# upgrade that changed `.strata` parse output would NOT invalidate the
+# cache, exactly the T-0243 incident this mechanism exists to prevent,
+# reintroduced for `.strata`. Full derivation of this list from
+# `frob.lang`'s grammar registry (rather than a hand-copied tuple) is a
+# larger change than this fix; still tracked as G6's open half, see
+# docs/audits/graph.md.
+_FINGERPRINT_PACKAGES = (
+    "frob",
+    "tree-sitter",
+    "tree-sitter-python",
+    "tree-sitter-cpp",
+    "tree-sitter-language-pack",
+    "strata-core",
+)
+
+
+# frob:ticket T-0243
+# frob:tests tests/test_graph.py::TestBuildIncremental.test_fingerprint_bump_rebuilds
+def _compute_fingerprint() -> str:
+    """Version string of frob + every tree-sitter grammar package it uses.
+
+    Used as a cache-invalidation key (`meta.fingerprint`, T-0243): any
+    version change here means the same source bytes can parse to a
+    different symbol/edge set, so a cache written under an old fingerprint
+    must never be served under a new one.
+    """
+    parts = []
+    for pkg in _FINGERPRINT_PACKAGES:
+        try:
+            parts.append(f"{pkg}=={version(pkg)}")
+        except PackageNotFoundError:
+            parts.append(f"{pkg}==unknown")
+    return "|".join(parts)
+
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
@@ -104,9 +165,19 @@ def _read_schema_version(
 
 
 def _apply_schema(conn: sqlite3.Connection, existing: int | None, path: Path) -> None:
-    """Ensure the schema is current; wipe and rebuild on a version mismatch."""
+    """Ensure the schema is current; wipe and rebuild on a version mismatch.
+
+    A no-op when `existing` already matches `_SCHEMA_VERSION` (T-0232): the
+    common case, hit on every `connect()` call, has no schema work to do at
+    all, so skip re-running `CREATE TABLE IF NOT EXISTS` for it rather than
+    re-executing statements whose only possible effect on an up-to-date db
+    is wasted work. See `connect_readonly` (T-0232) for the actual .frob
+    db contention fix -- callers that only ever read (e.g. `load_graph`)
+    now use a connection that cannot request sqlite's write lock at all,
+    instead of relying on this DDL being a no-op to stay out of a
+    concurrent writer's way.
+    """
     if existing == _SCHEMA_VERSION:
-        conn.executescript(_SCHEMA)
         return
     _log.info(
         "cache.connect: schema %s -> %s at %s, rebuilding",
@@ -120,6 +191,47 @@ def _apply_schema(conn: sqlite3.Connection, existing: int | None, path: Path) ->
     conn.execute(
         "INSERT INTO meta (key, value) VALUES ('schema_version', ?)",
         (str(_SCHEMA_VERSION),),
+    )
+    conn.commit()
+
+
+# frob:ticket T-0243
+def _check_fingerprint(conn: sqlite3.Connection, path: Path) -> None:
+    """Invalidate all derived rows (keep schema) if the stored fingerprint
+    (frob version + grammar/parser package versions) does not match the
+    running process's fingerprint (T-0243).
+
+    A cache built under an older frob/tree-sitter version can parse the
+    same source bytes to a different symbol/edge set; the schema-version
+    check alone does not catch this because the table shape hasn't
+    changed, only the parsed content would be wrong. This treats every
+    cached file as a miss (deletes `files`/`symbols`/`edges`/`malformed`
+    rows) so `build_graph` reparses everything on the next incremental
+    build, exactly as if the cache were empty.
+    """
+    current = _compute_fingerprint()
+    cur = conn.execute("SELECT value FROM meta WHERE key = 'fingerprint'")
+    row = cur.fetchone()
+    stored = row[0] if row is not None else None
+    if stored == current:
+        return
+    _log.info(
+        "cache.connect: fingerprint %r -> %r at %s, invalidating cached rows",
+        stored,
+        current,
+        path,
+    )
+    for table in ("files", "symbols", "edges", "malformed"):
+        conn.execute(f"DELETE FROM {table}")
+    # Also drop 'root', mirroring the schema-version mismatch path: this
+    # makes `load_graph` see "never been built" (CacheCorrupt) rather than
+    # silently returning an empty-but-Ok snapshot for a cache whose rows
+    # were just invalidated out from under it.
+    conn.execute("DELETE FROM meta WHERE key = 'root'")
+    conn.execute(
+        "INSERT INTO meta (key, value) VALUES ('fingerprint', ?) "
+        "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+        (current,),
     )
     conn.commit()
 
@@ -173,6 +285,7 @@ def _apply_schema_with_recovery(
 
 
 # frob:invariant INV-003
+# invariant spec: [INV-003](invariants/INV-003.md)
 # frob:ticket T-0029
 # frob:ticket T-0141
 # frob:doc docs/modules/graph.md#cache
@@ -188,7 +301,37 @@ def connect(path: Path) -> sqlite3.Connection:
     path.parent.mkdir(parents=True, exist_ok=True)
     conn = _open(path)
     conn, existing = _read_schema_version(conn, path)
-    return _apply_schema_with_recovery(conn, existing, path)
+    conn = _apply_schema_with_recovery(conn, existing, path)
+    _check_fingerprint(conn, path)
+    return conn
+
+
+# frob:ticket T-0232
+# frob:doc docs/modules/graph.md#cache
+# frob:tests tests/test_graph.py::TestCacheModule.test_connect_readonly_rejects_writes_no_lock_contention  # noqa: E501
+def connect_readonly(path: Path) -> sqlite3.Connection:
+    """A connection that can never take sqlite's write lock -- for callers
+    (`load_graph`, and any gate that only reads the snapshot) that must
+    never contend with a concurrent writer's build (T-0232: multiple frob
+    processes racing over the same `.frob/cache.db`, the multi-agent-loop
+    scenario).
+
+    `connect()` self-heals a missing/stale/corrupt cache by writing to it,
+    which is right for a builder but wrong for a reader: a reader has no
+    business taking the single writer slot just to `SELECT`, and doing so
+    is exactly what serializes unrelated `frob` invocations behind each
+    other's cache writes. Opened via sqlite's `mode=ro` URI so any stray
+    write attempt raises immediately (`OperationalError: attempt to write
+    a readonly database`) instead of silently blocking on `busy_timeout`
+    -- a bug that would otherwise reintroduce this contention.
+
+    Raises `sqlite3.OperationalError` if `path` does not exist; callers
+    must check existence first (`load_graph` already does).
+    """
+    uri = f"file:{path}?mode=ro"
+    conn = sqlite3.connect(uri, uri=True, timeout=30.0)
+    conn.execute("PRAGMA query_only = ON")
+    return conn
 
 
 # frob:doc docs/modules/graph.md#cache
@@ -284,7 +427,10 @@ def store_file_data(
     edges: tuple[Edge, ...],
     malformed: tuple[MalformedDirective, ...],
 ) -> None:
-    """Replace all rows derived from `file_path` (delete-then-insert, one commit)."""
+    """Replace all rows derived from `file_path` (delete-then-insert, one
+    transaction step -- caller commits; see T-0402 G12: this never calls
+    `conn.commit()` itself, only `_finalize_build` does, once, for the
+    whole build)."""
     conn.execute(
         "INSERT INTO files (path, content_hash) VALUES (?, ?) "
         "ON CONFLICT(path) DO UPDATE SET content_hash = excluded.content_hash",

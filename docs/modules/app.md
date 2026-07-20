@@ -212,6 +212,8 @@ directories once.
 <!-- frob:describes src/frob/excludes.py::is_excluded -->
 <!-- frob:describes src/frob/excludes.py::is_skipped_dir -->
 <!-- frob:describes src/frob/excludes.py::BUILTIN_SKIP_DIRS -->
+<!-- frob:describes src/frob/excludes.py::walk_pruned -->
+<!-- frob:describes src/frob/excludes.py::iter_files -->
 
 ```python
 # frob/excludes.py
@@ -224,7 +226,23 @@ is_excluded(rel_path: str, exclude_globs: tuple[str, ...]) -> bool
 is_skipped_dir(name: str) -> bool
     # True if a directory name is in the builtin always-pruned set
     # (__pycache__, .git, node_modules, ...), independent of frob.toml.
+
+walk_pruned(root: Path, *, exclude_globs: tuple[str, ...] = ()) -> Iterator[Path]
+    # os.walk that prunes dirnames in place (via _should_prune_dir) BEFORE
+    # descending -- never enters .git/.venv/node_modules/.claude/worktrees/
+    # build/dist/target/__pycache__.
+
+iter_files(root: Path, *, suffix: str | None = None) -> tuple[Path, ...]
+    # The one shared entry point for "give me every file under root,
+    # pruned". Prefers a `git ls-files` fast path (tracked files only)
+    # when root is a git work tree; falls back to walk_pruned otherwise.
 ```
 
 `BUILTIN_SKIP_DIRS` is the frozenset backing `is_skipped_dir`: the
 always-pruned directory names, additive to whatever `frob.toml` declares.
+
+`walk_pruned`/`iter_files` (T-0471) are the shared prune-aware walk
+primitives every traversal in `src/frob/` must route through --
+`frob.gates._walk_lint`'s WALK001 statically flags any NEW raw
+`Path.rglob`/`os.walk`/`glob.glob("**"...)` call that bypasses them (see
+docs/modules/gates.md#walk001-unpruned-traversal-t-0471).

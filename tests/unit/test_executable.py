@@ -18,6 +18,9 @@ FROB = [sys.executable, "-m", "frob"]
 FIXTURES = Path(__file__).parent.parent / "fixtures"
 
 
+# frob:waive DUP001 reason="parallel test fixtures across 2 sibling test \
+# file(s) (2 sites) sharing an arrange-act scaffold typical of exhaustive \
+# per-case/per-scenario coverage; extracting would obscure per-case intent"
 def run_frob(*args, input=None):
     return subprocess.run(
         FROB + list(args),
@@ -195,6 +198,10 @@ class TestTyExecutable:
 
 @pytest.mark.skipif(shutil.which("gcc") is None, reason="gcc not installed")
 class TestGccExecutable:
+    # frob:waive DUP001 reason="parallel test methods within \
+    # test_executable.py (2 sites) sharing an arrange-act scaffold typical \
+    # of exhaustive per-case coverage; extracting would obscure per-case \
+    # intent"
     def test_gcc_reports_error_on_bad_cpp(self):
         fixture = FIXTURES / "bad_cpp"
         gcc = _run(
@@ -233,6 +240,10 @@ class TestGccExecutable:
 
 @pytest.mark.skipif(shutil.which("g++") is None, reason="g++ not installed")
 class TestGppExecutable:
+    # frob:waive DUP001 reason="parallel test methods within \
+    # test_executable.py (2 sites) sharing an arrange-act scaffold typical \
+    # of exhaustive per-case coverage; extracting would obscure per-case \
+    # intent"
     def test_gpp_reports_error_on_bad_cpp(self):
         fixture = FIXTURES / "bad_cpp"
         gpp = _run(

@@ -60,6 +60,7 @@ from ._selfconform import (
     SYS_UNMODELED_CODE,
 )
 from ._threat import (
+    ALL_CATALOG,
     CWE_CATALOG,
     DEFAULT_BENIGN_CAPABILITIES,
     QUALITY_CATALOG,
@@ -79,8 +80,8 @@ from ._waive import (
     WaivedFinding,
     WaiverApplication,
     WaiverMatch,
+    _stale_detail,
     apply_waivers,
-    stale_detail,
 )
 
 _log = get_logger(__name__)
@@ -267,6 +268,9 @@ def _compliance_gaps(
     )
 
 
+# frob:waive DUP001 reason="parallel family-gap adapter shape shared \
+# with _lint_gaps below by design (T-0154 precedent, see docstrings); \
+# distinct violation types and family tags, not shared logic"
 def _pii_gaps(violations: tuple[PiiViolation, ...]) -> tuple[FamilyGap, ...]:
     """Adapt `_pii.py::PiiViolation`s into `FamilyGap`s. `_pii.py::
     evaluate_pii` has no baseline-view concept (PII001-004 are all
@@ -284,6 +288,9 @@ def _pii_gaps(violations: tuple[PiiViolation, ...]) -> tuple[FamilyGap, ...]:
     )
 
 
+# frob:waive DUP001 reason="parallel family-gap adapter shape shared \
+# with _pii_gaps above by design; distinct violation types and family \
+# tags, not shared logic"
 def _lint_gaps(violations: tuple[LintViolation, ...]) -> tuple[FamilyGap, ...]:
     """Adapt `_lint.py::LintViolation`s into `FamilyGap`s. `_lint.py::
     evaluate_lint` has no baseline-view concept (LINT001-005 are all
@@ -386,11 +393,23 @@ def _evaluate_family(
     non-security family (whose views live in a separate table, e.g.
     `QUALITY_VIEWS`) can be evaluated without `evaluate_threats`'s
     hardcoded fallback to the module-global `VIEWS` shadowing it (zero new
-    detection -- see module docstring)."""
+    detection -- see module docstring).
+
+    T-0171: THREAT002 (capability classification) is checked against
+    `ALL_CATALOG` -- the union sink taxonomy across every family -- not
+    the narrower per-family `catalog`, so a capability kind classified
+    security-side (`CWE_CATALOG`) but absent from a quality-only catalog's
+    vocabulary (`QUALITY_CATALOG`) is not misreported as unclassified when
+    auditing a quality view (`_threat.py::ALL_CATALOG`'s comment). THREAT001
+    (`catalog`/`out_of_scope`/`views`) and THREAT003 (`catalog`) stay
+    family-scoped -- only which family's obligations a capability FIRES is
+    per-family; whether the capability is classified AT ALL is not."""
     catalog_violations = check_catalog_completeness(view, catalog, out_of_scope, views)
     if catalog_violations.is_err:
         return Err(catalog_violations.danger_err)
-    capability_violations = check_capability_completeness(model, catalog, benign)
+    capability_violations = check_capability_completeness(
+        model, catalog, benign, taxonomy=ALL_CATALOG
+    )
     if capability_violations.is_err:
         return Err(capability_violations.danger_err)
     discharge_violations = check_discharge_completeness(model, catalog)
@@ -675,7 +694,7 @@ def _stale_waiver_gaps(stale_waivers: tuple[WaiverMatch, ...]) -> list[FamilyGap
             family="waiver",
             view="model",
             rule=STALE_WAIVER_RULE,
-            detail=stale_detail(stale),
+            detail=_stale_detail(stale),
             target=stale.node,
         )
         for stale in stale_waivers

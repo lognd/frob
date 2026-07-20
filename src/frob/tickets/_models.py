@@ -3,13 +3,14 @@
 
 from __future__ import annotations
 
+import fnmatch
 import re
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from datetime import date
 from enum import StrEnum
 from pathlib import Path
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 from typani.error_set import ErrorSet
 
 
@@ -73,6 +74,316 @@ def is_cmd_evidence(entry: str) -> bool:
     pytest-node-id check instead and fails there too.
     """
     return bool(_CMD_EVIDENCE_RE.match(entry))
+
+
+# frob:doc docs/modules/tickets.md#public-api
+# The ledger every ticket op reads/writes on every invocation -- always
+# implicitly in scope so recording a Done report or evidence never itself
+# trips SCOPE001 (T-0241).
+LEDGER_PATH = "tickets.md"
+
+
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets.py::TestScopeMatching.test_comma_joined_entry_splits
+def _split_scope_entries(raw: Sequence[str]) -> tuple[str, ...]:
+    """Split each entry of `raw` on commas and strip whitespace.
+
+    A hand-typed or scripted `--scope 'a/,b/,c/'` previously became ONE
+    fnmatch pattern (`"a/,b/,c/"`) that could never match any real path --
+    SCOPE001 fired on every touched file and pre-work sweeps recorded
+    against zero files (T-0241). Applied at model-construction time so it
+    normalizes both freshly created tickets and tickets loaded from a
+    hand-edited ledger.
+    """
+    entries: list[str] = []
+    for item in raw:
+        for piece in item.split(","):
+            piece = piece.strip()
+            if piece:
+                entries.append(piece)
+    return tuple(entries)
+
+
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets.py::TestScopeMatching.test_dir_prefix_globs_recursively
+def _scope_globs(scope: Sequence[str]) -> tuple[str, ...]:
+    """Expand a ticket's declared `scope` into concrete fnmatch patterns.
+
+    A bare directory prefix (`design/`, no glob metacharacters) previously
+    matched nothing since fnmatch treats it as a literal string equal to
+    the path -- expand it to `design/**` so it recurses. `LEDGER_PATH` is
+    always appended so the ledger is implicitly in scope for every ticket
+    (T-0241).
+    """
+    globs: list[str] = []
+    for entry in scope:
+        if entry.endswith("/") and not any(ch in entry for ch in "*?["):
+            globs.append(entry + "**")
+        else:
+            globs.append(entry)
+    if LEDGER_PATH not in globs:
+        globs.append(LEDGER_PATH)
+    return tuple(globs)
+
+
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets.py::TestScopeMatching.test_ledger_always_in_scope
+def scope_matches(path: str, scope: Sequence[str]) -> bool:
+    """Whether `path` is covered by a ticket's declared `scope`.
+
+    THE one implementation every scope-consulting site (`frob.tickets`'s
+    own land-time check, `frob.gates`'s SCOPE001/PRE001/scope-digest
+    checks) must call, so `dir/` glob expansion and the implicit-ledger
+    rule can never drift between two independent copies (T-0241). Re-splits
+    comma-joined entries defensively even though `Ticket`/`TicketSpec`
+    normalize on construction, so a raw, un-modeled `scope` sequence passed
+    directly still matches correctly.
+    """
+    return any(
+        fnmatch.fnmatch(path, glob)
+        for glob in _scope_globs(_split_scope_entries(scope))
+    )
+
+
+# frob:ticket T-0453
+# frob:doc docs/modules/tickets.md#public-api
+def _tokenize_glob(pattern: str) -> tuple[str, ...]:
+    """Tokenize an fnmatch pattern into single-char literal tokens plus a
+    `'*'` (any-length wildcard) token and a `'?'` (any-single-char) token
+    -- a `[...]` bracket class collapses to one `'?'` token since fnmatch
+    itself only ever consumes exactly one character for it. Feeds
+    `_globs_intersect`'s pattern-vs-pattern DP (T-0453)."""
+    tokens: list[str] = []
+    i = 0
+    n = len(pattern)
+    while i < n:
+        ch = pattern[i]
+        if ch in "*?":
+            tokens.append(ch)
+            i += 1
+        elif ch == "[":
+            close = pattern.find("]", i + 1)
+            tokens.append("?")
+            i = (close + 1) if close != -1 else n
+        else:
+            tokens.append(ch)
+            i += 1
+    return tuple(tokens)
+
+
+# frob:ticket T-0453
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets_lease.py::TestGlobsIntersect.test_wildcard_prefix_overlaps_literal  # noqa: E501
+# frob:tests tests/test_tickets_lease.py::TestGlobsIntersect.test_disjoint_literal_siblings  # noqa: E501
+def _globs_intersect(glob_a: str, glob_b: str) -> bool:
+    """Whether two fnmatch-style glob patterns can ever match the SAME
+    concrete path -- a sound path/glob intersection test (T-0453 DESIGN
+    CORRECTION), not a literal-prefix heuristic: `'*'` matches any
+    (possibly empty) run of characters and `'?'`/a bracket class matches
+    exactly one, on EITHER side, via the standard two-pattern wildcard-
+    intersection DP (memoized over token positions). This is what keeps
+    the T-0453 scope-lease overlap check sound for arbitrary globs -- not
+    just the `dir/**`-vs-literal-file case, and specifically NOT special-
+    casing `tests/**`/`docs/` out of the comparison (the thing the design
+    correction says never to do).
+    """
+    tok_a = _tokenize_glob(glob_a)
+    tok_b = _tokenize_glob(glob_b)
+    memo: dict[tuple[int, int], bool] = {}
+
+    def rec(i: int, j: int) -> bool:
+        key = (i, j)
+        if key in memo:
+            return memo[key]
+        if i == len(tok_a) and j == len(tok_b):
+            result = True
+        elif i < len(tok_a) and tok_a[i] == "*":
+            result = rec(i + 1, j) or (j < len(tok_b) and rec(i, j + 1))
+        elif j < len(tok_b) and tok_b[j] == "*":
+            result = rec(i, j + 1) or (i < len(tok_a) and rec(i + 1, j))
+        elif i < len(tok_a) and j < len(tok_b):
+            a_tok, b_tok = tok_a[i], tok_b[j]
+            result = (a_tok == "?" or b_tok == "?" or a_tok == b_tok) and rec(
+                i + 1, j + 1
+            )
+        else:
+            result = False
+        memo[key] = result
+        return result
+
+    return rec(0, 0)
+
+
+# frob:ticket T-0453
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets_lease.py::TestScopeOverlap.test_precise_scopes_disjoint
+# frob:tests tests/test_tickets_lease.py::TestScopeOverlap.test_real_collision_detected
+def scope_overlap_globs(
+    scope_a: Sequence[str], scope_b: Sequence[str]
+) -> tuple[str, str] | None:
+    """First colliding `(glob_from_a, glob_from_b)` pair between two
+    tickets' declared scopes, or `None` if provably disjoint (T-0453).
+
+    `LEDGER_PATH` is dropped from BOTH sides first: every ticket implicitly
+    leases it via `_scope_globs`, so leaving it in would make every ticket
+    pair collide on `tickets.md` alone (the over-hiding bug the T-0453
+    DESIGN CORRECTION fixes) -- it is the ONLY path ignored in the overlap
+    check; `tests/**`/`docs/` are deliberately NOT special-cased out here.
+    """
+    globs_a = [g for g in _scope_globs(scope_a) if g != LEDGER_PATH]
+    globs_b = [g for g in _scope_globs(scope_b) if g != LEDGER_PATH]
+    for glob_a in globs_a:
+        for glob_b in globs_b:
+            if _globs_intersect(glob_a, glob_b):
+                return (glob_a, glob_b)
+    return None
+
+
+# frob:ticket T-0453
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets_lease.py::TestScopeOverlap.test_precise_scopes_disjoint
+def scope_overlap(scope_a: Sequence[str], scope_b: Sequence[str]) -> bool:
+    """Whether two tickets' declared scopes could ever both match the same
+    real path -- the T-0453 scope-lease collision test `doable` filters
+    queued/planned candidates through against every in-progress ticket."""
+    return scope_overlap_globs(scope_a, scope_b) is not None
+
+
+# frob:ticket T-0453
+# frob:doc docs/modules/tickets.md#public-api
+# T-0453 DESIGN CORRECTION: these are the specific globs that have
+# actually caused over-hiding in this repo's history (nearly every ticket
+# declares `tests/**` and/or `docs/`) -- flagged unconditionally by
+# `large_glob_warnings`, before the file-count threshold is even
+# consulted, as a nudge to narrow to the precise files a ticket touches.
+OVER_BROAD_LITERAL_GLOBS = frozenset(
+    {
+        "tests/**",
+        "tests/",
+        "src/frob/**",
+        "src/frob/",
+        "docs/",
+        "docs/**",
+    }
+)
+
+
+# frob:ticket T-0398
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_evidence_integrity.py::TestD11DedupedMatchRule.test_tickets_and_gates_share_matches_collected  # noqa: E501
+def matches_collected(evidence: str, collected: frozenset[str]) -> bool:
+    """Exact node-id membership, or bare-function match for parametrized
+    tests (`f` satisfies evidence when only `f[param]` variants collect).
+
+    THE single implementation of "collected" resolution -- `frob.tickets`
+    (`add_evidence`) and `frob.gates` (COV003) both call this instead of
+    keeping two independently-hand-written copies of the same regex-free
+    matching rule (D-11: the two copies could desync silently; gates may
+    import from tickets since gates already sits above tickets in the
+    dependency graph, so this is a one-way, cycle-free consolidation)."""
+    if evidence in collected:
+        return True
+    prefix = evidence + "["
+    return any(node.startswith(prefix) for node in collected)
+
+
+# frob:doc docs/modules/tickets.md#public-api
+# T-0458: public (no leading underscore) so `frob.tickets.compose_done_report`
+# can reuse the SAME heading string `has_substantive_done_report`/
+# `replace_done_report_section` key off, rather than a second hand-typed
+# copy that could silently drift out of sync with what the D-03 check
+# recognizes as a real Done-report heading.
+DONE_REPORT_HEADING = "## Done report"
+_DONE_REPORT_HEADING = DONE_REPORT_HEADING
+# D-03: a bare heading with nothing under it (or only blank lines)
+# previously satisfied close/land (`_has_done_report`'s old shape). The bar
+# is deliberately minimal -- 1 non-blank line, a handful of characters --
+# so it rejects only a truly EMPTY section (the fabrication this finding is
+# about) and never blocks a genuine, even terse, one-line Done report (this
+# repo's own test fixtures routinely use short bodies like "All good." or
+# "smoke" as a legitimate Done report).
+_MIN_DONE_REPORT_CHARS = 3
+_MIN_DONE_REPORT_LINES = 1
+
+
+def _done_report_section_lines(body: str) -> list[str] | None:
+    """The raw lines of body's `## Done report` section (up to the next
+    `## ` heading or EOF), or `None` if no such heading exists."""
+    lines = body.splitlines()
+    heading_idx = None
+    for i, line in enumerate(lines):
+        if line.strip() == _DONE_REPORT_HEADING:
+            heading_idx = i
+            break
+    if heading_idx is None:
+        return None
+    section: list[str] = []
+    for line in lines[heading_idx + 1 :]:
+        if line.strip().startswith("## "):
+            break
+        section.append(line)
+    return section
+
+
+# frob:ticket T-0398
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_evidence_integrity.py::TestD03SubstantiveDoneReport.test_empty_section_rejected  # noqa: E501
+def has_substantive_done_report(body: str) -> bool:
+    """Whether `body` carries a `## Done report` heading AND a real section
+    under it (D-03) -- `frob.tickets.__init__` (`_done_transition_guard`)
+    and `frob.tickets._land` (`_validate_closeable`, `_newer`) both call
+    this single implementation (also dedupes the two independent
+    heading-only copies those two modules used to carry). A section is
+    "real" if it has at least `_MIN_DONE_REPORT_LINES` non-blank lines and
+    at least `_MIN_DONE_REPORT_CHARS` of non-whitespace content -- low
+    enough to never block a genuine terse report, high enough to reject a
+    bare `## Done report\n` heading or a couple of blank lines under it."""
+    section = _done_report_section_lines(body)
+    if section is None:
+        return False
+    non_blank = [line for line in section if line.strip()]
+    content = "\n".join(non_blank)
+    return (
+        len(non_blank) >= _MIN_DONE_REPORT_LINES
+        and len(content) >= _MIN_DONE_REPORT_CHARS
+    )
+
+
+# frob:ticket T-0458
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/unit/test_ticket_store.py::TestReplaceDoneReportSection.test_replaces_existing_section  # noqa: E501
+def replace_done_report_section(body: str, new_section: str) -> str:
+    """Splice `new_section` (a full `## Done report\\n...` block) into `body`,
+    replacing any existing '## Done report' section (heading through the
+    next top-level '## ' heading or EOF) verbatim, or appending it at the
+    end if no such heading exists yet.
+
+    THE block-boundary-aware primitive `frob.tickets.set_done_report` uses
+    so a caller composing a Done report never hand-slices markdown itself
+    (T-0458) -- the exact hand-edit failure mode (an Edit call landing
+    mid-section, or missing the next `## ` boundary) that repeatedly
+    corrupted `tickets.md` this session.
+    """
+    lines = body.splitlines()
+    heading_idx = None
+    for i, line in enumerate(lines):
+        if line.strip() == _DONE_REPORT_HEADING:
+            heading_idx = i
+            break
+    new_lines = new_section.rstrip("\n").splitlines()
+    if heading_idx is None:
+        separator: list[str] = [] if not lines or lines[-1] == "" else [""]
+        return "\n".join([*lines, *separator, *new_lines]) + "\n"
+    end_idx = len(lines)
+    for i in range(heading_idx + 1, len(lines)):
+        if lines[i].strip().startswith("## "):
+            end_idx = i
+            break
+    before, after = lines[:heading_idx], lines[end_idx:]
+    result = [*before, *new_lines]
+    if after:
+        result = [*result, "", *after]
+    return "\n".join(result) + "\n"
 
 
 # frob:doc docs/modules/tickets.md#data-models
@@ -141,6 +452,13 @@ class Ticket(BaseModel):
     threat: Stride | None = None
     body: str = ""
 
+    @field_validator("scope", mode="before")
+    @classmethod
+    def _normalize_scope(cls, value: Sequence[str]) -> tuple[str, ...]:
+        """Split any comma-joined entry into separate globs on load or
+        construction (T-0241) -- see `_split_scope_entries`."""
+        return _split_scope_entries(value)
+
 
 # frob:doc docs/modules/tickets.md#data-models
 class TicketSpec(BaseModel):
@@ -158,6 +476,13 @@ class TicketSpec(BaseModel):
     threat: Stride | None = None
     evidence: tuple[str, ...] = ()
     body: str = ""
+
+    @field_validator("scope", mode="before")
+    @classmethod
+    def _normalize_scope(cls, value: Sequence[str]) -> tuple[str, ...]:
+        """Split any comma-joined entry into separate globs before the spec
+        is turned into a `Ticket` (T-0241) -- see `_split_scope_entries`."""
+        return _split_scope_entries(value)
 
 
 # frob:doc docs/modules/tickets.md#data-models
@@ -210,6 +535,10 @@ class TicketError(ErrorSet):
     # T-0215: non-pytest evidence channel for docs-kind tickets
     EvidenceKindNotAllowed = "cmd evidence is only allowed for docs-kind tickets"
     EvidenceCmdFailed = "evidence command failed to launch or exited nonzero"
+    # T-0398 D-01: injected pass/fail oracle says a collected id did not pass
+    EvidenceNotPassing = "Evidence id resolved but did not pass when last run"
+    # T-0398 D-02: no evidence id binds to a touched/scope symbol
+    EvidenceScopeUnbound = "No evidence id covers a touched/scope symbol"
 
 
 # frob:ticket T-0176
@@ -228,6 +557,10 @@ class LandError(ErrorSet):
     CloseFailed = "closing the ticket after merge failed"
     SquashConflict = "squash-applying the worktree onto main produced real conflicts"
     CommitFailed = "the final landing commit failed"
+    IncompleteLand = (
+        "the staged squash-apply is missing file(s) the worktree changed "
+        "(T-0463 completeness assertion)"
+    )
 
 
 # frob:ticket T-0176
@@ -247,3 +580,10 @@ class LandReport(BaseModel):
     unowned_deletions: tuple[str, ...] = ()
     commit_sha: str | None = None
     files_changed: tuple[str, ...] = ()
+    # T-0463: the worktree's full pre-squash changeset (tracked edits,
+    # untracked new files, deletions -- everything `git diff <main>...HEAD`
+    # in the worktree reports once the wip-commit has made it all tracked),
+    # asserted equal-or-subset of `files_changed` before the landing commit
+    # is ever made. Always empty on a real (non-dry-run) success since a
+    # completeness gap aborts the land instead of returning a report.
+    worktree_changeset: tuple[str, ...] = ()

@@ -93,7 +93,11 @@ class OutOfScopeRegulation(BaseModel):
     mandatory: the charter's compliance closing paragraph requires every
     cited exclusion to carry legal ownership + a review date, since
     regulations change underneath a stale exclusion (docs/strata/
-    threat.md#compliance, "Exhaustiveness for compliance")."""
+    threat.md#compliance, "Exhaustiveness for compliance"). `caught_by`
+    (T-0381) is likewise mandatory: an exclusion without a named
+    compensating control (the gate/rule/mechanism -- or legal process --
+    that catches the excused regulation elsewhere) is an unaccounted-for
+    gap, not an honest exclusion."""
 
     model_config = ConfigDict(frozen=True)
 
@@ -101,6 +105,7 @@ class OutOfScopeRegulation(BaseModel):
     reason: str = Field(min_length=1)
     owner: str = Field(min_length=1)
     review: str  # ISO date
+    caught_by: str = Field(min_length=1)
 
 
 # frob:doc docs/strata/threat.md#compliance-regulatory-obligations-stdcompliance

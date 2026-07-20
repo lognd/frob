@@ -7,7 +7,7 @@ from pathlib import Path
 from frob.gates import decisions_gate
 from frob.gates.decisions import (
     DecisionError,
-    DecisionStatus,
+    _DecisionStatus,
     load_decisions,
 )
 from frob.graph import build_graph
@@ -31,7 +31,7 @@ def test_load_decisions_parses_records(tmp_path):
     _record(tmp_path, "AD-001", "accepted")
     decisions = load_decisions(tmp_path).danger_ok
     assert len(decisions) == 1
-    assert decisions[0].status == DecisionStatus.ACCEPTED
+    assert decisions[0].status == _DecisionStatus.ACCEPTED
 
 
 def test_malformed_record_is_err(tmp_path):

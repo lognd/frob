@@ -40,7 +40,7 @@ def core_available() -> bool:
 
 
 # frob:doc docs/modules/dup.md#rust-core
-def r3_canonical_hash(tokens: tuple[str, ...]) -> Result[str, DupError]:
+def _r3_canonical_hash(tokens: tuple[str, ...]) -> Result[str, DupError]:
     """R3: canonicalized-AST subtree hash of a normalized token sequence."""
     if not core_available():
         return Err(DupError.CoreUnavailable)
@@ -50,7 +50,7 @@ def r3_canonical_hash(tokens: tuple[str, ...]) -> Result[str, DupError]:
 
 
 # frob:doc docs/modules/dup.md#rust-core
-def winnow_fingerprints(
+def _winnow_fingerprints(
     tokens: tuple[str, ...], k: int, w: int
 ) -> Result[tuple[int, ...], DupError]:
     """R4: winnowed fingerprint set over `tokens` with k-gram/window sizes."""
@@ -62,7 +62,7 @@ def winnow_fingerprints(
 
 
 # frob:doc docs/modules/dup.md#rust-core
-def candidate_pairs(
+def _candidate_pairs(
     fingerprint_sets: tuple[tuple[int, ...], ...], min_shared: int
 ) -> Result[tuple[tuple[int, int], ...], DupError]:
     """R4 candidate discovery: index pairs sharing >= `min_shared` fingerprints."""
@@ -75,7 +75,7 @@ def candidate_pairs(
 
 
 # frob:doc docs/modules/dup.md#rust-core
-def tree_edit_similarity(
+def _tree_edit_similarity(
     a: tuple[int, ...], b: tuple[int, ...]
 ) -> Result[tuple[float, tuple[tuple[int, int], ...]], DupError]:
     """R4 verification: statement-sequence similarity and matched-index alignment."""
@@ -88,7 +88,7 @@ def tree_edit_similarity(
 
 
 # frob:doc docs/modules/dup.md#rung-r4
-def apted_similarity(
+def _apted_similarity(
     labels_a: tuple[str, ...],
     parents_a: tuple[int, ...],
     labels_b: tuple[str, ...],
@@ -98,7 +98,7 @@ def apted_similarity(
 
     `labels_*`/`parents_*` come from `frob.lang.flatten_tree` over a
     `frob.lang.symbol_tree` export -- real subtree structure, not the flat
-    statement-hash sequence `tree_edit_similarity` compares.
+    statement-hash sequence `_tree_edit_similarity` compares.
     """
     if not core_available():
         return Err(DupError.CoreUnavailable)
@@ -121,7 +121,7 @@ def anti_unify(
     """Plotkin lgg: lockstep anti-unification template + per-side hole bindings.
 
     `labels_*`/`parents_*` are the same `(labels, parents)` node-array pair
-    `apted_similarity` consumes. A hole-ceiling failure (template >50%
+    `_apted_similarity` consumes. A hole-ceiling failure (template >50%
     `$hole_N` placeholders -- too little shared structure to be a
     meaningful generalization) comes back as
     `Err(DupError.HoleCeilingExceeded)`; the caller falls back to treating
@@ -148,9 +148,9 @@ def anti_unify(
 
 
 # frob:doc docs/modules/dup.md#rung-r1-5
-def exact_regions(
-    documents: tuple[tuple[str, ...], ...], min_len: int
-) -> Result[tuple[tuple[int, int, int, int, int], ...], DupError]:
+def _exact_regions(
+    documents: tuple[tuple[str, ...], ...], min_len: int, max_run_size: int = 200
+) -> Result[tuple[tuple[tuple[int, int, int, int, int], ...], bool], DupError]:
     """R1.5: exact repeated-region discovery via a generalized suffix array
     over `documents`' concatenated (already-normalized) token streams.
 
@@ -159,17 +159,26 @@ def exact_regions(
     that match exactly for `length` tokens. Unlike R1/R2 (whole-body
     hashing), this finds copy-pasted sub-regions inside otherwise-different
     documents; see docs/modules/dup.md's rung table.
+
+    `max_run_size` (T-0273) bounds the O(k^2) pair emission for one
+    equal-token run of size `k` -- a run larger than `max_run_size` only
+    pairs its first `max_run_size` occurrences, and the returned `bool` is
+    `True` iff at least one run was capped this way. This is an honest
+    truncation signal, not a silent drop (the T-0193-recall-bug lesson):
+    callers must surface it rather than treat the region list as
+    exhaustive when it is `True`.
     """
     if not core_available():
         return Err(DupError.CoreUnavailable)
     import frob_core
 
     docs = [list(d) for d in documents]
-    return Ok(tuple(tuple(r) for r in frob_core.exact_regions(docs, min_len)))
+    regions, truncated = frob_core.exact_regions(docs, min_len, max_run_size)
+    return Ok((tuple(tuple(r) for r in regions), truncated))
 
 
 # frob:doc docs/modules/dup.md#rung-r5
-def wl_hash(
+def _wl_hash(
     adjacency: tuple[tuple[int, int], ...], labels: tuple[str, ...], iterations: int
 ) -> Result[int, DupError]:
     """R5: Weisfeiler-Lehman graph-kernel hash of a def-use/control adjacency."""
@@ -183,12 +192,12 @@ def wl_hash(
 __all__ = [
     "INSTALL_HINT",
     "anti_unify",
-    "apted_similarity",
-    "candidate_pairs",
+    "_apted_similarity",
+    "_candidate_pairs",
     "core_available",
-    "exact_regions",
-    "r3_canonical_hash",
-    "tree_edit_similarity",
-    "wl_hash",
-    "winnow_fingerprints",
+    "_exact_regions",
+    "_r3_canonical_hash",
+    "_tree_edit_similarity",
+    "_wl_hash",
+    "_winnow_fingerprints",
 ]

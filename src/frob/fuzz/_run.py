@@ -13,8 +13,6 @@ Wiring `run_fuzz` to call bound `kind="fuzz"` test functions is `frob.testing`
 + coordinator work (docs/modules/fuzz.md "Execution and corpus"), not this ticket.
 """
 
-# frob:waive TEST005 reason="module line coverage 83.7%, debt T-0160"
-
 from __future__ import annotations
 
 from collections.abc import Mapping
@@ -27,7 +25,7 @@ from frob.logging import get_logger
 
 _log = get_logger(__name__)
 
-# frob:todo T-0300
+# frob:todo T-0469
 # budget_s currently maps to a fixed max_examples count, not true wall-clock;
 # hypothesis's own `deadline`/`settings(max_examples=...)` gives a
 # per-example ceiling, not a whole-run wall-clock budget. A real wall-clock
@@ -115,7 +113,6 @@ def _run_property_test(test_fn, ref: str, policy: FuzzPolicy, get_count):  # noq
 
 
 # frob:doc docs/modules/fuzz.md#public-api
-# frob:waive TEST005 reason="run_fuzz 71.4% branch cover, debt T-0160"
 def run_fuzz(
     targets: tuple[type[BaseModel], ...],
     budget_s: int,

@@ -1,5 +1,20 @@
 check_base = "main"
 
+# T-0373: the arch gate (frob.gates._arch.arch_gate, via frob.app.config.
+# load_arch_config) and the standalone `frob arch` linter both read this
+# table. These are a deliberate calibration, not the library's own
+# conservative defaults (30-line functions, 500-line files) -- 800 lines
+# and 60-line functions are the idiomatic ceilings this repo actually
+# holds itself to; unset keys fall back to load_arch_config's defaults,
+# which match these same values, so this table is documentation of the
+# decision as much as it is wiring.
+[arch]
+max_function_lines = 60
+max_class_methods = 12
+max_local_imports = 8
+max_nesting_depth = 4
+max_file_lines = 800
+
 [graph]
 # design/litmus/**: strata litmus fixtures (T-0130) -- example models used
 # by tests/unit/strata's parametrized suite, not maintained product surface.
@@ -23,6 +38,63 @@ exclude = [
     ".claude/worktrees/**",
     "src/frob/scaffold/data/**",
 ]
+
+# T-0396: anti-orphan file-reference gate (REF001/002/003) allowlist --
+# each entry is a file that is legitimately low/no-inbound because it is
+# read from OUTSIDE this repo's own tracked-file graph (a human, GitHub's
+# UI, a packaging tool, CI's own runner, the interpreter's own entry-point
+# convention), never a blanket mute: every entry carries its own reason.
+[[refs.entrypoint]]
+path = "README.md"
+reason = "read by humans/GitHub, not referenced from other tracked files"
+
+[[refs.entrypoint]]
+path = "LICENSE"
+reason = "read by humans/packaging tools, not referenced from source"
+
+[[refs.entrypoint]]
+path = "CHANGELOG.md"
+reason = "read by humans/release tooling, not referenced from source"
+
+[[refs.entrypoint]]
+path = "pyproject.toml"
+reason = "read by pip/uv/build backends outside this repo's own graph"
+
+[[refs.entrypoint]]
+path = "frob.toml"
+reason = "the root config every gate reads; referencing it from tracked source would be circular, not meaningful"
+
+[[refs.entrypoint]]
+path = "frob.lock"
+reason = "machine-generated lock artifact frob.graph writes and reads by fixed path convention, not referenced by name from source"
+
+[[refs.entrypoint]]
+path = "src/frob/__main__.py"
+reason = "the CLI entry point, invoked by the installed console-script shim outside this repo's tracked-file graph"
+
+[[refs.entrypoint]]
+path = "CLAUDE.md"
+reason = "read by Claude/AI agents as project instructions, not referenced from other tracked files"
+
+[[refs.entrypoint]]
+path = ".gitignore"
+reason = "read by git outside this repo's own tracked-file graph, not referenced from source"
+
+[[refs.entrypoint]]
+path = ".gitattributes"
+reason = "read by git (merge-driver/attribute config) outside this repo's tracked-file graph"
+
+[[refs.entrypoint]]
+path = "Makefile"
+reason = "read by make outside this repo's tracked-file graph, not referenced from source"
+
+[[refs.entrypoint]]
+path = ".github/workflows/ci.yml"
+reason = "read by the GitHub Actions runner outside this repo's tracked-file graph"
+
+[[refs.entrypoint]]
+path = ".mcp.json"
+reason = "read by MCP clients outside this repo's tracked-file graph, not referenced from source"
 
 [gates.severity]
 # COV001 (public symbol has an explicit frob:doc edge) and TEST001 (public
@@ -98,3 +170,20 @@ language = "strata"
 command = ["uv", "run", "pytest", "-q", "tests/unit/strata", "{files}"]
 all_command = ["uv", "run", "pytest", "-q", "tests/unit/strata"]
 cwd = "."
+
+# T-0333: compiled extension modules the pytest suite importorskip-gates on.
+# Declaring them lets `collect_python_tests` fingerprint their build state
+# (so `make core` invalidates the collection cache automatically instead of
+# leaving a stale set that reds COV003), and lets the coverage gate name the
+# real remedy when a native is not built. `name` is the python IMPORT name
+# (resolved via importlib.util.find_spec), not a path -- so this works
+# identically for these pyo3/maturin crates and for any c/c++ extension.
+[[native]]
+name = "strata_core"
+build_cmd = "make core"
+language = "rust"
+
+[[native]]
+name = "frob_core"
+build_cmd = "make core"
+language = "rust"

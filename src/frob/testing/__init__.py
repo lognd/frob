@@ -10,20 +10,31 @@ the bindings exist, `frob test` runs the bound tests.
 
 from __future__ import annotations
 
-from frob.testing._collect import collect_python_tests, collect_rust_tests
+from frob.testing._collect import (
+    collect_python_tests,
+    collect_rust_tests,
+    drop_collection_cache,
+)
 from frob.testing._models import (
     CollectedTests,
+    NativeSpec,
     RunnerOutcome,
     RunnerSpec,
     SelectConfig,
     SelectionReport,
     TestRunReport,
 )
-from frob.testing._runners import TestingError, load_runners, run_selected
+from frob.testing._runners import (
+    TestingError,
+    load_natives,
+    load_runners,
+    run_selected,
+)
 from frob.testing._select import extension_language, select_tests
 
 __all__ = [
     "CollectedTests",
+    "NativeSpec",
     "RunnerOutcome",
     "RunnerSpec",
     "SelectConfig",
@@ -32,7 +43,9 @@ __all__ = [
     "TestingError",
     "collect_python_tests",
     "collect_rust_tests",
+    "drop_collection_cache",
     "extension_language",
+    "load_natives",
     "load_runners",
     "run_selected",
     "select_tests",

@@ -28,11 +28,13 @@ from __future__ import annotations
 
 import ast
 import fnmatch
+import os
 from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict
 from typani.result import Err, Ok, Result
 
+from frob.excludes import _should_prune_dir as _prune_dir  # noqa: SLF001
 from frob.excludes import is_excluded, is_skipped_dir, load_exclude_globs
 from frob.lang import resolve_local_import
 from frob.logging import get_logger
@@ -96,10 +98,32 @@ def _sorted_owners(matched: set[str]) -> tuple[str, ...]:
     return tuple(sorted(matched))
 
 
-def _sorted_py_files(root: Path) -> list[Path]:
+def _sorted_py_files(root: Path, exclude_globs: tuple[str, ...] = ()) -> list[Path]:
     """Every `.py` file under `root`, in deterministic path order (hoisted
-    out of `bind_code`'s loop so the sort runs once, not per iteration)."""
-    return sorted(root.rglob("*.py"))
+    out of `bind_code`'s loop so the sort runs once, not per iteration).
+
+    T-0414 (docs/audits/perf.md H2/M7): a plain `Path.rglob("*.py")` cannot
+    prune a subtree mid-descent, so it fully walks and stats every excluded
+    directory (in this repo, `.claude/worktrees/agent-*` alone holds 45k+
+    stray `.py` files) before the caller's `is_skipped_dir`/`is_excluded`
+    filter ever runs -- measured as the dominant cost of the `sys` gate's
+    SYS003 check. `os.walk` with `_should_prune_dir` pruning `dirnames` in
+    place (the same helper `frob.graph._walk_source_files` already uses)
+    skips descending into those directories at all, and returns the exact
+    same final file set `_bind_all_files`'s post-filter used to converge
+    on -- only the number of `os.scandir` calls changes, not which files
+    are ultimately bound."""
+    found: list[Path] = []
+    for dirpath, dirnames, filenames in os.walk(root):
+        dir_path = Path(dirpath)
+        dirnames[:] = [
+            d for d in dirnames if not _prune_dir(dir_path / d, root, exclude_globs)
+        ]
+        for name in filenames:
+            if name.endswith(".py"):
+                found.append(dir_path / name)
+    # frob:waive PERF004 reason="one sort after the walk loop above, not per iteration"
+    return sorted(found)
 
 
 def _bind_one(rel: str, globs: list[tuple[str, str]]) -> Result[str, StrataError]:
@@ -121,7 +145,7 @@ def _bind_all_files(
     """Every non-skipped, non-excluded `.py` file under `root`, bound to its
     owner (or `FOREIGN`), in deterministic path order."""
     owner: dict[str, str] = {}
-    for path in _sorted_py_files(root):
+    for path in _sorted_py_files(root, exclude_globs):
         rel_path = path.relative_to(root)
         if any(is_skipped_dir(part) for part in rel_path.parts):
             continue

@@ -15,12 +15,12 @@ from __future__ import annotations
 
 from tree_sitter import Node, Tree
 
-from frob.lang._common import child_text, span_of, strip_comment_delims
-from frob.lang._common import find_enclosing_symbol as _find_enclosing
-from frob.lang._common import find_following_symbol as _find_following
+from frob.lang._common import _find_enclosing_symbol as _find_enclosing
+from frob.lang._common import _find_following_symbol as _find_following
+from frob.lang._common import _span_of, _strip_comment_delims, child_text
 from frob.lang._models import RawComment, RawSymbol
 from frob.lang._walk_c import _walk_c_family
-from frob.lang._walk_python import _walk_python
+from frob.lang._walk_python import _walk_python, _walk_python_docstring_comments
 from frob.lang._walk_rust import _walk_rust
 from frob.lang._walk_typescript import _walk_typescript
 from frob.logging import get_logger
@@ -64,6 +64,18 @@ _WALKERS = {
     "cpp": _walk_cpp,
 }
 
+# frob:ticket T-0342
+# Per-language docstring-directive scan, additive to `COMMENT_TYPES`'
+# comment-node walk: python's docstring-as-first-statement convention has
+# no `comment`-typed node at all, so a `frob:` directive written inside one
+# is invisible unless a language also gets its own docstring walk here.
+# Only python has one today; the ticket's body notes the same gap likely
+# exists for other languages' doc-comment conventions but leaves that for
+# a follow-up (out of this ticket's repro/scope).
+_DOCSTRING_COMMENT_WALKERS = {
+    "python": _walk_python_docstring_comments,
+}
+
 
 # frob:doc docs/modules/lang.md#extraction-api
 def extract(
@@ -73,6 +85,9 @@ def extract(
     walker = _WALKERS[language]
     symbols = walker(tree.root_node)
     comments = _extract_comments(tree.root_node, COMMENT_TYPES[language], symbols)
+    docstring_walker = _DOCSTRING_COMMENT_WALKERS.get(language)
+    if docstring_walker is not None:
+        comments = comments + docstring_walker(tree.root_node, symbols)
     _log.debug(
         "extracted %d symbols, %d comments for language=%s",
         len(symbols),
@@ -115,7 +130,7 @@ def _collect_comment_nodes(root: Node, comment_types: frozenset[str]) -> list[No
 
     walk(root)
     # frob:waive PERF004 reason="one sort per file, not in a loop; walk() is recursion"
-    raw_nodes.sort(key=lambda n: span_of(n)[0])
+    raw_nodes.sort(key=lambda n: _span_of(n)[0])
     return raw_nodes
 
 
@@ -128,8 +143,8 @@ def _bind_comments(
     enclosing/following symbol bindings."""
     out: list[RawComment] = []
     for node, end in zip(raw_nodes, block_end, strict=True):
-        span = span_of(node)
-        text = strip_comment_delims(child_text(node))
+        span = _span_of(node)
+        text = _strip_comment_delims(child_text(node))
         enclosing = _find_enclosing(span, symbols)
         following = _find_following((span[0], end), symbols)
         out.append(
@@ -140,7 +155,7 @@ def _bind_comments(
 
 def _effective_end_row(node: Node) -> int:
     """0-based end row `node` actually occupies, with the tree-sitter
-    trailing-newline artifact folded back (the same rule `span_of` applies,
+    trailing-newline artifact folded back (the same rule `_span_of` applies,
     T-0301): some comment nodes -- a rust `///` line comment is the
     reproducing case -- report `end_point` at column 0 of the FOLLOWING
     line rather than ending on their own row. Comparing raw `end_point[0]`
@@ -151,10 +166,10 @@ def _effective_end_row(node: Node) -> int:
     first line of any 3+-line `///` block -- exactly the escalation this
     fixes (a `// frob:doc` placed above a multi-line rustdoc block failing
     to bind; single-line rustdoc happened to have only one such comparison
-    and so looked fine). Reuses `span_of`'s own fold rule (1-based inclusive
+    and so looked fine). Reuses `_span_of`'s own fold rule (1-based inclusive
     end line) rather than re-deriving it, so the artifact-correction logic
     lives in exactly one place."""
-    return span_of(node)[1] - 1
+    return _span_of(node)[1] - 1
 
 
 def _is_trailing_comment(node: Node) -> bool:
@@ -188,8 +203,8 @@ def _block_ends(sorted_nodes: list[Node]) -> list[int]:
     never extends a block backward through itself since it is excluded as a
     valid chain target below.
     """
-    ends = [span_of(n)[1] for n in sorted_nodes]
-    starts = [span_of(n)[0] for n in sorted_nodes]
+    ends = [_span_of(n)[1] for n in sorted_nodes]
+    starts = [_span_of(n)[0] for n in sorted_nodes]
     trailing = [_is_trailing_comment(n) for n in sorted_nodes]
     block_end = [0] * len(sorted_nodes)
     for i in range(len(sorted_nodes) - 1, -1, -1):
@@ -296,7 +311,7 @@ def iter_identifiers(tree: Tree, language: str) -> tuple[tuple[str, int], ...]:
         if n.type in types:
             txt = child_text(n)
             if txt:
-                out.append((txt, span_of(n)[0]))
+                out.append((txt, _span_of(n)[0]))
             return
         for child in n.children:
             visit(child)

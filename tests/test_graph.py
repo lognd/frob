@@ -100,15 +100,15 @@ class TestDigests:
         assert d1.doc != d2.doc
 
     def test_digest_sig_body_doc_are_independent_facets(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/graph/digest.py::digest_sig
-        # frob:tests src/frob/graph/digest.py::digest_body
-        # frob:tests src/frob/graph/digest.py::digest_doc
-        from frob.graph.digest import digest_body, digest_doc, digest_sig
+        # frob:tests src/frob/graph/digest.py::_digest_sig
+        # frob:tests src/frob/graph/digest.py::_digest_body
+        # frob:tests src/frob/graph/digest.py::_digest_doc
+        from frob.graph.digest import _digest_body, _digest_doc, _digest_sig
 
         method = self._method(self._parse(tmp_path, _BASE_PY, "a.py"))
-        sig = digest_sig(method)
-        body = digest_body(method)
-        doc = digest_doc(method)
+        sig = _digest_sig(method)
+        body = _digest_body(method)
+        doc = _digest_doc(method)
         # each facet is a distinct sha256 hex digest of a different token
         # stream, so a signature change must not perturb the other two.
         assert len(sig) == 64
@@ -124,9 +124,9 @@ class TestDigests:
                 "b.py",
             )
         )
-        assert digest_sig(renamed_method) != sig
-        assert digest_body(renamed_method) == body
-        assert digest_doc(renamed_method) == doc
+        assert _digest_sig(renamed_method) != sig
+        assert _digest_body(renamed_method) == body
+        assert _digest_doc(renamed_method) == doc
 
 
 class TestSymbolRecord:
@@ -160,6 +160,8 @@ class TestDsl:
         assert edges[0].target == "T-0042"
         assert edges[0].src.endswith("::foo")
 
+    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an \
+    # arrange-act scaffold; extracting would obscure per-case intent"
     def test_slash_slash_directive(self, tmp_path: Path) -> None:
         src = """function foo(): void {
     // frob:invariant INV-007
@@ -184,6 +186,8 @@ class TestDsl:
         assert edges[0].target == "RULE-1"
         assert edges[0].attrs["reason"] == "known issue"
 
+    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an \
+    # arrange-act scaffold; extracting would obscure per-case intent"
     def test_binds_to_enclosing_symbol(self, tmp_path: Path) -> None:
         src = """def foo() -> None:
     # frob:ticket T-0001
@@ -193,6 +197,8 @@ class TestDsl:
         edges, _ = parse_directives(pf)
         assert edges[0].src == f"{pf.path}::foo"
 
+    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an \
+    # arrange-act scaffold; extracting would obscure per-case intent"
     def test_binds_to_following_symbol(self, tmp_path: Path) -> None:
         src = """# frob:ticket T-0002
 def foo() -> None:
@@ -202,6 +208,8 @@ def foo() -> None:
         edges, _ = parse_directives(pf)
         assert edges[0].src == f"{pf.path}::foo"
 
+    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an \
+    # arrange-act scaffold; extracting would obscure per-case intent"
     def test_binds_to_nested_method_not_enclosing_class(self, tmp_path: Path) -> None:
         # frob:ticket T-0044
         src = """class Foo:
@@ -213,6 +221,8 @@ def foo() -> None:
         edges, _ = parse_directives(pf)
         assert edges[0].src == f"{pf.path}::Foo.bar"
 
+    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an \
+    # arrange-act scaffold; extracting would obscure per-case intent"
     def test_binds_three_stacked_directives_to_def(self, tmp_path: Path) -> None:
         # frob:ticket T-0100
         src = """# frob:ticket T-0100
@@ -228,6 +238,8 @@ def foo() -> None:
         for edge in edges:
             assert edge.src == f"{pf.path}::foo"
 
+    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an \
+    # arrange-act scaffold; extracting would obscure per-case intent"
     def test_binds_five_stacked_directives_to_def(self, tmp_path: Path) -> None:
         # frob:ticket T-0100
         src = """# frob:ticket T-0100
@@ -245,12 +257,15 @@ def foo() -> None:
         for edge in edges:
             assert edge.src == f"{pf.path}::foo"
 
+    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an \
+    # arrange-act scaffold; extracting would obscure per-case intent"
     def test_directive_binds_past_trailing_comment_on_def_line(
         self, tmp_path: Path
     ) -> None:
         # frob:ticket T-0100
         #
-        # A trailing comment on the def line itself (e.g. `# noqa: ...`)
+        # A trailing comment on the def line itself (e.g. a lint-suppression
+        # marker like the one on the fixture's `def foo()` below)
         # must not be treated as a continuation of the directive's block --
         # doing so pushes the following-window past the def and loses the
         # binding entirely.
@@ -264,6 +279,8 @@ def foo():  # noqa: N802 - rule-id naming convention
         assert len(edges) == 1
         assert edges[0].src == f"{pf.path}::foo"
 
+    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an \
+    # arrange-act scaffold; extracting would obscure per-case intent"
     def test_stacked_directives_bind_past_trailing_comment_on_def_line(
         self, tmp_path: Path
     ) -> None:
@@ -281,6 +298,8 @@ def foo():  # noqa: N802 - rule-id naming convention
         for edge in edges:
             assert edge.src == f"{pf.path}::foo"
 
+    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an \
+    # arrange-act scaffold; extracting would obscure per-case intent"
     def test_directive_does_not_chain_upward_through_prior_trailing_comment(
         self, tmp_path: Path
     ) -> None:
@@ -301,6 +320,8 @@ def foo() -> None:
         assert len(edges) == 1
         assert edges[0].src == f"{pf.path}::foo"
 
+    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an \
+    # arrange-act scaffold; extracting would obscure per-case intent"
     def test_directive_separated_from_def_by_non_directive_comment(
         self, tmp_path: Path
     ) -> None:
@@ -320,6 +341,8 @@ def foo() -> None:
         assert len(edges) == 1
         assert edges[0].src == f"{pf.path}::foo"
 
+    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an \
+    # arrange-act scaffold; extracting would obscure per-case intent"
     def test_directive_separated_from_def_by_blank_line(self, tmp_path: Path) -> None:
         # frob:ticket T-0100
         #
@@ -342,6 +365,78 @@ def foo() -> None:
         edges, _ = parse_directives(pf)
         assert edges[0].src == pf.path
 
+    # frob:tests tests/test_graph.py::TestDsl.test_module_docstring_directive_binds_to_bare_file
+    # frob:ticket T-0342
+    def test_module_docstring_directive_binds_to_bare_file(
+        self, tmp_path: Path
+    ) -> None:
+        # A `frob:` directive inside a MODULE docstring (not a `#` comment)
+        # must still resolve to an edge, bound to the bare file path since
+        # no symbol encloses the whole module -- the python walker never
+        # scanned docstrings at all before T-0342, so this silently
+        # produced zero edges and zero MalformedDirective reports.
+        src = '"""Module summary.\n\nfrob:ticket T-0342\n"""\n\ndef foo() -> None:\n    pass\n'
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        assert len(edges) == 1
+        assert edges[0].kind.value == "ticket"
+        assert edges[0].target == "T-0342"
+        assert edges[0].src == pf.path
+
+    # frob:tests tests/test_graph.py::TestDsl.test_function_docstring_directive_binds_to_function
+    # frob:ticket T-0342
+    def test_function_docstring_directive_binds_to_function(
+        self, tmp_path: Path
+    ) -> None:
+        # Same gap, but inside a FUNCTION docstring: the directive must
+        # bind to the enclosing function, same as if it had been written
+        # as a `#` comment on the first line of the function body.
+        src = (
+            "def foo() -> None:\n"
+            '    """Do the thing.\n'
+            "\n"
+            '    frob:tests tests/a.py::test_foo kind="unit"\n'
+            '    """\n'
+            "    pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        assert len(edges) == 1
+        assert edges[0].kind.value == "tests"
+        assert edges[0].target == "tests/a.py::test_foo"
+        assert edges[0].src == f"{pf.path}::foo"
+
+    # frob:tests tests/test_graph.py::TestDsl.test_invalid_kind_in_module_docstring_is_surfaced_not_silent
+    # frob:ticket T-0269
+    def test_invalid_kind_in_module_docstring_is_surfaced_not_silent(
+        self, tmp_path: Path
+    ) -> None:
+        # T-0269: once T-0342 makes docstring directives visible, a
+        # tests-kind directive carrying an invalid kind value inside a
+        # module docstring must surface as a MalformedDirective (which
+        # TEST010 then escalates), never a silently-dropped no-op. This is the
+        # exact failure the two kind="drift" instances in
+        # tests/unit/test_strata_tmlanguage.py and
+        # test_extending_guides_complete.py exhibited -- invisible before
+        # T-0342, and (had they stayed kind="drift") a silent malformed
+        # after it without this coupling being enforced.
+        src = (
+            '"""Module summary.\n'
+            "\n"
+            'frob:tests some/target.py::thing kind="drift"\n'
+            '"""\n'
+            "\n"
+            "def foo() -> None:\n"
+            "    pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not edges
+        assert len(malformed) == 1
+        assert "frob:tests" in malformed[0].reason
+
     def test_tests_verb_attrs(self, tmp_path: Path) -> None:
         src = """def test_it() -> None:
     # frob:tests src/foo.py::Widget.render kind="e2e"
@@ -361,6 +456,24 @@ def foo() -> None:
         edges, _ = parse_directives(pf)
         assert edges[0].attrs["kind"] == "unit"
 
+    def test_tests_verb_invalid_kind_is_malformed(self, tmp_path: Path) -> None:
+        """T-0237: `kind=` must be one of unit/integration/e2e -- a
+        misspelled or invented kind (e.g. "drift") never becomes an Edge,
+        it degrades to a `MalformedDirective` whose `reason` names the
+        `frob:tests` verb literally so `frob.gates._test010_violations` can
+        pick it out and report it as a real gate violation (TEST010),
+        instead of it staying a silent parse-time warning."""
+        src = """def test_it() -> None:
+    # frob:tests src/foo.py::Widget.render kind="drift"
+    pass
+"""
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not edges
+        assert len(malformed) == 1
+        assert "frob:tests" in malformed[0].reason
+        assert "drift" in malformed[0].reason
+
     def test_unknown_verb_is_malformed(self, tmp_path: Path) -> None:
         src = """def foo() -> None:
     # frob:bogus target
@@ -372,6 +485,8 @@ def foo() -> None:
         assert len(malformed) == 1
         assert malformed[0].file == pf.path
 
+    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an \
+    # arrange-act scaffold; extracting would obscure per-case intent"
     def test_missing_target_is_malformed(self, tmp_path: Path) -> None:
         src = """def foo() -> None:
     # frob:ticket
@@ -381,6 +496,8 @@ def foo() -> None:
         _edges, malformed = parse_directives(pf)
         assert len(malformed) == 1
 
+    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an \
+    # arrange-act scaffold; extracting would obscure per-case intent"
     def test_waive_without_reason_is_malformed(self, tmp_path: Path) -> None:
         src = """def foo() -> None:
     # frob:waive RULE-1
@@ -390,6 +507,8 @@ def foo() -> None:
         _edges, malformed = parse_directives(pf)
         assert len(malformed) == 1
 
+    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an \
+    # arrange-act scaffold; extracting would obscure per-case intent"
     def test_bad_attr_syntax_is_malformed(self, tmp_path: Path) -> None:
         src = """def foo() -> None:
     # frob:ticket T-1 not-an-attr
@@ -517,6 +636,33 @@ class TestBuildIncremental:
         assert third.stats.parsed == 1
         assert third.stats.cache_hits == 1
 
+    def test_fingerprint_bump_rebuilds(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/graph/cache.py::_compute_fingerprint
+        """T-0243: a cache written under one frob/tree-sitter fingerprint
+        must not be silently reused after that fingerprint changes -- a
+        stale cache served wrong symbol counts across a real frob upgrade
+        (malmberg pilot P3). Simulate the upgrade by bumping the fake
+        fingerprint between builds and assert the second build is a cold
+        rebuild (parsed == all files), not a cache hit."""
+        root = self._tree(tmp_path)
+        cache = root / ".frob" / "cache.db"
+
+        monkeypatch.setattr(graph_cache, "_compute_fingerprint", lambda: "frob==0.0.1")
+        first = build_graph(root, cache).danger_ok
+        assert first.stats.parsed == 2
+        assert first.stats.cache_hits == 0
+
+        same_fingerprint = build_graph(root, cache).danger_ok
+        assert same_fingerprint.stats.parsed == 0
+        assert same_fingerprint.stats.cache_hits == 2
+
+        monkeypatch.setattr(graph_cache, "_compute_fingerprint", lambda: "frob==0.0.2")
+        after_upgrade = build_graph(root, cache).danger_ok
+        assert after_upgrade.stats.parsed == 2
+        assert after_upgrade.stats.cache_hits == 0
+
     def test_cache_hit_build_reports_real_edge_count(self, tmp_path: Path) -> None:
         # frob:tests src/frob/graph/__init__.py::build_graph
         """T-0218: an all-cache-hit rebuild must report the loaded graph's
@@ -614,6 +760,56 @@ class TestExclude:
         assert "src/a.py" in paths
         assert "tests/fixtures/b.py" in paths
 
+    def test_nested_git_worktree_pruned_without_config(self, tmp_path: Path) -> None:
+        """A nested git checkout (own `.git` dir) is pruned by default, with
+        no `[graph] exclude` entry needed -- T-0239: `.claude/worktrees/*`
+        agent checkouts were walked and parsed wholesale, ~73pct wasted
+        work, until pruned before descent."""
+        _write(tmp_path, "src/a.py", "def foo() -> None:\n    pass\n")
+        nested = tmp_path / ".claude" / "worktrees" / "agent-x"
+        _write(nested, "src/a.py", "def broken(:\n")
+        (nested / ".git").mkdir(parents=True, exist_ok=True)
+        cache = tmp_path / ".frob" / "cache.db"
+        snap = build_graph(tmp_path, cache).danger_ok
+        paths = {rec.id.path for rec in snap.symbols.values()}
+        assert "src/a.py" in paths
+        assert not any(".claude/worktrees" in p for p in paths)
+
+    def test_walk_source_files_prunes_before_descent(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """`_walk_source_files` never calls `os.walk` into an excluded
+        subtree -- directory pruning happens via `dirnames[:]` before the
+        walk descends, not by filtering files after a full traversal
+        (T-0239's actual perf bug: filtering post-walk still pays the full
+        `os.walk`/stat cost of every excluded subtree)."""
+        import os as os_mod
+
+        from frob.graph import _walk_source_files
+
+        _write(tmp_path, "src/a.py", "x = 1\n")
+        excluded_dir = tmp_path / "tests" / "fixtures"
+        _write(excluded_dir, "deep/deeper/b.py", "y = 2\n")
+
+        visited: list[Path] = []
+        real_walk = os_mod.walk
+
+        def _counting_walk(root, *a, **kw):  # noqa: ANN001, ANN002, ANN003
+            for dirpath, dirnames, filenames in real_walk(root, *a, **kw):
+                visited.append(Path(dirpath))
+                yield dirpath, dirnames, filenames
+
+        monkeypatch.setattr("frob.graph.os.walk", _counting_walk)
+        found = _walk_source_files(tmp_path, exclude_globs=("tests/fixtures/**",))
+
+        found_rel = {p.relative_to(tmp_path).as_posix() for p in found}
+        assert found_rel == {"src/a.py"}
+        visited_rel = {p.relative_to(tmp_path).as_posix() for p in visited}
+        # os.walk must never even enter the excluded subtree's children --
+        # if pruning happened only via post-walk file filtering, "tests/fixtures"
+        # and its "deep"/"deep/deeper" children would all appear here too.
+        assert not any(v.startswith("tests/fixtures") for v in visited_rel if v)
+
 
 class TestResolve:
     def _snapshot(self, tmp_path: Path):
@@ -638,8 +834,37 @@ class TestResolve:
         result = resolve(snap, "Widget.render")
         assert result.is_ok
 
-    def test_ambiguous(self, tmp_path: Path) -> None:
+    def test_exact_qualname_wins_over_suffix_match(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/__init__.py::resolve
+        # G10 (T-0402): a bare top-level `render` exactly matches one
+        # qualname (`render` in b.py) AND loosely `.endswith`-matches
+        # another (`Widget.render` in a.py). Exact qualname matches must be
+        # checked -- and win -- strictly before suffix candidates are even
+        # pooled in, or this collapses into a false `AmbiguousSymbol`.
         snap = self._snapshot(tmp_path)
+        result = resolve(snap, "render")
+        assert result.is_ok
+        assert result.danger_ok.id.qualname == "render"
+
+    def test_ambiguous_suffix_match(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/__init__.py::resolve
+        # Genuine ambiguity: two DIFFERENT symbols both suffix-match a bare
+        # `render`, and neither is an exact qualname hit (no top-level
+        # `render` here) -- this must still be `AmbiguousSymbol`,
+        # distinguishing "exact wins" (G10) from "suffix matching stops
+        # detecting real ambiguity".
+        _write(
+            tmp_path,
+            "src/a.py",
+            "class Widget:\n    def render(self) -> None:\n        pass\n",
+        )
+        _write(
+            tmp_path,
+            "src/c.py",
+            "class Other:\n    def render(self) -> None:\n        pass\n",
+        )
+        cache = tmp_path / ".frob" / "cache.db"
+        snap = build_graph(tmp_path, cache).danger_ok
         result = resolve(snap, "render")
         assert result.is_err
         assert result.danger_err == GraphError.AmbiguousSymbol
@@ -692,7 +917,124 @@ class TestLoadGraph:
         assert result.is_err
         assert result.danger_err == GraphError.CacheCorrupt
 
+    def test_load_graph_success_returns_snapshot(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/__init__.py::load_graph
+        # The happy path: an unmodified cache loads back to an Ok snapshot
+        # carrying the built symbols (exercises the load_all + Ok tail).
+        _write(tmp_path, "src/a.py", "def foo() -> None:\n    pass\n")
+        cache = tmp_path / ".frob" / "cache.db"
+        build_graph(tmp_path, cache).danger_ok
+        result = load_graph(cache)
+        assert result.is_ok
+        assert "src/a.py::foo" in result.danger_ok.symbols
+
+    def test_load_graph_never_built_root_is_corrupt(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/graph/__init__.py::load_graph
+        # A cache that opens read-only but has no recorded root (get_root ->
+        # None) is CacheCorrupt -- "never been built".
+        import frob.graph as graph_mod
+
+        _write(tmp_path, "src/a.py", "def foo() -> None:\n    pass\n")
+        cache = tmp_path / ".frob" / "cache.db"
+        build_graph(tmp_path, cache).danger_ok
+        monkeypatch.setattr(graph_mod._cache, "get_root", lambda conn: None)
+        result = load_graph(cache)
+        assert result.is_err
+        assert result.danger_err == GraphError.CacheCorrupt
+
+    def test_load_graph_get_root_query_error_is_corrupt(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/graph/__init__.py::load_graph
+        # Corrupt bytes can surface as a query-time DatabaseError inside
+        # get_root (not at connect) -- still CacheCorrupt, connection closed.
+        import sqlite3
+
+        import frob.graph as graph_mod
+
+        _write(tmp_path, "src/a.py", "def foo() -> None:\n    pass\n")
+        cache = tmp_path / ".frob" / "cache.db"
+        build_graph(tmp_path, cache).danger_ok
+
+        def _boom(conn: object) -> str:
+            raise sqlite3.DatabaseError("simulated query-time corruption")
+
+        monkeypatch.setattr(graph_mod._cache, "get_root", _boom)
+        result = load_graph(cache)
+        assert result.is_err
+        assert result.danger_err == GraphError.CacheCorrupt
+
+    def test_load_graph_connect_readonly_failure_is_corrupt(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/graph/__init__.py::load_graph
+        # If the read-only connection itself cannot be opened (locked, ACL,
+        # OS error), that is CacheCorrupt -- the connect-time except branch,
+        # distinct from a query-time get_root failure.
+        import frob.graph as graph_mod
+
+        _write(tmp_path, "src/a.py", "def foo() -> None:\n    pass\n")
+        cache = tmp_path / ".frob" / "cache.db"
+        build_graph(tmp_path, cache).danger_ok
+
+        def _fail(_c: Path) -> object:
+            raise OSError("simulated read-only open failure")
+
+        monkeypatch.setattr(graph_mod._cache, "connect_readonly", _fail)
+        result = load_graph(cache)
+        assert result.is_err
+        assert result.danger_err == GraphError.CacheCorrupt
+
+    def test_cache_stale_after_new_file_added(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/__init__.py::load_graph
+        # G1 (T-0402): a file added since the last build has no cache row
+        # to hash-compare against, so the old `_first_stale_cached_file`
+        # loop (which only iterates rows already IN `files`) could never
+        # see it -- `load_graph` returned `Ok` on a snapshot silently
+        # missing the new file's obligations. Reverting the
+        # `_first_added_file` check in `load_graph` makes this assert
+        # `is_ok` instead.
+        _write(tmp_path, "src/a.py", "def foo() -> None:\n    pass\n")
+        cache = tmp_path / ".frob" / "cache.db"
+        build_graph(tmp_path, cache).danger_ok
+        _write(tmp_path, "src/b.py", "def bar() -> None:\n    pass\n")
+        result = load_graph(cache)
+        assert result.is_err
+        assert result.danger_err == GraphError.CacheStale
+
+    def test_cache_stale_after_new_doc_added(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/__init__.py::load_graph
+        # Same as above (G1) but for a newly-added doc file under docs/,
+        # the other file class `load_graph` must catch as an addition.
+        _write(tmp_path, "src/a.py", "def foo() -> None:\n    pass\n")
+        cache = tmp_path / ".frob" / "cache.db"
+        build_graph(tmp_path, cache).danger_ok
+        _write(tmp_path, "docs/new.md", "# New\n")
+        result = load_graph(cache)
+        assert result.is_err
+        assert result.danger_err == GraphError.CacheStale
+
+    def test_non_utf8_doc_file_is_skipped_not_crashed(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/__init__.py::build_graph
+        # G2 (T-0402): UnicodeDecodeError subclasses ValueError, not
+        # OSError, so `_process_doc_file`'s `except OSError` never caught
+        # it -- one non-UTF-8 .md file crashed the whole `build_graph` call
+        # (and everything layered on its `Result` contract, uncaught).
+        # Reverting the `(OSError, UnicodeDecodeError)` catch makes this
+        # raise `UnicodeDecodeError` instead of returning `Ok`.
+        _write(tmp_path, "src/a.py", "def foo() -> None:\n    pass\n")
+        docs_dir = tmp_path / "docs"
+        docs_dir.mkdir(parents=True, exist_ok=True)
+        (docs_dir / "bad.md").write_bytes(b"\xff\xfeheading\n")
+        cache = tmp_path / ".frob" / "cache.db"
+        result = build_graph(tmp_path, cache)
+        assert result.is_ok
+        assert "src/a.py::foo" in result.danger_ok.symbols
+
     # frob:invariant INV-003
+    # invariant spec: [INV-003](invariants/INV-003.md)
     def test_deleted_cache_is_rebuildable_from_source(self, tmp_path: Path) -> None:
         """Deleting `.frob/cache.db` entirely is equivalent to a fresh build."""
         _write(tmp_path, "src/a.py", "def foo() -> None:\n    pass\n")
@@ -797,7 +1139,9 @@ class TestCorruptCacheRecovery:
             ).fetchone()
         finally:
             conn.close()
-        assert row is not None and row[0] == "1"
+        from frob.graph.cache import _SCHEMA_VERSION
+
+        assert row is not None and row[0] == str(_SCHEMA_VERSION)
 
 
 class TestDuplicateSymrefs:
@@ -900,6 +1244,157 @@ class TestCacheModule:
         finally:
             conn.close()
 
+    # frob:ticket T-0279
+    def test_tests_edge_direction_agrees_fresh_parse_vs_cache_roundtrip(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/dsl.py::parse_directives
+        # frob:tests src/frob/graph/cache.py::store_file_data
+        # frob:tests src/frob/graph/cache.py::load_file_data
+        """T-0279: a `frob:tests` directive's `src`/`target` endpoints must
+        mean the same thing whether read from a fresh `dsl.parse_directives`
+        call or read back from `cache.py`'s store/load round-trip -- a
+        direction disagreement between the two would silently flip which
+        side is the test and which is the source (T-0137's either-direction
+        convention depends on both paths agreeing).
+
+        Writes ONE source file with a `frob:tests` directive placed above
+        the SOURCE symbol (this repo's `_conform.py`/`_generate.py`
+        convention: `src`=source, `target`=test), parses it fresh, then
+        stores that exact edge through `cache.store_file_data` and reads it
+        back via `cache.load_file_data` -- the src/target pair must come
+        back byte-identical, proving the cache is a pure passthrough with
+        no direction transform in either direction.
+        """
+        root = tmp_path / "repo"
+        path = _write(
+            root,
+            "src/pkg/mod.py",
+            '"""Module."""\n\n\n'
+            "# frob:tests tests/test_mod.py::TestWidget.test_helper "
+            'kind="unit"\n'
+            "def helper(x: int) -> int:\n"
+            '    """Helper."""\n'
+            "    return x + 1\n",
+        )
+        parsed = parse_file(path).danger_ok
+        fresh_edges, malformed = parse_directives(parsed)
+        assert malformed == ()
+        tests_edges = [e for e in fresh_edges if e.kind.value == "tests"]
+        assert len(tests_edges) == 1
+        fresh_edge = tests_edges[0]
+        # Source-side convention: src is the source symbol, target names
+        # the covering test.
+        assert fresh_edge.src == f"{parsed.path}::helper"
+        assert fresh_edge.target == "tests/test_mod.py::TestWidget.test_helper"
+
+        conn = graph_cache.connect(tmp_path / ".frob" / "cache.db")
+        try:
+            graph_cache.store_file_data(
+                conn,
+                file_path=parsed.path,
+                content_hash="deadbeef",
+                symbols=(),
+                edges=(fresh_edge,),
+                malformed=(),
+            )
+            conn.commit()
+            _symbols, cached_edges, _malformed = graph_cache.load_file_data(
+                conn, parsed.path
+            )
+        finally:
+            conn.close()
+        assert len(cached_edges) == 1
+        cached_edge = cached_edges[0]
+        # Cache round-trip must not swap or otherwise transform src/target
+        # -- the direction a fresh parse produces is the direction the
+        # cache must serve back, always.
+        assert cached_edge.src == fresh_edge.src
+        assert cached_edge.target == fresh_edge.target
+
+    # frob:ticket T-0279
+    def test_schema_version_mismatch_wipes_derived_rows(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/cache.py::connect
+        """T-0279: a cache.db written under an OLDER `_SCHEMA_VERSION` (e.g.
+        one predating a src/target semantic fix in dsl.py/gates.py, the
+        T-0279 scenario) must never be served as-is -- `connect` must wipe
+        every derived row and force a full reparse on the next build,
+        exactly as it already does for a genuine table-shape change."""
+        from frob.graph import cache as _cache
+        from frob.graph._models import Digests, SymbolId, SymbolRecord
+        from frob.lang import SymbolKind
+
+        cache_path = tmp_path / ".frob" / "cache.db"
+        conn = _cache.connect(cache_path)
+        record = SymbolRecord(
+            id=SymbolId(path="src/a.py", qualname="foo"),
+            kind=SymbolKind.FUNCTION,
+            public=True,
+            digests=Digests(sig="s", body="b", doc="d"),
+            span=(1, 3),
+        )
+        _cache.store_file_data(
+            conn,
+            file_path="src/a.py",
+            content_hash="deadbeef",
+            symbols=(record,),
+            edges=(),
+            malformed=(),
+        )
+        conn.execute(
+            "INSERT INTO meta (key, value) VALUES ('schema_version', '0') "
+            "ON CONFLICT(key) DO UPDATE SET value = excluded.value"
+        )
+        conn.commit()
+        conn.close()
+
+        reopened = _cache.connect(cache_path)
+        try:
+            assert _cache.get_file_hash(reopened, "src/a.py") is None
+            symbols, edges, malformed = _cache.load_file_data(reopened, "src/a.py")
+            assert symbols == ()
+            assert edges == ()
+            assert malformed == ()
+        finally:
+            reopened.close()
+
+    # frob:ticket T-0232
+    def test_connect_readonly_rejects_writes_no_lock_contention(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/cache.py::connect_readonly
+        """`connect_readonly` (T-0232) must (1) reject writes outright and
+        (2) succeed immediately against a db another connection is mid-write
+        on -- the two properties that make it safe for `load_graph` to use
+        without contending for sqlite's single writer slot."""
+        import time
+
+        from frob.graph import cache as _cache
+
+        cache_path = tmp_path / ".frob" / "cache.db"
+        _cache.connect(cache_path).close()  # initialize schema once
+
+        ro_conn = _cache.connect_readonly(cache_path)
+        try:
+            with pytest.raises(sqlite3.OperationalError):
+                ro_conn.execute("INSERT INTO meta (key, value) VALUES ('x', 'y')")
+
+            writer = _cache.connect(cache_path)
+            writer.execute("INSERT INTO meta (key, value) VALUES ('a', 'held')")
+            try:
+                start = time.monotonic()
+                row = ro_conn.execute(
+                    "SELECT value FROM meta WHERE key = 'schema_version'"
+                ).fetchone()
+                elapsed = time.monotonic() - start
+            finally:
+                writer.rollback()
+                writer.close()
+            assert row is not None
+            assert elapsed < 5.0
+        finally:
+            ro_conn.close()
+
 
 class TestConcurrentCache:
     # frob:ticket T-0029
@@ -935,6 +1430,54 @@ class TestConcurrentCache:
             futures = [ex.submit(writer, n) for n in range(4)]
             assert all(f.result() for f in futures)
 
+    # frob:ticket T-0232
+    def test_connect_on_current_schema_does_not_block_on_a_held_write_lock(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/cache.py::connect
+        """T-0232: `connect()` on an already-initialized, current-schema db
+        must not itself take a write lock -- `_apply_schema` used to run
+        `CREATE TABLE IF NOT EXISTS` unconditionally on every connect, and
+        sqlite always treats DDL as a write regardless of whether it
+        changes anything. That meant every read-only caller (e.g.
+        `load_graph`, or a concurrent gate job) queued behind any other
+        process's write transaction on this same db, even though it had no
+        actual data to write. Pin the fix: a second connection to a db
+        already at the current schema version must return promptly while a
+        different connection is mid-write (holds an uncommitted insert),
+        instead of blocking for anywhere near the 30s busy timeout."""
+        import time
+        from concurrent.futures import ThreadPoolExecutor
+
+        from frob.graph import cache as _cache
+
+        cache_path = tmp_path / ".frob" / "cache.db"
+        _cache.connect(cache_path).close()  # initialize schema once, up front
+
+        writer_conn = _cache.connect(cache_path)
+        writer_conn.execute(
+            "INSERT INTO meta (key, value) VALUES ('probe', 'held')"
+        )  # uncommitted: holds sqlite's write lock until commit/rollback
+
+        def reader() -> float:
+            start = time.monotonic()
+            conn = _cache.connect(cache_path)
+            conn.close()
+            return time.monotonic() - start
+
+        try:
+            with ThreadPoolExecutor(max_workers=1) as ex:
+                elapsed = ex.submit(reader).result(timeout=25)
+        finally:
+            writer_conn.rollback()
+            writer_conn.close()
+
+        assert elapsed < 5.0, (
+            f"connect() took {elapsed:.2f}s against a current-schema db with "
+            "an unrelated write in progress -- it should not need the write "
+            "lock at all"
+        )
+
 
 def test_graph_build_lock_drift_integration(tmp_path: Path) -> None:
     # frob:tests src/frob/graph kind="integration"
@@ -968,3 +1511,46 @@ def test_graph_build_lock_drift_integration(tmp_path: Path) -> None:
     snapshot2 = build_graph(tmp_path, cache).danger_ok
     report = drift(acked, snapshot2)
     assert any(item.entry.ref == ref for item in report.stale)
+
+
+class TestGeneratedSource:
+    """`frob.graph._generated.is_generated_source` (T-0234)."""
+
+    def test_is_generated_source_detects_repo_convention_header(
+        self, tmp_path: Path
+    ) -> None:
+        from frob.graph._generated import is_generated_source
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "# generated by: frob exports src/a\ndef helper(x):\n    return x\n",
+        )
+        assert is_generated_source(tmp_path, "src/a.py") is True
+
+    def test_is_generated_source_detects_do_not_edit_and_at_markers(
+        self, tmp_path: Path
+    ) -> None:
+        from frob.graph._generated import is_generated_source
+
+        _write(
+            tmp_path,
+            "src/b.ts",
+            "// Code generated by protoc-gen-go. DO NOT EDIT.\nexport const x = 1;\n",
+        )
+        _write(tmp_path, "src/c.ts", "// @generated\nexport const y = 1;\n")
+        assert is_generated_source(tmp_path, "src/b.ts") is True
+        assert is_generated_source(tmp_path, "src/c.ts") is True
+
+    def test_is_generated_source_false_for_hand_authored_file(
+        self, tmp_path: Path
+    ) -> None:
+        from frob.graph._generated import is_generated_source
+
+        _write(tmp_path, "src/d.py", '"""A hand-written module."""\n\nx = 1\n')
+        assert is_generated_source(tmp_path, "src/d.py") is False
+
+    def test_is_generated_source_false_for_missing_file(self, tmp_path: Path) -> None:
+        from frob.graph._generated import is_generated_source
+
+        assert is_generated_source(tmp_path, "src/does_not_exist.py") is False

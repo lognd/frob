@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from typani import Err, ErrorSet, Ok
 from typani.result import Result
 
+from frob.excludes import iter_files
 from frob.lang import (
     RawSymbol,
     SymbolKind,
@@ -131,16 +132,22 @@ def xref(
     return Ok(XrefResult(symbol=symbol, definition=definition, usages=usages))
 
 
+# frob:ticket T-0471
 def _collect_source_files(root: Path, lang: str | None) -> list[Path]:
+    """Every source file under `root` matching `lang`'s extensions (or every
+    known extension if `lang` is `None`), routed through the shared
+    `frob.excludes.iter_files` prune-aware walk (T-0471) instead of a raw
+    `root.rglob("*")` that paid the full traversal cost of `.git`/`.venv`/
+    `.claude/worktrees` before `_is_hidden` ever ran its post-hoc filter."""
     exts = _LANG_EXTS.get(lang, _ALL_EXTS) if lang is not None else _ALL_EXTS
 
     if root.is_file():
         return [root] if root.suffix.lower() in exts else []
 
-    candidates = sorted(root.rglob("*"))
+    candidates = sorted(iter_files(root))
     results: list[Path] = []
     for path in candidates:
-        if not path.is_file() or path.suffix.lower() not in exts:
+        if path.suffix.lower() not in exts:
             continue
         if not _is_hidden(path, root):
             results.append(path)

@@ -9,8 +9,6 @@ rather than raising, and FUZZ002 treats `None` as "could not introspect"
 (skipped, not a violation) rather than a false positive.
 """
 
-# frob:waive TEST005 reason="module line coverage 80.3%, debt T-0160"
-
 from __future__ import annotations
 
 import importlib
@@ -54,7 +52,6 @@ def _resolve_attr(module: object, qualname: str) -> object | None:
 
 
 # frob:doc docs/modules/fuzz.md#implementation-notes
-# frob:waive TEST005 reason="resolve_param_types 75.0% branch cover, debt T-0160"
 def resolve_param_types(root: Path, ref: str) -> tuple[type, ...] | None:
     """Best-effort: the non-`self`/`cls` parameter types of the Python symbol `ref`.
 

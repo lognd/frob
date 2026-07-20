@@ -1,4 +1,3 @@
-# frob:waive TEST005 reason="module line coverage 84.3%, debt T-0160"
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -343,7 +342,6 @@ def _write_manifest_entries(
 
 
 # frob:doc docs/commands/scaffold.md#public-api
-# frob:waive TEST005 reason="render_project 74.2% branch cover, debt T-0160"
 def render_project(
     project_type: str,
     name: str,

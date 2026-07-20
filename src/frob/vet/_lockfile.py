@@ -31,7 +31,7 @@ _LOCKFILE_NAMES = (
 # frob:doc docs/modules/vet.md#public-api
 # frob:tests tests/test_vet.py::TestLockfileParsers.test_find_lockfile_direct
 # frob:tests tests/test_vet.py::TestLockfileParsers.test_find_lockfile_bad_name
-def find_lockfile(root: Path) -> Path | None:
+def _find_lockfile(root: Path) -> Path | None:
     """`root` itself if it is already a supported lockfile path (T-0221 --
     `frob vet uv.lock` must not be misread as "look for uv.lock under
     ./uv.lock/"), else the first supported lockfile found directly under
@@ -48,7 +48,7 @@ def find_lockfile(root: Path) -> Path | None:
 
 
 # frob:doc docs/modules/vet.md#public-api
-def parse_lockfile(path: Path) -> Result[tuple[Dependency, ...], VetError]:
+def _parse_lockfile(path: Path) -> Result[tuple[Dependency, ...], VetError]:
     """Dispatch to the parser matching `path`'s filename; Err on unsupported."""
     name = path.name
     if name == "uv.lock":
@@ -168,4 +168,4 @@ def _parse_pnpm_lock(path: Path) -> Result[tuple[Dependency, ...], VetError]:
     return Ok(tuple(deps))
 
 
-__all__ = ["find_lockfile", "parse_lockfile"]
+__all__ = ["_find_lockfile", "_parse_lockfile"]

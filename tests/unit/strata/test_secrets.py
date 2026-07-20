@@ -112,6 +112,9 @@ class TestSecretElaboration:
         assert result.danger_err is StrataError.UnknownReference
 
     # frob:tests src/frob/strata/_secrets.py::elaborate_secret kind="unit"
+    # frob:waive DUP001 reason="parallel secrets-gate case table: \
+    # independent fire/no-fire cases sharing an arrange-act scaffold; \
+    # extracting would obscure per-case intent"
     def test_lifetime_wrong_dimension_fails_closed(self):
         known = _issuer_and_readers("api")
         spec = SecretSpec(
@@ -125,6 +128,9 @@ class TestSecretElaboration:
         assert result.danger_err is StrataError.UnitMismatch
 
     # frob:tests src/frob/strata/_secrets.py::elaborate_secret kind="unit"
+    # frob:waive DUP001 reason="parallel secrets-gate case table: \
+    # independent fire/no-fire cases sharing an arrange-act scaffold; \
+    # extracting would obscure per-case intent"
     def test_revoke_wrong_dimension_fails_closed(self):
         known = _issuer_and_readers("api")
         spec = SecretSpec(

@@ -1,6 +1,7 @@
-"""`std.host` litmus fixture coverage (T-0255, mirroring `test_litmus_pii.py`'s
+"""`std.host` litmus fixture coverage (T-0255, T-0272 for group/sudoers,
+mirroring `test_litmus_pii.py`'s
 parse -> elaborate round-trip discipline): the declared/undeclared pair
-round-trips through the real `strata_core` parser, proving `host_attrs`'s
+round-trips through the real `strata_core` parser, proving `_host_attrs`'s
 attr-desugar convention and `host_manifest_for`'s read-back survive real
 source text, not just a hand-built `KernelModel`. T-0255 is manifest-only
 (no generator, no proofs), so there is no vuln/hardened firing pair to
@@ -40,6 +41,8 @@ class TestHostDeclaredLitmus:
             ("/var/lib/api", "0750"),
         ]
         assert manifest.listens == (8080, 8443)
+        assert manifest.group == ("deploy", "docker")
+        assert manifest.sudoers == ("ALL=(root) NOPASSWD: /bin/systemctl restart api",)
 
 
 class TestHostUndeclaredLitmus:

@@ -28,25 +28,28 @@ memory) for the pattern class it fingerprints. A handful of the ticket's
 suggested example classes are deliberately NOT shipped here rather than
 force-fit with a low-confidence or fabricated citation:
 
-- TLS `verify=False` (CWE-295), weak-hash password storage (CWE-916), and
-  XML external entities (CWE-611): no `WeaknessEntry` for CWE-295, CWE-916,
-  or CWE-611 exists in ANY catalog tuple yet (`CWE_CATALOG`/
-  `CWE_TOP_25_CATALOG`/`QUALITY_CATALOG`) -- shipping a fingerprint for any
-  of the three would fail `check_fingerprint_catalog_drift` outright by
-  this module's OWN drift-lock rule, confirming they must wait for a
-  `WeaknessEntry` (a separate, catalog-scoped ticket) before a fingerprint
-  can honestly join them.
+- Weak-hash password storage (CWE-916): no `WeaknessEntry` for CWE-916
+  exists in ANY catalog tuple yet
+  (`CWE_CATALOG`/`CWE_TOP_25_CATALOG`/`QUALITY_CATALOG`) -- shipping a
+  fingerprint for it would fail `check_fingerprint_catalog_drift`
+  outright by this module's OWN drift-lock rule, confirming it must wait
+  for a `WeaknessEntry` (a separate, catalog-scoped ticket) before a
+  fingerprint can honestly join it. TLS `verify=False` (CWE-295, T-0188 ->
+  `QUALITY_CATALOG`) and XML external entities (CWE-611, T-0189 ->
+  `CWE_CATALOG`) were both in this same disclosed-gap bucket until their
+  `WeaknessEntry` rows landed -- the FP-TLS-VERIFY-* and FP-XXE-PARSE-*
+  entries below are those follow-ups.
 - JNDI-style lookup injection (the Log4Shell class): Log4Shell is a
   Java/JNDI-specific shape with no equivalent construct in any of the four
   languages `frob.vet._capability` scans (python/typescript/rust/c-cpp) --
   a fingerprint with no genuine needle in a scanned language would be
   undetectable data, not a real pattern-match capability.
 
-Nine fingerprints ship, each with a needle in a language the vet scanner
-actually covers. TLS `verify=False`, weak-hash password storage, and XXE
-are tracked as an honest, disclosed gap (this docstring) rather than
-silently dropped; a follow-up ticket adding the missing CWE-295, CWE-916,
-and CWE-611 `WeaknessEntry` rows would unblock all three.
+Thirteen fingerprints ship, each with a needle in a language the vet
+scanner actually covers. Weak-hash password storage (CWE-916) remains
+tracked as an honest, disclosed gap (this docstring) rather than silently
+dropped; a follow-up ticket adding the missing CWE-916 `WeaknessEntry`
+row would unblock it.
 """
 
 from __future__ import annotations
@@ -222,6 +225,73 @@ CVE_FINGERPRINTS: tuple[CveFingerprint, ...] = (
         needles=('password = "', "password: str = '", 'PASSWORD = "'),
         remediation="load credentials from an environment variable or a "
         "secrets manager at runtime -- never a source-literal string",
+    ),
+    CveFingerprint(
+        id="FP-TLS-VERIFY-001",
+        title="requests/httpx/aiohttp call with TLS certificate "
+        "verification explicitly disabled",
+        cve=("CVE-2024-35195",),  # Requests < 2.32.0: once a Session's
+        # FIRST request disabled verification (verify=False), the
+        # connection-pooled Session silently kept skipping certificate
+        # verification for that host on every later request regardless of
+        # a subsequent verify=True -- the canonical "verify=False leaks
+        # past the call it was set on" exemplar for this needle class.
+        cwe_id="CWE-295",
+        language="python",
+        needles=("verify=False",),
+        remediation="never pass verify=False (requests) / verify=False "
+        "(httpx) / ssl=False (aiohttp) to a production HTTP client call; "
+        "if a private CA is involved, pass its bundle path to verify= "
+        "instead of disabling verification outright",
+    ),
+    CveFingerprint(
+        id="FP-TLS-VERIFY-002",
+        title="Node https/tls client with rejectUnauthorized explicitly disabled",
+        cve=("CVE-2021-22939",),  # Node.js https API: passing an explicit
+        # `undefined` for rejectUnauthorized silently disabled TLS
+        # certificate verification (treated as false) with no error --
+        # the same "verification silently off" shape a literal
+        # rejectUnauthorized: false reproduces deliberately rather than
+        # accidentally.
+        cwe_id="CWE-295",
+        language="typescript",
+        needles=("rejectUnauthorized: false", "rejectUnauthorized:false"),
+        remediation="never set rejectUnauthorized: false on an https/tls "
+        "client option object; if a private CA is involved, pass its "
+        "certificate via the ca option instead of disabling verification",
+    ),
+    CveFingerprint(
+        id="FP-TLS-VERIFY-003",
+        title="Rust reqwest client built with danger_accept_invalid_certs",
+        cve=("CVE-2026-30794",),  # RustDesk client: TLS retry logic fell
+        # back to danger_accept_invalid_certs(true) on a failed connection
+        # attempt, disabling certificate chain validation entirely and
+        # enabling an adversary-in-the-middle to intercept the retried
+        # connection.
+        cwe_id="CWE-295",
+        language="rust",
+        needles=("danger_accept_invalid_certs(true)",),
+        remediation="never call .danger_accept_invalid_certs(true) on a "
+        "reqwest ClientBuilder in production code, including fallback/"
+        "retry paths; if a private CA is involved, add its certificate to "
+        "the ClientBuilder instead of disabling validation",
+    ),
+    CveFingerprint(
+        id="FP-XXE-PARSE-001",
+        title="XML parsed with external-entity resolution left enabled",
+        cve=("CVE-2013-1665",),  # Python's stdlib XML libraries (2.6-3.4),
+        # as used by Django's xml.dom.pulldom-based deserializer among
+        # others, let a remote attacker read arbitrary files via a DOCTYPE-
+        # declared external entity reference -- the canonical Python XXE
+        # exemplar; the same unrestricted-external-entity default this
+        # fingerprint's needles target in lxml.etree/xml.sax.
+        cwe_id="CWE-611",
+        language="python",
+        needles=("resolve_entities=True", "xml.sax.make_parser("),
+        remediation="construct etree.XMLParser(resolve_entities=False, "
+        "no_network=True, load_dtd=False) explicitly, and for xml.sax call "
+        "parser.setFeature(xml.sax.handler.feature_external_ges, False) -- "
+        "or parse with defusedxml instead of the stdlib/lxml parser directly",
     ),
 )
 

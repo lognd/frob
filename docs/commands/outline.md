@@ -57,7 +57,9 @@ whole file, stub it, or skip it entirely.
 
 ## Language support
 
-Python (tree-sitter-python), C/C++ (tree-sitter-cpp).
+Python (tree-sitter-python), C/C++ (tree-sitter-cpp), Rust
+(tree-sitter-rust, T-0238). `.strata` design files are also outlined when
+frob.lang's grammar for them is available.
 
 ## Public API
 

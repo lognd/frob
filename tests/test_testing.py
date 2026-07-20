@@ -318,6 +318,10 @@ class TestRunners:
         assert result.is_err
         assert result.danger_err == TestingError.NoRunner
 
+    # frob:waive DUP001 reason="parallel test methods within \
+    # test_testing.py (2 sites) sharing an arrange-act scaffold typical of \
+    # exhaustive per-case coverage; extracting would obscure per-case \
+    # intent"
     def test_bad_runner_spec_zero_placeholders(self, tmp_path: Path) -> None:
         toml_text = """
         [[test.runner]]
@@ -330,6 +334,10 @@ class TestRunners:
         assert result.is_err
         assert result.danger_err == TestingError.BadRunnerSpec
 
+    # frob:waive DUP001 reason="parallel test methods within \
+    # test_testing.py (2 sites) sharing an arrange-act scaffold typical of \
+    # exhaustive per-case coverage; extracting would obscure per-case \
+    # intent"
     def test_bad_runner_spec_two_placeholders(self, tmp_path: Path) -> None:
         toml_text = """
         [[test.runner]]
@@ -513,6 +521,76 @@ class TestRunners:
         result = run_selected(selection, (spec,), tmp_path)
         assert result.is_err
         assert result.danger_err == TestingError.SpawnFailed
+
+
+class TestNativeStrataAudit:
+    """T-0242: a touched `.strata` selection runs `frob sys audit` natively,
+    with no `[[test.runner]] language = "strata"` entry at all -- the
+    exact zero-config gap the malmberg pilot P3 hit (`NoRunner`, then a
+    dummy-`{ids}`-placeholder `BadRunnerSpec` workaround)."""
+
+    _MODEL = """module m
+node client : foreign { clearance Public; }
+node api : authenticated { clearance Internal; }
+node vault : trusted { clearance Secret; }
+flow f_login : client -> api
+boundary b_login endorse f_login : foreign -> authenticated when "jwt_verified"
+"""
+
+    def _selection(self, root: Path):  # noqa: ANN201
+        from frob.testing._models import SelectionReport
+
+        return SelectionReport(
+            touched=(f"{root}/design/m.strata",),
+            selected={"strata": (f"{root}/design/m.strata",)},
+            ripple=(),
+            unbound=(),
+            fallback="package",
+        )
+
+    # frob:tests tests/test_testing.py::TestNativeStrataAudit.test_no_runner_config_needed
+    def test_no_runner_config_needed(self, tmp_path: Path) -> None:
+        """A `strata` selection with ZERO `[[test.runner]]` entries never
+        hits `TestingError.NoRunner` -- `run_selected`'s empty `runners`
+        tuple proves no per-repo config was consulted at all."""
+        _write(tmp_path, "design/m.strata", self._MODEL)
+        selection = self._selection(tmp_path)
+
+        result = run_selected(selection, (), tmp_path)
+
+        assert result.is_ok
+        report = result.danger_ok
+        assert len(report.outcomes) == 1
+        outcome = report.outcomes[0]
+        assert outcome.language == "strata"
+        assert outcome.argv == ("<native>", "frob", "sys", "audit")
+
+    # frob:tests tests/test_testing.py::TestNativeStrataAudit.test_no_models_is_neutral_pass
+    def test_no_models_is_neutral_pass(self, tmp_path: Path) -> None:
+        """No `.strata` files under the design dir at all -- `frob sys
+        audit`'s own vacuous-but-honest "nothing to check yet" posture,
+        not a fabricated failure."""
+        selection = self._selection(tmp_path)
+
+        result = run_selected(selection, (), tmp_path)
+
+        assert result.is_ok
+        report = result.danger_ok
+        assert report.ok is True
+        assert report.outcomes[0].exit_code == 0
+
+    # frob:tests tests/test_testing.py::TestNativeStrataAudit.test_bad_design_file_fails
+    def test_bad_design_file_fails(self, tmp_path: Path) -> None:
+        """A `.strata` file that fails to parse surfaces as
+        `TestingError.NativeAuditFailed`, not a spawn/timeout error --
+        there is no subprocess to spawn or time out here."""
+        _write(tmp_path, "design/bad.strata", "this is not valid strata {{{")
+        selection = self._selection(tmp_path)
+
+        result = run_selected(selection, (), tmp_path)
+
+        assert result.is_err
+        assert result.danger_err == TestingError.NativeAuditFailed
 
 
 class TestWorktree:
@@ -816,6 +894,7 @@ class TestCargoEnv:
 
         from frob.testing._runners import _env_overlay
 
+        # frob:waive SEC110 reason="synthetic test-only var this test itself sets via monkeypatch"
         monkeypatch.setenv("FROB_T0092_PROBE", "before")
         with _env_overlay({"FROB_T0092_PROBE": "during", "FROB_T0092_NEW": "x"}):
             assert os.environ["FROB_T0092_PROBE"] == "during"
@@ -1349,3 +1428,584 @@ class TestIntegrationTestCollection:
         _write(tmp_path, "crates/a/tests/bar.rs", "#[test]\nfn t() {}\n")
         found = _find_integration_test_files(crate_dir)
         assert found == sorted([crate_dir / "tests/foo.rs", crate_dir / "tests/bar.rs"])
+
+
+# frob:waive DUP001 reason="parallel test fixtures across 2 sibling test \
+# file(s) (2 sites) sharing an arrange-act scaffold typical of exhaustive \
+# per-case/per-scenario coverage; extracting would obscure per-case intent"
+def _fake_native_package(root: Path, name: str, so_bytes: bytes) -> Path:
+    """A maturin-style extension PACKAGE on `root`: `name/__init__.py` plus a
+    compiled `name.abi3.so` alongside it (the layout strata_core/frob_core
+    install as). Returns `root` so the caller can put it on sys.path."""
+    pkg = root / name
+    pkg.mkdir(parents=True, exist_ok=True)
+    (pkg / "__init__.py").write_text("# fake native package\n")
+    (pkg / f"{name}.abi3.so").write_bytes(so_bytes)
+    return root
+
+
+class TestNativeFingerprint:
+    """T-0333: the collection cache must track native-extension build state."""
+
+    def test_load_natives_parses_entries(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/testing/_runners.py::load_natives kind="unit"
+        from frob.testing import load_natives
+
+        toml_text = """
+        [[native]]
+        name = "strata_core"
+        build_cmd = "make core"
+        language = "rust"
+        """
+        (tmp_path / "frob.toml").write_text(textwrap.dedent(toml_text))
+        result = load_natives(tmp_path)
+        assert result.is_ok
+        specs = result.danger_ok
+        assert len(specs) == 1
+        assert specs[0].name == "strata_core"
+        assert specs[0].build_cmd == "make core"
+
+    def test_load_natives_missing_table_is_ok_empty(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/testing/_runners.py::load_natives kind="unit"
+        from frob.testing import load_natives
+
+        (tmp_path / "frob.toml").write_text('[graph]\nsrc = ["src"]\n')
+        result = load_natives(tmp_path)
+        assert result.is_ok
+        assert result.danger_ok == ()
+
+    # frob:waive DUP001 reason="parallel test methods within \
+    # test_testing.py (2 sites) sharing an arrange-act scaffold typical of \
+    # exhaustive per-case coverage; extracting would obscure per-case \
+    # intent"
+    def test_load_natives_missing_field_is_err(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/testing/_runners.py::load_natives kind="unit"
+        from frob.testing import TestingError, load_natives
+
+        (tmp_path / "frob.toml").write_text('[[native]]\nname = "x"\n')
+        result = load_natives(tmp_path)
+        assert result.is_err
+        assert result.danger_err == TestingError.BadRunnerSpec
+
+    def test_absent_native_fingerprints_as_absent(self) -> None:
+        # frob:tests src/frob/testing/_collect.py::_native_artifact_digest kind="unit"
+        from frob.testing import NativeSpec
+        from frob.testing._collect import _native_artifact_digest
+
+        spec = NativeSpec(name="frob_no_such_native_xyz", build_cmd="make core")
+        assert _native_artifact_digest(spec) == "frob_no_such_native_xyz:absent"
+
+    def test_fingerprint_changes_absent_to_built(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/testing/_collect.py::_native_fingerprint kind="unit"
+        # AC1: unbuilt->built must flip the fingerprint (and thus the cache key).
+        import importlib
+
+        from frob.testing import NativeSpec
+        from frob.testing._collect import _native_fingerprint
+
+        name = "fakenat_build"
+        specs = (NativeSpec(name=name, build_cmd="make core"),)
+        # absent -> deterministic "absent" fingerprint
+        before = _native_fingerprint(specs)
+
+        _fake_native_package(tmp_path, name, b"\x00compiled-v1")
+        monkeypatch.syspath_prepend(str(tmp_path))
+        importlib.invalidate_caches()
+        after = _native_fingerprint(specs)
+        assert before != after
+
+    def test_fingerprint_changes_on_rebuild(self, tmp_path: Path, monkeypatch) -> None:
+        # frob:tests src/frob/testing/_collect.py::_native_artifact_digest kind="unit"
+        # AC1: a RECOMPILE (same package, different .so bytes) must flip it too,
+        # even though the package __init__.py is unchanged.
+        import importlib
+
+        from frob.testing import NativeSpec
+        from frob.testing._collect import _compiled_artifacts, _native_artifact_digest
+
+        name = "fakenat_rebuild"
+        spec = NativeSpec(name=name, build_cmd="make core")
+        _fake_native_package(tmp_path, name, b"\x00compiled-v1")
+        monkeypatch.syspath_prepend(str(tmp_path))
+        importlib.invalidate_caches()
+        # sanity: it resolves to the .so, not the __init__.py
+        found = importlib.util.find_spec(name)
+        assert found is not None
+        assert [p.name for p in _compiled_artifacts(found)] == [f"{name}.abi3.so"]
+        first = _native_artifact_digest(spec)
+
+        (tmp_path / name / f"{name}.abi3.so").write_bytes(b"\x00compiled-v2")
+        importlib.invalidate_caches()
+        second = _native_artifact_digest(spec)
+        assert first != second
+        assert first != f"{name}:absent"
+
+    def test_collection_cache_key_reflects_native_state(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/testing/_collect.py::_collection_cache_key kind="unit"
+        from frob.testing import NativeSpec
+        from frob.testing._collect import _collection_cache_key
+
+        (tmp_path / "tests").mkdir()
+        (tmp_path / "tests" / "test_a.py").write_text("def test_x():\n    pass\n")
+        absent = NativeSpec(name="frob_no_such_native_xyz", build_cmd="make core")
+        key_no_native = _collection_cache_key(tmp_path, ())
+        key_absent_native = _collection_cache_key(tmp_path, (absent,))
+        # declaring a (currently-absent) native changes the key vs none declared
+        assert key_no_native != key_absent_native
+
+    def test_missing_natives_reports_unbuilt(self) -> None:
+        # frob:tests src/frob/testing/_collect.py::_missing_natives kind="unit"
+        from frob.testing import NativeSpec
+        from frob.testing._collect import _missing_natives
+
+        absent = NativeSpec(name="frob_no_such_native_xyz", build_cmd="make core")
+        missing = _missing_natives((absent,))
+        assert [s.name for s in missing] == ["frob_no_such_native_xyz"]
+
+    def test_drop_collection_cache_removes_file(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/testing/_collect.py::drop_collection_cache kind="unit"
+        from frob.testing import drop_collection_cache
+
+        cache = tmp_path / ".frob" / "pytest-collect.json"
+        cache.parent.mkdir(parents=True)
+        cache.write_text("{}")
+        assert drop_collection_cache(tmp_path) is True
+        assert not cache.exists()
+        # idempotent: dropping an absent cache is a no-op, not an error
+        assert drop_collection_cache(tmp_path) is False
+
+    def test_drop_collection_cache_unremovable_is_false(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/testing/_collect.py::drop_collection_cache kind="unit"
+        # the OSError path: cache path is a non-empty directory, so unlink fails
+        # -- reported as False, never raised.
+        from frob.testing import drop_collection_cache
+
+        cache_dir = tmp_path / ".frob" / "pytest-collect.json"
+        cache_dir.mkdir(parents=True)
+        (cache_dir / "sentinel").write_text("x")  # non-empty -> unlink raises
+        assert drop_collection_cache(tmp_path) is False
+
+    # frob:waive DUP001 reason="parallel test methods within \
+    # test_testing.py (2 sites) sharing an arrange-act scaffold typical of \
+    # exhaustive per-case coverage; extracting would obscure per-case \
+    # intent"
+    def test_load_natives_malformed_toml_is_err(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/testing/_runners.py::load_natives kind="unit"
+        from frob.testing import TestingError, load_natives
+
+        (tmp_path / "frob.toml").write_text("this is [not valid toml")
+        result = load_natives(tmp_path)
+        assert result.is_err
+        assert result.danger_err == TestingError.BadRunnerSpec
+
+    def test_native_digest_error_on_bad_name(self, monkeypatch) -> None:
+        # frob:tests src/frob/testing/_collect.py::_native_artifact_digest kind="unit"
+        # find_spec raising (half-installed/shadowed name) fingerprints as
+        # ":error", never propagating the exception into collection.
+        import importlib.util
+
+        from frob.testing import NativeSpec
+        from frob.testing._collect import _native_artifact_digest
+
+        def _boom(name: str):
+            raise ValueError("bad parent package")
+
+        monkeypatch.setattr(importlib.util, "find_spec", _boom)
+        spec = NativeSpec(name="whatever", build_cmd="make core")
+        assert _native_artifact_digest(spec) == "whatever:error"
+
+    def test_single_file_extension_fingerprinted(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/testing/_collect.py::_compiled_artifacts kind="unit"
+        # a single-FILE extension (origin IS the .so, no package dir) is
+        # fingerprinted directly -- the c/c++-style layout, vs the maturin
+        # package layout covered above.
+        import importlib
+
+        from frob.testing._collect import _compiled_artifacts
+
+        so = tmp_path / "singlemod.abi3.so"
+        so.write_bytes(b"\x00ext")
+        monkeypatch.syspath_prepend(str(tmp_path))
+        importlib.invalidate_caches()
+        found = importlib.util.find_spec("singlemod")
+        assert found is not None
+        assert [p.name for p in _compiled_artifacts(found)] == ["singlemod.abi3.so"]
+
+
+class TestCollectBranchGaps:
+    """T-0160 batch 8: TEST005 branch-coverage gaps in
+    src/frob/testing/_collect.py that the tests above never exercise --
+    error/degraded paths in the python and rust collection pipelines."""
+
+    def test_walk_test_files_matches_suffix_style_test_files(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_python_tests kind="unit"
+        # the `*_test.py` naming convention (as opposed to `test_*.py`) is a
+        # separate branch in _walk_test_files -- must be matched too.
+        from frob.testing._collect import _find_test_files
+
+        _write(tmp_path, "tests/thing_test.py", "def test_x(): pass\n")
+        found = _find_test_files(tmp_path)
+        rels = {p.relative_to(tmp_path).as_posix() for p in found}
+        assert rels == {"tests/thing_test.py"}
+
+    def test_content_key_unreadable_file_is_skipped_not_raised(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_python_tests kind="unit"
+        # an OSError reading one test file's bytes must be logged and
+        # skipped, not propagated -- one unreadable file must not take
+        # down the whole content-hash computation.
+        from frob.testing._collect import _content_key
+
+        _write(tmp_path, "tests/test_a.py", "def test_x(): pass\n")
+        real_read_bytes = Path.read_bytes
+
+        def fake_read_bytes(self):
+            if self.name == "test_a.py":
+                raise OSError("permission denied")
+            return real_read_bytes(self)
+
+        monkeypatch.setattr(Path, "read_bytes", fake_read_bytes)
+        # must not raise
+        key = _content_key(tmp_path)
+        assert isinstance(key, str) and key
+
+    def test_native_artifact_digest_resolvable_no_compiled_artifact(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/testing/_collect.py::_native_artifact_digest kind="unit"
+        # a name that resolves (e.g. a pure-python stub standing in for an
+        # unbuilt native) but has no compiled artifact must fingerprint as
+        # "absent", the same as a name that does not resolve at all.
+        import importlib
+
+        from frob.testing import NativeSpec
+        from frob.testing._collect import _native_artifact_digest
+
+        name = "fakenat_purepy_stub"
+        pkg = tmp_path / name
+        pkg.mkdir()
+        (pkg / "__init__.py").write_text("# pure-python stub, no .so\n")
+        monkeypatch.syspath_prepend(str(tmp_path))
+        importlib.invalidate_caches()
+        spec = NativeSpec(name=name, build_cmd="make core")
+        assert _native_artifact_digest(spec) == f"{name}:absent"
+
+    def test_native_artifact_digest_unreadable_artifact(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/testing/_collect.py::_native_artifact_digest kind="unit"
+        # an OSError reading the compiled artifact's bytes reports
+        # ":unreadable" rather than raising.
+        import importlib
+
+        from frob.testing import NativeSpec
+        from frob.testing._collect import _native_artifact_digest
+
+        name = "fakenat_unreadable"
+        _fake_native_package(tmp_path, name, b"\x00v1")
+        monkeypatch.syspath_prepend(str(tmp_path))
+        importlib.invalidate_caches()
+
+        real_read_bytes = Path.read_bytes
+
+        def fake_read_bytes(self):
+            if self.suffix == ".so":
+                raise OSError("boom")
+            return real_read_bytes(self)
+
+        monkeypatch.setattr(Path, "read_bytes", fake_read_bytes)
+        spec = NativeSpec(name=name, build_cmd="make core")
+        assert _native_artifact_digest(spec) == f"{name}:unreadable"
+
+    def test_missing_natives_treats_find_spec_error_as_missing(
+        self, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/testing/_collect.py::_missing_natives kind="unit"
+        # find_spec raising ImportError/ValueError for one declared native
+        # must not crash the whole scan -- it counts as missing.
+        import importlib.util
+
+        from frob.testing import NativeSpec
+        from frob.testing._collect import _missing_natives
+
+        def _boom(name: str):
+            raise ImportError("shadowed name")
+
+        monkeypatch.setattr(importlib.util, "find_spec", _boom)
+        specs = (NativeSpec(name="whatever", build_cmd="make core"),)
+        missing = _missing_natives(specs)
+        assert [s.name for s in missing] == ["whatever"]
+
+    def test_load_natives_or_empty_degrades_on_malformed_config(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_python_tests kind="unit"
+        # a malformed [[native]] table must not take down collection --
+        # it degrades to an empty native tuple with a warning.
+        from frob.testing._collect import _load_natives_or_empty
+
+        (tmp_path / "frob.toml").write_text("this is [not valid toml")
+        assert _load_natives_or_empty(tmp_path) == ()
+
+    def test_load_cache_unreadable_json_is_none(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_python_tests kind="unit"
+        from frob.testing._collect import _load_cache
+
+        cache_path = tmp_path / "cache.json"
+        cache_path.write_text("not valid json{{{")
+        assert _load_cache(cache_path, "somekey") is None
+
+    def test_load_cache_key_mismatch_is_none(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_python_tests kind="unit"
+        import json
+
+        from frob.testing._collect import _load_cache
+
+        cache_path = tmp_path / "cache.json"
+        cache_path.write_text(json.dumps({"key": "old-key", "node_ids": ["a::b"]}))
+        assert _load_cache(cache_path, "new-key") is None
+
+    def test_run_collect_only_spawn_failure_is_err(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_python_tests kind="unit"
+        import frob.testing._collect as collect_mod
+        from frob.gitio import GitError
+        from frob.testing import TestingError
+
+        def fake_run_argv(argv, *, cwd=None, timeout_s=300.0):
+            return Err(GitError.GitFailed)
+
+        monkeypatch.setattr(collect_mod, "run_argv", fake_run_argv)
+        result = collect_mod._run_collect_only(tmp_path)
+        assert result.is_err
+        assert result.danger_err == TestingError.CollectFailed
+
+    def test_run_collect_only_bad_exit_code_is_err(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_python_tests kind="unit"
+        import frob.testing._collect as collect_mod
+        from frob.testing import TestingError
+
+        def fake_run_argv(argv, *, cwd=None, timeout_s=300.0):
+            return Ok(
+                ProcResult(argv=tuple(argv), returncode=2, stdout="", stderr="boom")
+            )
+
+        monkeypatch.setattr(collect_mod, "run_argv", fake_run_argv)
+        result = collect_mod._run_collect_only(tmp_path)
+        assert result.is_err
+        assert result.danger_err == TestingError.CollectFailed
+
+    def test_reroot_node_ids_noop_for_dot_cwd(self) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_python_tests kind="unit"
+        # cwd_rel == "." (the outer collection's own runner) must be a
+        # no-op -- the untouched no-op branch is never hit by the outer
+        # collection pass itself, only via a direct call.
+        from frob.testing._collect import _reroot_node_ids
+
+        ids = frozenset({"tests/test_a.py::test_x"})
+        assert _reroot_node_ids(ids, ".") == ids
+        assert _reroot_node_ids(ids, "") == ids
+
+    def test_python_runner_cwds_degrades_on_bad_runner_config(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_python_tests kind="unit"
+        # a malformed [[test.runner]] table must degrade to "outer tree
+        # only" rather than crashing collection.
+        from frob.testing._collect import _python_runner_cwds
+
+        (tmp_path / "frob.toml").write_text("this is [not valid toml")
+        assert _python_runner_cwds(tmp_path) == []
+
+    def test_python_runner_cwds_dedupes_repeated_cwd(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_python_tests kind="unit"
+        # two [[test.runner]] entries pointed at the SAME nested cwd must
+        # only be visited once.
+        from frob.testing._collect import _python_runner_cwds
+
+        _write(
+            tmp_path,
+            "frob.toml",
+            """
+            [[test.runner]]
+            language = "python"
+            command = ["uv", "run", "pytest", "-q", "{ids}"]
+            all_command = ["uv", "run", "pytest", "-q"]
+            cwd = "nested"
+
+            [[test.runner]]
+            language = "python"
+            command = ["pytest", "{ids}"]
+            all_command = ["pytest"]
+            cwd = "nested"
+            """,
+        )
+        assert _python_runner_cwds(tmp_path) == ["nested"]
+
+    def test_collect_nested_python_propagates_collect_failure(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_python_tests kind="unit"
+        import frob.testing._collect as collect_mod
+        from frob.testing import TestingError
+
+        (tmp_path / "nested").mkdir()
+
+        def fake_run_argv(argv, *, cwd=None, timeout_s=300.0):
+            return Ok(ProcResult(argv=tuple(argv), returncode=2, stdout="", stderr="x"))
+
+        monkeypatch.setattr(collect_mod, "run_argv", fake_run_argv)
+        result = collect_mod._collect_nested_python(tmp_path, "nested")
+        assert result.is_err
+        assert result.danger_err == TestingError.CollectFailed
+
+    def test_collect_python_tests_outer_collection_failure_is_err(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_python_tests kind="unit"
+        import frob.testing._collect as collect_mod
+        from frob.testing import TestingError
+
+        def fake_run_argv(argv, *, cwd=None, timeout_s=300.0):
+            return Ok(ProcResult(argv=tuple(argv), returncode=2, stdout="", stderr="x"))
+
+        monkeypatch.setattr(collect_mod, "run_argv", fake_run_argv)
+        result = collect_mod.collect_python_tests(tmp_path)
+        assert result.is_err
+        assert result.danger_err == TestingError.CollectFailed
+
+    def test_collect_python_tests_nested_failure_degrades_with_warning(
+        self, tmp_path: Path, monkeypatch, caplog
+    ) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_python_tests kind="unit"
+        # a nested runner cwd that fails to collect must be logged and
+        # skipped -- the outer tree's own results still come back Ok.
+        import frob.testing._collect as collect_mod
+
+        _write(
+            tmp_path,
+            "frob.toml",
+            """
+            [[test.runner]]
+            language = "python"
+            command = ["uv", "run", "pytest", "-q", "{ids}"]
+            all_command = ["uv", "run", "pytest", "-q"]
+            cwd = "nested"
+            """,
+        )
+        _write(tmp_path, "tests/test_outer.py", "def test_outer(): pass\n")
+        (tmp_path / "nested").mkdir()
+
+        def fake_run_argv(argv, *, cwd=None, timeout_s=300.0):
+            if cwd == tmp_path / "nested":
+                return Ok(
+                    ProcResult(argv=tuple(argv), returncode=2, stdout="", stderr="x")
+                )
+            return Ok(
+                ProcResult(
+                    argv=tuple(argv),
+                    returncode=0,
+                    stdout="tests/test_outer.py::test_outer\n",
+                    stderr="",
+                )
+            )
+
+        monkeypatch.setattr(collect_mod, "run_argv", fake_run_argv)
+        with caplog.at_level("WARNING"):
+            result = collect_mod.collect_python_tests(tmp_path)
+        assert result.is_ok
+        assert result.danger_ok.node_ids == frozenset(
+            {"tests/test_outer.py::test_outer"}
+        )
+        assert any("nested collection failed" in msg for msg in caplog.messages)
+
+    def test_rust_content_key_unreadable_file_is_skipped(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_rust_tests kind="unit"
+        from frob.testing._collect import _rust_content_key
+
+        _write(tmp_path, "src/lib.rs", "pub fn noop() {}\n")
+        _write(
+            tmp_path,
+            "Cargo.toml",
+            """
+            [package]
+            name = "solo"
+            version = "0.1.0"
+            """,
+        )
+        real_read_bytes = Path.read_bytes
+
+        def fake_read_bytes(self):
+            if self.name == "lib.rs":
+                raise OSError("boom")
+            return real_read_bytes(self)
+
+        monkeypatch.setattr(Path, "read_bytes", fake_read_bytes)
+        key = _rust_content_key(tmp_path)
+        assert isinstance(key, str) and key
+
+    def test_cargo_list_result_spawn_failure_is_err(self) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_rust_tests kind="unit"
+        from frob.gitio import GitError
+        from frob.testing import TestingError
+        from frob.testing._collect import _cargo_list_result
+
+        result = _cargo_list_result(Err(GitError.GitFailed), Path("/tmp/crate"))
+        assert result.is_err
+        assert result.danger_err == TestingError.CollectFailed
+
+    def test_run_cargo_test_list_integration_failure_propagates(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_rust_tests kind="unit"
+        # an integration binary's `cargo test --test <stem> -- --list`
+        # failing (real compile error, not the no-lib-target case) must
+        # propagate as Err from _collect_rust_uncached, not be swallowed.
+        import frob.testing._collect as collect_mod
+        from frob.testing import TestingError
+
+        self_member = tmp_path
+        _write(
+            self_member,
+            "Cargo.toml",
+            """
+            [package]
+            name = "solo"
+            version = "0.1.0"
+            """,
+        )
+        _write(self_member, "src/lib.rs", "pub fn noop() {}\n")
+        _write(self_member, "tests/foo.rs", "#[test]\nfn t() {}\n")
+
+        def fake_cargo_env():
+            return Ok({})
+
+        def fake_run_argv(argv, *, cwd=None, timeout_s=300.0):
+            if "--test" in argv:
+                return Ok(
+                    ProcResult(
+                        argv=tuple(argv),
+                        returncode=101,
+                        stdout="",
+                        stderr="error[E0433]: real compile error",
+                    )
+                )
+            return Ok(ProcResult(argv=tuple(argv), returncode=0, stdout="", stderr=""))
+
+        monkeypatch.setattr(collect_mod, "_cargo_env", fake_cargo_env)
+        monkeypatch.setattr(collect_mod, "run_argv", fake_run_argv)
+        result = collect_mod._collect_rust_uncached(tmp_path)
+        assert result.is_err
+        assert result.danger_err == TestingError.CollectFailed

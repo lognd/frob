@@ -1,0 +1,295 @@
+# frob:used-by src/frob/gates/_registry_exhaustiveness.py
+# supply-chain.yaml -- supply-chain attack/defense/detection registry
+# source doc: docs/design/supply-chain-corpus.md
+schema_version: 1
+entries:
+  - id: "SC-ATTACK-TYPOSQUATTING"
+    class: ['attack']
+    checkability: ['statically-detectable', 'requires-external-data']
+    sourcing: "verified"
+    source_doc: "docs/design/supply-chain-corpus.md"
+    disposition: "deferred:T-0389"
+    cross_refs: []
+  - id: "SC-ATTACK-DEPENDENCY-CONFUSION"
+    class: ['attack']
+    checkability: ['requires-external-data']
+    sourcing: "verified"
+    source_doc: "docs/design/supply-chain-corpus.md"
+    disposition: "deferred:T-0389"
+    cross_refs: []
+  - id: "SC-ATTACK-MAINTAINER-TAKEOVER"
+    class: ['attack']
+    checkability: ['statically-detectable', 'requires-external-data']
+    sourcing: "verified"
+    source_doc: "docs/design/supply-chain-corpus.md"
+    disposition: "deferred:T-0389"
+    cross_refs: []
+  - id: "SC-ATTACK-PROTESTWARE"
+    class: ['attack']
+    checkability: ['statically-detectable', 'advisory']
+    sourcing: "verified"
+    source_doc: "docs/design/supply-chain-corpus.md"
+    disposition: "deferred:T-0389"
+    cross_refs: []
+  - id: "SC-ATTACK-BUILD-SYSTEM-COMPROMISE"
+    class: ['attack']
+    checkability: ['requires-external-data']
+    sourcing: "verified"
+    source_doc: "docs/design/supply-chain-corpus.md"
+    disposition: "deferred:T-0389"
+    cross_refs: []
+  - id: "SC-ATTACK-CICD-PIPELINE-COMPROMISE"
+    class: ['attack']
+    checkability: ['requires-external-data']
+    sourcing: "verified"
+    source_doc: "docs/design/supply-chain-corpus.md"
+    disposition: "deferred:T-0389"
+    cross_refs: []
+  - id: "SC-ATTACK-REGISTRY-WORM"
+    class: ['attack']
+    checkability: ['statically-detectable', 'requires-external-data']
+    sourcing: "verified"
+    source_doc: "docs/design/supply-chain-corpus.md"
+    disposition: "deferred:T-0389"
+    cross_refs: []
+  - id: "SC-ATTACK-INSTALL-SCRIPT-ABUSE"
+    class: ['attack']
+    checkability: ['statically-detectable']
+    sourcing: "verified"
+    source_doc: "docs/design/supply-chain-corpus.md"
+    disposition: "deferred:T-0389"
+    cross_refs: []
+  - id: "SC-ATTACK-STARJACKING"
+    class: ['attack']
+    checkability: ['requires-external-data']
+    sourcing: "verified"
+    source_doc: "docs/design/supply-chain-corpus.md"
+    disposition: "deferred:T-0389"
+    cross_refs: []
+  - id: "SC-ATTACK-MANIFEST-CONFUSION"
+    class: ['attack']
+    checkability: ['requires-external-data']
+    sourcing: "verified"
+    source_doc: "docs/design/supply-chain-corpus.md"
+    disposition: "deferred:T-0389"
+    cross_refs: []
+  - id: "SC-ATTACK-CACHE-POISONING"
+    class: ['attack']
+    checkability: ['requires-external-data']
+    sourcing: "partial"
+    source_doc: "docs/design/supply-chain-corpus.md"
+    disposition: "deferred:T-0389"
+    cross_refs: []
+  - id: "SC-ATTACK-UNPINNED-DEPENDENCIES"
+    class: ['attack']
+    checkability: ['statically-detectable']
+    sourcing: "verified"
+    source_doc: "docs/design/supply-chain-corpus.md"
+    disposition: "deferred:T-0389"
+    cross_refs: []
+  - id: "SC-ATTACK-TRANSITIVE-BLINDNESS"
+    class: ['attack']
+    checkability: ['process-only']
+    sourcing: "verified"
+    source_doc: "docs/design/supply-chain-corpus.md"
+    disposition: "out_of_scope:process-only per this entry's own checkability tag -- organizational dependency-review practice, not statically checkable by frob"
+    cross_refs: []
+  - id: "SC-ATTACK-LOCKFILE-TAMPERING"
+    class: ['attack']
+    checkability: ['statically-detectable', 'requires-external-data']
+    sourcing: "verified"
+    source_doc: "docs/design/supply-chain-corpus.md"
+    disposition: "deferred:T-0389"
+    cross_refs: []
+  - id: "SC-ATTACK-SLOPSQUATTING"
+    class: ['attack']
+    checkability: ['requires-external-data', 'advisory']
+    sourcing: "verified"
+    source_doc: "docs/design/supply-chain-corpus.md"
+    disposition: "deferred:T-0389"
+    cross_refs: []
+  - id: "SC-ATTACK-NATIVE-EXTENSION-OPACITY"
+    class: ['attack', 'detection']
+    checkability: ['statically-detectable', 'requires-external-data']
+    sourcing: "verified"
+    source_doc: "docs/design/supply-chain-corpus.md"
+    disposition: "deferred:T-0389"
+    cross_refs: []
+  - id: "SC-DEFENSE-SLSA"
+    class: ['defense']
+    checkability: ['requires-external-data']
+    sourcing: "verified"
+    source_doc: "docs/design/supply-chain-corpus.md"
+    disposition: "deferred:T-0389"
+    cross_refs: []
+  - id: "SC-DEFENSE-OPENSSF-SCORECARD"
+    class: ['defense', 'detection']
+    checkability: ['requires-external-data', 'statically-detectable']
+    sourcing: "verified"
+    source_doc: "docs/design/supply-chain-corpus.md"
+    disposition: "deferred:T-0389"
+    cross_refs: []
+  - id: "SC-DEFENSE-SIGSTORE-COSIGN"
+    class: ['defense']
+    checkability: ['requires-external-data']
+    sourcing: "verified"
+    source_doc: "docs/design/supply-chain-corpus.md"
+    disposition: "deferred:T-0389"
+    cross_refs: []
+  - id: "SC-DEFENSE-SBOM-FORMATS"
+    class: ['defense']
+    checkability: ['requires-external-data', 'advisory']
+    sourcing: "verified"
+    source_doc: "docs/design/supply-chain-corpus.md"
+    disposition: "deferred:T-0389"
+    cross_refs: []
+  - id: "SC-DEFENSE-OSV"
+    class: ['defense', 'detection']
+    checkability: ['requires-external-data']
+    sourcing: "verified"
+    source_doc: "docs/design/supply-chain-corpus.md"
+    disposition: "deferred:T-0389"
+    cross_refs: []
+  - id: "SC-DEFENSE-REPRODUCIBLE-BUILDS"
+    class: ['defense']
+    checkability: ['requires-external-data']
+    sourcing: "verified"
+    source_doc: "docs/design/supply-chain-corpus.md"
+    disposition: "deferred:T-0389"
+    cross_refs: []
+  - id: "SC-DEFENSE-2FA-TRUSTED-PUBLISHING"
+    class: ['defense']
+    checkability: ['requires-external-data']
+    sourcing: "verified"
+    source_doc: "docs/design/supply-chain-corpus.md"
+    disposition: "deferred:T-0389"
+    cross_refs: []
+  - id: "SC-DEFENSE-IN-TOTO"
+    class: ['defense']
+    checkability: ['requires-external-data']
+    sourcing: "partial"
+    source_doc: "docs/design/supply-chain-corpus.md"
+    disposition: "deferred:T-0389"
+    cross_refs: []
+  - id: "SC-DEFENSE-CAPABILITY-SANDBOXING"
+    class: ['defense']
+    checkability: ['process-only']
+    sourcing: "partial"
+    source_doc: "docs/design/supply-chain-corpus.md"
+    disposition: "out_of_scope:process-only per this entry's own checkability tag -- deployment/runtime sandboxing practice, not statically checkable by frob"
+    cross_refs: []
+  - id: "SC-DETECTION-MAINTAINER-INSTALLHOOK-NET"
+    class: ['detection']
+    checkability: ['statically-detectable', 'requires-external-data']
+    sourcing: "verified"
+    source_doc: "docs/design/supply-chain-corpus.md"
+    disposition: "deferred:T-0389"
+    cross_refs: []
+  - id: "SC-DETECTION-EDIT-DISTANCE-NAME"
+    class: ['detection']
+    checkability: ['statically-detectable', 'requires-external-data']
+    sourcing: "verified"
+    source_doc: "docs/design/supply-chain-corpus.md"
+    disposition: "deferred:T-0389"
+    cross_refs: []
+  - id: "SC-DETECTION-LOCKFILE-MISMATCH"
+    class: ['detection']
+    checkability: ['statically-detectable', 'requires-external-data']
+    sourcing: "verified"
+    source_doc: "docs/design/supply-chain-corpus.md"
+    disposition: "deferred:T-0389"
+    cross_refs: []
+  - id: "SC-DETECTION-OBFUSCATED-SOURCE"
+    class: ['detection']
+    checkability: ['statically-detectable']
+    sourcing: "verified"
+    source_doc: "docs/design/supply-chain-corpus.md"
+    disposition: "deferred:T-0389"
+    cross_refs: []
+  - id: "SC-DETECTION-ENTROPY-BLOB"
+    class: ['detection']
+    checkability: ['statically-detectable']
+    sourcing: "verified"
+    source_doc: "docs/design/supply-chain-corpus.md"
+    disposition: "deferred:T-0389"
+    cross_refs: []
+  - id: "SC-DETECTION-TROJAN-SOURCE"
+    class: ['detection']
+    checkability: ['statically-detectable']
+    sourcing: "verified"
+    source_doc: "docs/design/supply-chain-corpus.md"
+    disposition: "deferred:T-0389"
+    cross_refs: []
+  - id: "SC-DETECTION-HEX-IDENTIFIER-RATIO"
+    class: ['detection']
+    checkability: ['statically-detectable']
+    sourcing: "verified"
+    source_doc: "docs/design/supply-chain-corpus.md"
+    disposition: "deferred:T-0389"
+    cross_refs: []
+  - id: "SC-DETECTION-REPO-URL-MISMATCH"
+    class: ['detection']
+    checkability: ['requires-external-data']
+    sourcing: "verified"
+    source_doc: "docs/design/supply-chain-corpus.md"
+    disposition: "deferred:T-0389"
+    cross_refs: []
+  - id: "SC-DETECTION-MANIFEST-TARBALL-MISMATCH"
+    class: ['detection']
+    checkability: ['requires-external-data']
+    sourcing: "verified"
+    source_doc: "docs/design/supply-chain-corpus.md"
+    disposition: "deferred:T-0389"
+    cross_refs: []
+  - id: "SC-DETECTION-QUARANTINE-WINDOW"
+    class: ['detection']
+    checkability: ['requires-external-data']
+    sourcing: "verified"
+    source_doc: "docs/design/supply-chain-corpus.md"
+    disposition: "deferred:T-0389"
+    cross_refs: []
+  - id: "SC-DETECTION-PROC-MACRO-BUILDRS"
+    class: ['detection']
+    checkability: ['statically-detectable']
+    sourcing: "verified"
+    source_doc: "docs/design/supply-chain-corpus.md"
+    disposition: "deferred:T-0389"
+    cross_refs: []
+  - id: "SC-DETECTION-PYTHON-INSTALL-ARTIFACTS"
+    class: ['detection']
+    checkability: ['statically-detectable']
+    sourcing: "verified"
+    source_doc: "docs/design/supply-chain-corpus.md"
+    disposition: "deferred:T-0389"
+    cross_refs: []
+  - id: "SC-DETECTION-NPM-NON-REGISTRY-SOURCE"
+    class: ['detection']
+    checkability: ['statically-detectable']
+    sourcing: "verified"
+    source_doc: "docs/design/supply-chain-corpus.md"
+    disposition: "deferred:T-0389"
+    cross_refs: []
+  - id: "SC-DETECTION-UNPINNED-CI-ACTION"
+    class: ['detection']
+    checkability: ['statically-detectable']
+    sourcing: "verified"
+    source_doc: "docs/design/supply-chain-corpus.md"
+    disposition: "deferred:T-0389"
+    cross_refs: []
+  - id: "SC-DETECTION-OPAQUE-BINARY-ARTIFACT"
+    class: ['detection']
+    checkability: ['statically-detectable']
+    sourcing: "verified"
+    source_doc: "docs/design/supply-chain-corpus.md"
+    disposition: "deferred:T-0389"
+    cross_refs: []
+  - id: "SC-DETECTION-OSV-ADVISORY-MATCH"
+    class: ['detection']
+    checkability: ['requires-external-data']
+    sourcing: "verified"
+    source_doc: "docs/design/supply-chain-corpus.md"
+    disposition: "deferred:T-0389"
+    cross_refs: []
+total: 41
+total_per_source_doc_TOTAL_field: 39  # mismatch: source doc's own denominator_manifest.TOTAL says
+  # 39 but its own entries: list has 41 unique ids (verified, no duplicates) -- see RECONCILIATION.md

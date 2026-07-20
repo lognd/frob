@@ -6,8 +6,6 @@ law 4). Assumes close as ASSUMED (law 3); everything else is proved or
 refuted against the `FactBase` closure, which is complete over the model.
 """
 
-# frob:waive TEST005 reason="module line coverage 84.7%, debt T-0160"
-
 from __future__ import annotations
 
 import calendar

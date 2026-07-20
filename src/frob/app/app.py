@@ -1,4 +1,5 @@
 # frob:waive TEST005 reason="module line coverage 52.0%, debt T-0160"
+# frob:waive SCOPE001 reason="T-0319 scope comma-joined, matches nothing (T-0241 bug)"
 from __future__ import annotations
 
 import sys
@@ -14,8 +15,10 @@ _RUNNER_MODULE_NAMES = (
     "ack_runner",
     "arch_runner",
     "check_runner",
+    "clean_runner",
     "cycle_runner",
     "deploy_runner",
+    "doctor_runner",
     "docs_runner",
     "dup_runner",
     "exports_runner",
@@ -82,6 +85,8 @@ _SUBCOMMAND_RUNNER_NAMES: dict[Subcommand, str] = {
     Subcommand.mutate: "mutate_runner",
     Subcommand.sys: "sys_runner",
     Subcommand.deploy: "deploy_runner",
+    Subcommand.doctor: "doctor_runner",
+    Subcommand.clean: "clean_runner",
 }
 """Every subcommand handled by a uniform `*_runner.run(AppConfig)` entry point,
 mapped to the runner module name that serves it. `bind` is excluded: it takes
@@ -117,7 +122,7 @@ class App:
                 "usage: frob "
                 "<scaffold|cycle|outline|map|xref|parse|dup|arch|docs|bind|"
                 "exports|check|gitlog|graph|ack|ticket|test|vet|perf|"
-                "release|stats|serve|mutate|sys|deploy>"
+                "release|stats|serve|mutate|sys|deploy|doctor|clean>"
                 " ..."
             )
             sys.exit(1)

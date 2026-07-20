@@ -35,10 +35,16 @@ def arch_gate(root: Path) -> tuple[Violation, ...]:
     `frob.arch.analyze_project` still flags after its complexity filter
     (`frob.arch._python._py_is_complex` / `_cpp._cpp_is_complex`) --
     `symref`/`metric` carried through so `frob.gates._match_waiver` can bind
-    a `frob:waive ARCH001 reason="..." [ceiling=N]` to the exact function."""
+    a `frob:waive ARCH001 reason="..." [ceiling=N]` to the exact function.
+
+    T-0373: thresholds come from `frob.app.config.load_arch_config` (the
+    repo's `[arch]` `frob.toml` table, calibrated-default fallback) instead
+    of `analyze_project`'s own conservative keyword defaults -- the gate
+    used to silently ignore the user's disclosed 60/800 calibration."""
+    from frob.app.config import load_arch_config
     from frob.arch import analyze_project
 
-    result = analyze_project(root)
+    result = analyze_project(root, **load_arch_config(root))
     violations: list[Violation] = []
     for s in result.suggestions:
         if s.category != _ARCH_LONG_FUNCTION_CATEGORY:

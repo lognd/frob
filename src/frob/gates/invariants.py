@@ -8,8 +8,6 @@ code-anchor closure) live in `frob.gates` proper since they must join
 against `CollectedTests` and the `GraphSnapshot`.
 """
 
-# frob:waive TEST005 reason="module line coverage 78.3%, debt T-0160"
-
 from __future__ import annotations
 
 import re
@@ -30,14 +28,14 @@ _FRONTMATTER_RE = re.compile(r"^---\n(.*?)\n---\n?(.*)$", re.DOTALL)
 
 
 # frob:doc docs/modules/gates.md#invariants
-class Criticality(StrEnum):
+class _Criticality(StrEnum):
     """How severe a broken invariant would be."""
 
     HIGH = "high"
     MEDIUM = "medium"
 
 
-_CRITICALITY_VALUES = frozenset(c.value for c in Criticality)
+_CRITICALITY_VALUES = frozenset(c.value for c in _Criticality)
 
 
 # frob:doc docs/modules/gates.md#invariants
@@ -48,7 +46,7 @@ class Invariant(BaseModel):
 
     id: str
     statement: str
-    criticality: Criticality
+    criticality: _Criticality
     evidence: tuple[str, ...] = ()
     path: str = ""
 
@@ -125,7 +123,7 @@ def _build_invariant(
         invariant = Invariant(
             id=str(raw.get("id", "")),
             statement=str(raw.get("statement", "")),
-            criticality=Criticality(raw_criticality),
+            criticality=_Criticality(raw_criticality),
             evidence=tuple(str(item) for item in evidence),
             path=str(path.relative_to(root).as_posix()),
         )
@@ -173,4 +171,4 @@ def load_invariants(root: Path) -> Result[tuple[Invariant, ...], InvariantError]
     return Ok(tuple(invariants.values()))
 
 
-__all__ = ["Criticality", "Invariant", "InvariantError", "load_invariants"]
+__all__ = ["_Criticality", "Invariant", "InvariantError", "load_invariants"]

@@ -1,4 +1,7 @@
-"""Typed surface of the strata-core kernels (docs/strata/kernel.md)."""
+"""Typed surface of the strata-core kernels (docs/strata/kernel.md).
+
+frob:describes strata-core/src/lib.rs
+"""
 
 def reachable(
     edges: list[tuple[str, str, str, bool, bool]],

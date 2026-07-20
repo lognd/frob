@@ -1,7 +1,5 @@
 """CLI wiring for `frob release stamp|check` (T-0003)."""
 
-# frob:waive TEST005 reason="module line coverage 0.0%, debt T-0160"
-
 from __future__ import annotations
 
 import sys
@@ -17,7 +15,6 @@ _CACHE_REL = Path(".frob") / "cache.db"
 
 # frob:ticket T-0003
 # frob:doc docs/modules/app.md#runners
-# frob:waive TEST005 reason="run 0.0% branch cover, debt T-0160"
 def run(cfg: AppConfig) -> None:
     """Dispatch to the release subcommand named by `cfg.release_command`."""
     root = (cfg.release_path or Path(".")).resolve()

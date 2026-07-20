@@ -77,31 +77,44 @@ Entries are grouped into cited baseline VIEWS (`cwe-top-25`,
 `owasp-top-10`, `owasp-asvs`, `cwe-1000`). Selecting a view in `frob.toml`
 declares the baseline the exhaustiveness proof is measured against.
 
-**`cwe-top-25` (T-0143).** Pinned to the **2023** MITRE CWE Top 25 Most
-Dangerous Software Weaknesses release
-(cwe.mitre.org/top25/archive/2023/2023_top25_list.html). Staleness review
-applies per the charter's "pinned to a release ... staleness past a review
-bound is a gate warning" rule above -- when MITRE ships a newer Top 25, this
-pin should be re-verified and bumped, not silently left stale. Eight of the
-25 ids overlap the OWASP-cited core reframe entries already cataloged
-(CWE-79/89/78/22/918/502/352/798) and are reused, not duplicated. Of the
-remaining 17: one (CWE-94, code injection) gets a genuine new
-`WeaknessEntry` reusing CWE-78's `exec` capability join (the kernel does
-not distinguish an OS-command sink from a code-eval sink, so both fire on
-the same precondition -- the same pattern CWE-639 already uses for `sql`).
-The other 16 are honest `OutOfScopeEntry` rows, each naming the SPECIFIC
-kernel concept still missing: a memory-safety group (CWE-787/416/125/119/
-476/190 -- no pointer/buffer/allocator/arithmetic-width model), a
-concurrency id (CWE-362 -- no synchronization/scheduling model), an
-authn/authz-boundary group (CWE-862/863/306/287/269/276 -- no endpoint/
-route + authn/authz predicate concept, the same gap `SEC-ROUTE-AUTHZ-001`
-already names), a file-upload id (CWE-434 -- no content-type-validation
-sink), a generic-precondition id (CWE-20 -- no structural precondition of
-its own, same class as CWE-840 below), and one duplicate-coverage
+**`cwe-top-25` (T-0143, bumped by T-0345).** Pinned to the **2025** MITRE
+CWE Top 25 Most Dangerous Software Weaknesses release
+(cwe.mitre.org/top25/archive/2025/2025_cwe_top25.html) -- T-0345 bumped
+this from the 2023 pin, two releases stale. Staleness review applies per
+the charter's "pinned to a release ... staleness past a review bound is a
+gate warning" rule above -- when MITRE ships a newer Top 25, this pin
+should be re-verified and bumped, not silently left stale. Seven of the 25
+ids overlap the OWASP-cited core reframe entries already cataloged
+(CWE-79/89/78/22/918/502/352) and are reused, not duplicated. Two more
+are genuine new `WeaknessEntry` rows: CWE-94 (code injection) reuses
+CWE-78's `exec` capability join (the kernel does not distinguish an
+OS-command sink from a code-eval sink, so both fire on the same
+precondition); CWE-639 (authorization bypass through user-controlled key)
+reuses `QUALITY_CATALOG`'s existing `sql` capability join, the same
+disclosed-reuse convention CWE-94 follows. The other 16 are honest
+`OutOfScopeEntry` rows, each naming the SPECIFIC kernel concept still
+missing: a memory-safety group (CWE-787/416/125/476/120/121/122 -- no
+pointer/buffer/allocator model, the buffer-overflow variants all sharing
+the same missing bounds model), an authn/authz-boundary group
+(CWE-862/863/306/284/200 -- no endpoint/route + authn/authz predicate
+concept, the same gap `SEC-ROUTE-AUTHZ-001` already names, CWE-284 being
+the generic parent of CWE-862/863 with no precondition of its own, and
+CWE-200 (exposure of sensitive information) matching docs/design/
+registry/weaknesses.yaml's independent CWE-1000 disposition sweep, which
+classifies it the same `out-of-scope:authn-authz-boundary-predicate`
+way), a file-upload id (CWE-434 -- no content-type-validation sink), a
+generic-precondition id (CWE-20 -- no structural precondition of its own,
+same class as CWE-840 below), a resource-exhaustion id (CWE-770 -- no
+resource-budget/rate-limiting model), and one duplicate-coverage
 disclosure (CWE-77, the generic parent of CWE-78's already-cataloged
 OS-command instance -- a second entry would duplicate the identical fire
 path, the same non-duplication discipline the stored-XSS note above
-applies). `cwe-top-25`'s view table (`CWE_TOP_25_VIEWS`) is kept
+applies). Dropped from the 2023 pin, no longer 2025-list members: CWE-798
+(still cataloged in the core reframe entries above, just no longer a
+top-25 member), CWE-287/190/119/362/269/276 (were `OutOfScopeEntry` rows
+here only, removed outright since this view tracks the CITED release's
+membership, not a running union of every release ever pinned).
+`cwe-top-25`'s view table (`CWE_TOP_25_VIEWS`) is kept
 deliberately separate from the main `VIEWS` dict: `frob.strata._audit`'s
 `DEFAULT_SECURITY_VIEWS` iterates every `VIEWS` key against the bare
 `CWE_CATALOG` default, so merging `cwe-top-25` in would silently
@@ -481,7 +494,7 @@ flags the SHAPE of the vulnerability directly in a file's text, following
 exclusion lesson (a needle must not fire on a dotted method access that
 merely shares a name with a dangerous bare call).
 
-`CVE_FINGERPRINTS` (`src/frob/strata/_cve_fingerprint.py`) ships nine
+`CVE_FINGERPRINTS` (`src/frob/strata/_cve_fingerprint.py`) ships thirteen
 entries, each joined to an EXISTING `std.cwe` catalog id via `cwe_id` and
 cited by at least one REAL, independently-verified CVE -- `cve` is never
 hand-guessed from memory; every citation here was checked against a
@@ -494,14 +507,24 @@ follows. `CVE_FINGERPRINT_VIEWS['cve-fingerprint-catalog']` is a SEPARATE
 view table (never merged into `VIEWS`/`CWE_TOP_25_VIEWS`), following the
 same "no silent default-view widening" precedent those tables already set.
 
-**Curated, not exhaustive -- a disclosed cut, not a silent one.** Three of
-the ticket's suggested example classes are deliberately NOT shipped:
-TLS `verify=False` (CWE-295), weak-hash password storage (CWE-916), and
-XML external entities (CWE-611) have no `WeaknessEntry` in ANY catalog
-tuple yet, so a fingerprint citing any of the three would fail this
-module's OWN CVEFP001 drift-lock -- confirming they need a catalog
-addition (a separate, catalog-scoped ticket) before a fingerprint can
-honestly join them, rather than being force-fit around the drift-lock.
+**Curated, not exhaustive -- a disclosed cut, not a silent one.** One of
+the ticket's suggested example classes is deliberately NOT shipped:
+weak-hash password storage (CWE-916) has no `WeaknessEntry` in ANY catalog
+tuple yet, so a fingerprint citing it would fail this module's OWN CVEFP001
+drift-lock -- confirming it needs a catalog addition (a separate, catalog-
+scoped ticket) before a fingerprint can honestly join it, rather than being
+force-fit around the drift-lock. TLS `verify=False` (CWE-295) and XML
+external entities (CWE-611) were both in this same bucket until their
+`WeaknessEntry` rows landed: T-0188 added CWE-295 to `QUALITY_CATALOG`
+(honest-views-placement rationale in `_threat.py`'s CWE-295 entry -- it
+belongs to neither the verified `owasp-top-10` nor `cwe-top-25` membership,
+so it is cataloged with no view at all rather than silently widening
+either), unblocking the three FP-TLS-VERIFY-* entries (python requests/
+httpx/aiohttp `verify=False`, TypeScript/Node `rejectUnauthorized: false`,
+Rust reqwest `danger_accept_invalid_certs`); T-0189 added CWE-611 to
+`CWE_CATALOG` (`capability_kind=None`, a parser-configuration precondition,
+the same citation-only shape CWE-22/352/798 already use), unblocking the
+`FP-XXE-PARSE-001` fingerprint below.
 JNDI-style lookup injection (the Log4Shell class) is Java/JNDI-specific
 with no equivalent construct in any of the four languages `frob.vet.
 _capability` scans (python/typescript/rust/c-cpp); a fingerprint with no
@@ -582,6 +605,17 @@ THREAT003 join) -- out of T-0145's scope (fixture coverage of the
 EXISTING catalog, not new kernel primitives), tracked as an honest,
 disclosed gap rather than a silent one.
 
+T-0189 added a fourth id to this same never-fires set: CWE-611 is also
+cataloged with `capability_kind=None` (a "parser-configuration
+precondition", the entry's own comment) for the identical structural
+reason -- the kernel has no external-entity-resolution vocabulary for
+`_fired_obligations` to join against. `cwe_611_unfired.strata`
+(`tests/unit/strata/litmus/`) proves the same negative explicitly,
+mirroring `cwe_798_unfired.strata`'s shape exactly -- `test_litmus_cwe.py`'s
+`_FIRING_FIXTURES`/`_UNFIRED_FIXTURES` drift-lock tables required this
+(a catalog entry with no fixture mapping fails
+`test_every_catalog_entry_has_a_fixture_mapping` loudly, not silently).
+
 The out-of-scope exemption boundary is checked too:
 `test_out_of_scope_ids_cover_the_top_25_gap_exactly` proves
 `CWE_TOP_25_OUT_OF_SCOPE`'s ids are exactly the `cwe-top-25` view members
@@ -596,14 +630,40 @@ out-of-scope list.
 benign-capabilities.md) is frob's own built-in excuse tuple, bridging the
 vet scanner's tier-2 vocabulary (net/fs/fs-read/eval/env/ffi/
 install-hook) against the CWE-sink-shaped catalog vocabulary. A
-consuming repo can have a DIFFERENT, genuinely benign gap: a real `may`
-capability (`html_render`, `client_storage`, ...) that IS classified
-under `CWE_CATALOG` but has no `QUALITY_CATALOG` analog (or vice versa),
-specific to how that repo actually uses the kind. Before T-0017 the only
-excuse mechanism was patching frob's own Python source -- a downstream
-repo cannot edit `DEFAULT_BENIGN_CAPABILITIES` and had no choice but to
-`waive "THREAT002:<kind>"`, which names a frob design gap as the reason
-rather than a fact about the repo's own model.
+consuming repo can have a DIFFERENT, genuinely benign gap: a `may`
+capability the ENTIRE taxonomy (every family's catalog combined) does
+not recognize at all -- see `ALL_CATALOG` below for why a capability
+classified under `CWE_CATALOG` alone no longer needs one of these.
+Before T-0017 the only excuse mechanism was patching frob's own Python
+source -- a downstream repo cannot edit `DEFAULT_BENIGN_CAPABILITIES` and
+had no choice but to `waive "THREAT002:<kind>"`, which names a frob
+design gap as the reason rather than a fact about the repo's own model.
+
+**T-0171: classification is taxonomy-wide, not per-family.** Before this
+fix, `html_render`/`client_storage`/... classified under `CWE_CATALOG`
+(security) but absent from `QUALITY_CATALOG`'s narrower vocabulary (or
+vice versa) fired THREAT002 against the family whose OWN catalog had no
+matching entry -- `check_capability_completeness`'s `catalog` argument
+was doing double duty as both "which entries fire obligations for this
+family" AND "what counts as classified at all". `_audit.py::
+evaluate_exhaustiveness`'s multi-family sweep (`_evaluate_family`) now
+passes `check_capability_completeness`'s new `taxonomy` parameter as
+`ALL_CATALOG` (`_threat.py`: `CWE_CATALOG + CWE_TOP_25_CATALOG +
+QUALITY_CATALOG`, the same union `check_fingerprint_catalog_drift`
+already joins against, above) so a capability kind is unclassified only
+when NO family's catalog names it -- genuinely irrelevant-to-this-family
+capabilities no longer need a bespoke `BenignCapability` entry per repo
+(the logand.app pilot's gap: `DEFAULT_BENIGN_CAPABILITIES` was frob's own
+repo-side patch for its OWN handful of kinds; a downstream repo with a
+DIFFERENT security-only capability had no equivalent excuse until it hand-
+wrote one). `check_capability_completeness`'s single-view callers
+(`evaluate_threats`) are unaffected -- `taxonomy` defaults to `catalog`,
+preserving the pre-T-0171 single-family behavior there; only the
+cross-family audit sweep widens the classification taxonomy.
+`BenignCapability` remains the correct excuse for a capability truly
+unclassified by every family's catalog (the vet-scanner-vocabulary
+bridge `DEFAULT_BENIGN_CAPABILITIES` itself exists for, and any genuinely
+novel per-repo capability kind).
 
 **Design choice.** Two homes were considered: a `.strata` surface
 construct (a `benign "kind" reason "..."` clause on the model, alongside
@@ -662,7 +722,13 @@ the unknown -- and says so.
   catalog already names) or an explicit `BenignCapability` excuse; the
   code-level half (joining `_effects.py`'s extracted net/fs/exec sinks
   against this same taxonomy) stays phase C, since it needs the finer
-  capability grammar `_effects.py` itself defers.
+  capability grammar `_effects.py` itself defers. T-0171: when auditing
+  across families (`frob sys audit`'s multi-family sweep), "classified"
+  now means classified by ANY family's catalog (`ALL_CATALOG`, [per-repo
+  benign-capability declarations](#per-repo-benign-capability-
+  declarations) above) -- a capability the quality family's own narrower
+  catalog does not name is not unclassified if the security family's
+  catalog names it, and vice versa.
 - **C (code binding)**: effect extraction of CWE-relevant sinks (joins
   T-0079), the "undeclared capability in code" error, mitigation
   chokepoint verification via the policy forms.

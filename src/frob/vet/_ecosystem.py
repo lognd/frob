@@ -16,6 +16,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from frob.excludes import iter_files
 from frob.gates._models import Severity, Violation
 from frob.logging import get_logger
 from frob.vet._models import Dependency
@@ -74,10 +75,9 @@ def _pickle_violation(
     dep: Dependency, source_dir: Path, lockfile_name: str
 ) -> Violation | None:
     """VET-PY003: shipped pickle payloads (serialized-code load == eval)."""
+    # frob:ticket T-0471
     pickle_files = [
-        p
-        for p in source_dir.rglob("*")
-        if p.suffix in (".pkl", ".pickle") and p.is_file()
+        p for p in iter_files(source_dir) if p.suffix in (".pkl", ".pickle")
     ]
     if not pickle_files:
         return None
@@ -94,7 +94,7 @@ def _pickle_violation(
 
 
 # frob:doc docs/modules/vet.md#public-api
-def python_rules(
+def _python_rules(
     dep: Dependency, source_dir: Path, lockfile_name: str
 ) -> list[Violation]:
     """VET-PY001 (executable setup.py present) and VET-PY002 (.pth files) --
@@ -159,7 +159,7 @@ def _proc_macro_violation(
 
 
 # frob:doc docs/modules/vet.md#public-api
-def rust_rules(
+def _rust_rules(
     dep: Dependency, source_dir: Path, lockfile_name: str
 ) -> list[Violation]:
     """VET-RS001 (build.rs capability-scanned as a normal package) and
@@ -177,7 +177,7 @@ def rust_rules(
 
 
 # frob:doc docs/modules/vet.md#public-api
-def npm_non_registry_rule(dep: Dependency, lockfile_name: str) -> Violation | None:
+def _npm_non_registry_rule(dep: Dependency, lockfile_name: str) -> Violation | None:
     """VET-JS004: git/http/file dependency sources are declarable-only."""
     if not dep.resolved:
         return None
@@ -197,4 +197,4 @@ def npm_non_registry_rule(dep: Dependency, lockfile_name: str) -> Violation | No
     return None
 
 
-__all__ = ["npm_non_registry_rule", "python_rules", "rust_rules"]
+__all__ = ["_npm_non_registry_rule", "_python_rules", "_rust_rules"]

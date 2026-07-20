@@ -52,12 +52,19 @@ class RawComment(BaseModel):
 
 # frob:doc docs/modules/dup.md#public-api
 class TreeNode(BaseModel):
-    """A simplified, language-agnostic subtree: a node's type label plus
-    its ordered children -- comments and whitespace already stripped.
+    """A simplified, language-agnostic subtree: a node's type label, its
+    ordered children, and the byte span of the original source it covers
+    -- comments and whitespace already stripped from `children`, but the
+    `span` still covers the node's full original text.
 
     `frob.dup`'s R4 rung feeds this to `frob-core`'s Zhang-Shasha kernel
-    (`apted_similarity`) for a real tree-edit-distance comparison, rather
+    (`_apted_similarity`) for a real tree-edit-distance comparison, rather
     than the flat leaf-token sequence `RawSymbol.body_tokens` exposes.
+    `span` exists so `frob.dup._template` (docs/modules/dup-sota-survey.md
+    sec 4) CAN slice literal source text for reverse-templating instead of
+    rendering a structural `label(child, ...)` skeleton -- that consumer
+    change is not made yet (tracked separately, out of `frob.lang`'s
+    scope); today `span` is populated but unread outside this module.
     Frozen for the same identity-of-value reason as every other
     `frob.lang` model (docs/modules/graph.md).
     """
@@ -65,6 +72,7 @@ class TreeNode(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     label: str
+    span: tuple[int, int] = (0, 0)
     children: tuple["TreeNode", ...] = ()
 
 

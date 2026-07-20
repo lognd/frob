@@ -2,9 +2,19 @@
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
-from frob.lang import LangError, SymbolKind, parse_file, supported_languages
+import pytest
+
+from frob.lang import (
+    LangError,
+    SymbolKind,
+    parse_cache_stats,
+    parse_file,
+    reset_parse_cache,
+    supported_languages,
+)
 
 _FIXTURES = Path(__file__).parent / "fixtures" / "lang"
 
@@ -88,6 +98,23 @@ class TestParsePython:
         assert comments["read the bytes"].enclosing == "GraphStore.load"
         assert "sum them" in comments
         assert comments["sum them"].enclosing == "top_level"
+
+    # frob:tests src/frob/lang/_common.py::_find_following_symbol
+    def test_directive_binds_across_two_blank_lines(self, tmp_path: Path) -> None:
+        """T-0434 (audit finding G4, docs/audits/graph.md): the fixed
+        following-symbol window used to be `end < span[0] <= end + 2`, so a
+        directive followed by TWO blank lines then a `def` fell outside it
+        and silently rebound to the enclosing/module fallback instead of
+        the intended function. `_FOLLOWING_SYMBOL_WINDOW` widened to 3
+        lines to cover this common formatting gap."""
+        src = _write(
+            tmp_path,
+            "two_blanks.py",
+            "# frob:doc docs/x.md#anchor\n\n\ndef target():\n    pass\n",
+        )
+        pf = parse_file(src).danger_ok
+        directive = next(c for c in pf.comments if "frob:doc" in c.text)
+        assert directive.following == "target"
 
     def test_content_hash_changes_on_any_byte_change(self, tmp_path: Path) -> None:
         base = (_FIXTURES / "sample.py").read_text()
@@ -226,7 +253,7 @@ class TestParseTsRustCppC:
         bare-file-path fallback -- `_walk_rust.py::_macro_symbol` emits a
         non-public stand-in `RawSymbol` (qualname suffixed `!`, e.g.
         `proptest!`) for recognized test-generating macros so the existing
-        comment-to-following-symbol mechanism (`find_following_symbol`) has
+        comment-to-following-symbol mechanism (`_find_following_symbol`) has
         something to attach to, exactly as it does for a plain `#[test]` fn."""
         source = (
             '// frob:tests crate/src kind="integration"\n'
@@ -252,6 +279,9 @@ class TestParseTsRustCppC:
         pf = parse_file(_write(tmp_path, "novec.rs", source)).danger_ok
         assert not any(s.qualname.endswith("!") for s in pf.symbols)
 
+    # frob:waive DUP001 reason="exhaustive per-language case table: \
+    # independent language fixtures sharing an arrange-act scaffold; \
+    # extracting would obscure per-case intent"
     def test_rust_directive_binds_above_stacked_attributes(
         self, tmp_path: Path
     ) -> None:
@@ -262,7 +292,7 @@ class TestParseTsRustCppC:
         node before the item (unlike python's `decorated_definition`
         wrapper), so the item's own span used to start at the item
         keyword line, more than 2 lines below a 2+-attribute stack's
-        comment (`frob.lang._common.find_following_symbol`'s window)."""
+        comment (`frob.lang._common._find_following_symbol`'s window)."""
         source = (
             "// frob:doc docs/x.md#anchor\n"
             "#[derive(Debug)]\n"
@@ -275,6 +305,9 @@ class TestParseTsRustCppC:
         directive_comment = next(c for c in pf.comments if "frob:doc" in c.text)
         assert directive_comment.following == "TwoAttrs"
 
+    # frob:waive DUP001 reason="exhaustive per-language case table: \
+    # independent language fixtures sharing an arrange-act scaffold; \
+    # extracting would obscure per-case intent"
     def test_rust_directive_binds_above_single_attribute(self, tmp_path: Path) -> None:
         """The 1-attribute case (already worked, kept as a guard against
         regressing it while fixing the 2+-attribute case)."""
@@ -289,6 +322,9 @@ class TestParseTsRustCppC:
         directive_comment = next(c for c in pf.comments if "frob:doc" in c.text)
         assert directive_comment.following == "OneAttr"
 
+    # frob:waive DUP001 reason="exhaustive per-language case table: \
+    # independent language fixtures sharing an arrange-act scaffold; \
+    # extracting would obscure per-case intent"
     def test_rust_directive_binds_directly_above_keyword_no_attrs(
         self, tmp_path: Path
     ) -> None:
@@ -300,6 +336,9 @@ class TestParseTsRustCppC:
         directive_comment = next(c for c in pf.comments if "frob:doc" in c.text)
         assert directive_comment.following == "NoAttrs"
 
+    # frob:waive DUP001 reason="exhaustive per-language case table: \
+    # independent language fixtures sharing an arrange-act scaffold; \
+    # extracting would obscure per-case intent"
     def test_rust_directive_binds_below_attributes_workaround_placement(
         self, tmp_path: Path
     ) -> None:
@@ -318,6 +357,9 @@ class TestParseTsRustCppC:
         directive_comment = next(c for c in pf.comments if "frob:doc" in c.text)
         assert directive_comment.following == "BelowAttrs"
 
+    # frob:waive DUP001 reason="exhaustive per-language case table: \
+    # independent language fixtures sharing an arrange-act scaffold; \
+    # extracting would obscure per-case intent"
     def test_rust_directive_binds_above_one_line_rustdoc(self, tmp_path: Path) -> None:
         """T-0301 (feldspar/lithos escalation): a single-line `///` rustdoc
         comment between a `// frob:doc` directive and the item was already
@@ -330,17 +372,20 @@ class TestParseTsRustCppC:
         directive_comment = next(c for c in pf.comments if "frob:doc" in c.text)
         assert directive_comment.following == "one_line"
 
+    # frob:waive DUP001 reason="exhaustive per-language case table: \
+    # independent language fixtures sharing an arrange-act scaffold; \
+    # extracting would obscure per-case intent"
     def test_rust_directive_binds_above_multiline_rustdoc(self, tmp_path: Path) -> None:
         """T-0301: a `// frob:doc` directive placed above a MULTI-line `///`
         rustdoc block must still bind to the item below (feldspar/lithos
         escalation, tickets.md T-0012 Done report): `_is_trailing_comment`
         compared raw tree-sitter `end_point` values, which for a rust
         `///` line-comment node bleed into column 0 of the FOLLOWING line
-        (a lexer artifact `span_of` already folds back but this helper
+        (a lexer artifact `_span_of` already folds back but this helper
         didn't) -- so every doc-comment line whose predecessor was ALSO a
         doc-comment line was misclassified as "trailing", truncating
         `_block_ends`'s backward chain after the block's second line and
-        starving `find_following_symbol`'s 2-line window once 3+ content
+        starving `_find_following_symbol`'s 2-line window once 3+ content
         lines separated the directive from the item."""
         source = (
             "// frob:doc docs/x.md#anchor\n"
@@ -362,11 +407,14 @@ class TestParseTsRustCppC:
         directive_comment = next(c for c in pf.comments if "frob:doc" in c.text)
         assert directive_comment.following == "zero_lines"
 
+    # frob:waive DUP001 reason="exhaustive per-language case table: \
+    # independent language fixtures sharing an arrange-act scaffold; \
+    # extracting would obscure per-case intent"
     def test_rust_directive_binds_regardless_of_indentation_mismatch(
         self, tmp_path: Path
     ) -> None:
         """T-0301 (Bug C): binding is purely line-adjacency based
-        (`find_enclosing_symbol`/`find_following_symbol` compare `RawSymbol`
+        (`_find_enclosing_symbol`/`_find_following_symbol` compare `RawSymbol`
         line spans only, never `start_point`'s column) -- a directive at a
         DIFFERENT indentation than the multi-line rustdoc block and item it
         binds to must still resolve. This locks the honest rule investigated
@@ -437,6 +485,30 @@ class TestErrors:
         names = {s.qualname for s in pf.symbols}
         assert "good_one" in names
 
+    # frob:tests src/frob/lang/__init__.py::_warn_if_partial_tree
+    def test_syntax_error_logs_partial_tree_warning(
+        self, caplog: pytest.LogCaptureFixture, tmp_path: Path
+    ) -> None:
+        """T-0434 (audit finding G9, docs/audits/graph.md): a salvaged
+        tree-sitter tree (`has_error` but children survive) must never
+        silently pass as clean -- symbols after the error region drop out
+        of the graph with no signal. `_parse` must log a WARNING naming
+        the file so the loss is at least visible, even though it still
+        returns `Ok` (a hard `Err` here would blank out the whole file's
+        obligations instead of just the broken tail)."""
+        reset_parse_cache()
+        broken = _write(
+            tmp_path,
+            "broken.py",
+            "def good_one():\n    pass\n\ndef broken(:\n    pass\n",
+        )
+        with caplog.at_level(logging.WARNING, logger="frob.lang"):
+            result = parse_file(broken)
+        assert result.is_ok
+        assert any(
+            "partial tree" in record.message.lower() for record in caplog.records
+        )
+
     def test_supported_languages(self) -> None:
         # frob:tests src/frob/lang/__init__.py::supported_languages
         langs = supported_languages()
@@ -475,3 +547,66 @@ def test_lang_pipeline_integration(tmp_path: Path) -> None:
 
     idents = iter_identifiers(src).danger_ok
     assert any(name == "Widget" for name, _line in idents)
+
+
+class TestParseCache:
+    """T-0414: `_parse`'s content-hash-keyed memo (docs/modules/lang.md#parse-cache)."""
+
+    def test_second_call_same_content_is_a_hit(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/lang/__init__.py::reset_parse_cache
+        # frob:tests src/frob/lang/__init__.py::parse_cache_stats
+        reset_parse_cache()
+        path = _write(tmp_path, "a.py", "def f() -> None:\n    pass\n")
+        parse_file(path)
+        parse_file(path)
+        hits, misses = parse_cache_stats()
+        assert hits == 1
+        assert misses == 1
+
+    def test_content_change_forces_a_reparse(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/lang/__init__.py::reset_parse_cache
+        # frob:tests src/frob/lang/__init__.py::parse_cache_stats
+        reset_parse_cache()
+        path = _write(tmp_path, "b.py", "def f() -> None:\n    pass\n")
+        parse_file(path)
+        path.write_text("def g() -> None:\n    pass\n")
+        parse_file(path)
+        hits, misses = parse_cache_stats()
+        assert hits == 0
+        assert misses == 2
+
+    def test_cache_hit_returns_identical_symbols(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/lang/__init__.py::parse_file
+        reset_parse_cache()
+        path = _write(tmp_path, "c.py", "def f() -> None:\n    pass\n")
+        first = parse_file(path).danger_ok
+        second = parse_file(path).danger_ok
+        assert first == second
+
+    def test_reset_clears_counters(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/lang/__init__.py::reset_parse_cache
+        path = _write(tmp_path, "d.py", "x = 1\n")
+        parse_file(path)
+        reset_parse_cache()
+        assert parse_cache_stats() == (0, 0)
+
+    def test_cross_entry_point_reuse_is_one_parse_per_file(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0414 anti-regression: `parse_file`, `extract_imports`, and
+        `raw_tree` are three distinct public entry points (standing in for
+        three distinct gate stages -- graph/dup, cycle/arch, vet) that all
+        funnel through `_parse`; a real `frob check` run must parse each
+        distinct `(path, content)` at most once no matter how many of these
+        a given file is visited through."""
+        # frob:tests src/frob/lang/__init__.py::parse_cache_stats
+        from frob.lang import extract_imports, raw_tree
+
+        reset_parse_cache()
+        path = _write(tmp_path, "e.py", "import os\n\ndef f() -> None:\n    pass\n")
+        parse_file(path)
+        extract_imports(path)
+        raw_tree(path)
+        hits, misses = parse_cache_stats()
+        assert misses == 1
+        assert hits == 2

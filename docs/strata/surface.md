@@ -143,6 +143,28 @@ THREAT003 weakness obligations (`_threat.py::check_discharge_completeness`)
 exactly the way a code-modeled node's would -- no new join, no new
 exemption.
 
+**`errors_total`/`panics_contained_by`/`observe`/`on deploy` on `store`
+(T-0247):** the identical T-0070/T-0136 clauses `node` has, now also
+accepted by `strata-core/src/parse.rs::parse_store` -- the same
+"component / store: nodes" reasoning (#key-construct-semantics) T-0166
+already documents above for `code`/`may`. Before T-0247, `parse_store` had
+no branch for any of the four (the same kind of real, narrow grammar gap
+T-0166 found and fixed for `code`/`may`: the `store_prop := node_prop |
+...` grammar line had implied support that did not exist). Elaboration
+(`_infra.py::_elaborate_store`) is the same desugar `_elaborate.py::
+_elaborate_node` gives `node`: `errors_total`/`panics_contained_by`
+become the same `errors_total`/`panics=<id>` attrs, and `on deploy`
+lands directly on the elaborated `Node`'s `deploy` field (the local
+`_infra.py::_elaborate_store_deploy` duplicate of `_elaborate.py::
+_elaborate_deploy`, kept local for the same import-cycle reason
+`_MANAGED_ATTR` already is). The cross-declaration checks
+(`_elaborate.py::_validate_observability`'s panics-supervisor/observe-
+target/log-class checks, and `_elaborate_observe_flows`'s synthesized
+`X__obs` flow) now walk `module.stores` as well as `module.nodes` -- a
+store's `observe`/`panics_contained_by` clause gets the identical
+fail-closed validation and synthesized flow a node's would, with no
+store/node distinction downstream.
+
 **Design choice (T-0132): STRING-quoted values, not a new token class.**
 `code=<glob>` globs (`src/frob/**`) and `may` capability atoms
 (`net.out:stripe.com`) both need characters -- `*`, `/`, `.`, `:` -- that
@@ -586,6 +608,14 @@ semantics):
   monthly growth, read by UTILIZATION bound claims for saturation dating).
 - node/store `skew zipf NUM` -> node/store attr `skew=<alpha>` (zipf
   hottest-shard exponent).
+- flow `utility;` -> flow attr `utility` (T-0226: marks this hop as a
+  non-transitive utility/hub edge -- `_facts.py::FactBase.reachable`
+  reads the attr the same way it reads `krb_no_transit`, so the edge's
+  `dst` is still directly reachable but the closure does not chain past
+  it, docs/strata/kernel.md#strata-core). Use this to keep a legitimate
+  `noflow` claim provable across an unrelated hub edge (e.g. a shared
+  logging import) without weakening transitivity for any edge that is
+  NOT explicitly marked `utility`.
 
 Because these are just more `attrs` entries, `FlowDecl`/`NodeDecl`/
 `StoreDecl` need no new fields and `elaborate`/`elaborate_infra` need no

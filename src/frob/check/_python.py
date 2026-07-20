@@ -11,6 +11,7 @@ parallel.
 from __future__ import annotations
 
 import subprocess
+import threading
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -211,67 +212,283 @@ def _run_cycle(root: Path) -> ToolResult:
     )
 
 
+# frob:ticket T-0375
+_DUP_CACHE_REL = Path(".frob") / "cache.db"
+
+# frob:ticket T-0375
+# T-0122's dup/arch stages run in the SAME ThreadPoolExecutor batch as
+# gates -- an unsynchronized cache would let two threads race into
+# `build_graph` concurrently against the same `.frob/cache.db` (sqlite
+# "database is locked" territory). A plain lock serializes the
+# first-caller-builds-it path; `_snapshot_cache` then makes every later
+# caller (same or different stage, same root) reuse that one build instead
+# of re-walking the tree.
+_snapshot_lock = threading.Lock()
+_snapshot_cache: dict[Path, object] = {}
+
+
+# frob:ticket T-0375
+def _cached_snapshot(scan: Path):  # noqa: ANN202
+    """`build_graph(scan, ...)`'s snapshot, memoized per `scan` root and
+    thread-safe (T-0375): the gates stage already builds this graph once
+    per `frob check` run (T-0122's "exactly one build" invariant); the
+    dup/arch stages' waiver cross-reference need the SAME snapshot's WAIVE
+    edges, so this reuses rather than re-walking the tree a second/third
+    time, even when those stages run concurrently. Returns `None` if the
+    build failed -- callers degrade to "everything unaccounted", never a
+    crash."""
+    from frob.graph import build_graph
+
+    with _snapshot_lock:
+        if scan in _snapshot_cache:
+            return _snapshot_cache[scan]
+        result = build_graph(scan, scan / _DUP_CACHE_REL)
+        snapshot = result.danger_ok if result.is_ok else None
+        _snapshot_cache[scan] = snapshot
+        return snapshot
+
+
+# frob:ticket T-0375
+def _waive_edges_for_rule(root: Path, rule: str):  # noqa: ANN202
+    """Every `frob:waive` edge in `root`'s obligation graph targeting `rule`,
+    or `()` if the graph fails to build (T-0375: a broken graph must never
+    crash the advisory dup/arch waiver cross-reference -- it just falls
+    back to reporting everything as unaccounted, same as before this
+    ticket)."""
+    from frob.graph._models import EdgeKind
+
+    scan = (root if root.is_dir() else root.parent).resolve()
+    snapshot = _cached_snapshot(scan)
+    if snapshot is None:
+        return ()
+    return tuple(
+        e for e in snapshot.edges if e.kind == EdgeKind.WAIVE and e.target == rule
+    )
+
+
+# frob:ticket T-0375
+def _dup_group_symrefs(group) -> set[str]:  # noqa: ANN001
+    """`{path::symbol}` for every fragment in a `frob.dup` `CloneGroup` --
+    the identity a `frob:waive DUP001`/`DUP002` directive binds to via
+    `frob.graph.dsl`'s enclosing-symbol resolution."""
+    return {f"{frag.file}::{frag.symbol}" for frag in group.fragments}
+
+
+# frob:ticket T-0375
+def _dup_waived_symrefs(waivers) -> set[str]:  # noqa: ANN001
+    """The `src` symrefs named by a set of DUP001/DUP002 `frob:waive` edges."""
+    return {w.src for w in waivers}
+
+
+# frob:ticket T-0375
+def _dup_group_covering_waivers(group, waived_symrefs: set[str]) -> tuple[str, ...]:  # noqa: ANN001
+    """The sorted waiver symrefs covering `group`, or `()` unless EVERY
+    fragment's symref is covered.
+
+    T-0375 review fix: `frob.dup._legacy`'s `_exact_groups`/`_renamed_groups`
+    deliberately let one symbol sit in BOTH an exact-clone group and a
+    DISTINCT, larger renamed-clone superset group (e.g. `foo`/`bar` exact,
+    `foo`/`bar`/`baz` renamed). An "ANY fragment symref matches ANY waiver"
+    rule would let a single `frob:waive DUP001` reasoned about the `foo`/
+    `bar` pair also silently swallow the unrelated, unwaived `baz` in the
+    renamed superset group -- exactly the dishonesty this ticket exists to
+    prevent. Requiring FULL group coverage (every fragment site named by
+    some waiver) means a waiver only ever excludes the specific group it
+    was written about: partial overlap leaves the group counted, and its
+    diagnostic lists every fragment still unaccounted for."""
+    symrefs = _dup_group_symrefs(group)
+    if not symrefs or not symrefs <= waived_symrefs:
+        return ()
+    return tuple(sorted(symrefs))
+
+
+# frob:ticket T-0375
+def _dup_group_diag(g, *, covering_waivers: tuple[str, ...]) -> Diagnostic:  # noqa: ANN001
+    """One diagnostic for a `frob.dup` group: `warning` if unaccounted for,
+    `note` (naming every covering symref) if `frob:waive DUP001`/`DUP002`
+    directives cover ALL of its fragments (see `_dup_group_covering_waivers`)
+    -- mirrors `_waived_diags`'s gates-stage treatment so a waived group is
+    never silently hidden, only demoted."""
+    locs = ", ".join(f"{f.file}:{f.start_line}" for f in g.fragments)
+    message = f"{g.size_lines}-line duplicate block at {locs}"
+    if covering_waivers:
+        return Diagnostic(
+            severity="note",
+            code=g.clone_type,
+            message=f"{message}  [waived: {', '.join(covering_waivers)}]",
+        )
+    return Diagnostic(severity="warning", code=g.clone_type, message=message)
+
+
+# frob:ticket T-0375
+def _dup_summary(n_unaccounted: int, n_waived: int) -> str:
+    """`"N duplicate groups (M waived)"` -- the headline counts only
+    unaccounted groups, mirroring the gates stage's error/warning/waived
+    split (T-0375); waived groups stay visible via the note diagnostics,
+    never hidden."""
+    if not n_unaccounted and not n_waived:
+        return "no duplicates"
+    base = f"{n_unaccounted} duplicate group{'s' if n_unaccounted != 1 else ''}"
+    if n_waived:
+        base += f" ({n_waived} waived)"
+    return base
+
+
+# frob:doc docs/modules/dup.md#check-stage-summary-is-waiver-aware-t-0375
 def _run_dup(root: Path) -> ToolResult:
-    """Structural duplicate-block detection."""
+    """Structural duplicate-block detection, waiver-aware (T-0375): a group
+    is excluded from the headline count only when EVERY one of its
+    fragments' symrefs is covered by a DUP001/DUP002 `frob:waive`
+    (`_dup_group_covering_waivers` -- full-coverage, never a partial-overlap
+    match), and even then it stays listed as a `note` diagnostic, never
+    hidden -- the same honesty the gates stage already gives its `N waived`
+    term."""
     from frob.dup import find_duplicates
 
-    result = find_duplicates(root if root.is_dir() else root.parent)
+    scan = root if root.is_dir() else root.parent
+    result = find_duplicates(scan)
+    waived_symrefs = _dup_waived_symrefs(
+        (*_waive_edges_for_rule(root, "DUP001"), *_waive_edges_for_rule(root, "DUP002"))
+    )
     diags: list[Diagnostic] = []
+    n_waived = 0
     for g in result.groups:
-        locs = ", ".join(f"{f.file}:{f.start_line}" for f in g.fragments)
-        diags.append(
-            Diagnostic(
-                severity="warning",
-                code=g.clone_type,
-                message=f"{g.size_lines}-line duplicate block at {locs}",
-            )
-        )
-    n = len(result.groups)
+        covering = _dup_group_covering_waivers(g, waived_symrefs)
+        diags.append(_dup_group_diag(g, covering_waivers=covering))
+        if covering:
+            n_waived += 1
+    n_unaccounted = len(result.groups) - n_waived
     return ToolResult(
         tool="frob-dup",
         exit_code=0,
         diagnostics=diags,
-        summary=f"{n} duplicate group{'s' if n != 1 else ''}" if n else "no duplicates",
+        summary=_dup_summary(n_unaccounted, n_waived),
     )
 
 
-def _arch_summary(suggestions) -> str:  # noqa: ANN001
-    """`"N warnings, M suggestions"` (or "no issues") over arch suggestions."""
-    n_warn = sum(1 for s in suggestions if s.severity == "warning")
-    n_sugg = len(suggestions) - n_warn
+def _arch_summary(n_warn_unaccounted: int, n_warn_waived: int, n_sugg: int) -> str:
+    """`"N warnings (M waived), K suggestions"` (or "no issues") over arch
+    findings -- T-0375: the warning headline counts only ARCH001
+    long-functions NOT covered by a matching `frob:waive ARCH001`; waived
+    ones stay visible as `note` diagnostics. Suggestion-severity categories
+    are never waivable (T-0101's unwaivable channel) so they pass through
+    unchanged."""
     parts = []
-    if n_warn:
-        parts.append(f"{n_warn} warning{'s' if n_warn != 1 else ''}")
+    if n_warn_unaccounted or n_warn_waived:
+        n_word = "warning" if n_warn_unaccounted == 1 else "warnings"
+        warn_part = f"{n_warn_unaccounted} {n_word}"
+        if n_warn_waived:
+            warn_part += f" ({n_warn_waived} waived)"
+        parts.append(warn_part)
     if n_sugg:
         parts.append(f"{n_sugg} suggestion{'s' if n_sugg != 1 else ''}")
     return ", ".join(parts) if parts else "no issues"
 
 
+# frob:ticket T-0375
+def _arch001_violations(suggestions) -> tuple[Violation, ...]:  # noqa: ANN001
+    """The ARCH001 `Violation`s `frob.gates._arch.arch_gate` would build from
+    `suggestions`, without re-running `analyze_project` a second time --
+    `_run_arch` already computed `suggestions` once; T-0375's waiver
+    cross-reference reuses them instead of paying for a duplicate arch pass."""
+    from frob.gates import Severity as GateSeverity
+    from frob.gates import Violation as GateViolation
+
+    return tuple(
+        GateViolation(
+            rule="ARCH001",
+            severity=GateSeverity.WARN,
+            file=s.file,
+            line=s.line or 0,
+            message=f"ARCH001: {s.message}",
+            symref=s.symref,
+            metric=s.metric,
+        )
+        for s in suggestions
+        if s.category == "long-function"
+    )
+
+
+# frob:ticket T-0375
+def _arch_long_function_waived_symrefs(root: Path, suggestions) -> set[str]:  # noqa: ANN001
+    """Symrefs of long-functions covered by a matching `frob:waive ARCH001
+    reason="..." [ceiling=N]`, matched via `frob.gates`' own waiver-matching
+    (`_apply_waivers`) over ARCH001 `Violation`s built from the already-
+    computed `suggestions` -- ceiling= honored, identical semantics to the
+    real gate, never a hand-rolled second matching rule that could drift
+    from it."""
+    from frob.gates import _apply_waivers
+
+    scan = (root if root.is_dir() else root.parent).resolve()
+    snapshot = _cached_snapshot(scan)
+    if snapshot is None:
+        return set()
+    violations = _arch001_violations(suggestions)
+    _kept, waived = _apply_waivers(violations, snapshot)
+    return {v.symref for v in waived if v.symref is not None}
+
+
+# frob:doc docs/modules/arch.md#check-stage-summary-is-waiver-aware-for-arch001-t-0375
+# frob:ticket T-0442
 def _run_arch(root: Path) -> ToolResult:
-    """frob's architectural analysis (long functions, god classes, etc.)."""
+    """frob's architectural analysis (long functions, god classes, etc.),
+    waiver-aware for ARCH001 long-functions (T-0375): a long-function
+    covered by a matching `frob:waive ARCH001` is excluded from the warning
+    headline but still listed (as a `note` diagnostic), never hidden. Every
+    other arch category stays on T-0101's unwaivable channel, unchanged.
+
+    T-0442: thresholds come from `frob.app.config.load_arch_config` (the
+    repo's `[arch]` frob.toml table, calibrated-default fallback), matching
+    `frob.gates._arch.arch_gate`'s T-0373 fix -- this tool-summary stage used
+    to silently fall back to `analyze_project`'s conservative keyword
+    defaults, so its suggestion counts could disagree with the ARCH001 gate
+    over the same code."""
+    from frob.app.config import load_arch_config
     from frob.arch import analyze_project
 
-    result = analyze_project(root if root.is_dir() else root.parent)
+    scan_root = root if root.is_dir() else root.parent
+    result = analyze_project(scan_root, **load_arch_config(scan_root))
+    waived_symrefs = _arch_long_function_waived_symrefs(root, result.suggestions)
     sev_map: dict[str, Severity] = {
         "warning": "warning",
         "suggestion": "note",
         "info": "info",
     }
-    diags = [
-        Diagnostic(
-            file=s.file,
-            line=s.line,
-            severity=sev_map.get(s.severity, "note"),
-            code=s.category,
-            message=s.message,
+    diags: list[Diagnostic] = []
+    n_warn_unaccounted = 0
+    n_warn_waived = 0
+    n_sugg = 0
+    for s in result.suggestions:
+        if s.severity == "warning" and s.symref in waived_symrefs:
+            diags.append(
+                Diagnostic(
+                    file=s.file,
+                    line=s.line,
+                    severity="note",
+                    code=s.category,
+                    message=f"{s.message}  [waived: {s.symref}]",
+                )
+            )
+            n_warn_waived += 1
+            continue
+        diags.append(
+            Diagnostic(
+                file=s.file,
+                line=s.line,
+                severity=sev_map.get(s.severity, "note"),
+                code=s.category,
+                message=s.message,
+            )
         )
-        for s in result.suggestions
-    ]
+        if s.severity == "warning":
+            n_warn_unaccounted += 1
+        else:
+            n_sugg += 1
     return ToolResult(
         tool="frob-arch",
         exit_code=0,
         diagnostics=diags,
-        summary=_arch_summary(result.suggestions),
+        summary=_arch_summary(n_warn_unaccounted, n_warn_waived, n_sugg),
     )
 
 
@@ -497,12 +714,19 @@ def _missing_exports(init_src: str, modules) -> list[str]:  # noqa: ANN001
 
 
 def _exports_for_package(init_file: Path, scan: Path) -> ToolResult | None:
-    """The un-exported-public-symbol ToolResult for one package, or None."""
+    """The un-exported-public-symbol ToolResult for one package, or None.
+
+    `tests/` (and any nested test package under it) is exempt (T-0362):
+    pytest test functions/classes are collected by pytest's own discovery,
+    never imported through a package `__init__.py` -- flagging every
+    `test_*`/`Test*` symbol as "should be exported" is a mis-scoped check
+    for a directory that isn't a public-API package at all.
+    """
     from frob.exports import exports_package
 
     pkg_dir = init_file.parent
     if any(
-        p.startswith(".") or p in {"__pycache__", ".venv", "build", "dist"}
+        p.startswith(".") or p in {"__pycache__", ".venv", "build", "dist", "tests"}
         for p in pkg_dir.parts
     ):
         return None

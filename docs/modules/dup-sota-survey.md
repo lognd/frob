@@ -46,12 +46,14 @@ corrects two things the ticket's "known debt" summary gets stale on:
 - **R7 (bounded SMT)** exists (`probe_smt_equivalence`, opt-in `z3-solver`)
   for tiny straight-line int/bool functions, refusing (`Err`) outside its
   accepted node set -- no silent approximation.
-- **DUP001/DUP002 are pure rule functions but NOT wired into
-  `frob.gates.__init__`** per the doc's own admission -- gate integration
-  is explicitly out of scope of the ticket that built the rungs. This
-  matters for every ADOPT verdict below: today, *nothing* in `frob.dup`
-  actually blocks a build. `frob check`'s dup stage runs the legacy
-  Type-1/2 scanner (`frob.dup._legacy` / `find_duplicates`) only.
+- **DUP001/DUP002 are wired into `frob.gates.__init__`** as `dup_gate`
+  (T-0191), which runs the real `find_clones` pipeline and is registered
+  as the opt-in `"clones"` gate. It stays off by default -- `[dup].enforce
+  = true` in `frob.toml` turns it on -- and is silent (skipped, logged at
+  debug) until a repo opts in, or if frob-core is not installed. When
+  enforce is off (the default), `frob check`'s dup stage still runs only
+  the legacy Type-1/2 scanner (`frob.dup._legacy` / `find_duplicates`);
+  once enforce is on, DUP001/DUP002 also fire.
 - Caching is content-addressed (digest-keyed) with LRU eviction on
   pairwise verdicts (`.frob/dup.db`, `frob.dup._cache`); a real, working
   incrementality layer any new rung must plug into rather than duplicate.
@@ -81,9 +83,10 @@ Meta/testing: 21 exhaustiveness-matrix design for detectors (frob-specific,
 in the mold of T-0158).
 Process items required by the brief: 22 ranked upgrade shortlist, 23
 reverse-templating design sketch, 24 meta-test design, 25 proposed ticket
-tree, 26 gate-integration gap noted in section 0 (DUP001/002 unwired) --
-carried as its own disposition since it blocks every other ADOPT from
-having teeth.
+tree, 26 gate-integration status noted in section 0 (DUP001/002 wired as
+the opt-in `dup_gate`, off by default via `[dup].enforce`) -- carried as
+its own disposition since default-off enforcement means most ADOPT
+verdicts still lack teeth in a repo that has not opted in.
 
 ## 2. Per-technique disposition
 

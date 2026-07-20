@@ -90,7 +90,7 @@ class TestRegionKernelFindsPartialClone:
         self, snapshot
     ):
         # frob:tests src/frob/dup/_pipeline.py::_region_groups kind="unit"
-        # frob:tests src/frob/dup/_core.py::exact_regions kind="unit"
+        # frob:tests src/frob/dup/_core.py::_exact_regions kind="unit"
         report = find_clones(
             snapshot,
             DupConfig(min_tokens=5, region_kernel_enabled=True, region_min_tokens=15),

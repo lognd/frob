@@ -2,7 +2,7 @@
 
 Every grammar tree-sitter hands back is formatting-insensitive at the leaf
 level: whitespace is never itself a node. That single property is what lets
-``leaf_tokens`` double as the entire "normalized token" story for the sig/
+``_leaf_tokens`` double as the entire "normalized token" story for the sig/
 body digest contract in docs/modules/graph.md -- no per-language pretty-printer is
 needed, only a byte-range exclusion list (a symbol's own body, a docstring
 statement) and a comment-type-name set. Keeping that trick here, instead of
@@ -29,7 +29,7 @@ _MAX_EXPORT_NODES = 4000
 
 
 # frob:doc docs/modules/lang.md#primitives
-def collapse_ws(text: str) -> str:
+def _collapse_ws(text: str) -> str:
     """Whitespace-collapse doc text so reflow never changes ``doc_text``."""
     return " ".join(text.split())
 
@@ -50,7 +50,7 @@ def _in_skip_range(node: Node, skip_ranges: tuple[ByteRange, ...]) -> bool:
 
 
 # frob:doc docs/modules/lang.md#primitives
-def leaf_tokens(
+def _leaf_tokens(
     node: Node,
     comment_types: frozenset[str],
     skip_ranges: tuple[ByteRange, ...] = (),
@@ -82,7 +82,7 @@ def leaf_tokens(
 
 
 # frob:doc docs/modules/lang.md#primitives
-def strip_comment_delims(raw: str) -> str:
+def _strip_comment_delims(raw: str) -> str:
     """Strip `//`, `///`, `/* */`, `/** */`, and leading `*` from one comment."""
     text = raw.strip()
     if text.startswith("/**"):
@@ -109,7 +109,7 @@ def strip_comment_delims(raw: str) -> str:
 
 
 # frob:doc docs/modules/lang.md#primitives
-def leading_doc_comment(
+def _leading_doc_comment(
     node: Node,
     comment_types: frozenset[str],
 ) -> str:
@@ -133,15 +133,15 @@ def leading_doc_comment(
             break
         if sib.end_point[0] + 1 < expected_end_row:
             break
-        collected.append(strip_comment_delims(child_text(sib)))
+        collected.append(_strip_comment_delims(child_text(sib)))
         expected_end_row = sib.start_point[0]
         i -= 1
     collected.reverse()
-    return collapse_ws(" ".join(collected))
+    return _collapse_ws(" ".join(collected))
 
 
 # frob:doc docs/modules/lang.md#primitives
-def span_of(node: Node) -> tuple[int, int]:
+def _span_of(node: Node) -> tuple[int, int]:
     """1-based inclusive (start_line, end_line) span for `node`.
 
     Some tokens (e.g. a rust `///` line comment whose text includes the
@@ -179,7 +179,7 @@ def export_tree(node: Node, comment_types: frozenset[str]) -> TreeNode:
 
     Leaf nodes label themselves with their decoded text (so `x` and `y`
     are distinguishable leaves, matching the rename-cost story in
-    `frob-core`'s `apted_similarity`); internal nodes label themselves
+    `frob-core`'s `_apted_similarity`); internal nodes label themselves
     with their grammar type (`if_statement`, `binary_operator`, ...), which
     is what makes the tree comparable across alpha-renamed-but-
     structurally-identical bodies. Truncates past `_MAX_EXPORT_NODES` total
@@ -189,28 +189,30 @@ def export_tree(node: Node, comment_types: frozenset[str]) -> TreeNode:
     budget = [_MAX_EXPORT_NODES]
 
     def build(n: Node) -> TreeNode:
+        span = (n.start_byte, n.end_byte)
         if budget[0] <= 0:
-            return TreeNode(label=n.type)
+            return TreeNode(label=n.type, span=span)
         budget[0] -= 1
         kids = [c for c in n.children if c.type not in comment_types]
         if not kids:
             return _leaf_tree_node(n)
-        return TreeNode(label=n.type, children=tuple(build(c) for c in kids))
+        return TreeNode(label=n.type, span=span, children=tuple(build(c) for c in kids))
 
     return build(node)
 
 
 def _leaf_tree_node(n: Node) -> TreeNode:
     """A `TreeNode` for a childless node: its decoded text, else its grammar type."""
+    span = (n.start_byte, n.end_byte)
     if n.child_count == 0:
         text = n.text
         label = text.decode("utf-8", errors="replace") if text else n.type
-        return TreeNode(label=label)
-    return TreeNode(label=n.type)
+        return TreeNode(label=label, span=span)
+    return TreeNode(label=n.type, span=span)
 
 
 # frob:doc docs/modules/lang.md#primitives
-def find_enclosing_symbol(
+def _find_enclosing_symbol(
     span: tuple[int, int], symbols: tuple[RawSymbol, ...]
 ) -> str | None:
     """Deepest (narrowest-span) symbol whose span fully contains `span`.
@@ -230,26 +232,45 @@ def find_enclosing_symbol(
     return best.qualname if best is not None else None
 
 
+# Lines a symbol's start may sit past a directive block's end line and
+# still count as "following" (T-0402 audit finding G4, docs/audits/graph.md).
+# A single blank line between the block and the `def` is the common case
+# this window must always cover; widened from 2 to 3 so a SECOND blank
+# line (or one blank line plus a decorator whose node start is offset by
+# one) does not silently drop the def out of the window and rebind the
+# directive onto a bare enclosing/module fallback instead (dsl.py's
+# consumer trusts whatever this returns -- see G4 for the full
+# blast-radius). Still a fixed heuristic, not a real "same paragraph"
+# check: `frob.graph.dsl` is the right place to additionally flag (as a
+# `MalformedDirective`) a directive that resolves to no following/enclosing
+# symbol at all for a verb that semantically requires one; that consumer
+# lives outside this package's scope.
+_FOLLOWING_SYMBOL_WINDOW = 3
+
+
 # frob:doc docs/modules/lang.md#primitives
-def find_following_symbol(
+# frob:ticket T-0434
+def _find_following_symbol(
     span: tuple[int, int], symbols: tuple[RawSymbol, ...]
 ) -> str | None:
-    """Symbol starting within 2 lines after `span`'s end line, earliest first.
+    """Symbol starting within `_FOLLOWING_SYMBOL_WINDOW` lines after `span`'s end.
+
+    Earliest match wins.
 
     Shared by the tree-sitter and strata comment walks -- see
-    `find_enclosing_symbol`. `span[1]` need not be the comment's own end
+    `_find_enclosing_symbol`. `span[1]` need not be the comment's own end
     line: `frob.lang._extract._extract_comments` passes a stacked-comment
     *block*'s end line instead (T-0100 -- `_block_ends`/`_is_trailing_comment`
     there), so a directive several lines above a `def` still resolves as
     long as every intervening line is either another comment in the same
-    contiguous block or a single blank line. This function only ever
-    compares the span tuple it is given; the block-vs-own-line distinction
-    is entirely the caller's concern.
+    contiguous block or up to `_FOLLOWING_SYMBOL_WINDOW` blank lines. This
+    function only ever compares the span tuple it is given; the
+    block-vs-own-line distinction is entirely the caller's concern.
     """
     end = span[1]
     best: RawSymbol | None = None
     for sym in symbols:
-        if end < sym.span[0] <= end + 2:
+        if end < sym.span[0] <= end + _FOLLOWING_SYMBOL_WINDOW:
             if best is None or sym.span[0] < best.span[0]:
                 best = sym
     return best.qualname if best is not None else None
@@ -257,7 +278,7 @@ def find_following_symbol(
 
 # frob:doc docs/modules/lang.md#primitives
 def flatten_tree(node: TreeNode) -> tuple[list[str], list[int]]:
-    """`(labels, parents)` flat arrays for `frob_core.apted_similarity`.
+    """`(labels, parents)` flat arrays for `frob_core._apted_similarity`.
 
     Preorder walk; `parents[i]` is the index of node `i`'s parent, `-1` for
     the root -- the exact shape `frob-core`'s Zhang-Shasha kernel expects

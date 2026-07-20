@@ -335,3 +335,94 @@ class TestRealLedgerIntegrity:
             f"duplicate ids in tickets-archive.md: {archive_dups}"
         )
         assert cross == [], f"ids present in BOTH active and archive: {cross}"
+
+
+class TestDefaultBranchEdgeCases:
+    """`_default_branch`/`on_default_branch` edge cases beyond the
+    two-worktree happy path above: remote symbolic-ref resolution, the
+    no-main/no-master fallback, detached HEAD, and non-git checkouts."""
+
+    def test_remote_symbolic_ref_wins_over_local_main(self, tmp_path: Path) -> None:
+        """A repo whose `origin/HEAD` symbolic-ref points elsewhere than
+        `main`/`master` uses that ref's branch name as the default --
+        proves `_default_branch`'s remote-symbolic-ref branch."""
+        # frob:tests src/frob/tickets/_provisional.py::on_default_branch kind="unit"
+        upstream = tmp_path / "upstream"
+        _git_init(upstream, branch="trunk")
+        atomic_write(ledger_path(upstream), "# Tickets\n\n")
+        _commit_all(upstream, "init")
+
+        clone = tmp_path / "clone"
+        _run(["git", "clone", "-q", str(upstream), str(clone)], tmp_path)
+        _run(
+            [
+                "git",
+                "-C",
+                str(clone),
+                "remote",
+                "set-head",
+                "origin",
+                "trunk",
+            ],
+            tmp_path,
+        )
+        _run(["git", "-C", str(clone), "checkout", "-q", "-b", "feature"], tmp_path)
+
+        assert on_default_branch(clone) is False
+        _run(["git", "-C", str(clone), "checkout", "-q", "trunk"], tmp_path)
+        assert on_default_branch(clone) is True
+
+    def test_no_remote_falls_back_to_local_master(self, tmp_path: Path) -> None:
+        """No remote and no `main` branch: `master` is used as the default
+        when it exists -- proves `_default_branch`'s master-fallback loop
+        iteration."""
+        repo = tmp_path / "repo"
+        _git_init(repo, branch="master")
+        atomic_write(ledger_path(repo), "# Tickets\n\n")
+        _commit_all(repo, "init")
+        _run(["git", "-C", str(repo), "checkout", "-q", "-b", "feature"], tmp_path)
+
+        assert on_default_branch(repo) is False
+        _run(["git", "-C", str(repo), "checkout", "-q", "master"], tmp_path)
+        assert on_default_branch(repo) is True
+
+    def test_no_remote_no_main_no_master_falls_back_to_main_literal(
+        self, tmp_path: Path
+    ) -> None:
+        """No remote, no `main`, no `master` branch anywhere: `_default_branch`
+        falls back to the literal `"main"` -- proves the final return."""
+        repo = tmp_path / "repo"
+        _git_init(repo, branch="trunk")
+        atomic_write(ledger_path(repo), "# Tickets\n\n")
+        _commit_all(repo, "init")
+
+        # Neither "main" nor "master" exist and "trunk" != "main", so this
+        # checkout is never considered on its own default branch.
+        assert on_default_branch(repo) is False
+
+    def test_detached_head_is_treated_as_default(self, tmp_path: Path) -> None:
+        """A detached HEAD (`git rev-parse --abbrev-ref HEAD` == "HEAD")
+        resolves to True -- proves `on_default_branch`'s detached-HEAD
+        branch."""
+        repo = tmp_path / "repo"
+        _git_init(repo)
+        atomic_write(ledger_path(repo), "# Tickets\n\n")
+        _commit_all(repo, "init")
+        sha = subprocess.run(
+            ["git", "-C", str(repo), "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        _run(["git", "-C", str(repo), "checkout", "-q", sha], tmp_path)
+
+        assert on_default_branch(repo) is True
+
+    def test_non_git_directory_is_treated_as_default(self, tmp_path: Path) -> None:
+        """A checkout with no `.git` at all: `current_branch` errs, so
+        `on_default_branch` conservatively assumes default -- proves the
+        `branch.is_err` branch."""
+        # frob:tests src/frob/tickets/_provisional.py::on_default_branch kind="unit"
+        not_a_repo = tmp_path / "not-a-repo"
+        not_a_repo.mkdir()
+        assert on_default_branch(not_a_repo) is True

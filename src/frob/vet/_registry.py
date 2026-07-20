@@ -33,7 +33,7 @@ _CRATES_HOST = "https://crates.io"
 
 
 # frob:doc docs/modules/vet.md#public-api
-class RegistryResult(BaseModel):
+class _RegistryResult(BaseModel):
     """Outcome of a publish-date lookup: `ok=False` means "could not verify"."""
 
     model_config = ConfigDict(frozen=True)
@@ -48,6 +48,9 @@ def _cache_key(ecosystem: str, name: str, version: str) -> str:
     return f"{ecosystem}:{name}:{version}"
 
 
+# frob:waive DUP001 reason="documented deliberate split: same shape as \
+# _nvd.py::_cache_get, kept separate since the two caches key different \
+# id spaces and expire on different TTLs (see _nvd.py's docstring)"
 def _cache_get(db_path: Path, key: str) -> str | None:
     """Cached JSON body for `key`, or `None` on miss/expiry/unreadable db."""
     if not db_path.exists():
@@ -73,6 +76,9 @@ def _cache_get(db_path: Path, key: str) -> str | None:
     return value
 
 
+# frob:waive DUP001 reason="mirrors _nvd.py::_cache_set; the two caches \
+# are independent artifacts with different TTLs, not worth forcing into \
+# one abstraction"
 def _cache_set(db_path: Path, key: str, value: str) -> None:
     """Best-effort cache write; failures are logged, never raised."""
     try:
@@ -151,21 +157,21 @@ def _parse_published(
 
 def _result_from_cached(
     ecosystem: str, name: str, version: str, key: str, cached: str
-) -> RegistryResult:
-    """Build a `RegistryResult` from an already-cached registry JSON body."""
+) -> _RegistryResult:
+    """Build a `_RegistryResult` from an already-cached registry JSON body."""
     try:
         resolved, published = _parse_published(ecosystem, name, version, cached)
     except (json.JSONDecodeError, ValueError) as exc:
         _log.warning("vet: cached body for %s unparseable: %s", key, exc)
-        return RegistryResult(ok=False, note="cached response unparseable")
+        return _RegistryResult(ok=False, note="cached response unparseable")
     _log.info("vet: %s publish date from cache: %s", key, published)
-    return RegistryResult(ok=True, published_at=published, resolved_version=resolved)
+    return _RegistryResult(ok=True, published_at=published, resolved_version=resolved)
 
 
 # frob:boundary b_vet_endorse
 # This is the endorsement site for design/frob.strata's
 # `boundary b_vet_endorse endorse f_registry_fetch : foreign -> trusted`:
-# a raw network response is parsed/validated into a `RegistryResult` here,
+# a raw network response is parsed/validated into a `_RegistryResult` here,
 # and nothing downstream re-validates it -- delete this validation and the
 # model's `c_no_registry_ledger` noflow claim would (correctly) refute.
 def _result_from_network(
@@ -176,30 +182,30 @@ def _result_from_network(
     url: str,
     cache_path: Path,
     timeout_s: float,
-) -> RegistryResult:
+) -> _RegistryResult:
     """Fetch, parse, and (for pinned versions) cache a registry publish date."""
     try:
         with urllib.request.urlopen(url, timeout=timeout_s) as resp:  # noqa: S310
             body = resp.read().decode("utf-8")
     except (urllib.error.URLError, TimeoutError, OSError) as exc:
         _log.warning("vet: registry query failed for %s: %s", key, exc)
-        return RegistryResult(ok=False, note=f"could not verify publish date: {exc}")
+        return _RegistryResult(ok=False, note=f"could not verify publish date: {exc}")
 
     try:
         resolved, published = _parse_published(ecosystem, name, version, body)
     except (json.JSONDecodeError, ValueError) as exc:
         _log.warning("vet: response for %s unparseable: %s", key, exc)
-        return RegistryResult(ok=False, note="could not verify publish date")
+        return _RegistryResult(ok=False, note="could not verify publish date")
 
     if version != _LATEST:
         _cache_set(cache_path, key, body)
     _log.info("vet: %s publish date: %s (resolved=%s)", key, published, resolved)
-    return RegistryResult(ok=True, published_at=published, resolved_version=resolved)
+    return _RegistryResult(ok=True, published_at=published, resolved_version=resolved)
 
 
 # frob:doc docs/modules/vet.md#public-api
-# frob:waive TEST005 reason="fetch_publish_date 87.5% branch cover, debt T-0160"
-def fetch_publish_date(
+# frob:waive TEST005 reason="_fetch_publish_date 87.5% branch cover, debt T-0160"
+def _fetch_publish_date(
     ecosystem: str,
     name: str,
     version: str,
@@ -207,7 +213,7 @@ def fetch_publish_date(
     cache_path: Path,
     base_url: str | None = None,
     timeout_s: float = _TIMEOUT_S,
-) -> RegistryResult:
+) -> _RegistryResult:
     """The publish timestamp for `name@version`; `ok=False` on any lookup failure."""
     key = _cache_key(ecosystem, name, version)
     cached = None if version == _LATEST else _cache_get(cache_path, key)
@@ -224,4 +230,4 @@ def fetch_publish_date(
 # frob:doc docs/modules/vet.md#public-api
 LATEST_VERSION = _LATEST
 
-__all__ = ["LATEST_VERSION", "RegistryResult", "fetch_publish_date"]
+__all__ = ["LATEST_VERSION", "_RegistryResult", "_fetch_publish_date"]

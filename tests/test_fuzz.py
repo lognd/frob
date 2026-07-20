@@ -315,6 +315,65 @@ class TestResolveParamTypes:
         types = resolve_param_types(tmp_path, "src/fuzz_fixture_mod.py::add")
         assert types == (int, int)
 
+    def test_strips_self_param_on_method(self, tmp_path: Path) -> None:
+        """A bound method's `self` parameter is excluded from the returned
+        param types, matching FUZZ002's non-self/cls contract."""
+        _write(
+            tmp_path,
+            "src/fuzz_fixture_method.py",
+            "class Widget:\n"
+            "    def resize(self, width: int, height: int) -> None:\n"
+            "        pass\n",
+        )
+        types = resolve_param_types(
+            tmp_path, "src/fuzz_fixture_method.py::Widget.resize"
+        )
+        assert types == (int, int)
+
+    def test_nested_module_path_derives_dotted_name(self, tmp_path: Path) -> None:
+        """A `src/pkg/mod.py` path derives `pkg.mod`, not just the file
+        stem -- proves `_module_name`'s multi-part branch."""
+        _write(tmp_path, "src/pkg/__init__.py", "")
+        _write(
+            tmp_path,
+            "src/pkg/mod.py",
+            "def double(x: int) -> int:\n    return x * 2\n",
+        )
+        types = resolve_param_types(tmp_path, "src/pkg/mod.py::double")
+        assert types == (int,)
+
+    # frob:waive DUP001 reason="parallel test methods within test_fuzz.py \
+    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
+    def test_unresolvable_qualname_returns_none(self, tmp_path: Path) -> None:
+        """A qualname that does not resolve to any attribute on the
+        imported module is `None`, not a crash -- proves `_resolve_attr`'s
+        miss branch via `_resolve_callable`."""
+        _write(
+            tmp_path,
+            "src/fuzz_fixture_missing.py",
+            "def real() -> None:\n    pass\n",
+        )
+        assert (
+            resolve_param_types(tmp_path, "src/fuzz_fixture_missing.py::not_there")
+            is None
+        )
+
+    # frob:waive DUP001 reason="parallel test methods within test_fuzz.py \
+    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
+    def test_non_callable_attribute_returns_none(self, tmp_path: Path) -> None:
+        """A qualname resolving to a non-callable module attribute is
+        `None` -- proves `_resolve_callable`'s not-callable branch."""
+        _write(
+            tmp_path,
+            "src/fuzz_fixture_value.py",
+            "CONSTANT = 42\n",
+        )
+        assert (
+            resolve_param_types(tmp_path, "src/fuzz_fixture_value.py::CONSTANT") is None
+        )
+
 
 # ---------------------------------------------------------------------------
 # run_fuzz: the derived-model round-trip execution harness
@@ -347,6 +406,91 @@ class TestRunFuzz:
         # Either it resolves via st.from_type(object) or it reports no generator;
         # the important contract is that run_fuzz never raises either way.
         assert results[0].examples >= 0
+
+    def test_no_generator_target_short_circuits_without_hypothesis(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """`_run_one`'s no-generator branch: `resolve` failing means
+        `run_fuzz` reports `falsified="no generator"` without ever driving
+        hypothesis -- proves the resolve-fails-first path independent of
+        whether hypothesis itself is installed."""
+        # frob:tests src/frob/fuzz/_run.py::run_fuzz kind="unit"
+        from typani import Err
+
+        import frob.fuzz._run as run_mod
+
+        class _Unresolvable(BaseModel):
+            model_config = ConfigDict(frozen=True)
+
+            value: int
+
+        monkeypatch.setattr(run_mod, "HYPOTHESIS_AVAILABLE", True)
+        monkeypatch.setattr(
+            run_mod,
+            "resolve",
+            lambda tp: Err(type("E", (), {"NoGenerator": "no generator"})()),
+        )
+        results = run_fuzz((_Unresolvable,), budget_s=1)
+        assert len(results) == 1
+        assert results[0].examples == 0
+        assert results[0].falsified == "no generator"
+
+    def test_digests_map_is_stamped_onto_matching_ref(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """`digests` keyed by `_ref_of(tp)` is threaded onto the produced
+        `FuzzResult.body_digest`."""
+        from typani import Err
+
+        import frob.fuzz._run as run_mod
+
+        class _Unresolvable(BaseModel):
+            model_config = ConfigDict(frozen=True)
+
+            value: int
+
+        monkeypatch.setattr(run_mod, "HYPOTHESIS_AVAILABLE", True)
+        monkeypatch.setattr(
+            run_mod,
+            "resolve",
+            lambda tp: Err(type("E", (), {"NoGenerator": "no generator"})()),
+        )
+        ref = run_mod._ref_of(_Unresolvable)
+        results = run_fuzz((_Unresolvable,), budget_s=1, digests={ref: "digest123"})
+        assert results[0].body_digest == "digest123"
+
+    def test_hypothesis_unavailable_returns_empty_and_logs(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """`run_fuzz` returns `()` with no crash when hypothesis is not
+        installed -- proves the `HYPOTHESIS_AVAILABLE`-false guard."""
+        import frob.fuzz._run as run_mod
+
+        monkeypatch.setattr(run_mod, "HYPOTHESIS_AVAILABLE", False)
+        assert run_fuzz((_Even,), budget_s=1) == ()
+
+    @needs_hypothesis
+    def test_unsatisfiable_strategy_reports_rejection_rate(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """`_run_property_test`'s `Unsatisfiable` branch: a strategy that
+        can never satisfy the property reports a rejection-rate reason
+        rather than raising."""
+        # frob:tests src/frob/fuzz/_run.py::run_fuzz kind="unit"
+        import hypothesis.strategies as st
+
+        import frob.fuzz._run as run_mod
+
+        always_reject = st.integers().filter(lambda _: False)
+        monkeypatch.setattr(
+            run_mod,
+            "resolve",
+            lambda tp: __import__("typani").Ok(always_reject),
+        )
+        results = run_fuzz((_Even,), budget_s=1, policy=FuzzPolicy(budget_s=1))
+        assert len(results) == 1
+        assert results[0].falsified is not None
+        assert "rejection rate" in results[0].falsified
 
 
 # ---------------------------------------------------------------------------

@@ -23,12 +23,18 @@ from typani.result import Result
 from frob.gitio import GitError, ProcResult, run_argv
 from frob.logging import get_logger
 from frob.testing._models import (
+    NativeSpec,
     RunnerOutcome,
     RunnerSpec,
     SelectionReport,
     TestRunReport,
 )
 from frob.testing._select import ALL_SENTINEL
+
+# T-0242: the `strata` language never needs a `[[test.runner]]` entry --
+# `_run_one_language_selection` invokes `frob sys audit` natively for it
+# (see `_run_strata_language`) instead of falling into `NoRunner`.
+_STRATA_LANGUAGE = "strata"
 
 _log = get_logger(__name__)
 
@@ -67,6 +73,10 @@ class TestingError(ErrorSet):
     UnroutedItem = (
         "A selected item's file does not fall under exactly one same-language "
         "[[test.runner]] cwd (T-0128: multiple runners per language route by cwd)"
+    )
+    NativeAuditFailed = (
+        "The native strata sys-audit invocation for a touched .strata "
+        "selection could not load or evaluate the design model (T-0242)"
     )
 
 
@@ -138,6 +148,52 @@ def load_runners(root: Path) -> Result[tuple[RunnerSpec, ...], TestingError]:
             return Err(TestingError.BadRunnerSpec)
         specs.append(spec)
     _log.info("load_runners: %d runner(s) loaded from %s", len(specs), toml_path)
+    return Ok(tuple(specs))
+
+
+def _parse_native_entry(entry: dict) -> NativeSpec | None:
+    """One `[[native]]` table as a `NativeSpec`, or `None` if malformed."""
+    try:
+        name = entry["name"]
+        build_cmd = entry["build_cmd"]
+    except KeyError as exc:
+        _log.error("load_natives: native entry missing field %s", exc)
+        return None
+    return NativeSpec(
+        name=name, build_cmd=build_cmd, language=entry.get("language", "")
+    )
+
+
+# frob:doc docs/modules/testing.md#public-api
+def load_natives(root: Path) -> Result[tuple[NativeSpec, ...], TestingError]:
+    """Parse `frob.toml`'s `[[native]]` entries (T-0333); missing file/table
+    is `Ok(())`. Each entry declares a compiled extension module the suite
+    `importorskip`-gates on plus its build command, so collection can
+    fingerprint its build state and the coverage gate can name the real
+    remedy when it is not built."""
+    toml_path = root / "frob.toml"
+    if not toml_path.exists():
+        _log.info("load_natives: no frob.toml at %s", toml_path)
+        return Ok(())
+    try:
+        with toml_path.open("rb") as f:
+            doc = tomllib.load(f)
+    except (OSError, ValueError) as exc:
+        _log.error("load_natives: could not parse %s: %s", toml_path, exc)
+        return Err(TestingError.BadRunnerSpec)
+
+    entries = doc.get("native", [])
+    if not entries:
+        _log.info("load_natives: no [[native]] entries in %s", toml_path)
+        return Ok(())
+
+    specs: list[NativeSpec] = []
+    for entry in entries:
+        spec = _parse_native_entry(entry)
+        if spec is None:
+            return Err(TestingError.BadRunnerSpec)
+        specs.append(spec)
+    _log.info("load_natives: %d native(s) loaded from %s", len(specs), toml_path)
     return Ok(tuple(specs))
 
 
@@ -312,6 +368,7 @@ def _env_overlay(overlay: Mapping[str, str]) -> Iterator[None]:
     (shared by the cargo runner here and `frob.testing._collect`'s cargo-list
     collector -- `frob.gitio.run_argv` has no `env=` parameter, so this is the
     one place process env gets patched for a subprocess call)."""
+    # frob:waive SEC110 reason="dynamic key, only allowlisted callers today"
     restore = {k: os.environ.get(k) for k in overlay}
     os.environ.update(overlay)
     try:
@@ -321,6 +378,7 @@ def _env_overlay(overlay: Mapping[str, str]) -> Iterator[None]:
             if value is None:
                 os.environ.pop(key, None)
             else:
+                # frob:waive SEC110 reason="restores a prior value by key, no new read"
                 os.environ[key] = value
 
 
@@ -459,6 +517,46 @@ def run_selected(
     return Ok(TestRunReport(selection=selection, outcomes=tuple(outcomes), ok=ok))
 
 
+def _run_strata_language(root: Path) -> Result[list[RunnerOutcome], TestingError]:
+    """Invoke `frob sys audit` natively for a touched `.strata` selection
+    (T-0242): zero-config, no `[[test.runner]]` entry, no dummy `{ids}`
+    placeholder (`frob.strata.run_native_sys_audit` takes no per-item ids
+    at all -- it audits the whole merged design model). `items` itself is
+    unused: exhaustiveness is a whole-model property, so which particular
+    `.strata` file triggered selection does not narrow what gets checked,
+    matching `frob sys audit`'s own whole-design-dir scope. Imported
+    lazily, inside the call, not at module scope: `frob.strata` pulls in
+    `frob.vet` -> `frob.gates`, and `frob.gates` itself imports
+    `frob.testing` at module scope (`CollectedTests`/`collect_python_tests`
+    /`collect_rust_tests`) -- a top-level `frob.testing -> frob.strata`
+    import would close that cycle and break every import of this
+    package."""
+    from frob.strata import run_native_sys_audit
+
+    start = time.monotonic()
+    audited = run_native_sys_audit(root)
+    duration = time.monotonic() - start
+    if audited.is_err:
+        _log.error(
+            "run_selected: native strata sys audit failed: %s", audited.danger_err
+        )
+        return Err(TestingError.NativeAuditFailed)
+    outcome = audited.danger_ok
+    _log.info("run_selected: strata native sys audit proved=%s", outcome.proved)
+    return Ok(
+        [
+            RunnerOutcome(
+                language=_STRATA_LANGUAGE,
+                argv=("<native>", "frob", "sys", "audit"),
+                exit_code=0 if outcome.proved else 1,
+                duration_s=duration,
+                stdout_tail=_excerpt(outcome.summary),
+                stderr_tail="",
+            )
+        ]
+    )
+
+
 def _run_one_language_selection(
     language: str,
     items: tuple[str, ...],
@@ -466,7 +564,11 @@ def _run_one_language_selection(
     root: Path,
 ) -> Result[list[RunnerOutcome], TestingError]:
     """Resolve `language`'s runner specs and run its selected `items`, or
-    `Err(NoRunner)` if no `[[test.runner]]` entry declares that language."""
+    `Err(NoRunner)` if no `[[test.runner]]` entry declares that language.
+    `strata` is special-cased (T-0242): it never needs a `[[test.runner]]`
+    entry -- `_run_strata_language` invokes `frob sys audit` natively."""
+    if language == _STRATA_LANGUAGE:
+        return _run_strata_language(root)
     specs = runners_by_lang.get(language)
     if not specs:
         _log.error(

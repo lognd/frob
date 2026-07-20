@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import logging
 from datetime import date
 from pathlib import Path
 
@@ -24,10 +25,11 @@ from frob.tickets import (
     load_queue,
     new_ticket,
     record_failure,
+    scope_matches,
     transition,
     validate_evidence,
 )
-from frob.tickets._store import serialize_ticket
+from frob.tickets._store import _serialize_ticket
 
 
 def _ticket(
@@ -60,7 +62,7 @@ def _write(root: Path, ticket: Ticket, slug: str = "sample-ticket") -> Path:
     tickets_dir = root / "tickets"
     tickets_dir.mkdir(parents=True, exist_ok=True)
     path = tickets_dir / f"{ticket.id}-{slug}.md"
-    path.write_text(serialize_ticket(ticket), encoding="utf-8")
+    path.write_text(_serialize_ticket(ticket), encoding="utf-8")
     return path
 
 
@@ -82,6 +84,7 @@ class TestQueue:
         result = load_queue(tmp_path)
         assert result.danger_ok.tickets["T-0001"].body == body
 
+    # invariant spec: [INV-004](invariants/INV-004.md)
     def test_malformed_frontmatter_is_err(self, tmp_path: Path) -> None:
         tickets_dir = tmp_path / "tickets"
         tickets_dir.mkdir()
@@ -213,8 +216,60 @@ class TestEvidenceValidation:
         assert result.is_err
         assert result.danger_err is TicketError.MalformedEvidence
 
+    def test_validate_evidence_normalizes_dot_separator_to_double_colon(
+        self,
+    ) -> None:
+        # frob:tests src/frob/tickets/__init__.py::normalize_evidence_separator kind="unit"
+        # T-0293: a hand-recorded `Class.method` (dot) evidence id never
+        # resolves against real pytest node ids (`Class::method`); it must
+        # be canonicalized at write time, not silently stored.
+        result = validate_evidence("tests/test_foo.py::TestFoo.test_a")
+        assert result.is_ok
+        assert result.danger_ok == "tests/test_foo.py::TestFoo::test_a"
+
+    def test_validate_evidence_leaves_correct_double_colon_form_unchanged(
+        self,
+    ) -> None:
+        # frob:tests tests/test_tickets.py::TestEvidenceValidation.test_validate_evidence_leaves_correct_double_colon_form_unchanged kind="unit"
+        result = validate_evidence("tests/test_foo.py::TestFoo::test_a")
+        assert result.is_ok
+        assert result.danger_ok == "tests/test_foo.py::TestFoo::test_a"
+
+    def test_validate_evidence_normalizes_dot_with_parametrized_suffix(self) -> None:
+        # frob:tests tests/test_tickets.py::TestEvidenceValidation.test_validate_evidence_normalizes_dot_with_parametrized_suffix kind="unit"
+        result = validate_evidence("tests/test_foo.py::TestFoo.test_a[x]")
+        assert result.is_ok
+        assert result.danger_ok == "tests/test_foo.py::TestFoo::test_a[x]"
+
+    def test_validate_evidence_ignores_plain_ids_without_double_colon(self) -> None:
+        # frob:tests tests/test_tickets.py::TestEvidenceValidation.test_validate_evidence_ignores_plain_ids_without_double_colon kind="unit"
+        # No `::` prefix at all (cmd: evidence, bare strings) -- nothing to
+        # normalize, must pass through untouched.
+        result = validate_evidence("cmd:sha256=deadbeefcafefeed")
+        assert result.is_ok
+        assert result.danger_ok == "cmd:sha256=deadbeefcafefeed"
+
+    def test_add_evidence_normalizes_dot_form_before_resolving_and_storing(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/__init__.py::add_evidence kind="unit"
+        # The normalized (::) form, not the original dot-form the caller
+        # passed in, must be what gets resolved against `collected` and
+        # what actually lands in the ticket's stored evidence.
+        _write(tmp_path, _ticket(ticket_id="T-0001"))
+        collected = frozenset({"tests/test_foo.py::TestFoo::test_a"})
+        result = add_evidence(
+            tmp_path,
+            "T-0001",
+            ("tests/test_foo.py::TestFoo.test_a",),
+            collected=collected,
+        )
+        assert result.is_ok, result.err
+        assert result.danger_ok.evidence == ("tests/test_foo.py::TestFoo::test_a",)
+
 
 class TestStateMachine:
+    # invariant spec: [INV-002](invariants/INV-002.md)
     @pytest.mark.parametrize(
         "start,to",
         [
@@ -562,6 +617,24 @@ class TestEvidence:
         queue = load_queue(tmp_path).danger_ok
         assert queue.tickets["T-0001"].evidence == ()
 
+    def test_unresolvable_id_warning_names_no_nonexistent_flag(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:ticket T-0445
+        # T-0292 sibling: the warning must NOT point at the nonexistent
+        # `frob test --collect` flag; it must name the real content-hash
+        # auto-refresh + cache-file fallback instead.
+        # frob:tests src/frob/tickets/__init__.py::add_evidence
+        _write(tmp_path, _ticket())
+        collected = frozenset({"tests/test_x.py::test_a"})
+        with caplog.at_level(logging.WARNING):
+            add_evidence(
+                tmp_path, "T-0001", ["tests/test_x.py::test_missing"], collected
+            )
+        messages = " ".join(r.message for r in caplog.records)
+        assert "frob test --collect to refresh" not in messages
+        assert "self-refreshes" in messages
+
     def test_mixed_batch_rejected_wholesale(self, tmp_path: Path) -> None:
         _write(tmp_path, _ticket())
         collected = frozenset({"tests/test_x.py::test_a"})
@@ -787,7 +860,7 @@ class TestSingleFileLedger:
         from frob.tickets import load_queue, migrate
         from frob.tickets._models import Origin as O
         from frob.tickets._models import Ticket, TicketKind, TicketState
-        from frob.tickets._store import serialize_ticket, tickets_dir
+        from frob.tickets._store import _serialize_ticket, tickets_dir
 
         d = tickets_dir(tmp_path)
         d.mkdir()
@@ -807,7 +880,7 @@ class TestSingleFileLedger:
                 body=f"body {title}\n",
             )
             (d / f"T-{n:04d}-{title}.md").write_text(
-                serialize_ticket(tk), encoding="utf-8"
+                _serialize_ticket(tk), encoding="utf-8"
             )
         n = migrate(tmp_path).danger_ok
         assert n == 2
@@ -822,7 +895,7 @@ class TestSingleFileLedger:
         from frob.tickets import load_queue
         from frob.tickets._models import Origin as O
         from frob.tickets._models import Ticket, TicketKind, TicketState
-        from frob.tickets._store import serialize_ticket, tickets_dir
+        from frob.tickets._store import _serialize_ticket, tickets_dir
 
         d = tickets_dir(tmp_path)
         d.mkdir()
@@ -840,7 +913,7 @@ class TestSingleFileLedger:
             attachments=(),
             body="x\n",
         )
-        (d / "T-0001-legacy.md").write_text(serialize_ticket(tk), encoding="utf-8")
+        (d / "T-0001-legacy.md").write_text(_serialize_ticket(tk), encoding="utf-8")
         q = load_queue(tmp_path).danger_ok
         assert q.tickets["T-0001"].title == "legacy"
 
@@ -949,3 +1022,50 @@ def test_tickets_queue_workflow_integration(tmp_path: Path) -> None:
 
     queue2 = load_queue(tmp_path).danger_ok
     assert dependent.id in {t.id for t in doable(queue2)}
+
+
+class TestScopeMatching:
+    """T-0241: comma-joined scope entries, dir/ prefixes, implicit ledger."""
+
+    def test_comma_joined_entry_splits(self) -> None:
+        # frob:tests src/frob/tickets/_models.py::_split_scope_entries
+        ticket = Ticket(
+            id="T-0001",
+            title="Sample",
+            state=TicketState.QUEUED,
+            kind=TicketKind.FEATURE,
+            origin=Origin.HUMAN,
+            created=date(2026, 1, 1),
+            scope=("src/a/**,src/b/**", "docs/x.md"),
+        )
+        assert ticket.scope == ("src/a/**", "src/b/**", "docs/x.md")
+
+    def test_comma_joined_entry_matches_split_paths(self) -> None:
+        # frob:tests src/frob/tickets/_models.py::scope_matches
+        assert scope_matches("src/a/f.py", ("src/a/**,src/b/**",))
+        assert scope_matches("src/b/f.py", ("src/a/**,src/b/**",))
+        assert not scope_matches("src/c/f.py", ("src/a/**,src/b/**",))
+
+    def test_dir_prefix_globs_recursively(self) -> None:
+        # frob:tests src/frob/tickets/_models.py::scope_matches
+        assert scope_matches("design/sub/f.py", ("design/",))
+        assert scope_matches("design/f.py", ("design/",))
+        assert not scope_matches("other/f.py", ("design/",))
+
+    def test_ledger_always_in_scope(self) -> None:
+        # frob:tests src/frob/tickets/_models.py::scope_matches
+        assert scope_matches("tickets.md", ("src/frob/foo/**",))
+        assert scope_matches("tickets.md", ())
+
+    def test_new_ticket_normalizes_comma_joined_scope(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/_models.py::TicketSpec
+        from frob.tickets import TicketSpec
+
+        spec = TicketSpec(
+            title="t",
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            scope=("src/a/**,src/b/**",),
+        )
+        t = new_ticket(tmp_path, spec).danger_ok
+        assert t.scope == ("src/a/**", "src/b/**")

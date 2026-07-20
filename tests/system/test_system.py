@@ -7,24 +7,11 @@ that unit tests cannot.
 """
 
 import json
-import subprocess
-import sys
 from pathlib import Path
 
 import pytest
 
-FROB = [sys.executable, "-m", "frob"]
-
-
-def run(*args, cwd=None, input=None) -> subprocess.CompletedProcess:
-    return subprocess.run(
-        FROB + list(args),
-        capture_output=True,
-        text=True,
-        cwd=cwd,
-        input=input,
-    )
-
+from tests.system.conftest import run
 
 # ---------------------------------------------------------------------------
 # fixtures for outline/xref
@@ -333,8 +320,7 @@ node api : trusted {
     unit;
     owns "/etc/api" "0640";
     listens 8080;
-    waive "HOST001:shared-group" reason "no group grammar yet, T-draft-7b5b5541";
-    waive "HOST002:sudoers" reason "no sudoers grammar yet, T-draft-7b5b5541";
+    group "api-grp";
 }
 
 node worker : trusted {
@@ -343,7 +329,7 @@ node worker : trusted {
     unit;
     owns "/etc/worker" "0640";
     listens 8081;
-    waive "HOST002:sudoers" reason "no sudoers grammar yet, T-draft-7b5b5541";
+    group "worker-grp";
 }
 """
 

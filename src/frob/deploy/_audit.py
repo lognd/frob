@@ -123,6 +123,7 @@ class StateCapture(BaseModel):
 
     label: str
     filesystem: dict[str, FileFact]
+    # frob:waive PII010 reason="raw /etc/passwd text for audit diff, not parsed PII"
     passwd: tuple[str, ...]
     group: tuple[str, ...]
     unit_files: dict[str, str]
@@ -146,6 +147,7 @@ class StateDiff(BaseModel):
     added_units: tuple[str, ...]
     removed_units: tuple[str, ...]
     changed_units: tuple[str, ...]
+    # frob:waive PII010 reason="passwd line-set diff count, not parsed PII"
     passwd_added: tuple[str, ...]
     passwd_removed: tuple[str, ...]
     group_added: tuple[str, ...]

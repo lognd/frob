@@ -10,8 +10,6 @@ from is disjoint by construction until finalize time, and finalize itself
 only ever runs against one ledger view at a time.
 """
 
-# frob:waive TEST005 reason="module line coverage 81.8%, debt T-0160"
-
 from __future__ import annotations
 
 import secrets
@@ -72,7 +70,6 @@ def _default_branch(root: Path) -> str:
 
 
 # frob:doc docs/modules/tickets.md#provisional-ids
-# frob:waive TEST005 reason="on_default_branch 80.0% branch cover, debt T-0160"
 def on_default_branch(root: Path) -> bool:
     """Whether `root`'s checkout is currently on the repo's default branch.
 

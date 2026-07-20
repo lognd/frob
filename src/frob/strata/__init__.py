@@ -197,6 +197,14 @@ from frob.strata._models import (
     Verdict,
     Waiver,
 )
+from frob.strata._native_staleness import (
+    NATIVE_SOURCE_DIRS,
+    StaleNative,
+    check_native_staleness_or_exit,
+    stale_native_warning,
+    stale_natives,
+)
+from frob.strata._native_test import NativeAuditOutcome, run_native_sys_audit
 from frob.strata._packs import ANALYZABLE, ANALYZABLE_POLICY_ID, require_analyzable
 from frob.strata._parse import parse_module
 from frob.strata._pii import (
@@ -268,6 +276,7 @@ __all__ = [
     "ANALYZABLE_POLICY_ID",
     "DEFAULT_DESIGN_DIR",
     "MARKER_PREFIX",
+    "NATIVE_SOURCE_DIRS",
     "RISKY_CAPABILITY_KINDS",
     "UNBOUND_REQUIRED_KINDS",
     "COMPLIANCE_CATALOG",
@@ -355,6 +364,7 @@ __all__ = [
     "Mediate",
     "Metric",
     "Module",
+    "NativeAuditOutcome",
     "Node",
     "NodeDecl",
     "NoFlow",
@@ -397,6 +407,7 @@ __all__ = [
     "SelfConformViolation",
     "SetEquality",
     "SetTrust",
+    "StaleNative",
     "StoreDecl",
     "StrataError",
     "SurfaceCapacity",
@@ -422,6 +433,7 @@ __all__ = [
     "check_discharge_completeness",
     "check_effect_completeness",
     "check_import_conformance",
+    "check_native_staleness_or_exit",
     "check_privacy_policy",
     "check_regulation_catalog_completeness",
     "check_regulation_discharge",
@@ -487,6 +499,9 @@ __all__ = [
     "render_audit_matrix",
     "render_report",
     "require_analyzable",
+    "run_native_sys_audit",
+    "stale_native_warning",
+    "stale_natives",
     "summarize",
     "unbound_constructs",
 ]

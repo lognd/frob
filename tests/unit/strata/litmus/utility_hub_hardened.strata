@@ -1,0 +1,24 @@
+// utility_hub_hardened.strata -- T-0226 litmus (marked half), the twin of
+// utility_hub_vuln.strata. SAME three nodes and SAME two edges, but
+// `f_tui_logs` is now marked `utility;`: `logs` is still directly
+// reachable from `tui` (one hop always succeeds), but the closure does
+// not chain past it to `server`, so `noflow tui -> server` PROVES --
+// the legitimate claim survives the unrelated logging hub without
+// weakening the closure for any edge that is NOT explicitly marked
+// (`f_logs_server` stays fully transitive, proving this is not a blanket
+// closure change).
+//
+// tested end to end (parse -> elaborate -> evaluate_claims) by
+// tests/unit/strata/test_litmus_utility_hub.py.
+// frob:tests tests/unit/strata/litmus/utility_hub_hardened.strata kind="e2e"
+
+module utility_hub_hardened
+
+node tui : trusted { clearance Internal; }
+node logs : trusted { clearance Internal; }
+node server : trusted { clearance Internal; }
+
+flow f_tui_logs : tui -> logs { label Internal; utility; }
+flow f_logs_server : logs -> server { label Internal; }
+
+assert "utility-hub:tui-server" noflow tui -> server

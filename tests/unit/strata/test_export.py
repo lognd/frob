@@ -39,6 +39,9 @@ class TestExportK8sNetpol:
         assert spec["egress"] == []
         assert spec["policyTypes"] == ["Ingress", "Egress"]
 
+    # frob:waive DUP001 reason="parallel test methods within test_export.py \
+    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
     def test_ingress_from_src(self) -> None:
         """dst's NetworkPolicy allows ingress only from src, matching the
         one declared Flow -- no other peer is ever implicitly allowed."""
@@ -55,6 +58,9 @@ class TestExportK8sNetpol:
             {"from": [{"podSelector": {"matchLabels": {"app": "web"}}}]}
         ]
 
+    # frob:waive DUP001 reason="parallel test methods within test_export.py \
+    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
     def test_egress_to_dst(self) -> None:
         """src's NetworkPolicy allows egress only to dst, matching the one
         declared Flow."""
@@ -116,6 +122,9 @@ class TestExportSeccomp:
         assert "socket" not in names
         assert "read" in names  # baseline
 
+    # frob:waive DUP001 reason="parallel test methods within test_export.py \
+    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
     def test_exec_allows_exec(self) -> None:
         """A `may=("exec",)` node's profile allows the exec syscall family."""
         model = KernelModel(nodes=(_node("worker", may=("exec",)),))
@@ -124,6 +133,9 @@ class TestExportSeccomp:
         assert "execve" in names
         assert "socket" not in names
 
+    # frob:waive DUP001 reason="parallel test methods within test_export.py \
+    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
     def test_net_allows_socket(self) -> None:
         """A `may=("net.out:stripe.com",)` node's profile allows the socket
         syscall family (kind extracted before the first `.`/`:`)."""

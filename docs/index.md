@@ -104,6 +104,9 @@ Two modules that support the above but are not yet fully re-platformed:
   public-API graph, `frob release stamp|check`, and the REL001 gate.
 - `docs/modules/stats.md` -- `frob.stats`: DORA-ish delivery measurement (queue
   health + commit cadence); measurement only, never a gate.
+- `docs/modules/clean.md` -- `frob.clean`: tiered, artifact-only workspace
+  cleanup (`frob clean [--all|--deep] [-y]`); allowlist-only, never touches
+  source or git-tracked files.
 - `docs/modules/decisions.md` -- ADR decision records (`decisions/AD-###.md`),
   `frob:decision` anchors, and the DEC gates.
 - `docs/modules/mutate.md` -- `frob.mutate`: mutation testing, the honest
@@ -176,6 +179,81 @@ Kept commands, each with usage, real output, and a "why it exists" section:
 their owning module design docs above (`docs/modules/graph.md`, `docs/modules/tickets.md`,
 `docs/modules/testing.md`) rather than as separate per-command pages, since their
 usage is inseparable from the data model they operate on.
+
+## Design research corpora (arch + strata check foundations)
+
+Cited, exhaustive design foundations that feed the arch epic (T-0330), the
+strata-systems epic (T-0331), the pattern recommender (T-0332), the sound
+capability may-analysis (T-0339), and conformance totality (T-0341):
+
+- `docs/design/architecture-check-catalog.md` -- the exhaustive
+  architecture/systems check catalog (GoF, Fowler smells, Release It!,
+  cloud patterns, 12-factor), tagged by checkability tier.
+- `docs/design/design-pattern-catalog.md` -- exhaustive cited enumeration of
+  the design-pattern universe (341 patterns across GoF/POSA/PoEAA/EIP/DDD/
+  cloud/...), primary-source citations per pattern, cross-linked to traps.
+- `docs/design/design-pattern-traps-corpus.md` -- cited practitioner
+  corpus of pattern/principle TRAPS (the "El Dorado" failure modes) with a
+  static hallmark per trap.
+- `docs/design/system-design-corpus.md` -- cited system-design canon at all
+  scales (distributed fundamentals, consensus, DDIA, resilience/SRE,
+  performance, observability, HW->FW->SW->service boundaries, and verified
+  primary-contributor lessons), each tagged by strata-checkability.
+- `docs/design/coding-performance-corpus.md` -- cited code-level performance
+  corpus: conceptual/algorithmic (complexity traps, data-structure choice)
+  and low-level/mechanical-sympathy (cache/branch/alloc/SIMD; Drepper, Fog,
+  H&P), mapped to frob.perf PERF rules (implemented/gap/advisory).
+- `docs/design/system-performance-corpus.md` -- cited system-performance
+  corpus (USE/RED methods, resource analysis, profiling/flame graphs,
+  queueing/USL, latency/coordinated-omission, capacity; Gregg/Gunther/Tene),
+  each tagged by strata-checkability.
+- `docs/design/security-corpus.md` -- cited security/weakness corpus (CWE
+  Top 25, OWASP Top 10, CVE fingerprint classes, threat-modeling frameworks,
+  Saltzer & Schroeder), each tagged by strata-checkability.
+- `docs/design/cwe-1000-registry.md` -- the COMPLETE MITRE CWE-1000 view
+  (all 944 weaknesses, CWE 4.20) with a per-entry disposition each
+  (checkable / duplicate-of / out-of-scope naming the missing kernel
+  concept), grouped into 18 named out-of-scope buckets.
+- `docs/design/compliance-corpus.md` -- cited compliance-framework corpus (16
+  frameworks: SOC2/PCI-DSS/HIPAA/GDPR/NIST/ISO27001/CIS/ASVS/SLSA...), 599
+  controls tagged code-checkable vs process.
+- `docs/design/secrets-pii-corpus.md` -- cited secrets-detection (gitleaks/
+  trufflehog/detect-secrets rule universe + provider token formats) and PII/
+  sensitive-data taxonomy (GDPR/CCPA/HIPAA/PCI), with detection signatures.
+- `docs/design/supply-chain-corpus.md` -- cited supply-chain threat/defense
+  corpus (typosquat/dependency-confusion/xz-backdoor; SLSA/Scorecard/Sigstore/
+  SBOM/OSV), each mapped to frob.vet implemented-vs-gap + detection signature.
+- `docs/design/capability-evasion-taxonomy.md` -- per-language-spec
+  enumeration of every capability-scan evasion construct (static-resolvable
+  vs runtime-opaque).
+- `docs/design/structural-linter-adversarial-hardening.md` -- the
+  anti-evasion structure (ground-truth grounding, model<->code conformance,
+  fail-closed, bounded escape hatches, gated config).
+- `docs/design/registry/` -- the UNIFIED design-knowledge registry: the
+  single machine-readable source of truth (per-domain YAML, canonical
+  namespaced ids, cross-refs, per-entry disposition) that all the corpus
+  docs above feed into.
+- `docs/design/registry/README.md` -- the registry schema and index.
+- `docs/design/registry/RECONCILIATION.md` -- the prose-only / split /
+  undispositioned findings the T-0343 drift-lock (bound to this registry)
+  must drive to zero (epic T-0346).
+
+## Capability audits (North-Star hardening, epic T-0397)
+
+Full-repo pessimistic capability audit (2026-07-20): every way a green
+`frob check` could be a lie, per subsystem. Remediation tracked under T-0397.
+
+- [docs/audits/README.md](audits/README.md) -- the audit index + honest
+  per-subsystem "is this good enough?" verdicts + cross-cutting themes.
+- [docs/audits/tickets-testing.md](audits/tickets-testing.md) -- evidence integrity.
+- [docs/audits/tickets-testing-round2.md](audits/tickets-testing-round2.md) -- evidence integrity convergence re-audit (round 2).
+- [docs/audits/strata.md](audits/strata.md) -- proof-engine vacuous-proof gaps.
+- [docs/audits/vet.md](audits/vet.md) -- capability/supply-chain resolution + fail-open.
+- [docs/audits/gates-accounting.md](audits/gates-accounting.md) -- accounting gates.
+- [docs/audits/gates-quality.md](audits/gates-quality.md) -- quality/security detectors.
+- [docs/audits/graph.md](audits/graph.md) -- graph foundation.
+- [docs/audits/lang-check-docs.md](audits/lang-check-docs.md) -- polyglot enforcement.
+- [docs/audits/perf.md](audits/perf.md) -- frob check hotpaths + caching.
 
 ## Planned / tracked work
 

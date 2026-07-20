@@ -23,6 +23,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from tests.system.conftest import git as _git
+
 FROB = [sys.executable, "-m", "frob"]
 
 _FAKE_NATIVE_DIR = str(Path(__file__).parent.parent / "fixtures" / "fake_no_native")
@@ -33,10 +35,6 @@ node evil : foreign
 node api : trusted
 flow f1 : evil -> api { rate 5 req/s; }
 """
-
-
-def _git(*args: str, cwd: Path) -> None:
-    subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True)
 
 
 def _run_with_faked_missing_native(

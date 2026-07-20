@@ -116,6 +116,13 @@ node graphlang : trusted {
 node gates : trusted {
     clearance Internal;
     code "src/frob/gates/**";
+    // T-0207: `_pii_structural.py` (the SEC110 detector) references
+    // `os.environ`/`os.getenv` as the scan-pattern data it matches AGAINST
+    // -- the capability scanner observes an `env` capability there. Declared
+    // honestly-to-the-measurement (a sound may-analysis over-approximation:
+    // the scanner cannot prove gates never reads env), matching how every
+    // other node's `may` set is measured from `scan_directory_capabilities`.
+    may "env";
     may "fs";
     may "fs-read";
 }

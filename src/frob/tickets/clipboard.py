@@ -6,8 +6,6 @@ and invocation is logged; a missing backend is Err(NoBackend) with the full
 probe report so the caller can see exactly why nothing worked.
 """
 
-# frob:waive TEST005 reason="module line coverage 58.6%, debt T-0160"
-
 from __future__ import annotations
 
 import os
@@ -258,7 +256,6 @@ def _pngpaste_image() -> Result[bytes, ClipboardError]:
 
 
 # frob:doc docs/modules/tickets.md#public-api
-# frob:waive TEST005 reason="clipboard_image 85.7% branch cover, debt T-0160"
 def clipboard_image() -> Result[bytes, ClipboardError]:
     """PNG bytes from the platform clipboard, via the first working backend."""
     if _is_wayland():
@@ -279,7 +276,6 @@ def clipboard_image() -> Result[bytes, ClipboardError]:
 
 
 # frob:doc docs/modules/tickets.md#public-api
-# frob:waive TEST005 reason="clipboard_has_image 66.7% branch cover, debt T-0160"
 def clipboard_has_image() -> bool:
     """Cheap probe used to decide whether to offer the interactive paste prompt."""
     if _is_wayland():

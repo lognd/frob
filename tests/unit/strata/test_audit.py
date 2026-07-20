@@ -33,7 +33,6 @@ from frob.strata import (
     NoFlow,
     Quantity,
     Rung,
-    Waiver,
 )
 from frob.strata._audit import (
     DEFAULT_QUALITY_VIEWS,
@@ -121,6 +120,28 @@ class TestExhaustiveness:
         pii_gaps = [g for g in report.gaps if g.family == "pii"]
         assert len(pii_gaps) == 1
         assert pii_gaps[0].rule == "PII003"
+
+    # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness kind="unit"
+    def test_security_only_capability_does_not_fire_threat002_in_quality_view(self):
+        """T-0171: `exec` is classified in `CWE_CATALOG` (CWE-78, security
+        family) but has NO entry in `QUALITY_CATALOG` at all (comment above
+        `DEFAULT_BENIGN_CAPABILITIES` in `_threat.py`) -- reproduces the
+        logand.app pilot's shape: a node declaring a security-family-only
+        capability must not fire THREAT002 against a quality-family view
+        just because that family's OWN narrower catalog has no matching
+        entry. `evaluate_exhaustiveness` proves the model clean of THREAT002
+        gaps for `web-quality-security-baseline` (a quality view) even
+        though `exec` is genuinely unclassified by `QUALITY_CATALOG` alone
+        -- it IS classified by the taxonomy overall (`ALL_CATALOG`), which
+        is the fact THREAT002 is supposed to test (docs/strata/threat.md
+        #phasing item B: "every capability kind ... is classified", not
+        "classified by this one family's subset")."""
+        model = KernelModel(nodes=(Node(id="worker", trust="trusted", may=("exec",)),))
+        result = evaluate_exhaustiveness(model, quality_views=DEFAULT_QUALITY_VIEWS)
+        assert result.is_ok
+        report = result.danger_ok
+        threat002_gaps = [g for g in report.gaps if g.rule == "THREAT002"]
+        assert threat002_gaps == []
 
     # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness kind="unit"
     def test_lint_gap_reported(self):
@@ -246,6 +267,9 @@ class TestHardenedLitmus:
         assert report.gaps == ()
 
 
+# frob:waive DUP001 reason="parallel test fixtures across 2 sibling test \
+# file(s) (2 sites) sharing an arrange-act scaffold typical of exhaustive \
+# per-case/per-scenario coverage; extracting would obscure per-case intent"
 def _shared_two_user_model() -> KernelModel:
     """Two service users sharing a writable path and a listening port, no
     declared `Flow` between them -- the HOST001/HOST002/blast-radius VULN
@@ -261,6 +285,8 @@ def _shared_two_user_model() -> KernelModel:
             "unit",
             "owns=/var/lib/shared:0664",
             "listens=9000",
+            "group=ops",
+            "sudoers=ALL=(root) NOPASSWD: /bin/true",
         ),
     )
     worker = Node(
@@ -271,41 +297,41 @@ def _shared_two_user_model() -> KernelModel:
             "unit",
             "owns=/var/lib/shared:0664",
             "listens=9000",
+            "group=ops",
         ),
     )
     return KernelModel(nodes=(api, worker))
 
 
+# frob:waive DUP001 reason="parallel test fixtures across 2 sibling test \
+# file(s) (2 sites) sharing an arrange-act scaffold typical of exhaustive \
+# per-case/per-scenario coverage; extracting would obscure per-case intent"
 def _isolated_hardened_two_user_model() -> KernelModel:
-    """Two service users with disjoint owns/listens and explicit waivers
-    for the two structurally-unprovable sub-targets (shared-group,
-    sudoers) -- the HOST001/HOST002 HARDENED shape (`test_host_isolation.
-    py::_isolated_hardened_model`'s convention) that discharges cleanly,
-    including the blast-radius scenario claims."""
+    """Two service users with disjoint owns/listens/groups and no
+    declared sudoers grant (`test_host_isolation.py::
+    _isolated_hardened_model`'s convention) that discharges cleanly with
+    no waivers needed at all (T-0272 closed the shared-group/sudoers
+    honest gap), including the blast-radius scenario claims."""
     api = Node(
         id="api",
         trust="trusted",
-        attrs=("runs_as=svc-a", "unit", "owns=/etc/api:0640", "listens=8080"),
-        waives=(
-            Waiver(
-                rule="HOST001:shared-group",
-                reason="no group grammar yet, T-draft-7b5b5541",
-            ),
-            Waiver(
-                rule="HOST002:sudoers",
-                reason="no sudoers grammar yet, T-draft-7b5b5541",
-            ),
+        attrs=(
+            "runs_as=svc-a",
+            "unit",
+            "owns=/etc/api:0640",
+            "listens=8080",
+            "group=api-grp",
         ),
     )
     worker = Node(
         id="worker",
         trust="trusted",
-        attrs=("runs_as=svc-b", "unit", "owns=/etc/worker:0640", "listens=8081"),
-        waives=(
-            Waiver(
-                rule="HOST002:sudoers",
-                reason="no sudoers grammar yet, T-draft-7b5b5541",
-            ),
+        attrs=(
+            "runs_as=svc-b",
+            "unit",
+            "owns=/etc/worker:0640",
+            "listens=8081",
+            "group=worker-grp",
         ),
     )
     return KernelModel(nodes=(api, worker))
@@ -402,9 +428,9 @@ class TestHostWiring:
         report = result.danger_ok
         assert report.proved
         assert report.gaps == ()
-        waived_rules = {(g.rule, g.sub_target) for g in report.waived}
-        assert ("HOST001", "shared-group") in waived_rules
-        assert ("HOST002", "sudoers") in waived_rules
+        # T-0272: no waivers needed -- disjoint groups and no declared
+        # sudoers grant structurally prove both sub-targets false.
+        assert report.waived == ()
 
     def test_no_runs_as_no_gaps(self):
         """A model with no `runs_as` service users (e.g. `design/frob.

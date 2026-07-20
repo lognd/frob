@@ -17,6 +17,7 @@ reconstruct by hand.
 from __future__ import annotations
 
 import fnmatch
+from collections.abc import Callable, Sequence
 from pathlib import Path
 
 from typani.result import Err, Ok, Result
@@ -30,7 +31,9 @@ from frob.tickets._models import (
     Ticket,
     TicketError,
     TicketState,
+    has_substantive_done_report,
     is_cmd_evidence,
+    matches_collected,
 )
 from frob.tickets._provisional import is_draft_id
 from frob.tickets._store import _parse_ledger, _render_ledger, archive_path, ledger_path
@@ -46,29 +49,55 @@ _STATE_RANK: dict[TicketState, int] = {
     TicketState.DROPPED: 3,
     TicketState.DONE: 3,
 }
-_DONE_REPORT_HEADING = "## Done report"
 
 
 def _has_done_report(body: str) -> bool:
-    """Whether body contains a '## Done report' section heading."""
-    return any(line.strip() == _DONE_REPORT_HEADING for line in body.splitlines())
+    """Whether `body` has a substantive '## Done report' section (D-03):
+    thin wrapper delegating to the single shared implementation in
+    `frob.tickets._models` -- dedupes the twin copy `tickets/__init__.py`
+    used to carry (D-11)."""
+    return has_substantive_done_report(body)
 
 
 # frob:doc docs/modules/tickets.md#frob-ticket-land
 def _newer(a: Ticket, b: Ticket) -> Ticket:
     """Which of two same-id ticket versions is "newer": further along the
-    state machine wins; a state-rank tie prefers whichever carries a Done
-    report, then more evidence, then `b` (the incoming/theirs side) as the
-    final deterministic tiebreak -- never a coin flip."""
+    state machine wins; a state-rank tie prefers whichever carries a
+    substantive Done report, then `b` (the incoming/theirs side) as the
+    final deterministic tiebreak -- never a coin flip. Either way, the
+    winner's evidence is UNIONED with the loser's (`_union_evidence`,
+    D-09) rather than the loser's evidence being silently dropped -- the
+    old `len(a.evidence) != len(b.evidence)` tiebreak used to pick ONE
+    side's evidence set wholesale, discarding the other side's ids
+    entirely when two worktrees closed the same ticket with disjoint
+    evidence."""
     rank_a, rank_b = _STATE_RANK[a.state], _STATE_RANK[b.state]
     if rank_a != rank_b:
-        return a if rank_a > rank_b else b
-    done_a, done_b = _has_done_report(a.body), _has_done_report(b.body)
-    if done_a != done_b:
-        return a if done_a else b
-    if len(a.evidence) != len(b.evidence):
-        return a if len(a.evidence) > len(b.evidence) else b
-    return b
+        winner = a if rank_a > rank_b else b
+    else:
+        done_a, done_b = _has_done_report(a.body), _has_done_report(b.body)
+        winner = (a if done_a else b) if done_a != done_b else b
+    return _union_evidence(winner, a, b)
+
+
+def _union_evidence(winner: Ticket, a: Ticket, b: Ticket) -> Ticket:
+    """D-09: never let a splice silently drop one side's evidence -- return
+    `winner` with its evidence extended (deduplicated, winner's own ids
+    first) by any id the OTHER of `a`/`b` carries that `winner` lacks."""
+    if a.evidence == b.evidence:
+        return winner
+    other = b if winner is a else a
+    merged = list(winner.evidence)
+    merged.extend(e for e in other.evidence if e not in merged)
+    if tuple(merged) == winner.evidence:
+        return winner
+    _log.info(
+        "tickets: land splice -- unioned evidence for %s (%d -> %d id(s))",
+        winner.id,
+        len(winner.evidence),
+        len(merged),
+    )
+    return winner.model_copy(update={"evidence": tuple(merged)})
 
 
 # frob:doc docs/modules/tickets.md#frob-ticket-land
@@ -163,9 +192,37 @@ def _conflicted_files(root: Path) -> set[str]:
     }
 
 
-def _in_scope(path: str, scope: tuple[str, ...]) -> bool:
-    """Whether `path` matches at least one of `scope`'s glob patterns."""
-    return any(fnmatch.fnmatch(path, pattern) for pattern in scope)
+def _deletion_glob_too_broad(glob: str) -> bool:
+    """Whether a scope glob is too broad to trust for authorizing a
+    DELETION (D-12): a bare top-level directory (`src/`, expanded to
+    `src/**`) or the whole-tree `.`/`*` pattern. `scope_matches`'s
+    ordinary dir-glob expansion (T-0241) is correct for the general
+    "is this file in scope" question, but a ticket scoped only to a
+    single top-level directory silently authorizes deleting ANYTHING
+    under it -- exactly the stale-base incident class this filter exists
+    to catch. A more specific glob (`src/frob/`, `src/frob/tickets/**`)
+    is still trusted."""
+    stripped = glob.removesuffix("/**").removesuffix("/*").rstrip("/")
+    if stripped in ("", ".", "*"):
+        return True
+    return "/" not in stripped
+
+
+def _deletion_owned(path: str, scope: tuple[str, ...]) -> bool:
+    """Whether `path` is authorized as an OWNED deletion by `scope`: matches
+    `scope_matches` AND is not matched only via an over-broad glob (D-12).
+    Deliberately stricter than plain `scope_matches`, and used only
+    by the deletion filter -- every other scope-consulting site (SCOPE001,
+    pre-work digests, ordinary in-scope checks) keeps the normal
+    `scope_matches` semantics unchanged."""
+    from frob.tickets._models import _scope_globs, _split_scope_entries
+
+    narrow_globs = [
+        glob
+        for glob in _scope_globs(_split_scope_entries(scope))
+        if not _deletion_glob_too_broad(glob)
+    ]
+    return any(fnmatch.fnmatch(path, glob) for glob in narrow_globs)
 
 
 def _validate_closeable(ticket: Ticket) -> Result[None, LandError]:
@@ -359,7 +416,7 @@ def _unowned_deletions(
     deleted = [
         line.strip() for line in diff.danger_ok.stdout.splitlines() if line.strip()
     ]
-    unowned = tuple(f for f in deleted if not _in_scope(f, scope))
+    unowned = tuple(f for f in deleted if not _deletion_owned(f, scope))
     return Ok(unowned)
 
 
@@ -430,11 +487,43 @@ def _commit_message(ticket: Ticket, final_id: str) -> str:
 # `merge --abort`/`reset --hard`, so a clean dry run is a real guarantee,
 # not a guess (T-0176).
 def land(
-    root: Path, ticket_id: str, worktree: Path, *, dry_run: bool = False
+    root: Path,
+    ticket_id: str,
+    worktree: Path,
+    *,
+    dry_run: bool = False,
+    collected: Callable[[], frozenset[str]] | None = None,
+    passed: Callable[[Sequence[str]], frozenset[str]] | None = None,
+    covers_scope: Callable[[Ticket], bool | None] | None = None,
 ) -> Result[LandReport, LandError]:
     """Land `ticket_id` from `worktree` onto `root`'s current branch:
     precheck, wip-commit + merge + deletion-check, finalize + close, then
-    squash-apply onto main with a conventional-commit message."""
+    squash-apply onto main with a conventional-commit message.
+
+    D-05: `collected`/`passed`/`covers_scope` let a caller with a fresh
+    test-collection/run/graph-binding oracle re-verify the ticket's
+    evidence against the POST-MERGE worktree tree (after
+    `_merge_main_into_worktree` has run -- NOT the pre-merge worktree
+    report `_land_precheck` validated) before it is finalized and closed,
+    instead of `land` trusting whatever the worktree's `Done report`
+    claims. They are CALLABLES, not precomputed values, because the
+    caller cannot know the post-merge tree state before `land` has
+    actually performed the merge internally -- `land` invokes them at the
+    right point instead: `collected()` (no args, run against `worktree`
+    after the merge) re-checks every non-cmd evidence id still resolves;
+    `passed(non_cmd_evidence_ids)` (given the reloaded post-merge ticket's
+    ids) returns the subset actually observed passing; `covers_scope
+    (ticket)` (given the reloaded post-merge ticket) answers the D-02
+    scope-binding question the same way `transition`'s own `covers_scope`
+    parameter does (`True`/`False`/`None`-skip). All three default to
+    `None` (skip, matching every caller before D-05) since computing them
+    needs `frob.testing`/`frob.graph` access `frob.tickets` deliberately
+    does not have (docs/rework.md cycle-avoidance) -- a caller that sits
+    above both (today, `frob.gates` for `covers_scope`'s computation, and
+    the `frob ticket land` CLI, which supplies all three by default --
+    see `ticket_runner.py`'s `_land`) provides them. Passing nothing
+    preserves the exact pre-D-05 behavior, which is why the library
+    default stays permissive even though the CLI's default is strict."""
     root, worktree = root.resolve(), worktree.resolve()
 
     precheck = _land_precheck(root, worktree, ticket_id)
@@ -448,19 +537,99 @@ def land(
     if stage.is_err:
         return Err(stage.danger_err)
     wip_committed, did_merge, dry_run_report = stage.danger_ok
+
+    # D-05: re-verify BEFORE the dry-run early return -- otherwise a
+    # `--dry-run` would report clean without ever running the post-merge
+    # check, defeating T-0176's "a clean dry run is a real guarantee, not
+    # a guess" design intent.
+    post_merge_check = _reverify_evidence_post_merge(
+        worktree, ticket_id, collected, passed
+    )
+    if post_merge_check.is_err:
+        if did_merge:
+            _abort_merge(worktree)
+        return Err(post_merge_check.danger_err)
+
     if dry_run_report is not None:
         return Ok(dry_run_report)
 
+    _refresh_prework_sweep(worktree, ticket)
+
     finalized = _land_finalize_and_close(
-        worktree, ticket_id, did_merge, main_branch_name
+        worktree, ticket_id, did_merge, main_branch_name, covers_scope=covers_scope
     )
     if finalized.is_err:
         return Err(finalized.danger_err)
     final_id = finalized.danger_ok
 
     return _land_squash_apply(
-        root, worktree, ticket, ticket_id, final_id, wip_committed, did_merge
+        root,
+        worktree,
+        ticket,
+        ticket_id,
+        final_id,
+        wip_committed,
+        did_merge,
+        main_branch_name,
     )
+
+
+def _reverify_evidence_post_merge(
+    worktree: Path,
+    ticket_id: str,
+    collected: Callable[[], frozenset[str]] | None,
+    passed: Callable[[Sequence[str]], frozenset[str]] | None,
+) -> Result[None, LandError]:
+    """D-05: re-load `ticket_id` from the POST-MERGE worktree ledger and
+    re-check every non-cmd evidence id still resolves against
+    `collected()` and still shows passing in `passed(non_cmd_ids)` -- the
+    ledger state `land` is about to finalize/close/squash-apply may differ
+    from what `_land_precheck` validated pre-merge (a splice can rewrite
+    `ticket.evidence`, see `_newer`/`_union_evidence`). `collected=None`
+    and `passed=None` (both defaults) skip this entirely, so `land`'s
+    behavior is unchanged unless a caller opts in."""
+    if collected is None and passed is None:
+        return Ok(None)
+    from frob.tickets import _load_one
+
+    loaded = _load_one(worktree, ticket_id)
+    if loaded.is_err:
+        _log.error(
+            "land: %s not found post-merge in %s -- cannot re-verify evidence",
+            ticket_id,
+            worktree,
+        )
+        return Err(LandError.NotFound)
+    ticket = loaded.danger_ok
+    non_cmd = [e for e in ticket.evidence if not is_cmd_evidence(e)]
+
+    if collected is not None:
+        collected_ids = collected()
+        unresolved = [e for e in non_cmd if not matches_collected(e, collected_ids)]
+        if unresolved:
+            _log.error(
+                "land: %s evidence no longer resolves post-merge: %s -- "
+                "the merged tree may have renamed/removed the covering "
+                "test(s); refresh evidence (`frob ticket evidence %s "
+                "<node-id>...`) and retry",
+                ticket_id,
+                unresolved,
+                ticket_id,
+            )
+            return Err(LandError.NotCloseable)
+
+    if passed is not None:
+        passing_ids = passed(non_cmd)
+        failing = [e for e in non_cmd if e not in passing_ids]
+        if failing:
+            _log.error(
+                "land: %s evidence did not pass post-merge: %s -- fix the "
+                "failure and re-record evidence before retrying",
+                ticket_id,
+                failing,
+            )
+            return Err(LandError.NotCloseable)
+    return Ok(None)
 
 
 def _refuse_if_main_dirty(
@@ -550,6 +719,40 @@ def _land_merge_stage(
     return Ok((wip_committed, did_merge, report))
 
 
+# frob:ticket T-0236
+def _refresh_prework_sweep(worktree: Path, ticket: Ticket) -> None:
+    """Re-record `ticket`'s pre-work sweep against the just-merged worktree
+    state, post-merge and pre-close.
+
+    Landing can pull in unrelated main commits that touch the ticket's scope
+    globs, moving the recorded sweep's scope digest out from under it -- if
+    `land` then fails before reaching close (evidence or Done-report issue),
+    the ticket is left in-progress carrying a sweep that `frob check`'s
+    PRE001 will flag as stale on the very next check, even though nothing
+    about THIS ticket's own work was actually un-swept (T-0236). Refreshing
+    here, unconditionally, before the close attempt below means a retried
+    land (or a reviewer's `frob check --ticket` in the interim) sees a sweep
+    that matches the current tree, not a stale one caused by drift outside
+    this ticket's control.
+
+    Best-effort: a refresh failure is logged and does not block landing --
+    the close step's own evidence/Done-report gates are what actually gate
+    `land`, not this sweep's freshness.
+    """
+    from frob.gates import sweep_ticket
+
+    swept = sweep_ticket(worktree, ticket)
+    if swept.is_err:
+        _log.warning(
+            "land: %s post-merge pre-work sweep refresh failed (%s) -- "
+            "PRE001 may report staleness until `frob ticket sweep %s` "
+            "is run manually",
+            ticket.id,
+            swept.danger_err,
+            ticket.id,
+        )
+
+
 def _dry_run_report(
     worktree: Path,
     ticket_id: str,
@@ -617,7 +820,12 @@ def _check_unowned_deletions(
 
 
 def _land_finalize_and_close(
-    worktree: Path, ticket_id: str, did_merge: bool, main_branch_name: str
+    worktree: Path,
+    ticket_id: str,
+    did_merge: bool,
+    main_branch_name: str,
+    *,
+    covers_scope: Callable[[Ticket], bool | None] | None = None,
 ) -> Result[str, LandError]:
     """Commit the merge (if any), finalize a draft id, close the ticket,
     and commit those writes too -- returns the ticket's final id."""
@@ -635,7 +843,9 @@ def _land_finalize_and_close(
         if commit.is_err or commit.danger_ok.returncode != 0:
             return Err(LandError.GitFailed)
 
-    finalized = _finalize_and_close_ticket(worktree, ticket_id)
+    finalized = _finalize_and_close_ticket(
+        worktree, ticket_id, covers_scope=covers_scope
+    )
     if finalized.is_err:
         return Err(finalized.danger_err)
     final_id = finalized.danger_ok
@@ -647,7 +857,10 @@ def _land_finalize_and_close(
 
 
 def _finalize_and_close_ticket(
-    worktree: Path, ticket_id: str
+    worktree: Path,
+    ticket_id: str,
+    *,
+    covers_scope: Callable[[Ticket], bool | None] | None = None,
 ) -> Result[str, LandError]:
     """Finalize a draft id (if `ticket_id` is one) and transition it to
     DONE; returns the ticket's final id."""
@@ -656,7 +869,9 @@ def _finalize_and_close_ticket(
         return Err(final_id_result.danger_err)
     final_id = final_id_result.danger_ok
 
-    return _close_finalized_ticket(worktree, ticket_id, final_id)
+    return _close_finalized_ticket(
+        worktree, ticket_id, final_id, covers_scope=covers_scope
+    )
 
 
 def _finalize_draft_id(worktree: Path, ticket_id: str) -> Result[str, LandError]:
@@ -684,12 +899,32 @@ def _finalize_draft_id(worktree: Path, ticket_id: str) -> Result[str, LandError]
 
 
 def _close_finalized_ticket(
-    worktree: Path, ticket_id: str, final_id: str
+    worktree: Path,
+    ticket_id: str,
+    final_id: str,
+    *,
+    covers_scope: Callable[[Ticket], bool | None] | None = None,
 ) -> Result[str, LandError]:
-    """Transition `final_id` to DONE."""
-    from frob.tickets import transition
+    """Transition `final_id` to DONE. `covers_scope`, if supplied, is a
+    callable invoked with the just-finalized `Ticket` (loaded fresh here,
+    post-finalize) -- see `land`'s docstring for why this is lazy."""
+    from frob.tickets import _load_one, transition
 
-    closed = transition(worktree, final_id, TicketState.DONE)
+    resolved_covers_scope: bool | None = None
+    if covers_scope is not None:
+        loaded = _load_one(worktree, final_id)
+        if loaded.is_err:
+            _log.error(
+                "land: %s not found post-finalize in %s -- cannot compute covers_scope",
+                final_id,
+                worktree,
+            )
+            return Err(LandError.NotFound)
+        resolved_covers_scope = covers_scope(loaded.danger_ok)
+
+    closed = transition(
+        worktree, final_id, TicketState.DONE, covers_scope=resolved_covers_scope
+    )
     if closed.is_err:
         _log.error(
             "land: %s close failed (%s) after the merge already landed in "
@@ -794,6 +1029,108 @@ def _squash_and_splice_ledger(
     return Ok(None)
 
 
+# frob:ticket T-0463
+def _worktree_full_changeset(
+    worktree: Path, main_branch_name: str
+) -> Result[frozenset[str], LandError]:
+    """The COMPLETE set of paths `worktree`'s finalized branch changes
+    relative to `main_branch_name`: tracked edits, untracked new files, AND
+    deletions, all in one git-native call.
+
+    `land()`'s wip-commit step (`git add -A`) has already turned every
+    untracked new file and every deletion into a tracked change on the
+    branch by the time this runs, so a plain `git diff --name-only
+    <main>...HEAD` walks the merge-base and reports the true full
+    changeset -- unlike a hand `git diff HEAD` / patch-based land, which
+    only ever sees tracked deltas against the CURRENT commit and silently
+    omits anything that was untracked (T-0463: the root cause of the
+    T-0448 `docs/modules/render.md` loss, where a surgical git-diff-patch
+    land dropped an untracked file with no error)."""
+    diff = run_argv(
+        [
+            "git",
+            "-C",
+            str(worktree),
+            "diff",
+            "--name-only",
+            f"{main_branch_name}...HEAD",
+        ]
+    )
+    if diff.is_err or diff.danger_ok.returncode != 0:
+        return Err(LandError.GitFailed)
+    return Ok(
+        frozenset(
+            line.strip() for line in diff.danger_ok.stdout.splitlines() if line.strip()
+        )
+    )
+
+
+# frob:ticket T-0463
+def _staged_files(root: Path) -> Result[frozenset[str], LandError]:
+    """The paths currently staged in `root`'s index relative to `HEAD`
+    (`git diff --cached --name-only`) -- used to assert the squash-apply
+    actually staged everything the worktree changed BEFORE the landing
+    commit is made, so an incomplete land aborts loudly instead of
+    committing a silently-partial changeset."""
+    diff = run_argv(["git", "-C", str(root), "diff", "--cached", "--name-only"])
+    if diff.is_err or diff.danger_ok.returncode != 0:
+        return Err(LandError.GitFailed)
+    return Ok(
+        frozenset(
+            line.strip() for line in diff.danger_ok.stdout.splitlines() if line.strip()
+        )
+    )
+
+
+# frob:ticket T-0463
+def _assert_land_complete(
+    root: Path, worktree: Path, ticket_id: str, main_branch_name: str
+) -> Result[frozenset[str], LandError]:
+    """Post-squash, pre-commit completeness assertion (T-0463): the set of
+    paths staged in `root`'s index must be a SUPERSET of everything the
+    worktree changed relative to `main_branch_name` (tracked edits,
+    untracked new files, deletions). If any worktree-changed file is
+    missing from staging, the squash is unwound (`reset --hard`, `clean
+    -fd`) and this returns `Err(IncompleteLand)` with the exact missing
+    paths logged -- the land never commits a silently-partial changeset.
+    Returns the worktree's full changeset on success (for the report)."""
+    expected = _worktree_full_changeset(worktree, main_branch_name)
+    if expected.is_err:
+        run_argv(["git", "-C", str(root), "reset", "--hard"])
+        run_argv(["git", "-C", str(root), "clean", "-fd"])
+        return Err(expected.danger_err)
+
+    staged = _staged_files(root)
+    if staged.is_err:
+        run_argv(["git", "-C", str(root), "reset", "--hard"])
+        run_argv(["git", "-C", str(root), "clean", "-fd"])
+        return Err(staged.danger_err)
+
+    missing = expected.danger_ok - staged.danger_ok
+    if missing:
+        run_argv(["git", "-C", str(root), "reset", "--hard"])
+        run_argv(["git", "-C", str(root), "clean", "-fd"])
+        _log.error(
+            "land: %s refused -- the staged squash-apply onto %s is missing "
+            "file(s) the worktree changed: %s. This is the T-0463 "
+            "completeness gap (a stale git-diff/patch land silently drops "
+            "untracked or deleted files) -- inspect `git -C %s status` and "
+            "`git -C %s diff --name-only %s...HEAD`, then retry "
+            "`frob ticket land %s --worktree %s`",
+            ticket_id,
+            root,
+            sorted(missing),
+            worktree,
+            worktree,
+            main_branch_name,
+            ticket_id,
+            worktree,
+        )
+        return Err(LandError.IncompleteLand)
+
+    return Ok(expected.danger_ok)
+
+
 def _land_commit_details(root: Path) -> tuple[str | None, tuple[str, ...]]:
     """The just-made HEAD commit's sha and changed-file list, best-effort
     (`None`/`()` if the git calls fail)."""
@@ -848,6 +1185,23 @@ def _commit_squash_apply(
     return Ok(None)
 
 
+# frob:ticket T-0248
+def _warn_if_native_stale(root: Path, final_id: str) -> None:
+    """LOUD, non-blocking log warning if `root`'s just-squashed source tree
+    now outpaces its own built native extension(s) (T-0248): the incident
+    class from T-0166's review, where a landed `strata-core/**` grammar
+    change left main's built `strata_core` behind and `frob check` silently
+    ran the OLD grammar until a human noticed a confusing SYS004. This never
+    blocks the landing commit -- `make core` is cheap to run manually right
+    after seeing the warning, and a native rebuild is not this ticket's
+    scope to automate into `land` itself."""
+    from frob.strata._native_staleness import stale_native_warning
+
+    warning = stale_native_warning(root)
+    if warning is not None:
+        _log.warning("land: %s -- %s", final_id, warning)
+
+
 def _land_squash_apply(
     root: Path,
     worktree: Path,
@@ -856,9 +1210,11 @@ def _land_squash_apply(
     final_id: str,
     wip_committed: bool,
     did_merge: bool,
+    main_branch_name: str,
 ) -> Result[LandReport, LandError]:
     """Squash-apply the worktree's finalized branch onto `root`, splice
-    tickets.md, commit, and build the final `LandReport`."""
+    tickets.md, assert completeness (T-0463) BEFORE committing, commit, and
+    build the final `LandReport`."""
     branch = current_branch(worktree)
     if branch.is_err:
         return Err(LandError.GitFailed)
@@ -867,6 +1223,13 @@ def _land_squash_apply(
     squashed = _squash_and_splice_ledger(root, worktree, final_id, branch_name)
     if squashed.is_err:
         return Err(squashed.danger_err)
+
+    completeness = _assert_land_complete(root, worktree, ticket_id, main_branch_name)
+    if completeness.is_err:
+        return Err(completeness.danger_err)
+    worktree_changeset = completeness.danger_ok
+
+    _warn_if_native_stale(root, final_id)
 
     committed = _commit_squash_apply(root, ticket, final_id)
     if committed.is_err:
@@ -885,5 +1248,6 @@ def _land_squash_apply(
             unowned_deletions=(),
             commit_sha=sha_str,
             files_changed=files,
+            worktree_changeset=tuple(sorted(worktree_changeset)),
         )
     )

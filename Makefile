@@ -13,14 +13,18 @@ TESTS     := tests
 
 # Runs each tool exactly once: format, lint, typecheck, test.
 all: $(STAMP)
-	uv run black $(SRC)/ $(TESTS)/
 	uv run ruff check $(SRC)/ $(TESTS)/ --fix --select I
 	uv run ruff format $(SRC)/ $(TESTS)/
 	uv run ty check $(SRC)/
 	uv run pytest $(TESTS)/ -q -n auto
 
 # Read-only gate (no auto-fix). Safe to run in CI.
+# T-0248: fail loudly, before frob check even runs, if strata-core/frob-core
+# source outpaces the built native extension -- otherwise frob check/frob
+# test silently run against the stale native and give wrong results (the
+# T-0166 review incident).
 check: $(STAMP)
+	uv run python -c "from pathlib import Path; from frob.strata._native_staleness import check_native_staleness_or_exit; check_native_staleness_or_exit(Path('.'))"
 	uv run frob check
 
 # Prints the agent playbook (per-dispatch checklist: worktree warm-up,
@@ -29,9 +33,25 @@ check: $(STAMP)
 playbook:
 	@cat docs/guides/agent-playbook.md
 
+# T-0464: subprocess coverage must be explicitly enabled or it silently
+# doesn't happen. Most frob code is exercised only via CLI subprocess
+# system tests (tests/system/conftest.py spawns `python -m frob`); a bare
+# `pytest --cov` only measures the main pytest process, so everything a
+# subprocess test covers reads as 0% hit and coverage.xml comes out
+# deflated (observed line-rate 0.49 vs a real 0.87), which explodes TEST005
+# into hundreds of false per-symbol/per-module coverage-floor findings.
+# COVERAGE_PROCESS_START=pyproject.toml + [tool.coverage.run] parallel=true
+# (pyproject.toml) makes every subprocess (via the coverage-installed .pth
+# site hook) write its own `.coverage.*` data file; `coverage combine`
+# merges them all before the xml report is generated, so `frob check
+# --stamp-coverage` stamps and TEST005 evaluates against real coverage.
 coverage: $(STAMP)
-	uv run pytest --cov=src/frob --cov-branch --cov-report=xml -q
+	rm -f .coverage .coverage.*
+	COVERAGE_PROCESS_START=pyproject.toml uv run pytest --cov=src/frob --cov-branch --cov-report= -q
+	uv run coverage combine
+	uv run coverage xml
 	uv run frob check --stamp-coverage
+	uv run frob clean -y
 
 # VirtualBox snapshot-diff harness proving artifact-free install/uninstall
 # (T-0259, deploy epic T-0254 child 5). NOT part of `check`/`all` -- it
@@ -91,7 +111,6 @@ install-tool:
 # ---------- formatting & linting ----------
 
 format: $(STAMP)
-	uv run black $(SRC)/ $(TESTS)/
 	uv run ruff check $(SRC)/ $(TESTS)/ --fix --select I
 	uv run ruff format $(SRC)/ $(TESTS)/
 
@@ -101,7 +120,6 @@ lint: $(STAMP)
 
 lint-fix: $(STAMP)
 	uv run ruff check $(SRC)/ $(TESTS)/ --fix
-	uv run black $(SRC)/ $(TESTS)/
 	uv run ruff format $(SRC)/ $(TESTS)/
 
 typecheck: $(STAMP)
@@ -168,10 +186,9 @@ sync-skills:
 
 # ---------- build & publish ----------
 
-clean:
-	rm -rf dist/ build/ .pytest_cache/ .ruff_cache/ .testmondata
-	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null; true
-	find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null; true
+clean: $(STAMP)
+	uv run frob clean --all -y
+	rm -f .testmondata
 
 upload: clean
 	@set -a && . ./.env && set +a; \

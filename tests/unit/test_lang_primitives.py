@@ -26,15 +26,15 @@ from frob.lang import (
     tree_sitter_extensions,
 )
 from frob.lang._common import (
+    _collapse_ws,
+    _leading_doc_comment,
+    _leaf_tokens,
+    _span_of,
+    _strip_comment_delims,
     child_text,
-    collapse_ws,
     export_tree,
     flatten_tree,
     iter_cpp_functions,
-    leading_doc_comment,
-    leaf_tokens,
-    span_of,
-    strip_comment_delims,
 )
 from frob.lang._extract import COMMENT_TYPES
 from frob.lang._extract import extract_imports as extract_imports_tree
@@ -71,35 +71,35 @@ def _cpp_tree(tmp_path: Path):
 
 
 def test_collapse_ws_flattens_whitespace():
-    # frob:tests src/frob/lang/_common.py::collapse_ws kind="unit"
-    assert collapse_ws("  a\n\t b   c ") == "a b c"
+    # frob:tests src/frob/lang/_common.py::_collapse_ws kind="unit"
+    assert _collapse_ws("  a\n\t b   c ") == "a b c"
 
 
 def test_strip_comment_delims_handles_each_style():
-    # frob:tests src/frob/lang/_common.py::strip_comment_delims kind="unit"
-    assert strip_comment_delims("// hi") == "hi"
-    assert strip_comment_delims("/// hi") == "hi"
-    assert strip_comment_delims("# hi") == "hi"
+    # frob:tests src/frob/lang/_common.py::_strip_comment_delims kind="unit"
+    assert _strip_comment_delims("// hi") == "hi"
+    assert _strip_comment_delims("/// hi") == "hi"
+    assert _strip_comment_delims("# hi") == "hi"
     # delimiters (and continuation `*`) are stripped; interior whitespace is
-    # left for the caller's collapse_ws, so a two-line block joins with the
+    # left for the caller's _collapse_ws, so a two-line block joins with the
     # residual leading space preserved.
-    assert strip_comment_delims("/** a\n * b */") == "a  b"
+    assert _strip_comment_delims("/** a\n * b */") == "a  b"
 
 
 def test_leaf_tokens_are_formatting_insensitive(tmp_path: Path):
-    # frob:tests src/frob/lang/_common.py::leaf_tokens kind="unit"
+    # frob:tests src/frob/lang/_common.py::_leaf_tokens kind="unit"
     tree, _src, _lang = _py_tree(tmp_path)
-    tokens = leaf_tokens(tree.root_node, COMMENT_TYPES["python"])
+    tokens = _leaf_tokens(tree.root_node, COMMENT_TYPES["python"])
     assert "def" in tokens and "greet" in tokens
     # the leading comment is a comment-typed leaf and must be excluded
     assert "# a leading comment" not in tokens
 
 
 def test_span_of_is_one_based_inclusive(tmp_path: Path):
-    # frob:tests src/frob/lang/_common.py::span_of kind="unit"
+    # frob:tests src/frob/lang/_common.py::_span_of kind="unit"
     tree, _src, _lang = _py_tree(tmp_path)
     fn = next(n for n in tree.root_node.children if n.type == "function_definition")
-    start, end = span_of(fn)
+    start, end = _span_of(fn)
     assert start == 5  # `def greet` is the 5th line
     assert end >= start
 
@@ -125,16 +125,16 @@ def test_child_by_field_and_node_text_public_wrappers(tmp_path: Path):
 
 
 def test_leading_doc_comment_gathers_block(tmp_path: Path):
-    # frob:tests src/frob/lang/_common.py::leading_doc_comment kind="unit"
+    # frob:tests src/frob/lang/_common.py::_leading_doc_comment kind="unit"
     tree, _src, _lang = _py_tree(tmp_path)
     fn = next(n for n in tree.root_node.children if n.type == "function_definition")
-    assert leading_doc_comment(fn, COMMENT_TYPES["python"]) == "a leading comment"
+    assert _leading_doc_comment(fn, COMMENT_TYPES["python"]) == "a leading comment"
 
 
 def test_export_tree_and_flatten_tree_round_trip(tmp_path: Path):
     # frob:tests src/frob/lang/_common.py::export_tree kind="unit"
     # frob:tests src/frob/lang/_common.py::flatten_tree kind="unit"
-    tree, _src, _lang = _py_tree(tmp_path)
+    tree, src, _lang = _py_tree(tmp_path)
     fn = next(n for n in tree.root_node.children if n.type == "function_definition")
     node = export_tree(fn, COMMENT_TYPES["python"])
     labels, parents = flatten_tree(node)
@@ -142,6 +142,18 @@ def test_export_tree_and_flatten_tree_round_trip(tmp_path: Path):
     assert parents[0] == -1
     assert len(labels) == len(parents) >= 2
     assert all(0 <= parents[i] < i for i in range(1, len(parents)))
+
+    # span carries the real tree-sitter byte offsets, not a placeholder.
+    assert node.span == (fn.start_byte, fn.end_byte)
+    start, end = node.span
+    assert start < end
+    assert src[start:end] == fn.text
+    assert src[start:end].startswith(b"def greet(name):")
+    # every child's span nests inside the parent's, and is itself well-formed.
+    for child in node.children:
+        c_start, c_end = child.span
+        assert c_start < c_end
+        assert start <= c_start and c_end <= end
 
 
 def test_iter_cpp_functions_finds_free_and_member(tmp_path: Path):
@@ -173,6 +185,14 @@ def test_symbol_tree_covers_span(tmp_path: Path):
     path.write_text(_PY)
     node = symbol_tree(path, (5, 7)).danger_ok
     assert node.label == "function_definition"
+
+    # TreeNode.span is real source byte offsets: unswapped, and slicing the
+    # original source by it reproduces the function's exact literal text.
+    start, end = node.span
+    assert start < end
+    source_bytes = _PY.encode("utf-8")
+    covered = source_bytes[start:end].decode("utf-8")
+    assert covered == ('def greet(name):\n    """Say hi."""\n    return name')
 
 
 def test_extract_imports_tree_and_path(tmp_path: Path):

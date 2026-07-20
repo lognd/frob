@@ -619,9 +619,25 @@ def _add_ticket_query_parsers(ticket_sub) -> list:
     ticket_show_p.add_argument("--json", dest="ticket_json", action="store_true")
 
     ticket_doable_p = ticket_sub.add_parser(
-        "doable", help="list doable tickets (queued/planned, no open blockers)"
+        "doable",
+        help="list doable tickets (queued/planned, no open blockers, "
+        "scope-lease-safe by default, T-0453)",
     )
     ticket_doable_p.add_argument("--json", dest="ticket_json", action="store_true")
+    ticket_doable_p.add_argument(
+        "--show-blocked",
+        dest="ticket_show_blocked",
+        action="store_true",
+        help="explain each doable candidate hidden by an in-progress "
+        "scope-lease (T-0453), instead of listing the doable set",
+    )
+    ticket_doable_p.add_argument(
+        "--ignore-lease",
+        dest="ticket_ignore_lease",
+        action="store_true",
+        help="skip the T-0453 scope-lease collision filter and return the "
+        "raw blocker-only doable list",
+    )
     return [ticket_list_p, ticket_show_p, ticket_doable_p]
 
 
@@ -647,6 +663,7 @@ def _add_ticket_progress_parsers(ticket_sub) -> list:
     )
     ticket_renumber_p = _add_ticket_renumber_parser(ticket_sub)
     ticket_land_p = _add_ticket_land_parser(ticket_sub)
+    ticket_merge_driver_p = _add_ticket_merge_driver_parser(ticket_sub)
     return [
         ticket_plan_p,
         ticket_start_p,
@@ -654,7 +671,25 @@ def _add_ticket_progress_parsers(ticket_sub) -> list:
         ticket_migrate_p,
         ticket_renumber_p,
         ticket_land_p,
+        ticket_merge_driver_p,
     ]
+
+
+# frob:ticket T-0323
+def _add_ticket_merge_driver_parser(ticket_sub):
+    """Register `frob ticket merge-driver %O %A %B`, the git merge-driver
+    entry point (docs/modules/tickets.md#git-merge-driver): git invokes
+    this with base/ours/theirs temp file paths and expects the splice
+    result written back into `ours` (%A)."""
+    ticket_merge_driver_p = ticket_sub.add_parser(
+        "merge-driver",
+        help="git merge driver for tickets.md -- splices base/ours/theirs "
+        "via splice_ledger instead of a line-level textual merge",
+    )
+    ticket_merge_driver_p.add_argument("ticket_merge_base", metavar="%O")
+    ticket_merge_driver_p.add_argument("ticket_merge_ours", metavar="%A")
+    ticket_merge_driver_p.add_argument("ticket_merge_theirs", metavar="%B")
+    return ticket_merge_driver_p
 
 
 def _add_ticket_renumber_parser(ticket_sub):
@@ -776,11 +811,50 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
     return [ticket_fail_p, ticket_evidence_p, ticket_archive_p]
 
 
+# frob:ticket T-0458
+def _add_ticket_done_report_parser(ticket_sub):
+    """Register `frob ticket done-report <id> (--why TEXT | --why-file PATH)`
+    -- the atomic, auto-composing Done-report writer (T-0458): the caller
+    supplies ONLY the narrative why; Changed and Evidence are auto-filled
+    from git and the ticket's recorded evidence. `--why -` (or neither flag
+    given) reads the narrative from stdin."""
+    ticket_done_report_p = ticket_sub.add_parser(
+        "done-report",
+        help="atomically write/update a ticket's Done report (Changed + "
+        "Evidence auto-composed -- never hand-edit tickets.md)",
+    )
+    ticket_done_report_p.add_argument("ticket_id", metavar="id")
+    ticket_done_report_p.add_argument(
+        "--why",
+        dest="ticket_why",
+        metavar="TEXT",
+        help="the narrative why (pass '-' or omit both --why/--why-file to "
+        "read from stdin)",
+    )
+    ticket_done_report_p.add_argument(
+        "--why-file",
+        dest="ticket_why_file",
+        metavar="PATH",
+        help="read the narrative why from PATH",
+    )
+    ticket_done_report_p.add_argument(
+        "--base-ref",
+        dest="ticket_base_ref",
+        default="main",
+        metavar="REF",
+        help="base ref the auto-filled Changed section diffs against (default: main)",
+    )
+    return ticket_done_report_p
+
+
 def _add_ticket_closeout_parsers(ticket_sub) -> list:
-    """Register the ticket closeout subcommands: attach/block/close/fail/evidence."""
-    return _add_ticket_attach_and_lifecycle_end_parsers(
-        ticket_sub
-    ) + _add_ticket_fail_evidence_archive_parsers(ticket_sub)
+    """Register the ticket closeout subcommands: attach/block/close/fail/
+    evidence/done-report."""
+    return (
+        _add_ticket_attach_and_lifecycle_end_parsers(ticket_sub)
+        + _add_ticket_fail_evidence_archive_parsers(ticket_sub)
+        + [_add_ticket_done_report_parser(ticket_sub)]
+    )
 
 
 # frob:ticket T-0030
@@ -818,6 +892,12 @@ def _add_test_parser(sub) -> None:
         action="store_true",
         help="property-test fuzz-obligated pydantic models and stamp (T-0002)",
     )
+    test_p.add_argument(
+        "--collect",
+        dest="test_collect",
+        action="store_true",
+        help="drop and rebuild the pytest collection cache, then exit (T-0333)",
+    )
     test_p.add_argument("--base", dest="test_base", metavar="REF")
     test_p.add_argument(
         "--lang", dest="test_lang", action="append", default=[], metavar="L"
@@ -854,6 +934,23 @@ def _add_vet_parser(sub) -> None:
         metavar="DIR",
         help="local cvelistV5 mirror root to match dependencies against "
         "(overrides [tool.frob].vet_cve_mirror in pyproject.toml, T-0147)",
+    )
+    vet_p.add_argument(
+        "--timeout",
+        dest="vet_timeout",
+        type=float,
+        metavar="SECONDS",
+        help="per-package scan timeout in seconds; on expiry that package "
+        "gets a VET-TIMEOUT verdict instead of hanging (T-0208, T-0251)",
+    )
+    vet_p.add_argument(
+        "--jobs",
+        dest="vet_jobs",
+        type=int,
+        metavar="N",
+        help="scan packages concurrently with N workers (default 1); "
+        "jobs>1 is best-effort against the shared verdict/registry caches, "
+        "see docs/modules/vet.md (T-0208, T-0251)",
     )
 
 
@@ -964,6 +1061,51 @@ def _add_stats_parser(sub) -> None:
         "--days", dest="stats_days", type=int, metavar="N", help="commit window (30)"
     )
     stats_p.add_argument("--json", dest="stats_json", action="store_true")
+
+
+# frob:ticket T-0319
+def _add_doctor_parser(sub) -> None:
+    """Register the `frob doctor` subcommand: verify+remediate missing
+    native extensions (`frob_core`, `strata_core`)."""
+    # -- doctor ----------------------------------------------------------------
+    doctor_p = sub.add_parser(
+        "doctor",
+        help="verify native extensions (frob_core, strata_core) are installed",
+    )
+    doctor_p.add_argument("--json", dest="doctor_json", action="store_true")
+
+
+# frob:ticket T-0457
+def _add_clean_parser(sub) -> None:
+    """Register the `frob clean` subcommand: tiered, artifact-only workspace
+    cleanup (`--all`/`--deep` widen the tier, `-y`/`--yes` executes -- the
+    default is a dry-run preview)."""
+    # -- clean -----------------------------------------------------------------
+    clean_p = sub.add_parser(
+        "clean",
+        help="remove build/test/cache artifacts (tiered, dry-run by default)",
+    )
+    clean_p.add_argument("clean_path", metavar="path", nargs="?", default=".")
+    clean_p.add_argument(
+        "--all",
+        dest="clean_all",
+        action="store_true",
+        help="tier 2: also remove rebuildable build/test/lint artifacts",
+    )
+    clean_p.add_argument(
+        "--deep",
+        dest="clean_deep",
+        action="store_true",
+        help="tier 3: also remove frob's own .frob/ caches and FROBLEMS.md",
+    )
+    clean_p.add_argument(
+        "-y",
+        "--yes",
+        dest="clean_yes",
+        action="store_true",
+        help="execute the removal (default is a dry-run preview)",
+    )
+    clean_p.add_argument("--json", dest="clean_json", action="store_true")
 
 
 # frob:ticket T-0030
@@ -1197,6 +1339,21 @@ def _build_parser() -> argparse.ArgumentParser:
         version=f"frob {_frob_version()}",
         help="print the installed frob version and exit",
     )
+    # T-0448: global output-layer flags, resolved once per invocation by
+    # `frob.render.resolve_color` -- every subcommand inherits these rather
+    # than declaring its own copy.
+    p.add_argument(
+        "--color",
+        choices=["auto", "always", "never"],
+        default=None,
+        help="force/disable ANSI color regardless of TTY detection",
+    )
+    p.add_argument(
+        "--no-color",
+        dest="no_color",
+        action="store_true",
+        help="disable ANSI color (shorthand for --color=never)",
+    )
     sub = p.add_subparsers(dest="subcommand")
     _add_analysis_subparsers(sub)
     _add_workflow_subparsers(sub)
@@ -1234,6 +1391,8 @@ def _add_workflow_subparsers(sub) -> None:
     _add_serve_parser(sub)
     _add_sys_parser(sub)
     _add_deploy_parser(sub)
+    _add_doctor_parser(sub)
+    _add_clean_parser(sub)
 
 
 # frob:doc docs/modules/app.md#entry-point

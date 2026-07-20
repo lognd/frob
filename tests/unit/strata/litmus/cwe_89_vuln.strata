@@ -7,6 +7,12 @@
 // golden -- this file is this ticket's OWN scoped fixture under
 // tests/unit/strata/litmus/, kept separate per T-0145's declared scope.)
 //
+// T-0345: `db`'s `may "sql"` ALSO fires CWE-639 (2025-list-new
+// `CWE_TOP_25_CATALOG` entry, SAME `sql` capability join) -- this fixture
+// is reused as CWE-639's own vuln fixture too
+// (test_litmus_cwe.py's `_FIRING_FIXTURES["CWE-639"]`), disclosed reuse
+// rather than a near-duplicate second fixture.
+//
 // tested end to end (parse -> elaborate -> check_discharge_completeness)
 // by tests/unit/strata/test_litmus_cwe.py.
 

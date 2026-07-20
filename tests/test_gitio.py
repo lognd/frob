@@ -11,6 +11,9 @@ import pytest
 from frob.gitio import GitError, current_branch, repo_root, run_argv, working_diff
 
 
+# frob:waive DUP001 reason="parallel test fixtures across 3 sibling test \
+# file(s) (3 sites) sharing an arrange-act scaffold typical of exhaustive \
+# per-case/per-scenario coverage; extracting would obscure per-case intent"
 def _git(root: Path, *args: str) -> None:
     subprocess.run(
         ["git", "-C", str(root), *args],
@@ -62,6 +65,30 @@ class TestRepoRoot:
         outside = tmp_path / "not-a-repo"
         outside.mkdir()
         result = repo_root(outside)
+        assert result.is_err
+        assert result.danger_err == GitError.NotARepo
+
+    def test_nonexistent_path_is_not_a_repo(self, tmp_path: Path) -> None:
+        """A `start` path that does not exist at all short-circuits before
+        ever spawning git."""
+        missing = tmp_path / "does-not-exist-at-all"
+        result = repo_root(missing)
+        assert result.is_err
+        assert result.danger_err == GitError.NotARepo
+
+    def test_run_argv_failure_surfaces_as_not_a_repo(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """If the underlying `run_argv` spawn itself fails (not just a
+        nonzero git exit), `repo_root` still reports `NotARepo`."""
+        import frob.gitio as gitio_mod
+
+        monkeypatch.setattr(
+            gitio_mod,
+            "run_argv",
+            lambda argv, **kw: gitio_mod.Err(GitError.GitFailed),
+        )
+        result = repo_root(tmp_path)
         assert result.is_err
         assert result.danger_err == GitError.NotARepo
 
@@ -177,6 +204,60 @@ class TestWorkingDiff:
         _commit(repo, "base")
 
         result = working_diff(repo, "does-not-exist")
+        assert result.is_err
+        assert result.danger_err == GitError.GitFailed
+
+    # frob:waive DUP001 reason="parallel test methods within test_gitio.py \
+    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
+    def test_diff_command_failure_propagates(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A failing `git diff` invocation (after a successful merge-base)
+        propagates its error rather than being swallowed."""
+        import frob.gitio as gitio_mod
+
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        (repo / "base.py").write_text("x = 1\n")
+        _commit(repo, "base")
+
+        real_run_git = gitio_mod._run_git
+
+        def flaky_run_git(args, *, cwd, timeout_s=gitio_mod._DEFAULT_TIMEOUT_S):
+            if args and args[0] == "diff":
+                return gitio_mod.Err(GitError.GitFailed)
+            return real_run_git(args, cwd=cwd, timeout_s=timeout_s)
+
+        monkeypatch.setattr(gitio_mod, "_run_git", flaky_run_git)
+        result = working_diff(repo, "main")
+        assert result.is_err
+        assert result.danger_err == GitError.GitFailed
+
+    # frob:waive DUP001 reason="parallel test methods within test_gitio.py \
+    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
+    def test_untracked_listing_failure_propagates(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A failing `git ls-files --others` invocation propagates its
+        error, distinct from the `git diff` failure path above."""
+        import frob.gitio as gitio_mod
+
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        (repo / "base.py").write_text("x = 1\n")
+        _commit(repo, "base")
+
+        real_run_git = gitio_mod._run_git
+
+        def flaky_run_git(args, *, cwd, timeout_s=gitio_mod._DEFAULT_TIMEOUT_S):
+            if args and args[0] == "ls-files":
+                return gitio_mod.Err(GitError.GitFailed)
+            return real_run_git(args, cwd=cwd, timeout_s=timeout_s)
+
+        monkeypatch.setattr(gitio_mod, "_run_git", flaky_run_git)
+        result = working_diff(repo, "main")
         assert result.is_err
         assert result.danger_err == GitError.GitFailed
 

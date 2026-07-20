@@ -35,10 +35,10 @@ Implements docs/modules/dup.md's `find_clones` across the full rung ladder:
   `frob.lang` does not yet expose per-token).
 - **R4 verification is now real tree edit distance.** `_apted_similarity_for_pair`
   calls `frob.lang.symbol_tree` to get actual node structure for both
-  candidates and runs `frob_core.apted_similarity` (Zhang-Shasha over the
+  candidates and runs `frob_core._apted_similarity` (Zhang-Shasha over the
   real subtree, not a flat statement sequence) -- the REPORTED similarity
   on a `ClonePair` is this real metric. The statement-sequence Levenshtein
-  (`_core.tree_edit_similarity`, still a real algorithm, just over a
+  (`_core._tree_edit_similarity`, still a real algorithm, just over a
   flatter unit) is kept as the near-miss floor check and the source of the
   region-span narrowing (`_region_span_for_alignment`) -- that alignment
   is still statement-index-based, not node-based, which is why it is kept
@@ -55,18 +55,30 @@ Implements docs/modules/dup.md's `find_clones` across the full rung ladder:
   keyword guess. `frob:todo T-0001` follow-up: extend real statement
   boundaries to the R4 alignment/region-span path too.
 - **R5's def-use/control-dependence graph is real when a `frob.lang`
-  subtree is available.** `_real_dataflow_graph` finds the function's
-  `block` node, labels identifiers "def"/"use" from actual `assignment`
-  node child position (not a "next token is `=`" guess), and adds a
+  subtree is available, across every grammar `_BLOCK_LABELS` names, not
+  Python only (T-0196).** `_real_dataflow_graph` finds the function's
+  body-statement container (`_find_block`, matching `_BLOCK_LABELS`:
+  python/rust `block`, typescript/tsx `statement_block`, c/cpp
+  `compound_statement` -- each verified directly against that grammar's
+  real parse tree, not assumed), labels identifiers "def"/"use" from
+  actual assignment-node child position (`_ASSIGNMENT_LABELS` /
+  `_DECLARATOR_LABELS`, not a "next token is `=`" guess), and adds a
   sequential control-flow edge between consecutive statements -- real
   execution order, which the old proxy had no notion of at all. Still not
   a full CFG (no branch-edge fan-out for `if`/`for`/`while`, no true
   reaching-definitions dataflow) and augmented assignment/tuple-unpacking/
   `for`-target binding still fold into "use" -- recorded as `frob:todo
   T-0001` follow-up. `_build_dataflow_graph` (the original co-occurrence
-  proxy) is kept as the fallback for regions where no `block` node is
-  found (non-function regions, parse failures).
-- **R7 (`probe_smt_equivalence`) is the bounded-SMT rung** docs/modules/dup.md
+  proxy) is kept as the honest fallback for every region where no
+  `_BLOCK_LABELS` node is found: non-function regions, parse failures, or
+  a `frob.lang`-supported grammar (e.g. `strata`) whose body-container
+  label is not yet in `_BLOCK_LABELS`. `docs/modules/dup.md` is not in
+  T-0196's scope, so its per-language coverage disclosure is a filed
+  follow-up (T-draft-75a6070b, mints a real id on land) rather than
+  updated here -- the exact real-vs-fallback breakdown per grammar lives
+  in `_BLOCK_LABELS`'/`_ASSIGNMENT_LABELS`'/`_DECLARATOR_LABELS`'
+  docstrings above until that lands.
+- **R7 (`_probe_smt_equivalence`) is the bounded-SMT rung** docs/modules/dup.md
   named as a research item, now real for its explicitly bounded subset:
   single-`return`, int/bool-annotated, straight-line functions built from
   `+ - * // %`, comparisons, `and/or/not`, and one `if`-expression --
@@ -86,6 +98,22 @@ Implements docs/modules/dup.md's `find_clones` across the full rung ladder:
   `importlib`; other `frob.lang` languages return `Err(DupError.NotPure)`
   (no cross-language FFI harness exists to call a Rust/TS/C function from
   Python).
+- **R4 candidate pairs are pre-filtered before expensive verification**
+  (T-0197, docs/modules/dup-sota-survey.md survey items 2/4/6): NiCad-style
+  size-ratio (`_nicad_size_ratio_ok`), Oreo-style branch-count metric-ratio
+  (`_oreo_metric_ratio_ok`), and a DECKARD-style characteristic-vector
+  cosine similarity over R2-normalized token-shape categories
+  (`_deckard_vector_ok`, `_characteristic_vector`) all run in
+  `_r4_candidate_pair` before `_r4_verify_pair`'s statement-alignment/APTED
+  path. These are PRUNE-ONLY: `tests/test_dup_prefilter.py` asserts
+  enabling `cfg.prefilter_enabled` (the default) never changes the
+  verified-clone set on the existing dup fixtures, only
+  `DupStats.pairs_prefiltered`/`pairs_verified` counts. DECKARD's real
+  characteristic vector is a per-subtree AST node-type histogram; this uses
+  the R2-normalized LEXICAL token-shape stream instead (`frob.lang`
+  currently exposes no per-token node-type metadata on `body_tokens`) --
+  same class of approximation as R2/R3's identifier-shaped-token
+  normalization above.
 """
 
 # frob:waive TEST005 reason="module line coverage 57.9%, debt T-0160"
@@ -240,11 +268,58 @@ _R4_MIN_SHARED = 2
 _R4_SIMILARITY_FLOOR = 0.6
 _R4_APTED_VERDICT_METHOD = "r4apted"
 
+# Branch-shaped keywords counted for the Oreo-style metric-ratio pre-filter
+# (docs/modules/dup-sota-survey.md item 6, non-ML half): a cheap McCabe-style
+# complexity proxy over the token stream -- `frob.lang.RawSymbol.body_tokens`
+# carries no per-token AST-node metadata, so an exact cyclomatic count is not
+# available here; counting branch-starting keywords is the same order of
+# approximation the module already uses for `_STMT_STARTERS`.
+_BRANCH_KEYWORDS = frozenset(
+    {"if", "elif", "for", "while", "try", "except", "case", "catch"}
+)
+
 # R5 iteration count for the WL-kernel refinement and its match similarity
 # (WL hashing is a boolean collide/not-collide signal, not a continuous
 # metric, so an exact-hash match is reported at a fixed high similarity).
 _R5_ITERATIONS = 2
 _R5_SIMILARITY = 0.88
+
+# R5 real-CFG per-grammar node vocabulary (T-0196): each supported
+# `frob.lang` grammar names its function-body statement container and its
+# assignment-shaped statements differently (tree-sitter node `type`, which
+# `TreeNode.label` mirrors verbatim -- verified directly against each
+# grammar's parse tree, not assumed). `_find_block` and `_statement_ids`
+# match against these sets instead of a single hardcoded label, so the real
+# def-use/control-flow path (`_real_dataflow_graph`) covers every grammar
+# whose body/assignment shape is listed here, not just Python's. A symbol
+# whose grammar is not listed (or whose subtree does not match any of these
+# labels) falls through to `_build_dataflow_graph`, the honest co-occurrence
+# proxy -- see docs/modules/dup.md's per-language R5 coverage table for the
+# current disclosure.
+_BLOCK_LABELS = frozenset(
+    {
+        "block",  # python, rust
+        "statement_block",  # typescript/tsx
+        "compound_statement",  # c, cpp
+    }
+)
+_ASSIGNMENT_LABELS = frozenset(
+    {
+        "assignment",  # python
+        "assignment_expression",  # c, cpp, typescript/tsx (re-assignment)
+        "let_declaration",  # rust `let x = ...;` (has a direct `=` child)
+    }
+)
+# Declaration statements that wrap the actual def/use pair one level down
+# (a direct `=`-bearing child) instead of carrying it themselves --
+# `_statement_ids` descends into the first matching child rather than
+# treating the whole wrapper as one flat "use" clique.
+_DECLARATOR_LABELS = frozenset(
+    {
+        "variable_declarator",  # typescript/tsx `let`/`const`/`var` binding
+        "init_declarator",  # c, cpp `int x = ...;`
+    }
+)
 
 # Cache "method" tags and a fixed corpus epoch (bumped only if the
 # winnowing/WL parameters above ever change -- there is no generator
@@ -298,7 +373,7 @@ def _split_statements(tokens: tuple[str, ...]) -> tuple[tuple[str, ...], ...]:
 
 
 def _statement_hashes(chunks: tuple[tuple[str, ...], ...]) -> tuple[int, ...]:
-    """One stable int hash per statement chunk, for `tree_edit_similarity`."""
+    """One stable int hash per statement chunk, for `_tree_edit_similarity`."""
     return tuple(hash(c) & 0xFFFFFFFFFFFFFFFF for c in chunks)
 
 
@@ -490,43 +565,82 @@ def _substitute_calls(
     i = 0
     n = len(tokens)
     while i < n:
-        tok = tokens[i]
-        if (
-            budget[0] > 0
-            and i + 1 < n
-            and tokens[i + 1] == "("
-            and tok in name_map
-            and name_map[tok] not in visited
-            and caller_counts.get(name_map[tok], 0) <= 1
-        ):
-            callee_symref = name_map[tok]
-            paren_depth = 1
-            j = i + 2
-            while j < n and paren_depth > 0:
-                if tokens[j] == "(":
-                    paren_depth += 1
-                elif tokens[j] == ")":
-                    paren_depth -= 1
-                j += 1
-            callee_tokens = _callee_tokens(state, callee_symref)
-            if callee_tokens:
-                budget[0] -= 1
-                callee_path = callee_symref.split("::", 1)[0]
-                substituted = _substitute_calls(
-                    state,
-                    callee_path,
-                    callee_symref,
-                    list(callee_tokens),
-                    visited | {callee_symref},
-                    budget,
-                    depth + 1,
-                )
-                out.extend(substituted)
-                i = j
-                continue
-        out.append(tok)
+        spliced = _splice_call_site(
+            state, tokens, i, name_map, visited, caller_counts, budget, depth
+        )
+        if spliced is not None:
+            new_tokens, next_i = spliced
+            out.extend(new_tokens)
+            i = next_i
+            continue
+        out.append(tokens[i])
         i += 1
     return out
+
+
+# frob:ticket T-0361
+def _splice_call_site(
+    state: _FpState,
+    tokens: list[str],
+    i: int,
+    name_map: dict[str, str],
+    visited: frozenset[str],
+    caller_counts: dict[str, int],
+    budget: list[int],
+    depth: int,
+) -> tuple[list[str], int] | None:
+    """If `tokens[i]` starts a resolvable, inlinable, singly-called `name(...)`
+    call site, scan to its matching close-paren and return the callee's
+    recursively-substituted body tokens plus the token index just past the
+    call; `None` if position `i` is not such a call site (left for the
+    caller to append as an ordinary token). Split out of `_substitute_calls`'
+    scan loop (T-0361)."""
+    n = len(tokens)
+    tok = tokens[i]
+    if not (
+        budget[0] > 0
+        and i + 1 < n
+        and tokens[i + 1] == "("
+        and tok in name_map
+        and name_map[tok] not in visited
+        and caller_counts.get(name_map[tok], 0) <= 1
+    ):
+        return None
+    callee_symref = name_map[tok]
+    j = _matching_paren_end(tokens, i + 2)
+    callee_tokens = _callee_tokens(state, callee_symref)
+    if not callee_tokens:
+        return None
+    budget[0] -= 1
+    callee_path = callee_symref.split("::", 1)[0]
+    substituted = _substitute_calls(
+        state,
+        callee_path,
+        callee_symref,
+        list(callee_tokens),
+        visited | {callee_symref},
+        budget,
+        depth + 1,
+    )
+    return substituted, j
+
+
+# frob:ticket T-0361
+def _matching_paren_end(tokens: list[str], open_idx: int) -> int:
+    """Token index just past the `)` matching the `(` already consumed at
+    `open_idx - 1` (i.e. `open_idx` is the first token INSIDE the call's
+    parens), scanning for nested parens; split out of `_splice_call_site`'s
+    paren-depth scan (T-0361)."""
+    n = len(tokens)
+    paren_depth = 1
+    j = open_idx
+    while j < n and paren_depth > 0:
+        if tokens[j] == "(":
+            paren_depth += 1
+        elif tokens[j] == ")":
+            paren_depth -= 1
+        j += 1
+    return j
 
 
 def _inline_private_calls(
@@ -590,9 +704,14 @@ def _add_clique_edges(node_ids: list[int], adjacency: list[tuple[int, int]]) -> 
 
 
 def _find_block(node: Any) -> Any | None:
-    """Depth-first search for the first `block` node (a Python function
-    body's statement container) under `node`."""
-    if node.label == "block":
+    """Depth-first search for the first function-body statement container
+    under `node`, across every `_BLOCK_LABELS` grammar (T-0196: was
+    Python-only `"block"`; `frob.lang.symbol_tree` labels mirror each
+    grammar's own tree-sitter node `type` verbatim, so python/rust both use
+    `"block"` but typescript/tsx use `"statement_block"` and c/cpp use
+    `"compound_statement"` -- verified against each grammar's real parse
+    tree, not assumed)."""
+    if node.label in _BLOCK_LABELS:
         return node
     for child in node.children:
         found = _find_block(child)
@@ -616,20 +735,24 @@ def _real_dataflow_graph(
 ) -> tuple[tuple[tuple[int, int], ...], tuple[str, ...]] | None:
     """R5 (real): a def-use adjacency plus sequential control-flow edges
     built from `frob.lang`'s actual statement nodes, not a token heuristic.
+    Covers every grammar `_BLOCK_LABELS` names (python, rust, typescript/
+    tsx, c, cpp -- T-0196), not Python only.
 
     See `_statement_sequence_graph` for the def-use/control-flow edge rules.
-    Every direct child of `block` is a statement (`frob.lang.export_tree`
-    mirrors tree-sitter-python's grammar as-is and does not wrap simple
-    statements -- `assignment`, bare `call`, etc. -- in an
-    `expression_statement` node; T-0117 found the opposite assumption
-    silently dropped every assignment statement, collapsing unrelated
-    functions to identical single-node graphs and WL-hash-colliding them).
-    No filtering by statement-type label is needed or correct here.
+    Every direct child of the body-statement container (`_find_block`'s
+    match) is a statement (`frob.lang.export_tree` mirrors each grammar's
+    own tree-sitter shape as-is and does not wrap simple statements --
+    `assignment`, bare `call`, etc. -- in an `expression_statement` node
+    for python; T-0117 found the opposite assumption silently dropped every
+    assignment statement, collapsing unrelated functions to identical
+    single-node graphs and WL-hash-colliding them). No filtering by
+    statement-type label is needed or correct here.
 
     Returns `None` (caller falls back to `_build_dataflow_graph`) when no
-    `block` node is found under `tree` (a non-function region, or a body
-    with no direct statements) -- an honest "can't build a real graph
-    here," not a silent wrong answer.
+    `_BLOCK_LABELS` node is found under `tree` (a non-function region, a
+    body with no direct statements, or a grammar not yet listed in
+    `_BLOCK_LABELS`) -- an honest "can't build a real graph here," not a
+    silent wrong answer.
     """
     block = _find_block(tree)
     if block is None or not block.children:
@@ -687,8 +810,11 @@ def _eq_index(children: list[Any]) -> int | None:
 
 
 def _assignment_ids(assign: Any, labels: list[str]) -> list[int]:
-    """Node ids for an `assignment` node: pre-`=` children are "def", the
-    rest "use"."""
+    """Node ids for an assignment-shaped node (`_ASSIGNMENT_LABELS`):
+    pre-`=` children are "def", the rest "use". Grammar-agnostic once the
+    node has a direct `=` leaf child -- verified true for every label in
+    `_ASSIGNMENT_LABELS`/`_DECLARATOR_LABELS` against each grammar's real
+    parse tree."""
     eq_idx = _eq_index(assign.children)
     ids: list[int] = []
     for i, child in enumerate(assign.children):
@@ -699,18 +825,42 @@ def _assignment_ids(assign: Any, labels: list[str]) -> list[int]:
     return ids
 
 
+def _find_child_label(node: Any, wanted: frozenset[str]) -> Any | None:
+    """First direct child of `node` whose label is in `wanted`, or None."""
+    for child in node.children:
+        if child.label in wanted:
+            return child
+    return None
+
+
 def _statement_ids(stmt: Any, labels: list[str]) -> list[int]:
     """Node ids (with def/use labels appended to `labels`) for one statement.
 
-    `assignment` is handled whether it's the statement itself (this
-    grammar's actual shape -- see `_real_dataflow_graph`'s docstring) or
-    wrapped one level under `expression_statement` (kept for robustness
-    against other tree-sitter grammar builds that do wrap it).
+    Three shapes, all real per-grammar node structure (T-0196, verified
+    against each grammar's actual parse tree, not assumed):
+    - `_ASSIGNMENT_LABELS` (python `assignment`, c/cpp/typescript
+      `assignment_expression`, rust `let_declaration`) is handled whether
+      it's the statement itself or wrapped one level under
+      `expression_statement` (kept for robustness against other
+      tree-sitter grammar builds that do wrap it).
+    - `_DECLARATOR_LABELS` (typescript `variable_declarator` under a
+      `lexical_declaration`/`variable_declaration` wrapper, c/cpp
+      `init_declarator` under a `declaration` wrapper) carries the real
+      `=` one level below the statement node -- descend into the first
+      matching child rather than flattening the wrapper to one "use"
+      clique.
+    - Anything else (a bare expression statement, a control-flow header
+      with no top-level assignment) falls back to "every identifier in
+      this statement is a use" -- the same conservative default the
+      original Python-only version used.
     """
-    if stmt.label == "assignment":
+    if stmt.label in _ASSIGNMENT_LABELS:
         return _assignment_ids(stmt, labels)
-    if stmt.children and stmt.children[0].label == "assignment":
+    if stmt.children and stmt.children[0].label in _ASSIGNMENT_LABELS:
         return _assignment_ids(stmt.children[0], labels)
+    declarator = _find_child_label(stmt, _DECLARATOR_LABELS)
+    if declarator is not None:
+        return _assignment_ids(declarator, labels)
     return _labeled_ids(_leaf_labels(stmt), "use", labels)
 
 
@@ -744,7 +894,7 @@ def _apted_similarity_for_pair(
         return None
     labels_a, parents_a = flatten_tree(left_tree.danger_ok)
     labels_b, parents_b = flatten_tree(right_tree.danger_ok)
-    sim_result = _core.apted_similarity(
+    sim_result = _core._apted_similarity(
         tuple(labels_a), tuple(parents_a), tuple(labels_b), tuple(parents_b)
     )
     if sim_result.is_err:
@@ -767,12 +917,16 @@ class _FpState:
     fingerprinted: int = 0
     cache_hits: int = 0
     pairs_verified: int = 0
+    pairs_prefiltered: int = 0
     tokens_by_path: dict[str, dict[str, tuple[str, ...]]] = field(default_factory=dict)
     body_tokens_by_ref: dict[str, tuple[str, ...]] = field(default_factory=dict)
     digest_by_ref: dict[str, str] = field(default_factory=dict)
     fp_by_ref: dict[str, tuple[int, ...]] = field(default_factory=dict)
     callgraph_by_dir: dict[str, CallGraph] = field(default_factory=dict)
     caller_counts_by_dir: dict[str, dict[str, int]] = field(default_factory=dict)
+    size_by_ref: dict[str, int] = field(default_factory=dict)
+    metric_by_ref: dict[str, int] = field(default_factory=dict)
+    vector_by_ref: dict[str, dict[str, int]] = field(default_factory=dict)
 
 
 def _r3_fingerprint(
@@ -784,7 +938,7 @@ def _r3_fingerprint(
     if cached is not None:
         state.cache_hits += 1
         return str(cached[0])
-    result = _core.r3_canonical_hash(normalized)
+    result = _core._r3_canonical_hash(normalized)
     if result.is_err:
         return None
     _cache.put_fingerprint(state.root, digest, "r3", (result.danger_ok,))
@@ -800,7 +954,7 @@ def _r4_fingerprint(
         state.cache_hits += 1
         state.fp_by_ref[symref] = cast("tuple[int, ...]", tuple(cached))
         return
-    result = _core.winnow_fingerprints(normalized, _R4_K, _R4_W)
+    result = _core._winnow_fingerprints(normalized, _R4_K, _R4_W)
     if result.is_ok:
         state.fp_by_ref[symref] = result.danger_ok
         _cache.put_fingerprint(state.root, digest, _R4_FP_RUNG, result.danger_ok)
@@ -828,7 +982,7 @@ def _r5_fingerprint(
         state.cache_hits += 1
         return cast(int, cached[0])
     adjacency, labels = _dataflow_graph(state.root, record, body_tokens)
-    result = _core.wl_hash(adjacency, labels, _R5_ITERATIONS)
+    result = _core._wl_hash(adjacency, labels, _R5_ITERATIONS)
     if result.is_err:
         return None
     _cache.put_fingerprint(state.root, digest, _R5_FP_RUNG, (result.danger_ok,))
@@ -870,6 +1024,12 @@ def _fingerprint_symbol(state: _FpState, symref: str, record: Any) -> None:
     digest = _digest(body_tokens)
     state.digest_by_ref[symref] = digest
     normalized = _r2_normalize(body_tokens)
+
+    state.size_by_ref[symref] = len(body_tokens)
+    state.metric_by_ref[symref] = sum(
+        1 for tok in body_tokens if tok in _BRANCH_KEYWORDS
+    )
+    state.vector_by_ref[symref] = _characteristic_vector(normalized)
 
     state.r1_buckets[_r1_hash(body_tokens)].append(symref)
     state.r2_buckets[_r2_hash(body_tokens)].append(symref)
@@ -974,7 +1134,7 @@ def _r4_alignment(
         return cast(float, cached[0]), tuple((p[0], p[1]) for p in raw)
     a_hashes = _statement_hashes(_split_statements(state.body_tokens_by_ref[a]))
     b_hashes = _statement_hashes(_split_statements(state.body_tokens_by_ref[b]))
-    result = _core.tree_edit_similarity(a_hashes, b_hashes)
+    result = _core._tree_edit_similarity(a_hashes, b_hashes)
     if result.is_err:
         return None
     sim, alignment_pairs = result.danger_ok
@@ -1081,7 +1241,7 @@ def _r4_groups(
     if len(r4_refs) < 2:
         return []
     sets = tuple(state.fp_by_ref[r] for r in r4_refs)
-    candidates_result = _core.candidate_pairs(sets, _R4_MIN_SHARED)
+    candidates_result = _core._candidate_pairs(sets, _R4_MIN_SHARED)
     if candidates_result.is_err:
         _log.debug("find_clones: r4 candidate discovery unavailable")
         return []
@@ -1093,6 +1253,101 @@ def _r4_groups(
     return [tuple(r4_group)] if r4_group else []
 
 
+def _characteristic_vector(normalized: tuple[str, ...]) -> dict[str, int]:
+    """DECKARD-style characteristic vector (docs/modules/dup-sota-survey.md
+    item 4, T-0197): a histogram over shape CATEGORIES of the R2-normalized
+    token stream, one bucket per distinct keyword/punctuation token plus a
+    single collapsed `"IDENT"` bucket for every alpha-renamed placeholder.
+
+    Real DECKARD builds this histogram over per-subtree AST *node-type*
+    labels; `frob.lang.RawSymbol.body_tokens` is a flat leaf-token tuple
+    with no per-token node-type metadata, so this uses the R2-normalized
+    LEXICAL shape as the cheap stand-in -- documented deviation, same
+    posture as the module docstring's other "no `frob.lang` per-token
+    metadata yet" notes. Collapsing all placeholders to one bucket keeps
+    the vector identifier-count-position-independent (two trees renamed
+    with a different NUMBER of distinct identifiers should still look
+    similar), matching DECKARD's rename-invariance property.
+    """
+    histogram: dict[str, int] = defaultdict(int)
+    for tok in normalized:
+        bucket = "IDENT" if tok.startswith("_v") and tok[2:].isdigit() else tok
+        histogram[bucket] += 1
+    return dict(histogram)
+
+
+def _cosine_similarity(vec_a: dict[str, int], vec_b: dict[str, int]) -> float:
+    """Cosine similarity of two sparse count-histograms; `1.0` if both are empty."""
+    if not vec_a and not vec_b:
+        return 1.0
+    if not vec_a or not vec_b:
+        return 0.0
+    keys = vec_a.keys() & vec_b.keys()
+    dot = sum(vec_a[k] * vec_b[k] for k in keys)
+    norm_a = sum(v * v for v in vec_a.values()) ** 0.5
+    norm_b = sum(v * v for v in vec_b.values()) ** 0.5
+    if norm_a == 0 or norm_b == 0:
+        return 0.0
+    return dot / (norm_a * norm_b)
+
+
+def _nicad_size_ratio_ok(state: _FpState, a: str, b: str) -> bool:
+    """NiCad-style size-ratio pre-filter (docs/modules/dup-sota-survey.md
+    item 2's one adoptable idea, T-0197): reject a candidate pair whose
+    token-count ratio is wilder than `cfg.prefilter_size_ratio` -- two
+    bodies of grossly different size are not a plausible Type-1/2/3 clone
+    pair. `min/max` so the ratio is always in `(0, 1]`; missing sizes (a
+    symbol not seen by `_fingerprint_symbol`, should not happen for an R4
+    candidate) pass through rather than reject."""
+    size_a, size_b = state.size_by_ref.get(a), state.size_by_ref.get(b)
+    if not size_a or not size_b:
+        return True
+    ratio = min(size_a, size_b) / max(size_a, size_b)
+    return ratio >= state.cfg.prefilter_size_ratio
+
+
+def _oreo_metric_ratio_ok(state: _FpState, a: str, b: str) -> bool:
+    """Oreo-style metric-ratio pre-filter (docs/modules/dup-sota-survey.md
+    item 6, non-ML half, T-0197): reject a candidate pair whose branch-
+    keyword count (a cheap McCabe-complexity proxy, `_BRANCH_KEYWORDS`)
+    ratio is wilder than `cfg.prefilter_metric_ratio`. Add-one smoothed so
+    two straight-line (zero-branch) bodies never spuriously divide-by-zero
+    or get rejected outright -- only a real, large complexity gap prunes."""
+    metric_a = state.metric_by_ref.get(a, 0) + 1
+    metric_b = state.metric_by_ref.get(b, 0) + 1
+    ratio = min(metric_a, metric_b) / max(metric_a, metric_b)
+    return ratio >= state.cfg.prefilter_metric_ratio
+
+
+def _deckard_vector_ok(state: _FpState, a: str, b: str) -> bool:
+    """DECKARD characteristic-vector pre-filter (T-0197): reject a candidate
+    pair whose `_characteristic_vector` cosine similarity is below
+    `cfg.prefilter_vector_similarity` -- structurally dissimilar token-shape
+    profiles are not a plausible clone pair. Missing vectors pass through
+    rather than reject."""
+    vec_a, vec_b = state.vector_by_ref.get(a), state.vector_by_ref.get(b)
+    if vec_a is None or vec_b is None:
+        return True
+    return _cosine_similarity(vec_a, vec_b) >= state.cfg.prefilter_vector_similarity
+
+
+def _passes_r4_prefilters(state: _FpState, a: str, b: str) -> bool:
+    """All three R4 candidate pre-filters (T-0197), ANDed: NiCad size-ratio,
+    Oreo metric-ratio, DECKARD characteristic-vector similarity. A pair must
+    clear every filter to reach the expensive `_r4_verify_pair` alignment/
+    APTED path -- these are PRUNE-ONLY (docs/modules/dup-sota-survey.md
+    survey items 2/4/6): failing a filter skips verification, it never adds
+    a clone report on its own. `cfg.prefilter_enabled=False` disables all
+    three (the pre-T-0197 behavior, every candidate reaches verification)."""
+    if not state.cfg.prefilter_enabled:
+        return True
+    return (
+        _nicad_size_ratio_ok(state, a, b)
+        and _oreo_metric_ratio_ok(state, a, b)
+        and _deckard_vector_ok(state, a, b)
+    )
+
+
 def _r4_candidate_pair(
     state: _FpState,
     r4_refs: list[str],
@@ -1102,11 +1357,11 @@ def _r4_candidate_pair(
     touched: frozenset[str] | None,
     seen_pairs: set[frozenset[str]],
 ) -> ClonePair | None:
-    """One `_core.candidate_pairs` index pair, filtered and verified into a
+    """One `_core._candidate_pairs` index pair, filtered and verified into a
     `ClonePair` (or `None`)."""
     if i == j:
         # T-0191: unlike _bucket_pairs' range(i+1, len(members)) (which
-        # structurally cannot self-pair), frob_core.candidate_pairs can
+        # structurally cannot self-pair), frob_core._candidate_pairs can
         # hand back (i, i) when a symbol's own fingerprint set collides
         # with itself past _R4_MIN_SHARED -- observed for real on this
         # repo's dup cache module post-refactor. Skip rather than
@@ -1118,6 +1373,9 @@ def _r4_candidate_pair(
     if touched is not None and a not in touched and b not in touched:
         return None
     if frozenset((a, b)) in seen_pairs:
+        return None
+    if not _passes_r4_prefilters(state, a, b):
+        state.pairs_prefiltered += 1
         return None
     return _r4_verify_pair(state, a, b, snapshot, seen_pairs)
 
@@ -1160,17 +1418,32 @@ def _region_groups(
     if len(refs) < 2:
         return []
     normalized_docs = tuple(_r2_normalize(state.body_tokens_by_ref[r]) for r in refs)
-    result = _core.exact_regions(normalized_docs, cfg.region_min_tokens)
+    result = _core._exact_regions(
+        normalized_docs, cfg.region_min_tokens, cfg.region_run_cap
+    )
     if result.is_err:
         _log.debug("find_clones: r1.5 exact-region kernel unavailable")
         return []
+    hits, truncated = result.danger_ok
+    if truncated:
+        # T-0273: an equal-token run exceeded [dup].region_run_cap and its
+        # pair emission was capped -- an honest signal, not a silent drop
+        # (the T-0193-recall-bug lesson). Some region pairs inside that
+        # oversized run were not reported.
+        _log.warning(
+            "find_clones: r1.5 exact-region kernel truncated pair emission "
+            "for at least one equal-token run larger than "
+            "[dup].region_run_cap=%d; some region pairs in that run were "
+            "not reported",
+            cfg.region_run_cap,
+        )
     group: list[ClonePair] = [
         pair
         for pair in (
             _region_candidate_pair(
                 state, snapshot, refs, normalized_docs, touched, seen_pairs, hit
             )
-            for hit in result.danger_ok
+            for hit in hits
         )
         if pair is not None
     ]
@@ -1186,7 +1459,7 @@ def _region_candidate_pair(
     seen_pairs: set[frozenset[str]],
     hit: tuple[int, int, int, int, int],
 ) -> ClonePair | None:
-    """One `_core.exact_regions` hit `(da, oa, db, ob, length)`, filtered and
+    """One `_core._exact_regions` hit `(da, oa, db, ob, length)`, filtered and
     turned into an r1.5 `ClonePair` (or `None`)."""
     da, oa, db, ob, length = hit
     a, b = refs[da], refs[db]
@@ -1304,16 +1577,18 @@ def _clone_report(state: _FpState, groups: list[tuple[ClonePair, ...]]) -> Clone
         fingerprinted=state.fingerprinted,
         cache_hits=state.cache_hits,
         pairs_verified=state.pairs_verified,
+        pairs_prefiltered=state.pairs_prefiltered,
     )
     clone_groups = tuple(
         CloneMatchGroup(pairs=group, template=build_group_template(state.root, group))
         for group in groups
     )
     _log.info(
-        "find_clones: %d group(s), %d pair(s) verified, %d symbol(s) fingerprinted, "
-        "%d cache hit(s)",
+        "find_clones: %d group(s), %d pair(s) verified, %d pair(s) prefiltered, "
+        "%d symbol(s) fingerprinted, %d cache hit(s)",
         len(clone_groups),
         state.pairs_verified,
+        state.pairs_prefiltered,
         state.fingerprinted,
         state.cache_hits,
     )
@@ -1787,7 +2062,7 @@ def _smt_function_expr(source: str, z3: Any) -> tuple[Any, list[Any]] | None:
     try:
         expr = _smt_translate(fn.body[0].value, z3, env)
     except ValueError as exc:
-        _log.debug("probe_smt_equivalence: unsupported subset (%s)", exc)
+        _log.debug("_probe_smt_equivalence: unsupported subset (%s)", exc)
         return None
     return expr, params
 
@@ -1813,8 +2088,8 @@ def _smt_bind_params(
 
 
 # frob:doc docs/modules/dup.md#rung-r7
-# frob:waive TEST005 reason="probe_smt_equivalence 66.7% branch cover, debt T-0160"
-def probe_smt_equivalence(
+# frob:waive TEST005 reason="_probe_smt_equivalence 66.7% branch cover, debt T-0160"
+def _probe_smt_equivalence(
     a: str, b: str, snapshot: GraphSnapshot
 ) -> Result[ProbeVerdict, DupError]:
     """R7 (opt-in, research-frontier per docs/modules/dup.md): bounded-SMT formal
@@ -1832,7 +2107,7 @@ def probe_smt_equivalence(
     try:
         import z3  # ty: ignore[unresolved-import]  # optional dep, frob[smt]
     except ImportError:
-        _log.warning("probe_smt_equivalence: z3-solver not installed")
+        _log.warning("_probe_smt_equivalence: z3-solver not installed")
         return Err(DupError.SmtUnavailable)
 
     parsed = _smt_parse_pair(a, b, snapshot, z3)
@@ -1915,16 +2190,16 @@ def _smt_solve(
 def _smt_verdict_for_check(
     a: str, b: str, solver: Any, verdict: Any, params_a: list[Any], z3: Any
 ) -> Result[ProbeVerdict, DupError]:
-    """Turn a `solver.check()` result into the `probe_smt_equivalence` verdict."""
+    """Turn a `solver.check()` result into the `_probe_smt_equivalence` verdict."""
     if verdict == z3.unsat:
-        _log.info("probe_smt_equivalence: %s vs %s -- proved equivalent", a, b)
+        _log.info("_probe_smt_equivalence: %s vs %s -- proved equivalent", a, b)
         return Ok(ProbeVerdict(left=a, right=b, equivalent=True, cases_run=0))
     if verdict == z3.sat:
         model = solver.model()
         counterexample = {
             str(p): str(model.eval(p, model_completion=True)) for p in params_a
         }
-        _log.info("probe_smt_equivalence: %s vs %s -- counterexample found", a, b)
+        _log.info("_probe_smt_equivalence: %s vs %s -- counterexample found", a, b)
         return Ok(
             ProbeVerdict(
                 left=a,
@@ -1934,13 +2209,13 @@ def _smt_verdict_for_check(
                 counterexample=counterexample,
             )
         )
-    _log.warning("probe_smt_equivalence: %s vs %s -- solver returned unknown", a, b)
+    _log.warning("_probe_smt_equivalence: %s vs %s -- solver returned unknown", a, b)
     return Err(DupError.SmtUnsupported)
 
 
 __all__ = [
     "find_clones",
     "probe_equivalence",
-    "probe_smt_equivalence",
+    "_probe_smt_equivalence",
     "touched_refs",
 ]

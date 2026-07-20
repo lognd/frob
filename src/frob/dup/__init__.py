@@ -16,6 +16,23 @@ from __future__ import annotations
 
 from frob.dup._cache import get_fingerprint, get_verdict, put_fingerprint, put_verdict
 from frob.dup._core import anti_unify, core_available
+from frob.dup._exhaustiveness import (
+    CLONE_TYPE_DESCRIPTIONS,
+    CLONE_TYPES,
+    DUP_CLAIMS,
+    DUP_MATRIX_EXCUSES,
+    RUNG_SPECS,
+    DupClaim,
+    DupMatrixCell,
+    DupMatrixExcuse,
+    RungSpec,
+    dup_matrix,
+    unclaimed_cells,
+    validate_claim_rungs,
+)
+from frob.dup._exhaustiveness import (
+    LANGUAGES as EXHAUSTIVENESS_LANGUAGES,
+)
 from frob.dup._legacy import CloneGroup, CodeFragment, DupResult, find_duplicates
 from frob.dup._models import (
     AntiUnifyTemplate,
@@ -40,8 +57,12 @@ from frob.dup._rules import DUP001, DUP002
 from frob.dup._template import build_group_template
 
 __all__ = [
+    "CLONE_TYPES",
+    "CLONE_TYPE_DESCRIPTIONS",
     "DUP001",
     "DUP002",
+    "DUP_CLAIMS",
+    "DUP_MATRIX_EXCUSES",
     "AntiUnifyTemplate",
     "CloneBinding",
     "CloneGroup",
@@ -51,14 +72,21 @@ __all__ = [
     "CloneReport",
     "CloneTemplate",
     "CodeFragment",
+    "DupClaim",
     "DupConfig",
     "DupError",
+    "DupMatrixCell",
+    "DupMatrixExcuse",
     "DupResult",
     "DupStats",
+    "EXHAUSTIVENESS_LANGUAGES",
     "ProbeVerdict",
+    "RUNG_SPECS",
+    "RungSpec",
     "anti_unify",
     "build_group_template",
     "core_available",
+    "dup_matrix",
     "find_clones",
     "find_duplicates",
     "find_helper_clones",
@@ -68,4 +96,6 @@ __all__ = [
     "put_fingerprint",
     "put_verdict",
     "touched_refs",
+    "unclaimed_cells",
+    "validate_claim_rungs",
 ]

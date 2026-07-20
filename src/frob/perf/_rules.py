@@ -3,7 +3,7 @@
 
 These rules run over `frob.lang`'s flattened, position-free leaf-token
 stream (`RawSymbol.body_tokens`) -- the same "whitespace never a node"
-contract `frob.lang._common.leaf_tokens` already gives every grammar. That
+contract `frob.lang._common._leaf_tokens` already gives every grammar. That
 contract buys formatting-insensitivity but costs positions: there is no
 per-token line number, so every violation is reported at the *enclosing
 symbol's* span start (`RawSymbol.span[0]`), not the exact offending line.
@@ -21,8 +21,6 @@ best-effort coverage of PERF001/PERF002 only, using token literals
 container-kind inference (list vs set/Map) is Python-only since sig/body
 tokens carry no type information to lean on for the other two languages.
 """
-
-# frob:waive TEST005 reason="module line coverage 82.0%, debt T-0160"
 
 from __future__ import annotations
 

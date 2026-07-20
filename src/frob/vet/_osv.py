@@ -62,17 +62,17 @@ def cve_ids(advisory: OsvAdvisory) -> tuple[str, ...]:
 
 
 # frob:doc docs/modules/vet.md#public-api
-def is_available() -> bool:
+def _is_available() -> bool:
     """Whether `osv-scanner` is resolvable on PATH."""
     return shutil.which(_BINARY) is not None
 
 
 # frob:doc docs/modules/vet.md#public-api
-# frob:waive TEST005 reason="run_osv_scan 19.0% branch cover, debt T-0160"
-def run_osv_scan(lockfile: Path) -> tuple[OsvAdvisory, ...] | None:
+# frob:waive TEST005 reason="_run_osv_scan 19.0% branch cover, debt T-0160"
+def _run_osv_scan(lockfile: Path) -> tuple[OsvAdvisory, ...] | None:
     """Advisories for `lockfile`, or `None` if osv-scanner is absent/failed
     (caller must report a skipped-note, never treat `None` as "no findings")."""
-    if not is_available():
+    if not _is_available():
         _log.info("vet: %s not on PATH; VET005 skipped", _BINARY)
         return None
 
@@ -142,4 +142,4 @@ def _advisories_from_data(data: dict) -> list[OsvAdvisory]:
     return advisories
 
 
-__all__ = ["OsvAdvisory", "cve_ids", "is_available", "run_osv_scan"]
+__all__ = ["OsvAdvisory", "cve_ids", "_is_available", "_run_osv_scan"]

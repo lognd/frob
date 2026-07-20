@@ -38,8 +38,8 @@ def _parse_allow(allow_raw: object) -> dict[str, tuple[str, ...] | bool]:
 
 
 # frob:doc docs/modules/vet.md#public-api
-# frob:waive TEST005 reason="load_vet_config 82.4% branch cover, debt T-0160"
-def load_vet_config(root: Path) -> VetConfig:
+# frob:waive TEST005 reason="_load_vet_config 82.4% branch cover, debt T-0160"
+def _load_vet_config(root: Path) -> VetConfig:
     """Read `frob.toml`'s `[vet]` table; absent table -> `present=False`
     (advisory-only)."""
     toml_path = root / "frob.toml"
@@ -91,4 +91,4 @@ def _build_vet_config(vet: dict[str, object]) -> VetConfig:
     return cfg
 
 
-__all__ = ["load_vet_config"]
+__all__ = ["_load_vet_config"]

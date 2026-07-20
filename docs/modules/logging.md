@@ -8,6 +8,8 @@ temporarily silencing stdout-bound log noise around `--json` output.
 
 ## Usage
 
+<!-- frob:waive DOC004 reason="the symbols this block imports (get_logger, quiet_stdout_logs, paint, should_color) are each frob:describes-anchored in the Public API section immediately below -- DOC004's nearby-directive window only looks at preceding lines, not a following section, T-0436" -->
+
 ```python
 from frob.logging import get_logger, quiet_stdout_logs
 from frob.logging.color import paint, should_color
@@ -19,10 +21,10 @@ _log.info("did the thing: %s", detail)
 ## Public API
 
 <!-- frob:describes src/frob/logging/logger.py::get_logger -->
-<!-- frob:describes src/frob/logging/formatter.py::FrobFormatter -->
-<!-- frob:describes src/frob/logging/formatter.py::FrobFormatter.format -->
-<!-- frob:describes src/frob/logging/filter.py::BelowLevelFilter -->
-<!-- frob:describes src/frob/logging/filter.py::BelowLevelFilter.filter -->
+<!-- frob:describes src/frob/logging/formatter.py::_FrobFormatter -->
+<!-- frob:describes src/frob/logging/formatter.py::_FrobFormatter.format -->
+<!-- frob:describes src/frob/logging/filter.py::_BelowLevelFilter -->
+<!-- frob:describes src/frob/logging/filter.py::_BelowLevelFilter.filter -->
 <!-- frob:describes src/frob/logging/color.py::should_color -->
 <!-- frob:describes src/frob/logging/color.py::paint -->
 <!-- frob:describes src/frob/logging/quiet.py::quiet_stdout_logs -->

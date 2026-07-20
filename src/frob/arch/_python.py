@@ -9,6 +9,8 @@ place instead of a bespoke nested closure per check.
 
 from __future__ import annotations
 
+import difflib
+import re
 from collections import defaultdict
 from collections.abc import Iterator
 from pathlib import Path
@@ -17,6 +19,7 @@ from typing import cast
 from tree_sitter import Node, Tree
 
 from frob.arch._models import ArchSuggestion
+from frob.dup._legacy_py import _collect_locals_py, _serialize_py_body
 from frob.lang import child_by_field as _child
 from frob.lang import node_text as _node_text
 from frob.logging import get_logger
@@ -292,45 +295,335 @@ def _py_param_types(func_node: Node) -> list[str]:
 def _extract_signatures(
     tree: object,
     rel: str,
-) -> list[tuple[str, str, tuple[str, ...], str]]:
-    """`(rel, func_name, param_types, return_type)` for every python function
-    carrying at least one annotated parameter or an annotated return type."""
+) -> list[tuple[str, str, tuple[str, ...], str, str]]:
+    """`(rel, func_name, param_types, return_type, body_fingerprint)` for
+    every python function carrying at least one annotated parameter or an
+    annotated return type.
+
+    T-0370: `body_fingerprint` is the alpha-renamed, literal-normalized
+    token serialization of the function body (`frob.dup._legacy_py`'s
+    `_collect_locals_py`/`_serialize_py_body`, the same normalizer the dup
+    scanner uses) -- it lets `_check_abstraction_opportunities` tell a
+    same-signature GROUP of near-duplicate bodies (a real extractable
+    abstraction) apart from a same-signature group of unrelated bodies
+    (a coincidental collision on a generic shape) without a bare shared
+    signature being treated as evidence on its own."""
     t: Tree = cast("Tree", tree)
-    results: list[tuple[str, str, tuple[str, ...], str]] = []
+    results: list[tuple[str, str, tuple[str, ...], str, str]] = []
     for func, _prefix, fname in _iter_py_functions(t.root_node):
         param_types = _py_param_types(func)
         ret_node = _child(func, "return_type")
         ret = _annotation_text(ret_node) if ret_node else ""
         if param_types or ret:
-            results.append((rel, fname, tuple(param_types), ret))
+            body_fp = _body_fingerprint(func)
+            results.append((rel, fname, tuple(param_types), ret, body_fp))
     return results
 
 
-def _check_abstraction_opportunities(
-    all_sigs: list[tuple[str, str, tuple[str, ...], str]],
+def _body_fingerprint(func: Node) -> str:
+    """Normalized token serialization of `func`'s body, or `""` if it has
+    none (T-0370, reused for abstraction-opportunity body-similarity)."""
+    body = _child(func, "body")
+    if body is None:
+        return ""
+    locals_ = _collect_locals_py(func)
+    return _serialize_py_body(body, locals_)
+
+
+_DISPATCH_CONTAINER_TYPES = frozenset({"list", "set", "tuple"})
+
+
+# frob:waive ARCH001 reason="detector internal owned by a separate ticket (T-0360 dispatch-family detection); a single recursive tree-walk over one grammar's dispatch-position cases, splitting the case list across functions would scatter one cohesive traversal without reducing its real complexity" ceiling="60"  # noqa: E501
+def _collect_dispatch_refs(node: Node, out: set[str]) -> None:
+    """Collect every identifier used in a DISPATCH-LIKE syntactic position
+    under `node`, into `out` (T-0360, reviewer-required fix).
+
+    Deliberately structural, not textual: a plain mention of a name (an
+    import, a docstring, a bare `__all__` string) proves nothing about
+    dispatch -- a re-export list or a test file that imports and asserts
+    against three unrelated functions mentions each name too, and a purely
+    textual "appears >=2 times" signal cannot tell those apart from a real
+    command table. Only these tree-sitter shapes count as "this name is
+    being dispatched from here":
+
+    - the callee of a `call` (`name(...)`) -- an `elif`/`match` branch
+      calling a handler, or a direct dispatch call;
+    - a positional or keyword ARGUMENT of a `call` (`register(name)`,
+      `table.append(name)`, `dispatch(cmd, handler=name)`) -- a
+      registration call;
+    - a value inside a `dictionary` literal's `pair` (`{"scan": name}`) --
+      a command table;
+    - an element of a `list`/`set`/`tuple` literal (`[name_a, name_b]`) --
+      a dispatch table built as a sequence.
+
+    A bare `from mod import name` or `name` sitting in an `__all__` list of
+    STRING literals (not identifiers) matches none of these and is
+    correctly not counted.
+    """
+    for c in node.children:
+        if c.type == "call":
+            func = _child(c, "function")
+            if func is not None and func.type == "identifier":
+                out.add(_node_text(func))
+            args = _child(c, "arguments")
+            if args is not None:
+                for a in args.named_children:
+                    if a.type == "identifier":
+                        out.add(_node_text(a))
+                    elif a.type == "keyword_argument":
+                        val = _child(a, "value")
+                        if val is not None and val.type == "identifier":
+                            out.add(_node_text(val))
+        elif c.type == "dictionary":
+            for pair in c.named_children:
+                if pair.type == "pair":
+                    val = _child(pair, "value")
+                    if val is not None and val.type == "identifier":
+                        out.add(_node_text(val))
+        elif c.type in _DISPATCH_CONTAINER_TYPES:
+            for el in c.named_children:
+                if el.type == "identifier":
+                    out.add(_node_text(el))
+        _collect_dispatch_refs(c, out)
+
+
+def _collect_file_dispatch_refs(tree: object) -> set[str]:
+    """Every identifier name referenced in a dispatch-like context
+    (`_collect_dispatch_refs`) anywhere in a parsed python file's tree.
+
+    Public so `frob.arch` (the caller building the cross-file corpus) can
+    decide, per file, whether to include it -- callers exclude
+    `__init__.py` re-export modules and test files (`is_test_file`) before
+    this function ever sees them, so this function itself stays a pure
+    structural extraction with no naming/path policy baked in."""
+    t: Tree = cast("Tree", tree)
+    refs: set[str] = set()
+    _collect_dispatch_refs(t.root_node, refs)
+    return refs
+
+
+def _is_dispatch_family(
+    members: list[tuple[str, str]],
+    all_dispatch_refs: dict[str, set[str]],
+) -> bool:
+    """Whether a shared-signature `members` group (T-0360) is an intentional
+    dispatch/validator family rather than an accidental duplication.
+
+    A same-signature group is NOT a missing abstraction when its members are
+    each reachable from a common site -- a command table, a validator
+    runner, an `elif` dispatch chain -- because the shared signature IS the
+    contract that lets that site call them uniformly. `all_dispatch_refs`
+    (built by `frob.arch` from `_collect_file_dispatch_refs`, already
+    excluding `__init__.py` and test files) maps each eligible file to the
+    set of names it references in a dispatch-like structural position
+    (call callee, call argument, dict value, list/set/tuple element) --
+    NOT every textual mention, so a re-export list or a test's assertion
+    calls cannot masquerade as a dispatch site (reviewer-flagged false
+    suppression, fixed here). Two members are "linked" if some single
+    eligible file's ref-set contains both their names. A large group can
+    legitimately be served by more than one such site (e.g. two separate
+    command tables that each dispatch a handful of same-signature
+    handlers) -- so the group is treated as an intentional family when
+    every member is linked to at least one sibling, i.e. no member sits
+    completely outside any dispatch site. A group with a member that is
+    never linked to any other member has no such site for that member and
+    still flags as a real opportunity.
+    """
+    names = [fname for _, fname in members]
+    if len(names) < 2:
+        return False
+    linked: set[int] = set()
+    for refs in all_dispatch_refs.values():
+        referenced = [i for i, name in enumerate(names) if name in refs]
+        if len(referenced) >= 2:
+            linked.update(referenced)
+    return len(linked) == len(names)
+
+
+# T-0370: types so ubiquitous that sharing one carries no abstraction
+# signal on its own -- `(str) -> str`, `(AppConfig) -> None`, and similar
+# shapes collide across dozens of semantically-unrelated functions purely
+# because the type system only has so many primitives to offer, OR because
+# one project-wide "contract" type is threaded through every subcommand
+# entrypoint on purpose (`AppConfig`, the App/AppConfig pattern's uniform
+# `run(config) -> None` shape every runner module implements). A signature
+# built ENTIRELY from names in this set is "generic"; a signature with at
+# least one name outside it (a real domain type like `TicketStore` or
+# `CloneReport`, which does NOT appear here) is specific.
+_GENERIC_TYPE_NAMES = frozenset(
+    {
+        "str",
+        "int",
+        "bool",
+        "float",
+        "bytes",
+        "None",
+        "Path",
+        "object",
+        "Any",
+        "list",
+        "dict",
+        "set",
+        "tuple",
+        "frozenset",
+        "Sequence",
+        "Iterable",
+        "Iterator",
+        "Mapping",
+        "Optional",
+        "Union",
+        "Callable",
+        "self",
+        "cls",
+        # App/AppConfig pattern (~/.claude/refs/python-app.md): every
+        # runner module's `run(config: AppConfig) -> None` entrypoint
+        # shares this signature by DESIGN, not by coincidence -- it is
+        # the uniform CLI-dispatch contract, not an extractable family.
+        "AppConfig",
+    }
+)
+
+_TYPE_TOKEN_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
+
+
+def _type_is_generic(annotation: str) -> bool:
+    """Whether every identifier token in `annotation` is one of the
+    ubiquitous names in `_GENERIC_TYPE_NAMES` (T-0370) -- e.g. `str`,
+    `list[str]`, `Path | None` are generic; `AppConfig`, `CloneReport` are
+    not. An annotation with no identifier tokens (empty) counts as
+    generic: it carries no specificity signal."""
+    tokens = _TYPE_TOKEN_RE.findall(annotation)
+    if not tokens:
+        return True
+    return all(tok in _GENERIC_TYPE_NAMES for tok in tokens)
+
+
+def _signature_is_specific(ptypes: tuple[str, ...], ret: str) -> bool:
+    """Whether a shared signature has at least one non-generic type
+    (T-0370) -- the SIGNATURE-SPECIFICITY discriminator. A group sharing
+    only ubiquitous types (`(str) -> str`, `(AppConfig) -> None`) needs
+    body-similarity evidence instead; one carrying a domain type
+    (`(TicketStore, str) -> Result[...]`) is specific enough on its own."""
+    return any(not _type_is_generic(t) for t in (*ptypes, ret) if t)
+
+
+# T-0370: two normalized bodies are near-duplicate when their token
+# sequences (locals alpha-renamed, literals collapsed to `_S_`/`_N_` by
+# `_serialize_py_body`) match at or above this ratio -- high enough that a
+# body reshaped only by renamed variables still matches, low enough to
+# tolerate a stray extra statement between otherwise-identical bodies.
+_BODY_SIMILARITY_THRESHOLD = 0.9
+
+# T-0370: bodies shorter than this many normalized tokens are excluded from
+# body-similarity clustering entirely. `difflib.SequenceMatcher.ratio()` on
+# very short strings is dominated by shared PUNCTUATION/keyword tokens
+# (`_S_ return _v0 . x`-shaped one-liners) rather than shared LOGIC, so tiny
+# unrelated one-line predicates/getters collide at >=0.9 by coincidence --
+# exactly the false-positive noise the ticket calls out. A real extractable
+# family has an actual body to share, not just a `return` statement.
+_BODY_MIN_TOKENS = 8
+
+
+def _near_duplicate_cluster(
+    members: list[tuple[str, str, str]],
+) -> list[tuple[str, str, str]]:
+    """The subset of `members` (`(rel, fname, body_fingerprint)`) that has
+    at least one near-duplicate partner within the group (T-0370) -- the
+    BODY-SIMILARITY discriminator, the strongest signal that a same-
+    signature group is a genuine extractable abstraction rather than a
+    coincidental collision. Bodies under `_BODY_MIN_TOKENS` tokens (empty
+    stubs, trivial one-liners) never participate -- too short for
+    similarity to mean anything. Returns the near-duplicate members only,
+    NOT the whole input group: a group of 30 unrelated functions with one
+    genuinely duplicated pair should be reported as that pair, not
+    misrepresented as 30 functions all sharing logic."""
+    eligible = [m for m in members if len(m[2].split()) >= _BODY_MIN_TOKENS]
+    cluster_idx: set[int] = set()
+    for i in range(len(eligible)):
+        for j in range(i + 1, len(eligible)):
+            ratio = difflib.SequenceMatcher(
+                None, eligible[i][2], eligible[j][2]
+            ).ratio()
+            if ratio >= _BODY_SIMILARITY_THRESHOLD:
+                cluster_idx.add(i)
+                cluster_idx.add(j)
+    return [eligible[i] for i in sorted(cluster_idx)]
+
+
+def _emit_abstraction_suggestion(
+    ptypes: tuple[str, ...],
+    ret: str,
+    flagged: list[tuple[str, str, str]],
     out: list[ArchSuggestion],
 ) -> None:
-    """Flag signatures shared by 3+ functions (a possible shared abstraction)."""
-    groups: dict[tuple[tuple[str, ...], str], list[tuple[str, str]]] = defaultdict(list)
-    for rel, fname, ptypes, ret in all_sigs:
+    """Append one `abstraction-opportunity` `ArchSuggestion` for `flagged`
+    (T-0370, factored out of `_check_abstraction_opportunities` to keep
+    the per-group decision logic and the message formatting each
+    independently short)."""
+    params_str = ", ".join(ptypes)
+    sig_str = f"({params_str}) -> {ret}" if ret else f"({params_str})"
+    fn_names = ", ".join(fname for _, fname, _ in flagged)
+    out.append(
+        ArchSuggestion(
+            file=flagged[0][0],
+            category="abstraction-opportunity",
+            severity="suggestion",
+            message=f"{len(flagged)} functions share signature `{sig_str}`: {fn_names}",
+            detail="Consider a shared protocol or base class",
+        )
+    )
+
+
+def _abstraction_group_evidence(
+    ptypes: tuple[str, ...],
+    ret: str,
+    members_with_body: list[tuple[str, str, str]],
+) -> list[tuple[str, str, str]]:
+    """The subset of `members_with_body` that constitutes genuine
+    abstraction-opportunity evidence for this `(ptypes, ret)` group
+    (T-0370): the whole group when the signature is SPECIFIC
+    (`_signature_is_specific`), or the near-duplicate-body subset
+    (`_near_duplicate_cluster`) when it is generic. Empty means no
+    evidence -- the caller should not flag."""
+    if _signature_is_specific(ptypes, ret):
+        return members_with_body
+    return _near_duplicate_cluster(members_with_body)
+
+
+def _check_abstraction_opportunities(
+    all_sigs: list[tuple[str, str, tuple[str, ...], str, str]],
+    all_dispatch_refs: dict[str, set[str]],
+    out: list[ArchSuggestion],
+) -> None:
+    """Flag signatures shared by 3+ functions with no common dispatch site
+    AND genuine evidence of an extractable abstraction (T-0370): either the
+    shared signature is SPECIFIC (`_signature_is_specific`, at least one
+    non-generic type -- the whole group is reported, the signature itself
+    is the evidence) or a subset of the members has near-duplicate BODIES
+    (`_near_duplicate_cluster`, reusing the dup-scanner's normalizer --
+    only that near-duplicate subset is reported, since the rest of a
+    generic-signature group proved nothing). A group sharing only an
+    over-generic signature (`(str) -> str`, `(AppConfig) -> None`) with no
+    such duplicated subset is NOT flagged at all -- you cannot factor N
+    unrelated functions into one helper just because they happen to take
+    the same primitive types. Groups whose members are all reachable from
+    one common caller/registry (`_is_dispatch_family`, T-0360) are
+    intentional dispatch families and are still skipped first."""
+    groups: dict[tuple[tuple[str, ...], str], list[tuple[str, str, str]]] = defaultdict(
+        list
+    )
+    for rel, fname, ptypes, ret, body_fp in all_sigs:
         if not ptypes:
             continue
-        groups[(ptypes, ret)].append((rel, fname))
+        groups[(ptypes, ret)].append((rel, fname, body_fp))
 
-    for (ptypes, ret), members in groups.items():
-        if len(members) < 3:
+    for (ptypes, ret), members_with_body in groups.items():
+        if len(members_with_body) < 3:
             continue
-        params_str = ", ".join(ptypes)
-        sig_str = f"({params_str}) -> {ret}" if ret else f"({params_str})"
-        fn_names = ", ".join(fname for _, fname in members)
-        out.append(
-            ArchSuggestion(
-                file=members[0][0],
-                category="abstraction-opportunity",
-                severity="suggestion",
-                message=(
-                    f"{len(members)} functions share signature `{sig_str}`: {fn_names}"
-                ),
-                detail="Consider a shared protocol or base class",
-            )
-        )
+        members = [(rel, fname) for rel, fname, _ in members_with_body]
+        if _is_dispatch_family(members, all_dispatch_refs):
+            continue
+        flagged = _abstraction_group_evidence(ptypes, ret, members_with_body)
+        if len(flagged) < 2:
+            continue
+        _emit_abstraction_suggestion(ptypes, ret, flagged, out)

@@ -43,6 +43,8 @@ class TestGraphBuild:
 
 
 class TestGraphQuery:
+    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an \
+    # arrange-act scaffold; extracting would obscure per-case intent"
     def test_query_known_ref(self, tmp_path):
         _init_repo(tmp_path)
         run("graph", "build", str(tmp_path))
@@ -59,6 +61,8 @@ class TestGraphQuery:
 
 
 class TestGraphWhy:
+    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an \
+    # arrange-act scaffold; extracting would obscure per-case intent"
     def test_why_unacked_ref(self, tmp_path):
         _init_repo(tmp_path)
         run("graph", "build", str(tmp_path))

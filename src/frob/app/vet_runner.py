@@ -6,8 +6,6 @@ with no network), 2 = BLOCK (quarantine/typosquat hit), reason on stderr for
 a Claude Code PreToolUse hook to surface to the agent.
 """
 
-# frob:waive TEST005 reason="module line coverage 19.2%, debt T-0160"
-
 from __future__ import annotations
 
 import json
@@ -31,7 +29,6 @@ _log = get_logger(__name__)
 
 
 # frob:doc docs/modules/app.md#runners
-# frob:waive TEST005 reason="run 25.0% branch cover, debt T-0160"
 # frob:tests tests/test_vet.py::TestVetRunnerLockArg.test_run_lockfile_arg
 # frob:tests tests/test_vet.py::TestVetRunnerLockArg.test_run_unsupp_nonzero
 def run(cfg: AppConfig) -> None:
@@ -84,8 +81,13 @@ def _cve_matches_for(report, cfg: AppConfig) -> tuple[CveMatch, ...]:
 
 
 def _run_scan(root: Path, cfg: AppConfig) -> None:
-    """Full lockfile pass: table (or `--json`) output; exit 1 on ERROR when enforced."""
-    result = scan_tree(root)
+    """Full lockfile pass: table (or `--json`) output; exit 1 on ERROR when enforced.
+
+    T-0251: `cfg.vet_timeout`/`cfg.vet_jobs` (from `--timeout`/`--jobs`)
+    plumb through to `scan_tree`; `jobs` defaults to 1 (untouched behavior)
+    when unset.
+    """
+    result = scan_tree(root, timeout=cfg.vet_timeout, jobs=cfg.vet_jobs or 1)
     if result.is_err:
         _log.error("vet: %s", result.danger_err)
         sys.exit(1)
@@ -104,14 +106,22 @@ def _run_scan(root: Path, cfg: AppConfig) -> None:
     for note in report.skipped:
         _log.warning("vet: %s", note)
 
+    sys.exit(_exit_code_for_report(report))
+
+
+# frob:ticket T-0361
+def _exit_code_for_report(report) -> int:  # noqa: ANN001
+    """`_run_scan`'s final exit-status decision: 0 for an advisory-only
+    report (with a warning to declare `[vet.allow]`), 1 only when the
+    report both enforces and has an ERROR-severity violation, else 0;
+    split out of `_run_scan`'s tail (T-0361)."""
     if report.advisory_only:
         _log.warning("vet: declare [vet.allow] to enforce")
-        sys.exit(0)
-
+        return 0
     has_errors = any(v.severity is Severity.ERROR for v in report.violations)
     if report.enforce and has_errors:
-        sys.exit(1)
-    sys.exit(0)
+        return 1
+    return 0
 
 
 def _print_table(report) -> None:
@@ -120,37 +130,48 @@ def _print_table(report) -> None:
 
     color = should_color(sys.stdout)
 
-    by_name: dict[str, list[str]] = {}
-    for v in report.violations:
-        for verdict in report.verdicts:
-            if verdict.name in v.message:
-                by_name.setdefault(verdict.name, []).append(f"{v.rule}:{v.severity}")
-
     if not report.verdicts:
         print("vet: no dependencies found")
         return
 
+    by_name = _notes_by_verdict_name(report)
     header = f"{'package':<30} {'ecosystem':<10} {'verdict':<10} notes"
     print(header)
     print("-" * len(header))
     for verdict in report.verdicts:
-        notes = by_name.get(verdict.name, [])
-        # Padding is computed on the PLAIN status word so column alignment
-        # is identical whether or not ANSI codes wrap it (T-0179): the
-        # escape sequence adds bytes but no visible width.
-        status = "FAIL" if notes else "ok"
-        painted = style_fail(status, color) if notes else style_ok(status, color)
-        pad = " " * max(0, 10 - len(status))
-        print(
-            f"{verdict.name:<30} {verdict.ecosystem:<10} {painted}{pad} "
-            f"{', '.join(notes)}"
-        )
+        _print_verdict_row(verdict, by_name.get(verdict.name, []), color)
 
     if report.violations:
         print()
         print("violations:")
         for v in report.violations:
             print(f"  [{v.severity}] {style_rule(v.rule, color)} {v.file}: {v.message}")
+
+
+# frob:ticket T-0361
+def _notes_by_verdict_name(report) -> dict[str, list[str]]:  # noqa: ANN001
+    """`verdict.name -> [rule:severity, ...]` note strings for every violation
+    whose message names that verdict; split out of `_print_table`'s
+    grouping phase (T-0361)."""
+    by_name: dict[str, list[str]] = {}
+    for v in report.violations:
+        for verdict in report.verdicts:
+            if verdict.name in v.message:
+                by_name.setdefault(verdict.name, []).append(f"{v.rule}:{v.severity}")
+    return by_name
+
+
+# frob:ticket T-0361
+def _print_verdict_row(verdict, notes: list[str], color: bool) -> None:  # noqa: ANN001
+    """Print one `_print_table` row for `verdict`, with a plain-text-width-padded
+    ok/FAIL status so ANSI styling never shifts column alignment (T-0179);
+    split out of `_print_table`'s row loop (T-0361)."""
+    status = "FAIL" if notes else "ok"
+    painted = style_fail(status, color) if notes else style_ok(status, color)
+    pad = " " * max(0, 10 - len(status))
+    print(
+        f"{verdict.name:<30} {verdict.ecosystem:<10} {painted}{pad} {', '.join(notes)}"
+    )
 
 
 def _print_cve_table(matches: tuple[CveMatch, ...]) -> None:

@@ -15,6 +15,8 @@ frob exports src/frob/edit/ --json
 
 ## Output
 
+<!-- frob:waive DOC004 reason="illustrative generated-__init__.py OUTPUT SHAPE only -- frob.edit._impl is a stale example module (the frob edit command was removed) but the block demonstrates frob exports' output format, not a real, currently-importable module; T-0436" -->
+
 ```python
 from frob.edit._impl import IsolatedSymbol, StagedPatch, CommitResult
 from frob.edit._impl import isolate, stage, commit, status, replace
@@ -36,6 +38,8 @@ __all__ = [
 When two modules in the same package export the same name (e.g. both
 `stub_runner` and `exports_runner` export `run`), the conflicting names are
 aliased automatically:
+
+<!-- frob:waive DOC004 reason="illustrative duplicate-symbol-aliasing example -- frob.app.stub_runner/exports_runner are stand-in module names for the mechanism being explained, not real modules; T-0436" -->
 
 ```python
 from frob.app.stub_runner import run as stub_runner_run

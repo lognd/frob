@@ -45,6 +45,27 @@ public:
 """
 
 
+RUST_SAMPLE = b"""\
+pub fn helper(x: i32) -> String {
+    x.to_string()
+}
+
+pub struct Engine {
+    cycles: i32,
+}
+
+impl Engine {
+    pub fn run(&self, cycles: i32) {
+        for _ in 0..cycles {}
+    }
+
+    pub fn status(&self) -> i32 {
+        0
+    }
+}
+"""
+
+
 @pytest.fixture
 def py_sample():
     return PY_SAMPLE
@@ -53,3 +74,8 @@ def py_sample():
 @pytest.fixture
 def cpp_sample():
     return CPP_SAMPLE
+
+
+@pytest.fixture
+def rust_sample():
+    return RUST_SAMPLE

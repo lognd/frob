@@ -105,6 +105,10 @@ class TestPropagatedDemand:
         assert facts.demand("b") == 10.0
 
     # frob:tests src/frob/strata/_facts.py::FactBase.propagated_demand kind="unit"
+    # frob:waive DUP001 reason="parallel test fixtures across 2 sibling \
+    # test file(s) (2 sites) sharing an arrange-act scaffold typical of \
+    # exhaustive per-case/per-scenario coverage; extracting would obscure \
+    # per-case intent"
     def test_sums_over_converging_paths(self) -> None:
         model = KernelModel(
             nodes=(_node("s1"), _node("s2"), _node("t")),

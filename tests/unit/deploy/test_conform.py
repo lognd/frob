@@ -32,6 +32,9 @@ node api : trusted {
 """
 
 
+# frob:waive DUP001 reason="parallel test fixtures across 3 sibling test \
+# file(s) (3 sites) sharing an arrange-act scaffold typical of exhaustive \
+# per-case/per-scenario coverage; extracting would obscure per-case intent"
 def _model() -> KernelModel:
     return KernelModel(
         nodes=(

@@ -20,8 +20,10 @@ from typani.error_set import ErrorSet
 from frob.gates._models import Violation
 
 __all__ = [
+    "ClosedWorldAccounting",
     "Dependency",
     "HookVerdict",
+    "ImportResolution",
     "PackageVerdict",
     "VetConfig",
     "VetError",
@@ -115,7 +117,7 @@ class VetConfig(BaseModel):
 
 
 # frob:doc docs/modules/vet.md#public-api
-class HookAction(StrEnum):
+class _HookAction(StrEnum):
     """A parsed --hook command's disposition before any network check."""
 
     INSTALL = "install"
@@ -134,3 +136,93 @@ class VetError(ErrorSet):
         "CVE mirror path is configured but missing or unreadable "
         "(T-0147, see docs/modules/vet.md)"
     )
+
+
+# frob:doc docs/modules/vet.md#public-api
+# frob:ticket T-0180
+class ImportResolution(BaseModel):
+    """One imported top-level module name's closed-world classification
+    (T-0158 addendum 2 remainder): `"registry"` (matches a
+    `DANGEROUS_OPERATIONS` library for the language), `"no-capability"`
+    (a curated `NO_CAPABILITY_MODULES` stdlib entry), `"vetted"` (a
+    locatable dependency scanned by the same capability engine and cached
+    per package+version), or `"unknown"` -- the loud, never-silent failure
+    case a plain-substring scanner cannot resolve any other way."""
+
+    model_config = ConfigDict(frozen=True)
+
+    import_name: str
+    resolution: str  # "registry" | "no-capability" | "vetted" | "unknown"
+    detail: str = ""
+
+
+# frob:doc docs/modules/vet.md#public-api
+# frob:ticket T-0180
+class ClosedWorldAccounting(BaseModel):
+    """Full closed-world import accounting for one vetted package (T-0158
+    addendum 2 remainder): every top-level import resolved to registry/
+    no-capability/vetted/unknown, plus the audit accounting line count
+    (N registry ops, M vetted libraries, K no-capability entries, J
+    unknown) T-0158's addendum 2 describes. `source_available=False` means
+    the package's source could not be located locally -- an honest "could
+    not check", never silently treated as zero unknowns."""
+
+    model_config = ConfigDict(frozen=True)
+
+    ecosystem: str
+    name: str
+    version: str
+    resolutions: tuple[ImportResolution, ...] = ()
+    source_available: bool = True
+
+    # frob:doc docs/modules/vet.md#closed-world-import-accounting-t-0180
+    @property
+    def registry_count(self) -> int:
+        """Imports resolved against a `DANGEROUS_OPERATIONS` registry library."""
+        return sum(1 for r in self.resolutions if r.resolution == "registry")
+
+    # frob:doc docs/modules/vet.md#closed-world-import-accounting-t-0180
+    @property
+    def no_capability_count(self) -> int:
+        """Imports resolved against the curated `NO_CAPABILITY_MODULES` set."""
+        return sum(1 for r in self.resolutions if r.resolution == "no-capability")
+
+    # frob:doc docs/modules/vet.md#closed-world-import-accounting-t-0180
+    @property
+    def vetted_count(self) -> int:
+        """Imports resolved to a locatable dependency scanned+cached by the
+        same capability engine."""
+        return sum(1 for r in self.resolutions if r.resolution == "vetted")
+
+    # frob:doc docs/modules/vet.md#closed-world-import-accounting-t-0180
+    @property
+    def unknown_count(self) -> int:
+        """Imports that resolved to NONE of registry/no-capability/vetted --
+        the closed-world proof's failure count; non-zero means the proof
+        does not hold for this package."""
+        return sum(1 for r in self.resolutions if r.resolution == "unknown")
+
+    # frob:doc docs/modules/vet.md#closed-world-import-accounting-t-0180
+    @property
+    def closed(self) -> bool:
+        """True iff every import resolved (`unknown_count == 0`) AND the
+        source was actually available to walk -- an unavailable source
+        can never claim closure by omission."""
+        return self.source_available and self.unknown_count == 0
+
+    # frob:doc docs/modules/vet.md#closed-world-import-accounting-t-0180
+    def accounting_line(self) -> str:
+        """The human-readable audit line T-0158 addendum 2 describes:
+        'N registry ops, M vetted libraries, K explicit no-capability
+        entries, J unknown' for `name@version`."""
+        prefix = f"{self.ecosystem}/{self.name}@{self.version}"
+        if not self.source_available:
+            return f"{prefix}: source unavailable, closed-world accounting skipped"
+        library_noun = "library" if self.vetted_count == 1 else "libraries"
+        return (
+            f"{prefix}: "
+            f"{self.registry_count} registry op(s), "
+            f"{self.vetted_count} vetted {library_noun}, "
+            f"{self.no_capability_count} explicit no-capability entries, "
+            f"{self.unknown_count} unknown"
+        )

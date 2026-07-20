@@ -12,7 +12,6 @@ violation rather than a silently-passing gate.
 
 from __future__ import annotations
 
-import hashlib
 import json
 import posixpath
 import xml.etree.ElementTree as ET
@@ -22,6 +21,7 @@ from typani import Err, Ok
 from typani.result import Result
 from typani.unit import Unit
 
+from frob.gates._filehash import _collect_file_hashes, _sha_of
 from frob.gates._models import CoverageData, CoverageError, GateError
 from frob.graph import GraphSnapshot
 from frob.logging import get_logger
@@ -30,16 +30,6 @@ _log = get_logger(__name__)
 
 _COVERAGE_XML = "coverage.xml"
 _STAMP_REL = Path(".frob") / "coverage-stamp"
-_SOURCE_EXTS = (".py", ".ts", ".tsx", ".rs", ".c", ".h", ".cpp")
-
-
-def _sha_of(path: Path) -> str | None:
-    """Sha256 hex of `path`'s bytes, `None` if unreadable."""
-    try:
-        return hashlib.sha256(path.read_bytes()).hexdigest()
-    except OSError as exc:
-        _log.warning("_coverage: could not read %s: %s", path, exc)
-        return None
 
 
 def _parse_line_el(line_el: ET.Element) -> tuple[int, tuple[int, int]] | None:
@@ -300,6 +290,47 @@ def _load_coverage_xml(
     return Ok((source_sha, tree))
 
 
+# frob:ticket T-0464
+def _newest_source_mtime(root: Path, snapshot: GraphSnapshot | None) -> float | None:
+    """The most recent on-disk mtime among files the graph snapshot knows about,
+    or `None` if there is no snapshot (freshness cannot be judged standalone).
+
+    `CoverageData.source_sha` only hashes coverage.xml itself, not the
+    source it measured, so nothing else in this module detects a
+    coverage.xml older than the working tree it is supposed to describe.
+    """
+    if snapshot is None or not snapshot.symbols:
+        return None
+    newest: float | None = None
+    for path in {record.id.path for record in snapshot.symbols.values()}:
+        try:
+            mtime = (root / path).stat().st_mtime
+        except OSError:
+            continue
+        if newest is None or mtime > newest:
+            newest = mtime
+    return newest
+
+
+# frob:ticket T-0464
+def _module_join_fraction(
+    module_line: dict[str, float], known_paths: frozenset[str]
+) -> float:
+    """Share of known `.py` modules that actually appear in `module_line`.
+
+    A run that silently drops subprocess coverage (T-0464's root cause)
+    only measures the main pytest process, so most modules never show up
+    in coverage.xml at all even when `root_join_ok` is True (SOME data
+    joined) -- this is the deflation fingerprint that `root_join_ok` alone
+    misses. `1.0` (nothing to flag) when there are no known `.py` modules
+    to compare against.
+    """
+    known_python_paths = frozenset(p for p in known_paths if p.endswith(".py"))
+    if not known_python_paths:
+        return 1.0
+    return len(module_line.keys() & known_python_paths) / len(known_python_paths)
+
+
 # frob:doc docs/modules/gates.md#public-api
 def load_coverage(
     root: Path, snapshot: GraphSnapshot | None = None
@@ -317,12 +348,27 @@ def load_coverage(
     )
     symbol_branch = _symbol_branch(snapshot, hits_by_class_line)
 
+    try:
+        xml_mtime = xml_path.stat().st_mtime
+    except OSError:
+        xml_mtime = None
+    newest_source_mtime = _newest_source_mtime(root, snapshot)
+    stale_by_mtime = (
+        xml_mtime is not None
+        and newest_source_mtime is not None
+        and xml_mtime < newest_source_mtime
+    )
+    join_fraction = _module_join_fraction(dict(module_line), known_paths)
+
     _log.info(
-        "load_coverage: %s -> %d module(s), %d symbol(s) mapped, join_ok=%s",
+        "load_coverage: %s -> %d module(s), %d symbol(s) mapped, join_ok=%s, "
+        "stale_by_mtime=%s, module_join_fraction=%.2f",
         xml_path,
         len(module_line),
         len(symbol_branch),
         join_ok,
+        stale_by_mtime,
+        join_fraction,
     )
     return Ok(
         CoverageData(
@@ -331,6 +377,8 @@ def load_coverage(
             module_line=module_line,
             root_join_ok=join_ok,
             attempted_roots=tried_roots,
+            stale_by_mtime=stale_by_mtime,
+            module_join_fraction=join_fraction,
         )
     )
 
@@ -346,20 +394,6 @@ def _known_repo_paths(root: Path, snapshot: GraphSnapshot | None) -> frozenset[s
     if snapshot is not None and snapshot.symbols:
         return frozenset(record.id.path for record in snapshot.symbols.values())
     return frozenset(_collect_file_hashes(root))
-
-
-def _collect_file_hashes(root: Path) -> dict[str, str]:
-    """Content-hash every tracked source file under `root` (excluded dirs pruned)."""
-    file_hashes: dict[str, str] = {}
-    for dirpath, _dirnames, filenames in _walk(root):
-        for name in filenames:
-            if not name.endswith(_SOURCE_EXTS):
-                continue
-            path = Path(dirpath) / name
-            digest = _sha_of(path)
-            if digest is not None:
-                file_hashes[str(path.relative_to(root).as_posix())] = digest
-    return file_hashes
 
 
 # frob:doc docs/modules/gates.md#public-api
@@ -387,16 +421,6 @@ def stamp_coverage(root: Path) -> Result[Unit, GateError]:
         source_sha[:8],
     )
     return Ok(Unit())
-
-
-def _walk(root: Path):  # noqa: ANN202
-    """Thin `os.walk` wrapper pruning the usual excluded directories."""
-    import os
-
-    excluded = {".git", ".venv", "node_modules", "target", "build", "dist", ".frob"}
-    for dirpath, dirnames, filenames in os.walk(root):
-        dirnames[:] = [d for d in dirnames if d not in excluded]
-        yield dirpath, dirnames, filenames
 
 
 # frob:doc docs/modules/gates.md#public-api

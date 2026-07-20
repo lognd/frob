@@ -1,8 +1,8 @@
 """Tests for `frob.vet._capability_registry` (T-0158): the single-source
-capability-kind enumeration, the structured `DangerousOperation` registry,
+capability-kind enumeration, the structured `_DangerousOperation` registry,
 and the (kind x language) coverage matrix -- plus per-cell fire fixtures
 proving representative patterned entries actually fire through
-`frob.vet._capability.scan_file_capabilities`/`scan_file_operations`
+`frob.vet._capability.scan_file_capabilities`/`_scan_file_operations`
 (T-0145 drift-lock style: a pattern with zero firing evidence is as good
 as absent)."""
 
@@ -13,29 +13,29 @@ from pathlib import Path
 import pytest
 
 from frob.vet._capability import (
+    _scan_file_operations,
     is_self_pattern_path,
     scan_file_capabilities,
-    scan_file_operations,
 )
 from frob.vet._capability_registry import (
     CAPABILITY_KINDS,
     CAPABILITY_MATRIX_EXCUSES,
     DANGEROUS_OPERATIONS,
     LANGUAGES,
-    DangerousOperation,
+    _DangerousOperation,
+    _unexcused_empty_cells,
+    _validate_registry_kinds,
     capability_matrix,
-    unexcused_empty_cells,
-    validate_registry_kinds,
 )
 
 
 class TestMatrixExhaustiveness:
-    # frob:tests src/frob/vet/_capability_registry.py::unexcused_empty_cells kind="unit"
+    # frob:tests src/frob/vet/_capability_registry.py::_unexcused_empty_cells kind="unit"
     def test_no_unexcused_empty_cells(self) -> None:
         """T-0158's core exhaustiveness claim: every (kind, language) cell is
         either patterned or excused. Any unexcused empty cell fails loudly
         here -- the blanket C/C++ exemption is retired."""
-        assert unexcused_empty_cells() == ()
+        assert _unexcused_empty_cells() == ()
 
     # frob:tests src/frob/vet/_capability_registry.py::capability_matrix kind="unit"
     def test_matrix_covers_every_kind_and_language(self) -> None:
@@ -49,7 +49,7 @@ class TestMatrixExhaustiveness:
 
     # frob:tests src/frob/vet/_capability_registry.py::DANGEROUS_OPERATIONS kind="unit"
     def test_every_operation_kind_and_language_registered(self) -> None:
-        """Every `DangerousOperation` names a registered kind/language --
+        """Every `_DangerousOperation` names a registered kind/language --
         the T-0158 drift-lock: the registry cannot silently grow a kind or
         language its own vocabulary tuples do not know about."""
         for entry in DANGEROUS_OPERATIONS:
@@ -72,16 +72,16 @@ class TestMatrixExhaustiveness:
 
 
 class TestValidateRegistryKinds:
-    # frob:tests src/frob/vet/_capability_registry.py::validate_registry_kinds kind="unit"
+    # frob:tests src/frob/vet/_capability_registry.py::_validate_registry_kinds kind="unit"
     def test_known_kinds_pass(self) -> None:
-        assert validate_registry_kinds(frozenset({"exec", "eval"})) == ()
+        assert _validate_registry_kinds(frozenset({"exec", "eval"})) == ()
 
-    # frob:tests src/frob/vet/_capability_registry.py::validate_registry_kinds kind="unit"
+    # frob:tests src/frob/vet/_capability_registry.py::_validate_registry_kinds kind="unit"
     def test_unknown_kind_reported(self) -> None:
-        offenders = validate_registry_kinds(frozenset({"exec", "bogus-kind"}))
+        offenders = _validate_registry_kinds(frozenset({"exec", "bogus-kind"}))
         assert offenders == ("bogus-kind",)
 
-    # frob:tests src/frob/vet/_capability_registry.py::validate_registry_kinds kind="unit"
+    # frob:tests src/frob/vet/_capability_registry.py::_validate_registry_kinds kind="unit"
     def test_every_threat_catalog_kind_is_registered(self) -> None:
         """Cross-check (T-0158 deliverable 4): every `capability_kind`
         `CWE_CATALOG`/`CWE_TOP_25_CATALOG`/`DEFAULT_BENIGN_CAPABILITIES`
@@ -95,7 +95,7 @@ class TestValidateRegistryKinds:
         used = {e.capability_kind for e in CWE_CATALOG if e.capability_kind}
         used |= {e.capability_kind for e in CWE_TOP_25_CATALOG if e.capability_kind}
         used |= {b.kind for b in DEFAULT_BENIGN_CAPABILITIES}
-        assert validate_registry_kinds(frozenset(used)) == ()
+        assert _validate_registry_kinds(frozenset(used)) == ()
 
 
 # ---------------------------------------------------------------------------
@@ -163,21 +163,21 @@ def test_fire_fixture_flags_capability(
 
 
 @pytest.mark.parametrize("language,kind,filename,source", _FIRE_FIXTURES)
-# frob:tests src/frob/vet/_capability.py::scan_file_operations kind="unit"
+# frob:tests src/frob/vet/_capability.py::_scan_file_operations kind="unit"
 def test_fire_fixture_names_a_registry_entry(
     tmp_path: Path, language: str, kind: str, filename: str, source: str
 ) -> None:
-    """T-0158 addendum 1: the richer `scan_file_operations` must name at
-    least one matching `DangerousOperation` for the same fixture, so an
+    """T-0158 addendum 1: the richer `_scan_file_operations` must name at
+    least one matching `_DangerousOperation` for the same fixture, so an
     audit finding can cite library/function/rationale/safer_alternative."""
     path = tmp_path / filename
     path.write_text(source)
-    ops = scan_file_operations(path)
+    ops = _scan_file_operations(path)
     assert any(op.capability_kind == kind for op in ops), (
         f"{language}/{kind} fixture matched no registry entry: {source!r}"
     )
     matching = next(op for op in ops if op.capability_kind == kind)
-    assert isinstance(matching, DangerousOperation)
+    assert isinstance(matching, _DangerousOperation)
     assert matching.rationale
     assert matching.safer_alternative
 
@@ -380,6 +380,7 @@ _LANG_EXT: dict[str, str] = {
     "typescript": ".ts",
     "rust": ".rs",
     "c-cpp": ".c",
+    "kotlin": ".kt",
 }
 
 #: benign source per language guaranteed to contain none of this registry's
@@ -389,10 +390,11 @@ _BENIGN_SOURCE: dict[str, str] = {
     "typescript": "const x = 1;\n",
     "rust": "let x: i32 = 1;\n",
     "c-cpp": "int x = 1;\n",
+    "kotlin": "val x: Int = 1\n",
 }
 
 
-def _fire_snippet(entry: DangerousOperation) -> str:
+def _fire_snippet(entry: _DangerousOperation) -> str:
     """Minimal source text that must fire `entry`: its own first needle
     verbatim, or -- for the one no-needle registry entry (python bare
     `compile()`, matched only via `_has_bare_compile_call`) -- a literal
@@ -424,16 +426,16 @@ class TestPerOperationFireFixtures:
     entry's cell-level fixture."""
 
     @pytest.mark.parametrize("entry", DANGEROUS_OPERATIONS, ids=_PER_OPERATION_IDS)
-    # frob:tests src/frob/vet/_capability.py::scan_file_operations kind="unit"
+    # frob:tests src/frob/vet/_capability.py::_scan_file_operations kind="unit"
     def test_entry_fires_scan_file_operations(
-        self, tmp_path: Path, entry: DangerousOperation
+        self, tmp_path: Path, entry: _DangerousOperation
     ) -> None:
-        """`scan_file_operations` must name THIS exact registry entry (not
+        """`_scan_file_operations` must name THIS exact registry entry (not
         merely some entry sharing its kind) for a minimal snippet built
         from the entry's own needle."""
         path = tmp_path / ("m" + _LANG_EXT[entry.language])
         path.write_text(_fire_snippet(entry))
-        ops = scan_file_operations(path)
+        ops = _scan_file_operations(path)
         assert entry in ops, (
             f"{entry.language}/{entry.library}/{entry.function_or_pattern} "
             f"did not fire via its own needle(s) {entry.needles!r}"
@@ -442,7 +444,7 @@ class TestPerOperationFireFixtures:
     @pytest.mark.parametrize("entry", DANGEROUS_OPERATIONS, ids=_PER_OPERATION_IDS)
     # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
     def test_entry_fires_scan_file_capabilities(
-        self, tmp_path: Path, entry: DangerousOperation
+        self, tmp_path: Path, entry: _DangerousOperation
     ) -> None:
         """The bare-kind sibling entry point must also observe `entry`'s
         `capability_kind` for the same minimal snippet."""
@@ -455,9 +457,9 @@ class TestPerOperationFireFixtures:
         )
 
     @pytest.mark.parametrize("entry", DANGEROUS_OPERATIONS, ids=_PER_OPERATION_IDS)
-    # frob:tests src/frob/vet/_capability.py::scan_file_operations kind="unit"
+    # frob:tests src/frob/vet/_capability.py::_scan_file_operations kind="unit"
     def test_entry_absent_from_benign_source(
-        self, tmp_path: Path, entry: DangerousOperation
+        self, tmp_path: Path, entry: _DangerousOperation
     ) -> None:
         """Negative fixture: this entry must NOT fire against benign source
         containing none of its needles -- proves the needle match is
@@ -465,7 +467,7 @@ class TestPerOperationFireFixtures:
         entry, not just per cell)."""
         path = tmp_path / ("m" + _LANG_EXT[entry.language])
         path.write_text(_BENIGN_SOURCE[entry.language])
-        ops = scan_file_operations(path)
+        ops = _scan_file_operations(path)
         assert entry not in ops, (
             f"{entry.language}/{entry.library}/{entry.function_or_pattern} "
             f"fired against benign source with none of its needles present"

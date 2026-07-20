@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import concurrent.futures
 import logging
-import sys
 from pathlib import Path
 from typing import Callable
 
@@ -40,7 +39,9 @@ from frob.check._python import (
     _run_ty,
 )
 from frob.check._ts import _run_eslint, _run_prettier, _run_tsc, _run_vitest
+from frob.lang import reset_parse_cache
 from frob.logging import get_logger
+from frob.logging.quiet import _stdout_stream_handlers as _stdout_log_handlers
 from frob.process.parsers.common import Diagnostic, ToolResult
 
 _log = get_logger(__name__)
@@ -266,14 +267,10 @@ def _python_tasks(
     return tasks
 
 
-def _stdout_log_handlers() -> list[logging.StreamHandler]:
-    """Every root-logger `StreamHandler` currently writing to `sys.stdout`."""
-    root_logger = logging.getLogger()
-    return [
-        h
-        for h in root_logger.handlers
-        if isinstance(h, logging.StreamHandler) and h.stream is sys.stdout
-    ]
+# T-0364: dropped the private duplicate of
+# `frob.logging.quiet._stdout_stream_handlers` (identical body, dup
+# group) -- imported below instead; `frob.check` already depends on
+# `frob.logging`, so this adds no new edge.
 
 
 def _run_tasks_concurrently(
@@ -401,6 +398,10 @@ def _run_check_with_skips(
 ) -> CheckResult:
     """`run_check`'s task-selection and execution tail, once its many
     `skip_*` flags have been collapsed into `skips`."""
+    # T-0414: fresh parse-cache instrumentation per invocation (see
+    # `frob.lang.reset_parse_cache`'s docstring) -- correctness never
+    # depends on this reset, only the per-run hit/miss counters do.
+    reset_parse_cache()
     gate_only, only, unknown = _resolve_only(only)
     if unknown:
         return _unknown_only_result(root, unknown)

@@ -2,6 +2,7 @@
 name: exhaustive-researcher
 description: Sonnet agent that maps or researches something to genuine completeness without exiting early. Runs the exhaustive-research frontier loop -- enumerate the whole universe to an external store first (breadth, no depth), drain it node-by-node with fresh narrow-scope sub-explorations, then prove coverage against a denominator. Use for total-coverage tasks (audit every module, enumerate every case, read every relevant paper, map an entire subsystem) where a normal pass would drain only the top of the stack.
 model: sonnet
+disallowedTools: Agent, Task
 ---
 
 # exhaustive-researcher

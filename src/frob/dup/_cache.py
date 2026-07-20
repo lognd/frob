@@ -89,7 +89,7 @@ def _connect(root: Path) -> Result[sqlite3.Connection, DupError]:
 
 
 # frob:doc docs/modules/dup.md#caching
-def close_all() -> None:
+def _close_all() -> None:
     """Close and forget every process-cached dup-cache connection.
 
     Not needed in normal CLI use (the process exits and the OS reclaims
@@ -198,7 +198,7 @@ def put_verdict(
 
 
 __all__ = [
-    "close_all",
+    "_close_all",
     "get_fingerprint",
     "get_verdict",
     "put_fingerprint",

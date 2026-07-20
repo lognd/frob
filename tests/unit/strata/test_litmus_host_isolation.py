@@ -1,10 +1,11 @@
-"""HOST001/HOST002 litmus fixture coverage (T-0256, mirroring
-`test_litmus_waive.py`'s parse -> elaborate -> evaluate round-trip
-discipline): a real shared-user VULN model that genuinely fires both
-rules, and a real isolated HARDENED model (disjoint paths/ports plus
-explicit waivers for the two structurally-unprovable sub-targets) that
-fully discharges -- both round-tripped through the real `strata_core`
-parser, never a hand-built `KernelModel`/`Waiver` value.
+"""HOST001/HOST002 litmus fixture coverage (T-0256, T-0272 for group/
+sudoers, mirroring `test_litmus_waive.py`'s parse -> elaborate ->
+evaluate round-trip discipline): a real shared-user VULN model that
+genuinely fires both rules (including the T-0272-derived shared-group/
+sudoers sub-targets), and a real isolated HARDENED model (disjoint
+paths/ports/groups, no declared sudoers grant) that fully discharges
+with no waivers needed at all -- both round-tripped through the real
+`strata_core` parser, never a hand-built `KernelModel`/`Waiver` value.
 """
 
 from __future__ import annotations
@@ -48,6 +49,7 @@ class TestHostIsolationHardenedLitmus:
         assert host002.kept == ()
         assert host001.stale == ()
         assert host002.stale == ()
-        # both waivers actually fired and were consumed, never a no-op
-        assert len(host001.waived) == 1
-        assert len(host002.waived) == 2
+        # T-0272: no waivers needed -- disjoint groups and no declared
+        # sudoers grant structurally prove both sub-targets false.
+        assert host001.waived == ()
+        assert host002.waived == ()

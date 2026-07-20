@@ -239,6 +239,45 @@ the graceful-degrade gate.
   class, not an exact Linux capability or syscall list, until the
   surface grammar can express finer atoms (same deferral
   `docs/strata/host.md` and `_export.py`'s own docstring already note).
+  `CAP_NET_BIND_SERVICE` specifically is only granted when a declared
+  `listens` port is actually privileged (`<1024`) -- a `may net` node
+  whose ports are all unprivileged gets no bind capability at all
+  (T-0281 item 8, the malmberg pilot's over-grant finding).
+- A service-user identity (`runs_as`) shared by more than one node/store
+  (e.g. a store and its consuming node both declaring the same name) gets
+  its `useradd`/`userdel` guard block rendered ONCE, not once per sharing
+  entry (T-0281 item 5). `generate_all` also computes the manifest walk
+  exactly once and shares it across all three renderers, instead of each
+  renderer independently re-walking the model (T-0281 item 4) -- besides
+  being wasted work, the independent re-walk meant `host_manifest_for`'s
+  per-node debug log line fired three times per node for one `frob
+  deploy generate` invocation.
+- A declared `listens` port is documented on the generated unit itself
+  (a `# listens: PORT` comment, T-0281 item 6) so a reader of the unit
+  file does not have to cross-reference `status.sh` to learn what port a
+  service is expected to bind. This is documentation only: `std.host` has
+  no inbound/outbound direction vocabulary yet, so no
+  `IPAddressAllow=`/`SocketBindAllow=` kernel-level network hardening is
+  emitted -- a real network-hardening directive would need that
+  vocabulary first, not a fabricated allow-list built off `listens`
+  alone.
+- `status.sh`'s port probes always run against `127.0.0.1` regardless of
+  which physical host a unit is actually meant to run on -- `std.host`
+  has no host/placement vocabulary yet (T-0281 item 7, the malmberg pilot
+  finding: a display node on a separate host always reads its port as
+  closed). The generated script now carries an explicit `NOTE:` comment
+  saying so and instructing the operator to run it on each declared host
+  separately. Designing an actual placement construct (partitioning
+  generated artifacts per declared host) is bigger than this ticket and
+  is tracked separately (see T-0281's Done report in `tickets.md` for the
+  filed follow-up id).
+- Reading waivers back off a parsed `std.host` model: `elaborate(...)
+  .danger_ok` (the `KernelModel`) exposes no `waivers` attribute of its
+  own -- `waive "HOST001:..."`/`waive "HOST002:..."` clauses parse and
+  apply, but are read back through the SEPARATE `_waive` channel
+  (`frob.strata._waive`, the same T-0174 waiver machinery SYS100/SYS101/
+  THREAT002/THREAT003 already use), not off the model object itself
+  (T-0281 item 10).
 
 ## See also
 

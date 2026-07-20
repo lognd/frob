@@ -1,0 +1,681 @@
+# frob:used-by src/frob/gates/_registry_exhaustiveness.py
+# evasion.yaml -- capability-evasion construct taxonomy (T-0339)
+# source doc: docs/design/capability-evasion-taxonomy.md
+# NOTE: source doc has NO ## DENOMINATOR MANIFEST section and assigns no stable ids to
+# its 112 constructs (only prose table rows) -- ids below (EVA-<LANG>-<NNN>) are assigned
+# by this registry pass to close that gap; see RECONCILIATION.md.
+schema_version: 1
+entries:
+  - id: "EVA-PY-S01"
+    language: "Python"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-PY-S02"
+    language: "Python"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-PY-S03"
+    language: "Python"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-PY-S04"
+    language: "Python"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-PY-S05"
+    language: "Python"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-PY-S06"
+    language: "Python"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-PY-S07"
+    language: "Python"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-PY-S08"
+    language: "Python"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-PY-S09"
+    language: "Python"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-PY-S10"
+    language: "Python"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-PY-S11"
+    language: "Python"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-PY-S12"
+    language: "Python"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-PY-S13"
+    language: "Python"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-PY-R01"
+    language: "Python"
+    category: "runtime-opaque"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-PY-R02"
+    language: "Python"
+    category: "runtime-opaque"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-PY-R03"
+    language: "Python"
+    category: "runtime-opaque"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-PY-R04"
+    language: "Python"
+    category: "runtime-opaque"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-PY-R05"
+    language: "Python"
+    category: "runtime-opaque"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-PY-R06"
+    language: "Python"
+    category: "runtime-opaque"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-PY-R07"
+    language: "Python"
+    category: "runtime-opaque"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-PY-R08"
+    language: "Python"
+    category: "runtime-opaque"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-PY-R09"
+    language: "Python"
+    category: "runtime-opaque"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-TSJS-S01"
+    language: "TypeScript/JavaScript"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-TSJS-S02"
+    language: "TypeScript/JavaScript"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-TSJS-S03"
+    language: "TypeScript/JavaScript"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-TSJS-S04"
+    language: "TypeScript/JavaScript"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-TSJS-S05"
+    language: "TypeScript/JavaScript"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-TSJS-S06"
+    language: "TypeScript/JavaScript"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-TSJS-S07"
+    language: "TypeScript/JavaScript"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-TSJS-S08"
+    language: "TypeScript/JavaScript"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-TSJS-S09"
+    language: "TypeScript/JavaScript"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-TSJS-S10"
+    language: "TypeScript/JavaScript"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-TSJS-S11"
+    language: "TypeScript/JavaScript"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-TSJS-S12"
+    language: "TypeScript/JavaScript"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-TSJS-S13"
+    language: "TypeScript/JavaScript"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-TSJS-S14"
+    language: "TypeScript/JavaScript"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-TSJS-S15"
+    language: "TypeScript/JavaScript"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-TSJS-S16"
+    language: "TypeScript/JavaScript"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-TSJS-S17"
+    language: "TypeScript/JavaScript"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-TSJS-R01"
+    language: "TypeScript/JavaScript"
+    category: "runtime-opaque"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-TSJS-R02"
+    language: "TypeScript/JavaScript"
+    category: "runtime-opaque"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-TSJS-R03"
+    language: "TypeScript/JavaScript"
+    category: "runtime-opaque"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-TSJS-R04"
+    language: "TypeScript/JavaScript"
+    category: "runtime-opaque"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-TSJS-R05"
+    language: "TypeScript/JavaScript"
+    category: "runtime-opaque"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-TSJS-R06"
+    language: "TypeScript/JavaScript"
+    category: "runtime-opaque"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-TSJS-R07"
+    language: "TypeScript/JavaScript"
+    category: "runtime-opaque"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-TSJS-R08"
+    language: "TypeScript/JavaScript"
+    category: "runtime-opaque"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-TSJS-R09"
+    language: "TypeScript/JavaScript"
+    category: "runtime-opaque"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-RS-S01"
+    language: "Rust"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-RS-S02"
+    language: "Rust"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-RS-S03"
+    language: "Rust"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-RS-S04"
+    language: "Rust"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-RS-S05"
+    language: "Rust"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-RS-S06"
+    language: "Rust"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-RS-S07"
+    language: "Rust"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-RS-S08"
+    language: "Rust"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-RS-S09"
+    language: "Rust"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-RS-S10"
+    language: "Rust"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-RS-S11"
+    language: "Rust"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-RS-S12"
+    language: "Rust"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-RS-S13"
+    language: "Rust"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-RS-R01"
+    language: "Rust"
+    category: "runtime-opaque"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-RS-R02"
+    language: "Rust"
+    category: "runtime-opaque"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-RS-R03"
+    language: "Rust"
+    category: "runtime-opaque"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-RS-R04"
+    language: "Rust"
+    category: "runtime-opaque"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-RS-R05"
+    language: "Rust"
+    category: "runtime-opaque"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-RS-R06"
+    language: "Rust"
+    category: "runtime-opaque"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-C-S01"
+    language: "C"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-C-S02"
+    language: "C"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-C-S03"
+    language: "C"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-C-S04"
+    language: "C"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-C-S05"
+    language: "C"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-C-S06"
+    language: "C"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-C-S07"
+    language: "C"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-C-R01"
+    language: "C"
+    category: "runtime-opaque"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-C-R02"
+    language: "C"
+    category: "runtime-opaque"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-C-R03"
+    language: "C"
+    category: "runtime-opaque"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-C-R04"
+    language: "C"
+    category: "runtime-opaque"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-C-R05"
+    language: "C"
+    category: "runtime-opaque"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-CPP-S01"
+    language: "C++"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-CPP-S02"
+    language: "C++"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-CPP-S03"
+    language: "C++"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-CPP-S04"
+    language: "C++"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-CPP-S05"
+    language: "C++"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-CPP-S06"
+    language: "C++"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-CPP-S07"
+    language: "C++"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-CPP-S08"
+    language: "C++"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-CPP-S09"
+    language: "C++"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-CPP-S10"
+    language: "C++"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-CPP-S11"
+    language: "C++"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-CPP-S12"
+    language: "C++"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-CPP-R01"
+    language: "C++"
+    category: "runtime-opaque"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-CPP-R02"
+    language: "C++"
+    category: "runtime-opaque"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-CPP-R03"
+    language: "C++"
+    category: "runtime-opaque"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-CPP-R04"
+    language: "C++"
+    category: "runtime-opaque"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-CPP-R05"
+    language: "C++"
+    category: "runtime-opaque"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-KT-S01"
+    language: "Kotlin"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-KT-S02"
+    language: "Kotlin"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-KT-S03"
+    language: "Kotlin"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-KT-S04"
+    language: "Kotlin"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-KT-S05"
+    language: "Kotlin"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-KT-S06"
+    language: "Kotlin"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-KT-S07"
+    language: "Kotlin"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-KT-S08"
+    language: "Kotlin"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-KT-S09"
+    language: "Kotlin"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-KT-S10"
+    language: "Kotlin"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-KT-S11"
+    language: "Kotlin"
+    category: "static-resolvable"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-KT-R01"
+    language: "Kotlin"
+    category: "runtime-opaque"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-KT-R02"
+    language: "Kotlin"
+    category: "runtime-opaque"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-KT-R03"
+    language: "Kotlin"
+    category: "runtime-opaque"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-KT-R04"
+    language: "Kotlin"
+    category: "runtime-opaque"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+  - id: "EVA-KT-R05"
+    language: "Kotlin"
+    category: "runtime-opaque"
+    source_doc: "docs/design/capability-evasion-taxonomy.md"
+    disposition: deferred:T-0339
+    cross_refs: []
+total: 112

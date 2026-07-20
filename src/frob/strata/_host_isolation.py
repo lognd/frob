@@ -8,8 +8,8 @@ declares 2+ `runs_as` service users, not an optional afterthought.
 
 HOST001 (lateral movement) fires per DISTINCT service-user PAIR: prove
 no shared writable filesystem path, no shared listening port reachable
-across users without a declared `Flow` between their nodes, and (an
-honest gap, see below) no shared OS group. HOST002 (vertical movement)
+across users without a declared `Flow` between their nodes, and (T-0272)
+no shared OS group. HOST002 (vertical movement)
 fires PER service user: no setuid path owned, no sudoers grant, no
 root-run unit whose owned paths are writable by a lower-trust user, and
 no write access to a path a higher-trust node also owns.
@@ -20,22 +20,24 @@ per-user table to fall out of sync with the model, mirroring
 `_threat.py::_entries_by_capability_kind`'s "one join, every caller
 reuses it" discipline.
 
-## The honest gap: two sub-targets `HostManifest` cannot see
+## The (former) honest gap: two sub-targets now derived from HostManifest
 
-`std.host` (T-0255) carries NO OS-group and NO sudoers-grant vocabulary
--- `strata-core/src/parse.rs`'s grammar is out of THIS ticket's declared
-scope (`src/frob/strata/**` only, not `strata-core/**`), so neither can
-be added here. Per T-0174's waive discipline (module docstring,
-`_waive.py`), a sub-target this checker cannot structurally prove is
-NEVER silently assumed safe (charter law 2, deny-by-default): `shared
-group` and `sudoers` UNCONDITIONALLY fire for every pair/user a HOST001/
-HOST002 obligation applies to, with a detail naming the missing grammar,
-until an operator either files the grammar ticket (`frob:todo T-draft-7b5b5541`
-below) or writes an explicit `waive "HOST001:shared-group" reason="..."`
-/ `waive "HOST002:sudoers" reason="..."` clause. This is the SAME shape
-`_threat.py::DEFAULT_BENIGN_CAPABILITIES` uses for a capability kind the
-catalog has no sink for -- an honest, always-visible gap, not a false
-"PROVED".
+`std.host` (T-0255) originally carried NO OS-group and NO sudoers-grant
+vocabulary, so `shared group` and `sudoers` UNCONDITIONALLY fired for
+every pair/user a HOST001/HOST002 obligation applied to (deny-by-default,
+charter law 2), with a detail naming the missing grammar, until an
+operator wrote an explicit `waive "HOST001:shared-group" reason="..."` /
+`waive "HOST002:sudoers" reason="..."` clause. T-0272 added `group
+"NAME"`+ and `sudoers "RULE"`+ to `std.host` (`strata-core/src/parse.rs`,
+`_host.py::HostManifest.group`/`.sudoers`), so both sub-targets now
+derive REAL findings from `HostManifest` intersection, the same
+DERIVED-not-hand-written discipline every other sub-target in this
+module follows: HOST001's shared-group fires when two service users'
+`group` tuples intersect; HOST002's sudoers fires when a user's
+`sudoers` tuple is non-empty. A user who declares no `group`/`sudoers`
+at all now correctly proves nothing to report, exactly like `owns`/
+`listens`'s absence -- this is the module's fired-until-declared
+discipline (charter law 2) applied consistently, not a relaxation of it.
 
 `setuid` (HOST002) IS derivable without new grammar: `owns "PATH"
 "MODE"` already carries a full POSIX octal mode string
@@ -83,18 +85,17 @@ _log = get_logger(__name__)
 #: against (module docstring's ticket-mandated sub-target requirement) --
 #: kept here, not appended to `_waive.py`'s frozen module constant, so a
 #: bare-rule `waive "HOST001"` clause is rejected the identical way a
-#: bare `waive "SYS100"` is (`_waive.py::validate_waiver_fields`).
+#: bare `waive "SYS100"` is (`_waive.py::_validate_waiver_fields`).
 # frob:doc docs/strata/host.md#waiver-discipline
 HOST_MULTI_INSTANCE_WAIVER_FAMILIES: frozenset[str] = frozenset({"HOST001", "HOST002"})
 
-#: HOST002 sub-target for the sudoers-grant check: `std.host` has no
-#: sudoers vocabulary (module docstring "honest gap"), so this ALWAYS
-#: fires until waived or the grammar lands.
+#: HOST002 sub-target for the sudoers-grant check: fires when a service
+#: user's `HostManifest.sudoers` (T-0272) is non-empty (module docstring).
 _SUB_SUDOERS = "sudoers"
 
-#: HOST001 sub-target for the shared-OS-group check: `std.host` has no
-#: group vocabulary (module docstring "honest gap"), so this ALWAYS
-#: fires for every qualifying pair until waived or the grammar lands.
+#: HOST001 sub-target for the shared-OS-group check: fires when two
+#: service users' `HostManifest.group` (T-0272) tuples intersect (module
+#: docstring).
 _SUB_SHARED_GROUP = "shared-group"
 
 _SUB_SETUID = "setuid"
@@ -181,6 +182,31 @@ def _listens_by_user(
     for node_id in user_nodes:
         ports.update(manifests[node_id].listens)
     return ports
+
+
+def _groups_by_user(
+    user_nodes: list[str], manifests: dict[str, HostManifest]
+) -> set[str]:
+    """Every OS group a user's node(s) declare `group` membership in
+    (T-0272) -- the union HOST001's shared-group sub-target intersects
+    across a pair, same shape as `_listens_by_user`."""
+    groups: set[str] = set()
+    for node_id in user_nodes:
+        groups.update(manifests[node_id].group)
+    return groups
+
+
+def _sudoers_by_user(
+    user_nodes: list[str], manifests: dict[str, HostManifest]
+) -> tuple[str, ...]:
+    """Every sudoers grant a user's node(s) declare (T-0272), in
+    declaration order across the user's nodes -- HOST002's sudoers
+    sub-target fires per grant, same "one finding per declared fact"
+    shape `_setuid_violations` uses for `owns`."""
+    sudoers: list[str] = []
+    for node_id in user_nodes:
+        sudoers.extend(manifests[node_id].sudoers)
+    return tuple(sudoers)
 
 
 def _mode_digits(mode: str) -> str | None:
@@ -298,21 +324,33 @@ def _shared_socket_violations(
     ]
 
 
-def _shared_group_violation(user_a: str, user_b: str) -> HostIsolationViolation:
-    """HOST001 shared-group honest-gap finding -- always fires, since
-    std.host carries no OS-group vocabulary to disprove it (frob:todo
-    T-draft-7b5b5541)."""
-    return HostIsolationViolation(
-        rule="HOST001",
-        sub_target=_SUB_SHARED_GROUP,
-        user=user_a,
-        peer=user_b,
-        detail="std.host carries no OS-group vocabulary "
-        "(frob:todo T-draft-7b5b5541) -- "
-        f"whether {user_a!r} and {user_b!r} share a group cannot be "
-        "structurally proved false; waive with a reason or await the "
-        "group grammar",
-    )
+def _shared_group_violations(
+    user_a: str,
+    nodes_a: list[str],
+    user_b: str,
+    nodes_b: list[str],
+    manifests: dict[str, HostManifest],
+) -> list[HostIsolationViolation]:
+    """HOST001 shared-group findings for one user pair (T-0272) -- one
+    finding per OS group both users' `HostManifest.group` (`_groups_by_
+    user`) declare in common, DERIVED the same way `_shared_writable_
+    path_violations` intersects `owns`. A pair sharing no declared group
+    produces no finding -- absence of a shared group is now structurally
+    provable, not an always-fire honest gap (module docstring)."""
+    groups_a = _groups_by_user(nodes_a, manifests)
+    groups_b = _groups_by_user(nodes_b, manifests)
+    shared = sorted(groups_a & groups_b)
+    return [
+        HostIsolationViolation(
+            rule="HOST001",
+            sub_target=_SUB_SHARED_GROUP,
+            user=user_a,
+            peer=user_b,
+            detail=f"users {user_a!r} and {user_b!r} share OS group {group!r} "
+            "-- a compromise of either reaches resources granted to that group",
+        )
+        for group in shared
+    ]
 
 
 def _lateral_pair_violations(
@@ -325,8 +363,8 @@ def _lateral_pair_violations(
 ) -> list[HostIsolationViolation]:
     """Every HOST001 sub-target finding for one (user_a, user_b) pair,
     DERIVED from the two users' `HostManifest` slices -- shared writable
-    path, cross-user socket unless a declared flow bridges them, and the
-    always-fires shared-group honest gap (module docstring)."""
+    path, cross-user socket unless a declared flow bridges them, and any
+    shared OS group (T-0272, module docstring)."""
     violations: list[HostIsolationViolation] = []
     violations.extend(
         _shared_writable_path_violations(user_a, nodes_a, user_b, nodes_b, manifests)
@@ -334,7 +372,9 @@ def _lateral_pair_violations(
     violations.extend(
         _shared_socket_violations(model, user_a, nodes_a, user_b, nodes_b, manifests)
     )
-    violations.append(_shared_group_violation(user_a, user_b))
+    violations.extend(
+        _shared_group_violations(user_a, nodes_a, user_b, nodes_b, manifests)
+    )
     return violations
 
 
@@ -586,18 +626,25 @@ def _setuid_violations(
     ]
 
 
-def _sudoers_violation(user: str) -> HostIsolationViolation:
-    """HOST002 sudoers honest-gap finding -- always fires, since std.host
-    carries no sudoers vocabulary to disprove it (frob:todo T-draft-7b5b5541)."""
-    return HostIsolationViolation(
-        rule="HOST002",
-        sub_target=_SUB_SUDOERS,
-        user=user,
-        detail="std.host carries no sudoers vocabulary "
-        "(frob:todo T-draft-7b5b5541) -- "
-        f"whether {user!r} holds a sudoers grant cannot be structurally "
-        "proved false; waive with a reason or await the grammar",
-    )
+def _sudoers_violations(
+    user: str, user_nodes: list[str], manifests: dict[str, HostManifest]
+) -> list[HostIsolationViolation]:
+    """HOST002 sudoers findings for one service user (T-0272) -- one
+    finding per declared `HostManifest.sudoers` grant (`_sudoers_by_
+    user`), DERIVED the same way `_setuid_violations` reads `owns`. A
+    user with no declared sudoers grant produces no finding -- absence
+    of a grant is now structurally provable, not an always-fire honest
+    gap (module docstring)."""
+    return [
+        HostIsolationViolation(
+            rule="HOST002",
+            sub_target=_SUB_SUDOERS,
+            user=user,
+            detail=f"user {user!r} holds sudoers grant {rule!r} -- "
+            "privilege escalation on compromise",
+        )
+        for rule in _sudoers_by_user(user_nodes, manifests)
+    ]
 
 
 def _root_unit_writable_violations(
@@ -676,7 +723,7 @@ def _vertical_user_violations(
     owns = _owns_by_user(user_nodes, manifests)
     violations: list[HostIsolationViolation] = []
     violations.extend(_setuid_violations(user, owns))
-    violations.append(_sudoers_violation(user))
+    violations.extend(_sudoers_violations(user, user_nodes, manifests))
     violations.extend(_root_unit_writable_violations(user, owns, root_nodes, manifests))
     violations.extend(
         _higher_trust_write_violations(

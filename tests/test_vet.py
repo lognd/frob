@@ -10,12 +10,12 @@ from pathlib import Path
 
 import pytest
 
-from frob.vet._allow import load_vet_config
+from frob.vet._allow import _load_vet_config
 from frob.vet._hook import check_package, parse_hook_command
-from frob.vet._lockfile import find_lockfile, parse_lockfile
+from frob.vet._lockfile import _find_lockfile, _parse_lockfile
 from frob.vet._models import Dependency
-from frob.vet._registry import RegistryResult
-from frob.vet._typosquat import damerau_levenshtein, find_typosquat
+from frob.vet._registry import _RegistryResult
+from frob.vet._typosquat import _damerau_levenshtein, _find_typosquat
 
 # ---------------------------------------------------------------------------
 # lockfile parsers
@@ -84,10 +84,10 @@ version = "1.35.1"
 class TestLockfileParsers:
     def test_find_lockfile_uv(self, tmp_path: Path) -> None:
         (tmp_path / "uv.lock").write_text(UV_LOCK)
-        assert find_lockfile(tmp_path) == tmp_path / "uv.lock"
+        assert _find_lockfile(tmp_path) == tmp_path / "uv.lock"
 
     def test_find_lockfile_none(self, tmp_path: Path) -> None:
-        assert find_lockfile(tmp_path) is None
+        assert _find_lockfile(tmp_path) is None
 
     def test_find_lockfile_direct(self, tmp_path: Path) -> None:
         """T-0221: `frob vet uv.lock` passes the lockfile itself as `root`;
@@ -95,20 +95,20 @@ class TestLockfileParsers:
         under (which would look for uv.lock/uv.lock)."""
         lockfile = tmp_path / "uv.lock"
         lockfile.write_text(UV_LOCK)
-        assert find_lockfile(lockfile) == lockfile
+        assert _find_lockfile(lockfile) == lockfile
 
     def test_find_lockfile_bad_name(self, tmp_path: Path) -> None:
         """A file path that isn't one of the supported lockfile names is not
         silently accepted just because it exists."""
         path = tmp_path / "yarn.lock"
         path.write_text("{}")
-        assert find_lockfile(path) is None
+        assert _find_lockfile(path) is None
 
     def test_parse_uv_lock(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_lockfile.py::parse_lockfile kind="unit"
+        # frob:tests src/frob/vet/_lockfile.py::_parse_lockfile kind="unit"
         path = tmp_path / "uv.lock"
         path.write_text(UV_LOCK)
-        result = parse_lockfile(path)
+        result = _parse_lockfile(path)
         assert result.is_ok
         deps = result.danger_ok
         assert Dependency(ecosystem="pypi", name="requests", version="2.31.0") in deps
@@ -117,7 +117,7 @@ class TestLockfileParsers:
     def test_parse_package_lock_json_v3(self, tmp_path: Path) -> None:
         path = tmp_path / "package-lock.json"
         path.write_text(PACKAGE_LOCK_JSON_V3)
-        result = parse_lockfile(path)
+        result = _parse_lockfile(path)
         assert result.is_ok
         deps = result.danger_ok
         assert Dependency(ecosystem="npm", name="lodash", version="4.17.21") in deps
@@ -126,7 +126,7 @@ class TestLockfileParsers:
     def test_parse_package_lock_json_v1(self, tmp_path: Path) -> None:
         path = tmp_path / "package-lock.json"
         path.write_text(PACKAGE_LOCK_JSON_V1)
-        result = parse_lockfile(path)
+        result = _parse_lockfile(path)
         assert result.is_ok
         deps = result.danger_ok
         assert Dependency(ecosystem="npm", name="express", version="4.18.2") in deps
@@ -134,7 +134,7 @@ class TestLockfileParsers:
     def test_parse_pnpm_lock(self, tmp_path: Path) -> None:
         path = tmp_path / "pnpm-lock.yaml"
         path.write_text(PNPM_LOCK_YAML)
-        result = parse_lockfile(path)
+        result = _parse_lockfile(path)
         assert result.is_ok
         deps = result.danger_ok
         assert Dependency(ecosystem="npm", name="lodash", version="4.17.21") in deps
@@ -142,20 +142,20 @@ class TestLockfileParsers:
     def test_parse_cargo_lock(self, tmp_path: Path) -> None:
         path = tmp_path / "Cargo.lock"
         path.write_text(CARGO_LOCK)
-        result = parse_lockfile(path)
+        result = _parse_lockfile(path)
         assert result.is_ok
         deps = result.danger_ok
         assert Dependency(ecosystem="cargo", name="serde", version="1.0.195") in deps
 
     def test_unsupported_lockfile(self, tmp_path: Path) -> None:
         path = tmp_path / "yarn.lock"
-        result = parse_lockfile(path)
+        result = _parse_lockfile(path)
         assert result.is_err
 
     def test_malformed_uv_lock(self, tmp_path: Path) -> None:
         path = tmp_path / "uv.lock"
         path.write_text("not valid = [ toml")
-        result = parse_lockfile(path)
+        result = _parse_lockfile(path)
         assert result.is_err
 
 
@@ -166,16 +166,16 @@ class TestLockfileParsers:
 
 class TestAllowConfig:
     def test_no_frob_toml_is_advisory_only(self, tmp_path: Path) -> None:
-        cfg = load_vet_config(tmp_path)
+        cfg = _load_vet_config(tmp_path)
         assert cfg.present is False
 
     def test_no_vet_section_is_advisory_only(self, tmp_path: Path) -> None:
         (tmp_path / "frob.toml").write_text("check_base = 'main'\n")
-        cfg = load_vet_config(tmp_path)
+        cfg = _load_vet_config(tmp_path)
         assert cfg.present is False
 
     def test_vet_section_present(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_allow.py::load_vet_config kind="unit"
+        # frob:tests src/frob/vet/_allow.py::_load_vet_config kind="unit"
         (tmp_path / "frob.toml").write_text(
             """
 [vet]
@@ -188,7 +188,7 @@ requests = true
 jinja2 = ["sandboxed template compilation, reviewed"]
 """
         )
-        cfg = load_vet_config(tmp_path)
+        cfg = _load_vet_config(tmp_path)
         assert cfg.present is True
         assert cfg.enforce is True
         assert cfg.quarantine_days == 7
@@ -196,7 +196,7 @@ jinja2 = ["sandboxed template compilation, reviewed"]
         assert cfg.allow["jinja2"] == ("sandboxed template compilation, reviewed",)
 
     def test_wrong_typed_scalars_fall_back_to_defaults(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_allow.py::load_vet_config kind="unit"
+        # frob:tests src/frob/vet/_allow.py::_load_vet_config kind="unit"
         # A malformed `[vet]` scalar (wrong TOML type) must degrade to the
         # field default, never crash the whole `frob` invocation.
         (tmp_path / "frob.toml").write_text(
@@ -206,7 +206,7 @@ quarantine_days = ["not", "an", "int"]
 registry_base_url = 42
 """
         )
-        cfg = load_vet_config(tmp_path)
+        cfg = _load_vet_config(tmp_path)
         assert cfg.present is True
         assert cfg.quarantine_days == 14
         assert cfg.registry_base_url is None
@@ -227,13 +227,13 @@ class TestQuarantine:
         def fake_fetch(
             ecosystem, name, version, *, cache_path, base_url=None, timeout_s=5.0
         ):
-            return RegistryResult(
+            return _RegistryResult(
                 ok=True,
                 published_at=datetime.now(UTC) - timedelta(days=2),
                 resolved_version=version,
             )
 
-        monkeypatch.setattr(_registry, "fetch_publish_date", fake_fetch)
+        monkeypatch.setattr(_registry, "_fetch_publish_date", fake_fetch)
         verdict = check_package("pypi", "some-new-pkg", "1.0.0", root=tmp_path)
         assert verdict.verdict == "quarantine"
         assert verdict.blocked is True
@@ -246,13 +246,13 @@ class TestQuarantine:
         def fake_fetch(
             ecosystem, name, version, *, cache_path, base_url=None, timeout_s=5.0
         ):
-            return RegistryResult(
+            return _RegistryResult(
                 ok=True,
                 published_at=datetime.now(UTC) - timedelta(days=900),
                 resolved_version=version,
             )
 
-        monkeypatch.setattr(_registry, "fetch_publish_date", fake_fetch)
+        monkeypatch.setattr(_registry, "_fetch_publish_date", fake_fetch)
         verdict = check_package("pypi", "requests", "2.31.0", root=tmp_path)
         assert verdict.verdict == "ok"
         assert verdict.blocked is False
@@ -265,11 +265,11 @@ class TestQuarantine:
         def fake_fetch(
             ecosystem, name, version, *, cache_path, base_url=None, timeout_s=5.0
         ):
-            return RegistryResult(
+            return _RegistryResult(
                 ok=False, note="could not verify publish date: timeout"
             )
 
-        monkeypatch.setattr(_registry, "fetch_publish_date", fake_fetch)
+        monkeypatch.setattr(_registry, "_fetch_publish_date", fake_fetch)
         verdict = check_package("pypi", "requests", "2.31.0", root=tmp_path)
         assert verdict.verdict == "unverified"
         assert verdict.blocked is False
@@ -282,22 +282,22 @@ class TestQuarantine:
 
 class TestTyposquat:
     def test_damerau_levenshtein_basic(self) -> None:
-        assert damerau_levenshtein("requests", "requests") == 0
-        assert damerau_levenshtein("requets", "requests") == 1
-        assert damerau_levenshtein("laodash", "lodash") == 1
+        assert _damerau_levenshtein("requests", "requests") == 0
+        assert _damerau_levenshtein("requets", "requests") == 1
+        assert _damerau_levenshtein("laodash", "lodash") == 1
 
     def test_requets_flags_requests(self) -> None:
-        # frob:tests src/frob/vet/_typosquat.py::find_typosquat kind="unit"
-        assert find_typosquat("pypi", "requets") == "requests"
+        # frob:tests src/frob/vet/_typosquat.py::_find_typosquat kind="unit"
+        assert _find_typosquat("pypi", "requets") == "requests"
 
     def test_laodash_flags_lodash(self) -> None:
-        assert find_typosquat("npm", "laodash") == "lodash"
+        assert _find_typosquat("npm", "laodash") == "lodash"
 
     def test_known_popular_package_not_flagged(self) -> None:
-        assert find_typosquat("pypi", "requests") is None
+        assert _find_typosquat("pypi", "requests") is None
 
     def test_unrelated_name_not_flagged(self) -> None:
-        assert find_typosquat("pypi", "some-totally-unrelated-package-xyz") is None
+        assert _find_typosquat("pypi", "some-totally-unrelated-package-xyz") is None
 
 
 # ---------------------------------------------------------------------------
@@ -371,49 +371,49 @@ def _make_fake_frob_repo_root(dest: Path) -> Path:
 
 class TestCapabilityScan:
     def test_scan_file_operations_names_registry_entry(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_operations kind="unit"
-        from frob.vet._capability import scan_file_operations
+        # frob:tests src/frob/vet/_capability.py::_scan_file_operations kind="unit"
+        from frob.vet._capability import _scan_file_operations
 
         pkg = tmp_path / "pkg.py"
         pkg.write_text("import subprocess\nsubprocess.run(['ls'])\n")
-        ops = scan_file_operations(pkg)
+        ops = _scan_file_operations(pkg)
         assert any(op.capability_kind == "exec" for op in ops)
         matched = next(op for op in ops if op.capability_kind == "exec")
         assert matched.library == "subprocess"
         assert matched.safer_alternative
 
     def test_scan_file_operations_no_language(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_operations kind="unit"
-        from frob.vet._capability import scan_file_operations
+        # frob:tests src/frob/vet/_capability.py::_scan_file_operations kind="unit"
+        from frob.vet._capability import _scan_file_operations
 
-        assert scan_file_operations(tmp_path / "foo.unknownext") == ()
+        assert _scan_file_operations(tmp_path / "foo.unknownext") == ()
 
     def test_scan_file_operations_bare_compile(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_operations kind="unit"
-        from frob.vet._capability import scan_file_operations
+        # frob:tests src/frob/vet/_capability.py::_scan_file_operations kind="unit"
+        from frob.vet._capability import _scan_file_operations
 
         pkg = tmp_path / "pkg.py"
         pkg.write_text("code = compile(source, '<s>', 'exec')\n")
-        ops = scan_file_operations(pkg)
+        ops = _scan_file_operations(pkg)
         assert any(op.function_or_pattern.startswith("compile(") for op in ops)
 
     def test_scan_file_operations_dotted_compile_not_matched(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_operations kind="unit"
-        from frob.vet._capability import scan_file_operations
+        # frob:tests src/frob/vet/_capability.py::_scan_file_operations kind="unit"
+        from frob.vet._capability import _scan_file_operations
 
         pkg = tmp_path / "pkg.py"
         pkg.write_text("import re\n_RE = re.compile(r'^x$')\n")
-        ops = scan_file_operations(pkg)
+        ops = _scan_file_operations(pkg)
         assert not any(op.function_or_pattern.startswith("compile(") for op in ops)
 
     def test_scan_file_operations_unreadable_file(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_operations kind="unit"
-        from frob.vet._capability import scan_file_operations
+        # frob:tests src/frob/vet/_capability.py::_scan_file_operations kind="unit"
+        from frob.vet._capability import _scan_file_operations
 
         missing = tmp_path / "gone.py"
-        assert scan_file_operations(missing) == ()
+        assert _scan_file_operations(missing) == ()
 
     def test_python_exec_and_net_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
@@ -435,10 +435,61 @@ class TestCapabilityScan:
         capabilities = scan_file_capabilities(build_rs)
         assert "exec" in capabilities
 
+    # frob:waive DUP001 reason="parallel vet-rule case table: independent \
+    # cases sharing an arrange-act scaffold typical of exhaustive per-rule \
+    # coverage; extracting would obscure per-case intent"
+    def test_kotlin_net_okhttp_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0170: OkHttp is the dominant Android HTTP client -- one of the
+        # per-cell fire fixtures for the new kotlin column.
+        from frob.vet._capability import scan_file_capabilities
+
+        kt = tmp_path / "Client.kt"
+        kt.write_text(
+            "import okhttp3.OkHttpClient\nfun makeClient() = OkHttpClient()\n"
+        )
+        assert "net" in scan_file_capabilities(kt)
+
+    def test_kotlin_exec_runtime_exec_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        from frob.vet._capability import scan_file_capabilities
+
+        kt = tmp_path / "Shell.kt"
+        kt.write_text("fun run(cmd: String) {\n    Runtime.getRuntime().exec(cmd)\n}\n")
+        assert "exec" in scan_file_capabilities(kt)
+
+    # frob:waive DUP001 reason="parallel vet-rule case table: independent \
+    # cases sharing an arrange-act scaffold typical of exhaustive per-rule \
+    # coverage; extracting would obscure per-case intent"
+    def test_kotlin_client_storage_shared_preferences_detected(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        from frob.vet._capability import scan_file_capabilities
+
+        kt = tmp_path / "Prefs.kt"
+        kt.write_text(
+            "fun load(ctx: Context) {\n"
+            '    val prefs = ctx.getSharedPreferences("app", 0)\n'
+            "}\n"
+        )
+        assert "client_storage" in scan_file_capabilities(kt)
+
+    def test_kotlin_benign_file_has_no_capabilities(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0170: a kotlin file that touches none of the patterned needles
+        # observes an empty capability set -- confirms the column does not
+        # over-fire on ordinary Kotlin code.
+        from frob.vet._capability import scan_file_capabilities
+
+        kt = tmp_path / "Math.kt"
+        kt.write_text("fun add(a: Int, b: Int): Int = a + b\n")
+        assert scan_file_capabilities(kt) == frozenset()
+
     def test_c_source_exec_detected(self, tmp_path: Path) -> None:
         # T-0158: C/C++ is now a first-class scanned language (the old
         # blanket "honestly-empty" exemption is retired) -- system() is a
-        # patterned c-cpp/exec DangerousOperation.
+        # patterned c-cpp/exec _DangerousOperation.
         from frob.vet._capability import scan_file_capabilities
 
         c_file = tmp_path / "foo.c"
@@ -446,8 +497,8 @@ class TestCapabilityScan:
         assert "exec" in scan_file_capabilities(c_file)
 
     def test_decode_to_exec_same_function(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::decode_to_exec_signal kind="unit"
-        from frob.vet._capability import decode_to_exec_signal
+        # frob:tests src/frob/vet/_capability.py::_decode_to_exec_signal kind="unit"
+        from frob.vet._capability import _decode_to_exec_signal
 
         pkg = tmp_path / "pkg.py"
         pkg.write_text(
@@ -456,10 +507,10 @@ class TestCapabilityScan:
             "    data = base64.b64decode(payload)\n"
             "    exec(data)\n"
         )
-        assert decode_to_exec_signal(pkg) is True
+        assert _decode_to_exec_signal(pkg) is True
 
     def test_decode_to_exec_absent_when_separate(self, tmp_path: Path) -> None:
-        from frob.vet._capability import decode_to_exec_signal
+        from frob.vet._capability import _decode_to_exec_signal
 
         pkg = tmp_path / "pkg.py"
         pkg.write_text(
@@ -469,7 +520,7 @@ class TestCapabilityScan:
             "def other():\n"
             "    return 1\n"
         )
-        assert decode_to_exec_signal(pkg) is False
+        assert _decode_to_exec_signal(pkg) is False
 
     def test_language_for_known_and_unknown_extensions(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::language_for kind="unit"
@@ -480,21 +531,27 @@ class TestCapabilityScan:
         assert language_for(tmp_path / "mod.ts") == "typescript"
         # T-0158: C/C++ is now a first-class "c-cpp" bucket, not None.
         assert language_for(tmp_path / "mod.c") == "c-cpp"
+        # T-0170: .kt/.kts extension mapping for the new kotlin column.
+        assert language_for(tmp_path / "mod.kt") == "kotlin"
+        assert language_for(tmp_path / "mod.kts") == "kotlin"
         assert language_for(tmp_path / "mod.unknownext") is None
 
     def test_scan_directory_capabilities_aggregates_across_files(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_directory_capabilities kind="unit"
-        from frob.vet._capability import scan_directory_capabilities
+        # frob:tests src/frob/vet/_capability.py::_scan_directory_capabilities kind="unit"
+        from frob.vet._capability import _scan_directory_capabilities
 
         (tmp_path / "a.py").write_text("import subprocess\nsubprocess.run(['ls'])\n")
         (tmp_path / "b.py").write_text("import requests\nrequests.get('x')\n")
-        capabilities, decode_to_exec_hit = scan_directory_capabilities(tmp_path)
+        capabilities, decode_to_exec_hit = _scan_directory_capabilities(tmp_path)
         assert "exec" in capabilities
         assert "net" in capabilities
         assert decode_to_exec_hit is False
 
+    # frob:waive DUP001 reason="parallel vet-rule case table: independent \
+    # cases sharing an arrange-act scaffold typical of exhaustive per-rule \
+    # coverage; extracting would obscure per-case intent"
     def test_re_compile_alone_does_not_report_eval(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
         # T-0151: bare `compile(` used to match `re.compile(`/`ast.compile(`
@@ -527,6 +584,9 @@ class TestCapabilityScan:
         pkg.write_text("eval(user_input)\n")
         assert "eval" in scan_file_capabilities(pkg)
 
+    # frob:waive DUP001 reason="parallel vet-rule case table: independent \
+    # cases sharing an arrange-act scaffold typical of exhaustive per-rule \
+    # coverage; extracting would obscure per-case intent"
     def test_comment_only_needle_does_not_fire(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
         # T-0209: pilot P2 -- a needle appearing only inside a `#` comment
@@ -543,6 +603,9 @@ class TestCapabilityScan:
         )
         assert "net" not in scan_file_capabilities(pkg)
 
+    # frob:waive DUP001 reason="parallel vet-rule case table: independent \
+    # cases sharing an arrange-act scaffold typical of exhaustive per-rule \
+    # coverage; extracting would obscure per-case intent"
     def test_real_code_needle_still_fires_alongside_comment(
         self, tmp_path: Path
     ) -> None:
@@ -594,7 +657,7 @@ class TestCapabilityScan:
     def test_scan_directory_capabilities_excludes_own_module(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_directory_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability.py::_scan_directory_capabilities kind="unit"
         # T-0151: directory aggregation over vet's REAL package path must not
         # self-inflate "eval"/"exec" from _capability.py's own pattern-table
         # literals (its needle tuples contain "eval(", "subprocess.", etc as
@@ -608,7 +671,7 @@ class TestCapabilityScan:
         # docs/modules/vet.md -- not something this exclusion targets.
         #
         # T-0253: the exclusion only fires when the scan root passed to
-        # `scan_directory_capabilities` itself identifies as frob's own
+        # `_scan_directory_capabilities` itself identifies as frob's own
         # repo (`_is_frob_repo_root`, no ancestor search) -- scanning a bare
         # subdirectory like `src/frob/vet` directly no longer qualifies on
         # its own. Build a fake repo root carrying the pyproject-name +
@@ -619,7 +682,7 @@ class TestCapabilityScan:
         # false; this test is specifically about vet/'s own self-match
         # exclusion, so it keeps the scan scoped the same way the pre-
         # T-0253 version did).
-        from frob.vet._capability import scan_directory_capabilities
+        from frob.vet._capability import _scan_directory_capabilities
 
         repo_root = Path(__file__).resolve().parents[1]
         fake_repo = tmp_path / "self-scan"
@@ -633,70 +696,1021 @@ class TestCapabilityScan:
             ignore=shutil.ignore_patterns("__pycache__"),
         )
 
-        capabilities, _ = scan_directory_capabilities(
+        capabilities, _ = _scan_directory_capabilities(
             fake_repo / "src" / "frob" / "vet", max_files=500
         )
         assert "eval" in capabilities  # discriminator refuses a subdir scan root
         assert "exec" in capabilities
 
-        capabilities_from_repo_root, _ = scan_directory_capabilities(
+        capabilities_from_repo_root, _ = _scan_directory_capabilities(
             fake_repo, max_files=500
         )
         assert "eval" not in capabilities_from_repo_root
         assert "exec" not in capabilities_from_repo_root
 
 
-class TestFingerprintScan:
-    """T-0153: `scan_file_fingerprints` -- the CVE-fingerprint sibling of
-    `scan_file_operations`, joined to `frob.strata.CVE_FINGERPRINTS`."""
+class TestCapabilityScanBindingResolution:
+    """T-0328: import/binding-aware symbol resolution -- the plain
+    substring needle scan in `TestCapabilityScan` above is evadable by
+    ordinary Python aliasing/from-import syntax (`import subprocess as sp`,
+    `from subprocess import run`); these tests lock the fix's litmus: every
+    evasion case now DETECTED, every shadowing case NOT detected (no false
+    positives), and a bare unimported name never fires."""
 
+    def test_import_as_alias_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Evasion case 1: `import subprocess as sp; sp.run(x)` -- the raw
+        # text never contains "subprocess.run(" so the pre-T-0328 scanner
+        # missed this entirely.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("import subprocess as sp\nsp.run(['ls'])\n")
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_from_import_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Evasion case 2: `from subprocess import run; run(x)` -- a bare
+        # call with no dotted prefix at the call site at all.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("from subprocess import run\nrun(['ls'])\n")
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_from_import_as_detected_with_correct_kind(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Evasion case 3: `from os import system as e; e(x)` must resolve to
+        # `os.system` -- capability "exec", NOT "eval" (the pre-T-0328
+        # scanner reported nothing at all; a naive fix that just matched
+        # "system" anywhere would have risked the wrong kind).
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("from os import system as e\ne('ls')\n")
+        capabilities = scan_file_capabilities(pkg)
+        assert "exec" in capabilities
+        assert "eval" not in capabilities
+
+    def test_import_as_alias_operation_names_registry_entry(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_scan_file_operations kind="unit"
+        # `_scan_file_operations`'s resolver-backed sibling: an aliased call
+        # still names the real registry entry (library="subprocess"), not
+        # just a bare kind label.
+        from frob.vet._capability import _scan_file_operations
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("import subprocess as sp\nsp.run(['ls'])\n")
+        ops = _scan_file_operations(pkg)
+        assert any(
+            op.capability_kind == "exec" and op.library == "subprocess" for op in ops
+        )
+
+    def test_method_shadowing_import_not_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Shadow case: a class method named `run` on an unrelated object
+        # (`Job().run()`) must NOT resolve to a dangerous `run` symbol --
+        # `Job()` is a call, not an import-bound name, so resolution
+        # deliberately stops there.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("class Job:\n    def run(self):\n        pass\n\nJob().run()\n")
+        assert "exec" not in scan_file_capabilities(pkg)
+
+    def test_param_shadowing_import_not_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Shadow case: a function parameter named `system` shadows a
+        # `from os import system` import for the duration of that function
+        # -- calling the param must not resolve to `os.system`.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("from os import system\n\n\ndef g(system):\n    system('ls')\n")
+        assert "exec" not in scan_file_capabilities(pkg)
+
+    # frob:waive DUP001 reason="parallel vet-rule case table: independent \
+    # cases sharing an arrange-act scaffold typical of exhaustive per-rule \
+    # coverage; extracting would obscure per-case intent"
+    def test_local_variable_shadowing_import_not_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Shadow case: a local variable named `run` (assigned a harmless
+        # value) shadows an imported dangerous `run` for the rest of that
+        # function's scope.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text(
+            "from subprocess import run\n\n\ndef f():\n"
+            "    run = 'not a subprocess call'\n"
+            "    run.upper()\n"
+        )
+        assert "exec" not in scan_file_capabilities(pkg)
+
+    def test_bare_name_call_with_no_import_not_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # No naive bare-name false positive: calling an undefined/locally-
+        # scoped `run()` with no matching import anywhere in the file must
+        # not resolve to anything.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("run('ls')\n")
+        assert "exec" not in scan_file_capabilities(pkg)
+
+    def test_direct_call_still_detected_via_resolver(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Regression: an ordinary unaliased `subprocess.run()` call (already
+        # caught by the raw-text scan) must still fire once the resolver
+        # path is unioned in -- no regression on the common case.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("import subprocess\nsubprocess.run(['ls'])\n")
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_attribute_only_env_access_via_alias_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Non-call attribute access (no argument_list) through an aliased
+        # import: `import os as o; o.environ` must resolve to `os.environ`.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("import os as o\nx = o.environ\n")
+        assert "env" in scan_file_capabilities(pkg)
+
+
+class TestCapabilityScanLocalRebindResolution:
+    """T-0337: follow-on to T-0328 -- the import/binding resolver above
+    correctly resolves import ALIASES but does no intraprocedural
+    dataflow, so a LOCAL rebinding of an already-imported dangerous name
+    (`xyz = run; xyz(...)`) evaded the scan entirely. These tests lock the
+    scope-local copy-propagation fix: single/chained/attribute rebinds now
+    DETECTED, while every T-0328 no-false-positive/shadow guarantee
+    (benign rebind, parameter shadow) stays silent."""
+
+    def test_single_rebind_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # `xyz = run; xyz(...)` -- a plain local rebind of an imported
+        # dangerous name must resolve through the alias to "exec".
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("from subprocess import run\nxyz = run\nxyz(['pwned'])\n")
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_chained_rebind_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # `a = run; b = a; b(...)` -- transitive copy-propagation across
+        # two hops in document order.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("from subprocess import run\na = run\nb = a\nb(['pwned'])\n")
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_attribute_rebind_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # `e = os.system; e("x")` -- rebind to a dangerous ATTRIBUTE chain
+        # (not a bare imported name) must also resolve.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("import os\ne = os.system\ne('ls')\n")
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_benign_rebind_not_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # `run = lambda x: x; run()` -- a name that is never bound to any
+        # dangerous target anywhere in the file must stay silent; a lambda
+        # RHS is not a resolvable identifier/attribute chain, so it never
+        # gets an alias-table entry.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("run = lambda x: x\nrun()\n")
+        assert "exec" not in scan_file_capabilities(pkg)
+
+    def test_parameter_shadow_still_not_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0328 regression guard: a parameter named `run` shadowing an
+        # imported dangerous `run` must stay silent -- a parameter binds no
+        # alias-table entry (it is not an assignment RHS this pass ever
+        # inspects), so the copy-propagation fix must not reopen this hole.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("from subprocess import run\n\n\ndef f(run):\n    run(['ls'])\n")
+        assert "exec" not in scan_file_capabilities(pkg)
+
+    def test_dangerous_then_benign_rebind_stays_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Documented may-analysis over-approximation (T-0337): once a name
+        # is EVER bound to a dangerous target in a scope, a later benign
+        # reassignment of that same name does not clear the flag -- a call
+        # anywhere in the scope through that name is still reported. This
+        # is a deliberate soundness choice, not a bug: a flow-insensitive
+        # "may" analysis over-approximates rather than risk a false
+        # negative from tracking reassignment order.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("from subprocess import run\nx = run\nx(['a'])\nx = 5\n")
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_call_before_rebinding_still_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0468: Python sibling of the T-0378 Rust ordering fix. The
+        # Python `_shadowing_scope`/`_py_scope_bound_names` pair collects
+        # every name bound ANYWHERE in the enclosing scope with no byte-
+        # position tracking, so a capability call textually BEFORE a
+        # same-named rebind is wrongly treated as already shadowed and the
+        # real dangerous call is silently dropped. `o.system(...)` here
+        # executes before `o = None` takes effect (Python assignment does
+        # not hoist), so it MUST still resolve through the `import os as o`
+        # alias to "exec". Uses an ALIASED import (not bare `os.system`) so
+        # the raw-text lexical pass cannot mask a resolver regression --
+        # the raw source never contains the literal substring "os.system".
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("import os as o\no.system('ls')\no = None\n")
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_call_after_rebinding_still_not_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0468 sibling of the ordering test above: the position-aware
+        # fix must not become unconditionally permissive -- a call AFTER
+        # the same `o = None` rebind is still correctly shadowed.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("import os as o\no = None\no.system('ls')\n")
+        assert "exec" not in scan_file_capabilities(pkg)
+
+
+class TestCapabilityScanTsBindingResolution:
+    """T-0377: TS/JS sibling of `TestCapabilityScanBindingResolution` --
+    before this, TypeScript/JS capability scanning was pure lexical
+    needle-matching, so any renamed/destructured/namespaced import to a
+    dangerous module evaded it entirely. These tests lock the fix's
+    litmus: every evasion case now DETECTED, every shadowing case NOT
+    detected (no false positives).
+
+    Deliberately uses the `net`/"axios." needle (dotted, no bare-module-
+    name needle) rather than `exec`/"child_process" for the evasion-
+    detection cases: `exec`'s needle table includes the bare substring
+    "child_process", which the PRE-EXISTING raw-text lexical scan already
+    matches on the import line itself regardless of aliasing -- a test
+    built on it would pass even with the resolver disabled, and would not
+    actually prove anything about the binding-aware fix. "axios." never
+    appears literally in an aliased/namespaced/required import's source
+    text (only the bare string literal `'axios'` does), so a positive
+    result here can only come from the resolver."""
+
+    def test_default_import_alias_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Evasion case 1: `import ax from 'axios'; ax.get(url)` -- a
+        # renamed default import; the raw text never contains "axios."
+        # (only the quoted module specifier 'axios').
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("import ax from 'axios';\nax.get(url);\n")
+        assert "net" in scan_file_capabilities(pkg)
+
+    def test_require_bare_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Evasion case 2: `const ax = require('axios'); ax.get(url)` --
+        # CommonJS require bound to a renamed local, no ES `import` at all.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("const ax = require('axios');\nax.get(url);\n")
+        assert "net" in scan_file_capabilities(pkg)
+
+    def test_require_destructure_rename_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Evasion case 3: `const {get: g} = require('axios'); g(url)` --
+        # CommonJS destructure WITH rename (`pair_pattern`), the sharpest
+        # evasion: the call site is a bare `g(url)`, matching no needle at
+        # all lexically.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("const {get: g} = require('axios');\ng(url);\n")
+        assert "net" in scan_file_capabilities(pkg)
+
+    def test_namespace_import_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Evasion case 4: `import * as ax from 'axios'; ax.get(url)` --
+        # namespace import, member access through the namespace alias.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("import * as ax from 'axios';\nax.get(url);\n")
+        assert "net" in scan_file_capabilities(pkg)
+
+    def test_ts_import_require_clause_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Evasion case 5: `import ax = require('axios'); ax.get(url)` --
+        # TS-only import-equals-require form.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("import ax = require('axios');\nax.get(url);\n")
+        assert "net" in scan_file_capabilities(pkg)
+
+    def test_operation_names_registry_entry_for_aliased_import(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_scan_file_operations kind="unit"
+        # `_scan_file_operations`'s resolver-backed sibling: a renamed
+        # default import still names the real registry entry
+        # (library="axios"), not just a bare kind label.
+        from frob.vet._capability import _scan_file_operations
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("import ax from 'axios';\nax.get(url);\n")
+        ops = _scan_file_operations(pkg)
+        assert any(op.capability_kind == "net" and op.library == "axios" for op in ops)
+
+    def test_param_named_get_not_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # No false positive: a LOCAL function parameter named `get` (never
+        # imported from anywhere dangerous) must not be flagged.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("function fetch(get) {\n  get(url);\n}\n")
+        assert "net" not in scan_file_capabilities(pkg)
+
+    def test_param_shadowing_import_not_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Shadow case: a function parameter named `ax` shadows a `import
+        # ax from 'axios'` default import for the duration of that
+        # function -- calling `ax.get(...)` inside must not resolve to
+        # `axios.get`.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("import ax from 'axios';\nfunction g(ax) {\n  ax.get(url);\n}\n")
+        assert "net" not in scan_file_capabilities(pkg)
+
+    def test_method_on_unrelated_object_not_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Shadow case: a class method named `get` on an unrelated object
+        # (`new Job().get()`) must NOT resolve to a dangerous `get` symbol
+        # -- `new Job()` is a `new_expression`, not an import-bound name,
+        # so resolution deliberately stops there.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("class Job {\n  get() {}\n}\nnew Job().get();\n")
+        assert "net" not in scan_file_capabilities(pkg)
+
+    def test_bare_name_call_with_no_import_not_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # No naive bare-name false positive: calling an undefined `get()`
+        # with no matching import anywhere in the file must not resolve.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("get(url);\n")
+        assert "net" not in scan_file_capabilities(pkg)
+
+    def test_direct_unaliased_call_still_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Regression: the pre-existing raw-text lexical scan (needle
+        # "child_process") is unaffected by adding the TS resolver pass --
+        # an ordinary unaliased `require('child_process').exec()` call
+        # still fires once the resolver path is unioned in.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("import {exec} from 'child_process';\nexec(cmd);\n")
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_bracket_access_inline_require_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0377 reviewer round 2: bracket/computed-member access,
+        # `require('axios')['get'](url)` -- a plain bracket-access RCE
+        # shape the round-1 resolver missed entirely (it only ever
+        # inspected `identifier`/`member_expression` nodes, never
+        # `subscript_expression`).
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("require('axios')['get'](url);\n")
+        assert "net" in scan_file_capabilities(pkg)
+
+    def test_bracket_access_aliased_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0377 reviewer round 2: bracket access through an aliased
+        # `require()` rebind -- `const ax = require('axios'); ax['get']
+        # (url)`.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("const ax = require('axios');\nax['get'](url);\n")
+        assert "net" in scan_file_capabilities(pkg)
+
+    def test_dynamic_import_then_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0377 reviewer round 2: `import('axios').then(ax => ax.get(url))`
+        # -- dynamic import is the STANDARD way to conditionally load a
+        # module in TS/JS, a natural place to hide a dangerous one; the
+        # round-1 resolver never recognized an `import(...)` call site at
+        # all.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("import('axios').then(ax => ax.get(url));\n")
+        assert "net" in scan_file_capabilities(pkg)
+
+    def test_await_dynamic_import_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0377 reviewer round 2: `const ax = await import('axios');
+        # ax.get(url)` -- the `async`/`await` sibling of `.then(cb)`.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text(
+            "async function f() {\n"
+            "  const ax = await import('axios');\n"
+            "  ax.get(url);\n"
+            "}\n"
+        )
+        assert "net" in scan_file_capabilities(pkg)
+
+    def test_child_process_bracket_and_dynamic_import_caught(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Realism confirmation (reviewer-requested): both new evasion
+        # classes against the ACTUAL exec-family library, not just the
+        # isolation proxy above. Note the raw-text lexical scan ALSO
+        # matches these two (needle "child_process" is a bare substring
+        # present on the `require('child_process')` line itself) -- this
+        # test confirms the full production path (lexical union resolver)
+        # still fires end-to-end on the real dangerous module; the axios/
+        # "net" tests above are what isolate the RESOLVER's own
+        # contribution from the lexical layer.
+        from frob.vet._capability import scan_file_capabilities
+
+        bracket_pkg = tmp_path / "bracket.ts"
+        bracket_pkg.write_text("require('child_process')['exec'](cmd);\n")
+        assert "exec" in scan_file_capabilities(bracket_pkg)
+
+        dynamic_pkg = tmp_path / "dynamic.ts"
+        dynamic_pkg.write_text("import('child_process').then(cp => cp.exec(cmd));\n")
+        assert "exec" in scan_file_capabilities(dynamic_pkg)
+
+    def test_computed_subscript_not_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Documented conservative limitation (module docstring, T-draft-e7c8b53c
+        # follow-up filed): a FULLY COMPUTED (non-string-literal) subscript
+        # -- `ax[dynamicKey](url)` -- cannot be resolved statically; the
+        # actual property name is a runtime value. This is an accepted
+        # false-negative gap, not a bug: recorded here so the gap is a
+        # checkable fact, not a silent one.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("const ax = require('axios');\nax[dynamicKey](url);\n")
+        assert "net" not in scan_file_capabilities(pkg)
+
+    def test_static_template_literal_subscript_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0377 reviewer round 3: a NO-INTERPOLATION template-literal
+        # subscript -- `` ax[`get`](url) `` -- carries identical static
+        # text to `ax['get'](url)` and must resolve the same. Template
+        # literals are an everyday idiom (many lint configs PREFER them
+        # over quotes), not an obfuscation trick, on the exact dangerous-
+        # capability surface this ticket protects.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("const ax = require('axios');\nax[`get`](url);\n")
+        assert "net" in scan_file_capabilities(pkg)
+
+    def test_interpolated_template_subscript_not_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Documented conservative limitation (module docstring, T-draft-
+        # e7c8b53c follow-up filed): an INTERPOLATED template-literal
+        # subscript -- `` ax[`${dynamicKey}`](url) `` -- is a genuinely
+        # computed key, unlike a static no-interpolation template literal
+        # (`test_static_template_literal_subscript_detected` above), and
+        # stays under the same accepted false-negative gap as
+        # `test_computed_subscript_not_detected`.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("const ax = require('axios');\nax[`${dynamicKey}`](url);\n")
+        assert "net" not in scan_file_capabilities(pkg)
+
+
+class TestCapabilityScanRustBindingResolution:
+    """T-0378: Rust sibling of `TestCapabilityScanBindingResolution`/
+    `TestCapabilityScanTsBindingResolution` -- before this, Rust capability
+    scanning was pure lexical needle-matching, so an `as`-aliased `use`
+    import to a dangerous path evaded it entirely (`use std::process::
+    Command as C; C::new(cmd)` never contains the literal "Command::new("
+    text the needle table looks for). These tests lock the fix's litmus:
+    the aliased evasion now DETECTED, local shadowing still NOT detected
+    (no false positives)."""
+
+    def test_use_as_alias_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Evasion case: `use std::process::Command as C; C::new(cmd)` -- the
+        # raw text never contains "Command::new(", only the `use` line's
+        # own "std::process::Command" text.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.rs"
+        pkg.write_text('use std::process::Command as C;\nfn f() { C::new("sh"); }\n')
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_operation_names_registry_entry_for_use_alias(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::_scan_file_operations kind="unit"
+        # `_scan_file_operations`'s resolver-backed sibling: an `as`-aliased
+        # `use` still names the real registry entry (library="std::
+        # process"), not just a bare kind label.
+        from frob.vet._capability import _scan_file_operations
+
+        pkg = tmp_path / "pkg.rs"
+        pkg.write_text('use std::process::Command as C;\nfn f() { C::new("sh"); }\n')
+        ops = _scan_file_operations(pkg)
+        assert any(
+            op.capability_kind == "exec" and op.library == "std::process" for op in ops
+        )
+
+    def test_bare_use_import_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # An unaliased `use` (no rename) still resolves through the same
+        # binding table -- `Command::new(cmd)` after `use std::process::
+        # Command;`.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.rs"
+        pkg.write_text('use std::process::Command;\nfn f() { Command::new("sh"); }\n')
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_param_shadowing_use_alias_not_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Shadow case: a function parameter named `C` shadows a `use
+        # std::process::Command as C` alias for the duration of that
+        # function -- calling `C::new(...)` inside must not resolve to
+        # `std::process::Command::new`.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.rs"
+        pkg.write_text(
+            'use std::process::Command as C;\nfn f(C: i32) { C::new("sh"); }\n'
+        )
+        assert "exec" not in scan_file_capabilities(pkg)
+
+    def test_let_shadowing_use_alias_not_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Shadow case: a local `let C = ...` binding shadows the `use`
+        # alias for the rest of that function body.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.rs"
+        pkg.write_text(
+            'use std::process::Command as C;\nfn f() { let C = 5; C::new("sh"); }\n'
+        )
+        assert "exec" not in scan_file_capabilities(pkg)
+
+    def test_bare_name_call_with_no_use_not_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # No naive bare-name false positive: calling `C::new(...)` with no
+        # `use` binding anywhere in the file must not resolve.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.rs"
+        pkg.write_text('fn f() { C::new("sh"); }\n')
+        assert "exec" not in scan_file_capabilities(pkg)
+
+    def test_call_before_rebinding_still_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0378 round 2 (reviewer REJECT, T-0339 fail-closed): round 1's
+        # shadow check was ORDER-INSENSITIVE -- it collected every name
+        # bound ANYWHERE in the scope regardless of position, so a call
+        # textually BEFORE a same-named `let` rebinding was wrongly
+        # treated as already shadowed and the real dangerous call got
+        # silently dropped. A `let` does not hoist in Rust: the call here
+        # executes before `let C = 5` takes effect, so it MUST still
+        # resolve through the `use`-bound alias.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.rs"
+        pkg.write_text(
+            "use std::process::Command as C;\n"
+            "fn f() {\n"
+            '    C::new("sh");\n'
+            "    let C = 5;\n"
+            "}\n"
+        )
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_call_after_rebinding_still_not_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0378 round 2 sibling of the ordering test above: the position-
+        # aware fix must not become UNCONDITIONALLY permissive -- a call
+        # AFTER the same `let C = 5` rebinding is still correctly shadowed
+        # (this is `test_let_shadowing_use_alias_not_detected` restated
+        # with an explicit two-statement body so both orderings are
+        # exercised side by side).
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.rs"
+        pkg.write_text(
+            "use std::process::Command as C;\n"
+            "fn f() {\n"
+            "    let C = 5;\n"
+            '    C::new("sh");\n'
+            "}\n"
+        )
+        assert "exec" not in scan_file_capabilities(pkg)
+
+
+class TestCapabilityScanCBindingResolution:
+    """T-0379: C/C++ sibling of `TestCapabilityScanRustBindingResolution` --
+    before this, C/C++ capability scanning was pure lexical needle-matching,
+    so a `#define`-renamed dangerous call evaded it entirely (`#define SYS
+    system; SYS("sh")` never contains the literal "system(" text the needle
+    table looks for). These tests lock the fix's litmus: the macro-aliased
+    evasion now DETECTED, local shadowing still NOT detected (no false
+    positives)."""
+
+    def test_macro_alias_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Evasion case: `#define SYS system` then `SYS("sh")` -- the raw
+        # text never contains "system(", only the `#define` line's own
+        # "system" token.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.c"
+        pkg.write_text('#define SYS system\nvoid f() { SYS("sh"); }\n')
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_operation_names_registry_entry_for_macro_alias(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_scan_file_operations kind="unit"
+        # `_scan_file_operations`'s resolver-backed sibling: a macro-renamed
+        # call still names the real registry entry (library="libc"), not
+        # just a bare kind label.
+        from frob.vet._capability import _scan_file_operations
+
+        pkg = tmp_path / "pkg.c"
+        pkg.write_text('#define SYS system\nvoid f() { SYS("sh"); }\n')
+        ops = _scan_file_operations(pkg)
+        assert any(op.capability_kind == "exec" and op.library == "libc" for op in ops)
+
+    def test_transitive_macro_alias_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # A chained rename (`#define A B` + `#define B system`) still
+        # resolves `A(...)` all the way through to `system`.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.c"
+        pkg.write_text('#define A B\n#define B system\nvoid f() { A("sh"); }\n')
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_bare_macro_no_define_not_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # No naive bare-name false positive: calling `SYS(...)` with no
+        # `#define` anywhere in the file must not resolve.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.c"
+        pkg.write_text('void f() { SYS("sh"); }\n')
+        assert "exec" not in scan_file_capabilities(pkg)
+
+    def test_param_shadowing_macro_alias_not_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Shadow case: a function parameter named `SYS` shadows the macro
+        # alias for the duration of that function -- calling `SYS(...)`
+        # inside must not resolve to `system`. (`SYS` as a parameter name is
+        # contrived C -- macros do not normally collide with identifiers
+        # this way -- but exercises the same no-false-positive discipline
+        # as the python/rust resolvers' shadow tests.)
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.c"
+        pkg.write_text('#define SYS system\nvoid f(int SYS) { SYS("sh"); }\n')
+        assert "exec" not in scan_file_capabilities(pkg)
+
+    def test_local_shadowing_macro_alias_not_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Shadow case: a local variable declaration named `SYS` shadows the
+        # macro alias for the rest of that function body.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.c"
+        pkg.write_text('#define SYS system\nvoid f() { int SYS; SYS("sh"); }\n')
+        assert "exec" not in scan_file_capabilities(pkg)
+
+    def test_call_before_local_shadow_still_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0379 mirrors the T-0378 round 2 ordering fix: a call textually
+        # BEFORE the same-named local declaration must still resolve
+        # through the macro alias -- the C preprocessor's own textual
+        # substitution has no notion of "not yet declared" either, so this
+        # also matches real preprocessor behavior, not just the scanner's
+        # approximation.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.c"
+        pkg.write_text(
+            '#define SYS system\nvoid f() {\n    SYS("sh");\n    int SYS;\n}\n'
+        )
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_function_like_macro_not_resolved(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Documented limitation: a function-like macro (`#define SYS(x)
+        # system(x)`) is a structurally different `preproc_function_def`
+        # node and is not resolved by this pass -- its own expansion
+        # already contains literal "system(" text most of the time anyway,
+        # so the raw-text lexical scan still has a real shot at typical
+        # usage. Here the definition line itself is what carries "system("
+        # so the lexical scan (not the binding resolver) is what fires.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.c"
+        pkg.write_text('#define SYS(x) system(x)\nvoid f() { SYS("sh"); }\n')
+        assert "exec" in scan_file_capabilities(pkg)
+
+
+class TestEmbeddedCodeCapability:
+    """T-0244: HTML/JS string literals embedded in python source (the
+    malmberg pilot P3 dashboard-as-a-string shape) -- fail-closed
+    `embedded_code` declaration plus best-effort typescript-needle
+    re-scan of the region's own text."""
+
+    def test_embedded_html_script_string_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0244: a large HTML/JS-shaped string literal inside a python
+        # module (the malmberg pilot P3 shape) surfaces `embedded_code`
+        # AND, since the embedded script itself calls `eval(`, the
+        # typescript-needle re-scan's `eval` hit too.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "dashboard.py"
+        padding = "x" * 40
+        pkg.write_text(
+            "DASHBOARD_HTML = '''\n"
+            "<!doctype html>\n"
+            "<html><body>\n"
+            "<script>\n"
+            f"// {padding}\n"
+            f"// {padding}\n"
+            "function render(payload) { eval(payload); }\n"
+            "document.getElementById('root').innerHTML = render();\n"
+            "</script>\n"
+            "</body></html>\n"
+            "'''\n"
+        )
+        capabilities = scan_file_capabilities(pkg)
+        assert "embedded_code" in capabilities
+        assert "eval" in capabilities
+
+    def test_embedded_code_region_below_size_threshold_not_detected(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0244: a short string that merely mentions an HTML tag (e.g. an
+        # error message fragment) must not fire -- the heuristic requires
+        # both the size floor and a signal token, not either alone.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("MSG = 'invalid <script> tag in input'\n")
+        assert "embedded_code" not in scan_file_capabilities(pkg)
+
+    def test_embedded_code_declared_even_when_content_opaque_to_needles(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0244 fail-closed guarantee: a large embedded HTML region whose
+        # content matches no specific typescript needle (plain markup, no
+        # script) still declares `embedded_code` -- the region is never
+        # silently passed just because the best-effort re-scan is empty.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.py"
+        filler = "\n".join(f"<div>row {i}</div>" for i in range(20))
+        pkg.write_text(
+            f"PAGE_HTML = '''\n<html><body>\n{filler}\n</body></html>\n'''\n"
+        )
+        capabilities = scan_file_capabilities(pkg)
+        assert "embedded_code" in capabilities
+
+    def test_embedded_code_regions_scanned_via_operations(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::_scan_file_operations kind="unit"
+        # T-0244: _scan_file_operations names the specific typescript
+        # DANGEROUS_OPERATIONS entry that fired inside the embedded region,
+        # not just the bare "eval" capability kind.
+        from frob.vet._capability import _scan_file_operations
+
+        pkg = tmp_path / "dashboard.py"
+        padding = "x" * 80
+        pkg.write_text(
+            "DASHBOARD_HTML = '''\n"
+            "<!doctype html>\n"
+            "<script>\n"
+            f"// {padding}\n"
+            f"// {padding}\n"
+            "function render(payload) { eval(payload); }\n"
+            "</script>\n"
+            "'''\n"
+        )
+        ops = _scan_file_operations(pkg)
+        assert any(
+            op.capability_kind == "eval" and op.language == "typescript" for op in ops
+        )
+
+
+class TestFingerprintScan:
+    """T-0153: `_scan_file_fingerprints` -- the CVE-fingerprint sibling of
+    `_scan_file_operations`, joined to `frob.strata.CVE_FINGERPRINTS`."""
+
+    # frob:waive DUP001 reason="parallel vet-rule case table: independent \
+    # cases sharing an arrange-act scaffold typical of exhaustive per-rule \
+    # coverage; extracting would obscure per-case intent"
     def test_matches_a_known_fingerprint(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_fingerprints kind="unit"
-        from frob.vet._capability import scan_file_fingerprints
+        # frob:tests src/frob/vet/_capability.py::_scan_file_fingerprints kind="unit"
+        from frob.vet._capability import _scan_file_fingerprints
 
         pkg = tmp_path / "pkg.py"
         pkg.write_text("data = yaml.load(raw_bytes)\n")
-        matches = scan_file_fingerprints(pkg)
+        matches = _scan_file_fingerprints(pkg)
         assert any(m.id == "FP-DESERIALIZE-YAML-001" for m in matches)
 
     def test_no_match_on_clean_source(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_fingerprints kind="unit"
-        from frob.vet._capability import scan_file_fingerprints
+        # frob:tests src/frob/vet/_capability.py::_scan_file_fingerprints kind="unit"
+        from frob.vet._capability import _scan_file_fingerprints
 
         pkg = tmp_path / "pkg.py"
         pkg.write_text("def add(a, b):\n    return a + b\n")
-        assert scan_file_fingerprints(pkg) == ()
+        assert _scan_file_fingerprints(pkg) == ()
+
+    # frob:waive DUP001 reason="parallel vet-rule case table: independent \
+    # cases sharing an arrange-act scaffold typical of exhaustive per-rule \
+    # coverage; extracting would obscure per-case intent"
+    def test_matches_the_xxe_fingerprint_positive(self, tmp_path: Path) -> None:
+        # T-0189 litmus positive: an lxml parser explicitly left resolving
+        # external entities matches FP-XXE-PARSE-001.
+        # frob:tests src/frob/vet/_capability.py::_scan_file_fingerprints kind="unit"
+        from frob.vet._capability import _scan_file_fingerprints
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text(
+            "parser = etree.XMLParser(resolve_entities=True)\n"
+            "tree = etree.parse(untrusted_source, parser)\n"
+        )
+        matches = _scan_file_fingerprints(pkg)
+        assert any(m.id == "FP-XXE-PARSE-001" for m in matches)
+
+    # frob:waive DUP001 reason="parallel vet-rule case table: independent \
+    # cases sharing an arrange-act scaffold typical of exhaustive per-rule \
+    # coverage; extracting would obscure per-case intent"
+    def test_does_not_match_the_xxe_fingerprint_negative(self, tmp_path: Path) -> None:
+        # T-0189 litmus negative: the hardened lxml configuration (entity
+        # resolution explicitly disabled) must not fire.
+        # frob:tests src/frob/vet/_capability.py::_scan_file_fingerprints kind="unit"
+        from frob.vet._capability import _scan_file_fingerprints
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text(
+            "parser = etree.XMLParser(resolve_entities=False, "
+            "no_network=True, load_dtd=False)\n"
+            "tree = etree.parse(untrusted_source, parser)\n"
+        )
+        matches = _scan_file_fingerprints(pkg)
+        assert not any(m.id == "FP-XXE-PARSE-001" for m in matches)
 
     def test_no_language_returns_empty(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_fingerprints kind="unit"
-        from frob.vet._capability import scan_file_fingerprints
+        # frob:tests src/frob/vet/_capability.py::_scan_file_fingerprints kind="unit"
+        from frob.vet._capability import _scan_file_fingerprints
 
-        assert scan_file_fingerprints(tmp_path / "foo.unknownext") == ()
+        assert _scan_file_fingerprints(tmp_path / "foo.unknownext") == ()
 
     def test_unreadable_file_returns_empty(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_fingerprints kind="unit"
-        from frob.vet._capability import scan_file_fingerprints
+        # frob:tests src/frob/vet/_capability.py::_scan_file_fingerprints kind="unit"
+        from frob.vet._capability import _scan_file_fingerprints
 
         missing = tmp_path / "gone.py"
-        assert scan_file_fingerprints(missing) == ()
+        assert _scan_file_fingerprints(missing) == ()
 
+    # frob:waive DUP001 reason="parallel vet-rule case table: independent \
+    # cases sharing an arrange-act scaffold typical of exhaustive per-rule \
+    # coverage; extracting would obscure per-case intent"
     def test_language_mismatch_does_not_match(self, tmp_path: Path) -> None:
         # a typescript-only fingerprint's needle appearing in a .py file
         # must never match -- the language gate is enforced independently
         # of the needle text.
-        # frob:tests src/frob/vet/_capability.py::scan_file_fingerprints kind="unit"
-        from frob.vet._capability import scan_file_fingerprints
+        # frob:tests src/frob/vet/_capability.py::_scan_file_fingerprints kind="unit"
+        from frob.vet._capability import _scan_file_fingerprints
 
         pkg = tmp_path / "pkg.py"
         pkg.write_text("x = 'new Function(\"return 1\")'\n")
-        matches = scan_file_fingerprints(pkg)
+        matches = _scan_file_fingerprints(pkg)
         assert not any(m.id == "FP-CODEEVAL-TEMPLATE-001" for m in matches)
+
+    # frob:waive DUP001 reason="parallel vet-rule case table: independent \
+    # cases sharing an arrange-act scaffold typical of exhaustive per-rule \
+    # coverage; extracting would obscure per-case intent"
+    def test_matches_tls_verify_false_python(self, tmp_path: Path) -> None:
+        # T-0188: FP-TLS-VERIFY-001 -- requests/httpx/aiohttp verify=False.
+        # frob:tests src/frob/vet/_capability.py::_scan_file_fingerprints kind="unit"
+        from frob.vet._capability import _scan_file_fingerprints
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("resp = requests.get(url, verify=False)\n")
+        matches = _scan_file_fingerprints(pkg)
+        assert any(m.id == "FP-TLS-VERIFY-001" for m in matches)
+
+    # frob:waive DUP001 reason="parallel vet-rule case table: independent \
+    # cases sharing an arrange-act scaffold typical of exhaustive per-rule \
+    # coverage; extracting would obscure per-case intent"
+    def test_no_match_on_verified_tls_python(self, tmp_path: Path) -> None:
+        # negative sibling: verify=True never fires FP-TLS-VERIFY-001.
+        # frob:tests src/frob/vet/_capability.py::_scan_file_fingerprints kind="unit"
+        from frob.vet._capability import _scan_file_fingerprints
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("resp = requests.get(url, verify=True)\n")
+        matches = _scan_file_fingerprints(pkg)
+        assert not any(m.id == "FP-TLS-VERIFY-001" for m in matches)
+
+    # frob:waive DUP001 reason="parallel vet-rule case table: independent \
+    # cases sharing an arrange-act scaffold typical of exhaustive per-rule \
+    # coverage; extracting would obscure per-case intent"
+    def test_matches_tls_reject_unauthorized_false_node(self, tmp_path: Path) -> None:
+        # T-0188: FP-TLS-VERIFY-002 -- Node https/tls rejectUnauthorized: false.
+        # frob:tests src/frob/vet/_capability.py::_scan_file_fingerprints kind="unit"
+        from frob.vet._capability import _scan_file_fingerprints
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("const opts = { host, rejectUnauthorized: false };\n")
+        matches = _scan_file_fingerprints(pkg)
+        assert any(m.id == "FP-TLS-VERIFY-002" for m in matches)
+
+    # frob:waive DUP001 reason="parallel vet-rule case table: independent \
+    # cases sharing an arrange-act scaffold typical of exhaustive per-rule \
+    # coverage; extracting would obscure per-case intent"
+    def test_no_match_on_reject_unauthorized_true_node(self, tmp_path: Path) -> None:
+        # negative sibling: rejectUnauthorized: true never fires
+        # FP-TLS-VERIFY-002.
+        # frob:tests src/frob/vet/_capability.py::_scan_file_fingerprints kind="unit"
+        from frob.vet._capability import _scan_file_fingerprints
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("const opts = { host, rejectUnauthorized: true };\n")
+        matches = _scan_file_fingerprints(pkg)
+        assert not any(m.id == "FP-TLS-VERIFY-002" for m in matches)
+
+    # frob:waive DUP001 reason="parallel vet-rule case table: independent \
+    # cases sharing an arrange-act scaffold typical of exhaustive per-rule \
+    # coverage; extracting would obscure per-case intent"
+    def test_matches_tls_danger_accept_invalid_certs_rust(self, tmp_path: Path) -> None:
+        # T-0188: FP-TLS-VERIFY-003 -- Rust reqwest danger_accept_invalid_certs.
+        # frob:tests src/frob/vet/_capability.py::_scan_file_fingerprints kind="unit"
+        from frob.vet._capability import _scan_file_fingerprints
+
+        pkg = tmp_path / "pkg.rs"
+        pkg.write_text(
+            "let client = Client::builder()"
+            ".danger_accept_invalid_certs(true).build()?;\n"
+        )
+        matches = _scan_file_fingerprints(pkg)
+        assert any(m.id == "FP-TLS-VERIFY-003" for m in matches)
+
+    # frob:waive DUP001 reason="parallel vet-rule case table: independent \
+    # cases sharing an arrange-act scaffold typical of exhaustive per-rule \
+    # coverage; extracting would obscure per-case intent"
+    def test_no_match_on_default_reqwest_builder_rust(self, tmp_path: Path) -> None:
+        # negative sibling: a builder with no danger_accept_invalid_certs
+        # call never fires FP-TLS-VERIFY-003.
+        # frob:tests src/frob/vet/_capability.py::_scan_file_fingerprints kind="unit"
+        from frob.vet._capability import _scan_file_fingerprints
+
+        pkg = tmp_path / "pkg.rs"
+        pkg.write_text("let client = Client::builder().build()?;\n")
+        matches = _scan_file_fingerprints(pkg)
+        assert not any(m.id == "FP-TLS-VERIFY-003" for m in matches)
 
     def test_own_catalog_file_excluded_from_directory_aggregation(self) -> None:
         # T-0153 self-match note (docs/strata/threat.md#cve-fingerprints-
         # code-level-pattern-catalog-t-0153): _cve_fingerprint.py stores
         # every needle as literal data, so it must be excluded from
-        # scan_directory_capabilities the same way _capability_registry.py
+        # _scan_directory_capabilities the same way _capability_registry.py
         # already is.
         # frob:tests src/frob/vet/_capability.py::_is_self_path kind="unit"
         from frob.vet._capability import _FINGERPRINT_CATALOG_PATH, _is_self_path
@@ -872,12 +1886,12 @@ class TestFingerprintScan:
     def test_scan_directory_fingerprints_aggregates_across_files(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_directory_fingerprints kind="unit"
-        from frob.vet._capability import scan_directory_fingerprints
+        # frob:tests src/frob/vet/_capability.py::_scan_directory_fingerprints kind="unit"
+        from frob.vet._capability import _scan_directory_fingerprints
 
         (tmp_path / "a.py").write_text("data = yaml.load(raw_bytes)\n")
         (tmp_path / "b.py").write_text("def add(a, b):\n    return a + b\n")
-        matched = scan_directory_fingerprints(tmp_path)
+        matched = _scan_directory_fingerprints(tmp_path)
         assert any(m.id == "FP-DESERIALIZE-YAML-001" for m in matched)
 
     def test_scan_directory_fingerprints_excludes_the_catalog_itself(
@@ -890,86 +1904,86 @@ class TestFingerprintScan:
         # identifies as frob's own repo (see the sibling capability-scan
         # test above for why); scan from a fake repo root instead of the
         # bare `src/frob/strata` subdirectory.
-        # frob:tests src/frob/vet/_capability.py::scan_directory_fingerprints kind="unit"
-        from frob.vet._capability import scan_directory_fingerprints
+        # frob:tests src/frob/vet/_capability.py::_scan_directory_fingerprints kind="unit"
+        from frob.vet._capability import _scan_directory_fingerprints
 
         fake_repo = _make_fake_frob_repo_root(tmp_path / "self-scan")
-        matched = scan_directory_fingerprints(fake_repo, max_files=2000)
+        matched = _scan_directory_fingerprints(fake_repo, max_files=2000)
         assert not any(m.id == "FP-DESERIALIZE-YAML-001" for m in matched)
 
 
 class TestObfuscationEnsemble:
     def test_high_entropy_string_flagged(self) -> None:
-        # frob:tests src/frob/vet/_obfuscation.py::scan_text_obfuscation kind="unit"
-        from frob.vet._obfuscation import scan_text_obfuscation
+        # frob:tests src/frob/vet/_obfuscation.py::_scan_text_obfuscation kind="unit"
+        from frob.vet._obfuscation import _scan_text_obfuscation
 
         text = 'x = "aGVsbG8gd29ybGQsIHRoaXMgaXMgYSB0ZXN0IHBheWxvYWQ="\n'
-        assert "high-entropy-string" in scan_text_obfuscation(text)
+        assert "high-entropy-string" in _scan_text_obfuscation(text)
 
     def test_plain_string_not_flagged(self) -> None:
-        from frob.vet._obfuscation import scan_text_obfuscation
+        from frob.vet._obfuscation import _scan_text_obfuscation
 
         text = 'greeting = "hello world, this is a normal string literal"\n'
-        assert "high-entropy-string" not in scan_text_obfuscation(text)
+        assert "high-entropy-string" not in _scan_text_obfuscation(text)
 
     def test_bidi_override_is_fatal(self) -> None:
-        # frob:tests src/frob/vet/_obfuscation.py::invisible_text_signal kind="unit"
-        from frob.vet._obfuscation import invisible_text_signal
+        # frob:tests src/frob/vet/_obfuscation.py::_invisible_text_signal kind="unit"
+        from frob.vet._obfuscation import _invisible_text_signal
 
         text = "x = 1" + chr(0x202E) + "y = 2"
-        assert invisible_text_signal(text) is True
+        assert _invisible_text_signal(text) is True
 
     def test_clean_text_no_bidi(self) -> None:
-        from frob.vet._obfuscation import invisible_text_signal
+        from frob.vet._obfuscation import _invisible_text_signal
 
-        assert invisible_text_signal("x = 1\ny = 2\n") is False
+        assert _invisible_text_signal("x = 1\ny = 2\n") is False
 
     def test_hex_identifier_ratio_flagged(self) -> None:
-        # frob:tests src/frob/vet/_obfuscation.py::hex_identifier_ratio_signal kind="unit"
-        from frob.vet._obfuscation import hex_identifier_ratio_signal
+        # frob:tests src/frob/vet/_obfuscation.py::_hex_identifier_ratio_signal kind="unit"
+        from frob.vet._obfuscation import _hex_identifier_ratio_signal
 
         idents = " ".join(f"_0x{i:04x}" for i in range(30))
-        assert hex_identifier_ratio_signal(idents) is True
+        assert _hex_identifier_ratio_signal(idents) is True
 
     def test_normal_identifiers_not_flagged(self) -> None:
-        from frob.vet._obfuscation import hex_identifier_ratio_signal
+        from frob.vet._obfuscation import _hex_identifier_ratio_signal
 
         idents = " ".join(f"variable_name_{i}" for i in range(30))
-        assert hex_identifier_ratio_signal(idents) is False
+        assert _hex_identifier_ratio_signal(idents) is False
 
     def test_high_entropy_strings_returns_the_literal(self) -> None:
-        # frob:tests src/frob/vet/_obfuscation.py::high_entropy_strings kind="unit"
-        from frob.vet._obfuscation import high_entropy_strings
+        # frob:tests src/frob/vet/_obfuscation.py::_high_entropy_strings kind="unit"
+        from frob.vet._obfuscation import _high_entropy_strings
 
         text = 'x = "aGVsbG8gd29ybGQsIHRoaXMgaXMgYSB0ZXN0IHBheWxvYWQ="\n'
-        hits = high_entropy_strings(text)
+        hits = _high_entropy_strings(text)
         assert len(hits) == 1
         assert hits[0].startswith("aGVsbG8")
 
     def test_high_entropy_strings_empty_for_plain_text(self) -> None:
-        from frob.vet._obfuscation import high_entropy_strings
+        from frob.vet._obfuscation import _high_entropy_strings
 
         text = 'greeting = "hello world, this is a normal string literal"\n'
-        assert high_entropy_strings(text) == ()
+        assert _high_entropy_strings(text) == ()
 
     def test_scan_directory_obfuscation_finds_signal_in_one_file(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_obfuscation.py::scan_directory_obfuscation kind="unit"
-        from frob.vet._obfuscation import scan_directory_obfuscation
+        # frob:tests src/frob/vet/_obfuscation.py::_scan_directory_obfuscation kind="unit"
+        from frob.vet._obfuscation import _scan_directory_obfuscation
 
         (tmp_path / "clean.py").write_text("x = 1\n")
         (tmp_path / "evil.py").write_text(
             'x = "aGVsbG8gd29ybGQsIHRoaXMgaXMgYSB0ZXN0IHBheWxvYWQ="\n'
         )
-        signals = scan_directory_obfuscation(tmp_path)
+        signals = _scan_directory_obfuscation(tmp_path)
         assert "high-entropy-string" in signals
 
 
 class TestVerdictCache:
     def test_store_and_retrieve_latest(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_cache.py::store_verdict kind="unit"
-        # frob:tests src/frob/vet/_cache.py::latest_verdict kind="unit"
+        # frob:tests src/frob/vet/_cache.py::_store_verdict kind="unit"
+        # frob:tests src/frob/vet/_cache.py::_latest_verdict kind="unit"
         from frob.vet import _cache
         from frob.vet._models import PackageVerdict
 
@@ -981,8 +1995,8 @@ class TestVerdictCache:
             artifact_hash="hash1",
             capabilities=frozenset({"net"}),
         )
-        _cache.store_verdict(db_path, v1)
-        latest = _cache.latest_verdict(db_path, "pypi", "foo")
+        _cache._store_verdict(db_path, v1)
+        latest = _cache._latest_verdict(db_path, "pypi", "foo")
         assert latest is not None
         assert latest.artifact_hash == "hash1"
         assert latest.capabilities == frozenset({"net"})
@@ -991,7 +2005,8 @@ class TestVerdictCache:
         from frob.vet import _cache
 
         assert (
-            _cache.latest_verdict(tmp_path / ".frob" / "vet.db", "pypi", "nope") is None
+            _cache._latest_verdict(tmp_path / ".frob" / "vet.db", "pypi", "nope")
+            is None
         )
 
 
@@ -1034,7 +2049,7 @@ class TestCapabilityDiff:
 
 class TestEcosystemRules:
     def test_python_setup_py_cmdclass_flagged(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_ecosystem.py::python_rules kind="unit"
+        # frob:tests src/frob/vet/_ecosystem.py::_python_rules kind="unit"
         from frob.gates._models import Severity
         from frob.vet import _ecosystem
 
@@ -1042,7 +2057,7 @@ class TestEcosystemRules:
             "from setuptools import setup\nsetup(cmdclass={'install': Foo})\n"
         )
         dep = Dependency(ecosystem="pypi", name="evilpkg", version="1.0.0")
-        violations = _ecosystem.python_rules(dep, tmp_path, "uv.lock")
+        violations = _ecosystem._python_rules(dep, tmp_path, "uv.lock")
         rules = {v.rule for v in violations}
         assert "VET-PY001" in rules
         assert any(
@@ -1054,22 +2069,22 @@ class TestEcosystemRules:
 
         (tmp_path / "evil.pth").write_text("import os; os.system('echo hi')\n")
         dep = Dependency(ecosystem="pypi", name="evilpkg", version="1.0.0")
-        violations = _ecosystem.python_rules(dep, tmp_path, "uv.lock")
+        violations = _ecosystem._python_rules(dep, tmp_path, "uv.lock")
         assert any(v.rule == "VET-PY002" for v in violations)
 
     def test_rust_build_rs_capability_flagged(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_ecosystem.py::rust_rules kind="unit"
+        # frob:tests src/frob/vet/_ecosystem.py::_rust_rules kind="unit"
         from frob.vet import _ecosystem
 
         (tmp_path / "build.rs").write_text(
             'fn main() { std::process::Command::new("curl"); }\n'
         )
         dep = Dependency(ecosystem="cargo", name="evilcrate", version="1.0.0")
-        violations = _ecosystem.rust_rules(dep, tmp_path, "Cargo.lock")
+        violations = _ecosystem._rust_rules(dep, tmp_path, "Cargo.lock")
         assert any(v.rule == "VET-RS001" for v in violations)
 
     def test_npm_non_registry_source_flagged(self) -> None:
-        # frob:tests src/frob/vet/_ecosystem.py::npm_non_registry_rule kind="unit"
+        # frob:tests src/frob/vet/_ecosystem.py::_npm_non_registry_rule kind="unit"
         from frob.vet import _ecosystem
 
         dep = Dependency(
@@ -1078,7 +2093,7 @@ class TestEcosystemRules:
             version="1.0.0",
             resolved="git+https://example.com/evil/evilpkg.git",
         )
-        violation = _ecosystem.npm_non_registry_rule(dep, "package-lock.json")
+        violation = _ecosystem._npm_non_registry_rule(dep, "package-lock.json")
         assert violation is not None
         assert violation.rule == "VET-JS004"
 
@@ -1091,7 +2106,7 @@ class TestEcosystemRules:
             version="4.17.21",
             resolved="https://registry.npmjs.org/lodash/-/lodash-4.17.21.tgz",
         )
-        violation = _ecosystem.npm_non_registry_rule(dep, "package-lock.json")
+        violation = _ecosystem._npm_non_registry_rule(dep, "package-lock.json")
         assert violation is None
 
 
@@ -1231,7 +2246,7 @@ class TestScanTreeWithLocalSource:
         # vulnerable-usage pattern (here, FP-DESERIALIZE-YAML-001's
         # yaml.load() needle) must surface a VET006 finding through the
         # REAL `frob vet` pipeline (scan_tree), not just via a direct
-        # scan_file_fingerprints import -- proving the wiring, not just
+        # _scan_file_fingerprints import -- proving the wiring, not just
         # the detector.
         # frob:tests src/frob/vet/_scan.py::_scan_source kind="unit"
         from frob.vet._scan import scan_tree
@@ -1312,8 +2327,8 @@ class TestScanTreeTimeout:
 
 class TestLifecycleScripts:
     def test_finds_postinstall_script(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_lifecycle.py::scan_lifecycle_scripts kind="unit"
-        from frob.vet._lifecycle import scan_lifecycle_scripts
+        # frob:tests src/frob/vet/_lifecycle.py::_scan_lifecycle_scripts kind="unit"
+        from frob.vet._lifecycle import _scan_lifecycle_scripts
 
         pkg_dir = tmp_path / "node_modules" / "sketchy-pkg"
         pkg_dir.mkdir(parents=True)
@@ -1325,13 +2340,13 @@ class TestLifecycleScripts:
                 }
             )
         )
-        found = scan_lifecycle_scripts(tmp_path)
+        found = _scan_lifecycle_scripts(tmp_path)
         assert found == {"sketchy-pkg": ("postinstall",)}
 
     def test_no_node_modules_returns_empty(self, tmp_path: Path) -> None:
-        from frob.vet._lifecycle import scan_lifecycle_scripts
+        from frob.vet._lifecycle import _scan_lifecycle_scripts
 
-        assert scan_lifecycle_scripts(tmp_path) == {}
+        assert _scan_lifecycle_scripts(tmp_path) == {}
 
 
 # ---------------------------------------------------------------------------
@@ -1343,27 +2358,27 @@ class TestOsvAdapter:
     def test_is_available_reflects_path_lookup(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests src/frob/vet/_osv.py::is_available kind="unit"
+        # frob:tests src/frob/vet/_osv.py::_is_available kind="unit"
         from frob.vet import _osv
 
         monkeypatch.setattr(
             _osv.shutil, "which", lambda _binary: "/usr/bin/osv-scanner"
         )
-        assert _osv.is_available() is True
+        assert _osv._is_available() is True
 
         monkeypatch.setattr(_osv.shutil, "which", lambda _binary: None)
-        assert _osv.is_available() is False
+        assert _osv._is_available() is False
 
     def test_run_osv_scan_none_when_binary_absent(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests src/frob/vet/_osv.py::run_osv_scan kind="unit"
+        # frob:tests src/frob/vet/_osv.py::_run_osv_scan kind="unit"
         from frob.vet import _osv
 
         monkeypatch.setattr(_osv.shutil, "which", lambda _binary: None)
         lockfile = tmp_path / "uv.lock"
         lockfile.write_text("version = 1\n")
-        assert _osv.run_osv_scan(lockfile) is None
+        assert _osv._run_osv_scan(lockfile) is None
 
 
 # ---------------------------------------------------------------------------
@@ -1375,10 +2390,10 @@ class TestRegistryLookup:
     def test_fetch_publish_date_degrades_on_network_failure(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_registry.py::fetch_publish_date kind="unit"
-        from frob.vet._registry import fetch_publish_date
+        # frob:tests src/frob/vet/_registry.py::_fetch_publish_date kind="unit"
+        from frob.vet._registry import _fetch_publish_date
 
-        result = fetch_publish_date(
+        result = _fetch_publish_date(
             "pypi",
             "some-package-that-should-not-resolve",
             "1.0.0",
@@ -1397,47 +2412,234 @@ class TestRegistryLookup:
 
 class TestSourceLocation:
     def test_locate_pypi_source_from_venv(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_source.py::locate_pypi_source kind="unit"
-        from frob.vet._source import locate_pypi_source
+        # frob:tests src/frob/vet/_source.py::_locate_pypi_source kind="unit"
+        from frob.vet._source import _locate_pypi_source
 
         site_packages = tmp_path / ".venv" / "lib" / "python3.11" / "site-packages"
         pkg_dir = site_packages / "some_pkg"
         pkg_dir.mkdir(parents=True)
-        found = locate_pypi_source(tmp_path, "some-pkg", "1.0.0")
+        found = _locate_pypi_source(tmp_path, "some-pkg", "1.0.0")
         assert found == pkg_dir
 
     def test_locate_pypi_source_missing_returns_none(self, tmp_path: Path) -> None:
-        from frob.vet._source import locate_pypi_source
+        from frob.vet._source import _locate_pypi_source
 
-        assert locate_pypi_source(tmp_path, "totally-absent-pkg", "1.0.0") is None
+        assert _locate_pypi_source(tmp_path, "totally-absent-pkg", "1.0.0") is None
 
     def test_locate_npm_source_from_node_modules(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_source.py::locate_npm_source kind="unit"
-        from frob.vet._source import locate_npm_source
+        # frob:tests src/frob/vet/_source.py::_locate_npm_source kind="unit"
+        from frob.vet._source import _locate_npm_source
 
         pkg_dir = tmp_path / "node_modules" / "lodash"
         pkg_dir.mkdir(parents=True)
-        assert locate_npm_source(tmp_path, "lodash") == pkg_dir
+        assert _locate_npm_source(tmp_path, "lodash") == pkg_dir
 
     def test_locate_npm_source_missing_returns_none(self, tmp_path: Path) -> None:
-        from frob.vet._source import locate_npm_source
+        from frob.vet._source import _locate_npm_source
 
-        assert locate_npm_source(tmp_path, "not-installed") is None
+        assert _locate_npm_source(tmp_path, "not-installed") is None
 
     def test_locate_cargo_source_missing_registry_returns_none(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests src/frob/vet/_source.py::locate_cargo_source kind="unit"
-        from frob.vet._source import locate_cargo_source
+        # frob:tests src/frob/vet/_source.py::_locate_cargo_source kind="unit"
+        from frob.vet._source import _locate_cargo_source
 
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        assert locate_cargo_source("serde", "1.0.195") is None
+        assert _locate_cargo_source("serde", "1.0.195") is None
 
     def test_locate_source_dispatches_by_ecosystem(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_source.py::locate_source kind="unit"
-        from frob.vet._source import locate_source
+        # frob:tests src/frob/vet/_source.py::_locate_source kind="unit"
+        from frob.vet._source import _locate_source
 
         pkg_dir = tmp_path / "node_modules" / "lodash"
         pkg_dir.mkdir(parents=True)
-        assert locate_source(tmp_path, "npm", "lodash", "4.17.21") == pkg_dir
-        assert locate_source(tmp_path, "unknown-ecosystem", "x", "1.0.0") is None
+        assert _locate_source(tmp_path, "npm", "lodash", "4.17.21") == pkg_dir
+        assert _locate_source(tmp_path, "unknown-ecosystem", "x", "1.0.0") is None
+
+
+class TestClosedWorldAccounting:
+    """T-0158 addendum 2 remainder / T-0180: closed-world import
+    accounting -- every import resolves to registry/no-capability/vetted,
+    or the loud unknown fallthrough."""
+
+    def _site_packages(self, tmp_path: Path) -> Path:
+        site_packages = tmp_path / ".venv" / "lib" / "python3.11" / "site-packages"
+        site_packages.mkdir(parents=True)
+        return site_packages
+
+    def test_walk_python_imports_collects_absolute_imports_only(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_closedworld.py::walk_python_imports kind="unit"
+        from frob.vet._closedworld import walk_python_imports
+
+        pkg_dir = tmp_path / "some_pkg"
+        pkg_dir.mkdir()
+        (pkg_dir / "__init__.py").write_text(
+            "import os\n"
+            "import requests.sessions\n"
+            "from json import loads\n"
+            "from . import helper\n"
+            "from .sub import thing\n"
+        )
+        roots = walk_python_imports(pkg_dir)
+        assert roots == frozenset({"os", "requests", "json"})
+
+    def test_walk_python_imports_skips_unparseable_files(self, tmp_path: Path) -> None:
+        from frob.vet._closedworld import walk_python_imports
+
+        pkg_dir = tmp_path / "broken_pkg"
+        pkg_dir.mkdir()
+        (pkg_dir / "good.py").write_text("import sys\n")
+        (pkg_dir / "bad.py").write_text("def f(:\n  this is not python\n")
+        assert walk_python_imports(pkg_dir) == frozenset({"sys"})
+
+    # frob:waive DUP001 reason="parallel vet-rule case table: independent \
+    # cases sharing an arrange-act scaffold typical of exhaustive per-rule \
+    # coverage; extracting would obscure per-case intent"
+    def test_resolve_import_registry_match(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_closedworld.py::resolve_import kind="unit"
+        from frob.vet._closedworld import resolve_import
+
+        result = resolve_import(
+            "subprocess", root=tmp_path, cache_path=tmp_path / ".frob" / "vet.db"
+        )
+        assert result.resolution == "registry"
+
+    # frob:waive DUP001 reason="parallel vet-rule case table: independent \
+    # cases sharing an arrange-act scaffold typical of exhaustive per-rule \
+    # coverage; extracting would obscure per-case intent"
+    def test_resolve_import_registry_match_via_pypi_name_override(
+        self, tmp_path: Path
+    ) -> None:
+        # python-dotenv's DANGEROUS_OPERATIONS library field is the PyPI
+        # distribution name "python-dotenv", not the import root "dotenv" --
+        # the override table must bridge that.
+        from frob.vet._closedworld import resolve_import
+
+        result = resolve_import(
+            "dotenv", root=tmp_path, cache_path=tmp_path / ".frob" / "vet.db"
+        )
+        assert result.resolution == "registry"
+
+    # frob:waive DUP001 reason="parallel vet-rule case table: independent \
+    # cases sharing an arrange-act scaffold typical of exhaustive per-rule \
+    # coverage; extracting would obscure per-case intent"
+    def test_resolve_import_no_capability_match(self, tmp_path: Path) -> None:
+        from frob.vet._closedworld import resolve_import
+
+        result = resolve_import(
+            "collections", root=tmp_path, cache_path=tmp_path / ".frob" / "vet.db"
+        )
+        assert result.resolution == "no-capability"
+
+    def test_resolve_import_vetted_via_local_source_scan_and_cache(
+        self, tmp_path: Path
+    ) -> None:
+        site_packages = self._site_packages(tmp_path)
+        dep_dir = site_packages / "leaf_dep"
+        dep_dir.mkdir()
+        (dep_dir / "__init__.py").write_text("import subprocess\n")
+
+        cache_path = tmp_path / ".frob" / "vet.db"
+        from frob.vet._cache import _latest_verdict
+        from frob.vet._closedworld import resolve_import
+
+        result = resolve_import("leaf_dep", root=tmp_path, cache_path=cache_path)
+        assert result.resolution == "vetted"
+        # second call must hit the cache, not rescan
+        cached = _latest_verdict(cache_path, "pypi", "leaf_dep")
+        assert cached is not None
+        result2 = resolve_import("leaf_dep", root=tmp_path, cache_path=cache_path)
+        assert result2.resolution == "vetted"
+        assert result2.detail.startswith("cached verdict")
+
+    def test_resolve_import_unknown_when_unresolvable(self, tmp_path: Path) -> None:
+        from frob.vet._closedworld import resolve_import
+
+        result = resolve_import(
+            "totally_unresolvable_pkg_xyz",
+            root=tmp_path,
+            cache_path=tmp_path / ".frob" / "vet.db",
+        )
+        assert result.resolution == "unknown"
+
+    def test_closed_world_accounting_source_unavailable(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_closedworld.py::closed_world_accounting kind="unit"
+        from frob.vet._closedworld import closed_world_accounting
+
+        acc = closed_world_accounting(
+            tmp_path,
+            "pypi",
+            "no-such-package",
+            "1.0.0",
+            cache_path=tmp_path / ".frob" / "vet.db",
+        )
+        assert acc.source_available is False
+        assert acc.resolutions == ()
+        assert acc.closed is False
+        assert "source unavailable" in acc.accounting_line()
+
+    # frob:tests src/frob/vet/_models.py::ClosedWorldAccounting.registry_count kind="unit"
+    # frob:tests src/frob/vet/_models.py::ClosedWorldAccounting.no_capability_count kind="unit"
+    # frob:tests src/frob/vet/_models.py::ClosedWorldAccounting.vetted_count kind="unit"
+    # frob:tests src/frob/vet/_models.py::ClosedWorldAccounting.unknown_count kind="unit"
+    # frob:tests src/frob/vet/_models.py::ClosedWorldAccounting.accounting_line kind="unit"
+    def test_closed_world_accounting_full_pass(self, tmp_path: Path) -> None:
+        site_packages = self._site_packages(tmp_path)
+        pkg_dir = site_packages / "top_pkg"
+        pkg_dir.mkdir()
+        (pkg_dir / "__init__.py").write_text(
+            "import subprocess\n"
+            "import collections\n"
+            "import totally_unresolvable_pkg_xyz\n"
+        )
+
+        from frob.vet._closedworld import closed_world_accounting
+
+        acc = closed_world_accounting(
+            tmp_path,
+            "pypi",
+            "top_pkg",
+            "1.0.0",
+            cache_path=tmp_path / ".frob" / "vet.db",
+        )
+        assert acc.source_available is True
+        assert acc.registry_count == 1
+        assert acc.no_capability_count == 1
+        assert acc.unknown_count == 1
+        assert acc.closed is False
+        assert "1 registry op(s)" in acc.accounting_line()
+        assert "1 unknown" in acc.accounting_line()
+
+    # frob:tests src/frob/vet/_models.py::ClosedWorldAccounting.closed kind="unit"
+    def test_closed_world_accounting_closed_when_no_unknowns(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_models.py::ClosedWorldAccounting kind="unit"
+        site_packages = self._site_packages(tmp_path)
+        pkg_dir = site_packages / "clean_pkg"
+        pkg_dir.mkdir()
+        (pkg_dir / "__init__.py").write_text("import subprocess\nimport collections\n")
+
+        from frob.vet._closedworld import closed_world_accounting
+
+        acc = closed_world_accounting(
+            tmp_path,
+            "pypi",
+            "clean_pkg",
+            "1.0.0",
+            cache_path=tmp_path / ".frob" / "vet.db",
+        )
+        assert acc.unknown_count == 0
+        assert acc.closed is True
+
+    def test_import_resolution_model_fields(self) -> None:
+        # frob:tests src/frob/vet/_models.py::ImportResolution kind="unit"
+        from frob.vet._models import ImportResolution
+
+        r = ImportResolution(import_name="os", resolution="no-capability")
+        assert r.import_name == "os"
+        assert r.resolution == "no-capability"
+        assert r.detail == ""

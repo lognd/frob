@@ -23,7 +23,7 @@ has no `elif language == "..."` branch for them yet.
 | `high-coupling` | a file with more than `max_local_imports` distinct local module imports (via `frob.lang.extract_imports`/`resolve_local_import`) | suggestion |
 | `deep-nesting` | a function whose `if`/`for`/`while`/`try`/`with` nesting exceeds `max_nesting_depth` | suggestion |
 | `large-file` | any file longer than `max_file_lines` | info |
-| `abstraction-opportunity` | 3+ Python functions across the project sharing the same annotated parameter/return-type signature | suggestion |
+| `abstraction-opportunity` | 3+ Python functions across the project sharing the same annotated parameter/return-type signature, EXCLUDING intentional dispatch/validator families (see below) | suggestion |
 
 All thresholds are `analyze_project` keyword arguments with the defaults
 shown in the Public API section below; there is no `frob.toml` table for
@@ -60,6 +60,130 @@ threshold bump is exactly the lazy-developer escape this tool exists to
 prevent; see the per-function override below for the honest way to
 justify a real exception.
 
+### `abstraction-opportunity` excludes intentional dispatch families (T-0360)
+
+A same-signature group is NOT flagged when it looks like an intentional
+dispatch/validator family -- N functions with an identical signature all
+registered in / dispatched from one common site (a command table, a
+validator runner, an `elif` chain on a tag). There the shared signature IS
+the contract that lets the site call them uniformly; extracting a shared
+base class or protocol would add ceremony, not remove duplication.
+
+`frob.arch._python._is_dispatch_family` detects this off tree-sitter
+STRUCTURE, not raw text (a plain textual "mentioned nearby" signal was
+tried first and reviewer-rejected -- see below for why). For every
+eligible python file, `_python.collect_file_dispatch_refs` walks its
+parsed tree and records every identifier name used in a dispatch-like
+syntactic position:
+
+- the callee of a `call` (`name(...)`) -- an `elif`/`match` branch calling
+  a handler, or a direct dispatch call;
+- a positional or keyword argument of a `call` (`register(name)`,
+  `table.append(name)`, `dispatch(cmd, handler=name)`) -- a registration
+  call;
+- a value inside a `dictionary` literal's `pair` (`{"scan": name}`) -- a
+  command table;
+- an element of a `list`/`set`/`tuple` literal (`[name_a, name_b]`) -- a
+  dispatch table built as a sequence.
+
+A bare textual mention -- an import, a docstring, a name in an `__all__`
+list of STRING literals -- matches none of these shapes and does not
+count. Two members of a group are "linked" if some single eligible file's
+dispatch-reference set contains both their names. A group is treated as
+an intentional family, and suppressed, when every member is linked to at
+least one sibling this way (a large family MAY be served by more than one
+such site, e.g. two separate command tables). A group with a member linked
+to no one else has no such site for that member and still flags as a real
+opportunity.
+
+**Corpus exclusions (defense-in-depth, T-0360).** Two file categories are
+excluded from the dispatch-reference corpus entirely, on top of the
+structural-only extraction above:
+
+- `__init__.py` files (`frob.arch._is_init_file`) -- a package's re-export
+  module has nothing but imports and an `__all__` string list, which the
+  structural extraction already ignores, but it is excluded outright as a
+  belt-and-suspenders guard given how central re-export modules are to
+  this false-suppression risk.
+- test files (`frob.excludes.is_test_file`) -- a test file's own calls
+  into the functions it tests (`assert normalize_alpha("x") == ...`) ARE
+  real `call` nodes and would otherwise satisfy the structural check,
+  which is exactly the second false-suppression path an early version of
+  this detector had: three unrelated same-signature functions imported
+  and called from one test module looked, structurally, just like a
+  dispatch table. Excluding test files from the corpus (not just from the
+  signature/finding side, which T-0359 already did) closes that path.
+
+These two exclusions are the fix for a reviewer-caught defect in an
+earlier version of this detector, which linked names on RAW TEXT
+proximity ("both names appear >=2 times in one file") instead of
+dispatch-shaped structure -- a re-export list or a test's assertion calls
+each mention a name at least twice (once imported, once used/listed) and
+fully suppressed genuine findings with zero real dispatch signal. The
+structural extraction plus these two corpus exclusions are what makes
+`test_init_reexport_does_not_suppress` and
+`test_test_file_co_mention_does_not_suppress` (`tests/unit/test_arch.py`)
+pass.
+
+Because `abstraction-opportunity` is one of the advisory,
+unwaivable-channel categories (`frob.gates._unwaivable_channel_rules`,
+T-0101), a `frob:waive abstraction-opportunity reason="..."` directive
+can never reach it -- disposition for a real finding is either fix it (add
+the shared abstraction) or teach the detector to recognize a legitimate
+pattern it is currently missing, never a code-comment waiver.
+
+### `abstraction-opportunity` requires signature-specificity or body-similarity, not a bare shared signature (T-0370)
+
+A shared signature ALONE is not evidence of a missing abstraction. Python
+has few primitive types, so dozens of semantically-unrelated functions
+routinely collide on the same over-generic shape purely by coincidence --
+every `run(config: AppConfig) -> None` per-command entrypoint across the
+runner modules (39, before this ticket), every `(str) -> str`
+name-munging helper (31), every `(str) -> bool` predicate. You cannot
+factor N unrelated functions into one shared abstraction just because they
+happen to take the same primitive types; T-0360's dispatch-family
+suppression caught the intentional-registry case but left this
+coincidental-collision residue untouched.
+
+`frob.arch._python._check_abstraction_opportunities` now requires one of
+two discriminators before flagging a same-signature group (after the
+T-0360 dispatch-family exclusion above still runs first):
+
+- **Signature-specificity** (`_signature_is_specific`): the shared
+  signature carries at least one type outside `_GENERIC_TYPE_NAMES` (the
+  ubiquitous primitives -- `str`, `int`, `bool`, `float`, `bytes`, `None`,
+  `Path`, `object`, `Any`, bare containers, `Optional`/`Union`/`Callable`,
+  and `AppConfig` -- the App/AppConfig pattern's uniform CLI-dispatch
+  contract, shared by design, not by coincidence). A signature carrying a
+  real domain type (`TicketStore`, `Violation`, `GraphSnapshot`, `Result[...,
+  VetError]`) is specific enough on its own; the WHOLE group is reported,
+  since the signature itself is the evidence.
+- **Body-similarity** (`_near_duplicate_cluster`): when the signature is
+  generic, the group is flagged only if a SUBSET of its members has
+  near-duplicate bodies. Each function's body is normalized the same way
+  the dup scanner does (`frob.dup._legacy_py._collect_locals_py` /
+  `_serialize_py_body` -- locals alpha-renamed, string/numeric literals
+  collapsed to `_S_`/`_N_`), then compared pairwise with
+  `difflib.SequenceMatcher.ratio()`; two members are near-duplicate at
+  `ratio >= _BODY_SIMILARITY_THRESHOLD` (0.9). Bodies under
+  `_BODY_MIN_TOKENS` (8) normalized tokens never participate -- a
+  same-shape one-liner (`return self._x`) collides with unrelated
+  one-liners by coincidence, not logic, at that length. Only the
+  near-duplicate SUBSET is reported (not the full generic-signature
+  group) -- a group of 30 unrelated functions with one genuinely
+  duplicated pair is reported as that pair, not misrepresented as 30
+  functions sharing logic.
+
+A generic-signature group with neither an above-threshold specific type
+nor a near-duplicate body subset is not flagged at all. This is what
+dropped the residue from 67 findings to the genuinely extractable
+families: the 39-member `(AppConfig) -> None` and 31-member `(str) ->
+str` groups vanished entirely (no near-duplicate bodies among their
+members), while e.g. a literal-duplicate `_has_done_report` defined twice
+still flags (found via body-similarity despite its generic `(str) ->
+bool` signature) and specific-signature families like the `(Path) ->
+tuple[Violation, ...]` gate group still flag in full.
+
 ### ARCH001: a reasoned per-function override (T-0289)
 
 `long-function` is the one `frob.arch` category channeled into a real
@@ -92,6 +216,25 @@ def configure_all_the_things(...):
   disappears the moment someone deletes the function it's no longer
   attached to.
 
+### Check-stage summary is waiver-aware for ARCH001 (T-0375)
+
+The `frob-arch` stage of `frob check` (`frob.check._python._run_arch`)
+used to report every `warning`-severity suggestion raw ("`N warnings, M
+suggestions`"), including `long-function` findings already carrying a
+reasoned `frob:waive ARCH001` -- inflating the headline against a waiver
+that should have made it honest. `_run_arch` now builds the same ARCH001
+`Violation`s `frob.gates._arch.arch_gate` would (reusing the suggestions it
+already computed, not a second `analyze_project` pass) and runs them
+through `frob.gates._apply_waivers` against the obligation graph's WAIVE
+edges -- `ceiling=` included, identical semantics to the real gate. A
+waived long-function is excluded from the warning headline and rendered as
+a `note` diagnostic (`[waived: <symref>]`) instead of `warning`; the
+summary line is `"N warnings (M waived), K suggestions"`. Every other arch
+category (`god-class`, `high-coupling`, `deep-nesting`,
+`abstraction-opportunity`, `large-file`) stays on T-0101's unwaivable
+channel and is unaffected -- only `long-function`/ARCH001 has a symref a
+waiver can bind to.
+
 ## Parsing
 
 `analyze_project` parses every collected file once through
@@ -106,7 +249,7 @@ per-parse INFO/DEBUG log lines. C/C++ function/class walks share
 ## Public API
 
 <a id="public-api"></a>
-<!-- frob:describes frob.arch.analyze_project -->
+<!-- frob:describes src/frob/arch/__init__.py::analyze_project -->
 
 ```python
 # frob/arch/__init__.py
@@ -126,7 +269,7 @@ def analyze_project(
 ```
 
 <a id="arch-suggestion"></a>
-<!-- frob:describes frob.arch.ArchSuggestion -->
+<!-- frob:describes src/frob/arch/_models.py::ArchSuggestion -->
 
 ```python
 class ArchSuggestion(BaseModel):
@@ -146,7 +289,7 @@ class ArchSuggestion(BaseModel):
 ```
 
 <a id="arch-result"></a>
-<!-- frob:describes frob.arch.ArchResult -->
+<!-- frob:describes src/frob/arch/_models.py::ArchResult -->
 
 ```python
 class ArchResult(BaseModel):
@@ -157,10 +300,43 @@ class ArchResult(BaseModel):
     def as_json(self) -> str: ...   # machine-readable, `frob arch --json`
 ```
 
-<!-- frob:describes frob.arch.ArchResult.as_text -->
-<!-- frob:describes frob.arch.ArchResult.as_json -->
+<!-- frob:describes src/frob/arch/_models.py::ArchResult.as_text -->
+<!-- frob:describes src/frob/arch/_models.py::ArchResult.as_json -->
 `as_text`/`as_json` are the two render paths every CLI output mode uses;
 covered by `tests/unit/test_arch.py::TestArchResultFormat`.
+
+## Configuration: `frob.toml` `[arch]` table (T-0373)
+
+<a id="frob-toml-arch-config"></a>
+<!-- frob:describes src/frob/app/config.py::load_arch_config -->
+<!-- frob:describes src/frob/app/config.py::ARCH_DEFAULT_MAX_FUNCTION_LINES -->
+<!-- frob:describes src/frob/app/config.py::ARCH_DEFAULT_MAX_CLASS_METHODS -->
+<!-- frob:describes src/frob/app/config.py::ARCH_DEFAULT_MAX_LOCAL_IMPORTS -->
+<!-- frob:describes src/frob/app/config.py::ARCH_DEFAULT_MAX_NESTING_DEPTH -->
+<!-- frob:describes src/frob/app/config.py::ARCH_DEFAULT_MAX_FILE_LINES -->
+
+`analyze_project`'s keyword defaults above (30/12/8/4/500) are library
+fallbacks for a caller with no `frob.toml` in scope. `frob check`'s ARCH
+gate (`frob.gates._arch.arch_gate`) does not use them directly -- it calls
+`frob.app.config.load_arch_config(root)` first, which reads the `[arch]`
+table from `root/frob.toml` and defaults every unset key to this repo's
+calibrated values instead: `max_function_lines=60`, `max_class_methods=12`,
+`max_local_imports=8`, `max_nesting_depth=4`, `max_file_lines=800`
+(`ARCH_DEFAULT_MAX_*` in `frob.app.config`). A missing or malformed
+`frob.toml`, or a `frob.toml` with no `[arch]` table, is not an error --
+`load_arch_config` just returns the calibrated defaults, same posture as
+every other per-section `frob.toml` reader in this codebase (e.g.
+`frob.gates._dup_config`).
+
+```python
+# frob/app/config.py
+def load_arch_config(root: Path) -> dict[str, int]
+    # Returns a kwargs dict: analyze_project(root, **load_arch_config(root))
+```
+
+This repo's own `frob.toml` carries an explicit `[arch]` table set to
+these same calibrated values -- not strictly required (they equal the
+defaults), but present as disclosure of the calibration decision.
 
 ## frob:tests
 

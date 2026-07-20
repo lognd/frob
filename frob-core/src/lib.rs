@@ -113,6 +113,13 @@ fn candidate_pairs(fingerprint_sets: Vec<Vec<u64>>, min_shared: usize) -> Vec<(u
         }
         for a in 0..members.len() {
             for b in (a + 1)..members.len() {
+                if members[a] == members[b] {
+                    // Same region indexed twice in one bucket (duplicate
+                    // fingerprint values within a single region's set) must
+                    // never emit a self-pair (i, i) -- a region always
+                    // "shares" with itself and that's not a candidate.
+                    continue;
+                }
                 let (i, j) = (members[a].min(members[b]), members[a].max(members[b]));
                 *shared_counts.entry((i, j)).or_insert(0) += 1;
             }
@@ -802,32 +809,58 @@ fn merge_diagonals(
 /// match is not reported (mirrors R4's `min_shared`/`min_tokens` floors --
 /// keeps trivial single-token "matches" out of the result).
 ///
-/// Returns `(doc_a, start_a, doc_b, start_b, length)` tuples: doc `doc_a`
-/// at token offset `start_a` and doc `doc_b` at token offset `start_b`
-/// share an exact `length`-token run. `doc_a <= doc_b` (and `start_a <=
-/// start_b` when `doc_a == doc_b`) by construction -- callers get each
-/// region pair once, not twice.
+/// Returns `(regions, truncated)`. `regions` is a list of `(doc_a,
+/// start_a, doc_b, start_b, length)` tuples: doc `doc_a` at token offset
+/// `start_a` and doc `doc_b` at token offset `start_b` share an exact
+/// `length`-token run. `doc_a <= doc_b` (and `start_a <= start_b` when
+/// `doc_a == doc_b`) by construction -- callers get each region pair once,
+/// not twice.
+///
+/// `max_run_size` (T-0273, reviewer finding on T-0193: `emit_run_pairs` is
+/// O(k^2) in one equal-token run's size `k` -- 2000 near-identical docs
+/// sharing a block produced 1,999,000 pairs in a demonstrated worst case)
+/// bounds `k` per run: a run larger than `max_run_size` only pairs its
+/// first `max_run_size` occurrences with each other, capping the per-run
+/// cost at O(max_run_size^2) regardless of how many more times the block
+/// repeats. `truncated` is `true` iff at least one run was capped -- an
+/// honest signal, never a silent drop (the T-0193-recall-bug lesson):
+/// callers are expected to surface it (e.g. a WARN log) rather than treat
+/// the result as exhaustive when `truncated` is set.
 #[pyfunction]
+#[pyo3(signature = (documents, min_len, max_run_size=200))]
 fn exact_regions(
     documents: Vec<Vec<String>>,
     min_len: usize,
-) -> Vec<(usize, usize, usize, usize, usize)> {
+    max_run_size: usize,
+) -> (Vec<(usize, usize, usize, usize, usize)>, bool) {
     // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
     if documents.is_empty() || min_len == 0 {
-        return Vec::new();
+        return (Vec::new(), false);
     }
     let (global, doc_of, offset_of) = flatten_documents(&documents);
     if global.is_empty() {
-        return Vec::new();
+        return (Vec::new(), false);
     }
     let sa = build_suffix_array(&global);
     let lcp = kasai_lcp(&global, &sa);
 
     let mut raw: Vec<(usize, usize, usize, usize, usize)> = Vec::new();
+    let mut truncated = false;
     for (lo, hi) in lcp_runs(&lcp, min_len) {
-        emit_run_pairs(&sa, &doc_of, &offset_of, lo, hi, &lcp, min_len, &mut raw);
+        let run_truncated = emit_run_pairs(
+            &sa,
+            &doc_of,
+            &offset_of,
+            lo,
+            hi,
+            &lcp,
+            min_len,
+            max_run_size,
+            &mut raw,
+        );
+        truncated = truncated || run_truncated;
     }
-    merge_diagonals(raw)
+    (merge_diagonals(raw), truncated)
 }
 
 /// Maximal `[lo, hi]` (inclusive, both indices into `sa`/`lcp`) SA-index
@@ -866,7 +899,14 @@ fn lcp_runs(lcp: &[usize], min_len: usize) -> Vec<(usize, usize)> {
 /// minimum `lcp[k]` for `k` in `(lo, hi]`, which every pair in the range
 /// is guaranteed to share (see `lcp_runs`'s doc comment). O(k^2) in the
 /// run size `k`; runs are bounded by how many times one block repeats in
-/// the corpus, not by corpus size, so this stays cheap in practice.
+/// the corpus, not by corpus size, so this stays cheap in the common case
+/// -- but a pathologically large equal-token run (many near-identical
+/// generated/boilerplate symbols sharing a block) is NOT bounded by
+/// anything else, so `max_run_size` (T-0273) caps `k` before the O(k^2)
+/// double loop: only the run's first `max_run_size` occurrences (by SA
+/// order) are paired with each other. Returns `true` iff the run exceeded
+/// `max_run_size` and was capped, so the caller can propagate an honest
+/// truncation signal instead of silently under-reporting.
 fn emit_run_pairs(
     sa: &[usize],
     doc_of: &[Option<usize>],
@@ -875,16 +915,25 @@ fn emit_run_pairs(
     hi: usize,
     lcp: &[usize],
     min_len: usize,
+    max_run_size: usize,
     out: &mut Vec<(usize, usize, usize, usize, usize)>,
-) {
+) -> bool {
     let run_len = lcp[lo + 1..=hi].iter().copied().min().unwrap_or(min_len);
-    for i in lo..=hi {
+    let run_size = hi - lo + 1;
+    let truncated = run_size > max_run_size.max(1);
+    let capped_hi = if truncated {
+        lo + max_run_size.max(1) - 1
+    } else {
+        hi
+    };
+    for i in lo..=capped_hi {
         let Some(da) = doc_of[sa[i]] else { continue };
-        for j in (i + 1)..=hi {
+        for j in (i + 1)..=capped_hi {
             let Some(db) = doc_of[sa[j]] else { continue };
             out.push((da, offset_of[sa[i]], db, offset_of[sa[j]], run_len));
         }
     }
+    truncated
 }
 
 #[cfg(test)]
@@ -913,6 +962,23 @@ mod tests {
         let sets = vec![vec![1u64, 2, 3], vec![2u64, 3, 4], vec![99u64]];
         let pairs = candidate_pairs(sets, 2);
         assert_eq!(pairs, vec![(0, 1)]);
+    }
+
+    #[test]
+    fn candidate_pairs_never_emits_a_self_pair() {
+        // frob:tests frob-core/src/lib.rs::candidate_pairs kind="unit"
+        // Regression for T-0268: a region whose own fingerprint set
+        // contains a duplicate value indexes itself twice into the same
+        // bucket, which previously produced a self-pair (i, i) once that
+        // region's own duplicate-value collision count reached min_shared.
+        let sets = vec![vec![7u64, 7, 7], vec![99u64]];
+        let pairs = candidate_pairs(sets, 2);
+        assert!(
+            pairs.iter().all(|&(i, j)| i != j),
+            "candidate_pairs returned a self-pair: {:?}",
+            pairs
+        );
+        assert!(pairs.is_empty());
     }
 
     #[test]
@@ -1173,7 +1239,8 @@ mod tests {
             .chain(["print", "y"].iter())
             .map(|s| s.to_string())
             .collect();
-        let regions = exact_regions(vec![doc_a.clone(), doc_b.clone()], shared.len());
+        let (regions, truncated) = exact_regions(vec![doc_a.clone(), doc_b.clone()], shared.len(), 10_000);
+        assert!(!truncated);
         assert_eq!(regions.len(), 1);
         let (da, oa, db, ob, l) = regions[0];
         assert_eq!(da, 0);
@@ -1188,7 +1255,7 @@ mod tests {
         let shared = vec!["a", "b", "c"];
         let doc_a: Vec<String> = shared.iter().map(|s| s.to_string()).collect();
         let doc_b: Vec<String> = shared.iter().map(|s| s.to_string()).collect();
-        let regions = exact_regions(vec![doc_a, doc_b], 10);
+        let (regions, _) = exact_regions(vec![doc_a, doc_b], 10, 10_000);
         assert!(regions.is_empty());
     }
 
@@ -1196,7 +1263,7 @@ mod tests {
     fn exact_regions_no_match_across_wholly_different_documents() {
         let doc_a: Vec<String> = vec!["a".into(), "b".into(), "c".into(), "d".into()];
         let doc_b: Vec<String> = vec!["w".into(), "x".into(), "y".into(), "z".into()];
-        let regions = exact_regions(vec![doc_a, doc_b], 2);
+        let (regions, _) = exact_regions(vec![doc_a, doc_b], 2, 10_000);
         assert!(regions.is_empty());
     }
 
@@ -1206,7 +1273,7 @@ mod tests {
         // the boundary from being reported as a match with anything.
         let doc_a: Vec<String> = vec!["p".into(), "q".into(), "r".into()];
         let doc_b: Vec<String> = vec!["r".into(), "s".into(), "t".into()];
-        let regions = exact_regions(vec![doc_a, doc_b], 1);
+        let (regions, _) = exact_regions(vec![doc_a, doc_b], 1, 10_000);
         // "r" alone (length 1) legitimately matches (doc0 offset 2, doc1
         // offset 0) -- but nothing longer, since "r","s" (from b) never
         // equals a real 2-token run present in doc_a.
@@ -1224,16 +1291,17 @@ mod tests {
         let shared: Vec<String> = (0..12).map(|i| format!("t{i}")).collect();
         let doc_a = shared.clone();
         let doc_b = shared.clone();
-        let regions = exact_regions(vec![doc_a, doc_b], 3);
+        let (regions, _) = exact_regions(vec![doc_a, doc_b], 3, 10_000);
         assert_eq!(regions.len(), 1);
         assert_eq!(regions[0].4, shared.len());
     }
 
     #[test]
     fn exact_regions_empty_input_is_empty_output() {
-        let regions = exact_regions(Vec::new(), 1);
+        let (regions, truncated) = exact_regions(Vec::new(), 1, 10_000);
         assert!(regions.is_empty());
-        let regions = exact_regions(vec![vec!["a".into()]], 0);
+        assert!(!truncated);
+        let (regions, _) = exact_regions(vec![vec!["a".into()]], 0, 10_000);
         assert!(regions.is_empty());
     }
 
@@ -1261,7 +1329,7 @@ mod tests {
         // them in the suffix array.
         let block: Vec<String> = ["a", "b", "c", "d"].iter().map(|s| s.to_string()).collect();
         let docs = vec![block.clone(), block.clone(), block.clone()];
-        let regions = exact_regions(docs, 2);
+        let (regions, _) = exact_regions(docs, 2, 10_000);
         assert!(has_pair(&regions, 0, 1, 4), "missing (doc0, doc1): {regions:?}");
         assert!(has_pair(&regions, 0, 2, 4), "missing (doc0, doc2): {regions:?}");
         assert!(has_pair(&regions, 1, 2, 4), "missing (doc1, doc2): {regions:?}");
@@ -1272,7 +1340,7 @@ mod tests {
         // frob:tests frob-core/src/lib.rs::exact_regions kind="unit"
         let block: Vec<String> = (0..6).map(|i| format!("w{i}")).collect();
         let docs = vec![block.clone(), block.clone(), block.clone(), block.clone()];
-        let regions = exact_regions(docs, 3);
+        let (regions, _) = exact_regions(docs, 3, 10_000);
         for x in 0..4 {
             for y in (x + 1)..4 {
                 assert!(has_pair(&regions, x, y, 6), "missing ({x}, {y}): {regions:?}");
@@ -1301,7 +1369,7 @@ mod tests {
         let doc0 = mk(&region_b);
         let doc1 = mk(&region_b);
         let doc2 = mk(&["x", "y", "z"]); // no region B
-        let regions = exact_regions(vec![doc0, doc1, doc2], 3);
+        let (regions, _) = exact_regions(vec![doc0, doc1, doc2], 3, 10_000);
 
         // Region A (length 4) ties all three documents together.
         assert!(has_pair(&regions, 0, 1, 4), "missing region-A (doc0,doc1): {regions:?}");
@@ -1318,6 +1386,41 @@ mod tests {
                 .any(|&(da, _, db, _, l)| (da == 0 && db == 1) && l >= 7),
             "expected a doc0/doc1 match covering both region A and B: {regions:?}"
         );
+    }
+
+    #[test]
+    fn exact_regions_run_size_guard_bounds_pair_emission_on_a_large_run() {
+        // frob:tests frob-core/src/lib.rs::exact_regions kind="unit"
+        // T-0273: reviewer finding on T-0193 -- 2000 identical documents
+        // sharing a block produced 1,999,000 unbounded pairs. With the
+        // default cap (200) a 500-document run must emit at most
+        // C(200, 2) = 19,900 pairs, never the unbounded C(500, 2) =
+        // 124,750, and the truncation signal must be set so a caller
+        // never mistakes the capped result for exhaustive.
+        let block: Vec<String> = ["a", "b", "c", "d"].iter().map(|s| s.to_string()).collect();
+        let docs: Vec<Vec<String>> = (0..500).map(|_| block.clone()).collect();
+        let (regions, truncated) = exact_regions(docs, 2, 200);
+        assert!(truncated, "500-document identical run must be flagged truncated");
+        let max_uncapped_pairs = 500usize * 499 / 2;
+        let cap_pairs = 200usize * 199 / 2;
+        assert!(
+            regions.len() <= cap_pairs,
+            "expected <= {cap_pairs} pairs from the capped run, got {} (unbounded would be {max_uncapped_pairs})",
+            regions.len()
+        );
+        assert!(!regions.is_empty(), "the capped run must still report something");
+    }
+
+    #[test]
+    fn exact_regions_run_size_guard_does_not_trip_below_the_cap() {
+        // frob:tests frob-core/src/lib.rs::exact_regions kind="unit"
+        // A run at or below max_run_size is unaffected: no truncation
+        // signal, and every pair among the (small) run is still reported.
+        let block: Vec<String> = ["a", "b", "c", "d"].iter().map(|s| s.to_string()).collect();
+        let docs: Vec<Vec<String>> = (0..5).map(|_| block.clone()).collect();
+        let (regions, truncated) = exact_regions(docs, 2, 200);
+        assert!(!truncated);
+        assert_eq!(regions.len(), 5 * 4 / 2);
     }
 
     #[test]

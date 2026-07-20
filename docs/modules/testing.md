@@ -27,13 +27,28 @@ the gates prove the bindings exist; `frob test` runs the bound tests.
    makes it look selected (e.g. a brand-new test file's own methods count
    as "touched," which used to leak the paired source symbol's node id
    into the pytest argv and crash collection).
-4. Contract ripple (one hop): symbols holding a `uses-contract` edge to a
-   touched symbol are treated as touched -- their tests run too.
+4. Contract ripple (T-0398 D-07: bounded multi-hop, up to 4 `uses-contract`
+   hops -- widened from a single hop, which missed a caller two or more
+   hops removed from a touched leaf): symbols holding a `uses-contract`
+   edge to a touched symbol, or transitively to another ripple symbol, are
+   treated as touched -- their tests run too.
 5. Touched test files always run themselves.
 6. Fallback for touched files with zero bindings, per `[testing.select]`
    `fallback`: `package` (default -- run the owning package's suite for
    that language), `suite` (whole language suite), or `warn` (skip and
    emit a warning; the TEST001 gate is what makes this safe to choose).
+   Two refinements (T-0398):
+   - D-04: a touched file whose extension maps to no known language at all
+     (`.toml`/`.json`/`.yaml`/`.md`, config/data) cannot name a
+     language-specific package -- `package`/`suite` both degrade to a
+     suite-wide run across EVERY language the graph has symbols for,
+     instead of silently selecting nothing. `warn` still only logs.
+   - D-06: a touched file the graph already tracks (has symbols), but
+     whose changed hunk(s) overlapped none of them (a module-level edit --
+     an import, a module constant, a top-level side-effecting call), forces
+     the `package` fallback even under `fallback="warn"`. A file whose
+     touched hunk DID overlap a symbol (just one with no bound test) still
+     respects `warn`'s ordinary accepted-risk skip.
 
 `--all` skips selection and runs every configured runner's full suite.
 
@@ -82,6 +97,43 @@ dot-joined) -- see `_to_rust_filter`. `frob scaffold` templates ship with
 runners pre-filled. Every spawn goes through the typed subprocess seam with
 an explicit timeout and full logging (lithos procio discipline).
 
+## Native extensions (`frob.toml`, `[[native]]`, T-0333)
+
+A test suite that `pytest.importorskip("strata_core")`-gates on a compiled
+extension has a hidden dependency the collection cache cannot see on its own:
+`collect_python_tests` keys its cache on test-FILE content, but building the
+extension changes no test file. So a collection captured while the native was
+unbuilt (its tests SKIP, and never enter the node-id set) survived every
+rebuild -- reding COV003 on correctly-bound evidence until someone manually
+deleted `.frob/pytest-collect.json`.
+
+Declare each such module so collection can track its build state:
+
+```toml
+[[native]]
+name = "strata_core"   # the python IMPORT name (find_spec), not a path
+build_cmd = "make core"
+language = "rust"       # optional, informational
+```
+
+- **Cache correctness.** The cache key folds in a fingerprint over each
+  declared native's *compiled artifacts* (`.so`/`.pyd`/`.dylib`), found via
+  `importlib.util.find_spec`. Because it hashes the compiled OUTPUT, it is
+  toolchain- and platform-agnostic: it behaves identically for maturin/pyo3
+  (Rust) and setuptools/pybind11/scikit-build (C/C++), on Linux, macOS, and
+  Windows, x86 or arm. Going unbuilt -> built (absent -> hashed) OR a
+  recompile (bytes change) flips the key and forces re-collection
+  automatically. A maturin PACKAGE (`name/__init__.py` + `name.abi3.so`) is
+  handled by fingerprinting the `.so` alongside the `__init__.py`, not the
+  unchanged `__init__.py`.
+- **Honest diagnostics.** When a declared native is unbuilt, COV003 names the
+  module and its `build_cmd` ("native extension `strata_core` not built; run
+  `make core`") instead of blaming the evidence id. The unbuilt natives are
+  carried on `CollectedTests.missing_natives`.
+- **Escape hatch.** `frob test --collect` drops and rebuilds the collection
+  cache, then exits -- rarely needed now that the fingerprint invalidates
+  automatically, but the honest remedy for a hand-edited cache.
+
 ## Rust runner
 
 **Multiple runners per language (T-0128).** `frob-core` and `strata-core`
@@ -128,6 +180,33 @@ Both the rust runner (`run_selected`) and rust test collection
    empty-but-successful test run (T-0102's vacuous-pass principle applies to
    the runner exactly as it does to the gates).
 
+## Strata runner (native, T-0242)
+
+`.strata` design files select under `language = "strata"` like any other
+touched file, but they never need a `[[test.runner]]` entry: no subprocess
+is spawned at all. `frob sys audit` has no per-item ids to place behind a
+`{ids}`/`{files}`/`{filters}`/`{regex}` placeholder -- it always evaluates
+the whole merged design model's exhaustiveness -- so a language runner
+that took the only pre-T-0242 route (registering `frob sys audit` as a
+`[[test.runner]]` command) had to invent a dummy placeholder token just to
+satisfy `_validate_placeholder`'s "exactly one" rule (the malmberg pilot P3
+workaround, 2026-07-18).
+
+`_run_one_language_selection` special-cases `language == "strata"` before
+it ever looks a runner up in `runners_by_lang`: it calls
+`frob.strata.run_native_sys_audit(root)` in process (the same
+`load_design_ids` -> `merge_models` -> `evaluate_exhaustiveness` ->
+`check_self_conformance` composition `frob sys audit` itself runs, module
+docstring of `frob/strata/_native_test.py`) and folds the resulting
+`NativeAuditOutcome` into a single `RunnerOutcome` (`argv=("<native>",
+"frob", "sys", "audit")`, marking where it came from since no real argv was
+spawned; `exit_code` 0 iff `proved`, else 1; `stdout_tail` carries the
+gap/proved summary). This is zero-config: touching a `.strata` file under
+`frob test` invokes the audit whether or not the repo's `frob.toml`
+declares anything for `strata` at all -- T-0149's per-repo `[[test.runner]]`
+path still works for any OTHER command a repo wants, but is no longer
+required for this one.
+
 ## Public API
 
 <!-- frob:describes src/frob/gitio.py::repo_root -->
@@ -141,6 +220,10 @@ Both the rust runner (`run_selected`) and rust test collection
 <!-- frob:describes src/frob/testing/_runners.py::load_runners -->
 <!-- frob:describes src/frob/testing/_collect.py::collect_python_tests -->
 <!-- frob:describes src/frob/testing/_collect.py::collect_rust_tests -->
+<!-- frob:describes src/frob/testing/_collect.py::drop_collection_cache -->
+<!-- frob:describes src/frob/testing/_runners.py::load_natives -->
+<!-- frob:describes src/frob/strata/_native_test.py::run_native_sys_audit -->
+<!-- frob:describes src/frob/strata/_native_test.py::NativeAuditOutcome -->
 
 ```python
 # frob/gitio.py -- the ONE git subprocess seam (shared with frob.gates)
@@ -174,7 +257,14 @@ def run_selected(selection: SelectionReport, runners: tuple[RunnerSpec, ...],
     # crates); each selected item is routed to the one runner whose cwd
     # owns its file (Err UnroutedItem if zero or more than one match).
 def load_runners(root: Path) -> Result[tuple[RunnerSpec, ...], TestingError]
+def load_natives(root: Path) -> Result[tuple[NativeSpec, ...], TestingError]
+    # frob.toml [[native]] entries (T-0333): compiled extension modules the
+    # suite importorskip-gates on, so collection can fingerprint their build
+    # state and COV003 can name the real build remedy.
 def collect_python_tests(root: Path) -> Result[CollectedTests, TestingError]
+def drop_collection_cache(root: Path) -> bool
+    # `frob test --collect`: delete the pytest collection cache so the next
+    # collection re-runs from scratch (T-0333 escape hatch).
 
 ALL_SENTINEL = "*"
     # The all-suite marker in a language's selected-tests tuple; run_selected
@@ -209,6 +299,11 @@ class RunnerSpec(BaseModel):     # frozen; one [[test.runner]] entry
     cwd: str = "."
     timeout_s: float = 900.0
 
+class NativeSpec(BaseModel):     # frozen; one [[native]] entry (T-0333)
+    name: str                     # python import name (find_spec), not a path
+    build_cmd: str                # e.g. "make core"
+    language: str = ""            # optional, informational
+
 class SelectConfig(BaseModel):    # frozen; selection knobs
     fallback: str = "package"     # unbound-file policy: package|suite|warn
 
@@ -234,6 +329,7 @@ class TestRunReport(BaseModel)    # frozen
 
 class CollectedTests(BaseModel):  # frozen; collect_python_tests + collect_rust_tests
     node_ids: frozenset[str]      # every pytest node id and cargo test symref
+    missing_natives: tuple[NativeSpec, ...] = ()   # declared-but-unbuilt (T-0333)
 
 class Hunk(BaseModel):            # frozen; one gitio.py touched-line range
     file: str

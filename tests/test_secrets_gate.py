@@ -11,15 +11,19 @@ whole repo) stays clean under the real gate.
 
 from __future__ import annotations
 
+import re
 import subprocess
 from pathlib import Path
 
 import pytest
 
 from frob.gates._models import Severity
-from frob.gates._secrets import _PATTERNS, ALL_PROVIDERS, redact, secrets_gate
+from frob.gates._secrets import _PATTERNS, ALL_PROVIDERS, _redact, secrets_gate
 
 
+# frob:waive DUP001 reason="parallel secrets-gate case table: independent \
+# fire/no-fire cases sharing an arrange-act scaffold; extracting would \
+# obscure per-case intent"
 def _git(root: Path, *args: str) -> None:
     subprocess.run(
         ["git", "-C", str(root), *args],
@@ -44,10 +48,13 @@ def _commit(root: Path, message: str = "commit") -> None:
 
 class TestRedact:
     def test_never_returns_the_token(self) -> None:
-        # frob:tests src/frob/gates/_secrets.py::redact
-        # frob:secret-fake -- fixture literal for the redact() unit test
-        token = "sk_live_abcdefghijklmnopqrstuvwxyz"
-        out = redact(token, "sk_live_")
+        # frob:tests src/frob/gates/_secrets.py::_redact
+        # Runtime-constructed (never a contiguous literal in this file's
+        # own source), T-0190 GitHub-unflaggable discipline: a bare literal
+        # "sk_live_" + 20+ contiguous alnum chars is exactly the shape
+        # GitHub's push protection matches.
+        token = "sk_live_" + "abcdefghijklmnopqrstuvwxyz"
+        out = _redact(token, "sk_live_")
         assert token not in out
         assert out == f"sk_live_... ({len(token)} chars)"
 
@@ -162,6 +169,9 @@ class TestFindsTokens:
 
 
 class TestFakeMarking:
+    # frob:waive DUP001 reason="parallel secrets-gate case table: \
+    # independent fire/no-fire cases sharing an arrange-act scaffold; \
+    # extracting would obscure per-case intent"
     def test_placeholder_xxxx_tail_is_not_flagged(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_secrets.py::secrets_gate
         repo = tmp_path / "repo"
@@ -172,6 +182,9 @@ class TestFakeMarking:
         violations = secrets_gate(repo)
         assert violations == ()
 
+    # frob:waive DUP001 reason="parallel secrets-gate case table: \
+    # independent fire/no-fire cases sharing an arrange-act scaffold; \
+    # extracting would obscure per-case intent"
     def test_literal_fake_word_in_token_is_not_flagged(self, tmp_path: Path) -> None:
         repo = tmp_path / "repo"
         _init_repo(repo)
@@ -181,6 +194,9 @@ class TestFakeMarking:
         violations = secrets_gate(repo)
         assert violations == ()
 
+    # frob:waive DUP001 reason="parallel secrets-gate case table: \
+    # independent fire/no-fire cases sharing an arrange-act scaffold; \
+    # extracting would obscure per-case intent"
     def test_fake_marker_same_line(self, tmp_path: Path) -> None:
         repo = tmp_path / "repo"
         _init_repo(repo)
@@ -203,30 +219,42 @@ class TestFakeMarking:
         violations = secrets_gate(repo)
         assert violations == ()
 
+    # frob:waive DUP001 reason="parallel secrets-gate case table: \
+    # independent fire/no-fire cases sharing an arrange-act scaffold; \
+    # extracting would obscure per-case intent"
     def test_placeholder_phrase_your_dash_here_is_not_flagged(
         self, tmp_path: Path
     ) -> None:
         # frob:tests src/frob/gates/_secrets.py::secrets_gate
-        # T-0219: a doc-example token like `xoxb-your-slack-token-here`
+        # T-0219: a doc-example token like `xoxb-your-...-here`
         # reads as an obvious template to a human but contains none of the
         # single-word `_PLACEHOLDER_WORDS` (fake/changeme/example/
         # placeholder) -- pre-fix, this fired a false-positive SEC001.
+        # Runtime-constructed (T-0190: never a contiguous literal in this
+        # file's own source, same discipline as the real-shaped-token
+        # fixtures above).
         repo = tmp_path / "repo"
         _init_repo(repo)
-        (repo / "README.md").write_text("SLACK_TOKEN=xoxb-your-slack-token-here\n")
+        token = "xoxb-your-" + "slack-token-here"
+        (repo / "README.md").write_text(f"SLACK_TOKEN={token}\n")
         _commit(repo)
 
         violations = secrets_gate(repo)
         assert violations == ()
 
+    # frob:waive DUP001 reason="parallel secrets-gate case table: \
+    # independent fire/no-fire cases sharing an arrange-act scaffold; \
+    # extracting would obscure per-case intent"
     def test_placeholder_phrase_insert_dash_is_not_flagged(
         self, tmp_path: Path
     ) -> None:
         # frob:tests src/frob/gates/_secrets.py::secrets_gate
         # Same T-0219 phrase-recognition fix, `insert-` variant.
+        # Runtime-constructed, same T-0190 discipline as above.
         repo = tmp_path / "repo"
         _init_repo(repo)
-        (repo / "README.md").write_text("SLACK_TOKEN=xoxb-insert-your-real-token\n")
+        token = "xoxb-insert-" + "your-real-token"
+        (repo / "README.md").write_text(f"SLACK_TOKEN={token}\n")
         _commit(repo)
 
         violations = secrets_gate(repo)
@@ -252,6 +280,9 @@ class TestFakeMarking:
         assert len(violations) == 1
         assert violations[0].rule == "SEC001"
 
+    # frob:waive DUP001 reason="parallel secrets-gate case table: \
+    # independent fire/no-fire cases sharing an arrange-act scaffold; \
+    # extracting would obscure per-case intent"
     def test_placeholder_phrase_your_does_not_suppress_high_entropy_token(
         self, tmp_path: Path
     ) -> None:
@@ -272,6 +303,9 @@ class TestFakeMarking:
         matches = [v for v in violations if v.rule == "SEC001"]
         assert len(matches) == 1
 
+    # frob:waive DUP001 reason="parallel secrets-gate case table: \
+    # independent fire/no-fire cases sharing an arrange-act scaffold; \
+    # extracting would obscure per-case intent"
     def test_placeholder_phrase_insert_does_not_suppress_high_entropy_token(
         self, tmp_path: Path
     ) -> None:
@@ -305,6 +339,9 @@ class TestFakeMarking:
         matches = [v for v in violations if v.rule == "SEC001"]
         assert len(matches) == 1
 
+    # frob:waive DUP001 reason="parallel secrets-gate case table: \
+    # independent fire/no-fire cases sharing an arrange-act scaffold; \
+    # extracting would obscure per-case intent"
     def test_digit_free_mixed_case_your_token_still_fires(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_secrets.py::secrets_gate
         # T-0219 round 3 (reviewer-reproduced live bypass): round 2's
@@ -326,6 +363,9 @@ class TestFakeMarking:
         matches = [v for v in violations if v.rule == "SEC001"]
         assert len(matches) == 1
 
+    # frob:waive DUP001 reason="parallel secrets-gate case table: \
+    # independent fire/no-fire cases sharing an arrange-act scaffold; \
+    # extracting would obscure per-case intent"
     def test_digit_free_insert_alphabet_run_still_fires(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_secrets.py::secrets_gate
         # Same round-3 bypass class: digit-free, single-case, but a wide
@@ -377,6 +417,9 @@ class TestTrackedEnvFile:
         assert sec002[0].severity == Severity.ERROR
         assert sec002[0].file == ".env"
 
+    # frob:waive DUP001 reason="parallel secrets-gate case table: \
+    # independent fire/no-fire cases sharing an arrange-act scaffold; \
+    # extracting would obscure per-case intent"
     def test_env_example_is_not_flagged(self, tmp_path: Path) -> None:
         repo = tmp_path / "repo"
         _init_repo(repo)
@@ -611,6 +654,74 @@ class TestGateIsGreenOnItself:
         assert violations == [] or violations == (), (
             "secrets_gate found real-looking credentials in the live repo: "
             + "; ".join(f"{v.rule} {v.file}:{v.line}" for v in violations)
+        )
+
+
+class TestGitHubPushProtectionUnflaggable:
+    """T-0190: GH013 push protection rejected main because a fixture in an
+    earlier revision of this file (the Stripe key at 48aeed1, T-0157) was a
+    contiguous literal that matched GitHub's own secret-scanning patterns
+    closely enough to be blocked as a real credential, even though it was
+    already pattern-invalid/fake-marked for frob's own gate. This class is
+    the meta-test the ticket calls for: a coarse re-encoding of GitHub's
+    published detector shapes (github.com/advanced-security/secret-
+    scanning-patterns) for the providers this repo's fixtures are most
+    likely to collide with, checked directly against THIS FILE'S OWN
+    on-disk source text -- so a future fixture that reintroduces a
+    contiguous, GitHub-flaggable literal fails locally before it can ever
+    reach a push and retrip GH013.
+
+    Deliberately narrower than `frob`'s own `_PATTERNS` table: GitHub's
+    scanner requires an unbroken literal run in the raw file bytes, so a
+    fixture built by concatenating string pieces at runtime (this file's
+    house style throughout, e.g. `"sk-ant-" + "a" * 30`) can satisfy
+    frob's own regex when evaluated while never appearing as one
+    contiguous span in the source -- that is precisely the property this
+    class locks in.
+    """
+
+    #: Coarse re-encodings of a handful of GitHub's published secret-
+    #: scanning patterns, chosen to match the providers T-0157's fixture
+    #: table covers and that are most likely to be mistaken for a real,
+    #: partner-verified credential. These are intentionally looser than
+    #: frob's own per-provider regexes (no anchoring, generous charset) --
+    #: the goal is "would GitHub plausibly flag a contiguous literal like
+    #: this", not an exact reproduction of GitHub's private matching logic.
+    _GITHUB_FLAGGABLE_RES: tuple[re.Pattern[str], ...] = (
+        re.compile(r"sk_live_[0-9a-zA-Z]{20,}"),  # Stripe live secret key
+        re.compile(r"AKIA[0-9A-Z]{16}"),  # AWS access key id
+        re.compile(r"ghp_[0-9a-zA-Z]{30,}"),  # GitHub personal access token
+        re.compile(r"xox[baprs]-[0-9a-zA-Z-]{10,}"),  # Slack token
+    )
+
+    def test_this_file_contains_no_github_flaggable_literal(self) -> None:
+        # frob:tests src/frob/gates/_secrets.py::secrets_gate
+        text = Path(__file__).read_text(encoding="utf-8")
+        hits: list[str] = []
+        for pattern in self._GITHUB_FLAGGABLE_RES:
+            for m in pattern.finditer(text):
+                hits.append(f"{pattern.pattern} -> {m.group(0)[:8]}...")
+        assert hits == [], (
+            "this file contains a contiguous literal shaped like a "
+            "GitHub-flaggable credential (GH013 push-protection risk, "
+            "T-0190): " + "; ".join(hits)
+        )
+
+    def test_pattern_source_module_contains_no_github_flaggable_literal(
+        self,
+    ) -> None:
+        # frob:tests src/frob/gates/_secrets.py::secrets_gate
+        root = Path(__file__).resolve().parents[1]
+        module = root / "src" / "frob" / "gates" / "_secrets.py"
+        text = module.read_text(encoding="utf-8")
+        hits: list[str] = []
+        for pattern in self._GITHUB_FLAGGABLE_RES:
+            for m in pattern.finditer(text):
+                hits.append(f"{pattern.pattern} -> {m.group(0)[:8]}...")
+        assert hits == [], (
+            "the pattern-table source itself contains a contiguous "
+            "GitHub-flaggable literal (GH013 push-protection risk, "
+            "T-0190): " + "; ".join(hits)
         )
 
 

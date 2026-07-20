@@ -119,6 +119,9 @@ class TestGrammarRoundTrip:
 
 class TestScopeResolution:
     # frob:tests src/frob/strata/_policy.py::compile_policies kind="unit"
+    # frob:waive DUP001 reason="parallel test methods within test_policy.py \
+    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
     def test_component_scope_resolves_to_one_node(self):
         module = _module(
             """
@@ -148,6 +151,9 @@ class TestScopeResolution:
         assert compiled.policies[0].node_ids == ("api", "edge")
 
     # frob:tests src/frob/strata/_policy.py::compile_policies kind="unit"
+    # frob:waive DUP001 reason="parallel test methods within test_policy.py \
+    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
     def test_label_scope_resolves_via_lattice(self):
         module = _module(
             """
@@ -162,6 +168,9 @@ class TestScopeResolution:
         assert compiled.policies[0].node_ids == ("api",)
 
     # frob:tests src/frob/strata/_policy.py::compile_policies kind="unit"
+    # frob:waive DUP001 reason="parallel test methods within test_policy.py \
+    # (3 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
     def test_unknown_component_scope_fails_closed(self):
         module = _module(
             """
@@ -176,6 +185,9 @@ class TestScopeResolution:
         assert result.danger_err is StrataError.UnknownReference
 
     # frob:tests src/frob/strata/_policy.py::compile_policies kind="unit"
+    # frob:waive DUP001 reason="parallel test methods within test_policy.py \
+    # (3 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
     def test_unknown_trust_level_fails_closed(self):
         module = _module(
             """
@@ -190,6 +202,9 @@ class TestScopeResolution:
         assert result.danger_err is StrataError.UnknownReference
 
     # frob:tests src/frob/strata/_policy.py::compile_policies kind="unit"
+    # frob:waive DUP001 reason="parallel test methods within test_policy.py \
+    # (3 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
     def test_unknown_label_level_fails_closed(self):
         module = _module(
             """

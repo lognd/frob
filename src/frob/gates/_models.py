@@ -150,6 +150,10 @@ class TestPolicy(BaseModel):
 
     min_unit_cases: int = 3
     min_integration: int = 1
+    # TEST009 (T-0225): min e2e edges owed per `.strata` design file -- the
+    # design-artifact counterpart to `min_integration`, since design ids are
+    # exempt from TEST003's package-level integration count.
+    min_design_e2e: int = 1
     unit_branch_cov: int = 90
     module_line_cov: int = 85
     system_line_cov: int = 80
@@ -178,6 +182,19 @@ class CoverageData(BaseModel):
     root_join_ok: bool = True
     # The exact roots `_parse_classes` tried, in order, for diagnostics.
     attempted_roots: tuple[str, ...] = ()
+    # frob:ticket T-0464
+    # `source_sha` above is only the sha of coverage.xml itself, not of the
+    # source it measured -- neither field alone catches a coverage.xml that
+    # is stale or deflated relative to the working tree it claims to
+    # describe. `stale_by_mtime` is True when coverage.xml is older than the
+    # newest known source file on disk. `module_join_fraction` is the share
+    # of known python modules that actually show up in `module_line` --
+    # a run that silently drops subprocess coverage (T-0464's root cause)
+    # measures only the main pytest process, so most modules never appear
+    # in coverage.xml at all even though `root_join_ok` is True (some data
+    # did join). Both are advisory (TEST011, WARN) signals, not floors.
+    stale_by_mtime: bool = False
+    module_join_fraction: float = 1.0
 
 
 # frob:doc docs/modules/gates.md#error-types

@@ -80,7 +80,7 @@ from ._code_binding import FOREIGN, CodeBinding, _node_code_globs, bind_code
 from ._effects import _KIND_MAP, _declared_kinds, check_capability_conformance
 from ._errors import StrataError
 from ._models import KernelModel
-from ._waive import STALE_WAIVER_RULE, apply_waivers, stale_detail
+from ._waive import STALE_WAIVER_RULE, _stale_detail, apply_waivers
 
 _log = get_logger(__name__)
 
@@ -411,6 +411,23 @@ def _extended_kind_violations(
     return found
 
 
+# frob:ticket T-0361
+def _repo_files_excluding_skip_dirs(root: Path) -> list[str]:
+    """Every real file under `root`, as `root`-relative posix paths, with
+    any path whose parts include a skip-dir (`is_skipped_dir`) omitted;
+    split out of `_fully_excluded_node_ids`'s file-collection phase
+    (T-0361)."""
+    all_files: list[str] = []
+    for path in sorted(root.rglob("*")):
+        if not path.is_file():
+            continue
+        rel_path = path.relative_to(root)
+        if any(is_skipped_dir(part) for part in rel_path.parts):
+            continue
+        all_files.append(rel_path.as_posix())
+    return all_files
+
+
 # frob:doc docs/strata/selfconform.md#sys101-fully-excluded-nodes
 # frob:ticket T-0310
 def _fully_excluded_node_ids(model: KernelModel, root: Path) -> frozenset[str]:
@@ -430,14 +447,7 @@ def _fully_excluded_node_ids(model: KernelModel, root: Path) -> frozenset[str]:
     exclude_globs = load_exclude_globs(root)
     if not exclude_globs:
         return frozenset()
-    all_files: list[str] = []
-    for path in sorted(root.rglob("*")):
-        if not path.is_file():
-            continue
-        rel_path = path.relative_to(root)
-        if any(is_skipped_dir(part) for part in rel_path.parts):
-            continue
-        all_files.append(rel_path.as_posix())
+    all_files = _repo_files_excluding_skip_dirs(root)
     fully_excluded: set[str] = set()
     for node in model.nodes:
         globs = _node_code_globs(node)
@@ -626,13 +636,46 @@ def _bind_conformance_inputs(
     return Ok(capability_bound.danger_ok)
 
 
+def _dedupe_sys100_extended_against_core(
+    core: list[SelfConformViolation], extended: list[SelfConformViolation]
+) -> list[SelfConformViolation]:
+    """T-0266: `_core_undeclared_violations` (THREAT004 delegate, real
+    file:line evidence per observed site) and `_extended_kind_violations`
+    (one coarse node-level finding per capability kind, module docstring's
+    SYS100 gap statement) are two INDEPENDENT SYS100 producers joined
+    against the same `(node, capability)` space -- today's `_KIND_MAP`
+    (net/fs/exec) and `_EXTENDED_KINDS` (eval/env/ffi/install-hook/sql/
+    deserialize/html_render/fetch_url/client_storage/fs-read) vocabularies
+    happen not to overlap, but nothing enforces that split staying true as
+    either registry grows (T-0158/T-0304 already moved capability strings
+    between the two more than once), so a future/config-drift kind landing
+    in both tables would silently double-report the SAME site under one
+    rule id. Filters `extended` down to findings whose `(node, capability)`
+    is NOT already present in `core` -- `core` is kept whole (it is the
+    ONLY one of the two that can legitimately report multiple real sites
+    for the same node+kind, one per observed file:line, and those must all
+    survive), `extended` (one entry per node+kind by construction, module
+    docstring's `_extended_kind_violations`) is the one filtered since it
+    carries strictly less evidence than a matching core finding for the
+    same `(node, capability)`."""
+    core_keys = {(v.node, v.capability) for v in core}
+    return [v for v in extended if (v.node, v.capability) not in core_keys]
+
+
 def _collect_sys_violations(
     model: KernelModel, capability_binding: CodeBinding, root: Path
 ) -> list[SelfConformViolation]:
     """Every SYS100/SYS100-extended/SYS101/SYS102 finding, in that order,
-    for `check_self_conformance`."""
-    violations = _core_undeclared_violations(model, capability_binding, root)
-    violations.extend(_extended_kind_violations(model, capability_binding, root))
+    for `check_self_conformance`. T-0266: the extended SYS100 pass is
+    deduped against the core pass (`_dedupe_sys100_extended_against_core`)
+    before being appended, so a `(node, capability)` observed by BOTH
+    passes surfaces as ONE finding, not two."""
+    core_violations = _core_undeclared_violations(model, capability_binding, root)
+    extended_violations = _extended_kind_violations(model, capability_binding, root)
+    violations = list(core_violations)
+    violations.extend(
+        _dedupe_sys100_extended_against_core(core_violations, extended_violations)
+    )
     violations.extend(_stale_design_violations(model, capability_binding, root))
     violations.extend(_unmodeled_violations(root, capability_binding))
     return violations
@@ -672,7 +715,7 @@ def _stale_waiver_violations(applied) -> list[SelfConformViolation]:  # noqa: AN
     `check_self_conformance`."""
     return [
         SelfConformViolation(
-            rule=STALE_WAIVER_RULE, node=stale.node, detail=stale_detail(stale)
+            rule=STALE_WAIVER_RULE, node=stale.node, detail=_stale_detail(stale)
         )
         for stale in applied.stale
     ]

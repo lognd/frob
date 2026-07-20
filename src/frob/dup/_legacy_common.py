@@ -6,6 +6,8 @@ Raw node traversal (`child_by_field`/`node_text`) now lives in `frob.lang`
 stays local.
 """
 
+# frob:waive REF002 reason="private helper imported only by its sibling aggregator frob.dup._legacy; a single inbound anchor is intentional for a legacy-scan leaf module, T-0450"  # noqa: E501
+
 from __future__ import annotations
 
 import hashlib

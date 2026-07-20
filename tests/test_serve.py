@@ -12,6 +12,8 @@ import subprocess
 from datetime import date
 from pathlib import Path
 
+import pytest
+
 from frob.app.config import AppConfig
 from frob.graph import build_graph
 from frob.graph._models import LockEntry, LockFile
@@ -65,6 +67,29 @@ _SAMPLE_PY = (
     "    # frob:doc docs/x.md#helper\n"
     "    return x\n"
 )
+
+
+class TestServeGetattr:
+    """T-0160 batch 8: `frob.serve.__getattr__`'s lazy re-export (T-0362) --
+    `frob.serve` must import cheaply and still resolve `McpUnavailable`/
+    `build_server`/`run_stdio` on demand, and raise normal `AttributeError`
+    for anything else."""
+
+    def test_getattr_resolves_lazy_server_names(self) -> None:
+        # frob:tests src/frob/serve/__init__.py::__getattr__ kind="unit"
+        import frob.serve as serve_pkg
+        from frob.serve import server as server_mod
+
+        assert serve_pkg.McpUnavailable is server_mod.McpUnavailable
+        assert serve_pkg.build_server is server_mod.build_server
+        assert serve_pkg.run_stdio is server_mod.run_stdio
+
+    def test_getattr_unknown_name_raises_attribute_error(self) -> None:
+        # frob:tests src/frob/serve/__init__.py::__getattr__ kind="unit"
+        import frob.serve as serve_pkg
+
+        with pytest.raises(AttributeError, match="not_a_real_export"):
+            serve_pkg.not_a_real_export
 
 
 class TestBuildServer:

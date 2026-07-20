@@ -23,6 +23,25 @@ class RunnerSpec(BaseModel):
 
 
 # frob:doc docs/modules/testing.md#data-models
+class NativeSpec(BaseModel):
+    """One `[[native]]` entry: a compiled extension module the test suite
+    `importorskip`-gates on, and how to build it. Declaring it lets
+    collection fingerprint the module's build state (so a rebuild
+    invalidates the cache) and lets a missing-native gate name the real
+    remedy instead of a stale collection (T-0333)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    # python import name (e.g. "strata_core"), NOT a file path -- resolution
+    # is via importlib.util.find_spec so it works identically whether the
+    # artifact was produced by maturin/pyo3 (rust) or setuptools/pybind11/
+    # scikit-build (c/c++): the fingerprint hashes the compiled OUTPUT.
+    name: str
+    build_cmd: str
+    language: str = ""
+
+
+# frob:doc docs/modules/testing.md#data-models
 class SelectConfig(BaseModel):
     """Selection knobs: the unbound-file fallback mode."""
 
@@ -73,15 +92,21 @@ class TestRunReport(BaseModel):
 
 # frob:doc docs/modules/testing.md#data-models
 class CollectedTests(BaseModel):
-    """The set of pytest node ids collected by `collect_python_tests`."""
+    """The set of pytest node ids collected by `collect_python_tests`, plus
+    any declared native extensions that are NOT currently built (T-0333):
+    an unbuilt native `importorskip`-skips its tests, so they never enter
+    `node_ids` -- `missing_natives` lets COV003 name the real remedy (build
+    the extension) instead of blaming the evidence id."""
 
     model_config = ConfigDict(frozen=True)
 
     node_ids: frozenset[str]
+    missing_natives: tuple[NativeSpec, ...] = ()
 
 
 __all__ = [
     "CollectedTests",
+    "NativeSpec",
     "RunnerOutcome",
     "RunnerSpec",
     "SelectConfig",

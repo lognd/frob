@@ -46,6 +46,8 @@ command handler.
 
 ## Worked example diff
 
+<!-- frob:waive DOC004 reason="hypothetical future export format (terraform-sg) used to illustrate the add-an-entry recipe above -- export_terraform_sg is deliberately not-yet-added, not a stale reference to removed code; T-0436" -->
+
 ```python
 # src/frob/strata/_export.py
 def export_terraform_sg(model: KernelModel) -> str:

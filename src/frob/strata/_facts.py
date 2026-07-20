@@ -50,6 +50,18 @@ _log = get_logger(__name__)
 #: Flow attr prefix for the demand-propagation multiplier (surface `fanout NUM`).
 _FANOUT_PREFIX = "fanout="
 
+#: Flow attrs that mark an edge as a non-transitive hop in `reachable`'s BFS:
+#: the edge's dst is still directly reachable, but the closure does not
+#: chain past it to extend the witness path any further. `krb_no_transit`
+#: is `_krb.py::krb_trust_flows`'s synthesis for a one-way domain trust
+#: with no `transitive` marker (T-0282); `utility` is the general-purpose
+#: surface marker (`flow ... { utility; }`, docs/strata/surface.md) for a
+#: utility/hub edge whose relaying is not itself a meaningful transitive
+#: link -- this is how a real `noflow` claim survives an unrelated hub
+#: edge (e.g. a logging import) without weakening the closure for any
+#: edge that is NOT explicitly marked (T-0226).
+_NON_TRANSITIVE_ATTRS = frozenset({"krb_no_transit", "utility"})
+
 
 def _flow_fanout(flow: Flow) -> float:
     """A flow's demand-propagation multiplier: its `fanout=<float>` attr, or 1.0."""
@@ -118,13 +130,21 @@ class FactBase:
         semantics of docs/strata/kernel.md); with True the closure ignores
         boundaries, which is what positive `reach` claims want.
 
-        A flow carrying the `krb_no_transit` attr (synthesized by
-        `_krb.py::krb_trust_flows` for a `trusts ... ` clause with no
-        `transitive` marker, docs/strata/krb.md#domain-trust-lattice) is a
-        TERMINAL edge in the kernel's BFS (`strata-core/src/lib.rs::
-        reachable`): its `dst` is reachable directly but the closure does
-        not chain past it -- fixes T-0282's disclosed gap where a chain of
-        non-transitive trusts wrongly reached as far as a transitive one.
+        A flow carrying any of `_NON_TRANSITIVE_ATTRS` -- `krb_no_transit`
+        (synthesized by `_krb.py::krb_trust_flows` for a `trusts ... `
+        clause with no `transitive` marker, docs/strata/krb.md#domain-
+        trust-lattice) or `utility` (the general-purpose surface marker
+        `flow ... { utility; }`, T-0226) -- is a TERMINAL edge in the
+        kernel's BFS (`strata-core/src/lib.rs::reachable`): its `dst` is
+        reachable directly but the closure does not chain past it. This
+        fixes T-0282's disclosed gap where a chain of non-transitive
+        trusts wrongly reached as far as a transitive one, and T-0226's
+        gap where an unrelated utility/hub edge (e.g. a logging import)
+        falsely defeated a legitimate `noflow` claim by letting flow
+        transit through it. Every edge NOT explicitly marked stays fully
+        transitive -- a real transitive flow is still caught, deny-by-
+        default (charter law 2); this is an opt-in exclusion, never a
+        default weakening.
         """
         # frob:doc docs/strata/kernel.md#fact-base
         # A `FactBase` only ever exists via `build_facts`, which already
@@ -137,7 +157,7 @@ class FactBase:
                 f.src,
                 f.dst,
                 bool(self.boundaries_on.get(f.id)),
-                "krb_no_transit" not in f.attrs,
+                not (_NON_TRANSITIVE_ATTRS & set(f.attrs)),
             )
             for f in self.flows.values()
         ]
@@ -169,6 +189,7 @@ class FactBase:
         _log.debug("worst_age(%s) = %s via %s", target, age, path)
         return age, tuple(path)
 
+    # frob:doc docs/strata/kernel.md#fact-base
     def demand(self, node_id: str) -> float:
         """Total propagated inbound demand at a node in base units (per second).
 
@@ -176,7 +197,6 @@ class FactBase:
         RATE/UTILIZATION bound claims (`_claims.py`) only need the number,
         and an `inf` value already refutes any finite limit on its own.
         """
-        # frob:doc docs/strata/kernel.md#fact-base
         return self.propagated_demand(node_id)[0]
 
     def propagated_demand(self, node_id: str) -> tuple[float, tuple[str, ...]]:

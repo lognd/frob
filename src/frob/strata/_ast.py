@@ -40,9 +40,9 @@ class ObserveDecl(BaseModel):
 
 
 # frob:doc docs/strata/surface.md#stddeploy
-class CanaryStageDecl(BaseModel):
+class _CanaryStageDecl(BaseModel):
     """A parsed `LEVEL for QUANTITY` canary stage (T-0136), one entry in
-    `DeployDecl.stages`.
+    `_DeployDecl.stages`.
 
     Mirrors `_models.py::CanaryStage` field for field, minus
     `max_error_rate` -- the surface grammar has no syntax for the abort
@@ -57,7 +57,7 @@ class CanaryStageDecl(BaseModel):
 
 
 # frob:doc docs/strata/surface.md#stddeploy
-class DeployDecl(BaseModel):
+class _DeployDecl(BaseModel):
     """A parsed `on deploy { canary { ... }; endorsed_by ...; rollback within t }`
     node property (T-0136), mirroring `_models.py::DeployContract` field for field.
 
@@ -71,7 +71,7 @@ class DeployDecl(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    stages: tuple[CanaryStageDecl, ...] = ()
+    stages: tuple[_CanaryStageDecl, ...] = ()
     endorsed_by: tuple[str, ...] = ()
     rollback_budget: Quantity
 
@@ -144,7 +144,7 @@ class NodeDecl(BaseModel):
     # `may "CAPABILITY"` atoms, T-0132; elaborated straight to Node.may
     may: tuple[str, ...] = ()
     # `on deploy { ... }`, T-0136; elaborated straight to Node.deploy
-    deploy: DeployDecl | None = None
+    deploy: _DeployDecl | None = None
     # `carries "PII_TAG"+`, T-0154; elaborated to `pii=<tag>` attrs
     carries: tuple[str, ...] = ()
     # `managed` bare marker, T-0172; elaborated to a `"managed"` attr
@@ -167,6 +167,13 @@ class NodeDecl(BaseModel):
     # `listens PORT`+, T-0255; elaborated to `listens=<port>` attrs, one
     # per port.
     listens: tuple[int, ...] = ()
+    # `group "NAME"`+, T-0272 (std.host); elaborated to `group=<name>`
+    # attrs, one per entry (same per-atom desugar `owns` uses -- owns-
+    # adjacent, `_host.py::_host_attrs`).
+    group: tuple[str, ...] = ()
+    # `sudoers "RULE"`+, T-0272 (std.host); elaborated to `sudoers=<rule>`
+    # attrs, one per entry.
+    sudoers: tuple[str, ...] = ()
     # `realm "NAME"`, T-0262 (std.krb); elaborated to a `krb_realm=<name>`
     # attr. Not store-scoped in this pass -- see `_krb.py` module docstring
     # for the deferred store-symmetry cut.
@@ -430,6 +437,19 @@ class StoreDecl(BaseModel):
     is_unit: bool = False
     owns: tuple[OwnsDecl, ...] = ()
     listens: tuple[int, ...] = ()
+    # `group "NAME"`+ / `sudoers "RULE"`+, T-0272 (std.host); same shape
+    # and same attr-desugar convention as `node`'s.
+    group: tuple[str, ...] = ()
+    sudoers: tuple[str, ...] = ()
+    # `errors_total`/`panics_contained_by`/`observe`/`on deploy { ... }`,
+    # T-0247; the observability/deploy-contract subset of `node_prop`
+    # (T-0070/T-0136) a store needed -- SAME shapes as `NodeDecl`'s
+    # (a store is a node too, docs/strata/surface.md
+    # #key-construct-semantics).
+    errors_total: bool = False
+    panics_contained_by: str | None = None
+    observe: ObserveDecl | None = None
+    deploy: _DeployDecl | None = None
 
 
 # frob:doc docs/strata/surface.md#stdinfra
@@ -623,7 +643,7 @@ class PolicyDecl(BaseModel):
 
 
 # frob:doc docs/strata/surface.md#std-secrets
-class SecretDecl(BaseModel):
+class _SecretDecl(BaseModel):
     """A parsed `secret ID { issued_by ...; audience { ... }; lifetime ...;
     revoke ... }` statement (T-0136), one entry in a `Module`.
 
@@ -665,4 +685,4 @@ class Module(BaseModel):
     policies: tuple[PolicyDecl, ...] = ()
     operations: tuple[OperationDecl, ...] = ()
     scenarios: tuple[ScenarioDecl, ...] = ()
-    secrets: tuple[SecretDecl, ...] = ()
+    secrets: tuple[_SecretDecl, ...] = ()

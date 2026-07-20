@@ -30,6 +30,9 @@ class ReserveError(ErrorSet):
 
 
 class TestEvaluateSagaContractsNoSaga:
+    # frob:waive DUP001 reason="parallel test methods within test_atomic.py \
+    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
     def test_empty_diagnostics_when_no_coordinator_declared(self):
         # frob:tests src/frob/strata/_atomic.py::evaluate_saga_contracts kind="unit"
         text = """
@@ -71,6 +74,9 @@ class TestEvaluateSagaContractsJoin:
         assert "Coord" in diagnostic
         assert "idempotent" in diagnostic
 
+    # frob:waive DUP001 reason="parallel test methods within test_atomic.py \
+    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
     def test_flow_into_idempotent_coordinator_produces_no_diagnostic(self):
         # frob:tests src/frob/strata/_atomic.py::evaluate_saga_contracts kind="unit"
         text = """

@@ -19,7 +19,7 @@ _MODEL_PATH = _REPO_ROOT / "design" / "frob.strata"
 
 
 class TestCliSysExport:
-    """frob:tests test_cli_sys_export.py::TestCliSysExport"""
+    """End-to-end tests for the `frob sys export` CLI command."""
 
     def test_k8s_export_is_valid_yaml(self) -> None:
         """`frob sys export --format k8s` prints parseable multi-doc YAML

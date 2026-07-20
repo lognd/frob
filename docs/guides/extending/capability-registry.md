@@ -2,7 +2,7 @@
 
 <a id="capability-registry"></a>
 
-<!-- frob:describes src/frob/vet/_capability_registry.py::DangerousOperation -->
+<!-- frob:describes src/frob/vet/_capability_registry.py::_DangerousOperation -->
 
 ## What / where
 

@@ -18,6 +18,13 @@ from frob.perf._models import HeatEntry, HeatReport, PerfError, ProfileArtifact
 from frob.perf._profile import load_artifact, profile_command
 from frob.perf._rules import perf_rules
 
+# `frob.perf._harness.main` (T-0362) is deliberately NOT re-exported here: it
+# is a standalone subprocess entrypoint invoked as `python _harness.py
+# <pstats-out> ...` via `runpy` (see `_profile.py`'s `_harness_argv`), never
+# imported by any package -- re-exporting a `main()` from a package
+# `__init__.py` that nothing ever imports would be dead surface, not a real
+# fix.
+
 __all__ = [
     "HeatEntry",
     "HeatReport",

@@ -168,11 +168,11 @@ already-parsed tree.
 
 ## Primitives
 
-<!-- frob:describes src/frob/lang/_common.py::collapse_ws -->
-<!-- frob:describes src/frob/lang/_common.py::leaf_tokens -->
-<!-- frob:describes src/frob/lang/_common.py::strip_comment_delims -->
-<!-- frob:describes src/frob/lang/_common.py::leading_doc_comment -->
-<!-- frob:describes src/frob/lang/_common.py::span_of -->
+<!-- frob:describes src/frob/lang/_common.py::_collapse_ws -->
+<!-- frob:describes src/frob/lang/_common.py::_leaf_tokens -->
+<!-- frob:describes src/frob/lang/_common.py::_strip_comment_delims -->
+<!-- frob:describes src/frob/lang/_common.py::_leading_doc_comment -->
+<!-- frob:describes src/frob/lang/_common.py::_span_of -->
 <!-- frob:describes src/frob/lang/_common.py::child_text -->
 <!-- frob:describes src/frob/lang/_common.py::export_tree -->
 <!-- frob:describes src/frob/lang/_common.py::flatten_tree -->
@@ -228,6 +228,36 @@ every natives-less install.
 message string `walk_strata` returns for this case; `frob.lang.parse_file`
 matches on it to translate to `LangError.NativeParserUnavailable` rather than
 the generic `ParseFailed` a real strata syntax rejection gets.
+
+## Parse cache
+
+<!-- frob:describes src/frob/lang/__init__.py::reset_parse_cache -->
+<!-- frob:describes src/frob/lang/__init__.py::parse_cache_stats -->
+
+T-0414: `_parse` (the sole read+tree-sitter-parse chokepoint every public
+entry point in this module funnels through -- `parse_file`,
+`extract_imports`, `iter_identifiers`, `raw_tree`, `symbol_tree`) memoizes
+its result in a process-lifetime, thread-safe dict keyed on
+`(path, sha256(content))`. Before this cache, one `frob check` invocation
+independently re-read and re-parsed each source file once per stage that
+touched it (arch, vet, dup's R4 rung), 2-6x redundant tree-sitter parses
+per file for a 213-file tree (docs/audits/perf.md H1/H4/H5).
+
+Keying is content-hash-based, never mtime/size alone: a changed file
+always misses and reparses; an unchanged file's tree is shared across
+every stage/thread that asks for it in the same process, no matter how far
+apart in the call graph. `frob.check._run_check_with_skips` calls
+`reset_parse_cache()` once at the top of every `frob check` invocation so
+`parse_cache_stats()`'s hit/miss counters reflect a single run --
+correctness never depends on this reset (a stale entry can never be
+returned for changed content either way), it only bounds memory and keeps
+the anti-regression instrument (a test asserting each distinct file is
+parsed, i.e. missed, at most once per invocation) meaningful.
+
+```python
+def reset_parse_cache() -> None
+def parse_cache_stats() -> tuple[int, int]   # (hits, misses)
+```
 
 ## Dependencies
 

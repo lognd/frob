@@ -347,7 +347,7 @@ def build_containment_report(
     fetch: bool = True,
     base_url: str | None = None,
 ) -> ContainmentReport:
-    """Join `advisories` (an osv-scanner pass, `_osv.py::run_osv_scan`)
+    """Join `advisories` (an osv-scanner pass, `_osv.py::_run_osv_scan`)
     against `model`'s CWE obligations via NVD CVE->CWE data
     (docs/strata/threat.md "CVE: threat intelligence joined to the proof").
     `catalog` defaults to `frob.strata.CWE_CATALOG` (resolved lazily, see

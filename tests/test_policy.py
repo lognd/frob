@@ -91,6 +91,9 @@ class TestRules:
         violations = policy_gate(rules, snap, diff)
         assert any(v.rule == "POL-no-requests-call" for v in violations)
 
+    # frob:waive DUP001 reason="parallel test methods within test_policy.py \
+    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
     def test_pattern_bad_query_is_err(self, tmp_path: Path) -> None:
         _write(
             tmp_path,
@@ -104,6 +107,9 @@ class TestRules:
         assert result.is_err
         assert result.danger_err == PolicyError.BadQuery
 
+    # frob:waive DUP001 reason="parallel test methods within test_policy.py \
+    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
     def test_pattern_missing_query_file_is_err(self, tmp_path: Path) -> None:
         _write(
             tmp_path,

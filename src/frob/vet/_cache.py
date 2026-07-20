@@ -47,8 +47,8 @@ def _connect(db_path: Path) -> sqlite3.Connection | None:
 
 
 # frob:doc docs/modules/vet.md#public-api
-# frob:waive TEST005 reason="store_verdict 61.5% branch cover, debt T-0160"
-def store_verdict(db_path: Path, verdict: PackageVerdict) -> None:
+# frob:waive TEST005 reason="_store_verdict 61.5% branch cover, debt T-0160"
+def _store_verdict(db_path: Path, verdict: PackageVerdict) -> None:
     """Persist `verdict`, content-addressed by (ecosystem, name, artifact_hash).
     Best-effort: a write failure is logged, never raised (the scan already
     has its answer in memory)."""
@@ -92,8 +92,8 @@ def _insert_verdict(conn: sqlite3.Connection, verdict: PackageVerdict) -> None:
 
 
 # frob:doc docs/modules/vet.md#public-api
-# frob:waive TEST005 reason="latest_verdict 68.8% branch cover, debt T-0160"
-def latest_verdict(db_path: Path, ecosystem: str, name: str) -> PackageVerdict | None:
+# frob:waive TEST005 reason="_latest_verdict 68.8% branch cover, debt T-0160"
+def _latest_verdict(db_path: Path, ecosystem: str, name: str) -> PackageVerdict | None:
     """The most recently stored verdict for (ecosystem, name), any hash --
     used as the "previous version" baseline for VET003 escalation diffs."""
     if not db_path.exists():
@@ -126,4 +126,4 @@ def latest_verdict(db_path: Path, ecosystem: str, name: str) -> PackageVerdict |
     )
 
 
-__all__ = ["latest_verdict", "store_verdict"]
+__all__ = ["_latest_verdict", "_store_verdict"]

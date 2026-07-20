@@ -99,7 +99,7 @@ MULTI_INSTANCE_WAIVER_FAMILIES: frozenset[str] = frozenset(
 
 
 # frob:doc docs/strata/waive.md#sub-targets
-def split_waiver_rule(rule: str) -> tuple[str, str | None]:
+def _split_waiver_rule(rule: str) -> tuple[str, str | None]:
     """Split a declared `waive` rule string into `(family, sub_target)` on
     the first `:` -- `"SYS100:fs-write"` -> `("SYS100", "fs-write")`,
     `"LINT004"` -> `("LINT004", None)`. A colon with nothing (or only
@@ -112,7 +112,7 @@ def split_waiver_rule(rule: str) -> tuple[str, str | None]:
 
 
 # frob:doc docs/strata/waive.md#sub-targets
-def validate_waiver_fields(rule: str, reason: str) -> Result[None, StrataError]:
+def _validate_waiver_fields(rule: str, reason: str) -> Result[None, StrataError]:
     """Reject a `waive` clause's `(rule, reason)` pair at elaborate time,
     fails closed: `reason` empty/whitespace-only (a blank reason is a
     functional bypass -- suppresses the finding with nothing written down
@@ -123,7 +123,7 @@ def validate_waiver_fields(rule: str, reason: str) -> Result[None, StrataError]:
     validation call sites -- both shapes carry the same two fields."""
     if not reason.strip():
         return Err(StrataError.MalformedWaiver)
-    family, sub_target = split_waiver_rule(rule)
+    family, sub_target = _split_waiver_rule(rule)
     if family in MULTI_INSTANCE_WAIVER_FAMILIES and sub_target is None:
         return Err(StrataError.MalformedWaiver)
     return Ok(None)
@@ -188,8 +188,12 @@ class WaiverApplication(BaseModel, Generic[_F]):
 
 
 # frob:doc docs/strata/waive.md#drift-lock-stale-waivers-fail
-# frob:tests src/frob/strata/_waive.py::stale_detail kind="unit"
-def stale_detail(stale: WaiverMatch) -> str:
+# frob:tests src/frob/strata/_waive.py::_stale_detail kind="unit"
+# frob:waive DUP001 reason="dup grouped this with deploy/_generate.py's \
+# shell-heredoc builders and dup/_rules.py's _dup001_message purely on \
+# generic f-string-message shape; unrelated domains (waiver drift text \
+# vs systemd unit scripts vs gate messages), false positive"
+def _stale_detail(stale: WaiverMatch) -> str:
     """The human detail string every caller uses for a STALE waiver's
     generated finding -- one home for the message so `_audit.py`/
     `_selfconform.py` never phrase it two different ways (charter: no
@@ -253,7 +257,7 @@ def apply_waivers(
     declared = [
         (node_id, w)
         for node_id, w in _declared_waivers(model)
-        if in_scope(split_waiver_rule(w.rule)[0])
+        if in_scope(_split_waiver_rule(w.rule)[0])
     ]
     by_key = _index_declared_waivers(declared)
     kept, waived, matched_keys = _split_kept_and_waived(
@@ -271,7 +275,7 @@ def _index_declared_waivers(
     T-0174 perf: rather than rescanning it per finding -- `findings` and
     `declared` are each O(n), a per-finding linear scan would make matching
     O(n*m)."""
-    return {(node_id, *split_waiver_rule(w.rule)): w for node_id, w in declared}
+    return {(node_id, *_split_waiver_rule(w.rule)): w for node_id, w in declared}
 
 
 def _split_kept_and_waived(
@@ -333,7 +337,7 @@ def _stale_waivers(
     """Every declared waiver whose key never matched a finding."""
     stale: list[WaiverMatch] = []
     for node_id, waiver in declared:
-        family, sub_target = split_waiver_rule(waiver.rule)
+        family, sub_target = _split_waiver_rule(waiver.rule)
         key = (node_id, family, sub_target)
         if key in matched_keys:
             continue
@@ -363,7 +367,7 @@ __all__ = [
     "WaiverApplication",
     "WaiverMatch",
     "apply_waivers",
-    "split_waiver_rule",
-    "stale_detail",
-    "validate_waiver_fields",
+    "_split_waiver_rule",
+    "_stale_detail",
+    "_validate_waiver_fields",
 ]

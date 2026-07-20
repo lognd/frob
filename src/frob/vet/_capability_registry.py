@@ -6,11 +6,11 @@ exist" -- `frob.vet._capability`, `frob.strata._threat`'s `CWE_CATALOG`/
 `CWE_TOP_25_CATALOG`/`DEFAULT_BENIGN_CAPABILITIES`, `frob.strata._effects`'s
 `_KIND_MAP`, the surface grammar's `may` atoms -- imports `CAPABILITY_KINDS`
 from HERE so the vocabulary cannot fork (extends the T-0150 drift-lock:
-`validate_registry_kinds` fails loudly if any consumer uses a kind absent
+`_validate_registry_kinds` fails loudly if any consumer uses a kind absent
 from this tuple).
 
 Addendum 1 (2026-07-18) promotes every `_PATTERNS` needle into a
-`DangerousOperation`: {language, library, function_or_pattern,
+`_DangerousOperation`: {language, library, function_or_pattern,
 capability_kind, cwe_links, rationale, safer_alternative, severity} --
 audit findings then name the registry entry instead of a bare kind label.
 
@@ -19,7 +19,7 @@ stdlib module that can touch process/fs/net/env/dynamic-code is curated
 here (see `NO_CAPABILITY_MODULES` for the pure side of that curation), and
 `CAPABILITY_MATRIX_EXCUSES` replaces the old blanket C/C++ "honestly-
 empty" exemption with a per-(kind, language) decision: every cell is
-EITHER patterned (>=1 `DangerousOperation`) OR excused with a specific
+EITHER patterned (>=1 `_DangerousOperation`) OR excused with a specific
 written reason (`OutOfScopeEntry`-style discipline, docs/modules/vet.md
 "Coverage matrix").
 
@@ -30,7 +30,7 @@ anthropic/argon2-cffi/aiosmtpd/playwright/Pillow), npm (react/react-dom/
 vite/vitest/playwright/openapi-typescript/eslint tooling), and cargo
 (pyo3/serde/serde_json/tracing/libloading/wasm-bindgen/crossbeam/
 thiserror) -- against each library's real API surface: each library ends
-as either new `DangerousOperation` entries below or is a pure library with
+as either new `_DangerousOperation` entries below or is a pure library with
 no dangerous surface (documented in docs/modules/vet.md "Third-party
 library survey (T-0181)", not silently dropped).
 """
@@ -47,15 +47,15 @@ _log = get_logger(__name__)
 #: every language the matrix reasons about. C and C++ share one bucket
 #: (`c-cpp`) since the dangerous idioms -- `system`/`popen`/`exec*`/
 #: `dlopen`/`strcpy`-family -- are identical C ABI surface in both.
-LANGUAGES: tuple[str, ...] = ("python", "typescript", "rust", "c-cpp")
+LANGUAGES: tuple[str, ...] = ("python", "typescript", "rust", "c-cpp", "kotlin")
 
 # frob:doc docs/modules/vet.md#public-api
 #: SINGLE-SOURCE enumeration of every reserved capability kind (T-0158).
 #: Union of: every `capability_kind` `frob.strata._threat.CWE_CATALOG`/
 #: `CWE_TOP_25_CATALOG` names, every kind `DEFAULT_BENIGN_CAPABILITIES`
-#: excuses, and every kind this registry's `DangerousOperation` table
+#: excuses, and every kind this registry's `_DangerousOperation` table
 #: patterns. Any kind used anywhere else that is NOT in this tuple is a
-#: drift bug -- `validate_registry_kinds` (below) is the loud failure.
+#: drift bug -- `_validate_registry_kinds` (below) is the loud failure.
 CAPABILITY_KINDS: tuple[str, ...] = (
     "exec",
     "eval",
@@ -88,12 +88,25 @@ CAPABILITY_KINDS: tuple[str, ...] = (
     "fetch_url",
     "deserialize",
     "client_storage",
+    #: T-0244: a large HTML/JS-shaped STRING LITERAL embedded in another
+    #: language's source (the malmberg pilot P3 shape -- a 5400-line
+    #: dashboard's markup/script sitting inside a Python string) is
+    #: structurally invisible to every per-language needle table above,
+    #: which only ever scans a file's OWN source grammar. `frob.vet.
+    #: _capability._embedded_code_regions` detects such a region (size +
+    #: HTML/JS signal heuristic) and always emits this kind for the region
+    #: it found, independent of whether the embedded needle re-scan below
+    #: (typescript table over the region's own text) turns up anything
+    #: specific -- fail-closed per docs/design/structural-linter-
+    #: adversarial-hardening.md rule 3: the region is DECLARED, never
+    #: silently passed, even when the best-effort re-scan is empty.
+    "embedded_code",
 )
 
 
 # frob:doc docs/modules/vet.md#public-api
 # frob:doc docs/guides/extending/capability-registry.md#capability-registry
-class DangerousOperation(BaseModel):
+class _DangerousOperation(BaseModel):
     """One structured dangerous-operation entry (T-0158 addendum 1):
     a single builtin/stdlib/library function or literal pattern that
     grants `capability_kind`, with enough metadata (`cwe_links`,
@@ -119,9 +132,9 @@ class DangerousOperation(BaseModel):
 
 
 # frob:doc docs/modules/vet.md#public-api
-class MatrixExcuse(BaseModel):
+class _MatrixExcuse(BaseModel):
     """A written, specific reason a (kind, language) cell has NO
-    `DangerousOperation` entries -- T-0158 retires the old blanket C/C++
+    `_DangerousOperation` entries -- T-0158 retires the old blanket C/C++
     exemption; every excused cell names its own missing idiom, never a
     boilerplate 'not applicable'."""
 
@@ -142,9 +155,9 @@ def _op(
     severity: str,
     needles: tuple[str, ...],
     cwe_links: tuple[str, ...] = (),
-) -> DangerousOperation:
+) -> _DangerousOperation:
     """Terse constructor so the table below reads as data, not boilerplate."""
-    return DangerousOperation(
+    return _DangerousOperation(
         language=language,
         library=library,
         function_or_pattern=function_or_pattern,
@@ -159,7 +172,7 @@ def _op(
 
 # frob:doc docs/modules/vet.md#public-api
 # frob:ticket T-0158
-DANGEROUS_OPERATIONS: tuple[DangerousOperation, ...] = (
+DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...] = (
     # -- python: process/exec ------------------------------------------------
     _op(
         "python",
@@ -1007,6 +1020,79 @@ DANGEROUS_OPERATIONS: tuple[DangerousOperation, ...] = (
         ("std::env::var(", "std::env::vars("),
         (),
     ),
+    # -- kotlin: net (T-0170, Android node capability-scan column) -------------
+    _op(
+        "kotlin",
+        "okhttp3",
+        "OkHttpClient/Retrofit",
+        "net",
+        "the dominant Android HTTP client (and Retrofit, built on top of it) "
+        "issuing outbound requests",
+        "pin a timeout; validate SSRF-sensitive URLs; enable certificate pinning",
+        "medium",
+        ("OkHttpClient(", "okhttp3.", "Retrofit.Builder("),
+        (),
+    ),
+    _op(
+        "kotlin",
+        "java.net",
+        "HttpURLConnection",
+        "net",
+        "the JDK's built-in HTTP client, opening an outbound connection",
+        "prefer a higher-level client with TLS verification (OkHttp)",
+        "medium",
+        ("HttpURLConnection",),
+        (),
+    ),
+    # -- kotlin: exec ------------------------------------------------------
+    _op(
+        "kotlin",
+        "java.lang",
+        "Runtime.getRuntime().exec",
+        "exec",
+        "spawns an external process with the current process's privileges",
+        "validate the program/args come from a trusted, fixed set",
+        "high",
+        ("Runtime.getRuntime().exec(",),
+        ("CWE-78",),
+    ),
+    _op(
+        "kotlin",
+        "java.lang",
+        "ProcessBuilder",
+        "exec",
+        "spawns an external process with the current process's privileges",
+        "validate the program/args come from a trusted, fixed set",
+        "high",
+        ("ProcessBuilder(",),
+        ("CWE-78",),
+    ),
+    # -- kotlin: client_storage ----------------------------------------------
+    _op(
+        "kotlin",
+        "android.content",
+        "SharedPreferences/getSharedPreferences",
+        "client_storage",
+        "reads/writes the Android app's on-device key-value store, a "
+        "common landing spot for tokens/PII if left unencrypted",
+        "prefer EncryptedSharedPreferences (Jetpack Security) for sensitive values",
+        "low",
+        ("SharedPreferences", "getSharedPreferences("),
+        (),
+    ),
+    _op(
+        "kotlin",
+        "androidx.room",
+        "RoomDatabase/@Database",
+        "client_storage",
+        "the dominant on-device SQLite ORM for Android; stored rows can "
+        "carry sensitive data if unencrypted",
+        "use SQLCipher-backed Room (net.zetetic:android-database-sqlcipher) "
+        "for sensitive data",
+        "low",
+        ("RoomDatabase", "@Database("),
+        (),
+    ),
     # -- c/c++: exec -----------------------------------------------------------
     _op(
         "c-cpp",
@@ -1342,19 +1428,19 @@ DANGEROUS_OPERATIONS: tuple[DangerousOperation, ...] = (
 
 # frob:doc docs/modules/vet.md#public-api
 # frob:ticket T-0158
-#: every (kind, language) cell with NO `DangerousOperation` entry above
+#: every (kind, language) cell with NO `_DangerousOperation` entry above
 #: gets a SPECIFIC excuse naming the missing idiom -- the blanket C/C++
 #: "honestly-empty" exemption is retired (T-0158). An unexcused empty cell
 #: is a `capability_matrix()` gate failure.
-CAPABILITY_MATRIX_EXCUSES: tuple[MatrixExcuse, ...] = (
-    MatrixExcuse(
+CAPABILITY_MATRIX_EXCUSES: tuple[_MatrixExcuse, ...] = (
+    _MatrixExcuse(
         capability_kind="eval",
         language="c-cpp",
         reason="no idiomatic C/C++ 'evaluate a string as code' primitive in "
         "the standard library; dlopen (ffi) is the closest native-code-"
         "loading analog and is already patterned separately",
     ),
-    MatrixExcuse(
+    _MatrixExcuse(
         capability_kind="env",
         language="c-cpp",
         reason="getenv()/setenv() reads are pervasive, unprefixed C identifiers "
@@ -1362,27 +1448,27 @@ CAPABILITY_MATRIX_EXCUSES: tuple[MatrixExcuse, ...] = (
         "substring scanner) -- tracked as a real gap, not silently dropped; "
         "see docs/modules/vet.md 'Honest limits'",
     ),
-    MatrixExcuse(
+    _MatrixExcuse(
         capability_kind="install-hook",
         language="c-cpp",
         reason="no C/C++ packaging-install-hook idiom analogous to setuptools "
         "cmdclass; native builds hook via Makefile/CMake, outside this "
         "scanner's per-source-file text model",
     ),
-    MatrixExcuse(
+    _MatrixExcuse(
         capability_kind="html_render",
         language="c-cpp",
         reason="no C/C++ standard-library DOM/HTML-rendering concept; "
         "browser-only capability",
     ),
-    MatrixExcuse(
+    _MatrixExcuse(
         capability_kind="sql",
         language="c-cpp",
         reason="no single dominant C/C++ DB-API string-interpolation idiom "
         "(libpq/sqlite3 C APIs use bound parameters as the common path); "
         "tracked as a gap for the next C SQL-client survey, not claimed covered",
     ),
-    MatrixExcuse(
+    _MatrixExcuse(
         capability_kind="fetch_url",
         language="c-cpp",
         reason="no single dominant C/C++ URL-fetch idiom in the standard "
@@ -1390,7 +1476,7 @@ CAPABILITY_MATRIX_EXCUSES: tuple[MatrixExcuse, ...] = (
         "vetted-library path for libcurl-linked dependencies, not a hand "
         "pattern here",
     ),
-    MatrixExcuse(
+    _MatrixExcuse(
         capability_kind="deserialize",
         language="c-cpp",
         reason="no C/C++ standard-library object-deserialization primitive "
@@ -1398,13 +1484,13 @@ CAPABILITY_MATRIX_EXCUSES: tuple[MatrixExcuse, ...] = (
         "buffer-parsing bug, already covered by the strcpy/sprintf/gets "
         "fs-write-bucketed entries",
     ),
-    MatrixExcuse(
+    _MatrixExcuse(
         capability_kind="client_storage",
         language="c-cpp",
         reason="no C/C++ standard-library browser-storage concept; browser-"
         "only capability",
     ),
-    MatrixExcuse(
+    _MatrixExcuse(
         capability_kind="install-hook",
         language="typescript",
         reason="no idiomatic npm packaging-install-hook literal analogous to "
@@ -1412,7 +1498,7 @@ CAPABILITY_MATRIX_EXCUSES: tuple[MatrixExcuse, ...] = (
         "are declared in package.json data, not source text this scanner "
         "reads -- tracked as a real gap, not silently dropped",
     ),
-    MatrixExcuse(
+    _MatrixExcuse(
         capability_kind="sql",
         language="typescript",
         reason="no single dominant raw-SQL-string-interpolation idiom "
@@ -1420,7 +1506,7 @@ CAPABILITY_MATRIX_EXCUSES: tuple[MatrixExcuse, ...] = (
         "query-builder usage is the common path and is not itself dangerous "
         "-- tracked as a gap for a per-client survey",
     ),
-    MatrixExcuse(
+    _MatrixExcuse(
         capability_kind="deserialize",
         language="typescript",
         reason="JSON.parse is the dominant deserialization primitive and is "
@@ -1428,14 +1514,14 @@ CAPABILITY_MATRIX_EXCUSES: tuple[MatrixExcuse, ...] = (
         "prototype-pollution-adjacent merge utilities are a distinct, "
         "narrower gap tracked separately, not this kind",
     ),
-    MatrixExcuse(
+    _MatrixExcuse(
         capability_kind="sql",
         language="rust",
         reason="idiomatic Rust DB clients (sqlx/diesel) are compile-time "
         "parameterized by design; no dominant raw-string-interpolation "
         "idiom exists to pattern",
     ),
-    MatrixExcuse(
+    _MatrixExcuse(
         capability_kind="deserialize",
         language="rust",
         reason="serde is the dominant (de)serialization crate and is type-"
@@ -1443,34 +1529,34 @@ CAPABILITY_MATRIX_EXCUSES: tuple[MatrixExcuse, ...] = (
         "a `mem::transmute`/unsafe-FFI concern, already patterned under eval/"
         "ffi",
     ),
-    MatrixExcuse(
+    _MatrixExcuse(
         capability_kind="html_render",
         language="rust",
         reason="no single dominant Rust templating-crate raw-HTML-injection "
         "idiom surveyed yet (askama/maud/tera each differ); tracked as a "
         "follow-up per-crate survey, not claimed covered",
     ),
-    MatrixExcuse(
+    _MatrixExcuse(
         capability_kind="client_storage",
         language="rust",
         reason="no Rust standard-library browser-storage concept; browser-"
         "only capability (wasm-bindgen web-sys bindings are a follow-up "
         "survey item, not covered here)",
     ),
-    MatrixExcuse(
+    _MatrixExcuse(
         capability_kind="install-hook",
         language="rust",
         reason="no Rust packaging-install-hook idiom analogous to setuptools "
         "cmdclass; cargo build.rs is itself already the exec-capability "
         "surface (patterned separately as build.rs -> Command::new)",
     ),
-    MatrixExcuse(
+    _MatrixExcuse(
         capability_kind="client_storage",
         language="python",
         reason="no Python standard-library browser-storage concept; browser-"
         "only capability",
     ),
-    MatrixExcuse(
+    _MatrixExcuse(
         capability_kind="fetch_url",
         language="rust",
         reason="reqwest::/hyper:: are already patterned under net (fetching a "
@@ -1478,7 +1564,7 @@ CAPABILITY_MATRIX_EXCUSES: tuple[MatrixExcuse, ...] = (
         "fetch_url-specific idiom distinct from the net entries exists in "
         "Rust's ecosystem to pattern independently",
     ),
-    MatrixExcuse(
+    _MatrixExcuse(
         capability_kind="fs",
         language="python",
         reason="`fs` is `_effects.py::_KIND_MAP`'s tier-2-normalized alias "
@@ -1487,31 +1573,155 @@ CAPABILITY_MATRIX_EXCUSES: tuple[MatrixExcuse, ...] = (
         "detection pattern lives under `fs-write`, this is the same "
         "cell under its normalized name, not a separate detection surface",
     ),
-    MatrixExcuse(
+    _MatrixExcuse(
         capability_kind="fs",
         language="typescript",
         reason="see the python/fs excuse above -- same tier-2 alias, no "
         "separate detection surface",
     ),
-    MatrixExcuse(
+    _MatrixExcuse(
         capability_kind="fs",
         language="rust",
         reason="see the python/fs excuse above -- same tier-2 alias, no "
         "separate detection surface",
     ),
-    MatrixExcuse(
+    _MatrixExcuse(
         capability_kind="fs",
         language="c-cpp",
         reason="see the python/fs excuse above -- same tier-2 alias, no "
         "separate detection surface",
     ),
+    # -- kotlin (T-0170): every cell NOT patterned above, excused honestly --
+    _MatrixExcuse(
+        capability_kind="eval",
+        language="kotlin",
+        reason="no idiomatic string-eval/dynamic-code-execution primitive in "
+        "common Android/Kotlin use; the closest analog (reflection-based "
+        "class loading) is a distinct, narrower ffi-adjacent gap tracked "
+        "separately, not surveyed as a dominant idiom here",
+    ),
+    _MatrixExcuse(
+        capability_kind="fs-write",
+        language="kotlin",
+        reason="Kotlin's filesystem access goes through the same java.io/"
+        "java.nio surface as any JVM language, with no single dominant "
+        "write idiom distinct enough to needle cheaply without a wider "
+        "per-API survey; tracked as a follow-up, not guessed at here",
+    ),
+    _MatrixExcuse(
+        capability_kind="fs",
+        language="kotlin",
+        reason="see the python/fs excuse above -- same tier-2 alias, no "
+        "separate detection surface (and fs-write itself is excused for "
+        "kotlin, see above)",
+    ),
+    _MatrixExcuse(
+        capability_kind="fs-read",
+        language="kotlin",
+        reason="same java.io/java.nio survey gap as fs-write above -- no "
+        "single dominant read idiom surveyed yet",
+    ),
+    _MatrixExcuse(
+        capability_kind="env",
+        language="kotlin",
+        reason="System.getenv() is the obvious JVM idiom but was not part of "
+        "T-0170's per-cell survey list (net/exec/client_storage only); "
+        "tracked as a follow-up rather than guessed at here",
+    ),
+    _MatrixExcuse(
+        capability_kind="ffi",
+        language="kotlin",
+        reason="JNI (System.loadLibrary/native methods) is the JVM ffi "
+        "idiom but was not part of T-0170's per-cell survey list; tracked "
+        "as a follow-up rather than guessed at here",
+    ),
+    _MatrixExcuse(
+        capability_kind="install-hook",
+        language="kotlin",
+        reason="no Kotlin/Android packaging-install-hook idiom analogous to "
+        "setuptools cmdclass; Gradle build-script tasks are the closest "
+        "analog and are already trusted-author build tooling, not a "
+        "runtime dependency capability",
+    ),
+    _MatrixExcuse(
+        capability_kind="html_render",
+        language="kotlin",
+        reason="Android has no dominant raw-HTML-injection idiom analogous "
+        "to a web templating engine; WebView.loadData/loadDataWithBaseURL "
+        "is the closest analog and is a distinct, narrower gap not yet "
+        "surveyed",
+    ),
+    _MatrixExcuse(
+        capability_kind="sql",
+        language="kotlin",
+        reason="Room (already patterned under client_storage) is the "
+        "dominant Android SQL surface and is compile-time/annotation "
+        "checked by design; raw SQLiteDatabase.rawQuery string "
+        "interpolation is a distinct, narrower gap not yet surveyed",
+    ),
+    _MatrixExcuse(
+        capability_kind="fetch_url",
+        language="kotlin",
+        reason="OkHttp/HttpURLConnection are already patterned under net "
+        "(fetching a URL IS the SSRF-relevant surface for those clients); "
+        "no separate fetch_url-specific idiom distinct from the net "
+        "entries exists to pattern independently",
+    ),
+    _MatrixExcuse(
+        capability_kind="deserialize",
+        language="kotlin",
+        reason="Gson/Moshi/kotlinx.serialization are the dominant "
+        "(de)serialization libraries and are type-directed, not "
+        "string-eval-based; a per-library survey is deferred as a "
+        "follow-up rather than guessed at here",
+    ),
+    # T-0244: `embedded_code` is emitted structurally (a tree-sitter STRING
+    # node's size + HTML/JS-signal heuristic in `frob.vet._capability`),
+    # never from a per-language `DANGEROUS_OPERATIONS` needle -- every
+    # language cell is excused the same way, symmetrically, rather than
+    # patterned per language.
+    _MatrixExcuse(
+        capability_kind="embedded_code",
+        language="python",
+        reason="detected structurally by _capability._embedded_code_regions "
+        "(STRING-node size + HTML/JS signal heuristic), not a per-language "
+        "needle pattern -- see T-0244",
+    ),
+    _MatrixExcuse(
+        capability_kind="embedded_code",
+        language="typescript",
+        reason="detected structurally by _capability._embedded_code_regions "
+        "(STRING-node size + HTML/JS signal heuristic), not a per-language "
+        "needle pattern -- see T-0244",
+    ),
+    _MatrixExcuse(
+        capability_kind="embedded_code",
+        language="rust",
+        reason="detected structurally by _capability._embedded_code_regions "
+        "(STRING-node size + HTML/JS signal heuristic), not a per-language "
+        "needle pattern -- see T-0244",
+    ),
+    _MatrixExcuse(
+        capability_kind="embedded_code",
+        language="c-cpp",
+        reason="detected structurally by _capability._embedded_code_regions "
+        "(STRING-node size + HTML/JS signal heuristic), not a per-language "
+        "needle pattern -- see T-0244",
+    ),
+    _MatrixExcuse(
+        capability_kind="embedded_code",
+        language="kotlin",
+        reason="detected structurally by _capability._embedded_code_regions "
+        "(STRING-node size + HTML/JS signal heuristic), not a per-language "
+        "needle pattern -- see T-0244",
+    ),
 )
 
 
 # frob:doc docs/modules/vet.md#public-api
-class MatrixCell(BaseModel):
+class _MatrixCell(BaseModel):
     """One (capability_kind, language) matrix cell's verdict: `patterned`
-    (has >=1 `DangerousOperation`), `excused` (has a `MatrixExcuse`), or
+    (has >=1 `_DangerousOperation`), `excused` (has a `_MatrixExcuse`), or
     neither -- the last case is a gate failure (T-0158)."""
 
     model_config = ConfigDict(frozen=True)
@@ -1526,7 +1736,7 @@ class MatrixCell(BaseModel):
 
 # frob:doc docs/modules/vet.md#public-api
 # frob:ticket T-0158
-def capability_matrix() -> tuple[MatrixCell, ...]:
+def capability_matrix() -> tuple[_MatrixCell, ...]:
     """The full (kind x language) matrix: every cell is `patterned`,
     `excused`, or -- if neither -- a gate failure the caller must surface.
     Deterministic order: kind-major, then `LANGUAGES` order."""
@@ -1538,14 +1748,14 @@ def capability_matrix() -> tuple[MatrixCell, ...]:
         key = (entry.capability_kind, entry.language)
         counts[key] = counts.get(key, 0) + 1
 
-    cells: list[MatrixCell] = []
+    cells: list[_MatrixCell] = []
     for kind in CAPABILITY_KINDS:
         for language in LANGUAGES:
             key = (kind, language)
             operation_count = counts.get(key, 0)
             excuse = excuse_by_key.get(key)
             cells.append(
-                MatrixCell(
+                _MatrixCell(
                     capability_kind=kind,
                     language=language,
                     patterned=operation_count > 0,
@@ -1559,7 +1769,7 @@ def capability_matrix() -> tuple[MatrixCell, ...]:
 
 # frob:doc docs/modules/vet.md#public-api
 # frob:ticket T-0158
-def unexcused_empty_cells() -> tuple[MatrixCell, ...]:
+def _unexcused_empty_cells() -> tuple[_MatrixCell, ...]:
     """Every matrix cell with zero patterns and zero excuse -- the T-0158
     gate failure condition. Empty tuple = the exhaustiveness claim holds."""
     return tuple(c for c in capability_matrix() if not c.patterned and not c.excused)
@@ -1567,7 +1777,7 @@ def unexcused_empty_cells() -> tuple[MatrixCell, ...]:
 
 # frob:doc docs/modules/vet.md#public-api
 # frob:ticket T-0158
-def validate_registry_kinds(external_kinds: frozenset[str]) -> tuple[str, ...]:
+def _validate_registry_kinds(external_kinds: frozenset[str]) -> tuple[str, ...]:
     """Drift-lock (extends T-0150): every kind `external_kinds` names (e.g.
     every `WeaknessEntry.capability_kind`, every `may` atom kind observed
     in strata design files) must be a member of `CAPABILITY_KINDS`. Returns
@@ -1643,10 +1853,10 @@ __all__ = [
     "DANGEROUS_OPERATIONS",
     "LANGUAGES",
     "NO_CAPABILITY_MODULES",
-    "DangerousOperation",
-    "MatrixCell",
-    "MatrixExcuse",
+    "_DangerousOperation",
+    "_MatrixCell",
+    "_MatrixExcuse",
     "capability_matrix",
-    "unexcused_empty_cells",
-    "validate_registry_kinds",
+    "_unexcused_empty_cells",
+    "_validate_registry_kinds",
 ]

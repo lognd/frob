@@ -165,6 +165,37 @@ class TestClosure:
         assert "c" not in paths
 
     # frob:tests src/frob/strata/_facts.py::FactBase.reachable kind="unit"
+    def test_utility_attr_stops_chaining_past_that_hop(self):
+        # T-0226: a flow tagged `utility` (the general-purpose surface
+        # marker `flow ... { utility; }`) is a terminal edge -- its dst is
+        # reachable directly, but the closure must not chain past it, the
+        # same terminal-edge semantics `krb_no_transit` already gets.
+        model = KernelModel(
+            nodes=(_node("a"), _node("b"), _node("c")),
+            flows=(
+                _flow("f1", "a", "b", attrs=("utility",)),
+                _flow("f2", "b", "c"),
+            ),
+        )
+        facts = build_facts(model).danger_ok
+        paths = facts.reachable("a")
+        assert "b" in paths
+        assert "c" not in paths
+
+    # frob:tests src/frob/strata/_facts.py::FactBase.reachable kind="unit"
+    def test_utility_attr_does_not_defeat_a_real_transitive_flow(self):
+        # No weakening: an UNMARKED hub edge still lets a genuine
+        # transitive flow reach all the way through -- only an explicitly
+        # `utility`-marked edge is a terminal hop.
+        model = KernelModel(
+            nodes=(_node("a"), _node("b"), _node("c")),
+            flows=(_flow("f1", "a", "b"), _flow("f2", "b", "c")),
+        )
+        facts = build_facts(model).danger_ok
+        paths = facts.reachable("a")
+        assert "c" in paths
+
+    # frob:tests src/frob/strata/_facts.py::FactBase.reachable kind="unit"
     def test_boundaries_stop_taint_unless_asked_otherwise(self):
         model = KernelModel(
             nodes=(_node("evil", trust="foreign"), _node("api")),
@@ -204,6 +235,10 @@ class TestClosure:
         assert age == float("inf")
 
     # frob:tests src/frob/strata/_facts.py::FactBase.demand kind="unit"
+    # frob:waive DUP001 reason="parallel test fixtures across 2 sibling \
+    # test file(s) (2 sites) sharing an arrange-act scaffold typical of \
+    # exhaustive per-case/per-scenario coverage; extracting would obscure \
+    # per-case intent"
     def test_demand_sums_inbound_rates_in_base_units(self):
         model = KernelModel(
             nodes=(_node("a"), _node("b"), _node("api")),

@@ -1,7 +1,14 @@
 from frob.process.parsers.cargo import parse_cargo
 from frob.process.parsers.clang import parse_clang
 from frob.process.parsers.clang_tidy import parse_clang_tidy
-from frob.process.parsers.common import Diagnostic, Severity, TestCase, ToolResult
+from frob.process.parsers.common import (
+    Diagnostic,
+    Severity,
+    TestCase,
+    ToolResult,
+    summarize_severity,
+    tool_unavailable_result,
+)
 from frob.process.parsers.eslint import parse_eslint
 from frob.process.parsers.junit import parse_junit_xml
 from frob.process.parsers.pytest import parse_pytest
@@ -27,4 +34,6 @@ __all__ = [
     "Severity",
     "TestCase",
     "ToolResult",
+    "summarize_severity",
+    "tool_unavailable_result",
 ]

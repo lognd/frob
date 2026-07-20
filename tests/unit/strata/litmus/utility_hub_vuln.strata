@@ -1,0 +1,23 @@
+// utility_hub_vuln.strata -- T-0226 litmus (unmarked half): the sibling-repo
+// P1 gap (graphite/feldspar/lithos, 2026-07-18) that filed this ticket.
+// `tui` imports a shared `logs` module (an ordinary, unrelated-to-any-
+// claim utility hub), and `logs` is also imported by `server`'s entrypoint
+// hosting. Both edges are plain (unmarked) flows, so the closure treats
+// `logs` as fully transitive: `tui -> logs -> server` is a real witness
+// path and `noflow tui -> server` is REFUTED -- exactly the false defeat
+// the ticket describes when a utility hub is left unmarked.
+//
+// tested end to end (parse -> elaborate -> evaluate_claims) by
+// tests/unit/strata/test_litmus_utility_hub.py.
+// frob:tests tests/unit/strata/litmus/utility_hub_vuln.strata kind="e2e"
+
+module utility_hub_vuln
+
+node tui : trusted { clearance Internal; }
+node logs : trusted { clearance Internal; }
+node server : trusted { clearance Internal; }
+
+flow f_tui_logs : tui -> logs { label Internal; }
+flow f_logs_server : logs -> server { label Internal; }
+
+assert "utility-hub:tui-server" noflow tui -> server

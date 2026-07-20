@@ -1,7 +1,5 @@
 """CLI wiring for `frob stats` -- delivery measurement (T-0009)."""
 
-# frob:waive TEST005 reason="module line coverage 0.0%, debt T-0160"
-
 from __future__ import annotations
 
 import sys
@@ -16,7 +14,6 @@ _log = get_logger(__name__)
 
 # frob:ticket T-0009
 # frob:doc docs/modules/app.md#runners
-# frob:waive TEST005 reason="run 0.0% branch cover, debt T-0160"
 def run(cfg: AppConfig) -> None:
     """Render the delivery snapshot (queue health + commit cadence)."""
     from frob.stats import collect

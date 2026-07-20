@@ -98,6 +98,9 @@ class TestCheckVerbosity:
 
 
 class TestCheckBadCode:
+    # frob:waive DUP001 reason="parallel CLI system-test scaffolding: \
+    # independent commands sharing the subprocess-dispatch arrange-act \
+    # shape; extracting would obscure per-command intent"
     def test_unused_import_fails(self, tmp_path):
         src = "import os\n\ndef foo() -> None:\n    pass\n"
         _make_project(tmp_path, src)
@@ -135,6 +138,9 @@ class TestCheckBadCode:
 
 
 class TestCheckFixtures:
+    # frob:waive DUP001 reason="parallel CLI system-test scaffolding: \
+    # independent commands sharing the subprocess-dispatch arrange-act \
+    # shape; extracting would obscure per-command intent"
     def test_bad_python_code_fails(self, tmp_path):
         # bad_python fixture has noqa/type:ignore markers; use a raw bad file instead
         src = "import os\nimport sys\n\ndef foo() -> None:\n    pass\n"

@@ -457,6 +457,8 @@ impl Parser {
         let mut is_unit = false;
         let mut owns: Vec<serde_json::Value> = Vec::new();
         let mut listens: Vec<i64> = Vec::new();
+        let mut group: Vec<String> = Vec::new();
+        let mut sudoers: Vec<String> = Vec::new();
         let mut krb_realm: Option<String> = None;
         let mut krb_is_kdc = false;
         let mut krb_spns: Vec<String> = Vec::new();
@@ -584,6 +586,34 @@ impl Parser {
                     // replicas bounds convention. Repeatable.
                     self.advance();
                     listens.push(self.expect_int("listens port")?);
+                } else if self.at_keyword("group") {
+                    // T-0272: `group "NAME"`+ -- one or more OS groups this
+                    // node's service user is a member of (docs/strata/
+                    // host.md#surface-grammar). STRING, not IDENT, mirroring
+                    // `runs_as`'s "opaque atom" reason (a group name may
+                    // carry `-`). Repeatable: a node's service user may
+                    // belong to more than one group, same shape as `code`/
+                    // `carries`. Desugars to a `group=<name>` attr, one per
+                    // entry (owns-adjacent: `_host.py::_host_attrs`).
+                    self.advance();
+                    group.push(self.expect_string("group name")?);
+                    while matches!(self.cur().kind, TokKind::Str(_)) {
+                        group.push(self.expect_string("group name")?);
+                    }
+                } else if self.at_keyword("sudoers") {
+                    // T-0272: `sudoers "RULE"`+ -- one or more sudoers grant
+                    // lines for this node's service user (docs/strata/
+                    // host.md#surface-grammar). STRING, since a sudoers rule
+                    // is free-form text (e.g. "ALL=(root) NOPASSWD: /bin/
+                    // systemctl restart app"), the same "opaque atom"
+                    // reasoning as `may`/`carries`. Repeatable: a service
+                    // user may hold more than one sudoers grant. Desugars to
+                    // a `sudoers=<rule>` attr, one per entry.
+                    self.advance();
+                    sudoers.push(self.expect_string("sudoers rule")?);
+                    while matches!(self.cur().kind, TokKind::Str(_)) {
+                        sudoers.push(self.expect_string("sudoers rule")?);
+                    }
                 } else if self.at_keyword("residence") {
                     self.advance();
                     residence = Some(self.expect_ident("residence atom")?);
@@ -768,6 +798,8 @@ impl Parser {
             "is_unit": is_unit,
             "owns": owns,
             "listens": listens,
+            "group": group,
+            "sudoers": sudoers,
             "krb_realm": krb_realm,
             "krb_is_kdc": krb_is_kdc,
             "krb_spns": krb_spns,
@@ -993,6 +1025,20 @@ impl Parser {
                     self.advance();
                     let kind = self.expect_ident("authenticates_via ticket kind")?;
                     attrs.push(format!("krb_ticket={}", kind));
+                } else if self.at_keyword("utility") {
+                    // T-0226: `utility;` -- marks this flow as a
+                    // non-transitive utility/hub hop. Desugars to the bare
+                    // flow attr "utility" (no new kernel primitive, charter
+                    // law 1) -- `_facts.py::FactBase.reachable` reads it the
+                    // SAME way it already reads `krb_no_transit` (T-0282):
+                    // the edge's dst is still directly reachable, but the
+                    // BFS does not chain past it. This is how a legitimate
+                    // `noflow` claim survives an unrelated hub edge (e.g. a
+                    // logging import) that would otherwise be treated as
+                    // carrying real influence across the hub
+                    // (docs/strata/kernel.md#fact-base).
+                    self.advance();
+                    attrs.push("utility".to_string());
                 } else {
                     return self.err("unknown flow property");
                 }
@@ -1421,14 +1467,19 @@ impl Parser {
     ///             | "rpo" QUANTITY
     ///
     /// WHY: store is std.infra's node-with-extras; it reuses the node_prop
-    /// surface (clearance/attr/residence/capacity) verbatim plus engine, the
-    /// immutable/append_only markers the elaborator needs for the
-    /// cdn-unlimited-staleness pairing, and `rpo` -- a store's declared
+    /// surface (clearance/attr/residence/capacity/errors_total/
+    /// panics_contained_by/observe/`on deploy`, T-0247) verbatim plus
+    /// engine, the immutable/append_only markers the elaborator needs for
+    /// the cdn-unlimited-staleness pairing, and `rpo` -- a store's declared
     /// durability/replication lag, the same age-collapse family as cache ttl
     /// (docs/strata/surface.md#std-infra, docs/strata/kernel.md#age-
     /// propagation-semantics). The grammar accepts any unit here; dimension
     /// validation (must be a time unit) is the elaborator's job, matching
-    /// how ttl/staleness stay units-only at parse time too.
+    /// how ttl/staleness stay units-only at parse time too. T-0247's four
+    /// clauses are the observability/deploy-contract subset of node_prop a
+    /// store needed; std.krb's realm/kdc/spn/delegation/trusts remain
+    /// node-only (not requested by this ticket, filed separately if still
+    /// needed).
     fn parse_store(&mut self, ast: &mut ModuleAst) -> Result<(), ParseError> {
         self.advance(); // 'store'
         let id = self.expect_ident("store id")?;
@@ -1451,6 +1502,12 @@ impl Parser {
         let mut is_unit = false;
         let mut owns: Vec<serde_json::Value> = Vec::new();
         let mut listens: Vec<i64> = Vec::new();
+        let mut group: Vec<String> = Vec::new();
+        let mut sudoers: Vec<String> = Vec::new();
+        let mut errors_total = false;
+        let mut panics_contained_by: Option<String> = None;
+        let mut observe: Option<serde_json::Value> = None;
+        let mut deploy: Option<serde_json::Value> = None;
         if self.at_symbol('{') {
             self.advance();
             loop {
@@ -1483,6 +1540,23 @@ impl Parser {
                     // T-0255: same `listens PORT` shape as `node`.
                     self.advance();
                     listens.push(self.expect_int("listens port")?);
+                } else if self.at_keyword("group") {
+                    // T-0272: same `group "NAME"`+ shape as `node`'s clause
+                    // -- a store is a node too (docs/strata/surface.md
+                    // #key-construct-semantics).
+                    self.advance();
+                    group.push(self.expect_string("group name")?);
+                    while matches!(self.cur().kind, TokKind::Str(_)) {
+                        group.push(self.expect_string("group name")?);
+                    }
+                } else if self.at_keyword("sudoers") {
+                    // T-0272: same `sudoers "RULE"`+ shape as `node`'s
+                    // clause -- a store is a node too.
+                    self.advance();
+                    sudoers.push(self.expect_string("sudoers rule")?);
+                    while matches!(self.cur().kind, TokKind::Str(_)) {
+                        sudoers.push(self.expect_string("sudoers rule")?);
+                    }
                 } else if self.at_keyword("code") {
                     // T-0166: `code GLOB+` -- same STRING+ shape T-0132 gave
                     // `node` (parse_node); a store is a node too
@@ -1568,6 +1642,65 @@ impl Parser {
                     // #key-construct-semantics: "component / store: nodes").
                     self.advance();
                     is_managed = true;
+                } else if self.at_keyword("errors_total") {
+                    // T-0247: same bare marker as `node`'s `errors_total`
+                    // (parse_node) -- a store is a node too (docs/strata/
+                    // surface.md#key-construct-semantics), so the
+                    // errors-total observability claim applies to it
+                    // unchanged. The elaborator turns this into the same
+                    // `errors_total` node attr `node` gets.
+                    self.advance();
+                    errors_total = true;
+                } else if self.at_keyword("panics_contained_by") {
+                    // T-0247: same `panics_contained_by IDENT` shape as
+                    // `node`'s clause; reference validity is an
+                    // elaboration-time check, mirroring parse_node.
+                    self.advance();
+                    panics_contained_by = Some(self.expect_ident("panics supervisor id")?);
+                } else if self.at_keyword("on") {
+                    // T-0247: same `on deploy { ... }` shape as `node`'s
+                    // clause (parse_node); `deploy` is still the only `on`
+                    // keyword this parser accepts, matching parse_node's
+                    // deferral note for `on crash`/`on breach`.
+                    self.advance();
+                    self.expect_keyword("deploy")?;
+                    deploy = Some(self.parse_on_deploy_block()?);
+                } else if self.at_keyword("observe") {
+                    // T-0247: same `observe { log IDENT (, IDENT)*; to
+                    // IDENT }` shape as `node`'s clause (parse_node).
+                    self.advance();
+                    self.expect_symbol('{')?;
+                    let mut log: Vec<String> = Vec::new();
+                    let mut to: Option<String> = None;
+                    loop {
+                        if self.at_symbol('}') {
+                            break;
+                        }
+                        if self.at_keyword("log") {
+                            self.advance();
+                            log.push(self.expect_ident("observe log class")?);
+                            while self.at_symbol(',') {
+                                self.advance();
+                                log.push(self.expect_ident("observe log class")?);
+                            }
+                        } else if self.at_keyword("to") {
+                            self.advance();
+                            to = Some(self.expect_ident("observe target id")?);
+                        } else {
+                            return self.err("unknown observe property");
+                        }
+                        if self.at_symbol(';') {
+                            self.advance();
+                        } else {
+                            break;
+                        }
+                    }
+                    self.expect_symbol('}')?;
+                    let to = match to {
+                        Some(t) => t,
+                        None => return self.err("observe block needs a to IDENT"),
+                    };
+                    observe = Some(json!({"log": log, "to": to}));
                 } else {
                     return self.err("unknown store property");
                 }
@@ -1599,6 +1732,12 @@ impl Parser {
             "is_unit": is_unit,
             "owns": owns,
             "listens": listens,
+            "group": group,
+            "sudoers": sudoers,
+            "errors_total": errors_total,
+            "panics_contained_by": panics_contained_by,
+            "observe": observe,
+            "deploy": deploy,
         }));
         Ok(())
     }
@@ -2707,6 +2846,30 @@ mod tests {
         assert_eq!(n["is_unit"], false);
         assert_eq!(n["owns"].as_array().unwrap().len(), 0);
         assert_eq!(n["listens"].as_array().unwrap().len(), 0);
+        assert_eq!(n["group"].as_array().unwrap().len(), 0);
+        assert_eq!(n["sudoers"].as_array().unwrap().len(), 0);
+    }
+
+    #[test]
+    fn parses_node_group_and_sudoers_clauses() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0272: std.host OS-group and sudoers-grant vocabulary on a node
+        // (docs/strata/host.md) -- HOST001's shared-group and HOST002's
+        // sudoers sub-targets read these back instead of always firing.
+        let v = ok(r#"module m
+            node api : trusted {
+                runs_as "api-svc";
+                group "deploy";
+                group "docker";
+                sudoers "ALL=(root) NOPASSWD: /bin/systemctl restart api";
+            }"#);
+        let n = &v["nodes"][0];
+        assert_eq!(n["group"][0], "deploy");
+        assert_eq!(n["group"][1], "docker");
+        assert_eq!(
+            n["sudoers"][0],
+            "ALL=(root) NOPASSWD: /bin/systemctl restart api"
+        );
     }
 
     #[test]
@@ -2727,6 +2890,27 @@ mod tests {
         assert_eq!(s["owns"][0]["path"], "/var/lib/cache_db");
         assert_eq!(s["owns"][0]["mode"], "0700");
         assert_eq!(s["listens"][0], 6379);
+        assert_eq!(s["group"].as_array().unwrap().len(), 0);
+        assert_eq!(s["sudoers"].as_array().unwrap().len(), 0);
+    }
+
+    #[test]
+    fn parses_store_group_and_sudoers_clauses() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0272: same `group`/`sudoers` shape as `node`'s clauses on a
+        // `store` -- a store is a node too.
+        let v = ok(r#"module m
+            store cache_db : trusted {
+                runs_as "cache-svc";
+                group "dba";
+                sudoers "cache-svc ALL=(root) /usr/bin/systemctl restart cache_db";
+            }"#);
+        let s = &v["stores"][0];
+        assert_eq!(s["group"][0], "dba");
+        assert_eq!(
+            s["sudoers"][0],
+            "cache-svc ALL=(root) /usr/bin/systemctl restart cache_db"
+        );
     }
 
     #[test]
@@ -2915,6 +3099,55 @@ mod tests {
         assert_eq!(s["engine"], serde_json::Value::Null);
         assert_eq!(s["immutable"], false);
         assert_eq!(s["append_only"], false);
+        assert_eq!(s["errors_total"], false);
+        assert_eq!(s["panics_contained_by"], serde_json::Value::Null);
+        assert_eq!(s["observe"], serde_json::Value::Null);
+        assert_eq!(s["deploy"], serde_json::Value::Null);
+    }
+
+    #[test]
+    fn parses_store_errors_total_panics_and_observe() {
+        // T-0247: store_prop now accepts the same errors_total/
+        // panics_contained_by/observe node_prop entries `node` has.
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok(r#"module m
+            store db : trusted {
+                errors_total;
+                panics_contained_by supervisor;
+                observe { log error_paths, crash_events; to obs_sink }
+            }"#);
+        let s = &v["stores"][0];
+        assert_eq!(s["errors_total"], true);
+        assert_eq!(s["panics_contained_by"], "supervisor");
+        assert_eq!(s["observe"]["log"][0], "error_paths");
+        assert_eq!(s["observe"]["log"][1], "crash_events");
+        assert_eq!(s["observe"]["to"], "obs_sink");
+    }
+
+    #[test]
+    fn parses_store_on_deploy() {
+        // T-0247: store_prop now accepts the same `on deploy { ... }`
+        // node_prop entry `node` has.
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok(r#"module m
+            store db : trusted {
+                on deploy {
+                    canary { authenticated for 10 min };
+                    endorsed_by review_gate;
+                    rollback within 5 min;
+                }
+            }"#);
+        let d = &v["stores"][0]["deploy"];
+        assert_eq!(d["stages"][0]["level"], "authenticated");
+        assert_eq!(d["endorsed_by"][0], "review_gate");
+        assert_eq!(d["rollback_budget"]["value"], 5.0);
+    }
+
+    #[test]
+    fn error_store_observe_unknown_log_property() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let e = err("module m\nstore db : trusted { observe { bogus x; } }");
+        assert_eq!(e["message"], "unknown observe property");
     }
 
     #[test]
@@ -3114,6 +3347,14 @@ mod tests {
         // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
         let v = ok("module m\nflow f1 : a -> b { growth 5 %; }");
         assert_eq!(v["flows"][0]["attrs"][0], "growth=5");
+    }
+
+    #[test]
+    fn parses_flow_utility() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0226: `utility;` desugars to the bare flow attr "utility".
+        let v = ok("module m\nflow f1 : a -> b { utility; }");
+        assert_eq!(v["flows"][0]["attrs"][0], "utility");
     }
 
     #[test]

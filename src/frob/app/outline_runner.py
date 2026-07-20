@@ -1,4 +1,3 @@
-# frob:waive TEST005 reason="module line coverage 0.0%, debt T-0160"
 from __future__ import annotations
 
 import contextlib
@@ -26,7 +25,6 @@ def _fall_back_to_map(cfg: AppConfig, target) -> None:  # noqa: ANN001
 
 
 # frob:doc docs/modules/app.md#runners
-# frob:waive TEST005 reason="run 0.0% branch cover, debt T-0160"
 def run(cfg: AppConfig) -> None:
     if cfg.outline_file is None:
         _log.error("frob outline requires <file>")

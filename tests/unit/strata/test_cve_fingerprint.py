@@ -101,3 +101,26 @@ class TestCatalogDrift:
         assert result.is_ok
         flagged = {v.fingerprint_id for v in result.danger_ok}
         assert "FP-EXEC-SHELL-001" in flagged
+
+
+class TestXxeFingerprint:
+    """T-0189 (T-0153 review follow-up): `FP-XXE-PARSE-001` joins the new
+    CWE-611 `WeaknessEntry` (`_threat.py`) -- previously refused by
+    CVEFP001 since no CWE-611 catalog entry existed
+    (docs/strata/threat.md#cve-fingerprints-code-level-pattern-catalog-
+    t-0153)."""
+
+    # frob:tests src/frob/strata/_cve_fingerprint.py::CVE_FINGERPRINTS kind="unit"
+    def test_fp_xxe_parse_001_exists_and_joins_cwe_611(self):
+        entry = next((e for e in CVE_FINGERPRINTS if e.id == "FP-XXE-PARSE-001"), None)
+        assert entry is not None
+        assert entry.cwe_id == "CWE-611"
+        assert entry.language == "python"
+        assert entry.cve == ("CVE-2013-1665",)
+
+    # frob:tests src/frob/strata/_cve_fingerprint.py::check_fingerprint_catalog_drift kind="unit"
+    def test_fp_xxe_parse_001_resolves_against_the_default_joined_catalog(self):
+        result = check_fingerprint_catalog_drift()
+        assert result.is_ok
+        flagged = {v.fingerprint_id for v in result.danger_ok}
+        assert "FP-XXE-PARSE-001" not in flagged

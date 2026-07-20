@@ -6,7 +6,9 @@ REJECTED-skip cases against a REAL record (Log4Shell); a small synthetic
 mirror (`tests/unit/cve/fixtures/vet_mirror`) supplies clean semver ranges
 none of the committed real records happen to have, plus its own REJECTED
 record, since Log4Shell's own affected[] range is deliberately
-`versionType=custom` (uncomparable) end to end.
+`versionType=custom` (uncomparable) end to end. The synthetic mirror holds
+exactly two records this module asserts against: the AFFECTED libfoo record
+'CVE-2024-1000.json' and the REJECTED same-product decoy 'CVE-2024-1001.json'.
 """
 
 from __future__ import annotations

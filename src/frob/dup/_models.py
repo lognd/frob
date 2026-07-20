@@ -80,6 +80,7 @@ class DupStats(BaseModel):
     fingerprinted: int = 0
     cache_hits: int = 0
     pairs_verified: int = 0
+    pairs_prefiltered: int = 0
 
 
 # frob:doc docs/modules/dup.md#clone-binding
@@ -173,6 +174,30 @@ class DupConfig(BaseModel):
     uses for its dedicated pass over the private-helper population, so
     families of near-identical TINY helpers -- themselves usually below the
     whole-symbol `min_tokens` default -- are not silently skipped.
+
+    `region_run_cap` (T-0273) bounds the R1.5 exact-region kernel's O(k^2)
+    pair emission for one equal-token run of size `k` (a block repeated `k`
+    times in the corpus): a run larger than `region_run_cap` only pairs its
+    first `region_run_cap` occurrences, guarding against a pathologically
+    large equal-run bucket (thousands of near-identical generated/
+    boilerplate symbols sharing a block) before `[dup].region_kernel` ships
+    enabled. A capped run logs a WARN naming the truncation rather than
+    silently under-reporting (see `frob.dup._core._exact_regions`).
+
+    `prefilter_enabled` gates the three R4 candidate-pruning pre-filters
+    (docs/modules/dup-sota-survey.md items 2/4/6, T-0197): NiCad-style
+    size-ratio, Oreo-style metric-ratio, and DECKARD-style characteristic-
+    vector similarity, applied to `_core._candidate_pairs` output BEFORE the
+    expensive statement-alignment/APTED verification runs
+    (`frob.dup._pipeline._r4_candidate_pair`). These are ADDITIVE pruning
+    only -- a pair that fails a pre-filter is skipped, never reported as a
+    clone by that fact alone, and a pair that passes still goes through the
+    real R4 verification unchanged. `prefilter_size_ratio` /
+    `prefilter_metric_ratio` / `prefilter_vector_similarity` are the three
+    thresholds, deliberately loose defaults chosen so recall on the
+    existing dup fixture suite is unchanged (see
+    `tests/test_dup_prefilter.py`) -- only the number of pairs that reach
+    expensive verification drops.
     """
 
     model_config = ConfigDict(frozen=True)
@@ -182,10 +207,15 @@ class DupConfig(BaseModel):
     cache_entries: int = 200_000
     region_kernel_enabled: bool = False
     region_min_tokens: int = 15
+    region_run_cap: int = 200
     inline_calls: bool = True
     inline_max_depth: int = 3
     inline_max_nodes: int = 12
     helper_min_tokens: int = 8
+    prefilter_enabled: bool = True
+    prefilter_size_ratio: float = 0.25
+    prefilter_metric_ratio: float = 0.15
+    prefilter_vector_similarity: float = 0.35
 
 
 # frob:doc docs/modules/dup.md#anti-unification-plotkin-lgg
@@ -193,7 +223,7 @@ class AntiUnifyTemplate(BaseModel):
     """Plotkin lgg output: a generalized node array plus per-side hole bindings.
 
     `labels`/`parents` are the template in the same `(labels, parents)`
-    node-array shape `apted_similarity` consumes -- shared nodes keep their
+    node-array shape `_apted_similarity` consumes -- shared nodes keep their
     original label, divergence points carry a `$hole_N` placeholder.
     `bindings_a`/`bindings_b` each hold one `(hole_id, node_index)` pair per
     hole, naming which concrete subtree (in the corresponding input tree's

@@ -17,6 +17,13 @@ def cpp_file(tmp_path, cpp_sample):
     return p
 
 
+@pytest.fixture
+def rust_file(tmp_path, rust_sample):
+    p = tmp_path / "sample.rs"
+    p.write_bytes(rust_sample)
+    return p
+
+
 # ---------------------------------------------------------------------------
 # Python outline
 # ---------------------------------------------------------------------------
@@ -53,6 +60,9 @@ def test_py_outline_classes(py_file):
     assert "Other" in names
 
 
+# frob:waive DUP001 reason="parallel test methods within test_outline.py (3 \
+# sites) sharing an arrange-act scaffold typical of exhaustive per-case \
+# coverage; extracting would obscure per-case intent"
 def test_py_outline_methods(py_file):
     outline = outline_file(py_file).danger_ok
     classes_by_name = {c.name: c for c in outline.classes}
@@ -121,6 +131,9 @@ def test_cpp_outline_classes(cpp_file):
     assert "Engine" in names
 
 
+# frob:waive DUP001 reason="parallel test methods within test_outline.py (3 \
+# sites) sharing an arrange-act scaffold typical of exhaustive per-case \
+# coverage; extracting would obscure per-case intent"
 def test_cpp_outline_methods(cpp_file):
     outline = outline_file(cpp_file).danger_ok
     classes_by_name = {c.name: c for c in outline.classes}
@@ -128,6 +141,49 @@ def test_cpp_outline_methods(cpp_file):
     method_names = {m.name for m in cls.methods}
     assert "run" in method_names
     assert "status" in method_names
+
+
+# ---------------------------------------------------------------------------
+# Rust outline (T-0238)
+# ---------------------------------------------------------------------------
+
+
+def test_rust_outline_ok(rust_file):
+    # frob:tests src/frob/outline/__init__.py::outline_file kind="unit"
+    result = outline_file(rust_file)
+    assert result.is_ok
+
+
+def test_rust_outline_functions(rust_file):
+    outline = outline_file(rust_file).danger_ok
+    names = {f.name for f in outline.functions}
+    assert "helper" in names
+
+
+def test_rust_outline_classes(rust_file):
+    outline = outline_file(rust_file).danger_ok
+    names = {c.name for c in outline.classes}
+    assert "Engine" in names
+
+
+# frob:waive DUP001 reason="parallel test methods within test_outline.py (3 \
+# sites) sharing an arrange-act scaffold typical of exhaustive per-case \
+# coverage; extracting would obscure per-case intent"
+def test_rust_outline_methods(rust_file):
+    outline = outline_file(rust_file).danger_ok
+    classes_by_name = {c.name: c for c in outline.classes}
+    cls = classes_by_name["Engine"]
+    method_names = {m.name for m in cls.methods}
+    assert "run" in method_names
+    assert "status" in method_names
+
+
+def test_rust_outline_as_text(rust_file):
+    outline = outline_file(rust_file).danger_ok
+    text = outline.as_text()
+    assert "helper" in text
+    assert "Engine" in text
+    assert "[L" in text
 
 
 # ---------------------------------------------------------------------------

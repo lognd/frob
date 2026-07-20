@@ -44,39 +44,52 @@ def test_frob_core_module_registers_exported_kernels():
 
 class TestR3CanonicalHash:
     def test_identical_token_streams_hash_equal(self):
-        # frob:tests src/frob/dup/_core.py::r3_canonical_hash kind="unit"
+        # frob:tests src/frob/dup/_core.py::_r3_canonical_hash kind="unit"
         # frob:tests frob-core/src/lib.rs::r3_canonical_hash kind="unit"
         tokens = ("def", "_v0", "return", "_v0")
-        a = _core.r3_canonical_hash(tokens)
-        b = _core.r3_canonical_hash(tokens)
+        a = _core._r3_canonical_hash(tokens)
+        b = _core._r3_canonical_hash(tokens)
         assert a.is_ok and b.is_ok
         assert a.danger_ok == b.danger_ok
 
     def test_different_token_streams_hash_differently(self):
-        a = _core.r3_canonical_hash(("def", "_v0", "return", "_v0"))
-        b = _core.r3_canonical_hash(("def", "_v0", "return", "_N_"))
+        a = _core._r3_canonical_hash(("def", "_v0", "return", "_v0"))
+        b = _core._r3_canonical_hash(("def", "_v0", "return", "_N_"))
         assert a.danger_ok != b.danger_ok
 
 
-# frob:tests src/frob/dup/_core.py::winnow_fingerprints kind="unit"
+# frob:tests src/frob/dup/_core.py::_winnow_fingerprints kind="unit"
 def test_winnow_fingerprints_nonempty_for_long_stream():
     tokens = tuple(f"t{i}" for i in range(20))
-    result = _core.winnow_fingerprints(tokens, 4, 4)
+    result = _core._winnow_fingerprints(tokens, 4, 4)
     assert result.is_ok
     assert result.danger_ok
 
 
-# frob:tests src/frob/dup/_core.py::candidate_pairs kind="unit"
+# frob:tests src/frob/dup/_core.py::_candidate_pairs kind="unit"
 def test_candidate_pairs_finds_shared_bucket():
     sets = ((1, 2, 3), (2, 3, 4), (99,))
-    result = _core.candidate_pairs(sets, 2)
+    result = _core._candidate_pairs(sets, 2)
     assert result.is_ok
     assert result.danger_ok == ((0, 1),)
 
 
-# frob:tests src/frob/dup/_core.py::tree_edit_similarity kind="unit"
+# frob:tests frob-core/src/lib.rs::candidate_pairs kind="unit"
+def test_candidate_pairs_never_returns_a_self_pair():
+    # Regression for T-0268: a region whose own fingerprint set contains a
+    # duplicate value indexes itself twice into one bucket, which previously
+    # surfaced as a self-pair (i, i) once the self-collision count reached
+    # min_shared. Guards every Python caller of the kernel, not just the one
+    # _r4_groups site T-0191 patched.
+    result = _core._candidate_pairs(((7, 7, 7), (99,)), 2)
+    assert result.is_ok
+    assert all(i != j for i, j in result.danger_ok)
+    assert result.danger_ok == ()
+
+
+# frob:tests src/frob/dup/_core.py::_tree_edit_similarity kind="unit"
 def test_tree_edit_similarity_identical_sequences_is_one():
-    result = _core.tree_edit_similarity((1, 2, 3), (1, 2, 3))
+    result = _core._tree_edit_similarity((1, 2, 3), (1, 2, 3))
     assert result.is_ok
     sim, alignment = result.danger_ok
     assert sim == pytest.approx(1.0)
@@ -85,16 +98,16 @@ def test_tree_edit_similarity_identical_sequences_is_one():
 
 class TestAptedSimilarity:
     def test_identical_trees_similarity_one(self):
-        # frob:tests src/frob/dup/_core.py::apted_similarity kind="unit"
+        # frob:tests src/frob/dup/_core.py::_apted_similarity kind="unit"
         # frob:tests frob-core/src/lib.rs::apted_similarity kind="unit"
         labels = ("def", "return", "name")
         parents = (-1, 0, 0)
-        result = _core.apted_similarity(labels, parents, labels, parents)
+        result = _core._apted_similarity(labels, parents, labels, parents)
         assert result.is_ok
         assert result.danger_ok == pytest.approx(1.0)
 
     def test_disjoint_single_node_trees_similarity_zero(self):
-        result = _core.apted_similarity(("a",), (-1,), ("b",), (-1,))
+        result = _core._apted_similarity(("a",), (-1,), ("b",), (-1,))
         assert result.is_ok
         assert result.danger_ok == pytest.approx(0.0)
 
@@ -163,33 +176,34 @@ class TestAntiUnify:
 
 class TestWlHash:
     def test_relabeled_isomorphic_graphs_collide(self):
-        # frob:tests src/frob/dup/_core.py::wl_hash kind="unit"
+        # frob:tests src/frob/dup/_core.py::_wl_hash kind="unit"
         # frob:tests frob-core/src/lib.rs::wl_hash kind="unit"
         labels_a = ("def", "use", "use")
         adj_a = ((0, 1), (1, 2), (2, 0))
         labels_b = ("use", "def", "use")
         adj_b = ((1, 0), (0, 2), (2, 1))
-        a = _core.wl_hash(adj_a, labels_a, 2)
-        b = _core.wl_hash(adj_b, labels_b, 2)
+        a = _core._wl_hash(adj_a, labels_a, 2)
+        b = _core._wl_hash(adj_b, labels_b, 2)
         assert a.is_ok and b.is_ok
         assert a.danger_ok == b.danger_ok
 
     def test_empty_graph_is_zero(self):
-        result = _core.wl_hash((), (), 2)
+        result = _core._wl_hash((), (), 2)
         assert result.is_ok
         assert result.danger_ok == 0
 
 
 class TestExactRegions:
     def test_finds_shared_block_inside_different_documents(self):
-        # frob:tests src/frob/dup/_core.py::exact_regions kind="unit"
+        # frob:tests src/frob/dup/_core.py::_exact_regions kind="unit"
         # frob:tests frob-core/src/lib.rs::exact_regions kind="unit"
         shared = ("if", "x", ">", "0", "return", "x")
         doc_a = ("def", "foo", "(", *shared, "else", "return", "0")
         doc_b = ("def", "bar", "(", "y", ")", *shared, "print", "y")
-        result = _core.exact_regions((doc_a, doc_b), len(shared))
+        result = _core._exact_regions((doc_a, doc_b), len(shared))
         assert result.is_ok
-        regions = result.danger_ok
+        regions, truncated = result.danger_ok
+        assert truncated is False
         assert len(regions) == 1
         doc_a_idx, start_a, doc_b_idx, start_b, length = regions[0]
         assert (doc_a_idx, doc_b_idx, length) == (0, 1, len(shared))
@@ -198,14 +212,42 @@ class TestExactRegions:
 
     def test_below_min_len_finds_nothing(self):
         shared = ("a", "b", "c")
-        result = _core.exact_regions((shared, shared), 10)
+        result = _core._exact_regions((shared, shared), 10)
         assert result.is_ok
-        assert result.danger_ok == ()
+        regions, truncated = result.danger_ok
+        assert regions == ()
+        assert truncated is False
 
     def test_no_shared_tokens_finds_nothing(self):
-        result = _core.exact_regions((("a", "b"), ("x", "y")), 1)
+        result = _core._exact_regions((("a", "b"), ("x", "y")), 1)
         assert result.is_ok
-        assert result.danger_ok == ()
+        regions, truncated = result.danger_ok
+        assert regions == ()
+        assert truncated is False
+
+    def test_run_size_guard_bounds_pair_emission_and_signals_truncation(self):
+        # frob:tests src/frob/dup/_core.py::_exact_regions kind="unit"
+        # frob:tests frob-core/src/lib.rs::exact_regions kind="unit"
+        # T-0273: a run of 500 identical documents must not emit the
+        # unbounded C(500, 2) = 124,750 pairs -- with a cap of 50 it must
+        # emit at most C(50, 2) = 1,225 and report truncated=True.
+        block = ("a", "b", "c", "d")
+        docs = tuple(block for _ in range(500))
+        result = _core._exact_regions(docs, 2, max_run_size=50)
+        assert result.is_ok
+        regions, truncated = result.danger_ok
+        assert truncated is True
+        assert len(regions) <= 50 * 49 // 2
+        assert len(regions) > 0
+
+    def test_run_size_guard_does_not_trip_below_the_cap(self):
+        block = ("a", "b", "c", "d")
+        docs = tuple(block for _ in range(5))
+        result = _core._exact_regions(docs, 2, max_run_size=50)
+        assert result.is_ok
+        regions, truncated = result.danger_ok
+        assert truncated is False
+        assert len(regions) == 5 * 4 // 2
 
 
 def test_core_unavailable_path_is_err_not_exception(monkeypatch: pytest.MonkeyPatch):
@@ -213,11 +255,11 @@ def test_core_unavailable_path_is_err_not_exception(monkeypatch: pytest.MonkeyPa
     never a raised exception, for every _core function."""
     _core.core_available.cache_clear()
     monkeypatch.setattr(_core, "core_available", lambda: False)
-    assert _core.r3_canonical_hash(("a",)).err == DupError.CoreUnavailable
-    assert _core.winnow_fingerprints(("a", "b"), 1, 1).err == DupError.CoreUnavailable
-    assert _core.candidate_pairs(((1,),), 1).err == DupError.CoreUnavailable
-    assert _core.tree_edit_similarity((1,), (1,)).err == DupError.CoreUnavailable
-    assert _core.apted_similarity((), (), (), ()).err == DupError.CoreUnavailable
+    assert _core._r3_canonical_hash(("a",)).err == DupError.CoreUnavailable
+    assert _core._winnow_fingerprints(("a", "b"), 1, 1).err == DupError.CoreUnavailable
+    assert _core._candidate_pairs(((1,),), 1).err == DupError.CoreUnavailable
+    assert _core._tree_edit_similarity((1,), (1,)).err == DupError.CoreUnavailable
+    assert _core._apted_similarity((), (), (), ()).err == DupError.CoreUnavailable
     assert _core.anti_unify((), (), (), ()).err == DupError.CoreUnavailable
-    assert _core.wl_hash((), (), 1).err == DupError.CoreUnavailable
-    assert _core.exact_regions((("a",), ("a",)), 1).err == DupError.CoreUnavailable
+    assert _core._wl_hash((), (), 1).err == DupError.CoreUnavailable
+    assert _core._exact_regions((("a",), ("a",)), 1).err == DupError.CoreUnavailable

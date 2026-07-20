@@ -2,7 +2,7 @@ import logging
 
 
 # frob:doc docs/modules/logging.md#public-api
-class FrobFormatter(logging.Formatter):
+class _FrobFormatter(logging.Formatter):
     """
     Plain formatter. INFO and DEBUG emit just the message; WARNING+ prefix
     with the level name so errors are easy to spot without color codes.

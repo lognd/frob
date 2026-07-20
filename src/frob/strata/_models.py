@@ -30,9 +30,9 @@ class Lattice(BaseModel):
     name: str
     order: tuple[tuple[str, str], ...]  # (lower, higher) covering pairs
 
+    # frob:doc docs/strata/kernel.md#data-models
     def elements(self) -> frozenset[str]:
         """Every level named by the covering pairs."""
-        # frob:doc docs/strata/kernel.md#data-models
         return frozenset(x for pair in self.order for x in pair)
 
     def leq(self, low: str, high: str) -> Result[bool, StrataError]:

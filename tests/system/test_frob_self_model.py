@@ -32,6 +32,9 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 _MODEL_PATH = _REPO_ROOT / "design" / "frob.strata"
 
 
+# frob:waive DUP001 reason="parallel CLI system-test scaffolding: \
+# independent commands sharing the subprocess-dispatch arrange-act shape; \
+# extracting would obscure per-command intent"
 @pytest.fixture(scope="module")
 def _model():
     """Parse + elaborate `design/frob.strata` once for every test in this module."""
@@ -176,6 +179,15 @@ class TestFrobSelfModel:
         assert seen_ids == proved_ids | assumed_ids
 
     # frob:tests tests/system/test_frob_self_model.py::TestFrobSelfModel.test_sys_gate_zero_violations kind="e2e"
+    # T-0365: TEST009 owes design/frob.strata itself an e2e binding, not
+    # just a binding on the test method's own symbol (the directive above
+    # marks the test as self-covering per the repo-wide idiom, but that
+    # target never matches `_edges_for_design_file`'s design-file prefix
+    # check). This is the one test in the suite that runs frob's real
+    # `build_graph` + `sys_gate` path against this repo's own live
+    # `design/frob.strata`, so it is the correct e2e evidence for the
+    # design file as a deployable artifact.
+    # frob:tests design/frob.strata kind="e2e"
     def test_sys_gate_zero_violations(self, tmp_path: Path) -> None:
         """`frob check --only sys` against the live repo reports zero violations.
 

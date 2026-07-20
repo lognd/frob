@@ -2,7 +2,7 @@ import logging
 
 
 # frob:doc docs/modules/logging.md#public-api
-class BelowLevelFilter(logging.Filter):
+class _BelowLevelFilter(logging.Filter):
     """Pass records strictly below `below` level (used to keep stdout clean)."""
 
     def __init__(self, below: str) -> None:

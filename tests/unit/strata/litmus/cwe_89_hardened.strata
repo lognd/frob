@@ -3,6 +3,13 @@
 // an ASSUMED NoFlow claim named `weakness:CWE-89:db`
 // (`_threat.py::_discharge_claim_id`), owned and reviewed.
 //
+// T-0345: `db`'s `may "sql"` ALSO fires CWE-639 (2025-list-new
+// `CWE_TOP_25_CATALOG` entry, SAME `sql` capability join -- the identical
+// two-obligation-one-capability shape design/litmus/audit_vuln.strata's
+// docstring already documents for CWE-89/CWE-639) -- discharged here too
+// so this fixture stays reusable as CWE-639's own hardened twin
+// (test_litmus_cwe.py's `_HARDENED_FIXTURES["CWE-639"]`).
+//
 // tested end to end (parse -> elaborate -> check_discharge_completeness)
 // by tests/unit/strata/test_litmus_cwe.py.
 
@@ -17,3 +24,4 @@ node db : trusted {
 flow f_query : client -> db { label Public; }
 
 assume "weakness:CWE-89:db" noflow client -> db owner logan review "2026-10-01"
+assume "weakness:CWE-639:db" noflow client -> db owner logan review "2026-10-01"

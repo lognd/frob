@@ -1,15 +1,9 @@
 // host_isolation_hardened.strata -- T-0256 litmus: two service users
-// with fully disjoint owned paths and ports, plus explicit `waive`
-// clauses for the two sub-targets `std.host` cannot structurally prove
-// (HOST001:shared-group, HOST002:sudoers -- module docstring's "honest
-// gap") -- the isolated hardened shape HOST001/HOST002 must fully
-// discharge (no kept violations, no stale waivers).
-//
-// A HOST001 pair finding attributes to the alphabetically-earlier user
-// of the pair (svc-a/api) -- see `_host_isolation.py::
-// evaluate_host_isolation_waived`'s `target_of` docstring -- so the
-// `HOST001:shared-group` waiver is declared ONCE, on `api`, not on both
-// nodes; a duplicate on `worker` would correctly report STALE.
+// with fully disjoint owned paths, ports, and (T-0272) OS groups, and no
+// declared sudoers grant at all -- the isolated hardened shape HOST001/
+// HOST002 must fully discharge with NO waivers needed (shared-group and
+// sudoers are now structurally provable false, not an always-fire
+// honest gap that needed an explicit `waive`).
 //
 // tested end to end by tests/unit/strata/test_litmus_host_isolation.py.
 
@@ -21,8 +15,7 @@ node api : trusted {
     unit;
     owns "/etc/api" "0640";
     listens 8080;
-    waive "HOST001:shared-group" reason "no group grammar yet, T-draft-7b5b5541";
-    waive "HOST002:sudoers" reason "no sudoers grammar yet, T-draft-7b5b5541";
+    group "api-grp";
 }
 
 node worker : trusted {
@@ -31,5 +24,5 @@ node worker : trusted {
     unit;
     owns "/etc/worker" "0640";
     listens 8081;
-    waive "HOST002:sudoers" reason "no sudoers grammar yet, T-draft-7b5b5541";
+    group "worker-grp";
 }

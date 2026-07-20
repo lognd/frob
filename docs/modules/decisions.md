@@ -29,7 +29,7 @@ superseded_by: null       # AD-### when status is superseded
 
 ## Data models
 
-<!-- frob:describes src/frob/gates/decisions.py::DecisionStatus -->
+<!-- frob:describes src/frob/gates/decisions.py::_DecisionStatus -->
 <!-- frob:describes src/frob/gates/decisions.py::Decision -->
 <!-- frob:describes src/frob/gates/decisions.py::DecisionError -->
 

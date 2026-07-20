@@ -11,10 +11,10 @@ from __future__ import annotations
 from tree_sitter import Node
 
 from frob.lang._common import (
+    _leading_doc_comment,
+    _leaf_tokens,
+    _span_of,
     child_text,
-    leading_doc_comment,
-    leaf_tokens,
-    span_of,
 )
 from frob.lang._models import RawSymbol, SymbolKind
 
@@ -75,7 +75,7 @@ def _rust_public(node: Node, in_pyo3_impl: bool = False) -> bool:
 
 
 def _symbol_span(node: Node) -> tuple[int, int]:
-    """`span_of(node)` widened backward over any directly preceding
+    """`_span_of(node)` widened backward over any directly preceding
     `#[...]` attribute stack (T-0278: a `// frob:doc`/`// frob:tests`
     comment placed above a stack of 2+ attribute lines, e.g.
     `#[derive(Debug)]` / `#[serde(...)]`, silently failed to bind).
@@ -86,7 +86,7 @@ def _symbol_span(node: Node) -> tuple[int, int]:
     the def into one node whose span already starts at the first
     decorator (`_walk_python.py::_effective_node`). A rust item's own
     span therefore starts at the `pub fn`/`pub struct`/... keyword line,
-    never at a preceding attribute. `find_following_symbol` only looks
+    never at a preceding attribute. `_find_following_symbol` only looks
     within 2 lines past a comment (block)'s end line
     (`frob.lang._common`), so a directive sitting above a single
     attribute line still binds (1 line gap) but above 2+ stacked
@@ -103,7 +103,7 @@ def _symbol_span(node: Node) -> tuple[int, int]:
     while sib is not None and sib.type == "attribute_item":
         start_node = sib
         sib = sib.prev_sibling
-    return (span_of(start_node)[0], span_of(node)[1])
+    return (_span_of(start_node)[0], _span_of(node)[1])
 
 
 def _function_symbol(
@@ -118,8 +118,8 @@ def _function_symbol(
         kind=SymbolKind.METHOD if in_impl else SymbolKind.FUNCTION,
         public=_rust_public(node, in_pyo3_impl),
         span=_symbol_span(node),
-        sig_tokens=leaf_tokens(node, _COMMENT_TYPES, skip),
-        body_tokens=leaf_tokens(body, _COMMENT_TYPES) if body else (),
+        sig_tokens=_leaf_tokens(node, _COMMENT_TYPES, skip),
+        body_tokens=_leaf_tokens(body, _COMMENT_TYPES) if body else (),
         doc_text=doc,
     )
 
@@ -134,7 +134,7 @@ def _named_symbol(
         kind=kind,
         public=_rust_public(node),
         span=_symbol_span(node),
-        sig_tokens=leaf_tokens(node, _COMMENT_TYPES),
+        sig_tokens=_leaf_tokens(node, _COMMENT_TYPES),
         body_tokens=(),
         doc_text=doc,
     )
@@ -162,7 +162,7 @@ def _macro_symbol(
         kind=SymbolKind.FUNCTION,
         public=False,
         span=_symbol_span(node),
-        sig_tokens=leaf_tokens(node, _COMMENT_TYPES),
+        sig_tokens=_leaf_tokens(node, _COMMENT_TYPES),
         body_tokens=(),
         doc_text=doc,
     )
@@ -177,7 +177,7 @@ def _visit(
 ) -> None:
     """Recursive descent appending rust symbols under `container`."""
     for node in container.children:
-        doc = leading_doc_comment(node, _COMMENT_TYPES)
+        doc = _leading_doc_comment(node, _COMMENT_TYPES)
         if node.type == "function_item":
             symbols.append(_function_symbol(node, stack, in_impl, in_pyo3_impl, doc))
         elif node.type in ("struct_item", "trait_item"):

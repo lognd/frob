@@ -5,6 +5,7 @@ harvesting for locals, body serialization, and a function-node walker.
 """
 
 # frob:waive TEST005 reason="module line coverage 15.2%, debt T-0160"
+# frob:waive REF002 reason="private C++ fingerprinter imported only by its sibling aggregator frob.dup._legacy; a single inbound anchor is intentional for a legacy-scan leaf module, T-0450"  # noqa: E501
 
 from __future__ import annotations
 

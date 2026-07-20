@@ -1,17 +1,24 @@
 """CLI wiring for `frob ticket new|list|show|doable|plan|start|sweep|land|
-attach|block|close|fail|evidence|archive` (docs/modules/tickets.md)."""
+merge-driver|attach|block|close|fail|evidence|done-report|archive`
+(docs/modules/tickets.md)."""
 
 # frob:waive TEST005 reason="module line coverage 22.7%, debt T-0160"
+# frob:waive SCOPE001 reason="T-0323 scope omitted this file, filed T-draft-bc39c17f"
+# frob:waive SCOPE001 reason="T-0453 needs doable --show-blocked/--ignore-lease wiring here, T-0176/T-0220 precedent, no frob ticket scope cmd yet (T-0455)"  # noqa: E501
 
 from __future__ import annotations
 
 import sys
 from datetime import date
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from frob.app._style import style_state, style_ticket_id
 from frob.app.config import AppConfig
 from frob.logging import get_logger
+
+if TYPE_CHECKING:
+    from frob.tickets import TicketQueue
 
 _log = get_logger(__name__)
 
@@ -41,11 +48,13 @@ def _ticket_dispatch_table() -> dict:
         "migrate": lambda root, _cfg: _migrate(root),
         "renumber": _renumber,
         "land": _land,
+        "merge-driver": _merge_driver,
         "attach": _attach,
         "block": _block,
         "close": _close,
         "fail": _fail,
         "evidence": _evidence,
+        "done-report": _done_report,
         "archive": lambda root, _cfg: _archive(root),
     }
 
@@ -60,7 +69,8 @@ def run(cfg: AppConfig) -> None:
     if handler is None:
         _log.error(
             "usage: frob ticket <new|list|show|doable|plan|start|sweep|"
-            "land|attach|block|close|fail|evidence|archive> ..."
+            "land|merge-driver|attach|block|close|fail|evidence|"
+            "done-report|archive> ..."
         )
         sys.exit(1)
     handler(root, cfg)
@@ -209,14 +219,29 @@ def _show(root: Path, cfg: AppConfig) -> None:
     )
 
 
+# frob:ticket T-0453
 def _doable(root: Path, cfg: AppConfig) -> None:
-    from frob.tickets import doable, load_queue
+    """Render `frob ticket doable`: the default collision-safe list, or
+    `--show-blocked`'s per-exclusion explanation, or `--ignore-lease`'s raw
+    blocker-only list (T-0453 scope-lease model) -- also always prints an
+    "Active leases" section (what's holding the tree) and large-glob-
+    warning nudges, and a clear message when the result is empty."""
+    from frob.tickets import doable, load_queue, scope_breadth_context
 
     result = load_queue(root)
     if result.is_err:
         _log.error("ticket doable failed: %s", result.danger_err)
         sys.exit(1)
-    tickets = doable(result.danger_ok)
+    queue = result.danger_ok
+    # T-0453 perf fix: computed ONCE per invocation and threaded through
+    # every lease/warning check below -- never re-walked per candidate.
+    breadth = scope_breadth_context(root)
+
+    if cfg.ticket_show_blocked:
+        _render_doable_show_blocked(root, queue, cfg, breadth=breadth)
+        return
+
+    tickets = doable(queue, root, ignore_lease=cfg.ticket_ignore_lease)
 
     if cfg.ticket_json:
         import json
@@ -224,12 +249,110 @@ def _doable(root: Path, cfg: AppConfig) -> None:
         _log.info(json.dumps([t.model_dump(mode="json") for t in tickets], indent=2))
         return
 
+    _render_active_leases(queue)
+
+    for warning in _active_large_glob_warnings(root, queue, breadth=breadth):
+        _log.warning("ticket doable: %s", warning)
+
     if not tickets:
-        _log.info("nothing doable")
+        _log.info(
+            "zero doable tickets (no available lease found in repo tree; "
+            "starting any ticket would conflict with a ticket in progress)"
+        )
         return
     color = _stdout_color()
     for t in tickets:
         _log.info("%s  %s  (%s)", style_ticket_id(t.id, color), t.title, t.kind.value)
+
+
+# frob:ticket T-0453
+def _render_active_leases(queue: "TicketQueue") -> None:
+    """Print a compact "Active leases" line per IN-PROGRESS ticket (id,
+    title, scope) so the user always sees what's currently holding the
+    tree, ahead of the doable list itself (T-0453 UX request)."""
+    from frob.tickets import TicketState
+
+    holders = sorted(
+        (t for t in queue.tickets.values() if t.state is TicketState.IN_PROGRESS),
+        key=lambda t: t.id,
+    )
+    if not holders:
+        _log.info("Active leases: none")
+        return
+    color = _stdout_color()
+    _log.info("Active leases:")
+    for t in holders:
+        _log.info(
+            "  %s  %s  scope=%s", style_ticket_id(t.id, color), t.title, list(t.scope)
+        )
+
+
+# frob:ticket T-0453
+def _active_large_glob_warnings(
+    root: Path,
+    queue: "TicketQueue",
+    *,
+    breadth: tuple[int, tuple[str, ...]] | None = None,
+) -> list[str]:
+    """Large-glob-warning nudges (T-0453) for every ticket currently
+    holding a scope-lease (in-progress) or waiting to (queued/planned) --
+    surfaced alongside `frob ticket doable` output so an over-broad scope
+    that is serializing the queue is visible, not silently hand-diagnosed.
+    Pass a precomputed `breadth` (`scope_breadth_context(root)`) so the
+    breadth walk runs once for the whole listing, not once per ticket."""
+    from frob.tickets import TicketState, large_glob_warnings
+
+    warnings: list[str] = []
+    for t in sorted(queue.tickets.values(), key=lambda t: t.id):
+        if t.state in (
+            TicketState.IN_PROGRESS,
+            TicketState.QUEUED,
+            TicketState.PLANNED,
+        ):
+            warnings.extend(large_glob_warnings(t, root, breadth=breadth))
+    return warnings
+
+
+# frob:ticket T-0453
+def _render_doable_show_blocked(
+    root: Path,
+    queue: "TicketQueue",
+    cfg: AppConfig,
+    *,
+    breadth: tuple[int, tuple[str, ...]] | None = None,
+) -> None:
+    """Render `frob ticket doable --show-blocked`: every doable-candidate
+    currently hidden by an in-progress scope-lease, with the holding
+    ticket id and the overlapping glob named (T-0453)."""
+    from frob.tickets import doable_blocked
+
+    blocked = doable_blocked(queue, root, breadth=breadth)
+
+    if cfg.ticket_json:
+        import json
+
+        payload = [
+            {
+                "ticket": t.model_dump(mode="json"),
+                "held_by": [
+                    {"ticket_id": holder_id, "glob": glob} for holder_id, glob in hits
+                ],
+            }
+            for t, hits in blocked
+        ]
+        _log.info(json.dumps(payload, indent=2))
+        return
+
+    if not blocked:
+        _log.info("nothing held back by a scope-lease")
+        return
+    color = _stdout_color()
+    for t, hits in blocked:
+        reasons = "; ".join(
+            f"scope {glob!r} leased by in-progress {holder_id}"
+            for holder_id, glob in hits
+        )
+        _log.info("%s  %s  held: %s", style_ticket_id(t.id, color), t.title, reasons)
 
 
 def _migrate(root: Path) -> None:
@@ -343,23 +466,166 @@ def _report_land_result(root: Path, report) -> None:  # noqa: ANN001
         _log.info("  %s", f)
 
 
+# frob:ticket T-0398
+def _land_collected_fn(worktree: Path):  # noqa: ANN201
+    """D-05 CLI closure: `land()` calls this with no args, AFTER its
+    internal merge, to get the post-merge worktree's collected node ids.
+    Best-effort -- a collection failure logs and returns an empty set
+    (fail-closed: `land`'s post-merge check then treats every non-cmd
+    evidence id as unresolved, refusing the landing, rather than silently
+    skipping the check)."""
+
+    def fn() -> frozenset[str]:
+        collected = _collect_python_and_rust_ids(worktree)
+        if collected.is_err:
+            _log.warning(
+                "land: post-merge collection failed (%s) -- treating all "
+                "evidence as unresolved",
+                collected.danger_err,
+            )
+            return frozenset()
+        python_ids, rust_ids, _runners = collected.danger_ok
+        return python_ids | rust_ids
+
+    return fn
+
+
+# frob:ticket T-0398
+def _land_passed_fn(worktree: Path):  # noqa: ANN201
+    """D-05 CLI closure: `land()` calls this with the post-merge ticket's
+    non-cmd evidence ids, AFTER its internal merge, and expects back the
+    subset actually observed passing -- reuses `_verify_ids_passing`
+    (D-01's same real-run verification) against the worktree."""
+
+    def fn(node_ids) -> frozenset[str]:  # noqa: ANN001
+        collected = _collect_python_and_rust_ids(worktree)
+        if collected.is_err:
+            _log.warning(
+                "land: post-merge collection failed (%s) -- treating all "
+                "evidence as NOT passing",
+                collected.danger_err,
+            )
+            return frozenset()
+        python_ids, rust_ids, runners = collected.danger_ok
+        return _verify_ids_passing(worktree, node_ids, python_ids, rust_ids, runners)
+
+    return fn
+
+
+# frob:ticket T-0398
+def _land_covers_scope_fn(worktree: Path):  # noqa: ANN201
+    """D-05/D-02 CLI closure: `land()` calls this with the post-merge/
+    post-finalize `Ticket`, and expects back the D-02 scope-binding
+    answer computed against the WORKTREE's graph (not root's) -- the
+    merged, about-to-be-squashed tree is the one whose scope/evidence
+    actually matter."""
+
+    def fn(ticket):  # noqa: ANN001, ANN202
+        return _covers_scope_for_ticket(worktree, ticket)
+
+    return fn
+
+
 def _land(root: Path, cfg: AppConfig) -> None:
     """`frob ticket land <id> --worktree <path> [--dry-run]`: run the whole
     merge-check-splice-close-commit chain via `frob.tickets.land`, reporting
     every field of the resulting `LandReport` (or the exact `Err` + remedy
-    already logged by `land` itself) before exiting non-zero on failure."""
+    already logged by `land` itself) before exiting non-zero on failure.
+
+    T-0398: this is the CLI's STRICT default -- `collected`/`passed`/
+    `covers_scope` are ALWAYS supplied (as closures over the worktree,
+    since `land`'s internal merge determines the post-merge state they
+    must be computed against, see `land`'s own docstring), so a stale/
+    red/unrelated evidence id can never silently land onto main through
+    the real `frob ticket land` command, even though the library function
+    itself still defaults to permissive (`None`) for other callers/tests."""
     from frob.tickets import land
 
     _require_land_args(cfg)
     assert cfg.ticket_id is not None  # narrows for the type checker; enforced above
     assert cfg.ticket_worktree is not None
+    worktree = cfg.ticket_worktree
 
-    result = land(root, cfg.ticket_id, cfg.ticket_worktree, dry_run=cfg.ticket_dry_run)
+    result = land(
+        root,
+        cfg.ticket_id,
+        worktree,
+        dry_run=cfg.ticket_dry_run,
+        collected=_land_collected_fn(worktree),
+        passed=_land_passed_fn(worktree),
+        covers_scope=_land_covers_scope_fn(worktree),
+    )
     if result.is_err:
         _log.error("ticket land failed: %s", result.danger_err)
         sys.exit(1)
 
     _report_land_result(root, result.danger_ok)
+
+
+# frob:ticket T-0323
+def _require_merge_driver_args(cfg: AppConfig) -> None:
+    """Exit 1 (with a logged reason) unless `frob ticket merge-driver`'s
+    three positional temp-file paths (%O/%A/%B, git's merge-driver
+    protocol) are all present."""
+    if (
+        cfg.ticket_merge_base is None
+        or cfg.ticket_merge_ours is None
+        or cfg.ticket_merge_theirs is None
+    ):
+        _log.error(
+            "frob ticket merge-driver requires %%O %%A %%B (base/ours/theirs "
+            "temp file paths -- git supplies these when invoked as the "
+            "registered merge driver, see .gitattributes / docs/modules/"
+            "tickets.md#git-merge-driver)"
+        )
+        sys.exit(1)
+
+
+# frob:ticket T-0323
+def _merge_driver(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket merge-driver %O %A %B`: git's merge-driver entry point
+    for `tickets.md` (docs/modules/tickets.md#git-merge-driver). Reads the
+    `ours` (%A) and `theirs` (%B) temp files git hands it, splices them via
+    the SAME `splice_ledger` `frob ticket land` uses (never a duplicate
+    reimplementation), and overwrites `ours` in place with the result --
+    the merge-driver protocol's contract: `ours`'s final content on disk
+    IS the merge result git commits, regardless of exit status. `base`
+    (%O) is accepted (git always supplies it) but unused: `splice_ledger`
+    resolves per-ticket-id divergence via state-rank/Done-report tiebreaks
+    over `ours`/`theirs` alone, the same as `land`'s own splice call, not
+    a 3-way base diff. Exits 0 (git treats the auto-splice as a clean,
+    non-conflicted merge) unless `ours`/`theirs` fail to parse as a
+    ticket ledger, in which case it exits 1 and leaves `ours` untouched --
+    git then reports the usual conflict for a human to resolve by hand,
+    exactly as if no driver were registered."""
+    from frob.tickets import splice_ledger
+    from frob.tickets._land import _archived_ids
+
+    _require_merge_driver_args(cfg)
+    assert cfg.ticket_merge_ours is not None  # narrows for the type checker
+    assert cfg.ticket_merge_theirs is not None
+    ours_path, theirs_path = cfg.ticket_merge_ours, cfg.ticket_merge_theirs
+
+    ours_text = ours_path.read_text(encoding="utf-8")
+    theirs_text = theirs_path.read_text(encoding="utf-8")
+
+    spliced = splice_ledger(ours_text, theirs_text, archived_ids=_archived_ids(root))
+    if spliced.is_err:
+        _log.error(
+            "ticket merge-driver: splice_ledger failed (%s) -- leaving %s "
+            "untouched for a manual conflict resolution",
+            spliced.danger_err,
+            ours_path,
+        )
+        sys.exit(1)
+
+    ours_path.write_text(spliced.danger_ok, encoding="utf-8")
+    _log.info(
+        "ticket merge-driver: spliced %s (ours) + %s (theirs) -> %s",
+        ours_path,
+        theirs_path,
+        ours_path,
+    )
 
 
 def _plan(root: Path, cfg: AppConfig) -> None:
@@ -595,8 +861,62 @@ def _close_failure_hint(ticket_id: str, state, err) -> str:  # noqa: ANN001
     return f"close failed: {err}"
 
 
+# frob:ticket T-0398
+def _graph_snapshot(root: Path):  # noqa: ANN201
+    """The current `GraphSnapshot`, loading the cache (or building it fresh
+    on a miss) -- same pattern as `_scope_digest_for_ticket`, factored so
+    D-02's `covers_scope` computation shares it rather than re-deriving
+    its own cache-then-build fallback."""
+    from frob.graph import build_graph, load_graph
+
+    cache = root / _CACHE_REL
+    loaded = load_graph(cache)
+    if loaded.is_err:
+        loaded = build_graph(root, cache)
+    return loaded
+
+
+# frob:ticket T-0398
+def _covers_scope_for_ticket(root: Path, ticket) -> bool | None:  # noqa: ANN001
+    """D-02 CLI wiring: whether `ticket`'s evidence covers a touched/scope
+    symbol, via `frob.gates.evidence_covers_scope` over the current graph.
+
+    Returns `None` (skip the check entirely) when `ticket` carries NO
+    non-cmd evidence at all -- a docs-kind ticket closed purely via
+    `--evidence-cmd` has its own separate exit-code/digest verification
+    channel (`add_cmd_evidence`) that already substitutes for "coverage";
+    `evidence_covers_scope` would otherwise (correctly, by its own
+    contract) return `False` for a ticket with zero non-cmd evidence to
+    scan, which would wrongly block the docs cmd-evidence path this ticket
+    was explicitly warned not to break. Also returns `None` when
+    `ticket.scope` itself is empty -- an undeclared scope gives the
+    binding check nothing to bind AGAINST, so "does evidence cover scope"
+    is not a meaningful question to ask (this is a false-positive guard,
+    not a loophole: a ticket that declares a real scope still gets the
+    full check). Returns `False` (fail-closed, blocking the close) if the
+    graph itself cannot be loaded/built -- "cannot verify" must never
+    silently become "verified"."""
+    from frob.gates import evidence_covers_scope
+    from frob.tickets._models import is_cmd_evidence
+
+    non_cmd = [e for e in ticket.evidence if not is_cmd_evidence(e)]
+    if not non_cmd or not ticket.scope:
+        return None
+
+    snapshot = _graph_snapshot(root)
+    if snapshot.is_err:
+        _log.warning(
+            "ticket close: graph unavailable (%s), cannot verify D-02 "
+            "scope-binding -- refusing to close on unverifiable evidence",
+            snapshot.danger_err,
+        )
+        return False
+    return evidence_covers_scope(ticket, snapshot.danger_ok)
+
+
 # frob:ticket T-0106
 # frob:ticket T-0215
+# frob:ticket T-0398
 def _close(root: Path, cfg: AppConfig) -> None:
     """Transition a ticket to done; if `--evidence` ids or `--evidence-cmd`
     were given, validate and append them first (`_apply_evidence` /
@@ -604,7 +924,13 @@ def _close(root: Path, cfg: AppConfig) -> None:
     unresolvable/fails, so a bad flag can never close a ticket on
     unvalidated evidence. A failed transition is reported through
     `_close_failure_hint` so the operator gets a concrete next command, not
-    just the bare state-machine error (T-0215)."""
+    just the bare state-machine error (T-0215).
+
+    T-0398: this is the CLI's STRICT default -- `covers_scope` is always
+    computed (`_covers_scope_for_ticket`) and always passed to
+    `transition`, so evidence that covers none of the ticket's touched/
+    scope symbols rejects the close (`EvidenceScopeUnbound`) through the
+    real `frob ticket close` command."""
     from frob.tickets import TicketState, transition
 
     if cfg.ticket_id is None:
@@ -623,7 +949,15 @@ def _close(root: Path, cfg: AppConfig) -> None:
         if cmd_added.is_err:
             sys.exit(1)
 
-    result = transition(root, cfg.ticket_id, TicketState.DONE)
+    # Re-load: evidence may have just changed above, and covers_scope must
+    # be computed against the ticket's CURRENT evidence, not the state
+    # loaded before this call's own --evidence/--evidence-cmd applied.
+    fresh_ticket = _load_ticket_or_exit(root, cfg.ticket_id, verb="close")
+    covers_scope = _covers_scope_for_ticket(root, fresh_ticket)
+
+    result = transition(
+        root, cfg.ticket_id, TicketState.DONE, covers_scope=covers_scope
+    )
     if result.is_err:
         _log.error(_close_failure_hint(cfg.ticket_id, ticket.state, result.danger_err))
         sys.exit(1)
@@ -683,18 +1017,215 @@ def _evidence(root: Path, cfg: AppConfig) -> None:
             sys.exit(1)
 
 
+# frob:ticket T-0458
+def _resolve_done_report_why(cfg: AppConfig) -> str | None:
+    """Resolve `frob ticket done-report`'s narrative why text: `--why-file`
+    wins if given, else `--why` (a literal `-` or an omitted value both
+    mean "read stdin", so `frob ticket done-report T-#### -` and a bare
+    `frob ticket done-report T-####` piped a narrative both work). Exits 1
+    on an unreadable `--why-file`; returns `None` only if reading stdin
+    yields nothing meaningful for the caller to act on (never silently
+    writes an empty report)."""
+    if cfg.ticket_why_file is not None:
+        try:
+            return cfg.ticket_why_file.read_text(encoding="utf-8")
+        except OSError as exc:
+            _log.error(
+                "done-report: could not read --why-file %s: %s",
+                cfg.ticket_why_file,
+                exc,
+            )
+            sys.exit(1)
+    if cfg.ticket_why is not None and cfg.ticket_why != "-":
+        return cfg.ticket_why
+    text = sys.stdin.read()
+    return text or None
+
+
+# frob:ticket T-0458
+# frob:tests tests/test_tickets_evidence_cli.py::TestDoneReportCli.test_cli_composes_and_writes  # noqa: E501
+def _done_report(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket done-report <id> (--why TEXT | --why-file PATH | -)`:
+    resolve the narrative why, then call `frob.tickets.set_done_report` --
+    the ONLY thing this command does is supply `why`; the Changed and
+    Evidence sections are composed entirely inside `set_done_report` from
+    git and the ticket's own recorded evidence, never parsed/typed here
+    (T-0458)."""
+    from frob.tickets import set_done_report
+
+    if cfg.ticket_id is None:
+        _log.error("frob ticket done-report requires <id>")
+        sys.exit(1)
+
+    why = _resolve_done_report_why(cfg)
+    if why is None:
+        _log.error(
+            "frob ticket done-report requires --why TEXT, --why-file PATH, "
+            "or a narrative piped via stdin"
+        )
+        sys.exit(1)
+
+    result = set_done_report(root, cfg.ticket_id, why=why, base_ref=cfg.ticket_base_ref)
+    if result.is_err:
+        _log.error("done-report failed: %s", result.danger_err)
+        sys.exit(1)
+    ticket = result.danger_ok
+    _log.info(
+        "%s: Done report written (%d evidence id(s) rendered)",
+        cfg.ticket_id,
+        len(ticket.evidence),
+    )
+
+
+# frob:ticket T-0398
+def _collect_python_and_rust_ids(root: Path):  # noqa: ANN201
+    """`(python_ids, rust_ids, runners)` -- the same union-collection dance
+    `_apply_evidence` always did (T-0301), factored out so both evidence
+    recording (D-01 pass-check) and `frob ticket land`'s post-merge
+    re-verification (D-05) share one implementation. Returns `Err` only on
+    a python collection failure (rust degrades to a WARNING + empty set,
+    matching the existing resilience posture); `runners` is `()` if
+    `load_runners` itself fails."""
+    from frob.testing import collect_python_tests, collect_rust_tests, load_runners
+
+    collected = collect_python_tests(root)
+    if collected.is_err:
+        return collected
+
+    python_ids = frozenset(collected.danger_ok.node_ids)
+    rust_ids: frozenset[str] = frozenset()
+
+    runners = load_runners(root)
+    runner_specs = runners.danger_ok if runners.is_ok else ()
+    if any(spec.language == "rust" for spec in runner_specs):
+        rust_collected = collect_rust_tests(root)
+        if rust_collected.is_err:
+            _log.warning(
+                "ticket evidence: rust collection failed (%s); validating "
+                "against pytest ids only for this call",
+                rust_collected.danger_err,
+            )
+        else:
+            rust_ids = frozenset(rust_collected.danger_ok.node_ids)
+
+    from typani.result import Ok
+
+    return Ok((python_ids, rust_ids, runner_specs))
+
+
+# frob:ticket T-0398
+def _verify_ids_passing(
+    root: Path,
+    node_ids,  # noqa: ANN001
+    python_collected: frozenset[str],
+    rust_collected: frozenset[str],
+    runners,  # noqa: ANN001
+) -> frozenset[str]:
+    """D-01 CLI wiring: actually RUN `node_ids` (bucketed by which
+    collected set each id resolves against, python vs rust) and return the
+    subset that passed -- the piece that makes `frob ticket evidence`/
+    `close`/`land` mean "the work was actually tested," not just "a test
+    with this name exists."
+
+    Each language bucket is run as its OWN `run_selected` call, not one
+    combined invocation, for two reasons: (1) a combined run's single exit
+    code cannot tell you WHICH of several ids failed, so a batch mixing a
+    red and a green id would have to reject both -- overly strict for no
+    reason; per-language buckets are the coarsest split that still lets
+    genuinely-independent ids pass independently. (2) an infra failure in
+    one language (e.g. no PyO3 env for rust) must not silently swallow a
+    python id's real, successful verification -- each bucket's own
+    Err/failure is logged and only THAT bucket's ids are withheld from the
+    returned passing set, never the whole call. An id that resolves
+    against neither collected set is simply absent from the result (it
+    already fails resolution elsewhere; this function only concerns
+    itself with ids that at least exist)."""
+    from frob.tickets._models import matches_collected
+
+    passing: set[str] = set()
+    buckets = {
+        "python": tuple(n for n in node_ids if matches_collected(n, python_collected)),
+        "rust": tuple(n for n in node_ids if matches_collected(n, rust_collected)),
+    }
+    for language, items in buckets.items():
+        if items:
+            passing.update(_verify_one_bucket_passing(root, language, items, runners))
+    return frozenset(passing)
+
+
+# frob:ticket T-0398
+def _verify_one_bucket_passing(
+    root: Path,
+    language: str,
+    items: tuple[str, ...],
+    runners,  # noqa: ANN001
+) -> frozenset[str]:
+    """One language bucket of `_verify_ids_passing`'s work: run `items`
+    via `run_selected` and return the subset (all-or-nothing per bucket,
+    see `_verify_ids_passing`'s docstring) that passed. Falls back to a
+    direct `pytest <ids>` invocation for python when no `[[test.runner]]`
+    is declared at all -- `frob.toml` is optional, so a repo that never
+    configured one must not fall straight to "not passing" (a false-
+    positive trap this fix was explicitly warned against)."""
+    from frob.testing import SelectionReport, TestingError, run_selected
+
+    selection = SelectionReport(
+        touched=(),
+        selected={language: items},
+        ripple=(),
+        unbound=(),
+        fallback="evidence-verify",
+    )
+    run = run_selected(selection, runners, root)
+    if run.is_ok and run.danger_ok.ok:
+        return frozenset(items)
+    if run.is_err and language == "python" and run.danger_err == TestingError.NoRunner:
+        if _run_pytest_directly(root, items):
+            return frozenset(items)
+        _log.warning(
+            "ticket evidence: direct pytest verification FAILED for %s", list(items)
+        )
+        return frozenset()
+    _log.warning(
+        "ticket evidence: %s verification %s for %s",
+        language,
+        f"run failed to execute ({run.danger_err})" if run.is_err else "run FAILED",
+        list(items),
+    )
+    return frozenset()
+
+
+# frob:ticket T-0398
+def _run_pytest_directly(root: Path, node_ids) -> bool:  # noqa: ANN001
+    """`uv run pytest <node_ids> -q -o addopts=` in `root`, exit 0 == pass
+    -- the no-`[[test.runner]]`-declared fallback `_verify_ids_passing`
+    uses so D-01 verification works even in a repo that never configured
+    `frob.toml`'s test-runner registry (the same posture
+    `collect_python_tests` already takes for collection)."""
+    from frob.gitio import run_argv
+
+    argv = ("uv", "run", "pytest", *node_ids, "-q", "-o", "addopts=")
+    spawned = run_argv(argv, cwd=root, timeout_s=300.0)
+    if spawned.is_err:
+        _log.warning("ticket evidence: direct pytest failed to spawn in %s", root)
+        return False
+    return spawned.danger_ok.returncode == 0
+
+
 # frob:ticket T-0106
+# frob:ticket T-0398
 # frob:tests tests/test_tickets_evidence_cli.py
 def _apply_evidence(root: Path, ticket_id: str, node_ids: list[str]):
-    """Collect pytest node ids, validate `node_ids` against them via
-    `frob.tickets.add_evidence` (resolvable-id + dedupe semantics, wholesale
-    batch rejection on any unresolvable id), and append the resolvable ones
-    to `ticket_id`'s structured evidence list. Shared by `frob ticket
-    evidence`, `frob ticket new --evidence`, and `frob ticket close
-    --evidence` so all three routes go through identical validation --
-    never through an ad hoc, unvalidated write. Returns the `add_evidence`
-    Result unchanged so callers (e.g. `_close`) can refuse to transition
-    state on failure.
+    """Collect pytest node ids, validate `node_ids` against them AND
+    actually run them (D-01: `passed`) via `frob.tickets.add_evidence`
+    (resolvable-id + passing + dedupe semantics, wholesale batch rejection
+    on any unresolvable OR non-passing id), and append the resolvable
+    passing ones to `ticket_id`'s structured evidence list. Shared by
+    `frob ticket evidence`, `frob ticket new --evidence`, and `frob ticket
+    close --evidence` so all three routes go through identical validation
+    -- never through an ad hoc, unvalidated write. Returns the
+    `add_evidence` Result unchanged so callers (e.g. `_close`) can refuse
+    to transition state on failure.
 
     T-0301 (feldspar T-0015 escalation): a `--evidence` id must resolve
     against the union of every collected oracle the repo's `[[test.runner]]`
@@ -708,32 +1239,28 @@ def _apply_evidence(root: Path, ticket_id: str, node_ids: list[str]):
     blocking evidence recording outright -- an unrelated cargo/pyo3
     environment problem must not stop a purely-python ticket's evidence
     from being recorded (same resilience posture as T-0144's `make core`
-    guidance elsewhere in this module)."""
-    from frob.testing import collect_python_tests, collect_rust_tests, load_runners
+    guidance elsewhere in this module).
+
+    T-0398: this is the CLI's STRICT default -- `passed` is always
+    computed and always passed to `add_evidence`, so a red/errored/
+    skipped evidence test rejects the whole batch (`EvidenceNotPassing`)
+    through the real `frob ticket evidence`/`close` commands, not just the
+    library function a caller could otherwise bypass by never supplying
+    `passed`."""
     from frob.tickets import add_evidence
 
-    collected = collect_python_tests(root)
+    collected = _collect_python_and_rust_ids(root)
     if collected.is_err:
         _log.error(
             "ticket evidence: pytest collection failed: %s", collected.danger_err
         )
         return collected
+    python_ids, rust_ids, runners = collected.danger_ok
+    collected_ids = python_ids | rust_ids
 
-    collected_ids = set(collected.danger_ok.node_ids)
+    passing = _verify_ids_passing(root, node_ids, python_ids, rust_ids, runners)
 
-    runners = load_runners(root)
-    if runners.is_ok and any(spec.language == "rust" for spec in runners.danger_ok):
-        rust_collected = collect_rust_tests(root)
-        if rust_collected.is_err:
-            _log.warning(
-                "ticket evidence: rust collection failed (%s); validating "
-                "against pytest ids only for this call",
-                rust_collected.danger_err,
-            )
-        else:
-            collected_ids |= rust_collected.danger_ok.node_ids
-
-    result = add_evidence(root, ticket_id, node_ids, frozenset(collected_ids))
+    result = add_evidence(root, ticket_id, node_ids, collected_ids, passed=passing)
     _log_evidence_result(ticket_id, result)
     return result
 
@@ -743,8 +1270,11 @@ def _log_evidence_result(ticket_id: str, result) -> None:  # noqa: ANN001
     ticket's resulting evidence id count."""
     if result.is_err:
         _log.error(
-            "ticket evidence failed: %s (run `frob test --collect` to refresh "
-            "collected tests, or fix the id)",
+            "ticket evidence failed: %s (the collection cache self-refreshes "
+            "on the next `frob test` / `frob check` run; if it still does "
+            "not resolve, delete .frob/pytest-collect.json (or "
+            ".frob/cargo-collect.json for rust) to force a rebuild, or fix "
+            "the id)",
             result.danger_err,
         )
         return

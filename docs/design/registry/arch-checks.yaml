@@ -1,0 +1,2185 @@
+# frob:used-by src/frob/gates/_registry_exhaustiveness.py
+# arch-checks.yaml -- code-structure/systems-design check catalog + adversarial-hardening rules
+# source docs: architecture-check-catalog.md, structural-linter-adversarial-hardening.md
+schema_version: 1
+entries:
+  - id: "ACC-1-1-1"
+    name: "1 1 1"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.1"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-1-2"
+    name: "1 1 2"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.1"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-1-3"
+    name: "1 1 3"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.1"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-1-4"
+    name: "1 1 4"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.1"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-1-5"
+    name: "1 1 5"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.1"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-2-REP-REUSE-RELEASE-EQUIVALENCE"
+    name: "1 2 Rep Reuse Release Equivalence"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-2-CCP-COMMON-CLOSURE"
+    name: "1 2 Ccp Common Closure"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.2"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-2-CRP-COMMON-REUSE"
+    name: "1 2 Crp Common Reuse"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.2"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-2-ADP-ACYCLIC-DEPENDENCIES"
+    name: "1 2 Adp Acyclic Dependencies"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.2"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-2-SDP-STABLE-DEPENDENCIES"
+    name: "1 2 Sdp Stable Dependencies"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.2"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-2-SAP-STABLE-ABSTRACTIONS"
+    name: "1 2 Sap Stable Abstractions"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.2"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-2-INSTABILITY-METRIC-I-CE-CA-CE"
+    name: "1 2 Instability Metric I Ce Ca Ce"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.2"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-2-ABSTRACTNESS-METRIC-A-ABSTRACT-TYPES-TOTAL-TYPES"
+    name: "1 2 Abstractness Metric A Abstract Types Total Types"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.2"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-2-DISTANCE-FROM-MAIN-SEQUENCE-D"
+    name: "1 2 Distance From Main Sequence D"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-3-INFORMATION-EXPERT"
+    name: "1 3 Information Expert"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.3"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-3-CREATOR"
+    name: "1 3 Creator"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.3"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-3-CONTROLLER"
+    name: "1 3 Controller"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.3"
+    checkability: "tier3-not-checkable"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-3-LOW-COUPLING"
+    name: "1 3 Low Coupling"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.3"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-3-HIGH-COHESION"
+    name: "1 3 High Cohesion"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.3"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-3-POLYMORPHISM"
+    name: "1 3 Polymorphism"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.3"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-3-PURE-FABRICATION"
+    name: "1 3 Pure Fabrication"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.3"
+    checkability: "tier3-not-checkable"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-3-INDIRECTION"
+    name: "1 3 Indirection"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.3"
+    checkability: "tier3-not-checkable"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-3-PROTECTED-VARIATIONS"
+    name: "1 3 Protected Variations"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.3"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-4-CONNASCENCE-OF-NAME-CON"
+    name: "1 4 Connascence Of Name Con"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.4"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-4-CONNASCENCE-OF-TYPE-COT"
+    name: "1 4 Connascence Of Type Cot"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.4"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-4-CONNASCENCE-OF-MEANING-CONVENTION-COM"
+    name: "1 4 Connascence Of Meaning Convention Com"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.4"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-4-CONNASCENCE-OF-POSITION-COP"
+    name: "1 4 Connascence Of Position Cop"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.4"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-4-CONNASCENCE-OF-ALGORITHM-COA"
+    name: "1 4 Connascence Of Algorithm Coa"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.4"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-4-NAME"
+    name: "1 4 Name"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.4"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-4-CONNASCENCE-OF-EXECUTION-ORDER"
+    name: "1 4 Connascence Of Execution Order"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.4"
+    checkability: "tier3-not-checkable"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-4-CONNASCENCE-OF-TIMING-COTM"
+    name: "1 4 Connascence Of Timing Cotm"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.4"
+    checkability: "tier3-not-checkable"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-4-CONNASCENCE-OF-VALUE-COV"
+    name: "1 4 Connascence Of Value Cov"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.4"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-4-CONNASCENCE-OF-IDENTITY-COI"
+    name: "1 4 Connascence Of Identity Coi"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.4"
+    checkability: "tier3-not-checkable"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-5-DRY-DON-T-REPEAT-YOURSELF"
+    name: "1 5 Dry Don T Repeat Yourself"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.5"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-5-KISS-KEEP-IT-SIMPLE"
+    name: "1 5 Kiss Keep It Simple"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.5"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-5-YAGNI"
+    name: "1 5 Yagni"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.5"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-5-LAW-OF-DEMETER"
+    name: "1 5 Law Of Demeter"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.5"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-5-COMPOSITION-OVER-INHERITANCE"
+    name: "1 5 Composition Over Inheritance"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.5"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-5-TELL-DON-T-ASK"
+    name: "1 5 Tell Don T Ask"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.5"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-5-CQS-COMMAND-QUERY-SEPARATION"
+    name: "1 5 Cqs Command Query Separation"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.5"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-5-FAIL-FAST"
+    name: "1 5 Fail Fast"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.5"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-5-PRINCIPLE-OF-LEAST-ASTONISHMENT"
+    name: "1 5 Principle Of Least Astonishment"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.5"
+    checkability: "tier3-not-checkable"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-5-SLAP-SINGLE-LEVEL-OF-ABSTRACTION-PRINCIPLE"
+    name: "1 5 Slap Single Level Of Abstraction Principle"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.5"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-5-ENCAPSULATE-WHAT-VARIES"
+    name: "1 5 Encapsulate What Varies"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.5"
+    checkability: "tier3-not-checkable"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-5-PROGRAM-TO-AN-INTERFACE-NOT-AN-IMPLEMENTATION"
+    name: "1 5 Program To An Interface Not An Implementation"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.5"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-5-INVERSION-OF-CONTROL"
+    name: "1 5 Inversion Of Control"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.5"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-5-MAKE-ILLEGAL-STATES-UNREPRESENTABLE"
+    name: "1 5 Make Illegal States Unrepresentable"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.5"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-5-PARSE-DON-T-VALIDATE"
+    name: "1 5 Parse Don T Validate"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.5"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-5-ERRORS-AS-VALUES"
+    name: "1 5 Errors As Values"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.5"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-5-IMMUTABILITY-BY-DEFAULT"
+    name: "1 5 Immutability By Default"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.5"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-5-PRINCIPLE-OF-LEAST-PRIVILEGE-DESIGN-LEVEL-DISTINCT-FROM-SECURITY-LIST-EN"
+    name: "1 5 Principle Of Least Privilege Design Level Distinct From Security List En"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.5"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-5-ROBUSTNESS-PRINCIPLE-BE-LIBERAL-IN-WHAT-YOU-ACCEPT-CONSERVATIVE-IN-WHAT-"
+    name: "1 5 Robustness Principle Be Liberal In What You Accept Conservative In What "
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.5"
+    checkability: "tier3-not-checkable"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-5-RULE-OF-THREE-DUPLICATE-TWICE-BEFORE-ABSTRACTING"
+    name: "1 5 Rule Of Three Duplicate Twice Before Abstracting"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.5"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-1-5-HOLLYWOOD-PRINCIPLE-DON-T-CALL-US-WE-LL-CALL-YOU"
+    name: "1 5 Hollywood Principle Don T Call Us We Ll Call You"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-1.5"
+    checkability: "tier3-not-checkable"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-1-MYSTERIOUS-NAME"
+    name: "2 1 Mysterious Name"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.1"
+    checkability: "tier3-not-checkable"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-1-DUPLICATED-CODE"
+    name: "2 1 Duplicated Code"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.1"
+    checkability: "tier1-static"
+    disposition: handled_by:DUP001
+    cross_refs: []
+  - id: "ACC-2-1-LONG-FUNCTION"
+    name: "2 1 Long Function"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.1"
+    checkability: "tier1-static"
+    disposition: handled_by:ARCH001
+    cross_refs: []
+  - id: "ACC-2-1-LONG-PARAMETER-LIST"
+    name: "2 1 Long Parameter List"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.1"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-1-GLOBAL-DATA"
+    name: "2 1 Global Data"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.1"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-1-MUTABLE-DATA"
+    name: "2 1 Mutable Data"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.1"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-1-DIVERGENT-CHANGE"
+    name: "2 1 Divergent Change"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.1"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-1-SHOTGUN-SURGERY"
+    name: "2 1 Shotgun Surgery"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.1"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-1-FEATURE-ENVY"
+    name: "2 1 Feature Envy"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.1"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-1-DATA-CLUMPS"
+    name: "2 1 Data Clumps"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.1"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-1-PRIMITIVE-OBSESSION"
+    name: "2 1 Primitive Obsession"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.1"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-1-REPEATED-SWITCHES"
+    name: "2 1 Repeated Switches"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.1"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-1-LOOPS-IMPERATIVE-LOOP-WHERE-A-PIPELINE-COLLECTION-OP-READS-BETTER"
+    name: "2 1 Loops Imperative Loop Where A Pipeline Collection Op Reads Better"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.1"
+    checkability: "tier3-not-checkable"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-1-LAZY-ELEMENT"
+    name: "2 1 Lazy Element"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.1"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-1-SPECULATIVE-GENERALITY"
+    name: "2 1 Speculative Generality"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.1"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-1-TEMPORARY-FIELD"
+    name: "2 1 Temporary Field"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.1"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-1-MESSAGE-CHAINS"
+    name: "2 1 Message Chains"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.1"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-1-MIDDLE-MAN"
+    name: "2 1 Middle Man"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.1"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-1-INSIDER-TRADING"
+    name: "2 1 Insider Trading"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.1"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-1-LARGE-CLASS"
+    name: "2 1 Large Class"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.1"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-1-ALTERNATIVE-CLASSES-WITH-DIFFERENT-INTERFACES"
+    name: "2 1 Alternative Classes With Different Interfaces"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.1"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-1-DATA-CLASS"
+    name: "2 1 Data Class"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.1"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-1-REFUSED-BEQUEST"
+    name: "2 1 Refused Bequest"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.1"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-C1-INAPPROPRIATE-INFORMATION"
+    name: "2 2 C1 Inappropriate Information"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-C2-OBSOLETE-COMMENT"
+    name: "2 2 C2 Obsolete Comment"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-C3-REDUNDANT-COMMENT"
+    name: "2 2 C3 Redundant Comment"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-C4-POORLY-WRITTEN-COMMENT"
+    name: "2 2 C4 Poorly Written Comment"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier3-not-checkable"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-C5-COMMENTED-OUT-CODE"
+    name: "2 2 C5 Commented Out Code"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-NAME"
+    name: "2 2 Name"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-E1-BUILD-REQUIRES-MORE-THAN-ONE-STEP"
+    name: "2 2 E1 Build Requires More Than One Step"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-E2-TESTS-REQUIRE-MORE-THAN-ONE-STEP"
+    name: "2 2 E2 Tests Require More Than One Step"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-NAME-2"
+    name: "2 2 Name 2"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-F1-TOO-MANY-ARGUMENTS"
+    name: "2 2 F1 Too Many Arguments"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-F2-OUTPUT-ARGUMENTS"
+    name: "2 2 F2 Output Arguments"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-F3-FLAG-ARGUMENTS"
+    name: "2 2 F3 Flag Arguments"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-F4-DEAD-FUNCTION"
+    name: "2 2 F4 Dead Function"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-"
+    name: "2 2 "
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-G1"
+    name: "2 2 G1"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-G2"
+    name: "2 2 G2"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-G3"
+    name: "2 2 G3"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-G4"
+    name: "2 2 G4"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-G5"
+    name: "2 2 G5"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-G6"
+    name: "2 2 G6"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-G7"
+    name: "2 2 G7"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-G8"
+    name: "2 2 G8"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-G9"
+    name: "2 2 G9"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-G10"
+    name: "2 2 G10"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-G11"
+    name: "2 2 G11"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-G12"
+    name: "2 2 G12"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-G13"
+    name: "2 2 G13"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-G14"
+    name: "2 2 G14"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-G15"
+    name: "2 2 G15"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-G16"
+    name: "2 2 G16"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-G17"
+    name: "2 2 G17"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-G18"
+    name: "2 2 G18"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-G19"
+    name: "2 2 G19"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-G20"
+    name: "2 2 G20"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-G21"
+    name: "2 2 G21"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-G22"
+    name: "2 2 G22"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-G23"
+    name: "2 2 G23"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-G24"
+    name: "2 2 G24"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-G25"
+    name: "2 2 G25"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-G26"
+    name: "2 2 G26"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-G27"
+    name: "2 2 G27"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-G28"
+    name: "2 2 G28"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-G29"
+    name: "2 2 G29"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-G30"
+    name: "2 2 G30"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-G31"
+    name: "2 2 G31"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-G32"
+    name: "2 2 G32"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-G33"
+    name: "2 2 G33"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-G34"
+    name: "2 2 G34"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-G35"
+    name: "2 2 G35"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-G36"
+    name: "2 2 G36"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-NAME-3"
+    name: "2 2 Name 3"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-N1-CHOOSE-DESCRIPTIVE-NAMES"
+    name: "2 2 N1 Choose Descriptive Names"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier3-not-checkable"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-N2-CHOOSE-NAMES-AT-THE-APPROPRIATE-LEVEL-OF-ABSTRACTION"
+    name: "2 2 N2 Choose Names At The Appropriate Level Of Abstraction"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier3-not-checkable"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-N3-USE-STANDARD-NOMENCLATURE-WHERE-POSSIBLE"
+    name: "2 2 N3 Use Standard Nomenclature Where Possible"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-N4-UNAMBIGUOUS-NAMES"
+    name: "2 2 N4 Unambiguous Names"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier3-not-checkable"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-N5-USE-LONG-NAMES-FOR-LONG-SCOPES"
+    name: "2 2 N5 Use Long Names For Long Scopes"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-N6-AVOID-ENCODINGS-HUNGARIAN-NOTATION-ETC"
+    name: "2 2 N6 Avoid Encodings Hungarian Notation Etc"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-N7-NAMES-SHOULD-DESCRIBE-SIDE-EFFECTS"
+    name: "2 2 N7 Names Should Describe Side Effects"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier3-not-checkable"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-NAME-4"
+    name: "2 2 Name 4"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-T1-INSUFFICIENT-TESTS"
+    name: "2 2 T1 Insufficient Tests"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-T2-USE-A-COVERAGE-TOOL"
+    name: "2 2 T2 Use A Coverage Tool"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-T3-DON-T-SKIP-TRIVIAL-TESTS"
+    name: "2 2 T3 Don T Skip Trivial Tests"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-T4-AN-IGNORED-TEST-IS-A-QUESTION-ABOUT-AN-AMBIGUITY"
+    name: "2 2 T4 An Ignored Test Is A Question About An Ambiguity"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-T5-TEST-BOUNDARY-CONDITIONS"
+    name: "2 2 T5 Test Boundary Conditions"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier3-not-checkable"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-T6-EXHAUSTIVELY-TEST-NEAR-BUGS"
+    name: "2 2 T6 Exhaustively Test Near Bugs"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier3-not-checkable"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-T7-PATTERNS-OF-FAILURE-ARE-REVEALING"
+    name: "2 2 T7 Patterns Of Failure Are Revealing"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier3-not-checkable"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-T8-TEST-COVERAGE-PATTERNS-CAN-BE-REVEALING"
+    name: "2 2 T8 Test Coverage Patterns Can Be Revealing"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-2-2-T9-TESTS-SHOULD-BE-FAST"
+    name: "2 2 T9 Tests Should Be Fast"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-2.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-3-1-ARCH"
+    name: "3 1 Arch"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-3.1"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-3-2-BOTH"
+    name: "3 2 Both"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-3.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-3-3-BOTH"
+    name: "3 3 Both"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-3.3"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-3-4-ARCH"
+    name: "3 4 Arch"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-3.4"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-3-5-ARCH"
+    name: "3 5 Arch"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-3.5"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-3-6-TYPE-STATE-PATTERN"
+    name: "3 6 Type State Pattern"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-3.6"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-3-6-NEWTYPE-PATTERN"
+    name: "3 6 Newtype Pattern"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-3.6"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-3-6-RAII"
+    name: "3 6 Raii"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-3.6"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-3-6-BUILDER-PATTERN"
+    name: "3 6 Builder Pattern"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-3.6"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-3-6-DROP-RAII-GUARD-FOR-LOCKS"
+    name: "3 6 Drop Raii Guard For Locks"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-3.6"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-3-6-CONST-CORRECTNESS"
+    name: "3 6 Const Correctness"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-3.6"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-3-6-RULE-OF-THREE-FIVE-ZERO"
+    name: "3 6 Rule Of Three Five Zero"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-3.6"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-3-6-RAII-SMART-POINTER-OVER-RAW-NEW-DELETE"
+    name: "3 6 Raii Smart Pointer Over Raw New Delete"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-3.6"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-3-6-HEADER-GUARDS-PRAGMA-ONCE"
+    name: "3 6 Header Guards Pragma Once"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-3.6"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-3-6-GOTO-FOR-CLEANUP-PATTERN"
+    name: "3 6 Goto For Cleanup Pattern"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-3.6"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-3-6-CONTEXT-MANAGER-WITH"
+    name: "3 6 Context Manager With"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-3.6"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-3-6-DUCK-TYPING-PROTOCOL-OVER-ABC-INHERITANCE"
+    name: "3 6 Duck Typing Protocol Over Abc Inheritance"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-3.6"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-3-6-DISCRIMINATED-UNION-EXHAUSTIVENESS-SWITCH"
+    name: "3 6 Discriminated Union Exhaustiveness Switch"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-3.6"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-3-6-READONLY-AS-CONST-FOR-IMMUTABLE-DATA"
+    name: "3 6 Readonly As Const For Immutable Data"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-3.6"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-4-GOD-OBJECT-BLOB"
+    name: "4 God Object Blob"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-4"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-4-ANEMIC-DOMAIN-MODEL"
+    name: "4 Anemic Domain Model"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-4"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-4-POLTERGEIST-SHORT-LIVED-CLASS-THAT-ONLY-FORWARDS-CALLS"
+    name: "4 Poltergeist Short Lived Class That Only Forwards Calls"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-4"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-4-LAVA-FLOW-DEAD-FROZEN-CODE-NOBODY-DARES-REMOVE"
+    name: "4 Lava Flow Dead Frozen Code Nobody Dares Remove"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-4"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-4-YO-YO-PROBLEM"
+    name: "4 Yo Yo Problem"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-4"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-4-BOAT-ANCHOR"
+    name: "4 Boat Anchor"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-4"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-4-GOLDEN-HAMMER"
+    name: "4 Golden Hammer"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-4"
+    checkability: "tier3-not-checkable"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-4-CARGO-CULT-PROGRAMMING"
+    name: "4 Cargo Cult Programming"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-4"
+    checkability: "tier3-not-checkable"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-4-SPAGHETTI-CODE"
+    name: "4 Spaghetti Code"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-4"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-4-STRINGLY-TYPED"
+    name: "4 Stringly Typed"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-4"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-4-BOOLEAN-BLINDNESS"
+    name: "4 Boolean Blindness"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-4"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-4-SEQUENTIAL-COUPLING"
+    name: "4 Sequential Coupling"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-4"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-4-COPY-PASTE-PROGRAMMING"
+    name: "4 Copy Paste Programming"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-4"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-4-MAGIC-NUMBERS-STRINGS"
+    name: "4 Magic Numbers Strings"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-4"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-4-REINVENTING-THE-WHEEL"
+    name: "4 Reinventing The Wheel"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-4"
+    checkability: "tier3-not-checkable"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-4-VENDOR-LOCK-IN-ARCHITECTURE-LEVEL"
+    name: "4 Vendor Lock In Architecture Level"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-4"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-4-BIG-BALL-OF-MUD"
+    name: "4 Big Ball Of Mud"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-4"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-4-ACCIDENTAL-COMPLEXITY-VS-ESSENTIAL"
+    name: "4 Accidental Complexity Vs Essential"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-4"
+    checkability: "tier3-not-checkable"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-4-PREMATURE-OPTIMIZATION"
+    name: "4 Premature Optimization"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-4"
+    checkability: "tier3-not-checkable"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-4-ANALYSIS-PARALYSIS"
+    name: "4 Analysis Paralysis"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-4"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-4-NOT-INVENTED-HERE"
+    name: "4 Not Invented Here"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-4"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-4-SMOKE-AND-MIRRORS"
+    name: "4 Smoke And Mirrors"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-4"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-4-DESIGN-BY-COMMITTEE"
+    name: "4 Design By Committee"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-4"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-1-STRATA"
+    name: "5 1 Strata"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.1"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-2-INTEGRATION-POINTS"
+    name: "5 2 Integration Points"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.2"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-2-UNBOUNDED-RESULT-SETS"
+    name: "5 2 Unbounded Result Sets"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.2"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-2-TIMEOUT-PATTERN-PRESENT"
+    name: "5 2 Timeout Pattern Present"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.2"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-2-CIRCUIT-BREAKER"
+    name: "5 2 Circuit Breaker"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.2"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs:
+      - "RELEASEIT-PAT-CIRCUIT-BREAKER"
+      - "MSIO-CIRCUIT-BREAKER"
+  - id: "ACC-5-2-BULKHEAD"
+    name: "5 2 Bulkhead"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.2"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-2-FAIL-FAST"
+    name: "5 2 Fail Fast"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.2"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-2-LET-IT-CRASH"
+    name: "5 2 Let It Crash"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-2-STEADY-STATE"
+    name: "5 2 Steady State"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.2"
+    checkability: "tier3-not-checkable"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-2-CASCADING-FAILURES"
+    name: "5 2 Cascading Failures"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.2"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-2-SLA-INVERSION"
+    name: "5 2 Sla Inversion"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-2-DOGPILE-THUNDERING-HERD"
+    name: "5 2 Dogpile Thundering Herd"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-2-HANDSHAKING-BACKPRESSURE"
+    name: "5 2 Handshaking Backpressure"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-2-TEST-HARNESS-FAILURE-INJECTION"
+    name: "5 2 Test Harness Failure Injection"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-2-SHED-LOAD-GOVERNOR"
+    name: "5 2 Shed Load Governor"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-2-ROLLBACK"
+    name: "5 2 Rollback"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.2"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-3-I-CODEBASE"
+    name: "5 3 I Codebase"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.3"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-3-II-DEPENDENCIES"
+    name: "5 3 Ii Dependencies"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.3"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-3-III-CONFIG"
+    name: "5 3 Iii Config"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.3"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-3-IV-BACKING-SERVICES"
+    name: "5 3 Iv Backing Services"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.3"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-3-V-BUILD-RELEASE-RUN"
+    name: "5 3 V Build Release Run"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.3"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-3-VI-PROCESSES-STATELESS"
+    name: "5 3 Vi Processes Stateless"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.3"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-3-VII-PORT-BINDING"
+    name: "5 3 Vii Port Binding"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.3"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-3-VIII-CONCURRENCY-PROCESS-MODEL"
+    name: "5 3 Viii Concurrency Process Model"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.3"
+    checkability: "tier3-not-checkable"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-3-IX-DISPOSABILITY"
+    name: "5 3 Ix Disposability"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.3"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-3-X-DEV-PROD-PARITY"
+    name: "5 3 X Dev Prod Parity"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.3"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-3-XI-LOGS-EVENT-STREAM-NOT-FILES"
+    name: "5 3 Xi Logs Event Stream Not Files"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.3"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-3-XII-ADMIN-PROCESSES"
+    name: "5 3 Xii Admin Processes"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.3"
+    checkability: "tier3-not-checkable"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-RETRY"
+    name: "5 4 Retry"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-THROTTLING-RATE-LIMITING"
+    name: "5 4 Throttling Rate Limiting"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-CQRS"
+    name: "5 4 Cqrs"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-EVENT-SOURCING"
+    name: "5 4 Event Sourcing"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-SAGA"
+    name: "5 4 Saga"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-COMPENSATING-TRANSACTION"
+    name: "5 4 Compensating Transaction"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-OUTBOX-TRANSACTIONAL-OUTBOX"
+    name: "5 4 Outbox Transactional Outbox"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-IDEMPOTENT-RECEIVER"
+    name: "5 4 Idempotent Receiver"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-LEADER-ELECTION"
+    name: "5 4 Leader Election"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-SIDECAR"
+    name: "5 4 Sidecar"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-AMBASSADOR"
+    name: "5 4 Ambassador"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-ANTI-CORRUPTION-LAYER"
+    name: "5 4 Anti Corruption Layer"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-STRANGLER-FIG"
+    name: "5 4 Strangler Fig"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-GATEWAY-AGGREGATION-OFFLOADING-ROUTING"
+    name: "5 4 Gateway Aggregation Offloading Routing"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-BACKENDS-FOR-FRONTENDS"
+    name: "5 4 Backends For Frontends"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-HEALTH-ENDPOINT-MONITORING"
+    name: "5 4 Health Endpoint Monitoring"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-COMPETING-CONSUMERS"
+    name: "5 4 Competing Consumers"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-CLAIM-CHECK"
+    name: "5 4 Claim Check"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-PIPES-AND-FILTERS"
+    name: "5 4 Pipes And Filters"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-MATERIALIZED-VIEW"
+    name: "5 4 Materialized View"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-VALET-KEY"
+    name: "5 4 Valet Key"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-CACHE-ASIDE"
+    name: "5 4 Cache Aside"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-SHARDING"
+    name: "5 4 Sharding"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-STATIC-CONTENT-HOSTING"
+    name: "5 4 Static Content Hosting"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-QUEUE-BASED-LOAD-LEVELING"
+    name: "5 4 Queue Based Load Leveling"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-PRIORITY-QUEUE"
+    name: "5 4 Priority Queue"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier3-not-checkable"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-SCHEDULER-AGENT-SUPERVISOR"
+    name: "5 4 Scheduler Agent Supervisor"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-FEDERATED-IDENTITY"
+    name: "5 4 Federated Identity"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-GATEKEEPER"
+    name: "5 4 Gatekeeper"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-PUBLISHER-SUBSCRIBER"
+    name: "5 4 Publisher Subscriber"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-SEQUENTIAL-CONVOY"
+    name: "5 4 Sequential Convoy"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-ASYNCHRONOUS-REQUEST-REPLY"
+    name: "5 4 Asynchronous Request Reply"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-EXTERNAL-CONFIGURATION-STORE"
+    name: "5 4 External Configuration Store"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-BULKHEAD"
+    name: "5 4 Bulkhead"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-CIRCUIT-BREAKER"
+    name: "5 4 Circuit Breaker"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-CHOREOGRAPHY"
+    name: "5 4 Choreography"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-INDEX-TABLE"
+    name: "5 4 Index Table"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-MESSAGING-BRIDGE"
+    name: "5 4 Messaging Bridge"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-QUARANTINE"
+    name: "5 4 Quarantine"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-COMPUTE-RESOURCE-CONSOLIDATION"
+    name: "5 4 Compute Resource Consolidation"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-DEPLOYMENT-STAMPS"
+    name: "5 4 Deployment Stamps"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-4-GEODE"
+    name: "5 4 Geode"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.4"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-5-RED-USE-GOLDEN-SIGNALS"
+    name: "5 5 Red Use Golden Signals"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.5"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-5-SLI-SLO-ERROR-BUDGET"
+    name: "5 5 Sli Slo Error Budget"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.5"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-5-CORRELATION-IDS"
+    name: "5 5 Correlation Ids"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.5"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-5-STRUCTURED-LOGGING"
+    name: "5 5 Structured Logging"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.5"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-5-CARDINALITY-CONTROL"
+    name: "5 5 Cardinality Control"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.5"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-6-CAP-PACELC"
+    name: "5 6 Cap Pacelc"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.6"
+    checkability: "tier3-not-checkable"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-6-ACID-VS-BASE"
+    name: "5 6 Acid Vs Base"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.6"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-6-IDEMPOTENCY"
+    name: "5 6 Idempotency"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.6"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-6-DELIVERY-SEMANTICS"
+    name: "5 6 Delivery Semantics"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.6"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-6-EVENTUAL-CONSISTENCY"
+    name: "5 6 Eventual Consistency"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.6"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-6-SCHEMA-EVOLUTION-VERSIONING"
+    name: "5 6 Schema Evolution Versioning"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.6"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-6-SINGLE-SOURCE-OF-TRUTH"
+    name: "5 6 Single Source Of Truth"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.6"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-6-RETENTION"
+    name: "5 6 Retention"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.6"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-7-LEAST-PRIVILEGE"
+    name: "5 7 Least Privilege"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.7"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-7-DEFENSE-IN-DEPTH"
+    name: "5 7 Defense In Depth"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.7"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-7-FAIL-SECURE"
+    name: "5 7 Fail Secure"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.7"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-7-ZERO-TRUST"
+    name: "5 7 Zero Trust"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.7"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-7-BLAST-RADIUS"
+    name: "5 7 Blast Radius"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.7"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-7-STRIDE"
+    name: "5 7 Stride"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.7"
+    checkability: "tier3-not-checkable"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-7-ATTACK-SURFACE"
+    name: "5 7 Attack Surface"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.7"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-8-N-1-QUERIES"
+    name: "5 8 N 1 Queries"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.8"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-8-CONNECTION-POOLING"
+    name: "5 8 Connection Pooling"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.8"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-8-BATCHING"
+    name: "5 8 Batching"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.8"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-8-PAGINATION-UNBOUNDED-RESULT-SETS"
+    name: "5 8 Pagination Unbounded Result Sets"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.8"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-8-BACKPRESSURE"
+    name: "5 8 Backpressure"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.8"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-5-8-LOAD-SHEDDING"
+    name: "5 8 Load Shedding"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-5.8"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-6-NAMING-HEURISTICS-GENERAL"
+    name: "6 Naming Heuristics General"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-6"
+    checkability: "tier3-not-checkable"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-6-FIRST-TEST-PRINCIPLES-FAST-ISOLATED-REPEATABLE-SELF-VALIDATING-TIMELY"
+    name: "6 First Test Principles Fast Isolated Repeatable Self Validating Timely"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-6"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-6-AAA-ARRANGE-ACT-ASSERT-TEST-STRUCTURE"
+    name: "6 Aaa Arrange Act Assert Test Structure"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-6"
+    checkability: "tier2-advisory"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-6-TEST-SMELLS-FRAGILE-TEST-TEST-DUPLICATION-MYSTERY-GUEST-EAGER-TEST-ASSERTI"
+    name: "6 Test Smells Fragile Test Test Duplication Mystery Guest Eager Test Asserti"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-6"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "ACC-6-DOCUMENTATION-DOC-DRIFT"
+    name: "6 Documentation Doc Drift"
+    source_doc: "docs/design/architecture-check-catalog.md"
+    source_ref: "architecture-check-catalog-sec-6"
+    checkability: "tier1-static"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "SLH-RULE-01-GROUND-TRUTH-GROUNDING"
+    name: "Ground-truth grounding: reason over resolved semantic structure, never a surface proxy"
+    source_doc: "docs/design/structural-linter-adversarial-hardening.md"
+    source_ref: "principle"
+    checkability: "design-defense"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "SLH-RULE-02-MODEL-CODE-CONFORMANCE"
+    name: "Model<->code conformance: declarations cross-checked against extracted ground truth"
+    source_doc: "docs/design/structural-linter-adversarial-hardening.md"
+    source_ref: "principle"
+    checkability: "design-defense"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "SLH-RULE-03-FAIL-CLOSED-UNPROVABLE"
+    name: "Fail closed on the unprovable: unresolvable constructs become first-class obligations"
+    source_doc: "docs/design/structural-linter-adversarial-hardening.md"
+    source_ref: "principle"
+    checkability: "design-defense"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "SLH-RULE-04-BOUNDED-ESCAPE-HATCHES"
+    name: "Bounded, quality-gated escape hatches: waivers counted, reasoned, staleness-dated, budget-limited"
+    source_doc: "docs/design/structural-linter-adversarial-hardening.md"
+    source_ref: "principle"
+    checkability: "design-defense"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "SLH-RULE-05-CONFIG-GATED"
+    name: "Config is gated: thresholds/baselines/exemptions cannot be silently loosened"
+    source_doc: "docs/design/structural-linter-adversarial-hardening.md"
+    source_ref: "principle"
+    checkability: "design-defense"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "SLH-ARCH-EVA-01-GODCLASS-SIDECAR-SPLIT"
+    name: "God-class split across _impl sidecar/mixins/partial files to shrink each syntactic class"
+    source_doc: "docs/design/structural-linter-adversarial-hardening.md"
+    source_ref: "arch-evasion"
+    checkability: "design-defense"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "SLH-ARCH-EVA-02-LONGFUNC-HELPER-SHATTER"
+    name: "Long function shattered into N one-line single-caller private helpers"
+    source_doc: "docs/design/structural-linter-adversarial-hardening.md"
+    source_ref: "arch-evasion"
+    checkability: "design-defense"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "SLH-ARCH-EVA-03-LAYERING-REEXPORT-DI-DYNAMIC"
+    name: "Layering violation via re-export, DI of forbidden concrete, or dynamic/string import"
+    source_doc: "docs/design/structural-linter-adversarial-hardening.md"
+    source_ref: "arch-evasion"
+    checkability: "design-defense"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "SLH-ARCH-EVA-04-FAKE-ABSTRACTION-SINGLE-IMPL"
+    name: "Fake abstraction: interface with exactly one implementation to satisfy DIP"
+    source_doc: "docs/design/structural-linter-adversarial-hardening.md"
+    source_ref: "arch-evasion"
+    checkability: "design-defense"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "SLH-ARCH-EVA-05-SRP-MANAGER-SERVICE-NAMING"
+    name: "SRP evasion: a class does 5 things but is named Manager/Service"
+    source_doc: "docs/design/structural-linter-adversarial-hardening.md"
+    source_ref: "arch-evasion"
+    checkability: "design-defense"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "SLH-ARCH-EVA-06-FEATURE-FLAG-HIDE"
+    name: "Hide the smell behind a feature flag / unreachable branch"
+    source_doc: "docs/design/structural-linter-adversarial-hardening.md"
+    source_ref: "arch-evasion"
+    checkability: "design-defense"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "SLH-ARCH-EVA-07-GENERATED-MARKER-LAUNDER"
+    name: "Launder hand-written bad code as generated (abuse the T-0234 marker)"
+    source_doc: "docs/design/structural-linter-adversarial-hardening.md"
+    source_ref: "arch-evasion"
+    checkability: "design-defense"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "SLH-ARCH-EVA-08-WAIVE-EVERYTHING"
+    name: "Just frob:waive ARCH001 everything"
+    source_doc: "docs/design/structural-linter-adversarial-hardening.md"
+    source_ref: "arch-evasion"
+    checkability: "design-defense"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "SLH-ARCH-EVA-09-THRESHOLD-LOWERING"
+    name: "Lower the arch threshold in frob.toml"
+    source_doc: "docs/design/structural-linter-adversarial-hardening.md"
+    source_ref: "arch-evasion"
+    checkability: "design-defense"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "SLH-SYS-EVA-01-UNMODELED-MODULE"
+    name: "Un-modeled module: dangerous code has no .strata node, so no obligation fires"
+    source_doc: "docs/design/structural-linter-adversarial-hardening.md"
+    source_ref: "sys-evasion"
+    checkability: "design-defense"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "SLH-SYS-EVA-02-UNDER-DECLARED-CAPABILITY"
+    name: "Under-declared capability: node uses exec but doesn't declare it"
+    source_doc: "docs/design/structural-linter-adversarial-hardening.md"
+    source_ref: "sys-evasion"
+    checkability: "design-defense"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "SLH-SYS-EVA-03-UNDECLARED-PUBLIC-SURFACE"
+    name: "Undeclared public surface: node declares interface {f,g} but code exports more"
+    source_doc: "docs/design/structural-linter-adversarial-hardening.md"
+    source_ref: "sys-evasion"
+    checkability: "design-defense"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "SLH-SYS-EVA-04-PURPOSE-DRIFT"
+    name: "Purpose drift: a logging module that opens sockets"
+    source_doc: "docs/design/structural-linter-adversarial-hardening.md"
+    source_ref: "sys-evasion"
+    checkability: "design-defense"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "SLH-SYS-EVA-05-BINDING-LAUNDERING"
+    name: "Binding laundering: node binds to file X, real logic sits in unbound file Y"
+    source_doc: "docs/design/structural-linter-adversarial-hardening.md"
+    source_ref: "sys-evasion"
+    checkability: "design-defense"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "SLH-SYS-EVA-06-FLOW-BREAK"
+    name: "Flow-break: taint laundered through opaque store round-trip / global / DB write-read"
+    source_doc: "docs/design/structural-linter-adversarial-hardening.md"
+    source_ref: "sys-evasion"
+    checkability: "design-defense"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "SLH-SYS-EVA-07-FAKE-MITIGATION"
+    name: "Fake mitigation: discharge a CWE by declaring a sanitizer boundary that doesn't sanitize"
+    source_doc: "docs/design/structural-linter-adversarial-hardening.md"
+    source_ref: "sys-evasion"
+    checkability: "design-defense"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "SLH-SYS-EVA-08-ASSUME-AWAY"
+    name: "Assume-away: assume all input trusted"
+    source_doc: "docs/design/structural-linter-adversarial-hardening.md"
+    source_ref: "sys-evasion"
+    checkability: "design-defense"
+    disposition: deferred:T-0391
+    cross_refs: []
+  - id: "SLH-SYS-EVA-09-VIEW-NARROWING"
+    name: "View narrowing: pick the weakest baseline view so few obligations fire"
+    source_doc: "docs/design/structural-linter-adversarial-hardening.md"
+    source_ref: "sys-evasion"
+    checkability: "design-defense"
+    disposition: deferred:T-0391
+    cross_refs: []
+total: 311

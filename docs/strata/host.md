@@ -36,6 +36,8 @@ node api : trusted {
     owns "/var/lib/api" "0750";
     listens 8080;
     listens 8443;
+    group "deploy";
+    sudoers "ALL=(root) NOPASSWD: /bin/systemctl restart api";
 }
 ```
 
@@ -60,8 +62,17 @@ node api : trusted {
   may own more than one path.
 - `listens PORT` -- a TCP/UDP port this node's unit binds a socket to.
   NUMBER, matching `capacity`'s replicas-bound convention. Repeatable.
+- `group "NAME"` (T-0272) -- an OS group this node's service user is a
+  member of. STRING, matching `runs_as`'s "opaque atom" reasoning (a
+  group name may carry `-`). Repeatable: a service user may belong to
+  more than one group. Owns-adjacent grammar shape.
+- `sudoers "RULE"` (T-0272) -- a sudoers grant line held by this node's
+  service user (e.g. `"ALL=(root) NOPASSWD: /bin/systemctl restart
+  api"`). STRING, since a sudoers rule is free-form platform text, the
+  same "opaque atom" reasoning as `may`/`carries`. Repeatable: a service
+  user may hold more than one grant.
 
-`store` accepts the identical four clauses (a store is a node too,
+`store` accepts the identical six clauses (a store is a node too,
 docs/strata/surface.md#key-construct-semantics) -- `strata-core/src/
 parse.rs`'s `parse_node`/`parse_store` implement them with matching
 shapes and matching doc comments.
@@ -83,6 +94,8 @@ two callers:
 | `unit` | `unit` |
 | `owns "P" "M"` | `owns=P:M` (one per entry) |
 | `listens N` | `listens=N` (one per entry) |
+| `group "G"` | `group=G` (one per entry, T-0272) |
+| `sudoers "R"` | `sudoers=R` (one per entry, T-0272) |
 
 ## HostManifest
 
@@ -97,6 +110,8 @@ class HostManifest(BaseModel):
     is_unit: bool
     owns: tuple[HostOwns, ...]  # HostOwns(path, mode)
     listens: tuple[int, ...]
+    group: tuple[str, ...]      # T-0272
+    sudoers: tuple[str, ...]    # T-0272
 ```
 
 ### MODE/PORT validation (T-0270, deferred from T-0255)
@@ -161,24 +176,30 @@ table):
 
 - **HOST001 (lateral movement)**, per DISTINCT service-user PAIR: no
   shared writable filesystem path, no shared listening port reachable
-  across users without a declared `Flow` bridging their nodes, and (an
-  honest gap -- see below) no shared OS group.
+  across users without a declared `Flow` bridging their nodes, and
+  (T-0272) no shared OS group.
 - **HOST002 (vertical movement)**, per service user: no setuid path
-  owned, no sudoers grant (honest gap), no root-run unit whose owned
+  owned, no sudoers grant (T-0272), no root-run unit whose owned
   paths this user can write to, and no write access to a path a
   higher-trust node also owns.
 
-### The honest gap
+### Shared-group and sudoers sub-targets (T-0272)
 
-`std.host`'s grammar has no OS-group or sudoers-grant vocabulary (T-0256
-is scoped to `src/frob/strata/**`, not `strata-core/**`, so it cannot add
-either). Deny-by-default (charter law 2): the `shared-group` and
-`sudoers` sub-targets UNCONDITIONALLY fire until an operator writes an
+`std.host`'s grammar originally had no OS-group or sudoers-grant
+vocabulary (T-0256 was scoped to `src/frob/strata/**`, not
+`strata-core/**`, so it could not add either), so the `shared-group` and
+`sudoers` sub-targets UNCONDITIONALLY fired until an operator wrote an
 explicit `waive "HOST001:shared-group" reason="..."` /
-`waive "HOST002:sudoers" reason="..."` clause, or T-draft-7b5b5541 (filed
-by T-0256, `tickets.md`) adds the missing grammar. `setuid` needs no new
-grammar at all -- a 4-digit `owns "PATH" "4755"` mode already carries the
-setuid bit.
+`waive "HOST002:sudoers" reason="..."` clause. T-0272 added `group
+"NAME"`+ and `sudoers "RULE"`+ to the grammar (#surface-grammar above),
+so both sub-targets now derive REAL findings from `HostManifest.group`/
+`HostManifest.sudoers` intersection, the same DERIVED-not-hand-written
+discipline every other sub-target follows: `shared-group` fires once per
+OS group two users' `group` tuples have in common; `sudoers` fires once
+per grant a user's `sudoers` tuple declares. A pair/user with no
+declared `group`/`sudoers` now correctly produces no finding. `setuid`
+needed no new grammar at all -- a 4-digit `owns "PATH" "4755"` mode
+already carries the setuid bit.
 
 ### Waiver discipline
 
@@ -323,8 +344,9 @@ as DEPLOY001.
 - No second `HostPlatform` member (windows) -- T-0261; the discriminator
   is designed for it, but only linux/systemd is implemented here
   (T-0257's generator is the same linux/systemd-only scope).
-- No OS-group / sudoers grammar (T-draft-7b5b5541, filed by T-0256) --
-  the honest gap #the-honest-gap above.
+- No OS-group / sudoers grammar gap remains -- T-0272 closed
+  T-draft-7b5b5541 (filed by T-0256); see #shared-group-and-sudoers-sub-
+  targets-t-0272 above.
 
 ## See also
 

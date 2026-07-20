@@ -45,6 +45,11 @@ def _extraction_hint(template: CloneTemplate | None) -> str:
     return f"; candidate extraction: {template.suggested_signature}"
 
 
+# frob:waive DUP001 reason="dup grouped this gate-message builder with \
+# deploy/_generate.py's shell-heredoc blocks and _waive.py::_stale_detail \
+# purely on generic f-string shape; unrelated domain (DUP001's own \
+# violation message), false positive -- ironic given the rule id, but a \
+# real structural coincidence"
 def _dup001_message(
     new_side: CloneRegion,
     old_side: CloneRegion,

@@ -61,7 +61,7 @@ from typani.result import Ok, Result
 
 from frob.logging import get_logger
 
-from ._compliance import _REVOCATION_ATTR, _retention_limit
+from ._compliance import _retention_limit, _revoked_nodes
 from ._errors import StrataError
 from ._models import LABELS, Flow, KernelModel, Node
 
@@ -258,7 +258,7 @@ def check_pii_retention_erasure(model: KernelModel) -> tuple[PiiViolation, ...]:
     `carries` alone -- no jurisdiction tag required, since a `carries`
     declaration is itself a stronger, structural signal than clearance
     label."""
-    revoked_nodes = _revocation_target_nodes(model)
+    revoked_nodes = _revoked_nodes(model)
     violations: list[PiiViolation] = []
     # frob:waive PERF004 reason="one sort for deterministic order, not per-iteration"
     for node in sorted(model.nodes, key=lambda n: n.id):
@@ -289,15 +289,10 @@ def _pii003_violation(node: Node) -> PiiViolation:
     )
 
 
-def _revocation_target_nodes(model: KernelModel) -> set[str]:
-    """Every node id touched by a `_REVOCATION_ATTR` flow, for
-    `check_pii_retention_erasure`'s erasure-path detection."""
-    revoked_nodes: set[str] = set()
-    for flow in model.flows:
-        if _REVOCATION_ATTR in flow.attrs:
-            revoked_nodes.add(flow.src)
-            revoked_nodes.add(flow.dst)
-    return revoked_nodes
+# T-0364: dropped the private `_revocation_target_nodes` duplicate of
+# `_compliance._revoked_nodes` (identical body, dup group) -- this module
+# already imports `_REVOCATION_ATTR`/`_retention_limit` from `_compliance`,
+# so importing `_revoked_nodes` too is the same-cost, non-duplicated path.
 
 
 # frob:doc docs/strata/threat.md#pii-declarations-stdpii-t-0154

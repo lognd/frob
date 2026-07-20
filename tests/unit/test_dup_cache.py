@@ -16,7 +16,7 @@ def _close_cached_connections():
     across tests, but close explicitly so each test starts from a clean
     connection pool rather than relying on garbage collection."""
     yield
-    _cache.close_all()
+    _cache._close_all()
 
 
 class TestFingerprintRoundTrip:
@@ -105,12 +105,12 @@ class TestConnectionReuse:
         assert conn1 is conn2
 
     def test_close_all_drops_cached_connections(self, tmp_path: Path):
-        # frob:tests src/frob/dup/_cache.py::close_all kind="unit"
+        # frob:tests src/frob/dup/_cache.py::_close_all kind="unit"
         _cache.put_fingerprint(tmp_path, "d3", "r3", ("z",))
         before = _cache._connect(tmp_path).danger_ok
-        _cache.close_all()
+        _cache._close_all()
         after = _cache._connect(tmp_path).danger_ok
         assert before is not after
-        # the underlying file survives -- close_all only drops the
+        # the underlying file survives -- _close_all only drops the
         # in-process handle, not the data.
         assert _cache.get_fingerprint(tmp_path, "d3", "r3") == ["z"]

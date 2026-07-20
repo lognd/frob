@@ -19,6 +19,7 @@ boundary) lives here.
 from __future__ import annotations
 
 import hashlib
+import threading
 from pathlib import Path
 
 from tree_sitter import Node, Tree
@@ -29,6 +30,7 @@ from typani.result import Result
 from frob.lang._common import child_by_field as _child_by_field
 from frob.lang._common import child_text as _child_text
 from frob.lang._common import export_tree as _export_tree
+from frob.lang._common import flatten_tree
 from frob.lang._common import iter_cpp_functions as _iter_cpp_functions
 from frob.lang._extract import COMMENT_TYPES, extract
 from frob.lang._extract import extract_imports as _extract_imports
@@ -152,13 +154,95 @@ def _display_path(path: Path) -> str:
         return path.as_posix()
 
 
+# T-0414: process-lifetime, content-hash-keyed memo for `_parse` -- the
+# single read+tree-sitter-parse chokepoint every `frob.lang` entry point
+# funnels through (see docs/audits/perf.md H4). Before this cache, a 213-
+# file source tree was independently re-read and re-parsed by every stage
+# that touches source (arch 2x, vet 3x, selfconform 6x via vet) -- ~2000-
+# 2500 tree-sitter parses per `frob check` where ~213 would suffice. Keyed
+# on `(path, sha256(content))`, NEVER on mtime/size alone (T-0414's
+# correctness mandate: a stale or wrong cached tree would silently corrupt
+# every gate that reads it) -- a content change always misses the cache and
+# reparses, even if the path is unchanged; a path revisited with byte-
+# identical content always hits, even across two different calling stages.
+# Guarded by a lock since `frob check`'s gate stages run concurrently in a
+# `ThreadPoolExecutor` (`frob.check._run_tasks_concurrently`).
+_parse_cache_lock = threading.Lock()
+_parse_cache: dict[str, Result[tuple[Tree, bytes, str], LangError]] = {}
+_parse_cache_hits = 0
+_parse_cache_misses = 0
+
+
+# frob:doc docs/modules/lang.md#parse-cache
+# frob:ticket T-0414
+def reset_parse_cache() -> None:
+    """Clear the process-lifetime `_parse` memo and its hit/miss counters.
+
+    Called once per `frob check` invocation (`frob.check._run_check_with_
+    skips`) so the anti-regression instrument (`parse_cache_stats`) reports
+    counts for a single run rather than accumulated state across an entire
+    process (e.g. a long-lived test session or MCP server). Never required
+    for correctness -- the cache is content-hash-keyed, not invocation-
+    scoped, so stale entries are simply never returned for changed content;
+    this only resets instrumentation and frees memory held by old trees.
+    """
+    global _parse_cache_hits, _parse_cache_misses
+    with _parse_cache_lock:
+        _parse_cache.clear()
+        _parse_cache_hits = 0
+        _parse_cache_misses = 0
+
+
+# frob:doc docs/modules/lang.md#parse-cache
+# frob:ticket T-0414
+def parse_cache_stats() -> tuple[int, int]:
+    """(hits, misses) against the `_parse` memo since the last `reset_parse_cache`.
+
+    The T-0414 anti-regression instrument: a test asserts each distinct
+    `(path, content)` is parsed (a miss) at most once per invocation, no
+    matter how many stages (`graph`, `arch`, `vet`, `dup`) call through
+    `frob.lang`'s public entry points for it.
+    """
+    with _parse_cache_lock:
+        return _parse_cache_hits, _parse_cache_misses
+
+
+# frob:ticket T-0434
+def _warn_if_partial_tree(tree: Tree, path: Path) -> None:
+    """WARN when `tree` was salvaged around a syntax error (T-0402 finding G9).
+
+    tree-sitter can return a tree with `has_error` set but children still
+    present -- `_parse` treats that as usable (a hard `Err` would blank out
+    doc/coverage checking for the whole file over one typo), but every
+    symbol after the error region is silently absent from the salvaged
+    tree, and with it every `frob:` directive obligation attached to those
+    symbols (docs/audits/graph.md). This is the loud signal for that
+    otherwise-invisible loss; a caller wanting to escalate a
+    partially-broken file into a hard violation can key off this log line
+    until `frob.graph` grows its own `MalformedFile` record (out of this
+    package's scope).
+    """
+    if tree.root_node.has_error:
+        _log.warning(
+            "tree-sitter produced a PARTIAL tree for %s "
+            "(syntax error present, some top-level symbols may be "
+            "silently dropped from the salvaged tree)",
+            path,
+        )
+
+
 def _parse(path: Path) -> Result[tuple[Tree, bytes, str], LangError]:
     """Read and parse `path`, returning (tree, source, language_label).
 
     Shared by every public entry point below (`parse_file`, `extract_imports`,
     `iter_identifiers`) so the extension dispatch / read / tree-sitter-parse
-    steps live in exactly one place.
+    steps live in exactly one place. Memoized content-hash-keyed (T-0414,
+    see `_parse_cache` above): the read+hash always happens (cheap relative
+    to a tree-sitter parse), but the actual grammar parse is skipped on a
+    cache hit.
     """
+    global _parse_cache_hits, _parse_cache_misses
+
     ext = path.suffix.lower()
     entry = _EXTENSION_TABLE.get(ext)
     if entry is None:
@@ -173,6 +257,20 @@ def _parse(path: Path) -> Result[tuple[Tree, bytes, str], LangError]:
         _log.error("failed to read %s: %s", path, exc)
         return Err(LangError.IoFailed)
 
+    cache_key = f"{path}:{hashlib.sha256(source).hexdigest()}"
+    with _parse_cache_lock:
+        cached = _parse_cache.get(cache_key)
+        if cached is not None:
+            _parse_cache_hits += 1
+            result = cached
+        else:
+            _parse_cache_misses += 1
+            result = None
+
+    if result is not None:
+        _log.debug("parse cache hit path=%s", path)
+        return result
+
     parser = get_parser(grammar_name)  # type: ignore[arg-type]
     tree = parser.parse(source)
     unusable = tree.root_node is None or (
@@ -180,9 +278,14 @@ def _parse(path: Path) -> Result[tuple[Tree, bytes, str], LangError]:
     )
     if unusable:
         _log.error("tree-sitter produced no usable tree for %s", path)
-        return Err(LangError.ParseFailed)
+        result = Err(LangError.ParseFailed)
+    else:
+        _warn_if_partial_tree(tree, path)
+        result = Ok((tree, source, language_label))
 
-    return Ok((tree, source, language_label))
+    with _parse_cache_lock:
+        _parse_cache[cache_key] = result
+    return result
 
 
 def _build_parsed_file(
@@ -406,10 +509,13 @@ __all__ = [
     "child_by_field",
     "cpp_function_nodes",
     "extract_imports",
+    "flatten_tree",
     "iter_identifiers",
     "node_text",
+    "parse_cache_stats",
     "parse_file",
     "raw_tree",
+    "reset_parse_cache",
     "resolve_local_import",
     "supported_languages",
     "symbol_tree",

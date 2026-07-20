@@ -10,7 +10,7 @@ parser without a matching grammar update, or a stray keyword left in the
 grammar after a parser change, fails this test instead of silently going
 unhighlighted or unhonest.
 
-frob:tests strata-core/src/parse.rs::parse_program kind="drift"
+frob:tests strata-core/src/parse.rs kind="unit"
 """
 
 from __future__ import annotations

@@ -17,6 +17,312 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.34.0] - unreleased
+
+Public-API surface change since 0.33.0 (mechanical semver via REL001): an
+additive (minor) bump -- new `frob.render` package.
+
+- T-0448: FOUNDATION for the unified TTY-aware CLI output layer EPIC. New
+  `frob.render` package -- `Renderer` (the only object a command runner
+  should print through), `RenderWriter` (the standardized element
+  vocabulary, namespaced off `Renderer.write`: heading, subhead, kv,
+  status, count_summary, path, ticket_id, good, warn, critical, muted),
+  `resolve_color` (single TTY/color decision honoring `NO_COLOR`,
+  `FROB_NO_COLOR`, `--no-color`, `--color=auto|always|never`, `TERM=dumb`,
+  `CLICOLOR_FORCE`), the five-name colorblind-safe semantic palette
+  (`good`/`warn`/`critical`/`muted`/`accent`), and `RenderError`. `frob
+  doctor` and `frob map` are migrated as the two FOUNDATION exemplars
+  (`--json` paths unchanged). See `docs/modules/render.md`.
+
+## [0.33.0] - unreleased
+
+Public-API surface change since 0.32.0 (mechanical semver via REL001): an
+additive (minor) bump -- one new public function and five new public
+constants, no removal or signature-breaking change to any existing caller.
+
+- T-0373: the arch gate (`frob.gates._arch.arch_gate`, the ARCH stage of
+  `frob check`) used to always call `frob.arch.analyze_project` with the
+  library's own conservative keyword defaults (30-line functions, 500-line
+  files), silently ignoring the calibrated 60-line/800-line thresholds the
+  user had already decided on -- that calibration only ever reached the
+  standalone `frob arch` CLI, never the gate `frob check` actually runs.
+  New `frob.app.config.load_arch_config(root)` reads a `[arch]` table from
+  `frob.toml` (`max_function_lines`, `max_class_methods`,
+  `max_local_imports`, `max_nesting_depth`, `max_file_lines`), defaulting
+  every unset key to the calibrated values (new `ARCH_DEFAULT_MAX_*`
+  constants), and `arch_gate` now threads it through. This repo's own
+  `frob.toml` now carries an explicit `[arch]` table disclosing the
+  calibration.
+- T-0319: new `frob doctor` subcommand -- verifies the native extensions
+  (`frob_core`, `strata_core`) are importable, reports availability and
+  version for each, and exits nonzero with the remediation command
+  (`make core` / `make install-tool`) when either is missing, so a
+  natives-less install gets a clear diagnosis instead of silently degraded
+  gates. `frob doctor --json` emits the same report machine-readably. New
+  public `frob.doctor` module (`run_diagnosis`, `DoctorReport`,
+  `NativeExtensionStatus`, `NATIVE_EXTENSIONS`, `REMEDIATION_HINT`).
+
+## [0.32.0] - unreleased
+
+No public-API change recorded for this version.
+
+## [0.31.0] - unreleased
+
+Public-API surface changes since 0.29.0 (mechanical semver via REL001): an
+additive (minor) bump -- new optional parameters and new public functions,
+no removal or signature-breaking change to any existing caller.
+
+- T-0398: evidence-integrity fix for the audit's central North-Star hole
+  (docs/audits/tickets-testing.md D-01..D-12) -- close/land previously
+  meant only "a test with this name exists in collection," not "the work
+  was actually tested, covers the ticket, and passed." `add_evidence`
+  gained `passed` (D-01: a collected-but-currently-failing test is
+  rejected, `EvidenceNotPassing`), `transition`/`land` gained
+  `covers_scope` (D-02: evidence that binds to none of the ticket's
+  touched/scope symbols is rejected, `EvidenceScopeUnbound`, via new
+  `frob.gates.evidence_covers_scope`), `land` gained `collected`/`passed`/
+  `covers_scope` callables for post-merge re-verification (D-05), a Done
+  report must carry real content under its heading (D-03), an unknown-
+  language file change no longer silently selects zero tests (D-04), a
+  module-level edit forces selection even under `fallback="warn"` (D-06),
+  the `uses-contract` ripple horizon widened from one hop to a bounded
+  BFS (D-07), a splice union's evidence instead of dropping one side's
+  (D-09), and a new `reverify_cmd_evidence` re-checks a `cmd:` evidence
+  entry's reproducibility on demand (D-10). The real `frob ticket
+  evidence`/`close`/`land` CLI commands (`ticket_runner.py`) now compute
+  and supply these by default -- the library functions themselves keep a
+  permissive `None` default for backward compatibility, but the CLI's
+  default path is the strict one.
+
+## [0.29.0] - unreleased
+
+Public-API surface changes since 0.28.0 (mechanical semver via REL001): a
+minor bump -- the public surface SHRANK (a compatible reduction of
+internal-only names, not a breaking change to any documented API).
+
+- T-0369: 73 genuinely package-internal helpers (0-1 intra-package
+  consumer, never imported cross-package) were demoted to private
+  (`name` -> `_name`) across `dup`, `gates`, `graph`, `lang`, `logging`,
+  `strata`, `tickets`, and `vet`, with every in-repo reference and
+  `frob:doc`/`frob:describes` anchor updated in lockstep. This completes
+  the T-0362 export-or-demote pass: the public surface of each package is
+  now exactly its intended API, and `frob-exports` reports zero
+  unaccounted-for public symbols outside test packages.
+- T-0359/0360/0370/0372: the arch analyzer's advisory categories are now
+  materially more precise (test-file/data-file exemption, dispatch-family
+  recognition, abstraction-opportunity gated on body-similarity or
+  signature-specificity) -- no public API change, noted here for the
+  release narrative.
+
+## [0.28.0] - unreleased
+
+Public-API surface changes since 0.27.0 (mechanical semver via REL001): an
+additive (minor) bump.
+
+- T-0362: export-or-demote pass over every package `__init__.py`. Error
+  classes callers catch are now re-exported from their package roots
+  (`frob.gitio.GitError`, `frob.gates.decisions.DecisionError`,
+  `frob.graph.lock.LockError`, `frob.scaffold.project.ScaffoldError`),
+  alongside the `app.*_runner.run` entry points and `app._style` helpers.
+  The `frob-exports` checker no longer flags pytest symbols in `tests/`
+  packages (they were never meant to be package exports). 74 true-internal
+  helpers deferred to T-0369; two console-script entrypoints reason-noted.
+- T-0359: `frob.excludes.is_test_file` -- the single shared test-file
+  predicate -- is now public; three drifted private copies (in `gates`,
+  `arch`, `testing`) were collapsed into it, and it recognizes TS/JS
+  `*.test.*` naming the Python-only copies missed. Test files are now
+  exempt from the arch advisory categories (long-function, god-class,
+  abstraction-opportunity).
+- T-0360: the arch abstraction-opportunity detector recognizes intentional
+  dispatch/validator families (via tree-sitter structural references) and
+  no longer flags them; internal `_collect_file_dispatch_refs` is private.
+
+## [0.27.0] - unreleased
+
+Public-API surface changes since 0.26.0 (mechanical semver via REL001): an
+additive (minor) bump.
+
+- T-0353: disposition of frob's own PII010/SEC110 findings. The over-broad
+  `fingerprint` biometric field signature is narrowed to genuine biometric
+  field names (`fingerprint_scan`/`fingerprint_template`); SEC110 gains a
+  known-non-secret env-var allowlist (DISPLAY/TERM/PATH/PYO3_PYTHON/...) that
+  does not fire; the true residue (passwd-audit metadata, tooling env reads)
+  carries honest per-site `frob:waive` reasons. `frob check --only
+  pii_structural` on frob's own tree is now 0/0.
+
+## [0.26.0] - unreleased
+
+Public-API surface changes since 0.25.0 (mechanical semver via REL001): an
+additive (minor) bump.
+
+- T-0207: structural PII/secrets detection. New `frob.gates._pii_structural`
+  gate with `PII010` (a data-structure/schema FIELD whose name matches a
+  PII/credential signature -- drawn from the secrets+PII corpus's
+  `FIELD_SIGNATURES`) and `SEC110` (an `os.environ` read is a secret-source
+  observation to map to a declared std.secrets node or waive). Both waivable
+  with a reason, per the anti-evasion bounded-escape-hatch rule.
+
+## [0.25.0] - unreleased
+
+Public-API surface changes since 0.24.0 (mechanical semver via REL001): an
+additive (minor) bump.
+
+- T-0248: stale native-extension detection. New `frob.strata._native_staleness`
+  (`stale_natives`, `stale_native_warning`, `check_native_staleness_or_exit`,
+  `StaleNative`, `NATIVE_SOURCE_DIRS`) compares each `[[native]]`'s source dir
+  mtime against its built artifact (reusing the T-0333 fingerprint), so a
+  grammar-affecting change that left the native unrebuilt is caught: `make
+  check` fails loudly, and `frob ticket land` warns pre-commit.
+
+## [0.24.0] - unreleased
+
+Public-API surface changes since 0.23.0 (mechanical semver via REL001): an
+additive (minor) bump.
+
+- T-0232: per-gate timing attribution corrected (measured via
+  `time.thread_time()` per job instead of wall-clock, so GIL contention no
+  longer smears every gate's cost toward the slowest), and `.frob` db read
+  contention removed -- new `frob.graph.cache.connect_readonly` lets pure
+  readers (`load_graph`) open the cache without taking sqlite's write lock,
+  and `_apply_schema` no-ops when the schema is already current.
+
+## [0.23.0] - unreleased
+
+Public-API surface changes since 0.22.0 (mechanical semver via REL001): an
+additive (minor) bump.
+
+- T-0241: ticket scope parsing fixed. New `frob.tickets.scope_matches` is the
+  single shared scope matcher -- splits comma-joined scope entries, expands a
+  bare `dir/` prefix to `dir/**`, and always treats `tickets.md` as implicitly
+  in scope; every fnmatch call site (land + the scope gates) now delegates to
+  it, and `Ticket`/`TicketSpec` normalize comma-joined scope at construction.
+
+## [0.22.0] - unreleased
+
+Public-API surface changes since 0.21.0 (mechanical semver via REL001): an
+additive (minor) bump.
+
+- T-0244: embedded-code blind spot closed. The capability scanner now
+  detects HTML/JS embedded in python string literals (`_embedded_code_regions`)
+  and, per the anti-evasion fail-closed rule, always emits a new
+  `embedded_code` capability kind for a detected region (best-effort
+  needle re-scan on top), so dangerous embedded code can no longer hide
+  from the scan. `embedded_code` added to `CAPABILITY_KINDS` with per-language
+  matrix excuses.
+
+## [0.21.0] - unreleased
+
+Public-API surface changes since 0.20.0 (mechanical semver via REL001): an
+additive (minor) bump.
+
+- T-0247: the strata store grammar gains four `node_prop` productions --
+  `on-deploy`, `observe`, `errors_total`, `panics_contained_by` -- so a
+  `store` node can carry the same deploy/observability obligations other
+  nodes already do. `StoreDecl` gains the four fields; elaboration and the
+  observability validators now walk `module.stores`.
+
+## [0.20.0] - unreleased
+
+Public-API surface changes since 0.19.0 (mechanical semver via REL001): an
+additive (minor) bump.
+
+- T-0180: closed-world unknown-import accounting (T-0158 addendum 2
+  remainder). New `frob.vet` module `_closedworld` with `ImportResolution`
+  / `ClosedWorldAccounting` models: walks a project's absolute imports,
+  resolves each against the capability registry / vetted-library cache /
+  local-source scan, and reports the residue of genuinely-unknown imports
+  as a closed-world accounting.
+
+## [0.19.0] - unreleased
+
+Public-API surface changes since 0.18.0 (mechanical semver via REL001): an
+additive (minor) bump.
+
+- T-0236: `frob ticket land` now refreshes the pre-work sweep post-merge,
+  pre-close, so PRE001 stops re-firing stale sweep findings after a land in
+  the multi-agent loop. New `frob.gates.sweep_ticket(root, ticket)` (the
+  single dup+xref+digest sweep-computation function).
+
+## [0.18.0] - unreleased
+
+Public-API surface changes since 0.17.0 (mechanical semver via REL001).
+
+- T-0171: THREAT002 no longer fires in quality views for a capability that
+  IS classified, just in a different family's catalog (e.g. a security-only
+  `exec`/`html_render`). New `frob.strata.ALL_CATALOG` (the union sink
+  taxonomy across every family catalog) and a `taxonomy=` parameter on
+  `check_capability_completeness` (defaults to the per-family `catalog`, so
+  single-family callers are unchanged); the exhaustiveness sweep classifies
+  against the union while still scoping obligations per family.
+
+## [0.17.0] - unreleased
+
+Public-API surface changes since 0.16.0 (mechanical semver via REL001): an
+additive (minor) bump.
+
+- T-0234: generated-file marker respected by the coverage gate.
+  `frob.graph._generated.is_generated_source` + `GENERATED_MARKER_RE`
+  detect a generated-by/`@generated`/`DO NOT EDIT` header in a file's first
+  lines; COV001 then exempts such files from the frob:doc obligation
+  (nobody hand-documents generated code). The file stays fully in the graph
+  (xref/dup/arch still see it) -- only the documentation obligation is
+  waived, deliberately distinct from `[graph] exclude`.
+
+## [0.16.0] - unreleased
+
+Public-API surface changes since 0.15.0 (mechanical semver via REL001): in
+0.x a breaking change bumps the minor (semver section 4).
+
+- T-0233: a broken `frob:doc` target no longer suppresses other coverage
+  findings on the same file. `_cov001` now counts a symbol documented only
+  when its `frob:doc` edge actually RESOLVES (reusing DOC002's resolution
+  logic), so a dangling doc anchor is reported as its own DOC002 error
+  without masking the real COV001 gap. `coverage_gate`/`_cov001` gained a
+  `root: Path` parameter (the breaking change driving this bump).
+
+## [0.15.0] - unreleased
+
+Public-API surface changes since 0.14.0 (mechanical semver via REL001): an
+additive (minor) bump.
+
+- T-0170: `kotlin` capability-scanner column for Android nodes. Added as a
+  fully registry-backed language (`_capability_registry.LANGUAGES` +
+  `DANGEROUS_OPERATIONS` net/exec/client_storage rows + `MatrixExcuse`
+  entries for its unpatterned cells), so the T-0169 language-coverage
+  drift-lock stays strict equality with no carve-out. `.kt`/`.kts` files
+  now scan for net/exec/client-storage capabilities.
+
+## [0.14.0] - unreleased
+
+Public-API surface changes since 0.13.0 (mechanical semver via REL001): an
+additive (minor) bump.
+
+- T-0188: `CWE-295` (Improper Certificate Validation) `WeaknessEntry` added
+  to `QUALITY_CATALOG`, plus three `std.cve` fingerprints (FP-TLS-VERIFY-001/
+  002/003) for TLS certificate-verification bypass across Python
+  (`verify=False`), TypeScript/Node (`rejectUnauthorized: false`), and Rust
+  (`danger_accept_invalid_certs(true)`), each cited by a real CVE.
+- T-0189: `CWE-611` (XML External Entity) `WeaknessEntry` added to
+  `CWE_CATALOG`, plus the `FP-XXE-PARSE-001` fingerprint (Python
+  `resolve_entities=True` / `xml.sax.make_parser`), cited by CVE-2013-1665.
+
+## [0.13.0] - unreleased
+
+Public-API surface changes since 0.12.0 (mechanical semver via REL001): an
+additive (minor) bump.
+
+- T-0333: native-extension-aware test collection. `frob.testing.NativeSpec`
+  + `load_natives` parse a new `frob.toml` `[[native]]` table; the pytest
+  collection cache key now folds in a fingerprint over each declared
+  native's compiled artifacts (`.so`/`.pyd`/`.dylib`), so building or
+  rebuilding a native (`make core`) invalidates the cache automatically
+  instead of leaving a stale set that reds COV003. COV003 now names an
+  unbuilt native and its build command (via `CollectedTests.missing_natives`)
+  instead of pointing at a nonexistent flag; `frob test --collect`
+  (`drop_collection_cache`) is the explicit cache-refresh escape hatch.
+  Toolchain/platform-agnostic (maturin/pyo3 and setuptools/pybind11 alike;
+  Linux/macOS/Windows, x86/arm).
+
 ## [0.11.0] - unreleased
 
 Public-API surface changes since 0.10.0 (mechanical semver via REL001). Per

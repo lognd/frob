@@ -32,6 +32,7 @@ from frob.strata import (
 from frob.strata._effects import _may_kind
 from frob.strata._errors import StrataError
 from frob.strata._threat import (
+    ALL_CATALOG,
     CWE_CATALOG,
     CWE_TOP_25_CATALOG,
     CWE_TOP_25_OUT_OF_SCOPE,
@@ -83,7 +84,11 @@ class TestCatalogCompleteness:
         result = check_catalog_completeness(
             "owasp-top-10",
             catalog=thin_catalog,
-            out_of_scope=(OutOfScopeEntry(id="CWE-79", reason="no html_render yet"),),
+            out_of_scope=(
+                OutOfScopeEntry(
+                    id="CWE-79", reason="no html_render yet", caught_by="test fixture"
+                ),
+            ),
         )
         assert result.is_ok
         assert result.danger_ok == ()
@@ -99,6 +104,40 @@ class TestCatalogCompleteness:
         assert VIEWS["owasp-top-10"] == frozenset(e.id for e in CWE_CATALOG)
 
 
+class TestCwe611Xxe:
+    """T-0189 (T-0153 review follow-up): CWE-611 (XXE) added to
+    `CWE_CATALOG` so the XML external-entity fingerprint can join it
+    (docs/strata/threat.md#cve-fingerprints-code-level-pattern-catalog-
+    t-0153)."""
+
+    # frob:tests src/frob/strata/_threat.py::CWE_CATALOG kind="unit"
+    def test_cwe_611_entry_exists_in_the_catalog(self):
+        entry = next((e for e in CWE_CATALOG if e.id == "CWE-611"), None)
+        assert entry is not None
+        assert entry.cite == "https://cwe.mitre.org/data/definitions/611.html"
+        assert entry.capability_kind is None
+        assert entry.mitigation == "external_entity_disabled"
+
+    # frob:tests src/frob/strata/_threat.py::check_catalog_completeness kind="unit"
+    def test_cwe_611_is_reachable_via_the_owasp_top_10_view(self):
+        # CWE-611 is not an OWASP Top-10 baseline id itself, but the view
+        # is derived directly from CWE_CATALOG's ids (VIEWS module
+        # docstring) so adding it here still keeps THREAT001 clean.
+        result = check_catalog_completeness("owasp-top-10")
+        assert result.is_ok
+        assert result.danger_ok == ()
+        assert "CWE-611" in VIEWS["owasp-top-10"]
+
+    # frob:tests src/frob/strata/_threat.py::check_capability_completeness kind="unit"
+    def test_cwe_611_never_fires_capability_kind_is_none(self):
+        # Mirrors the CWE-22/352/798 "three catalog ids can never fire"
+        # design finding (docs/strata/threat.md) -- capability_kind=None
+        # means no `may` atom kind ever drags this obligation in via
+        # `_fired_obligations`/`_entries_by_capability_kind`.
+        entry = next(e for e in CWE_CATALOG if e.id == "CWE-611")
+        assert entry.capability_kind is None
+
+
 class TestQualityFamilies:
     """Phase E (T-0114, docs/strata/threat.md#phasing item E): the
     performance/reliability/compat anti-pattern families reuse THREAT001's
@@ -109,6 +148,9 @@ class TestQualityFamilies:
     from."""
 
     # frob:tests src/frob/strata/_threat.py::check_catalog_completeness kind="unit"
+    # frob:waive DUP001 reason="parallel test methods within test_threat.py \
+    # (3 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
     def test_web_performance_baseline_is_satisfied(self):
         result = check_catalog_completeness(
             "web-performance-baseline",
@@ -120,6 +162,9 @@ class TestQualityFamilies:
         assert result.danger_ok == ()
 
     # frob:tests src/frob/strata/_threat.py::check_catalog_completeness kind="unit"
+    # frob:waive DUP001 reason="parallel test methods within test_threat.py \
+    # (3 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
     def test_reliability_baseline_is_satisfied(self):
         result = check_catalog_completeness(
             "reliability-baseline",
@@ -131,6 +176,9 @@ class TestQualityFamilies:
         assert result.danger_ok == ()
 
     # frob:tests src/frob/strata/_threat.py::check_catalog_completeness kind="unit"
+    # frob:waive DUP001 reason="parallel test methods within test_threat.py \
+    # (3 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
     def test_web_quality_security_baseline_is_satisfied(self):
         result = check_catalog_completeness(
             "web-quality-security-baseline",
@@ -171,6 +219,22 @@ class TestQualityFamilies:
         assert entry.capability_kind == cwe_89.capability_kind == "sql"
         assert entry.mitigation != cwe_89.mitigation
 
+    # frob:tests src/frob/strata/_threat.py::QUALITY_CATALOG kind="unit"
+    def test_cwe_295_is_cataloged_with_no_capability_kind_or_view(self):
+        # T-0188: TLS verify=False's WeaknessEntry -- honest views
+        # placement means it belongs to neither owasp-top-10 nor
+        # cwe-top-25 (docs/strata/threat.md#cve-fingerprints-code-level-
+        # pattern-catalog-t-0153) and is fired only via the std.cve
+        # fingerprint layer, never a `may`-capability auto-instantiation.
+        entry = next(e for e in QUALITY_CATALOG if e.id == "CWE-295")
+        assert entry.title == "Improper Certificate Validation"
+        assert entry.family == "security"
+        assert entry.capability_kind is None
+        assert entry.id not in VIEWS["owasp-top-10"]
+        assert entry.id not in {e.id for e in CWE_CATALOG}
+        assert entry.id not in CWE_TOP_25_VIEWS["cwe-top-25"]
+        assert all(entry.id not in members for members in QUALITY_VIEWS.values())
+
     # frob:tests src/frob/strata/_threat.py::CWE_CATALOG kind="unit"
     def test_no_kind_field_asserted_out_of_scope_entries_have_reasons(self):
         assert len(QUALITY_OUT_OF_SCOPE) == 5
@@ -179,12 +243,14 @@ class TestQualityFamilies:
 
 
 # frob:ticket T-0143
+# frob:ticket T-0345
 class TestCweTop25:
-    """T-0143 (docs/strata/threat.md#the-catalog-stdcwe): the `cwe-top-25`
-    view spans two catalog tuples (`CWE_CATALOG`'s 8 overlapping ids +
-    `CWE_TOP_25_CATALOG`'s 1 genuinely new obligation) plus 16 honest
+    """T-0143 (docs/strata/threat.md#the-catalog-stdcwe), bumped to the
+    2025 release by T-0345: the `cwe-top-25` view spans two catalog tuples
+    (`CWE_CATALOG`'s 7 overlapping ids + `CWE_TOP_25_CATALOG`'s 2
+    genuinely new obligations: CWE-94/639) plus 16 honest
     `OutOfScopeEntry` rows -- these tests prove THREAT001 exhaustiveness
-    over the combined catalog and spot-check three new entries' data."""
+    over the combined catalog and spot-check the new entries' data."""
 
     # frob:tests src/frob/strata/_threat.py::check_catalog_completeness kind="unit"
     # frob:ticket T-0143
@@ -236,6 +302,7 @@ class TestCweTop25:
 
     # frob:tests src/frob/strata/_threat.py::CWE_TOP_25_OUT_OF_SCOPE kind="unit"
     # frob:ticket T-0143
+    # frob:ticket T-0345
     def test_out_of_scope_entries_have_specific_nonempty_reasons(self):
         assert len(CWE_TOP_25_OUT_OF_SCOPE) == 16
         for entry in CWE_TOP_25_OUT_OF_SCOPE:
@@ -269,10 +336,56 @@ class TestCweTop25:
         )
 
     # frob:tests src/frob/strata/_threat.py::CWE_TOP_25_OUT_OF_SCOPE kind="unit"
+    # frob:ticket T-0345
+    def test_buffer_overflow_trio_name_the_same_missing_bounds_model(self):
+        # T-0345: CWE-120/121/122 are 2025-list-new; each names the SAME
+        # buffer/bounds gap CWE-787/125 already disclose, never a generic
+        # "not supported".
+        by_id = {e.id: e for e in CWE_TOP_25_OUT_OF_SCOPE}
+        for cwe_id in ("CWE-120", "CWE-121", "CWE-122"):
+            assert "buffer" in by_id[cwe_id].reason
+            assert len(by_id[cwe_id].reason) > 20
+
+    # frob:tests src/frob/strata/_threat.py::CWE_TOP_25_OUT_OF_SCOPE kind="unit"
+    # frob:ticket T-0345
+    def test_cwe_284_discloses_generic_parent_of_862_863(self):
+        entry = next(e for e in CWE_TOP_25_OUT_OF_SCOPE if e.id == "CWE-284")
+        assert "CWE-862" in entry.reason or "CWE-863" in entry.reason
+
+    # frob:tests src/frob/strata/_threat.py::CWE_TOP_25_OUT_OF_SCOPE kind="unit"
+    # frob:ticket T-0345
+    def test_cwe_770_names_the_missing_resource_budget_concept(self):
+        entry = next(e for e in CWE_TOP_25_OUT_OF_SCOPE if e.id == "CWE-770")
+        assert "resource" in entry.reason or "rate-limit" in entry.reason
+
+    # frob:tests src/frob/strata/_threat.py::CWE_TOP_25_OUT_OF_SCOPE kind="unit"
+    # frob:ticket T-0345
+    def test_cwe_200_matches_the_weaknesses_registrys_own_disposition(self):
+        # T-0345: 2025-list-new; docs/design/registry/weaknesses.yaml's
+        # independent CWE-1000 disposition sweep already classified this
+        # id `out-of-scope:authn-authz-boundary-predicate` -- this catalog
+        # follows that judgment rather than re-deciding it (never a
+        # `capability_kind=None` WeaknessEntry, which would contradict it).
+        entry = next(e for e in CWE_TOP_25_OUT_OF_SCOPE if e.id == "CWE-200")
+        assert "authz" in entry.reason or "authn" in entry.reason
+        assert entry.id not in {e.id for e in CWE_TOP_25_CATALOG}
+
+    # frob:tests src/frob/strata/_threat.py::CWE_TOP_25_OUT_OF_SCOPE kind="unit"
     # frob:ticket T-0143
     def test_cwe_77_discloses_duplicate_coverage_of_cwe_78(self):
         entry = next(e for e in CWE_TOP_25_OUT_OF_SCOPE if e.id == "CWE-77")
         assert "CWE-78" in entry.reason
+
+    # frob:tests src/frob/strata/_threat.py::CWE_TOP_25_CATALOG kind="unit"
+    # frob:ticket T-0345
+    def test_cwe_639_reuses_the_sql_capability_join(self):
+        # T-0345: 2025-list-new; reuses QUALITY_CATALOG's existing CWE-639
+        # entry's sql join rather than duplicating it (disclosed reuse, the
+        # SAME convention CWE-94 follows for exec).
+        entry = next(e for e in CWE_TOP_25_CATALOG if e.id == "CWE-639")
+        quality_entry = next(e for e in QUALITY_CATALOG if e.id == "CWE-639")
+        assert entry.capability_kind == quality_entry.capability_kind == "sql"
+        assert entry.mitigation == "tenant_scoping"
 
     # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
     # frob:ticket T-0143
@@ -395,6 +508,9 @@ class TestDischargeCompleteness:
         assert "no owner/review date" in violations[0].detail
 
     # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:waive DUP001 reason="parallel test methods within test_threat.py \
+    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
     def test_assumed_claim_with_owner_and_review_is_discharged(self):
         node = Node(id="Web", trust="trusted", may=("html_render",))
         claim_id = _discharge_claim_id("CWE-79", "Web")
@@ -484,6 +600,9 @@ class TestDischargeChokepointShape:
         assert "does not prove a mitigation chokepoint" in violations[0].detail
 
     # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:waive DUP001 reason="parallel test methods within test_threat.py \
+    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
     def test_noflow_claim_with_wrong_dst_does_not_discharge(self):
         node = Node(id="Web", trust="trusted", may=("html_render",))
         other = Node(id="Other", trust="trusted")
@@ -524,6 +643,9 @@ class TestDischargeChokepointShape:
         assert result.danger_ok == ()
 
     # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:waive DUP001 reason="parallel test methods within test_threat.py \
+    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
     def test_noflow_from_a_non_foreign_node_does_not_discharge(self):
         node = Node(id="Web", trust="trusted", may=("html_render",))
         internal = Node(id="Internal", trust="trusted")
@@ -698,6 +820,9 @@ class TestMitigationKindChokepoint:
         assert "not of the required mitigation kind" in violations[0].detail
 
     # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:waive DUP001 reason="parallel test methods within test_threat.py \
+    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
     def test_assumed_claim_bypasses_the_mitigation_kind_check(self):
         # An assumed claim never reaches the closure at all
         # (`evaluate_claims` short-circuits it to ASSUMED), so there is no
@@ -776,7 +901,17 @@ class TestBenignCapability:
     # frob:tests src/frob/strata/_threat.py::BenignCapability kind="unit"
     def test_empty_reason_is_rejected(self):
         with pytest.raises(ValidationError):
-            BenignCapability(kind="metrics", reason="")
+            BenignCapability(kind="metrics", reason="", caught_by="test fixture")
+
+    # frob:tests src/frob/strata/_threat.py::BenignCapability kind="unit"
+    def test_empty_caught_by_is_rejected(self):
+        with pytest.raises(ValidationError):
+            BenignCapability(kind="metrics", reason="no CWE weakness", caught_by="")
+
+    # frob:tests src/frob/strata/_threat.py::BenignCapability kind="unit"
+    def test_missing_caught_by_is_rejected(self):
+        with pytest.raises(ValidationError):
+            BenignCapability(kind="metrics", reason="no CWE weakness")
 
 
 class TestLoadRepoBenignCapabilities:
@@ -800,7 +935,8 @@ class TestLoadRepoBenignCapabilities:
             "frob.toml",
             "[[strata.benign_capabilities]]\n"
             'kind = "html_render"\n'
-            'reason = "browser node renders trusted static assets only"\n',
+            'reason = "browser node renders trusted static assets only"\n'
+            'caught_by = "content-security-policy review, out of frob scope"\n',
         )
         result = load_repo_benign_capabilities(tmp_path)
         assert result.is_ok
@@ -809,25 +945,49 @@ class TestLoadRepoBenignCapabilities:
         assert excuses[0] == BenignCapability(
             kind="html_render",
             reason="browser node renders trusted static assets only",
+            caught_by="content-security-policy review, out of frob scope",
         )
 
     # frob:tests src/frob/strata/_threat.py::load_repo_benign_capabilities kind="unit"
+    # frob:waive DUP001 reason="parallel test methods within test_threat.py \
+    # (3 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
     def test_missing_reason_is_malformed(self, tmp_path: Path):
         _write(
             tmp_path,
             "frob.toml",
-            '[[strata.benign_capabilities]]\nkind = "html_render"\n',
+            '[[strata.benign_capabilities]]\nkind = "html_render"\n'
+            'caught_by = "test fixture"\n',
         )
         result = load_repo_benign_capabilities(tmp_path)
         assert result.is_err
         assert result.danger_err == StrataError.MalformedBenignConfig
 
     # frob:tests src/frob/strata/_threat.py::load_repo_benign_capabilities kind="unit"
+    # frob:waive DUP001 reason="parallel test methods within test_threat.py \
+    # (3 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
     def test_blank_reason_is_malformed(self, tmp_path: Path):
         _write(
             tmp_path,
             "frob.toml",
-            '[[strata.benign_capabilities]]\nkind = "html_render"\nreason = ""\n',
+            '[[strata.benign_capabilities]]\nkind = "html_render"\nreason = ""\n'
+            'caught_by = "test fixture"\n',
+        )
+        result = load_repo_benign_capabilities(tmp_path)
+        assert result.is_err
+        assert result.danger_err == StrataError.MalformedBenignConfig
+
+    # frob:tests src/frob/strata/_threat.py::load_repo_benign_capabilities kind="unit"
+    # frob:waive DUP001 reason="parallel test methods within test_threat.py \
+    # (3 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case coverage; extracting would obscure per-case intent"
+    def test_missing_caught_by_is_malformed(self, tmp_path: Path):
+        _write(
+            tmp_path,
+            "frob.toml",
+            '[[strata.benign_capabilities]]\nkind = "html_render"\n'
+            'reason = "browser node renders trusted static assets only"\n',
         )
         result = load_repo_benign_capabilities(tmp_path)
         assert result.is_err
@@ -855,7 +1015,8 @@ class TestLoadRepoBenignCapabilities:
             "frob.toml",
             "[[strata.benign_capabilities]]\n"
             'kind = "client_storage"\n'
-            'reason = "no QUALITY_CATALOG sink for this repo\'s usage"\n',
+            'reason = "no QUALITY_CATALOG sink for this repo\'s usage"\n'
+            'caught_by = "already CWE-922/312 classified in the security family"\n',
         )
         loaded = load_repo_benign_capabilities(tmp_path)
         assert loaded.is_ok
@@ -894,7 +1055,11 @@ class TestCapabilityCompleteness:
         node = Node(id="Web", trust="trusted", may=("metrics",))
         result = check_capability_completeness(
             KernelModel(nodes=(node,)),
-            benign=(BenignCapability(kind="metrics", reason="no CWE weakness"),),
+            benign=(
+                BenignCapability(
+                    kind="metrics", reason="no CWE weakness", caught_by="test fixture"
+                ),
+            ),
         )
         assert result.is_ok
         assert result.danger_ok == ()
@@ -956,6 +1121,28 @@ class TestCapabilityCompleteness:
         assert len(violations) == 1
         assert violations[0].capability == "html_render"
 
+    # frob:tests src/frob/strata/_threat.py::check_capability_completeness kind="unit"
+    def test_taxonomy_param_classifies_beyond_the_narrower_catalog(self):
+        """T-0171: `exec` has NO `QUALITY_CATALOG` entry (only `CWE_CATALOG`'s
+        CWE-78) -- checking against `catalog=QUALITY_CATALOG` alone (the
+        pre-T-0171 shape) misclassifies it; passing `taxonomy=ALL_CATALOG`
+        (the union across families) recognizes it as classified, matching
+        `ALL_CATALOG`'s "one taxonomy, split per-family only for view-
+        membership bookkeeping" contract."""
+        node = Node(id="Worker", trust="trusted", may=("exec",))
+        narrow = check_capability_completeness(
+            KernelModel(nodes=(node,)), catalog=QUALITY_CATALOG
+        )
+        assert narrow.is_ok
+        assert len(narrow.danger_ok) == 1
+        assert narrow.danger_ok[0].capability == "exec"
+
+        widened = check_capability_completeness(
+            KernelModel(nodes=(node,)), catalog=QUALITY_CATALOG, taxonomy=ALL_CATALOG
+        )
+        assert widened.is_ok
+        assert widened.danger_ok == ()
+
 
 class TestEvaluateThreats:
     # frob:tests src/frob/strata/_threat.py::evaluate_threats kind="unit"
@@ -991,7 +1178,11 @@ class TestEvaluateThreats:
         report = evaluate_threats(
             model,
             "owasp-top-10",
-            benign=(BenignCapability(kind="metrics", reason="no CWE weakness"),),
+            benign=(
+                BenignCapability(
+                    kind="metrics", reason="no CWE weakness", caught_by="test fixture"
+                ),
+            ),
         )
         assert report.is_ok
         assert report.danger_ok.violations == ()
@@ -1102,7 +1293,13 @@ class TestCheckEffectCompleteness:
             model,
             binding,
             tmp_path,
-            benign=(BenignCapability(kind="net", reason="no CWE weakness for net"),),
+            benign=(
+                BenignCapability(
+                    kind="net",
+                    reason="no CWE weakness for net",
+                    caught_by="test fixture",
+                ),
+            ),
         )
         assert result.is_ok
         assert result.danger_ok == ()

@@ -156,6 +156,7 @@ def build_group_template(
             )
         )
 
+    # frob:waive PERF004 reason="runs once after the members loop, not per iteration"
     holes = tuple(sorted({binding.hole for group in bindings for binding in group}))
     suggested_signature = "def _extracted({}): ...".format(
         ", ".join(f"hole_{h}" for h in holes)

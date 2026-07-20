@@ -1,5 +1,5 @@
 """Unit-level coverage for `std.krb`'s attr-desugar/read-back pair (T-0262,
-`src/frob/strata/_krb.py`): `krb_attrs` (desugar), `krb_manifest_for`
+`src/frob/strata/_krb.py`): `_krb_attrs` (desugar), `krb_manifest_for`
 (read-back), `krb_trust_flows` (domain-trust edge synthesis), and
 `flow_authenticates_via` (flow-level read-back) against hand-built values,
 mirroring `test_host.py`'s unit-test shape. End-to-end parse -> elaborate
@@ -14,8 +14,8 @@ from frob.strata._facts import build_facts
 from frob.strata._krb import (
     KrbDelegationKind,
     KrbTrust,
+    _krb_attrs,
     flow_authenticates_via,
-    krb_attrs,
     krb_manifest_for,
     krb_trust_flows,
 )
@@ -24,9 +24,9 @@ from frob.strata._parse import parse_module
 
 
 class TestKrbAttrs:
-    # frob:tests src/frob/strata/_krb.py::krb_attrs kind="unit"
+    # frob:tests src/frob/strata/_krb.py::_krb_attrs kind="unit"
     def test_desugars(self):
-        attrs = krb_attrs(
+        attrs = _krb_attrs(
             realm="CORP.EXAMPLE",
             is_kdc=True,
             spns=("HTTP/app@CORP.EXAMPLE",),
@@ -43,9 +43,9 @@ class TestKrbAttrs:
             "krb_trust=partner_kdc:two-way:True",
         )
 
-    # frob:tests src/frob/strata/_krb.py::krb_attrs kind="unit"
+    # frob:tests src/frob/strata/_krb.py::_krb_attrs kind="unit"
     def test_no_clauses_desugars_to_empty(self):
-        attrs = krb_attrs(
+        attrs = _krb_attrs(
             realm=None,
             is_kdc=False,
             spns=(),

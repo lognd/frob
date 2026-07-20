@@ -33,7 +33,7 @@ _DIST_FOR_IMPORT = {
 # imports that are intentionally NOT runtime deps: optional extras (their
 # import sites must be guarded), and the in-repo native crates.
 _ALLOWED_UNDECLARED = {
-    "z3",  # frob[smt] extra; probe_smt_equivalence guards the import
+    "z3",  # frob[smt] extra; _probe_smt_equivalence guards the import
     "strata_core",  # local native crate, shipped with the wheel build
     "frob_core",  # local native crate, shipped with the wheel build
     "frob",  # self-imports

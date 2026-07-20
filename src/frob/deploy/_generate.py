@@ -69,6 +69,14 @@ _CAP_KIND_MAP: dict[str, tuple[str, ...]] = {
     "net": ("CAP_NET_BIND_SERVICE",),
 }
 
+#: Ports below this number require `CAP_NET_BIND_SERVICE` on Linux (the
+#: kernel's own privileged-port cutoff, `ip_unprivileged_port_start`'s
+#: default). T-0281 item 8 (malmberg pilot finding): a node's `may net`
+#: previously granted `CAP_NET_BIND_SERVICE` unconditionally, even when
+#: every declared `listens` port is unprivileged -- an over-grant
+#: `_node_capabilities` below now gates on this cutoff instead.
+_PRIVILEGED_PORT_CUTOFF = 1024
+
 # frob:doc docs/strata/host.md#the-deploy-generator
 #: Header line every generated script carries. `_drift.py`'s DEPLOY001
 #: check does not grep for this prefix specifically -- it compares full
@@ -118,7 +126,7 @@ def sorted_manifest_entries(model: KernelModel) -> tuple[ManifestEntry, ...]:
                 node_id=node.id,
                 manifest=manifest,
                 capabilities=tuple(
-                    sorted(_node_capabilities(node)),
+                    sorted(_node_capabilities(node, manifest)),
                 ),
                 syscalls=tuple(sorted(node_allowed_syscalls(node))),
             )
@@ -126,14 +134,29 @@ def sorted_manifest_entries(model: KernelModel) -> tuple[ManifestEntry, ...]:
     return tuple(entries)
 
 
-def _node_capabilities(node: Node) -> frozenset[str]:
+def _node_capabilities(node: Node, manifest: HostManifest) -> frozenset[str]:
     """`CapabilityBoundingSet=` members for `node`, derived from the SAME
     `may`-kind join `node_allowed_syscalls` uses for `SystemCallFilter=`
     (`_CAP_KIND_MAP`, module docstring) -- never a second, independently
-    maintained kind mapping."""
+    maintained kind mapping.
+
+    T-0281 item 8 (malmberg pilot finding): `CAP_NET_BIND_SERVICE` is only
+    a real requirement when the manifest actually binds a PRIVILEGED port
+    (`_PRIVILEGED_PORT_CUTOFF`) -- a `may net` node whose every declared
+    `listens` port is >=1024 (or that declares no `listens` at all) never
+    needs it, so granting it unconditionally was an over-grant. Other
+    `_CAP_KIND_MAP` kinds (should the map grow) are unaffected by this
+    port gate -- it applies to `CAP_NET_BIND_SERVICE` specifically, the
+    one Linux capability whose need is itself port-dependent."""
+    needs_privileged_bind = any(
+        port < _PRIVILEGED_PORT_CUTOFF for port in manifest.listens
+    )
     caps: set[str] = set()
     for kind in node_may_kinds(node):
-        caps |= set(_CAP_KIND_MAP.get(kind, ()))
+        for cap in _CAP_KIND_MAP.get(kind, ()):
+            if cap == "CAP_NET_BIND_SERVICE" and not needs_privileged_bind:
+                continue
+            caps.add(cap)
     return frozenset(caps)
 
 
@@ -192,16 +215,29 @@ def _render_unit_file(entry: ManifestEntry) -> str:
     `ProtectSystem=strict`, `PrivateTmp`, a `CapabilityBoundingSet=`
     derived from `may` capabilities, and a `SystemCallFilter=` reusing
     the existing seccomp exporter's allowed-syscall join -- never a
-    second, independently maintained syscall list."""
+    second, independently maintained syscall list.
+
+    T-0281 item 6 (malmberg pilot finding): a declared `listens` PORT
+    previously drove `status.sh`'s `/dev/tcp` probe (`_status_unit_block`)
+    but was never materialized into the unit itself -- an operator reading
+    the unit file alone had no way to see what port the service is
+    expected to bind. `_listens_comment_line` below documents every
+    declared port as a `# listens: PORT` comment; full kernel-level
+    network hardening (`IPAddressAllow=`/`SocketBindAllow=`) is deferred
+    (docs/strata/host.md#the-honest-gap) since `std.host` has no inbound/
+    outbound direction vocabulary for `listens` yet -- documenting the
+    port honestly is the T-0281-scoped fix, not a fabricated allow-list."""
     manifest = entry.manifest
     read_write_paths = " ".join(sorted({o.path for o in manifest.owns}))
     cap_set = " ".join(entry.capabilities) if entry.capabilities else ""
     syscalls = " ".join(entry.syscalls)
     user_line = f"User={manifest.runs_as}\n" if manifest.runs_as else ""
     rwp_line = f"ReadWritePaths={read_write_paths}\n" if read_write_paths else ""
+    listens_comment = _listens_comment_line(manifest.listens)
     return (
         "[Unit]\n"
         f"Description=frob deploy generated unit for {entry.node_id}\n"
+        f"{listens_comment}"
         "\n"
         "[Service]\n"
         f"{user_line}"
@@ -217,13 +253,49 @@ def _render_unit_file(entry: ManifestEntry) -> str:
     )
 
 
-def _install_user_block(manifest: HostManifest) -> str:
-    """Check-then-apply service-user creation: `id -u` gates the `useradd`,
-    so a re-run performs zero commands when the user already exists
-    (idempotent-by-construction, T-0257's install requirement)."""
-    if manifest.runs_as is None:
+def _listens_comment_line(listens: tuple[int, ...] | list[int]) -> str:
+    """`# listens: PORT[, PORT...]\\n` documenting every declared `listens`
+    port on the unit itself (T-0281 item 6), or `""` when none are
+    declared -- so a unit file reader never has to cross-reference
+    `status.sh` just to learn what port a service is expected to bind."""
+    if not listens:
         return ""
-    name = manifest.runs_as
+    ports = ", ".join(str(p) for p in listens)
+    return f"# listens: {ports}\n"
+
+
+def _distinct_runs_as(entries: tuple[ManifestEntry, ...]) -> tuple[str, ...]:
+    """Every distinct `runs_as` identity declared across `entries`, in
+    first-seen (== `sorted_manifest_entries`' deterministic node-id) order.
+
+    T-0281 item 5 (malmberg pilot finding): a service-user name shared
+    across more than one node/store (e.g. a store and its consuming node
+    both declaring `runs_as "malmberg-ingest"`) previously got its
+    `useradd`/`userdel` guard block rendered ONCE PER ENTRY -- harmless
+    under `set -e` (the second `id -u` check just sees the user already
+    exists) but a literal duplicate block in the generated script, which
+    reads as a bug to anyone reviewing the output. This is the ONE place
+    entries are collapsed to distinct identities, shared by both
+    `generate_install_script` and `generate_uninstall_script` so the two
+    can never dedup by different rules."""
+    seen: dict[str, None] = {}
+    for entry in entries:
+        name = entry.manifest.runs_as
+        if name is not None and name not in seen:
+            seen[name] = None
+    return tuple(seen)
+
+
+# frob:waive DUP001 reason="mirror-image of _uninstall_user_block below \
+# by design (install creates, uninstall removes the same service user); \
+# parallel install/uninstall pairs read clearer kept separate than forced \
+# into one parameterized helper for a 5-line body"
+def _install_user_block(name: str) -> str:
+    """Check-then-apply service-user creation for one distinct `runs_as`
+    identity: `id -u` gates the `useradd`, so a re-run performs zero
+    commands when the user already exists (idempotent-by-construction,
+    T-0257's install requirement). Called once per DISTINCT identity
+    (`_distinct_runs_as`, T-0281 item 5), never once per node."""
     return (
         f'if ! id -u "{name}" >/dev/null 2>&1; then\n'
         f'    useradd --system --no-create-home --shell /usr/sbin/nologin "{name}"\n'
@@ -294,6 +366,10 @@ def _install_unit_block(entry: ManifestEntry) -> str:
     ) + _unit_enable_start_block(unit_name)
 
 
+# frob:waive DUP001 reason="dup grouped this shell-heredoc builder with \
+# _waive.py::_stale_detail and dup/_rules.py::_dup001_message purely on \
+# generic f-string shape -- unrelated domain (systemd unit install \
+# script), false positive"
 def _unit_write_block(
     unit_path: str, unit_name: str, body_digest: str, body: str
 ) -> str:
@@ -317,6 +393,9 @@ def _unit_write_block(
     )
 
 
+# frob:waive DUP001 reason="same false-positive grouping as \
+# _unit_write_block above (dup/_rules.py::_dup001_message, _waive.py:: \
+# _stale_detail); generic f-string shape, unrelated domain"
 def _unit_enable_start_block(unit_name: str) -> str:
     """Check-then-apply `systemctl enable`/`start` block for `unit_name`."""
     return (
@@ -339,14 +418,29 @@ def generate_install_script(model: KernelModel) -> str:
     (module docstring). Every step logs what it did (or that it skipped),
     so a re-run's zero-command output is itself the honest idempotency
     proof, not a claim."""
-    entries = sorted_manifest_entries(model)
+    return _render_install_script(model, sorted_manifest_entries(model))
+
+
+def _render_install_script(
+    model: KernelModel, entries: tuple[ManifestEntry, ...]
+) -> str:
+    """`generate_install_script`'s body, taking an already-computed
+    `entries` walk. `generate_all` (below) computes `sorted_manifest_entries`
+    exactly ONCE and passes it to this and its status/uninstall siblings --
+    T-0281 item 4 (malmberg pilot finding): each of the three top-level
+    `generate_*_script` functions independently re-walking the model via
+    `sorted_manifest_entries` meant `host_manifest_for`'s per-node DEBUG
+    log line fired three times per node for one `frob deploy generate`
+    invocation. Sharing one walk cuts that back to once."""
     parts = [_header(model, "frob deploy install.sh")]
     if not entries:
         parts.append('echo "no host manifests declared, nothing to install"\n')
         return "".join(parts)
+    parts.append('echo "--- service users ---"\n')
+    for name in _distinct_runs_as(entries):
+        parts.append(_install_user_block(name))
     for entry in entries:
         parts.append(f'echo "--- {entry.node_id} ---"\n')
-        parts.append(_install_user_block(entry.manifest))
         parts.append(_install_unit_block(entry))
         parts.append(_install_owns_block(entry.manifest))
     parts.append('echo "install complete"\n')
@@ -385,8 +479,37 @@ def generate_status_script(model: KernelModel) -> str:
     """Render `status.sh`: per-unit active/enabled state plus a listen-
     port probe, one machine-parseable `key=value ...` line per fact
     (module docstring)."""
-    entries = sorted_manifest_entries(model)
-    parts = [_header(model, "frob deploy status.sh")]
+    return _render_status_script(model, sorted_manifest_entries(model))
+
+
+#: T-0281 item 7 (malmberg pilot finding): `std.host` has no host/
+#: placement vocabulary yet -- every generated `status.sh` probes
+#: `127.0.0.1` for every declared unit's `listens` ports regardless of
+#: which physical host that unit is actually meant to run on, so a
+#: multi-host deployment (e.g. malmberg's display node is a SEPARATE host
+#: from its ingest node) always reports a remote unit's port as closed.
+#: This comment is the honest documentation of that gap (rather than a
+#: fabricated per-host partition `std.host` cannot yet express) --
+#: designing the placement construct itself is filed separately
+#: (docs/strata/host.md#the-honest-gap) since it is bigger than this
+#: ticket's scope and may grow its own child tickets.
+_MULTI_HOST_STATUS_NOTE = (
+    "# NOTE: every socket probe below runs against 127.0.0.1 -- std.host\n"
+    "# has no host/placement vocabulary yet, so this script cannot tell\n"
+    "# which unit is meant to run on which physical host. Run this script\n"
+    "# ON EACH declared host separately; a unit not actually placed here\n"
+    "# will always read as closed. See docs/commands/deploy.md#scope-and-\n"
+    "# honesty-notes-generate.\n"
+)
+
+
+def _render_status_script(
+    model: KernelModel, entries: tuple[ManifestEntry, ...]
+) -> str:
+    """`generate_status_script`'s body, taking an already-computed
+    `entries` walk (`_render_install_script`'s docstring: T-0281 item 4,
+    one shared walk per `generate_all` invocation instead of three)."""
+    parts = [_header(model, "frob deploy status.sh"), _MULTI_HOST_STATUS_NOTE]
     unit_entries = [e for e in entries if e.manifest.is_unit]
     if not unit_entries:
         parts.append('echo "no units declared"\n')
@@ -436,13 +559,14 @@ def _uninstall_owns_block(manifest: HostManifest) -> str:
     return "".join(lines)
 
 
-def _uninstall_user_block(manifest: HostManifest) -> str:
-    """Remove exactly the service user this manifest created -- check-
-    then-apply via `id -u` first, matching `_install_user_block`'s
-    mirror-image gate."""
-    if manifest.runs_as is None:
-        return ""
-    name = manifest.runs_as
+# frob:waive DUP001 reason="mirror-image of _install_user_block above by \
+# design; see that function's waiver"
+def _uninstall_user_block(name: str) -> str:
+    """Remove exactly one distinct `runs_as` identity's service user --
+    check-then-apply via `id -u` first, matching `_install_user_block`'s
+    mirror-image gate. Called once per DISTINCT identity
+    (`_distinct_runs_as`, T-0281 item 5), never once per node -- a user
+    shared by two nodes/stores is removed once, not `userdel`'d twice."""
     return (
         f'if id -u "{name}" >/dev/null 2>&1; then\n'
         f'    userdel "{name}"\n'
@@ -458,7 +582,15 @@ def generate_uninstall_script(model: KernelModel) -> str:
     removed, service users deleted -- EXACTLY the manifest set, reverse
     order of install (unit down before its user is removed, module
     docstring's artifact-freeness requirement)."""
-    entries = sorted_manifest_entries(model)
+    return _render_uninstall_script(model, sorted_manifest_entries(model))
+
+
+def _render_uninstall_script(
+    model: KernelModel, entries: tuple[ManifestEntry, ...]
+) -> str:
+    """`generate_uninstall_script`'s body, taking an already-computed
+    `entries` walk (`_render_install_script`'s docstring: T-0281 item 4,
+    one shared walk per `generate_all` invocation instead of three)."""
     parts = [_header(model, "frob deploy uninstall.sh")]
     if not entries:
         parts.append('echo "no host manifests declared, nothing to uninstall"\n')
@@ -467,7 +599,9 @@ def generate_uninstall_script(model: KernelModel) -> str:
         parts.append(f'echo "--- {entry.node_id} ---"\n')
         parts.append(_uninstall_unit_block(entry))
         parts.append(_uninstall_owns_block(entry.manifest))
-        parts.append(_uninstall_user_block(entry.manifest))
+    parts.append('echo "--- service users ---"\n')
+    for name in _distinct_runs_as(entries):
+        parts.append(_uninstall_user_block(name))
     parts.append('echo "uninstall complete"\n')
     return "".join(parts)
 
@@ -478,9 +612,16 @@ def generate_all(model: KernelModel) -> dict[str, str]:
     """`{"install.sh": ..., "status.sh": ..., "uninstall.sh": ...}` -- the
     ONE call site `frob deploy generate`'s CLI runner and `_drift.py`'s
     DEPLOY001 recompilation both use, so the three scripts' filenames can
-    never drift apart between the writer and the checker."""
+    never drift apart between the writer and the checker.
+
+    T-0281 item 4 (malmberg pilot finding): `sorted_manifest_entries` is
+    computed exactly ONCE here and shared across all three renderers,
+    instead of each one independently re-walking the model -- the shared
+    walk is what stops `host_manifest_for`'s per-node DEBUG log line from
+    firing three times per node for one `frob deploy generate` run."""
+    entries = sorted_manifest_entries(model)
     return {
-        "install.sh": generate_install_script(model),
-        "status.sh": generate_status_script(model),
-        "uninstall.sh": generate_uninstall_script(model),
+        "install.sh": _render_install_script(model, entries),
+        "status.sh": _render_status_script(model, entries),
+        "uninstall.sh": _render_uninstall_script(model, entries),
     }

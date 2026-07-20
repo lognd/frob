@@ -20,7 +20,6 @@ from frob.logging import get_logger
 from ._ast import (
     BoundaryDecl,
     ClaimDecl,
-    DeployDecl,
     FlowDecl,
     Module,
     NodeDecl,
@@ -29,14 +28,16 @@ from ._ast import (
     RemoveDecl,
     ScaleDecl,
     ScenarioDecl,
-    SecretDecl,
+    StoreDecl,
     TrustDecl,
+    _DeployDecl,
+    _SecretDecl,
 )
 from ._code_binding import _CODE_PREFIX
 from ._errors import StrataError
-from ._host import host_attrs
+from ._host import _host_attrs
 from ._infra import elaborate_infra
-from ._krb import KrbDelegationKind, krb_attrs, krb_trust_flows
+from ._krb import KrbDelegationKind, _krb_attrs, krb_trust_flows
 from ._models import (
     LABELS,
     TRUST,
@@ -66,7 +67,7 @@ from ._models import (
 from ._packs import require_analyzable
 from ._pii import _PII_PREFIX
 from ._secrets import SecretExpansion, SecretSpec, elaborate_secret
-from ._waive import validate_waiver_fields
+from ._waive import _validate_waiver_fields
 
 _log = get_logger(__name__)
 
@@ -91,8 +92,11 @@ _OBSERVE_LOG_CLASSES = frozenset(
 )
 
 
-def _elaborate_deploy(decl: DeployDecl) -> DeployContract:
-    """One `DeployDecl` -> one `DeployContract` (T-0136); a direct field-for-field
+# frob:waive DUP001 reason="_infra.py::_elaborate_store_deploy duplicates \
+# this field-for-field mapping locally for the same import-cycle reason \
+# documented in that module (T-0247); already reasoned, not a new gap"
+def _elaborate_deploy(decl: _DeployDecl) -> DeployContract:
+    """One `_DeployDecl` -> one `DeployContract` (T-0136); a direct field-for-field
     mapping onto T-0083's landed kernel construct -- `max_error_rate` is always
     `None` since the surface grammar has no abort-predicate syntax yet."""
     return DeployContract(
@@ -139,19 +143,22 @@ def _node_marker_attrs(decl: NodeDecl, attrs: tuple[str, ...]) -> tuple[str, ...
 
 def _node_host_krb_attrs(decl: NodeDecl, attrs: tuple[str, ...]) -> tuple[str, ...]:
     """Append std.host/std.krb desugared attrs to `attrs`."""
-    host = host_attrs(
+    host = _host_attrs(
         runs_as=decl.runs_as,
         is_unit=decl.is_unit,
         owns=tuple((o.path, o.mode) for o in decl.owns),
         listens=decl.listens,
+        group=decl.group,
+        sudoers=decl.sudoers,
     )
     if host:
-        # T-0255: std.host -- runs_as/unit/owns/listens desugar to attrs
-        # the SAME way as `_infra.py::_elaborate_store` (`_host.py::
-        # host_attrs`, the one shared encoding for both callers).
+        # T-0255: std.host -- runs_as/unit/owns/listens/group/sudoers
+        # (group/sudoers added T-0272) desugar to attrs the SAME way as
+        # `_infra.py::_elaborate_store` (`_host.py::_host_attrs`, the one
+        # shared encoding for both callers).
         _log.debug("node %s declares %d std.host attr(s)", decl.id, len(host))
         attrs = (*attrs, *host)
-    krb = krb_attrs(
+    krb = _krb_attrs(
         realm=decl.krb_realm,
         is_kdc=decl.krb_is_kdc,
         spns=decl.krb_spns,
@@ -162,7 +169,7 @@ def _node_host_krb_attrs(decl: NodeDecl, attrs: tuple[str, ...]) -> tuple[str, .
     if krb:
         # T-0262: std.krb -- realm/kdc/spn/delegation/trusts desugar to
         # attrs the SAME way std.host's clauses do just above
-        # (`_krb.py::krb_attrs`, the one shared encoding for this
+        # (`_krb.py::_krb_attrs`, the one shared encoding for this
         # vocabulary).
         _log.debug("node %s declares %d std.krb attr(s)", decl.id, len(krb))
         attrs = (*attrs, *krb)
@@ -361,12 +368,12 @@ def _elaborate_scenario(decl: ScenarioDecl) -> Scenario:
 
 
 def _elaborate_secrets(
-    secrets: tuple[SecretDecl, ...], known: dict[str, Node]
+    secrets: tuple[_SecretDecl, ...], known: dict[str, Node]
 ) -> Result[tuple[SecretExpansion, ...], StrataError]:
-    """Every `SecretDecl` -> a `SecretSpec` handed to the landed `elaborate_secret`
+    """Every `_SecretDecl` -> a `SecretSpec` handed to the landed `elaborate_secret`
     (T-0082) -- never re-validating issuer/audience/lifetime/revoke logic here
     (charter law 1: a vocabulary is a pure function, defined exactly once in
-    `_secrets.py`). Fails closed on the first `SecretDecl` `elaborate_secret`
+    `_secrets.py`). Fails closed on the first `_SecretDecl` `elaborate_secret`
     rejects, same first-error-wins posture as every other `elaborate()` step.
     """
     expansions: list[SecretExpansion] = []
@@ -412,7 +419,7 @@ def _validate_waivers(module: Module) -> Result[None, StrataError]:
     `MULTI_INSTANCE_WAIVER_FAMILIES` rule (SYS100/SYS101/THREAT002/
     THREAT003, which can each fire more than once per node) must carry a
     `RULE:SUBTARGET` sub-target -- fails closed at elaborate time
-    (`_waive.py::validate_waiver_fields`'s module docstring: a bare rule
+    (`_waive.py::_validate_waiver_fields`'s module docstring: a bare rule
     on one of these families would blanket-suppress every current and
     future finding of that rule on the node, the T-0148 bug reopened at
     node scope; an empty reason is a functional bypass with nothing
@@ -423,7 +430,7 @@ def _validate_waivers(module: Module) -> Result[None, StrataError]:
     """
     for node in module.nodes:
         for waiver in node.waives:
-            checked = validate_waiver_fields(waiver.rule, waiver.reason)
+            checked = _validate_waiver_fields(waiver.rule, waiver.reason)
             if checked.is_err:
                 _log.error(
                     "node %s: malformed waive clause rule=%r reason=%r",
@@ -679,9 +686,15 @@ def _validate_operations(module: Module) -> Result[None, StrataError]:
 
 
 def _validate_node_observability(
-    decl: NodeDecl, known: set[str]
+    decl: NodeDecl | StoreDecl, known: set[str]
 ) -> Result[None, StrataError]:
-    """One node's panics/observe checks; see `_validate_observability`."""
+    """One node/store's panics/observe checks; see `_validate_observability`.
+
+    T-0247: `decl` is `NodeDecl | StoreDecl` since a store now carries the
+    same `errors_total`/`panics_contained_by`/`observe` fields as a node
+    (docs/strata/surface.md#key-construct-semantics: a store is a node
+    too) -- both share this one check, no store-specific duplicate.
+    """
     if decl.panics_contained_by is not None and decl.panics_contained_by not in known:
         _log.error(
             "node %s: panics_contained_by %r is not declared",
@@ -689,23 +702,37 @@ def _validate_node_observability(
             decl.panics_contained_by,
         )
         return Err(StrataError.UnknownReference)
-    if decl.observe is not None:
-        for log_class in decl.observe.log:
-            if log_class not in _OBSERVE_LOG_CLASSES:
-                _log.error(
-                    "node %s: observe log class %r is not in the fixed vocabulary %s",
-                    decl.id,
-                    log_class,
-                    sorted(_OBSERVE_LOG_CLASSES),
-                )
-                return Err(StrataError.UnknownLogClass)
-        if decl.observe.to not in known:
-            _log.error(
-                "node %s: observe target %r is not declared", decl.id, decl.observe.to
-            )
-            return Err(StrataError.UnknownReference)
+    observe_checked = _validate_observe_field(decl, known)
+    if observe_checked.is_err:
+        return observe_checked
     if decl.errors_total and decl.observe is None:
         _log.warning("node %s: errors_total without observe", decl.id)
+    return Ok(None)
+
+
+# frob:ticket T-0361
+def _validate_observe_field(
+    decl: NodeDecl | StoreDecl, known: set[str]
+) -> Result[None, StrataError]:
+    """The `observe` half of `_validate_node_observability`: every log class
+    is in the fixed vocabulary and the `to` target is a known node id;
+    split out of that function's body (T-0361)."""
+    if decl.observe is None:
+        return Ok(None)
+    for log_class in decl.observe.log:
+        if log_class not in _OBSERVE_LOG_CLASSES:
+            _log.error(
+                "node %s: observe log class %r is not in the fixed vocabulary %s",
+                decl.id,
+                log_class,
+                sorted(_OBSERVE_LOG_CLASSES),
+            )
+            return Err(StrataError.UnknownLogClass)
+    if decl.observe.to not in known:
+        _log.error(
+            "node %s: observe target %r is not declared", decl.id, decl.observe.to
+        )
+        return Err(StrataError.UnknownReference)
     return Ok(None)
 
 
@@ -718,10 +745,16 @@ def _validate_observability(module: Module) -> Result[None, StrataError]:
     (docs/strata/policy.md#packs). A node declaring `errors_total` with no
     `observe` block is a non-fatal WARNING diagnostic ("errors_total
     without observe"), not a hard error -- the ERR/OBS *gate* wiring into
-    `frob check` is phase 4 (T-0070 scope note).
+    `frob check` is phase 4 (T-0070 scope note). T-0247 extends this walk
+    to `module.stores` too -- a store is a node too (docs/strata/
+    surface.md#key-construct-semantics), so its `errors_total`/
+    `panics_contained_by`/`observe` clauses get the same checks.
     """
     known = _known_node_ids(module)
-    for decl in module.nodes:
+    # T-0247: stores share the same panics/observe checks as nodes -- a
+    # store is a node too, so its `errors_total`/`panics_contained_by`/
+    # `observe` clauses get the identical fail-closed validation.
+    for decl in (*module.nodes, *module.stores):
         checked = _validate_node_observability(decl, known)
         if checked.is_err:
             return checked
@@ -880,7 +913,16 @@ def _elaborate_operation_flows(module: Module) -> tuple[Flow, ...]:
 
 
 def _elaborate_observe_flows(module: Module) -> tuple[Flow, ...]:
-    """One Internal-labeled `Flow` per node's `observe { ... to IDENT }` block."""
+    """One Internal-labeled `Flow` per node/store's `observe { ... to IDENT }`
+    block.
+
+    T-0247: also walks `module.stores` -- a store is a node too (docs/
+    strata/surface.md#key-construct-semantics), so a store's `observe`
+    clause needs the same synthesized flow a node's gets. This runs before
+    `elaborate_infra` expands stores into `Node`s (`_build_base_kernel_
+    model`'s call order), so it must read `module.stores` directly rather
+    than the not-yet-built store `Node`s.
+    """
     return tuple(
         Flow(
             id=f"{decl.id}__obs",
@@ -889,7 +931,7 @@ def _elaborate_observe_flows(module: Module) -> tuple[Flow, ...]:
             label="Internal",
             attrs=("observe",),
         )
-        for decl in module.nodes
+        for decl in (*module.nodes, *module.stores)
         if decl.observe is not None
     )
 

@@ -56,6 +56,8 @@ class TestRegulationCatalogCompleteness:
                     reason="no under-13 flows in this deployment",
                     owner="legal@example.com",
                     review="2027-01-01",
+                    caught_by="legal intake process reviews age-gating at "
+                    "onboarding, outside frob's static scope",
                 ),
             ),
         )

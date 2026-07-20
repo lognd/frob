@@ -10,7 +10,7 @@ and -- the completeness half -- every KNOWN registry marker in the codebase
 appears as an inventory row, so ADDING A NEW REGISTRY without a guide fails
 the build here instead of rotting silently.
 
-frob:tests docs/guides/extending/registry_of_registries.json kind="drift"
+frob:tests docs/guides/extending/registry_of_registries.json kind="unit"
 """
 
 from __future__ import annotations

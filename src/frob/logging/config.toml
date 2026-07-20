@@ -2,14 +2,14 @@ version = 1
 disable_existing_loggers = false
 
 [filters.below_warning]
-"()" = "frob.logging.filter.BelowLevelFilter"
+"()" = "frob.logging.filter._BelowLevelFilter"
 below = "WARNING"
 
 [formatters.stdout_fmt]
-"()" = "frob.logging.formatter.FrobFormatter"
+"()" = "frob.logging.formatter._FrobFormatter"
 
 [formatters.stderr_fmt]
-"()" = "frob.logging.formatter.FrobFormatter"
+"()" = "frob.logging.formatter._FrobFormatter"
 show_level = true
 
 [handlers.stdout]

@@ -61,12 +61,28 @@ exactly as fast as before this rung existed.
 enforce = true
 region_kernel = true    # opt-in: also off by default
 region_min_tokens = 15  # floor below which a region match is not reported
+region_run_cap = 200    # per-run pair-emission guard, see below
 ```
 
 Reported `ClonePair`s use `rung="r1.5"`, `similarity=1.0` (every match is
 exact by construction), and a narrowed `CloneRegion` span covering just
 the matched token window -- not the whole symbol, same posture as R4's
 region-narrowing.
+
+**Run-size guard (`[dup].region_run_cap`, T-0273).** Emitting every
+occurrence pair within one equal-token run is O(k^2) in the run size `k`
+(`emit_run_pairs` in `frob-core/src/lib.rs`) -- a reviewer demonstrated
+2000 identical 20-token documents sharing a block producing 1,999,000
+pairs in 17.5s. A real monorepo with thousands of near-identical
+generated/boilerplate symbols sharing a block `>= region_min_tokens`
+would hit the same wall. `region_run_cap` (default 200) bounds `k` per
+run: a run larger than the cap only pairs its first `region_run_cap`
+occurrences with each other, capping per-run cost at O(region_run_cap^2)
+no matter how many more times the block repeats. Truncation is signaled,
+never silent (the T-0193-recall-bug lesson) -- `frob_core.exact_regions`
+returns `(regions, truncated)`, and `frob.dup._pipeline._region_groups`
+logs a WARN naming `[dup].region_run_cap` when at least one run was
+capped.
 
 ## Granularity: regions, not just functions
 
@@ -236,6 +252,7 @@ min_tokens = 40           # ignore trivial bodies
 cache_entries = 200000    # LRU cap on pairwise verdicts
 region_kernel = false     # R1.5 exact-region kernel opt-in (needs enforce=true too)
 region_min_tokens = 15    # R1.5 floor below which a region match is not reported
+region_run_cap = 200      # R1.5 per-run pair-emission guard (T-0273)
 ```
 
 ## Rust core (frob-core)
@@ -301,8 +318,8 @@ descriptions above.
 ## Anti-unification (Plotkin lgg)
 
 <a id="anti-unification-plotkin-lgg"></a>
-<!-- frob:describes frob.dup._core.anti_unify -->
-<!-- frob:describes frob.dup.AntiUnifyTemplate -->
+<!-- frob:describes src/frob/dup/_core.py::anti_unify -->
+<!-- frob:describes src/frob/dup/_models.py::AntiUnifyTemplate -->
 
 `anti_unify` (T-0194, docs/modules/dup-sota-survey.md section 4, item 17)
 is the anti-unification kernel: given two `(labels, parents)` node arrays
@@ -347,10 +364,10 @@ build on.
 ## Reverse-templating report
 
 <a id="reverse-templating-report"></a>
-<!-- frob:describes frob.dup._template.build_group_template -->
-<!-- frob:describes frob.dup.CloneTemplate -->
-<!-- frob:describes frob.dup.CloneBinding -->
-<!-- frob:describes frob.dup.CloneMatchGroup -->
+<!-- frob:describes src/frob/dup/_template.py::build_group_template -->
+<!-- frob:describes src/frob/dup/_models.py::CloneTemplate -->
+<!-- frob:describes src/frob/dup/_models.py::CloneBinding -->
+<!-- frob:describes src/frob/dup/_models.py::CloneMatchGroup -->
 
 T-0195 (docs/modules/dup-sota-survey.md sec 4): a synthesis stage over the
 `anti_unify` kernel that turns a clone group's already-detected `ClonePair`s
@@ -395,6 +412,44 @@ not installed, or the hole-ceiling sanity check tripping at any fold step
 plain `pairs` with no template in that case, per the survey's "Err back to
 a plain ClonePair report with no template rather than emitting noise" rule.
 
+## Exhaustiveness matrix (T-0199)
+
+`frob.dup._exhaustiveness` extends the T-0158 capability-matrix mold to
+duplicate detection: a single-source `RUNG_SPECS` registry names, per
+rung, which clone type(s) in the classic Roy/Cordy taxonomy (Type-1 exact,
+Type-2 renamed, Type-3 near-miss, Type-4 semantic) it is designed to
+catch. `dup_matrix()` cross-products every `(rung, clone_type)` pair that
+follows from `RUNG_SPECS` against every supported language
+(`LANGUAGES` -- python/typescript/rust/c/cpp); every resulting cell is
+either `DUP_CLAIMS`-backed by a real, reused litmus fixture proving the
+rung fires on that language, or `DUP_MATRIX_EXCUSES`-backed by a specific
+written reason it does not (yet). `unclaimed_cells()` is the gate
+condition: empty means every claimed-or-excusable cell is accounted for.
+`tests/test_dup_exhaustiveness.py` is the drift-lock -- adding a rung or
+widening a `claimed_clone_types` entry without a firing fixture fails the
+suite immediately, before any new detector work lands (the T-0187/T-0158
+acceptance bar this ticket was scoped against).
+
+The registry is honest about two gaps it found rather than papering over
+them (both filed as T-draft-d6bca168, not fixed here -- out of T-0199's scope,
+which excludes `frob-core/**`):
+
+- **R3 currently cannot be distinguished from R2 by any fixture.**
+  `frob.dup._pipeline._fingerprint_symbol` feeds `r3_canonical_hash` the
+  same `_r2_normalize` output R2 hashes -- no literal abstraction, no
+  commutative-operand ordering, no for/while control-flow desugaring is
+  implemented, despite `frob-core/src/lib.rs::r3_canonical_hash`'s
+  docstring assuming the caller already did that work. Verified directly:
+  a for-loop/while-loop pair computing the same accumulation produces
+  different r2-normalized token streams, so R3 never independently fires.
+- **Only python is proven cross-rung today.** R1-R5 operate on
+  `frob.lang`'s normalized token/AST output and are not language-
+  restricted by construction, but no typescript/rust/c/cpp litmus fixture
+  has been authored yet to prove any rung fires cross-language. R6/R7 ARE
+  structurally python-only (`_load_python_callable` resolves to an
+  importable Python callable; `Err(NotPure)` for every other language) --
+  a real limit, not a missing-fixture gap.
+
 ## Gate integration
 
 - DUP001 (error): diff introduces a clone of a pre-existing symbol at or
@@ -406,6 +461,51 @@ a plain ClonePair report with no template rather than emitting noise" rule.
 - The pre-work sweep (`frob ticket start`) reuses the same pipeline
   scoped to the ticket, replacing the old advisory dup+xref sweep with
   the mechanized check.
+
+## Check-stage summary is waiver-aware (T-0375)
+
+The `frob-dup` stage of `frob check` (`frob.check._python._run_dup`) runs
+the legacy `find_duplicates` scan over the whole tree, independent of
+`dup_gate`'s diff-scoped DUP001/DUP002. Before T-0375 its stage summary
+("`N duplicate groups`") counted every group raw, even ones a developer had
+already dispositioned with a reasoned `frob:waive DUP001`/`DUP002` above one
+of the group's functions -- making a written waiver pointless for the
+zero-warnings headline. `_run_dup` now cross-references the obligation
+graph's DUP001/DUP002 `frob:waive` edges against each group's fragment
+symrefs (`path::symbol`, the same identity `frob.graph.dsl` binds a waiver
+comment to).
+
+**Full-coverage rule, not "any fragment matches" (T-0375 review fix):** a
+group is excluded from the headline ONLY when EVERY one of its fragments'
+symrefs is covered by a matching waiver (`_dup_group_covering_waivers`) --
+not merely when any single fragment happens to be named by some waiver
+elsewhere. This matters because `frob.dup._legacy`'s `_exact_groups`/
+`_renamed_groups` deliberately let one symbol sit in BOTH an exact-clone
+group and a DISTINCT, larger renamed-clone superset group (a renamed group
+is only dropped when its whole fragment set is a subset of some exact
+group's -- see `_renamed_groups`'s docstring). Concretely: if `foo` and
+`bar` are exact clones of each other, and `baz` is a separate renamed
+(alpha-equivalent) clone of both, `foo` sits in the exact group `{foo,
+bar}` AND the renamed group `{foo, bar, baz}`. A reasoned
+`frob:waive DUP001` covering `foo`+`bar` (the exact pair) correctly retires
+that group -- but must NOT also retire the renamed group, because `baz` was
+never reasoned about. An "any fragment symref matches" rule would silently
+drop the renamed group's un-waived `baz` from the headline the moment `foo`
+was waived for an unrelated pairing; full-group coverage is the only
+semantics that keeps a waiver scoped to what it was actually written about.
+A fully-covered group is rendered as a `note` diagnostic (`[waived:
+<symref1>, <symref2>, ...]`) instead of `warning` -- never hidden, only
+demoted. The summary line is `"N duplicate groups (M waived)"`, mirroring
+the gates stage's `error/warning/waived` split.
+
+Note this is a deliberately STRICTER, stage-local rule than the real
+DUP001/DUP002 gate's own waiver matching: `frob.dup._rules.DUP001`/`DUP002`
+never set `Violation.symref` at all, so `frob.gates._match_waiver` falls
+back to its file-scoped mode for those rules (any waiver in the same file
+matches). The check-stage summary's advisory count intentionally does NOT
+reuse that broader file-scoped rule -- it would make one waiver anywhere in
+a file silently absorb every duplicate group the file participates in, the
+same class of over-exclusion this section exists to rule out.
 
 ## Dependencies and integration points
 
@@ -450,11 +550,45 @@ deviations, so nothing here is silently assumed done:
   `_pipeline.py` -- `frob.lang` exposes no real statement boundaries, so
   chunking is a statement-starting-keyword heuristic, not a parse). R5 is
   new this pass too: a Weisfeiler-Lehman graph-kernel hash
-  (`frob_core.wl_hash`, new kernel) over a co-occurrence proxy for each
-  function's def-use graph (`_build_dataflow_graph`'s deviation note --
-  no real CFG/DFG exists, so this connects every identifier token within
-  a heuristic statement chunk and labels by "immediately followed by `=`"
-  as a def/use proxy).
+  (`frob_core.wl_hash`, new kernel) over each function's def-use graph.
+  **T-0196 update:** R5 now has two graph-construction paths, chosen per
+  symbol, not one co-occurrence proxy for everything. `_real_dataflow_graph`
+  walks the symbol's ACTUAL parsed subtree -- it finds the function-body
+  statement container via `_BLOCK_LABELS`, walks real statement-node
+  children in source order (real control flow, not token position), and
+  finds each assignment's actual def/use split via `_ASSIGNMENT_LABELS`/
+  `_DECLARATOR_LABELS` (a real node match, not a "next token is `=`"
+  guess). This is a genuine CFG/DFG built from `frob.lang`'s parsed tree,
+  for every grammar whose body/assignment shape is listed in those three
+  label sets (see the coverage table below). When no such subtree is
+  available (a grammar not listed, a parse failure, or a region with no
+  matching block node), `find_clones` falls back to
+  `_build_dataflow_graph`, the original co-occurrence proxy described
+  above -- still real (it runs), still honestly documented as a proxy, now
+  demoted from "the only path" to "the fallback path."
+
+  **R5 per-language coverage (T-0196, verified against
+  `src/frob/dup/_pipeline.py`'s `_BLOCK_LABELS`/`_ASSIGNMENT_LABELS`/
+  `_DECLARATOR_LABELS` and `tests/test_dup_r5_multilang.py`, not
+  aspirational):**
+
+  | `frob.lang` language | Extensions | Body container matched | Def/use split matched | R5 graph |
+  | --- | --- | --- | --- | --- |
+  | python | `.py` | `block` | `assignment` | Real CFG/DFG (`_real_dataflow_graph`) |
+  | rust | `.rs` | `block` | `let_declaration` | Real CFG/DFG (`_real_dataflow_graph`); re-assignment to an existing binding (no `let`) is not in `_ASSIGNMENT_LABELS`/`_DECLARATOR_LABELS` and falls through that statement to the proxy edge, not a hard failure of the whole graph |
+  | typescript | `.ts` | `statement_block` | `assignment_expression`, `variable_declarator` (via `_DECLARATOR_LABELS`) | Real CFG/DFG (`_real_dataflow_graph`) |
+  | tsx | `.tsx` | `statement_block` | `assignment_expression`, `variable_declarator` (via `_DECLARATOR_LABELS`) | Real CFG/DFG (`_real_dataflow_graph`) -- same grammar labels as typescript (`_EXTENSION_TABLE` maps `.tsx` to the `tsx` tree-sitter grammar under the same `"typescript"` `frob.lang` label); not separately covered by `tests/test_dup_r5_multilang.py`, which only exercises `.ts` |
+  | c | `.c`, `.h` | `compound_statement` | `assignment_expression`, `init_declarator` (via `_DECLARATOR_LABELS`) | Real CFG/DFG (`_real_dataflow_graph`) |
+  | cpp | `.cpp`, `.hpp`, `.cc`, `.hh`, `.cxx` | `compound_statement` | `assignment_expression`, `init_declarator` (via `_DECLARATOR_LABELS`) | Real CFG/DFG (`_real_dataflow_graph`) |
+  | strata | `.strata` | not listed (`.strata` has no tree-sitter grammar at all -- `frob.lang.symbol_tree` returns `Err(UnsupportedLanguage)` for it, see `frob.lang`'s module docstring) | not listed | Co-occurrence proxy only (`_build_dataflow_graph`) -- `_real_dataflow_graph` cannot run without a `symbol_tree` to walk |
+
+  A grammar row's real-CFG path is also only reached when `_find_block`
+  actually finds a matching container in a given symbol's subtree; a
+  region with no block node under it (an unparseable fragment, a
+  non-function region R5 is asked to compare) falls back to the proxy for
+  that symbol even on a grammar with real-CFG support -- the table above
+  states per-grammar *capability*, not a 100%-real-path guarantee for
+  every symbol in that language.
 - **Region-subsection matching** falls out of R4: `tree_edit_similarity`'s
   alignment is mapped back to a line-range subset of the statement chunks
   it covers (`_region_span_for_alignment`), so a partial-body match
@@ -557,75 +691,75 @@ artifact) returns nothing.
 ## Public API reference
 
 <a id="public-api"></a>
-<!-- frob:describes frob.dup.find_clones -->
-<!-- frob:describes frob.dup.probe_equivalence -->
+<!-- frob:describes src/frob/dup/_pipeline.py::find_clones -->
+<!-- frob:describes src/frob/dup/_pipeline.py::probe_equivalence -->
 **`find_clones`/`probe_equivalence`**: see the "Public API" code block
 above for signatures. `find_clones` runs the R1-R5 ladder; `probe_equivalence`
 is R6, opt-in and separate from the gate path.
 
 <a id="rung-r7"></a>
-<!-- frob:describes frob.dup._pipeline.probe_smt_equivalence -->
+<!-- frob:describes src/frob/dup/_pipeline.py::_probe_smt_equivalence -->
 **`probe_smt_equivalence`**: R7, opt-in bounded-SMT formal-equivalence
 check for tiny int/bool functions (`z3-solver`, optional).
 
 <a id="pipeline"></a>
-<!-- frob:describes frob.dup._pipeline.touched_refs -->
+<!-- frob:describes src/frob/dup/_pipeline.py::touched_refs -->
 **`touched_refs`**: symrefs in a `GraphSnapshot` whose span overlaps a
 `Diff` hunk -- the "new side" restriction `find_clones` uses for the
 DUP001 gate path.
 
-<!-- frob:describes frob.dup._pipeline.find_helper_clones -->
+<!-- frob:describes src/frob/dup/_pipeline.py::find_helper_clones -->
 **`find_helper_clones`**: see "Helper-inlining triage" above -- the
 dedicated dup pass over the private-helper population, at
 `DupConfig.helper_min_tokens` instead of `DupConfig.min_tokens`.
 
 <a id="rust-core"></a>
-<!-- frob:describes frob.dup._core.core_available -->
-<!-- frob:describes frob.dup._core.INSTALL_HINT -->
-<!-- frob:describes frob.dup._core.r3_canonical_hash -->
-<!-- frob:describes frob.dup._core.winnow_fingerprints -->
-<!-- frob:describes frob.dup._core.candidate_pairs -->
-<!-- frob:describes frob.dup._core.tree_edit_similarity -->
+<!-- frob:describes src/frob/dup/_core.py::core_available -->
+<!-- frob:describes src/frob/dup/_core.py::INSTALL_HINT -->
+<!-- frob:describes src/frob/dup/_core.py::_r3_canonical_hash -->
+<!-- frob:describes src/frob/dup/_core.py::_winnow_fingerprints -->
+<!-- frob:describes src/frob/dup/_core.py::_candidate_pairs -->
+<!-- frob:describes src/frob/dup/_core.py::_tree_edit_similarity -->
 **`frob.dup._core`**: thin `Result`-returning shims over the `frob_core`
 native extension (see "Rust core" above) -- `core_available` gates every
 other call; a missing extension is `Err(DupError.CoreUnavailable)`, never
 a silent downgrade.
 
 <a id="rung-r4"></a>
-<!-- frob:describes frob.dup._core.apted_similarity -->
+<!-- frob:describes src/frob/dup/_core.py::_apted_similarity -->
 **`apted_similarity`**: real Zhang-Shasha tree-edit-distance similarity
 between two exported `frob.lang` subtrees -- R4's verification metric.
 
 <a id="rung-r5"></a>
-<!-- frob:describes frob.dup._core.wl_hash -->
+<!-- frob:describes src/frob/dup/_core.py::_wl_hash -->
 **`wl_hash`**: Weisfeiler-Lehman graph-kernel hash of a def-use/control-
 flow adjacency -- R5's fingerprint.
 
 <a id="gate-integration"></a>
-<!-- frob:describes frob.dup._rules.DUP001 -->
-<!-- frob:describes frob.dup._rules.DUP002 -->
+<!-- frob:describes src/frob/dup/_rules.py::DUP001 -->
+<!-- frob:describes src/frob/dup/_rules.py::DUP002 -->
 See "Gate integration" above for what DUP001/DUP002 report.
 
 <a id="dup-error"></a>
-<!-- frob:describes frob.dup.DupError -->
+<!-- frob:describes src/frob/dup/_models.py::DupError -->
 <a id="clone-region"></a>
-<!-- frob:describes frob.dup.CloneRegion -->
+<!-- frob:describes src/frob/dup/_models.py::CloneRegion -->
 <a id="clone-pair"></a>
-<!-- frob:describes frob.dup.ClonePair -->
+<!-- frob:describes src/frob/dup/_models.py::ClonePair -->
 <a id="clone-report"></a>
-<!-- frob:describes frob.dup.CloneReport -->
+<!-- frob:describes src/frob/dup/_models.py::CloneReport -->
 <a id="dup-stats"></a>
-<!-- frob:describes frob.dup.DupStats -->
+<!-- frob:describes src/frob/dup/_models.py::DupStats -->
 <a id="dup-config"></a>
-<!-- frob:describes frob.dup.DupConfig -->
+<!-- frob:describes src/frob/dup/_models.py::DupConfig -->
 <a id="probe-verdict"></a>
-<!-- frob:describes frob.dup.ProbeVerdict -->
+<!-- frob:describes src/frob/dup/_models.py::ProbeVerdict -->
 <a id="clone-group"></a>
-<!-- frob:describes frob.dup.CloneMatchGroup -->
+<!-- frob:describes src/frob/dup/_models.py::CloneMatchGroup -->
 <a id="clone-binding"></a>
-<!-- frob:describes frob.dup.CloneBinding -->
+<!-- frob:describes src/frob/dup/_models.py::CloneBinding -->
 <a id="clone-template"></a>
-<!-- frob:describes frob.dup.CloneTemplate -->
+<!-- frob:describes src/frob/dup/_models.py::CloneTemplate -->
 See the "Public API" code block above for `DupError`/`CloneRegion`/
 `ClonePair`/`CloneMatchGroup`/`CloneReport`/`DupStats`/`DupConfig`/
 `ProbeVerdict`/`CloneBinding`/`CloneTemplate` field shapes, and
@@ -633,19 +767,19 @@ See the "Public API" code block above for `DupError`/`CloneRegion`/
 `CloneBinding`, and `CloneTemplate` semantics.
 
 <a id="caching"></a>
-<!-- frob:describes frob.dup._cache.get_fingerprint -->
-<!-- frob:describes frob.dup._cache.put_fingerprint -->
-<!-- frob:describes frob.dup._cache.get_verdict -->
-<!-- frob:describes frob.dup._cache.put_verdict -->
+<!-- frob:describes src/frob/dup/_cache.py::get_fingerprint -->
+<!-- frob:describes src/frob/dup/_cache.py::put_fingerprint -->
+<!-- frob:describes src/frob/dup/_cache.py::get_verdict -->
+<!-- frob:describes src/frob/dup/_cache.py::put_verdict -->
 See "Caching (content-addressed + LRU)" above -- these four functions are
 the `.frob/dup.db` read/write surface `find_clones` uses.
 
 <a id="legacy-scanner"></a>
-<!-- frob:describes frob.dup._legacy.DupError -->
-<!-- frob:describes frob.dup._legacy.CodeFragment -->
-<!-- frob:describes frob.dup._legacy.CloneGroup -->
-<!-- frob:describes frob.dup._legacy.DupResult -->
-<!-- frob:describes frob.dup.find_duplicates -->
+<!-- frob:describes src/frob/dup/_legacy.py::DupError -->
+<!-- frob:describes src/frob/dup/_legacy.py::CodeFragment -->
+<!-- frob:describes src/frob/dup/_legacy.py::CloneGroup -->
+<!-- frob:describes src/frob/dup/_legacy.py::DupResult -->
+<!-- frob:describes src/frob/dup/_legacy.py::find_duplicates -->
 The pre-smart-dup Type-1/Type-2 scanner (`frob.dup._legacy`), kept
 verbatim in behavior and re-exported as `frob.dup.find_duplicates` for
 `frob check`'s dup stage and the `frob dup` CLI -- see "frob.ast

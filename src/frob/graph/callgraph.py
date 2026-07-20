@@ -89,7 +89,18 @@ def build_call_graph(root: Path, paths: Sequence[str]) -> CallGraph:
             continue
         parsed_by_path[path] = list(result.danger_ok.symbols)
 
-    # short_name -> [(symref, path, is_private)]
+    by_name = _short_name_index(parsed_by_path)
+    calls = _resolve_call_edges(parsed_by_path, by_name)
+    return CallGraph(calls=calls)
+
+
+# frob:ticket T-0361
+def _short_name_index(
+    parsed_by_path: dict[str, list],
+) -> dict[str, list[tuple[str, str, bool]]]:
+    """`short_name -> [(symref, path, is_private)]` index over every symbol
+    in `parsed_by_path`; split out of `build_call_graph`'s indexing phase
+    (T-0361)."""
     by_name: dict[str, list[tuple[str, str, bool]]] = {}
     for path, symbols in parsed_by_path.items():
         for sym in symbols:
@@ -98,7 +109,17 @@ def build_call_graph(root: Path, paths: Sequence[str]) -> CallGraph:
             by_name.setdefault(_short_name(sym.qualname), []).append(
                 (symref, path, is_private)
             )
+    return by_name
 
+
+# frob:ticket T-0361
+def _resolve_call_edges(
+    parsed_by_path: dict[str, list],
+    by_name: dict[str, list[tuple[str, str, bool]]],
+) -> dict[str, tuple[str, ...]]:
+    """Caller symref -> resolved private-callee symrefs, per `build_call_graph`'s
+    resolution rule (never a public symbol, never self); split out of
+    `build_call_graph`'s edge-resolution phase (T-0361)."""
     calls: dict[str, tuple[str, ...]] = {}
     for path, symbols in parsed_by_path.items():
         for sym in symbols:
@@ -113,7 +134,7 @@ def build_call_graph(root: Path, paths: Sequence[str]) -> CallGraph:
                         callees.append(symref)
             if callees:
                 calls[caller_symref] = tuple(callees)
-    return CallGraph(calls=calls)
+    return calls
 
 
 # frob:doc docs/modules/graph.md#call-graph

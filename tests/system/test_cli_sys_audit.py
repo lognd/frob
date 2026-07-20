@@ -4,10 +4,10 @@ named-gap summary when any part fails."""
 
 from __future__ import annotations
 
-import subprocess
 from pathlib import Path
 
-from tests.system.conftest import run
+from tests.system.conftest import git as _git
+from tests.system.conftest import init_repo, run
 
 _CLEAN_MODEL = """\
 module m
@@ -22,23 +22,10 @@ flow f1 : evil -> api { rate 5 req/s; }
 # same design/frob.strata cascading-fix precedent, T-0150/T-0151).
 
 
-def _git(*args: str, cwd: Path) -> None:
-    subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True)
-
-
 def _init_repo(tmp_path: Path, model: str) -> Path:
-    """A minimal frob-enabled repo: git init, empty ledger, one design file."""
-    repo = tmp_path / "repo"
-    repo.mkdir()
-    _git("init", "-q", cwd=repo)
-    _git("config", "user.email", "test@example.com", cwd=repo)
-    _git("config", "user.name", "Test", cwd=repo)
-    (repo / "tickets.md").write_text("# Tickets\n")
-    (repo / "design").mkdir()
-    (repo / "design" / "m.strata").write_text(model)
-    _git("add", "-A", cwd=repo)
-    _git("commit", "-q", "-m", "init", cwd=repo)
-    return repo
+    """A minimal frob-enabled repo: git init, empty ledger, one design file
+    (T-0364: arrange step extracted to conftest.init_repo)."""
+    return init_repo(tmp_path, model)
 
 
 class TestSysAuditCli:
@@ -83,6 +70,9 @@ flow f1 : evil -> web
         assert str(repo) in out
         assert "is a file" in out
 
+    # frob:waive DUP001 reason="parallel CLI system-test scaffolding: \
+    # independent commands sharing the subprocess-dispatch arrange-act \
+    # shape; extracting would obscure per-command intent"
     def test_no_design_dir_is_a_noop(self, tmp_path: Path) -> None:
         repo = tmp_path / "repo"
         repo.mkdir()

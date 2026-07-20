@@ -1,6 +1,6 @@
 """`std.krb` litmus fixture coverage (T-0262, mirroring `test_litmus_host.py`'s
 parse -> elaborate round-trip discipline): the declared/undeclared pair
-round-trips through the real `strata_core` parser, proving `krb_attrs`'s
+round-trips through the real `strata_core` parser, proving `_krb_attrs`'s
 attr-desugar convention, `krb_manifest_for`'s read-back, `krb_trust_flows`'s
 synthesized cross-realm edge, and `flow_authenticates_via`'s read-back all
 survive real source text, not just a hand-built `KernelModel`. T-0262 is

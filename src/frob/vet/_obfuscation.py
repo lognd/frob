@@ -22,6 +22,7 @@ import re
 from collections import Counter
 from pathlib import Path
 
+from frob.excludes import iter_files
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
@@ -32,7 +33,7 @@ _log = get_logger(__name__)
 _ENTROPY_THRESHOLD = 4.5
 _MIN_STRING_LEN = 24
 
-# T-0208: `high_entropy_strings` used to scan with a regex whose alternation
+# T-0208: `_high_entropy_strings` used to scan with a regex whose alternation
 # `(?:\\.|(?!\1).)*` catastrophically backtracks on real files -- a 9.6KB
 # fixture (blib2to3/pgen2/conv.py, stdlib-adjacent, nothing adversarial in
 # it) profiled at ~90ms in the regex alone vs ~0.3ms for the entropy math
@@ -196,7 +197,7 @@ def _shannon_entropy(s: str) -> float:
 
 
 # frob:doc docs/modules/vet.md#public-api
-def high_entropy_strings(text: str) -> tuple[str, ...]:
+def _high_entropy_strings(text: str) -> tuple[str, ...]:
     """String literals whose Shannon entropy exceeds the baseline -- likely
     base64/hex/packed payloads rather than legitimate code strings. O(len(text))
     single-pass scan (T-0208 -- see the module-level note on the regex this
@@ -214,8 +215,8 @@ def high_entropy_strings(text: str) -> tuple[str, ...]:
 
 
 # frob:doc docs/modules/vet.md#public-api
-# frob:waive TEST005 reason="invisible_text_signal 85.7% branch cover, debt T-0160"
-def invisible_text_signal(text: str) -> bool:
+# frob:waive TEST005 reason="_invisible_text_signal 85.7% branch cover, debt T-0160"
+def _invisible_text_signal(text: str) -> bool:
     """True if `text` contains a Unicode bidi override, zero-width character,
     or BOM outside the file's leading position -- the Trojan Source family.
     Deterministic, zero false positives, always fatal."""
@@ -230,7 +231,7 @@ def invisible_text_signal(text: str) -> bool:
 
 
 # frob:doc docs/modules/vet.md#public-api
-def hex_identifier_ratio_signal(text: str) -> bool:
+def _hex_identifier_ratio_signal(text: str) -> bool:
     """True if `_0x...`-style identifiers (obfuscator.io's default rename
     scheme) dominate the identifier population."""
     identifiers = _IDENTIFIER_RE.findall(text)
@@ -245,21 +246,21 @@ def hex_identifier_ratio_signal(text: str) -> bool:
 
 
 # frob:doc docs/modules/vet.md#public-api
-# frob:waive TEST005 reason="scan_text_obfuscation 85.7% branch cover, debt T-0160"
-def scan_text_obfuscation(text: str) -> tuple[str, ...]:
+# frob:waive TEST005 reason="_scan_text_obfuscation 85.7% branch cover, debt T-0160"
+def _scan_text_obfuscation(text: str) -> tuple[str, ...]:
     """All obfuscation signal names present in `text` (empty = clean)."""
     signals: list[str] = []
-    if high_entropy_strings(text):
+    if _high_entropy_strings(text):
         signals.append("high-entropy-string")
-    if invisible_text_signal(text):
+    if _invisible_text_signal(text):
         signals.append("invisible-text")
-    if hex_identifier_ratio_signal(text):
+    if _hex_identifier_ratio_signal(text):
         signals.append("hex-identifier-ratio")
     return tuple(signals)
 
 
 # frob:doc docs/modules/vet.md#public-api
-def scan_directory_obfuscation(
+def _scan_directory_obfuscation(
     source_dir: Path, *, max_files: int = 500
 ) -> tuple[str, ...]:
     """Union of obfuscation signals across every text-ish file under `source_dir`."""
@@ -276,18 +277,19 @@ def _collect_dir_signals(source_dir: Path, max_files: int) -> set[str]:
     """Union obfuscation signals over readable source files, bounded by `max_files`."""
     signals: set[str] = set()
     scanned = 0
-    for path in source_dir.rglob("*"):
+    # frob:ticket T-0471
+    for path in iter_files(source_dir):
         if scanned >= max_files:
             _log.warning(
                 "vet: %s: obfuscation scan truncated at %d files", source_dir, max_files
             )
             break
-        if not path.is_file() or path.suffix.lower() not in _SCANNABLE_SUFFIXES:
+        if path.suffix.lower() not in _SCANNABLE_SUFFIXES:
             continue
         text = _read_scannable_text(path)
         if text is None:
             continue
-        signals |= set(scan_text_obfuscation(text))
+        signals |= set(_scan_text_obfuscation(text))
         scanned += 1
     return signals
 
@@ -316,9 +318,9 @@ def _read_scannable_text(path: Path) -> str | None:
 
 
 __all__ = [
-    "hex_identifier_ratio_signal",
-    "high_entropy_strings",
-    "invisible_text_signal",
-    "scan_directory_obfuscation",
-    "scan_text_obfuscation",
+    "_hex_identifier_ratio_signal",
+    "_high_entropy_strings",
+    "_invisible_text_signal",
+    "_scan_directory_obfuscation",
+    "_scan_text_obfuscation",
 ]

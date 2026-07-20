@@ -48,7 +48,13 @@ _TESTS_KINDS = frozenset({"unit", "integration", "e2e"})
 #: - "secret-fake": owned by `frob.gates._secrets._FAKE_MARKER` -- a
 #:   fixture-discharge token scanned directly out of tracked-file text,
 #:   deliberately never a graph edge (see that module's docstring, T-0157).
-_RESERVED_MARKER_VERBS = frozenset({"secret-fake"})
+#: - "used-by": owned by `frob.gates._refs` (T-0396) -- the anti-orphan
+#:   gate's own regex scan over each tracked file's raw text (`frob:used-by
+#:   <consumer>`, REF001/REF002/REF003), independent of `frob.graph`'s
+#:   symbol/EdgeKind model since a `frob:used-by` target is a whole FILE,
+#:   not a symbol, and every non-source tracked type (yaml/md/toml/...)
+#:   must carry it too, most of which `frob.lang` never parses at all.
+_RESERVED_MARKER_VERBS = frozenset({"secret-fake", "used-by"})
 
 _DESCRIBES_RE = re.compile(
     r"<!--\s*frob:describes\s+(?P<symref>\S+)(?:\s+(?P<facet>sig|body|doc))?\s*-->"
@@ -63,6 +69,11 @@ _SLUG_STRIP_RE = re.compile(r"[^\w\- ]", re.UNICODE)
 
 
 # frob:doc docs/modules/graph.md#comment-dsl
+# frob:waive DUP001 reason="tests/unit/test_research_assets.py::_slugify \
+# deliberately mirrors this exactly (own docstring: checks the same \
+# anchor resolution the doclink/docanchor gates perform, without \
+# importing gate internals into a unit test) -- intentional test \
+# isolation, not an unaccounted duplicate"
 def slugify(heading: str) -> str:
     """GitHub heading-anchor slug: lowercase, strip disallowed punctuation
     (keeping word chars/hyphens/spaces), spaces become hyphens one-for-one
@@ -154,8 +165,17 @@ def _parse_attrs(
     if verb == "tests":
         attrs.setdefault("kind", "unit")
         if attrs["kind"] not in _TESTS_KINDS:
+            # T-0237: the literal 'frob:tests' substring lets
+            # frob.gates._test010_violations pick this MalformedDirective out
+            # of the mixed pile in GraphSnapshot.malformed, mirroring how
+            # WAIVE001 filters frob:waive's own malformed directives.
             return MalformedDirective(
-                file=path, line=lineno, reason=f"invalid tests kind {attrs['kind']!r}"
+                file=path,
+                line=lineno,
+                reason=(
+                    f"frob:tests invalid kind={attrs['kind']!r}; "
+                    f"must be one of {sorted(_TESTS_KINDS)}"
+                ),
             )
     return attrs
 
@@ -289,7 +309,7 @@ def _resolve_block_srcs(comments: tuple[RawComment, ...], path: str) -> dict[int
     Some walkers resolve `RawComment.following` against a narrow lookahead
     window measured from each comment's OWN line rather than the whole
     stacked comment block's end line (`frob.lang._walk_strata` is one --
-    see its `_extract_comments`, which calls `find_following_symbol` with
+    see its `_extract_comments`, which calls `_find_following_symbol` with
     the comment's own single-line span instead of a block-widened one the
     way `frob.lang._extract`'s generic tree-sitter path does via
     `_block_ends`). That means a directive several lines above the symbol

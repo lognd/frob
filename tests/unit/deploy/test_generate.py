@@ -41,6 +41,26 @@ class TestSorted:
         entries = sorted_manifest_entries(_model_with_host_node())
         assert [e.node_id for e in entries] == ["api"]
         assert entries[0].manifest.runs_as == "api-svc"
+        # port 8080 is unprivileged (>=1024): T-0281 item 8, CAP_NET_BIND_SERVICE
+        # is only granted when a declared listens port actually needs it.
+        assert "CAP_NET_BIND_SERVICE" not in entries[0].capabilities
+
+    # frob:tests src/frob/deploy/_generate.py::sorted_manifest_entries kind="unit"
+    def test_privileged_port_grants_cap_net_bind(self):
+        """T-0281 item 8: a `may net` node binding a PRIVILEGED (<1024)
+        port still gets `CAP_NET_BIND_SERVICE` -- the gate narrows the
+        over-grant, it does not remove the capability outright."""
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="web",
+                    trust="trusted",
+                    may=("net.out:x",),
+                    attrs=("runs_as=web-svc", "unit", "listens=80"),
+                ),
+            )
+        )
+        entries = sorted_manifest_entries(model)
         assert "CAP_NET_BIND_SERVICE" in entries[0].capabilities
 
 
@@ -83,6 +103,30 @@ class TestInstall:
     def test_empty_model(self):
         script = generate_install_script(KernelModel())
         assert "nothing to install" in script
+
+    # frob:tests src/frob/deploy/_generate.py::generate_install_script kind="unit"
+    def test_shared_runs_as_useradd_block_rendered_once(self):
+        """T-0281 item 5 (malmberg pilot finding): a `runs_as` identity
+        shared by two nodes/stores (e.g. media_store+ingest both `runs_as
+        "malmberg-ingest"`) must render exactly ONE `useradd` guard block
+        in install.sh, not one per sharing entry."""
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="ingest",
+                    trust="trusted",
+                    attrs=("runs_as=shared-svc", "unit"),
+                ),
+                Node(
+                    id="media_store",
+                    trust="trusted",
+                    attrs=("runs_as=shared-svc", "owns=/var/media:0644"),
+                ),
+            )
+        )
+        script = generate_install_script(model)
+        assert script.count('if ! id -u "shared-svc"') == 1
+        assert script.count("useradd --system") == 1
 
 
 class TestStatus:
@@ -135,7 +179,9 @@ class TestUninstall:
         assert 'rm -rf "/etc/api"' in script
         assert 'userdel "api-svc"' in script
         # nothing outside the declared node's own paths/users appears
-        assert "db" not in script
+        # (checked by header, not raw substring: "db" happens to also be
+        # valid lowercase hex and can appear inside the manifest digest)
+        assert "--- db ---" not in script
 
     # frob:tests src/frob/deploy/_generate.py::generate_uninstall_script kind="unit"
     def test_empty_model(self):
@@ -158,6 +204,28 @@ class TestUninstall:
         assert "systemctl stop" not in script
         assert "userdel" not in script
         assert "rm -rf" not in script
+
+    # frob:tests src/frob/deploy/_generate.py::generate_uninstall_script kind="unit"
+    def test_shared_runs_as_userdel_block_rendered_once(self):
+        """T-0281 item 5 (malmberg pilot finding): a `runs_as` identity
+        shared by two nodes/stores must render exactly ONE `userdel`
+        guard block in uninstall.sh, not one per sharing entry."""
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="ingest",
+                    trust="trusted",
+                    attrs=("runs_as=shared-svc", "unit"),
+                ),
+                Node(
+                    id="media_store",
+                    trust="trusted",
+                    attrs=("runs_as=shared-svc", "owns=/var/media:0644"),
+                ),
+            )
+        )
+        script = generate_uninstall_script(model)
+        assert script.count('userdel "shared-svc"') == 1
 
 
 class TestAll:

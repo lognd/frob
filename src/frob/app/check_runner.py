@@ -1,4 +1,3 @@
-# frob:waive TEST005 reason="module line coverage 0.0%, debt T-0160"
 from __future__ import annotations
 
 import logging
@@ -480,7 +479,6 @@ def _run_all_stages(cfg: AppConfig, root: Path) -> CheckResult:
 
 
 # frob:doc docs/modules/app.md#runners
-# frob:waive TEST005 reason="run 0.0% branch cover, debt T-0160"
 def run(cfg: AppConfig) -> None:
     """`frob check [--type T] [--json] [--stamp-coverage|--stamp-baseline]`:
     run every applicable stage (ruff/ty/arch/cycle/dup/bind/exports plus the

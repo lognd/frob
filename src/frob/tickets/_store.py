@@ -6,7 +6,7 @@ The queue is a contract surface (docs/modules/tickets.md): every read is strict
 in the same directory, so a crash mid-write never corrupts what a
 concurrent reader observes).
 
-Two backends, auto-detected by `store_mode`:
+Two backends, auto-detected by `_store_mode`:
 
 - **single** (default for new repos): all tickets live in one `tickets.md`
   at the repo root, each a section delimited by a `<!-- ticket:T-#### -->`
@@ -18,14 +18,17 @@ The public `Ticket` / `TicketQueue` shapes are identical across both, so
 frob.gates and the CLI never see the difference.
 """
 
-# frob:waive TEST005 reason="module line coverage 84.8%, debt T-0160"
-
 from __future__ import annotations
 
+import importlib
 import os
 import re
 import tempfile
+import threading
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
+from types import ModuleType
 
 import yaml
 from pydantic import ValidationError
@@ -33,6 +36,15 @@ from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
 from frob.tickets._models import Ticket, TicketError
+
+# T-0458: `fcntl` is posix-only; `ledger_lock` degrades to a documented
+# no-op (see its docstring) on a platform without it, rather than failing
+# import outright.
+fcntl: ModuleType | None
+try:
+    fcntl = importlib.import_module("fcntl")
+except ImportError:  # pragma: no cover -- posix-only in this repo's CI
+    fcntl = None
 
 _log = get_logger(__name__)
 
@@ -65,6 +77,103 @@ _ARCHIVE_HEADER = (
     "# Tickets archive\n\nDone/dropped tickets moved here by `frob ticket archive` "
     "-- same format as tickets.md, still tracked and greppable.\n"
 )
+
+# frob:ticket T-0458
+# The single-writer lock file: every ledger mutation (active OR archive) in
+# this repo serializes through one lock, not two, so an `archive()` call
+# (which touches both files) can never interleave with a concurrent
+# `write_ticket` on the active ledger alone.
+_LOCK_REL = Path(".frob") / "tickets.lock"
+
+# frob:ticket T-0458
+# Thread-local re-entrancy bookkeeping for `ledger_lock`: {lock_path_str:
+# (fd, depth)}. `flock` is scoped to an open file DESCRIPTION, not a
+# process, so a naive "always os.open + flock" implementation would
+# self-deadlock the moment one call site (e.g. `new_ticket`) wraps a
+# sequence that itself calls another lock-holding primitive (`write_ticket`)
+# -- the second `os.open` gets a fresh description and blocks forever
+# waiting on a lock the SAME thread already holds via the first
+# description. Tracking depth per thread makes nested `with ledger_lock():`
+# blocks in one thread a no-op re-entry instead of a deadlock, while a
+# different thread (or process) still genuinely blocks on the real flock.
+_lock_local = threading.local()
+
+
+# frob:doc docs/modules/tickets.md#storage-internals
+# frob:tests tests/unit/test_ticket_store.py::TestLockPath.test_lock_path_under_frob_dir  # noqa: E501
+def lock_path(root: Path) -> Path:
+    """The advisory lock file path (`.frob/tickets.lock`) `ledger_lock` holds."""
+    return root / _LOCK_REL
+
+
+# frob:doc docs/modules/tickets.md#storage-internals
+# frob:tests tests/unit/test_ticket_store.py::TestLedgerLock.test_two_threads_serialize
+@contextmanager
+def ledger_lock(root: Path) -> Iterator[None]:
+    """Exclusive, blocking, cross-process lock serializing EVERY ledger
+    mutation under `root` (T-0458 single-writer invariant).
+
+    Every write path that reads-then-writes the ledger (`write_ticket`,
+    `write_all`, `write_archive`, and therefore every `frob.tickets`
+    mutation built on them: `new_ticket`'s id allocation, `transition`,
+    `add_evidence`, `set_done_report`, ...) acquires this BEFORE its own
+    load step and holds it through the atomic write, so two concurrent
+    callers -- same process or different agent processes -- can never
+    observe-then-clobber each other's state. This is what makes an id
+    allocation race (T-0465's duplicate T-0427) and a lost concurrent
+    Done-report edit structurally impossible rather than merely unlikely.
+
+    Uses `fcntl.flock` on `.frob/tickets.lock` (POSIX). On a platform
+    without `fcntl` this degrades to a documented no-op (logged at WARNING,
+    not silently pretended to be locked) -- a real Windows named-pipe/lock
+    equivalent is the T-0458 phase-2 daemon-pipe follow-up, not built here.
+    Re-entrant per thread (see `_lock_local`) so a locked primitive called
+    from inside an already-locked caller in the SAME thread does not
+    deadlock; a different thread or process still blocks on the real OS
+    lock.
+    """
+    if fcntl is None:  # pragma: no cover -- posix-only in this repo's CI
+        _log.warning(
+            "tickets: ledger_lock: fcntl unavailable on this platform, "
+            "lock is a NO-OP (T-0458 phase-2 tracks a real cross-platform "
+            "primitive) -- concurrent writers are NOT serialized here"
+        )
+        yield
+        return
+
+    path = lock_path(root)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    key = str(path)
+    maybe_held: dict[str, tuple[int, int]] | None = getattr(_lock_local, "held", None)
+    held: dict[str, tuple[int, int]] = maybe_held if maybe_held is not None else {}
+    if maybe_held is None:
+        _lock_local.held = held
+
+    entry = held.get(key)
+    if entry is not None:
+        fd, depth = entry
+        held[key] = (fd, depth + 1)
+        try:
+            yield
+        finally:
+            fd, depth = held[key]
+            if depth <= 1:
+                del held[key]
+            else:
+                held[key] = (fd, depth - 1)
+        return
+
+    fd = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o644)
+    fcntl.flock(fd, fcntl.LOCK_EX)
+    held[key] = (fd, 1)
+    _log.debug("tickets: ledger_lock acquired (%s)", path)
+    try:
+        yield
+    finally:
+        del held[key]
+        fcntl.flock(fd, fcntl.LOCK_UN)
+        os.close(fd)
+        _log.debug("tickets: ledger_lock released (%s)", path)
 
 
 # frob:doc docs/modules/tickets.md#storage-internals
@@ -107,7 +216,7 @@ def _dir_glob(root: Path) -> list[Path]:
 
 
 # frob:doc docs/modules/tickets.md#storage-internals
-def store_mode(root: Path) -> str:
+def _store_mode(root: Path) -> str:
     """Which backend a repo uses: 'single' if tickets.md exists, 'dir' if only
     the legacy tickets/*.md files exist, else 'single' (the default for a
     fresh repo -- new ledgers are compact, not sprawling)."""
@@ -130,7 +239,7 @@ def _frontmatter_yaml(ticket: Ticket) -> str:
 
 
 # frob:doc docs/modules/tickets.md#storage-internals
-def serialize_ticket(ticket: Ticket) -> str:
+def _serialize_ticket(ticket: Ticket) -> str:
     """Render a Ticket to legacy `---`-frontmatter + body (dir-mode file text)."""
     return f"---\n{_frontmatter_yaml(ticket)}---\n{ticket.body}"
 
@@ -154,8 +263,7 @@ def _validate(data: dict, body: str, where: str) -> Result[Ticket, TicketError]:
 
 
 # frob:doc docs/modules/tickets.md#storage-internals
-# frob:waive TEST005 reason="parse_ticket_file 80.0% branch cover, debt T-0160"
-def parse_ticket_file(path: Path) -> Result[Ticket, TicketError]:
+def _parse_ticket_file(path: Path) -> Result[Ticket, TicketError]:
     """Split a legacy ticket file into frontmatter + body and validate it."""
     text = path.read_text(encoding="utf-8")
     match = _FRONTMATTER_RE.match(text)
@@ -246,14 +354,14 @@ def _render_ledger(tickets: dict[str, Ticket], header: str = _LEDGER_HEADER) -> 
 # frob:doc docs/modules/tickets.md#storage-internals
 def load_all(root: Path) -> Result[dict[str, Ticket], TicketError]:
     """Every ticket in the repo as an id -> Ticket map, backend-agnostic."""
-    if store_mode(root) == "single":
+    if _store_mode(root) == "single":
         ledger = ledger_path(root)
         if not ledger.exists():
             return Ok({})
         return _parse_ledger(ledger.read_text(encoding="utf-8"))
     tickets: dict[str, Ticket] = {}
     for path in _dir_glob(root):
-        parsed = parse_ticket_file(path)
+        parsed = _parse_ticket_file(path)
         if parsed.is_err:
             _log.error("tickets: load aborted, %s is malformed", path)
             return Err(parsed.danger_err)
@@ -277,42 +385,59 @@ def load_archive(root: Path) -> Result[dict[str, Ticket], TicketError]:
 
 
 # frob:doc docs/modules/tickets.md#storage-internals
+# frob:ticket T-0458
 def write_archive(root: Path, tickets: dict[str, Ticket]) -> Result[None, TicketError]:
     """Replace `tickets-archive.md` wholesale with `tickets` (same ledger
-    section format as the active file, distinct header)."""
-    return atomic_write(archive_path(root), _render_ledger(tickets, _ARCHIVE_HEADER))
+    section format as the active file, distinct header); serialized against
+    every other ledger mutation via `ledger_lock` (T-0458)."""
+    with ledger_lock(root):
+        text = _render_ledger(tickets, _ARCHIVE_HEADER)
+        return atomic_write(archive_path(root), text)
 
 
 # frob:doc docs/modules/tickets.md#storage-internals
-# frob:waive TEST005 reason="write_ticket 85.7% branch cover, debt T-0160"
+# frob:ticket T-0458
 def write_ticket(root: Path, ticket: Ticket) -> Result[None, TicketError]:
-    """Upsert one ticket into whichever backend the repo uses (atomic)."""
-    if store_mode(root) == "single":
-        existing = load_all(root)
-        if existing.is_err:
-            return Err(existing.danger_err)
-        tickets = existing.danger_ok
-        tickets[ticket.id] = ticket
-        return atomic_write(ledger_path(root), _render_ledger(tickets))
-    return atomic_write(_dir_path_for(root, ticket), serialize_ticket(ticket))
+    """Upsert one ticket into whichever backend the repo uses (atomic).
+
+    Single mode reads the whole ledger, merges `ticket` in, and rewrites it
+    -- the read-modify-write is held under `ledger_lock` end to end (T-0458)
+    so a concurrent writer can never read the pre-merge state and clobber
+    this write (or vice versa). Dir mode has no read step (one file per
+    ticket) but still locks, so it serializes correctly against a
+    concurrent `write_all`/`archive` touching the same store.
+    """
+    with ledger_lock(root):
+        if _store_mode(root) == "single":
+            existing = load_all(root)
+            if existing.is_err:
+                return Err(existing.danger_err)
+            tickets = existing.danger_ok
+            tickets[ticket.id] = ticket
+            return atomic_write(ledger_path(root), _render_ledger(tickets))
+        return atomic_write(_dir_path_for(root, ticket), _serialize_ticket(ticket))
 
 
 # frob:doc docs/modules/tickets.md#storage-internals
+# frob:ticket T-0458
 def write_all(root: Path, tickets: dict[str, Ticket]) -> Result[None, TicketError]:
     """Replace the ENTIRE store with `tickets` (used by renumber). Single mode
     rewrites the ledger wholesale; dir mode writes each file and removes any
-    T-*.md whose id is no longer present."""
-    if store_mode(root) == "single":
-        return atomic_write(ledger_path(root), _render_ledger(tickets))
-    keep_files: set[Path] = set()
-    for ticket in tickets.values():
-        path = _dir_path_for(root, ticket)
-        result = atomic_write(path, serialize_ticket(ticket))
-        if result.is_err:
-            return Err(result.danger_err)
-        keep_files.add(path)
-    _prune_stale_files(root, keep_files)
-    return Ok(None)
+    T-*.md whose id is no longer present. Held under `ledger_lock` (T-0458)
+    so a wholesale replace can never interleave with a concurrent
+    single-ticket `write_ticket`."""
+    with ledger_lock(root):
+        if _store_mode(root) == "single":
+            return atomic_write(ledger_path(root), _render_ledger(tickets))
+        keep_files: set[Path] = set()
+        for ticket in tickets.values():
+            path = _dir_path_for(root, ticket)
+            result = atomic_write(path, _serialize_ticket(ticket))
+            if result.is_err:
+                return Err(result.danger_err)
+            keep_files.add(path)
+        _prune_stale_files(root, keep_files)
+        return Ok(None)
 
 
 def _prune_stale_files(root: Path, keep_files: set[Path]) -> None:
@@ -323,7 +448,6 @@ def _prune_stale_files(root: Path, keep_files: set[Path]) -> None:
 
 
 # frob:doc docs/modules/tickets.md#storage-internals
-# frob:waive TEST005 reason="migrate_to_ledger 77.8% branch cover, debt T-0160"
 def migrate_to_ledger(root: Path) -> Result[int, TicketError]:
     """Collapse a legacy tickets/*.md layout into a single tickets.md ledger.
 
@@ -336,7 +460,7 @@ def migrate_to_ledger(root: Path) -> Result[int, TicketError]:
         return Ok(0)
     tickets: dict[str, Ticket] = {}
     for path in files:
-        parsed = parse_ticket_file(path)
+        parsed = _parse_ticket_file(path)
         if parsed.is_err:
             return Err(parsed.danger_err)
         tickets[parsed.danger_ok.id] = parsed.danger_ok
@@ -353,7 +477,6 @@ def migrate_to_ledger(root: Path) -> Result[int, TicketError]:
 
 
 # frob:doc docs/modules/tickets.md#storage-internals
-# frob:waive TEST005 reason="atomic_write 56.2% branch cover, debt T-0160"
 def atomic_write(path: Path, content: str | bytes) -> Result[None, TicketError]:
     """Write content via temp file + os.replace in the same directory (crash-safe)."""
     path.parent.mkdir(parents=True, exist_ok=True)

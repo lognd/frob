@@ -28,6 +28,9 @@ from frob.process.parsers.common import Diagnostic, TestCase, ToolResult
 FROB = [sys.executable, "-m", "frob"]
 
 
+# frob:waive DUP001 reason="parallel test fixtures across 2 sibling test \
+# file(s) (2 sites) sharing an arrange-act scaffold typical of exhaustive \
+# per-case/per-scenario coverage; extracting would obscure per-case intent"
 def run(*args, input: str | None = None) -> subprocess.CompletedProcess:
     return subprocess.run(
         FROB + list(args),

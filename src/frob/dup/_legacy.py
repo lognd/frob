@@ -75,9 +75,9 @@ class DupResult(BaseModel):
     root: str
     groups: list[CloneGroup]
 
+    # frob:doc docs/modules/dup.md#legacy-scanner
     @property
     def total_clones(self) -> int:
-        # frob:doc docs/modules/dup.md#legacy-scanner
         return sum(len(g.fragments) for g in self.groups)
 
     def as_text(self) -> str:

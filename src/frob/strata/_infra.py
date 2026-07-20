@@ -26,14 +26,31 @@ from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
 
-from ._ast import BalancerDecl, CacheDecl, CdnDecl, Module, QueueDecl, StoreDecl
+from ._ast import (
+    BalancerDecl,
+    CacheDecl,
+    CdnDecl,
+    Module,
+    QueueDecl,
+    StoreDecl,
+    _DeployDecl,
+)
 from ._code_binding import _CODE_PREFIX
 from ._errors import StrataError
-from ._host import host_attrs
-from ._models import Boundary, BoundaryDirection, Flow, Node, Quantity, Waiver
+from ._host import _host_attrs
+from ._models import (
+    Boundary,
+    BoundaryDirection,
+    CanaryStage,
+    DeployContract,
+    Flow,
+    Node,
+    Quantity,
+    Waiver,
+)
 from ._models import Capacity as KernelCapacity
 from ._pii import _PII_PREFIX
-from ._waive import validate_waiver_fields
+from ._waive import _validate_waiver_fields
 
 _log = get_logger(__name__)
 
@@ -49,6 +66,29 @@ _STATE_NONE = "state=none"
 #: literal rather than an import to avoid a cycle (`_elaborate.py` already
 #: imports THIS module for `elaborate_infra`).
 _MANAGED_ATTR = "managed"
+
+#: Node attr marker for a store's `errors_total` claim (T-0247), the SAME
+#: literal `_elaborate.py::_ERRORS_TOTAL_ATTR` uses for `node` -- kept
+#: local for the same import-cycle reason as `_MANAGED_ATTR` above.
+_ERRORS_TOTAL_ATTR = "errors_total"
+
+
+# frob:waive DUP001 reason="documented deliberate duplication: same \
+# field-for-field mapping as _elaborate.py::_elaborate_deploy, kept local \
+# for the same import-cycle reason as _MANAGED_ATTR above (own docstring)"
+def _elaborate_store_deploy(decl: _DeployDecl) -> DeployContract:
+    """One store's `_DeployDecl` -> `DeployContract` (T-0247), the SAME
+    field-for-field mapping `_elaborate.py::_elaborate_deploy` uses for
+    `node` -- duplicated locally for the same import-cycle reason as
+    `_MANAGED_ATTR` above."""
+    return DeployContract(
+        stages=tuple(
+            CanaryStage(level=s.level, bake=s.bake, max_error_rate=None)
+            for s in decl.stages
+        ),
+        endorsement_chain=decl.endorsed_by,
+        rollback_budget=decl.rollback_budget,
+    )
 
 
 # frob:doc docs/strata/surface.md#stdinfra
@@ -73,13 +113,16 @@ class InfraExpansion(BaseModel):
 def _elaborate_store(decl: StoreDecl) -> Result[Node, StrataError]:
     """`store` -> `Node` at its declared trust; engine/durability/rpo become
     attrs (rpo unit-dimension check: `_store_rpo_attr`; code/may desugar
-    precedent: `_store_base_attrs`)."""
+    precedent: `_store_base_attrs`); errors_total/panics_contained_by ->
+    attrs and `on deploy` -> `Node.deploy` directly (T-0247, same desugar
+    `_elaborate.py::_elaborate_node` uses for `node`)."""
     attrs_result = _store_attrs(decl)
     if attrs_result.is_err:
         return Err(attrs_result.danger_err)
     waives_result = _validate_store_waives(decl)
     if waives_result.is_err:
         return Err(waives_result.danger_err)
+    deploy = None if decl.deploy is None else _elaborate_store_deploy(decl.deploy)
     _log.debug(
         "store %s -> node at trust %s, attrs=%s",
         decl.id,
@@ -95,6 +138,7 @@ def _elaborate_store(decl: StoreDecl) -> Result[Node, StrataError]:
             attrs=tuple(attrs_result.danger_ok),
             capacity=_store_capacity(decl),
             residence=decl.residence,
+            deploy=deploy,
             waives=waives_result.danger_ok,
         )
     )
@@ -114,9 +158,9 @@ def _store_attrs(decl: StoreDecl) -> Result[list[str], StrataError]:
 
 def _store_base_attrs(decl: StoreDecl) -> list[str]:
     """The non-fallible attr list a `store` desugars to before rpo/waives:
-    carries/code/engine/immutable/append_only/managed/host attrs, in
-    declaration order (T-0154/T-0166/T-0172/T-0255 desugar precedents,
-    each documented inline below)."""
+    carries/code/engine/immutable/append_only/managed/errors_total/panics/
+    host attrs, in declaration order (T-0154/T-0166/T-0172/T-0247/T-0255
+    desugar precedents, each documented inline below)."""
     attrs = list(decl.attrs)
     attrs.extend(_store_carries_code_attrs(decl))
     if decl.engine is not None:
@@ -129,6 +173,19 @@ def _store_base_attrs(decl: StoreDecl) -> list[str]:
         # T-0172: config-only infra store -- no `code=` glob expected.
         _log.debug("store %s is managed; marking attrs with %r", decl.id, _MANAGED_ATTR)
         attrs.append(_MANAGED_ATTR)
+    if decl.errors_total:
+        # T-0247: same bare-marker desugar `_elaborate.py::
+        # _node_marker_attrs` uses for `node`'s `errors_total` clause.
+        _log.debug("store %s declares errors_total", decl.id)
+        attrs.append(_ERRORS_TOTAL_ATTR)
+    if decl.panics_contained_by is not None:
+        # T-0247: same `panics=<id>` attr desugar `node` gets; reference
+        # validity is checked by `_elaborate.py::_validate_observability`
+        # (which now also walks `module.stores`).
+        _log.debug(
+            "store %s: panics contained by %s", decl.id, decl.panics_contained_by
+        )
+        attrs.append(f"panics={decl.panics_contained_by}")
     attrs.extend(_store_host_attrs(decl))
     return attrs
 
@@ -151,12 +208,15 @@ def _store_carries_code_attrs(decl: StoreDecl) -> list[str]:
 
 def _store_host_attrs(decl: StoreDecl) -> tuple[str, ...]:
     """T-0255 std.host attrs for a `store` -- same shared `_host.py::
-    host_attrs` encoding `_elaborate.py::_elaborate_node` uses for `node`."""
-    host = host_attrs(
+    _host_attrs` encoding `_elaborate.py::_elaborate_node` uses for `node`.
+    `group`/`sudoers` (T-0272) pass through the same way."""
+    host = _host_attrs(
         runs_as=decl.runs_as,
         is_unit=decl.is_unit,
         owns=tuple((o.path, o.mode) for o in decl.owns),
         listens=decl.listens,
+        group=decl.group,
+        sudoers=decl.sudoers,
     )
     if host:
         _log.debug("store %s declares %d std.host attr(s)", decl.id, len(host))
@@ -227,7 +287,7 @@ def _validate_store_waives(
     above `_validate_store_waives` for why this duplicates `_elaborate.py
     ::_validate_waivers`'s check rather than reusing it)."""
     for w in decl.waives:
-        checked = validate_waiver_fields(w.rule, w.reason)
+        checked = _validate_waiver_fields(w.rule, w.reason)
         if checked.is_err:
             _log.error(
                 "store %s: malformed waive clause rule=%r reason=%r",

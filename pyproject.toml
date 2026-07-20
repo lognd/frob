@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "frob"
-version = "0.12.0"
+version = "0.34.0"
 description = "The enforcement layer for agentic development: obligation graph, ticket queue, and gates."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -59,7 +59,6 @@ Issues = "https://github.com/lognd/frob/issues"
 
 [dependency-groups]
 dev = [
-    "black>=24",
     "packaging",
     "pytest>=8",
     "pytest-cov>=5",
@@ -108,9 +107,6 @@ select = ["E", "F", "W", "I"]
 # Fixture files are intentionally bad code used to test error detection
 "tests/fixtures/**" = ["E501", "F401", "F811", "F841", "E741", "W"]
 
-[tool.black]
-line-length = 88
-
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q -n auto"
@@ -118,3 +114,23 @@ pythonpath = ["."]
 markers = [
     "slow: long-running system tests excluded from quick loops",
 ]
+
+# T-0464: most frob code is exercised only via CLI SUBPROCESS system tests
+# (tests/system/conftest.py spawns `python -m frob`), whose coverage only
+# gets recorded if COVERAGE_PROCESS_START names this file (the `make
+# coverage` target sets it -- see Makefile). `parallel = true` lets each
+# subprocess write its own `.coverage.<host>.<pid>.<rand>` data file instead
+# of racing on a single one; `coverage combine` merges them before the xml
+# report is produced. Without this section (or without the env var), only
+# the main pytest process's own code paths are measured -- everything a
+# subprocess test exercises reads as 0% hit, deflating coverage.xml's
+# line-rate (observed 0.49 vs a real 0.87) and exploding TEST005 with
+# hundreds of false per-symbol/per-module coverage-floor findings.
+[tool.coverage.run]
+branch = true
+parallel = true
+relative_files = true
+source = ["src/frob"]
+
+[tool.coverage.paths]
+source = ["src/frob", "*/src/frob"]

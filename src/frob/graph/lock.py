@@ -24,14 +24,25 @@ from frob.graph._models import (
     DanglingEdge,
     DriftReport,
     Edge,
+    EdgeKind,
     GraphSnapshot,
     LockEntry,
     LockFile,
     StaleItem,
 )
+from frob.lang import SymbolKind
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
+
+# frob:ticket T-0402
+# G5: `digest.py`'s `body` facet is a constant empty-tuple hash for these
+# kinds (class/const/type have no body_tokens) -- acking `body` on one of
+# them can never observe drift, so `acknowledge` skips it rather than
+# recording a lock entry that looks meaningful but never fires.
+_BODY_FACET_MEANINGLESS_KINDS = frozenset(
+    {SymbolKind.CLASS, SymbolKind.CONST, SymbolKind.TYPE}
+)
 
 _DEFAULT_FACET = "sig"
 
@@ -71,11 +82,33 @@ def _edge_endpoints(snapshot: GraphSnapshot) -> set[str]:
 
 
 def _facet_for_ref(ref: str, snapshot: GraphSnapshot) -> str:
-    """The facet a DESCRIBES edge targeting `ref` requests, else the default."""
+    """The facet the FIRST DESCRIBES edge targeting `ref` requests, else the
+    default (kept for external callers that only ever wanted one facet;
+    `acknowledge` itself now uses `_facets_for_ref`, T-0402 G11)."""
     for edge in snapshot.edges:
         if edge.kind.value == "describes" and edge.target == ref:
             return edge.attrs.get("facet", _DEFAULT_FACET)
     return _DEFAULT_FACET
+
+
+# frob:ticket T-0402
+def _facets_for_ref(ref: str, snapshot: GraphSnapshot) -> set[str]:
+    """Every distinct facet a DESCRIBES edge targeting `ref` requests, or
+    `{_DEFAULT_FACET}` if none does.
+
+    G11 (T-0402): `acknowledge` used to call `_facet_for_ref` (singular),
+    which returns only the FIRST describes-facet found; a symbol described
+    by two anchors under different facets (one `sig`, one `doc`) only ever
+    got the first facet's digest locked -- the second facet's contract
+    could drift forever with no `DRIFT001` signal, because it was never
+    acked in the first place.
+    """
+    facets = {
+        edge.attrs.get("facet", _DEFAULT_FACET)
+        for edge in snapshot.edges
+        if edge.kind == EdgeKind.DESCRIBES and edge.target == ref
+    }
+    return facets or {_DEFAULT_FACET}
 
 
 def _sorted_entries(entries: Sequence[LockEntry]) -> tuple[LockEntry, ...]:
@@ -85,6 +118,8 @@ def _sorted_entries(entries: Sequence[LockEntry]) -> tuple[LockEntry, ...]:
 
 # frob:doc docs/modules/graph.md#public-api
 # frob:waive TEST005 reason="acknowledge 87.5% branch cover, debt T-0160"
+# frob:tests tests/test_graph_lock.py::TestAckDrift.test_acknowledge_records_every_describes_facet  # noqa: E501
+# frob:tests tests/test_graph_lock.py::TestAckDrift.test_acknowledge_skips_meaningless_body_facet_on_class  # noqa: E501
 def acknowledge(
     lock: LockFile, snapshot: GraphSnapshot, refs: Sequence[str]
 ) -> Result[LockFile, LockError]:
@@ -102,10 +137,18 @@ def acknowledge(
             _log.warning("acknowledge: %r does not resolve to a symbol", ref)
             return Err(LockError.UnknownRef)
         record = record_result.danger_ok
-        facet = _facet_for_ref(ref, snapshot)
-        digest = getattr(record.digests, facet)
-        entries[(ref, facet)] = LockEntry(ref=ref, facet=facet, digest=digest)
-        _log.info("acknowledge: %s facet=%s digest=%s", ref, facet, digest[:8])
+        for facet in sorted(_facets_for_ref(ref, snapshot)):
+            if facet == "body" and record.kind in _BODY_FACET_MEANINGLESS_KINDS:
+                _log.warning(
+                    "acknowledge: skipping meaningless body-facet ack for "
+                    "%s (kind=%s has a constant body digest, G5)",
+                    ref,
+                    record.kind,
+                )
+                continue
+            digest = getattr(record.digests, facet)
+            entries[(ref, facet)] = LockEntry(ref=ref, facet=facet, digest=digest)
+            _log.info("acknowledge: %s facet=%s digest=%s", ref, facet, digest[:8])
     ordered = _sorted_entries(list(entries.values()))
     return Ok(LockFile(version=lock.version, entries=ordered))
 
@@ -118,8 +161,20 @@ def _dependents(ref: str, snapshot: GraphSnapshot) -> tuple[str, ...]:
 
 
 def _vanished_endpoint(edge: Edge, snapshot: GraphSnapshot) -> str | None:
-    """The edge endpoint (target checked first, then src) that no longer resolves."""
-    if "::" in edge.target and edge.target not in snapshot.symbols:
+    """The edge endpoint (target checked first, then src) that no longer resolves.
+
+    G3 (T-0402): a DESCRIBES target is special-cased through `resolve()`
+    even when it is a bare name (no `::`) -- `markdown_anchors` happily
+    accepts `<!-- frob:describes my_func -->` with no path qualifier, so a
+    plain `"::" in edge.target` check never flagged a doc anchor pointing
+    at a symbol that does not exist. Every other verb's bare targets
+    (ticket ids, invariant ids, ...) are a different namespace entirely and
+    stay untouched by this check.
+    """
+    if edge.kind == EdgeKind.DESCRIBES:
+        if resolve(snapshot, edge.target).is_err:
+            return edge.target
+    elif "::" in edge.target and edge.target not in snapshot.symbols:
         return edge.target
     if "::" in edge.src and edge.src not in snapshot.symbols:
         return edge.src
@@ -202,6 +257,7 @@ def _dangling_edges(
 
 
 # frob:doc docs/modules/graph.md#public-api
+# frob:tests tests/test_graph_lock.py::TestAckDrift.test_bare_describes_target_to_nonexistent_symbol_is_dangling  # noqa: E501
 def drift(lock: LockFile, snapshot: GraphSnapshot) -> DriftReport:
     """Pure comparison: stale acks (digest moved) and dangling edges (endpoint gone)."""
     stale = _stale_items(lock, snapshot)

@@ -79,6 +79,7 @@ attachments:
 <!-- frob:describes src/frob/tickets/__init__.py::attach -->
 <!-- frob:describes src/frob/tickets/__init__.py::add_evidence -->
 <!-- frob:describes src/frob/tickets/__init__.py::run_cmd_evidence -->
+<!-- frob:describes src/frob/tickets/__init__.py::reverify_cmd_evidence -->
 <!-- frob:describes src/frob/tickets/__init__.py::add_cmd_evidence -->
 <!-- frob:describes src/frob/tickets/clipboard.py::clipboard_image -->
 <!-- frob:describes src/frob/tickets/clipboard.py::clipboard_has_image -->
@@ -90,6 +91,17 @@ attachments:
 <!-- frob:describes src/frob/tickets/__init__.py::load_active -->
 <!-- frob:describes src/frob/tickets/_provisional.py::on_default_branch -->
 <!-- frob:describes src/frob/tickets/_provisional.py::mint_draft_id -->
+<!-- frob:describes src/frob/tickets/__init__.py::doable_blocked -->
+<!-- frob:describes src/frob/tickets/__init__.py::leased_by -->
+<!-- frob:describes src/frob/tickets/__init__.py::large_glob_warnings -->
+<!-- frob:describes src/frob/tickets/_models.py::scope_overlap -->
+<!-- frob:describes src/frob/tickets/_models.py::scope_overlap_globs -->
+<!-- frob:describes src/frob/tickets/__init__.py::set_done_report -->
+<!-- frob:describes src/frob/tickets/__init__.py::compose_done_report -->
+<!-- frob:describes src/frob/tickets/__init__.py::render_evidence_block -->
+<!-- frob:describes src/frob/tickets/__init__.py::render_changed_block -->
+<!-- frob:describes src/frob/tickets/__init__.py::compute_changed_lines -->
+<!-- frob:describes src/frob/tickets/_store.py::ledger_lock -->
 
 ```python
 # frob/tickets/__init__.py
@@ -100,29 +112,59 @@ def load_queue(root: Path) -> Result[TicketQueue, TicketError]
 def load_active(root: Path) -> Result[TicketQueue, TicketError]
     # Active store ONLY, not the archive -- what `frob ticket list`/`doable`
     # display against, so archived tickets never bloat them (T-0096).
-def new_ticket(root: Path, spec: TicketSpec) -> Result[Ticket, TicketError]
-    # Allocates next id (T-####), writes file atomically.
+def new_ticket(root: Path, spec: TicketSpec,
+                collected: frozenset[str] | None = None) -> Result[Ticket, TicketError]
+    # Allocates next id (T-####), writes file atomically. T-0398 D-08:
+    # `collected`, when supplied, resolves spec.evidence the same way
+    # add_evidence does (Err(UnknownEvidence) on a bogus id); `collected=None`
+    # (default) preserves schema-only validation but now logs an explicit
+    # UNRESOLVED warning instead of silently skipping the check.
 def doable(queue: TicketQueue) -> tuple[Ticket, ...]
     # state in {queued, planned} and no open blockers, ordered oldest-first.
-def transition(root: Path, ticket_id: str, to: TicketState) -> Result[Ticket, TicketError]
+def transition(root: Path, ticket_id: str, to: TicketState, *,
+                covers_scope: bool | None = None) -> Result[Ticket, TicketError]
     # Enforces the state machine; done additionally requires evidence
-    # non-empty and a Done report section (the gate re-verifies).
+    # non-empty and a substantive Done report section (a bare heading with
+    # nothing under it no longer counts, T-0398 D-03). `covers_scope`
+    # (T-0398 D-02), when the caller supplies `False`, additionally
+    # requires the ticket's evidence to bind to a touched/scope symbol
+    # (Err(EvidenceScopeUnbound)) -- computed via `frob.gates.
+    # evidence_covers_scope`, injected rather than computed here so
+    # frob.tickets stays free of the frob.graph dependency that would pull
+    # in (docs/rework.md cycle-avoidance); `covers_scope=None` (default)
+    # skips the check.
 def record_failure(root: Path, ticket_id: str, entry: FailureEntry) -> Result[Ticket, TicketError]
     # Appends to the failure log so no future session retries a dead end.
 def attach(root: Path, ticket_id: str, source: AttachmentSource,
            caption: str) -> Result[Attachment, AttachError]
     # source is a file path or clipboard; stores under tickets/attachments/.
 def add_evidence(root: Path, ticket_id: str, node_ids: Sequence[str],
-                  collected: frozenset[str]) -> Result[Ticket, TicketError]
+                  collected: frozenset[str] | None = None,
+                  passed: frozenset[str] | None = None) -> Result[Ticket, TicketError]
     # Validates node_ids against `collected` (frob.testing.collect_python_tests
     # node ids, supplied by the caller) and appends the resolvable ones;
     # rejects the whole batch as Err(UnknownEvidence) if any id is
     # unresolvable -- closes the COV003-after-close gap at write time.
+    # T-0398 D-01: `passed` (the subset the caller has actually observed
+    # PASS on a real run, e.g. via frob.testing.run_selected) is checked
+    # the same way -- a non-cmd id absent from `passed` rejects the whole
+    # batch as Err(EvidenceNotPassing), so a collected-but-currently-
+    # FAILING test can never become evidence. `passed=None` (default)
+    # skips this check.
 def run_cmd_evidence(command: str) -> Result[str, TicketError]
     # T-0215: runs `command` through the shell and folds exit status + a
     # stdout digest into one evidence string (`cmd:<command> exit=0
     # sha256=<12-hex>`); Err(EvidenceCmdFailed) on nonzero exit or launch
     # failure.
+def reverify_cmd_evidence(entry: str) -> Result[bool, TicketError]
+    # T-0398 D-10: re-runs the command a `cmd:` evidence entry recorded and
+    # confirms it still exits 0 with the SAME stdout sha256 -- Ok(True)/
+    # Ok(False) report whether it reproduces; Err(MalformedEvidence) if
+    # `entry` is not a well-formed cmd: entry. Deliberately opt-in, not
+    # wired into COV003 by default (re-running an arbitrary recorded
+    # command on every check has a real cost/non-idempotence tradeoff
+    # `_evidence_valid_for_ticket` already documents choosing not to pay
+    # unconditionally).
 def add_cmd_evidence(root: Path, ticket_id: str, command: str) -> Result[Ticket, TicketError]
     # T-0215: kind-gated non-pytest evidence channel for tickets with no
     # pytest surface of their own -- only kind=docs may use it
@@ -149,6 +191,45 @@ def finalize_draft(root: Path, draft_id: str) -> Result[str, TicketError]
 def archive(root: Path) -> Result[int, TicketError]
     # Moves every done/dropped ticket from the active store into
     # tickets-archive.md verbatim (same section format); idempotent.
+def set_done_report(root: Path, ticket_id: str, *, why: str,
+                     base_ref: str = "main") -> Result[Ticket, TicketError]
+    # T-0458: THE single write path for a ticket's Done report. `why` is
+    # the ONLY thing the caller supplies -- Changed (compute_changed_lines,
+    # git diff --stat vs base_ref) and Evidence (render_evidence_block,
+    # from the ticket's own recorded evidence) are always auto-composed and
+    # spliced into body's '## Done report' section via
+    # replace_done_report_section (frob.tickets._models), so a caller never
+    # parses or edits markdown, and can never hand-type a Changed/Evidence
+    # list that drifts from what actually shipped. Held under ledger_lock
+    # end to end. Example:
+    #   set_done_report(root, "T-0458", why="implemented the thing")
+    #   # -> Ok(Ticket(... body="## Done report\n\nimplemented the thing\n\n
+    #   #     ### Changed\n```\nsrc/x.py | 3 ++-\n```\n\n### Evidence\n
+    #   #     - `tests/x.py::test_y` (pytest node id, verified passing
+    #   #     when recorded)\n"))
+def compose_done_report(why: str, changed_lines: Sequence[str],
+                         evidence: Sequence[str]) -> str
+    # T-0458: pure composition -- why plus render_changed_block(changed_lines)
+    # and render_evidence_block(evidence) folded into one '## Done report'
+    # section string. set_done_report's only caller; exposed separately so
+    # a caller that already has git/evidence data in hand can render
+    # without touching the store.
+def render_evidence_block(evidence: Sequence[str]) -> str
+    # T-0458: renders a ticket's evidence tuple as-is -- no fresh
+    # collection or test run needed, since every id in `evidence` was
+    # ALREADY validated resolvable-and-passing (add_evidence's D-01 check)
+    # or exit=0 (cmd: entries) at record time. "(no evidence recorded)" if
+    # empty.
+def render_changed_block(lines: Sequence[str]) -> str
+    # T-0458: fences compute_changed_lines's output verbatim (git --stat
+    # output is already human-readable columns). "(no changed files
+    # detected)" if empty.
+def compute_changed_lines(root: Path, base_ref: str = "main") -> tuple[str, ...]
+    # T-0458: best-effort `git diff --stat <base_ref>...HEAD` lines for the
+    # Changed section -- pulled from git, never hand-typed. Returns an
+    # empty tuple (never raises) if root is not a git checkout or the diff
+    # fails; the Changed block is auxiliary evidence, not a write
+    # precondition.
 
 # frob/tickets/clipboard.py
 def clipboard_image() -> Result[bytes, ClipboardError]
@@ -156,6 +237,44 @@ def clipboard_image() -> Result[bytes, ClipboardError]
 def clipboard_has_image() -> bool
     # Cheap probe used to decide whether to offer the interactive prompt.
 ```
+
+## Scope-lease model (T-0453)
+
+`frob ticket doable` does not just filter on blockers -- by default it also
+excludes any queued/planned candidate whose declared `scope` overlaps an
+IN-PROGRESS ticket's active scope-LEASE, so two agents dispatched straight
+off `doable` can never collide on the same files. This replaces hand-
+maintained collision blocklists a coordinator would otherwise have to build
+and update on every dispatch.
+
+- **Overlap** is a sound glob-set intersection (`scope_overlap_globs`,
+  `_globs_intersect`): two globs collide if some concrete path could match
+  both, via the standard two-pattern wildcard DP (`'*'` any-length,
+  `'?'`/a bracket class any-single-char), NOT a literal-prefix heuristic.
+  `tickets.md` is the ONLY path ignored in the overlap check (every ticket
+  implicitly leases it, and the `frob ticket merge-driver` already resolves
+  it) -- `tests/**`/`docs/` are deliberately NOT special-cased out; doing so
+  would mask real per-file collisions under those trees.
+- **`frob ticket doable`** (default): lease-filtered. **`--ignore-lease`**:
+  the raw blocker-only list, no collision filtering. **`--show-blocked`**:
+  explains every hidden candidate as `held: scope '<glob>' leased by
+  in-progress T-0xxx`.
+- **Large-glob warning**: a ticket whose scope contains a chronically
+  over-broad glob (`tests/**`, `src/frob/**`, `docs/`, `docs/**`, ...) or one
+  matching more real files than `[tickets] large_glob_max_files` in
+  `frob.toml` (default 25) gets a `large_glob_warnings` nudge surfaced
+  alongside `frob ticket doable` output -- narrow the scope to the specific
+  files the ticket actually touches. This is a NUDGE, not a hard gate: it
+  fixes over-hiding at the scope-DECLARATION level instead of ignoring
+  broad directories in the overlap check itself.
+- **Over-broad-lease demotion**: when a repo root is available (the CLI
+  path always has one), a HOLDER's over-broad scope entries -- the exact
+  same breadth test the warning uses -- are dropped before the overlap
+  check, so one repo-wide in-progress lease (e.g. a `src/frob/**` coverage
+  burn-down ticket) demotes to warn-only instead of zeroing out `doable`
+  for every other ticket in the repo. A PRECISE entry on the same holder
+  (e.g. `src/frob/gates/`) still hard-blocks a real collision under it.
+  Callers with no repo root (`root=None`) get the strict, undemoted check.
 
 ## State machine
 
@@ -267,6 +386,8 @@ concurrent automation.
 
 <!-- frob:describes src/frob/tickets/_land.py::land -->
 <!-- frob:describes src/frob/tickets/_land.py::splice_ledger -->
+<!-- frob:describes src/frob/tickets/_land.py::_assert_land_complete -->
+<!-- frob:describes src/frob/tickets/_land.py::_worktree_full_changeset -->
 
 The landing procedure used to be manual coordinator surgery repeated per
 ticket: wip-commit in the worktree, merge main into it, a deletion-filter
@@ -277,10 +398,23 @@ conventional commit. `frob ticket land <id> --worktree <path> [--dry-run]`
 ```python
 # frob/tickets/_land.py
 def land(root: Path, ticket_id: str, worktree: Path, *,
-         dry_run: bool = False) -> Result[LandReport, LandError]
+         dry_run: bool = False,
+         collected: frozenset[str] | None = None,
+         passed: frozenset[str] | None = None,
+         covers_scope: bool | None = None) -> Result[LandReport, LandError]
+    # T-0398 D-05: `collected`/`passed`/`covers_scope`, when supplied by a
+    # caller with a fresh test-collection/run/graph-binding oracle computed
+    # against the POST-MERGE worktree tree, re-verify the ticket's evidence
+    # (resolution, pass, scope-binding) BEFORE finalize/close -- `land`
+    # previously trusted whatever the worktree's pre-merge report claimed
+    # and re-ran nothing. All three default to `None` (skip, unchanged
+    # behavior) since computing them needs frob.testing/frob.graph access
+    # frob.tickets deliberately does not have.
 def splice_ledger(ours_text: str, theirs_text: str) -> Result[str, TicketError]
     # Merge two tickets.md texts at the TICKET-ID level (newest state per
-    # id wins) instead of git's line-level textual merge.
+    # id wins) instead of git's line-level textual merge. T-0398 D-09: the
+    # winning side's evidence is UNIONED with the losing side's (never
+    # dropped) on a same-id divergence.
 ```
 
 Order of operations, and why it is this order:
@@ -288,11 +422,13 @@ Order of operations, and why it is this order:
 1. **Refuse on a dirty `root`** (`git status --porcelain` non-empty) --
    `Err(DirtyMain)`, remedy: `git -C <root> status`, commit or stash.
 2. **Validate close preconditions in the worktree FIRST** (evidence
-   non-empty, a `## Done report` section) -- `Err(NotCloseable)` here means
-   NOTHING has been merged or committed anywhere yet. This ordering is the
-   whole point: closing is the step most likely to be forgotten, and it is
-   checked before any irreversible git operation, not after the merge has
-   already landed.
+   non-empty, a substantive `## Done report` section, T-0398 D-03) --
+   `Err(NotCloseable)` here means NOTHING has been merged or committed
+   anywhere yet. This ordering is the whole point: closing is the step
+   most likely to be forgotten, and it is checked before any irreversible
+   git operation, not after the merge has already landed. This is a
+   PRE-merge check against the worktree's own report; see step 5.5 below
+   for the T-0398 D-05 POST-merge re-verification.
 3. **wip-commit** any uncommitted worktree changes (`wip: pre-land snapshot
    for <id>`) so nothing an agent forgot to commit is silently dropped by
    the merge that follows.
@@ -310,7 +446,19 @@ Order of operations, and why it is this order:
    accidental) and unwinds the merge (`git merge --abort`) first. This is
    what catches a worktree branched from a stale main base that ends up,
    relative to main's CURRENT tip, silently deleting a feature main already
-   landed.
+   landed. T-0398 D-12: the deletion filter is STRICTER than an ordinary
+   `scope_matches` check here -- a scope glob broad enough to be "the
+   whole tree" or a bare top-level directory (`.`, `src/`) is never
+   trusted to authorize a deletion (`_deletion_owned`), even though it
+   would satisfy `scope_matches` for every other purpose; a more specific
+   glob (`src/frob/tickets/`) is still trusted.
+5.5. **Re-verify evidence against the POST-MERGE tree** (T-0398 D-05, only
+   when the caller supplied `collected`/`passed`/`covers_scope`): reload
+   the ticket from the worktree's now-merged ledger and re-check
+   resolution/pass -- the ledger state about to be finalized may differ
+   from what step 2 validated pre-merge (a splice can rewrite
+   `ticket.evidence`). Runs BEFORE the `--dry-run` early return in step 6,
+   so a clean dry run is still a real guarantee under D-05 too.
 6. **`--dry-run` stops here**, unwinding the staged merge (`merge --abort`)
    -- everything above this point has ACTUALLY run (real merge, real
    splice, real deletion diff), so a clean dry run is a guarantee, not a
@@ -330,6 +478,30 @@ Order of operations, and why it is this order:
    -- this is what makes the "main and the worktree each independently
    appended a new ticket near the same line" case a clean merge instead of
    a textual conflict requiring a human.
+9.5. **Completeness assertion** (T-0463, BEFORE the commit in step 10): the
+    worktree's finalized branch is diffed against `main` (`git diff
+    --name-only <main>...HEAD` in the worktree) to get the COMPLETE
+    changeset it introduces -- tracked edits, untracked new files, AND
+    deletions all show up in this one call, because step 3's wip-commit
+    already turned every untracked/deleted path into a tracked commit on
+    the branch. This set is compared against what step 9 actually staged
+    in `root` (`git diff --cached --name-only`); anything present in the
+    worktree's changeset but missing from staging aborts the land loudly
+    (`Err(IncompleteLand)`, the exact missing paths logged) and unwinds the
+    squash (`git reset --hard && git clean -fd`) -- the commit in step 10
+    never happens. This is the fix for the T-0448 incident: a manual
+    coordinator land done via a raw `git diff HEAD` / patch-apply (NOT
+    `frob ticket land`) only ever sees tracked deltas against the current
+    commit, so it silently dropped an untracked `docs/modules/render.md`
+    with no error at all. `frob ticket land`'s wip-commit + real `git
+    merge --squash` design was already structurally immune to that
+    specific failure mode; this step makes the immunity a checked
+    invariant instead of an assumption, and is what actually catches any
+    OTHER way a file could go missing (a git bug, a future refactor that
+    reintroduces a diff-based step, etc.). The verified changeset is
+    reported back as `LandReport.worktree_changeset`, and the actually
+    landed paths as `LandReport.files_changed` -- on a real (non-dry-run)
+    success the former is always a subset of the latter, by construction.
 10. **Commit** with a conventional-commit message template
     (`<type>(tickets): land <final-id> <title>`, type derived from
     `ticket.kind`; `feature`->`feat`, `bug`/`security`/`ux`/`incident`->
@@ -346,9 +518,73 @@ is always recoverable without touching main.
 it parses both ledger texts into id -> Ticket maps and unions them,
 picking the "newer" version on a genuine same-id divergence -- state-machine
 rank first (done/dropped > in-progress/blocked > planned > queued), then
-presence of a Done report, then evidence count, then the incoming side as
-the final deterministic tiebreak. A ticket id present on only one side is
-always kept.
+presence of a substantive Done report, then the incoming side as the final
+deterministic tiebreak. A ticket id present on only one side is always
+kept. T-0398 D-09: whichever side wins the tiebreak has its evidence
+UNIONED with the losing side's (deduplicated, winner's own ids first),
+never dropped -- previously an evidence-count tiebreak picked ONE side's
+evidence set wholesale, silently discarding the other side's ids when two
+worktrees closed the same ticket with disjoint evidence.
+
+## Git merge driver
+
+<!-- frob:describes src/frob/app/ticket_runner.py::_merge_driver -->
+
+`frob ticket land` (above) is the one-command path; not every
+`tickets.md` conflict goes through it though -- a plain `git merge`/
+`git pull`/`git rebase` between two branches that each independently
+appended a ticket near the same line hits git's default line-level merge
+and conflicts, requiring the manual `splice_ledger`-by-hand procedure
+`docs/guides/agent-playbook.md` section 10 used to document (T-0323: this
+happened by hand roughly 8 times in one coordinator session, twice
+silently dropping the `evidence:` field on re-splice). Registering
+`frob ticket merge-driver` as a git merge driver removes the manual step
+entirely for any `git merge`/`pull`/`rebase` touching `tickets.md`, not
+just `land`'s internal ones.
+
+**One-time setup** (per clone -- `.gitattributes` alone does not install a
+driver; git deliberately keeps the association (tracked, shared) and the
+driver command (local, since it names an executable) as two separate
+registrations):
+
+```
+git config merge.frob-ledger.name "frob ticket ledger splice"
+git config merge.frob-ledger.driver "frob ticket merge-driver %O %A %B"
+```
+
+`.gitattributes` (tracked, already in the repo) then routes `tickets.md`
+through it:
+
+```
+tickets.md merge=frob-ledger
+```
+
+`frob ticket merge-driver %O %A %B` is git's merge-driver protocol
+verbatim: git spawns it with three temp file paths -- `%O` (merge base),
+`%A` (ours), `%B` (theirs) -- and treats `%A`'s content ON DISK AFTER THE
+COMMAND RETURNS as the merge result, regardless of exit status. The
+handler:
+
+1. reads `%A` and `%B`'s text,
+2. calls the SAME `splice_ledger(ours_text, theirs_text,
+   archived_ids=...)` `frob ticket land` uses (never a separate
+   reimplementation -- one splice algorithm, two call sites),
+3. overwrites `%A` with the result and exits 0 (git records a clean,
+   non-conflicted merge).
+
+`%O` (the merge base) is accepted, since git always supplies it, but
+unused: `splice_ledger` resolves same-id divergence via state-rank
+(done/dropped > in-progress/blocked > planned > queued) and Done-report
+presence over `ours`/`theirs` directly, not a 3-way base diff -- see
+`splice_ledger`'s own docs above for why a base-aware 3-way diff is not
+the right model for an append-mostly, id-keyed ledger.
+
+If `splice_ledger` itself fails (a genuinely malformed `%A`/`%B`, not just
+a same-id divergence -- that case always resolves), the driver leaves
+`%A` untouched and exits 1: git then reports the ordinary conflict for a
+human to resolve by hand, exactly as if no driver were registered. A
+merge driver can never turn a real parse failure into a silently-wrong
+splice.
 
 ## Clipboard capture
 
@@ -472,14 +708,16 @@ AttachError = TicketError | ClipboardError
 <!-- frob:describes src/frob/tickets/_store.py::load_archive -->
 <!-- frob:describes src/frob/tickets/_store.py::write_archive -->
 <!-- frob:describes src/frob/tickets/_store.py::attachments_dir -->
-<!-- frob:describes src/frob/tickets/_store.py::store_mode -->
-<!-- frob:describes src/frob/tickets/_store.py::serialize_ticket -->
-<!-- frob:describes src/frob/tickets/_store.py::parse_ticket_file -->
+<!-- frob:describes src/frob/tickets/_store.py::_store_mode -->
+<!-- frob:describes src/frob/tickets/_store.py::_serialize_ticket -->
+<!-- frob:describes src/frob/tickets/_store.py::_parse_ticket_file -->
 <!-- frob:describes src/frob/tickets/_store.py::load_all -->
 <!-- frob:describes src/frob/tickets/_store.py::write_ticket -->
 <!-- frob:describes src/frob/tickets/_store.py::write_all -->
 <!-- frob:describes src/frob/tickets/_store.py::migrate_to_ledger -->
 <!-- frob:describes src/frob/tickets/_store.py::atomic_write -->
+<!-- frob:describes src/frob/tickets/_store.py::ledger_lock -->
+<!-- frob:describes src/frob/tickets/_store.py::lock_path -->
 
 `frob/tickets/_store.py` implements the single-file-ledger-vs-legacy-dir
 backend switch described under Storage above; `frob/tickets/__init__.py`
@@ -524,6 +762,28 @@ def migrate_to_ledger(root: Path) -> Result[int, TicketError]
 def atomic_write(path: Path, content: str | bytes) -> Result[None, TicketError]
     # Writes via temp file + os.replace in the same directory (crash-safe);
     # the one write primitive both storage backends funnel through.
+def lock_path(root: Path) -> Path
+    # T-0458: the advisory lock file path (.frob/tickets.lock) ledger_lock
+    # holds -- root / ".frob" / "tickets.lock".
+def ledger_lock(root: Path) -> Iterator[None]
+    # T-0458: exclusive, blocking, cross-process lock (fcntl.flock on
+    # lock_path(root)) serializing EVERY ledger mutation -- write_ticket,
+    # write_all, write_archive all acquire it around their own load-then-
+    # write, and new_ticket wraps its id-allocation + write in one outer
+    # hold so allocation and the claiming write can never be observed by a
+    # concurrent writer in between (the T-0465 duplicate-id race this
+    # closes). Re-entrant per thread (a nested `with ledger_lock(root):` in
+    # the SAME thread is a no-op re-entry, not a deadlock) so a locked
+    # primitive called from inside an already-locked caller is safe;
+    # cross-thread/cross-process callers still block on the real OS lock.
+    # Degrades to a documented, logged no-op on a platform without fcntl
+    # (non-POSIX; a real cross-platform primitive is T-0458's named
+    # phase-2 daemon-pipe follow-up). Example:
+    #   with ledger_lock(root):
+    #       ticket_id = _allocate_and_check_ticket_id(root)  # read max id
+    #       write_ticket(root, ticket)                       # claim it
+    #   # no concurrent new_ticket() call can observe the pre-write state
+    #   # in between -- the whole allocate+claim sequence is atomic.
 ```
 
 ## Design decisions
@@ -563,7 +823,7 @@ def atomic_write(path: Path, content: str | bytes) -> Result[None, TicketError]
   `tickets_gate` (TICK001/TICK002, T-0162) checks the id-collision invariant
   -- see "Decision record: T-0162" above.
 - CLI: `frob ticket new|list|show|doable|plan|start|sweep|migrate|renumber|
-  attach|block|close|fail|evidence|archive`. `start` auto-plans a queued
+  attach|block|close|fail|evidence|done-report|archive`. `start` auto-plans a queued
   ticket (both legal steps); `sweep` re-records the pre-work sweep after a
   scope change; `migrate` collapses a legacy dir into the ledger;
   `renumber <old> <new> [--dry-run]` (T-0162) rewrites ONE ticket's id
@@ -599,6 +859,21 @@ def atomic_write(path: Path, content: str | bytes) -> Result[None, TicketError]
   status alone; those kinds still require real pytest node ids via
   `--evidence`/`evidence`. A failing command (nonzero exit, or one that
   fails to launch) is `Err(EvidenceCmdFailed)` and never gets recorded.
+- `done-report <id> (--why TEXT | --why-file PATH | stdin) [--base-ref REF]`
+  (T-0458): atomically writes/updates a ticket's Done report via
+  `set_done_report` -- the caller supplies ONLY the narrative why; the
+  Changed section (`git diff --stat <base_ref>...HEAD`, default
+  `base_ref=main`) and the Evidence section (rendered from the ticket's
+  own recorded evidence ids) are always auto-composed, never hand-typed.
+  `--why -` (or omitting both `--why`/`--why-file`) reads the narrative
+  from stdin. This is now the only supported way to set a Done report --
+  never hand-edit the `## Done report` section in `tickets.md` directly.
+  Example:
+  ```
+  frob ticket done-report T-0458 --why "implemented the thing"
+  # or, from a file:
+  frob ticket done-report T-0458 --why-file /tmp/report-why.md --base-ref main
+  ```
 - Close-failure hints (T-0215): closing a `queued`/`planned` ticket fails
   `InvalidTransition` with a message naming the remedy (`frob ticket start
   <id>`); closing without evidence or a Done report fails

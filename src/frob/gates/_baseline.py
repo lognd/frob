@@ -25,51 +25,13 @@ from typani import Err, Ok
 from typani.result import Result
 from typani.unit import Unit
 
+from frob.gates._filehash import _collect_file_hashes, _sha_of
 from frob.gates._models import GateError, Violation
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
 
 _BASELINE_REL = Path(".frob") / "baseline"
-_SOURCE_EXTS = (".py", ".ts", ".tsx", ".rs", ".c", ".h", ".cpp")
-_EXCLUDED_DIRS = {".git", ".venv", "node_modules", "target", "build", "dist", ".frob"}
-
-
-def _sha_of(path: Path) -> str | None:
-    """Sha256 hex of `path`'s bytes, `None` if unreadable."""
-    try:
-        return hashlib.sha256(path.read_bytes()).hexdigest()
-    except OSError as exc:
-        _log.warning("_baseline: could not read %s: %s", path, exc)
-        return None
-
-
-def _walk(root: Path):  # noqa: ANN202
-    """Thin `os.walk` wrapper pruning the usual excluded directories."""
-    import os
-
-    for dirpath, dirnames, filenames in os.walk(root):
-        dirnames[:] = [d for d in dirnames if d not in _EXCLUDED_DIRS]
-        yield dirpath, dirnames, filenames
-
-
-def _collect_file_hashes(root: Path) -> dict[str, str]:
-    """Content-hash every tracked source file under `root` (excluded dirs pruned).
-
-    Mirrors `frob.gates._coverage._collect_file_hashes` deliberately -- the
-    two stamps (coverage, baseline) are independent artifacts with the same
-    staleness shape, not a shared abstraction worth forcing together.
-    """
-    file_hashes: dict[str, str] = {}
-    for dirpath, _dirnames, filenames in _walk(root):
-        for name in filenames:
-            if not name.endswith(_SOURCE_EXTS):
-                continue
-            path = Path(dirpath) / name
-            digest = _sha_of(path)
-            if digest is not None:
-                file_hashes[str(path.relative_to(root).as_posix())] = digest
-    return file_hashes
 
 
 # frob:doc docs/modules/gates.md#public-api

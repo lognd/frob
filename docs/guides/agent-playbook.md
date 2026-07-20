@@ -36,6 +36,26 @@ caution.
    version, or may not see gate-affecting source changes at all (next
    section).
 
+## 1b. NEVER `git stash` in a worktree (it is repo-global, not worktree-local)
+
+`git stash` writes to `refs/stash`, which is SHARED across every worktree of
+the repo -- it is NOT worktree-local. In a parallel multi-agent session,
+`git stash` / `git stash pop` in your worktree collides with other
+worktrees' stashes and silently reverts your own uncommitted state (state,
+evidence, Done report) -- observed reverting whole tickets mid-flight.
+
+Never `git stash` here. When you need to pull a fast-moving `main` into your
+worktree mid-ticket, COMMIT your work-in-progress first (that is the workflow
+anyway -- one clean commit per ticket), THEN `git merge main` (or rebase);
+git's 3-way merge preserves your committed work per-file and surfaces real
+conflicts as conflicts. If a merge conflicts in `tickets.md`, resolve it by
+KEEPING BOTH appended sides (the ledger-splice rule, section 10) -- never by
+stashing. Committed work cannot be silently lost the way stashed work can.
+A mid-ticket merge to pull fast-moving CODE is fine; but do NOT merge main
+late just to sync `tickets.md` -- finalize the ledger via the restore +
+`done-report` recipe in section 10b instead (a late ledger merge corrupts
+sibling tickets).
+
 ## 2. Gate-affecting source only takes effect via
 
 - `uv run frob ...` (editable install picks up local source changes on
@@ -110,6 +130,40 @@ New public symbols need both a `frob:doc` edge and a `frob:tests` edge --
 not warnings. Add both at the point you add or change the symbol, not as a
 follow-up.
 
+## 6b. Do NOT run `make coverage` as a dispatched sub-agent -- you cannot wait on it
+
+`make coverage` runs the full suite and exceeds the 120s foreground cap, so
+the harness auto-backgrounds it and your turn ends. As a DISPATCHED SUB-AGENT
+you fundamentally CANNOT observe its completion: the completion notification
+is routed to the coordinator, not to you. Backgrounding it (even with a
+`Monitor` or an `until`-loop "wait") just makes you yield and loop "waiting
+for make coverage" forever until the coordinator nudges you -- a wasted
+resume cycle every time. Do not do it.
+
+Instead, verify your change the FAST way and let the coordinator stamp
+coverage at land:
+
+- Run only YOUR OWN new/changed test files, foreground, fast:
+  `uv run pytest <your test files> -p no:cacheprovider -q`. This proves your
+  change works and stays well under 120s.
+- Run `uv run frob check --ticket T-XXXX` (scoped; needs no coverage stamp)
+  for gate verification, and `uv run frob check --delta` for new-violation
+  triage.
+- Record evidence, write the Done report, and COMMIT -- without ever running
+  `make coverage`.
+- The COORDINATOR runs `make coverage` + `frob check --stamp-coverage` once,
+  at land, against the merged result. That is the only place the full-suite
+  coverage stamp belongs.
+
+(If you hit `NativeExtensionUnavailable`, that's a missing native, not a
+coverage problem: `make core` then `frob test --collect`, and re-run your
+targeted tests.)
+
+The coordinator, running at the top level, CAN wait on `make coverage`
+(background + a Monitor/until-loop) because completion notifications come
+back to it -- so the full-suite stamp is a coordinator responsibility, not a
+sub-agent one.
+
 ## 7. Waive discipline
 
 `frob:waive RULE-ID reason="..."` suppresses one specific violation and
@@ -155,15 +209,56 @@ proceeding -- do not commit through it.
 ## 10. Ledger-conflict splice guidance
 
 `tickets.md` is a shared, append-mostly ledger; concurrent worktrees can
-produce a merge conflict on it. Resolve by keeping the NEWEST state per
-ticket section (the most recently updated `state:`/Done-report block for a
-given ticket id wins), not by mechanically taking "ours" or "theirs" -- a
-naive resolution can silently drop a state transition one side made.
-After resolving, audit the open-ticket count (`frob ticket doable` /
-`frob ticket show <id>` on anything touched by the conflict) to confirm no
-ticket regressed to an earlier state or vanished. `frob ticket land`
-(T-0176, not yet built) is the planned one-command version of this
-procedure; until it exists, this is manual.
+produce a merge conflict on it. Register the `frob ticket merge-driver`
+git merge driver once per clone (`docs/modules/tickets.md#git-merge-
+driver`) and any `git merge`/`pull`/`rebase` touching `tickets.md` auto-
+splices via `splice_ledger` instead of conflicting -- do this before
+touching a worktree, not after hitting the first conflict.
+
+If the driver is not registered (or a genuinely malformed ledger still
+gets past it, and git falls back to a real conflict), resolve by hand:
+keep the NEWEST state per ticket section (the most recently updated
+`state:`/Done-report block for a given ticket id wins), not by
+mechanically taking "ours" or "theirs" -- a naive resolution can silently
+drop a state transition one side made. After resolving, audit the
+open-ticket count (`frob ticket doable` / `frob ticket show <id>` on
+anything touched by the conflict) to confirm no ticket regressed to an
+earlier state or vanished. `frob ticket land` also resolves any
+`tickets.md` conflict it hits internally via the same `splice_ledger`
+call, no manual step needed there either.
+
+## 10b. Finalizing the ledger before you report (do NOT `git merge main` to fix it)
+
+Once your code and tests are done, DO NOT `git merge main` again to "sync"
+your `tickets.md`. This is a timing trap: main keeps advancing while you
+work, so any merge you do is immediately stale. Right before landing, the
+coordinator lands OTHER tickets -- now `git diff main -- tickets.md` shows
+YOUR older ledger as if it reverts those newly-landed tickets (a done
+ticket appears in-progress, its evidence/Done-report deleted). Hand-fixing
+the reverts one by one always misses some. In a single session this
+reverted 7 sibling tickets in one worktree (T-0281) and silently re-opened
+a just-landed ticket in another (T-0379). The `git merge main` at warm-up
+(section 1) is fine -- it is merging LATE, near reporting, that corrupts.
+
+Finalize the ledger with this exact recipe instead (no `git merge`, no
+hand-edit of `tickets.md`, no `git stash`):
+
+1. Overwrite your worktree ledger with current main's, verbatim:
+   `git checkout main -- tickets.md`
+   `git add tickets.md && git commit -m "chore: restore tickets.md to main before landing T-XXXX"`
+   Then `git diff main -- tickets.md` MUST be empty. Confirm it.
+2. Write ONLY your own Done report through the single-writer CLI (T-0458):
+   `uv run frob ticket done-report T-XXXX --why-file <path> --base-ref main`
+   (write the narrative to a temp file first; it auto-fills Changed +
+   Evidence). This never touches another ticket's block.
+3. Re-record your evidence ids (idempotent):
+   `uv run frob ticket evidence T-XXXX <each node id>`.
+4. Refresh the pre-work sweep in place so PRE001 stays clean:
+   `uv run frob ticket sweep T-XXXX` -- you do NOT need to merge main for
+   this. (`frob ticket land` also refreshes the sweep at land time.)
+5. Verify `git diff main -- tickets.md` now shows ONLY your ticket's own
+   block. If ANY other ticket id appears in that diff, stop -- do not
+   report done, and do not hand-patch it; tell the coordinator.
 
 ## 11. Ticket workflow
 

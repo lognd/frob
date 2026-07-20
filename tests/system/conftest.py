@@ -11,6 +11,8 @@ FIXTURES = Path(__file__).parent.parent / "fixtures"
 
 
 def run(*args, input=None, cwd=None):
+    """Run the `frob` CLI as a subprocess and capture its result (T-0364:
+    the one shared entry point every system test dispatches through)."""
     return subprocess.run(
         FROB + list(args),
         capture_output=True,
@@ -18,6 +20,30 @@ def run(*args, input=None, cwd=None):
         input=input,
         cwd=cwd,
     )
+
+
+def git(*args: str, cwd: Path) -> None:
+    """Run a `git` subcommand against `cwd`, raising on nonzero exit (T-0364:
+    extracted from four system test modules that had copy-pasted this exact
+    body -- see docs/modules/testing.md's system-test fixture note)."""
+    subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True)
+
+
+def init_repo(tmp_path: Path, model: str) -> Path:
+    """Build a minimal frob-enabled git repo (empty ledger, one `.strata`
+    design file) and commit it -- the shared arrange step behind
+    `frob sys doc`/`frob sys plan`'s CLI system tests (T-0364)."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    git("init", "-q", cwd=repo)
+    git("config", "user.email", "test@example.com", cwd=repo)
+    git("config", "user.name", "Test", cwd=repo)
+    (repo / "tickets.md").write_text("# Tickets\n")
+    (repo / "design").mkdir()
+    (repo / "design" / "m.strata").write_text(model)
+    git("add", "-A", cwd=repo)
+    git("commit", "-q", "-m", "init", cwd=repo)
+    return repo
 
 
 # ---------------------------------------------------------------------------

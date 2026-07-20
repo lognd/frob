@@ -139,12 +139,16 @@ class WeaknessEntry(BaseModel):
 class OutOfScopeEntry(BaseModel):
     """A baseline CWE id explicitly excluded from the catalog, with a
     reason -- satisfies THREAT001 without a `WeaknessEntry` (docs/strata/
-    threat.md#the-exhaustiveness-proof-the-point, item 1)."""
+    threat.md#the-exhaustiveness-proof-the-point, item 1). `caught_by`
+    (T-0381) is mandatory: an exclusion without a named compensating
+    control (the gate/rule/mechanism that catches the excused CWE
+    elsewhere) is an unaccounted-for gap, not an honest exclusion."""
 
     model_config = ConfigDict(frozen=True)
 
     id: str
     reason: str
+    caught_by: str = Field(min_length=1)
 
 
 # frob:doc docs/strata/threat.md#phasing
@@ -153,12 +157,16 @@ class BenignCapability(BaseModel):
     """A `may` capability KIND explicitly excused from THREAT002's sink
     taxonomy, with a reason -- mirrors `OutOfScopeEntry` for THREAT001
     (docs/strata/threat.md#phasing item B); an unmapped kind must be
-    named here or THREAT002 fails closed on it."""
+    named here or THREAT002 fails closed on it. `caught_by` (T-0381) is
+    mandatory: an excuse without a named compensating control (the gate/
+    rule/mechanism that catches the excused capability elsewhere) is an
+    unaccounted-for gap, not an honest exclusion."""
 
     model_config = ConfigDict(frozen=True)
 
     kind: str
     reason: str = Field(min_length=1)
+    caught_by: str = Field(min_length=1)
 
 
 #: T-0150: `may` capability kinds `_selfconform.py`'s SYS100/SYS101 measure
@@ -192,6 +200,10 @@ DEFAULT_BENIGN_CAPABILITIES: tuple[BenignCapability, ...] = (
             "which has no exec-mapped weakness at all -- module docstring "
             "above explains why this is a no-op for the security loop"
         ),
+        caught_by=(
+            "CWE-78 in CWE_CATALOG (the security family); this entry "
+            "only affects the QUALITY_CATALOG loop"
+        ),
     ),
     BenignCapability(
         kind="net",
@@ -201,6 +213,10 @@ DEFAULT_BENIGN_CAPABILITIES: tuple[BenignCapability, ...] = (
             "(SSRF/fetch_url is the catalog's closest analog and is a distinct, "
             "already-classified kind)"
         ),
+        caught_by=(
+            "none -- no CWE_CATALOG entry targets bare outbound network "
+            "calls as a sink on their own; not compensated elsewhere"
+        ),
     ),
     BenignCapability(
         kind="fs",
@@ -209,6 +225,10 @@ DEFAULT_BENIGN_CAPABILITIES: tuple[BenignCapability, ...] = (
             "fs-write); no CWE_CATALOG entry targets local filesystem writes "
             "as a sink on their own (CWE-22 path traversal is a distinct, "
             "flow-to-path-sink precondition, capability_kind=None)"
+        ),
+        caught_by=(
+            "none -- no CWE_CATALOG entry targets local filesystem writes "
+            "as a sink on their own; not compensated elsewhere"
         ),
     ),
     BenignCapability(
@@ -221,6 +241,11 @@ DEFAULT_BENIGN_CAPABILITIES: tuple[BenignCapability, ...] = (
             "have); no CWE_CATALOG entry targets local filesystem reads as a "
             "sink on their own, same rationale as 'fs' above"
         ),
+        caught_by=(
+            "none -- no CWE_CATALOG entry targets local filesystem reads "
+            "as a sink on their own (same gap as 'fs'); not compensated "
+            "elsewhere"
+        ),
     ),
     BenignCapability(
         kind="eval",
@@ -232,6 +257,11 @@ DEFAULT_BENIGN_CAPABILITIES: tuple[BenignCapability, ...] = (
             "_capability.py (filed as a separate scanner-precision ticket, "
             "T-0150 Done report), a distinct, already-flagged gap"
         ),
+        caught_by=(
+            "frob vet's own scanner (frob.vet._capability._PATTERNS, "
+            "compile/eval/__import__ literal match) -- the mechanism that "
+            "already flags dynamic code evaluation"
+        ),
     ),
     BenignCapability(
         kind="env",
@@ -239,6 +269,10 @@ DEFAULT_BENIGN_CAPABILITIES: tuple[BenignCapability, ...] = (
             "vet dependency-vetting signal (environment-variable read "
             "access); no CWE_CATALOG entry targets environment-variable "
             "reads as a sink"
+        ),
+        caught_by=(
+            "none -- no CWE_CATALOG entry targets environment-variable "
+            "reads as a sink; not compensated elsewhere"
         ),
     ),
     BenignCapability(
@@ -248,6 +282,10 @@ DEFAULT_BENIGN_CAPABILITIES: tuple[BenignCapability, ...] = (
             "CWE_CATALOG entry targets FFI/native-extension boundaries as a "
             "sink in v0's catalog"
         ),
+        caught_by=(
+            "none -- no CWE_CATALOG entry targets FFI/native-extension "
+            "boundaries as a sink in v0's catalog; not compensated elsewhere"
+        ),
     ),
     BenignCapability(
         kind="install-hook",
@@ -256,6 +294,10 @@ DEFAULT_BENIGN_CAPABILITIES: tuple[BenignCapability, ...] = (
             "hooks); no CWE_CATALOG entry targets packaging install hooks as "
             "a sink -- this is a dependency-supply-chain concern `frob vet` "
             "itself already flags, not a CWE-catalog weakness"
+        ),
+        caught_by=(
+            "frob vet's dependency-supply-chain scan -- the mechanism that "
+            "already flags packaging install hooks"
         ),
     ),
     # T-0158: `deserialize`/`fetch_url` ARE mapped in `CWE_CATALOG` (CWE-502/
@@ -272,6 +314,10 @@ DEFAULT_BENIGN_CAPABILITIES: tuple[BenignCapability, ...] = (
             "family); QUALITY_CATALOG has no deserialization-mapped entry "
             "at all -- this entry only affects the QUALITY_CATALOG loop"
         ),
+        caught_by=(
+            "CWE-502 in CWE_CATALOG (the security family); this entry "
+            "only affects the QUALITY_CATALOG loop"
+        ),
     ),
     BenignCapability(
         kind="fetch_url",
@@ -279,6 +325,10 @@ DEFAULT_BENIGN_CAPABILITIES: tuple[BenignCapability, ...] = (
             "already classified as CWE-918 in CWE_CATALOG (the security "
             "family); QUALITY_CATALOG has no SSRF/fetch-mapped entry at "
             "all -- this entry only affects the QUALITY_CATALOG loop"
+        ),
+        caught_by=(
+            "CWE-918 in CWE_CATALOG (the security family); this entry "
+            "only affects the QUALITY_CATALOG loop"
         ),
     ),
 )
@@ -298,15 +348,18 @@ def load_repo_benign_capabilities(
     hardcoded Python tuple, which no downstream repo can edit. Reads
     `frob.toml`'s `[[strata.benign_capabilities]]` array of tables (the same
     array-of-tables shape `frob.policy`'s `[[policy.*]]` already uses for
-    repo-declared rules) -- each entry needs `kind` and a non-blank `reason`
-    (deny-by-default, charter law 2: an excuse without a written reason is
-    not honest). Returns `Ok(())` for a missing `frob.toml` or a missing
-    `[strata]`/`benign_capabilities` table (no repo-declared excuses is a
-    valid, common case, not an error) and `Err(StrataError.
-    MalformedBenignConfig)` for a present-but-invalid table (unparseable
-    TOML, or an entry missing `kind`/`reason`) -- fails closed rather than
-    silently dropping a malformed entry, the same posture `_load_policy`'s
-    sibling loaders take. Callers combine the result with
+    repo-declared rules) -- each entry needs `kind`, a non-blank `reason`,
+    and a non-blank `caught_by` (T-0381: the compensating gate/rule/
+    mechanism that catches the excused capability elsewhere, or an honest
+    "none" disclosure) (deny-by-default, charter law 2: an excuse without a
+    written reason is not honest). Returns `Ok(())` for a missing
+    `frob.toml` or a missing `[strata]`/`benign_capabilities` table (no
+    repo-declared excuses is a valid, common case, not an error) and
+    `Err(StrataError.MalformedBenignConfig)` for a present-but-invalid
+    table (unparseable TOML, or an entry missing `kind`/`reason`/
+    `caught_by`) -- fails closed rather than silently dropping a malformed
+    entry, the same posture `_load_policy`'s sibling loaders take. Callers
+    combine the result with
     `DEFAULT_BENIGN_CAPABILITIES` (repo entries are ADDITIONAL excuses, never
     a replacement for the built-in tier-2 vocabulary excuses) before passing
     `benign=` to `evaluate_exhaustiveness`."""
@@ -335,7 +388,13 @@ def load_repo_benign_capabilities(
     excuses: list[BenignCapability] = []
     for entry in entries:
         try:
-            excuses.append(BenignCapability(kind=entry["kind"], reason=entry["reason"]))
+            excuses.append(
+                BenignCapability(
+                    kind=entry["kind"],
+                    reason=entry["reason"],
+                    caught_by=entry["caught_by"],
+                )
+            )
         except (KeyError, TypeError, ValidationError) as exc:
             _log.error(
                 "load_repo_benign_capabilities: malformed entry in %s: %s",
@@ -438,33 +497,72 @@ CWE_CATALOG: tuple[WeaknessEntry, ...] = (
         mitigation="clearance_boundary",
         rung=Rung.L4,
     ),
+    WeaknessEntry(
+        id="CWE-611",
+        title="Improper Restriction of XML External Entity Reference",
+        cite="https://cwe.mitre.org/data/definitions/611.html",
+        capability_kind=None,  # T-0189 (T-0153 review follow-up): a
+        # parser-configuration precondition (an XML parser resolving a
+        # DOCTYPE-declared external entity), not a `may` atom KIND the
+        # charter's capability-instantiation table lists -- the same
+        # "citation-only, capability_kind=None" shape CWE-22/352/798 above
+        # already use for a precondition the kernel has no auto-instantiate
+        # join for yet; still cataloged so THREAT001 can cite it and
+        # `_cve_fingerprint.py`'s CVEFP001 drift-lock can join a fingerprint
+        # against it.
+        mitigation="external_entity_disabled",
+        rung=Rung.L4,
+    ),
 )
 
-#: T-0143 (docs/strata/threat.md#the-catalog-stdcwe): the `cwe-top-25` view,
-#: transcribed from the 2023 MITRE CWE Top 25 Most Dangerous Software
-#: Weaknesses (https://cwe.mitre.org/top25/archive/2023/2023_top25_list.html,
-#: pinned release year 2023 -- staleness review against a newer release is
-#: the charter's obligation, docs/strata/threat.md#the-catalog-stdcwe "a
-#: versioned vocabulary pack ... pinned to a MITRE CWE release ... staleness
-#: past a review bound is a gate warning"). Eight of the 25 ids are already
-#: cataloged in `CWE_CATALOG` above (CWE-79/89/78/22/918/502/352/798) --
-#: reused here, not duplicated (charter: no duplication). The remaining 17
-#: split into ONE genuinely new obligation (`CWE_TOP_25_CATALOG`, below --
-#: `capability_kind` where the charter's instantiation semantics apply) and
-#: 16 honest `OutOfScopeEntry` rows (`CWE_TOP_25_OUT_OF_SCOPE`) whose
-#: preconditions the kernel model has no vocabulary for yet: memory-safety
-#: ids (no pointer/buffer/allocator/arithmetic-width model), a concurrency
-#: id (no synchronization/scheduling model), an authn/authz-boundary group
-#: (no endpoint/route + authn/authz predicate concept, same gap
-#: `SEC-ROUTE-AUTHZ-001` above already names), a file-upload id (no
-#: content-type-validation sink), a generic-input-validation id (no
+#: T-0143/T-0345 (docs/strata/threat.md#the-catalog-stdcwe): the
+#: `cwe-top-25` view, transcribed from the 2025 MITRE CWE Top 25 Most
+#: Dangerous Software Weaknesses (https://cwe.mitre.org/top25/archive/2025/
+#: 2025_cwe_top25.html, pinned release year 2025 -- T-0345 bumped this from
+#: the stale 2023 pin two releases behind; staleness review against a newer
+#: release is the charter's obligation, docs/strata/threat.md#the-catalog-
+#: stdcwe "a versioned vocabulary pack ... pinned to a MITRE CWE release ...
+#: staleness past a review bound is a gate warning"). Seven of the 25 ids
+#: are already cataloged in `CWE_CATALOG` above (CWE-79/89/78/22/918/502/
+#: 352) -- reused here, not duplicated (charter: no duplication). Two more
+#: are genuinely new obligations (`CWE_TOP_25_CATALOG`, below --
+#: `capability_kind` where the charter's instantiation semantics apply):
+#: CWE-94 (unchanged from the 2023 pin, reuses CWE-78's `exec` join) and
+#: CWE-639 (2025-list-new; reuses `QUALITY_CATALOG`'s existing `sql`-join
+#: entry rather than duplicating it, the SAME disclosed-reuse convention
+#: CWE-94 already follows). The remaining 16 are honest `OutOfScopeEntry`
+#: rows (`CWE_TOP_25_OUT_OF_SCOPE`) whose preconditions the kernel model
+#: has no vocabulary for yet: memory-safety ids (no pointer/buffer/
+#: allocator model -- now six of them: CWE-787/416/125/476 carried over
+#: plus 2025-list-new CWE-120/121/122, all buffer-overflow variants of the
+#: SAME missing buffer/bounds model), an authn/authz-boundary group (no
+#: endpoint/route + authn/authz predicate concept, same gap
+#: `SEC-ROUTE-AUTHZ-001` above already names -- CWE-862/863/306 carried
+#: over plus 2025-list-new CWE-284 (the generic parent of CWE-862/863 with
+#: no precondition of its own, the SAME generic-parent shape CWE-20
+#: already discloses) and CWE-200 (2025-list-new, `Exposure of Sensitive
+#: Information`; docs/design/registry/weaknesses.yaml's independent
+#: CWE-1000 disposition sweep classifies this id the same way,
+#: `out-of-scope:authn-authz-boundary-predicate`, cross-checked here to
+#: avoid re-litigating a judgment that sweep already made)), a file-upload
+#: id (no content-type-validation sink), a generic-input-validation id (no
 #: structural precondition, same "needs hand-written assert claims" class
-#: as CWE-840, docs/strata/threat.md#what-is-honestly-not-covered), and one
+#: as CWE-840, docs/strata/threat.md#what-is-honestly-not-covered), a
 #: duplicate-coverage id (CWE-77, the generic parent of CWE-78's already-
 #: cataloged OS-command instance -- disclosed as non-duplicated, the SAME
-#: discipline the module docstring above applies to stored XSS).
+#: discipline the module docstring above applies to stored XSS), and one
+#: 2025-list-new resource-exhaustion id (CWE-770, needs a resource-
+#: allocation/rate-limiting model the kernel does not carry). Dropped from
+#: the 2023 pin (no longer 2025-list members, so no longer `cwe-top-25`
+#: obligations at all -- their `OutOfScopeEntry`/`CWE_CATALOG` rows are
+#: removed, not archived, since this view's membership is the CITED
+#: release's, not a running union of every release ever pinned):
+#: CWE-798 (still in `CWE_CATALOG` above, just no longer a top-25 member),
+#: CWE-287/190/119/362/269/276 (were `OutOfScopeEntry` rows here only,
+#: removed outright).
 # frob:doc docs/strata/threat.md#the-catalog-stdcwe
 # frob:ticket T-0143
+# frob:ticket T-0345
 CWE_TOP_25_CATALOG: tuple[WeaknessEntry, ...] = (
     WeaknessEntry(
         id="CWE-94",
@@ -473,30 +571,51 @@ CWE_TOP_25_CATALOG: tuple[WeaknessEntry, ...] = (
         capability_kind="exec",  # reuses CWE-78's SAME exec capability join:
         # the kernel model does not distinguish an OS-command sink from a
         # code-eval sink, so both weaknesses fire on the same precondition,
-        # exactly the CWE-639/CWE-89 "sql" precedent above.
+        # exactly the CWE-639/CWE-89 "sql" precedent below.
         mitigation="code_execution_sandboxing",
+        rung=Rung.L4,
+    ),
+    WeaknessEntry(
+        id="CWE-639",
+        title="Authorization Bypass Through User-Controlled Key",
+        cite="https://cwe.mitre.org/data/definitions/639.html",
+        capability_kind="sql",  # reuses QUALITY_CATALOG's SAME sql
+        # capability join (see that entry's comment) -- disclosed reuse,
+        # not duplication, the SAME convention CWE-94 above follows;
+        # `cwe-top-25` needs its own entry since `THREAT001` checks
+        # `CWE_CATALOG + CWE_TOP_25_CATALOG`, not `QUALITY_CATALOG`.
+        mitigation="tenant_scoping",
         rung=Rung.L4,
     ),
 )
 
-#: T-0143: the 16 CWE Top 25 (2023) ids whose precondition the kernel
-#: cannot yet express, each with a SPECIFIC missing-concept reason (never a
-#: generic "not supported") -- see `CWE_TOP_25_CATALOG`'s comment above for
-#: the grouping this follows.
+#: T-0143/T-0345: the 16 CWE Top 25 (2025) ids whose precondition the
+#: kernel cannot yet express, each with a SPECIFIC missing-concept reason
+#: (never a generic "not supported") -- see `CWE_TOP_25_CATALOG`'s comment
+#: above for the grouping this follows.
 # frob:doc docs/strata/threat.md#the-exhaustiveness-proof-the-point
 # frob:ticket T-0143
+# frob:ticket T-0345
 CWE_TOP_25_OUT_OF_SCOPE: tuple[OutOfScopeEntry, ...] = (
     OutOfScopeEntry(
         id="CWE-787",
         reason="out-of-bounds write needs a buffer/allocation/bounds model "
         "the kernel has no vocabulary for -- it models data flow and trust, "
         "not memory layout",
+        caught_by=(
+            "none -- kernel has no buffer/allocation/bounds model; not compensated by "
+            "any other frob mechanism (documented gap)"
+        ),
     ),
     OutOfScopeEntry(
         id="CWE-416",
         reason="use-after-free needs an allocator/object-lifetime model the "
         "kernel does not carry -- no node/flow concept of allocation or "
         "deallocation exists",
+        caught_by=(
+            "none -- kernel has no allocator/object-lifetime model; not compensated by "
+            "any other frob mechanism (documented gap)"
+        ),
     ),
     OutOfScopeEntry(
         id="CWE-20",
@@ -505,40 +624,50 @@ CWE_TOP_25_OUT_OF_SCOPE: tuple[OutOfScopeEntry, ...] = (
         "injection ids already cataloged) -- needs a hand-written `assert` "
         "claim per site, the same class as CWE-840, docs/strata/threat.md"
         "#what-is-honestly-not-covered",
+        caught_by=(
+            "the specific sink-typed injection CWEs already in CWE_CATALOG (e.g. "
+            "CWE-79/CWE-89/CWE-78) that this generic parent's instances actually fire "
+            "through"
+        ),
     ),
     OutOfScopeEntry(
         id="CWE-125",
         reason="out-of-bounds read needs the same buffer/bounds model "
         "CWE-787 needs and the kernel does not carry",
+        caught_by=(
+            "none -- kernel has no buffer/bounds model (same gap as CWE-787); not "
+            "compensated elsewhere"
+        ),
     ),
     OutOfScopeEntry(
         id="CWE-434",
         reason="unrestricted dangerous file upload needs a file-upload sink "
         "and a content-type-validation boundary predicate the kernel model "
         "has no field for",
+        caught_by=(
+            "none -- kernel has no file-upload sink / content-type-"
+            "validation boundary; not compensated elsewhere"
+        ),
     ),
     OutOfScopeEntry(
         id="CWE-862",
         reason="missing authorization needs an endpoint/route concept and "
         "an authz-boundary predicate the kernel model has no field for -- "
         "the same gap SEC-ROUTE-AUTHZ-001 above already names",
+        caught_by=(
+            "none -- kernel has no endpoint/route + authz-boundary concept; not "
+            "compensated elsewhere (documented gap)"
+        ),
     ),
     OutOfScopeEntry(
         id="CWE-476",
         reason="NULL pointer dereference needs a pointer/nullability model "
         "the kernel does not carry -- it has no concept of a dereferenceable "
         "reference at all",
-    ),
-    OutOfScopeEntry(
-        id="CWE-287",
-        reason="improper authentication needs a session/credential-"
-        "verification boundary concept the kernel model has no field for",
-    ),
-    OutOfScopeEntry(
-        id="CWE-190",
-        reason="integer overflow/wraparound needs a numeric-width/"
-        "arithmetic model the kernel does not carry -- it has no concept of "
-        "a bounded numeric type",
+        caught_by=(
+            "none -- kernel has no pointer/nullability model; not "
+            "compensated elsewhere (documented gap)"
+        ),
     ),
     OutOfScopeEntry(
         id="CWE-77",
@@ -548,75 +677,128 @@ CWE_TOP_25_OUT_OF_SCOPE: tuple[OutOfScopeEntry, ...] = (
         "-- a second entry would duplicate the identical fire path rather "
         "than name a genuinely distinct obligation, the same non-"
         "duplication disclosure this module applies to stored XSS",
-    ),
-    OutOfScopeEntry(
-        id="CWE-119",
-        reason="improper restriction of operations within a memory buffer's "
-        "bounds needs the same buffer/bounds model CWE-787/125 need and the "
-        "kernel does not carry",
+        caught_by=(
+            "CWE-78 in CWE_CATALOG (the already-cataloged OS-command "
+            "instance firing on the identical exec-capability precondition)"
+        ),
     ),
     OutOfScopeEntry(
         id="CWE-306",
         reason="missing authentication for a critical function needs the "
-        "same endpoint/route + authn-boundary concept CWE-287/862 need and "
+        "same endpoint/route + authn-boundary concept CWE-862 needs and "
         "the kernel does not carry",
-    ),
-    OutOfScopeEntry(
-        id="CWE-362",
-        reason="race condition needs a concurrency/synchronization/"
-        "scheduling model the kernel does not carry -- it has no concept of "
-        "interleaved execution or shared mutable state",
-    ),
-    OutOfScopeEntry(
-        id="CWE-269",
-        reason="improper privilege management needs a privilege/role model "
-        "the kernel does not carry -- trust levels are not a role/privilege "
-        "hierarchy",
+        caught_by=(
+            "none -- kernel has no endpoint/route + authn-boundary "
+            "concept (same gap as CWE-862); not compensated elsewhere"
+        ),
     ),
     OutOfScopeEntry(
         id="CWE-863",
         reason="incorrect authorization needs the same endpoint/route + "
         "authz-boundary concept CWE-862 needs and the kernel does not carry",
+        caught_by=(
+            "none -- kernel has no endpoint/route + authz-boundary "
+            "concept (same gap as CWE-862); not compensated elsewhere"
+        ),
     ),
     OutOfScopeEntry(
-        id="CWE-276",
-        reason="incorrect default permissions needs a filesystem/resource "
-        "permission-mode model the kernel does not carry",
+        id="CWE-120",
+        reason="classic buffer overflow needs the same buffer/bounds model "
+        "CWE-787/125 need and the kernel does not carry",
+        caught_by=(
+            "none -- kernel has no buffer/bounds model (same gap as CWE-787/125); not "
+            "compensated elsewhere"
+        ),
+    ),
+    OutOfScopeEntry(
+        id="CWE-121",
+        reason="stack-based buffer overflow needs the same buffer/bounds "
+        "model CWE-787/125/120 need and the kernel does not carry",
+        caught_by=(
+            "none -- kernel has no buffer/bounds model (same gap as CWE-787/125/120); "
+            "not compensated elsewhere"
+        ),
+    ),
+    OutOfScopeEntry(
+        id="CWE-122",
+        reason="heap-based buffer overflow needs the same buffer/bounds "
+        "model CWE-787/125/120 need and the kernel does not carry",
+        caught_by=(
+            "none -- kernel has no buffer/bounds model (same gap as CWE-787/125/120); "
+            "not compensated elsewhere"
+        ),
+    ),
+    OutOfScopeEntry(
+        id="CWE-284",
+        reason="improper access control names no structural precondition "
+        "of its own (it is the generic parent of CWE-862/863's specific "
+        "authz-boundary preconditions) -- needs the same endpoint/route + "
+        "authz-boundary concept CWE-862/863 need, the SAME generic-parent "
+        "disclosure CWE-20 already applies to input validation",
+        caught_by=(
+            "none -- generic parent of CWE-862/863, both themselves out-of-scope for "
+            "the same endpoint/route + authz-boundary gap; not compensated elsewhere"
+        ),
+    ),
+    OutOfScopeEntry(
+        id="CWE-770",
+        reason="allocation of resources without limits or throttling needs "
+        "a resource-budget/rate-limiting model the kernel does not carry -- "
+        "it has no concept of a bounded allocation or a throttle boundary",
+        caught_by=(
+            "none -- kernel has no resource-budget/rate-limiting model; "
+            "not compensated elsewhere (documented gap)"
+        ),
+    ),
+    OutOfScopeEntry(
+        id="CWE-200",
+        reason="exposure of sensitive information to an unauthorized actor "
+        "needs an endpoint/route + authz-boundary predicate concept the "
+        "kernel model has no field for -- the same gap SEC-ROUTE-AUTHZ-001/"
+        "CWE-862/863/284 above already name; docs/design/registry/"
+        "weaknesses.yaml's independent CWE-1000 disposition sweep "
+        "classifies this id the same way (out-of-scope:authn-authz-"
+        "boundary-predicate)",
+        caught_by=(
+            "none -- kernel has no endpoint/route + authz-boundary "
+            "concept (same gap as CWE-862/863/284); not compensated "
+            "elsewhere"
+        ),
     ),
 )
 
-#: T-0143: the full 25-id `cwe-top-25` membership, literal so THREAT001
-#: checks it against the CITED release regardless of which catalog tuples a
-#: caller passes (mirrors `owasp-top-10`'s derive-from-`CWE_CATALOG`
-#: convenience being unavailable here since this view spans two catalog
-#: tuples, docs/strata/threat.md#the-catalog-stdcwe).
+#: T-0143/T-0345: the full 25-id `cwe-top-25` membership, literal so
+#: THREAT001 checks it against the CITED release regardless of which
+#: catalog tuples a caller passes (mirrors `owasp-top-10`'s derive-from-
+#: `CWE_CATALOG` convenience being unavailable here since this view spans
+#: two catalog tuples, docs/strata/threat.md#the-catalog-stdcwe).
 _CWE_TOP_25_IDS: frozenset[str] = frozenset(
     {
-        "CWE-787",
         "CWE-79",
         "CWE-89",
-        "CWE-416",
-        "CWE-78",
-        "CWE-20",
-        "CWE-125",
-        "CWE-22",
         "CWE-352",
-        "CWE-434",
         "CWE-862",
-        "CWE-476",
-        "CWE-287",
-        "CWE-190",
-        "CWE-502",
-        "CWE-77",
-        "CWE-119",
-        "CWE-798",
-        "CWE-918",
-        "CWE-306",
-        "CWE-362",
-        "CWE-269",
+        "CWE-787",
+        "CWE-22",
+        "CWE-416",
+        "CWE-125",
+        "CWE-78",
         "CWE-94",
+        "CWE-120",
+        "CWE-434",
+        "CWE-476",
+        "CWE-121",
+        "CWE-502",
+        "CWE-122",
         "CWE-863",
-        "CWE-276",
+        "CWE-20",
+        "CWE-284",
+        "CWE-200",
+        "CWE-306",
+        "CWE-918",
+        "CWE-77",
+        "CWE-639",
+        "CWE-770",
     }
 )
 
@@ -706,6 +888,65 @@ QUALITY_CATALOG: tuple[WeaknessEntry, ...] = (
         mitigation="cdn_routing",
         rung=Rung.L3,
     ),
+    WeaknessEntry(
+        id="CWE-295",
+        title="Improper Certificate Validation",
+        cite="https://cwe.mitre.org/data/definitions/295.html",
+        family="security",
+        # T-0188 (docs/strata/threat.md#cve-fingerprints-code-level-pattern-
+        # catalog-t-0153, "curated, not exhaustive"): honest views
+        # placement -- neither `CWE_CATALOG` (the verified 8-id `owasp-
+        # top-10` transcription) nor `CWE_TOP_25_CATALOG` (the verified
+        # 2023 MITRE Top 25 membership, `_CWE_TOP_25_IDS` above -- CWE-295
+        # is NOT one of the 25) claims this id without a fresh, dated
+        # re-verification against those specific pinned lists; adding it
+        # there would silently widen a view whose membership this module's
+        # own docstrings describe as independently checked. Cataloged here
+        # in `QUALITY_CATALOG` instead (already home to other
+        # `family="security"` rows, e.g. CWE-639 above) with NO `QUALITY_
+        # VIEWS` membership -- mirrors CWE-639/REL-001's own precedent of a
+        # catalog entry that need not belong to any named baseline view
+        # (`check_catalog_completeness` is per-view, not "every entry must
+        # have a view", `TestQualityFamilies` in test_threat.py). No
+        # `capability_kind`: TLS certificate-verification bypass (`verify=
+        # False` and its cross-language siblings) is not a `may`-capability
+        # auto-instantiation shape (`_effects.py::_may_kind` has no
+        # tls-verification kind) -- it is fired exclusively by the
+        # `std.cve` fingerprint layer (`_cve_fingerprint.py`'s
+        # FP-TLS-VERIFY-* entries) matching the literal disable-verification
+        # needle, the SAME "citation-only, discharge lives elsewhere"
+        # shape CWE-798/352 already use in `CWE_CATALOG` above.
+        capability_kind=None,
+        mitigation="certificate_verification_enabled",
+        rung=Rung.L4,
+    ),
+)
+
+#: T-0171: the union sink taxonomy across EVERY family catalog this module
+#: ships (`CWE_CATALOG`/`CWE_TOP_25_CATALOG`/`QUALITY_CATALOG`) -- the
+#: single home `check_capability_completeness` classifies a `may`
+#: capability kind against, regardless of which family's VIEW is being
+#: audited. Before this, `_audit.py::_evaluate_family` passed each family's
+#: OWN narrower catalog to `check_capability_completeness`, so a capability
+#: kind classified in `CWE_CATALOG` (security) but absent from `QUALITY_
+#: CATALOG` (e.g. `exec`, `deserialize`, `fetch_url` -- QUALITY_CATALOG has
+#: no entry mapped to those kinds at all, comment above `DEFAULT_BENIGN_
+#: CAPABILITIES`) fired THREAT002 against every quality-family view too,
+#: demanding a per-repo `BenignCapability` excuse for a capability that is
+#: NOT unclassified -- it is simply irrelevant to the quality family's
+#: obligation table. Classification ("is this kind a recognized sink
+#: ANYWHERE in the taxonomy") and relevance ("does THIS family's catalog
+#: fire an obligation for it") are different questions; THREAT001/THREAT003
+#: still resolve per-family (a family's obligations are only the entries
+#: its own catalog declares), but THREAT002 -- "every capability kind is
+#: classified" (threat.md#the-exhaustiveness-proof-the-point, item 2) --
+#: was never meant to mean "classified by THIS family's subset of the
+#: taxonomy"; the taxonomy itself is one thing, split into per-family
+#: catalogs only for view-membership bookkeeping (docs/strata/
+#: threat.md#beyond-security-the-anti-pattern-families).
+# frob:doc docs/strata/threat.md#phasing
+ALL_CATALOG: tuple[WeaknessEntry, ...] = (
+    CWE_CATALOG + CWE_TOP_25_CATALOG + QUALITY_CATALOG
 )
 
 # frob:doc docs/strata/threat.md#phasing
@@ -728,6 +969,8 @@ QUALITY_OUT_OF_SCOPE: tuple[OutOfScopeEntry, ...] = (
         "structured-payload precondition over `Flow.size`/`Flow.transport` "
         "the kernel model carries but no phase-E check yet interprets as a "
         "compression obligation -- new precondition logic, out of T-0114 scope",
+        caught_by="none -- no phase-E check interprets a compression "
+        "obligation yet; not compensated elsewhere (T-0114 follow-up)",
     ),
     OutOfScopeEntry(
         id="PERF-BATCH-001",
@@ -735,12 +978,16 @@ QUALITY_OUT_OF_SCOPE: tuple[OutOfScopeEntry, ...] = (
         "cardinality distinction the kernel model does not carry on `Flow` "
         "today (no collection-cardinality attribute) -- new precondition, "
         "out of T-0114 scope",
+        caught_by="none -- kernel has no collection-cardinality attribute "
+        "on `Flow`; not compensated elsewhere (T-0114 follow-up)",
     ),
     OutOfScopeEntry(
         id="PERF-OPTIMISTIC-001",
         reason="un-optimistic rendering needs a synchronous `waits_for` "
         "render-to-response edge concept the kernel model has no field for "
         "-- new precondition, out of T-0114 scope",
+        caught_by="none -- kernel has no synchronous `waits_for` render-to-"
+        "response edge concept; not compensated elsewhere (T-0114 follow-up)",
     ),
     OutOfScopeEntry(
         id="SEC-CORS-001",
@@ -748,6 +995,8 @@ QUALITY_OUT_OF_SCOPE: tuple[OutOfScopeEntry, ...] = (
         "cross-checked against the flow's data label carrying credentials "
         "-- a new boundary-kind predicate over CORS-specific fields the "
         "kernel model has no vocabulary for yet, out of T-0114 scope",
+        caught_by="none -- kernel has no CORS-specific boundary-kind "
+        "predicate vocabulary; not compensated elsewhere (T-0114 follow-up)",
     ),
     OutOfScopeEntry(
         id="SEC-ROUTE-AUTHZ-001",
@@ -755,6 +1004,8 @@ QUALITY_OUT_OF_SCOPE: tuple[OutOfScopeEntry, ...] = (
         "foreign-influenced redirect target) needs an endpoint/route "
         "concept and a redirect-target-taint precondition the kernel model "
         "has no field for -- new precondition, out of T-0114 scope",
+        caught_by="none -- kernel has no endpoint/route + redirect-target-"
+        "taint concept; not compensated elsewhere (T-0114 follow-up)",
     ),
 )
 
@@ -893,24 +1144,40 @@ def _capability_violation(kind: str, node_id: str) -> ThreatViolation:
 
 
 # frob:doc docs/strata/threat.md#phasing
+# frob:waive ARCH001 reason="body is 9 lines of a single sorted-nodes/sorted-kinds classify-or-flag loop; the rest is the docstring explaining the T-0171 taxonomy-wide classification contract -- splitting the loop would hide, not clarify, the one join it performs" ceiling="40"  # noqa: E501
 def check_capability_completeness(
     model: KernelModel,
     catalog: tuple[WeaknessEntry, ...] = CWE_CATALOG,
     benign: tuple[BenignCapability, ...] = (),
+    taxonomy: tuple[WeaknessEntry, ...] | None = None,
 ) -> Result[tuple[ThreatViolation, ...], StrataError]:
     """THREAT002: every capability kind a node declares via a `may` atom is
-    classified -- it names a sink the `catalog` recognizes (its
+    classified -- it names a sink `taxonomy` recognizes (its
     `capability_kind`) or is explicitly excused by a `BenignCapability`;
     an unclassified kind is a violation, deny-by-default (docs/strata/
     threat.md#phasing item B). The model-level half of "every capability
     ... is classified" (threat.md#the-exhaustiveness-proof-the-point,
     item 2); the code-level half is phase C (module docstring).
 
+    `taxonomy` defaults to `catalog` (pre-T-0171 behavior: classify only
+    against the SAME catalog whose entries this call's `view` resolves
+    obligations from) -- pass `ALL_CATALOG` (or any wider union) explicitly
+    when checking a NARROWER per-family catalog (e.g. `QUALITY_CATALOG`)
+    so a capability kind classified elsewhere in the taxonomy (security's
+    `CWE_CATALOG`) is not misreported as unclassified just because this
+    family's own catalog has no entry for it (T-0171: THREAT002 fired in
+    quality views for capabilities the taxonomy classifies, just not in
+    QUALITY_CATALOG's narrower vocabulary -- classification is a taxonomy-
+    wide fact, not a per-family one; see `ALL_CATALOG`'s comment).
+
     "Classified" means: a `may` kind present in `_entries_by_capability_
-    kind(catalog)` -- the SAME join `_fired_obligations` computes over the
-    same `catalog` argument, so this can never diverge from what actually
-    fires (charter: no duplication)."""
-    known = frozenset(_entries_by_capability_kind(catalog))
+    kind(taxonomy)` -- when `taxonomy is None` this is the SAME join
+    `_fired_obligations` computes over the same `catalog` argument, so the
+    pre-T-0171 default can never diverge from what actually fires (charter:
+    no duplication)."""
+    known = frozenset(
+        _entries_by_capability_kind(taxonomy if taxonomy is not None else catalog)
+    )
     excused = {entry.kind for entry in benign}
 
     violations: list[ThreatViolation] = []
@@ -1491,6 +1758,7 @@ def _log_pre_discharge_obligation_count(
 
 
 __all__ = [
+    "ALL_CATALOG",
     "CWE_CATALOG",
     "CWE_TOP_25_CATALOG",
     "CWE_TOP_25_OUT_OF_SCOPE",

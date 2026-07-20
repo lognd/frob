@@ -106,6 +106,9 @@ def test_json_god_class_entry():
     assert god["line"] > 0
 
 
+# frob:waive DUP001 reason="parallel CLI system-test scaffolding: \
+# independent commands sharing the subprocess-dispatch arrange-act shape; \
+# extracting would obscure per-command intent"
 def test_json_long_function_entry():
     r = run("arch", str(ARCH_PYTHON_DIR), "--json")
     data = json.loads(r.stdout)
@@ -115,6 +118,9 @@ def test_json_long_function_entry():
     assert lf["line"] > 0
 
 
+# frob:waive DUP001 reason="parallel CLI system-test scaffolding: \
+# independent commands sharing the subprocess-dispatch arrange-act shape; \
+# extracting would obscure per-command intent"
 def test_json_deep_nesting_entry():
     r = run("arch", str(ARCH_PYTHON_DIR), "--json")
     data = json.loads(r.stdout)

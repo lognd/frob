@@ -6,8 +6,6 @@ recursion shallow by delegating each statement/parameter shape to a small
 handler rather than nesting the branches inline.
 """
 
-# frob:waive TEST005 reason="module line coverage 79.4%, debt T-0160"
-
 from __future__ import annotations
 
 from collections.abc import Iterator
@@ -97,13 +95,39 @@ def _harvest_binding_stmt(child_node: Node, out: set[str]) -> None:
         _collect_assigned_names(child_node, out)
 
 
+def _harvest_with_item(item: Node, out: set[str]) -> None:
+    """Add the bound target name(s) of one `with_item` node to `out`.
+
+    The bound name lives under `with_item` -> `as_pattern` (field `value`)
+    -> `as_pattern_target` (field `alias`), not directly on `with_item` --
+    there is no `alias` field on `with_item` itself. `as_pattern_target`
+    may wrap a single `identifier` or a tuple/list pattern for
+    `with X as (a, b):`, so the target is walked with `_harvest_pattern`.
+    """
+    value = item.child_by_field_name("value")
+    if value is not None and value.type == "as_pattern":
+        target = value.child_by_field_name("alias")
+        if target is not None:
+            _harvest_pattern(target, out)
+
+
 def _harvest_with(child_node: Node, out: set[str]) -> None:
-    """Add `with ... as <name>` binding names and recurse into the body."""
+    """Add `with ... as <name>` binding names and recurse into the body.
+
+    `with_item` nodes are not direct children of `with_statement` -- the
+    grammar nests them one level down under an intermediate `with_clause`
+    node. Walk named descendants (skipping into nested function/class
+    scopes never occurs here since a `with_statement`'s only nested
+    scopes live under its own `body`, handled separately) to find every
+    `with_item` regardless of whether a `with_clause` wrapper is present.
+    """
     for item in child_node.named_children:
         if item.type == "with_item":
-            alias = item.child_by_field_name("alias")
-            if alias:
-                _harvest_pattern(alias, out)
+            _harvest_with_item(item, out)
+        elif item.type == "with_clause":
+            for sub in item.named_children:
+                if sub.type == "with_item":
+                    _harvest_with_item(sub, out)
     body = child_node.child_by_field_name("body")
     if body:
         _collect_assigned_names(body, out)

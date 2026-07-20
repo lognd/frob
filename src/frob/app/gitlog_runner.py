@@ -1,4 +1,3 @@
-# frob:waive TEST005 reason="module line coverage 0.0%, debt T-0160"
 from __future__ import annotations
 
 from pathlib import Path
@@ -8,7 +7,6 @@ from frob.gitlog import git_log
 
 
 # frob:doc docs/modules/app.md#runners
-# frob:waive TEST005 reason="run 0.0% branch cover, debt T-0160"
 def run(cfg: AppConfig) -> None:
     root = cfg.gitlog_path or Path(".")
     result = git_log(

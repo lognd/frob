@@ -438,8 +438,14 @@ validation and vocabulary stay in Python.
   5th `transitive` flag per edge (T-0282) marks a TERMINAL edge when
   `false`: its `dst` is discovered (one hop always succeeds) but never
   enqueued for further expansion, so it cannot become a middle link in a
-  longer chain -- `std.krb`'s non-transitive domain trusts (docs/strata/
-  krb.md#domain-trust-lattice) are the first consumer.
+  longer chain. Two Python-side flow attrs feed this flag
+  (`_facts.py::_NON_TRANSITIVE_ATTRS`): `std.krb`'s non-transitive domain
+  trusts (docs/strata/krb.md#domain-trust-lattice), the first consumer,
+  and the general-purpose surface marker `flow ... { utility; }` (T-0226)
+  for a utility/hub edge -- e.g. a shared logging import -- whose relaying
+  is not itself a meaningful transitive link, so a real `noflow` claim can
+  survive it without weakening the closure for any edge that is NOT
+  explicitly marked.
 - `worst_age` -- SCC-condensation longest-path DP; positive cycles return
   +inf plus the cycle witness.
 - `demand` -- plain declared inbound-rate aggregation (superseded by

@@ -3,7 +3,7 @@
 
 Network is MOCKED throughout -- `_nvd.fetch_cwe_for_cve` is monkeypatched
 or exercised purely against a pre-seeded `.frob/vet.db` cache, mirroring
-`test_vet.py::TestQuarantine`'s `_registry.fetch_publish_date` monkeypatch
+`test_vet.py::TestQuarantine`'s `_registry._fetch_publish_date` monkeypatch
 idiom. No test in this file makes a real network call.
 """
 

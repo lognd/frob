@@ -5,16 +5,18 @@ method visibility are kept here; the shared token/span/doc mechanism lives
 in `_common.py`. TSX reuses this walker unchanged.
 """
 
+# frob:waive REF002 reason="private per-language walker imported only by its sibling aggregator frob.lang._extract; a single inbound anchor is intentional for a language-dispatch leaf module, T-0450"  # noqa: E501
+
 from __future__ import annotations
 
 from tree_sitter import Node
 
 from frob.lang._common import (
     _body_skip,
+    _leading_doc_comment,
+    _leaf_tokens,
+    _span_of,
     child_text,
-    leading_doc_comment,
-    leaf_tokens,
-    span_of,
 )
 from frob.lang._models import RawSymbol, SymbolKind
 
@@ -49,9 +51,9 @@ def _function_symbol(
         qualname=".".join((*stack, name)),
         kind=SymbolKind.METHOD if stack else SymbolKind.FUNCTION,
         public=exported or bool(stack),
-        span=span_of(raw_child),
-        sig_tokens=leaf_tokens(node, _COMMENT_TYPES, _body_skip(body)),
-        body_tokens=leaf_tokens(body, _COMMENT_TYPES),
+        span=_span_of(raw_child),
+        sig_tokens=_leaf_tokens(node, _COMMENT_TYPES, _body_skip(body)),
+        body_tokens=_leaf_tokens(body, _COMMENT_TYPES),
         doc_text=doc,
     )
 
@@ -68,8 +70,8 @@ def _class_symbol(
         qualname=".".join((*stack, name)),
         kind=SymbolKind.CLASS,
         public=exported,
-        span=span_of(raw_child),
-        sig_tokens=leaf_tokens(node, _COMMENT_TYPES, _body_skip(body)),
+        span=_span_of(raw_child),
+        sig_tokens=_leaf_tokens(node, _COMMENT_TYPES, _body_skip(body)),
         body_tokens=(),
         doc_text=doc,
     )
@@ -92,9 +94,9 @@ def _method_symbol(
         qualname=".".join((*stack, name)),
         kind=SymbolKind.METHOD,
         public=access == "public",
-        span=span_of(raw_child),
-        sig_tokens=leaf_tokens(node, _COMMENT_TYPES, _body_skip(body)),
-        body_tokens=leaf_tokens(body, _COMMENT_TYPES),
+        span=_span_of(raw_child),
+        sig_tokens=_leaf_tokens(node, _COMMENT_TYPES, _body_skip(body)),
+        body_tokens=_leaf_tokens(body, _COMMENT_TYPES),
         doc_text=doc,
     )
 
@@ -116,8 +118,8 @@ def _const_symbol(
         qualname=name,
         kind=SymbolKind.CONST,
         public=exported,
-        span=span_of(raw_child),
-        sig_tokens=leaf_tokens(node, _COMMENT_TYPES),
+        span=_span_of(raw_child),
+        sig_tokens=_leaf_tokens(node, _COMMENT_TYPES),
         body_tokens=(),
         doc_text=doc,
     )
@@ -134,8 +136,8 @@ def _type_symbol(
         qualname=name,
         kind=SymbolKind.TYPE,
         public=exported,
-        span=span_of(raw_child),
-        sig_tokens=leaf_tokens(node, _COMMENT_TYPES),
+        span=_span_of(raw_child),
+        sig_tokens=_leaf_tokens(node, _COMMENT_TYPES),
         body_tokens=(),
         doc_text=doc,
     )
@@ -145,7 +147,7 @@ def _visit(container: Node, stack: tuple[str, ...], symbols: list[RawSymbol]) ->
     """Recursive descent appending TypeScript symbols under `container`."""
     for raw_child in container.children:
         node, exported = _unwrap(raw_child)
-        doc = leading_doc_comment(raw_child, _COMMENT_TYPES)
+        doc = _leading_doc_comment(raw_child, _COMMENT_TYPES)
         if node.type == "function_declaration":
             _append(symbols, _function_symbol(node, raw_child, stack, exported, doc))
         elif node.type == "class_declaration":

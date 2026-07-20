@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING
 from typani import Err, Ok
 from typani.result import Result
 
+from frob.excludes import iter_files
 from frob.gates._models import Severity, Violation
 from frob.logging import get_logger
 
@@ -35,8 +36,8 @@ from frob.vet import (
     _source,
     _typosquat,
 )
-from frob.vet._allow import load_vet_config
-from frob.vet._lockfile import find_lockfile, parse_lockfile
+from frob.vet._allow import _load_vet_config
+from frob.vet._lockfile import _find_lockfile, _parse_lockfile
 from frob.vet._models import (
     Dependency,
     PackageVerdict,
@@ -55,7 +56,8 @@ def _artifact_hash(source_dir: Path, *, max_files: int = 500) -> str:
     """sha256 over sorted (relpath, content) pairs -- the content address the
     verdict cache keys on (docs/modules/vet.md "Verdict cache")."""
     digest = hashlib.sha256()
-    files = sorted(p for p in source_dir.rglob("*") if p.is_file())[:max_files]
+    # frob:ticket T-0471
+    files = sorted(iter_files(source_dir))[:max_files]
     for path in files:
         try:
             digest.update(path.relative_to(source_dir).as_posix().encode("utf-8"))
@@ -87,7 +89,7 @@ def _quarantine_violation(
 ) -> Violation | None:
     """VET011: ERROR if newly published within the cooldown window, WARN if
     the publish date could not be verified (never a hard block offline)."""
-    lookup = _registry.fetch_publish_date(
+    lookup = _registry._fetch_publish_date(
         dep.ecosystem,
         dep.name,
         dep.version,
@@ -135,6 +137,9 @@ def _vet001_violation(
     )
 
 
+# frob:waive DUP001 reason="dup grouped this with frob.gates's \
+# _doc001_orphan purely on generic Violation(...)-builder shape; different \
+# gate family (dependency-vet vs doc-graph), unrelated rules"
 def _vet004_violation(
     dep: Dependency, lockfile_name: str, signals: list[str]
 ) -> Violation:
@@ -199,7 +204,7 @@ def _vet003_violation(
     artifact_hash: str,
 ) -> Violation | None:
     """VET003: a version bump that adds a capability vs the stored verdict."""
-    previous = _cache.latest_verdict(cache_path, dep.ecosystem, dep.name)
+    previous = _cache._latest_verdict(cache_path, dep.ecosystem, dep.name)
     if previous is None or previous.artifact_hash == artifact_hash:
         return None
     current = PackageVerdict(
@@ -262,12 +267,12 @@ def _capability_and_fingerprint_signals(
     signals: list[str] = []
     violations: list[Violation] = []
 
-    observed, decode_to_exec = _capability.scan_directory_capabilities(source_dir)
+    observed, decode_to_exec = _capability._scan_directory_capabilities(source_dir)
     capabilities = set(observed)
     if decode_to_exec:
         signals.append("decode-to-exec")
 
-    obfuscation_signals = _obfuscation.scan_directory_obfuscation(source_dir)
+    obfuscation_signals = _obfuscation._scan_directory_obfuscation(source_dir)
     signals.extend(obfuscation_signals)
     if obfuscation_signals or decode_to_exec:
         violations.append(_vet004_violation(dep, lockfile_name, signals))
@@ -277,7 +282,7 @@ def _capability_and_fingerprint_signals(
     # below) when a dependency's source matches a canonical vulnerable-
     # usage-class needle, independent of whether the dependency's PINNED
     # VERSION has a filed osv advisory (VET005's join).
-    fingerprint_matches = _capability.scan_directory_fingerprints(source_dir)
+    fingerprint_matches = _capability._scan_directory_fingerprints(source_dir)
     if fingerprint_matches:
         signals.append("cve-fingerprint")
         violations.append(_vet006_violation(dep, lockfile_name, fingerprint_matches))
@@ -289,9 +294,9 @@ def _ecosystem_rules(
 ) -> list[Violation]:
     """Ecosystem-specific rule violations (pypi/cargo) for `dep`."""
     if dep.ecosystem == "pypi":
-        return list(_ecosystem.python_rules(dep, source_dir, lockfile_name))
+        return list(_ecosystem._python_rules(dep, source_dir, lockfile_name))
     if dep.ecosystem == "cargo":
-        return list(_ecosystem.rust_rules(dep, source_dir, lockfile_name))
+        return list(_ecosystem._rust_rules(dep, source_dir, lockfile_name))
     return []
 
 
@@ -306,7 +311,7 @@ def _store_verdict_if_hashed(
     `source_dir` produced a real artifact hash."""
     if not artifact_hash:
         return
-    _cache.store_verdict(
+    _cache._store_verdict(
         cache_path,
         PackageVerdict(
             name=dep.name,
@@ -331,7 +336,7 @@ def _prehook_violations(
         if quarantine_v.severity is Severity.ERROR:
             signals.append("quarantined")
 
-    typosquat_of = _typosquat.find_typosquat(dep.ecosystem, dep.name)
+    typosquat_of = _typosquat._find_typosquat(dep.ecosystem, dep.name)
     if typosquat_of is not None:
         violations.append(
             Violation(
@@ -396,7 +401,7 @@ def _apply_npm_and_prehook_checks(
     prehook quarantine/typosquat violations into `violations`/`signals`,
     in place."""
     if dep.ecosystem == "npm":
-        js_violation = _ecosystem.npm_non_registry_rule(dep, lockfile.name)
+        js_violation = _ecosystem._npm_non_registry_rule(dep, lockfile.name)
         if js_violation is not None:
             violations.append(js_violation)
 
@@ -420,7 +425,7 @@ def _scan_located_source(
 ) -> None:
     """Locate `dep`'s source and, if found, scan it, folding results (in
     place) into `capabilities`/`signals`/`violations`."""
-    source_dir = _source.locate_source(root, dep.ecosystem, dep.name, dep.version)
+    source_dir = _source._locate_source(root, dep.ecosystem, dep.name, dep.version)
     if source_dir is None:
         signals.append("source-unavailable")
         _log.info(
@@ -629,7 +634,7 @@ def _lifecycle_violations(
     """VET-JS: node_modules lifecycle scripts not covered by [vet.allow]."""
     violations: list[Violation] = []
     skipped: list[str] = []
-    hooks = _lifecycle.scan_lifecycle_scripts(root)
+    hooks = _lifecycle._scan_lifecycle_scripts(root)
     if not (root / "node_modules").is_dir():
         skipped.append("VET-JS: no node_modules present")
     allow = dict(cfg.allow)
@@ -657,9 +662,9 @@ def _osv_violations(
     """VET005: osv-scanner advisories, or a skipped-note when unavailable/off."""
     if not cfg.osv:
         return [], ["VET005: osv disabled ([vet].osv = false)"]
-    if not _osv.is_available():
+    if not _osv._is_available():
         return [], ["VET005: osv-scanner not on PATH"]
-    advisories = _osv.run_osv_scan(lockfile)
+    advisories = _osv._run_osv_scan(lockfile)
     if advisories is None:
         return [], ["VET005: osv-scanner invocation failed"]
     violations: list[Violation] = []
@@ -699,7 +704,7 @@ def _resolve_lockfile_and_deps(
 ) -> Result[tuple[Path, tuple[Dependency, ...], Path, VetConfig, Path], VetError]:
     """Locate `root`'s lockfile, parse its dependencies, and resolve the
     project root + `[vet]` config + cache path `scan_tree` needs."""
-    lockfile = find_lockfile(root)
+    lockfile = _find_lockfile(root)
     if lockfile is None:
         _log.warning(
             "vet: no supported lockfile (uv.lock, package-lock.json, "
@@ -708,18 +713,18 @@ def _resolve_lockfile_and_deps(
         )
         return Err(VetError.LockfileUnsupported)
 
-    parsed = parse_lockfile(lockfile)
+    parsed = _parse_lockfile(lockfile)
     if parsed.is_err:
         return Err(parsed.danger_err)
     deps = parsed.danger_ok
     _log.info("vet: scanning %d dependency(ies) from %s", len(deps), lockfile)
 
-    # T-0221: `root` may itself be a lockfile path (find_lockfile returns it
+    # T-0221: `root` may itself be a lockfile path (_find_lockfile returns it
     # directly). Project-relative lookups (config, cache) need the
     # containing directory, never the lockfile path itself.
     project_root = root if root.is_dir() else lockfile.parent
 
-    cfg = load_vet_config(project_root)
+    cfg = _load_vet_config(project_root)
     cache_path = project_root / _CACHE_REL
     if not cfg.present:
         _log.info("vet: no [vet] section; advisory-only mode")

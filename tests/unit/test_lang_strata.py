@@ -91,13 +91,13 @@ class TestParseStrata:
 
     def test_comments_bind_following_symbol(self) -> None:
         # frob:tests src/frob/lang/_walk_strata.py::walk_strata kind="unit"
-        # frob:tests src/frob/lang/_common.py::find_following_symbol kind="unit"
+        # frob:tests src/frob/lang/_common.py::_find_following_symbol kind="unit"
         pf = parse_file(_LITMUS).danger_ok
         assert any(c.following == "chirp.tweets" for c in pf.comments)
 
     def test_comment_inside_a_block_binds_as_enclosing(self, tmp_path: Path) -> None:
         # frob:tests src/frob/lang/_walk_strata.py::walk_strata kind="unit"
-        # frob:tests src/frob/lang/_common.py::find_enclosing_symbol kind="unit"
+        # frob:tests src/frob/lang/_common.py::_find_enclosing_symbol kind="unit"
         src = (
             "module m\n"
             "node n : trusted {\n"

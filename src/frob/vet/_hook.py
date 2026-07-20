@@ -16,7 +16,7 @@ from pathlib import Path
 
 from frob.logging import get_logger
 from frob.vet import _registry, _typosquat
-from frob.vet._allow import load_vet_config
+from frob.vet._allow import _load_vet_config
 from frob.vet._models import HookVerdict, VetConfig
 
 _log = get_logger(__name__)
@@ -184,7 +184,7 @@ def _parse_install_tokens(
 
 
 def _unverified_lookup_verdict(
-    ecosystem: str, name: str, lookup: _registry.RegistryResult
+    ecosystem: str, name: str, lookup: _registry._RegistryResult
 ) -> HookVerdict | None:
     """An `unverified` `HookVerdict` if the publish-date lookup failed or
     found nothing, else None (caller proceeds to the age check)."""
@@ -216,7 +216,7 @@ def _quarantine_verdict(
 ) -> HookVerdict:
     """Registry publish-date verdict: unverified / not-found / quarantine / ok."""
     lookup_version = version or _registry.LATEST_VERSION
-    lookup = _registry.fetch_publish_date(
+    lookup = _registry._fetch_publish_date(
         ecosystem,
         name,
         lookup_version,
@@ -237,7 +237,7 @@ def _quarantine_verdict(
 def _age_based_verdict(
     ecosystem: str,
     name: str,
-    lookup: _registry.RegistryResult,
+    lookup: _registry._RegistryResult,
     age_days: int,
     quarantine_days: int,
 ) -> HookVerdict:
@@ -269,10 +269,10 @@ def check_package(
     ecosystem: str, name: str, version: str, *, root: Path
 ) -> HookVerdict:
     """Quarantine + typosquat check for one not-yet-installed package."""
-    cfg = load_vet_config(root)
+    cfg = _load_vet_config(root)
     cache_path = root / _CACHE_REL
 
-    typosquat_of = _typosquat.find_typosquat(ecosystem, name)
+    typosquat_of = _typosquat._find_typosquat(ecosystem, name)
     if typosquat_of is not None:
         msg = f"{name}: possible typosquat of {typosquat_of}"
         _log.warning("vet: hook: BLOCK %s", msg)

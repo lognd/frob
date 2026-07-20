@@ -1,4 +1,3 @@
-# frob:waive TEST005 reason="module line coverage 0.0%, debt T-0160"
 from __future__ import annotations
 
 import argparse
@@ -64,7 +63,6 @@ def _report_mismatches(mismatches, as_json: bool, root: Path) -> None:
 
 
 # frob:doc docs/modules/app.md#runners
-# frob:waive TEST005 reason="run 0.0% branch cover, debt T-0160"
 def run(argv=None):
     args = _build_bind_parser().parse_args(argv)
 

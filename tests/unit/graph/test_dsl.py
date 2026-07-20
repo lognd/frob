@@ -62,6 +62,8 @@ class TestContinuation:
         assert len(malformed) == 1
         assert malformed[0].line == 2
 
+    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an \
+    # arrange-act scaffold; extracting would obscure per-case intent"
     def test_join_uses_empty_string_not_space(self, tmp_path: Path) -> None:
         # No space is inserted at the join point -- a continuation that
         # wants a space must put it before the trailing backslash. Here the
@@ -78,6 +80,8 @@ class TestContinuation:
         assert not malformed
         assert edges[0].attrs["reason"] == "leftright"
 
+    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an \
+    # arrange-act scaffold; extracting would obscure per-case intent"
     def test_three_line_continuation(self, tmp_path: Path) -> None:
         # Continuation folds across more than one hop.
         src = (
@@ -105,6 +109,8 @@ class TestContinuation:
         assert len(edges) == 1
         assert edges[0].attrs["reason"] == "known issue"
 
+    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an \
+    # arrange-act scaffold; extracting would obscure per-case intent"
     def test_dangling_backslash_on_last_comment_line_is_literal(
         self, tmp_path: Path
     ) -> None:
@@ -135,6 +141,8 @@ class TestContinuation:
         assert edges[0].attrs["reason"] == "crlf safe"
         assert "\r" not in edges[0].attrs["reason"]
 
+    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an \
+    # arrange-act scaffold; extracting would obscure per-case intent"
     def test_verb_agnostic_multiline_tests_directive(self, tmp_path: Path) -> None:
         # Continuation folding is not waive-specific -- prove it also works
         # for frob:tests.
@@ -213,6 +221,8 @@ class TestNoqaTail:
     """A directive sharing a physical line with a linter-suppression comment
     (`# noqa: ...`) must still parse, not be dropped as malformed (T-0309)."""
 
+    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an \
+    # arrange-act scaffold; extracting would obscure per-case intent"
     def test_waive_with_trailing_noqa_parses(self, tmp_path: Path) -> None:
         # frob:tests src/frob/graph/dsl.py::_parse_attrs
         src = (
@@ -227,6 +237,8 @@ class TestNoqaTail:
         assert edges[0].target == "RULE-1"
         assert edges[0].attrs["reason"] == "x"
 
+    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an \
+    # arrange-act scaffold; extracting would obscure per-case intent"
     def test_tests_with_trailing_bare_noqa_binds(self, tmp_path: Path) -> None:
         # frob:tests src/frob/graph/dsl.py::_parse_attrs
         src = (

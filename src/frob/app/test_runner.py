@@ -195,10 +195,36 @@ def _run_selected_and_report(cfg: AppConfig, report, runners, root: Path) -> Non
         sys.exit(1)
 
 
+def _refresh_collection(root: Path) -> None:
+    """`frob test --collect`: drop the pytest collection cache and re-collect
+    from scratch (T-0333). The honest escape hatch for the rare case the
+    native-build fingerprint cannot cover; normally the fingerprint
+    invalidates the cache automatically on a native rebuild."""
+    from frob.testing import collect_python_tests, drop_collection_cache
+
+    dropped = drop_collection_cache(root)
+    _log.info("frob test --collect: cache %s", "dropped" if dropped else "absent")
+    collected = collect_python_tests(root)
+    if collected.is_err:
+        _log.error("frob test --collect: %s", collected.danger_err)
+        sys.exit(1)
+    tests = collected.danger_ok
+    print(f"frob test --collect: collected {len(tests.node_ids)} node id(s)")
+    for spec in tests.missing_natives:
+        print(
+            f"  warning: native extension {spec.name!r} not built "
+            f"(run: {spec.build_cmd}); its tests are absent from collection"
+        )
+
+
 # frob:waive TEST005 reason="run 0.0% branch cover, debt T-0160"
 def run(cfg: AppConfig) -> None:
     """Compute the touched set (or run everything with --all) and run the tests."""
     root = _resolve_test_root(cfg)
+
+    if cfg.test_collect:
+        _refresh_collection(root)
+        return
 
     if cfg.test_fuzz:
         _run_fuzz(root)

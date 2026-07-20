@@ -7,7 +7,7 @@ import sys
 
 from frob.logging import get_logger, quiet_stdout_logs
 from frob.logging.color import paint, should_color
-from frob.logging.filter import BelowLevelFilter
+from frob.logging.filter import _BelowLevelFilter
 
 
 def test_get_logger_returns_named_logger():
@@ -18,8 +18,8 @@ def test_get_logger_returns_named_logger():
 
 
 def test_below_level_filter():
-    # frob:tests src/frob/logging/filter.py::BelowLevelFilter.filter kind="unit"
-    f = BelowLevelFilter("WARNING")
+    # frob:tests src/frob/logging/filter.py::_BelowLevelFilter.filter kind="unit"
+    f = _BelowLevelFilter("WARNING")
     info_record = logging.LogRecord("x", logging.INFO, __file__, 1, "msg", (), None)
     warn_record = logging.LogRecord("x", logging.WARNING, __file__, 1, "msg", (), None)
     assert f.filter(info_record) is True

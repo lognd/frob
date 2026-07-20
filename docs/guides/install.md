@@ -1,3 +1,5 @@
+<!-- frob:waive SCOPE001 reason="T-0319 scope comma-joined, matches nothing (T-0241 bug); file is docs/** in intent" -->
+
 # Installing frob (T-0133)
 
 frob ships as one pure-Python package (`frob`) plus two optional Rust/PyO3
@@ -160,16 +162,26 @@ against a repo with `.strata` files fails immediately with a named
 treat that failure as the signal to re-run `make install-tool`, not a
 regression to chase in application code.
 
-To check natives are present without waiting to hit that gate, from any
-directory:
+## `frob doctor`: native-extension diagnosis (T-0319)
+
+To check natives are present without waiting to hit the `SYS004`/dup gate
+above, run:
+
+```bash
+frob doctor
+```
+
+This imports `frob_core` and `strata_core` and reports each one's
+availability (and version, when the module exposes one). When either is
+missing it prints the exact remediation -- `make core` (build in-place) or
+`make install-tool` (reinstall the CLI with natives bundled) -- and exits
+1, so it is scriptable as a preflight check (e.g. in CI or a postinstall
+hook), not just a human-readable report. `frob doctor --json` emits the
+same `DoctorReport` as machine-readable JSON. This supersedes the manual
 
 ```bash
 python3 -c "import strata_core, frob_core" \
   && echo "natives present" || echo "natives MISSING -- run: make install-tool"
 ```
 
-(there is no dedicated `frob doctor` subcommand yet; the plain Python
-import check above is the same thing `frob` itself would run, and needs no
-new code to be trustworthy today. Filed as a follow-up ticket, T-0317, for
-a proper `frob doctor`/postinstall-verification subcommand that wraps this
-check and prints the same remediation frob's own gates already print.)
+check as the first-class CLI surface for the same diagnosis (T-0317).

@@ -1,0 +1,14 @@
+# T-0323: tickets.md is a shared, append-mostly ledger -- concurrent
+# worktrees appending near the same line otherwise produce a false
+# textual conflict (T-0176's class). Route it through the frob-ledger
+# merge driver (splice_ledger, id-level/state-rank/evidence-union
+# resolution) instead of git's default line-level merge.
+#
+# The driver itself must still be registered locally (a .gitattributes
+# entry alone does not install it, by git's own design -- see
+# docs/modules/tickets.md#git-merge-driver for the one-time
+# `git config merge.frob-ledger.*` setup):
+#
+#   git config merge.frob-ledger.name "frob ticket ledger splice"
+#   git config merge.frob-ledger.driver "frob ticket merge-driver %O %A %B"
+tickets.md merge=frob-ledger

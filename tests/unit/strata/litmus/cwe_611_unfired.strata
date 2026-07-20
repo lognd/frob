@@ -1,0 +1,26 @@
+// cwe_611_unfired.strata -- T-0189 (T-0153 review follow-up) per-CWE
+// litmus, design-finding fixture: CWE-611 (Improper Restriction of XML
+// External Entity Reference) is cataloged with `capability_kind=None`
+// (`_threat.py::CWE_CATALOG`'s own comment: "a parser-configuration
+// precondition -- an XML parser resolving a DOCTYPE-declared external
+// entity, not a `may` atom KIND the charter's capability-instantiation
+// table lists"). No `may` atom can ever drag this obligation in -- the
+// same structural gap as CWE-22/CWE-352/CWE-798 (docs/strata/threat.md
+// #the-litmus-coverage-cwe-22352798-never-fire-by-design, now extended
+// to CWE-611). This fixture models a foreign caller reaching a
+// document-parsing node precisely to prove the negative: THREAT003
+// reports ZERO CWE-611 obligations here. No hardened twin: there is
+// nothing to discharge when nothing fires.
+//
+// tested end to end (parse -> elaborate -> check_discharge_completeness)
+// by tests/unit/strata/test_litmus_cwe.py, which asserts this NON-firing
+// explicitly rather than skipping the id.
+
+module cwe_611_unfired
+
+node client : foreign { clearance Public; }
+node xml_parser : trusted {
+    clearance Internal;
+}
+
+flow f_upload : client -> xml_parser { label Public; }

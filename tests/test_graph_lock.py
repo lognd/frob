@@ -95,6 +95,75 @@ class TestAckDrift:
         assert dangling.edge.kind.value == "describes"
         assert "src/a.py::Widget.draw" in dangling.candidates
 
+    def test_bare_describes_target_to_nonexistent_symbol_is_dangling(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/lock.py::drift
+        # G3 (T-0402): `markdown_anchors` accepts a BARE (no `::`) symref in
+        # `<!-- frob:describes ... -->`, so a doc anchor can point at a
+        # symbol that never existed. `_vanished_endpoint`'s old
+        # `"::" in edge.target` guard skipped bare targets entirely -- this
+        # doc silently "described" nothing and `drift` reported zero
+        # dangling. Reverting the `EdgeKind.DESCRIBES`-via-`resolve()`
+        # branch makes `report.dangling` empty again.
+        _write(tmp_path, "src/a.py", _WIDGET_PY)
+        _write(
+            tmp_path,
+            "docs/x.md",
+            "# X\n\n<!-- frob:describes does_not_exist -->\n",
+        )
+        cache = tmp_path / ".frob" / "cache.db"
+        snap = build_graph(tmp_path, cache).danger_ok
+        report = drift(load_lock(tmp_path / "frob.lock").danger_ok, snap)
+        assert len(report.dangling) == 1
+        assert report.dangling[0].edge.target == "does_not_exist"
+
+    def test_acknowledge_records_every_describes_facet(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/lock.py::acknowledge
+        # G11 (T-0402): two DESCRIBES anchors on the same symbol under
+        # different facets (`sig` and `doc`) used to collapse to only the
+        # FIRST facet found (`_facet_for_ref`, singular) -- the second
+        # facet's contract could drift with no `DRIFT001` signal because it
+        # was never acked at all. Reverting to the singular-facet lookup
+        # makes `acked.entries` length 1 instead of 2.
+        _write(tmp_path, "src/a.py", _WIDGET_PY)
+        _write(
+            tmp_path,
+            "docs/x.md",
+            "# X\n\n"
+            "<!-- frob:describes src/a.py::Widget.render sig -->\n"
+            "<!-- frob:describes src/a.py::Widget.render doc -->\n",
+        )
+        cache = tmp_path / ".frob" / "cache.db"
+        snap = build_graph(tmp_path, cache).danger_ok
+        ref = "src/a.py::Widget.render"
+        lock = load_lock(tmp_path / "frob.lock").danger_ok
+        acked = acknowledge(lock, snap, [ref]).danger_ok
+        facets = {e.facet for e in acked.entries}
+        assert facets == {"sig", "doc"}
+
+    def test_acknowledge_skips_meaningless_body_facet_on_class(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/lock.py::acknowledge
+        # G5 (T-0402): `digest.py`'s `body` facet is a constant empty-tuple
+        # hash for class/const/type symbols (they have no body_tokens), so
+        # acking `body` on a class can never observe drift. Reverting the
+        # `_BODY_FACET_MEANINGLESS_KINDS` skip makes this record a `body`
+        # entry for the class ref.
+        _write(tmp_path, "src/a.py", _WIDGET_PY)
+        _write(
+            tmp_path,
+            "docs/x.md",
+            "# X\n\n<!-- frob:describes src/a.py::Widget body -->\n",
+        )
+        cache = tmp_path / ".frob" / "cache.db"
+        snap = build_graph(tmp_path, cache).danger_ok
+        ref = "src/a.py::Widget"
+        lock = load_lock(tmp_path / "frob.lock").danger_ok
+        acked = acknowledge(lock, snap, [ref]).danger_ok
+        assert acked.entries == ()
+
     def test_acknowledge_unknown_ref_is_err(self, tmp_path: Path) -> None:
         snap = self._snapshot(tmp_path)
         lock = load_lock(tmp_path / "frob.lock").danger_ok

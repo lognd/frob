@@ -85,6 +85,10 @@ class TestElaborateScenario:
         assert trust_rewrite.level == "foreign"
 
     # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
+    # frob:waive DUP001 reason="parallel test fixtures across 2 sibling \
+    # test file(s) (3 sites) sharing an arrange-act scaffold typical of \
+    # exhaustive per-case/per-scenario coverage; extracting would obscure \
+    # per-case intent"
     def test_fails_closed_on_unknown_rewrite_target(self):
         text = """
         module m
@@ -129,6 +133,10 @@ class TestEvaluateScenarios:
         assert all(isinstance(s, ScenarioResult) for s in scenarios)
 
     # frob:tests src/frob/strata/_scenarios.py::evaluate_scenarios kind="unit"
+    # frob:waive DUP001 reason="parallel test methods within \
+    # test_scenarios.py (3 sites) sharing an arrange-act scaffold typical \
+    # of exhaustive per-case coverage; extracting would obscure per-case \
+    # intent"
     def test_remove_node_cascades_to_flows_and_boundaries(self):
         text = """
         module m
@@ -153,6 +161,10 @@ class TestEvaluateScenarios:
         assert scenario_result.results[0].verdict is Verdict.REFUTED
 
     # frob:tests src/frob/strata/_scenarios.py::evaluate_scenarios kind="unit"
+    # frob:waive DUP001 reason="parallel test methods within \
+    # test_scenarios.py (3 sites) sharing an arrange-act scaffold typical \
+    # of exhaustive per-case coverage; extracting would obscure per-case \
+    # intent"
     def test_scale_rate_multiplies_declared_rate(self):
         text = """
         module m
@@ -193,6 +205,10 @@ class TestEvaluateScenarios:
         assert result.danger_err is StrataError.UnratedFlow
 
     # frob:tests src/frob/strata/_scenarios.py::evaluate_scenarios kind="unit"
+    # frob:waive DUP001 reason="parallel test methods within \
+    # test_scenarios.py (3 sites) sharing an arrange-act scaffold typical \
+    # of exhaustive per-case coverage; extracting would obscure per-case \
+    # intent"
     def test_set_trust_reassigns_node_trust(self):
         text = """
         module m

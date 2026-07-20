@@ -11,6 +11,17 @@ out of scope (VET006-VET010, most of VET-C, dynamic detonation).
 
 from __future__ import annotations
 
+from frob.vet._capability import (
+    is_self_pattern_path,
+    language_for,
+    scan_file_capabilities,
+)
+from frob.vet._capability_registry import capability_matrix
+from frob.vet._closedworld import (
+    closed_world_accounting,
+    resolve_import,
+    walk_python_imports,
+)
 from frob.vet._containment import (
     CONTAINED,
     LIVE,
@@ -32,8 +43,10 @@ from frob.vet._cve import (
 )
 from frob.vet._hook import check_package, parse_hook_command
 from frob.vet._models import (
+    ClosedWorldAccounting,
     Dependency,
     HookVerdict,
+    ImportResolution,
     PackageVerdict,
     VetConfig,
     VetError,
@@ -50,6 +63,7 @@ __all__ = [
     "LIVE",
     "UNMODELED",
     "UNVERIFIED",
+    "ClosedWorldAccounting",
     "ContainmentFinding",
     "ContainmentReport",
     "CveMatch",
@@ -57,6 +71,7 @@ __all__ = [
     "CweLink",
     "Dependency",
     "HookVerdict",
+    "ImportResolution",
     "MatchStatus",
     "NvdResult",
     "OsvAdvisory",
@@ -67,13 +82,20 @@ __all__ = [
     "Violation",
     "build_containment_report",
     "capability_diff",
+    "capability_matrix",
     "check_package",
+    "closed_world_accounting",
     "cve_ids",
     "fetch_cwe_for_cve",
     "find_importing_nodes",
+    "is_self_pattern_path",
+    "language_for",
     "link_cwe_ids",
     "match_dependencies_against_mirror",
     "parse_hook_command",
     "render_containment_report",
+    "resolve_import",
+    "scan_file_capabilities",
     "scan_tree",
+    "walk_python_imports",
 ]

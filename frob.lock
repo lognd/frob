@@ -6,7 +6,7 @@
       "ref": "src/frob/gates/__init__.py::active_ticket"
     },
     {
-      "digest": "dc87a4a200a735beae29ae8f435a50e9cbbcd4db3ed8a2c5bdcb9ff25a1df2c8",
+      "digest": "29cc2c8355bdb951639a289ff5bcfe685af759b8b30c63ea402966835d88d8ba",
       "facet": "sig",
       "ref": "src/frob/gates/__init__.py::coverage_gate"
     },
@@ -186,7 +186,7 @@
       "ref": "src/frob/tickets/__init__.py::load_queue"
     },
     {
-      "digest": "cc53a261c161b3d120dedb38c7fff4cf692460efc84466cb7aa62507b6c77717",
+      "digest": "8312328748bdfe956b33796a10ac3dd01aac842baf66fca4a8242f64e431b1a6",
       "facet": "sig",
       "ref": "src/frob/tickets/__init__.py::new_ticket"
     },
@@ -196,7 +196,7 @@
       "ref": "src/frob/tickets/__init__.py::record_failure"
     },
     {
-      "digest": "4c852b04e4012a118e82a72d400a6f894a01ddacdb335e2edf32043a992d0723",
+      "digest": "29733ec2d6214f39cd26c3eb43be4f75fc365a13eec06b694caebedb4609ca71",
       "facet": "sig",
       "ref": "src/frob/tickets/__init__.py::transition"
     },

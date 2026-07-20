@@ -15,7 +15,13 @@ below rather than silently passing). Three ids (CWE-22/CWE-352/CWE-798)
 are cataloged with `capability_kind=None` and structurally can never fire
 under `_fired_obligations`/`_entries_by_capability_kind` -- a design
 finding documented in docs/strata/threat.md and asserted explicitly here
-as a non-firing fixture, never a skip.
+as a non-firing fixture, never a skip. T-0345 (2025 CWE Top 25 bump)
+added `CWE-639` to the union catalog, reusing `cwe_89_vuln.strata`/
+`cwe_89_hardened.strata` (SAME `sql` capability join CWE-89 already fires
+on, disclosed reuse not a near-duplicate fixture) -- CWE-200 was
+considered but classified `OutOfScopeEntry` instead (matching
+docs/design/registry/weaknesses.yaml's independent disposition sweep),
+so it needs no litmus fixture at all.
 """
 
 from __future__ import annotations
@@ -35,6 +41,10 @@ from frob.strata._threat import (
 )
 
 
+# frob:waive DUP001 reason="parallel litmus scenario fixtures: 7 sites \
+# across 7 file(s) sharing the exhaustiveness-fixture arrange-act shape by \
+# design (store-backed vs non-store-backed, or per-CWE scenario variants); \
+# extracting would obscure per-scenario intent"
 def _repo_root() -> Path:
     """Walk up from this file until a directory containing `frob.toml` is found."""
     here = Path(__file__).resolve()
@@ -74,6 +84,8 @@ _FIRING_FIXTURES: dict[str, tuple[str, str] | None] = {
     "CWE-352": None,
     "CWE-798": None,
     "CWE-94": ("cwe_exec_vuln.strata", "runner"),
+    "CWE-611": None,
+    "CWE-639": ("cwe_89_vuln.strata", "db"),
 }
 
 #: cwe id -> (hardened filename, node id) mirroring `_FIRING_FIXTURES` for
@@ -86,6 +98,7 @@ _HARDENED_FIXTURES: dict[str, tuple[str, str]] = {
     "CWE-502": ("cwe_502_hardened.strata", "worker"),
     "CWE-922": ("cwe_922_hardened.strata", "app"),
     "CWE-94": ("cwe_exec_hardened.strata", "runner"),
+    "CWE-639": ("cwe_89_hardened.strata", "db"),
 }
 
 #: cwe id -> non-firing fixture filename for the `capability_kind=None`
@@ -94,6 +107,7 @@ _UNFIRED_FIXTURES: dict[str, str] = {
     "CWE-22": "cwe_22_unfired.strata",
     "CWE-352": "cwe_352_unfired.strata",
     "CWE-798": "cwe_798_unfired.strata",
+    "CWE-611": "cwe_611_unfired.strata",
 }
 
 

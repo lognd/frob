@@ -1,5 +1,5 @@
 """Unit-level coverage for `std.host`'s attr-desugar/read-back pair
-(T-0255, `src/frob/strata/_host.py`): `host_attrs` (desugar) and
+(T-0255, `src/frob/strata/_host.py`): `_host_attrs` (desugar) and
 `host_manifest_for` (read-back) against hand-built values, mirroring the
 `_pii.py::node_pii_tags` precedent's unit-test shape. End-to-end
 parse -> elaborate coverage lives in `test_litmus_host.py`.
@@ -14,16 +14,16 @@ from frob.strata._host import (
     HostManifest,
     HostOwns,
     HostPlatform,
-    host_attrs,
+    _host_attrs,
     host_manifest_for,
 )
 from frob.strata._models import Node
 
 
 class TestHostAttrs:
-    # frob:tests src/frob/strata/_host.py::host_attrs kind="unit"
+    # frob:tests src/frob/strata/_host.py::_host_attrs kind="unit"
     def test_desugars(self):
-        attrs = host_attrs(
+        attrs = _host_attrs(
             runs_as="api-svc",
             is_unit=True,
             owns=(("/etc/api", "0644"), ("/var/lib/api", "0750")),
@@ -38,10 +38,30 @@ class TestHostAttrs:
             "listens=8443",
         )
 
-    # frob:tests src/frob/strata/_host.py::host_attrs kind="unit"
+    # frob:tests src/frob/strata/_host.py::_host_attrs kind="unit"
     def test_no_clauses_desugars_to_empty(self):
-        attrs = host_attrs(runs_as=None, is_unit=False, owns=(), listens=())
+        attrs = _host_attrs(runs_as=None, is_unit=False, owns=(), listens=())
         assert attrs == ()
+
+    # frob:tests src/frob/strata/_host.py::_host_attrs kind="unit"
+    def test_desugars_group_and_sudoers(self):
+        """T-0272: `group`/`sudoers` desugar to `group=`/`sudoers=` attrs,
+        one per entry, appended after owns/listens (same declaration-order
+        convention `_host_attrs` uses throughout)."""
+        attrs = _host_attrs(
+            runs_as="api-svc",
+            is_unit=False,
+            owns=(),
+            listens=(),
+            group=("deploy", "docker"),
+            sudoers=("ALL=(root) NOPASSWD: /bin/systemctl restart api",),
+        )
+        assert attrs == (
+            "runs_as=api-svc",
+            "group=deploy",
+            "group=docker",
+            "sudoers=ALL=(root) NOPASSWD: /bin/systemctl restart api",
+        )
 
 
 class TestHostManifest:
@@ -64,11 +84,42 @@ class TestHostManifest:
         assert manifest.is_unit is True
         assert manifest.owns == (HostOwns(path="/etc/api", mode="0644"),)
         assert manifest.listens == (8080,)
+        assert manifest.group == ()
+        assert manifest.sudoers == ()
 
     # frob:tests src/frob/strata/_host.py::host_manifest_for kind="unit"
     def test_node_with_no_host_attrs_returns_none(self):
         node = Node(id="api", trust="trusted", attrs=("code=src/**",))
         assert host_manifest_for(node) is None
+
+    # frob:tests src/frob/strata/_host.py::host_manifest_for kind="unit"
+    def test_reads_group_and_sudoers(self):
+        """T-0272: `group=`/`sudoers=` attrs read back into
+        `HostManifest.group`/`.sudoers`."""
+        node = Node(
+            id="api",
+            trust="trusted",
+            attrs=(
+                "runs_as=api-svc",
+                "group=deploy",
+                "group=docker",
+                "sudoers=ALL=(root) NOPASSWD: /bin/systemctl restart api",
+            ),
+        )
+        manifest = host_manifest_for(node)
+        assert manifest is not None
+        assert manifest.group == ("deploy", "docker")
+        assert manifest.sudoers == ("ALL=(root) NOPASSWD: /bin/systemctl restart api",)
+
+    # frob:tests src/frob/strata/_host.py::host_manifest_for kind="unit"
+    def test_group_only_declares_manifest(self):
+        """A node declaring ONLY `group` (no runs_as/unit/owns/listens)
+        still yields a manifest -- `declared` tracks any std.host attr,
+        not just the pre-T-0272 four."""
+        node = Node(id="api", trust="trusted", attrs=("group=deploy",))
+        manifest = host_manifest_for(node)
+        assert manifest is not None
+        assert manifest.group == ("deploy",)
 
 
 class TestHostOwnsModeValidation:

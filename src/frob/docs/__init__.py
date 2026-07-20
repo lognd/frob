@@ -98,7 +98,7 @@ def extract_docstrings(path: Path, symbol: str | None = None) -> list[Docstring]
     """Every python docstring in `path` (module, class, function, method).
 
     Rebuilt on top of `frob.lang.parse_file`'s `RawSymbol.doc_text` -- that
-    field is already whitespace-collapsed (`_common.collapse_ws`), so the
+    field is already whitespace-collapsed (`_common._collapse_ws`), so the
     `text` returned here is a single-line rendering rather than the old
     tree-sitter walker's multi-line, quote-stripped one. `frob.docs` only
     ever displays or greps this text, never round-trips it, so the shape

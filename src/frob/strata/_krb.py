@@ -132,7 +132,7 @@ class KrbManifest(BaseModel):
 
 # frob:doc docs/strata/krb.md#surface-grammar
 # frob:tests tests/unit/strata/test_krb.py::TestKrbAttrs.test_desugars kind="unit"
-def krb_attrs(
+def _krb_attrs(
     *,
     realm: str | None,
     is_kdc: bool,
@@ -144,7 +144,7 @@ def krb_attrs(
     """Desugar parsed std.krb node clauses into `Node.attrs` strings.
 
     The ONE encoding `_elaborate.py::_elaborate_node` calls, mirroring
-    `_host.py::host_attrs`'s shared-encoding role (charter law 5: no
+    `_host.py::_host_attrs`'s shared-encoding role (charter law 5: no
     duplication). `trusts` entries are `(target, direction, transitive)`
     triples, matching `KrbTrustDecl`'s field order.
     """

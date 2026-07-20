@@ -350,7 +350,7 @@ class TestCov003CmdEvidence:
         snap = _snapshot(tmp_path)
         diff = Diff(base="x", hunks=())
         tests = CollectedTests(node_ids=frozenset())
-        violations = coverage_gate(snap, queue, diff, tests)
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert not any(v.rule == "COV003" for v in violations)
 
     def test_bug_kind_ticket_with_hand_pasted_cmd_entry_fails_cov003(
@@ -370,7 +370,7 @@ class TestCov003CmdEvidence:
         snap = _snapshot(tmp_path)
         diff = Diff(base="x", hunks=())
         tests = CollectedTests(node_ids=frozenset())
-        violations = coverage_gate(snap, queue, diff, tests)
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         cov003 = [v for v in violations if v.rule == "COV003"]
         assert len(cov003) == 1
         assert "cmd:" in cov003[0].message
@@ -390,7 +390,7 @@ class TestCov003CmdEvidence:
         snap = _snapshot(tmp_path)
         diff = Diff(base="x", hunks=())
         tests = CollectedTests(node_ids=frozenset())
-        violations = coverage_gate(snap, queue, diff, tests)
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert any(v.rule == "COV003" for v in violations)
 
 

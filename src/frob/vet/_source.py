@@ -25,6 +25,7 @@ _log = get_logger(__name__)
 def _candidate_uv_cache_dirs() -> tuple[Path, ...]:
     """Plausible uv/pip wheel-cache roots, cheapest-first."""
     dirs = []
+    # frob:waive SEC110 reason="UV_CACHE_DIR is a local cache dir path, not a secret"
     uv_cache = os.environ.get("UV_CACHE_DIR")
     if uv_cache:
         dirs.append(Path(uv_cache))
@@ -38,8 +39,8 @@ def _normalize_py_name(name: str) -> str:
 
 
 # frob:doc docs/modules/vet.md#public-api
-# frob:waive TEST005 reason="locate_pypi_source 73.3% branch cover, debt T-0160"
-def locate_pypi_source(root: Path, name: str, version: str) -> Path | None:
+# frob:waive TEST005 reason="_locate_pypi_source 73.3% branch cover, debt T-0160"
+def _locate_pypi_source(root: Path, name: str, version: str) -> Path | None:
     """A directory containing `name`'s Python source, or `None`.
 
     Checked in order: any `.venv/lib/*/site-packages/<name>` under `root`,
@@ -64,7 +65,7 @@ def locate_pypi_source(root: Path, name: str, version: str) -> Path | None:
 
 
 # frob:doc docs/modules/vet.md#public-api
-def locate_npm_source(root: Path, name: str) -> Path | None:
+def _locate_npm_source(root: Path, name: str) -> Path | None:
     """A directory containing `name`'s JS/TS source under `node_modules/`."""
     candidate = root / "node_modules" / name
     if candidate.is_dir():
@@ -75,8 +76,8 @@ def locate_npm_source(root: Path, name: str) -> Path | None:
 
 
 # frob:doc docs/modules/vet.md#public-api
-# frob:waive TEST005 reason="locate_cargo_source 55.6% branch cover, debt T-0160"
-def locate_cargo_source(name: str, version: str) -> Path | None:
+# frob:waive TEST005 reason="_locate_cargo_source 55.6% branch cover, debt T-0160"
+def _locate_cargo_source(name: str, version: str) -> Path | None:
     """A directory containing `name`'s Rust source under `~/.cargo/registry/src`."""
     registry_root = Path.home() / ".cargo" / "registry" / "src"
     if not registry_root.is_dir():
@@ -91,22 +92,22 @@ def locate_cargo_source(name: str, version: str) -> Path | None:
 
 
 # frob:doc docs/modules/vet.md#public-api
-# frob:waive TEST005 reason="locate_source 71.4% branch cover, debt T-0160"
-def locate_source(root: Path, ecosystem: str, name: str, version: str) -> Path | None:
+# frob:waive TEST005 reason="_locate_source 71.4% branch cover, debt T-0160"
+def _locate_source(root: Path, ecosystem: str, name: str, version: str) -> Path | None:
     """Dispatch to the ecosystem-appropriate local-cache source locator."""
     if ecosystem == "pypi":
-        return locate_pypi_source(root, name, version)
+        return _locate_pypi_source(root, name, version)
     if ecosystem == "npm":
-        return locate_npm_source(root, name)
+        return _locate_npm_source(root, name)
     if ecosystem == "cargo":
-        return locate_cargo_source(name, version)
+        return _locate_cargo_source(name, version)
     _log.debug("vet: no source locator for ecosystem=%s", ecosystem)
     return None
 
 
 __all__ = [
-    "locate_cargo_source",
-    "locate_npm_source",
-    "locate_pypi_source",
-    "locate_source",
+    "_locate_cargo_source",
+    "_locate_npm_source",
+    "_locate_pypi_source",
+    "_locate_source",
 ]

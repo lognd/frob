@@ -3,8 +3,6 @@
 # frob:ticket T-0021
 """
 
-# frob:waive TEST005 reason="module line coverage 0.0%, debt T-0160"
-
 from __future__ import annotations
 
 import sys
@@ -21,7 +19,6 @@ __all__ = ["run"]
 
 # frob:ticket T-0021
 # frob:doc docs/modules/app.md#runners
-# frob:waive TEST005 reason="run 0.0% branch cover, debt T-0160"
 def run(cfg: AppConfig) -> None:
     """Dispatch to `frob perf profile` or `frob perf heat`."""
     match cfg.perf_command:

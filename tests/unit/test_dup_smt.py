@@ -1,4 +1,4 @@
-"""Unit tests for frob.dup._pipeline.probe_smt_equivalence (docs/modules/dup.md's R7).
+"""Unit tests for frob.dup._pipeline._probe_smt_equivalence (docs/modules/dup.md's R7).
 
 `z3-solver` is optional (`frob[smt]`) and not installed in every dev/CI
 environment, so this file always exercises the honest degrade path
@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 
 from frob.dup._models import DupError
-from frob.dup._pipeline import probe_smt_equivalence
+from frob.dup._pipeline import _probe_smt_equivalence
 from frob.graph._models import GraphSnapshot
 
 try:
@@ -28,11 +28,11 @@ def _empty_snapshot() -> GraphSnapshot:
     return GraphSnapshot(root=".", symbols={}, edges=())
 
 
-# frob:tests src/frob/dup/_pipeline.py::probe_smt_equivalence kind="unit"
+# frob:tests src/frob/dup/_pipeline.py::_probe_smt_equivalence kind="unit"
 def test_degrades_to_smt_unavailable_without_z3(monkeypatch: pytest.MonkeyPatch):
     if HAS_Z3:
         pytest.skip("z3-solver is installed; this exercises the absent-dep path")
-    result = probe_smt_equivalence("a", "b", _empty_snapshot())
+    result = _probe_smt_equivalence("a", "b", _empty_snapshot())
     assert result.is_err
     assert result.err == DupError.SmtUnavailable
 
@@ -51,7 +51,7 @@ def test_proves_equivalent_bounded_functions(tmp_path: Path):
     snapshot = build_graph(tmp_path, tmp_path / "cache").danger_ok
     a = next(r for r in snapshot.symbols if "double_a" in r)
     b = next(r for r in snapshot.symbols if "double_b" in r)
-    result = probe_smt_equivalence(a, b, snapshot)
+    result = _probe_smt_equivalence(a, b, snapshot)
     assert result.is_ok, result.err
     assert result.danger_ok.equivalent is True
 
@@ -69,7 +69,7 @@ def test_finds_counterexample_for_non_equivalent_functions(tmp_path: Path):
     snapshot = build_graph(tmp_path, tmp_path / "cache").danger_ok
     a = next(r for r in snapshot.symbols if "inc_a" in r)
     b = next(r for r in snapshot.symbols if "inc_b" in r)
-    result = probe_smt_equivalence(a, b, snapshot)
+    result = _probe_smt_equivalence(a, b, snapshot)
     assert result.is_ok, result.err
     assert result.danger_ok.equivalent is False
     assert result.danger_ok.counterexample

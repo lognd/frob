@@ -1,0 +1,49 @@
+# frob:used-by src/frob/gates/_registry_exhaustiveness.py
+# pii.yaml -- PII-category registry (section-granular)
+# source doc: docs/design/secrets-pii-corpus.md
+schema_version: 1
+total: 7
+entries:
+  - id: "SEC-PII-PII-GDPR_SPECIAL_CATEGORIES"
+    total_items: 8
+    sourcing: "verified"
+    source_doc: "docs/design/secrets-pii-corpus.md"
+    disposition: "deferred:T-0430"
+    cross_refs: []
+  - id: "SEC-PII-PII-CCPA_CATEGORIES"
+    total_items: 11
+    sourcing: "verified"
+    source_doc: "docs/design/secrets-pii-corpus.md"
+    disposition: "deferred:T-0430"
+    cross_refs: []
+  - id: "SEC-PII-PII-HIPAA_SAFE_HARBOR_IDENTIFIERS"
+    total_items: 18
+    sourcing: "verified_against_regulation_text"
+    source_doc: "docs/design/secrets-pii-corpus.md"
+    disposition: "deferred:T-0430"
+    cross_refs: []
+  - id: "SEC-PII-PII-PCI_DSS_GLOSSARY_TERMS"
+    total_items: 5
+    sourcing: "verified"
+    source_doc: "docs/design/secrets-pii-corpus.md"
+    disposition: "deferred:T-0430"
+    cross_refs: []
+  - id: "SEC-PII-PII-NIST_800_122_DEFINITION"
+    total_items: 1
+    sourcing: "verified"
+    source_doc: "docs/design/secrets-pii-corpus.md"
+    disposition: "deferred:T-0430"
+    cross_refs: []
+  - id: "SEC-PII-PII-DETECTABLE_SHAPES_CROSSMAP"
+    total_items: 17
+    sourcing: "verified"
+    source_doc: "docs/design/secrets-pii-corpus.md"
+    disposition: "deferred:T-0430"
+    cross_refs: []
+  - id: "SEC-PII-PII-STD_PII_CATEGORY_RECONCILIATION"
+    total_items: 7
+    sourcing: "verified"
+    source_doc: "docs/design/secrets-pii-corpus.md"
+    disposition: "deferred:T-0351"
+    cross_refs: []
+total_sections: 7

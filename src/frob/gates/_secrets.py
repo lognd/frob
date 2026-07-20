@@ -78,7 +78,7 @@ _FAKE_MARKER = "frob:secret-fake"
 _PLACEHOLDER_WORDS = ("fake", "changeme", "example", "placeholder")
 _PLACEHOLDER_RUN_RE = re.compile(r"(x{4,}|\*{4,})", re.IGNORECASE)
 #: Placeholder PHRASES (as opposed to single words above) -- T-0219: a
-#: fixture like `xoxb-your-slack-token-here` reads as an obvious template
+#: fixture like `xoxb-your-...-here` reads as an obvious template
 #: to a human but contains none of `_PLACEHOLDER_WORDS`. Matched
 #: case-insensitively against the token text, same as `_PLACEHOLDER_WORDS`.
 #:
@@ -95,7 +95,7 @@ _PLACEHOLDER_PHRASE_RE = re.compile(r"(-here\b|\byour-|\binsert-)", re.IGNORECAS
 #: Whole-token ANCHOR (T-0219 bypass fix): a known template *shape* --
 #: short provider-ish prefix, then `your-`/`insert-`, then more words,
 #: ending in `-here` -- matched with `fullmatch` against the ENTIRE token,
-#: never a substring. Catches `xoxb-your-slack-token-here`,
+#: never a substring. Catches `xoxb-your-...-here`,
 #: `sk-insert-api-key-here`, etc. without needing every placeholder word
 #: enumerated, and without ever matching a token that has anything else
 #: (digits, unrelated suffix) tacked on after the template.
@@ -419,7 +419,7 @@ ALL_PROVIDERS: frozenset[str] = frozenset(p.provider for p in _PATTERNS)
 
 # frob:doc docs/modules/gates.md#public-api
 # frob:tests tests/test_secrets_gate.py::TestRedact.test_never_returns_the_token
-def redact(token: str, display_prefix: str) -> str:
+def _redact(token: str, display_prefix: str) -> str:
     """`<prefix>... (<N> chars)` -- the ONLY representation of a matched
     token this module (or any caller) may print, log, or persist."""
     return f"{display_prefix}... ({len(token)} chars)"
@@ -428,7 +428,7 @@ def redact(token: str, display_prefix: str) -> str:
 #: Shannon-entropy floor (bits/char over alnum chars) below which a
 #: digit-free, single-case token is judged "human template prose" rather
 #: than a real secret's random tail (T-0219 round 3 bypass fix). Calibrated
-#: against the repo's own fixtures: `xoxb-insert-your-real-token` (an
+#: against the repo's own fixtures: `xoxb-insert-...-token` (an
 #: existing, intentionally-suppressed legit placeholder) sits at ~3.64
 #: bits/char; the reviewer's adversarial digit-free "real" tokens -- an
 #: `sk-live-insert-` prefix glued to a near-unique-letter run (~4.32
@@ -547,7 +547,7 @@ def _secret_violation(
     pattern: _SecretPattern, token: str, rel_path: str, index: int
 ) -> Violation:
     """The SEC001 `Violation` for one real-looking-token hit at 1-based `index + 1`."""
-    redacted = redact(token, pattern.display_prefix)
+    redacted = _redact(token, pattern.display_prefix)
     _log.warning(
         "%s: %s (%s) real-looking token at %s:%d",
         pattern.rule,
@@ -638,7 +638,7 @@ def secrets_gate(root: Path) -> tuple[Violation, ...]:
     """SEC001/SEC002/SEC003 (docs/modules/gates.md#rule-catalog): every
     git-tracked file scanned for real-looking provider credentials, plus a
     standalone check for a tracked `.env`. Never touches untracked files
-    (git ls-files only) and never echoes a matched token -- see `redact`."""
+    (git ls-files only) and never echoes a matched token -- see `_redact`."""
     root = Path(root)
     violations: list[Violation] = []
     scanned = 0
@@ -664,6 +664,6 @@ def secrets_gate(root: Path) -> tuple[Violation, ...]:
 __all__ = [
     "ALL_PROVIDERS",
     "CRITICAL_PROVIDERS",
-    "redact",
+    "_redact",
     "secrets_gate",
 ]

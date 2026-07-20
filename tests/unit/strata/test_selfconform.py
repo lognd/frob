@@ -28,9 +28,11 @@ from frob.strata._effects import _KIND_MAP
 from frob.strata._errors import StrataError
 from frob.strata._selfconform import (
     _EXTENDED_KINDS,
+    _dedupe_sys100_extended_against_core,
     _observed_extended_kinds_by_node,
     _sorted_capability_files,
 )
+from frob.strata._selfconform import SelfConformViolation as _SCV
 from frob.strata._waive import STALE_WAIVER_RULE
 from frob.vet._capability import _PATTERNS, SCANNED_LANGUAGES, language_for
 from frob.vet._capability_registry import LANGUAGES
@@ -47,6 +49,9 @@ class TestUndeclaredInterfaceCore:
     `check_capability_conformance` (docs/strata/selfconform.md#the-three-rules)."""
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
+    # per-rule/per-case coverage sharing an arrange-act shape typical of \
+    # thorough boundary testing; extracting would obscure per-case intent"
     def test_core_undeclared_interface_fires(self, tmp_path: Path):
         _write(
             tmp_path, "src/frob/widget/_io.py", "import requests\nrequests.get('x')\n"
@@ -64,6 +69,9 @@ class TestUndeclaredInterfaceCore:
         assert any(v.node == "widget" and "net" in v.detail for v in hit)
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
+    # per-rule/per-case coverage sharing an arrange-act shape typical of \
+    # thorough boundary testing; extracting would obscure per-case intent"
     def test_core_undeclared_interface_discharges_once_declared(self, tmp_path: Path):
         _write(
             tmp_path, "src/frob/widget/_io.py", "import requests\nrequests.get('x')\n"
@@ -90,6 +98,9 @@ class TestUndeclaredInterfaceExtended:
     structurally cannot see (docs/strata/selfconform.md#the-three-rules)."""
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
+    # per-rule/per-case coverage sharing an arrange-act shape typical of \
+    # thorough boundary testing; extracting would obscure per-case intent"
     def test_extended_undeclared_interface_fires(self, tmp_path: Path):
         _write(tmp_path, "src/frob/widget/_io.py", "x = compile('1', '<s>', 'eval')\n")
         model = KernelModel(
@@ -105,6 +116,9 @@ class TestUndeclaredInterfaceExtended:
         assert any(v.node == "widget" and "eval" in v.detail for v in hit)
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
+    # per-rule/per-case coverage sharing an arrange-act shape typical of \
+    # thorough boundary testing; extracting would obscure per-case intent"
     def test_extended_undeclared_interface_discharges_once_declared(
         self, tmp_path: Path
     ):
@@ -126,6 +140,101 @@ class TestUndeclaredInterfaceExtended:
         )
 
 
+class TestUndeclaredInterfaceCrossPassDedup:
+    """T-0266: `_core_undeclared_violations` and `_extended_kind_violations`
+    are independent SYS100 producers joined against the same `(node,
+    capability)` space -- a capability observed by BOTH passes must
+    surface as ONE finding, not two."""
+
+    def test_dedupe_helper_drops_extended_when_core_already_reports_same_site(self):
+        """Unit-level: the merge helper itself, isolated from any real
+        scan -- two `SelfConformViolation`s sharing `(node, capability)`,
+        one from each pass, collapse to zero surviving extended entries
+        (core is kept whole by the caller, `_collect_sys_violations`)."""
+        core = [
+            _SCV(
+                rule=SYS_UNDECLARED_INTERFACE,
+                node="widget",
+                detail="capability 'net' observed at src/frob/widget/_io.py:2 "
+                "but not declared",
+                capability="net",
+            )
+        ]
+        extended = [
+            _SCV(
+                rule=SYS_UNDECLARED_INTERFACE,
+                node="widget",
+                detail="capability 'net' observed but not declared",
+                capability="net",
+            )
+        ]
+        assert _dedupe_sys100_extended_against_core(core, extended) == []
+
+    def test_dedupe_helper_keeps_distinct_node_or_capability_sites(self):
+        """A distinct `(node, capability)` pair on the extended side is
+        never dropped -- only an exact `(node, capability)` match against
+        core is filtered."""
+        core = [
+            _SCV(
+                rule=SYS_UNDECLARED_INTERFACE,
+                node="widget",
+                detail="capability 'net' observed but not declared",
+                capability="net",
+            )
+        ]
+        extended = [
+            _SCV(
+                rule=SYS_UNDECLARED_INTERFACE,
+                node="widget",
+                detail="capability 'eval' observed but not declared",
+                capability="eval",
+            ),
+            _SCV(
+                rule=SYS_UNDECLARED_INTERFACE,
+                node="other",
+                detail="capability 'net' observed but not declared",
+                capability="net",
+            ),
+        ]
+        assert _dedupe_sys100_extended_against_core(core, extended) == extended
+
+    # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    def test_same_site_observed_by_both_passes_yields_one_finding(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
+        """End-to-end via `check_self_conformance`: widen `_EXTENDED_KINDS`
+        to also cover `net` (simulating the kind-vocabulary drift the
+        helper's docstring warns about -- `_KIND_MAP`/`_EXTENDED_KINDS`
+        are not today statically enforced disjoint) so ONE real `requests.
+        get` site is genuinely observed by BOTH `_core_undeclared_
+        violations` (THREAT004 delegate) and `_extended_kind_violations`
+        for the SAME `(node, capability)`. Asserts exactly one SYS100
+        finding survives, not two."""
+        import frob.strata._selfconform as selfconform_mod
+
+        monkeypatch.setattr(
+            selfconform_mod, "_EXTENDED_KINDS", frozenset({"net", *_EXTENDED_KINDS})
+        )
+        _write(
+            tmp_path, "src/frob/widget/_io.py", "import requests\nrequests.get('x')\n"
+        )
+        model = KernelModel(
+            nodes=(
+                Node(id="widget", trust="trusted", attrs=("code=src/frob/widget/**",)),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        hits = [
+            v
+            for v in result.danger_ok.violations
+            if v.rule == SYS_UNDECLARED_INTERFACE
+            and v.node == "widget"
+            and v.capability == "net"
+        ]
+        assert len(hits) == 1
+
+
 class TestUndeclaredInterfaceFsReadAlias:
     """T-0304 follow-up: the `fs`/`fs-read` backward-compat alias only
     covered SYS101 (stale design); SYS100 (undeclared interface) still
@@ -136,6 +245,9 @@ class TestUndeclaredInterfaceFsReadAlias:
     (docs/strata/selfconform.md#fs-read-fs-write)."""
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
+    # per-rule/per-case coverage sharing an arrange-act shape typical of \
+    # thorough boundary testing; extracting would obscure per-case intent"
     def test_broad_fs_declaration_discharges_read_only_observation(
         self, tmp_path: Path
     ):
@@ -168,6 +280,9 @@ class TestUndeclaredInterfaceFsReadAlias:
         )
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
+    # per-rule/per-case coverage sharing an arrange-act shape typical of \
+    # thorough boundary testing; extracting would obscure per-case intent"
     def test_narrow_fs_read_declaration_does_not_cover_fs_read(self, tmp_path: Path):
         """A node that already declares `may "fs-read"` directly is
         unaffected by the alias (it never needed it): a read-only
@@ -229,6 +344,9 @@ class TestUndeclaredInterfaceFsReadAlias:
 
 class TestStaleDesign:
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
+    # per-rule/per-case coverage sharing an arrange-act shape typical of \
+    # thorough boundary testing; extracting would obscure per-case intent"
     def test_stale_design_fires(self, tmp_path: Path):
         """A `may` capability declared for a node never observed in its
         `code=`-bound files is SYS101."""
@@ -268,6 +386,9 @@ class TestStaleDesign:
         assert not any(v.rule == SYS_STALE_DESIGN for v in result.danger_ok.violations)
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
+    # per-rule/per-case coverage sharing an arrange-act shape typical of \
+    # thorough boundary testing; extracting would obscure per-case intent"
     def test_legacy_fs_declaration_discharges_on_read_only_observation(
         self, tmp_path: Path
     ):
@@ -298,6 +419,9 @@ class TestStaleDesign:
         assert not any(v.rule == SYS_STALE_DESIGN for v in result.danger_ok.violations)
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
+    # per-rule/per-case coverage sharing an arrange-act shape typical of \
+    # thorough boundary testing; extracting would obscure per-case intent"
     def test_fs_read_declaration_discharges_on_read_only_observation(
         self, tmp_path: Path
     ):
@@ -536,6 +660,9 @@ class TestNonPythonLanguageWiring:
         )
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
+    # per-rule/per-case coverage sharing an arrange-act shape typical of \
+    # thorough boundary testing; extracting would obscure per-case intent"
     def test_typescript_stale_design_fires(self, tmp_path: Path):
         """`may=("fetch_url",)` declared on a node whose `code=`-bound `.ts`
         file never calls `fetch`/etc. is SYS101 for a non-Python language,
@@ -597,6 +724,9 @@ class TestCoreUndeclaredInterfaceNonPython:
     superset as SYS100-extended/SYS101."""
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
+    # per-rule/per-case coverage sharing an arrange-act shape typical of \
+    # thorough boundary testing; extracting would obscure per-case intent"
     def test_typescript_core_net_undeclared_fires(self, tmp_path: Path):
         """A `.ts` file calling `axios.get(...)` (raw `net`, THREAT004's
         core delegated kind) with no `may` declaration is SYS100, and NOT
@@ -623,6 +753,9 @@ class TestCoreUndeclaredInterfaceNonPython:
         assert not any(v.rule == SYS_UNMODELED_CODE for v in violations)
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
+    # per-rule/per-case coverage sharing an arrange-act shape typical of \
+    # thorough boundary testing; extracting would obscure per-case intent"
     def test_typescript_core_net_discharges_once_declared(self, tmp_path: Path):
         """The same `axios.get(...)` fixture with `may=("net",)` declared
         produces no SYS100 for `net` -- proves the TS core-kind scan
@@ -651,6 +784,9 @@ class TestCoreUndeclaredInterfaceNonPython:
         )
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
+    # per-rule/per-case coverage sharing an arrange-act shape typical of \
+    # thorough boundary testing; extracting would obscure per-case intent"
     def test_rust_core_exec_undeclared_fires(self, tmp_path: Path):
         """A `.rs` file calling `Command::new(...).spawn()` (raw `exec`)
         with no `may` declaration is SYS100, and NOT also a spurious
@@ -677,6 +813,9 @@ class TestCoreUndeclaredInterfaceNonPython:
         assert not any(v.rule == SYS_UNMODELED_CODE for v in violations)
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
+    # per-rule/per-case coverage sharing an arrange-act shape typical of \
+    # thorough boundary testing; extracting would obscure per-case intent"
     def test_rust_core_exec_discharges_once_declared(self, tmp_path: Path):
         """The same `Command::new(...).spawn()` fixture with
         `may=("exec",)` declared produces no SYS100 for `exec`."""
@@ -712,7 +851,12 @@ class TestLanguageCoverageDriftLock:
         coverage matrix). If a new language column is ever added to the
         registry without a matching `_EXT_LANGUAGE` extension entry (or
         vice versa), this fails immediately instead of that language
-        silently going unscanned the way TS/JS did before this ticket."""
+        silently going unscanned the way TS/JS did before this ticket.
+
+        T-0170 adds `kotlin` as a fully registry-backed language (its
+        `_DangerousOperation`/`_MatrixExcuse` entries live in
+        `_capability_registry.py` like every other language), so the lock
+        stays the strict equality it always was -- no carve-out."""
         assert SCANNED_LANGUAGES == frozenset(LANGUAGES)
 
     def test_language_for_is_consistent_with_scanned_languages(self):
@@ -727,6 +871,8 @@ class TestLanguageCoverageDriftLock:
             "a.rs": "rust",
             "a.c": "c-cpp",
             "a.cpp": "c-cpp",
+            "a.kt": "kotlin",
+            "a.kts": "kotlin",
         }
         for name, expected in samples.items():
             resolved = language_for(Path(name))

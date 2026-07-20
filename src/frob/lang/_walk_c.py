@@ -9,6 +9,7 @@ runs under `frob.check`'s thread pool).
 """
 
 # frob:waive TEST005 reason="module line coverage 69.9%, debt T-0160"
+# frob:waive REF002 reason="private per-language walker imported only by its sibling aggregator frob.lang._extract; a single inbound anchor is intentional for a language-dispatch leaf module, T-0450"  # noqa: E501
 
 from __future__ import annotations
 
@@ -18,10 +19,10 @@ from tree_sitter import Node
 
 from frob.lang._common import (
     _body_skip,
+    _leading_doc_comment,
+    _leaf_tokens,
+    _span_of,
     child_text,
-    leading_doc_comment,
-    leaf_tokens,
-    span_of,
 )
 from frob.lang._models import RawSymbol, SymbolKind
 
@@ -80,9 +81,9 @@ def _function_symbol(
         qualname=".".join((*stack, name)),
         kind=SymbolKind.METHOD if stack else SymbolKind.FUNCTION,
         public=public,
-        span=span_of(node),
-        sig_tokens=leaf_tokens(node, ctx.comment_types, skip),
-        body_tokens=leaf_tokens(body, ctx.comment_types) if body else (),
+        span=_span_of(node),
+        sig_tokens=_leaf_tokens(node, ctx.comment_types, skip),
+        body_tokens=_leaf_tokens(body, ctx.comment_types) if body else (),
         doc_text=doc,
     )
 
@@ -101,8 +102,8 @@ def _class_symbol(
         qualname=".".join((*stack, name)),
         kind=SymbolKind.CLASS,
         public=not _has_static(node),
-        span=span_of(node),
-        sig_tokens=leaf_tokens(node, ctx.comment_types, _body_skip(body)),
+        span=_span_of(node),
+        sig_tokens=_leaf_tokens(node, ctx.comment_types, _body_skip(body)),
         body_tokens=(),
         doc_text=doc,
     )
@@ -121,8 +122,8 @@ def _enum_symbol(
         qualname=".".join((*stack, name)),
         kind=SymbolKind.TYPE,
         public=True,
-        span=span_of(node),
-        sig_tokens=leaf_tokens(node, ctx.comment_types),
+        span=_span_of(node),
+        sig_tokens=_leaf_tokens(node, ctx.comment_types),
         body_tokens=(),
         doc_text=doc,
     )
@@ -149,8 +150,8 @@ def _type_symbol(ctx: _Ctx, node: Node, doc: str) -> RawSymbol | None:
         qualname=name,
         kind=SymbolKind.TYPE,
         public=True,
-        span=span_of(node),
-        sig_tokens=leaf_tokens(node, ctx.comment_types),
+        span=_span_of(node),
+        sig_tokens=_leaf_tokens(node, ctx.comment_types),
         body_tokens=(),
         doc_text=doc,
     )
@@ -178,8 +179,8 @@ def _const_symbol(ctx: _Ctx, node: Node, doc: str) -> RawSymbol | None:
         qualname=name,
         kind=SymbolKind.CONST,
         public=not _has_static(node),
-        span=span_of(node),
-        sig_tokens=leaf_tokens(node, ctx.comment_types),
+        span=_span_of(node),
+        sig_tokens=_leaf_tokens(node, ctx.comment_types),
         body_tokens=(),
         doc_text=doc,
     )
@@ -187,7 +188,7 @@ def _const_symbol(ctx: _Ctx, node: Node, doc: str) -> RawSymbol | None:
 
 def _dispatch(ctx: _Ctx, node: Node, stack: tuple[str, ...], cur_access: str) -> None:
     """Build and append the symbol(s) for one C/C++ child node."""
-    doc = leading_doc_comment(node, ctx.comment_types)
+    doc = _leading_doc_comment(node, ctx.comment_types)
     if node.type == "function_definition":
         ctx.symbols.append(_function_symbol(ctx, node, stack, cur_access, doc))
     elif node.type in ("class_specifier", "struct_specifier"):

@@ -45,7 +45,7 @@ class TestLandCLI:
             "--kind",
             "feature",
             "--scope",
-            "src/new_thing.py",
+            "src/new_thing.py,tests/test_new_thing.py",
             "--path",
             str(wt),
         )
@@ -60,14 +60,36 @@ class TestLandCLI:
         start_r = run("ticket", "start", ticket_id, "--path", str(wt))
         assert start_r.returncode == 0, start_r.stdout + start_r.stderr
 
-        # Hand-edit in evidence + a Done report (no pytest suite in this
-        # fixture repo for `frob ticket evidence` to collect against).
+        # T-0398 (D-01/D-05): land's post-merge re-verification now
+        # actually re-collects and re-runs evidence against the merged
+        # worktree tree -- a hand-edited, never-collected id (the old
+        # fixture's "no pytest suite ... to collect against" shortcut)
+        # would correctly FAIL land now. Give the worktree a REAL,
+        # actually-passing test and record it through the real
+        # `frob ticket evidence` command, so this test still proves what
+        # it always meant to prove (a clean dry run for genuinely-covered,
+        # passing, well-reported work), not the pre-D-05 shortcut.
+        (wt / "src" / "new_thing.py").write_text(
+            "def new_thing() -> int:\n    return 1\n"
+        )
+        (wt / "tests").mkdir(exist_ok=True)
+        (wt / "tests" / "test_new_thing.py").write_text(
+            "def test_new_thing() -> None:\n    assert True\n"
+        )
+        evidenced = run(
+            "ticket",
+            "evidence",
+            ticket_id,
+            "tests/test_new_thing.py::test_new_thing",
+            "--path",
+            str(wt),
+        )
+        assert evidenced.returncode == 0, evidenced.stdout + evidenced.stderr
+
         ledger = wt / "tickets.md"
         text = ledger.read_text()
-        text = text.replace("evidence: []", "evidence:\n- tests/x.py::test_ok")
         text += "\n## Done report\n\nsmoke\n"
         ledger.write_text(text)
-        (wt / "src" / "new_thing.py").write_text("# new\n")
         _git("add", "-A", cwd=wt)
         _git("commit", "-q", "-m", "cli land work", cwd=wt)
 

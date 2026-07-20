@@ -21,10 +21,12 @@ from __future__ import annotations
 import difflib
 import fnmatch
 import hashlib
+import os
 import re
 import time
 import tomllib
 from collections.abc import Callable, Sequence
+from concurrent.futures import Future, ProcessPoolExecutor, ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
 from typing import TypeVar
@@ -34,7 +36,7 @@ from typani import Err, Ok
 from typani.option import Nothing, Option, Some
 from typani.result import Result
 
-from frob.excludes import is_excluded, load_exclude_globs
+from frob.excludes import is_excluded, is_test_file, load_exclude_globs
 from frob.gates._arch import arch_gate
 from frob.gates._baseline import (
     delta_violations,
@@ -44,6 +46,7 @@ from frob.gates._baseline import (
     violation_fingerprint,
 )
 from frob.gates._coverage import load_coverage, load_stamp, stamp_coverage
+from frob.gates._docblocks import doc004_gate
 from frob.gates._models import (
     CoverageData,
     CoverageError,
@@ -58,8 +61,13 @@ from frob.gates._models import (
     Violation,
     WaiverRef,
 )
-from frob.gates._prework import load_prework, record_prework
+from frob.gates._pii_structural import pii_structural_gate
+from frob.gates._prework import load_prework, record_prework, sweep_ticket
+from frob.gates._refs import ref_gate
+from frob.gates._registry_exhaustiveness import registry_gate
 from frob.gates._secrets import secrets_gate
+from frob.gates._walk_lint import walk_lint_gate
+from frob.gates.decisions import DecisionError
 from frob.gates.invariants import Invariant, InvariantError, load_invariants
 from frob.gitio import Diff, Hunk, current_branch, run_argv, working_diff
 from frob.graph import (
@@ -71,6 +79,7 @@ from frob.graph import (
     edges_from,
     slugify,
 )
+from frob.graph._generated import is_generated_source
 from frob.graph._models import LockFile
 from frob.graph.lock import drift as _graph_drift
 from frob.graph.lock import load_lock
@@ -80,7 +89,12 @@ from frob.lang._walk_rust import _MACRO_SYMBOL_SUFFIX
 from frob.logging import get_logger
 from frob.testing import CollectedTests, collect_python_tests, collect_rust_tests
 from frob.tickets import Ticket, TicketQueue, TicketState, load_queue
-from frob.tickets._models import CMD_EVIDENCE_ALLOWED_KINDS, is_cmd_evidence
+from frob.tickets._models import (
+    CMD_EVIDENCE_ALLOWED_KINDS,
+    is_cmd_evidence,
+    matches_collected,
+    scope_matches,
+)
 from frob.tickets._provisional import is_draft_id, on_default_branch
 from frob.tickets._store import load_all as _tickets_load_all
 from frob.tickets._store import load_archive as _tickets_load_archive
@@ -207,17 +221,6 @@ def _is_test_path(path: str) -> bool:
     return "tests" in parts or name.startswith("test_") or name.endswith("_test.py")
 
 
-def _is_test_file(path: str) -> bool:
-    """True if `path` is itself a test file (documented duplicate of
-    `frob.testing._select._is_test_file`'s name/dir heuristic, not importable
-    in isolation since it is a private helper of that module)."""
-    pure = PurePosixPath(path)
-    if "tests" in pure.parts[:-1]:
-        return True
-    name = pure.stem
-    return name.startswith("test_") or name.endswith("_test")
-
-
 def _interface_package(path: str) -> str:
     """The interface unit a file belongs to: `src/<pkg>/<subpkg>` (or shorter)."""
     parts = PurePosixPath(path).parts
@@ -242,11 +245,11 @@ def _snake(name: str) -> str:
 
 def _evidence_collected(evidence: str, tests: CollectedTests) -> bool:
     """Exact node-id membership, or bare-function match for parametrized
-    tests (`f` satisfies evidence when only `f[param]` variants collect)."""
-    if evidence in tests.node_ids:
-        return True
-    prefix = evidence + "["
-    return any(node.startswith(prefix) for node in tests.node_ids)
+    tests (`f` satisfies evidence when only `f[param]` variants collect).
+    Thin wrapper over `frob.tickets._models.matches_collected` -- the
+    single shared implementation (D-11 dedupe; `frob.tickets.add_evidence`
+    used to carry an independent, hand-written copy of this exact rule)."""
+    return matches_collected(evidence, tests.node_ids)
 
 
 # frob:ticket T-0215
@@ -275,6 +278,99 @@ def _evidence_valid_for_ticket(
     return _evidence_collected(evidence, tests)
 
 
+# frob:ticket T-0398
+# frob:doc docs/modules/gates.md#public-api
+# frob:tests tests/test_evidence_integrity.py::TestD02ScopeBinding.test_evidence_covers_scope_true_for_bound_test  # noqa: E501
+def evidence_covers_scope(ticket: Ticket, snapshot: GraphSnapshot) -> bool:
+    """D-02: whether at least one of `ticket`'s non-cmd evidence ids binds
+    to a symbol/file under `ticket.scope`, via EITHER of two routes:
+
+    1. A `TESTS` edge: walks the same `TESTS`-edge graph
+       `frob.testing.select_tests` builds selections from, from the
+       evidence side -- for each evidence id, find the `TESTS` edge whose
+       test-side symref maps (via `_symref_to_nodeid`, honoring T-0137's
+       either-direction `frob:tests` convention) to that id, and check
+       whether the OTHER (source) side's file falls under `ticket.scope`.
+    2. The evidence id's OWN file is directly inside `ticket.scope` --
+       e.g. a ticket scoped to both its source AND its test file
+       (`scope: [src/foo.py, tests/test_foo.py]`, this repo's own common
+       convention, see T-0398's own ticket entry) needs no separate
+       `frob:tests` directive for its evidence to count as covering: the
+       human/agent already declared the test file itself in scope, which
+       is exactly as strong a binding signal as a graph edge would be.
+
+    Without either route, ANY collected pytest node id (however unrelated
+    to the ticket) satisfies close/land -- `frob ticket evidence
+    T-feature-x tests/test_logging.py::test_levels` closed T-feature-x
+    just as well as a real covering test.
+
+    A caller (today: `frob.app.ticket_runner`'s `_close`/`_land`, via
+    `_covers_scope_for_ticket`/`_land_covers_scope_fn`; see
+    `_done_transition_guard`'s `covers_scope` docstring for why it is
+    injected rather than automatic) computes this against a
+    `GraphSnapshot` and passes the result into
+    `frob.tickets.transition`/`land`'s `covers_scope` parameter.
+
+    A docs-kind ticket (T-0444) is exempt from the covering-TEST requirement:
+    its scope is documentation/data files with no coverable code symbols, and
+    T-0215 already sanctions it closing on a `--evidence-cmd` exit status. So
+    a ticket whose kind permits cmd evidence (`CMD_EVIDENCE_ALLOWED_KINDS`,
+    today just `docs`) and which carries at least one real cmd: evidence entry
+    is considered covered. Code kinds cannot carry cmd evidence (enforced by
+    `_transition_guard`/`_validate_closeable` against the same frozenset), so
+    this can never loophole a bug/feature/security ticket into closing on an
+    unrelated command."""
+    if ticket.kind in CMD_EVIDENCE_ALLOWED_KINDS and any(
+        is_cmd_evidence(evidence) for evidence in ticket.evidence
+    ):
+        return True
+    return any(
+        not is_cmd_evidence(evidence)
+        and (
+            _evidence_binds_to_scope(evidence, ticket.scope, snapshot)
+            or scope_matches(evidence.split("::", 1)[0], ticket.scope)
+        )
+        for evidence in ticket.evidence
+    )
+
+
+def _evidence_binds_to_scope(
+    evidence: str, scope: tuple[str, ...], snapshot: GraphSnapshot
+) -> bool:
+    """Whether `evidence` (a pytest/cargo node id) is the test-side of some
+    `TESTS` edge whose source-side symbol's file is covered by `scope`."""
+    for edge in snapshot.edges:
+        if edge.kind != EdgeKind.TESTS:
+            continue
+        for test_side, source_side in (
+            (edge.src, edge.target),
+            (edge.target, edge.src),
+        ):
+            if _node_id_matches_symref(
+                evidence, test_side
+            ) and _file_of_symref_in_scope(source_side, scope):
+                return True
+    return False
+
+
+def _node_id_matches_symref(evidence: str, symref: str) -> bool:
+    """Whether `evidence` (a pytest/cargo node id) is the test named by
+    `symref`: exact `_symref_to_nodeid` match (or its parametrize-expanded
+    form), or -- for a bare test FILE symref with no `::` -- the file
+    itself (or a path under it)."""
+    if "::" not in symref:
+        return evidence == symref or evidence.startswith(symref.rstrip("/") + "/")
+    node_id = _symref_to_nodeid(symref)
+    return evidence == node_id or evidence.startswith(node_id + "[")
+
+
+def _file_of_symref_in_scope(symref: str, scope: tuple[str, ...]) -> bool:
+    """Whether `symref`'s file (the part before `::`, or itself if bare)
+    is covered by `scope` (`scope_matches`)."""
+    path = symref.split("::", 1)[0]
+    return scope_matches(path, scope)
+
+
 # ---------------------------------------------------------------------------
 # TESTS-edge indexing
 # ---------------------------------------------------------------------------
@@ -288,6 +384,31 @@ def _test_edges(snapshot: GraphSnapshot, kind: str) -> dict[str, list[Edge]]:
         if edge.kind != EdgeKind.TESTS or edge.attrs.get("kind", "unit") != kind:
             continue
         result.setdefault(edge.target, []).append(edge)
+    return result
+
+
+def _unit_test_edges(snapshot: GraphSnapshot, kind: str) -> dict[str, list[Edge]]:
+    """`{tested_symref: [edges]}` for every TESTS edge of `kind`, indexed by
+    whichever endpoint names the tested symbol.
+
+    Two `frob:tests` conventions coexist in this codebase (docs/modules/
+    testing.md): a directive written above the SOURCE function names its
+    covering test as `target` (`src` is the source symbol itself), and a
+    directive written above/inside the TEST names what it covers as
+    `target` (`src` is the test). `_test001_002_one` looks up coverage by
+    the tested symbol's `record.symref`, which lands in `edge.src` for the
+    first convention and `edge.target` for the second -- a single
+    target-only (or src-only) index can only ever see one of the two,
+    silently dropping the other convention's explicit edges to the
+    naming-convention fallback (T-0336). Index both endpoints so a lookup
+    matches regardless of which convention was used."""
+    result: dict[str, list[Edge]] = {}
+    for edge in snapshot.edges:
+        if edge.kind != EdgeKind.TESTS or edge.attrs.get("kind", "unit") != kind:
+            continue
+        result.setdefault(edge.target, []).append(edge)
+        if edge.src != edge.target:
+            result.setdefault(edge.src, []).append(edge)
     return result
 
 
@@ -314,7 +435,7 @@ def _is_native_test_src(src: str) -> bool:
 def _is_native_test_symref(src: str) -> bool:
     """True if `src`'s qualname follows a test-code convention this module
     already trusts elsewhere: a `tests` module/namespace segment (rust's
-    `#[cfg(test)] mod tests { ... }`, mirroring `_is_test_file`'s "tests" dir
+    `#[cfg(test)] mod tests { ... }`, mirroring `is_test_file`'s "tests" dir
     check) or a `test_`/`_test` leaf name (the C/C++/TS convention, mirroring
     `_is_test_path`'s python check). Extension alone (`_is_native_test_src`)
     only says "no execution collector exists"; this says "and it actually
@@ -348,23 +469,44 @@ def _valid_edges(
     python (`collect_python_tests`) and rust (`collect_rust_tests`, T-0092).
     `snapshot` is optional so existing callers that only ever see python
     evidence are unaffected.
+
+    Two `frob:tests` conventions coexist (see `_unit_test_edges`): `src` is
+    the test and `target` is the tested symbol, or `src` is the tested
+    symbol and `target` is the test. `e.src` is checked first (the
+    convention this function originally assumed); `e.target` is checked as
+    a fallback so a directive written above the SOURCE, naming its test as
+    `target`, gets the same execution-evidence credit once `T-0336` makes
+    `_test001_002_one` able to find it in the first place -- honoring that
+    an edge exists (T-0336's fix) without also honoring what it actually
+    proves would leave a real explicit binding permanently unable to clear
+    TEST002, which is not "stricter," just wrong.
     """
-    valid: list[Edge] = []
-    for e in edges:
-        macro_file = _macro_symbol_file(e.src)
-        if macro_file is not None:
-            if _macro_file_collected(macro_file, tests.node_ids):
-                valid.append(e)
-        elif _node_id_collected(_symref_to_nodeid(e.src), tests.node_ids):
-            valid.append(e)
-        elif (
-            snapshot is not None
-            and _is_native_test_src(e.src)
-            and _is_native_test_symref(e.src)
-            and e.src in snapshot.symbols
-        ):
-            valid.append(e)
-    return valid
+    return [e for e in edges if _edge_has_execution_evidence(e, tests, snapshot)]
+
+
+# frob:ticket T-0361
+def _edge_has_execution_evidence(
+    e: Edge,
+    tests: CollectedTests,
+    snapshot: GraphSnapshot | None,
+) -> bool:
+    """True if `e` has real execution evidence per the four checks `_valid_edges`
+    applies in order (macro-file collection, src/target node-id match, or a
+    native test symref bound in `snapshot`); split out of `_valid_edges` so
+    that function stays a plain filter comprehension (T-0361)."""
+    macro_file = _macro_symbol_file(e.src)
+    if macro_file is not None:
+        return _macro_file_collected(macro_file, tests.node_ids)
+    if _node_id_collected(_symref_to_nodeid(e.src), tests.node_ids):
+        return True
+    if _node_id_collected(_symref_to_nodeid(e.target), tests.node_ids):
+        return True
+    return (
+        snapshot is not None
+        and _is_native_test_src(e.src)
+        and _is_native_test_symref(e.src)
+        and e.src in snapshot.symbols
+    )
 
 
 # frob:ticket T-0307
@@ -486,6 +628,7 @@ _KNOWN_GATE_RULES = frozenset(
         "COV002",
         "COV003",
         "COV004",
+        "COV005",
         "DRIFT001",
         "DRIFT002",
         "SCOPE001",
@@ -500,6 +643,9 @@ _KNOWN_GATE_RULES = frozenset(
         "TEST006",
         "TEST007",
         "TEST008",
+        "TEST009",
+        "TEST010",
+        "TEST011",
         "TODO001",
         "WAIVE001",
         "WAIVE002",
@@ -527,10 +673,28 @@ _KNOWN_GATE_RULES = frozenset(
         "SEC003",
         "TICK001",
         "TICK002",
+        "PII010",
+        "SEC110",
         # T-0289: long-function is the one frob-arch category channeled into
         # a real gate Violation (see frob.gates._arch's module docstring for
         # why only this one, not the whole ArchCategory surface).
         "ARCH001",
+        # T-0396: anti-orphan file-reference gate (frob.gates._refs).
+        "REF001",
+        "REF002",
+        "REF003",
+        # T-0343: registry exhaustiveness drift-lock
+        # (frob.gates._registry_exhaustiveness).
+        "REG001",
+        "REG002",
+        "REG003",
+        "REG004",
+        "REG005",
+        # T-0436: unbound/stale fenced-code-block doc-drift heuristic
+        # (frob.gates._docblocks).
+        "DOC004",
+        # T-0471: unpruned filesystem traversal (frob.gates._walk_lint).
+        "WALK001",
     }
 )
 
@@ -919,37 +1083,87 @@ def drift_gate(snapshot: GraphSnapshot, lock: LockFile) -> tuple[Violation, ...]
 
 # frob:doc docs/modules/gates.md#public-api
 def coverage_gate(
-    snapshot: GraphSnapshot, queue: TicketQueue, diff: Diff, tests: CollectedTests
+    root: Path,
+    snapshot: GraphSnapshot,
+    queue: TicketQueue,
+    diff: Diff,
+    tests: CollectedTests,
 ) -> tuple[Violation, ...]:
-    """COV001..COV004 and TODO001."""
+    """COV001..COV004 and TODO001.
+
+    `root` (repo root, T-0233) lets COV001 tell a *resolving* `frob:doc`
+    edge apart from a broken one -- see `_resolved_documented_srcs`.
+    """
     violations: list[Violation] = []
-    violations.extend(_cov001(snapshot))
+    violations.extend(_cov001(root, snapshot))
     violations.extend(_cov002(snapshot, queue, diff))
     violations.extend(_cov003(queue, tests))
     violations.extend(_cov004(queue))
+    violations.extend(_cov005(root, snapshot, diff))
     violations.extend(_todo001(snapshot, queue, diff))
     return tuple(violations)
 
 
 def _documented_srcs(snapshot: GraphSnapshot) -> set[str]:
-    """Symrefs carrying an explicit `frob:doc` edge."""
+    """Symrefs carrying an explicit `frob:doc` edge (resolving or not)."""
     return {e.src for e in snapshot.edges if e.kind == EdgeKind.DOC}
 
 
-def _cov001(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
-    """COV001: a public symbol has no explicit `frob:doc` edge.
+def _resolved_documented_srcs(root: Path, snapshot: GraphSnapshot) -> set[str]:
+    """Symrefs carrying a `frob:doc` edge whose anchor actually resolves.
+
+    T-0233: a `frob:doc <file>#<slug>` edge with a nonexistent file or an
+    unresolved anchor is already its own DOC002 error (`docanchor_gate`);
+    that error must not ALSO count as satisfying the symbol's COV001
+    documentation obligation. Before this fix a broken edge quietly
+    satisfied `_documented_srcs`, so `_cov001` skipped the symbol entirely
+    -- one bad `frob:doc` line silently masked real missing-coverage
+    findings for every other broken edge on the same file. Reuses
+    `_docanchor_check_edge`'s own resolution logic (memoized per doc file
+    via a fresh `slug_cache`) so the two gates can never disagree about
+    what "resolves" means.
+    """
+    slug_cache: dict[str, Option[set[str]]] = {}
+    resolved: set[str] = set()
+    for edge in snapshot.edges:
+        if edge.kind != EdgeKind.DOC:
+            continue
+        if _docanchor_check_edge(root, edge, slug_cache) is None:
+            resolved.add(edge.src)
+    return resolved
+
+
+def _cov001(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
+    """COV001: a public symbol has no explicit, *resolving* `frob:doc` edge.
 
     A docstring is not enough -- the obligation is an explicit `frob:doc
     <docs/anchor>` directive tying the symbol to a doc page whose drift is
     then tracked. Explicit edges are the point: they are what DRIFT001 can
-    check.
+    check. A `frob:doc` edge that fails to resolve (DOC002) does not count
+    as documentation (T-0233) -- see `_resolved_documented_srcs`. A file
+    carrying a recognized generated-file marker (T-0234,
+    `frob.graph._generated.is_generated_source`) is exempt outright: nobody
+    hand-documents machine-generated code, but unlike `[graph] exclude` the
+    file stays IN the graph so xref/dup/arch still see its symbols. The
+    per-path result is memoized (`generated_cache`) since a file's symbols
+    are visited consecutively and re-reading the same header per symbol
+    would otherwise multiply file IO by symbol count.
     """
-    documented = _documented_srcs(snapshot)
+    documented = _resolved_documented_srcs(root, snapshot)
+    generated_cache: dict[str, bool] = {}
     violations: list[Violation] = []
     for record in snapshot.symbols.values():
         if not record.public or record.symref in documented:
             continue
         if _is_test_path(record.id.path):
+            continue
+        path = record.id.path
+        if path not in generated_cache:
+            generated_cache[path] = is_generated_source(root, path)
+        if generated_cache[path]:
+            _log.debug(
+                "COV001: %s skipped -- %s is a generated source", record.symref, path
+            )
             continue
         _log.debug("COV001: %s public with no frob:doc edge", record.symref)
         violations.append(
@@ -977,11 +1191,10 @@ def _open_scopes(queue: TicketQueue) -> list[tuple[str, tuple[str, ...]]]:
 
 
 def _scope_covers(path: str, open_scopes: list[tuple[str, tuple[str, ...]]]) -> bool:
-    """True if `path` matches any open ticket's scope glob."""
+    """True if `path` matches any open ticket's scope (dir/ glob expansion
+    and implicit ledger via `scope_matches`, T-0241)."""
 
-    return any(
-        fnmatch.fnmatch(path, glob) for _tid, scope in open_scopes for glob in scope
-    )
+    return any(scope_matches(path, scope) for _tid, scope in open_scopes)
 
 
 def _ticket_edges(snapshot: GraphSnapshot, symref: str) -> list[Edge]:
@@ -1168,19 +1381,38 @@ def _cov003(queue: TicketQueue, tests: CollectedTests) -> tuple[Violation, ...]:
         if ticket.state != TicketState.DONE:
             continue
         violations.extend(
-            _cov003_evidence_violation(ticket, evidence, allowed_kinds)
+            _cov003_evidence_violation(ticket, evidence, allowed_kinds, tests)
             for evidence in ticket.evidence
             if not _evidence_valid_for_ticket(evidence, ticket, tests)
         )
     return tuple(violations)
 
 
+def _missing_native_remedy(tests: CollectedTests) -> str:
+    """A remedy clause naming every declared-but-unbuilt native extension and
+    its build command (T-0333), or `''` if all declared natives are built.
+    An unbuilt native `importorskip`-skips its tests, so bound evidence on
+    those tests cannot resolve -- the real fix is to build the native, NOT to
+    touch the evidence id."""
+    if not tests.missing_natives:
+        return ""
+    parts = ", ".join(
+        f"{spec.name} (run: {spec.build_cmd})" for spec in tests.missing_natives
+    )
+    return (
+        f"; a declared native extension is not built, which skips its tests: "
+        f"{parts} -- build it, then re-run"
+    )
+
+
 def _cov003_evidence_violation(
-    ticket, evidence: str, allowed_kinds: list[str]
+    ticket, evidence: str, allowed_kinds: list[str], tests: CollectedTests
 ) -> Violation:  # noqa: ANN001
     """The COV003 `Violation` for one of `ticket`'s evidence ids that
     already failed `_evidence_valid_for_ticket` -- a cmd: entry on a
-    kind-disallowed ticket, or a pytest node id that never collected."""
+    kind-disallowed ticket, or a pytest node id that never collected. When a
+    declared native extension is unbuilt (T-0333), the remedy names it and
+    its build command rather than blaming the evidence id."""
     _log.debug("COV003: %s evidence %s not collected", ticket.id, evidence)
     if is_cmd_evidence(evidence):
         message = (
@@ -1190,10 +1422,20 @@ def _cov003_evidence_violation(
             f"pytest --evidence node ids"
         )
     else:
+        native_remedy = _missing_native_remedy(tests)
+        # frob:ticket T-0292
+        # The collection cache is content-hash keyed and self-refreshes; do
+        # NOT name a `frob test --collect` flag (it does not exist, T-0292).
+        remedy = native_remedy or (
+            "; the collection cache is keyed on test file content and "
+            "refreshes automatically on the next `frob test` / `frob check` "
+            "run -- if it still does not resolve, delete "
+            ".frob/pytest-collect.json (or .frob/cargo-collect.json for rust) "
+            "to force a rebuild, or fix the evidence id"
+        )
         message = (
             f"COV003: {ticket.id} evidence {evidence!r} does not resolve "
-            f"to a collected test; run: frob test --collect to refresh, "
-            f"or fix the evidence id"
+            f"to a collected test{remedy}"
         )
     return Violation(
         rule="COV003",
@@ -1235,6 +1477,169 @@ def _cov004_one(
             ),
         ),
     )
+
+
+# frob:ticket T-0297
+# frob:tests tests/test_gates.py::TestCoverageGate.test_cov005_directive_rebound_to_private_symbol_flags  # noqa: E501
+# frob:tests tests/test_gates.py::TestCoverageGate.test_cov005_same_symbol_no_rebind_is_clean  # noqa: E501
+# frob:tests tests/test_gates.py::TestCoverageGate.test_cov005_no_old_blob_is_clean
+def _cov005(root: Path, snapshot: GraphSnapshot, diff: Diff) -> tuple[Violation, ...]:
+    """COV005: a `frob:` directive whose (kind, target) pair now binds a
+    PRIVATE symbol but bound a PUBLIC symbol in the same file at `diff.base`
+    -- a displaced obligation (T-0297). COV001 only checks that a directive
+    attaches to SOME resolvable symbol, never whether it is still attached
+    to the symbol it was written for; extracting a private helper directly
+    above an existing public `def` silently rebinds that def's trailing
+    `frob:` directives onto the new helper (`_enclosing`/`following`
+    resolution binds to the nearest symbol, not the author's intent), and
+    every other gate stays green because the directive still resolves. This
+    bit twice in this repo's own history (`scan_tree`, `renumber_one`) and
+    was only caught by manual review.
+
+    Restricted to files this diff actually touches (git-diff-aware, per the
+    ticket's candidate (a)) and to tracked files with a resolvable blob at
+    `diff.base` -- a brand-new file has no "before" to compare against, so
+    it is not in scope for a rebind check, only COV001 is. A `(kind,
+    target)` pair alone is NOT a unique directive identity -- this
+    repository's own convention reuses one `frob:doc <page>#<anchor>`
+    target across every public function a doc page covers, so comparing
+    old vs new bindings file-wide would flag every pre-existing private
+    helper that happens to share an anchor with some unrelated public
+    function elsewhere in the same file, none of which this diff touched.
+    The candidate new binding is only in scope for a rebind check if the
+    NEW private symbol's own span overlaps one of this diff's hunks in
+    that file -- i.e. the private symbol carrying the directive is itself
+    part of what this diff just changed, which is exactly the "extracted
+    helper directly above an existing def" shape the ticket describes.
+    """
+    new_edges_by_file: dict[str, list[Edge]] = {}
+    for edge in snapshot.edges:
+        # edge.origin is "path:lineno" (dsl._parse_line), not a bare path --
+        # the symbol's own file (edge.src's "path::qualname" prefix) is the
+        # correct file key here.
+        file_key = edge.src.split("::", 1)[0]
+        new_edges_by_file.setdefault(file_key, []).append(edge)
+    hunks_by_file: dict[str, list[tuple[int, int]]] = {}
+    for hunk in diff.hunks:
+        hunks_by_file.setdefault(hunk.file, []).append(hunk.span)
+    violations: list[Violation] = []
+    for file in sorted({hunk.file for hunk in diff.hunks}):
+        violations.extend(
+            _cov005_file(
+                root,
+                diff.base,
+                file,
+                new_edges_by_file.get(file, ()),
+                hunks_by_file.get(file, []),
+                snapshot,
+            )
+        )
+    return tuple(violations)
+
+
+def _cov005_file(
+    root: Path,
+    base: str,
+    file: str,
+    new_edges: Sequence[Edge],
+    file_hunks: list[tuple[int, int]],
+    snapshot: GraphSnapshot,
+) -> list[Violation]:
+    """COV005 for one diff-touched `file`: every old-public-now-private
+    directive rebind whose new (private) symbol overlaps `file_hunks`."""
+    old_bindings = _old_directive_bindings(root, base, file)
+    if not old_bindings:
+        return []
+    new_by_key: dict[tuple[EdgeKind, str], list[Edge]] = {}
+    for edge in new_edges:
+        new_by_key.setdefault((edge.kind, edge.target), []).append(edge)
+    violations: list[Violation] = []
+    for kind, target, was_public in old_bindings:
+        if not was_public:
+            continue
+        for new_edge in new_by_key.get((kind, target), ()):
+            record = snapshot.symbols.get(new_edge.src)
+            if record is None or record.public:
+                continue
+            if not any(_overlaps(span, record.span) for span in file_hunks):
+                continue
+            _log.debug(
+                "COV005: %s:%s %s rebound onto private %s (was public at %s)",
+                kind.value,
+                target,
+                file,
+                new_edge.src,
+                base,
+            )
+            violations.append(
+                Violation(
+                    rule="COV005",
+                    severity=Severity.ERROR,
+                    file=file,
+                    line=record.span[0],
+                    message=(
+                        f"COV005: frob:{kind.value} {target} now binds "
+                        f"{new_edge.src} (private), but the same "
+                        f"directive bound a PUBLIC symbol in this file "
+                        f"before this change -- looks like it silently "
+                        f"rode along onto an extracted/renamed helper; "
+                        f"move the directive back onto the intended "
+                        f"public symbol"
+                    ),
+                )
+            )
+    return violations
+
+
+def _old_directive_bindings(
+    root: Path, base: str, file: str
+) -> tuple[tuple[EdgeKind, str, bool], ...]:
+    """`(kind, target, was_public)` for every `frob:` directive `file` carried
+    at revision `base`, parsed from `git show <base>:<file>` -- empty (not an
+    error) if the blob does not exist there (new file) or fails to parse.
+
+    A throwaway same-suffix temp file is used so `frob.lang.parse_file`'s
+    extension dispatch sees the right grammar; the temp path itself never
+    leaks into the returned bindings (only `kind`/`target`/publicness do),
+    so it need not match `file`'s real repo-relative path.
+    """
+    import tempfile
+
+    from frob.graph.dsl import parse_directives
+    from frob.lang import parse_file  # local import: keep gates' top import list lean
+
+    shown = run_argv(("git", "-C", str(root), "show", f"{base}:{file}"))
+    if shown.is_err or shown.danger_ok.returncode != 0:
+        return ()
+    suffix = Path(file).suffix
+    tmp_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            "w", suffix=suffix, delete=False, encoding="utf-8"
+        ) as tmp:
+            tmp.write(shown.danger_ok.stdout)
+            tmp_path = Path(tmp.name)
+        parsed_result = parse_file(tmp_path)
+    finally:
+        if tmp_path is not None:
+            tmp_path.unlink(missing_ok=True)
+    if parsed_result.is_err:
+        _log.debug(
+            "COV005: could not parse old blob %s:%s (%s); skipping",
+            base,
+            file,
+            parsed_result.danger_err,
+        )
+        return ()
+    parsed = parsed_result.danger_ok
+    edges, _malformed = parse_directives(parsed)
+    public_by_qualname = {s.qualname: s.public for s in parsed.symbols}
+    bindings: list[tuple[EdgeKind, str, bool]] = []
+    for edge in edges:
+        qualname = edge.src.split("::", 1)[1] if "::" in edge.src else edge.src
+        was_public = public_by_qualname.get(qualname, False)
+        bindings.append((edge.kind, edge.target, was_public))
+    return tuple(bindings)
 
 
 def _todo001_edges(snapshot: GraphSnapshot, queue: TicketQueue) -> list[Violation]:
@@ -1334,7 +1739,7 @@ def scope_digest(scope: Sequence[str], snapshot: GraphSnapshot) -> str:
     matched = sorted(
         (path, digest)
         for path, digest in snapshot.file_hashes.items()
-        if any(fnmatch.fnmatch(path, glob) for glob in scope)
+        if scope_matches(path, scope)
     )
     hasher = hashlib.sha256()
     for path, digest in matched:
@@ -1412,7 +1817,7 @@ def _commit_exempts_file(
         other = queue.tickets.get(ref)
         if other is None:
             continue
-        if any(fnmatch.fnmatch(file, glob) for glob in other.scope):
+        if scope_matches(file, other.scope):
             return True
     return False
 
@@ -1487,7 +1892,7 @@ def _scope_gate_check_file(
     """The SCOPE001 `Violation` for one touched `file`, or None when it
     matches `ticket.scope` or is exempt (already committed under another
     ticket's own scope, T-0108)."""
-    if any(fnmatch.fnmatch(file, glob) for glob in ticket.scope):
+    if scope_matches(file, ticket.scope):
         return None
     if (
         root is not None
@@ -1568,6 +1973,9 @@ def _invariant_anchors(snapshot: GraphSnapshot) -> set[str]:
     return {e.target for e in snapshot.edges if e.kind == EdgeKind.INVARIANT}
 
 
+# frob:waive DUP001 reason="Violation-builder boilerplate shared shape \
+# with _inv002 below; distinct rule ids and distinct remediation messages \
+# (missing evidence vs missing anchor) -- structural coincidence"
 def _inv001(inv: Invariant) -> Violation:
     """INV001: an invariant with no standing evidence."""
     return Violation(
@@ -1583,6 +1991,9 @@ def _inv001(inv: Invariant) -> Violation:
     )
 
 
+# frob:waive DUP001 reason="Violation-builder boilerplate shared shape \
+# with _inv001 above; distinct rule id and message -- structural \
+# coincidence"
 def _inv002(inv: Invariant) -> Violation:
     """INV002: an invariant with no code anchor."""
     return Violation(
@@ -1720,13 +2131,13 @@ def _test001_002(
     consistent with T-0164's COV002 precedent that a `.strata` file is one
     design artifact governed by design-level gates, not pytest bindings.
     """
-    unit_edges = _test_edges(snapshot, "unit")
+    unit_edges = _unit_test_edges(snapshot, "unit")
     violations: list[Violation] = []
     for record in snapshot.symbols.values():
         if (
             not record.public
             or record.kind not in (SymbolKind.FUNCTION, SymbolKind.METHOD)
-            or _is_test_file(record.id.path)
+            or is_test_file(record.id.path)
             or record.id.path.endswith(".strata")
         ):
             continue
@@ -1742,10 +2153,22 @@ def _test001_002(
 
 
 def _public_packages(snapshot: GraphSnapshot) -> list[str]:
-    """Every `src/<pkg>/<subpkg>` package that contains a public, non-test symbol."""
+    """Every `src/<pkg>/<subpkg>` package that contains a public, non-test symbol.
+
+    `.strata` design-file declarations are excluded (T-0225), matching the
+    `_test001_002` exemption (T-0168): a design construct's proof obligation
+    is e2e-shaped (`_test009`), not "interface has N integration tests" --
+    counting `design/` as a package here just misapplied TEST003's
+    pytest-integration semantics to a directory that owns no pytest surface
+    at all.
+    """
     packages: dict[str, bool] = {}
     for record in snapshot.symbols.values():
-        if record.public and not _is_test_file(record.id.path):
+        if (
+            record.public
+            and not is_test_file(record.id.path)
+            and not record.id.path.endswith(".strata")
+        ):
             packages.setdefault(_interface_package(record.id.path), True)
     return list(packages)
 
@@ -1816,6 +2239,92 @@ def _test003_check_package(
             f'add: frob:tests {package} kind="integration"'
         ),
     )
+
+
+# ---------------------------------------------------------------------------
+# TEST009
+# ---------------------------------------------------------------------------
+
+
+def _design_files(snapshot: GraphSnapshot) -> list[str]:
+    """Every NON-TEST `.strata` design file that declares at least one public
+    flow/boundary/operation/scenario construct (`_walk_strata.py`'s
+    `_KEYWORD_KIND` mapping onto `FUNCTION`/`METHOD`).
+
+    Test-fixture `.strata` files (litmus/parser fixtures under a tests dir)
+    are excluded (T-0225 follow-up): TEST009 owes an e2e binding to a
+    DEPLOYABLE design model, but a litmus fixture is test DATA exercised
+    through its own covering pytest suite, not a system that owes its own
+    e2e obligation -- mirroring `_test001_002`/`_public_packages`' own
+    `is_test_file` exemptions."""
+    files: dict[str, bool] = {}
+    for record in snapshot.symbols.values():
+        if (
+            record.public
+            and record.id.path.endswith(".strata")
+            and not is_test_file(record.id.path)
+        ):
+            files.setdefault(record.id.path, True)
+    return list(files)
+
+
+def _edges_for_design_file(
+    all_pairs: list[tuple[str, Edge]], design_file: str
+) -> list[Edge]:
+    """e2e edges whose target is `design_file` itself or a symbol declared in it."""
+    prefix = design_file + "::"
+    return [
+        edge
+        for target, edge in all_pairs
+        if target == design_file or target.startswith(prefix)
+    ]
+
+
+def _test009(
+    snapshot: GraphSnapshot, tests: CollectedTests, cfg: TestPolicy
+) -> tuple[Violation, ...]:
+    """TEST009: every `.strata` design file owes `min_design_e2e` e2e edges (T-0225).
+
+    T-0168 exempted design-file `flow`/`boundary`/`operation`/`scenario`
+    declarations from TEST001/TEST002 (a "unit test" for a design construct
+    has no defined meaning), and T-0225 exempts the same declarations from
+    TEST003 (`_public_packages`) for the identical reason -- `design/` owns
+    no pytest surface at all, so package-level integration-test counting
+    misapplies TEST003's semantics to it. That is not the same as "design
+    ids owe no test obligation whatsoever": strata's own conformance
+    machinery (`frob sys audit`, self-conformance) is exercised end-to-end,
+    so the correct binding shape is `kind="e2e"`, not unit/integration.
+    This mirrors TEST004's per-`[[system]]` e2e floor but scopes to `.strata`
+    files instead of declared `[[system]]` entries, and treats a whole
+    design file as one artifact needing coverage (consistent with T-0164's
+    COV002 precedent), not each construct individually.
+    """
+    all_pairs = _flatten_edges(_test_edges(snapshot, "e2e"))
+    violations: list[Violation] = []
+    for design_file in sorted(_design_files(snapshot)):
+        valid = _valid_edges(
+            _edges_for_design_file(all_pairs, design_file), tests, snapshot
+        )
+        count = _case_count(valid, tests)
+        if count >= cfg.min_design_e2e:
+            continue
+        _log.debug(
+            "TEST009: %s has %d/%d e2e edges", design_file, count, cfg.min_design_e2e
+        )
+        violations.append(
+            Violation(
+                rule="TEST009",
+                severity=Severity.WARN,
+                file=design_file,
+                line=0,
+                message=(
+                    f"TEST009: design file {design_file} has {count} e2e "
+                    f"test(s), below min_design_e2e={cfg.min_design_e2e}; "
+                    f'add: frob:tests {design_file} kind="e2e"'
+                ),
+            )
+        )
+    return tuple(violations)
 
 
 # ---------------------------------------------------------------------------
@@ -1961,7 +2470,7 @@ def _test005_symbols(
         if (
             not record.public
             or record.kind not in (SymbolKind.FUNCTION, SymbolKind.METHOD)
-            or _is_test_file(record.id.path)
+            or is_test_file(record.id.path)
         ):
             continue
         pct = data.symbol_branch.get(record.symref)
@@ -2106,10 +2615,65 @@ def _test005(
     data = _exclude_filtered_coverage(coverage.danger_some, snapshot)
     return (
         *_test008_unjoined_root(data),
+        *_test011_freshness(data),
         *_test005_symbols(snapshot, data, cfg),
         *_test005_modules(data, cfg),
         *_test005_systems(systems, data, cfg),
     )
+
+
+# frob:ticket T-0464
+_TEST011_JOIN_FLOOR = 0.5
+
+
+def _test011_freshness(data: CoverageData) -> tuple[Violation, ...]:
+    """TEST011 (warn): coverage.xml looks stale or deflated relative to the
+    working tree it is supposed to measure.
+
+    `CoverageData.source_sha` only hashes coverage.xml itself, not the
+    source it measured -- a coverage.xml regenerated by a run that silently
+    dropped subprocess coverage (T-0464's root cause) carries a
+    fresh-looking sha with stale/deflated data underneath. Two independent,
+    cheap-to-compute signals catch that: `stale_by_mtime` (coverage.xml is
+    older than the newest known source file) and `module_join_fraction`
+    (coverage.xml's `<class>` entries joined to far fewer known modules
+    than the snapshot actually has -- the fingerprint of a run that only
+    measured the main pytest process and never merged subprocess data).
+    WARN, not ERROR: this is advisory triage pointing at `make coverage`,
+    not a hard floor -- TEST005/TEST006 already carry the enforcement
+    teeth this ticket's part 1 fix restores the trustworthiness of.
+    """
+    violations: list[Violation] = []
+    if data.stale_by_mtime:
+        violations.append(
+            Violation(
+                rule="TEST011",
+                severity=Severity.WARN,
+                file="coverage.xml",
+                line=0,
+                message=(
+                    "TEST011: coverage.xml predates a tracked source "
+                    "change; TEST005 findings may be stale. Re-run: "
+                    "make coverage"
+                ),
+            )
+        )
+    if data.module_join_fraction < _TEST011_JOIN_FLOOR:
+        violations.append(
+            Violation(
+                rule="TEST011",
+                severity=Severity.WARN,
+                file="coverage.xml",
+                line=0,
+                message=(
+                    "TEST011: coverage.xml only covers "
+                    f"{data.module_join_fraction:.0%} of known modules -- "
+                    "looks deflated (e.g. subprocess coverage not merged); "
+                    "TEST005 findings may be false. Re-run: make coverage"
+                ),
+            )
+        )
+    return tuple(violations)
 
 
 def _exclude_filtered_coverage(
@@ -2144,6 +2708,8 @@ def _exclude_filtered_coverage(
         },
         root_join_ok=data.root_join_ok,
         attempted_roots=data.attempted_roots,
+        stale_by_mtime=data.stale_by_mtime,
+        module_join_fraction=data.module_join_fraction,
     )
 
 
@@ -2194,6 +2760,43 @@ def _test006(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     return _test006_stale(stamp.get("file_hashes", {}), snapshot)
 
 
+# ---------------------------------------------------------------------------
+# TEST010
+# ---------------------------------------------------------------------------
+
+
+def _test010_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
+    """TEST010: a `frob:tests` directive's `kind=` attribute is not one of
+    unit/integration/e2e (T-0237).
+
+    Mirrors `_waive001_violations`: `frob.graph.dsl` already refuses to turn
+    such a line into a TESTS `Edge` at all (an invalid `kind=` degrades the
+    directive to a `MalformedDirective`, not silently defaulting), so this
+    just surfaces the ones `dsl.py` tagged as `frob:tests`-flavored from
+    `GraphSnapshot.malformed` as a real gate violation instead of letting
+    them sit as a parse-time warning nobody reads. A `frob:tests` edge's
+    CODE-side endpoint not resolving is already caught generically by
+    DRIFT002 (`_vanished_endpoint` in `frob.graph.lock` checks every edge's
+    `src`/`target`, TESTS edges included -- no TESTS-specific resolver
+    needed here, see docs/guides/agent-playbook.md's reuse-the-resolver
+    guidance)."""
+    violations: list[Violation] = []
+    for md in snapshot.malformed:
+        if "frob:tests" not in md.reason:
+            continue
+        _log.debug("TEST010: %s:%d %s", md.file, md.line, md.reason)
+        violations.append(
+            Violation(
+                rule="TEST010",
+                severity=Severity.ERROR,
+                file=md.file,
+                line=md.line,
+                message=f"TEST010: {md.file}:{md.line} {md.reason}",
+            )
+        )
+    return tuple(violations)
+
+
 # frob:doc docs/modules/gates.md#public-api
 def test_gate(
     snapshot: GraphSnapshot,
@@ -2202,9 +2805,19 @@ def test_gate(
     tests: CollectedTests,
     cfg: TestPolicy,
 ) -> tuple[Violation, ...]:
-    """TEST001..TEST006. Interfaces derived from packages with public symbols
+    """TEST001..TEST011. Interfaces derived from packages with public symbols
     (see `_test003`'s docstring for the exact alpha semantics). Coverage is
-    consumed as recorded evidence, never produced here."""
+    consumed as recorded evidence, never produced here. TEST009 (T-0225) is
+    `.strata` design files' e2e-binding counterpart to TEST003, which
+    `_public_packages` now excludes them from. TEST010 (T-0237) is a
+    `frob:tests` directive's own `kind=` attribute failing to parse -- the
+    code-endpoint-resolution half of that same ticket needed no new gate
+    code at all, since DRIFT002 already covers TESTS edges (see
+    `_test010_violations`'s docstring). TEST011 (T-0464, folded into
+    `_test005`'s return since it shares the same `coverage.is_nothing`
+    guard) is an advisory WARN that coverage.xml itself looks stale or
+    deflated, so a spike in TEST005 findings can be triaged as a coverage
+    problem rather than a real regression (see `_test011_freshness`)."""
     violations: list[Violation] = []
     violations.extend(_test001_002(snapshot, tests, cfg))
     violations.extend(_test003(snapshot, tests, cfg))
@@ -2212,6 +2825,8 @@ def test_gate(
     violations.extend(_test004(systems, snapshot, tests))
     violations.extend(_test005(snapshot, systems, coverage, cfg))
     violations.extend(_test006(snapshot))
+    violations.extend(_test009(snapshot, tests, cfg))
+    violations.extend(_test010_violations(snapshot))
     return tuple(violations)
 
 
@@ -2401,14 +3016,43 @@ def _design_dir(root: Path) -> str:
         return _DEFAULT_DESIGN_DIR
 
 
-def _sys004(design_ids) -> list[Violation]:  # noqa: ANN001
+def _sys004_native_hint(root: Path) -> str:
+    """Extra SYS004 clause naming `make core` as the likely remedy when a
+    declared native is stale against its own source tree (T-0248's
+    `frob.strata.stale_natives`), distinguishing a grammar/native version
+    mismatch from a genuine syntax error in the `.strata` file itself --
+    the original T-0166 incident's fix (2): a design file failed to load
+    with a mysterious "unknown construct" error because the built
+    `strata_core` predated a landed grammar change, and nothing at the
+    SYS004 call site said so. Returns the empty string when no native is
+    stale, so callers can unconditionally append it to the base message."""
+    from frob.strata import stale_natives
+
+    stale = stale_natives(root)
+    if not stale:
+        return ""
+    names = ", ".join(sorted({s.spec.name for s in stale}))
+    return (
+        f" -- built extension(s) [{names}] are older than their own source "
+        f"tree, which can itself cause a parse failure on a construct the "
+        f"grammar added since the last build; run `make core` first and "
+        f"re-check before treating this as a genuine `.strata` syntax error"
+    )
+
+
+# frob:tests tests/test_gates.py::TestSysGate.test_sys004_load_failure
+# frob:tests tests/test_gates.py::TestSysGate.test_sys004_suppresses_sys001
+# frob:tests tests/test_gates.py::TestSysGate.test_sys004_names_stale_native_as_likely_remedy  # noqa: E501
+def _sys004(design_ids, root: Path) -> list[Violation]:
     """SYS004: a `.strata` design file itself failed to parse/elaborate.
 
     Reported as its own rule, distinct from SYS001, because a load failure
     and a dangling reference are different problems with different fixes
     (fix the design file vs. fix the directive) -- collapsing them would
     misdirect whoever reads the message (reviewer-caught, T-0080 REJECT
-    round 1)."""
+    round 1). Also names a stale native build as a likely cause (T-0248
+    follow-up) when one is detected, per the T-0166 incident precedent."""
+    native_hint = _sys004_native_hint(root)
     return [
         Violation(
             rule="SYS004",
@@ -2421,6 +3065,7 @@ def _sys004(design_ids) -> list[Violation]:  # noqa: ANN001
                 f"suppressed while any design file fails to load, since ids are "
                 f"merged across all design files and a missing sibling's ids "
                 f"cannot be told apart from a genuinely dangling reference"
+                f"{native_hint}"
             ),
         )
         for error in design_ids.errors
@@ -2734,7 +3379,7 @@ def sys_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 
     design_ids = load_design_ids(root, design_dir)
     violations = (
-        *_sys004(design_ids),
+        *_sys004(design_ids, root),
         *_sys001(snapshot, design_ids),
         *_sys002(snapshot, design_ids),
         *_sys003(design_ids, root),
@@ -3127,6 +3772,9 @@ def doclink_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     return violations
 
 
+# frob:waive DUP001 reason="dup grouped this with frob.vet._scan's \
+# _vet004_violation purely on generic Violation(...)-builder shape; \
+# different gate family (doc-graph vs dependency-vet), unrelated rules"
 def _doc001_orphan(orphan: str, link_hint: str) -> Violation:
     """DOC001: `orphan` is a doc file linked from nowhere."""
     return Violation(
@@ -3347,6 +3995,11 @@ _ALL_GATES = frozenset(
         "secrets",
         "tickets",
         "archgate",
+        "pii_structural",
+        "refs",
+        "registry",
+        "docblocks",
+        "walk_lint",
     }
 )
 
@@ -3562,15 +4215,84 @@ def _load_inputs(cfg: GateConfig) -> Result[_GateInputs, GateError]:
     return Ok(_assemble_gate_inputs(root, cfg, required.danger_ok))
 
 
+# frob:ticket T-0415
+# T-0415 (docs/audits/perf.md H3): these gates are pure-Python, CPU-bound,
+# and (per the audit's measured wall-time) the largest jobs in the run --
+# sharing one ThreadPoolExecutor with everything else means the GIL
+# serializes them instead of letting them overlap (archgate 91.5s + sys
+# 77s summed, not maxed). They run in a ProcessPoolExecutor instead, where
+# each gets its own interpreter and genuinely overlaps the others. Every
+# other gate is I/O-bound or cheap enough that process-spawn/pickle
+# overhead would not pay for itself, so it stays on the thread pool.
+_PROCESS_POOL_GATES: frozenset[str] = frozenset(
+    {"archgate", "sys", "clones", "perf", "pii_structural", "secrets"}
+)
+
+# frob:ticket T-0415
+# The exact gate-name order `_build_jobs` used to assemble its single dict
+# in, before the CPU-bound subset moved to a second (process) pool. Merging
+# thread-pool and process-pool results back into this fixed order (T-0415)
+# is what keeps `frob check` output byte-identical to the old single-pool
+# run regardless of which pool a given job actually finishes in first --
+# real concurrency changes wall time, never violation order.
+_CANONICAL_GATE_ORDER: tuple[str, ...] = (
+    "drift",
+    "coverage",
+    "invariant",
+    "test",
+    "policy",
+    "doclink",
+    "docanchor",
+    "perf",
+    "fuzz",
+    "release",
+    "clones",
+    "decisions",
+    "sys",
+    "secrets",
+    "tickets",
+    "archgate",
+    "pii_structural",
+    "refs",
+    "registry",
+    "docblocks",
+    "walk_lint",
+    "scope",
+    "prework",
+)
+
+
+# frob:ticket T-0415
+@dataclass(frozen=True)
+class _ProcessJob:
+    """One CPU-bound gate job dispatched to the process pool (T-0415): a
+    module-level, picklable-by-reference gate function plus its picklable
+    positional args (`Path`/frozen pydantic models only -- no closures, no
+    native/Rust handles), so `ProcessPoolExecutor.submit` can ship it to a
+    worker without touching a lambda."""
+
+    func: Callable[..., tuple[Violation, ...]]
+    args: tuple
+
+
+# frob:ticket T-0415
 def _build_jobs(
     selected: frozenset[str], st: _GateInputs
-) -> tuple[dict[str, Callable[[], tuple[Violation, ...]]], list[str]]:
-    """Map each selected gate name to a zero-arg job over the loaded state."""
+) -> tuple[
+    dict[str, Callable[[], tuple[Violation, ...]]],
+    dict[str, _ProcessJob],
+    list[str],
+]:
+    """Map each selected gate name to a job over the loaded state: a zero-arg
+    thread-pool closure for I/O-bound/cheap gates, or a `_ProcessJob`
+    (T-0415) for the CPU-bound giants in `_PROCESS_POOL_GATES`."""
     from frob.policy import policy_gate
 
-    jobs: dict[str, Callable[[], tuple[Violation, ...]]] = {
+    thread_jobs: dict[str, Callable[[], tuple[Violation, ...]]] = {
         "drift": lambda: drift_gate(st.snapshot, st.lock),
-        "coverage": lambda: coverage_gate(st.snapshot, st.queue, st.diff, st.tests),
+        "coverage": lambda: coverage_gate(
+            st.repo_root, st.snapshot, st.queue, st.diff, st.tests
+        ),
         "invariant": lambda: invariant_gate(
             st.invariants, st.snapshot, st.tests, st.rule_ids
         ),
@@ -3584,20 +4306,51 @@ def _build_jobs(
         # (possibly scoped) st.root, so `frob check <subdir>` reports the
         # same DOC002 result as the unscoped run.
         "docanchor": lambda: docanchor_gate(st.repo_root, st.snapshot),
-        "perf": lambda: perf_gate(st.root, st.snapshot),
+        # T-0436: fenced-code-block doc-drift heuristic, repo_root-scoped for
+        # the same reason docanchor/refs are -- doc paths are repo-relative
+        # text either way, and `git ls-files *.md` must see the whole repo.
+        "docblocks": lambda: doc004_gate(st.repo_root, st.snapshot),
         "fuzz": lambda: fuzz_gate(st.root, st.snapshot),
         "release": lambda: release_gate(st.root, st.snapshot),
-        "clones": lambda: dup_gate(st.root, st.snapshot, st.diff),
         "decisions": lambda: decisions_gate(st.root, st.snapshot),
-        "sys": lambda: sys_gate(st.root, st.snapshot),
-        "secrets": lambda: secrets_gate(st.root),
         "tickets": lambda: tickets_gate(st.root, st.queue),
-        "archgate": lambda: arch_gate(st.root),
+        # T-0396: whole-repo scan, always against repo_root (never the
+        # possibly-scoped st.root) -- a `frob check <subdir>` run must see
+        # the same inbound-reference graph as an unscoped run, same
+        # reasoning as docanchor above.
+        "refs": lambda: ref_gate(st.repo_root),
+        # T-0343: fail-closed exhaustiveness drift-lock over
+        # docs/design/registry/*.yaml -- known_rules is this run's live
+        # gate-rule-id + policy-rule-id union, never a hardcoded list, so
+        # handled_by:<rule-id> is verified against what this build
+        # actually enforces.
+        "registry": lambda: registry_gate(
+            st.repo_root, st.queue, _KNOWN_GATE_RULES | st.rule_ids
+        ),
     }
-    selected_jobs = {name: job for name, job in jobs.items() if name in selected}
+    process_jobs: dict[str, _ProcessJob] = {
+        "perf": _ProcessJob(perf_gate, (st.root, st.snapshot)),
+        "clones": _ProcessJob(dup_gate, (st.root, st.snapshot, st.diff)),
+        "sys": _ProcessJob(sys_gate, (st.root, st.snapshot)),
+        "secrets": _ProcessJob(secrets_gate, (st.root,)),
+        "archgate": _ProcessJob(arch_gate, (st.root,)),
+        "pii_structural": _ProcessJob(pii_structural_gate, (st.root,)),
+        # T-0471: whole-repo tracked-file scan, always against repo_root
+        # (never the possibly-scoped st.root) -- same reasoning as
+        # `pii_structural`/`refs`: `frob check <subdir>` must see the same
+        # WALK001 result as an unscoped run since a raw traversal call
+        # anywhere in src/frob/ is a repo-wide concern, not a subdir one.
+        "walk_lint": _ProcessJob(walk_lint_gate, (st.repo_root,)),
+    }
+    selected_thread = {
+        name: job for name, job in thread_jobs.items() if name in selected
+    }
+    selected_process = {
+        name: job for name, job in process_jobs.items() if name in selected
+    }
     ticket_jobs, skipped = _build_ticket_scoped_jobs(selected, st)
-    selected_jobs.update(ticket_jobs)
-    return selected_jobs, skipped
+    selected_thread.update(ticket_jobs)
+    return selected_thread, selected_process, skipped
 
 
 def _build_ticket_scoped_jobs(
@@ -3624,34 +4377,166 @@ def _build_ticket_scoped_jobs(
     return jobs, skipped
 
 
+# frob:ticket T-0232
+def _timed_job(
+    job: Callable[[], tuple[Violation, ...]],
+) -> Callable[[], tuple[tuple[Violation, ...], float]]:
+    """Wrap `job` to self-report its own CPU time (T-0232): `time.thread_time()`
+    measured from inside the worker thread the job actually runs on, start to
+    finish, so the number reflects only that thread's own CPU consumption.
+
+    `_run_jobs` used to time each job from the *submitting* thread with
+    `time.monotonic()` around `future.result()` -- wall-clock elapsed. Most
+    gate jobs here are pure-Python, CPU-bound work (file scanning, regex,
+    AST walks) sharing one `ThreadPoolExecutor`, so they all contend for the
+    same GIL: with N such jobs running "concurrently", each gets roughly
+    1/N of the CPU, so wall-clock elapsed converges toward the *sum* of
+    every job's own cost, not that job's own cost -- every gate's reported
+    time ends up nearly identical to the slowest one's, regardless of how
+    little work it actually did (measured directly: on this repo, `sys`
+    reported 14.63s wall vs. 2.00s of its own CPU time; `tickets` 1.53s wall
+    vs. 0.53s CPU -- the wall numbers cluster together, the CPU numbers
+    don't). `thread_time()` is immune to this: it counts only the calling
+    thread's own scheduled CPU time, so a job that is genuinely blocked
+    waiting for the GIL (not running) does not accrue it.
+    """
+
+    def run() -> tuple[tuple[Violation, ...], float]:
+        cpu_start = time.thread_time()
+        result = job()
+        return result, time.thread_time() - cpu_start
+
+    return run
+
+
 def _run_jobs(
     jobs: dict[str, Callable[[], tuple[Violation, ...]]],
 ) -> tuple[list[Violation], dict[str, int], dict[str, float]]:
-    """Run the gate jobs in parallel; return merged violations, counts, timing."""
-    from concurrent.futures import ThreadPoolExecutor
-
+    """Run the gate jobs in parallel; return merged violations, counts,
+    and each job's own CPU time (T-0232, `_timed_job`) rather than wall
+    time distorted by GIL contention among the other jobs running at once."""
     counts: dict[str, int] = {}
     timing: dict[str, float] = {}
     violations: list[Violation] = []
     if not jobs:
         return violations, counts, timing
     with ThreadPoolExecutor(max_workers=max(1, len(jobs))) as pool:
-        futures = {}
-        for name, job in jobs.items():
-            futures[pool.submit(job)] = (name, time.monotonic())
-        for future in futures:
-            name, job_start = futures[future]
-            result = future.result()
-            timing[name] = time.monotonic() - job_start
+        futures = {name: pool.submit(_timed_job(job)) for name, job in jobs.items()}
+        for name, future in futures.items():
+            result, cpu_elapsed = future.result()
+            timing[name] = cpu_elapsed
             counts[name] = len(result)
             violations.extend(result)
             _log.info(
-                "run_gates: %s -> %d violation(s) in %.3fs",
+                "run_gates: %s -> %d violation(s) in %.3fs cpu",
                 name,
                 len(result),
-                timing[name],
+                cpu_elapsed,
             )
     return violations, counts, timing
+
+
+# frob:ticket T-0415
+def _run_process_gate(
+    func: Callable[..., tuple[Violation, ...]], args: tuple
+) -> tuple[tuple[Violation, ...], float]:
+    """Picklable `ProcessPoolExecutor` entry point (T-0415): run one
+    CPU-bound gate (`func(*args)`) in its own worker process and return its
+    own `time.process_time()` -- accurate here (unlike a shared thread pool,
+    T-0232) because each worker process runs exactly one job, so there is no
+    sibling job to contend with for CPU. Must stay a module-level function
+    (not a closure/lambda) so `pickle` can address it by `__module__` +
+    `__qualname__` when the parent ships the call to a worker."""
+    cpu_start = time.process_time()
+    result = func(*args)
+    return result, time.process_time() - cpu_start
+
+
+# frob:ticket T-0415
+def _drain_futures(
+    futures: dict[str, Future[tuple[tuple[Violation, ...], float]]],
+    raw: dict[str, tuple[Violation, ...]],
+    counts: dict[str, int],
+    timing: dict[str, float],
+    *,
+    pool_label: str,
+) -> None:
+    """Collect `futures` (from either pool) into the shared `raw`/`counts`/
+    `timing` accumulators `_run_combined_jobs` merges afterward (T-0415)."""
+    for name, future in futures.items():
+        result, cpu_elapsed = future.result()
+        raw[name] = result
+        timing[name] = cpu_elapsed
+        counts[name] = len(result)
+        _log.info(
+            "run_gates: %s -> %d violation(s) in %.3fs cpu%s",
+            name,
+            len(result),
+            cpu_elapsed,
+            pool_label,
+        )
+
+
+# frob:ticket T-0415
+def _submit_process_pool(
+    ppool: ProcessPoolExecutor,
+    process_jobs: dict[str, _ProcessJob],
+    raw: dict[str, tuple[Violation, ...]],
+    counts: dict[str, int],
+    timing: dict[str, float],
+) -> None:
+    """Submit every `process_jobs` entry to `ppool` and drain the results
+    into `raw`/`counts`/`timing` (T-0415) -- the process-pool half of
+    `_run_combined_jobs`, split out to keep that function under ARCH001's
+    line threshold."""
+    process_futures = {
+        name: ppool.submit(_run_process_gate, job.func, job.args)
+        for name, job in process_jobs.items()
+    }
+    _drain_futures(process_futures, raw, counts, timing, pool_label=" (process pool)")
+
+
+def _merge_canonical_order(raw: dict[str, tuple[Violation, ...]]) -> list[Violation]:
+    """Flatten `raw` (gate name -> its violations) into one list ordered by
+    `_CANONICAL_GATE_ORDER` (T-0415) -- the fixed order the old single-pool
+    `_build_jobs` dict used, so output stays identical regardless of which
+    pool produced a given gate's result first."""
+    violations: list[Violation] = []
+    for name in _CANONICAL_GATE_ORDER:
+        if name in raw:
+            violations.extend(raw[name])
+    return violations
+
+
+def _run_combined_jobs(
+    thread_jobs: dict[str, Callable[[], tuple[Violation, ...]]],
+    process_jobs: dict[str, _ProcessJob],
+) -> tuple[list[Violation], dict[str, int], dict[str, float]]:
+    """Run `thread_jobs` on a `ThreadPoolExecutor` and `process_jobs`
+    (the CPU-bound giants, T-0415/docs/audits/perf.md H3) on a
+    `ProcessPoolExecutor` at the same time, so e.g. archgate and sys
+    actually overlap instead of GIL-serializing on one shared pool. Merges
+    results back via `_merge_canonical_order` so output stays
+    deterministic regardless of which pool finishes a job first."""
+    counts: dict[str, int] = {}
+    timing: dict[str, float] = {}
+    raw: dict[str, tuple[Violation, ...]] = {}
+    if not thread_jobs and not process_jobs:
+        return [], counts, timing
+
+    with ThreadPoolExecutor(max_workers=max(1, len(thread_jobs))) as tpool:
+        thread_futures = {
+            name: tpool.submit(_timed_job(job)) for name, job in thread_jobs.items()
+        }
+        if process_jobs:
+            # Bounded worker count (constraint 4): never more workers than
+            # jobs, never more than the machine's CPU count.
+            proc_workers = max(1, min(len(process_jobs), os.cpu_count() or 4))
+            with ProcessPoolExecutor(max_workers=proc_workers) as ppool:
+                _submit_process_pool(ppool, process_jobs, raw, counts, timing)
+        _drain_futures(thread_futures, raw, counts, timing, pool_label="")
+
+    return _merge_canonical_order(raw), counts, timing
 
 
 # frob:doc docs/modules/gates.md#public-api
@@ -3669,25 +4554,29 @@ def run_gates(cfg: GateConfig) -> Result[GateReport, GateError]:
         return Err(inputs_result.danger_err)
     st = inputs_result.danger_ok
 
-    jobs, skipped = _build_jobs(selected, st)
-    report = _assemble_gate_report(cfg, st, jobs, skipped, start_all)
+    thread_jobs, process_jobs, skipped = _build_jobs(selected, st)
+    report = _assemble_gate_report(
+        cfg, st, thread_jobs, process_jobs, skipped, start_all
+    )
     return Ok(report)
 
 
 def _assemble_gate_report(
     cfg: GateConfig,
     st: _GateInputs,
-    jobs: dict[str, Callable[[], tuple[Violation, ...]]],
+    thread_jobs: dict[str, Callable[[], tuple[Violation, ...]]],
+    process_jobs: dict[str, _ProcessJob],
     skipped: list[str],
     start_all: float,
 ) -> GateReport:
-    """Run `jobs`, fold in the WAIVE001/WAIVE002 self-checks, apply waivers
-    and severity overrides, and log the run's final tally."""
+    """Run `thread_jobs`/`process_jobs` (T-0415), fold in the WAIVE001/
+    WAIVE002 self-checks, apply waivers and severity overrides, and log the
+    run's final tally."""
     all_violations: list[Violation] = [
         *_waive001_violations(st.snapshot),
         *_waive002_violations(st.snapshot, st.rule_ids),
     ]
-    job_violations, counts, timing = _run_jobs(jobs)
+    job_violations, counts, timing = _run_combined_jobs(thread_jobs, process_jobs)
     counts["waive"] = len(all_violations)
     all_violations.extend(job_violations)
 
@@ -3707,6 +4596,7 @@ def _assemble_gate_report(
 __all__ = [
     "CoverageData",
     "CoverageError",
+    "DecisionError",
     "GateConfig",
     "GateError",
     "GateReport",
@@ -3733,18 +4623,23 @@ __all__ = [
     "doclink_gate",
     "docanchor_gate",
     "dup_gate",
+    "evidence_covers_scope",
     "fuzz_gate",
     "perf_gate",
+    "pii_structural_gate",
     "release_gate",
     "prework_gate",
     "record_prework",
+    "registry_gate",
     "run_gates",
     "scope_digest",
     "scope_gate",
     "secrets_gate",
     "stamp_baseline",
     "stamp_coverage",
+    "sweep_ticket",
     "sys_gate",
     "test_gate",
     "violation_fingerprint",
+    "walk_lint_gate",
 ]

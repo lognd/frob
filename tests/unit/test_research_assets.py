@@ -31,6 +31,9 @@ _HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$")
 _SLUG_STRIP_RE = re.compile(r"[^\w\- ]", re.UNICODE)
 
 
+# frob:waive DUP001 reason="deliberate mirror of frob.graph.dsl.slugify \
+# for test isolation (see docstring below); waived at the production \
+# site with the same reasoning"
 def _slugify(heading: str) -> str:
     """GitHub heading-anchor slug: lowercase, strip disallowed punctuation,
     spaces become hyphens one-for-one (T-0212).

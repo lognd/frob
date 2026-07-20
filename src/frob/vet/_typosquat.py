@@ -12,7 +12,7 @@ _MAX_DISTANCE = 1
 
 
 # frob:doc docs/modules/vet.md#public-api
-def damerau_levenshtein(a: str, b: str) -> int:
+def _damerau_levenshtein(a: str, b: str) -> int:
     """Edit distance allowing insert/delete/substitute/transpose (OSA variant)."""
     # frob:waive PERF003 reason="algorithm-inherent edit-distance DP nested scan"
     la, lb = len(a), len(b)
@@ -35,8 +35,8 @@ def damerau_levenshtein(a: str, b: str) -> int:
 
 
 # frob:doc docs/modules/vet.md#public-api
-# frob:waive TEST005 reason="find_typosquat 85.7% branch cover, debt T-0160"
-def find_typosquat(ecosystem: str, name: str) -> str | None:
+# frob:waive TEST005 reason="_find_typosquat 85.7% branch cover, debt T-0160"
+def _find_typosquat(ecosystem: str, name: str) -> str | None:
     """The popular-list name `name` is a likely typosquat of, or `None`."""
     popular = ECOSYSTEM_POPULAR.get(ecosystem)
     if not popular:
@@ -49,7 +49,7 @@ def find_typosquat(ecosystem: str, name: str) -> str | None:
             continue
         if abs(len(lowered) - len(candidate)) > _MAX_DISTANCE:
             continue
-        if damerau_levenshtein(lowered, candidate) <= _MAX_DISTANCE:
+        if _damerau_levenshtein(lowered, candidate) <= _MAX_DISTANCE:
             _log.info(
                 "vet: %s/%s is distance<=%d from popular package %s",
                 ecosystem,
@@ -61,4 +61,4 @@ def find_typosquat(ecosystem: str, name: str) -> str | None:
     return None
 
 
-__all__ = ["damerau_levenshtein", "find_typosquat"]
+__all__ = ["_damerau_levenshtein", "_find_typosquat"]

@@ -7,6 +7,9 @@ from pathlib import Path
 from tests.system.conftest import run
 
 
+# frob:waive DUP001 reason="parallel CLI system-test scaffolding: \
+# independent commands sharing the subprocess-dispatch arrange-act shape; \
+# extracting would obscure per-command intent"
 def _git(args: list[str], cwd: Path) -> subprocess.CompletedProcess:
     return subprocess.run(
         ["git"] + args,

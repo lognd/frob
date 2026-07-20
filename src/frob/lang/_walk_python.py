@@ -5,6 +5,8 @@ Python's declaration vocabulary (docstring-as-first-statement,
 here; the shared token/span/doc mechanism lives in `_common.py`.
 """
 
+# frob:waive REF002 reason="private per-language walker imported only by its sibling aggregator frob.lang._extract; a single inbound anchor is intentional for a language-dispatch leaf module, T-0450"  # noqa: E501
+
 from __future__ import annotations
 
 from tree_sitter import Node
@@ -12,37 +14,45 @@ from tree_sitter import Node
 from frob.lang._common import (
     ByteRange,
     _body_skip,
+    _collapse_ws,
+    _find_enclosing_symbol,
+    _leaf_tokens,
+    _span_of,
     child_text,
-    collapse_ws,
-    leaf_tokens,
-    span_of,
 )
-from frob.lang._models import RawSymbol, SymbolKind
+from frob.lang._models import RawComment, RawSymbol, SymbolKind
 
 _COMMENT_TYPES = frozenset({"comment"})
 _DEF_TYPES = ("function_definition", "class_definition")
 _NESTED_TYPES = ("function_definition", "class_definition", "decorated_definition")
 
 
-def _python_docstring(body: Node) -> tuple[str, ByteRange | None]:
-    """The collapsed docstring text and its byte range for a def/class body."""
+def _docstring_string_node(body: Node) -> Node | None:
+    """The leading-statement `string` node holding `body`'s docstring, if
+    any -- shared by `_python_docstring` (digest text) and
+    `_docstring_nodes` (frob: directive scan, T-0342) so the "what counts
+    as a docstring" rule lives in exactly one place."""
     if body.named_child_count == 0:
-        return "", None
+        return None
     first = body.named_children[0]
     if first.type == "expression_statement":
         if first.named_child_count == 0 or first.named_children[0].type != "string":
-            return "", None
-        string_node = first.named_children[0]
-        doc_range = (first.start_byte, first.end_byte)
-    elif first.type == "string":
-        string_node = first
-        doc_range = (first.start_byte, first.end_byte)
-    else:
+            return None
+        return first.named_children[0]
+    if first.type == "string":
+        return first
+    return None
+
+
+def _python_docstring(body: Node) -> tuple[str, ByteRange | None]:
+    """The collapsed docstring text and its byte range for a def/class body."""
+    string_node = _docstring_string_node(body)
+    if string_node is None:
         return "", None
     content = "".join(
         child_text(c) for c in string_node.children if c.type == "string_content"
     )
-    return collapse_ws(content), doc_range
+    return _collapse_ws(content), (string_node.start_byte, string_node.end_byte)
 
 
 def _effective_node(child: Node) -> tuple[Node, Node] | None:
@@ -61,14 +71,14 @@ def _function_symbol(
     """A function/method `RawSymbol` (method when nested inside a class)."""
     name = child_text(node.child_by_field_name("name"))
     doc, doc_range = _python_docstring(body)
-    sig_tokens = leaf_tokens(sig_node, _COMMENT_TYPES, _body_skip(body))
+    sig_tokens = _leaf_tokens(sig_node, _COMMENT_TYPES, _body_skip(body))
     body_skip_range = (doc_range,) if doc_range else ()
-    body_tokens = leaf_tokens(body, _COMMENT_TYPES, body_skip_range)
+    body_tokens = _leaf_tokens(body, _COMMENT_TYPES, body_skip_range)
     return RawSymbol(
         qualname=".".join((*stack, name)),
         kind=SymbolKind.METHOD if stack else SymbolKind.FUNCTION,
         public=not name.startswith("_"),
-        span=span_of(sig_node),
+        span=_span_of(sig_node),
         sig_tokens=sig_tokens,
         body_tokens=body_tokens,
         doc_text=doc,
@@ -80,17 +90,17 @@ def _class_symbol(
 ) -> RawSymbol:
     """A class `RawSymbol`; nested defs are excluded from its body tokens."""
     doc, doc_range = _python_docstring(body)
-    sig_tokens = leaf_tokens(sig_node, _COMMENT_TYPES, _body_skip(body))
+    sig_tokens = _leaf_tokens(sig_node, _COMMENT_TYPES, _body_skip(body))
     nested_ranges = tuple(
         (c.start_byte, c.end_byte) for c in body.children if c.type in _NESTED_TYPES
     )
     body_skip_ranges = nested_ranges + ((doc_range,) if doc_range else ())
-    body_tokens = leaf_tokens(body, _COMMENT_TYPES, body_skip_ranges)
+    body_tokens = _leaf_tokens(body, _COMMENT_TYPES, body_skip_ranges)
     return RawSymbol(
         qualname=".".join((*stack, name)),
         kind=SymbolKind.CLASS,
         public=not name.startswith("_"),
-        span=span_of(sig_node),
+        span=_span_of(sig_node),
         sig_tokens=sig_tokens,
         body_tokens=body_tokens,
         doc_text=doc,
@@ -113,8 +123,8 @@ def _const_symbol(node: Node) -> RawSymbol | None:
         qualname=name,
         kind=SymbolKind.CONST,
         public=not name.startswith("_"),
-        span=span_of(node),
-        sig_tokens=leaf_tokens(node, _COMMENT_TYPES),
+        span=_span_of(node),
+        sig_tokens=_leaf_tokens(node, _COMMENT_TYPES),
         body_tokens=(),
         doc_text="",
     )
@@ -170,3 +180,53 @@ def _walk_python(root: Node) -> tuple[RawSymbol, ...]:
     symbols: list[RawSymbol] = []
     _visit(root, (), symbols)
     return tuple(symbols)
+
+
+def _docstring_nodes(container: Node) -> list[Node]:
+    """Depth-first collect every leading-statement docstring `string` node
+    under `container` (the module root, or any def/class body), recursing
+    only into nested function/class bodies -- matches `_visit`'s descent
+    shape without needing its qualname stack, since docstring binding is
+    resolved later by span alone (`_find_enclosing_symbol`)."""
+    nodes: list[Node] = []
+    own = _docstring_string_node(container)
+    if own is not None:
+        nodes.append(own)
+    for child in container.children:
+        effective = _effective_node(child)
+        if effective is None:
+            continue
+        node, _sig_node = effective
+        if node.type in _DEF_TYPES:
+            body = node.child_by_field_name("body")
+            if body is not None:
+                nodes.extend(_docstring_nodes(body))
+    return nodes
+
+
+# frob:doc docs/modules/lang.md#comment-extraction-and-binding
+def _walk_python_docstring_comments(
+    root: Node, symbols: tuple[RawSymbol, ...]
+) -> tuple[RawComment, ...]:
+    """`RawComment` for every module/class/function docstring (T-0342).
+
+    Without this, a `frob:` directive written inside a docstring instead of
+    a `#` comment is silently invisible to `frob.graph`'s DSL parser -- no
+    edge, no `MalformedDirective` either (see this module's `RawComment`
+    docstring for what `frob.graph.dsl.parse_directives` does with these).
+    Each docstring binds to the symbol whose body it opens (module-level
+    when nothing encloses it, resolved via `_find_enclosing_symbol` exactly
+    like a comment directive would), never to a `following` symbol -- a
+    docstring is never "about" whatever comes after the def it lives in.
+    """
+    comments: list[RawComment] = []
+    for node in _docstring_nodes(root):
+        content = "".join(
+            child_text(c) for c in node.children if c.type == "string_content"
+        )
+        span = _span_of(node)
+        enclosing = _find_enclosing_symbol(span, symbols)
+        comments.append(
+            RawComment(text=content, span=span, enclosing=enclosing, following=None)
+        )
+    return tuple(comments)

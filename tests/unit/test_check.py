@@ -275,6 +275,278 @@ class TestSummarySeverityHonesty:
         assert summary == "1 warning"
 
 
+class TestDupArchWaiverAwareSummaries:
+    """T-0375: the frob-dup and frob-arch stage summaries must subtract
+    findings already covered by a reasoned `frob:waive`, mirroring the
+    gates stage's error/warning/waived split -- a waived group/finding
+    stays listed (as a `note` diagnostic), never hidden, but no longer
+    inflates the headline count."""
+
+    _DUP_BODY = (
+        "    total = 0\n"
+        "    for item in items:\n"
+        "        total = total + item\n"
+        "        if total > 100:\n"
+        "            total = 100\n"
+        "    return total\n"
+    )
+    _WAIVER = '# frob:waive DUP001 reason="documented shared shape, T-0375 fixture"\n'
+
+    def _dup_source(self, *, waive_foo: bool = False, waive_bar: bool = False) -> str:
+        """Two functions with an identical (exact-clone) body, either
+        optionally preceded by a `frob:waive` directive."""
+        foo_waiver = self._WAIVER if waive_foo else ""
+        bar_waiver = self._WAIVER if waive_bar else ""
+        lines = [f"{foo_waiver}def foo(items):\n{self._DUP_BODY}"]
+        lines.append(f"{bar_waiver}def bar(items):\n{self._DUP_BODY}")
+        return "\n\n".join(lines)
+
+    def test_dup001_waived_group_excluded_from_headline_but_listed(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/check/_python.py::_run_dup kind="unit"
+        # Full-coverage rule (T-0375 review fix): the group has exactly two
+        # fragments (foo, bar) -- waiving BOTH covers the whole group.
+        from frob.check._python import _run_dup
+
+        (tmp_path / "a.py").write_text(self._dup_source(waive_foo=True, waive_bar=True))
+
+        result = _run_dup(tmp_path)
+
+        assert result.summary == "0 duplicate groups (1 waived)", result.summary
+        waived_diags = [d for d in result.diagnostics if d.severity == "note"]
+        assert len(waived_diags) == 1
+        assert "waived:" in waived_diags[0].message
+        assert not any(d.severity == "warning" for d in result.diagnostics)
+
+    def test_dup001_partial_group_waiver_does_not_hide_whole_group(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/check/_python.py::_run_dup kind="unit"
+        # T-0375 review fix: waiving only ONE fragment of a 2-fragment group
+        # must NOT mark the group waived -- an "any fragment matches"
+        # (rather than "every fragment matches") rule would silently treat
+        # a partially-reasoned-about group as fully accounted for.
+        from frob.check._python import _run_dup
+
+        (tmp_path / "a.py").write_text(self._dup_source(waive_foo=True))
+
+        result = _run_dup(tmp_path)
+
+        assert result.summary == "1 duplicate group", result.summary
+        assert any(d.severity == "warning" for d in result.diagnostics)
+        assert not any(d.severity == "note" for d in result.diagnostics)
+
+    def test_dup001_waiver_on_shared_symbol_does_not_hide_distinct_superset_group(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/check/_python.py::_run_dup kind="unit"
+        # T-0375 review fix (reviewer-reproduced regression): frob.dup's
+        # legacy scanner deliberately lets one symbol sit in BOTH an exact
+        # group and a DISTINCT, larger renamed-superset group --
+        # `_renamed_groups` only drops a renamed group when it is WHOLLY
+        # covered by a single exact group (frob/dup/_legacy.py). Here foo/
+        # bar form an exact group; foo/bar/baz (alpha-renamed) form a
+        # separate renamed group containing the new, un-reasoned-about baz.
+        # Fully waiving DUP001 on foo+bar (covering the exact group) must
+        # NOT also silently exclude the renamed group -- baz's fragment is
+        # not covered by any waiver, so that group must still count.
+        from frob.check._python import _run_dup
+
+        renamed_body = (
+            "    result = 0\n"
+            "    for value in values:\n"
+            "        result = result + value\n"
+            "        if result > 100:\n"
+            "            result = 100\n"
+            "    return result\n"
+        )
+        source = (
+            self._dup_source(waive_foo=True, waive_bar=True)
+            + "\n\n"
+            + f"def baz(values):\n{renamed_body}"
+        )
+        (tmp_path / "a.py").write_text(source)
+
+        result = _run_dup(tmp_path)
+
+        assert result.summary == "1 duplicate group (1 waived)", result.summary
+        codes = {(d.severity, d.code) for d in result.diagnostics}
+        assert ("note", "exact") in codes, (
+            "the fully-waived exact {foo,bar} group must still be listed, "
+            f"not hidden: {result.diagnostics}"
+        )
+        assert ("warning", "renamed") in codes, (
+            "the renamed {foo,bar,baz} superset group must still count "
+            f"unaccounted -- baz was never waived: {result.diagnostics}"
+        )
+
+    def test_dup001_waiving_every_fragment_of_superset_group_waives_it_too(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/check/_python.py::_run_dup kind="unit"
+        # The flip side of the above: once baz is ALSO waived, the renamed
+        # superset group is fully covered and is excluded from the
+        # headline too -- full coverage, not "never waivable".
+        from frob.check._python import _run_dup
+
+        renamed_body = (
+            "    result = 0\n"
+            "    for value in values:\n"
+            "        result = result + value\n"
+            "        if result > 100:\n"
+            "            result = 100\n"
+            "    return result\n"
+        )
+        source = (
+            self._dup_source(waive_foo=True, waive_bar=True)
+            + "\n\n"
+            + f"{self._WAIVER}def baz(values):\n{renamed_body}"
+        )
+        (tmp_path / "a.py").write_text(source)
+
+        result = _run_dup(tmp_path)
+
+        assert result.summary == "0 duplicate groups (2 waived)", result.summary
+        assert not any(d.severity == "warning" for d in result.diagnostics)
+
+    def test_dup001_unwaived_group_still_counts(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/check/_python.py::_run_dup kind="unit"
+        from frob.check._python import _run_dup
+
+        (tmp_path / "a.py").write_text(self._dup_source())
+
+        result = _run_dup(tmp_path)
+
+        assert result.summary == "1 duplicate group", result.summary
+        assert any(d.severity == "warning" for d in result.diagnostics)
+        assert not any(d.severity == "note" for d in result.diagnostics)
+
+    def _arch_source(self, *, waiver: str = "") -> str:
+        """A long AND structurally complex function (fires ARCH001's
+        long-function rule), optionally preceded by a `frob:waive`."""
+        lines = [waiver] if waiver else []
+        lines += [
+            "def complex_long(items):",
+            '    """Long and complex."""',
+            "    total = 0",
+        ]
+        for i in range(30):
+            lines.append(
+                f"    try:\n        if items[{i}] and total:\n"
+                "            for x in range(3):\n"
+                "                if x:\n                    total += x\n"
+                "    except Exception:\n        pass"
+            )
+        lines.append("    return total")
+        return "\n".join(lines) + "\n"
+
+    def test_arch001_waived_long_function_excluded_from_headline_but_listed(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/check/_python.py::_run_arch kind="unit"
+        from frob.check._python import _run_arch
+
+        (tmp_path / "src").mkdir()
+        waiver = '# frob:waive ARCH001 reason="justified, T-0375 fixture"\n'
+        (tmp_path / "src" / "big.py").write_text(self._arch_source(waiver=waiver))
+
+        result = _run_arch(tmp_path / "src")
+
+        assert "0 warnings (1 waived)" in result.summary, result.summary
+        waived = [
+            d
+            for d in result.diagnostics
+            if d.code == "long-function" and d.severity == "note"
+        ]
+        assert len(waived) == 1
+        assert "waived:" in waived[0].message
+        assert not any(
+            d.code == "long-function" and d.severity == "warning"
+            for d in result.diagnostics
+        )
+
+    def test_arch001_unwaived_long_function_still_counts(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/check/_python.py::_run_arch kind="unit"
+        from frob.check._python import _run_arch
+
+        (tmp_path / "src").mkdir()
+        (tmp_path / "src" / "big.py").write_text(self._arch_source())
+
+        result = _run_arch(tmp_path / "src")
+
+        assert "1 warning" in result.summary
+        assert "waived" not in result.summary
+        assert any(
+            d.code == "long-function" and d.severity == "warning"
+            for d in result.diagnostics
+        )
+
+    @staticmethod
+    def _calibrated_source(fn_name: str = "do_work") -> str:
+        """A function long enough to trip `frob.arch.analyze_project`'s bare
+        30-line `max_function_lines` default but short enough to stay under
+        the calibrated 60-line default (T-0373's frob.toml [arch] table),
+        and structurally complex enough (>=8 branches) to pass
+        `_py_is_complex`'s cyclomatic-proxy filter. Mirrors
+        `tests/test_gates.py::_complex_function_source`."""
+        lines = [f"def {fn_name}(cfg):", "    result = {}"]
+        for i in range(8):
+            lines.append(f'    if cfg.get("flag_{i}"):')
+            lines.append(f'        result["k{i}"] = {i}')
+        for i in range(20):
+            lines.append(f'    step_{i} = cfg.get("step_{i}", "default")')
+        lines.append("    return result, " + ", ".join(f"step_{i}" for i in range(20)))
+        return "\n".join(lines) + "\n"
+
+    def test_arch_stage_uses_calibrated_default_not_library_default(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/check/_python.py::_run_arch kind="unit"
+        # T-0442: without threading load_arch_config's calibrated 60-line
+        # default through, this tool-summary stage would use
+        # analyze_project's bare 30-line default and flag this ~39-line
+        # function -- disagreeing with ARCH001's own T-0373-fixed gate over
+        # the identical source. No frob.toml present: the calibrated
+        # default alone must suppress the finding.
+        from frob.arch import analyze_project
+        from frob.check._python import _run_arch
+
+        (tmp_path / "src").mkdir()
+        (tmp_path / "src" / "mod.py").write_text(self._calibrated_source())
+
+        raw_result = analyze_project(tmp_path / "src")
+        assert "long-function" in {s.category for s in raw_result.suggestions}, (
+            "fixture must trip the library's own bare default to prove anything"
+        )
+
+        result = _run_arch(tmp_path / "src")
+
+        assert not any(d.code == "long-function" for d in result.diagnostics), (
+            result.diagnostics
+        )
+
+    def test_arch_stage_respects_explicit_frob_toml_override(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/check/_python.py::_run_arch kind="unit"
+        # T-0442: an explicit frob.toml [arch] override (well below both the
+        # library default and the calibrated default) must still surface,
+        # proving _run_arch actually reads frob.toml via load_arch_config
+        # rather than a hardcoded calibrated constant.
+        from frob.check._python import _run_arch
+
+        (tmp_path / "src").mkdir()
+        (tmp_path / "src" / "mod.py").write_text(self._calibrated_source())
+        (tmp_path / "src" / "frob.toml").write_text("[arch]\nmax_function_lines = 20\n")
+
+        result = _run_arch(tmp_path / "src")
+
+        assert any(d.code == "long-function" for d in result.diagnostics), (
+            result.diagnostics
+        )
+
+
 def test_check_run_check_arch_integration(tmp_path: Path) -> None:
     # frob:tests src/frob/check kind="integration"
     # Exercises frob.check across a real analysis boundary: run_check with the

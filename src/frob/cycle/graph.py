@@ -9,23 +9,23 @@ class DependencyGraph:
         self._edges: dict[str, set[str]] = defaultdict(set)
         self._nodes: set[str] = set()
 
+    # frob:doc docs/commands/cycle.md#public-api
     def add_edge(self, src: str, dst: str) -> None:
-        # frob:doc docs/commands/cycle.md#public-api
         self._nodes.add(src)
         self._nodes.add(dst)
         self._edges[src].add(dst)
 
+    # frob:doc docs/commands/cycle.md#public-api
     def add_node(self, node: str) -> None:
-        # frob:doc docs/commands/cycle.md#public-api
         self._nodes.add(node)
 
+    # frob:doc docs/commands/cycle.md#public-api
     @property
     def nodes(self) -> frozenset[str]:
-        # frob:doc docs/commands/cycle.md#public-api
         return frozenset(self._nodes)
 
+    # frob:doc docs/commands/cycle.md#public-api
     def neighbors(self, node: str) -> set[str]:
-        # frob:doc docs/commands/cycle.md#public-api
         return self._edges.get(node, set())
 
 

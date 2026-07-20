@@ -111,14 +111,24 @@ _CPP_EXTS = {".c", ".cc", ".cpp", ".cxx", ".c++", ".h", ".hpp", ".hxx", ".h++"}
 # symbols show up; `_dedupe_imports` sees an always-empty `raw_imports` for
 # it and the cpp-style branch is a no-op.
 _STRATA_EXTS = frozenset({".strata"})
-# `.strata` in particular is drawn from `frob.lang.supported_extensions()`
-# (T-0129) rather than a fresh literal, since that is its single source of
-# truth; `_PY_EXTS`/`_CPP_EXTS` predate T-0077/T-0129 and intentionally
-# carry a couple of cpp extensions (.c++/.hxx/.h++) frob.lang's grammar
-# table does not, so they are kept as explicit local buckets rather than
-# narrowed to frob.lang's set.
+# `.rs` is frob.lang's rust grammar (T-0238); rust has no `extract_imports`
+# walker registered in `frob.lang._extract._IMPORT_WALKERS`, so
+# `_parse_for_outline` picks up an always-empty `raw_imports` tuple for it
+# the same way `.strata` does, but through the ordinary `extract_imports`
+# call rather than a dedicated skip branch -- `.rs` files simply carry no
+# outline imports.
+_RUST_EXTS = frozenset({".rs"})
+# `.strata` and `.rs` are drawn from `frob.lang.supported_extensions()`
+# (T-0129, T-0238) rather than a fresh literal, since that is its single
+# source of truth; `_PY_EXTS`/`_CPP_EXTS` predate T-0077/T-0129 and
+# intentionally carry a couple of cpp extensions (.c++/.hxx/.h++) frob.lang's
+# grammar table does not, so they are kept as explicit local buckets rather
+# than narrowed to frob.lang's set.
 _OUTLINE_EXTS = (
-    frozenset(_PY_EXTS) | frozenset(_CPP_EXTS) | (_STRATA_EXTS & supported_extensions())
+    frozenset(_PY_EXTS)
+    | frozenset(_CPP_EXTS)
+    | (_STRATA_EXTS & supported_extensions())
+    | (_RUST_EXTS & supported_extensions())
 )
 
 

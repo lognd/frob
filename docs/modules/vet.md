@@ -35,6 +35,7 @@ immediately.
 | native | compiled artifacts in the wheel/crate (opaque to scanning) |
 | install-hook | setup.py/build.rs/postinstall scripts containing any of the above |
 | obfuscation | decode-then-eval chains, high-entropy string blobs, minified-source-in-sdist mismatch |
+| embedded_code | large HTML/JS-shaped STRING LITERAL inside another language's source (T-0244: python's own grammar hides an embedded dashboard's markup/script from every needle table above) -- size + HTML/JS-signal heuristic over python `string` tree-sitter nodes; ALWAYS emitted for a region found (fail-closed), plus any typescript-needle hits over the region's own text |
 
 `native` and `obfuscation` are capabilities in their own right: compiled
 code cannot be vetted statically and is therefore trusted only by explicit
@@ -301,10 +302,12 @@ rule is a natural follow-up, not yet built).
   verdict write can lose a race to another thread's write for the same
   key non-deterministically (never a crash or corruption, just "most
   recent write wins" under contention); `jobs=1` (the default) has none
-  of this risk. Wiring `--timeout`/`--jobs` CLI flags through
-  `app/vet_runner.py`/`__main__.py` is a follow-up (out of T-0208's
-  declared scope, which is `src/frob/vet/**` only -- see T-0110's
-  `--containment` precedent above for the same pattern).
+  of this risk. `frob vet --timeout SECONDS --jobs N` (T-0251) plumbs
+  both flags through `AppConfig.vet_timeout`/`vet_jobs`
+  (`app/config.py`) and `app/vet_runner.py`'s `_run_scan` into
+  `scan_tree` -- unset `--jobs` still defaults to the safe `jobs=1` path,
+  so raising it above 1 is an explicit opt-in into the shared-cache race
+  disclosed above, not a new default.
 - **Advisories (VET005)**: delegated to the osv-scanner adapter (see
   External tool adapters below) -- OSV.dev aggregates GitHub Advisory DB,
   PyPA, RustSec, and npm under one package-keyed schema, and osv-scanner
@@ -397,6 +400,22 @@ explicit trust, obfuscation is unconditionally fatal, escalation diffs
 catch the common attack shape, and VET005/osv covers disclosed compromises.
 frob.vet raises the cost of the attack classes that actually occur; it is
 not a proof of benignity, and the docs say so.
+
+Embedded-code declaration, not full re-parse (T-0244): `embedded_code`
+detection is a size + HTML/JS-signal heuristic over python STRING nodes,
+not a real HTML/JS parse of the embedded content -- the typescript-needle
+re-scan over a region's own text is the same coarse substring philosophy
+as every other needle table, so a region can be declared `embedded_code`
+while its specific sub-capabilities (`eval`/`html_render`/`fetch_url`/...)
+stay unobserved if the embedded content doesn't happen to contain a
+matching needle. That is intentional and fail-closed: `embedded_code`
+itself is ALWAYS emitted for a detected region regardless of what the
+re-scan finds, so the region cannot silently pass unseen (docs/design/
+structural-linter-adversarial-hardening.md rule 3) -- it must be declared
+or waived in `[vet.allow]` like any other observed capability (VET002).
+Detection is python-host-only for this pass (the reported pilot shape);
+embedded HTML/JS strings inside TS/rust/C-C++/kotlin hosts are a
+documented gap, not attempted here.
 
 Self-match false positives (T-0151): the capability scanner's pattern
 tables (`_PATTERNS` in `src/frob/vet/_capability.py`) are plain-text
@@ -502,6 +521,71 @@ advisory output), version-escalation diffs as the primary signal,
 cross-language capability sets via one grammar stack, offline-first, and
 gate enforcement.
 
+## Closed-world import accounting (T-0180)
+
+T-0158 shipped the single-source `DANGEROUS_OPERATIONS` registry, the
+(kind x language) coverage matrix with 0 unexcused cells, and the
+sys-audit matrix-verdict proof line -- but that proof only covers "every
+(capability kind, language) cell is patterned or excused." It says nothing
+about whether a GIVEN dependency's actual import graph is fully accounted
+for. `src/frob/vet/_closedworld.py` closes that separate gap: for one
+vetted package, `closed_world_accounting` locates its source, walks every
+absolute Python import (`ast.parse`, never a substring guess), and
+resolves each import root to exactly one of four buckets, in priority
+order:
+
+1. **registry** -- the import matches a `DANGEROUS_OPERATIONS` library for
+   the language (via the `library` field, plus a small documented
+   PyPI-distribution-name-vs-import-name override table for the two known
+   mismatches, `python-dotenv`/`dotenv` and `Pillow`/`PIL`).
+2. **no-capability** -- the import is a curated `NO_CAPABILITY_MODULES`
+   stdlib entry (T-0158 addendum 2's curated no-effect stdlib set).
+3. **vetted** -- the import is either already cached (`_cache.py`'s
+   `latest_verdict`) or its source is locatable under the project root, in
+   which case it is scanned by the SAME capability engine
+   (`scan_directory_capabilities`) and the resulting `PackageVerdict` is
+   cached via `_cache.py::store_verdict` -- the identical sqlite pattern
+   the primary verdict cache uses, keyed the same way (content-addressed
+   artifact hash).
+4. **unknown** -- none of the above: not a registry library, not curated
+   stdlib, and its source cannot be located locally. This is the LOUD
+   failure case -- logged at WARNING, never silently dropped -- and it is
+   exactly the honest outcome for e.g. an un-vendored stdlib module this
+   repo's `NO_CAPABILITY_MODULES` curation has not reached yet (`uuid`,
+   `ipaddress`, `ambiguous` `ast.parse`-only stdlib modules observed during
+   manual testing against `pydantic`'s real import graph), or a genuinely
+   uninstalled third-party dependency.
+
+`ClosedWorldAccounting.accounting_line()` renders the audit line T-0158's
+addendum 2 describes: "N registry op(s), M vetted library/ies, K explicit
+no-capability entries, J unknown" for `ecosystem/name@version`.
+`ClosedWorldAccounting.closed` is `True` iff the source was actually
+available to walk AND `unknown_count == 0` -- an unlocatable source can
+never claim closure by omission (`source_available=False` renders as
+"source unavailable, closed-world accounting skipped" instead of a
+misleadingly-clean zero-everything line).
+
+Honest scope cuts (T-0180, not silently claimed done):
+- **Python only.** The import-graph walk is `ast.parse`-based and Python-
+  specific. An npm (`import`/`require` AST) or cargo (`use`/`extern
+  crate`) import-graph walk is real, tracked, un-built work -- the same
+  "curated, not exhaustive" posture `NO_CAPABILITY_MODULES` already
+  documents for the Python stdlib subset itself.
+- **Single-hop resolution.** `resolve_import` scans a vetted import's OWN
+  source for capabilities; it does not recursively walk THAT import's own
+  imports (no transitive closure). A vetted dependency with an unresolved
+  transitive import of its own is invisible to this pass -- a real gap,
+  not a claimed-closed one.
+- **`RecursionError` degrades to empty capabilities, not a crash.**
+  `_capability.py::_comment_byte_spans`'s recursive tree-sitter walk hits
+  Python's recursion limit on some real, deeply-nested third-party source
+  files (observed live against `pydantic`'s installed dependency tree in
+  this repo's own `.venv`); `_closedworld.py::_scan_capabilities_best_effort`
+  catches it and treats that one dependency as having zero observed
+  capabilities (logged at WARNING) rather than aborting the whole
+  accounting pass -- the same best-effort posture `_source.py`/`_cache.py`
+  already document for their own failure modes.
+
 ## Third-party library survey (T-0181)
 
 T-0158 addendum 2's priority survey list of python/npm/cargo third-party
@@ -574,47 +658,47 @@ discipline `_capability.py`'s module docstring already documents for
 <!-- frob:describes src/frob/vet/_models.py::capability_diff -->
 <!-- frob:describes src/frob/vet/_models.py::HookVerdict -->
 <!-- frob:describes src/frob/vet/_models.py::VetConfig -->
-<!-- frob:describes src/frob/vet/_models.py::HookAction -->
+<!-- frob:describes src/frob/vet/_models.py::_HookAction -->
 <!-- frob:describes src/frob/vet/_models.py::VetError -->
-<!-- frob:describes src/frob/vet/_ecosystem.py::python_rules -->
-<!-- frob:describes src/frob/vet/_ecosystem.py::rust_rules -->
-<!-- frob:describes src/frob/vet/_ecosystem.py::npm_non_registry_rule -->
-<!-- frob:describes src/frob/vet/_cache.py::store_verdict -->
-<!-- frob:describes src/frob/vet/_cache.py::latest_verdict -->
+<!-- frob:describes src/frob/vet/_ecosystem.py::_python_rules -->
+<!-- frob:describes src/frob/vet/_ecosystem.py::_rust_rules -->
+<!-- frob:describes src/frob/vet/_ecosystem.py::_npm_non_registry_rule -->
+<!-- frob:describes src/frob/vet/_cache.py::_store_verdict -->
+<!-- frob:describes src/frob/vet/_cache.py::_latest_verdict -->
 <!-- frob:describes src/frob/vet/_hook.py::parse_hook_command -->
 <!-- frob:describes src/frob/vet/_hook.py::check_package -->
-<!-- frob:describes src/frob/vet/_lockfile.py::find_lockfile -->
-<!-- frob:describes src/frob/vet/_lockfile.py::parse_lockfile -->
+<!-- frob:describes src/frob/vet/_lockfile.py::_find_lockfile -->
+<!-- frob:describes src/frob/vet/_lockfile.py::_parse_lockfile -->
 <!-- frob:describes src/frob/vet/_capability.py::language_for -->
 <!-- frob:describes src/frob/vet/_capability.py::scan_file_capabilities -->
-<!-- frob:describes src/frob/vet/_capability.py::scan_file_fingerprints -->
-<!-- frob:describes src/frob/vet/_capability.py::decode_to_exec_signal -->
-<!-- frob:describes src/frob/vet/_capability.py::scan_directory_capabilities -->
-<!-- frob:describes src/frob/vet/_capability.py::scan_directory_fingerprints -->
+<!-- frob:describes src/frob/vet/_capability.py::_scan_file_fingerprints -->
+<!-- frob:describes src/frob/vet/_capability.py::_decode_to_exec_signal -->
+<!-- frob:describes src/frob/vet/_capability.py::_scan_directory_capabilities -->
+<!-- frob:describes src/frob/vet/_capability.py::_scan_directory_fingerprints -->
 <!-- frob:describes src/frob/vet/_scan.py::scan_tree -->
-<!-- frob:describes src/frob/vet/_lifecycle.py::scan_lifecycle_scripts -->
-<!-- frob:describes src/frob/vet/_obfuscation.py::high_entropy_strings -->
-<!-- frob:describes src/frob/vet/_obfuscation.py::invisible_text_signal -->
-<!-- frob:describes src/frob/vet/_obfuscation.py::hex_identifier_ratio_signal -->
-<!-- frob:describes src/frob/vet/_obfuscation.py::scan_text_obfuscation -->
-<!-- frob:describes src/frob/vet/_obfuscation.py::scan_directory_obfuscation -->
+<!-- frob:describes src/frob/vet/_lifecycle.py::_scan_lifecycle_scripts -->
+<!-- frob:describes src/frob/vet/_obfuscation.py::_high_entropy_strings -->
+<!-- frob:describes src/frob/vet/_obfuscation.py::_invisible_text_signal -->
+<!-- frob:describes src/frob/vet/_obfuscation.py::_hex_identifier_ratio_signal -->
+<!-- frob:describes src/frob/vet/_obfuscation.py::_scan_text_obfuscation -->
+<!-- frob:describes src/frob/vet/_obfuscation.py::_scan_directory_obfuscation -->
 <!-- frob:describes src/frob/vet/_popular_pypi.py::PYPI_TOP -->
 <!-- frob:describes src/frob/vet/_popular_cargo.py::CARGO_TOP -->
 <!-- frob:describes src/frob/vet/_popular_npm.py::NPM_TOP -->
 <!-- frob:describes src/frob/vet/_popular.py::ECOSYSTEM_POPULAR -->
 <!-- frob:describes src/frob/vet/_registry.py::LATEST_VERSION -->
-<!-- frob:describes src/frob/vet/_allow.py::load_vet_config -->
-<!-- frob:describes src/frob/vet/_typosquat.py::damerau_levenshtein -->
-<!-- frob:describes src/frob/vet/_typosquat.py::find_typosquat -->
+<!-- frob:describes src/frob/vet/_allow.py::_load_vet_config -->
+<!-- frob:describes src/frob/vet/_typosquat.py::_damerau_levenshtein -->
+<!-- frob:describes src/frob/vet/_typosquat.py::_find_typosquat -->
 <!-- frob:describes src/frob/vet/_osv.py::OsvAdvisory -->
-<!-- frob:describes src/frob/vet/_osv.py::is_available -->
-<!-- frob:describes src/frob/vet/_osv.py::run_osv_scan -->
-<!-- frob:describes src/frob/vet/_registry.py::RegistryResult -->
-<!-- frob:describes src/frob/vet/_registry.py::fetch_publish_date -->
-<!-- frob:describes src/frob/vet/_source.py::locate_pypi_source -->
-<!-- frob:describes src/frob/vet/_source.py::locate_npm_source -->
-<!-- frob:describes src/frob/vet/_source.py::locate_cargo_source -->
-<!-- frob:describes src/frob/vet/_source.py::locate_source -->
+<!-- frob:describes src/frob/vet/_osv.py::_is_available -->
+<!-- frob:describes src/frob/vet/_osv.py::_run_osv_scan -->
+<!-- frob:describes src/frob/vet/_registry.py::_RegistryResult -->
+<!-- frob:describes src/frob/vet/_registry.py::_fetch_publish_date -->
+<!-- frob:describes src/frob/vet/_source.py::_locate_pypi_source -->
+<!-- frob:describes src/frob/vet/_source.py::_locate_npm_source -->
+<!-- frob:describes src/frob/vet/_source.py::_locate_cargo_source -->
+<!-- frob:describes src/frob/vet/_source.py::_locate_source -->
 <!-- frob:describes src/frob/vet/_osv.py::cve_ids -->
 <!-- frob:describes src/frob/vet/_nvd.py::NvdResult -->
 <!-- frob:describes src/frob/vet/_nvd.py::fetch_cwe_for_cve -->
@@ -633,6 +717,11 @@ discipline `_capability.py`'s module docstring already documents for
 <!-- frob:describes src/frob/vet/_cve.py::CveMatch -->
 <!-- frob:describes src/frob/vet/_cve.py::link_cwe_ids -->
 <!-- frob:describes src/frob/vet/_cve.py::match_dependencies_against_mirror -->
+<!-- frob:describes src/frob/vet/_models.py::ImportResolution -->
+<!-- frob:describes src/frob/vet/_models.py::ClosedWorldAccounting -->
+<!-- frob:describes src/frob/vet/_closedworld.py::walk_python_imports -->
+<!-- frob:describes src/frob/vet/_closedworld.py::resolve_import -->
+<!-- frob:describes src/frob/vet/_closedworld.py::closed_world_accounting -->
 
 - `Dependency` -- one resolved (ecosystem, name, version[, resolved-URL])
   tuple read from a lockfile; the unit every rule operates on.
@@ -756,6 +845,19 @@ discipline `_capability.py`'s module docstring already documents for
   then UNMODELED.
 - `locate_source` -- dispatches to the ecosystem-appropriate local-cache
   source locator.
+- `ImportResolution` -- one imported module name's closed-world
+  classification (T-0180): `"registry"`, `"no-capability"`, `"vetted"`, or
+  the loud `"unknown"` fallthrough.
+- `ClosedWorldAccounting` -- the full closed-world import accounting for
+  one vetted package (T-0180): every import resolved, the four-bucket
+  counts, and `closed` (true iff source was available AND zero unknowns).
+- `walk_python_imports` -- every top-level module name a package's Python
+  source absolutely imports, via `ast.parse` (relative imports excluded).
+- `resolve_import` -- classifies one imported module name against the
+  `DANGEROUS_OPERATIONS` registry, `NO_CAPABILITY_MODULES`, a
+  scan-and-cache vetted-library lookup, or unknown, in that priority order.
+- `closed_world_accounting` -- locates a package's source, walks its
+  imports, and resolves each one; the T-0158 addendum 2 audit line.
 
 ```python
 # frob/vet/_models.py
@@ -877,6 +979,16 @@ def locate_pypi_source(root: Path, name: str, version: str) -> Path | None
 def locate_npm_source(root: Path, name: str) -> Path | None
 def locate_cargo_source(name: str, version: str) -> Path | None
 def locate_source(root: Path, ecosystem: str, name: str, version: str) -> Path | None
+
+# frob/vet/_closedworld.py (T-0180)
+def walk_python_imports(source_dir: Path, *, max_files: int = 300) -> frozenset[str]
+def resolve_import(
+    import_name: str, *, root: Path, cache_path: Path,
+    language: str = "python", ecosystem: str = "pypi",
+) -> ImportResolution
+def closed_world_accounting(
+    root: Path, ecosystem: str, name: str, version: str, *, cache_path: Path,
+) -> ClosedWorldAccounting
 ```
 
 ## Sequencing and integration
@@ -901,6 +1013,33 @@ What landed on top of the lockfile-conformance MVP:
   `decode_to_exec_signal` uses `frob.lang` symbol extraction so a decode
   call and an exec/eval call must land in the SAME function body to count
   -- the highest-precision obfuscation signal, per the docs above.
+  T-0170 adds a `kotlin` column (`.kt`/`.kts`) for Android nodes: net
+  (OkHttp/`okhttp3.`, `Retrofit.Builder(`, `HttpURLConnection`), exec
+  (`Runtime.getRuntime().exec(`, `ProcessBuilder(`), and client_storage
+  (`SharedPreferences`/`getSharedPreferences(`, `RoomDatabase`/
+  `@Database(`). `eval` is deliberately left unpatterned -- Kotlin has no
+  idiomatic string-eval/dynamic-code-execution primitive in common Android
+  use, the same "excuse honestly" posture the registry's rust/eval-
+  adjacent `MatrixExcuse` entries record. Unlike every other language
+  column, `kotlin`'s needle table (`_KOTLIN_PATTERNS`) is hand-maintained
+  directly in `_capability.py` rather than compiled from
+  `_capability_registry.DANGEROUS_OPERATIONS`: T-0170's declared scope
+  covers `_capability.py`/tests/this doc only, not
+  `src/frob/vet/_capability_registry.py`, so `kotlin` could not be added
+  to the registry's `LANGUAGES` tuple or given a formal `MatrixExcuse` for
+  its unpatterned cells (eval, fs/fs-write/fs-read, ffi, install-hook,
+  html_render, sql, fetch_url, deserialize) in the same change, and
+  `scan_file_operations` (the named-entry-citing sibling of
+  `scan_file_capabilities`) returns no entries for kotlin files as a
+  result -- only the bare-kind `scan_file_capabilities` path works for
+  kotlin today. `SCANNED_LANGUAGES` and `_capability_registry.LANGUAGES`
+  are consequently allowed to diverge by exactly `{"kotlin"}`
+  (`UNREGISTERED_SCANNED_LANGUAGES`, T-0170); the T-0169 drift-lock test
+  (`tests/unit/strata/test_selfconform.py::TestLanguageCoverageDriftLock`)
+  subtracts that set before comparing, so the check stays fully strict for
+  every other language. A follow-up ticket to migrate `kotlin` into the
+  registry (full T-0158 matrix discipline) was filed rather than expanding
+  this ticket's scope; see T-0170's Done report for the id.
 - **Source location** (`_source.py`): best-effort local-cache lookup only
   (`.venv/lib/*/site-packages`, `~/.cache/uv`, `~/.cache/pip`,
   `node_modules/<name>`, `~/.cargo/registry/src`). No network fetch is

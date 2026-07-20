@@ -4,10 +4,9 @@ default, `--apply` writes, and a second run is a no-op (idempotency)."""
 
 from __future__ import annotations
 
-import subprocess
 from pathlib import Path
 
-from tests.system.conftest import run
+from tests.system.conftest import init_repo, run
 
 _MODEL = """\
 module m
@@ -18,24 +17,12 @@ assert c1 noflow evil -> api
 """
 
 
-def _git(*args: str, cwd: Path) -> None:
-    subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True)
-
-
 def _init_repo(tmp_path: Path) -> Path:
     """A minimal frob-enabled repo: git init, empty ledger, one design file
-    with an unrefined abstract node and a REFUTED noflow claim."""
-    repo = tmp_path / "repo"
-    repo.mkdir()
-    _git("init", "-q", cwd=repo)
-    _git("config", "user.email", "test@example.com", cwd=repo)
-    _git("config", "user.name", "Test", cwd=repo)
-    (repo / "tickets.md").write_text("# Tickets\n")
-    (repo / "design").mkdir()
-    (repo / "design" / "m.strata").write_text(_MODEL)
-    _git("add", "-A", cwd=repo)
-    _git("commit", "-q", "-m", "init", cwd=repo)
-    return repo
+    with an unrefined abstract node and a REFUTED noflow claim (T-0364:
+    arrange step extracted to conftest.init_repo, shared with
+    test_cli_sys_doc.py)."""
+    return init_repo(tmp_path, _MODEL)
 
 
 class TestSysPlanCli:

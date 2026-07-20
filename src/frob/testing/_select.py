@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from pathlib import PurePosixPath
 
+from frob.excludes import is_test_file
 from frob.gitio import Diff, Hunk
 from frob.graph import EdgeKind, GraphSnapshot, SymbolRecord
 from frob.lang import language_for_extension
@@ -32,20 +33,6 @@ def extension_language(path: str) -> str | None:
     """
     suffix = PurePosixPath(path).suffix.lower()
     return language_for_extension(suffix)
-
-
-def _is_test_file(path: str) -> bool:
-    """True if `path` is itself a test file by name or by a `tests/` dir component."""
-    pure = PurePosixPath(path)
-    if "tests" in pure.parts[:-1]:
-        return True
-    name = pure.stem
-    return (
-        name.startswith("test_")
-        or name.endswith("_test")
-        or ".test" in pure.name
-        or "_test." in pure.name
-    )
 
 
 def _overlaps(hunk_span: tuple[int, int], sym_span: tuple[int, int]) -> bool:
@@ -75,12 +62,36 @@ def _touched_symbols(
     return touched
 
 
+# D-07: a single-hop ripple horizon missed a caller two-or-more hops
+# removed from a touched leaf (A tests-covered, A calls B, B calls changed
+# C: neither C's own test nor A's covering test used to be selected).
+# Bounded so a dense graph cannot make selection blow up to "everything".
+_RIPPLE_MAX_HOPS = 4
+
+
 def _ripple_symbols(snapshot: GraphSnapshot, touched_symbols: set[str]) -> set[str]:
-    """Symbols that depend (via `uses-contract`) on a touched symbol."""
-    ripple: set[str] = set()
+    """Symbols that transitively depend (via `uses-contract`) on a touched
+    symbol, up to `_RIPPLE_MAX_HOPS` hops (D-07, widened from a single
+    hop): a bounded breadth-first walk of the `USES_CONTRACT` edges,
+    frontier by frontier, so a dependent two or more hops away still gets
+    its own covering test selected."""
+    edges_into: dict[str, list[str]] = {}
     for edge in snapshot.edges:
-        if edge.kind == EdgeKind.USES_CONTRACT and edge.target in touched_symbols:
-            ripple.add(edge.src)
+        if edge.kind == EdgeKind.USES_CONTRACT:
+            edges_into.setdefault(edge.target, []).append(edge.src)
+
+    ripple: set[str] = set()
+    frontier = set(touched_symbols)
+    for _ in range(_RIPPLE_MAX_HOPS):
+        next_frontier: set[str] = set()
+        for target in frontier:
+            for src in edges_into.get(target, ()):
+                if src not in ripple and src not in touched_symbols:
+                    ripple.add(src)
+                    next_frontier.add(src)
+        if not next_frontier:
+            break
+        frontier = next_frontier
     return ripple
 
 
@@ -108,13 +119,13 @@ def _edge_symref_path(symref: str) -> str:
 
 def _looks_like_test_symbol(symref: str) -> bool:
     """Whether `symref` is itself a test: a conventional test *file*
-    (`_is_test_file`), or a Rust inline `mod tests { ... }` symbol whose
+    (`is_test_file`), or a Rust inline `mod tests { ... }` symbol whose
     qualname's leading component is `tests` (e.g.
     `strata-core/src/parse.rs::tests.some_case`) -- those live in the same
     source file as the code they cover, so the file-path check alone
     would call neither endpoint a test."""
     path, sep, qualname = symref.partition("::")
-    if _is_test_file(path):
+    if is_test_file(path):
         return True
     return sep == "::" and qualname.split(".", 1)[0] == "tests"
 
@@ -200,7 +211,7 @@ def _select_from_edges(
             _add_selected(selected, test_ref)
             bound_files.update(files_of_touched)
     for file in touched_files:
-        if _is_test_file(file):
+        if is_test_file(file):
             _add_selected(selected, file)
             bound_files.add(file)
     return selected, bound_files
@@ -233,18 +244,83 @@ def _file_has_selected_test(
 
 
 def _apply_fallback(
-    cfg: SelectConfig, file: str, language: str, selected: dict[str, set[str]]
+    cfg: SelectConfig,
+    file: str,
+    language: str,
+    selected: dict[str, set[str]],
+    *,
+    force_package: bool = False,
 ) -> None:
-    """Add the configured fallback selection for an unbound `file`."""
-    if cfg.fallback == "package":
+    """Add the configured fallback selection for an unbound `file`.
+
+    `force_package` (D-06) overrides `fallback="warn"` to `"package"` for a
+    file that IS a member of the graph (has at least one symbol recorded)
+    but whose particular touched hunk overlapped none of them -- a
+    module-level edit (an import, a module constant, a decorator argument,
+    a top-level side-effecting call). `warn` mode's accepted-risk posture
+    is for files with NO test infrastructure at all; a module-level edit
+    to a file the graph already knows about is a different, narrower risk
+    class that must not be silently skipped even under `warn`."""
+    mode = "package" if force_package and cfg.fallback == "warn" else cfg.fallback
+    if mode == "package":
         package = str(PurePosixPath(file).parent)
         selected.setdefault(language, set()).add(package)
-        _log.info("select_tests: fallback=package for %s -> %s", file, package)
-    elif cfg.fallback == "suite":
+        _log.info(
+            "select_tests: fallback=%s for %s -> %s",
+            "package (forced, module-level edit)" if force_package else "package",
+            file,
+            package,
+        )
+    elif mode == "suite":
         selected.setdefault(language, set()).add(ALL_SENTINEL)
         _log.info("select_tests: fallback=suite for %s -> all_command", file)
     elif cfg.fallback == "warn":
         _log.warning("select_tests: unbound file %s, fallback=warn (skipped)", file)
+    else:
+        _log.warning("select_tests: unknown fallback mode %r", cfg.fallback)
+
+
+def _apply_unknown_language_fallback(
+    cfg: SelectConfig,
+    file: str,
+    known_languages: set[str],
+    selected: dict[str, set[str]],
+) -> None:
+    """Fallback for a touched file whose extension maps to no known
+    language at all (D-04: config/data -- `.toml`/`.json`/`.yaml`/`.md`/
+    etc). `select_tests` cannot name a language-specific "package" for such
+    a file (there is no source-language directory to point at), so both
+    `package` and `suite` degrade to a suite-wide (`ALL_SENTINEL`) run of
+    EVERY language this repo's graph has any symbols for -- conservative
+    (never silently selects nothing), matching the audit's repro (editing
+    `frob.toml` or a data fixture under the default `package` fallback
+    must still select something). `warn` still only logs, preserving that
+    mode's documented accepted-risk posture unchanged."""
+    if cfg.fallback in ("package", "suite"):
+        if not known_languages:
+            _log.warning(
+                "select_tests: unbound file %s has unknown language and no "
+                "known languages to fall back to -- selecting nothing",
+                file,
+            )
+            return
+        for language in known_languages:
+            selected.setdefault(language, set()).add(ALL_SENTINEL)
+        # frob:waive PERF004 reason="lazy log-format arg, evaluated once per \
+        # fallback at INFO only, not a hot loop; indentation-blind FP (T-0367)"
+        _log.info(
+            "select_tests: fallback=%s for unknown-language file %s -> "
+            "suite-wide across %s",
+            cfg.fallback,
+            file,
+            sorted(known_languages),
+        )
+    elif cfg.fallback == "warn":
+        _log.warning(
+            "select_tests: unbound file %s has unknown language, "
+            "fallback=warn (skipped)",
+            file,
+        )
     else:
         _log.warning("select_tests: unknown fallback mode %r", cfg.fallback)
 
@@ -255,22 +331,38 @@ def _collect_unbound(
     touched_files: set[str],
     bound_files: set[str],
     all_touched: set[str],
+    files_of_touched: set[str],
     selected: dict[str, set[str]],
 ) -> list[str]:
     """Unbound touched files, applying the fallback policy for each."""
+    known_languages = {
+        lang
+        for lang in (extension_language(s.id.path) for s in snapshot.symbols.values())
+        if lang is not None
+    }
+    files_with_symbols = {s.id.path for s in snapshot.symbols.values()}
+
     ordered_files = sorted(touched_files)
     unbound: list[str] = []
     for file in ordered_files:
-        if file in bound_files or _is_test_file(file):
+        if file in bound_files or is_test_file(file):
             continue
         if _file_has_selected_test(snapshot, file, all_touched):
             continue
         unbound.append(file)
         language = extension_language(file)
         if language is None:
-            _log.warning("select_tests: unbound file %r has unknown language", file)
+            _apply_unknown_language_fallback(cfg, file, known_languages, selected)
             continue
-        _apply_fallback(cfg, file, language, selected)
+        # D-06: the file IS a member of the graph (it has symbols
+        # somewhere) but NONE of them were touched -- the changed hunk(s)
+        # landed strictly between symbols (an import, a module constant, a
+        # top-level side-effecting call). Force selection even under
+        # fallback="warn"; a file with NO symbols at all, or whose touched
+        # hunk DID overlap a symbol (just one with no bound test), keeps
+        # warn's ordinary accepted-risk skip.
+        force_package = file in files_with_symbols and file not in files_of_touched
+        _apply_fallback(cfg, file, language, selected, force_package=force_package)
     return unbound
 
 
@@ -331,7 +423,13 @@ def select_tests(
         snapshot, all_touched, enclosing_by_symref, files_of_touched, touched_files
     )
     unbound = _collect_unbound(
-        snapshot, cfg, touched_files, bound_files, all_touched, selected
+        snapshot,
+        cfg,
+        touched_files,
+        bound_files,
+        all_touched,
+        files_of_touched,
+        selected,
     )
     return _build_report(
         all_touched, touched_files, selected, ripple, unbound, cfg.fallback

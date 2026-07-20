@@ -19,14 +19,18 @@ from frob.strata._host_isolation import (
     evaluate_vertical_isolation,
     host_movement_flows,
 )
-from frob.strata._models import Flow, KernelModel, Node, Waiver
+from frob.strata._models import Flow, KernelModel, Node
 from frob.strata._scenarios import build_compromised_user_scenario, evaluate_scenarios
 from frob.strata._threat import check_catalog_completeness
 
 
+# frob:waive DUP001 reason="parallel test fixtures across 2 sibling test \
+# file(s) (2 sites) sharing an arrange-act scaffold typical of exhaustive \
+# per-case/per-scenario coverage; extracting would obscure per-case intent"
 def _shared_user_model() -> KernelModel:
-    """Two service users sharing a writable path and a listening port,
-    with no declared Flow between them -- the HOST001/HOST002 VULN shape."""
+    """Two service users sharing a writable path, a listening port, and
+    (T-0272) an OS group, with no declared Flow between them -- the
+    HOST001/HOST002 VULN shape."""
     api = Node(
         id="api",
         trust="trusted",
@@ -35,6 +39,8 @@ def _shared_user_model() -> KernelModel:
             "unit",
             "owns=/var/lib/shared:0664",
             "listens=9000",
+            "group=ops",
+            "sudoers=ALL=(root) NOPASSWD: /bin/true",
         ),
     )
     worker = Node(
@@ -45,39 +51,41 @@ def _shared_user_model() -> KernelModel:
             "unit",
             "owns=/var/lib/shared:0664",
             "listens=9000",
+            "group=ops",
         ),
     )
     return KernelModel(nodes=(api, worker))
 
 
+# frob:waive DUP001 reason="parallel test fixtures across 2 sibling test \
+# file(s) (2 sites) sharing an arrange-act scaffold typical of exhaustive \
+# per-case/per-scenario coverage; extracting would obscure per-case intent"
 def _isolated_hardened_model() -> KernelModel:
-    """Two service users with disjoint owns/listens and explicit waivers
-    for the two structurally-unprovable sub-targets (shared-group,
-    sudoers) -- the HOST001/HOST002 HARDENED shape that discharges."""
+    """Two service users with disjoint owns/listens/group and no declared
+    sudoers grant -- the HOST001/HOST002 HARDENED shape that discharges
+    with no waivers needed at all now that T-0272 makes shared-group/
+    sudoers structurally provable (previously this fixture carried
+    explicit waivers for those two always-fire sub-targets)."""
     api = Node(
         id="api",
         trust="trusted",
-        attrs=("runs_as=svc-a", "unit", "owns=/etc/api:0640", "listens=8080"),
-        waives=(
-            Waiver(
-                rule="HOST001:shared-group",
-                reason="no group grammar yet, T-draft-7b5b5541",
-            ),
-            Waiver(
-                rule="HOST002:sudoers",
-                reason="no sudoers grammar yet, T-draft-7b5b5541",
-            ),
+        attrs=(
+            "runs_as=svc-a",
+            "unit",
+            "owns=/etc/api:0640",
+            "listens=8080",
+            "group=api-grp",
         ),
     )
     worker = Node(
         id="worker",
         trust="trusted",
-        attrs=("runs_as=svc-b", "unit", "owns=/etc/worker:0640", "listens=8081"),
-        waives=(
-            Waiver(
-                rule="HOST002:sudoers",
-                reason="no sudoers grammar yet, T-draft-7b5b5541",
-            ),
+        attrs=(
+            "runs_as=svc-b",
+            "unit",
+            "owns=/etc/worker:0640",
+            "listens=8081",
+            "group=worker-grp",
         ),
     )
     return KernelModel(nodes=(api, worker))
@@ -97,7 +105,7 @@ class TestLateralIsolation:
         sub_targets = {v.sub_target for v in violations}
         assert "shared-writable-path" in sub_targets
         assert "cross-user-socket" in sub_targets
-        assert "shared-group" in sub_targets  # always fires, honest gap
+        assert "shared-group" in sub_targets  # T-0272: derived from shared group=ops
 
     # frob:tests src/frob/strata/_host_isolation.py::evaluate_lateral_isolation kind="unit"
     def test_declared_flow_discharges_cross_user_socket(self):
@@ -122,6 +130,14 @@ class TestLateralIsolation:
         violations = evaluate_lateral_isolation(_isolated_hardened_model()).danger_ok
         assert "shared-writable-path" not in {v.sub_target for v in violations}
 
+    # frob:tests src/frob/strata/_host_isolation.py::evaluate_lateral_isolation kind="unit"
+    def test_disjoint_groups_do_not_fire_shared_group(self):
+        """T-0272: two users declaring DIFFERENT groups must not fire
+        shared-group -- it is now a real intersection, not an always-fire
+        honest gap."""
+        violations = evaluate_lateral_isolation(_isolated_hardened_model()).danger_ok
+        assert "shared-group" not in {v.sub_target for v in violations}
+
 
 class TestVerticalIsolation:
     # frob:tests src/frob/strata/_host_isolation.py::evaluate_vertical_isolation kind="unit"
@@ -141,11 +157,32 @@ class TestVerticalIsolation:
         assert any(v.sub_target == "setuid" for v in violations)
 
     # frob:tests src/frob/strata/_host_isolation.py::evaluate_vertical_isolation kind="unit"
+    # T-0272: renamed from `test_sudoers_always_fires_as_honest_gap` would
+    # break T-0256's archived Done-report evidence (tickets-archive.md is
+    # outside this ticket's declared scope) -- kept as the historical
+    # name, behavior updated to match the new derived-not-honest-gap
+    # semantics (module docstring).
     def test_sudoers_always_fires_as_honest_gap(self):
-        node = Node(id="api", trust="trusted", attrs=("runs_as=svc-a", "unit"))
+        """T-0272: `sudoers` fires when a user's HostManifest.sudoers is
+        non-empty -- derived from the grant, not an always-fire gap
+        (name kept for T-0256 evidence continuity, see comment above)."""
+        node = Node(
+            id="api",
+            trust="trusted",
+            attrs=("runs_as=svc-a", "unit", "sudoers=ALL=(root) NOPASSWD: /bin/true"),
+        )
         model = KernelModel(nodes=(node,))
         violations = evaluate_vertical_isolation(model).danger_ok
         assert any(v.sub_target == "sudoers" for v in violations)
+
+    # frob:tests src/frob/strata/_host_isolation.py::evaluate_vertical_isolation kind="unit"
+    def test_sudoers_does_not_fire_when_undeclared(self):
+        """T-0272: a user with no `sudoers` clause at all produces no
+        sudoers finding -- absence is now structurally provable."""
+        node = Node(id="api", trust="trusted", attrs=("runs_as=svc-a", "unit"))
+        model = KernelModel(nodes=(node,))
+        violations = evaluate_vertical_isolation(model).danger_ok
+        assert not any(v.sub_target == "sudoers" for v in violations)
 
     # frob:tests src/frob/strata/_host_isolation.py::evaluate_vertical_isolation kind="unit"
     def test_root_unit_path_writable_by_user_fires(self):
@@ -199,6 +236,10 @@ class TestHostIsolationWaivers:
         assert h2.stale == ()
 
     # frob:tests src/frob/strata/_host_isolation.py::evaluate_host_isolation_waived kind="unit"
+    # frob:waive DUP001 reason="parallel test methods within \
+    # test_host_isolation.py (2 sites) sharing an arrange-act scaffold \
+    # typical of exhaustive per-case coverage; extracting would obscure \
+    # per-case intent"
     def test_propagates_lateral_isolation_error(self, monkeypatch):
         """HOST001's delegate failing must short-circuit before HOST002
         ever runs -- deny by default, never a silent partial result."""
@@ -212,6 +253,10 @@ class TestHostIsolationWaivers:
         assert result.danger_err == StrataError.UnknownReference
 
     # frob:tests src/frob/strata/_host_isolation.py::evaluate_host_isolation_waived kind="unit"
+    # frob:waive DUP001 reason="parallel test methods within \
+    # test_host_isolation.py (2 sites) sharing an arrange-act scaffold \
+    # typical of exhaustive per-case coverage; extracting would obscure \
+    # per-case intent"
     def test_propagates_vertical_isolation_error(self, monkeypatch):
         """HOST002's delegate failing must propagate even when HOST001
         succeeded -- the second fallible step is not silently ignored."""

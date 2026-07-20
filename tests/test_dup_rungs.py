@@ -102,6 +102,10 @@ class TestR6Probing:
     def _ref(self, snapshot, name):
         return next(r for r in snapshot.symbols if name in r)
 
+    # frob:waive DUP001 reason="parallel test methods within \
+    # test_dup_rungs.py (2 sites) sharing an arrange-act scaffold typical \
+    # of exhaustive per-case coverage; extracting would obscure per-case \
+    # intent"
     def test_fires_on_behaviorally_equivalent_pure_functions(self, snapshot):
         # frob:tests src/frob/dup/_pipeline.py::probe_equivalence kind="unit"
         a = self._ref(snapshot, "add_twice_a")
@@ -120,6 +124,10 @@ class TestR6Probing:
         assert result.is_ok, result.err
         assert result.danger_ok.equivalent is False
 
+    # frob:waive DUP001 reason="parallel test methods within \
+    # test_dup_rungs.py (2 sites) sharing an arrange-act scaffold typical \
+    # of exhaustive per-case coverage; extracting would obscure per-case \
+    # intent"
     def test_fires_on_equivalent_functions_with_renamed_multi_arg_params(
         self, snapshot
     ):

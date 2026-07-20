@@ -18,6 +18,9 @@ _MODEL_PATH = _REPO_ROOT / "design" / "frob.strata"
 _GOLDEN_DIR = _REPO_ROOT / "tests" / "golden"
 
 
+# frob:waive DUP001 reason="parallel test fixtures across 2 sibling test \
+# file(s) (2 sites) sharing an arrange-act scaffold typical of exhaustive \
+# per-case/per-scenario coverage; extracting would obscure per-case intent"
 def _model():
     """Parse + elaborate `design/frob.strata` into a `KernelModel`."""
     text = _MODEL_PATH.read_text(encoding="utf-8")
@@ -29,7 +32,7 @@ def _model():
 
 
 class TestExportGolden:
-    """frob:tests test_export_golden.py::TestExportGolden"""
+    """Golden-output regression tests for strata export formats."""
 
     def test_k8s(self) -> None:
         """`export_k8s_netpol(design/frob.strata)` matches the committed

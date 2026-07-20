@@ -161,6 +161,9 @@ def test_json_has_classes_key(py_src):
     assert "classes" in data
 
 
+# frob:waive DUP001 reason="parallel CLI system-test scaffolding: \
+# independent commands sharing the subprocess-dispatch arrange-act shape; \
+# extracting would obscure per-command intent"
 def test_json_functions_have_required_fields(py_src):
     r = run("outline", str(py_src), "--json")
     data = json.loads(r.stdout)

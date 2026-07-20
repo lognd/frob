@@ -33,10 +33,10 @@ from typani import Err, Ok
 from typani.result import Result
 
 from frob.lang._common import (
-    collapse_ws,
-    find_enclosing_symbol,
-    find_following_symbol,
-    strip_comment_delims,
+    _collapse_ws,
+    _find_enclosing_symbol,
+    _find_following_symbol,
+    _strip_comment_delims,
 )
 from frob.lang._models import RawComment, RawSymbol, SymbolKind
 from frob.logging import get_logger
@@ -120,15 +120,15 @@ def _leading_doc_comment(lines: list[str], start: int) -> str:
     """Contiguous `//`-comment block directly above `lines[start]`, collapsed.
 
     A blank (or non-comment) line breaks the chain, matching the "directly
-    above" convention every other grammar's `leading_doc_comment` uses.
+    above" convention every other grammar's `_leading_doc_comment` uses.
     """
     collected: list[str] = []
     i = start - 1
     while i >= 0 and lines[i].strip().startswith("//"):
-        collected.append(strip_comment_delims(lines[i].strip()))
+        collected.append(_strip_comment_delims(lines[i].strip()))
         i -= 1
     collected.reverse()
-    return collapse_ws(" ".join(collected))
+    return _collapse_ws(" ".join(collected))
 
 
 def _extract_symbols(lines: list[str]) -> tuple[RawSymbol, ...]:
@@ -171,13 +171,13 @@ def _extract_comments(
         if not stripped.startswith("//"):
             continue
         span = (idx + 1, idx + 1)
-        text = strip_comment_delims(stripped)
+        text = _strip_comment_delims(stripped)
         out.append(
             RawComment(
                 text=text,
                 span=span,
-                enclosing=find_enclosing_symbol(span, symbols),
-                following=find_following_symbol(span, symbols),
+                enclosing=_find_enclosing_symbol(span, symbols),
+                following=_find_following_symbol(span, symbols),
             )
         )
     return tuple(out)

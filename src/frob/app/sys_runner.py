@@ -55,6 +55,7 @@ from frob.strata import (
     group_gaps_by_view,
     load_design_ids,
     load_repo_benign_capabilities,
+    merge_models,
     plan_obligations,
     render_audit_matrix,
 )
@@ -151,6 +152,9 @@ def _resolve_design_root(cfg: AppConfig, command: str) -> Path:
     return root
 
 
+# frob:waive DUP001 reason="documented precedent duplication (own \
+# docstring): a two-line frob.toml read, deliberately not worth a \
+# cross-module import; frob.app.deploy_runner carries the same waiver"
 def _design_dir(root: Path) -> str:
     """`[strata].design_dir` from frob.toml, defaulting to `DEFAULT_DESIGN_DIR`
     (duplicated from `frob.gates`'s identical helper -- T-0084 scope excludes
@@ -168,16 +172,11 @@ def _design_dir(root: Path) -> str:
     return data.get("strata", {}).get("design_dir", DEFAULT_DESIGN_DIR)
 
 
-def _merge_models(models: tuple[KernelModel, ...]) -> KernelModel:
-    """Concatenate every loaded design file's facts into one `KernelModel` so
-    a multi-file design is planned as a single obligation surface."""
-    return KernelModel(
-        nodes=tuple(n for m in models for n in m.nodes),
-        flows=tuple(f for m in models for f in m.flows),
-        boundaries=tuple(b for m in models for b in m.boundaries),
-        claims=tuple(c for m in models for c in m.claims),
-        scenarios=tuple(s for m in models for s in m.scenarios),
-    )
+# T-0364: dropped the private `_merge_models` duplicate of
+# `frob.strata.merge_models` (dup group, identical body) -- `frob.app` may
+# import `frob.strata` (the reverse direction is what `merge_models`'s own
+# docstring rules out), so the public helper is the one shared home; call
+# sites below now use it directly.
 
 
 def _load_snapshot(root: Path) -> GraphSnapshot | None:
@@ -288,7 +287,7 @@ def _run_plan(cfg: AppConfig) -> None:
         _log.info("sys plan: no design models under %s/%s", root, design_dir)
         return
 
-    model = _merge_models(ids.models)
+    model = merge_models(ids.models)
     snapshot = _load_snapshot(root)
     planned = plan_obligations(model, design_ids=ids, snapshot=snapshot)
     if planned.is_err:
@@ -402,7 +401,7 @@ def _run_doc(cfg: AppConfig) -> None:
         _log.info("sys doc: no design models under %s/%s", root, design_dir)
         return
 
-    model = _merge_models(ids.models)
+    model = merge_models(ids.models)
     rendered = render_audit_matrix(model, cfg.sys_view)
     if rendered.is_err:
         _log.error("sys doc: %s", rendered.danger_err)
@@ -594,7 +593,7 @@ def _load_audit_model(root: Path) -> KernelModel | None:
     if not ids.models:
         _log.info("sys audit: no design models under %s/%s", root, design_dir)
         return None
-    return _merge_models(ids.models)
+    return merge_models(ids.models)
 
 
 def _evaluate_audit(model: KernelModel, root: Path):  # noqa: ANN201

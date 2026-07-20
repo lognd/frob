@@ -26,19 +26,19 @@ def _hash_tokens(tokens: tuple[str, ...]) -> str:
 
 
 # frob:doc docs/modules/graph.md#digests
-def digest_sig(symbol: RawSymbol) -> str:
+def _digest_sig(symbol: RawSymbol) -> str:
     """Sha256 hex digest of `symbol.sig_tokens`."""
     return _hash_tokens(symbol.sig_tokens)
 
 
 # frob:doc docs/modules/graph.md#digests
-def digest_body(symbol: RawSymbol) -> str:
+def _digest_body(symbol: RawSymbol) -> str:
     """Sha256 hex digest of `symbol.body_tokens` (empty for class/const/type)."""
     return _hash_tokens(symbol.body_tokens)
 
 
 # frob:doc docs/modules/graph.md#digests
-def digest_doc(symbol: RawSymbol) -> str:
+def _digest_doc(symbol: RawSymbol) -> str:
     """Sha256 hex digest of `symbol.doc_text` (already whitespace-collapsed)."""
     return hashlib.sha256(symbol.doc_text.encode("utf-8")).hexdigest()
 
@@ -47,9 +47,9 @@ def digest_doc(symbol: RawSymbol) -> str:
 def compute_digests(symbol: RawSymbol) -> Digests:
     """All three digests for `symbol` in one `Digests` value."""
     digests = Digests(
-        sig=digest_sig(symbol),
-        body=digest_body(symbol),
-        doc=digest_doc(symbol),
+        sig=_digest_sig(symbol),
+        body=_digest_body(symbol),
+        doc=_digest_doc(symbol),
     )
     _log.debug(
         "digested %s: sig=%s body=%s doc=%s",
@@ -61,4 +61,4 @@ def compute_digests(symbol: RawSymbol) -> Digests:
     return digests
 
 
-__all__ = ["compute_digests", "digest_body", "digest_doc", "digest_sig"]
+__all__ = ["compute_digests", "_digest_body", "_digest_doc", "_digest_sig"]

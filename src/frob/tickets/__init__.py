@@ -9,9 +9,11 @@ frob.graph or frob.lang by design (see docs/rework.md cycle-avoidance).
 
 from __future__ import annotations
 
+import fnmatch
 import hashlib
 import re
 import subprocess
+import tomllib
 from collections.abc import Sequence
 from datetime import date
 from pathlib import Path
@@ -22,6 +24,9 @@ from frob.logging import get_logger
 from frob.tickets._land import land, splice_ledger
 from frob.tickets._models import (
     CMD_EVIDENCE_ALLOWED_KINDS,
+    DONE_REPORT_HEADING,
+    LEDGER_PATH,
+    OVER_BROAD_LITERAL_GLOBS,
     Attachment,
     AttachmentSource,
     FailureEntry,
@@ -36,13 +41,19 @@ from frob.tickets._models import (
     TicketQueue,
     TicketSpec,
     TicketState,
+    has_substantive_done_report,
     is_cmd_evidence,
+    matches_collected,
+    replace_done_report_section,
+    scope_matches,
+    scope_overlap_globs,
 )
 from frob.tickets._provisional import is_draft_id, mint_draft_id, on_default_branch
 from frob.tickets._store import (
     archive_path,
     atomic_write,
     attachments_dir,
+    ledger_lock,
     ledger_path,
     load_all,
     load_archive,
@@ -53,7 +64,7 @@ from frob.tickets._store import (
     write_archive,
     write_ticket,
 )
-from frob.tickets.clipboard import ClipboardError, clipboard_image
+from frob.tickets.clipboard import ClipboardError, clipboard_has_image, clipboard_image
 
 _log = get_logger(__name__)
 
@@ -82,7 +93,6 @@ _OPEN_STATES = frozenset(
     s for s in TicketState if s not in (TicketState.DONE, TicketState.DROPPED)
 )
 
-_DONE_REPORT_HEADING = "## Done report"
 _FAILURE_LOG_HEADING = "## Failure log"
 
 
@@ -123,6 +133,7 @@ def _load_merged(root: Path) -> Result[dict[str, Ticket], TicketError]:
 
 
 # frob:invariant INV-004
+# invariant spec: [INV-004](invariants/INV-004.md)
 # frob:doc docs/modules/tickets.md#public-api
 def load_queue(root: Path) -> Result[TicketQueue, TicketError]:
     """Load every ticket, active store AND archive merged (malformation in
@@ -258,9 +269,14 @@ def _ticket_from_spec(
 
 # frob:ticket T-0102
 # frob:ticket T-0140
+# frob:ticket T-0398
 # frob:doc docs/modules/tickets.md#public-api
 # frob:waive TEST005 reason="new_ticket 80.0% branch cover, debt T-0160"
-def new_ticket(root: Path, spec: TicketSpec) -> Result[Ticket, TicketError]:
+def new_ticket(
+    root: Path,
+    spec: TicketSpec,
+    collected: frozenset[str] | None = None,
+) -> Result[Ticket, TicketError]:
     """Allocate the next sequential id and upsert the ticket into the store.
 
     Any `spec.evidence` entries are schema-validated (validate_evidence)
@@ -272,18 +288,41 @@ def new_ticket(root: Path, spec: TicketSpec) -> Result[Ticket, TicketError]:
     unloadable (DuplicateId) on the very next `load_queue`. A malformed
     archive fails loudly here too, via the same `_load_merged` path
     `load_queue` uses -- never silently ignored.
+
+    D-08: `spec.evidence` is now ALSO resolution-checked via the same
+    `_check_evidence_resolution` `add_evidence` uses, whenever a caller
+    supplies `collected` -- previously `new_ticket --evidence` only
+    schema-validated, so a bogus id (`tests/ghost.py::test_x`) was stored
+    unresolved and surfaced only if/when the ticket later reached DONE and
+    `frob check` ran COV003. `collected=None` (default, matching every
+    caller before D-08) preserves that schema-only behavior for a context
+    with no collector available, but now logs the same explicit UNRESOLVED
+    warning `add_evidence` does, so the gap is never silent.
     """
     validated = _validate_evidence_list(spec.evidence)
     if validated.is_err:
         return Err(validated.danger_err)
-    ticket_id_result = _allocate_and_check_ticket_id(root)
-    if ticket_id_result.is_err:
-        return Err(ticket_id_result.danger_err)
-    ticket_id = ticket_id_result.danger_ok
-    ticket = _ticket_from_spec(ticket_id, spec, validated.danger_ok)
-    write_result = write_ticket(root, ticket)
-    if write_result.is_err:
-        return Err(write_result.danger_err)
+    resolution = _check_evidence_resolution(
+        "new_ticket", validated.danger_ok, collected
+    )
+    if resolution.is_err:
+        return Err(resolution.danger_err)
+    # frob:ticket T-0458
+    # Allocation (read the current max id) and the write that claims it
+    # MUST happen under one held lock -- two processes each reading the
+    # pre-write max id and then writing, unlocked in between, is exactly
+    # the sequential-id race that produced T-0465's duplicate T-0427.
+    # `write_ticket` re-acquires the same lock internally (reentrant, see
+    # `ledger_lock`), so this outer hold is what actually closes the gap.
+    with ledger_lock(root):
+        ticket_id_result = _allocate_and_check_ticket_id(root)
+        if ticket_id_result.is_err:
+            return Err(ticket_id_result.danger_err)
+        ticket_id = ticket_id_result.danger_ok
+        ticket = _ticket_from_spec(ticket_id, spec, validated.danger_ok)
+        write_result = write_ticket(root, ticket)
+        if write_result.is_err:
+            return Err(write_result.danger_err)
     _log.info("tickets: created %s", ticket_id)
     return Ok(ticket)
 
@@ -655,11 +694,358 @@ def _doable_candidates(queue: TicketQueue) -> list[Ticket]:
     ]
 
 
+# frob:ticket T-0453
 # frob:doc docs/modules/tickets.md#public-api
-def doable(queue: TicketQueue) -> tuple[Ticket, ...]:
-    """Tickets in {queued, planned} with no open blockers, ordered oldest-first."""
+def _in_progress_leases(queue: TicketQueue) -> tuple[tuple[str, tuple[str, ...]], ...]:
+    """`(ticket_id, scope)` for every IN_PROGRESS ticket, id-ordered -- the
+    active scope-leases `doable`'s default collision filter and
+    `leased_by`'s explanation both check candidates against (T-0453
+    scope-lease model)."""
+    return tuple(
+        (t.id, t.scope)
+        for t in sorted(queue.tickets.values(), key=lambda t: t.id)
+        if t.state is TicketState.IN_PROGRESS
+    )
+
+
+# frob:ticket T-0453
+# frob:doc docs/modules/tickets.md#public-api
+_LARGE_GLOB_DEFAULT_MAX_FILES = 25
+
+
+# frob:ticket T-0453
+# frob:doc docs/modules/tickets.md#public-api
+def _load_large_glob_max_files(root: Path) -> int:
+    """Read `[tickets] large_glob_max_files` from `frob.toml` -- the
+    tunable file-count threshold `large_glob_warnings`/`leased_by` flag a
+    scope glob against (T-0453). Absent config, an unreadable/malformed
+    file, or a non-positive value all fall back to
+    `_LARGE_GLOB_DEFAULT_MAX_FILES` rather than erroring, matching
+    `frob.excludes.load_exclude_globs`'s degrade-quietly posture for
+    optional config."""
+    toml_path = root / "frob.toml"
+    if not toml_path.exists():
+        return _LARGE_GLOB_DEFAULT_MAX_FILES
+    try:
+        with toml_path.open("rb") as handle:
+            doc = tomllib.load(handle)
+    except (OSError, tomllib.TOMLDecodeError) as exc:
+        _log.warning("tickets: could not parse %s: %s", toml_path, exc)
+        return _LARGE_GLOB_DEFAULT_MAX_FILES
+    value = doc.get("tickets", {}).get("large_glob_max_files")
+    if not isinstance(value, int) or isinstance(value, bool) or value <= 0:
+        return _LARGE_GLOB_DEFAULT_MAX_FILES
+    return value
+
+
+# frob:ticket T-0453
+# frob:doc docs/modules/tickets.md#public-api
+def _is_excluded_breadth_path(path: str) -> bool:
+    """Whether `path` should never count toward the T-0453 breadth measure
+    regardless of tracking status -- `.git`/`.venv`/`__pycache__`/... (any
+    `frob.excludes.is_skipped_dir` name) and `.claude/worktrees/` (the
+    per-agent worktree tree, ~129 of them observed in this repo, whose
+    file count would otherwise massively over-count breadth and -- before
+    this fix -- made `_repo_files`'s old full-tree `rglob` walk take
+    minutes per call)."""
+    from frob.excludes import is_skipped_dir
+
+    parts = path.split("/")
+    if any(is_skipped_dir(part) for part in parts[:-1]):
+        return True
+    return path.startswith(".claude/worktrees/")
+
+
+# frob:ticket T-0453
+# frob:doc docs/modules/tickets.md#public-api
+def _repo_files_git(root: Path) -> tuple[str, ...] | None:
+    """`git ls-files` under `root` -- tracked files only, `root`-relative
+    posix paths, breadth-excluded paths dropped -- or `None` if `root` is
+    not a git work tree / `git` is unavailable (T-0453 perf fix: this
+    replaces a full-tree `rglob` walk, which used to include the ~129
+    stale worktrees under `.claude/worktrees/` and made `frob ticket
+    doable` take minutes)."""
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(root), "ls-files"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        _log.warning("tickets: git ls-files failed under %s: %s", root, exc)
+        return None
+    if result.returncode != 0:
+        return None
+    return tuple(
+        sorted(
+            line
+            for line in result.stdout.splitlines()
+            if line and not _is_excluded_breadth_path(line)
+        )
+    )
+
+
+# frob:ticket T-0453
+# frob:doc docs/modules/tickets.md#public-api
+def _repo_files_walk_fallback(root: Path) -> tuple[str, ...]:
+    """Every real file under `root` as `root`-relative posix paths, with
+    built-in skip dirs (`.git`, `.venv`, `__pycache__`, ...) and
+    `.claude/worktrees/` pruned -- the `_repo_files` fallback for a `root`
+    that is not a git work tree (T-0453). Never the default path in a real
+    git checkout; `_repo_files_git` is."""
+    files: list[str] = []
+    for path in sorted(root.rglob("*")):
+        if not path.is_file():
+            continue
+        rel = path.relative_to(root).as_posix()
+        if _is_excluded_breadth_path(rel):
+            continue
+        files.append(rel)
+    return tuple(files)
+
+
+# frob:ticket T-0453
+# frob:doc docs/modules/tickets.md#public-api
+def _repo_files(root: Path) -> tuple[str, ...]:
+    """The T-0453 breadth-check file universe under `root`: `git ls-files`
+    (tracked files, fast) when `root` is a git work tree, else a pruned
+    tree walk (`_repo_files_walk_fallback`). Callers should invoke this
+    (via `scope_breadth_context`) ONCE per `doable` call, never once per
+    candidate x holder pair -- see `scope_breadth_context`."""
+    tracked = _repo_files_git(root)
+    if tracked is not None:
+        return tracked
+    return _repo_files_walk_fallback(root)
+
+
+# frob:ticket T-0453
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets_lease.py::TestBreadthPerf.test_computed_once_per_doable_call  # noqa: E501
+def scope_breadth_context(root: Path) -> tuple[int, tuple[str, ...]]:
+    """`(large_glob_max_files threshold, repo_files)` computed ONCE -- the
+    shared input `_over_broad_scope_entries`/`large_glob_warnings` reuse
+    instead of each re-running `git ls-files`/re-walking the tree per
+    candidate x holder pair (T-0453 perf fix: this repo's real `frob
+    ticket doable` used to take minutes -- a full-tree `rglob`, including
+    ~129 stale `.claude/worktrees/` checkouts, called once per candidate
+    per in-progress holder). `doable`/`doable_blocked` compute this a
+    single time per call and thread it through `leased_by`."""
+    return (_load_large_glob_max_files(root), _repo_files(root))
+
+
+# frob:ticket T-0453
+# frob:doc docs/modules/tickets.md#public-api
+def _entry_to_glob(entry: str) -> str:
+    """Expand a bare directory-prefix scope entry (`"docs/"`, no wildcard
+    metacharacters) into its recursive glob (`"docs/**"`) -- the SAME
+    expansion `frob.tickets._models._scope_globs` applies, duplicated here
+    (rather than imported) only because this needs the single-entry form
+    to build a per-entry warning/breadth message; `_scope_globs` itself
+    remains the one place actual scope MATCHING expands from (T-0453)."""
+    if entry.endswith("/") and not any(ch in entry for ch in "*?["):
+        return entry + "**"
+    return entry
+
+
+# frob:ticket T-0453
+# frob:doc docs/modules/tickets.md#public-api
+def _over_broad_scope_entries(
+    scope: Sequence[str], threshold: int, files: Sequence[str]
+) -> tuple[str, ...]:
+    """Declared scope entries of `scope` that are over-broad (T-0453): a
+    named chronically-broad glob (`OVER_BROAD_LITERAL_GLOBS`) unconditionally,
+    or one matching more of `files` than `threshold`. `LEDGER_PATH` is never
+    flagged (every ticket implicitly leases it).
+
+    Takes a PRECOMPUTED `(threshold, files)` pair (`scope_breadth_context`)
+    rather than a `root` to walk -- this is the hot inner loop callers run
+    once per candidate x holder pair, and re-deriving `files` (a `git
+    ls-files`/tree-walk) on every call is exactly the T-0453 perf bug
+    (`frob ticket doable` taking minutes on this repo's real worktree
+    count) this signature avoids.
+
+    THE single breadth criterion both `large_glob_warnings` (nudge the
+    ticket author to narrow it) and `leased_by` (an over-broad in-progress
+    lease demotes to warn-only rather than hard-blocking the ENTIRE queue,
+    T-0453 real-repo verification) consult -- one signal driving two
+    behaviors, not a `tests/**`/`docs/` directory special-case (the fix the
+    T-0453 DESIGN CORRECTION explicitly forbids): any glob this broad by
+    this SAME measure is treated the same way, regardless of which
+    directory it names.
+    """
+    broad: list[str] = []
+    for entry in scope:
+        if entry == LEDGER_PATH:
+            continue
+        if entry in OVER_BROAD_LITERAL_GLOBS:
+            broad.append(entry)
+            continue
+        # fnmatch.filter translates the glob ONCE and matches all files in
+        # one pass (T-0453 perf fix: was 624k fnmatch.fnmatch calls
+        # re-deriving the same glob per file on the real repo).
+        if len(fnmatch.filter(files, _entry_to_glob(entry))) > threshold:
+            broad.append(entry)
+    return tuple(broad)
+
+
+# frob:ticket T-0453
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets_lease.py::TestLargeGlobWarnings.test_fires_on_broad_tests_glob  # noqa: E501
+# frob:tests tests/test_tickets_lease.py::TestLargeGlobWarnings.test_silent_on_precise_test_file  # noqa: E501
+def large_glob_warnings(
+    ticket: Ticket,
+    root: Path,
+    *,
+    breadth: tuple[int, tuple[str, ...]] | None = None,
+) -> tuple[str, ...]:
+    """Human-readable nudges for any of `ticket`'s declared scope entries
+    `_over_broad_scope_entries` flags (T-0453 DESIGN CORRECTION). Empty for
+    a precisely-scoped ticket (e.g. `tests/test_gates.py`).
+
+    Pass a precomputed `breadth` (`scope_breadth_context(root)`) when
+    calling this in a loop over several tickets so the breadth walk runs
+    once, not once per ticket (`root` is still required to label warnings
+    consistently and for the `breadth is None` single-call convenience
+    path, which computes it internally).
+
+    This is a NUDGE, not a hard gate: it exists to fix over-hiding at the
+    scope-DECLARATION level (narrow the glob to the files actually
+    touched) instead of ignoring `tests/**`/`docs/` in the lease-overlap
+    check itself, which the T-0453 design correction says would mask real
+    per-file collisions under those trees.
+    """
+    threshold, files = breadth if breadth is not None else scope_breadth_context(root)
+    warnings: list[str] = []
+    for entry in _over_broad_scope_entries(ticket.scope, threshold, files):
+        if entry in OVER_BROAD_LITERAL_GLOBS:
+            warnings.append(
+                f"{ticket.id} scope {entry!r} is a chronically over-broad "
+                "glob -- narrow it to the specific files this ticket "
+                "touches"
+            )
+            continue
+        matched = len(fnmatch.filter(files, _entry_to_glob(entry)))
+        warnings.append(
+            f"{ticket.id} scope {entry!r} matches {matched} files "
+            f"(> {threshold}) -- narrow it to the specific files this "
+            "ticket touches"
+        )
+    return tuple(warnings)
+
+
+# frob:ticket T-0453
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets_lease.py::TestLeasedBy.test_precise_in_progress_does_not_hide_disjoint  # noqa: E501
+# frob:tests tests/test_tickets_lease.py::TestLeasedBy.test_real_source_scope_collision_is_hidden  # noqa: E501
+# frob:tests tests/test_tickets_lease.py::TestLeasedBy.test_over_broad_lease_demotes_to_warn_only  # noqa: E501
+def leased_by(
+    queue: TicketQueue,
+    ticket: Ticket,
+    root: Path | None = None,
+    *,
+    breadth: tuple[int, tuple[str, ...]] | None = None,
+) -> tuple[tuple[str, str], ...]:
+    """`(holding_ticket_id, glob_that_leases_it)` for every IN_PROGRESS
+    ticket whose scope-lease overlaps `ticket`'s own scope (T-0453) --
+    empty means `ticket` is free to dispatch right now. Powers both
+    `doable`'s default exclusion and `--show-blocked`'s per-ticket
+    explanation ("T-0xxx held: scope src/frob/gates/** leased by
+    in-progress T-0yyy").
+
+    When `root` is given, a holder's OVER-BROAD scope entries
+    (`_over_broad_scope_entries`) are dropped before the overlap check --
+    an over-broad DECLARED lease demotes to warn-only (`large_glob_warnings`
+    still nudges narrowing it) rather than hard-blocking the entire doable
+    queue, so one repo-wide `src/frob/**` in-progress ticket cannot zero
+    out `doable` for everyone. Precise scope entries on the SAME holder
+    still enforce normally -- this is breadth-driven demotion, not a
+    directory-specific carve-out, and does not weaken the sound overlap
+    test itself (`root=None` keeps the strict, undemoted check, e.g. for
+    callers with no repo root to walk).
+
+    Pass a precomputed `breadth` (`scope_breadth_context(root)`) when
+    calling this per-candidate in a loop (`doable`/`doable_blocked` do) so
+    the breadth walk runs ONCE for the whole call, not once per candidate
+    x holder pair (T-0453 perf fix -- this is what made `frob ticket
+    doable` take minutes on this repo's real worktree count before the
+    fix). Omitting it while `root` is given computes it internally, for
+    standalone/test callers.
+    """
+    if root is not None and breadth is None:
+        breadth = scope_breadth_context(root)
+    hits: list[tuple[str, str]] = []
+    for holder_id, holder_scope in _in_progress_leases(queue):
+        if holder_id == ticket.id:
+            continue
+        effective_scope = holder_scope
+        if breadth is not None:
+            threshold, files = breadth
+            broad = frozenset(_over_broad_scope_entries(holder_scope, threshold, files))
+            effective_scope = tuple(s for s in holder_scope if s not in broad)
+            if not effective_scope:
+                continue
+        collision = scope_overlap_globs(ticket.scope, effective_scope)
+        if collision is not None:
+            hits.append((holder_id, collision[1]))
+    return tuple(hits)
+
+
+# frob:ticket T-0453
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets_lease.py::TestDoable.test_ignore_lease_returns_raw_list
+# frob:waive DRIFT001 reason="T-0453 added root/ignore_lease params; frob.lock ack out of scope, no inline-waivable syntax for JSON -- reviewer re-acks at land"  # noqa: E501
+def doable(
+    queue: TicketQueue, root: Path | None = None, *, ignore_lease: bool = False
+) -> tuple[Ticket, ...]:
+    """Tickets in {queued, planned} with no open blockers, ordered
+    oldest-first.
+
+    By DEFAULT also excludes any candidate whose declared scope overlaps
+    an in-progress ticket's active scope-lease (T-0453 scope-lease model,
+    `leased_by`) -- two agents dispatched straight off this list can never
+    collide on the same files, with no hand-maintained blocklist. Pass
+    `root` (the repo root) so an over-broad holder lease demotes to
+    warn-only instead of blocking everything (`leased_by`'s `root`
+    parameter); omit it only when no repo root is available to walk (the
+    check then stays strict/undemoted). Pass `ignore_lease=True`
+    (`frob ticket doable --ignore-lease`) for the raw, blocker-only list
+    with no collision filtering at all.
+    """
     candidates = _doable_candidates(queue)
+    if not ignore_lease:
+        breadth = scope_breadth_context(root) if root is not None else None
+        candidates = [
+            t for t in candidates if not leased_by(queue, t, root, breadth=breadth)
+        ]
     return tuple(sorted(candidates, key=lambda t: (t.created, t.id)))
+
+
+# frob:ticket T-0453
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets_lease.py::TestShowBlocked.test_show_blocked_lists_reasons  # noqa: E501
+def doable_blocked(
+    queue: TicketQueue,
+    root: Path | None = None,
+    *,
+    breadth: tuple[int, tuple[str, ...]] | None = None,
+) -> tuple[tuple[Ticket, tuple[tuple[str, str], ...]], ...]:
+    """Doable-candidates hidden by an in-progress scope-lease, paired with
+    WHY (`(holding_ticket_id, overlapping_glob)` per collision) -- the data
+    `frob ticket doable --show-blocked` renders (T-0453). See `leased_by`
+    for what passing `root` does (over-broad-lease demotion) and what
+    passing a precomputed `breadth` (`scope_breadth_context(root)`) avoids
+    (re-walking the tree when the caller already has one)."""
+    candidates = _doable_candidates(queue)
+    if root is not None and breadth is None:
+        breadth = scope_breadth_context(root)
+    blocked: list[tuple[Ticket, tuple[tuple[str, str], ...]]] = []
+    for t in sorted(candidates, key=lambda t: (t.created, t.id)):
+        hits = leased_by(queue, t, root, breadth=breadth)
+        if hits:
+            blocked.append((t, hits))
+    return tuple(blocked)
 
 
 def _open_blockers(queue: TicketQueue, ticket: Ticket) -> tuple[str, ...]:
@@ -687,6 +1073,36 @@ def _load_one(root: Path, ticket_id: str) -> Result[Ticket, TicketError]:
 _MAX_EVIDENCE_LEN = 300
 
 
+# frob:ticket T-0293
+# frob:doc docs/modules/tickets.md#public-api
+def normalize_evidence_separator(entry: str) -> str:
+    """Canonicalize a `path::Class.method` (dot) evidence id to the pytest-
+    collected `path::Class::method` (double-colon) form.
+
+    T-0282 and T-0217 both had evidence hand-recorded with a dot before the
+    final segment (`Class.method`), which never resolves against real
+    pytest node ids (`Class::method`) and only surfaces late as a confusing
+    COV003 at check time. This rewrites the single dot immediately after
+    the `::`-qualified prefix into `::`, so the wrong-separator id resolves
+    the same as the correct one instead of silently failing later. Returns
+    `entry` unchanged when it does not match that specific dot-before-last-
+    segment shape (no `::` at all, or the remainder after `::` already
+    contains its own `::`, or there is no dot to rewrite).
+    """
+    if "::" not in entry:
+        return entry
+    path, _, remainder = entry.partition("::")
+    if "::" in remainder:
+        return entry
+    dot_idx = remainder.find(".")
+    if dot_idx <= 0:
+        return entry
+    head, tail = remainder[:dot_idx], remainder[dot_idx + 1 :]
+    if not head.isidentifier() or not tail:
+        return entry
+    return f"{path}::{head}::{tail}"
+
+
 # frob:ticket T-0102
 # frob:doc docs/modules/tickets.md#public-api
 def validate_evidence(entry: str) -> Result[str, TicketError]:
@@ -698,8 +1114,13 @@ def validate_evidence(entry: str) -> Result[str, TicketError]:
     `load_queue` (and therefore every `frob check` gate) fails to parse it
     (T-0102 companion fix -- the vacuous-pass class started with a hand-
     edited evidence block that bypassed this validation entirely).
+
+    Also normalizes a dot-separated `Class.method` suffix to the pytest
+    `Class::method` form (T-0293) before the schema checks below run, so a
+    mis-separated id is fixed at write time instead of landing as evidence
+    that can never resolve.
     """
-    stripped = entry.strip()
+    stripped = normalize_evidence_separator(entry.strip())
     if not stripped:
         _log.warning("tickets: rejected empty evidence entry")
         return Err(TicketError.MalformedEvidence)
@@ -728,10 +1149,14 @@ def _validate_evidence_list(
 
 
 # frob:ticket T-0102
+# frob:ticket T-0398
 # frob:doc docs/modules/tickets.md#public-api
 def _has_done_report(body: str) -> bool:
-    """Whether body contains a '## Done report' section heading."""
-    return any(line.strip() == _DONE_REPORT_HEADING for line in body.splitlines())
+    """Whether `body` has a substantive '## Done report' section (D-03):
+    thin wrapper kept for call-site stability, delegating to
+    `frob.tickets._models.has_substantive_done_report` (the single
+    heading-plus-content implementation, dedupe of D-11's twin)."""
+    return has_substantive_done_report(body)
 
 
 def _start_blockers(ticket: Ticket, queue: dict[str, Ticket]) -> list[str]:
@@ -742,7 +1167,11 @@ def _start_blockers(ticket: Ticket, queue: dict[str, Ticket]) -> list[str]:
 
 
 def _transition_guard(
-    ticket: Ticket, to: TicketState, queue: dict[str, Ticket]
+    ticket: Ticket,
+    to: TicketState,
+    queue: dict[str, Ticket],
+    *,
+    covers_scope: bool | None = None,
 ) -> Result[None, TicketError]:
     """Enforce start-blocker and done-evidence preconditions for `to`."""
     if to == TicketState.IN_PROGRESS:
@@ -753,7 +1182,7 @@ def _transition_guard(
             )
             return Err(TicketError.BlockerOpen)
     if to == TicketState.DONE:
-        return _done_transition_guard(ticket)
+        return _done_transition_guard(ticket, covers_scope=covers_scope)
     return Ok(None)
 
 
@@ -763,12 +1192,27 @@ def _transition_guard(
 # hand-edited after evidence was recorded, or a cmd: entry can be
 # hand-pasted directly into the ledger, either of which would otherwise
 # slip a code-kind ticket through close on unverifiable evidence.
-def _done_transition_guard(ticket: Ticket) -> Result[None, TicketError]:
-    """Enforce DONE-transition preconditions: evidence + Done report present,
-    and no cmd: evidence on a kind that disallows it."""
+def _done_transition_guard(
+    ticket: Ticket, *, covers_scope: bool | None = None
+) -> Result[None, TicketError]:
+    """Enforce DONE-transition preconditions: evidence + substantive Done
+    report present, no cmd: evidence on a kind that disallows it, and (D-02,
+    when the caller supplies `covers_scope`) at least one evidence id binds
+    to a touched/scope symbol.
+
+    `covers_scope` is injected, never computed here (D-02): answering "does
+    an evidence id cover a touched/scope symbol" needs the obligation graph
+    (`frob.graph`) and the `TESTS`-edge index `frob.testing`/`frob.gates`
+    already build, and `frob.tickets` deliberately stays free of that
+    dependency (docs/rework.md cycle-avoidance -- `frob.gates` is the one
+    module allowed to join graph + tickets). `covers_scope=None` (the
+    default, matching every caller before D-02) skips the check entirely,
+    so existing callers/tests are unaffected; a caller with graph access
+    (`frob.gates.evidence_covers_scope`, or its own equivalent) opts in by
+    passing an explicit `True`/`False`."""
     if not ticket.evidence or not _has_done_report(ticket.body):
         _log.warning(
-            "tickets: %s cannot close, missing evidence or Done report",
+            "tickets: %s cannot close, missing evidence or a substantive Done report",
             ticket.id,
         )
         return Err(TicketError.MissingEvidence)
@@ -783,6 +1227,12 @@ def _done_transition_guard(ticket: Ticket) -> Result[None, TicketError]:
             sorted(k.value for k in CMD_EVIDENCE_ALLOWED_KINDS),
         )
         return Err(TicketError.EvidenceKindNotAllowed)
+    if covers_scope is False:
+        _log.warning(
+            "tickets: %s cannot close, no evidence id covers a touched/scope symbol",
+            ticket.id,
+        )
+        return Err(TicketError.EvidenceScopeUnbound)
     return Ok(None)
 
 
@@ -807,11 +1257,20 @@ def _load_ticket_and_queue(
 
 
 # frob:invariant INV-002
+# invariant spec: [INV-002](invariants/INV-002.md)
 # frob:doc docs/modules/tickets.md#public-api
 def transition(
-    root: Path, ticket_id: str, to: TicketState
+    root: Path,
+    ticket_id: str,
+    to: TicketState,
+    *,
+    covers_scope: bool | None = None,
 ) -> Result[Ticket, TicketError]:
-    """Enforce the state machine; `done` also requires evidence and a Done report."""
+    """Enforce the state machine; `done` also requires evidence and a
+    substantive Done report, and (D-02) an evidence id covering a touched/
+    scope symbol whenever the caller supplies `covers_scope=False` (see
+    `_done_transition_guard`'s docstring for why this is injected rather
+    than computed here)."""
     loaded = _load_ticket_and_queue(root, ticket_id)
     if loaded.is_err:
         return Err(loaded.danger_err)
@@ -824,7 +1283,7 @@ def transition(
         )
         return Err(TicketError.InvalidTransition)
 
-    guard = _transition_guard(ticket, to, queue)
+    guard = _transition_guard(ticket, to, queue, covers_scope=covers_scope)
     if guard.is_err:
         return Err(guard.danger_err)
 
@@ -836,68 +1295,109 @@ def transition(
     return Ok(updated)
 
 
-def _matches_collected(evidence: str, collected: frozenset[str]) -> bool:
-    """Exact node-id membership, or bare-function match for parametrized tests
-    (`f` satisfies evidence when only `f[param]` variants were collected).
-    Mirrors frob.gates._evidence_collected -- deliberately duplicated (not
-    imported) so frob.tickets stays free of the frob.graph dependency that
-    module would pull in (docs/rework.md cycle-avoidance)."""
-    if evidence in collected:
-        return True
-    prefix = evidence + "["
-    return any(node.startswith(prefix) for node in collected)
-
-
 # frob:doc docs/modules/tickets.md#public-api
 def add_evidence(
     root: Path,
     ticket_id: str,
     node_ids: Sequence[str],
     collected: frozenset[str] | None = None,
+    passed: frozenset[str] | None = None,
 ) -> Result[Ticket, TicketError]:
-    """Validate `node_ids` against `collected` pytest node ids and append the
-    resolvable ones to the ticket's structured evidence list; rejecting the
-    whole batch (Err(UnknownEvidence)) if any id is unresolvable, so a typo'd
-    id can never sneak into evidence and surface only at close time as
-    COV003 (the failure mode this command exists to close at write time).
-    `collected` is supplied by the caller (frob.testing.collect_python_tests)
-    rather than fetched here, keeping this library free of the frob.graph
+    """Validate `node_ids` against `collected` pytest node ids and (D-01)
+    against `passed` -- the ids a caller has actually observed PASS on a
+    real run -- and append the resolvable, passing ones to the ticket's
+    structured evidence list; rejecting the whole batch
+    (Err(UnknownEvidence) / Err(EvidenceNotPassing)) if any id fails either
+    check, so neither a typo'd id NOR a red/failing test can sneak into
+    evidence and surface only at close time (the failure mode this command
+    exists to close at write time).
+
+    `collected`/`passed` are supplied by the caller (frob.testing) rather
+    than fetched here, keeping this library free of the frob.graph
     dependency frob.testing pulls in. `collected=None` skips resolution
     (schema validation still applies) -- the T-0102 in-process path where
-    no collector is available."""
+    no collector is available. `passed=None` (default, matching every
+    caller before D-01) skips pass-verification the same way -- a caller
+    with no test-run oracle available is unaffected; a caller that actually
+    ran the tests (`frob.testing.run_selected` or equivalent) opts in by
+    passing the observed-passing subset. cmd: evidence entries are exempt
+    from `passed` (verified by their own exit-code/digest channel instead,
+    see `add_cmd_evidence`/`reverify_cmd_evidence`)."""
     validated = _validate_evidence_list(tuple(node_ids))
     if validated.is_err:
         return Err(validated.danger_err)
+    # T-0293: validation normalizes a dot-separated Class.method suffix to
+    # the pytest Class::method form -- resolution, pass-checking, and the
+    # persisted evidence must all use the NORMALIZED ids from here on, or a
+    # dot-form id would still be checked/stored under its original,
+    # never-resolving spelling.
+    normalized_ids = validated.danger_ok
     loaded = _load_one(root, ticket_id)
     if loaded.is_err:
         return Err(loaded.danger_err)
     ticket = loaded.danger_ok
 
-    resolution = _check_evidence_resolution(ticket_id, node_ids, collected)
+    resolution = _check_evidence_resolution(ticket_id, normalized_ids, collected)
     if resolution.is_err:
         return Err(resolution.danger_err)
 
-    return _append_evidence_and_write(root, ticket, ticket_id, node_ids)
+    passing = _check_evidence_passing(ticket_id, normalized_ids, passed)
+    if passing.is_err:
+        return Err(passing.danger_err)
+
+    return _append_evidence_and_write(root, ticket, ticket_id, normalized_ids)
 
 
 def _check_evidence_resolution(
     ticket_id: str, node_ids: Sequence[str], collected: frozenset[str] | None
 ) -> Result[None, TicketError]:
     """`Err(UnknownEvidence)` if any of `node_ids` fails to resolve against
-    `collected`; `collected=None` skips resolution entirely."""
-    unresolved = (
-        []
-        if collected is None
-        else [nid for nid in node_ids if not _matches_collected(nid, collected)]
-    )
+    `collected`; `collected=None` skips resolution entirely (D-08: this is
+    the "unresolved" path -- always logged at WARNING so a `collected=None`
+    call is never silent about the gap, even though it cannot reject)."""
+    if collected is None:
+        _log.warning(
+            "tickets: %s evidence %s recorded UNRESOLVED -- no collector "
+            "supplied, existence against the current test suite was not "
+            "checked (run `frob check` to catch a stale id via COV003)",
+            ticket_id,
+            list(node_ids),
+        )
+        return Ok(None)
+    unresolved = [nid for nid in node_ids if not matches_collected(nid, collected)]
     if unresolved:
         _log.warning(
             "tickets: %s evidence rejected, unresolved id(s) %s "
-            "(run `frob test --collect` to refresh, or fix the id)",
+            "(the collection cache self-refreshes on the next `frob test` "
+            "/ `frob check` run; if it still does not resolve, delete "
+            ".frob/pytest-collect.json (or .frob/cargo-collect.json for "
+            "rust) to force a rebuild, or fix the id)",
             ticket_id,
             unresolved,
         )
         return Err(TicketError.UnknownEvidence)
+    return Ok(None)
+
+
+def _check_evidence_passing(
+    ticket_id: str, node_ids: Sequence[str], passed: frozenset[str] | None
+) -> Result[None, TicketError]:
+    """`Err(EvidenceNotPassing)` if any non-cmd id in `node_ids` is absent
+    from `passed` (D-01); `passed=None` skips the check entirely (no
+    pass/fail oracle supplied -- back-compat default, see `add_evidence`)."""
+    if passed is None:
+        return Ok(None)
+    failing = [
+        nid for nid in node_ids if not is_cmd_evidence(nid) and nid not in passed
+    ]
+    if failing:
+        _log.warning(
+            "tickets: %s evidence rejected, did not pass on last run: %s "
+            "(re-run `frob test`, fix the failure, then re-record evidence)",
+            ticket_id,
+            failing,
+        )
+        return Err(TicketError.EvidenceNotPassing)
     return Ok(None)
 
 
@@ -942,6 +1442,50 @@ def run_cmd_evidence(command: str) -> Result[str, TicketError]:
     digest = hashlib.sha256(completed.danger_ok.stdout.encode("utf-8")).hexdigest()[:12]
     entry = f"cmd:{command} exit=0 sha256={digest}"
     return validate_evidence(entry)
+
+
+_CMD_EVIDENCE_PARSE_RE = re.compile(
+    r"^cmd:(?P<command>.+) exit=0 sha256=(?P<sha>[0-9a-f]{12})$"
+)
+
+
+# frob:ticket T-0398
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_evidence_integrity.py::TestD10CmdEvidenceReverify.test_reverify_true_when_command_still_reproduces  # noqa: E501
+def reverify_cmd_evidence(entry: str) -> Result[bool, TicketError]:
+    """Re-run the command a `cmd:` evidence entry recorded and confirm it
+    still exits 0 with the SAME stdout digest (D-10): `run_cmd_evidence`'s
+    sha256 is otherwise a record-time-only attestation nothing ever
+    re-checks. `Ok(True)`/`Ok(False)` report whether the command still
+    reproduces; `Err(MalformedEvidence)` if `entry` is not a well-formed
+    `cmd:` entry at all.
+
+    Deliberately opt-in, not wired into `_done_transition_guard`/COV003 by
+    default: re-running an arbitrary recorded command on every check is
+    exactly the cost/non-idempotence tradeoff `_evidence_valid_for_ticket`
+    already documents choosing NOT to pay unconditionally (a docs command
+    may be slow, or legitimately non-deterministic in a way that does not
+    indicate the underlying claim is false). A caller that wants the
+    stronger guarantee for a specific entry calls this directly."""
+    match = _CMD_EVIDENCE_PARSE_RE.match(entry)
+    if match is None:
+        _log.warning("tickets: reverify_cmd_evidence: not a cmd: entry: %r", entry)
+        return Err(TicketError.MalformedEvidence)
+    command, recorded_sha = match.group("command"), match.group("sha")
+    completed = _run_evidence_command(command)
+    if completed.is_err:
+        _log.warning("tickets: reverify_cmd_evidence: %r no longer exits 0", command)
+        return Ok(False)
+    digest = hashlib.sha256(completed.danger_ok.stdout.encode("utf-8")).hexdigest()[:12]
+    matches = digest == recorded_sha
+    if not matches:
+        _log.warning(
+            "tickets: reverify_cmd_evidence: %r stdout digest changed (%s -> %s)",
+            command,
+            recorded_sha,
+            digest,
+        )
+    return Ok(matches)
 
 
 def _run_evidence_command(
@@ -1022,6 +1566,139 @@ def add_cmd_evidence(
     if write_result.is_err:
         return Err(write_result.danger_err)
     _log.info("tickets: %s recorded cmd evidence (%s)", ticket_id, entry)
+    return Ok(updated)
+
+
+# frob:ticket T-0458
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/unit/test_ticket_store.py::TestRenderEvidenceBlock.test_mixed_cmd_and_pytest_ids  # noqa: E501
+def render_evidence_block(evidence: Sequence[str]) -> str:
+    """Auto-fill a Done report's Evidence section from a ticket's already-
+    recorded evidence ids alone (T-0458 REFINEMENT).
+
+    No fresh collection or test run is needed here: every id in `evidence`
+    was ALREADY validated resolvable-and-passing (pytest, `add_evidence`'s
+    D-01 `passed` check) or exit=0 (`cmd:` entries, `add_cmd_evidence`) at
+    the moment it was accepted into the ticket -- so this just renders what
+    frob already knows to be true, instead of the agent retyping node ids
+    and pass counts by hand (the class of drift that produced this
+    session's stale-evidence-id incidents).
+    """
+    if not evidence:
+        return "(no evidence recorded)"
+    lines = []
+    for eid in evidence:
+        if is_cmd_evidence(eid):
+            lines.append(f"- `{eid}` (cmd evidence, exit=0)")
+        else:
+            lines.append(f"- `{eid}` (pytest node id, verified passing when recorded)")
+    return "\n".join(lines)
+
+
+# frob:ticket T-0458
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/unit/test_ticket_store.py::TestComputeChangedLines.test_non_git_root_returns_empty  # noqa: E501
+def compute_changed_lines(root: Path, base_ref: str = "main") -> tuple[str, ...]:
+    """Best-effort `git diff --stat <base_ref>...HEAD` lines for a Done
+    report's Changed section (T-0458 REFINEMENT) -- pulled straight from
+    git, never retyped by the agent (the exact class of error that dropped
+    `render.md` / mis-listed files by hand this session).
+
+    Returns an empty tuple (never raises, never Err) if `root` is not a git
+    checkout or the diff itself fails -- the Changed block is auxiliary
+    evidence for the report, not a precondition for writing one; a caller
+    that wants a hard failure on a broken git state should check `root`
+    itself before calling `set_done_report`.
+    """
+    from frob.gitio import run_argv
+
+    spawned = run_argv(["git", "-C", str(root), "diff", "--stat", f"{base_ref}...HEAD"])
+    if spawned.is_err or spawned.danger_ok.returncode != 0:
+        _log.warning(
+            "tickets: git diff --stat %s...HEAD unavailable for done-report "
+            "Changed block (root=%s)",
+            base_ref,
+            root,
+        )
+        return ()
+    return tuple(line for line in spawned.danger_ok.stdout.splitlines() if line.strip())
+
+
+# frob:ticket T-0458
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/unit/test_ticket_store.py::TestRenderChangedBlock.test_lines_rendered_fenced  # noqa: E501
+def render_changed_block(lines: Sequence[str]) -> str:
+    """Render `compute_changed_lines`'s output as a Done report Changed
+    section (fenced verbatim, since git's `--stat` output is already
+    human-readable columns) (T-0458)."""
+    if not lines:
+        return "(no changed files detected)"
+    return "```\n" + "\n".join(lines) + "\n```"
+
+
+# frob:ticket T-0458
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/unit/test_ticket_store.py::TestComposeDoneReport.test_composes_all_three_sections  # noqa: E501
+def compose_done_report(
+    why: str, changed_lines: Sequence[str], evidence: Sequence[str]
+) -> str:
+    """Compose a full '## Done report' section: the caller's narrative
+    `why` plus AUTO-FILLED Changed (`render_changed_block`) and Evidence
+    (`render_evidence_block`) sections (T-0458 REFINEMENT) -- the mechanical
+    parts are always generated, never hand-typed, so they can never drift
+    from what frob and git actually recorded."""
+    why_text = why.strip() or "(no narrative supplied)"
+    changed_block = render_changed_block(changed_lines)
+    evidence_block = render_evidence_block(evidence)
+    return (
+        f"{DONE_REPORT_HEADING}\n\n"
+        f"{why_text}\n\n"
+        f"### Changed\n{changed_block}\n\n"
+        f"### Evidence\n{evidence_block}\n"
+    )
+
+
+# frob:ticket T-0458
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/unit/test_ticket_store.py::TestSetDoneReport.test_composes_and_writes_atomically  # noqa: E501
+# frob:tests tests/unit/test_ticket_store.py::TestSetDoneReport.test_caller_never_touches_markdown  # noqa: E501
+def set_done_report(
+    root: Path, ticket_id: str, *, why: str, base_ref: str = "main"
+) -> Result[Ticket, TicketError]:
+    """THE single write path for a ticket's Done report (T-0458): compose
+    `why` (the caller's narrative -- the ONLY thing the caller supplies)
+    with auto-filled Changed (`compute_changed_lines` vs `base_ref`) and
+    Evidence (`render_evidence_block`, from the ticket's own recorded
+    evidence) sections, then splice the result into `body`'s '## Done
+    report' section via `replace_done_report_section` -- the caller never
+    parses or edits markdown directly, and never re-derives block
+    boundaries by hand (the exact failure mode -- a dropped marker, a
+    mis-listed Changed/Evidence block, an Edit landing mid-section -- that
+    repeatedly corrupted `tickets.md` when done by hand).
+
+    Held under `ledger_lock` end to end (load, compose, write) so a
+    concurrent `set_done_report`/`add_evidence`/`new_ticket` call on the
+    same ledger can never interleave with this one (T-0458 single-writer
+    invariant)."""
+    with ledger_lock(root):
+        loaded = _load_one(root, ticket_id)
+        if loaded.is_err:
+            return Err(loaded.danger_err)
+        ticket = loaded.danger_ok
+        changed_lines = compute_changed_lines(root, base_ref)
+        report = compose_done_report(why, changed_lines, ticket.evidence)
+        updated = ticket.model_copy(
+            update={"body": replace_done_report_section(ticket.body, report)}
+        )
+        write_result = write_ticket(root, updated)
+        if write_result.is_err:
+            return Err(write_result.danger_err)
+    _log.info(
+        "tickets: %s Done report set (%d evidence id(s), %d changed line(s))",
+        ticket_id,
+        len(ticket.evidence),
+        len(changed_lines),
+    )
     return Ok(updated)
 
 
@@ -1163,9 +1840,16 @@ __all__ = [
     "add_evidence",
     "archive",
     "attach",
+    "clipboard_has_image",
+    "compose_done_report",
+    "compute_changed_lines",
     "doable",
+    "doable_blocked",
     "is_cmd_evidence",
     "land",
+    "large_glob_warnings",
+    "leased_by",
+    "ledger_lock",
     "load_active",
     "load_queue",
     "Stride",
@@ -1173,7 +1857,14 @@ __all__ = [
     "new_ticket",
     "renumber",
     "record_failure",
+    "render_changed_block",
+    "render_evidence_block",
+    "reverify_cmd_evidence",
     "run_cmd_evidence",
+    "scope_breadth_context",
+    "scope_matches",
+    "scope_overlap_globs",
+    "set_done_report",
     "splice_ledger",
     "transition",
     "validate_evidence",

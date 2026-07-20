@@ -4,13 +4,19 @@ docs/strata/host.md).
 Foundation of the deploy epic (T-0254). A node/store may declare `runs_as
 "svc-name"` (a dedicated OS service user), `unit` (bare marker: this
 node's process is modeled as a systemd unit), `owns "PATH" "MODE"`
-(filesystem ownership, repeatable), and `listens PORT` (a bound socket,
-repeatable) -- `strata-core/src/parse.rs`'s `parse_node`/`parse_store`.
+(filesystem ownership, repeatable), `listens PORT` (a bound socket,
+repeatable), `group "NAME"` (OS-group membership, repeatable, T-0272),
+and `sudoers "RULE"` (a sudoers grant line, repeatable, T-0272) --
+`strata-core/src/parse.rs`'s `parse_node`/`parse_store`. `group`/
+`sudoers` close the honest gap `_host_isolation.py`'s module docstring
+documented: HOST001's shared-group and HOST002's sudoers sub-targets can
+now derive real findings from `HostManifest.group`/`HostManifest.
+sudoers` instead of always firing.
 Charter law 1 (a vocabulary is a pure function surface -> kernel facts):
 none of this grows `KernelModel`/`Node` with a new field. Instead, exactly
 like `code`/`may`/`carries`/`managed` before it, each clause desugars to a
 plain `Node.attrs` string (`_elaborate.py::_elaborate_node`, `_infra.py::
-_elaborate_store`) -- `host_attrs` here is the ONE place that encoding is
+_elaborate_store`) -- `_host_attrs` here is the ONE place that encoding is
 written, imported by both elaborators so the convention cannot desync
 between node and store.
 
@@ -60,6 +66,14 @@ _OWNS_PREFIX = "owns="
 
 #: `listens=<port>` attr prefix, one per declared `listens` entry.
 _LISTENS_PREFIX = "listens="
+
+#: `group=<name>` attr prefix, one per declared `group` entry (T-0272) --
+#: the SAME per-atom `key=value` attr convention `_OWNS_PREFIX`/
+#: `_LISTENS_PREFIX` use, owns-adjacent per the ticket's grammar shape.
+_GROUP_PREFIX = "group="
+
+#: `sudoers=<rule>` attr prefix, one per declared `sudoers` entry (T-0272).
+_SUDOERS_PREFIX = "sudoers="
 
 #: Well-formed LINUX_SYSTEMD `owns` MODE: 3-4 octal digits (0-7), matching
 #: `chmod`'s own permission-string shape -- a 4th digit carries setuid/
@@ -148,6 +162,16 @@ class HostManifest(BaseModel):
     # across nodes sharing a host -- both are cross-manifest concerns,
     # not a single manifest's well-formedness.
     listens: tuple[int, ...] = ()
+    # T-0272: OS groups this manifest's `runs_as` user is a member of,
+    # and sudoers grants held by that user -- the grammar HOST001's
+    # shared-group and HOST002's sudoers sub-targets needed to stop
+    # always-firing (docs/strata/host.md#the-honest-gap, module docstring
+    # of `_host_isolation.py`). Both plain string tuples, same "opaque
+    # atom" shape `owns`'s mode/`listens`'s port neighbors use -- a group
+    # name and a sudoers rule line are free-form platform text, not
+    # structured data this manifest needs to interpret further.
+    group: tuple[str, ...] = ()
+    sudoers: tuple[str, ...] = ()
 
     @field_validator("listens")
     @classmethod
@@ -166,18 +190,22 @@ class HostManifest(BaseModel):
 
 # frob:doc docs/strata/host.md#surface-grammar
 # frob:tests tests/unit/strata/test_host.py::TestHostAttrs.test_desugars kind="unit"
-def host_attrs(
+def _host_attrs(
     *,
     runs_as: str | None,
     is_unit: bool,
     owns: tuple[tuple[str, str], ...],
     listens: tuple[int, ...],
+    group: tuple[str, ...] = (),
+    sudoers: tuple[str, ...] = (),
 ) -> tuple[str, ...]:
     """Desugar parsed std.host clauses into `Node.attrs` strings.
 
     The ONE encoding both `_elaborate.py::_elaborate_node` (node) and
     `_infra.py::_elaborate_store` (store) call, so the attr convention
     cannot desync between the two callers (charter law 5: no duplication).
+    `group`/`sudoers` (T-0272) default to empty so existing callers built
+    against the pre-T-0272 four-argument shape keep working unchanged.
     """
     attrs: list[str] = []
     if runs_as is not None:
@@ -186,6 +214,8 @@ def host_attrs(
         attrs.append(_UNIT_ATTR)
     attrs.extend(f"{_OWNS_PREFIX}{path}:{mode}" for path, mode in owns)
     attrs.extend(f"{_LISTENS_PREFIX}{port}" for port in listens)
+    attrs.extend(f"{_GROUP_PREFIX}{name}" for name in group)
+    attrs.extend(f"{_SUDOERS_PREFIX}{rule}" for rule in sudoers)
     return tuple(attrs)
 
 
@@ -198,6 +228,8 @@ class _ParsedHostAttrs:
         self.is_unit = False
         self.owns: list[HostOwns] = []
         self.listens: list[int] = []
+        self.group: list[str] = []
+        self.sudoers: list[str] = []
         self.declared = False
 
 
@@ -229,6 +261,12 @@ def _parse_host_attrs(node: Node) -> _ParsedHostAttrs:
                 ) from exc
             parsed.listens.append(port)
             parsed.declared = True
+        elif attr.startswith(_GROUP_PREFIX):
+            parsed.group.append(attr[len(_GROUP_PREFIX) :])
+            parsed.declared = True
+        elif attr.startswith(_SUDOERS_PREFIX):
+            parsed.sudoers.append(attr[len(_SUDOERS_PREFIX) :])
+            parsed.declared = True
     return parsed
 
 
@@ -257,12 +295,15 @@ def host_manifest_for(node: Node) -> HostManifest | None:
     if not parsed.declared:
         return None
     _log.debug(
-        "node %s: host manifest runs_as=%r unit=%s owns=%d listens=%d",
+        "node %s: host manifest runs_as=%r unit=%s owns=%d listens=%d "
+        "group=%d sudoers=%d",
         node.id,
         parsed.runs_as,
         parsed.is_unit,
         len(parsed.owns),
         len(parsed.listens),
+        len(parsed.group),
+        len(parsed.sudoers),
     )
     return HostManifest(
         platform=HostPlatform.LINUX_SYSTEMD,
@@ -270,4 +311,6 @@ def host_manifest_for(node: Node) -> HostManifest | None:
         is_unit=parsed.is_unit,
         owns=tuple(parsed.owns),
         listens=tuple(parsed.listens),
+        group=tuple(parsed.group),
+        sudoers=tuple(parsed.sudoers),
     )

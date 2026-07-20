@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import sqlite3
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -30,6 +31,7 @@ from typani.result import Result
 
 from frob import excludes as _excludes
 from frob.graph import cache as _cache
+from frob.graph._generated import is_generated_source
 from frob.graph._models import (
     BuildStats,
     DanglingEdge,
@@ -45,16 +47,13 @@ from frob.graph._models import (
     SymbolId,
     SymbolRecord,
 )
+from frob.graph.callgraph import CallGraph, build_call_graph, closure
 from frob.graph.digest import compute_digests
 from frob.graph.dsl import dedupe_slug, markdown_anchors, parse_directives, slugify
 from frob.lang import LangError, ParsedFile, parse_file, supported_extensions
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
-
-_EXCLUDED_DIRS = frozenset(
-    {".git", ".venv", "node_modules", "target", "build", "dist", "__pycache__", ".frob"}
-)
 
 
 # frob:doc docs/modules/graph.md#error-types
@@ -89,15 +88,35 @@ def _display_path(path: Path, root: Path) -> str:
 # aliases so the graph's internal call sites keep their names.
 _load_exclude_globs = _excludes.load_exclude_globs
 _is_excluded = _excludes.is_excluded
+# T-0239: directory-pruning helper is intentionally private in frob.excludes
+# (leading underscore keeps it off the REL001 public-API surface -- it is an
+# internal walker detail, not something outside consumers should call).
+_should_prune_dir = _excludes._should_prune_dir  # noqa: SLF001
 
 
+# frob:ticket T-0239
+# frob:tests tests/test_graph.py::TestExclude.test_nested_git_worktree_pruned_without_config  # noqa: E501
+# frob:tests tests/test_graph.py::TestExclude.test_walk_source_files_prunes_before_descent  # noqa: E501
 def _walk_source_files(root: Path, exclude_globs: tuple[str, ...] = ()) -> list[Path]:
-    """Every source file under `root` with a recognized extension, exclusions pruned."""
+    """Every source file under `root` with a recognized extension.
+
+    Excluded directories -- the builtin skip set, `[graph] exclude` globs,
+    and nested git worktree checkouts -- are pruned from `dirnames` BEFORE
+    `os.walk` descends into them (T-0239: filtering files after the walk
+    still pays the full traversal/stat cost of every excluded subtree, which
+    measured as ~73pct of wasted work on a repo with stale
+    `.claude/worktrees/agent-*` checkouts).
+    """
     found: list[Path] = []
     for dirpath, dirnames, filenames in os.walk(root):
-        dirnames[:] = [d for d in dirnames if d not in _EXCLUDED_DIRS]
+        dir_path = Path(dirpath)
+        dirnames[:] = [
+            d
+            for d in dirnames
+            if not _should_prune_dir(dir_path / d, root, exclude_globs)
+        ]
         for name in filenames:
-            path = Path(dirpath) / name
+            path = dir_path / name
             if Path(name).suffix.lower() not in supported_extensions():
                 continue
             if exclude_globs and _is_excluded(_display_path(path, root), exclude_globs):
@@ -106,18 +125,35 @@ def _walk_source_files(root: Path, exclude_globs: tuple[str, ...] = ()) -> list[
     return found
 
 
+# frob:ticket T-0239
 def _walk_doc_files(root: Path, exclude_globs: tuple[str, ...] = ()) -> list[Path]:
-    """Every `docs/**/*.md` file under `root`."""
+    """Every `docs/**/*.md` file under `root`, excluded directories pruned.
+
+    Uses a manual `os.walk` (not `Path.rglob`, which cannot prune subtrees
+    mid-traversal) so a nested worktree checkout or excluded glob under
+    `docs/` is skipped before it is descended into -- same T-0239 fix as
+    `_walk_source_files`.
+    """
     docs_dir = root / "docs"
     if not docs_dir.is_dir():
         return []
-    return sorted(
-        path
-        for path in docs_dir.rglob("*.md")
-        if not (
-            exclude_globs and _is_excluded(_display_path(path, root), exclude_globs)
-        )
-    )
+    found: list[Path] = []
+    for dirpath, dirnames, filenames in os.walk(docs_dir):
+        dir_path = Path(dirpath)
+        dirnames[:] = [
+            d
+            for d in dirnames
+            if not _should_prune_dir(dir_path / d, root, exclude_globs)
+        ]
+        for name in filenames:
+            if not name.endswith(".md"):
+                continue
+            path = dir_path / name
+            if exclude_globs and _is_excluded(_display_path(path, root), exclude_globs):
+                continue
+            found.append(path)
+    # frob:waive PERF004 reason="runs once after the os.walk loop, not per iteration"
+    return sorted(found)
 
 
 def _symbol_record(rel_path: str, symbol) -> SymbolRecord:  # noqa: ANN001
@@ -212,7 +248,13 @@ def _process_doc_file(conn, root: Path, path: Path, on_disk_hash: str) -> bool:
         return False
     try:
         text = path.read_text(encoding="utf-8")
-    except OSError as exc:
+    except (OSError, UnicodeDecodeError) as exc:
+        # frob:ticket T-0402
+        # G2: UnicodeDecodeError subclasses ValueError, not OSError, so it
+        # was never caught here -- one non-UTF-8 .md crashed the whole
+        # build (and every command layered on `Result`, hard). Degrade the
+        # same way an unreadable file already does: log loudly, skip the
+        # file, keep the build alive.
         _log.warning("skipping %s: %s", rel_path, exc)
         return True
     edges = markdown_anchors(rel_path, text)
@@ -278,6 +320,7 @@ def _prune_stale_cache(conn, seen_paths: set[str]) -> None:
 
 
 # frob:doc docs/modules/graph.md#public-api
+# frob:tests tests/test_graph.py::TestLoadGraph.test_non_utf8_doc_file_is_skipped_not_crashed  # noqa: E501
 def build_graph(root: Path, cache: Path) -> Result[GraphSnapshot, BuildError]:
     """Incrementally (re)build the obligation graph for `root` into `cache`."""
     root = root.resolve()
@@ -334,30 +377,98 @@ def _finalize_build(
     return snapshot
 
 
+# frob:ticket T-0361
+def _first_stale_cached_file(conn: sqlite3.Connection, root: Path) -> str | None:
+    """The first cached file path whose on-disk content hash no longer
+    matches the cache's stored hash, or `None` if every cached file still
+    matches; split out of `load_graph`'s staleness-check loop (T-0361)."""
+    for path, stored_hash in conn.execute("SELECT path, content_hash FROM files"):
+        current = _content_hash(root / path)
+        if current != stored_hash:
+            return path
+    return None
+
+
+# frob:ticket T-0402
+def _first_added_file(
+    conn: sqlite3.Connection, root: Path, exclude_globs: tuple[str, ...]
+) -> str | None:
+    """The first on-disk source/doc path with no `files` cache row, or
+    `None` if every on-disk path is already cached (T-0402, G1).
+
+    `_first_stale_cached_file` only iterates rows already IN the cache, so
+    it can never see a file that has never been ingested at all -- a
+    brand-new source or doc file made `load_graph` return `Ok` on a
+    snapshot silently missing that file's symbols, edges, malformed
+    directives, and doc obligations. This pays one extra `os.walk` (the
+    same walk `build_graph` already pays) to catch additions, the one
+    staleness shape `_first_stale_cached_file`'s hash-only loop cannot see.
+    """
+    cached = {row[0] for row in conn.execute("SELECT path FROM files")}
+    on_disk = _walk_source_files(root, exclude_globs) + _walk_doc_files(
+        root, exclude_globs
+    )
+    for path in on_disk:
+        rel_path = _display_path(path, root)
+        if rel_path not in cached:
+            return rel_path
+    return None
+
+
 # frob:doc docs/modules/graph.md#public-api
-# frob:waive TEST005 reason="load_graph 87.0% branch cover, debt T-0160"
+# frob:ticket T-0232
+# frob:tests tests/test_graph.py::TestLoadGraph.test_cache_stale_after_new_file_added  # noqa: E501
+# frob:tests tests/test_graph.py::TestLoadGraph.test_cache_stale_after_new_doc_added  # noqa: E501
 def load_graph(cache: Path) -> Result[GraphSnapshot, GraphError]:
     """Cache-only read: `Err(CacheStale)` if any on-disk hash moved, `Err(CacheCorrupt)`
-    if the cache is unreadable or has never been built."""
+    if the cache is unreadable or has never been built.
+
+    Opens `cache` via `connect_readonly` (T-0232), not `connect`: a pure
+    read has no business taking sqlite's single writer slot, and doing so
+    is what serialized concurrent `frob` invocations (agent loop, CI, a
+    background `frob vet`) behind each other's cache writes even when
+    neither side had anything to write. A cache this can't open read-only
+    (missing, corrupt, or mid-rebuild) is exactly `CacheCorrupt` territory
+    -- self-healing it is `build_graph`'s job, not a reader's.
+    """
     if not cache.exists():
         _log.warning("load_graph: no cache at %s", cache)
         return Err(GraphError.CacheCorrupt)
     try:
-        conn = _cache.connect(cache)
+        conn = _cache.connect_readonly(cache)
     except Exception as exc:  # sqlite3.DatabaseError and friends
         _log.error("load_graph: cache unreadable at %s: %s", cache, exc)
         return Err(GraphError.CacheCorrupt)
     try:
         root_str = _cache.get_root(conn)
+    except sqlite3.DatabaseError as exc:
+        # A read-only connection cannot self-heal a garbage/corrupt file the
+        # way `connect()` does (T-0232) -- that would require a write.
+        # Corrupt bytes surface as a query-time error here rather than at
+        # connect time; still `CacheCorrupt`, same as the old self-healing
+        # path's outcome once it found no root ever recorded.
+        _log.error("load_graph: cache unreadable at %s: %s", cache, exc)
+        conn.close()
+        return Err(GraphError.CacheCorrupt)
+    try:
         if root_str is None:
             _log.warning("load_graph: cache at %s has never been built", cache)
             return Err(GraphError.CacheCorrupt)
         root = Path(root_str)
-        for path, stored_hash in conn.execute("SELECT path, content_hash FROM files"):
-            current = _content_hash(root / path)
-            if current != stored_hash:
-                _log.warning("load_graph: %s drifted from cache", path)
-                return Err(GraphError.CacheStale)
+        stale_path = _first_stale_cached_file(conn, root)
+        if stale_path is not None:
+            _log.warning("load_graph: %s drifted from cache", stale_path)
+            return Err(GraphError.CacheStale)
+        # frob:ticket T-0402
+        # G1: a hash-only staleness loop is blind to files added since the
+        # last build (they simply have no cache row to compare against).
+        # Catch that shape too, or a load-only reader silently operates on
+        # an incomplete graph forever, never re-triggering a rebuild.
+        exclude_globs = _load_exclude_globs(root)
+        added_path = _first_added_file(conn, root, exclude_globs)
+        if added_path is not None:
+            _log.warning("load_graph: %s added since cache built", added_path)
+            return Err(GraphError.CacheStale)
         snapshot = _cache.load_all(conn)
         _log.info(
             "load_graph: loaded %d symbols, %d edges",
@@ -370,22 +481,48 @@ def load_graph(cache: Path) -> Result[GraphSnapshot, GraphError]:
 
 
 # frob:doc docs/modules/graph.md#public-api
+# frob:ticket T-0402
+# frob:tests tests/test_graph.py::TestResolve.test_exact_qualname_wins_over_suffix_match  # noqa: E501
+# frob:tests tests/test_graph.py::TestResolve.test_ambiguous_suffix_match
 def resolve(snapshot: GraphSnapshot, ref: str) -> Result[SymbolRecord, GraphError]:
-    """Resolve `ref`: exact `path::qualname`, else a unique qualname/suffix match."""
+    """Resolve `ref`: exact `path::qualname`, else a unique qualname match,
+    else a unique `.suffix` match.
+
+    G10 (T-0402): exact-qualname and loose-suffix candidates used to be
+    merged into one pool before counting, so a top-level `foo` and any
+    `X.foo` collided into `AmbiguousSymbol` even though the bare `qualname
+    == ref` hit was unambiguous on its own, and a `.suffix` hit could win
+    over an exact qualname match that existed elsewhere in the pool. Exact
+    qualname matches are now checked -- and count towards ambiguity --
+    strictly before suffix matches are even considered.
+    """
     exact = snapshot.symbols.get(ref)
     if exact is not None:
         return Ok(exact)
 
+    qualname_matches = [
+        record for record in snapshot.symbols.values() if record.id.qualname == ref
+    ]
+    if len(qualname_matches) == 1:
+        return Ok(qualname_matches[0])
+    if len(qualname_matches) > 1:
+        _log.warning(
+            "resolve(%r): ambiguous, %d qualname matches", ref, len(qualname_matches)
+        )
+        return Err(GraphError.AmbiguousSymbol)
+
     suffix = f".{ref}"
-    matches = [
+    suffix_matches = [
         record
         for record in snapshot.symbols.values()
-        if record.id.qualname == ref or record.id.qualname.endswith(suffix)
+        if record.id.qualname.endswith(suffix)
     ]
-    if len(matches) == 1:
-        return Ok(matches[0])
-    if len(matches) > 1:
-        _log.warning("resolve(%r): ambiguous, %d matches", ref, len(matches))
+    if len(suffix_matches) == 1:
+        return Ok(suffix_matches[0])
+    if len(suffix_matches) > 1:
+        _log.warning(
+            "resolve(%r): ambiguous, %d suffix matches", ref, len(suffix_matches)
+        )
         return Err(GraphError.AmbiguousSymbol)
     _log.debug("resolve(%r): no match", ref)
     return Err(GraphError.UnknownSymbol)
@@ -403,9 +540,15 @@ def edges_to(snapshot: GraphSnapshot, target: str) -> tuple[Edge, ...]:
     return tuple(edge for edge in snapshot.edges if edge.target == target)
 
 
+# frob.graph.lock imports `resolve` back from this package, so it must be
+# imported only after `resolve` is defined above -- importing it at the top
+# with the rest deadlocks on a partially-initialized module (T-0362).
+from frob.graph.lock import LockError, acknowledge, load_lock, write_lock  # noqa: E402
+
 __all__ = [
     "BuildError",
     "BuildStats",
+    "CallGraph",
     "Digests",
     "DanglingEdge",
     "DriftReport",
@@ -414,16 +557,23 @@ __all__ = [
     "GraphError",
     "GraphSnapshot",
     "LockEntry",
+    "LockError",
     "LockFile",
     "MalformedDirective",
     "StaleItem",
     "SymbolId",
     "SymbolRecord",
+    "acknowledge",
+    "build_call_graph",
     "build_graph",
+    "closure",
     "dedupe_slug",
     "edges_from",
     "edges_to",
+    "is_generated_source",
     "load_graph",
+    "load_lock",
     "resolve",
     "slugify",
+    "write_lock",
 ]

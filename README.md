@@ -60,6 +60,10 @@ Every violation message embeds its own remedy command, so an agent acting on
 | `frob ticket` | The statically-checkable ticket queue: new/list/show/doable/start/attach/block/close/fail |
 | `frob check` | Aggregate quality gate: ruff, ty, cycle/dup/arch/bind/exports, and the enforcement gates |
 | `frob test` | Select and run tests for the touched set vs a base ref (or `--all`) |
+| `frob vet` | Dependency capability vetting: source-resolved capability scan, CVE fingerprints, supply-chain/obfuscation checks |
+| `frob sys` | strata system-design audit: model-vs-code conformance, threat/CWE/compliance/PII, deploy proofs (`plan`/`doc`/`audit`/`export`) |
+| `frob deploy` | Auditable OS-layer deployment: compile a host manifest into idempotent install/status/uninstall + VM audit |
+| `frob release` | Mechanical semver from the public-API graph and the REL001 release gate (`stamp`/`check`) |
 
 ### Analysis
 
@@ -76,6 +80,10 @@ Every violation message embeds its own remedy command, so an agent acting on
 | `frob bind` | Verify binding declarations match source signatures |
 | `frob parse` | Parse tool output (pytest/ruff/ty/clang/junit) into a compact summary |
 | `frob gitlog` | Summarize git history filtered by conventional commit type |
+| `frob perf` | Profiling (`profile`/`heat`) and the PERF001-004 linear-scan gates |
+| `frob mutate` | Mutation testing: the honest test-quality oracle |
+| `frob stats` | DORA-ish delivery measurement (queue health + commit cadence); measurement only |
+| `frob serve` | MCP stdio adapter exposing doable tickets, stale docs, scope/graph queries as read-only tools |
 
 ### Setup
 
