@@ -847,13 +847,59 @@ def _add_ticket_done_report_parser(ticket_sub):
     return ticket_done_report_p
 
 
+# frob:ticket T-0455
+def _add_ticket_scope_parser(ticket_sub):
+    """Register `frob ticket scope <id> --add GLOB... --remove GLOB...
+    --reason TEXT` -- the formal scope/lease change protocol (T-0455): an
+    honest, audited expansion or reduction of a ticket's declared scope
+    (and, since the lease is derived live from it, its active tree-lease
+    too), replacing the ad-hoc SCOPE001 waive dodge. `--add`/`--remove` may
+    each be repeated and may be combined in one call; `--reason` applies to
+    every glob the call mutates and is always required."""
+    ticket_scope_p = ticket_sub.add_parser(
+        "scope",
+        help="formally expand/reduce a ticket's declared scope + tree-lease "
+        "(T-0455) -- fails loudly on an --add that overlaps another "
+        "in-progress ticket's lease",
+    )
+    ticket_scope_p.add_argument("ticket_id", metavar="id")
+    ticket_scope_p.add_argument(
+        "--add",
+        dest="ticket_scope_add",
+        action="append",
+        default=[],
+        metavar="GLOB",
+        help="expand scope + lease to GLOB (repeatable)",
+    )
+    ticket_scope_p.add_argument(
+        "--remove",
+        dest="ticket_scope_remove",
+        action="append",
+        default=[],
+        metavar="GLOB",
+        help="release GLOB from scope + lease (repeatable)",
+    )
+    ticket_scope_p.add_argument(
+        "--reason",
+        dest="ticket_scope_reason",
+        required=True,
+        metavar="TEXT",
+        help="why this scope change (recorded in the ticket's scope_changes "
+        "audit trail)",
+    )
+    return ticket_scope_p
+
+
 def _add_ticket_closeout_parsers(ticket_sub) -> list:
     """Register the ticket closeout subcommands: attach/block/close/fail/
-    evidence/done-report."""
+    evidence/done-report/scope."""
     return (
         _add_ticket_attach_and_lifecycle_end_parsers(ticket_sub)
         + _add_ticket_fail_evidence_archive_parsers(ticket_sub)
-        + [_add_ticket_done_report_parser(ticket_sub)]
+        + [
+            _add_ticket_done_report_parser(ticket_sub),
+            _add_ticket_scope_parser(ticket_sub),
+        ]
     )
 
 

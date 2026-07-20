@@ -10,6 +10,7 @@ frob.graph or frob.lang by design (see docs/rework.md cycle-avoidance).
 from __future__ import annotations
 
 import fnmatch
+import getpass
 import hashlib
 import re
 import subprocess
@@ -34,6 +35,8 @@ from frob.tickets._models import (
     LandReport,
     Origin,
     RenumberReport,
+    ScopeChangeEntry,
+    ScopeChangeOp,
     Stride,
     Ticket,
     TicketError,
@@ -48,6 +51,7 @@ from frob.tickets._models import (
     scope_matches,
     scope_overlap_globs,
 )
+from frob.tickets._models import _split_scope_entries as _normalize_scope_entries
 from frob.tickets._provisional import is_draft_id, mint_draft_id, on_default_branch
 from frob.tickets._store import (
     archive_path,
@@ -992,6 +996,241 @@ def leased_by(
     return tuple(hits)
 
 
+# frob:ticket T-0455
+def _current_actor() -> str:
+    """Best-effort identity for a `scope_changes` audit entry's `actor` field
+    -- the OS login name, or `"unknown"` if the platform/sandbox refuses to
+    report one (never raises)."""
+    try:
+        return getpass.getuser()
+    except OSError:
+        return "unknown"
+
+
+# frob:ticket T-0455
+def _scope_add_conflicts(
+    glob: str, ticket_id: str, queue: dict[str, Ticket]
+) -> tuple[str, str] | None:
+    """`(holding_ticket_id, holder_glob)` if `glob` overlaps the declared
+    scope of another IN_PROGRESS ticket (T-0453 lease model), or `None` if
+    free to lease. Every OTHER in-progress ticket's FULL declared scope is
+    checked (not breadth-demoted) -- an explicit `--add` request is a
+    stronger claim than a passive `doable` listing, so this never silently
+    lets an expansion into a busy over-broad lease through the same
+    demotion `leased_by` applies for queue-display purposes."""
+    for holder in sorted(queue.values(), key=lambda t: t.id):
+        if holder.id == ticket_id or holder.state is not TicketState.IN_PROGRESS:
+            continue
+        collision = scope_overlap_globs((glob,), holder.scope)
+        if collision is not None:
+            return (holder.id, collision[1])
+    return None
+
+
+# frob:ticket T-0455
+def _scope_remove_orphans_evidence(glob: str, ticket: Ticket) -> bool:
+    """Whether removing `glob` from `ticket.scope` would orphan already-
+    recorded evidence (T-0455 guardrail): any evidence id whose leading
+    `path::` segment `glob` currently covers."""
+    for entry in ticket.evidence:
+        path = entry.split("::", 1)[0]
+        if fnmatch.fnmatch(path, glob):
+            return True
+    return False
+
+
+# frob:ticket T-0455
+def _validate_scope_request(
+    add_globs: tuple[str, ...], remove_globs: tuple[str, ...], reason: str
+) -> Result[None, TicketError]:
+    """The two request-shape checks `mutate_scope` rejects before ever
+    touching the ledger: at least one op, and a non-blank `reason`
+    (T-0455)."""
+    if not add_globs and not remove_globs:
+        _log.error("tickets: scope change requires --add or --remove")
+        return Err(TicketError.ScopeChangeEmpty)
+    if not reason.strip():
+        _log.error("tickets: scope change requires --reason")
+        return Err(TicketError.ScopeChangeReasonMissing)
+    return Ok(None)
+
+
+# frob:ticket T-0455
+def _validate_scope_mutation(
+    ticket_id: str,
+    ticket: Ticket,
+    queue: dict[str, Ticket],
+    add_globs: tuple[str, ...],
+    remove_globs: tuple[str, ...],
+) -> Result[None, TicketError]:
+    """The per-glob FAIL-LOUD checks `mutate_scope` runs against the loaded
+    ticket+queue (T-0455): a `remove` glob must be declared and evidence-
+    free (`ScopeRemoveNotDeclared`/`ScopeRemoveOrphansEvidence`); an `add`
+    glob must not overlap another in-progress ticket's lease
+    (`ScopeLeaseConflict`, `_scope_add_conflicts`)."""
+    for glob in remove_globs:
+        if glob not in ticket.scope:
+            _log.error(
+                "tickets: %s cannot remove %r, not in declared scope %s",
+                ticket_id,
+                glob,
+                ticket.scope,
+            )
+            return Err(TicketError.ScopeRemoveNotDeclared)
+        if _scope_remove_orphans_evidence(glob, ticket):
+            _log.error(
+                "tickets: %s cannot remove %r, covers recorded evidence",
+                ticket_id,
+                glob,
+            )
+            return Err(TicketError.ScopeRemoveOrphansEvidence)
+    for glob in add_globs:
+        conflict = _scope_add_conflicts(glob, ticket_id, queue)
+        if conflict is not None:
+            holder_id, holder_glob = conflict
+            _log.error(
+                "tickets: %s cannot lease %r: held by in-progress %s (scope %r)",
+                ticket_id,
+                glob,
+                holder_id,
+                holder_glob,
+            )
+            return Err(TicketError.ScopeLeaseConflict)
+    return Ok(None)
+
+
+# frob:ticket T-0455
+def _warn_over_broad_adds(
+    root: Path, ticket_id: str, add_globs: tuple[str, ...]
+) -> None:
+    """Log a WARNING (never a rejection) for any `add_globs` entry the
+    T-0453 breadth criterion flags -- a nudge, not a hard block (T-0455)."""
+    threshold, files = scope_breadth_context(root)
+    for glob in add_globs:
+        if _over_broad_scope_entries((glob,), threshold, files):
+            _log.warning(
+                "tickets: %s --add %r is an over-broad glob -- consider "
+                "narrowing it to the files this ticket actually touches",
+                ticket_id,
+                glob,
+            )
+
+
+# frob:ticket T-0455
+def _scope_change_entries(
+    add_globs: tuple[str, ...], remove_globs: tuple[str, ...], reason: str
+) -> tuple[ScopeChangeEntry, ...]:
+    """Build one `ScopeChangeEntry` per mutated glob (removes first, then
+    adds), all stamped with today's date and the current actor (T-0455)."""
+    today = date.today()
+    actor = _current_actor()
+    return tuple(
+        ScopeChangeEntry(
+            op=ScopeChangeOp.REMOVE, glob=g, reason=reason, actor=actor, at=today
+        )
+        for g in remove_globs
+    ) + tuple(
+        ScopeChangeEntry(
+            op=ScopeChangeOp.ADD, glob=g, reason=reason, actor=actor, at=today
+        )
+        for g in add_globs
+    )
+
+
+# frob:ticket T-0455
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets_scope_mutation.py::TestMutateScope.test_add_free_path_granted  # noqa: E501
+# frob:tests tests/test_tickets_scope_mutation.py::TestMutateScope.test_add_leased_path_rejected_names_holder  # noqa: E501
+# frob:tests tests/test_tickets_scope_mutation.py::TestMutateScope.test_remove_frees_path_for_other_doable  # noqa: E501
+def mutate_scope(
+    root: Path,
+    ticket_id: str,
+    *,
+    add: Sequence[str] = (),
+    remove: Sequence[str] = (),
+    reason: str,
+) -> Result[Ticket, TicketError]:
+    """Formally expand or reduce `ticket_id`'s declared `scope` -- and, since
+    the T-0453 tree-lease is DERIVED live from an in-progress ticket's
+    `scope` (`_in_progress_leases`), its active tree-lease too, in the same
+    atomic write (T-0455). This is the accountable replacement for the
+    ad-hoc SCOPE001 waive dodge (T-0176/T-0220 precedent): every mutation
+    appends a `ScopeChangeEntry` to the ticket's `scope_changes` audit list
+    instead of hiding the expansion behind a waiver comment.
+
+    `add` and `remove` may be combined in one call; `reason` applies to
+    every glob mutated by that call. FAILS LOUDLY (`Err`, no partial write)
+    per `_validate_scope_request`/`_validate_scope_mutation`'s docstrings --
+    notably `ScopeLeaseConflict` when an `add` glob overlaps a path leased
+    by ANOTHER in-progress ticket (the error names the holding ticket): an
+    agent can never expand into paths another agent is actively writing.
+    An over-broad `add` glob is logged at WARNING only (`_warn_over_broad_adds`).
+
+    Held under `ledger_lock` end to end (load, validate, write) so this can
+    never interleave with a concurrent ledger mutation (T-0458 single-writer
+    invariant) -- no hand-edit of `tickets.md` is ever involved.
+    """
+    add_globs = _normalize_scope_entries(tuple(add))
+    remove_globs = _normalize_scope_entries(tuple(remove))
+    request_check = _validate_scope_request(add_globs, remove_globs, reason)
+    if request_check.is_err:
+        return Err(request_check.danger_err)
+
+    with ledger_lock(root):
+        loaded = _load_ticket_and_queue(root, ticket_id)
+        if loaded.is_err:
+            return Err(loaded.danger_err)
+        ticket, queue = loaded.danger_ok
+
+        mutation_check = _validate_scope_mutation(
+            ticket_id, ticket, queue, add_globs, remove_globs
+        )
+        if mutation_check.is_err:
+            return Err(mutation_check.danger_err)
+
+        _warn_over_broad_adds(root, ticket_id, add_globs)
+        result = _write_scope_mutation(root, ticket, add_globs, remove_globs, reason)
+        if result.is_err:
+            return Err(result.danger_err)
+        updated = result.danger_ok
+    _log.info(
+        "tickets: %s scope changed (+%d/-%d): %s",
+        ticket_id,
+        len(add_globs),
+        len(remove_globs),
+        reason,
+    )
+    return Ok(updated)
+
+
+# frob:ticket T-0455
+def _write_scope_mutation(
+    root: Path,
+    ticket: Ticket,
+    add_globs: tuple[str, ...],
+    remove_globs: tuple[str, ...],
+    reason: str,
+) -> Result[Ticket, TicketError]:
+    """Compute `ticket`'s new scope + appended audit entries and write it
+    (T-0455) -- the final step `mutate_scope` runs once every validation
+    check has passed. Caller holds `ledger_lock` already."""
+    new_scope = tuple(s for s in ticket.scope if s not in remove_globs)
+    for glob in add_globs:
+        if glob not in new_scope:
+            new_scope += (glob,)
+    new_entries = _scope_change_entries(add_globs, remove_globs, reason)
+    updated = ticket.model_copy(
+        update={
+            "scope": new_scope,
+            "scope_changes": ticket.scope_changes + new_entries,
+        }
+    )
+    write_result = write_ticket(root, updated)
+    if write_result.is_err:
+        return Err(write_result.danger_err)
+    return Ok(updated)
+
+
 # frob:ticket T-0453
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_lease.py::TestDoable.test_ignore_lease_returns_raw_list
@@ -1830,6 +2069,8 @@ __all__ = [
     "LandError",
     "LandReport",
     "Origin",
+    "ScopeChangeEntry",
+    "ScopeChangeOp",
     "Ticket",
     "TicketError",
     "TicketKind",
@@ -1852,6 +2093,7 @@ __all__ = [
     "ledger_lock",
     "load_active",
     "load_queue",
+    "mutate_scope",
     "Stride",
     "migrate",
     "new_ticket",

@@ -102,6 +102,7 @@ attachments:
 <!-- frob:describes src/frob/tickets/__init__.py::render_changed_block -->
 <!-- frob:describes src/frob/tickets/__init__.py::compute_changed_lines -->
 <!-- frob:describes src/frob/tickets/_store.py::ledger_lock -->
+<!-- frob:describes src/frob/tickets/__init__.py::mutate_scope -->
 
 ```python
 # frob/tickets/__init__.py
@@ -275,6 +276,52 @@ and update on every dispatch.
   for every other ticket in the repo. A PRECISE entry on the same holder
   (e.g. `src/frob/gates/`) still hard-blocks a real collision under it.
   Callers with no repo root (`root=None`) get the strict, undemoted check.
+
+## Scope/lease change protocol (T-0455)
+
+`frob ticket scope <id> --add GLOB... --remove GLOB... --reason TEXT`
+formally expands or reduces a ticket's declared `scope` -- and, since the
+T-0453 tree-lease is derived LIVE from an in-progress ticket's `scope`
+(`_in_progress_leases`), its active tree-lease too, in one atomic write.
+This is the accountable replacement for the ad-hoc `frob:waive SCOPE001`
+dodge (T-0176/T-0220 precedent): an agent that discovers mid-work that a
+fix structurally needs a file outside its declared scope runs this instead
+of waiving the gate, and the mutation is recorded, not hidden.
+
+- `frob.tickets.mutate_scope(root, ticket_id, add=(...), remove=(...),
+  reason="...")` is the library entry point; the CLI subcommand is a thin
+  forward with no logic of its own. Held under `ledger_lock` end to end
+  (load, validate, write) -- the T-0458 single-writer invariant, never a
+  hand-edit of `tickets.md`.
+- **Audit trail**: every mutated glob appends one `ScopeChangeEntry` (`op`,
+  `glob`, `reason`, `actor`, `at`) to the ticket's `scope_changes` list --
+  append-only, never edited or removed, so scope creep is visible in the
+  ledger itself rather than buried in a waiver comment.
+- **Fails loudly on an `--add` overlapping another lease**: if the
+  requested glob's overlap check (`scope_overlap_globs`) against ANY OTHER
+  in-progress ticket's full declared scope (not breadth-demoted -- an
+  explicit expansion request is a stronger claim than a passive `doable`
+  listing) finds a collision, the whole call is rejected with
+  `ScopeLeaseConflict` and the error names the holding ticket id and the
+  colliding glob (`cannot lease '<glob>': held by in-progress T-0xxx (scope
+  '<holder-glob>')`) -- an agent can never silently grab a path another
+  agent is actively writing.
+- **Guardrails**:
+  - `--add`/`--remove` both empty is `ScopeChangeEmpty`; a blank `--reason`
+    is `ScopeChangeReasonMissing` -- neither op is ever a silent no-op.
+  - `--remove` of a glob not verbatim in the ticket's current `scope` is
+    `ScopeRemoveNotDeclared` (nothing to release).
+  - `--remove` of a glob that already covers a recorded evidence id's
+    leading `path::` segment is `ScopeRemoveOrphansEvidence` -- a reduction
+    can never orphan already-bound work.
+  - An over-broad `--add` glob (the same criterion `large_glob_warnings`
+    uses) is logged at WARNING, not rejected -- a nudge, not a hard block,
+    matching T-0453's existing breadth posture.
+- **Example** (the T-0446 new-subcommand scope gap, formalized): a ticket
+  scoped to `src/frob/tickets/**` that needs to register a new CLI
+  subcommand runs `frob ticket scope T-#### --add src/frob/__main__.py
+  --reason "new subcommand registration"` instead of `frob:waive SCOPE001
+  reason="... T-0176/T-0220 precedent"`.
 
 ## State machine
 

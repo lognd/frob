@@ -429,6 +429,33 @@ class FailureEntry(BaseModel):
     summary: str
 
 
+# frob:ticket T-0455
+# frob:doc docs/modules/tickets.md#data-models
+class ScopeChangeOp(StrEnum):
+    """Whether a `scope_changes` audit entry expanded or reduced a ticket's
+    declared scope (T-0455)."""
+
+    ADD = "add"
+    REMOVE = "remove"
+
+
+# frob:ticket T-0455
+# frob:doc docs/modules/tickets.md#data-models
+class ScopeChangeEntry(BaseModel):
+    """One append-only audit line for a `frob ticket scope --add/--remove`
+    mutation (T-0455): what glob moved, which direction, why, who did it,
+    and when -- the formal, accountable replacement for the ad-hoc SCOPE001
+    waive dodge. Never edited or removed once written, only appended to."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    op: ScopeChangeOp
+    glob: str
+    reason: str
+    actor: str
+    at: date
+
+
 # frob:doc docs/modules/tickets.md#data-models
 class Ticket(BaseModel):
     """One ticket: frontmatter fields plus the verbatim markdown body."""
@@ -444,6 +471,12 @@ class Ticket(BaseModel):
     blocked_by: tuple[str, ...] = ()
     parent: str | None = None
     scope: tuple[str, ...] = ()
+    # frob:ticket T-0455
+    # append-only audit trail of every `frob ticket scope --add/--remove`
+    # mutation this ticket's `scope` has gone through (never edited, only
+    # appended) -- makes scope creep visible instead of a silent SCOPE001
+    # waive.
+    scope_changes: tuple[ScopeChangeEntry, ...] = ()
     evidence: tuple[str, ...] = ()
     attachments: tuple[Attachment, ...] = ()
     # given/when/then acceptance criteria the reviewer verifies (T-0006)
@@ -539,6 +572,16 @@ class TicketError(ErrorSet):
     EvidenceNotPassing = "Evidence id resolved but did not pass when last run"
     # T-0398 D-02: no evidence id binds to a touched/scope symbol
     EvidenceScopeUnbound = "No evidence id covers a touched/scope symbol"
+    # T-0455: `frob ticket scope --add/--remove` failure modes
+    ScopeChangeEmpty = "scope change requires at least one --add or --remove glob"
+    ScopeChangeReasonMissing = "scope change requires a non-empty --reason"
+    ScopeLeaseConflict = (
+        "requested --add glob overlaps a path leased by another in-progress ticket"
+    )
+    ScopeRemoveNotDeclared = "requested --remove glob is not in the ticket's scope"
+    ScopeRemoveOrphansEvidence = (
+        "cannot remove a scope glob that already covers recorded evidence"
+    )
 
 
 # frob:ticket T-0176

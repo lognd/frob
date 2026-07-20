@@ -1,10 +1,10 @@
 """CLI wiring for `frob ticket new|list|show|doable|plan|start|sweep|land|
-merge-driver|attach|block|close|fail|evidence|done-report|archive`
+merge-driver|attach|block|close|fail|evidence|done-report|scope|archive`
 (docs/modules/tickets.md)."""
 
 # frob:waive TEST005 reason="module line coverage 22.7%, debt T-0160"
 # frob:waive SCOPE001 reason="T-0323 scope omitted this file, filed T-draft-bc39c17f"
-# frob:waive SCOPE001 reason="T-0453 needs doable --show-blocked/--ignore-lease wiring here, T-0176/T-0220 precedent, no frob ticket scope cmd yet (T-0455)"  # noqa: E501
+# frob:waive SCOPE001 reason="T-0453 needs doable --show-blocked/--ignore-lease wiring here, T-0176/T-0220 precedent"  # noqa: E501
 
 from __future__ import annotations
 
@@ -55,6 +55,7 @@ def _ticket_dispatch_table() -> dict:
         "fail": _fail,
         "evidence": _evidence,
         "done-report": _done_report,
+        "scope": _scope,
         "archive": lambda root, _cfg: _archive(root),
     }
 
@@ -70,7 +71,7 @@ def run(cfg: AppConfig) -> None:
         _log.error(
             "usage: frob ticket <new|list|show|doable|plan|start|sweep|"
             "land|merge-driver|attach|block|close|fail|evidence|"
-            "done-report|archive> ..."
+            "done-report|scope|archive> ..."
         )
         sys.exit(1)
     handler(root, cfg)
@@ -1074,6 +1075,46 @@ def _done_report(root: Path, cfg: AppConfig) -> None:
         "%s: Done report written (%d evidence id(s) rendered)",
         cfg.ticket_id,
         len(ticket.evidence),
+    )
+
+
+# frob:ticket T-0455
+# frob:tests tests/test_tickets_scope_mutation.py::TestScopeCli.test_cli_add_free_path
+# frob:tests tests/test_tickets_scope_mutation.py::TestScopeCli.test_cli_add_leased_path_exits_nonzero  # noqa: E501
+def _scope(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket scope <id> --add GLOB... --remove GLOB... --reason TEXT`:
+    the ONLY thing this command does is forward to
+    `frob.tickets.mutate_scope` -- all lease-conflict/evidence-orphan
+    validation lives there (T-0455), never re-derived here."""
+    from frob.tickets import mutate_scope
+
+    if cfg.ticket_id is None:
+        _log.error("frob ticket scope requires <id>")
+        sys.exit(1)
+    if not cfg.ticket_scope_add and not cfg.ticket_scope_remove:
+        _log.error("frob ticket scope requires --add and/or --remove GLOB")
+        sys.exit(1)
+    if not cfg.ticket_scope_reason:
+        _log.error("frob ticket scope requires --reason TEXT")
+        sys.exit(1)
+
+    result = mutate_scope(
+        root,
+        cfg.ticket_id,
+        add=cfg.ticket_scope_add,
+        remove=cfg.ticket_scope_remove,
+        reason=cfg.ticket_scope_reason,
+    )
+    if result.is_err:
+        _log.error("scope change failed: %s", result.danger_err)
+        sys.exit(1)
+    ticket = result.danger_ok
+    _log.info(
+        "%s: scope now %s (+%d/-%d this change)",
+        cfg.ticket_id,
+        list(ticket.scope),
+        len(cfg.ticket_scope_add),
+        len(cfg.ticket_scope_remove),
     )
 
 

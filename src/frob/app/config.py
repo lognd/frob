@@ -1,5 +1,6 @@
 # frob:waive SCOPE001 reason="T-0319 scope comma-joined, matches nothing (T-0241 bug)"
 # frob:waive SCOPE001 reason="T-0458 needs new AppConfig dest fields for done-report's CLI flags; T-0455's formal scope protocol is queued, not built -- ad-hoc waive per existing T-0176/T-0220 precedent"  # noqa: E501
+# frob:waive SCOPE001 reason="T-0455 itself needs new AppConfig fields (ticket_scope_add/remove/reason) for its own `frob ticket scope` CLI wiring -- T-0455's declared scope is tickets/**+ticket_runner.py+__main__.py, not config.py; bootstrap precedent, same as the T-0458 waive above"  # noqa: E501
 from __future__ import annotations
 
 import argparse
@@ -205,9 +206,14 @@ class AppConfig(BaseModel):
     ticket_caption: str = ""
     ticket_attach_path: Path | None = None
     ticket_json: bool = False
-    # frob:waive SCOPE001 reason="T-0453 scope omitted this file; doable --show-blocked/--ignore-lease need AppConfig fields, T-0176/T-0220 precedent, no frob ticket scope command yet (T-0455)"  # noqa: E501
+    # frob:waive SCOPE001 reason="T-0453 scope omitted this file; doable --show-blocked/--ignore-lease need AppConfig fields, T-0176/T-0220 precedent (T-0455)"  # noqa: E501
     ticket_show_blocked: bool = False
     ticket_ignore_lease: bool = False
+    # frob:ticket T-0455
+    # `frob ticket scope <id> --add GLOB... --remove GLOB... --reason TEXT`
+    ticket_scope_add: list[str] = []
+    ticket_scope_remove: list[str] = []
+    ticket_scope_reason: str | None = None
     ticket_evidence_ids: list[str] = []
     ticket_evidence_cmd: str | None = None
     ticket_old_id: str | None = None
@@ -378,6 +384,7 @@ class AppConfig(BaseModel):
             "ticket_evidence_cmd",
             "ticket_why",
             "ticket_base_ref",
+            "ticket_scope_reason",
             "test_base",
             "test_fallback",
             "vet_hook",
@@ -479,6 +486,8 @@ class AppConfig(BaseModel):
             "ack_refs",
             "ticket_ids",
             "ticket_scope",
+            "ticket_scope_add",
+            "ticket_scope_remove",
             "ticket_blocked_by",
             "ticket_acceptance",
             "ticket_evidence_ids",
