@@ -1985,7 +1985,7 @@ EXHAUSTIVENESS DRIFT-LOCK (T-0343, 2026-07-20 mandate 'implementation MUST addre
 id: T-0334
 title: 'frob.lang: give cross-grammar node vocabulary so dup R1-R3 bucket structurally,
   not lexically'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-07-19'
@@ -2653,7 +2653,7 @@ The global 'frob' (uv tool install, ~/.local/bin) can be an OLD published versio
 id: T-0376
 title: 'Depth epic: real source resolution, compensating out-of-scope controls, full
   registry enforcement, advisories'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-20'
