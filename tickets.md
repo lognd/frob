@@ -2040,7 +2040,7 @@ EXHAUSTIVENESS DRIFT-LOCK (T-0343, 2026-07-20 mandate 'implementation MUST addre
 id: T-0334
 title: 'frob.lang: give cross-grammar node vocabulary so dup R1-R3 bucket structurally,
   not lexically'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-19'
@@ -2049,7 +2049,11 @@ parent: null
 scope:
 - src/frob/lang/**
 scope_changes: []
-evidence: []
+evidence:
+- tests/unit/test_lang_primitives.py::TestCanonicalTokensCrossGrammarVocabulary::test_shares_structural_tags_across_python_and_typescript
+- tests/unit/test_lang_primitives.py::TestCanonicalTokensCrossGrammarVocabulary::test_identifier_and_literal_renaming_does_not_change_body_norm
+- tests/unit/test_lang_primitives.py::TestCanonicalTokensCrossGrammarVocabulary::test_unmapped_keyword_falls_back_to_other_tag
+- tests/unit/test_lang_primitives.py::TestCanonicalTokensCrossGrammarVocabulary::test_deterministic_and_reformatting_insensitive
 attachments: []
 acceptance: []
 threat: null
