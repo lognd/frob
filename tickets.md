@@ -16,6 +16,7 @@ scope:
 - src/frob/**
 - tests/**
 - frob.toml
+scope_changes: []
 evidence:
 - tests/test_gates.py::TestInvariantLoad::test_unreadable_file_is_malformed
 - tests/test_gates.py::TestInvariantLoad::test_no_frontmatter_block_is_malformed
@@ -949,6 +950,7 @@ scope:
 - tests/**
 - docs/modules/serve.md
 - tickets.md
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -975,6 +977,7 @@ scope:
 - docs/guides/**
 - tests/**
 - tickets.md
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -1032,6 +1035,7 @@ scope:
 - docs/modules/**
 - docs/index.md
 - tickets.md
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -1056,6 +1060,7 @@ scope:
 - design/frob.strata
 - tests/**
 - tickets.md
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -1080,6 +1085,7 @@ scope:
 - frob.toml
 - docs/**
 - tickets.md
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -1099,6 +1105,7 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/**
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -1124,6 +1131,7 @@ scope:
 - tests/**
 - docs/**
 - tickets.md
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -1149,6 +1157,7 @@ scope:
 - tests/**
 - Makefile
 - tickets.md
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -1172,6 +1181,7 @@ scope:
 - docs/**
 - tests/**
 - tickets.md
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -1199,6 +1209,7 @@ scope:
 - docs/strata/**
 - tests/**
 - tickets.md
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -1226,6 +1237,7 @@ scope:
 - design/**
 - tests/**
 - tickets.md
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -1252,6 +1264,7 @@ scope:
 - docs/**
 - tests/**
 - tickets.md
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -1275,6 +1288,7 @@ scope:
 - src/frob/graph/**
 - tests/**
 - tickets.md
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -1300,6 +1314,7 @@ scope:
 - tests/**
 - docs/modules/dup.md
 - tickets.md
+scope_changes: []
 evidence: []
 attachments: []
 acceptance:
@@ -1336,6 +1351,7 @@ scope:
 - tests/**
 - docs/modules/perf.md
 - tickets.md
+scope_changes: []
 evidence: []
 attachments: []
 acceptance:
@@ -1378,6 +1394,7 @@ scope:
 - tests/**
 - docs/modules/gates.md
 - tickets.md
+scope_changes: []
 evidence: []
 attachments: []
 acceptance:
@@ -1404,6 +1421,7 @@ scope:
 - src/frob/gates/__init__.py
 - tests/**
 - tickets.md
+scope_changes: []
 evidence: []
 attachments: []
 acceptance:
@@ -1432,6 +1450,7 @@ scope:
 - src/frob/**
 - docs/**
 - tickets.md
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -1518,6 +1537,7 @@ scope:
 - src/frob/serve/**
 - tests/**
 - tickets.md
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -1540,6 +1560,7 @@ scope:
 - src/frob/testing/**
 - tests/**
 - tickets.md
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -1563,6 +1584,7 @@ scope:
 - src/frob/serve/**
 - docs/**
 - tickets.md
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -1586,6 +1608,7 @@ scope:
 - tests/**
 - docs/modules/arch.md
 - tickets.md
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -1609,6 +1632,7 @@ scope:
 - tests/**
 - docs/modules/arch.md
 - tickets.md
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -1647,6 +1671,7 @@ scope:
 - tests/**
 - docs/strata/**
 - tickets.md
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -1701,6 +1726,7 @@ scope:
 - tests/**
 - docs/modules/arch.md
 - tickets.md
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -1723,6 +1749,7 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/lang/**
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -1746,6 +1773,7 @@ scope:
 - src/frob/excludes.py
 - tests/**
 - tickets.md
+scope_changes: []
 evidence: []
 attachments: []
 acceptance:
@@ -1777,6 +1805,7 @@ scope:
 - tests/**
 - docs/**
 - tickets.md
+scope_changes: []
 evidence: []
 attachments: []
 acceptance:
@@ -1816,6 +1845,7 @@ scope:
 - docs/**
 - tests/**
 - tickets.md
+scope_changes: []
 evidence: []
 attachments: []
 acceptance:
@@ -1857,6 +1887,7 @@ scope:
 - pyproject.toml
 - docs/**
 - tickets.md
+scope_changes: []
 evidence: []
 attachments: []
 acceptance:
@@ -1918,6 +1949,7 @@ scope:
 - docs/**
 - tests/**
 - tickets.md
+scope_changes: []
 evidence: []
 attachments: []
 acceptance:
@@ -1963,6 +1995,7 @@ scope:
 - src/frob/arch/**
 - tests/**
 - tickets.md
+scope_changes: []
 evidence: []
 attachments: []
 acceptance:
@@ -2004,6 +2037,7 @@ scope:
 - src/frob/gates/**
 - tests/**
 - docs/**
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2027,6 +2061,7 @@ scope:
 - src/frob/gates/**
 - tests/**
 - docs/**
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2048,6 +2083,7 @@ scope:
 - src/frob/gates/**
 - tests/**
 - docs/**
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2071,6 +2107,7 @@ scope:
 - src/frob/strata/**
 - tests/**
 - docs/**
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2093,6 +2130,7 @@ scope:
 - src/frob/lang/**
 - tests/**
 - docs/**
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2113,6 +2151,7 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/app/ticket_runner.py
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2135,6 +2174,7 @@ scope:
 - src/frob/__main__.py
 - src/frob/gates/**
 - src/frob/tickets/**
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2154,6 +2194,7 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/tickets/
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2175,6 +2216,7 @@ parent: null
 scope:
 - src/frob/app/config.py
 - src/frob/__main__.py
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2197,6 +2239,7 @@ scope:
 - src/frob/vet/
 - src/frob/strata/
 - docs/design/registry/
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2221,6 +2264,7 @@ parent: T-0376
 scope:
 - src/frob/vet/_capability.py
 - tests/test_vet*.py
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2243,6 +2287,7 @@ scope:
 - src/frob/strata/_threat.py
 - src/frob/strata/_compliance.py
 - tests/test_strata*.py
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2265,6 +2310,7 @@ parent: T-0376
 scope:
 - src/frob/strata/
 - docs/design/registry/
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2288,6 +2334,7 @@ scope:
 - src/frob/vet/
 - src/frob/strata/
 - docs/design/registry/weaknesses.yaml
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2310,6 +2357,7 @@ parent: T-0376
 scope:
 - src/frob/vet/
 - docs/design/registry/patterns.yaml
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2332,6 +2380,7 @@ parent: T-0376
 scope:
 - src/frob/vet/
 - docs/design/registry/secrets.yaml
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2354,6 +2403,7 @@ parent: T-0376
 scope:
 - src/frob/vet/
 - docs/design/registry/pii.yaml
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2376,6 +2426,7 @@ parent: T-0376
 scope:
 - src/frob/strata/_compliance.py
 - docs/design/registry/compliance.yaml
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2398,6 +2449,7 @@ parent: T-0376
 scope:
 - src/frob/vet/
 - docs/design/registry/supply-chain.yaml
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2420,6 +2472,7 @@ parent: T-0376
 scope:
 - src/frob/vet/
 - docs/design/registry/evasion.yaml
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2442,6 +2495,7 @@ parent: T-0376
 scope:
 - src/frob/gates/
 - docs/design/registry/arch-checks.yaml
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2464,6 +2518,7 @@ parent: T-0376
 scope:
 - src/frob/strata/
 - docs/design/registry/system-design.yaml
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2483,6 +2538,7 @@ blocked_by: []
 parent: T-0376
 scope:
 - src/frob/
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2502,6 +2558,7 @@ blocked_by: []
 parent: T-0376
 scope:
 - src/frob/
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2522,6 +2579,7 @@ blocked_by:
 parent: T-0376
 scope:
 - src/frob/
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2541,6 +2599,7 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2563,6 +2622,7 @@ scope:
 - src/frob/gates/
 - src/frob/app/config.py
 - frob.toml
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2582,6 +2642,7 @@ blocked_by: []
 parent: T-0397
 scope:
 - src/frob/vet/
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2602,6 +2663,7 @@ blocked_by: []
 parent: T-0397
 scope:
 - src/frob/strata/
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2622,6 +2684,7 @@ parent: T-0397
 scope:
 - src/frob/gates/
 - src/frob/graph/
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2643,6 +2706,7 @@ scope:
 - src/frob/lang/
 - src/frob/check/
 - src/frob/gates/
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2667,6 +2731,7 @@ scope:
 - src/frob/testing/
 - src/frob/arch/
 - src/frob/gates/
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2690,6 +2755,7 @@ scope:
 - src/frob/lang/
 - src/frob/vet/
 - frob.toml
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2711,6 +2777,7 @@ parent: T-0397
 scope:
 - src/frob/
 - docs/design/registry/
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2737,6 +2804,7 @@ scope:
 - src/frob/gates/
 - invariants/
 - src/frob/
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2763,6 +2831,7 @@ scope:
 - src/frob/gates/
 - src/frob/tickets/
 - frob.toml
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2785,6 +2854,7 @@ scope:
 - src/frob/
 - frob-core/
 - strata-core/
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2807,6 +2877,7 @@ scope:
 - src/frob/tickets/
 - src/frob/gates/
 - frob.toml
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2831,6 +2902,7 @@ scope:
 - src/frob/graph/
 - src/frob/gates/
 - frob.toml
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2858,6 +2930,7 @@ parent: T-0410
 scope:
 - src/frob/perf/
 - src/frob/gates/
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2878,6 +2951,7 @@ blocked_by: []
 parent: T-0410
 scope:
 - src/frob/strata/_code_binding.py
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2901,6 +2975,7 @@ scope:
 - src/frob/gates/
 - src/frob/app/ticket_runner.py
 - src/frob/testing/
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2922,6 +2997,7 @@ parent: T-0410
 scope:
 - src/frob/check/
 - src/frob/gates/
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2944,6 +3020,7 @@ scope:
 - src/frob/app/
 - src/frob/check/
 - src/frob/logging/
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2965,6 +3042,7 @@ parent: T-0410
 scope:
 - src/frob/app/
 - src/frob/check/
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -2987,6 +3065,7 @@ scope:
 - src/frob/app/
 - src/frob/check/
 - frob.toml
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -3008,6 +3087,7 @@ parent: T-0407
 scope:
 - src/frob/gates/
 - src/frob/graph/
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -3033,6 +3113,7 @@ scope:
 - src/frob/strata/
 - src/frob/vet/
 - src/frob/check/
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -3055,6 +3136,7 @@ scope:
 - docs/audits/
 - src/frob/
 - frob.toml
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -3077,6 +3159,7 @@ scope:
 - src/frob/gates/
 - frob.toml
 - docs/modules/gates.md
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -3101,6 +3184,7 @@ scope:
 - src/frob/gates/
 - src/frob/
 - docs/design/registry/
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -3125,6 +3209,7 @@ scope:
 - .claude/agents/
 - src/frob/
 - docs/guides/
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -3148,6 +3233,7 @@ scope:
 - src/frob/gates/
 - src/frob/scaffold/
 - frob.toml
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -3168,6 +3254,7 @@ parent: null
 scope:
 - src/frob/vet/_capability.py
 - tests/test_vet*.py
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -3189,6 +3276,7 @@ parent: T-0402
 scope:
 - src/frob/graph/
 - src/frob/lang/
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -3211,6 +3299,7 @@ scope:
 - src/frob/gates/
 - README.md
 - docs/
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -3234,6 +3323,7 @@ scope:
 - src/frob/graph/
 - docs/
 - frob.toml
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -3257,6 +3347,7 @@ scope:
 - src/frob/gates/
 - docs/design/registry/weaknesses.yaml
 - tests/**
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -3278,6 +3369,7 @@ scope:
 - design/frob.strata
 - docs/strata/
 - tests/**
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -3300,6 +3392,7 @@ scope:
 - src/frob/gates/
 - src/frob/app/
 - docs/
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -3364,6 +3457,7 @@ scope:
 - frob.toml
 - tests/**
 - docs/**
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -3384,6 +3478,7 @@ parent: null
 scope:
 - src/frob/tickets/
 - docs/
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -3405,6 +3500,7 @@ scope:
 - frob-core/src/lib.rs
 - src/frob/dup/_pipeline.py
 - tests/**
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -3428,6 +3524,7 @@ scope:
 - src/frob/gates/
 - docs/
 - tests/**
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -3489,6 +3586,7 @@ scope:
 - src/frob/__main__.py
 - docs/
 - tests/**
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -3530,7 +3628,7 @@ title: 'formal scope/lease change protocol: frob ticket scope --add/--remove <gl
   --reason (expand or reduce a ticket''s work-scope AND its tree-lease), FAILS LOUDLY
   if requested paths are leased by another in-progress ticket -- replaces the ad-hoc
   SCOPE001 waive dodge'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -3542,7 +3640,20 @@ scope:
 - src/frob/__main__.py
 - docs/modules/tickets.md
 - tests/**
-evidence: []
+scope_changes: []
+evidence:
+- tests/test_tickets_scope_mutation.py::TestMutateScope::test_add_free_path_granted
+- tests/test_tickets_scope_mutation.py::TestMutateScope::test_add_leased_path_rejected_names_holder
+- tests/test_tickets_scope_mutation.py::TestMutateScope::test_remove_frees_path_for_other_doable
+- tests/test_tickets_scope_mutation.py::TestMutateScope::test_remove_not_declared_rejected
+- tests/test_tickets_scope_mutation.py::TestMutateScope::test_remove_orphaning_evidence_rejected
+- tests/test_tickets_scope_mutation.py::TestMutateScope::test_empty_change_rejected
+- tests/test_tickets_scope_mutation.py::TestMutateScope::test_missing_reason_rejected
+- tests/test_tickets_scope_mutation.py::TestMutateScope::test_audit_trail_is_append_only
+- tests/test_tickets_scope_mutation.py::TestScopeCli::test_cli_add_free_path
+- tests/test_tickets_scope_mutation.py::TestScopeCli::test_cli_add_leased_path_exits_nonzero
+- tests/test_tickets_scope_mutation.py::TestScopeCli::test_cli_requires_reason
+- tests/test_tickets_scope_mutation.py::TestScopeCli::test_cli_requires_add_or_remove
 attachments: []
 acceptance: []
 threat: null
@@ -3583,6 +3694,16 @@ Design (formal scope + lease mutation, ties to T-0453 lease model):
   scope_changes audit shows every mutation with its reason; SCOPE001 no
   longer needs the __main__.py waive dodge for a properly-expanded ticket.
 
+## Done report
+
+frob ticket scope command: add/remove scope globs with lease-conflict and evidence-orphan guards, under ledger_lock. Reviewer approved; landed code-first for schema-migration ordering.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+(no evidence recorded)
+
 <!-- ticket:T-0456 -->
 ```yaml
 id: T-0456
@@ -3601,6 +3722,7 @@ scope:
 - src/frob/__main__.py
 - docs/
 - tests/**
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -3661,6 +3783,7 @@ scope:
 - src/frob/gates/
 - src/frob/render/
 - tests/**
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -3710,6 +3833,7 @@ scope:
 - src/frob/render/
 - docs/modules/render.md
 - tests/**
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -3731,6 +3855,7 @@ scope:
 - src/frob/
 - src/frob/app/
 - tests/**
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -3754,6 +3879,7 @@ scope:
 - src/frob/gates/
 - docs/
 - tests/**
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -3776,6 +3902,7 @@ scope:
 - docs/guides/agent-playbook.md
 - src/frob/gates/
 - tests/**
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -3794,6 +3921,7 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/fuzz/**
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -3818,6 +3946,7 @@ scope:
 - src/frob/gates/__init__.py
 - docs/modules/gates.md
 - tests/**
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -3842,6 +3971,7 @@ scope:
 - src/frob/__main__.py
 - docs/modules/tickets.md
 - tests/**
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -3860,6 +3990,7 @@ created: '2026-07-20'
 blocked_by: []
 parent: null
 scope: []
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -3879,6 +4010,7 @@ created: '2026-07-20'
 blocked_by: []
 parent: null
 scope: []
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -3899,6 +4031,7 @@ created: '2026-07-20'
 blocked_by: []
 parent: null
 scope: []
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -3924,6 +4057,7 @@ created: '2026-07-20'
 blocked_by: []
 parent: null
 scope: []
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -3944,6 +4078,7 @@ created: '2026-07-20'
 blocked_by: []
 parent: null
 scope: []
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -3964,6 +4099,7 @@ created: '2026-07-20'
 blocked_by: []
 parent: null
 scope: []
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -3988,6 +4124,7 @@ created: '2026-07-20'
 blocked_by: []
 parent: null
 scope: []
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -4010,6 +4147,7 @@ scope:
 - tests/**
 - docs/modules/dup.md
 - tickets.md
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -4030,6 +4168,7 @@ parent: null
 scope:
 - src/frob/check/_python.py
 - tests/**
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -4053,6 +4192,7 @@ scope:
 - src/frob/graph/**
 - tests/**
 - docs/modules/gates.md
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
