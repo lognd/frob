@@ -972,7 +972,7 @@ frob serve is already a FastMCP stdio server with 5 read-only tools (doable tick
 ```yaml
 id: T-0178
 title: 'agentic time profiling: non-gated breakdown of where development time goes'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-18'
@@ -1052,7 +1052,7 @@ authority).
 id: T-0187
 title: 'frob dup bleeding-edge: algorithm survey, reverse-templating abstraction,
   exhaustiveness meta-test'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-18'
@@ -1087,7 +1087,7 @@ User mandate 2026-07-18: frob dup does the basics (R1-R6 rungs: winnow, WL-hash,
 ```yaml
 id: T-0200
 title: add real kill-switch/feature-flag mechanism for exec/net capabilities (checker/core/stratamod/vet)
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-18'
@@ -1168,7 +1168,7 @@ T-0202 fixed the check-path log-level bug (stdout handler defaulted to DEBUG unc
 id: T-0245
 title: 'mount-aware performance: per-file stat storms and sqlite contention on /mnt/c
   (13-60x tax)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-07-18'
@@ -1387,7 +1387,7 @@ T-0254 Windows generation. The T-0257 generator gains a windows target emitting 
 id: T-0265
 title: self-referential frob:tests directive on a test function passes --ticket check
   but fails full DRIFT002
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-07-18'
@@ -1466,7 +1466,7 @@ Extends the Plotkin lgg kernel (T-0194) and template report (T-0195). Today anti
 id: T-0290
 title: 'recursion static analysis: prove-terminating-or-error, tail-call + depth-bound
   gate'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-19'
