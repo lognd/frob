@@ -972,7 +972,7 @@ frob serve is already a FastMCP stdio server with 5 read-only tools (doable tick
 ```yaml
 id: T-0178
 title: 'agentic time profiling: non-gated breakdown of where development time goes'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-18'
@@ -1008,7 +1008,9 @@ scope_changes:
   reason: T-0178 app work maps to tests/test_app.py
   actor: logan
   at: '2026-07-20'
-evidence: []
+evidence:
+- tests/test_telemetry.py::test_timed_call_records_event_and_returns_value
+- tests/test_telemetry_hook_script.py::test_hook_redacts_secret_looking_input
 attachments: []
 acceptance: []
 threat: null
@@ -1046,6 +1048,16 @@ annotated cost); the full check always runs everything -- fast mode is
 an explicit opt-in, never the default for release/CI gates (vacuous-pass
 doctrine: a skipped test must be visible, and the full gate is the
 authority).
+
+## Done report
+
+CLI timing telemetry + agentic_report aggregation + PostToolUse hook; secret redaction via main's _secrets scan API, hook exits 0 on any input. Reviewer approved after redaction + hook-crash fixes.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+(no evidence recorded)
 
 <!-- ticket:T-0187 -->
 ```yaml
@@ -2741,6 +2753,16 @@ acceptance: []
 threat: null
 ```
 User directive (2026-07-20): four depth gaps to close. (1) VET must do ACTUAL SOURCE RESOLUTION not lexical: today only Python is binding/import/alias/scope-resolved (T-0328/0337); TS, Rust, C/C++ are pure needle-matching and CVE fingerprints are lexical for ALL langs -- aliased/renamed imports evade detection in every non-Python language. (2) OUT-OF-SCOPE threats must be CAUGHT ELSEWHERE: OutOfScopeEntry is id+reason only, no compensating-control reference, no verification -- an excused CWE may be caught nowhere. Require each out-of-scope entry to name where it IS caught and verify that control exists/fires. (3) REGISTRIES must be ACTUALLY IMPLEMENTED FULLY: catalogues are large (944 CWEs, 346 patterns) but enforcement covers ~30 CWEs / ~20 rule ids; pii(7)/secrets(3)/compliance(27) are thin; RECONCILIATION.md has undispositioned entries. Every catalogued registry entry must map to an enforced check OR a documented out-of-scope-with-compensating-control. (4) ADVISORIES: address the 74 frob-arch suggestions. Children to be filed per area.
+
+## Done report
+
+THREAT006: caught_by references (CWE/rule-id shaped) must resolve against a real catalog, fail-closed on fabrication; honest 'none' exempt. Reviewer approved; registry wiring deferred.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+(no evidence recorded)
 
 <!-- ticket:T-0380 -->
 ```yaml
