@@ -1137,6 +1137,16 @@ threat: null
 ```
 T-0155's LINT004 rule (design lint family) fires honestly on design/frob.strata's checker/core/stratamod/vet nodes: each holds a risky (exec/net) may capability with no real, checked-in kill switch (env var / feature flag) an operator can flip live to disable it. T-0155 deliberately did not fabricate a flag=<id> attr naming a mechanism that does not exist (declare real facts or waive with reasons, T-0150/T-0151 precedent) -- this ticket is the follow-on product work to build the actual mechanism and then discharge LINT004 for real on design/frob.strata.
 
+## Done report
+
+Real kill-switch: guarded_subprocess_run refuses exec when FROB_DISABLE_EXEC set, wired at every frob.check spawn site; checker LINT004 waive replaced by a real declared flag. Reviewer approved.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+(no evidence recorded)
+
 <!-- ticket:T-0204 -->
 ```yaml
 id: T-0204
