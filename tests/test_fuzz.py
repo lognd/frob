@@ -15,6 +15,7 @@ from frob.fuzz import (
     FuzzEnforce,
     FuzzObligation,
     FuzzPolicy,
+    FuzzRegistry,
     FuzzResult,
     load_fuzz_stamp,
     obligations,
@@ -129,6 +130,41 @@ class TestResolve:
 
         result = resolve(_Bare)
         assert result.is_err
+
+
+class TestFuzzRegistry:
+    """A `FuzzRegistry` instance scopes registrations independently of the
+    process-global default registry (T-0469)."""
+
+    @needs_hypothesis
+    def test_scoped_registry_registration_is_isolated(self) -> None:
+        # frob:tests src/frob/fuzz/_arbitrary.py::FuzzRegistry kind="unit"
+        import hypothesis.strategies as st
+
+        class _ScopedOnly:
+            """A type registered only on a private `FuzzRegistry`, never globally."""
+
+        private_registry = FuzzRegistry()
+        private_registry.register(_ScopedOnly, st.builds(_ScopedOnly))
+
+        assert _ScopedOnly in private_registry
+        assert resolve(_ScopedOnly).is_err
+        assert resolve(_ScopedOnly, registry=private_registry).is_ok
+
+    @needs_hypothesis
+    def test_register_accepts_explicit_registry_kwarg(self) -> None:
+        # frob:tests src/frob/fuzz/_arbitrary.py::register kind="unit"
+        import hypothesis.strategies as st
+
+        class _ViaKwarg:
+            """A type registered through the free `register()` function's
+            explicit `registry=` kwarg, not the process-global default."""
+
+        private_registry = FuzzRegistry()
+        register(_ViaKwarg, st.builds(_ViaKwarg), registry=private_registry)
+
+        assert resolve(_ViaKwarg, registry=private_registry).is_ok
+        assert resolve(_ViaKwarg).is_err
 
 
 # ---------------------------------------------------------------------------
@@ -468,6 +504,17 @@ class TestRunFuzz:
 
         monkeypatch.setattr(run_mod, "HYPOTHESIS_AVAILABLE", False)
         assert run_fuzz((_Even,), budget_s=1) == ()
+
+    @needs_hypothesis
+    def test_budget_s_is_a_real_wall_clock_cutoff(self) -> None:
+        """`run_fuzz` stops driving examples once `budget_s` wall-clock
+        elapses, rather than mapping `budget_s` to a fixed example count
+        (T-0469) -- a near-zero budget yields far fewer examples than a
+        one-second budget for the same cheap strategy."""
+        # frob:tests src/frob/fuzz/_run.py::run_fuzz kind="unit"
+        tiny = run_fuzz((_Even,), budget_s=0, policy=FuzzPolicy(budget_s=0))
+        larger = run_fuzz((_Even,), budget_s=1, policy=FuzzPolicy(budget_s=1))
+        assert tiny[0].examples <= larger[0].examples
 
     @needs_hypothesis
     def test_unsatisfiable_strategy_reports_rejection_rate(

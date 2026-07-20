@@ -7,6 +7,10 @@ missing fuzz binding is a gate failure, not a code-review hope.
 
 The generator registry is shared infrastructure: the same strategies that
 fuzz a function also drive observational clone probing (docs/modules/dup.md R6).
+`register`/`resolve` default to a process-global `FuzzRegistry` for the
+common single-project case; a caller hosting more than one project in one
+process constructs its own `FuzzRegistry()` and passes it explicitly
+(T-0469), so registrations never bleed across projects sharing a process.
 
 ## The Arbitrary protocol
 
@@ -74,6 +78,7 @@ Waivable per-site as always (`frob:waive FUZZ001 reason="..."`).
 
 <!-- frob:describes src/frob/fuzz/_arbitrary.py::register -->
 <!-- frob:describes src/frob/fuzz/_arbitrary.py::resolve -->
+<!-- frob:describes src/frob/fuzz/_arbitrary.py::FuzzRegistry -->
 <!-- frob:describes src/frob/fuzz/_obligations.py::obligations -->
 <!-- frob:describes src/frob/fuzz/_stamp.py::stamp_fuzz -->
 <!-- frob:describes src/frob/fuzz/_stamp.py::load_fuzz_stamp -->
@@ -89,10 +94,15 @@ Waivable per-site as always (`frob:waive FUZZ001 reason="..."`).
 
 ```python
 # frob/fuzz/__init__.py
-def register(tp: type, strategy: object) -> None
+def register(tp: type, strategy: object, *, registry: FuzzRegistry | None = None) -> None
     # Project-level registration hook (imported from tests/strategies.py).
-def resolve(tp: type) -> Result[object, FuzzError]
+def resolve(tp: type, *, registry: FuzzRegistry | None = None) -> Result[object, FuzzError]
     # Derived -> declared -> registered; Err(NoGenerator) otherwise.
+
+class FuzzRegistry:
+    # A registered-strategy table scoped to one instance (T-0469); default
+    # module-level registry serves the single-project case, multi-project
+    # hosts pass their own instance to register()/resolve().
 def obligations(snapshot: GraphSnapshot, policy: FuzzPolicy)
         -> tuple[FuzzObligation, ...]
     # Pure: which symbols owe fuzzing under the configured enforce mode.
@@ -204,11 +214,20 @@ avoid merge conflicts on those shared files.
   produces valid instances within budget, which is the real, honest v1
   capability: exercising the Arbitrary protocol's generators, not yet
   exercising project-authored properties.
-- **`budget_s` maps to a bounded example count, not wall-clock time.**
-  hypothesis's `settings(max_examples=...)` is a per-run example ceiling;
-  a true wall-clock cutoff needs a custom stopping callback. `run_fuzz`
-  approximates budget with `examples = clamp(budget_s * 5, 10, 500)` and
-  logs a `frob:todo T-0002` marker at the approximation site.
+- **`budget_s` is a real wall-clock cutoff (T-0469).** hypothesis's
+  `settings(max_examples=...)` is only a per-batch example ceiling, so
+  `run_fuzz` drives hypothesis in small batches (`_BATCH_EXAMPLES` per
+  batch) and checks `time.monotonic()` against a `budget_s`-out deadline
+  between batches -- the "custom stopping callback" earlier versions of
+  this doc called out as missing. A hard `_MAX_TOTAL_EXAMPLES` safety
+  ceiling still applies across all batches of one target, independent of
+  `budget_s`, so a misconfigured huge budget cannot spin forever.
+- **The generator registry is per-`FuzzRegistry`-instance, not hard-coded
+  global (T-0469).** `register`/`resolve` default to a process-global
+  `FuzzRegistry` instance for the common single-project case; a caller
+  hosting more than one project in one process constructs its own
+  `FuzzRegistry()` and passes it via the `registry=` keyword to keep
+  registrations scoped instead of sharing one process-wide table.
 - **hypothesis is an optional import.** Every module that touches it
   guards the import behind `HYPOTHESIS_AVAILABLE`; a worktree without it
   installed still imports `frob.fuzz` cleanly and every hypothesis-backed

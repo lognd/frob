@@ -13,6 +13,13 @@ for third-party types the caller cannot annotate). Anything else is
 hypothesis is an optional dependency at import time: a worktree without it
 installed still imports this module cleanly, and every function that would
 need it returns `Err(NoGenerator)` instead of raising `ImportError`.
+
+Registered strategies live in a `FuzzRegistry` (T-0469): the module-level
+`register`/`resolve` functions default to a process-global instance for the
+common single-project case, but a caller hosting more than one project in
+one process (or a test that must not leak registrations across cases) can
+construct its own `FuzzRegistry()` and pass it explicitly, keeping
+registrations scoped instead of bleeding across projects sharing a process.
 """
 
 # frob:waive TEST005 reason="module line coverage 77.2%, debt T-0160"
@@ -38,17 +45,43 @@ try:
 except ImportError:  # pragma: no cover - exercised only where hypothesis is absent
     HYPOTHESIS_AVAILABLE = False
 
-# frob:todo T-0469
-# Registry is process-global; a future multi-project host (frob serving
-# several repos in one process) would need this scoped per-run.
-_REGISTRY: dict[type, object] = {}
+
+# frob:doc docs/modules/fuzz.md#public-api
+class FuzzRegistry:
+    """A registered-strategy table scoped to one instance (T-0469): the
+    default module-level registry serves the common single-project case,
+    but a multi-project host constructs its own instance per project so
+    registrations never bleed across projects sharing a process."""
+
+    def __init__(self) -> None:
+        self._entries: dict[type, object] = {}
+
+    # frob:doc docs/modules/fuzz.md#public-api
+    def register(self, tp: type, strategy: object) -> None:
+        """Register `strategy` (a hypothesis `SearchStrategy`) as the
+        generator for `tp` on this instance."""
+        _log.info("FuzzRegistry.register: %s -> %r", tp, strategy)
+        self._entries[tp] = strategy
+
+    def __contains__(self, tp: type) -> bool:
+        """Whether `tp` has a registered strategy on this instance."""
+        return tp in self._entries
+
+    def __getitem__(self, tp: type) -> object:
+        """The registered strategy for `tp`; raises `KeyError` if absent."""
+        return self._entries[tp]
+
+
+_default_registry = FuzzRegistry()
 
 
 # frob:doc docs/modules/fuzz.md#public-api
-def register(tp: type, strategy: object) -> None:
-    """Register `strategy` (a hypothesis `SearchStrategy`) as the generator for `tp`."""
-    _log.info("register: %s -> %r", tp, strategy)
-    _REGISTRY[tp] = strategy
+def register(
+    tp: type, strategy: object, *, registry: FuzzRegistry | None = None
+) -> None:
+    """Register `strategy` (a hypothesis `SearchStrategy`) as the generator
+    for `tp`, on `registry` (default: the process-global default registry)."""
+    (registry or _default_registry).register(tp, strategy)
 
 
 def _declared_strategy(tp: type) -> object | None:
@@ -124,8 +157,14 @@ def _field_strategies_for(
 
 # frob:doc docs/modules/fuzz.md#public-api
 # frob:waive TEST005 reason="resolve 88.2% branch cover, debt T-0160"
-def resolve(tp: type) -> Result[object, FuzzError]:
+def resolve(
+    tp: type, *, registry: FuzzRegistry | None = None
+) -> Result[object, FuzzError]:
     """Derived -> declared -> registered; `Err(NoGenerator)` otherwise.
+
+    `registry` (default: the process-global default registry, T-0469) is
+    consulted for the REGISTERED case, letting a multi-project host pass a
+    project-scoped `FuzzRegistry` instead of sharing one process-wide table.
 
     Deviation from docs/modules/fuzz.md's literal 1-2-3 ordering: `__fuzz__()` is
     checked *before* pydantic derivation, not after. The design-decisions
@@ -138,10 +177,10 @@ def resolve(tp: type) -> Result[object, FuzzError]:
     if not HYPOTHESIS_AVAILABLE:
         _log.error("resolve: hypothesis is not installed; cannot generate for %s", tp)
         return Err(FuzzError.NoGenerator)
-    return _resolve_cascade(tp)
+    return _resolve_cascade(tp, registry or _default_registry)
 
 
-def _resolve_cascade(tp: type) -> Result[object, FuzzError]:
+def _resolve_cascade(tp: type, registry: FuzzRegistry) -> Result[object, FuzzError]:
     """Try declared -> pydantic-derived -> registered strategies for `tp`
     in order, logging which source hit (or that all missed)."""
     declared = _declared_strategy(tp)
@@ -155,9 +194,9 @@ def _resolve_cascade(tp: type) -> Result[object, FuzzError]:
             _log.debug("resolve: %s -> derived from pydantic fields", tp)
         return derived
 
-    if tp in _REGISTRY:
+    if tp in registry:
         _log.debug("resolve: %s -> registered strategy", tp)
-        return Ok(_REGISTRY[tp])
+        return Ok(registry[tp])
 
     _log.warning(
         "resolve: no generator for %s (derived/declared/registered all miss)", tp
@@ -165,4 +204,4 @@ def _resolve_cascade(tp: type) -> Result[object, FuzzError]:
     return Err(FuzzError.NoGenerator)
 
 
-__all__ = ["HYPOTHESIS_AVAILABLE", "register", "resolve"]
+__all__ = ["HYPOTHESIS_AVAILABLE", "FuzzRegistry", "register", "resolve"]

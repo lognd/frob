@@ -19,7 +19,7 @@ this ticket (T-0002), not this module's.
 
 from __future__ import annotations
 
-from frob.fuzz._arbitrary import HYPOTHESIS_AVAILABLE, register, resolve
+from frob.fuzz._arbitrary import HYPOTHESIS_AVAILABLE, FuzzRegistry, register, resolve
 from frob.fuzz._models import (
     FuzzEnforce,
     FuzzError,
@@ -42,6 +42,7 @@ __all__ = [
     "FuzzError",
     "FuzzObligation",
     "FuzzPolicy",
+    "FuzzRegistry",
     "FuzzResult",
     "load_fuzz_stamp",
     "obligations",
