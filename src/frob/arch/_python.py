@@ -77,6 +77,10 @@ _LONG_FUNCTION_NESTING_THRESHOLD = 3
 _LONG_FUNCTION_CYCLOMATIC_THRESHOLD = 8
 
 
+# frob:invariant terminates reason="recurses only into a body node one \
+# tree-sitter edge below the current node; a lexical prover cannot see \
+# that the child accessor is structurally smaller without dataflow" \
+# measure="tree-sitter AST depth under node, finite per parse"
 def _iter_py_functions(
     node: Node, class_prefix: str = ""
 ) -> Iterator[tuple[Node, str, str]]:

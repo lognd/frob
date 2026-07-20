@@ -666,6 +666,8 @@ _KNOWN_GATE_RULES = frozenset(
         "PERF002",
         "PERF003",
         "PERF004",
+        "PERF005",
+        "PERF006",
         "SYS001",
         "SYS002",
         "SYS003",

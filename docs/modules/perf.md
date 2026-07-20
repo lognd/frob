@@ -31,10 +31,49 @@ across 28k files whose fix was literally a hashset.)
 | PERF002 | `.index()`, `.indexOf()`, `.find(==)`, `list.count()` inside a loop | dict/Map from key to index/count, built once |
 | PERF003 | nested loops over two collections with an equality comparison between their items (the O(n*m) join) | index the inner collection by the compared key |
 | PERF004 | `sorted()`/`.sort()` inside a loop over data unchanged by the loop | hoist the sort, or use a sorted container |
+| PERF005 | recursive function (self- or same-file mutual recursion) with no provable termination measure | add `frob:invariant terminates reason="..." measure="..."`, or restructure so termination is provable |
+| PERF006 | tail-recursive function with no proven depth bound (Python has no TCO -- unbounded input depth is a stack-overflow/DoS bug) | rewrite as an explicit loop, or prove a static depth bound |
 
-Severity: `warn` by default (static size-blindness is real -- a 3-element
-list is fine as a list); promotable per-repo via `[gates.severity]`
-(`PERF001 = "error"`). Waivable per-site with reason, as always.
+Severity: PERF001-004 are `warn` by default (static size-blindness is real
+-- a 3-element list is fine as a list); promotable per-repo via
+`[gates.severity]` (`PERF001 = "error"`). PERF005/PERF006 are `error` by
+default -- unlike the lexical smells, unreasoned unbounded recursion is a
+control-flow hazard (T-0290), not a size-blind heuristic. Waivable per-site
+with reason, as always (`frob:waive PERF005 reason="..."`), or -- for
+PERF005/PERF006 specifically -- proven with a reasoned termination
+directive instead of a blanket waiver (see below).
+
+## Recursion: prove-terminating-or-error (PERF005/PERF006, T-0290)
+
+Termination is undecidable in general, so PERF005/PERF006 stay SOUND, not
+complete: they prove the decidable fragment and ERROR on everything else,
+per the same "prove it, or justify it at the code" philosophy T-0289 uses
+for arch complexity overrides.
+
+- **Detect**: `frob.perf._recursion` builds a small same-file, name-based
+  call index (self-calls and A<->B mutual recursion) over
+  `RawSymbol.body_tokens` -- the same best-effort lexical posture as
+  PERF001-004, and deliberately a separate graph from
+  `frob.graph.callgraph` (T-0288's dup-inlining substrate), which excludes
+  self-edges and public callees by construction for a different purpose.
+- **Prove-or-error**: a recursive call is considered proven only when the
+  function both (a) narrows its argument toward a base case on a
+  well-founded measure -- a decreasing bounded integer (`n - 1`, `n // 2`)
+  or structural descent (`.next`/`.left`/`.right`/`.parent`, a one-sided
+  slice) -- and (b) contains a guard (`if`) that can reach a base case.
+  Anything short of that is PERF005: unproven termination, ERROR.
+- **Escape hatch**: `frob:invariant terminates reason="..." measure="..."`
+  at the recursive symbol's site is the reasoned, auditable override --
+  both `reason` and `measure` must be non-empty to count as proof. This is
+  the same comment DSL every other `frob:invariant` anchor uses
+  (docs/modules/graph.md#comment-dsl); it does not require a matching
+  `invariants/INV-###.md` file.
+- **Depth/stack safety (PERF006)**: a tail-recursive call (`return f(...)`
+  as the last thing on a path) is flagged separately from PERF005 -- Python
+  has no TCO, so tail recursion over runtime-sized input is a stack-
+  overflow/DoS bug, not just an unproven-termination finding. The same
+  `frob:invariant terminates reason="..." measure="..."` directive silences
+  PERF006 too (a proven depth bound is also a proven termination measure).
 
 ## The killer join: hot AND quadratic
 
@@ -54,6 +93,7 @@ goes". Ranked output, remedy per row.
 <!-- frob:describes src/frob/perf/_models.py::HeatReport -->
 <!-- frob:describes src/frob/perf/_heat.py::join_smells -->
 <!-- frob:describes src/frob/perf/_heat.py::render_bar -->
+<!-- frob:describes src/frob/perf/_recursion.py::recursion_rules -->
 
 ```python
 # frob/perf/__init__.py
@@ -63,7 +103,11 @@ def load_artifact(root: Path, ref: str | None = None) -> Result[ProfileArtifact,
 def heat(artifact: ProfileArtifact, snapshot: GraphSnapshot) -> HeatReport
     # Pure join of pstats rows onto symbol spans.
 def perf_rules(snapshot: GraphSnapshot, files: Sequence[ParsedFile]) -> tuple[Violation, ...]
-    # PERF001..PERF004; pure; consumed by the policy gate stage.
+    # PERF001..PERF006; pure; consumed by the policy gate stage.
+
+# frob/perf/_recursion.py
+def recursion_rules(snapshot: GraphSnapshot, files: Sequence[ParsedFile]) -> tuple[Violation, ...]
+    # PERF005 (unproven termination) + PERF006 (unbounded tail recursion).
 
 # frob/perf/_heat.py
 def join_smells(report: HeatReport, violations_by_ref: dict[str, tuple[str, ...]]) -> HeatReport

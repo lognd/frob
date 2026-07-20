@@ -456,6 +456,204 @@ def test_perf003_call_operand_join_stays_narrow_no_recursive_unwind(tmp_path):
     assert not any(v.rule == "PERF003" for v in violations)
 
 
+def test_perf005_fires_on_unproven_self_recursion(tmp_path):
+    """PERF005: a self-recursive function with no descent/guard shape and
+    no `frob:invariant terminates` directive is unproven -- ERROR."""
+    # frob:ticket T-0290
+    # frob:tests src/frob/perf/_recursion.py::recursion_rules
+    src = "def loop_forever(x):\n    return loop_forever(x)\n"
+    path = _write(tmp_path, "mod.py", src)
+    parsed = parse_file(path).danger_ok
+    snapshot = _snapshot(tmp_path)
+    violations = perf_rules(snapshot, [parsed])
+    hit = next(v for v in violations if v.rule == "PERF005")
+    assert hit.severity.value == "error"
+
+
+def test_perf005_does_not_fire_on_structural_descent_with_guard(tmp_path):
+    """PERF005 is silent when the recursive call narrows on a decreasing
+    integer measure AND the function has a base-case guard -- the proven,
+    decidable fragment."""
+    # frob:ticket T-0290
+    # frob:tests src/frob/perf/_recursion.py::recursion_rules
+    src = (
+        "def countdown(n):\n"
+        "    if n <= 0:\n"
+        "        return 0\n"
+        "    return countdown(n - 1)\n"
+    )
+    path = _write(tmp_path, "mod.py", src)
+    parsed = parse_file(path).danger_ok
+    snapshot = _snapshot(tmp_path)
+    violations = perf_rules(snapshot, [parsed])
+    assert not any(v.rule == "PERF005" for v in violations)
+
+
+def test_perf005_silenced_by_reasoned_termination_directive(tmp_path, monkeypatch):
+    """The `frob:invariant terminates reason="..." measure="..."` escape
+    hatch (T-0290) suppresses PERF005 even with no provable descent shape."""
+    # frob:ticket T-0290
+    # frob:tests src/frob/perf/_recursion.py::recursion_rules
+    # `_display_path` relativizes to cwd; chdir so the directly-parsed
+    # ParsedFile's path matches the root-relative symref build_graph binds
+    # the frob:invariant edge to.
+    monkeypatch.chdir(tmp_path)
+    src = (
+        '# frob:invariant terminates reason="ackermann on bounded fuel arg"'
+        ' measure="fuel"\n'
+        "def weird(fuel, x):\n"
+        "    return weird(fuel, x)\n"
+    )
+    path = _write(tmp_path, "mod.py", src)
+    parsed = parse_file(path).danger_ok
+    snapshot = _snapshot(tmp_path)
+    violations = perf_rules(snapshot, [parsed])
+    assert not any(v.rule == "PERF005" for v in violations)
+
+
+def test_perf006_fires_on_unbounded_tail_recursion(tmp_path):
+    """PERF006: tail recursion (`return f(...)` as the whole return) with
+    no proven depth bound -- Python has no TCO, so this is a stack-overflow
+    hazard, not just an unproven-termination finding."""
+    # frob:ticket T-0290
+    # frob:tests src/frob/perf/_recursion.py::recursion_rules
+    src = "def tail(x):\n    return tail(x)\n"
+    path = _write(tmp_path, "mod.py", src)
+    parsed = parse_file(path).danger_ok
+    snapshot = _snapshot(tmp_path)
+    violations = perf_rules(snapshot, [parsed])
+    assert any(v.rule == "PERF006" for v in violations)
+
+
+def test_perf006_silenced_by_reasoned_termination_directive(tmp_path, monkeypatch):
+    """The same reasoned directive that proves PERF005 also silences
+    PERF006 -- a proven depth bound is also a proven termination measure."""
+    # frob:ticket T-0290
+    # frob:tests src/frob/perf/_recursion.py::recursion_rules
+    monkeypatch.chdir(tmp_path)
+    src = (
+        '# frob:invariant terminates reason="bounded by fuel param"'
+        ' measure="fuel"\n'
+        "def tail(fuel):\n    return tail(fuel)\n"
+    )
+    path = _write(tmp_path, "mod.py", src)
+    parsed = parse_file(path).danger_ok
+    snapshot = _snapshot(tmp_path)
+    violations = perf_rules(snapshot, [parsed])
+    assert not any(v.rule == "PERF006" for v in violations)
+
+
+def test_perf005_fires_on_mutual_recursion(tmp_path):
+    """PERF005 detects same-file mutual recursion (A calls B, B calls A),
+    not just direct self-recursion."""
+    # frob:ticket T-0290
+    # frob:tests src/frob/perf/_recursion.py::recursion_rules
+    src = (
+        "def is_even(n):\n"
+        "    return is_odd(n)\n\n"
+        "def is_odd(n):\n"
+        "    return is_even(n)\n"
+    )
+    path = _write(tmp_path, "mod.py", src)
+    parsed = parse_file(path).danger_ok
+    snapshot = _snapshot(tmp_path)
+    violations = perf_rules(snapshot, [parsed])
+    refs = {
+        (v.symref or "").rsplit("::", 1)[-1] for v in violations if v.rule == "PERF005"
+    }
+    assert "is_even" in refs
+    assert "is_odd" in refs
+
+
+def test_perf005_does_not_fire_on_non_recursive_function(tmp_path):
+    """A plain, non-recursive function never trips PERF005/PERF006."""
+    # frob:ticket T-0290
+    # frob:tests src/frob/perf/_recursion.py::recursion_rules
+    src = "def add(a, b):\n    return a + b\n"
+    path = _write(tmp_path, "mod.py", src)
+    parsed = parse_file(path).danger_ok
+    snapshot = _snapshot(tmp_path)
+    violations = perf_rules(snapshot, [parsed])
+    assert not any(v.rule in ("PERF005", "PERF006") for v in violations)
+
+
+def test_perf005_fires_when_descent_is_outside_the_call_args(tmp_path):
+    """Reviewer-caught bug (T-0290 round 2): `loop_forever(n) - 1 if n > 0
+    else 0` puts the `- 1` OUTSIDE the recursive call's own argument list --
+    `n` itself is never narrowed inside the call -- so this is genuine
+    infinite recursion and PERF005 MUST still fire. The prior fixed
+    `tokens[i+2:i+12]` lookahead window scanned past the call's own parens
+    into the surrounding expression and misread the outer `- 1` as descent,
+    silently missing this case."""
+    # frob:ticket T-0290
+    # frob:tests src/frob/perf/_recursion.py::recursion_rules
+    src = "def loop_forever(n):\n    return loop_forever(n) - 1 if n > 0 else 0\n"
+    path = _write(tmp_path, "mod.py", src)
+    parsed = parse_file(path).danger_ok
+    snapshot = _snapshot(tmp_path)
+    violations = perf_rules(snapshot, [parsed])
+    assert any(v.rule == "PERF005" for v in violations)
+
+
+def test_perf005_does_not_fire_on_super_init_call(tmp_path):
+    """Reviewer-caught bug (T-0290 round 2): `super().__init__()` inside
+    `__init__` is NOT self-recursion -- the bare `identifier(` scan with no
+    receiver awareness misread it as a recursive call to `__init__` and
+    produced ~50 false-positive findings across frob's own constructors.
+    Call detection must be receiver-aware: an unqualified call, or a call
+    qualified by `self`, counts; `super().foo()` never does."""
+    # frob:ticket T-0290
+    # frob:tests src/frob/perf/_recursion.py::recursion_rules
+    src = (
+        "class Filter:\n"
+        "    def __init__(self, name):\n"
+        "        super().__init__()\n"
+        "        self.name = name\n"
+    )
+    path = _write(tmp_path, "mod.py", src)
+    parsed = parse_file(path).danger_ok
+    snapshot = _snapshot(tmp_path)
+    violations = perf_rules(snapshot, [parsed])
+    assert not any(v.rule in ("PERF005", "PERF006") for v in violations)
+
+
+def test_perf005_does_not_pair_same_named_methods_across_classes(tmp_path):
+    """Reviewer-caught bug (T-0290 round 2): mutual-recursion pairing must
+    require the same enclosing scope (class), not just a matching short
+    name anywhere in the file. `Alpha.foo`/`Alpha.bar` are a real,
+    intra-class mutual-recursion pair (`foo` calls `self.bar()`, `bar`
+    calls `self.foo()`). `Beta.bar` is UNRELATED -- it calls `self.foo()`,
+    but `Beta` has no `foo` of its own, so this can never actually be
+    recursion at runtime. The pre-fix, scope-blind algorithm paired
+    `Beta.bar` with `Alpha.foo` anyway (both share the file, and their
+    short names cross-reference) -- a spurious cross-class finding this
+    test pins closed."""
+    # frob:ticket T-0290
+    # frob:tests src/frob/perf/_recursion.py::recursion_rules
+    src = (
+        "class Alpha:\n"
+        "    def foo(self):\n"
+        "        return self.bar()\n"
+        "    def bar(self):\n"
+        "        return self.foo()\n\n"
+        "class Beta:\n"
+        "    def bar(self):\n"
+        "        return self.foo()\n"
+    )
+    path = _write(tmp_path, "mod.py", src)
+    parsed = parse_file(path).danger_ok
+    snapshot = _snapshot(tmp_path)
+    violations = perf_rules(snapshot, [parsed])
+    beta_refs = [
+        v
+        for v in violations
+        if v.rule in ("PERF005", "PERF006")
+        and v.symref
+        and v.symref.endswith("::Beta.bar")
+    ]
+    assert beta_refs == []
+
+
 def test_profile_command_and_load_artifact_round_trip(tmp_path):
     """`profile_command` writes an artifact `load_artifact` can read back."""
     # frob:ticket T-0021
