@@ -1508,7 +1508,7 @@ Extends the Plotkin lgg kernel (T-0194) and template report (T-0195). Today anti
 id: T-0290
 title: 'recursion static analysis: prove-terminating-or-error, tail-call + depth-bound
   gate'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-19'
@@ -1534,7 +1534,10 @@ scope_changes:
   reason: T-0290 perf work maps to tests/test_perf.py
   actor: logan
   at: '2026-07-20'
-evidence: []
+evidence:
+- tests/test_perf.py::test_perf005_fires_when_descent_is_outside_the_call_args
+- tests/test_perf.py::test_perf005_does_not_fire_on_super_init_call
+- tests/test_perf.py::test_perf005_does_not_pair_same_named_methods_across_classes
 attachments: []
 acceptance:
 - given any function, when analysis runs, then a static call graph is built and every
@@ -1558,6 +1561,16 @@ acceptance:
 threat: null
 ```
 User vision (2026-07-19): frob perf does nothing with recursion today (PERF001-004 are lexical loop smells only). Recursion is a control-flow hazard that must be either statically reasoned about or rejected. NORTH STAR (user, verbatim intent): "you should not be able to write bad code (logically similar or copied); it will be flagged" -- extend that to control flow: no recursion whose termination/depth cannot be statically bounded may pass unreasoned. DESIGN, three layers: (1) DETECT -- build a static call graph, find recursive SCCs incl. mutual recursion (frob-core, reuse for T-0288/T-0289). (2) PROVE-OR-ERROR -- termination is undecidable in general, so be SOUND not complete: prove the decidable fragment (structural descent on a well-founded argument; strictly-decreasing bounded integer measure to a guarded base case), and ERROR on everything unproven. The escape is a REASONED directive (frob:invariant terminates reason=... measure=...), auditable like any waiver -- consistent with the T-0289 arch-override philosophy (prove it, or justify it at the code; never silent). (3) DEPTH/STACK SAFETY -- tail-call detection (user example: Python has no TCO, so tail recursion over runtime-sized input is a stack-overflow/DoS bug): flag tail recursion with a rewrite-as-loop suggestion, and require a proven depth bound; recursion whose depth scales with input and has no bound is an error. CONSISTENCY: this shares the interprocedural call-graph substrate with dup helper-inlining (T-0288) and arch complexity-awareness (T-0289) -- one call-graph facility feeds dup (see through helpers), arch (complexity, mutual-recursion-via-helpers), and this (termination/depth). Unify the escape-hatch philosophy across arch/perf/recursion: the tool proves what it can, and every unprovable residue must carry a reasoned, counted directive -- that is what makes "you cannot write bad code silently" actually hold.
+
+## Done report
+
+PERF005/006 recursion termination prover (well-founded measure + base case, or frob:invariant terminates escape). Reviewer approved after fixing the descent-scan soundness hole, super().__init__ false positive, and cross-class mutual pairing.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+(no evidence recorded)
 
 <!-- ticket:T-0298 -->
 ```yaml
