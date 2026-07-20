@@ -467,7 +467,9 @@ def test_perf005_fires_on_unproven_self_recursion(tmp_path):
     snapshot = _snapshot(tmp_path)
     violations = perf_rules(snapshot, [parsed])
     hit = next(v for v in violations if v.rule == "PERF005")
-    assert hit.severity.value == "error"
+    # T-0290 lands at WARN until the ~45 pre-existing sites are swept
+    # (then promoted to ERROR); see _recursion.py severity note.
+    assert hit.severity.value == "warn"
 
 
 def test_perf005_does_not_fire_on_structural_descent_with_guard(tmp_path):

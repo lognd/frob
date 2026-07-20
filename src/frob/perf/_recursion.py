@@ -278,7 +278,11 @@ def _violation(rule: str, file: str, line: int, symref: str, extra: str) -> Viol
     )
     return Violation(
         rule=rule,
-        severity=Severity.ERROR,
+        # T-0290 lands PERF005/006 at WARN: there are ~45 pre-existing
+        # genuine unproven-recursion sites repo-wide (cycle/deploy/map/dup/
+        # lang) that must be swept (frob:invariant terminates or restructure)
+        # before this can be promoted to ERROR without reddening every repo.
+        severity=Severity.WARN,
         file=file,
         line=line,
         message=f"{rule}: {file}:{line} {extra}; suggested fix: {remedy}",
