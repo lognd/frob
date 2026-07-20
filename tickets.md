@@ -1406,7 +1406,7 @@ T-0254 Windows generation. The T-0257 generator gains a windows target emitting 
 id: T-0265
 title: self-referential frob:tests directive on a test function passes --ticket check
   but fails full DRIFT002
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-18'
@@ -1428,12 +1428,25 @@ scope_changes:
   reason: T-0265 gates work is tested in tests/test_gates.py
   actor: logan
   at: '2026-07-20'
-evidence: []
+evidence:
+- tests/test_gates.py::TestCoverageGate::test_test009_self_referential_tests_directive
+- tests/test_gates.py::TestCoverageGate::test_test009_not_flagged_for_a_genuine_tests_edge
+- tests/test_gates.py::TestCoverageGate::test_test009_surfaces_under_a_narrow_ticket_scoped_gate_selection
 attachments: []
 acceptance: []
 threat: null
 ```
 Recurring: implementer agents put a 'frob:tests <self>' directive above their own new test function; the target does not resolve as a graph qualname so full frob check fires DRIFT002, but frob check --delta --ticket (what agents+reviewers run) does NOT surface it -- so it lands and reddens main (happened for T-0213, T-0216; coordinator removed 3). Two fixes: (1) frob check --ticket should include the drift gate for edges the ticket's own diff ADDS (a new frob:tests directive in the diff must be validated even under --ticket scoping); (2) the graph should REJECT or warn on a frob:tests directive whose target is the annotated symbol itself (a test testing itself is meaningless) at directive-parse time, not silently store a dangling edge. Add a check-scoping regression + a self-edge rejection test.
+
+## Done report
+
+TEST009: parse-time rejection of self-referential frob:tests, wired into the always-on gate lane so scoped runs cannot skip it. Reviewer approved.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+(no evidence recorded)
 
 <!-- ticket:T-0287 -->
 ```yaml
