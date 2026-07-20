@@ -1052,7 +1052,7 @@ authority).
 id: T-0187
 title: 'frob dup bleeding-edge: algorithm survey, reverse-templating abstraction,
   exhaustiveness meta-test'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-18'
@@ -1090,47 +1090,17 @@ User mandate 2026-07-18: frob dup does the basics (R1-R6 rungs: winnow, WL-hash,
 
 ## Done report
 
-T-0187 is the umbrella ticket for the dup bleeding-edge work (survey +
-reverse-templating + exhaustiveness meta-test). Verified in this pass,
-against the current worktree tip, that all three phases the acceptance
-criterion names are already complete:
-
-- Phase 1 (survey): docs/modules/dup-sota-survey.md is committed (840c128),
-  26/26 items dispositioned, coverage-proof section present.
-- Phase 2 (ticket tree): the survey's section 6 shortlist was filed as
-  T-0191..T-0199 (dup-gate-wire, probe-cli, suffix-automaton, anti-unify
-  kernel, template-report, R5 real-CFG, prefilter-vectors, cross-lang
-  litmus, exhaustiveness matrix) -- all nine are state=done.
-- Phase 3 (meta-test): T-0199 built the (clone-type x language x rung)
-  registry + fixtures; tests/test_dup_exhaustiveness.py is green (13
-  tests, 0 failures) confirming it is a real drift-lock over the CURRENT
-  detector set, not a stub.
-
-No new code was needed in this pass -- this ticket's own deliverables were
-already satisfied by its children's landed work. Ran the full dup test
-surface (150 collected tests across
-tests/test_dup_{exhaustiveness,cross_lang,prefilter,r5_multilang,region,
-rungs,smart,inline}.py and tests/unit/test_dup*.py) to confirm nothing
-regressed: all pass (2 skips, environment-gated, pre-existing).
-
-One known gap surfaced by T-0198/T-0447 and left as-is per those tickets'
-scope: the cross-language litmus fixture (tests/test_dup_cross_lang.py)
-documents that find_clones currently reports zero cross-language matches
-because R1-R3 bucket on literal tokens rather than a shared cross-grammar
-node vocabulary -- tracked as an open, already-filed bug (T-0447), not
-something this ticket's scope (or T-0198's) claimed to fix.
-
-`frob check --ticket T-0187` shows the dup/clones gate itself clean
-(frob-dup: pass, gates clones stage: 0.00s, no dup-scoped errors); the run's
-14 errors are all in unrelated modules (tickets CLI evidence drift,
-src/frob/render/_errors.py coverage) with no overlap to this ticket's
-scope globs, confirmed by grep over the full check output.
+Epic already satisfied by landed child tickets: Phase 1 survey (docs/modules/dup-sota-survey.md, 26/26 dispositioned), Phase 2 tree (T-0191..T-0199 all done), Phase 3 exhaustiveness meta-test (T-0199, tests/test_dup_exhaustiveness.py green). Verification-only close; no new code.
 
 ### Changed
 (no changed files detected)
 
 ### Evidence
-(no evidence recorded)
+- `tests/test_dup_exhaustiveness.py::TestMatrixExhaustiveness::test_matrix_covers_every_rung_clone_type_and_language` (pytest node id, verified passing when recorded)
+- `tests/test_dup_exhaustiveness.py::TestMatrixExhaustiveness::test_no_unclaimed_cells` (pytest node id, verified passing when recorded)
+- `tests/test_dup_exhaustiveness.py::TestMatrixClaimsFire::test_r1_python_type1` (pytest node id, verified passing when recorded)
+- `tests/test_dup_cross_lang.py::TestCrossLanguageCloneNotYetDetected::test_no_clone_group_at_any_threshold[0.1]` (pytest node id, verified passing when recorded)
+- `tests/test_dup_prefilter.py::TestPrefilterPreservesRecall::test_verified_clone_set_unchanged[dup_smart]` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0200 -->
 ```yaml
