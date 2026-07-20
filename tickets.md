@@ -2736,7 +2736,7 @@ The global 'frob' (uv tool install, ~/.local/bin) can be an OLD published versio
 id: T-0376
 title: 'Depth epic: real source resolution, compensating out-of-scope controls, full
   registry enforcement, advisories'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -2747,7 +2747,9 @@ scope:
 - src/frob/strata/
 - docs/design/registry/
 scope_changes: []
-evidence: []
+evidence:
+- tests/unit/strata/test_threat.py::TestCaughtByIntegrity::test_fabricated_cwe_reference_fails_closed
+- tests/unit/strata/test_threat.py::TestCaughtByIntegrity::test_honest_none_caught_by_never_fails
 attachments: []
 acceptance: []
 threat: null
