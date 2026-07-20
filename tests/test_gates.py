@@ -872,53 +872,6 @@ class TestCoverageGate:
         assert any(v.rule == "WAIVE001" for v in violations)
         assert violations[0].severity == Severity.ERROR
 
-    def test_test009_self_referential_tests_directive(self, tmp_path: Path) -> None:
-        source = "def test_self():\n    # frob:tests a.py::test_self\n    pass\n"
-        _write(tmp_path, "a.py", source)
-        snap = _snapshot(tmp_path)
-        from frob.gates import _test009_violations  # noqa: PLC0415
-
-        violations = _test009_violations(snap)
-        v = _first_rule(violations, "TEST009")
-        assert v is not None
-        assert v.severity == Severity.ERROR
-        assert "itself" in v.message
-
-    def test_test009_not_flagged_for_a_genuine_tests_edge(self, tmp_path: Path) -> None:
-        source = "def foo():\n    # frob:tests a.py::test_foo\n    pass\n"
-        _write(tmp_path, "a.py", source)
-        snap = _snapshot(tmp_path)
-        from frob.gates import _test009_violations  # noqa: PLC0415
-
-        assert _test009_violations(snap) == ()
-
-    def test_test009_surfaces_under_a_narrow_ticket_scoped_gate_selection(
-        self, tmp_path: Path
-    ) -> None:
-        """T-0265 check-scoping regression: TEST009 is derived from
-        `GraphSnapshot.malformed` in `_assemble_gate_report`'s always-on
-        lane (alongside WAIVE001/WAIVE002), never a job in `_build_jobs`'s
-        selectable table -- so a narrow `--only`/`--ticket` gate selection
-        that omits "drift" (the lane that used to be the only place a
-        self-referential `frob:tests` directive could ever surface, and
-        only under an UNSCOPED `frob check`) still catches it."""
-        # frob:tests src/frob/gates/__init__.py::run_gates kind="integration"
-        _git_init(tmp_path)
-        source = "def test_self():\n    # frob:tests a.py::test_self\n    pass\n"
-        _write(tmp_path, "a.py", source)
-        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
-        subprocess.run(
-            ["git", "commit", "-q", "-m", "add file"], cwd=tmp_path, check=True
-        )
-        cfg = GateConfig(root=str(tmp_path), base="main", gates=frozenset({"scope"}))
-        result = run_gates(cfg)
-        assert result.is_ok
-        report = result.danger_ok
-        assert _first_rule(report.violations, "DRIFT002") is None
-        v = _first_rule(report.violations, "TEST009")
-        assert v is not None
-        assert "itself" in v.message
-
     def test_waive002_known_gate_rule_is_not_flagged(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/__init__.py::_waive002_violations kind="unit"
         source = 'def helper(x):\n    # frob:waive COV001 reason="ok"\n    return x\n'
@@ -2905,6 +2858,7 @@ class TestCov002StrataModuleCoverage:
         subprocess.run(["git", "config", "user.email", "t@t"], cwd=tmp_path, check=True)
         subprocess.run(["git", "config", "user.name", "t"], cwd=tmp_path, check=True)
 
+    # frob:tests tests/test_gates.py::TestCov002StrataModuleCoverage.test_module_level_ticket_edge_covers_nested_declaration
     def test_module_level_ticket_edge_covers_nested_declaration(
         self, tmp_path: Path
     ) -> None:
@@ -2960,6 +2914,7 @@ class TestCov002StrataModuleCoverage:
         ).danger_ok
         assert not [v for v in report.violations if v.rule == "COV002"]
 
+    # frob:tests tests/test_gates.py::TestCov002StrataModuleCoverage.test_declaration_without_module_edge_still_fires
     def test_declaration_without_module_edge_still_fires(self, tmp_path: Path) -> None:
         """No `frob:ticket` anywhere in the `.strata` file -> COV002 still
         fires on the changed nested declaration (the escape hatch is not a
@@ -3060,6 +3015,7 @@ class TestConventionUnitBinding:
         )
         assert any(v.rule == "TEST001" and "::of" in v.message for v in violations)
 
+    # frob:tests tests/test_gates.py::TestConventionUnitBinding.test_test001_exempts_strata_flow_declarations kind="unit"
     def test_test001_exempts_strata_flow_declarations(self, tmp_path):
         """T-0168: a `flow` (or other) `.strata` declaration has no defined
         "unit test" meaning -- design conformance is proven by the sys

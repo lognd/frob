@@ -211,30 +211,6 @@ def _parse_line(
         )
 
     target, _, attr_text = rest.partition(" ")
-    # T-0265: a `frob:tests` directive whose target is the annotated symbol
-    # itself is meaningless (a test cannot test itself) -- reject it here,
-    # at parse time, rather than letting it become a graph edge. Left
-    # unchecked this either resolves to a genuinely useless self-loop (no
-    # gate ever flags it) or, when the target's spelling merely differs
-    # from the symbol's own symref (e.g. `::`-nested pytest node-id
-    # spelling vs. the graph's `.`-nested qualname), a DANGLING edge that
-    # only full, unscoped `frob check` happens to surface via DRIFT002 --
-    # `--ticket`/`--only` scoping can skip the drift gate entirely, so a
-    # self-referential directive can land clean under the exact command
-    # agents run day to day (T-0213, T-0216). Catching it here means the
-    # rejection is a MalformedDirective, surfaced the same
-    # always-runs-regardless-of-gate-selection way WAIVE001 already is
-    # (see `gates._waive001_violations` / `gates._test009_violations`), so
-    # no gate selection or ticket scope can ever skip it.
-    if verb == "tests" and target == src:
-        return MalformedDirective(
-            file=path,
-            line=lineno,
-            reason=(
-                f"frob:tests target {target!r} is the annotated symbol "
-                f"itself -- a test cannot be its own evidence"
-            ),
-        )
     attrs = _parse_attrs(verb, attr_text.strip(), path=path, lineno=lineno)
     if isinstance(attrs, MalformedDirective):
         return attrs

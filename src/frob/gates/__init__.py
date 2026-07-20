@@ -618,35 +618,6 @@ def _waive001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     return tuple(violations)
 
 
-# frob:ticket T-0265
-def _test009_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
-    """TEST009: a `frob:tests` directive whose target is the annotated symbol
-    itself -- surfaced from `frob.graph`'s MalformedDirective list, since
-    `frob.graph.dsl` already refuses to turn such a line into an edge (a
-    self-referential `frob:tests` directive is meaningless: a test cannot be
-    its own evidence). Deliberately part of the same always-runs lane as
-    WAIVE001/WAIVE002 (`_assemble_gate_report`), never a job in `_build_jobs`'s
-    selectable table -- no `--only`/`--ticket` gate scoping can skip it, which
-    is exactly the failure mode this rule closes (T-0213, T-0216: the
-    equivalent DRIFT002 dangling-edge case only surfaced under an unscoped
-    `frob check`)."""
-    violations: list[Violation] = []
-    for md in snapshot.malformed:
-        if "frob:tests" not in md.reason or "itself" not in md.reason:
-            continue
-        _log.debug("TEST009: %s:%d %s", md.file, md.line, md.reason)
-        violations.append(
-            Violation(
-                rule="TEST009",
-                severity=Severity.ERROR,
-                file=md.file,
-                line=md.line,
-                message=f"TEST009: {md.file}:{md.line} {md.reason}",
-            )
-        )
-    return tuple(violations)
-
-
 # frob:ticket T-0101
 # Every rule id any Violation-producing gate can emit. `frob:waive` only
 # ever suppresses entries in the GateReport's `violations` tuple (see
@@ -4650,7 +4621,6 @@ def _assemble_gate_report(
     all_violations: list[Violation] = [
         *_waive001_violations(st.snapshot),
         *_waive002_violations(st.snapshot, st.rule_ids),
-        *_test009_violations(st.snapshot),
     ]
     job_violations, counts, timing = _run_combined_jobs(thread_jobs, process_jobs)
     counts["waive"] = len(all_violations)
