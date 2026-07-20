@@ -453,16 +453,68 @@ class TestCoverageGate:
         error -- the catch-22 this ticket fixes. THIS ticket's own
         `<!-- ticket:T-0001 -->` marker falling inside the touched
         `tickets.md` hunk span is the grace-window signal (not merely
-        `tickets.md` being touched anywhere)."""
+        `tickets.md` being touched anywhere), AND (T-0320) the ticket must
+        have genuinely been open at the diff's base commit -- here it was
+        (state=IN_PROGRESS at base, DONE in the working tree), so grace
+        applies."""
+        source = "def helper(x):\n    # frob:ticket T-0001\n    return x\n"
+        _write(tmp_path, "src/a.py", source)
+        ticket = _ticket(state=TicketState.IN_PROGRESS)
+        _write_ticket(tmp_path, ticket)
+        _git_init(tmp_path)
+        done_ticket = _ticket(state=TicketState.DONE)
+        _write_ticket(tmp_path, done_ticket)
+        marker_line = _marker_line(tmp_path, "T-0001")
+        snap = _snapshot(tmp_path)
+        record = snap.symbols["src/a.py::helper"]
+        base_sha = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        diff = Diff(
+            base=base_sha,
+            hunks=(
+                Hunk(file="src/a.py", span=record.span),
+                Hunk(file="tickets.md", span=(marker_line, marker_line)),
+            ),
+        )
+        queue = TicketQueue(tickets={"T-0001": done_ticket})
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert not any(v.rule == "COV002" for v in violations)
+
+    def test_cov002_marker_touch_without_state_transition_still_fires(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0320: a ticket that was ALREADY `DONE` at the diff's base
+        commit does not get COV002 grace merely because its marker line is
+        edited again (e.g. a typo fix or evidence append to its Done
+        report) -- marker-in-hunk alone is a proxy for "closing", not proof
+        of an open -> DONE transition, so a symbol bound to it and touched
+        without a covering open ticket must still fire."""
         source = "def helper(x):\n    # frob:ticket T-0001\n    return x\n"
         _write(tmp_path, "src/a.py", source)
         ticket = _ticket(state=TicketState.DONE)
         _write_ticket(tmp_path, ticket)
+        _git_init(tmp_path)
+        # Touch the ticket's own section again (still DONE) -- simulates a
+        # Done-report typo fix that happens to touch the marker's hunk.
+        _write_ticket(tmp_path, ticket)
         marker_line = _marker_line(tmp_path, "T-0001")
         snap = _snapshot(tmp_path)
         record = snap.symbols["src/a.py::helper"]
+        base_sha = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
         diff = Diff(
-            base="x",
+            base=base_sha,
             hunks=(
                 Hunk(file="src/a.py", span=record.span),
                 Hunk(file="tickets.md", span=(marker_line, marker_line)),
@@ -471,7 +523,9 @@ class TestCoverageGate:
         queue = TicketQueue(tickets={"T-0001": ticket})
         tests = CollectedTests(node_ids=frozenset())
         violations = coverage_gate(tmp_path, snap, queue, diff, tests)
-        assert not any(v.rule == "COV002" for v in violations)
+        v = _first_rule(violations, "COV002")
+        assert v is not None
+        assert "frob ticket new" in v.message
 
     def test_cov002_done_ticket_without_grace_still_fires(self, tmp_path: Path) -> None:
         """A `DONE` ticket whose close already landed as a separate commit

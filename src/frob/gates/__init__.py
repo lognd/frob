@@ -20,12 +20,13 @@ from __future__ import annotations
 
 import difflib
 import fnmatch
+import functools
 import hashlib
 import os
 import re
 import time
 import tomllib
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from concurrent.futures import Future, ProcessPoolExecutor, ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
@@ -96,6 +97,7 @@ from frob.tickets._models import (
     scope_matches,
 )
 from frob.tickets._provisional import is_draft_id, on_default_branch
+from frob.tickets._store import _parse_ledger as _tickets_parse_ledger
 from frob.tickets._store import load_all as _tickets_load_all
 from frob.tickets._store import load_archive as _tickets_load_archive
 
@@ -1203,15 +1205,18 @@ def _ticket_edges(snapshot: GraphSnapshot, symref: str) -> list[Edge]:
 
 
 # frob:ticket T-0214
+# frob:ticket T-0320
 # frob:tests tests/test_gates.py::TestCoverageGate.test_cov002_done_ticket_covers_own_closing_diff  # noqa: E501
 # frob:tests tests/test_gates.py::TestCoverageGate.test_cov002_done_ticket_without_grace_still_fires  # noqa: E501
 # frob:tests tests/test_gates.py::TestCoverageGate.test_cov002_stale_done_ticket_unrelated_tickets_md_touch_still_fires  # noqa: E501
+# frob:tests tests/test_gates.py::TestCoverageGate.test_cov002_marker_touch_without_state_transition_still_fires  # noqa: E501
 def _bound_to_open_ticket(
     snapshot: GraphSnapshot, queue: TicketQueue, symref: str, diff: Diff | None = None
 ) -> bool:
     """True if `symref` has a `frob:ticket` edge to an open ticket, OR (T-0214
-    grace window) to a ticket whose OWN close is landing to `DONE` within
-    this same uncommitted `diff`'s `tickets.md` hunk(s).
+    grace window, T-0320 tightened) to a ticket whose OWN close is landing to
+    `DONE` within this same uncommitted `diff`'s `tickets.md` hunk(s) AND
+    whose state at the diff's base commit was actually open.
 
     Closing the covering ticket and landing the symbol edit it covers is one
     logical change; if THIS ticket's `<!-- ticket:T-#### -->` marker falls
@@ -1221,10 +1226,16 @@ def _bound_to_open_ticket(
     touched somewhere in the diff" is not enough: that would grant grace to
     any already-`DONE` ticket's stale edge whenever the diff happens to
     close a *different* ticket, which is a bypass, not a catch-22 fix (see
-    `_ticket_marker_in_diff_hunk`). Once the close lands as its own commit
-    (tickets.md drops out of the diff, or the hunk no longer spans this
-    ticket's marker), a `DONE` ticket's edge stops counting here, same as
-    before, so a truly unrelated later touch to the symbol is still caught.
+    `_ticket_marker_in_diff_hunk`). Marker-in-hunk alone is still only a
+    PROXY for "closing" (T-0320): a typo fix, evidence append, or reformat
+    inside an already-`DONE` ticket's section also touches its marker line
+    without ever transitioning it, so grace additionally requires the
+    ticket's state at `diff.base` (before this diff) to have been open --
+    see `_ledger_states_at_base`. Once the close lands as its own commit
+    (tickets.md drops out of the diff, the hunk no longer spans this
+    ticket's marker, or the ticket was already `DONE` at `diff.base`), a
+    `DONE` ticket's edge stops counting here, same as before, so a truly
+    unrelated later touch to the symbol is still caught.
     """
     for edge in _ticket_edges(snapshot, symref):
         ticket = queue.tickets.get(edge.target)
@@ -1236,9 +1247,44 @@ def _bound_to_open_ticket(
             diff is not None
             and ticket.state == TicketState.DONE
             and _ticket_marker_in_diff_hunk(snapshot.root, diff, ticket.id)
+            and _ledger_states_at_base(snapshot.root, diff.base).get(ticket.id)
+            in _OPEN_STATES
         ):
             return True
     return False
+
+
+@functools.lru_cache(maxsize=32)
+def _ledger_states_at_base(root: str, base: str) -> Mapping[str, TicketState]:
+    """The `tickets.md` ticket-id -> state map as it existed at `diff.base`
+    (the merge-base sha), or `{}` if `tickets.md` did not exist there or
+    failed to parse.
+
+    T-0320: `_bound_to_open_ticket`'s marker-in-hunk grace is a PROXY for "a
+    ticket close is landing in this diff" -- it does not by itself prove a
+    state TRANSITION, so any touch to an already-`DONE` ticket's marker line
+    (typo fix, evidence append, reformat) would otherwise grant grace to a
+    stale, uncovered symbol. Fetching the ledger as it stood before this
+    diff and requiring the ticket to have been open there closes that gap:
+    grace now demands an actual open -> DONE transition, not mere hunk
+    overlap. Cached per `(root, base)` since `_cov002` calls this once per
+    touched symbol and the base ledger does not change mid-run.
+    """
+    spawned = run_argv(("git", "-C", root, "show", f"{base}:tickets.md"))
+    if spawned.is_err or spawned.danger_ok.returncode != 0:
+        _log.debug(
+            "_ledger_states_at_base: no tickets.md at base=%s (root=%s)", base, root
+        )
+        return {}
+    parsed = _tickets_parse_ledger(spawned.danger_ok.stdout)
+    if parsed.is_err:
+        _log.debug(
+            "_ledger_states_at_base: unparsable tickets.md at base=%s: %s",
+            base,
+            parsed.danger_err,
+        )
+        return {}
+    return {tid: t.state for tid, t in parsed.danger_ok.items()}
 
 
 def _ticket_marker_in_diff_hunk(root: str, diff: Diff, ticket_id: str) -> bool:
