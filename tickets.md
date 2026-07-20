@@ -1187,7 +1187,7 @@ T-0202 fixed the check-path log-level bug (stdout handler defaulted to DEBUG unc
 id: T-0245
 title: 'mount-aware performance: per-file stat storms and sqlite contention on /mnt/c
   (13-60x tax)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-18'
@@ -1221,7 +1221,10 @@ scope_changes:
   reason: T-0245 graph work maps to docs/modules/graph.md
   actor: logan
   at: '2026-07-20'
-evidence: []
+evidence:
+- tests/test_graph.py::TestBuildIncremental::test_touch_without_edit_skips_reparse
+- tests/test_graph.py::TestLoadGraph::test_touch_without_edit_is_not_stale
+- tests/test_graph.py::TestCacheModule::test_get_file_meta_and_touch_file_stat
 attachments: []
 acceptance: []
 threat: null
@@ -1230,7 +1233,7 @@ Filed from malmberg pilot P3 (/mnt/c, 2026-07-18). Malmberg pilot dedicated /mnt
 
 ## Done report
 
-Stat-first graph cache: skip byte reads when mtime_ns+size match, hash fallback on mismatch; single pruned walk. Cuts the per-file stat/read storm on latency-heavy mounts. Reviewer approved.
+Stat-first graph cache: skip byte reads when mtime_ns+size match (hash fallback on mismatch); single pruned source+docs walk. Cuts the per-file stat/read storm on latency-heavy mounts. Reviewer approved; rebased to schema v3.
 
 ### Changed
 (no changed files detected)
