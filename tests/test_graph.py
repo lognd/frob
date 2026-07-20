@@ -518,6 +518,37 @@ def foo() -> None:
         _edges, malformed = parse_directives(pf)
         assert len(malformed) == 1
 
+    def test_self_referential_tests_directive_is_malformed(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0265: a `frob:tests` directive whose target is the annotated
+        symbol itself is rejected at parse time, never turned into a
+        (dangling-or-not) edge."""
+        path = _write(tmp_path, "a.py", "def test_self() -> None:\n    pass\n")
+        path.write_text(
+            f"def test_self() -> None:\n    # frob:tests {path}::test_self\n    pass\n"
+        )
+        pf = parse_file(path).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not edges
+        assert len(malformed) == 1
+        assert "itself" in malformed[0].reason
+
+    def test_tests_directive_pointing_elsewhere_still_parses(
+        self, tmp_path: Path
+    ) -> None:
+        """A `frob:tests` directive pointing at a genuinely different
+        symbol is unaffected by the self-reference rejection (T-0265)."""
+        path = _write(tmp_path, "a.py", "def foo() -> None:\n    pass\n")
+        path.write_text(
+            f"def foo() -> None:\n    # frob:tests {path}::test_foo\n    pass\n"
+        )
+        pf = parse_file(path).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        assert len(edges) == 1
+        assert edges[0].target == f"{path}::test_foo"
+
 
 class TestMarkdownAnchors:
     def test_describes_edge_with_heading_slug_and_facet(self) -> None:
