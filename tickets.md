@@ -1228,6 +1228,16 @@ threat: null
 ```
 Filed from malmberg pilot P3 (/mnt/c, 2026-07-18). Malmberg pilot dedicated /mnt/c findings: same content, same machine -- graph cold 7.4s vs 1.1s, warm up to 31s vs 0.5s, gates-only 19-47s vs 7.9s; ~0.5ms/stat under load (11.3k stats in 90s of sweep strace); sqlite commit 8.2ms vs 2.3ms; concurrent frob processes drove D-state stalls with no lock feedback. Fixes: batch directory walks (os.scandir reuse), cut redundant per-file stats (trust one snapshot pass), sqlite busy_timeout + a visible waiting-on-lock message, and a docs page on WSL-mount expectations. Acceptance: measured cold graph build on the malmberg /mnt/c checkout under 3s.
 
+## Done report
+
+Stat-first graph cache: skip byte reads when mtime_ns+size match, hash fallback on mismatch; single pruned walk. Cuts the per-file stat/read storm on latency-heavy mounts. Reviewer approved.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+(no evidence recorded)
+
 <!-- ticket:T-0254 -->
 ```yaml
 id: T-0254
