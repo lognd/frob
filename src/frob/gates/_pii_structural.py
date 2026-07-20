@@ -55,6 +55,22 @@ per the ticket body), family (5) keyword-only suggestion-severity sweep of
 identifiers/comments, and non-Python languages (TS/Rust field-shape
 equivalents). `PII010`/`SEC110` cover exactly families (1) and (3), scoped
 to Python via `frob.lang`'s existing parse surface.
+
+T-0430 (`docs/design/registry/pii.yaml`'s six deferred sections) extended
+`FIELD_SIGNATURES` toward GDPR Art.9(1) special-category / CCPA / HIPAA
+Safe Harbor / PCI-DSS / NIST SP 800-122 field-name parity (corpus B.1/B.2):
+account/license/vehicle/device identifiers, medical-record/beneficiary
+numbers, mother's maiden name, geolocation, and the GDPR Art.9(1) special-
+category demographic fields (ethnicity, political affiliation, religion,
+union membership, sexual orientation, genetic data) folded into the
+`behavioral` bucket per the same B.3-documented seam (no dedicated
+PII_CATEGORIES bucket for these). Still not built: PCI-DSS Sensitive
+Authentication Data field-name shapes (track data, PIN block -- no safe
+low-FP field-name keyword identified this pass) and CCPA's non-field-
+shaped categories (commercial/purchase history, internet activity,
+inferences) which are behavioral-content signals, not field-name
+signals -- both remain honest gaps for a follow-on ticket, not silently
+dropped.
 """
 
 # frob:ticket T-0207
@@ -140,6 +156,46 @@ FIELD_SIGNATURES: tuple[_FieldSignature, ...] = (
     _sig("fingerprint_scan", "fingerprint_scan", "biometric"),
     _sig("fingerprint_template", "fingerprint_template", "biometric"),
     _sig("face_embedding", "face_embedding", "biometric"),
+    # T-0430: extend field-name coverage toward GDPR/CCPA/HIPAA/PCI-DSS/
+    # NIST-800-122 parity (docs/design/secrets-pii-corpus.md B.1/B.2,
+    # docs/design/registry/pii.yaml's six T-0430-deferred sections).
+    # HIPAA Safe Harbor identifiers #10-13 (account/certificate/license/
+    # vehicle/device numbers), not previously covered by any entry above.
+    _sig("account_number", "account_number", "financial"),
+    _sig("drivers_license", "drivers_license", "identifier"),
+    _sig("license_number", "license_number", "identifier"),
+    _sig("vehicle_id", "vehicle_id", "identifier"),
+    _sig("vin", "vin", "identifier"),
+    _sig("imei", "imei", "identifier"),
+    _sig("mac_address", "mac_address", "identifier"),
+    _sig("device_serial", "device_serial", "identifier"),
+    # HIPAA #8/#9 (medical record / health plan beneficiary numbers) --
+    # more precise field-name shapes than the existing bare "medical_record"
+    # entry, which only matches the record itself, not the beneficiary id.
+    _sig("medical_record_number", "medical_record_number", "health"),
+    _sig("beneficiary_id", "beneficiary_id", "health"),
+    # NIST SP 800-122's explicit clause-1 direct-identifier example
+    # ("mother's maiden name").
+    _sig("maiden_name", "maiden_name", "identifier"),
+    # GDPR Art.4(1) "location data" identifier example / CCPA (G)
+    # geolocation category -- the compound field name is schema/field-name-
+    # detectable per corpus B.2 even though the coordinate VALUE itself has
+    # no fixed shape; a bare "latitude"/"longitude" token is left out
+    # deliberately (too FP-prone against ordinary non-PII geo/graphics code
+    # in this codebase and elsewhere).
+    _sig("geolocation", "geolocation", "identifier"),
+    # GDPR Art.9(1) special categories (items 1,2,3,4,8) with no PCI/HIPAA
+    # anchor and no dedicated PII_CATEGORIES bucket (corpus B.3: the closest
+    # available bucket is "behavioral", the same seam B.3 already documents
+    # for CCPA (D)/(F)/(K) -- these are demographic/opinion fields, not
+    # usage-pattern fields, but "behavioral" is the least-wrong of the seven
+    # fixed buckets and the corpus draws no finer distinction here).
+    _sig("ethnicity", "ethnicity", "behavioral"),
+    _sig("political_affiliation", "political_affiliation", "behavioral"),
+    _sig("religion", "religion", "behavioral"),
+    _sig("union_membership", "union_membership", "behavioral"),
+    _sig("sexual_orientation", "sexual_orientation", "behavioral"),
+    _sig("genetic_data", "genetic_data", "behavioral"),
     # Type-based signals (corpus Part B.2: EmailStr/SecretStr and TS/Rust
     # equivalents named in the ticket body -- only the Python types are
     # scoped this pass, see module docstring).
