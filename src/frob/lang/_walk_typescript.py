@@ -13,6 +13,7 @@ from tree_sitter import Node
 
 from frob.lang._common import (
     _body_skip,
+    _canonical_tokens,
     _leading_doc_comment,
     _leaf_tokens,
     _span_of,
@@ -55,6 +56,7 @@ def _function_symbol(
         sig_tokens=_leaf_tokens(node, _COMMENT_TYPES, _body_skip(body)),
         body_tokens=_leaf_tokens(body, _COMMENT_TYPES),
         doc_text=doc,
+        body_norm=_canonical_tokens(body, _COMMENT_TYPES),
     )
 
 
@@ -98,6 +100,7 @@ def _method_symbol(
         sig_tokens=_leaf_tokens(node, _COMMENT_TYPES, _body_skip(body)),
         body_tokens=_leaf_tokens(body, _COMMENT_TYPES),
         doc_text=doc,
+        body_norm=_canonical_tokens(body, _COMMENT_TYPES),
     )
 
 

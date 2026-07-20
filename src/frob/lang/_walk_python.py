@@ -14,6 +14,7 @@ from tree_sitter import Node
 from frob.lang._common import (
     ByteRange,
     _body_skip,
+    _canonical_tokens,
     _collapse_ws,
     _find_enclosing_symbol,
     _leaf_tokens,
@@ -82,6 +83,7 @@ def _function_symbol(
         sig_tokens=sig_tokens,
         body_tokens=body_tokens,
         doc_text=doc,
+        body_norm=_canonical_tokens(body, _COMMENT_TYPES, body_skip_range),
     )
 
 
@@ -104,6 +106,7 @@ def _class_symbol(
         sig_tokens=sig_tokens,
         body_tokens=body_tokens,
         doc_text=doc,
+        body_norm=_canonical_tokens(body, _COMMENT_TYPES, body_skip_ranges),
     )
 
 

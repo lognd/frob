@@ -25,7 +25,23 @@ class SymbolKind(StrEnum):
 
 # frob:doc docs/modules/lang.md#data-models
 class RawSymbol(BaseModel):
-    """One extracted declaration: identity, publicness, span, and tokens."""
+    """One extracted declaration: identity, publicness, span, and tokens.
+
+    `body_norm` (T-0334) is `body_tokens` re-expressed over a shared
+    cross-grammar node-KIND vocabulary instead of literal leaf text: every
+    identifier/literal leaf collapses to a generic `IDENT`/`LIT` tag and
+    every keyword/punctuation leaf maps through `_common._CANONICAL_VOCAB`
+    onto a canonical tag (python `def` and typescript `function` both
+    become `FUNC_KW`, python `for ... in` and typescript `for ... of` both
+    become `FOR_KW`/`ITER_KW`) -- see docs/modules/lang.md#the-token-contract.
+    `frob.dup`'s R1-R3 bucket on literal `body_tokens`
+    (tests/test_dup_cross_lang.py's T-0198 litmus proved that misses every
+    cross-language clone by construction); `body_norm` exists so a
+    follow-up to that pipeline can bucket on shared structure instead of
+    shared spelling. Defaults to `()` for symbols with no body (`CONST`,
+    `TYPE`, non-python `CLASS`) and for the strata walker, which has no
+    tree-sitter node kinds to map through.
+    """
 
     model_config = ConfigDict(frozen=True)
 
@@ -36,6 +52,7 @@ class RawSymbol(BaseModel):
     sig_tokens: tuple[str, ...]
     body_tokens: tuple[str, ...]
     doc_text: str
+    body_norm: tuple[str, ...] = ()
 
 
 # frob:doc docs/modules/lang.md#data-models

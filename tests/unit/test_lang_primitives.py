@@ -26,6 +26,7 @@ from frob.lang import (
     tree_sitter_extensions,
 )
 from frob.lang._common import (
+    _canonical_tokens,
     _collapse_ws,
     _leading_doc_comment,
     _leaf_tokens,
@@ -57,6 +58,33 @@ _CPP = (
     "};\n"
 )
 
+# T-0334: the same accumulator-with-clamp logic as
+# tests/fixtures/dup_cross_lang's python/typescript pair (T-0198's litmus),
+# kept inline here so `_canonical_tokens`'s cross-grammar claim is verified
+# directly against the two grammars' real body node, not just eyeballed.
+_ACCUM_PY = (
+    "def compute_total(items):\n"
+    "    total = 0\n"
+    "    for item in items:\n"
+    "        total = total + item\n"
+    "        if total > 1000:\n"
+    "            total = 1000\n"
+    "    return total\n"
+)
+
+_ACCUM_TS = (
+    "function computeTotal(items) {\n"
+    "    let total = 0;\n"
+    "    for (const item of items) {\n"
+    "        total = total + item;\n"
+    "        if (total > 1000) {\n"
+    "            total = 1000;\n"
+    "        }\n"
+    "    }\n"
+    "    return total;\n"
+    "}\n"
+)
+
 
 def _py_tree(tmp_path: Path):
     path = tmp_path / "sample.py"
@@ -68,6 +96,26 @@ def _cpp_tree(tmp_path: Path):
     path = tmp_path / "sample.cpp"
     path.write_text(_CPP)
     return raw_tree(path).danger_ok
+
+
+def _first_function_body(tmp_path: Path, name: str, source: str):
+    """`_canonical_tokens`-ready body node of `source`'s first top-level
+    function/def, for whichever grammar `name`'s extension dispatches to."""
+    path = tmp_path / name
+    path.write_text(source)
+    tree, _source, language = raw_tree(path).danger_ok
+    comment_types = (
+        frozenset({"comment"})
+        if language != "rust"
+        else frozenset({"line_comment", "block_comment"})
+    )
+    fn = next(
+        n
+        for n in tree.root_node.children
+        if n.type in ("function_definition", "function_declaration", "function_item")
+    )
+    body = fn.child_by_field_name("body")
+    return body, comment_types
 
 
 def test_collapse_ws_flattens_whitespace():
@@ -249,3 +297,106 @@ def test_resolve_local_import_maps_to_repo_relative(tmp_path: Path):
     resolved = resolve_local_import("pkg.mod", "python", file_dir=root, root=root)
     assert resolved == "pkg/mod.py"
     assert resolve_local_import("os", "python", file_dir=root, root=root) is None
+
+
+class TestCanonicalTokensCrossGrammarVocabulary:
+    """T-0334: `_canonical_tokens` is the primitive `RawSymbol.body_norm`
+    delegates to (see each `_walk_*.py`'s `body_norm=_canonical_tokens(...)`
+    call sites) -- these tests exercise it directly against real
+    tree-sitter parses, the same way this file's other primitive tests do,
+    rather than through `body_tokens`-only assertions that say nothing
+    about the new vocabulary path."""
+
+    # frob:tests src/frob/lang/_common.py::_canonical_tokens kind="unit"
+    def test_shares_structural_tags_across_python_and_typescript(
+        self, tmp_path: Path
+    ) -> None:
+        """The T-0198 litmus's own accumulator-with-clamp logic, expressed
+        once in each grammar: `body_tokens` shares nothing across the pair
+        (that is the whole T-0198 finding) but `body_norm` must share the
+        control-flow/comparison vocabulary that makes the two bodies
+        structurally the same shape."""
+        py_body, py_comments = _first_function_body(tmp_path, "accum.py", _ACCUM_PY)
+        ts_body, ts_comments = _first_function_body(tmp_path, "accum.ts", _ACCUM_TS)
+        py_norm = _canonical_tokens(py_body, py_comments)
+        ts_norm = _canonical_tokens(ts_body, ts_comments)
+
+        # the T-0198 finding: body_tokens do not share the keyword/
+        # punctuation vocabulary that would let R1-R3 bucket the pair
+        # together -- neither `for`/`in`'s block-open colon nor `for`/`of`'s
+        # brace survives across the grammars (still true, this diff never
+        # touches body_tokens).
+        py_tokens = set(_leaf_tokens(py_body, py_comments))
+        ts_tokens = set(_leaf_tokens(ts_body, ts_comments))
+        assert ":" in py_tokens and ":" not in ts_tokens
+        assert "{" in ts_tokens and "{" not in py_tokens
+        assert "of" in ts_tokens and "of" not in py_tokens
+
+        # the T-0334 fix: body_norm shares the structural vocabulary a
+        # cross-language R1-R3 bucketing rework would need.
+        shared = {"FOR_KW", "ITER_KW", "IF_KW", "CMP_OP", "RETURN_KW"}
+        assert shared <= set(py_norm)
+        assert shared <= set(ts_norm)
+        assert shared <= (set(py_norm) & set(ts_norm))
+
+    # frob:tests src/frob/lang/_common.py::_canonical_tokens kind="unit"
+    def test_identifier_and_literal_renaming_does_not_change_body_norm(
+        self, tmp_path: Path
+    ) -> None:
+        """Two structurally identical functions, differing only in their
+        variable name and literal value, must fingerprint identically under
+        `body_norm` -- the whole point of collapsing identifier/literal
+        leaves to `IDENT`/`LIT` is that renaming/reliteralizing must not
+        break a structural match."""
+        a_body, comments = _first_function_body(
+            tmp_path,
+            "a.py",
+            "def f():\n    total = 0\n    return total\n",
+        )
+        b_body, _comments = _first_function_body(
+            tmp_path,
+            "b.py",
+            "def g():\n    accumulator = 999\n    return accumulator\n",
+        )
+        assert _canonical_tokens(a_body, comments) == _canonical_tokens(
+            b_body, comments
+        )
+        # body_tokens, by contrast, DOES change -- proves the abstraction is
+        # actually doing something, not just two already-identical bodies.
+        assert _leaf_tokens(a_body, comments) != _leaf_tokens(b_body, comments)
+
+    # frob:tests src/frob/lang/_common.py::_canonical_tokens kind="unit"
+    def test_unmapped_keyword_falls_back_to_other_tag(self, tmp_path: Path) -> None:
+        """A construct neither `_CANONICAL_VOCAB` nor the identifier/literal
+        tables recognize (python's `with`/`as`) must degrade to a distinct
+        `OTHER:<node.type>` tag rather than being dropped or crashing."""
+        body, comments = _first_function_body(
+            tmp_path,
+            "with_stmt.py",
+            'def f():\n    with open("x") as fh:\n        return fh\n',
+        )
+        norm = _canonical_tokens(body, comments)
+        assert "OTHER:with" in norm
+        assert "OTHER:as" in norm
+        # a recognized leaf right alongside the unmapped ones still maps
+        # normally -- the fallback is per-leaf, not file-wide.
+        assert "RETURN_KW" in norm
+
+    # frob:tests src/frob/lang/_common.py::_canonical_tokens kind="unit"
+    def test_deterministic_and_reformatting_insensitive(self, tmp_path: Path) -> None:
+        """Same source parsed twice yields identical `body_norm` (pure
+        function of the tree), and reflowing whitespace/indentation changes
+        neither `body_tokens` nor `body_norm` -- the same formatting-
+        insensitivity guarantee `TestFormattingInsensitivity` (test_lang.py)
+        already locks in for `body_tokens`, extended to the new field."""
+        source = "def f(x):\n    if x > 0:\n        return x\n    return 0\n"
+        reformatted = "def f( x ):\n\n    if x > 0:\n\n        return x\n    return 0\n"
+
+        body1, comments = _first_function_body(tmp_path, "d1.py", source)
+        body2, _ = _first_function_body(tmp_path, "d2.py", source)
+        assert _canonical_tokens(body1, comments) == _canonical_tokens(body2, comments)
+
+        reflowed_body, _ = _first_function_body(tmp_path, "d3.py", reformatted)
+        assert _canonical_tokens(body1, comments) == _canonical_tokens(
+            reflowed_body, comments
+        )

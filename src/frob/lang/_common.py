@@ -81,6 +81,213 @@ def _leaf_tokens(
     return tuple(tokens)
 
 
+# T-0334: the tag every identifier-shaped leaf (a name, whether a
+# declaration or a reference) collapses to in `_canonical_tokens` --
+# structural bucketing needs "some name was used here", not which name.
+_IDENT_TAG = "IDENT"
+
+# T-0334: the tag every literal-shaped leaf (number, string, bool, null)
+# collapses to -- same rationale as `_IDENT_TAG`.
+_LIT_TAG = "LIT"
+
+# Leaf node types tree-sitter emits for a bare name reference/declaration,
+# across all five grammars this package walks. Anonymous per-grammar names
+# for "this is an identifier" differ (`identifier` everywhere, but also
+# `type_identifier`/`field_identifier`/`property_identifier` depending on
+# grammar and position) -- collecting them here means `_canonical_tokens`
+# does not need per-language branching to find them.
+_IDENT_LEAF_TYPES = frozenset(
+    {
+        "identifier",
+        "type_identifier",
+        "field_identifier",
+        "property_identifier",
+        "shorthand_property_identifier",
+        "shorthand_property_identifier_pattern",
+        "namespace_identifier",
+        "primitive_type",
+    }
+)
+
+# Leaf node types for a literal value, across all five grammars. Deliberately
+# collapses `1`, `1.0`, `"x"`, `true`, `None`/`null`/`nullptr` alike -- the
+# goal is a structural "a literal sat here" signal for cross-grammar
+# bucketing, not a faithful literal-kind distinction (that distinction is
+# already fully preserved in `body_tokens`, which `body_norm` supplements
+# rather than replaces).
+_LITERAL_LEAF_TYPES = frozenset(
+    {
+        "integer",
+        "float",
+        "number",
+        "string",
+        "string_content",
+        "char_literal",
+        "number_literal",
+        "string_literal",
+        "raw_string_literal",
+        "true",
+        "false",
+        "none",
+        "null",
+        "nullptr",
+        "undefined",
+    }
+)
+
+# T-0334: keyword/punctuation leaf node types, across python/typescript/
+# rust/c/cpp, mapped onto a shared vocabulary tag. Tree-sitter's anonymous
+# (unnamed) leaf nodes carry their own literal spelling as `node.type`
+# (python's `for` keyword node has `type == "for"`), so this table's keys
+# are literal keyword/punctuation spellings pooled across all five grammars
+# -- a spelling absent from one grammar simply never matches when walking
+# that grammar's tree. Entries intentionally group semantically-equivalent
+# constructs across grammars (python `def/class` colon-block vs
+# typescript/rust/c/cpp brace-block both map their block delimiter to
+# `BLOCK_OPEN`/`BLOCK_CLOSE`-adjacent tags where possible, `for ... in`
+# (python) and `for ... of` (typescript) both land on `FOR_KW`/`ITER_KW`)
+# -- that grouping is the entire point: it is what lets `frob.dup`'s R1-R3
+# bucket the same logic written in two languages into the same bucket
+# instead of two disjoint ones (see `RawSymbol.body_norm`'s docstring).
+_CANONICAL_VOCAB: dict[str, str] = {
+    # function/method declaration
+    "def": "FUNC_KW",
+    "function": "FUNC_KW",
+    "fn": "FUNC_KW",
+    "lambda": "FUNC_KW",
+    "async": "FUNC_KW",
+    # type/class declaration
+    "class": "TYPE_KW",
+    "struct": "TYPE_KW",
+    "trait": "TYPE_KW",
+    "interface": "TYPE_KW",
+    "enum": "TYPE_KW",
+    "impl": "TYPE_KW",
+    "typedef": "TYPE_KW",
+    "union": "TYPE_KW",
+    "type": "TYPE_KW",
+    # loops
+    "for": "FOR_KW",
+    "while": "WHILE_KW",
+    "loop": "WHILE_KW",
+    "do": "WHILE_KW",
+    "in": "ITER_KW",
+    "of": "ITER_KW",
+    # conditionals
+    "if": "IF_KW",
+    "else": "ELSE_KW",
+    "elif": "ELSE_KW",
+    "switch": "SWITCH_KW",
+    "match": "SWITCH_KW",
+    "case": "CASE_KW",
+    "default": "CASE_KW",
+    # control transfer
+    "return": "RETURN_KW",
+    "break": "BREAK_KW",
+    "continue": "CONTINUE_KW",
+    "yield": "YIELD_KW",
+    "pass": "NOOP_KW",
+    # exceptions
+    "try": "TRY_KW",
+    "except": "CATCH_KW",
+    "catch": "CATCH_KW",
+    "finally": "FINALLY_KW",
+    "raise": "THROW_KW",
+    "throw": "THROW_KW",
+    # local declaration
+    "let": "DECL_KW",
+    "const": "DECL_KW",
+    "var": "DECL_KW",
+    "static": "DECL_KW",
+    "mut": "DECL_KW",
+    "new": "NEW_KW",
+    # imports
+    "import": "IMPORT_KW",
+    "from": "IMPORT_KW",
+    "use": "IMPORT_KW",
+    "include": "IMPORT_KW",
+    "#include": "IMPORT_KW",
+    # bracketing / block structure
+    "{": "BLOCK_OPEN",
+    "}": "BLOCK_CLOSE",
+    "(": "PAREN_OPEN",
+    ")": "PAREN_CLOSE",
+    "[": "BRACKET_OPEN",
+    "]": "BRACKET_CLOSE",
+    ":": "COLON",
+    ";": "STMT_END",
+    ",": "COMMA",
+    ".": "DOT",
+    "->": "ARROW",
+    "=>": "ARROW",
+    "::": "SCOPE",
+    # assignment
+    "=": "ASSIGN_OP",
+    "+=": "ASSIGN_OP",
+    "-=": "ASSIGN_OP",
+    "*=": "ASSIGN_OP",
+    "/=": "ASSIGN_OP",
+    # comparison
+    "==": "CMP_OP",
+    "!=": "CMP_OP",
+    ">": "CMP_OP",
+    "<": "CMP_OP",
+    ">=": "CMP_OP",
+    "<=": "CMP_OP",
+    # arithmetic
+    "+": "ARITH_OP",
+    "-": "ARITH_OP",
+    "*": "ARITH_OP",
+    "/": "ARITH_OP",
+    "%": "ARITH_OP",
+    # boolean
+    "&&": "BOOL_OP",
+    "||": "BOOL_OP",
+    "and": "BOOL_OP",
+    "or": "BOOL_OP",
+    "not": "BOOL_OP",
+    "!": "BOOL_OP",
+}
+
+
+def _canonical_tokens(
+    node: Node,
+    comment_types: frozenset[str],
+    skip_ranges: tuple[ByteRange, ...] = (),
+) -> tuple[str, ...]:
+    """`_leaf_tokens`-shaped walk of `node`, but each leaf is mapped onto a
+    shared cross-grammar vocabulary tag (`RawSymbol.body_norm`, T-0334)
+    instead of kept as literal text.
+
+    Identifier- and literal-shaped leaves collapse to `_IDENT_TAG`/
+    `_LIT_TAG`; keyword/punctuation leaves map through `_CANONICAL_VOCAB`;
+    anything neither table recognizes falls back to `OTHER:<node.type>` so
+    an unmapped grammar construct degrades to a harmless bucket-miss (still
+    distinct per node type, never silently merged into an unrelated tag)
+    rather than being dropped or crashing.
+    """
+    tokens: list[str] = []
+
+    def walk(n: Node) -> None:
+        if _in_skip_range(n, skip_ranges):
+            return
+        if n.child_count == 0:
+            if n.type in comment_types:
+                return
+            if n.type in _IDENT_LEAF_TYPES:
+                tokens.append(_IDENT_TAG)
+            elif n.type in _LITERAL_LEAF_TYPES:
+                tokens.append(_LIT_TAG)
+            else:
+                tokens.append(_CANONICAL_VOCAB.get(n.type, f"OTHER:{n.type}"))
+            return
+        for child in n.children:
+            walk(child)
+
+    walk(node)
+    return tuple(tokens)
+
+
 # frob:doc docs/modules/lang.md#primitives
 def _strip_comment_delims(raw: str) -> str:
     """Strip `//`, `///`, `/* */`, `/** */`, and leading `*` from one comment."""

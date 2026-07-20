@@ -11,6 +11,7 @@ from __future__ import annotations
 from tree_sitter import Node
 
 from frob.lang._common import (
+    _canonical_tokens,
     _leading_doc_comment,
     _leaf_tokens,
     _span_of,
@@ -121,6 +122,7 @@ def _function_symbol(
         sig_tokens=_leaf_tokens(node, _COMMENT_TYPES, skip),
         body_tokens=_leaf_tokens(body, _COMMENT_TYPES) if body else (),
         doc_text=doc,
+        body_norm=_canonical_tokens(body, _COMMENT_TYPES) if body else (),
     )
 
 

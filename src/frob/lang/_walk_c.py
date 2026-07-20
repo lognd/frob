@@ -19,6 +19,7 @@ from tree_sitter import Node
 
 from frob.lang._common import (
     _body_skip,
+    _canonical_tokens,
     _leading_doc_comment,
     _leaf_tokens,
     _span_of,
@@ -85,6 +86,7 @@ def _function_symbol(
         sig_tokens=_leaf_tokens(node, ctx.comment_types, skip),
         body_tokens=_leaf_tokens(body, ctx.comment_types) if body else (),
         doc_text=doc,
+        body_norm=_canonical_tokens(body, ctx.comment_types) if body else (),
     )
 
 
