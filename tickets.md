@@ -947,10 +947,20 @@ scope:
 - src/frob/app/**
 - pyproject.toml
 - Makefile
-- tests/**
 - docs/modules/serve.md
 - tickets.md
-scope_changes: []
+- tests/test_serve.py
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/test_serve.py
+  reason: T-0177 serve work maps to tests/test_serve.py
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance: []
@@ -974,10 +984,30 @@ scope:
 - src/frob/stats/**
 - scripts/**
 - docs/modules/stats.md
-- docs/guides/**
-- tests/**
 - tickets.md
-scope_changes: []
+- docs/modules/app.md
+- tests/test_app.py
+scope_changes:
+- op: remove
+  glob: docs/guides/**
+  reason: 'scope hygiene (T-0455): narrow speculative docs/guides/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: docs/modules/app.md
+  reason: T-0178 app work maps to docs/modules/app.md
+  actor: logan
+  at: '2026-07-20'
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/test_app.py
+  reason: T-0178 app work maps to tests/test_app.py
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance: []
@@ -1031,11 +1061,21 @@ parent: null
 scope:
 - src/frob/dup/**
 - frob-core/**
-- tests/**
 - docs/modules/**
 - docs/index.md
 - tickets.md
-scope_changes: []
+- tests/test_dup.py
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/test_dup.py
+  reason: T-0187 dup work maps to tests/test_dup.py
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance: []
@@ -1058,9 +1098,19 @@ scope:
 - src/frob/check/**
 - src/frob/strata/**
 - design/frob.strata
-- tests/**
 - tickets.md
-scope_changes: []
+- tests/test_process.py
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/test_process.py
+  reason: T-0200 process work maps to tests/test_process.py
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance: []
@@ -1128,10 +1178,30 @@ scope:
 - src/frob/graph/**
 - src/frob/gates/**
 - src/frob/gitio.py
-- tests/**
-- docs/**
 - tickets.md
-scope_changes: []
+- tests/test_graph.py
+- docs/modules/graph.md
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/test_graph.py
+  reason: T-0245 graph work maps to tests/test_graph.py
+  actor: logan
+  at: '2026-07-20'
+- op: remove
+  glob: docs/**
+  reason: 'scope hygiene (T-0455): narrow speculative docs/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: docs/modules/graph.md
+  reason: T-0245 graph work maps to docs/modules/graph.md
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance: []
@@ -1207,9 +1277,19 @@ scope:
 - src/frob/deploy/**
 - editors/**
 - docs/strata/**
-- tests/**
 - tickets.md
-scope_changes: []
+- tests/unit/strata/
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/unit/strata/
+  reason: T-0261 strata work maps to tests/unit/strata/
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance: []
@@ -1235,9 +1315,19 @@ scope:
 - src/frob/strata/**
 - docs/strata/**
 - design/**
-- tests/**
 - tickets.md
-scope_changes: []
+- tests/unit/strata/
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/unit/strata/
+  reason: T-0263 strata work maps to tests/unit/strata/
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance: []
@@ -1261,10 +1351,30 @@ parent: T-0254
 scope:
 - src/frob/deploy/**
 - src/frob/app/**
-- docs/**
-- tests/**
 - tickets.md
-scope_changes: []
+- docs/modules/deploy.md
+- tests/unit/deploy/
+scope_changes:
+- op: remove
+  glob: docs/**
+  reason: 'scope hygiene (T-0455): narrow speculative docs/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: docs/modules/deploy.md
+  reason: T-0264 deploy work maps to docs/modules/deploy.md
+  actor: logan
+  at: '2026-07-20'
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/unit/deploy/
+  reason: T-0264 deploy work maps to tests/unit/deploy/
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance: []
@@ -1286,9 +1396,19 @@ parent: null
 scope:
 - src/frob/gates/**
 - src/frob/graph/**
-- tests/**
 - tickets.md
-scope_changes: []
+- tests/test_gates.py
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: narrow speculative tests/** to the mirrored test module (T-0455 scope hygiene)
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/test_gates.py
+  reason: T-0265 gates work is tested in tests/test_gates.py
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance: []
@@ -1311,10 +1431,20 @@ parent: null
 scope:
 - frob-core/**
 - src/frob/dup/**
-- tests/**
 - docs/modules/dup.md
 - tickets.md
-scope_changes: []
+- tests/test_dup.py
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/test_dup.py
+  reason: T-0287 dup work maps to tests/test_dup.py
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance:
@@ -1348,10 +1478,20 @@ scope:
 - src/frob/arch/**
 - src/frob/graph/dsl.py
 - src/frob/gates/**
-- tests/**
 - docs/modules/perf.md
 - tickets.md
-scope_changes: []
+- tests/test_perf.py
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/test_perf.py
+  reason: T-0290 perf work maps to tests/test_perf.py
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance:
@@ -1391,10 +1531,20 @@ parent: null
 scope:
 - src/frob/gates/__init__.py
 - src/frob/testing/**
-- tests/**
 - docs/modules/gates.md
 - tickets.md
-scope_changes: []
+- tests/test_gates.py
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/test_gates.py
+  reason: T-0298 gates work maps to tests/test_gates.py
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance:
@@ -1462,9 +1612,19 @@ parent: null
 scope:
 - src/frob/serve/**
 - src/frob/**
-- docs/**
 - tickets.md
-scope_changes: []
+- docs/modules/serve.md
+scope_changes:
+- op: remove
+  glob: docs/**
+  reason: 'scope hygiene (T-0455): narrow speculative docs/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: docs/modules/serve.md
+  reason: T-0321 serve work maps to docs/modules/serve.md
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance: []
@@ -1549,9 +1709,19 @@ scope:
 - src/frob/app/**
 - src/frob/testing/**
 - src/frob/serve/**
-- tests/**
 - tickets.md
-scope_changes: []
+- tests/test_app.py
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/test_app.py
+  reason: T-0322 app work maps to tests/test_app.py
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance: []
@@ -1572,9 +1742,19 @@ parent: null
 scope:
 - src/frob/gates/**
 - src/frob/testing/**
-- tests/**
 - tickets.md
-scope_changes: []
+- tests/test_gates.py
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/test_gates.py
+  reason: T-0324 gates work maps to tests/test_gates.py
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance: []
@@ -1596,9 +1776,19 @@ parent: null
 scope:
 - src/frob/graph/**
 - src/frob/serve/**
-- docs/**
 - tickets.md
-scope_changes: []
+- docs/modules/graph.md
+scope_changes:
+- op: remove
+  glob: docs/**
+  reason: 'scope hygiene (T-0455): narrow speculative docs/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: docs/modules/graph.md
+  reason: T-0325 graph work maps to docs/modules/graph.md
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance: []
@@ -1619,10 +1809,20 @@ parent: null
 scope:
 - src/frob/arch/**
 - src/frob/lang/**
-- tests/**
 - docs/modules/arch.md
 - tickets.md
-scope_changes: []
+- tests/unit/test_arch.py
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/unit/test_arch.py
+  reason: T-0329 arch work maps to tests/unit/test_arch.py
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance: []
@@ -1643,10 +1843,20 @@ parent: null
 scope:
 - src/frob/arch/**
 - src/frob/graph/**
-- tests/**
 - docs/modules/arch.md
 - tickets.md
-scope_changes: []
+- tests/unit/test_arch.py
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/unit/test_arch.py
+  reason: T-0330 arch work maps to tests/unit/test_arch.py
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance: []
@@ -1682,10 +1892,20 @@ parent: null
 scope:
 - src/frob/strata/**
 - strata-core/**
-- tests/**
 - docs/strata/**
 - tickets.md
-scope_changes: []
+- tests/unit/strata/
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/unit/strata/
+  reason: T-0331 strata work maps to tests/unit/strata/
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance: []
@@ -1737,10 +1957,20 @@ blocked_by: []
 parent: T-0330
 scope:
 - src/frob/arch/**
-- tests/**
 - docs/modules/arch.md
 - tickets.md
-scope_changes: []
+- tests/unit/test_arch.py
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/unit/test_arch.py
+  reason: T-0332 arch work maps to tests/unit/test_arch.py
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance: []
@@ -1785,9 +2015,19 @@ scope:
 - src/frob/gates/**
 - src/frob/tickets/**
 - src/frob/excludes.py
-- tests/**
 - tickets.md
-scope_changes: []
+- tests/test_gates.py
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/test_gates.py
+  reason: T-0335 gates work maps to tests/test_gates.py
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance:
@@ -1816,10 +2056,30 @@ scope:
 - src/frob/tickets/**
 - src/frob/app/**
 - src/frob/release/**
-- tests/**
-- docs/**
 - tickets.md
-scope_changes: []
+- tests/unit/test_ticket_store.py
+- docs/modules/tickets.md
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/unit/test_ticket_store.py
+  reason: T-0338 tickets work maps to tests/unit/test_ticket_store.py
+  actor: logan
+  at: '2026-07-20'
+- op: remove
+  glob: docs/**
+  reason: 'scope hygiene (T-0455): narrow speculative docs/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: T-0338 tickets work maps to docs/modules/tickets.md
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance:
@@ -1856,10 +2116,30 @@ scope:
 - src/frob/vet/**
 - src/frob/lang/**
 - src/frob/strata/**
-- docs/**
-- tests/**
 - tickets.md
-scope_changes: []
+- docs/modules/vet.md
+- tests/test_vet.py
+scope_changes:
+- op: remove
+  glob: docs/**
+  reason: 'scope hygiene (T-0455): narrow speculative docs/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: docs/modules/vet.md
+  reason: T-0339 vet work maps to docs/modules/vet.md
+  actor: logan
+  at: '2026-07-20'
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/test_vet.py
+  reason: T-0339 vet work maps to tests/test_vet.py
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance:
@@ -1960,10 +2240,30 @@ scope:
 - src/frob/strata/**
 - src/frob/vet/**
 - src/frob/graph/**
-- docs/**
-- tests/**
 - tickets.md
-scope_changes: []
+- docs/modules/strata.md
+- tests/unit/strata/
+scope_changes:
+- op: remove
+  glob: docs/**
+  reason: 'scope hygiene (T-0455): narrow speculative docs/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: docs/modules/strata.md
+  reason: T-0341 strata work maps to docs/modules/strata.md
+  actor: logan
+  at: '2026-07-20'
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/unit/strata/
+  reason: T-0341 strata work maps to tests/unit/strata/
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance:
@@ -2007,9 +2307,19 @@ scope:
 - docs/design/**
 - src/frob/strata/**
 - src/frob/arch/**
-- tests/**
 - tickets.md
-scope_changes: []
+- tests/unit/strata/
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/unit/strata/
+  reason: T-0346 strata work maps to tests/unit/strata/
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance:
@@ -2049,9 +2359,29 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/gates/**
-- tests/**
-- docs/**
-scope_changes: []
+- tests/test_gates.py
+- docs/modules/gates.md
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/test_gates.py
+  reason: T-0348 gates work maps to tests/test_gates.py
+  actor: logan
+  at: '2026-07-20'
+- op: remove
+  glob: docs/**
+  reason: 'scope hygiene (T-0455): narrow speculative docs/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: docs/modules/gates.md
+  reason: T-0348 gates work maps to docs/modules/gates.md
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance: []
@@ -2073,9 +2403,29 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/gates/**
-- tests/**
-- docs/**
-scope_changes: []
+- tests/test_gates.py
+- docs/modules/gates.md
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/test_gates.py
+  reason: T-0349 gates work maps to tests/test_gates.py
+  actor: logan
+  at: '2026-07-20'
+- op: remove
+  glob: docs/**
+  reason: 'scope hygiene (T-0455): narrow speculative docs/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: docs/modules/gates.md
+  reason: T-0349 gates work maps to docs/modules/gates.md
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance: []
@@ -2095,9 +2445,29 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/gates/**
-- tests/**
-- docs/**
-scope_changes: []
+- tests/test_gates.py
+- docs/modules/gates.md
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/test_gates.py
+  reason: T-0350 gates work maps to tests/test_gates.py
+  actor: logan
+  at: '2026-07-20'
+- op: remove
+  glob: docs/**
+  reason: 'scope hygiene (T-0455): narrow speculative docs/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: docs/modules/gates.md
+  reason: T-0350 gates work maps to docs/modules/gates.md
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance: []
@@ -2119,9 +2489,29 @@ parent: null
 scope:
 - src/frob/gates/**
 - src/frob/strata/**
-- tests/**
-- docs/**
-scope_changes: []
+- tests/test_gates.py
+- docs/modules/gates.md
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/test_gates.py
+  reason: T-0351 gates work maps to tests/test_gates.py
+  actor: logan
+  at: '2026-07-20'
+- op: remove
+  glob: docs/**
+  reason: 'scope hygiene (T-0455): narrow speculative docs/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: docs/modules/gates.md
+  reason: T-0351 gates work maps to docs/modules/gates.md
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance: []
@@ -2142,9 +2532,29 @@ parent: null
 scope:
 - src/frob/gates/**
 - src/frob/lang/**
-- tests/**
-- docs/**
-scope_changes: []
+- tests/test_gates.py
+- docs/modules/gates.md
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/test_gates.py
+  reason: T-0352 gates work maps to tests/test_gates.py
+  actor: logan
+  at: '2026-07-20'
+- op: remove
+  glob: docs/**
+  reason: 'scope hygiene (T-0455): narrow speculative docs/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: docs/modules/gates.md
+  reason: T-0352 gates work maps to docs/modules/gates.md
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance: []
@@ -3360,8 +3770,18 @@ scope:
 - src/frob/strata/
 - src/frob/gates/
 - docs/design/registry/weaknesses.yaml
-- tests/**
-scope_changes: []
+- tests/unit/strata/
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/unit/strata/
+  reason: T-0439 strata work maps to tests/unit/strata/
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance: []
@@ -3469,9 +3889,29 @@ parent: null
 scope:
 - src/frob/gates/_docblocks.py
 - frob.toml
-- tests/**
-- docs/**
-scope_changes: []
+- tests/test_gates.py
+- docs/modules/gates.md
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/test_gates.py
+  reason: T-0443 gates work maps to tests/test_gates.py
+  actor: logan
+  at: '2026-07-20'
+- op: remove
+  glob: docs/**
+  reason: 'scope hygiene (T-0455): narrow speculative docs/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: docs/modules/gates.md
+  reason: T-0443 gates work maps to docs/modules/gates.md
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance: []
@@ -3513,8 +3953,18 @@ parent: null
 scope:
 - frob-core/src/lib.rs
 - src/frob/dup/_pipeline.py
-- tests/**
-scope_changes: []
+- tests/test_dup.py
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/test_dup.py
+  reason: T-0447 dup work maps to tests/test_dup.py
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance: []
@@ -3537,8 +3987,18 @@ scope:
 - src/frob/gates/invariants.py
 - src/frob/gates/
 - docs/
-- tests/**
-scope_changes: []
+- tests/test_gates.py
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/test_gates.py
+  reason: T-0452 gates work maps to tests/test_gates.py
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance: []
@@ -3599,8 +4059,18 @@ scope:
 - src/frob/app/ticket_runner.py
 - src/frob/__main__.py
 - docs/
-- tests/**
-scope_changes: []
+- tests/unit/test_ticket_store.py
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/unit/test_ticket_store.py
+  reason: T-0454 tickets work maps to tests/unit/test_ticket_store.py
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance: []
@@ -3735,8 +4205,18 @@ scope:
 - src/frob/app/ticket_runner.py
 - src/frob/__main__.py
 - docs/
-- tests/**
-scope_changes: []
+- tests/unit/test_ticket_store.py
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/unit/test_ticket_store.py
+  reason: T-0456 tickets work maps to tests/unit/test_ticket_store.py
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance: []
@@ -3796,8 +4276,18 @@ parent: null
 scope:
 - src/frob/gates/
 - src/frob/render/
-- tests/**
-scope_changes: []
+- tests/test_gates.py
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/test_gates.py
+  reason: T-0459 gates work maps to tests/test_gates.py
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance: []
@@ -3846,8 +4336,18 @@ parent: null
 scope:
 - src/frob/render/
 - docs/modules/render.md
-- tests/**
-scope_changes: []
+- tests/test_render.py
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/test_render.py
+  reason: T-0460 render work maps to tests/test_render.py
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance: []
@@ -3868,8 +4368,18 @@ parent: null
 scope:
 - src/frob/
 - src/frob/app/
-- tests/**
-scope_changes: []
+- tests/test_app.py
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/test_app.py
+  reason: T-0461 app work maps to tests/test_app.py
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance: []
@@ -3892,8 +4402,18 @@ scope:
 - src/frob/gates/invariants.py
 - src/frob/gates/
 - docs/
-- tests/**
-scope_changes: []
+- tests/test_gates.py
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/test_gates.py
+  reason: T-0462 gates work maps to tests/test_gates.py
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance: []
@@ -3915,8 +4435,18 @@ parent: null
 scope:
 - docs/guides/agent-playbook.md
 - src/frob/gates/
-- tests/**
-scope_changes: []
+- tests/test_gates.py
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/test_gates.py
+  reason: T-0465 gates work maps to tests/test_gates.py
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance: []
@@ -3973,8 +4503,18 @@ parent: null
 scope:
 - src/frob/gates/__init__.py
 - docs/modules/gates.md
-- tests/**
-scope_changes: []
+- tests/test_gates.py
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/test_gates.py
+  reason: T-0470 gates work maps to tests/test_gates.py
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance: []
@@ -3998,8 +4538,18 @@ scope:
 - src/frob/app/ticket_runner.py
 - src/frob/__main__.py
 - docs/modules/tickets.md
-- tests/**
-scope_changes: []
+- tests/test_app.py
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/test_app.py
+  reason: T-0472 app work maps to tests/test_app.py
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance: []
@@ -4172,10 +4722,20 @@ parent: null
 scope:
 - src/frob/dup/_template.py
 - src/frob/dup/_pipeline.py
-- tests/**
 - docs/modules/dup.md
 - tickets.md
-scope_changes: []
+- tests/test_dup.py
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/test_dup.py
+  reason: T-draft-aa52c66f dup work maps to tests/test_dup.py
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance: []
@@ -4195,8 +4755,18 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/check/_python.py
-- tests/**
-scope_changes: []
+- tests/test_check.py
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/test_check.py
+  reason: T-draft-b4a0b4be check work maps to tests/test_check.py
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance: []
@@ -4218,9 +4788,19 @@ parent: null
 scope:
 - src/frob/gates/__init__.py
 - src/frob/graph/**
-- tests/**
 - docs/modules/gates.md
-scope_changes: []
+- tests/test_gates.py
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'scope hygiene (T-0455): narrow speculative tests/** to mirrored path'
+  actor: logan
+  at: '2026-07-20'
+- op: add
+  glob: tests/test_gates.py
+  reason: T-draft-e6aafc2f gates work maps to tests/test_gates.py
+  actor: logan
+  at: '2026-07-20'
 evidence: []
 attachments: []
 acceptance: []
