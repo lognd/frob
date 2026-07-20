@@ -8656,6 +8656,30 @@ acceptance: []
 threat: null
 ```
 
+<!-- ticket:T-0479 -->
+```yaml
+id: T-0479
+title: 'frob ticket land: auto-reconcile the ledger and non-owned code conflicts so
+  no manual restore recipe is ever needed -- (a) splice ONLY the landed ticket''s
+  own block onto main''s CURRENT tickets.md (restore-from-main + single-writer apply
+  of state+done-report+evidence), never carrying the worktree''s stale sibling-ticket
+  states; (b) auto-resolve merge conflicts in files OUTSIDE the ticket''s declared
+  scope by taking main''s version (the worktree never legitimately changed them);
+  only surface conflicts in IN-SCOPE files for manual resolution. Implements the coordinator''s
+  hand-run restore recipe (playbook 10b) as land behavior. Subsumes T-0475.'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-20'
+blocked_by: []
+parent: null
+scope: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+
 <!-- ticket:T-draft-aa52c66f -->
 ```yaml
 id: T-draft-aa52c66f
