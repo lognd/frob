@@ -62,6 +62,7 @@ from ._selfconform import (
 from ._threat import (
     ALL_CATALOG,
     CWE_CATALOG,
+    CWE_TOP_25_OUT_OF_SCOPE,
     DEFAULT_BENIGN_CAPABILITIES,
     QUALITY_CATALOG,
     QUALITY_OUT_OF_SCOPE,
@@ -73,6 +74,7 @@ from ._threat import (
     WeaknessEntry,
     check_capability_completeness,
     check_catalog_completeness,
+    check_caught_by_integrity,
     check_discharge_completeness,
 )
 from ._waive import (
@@ -453,6 +455,28 @@ def _threat_and_quality_gaps(
     return Ok((gaps, checked))
 
 
+def _caught_by_gaps(
+    known_rule_ids: frozenset[str],
+    benign: tuple[BenignCapability, ...],
+) -> Result[tuple[list[FamilyGap], list[str]], StrataError]:
+    """THREAT006 (T-0382) gaps: `caught_by` integrity across every built-in
+    `OutOfScopeEntry`/`BenignCapability` this module ships, security AND
+    quality families' out-of-scope tuples plus the full `benign` set
+    (`DEFAULT_BENIGN_CAPABILITIES` plus whatever the repo/caller adds) --
+    model-independent (a catalog-level fact, like THREAT001), so this runs
+    once per audit rather than once per view."""
+    result = check_caught_by_integrity(
+        out_of_scope=CWE_TOP_25_OUT_OF_SCOPE + QUALITY_OUT_OF_SCOPE,
+        benign=benign,
+        known_rule_ids=known_rule_ids,
+        catalog=ALL_CATALOG,
+    )
+    if result.is_err:
+        return Err(result.danger_err)
+    gaps = list(_threat_gaps("security", "caught_by", result.danger_ok))
+    return Ok((gaps, ["security:caught_by"]))
+
+
 def _compliance_pii_lint_fingerprint_gaps(
     model: KernelModel, compliance_views: tuple[str, ...]
 ) -> Result[tuple[list[FamilyGap], list[str]], StrataError]:
@@ -571,6 +595,7 @@ def evaluate_exhaustiveness(
     quality_views: tuple[str, ...] = DEFAULT_QUALITY_VIEWS,
     compliance_views: tuple[str, ...] = DEFAULT_COMPLIANCE_VIEWS,
     benign: tuple[BenignCapability, ...] = DEFAULT_BENIGN_CAPABILITIES,
+    known_rule_ids: frozenset[str] = frozenset(),
 ) -> Result[AuditReport, StrataError]:
     """`frob sys audit`'s model-side entrypoint: the full three-part
     exhaustiveness conjunction (THREAT001-003 for security AND quality,
@@ -579,12 +604,17 @@ def evaluate_exhaustiveness(
     detection (module docstring). `benign` defaults to
     `DEFAULT_BENIGN_CAPABILITIES` (T-0150) so tier-2 `may` kinds with no
     CWE-catalog analog do not fail THREAT002 by default; a caller wanting
-    the pre-T-0150 strict behavior passes `benign=()`. Fails closed: an
-    unknown view name in any family propagates as
+    the pre-T-0150 strict behavior passes `benign=()`. `known_rule_ids`
+    (T-0382) is the live gate-rule-id set THREAT006's `caught_by`
+    verification checks rule-id-shaped references against
+    (`frob.gates.known_gate_rule_ids()`) -- defaults to empty (no rule-id
+    reference can resolve) since this package cannot import `frob.gates`
+    itself (`_threat.py::check_caught_by_integrity`'s docstring). Fails
+    closed: an unknown view name in any family propagates as
     `Err(StrataError.UnknownReference)` rather than being silently
     skipped, matching every other exhaustiveness check in this package."""
     all_result = _collect_all_family_gaps(
-        model, security_views, quality_views, compliance_views, benign
+        model, security_views, quality_views, compliance_views, benign, known_rule_ids
     )
     if all_result.is_err:
         return Err(all_result.danger_err)
@@ -601,6 +631,7 @@ def _collect_all_family_gaps(
     quality_views: tuple[str, ...],
     compliance_views: tuple[str, ...],
     benign: tuple[BenignCapability, ...],
+    known_rule_ids: frozenset[str] = frozenset(),
 ) -> Result[
     tuple[
         list[FamilyGap],
@@ -611,7 +642,7 @@ def _collect_all_family_gaps(
     StrataError,
 ]:
     """Every family's gaps (threat/quality, compliance/pii/lint/
-    fingerprint, host), in order."""
+    fingerprint, caught_by, host), in order."""
     gaps: list[FamilyGap] = []
     checked: list[str] = []
 
@@ -623,6 +654,13 @@ def _collect_all_family_gaps(
     family_gaps, family_checked = family_result.danger_ok
     gaps.extend(family_gaps)
     checked.extend(family_checked)
+
+    caught_by_result = _caught_by_gaps(known_rule_ids, benign)
+    if caught_by_result.is_err:
+        return Err(caught_by_result.danger_err)
+    caught_by_gaps, caught_by_checked = caught_by_result.danger_ok
+    gaps.extend(caught_by_gaps)
+    checked.extend(caught_by_checked)
 
     other_result = _compliance_pii_lint_fingerprint_gaps(model, compliance_views)
     if other_result.is_err:

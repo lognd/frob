@@ -75,6 +75,7 @@ code-level half phase B deferred, in two independent pieces:
 
 from __future__ import annotations
 
+import re
 import tomllib
 from pathlib import Path
 
@@ -1186,6 +1187,105 @@ def check_capability_completeness(
         for kind in kinds:
             if kind not in known and kind not in excused:
                 violations.append(_capability_violation(kind, node.id))
+    return Ok(tuple(violations))
+
+
+#: T-0382: a `caught_by` string is honest about naming NO compensating
+#: control -- "not caught anywhere yet" -- when it starts with this marker,
+#: e.g. `"none -- no CWE_CATALOG entry targets ..."` (many existing
+#: `DEFAULT_BENIGN_CAPABILITIES`/`*_OUT_OF_SCOPE` entries use this exact
+#: convention already). `check_caught_by_integrity` never fails an honest
+#: "none" -- fabricating a control reference to dodge the check would be
+#: worse than admitting the gap; converting each honest "none" into a real
+#: enforced check or a genuine compensating control is T-0383's job, not
+#: this one's.
+# frob:doc docs/strata/threat.md#the-exhaustiveness-proof-the-point
+CAUGHT_BY_NONE_MARKER = "none"
+
+#: A rule-id-shaped token: 2-10 uppercase letters then 3+ digits, matching
+#: this repo's own gate-rule naming convention (`THREAT002`, `SEC110`,
+#: `PII010`, ...) -- `frob.gates._KNOWN_GATE_RULES`'s own id shape. Kept
+#: local to this module (no import from `frob.gates`, which already
+#: imports `frob.strata` -- importing back would cycle); callers that know
+#: the live gate-rule set (`frob.gates`) pass it in as `known_rule_ids`.
+_RULE_ID_TOKEN = re.compile(r"\b([A-Z]{2,10}[0-9]{3})\b")
+
+#: A CWE-id-shaped token, e.g. "CWE-78" -- verified against this module's
+#: own `WeaknessEntry` catalogs (`ALL_CATALOG` by default), never a
+#: separately hand-maintained id list (charter: no duplication).
+_CWE_ID_TOKEN = re.compile(r"\b(CWE-\d+)\b")
+
+
+def _caught_by_referenced_tokens(
+    caught_by: str,
+) -> tuple[frozenset[str], frozenset[str]]:
+    """Every rule-id-shaped and CWE-id-shaped token a `caught_by` string
+    mentions, as `(rule_ids, cwe_ids)` -- the set `check_caught_by_
+    integrity` verifies each actually resolves to a real control."""
+    return (
+        frozenset(_RULE_ID_TOKEN.findall(caught_by)),
+        frozenset(_CWE_ID_TOKEN.findall(caught_by)),
+    )
+
+
+def _caught_by_violation(
+    entry_id: str, caught_by: str, unresolved: frozenset[str]
+) -> ThreatViolation:
+    """THREAT006 violation helper: `caught_by` names a rule id or CWE id
+    that resolves to no real registered control -- deny-by-default, an
+    excuse referencing a fabricated control is worse than one honestly
+    naming none at all (`CAUGHT_BY_NONE_MARKER`)."""
+    named = ", ".join(sorted(unresolved))
+    _log.warning(
+        "threat: THREAT006 %s caught_by %r references unknown control(s): %s",
+        entry_id,
+        caught_by,
+        named,
+    )
+    return ThreatViolation(
+        rule="THREAT006",
+        cwe=entry_id if entry_id.startswith("CWE-") else "",
+        detail=f"{entry_id} caught_by {caught_by!r} references unknown "
+        f"control(s) that do not exist: {named}",
+    )
+
+
+# frob:doc docs/strata/threat.md#the-exhaustiveness-proof-the-point
+def check_caught_by_integrity(
+    out_of_scope: tuple[OutOfScopeEntry, ...] = (),
+    benign: tuple[BenignCapability, ...] = (),
+    known_rule_ids: frozenset[str] = frozenset(),
+    catalog: tuple[WeaknessEntry, ...] = ALL_CATALOG,
+) -> Result[tuple[ThreatViolation, ...], StrataError]:
+    """THREAT006 (T-0382): every `OutOfScopeEntry`/`BenignCapability.
+    caught_by` that names a rule-id- or CWE-id-shaped token must reference
+    a control that actually exists -- a typo'd or fabricated reference is
+    a violation, deny-by-default (an excused CWE/capability "caught
+    nowhere" must be visible, not silently trusted, docs/strata/threat.md
+    #the-exhaustiveness-proof-the-point). An honest `"none -- ..."`
+    `caught_by` (`CAUGHT_BY_NONE_MARKER`) never fails this check -- it is
+    already declaring the gap, not hiding it; free text with no
+    recognizable rule-id/CWE-id token is not checked further (this pass
+    verifies REFERENCES resolve, it does not grade prose).
+
+    `known_rule_ids` is the live gate-rule-id set (`frob.gates.
+    _KNOWN_GATE_RULES`) -- passed in by the caller rather than imported,
+    since `frob.gates` already imports `frob.strata` (import direction
+    would cycle otherwise). Passing the default empty set means no
+    rule-id-shaped token can ever resolve, so a caller wanting real rule-id
+    verification must supply it explicitly."""
+    cataloged_cwes = {entry.id for entry in catalog}
+    violations: list[ThreatViolation] = []
+    for entry_id, caught_by in (
+        *((e.id, e.caught_by) for e in out_of_scope),
+        *((e.kind, e.caught_by) for e in benign),
+    ):
+        if caught_by.strip().lower().startswith(CAUGHT_BY_NONE_MARKER):
+            continue
+        rule_ids, cwe_ids = _caught_by_referenced_tokens(caught_by)
+        unresolved = (rule_ids - known_rule_ids) | (cwe_ids - cataloged_cwes)
+        if unresolved:
+            violations.append(_caught_by_violation(entry_id, caught_by, unresolved))
     return Ok(tuple(violations))
 
 
