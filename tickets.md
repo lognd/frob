@@ -1106,7 +1106,7 @@ Epic already satisfied by landed child tickets: Phase 1 survey (docs/modules/dup
 ```yaml
 id: T-0200
 title: add real kill-switch/feature-flag mechanism for exec/net capabilities (checker/core/stratamod/vet)
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-18'
@@ -1130,7 +1130,9 @@ scope_changes:
   reason: T-0200 process work maps to tests/test_process.py
   actor: logan
   at: '2026-07-20'
-evidence: []
+evidence:
+- tests/unit/test_process_guard.py::TestExecEnabled::test_truthy_values_disable
+- tests/unit/test_process_guard.py::TestGuardedSubprocessRun::test_disabled_returns_err_without_spawning
 attachments: []
 acceptance: []
 threat: null
