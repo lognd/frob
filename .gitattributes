@@ -11,4 +11,11 @@
 #
 #   git config merge.frob-ledger.name "frob ticket ledger splice"
 #   git config merge.frob-ledger.driver "frob ticket merge-driver %O %A %B"
-tickets.md merge=frob-ledger
+#
+# T-0480: the pattern MUST be anchored with a leading slash so it matches
+# ONLY the root ledger. An unanchored `tickets.md` also matches
+# `docs/modules/tickets.md` (and any other file so named), and the ledger
+# driver then truncates that documentation to a bare 3-line ledger header
+# with NO conflict markers -- silent ~900-line doc loss during any merge.
+/tickets.md merge=frob-ledger
+/tickets-archive.md merge=frob-ledger
