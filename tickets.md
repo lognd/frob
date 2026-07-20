@@ -1411,7 +1411,7 @@ Root cause of a 25-error main-red incident 2026-07-19: both arch-burndown agents
 ```yaml
 id: T-0320
 title: 'COV002 grace: require an actual open->done ticket transition, not just marker-in-hunk'
-state: in-progress
+state: done
 kind: bug
 origin: auditor
 created: '2026-07-19'
@@ -1422,7 +1422,11 @@ scope:
 - tests/**
 - tickets.md
 scope_changes: []
-evidence: []
+evidence:
+- tests/test_gates.py::TestCoverageGate::test_cov002_done_ticket_covers_own_closing_diff
+- tests/test_gates.py::TestCoverageGate::test_cov002_marker_touch_without_state_transition_still_fires
+- tests/test_gates.py::TestCoverageGate::test_cov002_done_ticket_without_grace_still_fires
+- tests/test_gates.py::TestCoverageGate::test_cov002_stale_done_ticket_unrelated_tickets_md_touch_still_fires
 attachments: []
 acceptance:
 - given a symbol bound to an ALREADY-DONE (stale) ticket and a diff that edits that
@@ -1434,6 +1438,16 @@ acceptance:
 threat: null
 ```
 Follow-up from T-0214 (reviewer-recommended, not blocking). T-0214 closed the exploitable COV002 grace bypass by requiring the bound DONE tickets own <!-- ticket:T-#### --> marker line to fall inside the diffs tickets.md hunk. That closes the easy/invisible case (unrelated ticket close elsewhere in the commit). Residual narrow gap: marker-in-hunk is a PROXY for "closing" -- it does not verify a state TRANSITION, so any edit to a stale DONE tickets own entry that touches its marker line (typo fix in its Done report, evidence append, reformat) grants grace to a bound-but-uncovered stale symbol. Narrow + visible in diff review, hence not blocking, but should be tightened: compare the tickets state in the diffs BEFORE vs AFTER tickets.md (open-before / done-after) rather than mere marker-span overlap. Requires diffing ledger state pre/post within the gate.
+
+## Done report
+
+COV002 grace now requires a provable in-progress->done transition at diff.base, fail-closed. Reviewer approved.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+(no evidence recorded)
 
 <!-- ticket:T-0321 -->
 ```yaml
@@ -3913,7 +3927,7 @@ threat: null
 ```yaml
 id: T-0469
 title: 'frob.fuzz v1 limits: process-global generator registry and example-count budget'
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-07-20'
@@ -3922,12 +3936,26 @@ parent: null
 scope:
 - src/frob/fuzz/**
 scope_changes: []
-evidence: []
+evidence:
+- tests/test_fuzz.py::TestResolve::test_unknown_type_is_no_generator
+- tests/test_fuzz.py::TestFuzzRegistry::test_scoped_registry_registration_is_isolated
+- tests/test_fuzz.py::TestFuzzRegistry::test_register_accepts_explicit_registry_kwarg
+- tests/test_fuzz.py::TestRunFuzz::test_budget_s_is_a_real_wall_clock_cutoff
 attachments: []
 acceptance: []
 threat: null
 ```
 Two genuine v1 deferrals in frob.fuzz, formerly parked on dropped T-0002 then done-tracker T-0300 (both closed). Track here as live open work: (1) src/frob/fuzz/_arbitrary.py generator registry is process-global rather than per-project scoped; (2) src/frob/fuzz/_run.py budget_s is interpreted as an example count, not a wall-clock budget. Rebind the two frob:todo directives here.
+
+## Done report
+
+FuzzRegistry scoping + wall-clock budget with hard example ceiling. Reviewer approved.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+(no evidence recorded)
 
 <!-- ticket:T-0470 -->
 ```yaml
