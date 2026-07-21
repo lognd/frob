@@ -46,15 +46,21 @@ DISCIPLINE (ticket-mandated, non-negotiable):
   fires PII010 against a synthetic fixture class -- a registry entry with
   no firing fixture fails the test (T-0182 style).
 
+T-0348 (family 2, DB/DDL schema scanning) extended PII010 to sqlalchemy
+ORM `Column(...)` declarations (`_scan_orm_columns`) and raw-SQL `CREATE
+TABLE` string literals embedded in tracked `.py` files (`_scan_ddl_
+strings`), reusing the same `FIELD_SIGNATURES` table -- schema headers are
+the highest-value PII surface per the umbrella ticket body.
+
 Deliberately NOT built this pass (disclosed, not silently dropped -- see
 this ticket's Done report for the filed follow-on ticket ids):
-family (2) database/DDL schema scanning (`CREATE TABLE`, alembic
-migrations, sqlalchemy `Column(...)`), family (4) email-shape value
-detection (structural `email.utils.parseaddr`-based, explicitly NOT regex
-per the ticket body), family (5) keyword-only suggestion-severity sweep of
-identifiers/comments, and non-Python languages (TS/Rust field-shape
-equivalents). `PII010`/`SEC110` cover exactly families (1) and (3), scoped
-to Python via `frob.lang`'s existing parse surface.
+family (4) email-shape value detection (structural `email.utils.
+parseaddr`-based, explicitly NOT regex per the ticket body), family (5)
+keyword-only suggestion-severity sweep of identifiers/comments, and non-
+Python languages (TS/Rust field-shape equivalents, and non-Python DDL
+sources such as `.sql` migration files). `PII010`/`SEC110` cover exactly
+families (1), (2), and (3), scoped to Python via `frob.lang`'s existing
+parse surface.
 
 T-0430 (`docs/design/registry/pii.yaml`'s six deferred sections) extended
 `FIELD_SIGNATURES` toward GDPR Art.9(1) special-category / CCPA / HIPAA
@@ -77,6 +83,7 @@ dropped.
 from __future__ import annotations
 
 import ast
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -345,6 +352,154 @@ def _scan_python_fields(tree: ast.Module, rel_path: str) -> tuple[Violation, ...
     return tuple(violations)
 
 
+#: `Column(...)`/`sa.Column(...)` call-name fragment (family 2, T-0348):
+#: sqlalchemy ORM declarative-model column declarations. Matched on the
+#: bare dotted-suffix, same posture as `_decorator_name`'s bare-name match
+#: (no import-alias resolution attempted -- a local, testable surface).
+_COLUMN_CALL_NAME = "Column"
+
+
+def _is_column_call(node: ast.Call) -> bool:
+    """Whether `node` is a `Column(...)`/`sa.Column(...)`/`sqlalchemy.
+    Column(...)` call (T-0348 family 2: sqlalchemy ORM column declarations)."""
+    func = node.func
+    if isinstance(func, ast.Name):
+        return func.id == _COLUMN_CALL_NAME
+    if isinstance(func, ast.Attribute):
+        return func.attr == _COLUMN_CALL_NAME
+    return False
+
+
+def _column_call_string_name(node: ast.Call) -> str | None:
+    """The literal column-name string of an alembic-style positional
+    `Column("name", ...)` / `sa.Column("name", ...)` call (`op.create_
+    table`'s column-list form), or `None` if the first arg is not a bare
+    string literal (e.g. the ORM declarative form, which has no name arg
+    at all -- the assignment target name covers that case instead)."""
+    if not node.args:
+        return None
+    return _literal_str(node.args[0])
+
+
+def _scan_orm_columns(tree: ast.Module, rel_path: str) -> list[Violation]:
+    """PII010 over `name = Column(...)` declarative-model assignments and
+    `Column("name", ...)` alembic-style positional column declarations
+    (T-0348 family 2), matched against `FIELD_SIGNATURES` the same way a
+    dataclass/pydantic field name is."""
+    violations: list[Violation] = []
+    for node in ast.walk(tree):
+        if not (isinstance(node, ast.Call) and _is_column_call(node)):
+            continue
+        string_name = _column_call_string_name(node)
+        if string_name is not None:
+            sig = _field_name_hit(string_name)
+            if sig is not None:
+                violations.append(
+                    _pii010_violation(rel_path, node.lineno, string_name, sig)
+                )
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Assign):
+            continue
+        if not (isinstance(node.value, ast.Call) and _is_column_call(node.value)):
+            continue
+        for target in node.targets:
+            if isinstance(target, ast.Name):
+                sig = _field_name_hit(target.id)
+                if sig is not None:
+                    violations.append(
+                        _pii010_violation(rel_path, node.lineno, target.id, sig)
+                    )
+    return violations
+
+
+#: `CREATE TABLE ... (col1 TYPE, col2 TYPE, ...)` column-list extraction
+#: (T-0348 family 2: raw SQL DDL embedded as a Python string literal, e.g.
+#: a raw-SQL alembic migration's `op.execute("CREATE TABLE ...")`).
+_CREATE_TABLE_RE = re.compile(
+    r"CREATE\s+TABLE\s+[\"'`]?\w+[\"'`]?\s*\((.*)\)", re.IGNORECASE | re.DOTALL
+)
+
+
+def _split_top_level_commas(body: str) -> list[str]:
+    """Split a `CREATE TABLE(...)` column-list body on top-level commas
+    only -- commas nested inside a `CHECK(...)`/`DEFAULT(...)`/type-param
+    parenthesized clause (e.g. `NUMERIC(10, 2)`) must not split a single
+    column definition in two."""
+    parts: list[str] = []
+    depth = 0
+    current: list[str] = []
+    for ch in body:
+        if ch == "(":
+            depth += 1
+            current.append(ch)
+        elif ch == ")":
+            depth -= 1
+            current.append(ch)
+        elif ch == "," and depth == 0:
+            parts.append("".join(current))
+            current = []
+        else:
+            current.append(ch)
+    if current:
+        parts.append("".join(current))
+    return parts
+
+
+#: DDL table-constraint keywords a column-list entry may start with instead
+#: of a column name (`PRIMARY KEY (...)`, `FOREIGN KEY (...)`, etc.) -- these
+#: are not column names and must not be matched against `FIELD_SIGNATURES`.
+_DDL_CONSTRAINT_KEYWORDS = frozenset(
+    {"PRIMARY", "FOREIGN", "UNIQUE", "CHECK", "CONSTRAINT"}
+)
+
+
+def _ddl_column_names(sql: str) -> list[str]:
+    """Every column NAME token in the first `CREATE TABLE(...)` statement
+    found in `sql`, skipping table-constraint entries (`_DDL_CONSTRAINT_
+    KEYWORDS`) -- a small structural parse, not a full SQL grammar (module
+    docstring precedent: `_pii_structural` favors a targeted, testable
+    surface over a general parser)."""
+    match = _CREATE_TABLE_RE.search(sql)
+    if match is None:
+        return []
+    names: list[str] = []
+    for entry in _split_top_level_commas(match.group(1)):
+        tokens = entry.strip().split()
+        if not tokens:
+            continue
+        first = tokens[0].strip('"`[]')
+        if first.upper() in _DDL_CONSTRAINT_KEYWORDS:
+            continue
+        names.append(first)
+    return names
+
+
+def _scan_ddl_strings(tree: ast.Module, rel_path: str) -> list[Violation]:
+    """PII010 over `CREATE TABLE` column names embedded in string-literal
+    constants anywhere in `tree` (T-0348 family 2: raw-SQL migrations)."""
+    violations: list[Violation] = []
+    for node in ast.walk(tree):
+        if not (isinstance(node, ast.Constant) and isinstance(node.value, str)):
+            continue
+        for column_name in _ddl_column_names(node.value):
+            sig = _field_name_hit(column_name)
+            if sig is not None:
+                violations.append(
+                    _pii010_violation(rel_path, node.lineno, column_name, sig)
+                )
+    return violations
+
+
+# frob:tests tests/test_pii_structural_gate.py::TestDdlSchema.test_orm_column_password_fires  # noqa: E501
+def _scan_python_ddl(tree: ast.Module, rel_path: str) -> tuple[Violation, ...]:
+    """PII010 over sqlalchemy ORM `Column(...)` declarations and raw-SQL
+    `CREATE TABLE` string literals (T-0348 family 2: DB/DDL schema
+    scanning, deferred from T-0207)."""
+    violations = _scan_orm_columns(tree, rel_path)
+    violations.extend(_scan_ddl_strings(tree, rel_path))
+    return tuple(violations)
+
+
 #: Attribute/function names an env-access call site's dotted path may end
 #: in, for `_is_env_access` (corpus family 3: "os.environ[...]/os.getenv/
 #: load_dotenv() ... process.env, std::env::var" -- Python subset here).
@@ -525,6 +680,7 @@ def pii_structural_gate(root: Path) -> tuple[Violation, ...]:
         scanned += 1
         violations.extend(_scan_python_fields(tree, rel_path))
         violations.extend(_scan_python_env_access(tree, rel_path))
+        violations.extend(_scan_python_ddl(tree, rel_path))
 
     _log.info(
         "pii_structural_gate: scanned %d tracked .py file(s), %d violation(s)",
@@ -540,4 +696,5 @@ __all__ = [
     "pii_structural_gate",
     "_scan_python_env_access",
     "_scan_python_fields",
+    "_scan_python_ddl",
 ]

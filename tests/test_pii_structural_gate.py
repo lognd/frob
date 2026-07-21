@@ -17,6 +17,7 @@ import pytest
 from frob.gates._pii_structural import (
     FIELD_SIGNATURES,
     _is_data_structure,
+    _scan_python_ddl,
     _scan_python_env_access,
     _scan_python_fields,
     pii_structural_gate,
@@ -156,6 +157,75 @@ class TestEnvAccess:
         src = "value = dict().get('SOME_VAR')\n"
         tree = ast.parse(src)
         violations = _scan_python_env_access(tree, "example.py")
+        assert violations == ()
+
+
+class TestDdlSchema:
+    """PII010 (T-0348 family 2): sqlalchemy ORM `Column(...)` declarations
+    and raw-SQL `CREATE TABLE` string literals."""
+
+    # frob:waive DUP001 reason="parallel test methods within \
+    # test_pii_structural_gate.py (2 sites) sharing an arrange-act scaffold \
+    # typical of exhaustive per-case coverage; extracting would obscure \
+    # per-case intent"
+    def test_orm_column_password_fires(self) -> None:
+        # frob:tests src/frob/gates/_pii_structural.py::_scan_python_ddl
+        src = (
+            "from sqlalchemy import Column, String\n\n"
+            "class User(Base):\n"
+            "    __tablename__ = 'users'\n"
+            "    password = Column(String)\n"
+        )
+        tree = ast.parse(src)
+        violations = _scan_python_ddl(tree, "example.py")
+        assert any(v.rule == "PII010" for v in violations)
+
+    def test_alembic_positional_column_ssn_fires(self) -> None:
+        src = (
+            "import sqlalchemy as sa\n"
+            "from alembic import op\n\n"
+            "op.create_table(\n"
+            "    'users',\n"
+            "    sa.Column('ssn', sa.String),\n"
+            ")\n"
+        )
+        tree = ast.parse(src)
+        violations = _scan_python_ddl(tree, "example.py")
+        assert any(v.rule == "PII010" for v in violations)
+
+    def test_raw_sql_create_table_email_fires(self) -> None:
+        src = (
+            "from alembic import op\n\n"
+            "op.execute(\n"
+            "    'CREATE TABLE users (id INTEGER PRIMARY KEY, "
+            "email VARCHAR(255), age INTEGER)'\n"
+            ")\n"
+        )
+        tree = ast.parse(src)
+        violations = _scan_python_ddl(tree, "example.py")
+        assert any(v.rule == "PII010" for v in violations)
+
+    def test_raw_sql_create_table_unrelated_columns_do_not_fire(self) -> None:
+        src = (
+            "from alembic import op\n\n"
+            "op.execute(\n"
+            "    'CREATE TABLE widgets (id INTEGER PRIMARY KEY, "
+            "width INTEGER, height INTEGER)'\n"
+            ")\n"
+        )
+        tree = ast.parse(src)
+        violations = _scan_python_ddl(tree, "example.py")
+        assert violations == ()
+
+    def test_orm_column_unrelated_field_does_not_fire(self) -> None:
+        src = (
+            "from sqlalchemy import Column, Integer\n\n"
+            "class Widget(Base):\n"
+            "    __tablename__ = 'widgets'\n"
+            "    width = Column(Integer)\n"
+        )
+        tree = ast.parse(src)
+        violations = _scan_python_ddl(tree, "example.py")
         assert violations == ()
 
 

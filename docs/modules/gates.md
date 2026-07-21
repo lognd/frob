@@ -232,14 +232,22 @@ structures and env-var access sites, drawn from
 - Self-match exclusion (T-0201 lesson): `_pii_structural.py`'s own path is
   hardcoded-excluded from the scan, so `FIELD_SIGNATURES`'s own keyword
   string literals can never be misread as a scanned field.
+- **PII010 also covers DB/DDL schema scanning (T-0348, family 2)**:
+  sqlalchemy ORM declarative `name = Column(...)` assignments and alembic-
+  style positional `Column("name", ...)` calls (`_scan_orm_columns`), plus
+  raw-SQL `CREATE TABLE(...)` column lists embedded in tracked-`.py`
+  string literals (`_scan_ddl_strings`) -- both matched against the same
+  `FIELD_SIGNATURES` table, no second registry. Schema headers are the
+  highest-value PII surface per the umbrella ticket body.
 - **Deliberately not built this pass** (see `_pii_structural.py`'s module
-  docstring and this ticket's Done report): DB/DDL schema scanning (`CREATE
-  TABLE`, sqlalchemy `Column`), structural (non-regex) email-shape value
-  detection, identifier/comment keyword-sweep at suggestion severity, and
-  non-Python language equivalents. Filed as follow-on tickets, not silently
-  dropped. A direct join from a PII010/SEC110 finding to a T-0154 `carries`
-  tag or a T-0082 `std.secrets` node (rather than a bare waiver) is likewise
-  a follow-on -- today's only discharge mechanism is the waiver.
+  docstring and this ticket's Done report): structural (non-regex)
+  email-shape value detection, identifier/comment keyword-sweep at
+  suggestion severity, non-Python language equivalents, and non-Python DDL
+  sources (`.sql` migration files). Filed as follow-on tickets, not
+  silently dropped. A direct join from a PII010/SEC110 finding to a T-0154
+  `carries` tag or a T-0082 `std.secrets` node (rather than a bare waiver)
+  is likewise a follow-on -- today's only discharge mechanism is the
+  waiver.
 
 ### Anti-orphan file-reference gate T-0396
 

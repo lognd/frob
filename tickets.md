@@ -2434,7 +2434,7 @@ User critique (2026-07-20): the corpora hedged where the mandate is to EXHAUST -
 ```yaml
 id: T-0348
 title: 'structural PII/secrets: DB/DDL schema scanning (family 2)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -2444,6 +2444,7 @@ scope:
 - src/frob/gates/**
 - tests/test_gates.py
 - docs/modules/gates.md
+- tests/test_pii_structural_gate.py
 scope_changes:
 - op: remove
   glob: tests/**
@@ -2465,7 +2466,19 @@ scope_changes:
   reason: T-0348 gates work maps to docs/modules/gates.md
   actor: logan
   at: '2026-07-20'
-evidence: []
+- op: add
+  glob: tests/test_pii_structural_gate.py
+  reason: T-0455 scope hygiene narrowed tests/** to tests/test_gates.py, the wrong
+    mirrored path -- this family's actual test file (used as T-0207 predecessor's
+    evidence) is tests/test_pii_structural_gate.py
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_pii_structural_gate.py::TestDdlSchema::test_orm_column_password_fires
+- tests/test_pii_structural_gate.py::TestDdlSchema::test_alembic_positional_column_ssn_fires
+- tests/test_pii_structural_gate.py::TestDdlSchema::test_raw_sql_create_table_email_fires
+- tests/test_pii_structural_gate.py::TestDdlSchema::test_raw_sql_create_table_unrelated_columns_do_not_fire
+- tests/test_pii_structural_gate.py::TestDdlSchema::test_orm_column_unrelated_field_does_not_fire
 attachments: []
 acceptance: []
 threat: null
@@ -2473,6 +2486,61 @@ threat: null
 T-0207 follow-on: CREATE TABLE / column DDL in migrations (alembic, raw SQL) and sqlalchemy Column(...) ORM models scanned with the FIELD_SIGNATURES keyword+type table (frob.gates._pii_structural). Deferred from T-0207's scope (Python data-structure fields + env access only).
 
 CORPUS UNIVERSE ADDITION (2026-07-20): the code-level performance corpus (docs/design/coding-performance-corpus.md -- conceptual/algorithmic + low-level/mechanical-sympathy) and the system-performance corpus (docs/design/system-performance-corpus.md -- USE/RED methods, profiling, queueing/USL, latency/coordinated-omission, capacity planning) join the registry universe on the same terms: each emits a DENOMINATOR MANIFEST, is folded into docs/design/registry/ (perf.yaml), reconciled against src/frob/perf's PERF rules, and every entry gets a disposition. They feed the arch/perf-check side of the exhaustiveness drift-lock (T-0343).
+
+## Done report
+
+## Done report
+
+Changed:
+- src/frob/gates/_pii_structural.py: PII010 now scans (T-0348 family 2, DB/DDL schema):
+  `_is_column_call`, `_column_call_string_name`, `_scan_orm_columns` (sqlalchemy
+  declarative `name = Column(...)` and alembic-style positional
+  `Column("name", ...)`), `_split_top_level_commas`, `_ddl_column_names`,
+  `_scan_ddl_strings` (raw-SQL `CREATE TABLE(...)` string literals), and the new
+  `_scan_python_ddl` entrypoint wired into `pii_structural_gate`. All reuse the
+  existing `FIELD_SIGNATURES`/`_field_name_hit` single-source registry, no second
+  table.
+- tests/test_pii_structural_gate.py: new `TestDdlSchema` class (5 cases: ORM
+  column fires, alembic positional-arg column fires, raw-SQL CREATE TABLE fires,
+  raw-SQL CREATE TABLE with unrelated columns does not fire, ORM column with
+  unrelated field does not fire).
+- docs/modules/gates.md: documented the family-2 extension under the existing
+  "Structural PII secrets detection T-0207" section.
+
+Evidence:
+- tests/test_pii_structural_gate.py::TestDdlSchema::test_orm_column_password_fires
+- tests/test_pii_structural_gate.py::TestDdlSchema::test_alembic_positional_column_ssn_fires
+- tests/test_pii_structural_gate.py::TestDdlSchema::test_raw_sql_create_table_email_fires
+- tests/test_pii_structural_gate.py::TestDdlSchema::test_raw_sql_create_table_unrelated_columns_do_not_fire
+- tests/test_pii_structural_gate.py::TestDdlSchema::test_orm_column_unrelated_field_does_not_fire
+- Full-file run: `uv run pytest tests/test_pii_structural_gate.py tests/test_secrets_gate.py -q` -> 142 passed
+- `uv run frob test --base main` -> [PASS] python exit=0
+
+Filed: none (no out-of-scope work found)
+
+Scope note: T-0455's scope-hygiene pass had narrowed this ticket's test-file
+scope to tests/test_gates.py (the wrong mirrored path -- T-0207's actual
+evidence lives in tests/test_pii_structural_gate.py). Corrected via
+`frob ticket scope T-0348 --add tests/test_pii_structural_gate.py --reason ...`
+before touching the test file; recorded in the ticket's scope_changes audit
+trail. Filed no separate ticket for this since `frob ticket scope` is the
+built-in self-serve correction mechanism and the same wrong-path narrowing
+affects the sibling T-0349/T-0350/T-0351 tickets, corrected the same way per
+ticket as each is started (sequential leases prevent doing all four upfront).
+
+Gates: `uv run frob check --delta --ticket T-0348` clean (0 errors, 2
+pre-existing WARN-severity waived findings unrelated to this change). ruff
+check/format and ty both clean.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/test_pii_structural_gate.py::TestDdlSchema::test_orm_column_password_fires` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestDdlSchema::test_alembic_positional_column_ssn_fires` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestDdlSchema::test_raw_sql_create_table_email_fires` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestDdlSchema::test_raw_sql_create_table_unrelated_columns_do_not_fire` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestDdlSchema::test_orm_column_unrelated_field_does_not_fire` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0349 -->
 ```yaml
