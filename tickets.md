@@ -3149,11 +3149,26 @@ parent: null
 scope:
 - src/frob/gates/__init__.py
 - tests/test_gates.py
+- src/frob/graph/dsl.py
+- tests/unit/graph/test_dsl.py
 scope_changes:
 - op: add
   glob: tests/test_gates.py
   reason: T-0527 needs a merge-commit regression test fixture in the existing SCOPE001/T-0108
     exemption test class
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/graph/dsl.py
+  reason: 'sequential single-worktree dispatch: T-0526''s committed files (dsl.py)
+    still show in the diff-vs-main SCOPE001 check for T-0527 (T-0108/T-0412 precedent)
+    since one of T-0526''s commit subjects did not carry a T-0526 reference'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/graph/test_dsl.py
+  reason: 'sequential single-worktree dispatch: T-0526''s committed files (test_dsl.py)
+    still show in the diff-vs-main SCOPE001 check for T-0527 (T-0108/T-0412 precedent)'
   actor: logan
   at: '2026-07-21'
 evidence:
@@ -3163,6 +3178,72 @@ acceptance: []
 threat: null
 ```
 Found while working T-0513 in a sequential-tickets-in-one-worktree flow: SCOPE001's T-0108 cross-ticket exemption (a file already committed entirely under another ticket's own scope is exempt) stopped recognizing CHANGELOG.md/pyproject.toml/uv.lock as exempt for T-0513's own frob check --ticket run, even though the LATEST commit touching them (chore(release): re-stamp 0.57.0 after main merge, T-0512 done report) references T-0512 and T-0512's scope was extended to cover exactly those files. Root cause suspected: a plain 'git merge main' merge commit in the history also touches these files (conflict resolution) and carries NO ticket reference at all in its message, defeating whatever per-commit ticket-reference check the exemption performs. Needs investigation into _scope_gate_check_file / the T-0108 exemption's commit-walking logic to see if a merge commit should be transparently skipped (its content is just main's own already-scoped history, not new unscoped work) rather than treated as an unattributed touch.
+
+## Done report
+
+Root-caused and fixed the suspected root cause from the ticket body: a
+plain `git merge` conflict-resolution commit's default subject ("Merge
+branch '...'") carries no ticket reference at all, yet `git blame` can
+attribute a reconciled hunk to that merge commit sha directly (when the
+resolved content differs from every parent -- a real conflict-resolution
+edit, not a pass-through). `_commit_exempts_file`
+(src/frob/gates/__init__.py) previously required THAT commit's own
+subject to carry a ticket reference naming a ticket whose scope covers
+the file; a merge commit with no ticket reference of its own therefore
+always failed the exemption, even though its content is just reconciling
+its parents' own already-scoped work.
+
+Fix: new `_commit_parents` helper (`git log -1 --format=%P`); when a
+commit has more than one parent AND its own subject carries no ticket
+reference, `_commit_exempts_file` now also searches its PARENTS'
+subjects for the reference that actually attributes the reconciled
+content, before concluding the touch is unattributed. A merge commit
+whose OWN subject does carry a ticket reference is unaffected (parents
+are only consulted as a fallback, never override an explicit reference).
+
+This is a plausible, testable fix for the exact incident described (a
+merge commit conflict-resolving CHANGELOG.md/pyproject.toml/uv.lock with
+no ticket reference of its own, where the real owning ticket's reference
+lived on the branch tip commit merged into it) -- not a blanket "always
+exempt merge commits" change, since a merge commit's own explicit ticket
+reference (when present) still takes priority and a commit that is not a
+merge (single parent) is entirely unaffected.
+
+Regression test added: `tests/test_gates.py::TestScopePrework::
+test_scope001_merge_commit_with_no_ticket_ref_falls_back_to_parent`
+builds a real merge-commit fixture (two branches diverge from main both
+editing the same file's same lines under ticket T-0001, merged with
+`git merge --no-ff` producing a genuine conflict, resolved and committed
+with a default no-ticket-reference merge message) and asserts the
+resulting SCOPE001 check for an unrelated ticket T-0002 does not flag the
+merged file -- this fails without the fix (the merge commit's bare
+subject has no ticket ref) and passes with it (falls back to the parent
+commits' T-0001 references).
+
+Scope was widened by one file via `frob ticket scope --add
+tests/test_gates.py` (the ticket's original scope named only the
+implementation file) to add the regression test to the existing gates
+test file's `TestScopePrework` class alongside the T-0108 exemption's
+other tests, rather than inventing a new untracked test file.
+
+Gates: `uv run frob check --ticket T-0527 --json` -> 0 errors.
+`ruff check`/`ruff format --check` clean on both touched files under
+both the PATH `ruff` and `uv run ruff`. `uv run pytest tests/test_gates.py
+-q` -> 253 passed (full file, not just the scope001 subset, to rule out
+a regression elsewhere in the same module).
+
+### Changed
+```
+ src/frob/gates/__init__.py   |  64 +++++++++++++++++------
+ src/frob/graph/dsl.py        |  97 +++++++++++++++++++++++++++++++++++
+ tests/test_gates.py          |  70 ++++++++++++++++++++++++++
+ tests/unit/graph/test_dsl.py |  57 +++++++++++++++++++++
+ tickets.md                   | 117 ++++++++++++++++++++++++++++++++++++++++---
+ 5 files changed, 383 insertions(+), 22 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestScopePrework::test_scope001_merge_commit_with_no_ticket_ref_falls_back_to_parent` (pytest node id, verified passing when recorded)
 <!-- ticket:T-0528 -->
 ```yaml
 id: T-0528
