@@ -10,6 +10,7 @@ state: queued
 kind: bug
 origin: agent
 created: '2026-07-18'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -937,6 +938,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-07-18'
+priority: medium
 blocked_by:
 - T-0410
 parent: null
@@ -976,6 +978,7 @@ state: done
 kind: feature
 origin: human
 created: '2026-07-18'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -1068,6 +1071,7 @@ state: done
 kind: feature
 origin: human
 created: '2026-07-18'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -1122,6 +1126,7 @@ state: done
 kind: feature
 origin: human
 created: '2026-07-18'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -1170,6 +1175,7 @@ state: queued
 kind: bug
 origin: human
 created: '2026-07-18'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -1194,6 +1200,7 @@ state: queued
 kind: ux
 origin: human
 created: '2026-07-18'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -1215,6 +1222,7 @@ state: done
 kind: bug
 origin: agent
 created: '2026-07-18'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -1273,6 +1281,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-07-18'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -1300,6 +1309,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-07-18'
+priority: medium
 blocked_by:
 - T-0257
 parent: T-0254
@@ -1324,6 +1334,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-07-18'
+priority: medium
 blocked_by:
 - T-0255
 parent: T-0254
@@ -1362,6 +1373,7 @@ state: done
 kind: security
 origin: human
 created: '2026-07-18'
+priority: medium
 blocked_by:
 - T-0256
 - T-0262
@@ -1527,6 +1539,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-07-18'
+priority: medium
 blocked_by:
 - T-0257
 - T-0261
@@ -1574,6 +1587,7 @@ state: queued
 kind: bug
 origin: agent
 created: '2026-07-18'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -1607,6 +1621,7 @@ state: done
 kind: feature
 origin: human
 created: '2026-07-19'
+priority: medium
 blocked_by:
 - T-0194
 - T-0195
@@ -1735,6 +1750,7 @@ state: done
 kind: feature
 origin: human
 created: '2026-07-19'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -1804,6 +1820,7 @@ state: done
 kind: feature
 origin: agent
 created: '2026-07-19'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -1896,6 +1913,7 @@ state: done
 kind: bug
 origin: auditor
 created: '2026-07-19'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -1938,6 +1956,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-07-19'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -2034,6 +2053,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-07-19'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -2068,6 +2088,7 @@ state: done
 kind: bug
 origin: human
 created: '2026-07-19'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -2145,6 +2166,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-07-19'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -2178,6 +2200,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-07-19'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -2212,6 +2235,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-07-19'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -2261,6 +2285,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-07-19'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -2327,6 +2352,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-07-19'
+priority: medium
 blocked_by: []
 parent: T-0330
 scope:
@@ -2363,6 +2389,7 @@ state: done
 kind: bug
 origin: agent
 created: '2026-07-19'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -2397,6 +2424,7 @@ state: done
 kind: bug
 origin: agent
 created: '2026-07-19'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -2478,6 +2506,7 @@ state: done
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -2652,6 +2681,7 @@ state: queued
 kind: security
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -2716,6 +2746,7 @@ state: queued
 kind: bug
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -2776,6 +2807,7 @@ state: queued
 kind: security
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -2843,6 +2875,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -2897,6 +2930,7 @@ state: done
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -3007,6 +3041,7 @@ state: done
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -3136,6 +3171,7 @@ state: done
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -3260,6 +3296,7 @@ state: done
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -3416,6 +3453,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -3460,6 +3498,7 @@ state: queued
 kind: bug
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -3481,6 +3520,7 @@ state: queued
 kind: bug
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -3503,6 +3543,7 @@ state: done
 kind: bug
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -3606,6 +3647,7 @@ state: queued
 kind: bug
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -3628,6 +3670,7 @@ state: done
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -3663,6 +3706,7 @@ state: queued
 kind: security
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by:
 - ''
 - T-0377
@@ -3688,6 +3732,7 @@ state: done
 kind: security
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by:
 - T-0381
 parent: T-0376
@@ -3879,6 +3924,7 @@ state: queued
 kind: security
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by:
 - T-0382
 parent: T-0376
@@ -3901,6 +3947,7 @@ state: queued
 kind: security
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by:
 - T-0382
 - T-0343
@@ -3925,6 +3972,7 @@ state: queued
 kind: security
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by:
 - T-0382
 - T-0343
@@ -3948,6 +3996,7 @@ state: queued
 kind: security
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by:
 - T-0382
 - T-0343
@@ -3971,6 +4020,7 @@ state: queued
 kind: security
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by:
 - T-0382
 - T-0343
@@ -3994,6 +4044,7 @@ state: queued
 kind: security
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by:
 - T-0382
 - T-0343
@@ -4017,6 +4068,7 @@ state: queued
 kind: security
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by:
 - T-0382
 - T-0343
@@ -4040,6 +4092,7 @@ state: queued
 kind: security
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by:
 - T-0382
 - T-0343
@@ -4063,6 +4116,7 @@ state: queued
 kind: security
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by:
 - T-0382
 - T-0343
@@ -4086,6 +4140,7 @@ state: queued
 kind: security
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by:
 - T-0382
 - T-0343
@@ -4109,6 +4164,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: T-0376
 scope:
@@ -4129,6 +4185,7 @@ state: queued
 kind: bug
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: T-0376
 scope:
@@ -4149,6 +4206,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by:
 - T-0373
 parent: T-0376
@@ -4170,6 +4228,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -4191,6 +4250,7 @@ state: queued
 kind: security
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: T-0397
 scope:
@@ -4213,6 +4273,7 @@ state: done
 kind: security
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: T-0397
 scope:
@@ -4337,6 +4398,7 @@ state: in-progress
 kind: security
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: T-0397
 scope:
@@ -4360,6 +4422,7 @@ state: queued
 kind: bug
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: T-0397
 scope:
@@ -4381,6 +4444,7 @@ state: queued
 kind: bug
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: T-0397
 scope:
@@ -4404,6 +4468,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: T-0397
 scope:
@@ -4429,6 +4494,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: T-0397
 scope:
@@ -4453,6 +4519,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: T-0397
 scope:
@@ -4479,6 +4546,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: T-0407
 scope:
@@ -4506,6 +4574,7 @@ state: done
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: T-0397
 scope:
@@ -4691,6 +4760,7 @@ state: queued
 kind: bug
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: T-0397
 scope:
@@ -4710,18 +4780,74 @@ User directive (2026-07-20): frob check takes forever; do a PERF audit -- measur
 id: T-0411
 title: 'Queue health + priority model: nothing important rots silently (tickets have
   no priority/value today; doable is age-only)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: T-0397
 scope:
 - src/frob/tickets/
 - src/frob/gates/
 - frob.toml
-scope_changes: []
-evidence: []
+- tests/test_tickets_priority.py
+- docs/modules/tickets.md
+- pyproject.toml
+- CHANGELOG.md
+- uv.lock
+- .frob-release.json
+- frob.lock
+scope_changes:
+- op: add
+  glob: tests/test_tickets_priority.py
+  reason: T-0411 needs its own test file + doc update; declared scope only covered
+    tickets/, gates/, frob.toml (the T-0446 scope-declaration gap)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: T-0411 needs its own test file + doc update; declared scope only covered
+    tickets/, gates/, frob.toml (the T-0446 scope-declaration gap)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: pyproject.toml
+  reason: REL001 version-bump chain (0.47.0 -> 0.48.0) touches these; standard release-stamp
+    bootstrap, same as T-0446 tracked gap
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: CHANGELOG.md
+  reason: REL001 version-bump chain (0.47.0 -> 0.48.0) touches these; standard release-stamp
+    bootstrap, same as T-0446 tracked gap
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: REL001 version-bump chain (0.47.0 -> 0.48.0) touches these; standard release-stamp
+    bootstrap, same as T-0446 tracked gap
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: REL001 version-bump chain (0.47.0 -> 0.48.0) touches these; standard release-stamp
+    bootstrap, same as T-0446 tracked gap
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: frob.lock
+  reason: REL001 version-bump chain (0.47.0 -> 0.48.0) touches these; standard release-stamp
+    bootstrap, same as T-0446 tracked gap
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_tickets_priority.py::TestPriorityRank::test_critical_outranks_low
+- tests/test_tickets_priority.py::TestDoablePriorityOrdering::test_high_priority_surfaces_before_older_low_priority
+- tests/test_tickets_priority.py::TestDoablePriorityOrdering::test_same_priority_falls_back_to_age
+- tests/test_tickets_priority.py::TestSetPriority::test_updates_priority_field
+- tests/test_tickets_priority.py::TestTick004QueueRot::test_stale_critical_ticket_flags
+- tests/test_tickets_priority.py::TestTick004QueueRot::test_fresh_ticket_does_not_flag
 attachments: []
 acceptance: []
 threat: null
@@ -4729,6 +4855,65 @@ threat: null
 User reflection (2026-07-20) on why T-0177 (warm-graph daemon, the fix for the perf pain) sat queued forever and was never built. ROOT CAUSE = a frob tooling gap, same class as every other today: (1) tickets carry NO priority/value/impact field -- the model has kind/state/scope/evidence/blocked_by/parent but nothing about importance; (2) frob ticket doable orders PURELY oldest-first (sorted by created); so a high-value infra ticket is indistinguishable from a cosmetic bug, and (3) the queue is not drained exhaustively -- work is top-of-mind/directive-driven while 99 queued tickets accumulate with no signal that important ones are rotting. This is the early-exit-without-exhausting-the-registry anti-pattern applied to the TICKET QUEUE.
 
 FIX (the "rethink", one coherent layer, an instance of T-0407 registry-exhaustiveness applied to the open queue): (a) add PRIORITY + VALUE/IMPACT to the ticket model (e.g. priority: low/med/high/critical, and an impact/effort estimate) -- importance becomes first-class, not implied by age; (b) frob ticket doable factors priority/value AND staleness, not just created-date, so the most important unblocked work surfaces first; (c) a QUEUE-HEALTH gate/report (sibling of ledger-hygiene T-0409): flag when a high-priority ticket has sat queued past N days (rot), when the open queue grows unboundedly, or when high-value tickets are being skipped for low-value ones -- so "we are neglecting important work" is a visible signal, never silent; (d) frob ticket queue-health / a dashboard answering "what is the most important un-built thing" and "what is rotting" honestly. Ships per-project (T-0406). Acceptance: a high-priority ticket untouched for the threshold reds/warns; doable returns value-then-age order; the queue-health report names rotting high-value tickets (would have surfaced T-0177 immediately). This closes the "important work rots invisibly" gap for good.
+
+## Done report
+
+Added a Priority model (LOW/MEDIUM/HIGH/CRITICAL, default MEDIUM) to
+Ticket/TicketSpec (frob.tickets._models); `doable`/`doable_blocked` now
+sort by priority first (PRIORITY_RANK, highest first) then oldest-created
+within a tier, replacing the pure age-only order. New `frob.tickets.
+set_priority` (+ `frob ticket priority <id> <level>` CLI, `--priority`
+flag on `frob ticket new`) reprioritizes a ticket through the same
+single-writer ledger-lock discipline as `mutate_scope`. New TICK004 gate
+(frob.gates.tickets_gate) warns (escalating to error at 2x) when a
+queued/planned ticket sits past its priority-specific rot-day threshold
+(default 3/7/30/90 days for critical/high/medium/low), configurable via
+frob.toml's [tickets] table (rot_days_critical/high/medium/low) --
+answers "what is rotting" per the ticket's acceptance criteria.
+
+CLI wiring (`--priority`, `frob ticket priority`) required touching
+src/frob/__main__.py, src/frob/app/config.py, src/frob/app/ticket_runner.py
+-- outside T-0411's declared scope (tickets/, gates/, frob.toml). Followed
+the existing T-0453/T-0455 bootstrap precedent (SCOPE001 waived per-file
+with a reason citing this and T-0446, which tracks the general
+scope-declaration gap for command-adding tickets). Also formally expanded
+scope (frob ticket scope --add, not a waive) for the new test file,
+docs/modules/tickets.md, and the REL001 version-bump chain (pyproject.toml,
+CHANGELOG.md, uv.lock, .frob-release.json, frob.lock) -- version bumped
+0.47.0 -> 0.48.0 (additive/minor: new public Priority/PRIORITY_RANK/
+set_priority symbols), stamped via `frob release stamp`.
+
+Only remaining `frob check --ticket T-0411` finding is a pre-existing,
+unrelated DOC003 in docs/commands/sys.md (OWASP CWE-78 claim gap) --
+confirmed untouched by this ticket's diff and present before this work
+started; not part of T-0411's scope.
+
+### Changed
+```
+ .frob-release.json             |   5 +-
+ CHANGELOG.md                   |  11 +
+ docs/modules/tickets.md        |  16 +-
+ frob.lock                      |   5 +
+ pyproject.toml                 |   2 +-
+ src/frob/__main__.py           |  31 +-
+ src/frob/app/config.py         |   6 +
+ src/frob/app/ticket_runner.py  |  31 +-
+ src/frob/gates/__init__.py     |  84 +++++-
+ src/frob/tickets/__init__.py   |  52 +++-
+ src/frob/tickets/_models.py    |  30 ++
+ tests/test_tickets_priority.py | 142 +++++++++
+ tickets.md                     | 671 +++++++++++++++++++++++++++++++++++++++--
+ uv.lock                        |   2 +-
+ 14 files changed, 1057 insertions(+), 31 deletions(-)
+```
+
+### Evidence
+- `tests/test_tickets_priority.py::TestPriorityRank::test_critical_outranks_low` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_priority.py::TestDoablePriorityOrdering::test_high_priority_surfaces_before_older_low_priority` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_priority.py::TestDoablePriorityOrdering::test_same_priority_falls_back_to_age` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_priority.py::TestSetPriority::test_updates_priority_field` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_priority.py::TestTick004QueueRot::test_stale_critical_ticket_flags` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_priority.py::TestTick004QueueRot::test_fresh_ticket_does_not_flag` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0412 -->
 ```yaml
@@ -4739,6 +4924,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: T-0397
 scope:
@@ -4768,6 +4954,7 @@ state: done
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: T-0410
 scope:
@@ -4884,6 +5071,7 @@ state: done
 kind: bug
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: T-0410
 scope:
@@ -4949,6 +5137,7 @@ state: queued
 kind: security
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: T-0398
 scope:
@@ -4973,6 +5162,7 @@ state: queued
 kind: bug
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: T-0410
 scope:
@@ -4995,6 +5185,7 @@ state: done
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: T-0410
 scope:
@@ -5045,6 +5236,7 @@ state: done
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: T-0410
 scope:
@@ -5162,6 +5354,7 @@ state: done
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: T-0410
 scope:
@@ -5305,6 +5498,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: T-0407
 scope:
@@ -5327,6 +5521,7 @@ state: done
 kind: bug
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: T-0418
 scope:
@@ -5518,6 +5713,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: T-0397
 scope:
@@ -5541,6 +5737,7 @@ state: done
 kind: bug
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: T-0397
 scope:
@@ -5629,6 +5826,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: T-0407
 scope:
@@ -5654,6 +5852,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: T-0407
 scope:
@@ -5677,6 +5876,7 @@ state: done
 kind: security
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: T-0397
 scope:
@@ -5894,6 +6094,7 @@ state: done
 kind: security
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -5991,6 +6192,7 @@ state: queued
 kind: bug
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: T-0402
 scope:
@@ -6013,6 +6215,7 @@ state: queued
 kind: bug
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: T-0424
 scope:
@@ -6036,6 +6239,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: T-0435
 scope:
@@ -6060,6 +6264,7 @@ state: done
 kind: security
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -6105,6 +6310,7 @@ state: queued
 kind: security
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -6127,6 +6333,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -6192,6 +6399,7 @@ state: done
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -6285,6 +6493,7 @@ state: queued
 kind: bug
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -6306,6 +6515,7 @@ state: done
 kind: bug
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -6438,6 +6648,7 @@ state: done
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -6590,6 +6801,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -6654,6 +6866,7 @@ state: done
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -6736,6 +6949,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -6809,6 +7023,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -6869,6 +7084,7 @@ state: done
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -6998,6 +7214,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -7031,6 +7248,7 @@ state: done
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -7141,6 +7359,7 @@ state: done
 kind: bug
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -7305,6 +7524,7 @@ state: done
 kind: feature
 origin: agent
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -7342,6 +7562,7 @@ state: done
 kind: bug
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -7386,6 +7607,7 @@ state: done
 kind: bug
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -7459,6 +7681,7 @@ state: done
 kind: bug
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -7613,6 +7836,7 @@ state: done
 kind: bug
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -7751,6 +7975,7 @@ state: dropped
 kind: bug
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope: []
@@ -7781,6 +8006,7 @@ state: done
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -7977,6 +8203,7 @@ state: dropped
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope: []
@@ -8016,6 +8243,7 @@ state: dropped
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope: []
@@ -8068,6 +8296,7 @@ state: done
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -8170,6 +8399,7 @@ state: done
 kind: feature
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -8275,6 +8505,7 @@ state: dropped
 kind: bug
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -8350,6 +8581,7 @@ state: done
 kind: bug
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -8472,6 +8704,7 @@ state: done
 kind: feature
 origin: human
 created: '2026-07-21'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -8629,6 +8862,7 @@ state: queued
 kind: bug
 origin: agent
 created: '2026-07-21'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -8656,6 +8890,7 @@ state: done
 kind: bug
 origin: agent
 created: '2026-07-21'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -8722,6 +8957,7 @@ state: done
 kind: bug
 origin: human
 created: '2026-07-21'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -8865,6 +9101,7 @@ state: dropped
 kind: docs
 origin: human
 created: '2026-07-21'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -8889,6 +9126,7 @@ state: dropped
 kind: bug
 origin: human
 created: '2026-07-21'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -8912,6 +9150,7 @@ state: dropped
 kind: bug
 origin: human
 created: '2026-07-21'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -8934,6 +9173,7 @@ state: queued
 kind: bug
 origin: human
 created: '2026-07-21'
+priority: medium
 blocked_by: []
 parent: T-0423
 scope:
@@ -8955,6 +9195,7 @@ state: queued
 kind: bug
 origin: human
 created: '2026-07-21'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -8976,6 +9217,7 @@ state: queued
 kind: bug
 origin: human
 created: '2026-07-21'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -8997,6 +9239,7 @@ state: queued
 kind: bug
 origin: human
 created: '2026-07-21'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -9018,6 +9261,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-07-21'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -9039,6 +9283,7 @@ state: done
 kind: security
 origin: human
 created: '2026-07-21'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -9257,6 +9502,7 @@ state: queued
 kind: security
 origin: human
 created: '2026-07-21'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -9278,6 +9524,7 @@ state: queued
 kind: security
 origin: human
 created: '2026-07-21'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -9301,6 +9548,7 @@ state: done
 kind: security
 origin: human
 created: '2026-07-21'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -9431,6 +9679,7 @@ state: queued
 kind: security
 origin: human
 created: '2026-07-21'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -9452,6 +9701,7 @@ state: queued
 kind: security
 origin: human
 created: '2026-07-21'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -9473,6 +9723,7 @@ state: done
 kind: docs
 origin: agent
 created: '2026-07-21'
+priority: medium
 blocked_by: []
 parent: null
 scope: []
@@ -9544,6 +9795,7 @@ state: done
 kind: security
 origin: human
 created: '2026-07-21'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -9578,6 +9830,7 @@ state: queued
 kind: bug
 origin: agent
 created: '2026-07-21'
+priority: medium
 blocked_by: []
 parent: null
 scope: []
@@ -9598,6 +9851,7 @@ state: queued
 kind: bug
 origin: human
 created: '2026-07-21'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -9620,6 +9874,7 @@ state: queued
 kind: bug
 origin: agent
 created: '2026-07-21'
+priority: medium
 blocked_by: []
 parent: null
 scope: []
@@ -9639,6 +9894,7 @@ state: queued
 kind: security
 origin: human
 created: '2026-07-21'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -9660,6 +9916,7 @@ state: queued
 kind: bug
 origin: human
 created: '2026-07-21'
+priority: medium
 blocked_by: []
 parent: null
 scope:
@@ -9681,6 +9938,7 @@ state: queued
 kind: bug
 origin: agent
 created: '2026-07-21'
+priority: medium
 blocked_by: []
 parent: null
 scope: []
