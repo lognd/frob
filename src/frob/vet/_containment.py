@@ -288,7 +288,6 @@ def _contained_finding(
     )
 
 
-# frob:doc docs/modules/vet.md#public-api
 def _findings_for_advisory(
     advisory: OsvAdvisory,
     node_ids: frozenset[str],

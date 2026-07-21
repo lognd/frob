@@ -33,6 +33,9 @@ _CRATES_HOST = "https://crates.io"
 
 
 # frob:doc docs/modules/vet.md#public-api
+# frob:waive COV007 reason="docs/modules/vet.md's Public API section \
+# individually frob:describes this private model by name (T-0529) -- a \
+# deliberate architecture doc, not accidental drift onto a private helper"
 class _RegistryResult(BaseModel):
     """Outcome of a publish-date lookup: `ok=False` means "could not verify"."""
 
@@ -204,6 +207,9 @@ def _result_from_network(
 
 
 # frob:doc docs/modules/vet.md#public-api
+# frob:waive COV007 reason="docs/modules/vet.md's Public API section \
+# individually frob:describes this private helper by name (T-0529) -- a \
+# deliberate architecture doc, not accidental drift onto a private helper"
 # frob:waive TEST005 reason="_fetch_publish_date 87.5% branch cover, debt T-0160"
 def _fetch_publish_date(
     ecosystem: str,

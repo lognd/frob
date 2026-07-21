@@ -62,12 +62,18 @@ def cve_ids(advisory: OsvAdvisory) -> tuple[str, ...]:
 
 
 # frob:doc docs/modules/vet.md#public-api
+# frob:waive COV007 reason="docs/modules/vet.md's Public API section \
+# individually frob:describes this private helper by name (T-0529) -- a \
+# deliberate architecture doc, not accidental drift onto a private helper"
 def _is_available() -> bool:
     """Whether `osv-scanner` is resolvable on PATH."""
     return shutil.which(_BINARY) is not None
 
 
 # frob:doc docs/modules/vet.md#public-api
+# frob:waive COV007 reason="docs/modules/vet.md's Public API section \
+# individually frob:describes this private helper by name (T-0529) -- a \
+# deliberate architecture doc, not accidental drift onto a private helper"
 # frob:waive TEST005 reason="_run_osv_scan 19.0% branch cover, debt T-0160"
 def _run_osv_scan(lockfile: Path) -> tuple[OsvAdvisory, ...] | None:
     """Advisories for `lockfile`, or `None` if osv-scanner is absent/failed
