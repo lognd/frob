@@ -5098,7 +5098,7 @@ T-0515 calibrated INV003/INV004: INV004 changed from per-section to per-file gra
 id: T-0521
 title: 'SCOPE001: bare directory scope entries (no trailing slash) never expand and
   silently drop from a ticket''s real scope'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-07-21'
@@ -5107,14 +5107,37 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/tickets/_models.py
-scope_changes: []
-evidence: []
+- tests/test_tickets.py
+scope_changes:
+- op: add
+  glob: tests/test_tickets.py
+  reason: regression test for fix lives here
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_tickets.py::TestScopeMatching::test_bare_dir_entry_no_trailing_slash_globs_recursively
 attachments: []
 acceptance: []
 threat: null
 ```
 Found while working T-0515: _scope_globs (frob.tickets._models) only expands a bare directory entry to dir/** when the entry ENDS WITH a trailing slash and has no glob metacharacters -- an entry written as 'docs/modules' (no trailing slash, as several existing tickets.md scope blocks use) is instead treated as a literal fnmatch pattern equal to that exact string, which can never match a real file path (docs/modules/gates.md, etc). This means any ticket whose author typed a bare directory name without the trailing slash silently has that entry as dead weight in scope -- SCOPE001 fires on every file under it, and PRE001's sweep sees it as empty. T-0515 hit this directly (docs/modules / docs/strata entries had to be corrected to docs/modules/ / docs/strata/ mid-ticket). Fix direction: either warn/normalize at TicketSpec construction time (strip trailing slash requirement, treat any scope entry with no glob metacharacters and no dot-extension as an implied directory prefix), or add a lint that flags scope entries shaped like a bare directory name lacking a trailing slash. Grep tickets.md for scope entries matching a bare path segment (no /, no ., no *) to gauge how many existing tickets are silently affected.
 
+## Done report
+
+Fixed _scope_globs (frob.tickets._models) so a bare directory scope entry
+with NO trailing slash (e.g. "docs/modules") is expanded to also match the
+subtree (entry + "/**"), same as the trailing-slash case, instead of being
+treated as a dead literal fnmatch pattern that can never match a real
+file path. An entry whose final path segment carries a dot-extension
+(a literal file reference like "src/frob/foo.py") is left untouched.
+Added a regression test covering the recursive match, the sibling-dir
+non-match, and the literal-file-is-not-a-directory case.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/test_tickets.py::TestScopeMatching::test_bare_dir_entry_no_trailing_slash_globs_recursively` (pytest node id, verified passing when recorded)
 <!-- ticket:T-0522 -->
 ```yaml
 id: T-0522

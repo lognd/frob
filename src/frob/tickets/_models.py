@@ -129,19 +129,38 @@ def _split_scope_entries(raw: Sequence[str]) -> tuple[str, ...]:
 
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets.py::TestScopeMatching.test_dir_prefix_globs_recursively
+# frob:tests tests/test_tickets.py::TestScopeMatching.test_bare_dir_entry_no_trailing_slash_globs_recursively  # noqa: E501
 def _scope_globs(scope: Sequence[str]) -> tuple[str, ...]:
     """Expand a ticket's declared `scope` into concrete fnmatch patterns.
 
     A bare directory prefix (`design/`, no glob metacharacters) previously
     matched nothing since fnmatch treats it as a literal string equal to
-    the path -- expand it to `design/**` so it recurses. `LEDGER_PATH` is
-    always appended so the ledger is implicitly in scope for every ticket
+    the path -- expand it to `design/**` so it recurses. A directory entry
+    typed WITHOUT the trailing slash (`docs/modules`, no glob
+    metacharacters and no dot-extension on its last path segment) is the
+    same trap in a different shape: fnmatch treats it as a literal string
+    that can never match a real file path underneath it, so it silently
+    drops out of scope (T-0521 -- T-0515 hit this directly with
+    `docs/modules`/`docs/strata` entries). Both the entry itself (so a
+    ticket can still scope-lease the directory path used as a doc anchor)
+    and its `/**` recursive expansion are added, matching the
+    trailing-slash case's semantics. An entry with a dot-extension in its
+    final segment (`src/frob/foo.py`) is always a literal file reference,
+    never a directory, and is left untouched. `LEDGER_PATH` is always
+    appended so the ledger is implicitly in scope for every ticket
     (T-0241).
     """
     globs: list[str] = []
     for entry in scope:
-        if entry.endswith("/") and not any(ch in entry for ch in "*?["):
+        has_glob_chars = any(ch in entry for ch in "*?[")
+        if entry.endswith("/") and not has_glob_chars:
             globs.append(entry + "**")
+        elif not has_glob_chars and "." not in entry.rsplit("/", 1)[-1]:
+            # Bare directory name with no trailing slash, e.g. "docs/modules":
+            # not a glob and not a file (no extension on its last segment) --
+            # treat as an implied directory prefix (T-0521).
+            globs.append(entry)
+            globs.append(entry + "/**")
         else:
             globs.append(entry)
     if LEDGER_PATH not in globs:
