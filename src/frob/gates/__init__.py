@@ -94,7 +94,7 @@ from frob.graph._models import LockFile
 from frob.graph.lock import drift as _graph_drift
 from frob.graph.lock import load_lock
 from frob.lang import SymbolKind
-from frob.lang._models import ParsedFile
+from frob.lang._models import ParsedFile, RawComment, RawSymbol
 from frob.lang._walk_rust import _MACRO_SYMBOL_SUFFIX
 from frob.logging import get_logger
 from frob.testing import CollectedTests, collect_python_tests, collect_rust_tests
@@ -703,6 +703,9 @@ _KNOWN_GATE_RULES = frozenset(
         # a `frob:doc` anchor bound to a private helper (COV007).
         "COV006",
         "COV007",
+        # T-0504: class-directive placement lint (a `frob:` directive that
+        # class-falls-back but plausibly missed a nearby real symbol).
+        "PLACE001",
         "DRIFT001",
         "DRIFT002",
         "SCOPE001",
@@ -983,23 +986,208 @@ def _waive003_violations(
     return tuple(out)
 
 
-# frob:ticket T-0470
-# PLACE001 (class-fallback directive placement) was prototyped here and
-# DELIBERATELY DROPPED before landing: a "distance from the class's own
-# span start" heuristic fires on this repo's own widespread, legitimate
-# idiom of per-field `frob:waive`/`frob:ticket` comments documenting one
-# field deep inside a large pydantic config class (e.g. `src/frob/app/
-# config.py`'s `AppConfig`, `frob:waive SCOPE001` at line 212, 150+ lines
-# past the class's `class AppConfig:` line) -- fields are not `RawSymbol`s
-# (only FUNCTION/METHOD/CLASS/CONST/TYPE are), so a directive above one
-# always falls back to the enclosing class by construction, and doing so
-# far from the class top is completely intentional there, not mis-scoped.
-# A real fix needs a materially different signal (e.g. detecting a nearby
-# symbol the directive plausibly SHOULD have bound to via `following` but
-# didn't reach, rather than raw line distance from the class start) --
-# out of this ticket's remaining scope/effort budget; a follow-up ticket
-# for prong (2) is filed with this exact counterexample instead of
-# shipping a lint proven noisy against the repo's own real pattern.
+# frob:ticket T-0504
+# PLACE001 was first prototyped as "distance from the class's own span
+# start" and DELIBERATELY DROPPED (T-0470) before landing: that heuristic
+# fired on this repo's own widespread, legitimate idiom of per-field
+# `frob:waive`/`frob:ticket` comments documenting one field deep inside a
+# large pydantic config class (e.g. `src/frob/app/config.py`'s
+# `AppConfig`, `frob:waive SCOPE001` at line 212, 150+ lines past the
+# class's `class AppConfig:` line) -- fields are not `RawSymbol`s (only
+# FUNCTION/METHOD/CLASS/CONST/TYPE are), so a directive above one always
+# falls back to the enclosing class by construction, and doing so far
+# from the class top is completely intentional there, not mis-scoped.
+#
+# T-0504 replaces that raw-distance signal with the materially different
+# one this comment's own predecessor named as the real fix: does a
+# nearby REAL symbol exist that the directive plausibly SHOULD have
+# bound to via `following` but didn't reach, with nothing but blank
+# lines/comments/decorators between the directive and that symbol? The
+# per-field idiom always has genuine field-assignment CODE in that gap
+# (the very thing that makes it a field and not a stray comment), so it
+# is excluded by construction rather than by distance -- see
+# `_place001_missed_symbol`'s docstring for the full argument and
+# `TestPlace001Gate` for both the non-vacuous positive (a directive
+# separated from its intended `def` by one blank line too many) and the
+# AppConfig-shaped negative (a directive above a field, real code before
+# the next real method).
+_PLACE001_LOOKAHEAD = 10
+
+
+# frob:ticket T-0504
+def _place001_missed_symbol(
+    comment: RawComment,
+    symbols: tuple[RawSymbol, ...],
+    lines: list[str],
+) -> RawSymbol | None:
+    """The nearby REAL symbol (within `_PLACE001_LOOKAHEAD` lines) that a
+    class-fallback-bound `frob:` directive plausibly intended but missed
+    via `_find_following_symbol`'s narrower window -- `None` if no such
+    symbol exists, or if genuine code (anything other than a blank line,
+    a `#`/`//` comment, or a decorator line) sits between the directive
+    and the candidate.
+
+    That "genuine code in between" check is the whole soundness argument
+    (T-0504): the only way `following` can miss a REAL symbol that is
+    still close by is a run of blank lines, stacked comments, or
+    decorators wider than `_FOLLOWING_SYMBOL_WINDOW` -- none of which is
+    itself an intervening obligation the directive could instead belong
+    to. The per-field pydantic idiom this ticket must NOT fire on always
+    has actual field-assignment code in that gap (that is what makes it
+    a field), so it can never produce a candidate here regardless of how
+    close or far the class's next real method sits.
+    """
+    end = comment.span[1]
+    candidates = [
+        sym for sym in symbols if end < sym.span[0] <= end + _PLACE001_LOOKAHEAD
+    ]
+    if not candidates:
+        return None
+    candidate = min(candidates, key=lambda sym: sym.span[0])
+    for lineno in range(end + 1, candidate.span[0]):
+        if lineno - 1 >= len(lines):
+            break
+        stripped = lines[lineno - 1].strip()
+        if stripped == "" or stripped.startswith(("#", "//", "@")):
+            continue
+        return None
+    return candidate
+
+
+# frob:ticket T-0504
+def _place001_bindings(
+    comments: tuple[RawComment, ...], path: str
+) -> dict[int, tuple[str, bool]]:
+    """`comment_id -> (resolved_src, via_following)` for every comment in
+    `comments`, mirroring `frob.graph.dsl._resolve_block_srcs`'s exact
+    stacked-comment-propagation algorithm (order, carry state) but ALSO
+    tagging whether the binding was reached via a `following` match
+    (direct, or propagated backward from a later comment's own resolved
+    `following` in the same contiguous block, T-0313) versus a genuine
+    `enclosing`/bare-path fallback.
+
+    This distinction is the entire soundness argument for PLACE001: a
+    `frob:doc`/`frob:ticket` comment placed directly above `class Foo:`
+    resolves via `following` straight to `Foo` (correct and intentional,
+    `via_following=True`) even though `Foo` is a CLASS -- checking only
+    "did this resolve to a class" (as `_resolve_block_srcs`'s plain
+    output would tempt) cannot tell that apart from a directive genuinely
+    stuck at the class-fallback because it sits somewhere INSIDE the
+    class body with no reachable `following` target at all
+    (`via_following=False`). Only the latter is what T-0504's placement
+    check should ever consider.
+    """
+    from frob.graph.dsl import _enclosing_src
+
+    order = sorted(range(len(comments)), key=lambda i: comments[i].span[0])
+    resolved: dict[int, tuple[str, bool]] = {}
+    carry_start: int | None = None
+    carry_src: str | None = None
+    for idx in reversed(order):
+        comment = comments[idx]
+        if comment.following is not None:
+            src = f"{path}::{comment.following}"
+        elif carry_src is not None and comment.span[1] + 1 == carry_start:
+            src = carry_src
+        else:
+            resolved[idx] = (_enclosing_src(comment, path), False)
+            carry_start = None
+            carry_src = None
+            continue
+        resolved[idx] = (src, True)
+        carry_start = comment.span[0]
+        carry_src = src
+    return resolved
+
+
+# frob:ticket T-0504
+def _place001_file(root: Path, file: str) -> tuple[Violation, ...]:
+    """PLACE001 findings for one file: a `frob:` directive whose fully
+    resolved binding (`_place001_bindings`, the same stacked-comment-aware
+    resolution `parse_directives` itself uses) is a genuine class
+    FALLBACK (`via_following=False`, not a directive that correctly
+    resolved via `following` straight to a class it precedes), where
+    `_place001_missed_symbol` finds a real symbol the directive plausibly
+    should have reached instead.
+
+    Re-parses `file` directly (root-relative, like `_cov006`/`_cov005`)
+    rather than reusing `GraphSnapshot` -- the snapshot only carries
+    already-resolved `Edge`s, not the per-comment `following`/`enclosing`
+    detail this check needs.
+    """
+    from frob.lang import parse_file
+
+    result = parse_file(root / file)
+    if result.is_err:
+        return ()
+    parsed = result.danger_ok
+    try:
+        lines = (root / file).read_text(encoding="utf-8").splitlines()
+    except OSError as exc:
+        _log.warning("PLACE001: could not read %s: %s", file, exc)
+        return ()
+    symbol_by_qualname = {sym.qualname: sym for sym in parsed.symbols}
+    resolved = _place001_bindings(parsed.comments, file)
+    violations: list[Violation] = []
+    for comment_id, comment in enumerate(parsed.comments):
+        if not comment.text.startswith("frob:"):
+            continue
+        src, via_following = resolved[comment_id]
+        if via_following:
+            continue
+        _prefix, sep, qualname = src.partition("::")
+        if not sep:
+            continue
+        enclosing_sym = symbol_by_qualname.get(qualname)
+        if enclosing_sym is None or enclosing_sym.kind != SymbolKind.CLASS:
+            continue
+        missed = _place001_missed_symbol(comment, parsed.symbols, lines)
+        if missed is None:
+            continue
+        _log.debug(
+            "PLACE001: %s:%s directive class-falls-back to %s, missed %s",
+            file,
+            comment.span[0],
+            qualname,
+            missed.qualname,
+        )
+        violations.append(
+            Violation(
+                rule="PLACE001",
+                severity=Severity.WARN,
+                file=file,
+                line=comment.span[0],
+                message=(
+                    f"PLACE001: {file}:{comment.span[0]} frob: directive "
+                    f"falls back to enclosing class {qualname!r}, but "
+                    f"{missed.qualname!r} starts at line {missed.span[0]} "
+                    f"with nothing but blank lines/comments/decorators in "
+                    f"between -- likely intended for that symbol; move "
+                    f"the directive within the following-window, or "
+                    f"confirm the class binding is intentional"
+                ),
+            )
+        )
+    return tuple(violations)
+
+
+# frob:ticket T-0504
+def _place001(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
+    """PLACE001 (advisory): a `frob:` directive that class-falls-back
+    (`_place001_file`) instead of reaching a real, nearby symbol via
+    `following` -- a likely mis-scoped directive, not raw distance from
+    the class's own span start (T-0470's dropped prototype; see the
+    comment above `_PLACE001_LOOKAHEAD` for the full history).
+
+    WARN severity: best-effort, name/position-based (same tier as
+    COV006) -- a finding is a prompt to double check, not proof the
+    directive is wrong.
+    """
+    files = sorted({symref.split("::", 1)[0] for symref in snapshot.symbols})
+    violations: list[Violation] = []
+    for file in files:
+        violations.extend(_place001_file(root, file))
+    return tuple(violations)
 
 
 # _match_waiver has three matching modes, chosen by `violation.symref`/
@@ -1301,7 +1489,7 @@ def coverage_gate(
     diff: Diff,
     tests: CollectedTests,
 ) -> tuple[Violation, ...]:
-    """COV001..COV004 and TODO001/TODO002.
+    """COV001..COV007, PLACE001, and TODO001/TODO002.
 
     `root` (repo root, T-0233) lets COV001 tell a *resolving* `frob:doc`
     edge apart from a broken one -- see `_resolved_documented_srcs`.
@@ -1314,6 +1502,7 @@ def coverage_gate(
     violations.extend(_cov005(root, snapshot, diff))
     violations.extend(_cov006(root, snapshot))
     violations.extend(_cov007(snapshot))
+    violations.extend(_place001(root, snapshot))
     violations.extend(_todo001(snapshot, queue, diff))
     return tuple(violations)
 

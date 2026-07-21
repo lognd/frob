@@ -1775,6 +1775,100 @@ class TestInv004Gate:
         assert inv004_gate(tmp_path) == ()
 
 
+class TestPlace001Gate:
+    """T-0504: PLACE001 replaces the dropped T-0470 "distance from the
+    class's own span start" prototype (proven noisy against this repo's
+    own per-field pydantic idiom) with a materially different signal --
+    a nearby real symbol the directive plausibly missed via `following`,
+    not raw distance. See `_place001_missed_symbol`'s docstring."""
+
+    # frob:tests src/frob/gates/__init__.py::coverage_gate
+    def test_missed_following_binding_fires(self, tmp_path: Path) -> None:
+        """A directive separated from its intended `def` by more blank
+        lines than `_find_following_symbol`'s window (3), with NOTHING
+        but blank lines in between, is a genuine placement miss."""
+        _write(
+            tmp_path,
+            "src/a.py",
+            "class Foo:\n"
+            "    # frob:ticket T-0001\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "    def bar(self):\n"
+            "        return 1\n",
+        )
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        v = _first_rule(violations, "PLACE001")
+        assert v is not None
+        assert v.severity == Severity.WARN
+        assert "Foo" in v.message
+        assert "bar" in v.message
+
+    def test_per_field_pydantic_idiom_is_silent(self, tmp_path: Path) -> None:
+        """T-0470's counterexample: a directive above one field deep in a
+        class, with more real field-assignment code (not blank lines)
+        before the next real method, must NOT fire -- this is exactly
+        the shape the dropped raw-distance prototype false-positived on
+        (`AppConfig`'s `frob:waive SCOPE001` 150+ lines past the class
+        line)."""
+        _write(
+            tmp_path,
+            "src/a.py",
+            "class AppConfig:\n"
+            "    name: str\n"
+            '    # frob:waive SCOPE001 reason="test"\n'
+            "    value: int = 0\n"
+            "    another: str = ''\n"
+            "    more: int = 1\n"
+            "    yet_more: bool = False\n"
+            "    def other(self):\n"
+            "        return self.value\n",
+        )
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert _first_rule(violations, "PLACE001") is None
+
+    def test_directive_directly_above_def_is_silent(self, tmp_path: Path) -> None:
+        """A directive that resolves via `following` in the ordinary way
+        (immediately above its `def`) never class-falls-back at all, so
+        PLACE001 has nothing to say about it."""
+        _write(
+            tmp_path,
+            "src/a.py",
+            "class Foo:\n    # frob:ticket T-0001\n    def bar(self):\n        return 1\n",
+        )
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert _first_rule(violations, "PLACE001") is None
+
+    def test_no_nearby_symbol_at_all_is_silent(self, tmp_path: Path) -> None:
+        """A class-fallback directive with no real symbol within the
+        lookahead window at all has nothing to flag as "missed"."""
+        _write(
+            tmp_path,
+            "src/a.py",
+            "class Foo:\n    # frob:ticket T-0001\n    x = 1\n",
+        )
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert _first_rule(violations, "PLACE001") is None
+
+
 class TestExcludeHazardGate:
     # frob:tests src/frob/gates/_exclude_hazard.py::exclude_hazard_gate
     def test_entry_shadowing_tracked_dir_fires(self, tmp_path: Path) -> None:

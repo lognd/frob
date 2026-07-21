@@ -21,6 +21,7 @@ declaration).
 | COV005 | coverage | a diff-touched file's `frob:` directive now binds a PRIVATE symbol whose span overlaps this diff's hunks, where the same `(kind, target)` directive bound a PUBLIC symbol in that file at the diff's base revision -- a displaced obligation (T-0297), see design decisions below |
 | COV006 | coverage | (warn) a `frob:tests` edge bound to a PRIVATE symbol whose test has no `frob.graph.callgraph` reachability to it -- see "COV006/COV007 (T-0483)" below, including a disclosed known false-positive shape |
 | COV007 | coverage | (warn) a `frob:doc` edge whose src symbol is PRIVATE -- see "COV006/COV007 (T-0483)" below |
+| PLACE001 | coverage | (warn) a `frob:` directive that genuinely class-falls-back (not a directive that correctly resolved via `following` straight to a class it precedes) where a nearby real symbol looks plausibly missed -- see "PLACE001 (T-0504)" below |
 | TODO001 | coverage | bare TODO/FIXME comment (not `frob:`-prefixed) in a diff-touched file -- work marked but not accounted for at all |
 | TODO002 | coverage | `frob:todo` edge bound to a non-open (closed or missing) ticket -- work accounted for, but the reference is dangling |
 | SCOPE001 | scope | diff touches paths/symbols outside the active ticket's `scope` |
@@ -168,6 +169,18 @@ Candidates (b) and (c) landed here as COV006/COV007:
   these on first landing in any repo with this test-via-public-wrapper
   idiom, same as any other warn-tier gate here.
 
+  **T-0506 update**: the most common shape above is now rescued rather
+  than merely disclosed. `_cov006_public_wrapper_reachable` does a
+  gate-local, one-hop lookahead: if a PUBLIC symbol in the bound
+  target's own file both calls that target directly and is itself
+  called, by name, from the test's own body, the binding is accepted
+  without ever recording a public-callee edge in the shared `CallGraph`
+  (`frob.dup`/arch's public-boundary-stop guarantee stays untouched).
+  Reduced this repo's own COV006 count from 98 to 89 on landing; the
+  residual is a genuinely reviewable pool, tracked as a follow-up
+  burndown ticket rather than the original disclosed "expect noise"
+  posture.
+
 - **COV007** (warn): a `frob:doc` edge whose src symbol is PRIVATE. Doc
   anchors normally cover the public API surface (COV001 only ever asks
   for one on a PUBLIC symbol), so one on a private helper is usually
@@ -179,6 +192,53 @@ Candidates (b) and (c) landed here as COV006/COV007:
   code has real examples of that (`frob.logging._FrobFormatter`,
   `frob.gates._pii_structural._FieldSignature`) -- COV007 flags the
   pattern for a human decision, it does not forbid it.
+
+### PLACE001 (T-0504)
+
+<!-- frob:describes src/frob/gates/__init__.py::_place001_missed_symbol -->
+<!-- frob:describes src/frob/gates/__init__.py::_place001_bindings -->
+
+T-0470 first prototyped a class-directive placement lint as "distance
+from the class's own span start" and DELIBERATELY DROPPED it before
+landing: that heuristic fires on this repo's own widespread, legitimate
+idiom of a per-field `frob:waive`/`frob:ticket` comment documenting one
+field deep inside a large pydantic config class (`AppConfig`'s
+`frob:waive SCOPE001`, 150+ lines past the class's own `class AppConfig:`
+line) -- fields are not `RawSymbol`s, so a directive above one always
+falls back to the enclosing class by construction, and doing so far from
+the class top is completely intentional there, not mis-scoped.
+
+PLACE001 replaces raw distance with a materially different signal: does
+a nearby REAL symbol exist that the directive plausibly should have
+bound to via `following` but didn't reach, with nothing but blank
+lines/comments/decorators in the gap? `_place001_missed_symbol` answers
+this directly -- the per-field idiom always has genuine field-assignment
+CODE in that gap (that is what makes it a field, not a stray comment),
+so it can never produce a "missed" candidate regardless of how close or
+far the class's next real method sits; a directive separated from its
+intended `def` by one blank line too many (or an extra decorator, or a
+too-long stacked-comment run) always does.
+
+**The subtle trap this check had to avoid**: a `frob:doc`/`frob:ticket`
+comment placed directly above `class Foo:` resolves via `following`
+straight to `Foo` -- correct and universal across this repo -- even
+though `Foo` IS a class. Naively checking "did this resolve to a class
+symbol" cannot tell that apart from a directive genuinely stuck at the
+class-fallback (sitting somewhere inside the class body with no
+reachable `following` target at all). `_place001_bindings` mirrors
+`frob.graph.dsl._resolve_block_srcs`'s exact stacked-comment-propagation
+algorithm but additionally tags whether each binding was reached via a
+`following` match (direct, or propagated backward through an unbroken
+comment run, T-0313) versus a genuine `enclosing` fallback -- PLACE001
+only ever considers the latter. An earlier draft of this gate skipped
+that distinction and fired ~400 findings across this repo, almost all on
+the ordinary "directive directly above its class" idiom; with it in
+place the finding count on this repo's own tree is zero (the corpus is
+clean), proven non-vacuous instead by `TestPlace001Gate`'s constructed
+positive case.
+
+WARN severity: best-effort, name/position-based (same tier as COV006) --
+a finding is a prompt to double check, not proof the directive is wrong.
 
 ### Waiver over-breadth (T-0470)
 
