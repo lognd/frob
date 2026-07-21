@@ -67,7 +67,9 @@ from ._selfconform import (
 from ._threat import (
     ALL_CATALOG,
     CWE_CATALOG,
+    CWE_TOP_25_CATALOG,
     CWE_TOP_25_OUT_OF_SCOPE,
+    CWE_TOP_25_VIEWS,
     DEFAULT_BENIGN_CAPABILITIES,
     QUALITY_CATALOG,
     QUALITY_OUT_OF_SCOPE,
@@ -149,12 +151,45 @@ class FamilyGap(BaseModel):
     sub_target: str | None = None
 
 
+#: T-0512 (strata audit G6): every security-family baseline view the
+#: catalog module ships, regardless of whether `DEFAULT_SECURITY_VIEWS`
+#: actually checks it by default -- the reference `_narrower_than_
+#: baseline` diffs against so a narrower-than-full-baseline default run
+#: is disclosed, never silently omitted. Kept local (not re-exported)
+#: since it exists purely for that one disclosure computation; a caller
+#: wanting the full security-family view set imports `VIEWS`/
+#: `CWE_TOP_25_VIEWS` from `_threat.py` directly, the same way
+#: `DEFAULT_SECURITY_VIEWS` itself is built.
+_ALL_SECURITY_VIEWS: frozenset[str] = frozenset(VIEWS) | frozenset(CWE_TOP_25_VIEWS)
+
+
+def _narrower_than_baseline(security_views: tuple[str, ...]) -> tuple[str, ...]:
+    """T-0512: every baseline security view `_ALL_SECURITY_VIEWS` names
+    that `security_views` (whatever a caller actually configured this run
+    with -- `DEFAULT_SECURITY_VIEWS` unless overridden) does NOT include,
+    sorted for determinism -- empty when the run is genuinely exhaustive
+    over every view this repo's catalogs currently define. This is the
+    disclosure `AuditReport.narrower_than_baseline` surfaces so a PROVED
+    report can never silently mean "proved against less than the full
+    catalog baseline" without saying so."""
+    return tuple(sorted(_ALL_SECURITY_VIEWS - frozenset(security_views)))
+
+
 # frob:doc docs/strata/threat.md#the-exhaustiveness-proof-the-point
 class AuditReport(BaseModel):
     """The full exhaustiveness conjunction's outcome across every configured
     view: `proved` iff `gaps` is empty. `views_checked` names exactly what
     was evaluated (family-qualified, e.g. `security:owasp-top-10`), so a
-    clean report is auditable -- no view silently skipped."""
+    clean report is auditable -- no view silently skipped. `narrower_
+    than_baseline` (T-0512, strata audit G6) names every security-family
+    baseline view the catalog module ships that THIS run did not check --
+    empty for a genuinely exhaustive run, non-empty (e.g. `("cwe-top-25",)`
+    for the as-shipped `DEFAULT_SECURITY_VIEWS`, which names only
+    `owasp-top-10`) when a caller configured (or defaulted to) a narrower
+    view set: `PROVED` with a non-empty `narrower_than_baseline` means
+    "every view actually run held," never "every baseline view this repo
+    defines held" -- a distinction the report itself must state, not
+    leave the caller to infer."""
 
     model_config = ConfigDict(frozen=True)
 
@@ -165,12 +200,19 @@ class AuditReport(BaseModel):
     # docstring), separate from `gaps` so `proved` stays exactly "zero
     # UNWAIVED gaps."
     waived: tuple[FamilyGap, ...] = ()
+    # frob:ticket T-0512
+    narrower_than_baseline: tuple[str, ...] = ()
 
     # frob:doc docs/strata/threat.md#the-exhaustiveness-proof-the-point
     @property
     def proved(self) -> bool:
         """True iff every configured view's exhaustiveness conjunction held
-        across all families -- zero named gaps anywhere."""
+        across all families -- zero named gaps anywhere. NOTE (T-0512):
+        `proved` answers "did every view this run actually checked hold",
+        not "did every baseline view the catalogs define hold" -- check
+        `narrower_than_baseline` for the latter; a `True` `proved` next to
+        a non-empty `narrower_than_baseline` is an honest, disclosed
+        narrower-scope PROVED, not a false completeness claim."""
         return not self.gaps
 
 
@@ -437,12 +479,33 @@ def _threat_and_quality_gaps(
     quality_views: tuple[str, ...],
     benign: tuple[BenignCapability, ...],
 ) -> Result[tuple[list[FamilyGap], list[str]], StrataError]:
-    """THREAT001-003 gaps for every security then quality view, in order."""
+    """THREAT001-003 gaps for every security then quality view, in order.
+
+    T-0512 (strata audit G6): a security-family `view` resolves against
+    ONE of two, mutually exclusive views tables/catalogs -- `owasp-top-10`
+    (`VIEWS`, `CWE_CATALOG` alone) or `cwe-top-25` (`CWE_TOP_25_VIEWS`,
+    the COMBINED `CWE_CATALOG + CWE_TOP_25_CATALOG` catalog, T-0143's own
+    "needs the wider union" rationale) -- decided by membership in
+    `CWE_TOP_25_VIEWS` (today exactly `{"cwe-top-25"}`) so a caller who
+    explicitly widens `security_views` to include `cwe-top-25` (clearing
+    `AuditReport.narrower_than_baseline`, `_narrower_than_baseline` below)
+    resolves correctly rather than failing closed against `VIEWS`, which
+    has no such key."""
     gaps: list[FamilyGap] = []
     checked: list[str] = []
 
     for view in security_views:
-        report = _evaluate_family(model, view, CWE_CATALOG, (), benign, VIEWS)
+        if view in CWE_TOP_25_VIEWS:
+            report = _evaluate_family(
+                model,
+                view,
+                CWE_CATALOG + CWE_TOP_25_CATALOG,
+                CWE_TOP_25_OUT_OF_SCOPE,
+                benign,
+                CWE_TOP_25_VIEWS,
+            )
+        else:
+            report = _evaluate_family(model, view, CWE_CATALOG, (), benign, VIEWS)
         if report.is_err:
             return Err(report.danger_err)
         gaps.extend(_threat_gaps("security", view, report.danger_ok))
@@ -641,7 +704,12 @@ def evaluate_exhaustiveness(
     gaps, checked, host001_applied, host002_applied = all_result.danger_ok
 
     return _apply_exhaustiveness_waivers(
-        model, gaps, checked, host001_applied, host002_applied
+        model,
+        gaps,
+        checked,
+        host001_applied,
+        host002_applied,
+        _narrower_than_baseline(security_views),
     )
 
 
@@ -849,25 +917,34 @@ def _apply_exhaustiveness_waivers(
     checked: list[str],
     host001_applied: WaiverApplication[HostIsolationViolation],
     host002_applied: WaiverApplication[HostIsolationViolation],
+    narrower_than_baseline: tuple[str, ...] = (),
 ) -> Result[AuditReport, StrataError]:
     """Apply every node's `waive` clause to `gaps`, fold host
-    waivers/stale, assemble the report."""
+    waivers/stale, assemble the report. `narrower_than_baseline` (T-0512)
+    passes straight through from `evaluate_exhaustiveness`'s caller-
+    configured `security_views` -- a waiver never suppresses a NEVER-RUN
+    view's absence, only a fired finding, so this disclosure is untouched
+    by waiver application."""
     applied = _apply_gap_waivers(model, gaps)
     final_gaps = _final_gaps_with_stale(applied, host001_applied, host002_applied)
     waived_gaps = _waived_gaps_with_host(applied, host001_applied, host002_applied)
 
     _log.info(
-        "audit: evaluated views=%d -> %d gap(s), %d waived, %d stale waiver(s)",
+        "audit: evaluated views=%d -> %d gap(s), %d waived, %d stale waiver(s)%s",
         len(checked),
         len(final_gaps),
         len(waived_gaps),
         len(applied.stale),
+        f", narrower_than_baseline={narrower_than_baseline}"
+        if narrower_than_baseline
+        else "",
     )
     return Ok(
         AuditReport(
             views_checked=tuple(checked),
             gaps=tuple(final_gaps),
             waived=waived_gaps,
+            narrower_than_baseline=narrower_than_baseline,
         )
     )
 

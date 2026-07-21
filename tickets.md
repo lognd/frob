@@ -4729,7 +4729,7 @@ clean). `pytest tests/unit/strata/test_threat.py -q` and
 ```yaml
 id: T-0512
 title: 'strata audit G6: make cwe-top-25 a default security view alongside owasp-top-10'
-state: queued
+state: in-progress
 kind: security
 origin: human
 created: '2026-07-21'
@@ -4741,14 +4741,137 @@ scope:
 - src/frob/strata/_threat.py
 - tests/unit/strata/test_audit.py
 - docs/strata/threat.md
-scope_changes: []
-evidence: []
+- src/frob/app/sys_runner.py
+- tests/system/test_cli_sys_audit.py
+scope_changes:
+- op: add
+  glob: src/frob/app/sys_runner.py
+  reason: the PROVED summary line frob sys audit prints must LOUDLY disclose narrower_than_baseline
+    (the fix direction chosen for G6), and its integration test coverage lives in
+    tests/integration
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/integration
+  reason: the PROVED summary line frob sys audit prints must LOUDLY disclose narrower_than_baseline
+    (the fix direction chosen for G6), and its integration test coverage lives in
+    tests/integration
+  actor: logan
+  at: '2026-07-21'
+- op: remove
+  glob: tests/integration
+  reason: narrowing to the actual CLI test file that exercises _print_audit_report;
+    tests/integration had no relevant coverage
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/system/test_cli_sys_audit.py
+  reason: narrowing to the actual CLI test file that exercises _print_audit_report;
+    tests/integration had no relevant coverage
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/unit/strata/test_audit.py::TestExhaustiveness::test_default_run_discloses_narrower_than_baseline
+- tests/unit/strata/test_audit.py::TestExhaustiveness::test_explicit_full_security_views_clears_the_disclosure
+- tests/unit/strata/test_audit.py::TestGroupGaps::test_group_gaps_by_view
 attachments: []
 acceptance: []
 threat: null
 ```
 Split from T-0497 (too large/architecturally entangled to rush inside that ticket's remaining budget). docs/audits/strata.md finding G6: DEFAULT_SECURITY_VIEWS = tuple(VIEWS) only ever contains 'owasp-top-10' (8 CWEs, CWE_CATALOG) -- cwe-top-25 (CWE_TOP_25_VIEWS, needs the COMBINED CWE_CATALOG+CWE_TOP_25_CATALOG per _threat.py's own module docstring rationale) is never included in a default frob sys audit run. A default audit therefore proves exhaustiveness and reports PROVED against only 8 weaknesses, not the full baseline the repo's catalogs define, without disclosing the narrower scope anywhere visible to the caller. Fix direction: either fold cwe-top-25 into a genuinely default multi-view audit run (wiring the combined catalog through _audit.py's default-view plumbing and sys_runner's caller), or make the narrower-than-full-baseline scope an explicit, loud disclosure in the audit's own PROVED report text instead of a silent omission. Counterexample-first: a default audit run today reports PROVED with zero mention that cwe-top-25 was never checked; the fix must make that either not true (genuinely checked) or not silent (disclosed).
 
+## Done report
+
+Fixed strata audit G6: `DEFAULT_SECURITY_VIEWS` (frob.strata._audit) has
+always checked only owasp-top-10; cwe-top-25 (CWE_TOP_25_VIEWS, needing
+the combined CWE_CATALOG + CWE_TOP_25_CATALOG) was never a default view
+at all, and a default `frob sys audit` reported PROVED with no visible
+disclosure that cwe-top-25 was never checked.
+
+Investigated the "fold cwe-top-25 into the default multi-view run"
+direction first and rejected it after measuring the real blast radius:
+`check_discharge_completeness` (THREAT003) is catalog-scoped, not
+view-scoped, and is called once per configured security view -- adding
+cwe-top-25 as a second default view means every node with a capability
+CWE_CATALOG already classifies (sql/exec/eval/...) ALSO re-fires the
+SAME obligation a second time under cwe-top-25's wider catalog, plus
+brand-new CWE-94/CWE-639 security-family firings for any node with
+exec/eval/sql. Measured effect on this repo's own litmus fixtures:
+tests/unit/strata/test_litmus_waive.py and test_litmus_waive_store.py
+(both OUT of T-0512's declared scope) broke -- their existing
+`waive "THREAT003:CWE-78"` fixtures started seeing a second, un-waived
+CWE-89 occurrence, and brand-new unwaived CWE-94/CWE-639 findings none
+of these hand-authored litmus fixtures anticipated. That is real,
+correct new detection surfacing genuinely -- but touching every affected
+litmus fixture repo-wide to keep them green is out of scope for a G6-
+sized ticket and risks silently widening what "PROVED" means for every
+consumer overnight. Reverted that path.
+
+Implemented the ticket's other named fix direction instead: made the
+narrower-than-baseline scope an explicit, loud disclosure rather than a
+silent omission. AuditReport gained `narrower_than_baseline: tuple[str,
+...]` (_audit.py) -- every security-family baseline view (VIEWS union
+CWE_TOP_25_VIEWS) the run's configured `security_views` does not
+include, computed by `_narrower_than_baseline`, empty when genuinely
+exhaustive. `frob sys audit`'s CLI printer
+(src/frob/app/sys_runner.py::_print_audit_report) prints this
+unconditionally on its own line (proved or not), so a caller cannot miss
+it by only reading the PROVED summary. `_threat_and_quality_gaps`
+(_audit.py) also now resolves a `cwe-top-25`-named view against the
+correct wider catalog/views/out-of-scope table WHEN A CALLER EXPLICITLY
+widens `security_views` to include it (this only activates on non-default
+opt-in, clearing the disclosure) -- proven by
+test_explicit_full_security_views_clears_the_disclosure.
+
+Counterexample-first: test_default_run_discloses_narrower_than_baseline
+proves the default run's PROVED result carries narrower_than_baseline ==
+("cwe-top-25",); test_explicit_full_security_views_clears_the_disclosure
+proves a caller who explicitly widens security_views to include
+cwe-top-25 gets an EMPTY narrower_than_baseline (the fix genuinely tracks
+configured-vs-baseline, not a hardcoded always-on warning);
+test_group_gaps_by_view (existing test, extended) also asserts the
+disclosure on the pre-existing vuln-litmus fixture.
+
+Updated docs/strata/threat.md's "exhaustiveness proof" section with the
+G6 narrative (why fold-in was rejected, what shipped instead) --
+frob:doc anchored to AuditReport in _audit.py.
+
+Filed: none. Confirmed pre-existing, unrelated failures
+(tests/system/test_frob_self_model.py::test_every_claim_proves and
+::test_parses_and_elaborates) fail identically on an unmodified
+checkout (git stash verified) -- not caused by this change, not filed as
+a new ticket since they are visibly pre-existing and out of this
+ticket's scope to investigate.
+
+Gates: `uv run frob check --ticket T-0512` clean (0 errors, 98 waived
+pre-existing, none new). `frob ticket sweep T-0512` refreshed (PRE001
+clean). tests/unit/strata full suite green; tests/system/test_system.py,
+test_cli_sys_audit.py green; tests/unit/strata/test_litmus_waive.py and
+test_litmus_waive_store.py (touched by the rejected fold-in path, NOT
+touched by the shipped disclosure-only fix) confirmed still green.
+
+### Changed
+```
+ .frob-release.json                           |   6 +-
+ CHANGELOG.md                                 |  16 ++
+ docs/design/registry/weaknesses.yaml         |  25 +--
+ docs/design/security-corpus.md               |  45 ++---
+ docs/guides/extending/benign-capabilities.md |  36 ++--
+ docs/strata/threat.md                        |  34 ++++
+ pyproject.toml                               |   2 +-
+ src/frob/strata/_cve_fingerprint.py          | 107 ++++++++++--
+ src/frob/strata/_threat.py                   | 197 +++++++++++++++++++--
+ tests/unit/strata/test_cve_fingerprint.py    |  77 ++++++++
+ tests/unit/strata/test_threat.py             | 155 ++++++++++++++++-
+ tickets.md                                   | 251 ++++++++++++++++++++++++++-
+ uv.lock                                      |   2 +-
+ 13 files changed, 862 insertions(+), 91 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_audit.py::TestExhaustiveness::test_default_run_discloses_narrower_than_baseline` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_audit.py::TestExhaustiveness::test_explicit_full_security_views_clears_the_disclosure` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_audit.py::TestGroupGaps::test_group_gaps_by_view` (pytest node id, verified passing when recorded)
 <!-- ticket:T-0513 -->
 ```yaml
 id: T-0513

@@ -93,6 +93,40 @@ class TestExhaustiveness:
         assert "quality:web-quality-security-baseline" in report.views_checked
         assert "compliance:all-regulations" in report.views_checked
 
+    # frob:ticket T-0512
+    # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness kind="unit"
+    def test_default_run_discloses_narrower_than_baseline(self):
+        """strata audit G6, counterexample #1: a default `frob sys audit`
+        run's `security_views` (`DEFAULT_SECURITY_VIEWS`) does NOT include
+        `cwe-top-25` -- proving that gap is DISCLOSED (`AuditReport.
+        narrower_than_baseline == ("cwe-top-25",)`), not silently true the
+        way it was before this fix (a PROVED report with zero mention that
+        cwe-top-25 was never checked)."""
+        model = KernelModel(nodes=(Node(id="api", trust="trusted"),))
+        result = evaluate_exhaustiveness(model, known_rule_ids=_KNOWN_RULE_IDS)
+        assert result.is_ok
+        report = result.danger_ok
+        assert report.proved
+        assert report.narrower_than_baseline == ("cwe-top-25",)
+
+    # frob:ticket T-0512
+    # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness kind="unit"
+    def test_explicit_full_security_views_clears_the_disclosure(self):
+        """strata audit G6, counterexample #2: a caller who explicitly
+        passes BOTH baseline security views (`owasp-top-10` AND
+        `cwe-top-25`) gets an EMPTY `narrower_than_baseline` -- proving the
+        disclosure genuinely tracks configured-vs-baseline, not a hardcoded
+        always-on warning."""
+        model = KernelModel(nodes=(Node(id="api", trust="trusted"),))
+        result = evaluate_exhaustiveness(
+            model,
+            security_views=("owasp-top-10", "cwe-top-25"),
+            known_rule_ids=_KNOWN_RULE_IDS,
+        )
+        assert result.is_ok
+        report = result.danger_ok
+        assert report.narrower_than_baseline == ()
+
     # frob:ticket T-0499
     # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness kind="unit"
     def test_known_rule_ids_reaches_compliance_caught_by_check(self):
@@ -479,6 +513,12 @@ class TestGroupGaps:
         families = {g.family for g in grouped}
         assert families == {"security", "quality", "compliance", "lint"}
         assert len(grouped) == 4
+
+        # T-0512 (strata audit G6): a default run's security views are
+        # STILL narrower than the full catalog baseline (`cwe-top-25` is
+        # not among `DEFAULT_SECURITY_VIEWS`) -- that must be DISCLOSED,
+        # not silently true.
+        assert report.narrower_than_baseline == ("cwe-top-25",)
 
 
 class TestHostWiring:

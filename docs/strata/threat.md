@@ -194,6 +194,34 @@ expiring. The claims audit binds prose: a README claiming "protected
 against the OWASP Top 10" must cite a PROVED exhaustiveness result or it
 fails CI.
 
+**T-0512 (strata audit G6): "the cited baseline" must itself be
+disclosed, not assumed.** `DEFAULT_SECURITY_VIEWS`
+(`frob.strata._audit`) checks `owasp-top-10` only -- `cwe-top-25`
+(`CWE_TOP_25_VIEWS`, this catalog's OTHER baseline security view, needing
+the combined `CWE_CATALOG + CWE_TOP_25_CATALOG` per the "cwe-top-25's
+view table" note above) was never in the default run at all. Before this
+fix, a default `frob sys audit` reported `PROVED` with NO indication that
+`cwe-top-25` had not been checked -- exhaustive relative to a baseline
+narrower than what the catalog module actually defines, silently. Rather
+than fold `cwe-top-25` into `DEFAULT_SECURITY_VIEWS` (rejected: the
+combined catalog re-fires `CWE_CATALOG` entries a second time per node
+under `cwe-top-25`'s own discharge check, which is catalog- not
+view-scoped -- every litmus/hardened-twin fixture in this repo would need
+new discharge claims for weaknesses the model never intended to exercise
+twice, a large, high-risk blast radius for a G6-scoped fix),
+`AuditReport` gained `narrower_than_baseline: tuple[str, ...]` --
+every security-family baseline view (`VIEWS` union `CWE_TOP_25_VIEWS`)
+the CONFIGURED `security_views` for this run does not include, empty
+when genuinely exhaustive. `frob sys audit`'s CLI printer
+(`src/frob/app/sys_runner.py::_print_audit_report`) prints this on its
+own line, unconditionally (proved or not), and `_log_proved_summary`'s
+docstring records why the disclosure lives there rather than duplicated
+into the PROVED line itself. `_threat_and_quality_gaps` (`_audit.py`)
+resolves a `cwe-top-25`-named view against the correct wider catalog/
+views table when a CALLER explicitly widens `security_views` to include
+it (clearing the disclosure) -- the default stays narrower, honestly
+disclosed, rather than silently claiming more than it checks.
+
 **Charter drift (T-0085):** earlier phasing text in this document named
 this check DOC002. By the time T-0085 implemented it, DOC002 had already
 been taken by the doc-anchor-resolution gate (T-0127, `frob.gates.

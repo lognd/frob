@@ -432,7 +432,13 @@ def _log_waived_gaps(report: AuditReport) -> None:
 def _log_proved_summary(report: AuditReport) -> None:
     """Log the PROVED summary line, carrying the waived count inline
     (T-0174 REJECT round: a separate WARNING line is lost under grep/
-    quiet-mode filtering, so the count must ride the summary itself)."""
+    quiet-mode filtering, so the count must ride the summary itself).
+    T-0512 (strata audit G6): the narrower-than-baseline disclosure itself
+    lives in `_print_audit_report`'s own unconditional warning line
+    (fired regardless of proved/gap, charter: no duplication) -- this
+    function only needs to avoid ever claiming MORE than "every view this
+    run was configured to check held," which "every configured view"
+    below already says precisely."""
     color = _stdout_color()
     if report.waived:
         _log.info(
@@ -469,17 +475,29 @@ def _log_gaps(report: AuditReport) -> None:
 
 
 # frob:ticket T-0115
+# frob:ticket T-0512
 def _print_audit_report(report: AuditReport) -> None:
     """Print `frob sys audit`'s machine-usable summary: which views were
     checked, then every named gap grouped by family (docs/strata/threat.md
     #the-exhaustiveness-proof-the-point: "every gap named, owned, and
     expiring") -- CI-parseable one-gap-per-line, no ambiguity about which
-    conjunction member failed."""
+    conjunction member failed. T-0512 (strata audit G6): when this run's
+    security views are narrower than the full catalog baseline
+    (`AuditReport.narrower_than_baseline`), that is disclosed on its OWN
+    line here too -- not only folded into the PROVED summary -- so a
+    caller scanning for gaps (the `not report.proved` branch) sees the
+    same disclosure a clean run would."""
     _log.info(
         "sys audit: checked %d view(s): %s",
         len(report.views_checked),
         ", ".join(report.views_checked),
     )
+    if report.narrower_than_baseline:
+        _log.warning(
+            "sys audit: narrower than the full catalog baseline -- NOT "
+            "checked against: %s",
+            ", ".join(report.narrower_than_baseline),
+        )
     _log_waived_gaps(report)
     if report.proved:
         _log_proved_summary(report)
