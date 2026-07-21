@@ -106,7 +106,7 @@
     "src/frob/app/ticket_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
     "src/frob/app/vet_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
     "src/frob/app/xref_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
-    "src/frob/arch/__init__.py::analyze_project": "a75366dd429f14f3f9682770369ed4c39ca1812e6e288671083c0cb6fc26885f",
+    "src/frob/arch/__init__.py::analyze_project": "852f784a8a314e41c9ff1654a2e28d8d93c4710e603606dd3a498e3608082bc7",
     "src/frob/arch/_models.py::ArchResult": "bb142d78c52b04dc8ce918d87d3be9ff04153b944668c3836d9f0c241930a74d",
     "src/frob/arch/_models.py::ArchResult.as_json": "48b9248523b087dc9e7b32cb2edf9190690bf1624ca640ac8c00b6a7182c4266",
     "src/frob/arch/_models.py::ArchResult.as_text": "172dd4d365ee80aaeb22db8a426cfe5fe2ad5b39de7e8b75834a087a19975f51",
@@ -127,6 +127,10 @@
     "src/frob/check/__init__.py::run_check_cpp": "35d99b4c3f7974f9b71caa21c1d47160fd2bebc03b2d0f2a42fa4391a6683000",
     "src/frob/check/__init__.py::run_check_rust": "b2cd6a6cadfd7cb1f4829dde854fb0331141493ab1b5bccf989a5413b4c096fe",
     "src/frob/check/__init__.py::run_check_ts": "3763c73a293c53ee335424a1071dd7dfe395ff8b3d3b4ff3d39bce760fd2b08b",
+    "src/frob/check/_memo.py::memoize_per_run": "bd14a5c9c8a29678e20a5bce3c85926feb16c1382b9eb0ea6a1a092ca751d470",
+    "src/frob/check/_memo.py::reset_run_memo": "263a479d19134923ff8dd28c594f93bd72bfdda1407684494a179b55fe8442d3",
+    "src/frob/check/_memo.py::run_memo_scope": "0854945480cfb55ee3cc2d8da07ebb46ef172cd6d02b091572275d27fdb65ff2",
+    "src/frob/check/_memo.py::run_memo_stats": "e087840b770f2ed55dcac3bb0f4c582205c8f99e166cb290ffc6c737234c66df",
     "src/frob/clean/_core.py::clean": "f27a5026ab47240fde4cac22aee3c76f60252c936e4615bb2c31fe30403a40da",
     "src/frob/clean/_core.py::scan": "f8e57b010b2feb9a486f8f8b396cf752382b73cf3b662cccfae37bebe1ed9d8b",
     "src/frob/clean/_models.py::ArtifactEntry": "89bd7a96b54cea9759190e440905e0c1828d4bf18e04d610d5e42724b7857261",
@@ -360,7 +364,7 @@
     "src/frob/gitlog/__init__.py::GitLogResult.groups": "492659e9173822832d7b7076a2035d8fb2b3e159effb0648a20747c77d7f8e98",
     "src/frob/gitlog/__init__.py::git_log": "237dd98269aed7c42bd437fafbcb31433e8c72fb0077417c72cf928ecc5c07c3",
     "src/frob/graph/__init__.py::GraphError": "f7585d69a783d9d7a28209ed8ea427b37eb3a03df9b99b39bd00c987d905df41",
-    "src/frob/graph/__init__.py::build_graph": "c2b6a00c4af34fbd04caf36a73074fffec5268c9c1467d257131b9774fb36755",
+    "src/frob/graph/__init__.py::build_graph": "b4eb47a618c77ecebf4289339ff76a6343bd9ca19c4800c295797b1477fad00a",
     "src/frob/graph/__init__.py::edges_from": "950920c37f62d10c42acde2bd524c0f4fd414a24660c5358fabbadde1a138472",
     "src/frob/graph/__init__.py::edges_to": "75535e22d16d1601eadadcd41b75089f91b862da46b804a8957fd962cfe67ebd",
     "src/frob/graph/__init__.py::load_graph": "76c2972f9d1e84401b66517de875357b1f7b0200c1130cf17ec2df06ddfd10bd",
@@ -963,7 +967,7 @@
     "src/frob/vet/_capability.py::scan_file_capabilities": "4a695059d8ce6f919b7a8295c6516529f0ffcc371ed1d5c3aea4c0276657c520",
     "src/frob/vet/_capability_registry.py::CAPABILITY_KINDS": "02bfbd2fa3010c208005ccc75ef6c43e02984e4c8f55456e01840424c1956d61",
     "src/frob/vet/_capability_registry.py::CAPABILITY_MATRIX_EXCUSES": "564284975820c396c9092e869c10c76e302dabb8de2ec0ca58414159350fb19c",
-    "src/frob/vet/_capability_registry.py::DANGEROUS_OPERATIONS": "99c80e93610519de4559cf0e858642aa090632a92dfbc8af77f189ae608fb0fa",
+    "src/frob/vet/_capability_registry.py::DANGEROUS_OPERATIONS": "a9036db9cde50e3631d046c1bfcfa31e62d1495fa643daaaa51a0826a9dec457",
     "src/frob/vet/_capability_registry.py::LANGUAGES": "bae7f28f4eaab757fde26a3937c7a3ff6b9391f5d6bfbb8200c915096fd72bf8",
     "src/frob/vet/_capability_registry.py::NO_CAPABILITY_MODULES": "b93b45d24b5739b682a3dfc3dbc9a6dc711125180679c498aefc64fd5df28b9f",
     "src/frob/vet/_capability_registry.py::capability_matrix": "d0244e8f83ed43ed86ca3aa06f44b035eaab10dfca158e091469eb7eb97224ec",
@@ -1027,5 +1031,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.36.0"
+  "version": "0.37.0"
 }
