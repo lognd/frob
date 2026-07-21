@@ -9616,7 +9616,7 @@ Found while landing T-0483 in a worktree (branch worktree-agent-ae00df0ca54dd3df
 id: T-0506
 title: 'COV006 false-positive class: extend reachability through same-file public
   wrappers before burndown of the ~97 findings'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-21'
@@ -9624,12 +9624,55 @@ blocked_by: []
 parent: null
 scope: []
 scope_changes: []
-evidence: []
+evidence:
+- tests/test_gates.py::TestCoverageGate::test_cov006_silent_when_test_reaches_via_same_file_public_wrapper
+- tests/test_gates.py::TestCoverageGate::test_cov006_still_fires_when_no_public_wrapper_reaches_the_target
+- tests/test_gates.py::TestCoverageGate::test_cov006_flags_test_with_no_call_graph_reachability
+- tests/test_gates.py::TestCoverageGate::test_cov006_silent_when_test_calls_the_bound_symbol
+- tests/test_gates.py::TestCoverageGate::test_cov006_never_fires_for_a_public_target
 attachments: []
 acceptance: []
 threat: null
 ```
 T-0483's COV006 (frob:tests edge to a private symbol with no call-graph reachability from the test) has a disclosed common FP shape: the call graph never records edges INTO public callees, so a test calling a same-file public wrapper that itself calls the bound private helper reads as unreachable. Before hand-burning down the ~97 COV006 / ~61 COV007 warn findings, extend the reachability check one hop through same-file public wrappers (or record public-callee edges for this check's purposes). Scope: src/frob/gates/__init__.py (COV006 helpers), tests/test_gates.py.
+
+## Done report
+
+Extended COV006 (frob:tests -> private-symbol call-graph reachability) with
+a one-hop rescue for the disclosed T-0483 false-positive class: a test that
+only calls a PUBLIC wrapper in the same file as the bound private target,
+which itself calls that target, no longer fires COV006. Implemented as a
+gate-local helper `_cov006_public_wrapper_reachable` (src/frob/gates/__init__.py)
+that re-parses the target's file (and the test's file, if different) and
+checks for a public symbol in the target's file that both calls the private
+target directly and is itself called by name from the test body. The shared
+`frob.graph.callgraph.CallGraph` substrate (consumed by frob.dup/arch, T-0288/
+T-0290) is untouched -- its public-boundary-stop behavior stays load-bearing
+for those other two consumers.
+
+Before/after (measured via `uv run frob check` on this worktree, before by
+temporarily reverting the edit and re-running, after with the edit applied):
+COV006 98 -> 89 (9 false positives of the disclosed shape eliminated).
+COV007 unchanged at 126 (out of scope for this ticket; a different gate).
+
+Residual 89 COV006 findings were NOT hand-burned down in this ticket: 89 is
+above the <20 in-ticket-burndown threshold this ticket's plan set, so a
+follow-up burndown ticket was filed instead (T-draft-a16d9d8f, mints its
+real id at land) with the exact before/after counts and next-step guidance.
+
+### Changed
+```
+ src/frob/gates/__init__.py | 83 ++++++++++++++++++++++++++++++++++++++--------
+ tests/test_gates.py        | 54 ++++++++++++++++++++++++++++++
+ 2 files changed, 123 insertions(+), 14 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestCoverageGate::test_cov006_silent_when_test_reaches_via_same_file_public_wrapper` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCoverageGate::test_cov006_still_fires_when_no_public_wrapper_reaches_the_target` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCoverageGate::test_cov006_flags_test_with_no_call_graph_reachability` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCoverageGate::test_cov006_silent_when_test_calls_the_bound_symbol` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCoverageGate::test_cov006_never_fires_for_a_public_target` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0507 -->
 ```yaml
@@ -9691,3 +9734,24 @@ acceptance: []
 threat: null
 ```
 T-0462/T-0452 landed WARN-severity as disclosed, but the exclusivity/normative corpora fire 765 times across docs/ -- far too noisy to burn down by hand and mostly bare-'only' prose, not genuine invariant claims. Calibrate first: require stronger claim shapes (subject+exclusivity+verb patterns, skip code fences/links/tables), add markdown-side frob:waive support so genuine-but-unprovable claims can be dispositioned, and consider scoping INV003 to spec-normative docs (docs/modules, docs/strata) rather than all docs/**.md. Then burn the residual down to zero. Scope: src/frob/gates/invariants.py, src/frob/gates/__init__.py, tests/test_gates.py, docs/modules/gates.md.
+
+<!-- ticket:T-draft-a16d9d8f -->
+```yaml
+id: T-draft-a16d9d8f
+title: burn down residual 89 COV006 findings after T-0506 wrapper-reachability fix
+state: queued
+kind: bug
+origin: human
+created: '2026-07-21'
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/__init__.py
+- tests/test_gates.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0506 extended COV006 with a one-hop same-file public-wrapper rescue, reducing the finding count from 98 to 89 (measured via frob check before/after on this worktree). The residual 89 are either genuinely broken frob:tests bindings needing a real bound symbol, or FP shapes not covered by the wrapper rescue (e.g. cross-file wrapper, two-hop chains, or a test calling the private symbol via an attribute/instance rather than a bare call token). Triage the residual list from a fresh frob check run and either bind real tests, fix wrong directives, or narrow to a documented remaining FP class.
