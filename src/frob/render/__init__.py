@@ -11,7 +11,10 @@ on `cfg.*_json` before ever constructing a `Renderer`.
 See `frob.render._color` for the TTY/color precedence, `frob.render.
 _palette` for the five-name semantic palette, and `frob.render._elements`
 for the standardized vocabulary (heading, subhead, kv row, status pill,
-count summary, path, ticket-id) each element renders through.
+count summary, path, ticket-id, table, tree, count deltas) each element
+renders through. `frob.render._renderer.Progress` (T-0460) is the one
+TTY-only, cursor-controlling exception to "every element is total plain
+text" -- it never reaches a non-TTY stream at all, per the T-0419 contract.
 
 A follow-up ticket (named, not yet filed, in T-0448's Done report) adds the
 enforcement gate that fails `frob check` on a bare print/echo outside this
@@ -24,25 +27,30 @@ from __future__ import annotations
 from frob.render._color import ColorFlag, resolve_color
 from frob.render._elements import (
     Status,
+    count_deltas,
     count_summary,
     heading,
     kv_row,
     path_label,
     status_pill,
     subhead,
+    table,
     ticket_id_label,
+    tree,
 )
 from frob.render._errors import RenderError
 from frob.render._palette import accent, critical, good, muted, warn
-from frob.render._renderer import Renderer, RenderWriter
+from frob.render._renderer import Progress, Renderer, RenderWriter
 
 __all__ = [
     "ColorFlag",
+    "Progress",
     "RenderError",
     "RenderWriter",
     "Renderer",
     "Status",
     "accent",
+    "count_deltas",
     "count_summary",
     "critical",
     "good",
@@ -53,6 +61,8 @@ __all__ = [
     "resolve_color",
     "status_pill",
     "subhead",
+    "table",
     "ticket_id_label",
+    "tree",
     "warn",
 ]

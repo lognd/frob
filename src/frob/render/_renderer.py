@@ -23,38 +23,107 @@ worthy bug or a "fall back to plain text" situation.
 from __future__ import annotations
 
 import sys
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from pathlib import Path
+from types import TracebackType
 from typing import IO
 
 from typani.result import Err, Ok, Result
 
 from frob.render._color import ColorFlag, resolve_color
 from frob.render._elements import (
+    count_deltas,
     count_summary,
     heading,
     kv_row,
     path_label,
     status_pill,
     subhead,
+    table,
     ticket_id_label,
+    tree,
 )
 from frob.render._errors import RenderError
 from frob.render._palette import critical, good, muted, warn
 
 
+# frob:ticket T-0460
+# frob:doc docs/modules/render.md#progress-t-0419-contract-tty-only
+class Progress:
+    """An ephemeral, TTY-only progress indicator (the T-0419 contract):
+    `update` redraws one in-place line via a carriage return, and `clear`
+    (also called automatically on context-manager exit) erases that line
+    entirely so nothing is left behind once the tracked work completes. On
+    a non-TTY stream every method is a no-op -- no cursor control, no bar,
+    ever reaches a pipe or log capture."""
+
+    def __init__(self, stream: IO[str], *, tty: bool) -> None:
+        """Bind this indicator to `stream`; `tty` is decided once by the
+        `Renderer` that constructs it, never re-checked per update."""
+        self._stream = stream
+        self._tty = tty
+        self._last_len = 0
+
+    # frob:doc docs/modules/render.md#progress-t-0419-contract-tty-only
+    def update(self, label: str, current: int, total: int) -> None:
+        """Redraw the progress line in place: `label [#####-----] NN%`.
+        No-op when the bound stream is not a TTY."""
+        if not self._tty:
+            return
+        pct = int(100 * current / total) if total else 0
+        pct = max(0, min(100, pct))
+        bar_width = 20
+        filled = int(bar_width * current / total) if total else 0
+        filled = max(0, min(bar_width, filled))
+        bar = "#" * filled + "-" * (bar_width - filled)
+        line = f"{label} [{bar}] {pct}%"
+        pad = " " * max(0, self._last_len - len(line))
+        self._stream.write(f"\r{line}{pad}")
+        self._stream.flush()
+        self._last_len = len(line)
+
+    # frob:doc docs/modules/render.md#progress-t-0419-contract-tty-only
+    def clear(self) -> None:
+        """Erase the current progress line, leaving the cursor at column
+        zero and no residue. No-op when the bound stream is not a TTY."""
+        if not self._tty:
+            return
+        self._stream.write("\r" + " " * self._last_len + "\r")
+        self._stream.flush()
+        self._last_len = 0
+
+    def __enter__(self) -> "Progress":
+        """Enter the `with r.write.progress(...) as p:` block unchanged."""
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
+    ) -> None:
+        """Always clear the progress line on block exit, success or not,
+        so a raised exception never leaves a stale bar on screen."""
+        self.clear()
+
+
 # frob:ticket T-0448
+# frob:ticket T-0460
 # frob:doc docs/modules/render.md#renderer
 class RenderWriter:
     """The standardized element vocabulary, namespaced off `Renderer.write`
-    so the vocabulary can grow (table, tree, progress -- named follow-ups
-    in T-0448's Done report) without `Renderer` itself accreting methods."""
+    so the vocabulary can grow without `Renderer` itself accreting methods."""
 
-    def __init__(self, emit, *, color: bool) -> None:
-        """Bind this writer to `emit` (a single-line sink) and a resolved
-        color decision; constructed only by `Renderer`, never directly."""
+    def __init__(
+        self, emit, *, color: bool, stream: IO[str] | None = None, tty: bool = False
+    ) -> None:
+        """Bind this writer to `emit` (a single-line sink), a resolved
+        color decision, and (for `progress`) the raw `stream`/`tty` state;
+        constructed only by `Renderer`, never directly."""
         self._emit = emit
         self.color = color
+        self._stream = stream
+        self._tty = tty
 
     # frob:doc docs/modules/render.md#renderer
     def heading(self, text: str) -> None:
@@ -128,6 +197,41 @@ class RenderWriter:
         # frob:invariant terminates reason="not actual recursion: this call resolves to the module-level frob.render._palette.muted imported above, a distinct function with the same name, never RenderWriter.muted itself" measure="not recursive; call depth is fixed at 1"  # noqa: E501
         self._emit(muted(text, self.color))
 
+    # frob:ticket T-0460
+    # frob:doc docs/modules/render.md#element-vocabulary
+    def table(self, headers: Sequence[str], rows: Sequence[Sequence[str]]) -> None:
+        """Emit a fixed-column table: header row, `-`-rule, then data rows,
+        one `_emit` call per line."""
+        # frob:invariant terminates reason="not actual recursion: this call resolves to the module-level frob.render._elements.table imported above, a distinct function with the same name, never RenderWriter.table itself" measure="not recursive; call depth is fixed at 1"  # noqa: E501
+        for line in table(headers, rows, color=self.color):
+            self._emit(line)
+
+    # frob:ticket T-0460
+    # frob:doc docs/modules/render.md#element-vocabulary
+    def tree(self, entries: Sequence[tuple[int, str]]) -> None:
+        """Emit a hierarchical `(depth, label)` listing, one `_emit` call
+        per line."""
+        # frob:invariant terminates reason="not actual recursion: this call resolves to the module-level frob.render._elements.tree imported above, a distinct function with the same name, never RenderWriter.tree itself" measure="not recursive; call depth is fixed at 1"  # noqa: E501
+        for line in tree(entries, color=self.color):
+            self._emit(line)
+
+    # frob:ticket T-0460
+    # frob:doc docs/modules/render.md#element-vocabulary
+    def count_deltas(self, deltas: Mapping[str, tuple[int, int]]) -> None:
+        """Emit a `key: old -> new (+/-n)` before/after rollup line."""
+        # frob:invariant terminates reason="not actual recursion: this call resolves to the module-level frob.render._elements.count_deltas imported above, a distinct function with the same name, never RenderWriter.count_deltas itself" measure="not recursive; call depth is fixed at 1"  # noqa: E501
+        self._emit(count_deltas(deltas, color=self.color))
+
+    # frob:ticket T-0460
+    # frob:doc docs/modules/render.md#progress-t-0419-contract-tty-only
+    def progress(self, label: str) -> Progress:
+        """Build a `Progress` bound to this writer's stream/TTY state (the
+        T-0419 contract): ephemeral in-place updates on a human TTY, a
+        silent no-op everywhere else. Use as a context manager so the line
+        is always cleared on exit: `with r.write.progress("stage") as p:`."""
+        stream = self._stream if self._stream is not None else sys.stdout
+        return Progress(stream, tty=self._tty)
+
 
 # frob:ticket T-0448
 # frob:doc docs/modules/render.md#renderer
@@ -138,10 +242,16 @@ class Renderer:
 
     def __init__(self, stream: IO[str] | None = None, *, color: bool) -> None:
         """Bind this renderer to `stream` (default stdout) with a color
-        decision already resolved by the caller (see `Renderer.for_stream`)."""
+        decision already resolved by the caller (see `Renderer.for_stream`).
+        TTY-ness is checked once here too (independent of the color
+        decision, since `--no-color` on a real TTY must still gate
+        `progress` off) and threaded into `RenderWriter`."""
         self.stream: IO[str] = stream if stream is not None else sys.stdout
         self.color = color
-        self.write = RenderWriter(self._emit, color=color)
+        self.is_tty = bool(getattr(self.stream, "isatty", lambda: False)())
+        self.write = RenderWriter(
+            self._emit, color=color, stream=self.stream, tty=self.is_tty
+        )
 
     # frob:doc docs/modules/render.md#renderer
     @classmethod
@@ -179,4 +289,4 @@ class Renderer:
         self._emit(text)
 
 
-__all__ = ["RenderWriter", "Renderer"]
+__all__ = ["Progress", "RenderWriter", "Renderer"]

@@ -1,0 +1,46 @@
+// krb_movement_vuln.strata -- T-0263 litmus: unconstrained delegation, a
+// roastable SPN, a constrained-delegation chain that escalates to a
+// higher-trust vault, and a one-way domain trust from a low-trust realm
+// into a high-trust realm -- the VULN shape KRB001-004 must all fire on.
+//
+// tested end to end by tests/unit/strata/test_litmus_krb_movement.py.
+
+module krb_movement_vuln
+
+node low_kdc : authenticated {
+    clearance Internal;
+    realm "LOW.EXAMPLE";
+    kdc;
+    trusts high_kdc direction "one-way" transitive;
+}
+
+node high_kdc : trusted {
+    clearance Internal;
+    realm "HIGH.EXAMPLE";
+    kdc;
+}
+
+node app : trusted {
+    clearance Internal;
+    realm "HIGH.EXAMPLE";
+    runs_as "app-svc";
+    spn "HTTP/app.corp.example@HIGH.EXAMPLE";
+    delegation unconstrained;
+}
+
+node mid : authenticated {
+    clearance Internal;
+    realm "HIGH.EXAMPLE";
+    runs_as "mid-svc";
+    spn "HTTP/mid.corp.example@HIGH.EXAMPLE";
+    delegation constrained target "HTTP/vault.corp.example@HIGH.EXAMPLE";
+}
+
+node vault : trusted {
+    clearance Internal;
+    realm "HIGH.EXAMPLE";
+    runs_as "vault-svc";
+    spn "HTTP/vault.corp.example@HIGH.EXAMPLE";
+}
+
+// frob:waive REF002 reason="litmus fixture read by exactly one dedicated test module by design (T-0145/T-0255/T-0256/T-0262/T-0172/T-0154/T-0155/T-0223/T-0226/T-0263 litmus suites); a second consumer would not be genuine"

@@ -16,7 +16,7 @@ fail.
 from __future__ import annotations
 
 import re
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Literal
 
@@ -113,13 +113,86 @@ def ticket_id_label(ticket_id: str, *, color: bool) -> Result[str, RenderError]:
     return Ok(accent(ticket_id, color) if color else ticket_id)
 
 
+# frob:ticket T-0460
+# frob:doc docs/modules/render.md#element-vocabulary
+def table(
+    headers: Sequence[str], rows: Sequence[Sequence[str]], *, color: bool
+) -> list[str]:
+    """A fixed-column table -- header row (painted `accent`), a `-`-rule
+    separator (painted `muted`), then data rows, one line per list entry so
+    a caller emits each line verbatim. Column widths are the max of the
+    header and every row's cell in that column, so the plain shape (widths,
+    two-space gutters) is identical in color and plain mode -- color only
+    paints the header/rule, it never re-flows a column."""
+    widths = [len(h) for h in headers]
+    for row in rows:
+        for i, cell in enumerate(row):
+            widths[i] = max(widths[i], len(cell))
+    header_line = "  ".join(h.ljust(widths[i]) for i, h in enumerate(headers))
+    rule = "  ".join("-" * widths[i] for i in range(len(headers)))
+    lines = [
+        accent(header_line, color) if color else header_line,
+        muted(rule, color) if color else rule,
+    ]
+    for row in rows:
+        line = "  ".join(cell.ljust(widths[i]) for i, cell in enumerate(row))
+        lines.append(line)
+    return lines
+
+
+# frob:ticket T-0460
+# frob:doc docs/modules/render.md#element-vocabulary
+def tree(entries: Sequence[tuple[int, str]], *, color: bool) -> list[str]:
+    """A hierarchical listing from `(depth, label)` pairs -- each line is
+    two spaces of indent per depth level plus a `- ` marker, so the plain
+    shape is deterministic and greppable (no box-drawing connectors that
+    depend on sibling lookahead). `depth` 0 labels are painted `accent`
+    (section roots); deeper labels are left uncolored body text."""
+    lines = []
+    for depth, label in entries:
+        indent = "  " * depth
+        shape = f"{indent}- {label}"
+        if color and depth == 0:
+            lines.append(f"{indent}- {accent(label, color)}")
+        else:
+            lines.append(shape)
+    return lines
+
+
+# frob:ticket T-0460
+# frob:doc docs/modules/render.md#element-vocabulary
+def count_deltas(deltas: Mapping[str, tuple[int, int]], *, color: bool) -> str:
+    """A `key: old -> new (+n/-n)` rollup line for before/after counts (the
+    `frob check --delta` use case). Fewer is assumed the improving
+    direction (a violation-count convention, not a general one): a
+    non-positive delta paints `good`, a positive delta paints `critical`,
+    and an unchanged count paints `muted`."""
+    parts = []
+    for key, (before, after) in deltas.items():
+        delta = after - before
+        sign = f"+{delta}" if delta > 0 else str(delta)
+        segment = f"{key}: {before} -> {after} ({sign})"
+        if color:
+            if delta > 0:
+                segment = critical(segment, color)
+            elif delta < 0:
+                segment = good(segment, color)
+            else:
+                segment = muted(segment, color)
+        parts.append(segment)
+    return ", ".join(parts)
+
+
 __all__ = [
     "Status",
+    "count_deltas",
     "count_summary",
     "heading",
     "kv_row",
     "path_label",
     "status_pill",
     "subhead",
+    "table",
     "ticket_id_label",
+    "tree",
 ]

@@ -393,17 +393,22 @@ right-hand tree, so hole ids line up identically across every member without
 threading state through the fold by hand. A 2-member group is the trivial
 case of this same fold (one iteration).
 
-**Readable rendering, not literal source**: `CloneTemplate.skeleton_text`
-and `CloneBinding.source_text` render `label(child, child, ...)` from the
-`(labels, parents)` node arrays -- a structural skeleton, not the literal
-source characters. `frob.lang.TreeNode` (docs/modules/lang.md) does not
-carry source spans/text today, so exact source-text extraction (and the
-survey's "reuse the identifier when both instances agree on a name" nicety)
-is out of scope here; see T-0195's Done report in tickets.md for the filed
-follow-up. `CloneTemplate.suggested_signature` is therefore always
-`hole_N`-named parameters, never a guessed real identifier -- advisory text
-embedded in DUP001's message, never an auto-applied patch, consistent with
-every other frob gate being conformance-only.
+**Literal source rendering**: `CloneTemplate.skeleton_text` and
+`CloneBinding.source_text` render the exact literal source characters, sliced
+from `frob.lang.TreeNode.span` byte offsets (T-0327) against the member's raw
+file bytes -- not a structural `label(child, child, ...)` approximation.
+`_template._render_literal` walks the folded template and a member's tree in
+lockstep, re-stitching the original text between children so whitespace and
+formatting the parser drops from `TreeNode.label` still round-trips into the
+rendering; a hole stops descent and renders as its `$hole_N` placeholder
+instead of the member's concrete text. `CloneTemplate.suggested_signature`
+reuses the survey's "reuse the identifier when both instances agree on a
+name" nicety: when every member's bound text for a hole is the same single
+plain identifier, that identifier names the parameter; otherwise it falls
+back to the positional `hole_N` name (T-0481, see T-0195's Done report in
+tickets-archive.md for the original follow-up this closes). It remains
+advisory text embedded in DUP001's message, never an auto-applied patch,
+consistent with every other frob gate being conformance-only.
 
 **Failure is silent-to-None, never raised**: any recovery failure --
 a member's subtree unavailable (unparseable file, stale span), `frob_core`

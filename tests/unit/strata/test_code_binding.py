@@ -2,6 +2,13 @@
 (docs/strata/surface.md#code-binding-tier-2-v0-implementation, T-0078).
 """
 
+# frob:waive SCOPE001 reason="T-0416 scope is src/frob/strata/_code_binding.py \
+# only; this file's ticket-scope --add was blocked by ScopeLeaseConflict with \
+# T-0263 (tests/unit/strata/) holding the overlapping lease, so a scope-only \
+# addition was not possible -- the sole change here is one new regression \
+# test pinning T-0416's chosen semantics, per the ticket's own acceptance \
+# criteria"
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -65,6 +72,25 @@ class TestBindCode:
         owner = result.danger_ok.owner
         assert owner["server/routes.py"] == "Server"
         assert "server/static/bundle.py" not in owner
+
+    # frob:tests src/frob/strata/_code_binding.py::bind_code kind="unit"
+    # frob:ticket T-0416
+    def test_nested_git_checkout_pruned_even_when_not_covered_by_exclude_globs(
+        self, tmp_path: Path
+    ):
+        """T-0416: `_sorted_py_files`'s pruned walk drops a nested git
+        checkout's `.py` files unconditionally (`_is_nested_worktree`), even
+        when NO `[graph] exclude` glob covers it -- an intentional
+        tightening vs. the pre-T-0414 `rglob` walk, which had no such
+        check and would have bound `vendor/dep/lib.py` to `Vendor`."""
+        _write(tmp_path, "vendor/dep/lib.py", "x = 1\n")
+        (tmp_path / "vendor" / "dep" / ".git").mkdir(parents=True, exist_ok=True)
+        model = KernelModel(
+            nodes=(Node(id="Vendor", trust="trusted", attrs=("code=vendor/**",)),)
+        )
+        result = bind_code(model, tmp_path)
+        assert result.is_ok
+        assert "vendor/dep/lib.py" not in result.danger_ok.owner
 
     # frob:tests src/frob/strata/_code_binding.py::bind_code kind="unit"
     def test_no_code_glob_declared_yields_empty_binding(self, tmp_path: Path):
