@@ -2490,7 +2490,7 @@ User directive (2026-07-20): frob check takes forever; do a PERF audit -- measur
 id: T-0412
 title: frob:debt vs frob:waive -- expiring debt that is collected + re-raised as error
   before release (143 debt-waivers hide today)
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -2692,11 +2692,13 @@ context budget, I implemented the mechanism whose title and DESIGN section
 this ticket names (frob:debt vs frob:waive, expiry, release-blocking,
 listing) fully and honestly, and am disclosing the DEBT<->TODO coherence
 clause as NOT done rather than half-implementing it. Filed as a named
-follow-up: T-draft (mint at land) "frob:debt <-> frob:todo coherence:
-require/auto-register a paired todo, same-ticket consistency check,
-symmetric resolution surfacing" scoped to src/frob/graph/dsl.py,
-src/frob/gates/__init__.py, docs/guides/extending/comment-dsl-
-directives.md.
+follow-up: T-draft-b1002293 (mints a real T-#### id once this worktree
+lands on main) "frob:debt/frob:todo coherence: paired todo, same-ticket
+check, symmetric resolution", scoped to src/frob/graph/dsl.py (scope --add
+for src/frob/gates/__init__.py was refused: T-0412 itself holds an
+in-progress lease on that same file, the standard T-0453 collision guard;
+the coordinator can widen the follow-up's scope once T-0412 lands and
+releases the lease).
 
 MIGRATE: explicitly NOT done in this ticket, per the dispatch instruction
 ("do NOT mass-rewrite waivers in this ticket; that is a follow-up
@@ -2734,26 +2736,38 @@ since no frob:waive has been migrated yet).
 
 ### Changed
 ```
- .frob-release.json                   |   9 +-
- CHANGELOG.md                         |  21 ++
- docs/modules/tickets.md              |  57 ++++++
- pyproject.toml                       |   2 +-
- src/frob/app/ack_runner.py           |  14 +-
- src/frob/app/ticket_runner.py        |  20 +-
- src/frob/release/__init__.py         |  14 +-
- src/frob/tickets/_journal.py         | 157 +++++++++++++++
- src/frob/tickets/_land.py            |  88 +++++----
- src/frob/tickets/_reconcile.py       |  30 ++-
- src/frob/tickets/_store.py           |  15 +-
- tests/test_ack_worktree_lease.py     |  55 ++++++
- tests/test_release_worktree_lease.py |  52 +++++
- tests/test_ticket_journal.py         |  93 +++++++++
- tests/test_ticket_reconcile.py       |  35 ++++
- tests/unit/test_ticket_store.py      |  51 +++++
- tickets-archive.md                   |  17 +-
- tickets.md                           | 374 ++++++++++++++++++++++++++++++++++-
- uv.lock                              |   2 +-
- 19 files changed, 1035 insertions(+), 71 deletions(-)
+ .frob-release.json                              |  13 +-
+ CHANGELOG.md                                    |  37 ++
+ docs/guides/extending/comment-dsl-directives.md |  48 +-
+ docs/modules/gates.md                           |  34 ++
+ docs/modules/tickets.md                         |  57 +++
+ pyproject.toml                                  |   2 +-
+ src/frob/__main__.py                            |  11 +
+ src/frob/app/ack_runner.py                      |  14 +-
+ src/frob/app/app.py                             |   4 +-
+ src/frob/app/config.py                          |   8 +
+ src/frob/app/debt_runner.py                     |  92 ++++
+ src/frob/app/ticket_runner.py                   |  20 +-
+ src/frob/gates/__init__.py                      | 261 ++++++++++
+ src/frob/gates/_models.py                       |  16 +
+ src/frob/graph/_models.py                       |   3 +
+ src/frob/graph/dsl.py                           |  15 +
+ src/frob/release/__init__.py                    |  14 +-
+ src/frob/tickets/_journal.py                    | 157 ++++++
+ src/frob/tickets/_land.py                       |  88 ++--
+ src/frob/tickets/_reconcile.py                  |  30 +-
+ src/frob/tickets/_store.py                      |  15 +-
+ tests/test_ack_worktree_lease.py                |  55 ++
+ tests/test_debt_runner.py                       |  64 +++
+ tests/test_gates.py                             | 161 ++++++
+ tests/test_release_worktree_lease.py            |  52 ++
+ tests/test_ticket_journal.py                    |  93 ++++
+ tests/test_ticket_reconcile.py                  |  35 ++
+ tests/unit/test_ticket_store.py                 |  51 ++
+ tickets-archive.md                              |  17 +-
+ tickets.md                                      | 635 +++++++++++++++++++++++-
+ uv.lock                                         |   2 +-
+ 31 files changed, 2028 insertions(+), 76 deletions(-)
 ```
 
 ### Evidence
@@ -5277,3 +5291,23 @@ scope (tickets.md/tickets-archive.md evidence only).
 
 ### Evidence
 - `tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches` (pytest node id, verified passing when recorded)
+
+<!-- ticket:T-draft-b1002293 -->
+```yaml
+id: T-draft-b1002293
+title: 'frob:debt/frob:todo coherence: paired todo, same-ticket check, symmetric resolution'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: T-0412
+scope:
+- src/frob/graph/dsl.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
