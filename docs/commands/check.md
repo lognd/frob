@@ -114,6 +114,52 @@ frob check --only gates --delta        # gates stage reports only violations new
 `.frob/coverage-stamp` after `pytest --cov` runs; TEST006 compares the stamp
 against the live graph snapshot on later `frob check` runs.
 
+## Run-scoped memoization
+
+<!-- frob:describes src/frob/check/_memo.py::run_memo_scope -->
+<!-- frob:describes src/frob/check/_memo.py::reset_run_memo -->
+<!-- frob:describes src/frob/check/_memo.py::run_memo_stats -->
+<!-- frob:describes src/frob/check/_memo.py::memoize_per_run -->
+
+T-0423: the heavy PURE analyses (`frob.graph.build_graph`,
+`frob.arch.analyze_project`, ...) generalize the T-0414 `frob.lang` parse
+cache one level up -- `@memoize_per_run` on the function definition makes a
+second call with identical arguments, while a `run_memo_scope()` is active,
+a cache hit instead of a recompute, no matter which `frob check` stage
+calls it or in what order. This is the general fix for the T-0418 class of
+bug (the same expensive computation independently rerun by more than one
+stage in one invocation).
+
+```python
+# frob/check/_memo.py
+def run_memo_scope() -> ContextManager[None]
+    # Activates memoize_per_run caching for the `with` block's duration;
+    # frob.check._run_check_with_skips opens exactly one per `frob check`
+    # invocation. Outside an active scope, decorated functions are a pure
+    # passthrough -- no caching, no staleness risk.
+
+def reset_run_memo() -> None
+    # Convenience over run_memo_scope() for callers/tests that want an
+    # unconditionally-active, unbounded scope rather than a `with` block.
+
+def run_memo_stats() -> tuple[int, int]
+    # (hits, misses) since the last reset_run_memo/run_memo_scope entry --
+    # the anti-regression instrument, mirroring frob.lang.parse_cache_stats.
+
+def memoize_per_run(func) -> Callable
+    # Decorator: while a scope is active, repeat calls with identical
+    # arguments reuse the first call's result. Applied to build_graph and
+    # analyze_project at their definition site, so every caller (any
+    # stage, any gate) benefits automatically without call-site edits.
+```
+
+Correctness boundary: the memo is keyed on arguments only (no content
+hash), so it must NEVER be active outside a real `frob check` run -- a
+caller invoking `build_graph` directly (a CLI runner, or a test exercising
+real incremental-rebuild behavior across an on-disk content change) sees
+the function's ordinary, always-fresh behavior, because no scope is open
+around that call.
+
 ### Delta baseline (agent workflow)
 
 `frob check` prints every kept violation on every run -- useful for a human

@@ -30,6 +30,7 @@ from typani import Err, ErrorSet, Ok
 from typani.result import Result
 
 from frob import excludes as _excludes
+from frob.check._memo import memoize_per_run
 from frob.graph import cache as _cache
 from frob.graph._generated import is_generated_source
 from frob.graph._models import (
@@ -366,9 +367,19 @@ def _prune_stale_cache(conn, seen_paths: set[str]) -> None:
 
 
 # frob:doc docs/modules/graph.md#public-api
+# frob:doc docs/commands/check.md#run-scoped-memoization
 # frob:tests tests/test_graph.py::TestLoadGraph.test_non_utf8_doc_file_is_skipped_not_crashed  # noqa: E501
+# frob:tests tests/unit/test_memo.py::test_build_graph_second_call_is_memo_hit
+# frob:ticket T-0423
+@memoize_per_run
 def build_graph(root: Path, cache: Path) -> Result[GraphSnapshot, BuildError]:
-    """Incrementally (re)build the obligation graph for `root` into `cache`."""
+    """Incrementally (re)build the obligation graph for `root` into `cache`.
+
+    Memoized per `frob check` run (T-0423, `frob.check._memo.memoize_
+    per_run`): a second call with the same `(root, cache)` in the same run
+    is a cache hit, not a re-walk -- closes the "same heavy analysis reruns
+    across stages" class the T-0418 arch double-run was one instance of.
+    """
     root = root.resolve()
     _log.info("build_graph: root=%s cache=%s", root, cache)
     conn = _cache.connect(cache)
