@@ -42,6 +42,7 @@ from frob.strata._threat import (
     QUALITY_VIEWS,
     VIEWS,
     _discharge_claim_id,
+    caught_by_unresolved_tokens,
     check_caught_by_integrity,
     load_repo_benign_capabilities,
 )
@@ -1144,6 +1145,91 @@ class TestCapabilityCompleteness:
         )
         assert widened.is_ok
         assert widened.danger_ok == ()
+
+
+class TestEvalFiresCwe94:
+    """T-0401 (docs/audits/strata.md G3): `eval` used to be globally
+    `BenignCapability`-excused with the (false) reason "no CWE_CATALOG
+    entry targets dynamic code evaluation" -- CWE-94 IS that entry, just
+    never joined to the `eval` kind. Non-vacuous pair: BEFORE the fix an
+    `eval` node fired no obligation at all (the vulnerable case, proven
+    here via the empty `benign` default no longer excusing it); the
+    hardened case is a real `weakness:CWE-94:<node>` discharge."""
+
+    # frob:tests src/frob/strata/_threat.py::check_capability_completeness kind="unit"
+    def test_eval_capability_is_classified_not_benign_excused(self):
+        """Vulnerable-shape repro: a node declaring `may "eval"` with NO
+        BenignCapability excuse must be CLASSIFIED (known to the taxonomy),
+        proving `eval` now maps to a real catalog entry instead of silently
+        passing THREAT002 the way the old global excuse made it."""
+        node = Node(id="Worker", trust="trusted", may=("eval",))
+        result = check_capability_completeness(
+            KernelModel(nodes=(node,)), catalog=ALL_CATALOG, taxonomy=ALL_CATALOG
+        )
+        assert result.is_ok
+        assert result.danger_ok == ()  # classified (CWE-94), not unclassified
+
+    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    def test_eval_capability_fires_a_real_cwe94_obligation(self):
+        """The obligation actually FIRES (THREAT003) with no discharge --
+        this is the counterexample: an `eval`-declaring node with no
+        mitigating claim must be refused (undischarged CWE-94), proving the
+        capability is no longer a global no-op."""
+        node = Node(id="Sandbox", trust="trusted", may=("eval",))
+        model = KernelModel(nodes=(node,))
+        result = check_discharge_completeness(model, catalog=CWE_TOP_25_CATALOG)
+        assert result.is_ok
+        violations = result.danger_ok
+        assert any(v.rule == "THREAT003" and v.cwe == "CWE-94" for v in violations)
+
+    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    def test_eval_capability_discharges_with_a_real_mitigation_claim(self):
+        """Hardened case: the identical node, but with a proven `NoFlow`
+        mitigation claim named `weakness:CWE-94:<node>` -- discharges
+        clean, mirroring `test_cwe_94_fires_and_discharges_on_exec_
+        capability` above but for the `eval` join."""
+        node = Node(id="Sandbox", trust="trusted", may=("eval",))
+        claim_id = _discharge_claim_id("CWE-94", "Sandbox")
+        model = KernelModel(
+            nodes=(node,),
+            claims=(
+                Claim(
+                    id=claim_id,
+                    body=NoFlow(src="foreign", dst="Sandbox"),
+                    required_rung=Rung.L4,
+                ),
+            ),
+        )
+        result = check_discharge_completeness(model, catalog=CWE_TOP_25_CATALOG)
+        assert result.is_ok
+        assert not any(v.cwe == "CWE-94" for v in result.danger_ok)
+
+
+class TestCaughtByUnresolvedTokens:
+    """T-0382: `caught_by_unresolved_tokens` -- the public per-entry
+    resolution helper `check_caught_by_integrity` (THREAT006) and
+    `_compliance.py`'s `check_regulation_caught_by_integrity`
+    (COMPLIANCE004) both share, rather than duplicating the token
+    regex/resolution rule."""
+
+    # frob:tests src/frob/strata/_threat.py::caught_by_unresolved_tokens kind="unit"
+    def test_unknown_rule_id_is_unresolved(self):
+        unresolved = caught_by_unresolved_tokens(
+            "already enforced by SEC999", known_rule_ids=frozenset({"SEC001"})
+        )
+        assert unresolved == frozenset({"SEC999"})
+
+    # frob:tests src/frob/strata/_threat.py::caught_by_unresolved_tokens kind="unit"
+    def test_known_rule_id_resolves(self):
+        unresolved = caught_by_unresolved_tokens(
+            "already enforced by SEC001", known_rule_ids=frozenset({"SEC001"})
+        )
+        assert unresolved == frozenset()
+
+    # frob:tests src/frob/strata/_threat.py::caught_by_unresolved_tokens kind="unit"
+    def test_no_referenced_tokens_is_unresolved_empty(self):
+        unresolved = caught_by_unresolved_tokens("legal review, out of scope")
+        assert unresolved == frozenset()
 
 
 class TestCaughtByIntegrity:

@@ -476,6 +476,10 @@ class TestTicketStart:
         assert "no ticket" in caplog.text
 
     def test_start_auto_plans_queued_ticket(self, tmp_path: Path, caplog) -> None:
+        # T-0474: `start`'s default backgrounds the pre-work sweep -- it
+        # logs that the sweep was LAUNCHED, not "swept T-0001" (that line
+        # only comes from `_run_sweep` actually completing, which now
+        # happens in a detached subprocess, not this one).
         cfg = AppConfig(
             ticket_command="new",
             ticket_path=tmp_path,
@@ -489,11 +493,35 @@ class TestTicketStart:
         with caplog.at_level("INFO"):
             ticket_run(cfg)
         assert "auto-planned T-0001" in caplog.text
-        assert "swept T-0001" in caplog.text
+        assert "pre-work sweep launched in the background" in caplog.text
         assert (
             load_queue(tmp_path).danger_ok.tickets["T-0001"].state
             == TicketState.IN_PROGRESS
         )
+
+    def test_start_foreground_runs_sweep_synchronously(
+        self, tmp_path: Path, caplog
+    ) -> None:
+        """`--foreground` (`ticket_foreground=True`) is T-0474's opt-out --
+        the sweep completes synchronously, in this process, exactly like
+        every `start` did before T-0474."""
+        cfg = AppConfig(
+            ticket_command="new",
+            ticket_path=tmp_path,
+            ticket_title="start me fg",
+            ticket_kind="bug",
+        )
+        ticket_run(cfg)
+        cfg = AppConfig(
+            ticket_command="start",
+            ticket_path=tmp_path,
+            ticket_id="T-0001",
+            ticket_foreground=True,
+        )
+        with caplog.at_level("INFO"):
+            ticket_run(cfg)
+        assert "swept T-0001" in caplog.text
+        assert "pre-work sweep launched in the background" not in caplog.text
 
     def test_start_already_in_progress_exits_1(self, tmp_path: Path, caplog) -> None:
         cfg = AppConfig(
@@ -510,6 +538,72 @@ class TestTicketStart:
         with caplog.at_level("ERROR"), pytest.raises(SystemExit):
             ticket_run(cfg)
         assert "already in-progress" in caplog.text
+
+
+class TestSpawnBackgroundSweep:
+    """`frob.app.ticket_runner._spawn_background_sweep` (T-0474): the
+    default `start` no longer blocks on the pre-work sweep -- it launches
+    it as a detached subprocess and returns."""
+
+    def test_spawns_detached_sweep_subprocess(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_app_runners_batch7.py::TestSpawnBackgroundSweep.test_spawns_detached_sweep_subprocess
+        import subprocess
+        import sys
+
+        from frob.app import ticket_runner as ticket_runner_mod
+
+        calls: list[dict] = []
+
+        class _FakePopen:
+            def __init__(self, argv, **kwargs) -> None:  # noqa: ANN001
+                calls.append({"argv": argv, "kwargs": kwargs})
+
+        monkeypatch.setattr(subprocess, "Popen", _FakePopen)
+        ticket_runner_mod._spawn_background_sweep(tmp_path, "T-0001")
+
+        assert len(calls) == 1
+        argv = calls[0]["argv"]
+        assert argv[:1] == [sys.executable]
+        assert "sweep" in argv
+        assert "T-0001" in argv
+        assert calls[0]["kwargs"]["start_new_session"] is True
+
+    def test_popen_failure_falls_back_to_synchronous_sweep(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
+    ) -> None:
+        """A spawn failure (e.g. a sandboxed environment refusing
+        `subprocess.Popen`) must never silently drop the sweep -- it falls
+        back to running it synchronously right there."""
+        # frob:tests tests/unit/test_app_runners_batch7.py::TestSpawnBackgroundSweep.test_popen_failure_falls_back_to_synchronous_sweep
+        import subprocess
+
+        from frob.app import ticket_runner as ticket_runner_mod
+
+        cfg = AppConfig(
+            ticket_command="new",
+            ticket_path=tmp_path,
+            ticket_title="fallback me",
+            ticket_kind="bug",
+        )
+        ticket_run(cfg)
+        cfg = AppConfig(ticket_command="plan", ticket_path=tmp_path, ticket_id="T-0001")
+        ticket_run(cfg)
+        # Manually drive to in-progress the way `_start` does, so the
+        # helper under test sees a real in-progress ticket to sweep.
+        from frob.tickets import TicketState, transition
+
+        assert transition(tmp_path, "T-0001", TicketState.IN_PROGRESS).is_ok
+
+        def _raise(*args, **kwargs):  # noqa: ANN001, ANN002, ANN003
+            raise OSError("sandbox refused Popen")
+
+        monkeypatch.setattr(subprocess, "Popen", _raise)
+        with caplog.at_level("INFO"):
+            ticket_runner_mod._spawn_background_sweep(tmp_path, "T-0001")
+        assert "background sweep spawn failed" in caplog.text
+        assert "swept T-0001" in caplog.text
 
 
 class TestTicketRequeue:
@@ -623,6 +717,31 @@ class TestTicketSweep:
         with caplog.at_level("ERROR"), pytest.raises(SystemExit):
             ticket_run(cfg)
         assert "is not in-progress" in caplog.text
+
+
+class TestTicketReconcileCli:
+    """`frob ticket reconcile` (T-0476) dispatch smoke test -- the real
+    stale-hold/orphan-worktree behavior is covered end to end (real `git
+    worktree` fixtures) by `tests/test_ticket_reconcile.py`; this just
+    exercises the CLI plumbing (flag wiring, log summary, clean exit) on
+    the trivial no-anomalies case."""
+
+    def test_no_anomalies_logs_clean_summary(self, tmp_path: Path, caplog) -> None:
+        import subprocess
+
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        cfg = AppConfig(ticket_command="reconcile", ticket_path=tmp_path)
+        with caplog.at_level("INFO"):
+            ticket_run(cfg)
+        assert "no stale in-progress holds found" in caplog.text
+        assert "no orphan worktrees found" in caplog.text
+
+    def test_load_error_exits_1(self, tmp_path: Path, caplog) -> None:
+        _write_malformed_ledger(tmp_path)
+        cfg = AppConfig(ticket_command="reconcile", ticket_path=tmp_path)
+        with caplog.at_level("ERROR"), pytest.raises(SystemExit):
+            ticket_run(cfg)
+        assert "ticket reconcile failed" in caplog.text
 
 
 class TestClipboardAttachOnNew:

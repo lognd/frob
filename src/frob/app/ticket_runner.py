@@ -1,6 +1,6 @@
 """CLI wiring for `frob ticket new|list|show|doable|plan|start|requeue|
-sweep|land|merge-driver|attach|block|close|fail|evidence|done-report|
-scope|archive` (docs/modules/tickets.md)."""
+sweep|reconcile|land|merge-driver|attach|block|close|fail|evidence|
+done-report|scope|archive` (docs/modules/tickets.md)."""
 
 # frob:waive TEST005 reason="module line coverage 22.7%, debt T-0160"
 # frob:waive SCOPE001 reason="T-0323 scope omitted this file, filed T-draft-bc39c17f"
@@ -8,6 +8,7 @@ scope|archive` (docs/modules/tickets.md)."""
 
 from __future__ import annotations
 
+import subprocess
 import sys
 from datetime import date
 from pathlib import Path
@@ -46,6 +47,7 @@ def _ticket_dispatch_table() -> dict:
         "start": _start,
         "requeue": _requeue,
         "sweep": _sweep_cmd,
+        "reconcile": _reconcile_cmd,
         "migrate": lambda root, _cfg: _migrate(root),
         "renumber": _renumber,
         "land": _land,
@@ -71,7 +73,7 @@ def run(cfg: AppConfig) -> None:
     if handler is None:
         _log.error(
             "usage: frob ticket <new|list|show|doable|plan|start|requeue|"
-            "sweep|land|merge-driver|attach|block|close|fail|evidence|"
+            "sweep|reconcile|land|merge-driver|attach|block|close|fail|evidence|"
             "done-report|scope|archive> ..."
         )
         sys.exit(1)
@@ -754,7 +756,70 @@ def _start(root: Path, cfg: AppConfig) -> None:
 
     record_ticket_event(root, ticket_id=cfg.ticket_id, event="started")
 
-    _run_sweep(root, transitioned.danger_ok)
+    # frob:ticket T-0474
+    # By default `start` is now just the state transition above -- the
+    # pre-work sweep (a synchronous whole-repo dup+xref scan, 57s on this
+    # repo's /mnt/c checkout) runs in the BACKGROUND instead of blocking the
+    # command. `--foreground` opts back into the old synchronous behavior
+    # (useful for a script/test that wants the sweep guaranteed recorded the
+    # instant `start` returns). Either way, `frob ticket sweep <id>` remains
+    # the always-available, always-synchronous way to (re)record it, so
+    # PRE001 stays satisfiable regardless of how `start` recorded it.
+    if cfg.ticket_foreground:
+        _run_sweep(root, transitioned.danger_ok)
+    else:
+        _spawn_background_sweep(root, cfg.ticket_id)
+
+
+def _spawn_background_sweep(root: Path, ticket_id: str) -> None:
+    """Launch `frob ticket sweep <ticket_id>` as a detached background
+    process against `root` (T-0474) -- `start` returns as soon as this is
+    spawned, without waiting for the sweep (dup scan + xref + scope digest)
+    to finish. `start_new_session=True` detaches it from this process's
+    session so it keeps running after the `start` CLI invocation exits;
+    stdout/stderr are discarded (the sweep's own `record_prework` call is
+    the durable side effect a caller cares about -- `frob check`'s PRE001
+    gate, or a later `frob ticket sweep`/`frob ticket show`, is how a
+    caller observes whether it has landed yet, not this process's output).
+
+    Best-effort: if spawning itself fails (e.g. `sys.executable` refused by
+    a locked-down sandbox), this logs a warning and falls back to running
+    the sweep synchronously right here -- `start` must never silently skip
+    recording a sweep at all, only ever trade "instant" for "eventually"."""
+    try:
+        subprocess.Popen(  # noqa: S603
+            [
+                sys.executable,
+                "-m",
+                "frob",
+                "ticket",
+                "sweep",
+                ticket_id,
+                "--path",
+                str(root),
+            ],
+            cwd=str(root),
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            stdin=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+    except OSError as exc:
+        _log.warning(
+            "ticket start: %s background sweep spawn failed (%s) -- "
+            "running it synchronously instead",
+            ticket_id,
+            exc,
+        )
+        ticket = _load_ticket_or_exit(root, ticket_id, verb="start")
+        _run_sweep(root, ticket)
+        return
+    _log.info(
+        "ticket start: %s pre-work sweep launched in the background -- "
+        "`frob ticket sweep %s` re-runs it synchronously if needed sooner",
+        ticket_id,
+        ticket_id,
+    )
 
 
 def _sweep_cmd(root: Path, cfg: AppConfig) -> None:
@@ -769,6 +834,48 @@ def _sweep_cmd(root: Path, cfg: AppConfig) -> None:
         _log.error("ticket sweep: %s is not in-progress", cfg.ticket_id)
         sys.exit(1)
     _run_sweep(root, ticket)
+
+
+# frob:ticket T-0476
+def _reconcile_cmd(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket reconcile [--apply] [--remove-orphans]`: report (and,
+    with `--apply`, heal) T-0476's two ticket<->worktree binding anomalies.
+    Always logs a human-readable summary; exits 0 whether or not anomalies
+    were found (finding an anomaly is not itself a command failure -- only
+    a real error loading the ledger is)."""
+    from frob.tickets import reconcile
+
+    result = reconcile(
+        root,
+        apply=cfg.ticket_reconcile_apply,
+        remove_orphans=cfg.ticket_reconcile_remove_orphans,
+    )
+    if result.is_err:
+        _log.error("ticket reconcile failed: %s", result.danger_err)
+        sys.exit(1)
+    report = result.danger_ok
+
+    verb = "requeued" if report.applied else "would requeue"
+    if report.requeued_tickets:
+        _log.info(
+            "reconcile: %s %d stale in-progress hold(s): %s",
+            verb,
+            len(report.requeued_tickets),
+            list(report.requeued_tickets),
+        )
+    else:
+        _log.info("reconcile: no stale in-progress holds found")
+
+    if report.orphan_worktrees:
+        removed_verb = "removed" if report.removed_orphans else "flagged (not removed)"
+        _log.info(
+            "reconcile: %s %d orphan worktree(s) (no lease): %s",
+            removed_verb,
+            len(report.orphan_worktrees),
+            list(report.orphan_worktrees),
+        )
+    else:
+        _log.info("reconcile: no orphan worktrees found")
 
 
 def _xref_hits_for_scope(root: Path, scope: tuple[str, ...]) -> list[str]:

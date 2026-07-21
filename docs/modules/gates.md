@@ -468,14 +468,33 @@ false-positive lesson applies here too: a noisy gate gets blanket-waived):
    external or illustrative block the heuristic cannot confidently
    classify.
 
-**Scope cut (disclosed, not silent)**: console/bash command-drift checking
-(`frob <subcommand>` against a live registry) is NOT implemented in this
-landing -- the ticket's own refinement demanded a CONFIGURABLE command
-source (a `frob.toml`-declared entry point, generic per project, frob
-being only one instance among many) rather than a hardcoded argparse-of-
-frob special case, and building that generically was judged out of scope
-for a first, conservative pass. Filed as a follow-up ticket (see T-0436's
-Done report in `tickets.md` for the id).
+5. **Console/bash command-drift checking (T-0443)**: a
+   ` ```console ``` `/` ```bash ``` `/` ```sh ``` `/` ```shell ``` ` fenced
+   block's lines are scanned for `<prog> <subcommand...>` invocations of a
+   CONFIGURED command source -- never a hardcoded, frob-specific
+   subcommand list. `frob.toml`'s `[[docblocks.commands]]` array declares
+   each source generically:
+
+   ```toml
+   [[docblocks.commands]]
+   prog = "frob"
+   parser = "frob.__main__:_build_parser"
+   ```
+
+   `parser` is a `module:callable` dotted path to a zero-argument factory
+   returning an `argparse.ArgumentParser`; the gate imports it AT CHECK
+   TIME and walks its live `add_subparsers` tree, so the argparse registry
+   is the single source of truth -- a subcommand rename/removal there is
+   caught automatically, with zero edits to this gate or to `frob.toml`.
+   A chain that does not walk the tree is STALE (error); one that does
+   resolve is checked for a nearby binding directive same as every other
+   tier (UNBOUND, warn). No `[[docblocks.commands]]` entries at all (a
+   project that has not opted in) means zero console/bash checking --
+   fail-open, matching every other namespace source in this module.
+
+This repo configures itself as its own first instance -- see
+`frob.toml`'s `[[docblocks.commands]]` table, pointed at
+`frob.__main__:_build_parser`.
 
 **Dogfooding result (T-0436 Done report has the full finding-by-finding
 detail)**: run on this repo's own tracked docs, DOC004 found 5 real

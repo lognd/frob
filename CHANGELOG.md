@@ -17,6 +17,38 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.42.0] - unreleased
+
+Public-API surface change since 0.41.0 (mechanical semver via REL001): an
+additive (minor) bump -- new `frob.tickets._reconcile` module and `frob
+ticket reconcile` CLI command.
+
+- T-0476: ticket<->worktree binding + liveness reconcile. New `frob.
+  tickets.reconcile`/`ReconcileReport` (`src/frob/tickets/_reconcile.py`),
+  reusing the T-0473 lease registry to judge two anomaly classes
+  structurally: a stale `IN_PROGRESS` hold (a checkout's own ledger shows
+  it, but no live lease backs it -- requeued to `QUEUED` via the same edge
+  `frob ticket requeue` uses) and an orphan live worktree (a real `git
+  worktree` entry with no lease naming it -- flagged, and only removed with
+  `--remove-orphans`, a strictly more destructive opt-in gated separately
+  from `--apply`). New `frob ticket reconcile [--apply] [--remove-orphans]`
+  CLI command.
+
+## [0.41.0] - unreleased
+
+Public-API surface change since 0.40.0 (mechanical semver via REL001):
+additive minor bump -- DOC004 console/bash command-drift tier driven by
+[[docblocks.commands]] (T-0443) and PERF007 cross-stage redundant-
+recomputation detection in frob.perf._redundancy (T-0413).
+
+## [0.40.0] - unreleased
+
+Public-API surface change since 0.39.0 (mechanical semver via REL001):
+strata caught_by integrity -- new COMPLIANCE004 check, shared public
+`caught_by_unresolved_tokens` helper in frob.strata._threat (T-0382),
+and the eval/CWE-94 threat join with self-conformance updates (T-0401
+G3).
+
 ## [0.39.0] - unreleased
 
 Public-API surface change since 0.38.0 (mechanical semver via REL001): an

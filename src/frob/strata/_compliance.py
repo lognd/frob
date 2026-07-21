@@ -54,6 +54,16 @@ from ._errors import StrataError
 from ._facts import FactBase, build_facts
 from ._models import BoundaryDirection, Flow, KernelModel, Node, Quantity
 
+#: `_threat.py`'s `CAUGHT_BY_NONE_MARKER`/`caught_by_unresolved_tokens`
+#: (T-0382) are reused (not duplicated) below, but only via a LOCAL import
+#: inside `check_regulation_caught_by_integrity` -- a module-level import
+#: here would cycle: `frob.strata.__init__` -> `_atomic` -> `_elaborate` ->
+#: `_infra` -> `_pii` -> `_compliance` (this module) -> `_threat` ->
+#: `_effects` -> `frob.vet` -> `frob.gates` -> `frob.gates._pii_structural`
+#: -> `frob.strata._pii` (still mid-import, `PII_CATEGORIES` not yet
+#: defined). `_threat.py` itself is fully initialized by the time any
+#: caller actually invokes this function, so the local import is safe.
+
 _log = get_logger(__name__)
 
 #: Flow/Node attr prefixes carrying compliance tags (module docstring).
@@ -240,6 +250,65 @@ def check_regulation_catalog_completeness(
         for reg_id in ordered_members
         if reg_id not in cataloged and reg_id not in excused
     ]
+    return Ok(tuple(violations))
+
+
+def _regulation_caught_by_violation(
+    reg_id: str, caught_by: str, unresolved: frozenset[str]
+) -> ComplianceViolation:
+    """COMPLIANCE004 violation helper: an `OutOfScopeRegulation.caught_by`
+    names a rule id that resolves to no real registered control -- mirrors
+    `_threat.py::_caught_by_violation` (THREAT006) for the compliance
+    family; deny-by-default, a fabricated reference is worse than an
+    honest `CAUGHT_BY_NONE_MARKER` disclosure."""
+    named = ", ".join(sorted(unresolved))
+    _log.warning(
+        "compliance: COMPLIANCE004 %s caught_by %r references unknown control(s): %s",
+        reg_id,
+        caught_by,
+        named,
+    )
+    return ComplianceViolation(
+        rule="COMPLIANCE004",
+        regulation=reg_id,
+        detail=f"{reg_id} caught_by {caught_by!r} references unknown "
+        f"control(s) that do not exist: {named}",
+    )
+
+
+# frob:doc docs/strata/threat.md#compliance-regulatory-obligations-stdcompliance
+# frob:tests tests/unit/strata/test_compliance.py::TestRegulationCaughtByIntegrity.test_caught_by_naming_absent_control_is_refused  # noqa: E501
+# frob:tests tests/unit/strata/test_compliance.py::TestRegulationCaughtByIntegrity.test_caught_by_naming_present_control_discharges  # noqa: E501
+def check_regulation_caught_by_integrity(
+    out_of_scope: tuple[OutOfScopeRegulation, ...] = (),
+    known_rule_ids: frozenset[str] = frozenset(),
+) -> Result[tuple[ComplianceViolation, ...], StrataError]:
+    """COMPLIANCE004 (T-0382): every `OutOfScopeRegulation.caught_by` that
+    names a rule-id-shaped token must reference a control that actually
+    exists in `known_rule_ids` (the live gate-rule-id set) -- a typo'd or
+    fabricated reference is a violation, existence AND (via `known_rule_
+    ids` being the set of rule ids a real Violation-producing gate can
+    emit) efficacy, not just a registered-looking string. An honest
+    `"none -- ..."` `caught_by` (`CAUGHT_BY_NONE_MARKER`) never fails this
+    check -- it is already declaring the gap. Mirrors `_threat.py::
+    check_caught_by_integrity` (THREAT006) exactly, reusing its token-
+    resolution helper (`caught_by_unresolved_tokens`) rather than
+    duplicating the regex/logic (imported locally -- module docstring
+    above explains why a top-level import cycles). `known_rule_ids`
+    defaults to empty (fail closed: no rule-id-shaped reference can
+    resolve) since this package cannot import `frob.gates` itself, same
+    rationale as THREAT006's own docstring."""
+    from ._threat import CAUGHT_BY_NONE_MARKER, caught_by_unresolved_tokens
+
+    violations: list[ComplianceViolation] = []
+    for entry in out_of_scope:
+        if entry.caught_by.strip().lower().startswith(CAUGHT_BY_NONE_MARKER):
+            continue
+        unresolved = caught_by_unresolved_tokens(entry.caught_by, known_rule_ids)
+        if unresolved:
+            violations.append(
+                _regulation_caught_by_violation(entry.id, entry.caught_by, unresolved)
+            )
     return Ok(tuple(violations))
 
 
@@ -752,12 +821,18 @@ def evaluate_compliance(
     catalog: tuple[RegulationEntry, ...] = COMPLIANCE_CATALOG,
     out_of_scope: tuple[OutOfScopeRegulation, ...] = (),
     policy: PrivacyPolicy | None = None,
+    known_rule_ids: frozenset[str] = frozenset(),
 ) -> Result[ComplianceReport, StrataError]:
     """The strata-level compliance-audit entrypoint: COMPLIANCE001 +
-    COMPLIANCE002 (+ COMPLIANCE003 when `policy` is given) over `model`
-    against the selected baseline `view` (docs/strata/threat.md#compliance).
-    Kept gate-agnostic (no `src/frob/gates` import), mirroring
-    `_threat.py::evaluate_threats`."""
+    COMPLIANCE002 (+ COMPLIANCE003 when `policy` is given, + COMPLIANCE004
+    when `out_of_scope` carries any rule-id-shaped `caught_by`) over
+    `model` against the selected baseline `view` (docs/strata/threat.md
+    #compliance). Kept gate-agnostic (no `src/frob/gates` import),
+    mirroring `_threat.py::evaluate_threats`. `known_rule_ids` (T-0382) is
+    the live gate-rule-id set COMPLIANCE004's caught_by verification
+    checks against -- defaults to empty (no rule-id reference can
+    resolve, fail closed), same rationale as `_threat.py::
+    evaluate_exhaustiveness`'s own `known_rule_ids` parameter."""
     catalog_violations = check_regulation_catalog_completeness(
         view, catalog, out_of_scope
     )
@@ -769,10 +844,16 @@ def evaluate_compliance(
     policy_violations = (
         check_privacy_policy(model, policy) if policy is not None else ()
     )
+    caught_by_violations = check_regulation_caught_by_integrity(
+        out_of_scope, known_rule_ids
+    )
+    if caught_by_violations.is_err:
+        return Err(caught_by_violations.danger_err)
     all_violations = (
         *catalog_violations.danger_ok,
         *discharge_violations.danger_ok,
         *policy_violations,
+        *caught_by_violations.danger_ok,
     )
     _log.info(
         "compliance: evaluated view=%r catalog=%d out_of_scope=%d -> %d violation(s)",
@@ -793,6 +874,7 @@ __all__ = [
     "PrivacyPolicy",
     "RegulationEntry",
     "check_privacy_policy",
+    "check_regulation_caught_by_integrity",
     "check_regulation_catalog_completeness",
     "check_regulation_discharge",
     "evaluate_compliance",
