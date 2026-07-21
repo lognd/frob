@@ -4559,7 +4559,7 @@ Split from T-0497 (too large to rush inside that ticket's remaining budget -- ne
 ```yaml
 id: T-0515
 title: burn down residual 604 INV003/INV004 findings after T-0509 calibration
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-07-21'
@@ -4577,12 +4577,11 @@ acceptance: []
 threat: null
 ```
 T-0509 calibrated INV003/INV004: noise-stripping (fenced/inline code, links, table rows), a claim-verb requirement in the same sentence as the trigger word, INV003 scoped to INV003_SPEC_DIRS (docs/modules, docs/strata) instead of all docs/**.md, and markdown-side frob:waive support. Combined warnings dropped from 765 to 604 (INV003 88->31, INV004 677->573), measured via frob check --only invariant on this worktree before/after. 604 is still above the <30 in-ticket-burndown threshold, so this residual was NOT hand-burned down in T-0509. Next steps: bind real invariants/INV-###.md files for genuine claims, add <!-- frob:waive INV003|INV004 reason="..." --> markers for design-intent-only prose, and reword sections that used normative language loosely. INV004's 573 is the larger share (all of docs/**.md still in scope) -- consider whether INV004 also warrants directory scoping or a further claim-shape narrowing as part of this burndown.
-
 <!-- ticket:T-0516 -->
 ```yaml
 id: T-0516
 title: burn down residual 89 COV006 findings after T-0506 wrapper-reachability fix
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-07-21'
@@ -4599,7 +4598,6 @@ acceptance: []
 threat: null
 ```
 T-0506 extended COV006 with a one-hop same-file public-wrapper rescue, reducing the finding count from 98 to 89 (measured via frob check before/after on this worktree). The residual 89 are either genuinely broken frob:tests bindings needing a real bound symbol, or FP shapes not covered by the wrapper rescue (e.g. cross-file wrapper, two-hop chains, or a test calling the private symbol via an attribute/instance rather than a bare call token). Triage the residual list from a fresh frob check run and either bind real tests, fix wrong directives, or narrow to a documented remaining FP class.
-
 <!-- ticket:T-0517 -->
 ```yaml
 id: T-0517

@@ -550,6 +550,18 @@ assume "weakness:CWE-94:graphlang" noflow registry -> graphlang owner logan revi
 assume "weakness:CWE-94:stratamod" noflow registry -> stratamod owner logan review "2026-10-15"
 // frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
 assume "weakness:CWE-94:core" noflow registry -> core owner logan review "2026-10-15"
+// gates: T-0443 gave `gates` its own `may "eval"` (importlib.import_module
+// of the `[[docblocks.commands]]` parser factory in gates/_docblocks.py),
+// dragging in fresh CWE-94/CWE-78 obligations. The import target is a
+// dotted path read from TRACKED frob.toml -- never from registry response
+// bytes, user input, or scanned file content -- and no subprocess/
+// os.system/shell call site exists under gates' code glob (verified by
+// direct grep, same T-0150/T-0151 standard as the nodes above), so no
+// code-injection or OS-command path from registry can reach it.
+// frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
+assume "weakness:CWE-94:gates" noflow registry -> gates owner logan review "2026-10-15"
+// frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
+assume "weakness:CWE-78:gates" noflow registry -> gates owner logan review "2026-10-15"
 
 // `eval` also joins `CWE-78` WITHIN `CWE_CATALOG` itself (the `owasp-
 // top-10` default view does not include CWE-94 at all, G6 -- a separate
