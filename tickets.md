@@ -3713,7 +3713,7 @@ Root-cause analysis (user, 2026-07-20: "why do I have to keep making these reque
 id: T-0425
 title: Split TODO001 into per-failure-mode rule ids (bare-untracked vs dangling-frob:todo-ticket);
   align with frob's own one-id-per-mode convention
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-20'
@@ -3723,8 +3723,18 @@ scope:
 - src/frob/gates/
 - frob.toml
 - docs/modules/gates.md
-scope_changes: []
-evidence: []
+- tests/test_gates.py
+scope_changes:
+- op: add
+  glob: tests/test_gates.py
+  reason: existing TODO001 edges test must be updated to TODO002 after the rule split,
+    or it silently breaks
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_gates.py::TestCoverageGate::test_todo002_unbound_directive
+- tests/test_gates.py::TestCoverageGate::test_todo001_bare_comment_in_touched_file
+- tests/test_gates.py::TestCoverageGate::test_todo002_edge_to_closed_ticket
 attachments: []
 acceptance: []
 threat: null
@@ -3732,6 +3742,59 @@ threat: null
 User (2026-07-20): is it smart to categorize both failure modes under TODO001? No. TODO001 conflates TWO distinct failure modes: (a) _todo001_bare -- a bare untracked TODO/FIXME comment (work marked, not accounted for at all; fix = file a ticket + convert to frob:todo T-####); (b) _todo001_edges -- a frob:todo bound to a CLOSED/MISSING ticket (work accounted, but the reference is dangling; fix = ticket is closed so remove the TODO/reopen, or the id is wrong so correct it). Different diagnoses, different fixes, yet one rule id -- so you cannot tier their severity independently, cannot frob:waive one without the other, and cannot filter/report them apart. This VIOLATES frobs own one-id-per-failure-mode convention: every other family splits its modes (WAIVE001/WAIVE002, COV001-004, TEST001-010, DUP001/002, PERF001-004). TODO having ONE id for TWO modes is a self-consistency gap -- exactly the "frob does not apply its own standard to itself" class T-0424 (reflexive completeness) should catch.
 
 FIX: split into distinct rule ids -- e.g. TODO001 = bare untracked TODO/FIXME, TODO002 = frob:todo -> non-open/missing ticket (choose numbering; keep TODO001 as the most common/original mode for waiver back-compat, or migrate existing frob:waive TODO001 sites deliberately). Update _KNOWN_GATE_RULES, the waiver machinery, docs/modules/gates.md rule catalog, and any existing frob:waive TODO001 directives in this repo (+ note the per-project migration for sibling repos). COORDINATE with T-0412 (frob:debt<->frob:todo coherence): the debt/todo coherence adds MORE modes (debt-without-todo, debt/todo ticket-mismatch, todo-on-closed-ticket) -- each of THOSE should also be its own rule id, not piled onto a conflated TODO001. Acceptance: each todo/debt failure mode has its own rule id, independently severable/waivable/reportable; the rule catalog documents each; existing waivers migrated; no mode silently shares an id with a semantically-different one. Queued behind T-0343 (gates/__init__.py overlap).
+
+## Done report
+
+Split the conflated TODO001 rule into two per-failure-mode rule ids,
+matching frob's own one-id-per-mode convention (WAIVE001/002, COV001-004,
+TEST001-010, DUP001/002, PERF001-004):
+
+- TODO001: a bare, wholly untracked TODO/FIXME comment in a diff-touched
+  file (`_todo001_bare`/`_todo001_bare_comment`) -- work not accounted for
+  at all.
+- TODO002: a `frob:todo` edge bound to a non-open (closed or missing)
+  ticket (`_todo002_edges`) -- work was accounted for once, but the
+  reference is now dangling.
+
+`_todo001` is now a thin dispatcher over both, `_KNOWN_GATE_RULES` lists
+both ids, `docs/modules/gates.md`'s rule catalog and severity-defaults note
+both cover TODO002, and `tests/test_gates.py` carries dedicated cases per
+mode (bare-untracked, dangling-to-missing, dangling-to-closed) plus a
+negative assertion that each case does NOT also fire the other rule id.
+Swept the repo for other TODO001-only references (frob.toml has no
+TODO001-specific entries to migrate; existing docs/tests already updated
+in the same change).
+
+Test results: `uv run pytest tests/test_gates.py -q` -- 186 passed.
+`uv run pytest --collect-only -q` -- collects cleanly repo-wide, no errors.
+
+Gates: `uv run frob check --ticket T-0425` -- 0 errors, 1 warning (TEST006,
+no coverage stamp; coordinator-side), 91 waived, scope/prework/coverage all
+clean for this ticket's scope. One unrelated pre-existing error remains in
+the full check output: COV003 on already-closed T-0416, whose recorded
+evidence node id no longer collects
+(`tests/unit/strata/test_code_binding.py::TestBindCode::
+test_nested_git_checkout_pruned_even_when_not_covered_by_exclude_globs`) --
+confirmed out of T-0425's scope (src/frob/gates/, frob.toml,
+docs/modules/gates.md, tests/test_gates.py) and pre-dates this change;
+filed as T-draft-5443bd5e rather than fixed here.
+
+Filed: T-draft-5443bd5e (T-0416 evidence no longer collects, COV003) --
+out-of-scope discovery, not fixed in this ticket.
+
+### Changed
+```
+ docs/modules/gates.md      |  5 +--
+ src/frob/gates/__init__.py | 44 ++++++++++++++++-------
+ tests/test_gates.py        | 21 +++++++++--
+ tickets.md                 | 87 ++++++++++++++++++++++++++++++++++++++++++++--
+ 4 files changed, 137 insertions(+), 20 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestCoverageGate::test_todo002_unbound_directive` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCoverageGate::test_todo001_bare_comment_in_touched_file` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCoverageGate::test_todo002_edge_to_closed_ticket` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0428 -->
 ```yaml
@@ -5127,3 +5190,23 @@ acceptance:
 threat: null
 ```
 Found during the 2026-07-21 doable-warning scope-narrowing sweep. frob ticket scope --add checks every added glob against in-progress leases, but queued tickets ALREADY hold broad globs that overlap those same leases (grandfathered at creation). Narrowing 'src/frob/strata/**' down to 'src/frob/strata/_host.py' is refused (ScopeLeaseConflict, e.g. vs T-0263's strata lease) even though the change strictly SHRINKS the overlap. Because scope changes are atomic, the whole narrowing fails and the chronically-over-broad glob (and its doable WARNING) cannot be cleared until the leaseholder lands. Fix: when validating --add, subtract the ticket's own existing scope coverage first -- an add that is a subset of what the ticket already covers can never create NEW contention and must be allowed. Related interplay: ScopeRemoveOrphansEvidence forces a covering --add for recorded evidence, so a ticket whose evidence lies under another ticket's leased tree (T-0160: tests/unit/strata/test_native_staleness.py under T-0263's lease) is fully wedged: cannot remove tests/** without an add, cannot add the evidence path. Tickets left un-narrowed by the sweep, to re-narrow once T-0263/T-0423/T-0460 land: T-0235 T-0261 T-0339 T-0341 T-0383 T-0384 T-0392 T-0393 T-0394 T-0395 T-0401 T-0410 T-0428 T-0439 T-0440; partial leftovers: T-0160 (tests/** stays), T-0461 (add src/frob/render/ post-T-0460).
+
+<!-- ticket:T-draft-5443bd5e -->
+```yaml
+id: T-draft-5443bd5e
+title: T-0416 evidence no longer collects (COV003)
+state: queued
+kind: bug
+origin: human
+created: '2026-07-21'
+blocked_by: []
+parent: null
+scope:
+- tests/unit/strata/test_code_binding.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+found while working T-0425: frob check reports COV003 for T-0416 (done) -- its recorded evidence tests/unit/strata/test_code_binding.py::TestBindCode::test_nested_git_checkout_pruned_even_when_not_covered_by_exclude_globs no longer collects (pytest --collect-only: 'not found', no match in TestBindCode). Either the test was renamed/removed since T-0416 closed, or something broke collection for it. Out of scope for T-0425 (src/frob/gates/, frob.toml, docs/modules/gates.md, tests/test_gates.py only).
