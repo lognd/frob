@@ -6719,112 +6719,112 @@ other_weakness_framework_entries:
   framework: cve-fingerprint
   source_doc: docs/design/security-corpus.md
   checkability: needle-detectable
-  disposition: deferred:T-0439
+  disposition: deferred:T-0508
   cross_refs: []
 - id: SEC-CVE-FINGERPRINT-FP-XSS-JQUERY-001
   name: FP-XSS-JQUERY-001
   framework: cve-fingerprint
   source_doc: docs/design/security-corpus.md
   checkability: needle-detectable
-  disposition: deferred:T-0439
+  disposition: deferred:T-0508
   cross_refs: []
 - id: SEC-CVE-FINGERPRINT-FP-PATH-TAR-001
   name: FP-PATH-TAR-001
   framework: cve-fingerprint
   source_doc: docs/design/security-corpus.md
   checkability: needle-detectable
-  disposition: deferred:T-0439
+  disposition: deferred:T-0508
   cross_refs: []
 - id: SEC-CVE-FINGERPRINT-FP-DESERIALIZE-YAML-001
   name: FP-DESERIALIZE-YAML-001
   framework: cve-fingerprint
   source_doc: docs/design/security-corpus.md
   checkability: needle-detectable
-  disposition: deferred:T-0439
+  disposition: deferred:T-0508
   cross_refs: []
 - id: SEC-CVE-FINGERPRINT-FP-DESERIALIZE-PICKLE-001
   name: FP-DESERIALIZE-PICKLE-001
   framework: cve-fingerprint
   source_doc: docs/design/security-corpus.md
   checkability: needle-detectable
-  disposition: deferred:T-0439
+  disposition: deferred:T-0508
   cross_refs: []
 - id: SEC-CVE-FINGERPRINT-FP-SQLI-STRFMT-001
   name: FP-SQLI-STRFMT-001
   framework: cve-fingerprint
   source_doc: docs/design/security-corpus.md
   checkability: needle-detectable
-  disposition: deferred:T-0439
+  disposition: deferred:T-0508
   cross_refs: []
 - id: SEC-CVE-FINGERPRINT-FP-SSRF-FETCH-001
   name: FP-SSRF-FETCH-001
   framework: cve-fingerprint
   source_doc: docs/design/security-corpus.md
   checkability: needle-detectable
-  disposition: deferred:T-0439
+  disposition: deferred:T-0508
   cross_refs: []
 - id: SEC-CVE-FINGERPRINT-FP-CODEEVAL-TEMPLATE-001
   name: FP-CODEEVAL-TEMPLATE-001
   framework: cve-fingerprint
   source_doc: docs/design/security-corpus.md
   checkability: needle-detectable
-  disposition: deferred:T-0439
+  disposition: deferred:T-0508
   cross_refs: []
 - id: SEC-CVE-FINGERPRINT-FP-HARDCODED-CRED-001
   name: FP-HARDCODED-CRED-001
   framework: cve-fingerprint
   source_doc: docs/design/security-corpus.md
   checkability: needle-detectable
-  disposition: deferred:T-0439
+  disposition: deferred:T-0508
   cross_refs: []
 - id: SEC-CVE-FINGERPRINT-CWE-295-TLS-VERIFY
   name: CWE-295-TLS-VERIFY
   framework: cve-fingerprint
   source_doc: docs/design/security-corpus.md
   checkability: advisory
-  disposition: deferred:T-0439
+  disposition: deferred:T-0508
   cross_refs: []
 - id: SEC-CVE-FINGERPRINT-CWE-916-WEAK-HASH
   name: CWE-916-WEAK-HASH
   framework: cve-fingerprint
   source_doc: docs/design/security-corpus.md
   checkability: advisory
-  disposition: deferred:T-0439
+  disposition: deferred:T-0508
   cross_refs: []
 - id: SEC-CVE-FINGERPRINT-CWE-611-XXE
   name: CWE-611-XXE
   framework: cve-fingerprint
   source_doc: docs/design/security-corpus.md
   checkability: advisory
-  disposition: deferred:T-0439
+  disposition: deferred:T-0508
   cross_refs: []
 - id: SEC-CVE-FINGERPRINT-CWE-1321-PROTO-POLLUTION
   name: CWE-1321-PROTO-POLLUTION
   framework: cve-fingerprint
   source_doc: docs/design/security-corpus.md
   checkability: advisory
-  disposition: deferred:T-0439
+  disposition: deferred:T-0508
   cross_refs: []
 - id: SEC-CVE-FINGERPRINT-CWE-1333-REDOS
   name: CWE-1333-REDOS
   framework: cve-fingerprint
   source_doc: docs/design/security-corpus.md
   checkability: advisory
-  disposition: deferred:T-0439
+  disposition: deferred:T-0508
   cross_refs: []
 - id: SEC-CVE-FINGERPRINT-CWE-601-OPEN-REDIRECT
   name: CWE-601-OPEN-REDIRECT
   framework: cve-fingerprint
   source_doc: docs/design/security-corpus.md
   checkability: advisory
-  disposition: deferred:T-0439
+  disposition: deferred:T-0508
   cross_refs: []
 - id: SEC-CVE-FINGERPRINT-CWE-1336-SSTI
   name: CWE-1336-SSTI
   framework: cve-fingerprint
   source_doc: docs/design/security-corpus.md
   checkability: advisory
-  disposition: deferred:T-0439
+  disposition: deferred:T-0508
   cross_refs: []
 - id: SEC-THREAT-FRAMEWORK-STRIDE
   name: STRIDE

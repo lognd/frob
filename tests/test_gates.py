@@ -22,6 +22,9 @@ from frob.gates import (
     coverage_gate,
     delta_violations,
     drift_gate,
+    exclude_hazard_gate,
+    inv003_gate,
+    inv004_gate,
     invariant_gate,
     is_baseline_stale,
     known_gate_rule_ids,
@@ -1538,6 +1541,148 @@ class TestInvariantGate:
         tests = CollectedTests(node_ids=frozenset())
         violations = invariant_gate((inv,), snap, tests, frozenset({"POL-thing"}))
         assert not any(v.rule == "INV001" for v in violations)
+
+
+class TestInv003Gate:
+    # frob:tests src/frob/gates/__init__.py::inv003_gate
+    def test_exclusivity_claim_without_marker_warns(self, tmp_path: Path) -> None:
+        _write(
+            tmp_path,
+            "docs/x.md",
+            "# X\n\nThe only writer of this file is the daemon.\n",
+        )
+        violations = inv003_gate(tmp_path, ())
+        assert len(violations) == 1
+        assert violations[0].rule == "INV003"
+        assert violations[0].severity == Severity.WARN
+        assert violations[0].file == "docs/x.md"
+
+    def test_exclusivity_claim_with_bound_known_invariant_is_silent(
+        self, tmp_path: Path
+    ) -> None:
+        from frob.gates.invariants import Invariant
+
+        _write(
+            tmp_path,
+            "docs/x.md",
+            "# X\n\n<!-- frob:invariant INV-001 -->\n"
+            "The only writer of this file is the daemon.\n",
+        )
+        inv = Invariant(
+            id="INV-001", statement="x", criticality=_Criticality.HIGH, evidence=()
+        )
+        violations = inv003_gate(tmp_path, (inv,))
+        assert violations == ()
+
+    def test_marker_naming_unknown_invariant_still_warns(self, tmp_path: Path) -> None:
+        _write(
+            tmp_path,
+            "docs/x.md",
+            "# X\n\n<!-- frob:invariant INV-999 -->\n"
+            "The only writer of this file is the daemon.\n",
+        )
+        violations = inv003_gate(tmp_path, ())
+        assert len(violations) == 1
+
+    def test_no_exclusivity_language_is_silent(self, tmp_path: Path) -> None:
+        _write(tmp_path, "docs/x.md", "# X\n\nThe daemon writes this file.\n")
+        violations = inv003_gate(tmp_path, ())
+        assert violations == ()
+
+    def test_missing_docs_dir_is_silent(self, tmp_path: Path) -> None:
+        assert inv003_gate(tmp_path, ()) == ()
+
+
+class TestInv004Gate:
+    # frob:tests src/frob/gates/__init__.py::inv004_gate
+    def test_section_with_normative_language_and_no_invariant_is_advisory(
+        self, tmp_path: Path
+    ) -> None:
+        _write(
+            tmp_path,
+            "docs/x.md",
+            "# X\n\nThe daemon must never write to this file directly.\n",
+        )
+        violations = inv004_gate(tmp_path)
+        assert len(violations) == 1
+        assert violations[0].rule == "INV004"
+        assert violations[0].severity == Severity.WARN
+        assert violations[0].file == "docs/x.md"
+
+    def test_section_with_any_invariant_marker_is_silent(self, tmp_path: Path) -> None:
+        _write(
+            tmp_path,
+            "docs/x.md",
+            "# X\n\n<!-- frob:invariant INV-999 -->\n"
+            "The daemon must never write to this file directly.\n",
+        )
+        # A marker naming an UNKNOWN invariant still counts here (T-0452's
+        # signal is "anchors zero invariants at all", the coarser inverse
+        # of INV003's "anchors a REAL one").
+        violations = inv004_gate(tmp_path)
+        assert violations == ()
+
+    def test_section_with_no_normative_language_is_silent(self, tmp_path: Path) -> None:
+        _write(tmp_path, "docs/x.md", "# X\n\nThe daemon writes this file.\n")
+        assert inv004_gate(tmp_path) == ()
+
+    def test_two_sections_only_flags_the_underspecified_one(
+        self, tmp_path: Path
+    ) -> None:
+        _write(
+            tmp_path,
+            "docs/x.md",
+            "# A\n\nThe daemon must never write to this file directly.\n"
+            "# B\n\n<!-- frob:invariant INV-001 -->\n"
+            "This section always holds too.\n",
+        )
+        violations = inv004_gate(tmp_path)
+        assert len(violations) == 1
+        assert "'# A" in violations[0].message
+
+    def test_missing_docs_dir_is_silent(self, tmp_path: Path) -> None:
+        assert inv004_gate(tmp_path) == ()
+
+
+class TestExcludeHazardGate:
+    # frob:tests src/frob/gates/_exclude_hazard.py::exclude_hazard_gate
+    def test_entry_shadowing_tracked_dir_fires(self, tmp_path: Path) -> None:
+        _write(tmp_path, "src/pkg/a.py", "x = 1\n")
+        _git_init(tmp_path)
+        (tmp_path / ".git" / "info" / "exclude").write_text("src/pkg/\n")
+        violations = exclude_hazard_gate(tmp_path)
+        assert len(violations) == 1
+        assert violations[0].rule == "EXCL001"
+        assert violations[0].severity == Severity.ERROR
+        assert "src/pkg" in violations[0].message
+
+    def test_entry_matching_no_tracked_path_is_silent(self, tmp_path: Path) -> None:
+        _write(tmp_path, "src/pkg/a.py", "x = 1\n")
+        _git_init(tmp_path)
+        (tmp_path / ".git" / "info" / "exclude").write_text("*.pyc\nbuild/\n")
+        assert exclude_hazard_gate(tmp_path) == ()
+
+    def test_comment_and_negated_lines_are_ignored(self, tmp_path: Path) -> None:
+        _write(tmp_path, "src/pkg/a.py", "x = 1\n")
+        _git_init(tmp_path)
+        (tmp_path / ".git" / "info" / "exclude").write_text("# src/pkg/\n!src/pkg/\n")
+        assert exclude_hazard_gate(tmp_path) == ()
+
+    def test_exact_tracked_file_entry_fires(self, tmp_path: Path) -> None:
+        _write(tmp_path, "README.md", "hi\n")
+        _git_init(tmp_path)
+        (tmp_path / ".git" / "info" / "exclude").write_text("README.md\n")
+        violations = exclude_hazard_gate(tmp_path)
+        assert len(violations) == 1
+
+    def test_empty_exclude_file_is_silent(self, tmp_path: Path) -> None:
+        _write(tmp_path, "src/pkg/a.py", "x = 1\n")
+        _git_init(tmp_path)
+        assert exclude_hazard_gate(tmp_path) == ()
+
+    def test_non_git_root_is_silent(self, tmp_path: Path) -> None:
+        _write(tmp_path, "src/pkg/a.py", "x = 1\n")
+        assert exclude_hazard_gate(tmp_path) == ()
 
 
 class TestInvariantLoad:

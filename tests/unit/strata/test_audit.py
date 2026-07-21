@@ -25,6 +25,7 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
+from frob.gates import known_gate_rule_ids
 from frob.strata import (
     Boundary,
     BoundaryDirection,
@@ -42,7 +43,16 @@ from frob.strata._audit import (
     evaluate_exhaustiveness,
     group_gaps_by_view,
 )
+from frob.strata._compliance import OutOfScopeRegulation
 from frob.strata._threat import _discharge_claim_id
+
+#: T-0503: the live gate-rule-id set (mirrors what `sys_runner.py`'s
+#: production callsite passes) -- required so `COMPLIANCE_OUT_OF_SCOPE`'s
+#: `caught_by="... (PII010) ..."` entry actually resolves instead of every
+#: fixture in this file that used to call `evaluate_exhaustiveness(model)`
+#: with the default empty `known_rule_ids` picking up a spurious COMPLIANCE004
+#: gap now that the catalog is non-empty in production (T-0503's whole point).
+_KNOWN_RULE_IDS = known_gate_rule_ids()
 
 
 def _foreign(node_id: str) -> Node:
@@ -73,7 +83,7 @@ class TestExhaustiveness:
     # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness kind="unit"
     def test_clean_proved(self):
         model = KernelModel(nodes=(Node(id="api", trust="trusted"),))
-        result = evaluate_exhaustiveness(model)
+        result = evaluate_exhaustiveness(model, known_rule_ids=_KNOWN_RULE_IDS)
         assert result.is_ok
         report = result.danger_ok
         assert isinstance(report, AuditReport)
@@ -107,6 +117,53 @@ class TestExhaustiveness:
         assert spy.call_count > 0
         for call in spy.call_args_list:
             assert call.kwargs["known_rule_ids"] == rule_ids
+
+    # frob:ticket T-0503
+    # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness kind="unit"
+    def test_compliance_out_of_scope_reaches_real_audit_path(self):
+        """T-0503: `COMPLIANCE_OUT_OF_SCOPE` is now threaded into
+        `_compliance_pii_lint_fingerprint_gaps` -> `evaluate_compliance`
+        (the exact production callsite `frob.app.sys_runner._evaluate_audit`
+        dispatches through via `evaluate_exhaustiveness`), so COMPLIANCE004
+        is no longer vacuous -- unlike `test_known_rule_ids_reaches_
+        compliance_caught_by_check` above, this exercises the REAL
+        production catalog (not a mock), with the live gate-rule-id set, and
+        proves it discharges clean end-to-end."""
+        model = KernelModel(nodes=(Node(id="api", trust="trusted"),))
+        result = evaluate_exhaustiveness(model, known_rule_ids=_KNOWN_RULE_IDS)
+        assert result.is_ok
+        report = result.danger_ok
+        assert not [g for g in report.gaps if g.rule == "COMPLIANCE004"]
+
+    # frob:ticket T-0503
+    # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness kind="unit"
+    def test_compliance_out_of_scope_bad_caught_by_fails_real_audit_path(self):
+        """T-0503 non-vacuous proof: a `caught_by` naming a control that does
+        not exist in `known_rule_ids` must FAIL through the real production
+        entrypoint (`evaluate_exhaustiveness`, exactly what `frob sys audit`
+        calls), not just `check_regulation_caught_by_integrity` in isolation.
+        Monkeypatches the production `COMPLIANCE_OUT_OF_SCOPE` constant
+        `_audit.py` imports to swap in a fabricated `caught_by` -- the
+        counterexample half of the litmus pair completed by the clean case
+        above (`test_compliance_out_of_scope_reaches_real_audit_path`)."""
+        bad_entry = OutOfScopeRegulation(
+            id="CCPA",
+            reason="test counterexample: a fabricated caught_by",
+            owner="logan",
+            review="2027-01-21",
+            caught_by="a nonexistent control (FAKE999)",
+        )
+        model = KernelModel(nodes=(Node(id="api", trust="trusted"),))
+        with patch("frob.strata._audit.COMPLIANCE_OUT_OF_SCOPE", (bad_entry,)):
+            result = evaluate_exhaustiveness(model, known_rule_ids=_KNOWN_RULE_IDS)
+        assert result.is_ok
+        report = result.danger_ok
+        assert not report.proved
+        compliance004_gaps = [g for g in report.gaps if g.rule == "COMPLIANCE004"]
+        # one COMPLIANCE004 gap per configured compliance view (mirrors the
+        # per-view repetition every other family gap already gets).
+        assert compliance004_gaps
+        assert all("FAKE999" in g.detail for g in compliance004_gaps)
 
     # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness kind="unit"
     def test_unknown_view_errs(self):
@@ -287,7 +344,7 @@ class TestHardenedLitmus:
     # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness kind="unit"
     def test_hardened_clean(self):
         model = _hardened_model()
-        result = evaluate_exhaustiveness(model)
+        result = evaluate_exhaustiveness(model, known_rule_ids=_KNOWN_RULE_IDS)
         assert result.is_ok
         report = result.danger_ok
         assert report.proved
@@ -377,7 +434,7 @@ class TestGroupGaps:
     # frob:tests tests/unit/strata/test_audit.py::TestGroupGaps.test_group_gaps_by_view kind="unit"
     def test_group_gaps_by_view(self):
         model = _vulnerable_model()
-        result = evaluate_exhaustiveness(model)
+        result = evaluate_exhaustiveness(model, known_rule_ids=_KNOWN_RULE_IDS)
         assert result.is_ok
         report = result.danger_ok
 
@@ -450,7 +507,7 @@ class TestHostWiring:
 
     def test_hardened_model_proved(self):
         model = _isolated_hardened_two_user_model()
-        result = evaluate_exhaustiveness(model)
+        result = evaluate_exhaustiveness(model, known_rule_ids=_KNOWN_RULE_IDS)
         assert result.is_ok
         report = result.danger_ok
         assert report.proved
@@ -465,7 +522,7 @@ class TestHostWiring:
         blast-radius obligation at all -- confirms T-0280's wiring adds
         zero regression for models outside its scope."""
         model = KernelModel(nodes=(Node(id="solo", trust="trusted"),))
-        result = evaluate_exhaustiveness(model)
+        result = evaluate_exhaustiveness(model, known_rule_ids=_KNOWN_RULE_IDS)
         assert result.is_ok
         report = result.danger_ok
         assert report.proved

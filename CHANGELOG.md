@@ -17,7 +17,7 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
-## [0.48.0] - unreleased
+## [0.50.0] - unreleased
 
 T-0411: queue health + priority model. Tickets carry a `priority`
 (low/medium/high/critical, default medium) field; `frob ticket doable`
@@ -27,6 +27,104 @@ its priority-specific rot-day threshold (default 3/7/30/90 days for
 critical/high/medium/low, configurable via `frob.toml`'s `[tickets]`
 table); `frob ticket priority <id> <level>` reprioritizes an existing
 ticket through the single-writer ledger path.
+
+## [0.49.0] - unreleased (reconciliation)
+
+Another parallel landing chain (T-0335/T-0462/T-0452/T-0465, gates-area
+tickets worked sequentially in one worktree) independently claimed
+version numbers 0.44.0-0.46.0, colliding with the land-machinery/strata
+chains reconciled at 0.47.0/0.48.0 below. Final reconciled version is
+0.49.0; that chain's own three sections follow immediately below under
+the numbers they were authored with, same reconciliation pattern as
+0.47.0.
+
+## [0.46.0] - unreleased (gates-area chain)
+
+Public-API surface change since 0.45.0 (mechanical semver via REL001): an
+additive (minor) bump -- new hazard-guard gate rule.
+
+- T-0465: EXCL001, a new (ERROR-severity, unwaivable) gate rule flagging
+  `.git/info/exclude` entries that shadow git-tracked source. `.git/
+  info/exclude` is the SHARED common-dir file across every worktree of a
+  clone -- an agent once added `src/frob/render/` to it to hide its own
+  scratch files, silently blinding `git status`/`git add -A` to every
+  NEW file added under that real source directory afterward, in every
+  worktree, until the T-0448 foundation went missing. New public
+  `frob.gates.exclude_hazard_gate` (`src/frob/gates/_exclude_hazard.py`).
+  Added the same hazard as a hard rule in
+  docs/guides/agent-playbook.md (section 1c).
+
+## [0.45.0] - unreleased (gates-area chain)
+
+Public-API surface change since 0.44.0 (mechanical semver via REL001): an
+additive (minor) bump -- new advisory invariant density lint.
+
+- T-0452: INV004, a new advisory (warn-severity, never fails `frob
+  check`) invariant gate rule complementing INV003's per-claim check
+  with the section-level inverse: a `docs/**.md` section using ANY
+  normative language ("must", "must not", "never", "always", "shall",
+  "guarantees", "ensures", "requires", plus INV003's exclusivity
+  vocabulary) but anchoring ZERO `frob:invariant` markers at all is
+  flagged as likely under-specified -- the "silence" a per-claim lint
+  can't see. New public `frob.gates.invariants.find_normative_claims` /
+  `NORMATIVE_CLAIM_PATTERNS` and `frob.gates.inv004_gate`.
+
+## [0.44.0] - unreleased (gates-area chain)
+
+Public-API surface change since 0.43.0 (mechanical semver via REL001): an
+additive (minor) bump -- new invariant-language lint.
+
+- T-0462: INV003, a new (warn-severity) invariant gate rule: a
+  `docs/**.md` file making an exclusivity/normative claim ("only",
+  "sole"/"solely", "exclusively", "nothing else", "never...except", "at
+  most/exactly one") needs a `<!-- frob:invariant INV-### -->` marker in
+  the same file naming a real, loaded invariant. New public
+  `frob.gates.invariants.find_exclusivity_claims` /
+  `EXCLUSIVITY_CLAIM_PATTERNS` (the exclusivity-word corpus) and
+  `frob.gates.inv003_gate`. WARN, not ERROR: the vocabulary's bare "only"
+  surfaces ~90 findings across this repo's own pre-existing docs;
+  hardening specific docs to ERROR (or building markdown-side
+  `frob:waive` support) is follow-up work, not done in this pass.
+
+## [0.48.0] - unreleased (strata round 2, part 2)
+
+Public-API surface change since 0.44.0 (mechanical semver via REL001): an
+additive (minor) bump -- new `frob.strata.scan_text_for_fingerprints`/
+`FingerprintHit` and `frob.gates.cve_fingerprint_scan_gate`.
+
+- T-0439: added SEC-CVE-FINGERPRINT-001, a `frob check` gate scanning
+  first-party repo source for the `CVE_FINGERPRINTS` needle corpus
+  (`frob.strata._cve_fingerprint`) -- the missing first-party-source-lint
+  sibling of CVEFP001 (catalog-drift only, no source scan) and `frob vet`'s
+  `_scan_file_fingerprints` (third-party dependency source, no file:line).
+  New `frob.strata.scan_text_for_fingerprints`/`FingerprintHit` do the
+  line-level needle scan; `frob.gates.cve_fingerprint_scan_gate`
+  (`src/frob/gates/_cve_fingerprint_scan.py`) walks every git-tracked,
+  language-bucketed file and wires it into `frob check` as WARN-severity
+  `SEC-CVE-FINGERPRINT-001` (registered in `_KNOWN_GATE_RULES`). Litmus
+  pair: `tests/unit/strata/test_cve_fingerprint_scan.py` -- a "smelly" fixture
+  (`shell=True`) fires, a "clean" one (`shell=False`) and an out-of-language
+  file do not.
+
+## [0.48.0] - unreleased (strata round 2, part 1)
+
+Public-API surface change since 0.43.0 (mechanical semver via REL001): an
+additive (minor) bump -- new `frob.strata.COMPLIANCE_OUT_OF_SCOPE` catalog.
+
+- T-0503: COMPLIANCE004 (`caught_by` integrity for compliance out-of-scope
+  exclusions) was vacuous in production -- `_audit.py` never threaded an
+  `out_of_scope` catalog into `evaluate_compliance` (unlike the security/
+  quality families' `CWE_TOP_25_OUT_OF_SCOPE`/`QUALITY_OUT_OF_SCOPE`), so
+  it always defaulted to `()` and the check trivially passed regardless of
+  a fabricated `caught_by`. Added `COMPLIANCE_OUT_OF_SCOPE` (a real,
+  production `OutOfScopeRegulation` catalog, `frob.strata._compliance`) and
+  threaded it into `_compliance_pii_lint_fingerprint_gaps`'s
+  `evaluate_compliance` call. Non-vacuous proof: `tests/unit/strata/
+  test_audit.py::TestExhaustiveness.
+  test_compliance_out_of_scope_bad_caught_by_fails_real_audit_path` shows a
+  fabricated `caught_by` failing through the real production entrypoint
+  (`evaluate_exhaustiveness`, exactly what `frob sys audit` calls), not
+  just the unit-level `check_regulation_caught_by_integrity` evaluator.
 
 ## [0.47.0] - unreleased
 
