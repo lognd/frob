@@ -8648,7 +8648,7 @@ found while working T-0287 (dup type-generalizing anti-unification): _template._
 id: T-0496
 title: 'strata audit G5: utility/krb_no_transit flow marker silently defeats confidentiality
   NoFlow'
-state: queued
+state: in-progress
 kind: security
 origin: human
 created: '2026-07-21'
@@ -8656,13 +8656,210 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/strata/_facts.py
-scope_changes: []
-evidence: []
+- tests/unit/strata/test_facts.py
+- tests/unit/strata/test_claims.py
+- tests/unit/strata/litmus/utility_hub_hardened.strata
+- tests/unit/strata/litmus/utility_hub_vuln.strata
+- tests/unit/strata/test_litmus_utility_hub.py
+scope_changes:
+- op: add
+  glob: tests/unit/strata/test_facts.py
+  reason: existing test_utility_attr_stops_chaining_past_that_hop locks in the vulnerable
+    behavior for the through_barriers=False (confidentiality noflow) path; must flip
+    alongside the fix, plus a claims-level litmus test for the noflow discharge itself
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/strata/test_claims.py
+  reason: existing test_utility_attr_stops_chaining_past_that_hop locks in the vulnerable
+    behavior for the through_barriers=False (confidentiality noflow) path; must flip
+    alongside the fix, plus a claims-level litmus test for the noflow discharge itself
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/strata/litmus/utility_hub_hardened.strata
+  reason: T-0226's own hardened litmus (utility_hub_hardened.strata) IS the exact
+    G5 vulnerability shape -- its noflow claim genuinely has a real path to its target
+    through the marked hub, so it must now correctly REFUTE instead of falsely PROVE;
+    fixture+test need correcting, not just the unit-level tests
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/strata/litmus/utility_hub_vuln.strata
+  reason: T-0226's own hardened litmus (utility_hub_hardened.strata) IS the exact
+    G5 vulnerability shape -- its noflow claim genuinely has a real path to its target
+    through the marked hub, so it must now correctly REFUTE instead of falsely PROVE;
+    fixture+test need correcting, not just the unit-level tests
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/strata/test_litmus_utility_hub.py
+  reason: T-0226's own hardened litmus (utility_hub_hardened.strata) IS the exact
+    G5 vulnerability shape -- its noflow claim genuinely has a real path to its target
+    through the marked hub, so it must now correctly REFUTE instead of falsely PROVE;
+    fixture+test need correcting, not just the unit-level tests
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/unit/strata/test_facts.py::TestClosure::test_utility_attr_does_not_stop_chaining_for_confidentiality_noflow
+- tests/unit/strata/test_facts.py::TestClosure::test_krb_no_transit_still_terminal_for_confidentiality_noflow
+- tests/unit/strata/test_facts.py::TestClosure::test_utility_attr_stops_chaining_past_that_hop
+- tests/unit/strata/test_claims.py::TestNoFlow::test_real_leak_through_a_utility_hub_still_refutes
+- tests/unit/strata/test_claims.py::TestNoFlow::test_utility_hub_with_no_further_edges_still_discharges
+- tests/unit/strata/test_litmus_utility_hub.py::TestUtilityHubHardenedLitmus::test_marked_utility_hub_edge_lets_the_noflow_claim_prove
 attachments: []
 acceptance: []
 threat: null
 ```
 docs/audits/strata.md G5 (MEDIUM), from T-0401. _facts.py:63,160: any flow carrying the surface attr utility (or synthetic krb_no_transit) is a TERMINAL edge -- taint does not chain past it -- honored on the security noflow side too (_eval_noflow uses the same reachable). A real exfiltration path transiting a hub edge marked utility is invisible to noflow, so any THREAT003 discharge built on it is vacuous; the marker is author-controlled with no compensating check. Repro: flow log_hub{src=secret_store,dst=logger,utility} then flow leak{src=logger,dst=foreign_sink}: noflow(secret_store,foreign_sink) PROVES despite the two-hop leak. Fix direction: forbid utility on flows whose payload label is above a floor, or exclude utility termination when evaluating confidentiality noflow specifically (keep it only for capacity/availability closures where T-0226 needed it).
+
+## Done report
+
+Root cause confirmed at the exact repro (`docs/audits/strata.md` G5):
+`FactBase.reachable`'s single `_NON_TRANSITIVE_ATTRS` set (`krb_no_transit`,
+`utility`) was honored identically for BOTH `through_barriers` modes, but
+`through_barriers=False` (the confidentiality `noflow` closure,
+`_claims.py::_first_noflow_witness`) is the ONLY caller that omits
+`through_barriers` -- confirmed by grep, every other caller (`reach`/
+`independent`/`readers`/krb-movement/breach) explicitly passes
+`through_barriers=True`. So `utility`'s terminal-edge effect was, in
+practice, felt EXCLUSIVELY by the security-critical confidentiality check,
+never by any capacity/availability closure (`demand`/`worst_age` do not
+even consult `_NON_TRANSITIVE_ATTRS` -- they build a different edge shape
+entirely).
+
+`strata-core/src/lib.rs::reachable`'s BFS: once a node is reached ONLY via
+a non-transitive edge, it is added to `paths` (so it counts as "reached")
+but NOT enqueued into the frontier -- so its OWN further outgoing edges,
+even fully transitive ones, are never explored. The repro (`log_hub{utility}`
+secret_store->logger, then a real `leak` edge logger->foreign_sink) hits
+this exactly: `logger` is reached via the terminal `utility` edge, so
+`leak` is never walked, and `noflow(secret_store, foreign_sink)` PROVED
+despite a genuine two-hop leak.
+
+Fix (entirely within `src/frob/strata/_facts.py`, no Rust change needed,
+matching the ticket's declared scope): split the non-transitive attr set
+by `through_barriers` mode. Added `_NOFLOW_NON_TRANSITIVE_ATTRS =
+frozenset({"krb_no_transit"})` -- `utility` is excluded from it.
+`reachable()` now picks `_NON_TRANSITIVE_ATTRS` (unchanged, both attrs)
+when `through_barriers=True`, and `_NOFLOW_NON_TRANSITIVE_ATTRS` (`krb_no_
+transit` only) when `through_barriers=False`. `krb_no_transit` keeps its
+existing behavior in both modes (no known equivalent gap for it named by
+the ticket, and no caller currently reaches it through the confidentiality
+path anyway -- `_krb.py`'s synthesized flows feed the `through_barriers=
+True` movement closures). `utility` becomes fully transitive for
+confidentiality `noflow` specifically, closing the vacuous-discharge gap;
+it keeps its original T-0226 terminal-edge behavior for the existential
+`reach`/`independent`/`readers`/krb-movement closures, which never relied
+on it defeating a genuine downstream edge the way `noflow` did.
+
+Counterexample-first:
+- `tests/unit/strata/test_claims.py::TestNoFlow.
+  test_real_leak_through_a_utility_hub_still_refutes` is the ticket's own
+  repro, verbatim, at the claim-evaluation level: before this fix, PROVED
+  (vacuous); after, REFUTED with the full two-hop witness path.
+- `tests/unit/strata/test_claims.py::TestNoFlow.
+  test_utility_hub_with_no_further_edges_still_discharges` proves the fix
+  is not a blanket weakening: an innocuous hub with nothing further
+  downstream still lets `noflow` prove clean, the original T-0226 case.
+- `tests/unit/strata/test_facts.py::TestClosure.
+  test_utility_attr_does_not_stop_chaining_for_confidentiality_noflow` /
+  `test_krb_no_transit_still_terminal_for_confidentiality_noflow` /
+  `test_utility_attr_stops_chaining_past_that_hop` cover the same litmus at
+  the `reachable()` unit level, for both attrs and both `through_barriers`
+  modes.
+
+T-0226's own end-to-end litmus pair (`tests/unit/strata/litmus/
+utility_hub_hardened.strata` + `test_litmus_utility_hub.py`) turned out to
+BE the exact G5 vulnerability shape: its "hardened" fixture's `f_logs_
+server` edge is a real, fully-transitive path landing exactly on the
+`noflow` claim's own target (`server`), not an unrelated hub detour --
+T-0226's premise that marking the FIRST hop `utility` alone could safely
+discharge that claim was unsound from the start. Corrected the fixture to
+discharge via a REAL `ENDORSE` boundary on `f_logs_server` instead (the
+same mechanism `managed_hardened.strata` and `test_claims.py`'s own
+boundary-cuts-the-path test already use) -- the `utility` marker is still
+present on `f_tui_logs` but is now inert for this claim, which the test's
+updated docstring says explicitly. The "vuln" twin (`utility_hub_vuln.
+strata`) needed no behavior change (never marks `utility`) and got a
+one-line note only. Test method names were kept IDENTICAL to their
+pre-fix names (not renamed to something more "accurate") specifically so
+`T-0226`'s own archived ticket evidence (`tickets-archive.md`, append-only)
+does not dangle -- confirmed via `frob check --ticket T-0496`: renaming
+first tripped 2 new COV003s citing T-0226's evidence, reverted before
+finishing.
+
+Registry/REG gates: `frob check --ticket T-0496` surfaces 16 pre-existing
+REG003 errors on `docs/design/registry/weaknesses.yaml`'s `SEC-CVE-
+FINGERPRINT-*` entries (`deferred:T-0439`, now a closed ticket) -- these
+predate this ticket entirely (present on `main`, not touched by this
+change; confirmed via `git diff main -- docs/design/registry/
+weaknesses.yaml` showing zero diff) and are a genuine oversight from
+closing T-0439 earlier this session (that file was already in T-0439's
+OWN declared scope, and its dispositions should have been reconciled to
+`handled_by:SEC-CVE-FINGERPRINT-001` then). Filed T-draft-92456503 for
+the careful per-entry reconciliation (not a blind sweep -- 9 of the 16
+entries map 1:1 to the shipped catalog, 7 do not) rather than folding it
+into this unrelated ticket.
+
+Verification:
+- `uv run pytest tests/unit/strata -q`: all green except `test_export_
+  golden.py::TestExportGolden::test_seccomp`, confirmed pre-existing
+  (unrelated golden-drift failure, reproduces identically with this
+  ticket's changes checked out to their pre-change state via the same
+  checkout+patch-file method T-0503/T-0439 used, never `git stash`).
+- `uv run pytest tests/unit/strata/test_selfconform.py::TestRealGateGreen
+  -q`: green (1 passed) -- confirmed `utility` is never actually used in
+  `design/frob.strata` itself (only mentioned in a prose comment), so this
+  fix has zero effect on the repo's own self-audit.
+- `uv run ruff check` / `uv run ruff format --check` on every touched
+  file: clean.
+- `uv run frob check --ticket T-0496`: 0 NEW errors from this ticket's
+  change. Remaining errors are all confirmed pre-existing/out of scope:
+  6x COV003 (T-0421/T-0470/T-0483 evidence referencing non-existent
+  `tests/test_gates.py` node ids, same known ledger-reconstruction gap
+  noted in T-0439's Done report), 16x REG003 (T-0439's registry gap, filed
+  as T-draft-6ec0fb9f above), 1x DOC003 (pre-existing THREAT003 CWE-78 gap
+  on the `gates` design node, unrelated to compliance/facts), and SCOPE001
+  noise from T-0503/T-0439's own already-closed, already-verified files
+  (an artifact of doing three tickets sequentially in one un-merged
+  worktree branch, not a new violation).
+
+Filed: T-draft-92456503 (weaknesses.yaml SEC-CVE-FINGERPRINT-*
+reconciliation, out-of-scope discovery from closing T-0439 earlier this
+session).
+
+### Changed
+```
+ .frob-release.json                                 |    6 +-
+ CHANGELOG.md                                       |   40 +
+ pyproject.toml                                     |    2 +-
+ src/frob/gates/__init__.py                         |   10 +
+ src/frob/gates/_cve_fingerprint_scan.py            |  177 ++++
+ src/frob/strata/_audit.py                          |   19 +-
+ src/frob/strata/_compliance.py                     |   34 +
+ src/frob/strata/_cve_fingerprint.py                |   78 ++
+ src/frob/strata/_facts.py                          |   84 +-
+ .../unit/strata/litmus/utility_hub_hardened.strata |   30 +-
+ tests/unit/strata/litmus/utility_hub_vuln.strata   |    6 +-
+ tests/unit/strata/test_audit.py                    |   67 +-
+ tests/unit/strata/test_claims.py                   |   44 +
+ tests/unit/strata/test_cve_fingerprint_scan.py     |  148 +++
+ tests/unit/strata/test_facts.py                    |   48 +-
+ tests/unit/strata/test_litmus_audit_hardened.py    |    8 +-
+ tests/unit/strata/test_litmus_utility_hub.py       |   27 +-
+ tickets.md                                         | 1003 +++++++++++++++++++-
+ uv.lock                                            |    2 +-
+ 19 files changed, 1750 insertions(+), 83 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_facts.py::TestClosure::test_utility_attr_does_not_stop_chaining_for_confidentiality_noflow` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_facts.py::TestClosure::test_krb_no_transit_still_terminal_for_confidentiality_noflow` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_facts.py::TestClosure::test_utility_attr_stops_chaining_past_that_hop` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_claims.py::TestNoFlow::test_real_leak_through_a_utility_hub_still_refutes` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_claims.py::TestNoFlow::test_utility_hub_with_no_further_edges_still_discharges` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_litmus_utility_hub.py::TestUtilityHubHardenedLitmus::test_marked_utility_hub_edge_lets_the_noflow_claim_prove` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0497 -->
 ```yaml
@@ -9054,3 +9251,24 @@ attachments: []
 acceptance: []
 threat: null
 ```
+
+<!-- ticket:T-draft-92456503 -->
+```yaml
+id: T-draft-92456503
+title: reconcile weaknesses.yaml SEC-CVE-FINGERPRINT-* dispositions now that T-0439
+  shipped SEC-CVE-FINGERPRINT-001
+state: queued
+kind: bug
+origin: human
+created: '2026-07-21'
+blocked_by: []
+parent: null
+scope:
+- docs/design/registry/weaknesses.yaml
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Found while working T-0496/checking frob check output after closing T-0439. docs/design/registry/weaknesses.yaml carries 16 SEC-CVE-FINGERPRINT-* entries (lines ~6717-6827) with disposition: deferred:T-0439, anticipating exactly the gate T-0439 shipped (SEC-CVE-FINGERPRINT-001, src/frob/gates/_cve_fingerprint_scan.py). Now that T-0439 is done, REG003 fires on all 16 (deferral to a closed ticket is not a real deferral). This was a real oversight in T-0439's own scope (docs/design/registry/weaknesses.yaml was already in T-0439's declared scope from the start) -- T-0439's Done report incorrectly claimed nothing needed updating there. Reconciliation is NOT a blind find-and-replace: 9 entries are checkability=needle-detectable with an id matching a real shipped CVE_FINGERPRINTS entry (FP-EXEC-SHELL-001, FP-XSS-JQUERY-001, FP-PATH-TAR-001, FP-DESERIALIZE-YAML-001, FP-DESERIALIZE-PICKLE-001, FP-SQLI-STRFMT-001, FP-SSRF-FETCH-001, FP-CODEEVAL-TEMPLATE-001, FP-HARDCODED-CRED-001) -- these should become handled_by:SEC-CVE-FINGERPRINT-001. The other 7 are checkability=advisory (CWE-295-TLS-VERIFY, CWE-916-WEAK-HASH, CWE-611-XXE, CWE-1321-PROTO-POLLUTION, CWE-1333-REDOS, CWE-601-OPEN-REDIRECT, CWE-1336-SSTI) and do NOT map 1:1 to the shipped catalog: CWE-916 is explicitly still out-of-scope per _cve_fingerprint.py's own docstring (no WeaknessEntry exists for it yet); CWE-611/CWE-295 ARE shipped but under different fingerprint ids (FP-XXE-PARSE-001, FP-TLS-VERIFY-001/002/003) than the registry's generic CWE-*-named rows, needing a cross_refs join or a renamed id, not a bare handled_by; CWE-1321/1333/601/1336 have no shipped fingerprint at all. Needs a careful per-entry pass, not a mechanical sweep.
