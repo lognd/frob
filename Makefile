@@ -50,6 +50,13 @@ playbook:
 # site hook) write its own `.coverage.*` data file; `coverage combine`
 # merges them all before the xml report is generated, so `frob check
 # --stamp-coverage` stamps and TEST005 evaluates against real coverage.
+# NOTE: do NOT also pin COVERAGE_FILE here to corral the subprocess data
+# files. It is inherited by nested projects too -- the scaffold DX tests
+# build a demo project and run ITS coverage, and a global COVERAGE_FILE
+# redirects that statement-only data into frob's branch-mode file, which
+# makes `combine` fail with "Can't combine branch coverage data with
+# statement data". Fixture repos instead gitignore the stray `.coverage.*`
+# locally, the same way they gitignore `.frob/`.
 coverage: $(STAMP)
 	rm -f .coverage .coverage.*
 	COVERAGE_PROCESS_START=$(CURDIR)/pyproject.toml uv run pytest --cov=src/frob --cov-branch --cov-report= -q
