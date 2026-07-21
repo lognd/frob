@@ -9035,9 +9035,9 @@ threat: null
 ```
 T-0483's COV006 (frob:tests edge to a private symbol with no call-graph reachability from the test) has a disclosed common FP shape: the call graph never records edges INTO public callees, so a test calling a same-file public wrapper that itself calls the bound private helper reads as unreachable. Before hand-burning down the ~97 COV006 / ~61 COV007 warn findings, extend the reachability check one hop through same-file public wrappers (or record public-callee edges for this check's purposes). Scope: src/frob/gates/__init__.py (COV006 helpers), tests/test_gates.py.
 
-<!-- ticket:T-draft-0afb5f70 -->
+<!-- ticket:T-0507 -->
 ```yaml
-id: T-draft-0afb5f70
+id: T-0507
 title: Extend worktree-lease guard to frob release stamp and frob ack
 state: queued
 kind: security
