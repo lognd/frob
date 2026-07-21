@@ -1,6 +1,6 @@
-"""CLI wiring for `frob ticket new|list|show|doable|plan|start|sweep|land|
-merge-driver|attach|block|close|fail|evidence|done-report|scope|archive`
-(docs/modules/tickets.md)."""
+"""CLI wiring for `frob ticket new|list|show|doable|plan|start|requeue|
+sweep|land|merge-driver|attach|block|close|fail|evidence|done-report|
+scope|archive` (docs/modules/tickets.md)."""
 
 # frob:waive TEST005 reason="module line coverage 22.7%, debt T-0160"
 # frob:waive SCOPE001 reason="T-0323 scope omitted this file, filed T-draft-bc39c17f"
@@ -44,6 +44,7 @@ def _ticket_dispatch_table() -> dict:
         "doable": _doable,
         "plan": _plan,
         "start": _start,
+        "requeue": _requeue,
         "sweep": _sweep_cmd,
         "migrate": lambda root, _cfg: _migrate(root),
         "renumber": _renumber,
@@ -69,8 +70,8 @@ def run(cfg: AppConfig) -> None:
     handler = _ticket_dispatch_table().get(cfg.ticket_command)
     if handler is None:
         _log.error(
-            "usage: frob ticket <new|list|show|doable|plan|start|sweep|"
-            "land|merge-driver|attach|block|close|fail|evidence|"
+            "usage: frob ticket <new|list|show|doable|plan|start|requeue|"
+            "sweep|land|merge-driver|attach|block|close|fail|evidence|"
             "done-report|scope|archive> ..."
         )
         sys.exit(1)
@@ -644,6 +645,50 @@ def _plan(root: Path, cfg: AppConfig) -> None:
         _log.error("ticket plan failed: %s", planned.danger_err)
         sys.exit(1)
     _log.info("planned %s", cfg.ticket_id)
+
+
+# frob:ticket T-0472
+def _requeue(root: Path, cfg: AppConfig) -> None:
+    """Transition an in-progress ticket back to queued (the state-machine-
+    legal reverse of `start`'s auto-plan+start), for a parked or
+    mis-started ticket that must be honestly requeued instead of hand-
+    edited (T-0472). Since the T-0453 tree-lease is derived live from
+    IN_PROGRESS state + scope, this transition alone releases the lease --
+    no separate lease-release step is needed. `--reason` is optional and,
+    when given, is only logged (not persisted) -- requeue carries no
+    Done-report/evidence surface of its own to attach it to."""
+    from frob.tickets import TicketState, transition
+
+    if cfg.ticket_id is None:
+        _log.error("frob ticket requeue requires <id>")
+        sys.exit(1)
+
+    ticket = _load_ticket_or_exit(root, cfg.ticket_id, verb="requeue")
+    if ticket.state != TicketState.IN_PROGRESS:
+        _log.error(
+            "ticket requeue failed: %s is %s, not in-progress -- only an "
+            "in-progress ticket can be requeued",
+            cfg.ticket_id,
+            ticket.state.value,
+        )
+        sys.exit(1)
+
+    requeued = transition(root, cfg.ticket_id, TicketState.QUEUED)
+    if requeued.is_err:
+        _log.error("ticket requeue failed: %s", requeued.danger_err)
+        sys.exit(1)
+    if cfg.ticket_reason:
+        _log.info(
+            "%s requeued (in-progress -> queued): %s",
+            cfg.ticket_id,
+            cfg.ticket_reason,
+        )
+    else:
+        _log.info("%s requeued (in-progress -> queued)", cfg.ticket_id)
+    # frob:ticket T-0178
+    from frob.app.telemetry import record_ticket_event
+
+    record_ticket_event(root, ticket_id=cfg.ticket_id, event="requeued")
 
 
 def _load_ticket_or_exit(root: Path, ticket_id: str, *, verb: str):  # noqa: ANN201

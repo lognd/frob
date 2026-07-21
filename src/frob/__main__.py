@@ -642,9 +642,18 @@ def _add_ticket_query_parsers(ticket_sub) -> list:
 
 
 def _add_ticket_progress_parsers(ticket_sub) -> list:
-    """Register the state-only ticket transitions: plan/start/sweep/migrate/renumber."""
+    """Register the state-only ticket transitions: plan/requeue/start/sweep/
+    migrate/renumber."""
     ticket_plan_p = ticket_sub.add_parser("plan", help="transition queued -> planned")
     ticket_plan_p.add_argument("ticket_id", metavar="id")
+
+    ticket_requeue_p = ticket_sub.add_parser(
+        "requeue",
+        help="transition in-progress -> queued (releases the T-0453 lease) "
+        "for a parked or mis-started ticket",
+    )
+    ticket_requeue_p.add_argument("ticket_id", metavar="id")
+    ticket_requeue_p.add_argument("--reason", dest="ticket_reason", default=None)
 
     ticket_start_p = ticket_sub.add_parser(
         "start",
@@ -666,6 +675,7 @@ def _add_ticket_progress_parsers(ticket_sub) -> list:
     ticket_merge_driver_p = _add_ticket_merge_driver_parser(ticket_sub)
     return [
         ticket_plan_p,
+        ticket_requeue_p,
         ticket_start_p,
         ticket_sweep_p,
         ticket_migrate_p,

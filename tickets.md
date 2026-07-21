@@ -4731,7 +4731,7 @@ title: 'frob ticket requeue/unstart: no CLI command exists for the state-machine
   in-progress->queued transition (plan/block/close/fail only) -- a parked/mis-started
   ticket cannot be honestly requeued without hand-editing; add the command (releases
   the T-0453 lease)'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-20'
@@ -4742,6 +4742,7 @@ scope:
 - src/frob/__main__.py
 - docs/modules/tickets.md
 - tests/test_app.py
+- tests/unit/test_app_runners_batch7.py
 scope_changes:
 - op: remove
   glob: tests/**
@@ -4753,11 +4754,50 @@ scope_changes:
   reason: T-0472 app work maps to tests/test_app.py
   actor: logan
   at: '2026-07-20'
-evidence: []
+- op: add
+  glob: tests/unit/test_app_runners_batch7.py
+  reason: T-0455 hygiene pass pinned tests/test_app.py, a file that does not exist;
+    the real sibling convention for this CLI command (TestTicketStart) already lives
+    in tests/unit/test_app_runners_batch7.py, so TestTicketRequeue belongs there
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/unit/test_app_runners_batch7.py::TestTicketRequeue::test_missing_id_exits_1
+- tests/unit/test_app_runners_batch7.py::TestTicketRequeue::test_unknown_id_exits_1
+- tests/unit/test_app_runners_batch7.py::TestTicketRequeue::test_requeue_success
+- tests/unit/test_app_runners_batch7.py::TestTicketRequeue::test_requeue_not_in_progress_exits_1
 attachments: []
 acceptance: []
 threat: null
 ```
+## Done report
+
+Added `frob ticket requeue <id> [--reason TEXT]`, the state-machine-legal
+in-progress -> queued transition, so a parked or mis-started ticket can be
+honestly requeued via the CLI instead of hand-editing the ledger. The
+`in-progress -> queued` edge already exists in `_TRANSITIONS`, so `_requeue`
+calls the existing `transition()` and refuses (exit 1, logged) unless the
+ticket is currently in-progress. `--reason` is optional and, when given, is
+only logged (not persisted) -- requeue carries no Done-report/evidence
+surface of its own. Since the T-0453 tree-lease is derived live from
+IN_PROGRESS state + declared scope, the state transition alone releases the
+lease; no separate release step was needed. Wired into `_ticket_dispatch_table`,
+`AppConfig.ticket_reason`, the argparse subparser, and documented in
+docs/modules/tickets.md (state-machine section + CLI command list).
+
+### Changed
+```
+ docs/modules/tickets.md               | 19 +++++++++---
+ src/frob/__main__.py                  | 12 +++++++-
+ src/frob/app/config.py                |  4 +++
+ src/frob/app/ticket_runner.py         | 55 ++++++++++++++++++++++++++++++---
+ tests/unit/test_app_runners_batch7.py | 57 +++++++++++++++++++++++++++++++++++
+ tickets.md                            | 48 +++++++++++++++++++++++++++--
+ 6 files changed, 183 insertions(+), 12 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
 
 <!-- ticket:T-0473 -->
 ```yaml
@@ -5210,3 +5250,24 @@ acceptance: []
 threat: null
 ```
 found while working T-0425: frob check reports COV003 for T-0416 (done) -- its recorded evidence tests/unit/strata/test_code_binding.py::TestBindCode::test_nested_git_checkout_pruned_even_when_not_covered_by_exclude_globs no longer collects (pytest --collect-only: 'not found', no match in TestBindCode). Either the test was renamed/removed since T-0416 closed, or something broke collection for it. Out of scope for T-0425 (src/frob/gates/, frob.toml, docs/modules/gates.md, tests/test_gates.py only).
+
+<!-- ticket:T-draft-d6d316c8 -->
+```yaml
+id: T-draft-d6d316c8
+title: T-0416 evidence test_nested_git_checkout_pruned_even_when_not_covered_by_exclude_globs
+  does not resolve (COV003)
+state: queued
+kind: bug
+origin: human
+created: '2026-07-21'
+blocked_by: []
+parent: null
+scope:
+- tests/unit/strata/test_code_binding.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+found while working T-0472: frob check --ticket T-0472 reports COV003 for T-0416 (already closed/done) -- its recorded evidence id tests/unit/strata/test_code_binding.py::TestBindCode::test_nested_git_checkout_pruned_even_when_not_covered_by_exclude_globs does not exist anywhere in the repo (grep -rn finds nothing), even after deleting .frob/pytest-collect.json to force a cache rebuild. Either the test was removed/renamed after T-0416 closed, or the evidence id was never real. Unrelated to T-0472's scope; filing separately per the playbook out-of-scope rule.
