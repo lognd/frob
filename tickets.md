@@ -6202,7 +6202,7 @@ title: 'waiver over-breadth + class-ignore placement lint: (1) _match_waiver mat
   symref-LESS (file-scoped) findings by file OR package-PREFIX, so one frob:waive
   can suppress broadly; (2) warn when a class-bound frob:waive/directive is not at
   the class top (likely mis-scoped)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-07-20'
