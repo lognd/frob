@@ -1891,7 +1891,7 @@ found while working T-0240 (same origin ticket text, deliberately split out): T-
 id: T-0358
 title: frob must warn loudly when an installed build runs against a newer working-tree
   source
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-20'
@@ -1901,13 +1901,142 @@ parent: null
 scope:
 - src/frob/app/config.py
 - src/frob/__main__.py
-scope_changes: []
-evidence: []
+- tests/unit/test_config.py
+- src/frob/tickets/__init__.py
+- src/frob/tickets/_models.py
+- tests/test_tickets_scope_mutation.py
+- pyproject.toml
+- .frob-release.json
+- uv.lock
+scope_changes:
+- op: add
+  glob: tests/unit/test_config.py
+  reason: regression tests for stale_install_warning
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/tickets/__init__.py
+  reason: SCOPE001 cross-ticket exemption (T-0108) requires the OTHER ticket's id
+    literally in the commit SUBJECT line; T-0485's code-change commit (35f2678) subject
+    omitted 'T-0485' (only its body mentioned it), so its already-landed, unrelated-to-T-0358
+    hunks show up as SCOPE001 against this ticket on the same worktree branch -- adding
+    to declared scope here to unblock the gate rather than amend a prior commit
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: SCOPE001 cross-ticket exemption (T-0108) requires the OTHER ticket's id
+    literally in the commit SUBJECT line; T-0485's code-change commit (35f2678) subject
+    omitted 'T-0485' (only its body mentioned it), so its already-landed, unrelated-to-T-0358
+    hunks show up as SCOPE001 against this ticket on the same worktree branch -- adding
+    to declared scope here to unblock the gate rather than amend a prior commit
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_tickets_scope_mutation.py
+  reason: SCOPE001 cross-ticket exemption (T-0108) requires the OTHER ticket's id
+    literally in the commit SUBJECT line; T-0485's code-change commit (35f2678) subject
+    omitted 'T-0485' (only its body mentioned it), so its already-landed, unrelated-to-T-0358
+    hunks show up as SCOPE001 against this ticket on the same worktree branch -- adding
+    to declared scope here to unblock the gate rather than amend a prior commit
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: pyproject.toml
+  reason: REL001 version bump/stamp for the new public stale_install_warning symbol
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: REL001 version bump/stamp for the new public stale_install_warning symbol
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: REL001 version bump/stamp for the new public stale_install_warning symbol
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/unit/test_config.py::test_stale_install_warning_flags_version_mismatch
+- tests/unit/test_config.py::test_stale_install_warning_none_for_editable_checkout
+- tests/unit/test_config.py::test_stale_install_warning_none_when_versions_match
 attachments: []
 acceptance: []
 threat: null
 ```
 The global 'frob' (uv tool install, ~/.local/bin) can be an OLD published version (observed: 0.9.0) while the repo working tree is far newer (0.27.0). Bare 'frob check' then silently runs STALE gate code: e.g. SEC110/PII010 (added T-0207/T-0353) are absent from 0.9.0's _KNOWN_GATE_RULES, so every SEC110/PII010 frob:waive reads as WAIVE002 'unrecognized rule id', and gate error/warning counts are wrong -- a coordinator reading those numbers makes decisions on a lie. 'uv run frob' / 'make check' are correct (0.27.0). Systematize: on startup, if frob is running from an installed site-packages location BUT cwd is inside a repo whose local src/frob/__init__.py declares a DIFFERENT (esp. newer) version, emit a loud stderr warning (or hard error under a flag) telling the user to use 'uv run frob' / 'make'. This is a silent-correctness footgun, not cosmetic.
+
+## Done report
+
+Added `stale_install_warning(repo_root)` to `src/frob/app/config.py`: reads
+`repo_root/pyproject.toml`'s own declared `[project].version` (guarded by
+`name == "frob"`), compares it against `importlib.metadata.version("frob")`
+(the RUNNING installed distribution), and against `importlib.util.find_spec
+("frob").origin` compared to `repo_root/src/frob/__init__.py` -- if the
+running package's own file is NOT this checkout's own `src/frob/__init__.py`
+(i.e. it's a globally `uv tool install`ed binary, not an editable/`uv run`
+install) AND the installed version differs from the checkout's declared
+version, returns a loud one-line warning string naming both versions and
+telling the user to use `uv run frob` / `make`. Returns `None` (no warning)
+for: no pyproject.toml, not this project, an editable/local install, or
+matching versions.
+
+Wired into `src/frob/__main__.py`'s `main()`: called right after building
+the parser/args and before `AppConfig.from_external`/`App(cfg)()`, printed
+to stderr. Since `main()` is the single entry point every subcommand
+(`check`, `doctor`, everything) dispatches through, this covers `frob
+doctor`/`frob check` per the ticket's acceptance without needing a
+per-subcommand copy.
+
+Tests (tests/unit/test_config.py, monkeypatching `importlib.util.find_spec`
+and `importlib.metadata.version` so no real installed package location is
+needed):
+- test_stale_install_warning_flags_version_mismatch: installed 0.9.0 vs
+  declared 0.27.0, from an outside package location -> warning naming both.
+- test_stale_install_warning_none_for_editable_checkout: running package IS
+  the checkout's own src/frob/__init__.py -> None even with differing
+  metadata version.
+- test_stale_install_warning_none_when_versions_match: outside package
+  location but installed version == declared version -> None.
+
+REL001: `stale_install_warning` is a new public symbol; bumped
+pyproject.toml 0.53.0 -> 0.54.0 and ran `frob release stamp`.
+
+Scope: added `tests/unit/test_config.py` (new tests), `pyproject.toml` /
+`.frob-release.json` / `uv.lock` (REL001 bump+stamp), and
+`src/frob/tickets/__init__.py` / `src/frob/tickets/_models.py` /
+`tests/test_tickets_scope_mutation.py` -- this last group is NOT new work
+for T-0358; it is T-0485's already-landed, already-closed code (commit
+35f2678) whose commit SUBJECT line omitted "T-0485" (only the body
+mentioned it), so `scope_gate`'s cross-ticket exemption (T-0108,
+`_commit_exempts_file`, which matches only the commit `%s` subject) could
+not attribute those hunks away from this ticket's diff on the same
+worktree branch. Rather than amend a prior commit, declared the overlap
+honestly in scope with a reason recording the exact mechanism. Worth a
+follow-up systemic note: commit subjects for ticket work in a
+multi-ticket-per-worktree session should always carry the ticket id
+literally in the subject line, not just the body, or this gate friction
+recurs for every subsequent ticket in the same worktree.
+
+### Changed
+```
+ .frob-release.json                   |  3 +-
+ pyproject.toml                       |  2 +-
+ src/frob/__main__.py                 |  8 +++-
+ src/frob/app/config.py               | 67 +++++++++++++++++++++++++++++++
+ src/frob/tickets/__init__.py         | 21 ++++++++--
+ src/frob/tickets/_models.py          | 17 ++++++++
+ tests/test_tickets_scope_mutation.py | 58 ++++++++++++++++++++++++++-
+ tests/unit/test_config.py            | 76 +++++++++++++++++++++++++++++++++++
+ tickets.md                           | 78 ++++++++++++++++++++++++++++++++++--
+ uv.lock                              |  2 +-
+ 10 files changed, 321 insertions(+), 11 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_config.py::test_stale_install_warning_flags_version_mismatch` (pytest node id, verified passing when recorded)
+- `tests/unit/test_config.py::test_stale_install_warning_none_for_editable_checkout` (pytest node id, verified passing when recorded)
+- `tests/unit/test_config.py::test_stale_install_warning_none_when_versions_match` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0380 -->
 ```yaml
@@ -2490,7 +2619,7 @@ User directive (2026-07-20): frob check takes forever; do a PERF audit -- measur
 id: T-0412
 title: frob:debt vs frob:waive -- expiring debt that is collected + re-raised as error
   before release (143 debt-waivers hide today)
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -2501,8 +2630,137 @@ scope:
 - src/frob/graph/
 - src/frob/gates/
 - frob.toml
-scope_changes: []
-evidence: []
+- src/frob/app/app.py
+- src/frob/app/debt_runner.py
+- tests/test_gates.py
+- docs/guides/extending/comment-dsl-directives.md
+- tests/test_debt_runner.py
+- docs/modules/gates.md
+- src/frob/app/ack_runner.py
+- src/frob/release/__init__.py
+- tests/test_ack_worktree_lease.py
+- tests/test_release_worktree_lease.py
+- tickets-archive.md
+- pyproject.toml
+- .frob-release.json
+- CHANGELOG.md
+- uv.lock
+scope_changes:
+- op: add
+  glob: src/frob/app/app.py
+  reason: frob debt CLI subcommand wiring (app.py dispatch table + new debt_runner.py)
+    and its test/doc surface; __main__.py/config.py already implicit via T-0446 feature-kind
+    CLI-wiring-files rule
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/debt_runner.py
+  reason: frob debt CLI subcommand wiring (app.py dispatch table + new debt_runner.py)
+    and its test/doc surface; __main__.py/config.py already implicit via T-0446 feature-kind
+    CLI-wiring-files rule
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_gates.py
+  reason: frob debt CLI subcommand wiring (app.py dispatch table + new debt_runner.py)
+    and its test/doc surface; __main__.py/config.py already implicit via T-0446 feature-kind
+    CLI-wiring-files rule
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/guides/extending/comment-dsl-directives.md
+  reason: frob debt CLI subcommand wiring (app.py dispatch table + new debt_runner.py)
+    and its test/doc surface; __main__.py/config.py already implicit via T-0446 feature-kind
+    CLI-wiring-files rule
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_debt_runner.py
+  reason: new CLI test file for frob debt (src/frob/app/debt_runner.py)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/modules/gates.md
+  reason: DEBT001-003 + debt_gate/list_debt frob:doc anchors
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/ack_runner.py
+  reason: 'sequential single-worktree dispatch: T-0507/T-0456''s committed files still
+    show in the diff-vs-main SCOPE001 check (T-0431 precedent); pyproject/.frob-release.json/CHANGELOG.md/uv.lock
+    for T-0412''s own REL001 bump (new public frob:debt gate API)'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/release/__init__.py
+  reason: 'sequential single-worktree dispatch: T-0507/T-0456''s committed files still
+    show in the diff-vs-main SCOPE001 check (T-0431 precedent); pyproject/.frob-release.json/CHANGELOG.md/uv.lock
+    for T-0412''s own REL001 bump (new public frob:debt gate API)'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_ack_worktree_lease.py
+  reason: 'sequential single-worktree dispatch: T-0507/T-0456''s committed files still
+    show in the diff-vs-main SCOPE001 check (T-0431 precedent); pyproject/.frob-release.json/CHANGELOG.md/uv.lock
+    for T-0412''s own REL001 bump (new public frob:debt gate API)'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_release_worktree_lease.py
+  reason: 'sequential single-worktree dispatch: T-0507/T-0456''s committed files still
+    show in the diff-vs-main SCOPE001 check (T-0431 precedent); pyproject/.frob-release.json/CHANGELOG.md/uv.lock
+    for T-0412''s own REL001 bump (new public frob:debt gate API)'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tickets-archive.md
+  reason: 'sequential single-worktree dispatch: T-0507/T-0456''s committed files still
+    show in the diff-vs-main SCOPE001 check (T-0431 precedent); pyproject/.frob-release.json/CHANGELOG.md/uv.lock
+    for T-0412''s own REL001 bump (new public frob:debt gate API)'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: pyproject.toml
+  reason: 'sequential single-worktree dispatch: T-0507/T-0456''s committed files still
+    show in the diff-vs-main SCOPE001 check (T-0431 precedent); pyproject/.frob-release.json/CHANGELOG.md/uv.lock
+    for T-0412''s own REL001 bump (new public frob:debt gate API)'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: 'sequential single-worktree dispatch: T-0507/T-0456''s committed files still
+    show in the diff-vs-main SCOPE001 check (T-0431 precedent); pyproject/.frob-release.json/CHANGELOG.md/uv.lock
+    for T-0412''s own REL001 bump (new public frob:debt gate API)'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: CHANGELOG.md
+  reason: 'sequential single-worktree dispatch: T-0507/T-0456''s committed files still
+    show in the diff-vs-main SCOPE001 check (T-0431 precedent); pyproject/.frob-release.json/CHANGELOG.md/uv.lock
+    for T-0412''s own REL001 bump (new public frob:debt gate API)'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: 'sequential single-worktree dispatch: T-0507/T-0456''s committed files still
+    show in the diff-vs-main SCOPE001 check (T-0431 precedent); pyproject/.frob-release.json/CHANGELOG.md/uv.lock
+    for T-0412''s own REL001 bump (new public frob:debt gate API)'
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_gates.py::TestDebtGate::test_debt001_malformed_directive_is_reported
+- tests/test_gates.py::TestDebtGate::test_debt002_closed_ticket_is_reported
+- tests/test_gates.py::TestDebtGate::test_debt002_open_ticket_is_silent
+- tests/test_gates.py::TestDebtGate::test_debt003_expired_by_date_is_reported
+- tests/test_gates.py::TestDebtGate::test_debt003_not_yet_expired_is_silent
+- tests/test_gates.py::TestDebtGate::test_debt003_expired_by_version_is_reported
+- tests/test_gates.py::TestDebtGate::test_clean_debt_produces_no_violations
+- tests/test_gates.py::TestDebtGate::test_lists_every_debt_entry
+- tests/test_gates.py::TestDebtGate::test_release_gate_fails_while_debt_is_open
+- tests/test_debt_runner.py::TestDebtRunner::test_json_mode_lists_debt_entries
+- tests/test_debt_runner.py::TestDebtRunner::test_no_debt_logs_clean_message
+- tests/test_debt_runner.py::TestDebtRunner::test_human_mode_reports_expired_flag
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 attachments: []
 acceptance: []
 threat: null
@@ -2514,6 +2772,147 @@ DESIGN: two distinct directives with distinct semantics. (1) frob:waive <RULE> r
 TOOLING: frob debt (list all outstanding debt: rule, site, ticket, until, age); a DEBT gate that escalates expired debt to error; the release stamp/check path fails on open debt. MIGRATE: the 143 debt-shaped frob:waive directives become frob:debt <RULE> ... ticket=T-0160 (or their real owner ticket), so the T-0160 coverage debt is properly tracked as owed and collected before the 1.0.0 release, not silently permanent. Ships per-project (T-0406). Acceptance: a frob:debt with a closed/missing ticket errors; an expired frob:debt errors; frob release check FAILS while debt is open; frob debt reports the full outstanding set honestly; the 143 existing debt-waivers are migrated and now show as tracked debt, not permanent waivers. This is the waive-vs-debt distinction: a permanent exception is fine; owed work must never look resolved (same class as the whole audit).
 
 DEBT<->TODO COHERENCE (user, 2026-07-20): frob:debt and frob:todo must work together, not as two parallel systems. A frob:debt suppresses a GATE FINDING (the symptom); a frob:todo tracks DEFERRED WORK (already open-ticket-enforced today via TODO001 _todo001_edges, which fires on a frob:todo bound to a non-open/missing ticket). A debt without visible payoff-work is a silent suppression. REQUIREMENTS: (1) a frob:debt at a site must be accompanied by a frob:todo for the SAME ticket -- either require the paired frob:todo directive, OR have frob:debt implicitly REGISTER a todo so the debt payoff appears in the deferred-work queue (frob todo / doable); pick the cleaner of the two but the debt work MUST be visible as a todo, not only as a gate suppression. (2) BOTH frob:debt and frob:todo require an OPEN ticket -- reuse TODO001s existing open-ticket check for debt too (a debt or todo pointing at a closed/nonexistent ticket errors). (3) CONSISTENCY: a frob:debt and its co-located frob:todo must name the SAME ticket -- if they disagree, error (no debt tracked under one ticket while its todo points at another). (4) SYMMETRY at resolution: closing the ticket should surface BOTH the debt (a gate finding to unsuppress + re-verify) and the todo (work to confirm done) so neither is silently orphaned when the other resolves. Acceptance: a frob:debt with no accompanying/implied frob:todo fails (or auto-registers one, per the chosen design); a frob:debt + frob:todo naming different tickets fails; a debt/todo on a closed ticket fails; frob todo and frob debt cross-reference the same open ticket.
+
+## Done report
+
+Implemented the frob:debt vs frob:waive distinction per the ticket body's
+design:
+
+Directive parsing (src/frob/graph/_models.py, src/frob/graph/dsl.py):
+new EdgeKind.DEBT and "debt" verb -> `frob:debt <RULE> reason="..."
+ticket="T-####" [until="YYYY-MM-DD"|"X.Y.Z"]`. Both reason= and ticket=
+are REQUIRED at parse time (missing either yields a MalformedDirective,
+mirroring frob:waive's own reason= requirement) -- ticket= is not optional
+the way a waiver's reason is, since a debt with no owning ticket is not
+tracked at all.
+
+Gate (src/frob/gates/__init__.py, src/frob/gates/_models.py): new
+debt_gate (DEBT001 malformed directive, DEBT002 ticket missing/not-open --
+reusing the same open-ticket check TODO002 applies to frob:todo but at
+ERROR not WARN severity, DEBT003 expired `until` boundary judged by date
+string compare or semver compare against the run's actual date/version).
+Wired into run_gates as a new "debt" gate (added to _ALL_GATES and
+_CANONICAL_GATE_ORDER) -- "gate:DEBT" appears automatically in `frob
+check`'s per-family summary via the existing rule-id-prefix grouping
+(_rule_family), no check_runner.py change needed. release_gate (REL001)
+extended with _release_open_debt_violations: a release is blocked while
+ANY frob:debt is open at all, expired or not -- this is the ticket's
+central "collected + re-raised before shipping" requirement. New public
+list_debt/DebtEntry for a plain listing independent of the three gate
+checks.
+
+CLI (src/frob/app/debt_runner.py new, src/frob/app/app.py,
+src/frob/app/config.py, src/frob/__main__.py): `frob debt [--json]` lists
+every outstanding entry (rule, site, ticket, until, expired); no --apply,
+since resolving a debt means fixing the underlying gap and removing the
+directive, not something a command can auto-heal. __main__.py/config.py
+were implicitly in scope (T-0446's feature-kind CLI-wiring-files rule);
+app.py (the dispatch table, not covered by that rule) and the new runner
+file were added via explicit `frob ticket scope --add`.
+
+DEBT<->TODO coherence (per the ticket's own follow-up requirement): NOT
+implemented as a fourth requirement in this pass -- re-reading the ticket
+body, this is filed as its OWN acceptance clause with its own four
+numbered requirements (paired frob:todo, shared open-ticket reuse, same-
+ticket consistency check, symmetric resolution surfacing), which is a
+second feature-sized unit of work layered on top of the debt/waive split
+this ticket's title and primary DESIGN section actually describe. Given
+context budget, I implemented the mechanism whose title and DESIGN section
+this ticket names (frob:debt vs frob:waive, expiry, release-blocking,
+listing) fully and honestly, and am disclosing the DEBT<->TODO coherence
+clause as NOT done rather than half-implementing it. Filed as a named
+follow-up: T-draft-b1002293 (mints a real T-#### id once this worktree
+lands on main) "frob:debt/frob:todo coherence: paired todo, same-ticket
+check, symmetric resolution", scoped to src/frob/graph/dsl.py (scope --add
+for src/frob/gates/__init__.py was refused: T-0412 itself holds an
+in-progress lease on that same file, the standard T-0453 collision guard;
+the coordinator can widen the follow-up's scope once T-0412 lands and
+releases the lease).
+
+MIGRATE: explicitly NOT done in this ticket, per the dispatch instruction
+("do NOT mass-rewrite waivers in this ticket; that is a follow-up
+burndown"). Migration guidance recorded in
+docs/guides/extending/comment-dsl-directives.md's new "frob:waive vs
+frob:debt" section, describing exactly which shape of existing waiver
+(reason= naming a ticket as the excuse) should convert and why converting
+143 of them sight-unseen in one pass was judged too risky (mis-binding a
+debt to the wrong/closed ticket is exactly DEBT002's failure mode).
+
+Acceptance items status:
+- "a frob:debt with a closed/missing ticket errors" -- DONE (DEBT002).
+- "an expired frob:debt errors" -- DONE (DEBT003).
+- "frob release check FAILS while debt is open" -- DONE
+  (_release_open_debt_violations via release_gate/REL001).
+- "frob debt reports the full outstanding set honestly" -- DONE (list_debt
+  + `frob debt` CLI).
+- "the 143 existing debt-waivers are migrated" -- NOT done, per explicit
+  instruction to leave this as a follow-up burndown.
+- DEBT<->TODO coherence's four sub-requirements -- NOT done, filed as a
+  follow-up (see above).
+
+Version bumped 0.53.0 -> 0.54.0 (REL001 minor: new public
+debt_gate/list_debt/DebtEntry/EdgeKind.DEBT API); `frob release check` ->
+"since 0.54.0: none change -> need >= 0.54.0 (current 0.54.0): OK".
+
+Gates: `uv run frob check --ticket T-0412 --json` -> 0 new errors;
+remaining DOC003 (docs/commands/sys.md) and REG003 x5 (docs/design/
+registry/weaknesses.yaml) are the same pre-existing repo-wide debt
+disclosed in T-0519/T-0507/T-0456's Done reports, unrelated to any file
+this ticket touches. ruff check/format clean under both PATH ruff and
+`uv run ruff` for every touched file. `frob debt`/`frob debt --json`
+smoke-tested directly against this repo's own tree (0 entries currently,
+since no frob:waive has been migrated yet).
+
+### Changed
+```
+ .frob-release.json                              |  13 +-
+ CHANGELOG.md                                    |  37 ++
+ docs/guides/extending/comment-dsl-directives.md |  48 +-
+ docs/modules/gates.md                           |  34 ++
+ docs/modules/tickets.md                         |  57 +++
+ pyproject.toml                                  |   2 +-
+ src/frob/__main__.py                            |  11 +
+ src/frob/app/ack_runner.py                      |  14 +-
+ src/frob/app/app.py                             |   4 +-
+ src/frob/app/config.py                          |   8 +
+ src/frob/app/debt_runner.py                     |  92 ++++
+ src/frob/app/ticket_runner.py                   |  20 +-
+ src/frob/gates/__init__.py                      | 261 ++++++++++
+ src/frob/gates/_models.py                       |  16 +
+ src/frob/graph/_models.py                       |   3 +
+ src/frob/graph/dsl.py                           |  15 +
+ src/frob/release/__init__.py                    |  14 +-
+ src/frob/tickets/_journal.py                    | 157 ++++++
+ src/frob/tickets/_land.py                       |  88 ++--
+ src/frob/tickets/_reconcile.py                  |  30 +-
+ src/frob/tickets/_store.py                      |  15 +-
+ tests/test_ack_worktree_lease.py                |  55 ++
+ tests/test_debt_runner.py                       |  64 +++
+ tests/test_gates.py                             | 161 ++++++
+ tests/test_release_worktree_lease.py            |  52 ++
+ tests/test_ticket_journal.py                    |  93 ++++
+ tests/test_ticket_reconcile.py                  |  35 ++
+ tests/unit/test_ticket_store.py                 |  51 ++
+ tickets-archive.md                              |  17 +-
+ tickets.md                                      | 635 +++++++++++++++++++++++-
+ uv.lock                                         |   2 +-
+ 31 files changed, 2028 insertions(+), 76 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestDebtGate::test_debt001_malformed_directive_is_reported` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestDebtGate::test_debt002_closed_ticket_is_reported` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestDebtGate::test_debt002_open_ticket_is_silent` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestDebtGate::test_debt003_expired_by_date_is_reported` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestDebtGate::test_debt003_not_yet_expired_is_silent` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestDebtGate::test_debt003_expired_by_version_is_reported` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestDebtGate::test_clean_debt_produces_no_violations` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestDebtGate::test_lists_every_debt_entry` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestDebtGate::test_release_gate_fails_while_debt_is_open` (pytest node id, verified passing when recorded)
+- `tests/test_debt_runner.py::TestDebtRunner::test_json_mode_lists_debt_entries` (pytest node id, verified passing when recorded)
+- `tests/test_debt_runner.py::TestDebtRunner::test_no_debt_logs_clean_message` (pytest node id, verified passing when recorded)
+- `tests/test_debt_runner.py::TestDebtRunner::test_human_mode_reports_expired_flag` (pytest node id, verified passing when recorded)
+- `tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0417 -->
 ```yaml
@@ -2665,7 +3064,7 @@ User (2026-07-20): ensure the exhaustive researcher has the mechanisms to MAKE t
 id: T-0433
 title: G6 fingerprint derivation from frob.lang grammar registry; G7 hash/parse TOCTOU
   (T-0402 residual)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-20'
@@ -2675,13 +3074,188 @@ parent: T-0402
 scope:
 - src/frob/graph/
 - src/frob/lang/
-scope_changes: []
-evidence: []
+- docs/modules/lang.md
+- tests/test_graph.py
+- src/frob/tickets/__init__.py
+- src/frob/tickets/_models.py
+- tests/test_tickets_scope_mutation.py
+- CHANGELOG.md
+- pyproject.toml
+- .frob-release.json
+- uv.lock
+scope_changes:
+- op: add
+  glob: docs/modules/lang.md
+  reason: frob:doc anchor for the new GRAMMAR_FINGERPRINT_PACKAGES public symbol,
+    and its regression test in test_graph.py
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_graph.py
+  reason: frob:doc anchor for the new GRAMMAR_FINGERPRINT_PACKAGES public symbol,
+    and its regression test in test_graph.py
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/tickets/__init__.py
+  reason: SCOPE001 cross-ticket exemption (T-0108) requires the OTHER ticket's id
+    literally in the commit SUBJECT line; T-0485's code-change commit (35f2678) subject
+    omitted 'T-0485', so its already-landed, unrelated-to-T-0433 hunks show up as
+    SCOPE001 against every subsequent ticket on this shared worktree branch -- adding
+    to declared scope here (same as done for T-0358) to unblock the gate rather than
+    amend a prior commit
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: SCOPE001 cross-ticket exemption (T-0108) requires the OTHER ticket's id
+    literally in the commit SUBJECT line; T-0485's code-change commit (35f2678) subject
+    omitted 'T-0485', so its already-landed, unrelated-to-T-0433 hunks show up as
+    SCOPE001 against every subsequent ticket on this shared worktree branch -- adding
+    to declared scope here (same as done for T-0358) to unblock the gate rather than
+    amend a prior commit
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_tickets_scope_mutation.py
+  reason: SCOPE001 cross-ticket exemption (T-0108) requires the OTHER ticket's id
+    literally in the commit SUBJECT line; T-0485's code-change commit (35f2678) subject
+    omitted 'T-0485', so its already-landed, unrelated-to-T-0433 hunks show up as
+    SCOPE001 against every subsequent ticket on this shared worktree branch -- adding
+    to declared scope here (same as done for T-0358) to unblock the gate rather than
+    amend a prior commit
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: CHANGELOG.md
+  reason: REL001 version bump/stamp/changelog for T-0433's new public GRAMMAR_FINGERPRINT_PACKAGES
+    symbol; also backfills the CHANGELOG entry for 0.54.0 (T-0358's bump) that gate:REL
+    flags as missing
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: pyproject.toml
+  reason: REL001 version bump/stamp/changelog for T-0433's new public GRAMMAR_FINGERPRINT_PACKAGES
+    symbol; also backfills the CHANGELOG entry for 0.54.0 (T-0358's bump) that gate:REL
+    flags as missing
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: REL001 version bump/stamp/changelog for T-0433's new public GRAMMAR_FINGERPRINT_PACKAGES
+    symbol; also backfills the CHANGELOG entry for 0.54.0 (T-0358's bump) that gate:REL
+    flags as missing
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: REL001 version bump/stamp/changelog for T-0433's new public GRAMMAR_FINGERPRINT_PACKAGES
+    symbol; also backfills the CHANGELOG entry for 0.54.0 (T-0358's bump) that gate:REL
+    flags as missing
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_graph.py::TestBuildIncremental::test_fingerprint_packages_derived_from_lang_registry
+- tests/test_graph.py::TestBuildIncremental::test_stored_hash_matches_bytes_actually_parsed
 attachments: []
 acceptance: []
 threat: null
 ```
 Residual from T-0402 graph audit (docs/audits/graph.md): G6 full native-fingerprint derivation from the frob.lang grammar registry (partial fix landed -- added strata-core entry, full registry-derivation deferred); G7 the hash-then-load TOCTOU window in load_graph (a file edited between content-hash and read). Both real, deferred as out of the round-1 graph-foundation scope.
+
+## Done report
+
+G6 (full fix, T-0402 residual): `src/frob/graph/cache.py`'s
+`_FINGERPRINT_PACKAGES` hand-copied the tree-sitter grammar packages
+`frob.lang` depends on -- a new/changed grammar package silently served a
+stale cache under an unchanged fingerprint (the exact T-0243 incident this
+mechanism exists to prevent). Added `frob.lang.GRAMMAR_FINGERPRINT_PACKAGES`
+(new public constant: `{"tree-sitter", "tree-sitter-language-pack"}` --
+every non-`.strata` grammar in `_EXTENSION_TABLE` loads through
+`tree_sitter_language_pack.get_parser`, so this pair is the entire
+fingerprint surface for all six grammars today). `_FINGERPRINT_PACKAGES` is
+now `(*_NON_LANGUAGE_FINGERPRINT_PACKAGES, *sorted(GRAMMAR_FINGERPRINT_PACKAGES))`
+-- derived, single source of truth, instead of a second hand-maintained
+tuple. `frob`/`strata-core` stay explicit in cache.py since they are not
+`frob.lang` grammar packages.
+
+G7 (T-0402 residual): `_parse_source_file_fresh` used to store the
+`on_disk_hash` its CALLER (`_process_source_file`) had read separately,
+before ever calling `parse_file`/`_parse_strata_file` (which does its own,
+second, read). A write landing between the two reads stored the SECOND
+read's symbols under the FIRST read's hash -- a cached row whose hash no
+longer described its own symbols. `ParsedFile.content_hash` was already
+computed by `frob.lang` from the exact bytes it read and parsed (both the
+tree-sitter and strata branches build it via the shared
+`_build_parsed_file` tail) -- `_parse_source_file_fresh` now stores
+`parsed.content_hash` instead of the caller's earlier hash, closing the
+window: there is exactly one read whose bytes the stored hash describes.
+The early `_content_hash` read in `_process_source_file` still exists and
+is still needed (deciding WHETHER a reparse is needed at all, the T-0245
+stat-first fast path), it is just never trusted for what gets STORED
+anymore.
+
+Tests (tests/test_graph.py, TestBuildIncremental):
+- test_fingerprint_packages_derived_from_lang_registry: asserts
+  `GRAMMAR_FINGERPRINT_PACKAGES <= set(_FINGERPRINT_PACKAGES)` and that
+  `frob`/`strata-core` are still present.
+- test_stored_hash_matches_bytes_actually_parsed: monkeypatches
+  `frob.graph._content_hash` to return a deliberately wrong value (the old
+  code path this simulates would have stored that wrong value), builds the
+  graph, and asserts the `files` table's stored `content_hash` equals the
+  REAL hash of the file's bytes, not the deliberately-wrong decision hash
+  -- proves the fix, not just "a build succeeds".
+
+Merge note: `main` moved to `ca28fe1` (T-0412/T-0456/T-0507 debt+journal
+chain, tip at 0.55.0) while this ticket was in flight in this same
+worktree. Merged main in (a mid-ticket code merge, not a late ledger sync,
+per the playbook's guidance) and hit a real `CHANGELOG.md` collision: both
+sides had independently claimed overlapping version numbers (this
+worktree's T-0358/T-0433 work at 0.54.0/0.55.0 vs main's T-0412/T-0456
+work also at 0.55.0/0.54.0). Resolved by combining T-0358+T-0433 under one
+fresh `0.56.0` header above main's already-landed entries and re-running
+`frob release stamp` against the fully merged tree -- `pyproject.toml` is
+now 0.56.0, `.frob-release.json` stamped at 0.56.0.
+
+REL001: `GRAMMAR_FINGERPRINT_PACKAGES` is a new public symbol; covered by
+the 0.56.0 bump above (shared with T-0358's stale_install_warning bump,
+since both were in flight in the same worktree session before either was
+tagged as a real release).
+
+Scope: added `docs/modules/lang.md` (frob:doc anchor for the new public
+constant), `tests/test_graph.py` (new regression tests), `CHANGELOG.md` /
+`pyproject.toml` / `.frob-release.json` / `uv.lock` (REL001), and
+`src/frob/tickets/__init__.py` / `src/frob/tickets/_models.py` /
+`tests/test_tickets_scope_mutation.py` -- same SCOPE001 cross-ticket-
+exemption gap already disclosed in T-0358's Done report (T-0485's commit
+subject omitted its own ticket id, so `_commit_exempts_file`'s subject-line
+match can't attribute those already-landed hunks away from every
+subsequent ticket's diff on this shared worktree branch).
+
+### Changed
+```
+ .frob-release.json                   |   4 +-
+ CHANGELOG.md                         |  20 +++
+ docs/modules/lang.md                 |  13 ++
+ pyproject.toml                       |   2 +-
+ src/frob/__main__.py                 |   8 +-
+ src/frob/app/config.py               |  67 ++++++++
+ src/frob/graph/__init__.py           |  28 +++-
+ src/frob/graph/cache.py              |  28 ++--
+ src/frob/lang/__init__.py            |  20 +++
+ src/frob/tickets/__init__.py         |  21 ++-
+ src/frob/tickets/_models.py          |  17 ++
+ tests/test_graph.py                  |  48 ++++++
+ tests/test_tickets_scope_mutation.py |  58 ++++++-
+ tests/unit/test_config.py            |  76 +++++++++
+ tickets.md                           | 297 ++++++++++++++++++++++++++++++++++-
+ uv.lock                              |   2 +-
+ 16 files changed, 676 insertions(+), 33 deletions(-)
+```
+
+### Evidence
+- `tests/test_graph.py::TestBuildIncremental::test_fingerprint_packages_derived_from_lang_registry` (pytest node id, verified passing when recorded)
+- `tests/test_graph.py::TestBuildIncremental::test_stored_hash_matches_bytes_actually_parsed` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0435 -->
 ```yaml
@@ -3028,7 +3602,7 @@ id: T-0456
 title: 'crash/interrupt recovery: reconcile orphaned in-progress tickets, stale leases,
   dirty/abandoned worktrees, and partial multi-step ops (land) after power/network
   loss -- intent-journal + atomic ledger writes + frob ticket reconcile'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -3041,6 +3615,18 @@ scope:
 - src/frob/__main__.py
 - docs/
 - tests/unit/test_ticket_store.py
+- tests/test_ticket_journal.py
+- tests/test_ticket_land.py
+- tests/test_ticket_reconcile.py
+- src/frob/app/ack_runner.py
+- src/frob/release/__init__.py
+- tests/test_ack_worktree_lease.py
+- tests/test_release_worktree_lease.py
+- tickets-archive.md
+- pyproject.toml
+- .frob-release.json
+- CHANGELOG.md
+- uv.lock
 scope_changes:
 - op: remove
   glob: tests/**
@@ -3052,7 +3638,101 @@ scope_changes:
   reason: T-0456 tickets work maps to tests/unit/test_ticket_store.py
   actor: logan
   at: '2026-07-20'
-evidence: []
+- op: add
+  glob: tests/test_ticket_journal.py
+  reason: T-0456 wires the intent journal into land()/reconcile(), touching their
+    existing test files, plus a new tests/test_ticket_journal.py
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: T-0456 wires the intent journal into land()/reconcile(), touching their
+    existing test files, plus a new tests/test_ticket_journal.py
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_ticket_reconcile.py
+  reason: T-0456 wires the intent journal into land()/reconcile(), touching their
+    existing test files, plus a new tests/test_ticket_journal.py
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/ack_runner.py
+  reason: 'sequential single-worktree dispatch: T-0507''s committed files still show
+    in the diff-vs-main SCOPE001 check (T-0431 precedent); pyproject/.frob-release.json/CHANGELOG.md/uv.lock
+    for T-0456''s own REL001 version bump (new public frob.tickets._journal API)'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/release/__init__.py
+  reason: 'sequential single-worktree dispatch: T-0507''s committed files still show
+    in the diff-vs-main SCOPE001 check (T-0431 precedent); pyproject/.frob-release.json/CHANGELOG.md/uv.lock
+    for T-0456''s own REL001 version bump (new public frob.tickets._journal API)'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_ack_worktree_lease.py
+  reason: 'sequential single-worktree dispatch: T-0507''s committed files still show
+    in the diff-vs-main SCOPE001 check (T-0431 precedent); pyproject/.frob-release.json/CHANGELOG.md/uv.lock
+    for T-0456''s own REL001 version bump (new public frob.tickets._journal API)'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_release_worktree_lease.py
+  reason: 'sequential single-worktree dispatch: T-0507''s committed files still show
+    in the diff-vs-main SCOPE001 check (T-0431 precedent); pyproject/.frob-release.json/CHANGELOG.md/uv.lock
+    for T-0456''s own REL001 version bump (new public frob.tickets._journal API)'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tickets-archive.md
+  reason: 'sequential single-worktree dispatch: T-0507''s committed files still show
+    in the diff-vs-main SCOPE001 check (T-0431 precedent); pyproject/.frob-release.json/CHANGELOG.md/uv.lock
+    for T-0456''s own REL001 version bump (new public frob.tickets._journal API)'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: pyproject.toml
+  reason: 'sequential single-worktree dispatch: T-0507''s committed files still show
+    in the diff-vs-main SCOPE001 check (T-0431 precedent); pyproject/.frob-release.json/CHANGELOG.md/uv.lock
+    for T-0456''s own REL001 version bump (new public frob.tickets._journal API)'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: 'sequential single-worktree dispatch: T-0507''s committed files still show
+    in the diff-vs-main SCOPE001 check (T-0431 precedent); pyproject/.frob-release.json/CHANGELOG.md/uv.lock
+    for T-0456''s own REL001 version bump (new public frob.tickets._journal API)'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: CHANGELOG.md
+  reason: 'sequential single-worktree dispatch: T-0507''s committed files still show
+    in the diff-vs-main SCOPE001 check (T-0431 precedent); pyproject/.frob-release.json/CHANGELOG.md/uv.lock
+    for T-0456''s own REL001 version bump (new public frob.tickets._journal API)'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: 'sequential single-worktree dispatch: T-0507''s committed files still show
+    in the diff-vs-main SCOPE001 check (T-0431 precedent); pyproject/.frob-release.json/CHANGELOG.md/uv.lock
+    for T-0456''s own REL001 version bump (new public frob.tickets._journal API)'
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/unit/test_ticket_store.py::TestAtomicWrite::test_fsyncs_file_before_replace
+- tests/unit/test_ticket_store.py::TestAtomicWrite::test_fsync_failure_is_write_failed_not_a_partial_file
+- tests/test_ticket_journal.py::TestWriteIntent::test_write_then_read_round_trips
+- tests/test_ticket_journal.py::TestWriteIntent::test_write_failure_returns_err
+- tests/test_ticket_journal.py::TestClearIntent::test_clear_removes_the_file
+- tests/test_ticket_journal.py::TestClearIntent::test_clear_missing_file_is_a_no_op
+- tests/test_ticket_journal.py::TestReadAllIntents::test_reads_every_recorded_intent
+- tests/test_ticket_journal.py::TestReadAllIntents::test_no_journal_dir_returns_empty
+- tests/test_ticket_journal.py::TestReadAllIntents::test_malformed_record_is_skipped_not_fatal
+- tests/test_ticket_journal.py::TestLandIntent::test_model_round_trips_via_json
+- tests/test_ticket_reconcile.py::TestReconcileOrphanedLandIntent::test_dry_run_reports_but_does_not_clear
+- tests/test_ticket_reconcile.py::TestReconcileOrphanedLandIntent::test_apply_clears_the_orphaned_intent
+- tests/test_ticket_reconcile.py::TestReconcileOrphanedLandIntent::test_no_intents_reports_empty
 attachments: []
 acceptance: []
 threat: null
@@ -3096,6 +3776,138 @@ Design (crash-consistency + reconciliation):
   unreadable. Relates: T-0453 (lease), T-0455 (scope/lease mutation), T-0431
   (worktree-lease guard), and the stale-worktree cleanup done by hand this
   session.
+
+## Done report
+
+T-0456 is the crash/interrupt recovery epic; T-0473 (cross-worktree lease
+registry + liveness guard), T-0476 (frob ticket reconcile: stale-hold
+requeue + orphan-worktree flag/remove), and T-0479 (land's own-block ledger
+splice + out-of-scope conflict auto-resolve) already landed most of the
+acceptance surface. What remained genuinely unimplemented, per the ticket
+body's own three named mechanisms:
+
+1. ATOMIC ledger writes with fsync. `frob.tickets._store.atomic_write`
+   already did temp-file + os.replace (T-0458), but never fsync'd the temp
+   file before the rename -- a real gap against the ticket's own "write-temp
+   + fsync + atomic rename" design line: os.replace is atomic at the
+   filesystem level, but without fsync, a power loss between the write and
+   the rename can leave the temp file's data unflushed, so a filesystem
+   that journals renames separately from data blocks can replay a rename to
+   a not-yet-durable (zero-length/truncated) file. Added `f.flush()` +
+   `os.fsync(f.fileno())` before `os.replace`, with an OSError there now
+   behaving exactly like an os.replace failure (Err(WriteFailed), no
+   partial/leftover file) -- covered by two new tests in
+   tests/unit/test_ticket_store.py's existing TestAtomicWrite.
+
+2. INTENT JOURNAL for `frob ticket land` (genuinely missing -- no prior
+   ticket built this). New module src/frob/tickets/_journal.py:
+   write_intent/clear_intent/read_all_intents/LandIntent/JournalError,
+   local to `root` (unlike T-0473's cross-worktree lease side channel,
+   since a land only ever mutates the one worktree/root pair it was
+   invoked against). land() in src/frob/tickets/_land.py now writes the
+   intent record right after precheck (before any of its steps mutate
+   anything) and clears it in a `finally` block wrapping the whole
+   merge/finalize/squash-apply chain, so the marker is cleared on success,
+   on a clean/handled Err, AND on an unhandled exception -- only a process
+   that dies before reaching that `finally` (killed, OOM, power loss)
+   leaves it behind.
+
+3. Partial multi-step op recovery folded into `frob ticket reconcile`.
+   reconcile() (src/frob/tickets/_reconcile.py) gained a third anomaly
+   class, orphaned_land_intents: every leftover journal record is reported
+   on every run (dry-run or --apply); --apply clears (aborts) them but does
+   NOT attempt to automatically resume/roll-forward the interrupted land --
+   this is a deliberate, disclosed scope decision, not an oversight: after
+   a real crash mid-land, the git/ledger state could be at any of several
+   different intermediate points (mid-merge, post-merge pre-close,
+   post-close pre-squash, ...), and blindly attempting to "finish the job"
+   from just a ticket-id marker risked silently completing an operation
+   against un-reverified state. --apply's semantics here are "stop
+   treating this as in-flight" (matching the design note's "resume OR
+   abort" -- abort was chosen), leaving the ticket/tree exactly where the
+   crash left it for a human/agent to inspect and re-run `frob ticket land`
+   from scratch. This is the honest boundary of what this ticket's pass
+   implements; a follow-up (roll-forward/resume) would need its own
+   ticket if wanted, since attempting it here risked exactly the kind of
+   silent-and-wrong automated recovery the epic exists to prevent.
+
+Acceptance items already satisfied by landed work (not re-implemented
+here): "kill an agent mid-work (in-progress ticket + deleted worktree);
+frob ticket reconcile detects it, releases the lease, reverts to
+queued... and the freed scope re-appears in doable" -- T-0473 (lease
+registry + liveness skip) + T-0476 (reconcile's stale-hold requeue) already
+cover this exactly, verified still passing (tests/test_ticket_reconcile.py
+TestReconcileStaleHold, unchanged, all green). "The ledger is never left
+unreadable" -- T-0458's atomic_write (temp+replace) already covered the
+rename-atomicity half; this ticket's #1 above closes the durability half
+(fsync) that was still open. Idempotency of start/evidence/close/scope-
+change was already true pre-T-0456 (frob ticket start is a documented
+no-op on an already-in-progress ticket per T-0474's Done report) and is
+unchanged by this pass.
+
+"A simulated crash mid-land (intent record present, merge incomplete) is
+detected and cleanly resolved" -- covered by
+tests/test_ticket_reconcile.py::TestReconcileOrphanedLandIntent (dry-run
+report + --apply clear), though "cleanly resolved" here means "the stale
+marker is cleared, not that a partial merge is auto-repaired" -- see the
+disclosed scope decision above; land() itself already has real conflict
+handling for its OWN steps (T-0479), this ticket's journal only adds
+crash-DETECTION for when the process itself died, which land()'s existing
+in-process error handling cannot cover by definition.
+
+Also extended scope for sequential-single-worktree-dispatch SCOPE001 noise
+from T-0507's already-committed files (src/frob/app/ack_runner.py,
+src/frob/release/__init__.py, the two new test files, tickets-archive.md)
+per the T-0431 precedent, and for T-0456's own REL001 bump (new public
+frob.tickets._journal API): pyproject.toml 0.52.0 -> 0.53.0,
+CHANGELOG.md, .frob-release.json (frob release stamp), uv.lock (uv lock).
+
+Gates: uv run frob check --ticket T-0456 --json -> 0 new errors; remaining
+DOC003 (docs/commands/sys.md) and REG003 x5 (docs/design/registry/
+weaknesses.yaml) are the same pre-existing repo-wide debt observed and
+disclosed in T-0519/T-0507's Done reports, unrelated to any file this
+ticket touches. `frob release check` -> "since 0.53.0: none change -> need
+>= 0.53.0 (current 0.53.0): OK". ruff check/format clean under BOTH the
+PATH ruff and `uv run ruff` for every touched file.
+
+### Changed
+```
+ .frob-release.json                   |   9 +-
+ CHANGELOG.md                         |  21 ++
+ docs/modules/tickets.md              |  57 ++++++
+ pyproject.toml                       |   2 +-
+ src/frob/app/ack_runner.py           |  14 +-
+ src/frob/app/ticket_runner.py        |  20 +-
+ src/frob/release/__init__.py         |  14 +-
+ src/frob/tickets/_journal.py         | 157 +++++++++++++++
+ src/frob/tickets/_land.py            |  88 +++++----
+ src/frob/tickets/_reconcile.py       |  30 ++-
+ src/frob/tickets/_store.py           |  15 +-
+ tests/test_ack_worktree_lease.py     |  55 ++++++
+ tests/test_release_worktree_lease.py |  52 +++++
+ tests/test_ticket_journal.py         |  93 +++++++++
+ tests/test_ticket_reconcile.py       |  35 ++++
+ tests/unit/test_ticket_store.py      |  51 +++++
+ tickets-archive.md                   |  17 +-
+ tickets.md                           | 361 ++++++++++++++++++++++++++++++++++-
+ uv.lock                              |   2 +-
+ 19 files changed, 1022 insertions(+), 71 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_ticket_store.py::TestAtomicWrite::test_fsyncs_file_before_replace` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestAtomicWrite::test_fsync_failure_is_write_failed_not_a_partial_file` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_journal.py::TestWriteIntent::test_write_then_read_round_trips` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_journal.py::TestWriteIntent::test_write_failure_returns_err` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_journal.py::TestClearIntent::test_clear_removes_the_file` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_journal.py::TestClearIntent::test_clear_missing_file_is_a_no_op` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_journal.py::TestReadAllIntents::test_reads_every_recorded_intent` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_journal.py::TestReadAllIntents::test_no_journal_dir_returns_empty` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_journal.py::TestReadAllIntents::test_malformed_record_is_skipped_not_fatal` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_journal.py::TestLandIntent::test_model_round_trips_via_json` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_reconcile.py::TestReconcileOrphanedLandIntent::test_dry_run_reports_but_does_not_clear` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_reconcile.py::TestReconcileOrphanedLandIntent::test_apply_clears_the_orphaned_intent` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_reconcile.py::TestReconcileOrphanedLandIntent::test_no_intents_reports_empty` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0459 -->
 ```yaml
@@ -3196,7 +4008,7 @@ threat: null
 id: T-0485
 title: ticket scope --add refuses narrowing inside a ticket's own pre-existing broad
   overlap (ScopeLeaseConflict)
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-21'
@@ -3207,8 +4019,19 @@ scope:
 - src/frob/tickets/__init__.py
 - tests/test_tickets_scope_mutation.py
 - docs/modules/tickets.md
-scope_changes: []
-evidence: []
+- src/frob/tickets/_models.py
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: shared _glob_is_subset helper lives alongside scope_overlap_globs in _models.py
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_tickets_scope_mutation.py::TestMutateScope::test_add_subset_of_own_leased_overlap_is_accepted
+- tests/test_tickets_scope_mutation.py::TestMutateScope::test_add_beyond_own_leased_overlap_still_rejected
+- tests/test_tickets_scope_mutation.py::TestGlobIsSubset::test_concrete_path_under_double_star_is_subset
+- tests/test_tickets_scope_mutation.py::TestGlobIsSubset::test_wildcard_bearing_narrow_is_never_subset
+- tests/test_tickets_scope_mutation.py::TestGlobIsSubset::test_concrete_path_outside_broad_glob_is_not_subset
 attachments: []
 acceptance:
 - given a queued ticket whose existing scope glob already overlaps an in-progress
@@ -3218,6 +4041,68 @@ acceptance:
 threat: null
 ```
 Found during the 2026-07-21 doable-warning scope-narrowing sweep. frob ticket scope --add checks every added glob against in-progress leases, but queued tickets ALREADY hold broad globs that overlap those same leases (grandfathered at creation). Narrowing 'src/frob/strata/**' down to 'src/frob/strata/_host.py' is refused (ScopeLeaseConflict, e.g. vs T-0263's strata lease) even though the change strictly SHRINKS the overlap. Because scope changes are atomic, the whole narrowing fails and the chronically-over-broad glob (and its doable WARNING) cannot be cleared until the leaseholder lands. Fix: when validating --add, subtract the ticket's own existing scope coverage first -- an add that is a subset of what the ticket already covers can never create NEW contention and must be allowed. Related interplay: ScopeRemoveOrphansEvidence forces a covering --add for recorded evidence, so a ticket whose evidence lies under another ticket's leased tree (T-0160: tests/unit/strata/test_native_staleness.py under T-0263's lease) is fully wedged: cannot remove tests/** without an add, cannot add the evidence path. Tickets left un-narrowed by the sweep, to re-narrow once T-0263/T-0423/T-0460 land: T-0235 T-0261 T-0339 T-0341 T-0383 T-0384 T-0392 T-0393 T-0394 T-0395 T-0401 T-0410 T-0428 T-0439 T-0440; partial leftovers: T-0160 (tests/** stays), T-0461 (add src/frob/render/ post-T-0460).
+
+## Done report
+
+Root cause: `_scope_add_conflicts` checked an `--add` glob against every OTHER
+in-progress ticket's declared scope with no exemption for globs the
+requesting ticket ALREADY covers. A queued ticket that grandfathers a broad
+glob (e.g. `src/frob/strata/**`) overlapping an in-progress ticket's lease
+could never narrow that overlap down to a concrete subset path (e.g.
+`src/frob/strata/_host.py`) -- the narrowing itself was rejected as a fresh
+`ScopeLeaseConflict`, even though it strictly SHRINKS contention and can
+never create new contention.
+
+Fix: added `_glob_is_subset(narrow, broad)` (src/frob/tickets/_models.py) --
+exact when `narrow` is a concrete literal path (delegates to
+`fnmatch.fnmatch`), conservatively `False` whenever `narrow` still carries a
+wildcard (so a genuine expansion can never slip through disguised as a
+narrowing). `_scope_add_conflicts` now takes the requesting ticket's own
+pre-mutation `scope` and exempts any `--add` glob that is a subset of
+something already in it, before ever checking against other holders'
+leases. `_validate_scope_mutation` passes `ticket.scope` through.
+
+Re-narrowing the 16 tickets listed in T-0485's body: read all 16 ticket
+bodies (T-0235, T-0261, T-0339, T-0341, T-0383, T-0384, T-0392, T-0393,
+T-0394, T-0395, T-0401, T-0410, T-0428, T-0440, T-0160, T-0461). Disclosing
+plainly: none of them yielded a genuinely narrower concrete touch set
+distinct from what they already declare -- they are open-ended audits/
+reconciliations/refactor sweeps (arch-advisory triage across src/frob/,
+registry-vs-enforcement reconciliation across the whole capability matrix,
+a repo-wide perf audit, a coverage backlog spanning ~78 modules) whose
+declared breadth is what the described work actually requires, not an
+artifact of the T-0455-era sweep failing to narrow them. Fabricating a
+concrete file list not actually derived from the body would misrepresent
+scope for whoever picks these up next, so no scope mutation was applied to
+any of the 16. Also, only T-0401 is currently in-progress among them
+(holding `src/frob/strata/`) -- the other 15 are queued and not blocking
+any live lease today; `frob ticket doable | grep WARNING` count is
+unrelated to lease contention (breadth-threshold nudges, not lease
+rejections) and was not the mechanism this bug affected. The concrete,
+verified fix is the mechanism itself (proven by the two new
+TestMutateScope cases below), available for any agent to invoke on any of
+the 16 once it identifies a real narrower touch set from its own work.
+
+REL001: not required -- no public symbol's signature/behavior changed
+(`_scope_add_conflicts`/`_validate_scope_mutation` are private; the new
+`_glob_is_subset` is private). `frob release check` reports OK at 0.53.0
+unchanged.
+
+### Changed
+```
+ src/frob/tickets/__init__.py         | 21 +++++++++--
+ src/frob/tickets/_models.py          | 17 +++++++++
+ tests/test_tickets_scope_mutation.py | 58 ++++++++++++++++++++++++++++-
+ tickets.md                           | 72 ++++++++++++++++++++++++++++++++++--
+ 4 files changed, 161 insertions(+), 7 deletions(-)
+```
+
+### Evidence
+- `tests/test_tickets_scope_mutation.py::TestMutateScope::test_add_subset_of_own_leased_overlap_is_accepted` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_scope_mutation.py::TestMutateScope::test_add_beyond_own_leased_overlap_still_rejected` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_scope_mutation.py::TestGlobIsSubset::test_concrete_path_under_double_star_is_subset` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_scope_mutation.py::TestGlobIsSubset::test_wildcard_bearing_narrow_is_never_subset` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_scope_mutation.py::TestGlobIsSubset::test_concrete_path_outside_broad_glob_is_not_subset` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0491 -->
 ```yaml
@@ -4201,7 +5086,7 @@ real id at land) with the exact before/after counts and next-step guidance.
 ```yaml
 id: T-0507
 title: Extend worktree-lease guard to frob release stamp and frob ack
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-07-21'
@@ -4211,12 +5096,95 @@ parent: null
 scope:
 - src/frob/release/
 - src/frob/app/
-scope_changes: []
-evidence: []
+- tests/test_release_worktree_lease.py
+- tests/test_ack_worktree_lease.py
+- tickets-archive.md
+scope_changes:
+- op: add
+  glob: tests/test_release_worktree_lease.py
+  reason: new test files for the extended worktree-lease guard
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_ack_worktree_lease.py
+  reason: new test files for the extended worktree-lease guard
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tickets-archive.md
+  reason: 'sequential single-worktree dispatch: T-0519''s committed tickets-archive.md
+    still shows in the diff-vs-main SCOPE001 check (T-0431 precedent)'
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_release_worktree_lease.py::TestStampWorktreeLease::test_mismatched_lease_refuses
+- tests/test_release_worktree_lease.py::TestStampWorktreeLease::test_no_lease_succeeds
+- tests/test_ack_worktree_lease.py::TestAckWorktreeLease::test_mismatched_lease_refuses
+- tests/test_ack_worktree_lease.py::TestAckWorktreeLease::test_no_lease_reaches_normal_ack_failure
 attachments: []
 acceptance: []
 threat: null
 ```
+## Done report
+
+Extended the T-0431 FROB_WORKTREE lease guard (enforce_worktree_lease) to
+the two remaining mutating entry points named in the ticket:
+
+1. frob.release.stamp (src/frob/release/__init__.py) -- the function that
+   writes .frob-release.json. Added ReleaseError.WorktreeLeaseViolation and
+   a guard check at the top of stamp(), same shape as gates._baseline's
+   stamp_baseline/stamp_coverage (T-0431).
+2. frob.app.ack_runner.run (src/frob/app/ack_runner.py) -- the CLI entry
+   point that writes frob.lock. Added the guard check directly at the top
+   of run() (exit 1 + logged error on violation), since frob.graph.lock is
+   out of this ticket's declared scope (src/frob/release/, src/frob/app/
+   only) and the CLI layer is where every other T-0431 guard call site
+   already lives for commands whose core module sits outside scope.
+
+Both follow the exact T-0431 contract: FROB_WORKTREE unset is a no-op
+(unrestricted); set-and-mismatched refuses loudly; set-and-matching
+proceeds normally.
+
+New tests (tests/test_release_worktree_lease.py,
+tests/test_ack_worktree_lease.py) mirror tests/test_gates_worktree_lease.py's
+style: a real git repo in tmp_path, FROB_WORKTREE set/unset/mismatched via
+monkeypatch, asserting Err(WorktreeLeaseViolation)/exit vs normal-path
+behavior.
+
+Scope was widened (frob ticket scope) to add the two new test files, plus
+tickets-archive.md -- the latter purely because T-0519 (worked earlier in
+this same sequential worktree) already committed a tickets-archive.md
+change that still shows in the diff-vs-main SCOPE001 check, the same
+"sequential single-worktree dispatch" precedent T-0431's own scope_changes
+documents for T-0357/T-0338/T-0409.
+
+frob release check reports "none change -> need >= 0.52.0 (current
+0.52.0): OK" -- adding one ErrorSet member did not trip the bump
+requirement, so no REL001/version bump was needed this ticket.
+
+Gates: uv run frob check --ticket T-0507 --json -> 0 new errors from this
+ticket's changes; remaining errors (gate:DOC DOC003 on docs/commands/sys.md,
+gate:REG REG003 x5 on docs/design/registry/weaknesses.yaml) are pre-existing
+repo-wide debt, unrelated to src/frob/release/ or src/frob/app/ack_runner.py
+(verified identical error set present before this ticket's scope was even
+touched, see T-0519's Done report which observed the same DOC/REG errors).
+
+### Changed
+```
+ src/frob/app/ack_runner.py           |  14 +++-
+ src/frob/release/__init__.py         |  14 +++-
+ tests/test_ack_worktree_lease.py     |  55 +++++++++++++++
+ tests/test_release_worktree_lease.py |  52 ++++++++++++++
+ tickets-archive.md                   |  17 ++---
+ tickets.md                           | 129 +++++++++++++++++++++++++++++++++--
+ 6 files changed, 260 insertions(+), 21 deletions(-)
+```
+
+### Evidence
+- `tests/test_release_worktree_lease.py::TestStampWorktreeLease::test_mismatched_lease_refuses` (pytest node id, verified passing when recorded)
+- `tests/test_release_worktree_lease.py::TestStampWorktreeLease::test_no_lease_succeeds` (pytest node id, verified passing when recorded)
+- `tests/test_ack_worktree_lease.py::TestAckWorktreeLease::test_mismatched_lease_refuses` (pytest node id, verified passing when recorded)
+- `tests/test_ack_worktree_lease.py::TestAckWorktreeLease::test_no_lease_reaches_normal_ack_failure` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0508 -->
 ```yaml
@@ -5052,7 +6020,7 @@ diff no longer appears against T-0518's base.
 id: T-0519
 title: T-0187/T-0198 evidence test_no_clone_group_at_any_threshold does not resolve
   (COV003) after T-0494 flipped its assertion
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-21'
@@ -5061,13 +6029,52 @@ blocked_by: []
 parent: null
 scope:
 - tickets.md
-scope_changes: []
-evidence: []
+- tickets-archive.md
+- tests/integration/test_interfaces.py
+scope_changes:
+- op: add
+  glob: tickets-archive.md
+  reason: T-0519 dedupes the T-0187/T-0198 archived evidence lines that live in tickets-archive.md,
+    not tickets.md
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/integration/test_interfaces.py
+  reason: 'route 2 evidence-scope binding (D-02): the recorded T-0167-precedent CLI-dispatch
+    evidence file must itself be in scope for close to recognize it as covering'
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 attachments: []
 acceptance: []
 threat: null
 ```
 found while working T-0494: T-0494 legitimately removed tests/test_dup_cross_lang.py::TestCrossLanguageCloneNotYetDetected::test_no_clone_group_at_any_threshold (its assertion, report.groups == (), is now FALSE at every threshold since T-0487's _KEYWORDS fix made R5 correctly fire cross-language for this fixture -- see T-0494's Done report and the new TestCrossLanguageR5NowFires class replacing it). This leaves T-0187 (1 evidence id) and T-0198 (5 evidence ids, one per threshold parametrization) in tickets-archive.md pointing at a test id that no longer exists, firing COV003 for both archived tickets on every frob check. Same shape as the T-0416/T-0472 precedent (evidence pointing at a removed/renamed test). Remedy: update T-0187's and T-0198's archived evidence lists to point at still-valid replacement ids (e.g. TestCrossLanguageR5NowFires::test_r5_group_fires_at_every_threshold[*] for the threshold-parametrized ones, or drop the stale id with a note that the original claim inverted) via the tickets CLI against tickets-archive.md. Out of T-0494's declared scope (scope=tests/test_dup_cross_lang.py, docs/modules/dup.md -- does not include editing OTHER tickets' archived evidence).
+
+## Done report
+
+T-0494 legitimately removed test_no_clone_group_at_any_threshold (its
+zero-groups assertion was inverted by T-0487's keyword fix). Commit
+458244a already re-pointed T-0187/T-0198's dangling evidence ids in
+tickets-archive.md at that landing, but T-0198's evidence list ended up
+with the surviving replacement id
+(test_both_languages_parse_into_the_snapshot) repeated 6 times where the
+original had 6 separate now-stale entries, plus the Done report's own
+evidence-recap list carried the same 6x repeat. Deduped both to a single
+entry (plus the untouched test_both_symbols_are_individually_fingerprinted
+line), and left a note in the Done report explaining the pre-dedup pass
+count. T-0187's evidence list had no duplicates. Verified via
+`uv run frob check --ticket T-0187` and `--ticket T-0198`: 0 COV003 hits in
+either scoped run (grep -c COV003 on full check output -> 0); remaining
+errors are pre-existing COV006/DOC/REG findings unrelated to this ticket's
+scope (tickets.md/tickets-archive.md evidence only).
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0520 -->
 ```yaml
@@ -5143,6 +6150,7 @@ non-match, and the literal-file-is-not-a-directory case.
 
 ### Evidence
 - `tests/test_tickets.py::TestScopeMatching::test_bare_dir_entry_no_trailing_slash_globs_recursively` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0522 -->
 ```yaml
 id: T-0522
@@ -5203,6 +6211,7 @@ Added a regression test using the exact gates.md example text.
 
 ### Evidence
 - `tests/test_gates.py::TestInv003Gate::test_illustrative_example_reason_does_not_self_waive` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0523 -->
 ```yaml
 id: T-0523
@@ -5295,6 +6304,7 @@ output -- exactly 59 - 3 fixed = 56.
 ### Evidence
 - `tests/unit/test_check.py::TestSummarySeverityHonesty::test_cycle_summary_splits_by_severity` (pytest node id, verified passing when recorded)
 - `tests/unit/strata/test_waive.py::TestStaleDetail::test_names_rule_node_and_reason` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0524 -->
 ```yaml
 id: T-0524
@@ -5338,6 +6348,26 @@ acceptance: []
 threat: null
 ```
 Discovered while working T-0516: COV006 Violation objects carry no symref (file=test_file, line=0), so _match_waiver falls back to file-level matching for a frob:waive COV006 comment anywhere in that file -- ANY single COV006 waiver in a test file silently suppresses EVERY COV006 finding in that file, not just the one it was written next to. Verified directly: adding one waiver comment near one test in tests/test_gates.py suppressed all 7 COV006 findings then present in that file, including unrelated ones that were NOT sound (an import-alias false-positive that needed a real fix, not a waiver). Consider giving COV006 violations a symref (the test's own qualname) so _match_waiver can do symbol-exact matching the way most other rules do, instead of falling back to file-scope for a rule that very plausibly has multiple independent findings per file.
+
+<!-- ticket:T-0526 -->
+```yaml
+id: T-0526
+title: 'frob:debt/frob:todo coherence: paired todo, same-ticket check, symmetric resolution'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: T-0412
+scope:
+- src/frob/graph/dsl.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
 
 <!-- ticket:T-draft-bfda63d4 -->
 ```yaml

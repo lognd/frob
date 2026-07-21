@@ -7,6 +7,7 @@ import argparse
 from pathlib import Path
 
 from frob.app import App, AppConfig
+from frob.app.config import stale_install_warning
 
 
 # frob:ticket T-0030
@@ -538,6 +539,16 @@ def _add_ack_parser(sub) -> None:
         "--facet", dest="ack_facet", choices=["sig", "body", "doc"], default="sig"
     )
     ack_p.add_argument("--path", dest="ack_path", metavar="DIR", default=".")
+
+
+# frob:ticket T-0412
+def _add_debt_parser(sub) -> None:
+    """Register the `frob debt` subcommand: list outstanding `frob:debt` entries."""
+    debt_p = sub.add_parser(
+        "debt", help="list outstanding frob:debt entries (rule, site, ticket, until)"
+    )
+    debt_p.add_argument("--path", dest="debt_path", metavar="DIR", default=".")
+    debt_p.add_argument("--json", dest="debt_json", action="store_true")
 
 
 def _add_ticket_new_identity_args(ticket_new_p) -> None:
@@ -1493,6 +1504,7 @@ def _add_workflow_subparsers(sub) -> None:
     _add_gitlog_parser(sub)
     _add_graph_parser(sub)
     _add_ack_parser(sub)
+    _add_debt_parser(sub)
     _add_ticket_parser(sub)
     _add_test_parser(sub)
     _add_vet_parser(sub)
@@ -1519,7 +1531,12 @@ def main() -> None:
     else:
         parser = _build_parser()
         args = parser.parse_args()
-        cfg = AppConfig.from_external(args, Path("pyproject.toml"))
+        pyproject = Path("pyproject.toml")
+        # frob:ticket T-0358
+        warning = stale_install_warning(pyproject.parent.resolve())
+        if warning is not None:
+            print(warning, file=_sys.stderr)
+        cfg = AppConfig.from_external(args, pyproject)
         App(cfg)()
 
 

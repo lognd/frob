@@ -47,6 +47,8 @@ class Subcommand(str, enum.Enum):
     deploy = "deploy"
     doctor = "doctor"
     clean = "clean"
+    # T-0412: list outstanding frob:debt entries.
+    debt = "debt"
 
 
 # frob:doc docs/modules/app.md#config
@@ -193,6 +195,10 @@ class AppConfig(BaseModel):
     ack_refs: list[str] = []
     ack_facet: str = "sig"
     ack_path: Path | None = None
+
+    # debt (T-0412)
+    debt_path: Path | None = None
+    debt_json: bool = False
 
     # ticket
     ticket_command: str | None = None
@@ -446,6 +452,7 @@ class AppConfig(BaseModel):
             "gitlog_path",
             "graph_path",
             "ack_path",
+            "debt_path",
             "ticket_path",
             "ticket_attach_path",
             "ticket_worktree",
@@ -576,6 +583,7 @@ class AppConfig(BaseModel):
             "check_stamp_baseline",
             "check_delta",
             "graph_json",
+            "debt_json",
             "ticket_json",
             "ticket_show_blocked",
             "ticket_ignore_lease",
@@ -675,3 +683,70 @@ def load_arch_config(root: Path) -> dict[str, int]:
     except (OSError, tomllib.TOMLDecodeError, ValueError, TypeError) as exc:
         _log.warning("load_arch_config: frob.toml unreadable, using defaults: %s", exc)
         return defaults
+
+
+# frob:ticket T-0358
+# frob:doc docs/modules/app.md#entry-point
+# frob:tests tests/unit/test_config.py::test_stale_install_warning_flags_version_mismatch  # noqa: E501
+# frob:tests tests/unit/test_config.py::test_stale_install_warning_none_for_editable_checkout  # noqa: E501
+# frob:tests tests/unit/test_config.py::test_stale_install_warning_none_when_versions_match  # noqa: E501
+def stale_install_warning(repo_root: Path) -> str | None:
+    """A loud, one-line warning string if the RUNNING `frob` package is
+    installed OUTSIDE `repo_root`'s own `src/frob/` (a globally `uv tool
+    install`ed binary, e.g. `~/.local/bin/frob`) while `repo_root` is a
+    frob source checkout whose `pyproject.toml` declares a DIFFERENT
+    version -- the stale-global-binary phantom-numbers trap (T-0358):
+    an old installed gate implementation silently runs against a newer
+    working tree, so gate rule ids the new tree has waived (e.g. SEC110/
+    PII010 added after the installed version was built) read back as
+    'unrecognized rule id' and violation counts are simply wrong.
+
+    `None` (no warning) when: `repo_root` has no `pyproject.toml`, that
+    file does not declare `[project] name = "frob"` (not this repo at
+    all), the running package's own `__init__.py` resolves to exactly
+    `repo_root/src/frob/__init__.py` (an editable install / `uv run frob`
+    from this same checkout -- never stale), or the installed and
+    declared versions already match. Deliberately a pure string-or-None
+    return, not a log call itself, so callers can decide severity (stderr
+    print for `main()`, `_log.warning` for `frob doctor`/`frob check`)."""
+    import importlib.metadata
+    import importlib.util
+
+    pyproject = repo_root / "pyproject.toml"
+    if not pyproject.exists():
+        return None
+    try:
+        with pyproject.open("rb") as fh:
+            data = tomllib.load(fh)
+    except (OSError, tomllib.TOMLDecodeError):
+        return None
+    project = data.get("project", {})
+    if project.get("name") != "frob":
+        return None
+    repo_version = project.get("version")
+    if not repo_version:
+        return None
+
+    spec = importlib.util.find_spec("frob")
+    if spec is None or spec.origin is None:
+        return None
+    running_init = Path(spec.origin).resolve()
+    local_init = (repo_root / "src" / "frob" / "__init__.py").resolve()
+    if running_init == local_init:
+        return None
+
+    try:
+        installed_version = importlib.metadata.version("frob")
+    except importlib.metadata.PackageNotFoundError:
+        return None
+    if installed_version == repo_version:
+        return None
+
+    return (
+        f"frob: WARNING -- running installed frob {installed_version} "
+        f"({running_init}) inside a checkout whose pyproject.toml "
+        f"declares frob {repo_version}. Gate logic can differ between "
+        f"versions and produce silently wrong results -- use "
+        f"'uv run frob' or 'make check'/'make' instead of the bare "
+        f"installed binary."
+    )

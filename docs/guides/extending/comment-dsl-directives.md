@@ -7,11 +7,57 @@
 `frob:<verb> <target> [key="value" ...]` is the in-source obligation
 language (`docs/modules/graph.md#comment-dsl`). Verbs map to `EdgeKind`
 values via `_VERB_TABLE` in `src/frob/graph/dsl.py`. Current verbs: `doc`,
-`uses-contract`, `invariant`, `ticket`, `todo`, `waive`, `tests`,
+`uses-contract`, `invariant`, `ticket`, `todo`, `waive`, `debt`, `tests`,
 `decision`, `channel`, `boundary`, `secret`. Parsing is language-agnostic:
 `frob.lang`'s five walkers strip comment delimiters first, so `dsl.py`
 only ever sees the bare `frob:...` text regardless of `#`, `//`, or
 `/* */` origin.
+
+### `frob:waive` vs `frob:debt` (T-0412)
+
+Two directives suppress a gate finding at a site, with deliberately
+different lifetimes:
+
+```
+frob:waive <RULE> reason="..."
+frob:debt <RULE> reason="..." ticket="T-####" [until="YYYY-MM-DD" | until="X.Y.Z"]
+```
+
+- `frob:waive` is PERMANENT: a genuine, forever-acceptable exception (a
+  sort that runs once, not in a loop; scan-pattern data that looks like a
+  secret but isn't). It never expires and carries no ticket.
+- `frob:debt` is TEMPORARY: an accepted gap that is TRACKED as owed.
+  `ticket="T-####"` is REQUIRED (never optional, unlike a waiver's
+  ticket-free reason) and must name a currently OPEN ticket -- DEBT002
+  fails a debt bound to a missing or closed ticket, since a debt pointing
+  at nothing owed is a lie about what is still tracked. An optional
+  `until=` (a `YYYY-MM-DD` date or an `X.Y.Z` semver) escalates the debt
+  to a hard ERROR (DEBT003) once that boundary passes. A debt missing
+  either `reason=` or `ticket=` is DEBT001, the malformed-directive
+  counterpart to WAIVE001.
+
+Critically, `frob release`'s REL001 check refuses to bless a release
+while ANY `frob:debt` is still open at all -- expired or not. Debt is
+collected and re-raised BEFORE shipping, never silently carried forward
+as a de facto permanent waiver. `frob debt` lists every currently-recorded
+entry (rule, site, ticket, until, expired) for a human/agent to work
+through; there is no `--apply`/auto-fix -- resolving a debt means fixing
+the underlying gap and removing the directive, not running a command over
+it.
+
+**Migration guidance (not yet done in bulk, T-0412's own follow-up):** a
+`frob:waive` whose `reason=` literally names a ticket as the excuse (e.g.
+`reason="visit_Constant 75.0% branch cover, debt T-0160"`) is DEBT-shaped,
+not a genuine permanent exception -- convert it to `frob:debt <RULE>
+reason="..." ticket="T-0160"` (add `until=` if there is a real target
+date/version) so the gap is tracked and collected, rather than left as an
+un-audited waiver that never expires. This repo has ~143 such debt-shaped
+waivers as of T-0412; converting them is a deliberate follow-up burndown
+ticket, not a mass find-and-replace done here -- migrating that many
+directives at once, sight-unseen, risks silently mis-binding several to
+the wrong ticket or an already-closed one, which is exactly the failure
+mode DEBT002 exists to catch. Convert them incrementally, verifying each
+one's ticket is real and open as you go.
 
 ## Multi-line directives (backslash continuation)
 

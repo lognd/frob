@@ -537,8 +537,19 @@ def migrate_to_ledger(root: Path) -> Result[int, TicketError]:
 
 
 # frob:doc docs/modules/tickets.md#storage-internals
+# frob:tests tests/unit/test_ticket_store.py::TestAtomicWrite.test_fsyncs_file_before_replace  # noqa: E501
+# frob:tests tests/unit/test_ticket_store.py::TestAtomicWrite.test_fsync_failure_is_write_failed_not_a_partial_file  # noqa: E501
 def atomic_write(path: Path, content: str | bytes) -> Result[None, TicketError]:
-    """Write content via temp file + os.replace in the same directory (crash-safe)."""
+    """Write content via temp file + fsync + os.replace in the same directory
+    (T-0456: crash-safe -- `os.replace` alone is atomic AT THE FILESYSTEM
+    level, but without an `fsync` first, a power loss between the write and
+    the rename can leave the temp file's data unflushed to disk, so a
+    subsequent replay of the rename journal entry (on filesystems that log
+    renames separately from data blocks) can surface a zero-length or
+    truncated file. `fsync`ing the temp file's own fd before `os.replace`
+    guarantees the data is durable before the rename that makes it visible
+    under `path`, so `tickets.md`/`.frob-release.json`/lease and journal
+    files are never left partially written after an interrupt.)"""
     path.parent.mkdir(parents=True, exist_ok=True)
     mode = "wb" if isinstance(content, bytes) else "w"
     encoding = None if isinstance(content, bytes) else "utf-8"
@@ -548,6 +559,8 @@ def atomic_write(path: Path, content: str | bytes) -> Result[None, TicketError]:
     try:
         with os.fdopen(fd, mode, encoding=encoding) as f:
             f.write(content)
+            f.flush()
+            os.fsync(f.fileno())
         os.replace(tmp_name, path)
     except OSError as exc:
         _log.error("tickets: atomic write to %s failed: %s", path, exc)
