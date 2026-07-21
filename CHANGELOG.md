@@ -17,6 +17,24 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.50.0] - unreleased (gates-calibration chain)
+
+- T-0506: COV006's disclosed T-0483 false-positive shape (a test reaching
+  its bound private target only via a same-file public wrapper) is now
+  rescued by a gate-local one-hop lookahead
+  (`_cov006_public_wrapper_reachable`), reducing COV006 from 98 to 89
+  findings on this repo without weakening `frob.graph.callgraph`'s
+  public-boundary-stop guarantee (still load-bearing for frob.dup/arch).
+  Residual burndown filed as a follow-up ticket per its count.
+- T-0509: INV003/INV004 calibrated -- claim-shape scanning now strips
+  fenced/inline code, link targets, and table rows before matching, and
+  requires a claim-verb in the same sentence as the trigger word
+  (`frob.gates.invariants._is_claim_shaped`); INV003 is scoped to
+  `INV003_SPEC_DIRS` (docs/modules, docs/strata) rather than all of
+  docs/**.md; markdown-side `<!-- frob:waive INV003|INV004
+  reason="..." -->` support lets a genuine-but-unprovable claim be
+  dispositioned honestly. INV003+INV004 combined warnings: 765 -> 604.
+
 ## [0.49.0] - unreleased (reconciliation)
 
 Another parallel landing chain (T-0335/T-0462/T-0452/T-0465, gates-area

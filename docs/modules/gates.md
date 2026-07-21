@@ -27,8 +27,8 @@ declaration).
 | PRE001 | pre-work | ticket moved to in-progress without a recorded pre-work sweep |
 | INV001 | invariant | invariant has no evidence (test or policy rule) |
 | INV002 | invariant | invariant has no code anchor (`frob:invariant`) |
-| INV003 | invariant | (warn) a `docs/**.md` file makes an exclusivity/normative claim (`only`, `sole`/`solely`, `exclusively`, `nothing else`, `never...except`, `at most/exactly one`) with no `<!-- frob:invariant INV-### -->` marker in the file naming a real (loaded) invariant -- see "INV003 (T-0462)" below |
-| INV004 | invariant | (warn, advisory) a `docs/**.md` section uses normative language (`must`, `must not`, `never`, `always`, `shall`, `guarantees`, `ensures`, `requires`, plus INV003's exclusivity vocabulary) but anchors ZERO `frob:invariant` markers at all -- see "INV004 (T-0452)" below |
+| INV003 | invariant | (warn) a doc file under `INV003_SPEC_DIRS` (`docs/modules`, `docs/strata`) makes a claim-shaped exclusivity/normative assertion (`only`, `sole`/`solely`, `exclusively`, `nothing else`, `never...except`, `at most/exactly one`, verb required in the same sentence) with no `<!-- frob:invariant INV-### -->` marker naming a real (loaded) invariant, and no reasoned `<!-- frob:waive INV003 reason="..." -->` marker -- see "INV003 (T-0462)" below |
+| INV004 | invariant | (warn, advisory) a `docs/**.md` section uses claim-shaped normative language (`must`, `must not`, `never`, `always`, `shall`, `guarantees`, `ensures`, `requires`, plus INV003's exclusivity vocabulary) but anchors ZERO `frob:invariant` markers and carries no reasoned `<!-- frob:waive INV004 reason="..." -->` marker -- see "INV004 (T-0452)" below |
 | DEC001 | decisions | a `frob:decision AD-###` edge points at a record that does not exist (opt-in: a `decisions/` dir must exist) |
 | DEC002 | decisions | an `accepted` decision record has no `frob:decision` code anchor |
 | TEST001 | test | public function/method has no `frob:tests` unit edge |
@@ -759,15 +759,48 @@ holds. A doc file making such a claim needs a
 naming a real, loaded invariant; a marker naming an unknown id does not
 count (`inv003_gate`).
 
-INV003 is `Severity.WARN`, not `ERROR` like INV001/INV002: the
-vocabulary includes bare "only", common enough in ordinary prose that a
-first run across this repo's own `docs/` surfaced roughly 90 findings --
-promoting straight to ERROR would force either a mass reword/binding
-pass unrelated to whatever change triggered `frob check`, or markdown-
-side `frob:waive` support that does not exist yet (`_match_waiver` keys
-off graph edges; doc prose carries none today). Hardening specific docs
-to ERROR, or building markdown waiver support, is tracked as follow-up
-work rather than forced through in one pass.
+INV003 is `Severity.WARN`, not `ERROR` like INV001/INV002: even after
+calibration (below) a claim can be genuine design intent rather than an
+enforced behavior, so WARN surfaces the signal for human triage rather
+than forcing a bind-or-waive on every hit.
+
+**T-0509 calibration.** The original bare-vocabulary scan surfaced ~90
+INV003 findings (and ~677 INV004 findings, see below) across `docs/` --
+mostly headings, table cells, code samples, and link text carrying the
+trigger word with no actual claim attached (a `## Schema` heading, a
+`| only |` table cell). Three changes narrow this to a genuinely
+reviewable pool without dropping real claims:
+
+- **Noise stripping** (`frob.gates.invariants._strip_markdown_noise`):
+  fenced code blocks, inline code spans, markdown link targets, and table
+  rows are removed before scanning -- code samples and URLs are not prose
+  assertions.
+- **Claim-shape requirement** (`_is_claim_shaped`, `_CLAIM_VERB_RE`): a
+  trigger word only counts if a claim-verb (`is`/`must`/`supports`/`writes`/
+  etc.) appears in the SAME sentence -- a bare heading or dangling noun
+  phrase asserts nothing regardless of vocabulary.
+- **Directory scoping** (`INV003_SPEC_DIRS = ("docs/modules", "docs/strata")`):
+  INV003 only runs over these two spec-normative trees, not all of
+  `docs/**.md` -- exclusivity claims worth gating describe enforced
+  contracts, which is what those trees are for; a narrative design doc or
+  changelog making a passing "only" remark is a different failure mode
+  than T-0462 named. INV004 (below) still runs over all of `docs/`.
+
+Markdown-side `frob:waive` support now also exists (`_match_waiver` keys
+off graph edges, which doc prose still carries none of -- this is a
+separate marker): `<!-- frob:waive INV003 reason="..." -->` anywhere in a
+file dispositions that file's INV003 findings, same honesty requirement
+as the code-side `frob:waive`'s WAIVE001 (a marker with no `reason=` is
+not honored). Applied from `inv003_gate` via
+`_file_has_reasoned_doc_waiver` rather than inside `_inv003_doc_violations`
+itself -- see that helper's docstring for why (a COV005 false-positive
+this repo hit once already, from directive-target reuse across public
+and private symbols in the same file).
+
+Net effect measured on this repo (`frob check --only invariant`):
+INV003+INV004 combined, 765 -> 604 warnings (INV003 88 -> 31, INV004
+677 -> 573). The residual is tracked as a follow-up burndown ticket
+rather than hand-closed in one pass.
 
 ### INV004 (T-0452)
 
@@ -789,7 +822,17 @@ the "silence" a per-claim lint can't see, because there is no single
 explicit claim to anchor on.
 
 Always `Severity.WARN` -- advisory by design, a suggestion to formalize
-rather than a broken obligation; INV004 must never fail `frob check`.
+rather than a broken obligation; INV004 does not fail `frob check`.
+
+INV004 shares INV003's T-0509 noise-stripping and claim-shape scan
+(`find_normative_claims` calls the same `_claim_shaped_sentences`
+preprocessing as `find_exclusivity_claims`), but is NOT scoped to
+`INV003_SPEC_DIRS` -- it still runs over all of `docs/**.md`, since its
+job is the coarser "is anything tracked in this doc region at all"
+signal rather than INV003's per-claim check. A section-scoped markdown
+`frob:waive` marker (`<!-- frob:waive INV004 reason="..." -->`, applied
+via `_inv004_waived_headings`/`_inv004_message_heading` from `inv004_gate`)
+dispositions one under-specified section without a fake bound invariant.
 
 ## Policy rules (`frob.toml`, `[policy]`)
 

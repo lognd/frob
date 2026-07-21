@@ -1600,16 +1600,18 @@ class TestInvariantGate:
 class TestInv003Gate:
     # frob:tests src/frob/gates/__init__.py::inv003_gate
     def test_exclusivity_claim_without_marker_warns(self, tmp_path: Path) -> None:
+        # T-0509: INV003 is scoped to INV003_SPEC_DIRS (docs/modules,
+        # docs/strata), not all of docs/**.md -- fixture must live there.
         _write(
             tmp_path,
-            "docs/x.md",
+            "docs/modules/x.md",
             "# X\n\nThe only writer of this file is the daemon.\n",
         )
         violations = inv003_gate(tmp_path, ())
         assert len(violations) == 1
         assert violations[0].rule == "INV003"
         assert violations[0].severity == Severity.WARN
-        assert violations[0].file == "docs/x.md"
+        assert violations[0].file == "docs/modules/x.md"
 
     def test_exclusivity_claim_with_bound_known_invariant_is_silent(
         self, tmp_path: Path
@@ -1618,7 +1620,7 @@ class TestInv003Gate:
 
         _write(
             tmp_path,
-            "docs/x.md",
+            "docs/modules/x.md",
             "# X\n\n<!-- frob:invariant INV-001 -->\n"
             "The only writer of this file is the daemon.\n",
         )
@@ -1631,7 +1633,7 @@ class TestInv003Gate:
     def test_marker_naming_unknown_invariant_still_warns(self, tmp_path: Path) -> None:
         _write(
             tmp_path,
-            "docs/x.md",
+            "docs/modules/x.md",
             "# X\n\n<!-- frob:invariant INV-999 -->\n"
             "The only writer of this file is the daemon.\n",
         )
@@ -1639,12 +1641,70 @@ class TestInv003Gate:
         assert len(violations) == 1
 
     def test_no_exclusivity_language_is_silent(self, tmp_path: Path) -> None:
-        _write(tmp_path, "docs/x.md", "# X\n\nThe daemon writes this file.\n")
+        _write(tmp_path, "docs/modules/x.md", "# X\n\nThe daemon writes this file.\n")
         violations = inv003_gate(tmp_path, ())
         assert violations == ()
 
     def test_missing_docs_dir_is_silent(self, tmp_path: Path) -> None:
         assert inv003_gate(tmp_path, ()) == ()
+
+    def test_claim_without_verb_in_sentence_is_silent(self, tmp_path: Path) -> None:
+        """T-0509: a bare heading/fragment containing the trigger word but
+        no claim-verb in the same sentence is not a claim (e.g. a
+        '## Schema' style heading, or a dangling noun phrase)."""
+        _write(
+            tmp_path,
+            "docs/modules/x.md",
+            "# X\n\n## Only child nodes\n\nSee below.\n",
+        )
+        assert inv003_gate(tmp_path, ()) == ()
+
+    def test_claim_in_code_fence_is_silent(self, tmp_path: Path) -> None:
+        """T-0509: `_strip_markdown_noise` drops fenced code before
+        scanning -- a code sample using "only" in a comment is not prose."""
+        _write(
+            tmp_path,
+            "docs/modules/x.md",
+            "# X\n\n```python\n# only the daemon is allowed to write here\n```\n",
+        )
+        assert inv003_gate(tmp_path, ()) == ()
+
+    def test_outside_spec_dirs_is_silent(self, tmp_path: Path) -> None:
+        """T-0509: INV003 is scoped to `INV003_SPEC_DIRS`
+        (docs/modules, docs/strata) -- a claim in another docs/ subtree
+        (e.g. docs/design) is out of scope for this gate."""
+        _write(
+            tmp_path,
+            "docs/design/x.md",
+            "# X\n\nThe only writer of this file is the daemon.\n",
+        )
+        assert inv003_gate(tmp_path, ()) == ()
+
+    def test_markdown_waive_marker_with_reason_is_silent(self, tmp_path: Path) -> None:
+        """T-0509: a `<!-- frob:waive INV003 reason="..." -->` marker
+        dispositions a genuine-but-unprovable exclusivity claim without
+        requiring a fake bound invariant."""
+        _write(
+            tmp_path,
+            "docs/modules/x.md",
+            '# X\n\n<!-- frob:waive INV003 reason="design intent, not enforced" -->\n'
+            "The only writer of this file is the daemon.\n",
+        )
+        assert inv003_gate(tmp_path, ()) == ()
+
+    def test_markdown_waive_marker_without_reason_still_warns(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0509: a waiver marker with no `reason=` is not honored --
+        same honesty requirement as the code-side `frob:waive` WAIVE001."""
+        _write(
+            tmp_path,
+            "docs/modules/x.md",
+            "# X\n\n<!-- frob:waive INV003 -->\n"
+            "The only writer of this file is the daemon.\n",
+        )
+        violations = inv003_gate(tmp_path, ())
+        assert len(violations) == 1
 
 
 class TestInv004Gate:
@@ -1695,6 +1755,23 @@ class TestInv004Gate:
         assert "'# A" in violations[0].message
 
     def test_missing_docs_dir_is_silent(self, tmp_path: Path) -> None:
+        assert inv004_gate(tmp_path) == ()
+
+    def test_markdown_waive_marker_with_reason_is_silent(self, tmp_path: Path) -> None:
+        """T-0509: a `<!-- frob:waive INV004 reason="..." -->` marker in
+        the section dispositions it without a fake bound invariant."""
+        _write(
+            tmp_path,
+            "docs/x.md",
+            '# X\n\n<!-- frob:waive INV004 reason="design note, not a gate" -->\n'
+            "The daemon must never write to this file directly.\n",
+        )
+        assert inv004_gate(tmp_path) == ()
+
+    def test_claim_without_verb_in_sentence_is_silent(self, tmp_path: Path) -> None:
+        """T-0509: a heading using trigger vocabulary with no claim-verb
+        in the same sentence is not a claim."""
+        _write(tmp_path, "docs/x.md", "# X\n\n## Always current\n\nSee below.\n")
         assert inv004_gate(tmp_path) == ()
 
 

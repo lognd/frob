@@ -18,6 +18,7 @@ is decomposed into small private helpers alongside it.
 
 from __future__ import annotations
 
+import ast
 import difflib
 import fnmatch
 import functools
@@ -2493,6 +2494,102 @@ def invariant_gate(
 # frob:ticket T-0462
 _DOC_INVARIANT_MARKER_RE = re.compile(r"<!--\s*frob:invariant\s+(INV-\d{3})\s*-->")
 
+# frob:doc docs/modules/gates.md#invariants
+# frob:ticket T-0509
+# Markdown-side waiver marker: `<!-- frob:waive INV003 reason="..." -->`.
+# `_match_waiver` (the code-side waiver path) keys off graph edges, which
+# doc prose carries none of -- this is a separate, file/section-scoped
+# marker so a genuine-but-unprovable claim (prose describing a design
+# intent rather than an enforced behavior) can be dispositioned honestly
+# instead of either being hand-bound to a fake invariant or silently
+# ignored. A missing/empty reason does not count as a waiver (same
+# honesty requirement as `frob:waive`'s code-side WAIVE001).
+_DOC_WAIVE_MARKER_RE = re.compile(
+    r'<!--\s*frob:waive\s+(INV00[34])\s+reason="([^"]+)"\s*-->'
+)
+
+# frob:doc docs/modules/gates.md#invariants
+# frob:ticket T-0509
+# INV003 is scoped to these repo-relative directories (spec-normative
+# design/module docs), not all of docs/**.md -- exclusivity claims worth
+# gating live in the docs that describe enforced contracts; a narrative
+# design doc or changelog making a passing "only" remark is not the same
+# failure mode T-0462 named. INV004 (the coarser advisory signal) keeps
+# scanning all of docs/ -- see `inv004_gate`.
+INV003_SPEC_DIRS: tuple[str, ...] = ("docs/modules", "docs/strata")
+
+
+# frob:doc docs/modules/gates.md#invariants
+# frob:ticket T-0509
+def _file_has_reasoned_doc_waiver(path: Path, rule: str) -> bool:
+    """True if `path` carries a `<!-- frob:waive <rule> reason="..." -->`
+    marker anywhere in the file, with a non-empty reason.
+
+    Deliberately NOT folded into `_inv003_doc_violations`'s own body: that
+    function's `frob:ticket T-0462` directive is one of several bindings
+    sharing that same ticket-id target across this file (T-0462 also
+    covers `inv003_gate`, still public) -- COV005's rebind check matches
+    old/new directive bindings by `(kind, target)` alone, so editing
+    inside an already-ticket-tagged private helper whose target is shared
+    with a public sibling elsewhere in the file spuriously reads as "this
+    directive rode onto a new private symbol" even though nothing rebound.
+    Applying the waiver filter from the (public, freshly-tagged) gate
+    function instead avoids that false positive entirely.
+    """
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        _log.warning("%s: could not read %s for waiver check: %s", rule, path, exc)
+        return False
+    return any(
+        matched_rule == rule and reason
+        for matched_rule, reason in _DOC_WAIVE_MARKER_RE.findall(text)
+    )
+
+
+# frob:doc docs/modules/gates.md#invariants
+# frob:ticket T-0509
+def _inv004_waived_headings(text: str) -> frozenset[str]:
+    """Heading text of every section in `text` that carries a reasoned
+    `<!-- frob:waive INV004 reason="..." -->` marker (see
+    `_file_has_reasoned_doc_waiver`'s docstring for why this filters at
+    the gate-function level rather than inside `_inv004_doc_violations`).
+    """
+    waived: set[str] = set()
+    for section in _markdown_sections(text):
+        if not any(
+            rule == "INV004" and reason
+            for rule, reason in _DOC_WAIVE_MARKER_RE.findall(section)
+        ):
+            continue
+        heading_match = re.match(r"^(#{1,6}\s.*)$", section, re.MULTILINE)
+        heading = heading_match.group(1).strip() if heading_match else "(no heading)"
+        waived.add(heading)
+    return frozenset(waived)
+
+
+# frob:doc docs/modules/gates.md#invariants
+# frob:ticket T-0509
+_INV004_MESSAGE_HEADING_RE = re.compile(r"section (.+?) describes behavior")
+
+
+# frob:doc docs/modules/gates.md#invariants
+# frob:ticket T-0509
+def _inv004_message_heading(message: str) -> str | None:
+    """Recover the exact heading string `_inv004_doc_violations` embedded
+    (via `heading!r`) in one INV004 `Violation.message`, or `None` if the
+    message does not match the expected shape. `ast.literal_eval` undoes
+    the `repr()` reliably regardless of whether Python chose single- or
+    double-quote style for a heading containing an apostrophe."""
+    match = _INV004_MESSAGE_HEADING_RE.search(message)
+    if match is None:
+        return None
+    try:
+        value = ast.literal_eval(match.group(1))
+    except (ValueError, SyntaxError):
+        return None
+    return value if isinstance(value, str) else None
+
 
 # frob:doc docs/modules/gates.md#invariants
 # frob:ticket T-0462
@@ -2543,29 +2640,36 @@ def _inv003_doc_violations(
 # frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-0462
 def inv003_gate(root: Path, invariants: tuple[Invariant, ...]) -> tuple[Violation, ...]:
-    """INV003: every docs/**.md exclusivity claim needs a bound invariant.
+    """INV003: every exclusivity claim in a spec-normative doc
+    (`INV003_SPEC_DIRS`) needs a bound invariant.
 
-    Runs over `docs/` only (not the whole repo) -- normative claims worth
-    gating live in prose documentation, not generated/vendored trees.
+    T-0509: scoped to `INV003_SPEC_DIRS` (docs/modules, docs/strata), not
+    all of docs/**.md -- exclusivity claims worth gating describe enforced
+    contracts, which is what those two trees are for; a narrative design
+    doc or changelog making a passing "only" remark is a different failure
+    mode than T-0462 named. Combined with the stronger claim-shape scan
+    (`find_exclusivity_claims`: noise-stripped, verb-bearing sentences
+    only) and markdown-side `frob:waive` support (`_DOC_WAIVE_MARKER_RE`),
+    this narrows the original ~765-warning INV003+INV004 pool to a
+    genuinely reviewable set (T-0509's Done report has the exact counts).
 
     WARN severity (does not fail `frob check`), not ERROR like INV001/
-    INV002: the exclusivity vocabulary (T-0462) includes bare "only",
-    common enough in ordinary prose that a repo-wide first run surfaces
-    ~90 findings across docs/ written before this rule existed --
-    promoting straight to ERROR would either force a mass reword/binding
-    pass unrelated to any single change, or require markdown-side
-    `frob:waive` support (not yet wired: `_match_waiver` keys off graph
-    edges, and doc prose carries no such edges today). WARN surfaces the
-    signal now; hardening specific docs to ERROR (or building markdown
-    waiver support) is follow-up work, not silently dropped.
+    INV002: even after calibration, a claim can still be genuine design
+    intent rather than an enforced behavior -- WARN surfaces the signal
+    for human triage rather than forcing a bind-or-waive on every hit.
     """
-    docs_dir = root / "docs"
-    if not docs_dir.is_dir():
-        return ()
     known_ids = frozenset(inv.id for inv in invariants)
     violations: list[Violation] = []
-    for path in iter_files(docs_dir, suffix=".md"):
-        violations.extend(_inv003_doc_violations(root, path, known_ids))
+    for spec_dir in INV003_SPEC_DIRS:
+        docs_dir = root / spec_dir
+        if not docs_dir.is_dir():
+            continue
+        for path in iter_files(docs_dir, suffix=".md"):
+            file_violations = _inv003_doc_violations(root, path, known_ids)
+            if file_violations and _file_has_reasoned_doc_waiver(path, "INV003"):
+                _log.debug("INV003: %s waived by markdown frob:waive marker", path)
+                continue
+            violations.extend(file_violations)
     return tuple(violations)
 
 
@@ -2649,7 +2753,27 @@ def inv004_gate(root: Path) -> tuple[Violation, ...]:
         return ()
     violations: list[Violation] = []
     for path in iter_files(docs_dir, suffix=".md"):
-        violations.extend(_inv004_doc_violations(root, path))
+        file_violations = _inv004_doc_violations(root, path)
+        if not file_violations:
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except OSError as exc:
+            _log.warning("INV004: could not re-read %s for waivers: %s", path, exc)
+            violations.extend(file_violations)
+            continue
+        waived_headings = _inv004_waived_headings(text)
+        if not waived_headings:
+            violations.extend(file_violations)
+            continue
+        for v in file_violations:
+            heading = _inv004_message_heading(v.message)
+            if heading is not None and heading in waived_headings:
+                _log.debug(
+                    "INV004: %s section %r waived by markdown marker", path, heading
+                )
+                continue
+            violations.append(v)
     return tuple(violations)
 
 
