@@ -3068,16 +3068,36 @@ Incident (2026-07-22): the COV-finish branch hit a tickets.md conflict mid-fligh
 id: T-0538
 title: make coverage clobbers maturin natives (uv sync) then fails on strata_core
   imports -- guard the target
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-21'
 priority: medium
 blocked_by: []
 parent: null
-scope: []
-scope_changes: []
-evidence: []
+scope:
+- Makefile
+- docs/modules/testing.md
+- tests/test_coverage.py
+scope_changes:
+- op: add
+  glob: Makefile
+  reason: declare scope from ticket prose, needed to add Makefile-target dry-run test
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/modules/testing.md
+  reason: declare scope from ticket prose, needed to add Makefile-target dry-run test
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_coverage.py
+  reason: declare scope from ticket prose, needed to add Makefile-target dry-run test
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_coverage.py::TestCoverageTargetNativesGuard::test_coverage_target_restores_and_verifies_natives_before_pytest
+- tests/test_coverage.py::TestCoverageTargetNativesGuard::test_coverage_fast_incremental_branch_restores_and_verifies_natives
 attachments: []
 acceptance: []
 threat: null
@@ -3085,3 +3105,33 @@ component: null
 labels: []
 ```
 Incident (2026-07-22): make coverage removed the editable strata_core/frob_core natives mid-run (the known uv-sync clobber, same family as the uv build --wheel gotcha), then died collecting tests/system/test_frob_self_model.py and left 44 phantom errors in frob check (SYS004 native-missing, 16 COV003 unresolvable kernel-property evidence, DRIFT fallout) until make core was re-run. Fix: the coverage target must either pin/exclude the natives from sync or run make core (cheap no-op when fresh) before pytest, and frob doctor's native check should run first so the failure is one clear line. Scope: Makefile, docs/modules/testing.md.
+
+## Done report
+
+`make coverage`/`make coverage-fast` both depend on `$(STAMP)` (`uv sync`),
+which reconciles the venv against only the declared dependency set and
+silently removes the editable `strata_core`/`frob_core` natives `make
+core` installed. Both targets now run `make core` (restore) then
+`uv run frob doctor` (verify, exit 1 with one clear line if a native is
+still missing, e.g. no Rust toolchain) before pytest ever collects.
+`coverage-fast`'s incremental (non-fallback) branch got the same guard
+since it shares the `$(STAMP)` dependency and does not always route
+through `coverage:`'s own guard.
+
+Verified via `make -n coverage` / `make -n coverage-fast` dry-runs (no
+recipe line executed) confirming `make core` then `frob doctor` precede
+the pytest invocation in both targets, plus a real `uv run frob doctor`
+run against the now-built natives. Did NOT run the full `make coverage`
+cycle per playbook 6b.
+
+### Changed
+```
+ Makefile                | 29 ++++++++++++++++++++++
+ docs/modules/testing.md | 11 +++++++++
+ tests/test_coverage.py  | 65 ++++++++++++++++++++++++++++++++++++++++++++++++-
+ 3 files changed, 104 insertions(+), 1 deletion(-)
+```
+
+### Evidence
+- `tests/test_coverage.py::TestCoverageTargetNativesGuard::test_coverage_target_restores_and_verifies_natives_before_pytest` (pytest node id, verified passing when recorded)
+- `tests/test_coverage.py::TestCoverageTargetNativesGuard::test_coverage_fast_incremental_branch_restores_and_verifies_natives` (pytest node id, verified passing when recorded)
