@@ -3119,7 +3119,7 @@ docs/audits/strata.md G2+G7 (HIGH/MEDIUM), from T-0401. _mitigation_is_chokepoin
 id: T-0514
 title: 'strata audit G10: differential/property tests for FactBase''s native Rust
   kernels'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-07-21'
