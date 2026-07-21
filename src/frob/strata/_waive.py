@@ -188,7 +188,11 @@ class WaiverApplication(BaseModel, Generic[_F]):
 
 
 # frob:doc docs/strata/waive.md#drift-lock-stale-waivers-fail
-# frob:tests src/frob/strata/_waive.py::_stale_detail kind="unit"
+# T-0523: the self-referential `frob:tests ...::_stale_detail` directive
+# once here (this symbol naming ITSELF as its own tested target, which
+# COV006 correctly flagged as an unreachable/nonsensical binding) is
+# removed -- real, directly-reachable coverage already exists at
+# tests/unit/strata/test_waive.py::TestStaleDetail.test_names_rule_node_and_reason.
 # frob:waive DUP001 reason="dup grouped this with deploy/_generate.py's \
 # shell-heredoc builders and dup/_rules.py's _dup001_message purely on \
 # generic f-string-message shape; unrelated domains (waiver drift text \
