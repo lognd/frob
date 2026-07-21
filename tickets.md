@@ -5164,12 +5164,45 @@ scope_changes:
   reason: regression test for fix lives here
   actor: logan
   at: '2026-07-21'
-evidence: []
+evidence:
+- tests/test_gates.py::TestInv003Gate::test_illustrative_example_reason_does_not_self_waive
 attachments: []
 acceptance: []
 threat: null
 ```
 Found while working T-0515: _DOC_WAIVE_MARKER_RE (frob.gates.__init__) matches any '<!-- frob:waive INV003|INV004 reason="..." -->' text found anywhere in a file's raw text, with no distinction between a REAL waiver marker and an ILLUSTRATIVE example demonstrating the syntax in prose. docs/modules/gates.md's own INV003/INV004 documentation necessarily spells out the marker syntax as a literal example, e.g. reason="..." (literal three dots) -- which is non-empty and satisfies the regex, so gates.md has silently self-waived its own INV003 and INV004 findings since T-0509/T-0515, never appearing in the residual list despite having plenty of exclusivity/normative prose. Fix direction: either scan for the marker only outside fenced/inline code (the same _strip_markdown_noise pass find_exclusivity_claims/find_normative_claims already apply, which would not help here since these examples are NOT inside code fences), or require the reason text to not be a placeholder ellipsis/generic string, or accept this as a known limitation and document it explicitly in docs/modules/gates.md's INV003/INV004 sections. Low priority since it only affects gates.md's own meta-documentation of the gate today, but the same trap would silently hit ANY doc that ever explains the waiver syntax by literal example.
+
+## Done report
+
+_DOC_WAIVE_MARKER_RE (frob.gates.__init__) matched a literal
+<!-- frob:waive INV003/INV004 reason="..." --> marker anywhere in a
+file's raw text, with no distinction between a genuine waiver and an
+ILLUSTRATIVE example demonstrating the syntax in prose. docs/modules/
+gates.md's own INV003/INV004 documentation necessarily spells out the
+marker syntax with a literal reason="..." placeholder, so gates.md was
+silently self-waiving its own INV003/INV004 findings.
+
+Added _DOC_WAIVE_PLACEHOLDER_RE and treat a reason consisting only of a
+"..." ellipsis (2+ dots) the same as an empty reason in
+_file_has_reasoned_doc_waiver -- a placeholder reason no longer counts
+as a real, reasoned waiver. Verified this actually surfaces gates.md's
+own findings post-fix (frob check --only invariant now reports INV003
+and INV004 on docs/modules/gates.md, both WARN-severity, non-blocking).
+
+Added a regression test using the exact gates.md example text.
+
+### Changed
+```
+ src/frob/gates/__init__.py  | 20 +++++++++++++++++++-
+ src/frob/tickets/_models.py | 25 ++++++++++++++++++++++---
+ tests/test_gates.py         | 19 +++++++++++++++++++
+ tests/test_tickets.py       |  9 +++++++++
+ tickets.md                  | 45 +++++++++++++++++++++++++++++++++++++++------
+ 5 files changed, 108 insertions(+), 10 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestInv003Gate::test_illustrative_example_reason_does_not_self_waive` (pytest node id, verified passing when recorded)
 <!-- ticket:T-0523 -->
 ```yaml
 id: T-0523
