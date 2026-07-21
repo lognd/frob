@@ -4900,7 +4900,7 @@ re-splitting only where a physical line would exceed the limit.
 id: T-0443
 title: 'docblocks: console/bash ''frob <subcommand>'' command-drift tier for DOC004
   (needs frob.toml-configurable command source)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
