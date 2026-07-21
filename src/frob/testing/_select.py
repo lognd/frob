@@ -130,6 +130,7 @@ def _looks_like_test_symbol(symref: str) -> bool:
     return sep == "::" and qualname.split(".", 1)[0] == "tests"
 
 
+# frob:invariant INV-023
 def _edge_test_and_source(edge) -> tuple[str, str] | None:
     """Which endpoint of a `TESTS` edge is the test and which is the tested
     source symbol, or `None` if that can't be determined.

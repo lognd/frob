@@ -287,6 +287,8 @@ evidence:
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 TEST005 module-line-coverage floor (frob.toml [testing].module_line_cov=85) reports ~78 src/frob/** modules below threshold, from 0.0% (never-exercised runners like app/ack_runner.py, app/arch_runner.py, and most other app/*_runner.py CLI entry points) up to modules a few points shy of the floor (e.g. tickets/_store.py at 84.8%, strata/_claims.py at 84.7%). This backlog was invisible during T-0148's original scope (a fresh worktree has no .frob/coverage-stamp, and TEST005 silently produces no findings without one) -- it surfaced only after T-0148 regenerated the stamp to clear its own TEST006 finding ("no coverage stamp found"). It is pre-existing, repo-wide coverage debt, not something T-0148's edits introduced, and burning it down to the 85% floor across ~78 modules (many CLI app/*_runner.py entry points at literal 0%, needing new system/integration tests, not just unit tests) is a dedicated, multi-session effort far outside a gates-sweep ticket. Full per-module list captured via: uv run frob check --only test (TEST005 lines), 2026-07-18.
 
@@ -967,6 +969,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 frob serve is already a FastMCP stdio server with 5 read-only tools (doable tickets, stale docs, graph query, doc-for, check-scope) and is now wired into the coordinator's MCP config. Grow it into the structural fix for test-wait latency: the obligation graph knows exactly which obligations a diff can invalidate (frob test --base already proves the touched-set concept for tests) -- exploit it for gates. Deliverables: (1) warm state: the daemon holds the parsed graph snapshot, collected test ids, and the stamped violation baseline, refreshing incrementally on file-change (mtime/content-hash walk, reuse the .frob sqlite cache) instead of cold-parsing per invocation; (2) frob_check_delta MCP tool: given a base ref or dirty set, evaluate ONLY the obligations whose inputs changed and return the violation delta against the stamped baseline, in seconds; (3) frob_run_touched_tests tool wrapping the existing touched-set selection; (4) correctness guarantee: incremental results must provably match a cold frob check -- add a verification mode that runs both and diffs, plus property tests for the invalidation logic (an obligation NOT re-evaluated must have had no changed inputs -- vacuous-pass doctrine applies to the cache); (5) packaging: mcp becomes a proper [serve] extra in pyproject (mirroring [smt]) with _require_mcp's remedy message updated; Makefile install-tool already passes --with mcp -- reconcile with the extra; (6) docs/modules/serve.md updated with the daemon lifecycle and the staleness/correctness contract. Sequence AFTER the T-0148 sweep lands (gates code moves under it).
 
@@ -993,6 +997,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 User directive 2026-07-18: the pass-line counters hide real debt -- frob-exports reports 12-253 public symbols missing from __init__.py per package (decide policy: export or demote to private, per package, no blanket waiver), frob-dup 64 duplicate groups (triage: real extraction candidates vs false pairs; feeds T-0187 tree), frob-arch 197 warnings + 123 suggestions (long-function/god-class residue post-calibration -- fix or waive with reasons), perf gate 174 violations (166 waived -- re-audit every waiver still holds after T-0161's heuristic fixes land; the 8 unwaived need real fixes). Deliverable: each family driven to a state where the summary line is HONEST -- zero unwaived findings or a written per-finding reason; no threshold-loosening without a disclosed decision. Split into child tickets per family if any single family exceeds a session of work -- this ticket is the umbrella and the accounting.
 
@@ -1014,6 +1020,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 T-0202 fixed the check-path log-level bug (stdout handler defaulted to DEBUG unconditionally) and demoted the per-symbol/per-violation INFO calls found in gates/graph along that path. It did not exhaustively classify every _log./print( call site repo-wide (~1016 sites across src/frob) into keep-INFO/demote-DEBUG/convert-print as the ticket's enumerate-first instruction asked -- only src/frob/{gates,graph,check,app/check_runner.py,logging} got a full pass; the other 26 files under src/frob/app/ (89 INFO, 125 ERROR, 46 print call sites) and all non-scope dirs (strata 27, vet 17, fuzz 6, dup 5, tickets 4, testing 3, perf 3, lang 3, serve 2, arch 2, stats 1, release 1, policy 1, mutate 1, cve 1) were only sampled, not individually classified. Do the full pass and produce the classification table T-0202's Done report deferred.
 
@@ -1041,6 +1049,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 User mandate 2026-07-19: a frob deploy utility built into strata. The threat model: red teams compromise the one user that owns a service and nothing isolates that user -- lateral and vertical movement must be PROVABLY blocked, not hoped. The deployment sequence (idempotent install, status/health, uninstall with NO artifacts) must be auditable end to end, including an expensive opt-in VM-snapshot audit (VirtualBox) that is NOT part of make check. Scripts must tie into the model so hand edits are DETECTABLE through the strata checker, and the 'weird layer between the OS and the backend' (users, groups, units, ownership, ports) becomes provable architecture. Children: std.host OS-layer modeling -> movement-impossibility proofs + deploy script generation -> script<->model conformance gate -> VM snapshot audit harness -> real-service pilot (malmberg) remediating its awkward setup. Umbrella closes when all children close.
 
@@ -1066,6 +1076,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 T-0254 child 6 (proof on reality). Apply the full chain to malmberg (the real server product from pilot P3: server_api/ingest/cloudsync/faces/backup/display + media_store): extend design/malmberg.strata with std.host (dedicated service users per component, units, ownership of media_store paths, ports), prove HOST001/HOST002 movement-impossibility or record honest waivers, generate the deploy scripts, run the conformance gate, and if a VirtualBox environment is available run the full VM snapshot audit and attach the attestation. Remediate the current awkward setup step in malmberg's docs/scripts with the generated sequence. Work happens IN THE MALMBERG REPO per the break-and-report pilot protocol (frob-side gaps come back as tickets, filed serially by the coordinator); this frob-side ticket tracks the campaign and collects the gap list. Success = malmberg installs/uninstalls via generated scripts with a green conformance gate and a documented (or executed) VM audit path.
 
@@ -1105,6 +1117,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 T-0254 Windows pillar. Generalize the HostManifest (T-0255, Linux/systemd-first) into a platform-tagged model so a node can target windows. Windows analogs: service account instead of runs_as (dedicated low-priv local account, or a group Managed Service Account gMSA for domain-joined hosts -- NO interactive-logon right, deny-network-logon where possible, SeDenyBatchLogonRight per hardening); Windows Service (SCM) instead of systemd unit, with the hardening equivalents (service SID type restricted, required-privileges allowlist derived from may-capabilities, protected-process where applicable); NTFS ACLs (owner + explicit DACL entries) instead of POSIX owns MODE -- model must express deny-inheritance and per-principal rights, richer than a 3-octal mode; named pipes + Windows firewall rules for the listens surface. The platform tag drives which fields are required (a windows node without an ACL model is a HOST-family gap, mirroring a linux node without owns). Keep ONE HostManifest with a platform discriminator, not two parallel models -- the movement proofs (T-0256) and conformance (T-0258) must consume both uniformly. Grammar in parse.rs, tmLanguage drift-lock, litmus pair (linux + windows), docs/strata/host.md gains a Windows section. Generator/audit are separate tickets -- manifest + model only here.
 
@@ -1153,6 +1167,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 T-0254 Windows generation. The T-0257 generator gains a windows target emitting idempotent PowerShell (check-then-apply, same contract as the bash target): install creates the service account/gMSA, registers the Windows Service with its hardening (service SID type, required-privileges, deny-logon rights), applies the NTFS ACLs exactly from the manifest, opens the declared firewall ports / creates named pipes, and configures the SPN + delegation setting from std.krb (setspn / the delegation flags) when a krb model is present. status queries SCM state + health. uninstall removes exactly the manifest set (service, account, ACL grants, firewall rules, SPN registration) leaving no artifacts. Same DEPLOY001 digest-header drift-lock as bash. Scripts must be PSScriptAnalyzer-clean and depend only on in-box modules (no PSGallery). The conformance gate (T-0258) and VM audit (T-0259) must handle the PowerShell mutation surface too -- coordinate the manifest abstraction so those tickets' parsers are platform-tagged, not bash-only; if T-0258/T-0259 landed bash-only, file follow-ups for their windows extension rather than expanding scope here.
 
@@ -1188,6 +1204,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 Recurring: implementer agents put a 'frob:tests <self>' directive above their own new test function; the target does not resolve as a graph qualname so full frob check fires DRIFT002, but frob check --delta --ticket (what agents+reviewers run) does NOT surface it -- so it lands and reddens main (happened for T-0213, T-0216; coordinator removed 3). Two fixes: (1) frob check --ticket should include the drift gate for edges the ticket's own diff ADDS (a new frob:tests directive in the diff must be validated even under --ticket scoping); (2) the graph should REJECT or warn on a frob:tests directive whose target is the annotated symbol itself (a test testing itself is meaningless) at directive-parse time, not silently store a dangling edge. Add a check-scoping regression + a self-edge rejection test.
 
@@ -1222,6 +1240,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 Expands T-0177 into a long-lived per-project daemon that holds warm, incrementally-maintained state (obligation graph + per-symbol digests, test collection, coverage, dup analysis, gate results) and serves it to all clients (agents, make, MCP, CI) via single-flight execution + a content-addressed result cache. Root cause it solves (observed live over a long multi-agent session): N parallel agents each redundantly recompute the same expensive state (make core, make coverage ~5min each, frob check 114s stages, ticket sweep dup-scan ~90s) in isolated worktrees with no sharing, and background-then-stall on make coverage. Children: (a) warm graph + FS-watch incremental invalidation by digest; (b) single-flight coverage/collection keyed by source digest, shared across worktrees with identical content; (c) local unix-socket JSON-RPC query protocol; (d) frob CLI auto-proxies to the daemon if running, else in-process (make targets become thin shims); (e) subscribe/push events (coverage-fresh, graph-changed) -- the stall-killer; (f) resource leases/semaphores (coverage=1 writer). MCP becomes one frontend over the same core. See the design discussion 2026-07-19.
 
@@ -1320,6 +1340,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 THE stall-killer, extractable before the full daemon. Observed: implementer agents run make coverage in the background and stall waiting for a Monitor notification they cannot act on -- work done, uncommitted, looping 'waiting for coverage'; coordinator had to take over ~5 agents this session. Provide a blocking-until-fresh coverage/test contract (a foreground  that blocks on completion, backed by single-flight so concurrent callers share one run) so an agent gets a definitive fresh-or-failed result inline instead of babysitting a detached job. Interim (pre-daemon): a proper foreground make-coverage wrapper + single-flight file lock so 6 agents don't each run the full suite.
 
@@ -1355,6 +1377,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 The user's original vision (CLAUDE.md): every function/class/etc. carries a digest in .frob/, every doc is connected, and frob answers -- without running a test, like a static type-checker for docs -- 'X's digest changed, here is the transitively-affected doc + code set that must be reviewed/updated.' Only practical if the graph is kept WARM (frob daemon epic). Query surface: graph.affects(symbol) -> impacted docs+symbols; a gate that fails when a touched symbol's dependents' digests weren't acked. This is the same project as the daemon; file so the digest-graph work is tracked as its own deliverable.
 
@@ -1390,6 +1414,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 frob arch today has per-language walkers (_python.py, _cpp.py) only. To extend cleanly (not N copies of each check), introduce a NORMALIZED CODE MODEL: a language-agnostic view (module, class, function, method, param, branch, loop, call, import, override, field-access, return, raise/throw, catch) that each language adapter maps its tree-sitter grammar onto. Checks are written ONCE against the model; adapters supply per-grammar node-type maps. Then add adapters for TypeScript, Rust, Kotlin (Kotlin needs tree-sitter-kotlin added to frob.lang; ts/rust/cpp/c already parse via tree-sitter-language-pack). Language-specific checks (Rust must_use/ownership, TS any/strict-null) live in per-language extensions on top of the shared model. Acceptance: an arch check written once fires correctly across python+ts+rust+kotlin on equivalent code; Kotlin grammar wired; the existing python/cpp checks refactored onto the model with no regression. Children: normalized-model, ts-adapter, rust-adapter, kotlin-grammar+adapter.
 
@@ -1425,6 +1451,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 Encode what a senior software designer knows (SOLID, ArjanCodes, Logan-Smith type-driven design, logging, fallibility) as STATIC checks over parsed source -- each with a concrete, non-hacky static proxy (subjective principles get objective detectable smells). CATALOG (each becomes a child ticket, ARCH1xx family):
 SRP/cohesion: LCOM4 low-cohesion class (methods partition into disjoint field-usage components); god-module (unrelated exports); mixed-concern function (I/O capability + pure compute + formatting in one body).
@@ -1475,6 +1503,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 Complete the system-design linter with what a senior systems/reliability engineer checks -- over the .strata MODEL (nodes/flows/boundaries/stores), each a real static obligation, SYS2xx/REL2xx family. CATALOG:
 Reliability: TIMEOUT on every remote/cross-boundary flow (unbounded hang otherwise); RETRY must declare exponential backoff+jitter, and no retry on a non-idempotent op; IDEMPOTENCY key required on a mutating op reachable by a retryable flow (duplicate effects); CIRCUIT BREAKER / bulkhead per external dependency (extends LINT004 kill-switch); FALLBACK / graceful degradation declared for a CRITICAL dependency; HEALTH liveness+readiness on every service node; SPOF -- a node with inbound critical flows and replicas_max=1/no redundancy; BACKPRESSURE bounded intake on queues/consumers (extends LINT003 surge / LINT005 capacity).
@@ -1541,6 +1571,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 Positive complement to the SOLID smell catalog (T-0330). An exhaustive PATTERN REGISTRY (structured like the capability registry -- pattern x hallmark x language matrix, covered-or-excused): each entry = a HALLMARK detector (the before-shape), the recommended PATTERN (GoF + modern), the FORCE/tension it resolves, a refactoring sketch, languages. Two directions: HALLMARK->PATTERN (N-arm isinstance/type-switch -> Strategy/polymorphism; growing if-chain on a state field -> State machine; scattered ConcreteX() construction -> Factory/DI; telescoping optional ctor params -> Builder; manual callback lists -> Observer; repeated wrap+delegate -> Decorator; incompatible-interface bridging -> Adapter; expensive-object reuse -> Flyweight/pool) and ANTI-PATTERN->ESCAPE (god object -> SRP decompose; anemic domain model -> move behavior to data; stringly-typed -> newtype; poltergeist/lava-flow -> delete; sequential coupling -> explicit state). CRITICAL DESIGN (do it right, avoid cargo-culting): (1) RECOMMENDATIONS not errors -- advisory/suggestion severity only, forcing a pattern is itself over-engineering; the user said 'recommended'. (2) STRONG-HALLMARK-ONLY / high precision -- recommend only on an unambiguous structural signal; a noisy recommender trains users to ignore it; the library itself must NOT recommend when the code is already simple. (3) PAIRS WITH the SOLID smells -- reuse the same hallmark detectors: the smell is the diagnosis, the pattern is the prescription (one detector, two outputs: 'violates OCP' + 'consider Strategy'). (4) WAIVABLE with a reason so a repo records deliberate exceptions. (5) each recommendation names the FORCE + a concrete sketch, never a bare 'use Strategy'.
 
@@ -1606,6 +1638,8 @@ acceptance:
   an unaccounted sink without either resolving to it or tripping the opaque-indirection
   finding'
 threat: elevation-of-privilege
+component: null
+labels: []
 ```
 User mandate (2026-07-20): 'ensure that you stop ALL methods EXHAUSTIVELY across ALL LANGUAGES of evading detection. ENSURE THAT IT IS 100% EXHAUSTIVE via LANGUAGE SPEC.' HONEST ARCHITECTURE (recorded so no one later mistakes the goal for the impossible one): a sound STATIC analyzer cannot resolve runtime dispatch (getattr/eval/reflection/dynamic-require/fn-ptr-from-data) -- Rice's theorem. So 'exhaustive' means: (1) EXHAUSTIVE-RESOLVE the DECIDABLE fragment -- enumerate FROM EACH LANGUAGE SPEC every static name-binding/aliasing/re-export/copy construct (imports, import-as, from-import[-as], star-import, local + chained + attribute rebinding, destructuring, tuple/list unpack, Rust use/use-as/pub use, C/C++ #define + using-decl + function-pointer init from a named fn + typedef'd fn-ptr, Kotlin import-as + ::ref + typealias) and resolve calls through all of them, transitively, per-scope, cycle-guarded, WITHOUT regressing shadowing soundness (a benign/param binding must stay silent); (2) FAIL CLOSED on the UNDECIDABLE fragment -- every spec-defined runtime-resolved indirection becomes an 'opaque capability indirection' obligation (fires, requires a reasoned waiver), consistent with strata's prove-or-reject philosophy (T-0290 recursion, arch-override). DELIVERY: (a) dispatch exhaustive-research to produce the per-language evasion denominator from the actual specs (the coverage denominator for acceptance 1) + the opaque-construct list (acceptance 2); (b) child tickets per language implementing the static resolver to its denominator + litmus; (c) one child for the fail-closed opaque-indirection obligation in the scanner/strata may-analysis; (d) a cross-language exhaustiveness meta-test binding each denominator entry to its litmus (fails if a construct has no fixture, like the CVE catalog drift-lock). T-0337 (Python local rebind) and T-0328 (Python import resolution) are the first two leaves. This is the 'you cannot get around it' guarantee the whole tool exists for.
 
@@ -1642,6 +1676,8 @@ acceptance:
   the standard build/test entrypoint, then natives are ensured present with no manual
   'make core' needed as a separate remembered step
 threat: null
+component: null
+labels: []
 ```
 Recurring, high-cost friction ([[worktree-natives-artifact]]): the maturin-develop editable installs of strata_core/frob_core are not tracked in uv.lock, so uv treats them as extras and REMOVES them on any environment re-sync -- triggered by , , load_graph: loaded 6496 symbols, 4043 edges
 release: stamped 927 public symbol(s) at 0.20.0
@@ -1735,6 +1771,8 @@ acceptance:
   staleness-dated, and budget-limited (waive-everything is itself a smell); baseline-view
   and threshold loosening is an audited event, never silent'
 threat: elevation-of-privilege
+component: null
+labels: []
 ```
 The user asked (2026-07-20): 'what mechanisms enforce conformance to the .strata file? Do we force every module to declare its purpose and interface?' -- and to harden it adversarially. Design north-star: docs/design/structural-linter-adversarial-hardening.md. Today _code_binding.py (bind_code/ConformanceReport/check_import_conformance) and _effects.py::check_capability_conformance exist, and T-0331 already mandates 'NO obligation satisfied by bare declaration' -- but conformance is NOT TOTAL, which is the evasion surface: (1) un-modeled modules escape all obligations; (2) a node can declare a partial interface while the code exports more; (3) nothing binds a module's PURPOSE to an allowed-effect profile; (4) binding need not be total, so logic can be laundered into an unbound file. This epic closes those into the five acceptance criteria above (SYS-COV coverage totality, exact interface conformance, purpose contract, binding totality + effect conformance, bounded escape hatches + gated config), each a child ticket. Soundness rests entirely on the exhaustive binding-aware scanner (T-0328/T-0337/T-0339) -- this epic is the conformance layer ON TOP of that foundation. Coincident with the arch epic (T-0330) and strata-systems epic (T-0331); this is the 'the model cannot lie about the code' guarantee made total.
 
@@ -1793,6 +1831,8 @@ acceptance:
   an addressed entry''s check vanishes -- so an implementing ticket provably addresses
   EVERYTHING'
 threat: null
+component: null
+labels: []
 ```
 User critique (2026-07-20): the corpora hedged where the mandate is to EXHAUST -- e.g. security-corpus skipped CWE-1000 as 'repo spam' when the intent is to enumerate ALL ~900, categorize each, and reason mitigation per entry; and information split across 10 docs/design/*.md files means an item can exist in one file's prose but be absent from the enforceable denominator ('miss split across two files'). This epic makes the corpus a REGISTRY, not a reading list: (1) a single canonical machine-readable registry aggregating every corpus manifest with stable ids + cross-refs (pattern<->trap<->evasion<->mitigation linked by id); (2) a reconciliation/consolidation pass that de-dups cross-file and flags any prose-only entry; (3) completion of the bulk-skipped enumerations to per-entry disposition; (4) T-0343 (exhaustiveness drift-lock) bound to the registry with a mandatory per-entry disposition. Governs T-0330/331/332/339/341/343 and all the corpus docs. The corpora already emit '## DENOMINATOR MANIFEST' sections (per-doc TOTAL); this epic unifies them into one registry and closes the 'seems like spam so I skipped it' and 'split across two files' gaps permanently.
 
@@ -1837,6 +1877,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 T-0207 follow-on: frob.gates._pii_structural.FIELD_SIGNATURES is Python-only (ast-based). Extend PII010/SEC110 to TypeScript/Rust field-shape and env-access equivalents (process.env, std::env::var) per the ticket body's cross-language mandate. Deferred from T-0207's scope.
 
@@ -1859,6 +1901,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 found while working T-0240: gates/_prework.py::sweep_ticket's xref loop called xref(symbol, root) instead of the scan_path it computed, and derived xref-hit terms via Path(pattern).stem (nonsense for glob patterns). app/ticket_runner.py's _run_sweep + _xref_hits_for_scope + _scope_digest_for_ticket carry an IDENTICAL copy of the same loop (already flagged as duplicate call-site debt in T-0236's Done report, follow-up ticket not yet filed) with the same two bugs. src/frob/app/** was out of scope for T-0240 (whose scope was tickets/gates/dup/tests only), so this sibling copy still has the unbounded-walk + nonsense-stem bugs. Either delegate _run_sweep to frob.gates._prework.sweep_ticket directly (collapsing the duplication per T-0236) or port the same fix.
 
@@ -1883,6 +1927,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 found while working T-0240 (same origin ticket text, deliberately split out): T-0240 fixed the sweep's unbounded full-root xref walk and glob-stem xref terms, but three remaining items from the original malmberg report are NOT addressed by that fix and need their own design/scope: (1) SIGINT during a long sweep prints a bare KeyboardInterrupt traceback instead of a clean message -- __main__.py-level signal handling, out of T-0240's tickets/gates/dup scope. (2) PRE001 catch-22 on slow mounts: editing a ticket's scope demands a re-sweep, and if the sweep itself is what is slow on that mount the ticket can never get back into a checkable state -- needs a design decision (timeout + partial-sweep-ok state, or async sweep), not a bugfix. (3) scope_digest hashes snapshot file-hashes (path+content sha), so a recorded sweep cannot be transplanted between two checkouts with identical file content but different paths/timestamps-derived hashes -- consider keying on content-only digest so sweep records are checkout-portable. None of these are addressed by T-0240's fix.
 
@@ -1909,6 +1955,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 _scan_file_fingerprints (CVE matching) is lexical needle-matching for EVERY language including Python -- a renamed import defeats a fingerprint even where capability scanning is binding-aware. Reuse the binding tables built for capability resolution (Python + the new TS/Rust/C-C++ tables) to resolve aliases before fingerprint matching for all languages. Acceptance: an aliased import that would evade a lexical fingerprint match is still caught; adversarial test per language.
 
@@ -1933,6 +1981,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 Audit every EXISTING out_of_scope / BenignCapability / CAPABILITY_MATRIX_EXCUSES entry in the repo and populate its new caught_by field with the real compensating control, or, where nothing actually catches the excused item, convert the entry into a real enforced check instead of an excuse. Acceptance: frob check --only invariant/security passes with the caught_by verification (T-0382) enabled across the whole repo; zero entries left with a placeholder/fabricated caught_by.
 
@@ -1958,6 +2008,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 Reconcile docs/design/registry/weaknesses.yaml against actual enforcement: every catalogued entry must map to (i) an enforced check, (ii) a documented out-of-scope entry with a verified caught_by (T-0381/T-0382), or (iii) an explicit deferred ticket. Resolve RECONCILIATION.md's undispositioned entries for this registry. Add an EXHAUSTIVENESS meta-test for this registry: catalogued count == enforced+excused+deferred count, so a future gap fails the build. Acceptance: exhaustiveness meta-test passes and is wired into frob check.
 
@@ -1982,6 +2034,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 Reconcile docs/design/registry/patterns.yaml against actual enforcement: every catalogued entry must map to (i) an enforced check, (ii) a documented out-of-scope entry with a verified caught_by (T-0381/T-0382), or (iii) an explicit deferred ticket. Resolve RECONCILIATION.md's undispositioned entries for this registry. Add an EXHAUSTIVENESS meta-test for this registry: catalogued count == enforced+excused+deferred count, so a future gap fails the build. Acceptance: exhaustiveness meta-test passes and is wired into frob check.
 
@@ -2006,6 +2060,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 Reconcile docs/design/registry/secrets.yaml against actual enforcement: every catalogued entry must map to (i) an enforced check, (ii) a documented out-of-scope entry with a verified caught_by (T-0381/T-0382), or (iii) an explicit deferred ticket. Resolve RECONCILIATION.md's undispositioned entries for this registry. Add an EXHAUSTIVENESS meta-test for this registry: catalogued count == enforced+excused+deferred count, so a future gap fails the build. Acceptance: exhaustiveness meta-test passes and is wired into frob check.
 
@@ -2030,6 +2086,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 Reconcile docs/design/registry/pii.yaml against actual enforcement: every catalogued entry must map to (i) an enforced check, (ii) a documented out-of-scope entry with a verified caught_by (T-0381/T-0382), or (iii) an explicit deferred ticket. Resolve RECONCILIATION.md's undispositioned entries for this registry. Add an EXHAUSTIVENESS meta-test for this registry: catalogued count == enforced+excused+deferred count, so a future gap fails the build. Acceptance: exhaustiveness meta-test passes and is wired into frob check.
 
@@ -2054,6 +2112,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 Reconcile docs/design/registry/compliance.yaml against actual enforcement: every catalogued entry must map to (i) an enforced check, (ii) a documented out-of-scope entry with a verified caught_by (T-0381/T-0382), or (iii) an explicit deferred ticket. Resolve RECONCILIATION.md's undispositioned entries for this registry. Add an EXHAUSTIVENESS meta-test for this registry: catalogued count == enforced+excused+deferred count, so a future gap fails the build. Acceptance: exhaustiveness meta-test passes and is wired into frob check.
 
@@ -2078,6 +2138,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 Reconcile docs/design/registry/supply-chain.yaml against actual enforcement: every catalogued entry must map to (i) an enforced check, (ii) a documented out-of-scope entry with a verified caught_by (T-0381/T-0382), or (iii) an explicit deferred ticket. Resolve RECONCILIATION.md's undispositioned entries for this registry. Add an EXHAUSTIVENESS meta-test for this registry: catalogued count == enforced+excused+deferred count, so a future gap fails the build. Acceptance: exhaustiveness meta-test passes and is wired into frob check.
 
@@ -2102,6 +2164,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 Reconcile docs/design/registry/evasion.yaml against actual enforcement: every catalogued entry must map to (i) an enforced check, (ii) a documented out-of-scope entry with a verified caught_by (T-0381/T-0382), or (iii) an explicit deferred ticket. Resolve RECONCILIATION.md's undispositioned entries for this registry. Add an EXHAUSTIVENESS meta-test for this registry: catalogued count == enforced+excused+deferred count, so a future gap fails the build. Acceptance: exhaustiveness meta-test passes and is wired into frob check.
 
@@ -2126,6 +2190,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 Reconcile docs/design/registry/arch-checks.yaml against actual enforcement: every catalogued entry must map to (i) an enforced check, (ii) a documented out-of-scope entry with a verified caught_by (T-0381/T-0382), or (iii) an explicit deferred ticket. Resolve RECONCILIATION.md's undispositioned entries for this registry. Add an EXHAUSTIVENESS meta-test for this registry: catalogued count == enforced+excused+deferred count, so a future gap fails the build. Acceptance: exhaustiveness meta-test passes and is wired into frob check.
 
@@ -2150,6 +2216,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 Reconcile docs/design/registry/system-design.yaml against actual enforcement: every catalogued entry must map to (i) an enforced check, (ii) a documented out-of-scope entry with a verified caught_by (T-0381/T-0382), or (iii) an explicit deferred ticket. Resolve RECONCILIATION.md's undispositioned entries for this registry. Add an EXHAUSTIVENESS meta-test for this registry: catalogued count == enforced+excused+deferred count, so a future gap fails the build. Acceptance: exhaustiveness meta-test passes and is wired into frob check.
 
@@ -2171,6 +2239,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 Triage the 37 frob-arch abstraction-opportunity advisories: for each genuine near-duplicate or specific-signature family, either extract the real shared code into one home, or add an explicit reason-note accepting the duplication. Acceptance: frob check arch advisories for abstraction-opportunity reduced to zero unresolved (each is either fixed or reason-noted).
 
@@ -2192,6 +2262,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 Address the 2 frob-arch deep-nesting advisories: refactor to reduce nesting depth, or add an explicit reason-note if the nesting is justified. Acceptance: both findings resolved (fixed or reason-noted).
 
@@ -2214,6 +2286,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 After T-0373 re-thresholds frob-arch large-file to 800 lines / 60 (function), address the residue that still exceeds 800 lines among the 34 large-file advisories: real module splits, or accepted-with-reason for files that don't decompose cleanly. Acceptance: frob check arch large-file advisories at the calibrated threshold reduced to zero unresolved.
 
@@ -2235,6 +2309,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 Full-repo pessimistic capability audit (2026-07-20, 7 read-only auditors). North-Star: if frob check / a ticket-close / a strata proof passes, the thing it claims must ACTUALLY hold. The audit found the North-Star is violated in concrete ways across subsystems. Each subsystem audit gets an umbrella child holding its full findings table; each HIGH finding gets an actionable child. Findings files live in the audit run; this epic is the durable tracked home so the audit itself does not become an orphaned document (the exact failure mode that motivated it). Consolidation in progress as the 7 auditors land: tickets/testing (evidence integrity), strata (vacuous proofs), graph/edges, gates-accounting, gates-quality/security, vet (lexical resolution), lang/check/docs.
 
@@ -2259,6 +2335,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 See docs/audits/gates-quality.md. HIGH: entire quality surface is non-blocking (PERF/PII010/SEC110/ARCH001/DUP/lower-secrets are WARN, frob check exits 0 on them) -- green makes NO quality claim; DUP fails open (default-off AND no-op without natives); frob:secret-fake suppresses real secrets with no accountability/reason/ledger. RIGHT-WAY fix: decide per rule which are error-tier (and default DUP on / fail-closed when natives missing); give secret suppression the same reasoned-waiver accountability as frob:waive. Expect the build to red -- that red is honest. Then re-audit until empty. MED/LOW in the doc.
 
@@ -2284,6 +2362,8 @@ evidence:
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 See docs/audits/strata.md. HIGH: boundaries never bound to code (discharge = typing a matching string); vacuous discharge when foreign->sink flow is un-modeled (incomplete .strata discharges real caps); eval globally BenignCapability-excused (no RCE obligation); FOREIGN files loose under src/frob/ escape all SYS + THREAT004/005; utility flow marker defeats confidentiality noflow. RIGHT-WAY fix: join Boundary predicates against observed code; require flow-completeness before a NoFlow discharges (fail-closed); add eval obligation; make sys rules cover every capability-bearing file. Then re-audit until empty. G6-G12 in the doc.
 
@@ -2306,6 +2386,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 See docs/audits/gates-accounting.md. HIGH: the one blocking per-symbol test gate clears on a vacuous name-matching test while TEST002/005 are non-blocking WARN; DRIFT001 default sig facet is blind to body/behavior rewrites so a documented lie passes; TS/C/C++ frob:tests edges require NO execution evidence. Plus: coverage/stamp/baseline/prework chain is gitignored-local so CI cannot trust it. RIGHT-WAY fix: strengthen test-presence to reject vacuous tests + make it blocking; DRIFT over body/doc facets not just sig; execution evidence for non-Python; make CI-critical signals trackable. Then re-audit until empty. MED/LOW in the doc.
 
@@ -2329,6 +2411,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 See docs/audits/lang-check-docs.md. HIGH: doc/coverage/drift/inv gates run ONLY in the Python pipeline -- a Rust/C++/TS repo gets ZERO COV/DOC/DRIFT despite the polyglot promise; parse/IO failure silently erases a files whole obligation set (gates pass vacuously); COV001 is WARN-only. RIGHT-WAY fix: run the accounting gates across ALL language pipelines; fail-closed + loud on parse/IO failure (never empty-as-clean); decide COV001 severity. Then re-audit until empty. MED/LOW in the doc.
 
@@ -2355,6 +2439,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 User directive (2026-07-20): adding a new language/capability (Kotlin, Swift/iOS native, Go, ...) must be VERY simple -- one well-defined registration, not a scattered edit across 10 files where forgetting one silently creates a coverage gap (the exact fail-open per-language holes the audit found: Python is binding-resolved while TS/Rust/C++ are lexical; doc/cov/drift gates run only in the Python pipeline). SOLUTION couples easy-extension with no-silent-gaps: define a LanguageSupport protocol/registry enumerating EVERY per-language facet frob needs -- tree-sitter grammar + extension map, comment-span extraction, capability pattern table, binding-aware capability RESOLVER (import/alias/scope), dangerous-operation registry entries, CVE fingerprint support, obfuscation/bidi scanning, test runner, arch complexity detectors, dup normalization, doc/directive parsing. Each registered language declares, per facet, either an implementation OR an explicit reasoned not-applicable. Then a CONFORMANCE GATE (fail-closed, like strata SYS/threat exhaustiveness) enumerates languages x facets and FAILS the build if any registered language is missing any facet with no reasoned n/a -- so a half-added language cannot ship, and the current TS/Rust/C++ lexical gaps show up immediately as conformance failures. Acceptance: adding a fixture language that implements the grammar+runner but omits the resolver FAILS the conformance gate naming the missing facet; a fully-implemented language passes; adding Kotlin/Swift is demonstrably a single registration + the facet impls the gate demands, nothing else. This is the structural prevention for the whole per-language-gap class; ties to T-0400 (vet resolution) and T-0404 (polyglot enforcement) which become "make every language conform".
 
@@ -2380,6 +2466,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 User directive (2026-07-20): use frob ITSELF to ENFORCE the structural fixes across ALL projects, not just frobs own repo. Frobs enforcement vector is its gate system -- gates run in every frob-enabled repo (the 8 siblings + any future project). So the audit remediations must ship as first-class GATE FAMILIES wired into frob check and ON BY DEFAULT (opt-in = the fail-open trap again), so the guarantees propagate to every consumer automatically. TWO concrete requirements: (1) The language/capability CONFORMANCE (T-0405) must be a SHIPPED, per-project gate, not a frob-internal test. In a DOWNSTREAM project, it must FAIL LOUDLY when the project actually contains a language that frob does NOT fully+conformantly support -- e.g. a repo with Kotlin/Swift/Go where frobs resolver/dangerous-table/runner for that language is missing or partial must get a hard "coverage for <lang> is UNSOUND (lexical-only / missing resolver)" failure, never a silent lexical fallback that fakes coverage. This turns "we half-support a language" from an invisible product gap into a build failure in every affected project, and makes adding full support the way to clear it. (2) The other structural remediations (evidence-must-be-covering-and-passed T-0398, fail-closed parsing T-0402/0404, blocking quality T-0399, orphan gate T-0396, registry drift-lock T-0343) likewise ship as gate families with sane defaults so every project inherits them; a per-project frob.toml can tune severity but not silently disable the fail-closed core. Acceptance: a fixture downstream repo containing a not-fully-supported language reds frob check with a named unsound-coverage finding; a repo whose languages are all fully-conformant passes; the guarantee is verified to run in a sibling repo, not just frob. This is what makes the North-Star hold everywhere frob runs, not just here.
 
@@ -2403,6 +2491,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 User insight (2026-07-20): the REAL gap in vibe-coded capabilities is EARLY EXIT WITHOUT EXHAUSTING THE REGISTRY -- research enumerates a whole universe (CWEs, patterns, dangerous ops, languages, compliance regs, capabilities) then implementation handles only the top of the stack and the rest silently disappears. Every specific failure today is an instance: orphaned .yaml registries, ~30 of 944 CWEs enforced, TS/Rust/C++ unresolved, split-across-files corpus entries. FIX = make REGISTRY a first-class frob capability, not a pile of ad-hoc YAMLs + scattered code that desync.
 
@@ -2431,6 +2521,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 Two-part gap the user surfaced (2026-07-20). CONTENT: only 4 formal invariants (INV-001..004) exist for a ~60k-line system, while grep finds 128 files asserting a property in prose (always/never/idempotent/thread-safe/exactly once/monotonic/guaranteed/must not). A large subset are genuine guarantees (capability-sink NoFlow, cache invalidation correctness, ledger state-machine transitions, evidence exactly-once, splice idempotence, dup alpha-rename soundness, id-allocation collision-freedom, graph-built-once) with ZERO property tests. TOOLING (the meta-gap the user named -- "frob let us get away with it for so long"): INV001/INV002 only validate DECLARED invariants (evidence + binding present); nothing checks whether ENOUGH invariants are declared, so a huge system with 4 invariants passes clean. Same class as every failure today: existence-not-completeness, early-exit-without-exhausting-the-registry.
 
@@ -2459,6 +2551,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 User directive (2026-07-20): frob check takes forever; do a PERF audit -- measure where hotpaths ACTUALLY are, lower into native Rust where it helps, review the architecture for stupidity (and note that frob SHOULD have detected its own perf issues -- meta-gap), and think through parallelism/concurrency/multiprocessing. Plus: audit the daemon to ensure we cache what we are supposed to. Grounding measurements (this repo, latest full frob check): archgate=153.6s and sys=145.3s DOMINATE; every other stage is <6s (perf 5.4, pii 1.7, secrets 1.4, test 1.4, tickets 0.27, rest ~0). Strong hypothesis (auditor must MEASURE to confirm/refute via profiling): the repo is tree-sitter-parsed MULTIPLE times per check -- build_graph parses everything, then arch/analyze_project re-parses everything, then strata selfconform (sys) re-parses everything, plus vet/secrets/dup each parse; check/_python.py::_cached_snapshot only memoizes the GRAPH build, NOT arch/sys parses, so trees are not shared across stages. Confound: /mnt/c mount tax (13-60x slower I/O per T-0245) -- the audit MUST distinguish I/O-bound (reading every file N times) from CPU-bound (parsing/walking N times). Deliverables to docs/audits/perf.md (auditor writes it): (A) real profile of a full frob check -- top hotpaths by cumulative time, per stage, with the redundant-parse count actually measured; (B) architecture review: how many times each file is read+parsed, where a single shared parse pass / warm snapshot would collapse work, sqlite connection/contention patterns, any O(n^2) or per-file-stat storms; (C) parallelism/concurrency: are stages actually parallel or serialized? where is the serialization? would a process/thread pool or a shared-parse-then-fan-out help? what belongs in frob-core Rust (hot tree walks: arch complexity, capability scan, hashing -- dup is already Rust)? (D) DAEMON/caching audit: is the warm-graph incremental daemon (T-0177) actually built, and does serve/ cache the parsed graph across requests + invalidate correctly, or re-build/re-parse per call? is the .frob cache doing incremental (only re-parse changed files) or full rebuilds? (E) META-GAP: why did PERF001-004 NOT flag the redundant full-repo parsing / missing shared cache -- what class of architectural/cross-stage perf antipattern is the PERF gate blind to, and what enforcement would catch it (this becomes its own ticket). >=10 concrete findings with measured impact + severity + file:line. REPORT ONLY (auditor). Then remediation children per finding.
 
@@ -2484,6 +2578,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 Convergence re-audit of the tickets/testing subsystem AFTER T-0398 landed (docs/audits/tickets-testing-round2.md): D-01..D-12 genuinely fixed EXCEPT the subsystem is NOT converged -- 3 new HIGH CLI-reachable bypasses (no --force needed): N-01 omitting --scope skips the D-02 covers_scope binding entirely (a code ticket with no scope closes on any passing evidence); N-02 frob ticket close does NOT re-run the evidence tests -- it trusts the pass status recorded at evidence-record time, so a test recorded green then later broken still closes (TOCTOU); N-03/N-04 pass == pytest exit 0, so a VACUOUS test (asserts nothing) or a self-scoped no-op test satisfies the gate -- the exact vacuous-test class the review loop keeps catching. Plus D-03 is only a 3-char floor (weak done-report substance) and D-10/D-12 unchanged. FIX the RIGHT way: (N-01) fail-CLOSED on empty scope for CODE-kind tickets (a code ticket MUST declare scope + have covering evidence); (N-02) RE-VERIFY evidence at close the way land already does (re-run the evidence tests at close, not just trust record-time status); (N-03/04) detect vacuous/no-assertion evidence tests (a test that passes but asserts nothing / never exercises the scope symbol should not count -- reuse the covers_scope graph binding to require the evidence actually reaches a touched symbol, and consider an assertion-presence check); strengthen D-03 beyond a char floor (require the real sections). Re-audit again after -- converged only when a pessimistic pass finds nothing. Full findings + repros: docs/audits/tickets-testing-round2.md. QUEUED behind T-0343/T-0415 (gates/app overlap) to avoid merge conflict.
 
@@ -2507,6 +2603,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 User spotted from frob check output: frob-arch appears as its own stage AND archgate=112.81s appears in the gates timing -- arch is analyzed TWICE. Confirmed: check/_python.py::_run_arch (the advisory frob-arch stage) calls analyze_project once (~line 440); gates/_arch.py::arch_gate independently calls analyze_project again for ARCH001 (the archgate timing). The helper written to prevent exactly this -- check/_python.py::_arch_violations_from_suggestions (builds ARCH001 Violations from the already-computed suggestions "without re-running analyze_project a second time") -- is DEAD CODE, grep finds zero callers. FIX: wire the gates stage to build ARCH001 from the suggestions _run_arch already computed (via the dead helper), so analyze_project runs ONCE per check. Verify the same ARCH001 violation set is produced (byte-identical gate output) and archgate drops toward 0 (the work moves into the single frob-arch run). CHECK dup too: _run_dup calls find_duplicates for the frob-dup stage; confirm dup_gate does not ALSO re-run detection (it is default-off so may already skip -- verify). This is the exact "same expensive input recomputed across stages" class T-0413 (PERF meta-gap) must catch. Measured target: ~112s saved.
 
@@ -2530,6 +2628,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 Root cause of the arch double-run (T-0418): _arch_violations_from_suggestions was WRITTEN to prevent the duplication but NEVER WIRED -- zero callers, dead code, and no gate flagged it. Generalize: a private symbol (leading-underscore function/class/method) with NO in-repo references (not called, not re-exported, not a test target, not a registered dispatch entry, not a dunder/protocol method) is DEAD -- either wire it or delete it. This is the SYMBOL-level analog of the anti-orphan FILE gate (REF001/T-0396): a file with no inbound refs is an orphan file; a private symbol with no inbound refs is an orphan symbol. Reuse the graph the orphan-file/callgraph work already builds (references/uses edges). Fail-tier WARN (advisory-but-tracked, like REF). Careful about FALSE POSITIVES: exempt dunders, protocol/ABC methods, pytest test_ functions, registered-via-decorator handlers, and anything reached only dynamically WITH an explicit frob:used-by-style declaration (verified). Acceptance: a written-but-unwired private function like _arch_violations_from_suggestions is flagged; a genuinely-used private helper is not; a decorator-registered handler is not. This stops the entire "intended code silently rots unwired" class.
 
@@ -2554,6 +2654,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 Root-cause analysis (user, 2026-07-20: "why do I have to keep making these requests?"). Every gap the user caught this session is one of: catalogued-not-enforced, present-not-verified, written-not-wired, done-not-maintained, resolved-looking-but-owed, correct-but-wasteful. Two-layer root: (L1) frob checks that a thing EXISTS, not that it DOES ITS JOB (existence != efficacy) -- it was built to track/account, never to check completeness/truth/efficiency/honesty/maintenance of its own guarantees; (L2) frob has NO check-for-missing-checks: its own coverage (the set of "kinds of badness it enforces") is an un-exhausted, un-enforced registry whose ONLY draining process is the users eyeballs -- so the user IS the adversarial efficacy-auditor frob lacks, and each request adds one entry to an implicit "checks frob should have" list. SYSTEMIC FIX (the session-wide principle turned reflexively on frob itself): (1) make frobs CHECK-COVERAGE a first-class EXHAUSTIBLE REGISTRY (an instance of T-0407) -- a living taxonomy of the correctness/quality/security/perf/UX/maintenance concerns frob should enforce, each dispositioned (implemented gate id | open ticket | out-of-scope+reason); the docs/audits/ findings are its first draft; an exhaustiveness gate reds until every known concern is dispositioned, so GAPS are enumerated and driven to zero by the PROCESS. (2) Move the adversarial efficacy-auditing from the USER to the CONTINUOUS pessimistic auditors: schedule the audit-until-empty loop as a STANDING converging process across all subsystems AND reflexively on frobs own efficacy (does each gate actually catch what it claims, not just exist), so new gaps are found by auditors before the user would notice. (3) The meta-principle already in memory ("every got-away-with is a frob enforcement gap -> file the gate") is the DISPOSITION RULE for this registry. Acceptance: a named check-coverage registry exists with per-concern dispositions; a new un-dispositioned concern reds the exhaustiveness gate; the pessimistic-auditor loop runs on a schedule and its findings auto-file as dispositioned entries; measurably, the user stops being the one who finds the gaps.
 
@@ -2578,6 +2680,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 User (2026-07-20): worried about the single-source-of-truth mantra -- is there a better way? YES, invert it. PROBLEM with the current T-0343 model: a hand-maintained canonical .yaml is the SSOT, with hand-TYPED handled_by:<rule-id> claims. That is the catalogued-vs-enforced drift moved up one level -- the registry is a CLAIM about the code, and a hand-typed claim that must be kept in sync is exactly why REG002 (dangling handled_by) must exist. The real source of truth about what is enforced is the CODE, not a file describing it. BETTER ARCHITECTURE (derived, not authored): (1) ENFORCEMENT TRUTH lives IN CODE -- each rule/detector declares what concepts it enforces via an in-code directive (frob:enforces <concept-id>, e.g. frob:enforces CWE-79 on the SEC rule / a rule-registry field); this cannot drift from the code because it IS the code, and it is verifiable (the rule must exist to carry the directive). (2) THE UNIVERSE lives in an append-only research CORPUS (SSOT for "what concepts exist"). (3) THE REGISTRY is the COMPUTED reconciliation of universe INTERSECT code-declarations: handled_by is DERIVED from the frob:enforces declarations (never hand-typed, so REG002-dangling becomes structurally impossible); an entry is undispositioned iff it is in the universe but no code enforces it AND no open deferral/out-of-scope exists. Benefits: no hand-maintained middle file to drift; adding an enforcing rule auto-updates coverage (no separate registry edit to forget); the researcher just appends to the universe and coverage falls out; two REAL ssots (code=enforced, corpus=exists) + one computed join, instead of one file pretending to be the truth about code it cannot see. This SUPERSEDES T-0343 hand-maintained handled_by as the target model (T-0343 is the v0 drift-lock; this is the v1 derived-coverage). Acceptance: a rule carrying frob:enforces CWE-79 auto-marks CWE-79 handled in the computed registry; removing that rule un-marks it (the registry tracks CODE reality); a universe entry with no enforcing rule and no open deferral shows undispositioned; NO hand-typed handled_by remains as the source of truth.
 
@@ -2604,6 +2708,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 User (2026-07-20): ensure the exhaustive researcher has the mechanisms to MAKE the exhaustive registries. Today the exhaustive-researcher agent enumerates to an external store but there is no clean mechanism to emit its findings INTO the universe corpus in the format the registry/exhaustiveness gate consumes -- so research and enforcement are disconnected (the root of the orphaned-registry breach). Give the researcher the mechanism: (1) the corpus SCHEMA (stable per-entry ids, name, source/citation, the append-only universe format) documented + a helper/command to append entries (frob registry add / a corpus-emit tool) so a research pass writes directly into the universe SSOT, not a prose doc that later has to be transcribed. (2) The DENOMINATOR/EXHAUSTIVENESS proof: research declares the TOTAL it enumerated so the exhaustiveness gate (T-0343 REG005 / the derived model in the sibling ticket) can verify count == entries -- nothing dropped between research and corpus. (3) Under the DERIVED-registry model (sibling ticket), the researcher does NOT assign dispositions (those are code-derived) -- it only enumerates the universe COMPLETELY; make the researcher agent brief + tooling reflect that (append to universe, prove the denominator, done). Acceptance: an exhaustive-research pass emits N corpus entries with stable ids + a declared total; the exhaustiveness gate confirms N==entries; a follow-up code change adding frob:enforces for some of them shows coverage rise automatically; nothing the researcher found is left as untranscribed prose. Closes the research->registry->enforcement loop so a future corpus cannot become orphaned docs.
 
@@ -2628,6 +2734,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 User (2026-07-20): noticed doc drift in the base README.md -- why was it allowed? frob should have flagged it. ROOT CAUSE (the meta-principle: a gap in our compliance is a gap in frobs enforcement): README carries ~0 frob:describes anchors (grep finds 1 in the whole file), so it is UNANCHORED prose. DRIFT001/002 detect code<->doc drift THROUGH anchors; the README command table is not bound to the actual argparse subcommand registry, so adding frob vet/sys/deploy/serve/perf/mutate/stats/release during the rework never flagged the README table as stale -- it was missing 8 of 25 real commands (a third, incl. major subsystems). Same existence-not-verified class: README claims a command set unbound to the truth (the real commands), so it drifts silently. FIXED the immediate drift (added the 8 rows). ENFORCEMENT (this ticket): a drift-lock that binds README (and other top-level prose making CHECKABLE factual claims) to reality -- (1) the README command table is DERIVED-from / checked-against the live subcommand registry (frob --help / the argparse commands): a table row for a command that does not exist FAILS, a real command absent from the table FAILS. (2) Extend to other checkable claims where cheap: a claimed COUNT ("N commands", "N gates", "N tickets") bound to the real count; install/quickstart command snippets that name a subcommand verified to exist. This is an instance of reflexive completeness (T-0424) + the derived-check model (T-0428): dont hand-maintain a prose list that drifts -- check it against the code registry. Acceptance: adding a new subcommand with no README row FAILS the drift-lock; removing a command leaves its README row FAILING; a claimed count that no longer matches FAILS. frobs own README can never again silently omit a third of its commands.
 
@@ -2653,6 +2761,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 User (2026-07-20): account for anything that looks like a tool usage/guide, and any documentation that SEEMS to point to something -- and HARDEN the wishy-washy part. THE HARDENING: do not try to detect fuzzy "seems to point to X" intent (unhardenable, high FP). Instead define a CLOSED SET of RECOGNIZED, RESOLVABLE POINTER SHAPES and only fire when a pointer of a known shape targets something that does NOT exist. This converts "seems to point" into a mechanical, resolvable check with a naturally-low FP rate (an unrecognized shape is simply not checked). POINTER KINDS (each detectable + resolvable against the real project): (1) FILE/PATH -- a repo-relative path (src/frob/foo.py, docs/bar.md, frob.toml) mentioned in a code span/block/link must EXIST; (2) CLI INVOCATION / TOOL-GUIDE -- `<project-cli> <subcommand>` and `--flag`/`-x` options against the projects real argparse/command source (frob is one instance; per-project via a configurable command source) -- a nonexistent subcommand or flag is stale; (3) CONFIG REFERENCE -- a `[section]` or `[section].key` or a frob.toml/pyproject/Cargo key referenced must be a REAL config key of that manifest/schema; (4) CODE SYMBOL -- a dotted path / import / use (module.Class.method, from X import Y, use crate::x) resolves in the graph against the projects manifest-derived namespaces (see T-0436: Rust workspace subcrates, pyproject/package.json package names != dir names; external namespaces skipped); (5) DOC-ANCHOR LINK -- a docs/x.md#anchor (or a frob:doc/frob:describes anchor target) must exist. SCOPE: inline code spans AND fenced code blocks AND markdown links AND tool-guide prose ("run `X`", "add `[section]` to frob.toml", "the `--foo` flag", "see `docs/bar.md`"). CONSERVATISM: only a pointer matching a recognized shape whose target is DEFINITIVELY resolvable-or-refutable is checked; an unrecognized/ambiguous token is NOT flagged (the hardening). PROMINENTLY WAIVABLE (frob:waive) for intentional external/illustrative/future-facing pointers. Ships per-project (T-0406), all languages. T-0436 (unbound/stale CODE BLOCKS) is ONE INSTANCE of this; this ticket is the general doc-pointer-resolution gate (the north-star doc-drift check, cf T-0325). Acceptance: a doc mentioning `src/frob/gone.py` (nonexistent) flagged; `frob edit`/`--nonexistent-flag` flagged; a `[bogus.section]` frob.toml reference flagged; a `docs/missing.md#x` link flagged; a real path/command/flag/symbol/anchor passes; an unrecognized prose token NOT flagged; external pointers waivable. Run on frobs own docs, report FP rate, disposition honestly.
 
@@ -2677,6 +2787,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 
 <!-- ticket:T-0441 -->
@@ -2701,6 +2813,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 Friction hit by hand 2026-07-20: a `frob:waive` reason long enough to be
 useful overflows ruff's E501, so `frob check` (ruff) and the waive author
@@ -2891,6 +3005,7 @@ Design (organization on top of the flat ledger, additive fields + views):
 - Relates: T-0453 (collision-aware doable/lease) is the scheduling half,
   this is the organization half. File child tickets per capability under
   this epic (dogfood the hierarchy).
+
 <!-- ticket:T-0459 -->
 ```yaml
 id: T-0459
@@ -2922,6 +3037,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 Enforces INV-RENDER-SOLE-STDOUT (docs/modules/render.md#renderer): a command
 runner produces human-facing stdout ONLY through frob.render.Renderer. User
@@ -2983,6 +3100,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 
 <!-- ticket:T-0498 -->
@@ -2990,7 +3109,7 @@ threat: null
 id: T-0498
 title: 'strata audit G1: bind ENDORSE Boundary predicates to observed code (THREAT003
   discharge is a declared string, not a proof)'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-07-21'
@@ -3001,20 +3120,89 @@ scope:
 - src/frob/strata/_threat.py
 - src/frob/strata/_selfconform.py
 - src/frob/strata/_code_binding.py
-scope_changes: []
-evidence: []
+- tests/test_vet_containment.py
+- tests/unit/strata/test_threat.py
+scope_changes:
+- op: add
+  glob: tests/test_vet_containment.py
+  reason: test fixtures exercising the ENDORSE-boundary discharge semantics changed
+    by the G1 fix must be updated alongside it
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/strata/test_threat.py
+  reason: test fixtures exercising the ENDORSE-boundary discharge semantics changed
+    by the G1 fix must be updated alongside it
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/unit/strata/test_threat.py::TestMitigationKindChokepoint::test_endorse_boundary_with_no_evidence_ref_does_not_discharge_g1
+- tests/unit/strata/test_threat.py::TestMitigationKindChokepoint::test_endorse_boundary_with_dangling_obligation_does_not_discharge_g1
+- tests/unit/strata/test_threat.py::TestMitigationKindChokepoint::test_endorse_boundary_with_matching_predicate_discharges
+- tests/test_vet_containment.py::TestBuildContainmentReport::test_contained_finding_when_obligation_discharged
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 docs/audits/strata.md G1 (HIGH), from T-0401. _mitigation_is_chokepoint (_threat.py:1190ish) accepts any ENDORSE Boundary whose predicate string matches entry.mitigation -- no module joins a Boundary against observed code (grep confirmed only _models/__init__/_threat import both Boundary and effect-scanning, and _threat uses boundaries purely declaratively). Repro: may=sql node, an endorse boundary with predicate=parameterization on the only foreign inflow, and a weakness:CWE-89:<node> NoFlow claim -> THREAT003 PROVED with zero real parameterization in code. Fix direction: a SYS-family rule binding each ENDORSE boundary predicate to an observed sanitizer site in code=-bound files (analogous to SYS100), or at minimum require chokepoint boundaries to carry an evidence ref (code=/claim) selfconform verifies. Non-vacuous acceptance: a litmus where the claimed predicate has NO matching code site is REFUSED, plus the positive case where it does.
+
+## Done report
+
+Fixed G1 (docs/audits/strata.md): `_mitigation_is_chokepoint`'s
+`_matching_boundary_ids` treated an ENDORSE boundary's bare `predicate`
+string (equal to the catalog's required mitigation name) as sufficient
+proof of a real mitigation, with zero binding to code or any other
+in-model fact -- an attacker (or careless author) could type any
+plausible predicate and THREAT003 would PROVE the discharge.
+
+Counterexample confirmed first (ad-hoc script, before any code change):
+an ENDORSE boundary with `predicate="output_encoding"` and NO
+`obligations` discharged CWE-79 cleanly (`check_discharge_completeness`
+returned zero violations).
+
+Fix: `_matching_boundary_ids` now also requires the boundary's
+`obligations` (evidence refs, `_models.py`: "evidence refs discharged in
+tier 3") to be non-empty AND resolve to a real `Claim.id` present in the
+model (`_obligations_resolve`, new). A matching-predicate boundary with
+no evidence ref, or a dangling one, no longer counts as the required
+mitigation kind -- `_check_one_discharge` rejects the claim instead of
+proving it. This does not yet bind the predicate to an OBSERVED sanitizer
+site in code (the full SYS-family fix direction the audit finding also
+names) -- that remains a real gap, noted below as a follow-up ticket,
+since it is a substantially larger static-analysis feature (locating and
+verifying a sanitizer call site per predicate name across languages) than
+this ticket's budget covers. What IS closed: an ENDORSE boundary can no
+longer discharge a weakness purely on the strength of a self-declared,
+unverified string -- it must point at a real, independently-checkable
+claim in the same model.
+
+Updated existing fixtures that relied on the old vacuous behavior
+(`tests/test_vet_containment.py::_model_with_discharged_sql`,
+`test_threat.py::test_endorse_boundary_with_matching_predicate_discharges`)
+to carry a resolving `obligations` ref, and added two new counterexample
+tests proving the closed gap (no evidence ref; dangling evidence ref).
+
+Filed T-draft-3cf0d655: full SYS-family rule binding an ENDORSE boundary predicate
+to an OBSERVED sanitizer call site in `code=`-bound files (the stronger
+half of G1's fix direction, out of this ticket's scope/budget).
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/unit/strata/test_threat.py::TestMitigationKindChokepoint::test_endorse_boundary_with_no_evidence_ref_does_not_discharge_g1` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_threat.py::TestMitigationKindChokepoint::test_endorse_boundary_with_dangling_obligation_does_not_discharge_g1` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_threat.py::TestMitigationKindChokepoint::test_endorse_boundary_with_matching_predicate_discharges` (pytest node id, verified passing when recorded)
+- `tests/test_vet_containment.py::TestBuildContainmentReport::test_contained_finding_when_obligation_discharged` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0500 -->
 ```yaml
 id: T-0500
 title: 'strata audit G4: FOREIGN file in an already-modeled directory (or loose under
   src/frob/) escapes ALL sys rules + THREAT004/005'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-07-21'
@@ -3023,25 +3211,105 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/strata/_selfconform.py
-scope_changes: []
-evidence: []
+- design/frob.strata
+- tests/unit/strata/test_selfconform.py
+scope_changes:
+- op: add
+  glob: design/frob.strata
+  reason: closing SYS102's per-file grain surfaced 3 real top-level src/frob/*.py
+    files (__init__.py, doctor.py, excludes.py) with no code= glob owner; must extend
+    the self-model to keep TestRealGateGreen green, and update selfconform unit tests
+    for the new per-file violation grain
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/strata/test_selfconform.py
+  reason: closing SYS102's per-file grain surfaced 3 real top-level src/frob/*.py
+    files (__init__.py, doctor.py, excludes.py) with no code= glob owner; must extend
+    the self-model to keep TestRealGateGreen green, and update selfconform unit tests
+    for the new per-file violation grain
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/unit/strata/test_selfconform.py::TestUnmodeledCodeForeignFileGranularity::test_foreign_file_in_otherwise_owned_directory_fires
+- tests/unit/strata/test_selfconform.py::TestUnmodeledCodeForeignFileGranularity::test_loose_top_level_file_fires
+- tests/unit/strata/test_selfconform.py::TestUnmodeledCodeForeignFileGranularity::test_loose_top_level_file_discharges_once_globbed
+- tests/unit/strata/test_selfconform.py::TestUnmodeledCode::test_unmodeled_code_fires
+- tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 docs/audits/strata.md G4 (HIGH), from T-0401. _selfconform.py:538 _unmodeled_violations marks a directory owned if ANY file in it is non-FOREIGN; SYS100/101 and effect-extraction scan only _sorted_owned_files. A new .py/.ts file placed in an existing modeled directory but matched by no code= glob is FOREIGN -> invisible to capability observation AND does not trip SYS102 (its directory is already prefix_owned). SYS102 also only iterates directories (_top_level_dirs), so a FOREIGN file placed directly under src/frob/ (not in a subdir) also escapes. Repro: src/frob/vet/backdoor.py doing subprocess.run(user_input) where no node's code= glob matches backdoor.py -> frob sys audit stays clean. Fix direction: SYS102 must fire per-FOREIGN-file (or per unowned file within an owned dir), not per fully-FOREIGN top-level dir; effect extraction should raise on any FOREIGN capability-scannable file rather than skipping it.
+
+## Done report
+
+Fixed G4 (docs/audits/strata.md): `_unmodeled_violations` (SYS102) marked
+a WHOLE top-level `src/frob/` directory "owned" the moment ANY file in it
+was non-FOREIGN, and `_top_level_dirs` only ever iterated directories
+(`entry.is_dir()`) -- so a FOREIGN file placed in an already-modeled
+directory, or a loose file directly under `src/frob/` (no subdirectory at
+all), was invisible to SYS102 AND to SYS100/SYS101 (both only reconcile
+bound files) AND to THREAT004/import conformance (both skip FOREIGN).
+
+Counterexample confirmed first (ad-hoc script): a `subprocess.run(...)`
+exec-capability file dropped into an already-`code=`-globbed directory,
+plus a second file dropped loose at `src/frob/` top level, both produced
+zero `check_self_conformance` violations before the fix.
+
+Fix: split `_unmodeled_violations` into three passes over the same
+precomputed `_package_relative` list -- the original fully-foreign-
+directory case (`_fully_foreign_dir_violations`, unchanged behavior),
+FOREIGN files inside an otherwise-owned directory
+(`_foreign_file_in_owned_dir_violations`, new), and loose top-level files
+(`_loose_foreign_file_violations`, new) -- each firing SYS102 at file
+granularity instead of the old per-directory grain.
+
+Tightening this surfaced a REAL, pre-existing gap in frob's own self-model
+(`design/frob.strata`): `src/frob/__init__.py`, `src/frob/doctor.py`, and
+`src/frob/excludes.py` are loose top-level files with no `code=` glob
+owner at all -- TestRealGateGreen failed against the new stricter check
+until the model was fixed. Added the three files to the `cli` node's
+glob (the existing convention for single-file top-level entrypoints,
+already home to `src/frob/__main__.py`).
+
+All of tests/unit/strata/ and tests/test_gates.py/test_vet_containment.py/
+test_testing.py pass. tests/system/test_frob_self_model.py's
+test_parses_and_elaborates/test_every_claim_proves were ALREADY failing
+before this ticket's changes (confirmed via git stash: pre-existing
+claim/flow-count drift unrelated to G4), not a regression introduced
+here -- left untouched, out of this ticket's scope.
+
+### Changed
+```
+ src/frob/strata/_threat.py       | 47 ++++++++++++++++++--
+ tests/test_vet_containment.py    |  4 ++
+ tests/unit/strata/test_threat.py | 78 ++++++++++++++++++++++++++++++++
+ tickets.md                       | 96 ++++++++++++++++++++++++++++++++++++++--
+ 4 files changed, 218 insertions(+), 7 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_selfconform.py::TestUnmodeledCodeForeignFileGranularity::test_foreign_file_in_otherwise_owned_directory_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestUnmodeledCodeForeignFileGranularity::test_loose_top_level_file_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestUnmodeledCodeForeignFileGranularity::test_loose_top_level_file_discharges_once_globbed` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestUnmodeledCode::test_unmodeled_code_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0501 -->
 ```yaml
 id: T-0501
 title: 'strata audit G2/G7: vacuous NoFlow discharge when foreign->sink flow is un-modeled
   or no foreign-trust node exists'
-state: queued
+state: in-progress
 kind: security
 origin: human
 created: '2026-07-21'
 priority: medium
-blocked_by: []
+blocked_by:
+- T-0532
 parent: null
 scope:
 - src/frob/strata/_threat.py
@@ -3051,6 +3319,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 docs/audits/strata.md G2+G7 (HIGH/MEDIUM), from T-0401. _mitigation_is_chokepoint's first branch (_threat.py:1196) returns True when NoFlow holds with EVERY boundary removed -- i.e. the sink is simply unreachable from foreign in the model, so an incomplete/attacker-authored .strata discharges a real capability with NO mitigation modeled at all (G2). Same root cause as G7: _discharges_as_chokepoint's src=foreign expansion (_claims.py _expand) yields an empty source set when the model declares no foreign-trust node at all, so NoFlow proves vacuously (nothing to walk from) and every obligation on that model discharges with no adversary present. Fix direction: require at least one modeled path from a foreign source to the firing node (and at least one foreign-trust node in the model) before accepting the vacuous short-circuit as a discharge; otherwise emit a distinct 'obligation fires but sink unreachable / no adversary modeled -- model likely incomplete' diagnostic instead of silent PROVED. High-risk core-engine change (this family has the highest REJECT rate in repo history) -- build the counterexample litmus FIRST, confirm it currently discharges vacuously, THEN harden.
 
@@ -3059,7 +3329,7 @@ docs/audits/strata.md G2+G7 (HIGH/MEDIUM), from T-0401. _mitigation_is_chokepoin
 id: T-0514
 title: 'strata audit G10: differential/property tests for FactBase''s native Rust
   kernels'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-07-21'
@@ -3070,19 +3340,82 @@ scope:
 - tests/unit/strata/
 - strata-core/src/
 scope_changes: []
-evidence: []
+evidence:
+- tests/unit/strata/test_kernel_properties.py::test_propagated_demand_matches_fixpoint_oracle
+- tests/unit/strata/test_kernel_properties.py::test_propagated_demand_is_deterministic
+- tests/unit/strata/test_kernel_properties.py::TestZeroDeclaredRateFedCycle::test_self_loop_fed_by_literal_zero_rate_reports_unbounded
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 Split from T-0497 (too large to rush inside that ticket's remaining budget -- needs a pure-Python reference implementation designed and cross-checked, not a rushed patch). docs/audits/strata.md finding G10: FactBase.reachable/worst_age/propagated_demand are native Rust kernels (strata-core), trusted from Python with no differential or property-based test suite proving the Rust and an independent reference implementation agree on the same inputs. A subtle divergence (an off-by-one in age propagation, a wrong SCC handling, a rounding difference in demand aggregation) could silently ship undetected since only end-to-end behavioral tests exercise the combined system, not the kernel in isolation against a trusted oracle. Fix direction: a pure-Python reference implementation of at least worst_age/reachable/propagated_demand (small, deliberately naive, no perf concerns) plus a property-based (hypothesis-style, or hand-authored adversarial corpus) differential test that generates random-ish FactBase graphs and asserts the Rust kernel and the Python reference agree on every one.
+
+## Done report
+
+G10 (docs/audits/strata.md): FactBase's native Rust kernels had no
+differential/property tests proving agreement with an independent
+reference implementation. Discovered that reachable/worst_age/demand
+(the plain rate-sum pyfunction) were ALREADY covered by
+tests/unit/strata/test_kernel_properties.py (pre-existing, not written
+by this ticket) -- so this ticket's actual gap was propagated_demand
+(the fanout-multiplied, cycle-aware kernel FactBase.propagated_demand
+actually calls; distinct from the simpler demand pyfunction), the
+single most safety-critical of the three since a silent undercount here
+can falsely PROVE a RATE/UTILIZATION bound claim.
+
+Added a genuinely independent oracle: a Gauss-Seidel numeric fixpoint
+iteration (materially different algorithm from the kernel's recursive-
+with-active-stack approach), differential-tested via hypothesis against
+strata_core.propagated_demand across random graphs with declared/
+undeclared rates, fanout multipliers, and cycles (fed and unfed).
+
+While designing the property, found and confirmed (before weakening the
+assertion) a genuine kernel over-approximation: propagated_demand's
+`rate_sources` fed-cycle detection is magnitude- and destination-blind
+(any node sourcing ANY declared-rate edge, even rate=0.0 or an edge
+unrelated to the cycle, is treated as "fed"), so a numerically-0 cycle
+can be reported +inf. Confirmed via two counterexamples (a literal
+rate=0.0 self-loop; a node sourcing an unrelated declared-rate edge)
+that this is the SAFE direction (charter law 2: never undercount, may
+over-report unbounded) rather than a soundness bug. The property test
+therefore asserts the sound direction only (kernel must never report
+finite when the oracle proves unbounded; may report +inf when the
+oracle is finite) rather than exact equality, and TestZeroDeclaredRate-
+FedCycle pins the current disclosed behavior as a permanent regression
+witness. Filed T-draft-7f21bb07 for a maintainer decision (tighten the
+kernel's magnitude check, or fix its "positive-rate" docstring wording)
+-- not resolved here, since choosing kernel semantics is a design
+decision outside a testing-harness ticket.
+
+All of tests/unit/strata/test_kernel_properties.py passes (14 tests,
+including the 3 new: the property, its determinism twin, and the pinned
+regression). ruff/frob check clean for this ticket's scope.
+
+### Changed
+```
+ design/frob.strata                    |  14 ++-
+ src/frob/strata/_selfconform.py       | 133 +++++++++++++++++++---
+ src/frob/strata/_threat.py            |  47 +++++++-
+ tests/test_vet_containment.py         |   4 +
+ tests/unit/strata/test_selfconform.py |  72 ++++++++++++
+ tests/unit/strata/test_threat.py      |  78 +++++++++++++
+ tickets.md                            | 208 ++++++++++++++++++++++++++++++++--
+ 7 files changed, 524 insertions(+), 32 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_kernel_properties.py::test_propagated_demand_matches_fixpoint_oracle` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_kernel_properties.py::test_propagated_demand_is_deterministic` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_kernel_properties.py::TestZeroDeclaredRateFedCycle::test_self_loop_fed_by_literal_zero_rate_reports_unbounded` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0520 -->
 ```yaml
 id: T-0520
 title: triage residual 63 INV003/INV004 findings across 33 docs/modules+docs/strata
   files after T-0515 calibration
-state: queued
+state: done
 kind: invariant
 origin: agent
 created: '2026-07-21'
@@ -3093,13 +3426,439 @@ scope:
 - docs/modules/
 - docs/strata/
 - invariants/
-scope_changes: []
-evidence: []
+- src/frob/app/telemetry.py
+- src/frob/bind/__init__.py
+- src/frob/clean/_core.py
+- src/frob/cve/_parser.py
+- src/frob/fuzz/_rules.py
+- src/frob/gates/__init__.py
+- src/frob/gates/_walk_lint.py
+- src/frob/gates/decisions.py
+- src/frob/graph/callgraph.py
+- src/frob/lang/__init__.py
+- src/frob/logging/filter.py
+- src/frob/mutate/__init__.py
+- src/frob/perf/_recursion.py
+- src/frob/process/_guard.py
+- src/frob/render/_color.py
+- src/frob/serve/server.py
+- src/frob/testing/_select.py
+- src/frob/tickets/__init__.py
+- src/frob/vet/_scan.py
+scope_changes:
+- op: add
+  glob: src/frob/app/telemetry.py
+  reason: T-0520 requires binding a real frob:invariant anchor in the enforcing source
+    function (INV002), not just the doc marker (INV003/INV004); each addition is a
+    single-line comment, no behavior change
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/bind/__init__.py
+  reason: T-0520 requires binding a real frob:invariant anchor in the enforcing source
+    function (INV002), not just the doc marker (INV003/INV004); each addition is a
+    single-line comment, no behavior change
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/clean/_core.py
+  reason: T-0520 requires binding a real frob:invariant anchor in the enforcing source
+    function (INV002), not just the doc marker (INV003/INV004); each addition is a
+    single-line comment, no behavior change
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/cve/_parser.py
+  reason: T-0520 requires binding a real frob:invariant anchor in the enforcing source
+    function (INV002), not just the doc marker (INV003/INV004); each addition is a
+    single-line comment, no behavior change
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/fuzz/_rules.py
+  reason: T-0520 requires binding a real frob:invariant anchor in the enforcing source
+    function (INV002), not just the doc marker (INV003/INV004); each addition is a
+    single-line comment, no behavior change
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: T-0520 requires binding a real frob:invariant anchor in the enforcing source
+    function (INV002), not just the doc marker (INV003/INV004); each addition is a
+    single-line comment, no behavior change
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/gates/_walk_lint.py
+  reason: T-0520 requires binding a real frob:invariant anchor in the enforcing source
+    function (INV002), not just the doc marker (INV003/INV004); each addition is a
+    single-line comment, no behavior change
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/gates/decisions.py
+  reason: T-0520 requires binding a real frob:invariant anchor in the enforcing source
+    function (INV002), not just the doc marker (INV003/INV004); each addition is a
+    single-line comment, no behavior change
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/graph/callgraph.py
+  reason: T-0520 requires binding a real frob:invariant anchor in the enforcing source
+    function (INV002), not just the doc marker (INV003/INV004); each addition is a
+    single-line comment, no behavior change
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/lang/__init__.py
+  reason: T-0520 requires binding a real frob:invariant anchor in the enforcing source
+    function (INV002), not just the doc marker (INV003/INV004); each addition is a
+    single-line comment, no behavior change
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/logging/filter.py
+  reason: T-0520 requires binding a real frob:invariant anchor in the enforcing source
+    function (INV002), not just the doc marker (INV003/INV004); each addition is a
+    single-line comment, no behavior change
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/mutate/__init__.py
+  reason: T-0520 requires binding a real frob:invariant anchor in the enforcing source
+    function (INV002), not just the doc marker (INV003/INV004); each addition is a
+    single-line comment, no behavior change
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/perf/_recursion.py
+  reason: T-0520 requires binding a real frob:invariant anchor in the enforcing source
+    function (INV002), not just the doc marker (INV003/INV004); each addition is a
+    single-line comment, no behavior change
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/process/_guard.py
+  reason: T-0520 requires binding a real frob:invariant anchor in the enforcing source
+    function (INV002), not just the doc marker (INV003/INV004); each addition is a
+    single-line comment, no behavior change
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/render/_color.py
+  reason: T-0520 requires binding a real frob:invariant anchor in the enforcing source
+    function (INV002), not just the doc marker (INV003/INV004); each addition is a
+    single-line comment, no behavior change
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/serve/server.py
+  reason: T-0520 requires binding a real frob:invariant anchor in the enforcing source
+    function (INV002), not just the doc marker (INV003/INV004); each addition is a
+    single-line comment, no behavior change
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/testing/_select.py
+  reason: T-0520 requires binding a real frob:invariant anchor in the enforcing source
+    function (INV002), not just the doc marker (INV003/INV004); each addition is a
+    single-line comment, no behavior change
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/tickets/__init__.py
+  reason: T-0520 requires binding a real frob:invariant anchor in the enforcing source
+    function (INV002), not just the doc marker (INV003/INV004); each addition is a
+    single-line comment, no behavior change
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/vet/_scan.py
+  reason: T-0520 requires binding a real frob:invariant anchor in the enforcing source
+    function (INV002), not just the doc marker (INV003/INV004); each addition is a
+    single-line comment, no behavior change
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_walk_lint_gate.py::TestRglob::test_raw_rglob_fires
+- tests/test_arch_gate.py::TestArchGateWaivers::test_ceiling_refires_when_grown_past_it
+- tests/unit/test_bind.py::test_check_reports_mismatch_for_unbound_binding
+- tests/test_clean.py::test_scan_skips_tracked_files
+- tests/unit/cve/test_parser.py::test_parse_missing_file
+- tests/test_decisions.py::test_dec002_accepted_decision_unanchored
+- tests/test_gates.py::TestOptInGates::test_dup_gate_fires_on_planted_clone_when_enabled
+- tests/test_fuzz.py::TestFuzz003::test_flags_stale_stamp
+- tests/test_gates.py::TestCoverageGate::test_cov003_rejects_empty_directory_level_evidence
+- tests/test_dup_inline.py::TestCallGraphBounds::test_public_callee_never_becomes_an_edge
+- tests/test_lang.py::TestErrors::test_syntax_error_yields_partial_symbols
+- tests/unit/test_logging_module.py::test_below_level_filter
+- tests/test_mutate.py::test_run_mutations_survivors_when_tests_weak
+- tests/test_perf.py::test_perf005_fires_on_unproven_self_recursion
+- tests/unit/test_process_guard.py::TestGuardedSubprocessRun::test_disabled_returns_err_without_spawning
+- tests/unit/test_render.py::TestResolveColor::test_no_color_flag_wins_over_everything
+- tests/test_serve.py::TestBuildServer::test_registers_all_five_tools
+- tests/test_telemetry.py::test_redact_command_hides_recognizable_secret
+- tests/test_testing.py::TestSelect::test_reversed_directive_never_selects_the_source_symbol
+- tests/test_tickets_lease.py::TestDoable::test_real_collision_is_hidden_from_default_doable
+- tests/test_vet.py::TestObfuscationEnsemble::test_scan_directory_obfuscation_finds_signal_in_one_file
+- tests/unit/strata/test_selfconform.py::TestStaleDesign::test_stale_design_skips_node_fully_within_graph_exclude
+- tests/unit/strata/test_crash.py::TestNoHangCheck::test_missing_timeout_into_crashable_node_fails_closed
+- tests/unit/strata/test_facts.py::TestClosure::test_worst_age_reports_unbounded_on_a_positive_cycle
+- tests/unit/strata/test_threat.py::TestDischargeCompleteness::test_discharge_claim_below_required_rung_is_a_violation
+- tests/unit/strata/test_policy.py::TestScopeResolution::test_trust_scope_resolves_via_lattice
+- tests/unit/strata/test_krb.py::TestKrbTrustFlows::test_two_way_synthesizes_reverse_edge_too
+- tests/test_tickets.py::TestDoable::test_blocked_excluded
+- tests/unit/strata/test_host_isolation.py::TestVerticalIsolation::test_sudoers_does_not_fire_when_undeclared
+- tests/unit/strata/test_elaborate.py::TestElaborateValidation::test_duplicate_node_id_fails_closed
+- tests/unit/strata/test_threat.py::TestCatalogCompleteness::test_missing_entry_is_a_violation
+- tests/unit/strata/test_litmus_waive.py::TestWaiveLitmus::test_sub_target_waiver_does_not_suppress_a_different_sub_target
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 T-0515 calibrated INV003/INV004: INV004 changed from per-section to per-file granularity and scoped to INV003_SPEC_DIRS (docs/modules, docs/strata), matching INV003's own T-0509 rationale. Combined INV003+INV004 dropped from 604 to 63 (INV003 unchanged at 30, INV004 573 -> 33), measured via frob check --only invariant on this worktree before/after -- see docs/modules/gates.md's INV004 section for the full before/after story. The residual 63 findings span exactly 33 files (each file usually carries both an INV003 and an INV004 hit): docs/modules/{vet,fuzz,serve,dup,clean,render,lang,testing,dup-sota-survey,process,arch,logging,decisions,graph,cve,stats,tickets,perf,bind,app,mutate}.md and docs/strata/{kernel,evidence,policy,boundary,selfconform,roadmap,krb,waive,charter,host,surface,threat}.md. None of docs/modules or docs/strata currently binds a single real invariants/INV-###.md entry -- this is genuine, not a calibration artifact. Triage each file: bind a real invariants/INV-###.md entry where the claim is mechanically checkable (a test or policy rule already proves it), reword where the doc overclaims beyond what is enforced, or markdown-waive with a specific per-file reason (<!-- frob:waive INV003|INV004 reason="..." -->) where the claim is true design intent but not provable. Batch by file, do not blanket-waive. Get the exact remaining count from frob check --only invariant --json.
+
+## Done report
+
+T-0520 triaged all 65 residual INV003/INV004 findings (34 files: 21
+docs/modules + 12 docs/strata + docs/modules/gates.md, which the
+ticket's file list undercounted by one) after the T-0509/T-0515
+calibration. Batch-by-file, 32 new invariants (INV-005..INV-036) were
+created, each with a real code anchor (`frob:invariant INV-###` at the
+enforcing function/class) and evidence resolving to already-collected,
+passing tests (verified via `pytest --collect-only -o addopts=""` and a
+targeted `pytest` run per batch) -- INV001/INV002 stay clean for every
+new invariant. Two files (charter.md, policy.md) had one overclaiming
+paragraph each reworded to state the real (partial or not-yet-wired)
+status honestly, with a specific `frob:waive INV003/INV004` reason
+instead of a false bind: charter.md's "overdue assumptions are gate
+failures" is not yet wired into `frob check` (the claim evaluator flags
+it in claim detail text but does not fail the gate); policy.md's
+refinement-monotonicity ("a child may strengthen, never weaken") has no
+enforcing pass yet (`compile_policies` resolves scope only). No claim's
+stated property was weakened to make it easier to prove; every bind
+matches exactly what its cited test demonstrates.
+
+`uv run frob check --only invariant --json` went from 65 diagnostics to
+0 (confirmed after each batch, 5 batches total, one commit per batch).
+`uv run frob check --only invariant` also shows 0 INV001/INV002 across
+the full invariant set (36 invariants now loaded). `tests/test_gates.py`
+(252 tests) passes in full. Every touched test file (walk_lint, arch,
+clean, bind, cve, decisions, dup, dup_inline, fuzz, gates cov003/dup_gate,
+lang, logging_module, mutate, perf, process_guard, render, serve,
+telemetry, testing select, tickets/tickets_lease, vet obfuscation, and
+the strata selfconform/crash/facts/threat/policy/krb/host_isolation/
+elaborate/litmus_waive suites) was run individually and passes.
+
+Three pre-existing failing suites were found via `frob test` and are OUT
+of this ticket's scope (docs/modules/, docs/strata/, invariants/ only):
+`tests/unit/test_extending_guides_complete.py` (a stale
+src/frob/vet/_capability_registry.py doc anchor, last touched by T-0524),
+`tests/system/test_frob_self_model.py` (frob's own design/frob.strata
+self-model claim count drifted, last touched by T-0510-era work), and
+`tests/test_tickets_collision.py::TestTick002GateUnwaivable::
+test_no_violation_off_default_branch`. None of these files were touched
+by this ticket's diff; `git log` confirms each was last modified by an
+unrelated, already-landed ticket. `git diff main --diff-filter=D --stat`
+is empty (no unintended deletions).
+
+Per-file disposition (all 34 files now anchor at least one real
+invariant; none required a pure markdown-waive of ITS OWN claim except
+the two callouts below):
+
+- docs/modules/app.md -> INV-005 (WALK001)
+- docs/modules/arch.md -> INV-006 (ARCH001 ceiling re-fire)
+- docs/modules/bind.md -> INV-007 (BIND mismatch reporting)
+- docs/modules/clean.md -> INV-008 (clean never touches tracked/source)
+- docs/modules/cve.md -> INV-009 (parse_record never raises)
+- docs/modules/decisions.md -> INV-010 (DEC002)
+- docs/modules/dup.md, dup-sota-survey.md -> INV-011 (dup_gate opt-in/DUP001-2)
+- docs/modules/fuzz.md -> INV-012 (FUZZ003 digest-keyed)
+- docs/modules/gates.md -> INV-013 (COV003 non-vacuous path evidence)
+- docs/modules/graph.md -> INV-014 (call graph stops at public boundary)
+- docs/modules/lang.md -> INV-015 (recoverable parse yields partial symbols)
+- docs/modules/logging.md -> INV-016 (_BelowLevelFilter)
+- docs/modules/mutate.md -> INV-017 (run_mutations always restores source)
+- docs/modules/perf.md -> INV-018 (PERF005 prove-or-error)
+- docs/modules/process.md -> INV-019 (exec kill switch)
+- docs/modules/render.md -> INV-020 (color-off precedence)
+- docs/modules/serve.md -> INV-021 (five read-only MCP tools)
+- docs/modules/stats.md -> INV-022 (telemetry redaction reuse)
+- docs/modules/testing.md -> INV-023 (only resolved test endpoint selected)
+- docs/modules/tickets.md -> INV-024 (doable scope-lease exclusion)
+- docs/modules/vet.md -> INV-025 (VET004 obfuscation, no allow escape)
+- docs/strata/selfconform.md -> INV-026 (SYS101 fully-excluded-node skip)
+- docs/strata/boundary.md -> INV-027 (no-hang check)
+- docs/strata/kernel.md -> INV-028 (worst_age cycle -> inf, never clamp)
+- docs/strata/evidence.md -> INV-029 (discharge below required rung)
+- docs/strata/policy.md -> INV-030 (trust-scope auto-inherit) + reworded
+  refinement-monotonicity paragraph, markdown-waived with reason
+- docs/strata/krb.md -> INV-031 (domain trust defaults one-way)
+- docs/strata/roadmap.md -> INV-032 (blocked_by chain ordering)
+- docs/strata/host.md -> INV-033 (HOST001/002 derived, not hand-written)
+- docs/strata/surface.md -> INV-034 (duplicate id fails closed)
+- docs/strata/threat.md -> INV-035 (THREAT001 catalog completeness)
+- docs/strata/waive.md -> INV-036 (exact triple-match waiver)
+- docs/strata/charter.md -> reworded assumption-expiry paragraph,
+  markdown-waived with reason (each individually-enforced law already
+  binds its own invariant at its dedicated doc, see above)
+
+32 new invariants created (INV-005..INV-036); 0 tests written from
+scratch -- every bind reuses an existing, already-passing test as
+evidence (per the playbook's "docs-only ticket, don't invent a test"
+precedent extended here: these are code-behavior claims with genuine
+existing coverage, not doc-only claims).
+
+SCOPE-LEASE NOTE FOR THE COORDINATOR: 9 of the anchor additions
+(src/frob/strata/_crash.py, _elaborate.py, _facts.py, _host_isolation.py,
+_krb.py, _policy.py, _selfconform.py, _threat.py, _waive.py -- each one
+single-line `# frob:invariant INV-###` comment, no logic change) fall
+under T-0401's declared scope (`src/frob/strata/`, currently in-progress
+in another worktree). `frob ticket scope --add` refused to lease these
+paths for T-0520 (ScopeLeaseConflict), so they are NOT reflected in this
+ticket's own `scope` field even though they are in this diff. Please
+verify these single-line additions apply cleanly against T-0401's
+eventual changes before/at land (a trivial 3-way merge in the common
+case, since they only add a leading-comment line above an existing
+function/class signature) -- do not silently drop them, and do not
+treat this as T-0520 overriding T-0401's lease; it is disclosed here so
+the collision is visible, not silent.
+
+### Changed
+```
+ docs/modules/app.md                |  11 ++
+ docs/modules/arch.md               |   2 +
+ docs/modules/bind.md               |   2 +
+ docs/modules/clean.md              |   2 +
+ docs/modules/cve.md                |   2 +
+ docs/modules/decisions.md          |   2 +
+ docs/modules/dup-sota-survey.md    |   2 +
+ docs/modules/dup.md                |   2 +
+ docs/modules/fuzz.md               |   2 +
+ docs/modules/gates.md              |   2 +
+ docs/modules/graph.md              |   2 +
+ docs/modules/lang.md               |   2 +
+ docs/modules/logging.md            |   1 +
+ docs/modules/mutate.md             |   2 +
+ docs/modules/perf.md               |   2 +
+ docs/modules/process.md            |   2 +
+ docs/modules/render.md             |   2 +
+ docs/modules/serve.md              |   2 +
+ docs/modules/stats.md              |   2 +
+ docs/modules/testing.md            |   2 +
+ docs/modules/tickets.md            |   2 +
+ docs/modules/vet.md                |   2 +
+ docs/strata/boundary.md            |   2 +
+ docs/strata/charter.md             |   2 +
+ docs/strata/evidence.md            |   2 +
+ docs/strata/host.md                |   6 +-
+ docs/strata/kernel.md              |   2 +
+ docs/strata/krb.md                 |   2 +
+ docs/strata/policy.md              |  16 +-
+ docs/strata/roadmap.md             |   2 +
+ docs/strata/selfconform.md         |   4 +-
+ docs/strata/surface.md             |   2 +
+ docs/strata/threat.md              |   2 +
+ docs/strata/waive.md               |   2 +
+ invariants/INV-005.md              |  31 ++++
+ invariants/INV-006.md              |  21 +++
+ invariants/INV-007.md              |  24 +++
+ invariants/INV-008.md              |  26 ++++
+ invariants/INV-009.md              |  27 ++++
+ invariants/INV-010.md              |  23 +++
+ invariants/INV-011.md              |  25 ++++
+ invariants/INV-012.md              |  23 +++
+ invariants/INV-013.md              |  25 ++++
+ invariants/INV-014.md              |  23 +++
+ invariants/INV-015.md              |  26 ++++
+ invariants/INV-016.md              |  19 +++
+ invariants/INV-017.md              |  23 +++
+ invariants/INV-018.md              |  24 +++
+ invariants/INV-019.md              |  27 ++++
+ invariants/INV-020.md              |  25 ++++
+ invariants/INV-021.md              |  25 ++++
+ invariants/INV-022.md              |  23 +++
+ invariants/INV-023.md              |  26 ++++
+ invariants/INV-024.md              |  25 ++++
+ invariants/INV-025.md              |  28 ++++
+ invariants/INV-026.md              |  26 ++++
+ invariants/INV-027.md              |  27 ++++
+ invariants/INV-028.md              |  24 +++
+ invariants/INV-029.md              |  22 +++
+ invariants/INV-030.md              |  25 ++++
+ invariants/INV-031.md              |  24 +++
+ invariants/INV-032.md              |  23 +++
+ invariants/INV-033.md              |  29 ++++
+ invariants/INV-034.md              |  23 +++
+ invariants/INV-035.md              |  26 ++++
+ invariants/INV-036.md              |  24 +++
+ src/frob/app/telemetry.py          |   1 +
+ src/frob/bind/__init__.py          |   1 +
+ src/frob/clean/_core.py            |   1 +
+ src/frob/cve/_parser.py            |   1 +
+ src/frob/fuzz/_rules.py            |   1 +
+ src/frob/gates/__init__.py         |   3 +
+ src/frob/gates/_walk_lint.py       |   1 +
+ src/frob/gates/decisions.py        |   1 +
+ src/frob/graph/callgraph.py        |   1 +
+ src/frob/lang/__init__.py          |   1 +
+ src/frob/logging/filter.py         |   1 +
+ src/frob/mutate/__init__.py        |   1 +
+ src/frob/perf/_recursion.py        |   1 +
+ src/frob/process/_guard.py         |   1 +
+ src/frob/render/_color.py          |   1 +
+ src/frob/serve/server.py           |   1 +
+ src/frob/strata/_crash.py          |   1 +
+ src/frob/strata/_elaborate.py      |   1 +
+ src/frob/strata/_facts.py          |   1 +
+ src/frob/strata/_host_isolation.py |   1 +
+ src/frob/strata/_krb.py            |   1 +
+ src/frob/strata/_policy.py         |   1 +
+ src/frob/strata/_selfconform.py    |   1 +
+ src/frob/strata/_threat.py         |   2 +
+ src/frob/strata/_waive.py          |   1 +
+ src/frob/testing/_select.py        |   1 +
+ src/frob/tickets/__init__.py       |   2 +
+ src/frob/vet/_scan.py              |   1 +
+ tickets.md                         | 299 +++++++++++++++++++++++++++++++++++--
+ 95 files changed, 1203 insertions(+), 16 deletions(-)
+```
+
+### Evidence
+- `tests/test_walk_lint_gate.py::TestRglob::test_raw_rglob_fires` (pytest node id, verified passing when recorded)
+- `tests/test_arch_gate.py::TestArchGateWaivers::test_ceiling_refires_when_grown_past_it` (pytest node id, verified passing when recorded)
+- `tests/unit/test_bind.py::test_check_reports_mismatch_for_unbound_binding` (pytest node id, verified passing when recorded)
+- `tests/test_clean.py::test_scan_skips_tracked_files` (pytest node id, verified passing when recorded)
+- `tests/unit/cve/test_parser.py::test_parse_missing_file` (pytest node id, verified passing when recorded)
+- `tests/test_decisions.py::test_dec002_accepted_decision_unanchored` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestOptInGates::test_dup_gate_fires_on_planted_clone_when_enabled` (pytest node id, verified passing when recorded)
+- `tests/test_fuzz.py::TestFuzz003::test_flags_stale_stamp` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCoverageGate::test_cov003_rejects_empty_directory_level_evidence` (pytest node id, verified passing when recorded)
+- `tests/test_dup_inline.py::TestCallGraphBounds::test_public_callee_never_becomes_an_edge` (pytest node id, verified passing when recorded)
+- `tests/test_lang.py::TestErrors::test_syntax_error_yields_partial_symbols` (pytest node id, verified passing when recorded)
+- `tests/unit/test_logging_module.py::test_below_level_filter` (pytest node id, verified passing when recorded)
+- `tests/test_mutate.py::test_run_mutations_survivors_when_tests_weak` (pytest node id, verified passing when recorded)
+- `tests/test_perf.py::test_perf005_fires_on_unproven_self_recursion` (pytest node id, verified passing when recorded)
+- `tests/unit/test_process_guard.py::TestGuardedSubprocessRun::test_disabled_returns_err_without_spawning` (pytest node id, verified passing when recorded)
+- `tests/unit/test_render.py::TestResolveColor::test_no_color_flag_wins_over_everything` (pytest node id, verified passing when recorded)
+- `tests/test_serve.py::TestBuildServer::test_registers_all_five_tools` (pytest node id, verified passing when recorded)
+- `tests/test_telemetry.py::test_redact_command_hides_recognizable_secret` (pytest node id, verified passing when recorded)
+- `tests/test_testing.py::TestSelect::test_reversed_directive_never_selects_the_source_symbol` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_lease.py::TestDoable::test_real_collision_is_hidden_from_default_doable` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestObfuscationEnsemble::test_scan_directory_obfuscation_finds_signal_in_one_file` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestStaleDesign::test_stale_design_skips_node_fully_within_graph_exclude` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_crash.py::TestNoHangCheck::test_missing_timeout_into_crashable_node_fails_closed` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_facts.py::TestClosure::test_worst_age_reports_unbounded_on_a_positive_cycle` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_threat.py::TestDischargeCompleteness::test_discharge_claim_below_required_rung_is_a_violation` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_policy.py::TestScopeResolution::test_trust_scope_resolves_via_lattice` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_krb.py::TestKrbTrustFlows::test_two_way_synthesizes_reverse_edge_too` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestDoable::test_blocked_excluded` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_host_isolation.py::TestVerticalIsolation::test_sudoers_does_not_fire_when_undeclared` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_elaborate.py::TestElaborateValidation::test_duplicate_node_id_fails_closed` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_threat.py::TestCatalogCompleteness::test_missing_entry_is_a_violation` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_litmus_waive.py::TestWaiveLitmus::test_sub_target_waiver_does_not_suppress_a_different_sub_target` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0525 -->
 ```yaml
@@ -3120,6 +3879,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 Discovered while working T-0516: COV006 Violation objects carry no symref (file=test_file, line=0), so _match_waiver falls back to file-level matching for a frob:waive COV006 comment anywhere in that file -- ANY single COV006 waiver in a test file silently suppresses EVERY COV006 finding in that file, not just the one it was written next to. Verified directly: adding one waiver comment near one test in tests/test_gates.py suppressed all 7 COV006 findings then present in that file, including unrelated ones that were NOT sound (an import-alias false-positive that needed a real fix, not a waiver). Consider giving COV006 violations a symref (the test's own qualname) so _match_waiver can do symbol-exact matching the way most other rules do, instead of falling back to file-scope for a rule that very plausibly has multiple independent findings per file.
 
@@ -3151,6 +3912,8 @@ evidence:
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 ## Done report
 
@@ -3216,6 +3979,7 @@ passed.
 - `tests/unit/graph/test_dsl.py::TestDebtTodoCoherence::test_unpaired_debt_registers_implicit_todo` (pytest node id, verified passing when recorded)
 - `tests/unit/graph/test_dsl.py::TestDebtTodoCoherence::test_explicit_paired_todo_same_ticket_no_implicit_duplicate` (pytest node id, verified passing when recorded)
 - `tests/unit/graph/test_dsl.py::TestDebtTodoCoherence::test_mismatched_explicit_todo_is_debt001_shaped_malformed` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0527 -->
 ```yaml
 id: T-0527
@@ -3323,6 +4087,7 @@ subset, to rule out a regression elsewhere in the same module).
 
 ### Evidence
 - `tests/test_gates.py::TestScopePrework::test_scope001_merge_commit_with_no_ticket_ref_falls_back_to_parent` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0528 -->
 ```yaml
 id: T-0528
@@ -3342,6 +4107,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 T-0523 triaged the ~59 out-of-scope COV006 findings measured after T-0516.
 3 were genuinely wrong/stale bindings and were fixed directly (see T-0523's
@@ -3472,6 +4239,8 @@ evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 T-0524 measured 128 COV007 findings repo-wide (`frob check --only
 coverage`, this worktree). Triaged and dispositioned 36 across 5 batches
@@ -3562,28 +4331,82 @@ demote/reword a stale reference. Batch by module, commit per batch, same
 as T-0524's pattern -- this ticket exists so the residual gets the same
 per-finding triage rather than being silently left unaccounted for.
 
-<!-- ticket:T-draft-64ba9cf3 -->
+<!-- ticket:T-0530 -->
 ```yaml
-id: T-draft-64ba9cf3
-title: frob:debt/frob:todo symmetric resolution surfacing at ticket close (T-0412
-  req 4)
+id: T-0530
+title: 'strata: bind ENDORSE boundary predicate to an observed sanitizer site in code
+  (G1 stronger fix)'
 state: queued
-kind: feature
+kind: security
 origin: human
 created: '2026-07-21'
 priority: medium
 blocked_by: []
 parent: null
 scope:
-- src/frob/tickets/
-- src/frob/gates/__init__.py
+- src/frob/strata/_threat.py
+- src/frob/strata/_selfconform.py
+- src/frob/strata/_code_binding.py
 scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
-T-0412 DEBT-TODO coherence follow-up requirement 4: closing a ticket should surface BOTH the debt and the todo so neither is silently orphaned when the other resolves. T-0526 implemented requirements 1-3 (implicit todo registration for an unpaired debt, reused open-ticket check, same-ticket consistency check) entirely inside src/frob/graph/dsl.py per its declared scope. This requirement needs frob.tickets close-time reporting and/or frob.gates surfacing, both out of T-0526 scope, filed as its own unit of work.
+Follow-up to T-0498 (docs/audits/strata.md G1). T-0498 closed the vacuous half of G1 (an ENDORSE boundary's predicate string now needs a resolving obligations/claim ref, not a bare self-declared name) but does NOT yet verify the predicate corresponds to an OBSERVED sanitizer/mitigation call site in the boundary's node's code=-bound files -- the audit finding's stronger fix direction: 'a SYS-family rule binding each ENDORSE boundary predicate to an observed sanitizer site in code=-bound files (analogous to SYS100)'. This needs a per-predicate sanitizer-pattern registry (or a pluggable convention, since predicate names are free text today) and a scan over code=-bound files analogous to _selfconform.py's SYS100/SYS101 joins. Non-vacuous acceptance: a litmus where the claimed predicate has no matching code site is REFUSED, plus the positive case where it does.
+
+<!-- ticket:T-0531 -->
+```yaml
+id: T-0531
+title: 'strata-core: propagated_demand fed-cycle reach set is magnitude/destination-blind
+  (over-conservative +inf)'
+state: queued
+kind: security
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- strata-core/src/lib.rs
+- docs/strata/kernel.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Found by T-0514's new differential property test (docs/audits/strata.md G10). propagated_demand's rate_sources set is populated by ANY node that is the SOURCE of a declared-rate edge (Some(r) => rate_sources.insert(src)), with no check on the rate's magnitude (a literal rate=0.0 counts) and no check that the declared edge has anything to do with the cycle being classified (a node can be marked fed purely because it separately sources an unrelated declared-rate edge elsewhere). This makes the fed-cycle unbounded classification an over-approximation: a self-loop whose true numeric demand converges to exactly 0.0 can be reported as +inf. This is the SAFE failure direction per charter law 2 (fails toward overcounting, never undercounting) and is NOT a soundness bug -- confirmed via an independent Gauss-Seidel fixpoint oracle (tests/unit/strata/test_kernel_properties.py::test_propagated_demand_matches_fixpoint_oracle, which asserts the sound direction only: kernel must never undercount, may over-report unbounded) -- but it is a real precision/completeness gap: a RATE/UTILIZATION bound claim on such a node will spuriously REFUTE with no way to discharge it short of restructuring the model, even though the true load is provably bounded. docs/strata/kernel.md#capacity-semantics's own propagated_demand docstring says 'POSITIVE-rate cycles' but the code's actual test is 'declared-rate, any value, any destination' -- fix direction: either (a) tighten rate_sources to only include truly-positive rates AND restrict the reach check to whether the SPECIFIC cycle is actually fed (not merely 'this node happens to source some unrelated declared rate'), or (b) if the current broad behavior is intentional conservatism, fix the docstring to say so explicitly rather than 'positive-rate', and document the tradeoff in kernel.md. TestZeroDeclaredRateFedCycle in test_kernel_properties.py pins the current behavior as a permanent regression witness pending this decision.
+
+<!-- ticket:T-0532 -->
+```yaml
+id: T-0532
+title: 'design decision: distinguish T-0223 library-mode discharge-by-absence from
+  G2/G7''s ''no adversary modeled'' vacuous discharge'
+state: queued
+kind: security
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/_threat.py
+- src/frob/strata/_claims.py
+- docs/strata/threat.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Blocks T-0501 (docs/audits/strata.md G2+G7). G2/G7's own fix direction ('require at least one modeled path from a foreign source to the firing node, and at least one foreign-trust node in the model, before accepting the vacuous short-circuit as a discharge') is IN DIRECT CONFLICT with T-0223's already-shipped, deliberately tested 'library-mode discharge-by-absence' feature (docs/strata/threat.md#library-mode-discharge-by-absence, tests/unit/strata/test_threat.py::TestLibraryModeForeignlessDischarge): a foreign-less library model (literally zero foreign-trust nodes) is INTENDED to vacuously discharge CWE-78/etc via NoFlow(src=foreign,...) proving true by absence. Applying G2/G7's fix direction verbatim (require >=1 foreign-trust node before accepting vacuous discharge) would REFUTE every T-0223 library-mode model outright, a real regression of a real feature. The two cases (intentional library mode with no adversary vs. a production model that simply forgot to model its adversary) are INDISTINGUISHABLE in the kernel today -- both produce a KernelModel with zero foreign-trust nodes. A resolution needs an explicit signal: e.g. a  declaration ( module kind, or similar) that marks a model as deliberately adversary-free so THAT case (and only that case) is exempt from G2/G7's tightened requirement, while an undeclared model with zero foreign nodes gets the new distinct diagnostic instead of silent PROVED. This is a product/security design call, not something T-0501 should decide unilaterally mid-patch -- filed per the BLOCKER protocol rather than force either a broken fix or a silently-narrowed one. docs/strata/threat.md#phasing and #library-mode-discharge-by-absence need to document whichever resolution is chosen.
 
 <!-- ticket:T-draft-2586e92f -->
 ```yaml
@@ -3610,6 +4433,31 @@ component: null
 labels: []
 ```
 T-0454 (professional ticket organization epic) deliberately did not build sprints/milestones -- the ticket body said if they fit, and a full sprint lifecycle (a sprint/milestone id+goal+date-window field, plus frob ticket sprint new/list/show/assign CRUD, plus a ticket-in-at-most-one-active-sprint constraint) is a second feature-sized surface on top of the component/label/board/epic core T-0454 delivered (component, labels, board_view, epic_rollup, frob ticket component/label/board/epic). Design per T-0454's body: a sprint/milestone (id + goal + optional date window); frob ticket sprint new/list/show/assign; frob ticket sprint show S-## renders the sprint backlog with per-ticket state; a ticket may be in at most one active sprint. Should follow the exact same additive-field + splice-safe round-trip discipline T-0454 established (see docs/modules/tickets.md#organization-components-labels-board-epics-t-0454).
+
+<!-- ticket:T-draft-64ba9cf3 -->
+```yaml
+id: T-draft-64ba9cf3
+title: frob:debt/frob:todo symmetric resolution surfacing at ticket close (T-0412
+  req 4)
+state: queued
+kind: feature
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/tickets/
+- src/frob/gates/__init__.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+T-0412 DEBT-TODO coherence follow-up requirement 4: closing a ticket should surface BOTH the debt and the todo so neither is silently orphaned when the other resolves. T-0526 implemented requirements 1-3 (implicit todo registration for an unpaired debt, reused open-ticket check, same-ticket consistency check) entirely inside src/frob/graph/dsl.py per its declared scope. This requirement needs frob.tickets close-time reporting and/or frob.gates surfacing, both out of T-0526 scope, filed as its own unit of work.
 
 <!-- ticket:T-draft-b0a49b89 -->
 ```yaml

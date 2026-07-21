@@ -297,6 +297,8 @@ off `doable` can never collide on the same files. This replaces hand-
 maintained collision blocklists a coordinator would otherwise have to build
 and update on every dispatch.
 
+<!-- frob:invariant INV-024 -->
+
 - **Overlap** is a sound glob-set intersection (`scope_overlap_globs`,
   `_globs_intersect`): two globs collide if some concrete path could match
   both, via the standard two-pattern wildcard DP (`'*'` any-length,

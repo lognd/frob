@@ -48,6 +48,7 @@ FrobFormatter.format(record: logging.LogRecord) -> str
 class BelowLevelFilter(logging.Filter)
     # A logging.Filter that only lets records strictly below a level
     # through, used to keep stdout free of WARNING+ noise.
+    # <!-- frob:invariant INV-016 -->
 
 BelowLevelFilter.filter(record: logging.LogRecord) -> bool
     # True if `record.levelno` is below the configured threshold.

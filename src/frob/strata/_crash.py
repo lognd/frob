@@ -100,6 +100,7 @@ def _validate_recovery_sources(
     return Ok(None)
 
 
+# frob:invariant INV-027
 def _validate_no_hang_flow(flow: Flow, node: Node) -> Result[None, StrataError]:
     """No-hang check body for one flow into one crashable `node`."""
     assert node.crash is not None

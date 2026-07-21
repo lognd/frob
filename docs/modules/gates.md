@@ -100,6 +100,8 @@ evidence for that shape of change is what produced a real 25-error
 main-red incident (2026-07-19) when two agents both recorded file-level
 ids COV003 could not, at the time, resolve at all.
 
+<!-- frob:invariant INV-013 -->
+
 Severity: `error` (exit 1) or `warn`; per-rule default overridable via the
 `[gates.severity]` table in `frob.toml` (`COV001 = "warn"`), applied as a
 single post-processing step in `run_gates` -- the legacy-adoption dial. A

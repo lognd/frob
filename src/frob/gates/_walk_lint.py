@@ -268,6 +268,7 @@ def _tracked_python_files(root: Path) -> tuple[str, ...]:
 # frob:tests tests/test_walk_lint_gate.py::TestRglob.test_raw_rglob_fires
 # frob:tests tests/test_walk_lint_gate.py::TestHelper.test_helper_call_is_silent
 # frob:tests tests/test_walk_lint_gate.py::TestSelfMatchExclusion.test_own_files_not_scanned  # noqa: E501
+# frob:invariant INV-005
 def walk_lint_gate(root: Path) -> tuple[Violation, ...]:
     """WALK001 (docs/modules/gates.md#walk001-unpruned-traversal-t-0471):
     every git-tracked `src/frob/**/*.py` file scanned for a raw recursive

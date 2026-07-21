@@ -106,6 +106,8 @@ everything on this node," and (the point of this section) never "waive
 every instance of this rule on this node." `sub_target=None` (bare rule)
 only ever matches a finding whose own sub-target is also `None`.
 
+<!-- frob:invariant INV-036 -->
+
 ## Reported output: WAIVED, never silent
 
 `frob sys audit` prints a `WAIVED` line for every suppressed finding, WITH

@@ -129,6 +129,7 @@ def _anchored_decisions(snapshot: GraphSnapshot) -> set[str]:
     return {e.target for e in snapshot.edges if e.kind == EdgeKind.DECISION}
 
 
+# frob:invariant INV-010
 def _dec002(decisions: tuple[Decision, ...], anchored: set[str]) -> list:
     """DEC002: an accepted decision has no `frob:decision` anchor in code."""
     from frob.gates._models import Severity, Violation

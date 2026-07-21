@@ -70,6 +70,8 @@ for arch complexity overrides.
   or structural descent (`.next`/`.left`/`.right`/`.parent`, a one-sided
   slice) -- and (b) contains a guard (`if`) that can reach a base case.
   Anything short of that is PERF005: unproven termination, ERROR.
+
+  <!-- frob:invariant INV-018 -->
 - **Escape hatch**: `frob:invariant terminates reason="..." measure="..."`
   at the recursive symbol's site is the reasoned, auditable override --
   both `reason` and `measure` must be non-empty to count as proof. This is

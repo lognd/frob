@@ -111,6 +111,7 @@ def _ungenerated_param_violations(
 
 # frob:doc docs/modules/fuzz.md#public-api
 # frob:waive TEST005 reason="FUZZ003 87.5% branch cover, debt T-0160"
+# frob:invariant INV-012
 def FUZZ003(  # noqa: N802 - rule-id naming convention shared with frob.gates.invariants
     snapshot: GraphSnapshot,
     obligations: tuple[FuzzObligation, ...],

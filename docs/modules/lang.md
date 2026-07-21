@@ -27,6 +27,8 @@ tree-sitter could parse around the error (`ParseFailed` is reserved for a
 totally unusable tree -- in practice, only when the root node has an error
 and no children).
 
+<!-- frob:invariant INV-015 -->
+
 ## The token contract
 
 `sig_tokens` and `body_tokens` are the leaf-node text of a symbol's

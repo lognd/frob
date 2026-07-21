@@ -31,6 +31,8 @@ entry missing `version`/`status` -- which raises a pydantic
 `ValidationError` that `parse_record` turns into `Err(CveError
 .MalformedRecord)`.
 
+<!-- frob:invariant INV-009 -->
+
 `parse_record` never raises for a bad input file; every failure mode
 (missing path, unreadable, not JSON, structurally invalid) is a distinct
 `CveError` value. `iter_mirror` never silently drops a broken record: a

@@ -29,6 +29,8 @@ Explicit off (`--no-color` / `--color=never` / `NO_COLOR`) always beats
 `CLICOLOR_FORCE`. The resolution runs once per `Renderer`, never per call
 site, so a command's output is internally consistent.
 
+<!-- frob:invariant INV-020 -->
+
 ## Semantic palette
 
 One colorblind-safe palette, shared by every command, with five semantic
