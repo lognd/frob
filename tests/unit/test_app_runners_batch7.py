@@ -605,6 +605,40 @@ class TestSpawnBackgroundSweep:
         assert "background sweep spawn failed" in caplog.text
         assert "swept T-0001" in caplog.text
 
+    def test_exec_kill_switch_forces_synchronous_sweep(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
+    ) -> None:
+        """FROB_DISABLE_EXEC must genuinely stop the spawn (the cli node's
+        `may "exec"` kill-switch claim in design/frob.strata, T-0474): no
+        Popen at all, sweep runs synchronously in-process instead."""
+        # frob:tests tests/unit/test_app_runners_batch7.py::TestSpawnBackgroundSweep.test_exec_kill_switch_forces_synchronous_sweep
+        import subprocess
+
+        from frob.app import ticket_runner as ticket_runner_mod
+
+        cfg = AppConfig(
+            ticket_command="new",
+            ticket_path=tmp_path,
+            ticket_title="kill switch me",
+            ticket_kind="bug",
+        )
+        ticket_run(cfg)
+        cfg = AppConfig(ticket_command="plan", ticket_path=tmp_path, ticket_id="T-0001")
+        ticket_run(cfg)
+        from frob.tickets import TicketState, transition
+
+        assert transition(tmp_path, "T-0001", TicketState.IN_PROGRESS).is_ok
+
+        def _fail(*args, **kwargs):  # noqa: ANN001, ANN002, ANN003
+            raise AssertionError("Popen must not be called under the kill switch")
+
+        monkeypatch.setattr(subprocess, "Popen", _fail)
+        monkeypatch.setenv("FROB_DISABLE_EXEC", "1")
+        with caplog.at_level("INFO"):
+            ticket_runner_mod._spawn_background_sweep(tmp_path, "T-0001")
+        assert "exec kill switch" in caplog.text
+        assert "swept T-0001" in caplog.text
+
 
 class TestTicketRequeue:
     def test_missing_id_exits_1(self, tmp_path: Path) -> None:

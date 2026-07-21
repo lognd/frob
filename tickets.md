@@ -8076,9 +8076,9 @@ was left behind there. Did not touch src/frob/gates/** per instruction.
 ### Evidence
 (no evidence recorded)
 
-<!-- ticket:T-draft-94774bc5 -->
+<!-- ticket:T-0503 -->
 ```yaml
-id: T-draft-94774bc5
+id: T-0503
 title: 'strata: compliance out_of_scope catalog never threaded into _audit.py evaluate_compliance
   call'
 state: queued

@@ -83,6 +83,15 @@ node cli : trusted {
     // (os.environ.get) to opt out of/into the non-gated agentic telemetry
     // stream and its `--agentic` report trigger.
     may "env";
+    // T-0474: `frob ticket start` detaches its pre-work sweep as a
+    // background `frob ticket sweep` child (subprocess.Popen of
+    // sys.executable in app/ticket_runner.py::_spawn_background_sweep).
+    // Same T-0200 discipline as the checker node: the spawn honors the
+    // real, live FROB_DISABLE_EXEC kill switch (frob.process._guard.
+    // exec_enabled) by degrading to the synchronous in-process sweep, so
+    // this is a switchable capability, not an aspirational claim.
+    may "exec";
+    attr flag=frob_check_exec_kill_switch;
 }
 
 // graph+lang: src/frob/graph/**, src/frob/lang/**, src/frob/arch/**. Owns
@@ -129,6 +138,13 @@ node gates : trusted {
     may "env";
     may "fs";
     may "fs-read";
+    // T-0443: the DOC004 console/bash command-drift tier resolves the
+    // `[[docblocks.commands]]` parser source by dotted path via
+    // importlib.import_module (gates/_docblocks.py) -- a dynamic-import
+    // (eval-family) capability the scanner rightly observes. The import
+    // target comes from tracked frob.toml, not user input, and failures
+    // fail open to the unbound warning path.
+    may "eval";
 }
 
 // check orchestration: src/frob/check/**. Runs the gate suite plus the

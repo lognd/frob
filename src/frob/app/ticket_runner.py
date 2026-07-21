@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING
 from frob.app._style import style_state, style_ticket_id
 from frob.app.config import AppConfig
 from frob.logging import get_logger
+from frob.process._guard import EXEC_KILL_SWITCH_ENV, exec_enabled
 
 if TYPE_CHECKING:
     from frob.tickets import TicketQueue
@@ -785,7 +786,22 @@ def _spawn_background_sweep(root: Path, ticket_id: str) -> None:
     Best-effort: if spawning itself fails (e.g. `sys.executable` refused by
     a locked-down sandbox), this logs a warning and falls back to running
     the sweep synchronously right here -- `start` must never silently skip
-    recording a sweep at all, only ever trade "instant" for "eventually"."""
+    recording a sweep at all, only ever trade "instant" for "eventually".
+
+    Honors the repo-wide exec kill switch (`FROB_DISABLE_EXEC`, T-0200):
+    when set, no process is spawned at all and the sweep runs
+    synchronously in-process, keeping `may "exec"` on the `cli` node a
+    genuinely switchable capability (design/frob.strata, T-0474)."""
+    if not exec_enabled():
+        _log.info(
+            "ticket start: %s exec kill switch (%s) set -- running the "
+            "pre-work sweep synchronously in-process",
+            ticket_id,
+            EXEC_KILL_SWITCH_ENV,
+        )
+        ticket = _load_ticket_or_exit(root, ticket_id, verb="start")
+        _run_sweep(root, ticket)
+        return
     try:
         subprocess.Popen(  # noqa: S603
             [
