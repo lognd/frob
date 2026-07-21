@@ -2908,7 +2908,7 @@ threat: null
 id: T-0498
 title: 'strata audit G1: bind ENDORSE Boundary predicates to observed code (THREAT003
   discharge is a declared string, not a proof)'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-07-21'
@@ -2919,20 +2919,87 @@ scope:
 - src/frob/strata/_threat.py
 - src/frob/strata/_selfconform.py
 - src/frob/strata/_code_binding.py
-scope_changes: []
-evidence: []
+- tests/test_vet_containment.py
+- tests/unit/strata/test_threat.py
+scope_changes:
+- op: add
+  glob: tests/test_vet_containment.py
+  reason: test fixtures exercising the ENDORSE-boundary discharge semantics changed
+    by the G1 fix must be updated alongside it
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/strata/test_threat.py
+  reason: test fixtures exercising the ENDORSE-boundary discharge semantics changed
+    by the G1 fix must be updated alongside it
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/unit/strata/test_threat.py::TestMitigationKindChokepoint::test_endorse_boundary_with_no_evidence_ref_does_not_discharge_g1
+- tests/unit/strata/test_threat.py::TestMitigationKindChokepoint::test_endorse_boundary_with_dangling_obligation_does_not_discharge_g1
+- tests/unit/strata/test_threat.py::TestMitigationKindChokepoint::test_endorse_boundary_with_matching_predicate_discharges
+- tests/test_vet_containment.py::TestBuildContainmentReport::test_contained_finding_when_obligation_discharged
 attachments: []
 acceptance: []
 threat: null
 ```
 docs/audits/strata.md G1 (HIGH), from T-0401. _mitigation_is_chokepoint (_threat.py:1190ish) accepts any ENDORSE Boundary whose predicate string matches entry.mitigation -- no module joins a Boundary against observed code (grep confirmed only _models/__init__/_threat import both Boundary and effect-scanning, and _threat uses boundaries purely declaratively). Repro: may=sql node, an endorse boundary with predicate=parameterization on the only foreign inflow, and a weakness:CWE-89:<node> NoFlow claim -> THREAT003 PROVED with zero real parameterization in code. Fix direction: a SYS-family rule binding each ENDORSE boundary predicate to an observed sanitizer site in code=-bound files (analogous to SYS100), or at minimum require chokepoint boundaries to carry an evidence ref (code=/claim) selfconform verifies. Non-vacuous acceptance: a litmus where the claimed predicate has NO matching code site is REFUSED, plus the positive case where it does.
 
+## Done report
+
+Fixed G1 (docs/audits/strata.md): `_mitigation_is_chokepoint`'s
+`_matching_boundary_ids` treated an ENDORSE boundary's bare `predicate`
+string (equal to the catalog's required mitigation name) as sufficient
+proof of a real mitigation, with zero binding to code or any other
+in-model fact -- an attacker (or careless author) could type any
+plausible predicate and THREAT003 would PROVE the discharge.
+
+Counterexample confirmed first (ad-hoc script, before any code change):
+an ENDORSE boundary with `predicate="output_encoding"` and NO
+`obligations` discharged CWE-79 cleanly (`check_discharge_completeness`
+returned zero violations).
+
+Fix: `_matching_boundary_ids` now also requires the boundary's
+`obligations` (evidence refs, `_models.py`: "evidence refs discharged in
+tier 3") to be non-empty AND resolve to a real `Claim.id` present in the
+model (`_obligations_resolve`, new). A matching-predicate boundary with
+no evidence ref, or a dangling one, no longer counts as the required
+mitigation kind -- `_check_one_discharge` rejects the claim instead of
+proving it. This does not yet bind the predicate to an OBSERVED sanitizer
+site in code (the full SYS-family fix direction the audit finding also
+names) -- that remains a real gap, noted below as a follow-up ticket,
+since it is a substantially larger static-analysis feature (locating and
+verifying a sanitizer call site per predicate name across languages) than
+this ticket's budget covers. What IS closed: an ENDORSE boundary can no
+longer discharge a weakness purely on the strength of a self-declared,
+unverified string -- it must point at a real, independently-checkable
+claim in the same model.
+
+Updated existing fixtures that relied on the old vacuous behavior
+(`tests/test_vet_containment.py::_model_with_discharged_sql`,
+`test_threat.py::test_endorse_boundary_with_matching_predicate_discharges`)
+to carry a resolving `obligations` ref, and added two new counterexample
+tests proving the closed gap (no evidence ref; dangling evidence ref).
+
+Filed T-draft-3cf0d655: full SYS-family rule binding an ENDORSE boundary predicate
+to an OBSERVED sanitizer call site in `code=`-bound files (the stronger
+half of G1's fix direction, out of this ticket's scope/budget).
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/unit/strata/test_threat.py::TestMitigationKindChokepoint::test_endorse_boundary_with_no_evidence_ref_does_not_discharge_g1` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_threat.py::TestMitigationKindChokepoint::test_endorse_boundary_with_dangling_obligation_does_not_discharge_g1` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_threat.py::TestMitigationKindChokepoint::test_endorse_boundary_with_matching_predicate_discharges` (pytest node id, verified passing when recorded)
+- `tests/test_vet_containment.py::TestBuildContainmentReport::test_contained_finding_when_obligation_discharged` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0500 -->
 ```yaml
 id: T-0500
 title: 'strata audit G4: FOREIGN file in an already-modeled directory (or loose under
   src/frob/) escapes ALL sys rules + THREAT004/005'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-07-21'
@@ -2941,25 +3008,103 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/strata/_selfconform.py
-scope_changes: []
-evidence: []
+- design/frob.strata
+- tests/unit/strata/test_selfconform.py
+scope_changes:
+- op: add
+  glob: design/frob.strata
+  reason: closing SYS102's per-file grain surfaced 3 real top-level src/frob/*.py
+    files (__init__.py, doctor.py, excludes.py) with no code= glob owner; must extend
+    the self-model to keep TestRealGateGreen green, and update selfconform unit tests
+    for the new per-file violation grain
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/strata/test_selfconform.py
+  reason: closing SYS102's per-file grain surfaced 3 real top-level src/frob/*.py
+    files (__init__.py, doctor.py, excludes.py) with no code= glob owner; must extend
+    the self-model to keep TestRealGateGreen green, and update selfconform unit tests
+    for the new per-file violation grain
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/unit/strata/test_selfconform.py::TestUnmodeledCodeForeignFileGranularity::test_foreign_file_in_otherwise_owned_directory_fires
+- tests/unit/strata/test_selfconform.py::TestUnmodeledCodeForeignFileGranularity::test_loose_top_level_file_fires
+- tests/unit/strata/test_selfconform.py::TestUnmodeledCodeForeignFileGranularity::test_loose_top_level_file_discharges_once_globbed
+- tests/unit/strata/test_selfconform.py::TestUnmodeledCode::test_unmodeled_code_fires
+- tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
 attachments: []
 acceptance: []
 threat: null
 ```
 docs/audits/strata.md G4 (HIGH), from T-0401. _selfconform.py:538 _unmodeled_violations marks a directory owned if ANY file in it is non-FOREIGN; SYS100/101 and effect-extraction scan only _sorted_owned_files. A new .py/.ts file placed in an existing modeled directory but matched by no code= glob is FOREIGN -> invisible to capability observation AND does not trip SYS102 (its directory is already prefix_owned). SYS102 also only iterates directories (_top_level_dirs), so a FOREIGN file placed directly under src/frob/ (not in a subdir) also escapes. Repro: src/frob/vet/backdoor.py doing subprocess.run(user_input) where no node's code= glob matches backdoor.py -> frob sys audit stays clean. Fix direction: SYS102 must fire per-FOREIGN-file (or per unowned file within an owned dir), not per fully-FOREIGN top-level dir; effect extraction should raise on any FOREIGN capability-scannable file rather than skipping it.
 
+## Done report
+
+Fixed G4 (docs/audits/strata.md): `_unmodeled_violations` (SYS102) marked
+a WHOLE top-level `src/frob/` directory "owned" the moment ANY file in it
+was non-FOREIGN, and `_top_level_dirs` only ever iterated directories
+(`entry.is_dir()`) -- so a FOREIGN file placed in an already-modeled
+directory, or a loose file directly under `src/frob/` (no subdirectory at
+all), was invisible to SYS102 AND to SYS100/SYS101 (both only reconcile
+bound files) AND to THREAT004/import conformance (both skip FOREIGN).
+
+Counterexample confirmed first (ad-hoc script): a `subprocess.run(...)`
+exec-capability file dropped into an already-`code=`-globbed directory,
+plus a second file dropped loose at `src/frob/` top level, both produced
+zero `check_self_conformance` violations before the fix.
+
+Fix: split `_unmodeled_violations` into three passes over the same
+precomputed `_package_relative` list -- the original fully-foreign-
+directory case (`_fully_foreign_dir_violations`, unchanged behavior),
+FOREIGN files inside an otherwise-owned directory
+(`_foreign_file_in_owned_dir_violations`, new), and loose top-level files
+(`_loose_foreign_file_violations`, new) -- each firing SYS102 at file
+granularity instead of the old per-directory grain.
+
+Tightening this surfaced a REAL, pre-existing gap in frob's own self-model
+(`design/frob.strata`): `src/frob/__init__.py`, `src/frob/doctor.py`, and
+`src/frob/excludes.py` are loose top-level files with no `code=` glob
+owner at all -- TestRealGateGreen failed against the new stricter check
+until the model was fixed. Added the three files to the `cli` node's
+glob (the existing convention for single-file top-level entrypoints,
+already home to `src/frob/__main__.py`).
+
+All of tests/unit/strata/ and tests/test_gates.py/test_vet_containment.py/
+test_testing.py pass. tests/system/test_frob_self_model.py's
+test_parses_and_elaborates/test_every_claim_proves were ALREADY failing
+before this ticket's changes (confirmed via git stash: pre-existing
+claim/flow-count drift unrelated to G4), not a regression introduced
+here -- left untouched, out of this ticket's scope.
+
+### Changed
+```
+ src/frob/strata/_threat.py       | 47 ++++++++++++++++++--
+ tests/test_vet_containment.py    |  4 ++
+ tests/unit/strata/test_threat.py | 78 ++++++++++++++++++++++++++++++++
+ tickets.md                       | 96 ++++++++++++++++++++++++++++++++++++++--
+ 4 files changed, 218 insertions(+), 7 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_selfconform.py::TestUnmodeledCodeForeignFileGranularity::test_foreign_file_in_otherwise_owned_directory_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestUnmodeledCodeForeignFileGranularity::test_loose_top_level_file_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestUnmodeledCodeForeignFileGranularity::test_loose_top_level_file_discharges_once_globbed` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestUnmodeledCode::test_unmodeled_code_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0501 -->
 ```yaml
 id: T-0501
 title: 'strata audit G2/G7: vacuous NoFlow discharge when foreign->sink flow is un-modeled
   or no foreign-trust node exists'
-state: queued
+state: in-progress
 kind: security
 origin: human
 created: '2026-07-21'
 priority: medium
-blocked_by: []
+blocked_by:
+- T-0532
 parent: null
 scope:
 - src/frob/strata/_threat.py
@@ -2977,7 +3122,7 @@ docs/audits/strata.md G2+G7 (HIGH/MEDIUM), from T-0401. _mitigation_is_chokepoin
 id: T-0514
 title: 'strata audit G10: differential/property tests for FactBase''s native Rust
   kernels'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-07-21'
@@ -2988,12 +3133,73 @@ scope:
 - tests/unit/strata/
 - strata-core/src/
 scope_changes: []
-evidence: []
+evidence:
+- tests/unit/strata/test_kernel_properties.py::test_propagated_demand_matches_fixpoint_oracle
+- tests/unit/strata/test_kernel_properties.py::test_propagated_demand_is_deterministic
+- tests/unit/strata/test_kernel_properties.py::TestZeroDeclaredRateFedCycle::test_self_loop_fed_by_literal_zero_rate_reports_unbounded
 attachments: []
 acceptance: []
 threat: null
 ```
 Split from T-0497 (too large to rush inside that ticket's remaining budget -- needs a pure-Python reference implementation designed and cross-checked, not a rushed patch). docs/audits/strata.md finding G10: FactBase.reachable/worst_age/propagated_demand are native Rust kernels (strata-core), trusted from Python with no differential or property-based test suite proving the Rust and an independent reference implementation agree on the same inputs. A subtle divergence (an off-by-one in age propagation, a wrong SCC handling, a rounding difference in demand aggregation) could silently ship undetected since only end-to-end behavioral tests exercise the combined system, not the kernel in isolation against a trusted oracle. Fix direction: a pure-Python reference implementation of at least worst_age/reachable/propagated_demand (small, deliberately naive, no perf concerns) plus a property-based (hypothesis-style, or hand-authored adversarial corpus) differential test that generates random-ish FactBase graphs and asserts the Rust kernel and the Python reference agree on every one.
+
+## Done report
+
+G10 (docs/audits/strata.md): FactBase's native Rust kernels had no
+differential/property tests proving agreement with an independent
+reference implementation. Discovered that reachable/worst_age/demand
+(the plain rate-sum pyfunction) were ALREADY covered by
+tests/unit/strata/test_kernel_properties.py (pre-existing, not written
+by this ticket) -- so this ticket's actual gap was propagated_demand
+(the fanout-multiplied, cycle-aware kernel FactBase.propagated_demand
+actually calls; distinct from the simpler demand pyfunction), the
+single most safety-critical of the three since a silent undercount here
+can falsely PROVE a RATE/UTILIZATION bound claim.
+
+Added a genuinely independent oracle: a Gauss-Seidel numeric fixpoint
+iteration (materially different algorithm from the kernel's recursive-
+with-active-stack approach), differential-tested via hypothesis against
+strata_core.propagated_demand across random graphs with declared/
+undeclared rates, fanout multipliers, and cycles (fed and unfed).
+
+While designing the property, found and confirmed (before weakening the
+assertion) a genuine kernel over-approximation: propagated_demand's
+`rate_sources` fed-cycle detection is magnitude- and destination-blind
+(any node sourcing ANY declared-rate edge, even rate=0.0 or an edge
+unrelated to the cycle, is treated as "fed"), so a numerically-0 cycle
+can be reported +inf. Confirmed via two counterexamples (a literal
+rate=0.0 self-loop; a node sourcing an unrelated declared-rate edge)
+that this is the SAFE direction (charter law 2: never undercount, may
+over-report unbounded) rather than a soundness bug. The property test
+therefore asserts the sound direction only (kernel must never report
+finite when the oracle proves unbounded; may report +inf when the
+oracle is finite) rather than exact equality, and TestZeroDeclaredRate-
+FedCycle pins the current disclosed behavior as a permanent regression
+witness. Filed T-draft-7f21bb07 for a maintainer decision (tighten the
+kernel's magnitude check, or fix its "positive-rate" docstring wording)
+-- not resolved here, since choosing kernel semantics is a design
+decision outside a testing-harness ticket.
+
+All of tests/unit/strata/test_kernel_properties.py passes (14 tests,
+including the 3 new: the property, its determinism twin, and the pinned
+regression). ruff/frob check clean for this ticket's scope.
+
+### Changed
+```
+ design/frob.strata                    |  14 ++-
+ src/frob/strata/_selfconform.py       | 133 +++++++++++++++++++---
+ src/frob/strata/_threat.py            |  47 +++++++-
+ tests/test_vet_containment.py         |   4 +
+ tests/unit/strata/test_selfconform.py |  72 ++++++++++++
+ tests/unit/strata/test_threat.py      |  78 +++++++++++++
+ tickets.md                            | 208 ++++++++++++++++++++++++++++++++--
+ 7 files changed, 524 insertions(+), 32 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_kernel_properties.py::test_propagated_demand_matches_fixpoint_oracle` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_kernel_properties.py::test_propagated_demand_is_deterministic` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_kernel_properties.py::TestZeroDeclaredRateFedCycle::test_self_loop_fed_by_literal_zero_rate_reports_unbounded` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0520 -->
 ```yaml
@@ -3045,7 +3251,7 @@ Discovered while working T-0516: COV006 Violation objects carry no symref (file=
 ```yaml
 id: T-0526
 title: 'frob:debt/frob:todo coherence: paired todo, same-ticket check, symmetric resolution'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-21'
@@ -3321,3 +3527,74 @@ standalone drift-lock/decision-record anchor with no public wrapper), or
 demote/reword a stale reference. Batch by module, commit per batch, same
 as T-0524's pattern -- this ticket exists so the residual gets the same
 per-finding triage rather than being silently left unaccounted for.
+
+<!-- ticket:T-0530 -->
+```yaml
+id: T-0530
+title: 'strata: bind ENDORSE boundary predicate to an observed sanitizer site in code
+  (G1 stronger fix)'
+state: queued
+kind: security
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/_threat.py
+- src/frob/strata/_selfconform.py
+- src/frob/strata/_code_binding.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Follow-up to T-0498 (docs/audits/strata.md G1). T-0498 closed the vacuous half of G1 (an ENDORSE boundary's predicate string now needs a resolving obligations/claim ref, not a bare self-declared name) but does NOT yet verify the predicate corresponds to an OBSERVED sanitizer/mitigation call site in the boundary's node's code=-bound files -- the audit finding's stronger fix direction: 'a SYS-family rule binding each ENDORSE boundary predicate to an observed sanitizer site in code=-bound files (analogous to SYS100)'. This needs a per-predicate sanitizer-pattern registry (or a pluggable convention, since predicate names are free text today) and a scan over code=-bound files analogous to _selfconform.py's SYS100/SYS101 joins. Non-vacuous acceptance: a litmus where the claimed predicate has no matching code site is REFUSED, plus the positive case where it does.
+
+<!-- ticket:T-0531 -->
+```yaml
+id: T-0531
+title: 'strata-core: propagated_demand fed-cycle reach set is magnitude/destination-blind
+  (over-conservative +inf)'
+state: queued
+kind: security
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- strata-core/src/lib.rs
+- docs/strata/kernel.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Found by T-0514's new differential property test (docs/audits/strata.md G10). propagated_demand's rate_sources set is populated by ANY node that is the SOURCE of a declared-rate edge (Some(r) => rate_sources.insert(src)), with no check on the rate's magnitude (a literal rate=0.0 counts) and no check that the declared edge has anything to do with the cycle being classified (a node can be marked fed purely because it separately sources an unrelated declared-rate edge elsewhere). This makes the fed-cycle unbounded classification an over-approximation: a self-loop whose true numeric demand converges to exactly 0.0 can be reported as +inf. This is the SAFE failure direction per charter law 2 (fails toward overcounting, never undercounting) and is NOT a soundness bug -- confirmed via an independent Gauss-Seidel fixpoint oracle (tests/unit/strata/test_kernel_properties.py::test_propagated_demand_matches_fixpoint_oracle, which asserts the sound direction only: kernel must never undercount, may over-report unbounded) -- but it is a real precision/completeness gap: a RATE/UTILIZATION bound claim on such a node will spuriously REFUTE with no way to discharge it short of restructuring the model, even though the true load is provably bounded. docs/strata/kernel.md#capacity-semantics's own propagated_demand docstring says 'POSITIVE-rate cycles' but the code's actual test is 'declared-rate, any value, any destination' -- fix direction: either (a) tighten rate_sources to only include truly-positive rates AND restrict the reach check to whether the SPECIFIC cycle is actually fed (not merely 'this node happens to source some unrelated declared rate'), or (b) if the current broad behavior is intentional conservatism, fix the docstring to say so explicitly rather than 'positive-rate', and document the tradeoff in kernel.md. TestZeroDeclaredRateFedCycle in test_kernel_properties.py pins the current behavior as a permanent regression witness pending this decision.
+
+<!-- ticket:T-0532 -->
+```yaml
+id: T-0532
+title: 'design decision: distinguish T-0223 library-mode discharge-by-absence from
+  G2/G7''s ''no adversary modeled'' vacuous discharge'
+state: queued
+kind: security
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/_threat.py
+- src/frob/strata/_claims.py
+- docs/strata/threat.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Blocks T-0501 (docs/audits/strata.md G2+G7). G2/G7's own fix direction ('require at least one modeled path from a foreign source to the firing node, and at least one foreign-trust node in the model, before accepting the vacuous short-circuit as a discharge') is IN DIRECT CONFLICT with T-0223's already-shipped, deliberately tested 'library-mode discharge-by-absence' feature (docs/strata/threat.md#library-mode-discharge-by-absence, tests/unit/strata/test_threat.py::TestLibraryModeForeignlessDischarge): a foreign-less library model (literally zero foreign-trust nodes) is INTENDED to vacuously discharge CWE-78/etc via NoFlow(src=foreign,...) proving true by absence. Applying G2/G7's fix direction verbatim (require >=1 foreign-trust node before accepting vacuous discharge) would REFUTE every T-0223 library-mode model outright, a real regression of a real feature. The two cases (intentional library mode with no adversary vs. a production model that simply forgot to model its adversary) are INDISTINGUISHABLE in the kernel today -- both produce a KernelModel with zero foreign-trust nodes. A resolution needs an explicit signal: e.g. a  declaration ( module kind, or similar) that marks a model as deliberately adversary-free so THAT case (and only that case) is exempt from G2/G7's tightened requirement, while an undeclared model with zero foreign nodes gets the new distinct diagnostic instead of silent PROVED. This is a product/security design call, not something T-0501 should decide unilaterally mid-patch -- filed per the BLOCKER protocol rather than force either a broken fix or a silently-narrowed one. docs/strata/threat.md#phasing and #library-mode-discharge-by-absence need to document whichever resolution is chosen.
