@@ -32,9 +32,9 @@ FROB_WORKTREE_ENV = "FROB_WORKTREE"
 
 
 # frob:doc docs/modules/tickets.md#worktree-lease-guard-t-0431
-# frob:tests tests/test_worktree_guard.py::TestEnforceWorktreeLease::test_no_env_var_is_unrestricted  # noqa: E501
-# frob:tests tests/test_worktree_guard.py::TestEnforceWorktreeLease::test_matching_worktree_passes  # noqa: E501
-# frob:tests tests/test_worktree_guard.py::TestEnforceWorktreeLease::test_mismatched_worktree_refuses  # noqa: E501
+# frob:tests tests/test_worktree_guard.py::TestEnforceWorktreeLease.test_no_env_var_is_unrestricted  # noqa: E501
+# frob:tests tests/test_worktree_guard.py::TestEnforceWorktreeLease.test_matching_worktree_passes  # noqa: E501
+# frob:tests tests/test_worktree_guard.py::TestEnforceWorktreeLease.test_mismatched_worktree_refuses  # noqa: E501
 def enforce_worktree_lease(root: Path) -> Result[None, TicketError]:
     """`Err(WorktreeLeaseViolation)` if the `FROB_WORKTREE` env var is set
     AND `root`'s actual git top-level (`git rev-parse --show-toplevel`,

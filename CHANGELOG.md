@@ -17,6 +17,27 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.46.0] - unreleased
+
+Public-API surface change since 0.45.0 (mechanical semver via REL001): an
+additive (minor) bump -- new `frob.tickets.enforce_worktree_lease` and
+`frob.scaffold.install_worktree_lease_hook`.
+
+- T-0431: worktree-lease guard. New `FROB_WORKTREE=<abs path>` env var
+  names the one worktree an agent's shell is authorized to mutate frob's
+  tracked ticket state in; `frob.tickets.enforce_worktree_lease(root)`
+  refuses (`Err(WorktreeLeaseViolation)`) when it is set and `root`'s
+  actual git top-level does not match it -- wired as the first statement
+  of every mutating `frob.tickets` entry point (`new_ticket`,
+  `transition`, `add_evidence`, `add_cmd_evidence`, `set_done_report`,
+  `record_failure`, `attach`, `archive`, `renumber`/`renumber_one`) and
+  into `frob.gates`' `stamp_baseline`/`stamp_coverage`. Unset (the
+  coordinator's own commands) is unrestricted, matching prior behavior.
+  New `frob.scaffold.install_worktree_lease_hook` installs `pre-commit`/
+  `pre-merge-commit` git hooks that abort loudly when `FROB_AGENT` is set
+  non-empty, catching a raw `git commit`/`git merge` an agent shell ran
+  directly against the wrong checkout, independent of `frob.tickets`.
+
 ## [0.45.0] - unreleased
 
 Public-API surface change since 0.44.0 (mechanical semver via REL001): an
