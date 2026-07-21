@@ -769,6 +769,20 @@ _KNOWN_GATE_RULES = frozenset(
     }
 )
 
+
+# frob:ticket T-0499
+# frob:doc docs/modules/gates.md#public-api
+# frob:tests tests/test_gates.py::TestKnownGateRuleIds.test_returns_known_rule_id
+# frob:tests tests/test_gates.py::TestKnownGateRuleIds.test_is_frozenset
+def known_gate_rule_ids() -> frozenset[str]:
+    """Return every rule id a gate can emit, for strata `caught_by`
+    resolution to recognize rule-id-shaped references (e.g. THREAT006's
+    and COMPLIANCE004's `known_rule_ids` param) instead of treating them
+    as unresolved by default.
+    """
+    return _KNOWN_GATE_RULES
+
+
 # frob:ticket T-0148
 # TEST008 (coverage.xml carried data but zero of it joined to a known repo
 # path) is excluded from `_match_waiver` by construction, not merely by

@@ -16,6 +16,7 @@ design directory: the command itself appends the configured design dir
 every `.strata` file under it. Pass the repo root -- passing `design/`
 directly makes the command look for `design/design/` and find nothing:
 
+<!-- frob:describes src/frob/app/sys_runner.py::run -->
 ```bash
 frob sys plan                    # dry-run: print the would-be ticket tree
 frob sys plan --apply            # write the planned tickets
@@ -29,6 +30,7 @@ file** (default `design/frob.strata`), since a config skeleton is
 rendered from one elaborated `KernelModel`, not a directory of models --
 passing a directory is a hard error:
 
+<!-- frob:describes src/frob/app/sys_runner.py::_run_export -->
 ```bash
 frob sys export --format seccomp design/frob.strata
 frob sys export --format seccomp                    # defaults to design/frob.strata
@@ -61,6 +63,7 @@ Reads every `.strata` design file under the repo's design dir (default
 
 ### Usage
 
+<!-- frob:describes src/frob/strata/_plan.py::plan_obligations -->
 ```bash
 frob sys plan                 # dry-run: print the would-be ticket tree
 frob sys plan --apply         # write the tickets to tickets.md
@@ -109,6 +112,7 @@ citation, grouped by `WeaknessEntry.family`, plus an out-of-scope section
 and a catalog-gaps (THREAT001) section when either is non-empty. Output is
 deterministic markdown to stdout.
 
+<!-- frob:describes src/frob/strata/_sysdoc.py::render_audit_matrix -->
 ```bash
 frob sys doc                       # matrix for the owasp-top-10 view
 frob sys doc --view owasp-top-10   # explicit view
@@ -153,6 +157,7 @@ from the declared design.
 
 ### Usage
 
+<!-- frob:describes src/frob/strata/_export.py::export_k8s_netpol -->
 ```bash
 frob sys export --format k8s design/frob.strata        # k8s NetworkPolicy YAML
 frob sys export --format seccomp design/frob.strata     # seccomp profile JSON
@@ -245,6 +250,7 @@ from the already-shipped `check_catalog_completeness` / `check_capability_
 completeness` / `check_discharge_completeness` / `evaluate_compliance`
 calls `frob sys doc` and `evaluate_threats` already make.
 
+<!-- frob:describes src/frob/strata/_audit.py::evaluate_exhaustiveness -->
 ```bash
 frob sys audit                 # every default view, every family
 frob sys audit /path/to/repo

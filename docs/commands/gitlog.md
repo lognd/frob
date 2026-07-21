@@ -4,6 +4,7 @@ Summarize git history filtered by conventional commit type and detail level.
 
 ## Usage
 
+<!-- frob:describes src/frob/gitlog/__init__.py::git_log -->
 ```bash
 frob gitlog                           # user-visible changes (feat+fix), current dir
 frob gitlog src/                      # same, from a specific repo root
@@ -131,6 +132,7 @@ def git_log(root, *, granularity="user", since=None, until=None, limit=None,
 
 ## Agentic use
 
+<!-- frob:describes src/frob/gitlog/__init__.py::git_log -->
 ```bash
 # Orient at session start
 frob gitlog --level user -n 10

@@ -167,6 +167,7 @@ regression to chase in application code.
 To check natives are present without waiting to hit the `SYS004`/dup gate
 above, run:
 
+<!-- frob:describes src/frob/__main__.py::_add_doctor_parser -->
 ```bash
 frob doctor
 ```

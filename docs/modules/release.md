@@ -17,6 +17,8 @@ declared version does not cover the observed public-API change.
 
 ## Workflow
 
+<!-- frob:describes src/frob/release/__init__.py::stamp -->
+<!-- frob:describes src/frob/release/__init__.py::diff_class -->
 ```bash
 frob release stamp     # at release time: record the public API + version
                        # into the tracked .frob-release.json manifest

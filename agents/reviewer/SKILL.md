@@ -10,6 +10,7 @@ you do not fix, and you do not run `frob ticket close` yourself.
 
 ## frob workflow
 
+<!-- frob:waive DOC004 reason="illustrative agent-workflow example, not command reference" -->
 ```bash
 frob ticket show T-0042               # the Done report and declared scope
 frob check --ticket T-0042            # re-run every gate; import findings verbatim

@@ -11,6 +11,8 @@ a matter of an agent remembering to ask.
 
 The human's job is to queue outcomes, not implementation steps:
 
+<!-- frob:describes src/frob/__main__.py::_add_ticket_new_parser -->
+<!-- frob:describes src/frob/__main__.py::_add_ticket_attach_and_lifecycle_end_parsers -->
 ```bash
 frob ticket new --title "..." --kind feature --body "..."
 frob ticket attach T-0040        # paste a clipboard mockup, if stdin is a TTY
@@ -46,6 +48,8 @@ concerned.
 
 ## skills/plan: goal -> ticket tree
 
+<!-- frob:describes src/frob/__main__.py::_add_map_parser -->
+<!-- frob:describes src/frob/__main__.py::_add_ticket_query_parsers -->
 ```bash
 frob map src/
 frob ticket list                 # don't replan what's already queued
@@ -62,6 +66,7 @@ it isn't decomposed; split it further.
 
 ## skills/next: the work loop
 
+<!-- frob:describes src/frob/__main__.py::_add_ticket_query_parsers -->
 ```bash
 frob ticket doable                # ordered, unblocked, oldest-first
 ```
@@ -85,6 +90,7 @@ frob ticket close T-0042          # requires non-empty evidence + Done report
 Anything found outside the ticket's declared `scope` is filed as a new
 ticket, never folded into the current diff:
 
+<!-- frob:describes src/frob/__main__.py::_add_ticket_new_parser -->
 ```bash
 frob ticket new --title "..." --kind bug --scope "..." --body "found while working T-0042"
 ```
@@ -102,6 +108,8 @@ for the full six-point checklist. The reviewer never fixes and never calls
 
 ## skills/audit: interface + security sweeps
 
+<!-- frob:describes src/frob/__main__.py::_add_map_parser -->
+<!-- frob:describes src/frob/__main__.py::_add_check_parser -->
 ```bash
 frob map src/                     # enumerate package boundaries
 frob check --only test             # TEST003 already flags known interfaces
@@ -118,6 +126,7 @@ rule that would have caught it recurring is treated as half-done.
 
 ## skills/prove: closing invariant gaps
 
+<!-- frob:describes src/frob/__main__.py::_add_check_parser -->
 ```bash
 frob check --only invariant       # INV001 (no evidence) / INV002 (no anchor)
 ```

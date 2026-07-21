@@ -7896,7 +7896,7 @@ docs/audits/strata.md G1 (HIGH), from T-0401. _mitigation_is_chokepoint (_threat
 id: T-0499
 title: 'strata: wire real known_rule_ids into evaluate_exhaustiveness/evaluate_compliance
   production callsites'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-07-21'
@@ -7906,13 +7906,120 @@ scope:
 - src/frob/gates/__init__.py
 - src/frob/app/sys_runner.py
 - src/frob/strata/_audit.py
-scope_changes: []
-evidence: []
+- tests/test_gates.py
+- tests/unit/strata/test_audit.py
+- docs/modules/gates.md
+- .frob-release.json
+- CHANGELOG.md
+- pyproject.toml
+- uv.lock
+scope_changes:
+- op: add
+  glob: tests/test_gates.py
+  reason: add evidence tests + doc anchor for known_gate_rule_ids public accessor
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/strata/test_audit.py
+  reason: add evidence tests + doc anchor for known_gate_rule_ids public accessor
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/modules/gates.md
+  reason: add evidence tests + doc anchor for known_gate_rule_ids public accessor
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: REL001 version bump for known_gate_rule_ids public API addition
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: CHANGELOG.md
+  reason: REL001 version bump for known_gate_rule_ids public API addition
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: pyproject.toml
+  reason: REL001 version bump for known_gate_rule_ids public API addition
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: REL001 version bump for known_gate_rule_ids public API addition
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_gates.py::TestKnownGateRuleIds::test_returns_known_rule_id
+- tests/test_gates.py::TestKnownGateRuleIds::test_is_frozenset
+- tests/unit/strata/test_audit.py::TestExhaustiveness::test_known_rule_ids_reaches_compliance_caught_by_check
 attachments: []
 acceptance: []
 threat: null
 ```
 Found while working T-0382. THREAT006 (check_caught_by_integrity) and the new COMPLIANCE004 (check_regulation_caught_by_integrity) both take a known_rule_ids frozenset[str] param that must be the live gate-rule-id set (frob.gates._KNOWN_GATE_RULES) for rule-id-shaped caught_by references to ever resolve -- otherwise every rule-id-shaped reference is (correctly, fail-closed) treated as unresolved, and no positive case can ever pass in production. Today: (1) frob.gates has no known_gate_rule_ids() public accessor despite _audit.py's evaluate_exhaustiveness docstring already naming it as the expected source; (2) the only two callers of evaluate_exhaustiveness (src/frob/app/sys_runner.py:615, src/frob/strata/_native_test.py:136) never pass known_rule_ids, so it silently defaults to empty; (3) evaluate_compliance's new known_rule_ids param (T-0382) is similarly never threaded from sys_runner.py. No current caught_by entry references a rule-id-shaped token so this is currently dormant, not actively wrong -- but a future entry that legitimately names a real gate rule (e.g. SEC001) would be incorrectly refused. Add known_gate_rule_ids() to frob.gates (public, returns _KNOWN_GATE_RULES) and thread it through both production callsites for both families.
+
+## Done report
+
+Added `frob.gates.known_gate_rule_ids()` as the public accessor over
+`_KNOWN_GATE_RULES`, and threaded it into both production callsites named
+in the ticket: `frob.app.sys_runner._evaluate_audit` now passes it into
+`evaluate_exhaustiveness(..., known_rule_ids=known_gate_rule_ids())`, and
+`frob.strata._audit._compliance_pii_lint_fingerprint_gaps` (called from
+`_collect_all_family_gaps`) now forwards the same `known_rule_ids` into
+`evaluate_compliance(..., known_rule_ids=known_rule_ids)` -- so both
+THREAT006 and COMPLIANCE004's `caught_by` verification can resolve a
+rule-id-shaped reference against the live gate-rule-id set instead of
+always defaulting to empty (fail-closed on every reference).
+
+Counterexample-first note: this gap was dormant (no current `caught_by`
+entry names a rule-id-shaped token), so there is no existing litmus that
+flips from vuln to hardened here. Verified the wiring itself directly: a
+mock.patch spy on `evaluate_compliance` proves `evaluate_exhaustiveness`'s
+`known_rule_ids` kwarg reaches every `evaluate_compliance` call it makes
+(`test_known_rule_ids_reaches_compliance_caught_by_check`), and two direct
+unit tests exercise `known_gate_rule_ids()` itself.
+
+REL001: new public symbol `frob.gates.known_gate_rule_ids` triggered a
+minor version bump, 0.42.0 -> 0.43.0 (pyproject.toml, uv.lock, CHANGELOG.md,
+.frob-release.json via `frob release stamp`).
+
+Filed T-draft-94774bc5 (out-of-scope discovery): `_audit.py` never threads
+a compliance `out_of_scope` catalog into `evaluate_compliance` at all (no
+`COMPLIANCE_OUT_OF_SCOPE` constant exists, unlike the security/quality
+families) -- so COMPLIANCE004 stays vacuous in production regardless of
+this ticket's known_rule_ids fix. Same root shape as this ticket, but a
+distinct gap (out_of_scope threading vs known_rule_ids threading), left
+for a follow-up ticket rather than folded in here.
+
+Full targeted suite run: `uv run pytest tests/unit/strata -q` (all ~800,
+minus one pre-existing unrelated failure --
+`test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant`,
+confirmed failing identically on a clean checkout of these same files
+before this ticket's edits, i.e. not caused by this change) stayed green.
+`uv run frob check --ticket T-0499` is clean: 0 errors (374 warnings, 95
+waived, unchanged from the pre-work baseline stamp).
+
+### Changed
+```
+ .frob-release.json              |  3 +-
+ CHANGELOG.md                    | 16 ++++++++++
+ docs/modules/gates.md           |  7 +++++
+ pyproject.toml                  |  2 +-
+ src/frob/app/sys_runner.py      |  9 +++++-
+ src/frob/gates/__init__.py      | 14 +++++++++
+ src/frob/strata/_audit.py       | 17 +++++++---
+ tests/test_gates.py             | 18 +++++++++++
+ tests/unit/strata/test_audit.py | 27 ++++++++++++++++
+ tickets.md                      | 70 +++++++++++++++++++++++++++++++++++++++++
+ uv.lock                         |  2 +-
+ 11 files changed, 177 insertions(+), 8 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestKnownGateRuleIds::test_returns_known_rule_id` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestKnownGateRuleIds::test_is_frozenset` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_audit.py::TestExhaustiveness::test_known_rule_ids_reaches_compliance_caught_by_check` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0500 -->
 ```yaml
@@ -7956,3 +8063,95 @@ acceptance: []
 threat: null
 ```
 docs/audits/strata.md G2+G7 (HIGH/MEDIUM), from T-0401. _mitigation_is_chokepoint's first branch (_threat.py:1196) returns True when NoFlow holds with EVERY boundary removed -- i.e. the sink is simply unreachable from foreign in the model, so an incomplete/attacker-authored .strata discharges a real capability with NO mitigation modeled at all (G2). Same root cause as G7: _discharges_as_chokepoint's src=foreign expansion (_claims.py _expand) yields an empty source set when the model declares no foreign-trust node at all, so NoFlow proves vacuously (nothing to walk from) and every obligation on that model discharges with no adversary present. Fix direction: require at least one modeled path from a foreign source to the firing node (and at least one foreign-trust node in the model) before accepting the vacuous short-circuit as a discharge; otherwise emit a distinct 'obligation fires but sink unreachable / no adversary modeled -- model likely incomplete' diagnostic instead of silent PROVED. High-risk core-engine change (this family has the highest REJECT rate in repo history) -- build the counterexample litmus FIRST, confirm it currently discharges vacuously, THEN harden.
+
+<!-- ticket:T-0502 -->
+```yaml
+id: T-0502
+title: 'DOC004 console-tier burndown: anchor or waive the 59 unbound fences'
+state: done
+kind: docs
+origin: agent
+created: '2026-07-21'
+blocked_by: []
+parent: null
+scope: []
+scope_changes: []
+evidence:
+- cmd:uv run frob check --only docblocks exit=0 sha256=475855667bb8
+attachments: []
+acceptance: []
+threat: null
+```
+Console/bash command-drift tier (T-0443) flags 59 unbound fences across agents/**, skills/**, docs/commands/**, docs/modules/**, docs/guides/agentic-workflow.md, docs/guides/install.md. Per playbook: waive illustrative agent/skill workflow examples narrowly per-fence; bind real command reference docs with genuine anchors, fixing stale text where drifted. Skip docs/modules/gates.md (owned by sibling gates-chain agent) and src/frob/gates/** (out of scope).
+
+## Done report
+
+Changed:
+- 12 agents/*/SKILL.md and skills/*/SKILL.md files (waived, 27 fences total)
+- docs/commands/check.md, deploy.md, exports.md, gitlog.md, scaffold.md, sys.md (bound, 25 fences total)
+- docs/modules/clean.md, mutate.md, release.md, stats.md (bound, 4 fences total)
+- docs/guides/agentic-workflow.md (bound, 6 fences), docs/guides/install.md (bound, 1 fence)
+
+Evidence: uv run frob check --only docblocks -> 0 errors, 0 warnings (was 59 warnings)
+Filed: none (no gate-design gap found; every fence classified cleanly)
+Gates: uv run frob check --only docblocks clean (0/0); uv run frob check clean (0 errors,
+314 pre-existing warnings unrelated to DOC004, 95 pre-existing waived)
+Caveats: skipped docs/modules/gates.md entirely per coordinator instruction (sibling
+gates-chain agent territory) -- it had 0 DOC004 warnings in this run already, so nothing
+was left behind there. Did not touch src/frob/gates/** per instruction.
+
+### Changed
+```
+ agents/debugger/SKILL.md          |  2 ++
+ agents/implementer/SKILL.md       |  4 ++++
+ agents/interface-auditor/SKILL.md |  2 ++
+ agents/planner/SKILL.md           |  1 +
+ agents/prover/SKILL.md            |  2 ++
+ agents/reviewer/SKILL.md          |  1 +
+ agents/security-auditor/SKILL.md  |  2 ++
+ docs/commands/check.md            |  9 +++++++++
+ docs/commands/deploy.md           |  2 ++
+ docs/commands/exports.md          |  1 +
+ docs/commands/gitlog.md           |  2 ++
+ docs/commands/scaffold.md         |  1 +
+ docs/commands/sys.md              |  6 ++++++
+ docs/guides/agentic-workflow.md   |  9 +++++++++
+ docs/guides/install.md            |  1 +
+ docs/modules/clean.md             |  1 +
+ docs/modules/mutate.md            |  1 +
+ docs/modules/release.md           |  2 ++
+ docs/modules/stats.md             |  1 +
+ skills/audit/SKILL.md             |  2 ++
+ skills/document/SKILL.md          |  5 +++++
+ skills/fix/SKILL.md               |  1 +
+ skills/next/SKILL.md              |  1 +
+ skills/plan/SKILL.md              |  2 ++
+ skills/prove/SKILL.md             |  2 ++
+ tickets.md                        | 41 +++++++++++++++++++++++++++++++++++++++
+ 26 files changed, 104 insertions(+)
+```
+
+### Evidence
+(no evidence recorded)
+
+<!-- ticket:T-draft-94774bc5 -->
+```yaml
+id: T-draft-94774bc5
+title: 'strata: compliance out_of_scope catalog never threaded into _audit.py evaluate_compliance
+  call'
+state: queued
+kind: security
+origin: human
+created: '2026-07-21'
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/_audit.py
+- src/frob/strata/_compliance.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Found while working T-0499. _audit.py::_compliance_pii_lint_fingerprint_gaps calls evaluate_compliance(model, view, known_rule_ids=known_rule_ids) with no out_of_scope argument -- it always defaults to (). Unlike the security/quality families (CWE_TOP_25_OUT_OF_SCOPE, QUALITY_OUT_OF_SCOPE imported and passed at _audit.py:469), there is no module-level OutOfScopeRegulation tuple defined anywhere for compliance, and none is threaded from sys_runner.py either. Effect: COMPLIANCE004 (caught_by integrity for compliance out-of-scope exclusions) can never actually fire in production regardless of T-0499's known_rule_ids threading, since check_regulation_caught_by_integrity always receives an empty out_of_scope tuple from this callsite. check_regulation_caught_by_integrity itself is correctly unit-tested with a non-empty out_of_scope (tests/unit/strata/test_compliance.py), so the gap is purely in the production wiring, same shape as the known_rule_ids gap T-0499 fixed. Fix direction: define a COMPLIANCE_OUT_OF_SCOPE catalog (or repo-configurable equivalent, mirroring load_repo_benign_capabilities) and thread it through _compliance_pii_lint_fingerprint_gaps -> evaluate_compliance.

@@ -10,6 +10,7 @@ queue -- a design doc alone is not dispatchable and gets forgotten.
 
 ## Step 1: Orient without reading files
 
+<!-- frob:waive DOC004 reason="illustrative agent-workflow example, not command reference" -->
 ```bash
 frob map src/
 frob ticket list                   # what's already queued -- don't replan it
@@ -65,6 +66,7 @@ Link the doc from the parent ticket's body so implementers land on it.
 
 ## Step 5: Verify the tree before moving on
 
+<!-- frob:waive DOC004 reason="illustrative agent-workflow example, not command reference" -->
 ```bash
 frob ticket list --parent T-0040     # every leaf the planner claimed to create
 frob ticket show T-00xx              # spot-check scope is narrow, not src/**

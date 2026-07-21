@@ -273,6 +273,7 @@ advisory count in `frob check`'s printed summary honest.
 <!-- frob:describes src/frob/gates/_pii_structural.py::_FieldSignature -->
 <!-- frob:describes src/frob/gates/_pii_structural.py::_scan_python_fields -->
 <!-- frob:describes src/frob/gates/_pii_structural.py::_scan_python_env_access -->
+<!-- frob:describes src/frob/gates/__init__.py::known_gate_rule_ids -->
 
 - `load_stamp` -- the raw `.frob/coverage-stamp` document, or `None` if
   never stamped/unreadable; TEST006 compares it against live file hashes.
@@ -315,6 +316,12 @@ advisory count in `frob check`'s printed summary honest.
   waivable with a written reason like every other rule.
 - `run_gates` -- the single entry point: loads all state once, then runs
   the selected gates in parallel and merges/severity-overrides the result.
+- `known_gate_rule_ids` -- every rule id a gate can emit (T-0499), the
+  live set strata's `caught_by` verification (THREAT006, COMPLIANCE004)
+  needs to recognize a rule-id-shaped reference (e.g. `SEC001`) instead of
+  treating it as unresolved fail-closed; threaded into
+  `evaluate_exhaustiveness`/`evaluate_compliance` from `frob sys audit`'s
+  `_evaluate_audit` (`frob.app.sys_runner`).
 
 ### Structural PII secrets detection T-0207
 
