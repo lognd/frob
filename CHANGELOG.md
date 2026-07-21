@@ -17,6 +17,26 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.44.0] - unreleased
+
+Public-API surface change since 0.43.0 (mechanical semver via REL001): an
+additive (minor) bump -- new `frob.strata.COMPLIANCE_OUT_OF_SCOPE` catalog.
+
+- T-0503: COMPLIANCE004 (`caught_by` integrity for compliance out-of-scope
+  exclusions) was vacuous in production -- `_audit.py` never threaded an
+  `out_of_scope` catalog into `evaluate_compliance` (unlike the security/
+  quality families' `CWE_TOP_25_OUT_OF_SCOPE`/`QUALITY_OUT_OF_SCOPE`), so
+  it always defaulted to `()` and the check trivially passed regardless of
+  a fabricated `caught_by`. Added `COMPLIANCE_OUT_OF_SCOPE` (a real,
+  production `OutOfScopeRegulation` catalog, `frob.strata._compliance`) and
+  threaded it into `_compliance_pii_lint_fingerprint_gaps`'s
+  `evaluate_compliance` call. Non-vacuous proof: `tests/unit/strata/
+  test_audit.py::TestExhaustiveness.
+  test_compliance_out_of_scope_bad_caught_by_fails_real_audit_path` shows a
+  fabricated `caught_by` failing through the real production entrypoint
+  (`evaluate_exhaustiveness`, exactly what `frob sys audit` calls), not
+  just the unit-level `check_regulation_caught_by_integrity` evaluator.
+
 ## [0.43.0] - unreleased
 
 Public-API surface change since 0.42.0 (mechanical semver via REL001): an

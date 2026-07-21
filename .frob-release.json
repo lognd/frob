@@ -667,6 +667,7 @@
     "src/frob/strata/_code_binding.py::check_import_conformance": "1d0a8346dd268a2983e39c8b55f8cfa13d8e7109cecfdc3f77c493f6a41865d4",
     "src/frob/strata/_code_binding.py::is_managed": "aba6c15e41c0257249ca634b1033cddff76fd23a17b9efcb294776e58b29bcde",
     "src/frob/strata/_compliance.py::COMPLIANCE_CATALOG": "9f0b63cf4bf9ef9be6c9a9a43c6d3ba70a4b9470d010e683c286aab073d3b4bb",
+    "src/frob/strata/_compliance.py::COMPLIANCE_OUT_OF_SCOPE": "80366d1f19a3cde4d0eec6056ebcda80ce3f0f4610cd1000c55af382896a72c6",
     "src/frob/strata/_compliance.py::ComplianceReport": "ff1d8bde3dee10d1ba49de9b2351133bb956ccd5644dc516ca690bc0f062f889",
     "src/frob/strata/_compliance.py::ComplianceViolation": "fc270d1eb8ea7872c1868dc64786a84fac03c7ce36b315b17cc999a119b7e5a7",
     "src/frob/strata/_compliance.py::OutOfScopeRegulation": "b0cae7dcdd2cee8c238dbb976c2958df797c64285b1f71fb24ede388e8b17230",
@@ -1046,5 +1047,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.43.0"
+  "version": "0.44.0"
 }
