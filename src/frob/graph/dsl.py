@@ -25,6 +25,10 @@ _VERB_TABLE: dict[str, EdgeKind] = {
     "ticket": EdgeKind.TICKET,
     "todo": EdgeKind.TODO,
     "waive": EdgeKind.WAIVE,
+    # T-0412: frob:debt <RULE> reason="..." ticket="T-####" [until="..."] --
+    # a TEMPORARY, ticket-bound, tracked exception (see _parse_attrs' verb
+    # == "debt" branch for its required-attrs check).
+    "debt": EdgeKind.DEBT,
     "tests": EdgeKind.TESTS,
     "decision": EdgeKind.DECISION,
     # T-0080: strata directives -- bind a code symbol to a design construct
@@ -162,6 +166,17 @@ def _parse_attrs(
         return MalformedDirective(
             file=path, line=lineno, reason='frob:waive requires reason="..."'
         )
+    if verb == "debt":
+        missing = [key for key in ("reason", "ticket") if key not in attrs]
+        if missing:
+            return MalformedDirective(
+                file=path,
+                line=lineno,
+                reason=(
+                    'frob:debt requires reason="..." and ticket="T-####" '
+                    f"(missing: {', '.join(missing)})"
+                ),
+            )
     if verb == "tests":
         attrs.setdefault("kind", "unit")
         if attrs["kind"] not in _TESTS_KINDS:

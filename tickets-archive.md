@@ -14799,11 +14799,6 @@ scope:
 scope_changes: []
 evidence:
 - tests/test_dup_cross_lang.py::TestCrossLanguageCloneNotYetDetected::test_both_languages_parse_into_the_snapshot
-- tests/test_dup_cross_lang.py::TestCrossLanguageCloneNotYetDetected::test_both_languages_parse_into_the_snapshot
-- tests/test_dup_cross_lang.py::TestCrossLanguageCloneNotYetDetected::test_both_languages_parse_into_the_snapshot
-- tests/test_dup_cross_lang.py::TestCrossLanguageCloneNotYetDetected::test_both_languages_parse_into_the_snapshot
-- tests/test_dup_cross_lang.py::TestCrossLanguageCloneNotYetDetected::test_both_languages_parse_into_the_snapshot
-- tests/test_dup_cross_lang.py::TestCrossLanguageCloneNotYetDetected::test_both_languages_parse_into_the_snapshot
 - tests/test_dup_cross_lang.py::TestCrossLanguageCloneNotYetDetected::test_both_symbols_are_individually_fingerprinted
 attachments: []
 acceptance: []
@@ -14846,17 +14841,13 @@ main -- `frob ticket new` on an off-default branch), title "frob.lang: give
 cross-grammar node vocabulary so dup R1-R3 bucket structurally, not lexically",
 scope `src/frob/lang/**` (out of T-0198's scope, so not touched here).
 
-Evidence: recorded via `frob ticket evidence T-0198 <node-id>...` (all 7
-resolved against a fresh `pytest --collect-only` pass):
-- tests/test_dup_cross_lang.py::TestCrossLanguageCloneNotYetDetected::test_both_languages_parse_into_the_snapshot
-- tests/test_dup_cross_lang.py::TestCrossLanguageCloneNotYetDetected::test_both_languages_parse_into_the_snapshot
-- tests/test_dup_cross_lang.py::TestCrossLanguageCloneNotYetDetected::test_both_languages_parse_into_the_snapshot
-- tests/test_dup_cross_lang.py::TestCrossLanguageCloneNotYetDetected::test_both_languages_parse_into_the_snapshot
-- tests/test_dup_cross_lang.py::TestCrossLanguageCloneNotYetDetected::test_both_languages_parse_into_the_snapshot
+Evidence: recorded via `frob ticket evidence T-0198 <node-id>...` (both
+resolved against a fresh `pytest --collect-only` pass; T-0519 deduped the
+6x-repeated first line down to one entry -- see T-0519's Done report):
 - tests/test_dup_cross_lang.py::TestCrossLanguageCloneNotYetDetected::test_both_languages_parse_into_the_snapshot
 - tests/test_dup_cross_lang.py::TestCrossLanguageCloneNotYetDetected::test_both_symbols_are_individually_fingerprinted
 
-All 7 pass: `uv run pytest tests/test_dup_cross_lang.py -v` -> "7 passed in 0.99s".
+All 7 (pre-dedup) pass: `uv run pytest tests/test_dup_cross_lang.py -v` -> "7 passed in 0.99s".
 
 Gates: `uv run frob check --ticket T-0198` -> `gates 0 errors, 11 warnings, 202
 waived` (clean; the pre-existing warnings/waivers are unrelated repo-wide debt,

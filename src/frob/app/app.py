@@ -17,6 +17,7 @@ _RUNNER_MODULE_NAMES = (
     "check_runner",
     "clean_runner",
     "cycle_runner",
+    "debt_runner",
     "deploy_runner",
     "doctor_runner",
     "docs_runner",
@@ -75,6 +76,7 @@ _SUBCOMMAND_RUNNER_NAMES: dict[Subcommand, str] = {
     Subcommand.gitlog: "gitlog_runner",
     Subcommand.graph: "graph_runner",
     Subcommand.ack: "ack_runner",
+    Subcommand.debt: "debt_runner",
     Subcommand.ticket: "ticket_runner",
     Subcommand.test: "test_runner",
     Subcommand.vet: "vet_runner",
@@ -121,7 +123,7 @@ class App:
             _log.error(
                 "usage: frob "
                 "<scaffold|cycle|outline|map|xref|parse|dup|arch|docs|bind|"
-                "exports|check|gitlog|graph|ack|ticket|test|vet|perf|"
+                "exports|check|gitlog|graph|ack|debt|ticket|test|vet|perf|"
                 "release|stats|serve|mutate|sys|deploy|doctor|clean>"
                 " ..."
             )
