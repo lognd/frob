@@ -59,6 +59,46 @@ class TestFindDuplicates:
         all_symbols = {f.symbol for g in result.groups for f in g.fragments}
         assert "format_report" not in all_symbols
 
+    # frob:tests tests/unit/test_dup.py::TestFindDuplicates.test_with_target_alpha_rename_matches_at_renamed_rung
+    # frob:ticket T-0486
+    def test_with_target_alpha_rename_matches_at_renamed_rung(self, tmp_path):
+        """T-0486 regression: two clones differing only in a `with ... as
+        <name>:` binding name must still match as a Type-2 (renamed) clone.
+
+        Before the fix, `_harvest_with_item` looked up a nonexistent
+        `alias` field directly on `with_item`, so the bound name never
+        joined the alpha-rename local set and `serialize_body` emitted the
+        raw `with`-target identifier as a literal token instead of a
+        renamed placeholder -- the two fragments below would hash to
+        different renamed buckets and never group.
+        """
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "mod_one.py").write_text(
+            "def load_one(path):\n"
+            "    with open(path) as handle_a:\n"
+            "        data = handle_a.read()\n"
+            "        data = data.strip()\n"
+            "        data = data.upper()\n"
+            "        return data\n"
+        )
+        (src_dir / "mod_two.py").write_text(
+            "def load_two(path):\n"
+            "    with open(path) as handle_b:\n"
+            "        data = handle_b.read()\n"
+            "        data = data.strip()\n"
+            "        data = data.upper()\n"
+            "        return data\n"
+        )
+        result = find_duplicates(src_dir, min_lines=5)
+        renamed_groups = [g for g in result.groups if g.clone_type == "renamed"]
+        assert renamed_groups, (
+            "expected a renamed (Type-2) clone group for the with-target-"
+            f"only difference; got groups={result.groups!r}"
+        )
+        symbols = {f.symbol for g in renamed_groups for f in g.fragments}
+        assert {"load_one", "load_two"} <= symbols
+
 
 # ---------------------------------------------------------------------------
 # min_lines threshold

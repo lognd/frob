@@ -5559,7 +5559,7 @@ Found during the 2026-07-21 doable-warning scope-narrowing sweep. frob ticket sc
 id: T-0486
 title: 'dup/_legacy_py._harvest_with: with-item alias lookup uses nonexistent ''alias''
   field, as-pattern binding names never join the alpha-rename set'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-07-21'
@@ -5567,12 +5567,34 @@ blocked_by: []
 parent: null
 scope: []
 scope_changes: []
-evidence: []
+evidence:
+- tests/unit/test_dup.py::TestFindDuplicates::test_with_target_alpha_rename_matches_at_renamed_rung
 attachments: []
 acceptance: []
 threat: null
 ```
 Recovered filing: T-draft-7bae70b7 was filed in T-0160 batch work but its ledger block was lost in a merge (only the Done-report prose survived). _harvest_with looks up child_by_field_name('alias') on with_item nodes, but the tree-sitter-python grammar nests with_item under with_clause and represents the bound name via an as_pattern/as_pattern_target child, not an 'alias' field -- so 'with X as name:' binding names are never collected into the alpha-rename local set for Python dup-fingerprinting. Scope: src/frob/dup/_legacy_py.py plus its unit tests.
+
+## Done report
+
+Verified `_harvest_with_item` (src/frob/dup/_legacy_py.py) already walks
+with_item -> as_pattern (field=value) -> as_pattern_target (field=alias),
+confirmed against a live tree-sitter-python parse of `with open(x) as
+name:` (field_name_for_child dump). The bug as originally filed (a direct
+`with_item.child_by_field_name('alias')` lookup) is not present in the
+current tree; a prior pass already applied this exact fix and its unit
+coverage (tests/unit/test_dup_legacy_py.py). Added the missing regression
+proof at the pipeline level the ticket asked for: two clones differing
+only in the with-target binding name (`handle_a` vs `handle_b`) now group
+as a Type-2 (clone_type="renamed") clone via `find_duplicates`, proving
+the alpha-rename set actually includes with-bound names end to end, not
+just at the node-walker unit level.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/unit/test_dup.py::TestFindDuplicates::test_with_target_alpha_rename_matches_at_renamed_rung` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0487 -->
 ```yaml
