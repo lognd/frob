@@ -5148,7 +5148,7 @@ non-match, and the literal-file-is-not-a-directory case.
 id: T-0522
 title: INV003/INV004 doc-side frob:waive detection can self-match illustrative example
   text in gates.md's own prose
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-21'
