@@ -6308,7 +6308,7 @@ output -- exactly 59 - 3 fixed = 56.
 ```yaml
 id: T-0524
 title: burn down 130 COV007 findings (frob:doc on private symbols)
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-21'
