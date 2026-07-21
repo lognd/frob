@@ -2764,25 +2764,59 @@ def _commit_subject(root: Path, sha: str) -> Option[str]:
     return Some(spawned.danger_ok.stdout.strip())
 
 
+def _commit_parents(root: Path, sha: str) -> tuple[str, ...]:
+    """Parent shas of commit `sha` (`git log -1 --format=%P`), empty if `sha`
+    is a root commit or is unreadable (T-0527: used to detect a merge commit
+    and recover the ticket reference its OWN subject may lack)."""
+    spawned = run_argv(("git", "-C", str(root), "log", "-1", "--format=%P", sha))
+    if spawned.is_err or spawned.danger_ok.returncode != 0:
+        _log.debug("scope_gate: could not read parents of %s", sha)
+        return ()
+    return tuple(spawned.danger_ok.stdout.split())
+
+
 def _commit_exempts_file(
     root: Path, sha: str, file: str, ticket: Ticket, queue: TicketQueue
 ) -> bool:
-    """True if commit `sha`'s subject names another ticket (not `ticket`) whose
-    own declared `scope` covers `file` -- the SCOPE001 cross-ticket exemption
-    (T-0108): a commit's authorship is attributed by the ticket id its subject
-    references, not by whichever ticket happens to be running the check now."""
+    """True if commit `sha` (or, for a merge commit whose own subject carries
+    no ticket reference, one of its parents) names another ticket (not
+    `ticket`) whose own declared `scope` covers `file` -- the SCOPE001
+    cross-ticket exemption (T-0108): a commit's authorship is attributed by
+    the ticket id its subject references, not by whichever ticket happens to
+    be running the check now.
 
+    T-0527: a plain `git merge main` merge commit's OWN subject typically
+    carries no ticket reference at all, yet `git blame` can still attribute
+    a hunk to it (conflict-resolution content that differs from every
+    parent, e.g. a version-bump line both sides touched) -- that content is
+    still just reconciling the parents' own already-scoped work, not new
+    unscoped work introduced by this check's own ticket. So a merge commit
+    (more than one parent) whose subject has no usable ticket reference
+    falls back to searching its PARENTS' subjects for the reference that
+    actually attributes the reconciled content, instead of being treated as
+    a wholly unattributed touch."""
+
+    subjects = []
     subject = _commit_subject(root, sha)
-    if subject.is_nothing:
-        return False
-    for ref in _TICKET_REF_RE.findall(subject.danger_some):
-        if ref == ticket.id:
-            continue
-        other = queue.tickets.get(ref)
-        if other is None:
-            continue
-        if scope_matches(file, other.scope):
-            return True
+    if subject.is_some:
+        subjects.append(subject.danger_some)
+    parents = _commit_parents(root, sha)
+    if len(parents) > 1 and not (
+        subject.is_some and _TICKET_REF_RE.search(subject.danger_some)
+    ):
+        for parent in parents:
+            parent_subject = _commit_subject(root, parent)
+            if parent_subject.is_some:
+                subjects.append(parent_subject.danger_some)
+    for subject_text in subjects:
+        for ref in _TICKET_REF_RE.findall(subject_text):
+            if ref == ticket.id:
+                continue
+            other = queue.tickets.get(ref)
+            if other is None:
+                continue
+            if scope_matches(file, other.scope):
+                return True
     return False
 
 
