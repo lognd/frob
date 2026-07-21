@@ -106,6 +106,18 @@ about) -- this has caused silent failures where a command failed but the
 truncated output looked clean. If output is long, redirect to a file and
 read the file, or scroll -- do not filter the live command.
 
+## 3b. Never background a verification and end your turn to "wait" for it
+
+As a dispatched sub-agent, do NOT run pytest / frob check / builds with
+run_in_background (or set a Monitor) and then end your turn "waiting for
+the notification". The moment you end your turn with no live background
+children, no notification will EVER arrive -- the mission silently stalls
+until a coordinator manually notices and pokes you (this has burned
+multiple real dispatches). Run every verification command in the
+FOREGROUND and wait for it in-turn, even when it takes minutes. The only
+sanctioned exception is `make coverage`, which you must not run at all
+(section 6b) -- everything else is foreground.
+
 ## 4. Scope conventions
 
 - `tickets.md` is always in scope, implicitly, for any ticket -- the Done
