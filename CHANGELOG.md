@@ -17,6 +17,19 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.36.0] - unreleased
+
+Public-API surface change since 0.35.0 (mechanical semver via REL001): an
+additive (minor) bump -- new render vocabulary on `frob.render`.
+
+- T-0460: render vocabulary follow-on to the T-0448 foundation -- `table`,
+  `tree`, and `count_deltas` elements (each total: plain-mode shape and
+  color-mode painting are identical once ANSI is stripped), plus `Progress`
+  (TTY-only, cursor-controlling, clears on completion per the T-0419
+  contract; a no-op on any non-TTY stream). New `RenderWriter` methods:
+  `table`, `tree`, `count_deltas`, `progress`. See
+  `docs/modules/render.md`.
+
 ## [0.34.0] - unreleased
 
 Public-API surface change since 0.33.0 (mechanical semver via REL001): an
