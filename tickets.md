@@ -5829,7 +5829,7 @@ unintended deletions from the merge).
 ```yaml
 id: T-0513
 title: 'strata audit G9: native-staleness detection is mtime-only, defeated by a touch'
-state: in-progress
+state: done
 kind: security
 origin: human
 created: '2026-07-21'
