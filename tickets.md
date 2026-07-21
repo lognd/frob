@@ -2434,7 +2434,7 @@ T-0239 fixed graph/outline walking but a full frob check still shows archgate/se
 id: T-0338
 title: 'frob ticket land: own the full worktree->main flow (merge, REL001 bump+stamp,
   native rebuild, sweep refresh, evidence/done-report validation)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
