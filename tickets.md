@@ -6007,92 +6007,9 @@ Dropped (2026-07-21): duplicate of T-draft-5443bd5e, same stale-base worktree ar
 
 found while working T-0472: frob check --ticket T-0472 reports COV003 for T-0416 (already closed/done) -- its recorded evidence id tests/unit/strata/test_code_binding.py::TestBindCode::test_nested_git_checkout_pruned_even_when_not_covered_by_exclude_globs does not exist anywhere in the repo (grep -rn finds nothing), even after deleting .frob/pytest-collect.json to force a cache rebuild. Either the test was removed/renamed after T-0416 closed, or the evidence id was never real. Unrelated to T-0472's scope; filing separately per the playbook out-of-scope rule.
 
-<!-- ticket:T-draft-2d6b3e5d -->
+<!-- ticket:T-0491 -->
 ```yaml
-id: T-draft-2d6b3e5d
-title: 'frob ticket evidence: dot-form Class.method ids never verify as passing (raw
-  ids passed to _verify_ids_passing before normalization)'
-state: queued
-kind: bug
-origin: human
-created: '2026-07-21'
-blocked_by: []
-parent: null
-scope:
-- src/frob/app/ticket_runner.py
-scope_changes: []
-evidence: []
-attachments: []
-acceptance: []
-threat: null
-```
-Found while working T-0400. `frob ticket evidence <id> "path::Class.method"` (the dot form the playbook/docs document as the canonical evidence-id spelling) ALWAYS fails with EvidenceNotPassing, even when the test genuinely passes. Root cause: _apply_evidence (src/frob/app/ticket_runner.py) passes the raw, un-normalized node_ids straight into _verify_ids_passing, which buckets ids via matches_collected(n, python_collected) -- but python_collected (from _collect_python_and_rust_ids) stores pytest's native '::' form only. A dot-form id never matches_collected() against that set, so its bucket is empty, run_selected has nothing to run, and the id silently ends up absent from the returned passing frozenset -- rejected downstream as EvidenceNotPassing with a misleading message (the test did pass, it was just never actually invoked for this check). add_evidence's OWN normalization (_validate_evidence_list, T-0293) already converts dot-form to :: form before resolution/persistence; _apply_evidence needs to pass that SAME normalized list into _verify_ids_passing instead of the raw CLI args, or the two normalization paths silently diverge. Repro: 'frob ticket evidence T-XXXX "tests/test_foo.py::TestBar.test_baz"' rejects; 'frob ticket evidence T-XXXX "tests/test_foo.py::TestBar::test_baz"' (:: form) for the identical test succeeds. Workaround used in T-0400: recorded evidence in :: form.
-
-<!-- ticket:T-draft-30d66138 -->
-```yaml
-id: T-draft-30d66138
-title: 'release: bump version + CHANGELOG entry for T-0263 KRB001-004 API'
-state: queued
-kind: docs
-origin: human
-created: '2026-07-21'
-blocked_by: []
-parent: null
-scope:
-- pyproject.toml
-- CHANGELOG.md
-- .frob-release.json
-scope_changes: []
-evidence: []
-attachments: []
-acceptance: []
-threat: null
-```
-T-0263 added public API (KrbMovementViolation, evaluate_krb_movement_waived, evaluate_unconstrained_delegation, evaluate_roastable_spn, evaluate_constrained_delegation_blast_radius, evaluate_cross_realm_containment, KRB_MOVEMENT_CATALOG/_OUT_OF_SCOPE/_VIEWS, KRB_MULTI_INSTANCE_WAIVER_FAMILIES, build_compromised_krb_scenario) to frob.strata, which frob check's REL001 gate flags as a minor API change needing a version bump (>= 0.36.0) plus a CHANGELOG.md entry and frob release stamp. T-0263's own scope glob does not include pyproject.toml/CHANGELOG.md/.frob-release.json, so this is filed as separate follow-on release-management work rather than silently widening T-0263's scope.
-
-<!-- ticket:T-draft-4c5fea52 -->
-```yaml
-id: T-draft-4c5fea52
-title: fix pre-existing E501 in src/frob/strata/_scenarios.py:518
-state: queued
-kind: bug
-origin: human
-created: '2026-07-21'
-blocked_by: []
-parent: null
-scope:
-- src/frob/strata/_scenarios.py
-scope_changes: []
-evidence: []
-attachments: []
-acceptance: []
-threat: null
-```
-Landed on main via the krb_movement merge (T-0423's own git merge main pulled this in): src/frob/strata/_scenarios.py:518 is a 109-char frob:waive PERF004 comment, over ruff's 88-col E501 limit. Pre-existing on main at merge time, unrelated to T-0423's build_graph/analyze_project memoization work -- filed rather than fixed silently since it is outside T-0423's actual task, even though its path loosely matches that ticket's src/frob/strata/ scope glob. Fix: wrap the comment or add a targeted noqa: E501.
-
-<!-- ticket:T-draft-5443bd5e -->
-```yaml
-id: T-draft-5443bd5e
-title: T-0416 evidence no longer collects (COV003)
-state: queued
-kind: bug
-origin: human
-created: '2026-07-21'
-blocked_by: []
-parent: null
-scope:
-- tests/unit/strata/test_code_binding.py
-scope_changes: []
-evidence: []
-attachments: []
-acceptance: []
-threat: null
-```
-found while working T-0425: frob check reports COV003 for T-0416 (done) -- its recorded evidence tests/unit/strata/test_code_binding.py::TestBindCode::test_nested_git_checkout_pruned_even_when_not_covered_by_exclude_globs no longer collects (pytest --collect-only: 'not found', no match in TestBindCode). Either the test was renamed/removed since T-0416 closed, or something broke collection for it. Out of scope for T-0425 (src/frob/gates/, frob.toml, docs/modules/gates.md, tests/test_gates.py only).
-
-<!-- ticket:T-draft-5a44ea39 -->
-```yaml
-id: T-draft-5a44ea39
+id: T-0491
 title: extend T-0423 run-scoped memoization to frob.dup.find_duplicates
 state: queued
 kind: bug
@@ -6110,11 +6027,11 @@ threat: null
 ```
 T-0423 added run-scoped @memoize_per_run memoization for build_graph and analyze_project (src/frob/check/_memo.py), but find_duplicates was left un-memoized: it lives in src/frob/dup/_legacy.py, which is outside T-0423's declared scope and was under concurrent active rework (sibling agent editing src/frob/dup/_template.py) at the time. Once that rework settles, decorate find_duplicates (or its _pipeline.find_clones successor) with frob.check._memo.memoize_per_run at its definition site, matching the build_graph/analyze_project precedent -- covers every caller (frob.check._python._run_dup, frob.gates._prework, frob.gates._arch, frob.app.dup_runner) automatically with no call-site edits. Verify with a call-counter test mirroring tests/unit/test_memo.py::test_build_graph_second_call_is_memo_hit.
 
-<!-- ticket:T-draft-82caf099 -->
+<!-- ticket:T-0492 -->
 ```yaml
-id: T-draft-82caf099
-title: 'dup: python-centric _KEYWORDS misclassifies rust/ts/c/cpp keywords (let/fn/etc)
-  as identifiers in R5 def-use labeling'
+id: T-0492
+title: 'frob ticket evidence: dot-form Class.method ids never verify as passing (raw
+  ids passed to _verify_ids_passing before normalization)'
 state: queued
 kind: bug
 origin: human
@@ -6122,32 +6039,11 @@ created: '2026-07-21'
 blocked_by: []
 parent: null
 scope:
-- src/frob/dup/_pipeline.py
+- src/frob/app/ticket_runner.py
 scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
 threat: null
 ```
-Found while working T-0447 (tests/test_dup.py::TestCrossLanguageR5Litmus). _KEYWORDS is a python-only keyword set; a Rust let in a let_declaration is not recognized as a keyword, so _assignment_ids mis-labels it as an extra 'def' node, diverging the def-use graph from an equivalent Python function's graph. Needs a per-grammar keyword set (mirroring _BLOCK_LABELS/_ASSIGNMENT_LABELS's per-language pattern) so R5 cross-language structural matching is not accidentally broken by declaration-keyword tokens. Also: T-0447 only implements two of R3's three named canonicalizations (literal abstraction + elif control-flow desugar); commutative-operand reordering and real for/while loop-shape desugaring still need AST structure, not a token fold -- tracked as future work here too. Also: frob.dup._exhaustiveness.DUP_MATRIX_EXCUSES' r3-vs-r2 excuse (and the non-python r3/r5 language-gap excuses) should be updated to DUP_CLAIMS now that tests/test_dup.py proves r3 fires independently of r2 and r5 fires cross-language python/rust -- out of T-0447's declared scope (src/frob/dup/_exhaustiveness.py not in scope).
-
-<!-- ticket:T-draft-d6d316c8 -->
-```yaml
-id: T-draft-d6d316c8
-title: T-0416 evidence test_nested_git_checkout_pruned_even_when_not_covered_by_exclude_globs
-  does not resolve (COV003)
-state: queued
-kind: bug
-origin: human
-created: '2026-07-21'
-blocked_by: []
-parent: null
-scope:
-- tests/unit/strata/test_code_binding.py
-scope_changes: []
-evidence: []
-attachments: []
-acceptance: []
-threat: null
-```
-found while working T-0472: frob check --ticket T-0472 reports COV003 for T-0416 (already closed/done) -- its recorded evidence id tests/unit/strata/test_code_binding.py::TestBindCode::test_nested_git_checkout_pruned_even_when_not_covered_by_exclude_globs does not exist anywhere in the repo (grep -rn finds nothing), even after deleting .frob/pytest-collect.json to force a cache rebuild. Either the test was removed/renamed after T-0416 closed, or the evidence id was never real. Unrelated to T-0472's scope; filing separately per the playbook out-of-scope rule.
+Found while working T-0400. `frob ticket evidence <id> "path::Class.method"` (the dot form the playbook/docs document as the canonical evidence-id spelling) ALWAYS fails with EvidenceNotPassing, even when the test genuinely passes. Root cause: _apply_evidence (src/frob/app/ticket_runner.py) passes the raw, un-normalized node_ids straight into _verify_ids_passing, which buckets ids via matches_collected(n, python_collected) -- but python_collected (from _collect_python_and_rust_ids) stores pytest's native '::' form only. A dot-form id never matches_collected() against that set, so its bucket is empty, run_selected has nothing to run, and the id silently ends up absent from the returned passing frozenset -- rejected downstream as EvidenceNotPassing with a misleading message (the test did pass, it was just never actually invoked for this check). add_evidence's OWN normalization (_validate_evidence_list, T-0293) already converts dot-form to :: form before resolution/persistence; _apply_evidence needs to pass that SAME normalized list into _verify_ids_passing instead of the raw CLI args, or the two normalization paths silently diverge. Repro: 'frob ticket evidence T-XXXX "tests/test_foo.py::TestBar.test_baz"' rejects; 'frob ticket evidence T-XXXX "tests/test_foo.py::TestBar::test_baz"' (:: form) for the identical test succeeds. Workaround used in T-0400: recorded evidence in :: form.
