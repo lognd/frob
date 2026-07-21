@@ -8220,3 +8220,23 @@ acceptance: []
 threat: null
 ```
 Found while landing T-0483 in a worktree (branch worktree-agent-ae00df0ca54dd3df2, off main). Running frob ticket start/evidence/done-report/sweep (any command that rewrites the whole tickets.md ledger) on this branch silently reverted an already-finalized, unrelated ticket (T-0503, real id on main) back to its draft form (T-draft-94774bc5) in the rewritten tickets.md -- confirmed by diffing against main: the T-0503 marker+id both became T-draft-94774bc5 with no ticket CLI command targeting T-0503 at all. A stale Done report elsewhere in the ledger mentions 'Filed T-draft-94774bc5' in prose (harmless, just text), and something in the ledger-write path appears to match that provisional id string against a currently-finalized ticket sharing the same title and reassign its id backward when the write happens off the default branch. This corrupts a finalized ticket's identity as a side effect of an unrelated ticket's write -- worked around by hand-restoring the T-0503 marker/id in tickets.md before landing T-0483 (not a real fix). Needs root-causing in src/frob/tickets (is_draft_id/on_default_branch/finalize_draft or wherever ledger writes reconcile ids) and a regression test that writing an unrelated ticket off-default-branch never touches another already-finalized ticket's id.
+
+<!-- ticket:T-0506 -->
+```yaml
+id: T-0506
+title: 'COV006 false-positive class: extend reachability through same-file public
+  wrappers before burndown of the ~97 findings'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-21'
+blocked_by: []
+parent: null
+scope: []
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0483's COV006 (frob:tests edge to a private symbol with no call-graph reachability from the test) has a disclosed common FP shape: the call graph never records edges INTO public callees, so a test calling a same-file public wrapper that itself calls the bound private helper reads as unreachable. Before hand-burning down the ~97 COV006 / ~61 COV007 warn findings, extend the reachability check one hop through same-file public wrappers (or record public-callee edges for this check's purposes). Scope: src/frob/gates/__init__.py (COV006 helpers), tests/test_gates.py.
