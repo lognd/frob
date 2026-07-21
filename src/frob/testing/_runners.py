@@ -262,7 +262,6 @@ def _build_runner_argv(
     return Ok(argv)
 
 
-# frob:doc docs/modules/testing.md#rust-runner
 def _spec_owns_item(spec: RunnerSpec, item: str) -> bool:
     """True if `item`'s file path falls under `spec.cwd` (T-0128: lets several
     same-language runners -- e.g. frob-core and strata-core's cargo entries --
@@ -275,7 +274,6 @@ def _spec_owns_item(spec: RunnerSpec, item: str) -> bool:
     return file_part == spec.cwd or file_part.startswith(prefix)
 
 
-# frob:doc docs/modules/testing.md#rust-runner
 def _route_items(
     specs: list[RunnerSpec], items: tuple[str, ...]
 ) -> Result[dict[int, tuple[str, ...]], TestingError]:
@@ -341,7 +339,6 @@ def _find_pyo3_python() -> str | None:
     return None
 
 
-# frob:doc docs/modules/testing.md#rust-runner
 def _cargo_env() -> Result[dict[str, str], TestingError]:
     """The `PYO3_PYTHON` + `LD_LIBRARY_PATH` overlay a `cargo test` subprocess
     needs to link/run a PyO3 crate. `Err` -- never a fabricated pass -- when no

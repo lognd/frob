@@ -209,7 +209,6 @@ def _docstring_nodes(container: Node) -> list[Node]:
     return nodes
 
 
-# frob:doc docs/modules/lang.md#comment-extraction-and-binding
 def _walk_python_docstring_comments(
     root: Node, symbols: tuple[RawSymbol, ...]
 ) -> tuple[RawComment, ...]:

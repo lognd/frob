@@ -333,7 +333,6 @@ def _build_parsed_file(
     return parsed
 
 
-# frob:doc docs/modules/graph.md#public-api
 def _parse_strata_file(path: Path) -> Result[ParsedFile, LangError]:
     """`parse_file`'s `.strata` branch -- strata-core validation, no tree-sitter.
 

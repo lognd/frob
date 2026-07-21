@@ -347,7 +347,6 @@ def _dup_summary(n_unaccounted: int, n_waived: int) -> str:
     return base
 
 
-# frob:doc docs/modules/dup.md#check-stage-summary-is-waiver-aware-t-0375
 def _run_dup(root: Path) -> ToolResult:
     """Structural duplicate-block detection, waiver-aware (T-0375): a group
     is excluded from the headline count only when EVERY one of its
@@ -441,7 +440,6 @@ def _arch_long_function_waived_symrefs(root: Path, suggestions) -> set[str]:  # 
     return {v.symref for v in waived if v.symref is not None}
 
 
-# frob:doc docs/modules/arch.md#check-stage-summary-is-waiver-aware-for-arch001-t-0375
 # frob:ticket T-0442
 def _run_arch(root: Path) -> ToolResult:
     """frob's architectural analysis (long functions, god classes, etc.),
