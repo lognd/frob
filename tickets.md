@@ -4462,7 +4462,7 @@ META-PRINCIPLE (encode): every time we discover we "got away with" something, th
 id: T-0409
 title: 'Ledger-hygiene gate: enforce regular archiving (warn/fail when too many closed
   tickets sit un-archived)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -4472,13 +4472,175 @@ scope:
 - src/frob/gates/
 - src/frob/tickets/
 - frob.toml
-scope_changes: []
-evidence: []
+- tests/test_gates_tickets_hygiene.py
+- .frob-release.json
+- CHANGELOG.md
+- docs/modules/tickets.md
+- pyproject.toml
+- tests/test_ticket_land.py
+- tests/unit/test_ticket_runner_land_release.py
+- tests/unit/test_ticket_store.py
+- uv.lock
+- tests/test_tickets_collision.py
+scope_changes:
+- op: add
+  glob: tests/test_gates_tickets_hygiene.py
+  reason: TICK003 gate needs test coverage outside src/frob/gates|tickets scope globs
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: 'sequential single-worktree dispatch (T-0357/T-0338 done earlier, not yet
+    landed to main): their committed files still show in the diff-vs-main SCOPE001
+    checks against; cross-ticket exemption did not fire since those commit subjects
+    did not literally name their ticket ids'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: CHANGELOG.md
+  reason: 'sequential single-worktree dispatch (T-0357/T-0338 done earlier, not yet
+    landed to main): their committed files still show in the diff-vs-main SCOPE001
+    checks against; cross-ticket exemption did not fire since those commit subjects
+    did not literally name their ticket ids'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: 'sequential single-worktree dispatch (T-0357/T-0338 done earlier, not yet
+    landed to main): their committed files still show in the diff-vs-main SCOPE001
+    checks against; cross-ticket exemption did not fire since those commit subjects
+    did not literally name their ticket ids'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: pyproject.toml
+  reason: 'sequential single-worktree dispatch (T-0357/T-0338 done earlier, not yet
+    landed to main): their committed files still show in the diff-vs-main SCOPE001
+    checks against; cross-ticket exemption did not fire since those commit subjects
+    did not literally name their ticket ids'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: 'sequential single-worktree dispatch (T-0357/T-0338 done earlier, not yet
+    landed to main): their committed files still show in the diff-vs-main SCOPE001
+    checks against; cross-ticket exemption did not fire since those commit subjects
+    did not literally name their ticket ids'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/test_ticket_runner_land_release.py
+  reason: 'sequential single-worktree dispatch (T-0357/T-0338 done earlier, not yet
+    landed to main): their committed files still show in the diff-vs-main SCOPE001
+    checks against; cross-ticket exemption did not fire since those commit subjects
+    did not literally name their ticket ids'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/test_ticket_store.py
+  reason: 'sequential single-worktree dispatch (T-0357/T-0338 done earlier, not yet
+    landed to main): their committed files still show in the diff-vs-main SCOPE001
+    checks against; cross-ticket exemption did not fire since those commit subjects
+    did not literally name their ticket ids'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: 'sequential single-worktree dispatch (T-0357/T-0338 done earlier, not yet
+    landed to main): their committed files still show in the diff-vs-main SCOPE001
+    checks against; cross-ticket exemption did not fire since those commit subjects
+    did not literally name their ticket ids'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_tickets_collision.py
+  reason: TICK003 fires against this repo's real un-archived-closed count when the
+    test calls tickets_gate(Path("."), ...); isolate with tmp_path
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_below_warn_threshold_is_clean
+- tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_above_default_warn_threshold_warns
+- tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_above_default_error_threshold_errors
+- tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_open_tickets_never_count_toward_threshold
+- tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_configurable_thresholds_from_frob_toml
+- tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_malformed_frob_toml_degrades_to_defaults
+- tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_never_writes_or_archives_anything
+- tests/unit/test_ticket_store.py::TestClosedTicketIds::test_returns_done_and_dropped_only
+- tests/unit/test_ticket_store.py::TestClosedTicketIds::test_orders_oldest_first
+- tests/unit/test_ticket_store.py::TestClosedTicketIds::test_empty_queue_is_empty
+- tests/test_tickets_collision.py::TestTick002GateUnwaivable::test_no_violation_off_default_branch
 attachments: []
 acceptance: []
 threat: null
 ```
 User directive (2026-07-20): we need a THING to ensure tickets get archived regularly -- not a habit to remember. Current state: tickets.md active ledger is 10,521 lines holding 61 closed (done/dropped) tickets un-archived (vs 99 genuinely open); frob ticket archive exists but NOTHING enforces running it, so it drifts (archiving has been DEFERRED repeatedly). Same class as the whole audit: an operation that should be enforced is left to discipline. FIX (per the meta-principle: a repeated "we got away with not doing X" is a frob enforcement gap): add a ledger-hygiene gate (TICK003-style) that makes stale un-archived closed tickets a build signal -- WARN when the active ledger holds more than a configurable threshold of closed tickets (default e.g. 20), escalating toward ERROR past a hard cap, with the fix being run frob ticket archive. Consider also: (a) frob ticket close/land optionally auto-archiving, or a frob ticket archive --stale that CI runs on a schedule; (b) an age dimension (a closed ticket older than N days un-archived). MUST be resurrection-safe: the known hazard is that archiving while worktrees are in flight lets a stale-base merge resurrect archived sections -- the gate should encourage archiving in QUIET windows (no active worktrees) and the land/splice path already has _drop_resurrected_ids + splice_ledger archive-resurrection guards which must stay sound. Ships per-project (T-0406) so every frob repo keeps its ledger honest. Acceptance: an active ledger with >threshold closed tickets reds/warns frob check naming the count + the archive command; after archive it clears; the gate is resurrection-aware (documented). Note: this is an instance of enforcing a maintenance obligation, sibling to the exhaustiveness registry T-0407.
+
+## Done report
+
+Added TICK003: a ledger-hygiene gate that WARNs (escalating to ERROR
+past a hard cap) when the active tickets.md ledger holds more than a
+configurable threshold of closed (done/dropped) tickets un-archived --
+systematizing the repeated "we got away with not archiving" gap named in
+the ticket (61 closed vs 99 open at filing time). Thresholds
+(stale_archive_warn=20, stale_archive_error=60 by default) come from
+frob.toml's [tickets] table, degrading to defaults on a missing/
+malformed frob.toml. New public frob.tickets.closed_ticket_ids(queue) is
+the shared "which tickets are closed" predicate the gate counts over --
+kept in frob.tickets (not computed inline in frob.gates) per the
+dispatch's steer to keep the gates/__init__.py touch additive; the only
+edits there are the new _tick003_* functions plus one added line each in
+tickets_gate's return expression and _KNOWN_GATE_RULES.
+
+Resurrection-safety: the gate only COUNTS and recommends `frob ticket
+archive`; it never writes tickets-archive.md itself, so it structurally
+cannot interact with the land/splice path's archive-resurrection guards
+(_drop_resurrected_ids, splice_ledger) -- those guard a write this gate
+never performs. Verified with a dedicated
+test_never_writes_or_archives_anything test.
+
+Fixed two regressions surfaced while wiring this in: (1) a docblock-
+ordering bug where closed_ticket_ids's insertion point stole doable's
+frob:doc/frob:tests/frob:waive directive block, leaving doable with
+COV001; (2) TestTick002GateUnwaivable.test_no_violation_off_default_branch
+called tickets_gate(Path("."), ...) against this repo's own real
+tickets.md, which now legitimately has a TICK003 WARN (44 un-archived
+closed tickets) -- isolated with tmp_path since the test is only about
+TICK002's branch guard.
+
+### Changed
+```
+ .frob-release.json                            |   6 +-
+ CHANGELOG.md                                  |  61 ++++++++
+ docs/modules/tickets.md                       |  53 ++++++-
+ pyproject.toml                                |   2 +-
+ src/frob/app/ticket_runner.py                 | 209 +++++++++++++++++++++++++-
+ src/frob/gates/__init__.py                    |  89 ++++++++++-
+ src/frob/tickets/__init__.py                  | 125 +++++++++++++++
+ src/frob/tickets/_land.py                     | 132 +++++++++++++++-
+ src/frob/tickets/_models.py                   |   9 ++
+ tests/test_gates_tickets_hygiene.py           | 105 +++++++++++++
+ tests/test_ticket_land.py                     | 167 ++++++++++++++++++++
+ tests/test_tickets_collision.py               |   8 +-
+ tests/unit/test_ticket_runner_land_release.py | 182 ++++++++++++++++++++++
+ tests/unit/test_ticket_store.py               | 117 ++++++++++++++
+ tickets.md                                    | 206 ++++++++++++++++++++++++-
+ uv.lock                                       |   2 +-
+ 16 files changed, 1451 insertions(+), 22 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_below_warn_threshold_is_clean` (pytest node id, verified passing when recorded)
+- `tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_above_default_warn_threshold_warns` (pytest node id, verified passing when recorded)
+- `tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_above_default_error_threshold_errors` (pytest node id, verified passing when recorded)
+- `tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_open_tickets_never_count_toward_threshold` (pytest node id, verified passing when recorded)
+- `tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_configurable_thresholds_from_frob_toml` (pytest node id, verified passing when recorded)
+- `tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_malformed_frob_toml_degrades_to_defaults` (pytest node id, verified passing when recorded)
+- `tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_never_writes_or_archives_anything` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestClosedTicketIds::test_returns_done_and_dropped_only` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestClosedTicketIds::test_orders_oldest_first` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestClosedTicketIds::test_empty_queue_is_empty` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_collision.py::TestTick002GateUnwaivable::test_no_violation_off_default_branch` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0410 -->
 ```yaml
