@@ -4668,7 +4668,7 @@ title: 'frob ticket requeue/unstart: no CLI command exists for the state-machine
   in-progress->queued transition (plan/block/close/fail only) -- a parked/mis-started
   ticket cannot be honestly requeued without hand-editing; add the command (releases
   the T-0453 lease)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-07-20'
