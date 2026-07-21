@@ -17,6 +17,7 @@ from typani.error_set import ErrorSet
 __all__ = [
     "CoverageData",
     "CoverageError",
+    "DebtEntry",
     "GateConfig",
     "GateError",
     "GateReport",
@@ -46,6 +47,21 @@ class WaiverRef(BaseModel):
 
     site: str
     reason: str
+
+
+# frob:doc docs/modules/gates.md#debt-gate-t-0412
+class DebtEntry(BaseModel):
+    """One outstanding `frob:debt` entry, as `frob debt` lists it (T-0412):
+    the rule it suppresses, where it lives, the ticket that owns it, its
+    expiry (if any), and whether it has already expired."""
+
+    model_config = ConfigDict(frozen=True)
+
+    rule: str
+    site: str
+    ticket: str
+    until: str
+    expired: bool
 
 
 # frob:doc docs/modules/gates.md#data-models

@@ -55,6 +55,7 @@ from frob.gates._exclude_hazard import exclude_hazard_gate
 from frob.gates._models import (
     CoverageData,
     CoverageError,
+    DebtEntry,
     GateConfig,
     GateError,
     GateReport,
@@ -729,6 +730,12 @@ _KNOWN_GATE_RULES = frozenset(
         "TEST011",
         "TODO001",
         "TODO002",
+        # T-0412: frob:debt (temporary, ticket-bound, collected-before-
+        # release) vs frob:waive (permanent) -- malformed directive,
+        # non-open ticket, expired `until` boundary.
+        "DEBT001",
+        "DEBT002",
+        "DEBT003",
         "WAIVE001",
         "WAIVE002",
         # T-0470: over-broad package-prefix waiver reach.
@@ -2366,6 +2373,240 @@ def _todo001(
         *_todo002_edges(snapshot, queue),
         *_todo001_bare(snapshot, diff),
     )
+
+
+# ---------------------------------------------------------------------------
+# T-0412: the debt-vs-waive distinction
+#
+# `frob:waive <RULE> reason="..."` is PERMANENT: a genuine, forever-
+# acceptable exception. `frob:debt <RULE> reason="..." ticket="T-####"
+# [until="..."]` is its TEMPORARY counterpart -- an accepted gap that is
+# TRACKED as owed, bound to an open ticket (never optional, unlike a
+# waiver's ticket-free reason), and escalates to a hard ERROR once its
+# `until` boundary (a date `YYYY-MM-DD` or a semver `X.Y.Z`) passes. The
+# release gate additionally refuses to bless a release while ANY debt is
+# still open at all, expired or not (`_release_open_debt_violations`) --
+# debt is collected and re-raised before shipping, never silently carried
+# forward as a de facto permanent exception the way an un-audited
+# `frob:waive` can be.
+# ---------------------------------------------------------------------------
+
+
+def _debt_edges(snapshot: GraphSnapshot) -> tuple[Edge, ...]:
+    """Every `frob:debt` edge in the snapshot (dsl.py already rejects one
+    missing `reason=`/`ticket=` as a MalformedDirective, T-0412)."""
+    return tuple(e for e in snapshot.edges if e.kind == EdgeKind.DEBT)
+
+
+def _debt001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
+    """DEBT001: a `frob:debt` directive missing `reason="..."` and/or
+    `ticket="T-####"` -- surfaced from `frob.graph`'s MalformedDirective
+    list, mirroring WAIVE001's own shape for `frob:waive`."""
+    violations: list[Violation] = []
+    for md in snapshot.malformed:
+        if "frob:debt" not in md.reason:
+            continue
+        _log.debug("DEBT001: %s:%d %s", md.file, md.line, md.reason)
+        violations.append(
+            Violation(
+                rule="DEBT001",
+                severity=Severity.ERROR,
+                file=md.file,
+                line=md.line,
+                message=f"DEBT001: {md.file}:{md.line} {md.reason}",
+            )
+        )
+    return tuple(violations)
+
+
+def _debt002_violations(
+    snapshot: GraphSnapshot, queue: TicketQueue
+) -> tuple[Violation, ...]:
+    """DEBT002: a `frob:debt`'s `ticket="..."` names a ticket that is
+    missing or not open (T-0412's "anti-lie" requirement -- a debt must
+    point at real, open, owed work, never a closed/nonexistent ticket
+    pretending the gap is still tracked). Reuses the same open-ticket
+    check `_todo002_edges` (TODO002) applies to `frob:todo`, but at ERROR
+    severity: an untracked TODO is a hygiene warning, a mis-tracked DEBT is
+    a structural lie about what is actually owed."""
+    violations: list[Violation] = []
+    for edge in _debt_edges(snapshot):
+        ticket_id = edge.attrs.get("ticket", "")
+        target = queue.tickets.get(ticket_id)
+        if target is not None and target.state in _OPEN_STATES:
+            continue
+        file, line = _site_from_edge_origin(edge.origin)
+        _log.debug("DEBT002: %s -> ticket=%s not open", edge.src, ticket_id)
+        violations.append(
+            Violation(
+                rule="DEBT002",
+                severity=Severity.ERROR,
+                file=file,
+                line=line,
+                message=(
+                    f"DEBT002: frob:debt {edge.target} at {edge.src} is bound to "
+                    f"ticket={ticket_id!r}, which is not open (missing or closed); "
+                    f"a debt must point at real, owed work -- rebind to an open "
+                    f"ticket or resolve the debt and remove the directive"
+                ),
+            )
+        )
+    return tuple(violations)
+
+
+def _debt_is_expired(until: str, *, current_date: str, current_version: str) -> bool:
+    """Whether `until` (a `YYYY-MM-DD` date or an `X.Y.Z` semver) has
+    passed, judged against `current_date`/`current_version` (T-0412). An
+    unparseable `until` is treated as NOT expired here -- DEBT003 only
+    fires on a boundary it can actually evaluate; a malformed `until`
+    value is a separate, human-readable concern (not silently ignored: it
+    still shows up verbatim in `frob debt`'s listing)."""
+    date_match = re.match(r"^\d{4}-\d{2}-\d{2}$", until.strip())
+    if date_match:
+        return until.strip() <= current_date
+    parsed_until = _debt_parse_version(until)
+    parsed_current = _debt_parse_version(current_version)
+    if parsed_until is not None and parsed_current is not None:
+        return parsed_current >= parsed_until
+    return False
+
+
+_DEBT_VERSION_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)")
+
+
+def _debt_parse_version(version: str) -> tuple[int, int, int] | None:
+    """`(major, minor, patch)` from an `X.Y.Z(-suffix)` string, or `None`
+    (T-0412) -- a small self-contained copy of `frob.release`'s own
+    `_parse`, kept local rather than importing a private symbol across
+    the module boundary (`frob.gates` -> `frob.release` is already a
+    dependency for `release_gate`, but only of its PUBLIC API)."""
+    match = _DEBT_VERSION_RE.match(version.strip())
+    if match is None:
+        return None
+    return (int(match.group(1)), int(match.group(2)), int(match.group(3)))
+
+
+def _debt003_violations(
+    snapshot: GraphSnapshot, *, current_date: str, current_version: str
+) -> tuple[Violation, ...]:
+    """DEBT003: a `frob:debt` whose `until="..."` boundary has passed --
+    escalates from a suppressed finding to a hard ERROR (T-0412's whole
+    point: debt with an expiry that nothing enforces is not actually
+    temporary). A debt with no `until` at all never expires on its own;
+    it is still caught at release time by `_release_open_debt_violations`
+    (ALL open debt blocks a release, not just expired debt)."""
+    violations: list[Violation] = []
+    for edge in _debt_edges(snapshot):
+        until = edge.attrs.get("until", "")
+        if not until:
+            continue
+        if not _debt_is_expired(
+            until, current_date=current_date, current_version=current_version
+        ):
+            continue
+        file, line = _site_from_edge_origin(edge.origin)
+        _log.debug("DEBT003: %s expired (until=%s)", edge.src, until)
+        violations.append(
+            Violation(
+                rule="DEBT003",
+                severity=Severity.ERROR,
+                file=file,
+                line=line,
+                message=(
+                    f"DEBT003: frob:debt {edge.target} at {edge.src} expired "
+                    f"(until={until!r}); resolve the debt (fix the underlying "
+                    f"gap) and remove the directive, or file a follow-up and "
+                    f"extend `until` with a written reason"
+                ),
+            )
+        )
+    return tuple(violations)
+
+
+# frob:doc docs/modules/gates.md#debt-gate-t-0412
+# frob:tests tests/test_gates.py::TestDebtGate.test_debt001_malformed_directive_is_reported  # noqa: E501
+# frob:tests tests/test_gates.py::TestDebtGate.test_debt002_closed_ticket_is_reported  # noqa: E501
+# frob:tests tests/test_gates.py::TestDebtGate.test_debt003_expired_by_date_is_reported  # noqa: E501
+# frob:tests tests/test_gates.py::TestDebtGate.test_debt003_expired_by_version_is_reported  # noqa: E501
+# frob:tests tests/test_gates.py::TestDebtGate.test_clean_debt_produces_no_violations  # noqa: E501
+def debt_gate(
+    snapshot: GraphSnapshot,
+    queue: TicketQueue,
+    *,
+    current_date: str,
+    current_version: str,
+) -> tuple[Violation, ...]:
+    """DEBT001-003 (T-0412): `frob:debt`'s three failure modes -- a
+    malformed directive, a directive bound to a non-open ticket, and a
+    directive whose `until` boundary has passed. `current_date`
+    (`YYYY-MM-DD`) and `current_version` (`X.Y.Z`) are injected rather than
+    computed here so this stays a pure function over its inputs, matching
+    every other gate in this module."""
+    return (
+        *_debt001_violations(snapshot),
+        *_debt002_violations(snapshot, queue),
+        *_debt003_violations(
+            snapshot, current_date=current_date, current_version=current_version
+        ),
+    )
+
+
+# frob:doc docs/modules/gates.md#debt-gate-t-0412
+# frob:tests tests/test_gates.py::TestDebtGate.test_lists_every_debt_entry  # noqa: E501
+def list_debt(
+    snapshot: GraphSnapshot, *, current_date: str, current_version: str
+) -> tuple[DebtEntry, ...]:
+    """Every currently-recorded `frob:debt` entry (T-0412), for `frob debt`
+    to report honestly -- independent of whether each entry is itself
+    well-formed/open/expired (a malformed or mis-tracked one still shows up
+    here; DEBT001/002/003 are what fail the BUILD over it, this is what
+    lets a human/agent see the whole outstanding set at a glance)."""
+    entries: list[DebtEntry] = []
+    for edge in _debt_edges(snapshot):
+        until = edge.attrs.get("until", "")
+        expired = bool(until) and _debt_is_expired(
+            until, current_date=current_date, current_version=current_version
+        )
+        entries.append(
+            DebtEntry(
+                rule=edge.target,
+                site=edge.src,
+                ticket=edge.attrs.get("ticket", ""),
+                until=until,
+                expired=expired,
+            )
+        )
+    return tuple(entries)
+
+
+def _release_open_debt_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
+    """REL001: a release must never ship with ANY open `frob:debt` --
+    expired or not (T-0412's central requirement: debt is collected and
+    re-raised BEFORE release, never silently carried forward as a de facto
+    permanent exception). Reported under REL001, the same rule id
+    `release_gate`'s other findings use, since this is a release-blocking
+    condition, not a new independent failure mode of its own."""
+    debts = _debt_edges(snapshot)
+    if not debts:
+        return ()
+    violations: list[Violation] = []
+    for edge in debts:
+        file, line = _site_from_edge_origin(edge.origin)
+        violations.append(
+            Violation(
+                rule="REL001",
+                severity=Severity.ERROR,
+                file=file,
+                line=line,
+                message=(
+                    f"REL001: frob:debt {edge.target} at {edge.src} "
+                    f"(ticket={edge.attrs.get('ticket', '')!r}) is still open; "
+                    f"all debt must be resolved (or its owning ticket closed, "
+                    f"clearing the directive) before a release, run: frob debt"
+                ),
+            )
+        )
+    return tuple(violations)
 
 
 # ---------------------------------------------------------------------------
@@ -4649,6 +4890,10 @@ def release_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     )
     if bump != 0 and not _changelog_mentions(root, current_version):
         violations.append(_rel001_missing_changelog(current_version))
+    # T-0412: a release must never ship with ANY open frob:debt, expired or
+    # not -- debt is collected and re-raised before shipping, never
+    # silently carried forward as a de facto permanent waiver.
+    violations.extend(_release_open_debt_violations(snapshot))
     _log.info("release_gate: bump=%s, %d violation(s)", bump.name, len(violations))
     return tuple(violations)
 
@@ -5089,6 +5334,8 @@ _ALL_GATES = frozenset(
         "docblocks",
         "walk_lint",
         "excludehazard",
+        # T-0412: frob:debt malformed/non-open-ticket/expired-until checks.
+        "debt",
     }
 )
 
@@ -5347,6 +5594,7 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     "docblocks",
     "walk_lint",
     "excludehazard",
+    "debt",
     "scope",
     "prework",
 )
@@ -5406,6 +5654,16 @@ def _build_jobs(
         "release": lambda: release_gate(st.root, st.snapshot),
         "decisions": lambda: decisions_gate(st.root, st.snapshot),
         "tickets": lambda: tickets_gate(st.root, st.queue),
+        # T-0412: current_date/current_version are injected (debt_gate stays
+        # a pure function of its args, matching every other gate here) --
+        # an unresolvable version degrades to "0.0.0" so a repo with no
+        # pyproject.toml still gets the date-based expiry check.
+        "debt": lambda: debt_gate(
+            st.snapshot,
+            st.queue,
+            current_date=date.today().isoformat(),
+            current_version=_current_version(st.repo_root) or "0.0.0",
+        ),
         # T-0465: `.git/info/exclude` is the SHARED common-dir file across
         # every worktree of this clone, always against repo_root (never
         # the possibly-scoped st.root) for the same reason secrets/refs
@@ -5703,6 +5961,7 @@ def _assemble_gate_report(
 __all__ = [
     "CoverageData",
     "CoverageError",
+    "DebtEntry",
     "DecisionError",
     "GateConfig",
     "GateError",
@@ -5730,10 +5989,12 @@ __all__ = [
     "load_coverage",
     "load_invariants",
     "cve_fingerprint_scan_gate",
+    "debt_gate",
     "decisions_gate",
     "doclink_gate",
     "docanchor_gate",
     "dup_gate",
+    "list_debt",
     "evidence_covers_scope",
     "fuzz_gate",
     "perf_gate",

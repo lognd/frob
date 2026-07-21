@@ -47,6 +47,8 @@ class Subcommand(str, enum.Enum):
     deploy = "deploy"
     doctor = "doctor"
     clean = "clean"
+    # T-0412: list outstanding frob:debt entries.
+    debt = "debt"
 
 
 # frob:doc docs/modules/app.md#config
@@ -193,6 +195,10 @@ class AppConfig(BaseModel):
     ack_refs: list[str] = []
     ack_facet: str = "sig"
     ack_path: Path | None = None
+
+    # debt (T-0412)
+    debt_path: Path | None = None
+    debt_json: bool = False
 
     # ticket
     ticket_command: str | None = None
@@ -446,6 +452,7 @@ class AppConfig(BaseModel):
             "gitlog_path",
             "graph_path",
             "ack_path",
+            "debt_path",
             "ticket_path",
             "ticket_attach_path",
             "ticket_worktree",
@@ -576,6 +583,7 @@ class AppConfig(BaseModel):
             "check_stamp_baseline",
             "check_delta",
             "graph_json",
+            "debt_json",
             "ticket_json",
             "ticket_show_blocked",
             "ticket_ignore_lease",

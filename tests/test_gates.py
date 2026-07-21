@@ -20,6 +20,7 @@ from frob.gates import (
     Violation,
     active_ticket,
     coverage_gate,
+    debt_gate,
     delta_violations,
     drift_gate,
     exclude_hazard_gate,
@@ -28,6 +29,7 @@ from frob.gates import (
     invariant_gate,
     is_baseline_stale,
     known_gate_rule_ids,
+    list_debt,
     load_baseline,
     load_coverage,
     prework_gate,
@@ -1252,6 +1254,165 @@ class TestCoverageGate:
         assert result.is_ok
         report = result.danger_ok
         assert _first_rule(report.violations, "WAIVE002") is not None
+
+
+class TestDebtGate:
+    """T-0412: frob:debt vs frob:waive -- malformed directive (DEBT001),
+    non-open ticket (DEBT002), expired until boundary (DEBT003)."""
+
+    def test_debt002_closed_ticket_is_reported(self, tmp_path: Path) -> None:
+        """T-0412: a frob:debt bound to a closed ticket is DEBT002 -- a debt
+        must point at real, OPEN, owed work."""
+        # frob:tests tests/test_gates.py::TestDebtGate.test_debt002_closed_ticket_is_reported
+        source = (
+            "def helper(x):\n"
+            '    # frob:debt TEST005 reason="coverage gap" ticket="T-0001"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={"T-0001": _ticket(state=TicketState.DONE)})
+        violations = debt_gate(
+            snap, queue, current_date="2026-01-01", current_version="0.1.0"
+        )
+        v = _first_rule(violations, "DEBT002")
+        assert v is not None
+        assert v.severity == Severity.ERROR
+
+    def test_debt002_open_ticket_is_silent(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates.py::TestDebtGate.test_debt002_open_ticket_is_silent
+        source = (
+            "def helper(x):\n"
+            '    # frob:debt TEST005 reason="coverage gap" ticket="T-0001"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={"T-0001": _ticket(state=TicketState.QUEUED)})
+        violations = debt_gate(
+            snap, queue, current_date="2026-01-01", current_version="0.1.0"
+        )
+        assert not any(v.rule == "DEBT002" for v in violations)
+
+    def test_debt003_expired_by_date_is_reported(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates.py::TestDebtGate.test_debt003_expired_by_date_is_reported
+        source = (
+            "def helper(x):\n"
+            '    # frob:debt TEST005 reason="coverage gap" ticket="T-0001" '
+            'until="2026-01-01"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={"T-0001": _ticket(state=TicketState.QUEUED)})
+        violations = debt_gate(
+            snap, queue, current_date="2026-06-01", current_version="0.1.0"
+        )
+        v = _first_rule(violations, "DEBT003")
+        assert v is not None
+        assert v.severity == Severity.ERROR
+
+    def test_debt003_not_yet_expired_is_silent(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates.py::TestDebtGate.test_debt003_not_yet_expired_is_silent
+        source = (
+            "def helper(x):\n"
+            '    # frob:debt TEST005 reason="coverage gap" ticket="T-0001" '
+            'until="2099-01-01"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={"T-0001": _ticket(state=TicketState.QUEUED)})
+        violations = debt_gate(
+            snap, queue, current_date="2026-01-01", current_version="0.1.0"
+        )
+        assert not any(v.rule == "DEBT003" for v in violations)
+
+    def test_debt003_expired_by_version_is_reported(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates.py::TestDebtGate.test_debt003_expired_by_version_is_reported
+        source = (
+            "def helper(x):\n"
+            '    # frob:debt TEST005 reason="coverage gap" ticket="T-0001" '
+            'until="1.0.0"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={"T-0001": _ticket(state=TicketState.QUEUED)})
+        violations = debt_gate(
+            snap, queue, current_date="2026-01-01", current_version="1.2.0"
+        )
+        v = _first_rule(violations, "DEBT003")
+        assert v is not None
+
+    def test_debt001_malformed_directive_is_reported(self, tmp_path: Path) -> None:
+        """T-0412: frob:debt requires BOTH reason= and ticket= -- missing
+        either is DEBT001, mirroring WAIVE001's shape for frob:waive."""
+        # frob:tests tests/test_gates.py::TestDebtGate.test_debt001_malformed_directive_is_reported
+        source = 'def helper(x):\n    # frob:debt TEST005 reason="coverage gap"\n    return x\n'
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        violations = debt_gate(
+            snap, queue, current_date="2026-01-01", current_version="0.1.0"
+        )
+        v = _first_rule(violations, "DEBT001")
+        assert v is not None
+        assert v.severity == Severity.ERROR
+        assert "ticket" in v.message
+
+    def test_clean_debt_produces_no_violations(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates.py::TestDebtGate.test_clean_debt_produces_no_violations
+        source = (
+            "def helper(x):\n"
+            '    # frob:debt TEST005 reason="coverage gap" ticket="T-0001" '
+            'until="2099-01-01"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={"T-0001": _ticket(state=TicketState.QUEUED)})
+        violations = debt_gate(
+            snap, queue, current_date="2026-01-01", current_version="0.1.0"
+        )
+        assert violations == ()
+
+    def test_lists_every_debt_entry(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates.py::TestDebtGate.test_lists_every_debt_entry
+        source = (
+            "def helper(x):\n"
+            '    # frob:debt TEST005 reason="coverage gap" ticket="T-0001" '
+            'until="2099-01-01"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        entries = list_debt(snap, current_date="2026-01-01", current_version="0.1.0")
+        assert len(entries) == 1
+        entry = entries[0]
+        assert entry.rule == "TEST005"
+        assert entry.ticket == "T-0001"
+        assert entry.until == "2099-01-01"
+        assert entry.expired is False
+
+    def test_release_gate_fails_while_debt_is_open(self, tmp_path: Path) -> None:
+        """T-0412's central requirement: a release must never ship with ANY
+        open frob:debt, expired or not."""
+        # frob:tests tests/test_gates.py::TestDebtGate.test_release_gate_fails_while_debt_is_open
+        from frob.gates import release_gate
+        from frob.release import stamp
+
+        source = (
+            "def helper(x):\n"
+            '    # frob:debt TEST005 reason="coverage gap" ticket="T-0001"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        _write(tmp_path, "pyproject.toml", '[project]\nname = "x"\nversion = "0.1.0"\n')
+        snap = _snapshot(tmp_path)
+        assert stamp(tmp_path, snap, "0.1.0").is_ok
+        violations = release_gate(tmp_path, snap)
+        assert any(v.rule == "REL001" and "frob:debt" in v.message for v in violations)
 
 
 class TestScopePrework:

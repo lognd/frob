@@ -540,6 +540,16 @@ def _add_ack_parser(sub) -> None:
     ack_p.add_argument("--path", dest="ack_path", metavar="DIR", default=".")
 
 
+# frob:ticket T-0412
+def _add_debt_parser(sub) -> None:
+    """Register the `frob debt` subcommand: list outstanding `frob:debt` entries."""
+    debt_p = sub.add_parser(
+        "debt", help="list outstanding frob:debt entries (rule, site, ticket, until)"
+    )
+    debt_p.add_argument("--path", dest="debt_path", metavar="DIR", default=".")
+    debt_p.add_argument("--json", dest="debt_json", action="store_true")
+
+
 def _add_ticket_new_identity_args(ticket_new_p) -> None:
     """Register `frob ticket new`'s title/kind/acceptance/threat classification args."""
     ticket_new_p.add_argument("--title", dest="ticket_title", required=True)
@@ -1493,6 +1503,7 @@ def _add_workflow_subparsers(sub) -> None:
     _add_gitlog_parser(sub)
     _add_graph_parser(sub)
     _add_ack_parser(sub)
+    _add_debt_parser(sub)
     _add_ticket_parser(sub)
     _add_test_parser(sub)
     _add_vet_parser(sub)

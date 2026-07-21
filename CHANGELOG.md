@@ -17,6 +17,22 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.54.0] - unreleased
+
+T-0412: `frob:debt` vs `frob:waive` -- a TEMPORARY, ticket-bound, tracked
+exception distinct from `frob:waive`'s PERMANENT one. New public API:
+`EdgeKind.DEBT`, `frob.gates.debt_gate`/`list_debt`/`DebtEntry`, and the
+`DEBT001`/`DEBT002`/`DEBT003` rule ids (malformed directive / non-open
+ticket / expired `until`). `frob.gates.release_gate` (REL001) now
+additionally fails while ANY `frob:debt` is open, expired or not -- debt
+is collected and re-raised before a release, never silently carried
+forward. New `frob debt [--json]` CLI (`frob.app.debt_runner`) lists every
+outstanding entry (rule, site, ticket, until, expired). Migration of the
+~143 existing debt-shaped `frob:waive` directives to `frob:debt` is
+deliberately NOT done in this release -- see docs/guides/extending/
+comment-dsl-directives.md's migration-guidance note; it is a follow-up
+burndown ticket.
+
 ## [0.53.0] - unreleased
 
 T-0456: crash/interrupt recovery, the remaining delta after T-0473

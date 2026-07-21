@@ -107,6 +107,40 @@ rule produced by any of the gates above is waivable at a site via
 `frob:waive RULE-ID reason="..."`; waivers are listed in every report, so a
 waiver is visible debt, never silence.
 
+### DEBT gate (T-0412)
+
+`frob:debt <RULE> reason="..." ticket="T-####" [until="YYYY-MM-DD"|"X.Y.Z"]`
+is the TEMPORARY counterpart to `frob:waive`'s PERMANENT exception (full
+directive semantics: `docs/guides/extending/comment-dsl-directives.md`'s
+"frob:waive vs frob:debt" section). `frob.gates.debt_gate` (rule family
+`DEBT`) raises three distinct failure modes, all ERROR severity (a debt is
+a structural claim about owed work, not a hygiene nit):
+
+- **DEBT001**: a `frob:debt` missing `reason="..."` and/or `ticket="T-###
+  #"` -- surfaced from `frob.graph`'s `MalformedDirective` list, mirroring
+  WAIVE001's shape.
+- **DEBT002**: `ticket="..."` names a ticket that is missing or not open.
+  Same open-ticket check TODO002 applies to `frob:todo`, but at ERROR
+  (not WARN) severity: an untracked `frob:todo` is a hygiene gap, a
+  mis-tracked `frob:debt` is a lie about what is actually owed.
+- **DEBT003**: `until="..."` (a `YYYY-MM-DD` date or an `X.Y.Z` semver,
+  judged by `_debt_is_expired` against the run's actual date/version) has
+  passed. A debt with no `until` never expires this way on its own --
+  release-time blocking (below) still catches it.
+
+`frob.gates.release_gate` (REL001) additionally refuses to bless a release
+while ANY `frob:debt` is open at all, expired or not
+(`_release_open_debt_violations`) -- this is T-0412's central requirement:
+debt is collected and re-raised before shipping, never silently carried
+forward as a de facto permanent waiver the way an un-audited
+`frob:waive` can be.
+
+`frob.gates.list_debt` (and the `frob debt [--json]` CLI,
+`src/frob/app/debt_runner.py`) reports every currently-recorded entry
+(rule, site, ticket, until, expired) regardless of whether it is itself
+well-formed/open/unexpired -- a listing tool, not a gate; DEBT001-003 are
+what actually fail the build.
+
 ### Waive boundary (T-0101, revised T-0289)
 
 `frob:waive` only ever suppresses entries in a `GateReport`'s `violations`
