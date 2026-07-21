@@ -1891,7 +1891,7 @@ found while working T-0240 (same origin ticket text, deliberately split out): T-
 id: T-0358
 title: frob must warn loudly when an installed build runs against a newer working-tree
   source
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-07-20'
