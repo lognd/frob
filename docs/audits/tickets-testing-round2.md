@@ -385,3 +385,5 @@ proven."
   edges compound under-selection and under-binding independently.
 </content>
 </invoke>
+
+frob:waive REF002 reason="one-off round-2 testing audit doc, anchored from docs/index.md by design; not a living doc other files should also link"

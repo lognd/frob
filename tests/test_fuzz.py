@@ -179,6 +179,7 @@ class TestObligations:
         assert result == ()
 
     def test_invariant_anchored_picks_up_invariant_edges(self) -> None:
+        # invariant spec: [INV-001](invariants/INV-001.md)
         record = _record("a.py::f")
         edge = Edge(
             src="a.py::f", kind=EdgeKind.INVARIANT, target="INV-001", origin="a.py"

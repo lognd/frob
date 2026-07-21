@@ -38,7 +38,11 @@ Severity: PERF001-004 are `warn` by default (static size-blindness is real
 -- a 3-element list is fine as a list); promotable per-repo via
 `[gates.severity]` (`PERF001 = "error"`). PERF005/PERF006 are `error` by
 default -- unlike the lexical smells, unreasoned unbounded recursion is a
-control-flow hazard (T-0290), not a size-blind heuristic. Waivable per-site
+control-flow hazard (T-0290), not a size-blind heuristic. Broader
+conceptual and mechanical-sympathy background these lexical rules draw
+from -- including which smells are `STATIC` (linter-shaped like the table
+above), `PROFILE`-only, or `ADVISORY` -- lives in
+`docs/design/coding-performance-corpus.md`. Waivable per-site
 with reason, as always (`frob:waive PERF005 reason="..."`), or -- for
 PERF005/PERF006 specifically -- proven with a reasoned termination
 directive instead of a blanket waiver (see below).

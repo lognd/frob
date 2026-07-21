@@ -96,6 +96,61 @@ reason = "read by the GitHub Actions runner outside this repo's tracked-file gra
 path = ".mcp.json"
 reason = "read by MCP clients outside this repo's tracked-file graph, not referenced from source"
 
+# REF002 single-anchor waivers for file types the comment-directive scan
+# cannot reach (JSON has no comment syntax, TOML/SVG are not a
+# frob.lang-supported language) -- see docs/modules/gates.md#anti-orphan-file-reference-gate.
+[[refs.entrypoint]]
+path = "docs/assets/frob-banner.svg"
+reason = "banner image, anchored once from README.md by design; not meant to be embedded elsewhere"
+
+[[refs.entrypoint]]
+path = "editors/vscode-strata/language-configuration.json"
+reason = "VS Code language-config sidecar, referenced only by its own extension's package.json per VS Code's own single-owner convention"
+
+[[refs.entrypoint]]
+path = "frob-core/frob_core.pyi"
+reason = "typed stub for the frob_core native extension, paired 1:1 with frob-core/pyproject.toml's [tool.maturin] module-name; a second anchor would not be genuine"
+
+[[refs.entrypoint]]
+path = "frob-core/rust-toolchain.toml"
+reason = "rust toolchain pin read by cargo/rustup outside this repo's tracked-file graph; scaffold.project.py's mention is the sole intentional anchor"
+
+[[refs.entrypoint]]
+path = "strata-core/rust-toolchain.toml"
+reason = "rust toolchain pin read by cargo/rustup outside this repo's tracked-file graph; scaffold.project.py's mention is the sole intentional anchor"
+
+[[refs.entrypoint]]
+path = "tests/golden/frob_export_seccomp.json"
+reason = "golden fixture read by exactly one dedicated golden-export test by design; not meant to be shared across tests"
+
+[[refs.entrypoint]]
+path = "tests/unit/cve/fixtures/CVE-2024-4681.json"
+reason = "CVE parser fixture consumed by a single dedicated test module by design"
+
+[[refs.entrypoint]]
+path = "tests/unit/cve/fixtures/CVE-2024-7039.json"
+reason = "CVE parser fixture consumed by a single dedicated test module by design"
+
+[[refs.entrypoint]]
+path = "tests/unit/cve/fixtures/mirror/cves/2024/4xxx/CVE-2024-4681.json"
+reason = "CVE mirror-layout fixture consumed by a single dedicated test module by design"
+
+[[refs.entrypoint]]
+path = "tests/unit/cve/fixtures/mirror/cves/2024/7xxx/CVE-2024-7039.json"
+reason = "CVE mirror-layout fixture consumed by a single dedicated test module by design"
+
+[[refs.entrypoint]]
+path = "tests/unit/cve/fixtures/mirror/cves/2024/8xxx/CVE-2024-8888.json"
+reason = "CVE mirror-layout fixture consumed by a single dedicated test module by design"
+
+[[refs.entrypoint]]
+path = "tests/unit/cve/fixtures/mirror/cves/2024/9xxx/CVE-2024-9999.json"
+reason = "CVE mirror-layout fixture consumed by a single dedicated test module by design"
+
+[[refs.entrypoint]]
+path = "tests/unit/cve/fixtures/vet_mirror/cves/2024/1xxx/CVE-2024-1001.json"
+reason = "CVE vet-mirror fixture consumed by a single dedicated test module by design"
+
 [gates.severity]
 # COV001 (public symbol has an explicit frob:doc edge) and TEST001 (public
 # symbol has a unit test) are now hard errors: the whole surface -- Python,

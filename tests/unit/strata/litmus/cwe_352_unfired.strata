@@ -21,3 +21,5 @@ node api : trusted {
 }
 
 flow f_post : browser -> api { label Public; }
+
+// frob:waive REF002 reason="litmus fixture read by exactly one dedicated test module by design (T-0145/T-0255/T-0256/T-0262/T-0172/T-0154/T-0155/T-0223/T-0226 litmus suites); a second consumer would not be genuine"

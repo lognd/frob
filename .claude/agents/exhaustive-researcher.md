@@ -53,3 +53,5 @@ manual. The essentials:
 Lead with honesty: universe size (denominator), nodes done, nodes blocked
 and why, and the Phase-2 coverage verdict. If anything is pending or
 blocked, that goes in your first sentence.
+
+frob:waive REF002 reason="agent-definition doc anchored once from tickets-archive.md by design; agent .md files are not meant to be cross-linked from multiple docs"
