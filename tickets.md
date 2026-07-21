@@ -3045,7 +3045,7 @@ Discovered while working T-0516: COV006 Violation objects carry no symref (file=
 ```yaml
 id: T-0526
 title: 'frob:debt/frob:todo coherence: paired todo, same-ticket check, symmetric resolution'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-21'
@@ -3116,7 +3116,12 @@ touched files). `ruff check`/`ruff format --check` clean on both touched
 files under both the PATH `ruff` and `uv run ruff`.
 
 ### Changed
-(no changed files detected)
+```
+ src/frob/graph/dsl.py        | 97 ++++++++++++++++++++++++++++++++++++++++++++
+ tests/unit/graph/test_dsl.py | 57 ++++++++++++++++++++++++++
+ tickets.md                   | 88 +++++++++++++++++++++++++++++++++++++++-
+ 3 files changed, 240 insertions(+), 2 deletions(-)
+```
 
 ### Evidence
 - `tests/unit/graph/test_dsl.py::TestDebtTodoCoherence::test_unpaired_debt_registers_implicit_todo` (pytest node id, verified passing when recorded)
