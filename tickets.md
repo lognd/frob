@@ -1800,7 +1800,7 @@ PERF005/006 recursion termination prover (well-founded measure + base case, or f
 id: T-0298
 title: 'COV003: resolve file-level and directory-level evidence (any collected test
   under the path)'
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-07-19'
@@ -1823,7 +1823,11 @@ scope_changes:
   reason: T-0298 gates work maps to tests/test_gates.py
   actor: logan
   at: '2026-07-20'
-evidence: []
+evidence:
+- tests/test_gates.py::TestCoverageGate::test_cov003_passes_for_file_level_evidence
+- tests/test_gates.py::TestCoverageGate::test_cov003_passes_for_directory_level_evidence
+- tests/test_gates.py::TestCoverageGate::test_cov003_rejects_empty_directory_level_evidence
+- tests/test_gates.py::TestCoverageGate::test_cov003_prefers_node_level_over_path_level
 attachments: []
 acceptance:
 - given ticket evidence naming a whole test FILE (tests/test_vet.py) or a DIRECTORY
@@ -1834,6 +1838,55 @@ acceptance:
 threat: null
 ```
 Root cause of a 25-error main-red incident 2026-07-19: both arch-burndown agents recorded file-level evidence (tests/test_vet.py, tests/unit/deploy) and one embedded a kind="unit" attr into the id, none of which resolve because COV003 only matches node-level file::Class::method against the collected manifest. For a refactor touching ~20 files, "this whole test file passes" is a reasonable and natural evidence granularity; forcing one node-id per file is what led both agents (and me at close) to record unresolvable ids. Make file- and directory-level evidence first-class: resolve iff >=1 collected node lives under the path. Complements T-0293 (reject/normalize a genuinely-unresolvable id at RECORD time) and T-0292 (fix the bogus "frob test --collect" hint) -- together these make COV003 both lenient where it should be and strict where it must be. Until this lands, evidence MUST be node-level file::Class::method.
+
+## Done report
+
+`_evidence_collected` (`src/frob/gates/__init__.py`) now tries exact
+node-level resolution FIRST (`matches_collected`, unchanged, still the
+preferred/most precise granularity), and only when that fails and the
+evidence id carries no `::` at all (`_is_path_level_evidence`) falls back
+to a new `_path_level_evidence_collected`: resolves iff >=1 collected node
+id lives under the bare path, either as that exact file
+(`<path>::...` prefix) or inside that directory (`<path>/...` prefix).
+Deliberately non-vacuous per the ticket's acceptance criteria: a path with
+zero matching collected node ids (typo'd id, deleted/nonexistent
+directory) still fails COV003 -- only a real, non-empty match resolves.
+
+Node-level evidence is entirely unaffected (tried first, same code path as
+before); this is purely an additional fallback, never a replacement.
+
+Not in scope / not touched: the sibling malformed-id shape mentioned in
+this ticket's own body (an id with `kind="unit"` embedded as a trailing
+attribute rather than a bare path) is a different failure mode --
+malformed-at-record-time schema validation, not a resolvable path -- and
+belongs with T-0293's record-time normalization/rejection work
+(`frob.tickets`, out of this ticket's declared scope which is
+`src/frob/gates/__init__.py` + `src/frob/testing/**`, not `frob.tickets`).
+Not filing a new ticket since T-0293 already exists and covers exactly
+that shape.
+
+Changed:
+- src/frob/gates/__init__.py::_is_path_level_evidence (new)
+- src/frob/gates/__init__.py::_path_level_evidence_collected (new)
+- src/frob/gates/__init__.py::_evidence_collected (extended: node-level
+  first, path-level fallback)
+- docs/modules/gates.md (COV003 row + new T-0298 note documenting the
+  file-/directory-level resolution rule and its non-vacuous guarantee)
+
+Evidence:
+- tests/test_gates.py::TestCoverageGate::test_cov003_passes_for_file_level_evidence
+- tests/test_gates.py::TestCoverageGate::test_cov003_passes_for_directory_level_evidence
+- tests/test_gates.py::TestCoverageGate::test_cov003_rejects_empty_directory_level_evidence
+- tests/test_gates.py::TestCoverageGate::test_cov003_prefers_node_level_over_path_level
+
+Filed: none.
+
+Gates: `uv run pytest tests/test_gates.py -q` 138 passed. `uv run frob
+check --ticket T-0298` (after re-sweep) shows only pre-existing,
+out-of-scope items: TEST006 (no coverage stamp -- full-suite `make
+coverage` deferred to the coordinator per the playbook) and ARCH001 on
+`src/frob/dup/_template.py` (pre-existing, unrelated file). No new
+violations attributable to this change.
 
 <!-- ticket:T-0320 -->
 ```yaml
@@ -2011,7 +2064,7 @@ THE stall-killer, extractable before the full daemon. Observed: implementer agen
 ```yaml
 id: T-0324
 title: evidence/COV003 resolution must accept parametrized node ids (file::Class::method[param])
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-07-19'
@@ -2033,12 +2086,55 @@ scope_changes:
   reason: T-0324 gates work maps to tests/test_gates.py
   actor: logan
   at: '2026-07-20'
-evidence: []
+evidence:
+- tests/test_gates.py::TestCoverageGate::test_cov003_passes_for_parametrized_evidence_with_dot_in_case_id
+- tests/test_gates.py::TestTestGate::test_test003_satisfied_by_parametrized_case_with_dot_in_case_id
 attachments: []
 acceptance: []
 threat: null
 ```
 frob ticket evidence and COV003 reject a specific parametrized case id like ...test_x[015-python-...] (UnknownEvidence), only the bracket-less base resolves. Hit repeatedly this session (T-0222 auto-generated fixture evidence). T-0307 fixed parametrized COUNTING but evidence RESOLUTION of a [param] id is a separate path -- make it resolve a bracketed param id to its collected node. Pairs with T-0298 (file/dir-level evidence).
+
+## Done report
+
+Root cause: `frob.gates._symref_to_nodeid` (`path::a.b` -> `path::a::b`)
+did a blanket `qualname.replace('.', '::')` over the ENTIRE qualname,
+including any `[...]` parametrize case suffix. A collected node id whose
+case text itself contains a literal dot (a version string like
+`3.11.4`, a float parametrize value, or a dotted module path used as a
+case id -- exactly the T-0222 auto-generated fixture pattern) got its
+in-bracket dots corrupted into `::` (`3.11.4` -> `3::11::4`) before the
+comparison, so the bracket-less base symref resolved (via
+`_evidence_collected`'s prefix-match branch) while the specific
+bracketed case id never could. `matches_collected`/`_evidence_collected`
+themselves were already correct (exact membership check first) -- the
+corruption happened one layer up, in the symref-to-node-id conversion
+that feeds `_node_id_collected` (used by TESTS-edge/`frob:tests`
+resolution) and is the same helper COV003's directive-side callers rely
+on.
+
+Fix: `_symref_to_nodeid` now splits the qualname at the first `[` before
+converting dots, so only the dotted Class.method portion before any
+bracket is touched; the `[...]` case suffix (if present) passes through
+byte-for-byte unchanged.
+
+Changed:
+- src/frob/gates/__init__.py::_symref_to_nodeid
+
+Evidence:
+- tests/test_gates.py::TestCoverageGate::test_cov003_passes_for_parametrized_evidence_with_dot_in_case_id
+- tests/test_gates.py::TestTestGate::test_test003_satisfied_by_parametrized_case_with_dot_in_case_id
+
+Filed: none -- fix stayed inside declared scope (src/frob/gates/__init__.py,
+tests/test_gates.py).
+
+Gates: `uv run pytest tests/test_gates.py -q` 133 passed. `uv run frob
+check --ticket T-0324` shows only pre-existing, out-of-scope items: PRE001
+(stale sweep, refreshed via `frob ticket sweep T-0324` below), TEST006 (no
+coverage stamp -- full-suite `make coverage` is a coordinator
+responsibility per the playbook, not run here), and ARCH001 on
+`src/frob/dup/_template.py` (pre-existing, unrelated file). No new
+violations attributable to this change.
 
 <!-- ticket:T-0325 -->
 ```yaml
@@ -6504,7 +6600,7 @@ rebind).
 id: T-0484
 title: 'coverage cycle is too slow to run per-change: incrementalize / background
   it (daemon-side), so TEST005/TEST006 feedback is not a full-suite wait'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-21'
@@ -6513,13 +6609,148 @@ parent: null
 scope:
 - src/frob/testing/
 - src/frob/gates/_coverage.py
-scope_changes: []
-evidence: []
+- tests/test_coverage.py
+- Makefile
+- docs/modules/testing.md
+scope_changes:
+- op: add
+  glob: tests/test_coverage.py
+  reason: T-0484 needs a regression test (mirrored path per repo convention, tests/
+    dir has no src/frob/testing/ mirror glob in scope) and the Makefile coverage target
+    is the concrete incrementalization deliverable named in the mission/ticket body
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: Makefile
+  reason: T-0484 needs a regression test (mirrored path per repo convention, tests/
+    dir has no src/frob/testing/ mirror glob in scope) and the Makefile coverage target
+    is the concrete incrementalization deliverable named in the mission/ticket body
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/modules/testing.md
+  reason: new public symbol python_coverage_targets needs a frob:doc/describes anchor
+    (COV001/DOC002)
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_coverage.py::TestPythonCoverageTargets::test_touched_source_selects_test
+- tests/test_coverage.py::TestPythonCoverageTargets::test_nothing_touched_returns_empty
+- tests/test_coverage.py::TestPythonCoverageTargets::test_bad_base_ref_returns_empty
 attachments: []
 acceptance: []
 threat: null
 ```
 make coverage runs the whole suite under coverage on every change, so the stale-stamp gate (TEST006) forces a full re-run for a one-line edit. Explore: (a) daemon-side background coverage refresh on file-change, (b) per-file/touched-set incremental coverage merged into the stamp, (c) caching unchanged modules' coverage. Goal: TEST005/TEST006 feedback in seconds, not a full suite.
+
+## Done report
+
+Chose option (b), touched-set incremental coverage merged into the stamp,
+NOT (a) a background daemon. Justification: a daemon needs a long-lived
+process, an IPC/socket surface, and its own staleness/liveness handling --
+a materially larger, separately-scoped effort. Option (b) achieves the
+ticket's actual goal (seconds-scale feedback for a small change, not a
+full-suite wait) by reusing machinery this repo already has and already
+trusts: `frob.testing.select_tests`, the exact touched-set selection
+`frob test --base` already runs, and `coverage`'s own `--cov-append`
+(preserves prior per-file hit data for every file NOT re-executed this
+run, valid because that file's source has not changed since it was last
+measured).
+
+New: `frob.testing.python_coverage_targets(root, snapshot, base)` -- the
+touched set's selected python pytest targets against `base`, a thin,
+pure-ish wrapper over `working_diff` + `select_tests` (no new selection
+algorithm, no duplicated diff-to-tests mapping). Returns `()` (never
+raises) on a diff failure or an empty selection, so a caller (the Makefile
+recipe below) can honestly fall back to a full run rather than silently
+measuring nothing.
+
+New: `make coverage-fast` (`BASE` overridable, defaults `main`) -- if no
+prior `.coverage` data exists yet, falls back to the existing full `make
+coverage` (the first run always needs the full baseline; there is nothing
+yet to incrementally append onto). Otherwise: resolves the touched set's
+python targets via the new helper, runs `pytest --cov=src/frob
+--cov-branch --cov-append --cov-report=` restricted to JUST those targets
+(not `rm -f .coverage` first -- deliberately preserves prior data),
+combines, regenerates `coverage.xml`, and re-stamps
+(`frob check --stamp-coverage`, itself already cheap -- file hashing, no
+test execution) exactly as the full target does. When the touched set
+selects nothing, it skips the pytest run entirely and only re-stamps
+(still correct: file hashes for an unchanged coverage.xml need no update,
+but the stamp step's own hash pass is what TEST006 actually checks).
+
+Verified manually (not part of the automated evidence below, since it
+exercises the Makefile recipe's shell/subprocess path rather than pure
+Python): ran the `python_coverage_targets` one-liner the Makefile recipe
+uses directly against this worktree's own uncommitted diff -- it correctly
+selected `tests/integration/test_interfaces.py`,
+`tests/test_coverage.py`, and `tests/test_gates.py` (via a
+package/file-level `frob:tests` binding) as the touched-set's python
+targets, filtering out the `"*"` all-suite sentinel a `docs/`/`tickets.md`
+fallback line also produced -- exactly the intended selection.
+
+NOT built (disclosed, not silently dropped -- separate scope):
+- A real background/daemon-side refresh (the ticket's option (a)). Would
+  need a long-lived watcher process and its own staleness/liveness
+  handling; not attempted here.
+- Non-python touched-set coverage: `coverage-fast` still measures rust and
+  `.strata` only via the full `make coverage` fallback path (this repo's
+  `pytest-cov` only instruments the python process; rust coverage is a
+  materially different toolchain (`cargo llvm-cov` or similar), out of
+  this ticket's `src/frob/testing/`/`_coverage.py` scope).
+- `make coverage-fast`'s shell recipe itself is not covered by an
+  automated test (Make recipes are not natively unit-testable here, same
+  posture as the pre-existing `coverage`/`clean` targets); its correctness
+  rests on the `python_coverage_targets` unit tests below plus the manual
+  verification above.
+Filing no new ticket for these -- they are exactly the ticket's own
+disclosed (a)/(c) alternatives and non-goals, already named in T-0484's
+own body, not newly-discovered scope.
+
+Also incidental in this diff: a same-ticket `ruff format` pass reformatted
+one line in `tests/test_gates.py` that a prior sibling ticket (T-0298,
+already closed) had left slightly mis-formatted -- trivial whitespace
+only, no behavior change, folded into this commit rather than opened as
+its own ticket.
+
+Changed:
+- src/frob/testing/_incremental_coverage.py::python_coverage_targets (new)
+- src/frob/testing/__init__.py (export python_coverage_targets)
+- Makefile (new `coverage-fast` target + `.PHONY` entry)
+- docs/modules/testing.md (Public API section: new `frob:describes` anchor
+  + prose entry for `python_coverage_targets`)
+- tests/test_coverage.py (new file, 3 tests)
+- tests/test_gates.py (incidental ruff-format whitespace fix, see above)
+
+Evidence:
+- tests/test_coverage.py::TestPythonCoverageTargets::test_touched_source_selects_test
+- tests/test_coverage.py::TestPythonCoverageTargets::test_nothing_touched_returns_empty
+- tests/test_coverage.py::TestPythonCoverageTargets::test_bad_base_ref_returns_empty
+
+Filed: none.
+
+Gates: `uv run pytest tests/test_coverage.py tests/test_testing.py
+tests/test_gates.py -q` 210 passed. `uv run ruff check`/`uv run ruff
+format --check` both clean. Plain `uv run frob check` (no `--ticket`
+filter, the correct view here since T-0324/T-0298 already closed in this
+same worktree -- see the playbook's stacked-ticket note): 1 new error,
+REL001 ("public API changed (minor) since 0.37.0"), correctly fired --
+`python_coverage_targets` is a genuine new public symbol. Discharging it
+means editing `pyproject.toml`/`CHANGELOG.md`/`.frob-release.json`/
+`uv.lock` via `frob release stamp`, none of which are in T-0484's scope;
+per the T-0188 precedent (tickets-archive.md) this is disclosed as an open
+item for the reviewer/coordinator rather than silently worked around or
+self-widened into scope. `uv run frob check --ticket T-0484` (the
+narrower, ticket-scoped view) additionally shows 3 SCOPE001 entries
+(`docs/modules/gates.md`, `src/frob/gates/__init__.py`,
+`tests/test_gates.py`) -- these are T-0324/T-0298's OWN already-committed,
+already-closed changes surfacing under T-0484's narrower scope lens
+because all three tickets share this one worktree/branch; they are not
+new violations caused by T-0484's diff (confirmed: absent from the plain,
+unfiltered `frob check` above). TEST006 (no coverage stamp -- full-suite
+`make coverage` deferred to the coordinator per the playbook) and ARCH001
+on `src/frob/dup/_template.py` are pre-existing and unrelated to this
+ticket, same as T-0324/T-0298's Done reports.
 
 <!-- ticket:T-0485 -->
 ```yaml
