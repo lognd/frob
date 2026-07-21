@@ -95,6 +95,7 @@ from ._effects import (
 )
 from ._errors import StrataError
 from ._models import (
+    Boundary,
     BoundaryDirection,
     Claim,
     ClaimResult,
@@ -1580,26 +1581,55 @@ def _discharges_as_chokepoint(
     return src_node is not None and src_node.trust == _FOREIGN_TRUST
 
 
+def _obligations_resolve(model: KernelModel, boundary: Boundary) -> bool:
+    """Whether every evidence ref in `boundary.obligations` names a real
+    `Claim.id` present in `model` (docs/audits/strata.md G1). `obligations`
+    (`_models.py`: "evidence refs discharged in tier 3") was, before G1,
+    declared on `Boundary` but never joined against anything -- a boundary
+    could carry an empty tuple, or a string naming no claim that exists,
+    and `_matching_boundary_ids` would still treat its bare `predicate`
+    string as sufficient proof of a real-world mitigation. Requiring at
+    least one obligation that resolves to an in-model claim turns "some
+    reviewer typed a plausible-sounding predicate" into "this boundary
+    points at a concrete, independently-checkable claim" -- still not a
+    proof that the underlying code truly implements the mitigation (that
+    is the SYS-family follow-up the audit finding also names), but no
+    longer vacuous: an empty or dangling `obligations` tuple is refused
+    outright."""
+    if not boundary.obligations:
+        return False
+    claim_ids = {claim.id for claim in model.claims}
+    return all(ref in claim_ids for ref in boundary.obligations)
+
+
 def _matching_boundary_ids(model: KernelModel, entry: WeaknessEntry) -> frozenset[str]:
     """Boundary ids that carry the EXACT mitigation `entry` requires: an
     `ENDORSE`-direction boundary (a chokepoint raises integrity, it never
     lowers confidentiality -- `declassify` is the opposite operation and
     can never be a weakness mitigation, docs/strata/kernel.md#data-models)
     whose `predicate` equals `entry.mitigation` (the catalog's `needs
-    mitigation <name>` clause, docs/strata/threat.md#the-catalog-stdcwe).
+    mitigation <name>` clause, docs/strata/threat.md#the-catalog-stdcwe)
+    AND whose `obligations` resolve to a real in-model claim
+    (`_obligations_resolve`, docs/audits/strata.md G1).
 
     A boundary of the wrong direction, or an `endorse` boundary with an
     unrelated predicate (e.g. `"legal_review_signed_off"` sitting in for a
     CWE-79 `output_encoding` requirement), is excluded -- review round 2's
     gap: `_eval_noflow`'s `reachable` treats ANY boundary as a barrier
     regardless of kind, so without this filter a claim could be "proved"
-    by a boundary that mitigates nothing relevant to this weakness.
+    by a boundary that mitigates nothing relevant to this weakness. G1
+    (docs/audits/strata.md): a matching-predicate boundary with no
+    resolving `obligations` is ALSO excluded -- before this, `predicate`
+    was an opaque, self-declared string joined against nothing else in
+    the model or the code (THREAT003 "PROVED" required zero evidence that
+    the claimed mitigation was real).
     """
     return frozenset(
         boundary.id
         for boundary in model.boundaries
         if boundary.direction is BoundaryDirection.ENDORSE
         and boundary.predicate == entry.mitigation
+        and _obligations_resolve(model, boundary)
     )
 
 
@@ -1660,7 +1690,14 @@ def _claim_holds(model: KernelModel, claim: Claim) -> bool:
 # `_eval_noflow`/`reachable` closure walk `_discharges_as_chokepoint`'s
 # round-1 shape check already leans on) over a model copy with every
 # OTHER boundary removed (`_restricted_to_boundaries`) -- no new closure
-# primitive, no new `strata_core` call.
+# primitive, no new `strata_core` call. G1 (docs/audits/strata.md):
+# `_matching_boundary_ids` additionally requires each candidate boundary's
+# `obligations` to resolve to a real in-model `Claim.id`
+# (`_obligations_resolve`) -- a matching `predicate` string alone is no
+# longer sufficient; a chokepoint boundary with no evidence ref (or a
+# dangling one) is excluded from `matching` and so cannot satisfy this
+# check, even if its bare predicate name happens to equal
+# `entry.mitigation`.
 #
 # Quantifier: this is "the matching boundaries alone cut the closure the
 # SAME `NoFlow` walk already computes" -- sound (a PROVED result here
@@ -1791,7 +1828,9 @@ def _check_discharge_mitigation_kind(
             node_id,
             f"claim {claim_id!r} proves a chokepoint but not of the required "
             f"mitigation kind -- no ENDORSE boundary with predicate "
-            f"{entry.mitigation!r} is sufficient alone to block every path",
+            f"{entry.mitigation!r} and a resolving evidence ref "
+            f"(obligations naming a real claim) is sufficient alone to "
+            f"block every path",
         )
     return None
 

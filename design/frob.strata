@@ -75,7 +75,19 @@ node registry : foreign { clearance Public; }
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
 node cli : trusted {
     clearance Internal;
-    code "src/frob/app/**" "src/frob/__main__.py";
+    // T-0500 (docs/audits/strata.md G4): src/frob/__init__.py (package
+    // glue re-exporting gitio/excludes, T-0362), src/frob/doctor.py (the
+    // `frob doctor` diagnostic subcommand), and src/frob/excludes.py
+    // (scan-exclusion helpers used repo-wide) are loose top-level files
+    // with no subdirectory of their own -- tightening SYS102 to fire per
+    // FOREIGN file (not just per fully-foreign top-level directory)
+    // surfaced that none of the three had ever been given a code= glob
+    // owner at all. `cli` already owns __main__.py, the other single-file
+    // top-level entrypoint, so it is the existing-convention home for
+    // this class of file rather than inventing a new node for three
+    // small files.
+    code "src/frob/app/**" "src/frob/__main__.py" "src/frob/__init__.py"
+        "src/frob/doctor.py" "src/frob/excludes.py";
     may "eval";
     may "fs";
     may "fs-read";

@@ -779,6 +779,7 @@ class TestMitigationKindChokepoint:
                     from_level="foreign",
                     to_level="trusted",
                     predicate="output_encoding",
+                    obligations=(claim_id,),
                 ),
             ),
             claims=(
@@ -792,6 +793,83 @@ class TestMitigationKindChokepoint:
         result = check_discharge_completeness(model)
         assert result.is_ok
         assert result.danger_ok == ()
+
+    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    def test_endorse_boundary_with_no_evidence_ref_does_not_discharge_g1(self):
+        """docs/audits/strata.md G1: before the fix, an `ENDORSE` boundary
+        whose bare `predicate` string happened to equal the catalog's
+        required mitigation name discharged THREAT003 with ZERO evidence
+        that the mitigation was real -- `obligations=()` and no code/claim
+        binding at all. This is the counterexample the audit finding
+        names, confirmed to discharge vacuously before this ticket's fix
+        (`_matching_boundary_ids` now also requires `obligations` to
+        resolve to a real claim); it must be REFUSED after the fix."""
+        evil = Node(id="Evil", trust="foreign")
+        web = Node(id="Web", trust="trusted", may=("html_render",))
+        claim_id = _discharge_claim_id("CWE-79", "Web")
+        model = KernelModel(
+            nodes=(evil, web),
+            flows=(Flow(id="f1", src="Evil", dst="Web"),),
+            boundaries=(
+                Boundary(
+                    id="b1",
+                    flow_id="f1",
+                    direction=BoundaryDirection.ENDORSE,
+                    from_level="foreign",
+                    to_level="trusted",
+                    predicate="output_encoding",
+                    # No `obligations` -- the vacuous G1 case.
+                ),
+            ),
+            claims=(
+                Claim(
+                    id=claim_id,
+                    body=NoFlow(src="foreign", dst="Web"),
+                    required_rung=Rung.L4,
+                ),
+            ),
+        )
+        result = check_discharge_completeness(model)
+        assert result.is_ok
+        violations = result.danger_ok
+        assert len(violations) == 1
+        assert "not of the required mitigation kind" in violations[0].detail
+
+    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    def test_endorse_boundary_with_dangling_obligation_does_not_discharge_g1(self):
+        """G1's other half: `obligations` naming a claim id that does NOT
+        exist in the model must not be trusted either -- an evidence ref
+        has to resolve to something real, not merely be present."""
+        evil = Node(id="Evil", trust="foreign")
+        web = Node(id="Web", trust="trusted", may=("html_render",))
+        claim_id = _discharge_claim_id("CWE-79", "Web")
+        model = KernelModel(
+            nodes=(evil, web),
+            flows=(Flow(id="f1", src="Evil", dst="Web"),),
+            boundaries=(
+                Boundary(
+                    id="b1",
+                    flow_id="f1",
+                    direction=BoundaryDirection.ENDORSE,
+                    from_level="foreign",
+                    to_level="trusted",
+                    predicate="output_encoding",
+                    obligations=("claim-does-not-exist",),
+                ),
+            ),
+            claims=(
+                Claim(
+                    id=claim_id,
+                    body=NoFlow(src="foreign", dst="Web"),
+                    required_rung=Rung.L4,
+                ),
+            ),
+        )
+        result = check_discharge_completeness(model)
+        assert result.is_ok
+        violations = result.danger_ok
+        assert len(violations) == 1
+        assert "not of the required mitigation kind" in violations[0].detail
 
     # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
     def test_mixed_paths_matching_on_one_wrong_kind_on_other_does_not_discharge(self):

@@ -257,6 +257,10 @@ class TestBuildContainmentReport:
                     from_level="foreign",
                     to_level="trusted",
                     predicate="parameterization",
+                    # G1 (docs/audits/strata.md): an ENDORSE boundary must
+                    # carry an evidence ref resolving to a real claim to
+                    # count as a chokepoint mitigation of the correct kind.
+                    obligations=("weakness:CWE-89:Api",),
                 ),
             ),
             claims=(
