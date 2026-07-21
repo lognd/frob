@@ -3130,7 +3130,7 @@ T-0423 added run-scoped @memoize_per_run memoization for build_graph and analyze
 id: T-0492
 title: 'frob ticket evidence: dot-form Class.method ids never verify as passing (raw
   ids passed to _verify_ids_passing before normalization)'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-21'
@@ -3139,14 +3139,58 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/app/ticket_runner.py
-scope_changes: []
-evidence: []
+- tests/test_tickets_evidence_cli.py
+scope_changes:
+- op: add
+  glob: tests/test_tickets_evidence_cli.py
+  reason: T-0492 regression test for dot-form evidence-id normalization mirrors src/frob/app/ticket_runner.py
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_tickets_evidence_cli.py::TestDotFormEvidenceNormalizesBeforePassingCheck::test_dot_form_id_passes_exactly_like_its_colon_form
 attachments: []
 acceptance: []
 threat: null
 ```
 Found while working T-0400. `frob ticket evidence <id> "path::Class.method"` (the dot form the playbook/docs document as the canonical evidence-id spelling) ALWAYS fails with EvidenceNotPassing, even when the test genuinely passes. Root cause: _apply_evidence (src/frob/app/ticket_runner.py) passes the raw, un-normalized node_ids straight into _verify_ids_passing, which buckets ids via matches_collected(n, python_collected) -- but python_collected (from _collect_python_and_rust_ids) stores pytest's native '::' form only. A dot-form id never matches_collected() against that set, so its bucket is empty, run_selected has nothing to run, and the id silently ends up absent from the returned passing frozenset -- rejected downstream as EvidenceNotPassing with a misleading message (the test did pass, it was just never actually invoked for this check). add_evidence's OWN normalization (_validate_evidence_list, T-0293) already converts dot-form to :: form before resolution/persistence; _apply_evidence needs to pass that SAME normalized list into _verify_ids_passing instead of the raw CLI args, or the two normalization paths silently diverge. Repro: 'frob ticket evidence T-XXXX "tests/test_foo.py::TestBar.test_baz"' rejects; 'frob ticket evidence T-XXXX "tests/test_foo.py::TestBar::test_baz"' (:: form) for the identical test succeeds. Workaround used in T-0400: recorded evidence in :: form.
 
+## Done report
+
+Root cause: `_apply_evidence` (src/frob/app/ticket_runner.py) passed the raw,
+un-normalized `--evidence` CLI node ids straight into `_verify_ids_passing`,
+which buckets ids via `matches_collected(n, collected)` -- but the collected
+sets (`python_ids`/`rust_ids`) only ever hold pytest's native `::`-form node
+ids. A dot-form id (`path::Class.method`, the canonical spelling this repo's
+own docs teach) never matches either bucket, so its bucket is empty,
+`run_selected` never actually runs it, and it silently ends up absent from
+the returned `passing` frozenset -- rejected downstream as
+`EvidenceNotPassing` even though the test genuinely passed.
+`add_evidence`'s own normalization (`_validate_evidence_list`, T-0293)
+already converts dot-form to `::` form before resolution/persistence, so the
+two normalization paths had silently diverged.
+
+Fix: normalize `node_ids` via `normalize_evidence_separator` (the same
+function `validate_evidence` calls) BEFORE handing them to
+`_verify_ids_passing`, and pass that SAME normalized list into `add_evidence`
+too, so both paths see identical ids and can never diverge again.
+
+Regression test: TestDotFormEvidenceNormalizesBeforePassingCheck deliberately
+does NOT monkeypatch `_verify_ids_passing` (unlike this file's other tests)
+so the real bucket-matching + run path is exercised with a dot-form id,
+asserting it resolves and records identically to its `::` form.
+
+### Changed
+```
+ src/frob/app/ticket_runner.py      | 25 ++++++++--
+ src/frob/tickets/_store.py         | 98 ++++++++++++++++++++++++++++++--------
+ tests/test_tickets.py              | 32 +++++++++++++
+ tests/test_tickets_evidence_cli.py | 43 +++++++++++++++++
+ tickets.md                         | 43 ++++++++++++++++-
+ 5 files changed, 216 insertions(+), 25 deletions(-)
+```
+
+### Evidence
+- `tests/test_tickets_evidence_cli.py::TestDotFormEvidenceNormalizesBeforePassingCheck::test_dot_form_id_passes_exactly_like_its_colon_form` (pytest node id, verified passing when recorded)
 <!-- ticket:T-0493 -->
 ```yaml
 id: T-0493
