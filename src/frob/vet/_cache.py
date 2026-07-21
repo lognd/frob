@@ -47,6 +47,9 @@ def _connect(db_path: Path) -> sqlite3.Connection | None:
 
 
 # frob:doc docs/modules/vet.md#public-api
+# frob:waive COV007 reason="docs/modules/vet.md's Public API section \
+# individually frob:describes this private helper by name (T-0529) -- a \
+# deliberate architecture doc, not accidental drift onto a private helper"
 # frob:waive TEST005 reason="_store_verdict 61.5% branch cover, debt T-0160"
 def _store_verdict(db_path: Path, verdict: PackageVerdict) -> None:
     """Persist `verdict`, content-addressed by (ecosystem, name, artifact_hash).
@@ -92,6 +95,9 @@ def _insert_verdict(conn: sqlite3.Connection, verdict: PackageVerdict) -> None:
 
 
 # frob:doc docs/modules/vet.md#public-api
+# frob:waive COV007 reason="docs/modules/vet.md's Public API section \
+# individually frob:describes this private helper by name (T-0529) -- a \
+# deliberate architecture doc, not accidental drift onto a private helper"
 # frob:waive TEST005 reason="_latest_verdict 68.8% branch cover, debt T-0160"
 def _latest_verdict(db_path: Path, ecosystem: str, name: str) -> PackageVerdict | None:
     """The most recently stored verdict for (ecosystem, name), any hash --
