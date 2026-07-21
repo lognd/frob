@@ -2924,7 +2924,7 @@ check/format and ty both clean.
 id: T-0351
 title: 'structural PII/secrets: join PII010/SEC110 findings to std.pii/std.secrets
   declarations'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
