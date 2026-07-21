@@ -17,6 +17,26 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.45.0] - unreleased
+
+Public-API surface change since 0.44.0 (mechanical semver via REL001): an
+additive (minor) bump -- new `frob.strata.scan_text_for_fingerprints`/
+`FingerprintHit` and `frob.gates.cve_fingerprint_scan_gate`.
+
+- T-0439: added SEC-CVE-FINGERPRINT-001, a `frob check` gate scanning
+  first-party repo source for the `CVE_FINGERPRINTS` needle corpus
+  (`frob.strata._cve_fingerprint`) -- the missing first-party-source-lint
+  sibling of CVEFP001 (catalog-drift only, no source scan) and `frob vet`'s
+  `_scan_file_fingerprints` (third-party dependency source, no file:line).
+  New `frob.strata.scan_text_for_fingerprints`/`FingerprintHit` do the
+  line-level needle scan; `frob.gates.cve_fingerprint_scan_gate`
+  (`src/frob/gates/_cve_fingerprint_scan.py`) walks every git-tracked,
+  language-bucketed file and wires it into `frob check` as WARN-severity
+  `SEC-CVE-FINGERPRINT-001` (registered in `_KNOWN_GATE_RULES`). Litmus
+  pair: `tests/unit/strata/test_cve_fingerprint_scan.py` -- a "smelly" fixture
+  (`shell=True`) fires, a "clean" one (`shell=False`) and an out-of-language
+  file do not.
+
 ## [0.44.0] - unreleased
 
 Public-API surface change since 0.43.0 (mechanical semver via REL001): an
