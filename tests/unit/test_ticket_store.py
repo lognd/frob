@@ -349,6 +349,20 @@ class TestReplaceDoneReportSection:
         assert "second" in result
         assert "first" not in result
 
+    # frob:ticket T-0493
+    def test_stray_empty_heading_before_real_one_collapses_to_one(self) -> None:
+        """T-0493 regression: a stray, EMPTY '## Done report' heading sitting
+        before a real, substantive one (the corrupted shape that made
+        `close` fail with MissingEvidence, reading only the empty first
+        section) must collapse to a single heading on the next write, not
+        persist forever."""
+        body = "## Description\nkeep me\n\n## Done report\n\n## Done report\n\nreal content\n"
+        result = replace_done_report_section(body, "## Done report\n\nnew narrative\n")
+        assert result.count("## Done report") == 1
+        assert "real content" not in result
+        assert "new narrative" in result
+        assert "keep me" in result
+
 
 def _ticket_evidence(
     evidence: tuple[str, ...] = (), ticket_id: str = "T-0001"

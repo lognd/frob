@@ -306,9 +306,40 @@ _MIN_DONE_REPORT_CHARS = 3
 _MIN_DONE_REPORT_LINES = 1
 
 
+# frob:ticket T-0493
+def _done_report_section_end(lines: list[str], heading_idx: int) -> int:
+    """The index one past the END of the `## Done report` section starting
+    at `heading_idx`: the next `## ` heading that is NOT itself another
+    `## Done report` heading, or `len(lines)`.
+
+    T-0493: a stray, empty `## Done report` heading (hand-typed as a
+    placeholder, or left behind by an earlier corrupted write) sitting
+    BEFORE the real, substantive one must not be treated as its own
+    section boundary -- doing so is exactly what let a duplicate heading
+    persist forever: `has_substantive_done_report` would only ever see the
+    empty first section (rejecting a genuinely-done ticket as
+    `MissingEvidence`), and `replace_done_report_section` would only ever
+    overwrite that first, empty section, leaving the second, real one
+    stuck untouched on every subsequent write. Treating a REPEATED
+    `## Done report` heading as still part of the same section (skip past
+    it, keep scanning) means both functions see -- and, for the write
+    side, collapse -- the WHOLE run of Done-report headings as one
+    section, so a stray duplicate self-heals the next time either runs."""
+    end_idx = len(lines)
+    for i in range(heading_idx + 1, len(lines)):
+        stripped = lines[i].strip()
+        if stripped == _DONE_REPORT_HEADING:
+            continue
+        if stripped.startswith("## "):
+            end_idx = i
+            break
+    return end_idx
+
+
 def _done_report_section_lines(body: str) -> list[str] | None:
     """The raw lines of body's `## Done report` section (up to the next
-    `## ` heading or EOF), or `None` if no such heading exists."""
+    non-Done-report `## ` heading or EOF, T-0493), or `None` if no such
+    heading exists."""
     lines = body.splitlines()
     heading_idx = None
     for i, line in enumerate(lines):
@@ -317,12 +348,8 @@ def _done_report_section_lines(body: str) -> list[str] | None:
             break
     if heading_idx is None:
         return None
-    section: list[str] = []
-    for line in lines[heading_idx + 1 :]:
-        if line.strip().startswith("## "):
-            break
-        section.append(line)
-    return section
+    end_idx = _done_report_section_end(lines, heading_idx)
+    return lines[heading_idx + 1 : end_idx]
 
 
 # frob:ticket T-0398
@@ -363,6 +390,15 @@ def replace_done_report_section(body: str, new_section: str) -> str:
     (T-0458) -- the exact hand-edit failure mode (an Edit call landing
     mid-section, or missing the next `## ` boundary) that repeatedly
     corrupted `tickets.md` this session.
+
+    T-0493: if MORE THAN ONE `## Done report` heading is already present
+    (e.g. a stray empty placeholder left before a real one), the entire
+    run of them -- from the FIRST heading through whatever follows the
+    LAST one (`_done_report_section_end`'s repeated-heading skip, T-0493)
+    -- is replaced, not just the first. Otherwise a stray heading, once
+    introduced by any means, could never be cleared: this function would
+    keep overwriting only the empty first section forever, leaving a
+    real second one stuck untouched.
     """
     lines = body.splitlines()
     heading_idx = None
@@ -374,11 +410,7 @@ def replace_done_report_section(body: str, new_section: str) -> str:
     if heading_idx is None:
         separator: list[str] = [] if not lines or lines[-1] == "" else [""]
         return "\n".join([*lines, *separator, *new_lines]) + "\n"
-    end_idx = len(lines)
-    for i in range(heading_idx + 1, len(lines)):
-        if lines[i].strip().startswith("## "):
-            end_idx = i
-            break
+    end_idx = _done_report_section_end(lines, heading_idx)
     before, after = lines[:heading_idx], lines[end_idx:]
     result = [*before, *new_lines]
     if after:
