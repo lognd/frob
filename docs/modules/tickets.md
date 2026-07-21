@@ -335,6 +335,16 @@ queued -> planned -> in-progress -> done
 Any other transition is `Err(InvalidTransition)`. `done` and `dropped` are
 terminal. Cutting scope is `dropped` with a reason -- recorded, not deleted.
 
+The `in-progress -> queued` yield is `frob ticket requeue <id> [--reason
+TEXT]` (T-0472): the honest CLI path for a parked or mis-started ticket,
+so it never has to be hand-edited back to `queued`. `--reason` is optional
+and, if given, is only logged (not persisted on the ticket) -- requeue has
+no Done-report/evidence surface of its own to attach it to. Since the
+T-0453 tree-lease is derived live from `in-progress` state + declared
+scope, requeuing alone releases the lease -- no separate release step.
+Only an `in-progress` ticket can be requeued; anything else is a hard
+error naming the ticket's actual state.
+
 ## Provisional ids
 
 T-0162's collision-proofing mechanism. `frob ticket new` mints an id
@@ -869,10 +879,11 @@ def ledger_lock(root: Path) -> Iterator[None]
   and joins `frob:ticket`/`frob:todo` edge targets against the queue.
   `tickets_gate` (TICK001/TICK002, T-0162) checks the id-collision invariant
   -- see "Decision record: T-0162" above.
-- CLI: `frob ticket new|list|show|doable|plan|start|sweep|migrate|renumber|
-  attach|block|close|fail|evidence|done-report|archive`. `start` auto-plans a queued
-  ticket (both legal steps); `sweep` re-records the pre-work sweep after a
-  scope change; `migrate` collapses a legacy dir into the ledger;
+- CLI: `frob ticket new|list|show|doable|plan|start|requeue|sweep|migrate|
+  renumber|attach|block|close|fail|evidence|done-report|archive`. `start`
+  auto-plans a queued ticket (both legal steps); `requeue` is the reverse
+  in-progress -> queued yield (T-0472); `sweep` re-records the pre-work
+  sweep after a scope change; `migrate` collapses a legacy dir into the ledger;
   `renumber <old> <new> [--dry-run]` (T-0162) rewrites ONE ticket's id
   everywhere -- ledger plus every code directive reference -- the
   first-class replacement for the sed-by-hand that fixed the T-0157

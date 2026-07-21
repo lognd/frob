@@ -19,7 +19,8 @@ declaration).
 | COV003 | coverage | ticket in state done with evidence ids that do not resolve to collected tests (never verifies PASS/FAIL, nor scope-binding -- see the T-0398 note below the table) |
 | COV004 | coverage | attachment sha256 mismatch or file missing |
 | COV005 | coverage | a diff-touched file's `frob:` directive now binds a PRIVATE symbol whose span overlaps this diff's hunks, where the same `(kind, target)` directive bound a PUBLIC symbol in that file at the diff's base revision -- a displaced obligation (T-0297), see design decisions below |
-| TODO001 | coverage | `frob:todo` (or bare TODO/FIXME comment) not bound to an open ticket |
+| TODO001 | coverage | bare TODO/FIXME comment (not `frob:`-prefixed) in a diff-touched file -- work marked but not accounted for at all |
+| TODO002 | coverage | `frob:todo` edge bound to a non-open (closed or missing) ticket -- work accounted for, but the reference is dangling |
 | SCOPE001 | scope | diff touches paths/symbols outside the active ticket's `scope` |
 | PRE001 | pre-work | ticket moved to in-progress without a recorded pre-work sweep |
 | INV001 | invariant | invariant has no evidence (test or policy rule) |
@@ -916,6 +917,6 @@ dependency's real API did not match the sketch:
 - **Severity defaults per rule** are fixed in code (`ERROR` for
   DRIFT/COV002-004/SCOPE001/PRE001/INV001-002/TEST001/TEST004/WAIVE001/
   policy rules with no `severity` override; `WARN` for COV001, TODO001,
-  TEST002/003/005). Per-rule severity overrides in `frob.toml` were
+  TODO002, TEST002/003/005). Per-rule severity overrides in `frob.toml` were
   scoped out of this phase; `PolicyRule.severity` is the only
   user-configurable severity today (via `[[policy.*]].severity`).

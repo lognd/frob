@@ -15,8 +15,8 @@ from pathlib import Path
 import pytest
 
 from frob.dup import _core as dup_core
-from frob.dup._models import ClonePair, CloneRegion
-from frob.dup._template import build_group_template
+from frob.dup._models import CloneBinding, ClonePair, CloneRegion
+from frob.dup._template import _hole_param_name, build_group_template
 
 pytestmark = pytest.mark.skipif(
     not dup_core.core_available(),
@@ -82,6 +82,31 @@ class TestBuildGroupTemplate:
         # numbering stable across all three members, not just a pair.
         assert all(group[0].hole == 0 for group in template.bindings)
 
+    def test_literal_rendering_preserves_source_text_not_a_skeleton(self, tmp_path):
+        # frob:tests src/frob/dup/_template.py::build_group_template kind="unit"
+        left = _write(tmp_path, "a.py", 1)
+        right = _write(tmp_path, "b.py", 2)
+        pair = ClonePair(left=left, right=right, similarity=1.0, rung="test")
+
+        template = build_group_template(tmp_path, (pair,))
+
+        assert template is not None
+        # literal source characters survive verbatim (e.g. "return", "x +"),
+        # not a `label(child, ...)` structural approximation.
+        assert "return x + $hole_0" in template.skeleton_text
+
+    def test_suggested_signature_falls_back_when_not_a_plain_identifier(self, tmp_path):
+        # frob:tests src/frob/dup/_template.py::build_group_template kind="unit"
+        left = _write(tmp_path, "a.py", 1)
+        right = _write(tmp_path, "b.py", 2)
+        pair = ClonePair(left=left, right=right, similarity=1.0, rung="test")
+
+        template = build_group_template(tmp_path, (pair,))
+
+        assert template is not None
+        # both sides are numeric literals, never a valid parameter name.
+        assert "hole_0" in template.suggested_signature
+
     def test_single_member_returns_none(self, tmp_path):
         # frob:tests src/frob/dup/_template.py::build_group_template kind="unit"
         # A "group" with only one distinct region (both pair sides identical
@@ -99,3 +124,39 @@ class TestBuildGroupTemplate:
         pair = ClonePair(left=left, right=right, similarity=1.0, rung="test")
 
         assert build_group_template(tmp_path, (pair,)) is None
+
+
+class TestHoleParamName:
+    """`_hole_param_name` is pure Python (no `frob_core` dependency) -- covered
+    directly rather than only indirectly through a full `anti_unify` fold.
+    """
+
+    def test_reuses_shared_plain_identifier(self, tmp_path):
+        # frob:tests src/frob/dup/_template.py::_hole_param_name kind="unit"
+        region = CloneRegion(ref="a.py::f", span=(1, 2))
+        bindings = (
+            (CloneBinding(hole=0, region=region, source_text="count"),),
+            (CloneBinding(hole=0, region=region, source_text="count"),),
+        )
+
+        assert _hole_param_name(0, bindings) == "count"
+
+    def test_falls_back_when_members_disagree(self, tmp_path):
+        # frob:tests src/frob/dup/_template.py::_hole_param_name kind="unit"
+        region = CloneRegion(ref="a.py::f", span=(1, 2))
+        bindings = (
+            (CloneBinding(hole=0, region=region, source_text="count"),),
+            (CloneBinding(hole=0, region=region, source_text="other"),),
+        )
+
+        assert _hole_param_name(0, bindings) == "hole_0"
+
+    def test_falls_back_when_shared_text_is_not_a_plain_identifier(self, tmp_path):
+        # frob:tests src/frob/dup/_template.py::_hole_param_name kind="unit"
+        region = CloneRegion(ref="a.py::f", span=(1, 2))
+        bindings = (
+            (CloneBinding(hole=0, region=region, source_text="a.b"),),
+            (CloneBinding(hole=0, region=region, source_text="a.b"),),
+        )
+
+        assert _hole_param_name(0, bindings) == "hole_0"

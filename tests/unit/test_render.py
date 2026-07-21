@@ -9,15 +9,19 @@ import pytest
 
 from frob.render import Renderer, RenderError, resolve_color
 from frob.render._elements import (
+    count_deltas,
     count_summary,
     heading,
     kv_row,
     path_label,
     status_pill,
     subhead,
+    table,
     ticket_id_label,
+    tree,
 )
 from frob.render._palette import accent, critical, muted
+from frob.render._renderer import Progress
 
 
 class _FakeStream(io.StringIO):
@@ -375,3 +379,200 @@ class TestRenderIntegration:
         assert "\x1b[" in colored_text
         stripped = re.sub(r"\x1b\[[0-9;]*m", "", colored_text)
         assert stripped == plain_text
+
+
+class TestTableTreeCountDeltas:
+    """Element-level tests for the T-0460 vocabulary follow-on: `table`,
+    `tree`, `count_deltas`."""
+
+    # frob:tests src/frob/render/_elements.py::table
+    def test_table_plain_shape(self) -> None:
+        """Plain-mode table: header, `-`-rule, then rows, columns padded to
+        the widest cell in each column."""
+        lines = table(
+            ["ticket", "state"],
+            [["T-0448", "done"], ["T-0460", "in-progress"]],
+            color=False,
+        )
+        assert lines == [
+            "ticket  state      ",
+            "------  -----------",
+            "T-0448  done       ",
+            "T-0460  in-progress",
+        ]
+
+    # frob:tests src/frob/render/_elements.py::table
+    def test_table_color_paints_header_and_rule_only(self) -> None:
+        """Color mode paints the header and rule; data rows are identical
+        to plain mode once ANSI is stripped."""
+        import re
+
+        plain = table(["a", "b"], [["1", "2"]], color=False)
+        colored = table(["a", "b"], [["1", "2"]], color=True)
+        assert "\x1b[" in colored[0]
+        assert "\x1b[" in colored[1]
+        assert "\x1b[" not in colored[2]
+        stripped = [re.sub(r"\x1b\[[0-9;]*m", "", line) for line in colored]
+        assert stripped == plain
+
+    # frob:tests src/frob/render/_elements.py::tree
+    def test_tree_plain_shape(self) -> None:
+        """Plain-mode tree: two-space indent per depth level plus a
+        `- ` marker."""
+        lines = tree([(0, "src/frob"), (1, "render"), (2, "_elements.py")], color=False)
+        assert lines == [
+            "- src/frob",
+            "  - render",
+            "    - _elements.py",
+        ]
+
+    # frob:tests src/frob/render/_elements.py::tree
+    def test_tree_color_paints_only_depth_zero(self) -> None:
+        """Color mode paints only the depth-0 root label; deeper labels
+        strip down to the identical plain shape."""
+        import re
+
+        plain = tree([(0, "root"), (1, "child")], color=False)
+        colored = tree([(0, "root"), (1, "child")], color=True)
+        assert "\x1b[" in colored[0]
+        assert "\x1b[" not in colored[1]
+        stripped = [re.sub(r"\x1b\[[0-9;]*m", "", line) for line in colored]
+        assert stripped == plain
+
+    # frob:tests src/frob/render/_elements.py::count_deltas
+    def test_count_deltas_plain_shape(self) -> None:
+        """Plain-mode `count_deltas` shows `key: old -> new (+n/-n)` per
+        key, joined by `, `."""
+        out = count_deltas({"errors": (5, 2), "warnings": (1, 1)}, color=False)
+        assert out == "errors: 5 -> 2 (-3), warnings: 1 -> 1 (0)"
+
+    # frob:tests src/frob/render/_elements.py::count_deltas
+    def test_count_deltas_positive_delta_shape(self) -> None:
+        """A regression (count went up) renders a `+n` delta."""
+        out = count_deltas({"errors": (2, 5)}, color=False)
+        assert out == "errors: 2 -> 5 (+3)"
+
+    # frob:tests src/frob/render/_elements.py::count_deltas
+    def test_count_deltas_color_has_no_ansi_in_plain(self) -> None:
+        """Color mode wraps the segment in ANSI without changing the plain
+        shape once stripped."""
+        import re
+
+        plain = count_deltas({"errors": (5, 2)}, color=False)
+        colored = count_deltas({"errors": (5, 2)}, color=True)
+        assert "\x1b[" in colored
+        assert re.sub(r"\x1b\[[0-9;]*m", "", colored) == plain
+
+
+class TestWriterTableTreeCountDeltas:
+    # frob:tests src/frob/render/_renderer.py::RenderWriter.table
+    def test_write_table(self) -> None:
+        """`write.table` emits one line per table row via `_emit`."""
+        stream = _FakeStream(tty=False)
+        Renderer(stream, color=False).write.table(["a"], [["1"], ["22"]])
+        assert stream.getvalue().splitlines() == ["a ", "--", "1 ", "22"]
+
+    # frob:tests src/frob/render/_renderer.py::RenderWriter.tree
+    def test_write_tree(self) -> None:
+        """`write.tree` emits one line per `(depth, label)` entry."""
+        stream = _FakeStream(tty=False)
+        Renderer(stream, color=False).write.tree([(0, "root"), (1, "leaf")])
+        assert stream.getvalue().splitlines() == ["- root", "  - leaf"]
+
+    # frob:tests src/frob/render/_renderer.py::RenderWriter.count_deltas
+    def test_write_count_deltas(self) -> None:
+        """`write.count_deltas` emits the rollup as a single line."""
+        stream = _FakeStream(tty=False)
+        Renderer(stream, color=False).write.count_deltas({"errors": (3, 1)})
+        assert stream.getvalue().splitlines() == ["errors: 3 -> 1 (-2)"]
+
+
+class TestProgress:
+    """`Progress` is TTY-only per the T-0419 contract: ephemeral in-place
+    updates on a real TTY, a total no-op everywhere else."""
+
+    # frob:tests src/frob/render/_renderer.py::RenderWriter.progress
+    # frob:tests src/frob/render/_renderer.py::Progress.update
+    def test_progress_updates_in_place_on_tty(self) -> None:
+        """On a TTY stream, `update` writes a carriage-return-prefixed
+        line containing the label and percent."""
+        stream = _FakeStream(tty=True)
+        r = Renderer(stream, color=False)
+        p = r.write.progress("gates")
+        p.update("gates", 1, 4)
+        out = stream.getvalue()
+        assert out.startswith("\r")
+        assert "gates" in out
+        assert "25%" in out
+
+    # frob:tests src/frob/render/_renderer.py::Progress.update
+    def test_progress_is_noop_on_non_tty(self) -> None:
+        """On a non-TTY stream, `update` writes nothing at all -- no
+        carriage return, no bar, no residue in a captured pipe."""
+        stream = _FakeStream(tty=False)
+        r = Renderer(stream, color=False)
+        p = r.write.progress("gates")
+        p.update("gates", 1, 4)
+        assert stream.getvalue() == ""
+
+    # frob:tests src/frob/render/_renderer.py::Progress.clear
+    def test_progress_clear_erases_the_line_on_tty(self) -> None:
+        """`clear` overwrites the drawn line with spaces and returns the
+        cursor to column zero, leaving no residue."""
+        stream = _FakeStream(tty=True)
+        r = Renderer(stream, color=False)
+        p = r.write.progress("gates")
+        p.update("gates", 1, 4)
+        drawn_len = len(stream.getvalue().split("\r")[-1])
+        p.clear()
+        segments = stream.getvalue().split("\r")
+        assert segments[-2] == " " * drawn_len
+        assert segments[-1] == ""
+
+    # frob:tests src/frob/render/_renderer.py::Progress.clear
+    def test_progress_clear_is_noop_on_non_tty(self) -> None:
+        """`clear` on a non-TTY stream writes nothing."""
+        stream = _FakeStream(tty=False)
+        r = Renderer(stream, color=False)
+        p = r.write.progress("gates")
+        p.clear()
+        assert stream.getvalue() == ""
+
+    # frob:tests src/frob/render/_renderer.py::Progress.__exit__
+    def test_progress_context_manager_clears_on_exit(self) -> None:
+        """Using `Progress` as a context manager clears the drawn line on
+        exit, even when the block raises."""
+        stream = _FakeStream(tty=True)
+        r = Renderer(stream, color=False)
+        with r.write.progress("gates") as p:
+            p.update("gates", 2, 4)
+        final_segment = stream.getvalue().split("\r")[-1]
+        assert final_segment.strip() == ""
+
+    # frob:tests src/frob/render/_renderer.py::Progress.__exit__
+    def test_progress_context_manager_clears_even_on_exception(self) -> None:
+        """A raised exception inside the `with` block still clears the
+        progress line before propagating."""
+        stream = _FakeStream(tty=True)
+        r = Renderer(stream, color=False)
+        with pytest.raises(ValueError):
+            with r.write.progress("gates") as p:
+                p.update("gates", 1, 2)
+                raise ValueError("boom")
+        final_segment = stream.getvalue().split("\r")[-1]
+        assert final_segment.strip() == ""
+
+    # frob:tests src/frob/render/_renderer.py::Progress.update
+    def test_progress_shorter_next_line_pads_over_stale_tail(self) -> None:
+        """When a later `update` produces a shorter line than the previous
+        one, the redraw pads with spaces so no stale tail survives."""
+        stream = _FakeStream(tty=True)
+        p = Progress(stream, tty=True)
+        p.update("a very long stage name here", 1, 2)
+        stream.seek(0)
+        stream.truncate(0)
+        p.update("x", 2, 2)
+        out = stream.getvalue()
+        assert out.startswith("\rx [")
+        assert out.rstrip("\n") == out  # single redraw, no newline emitted
+        assert len(out) - len("\r") >= len("a very long stage name here [")

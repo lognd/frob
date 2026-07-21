@@ -819,7 +819,9 @@ class TestCoverageGate:
         violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert not any(v.rule == "COV005" for v in violations)
 
-    def test_todo001_unbound_directive(self, tmp_path: Path) -> None:
+    def test_todo002_unbound_directive(self, tmp_path: Path) -> None:
+        """A `frob:todo` edge bound to a missing ticket is TODO002 (dangling
+        reference), distinct from TODO001 (bare, wholly untracked comment)."""
         source = "def helper(x):\n    # frob:todo T-9999\n    return x\n"
         _write(tmp_path, "src/a.py", source)
         snap = _snapshot(tmp_path)
@@ -827,7 +829,8 @@ class TestCoverageGate:
         diff = Diff(base="x", hunks=())
         tests = CollectedTests(node_ids=frozenset())
         violations = coverage_gate(tmp_path, snap, queue, diff, tests)
-        assert any(v.rule == "TODO001" for v in violations)
+        assert any(v.rule == "TODO002" for v in violations)
+        assert not any(v.rule == "TODO001" for v in violations)
 
     def test_todo001_bare_comment_in_touched_file(self, tmp_path: Path) -> None:
         source = "def helper(x):\n    # TODO: fix this later\n    return x\n"
@@ -838,6 +841,20 @@ class TestCoverageGate:
         tests = CollectedTests(node_ids=frozenset())
         violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert any(v.rule == "TODO001" and "bare TODO" in v.message for v in violations)
+        assert not any(v.rule == "TODO002" for v in violations)
+
+    def test_todo002_edge_to_closed_ticket(self, tmp_path: Path) -> None:
+        """A `frob:todo` bound to a CLOSED ticket is also TODO002 (work was
+        accounted for once, but the reference is now stale)."""
+        source = "def helper(x):\n    # frob:todo T-0001\n    return x\n"
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={"T-0001": _ticket(state=TicketState.DONE)})
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert any(v.rule == "TODO002" for v in violations)
+        assert not any(v.rule == "TODO001" for v in violations)
 
     def test_waiver_suppresses_and_reports(self, tmp_path: Path) -> None:
         source = (
