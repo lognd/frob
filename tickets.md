@@ -7898,3 +7898,73 @@ acceptance: []
 threat: null
 ```
 docs/audits/strata.md G2+G7 (HIGH/MEDIUM), from T-0401. _mitigation_is_chokepoint's first branch (_threat.py:1196) returns True when NoFlow holds with EVERY boundary removed -- i.e. the sink is simply unreachable from foreign in the model, so an incomplete/attacker-authored .strata discharges a real capability with NO mitigation modeled at all (G2). Same root cause as G7: _discharges_as_chokepoint's src=foreign expansion (_claims.py _expand) yields an empty source set when the model declares no foreign-trust node at all, so NoFlow proves vacuously (nothing to walk from) and every obligation on that model discharges with no adversary present. Fix direction: require at least one modeled path from a foreign source to the firing node (and at least one foreign-trust node in the model) before accepting the vacuous short-circuit as a discharge; otherwise emit a distinct 'obligation fires but sink unreachable / no adversary modeled -- model likely incomplete' diagnostic instead of silent PROVED. High-risk core-engine change (this family has the highest REJECT rate in repo history) -- build the counterexample litmus FIRST, confirm it currently discharges vacuously, THEN harden.
+
+<!-- ticket:T-0502 -->
+```yaml
+id: T-0502
+title: 'DOC004 console-tier burndown: anchor or waive the 59 unbound fences'
+state: done
+kind: docs
+origin: agent
+created: '2026-07-21'
+blocked_by: []
+parent: null
+scope: []
+scope_changes: []
+evidence:
+- cmd:uv run frob check --only docblocks exit=0 sha256=475855667bb8
+attachments: []
+acceptance: []
+threat: null
+```
+Console/bash command-drift tier (T-0443) flags 59 unbound fences across agents/**, skills/**, docs/commands/**, docs/modules/**, docs/guides/agentic-workflow.md, docs/guides/install.md. Per playbook: waive illustrative agent/skill workflow examples narrowly per-fence; bind real command reference docs with genuine anchors, fixing stale text where drifted. Skip docs/modules/gates.md (owned by sibling gates-chain agent) and src/frob/gates/** (out of scope).
+
+## Done report
+
+Changed:
+- 12 agents/*/SKILL.md and skills/*/SKILL.md files (waived, 27 fences total)
+- docs/commands/check.md, deploy.md, exports.md, gitlog.md, scaffold.md, sys.md (bound, 25 fences total)
+- docs/modules/clean.md, mutate.md, release.md, stats.md (bound, 4 fences total)
+- docs/guides/agentic-workflow.md (bound, 6 fences), docs/guides/install.md (bound, 1 fence)
+
+Evidence: uv run frob check --only docblocks -> 0 errors, 0 warnings (was 59 warnings)
+Filed: none (no gate-design gap found; every fence classified cleanly)
+Gates: uv run frob check --only docblocks clean (0/0); uv run frob check clean (0 errors,
+314 pre-existing warnings unrelated to DOC004, 95 pre-existing waived)
+Caveats: skipped docs/modules/gates.md entirely per coordinator instruction (sibling
+gates-chain agent territory) -- it had 0 DOC004 warnings in this run already, so nothing
+was left behind there. Did not touch src/frob/gates/** per instruction.
+
+### Changed
+```
+ agents/debugger/SKILL.md          |  2 ++
+ agents/implementer/SKILL.md       |  4 ++++
+ agents/interface-auditor/SKILL.md |  2 ++
+ agents/planner/SKILL.md           |  1 +
+ agents/prover/SKILL.md            |  2 ++
+ agents/reviewer/SKILL.md          |  1 +
+ agents/security-auditor/SKILL.md  |  2 ++
+ docs/commands/check.md            |  9 +++++++++
+ docs/commands/deploy.md           |  2 ++
+ docs/commands/exports.md          |  1 +
+ docs/commands/gitlog.md           |  2 ++
+ docs/commands/scaffold.md         |  1 +
+ docs/commands/sys.md              |  6 ++++++
+ docs/guides/agentic-workflow.md   |  9 +++++++++
+ docs/guides/install.md            |  1 +
+ docs/modules/clean.md             |  1 +
+ docs/modules/mutate.md            |  1 +
+ docs/modules/release.md           |  2 ++
+ docs/modules/stats.md             |  1 +
+ skills/audit/SKILL.md             |  2 ++
+ skills/document/SKILL.md          |  5 +++++
+ skills/fix/SKILL.md               |  1 +
+ skills/next/SKILL.md              |  1 +
+ skills/plan/SKILL.md              |  2 ++
+ skills/prove/SKILL.md             |  2 ++
+ tickets.md                        | 41 +++++++++++++++++++++++++++++++++++++++
+ 26 files changed, 104 insertions(+)
+```
+
+### Evidence
+(no evidence recorded)
