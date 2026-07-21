@@ -5636,6 +5636,9 @@ scope:
 - src/frob/dup/_exhaustiveness.py
 - tests/test_dup.py
 - tests/test_dup_exhaustiveness.py
+- pyproject.toml
+- .frob-release.json
+- uv.lock
 scope_changes:
 - op: add
   glob: src/frob/dup/_exhaustiveness.py
@@ -5657,7 +5660,32 @@ scope_changes:
     update needs its drift-lock test file updated in the same ticket
   actor: logan
   at: '2026-07-21'
-evidence: []
+- op: add
+  glob: pyproject.toml
+  reason: REL001 gate requires a version bump + frob release stamp for this ticket's
+    public API change (new DUP_CLAIMS entries); stamping touches these three files
+    as a side effect
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: REL001 gate requires a version bump + frob release stamp for this ticket's
+    public API change (new DUP_CLAIMS entries); stamping touches these three files
+    as a side effect
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: REL001 gate requires a version bump + frob release stamp for this ticket's
+    public API change (new DUP_CLAIMS entries); stamping touches these three files
+    as a side effect
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_dup.py::TestCrossLanguageR5WithLet::test_r5_fires_across_languages_with_a_let_binding
+- tests/test_dup.py::TestR3LiteralAbstraction::test_r3_fires_where_r2_does_not
+- tests/test_dup_exhaustiveness.py::TestMatrixExhaustiveness::test_no_unclaimed_cells
+- tests/test_dup_exhaustiveness.py::TestMatrixExhaustiveness::test_no_cell_is_both_claimed_and_excused
 attachments: []
 acceptance: []
 threat: null
