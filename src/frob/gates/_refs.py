@@ -660,7 +660,7 @@ def _ref_gate_file_violations(
     text: str | None,
     tracked_set: frozenset[str],
     tokens_by_file: dict[str, frozenset[str]],
-    allowlist: frozenset[str],
+    allowlist: dict[str, str],
     native_stub_pairs: dict[str, str],
 ) -> list[Violation]:
     """REF001/002/003 violations for a single tracked file -- the per-file
