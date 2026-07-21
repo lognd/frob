@@ -99,6 +99,7 @@ attachments:
 <!-- frob:describes src/frob/tickets/__init__.py::set_done_report -->
 <!-- frob:describes src/frob/tickets/__init__.py::compose_done_report -->
 <!-- frob:describes src/frob/tickets/__init__.py::render_evidence_block -->
+<!-- frob:describes src/frob/tickets/__init__.py::replay_evidence_from_done_report -->
 <!-- frob:describes src/frob/tickets/__init__.py::render_changed_block -->
 <!-- frob:describes src/frob/tickets/__init__.py::compute_changed_lines -->
 <!-- frob:describes src/frob/tickets/_store.py::ledger_lock -->
@@ -221,6 +222,18 @@ def render_evidence_block(evidence: Sequence[str]) -> str
     # ALREADY validated resolvable-and-passing (add_evidence's D-01 check)
     # or exit=0 (cmd: entries) at record time. "(no evidence recorded)" if
     # empty.
+def replay_evidence_from_done_report(root: Path, ticket_id: str) -> Result[Ticket, TicketError]
+    # T-0357: recovers a ticket's structured evidence: field from its own
+    # rendered '### Evidence' Done-report prose when the field is empty --
+    # the coordinator-land bug where evidence recorded via add_evidence in a
+    # worktree never reached main's ledger in a form transition(..., DONE)
+    # recognizes (a hand `git merge --no-ff` that bypassed the T-0176/T-0479
+    # ledger splice). No-op (Ok, no write) if evidence is already present;
+    # Err(MissingEvidence) unchanged if nothing recoverable is found.
+    # Recovered ids are NOT re-validated against a fresh collection/pass
+    # run -- follow up with `frob check`'s COV003/TEST001 for that. Wired
+    # automatically into transition(..., DONE) as a best-effort recovery
+    # attempt before the ordinary MissingEvidence rejection.
 def render_changed_block(lines: Sequence[str]) -> str
     # T-0458: fences compute_changed_lines's output verbatim (git --stat
     # output is already human-readable columns). "(no changed files

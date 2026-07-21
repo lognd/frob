@@ -3345,7 +3345,7 @@ found while working T-0240 (same origin ticket text, deliberately split out): T-
 ```yaml
 id: T-0357
 title: 'coordinator land: replay worktree evidence into main .frob db on merge'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-07-20'
@@ -3354,12 +3354,42 @@ parent: null
 scope:
 - src/frob/tickets/
 scope_changes: []
-evidence: []
+evidence:
+- tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport::test_recovers_ids_when_structured_evidence_empty
+- tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport::test_noop_when_evidence_already_present
+- tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport::test_missing_evidence_when_nothing_recoverable
+- tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport::test_transition_to_done_auto_replays_lost_evidence
 attachments: []
 acceptance: []
 threat: null
 ```
 Evidence recorded via 'frob ticket evidence' in an implementer worktree lands in that worktree's gitignored .frob/ db, NOT tickets.md's committed ledger in a form the main-repo db recognizes. After 'git merge --no-ff' of the worktree branch, 'frob ticket close' on main fails MissingEvidence and the coordinator must re-run 'frob ticket evidence' by hand (bitten on T-0248-era lands and again T-0266). Systematize: either (a) 'frob ticket land'/merge helper replays evidence ids from the merged tickets.md Done report into the local db, or (b) evidence is persisted to the committed ledger in a db-authoritative form so a fresh clone/db reconstructs it. Wire into the coordinator-landing path so no manual re-record is ever needed.
+
+## Done report
+
+Added frob.tickets.replay_evidence_from_done_report, the inverse of
+render_evidence_block: it parses the rendered "### Evidence" section of a
+ticket's Done report and, when the ticket's structured evidence: field is
+empty, writes the recovered ids back into it (idempotent, ledger-locked).
+Wired automatically into transition(root, ticket_id, DONE): a ticket
+arriving with empty evidence now gets a best-effort recovery attempt from
+its own committed Done report text before the ordinary MissingEvidence
+rejection fires. This closes the coordinator-land gap where a hand
+`git merge --no-ff` of a worktree branch (bypassing `frob ticket land`'s
+ledger splice) could leave the Done report prose intact while the
+structured evidence field was lost, forcing a manual `frob ticket
+evidence` re-record on main (T-0248/T-0266 incidents). Recovered ids are
+not re-validated against a fresh collection/pass run; frob check's
+COV003/TEST001 gates still catch a stale or fabricated id independently.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport::test_recovers_ids_when_structured_evidence_empty` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport::test_noop_when_evidence_already_present` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport::test_missing_evidence_when_nothing_recoverable` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport::test_transition_to_done_auto_replays_lost_evidence` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0358 -->
 ```yaml

@@ -52,6 +52,7 @@ from frob.tickets._models import (
     scope_matches,
     scope_overlap_globs,
 )
+from frob.tickets._models import _done_report_section_lines
 from frob.tickets._models import _split_scope_entries as _normalize_scope_entries
 from frob.tickets._provisional import is_draft_id, mint_draft_id, on_default_branch
 from frob.tickets._reconcile import ReconcileReport, reconcile
@@ -1559,6 +1560,21 @@ def transition(
         return Err(loaded.danger_err)
     ticket, queue = loaded.danger_ok
 
+    # T-0357: a ticket closed straight from a hand-merged worktree (a
+    # `git merge --no-ff` that bypassed the `frob ticket land`/T-0479
+    # ledger splice) can arrive here with an empty structured `evidence:`
+    # field even though its Done report prose already carries the
+    # rendered ids -- attempt best-effort recovery before the DONE guard
+    # would otherwise reject it as MissingEvidence. A no-op (`Ok`, no
+    # write) when evidence is already present; a failed recovery falls
+    # through to the ordinary MissingEvidence rejection below, unchanged.
+    if to == TicketState.DONE and not ticket.evidence:
+        replayed = replay_evidence_from_done_report(root, ticket_id)
+        if replayed.is_ok:
+            ticket = replayed.danger_ok
+            queue = dict(queue)
+            queue[ticket_id] = ticket
+
     allowed = _TRANSITIONS.get(ticket.state, frozenset())
     if to not in allowed:
         _log.warning(
@@ -1899,6 +1915,92 @@ def render_evidence_block(evidence: Sequence[str]) -> str:
         else:
             lines.append(f"- `{eid}` (pytest node id, verified passing when recorded)")
     return "\n".join(lines)
+
+
+# frob:ticket T-0357
+_EVIDENCE_LINE_RE = re.compile(r"^- `([^`]+)` \((?:pytest node id|cmd evidence)")
+
+
+def _parse_evidence_ids_from_done_report(body: str) -> tuple[str, ...]:
+    """Recover evidence ids from a ticket's rendered '## Done report' ->
+    '### Evidence' section text, the inverse of `render_evidence_block`
+    (T-0357). A worktree's structured `evidence:` field is the source of
+    truth in the ordinary case; this exists only for the recovery path
+    where that field is empty (or was lost by a hand-merge that bypassed
+    the ledger splice) but the committed Done report prose still carries
+    the rendered ids -- so a coordinator merging a worktree branch by hand
+    (`git merge --no-ff` + `frob ticket close` on main, T-0248/T-0266) is
+    never stuck re-typing node ids by hand. Returns ids in the order they
+    appear, deduplicated; `()` if no '### Evidence' section or no
+    recognizable rendered lines are found."""
+    section = _done_report_section_lines(body)
+    if section is None:
+        return ()
+    ids: list[str] = []
+    in_evidence = False
+    for line in section:
+        stripped = line.strip()
+        if stripped.startswith("### "):
+            in_evidence = stripped == "### Evidence"
+            continue
+        if not in_evidence:
+            continue
+        match = _EVIDENCE_LINE_RE.match(stripped)
+        if match and match.group(1) not in ids:
+            ids.append(match.group(1))
+    return tuple(ids)
+
+
+# frob:ticket T-0357
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport::test_recovers_ids_when_structured_evidence_empty  # noqa: E501
+# frob:tests tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport::test_noop_when_evidence_already_present  # noqa: E501
+def replay_evidence_from_done_report(
+    root: Path, ticket_id: str
+) -> Result[Ticket, TicketError]:
+    """Recover `ticket_id`'s structured `evidence:` field from its own
+    committed Done report prose when the field is empty (T-0357): the
+    coordinator-land bug where evidence recorded via `frob ticket evidence`
+    in a worktree never made it into main's ledger in a form `frob ticket
+    close` recognizes (a hand `git merge --no-ff` that bypassed the T-0176/
+    T-0479 ledger splice, or a splice that otherwise dropped the field
+    while the Done report text survived). Best-effort and idempotent: a
+    ticket that already carries structured evidence is returned unchanged
+    (`Ok`, no write); a ticket with no evidence and no recognizable
+    rendered ids in its Done report returns `Err(MissingEvidence)`
+    unchanged -- there is nothing to replay. Recovered ids are NOT
+    re-validated against a fresh pytest collection or pass/fail run (no
+    such oracle is available here, and re-validating would defeat the
+    point of a same-repo-state recovery); callers that need that guarantee
+    should follow up with `frob check`'s COV003/TEST001 gates, which
+    re-verify independently."""
+    with ledger_lock(root):
+        loaded = _load_one(root, ticket_id)
+        if loaded.is_err:
+            return Err(loaded.danger_err)
+        ticket = loaded.danger_ok
+        if ticket.evidence:
+            return Ok(ticket)
+        recovered = _parse_evidence_ids_from_done_report(ticket.body)
+        if not recovered:
+            _log.warning(
+                "tickets: %s has no structured evidence and no recoverable "
+                "ids in its Done report -- nothing to replay",
+                ticket_id,
+            )
+            return Err(TicketError.MissingEvidence)
+        updated = ticket.model_copy(update={"evidence": recovered})
+        write_result = write_ticket(root, updated)
+        if write_result.is_err:
+            return Err(write_result.danger_err)
+    _log.warning(
+        "tickets: %s replayed %d evidence id(s) from its Done report text "
+        "(structured evidence: field was empty) -- %s",
+        ticket_id,
+        len(recovered),
+        list(recovered),
+    )
+    return Ok(updated)
 
 
 # frob:ticket T-0458
