@@ -4515,7 +4515,18 @@ between ticket creation and this pass) plus CHANGELOG.md/pyproject.toml/
 uv.lock for the version bump.
 
 ### Changed
-(no changed files detected)
+```
+ CHANGELOG.md                 |  13 +++
+ docs/modules/render.md       |  65 +++++++++++++-
+ pyproject.toml               |   2 +-
+ src/frob/render/__init__.py  |  14 ++-
+ src/frob/render/_elements.py |  75 +++++++++++++++-
+ src/frob/render/_renderer.py | 128 +++++++++++++++++++++++++--
+ tests/unit/test_render.py    | 201 +++++++++++++++++++++++++++++++++++++++++++
+ tickets.md                   |  90 ++++++++++++++++++-
+ uv.lock                      |   2 +-
+ 9 files changed, 570 insertions(+), 20 deletions(-)
+```
 
 ### Evidence
 - `tests/unit/test_render.py::TestTableTreeCountDeltas::test_table_plain_shape` (pytest node id, verified passing when recorded)
