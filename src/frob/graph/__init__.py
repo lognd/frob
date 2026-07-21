@@ -191,13 +191,26 @@ def _dedupe_symbols(rel_path: str, parsed: ParsedFile) -> tuple[SymbolRecord, ..
     return tuple(by_ref.values())
 
 
+# frob:ticket T-0433
+# frob:tests tests/test_graph.py::TestBuildIncremental.test_stored_hash_matches_bytes_actually_parsed  # noqa: E501
 def _parse_source_file_fresh(
-    conn, rel_path: str, path: Path, on_disk_hash: str, stat_key: tuple[int, int]
+    conn, rel_path: str, path: Path, stat_key: tuple[int, int]
 ) -> tuple[
     bool, tuple[SymbolRecord, ...], tuple[Edge, ...], tuple[MalformedDirective, ...]
 ]:
     """Parse one uncached source file and store the result:
-    `(True, symbols, edges, malformed)`."""
+    `(True, symbols, edges, malformed)`.
+
+    T-0433 (G7 fix): the stored `content_hash` is `parsed.content_hash` --
+    the hash `frob.lang` computed from the EXACT bytes it read and parsed
+    -- never a hash read separately by the caller beforehand. `_content_hash`
+    and `parse_file`/`_parse_strata_file` used to each do their own
+    `read_bytes()`, so a write landing between the two reads stored the
+    SECOND read's symbols under the FIRST read's hash: a cached row whose
+    hash no longer described its own symbols. Hashing only the bytes that
+    were actually parsed closes that window -- there is exactly one read
+    per store, not two.
+    """
     parsed_result = parse_file(path)
     if parsed_result.is_err:
         err = parsed_result.danger_err
@@ -220,7 +233,7 @@ def _parse_source_file_fresh(
     _cache.store_file_data(
         conn,
         file_path=rel_path,
-        content_hash=on_disk_hash,
+        content_hash=parsed.content_hash,
         mtime_ns=stat_key[0],
         size=stat_key[1],
         symbols=symbols,
@@ -244,6 +257,13 @@ def _process_source_file(
     at all. Only when the stat pair has moved does this fall back to a full
     content hash, and even then a hash match (a `touch` with no edit) still
     skips the reparse, just refreshing the stored stat.
+
+    T-0433 (G7): the `_content_hash` computed here only decides WHETHER to
+    reparse (a cheap early-out); it is never what gets stored for an
+    actually-reparsed file -- `_parse_source_file_fresh` stores the hash
+    `frob.lang` computed from the bytes it itself read and parsed, closing
+    the old TOCTOU window where a write between this decision-read and
+    `parse_file`'s own read could store fresh symbols under a stale hash.
     """
     rel_path = _display_path(path, root)
     meta = _cache.get_file_meta(conn, rel_path)
@@ -266,7 +286,7 @@ def _process_source_file(
         _cache.touch_file_stat(conn, rel_path, mtime_ns=stat_key[0], size=stat_key[1])
         symbols, edges, malformed = _cache.load_file_data(conn, rel_path)
         return False, symbols, edges, malformed
-    return _parse_source_file_fresh(conn, rel_path, path, on_disk_hash, stat_key)
+    return _parse_source_file_fresh(conn, rel_path, path, stat_key)
 
 
 # frob:ticket T-0245

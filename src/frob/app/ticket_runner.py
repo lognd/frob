@@ -1068,10 +1068,11 @@ def _sweep_cmd(root: Path, cfg: AppConfig) -> None:
 # frob:ticket T-0476
 def _reconcile_cmd(root: Path, cfg: AppConfig) -> None:
     """`frob ticket reconcile [--apply] [--remove-orphans]`: report (and,
-    with `--apply`, heal) T-0476's two ticket<->worktree binding anomalies.
-    Always logs a human-readable summary; exits 0 whether or not anomalies
-    were found (finding an anomaly is not itself a command failure -- only
-    a real error loading the ledger is)."""
+    with `--apply`, heal) T-0476's two ticket<->worktree binding anomalies,
+    plus T-0456's orphaned-`land`-intent anomaly. Always logs a
+    human-readable summary; exits 0 whether or not anomalies were found
+    (finding an anomaly is not itself a command failure -- only a real
+    error loading the ledger is)."""
     from frob.tickets import reconcile
 
     result = reconcile(
@@ -1105,6 +1106,17 @@ def _reconcile_cmd(root: Path, cfg: AppConfig) -> None:
         )
     else:
         _log.info("reconcile: no orphan worktrees found")
+
+    if report.orphaned_land_intents:
+        intent_verb = "cleared" if report.applied else "would clear"
+        _log.info(
+            "reconcile: %s %d orphaned land intent(s) (crash/interrupt mid-land): %s",
+            intent_verb,
+            len(report.orphaned_land_intents),
+            list(report.orphaned_land_intents),
+        )
+    else:
+        _log.info("reconcile: no orphaned land intents found")
 
 
 def _xref_hits_for_scope(root: Path, scope: tuple[str, ...]) -> list[str]:

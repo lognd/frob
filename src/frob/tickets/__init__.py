@@ -48,6 +48,7 @@ from frob.tickets._models import (
     TicketSpec,
     TicketState,
     _done_report_section_lines,
+    _glob_is_subset,
     has_substantive_done_report,
     is_cmd_evidence,
     matches_collected,
@@ -1060,8 +1061,12 @@ def _current_actor() -> str:
 
 
 # frob:ticket T-0455
+# frob:waive COV005 reason="T-0485's docstring/signature edit to this already-private helper shifted line offsets against the many other symbols in this file sharing the frob:ticket T-0455 target; COV005's rebind check matches old/new bindings by (kind, target) alone across the whole file and reads the shift as a rebind onto a new private symbol -- this directive has bound _scope_add_conflicts (private) all along, same false-positive class as gates/__init__.py's own documented COV005 waiver"  # noqa: E501
 def _scope_add_conflicts(
-    glob: str, ticket_id: str, queue: dict[str, Ticket]
+    glob: str,
+    ticket_id: str,
+    queue: dict[str, Ticket],
+    own_scope: Sequence[str] = (),
 ) -> tuple[str, str] | None:
     """`(holding_ticket_id, holder_glob)` if `glob` overlaps the declared
     scope of another IN_PROGRESS ticket (T-0453 lease model), or `None` if
@@ -1069,7 +1074,16 @@ def _scope_add_conflicts(
     checked (not breadth-demoted) -- an explicit `--add` request is a
     stronger claim than a passive `doable` listing, so this never silently
     lets an expansion into a busy over-broad lease through the same
-    demotion `leased_by` applies for queue-display purposes."""
+    demotion `leased_by` applies for queue-display purposes.
+
+    T-0485: before checking for contention, `glob` is exempted if it is a
+    provable subset (`_glob_is_subset`) of ANY glob already in `own_scope`
+    (the requesting ticket's OWN pre-mutation scope) -- narrowing an
+    already-grandfathered-broad glob down to a concrete path it already
+    covers can never create NEW contention, so it must never be refused as
+    a fresh lease request against the same holder."""
+    if any(_glob_is_subset(glob, existing) for existing in own_scope):
+        return None
     for holder in sorted(queue.values(), key=lambda t: t.id):
         if holder.id == ticket_id or holder.state is not TicketState.IN_PROGRESS:
             continue
@@ -1108,6 +1122,7 @@ def _validate_scope_request(
 
 
 # frob:ticket T-0455
+# frob:waive COV005 reason="T-0485's caller-signature edit (own_scope passthrough to _scope_add_conflicts) shifted line offsets against the many other symbols in this file sharing the frob:ticket T-0455 target; COV005's rebind check matches old/new bindings by (kind, target) alone across the whole file and reads the shift as a rebind onto a new private symbol -- this directive has bound _validate_scope_mutation (private) all along, same false-positive class as gates/__init__.py's own documented COV005 waiver"  # noqa: E501
 def _validate_scope_mutation(
     ticket_id: str,
     ticket: Ticket,
@@ -1137,7 +1152,7 @@ def _validate_scope_mutation(
             )
             return Err(TicketError.ScopeRemoveOrphansEvidence)
     for glob in add_globs:
-        conflict = _scope_add_conflicts(glob, ticket_id, queue)
+        conflict = _scope_add_conflicts(glob, ticket_id, queue, ticket.scope)
         if conflict is not None:
             holder_id, holder_glob = conflict
             _log.error(

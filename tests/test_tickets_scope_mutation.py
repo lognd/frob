@@ -23,7 +23,7 @@ from frob.tickets import (
     new_ticket,
     transition,
 )
-from frob.tickets._models import TicketSpec
+from frob.tickets._models import TicketSpec, _glob_is_subset
 
 
 def _make_ticket(
@@ -86,6 +86,45 @@ class TestMutateScope:
         queue = load_queue(tmp_path).danger_ok
         assert "src/frob/gates/foo.py" not in queue.tickets[agent.id].scope
         assert holder.state is TicketState.IN_PROGRESS
+
+    def test_add_subset_of_own_leased_overlap_is_accepted(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets_scope_mutation.py::TestMutateScope.test_add_subset_of_own_leased_overlap_is_accepted  # noqa: E501
+        # T-0485: a queued ticket whose scope ALREADY grandfathers a glob
+        # ('src/frob/strata/**') that overlaps another in-progress ticket's
+        # lease must still be allowed to narrow that overlap down to a
+        # concrete subset path -- the narrowing strictly shrinks
+        # contention, it never creates any.
+        holder = _make_ticket(
+            tmp_path, scope=("src/frob/strata/**",), state=TicketState.IN_PROGRESS
+        )
+        agent = _make_ticket(tmp_path, scope=("src/frob/strata/**",))
+        result = mutate_scope(
+            tmp_path,
+            agent.id,
+            add=("src/frob/strata/_host.py",),
+            reason="narrow to the file actually touched",
+        )
+        assert result.is_ok, result
+        updated = result.danger_ok
+        assert "src/frob/strata/_host.py" in updated.scope
+        assert holder.state is TicketState.IN_PROGRESS
+
+    def test_add_beyond_own_leased_overlap_still_rejected(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets_scope_mutation.py::TestMutateScope.test_add_beyond_own_leased_overlap_still_rejected  # noqa: E501
+        # T-0485 does not open the door to genuine expansion: an add glob
+        # that is NOT a subset of anything the ticket already declares
+        # must still be refused against a holder's lease.
+        _make_ticket(
+            tmp_path, scope=("src/frob/gates/**",), state=TicketState.IN_PROGRESS
+        )
+        agent = _make_ticket(tmp_path, scope=("src/frob/strata/**",))
+        result = mutate_scope(
+            tmp_path,
+            agent.id,
+            add=("src/frob/gates/foo.py",),
+            reason="need it",
+        )
+        assert result.is_err and result.danger_err == TicketError.ScopeLeaseConflict
 
     def test_remove_frees_path_for_other_doable(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_scope_mutation.py::TestMutateScope.test_remove_frees_path_for_other_doable  # noqa: E501
@@ -173,6 +212,23 @@ class TestMutateScope:
         assert len(second.danger_ok.scope_changes) == 2
         assert second.danger_ok.scope_changes[0].op is ScopeChangeOp.ADD
         assert second.danger_ok.scope_changes[1].op is ScopeChangeOp.REMOVE
+
+
+class TestGlobIsSubset:
+    def test_concrete_path_under_double_star_is_subset(self) -> None:
+        # frob:tests tests/test_tickets_scope_mutation.py::TestGlobIsSubset.test_concrete_path_under_double_star_is_subset  # noqa: E501
+        assert _glob_is_subset("src/frob/strata/_host.py", "src/frob/strata/**")
+
+    def test_concrete_path_outside_broad_glob_is_not_subset(self) -> None:
+        # frob:tests tests/test_tickets_scope_mutation.py::TestGlobIsSubset.test_concrete_path_outside_broad_glob_is_not_subset  # noqa: E501
+        assert not _glob_is_subset("src/frob/gates/foo.py", "src/frob/strata/**")
+
+    def test_wildcard_bearing_narrow_is_never_subset(self) -> None:
+        # frob:tests tests/test_tickets_scope_mutation.py::TestGlobIsSubset.test_wildcard_bearing_narrow_is_never_subset  # noqa: E501
+        # Conservative by design: a narrow glob that still carries a
+        # wildcard is never proven a subset, even if it would appear to be
+        # one -- this keeps the check sound rather than approximate.
+        assert not _glob_is_subset("src/frob/strata/*.py", "src/frob/strata/**")
 
 
 class TestScopeCli:

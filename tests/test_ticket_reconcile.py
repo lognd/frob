@@ -35,6 +35,7 @@ from frob.tickets import (
     reconcile,
     transition,
 )
+from frob.tickets._journal import read_all_intents, write_intent
 from frob.tickets._leases import read_all_leases
 from frob.tickets._store import atomic_write, ledger_path, write_ticket
 
@@ -218,3 +219,37 @@ class TestReconcileOrphanWorktree:
 
         assert transition(wt, tid, TicketState.QUEUED).is_ok
         _run(["git", "worktree", "remove", "--force", str(wt)], repo)
+
+
+class TestReconcileOrphanedLandIntent:
+    """T-0456: a `frob ticket land` intent-journal record still present
+    under `repo` means the process that started that land never reached
+    its own `clear_intent` cleanup (crash/interrupt mid-land)."""
+
+    def test_dry_run_reports_but_does_not_clear(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_reconcile.py::TestReconcileOrphanedLandIntent.test_dry_run_reports_but_does_not_clear
+        write_intent(repo, "T-crashed", repo)
+
+        result = reconcile(repo)
+        assert result.is_ok
+        report = result.danger_ok
+        assert report.orphaned_land_intents == ("T-crashed",)
+        assert report.cleared_land_intents == ()
+        assert len(read_all_intents(repo)) == 1
+
+    def test_apply_clears_the_orphaned_intent(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_reconcile.py::TestReconcileOrphanedLandIntent.test_apply_clears_the_orphaned_intent
+        write_intent(repo, "T-crashed", repo)
+
+        result = reconcile(repo, apply=True)
+        assert result.is_ok
+        report = result.danger_ok
+        assert report.orphaned_land_intents == ("T-crashed",)
+        assert report.cleared_land_intents == ("T-crashed",)
+        assert read_all_intents(repo) == ()
+
+    def test_no_intents_reports_empty(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_reconcile.py::TestReconcileOrphanedLandIntent.test_no_intents_reports_empty
+        result = reconcile(repo)
+        assert result.is_ok
+        assert result.danger_ok.orphaned_land_intents == ()

@@ -25,7 +25,7 @@ from frob.graph._models import (
     SymbolId,
     SymbolRecord,
 )
-from frob.lang import SymbolKind
+from frob.lang import GRAMMAR_FINGERPRINT_PACKAGES, SymbolKind
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
@@ -61,23 +61,25 @@ _SCHEMA_VERSION = 3
 # grammar/runtime package it parses source with. Bumping any of these can
 # silently change symbol/edge output for identical source bytes -- see the
 # T-0243 malmberg pilot incident (2830 vs 3007 symbols from a stale cache
-# after a frob upgrade). Extend this tuple whenever a new grammar package
-# is added to `frob.lang`.
+# after a frob upgrade).
 # frob:ticket T-0402
 # G6: "strata-core" was missing here -- a strata-core native-extension
 # upgrade that changed `.strata` parse output would NOT invalidate the
 # cache, exactly the T-0243 incident this mechanism exists to prevent,
-# reintroduced for `.strata`. Full derivation of this list from
-# `frob.lang`'s grammar registry (rather than a hand-copied tuple) is a
-# larger change than this fix; still tracked as G6's open half, see
-# docs/audits/graph.md.
+# reintroduced for `.strata`.
+# frob:ticket T-0433
+# G6 (full fix): the tree-sitter grammar packages are now DERIVED from
+# `frob.lang.GRAMMAR_FINGERPRINT_PACKAGES` -- the module that actually owns
+# grammar loading -- instead of hand-copied here. "frob" (this
+# distribution's own extraction/digest logic) and "strata-core" (the one
+# non-tree-sitter grammar) are not `frob.lang` grammar packages, so they
+# stay listed here explicitly; every tree-sitter-loaded language's
+# fingerprint surface now updates automatically if `frob.lang` ever adds or
+# drops a package to that set, with no second hand-copied tuple to forget.
+_NON_LANGUAGE_FINGERPRINT_PACKAGES = ("frob", "strata-core")
 _FINGERPRINT_PACKAGES = (
-    "frob",
-    "tree-sitter",
-    "tree-sitter-python",
-    "tree-sitter-cpp",
-    "tree-sitter-language-pack",
-    "strata-core",
+    *_NON_LANGUAGE_FINGERPRINT_PACKAGES,
+    *sorted(GRAMMAR_FINGERPRINT_PACKAGES),
 )
 
 
