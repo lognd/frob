@@ -5833,9 +5833,9 @@ threat: null
 ```
 Discovered while working T-0516: COV006 Violation objects carry no symref (file=test_file, line=0), so _match_waiver falls back to file-level matching for a frob:waive COV006 comment anywhere in that file -- ANY single COV006 waiver in a test file silently suppresses EVERY COV006 finding in that file, not just the one it was written next to. Verified directly: adding one waiver comment near one test in tests/test_gates.py suppressed all 7 COV006 findings then present in that file, including unrelated ones that were NOT sound (an import-alias false-positive that needed a real fix, not a waiver). Consider giving COV006 violations a symref (the test's own qualname) so _match_waiver can do symbol-exact matching the way most other rules do, instead of falling back to file-scope for a rule that very plausibly has multiple independent findings per file.
 
-<!-- ticket:T-draft-b1002293 -->
+<!-- ticket:T-0526 -->
 ```yaml
-id: T-draft-b1002293
+id: T-0526
 title: 'frob:debt/frob:todo coherence: paired todo, same-ticket check, symmetric resolution'
 state: queued
 kind: feature

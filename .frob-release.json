@@ -223,7 +223,7 @@
     "src/frob/dup/_core.py::core_available": "5c74242e33b3e6987b7193b1c2f3297d06017a5bea67cfe26d552a1d131ccc79",
     "src/frob/dup/_exhaustiveness.py::CLONE_TYPES": "dd2bf01703d1eec0ed717c401e98cc28e2ae33bf688d7dc55f48a073d2ee399f",
     "src/frob/dup/_exhaustiveness.py::CLONE_TYPE_DESCRIPTIONS": "ae8c67d2a13d41f8d451eff037fa6ef79a07b562a329d7b92e1697856e2e3697",
-    "src/frob/dup/_exhaustiveness.py::DUP_CLAIMS": "7867a4e2b6deccd6e8e9e922de6ba709bb759cdfe425f3018cbfd0968b25d8eb",
+    "src/frob/dup/_exhaustiveness.py::DUP_CLAIMS": "607b5a0f175fe0a49ed75052513146eefce4e5e4d56e7a0ffda574d7c18c9a35",
     "src/frob/dup/_exhaustiveness.py::DUP_MATRIX_EXCUSES": "8cd0eaeb4bea34462836123b9661b17ff9957b146b8bb7acd5f93d33276ef21a",
     "src/frob/dup/_exhaustiveness.py::DupClaim": "7c2610aacf2081c87406bb9c265c9dc3ae7ba54d9d7135c19b9ec8c8bd2d02f0",
     "src/frob/dup/_exhaustiveness.py::DupMatrixCell": "4b237720d8a4bcea000e768eda99655b203c7f05ac9c507115d9f3e57c9be35a",
@@ -1079,5 +1079,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.54.0"
+  "version": "0.55.0"
 }
