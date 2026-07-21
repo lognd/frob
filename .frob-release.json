@@ -62,6 +62,7 @@
     "src/frob/app/app.py::App": "a317250c7703e3bfcdaa6a635f78e470dcc6c4b379974182a9b10daea30f81d7",
     "src/frob/app/arch_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
     "src/frob/app/bind_runner.py::run": "d9f6c6004b17eea6226d73b5720d6b4ab6a2dabb037ceef438a63d8918972b7a",
+    "src/frob/app/check_runner.py::_ColorizedLevelFormatter.format": "e18613d80343f4b8f434caf7af974dea4419aeb99c8560f4fd332d7590a3b8c4",
     "src/frob/app/check_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
     "src/frob/app/clean_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
     "src/frob/app/config.py::ARCH_DEFAULT_MAX_CLASS_METHODS": "0940e49ddce7fc636ee4e8abd8ea62a5dad6a43a24c45483ab2866c2acf6717e",
@@ -1046,5 +1047,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.43.0"
+  "version": "0.44.0"
 }
