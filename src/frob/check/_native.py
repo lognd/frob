@@ -11,6 +11,7 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
+from frob.excludes import iter_files
 from frob.process._guard import EXEC_KILL_SWITCH_ENV, guarded_subprocess_run
 from frob.process.parsers.common import (
     Diagnostic,
@@ -26,7 +27,7 @@ def _collect_sources(root: Path, exts: tuple[str, ...]) -> list[Path]:
     """Source files under `root` with any of `exts`, excluding vendored dirs."""
     files: list[Path] = []
     for ext in exts:
-        files.extend(root.rglob(f"*{ext}"))
+        files.extend(iter_files(root, suffix=ext))
     return [f for f in files if not any(p in _CPP_EXCLUDED_DIRS for p in f.parts)]
 
 

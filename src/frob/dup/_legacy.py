@@ -286,18 +286,14 @@ def find_duplicates(root: Path, min_lines: int = 6) -> DupResult:
 def _walk(root: Path):
     """Yield all files under root, honoring built-in skips and [graph] exclude."""
     # frob:ticket T-0026
-    from frob.excludes import is_excluded, is_skipped_dir, load_exclude_globs
+    from frob.excludes import is_excluded, load_exclude_globs, walk_pruned
 
     exclude_globs = load_exclude_globs(root)
-    for path in root.rglob("*"):
-        if not path.is_file():
-            continue
-        try:
-            rel = path.relative_to(root)
-        except ValueError:
-            continue
-        if any(is_skipped_dir(part) for part in rel.parts):
-            continue
+    for path in walk_pruned(root, exclude_globs=exclude_globs):
+        # walk_pruned only prunes DIRECTORIES against exclude_globs; a glob
+        # that targets individual files (not a directory prefix) still
+        # needs this post-hoc check.
+        rel = path.relative_to(root)
         if exclude_globs and is_excluded(rel.as_posix(), exclude_globs):
             continue
         yield path

@@ -14,6 +14,7 @@ import threading
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from frob.excludes import iter_files
 from frob.process._guard import EXEC_KILL_SWITCH_ENV, guarded_subprocess_run
 from frob.process.parsers.common import (
     Diagnostic,
@@ -140,7 +141,7 @@ def _build_import_graph(scan_root: Path):  # noqa: ANN202
     graph = DependencyGraph()
     resolved_scan = scan_root.resolve()
     skip = {"__pycache__", ".venv", "build", "dist"}
-    for path in scan_root.rglob("*.py"):
+    for path in iter_files(scan_root, suffix=".py"):
         try:
             rel_parts = path.resolve().relative_to(resolved_scan).parts
         except ValueError:
@@ -698,7 +699,7 @@ def _run_bind(root: Path) -> ToolResult | None:
 
 def _has_bind_markers(scan: Path) -> bool:
     """Whether any `.py` file under `scan` contains a `# BIND` marker."""
-    for path in scan.rglob("*.py"):
+    for path in iter_files(scan, suffix=".py"):
         try:
             if b"# BIND" in path.read_bytes():
                 return True
@@ -789,7 +790,9 @@ def _unexported_symbols_result(
 def _run_exports(root: Path) -> list[ToolResult]:
     """Report public symbols in sub-modules that are absent from each __init__.py."""
     scan = root if root.is_dir() else root.parent
-    init_files = sorted(scan.rglob("__init__.py"))
+    init_files = sorted(
+        p for p in iter_files(scan, suffix=".py") if p.name == "__init__.py"
+    )
     out: list[ToolResult] = []
     for init_file in init_files:
         result = _exports_for_package(init_file, scan)

@@ -29,11 +29,11 @@ Two call sites (T-0248's plan):
 from __future__ import annotations
 
 import importlib.util
-import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+from frob.excludes import walk_pruned
 from frob.logging import get_logger
 from frob.testing._collect import _compiled_artifacts
 from frob.testing._models import NativeSpec
@@ -47,12 +47,6 @@ _log = get_logger(__name__)
 #: is skipped -- this module only speaks to natives it can locate source for.
 # frob:doc docs/modules/testing.md#public-api
 NATIVE_SOURCE_DIRS: tuple[str, ...] = ("strata-core", "frob-core")
-
-#: Directory names never worth walking for a source-tree mtime: build
-#: output (would make a native look "stale against itself" the moment it
-#: is built) and VCS/cache dirs that touch on every checkout unrelated to
-#: source content.
-_PRUNED_DIR_NAMES = frozenset({"target", ".git", "__pycache__", "node_modules"})
 
 
 # frob:doc docs/modules/testing.md#public-api
@@ -69,20 +63,19 @@ class StaleNative:
 
 def _newest_mtime(directory: Path) -> float | None:
     """Latest mtime among every regular file under `directory` (pruning
-    `_PRUNED_DIR_NAMES`), or `None` if `directory` does not exist -- an
-    absent source dir can never be "stale" against anything."""
+    `frob.excludes.BUILTIN_SKIP_DIRS` via `walk_pruned`), or `None` if
+    `directory` does not exist -- an absent source dir can never be "stale"
+    against anything."""
     if not directory.is_dir():
         return None
     newest: float | None = None
-    for dirpath, dirnames, filenames in os.walk(directory):
-        dirnames[:] = [d for d in dirnames if d not in _PRUNED_DIR_NAMES]
-        for name in filenames:
-            try:
-                mtime = (Path(dirpath) / name).stat().st_mtime
-            except OSError:
-                continue
-            if newest is None or mtime > newest:
-                newest = mtime
+    for path in walk_pruned(directory):
+        try:
+            mtime = path.stat().st_mtime
+        except OSError:
+            continue
+        if newest is None or mtime > newest:
+            newest = mtime
     return newest
 
 

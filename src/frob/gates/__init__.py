@@ -3720,6 +3720,7 @@ def _obligated_docs(root: Path, include: list[str], exclude: list[str]) -> set[s
 
     obligated: set[str] = set()
     for glob in include:
+        # frob:waive WALK001 reason="pathlib Path.glob's ** (zero-or-more-dirs) semantics matter here (e.g. default docs/**/*.md must match a top-level docs/orphan.md) and fnmatch.fnmatch (frob.excludes.is_excluded) does not have that semantics, so this cannot be reduced to an iter_files(suffix=...) prefilter without changing which docs are obligated; include is config-driven and defaults to the small docs/ subtree, not a repo-wide walk"  # noqa: E501
         for path in root.glob(glob):
             rel = path.relative_to(root).as_posix()
             if not any(fnmatch.fnmatch(rel, ex) for ex in exclude):

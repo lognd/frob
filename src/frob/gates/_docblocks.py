@@ -170,6 +170,7 @@ def _rust_namespaces(root: Path) -> tuple[frozenset[str], dict[str, str]]:
         for pattern in members:
             if not isinstance(pattern, str):
                 continue
+            # frob:waive WALK001 reason="Cargo workspace member glob (e.g. 'crates/*'), a single shallow level, not a recursive repo walk"  # noqa: E501
             for member_dir in sorted(root.glob(pattern)):
                 if not member_dir.is_dir():
                     continue
@@ -195,6 +196,7 @@ def _ts_namespaces(root: Path) -> frozenset[str]:
             for pattern in workspaces:
                 if not isinstance(pattern, str):
                     continue
+                # frob:waive WALK001 reason="npm workspaces glob (e.g. 'packages/*'), a single shallow level, not a recursive repo walk"  # noqa: E501
                 for member_dir in sorted(root.glob(pattern)):
                     member_data = _read_toml_json(member_dir / "package.json")
                     if member_data is None:

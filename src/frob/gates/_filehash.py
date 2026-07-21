@@ -12,13 +12,12 @@ implementation detail of the two stamp modules, not a standalone gate.
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
+from frob.excludes import walk_pruned
 from frob.graph import _content_hash as _graph_content_hash
 
 _SOURCE_EXTS = (".py", ".ts", ".tsx", ".rs", ".c", ".h", ".cpp")
-_EXCLUDED_DIRS = {".git", ".venv", "node_modules", "target", "build", "dist", ".frob"}
 
 
 def _sha_of(path: Path) -> str | None:
@@ -31,22 +30,13 @@ def _sha_of(path: Path) -> str | None:
     return _graph_content_hash(path)
 
 
-def _walk(root: Path):  # noqa: ANN202
-    """Thin `os.walk` wrapper pruning the usual excluded directories."""
-    for dirpath, dirnames, filenames in os.walk(root):
-        dirnames[:] = [d for d in dirnames if d not in _EXCLUDED_DIRS]
-        yield dirpath, dirnames, filenames
-
-
 def _collect_file_hashes(root: Path) -> dict[str, str]:
     """Content-hash every tracked source file under `root` (excluded dirs pruned)."""
     file_hashes: dict[str, str] = {}
-    for dirpath, _dirnames, filenames in _walk(root):
-        for name in filenames:
-            if not name.endswith(_SOURCE_EXTS):
-                continue
-            path = Path(dirpath) / name
-            digest = _sha_of(path)
-            if digest is not None:
-                file_hashes[str(path.relative_to(root).as_posix())] = digest
+    for path in walk_pruned(root):
+        if path.suffix not in _SOURCE_EXTS:
+            continue
+        digest = _sha_of(path)
+        if digest is not None:
+            file_hashes[str(path.relative_to(root).as_posix())] = digest
     return file_hashes

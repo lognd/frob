@@ -47,6 +47,7 @@ def _dir_size(path: Path) -> int:
     """Recursive byte size of a directory, best-effort (unreadable entries
     contribute 0 rather than raising)."""
     total = 0
+    # frob:waive WALK001 reason="sizes one already-matched artifact dir; excludes would prune the dirs this module exists to find"  # noqa: E501
     for p in path.rglob("*"):
         if p.is_file() and not p.is_symlink():
             try:
@@ -63,6 +64,7 @@ def _match_candidates(root: Path, patterns: tuple[str, ...]) -> dict[Path, str]:
     candidates: dict[Path, str] = {}
     root_resolved = root.resolve()
     for pattern in patterns:
+        # frob:waive WALK001 reason="allowlist patterns deliberately target __pycache__/build/dist/etc, the exact dirs frob.excludes prunes; that's this module's whole job"  # noqa: E501
         for match in root.glob(pattern):
             if _EXCLUDED_ANCESTORS.intersection(match.parts):
                 continue

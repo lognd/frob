@@ -100,9 +100,9 @@ def _build_graph(root: Path, lang: str | None) -> tuple[DependencyGraph, list[st
     graph = DependencyGraph()
     errors: list[str] = []
 
-    from frob.excludes import load_exclude_globs
+    from frob.excludes import iter_files, load_exclude_globs
 
-    files = [root] if root.is_file() else list(root.rglob("*"))
+    files = [root] if root.is_file() else list(iter_files(root))
     scan_root = root.parent if root.is_file() else root
     exclude_globs = load_exclude_globs(scan_root)
 

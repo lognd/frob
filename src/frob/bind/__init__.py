@@ -4,6 +4,8 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
+from frob.excludes import iter_files
+
 
 # frob:doc docs/modules/bind.md#public-api
 @dataclass
@@ -34,14 +36,14 @@ class Mismatch:
 def scan_bindings(root: Path) -> list[BindingDecl]:
     """Scan a project root for // BIND: comments in .cpp and .rs files."""
     results = []
-    for path in root.rglob("*.cpp"):
+    for path in iter_files(root, suffix=".cpp"):
         for i, line in enumerate(path.read_text(errors="replace").splitlines(), 1):
             m = re.search(r"//\s*BIND:\s*(.+)", line)
             if m:
                 results.append(
                     BindingDecl(str(path), i, m.group(1).strip(), "pybind11")
                 )
-    for path in root.rglob("*.rs"):
+    for path in iter_files(root, suffix=".rs"):
         for i, line in enumerate(path.read_text(errors="replace").splitlines(), 1):
             m = re.search(r"//\s*BIND:\s*(.+)", line)
             if m:
@@ -54,14 +56,14 @@ def scan_sources(root: Path) -> list[SourceDecl]:
     """Scan .h and .cpp files for declared functions, and .rs for #[pyfunction]."""
     results = []
     fn_re = re.compile(r"^\s*(?:[\w:*&<> ]+)\s+(\w+)\s*\(([^)]*)\)\s*(?:const\s*)?;")
-    for path in root.rglob("*.h"):
+    for path in iter_files(root, suffix=".h"):
         for i, line in enumerate(path.read_text(errors="replace").splitlines(), 1):
             m = fn_re.match(line)
             if m:
                 results.append(
                     SourceDecl(str(path), i, line.strip().rstrip(";"), "cpp_header")
                 )
-    for path in root.rglob("*.rs"):
+    for path in iter_files(root, suffix=".rs"):
         lines = path.read_text(errors="replace").splitlines()
         for i, line in enumerate(lines, 1):
             if "#[pyfunction]" in line and i < len(lines):

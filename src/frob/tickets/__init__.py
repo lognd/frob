@@ -412,9 +412,6 @@ def renumber(root: Path) -> Result[int, TicketError]:
 
 
 _DIRECTIVE_LINE_RE = re.compile(r"frob:(ticket|waive|todo|tests|invariant|doc)\b")
-_SKIP_DIR_NAMES = frozenset(
-    {".git", ".venv", "node_modules", "__pycache__", ".frob", "target", "dist", "build"}
-)
 
 
 def _tracked_files(root: Path) -> list[Path]:
@@ -422,16 +419,9 @@ def _tracked_files(root: Path) -> list[Path]:
     under a build/vendor/cache directory -- the search space `renumber_one`
     scans for code directive references. Falling back to a filesystem walk
     keeps renumber usable in a non-git fixture/test tree."""
-    from frob.gitio import run_argv
+    from frob.excludes import iter_files
 
-    spawned = run_argv(["git", "-C", str(root), "ls-files"])
-    if spawned.is_ok and spawned.danger_ok.returncode == 0:
-        return [root / line for line in spawned.danger_ok.stdout.splitlines() if line]
-    files: list[Path] = []
-    for path in root.rglob("*"):
-        if path.is_file() and not any(part in _SKIP_DIR_NAMES for part in path.parts):
-            files.append(path)
-    return files
+    return list(iter_files(root))
 
 
 def _rewrite_directive_references(
@@ -799,10 +789,10 @@ def _repo_files_walk_fallback(root: Path) -> tuple[str, ...]:
     `.claude/worktrees/` pruned -- the `_repo_files` fallback for a `root`
     that is not a git work tree (T-0453). Never the default path in a real
     git checkout; `_repo_files_git` is."""
+    from frob.excludes import walk_pruned
+
     files: list[str] = []
-    for path in sorted(root.rglob("*")):
-        if not path.is_file():
-            continue
+    for path in sorted(walk_pruned(root)):
         rel = path.relative_to(root).as_posix()
         if _is_excluded_breadth_path(rel):
             continue

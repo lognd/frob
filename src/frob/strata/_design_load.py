@@ -26,7 +26,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from frob.excludes import is_excluded, load_exclude_globs
+from frob.excludes import is_excluded, iter_files, load_exclude_globs
 from frob.graph import EdgeKind, GraphSnapshot
 from frob.logging import get_logger
 
@@ -101,7 +101,7 @@ def _strata_files(
     if not design_dir.is_dir():
         return []
     found = []
-    for path in sorted(design_dir.rglob("*.strata")):
+    for path in sorted(iter_files(design_dir, suffix=".strata")):
         rel = path.relative_to(root).as_posix()
         if exclude_globs and is_excluded(rel, exclude_globs):
             _log.debug("_strata_files: %s excluded by [graph].exclude", rel)

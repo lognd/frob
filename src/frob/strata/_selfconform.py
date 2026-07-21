@@ -63,12 +63,13 @@ anywhere -- exactly the gap this ticket asked SYS102 to close.
 from __future__ import annotations
 
 import fnmatch
+import os
 from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict
 from typani.result import Err, Ok, Result
 
-from frob.excludes import is_excluded, is_skipped_dir, load_exclude_globs
+from frob.excludes import is_excluded, is_skipped_dir, load_exclude_globs, walk_pruned
 from frob.logging import get_logger
 from frob.vet._capability import (
     is_self_pattern_path,
@@ -227,13 +228,8 @@ def _sorted_capability_files(root: Path) -> list[Path]:
     has no such constraint)."""
     exclude_globs = load_exclude_globs(root)
     found: list[Path] = []
-    for path in sorted(root.rglob("*")):
-        if not path.is_file() or language_for(path) is None:
-            continue
-        rel_path = path.relative_to(root)
-        if any(is_skipped_dir(part) for part in rel_path.parts):
-            continue
-        if exclude_globs and is_excluded(rel_path.as_posix(), exclude_globs):
+    for path in sorted(walk_pruned(root, exclude_globs=exclude_globs)):
+        if language_for(path) is None:
             continue
         found.append(path)
     return found
@@ -417,15 +413,21 @@ def _repo_files_excluding_skip_dirs(root: Path) -> list[str]:
     any path whose parts include a skip-dir (`is_skipped_dir`) omitted;
     split out of `_fully_excluded_node_ids`'s file-collection phase
     (T-0361)."""
+    # Deliberately skip-dir-only pruning (no [graph].exclude): the SYS101
+    # caller needs the pre-exclude file set to compare against is_excluded()
+    # per-glob itself, so this cannot route through walk_pruned's
+    # exclude_globs=() (which would fall back to loading frob.toml's
+    # globs and collapse that distinction). Still prunes mid-descent via
+    # os.walk's dirnames mutation, same as walk_pruned, just on a narrower
+    # predicate.
     all_files: list[str] = []
-    for path in sorted(root.rglob("*")):
-        if not path.is_file():
-            continue
-        rel_path = path.relative_to(root)
-        if any(is_skipped_dir(part) for part in rel_path.parts):
-            continue
-        all_files.append(rel_path.as_posix())
-    return all_files
+    # frob:waive WALK001 reason="deliberately skip-dir-only, no [graph].exclude pruning -- the SYS101 caller needs the pre-exclude file set to compare against is_excluded() per-glob itself; walk_pruned's exclude_globs=() default would load frob.toml globs and collapse that distinction. Still prunes mid-descent via dirnames mutation, same shape as walk_pruned, just a narrower predicate"  # noqa: E501
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = [d for d in dirnames if not is_skipped_dir(d)]
+        current = Path(dirpath)
+        for name in filenames:
+            all_files.append((current / name).relative_to(root).as_posix())
+    return sorted(all_files)
 
 
 # frob:doc docs/strata/selfconform.md#sys101-fully-excluded-nodes

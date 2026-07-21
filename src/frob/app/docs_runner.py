@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import os
 import sys
 from pathlib import Path
 
 from frob.app.config import AppConfig
 from frob.docs import extract_docstrings, find_docs_dir, overview, search
+from frob.excludes import iter_files
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
@@ -53,10 +53,8 @@ def _collect_docstrings(path: Path, symbol: str | None) -> list:
     if not path.is_dir():
         return extract_docstrings(path, symbol)
     results: list = []
-    for root, _, files in os.walk(path):
-        for f in files:
-            if f.endswith(".py"):
-                results.extend(extract_docstrings(Path(root) / f, symbol))
+    for f in iter_files(path, suffix=".py"):
+        results.extend(extract_docstrings(f, symbol))
     return results
 
 

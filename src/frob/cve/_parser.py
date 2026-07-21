@@ -77,6 +77,7 @@ def iter_mirror(
         _log.warning("cve: mirror root is not a directory: %s", root)
         yield (root, Err(CveError.MirrorPathInvalid))
         return
+    # frob:waive WALK001 reason="bounded external cvelistV5 mirror layout (cves/*/*/CVE-*.json), not the repo tree; no vendored/build dirs to prune"  # noqa: E501
     paths = sorted(root.glob(_MIRROR_GLOB))
     _log.info("cve: walking mirror %s (%d record file(s))", root, len(paths))
     for path in paths:

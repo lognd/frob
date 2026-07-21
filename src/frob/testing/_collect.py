@@ -15,7 +15,7 @@ from pathlib import Path
 from typani import Err, Ok
 from typani.result import Result
 
-from frob.excludes import is_excluded, is_skipped_dir, load_exclude_globs
+from frob.excludes import is_excluded, is_skipped_dir, load_exclude_globs, walk_pruned
 from frob.gitio import GitError, ProcResult, run_argv
 from frob.logging import get_logger
 from frob.testing._models import CollectedTests, NativeSpec, RunnerSpec
@@ -72,13 +72,12 @@ def _walk_test_files(root: Path) -> list[Path]:
     pruned (built-in skip set AND `[graph].exclude`, T-0274)."""
     exclude_globs = load_exclude_globs(root)
     found: list[Path] = []
-    for dirpath, dirnames, filenames in os.walk(root):
-        dirnames[:] = _prune_dirnames(Path(dirpath), root, dirnames, exclude_globs)
-        for name in filenames:
-            if name.startswith("test_") and name.endswith(".py"):
-                found.append(Path(dirpath) / name)
-            elif name.endswith("_test.py"):
-                found.append(Path(dirpath) / name)
+    for path in walk_pruned(root, exclude_globs=exclude_globs):
+        name = path.name
+        if name.startswith("test_") and name.endswith(".py"):
+            found.append(path)
+        elif name.endswith("_test.py"):
+            found.append(path)
     return found
 
 
@@ -136,6 +135,7 @@ def _compiled_artifacts(found: importlib.machinery.ModuleSpec) -> list[Path]:
             artifacts.append(origin)
     for location in found.submodule_search_locations or ():
         pkg_dir = Path(location)
+        # frob:waive WALK001 reason="bounded to a single already-resolved package dir's own compiled-artifact siblings, not a repo-wide walk"  # noqa: E501
         artifacts.extend(p for p in pkg_dir.rglob("*") if _is_compiled_artifact(p))
     return sorted(set(artifacts))
 
@@ -457,6 +457,7 @@ def _find_crates(root: Path) -> list[Path]:
     # frob:waive PERF004 reason="one sort of the final result list, not per-iteration"
     exclude_globs = load_exclude_globs(root)
     found: list[Path] = []
+    # frob:waive WALK001 reason="needs per-directory descend control (stop past a found crate root, _classify_crate_dir's should_prune) that the file-only iter_files/walk_pruned API cannot express; already prunes via _prune_dirnames using frob.excludes primitives"  # noqa: E501
     for dirpath, dirnames, filenames in os.walk(root):
         dirnames[:] = _prune_dirnames(Path(dirpath), root, dirnames, exclude_globs)
         if "Cargo.toml" in filenames:
@@ -482,6 +483,7 @@ def _classify_crate_dir(manifest_dir: Path) -> tuple[bool, bool]:
 def _rust_content_key(root: Path) -> str:
     """Sha256 over every crate's `(relpath, sha256)` pair -- the cache key."""
     hasher = hashlib.sha256()
+    # frob:waive WALK001 reason="bounded to each already-pruned single crate dir from _find_crates, not a repo-wide walk"  # noqa: E501
     all_rs_files = [
         p for crate_dir in _find_crates(root) for p in crate_dir.rglob("*.rs")
     ]

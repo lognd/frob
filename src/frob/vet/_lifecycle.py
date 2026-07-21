@@ -25,6 +25,7 @@ def _scan_lifecycle_scripts(root: Path) -> dict[str, tuple[str, ...]]:
         return {}
 
     found: dict[str, tuple[str, ...]] = {}
+    # frob:waive WALK001 reason="node_modules is BUILTIN_SKIP_DIRS; this scanner's whole job is walking inside it, which frob.excludes would prune entirely"  # noqa: E501
     for pkg_json in node_modules.glob("**/package.json"):
         try:
             data = json.loads(pkg_json.read_text(encoding="utf-8"))

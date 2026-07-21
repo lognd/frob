@@ -28,14 +28,12 @@ from __future__ import annotations
 
 import ast
 import fnmatch
-import os
 from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict
 from typani.result import Err, Ok, Result
 
-from frob.excludes import _should_prune_dir as _prune_dir  # noqa: SLF001
-from frob.excludes import is_excluded, is_skipped_dir, load_exclude_globs
+from frob.excludes import is_excluded, is_skipped_dir, load_exclude_globs, walk_pruned
 from frob.lang import resolve_local_import
 from frob.logging import get_logger
 
@@ -113,15 +111,9 @@ def _sorted_py_files(root: Path, exclude_globs: tuple[str, ...] = ()) -> list[Pa
     same final file set `_bind_all_files`'s post-filter used to converge
     on -- only the number of `os.scandir` calls changes, not which files
     are ultimately bound."""
-    found: list[Path] = []
-    for dirpath, dirnames, filenames in os.walk(root):
-        dir_path = Path(dirpath)
-        dirnames[:] = [
-            d for d in dirnames if not _prune_dir(dir_path / d, root, exclude_globs)
-        ]
-        for name in filenames:
-            if name.endswith(".py"):
-                found.append(dir_path / name)
+    found = [
+        p for p in walk_pruned(root, exclude_globs=exclude_globs) if p.suffix == ".py"
+    ]
     # frob:waive PERF004 reason="one sort after the walk loop above, not per iteration"
     return sorted(found)
 

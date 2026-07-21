@@ -56,6 +56,7 @@ def _locate_pypi_source(root: Path, name: str, version: str) -> Path | None:
     for cache_root in _candidate_uv_cache_dirs():
         if not cache_root.is_dir():
             continue
+        # frob:waive WALK001 reason="uv/pip wheel-extraction cache under the user's home, not the repo tree; frob.excludes' BUILTIN_SKIP_DIRS is irrelevant outside a project checkout"  # noqa: E501
         for hit in cache_root.glob(f"**/{normalized}"):
             if hit.is_dir():
                 _log.debug("vet: located pypi source for %s at %s", name, hit)
@@ -83,6 +84,7 @@ def _locate_cargo_source(name: str, version: str) -> Path | None:
     if not registry_root.is_dir():
         _log.info("vet: no ~/.cargo/registry/src; skipping cargo source lookup")
         return None
+    # frob:waive WALK001 reason="~/.cargo/registry/src cache, not the repo tree; single-level glob for a specific name-version, frob.excludes is irrelevant here"  # noqa: E501
     for hit in registry_root.glob(f"*/{name}-{version}"):
         if hit.is_dir():
             _log.debug("vet: located cargo source for %s at %s", name, hit)

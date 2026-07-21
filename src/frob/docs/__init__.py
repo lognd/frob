@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 
+from frob.excludes import iter_files
+
 if TYPE_CHECKING:
     from frob.lang._models import RawSymbol
 
@@ -220,7 +222,7 @@ def overview(path: Path, symbol: str | None = None) -> list[DocEntry]:
 
 def _collect_doc_entries(docs_dir: Path) -> list[DocEntry]:
     """Every heading/summary in `docs_dir` as `DocEntry` rows, file-sorted."""
-    md_files = sorted(docs_dir.rglob("*.md"))
+    md_files = sorted(iter_files(docs_dir, suffix=".md"))
     entries: list[DocEntry] = []
     for md_file in md_files:
         for line_no, heading, summary in _md_headings_and_summaries(md_file):
@@ -246,7 +248,7 @@ def search(query: str, docs_dir: Path) -> list[DocMatch]:
     q = query.lower()
     results: list[DocMatch] = []
 
-    md_files = sorted(docs_dir.rglob("*.md"))
+    md_files = sorted(iter_files(docs_dir, suffix=".md"))
     for md_file in md_files:
         lines = md_file.read_text(encoding="utf-8", errors="replace").splitlines()
         current_heading = ""
