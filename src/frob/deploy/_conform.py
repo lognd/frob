@@ -270,6 +270,13 @@ def _resolve_command(tokens: list[str]) -> tuple[str, int] | None:
     return None
 
 
+# frob:invariant terminates reason="mutually recurses with \
+# _mutation_for_eval, which re-tokenizes only the tokens strictly after \
+# the resolved 'eval' token (tokens[start + 1:]); each hop through eval \
+# therefore drops at least the 'eval' token itself before recursing, so \
+# the token-list length strictly decreases and is bounded below by 0" \
+# measure="len(tokens) at each recursive hop through eval, strictly \
+# decreasing"
 def _mutation_for_command(tokens: list[str]) -> set[MutationTarget]:
     """The `MutationTarget` set (0 or 1 members, except `eval` which may
     recurse into several) one simple command's tokens produce, after
@@ -289,6 +296,13 @@ def _mutation_for_command(tokens: list[str]) -> set[MutationTarget]:
     return _mutation_for_base(base, tokens[start + 1 :])
 
 
+# frob:invariant terminates reason="mutually recurses with \
+# _mutation_for_command by handing it sub_tokens re-tokenized from \
+# tokens[start + 1:] -- strictly fewer source tokens than this call's own \
+# `tokens`, since `start` always points at or past the resolved 'eval' \
+# verb (index 0); a script line has finitely many tokens, so nesting \
+# 'eval eval ...' bottoms out" measure="len(tokens) at each recursive \
+# hop, strictly decreasing"
 def _mutation_for_eval(tokens: list[str], start: int) -> set[MutationTarget]:
     """`eval`'s remaining args, re-tokenized and re-resolved as a fresh
     command line (see `_mutation_for_command`'s eval docs)."""
