@@ -2750,6 +2750,7 @@ scope_changes: []
 evidence:
 - tests/unit/strata/test_threat.py::TestCaughtByIntegrity::test_fabricated_cwe_reference_fails_closed
 - tests/unit/strata/test_threat.py::TestCaughtByIntegrity::test_honest_none_caught_by_never_fails
+- tests/unit/strata/test_threat.py::TestCaughtByIntegrity::test_real_cwe_reference_resolves
 attachments: []
 acceptance: []
 threat: null
