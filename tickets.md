@@ -4423,7 +4423,7 @@ Design (two mutually-reinforcing enforcements of the same invariant):
 id: T-0460
 title: 'render vocabulary: table, tree, progress (TTY-only clears-on-completion, T-0419
   contract), count-deltas elements on RenderWriter (T-0448 follow-on)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
