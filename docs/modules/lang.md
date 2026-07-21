@@ -194,6 +194,11 @@ logic is never re-derived per grammar.
 - `child_text` -- decode a node's text, `""` if absent.
 - `export_tree` -- a comment-stripped `TreeNode` snapshot of a subtree (for
   R4's tree-edit kernel), truncated past a node budget rather than dropped.
+  Each node's `field` (T-0495) is its own tree-sitter field name as seen
+  from its parent (`Node.field_name_for_child`), or `None` if it has
+  none -- lets a consumer (`frob.dup._template`'s type-hole
+  classification, T-0287) distinguish sibling positions some grammars
+  (rust/c/cpp) mark only by field name, never by a wrapping node label.
 - `flatten_tree` -- `(labels, parents)` preorder arrays in the shape
   `frob_core.apted_similarity` expects.
 - `iter_cpp_functions` -- `(node, qualified_name)` for every C/C++ function

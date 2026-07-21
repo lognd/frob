@@ -3388,7 +3388,7 @@ this change: green except for this file's own intentional rewrite.
 id: T-0495
 title: 'frob.lang.TreeNode: carry tree-sitter field names so dup''s type-hole classification
   (T-0287) can cover rust/c/cpp'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-21'
@@ -3397,8 +3397,47 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/lang/**
-scope_changes: []
-evidence: []
+- src/frob/dup/_template.py
+- tests/test_dup.py
+- tests/unit/test_dup_template.py
+- docs/modules/dup.md
+- docs/modules/lang.md
+scope_changes:
+- op: add
+  glob: src/frob/dup/_template.py
+  reason: non-vacuous acceptance (rust typed-generic proposal) requires plumbing frob.lang.TreeNode.field
+    through _template.py's type-hole classifier; docs need updating to match
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_dup.py
+  reason: non-vacuous acceptance (rust typed-generic proposal) requires plumbing frob.lang.TreeNode.field
+    through _template.py's type-hole classifier; docs need updating to match
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/test_dup_template.py
+  reason: non-vacuous acceptance (rust typed-generic proposal) requires plumbing frob.lang.TreeNode.field
+    through _template.py's type-hole classifier; docs need updating to match
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/modules/dup.md
+  reason: non-vacuous acceptance (rust typed-generic proposal) requires plumbing frob.lang.TreeNode.field
+    through _template.py's type-hole classifier; docs need updating to match
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/modules/lang.md
+  reason: non-vacuous acceptance (rust typed-generic proposal) requires plumbing frob.lang.TreeNode.field
+    through _template.py's type-hole classifier; docs need updating to match
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/unit/test_dup_template.py::TestTypeHoleClassificationRust::test_matching_type_annotations_propose_one_shared_type_var
+- tests/unit/test_dup_template.py::TestTypeHoleClassificationRust::test_value_only_divergence_is_never_misclassified_as_a_type_hole
+- tests/unit/test_dup_template.py::TestTypeHoleClassificationC::test_matching_type_annotations_propose_one_shared_type_var
+- tests/unit/test_dup_template.py::TestTypeHoleClassification::test_type_position_in_one_member_only_stays_a_value_hole
 attachments: []
 acceptance: []
 threat: null

@@ -202,10 +202,15 @@ class TestTypeHoleClassification:
         # parent index 0 is a "type" node) but a bare identifier at the
         # top level (index 0, no parent) in member 1.
         trees: list[
-            tuple[tuple[str, ...], tuple[int, ...], tuple[tuple[int, int], ...]]
+            tuple[
+                tuple[str, ...],
+                tuple[int, ...],
+                tuple[tuple[int, int], ...],
+                tuple[str | None, ...],
+            ]
         ] = [
-            (("type", "int"), (-1, 0), ((0, 10), (1, 4))),
-            (("x",), (-1,), ((0, 1),)),
+            (("type", "int"), (-1, 0), ((0, 10), (1, 4)), (None, None)),
+            (("x",), (-1,), ((0, 1),), (None,)),
         ]
         hole_node_idx = {0: [1, 0]}
         hole_source_texts = {0: ["int", "x"]}
@@ -247,3 +252,101 @@ class TestHoleParamName:
         )
 
         assert _hole_param_name(0, bindings) == "hole_0"
+
+
+class TestTypeHoleClassificationRust:
+    """T-0495: rust has no `type`/`type_annotation` WRAPPER node
+    (`_TYPE_WRAPPER_LABELS`) -- its `parameter` node places the type as a
+    direct sibling distinguished only by tree-sitter FIELD NAME ("type"
+    vs "pattern"), which `frob.lang.TreeNode.field` (T-0495) now carries.
+    Non-vacuous per the ticket: a real rust clone pair with CONSISTENT
+    type annotations proposes a shared type variable; one whose only real
+    divergence is a plain VALUE position does not (proving the field-name
+    rule doesn't over-fire)."""
+
+    def _write_typed(self, root: Path, name: str, type_name: str) -> CloneRegion:
+        """A one-function rust file annotating both its parameter and
+        return type as `type_name` (kept equal on purpose, mirroring
+        `TestTypeHoleClassification._write_typed`'s python shape)."""
+        (root / name).write_text(f"fn f(x: {type_name}) -> {type_name} {{\n    x\n}}\n")
+        return CloneRegion(ref=f"{name}::f", span=(1, 3))
+
+    # frob:tests src/frob/dup/_template.py::build_group_template kind="unit"
+    def test_matching_type_annotations_propose_one_shared_type_var(self, tmp_path):
+        left = self._write_typed(tmp_path, "a.rs", "i32")
+        right = self._write_typed(tmp_path, "b.rs", "u64")
+        pair = ClonePair(left=left, right=right, similarity=1.0, rung="test")
+
+        template = build_group_template(tmp_path, (pair,))
+
+        assert template is not None
+        # param annotation + return annotation, both type-shaped and
+        # co-varying identically (i32/u64 on both) -- one shared type
+        # var, not two independent ones, and no wrapper node involved
+        # (rust's `parameter`/`function_item` field name IS the signal).
+        assert template.type_params == ("T0",)
+        assert template.skeleton_text.count("T0") == 2
+        assert "$hole_" not in template.skeleton_text
+        for group in template.bindings:
+            assert len(group) == 2
+            assert all(b.type_var == "T0" for b in group)
+
+    # frob:tests src/frob/dup/_template.py::build_group_template kind="unit"
+    def test_value_only_divergence_is_never_misclassified_as_a_type_hole(
+        self, tmp_path
+    ):
+        # Negative counterpart, real files: both members share the IDENTICAL
+        # type annotation ("i32" on both sides, both param and return), so
+        # anti-unify never opens a hole at either type-field position at
+        # all -- the only divergence is the body expression (a plain
+        # `identifier`, no field name), a value position. Proves the new
+        # field-name-based rule (`_TYPE_FIELD_NAMES`) does not spuriously
+        # fire outside a true type position -- if it over-matched (e.g. any
+        # node under a `parameter`/`function_item`, not just the "type"
+        # field), this body-expression hole would be wrongly promoted to a
+        # type variable.
+        left = self._write_typed(tmp_path, "a.rs", "i32")
+        (tmp_path / "c.rs").write_text("fn f(x: i32) -> i32 {\n    y\n}\n")
+        right = CloneRegion(ref="c.rs::f", span=(1, 3))
+        pair = ClonePair(left=left, right=right, similarity=1.0, rung="test")
+
+        template = build_group_template(tmp_path, (pair,))
+
+        assert template is not None
+        assert all(b.type_var is None for group in template.bindings for b in group)
+        assert template.type_params == ()
+
+
+class TestTypeHoleClassificationC:
+    """T-0495: c shares rust's field-name-only convention for a
+    `parameter_declaration`'s type (field "type", no wrapper node), but
+    unlike rust reuses the SAME field name ("type") for its
+    `function_definition`'s return type too (no separate "return_type"
+    field). One litmus fixture proving c's shape is real, matching the
+    "c/cpp if feasible" acceptance note -- cpp inherits the identical
+    grammar shape for this construct and is not independently fixtured."""
+
+    def _write_typed(self, root: Path, name: str, type_name: str) -> CloneRegion:
+        """A one-function c file annotating both its parameter and return
+        type as `type_name` (kept equal on purpose, mirroring the rust
+        fixture's shape)."""
+        (root / name).write_text(
+            f"{type_name} f({type_name} x) {{\n    return x;\n}}\n"
+        )
+        return CloneRegion(ref=f"{name}::f", span=(1, 3))
+
+    # frob:tests src/frob/dup/_template.py::build_group_template kind="unit"
+    def test_matching_type_annotations_propose_one_shared_type_var(self, tmp_path):
+        left = self._write_typed(tmp_path, "a.c", "int")
+        right = self._write_typed(tmp_path, "b.c", "long")
+        pair = ClonePair(left=left, right=right, similarity=1.0, rung="test")
+
+        template = build_group_template(tmp_path, (pair,))
+
+        assert template is not None
+        # param type + return type, both classified via the SAME "type"
+        # field name (c has no separate return_type field, unlike rust) --
+        # one shared type var, not two independent ones.
+        assert template.type_params == ("T0",)
+        assert template.skeleton_text.count("T0") == 2
+        assert "$hole_" not in template.skeleton_text
