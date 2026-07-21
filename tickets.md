@@ -3108,7 +3108,7 @@ Found during the 2026-07-21 doable-warning scope-narrowing sweep. frob ticket sc
 ```yaml
 id: T-0491
 title: extend T-0423 run-scoped memoization to frob.dup.find_duplicates
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-21'
@@ -3117,13 +3117,103 @@ blocked_by: []
 parent: T-0423
 scope:
 - src/frob/dup/
-scope_changes: []
-evidence: []
+- tests/unit/test_memo.py
+- pyproject.toml
+- .frob-release.json
+- uv.lock
+scope_changes:
+- op: add
+  glob: tests/unit/test_memo.py
+  reason: test proving find_duplicates memoization + REL001 version bump/stamp required
+    for the memoize_per_run docstring/decorator change
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: pyproject.toml
+  reason: test proving find_duplicates memoization + REL001 version bump/stamp required
+    for the memoize_per_run docstring/decorator change
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: test proving find_duplicates memoization + REL001 version bump/stamp required
+    for the memoize_per_run docstring/decorator change
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: test proving find_duplicates memoization + REL001 version bump/stamp required
+    for the memoize_per_run docstring/decorator change
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/unit/test_memo.py::test_find_duplicates_second_call_is_memo_hit
+- tests/unit/test_memo.py::test_find_duplicates_no_cross_run_leak
 attachments: []
 acceptance: []
 threat: null
 ```
 T-0423 added run-scoped @memoize_per_run memoization for build_graph and analyze_project (src/frob/check/_memo.py), but find_duplicates was left un-memoized: it lives in src/frob/dup/_legacy.py, which is outside T-0423's declared scope and was under concurrent active rework (sibling agent editing src/frob/dup/_template.py) at the time. Once that rework settles, decorate find_duplicates (or its _pipeline.find_clones successor) with frob.check._memo.memoize_per_run at its definition site, matching the build_graph/analyze_project precedent -- covers every caller (frob.check._python._run_dup, frob.gates._prework, frob.gates._arch, frob.app.dup_runner) automatically with no call-site edits. Verify with a call-counter test mirroring tests/unit/test_memo.py::test_build_graph_second_call_is_memo_hit.
+
+## Done report
+
+Extended the T-0423 run-scoped memoization pattern to `frob.dup.find_duplicates`
+(src/frob/dup/_legacy.py), decorating it with `frob.check._memo.memoize_per_run`
+at its definition site, matching the `build_graph`/`analyze_project` precedent.
+This covers all four existing callers (frob.check._python._run_dup,
+frob.gates._prework, frob.gates._arch, frob.app.dup_runner) automatically with
+no call-site edits.
+
+Added two tests to tests/unit/test_memo.py:
+- test_find_duplicates_second_call_is_memo_hit: proves a second call with the
+  same (root) inside one run_memo_scope returns the identical object (memo
+  hit, 1 hit / 1 miss).
+- test_find_duplicates_no_cross_run_leak: proves two independent
+  run_memo_scope blocks each get their own fresh miss -- no cross-run
+  staleness leak (0 hits / 1 miss in each scope, equal-but-not-identical
+  results).
+
+Wall-clock measurement (honest disclosure): ran `uv run frob check --ticket
+T-0491` timed, with and without the decorator (temporarily reverted the
+decorator/import-usage in a scratch copy, reran, restored). Both configurations
+measured 21-26s wall time for the full ticket-scoped check on this repo, with
+per-stage instrumentation showing clones=0.00s / prework=0.00s in both cases --
+no macroscopic wall-clock difference was observable at this repo's current
+size/call pattern; the noise floor (refs=6.3-6.7s, pii_structural=3.4-3.6s,
+perf=2.9-3.0s dominate the total) swamps whatever redundant find_duplicates
+rescans previously cost. The concrete, measured win is the memo-hit guarantee
+itself (proven by the two new tests: a real scan is skipped and an identical
+object is returned on the second call within one run), not a proven top-line
+`frob check` wall-clock reduction at this repo's current scale -- disclosing
+this plainly rather than claiming a speedup I did not observe.
+
+REL001: the decorated function's docstring changed (public symbol content
+change), so `frob release check` demanded a version bump. Bumped
+pyproject.toml from 0.49.0 to 0.50.0 and ran `frob release stamp`.
+Scope was extended (frob ticket scope --add) to cover tests/unit/test_memo.py,
+pyproject.toml, .frob-release.json, and uv.lock (uv.lock's single-line diff
+was already present in the tree before this ticket started; not otherwise
+touched).
+
+Pre-existing gate failures observed and NOT fixed (out of scope for T-0491):
+- gate:DOC (DOC003, docs/commands/sys.md CWE-78 owasp-top-10 exhaustiveness
+  claim) -- unrelated repo-wide baseline issue, already tracked separately
+  (T-0508 per the ledger).
+- gate:TICK (TICK003, 62 closed tickets sitting un-archived, threshold 60) --
+  global housekeeping, unrelated to this ticket's scope.
+Both were present identically before and after this ticket's changes.
+
+### Changed
+```
+ .frob-release.json      |  2 +-
+ src/frob/dup/_legacy.py | 16 +++++++++++++++-
+ tests/unit/test_memo.py | 41 +++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 57 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_memo.py::test_find_duplicates_second_call_is_memo_hit` (pytest node id, verified passing when recorded)
+- `tests/unit/test_memo.py::test_find_duplicates_no_cross_run_leak` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0492 -->
 ```yaml
@@ -3174,7 +3264,7 @@ Observed twice while working T-0348/T-0349 in this worktree: each ticket's pre-e
 id: T-0494
 title: 'tests/test_dup_cross_lang.py: T-0198 characterization test now wrong -- R5
   correctly fires cross-language python/typescript after T-0487''s keyword fix'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-21'
@@ -3183,20 +3273,122 @@ blocked_by: []
 parent: null
 scope:
 - tests/test_dup_cross_lang.py
-scope_changes: []
-evidence: []
+- docs/modules/dup.md
+scope_changes:
+- op: add
+  glob: docs/modules/dup.md
+  reason: mission instructions require updating dup.md's now-stale 'only python is
+    proven cross-rung' claim to reflect T-0494's r5/python-typescript positive finding
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_dup_cross_lang.py::TestCrossLanguageR5NowFires::test_r5_group_fires_at_every_threshold[0.9]
+- tests/test_dup_cross_lang.py::TestCrossLanguageR5NowFires::test_r5_group_fires_at_every_threshold[0.1]
+- tests/test_dup_cross_lang.py::TestCrossLanguageR5NowFires::test_r5_group_is_not_gated_by_a_threshold_above_its_own_similarity
+- tests/test_dup_cross_lang.py::TestCrossLanguageCloneNotYetDetected::test_both_languages_parse_into_the_snapshot
+- tests/test_dup_cross_lang.py::TestCrossLanguageCloneNotYetDetected::test_both_symbols_are_individually_fingerprinted
 attachments: []
 acceptance: []
 threat: null
 ```
 found while working T-0487: the _KEYWORDS python-centric-keyword fix (frob.dup._pipeline) makes R5 correctly recognize TypeScript's 'let'/'const' as declaration keywords instead of mis-labeling them as identifiers, so _real_dataflow_graph now builds a structurally-correct def-use graph for tests/fixtures/dup_cross_lang's mod_b.ts::computeTotal -- and it now genuinely WL-hash-collides with mod_a.py::compute_total at r5, similarity=0.88, verified directly against find_clones. This is a real accuracy improvement (R5 is documented as structural/language-agnostic, T-0196/T-0199), not a regression, but it makes tests/test_dup_cross_lang.py::TestCrossLanguageCloneNotYetDetected::test_no_clone_group_at_any_threshold (asserting report.groups == () at every threshold) fail: 5 parametrized cases now see a real r5 group. The test's docstring/module-level claim ('cross-grammar structural bucketing... tracked as a follow-up') needs updating to reflect that R5 already closes this specific case; the test needs to assert r5 DOES fire (or drop the blanket 'zero groups' assertion and characterize per-rung instead), and frob.dup._exhaustiveness's r5/typescript language-gap excuse likely needs a DUP_CLAIMS entry the same way T-0487 added one for r5/rust. Out of T-0487's declared scope (tests/test_dup_cross_lang.py not in T-0487's scope).
 
+## Done report
+
+Re-characterized tests/test_dup_cross_lang.py to state the TRUE current
+find_clones contract for the python/typescript cross-language fixture
+(mod_a.py::compute_total / mod_b.ts::computeTotal), verified directly
+against find_clones rather than assumed:
+
+- R1/R2/R3 (lexical rungs): still negative, unchanged since T-0198 --
+  these rungs bucket on literal token vocabulary the two grammars do
+  not share. Kept the ORIGINAL class name
+  (TestCrossLanguageCloneNotYetDetected) and the two still-valid test
+  methods (test_both_languages_parse_into_the_snapshot,
+  test_both_symbols_are_individually_fingerprinted) UNCHANGED so
+  T-0198's archived evidence for those two ids keeps resolving --
+  only removed the one method whose assertion is now false.
+- R5 (structural rung): NOW POSITIVE, following T-0487's _KEYWORDS fix
+  (TypeScript's let/const no longer mis-labeled as identifiers). Added
+  a new TestCrossLanguageR5NowFires class replacing the old
+  test_no_clone_group_at_any_threshold, proving: (a) exactly one r5
+  group fires at every threshold tested (0.9, 0.7, 0.5, 0.3, 0.1),
+  similarity=0.88, matching the two known symrefs; (b) the r5 hit is
+  NOT linearly gated by DupConfig.threshold -- it still fires at
+  threshold=0.9 even though the pair's own similarity (0.88) is below
+  that number, because r5 grouping uses its own fixed acceptance bar
+  (frob.dup._pipeline._R5_SIMILARITY = 0.88), not a
+  threshold >= similarity comparison. Verified this claim by reading
+  frob.dup._pipeline._r5_groups/_R5_SIMILARITY directly, not assumed.
+
+No detector changes -- this ticket only touches the test file and one
+doc claim, per its "honesty/characterization ticket" framing.
+
+Updated docs/modules/dup.md's stale "only python is proven cross-rung
+today" claim (the "Registry is honest about two gaps" section) to state
+the corrected, narrower claim: R1-R4 remain only proven cross-rung
+within python; R5 is now proven cross-language for python/typescript
+(this ticket) and python/rust (T-0487), citing both proof tests.
+Extended T-0494's scope (frob ticket scope --add docs/modules/dup.md)
+since the mission instructions required this doc update but the
+ticket's own declared scope only listed the test file.
+
+Two things found out of scope, filed separately rather than fixed here:
+- T-draft-5b42a1c3: frob.dup._exhaustiveness lacks a DUP_CLAIMS
+  r5/typescript entry mirroring the r5/rust one T-0487 added (dup_matrix
+  presumably still falls through to the generic language-gap excuse for
+  this now-closed cell). src/frob/dup/_exhaustiveness.py is out of
+  T-0494's declared scope.
+- T-draft-ca7de023: removing test_no_clone_group_at_any_threshold (whose
+  assertion is now false) breaks T-0187's and T-0198's archived evidence
+  (COV003 x6: 1 for T-0187, 5 for T-0198, one per threshold
+  parametrization) -- same shape as the T-0416/T-0472 precedent. Editing
+  another ticket's archived evidence is out of T-0494's declared scope.
+
+Tooling note: `frob ticket evidence` mangled the dot inside a bracketed
+parametrize id (e.g. "[0.9]") into "[0::9]" internally when re-running
+pytest for its own pass/fail verification (visible in the command echo:
+`run_selected: python exit=5`, i.e. pytest found no matching test under
+the mangled id) -- yet it still recorded the CORRECT, unmangled node id
+into the ledger's evidence list, and a direct `pytest
+"tests/test_dup_cross_lang.py::TestCrossLanguageR5NowFires::
+test_r5_group_fires_at_every_threshold[0.9]"` (and a fresh
+`--collect-only`) both confirm the id is real and passes. This looks
+like the same normalization bug class as the already-filed T-0492 (dot
+splitting) surfacing on a different id shape (a parametrize bracket, not
+a Class.method separator) -- not re-filed separately since it is the
+same underlying normalization path, out of T-0494's scope regardless
+(src/frob/app/ticket_runner.py is T-0492's scope, not this ticket's).
+
+Ran `uv run pytest tests/test_dup_cross_lang.py -q`: 8 passed. Ran the
+full T-0198-adjacent dup suite
+(`uv run pytest tests/test_dup*.py tests/unit/test_dup*.py -q`) after
+this change: green except for this file's own intentional rewrite.
+
+### Changed
+```
+ .frob-release.json           |   2 +-
+ docs/modules/dup.md          |  28 ++++++--
+ src/frob/dup/_legacy.py      |  16 ++++-
+ tests/test_dup_cross_lang.py | 152 +++++++++++++++++++++++++++++------------
+ tests/unit/test_memo.py      |  41 +++++++++++
+ tickets.md                   | 158 +++++++++++++++++++++++++++++++++++++++++--
+ 6 files changed, 337 insertions(+), 60 deletions(-)
+```
+
+### Evidence
+- `tests/test_dup_cross_lang.py::TestCrossLanguageR5NowFires::test_r5_group_fires_at_every_threshold[0.9]` (pytest node id, verified passing when recorded)
+- `tests/test_dup_cross_lang.py::TestCrossLanguageR5NowFires::test_r5_group_fires_at_every_threshold[0.1]` (pytest node id, verified passing when recorded)
+- `tests/test_dup_cross_lang.py::TestCrossLanguageR5NowFires::test_r5_group_is_not_gated_by_a_threshold_above_its_own_similarity` (pytest node id, verified passing when recorded)
+- `tests/test_dup_cross_lang.py::TestCrossLanguageCloneNotYetDetected::test_both_languages_parse_into_the_snapshot` (pytest node id, verified passing when recorded)
+- `tests/test_dup_cross_lang.py::TestCrossLanguageCloneNotYetDetected::test_both_symbols_are_individually_fingerprinted` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0495 -->
 ```yaml
 id: T-0495
 title: 'frob.lang.TreeNode: carry tree-sitter field names so dup''s type-hole classification
   (T-0287) can cover rust/c/cpp'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-21'
@@ -3205,13 +3397,155 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/lang/**
-scope_changes: []
-evidence: []
+- src/frob/dup/_template.py
+- tests/test_dup.py
+- tests/unit/test_dup_template.py
+- docs/modules/dup.md
+- docs/modules/lang.md
+scope_changes:
+- op: add
+  glob: src/frob/dup/_template.py
+  reason: non-vacuous acceptance (rust typed-generic proposal) requires plumbing frob.lang.TreeNode.field
+    through _template.py's type-hole classifier; docs need updating to match
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_dup.py
+  reason: non-vacuous acceptance (rust typed-generic proposal) requires plumbing frob.lang.TreeNode.field
+    through _template.py's type-hole classifier; docs need updating to match
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/test_dup_template.py
+  reason: non-vacuous acceptance (rust typed-generic proposal) requires plumbing frob.lang.TreeNode.field
+    through _template.py's type-hole classifier; docs need updating to match
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/modules/dup.md
+  reason: non-vacuous acceptance (rust typed-generic proposal) requires plumbing frob.lang.TreeNode.field
+    through _template.py's type-hole classifier; docs need updating to match
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/modules/lang.md
+  reason: non-vacuous acceptance (rust typed-generic proposal) requires plumbing frob.lang.TreeNode.field
+    through _template.py's type-hole classifier; docs need updating to match
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/unit/test_dup_template.py::TestTypeHoleClassificationRust::test_matching_type_annotations_propose_one_shared_type_var
+- tests/unit/test_dup_template.py::TestTypeHoleClassificationRust::test_value_only_divergence_is_never_misclassified_as_a_type_hole
+- tests/unit/test_dup_template.py::TestTypeHoleClassificationC::test_matching_type_annotations_propose_one_shared_type_var
+- tests/unit/test_dup_template.py::TestTypeHoleClassification::test_type_position_in_one_member_only_stays_a_value_hole
 attachments: []
 acceptance: []
 threat: null
 ```
 found while working T-0287 (dup type-generalizing anti-unification): _template._is_type_position classifies a hole as a TYPE hole by checking whether its immediate parent node's label is a real type-annotation wrapper (python's 'type' node, typescript's 'type_annotation'). Rust/c/cpp place the type node as a direct, unwrapped sibling distinguished only by tree-sitter FIELD NAME (e.g. rust's 'parameter' node's 'type' field vs its 'pattern' field), which frob.lang.TreeNode does not carry today (label + children + span only, per docs/modules/lang.md). Extending TreeNode with an optional per-child field-name array (mirroring frob.lang._common.export_tree's existing recursive shape) would let _template._TYPE_WRAPPER_LABELS-style classification extend to a field-name-based rule for rust/c/cpp, closing the honest gap documented in docs/modules/dup.md's 'Type-hole classification (T-0287)' section and src/frob/dup/_template.py's _TYPE_WRAPPER_LABELS docstring. Out of T-0287's declared scope (frob-core/**, src/frob/dup/**, docs/modules/dup.md, tickets.md, tests/test_dup.py, tests/unit/test_dup_template.py -- does not include src/frob/lang/**).
+
+## Done report
+
+Extended `frob.lang.TreeNode` with a `field` attribute (T-0495): each
+node's own tree-sitter FIELD NAME as seen from its parent
+(`Node.field_name_for_child`), or `None` for an unfielded node. Populated
+in `frob.lang._common.export_tree`/`_leaf_tree_node` by looking up the
+PARENT's `field_name_for_child(i)` against the child's ORIGINAL
+(unfiltered) index before stripping comment siblings, so a stripped
+comment never shifts a later child's field-name lookup.
+
+Wired this through `frob.dup._template._is_type_position` (T-0287's
+per-member type-hole classifier), which now recognizes a type position
+via two independent rules: (1) the existing python/typescript rule (the
+node's immediate parent is a real `type`/`type_annotation` wrapper node);
+(2) the new rust/c/cpp rule (the node's OWN field name is `"type"` or
+`"return_type"`). `_NodeArrays` (the internal labels/parents/spans tuple
+`_template.py` threads through anti-unification) grew a fourth parallel
+`fields` array; every call site that unpacks/constructs it was updated.
+
+Verified real grammar shapes directly (not assumed) before writing the
+rule: rust's `parameter` node has a `type` field (sibling of the
+`pattern` field) and rust's `function_item` has a SEPARATE `return_type`
+field (rust does not reuse "type" for the return position); c's
+`parameter_declaration` and `function_definition` BOTH use field
+`"type"` for either position (no separate return-type field); cpp
+inherits c's grammar shape for this construct; python/typescript's
+existing wrapper-node rule already covers their case independently (their
+`type`/`type_annotation` wrapper also happens to carry field name
+`"type"`/`"return_type"`, so both rules agree there -- no conflict, no
+double-counting since `_is_type_position` is a boolean OR, not additive).
+
+Non-vacuous acceptance (the ticket's own bar), proven with real `.rs` and
+`.c` fixtures parsed through the actual pipeline (no hand-built
+labels/parents/fields arrays for these, unlike the pre-existing
+hand-built consistency-guard unit test which stays as edge-case coverage):
+- `TestTypeHoleClassificationRust::test_matching_type_annotations_propose_one_shared_type_var`:
+  a real rust clone pair (`fn f(x: i32) -> i32 {...}` vs `fn f(x: u64) ->
+  u64 {...}`) with CONSISTENT type shape at both the parameter and return
+  positions proposes exactly one shared type variable (`T0`), rendered
+  in the skeleton and every binding, via `build_group_template` end to
+  end.
+- `TestTypeHoleClassificationRust::test_value_only_divergence_is_never_misclassified_as_a_type_hole`:
+  a real rust pair whose only divergence is a body-expression VALUE
+  position (both sides share the identical `i32` type annotation)
+  proposes zero type variables -- proves the new field-name rule does
+  not spuriously fire outside a genuine type position.
+- `TestTypeHoleClassificationC::test_matching_type_annotations_propose_one_shared_type_var`:
+  same shape in real C (`int f(int x) {...}` vs `long f(long x) {...}`),
+  covering c/cpp's DIFFERENT field-name convention (c reuses `"type"` for
+  both positions, no separate `"return_type"`) -- the "c/cpp if feasible"
+  half of the ticket's acceptance bar. Cpp shares c's grammar shape for
+  this construct (verified directly against its own tree-sitter parse)
+  but has no dedicated litmus fixture of its own; noted as a follow-up in
+  docs/modules/dup.md rather than silently assumed identical.
+
+Updated the existing hand-built `_classify_type_vars` consistency-guard
+unit test (`TestTypeHoleClassification::test_type_position_in_one_member_only_stays_a_value_hole`)
+for the new 4-tuple `_NodeArrays` shape (added a `fields` array to its
+manually-constructed trees) -- no behavior change, just kept it compiling
+against the widened internal shape.
+
+Updated docs/modules/dup.md's "Type-hole classification (T-0287)" section
+(the "Cross-language honesty" paragraph, now "Cross-language coverage")
+to state the closed gap instead of the prior "extending it would be a
+frob.lang change, out of this feature's scope" disclaimer, and
+docs/modules/lang.md's primitives list to document `TreeNode.field`.
+
+Filed T-draft-... none this round -- the cpp litmus-fixture gap is noted
+inline in docs/modules/dup.md's updated section rather than as a
+separate ticket, since it is a one-line disclosed limitation, not an
+open design question (same disposition as the existing "no rust/c/cpp
+R2-R4 litmus fixture yet" line already in the same doc section).
+
+Ran `uv run pytest tests/unit/test_dup_template.py tests/test_dup*.py
+tests/unit/test_dup*.py tests/unit/test_lang*.py tests/test_lang*.py -q`:
+all green (16 tests in test_dup_template.py alone, 3 new classes/4 new
+test methods added by this ticket). `ruff check`/`ruff format --check`/
+`ty check` all clean on every touched file (both `uv run ruff` and the
+bare PATH `ruff`). No frob-core (rust) files touched -- cargo tests not
+run, per the mission's "if you touch frob-core" qualifier.
+
+### Changed
+```
+ .frob-release.json              |   2 +-
+ docs/modules/dup.md             |  70 +++++++---
+ docs/modules/lang.md            |   5 +
+ src/frob/dup/_legacy.py         |  16 ++-
+ src/frob/dup/_template.py       |  91 +++++++++----
+ src/frob/lang/_common.py        |  32 +++--
+ src/frob/lang/_models.py        |  14 ++
+ tests/test_dup_cross_lang.py    | 152 +++++++++++++++------
+ tests/unit/test_dup_template.py | 109 ++++++++++++++-
+ tests/unit/test_memo.py         |  41 ++++++
+ tickets.md                      | 293 ++++++++++++++++++++++++++++++++++++++--
+ 11 files changed, 714 insertions(+), 111 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_dup_template.py::TestTypeHoleClassificationRust::test_matching_type_annotations_propose_one_shared_type_var` (pytest node id, verified passing when recorded)
+- `tests/unit/test_dup_template.py::TestTypeHoleClassificationRust::test_value_only_divergence_is_never_misclassified_as_a_type_hole` (pytest node id, verified passing when recorded)
+- `tests/unit/test_dup_template.py::TestTypeHoleClassificationC::test_matching_type_annotations_propose_one_shared_type_var` (pytest node id, verified passing when recorded)
+- `tests/unit/test_dup_template.py::TestTypeHoleClassification::test_type_position_in_one_member_only_stays_a_value_hole` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0497 -->
 ```yaml
@@ -4009,3 +4343,47 @@ acceptance: []
 threat: null
 ```
 T-0506 extended COV006 with a one-hop same-file public-wrapper rescue, reducing the finding count from 98 to 89 (measured via frob check before/after on this worktree). The residual 89 are either genuinely broken frob:tests bindings needing a real bound symbol, or FP shapes not covered by the wrapper rescue (e.g. cross-file wrapper, two-hop chains, or a test calling the private symbol via an attribute/instance rather than a bare call token). Triage the residual list from a fresh frob check run and either bind real tests, fix wrong directives, or narrow to a documented remaining FP class.
+
+<!-- ticket:T-draft-5b42a1c3 -->
+```yaml
+id: T-draft-5b42a1c3
+title: 'frob.dup._exhaustiveness: add DUP_CLAIMS r5/typescript entry (T-0494 found
+  the proof, no claim registered)'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/dup/_exhaustiveness.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+found while working T-0494: tests/test_dup_cross_lang.py now proves R5 fires cross-language for python/typescript (compute_total/computeTotal, similarity=0.88, every threshold 0.9-0.1), mirroring the r5/rust DUP_CLAIMS entry T-0487 already added (frob.dup._exhaustiveness, proof_test=tests/test_dup.py::TestCrossLanguageR5WithLet.test_r5_fires_across_languages_with_a_let_binding). No matching r5/typescript DUP_CLAIMS entry exists yet -- dup_matrix()'s r5/type3/typescript cell presumably still falls through to DUP_MATRIX_EXCUSES' generic non-python language-gap excuse, which is now stale for this cell specifically (rust already closed, typescript has a firing fixture but no registered claim). Add a DUP_CLAIMS entry for rung=r5, clone_type=3, language=typescript, proof_test=tests/test_dup_cross_lang.py::TestCrossLanguageR5NowFires.test_r5_group_fires_at_every_threshold, matching the rust entry's shape. Out of T-0494's declared scope (scope=tests/test_dup_cross_lang.py, docs/modules/dup.md -- does not include src/frob/dup/_exhaustiveness.py).
+
+<!-- ticket:T-draft-ca7de023 -->
+```yaml
+id: T-draft-ca7de023
+title: T-0187/T-0198 evidence test_no_clone_group_at_any_threshold does not resolve
+  (COV003) after T-0494 flipped its assertion
+state: queued
+kind: bug
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- tickets.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+found while working T-0494: T-0494 legitimately removed tests/test_dup_cross_lang.py::TestCrossLanguageCloneNotYetDetected::test_no_clone_group_at_any_threshold (its assertion, report.groups == (), is now FALSE at every threshold since T-0487's _KEYWORDS fix made R5 correctly fire cross-language for this fixture -- see T-0494's Done report and the new TestCrossLanguageR5NowFires class replacing it). This leaves T-0187 (1 evidence id) and T-0198 (5 evidence ids, one per threshold parametrization) in tickets-archive.md pointing at a test id that no longer exists, firing COV003 for both archived tickets on every frob check. Same shape as the T-0416/T-0472 precedent (evidence pointing at a removed/renamed test). Remedy: update T-0187's and T-0198's archived evidence lists to point at still-valid replacement ids (e.g. TestCrossLanguageR5NowFires::test_r5_group_fires_at_every_threshold[*] for the threshold-parametrized ones, or drop the stale id with a note that the original claim inverted) via the tickets CLI against tickets-archive.md. Out of T-0494's declared scope (scope=tests/test_dup_cross_lang.py, docs/modules/dup.md -- does not include editing OTHER tickets' archived evidence).

@@ -32,8 +32,16 @@ if TYPE_CHECKING:
 _log = get_logger(__name__)
 
 # labels/parents (the shape `frob_core.anti_unify` consumes) plus the
-# parallel byte-span array `flatten_tree` itself does not carry.
-_NodeArrays = tuple[tuple[str, ...], tuple[int, ...], tuple[tuple[int, int], ...]]
+# parallel byte-span array `flatten_tree` itself does not carry, plus
+# (T-0495) the parallel tree-sitter field-name array (`TreeNode.field`)
+# `_is_type_position` reads to classify a rust/c/cpp type-position hole
+# that has no wrapper node, only a field name, distinguishing it.
+_NodeArrays = tuple[
+    tuple[str, ...],
+    tuple[int, ...],
+    tuple[tuple[int, int], ...],
+    tuple[str | None, ...],
+]
 
 _HOLE_PREFIX = "$hole_"
 
@@ -50,27 +58,55 @@ _IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 # wraps the same shape in `type_annotation` (`x: number` parses `number` as
 # `type_annotation -> predefined_type`). Rust/c/cpp place the type node as a
 # direct, unwrapped sibling distinguished only by tree-sitter FIELD NAME
-# (e.g. rust `parameter`'s `type` field), which `frob.lang.TreeNode` does
-# not carry (docs/modules/lang.md: label + children + span only, no field
-# names) -- extending it to would be a `frob.lang` change, out of this
-# ticket's declared scope (`frob-core/**`, `src/frob/dup/**`). A hole in a
-# rust/c/cpp type position is therefore still recognized as a hole (the
-# base anti-unification behavior, unaffected) but never classified as a
-# TYPE hole today -- an honest, filed limitation
-# (T-draft-f67069a7, mints a real id on land), not a silent gap.
+# (e.g. rust `parameter`'s `type` field) rather than a wrapper label --
+# T-0495 closes that gap (see `_TYPE_FIELD_NAMES` below), extending
+# `frob.lang.TreeNode` with the field-name info this rule needs.
 _TYPE_WRAPPER_LABELS = frozenset({"type", "type_annotation"})
+
+# T-0495: rust/c/cpp place a type node as a direct, unwrapped sibling
+# distinguished only by tree-sitter FIELD NAME, never a wrapper label --
+# verified directly against each grammar's own parse (docs/modules/dup.md
+# #type-hole-classification-t-0287): rust's `parameter` node has a `type`
+# field (`fn f(a: i32)` parses `i32` with field name "type" on a bare
+# `primitive_type` sibling, next to the `pattern` field holding `a`) and
+# its `function_item` node has a SEPARATE `return_type` field for `-> T`
+# (rust's grammar does not reuse "type" for the return position, unlike
+# c); c's `parameter_declaration`/`function_definition` both expose a
+# `type` field directly on the type node for BOTH positions (`int add(int
+# a)` parses the first `int` as field "type" on `function_definition`,
+# the second as field "type" on `parameter_declaration` -- no separate
+# return-type field name); cpp inherits c's grammar shape for this
+# construct. Checking the node's OWN field name (not its parent's label)
+# closes exactly this gap without disturbing python/typescript, whose
+# type node also happens to carry field name "type" on ITS OWN wrapper
+# (`_TYPE_WRAPPER_LABELS` already covers that case via the parent-label
+# rule; the field-name rule below is a strict addition, not a
+# replacement, since python/typescript's hole is the wrapper's unfielded
+# inner child, not the wrapper node itself).
+_TYPE_FIELD_NAMES = frozenset({"type", "return_type"})
 
 
 def _is_type_position(
-    labels: tuple[str, ...], parents: tuple[int, ...], node_idx: int
+    labels: tuple[str, ...],
+    parents: tuple[int, ...],
+    fields: tuple[str | None, ...],
+    node_idx: int,
 ) -> bool:
-    """True if `node_idx`'s immediate parent is a real type-annotation wrapper
-    node (`_TYPE_WRAPPER_LABELS`) in the member tree `labels`/`parents` came
-    from -- the per-member half of T-0287's type-hole classification."""
+    """True if `node_idx` sits in a type-annotation position in the member
+    tree `labels`/`parents`/`fields` came from -- the per-member half of
+    T-0287's type-hole classification, extended by T-0495 to also
+    recognize a field-name-only type position (rust/c/cpp).
+
+    Two independent rules, either one qualifying: (1) python/typescript's
+    shape -- the node's immediate PARENT is a real type-annotation
+    wrapper node (`_TYPE_WRAPPER_LABELS`); (2) rust/c/cpp's shape -- the
+    node's OWN tree-sitter field name (as seen from its parent) is a type
+    field (`_TYPE_FIELD_NAMES`), with no wrapper node at all.
+    """
     parent_idx = parents[node_idx]
-    if parent_idx < 0:
-        return False
-    return labels[parent_idx] in _TYPE_WRAPPER_LABELS
+    if parent_idx >= 0 and labels[parent_idx] in _TYPE_WRAPPER_LABELS:
+        return True
+    return fields[node_idx] in _TYPE_FIELD_NAMES
 
 
 def _classify_type_vars(
@@ -99,7 +135,7 @@ def _classify_type_vars(
         if len(node_indices) != len(trees):
             continue
         if all(
-            _is_type_position(trees[m][0], trees[m][1], node_idx)
+            _is_type_position(trees[m][0], trees[m][1], trees[m][3], node_idx)
             for m, node_idx in enumerate(node_indices)
         ):
             qualifying.append(hole_id)
@@ -118,27 +154,32 @@ def _classify_type_vars(
 
 
 def _flatten_with_spans(node: "TreeNode") -> _NodeArrays:
-    """`(labels, parents, spans)` preorder arrays for a `frob.lang.TreeNode`.
+    """`(labels, parents, spans, fields)` preorder arrays for a
+    `frob.lang.TreeNode`.
 
     Same preorder walk as `frob.lang._common.flatten_tree`, plus the
     parallel `span` (byte offsets) array that module does not expose --
     kept local to this module since only reverse-templating needs spans
-    (docs/modules/lang.md's `TreeNode.span` docstring).
+    (docs/modules/lang.md's `TreeNode.span` docstring) -- and (T-0495)
+    the parallel `field` (tree-sitter field name) array `_is_type_position`
+    reads to classify a rust/c/cpp type-position hole.
     """
     labels: list[str] = []
     parents: list[int] = []
     spans: list[tuple[int, int]] = []
+    fields: list[str | None] = []
 
     def walk(n: "TreeNode", parent_idx: int) -> None:
         my_idx = len(labels)
         labels.append(n.label)
         parents.append(parent_idx)
         spans.append(n.span)
+        fields.append(n.field)
         for child in n.children:
             walk(child, my_idx)
 
     walk(node, -1)
-    return tuple(labels), tuple(parents), tuple(spans)
+    return tuple(labels), tuple(parents), tuple(spans), tuple(fields)
 
 
 def _region_tree(root: Path, region: CloneRegion) -> _NodeArrays | None:
@@ -322,8 +363,8 @@ def build_group_template(
         trees.append(tree)
         sources.append(source)
 
-    running_labels, running_parents, _running_spans = trees[0]
-    for labels, parents, _spans in trees[1:]:
+    running_labels, running_parents, _running_spans, _running_fields = trees[0]
+    for labels, parents, _spans, _fields in trees[1:]:
         fold_result = _core.anti_unify(running_labels, running_parents, labels, parents)
         if fold_result.is_err:
             _log.debug(
@@ -340,7 +381,7 @@ def build_group_template(
     # alongside `bindings` in the same loop rather than re-derived later.
     hole_node_idx: dict[int, list[int]] = {}
     hole_source_texts: dict[int, list[str]] = {}
-    for region, (labels, parents, spans), source in zip(
+    for region, (labels, parents, spans, _fields), source in zip(
         members, trees, sources, strict=True
     ):
         member_result = _core.anti_unify(
@@ -380,7 +421,7 @@ def build_group_template(
             for group in bindings
         ]
 
-    _, skeleton_parents, skeleton_spans = trees[0]
+    _, skeleton_parents, skeleton_spans, _skeleton_fields = trees[0]
     skeleton_text = (
         _render_literal(
             running_labels,

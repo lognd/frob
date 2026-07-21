@@ -25,6 +25,7 @@ from pydantic import BaseModel
 from tree_sitter import Node
 from typani import ErrorSet
 
+from frob.check._memo import memoize_per_run
 from frob.dup._legacy_common import _sha16
 from frob.dup._legacy_cpp import (
     _collect_locals_cpp,
@@ -263,8 +264,21 @@ def _renamed_groups(
 
 
 # frob:doc docs/modules/dup.md#legacy-scanner
+# frob:tests tests/unit/test_memo.py::test_find_duplicates_second_call_is_memo_hit
+# frob:ticket T-0491
+@memoize_per_run
 def find_duplicates(root: Path, min_lines: int = 6) -> DupResult:
-    """Scan root recursively for duplicate function bodies."""
+    """Scan root recursively for duplicate function bodies.
+
+    Wrapped in `frob.check._memo.memoize_per_run` (T-0491, extending the
+    T-0423 precedent from `build_graph`/`analyze_project`): a second call
+    with identical arguments while a `run_memo_scope()` is active (i.e.
+    inside one `frob check` invocation) is a cache hit, not a rescan --
+    covers every caller (`frob.check._python._run_dup`, `frob.gates.
+    _prework`, `frob.gates._arch`, `frob.app.dup_runner`) with no call-site
+    edits. Outside an active scope this is a transparent passthrough, same
+    as the undecorated function always was.
+    """
     from frob.logging.quiet import quiet_stdout_logs
 
     exact_map: dict[str, list[CodeFragment]] = defaultdict(list)

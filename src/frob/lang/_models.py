@@ -82,6 +82,19 @@ class TreeNode(BaseModel):
     rendering a structural `label(child, ...)` skeleton -- that consumer
     change is not made yet (tracked separately, out of `frob.lang`'s
     scope); today `span` is populated but unread outside this module.
+
+    `field` (T-0495) is this node's tree-sitter FIELD NAME as seen from
+    its own parent (`Node.field_name_for_child`), or `None` for a node
+    with no field name (an unlabeled/anonymous child, or the tree root).
+    Some grammars distinguish two structurally-identical-looking sibling
+    positions only by field name, never by a wrapping node label --
+    e.g. rust's `parameter` node has a `pattern` field (the parameter
+    name) and a `type` field (its type annotation) as direct, unwrapped
+    siblings, unlike python/typescript which wrap a type annotation in
+    its own `type`/`type_annotation` node. `frob.dup._template`'s
+    type-hole classification (T-0287) reads `field` to extend TYPE-hole
+    recognition to rust/c/cpp, which the label-only shape before T-0495
+    could not express.
     Frozen for the same identity-of-value reason as every other
     `frob.lang` model (docs/modules/graph.md).
     """
@@ -91,6 +104,7 @@ class TreeNode(BaseModel):
     label: str
     span: tuple[int, int] = (0, 0)
     children: tuple["TreeNode", ...] = ()
+    field: str | None = None
 
 
 # frob:doc docs/modules/lang.md#data-models

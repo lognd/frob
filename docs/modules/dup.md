@@ -424,10 +424,18 @@ a plain ClonePair report with no template rather than emitting noise" rule.
 Not every hole is a value the survey's base design assumes -- some divergences
 are TYPE ANNOTATIONS: the same algorithm written once over `int` and once
 over `str`. `_template._is_type_position` recognizes a hole's bound node as
-a type position when its immediate parent is a real type-annotation wrapper
-node (`_template._TYPE_WRAPPER_LABELS`: python's `type` node -- `def f(a:
+a type position via either of two rules (T-0495 added the second): (1) its
+immediate parent is a real type-annotation WRAPPER node
+(`_template._TYPE_WRAPPER_LABELS`: python's `type` node -- `def f(a:
 int)` parses `int` as `type -> identifier` -- and typescript's
-`type_annotation`). A hole qualifies as a TYPE hole only when EVERY group
+`type_annotation`); or (2) the node's OWN tree-sitter FIELD NAME (as seen
+from its parent) is a type field (`_template._TYPE_FIELD_NAMES`: `"type"`
+and `"return_type"`) -- rust/c/cpp's shape, which places the type node as
+a direct, unwrapped sibling with no wrapper label at all (e.g. rust's
+`parameter` node has a `type` field alongside its `pattern` field; rust's
+`function_item` has a separate `return_type` field; c/cpp's
+`parameter_declaration`/`function_definition` both use `"type"` for
+either position). A hole qualifies as a TYPE hole only when EVERY group
 member's bound node sits in such a position (the ticket's "consistency
 guard": a hole that is type-shaped in some members and a plain value in
 others stays an ordinary value hole, never a half-right generic).
@@ -447,14 +455,26 @@ preamble line per distinct type parameter; the extracted-function parameter
 list itself is synthesized only from the remaining VALUE holes (a type hole
 is not a call-site argument).
 
-**Cross-language honesty**: rust/c/cpp place a type node as a direct,
-unwrapped sibling distinguished only by tree-sitter FIELD NAME (e.g. rust's
-`parameter` node's `type` field), which `frob.lang.TreeNode` does not carry
-today (label + children + span only, no field names) -- extending it would
-be a `frob.lang` change, out of this feature's scope. A hole in a rust/c/cpp
-type position is still recognized as a hole (ordinary anti-unification,
-unaffected) but is never classified as a TYPE hole yet; the follow-up is
-filed, not silently dropped.
+**Cross-language coverage (T-0495)**: rust/c/cpp place a type node as a
+direct, unwrapped sibling distinguished only by tree-sitter FIELD NAME
+(e.g. rust's `parameter` node's `type` field), which `frob.lang.TreeNode`
+did not carry before T-0495 (label + children + span only, no field
+names). T-0495 added `TreeNode.field` (the node's own tree-sitter field
+name, populated by `frob.lang._common.export_tree` via
+`Node.field_name_for_child`) and extended `_is_type_position` with the
+field-name rule above, so rust type-hole classification is now real,
+verified against actual `.rs` fixtures
+(`tests/unit/test_dup_template.py::TestTypeHoleClassificationRust`): a
+rust clone pair with consistent type annotations proposes a shared type
+variable; one whose only real divergence is a value position does not.
+C has its own litmus fixture too
+(`tests/unit/test_dup_template.py::TestTypeHoleClassificationC`) proving
+its shape (a `parameter_declaration`/`function_definition` both use
+field `"type"` -- unlike rust, c has no separate `"return_type"` field).
+Cpp shares c's grammar shape for this construct (verified directly
+against its parse) but has no dedicated litmus fixture of its own yet --
+not fixed here, filed as a follow-up rather than silently assumed to
+work.
 
 ## Exhaustiveness matrix (T-0199)
 
@@ -486,13 +506,27 @@ which excludes `frob-core/**`):
   docstring assuming the caller already did that work. Verified directly:
   a for-loop/while-loop pair computing the same accumulation produces
   different r2-normalized token streams, so R3 never independently fires.
-- **Only python is proven cross-rung today.** R1-R5 operate on
-  `frob.lang`'s normalized token/AST output and are not language-
-  restricted by construction, but no typescript/rust/c/cpp litmus fixture
-  has been authored yet to prove any rung fires cross-language. R6/R7 ARE
-  structurally python-only (`_load_python_callable` resolves to an
-  importable Python callable; `Err(NotPure)` for every other language) --
-  a real limit, not a missing-fixture gap.
+- **R1-R4 are only proven cross-rung within python today; R5 is now
+  proven cross-language (T-0494, updating the earlier "only python"
+  claim).** `tests/test_dup_cross_lang.py` runs the SAME
+  accumulator-with-clamp logic written once in Python
+  (`compute_total`) and once in TypeScript (`computeTotal`) through the
+  real pipeline: R1-R3 never bucket the pair together (they bucket on
+  literal token vocabulary the two grammars do not share -- a real,
+  still-open gap), but R5 -- which buckets on `_real_dataflow_graph`'s
+  structural def/use labels, not literal tokens -- WL-hash-collides the
+  pair at similarity=0.88, at every threshold tested (0.9 down to 0.1).
+  This followed directly from T-0487's `_KEYWORDS` fix (TypeScript's
+  `let`/`const` no longer mis-labeled as identifiers), which also
+  proved R5 fires python/rust (`tests/test_dup.py::
+  TestCrossLanguageR5WithLet`, `DUP_CLAIMS` r5/rust in
+  `frob.dup._exhaustiveness`). No rust/c/cpp litmus fixture proves R2-R4
+  cross-language yet, and no typescript `DUP_CLAIMS` entry exists
+  alongside the rust one (filed as a follow-up, not fixed here --
+  `src/frob/dup/_exhaustiveness.py` is out of T-0494's declared scope).
+  R6/R7 ARE structurally python-only (`_load_python_callable` resolves
+  to an importable Python callable; `Err(NotPure)` for every other
+  language) -- a real limit, not a missing-fixture gap.
 
 ## Gate integration
 

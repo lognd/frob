@@ -392,30 +392,44 @@ def export_tree(node: Node, comment_types: frozenset[str]) -> TreeNode:
     structurally-identical bodies. Truncates past `_MAX_EXPORT_NODES` total
     nodes (see the module-level cap's docstring) by stopping descent, not
     by silently dropping the whole subtree.
+
+    Each `TreeNode.field` (T-0495) is looked up via the PARENT's
+    `field_name_for_child` against the child's original (unfiltered)
+    index, so a stripped comment sibling never shifts a later child's
+    field-name lookup.
     """
     budget = [_MAX_EXPORT_NODES]
 
-    def build(n: Node) -> TreeNode:
+    def build(n: Node, field: str | None) -> TreeNode:
         span = (n.start_byte, n.end_byte)
         if budget[0] <= 0:
-            return TreeNode(label=n.type, span=span)
+            return TreeNode(label=n.type, span=span, field=field)
         budget[0] -= 1
-        kids = [c for c in n.children if c.type not in comment_types]
+        kids = [
+            (c, n.field_name_for_child(i))
+            for i, c in enumerate(n.children)
+            if c.type not in comment_types
+        ]
         if not kids:
-            return _leaf_tree_node(n)
-        return TreeNode(label=n.type, span=span, children=tuple(build(c) for c in kids))
+            return _leaf_tree_node(n, field)
+        return TreeNode(
+            label=n.type,
+            span=span,
+            field=field,
+            children=tuple(build(c, f) for c, f in kids),
+        )
 
-    return build(node)
+    return build(node, None)
 
 
-def _leaf_tree_node(n: Node) -> TreeNode:
+def _leaf_tree_node(n: Node, field: str | None = None) -> TreeNode:
     """A `TreeNode` for a childless node: its decoded text, else its grammar type."""
     span = (n.start_byte, n.end_byte)
     if n.child_count == 0:
         text = n.text
         label = text.decode("utf-8", errors="replace") if text else n.type
-        return TreeNode(label=label, span=span)
-    return TreeNode(label=n.type, span=span)
+        return TreeNode(label=label, span=span, field=field)
+    return TreeNode(label=n.type, span=span, field=field)
 
 
 # frob:doc docs/modules/lang.md#primitives
