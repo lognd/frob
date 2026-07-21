@@ -4648,7 +4648,7 @@ found while working T-0494: tests/test_dup_cross_lang.py now proves R5 fires cro
 id: T-0519
 title: T-0187/T-0198 evidence test_no_clone_group_at_any_threshold does not resolve
   (COV003) after T-0494 flipped its assertion
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-07-21'
@@ -4657,10 +4657,42 @@ blocked_by: []
 parent: null
 scope:
 - tickets.md
-scope_changes: []
-evidence: []
+- tickets-archive.md
+scope_changes:
+- op: add
+  glob: tickets-archive.md
+  reason: T-0519 dedupes the T-0187/T-0198 archived evidence lines that live in tickets-archive.md,
+    not tickets.md
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 attachments: []
 acceptance: []
 threat: null
 ```
 found while working T-0494: T-0494 legitimately removed tests/test_dup_cross_lang.py::TestCrossLanguageCloneNotYetDetected::test_no_clone_group_at_any_threshold (its assertion, report.groups == (), is now FALSE at every threshold since T-0487's _KEYWORDS fix made R5 correctly fire cross-language for this fixture -- see T-0494's Done report and the new TestCrossLanguageR5NowFires class replacing it). This leaves T-0187 (1 evidence id) and T-0198 (5 evidence ids, one per threshold parametrization) in tickets-archive.md pointing at a test id that no longer exists, firing COV003 for both archived tickets on every frob check. Same shape as the T-0416/T-0472 precedent (evidence pointing at a removed/renamed test). Remedy: update T-0187's and T-0198's archived evidence lists to point at still-valid replacement ids (e.g. TestCrossLanguageR5NowFires::test_r5_group_fires_at_every_threshold[*] for the threshold-parametrized ones, or drop the stale id with a note that the original claim inverted) via the tickets CLI against tickets-archive.md. Out of T-0494's declared scope (scope=tests/test_dup_cross_lang.py, docs/modules/dup.md -- does not include editing OTHER tickets' archived evidence).
+
+## Done report
+
+T-0494 legitimately removed test_no_clone_group_at_any_threshold (its
+zero-groups assertion was inverted by T-0487's keyword fix). Commit
+458244a already re-pointed T-0187/T-0198's dangling evidence ids in
+tickets-archive.md at that landing, but T-0198's evidence list ended up
+with the surviving replacement id
+(test_both_languages_parse_into_the_snapshot) repeated 6 times where the
+original had 6 separate now-stale entries, plus the Done report's own
+evidence-recap list carried the same 6x repeat. Deduped both to a single
+entry (plus the untouched test_both_symbols_are_individually_fingerprinted
+line), and left a note in the Done report explaining the pre-dedup pass
+count. T-0187's evidence list had no duplicates. Verified via
+`uv run frob check --ticket T-0187` and `--ticket T-0198`: 0 COV003 hits in
+either scoped run (grep -c COV003 on full check output -> 0); remaining
+errors are pre-existing COV006/DOC/REG findings unrelated to this ticket's
+scope (tickets.md/tickets-archive.md evidence only).
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches` (pytest node id, verified passing when recorded)
