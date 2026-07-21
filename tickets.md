@@ -3868,7 +3868,7 @@ User (2026-07-20), after an incident: a dispatched worktree agent accidentally r
 ```yaml
 id: T-0432
 title: 'vet: TS/JS computed (non-literal) bracket-subscript capability resolution'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-07-20'
@@ -3878,12 +3878,87 @@ scope:
 - src/frob/vet/_capability.py
 - tests/test_vet*.py
 scope_changes: []
-evidence: []
+evidence:
+- tests/test_vet.py::TestCapabilityScanTsBindingResolution::test_local_const_string_subscript_detected
+- tests/test_vet.py::TestCapabilityScanTsBindingResolution::test_local_const_template_substitution_subscript_detected
+- tests/test_vet.py::TestCapabilityScanTsBindingResolution::test_reassigned_const_string_subscript_not_detected
+- tests/test_vet.py::TestCapabilityScanTsBindingResolution::test_non_literal_bound_subscript_not_detected
+- tests/test_vet.py::TestCapabilityScanTsBindingResolution::test_multi_substitution_template_subscript_not_detected
+- tests/test_vet.py::TestCapabilityScanTsBindingResolution::test_computed_subscript_not_detected
+- tests/test_vet.py::TestCapabilityScanTsBindingResolution::test_interpolated_template_subscript_not_detected
 attachments: []
 acceptance: []
 threat: null
 ```
 T-0377 reviewer round 2 found and fixed string-literal bracket access (obj['fn']) and dynamic import() evasions in the TS/JS binding-aware capability resolver, but a FULLY COMPUTED (non-string-literal) subscript -- ax[dynamicKey](url), require('axios')[someVar]() -- still resolves to None: the property name is a runtime value the static resolver cannot evaluate (documented as an accepted limitation, tested by test_computed_subscript_not_detected in tests/test_vet.py::TestCapabilityScanTsBindingResolution). This is a real evasion surface for a sufficiently motivated attacker (or heavily-minified/bundled code that routes dangerous calls through a computed property name). Candidates to close the gap: (a) a conservative fail-open heuristic -- if the OBJECT resolves to a known-dangerous import and the subscript is non-literal, flag the capability anyway (accepting some false positives on legitimate dynamic dispatch); (b) light dataflow to resolve the subscript expression when it is itself a simple string-valued local (const key = 'exec'; ax[key]()); (c) leave as a permanently documented honest limitation if the false-positive cost of (a) is judged too high. Needs a design decision before implementation, not just an extension of the existing exact-match resolver.
+
+## Done report
+
+Implemented option (b) from the ticket's own candidate list: a light,
+conservative dataflow pass that resolves a computed bracket subscript
+when the key is a local name bound to exactly ONE string literal (or
+no-interpolation template literal) anywhere in the file --
+`const key = 'exec'; ax[key](url)` and `` ax[`${key}`](url) `` (single
+substitution, no other content) now resolve the same as `ax['exec'](url)`.
+
+Design decision recorded in the module docstring: candidate (a) (fail-open
+-- flag ANY bracket access on an object resolved to a known-dangerous
+import regardless of subscript shape) was considered and REJECTED -- the
+false-positive cost against ordinary dynamic-dispatch idioms (lookup
+tables, plugin registries) was judged too high without a concrete finding
+to weigh it against. Candidate (b) is a genuine, non-evadable-by-trivial-
+indirection closure for the one shape that matters (a single, unambiguous
+local constant) while staying honest about what remains unresolved.
+
+Made genuinely resistant to trivial indirection, not just the one-hop
+case: `_ts_local_string_bindings` tracks BOTH `variable_declarator`s and
+plain `assignment_expression` reassignments to the same name, and marks a
+name permanently ambiguous (excluded from the table) the instant it sees
+a second, DIFFERENT literal value OR any non-literal value anywhere in
+the file -- it never guesses which binding is "live" at the subscript
+site. This closes the naive "just check the last assignment" hole a
+careless implementation would have left (a `let key = 'get'; key =
+'post';` reassignment case is exercised by
+`test_reassigned_const_string_subscript_not_detected`).
+
+Honest negative tests recording what stays out of scope (not attempted,
+would need real reaching-definitions dataflow or a precision-cost
+decision this ticket explicitly declines to make):
+- a name bound to a non-literal value (function-call result, string
+  concatenation, another variable) anywhere in the file
+  (`test_non_literal_bound_subscript_not_detected`)
+- a name reassigned to two different literal values, including via plain
+  `=` reassignment, not just a second declarator
+  (`test_reassigned_const_string_subscript_not_detected`)
+- a template literal with more than one substitution or any surrounding
+  literal text (`test_multi_substitution_template_subscript_not_detected`)
+- a truly runtime-computed key with no literal binding anywhere
+  (`test_computed_subscript_not_detected`,
+  `test_interpolated_template_subscript_not_detected` -- pre-existing
+  tests, updated comments to clarify they now specifically cover the
+  UNBOUND case)
+
+### Changed
+```
+ docs/modules/vet.md                  |  17 ++-
+ src/frob/vet/_capability.py          |  43 +++++-
+ src/frob/vet/_capability_registry.py |  76 ++++++++++-
+ src/frob/vet/_lockfile.py            |  35 +++--
+ src/frob/vet/_obfuscation.py         |  22 +++-
+ src/frob/vet/_scan.py                | 112 ++++++++++++----
+ tests/test_vet.py                    | 249 +++++++++++++++++++++++++++++++++++
+ tickets.md                           | 130 +++++++++++++++++-
+ 8 files changed, 637 insertions(+), 47 deletions(-)
+```
+
+### Evidence
+- `tests/test_vet.py::TestCapabilityScanTsBindingResolution::test_local_const_string_subscript_detected` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanTsBindingResolution::test_local_const_template_substitution_subscript_detected` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanTsBindingResolution::test_reassigned_const_string_subscript_not_detected` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanTsBindingResolution::test_non_literal_bound_subscript_not_detected` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanTsBindingResolution::test_multi_substitution_template_subscript_not_detected` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanTsBindingResolution::test_computed_subscript_not_detected` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanTsBindingResolution::test_interpolated_template_subscript_not_detected` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0433 -->
 ```yaml

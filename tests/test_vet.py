@@ -1267,8 +1267,12 @@ class TestCapabilityScanTsBindingResolution:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
         # Documented conservative limitation (module docstring, T-draft-e7c8b53c
         # follow-up filed): a FULLY COMPUTED (non-string-literal) subscript
-        # -- `ax[dynamicKey](url)` -- cannot be resolved statically; the
-        # actual property name is a runtime value. This is an accepted
+        # whose key has no resolvable single-literal binding anywhere in
+        # the file (T-0432's `_ts_local_string_bindings` closes the case
+        # where it DOES, see `test_local_const_string_subscript_detected`)
+        # -- `ax[dynamicKey](url)` where `dynamicKey` is never assigned a
+        # literal -- cannot be resolved statically; the actual property
+        # name is a genuine runtime value. This is an accepted
         # false-negative gap, not a bug: recorded here so the gap is a
         # checkable fact, not a silent one.
         from frob.vet._capability import scan_file_capabilities
@@ -1295,15 +1299,108 @@ class TestCapabilityScanTsBindingResolution:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
         # Documented conservative limitation (module docstring, T-draft-
         # e7c8b53c follow-up filed): an INTERPOLATED template-literal
-        # subscript -- `` ax[`${dynamicKey}`](url) `` -- is a genuinely
-        # computed key, unlike a static no-interpolation template literal
-        # (`test_static_template_literal_subscript_detected` above), and
-        # stays under the same accepted false-negative gap as
+        # subscript whose substituted name has no resolvable single-
+        # literal binding -- `` ax[`${dynamicKey}`](url) `` where
+        # `dynamicKey` is never assigned a literal (T-0432's dataflow
+        # closes the case where it IS, see
+        # `test_local_const_template_substitution_subscript_detected`) --
+        # is a genuinely computed key, unlike a static no-interpolation
+        # template literal (`test_static_template_literal_subscript_detected`
+        # above), and stays under the same accepted false-negative gap as
         # `test_computed_subscript_not_detected`.
         from frob.vet._capability import scan_file_capabilities
 
         pkg = tmp_path / "pkg.ts"
         pkg.write_text("const ax = require('axios');\nax[`${dynamicKey}`](url);\n")
+        assert "net" not in scan_file_capabilities(pkg)
+
+    def test_local_const_string_subscript_detected(self, tmp_path: Path) -> None:
+        # T-0432: the trivial indirection the audit called out --
+        # `const key = 'get'; ax[key](url)` -- is a local name bound to
+        # exactly one string literal in the file, so the light dataflow
+        # pass resolves it the same as `ax['get'](url)`.
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text(
+            "const ax = require('axios');\nconst key = 'get';\nax[key](url);\n"
+        )
+        assert "net" in scan_file_capabilities(pkg)
+
+    def test_local_const_template_substitution_subscript_detected(
+        self, tmp_path: Path
+    ) -> None:
+        # T-0432: the same trivial indirection through a single-
+        # substitution template literal -- `` ax[`${key}`](url) `` where
+        # `key` is a local single-literal constant.
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text(
+            "const ax = require('axios');\nconst key = 'get';\nax[`${key}`](url);\n"
+        )
+        assert "net" in scan_file_capabilities(pkg)
+
+    def test_reassigned_const_string_subscript_not_detected(
+        self, tmp_path: Path
+    ) -> None:
+        # Honest limit (T-0432, not a regression): a name bound to TWO
+        # different literal values anywhere in the file is ambiguous --
+        # this dataflow-lite pass never guesses which one is live at the
+        # subscript site, so it stays silent (same as an unresolved
+        # computed subscript) rather than risk resolving to the wrong
+        # value.
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text(
+            "const ax = require('axios');\n"
+            "let key = 'get';\n"
+            "if (cond) { key = 'post'; }\n"
+            "ax[key](url);\n"
+        )
+        assert "net" not in scan_file_capabilities(pkg)
+
+    def test_non_literal_bound_subscript_not_detected(self, tmp_path: Path) -> None:
+        # Honest limit (T-0432, NOT closed by this ticket, out of scope):
+        # a name bound to a non-literal value (a function call result, a
+        # concatenation, another variable) anywhere in the file is
+        # excluded from the local-constant table entirely -- resolving it
+        # would need real reaching-definitions dataflow, not the light
+        # single-literal-binding heuristic this ticket implements.
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text(
+            "const ax = require('axios');\n"
+            "const key = computeMethodName();\n"
+            "ax[key](url);\n"
+        )
+        assert "net" not in scan_file_capabilities(pkg)
+
+    def test_multi_substitution_template_subscript_not_detected(
+        self, tmp_path: Path
+    ) -> None:
+        # Honest limit (T-0432, NOT closed by this ticket, out of scope):
+        # a template literal with MORE than one substitution, or any
+        # surrounding literal text, is still a genuinely computed key even
+        # when every piece happens to be a single-literal-bound local --
+        # only the exact `` `${key}` `` (one substitution, no other
+        # content) shape resolves.
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text(
+            "const ax = require('axios');\n"
+            "const a = 'g';\n"
+            "const b = 'et';\n"
+            "ax[`${a}${b}`](url);\n"
+        )
         assert "net" not in scan_file_capabilities(pkg)
 
 

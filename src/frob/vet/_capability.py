@@ -1100,6 +1100,31 @@ def _python_binding_operations(
 #      and a natural place to hide a dangerous one) -- both now resolve
 #      identically to a namespace `import * as`.
 #
+# T-0432 (computed/non-literal bracket-subscript resolution, light
+# dataflow): a COMPUTED subscript that is a bare identifier or a single-
+# substitution template literal (`ax[key](url)`, `` ax[`${key}`](url) ``)
+# now resolves when `key` is bound to exactly ONE string literal anywhere
+# in the file (`_ts_local_string_bindings`/`_ts_bound_subscript_text`) --
+# closes the trivial `const key = 'exec'; ax[key](url)` indirection the
+# T-0377 audit flagged as accepted-but-checkable. Deliberately NOT real
+# reaching-definitions dataflow: a name reassigned to two DIFFERENT
+# literal values anywhere in the file (including a plain `key = 'x'`
+# reassignment, not just a second declarator) is excluded from the table
+# entirely (stays unresolved, never guesses which value is live at the
+# subscript site); a name assigned a non-literal value (a function call, a
+# concatenation, a member-access key) is excluded the same way; a template
+# literal with MORE than one substitution or any surrounding literal text
+# still resolves to `None`. Considered and REJECTED: a fail-open heuristic
+# ("any bracket access on an object resolved to a known-dangerous import
+# is worth flagging regardless of subscript shape") -- the false-positive
+# cost against ordinary dynamic-dispatch idioms (a lookup table, a plugin
+# registry) was judged too high without a concrete finding to weigh it
+# against; the light single-literal-binding dataflow above is the
+# genuinely-closed subset, everything else stays an honest, tested
+# limitation (`test_non_literal_bound_subscript_not_detected`,
+# `test_multi_substitution_template_subscript_not_detected`,
+# `test_reassigned_const_string_subscript_not_detected`).
+#
 # Known limitations, documented rather than silently eaten (mirrors this
 # module's "Honest limits" posture): no scope-local alias copy-propagation
 # (the T-0337 Python enhancement) -- a name shadowed by a local binding is
@@ -1110,11 +1135,13 @@ def _python_binding_operations(
 # `require()` destructure (a narrow, safe-direction over-approximation, same
 # as Python's function-scoped `import`); a COMPUTED bracket subscript --
 # a NON-LITERAL key OR an INTERPOLATED template literal (a static, no-
-# interpolation template literal DOES resolve, round 3 above) -- never
-# resolves (T-draft-e7c8b53c follow-up, see above); a `.then(cb)`
-# callback's module binding is added to the FILE-WIDE table rather than
-# scoped to the callback body (the same over-approximation as every other
-# binding here -- can only ADD a resolution, never suppress a real one).
+# interpolation template literal DOES resolve, round 3 above) -- resolves
+# only through the T-0432 single-literal-binding case above, else stays
+# unresolved (T-draft-e7c8b53c tracks the fully-general case, see above); a
+# `.then(cb)` callback's module binding is added to the FILE-WIDE table
+# rather than scoped to the callback body (the same over-approximation as
+# every other binding here -- can only ADD a resolution, never suppress a
+# real one).
 # C-C++/Kotlin remain OUT of scope for this pass; Rust gets its own binding-
 # aware pass, T-0378 below.
 _TS_SCOPE_TYPES = (
@@ -1607,40 +1634,104 @@ def _ts_static_subscript_text(index) -> str | None:  # noqa: ANN001
     return None
 
 
+# T-0432: a single-substitution template literal (`` `${key}` ``) whose
+# ENTIRE content is that one substitution, no surrounding text -- the
+# shape `_ts_single_substitution_identifier` extracts a candidate
+# identifier name from, for `_ts_bound_subscript_text`'s local-constant
+# lookup to then try resolving.
+def _ts_single_substitution_identifier(node) -> str | None:  # noqa: ANN001
+    """If `node` is a `template_string` whose ONLY content is one
+    `template_substitution` wrapping a bare `identifier` (`` `${key}` ``,
+    no other text) -- that identifier's name; `None` for any other shape
+    (surrounding text, more than one substitution, or a non-identifier
+    substitution expression, e.g. `` `${a}${b}` ``/`` `pre${x}` ``/
+    `` `${obj.prop}` ``)."""
+    if node.type != "template_string":
+        return None
+    substitutions = [c for c in node.children if c.type == "template_substitution"]
+    fragments = [c for c in node.children if c.type == "string_fragment"]
+    if len(substitutions) != 1 or fragments:
+        return None
+    sub = substitutions[0]
+    inner = [c for c in sub.children if c.type not in ("${", "}")]
+    if len(inner) != 1 or inner[0].type != "identifier":
+        return None
+    return node_text(inner[0])
+
+
+def _ts_bound_subscript_text(index, string_bindings: dict[str, str]) -> str | None:  # noqa: ANN001
+    """T-0432: light dataflow closing the TRIVIAL computed-subscript
+    indirection the audit found (`const key = 'exec'; ax[key](url)`,
+    `` ax[`${key}`](url) ``) -- when `index` is a bare identifier, or a
+    template literal whose entire content is one identifier substitution,
+    look its name up in `string_bindings` (built by
+    `_ts_local_string_bindings`: every name in the file bound to exactly
+    ONE, non-conflicting string-literal/no-interpolation-template-literal
+    value). Deliberately conservative: a name reassigned to a non-literal
+    anywhere, or bound to two different literals, is EXCLUDED from
+    `string_bindings` entirely (never guesses which binding is live at the
+    subscript site) -- this is dataflow-lite, not real reaching-definitions
+    analysis, so it stays silent (returns `None`, same as an unresolved
+    computed subscript) on anything past this one shape: a function-call
+    result, string concatenation, a member-access key, or a name assigned
+    more than one distinct literal value anywhere in the file."""
+    if index.type == "identifier":
+        return string_bindings.get(node_text(index))
+    ident = _ts_single_substitution_identifier(index)
+    if ident is not None:
+        return string_bindings.get(ident)
+    return None
+
+
 def _resolve_ts_subscript(
-    node, import_table: dict[str, str], scope_cache: dict[int, frozenset[str]]
+    node,
+    import_table: dict[str, str],
+    scope_cache: dict[int, frozenset[str]],
+    string_bindings: dict[str, str],
 ) -> str | None:  # noqa: ANN001
     """`subscript_expression` case of `_resolve_ts_expr` (T-0377 reviewer
     round 2, bracket-access evasion fix; extended round 3 for static
-    template-literal subscripts): `obj['fn']`/`` obj[`fn`] `` resolves the
+    template-literal subscripts; extended T-0432 for the trivial local-
+    constant indirection case): `obj['fn']`/`` obj[`fn`] `` resolves the
     same as `obj.fn` when the subscript is a STRING LITERAL or a NO-
     INTERPOLATION TEMPLATE LITERAL (`require('axios')['get']`,
     `` ax[`get`] ``) -- a plain bracket-access RCE evasion the round-1
     resolver missed entirely (it only ever inspected `identifier`/
-    `member_expression` nodes). A COMPUTED subscript -- a non-literal key
-    OR an INTERPOLATED template literal (`ax[dynamicKey]`,
-    `` ax[`${dynamicKey}`] ``) -- resolves to `None`, a documented
-    limitation (module docstring below): the actual property name is a
-    runtime value this static resolver cannot evaluate, so a real
-    dangerous call reached only through a genuinely dynamic key is NOT
-    caught. Filed as a follow-up (T-draft-e7c8b53c) rather than silently
-    accepted."""
+    `member_expression` nodes). T-0432 additionally resolves `obj[key]`/
+    `` obj[`${key}`] `` when `key` is a local name bound to exactly one
+    string literal in the file (`_ts_bound_subscript_text`) -- the trivial
+    `const key = 'exec'; ax[key]()` indirection the audit called out. A
+    GENUINELY computed subscript -- a function call, string concatenation,
+    a member-access key, an interpolated template with surrounding text,
+    or a name with no single resolvable literal binding -- still resolves
+    to `None`, a documented limitation (module docstring below): giving up
+    precision entirely for "any bracket access on a dangerous object is
+    worth flagging" was considered and rejected as too high a false-
+    positive cost (docs/audits/vet.md T-0432 candidates), so a real
+    dangerous call reached only through genuine runtime-computed
+    indirection is still NOT caught. Filed as a follow-up (T-draft-
+    e7c8b53c) rather than silently accepted."""
     obj = node.child_by_field_name("object")
     index = node.child_by_field_name("index")
     if obj is None or index is None:
         return None
     # frob:invariant terminates reason="obj is node's own 'object' field child, a proper descendant of node in the finite tree-sitter parse tree; mutually recurses with _resolve_ts_expr, which only descends into the subscript/member branches by calling back here" measure="node's subtree depth strictly decreases"  # noqa: E501
-    resolved_obj = _resolve_ts_expr(obj, import_table, scope_cache)
+    resolved_obj = _resolve_ts_expr(obj, import_table, scope_cache, string_bindings)
     if resolved_obj is None:
         return None
     static_text = _ts_static_subscript_text(index)
+    if static_text is None:
+        static_text = _ts_bound_subscript_text(index, string_bindings)
     if static_text is None:
         return None
     return f"{resolved_obj}.{static_text}"
 
 
 def _resolve_ts_member(
-    node, import_table: dict[str, str], scope_cache: dict[int, frozenset[str]]
+    node,
+    import_table: dict[str, str],
+    scope_cache: dict[int, frozenset[str]],
+    string_bindings: dict[str, str],
 ) -> str | None:  # noqa: ANN001
     """`member_expression` case of `_resolve_ts_expr` -- split out to keep
     that function under the arch length ceiling (T-0377 reviewer round
@@ -1650,27 +1741,31 @@ def _resolve_ts_member(
     if obj is None or prop is None:
         return None
     # frob:invariant terminates reason="obj is node's own 'object' field child, a proper descendant of node in the finite tree-sitter parse tree; mutually recurses with _resolve_ts_expr, which only descends into the subscript/member branches by calling back here" measure="node's subtree depth strictly decreases"  # noqa: E501
-    resolved_obj = _resolve_ts_expr(obj, import_table, scope_cache)
+    resolved_obj = _resolve_ts_expr(obj, import_table, scope_cache, string_bindings)
     if resolved_obj is None:
         return None
     return f"{resolved_obj}.{node_text(prop)}"
 
 
 def _resolve_ts_expr(
-    node, import_table: dict[str, str], scope_cache: dict[int, frozenset[str]]
+    node,
+    import_table: dict[str, str],
+    scope_cache: dict[int, frozenset[str]],
+    string_bindings: dict[str, str],
 ) -> str | None:  # noqa: ANN001
     """Resolve one TS/JS expression node (a bare `identifier`, a
     `member_expression`/string-literal-`subscript_expression` chain, or an
     inline `require(...)`/dynamic `import(...)` call) to its fully-
     qualified import-bound target, or `None` if it is locally shadowed,
     unresolved, or not a resolvable chain at all (T-0377, extended by the
-    reviewer-round-2 bracket-access/dynamic-import fixes) -- mirrors
-    `_resolve_py_expr`'s python job, without the T-0337 alias-copy-
-    propagation layer (documented limitation above). Any other expression
-    (a `new_expression`, a non-import ordinary call, ...) is not a
-    resolvable "object" for chain purposes -- e.g. `new Job()` in `new
-    Job().run()` stops resolution here, so `.run` never reaches the import
-    table (the no-false-positive case)."""
+    reviewer-round-2 bracket-access/dynamic-import fixes and T-0432's
+    local-constant subscript dataflow) -- mirrors `_resolve_py_expr`'s
+    python job, without the T-0337 alias-copy-propagation layer (documented
+    limitation above). Any other expression (a `new_expression`, a
+    non-import ordinary call, ...) is not a resolvable "object" for chain
+    purposes -- e.g. `new Job()` in `new Job().run()` stops resolution
+    here, so `.run` never reaches the import table (the no-false-positive
+    case)."""
     if node.type == "identifier":
         name = node_text(node)
         if _is_ts_shadowed(name, node, scope_cache):
@@ -1678,10 +1773,10 @@ def _resolve_ts_expr(
         return import_table.get(name)
     if node.type == "member_expression":
         # frob:invariant terminates reason="mutually recurses with _resolve_ts_member, which only calls back here with node.child_by_field_name('object'), a proper descendant of node in the finite tree-sitter parse tree" measure="node's subtree depth strictly decreases"  # noqa: E501
-        return _resolve_ts_member(node, import_table, scope_cache)
+        return _resolve_ts_member(node, import_table, scope_cache, string_bindings)
     if node.type == "subscript_expression":
         # frob:invariant terminates reason="mutually recurses with _resolve_ts_subscript, which only calls back here with node.child_by_field_name('object'), a proper descendant of node in the finite tree-sitter parse tree" measure="node's subtree depth strictly decreases"  # noqa: E501
-        return _resolve_ts_subscript(node, import_table, scope_cache)
+        return _resolve_ts_subscript(node, import_table, scope_cache, string_bindings)
     if node.type == "call_expression":
         # T-0377 reviewer round 2: an INLINE `require('x')['fn']`/
         # `import('x')` used directly as the object of a member/subscript
@@ -1695,13 +1790,14 @@ def _collect_ts_candidates(
     node,
     import_table: dict[str, str],
     scope_cache: dict[int, frozenset[str]],
+    string_bindings: dict[str, str],
     candidates: list[tuple[str, int, int]],
 ) -> None:  # noqa: ANN001
     """Recursively walk `node`, appending `(resolved, start_byte, end_byte)`
     to `candidates` for every call/member/subscript-access site that
     resolves through `import_table` (T-0377, extended by the reviewer-
-    round-2 bracket-access fix) -- mirrors `_collect_py_candidates`'s
-    python job."""
+    round-2 bracket-access fix and T-0432's local-constant subscript
+    dataflow) -- mirrors `_collect_py_candidates`'s python job."""
     if node.type == "call_expression":
         func = node.child_by_field_name("function")
         if func is not None and func.type in (
@@ -1709,21 +1805,82 @@ def _collect_ts_candidates(
             "member_expression",
             "subscript_expression",
         ):
-            resolved = _resolve_ts_expr(func, import_table, scope_cache)
+            resolved = _resolve_ts_expr(
+                func, import_table, scope_cache, string_bindings
+            )
             if resolved is not None:
                 candidates.append((resolved, node.start_byte, node.end_byte))
     elif node.type in ("member_expression", "subscript_expression"):
-        resolved = _resolve_ts_expr(node, import_table, scope_cache)
+        resolved = _resolve_ts_expr(node, import_table, scope_cache, string_bindings)
         if resolved is not None:
             candidates.append((resolved, node.start_byte, node.end_byte))
     for child in node.children:
-        _collect_ts_candidates(child, import_table, scope_cache, candidates)
+        _collect_ts_candidates(
+            child, import_table, scope_cache, string_bindings, candidates
+        )
+
+
+def _ts_local_string_bindings(program_node) -> dict[str, str]:  # noqa: ANN001
+    """T-0432: file-wide name -> literal-string-value table for every
+    `const`/`let`/`var name = <value>` declarator whose value is a plain
+    string literal or a no-interpolation template literal, when `name` has
+    EXACTLY ONE such literal value across the whole file. A name assigned a
+    non-literal value anywhere (a function call, another variable, string
+    concatenation, ...), or assigned two DIFFERENT literal values (reused
+    across unrelated scopes/branches), is deliberately EXCLUDED entirely --
+    this is a conservative, no-false-claim approximation (never picks a
+    "most likely" value), not real reaching-definitions dataflow; it only
+    ever ADDS a resolution for the unambiguous single-literal-binding case
+    `_ts_bound_subscript_text` needs, never removes or overrides a
+    lexical-scan finding."""
+    bindings: dict[str, str | None] = {}
+
+    def record(name: str, value_node) -> None:  # noqa: ANN001
+        """Fold one `name = value_node` binding site (declarator OR plain
+        reassignment) into `bindings`, marking `name` permanently
+        ambiguous (`None`) the instant it sees a non-literal value or a
+        second, DIFFERENT literal value -- `let key = 'get'; key =
+        'post';` must not resolve to either, since a real reassignment
+        (T-0432 review: a bare declarator-only scan missed this) means the
+        live value at any given subscript site is genuinely ambiguous to
+        this file-wide, non-flow-sensitive pass."""
+        if name in bindings and bindings[name] is None:
+            return
+        text = _ts_static_subscript_text(value_node)
+        if text is None:
+            bindings[name] = None
+        elif name not in bindings:
+            bindings[name] = text
+        elif bindings[name] != text:
+            bindings[name] = None
+
+    def visit(node) -> None:  # noqa: ANN001
+        if node.type == "variable_declarator":
+            name_node = node.child_by_field_name("name")
+            value_node = node.child_by_field_name("value")
+            if (
+                name_node is not None
+                and name_node.type == "identifier"
+                and value_node is not None
+            ):
+                record(node_text(name_node), value_node)
+        elif node.type == "assignment_expression":
+            left = node.child_by_field_name("left")
+            right = node.child_by_field_name("right")
+            if left is not None and left.type == "identifier" and right is not None:
+                record(node_text(left), right)
+        for child in node.children:
+            visit(child)
+
+    visit(program_node)
+    return {name: text for name, text in bindings.items() if text is not None}
 
 
 def _ts_resolved_candidates(path: Path) -> tuple[tuple[str, int, int], ...]:
     """Every `(resolved_dotted_target, start_byte, end_byte)` this TS/JS
     file's call/member-access sites resolve to through its import/require
-    binding table and enclosing-scope shadow check (T-0377). Empty for a
+    binding table, enclosing-scope shadow check, and (T-0432) single-
+    literal local-constant subscript table (T-0377). Empty for a
     non-typescript-bucket file, an unparseable file, or one `frob.lang` has
     no grammar for -- degrades to the pre-existing lexical-only scan, never
     raises."""
@@ -1735,9 +1892,12 @@ def _ts_resolved_candidates(path: Path) -> tuple[tuple[str, int, int], ...]:
         return ()
 
     import_table = _ts_import_table(tree.root_node)
+    string_bindings = _ts_local_string_bindings(tree.root_node)
     scope_cache: dict[int, frozenset[str]] = {}
     candidates: list[tuple[str, int, int]] = []
-    _collect_ts_candidates(tree.root_node, import_table, scope_cache, candidates)
+    _collect_ts_candidates(
+        tree.root_node, import_table, scope_cache, string_bindings, candidates
+    )
     return tuple(candidates)
 
 
