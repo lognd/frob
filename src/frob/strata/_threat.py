@@ -1228,6 +1228,29 @@ def _caught_by_referenced_tokens(
     )
 
 
+# frob:doc docs/strata/threat.md#the-exhaustiveness-proof-the-point
+# frob:tests tests/unit/strata/test_threat.py::TestCaughtByUnresolvedTokens.test_unknown_rule_id_is_unresolved  # noqa: E501
+def caught_by_unresolved_tokens(
+    caught_by: str,
+    known_rule_ids: frozenset[str] = frozenset(),
+    cataloged_ids: frozenset[str] = frozenset(),
+) -> frozenset[str]:
+    """Public (T-0382) sibling of `check_caught_by_integrity`'s per-entry
+    resolution step: every rule-id-/CWE-id-shaped token `caught_by`
+    references that resolves to NEITHER `known_rule_ids` (the live
+    gate-rule-id set) NOR `cataloged_ids` (a catalog's own id set) --
+    empty means every referenced token resolved (or none was referenced
+    at all). Exists so `_compliance.py`'s own caught_by family
+    (`OutOfScopeRegulation.caught_by`, COMPLIANCE004) can verify its
+    excuses identically to `check_caught_by_integrity`'s THREAT006
+    without duplicating the token-extraction regexes or the deny-by-
+    default resolution rule (charter: no duplication) -- callers still
+    own the `CAUGHT_BY_NONE_MARKER` honest-disclosure short-circuit
+    themselves, this function does not special-case it."""
+    rule_ids, cwe_ids = _caught_by_referenced_tokens(caught_by)
+    return (rule_ids - known_rule_ids) | (cwe_ids - cataloged_ids)
+
+
 def _caught_by_violation(
     entry_id: str, caught_by: str, unresolved: frozenset[str]
 ) -> ThreatViolation:
@@ -1274,7 +1297,7 @@ def check_caught_by_integrity(
     would cycle otherwise). Passing the default empty set means no
     rule-id-shaped token can ever resolve, so a caller wanting real rule-id
     verification must supply it explicitly."""
-    cataloged_cwes = {entry.id for entry in catalog}
+    cataloged_cwes = frozenset(entry.id for entry in catalog)
     violations: list[ThreatViolation] = []
     for entry_id, caught_by in (
         *((e.id, e.caught_by) for e in out_of_scope),
@@ -1282,8 +1305,9 @@ def check_caught_by_integrity(
     ):
         if caught_by.strip().lower().startswith(CAUGHT_BY_NONE_MARKER):
             continue
-        rule_ids, cwe_ids = _caught_by_referenced_tokens(caught_by)
-        unresolved = (rule_ids - known_rule_ids) | (cwe_ids - cataloged_cwes)
+        unresolved = caught_by_unresolved_tokens(
+            caught_by, known_rule_ids, cataloged_cwes
+        )
         if unresolved:
             violations.append(_caught_by_violation(entry_id, caught_by, unresolved))
     return Ok(tuple(violations))
@@ -1873,8 +1897,11 @@ __all__ = [
     "ThreatReport",
     "ThreatViolation",
     "WeaknessEntry",
+    "CAUGHT_BY_NONE_MARKER",
+    "caught_by_unresolved_tokens",
     "check_capability_completeness",
     "check_catalog_completeness",
+    "check_caught_by_integrity",
     "check_discharge_completeness",
     "check_effect_completeness",
     "evaluate_threats",

@@ -42,6 +42,7 @@ from frob.strata._threat import (
     QUALITY_VIEWS,
     VIEWS,
     _discharge_claim_id,
+    caught_by_unresolved_tokens,
     check_caught_by_integrity,
     load_repo_benign_capabilities,
 )
@@ -1144,6 +1145,33 @@ class TestCapabilityCompleteness:
         )
         assert widened.is_ok
         assert widened.danger_ok == ()
+
+
+class TestCaughtByUnresolvedTokens:
+    """T-0382: `caught_by_unresolved_tokens` -- the public per-entry
+    resolution helper `check_caught_by_integrity` (THREAT006) and
+    `_compliance.py`'s `check_regulation_caught_by_integrity`
+    (COMPLIANCE004) both share, rather than duplicating the token
+    regex/resolution rule."""
+
+    # frob:tests src/frob/strata/_threat.py::caught_by_unresolved_tokens kind="unit"
+    def test_unknown_rule_id_is_unresolved(self):
+        unresolved = caught_by_unresolved_tokens(
+            "already enforced by SEC999", known_rule_ids=frozenset({"SEC001"})
+        )
+        assert unresolved == frozenset({"SEC999"})
+
+    # frob:tests src/frob/strata/_threat.py::caught_by_unresolved_tokens kind="unit"
+    def test_known_rule_id_resolves(self):
+        unresolved = caught_by_unresolved_tokens(
+            "already enforced by SEC001", known_rule_ids=frozenset({"SEC001"})
+        )
+        assert unresolved == frozenset()
+
+    # frob:tests src/frob/strata/_threat.py::caught_by_unresolved_tokens kind="unit"
+    def test_no_referenced_tokens_is_unresolved_empty(self):
+        unresolved = caught_by_unresolved_tokens("legal review, out of scope")
+        assert unresolved == frozenset()
 
 
 class TestCaughtByIntegrity:
