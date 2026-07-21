@@ -29,6 +29,7 @@ from typani.result import Err, Ok, Result
 
 from frob.gitio import run_argv
 from frob.logging import get_logger
+from frob.tickets._journal import clear_intent, read_all_intents
 from frob.tickets._leases import read_all_leases, release_lease
 from frob.tickets._models import TicketError, TicketState
 from frob.tickets._store import load_all
@@ -41,13 +42,20 @@ class ReconcileReport(BaseModel):
     """The anomalies `reconcile` found (and, if `applied`, healed) --
     (T-0476) `requeued_tickets` (stale holds) and `orphan_worktrees` (live
     worktrees with no lease), plus whichever of the two mutation flags were
-    actually acted on."""
+    actually acted on. `orphaned_land_intents` (T-0456) is the third
+    anomaly class: a `frob ticket land` intent-journal record
+    (`frob.tickets._journal`) still present, meaning the process that
+    started that land never reached its own cleanup -- cleared (aborted,
+    never resumed/rolled-forward) when `apply` is set, same as the other
+    two classes' own report-then-heal shape."""
 
     model_config = {}
 
     requeued_tickets: tuple[str, ...]
     orphan_worktrees: tuple[str, ...]
     removed_worktrees: tuple[str, ...]
+    orphaned_land_intents: tuple[str, ...] = ()
+    cleared_land_intents: tuple[str, ...] = ()
     applied: bool
     removed_orphans: bool
 
@@ -129,6 +137,22 @@ def _requeue_stale_holds(root: Path, stale_ids: tuple[str, ...]) -> tuple[str, .
     return tuple(requeued)
 
 
+def _clear_orphaned_intents(root: Path, ticket_ids: tuple[str, ...]) -> tuple[str, ...]:
+    """Clear each of `ticket_ids`' land-intent journal record (T-0456);
+    returns the ids actually cleared (`clear_intent` is itself always
+    best-effort/never-raises, so this is really just a pass-through, kept
+    as its own helper for symmetry with `_requeue_stale_holds`/
+    `_remove_orphan_worktrees`)."""
+    for ticket_id in ticket_ids:
+        clear_intent(root, ticket_id)
+        _log.info(
+            "tickets: reconcile cleared orphaned land intent for %s "
+            "(process that started it never reached its own cleanup)",
+            ticket_id,
+        )
+    return ticket_ids
+
+
 def _remove_orphan_worktrees(root: Path, orphans: tuple[Path, ...]) -> tuple[str, ...]:
     """`git worktree remove --force <path>` for each of `orphans`; returns
     the paths actually removed (a removal failure -- e.g. uncommitted
@@ -183,17 +207,21 @@ def reconcile(
 
     stale_ids = _stale_in_progress_ticket_ids(tickets, leased_ticket_ids)
     orphans = _orphan_worktree_paths(root, leased_worktrees)
+    orphaned_intents = tuple(intent.ticket_id for intent in read_all_intents(root))
 
     requeued = _requeue_stale_holds(root, stale_ids) if apply else stale_ids
     removed = (
         _remove_orphan_worktrees(root, orphans) if apply and remove_orphans else ()
     )
+    cleared_intents = _clear_orphaned_intents(root, orphaned_intents) if apply else ()
 
     return Ok(
         ReconcileReport(
             requeued_tickets=requeued,
             orphan_worktrees=tuple(str(p) for p in orphans),
             removed_worktrees=removed,
+            orphaned_land_intents=orphaned_intents,
+            cleared_land_intents=cleared_intents,
             applied=apply,
             removed_orphans=apply and remove_orphans,
         )

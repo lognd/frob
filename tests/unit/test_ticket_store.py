@@ -253,6 +253,57 @@ class TestAtomicWrite:
         leftovers = [p for p in tmp_path.iterdir() if p.name != "tickets.md"]
         assert leftovers == [], f"a partial/temp file leaked: {leftovers}"
 
+    # frob:ticket T-0456
+    def test_fsyncs_file_before_replace(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-0456: `atomic_write` must durably flush the temp file (fsync)
+        BEFORE the rename that makes it visible under `path`, so a power
+        loss right after the rename cannot surface stale/unflushed data."""
+        path = tmp_path / "tickets.md"
+        events: list[str] = []
+
+        real_fsync = os.fsync
+        real_replace = os.replace
+
+        def _record_fsync(fd: int) -> None:
+            events.append("fsync")
+            real_fsync(fd)
+
+        def _record_replace(src: str, dst: str) -> None:
+            events.append("replace")
+            real_replace(src, dst)
+
+        monkeypatch.setattr(os, "fsync", _record_fsync)
+        monkeypatch.setattr(os, "replace", _record_replace)
+        result = atomic_write(path, "content\n")
+
+        assert result.is_ok
+        assert events == ["fsync", "replace"]
+
+    # frob:ticket T-0456
+    def test_fsync_failure_is_write_failed_not_a_partial_file(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """An `fsync` failure (e.g. ENOSPC/EIO) must behave exactly like a
+        `os.replace` failure: Err(WriteFailed), destination untouched, no
+        leftover temp file (T-0456, same contract as
+        test_no_partial_file_on_simulated_interrupt)."""
+        path = tmp_path / "tickets.md"
+        path.write_text("original content\n", encoding="utf-8")
+
+        def _boom(fd: int) -> None:
+            raise OSError("simulated fsync failure")
+
+        monkeypatch.setattr(os, "fsync", _boom)
+        result = atomic_write(path, "NEW CONTENT THAT SHOULD NEVER LAND\n")
+
+        assert result.is_err
+        assert result.danger_err == TicketError.WriteFailed
+        assert path.read_text(encoding="utf-8") == "original content\n"
+        leftovers = [p for p in tmp_path.iterdir() if p.name != "tickets.md"]
+        assert leftovers == [], f"a partial/temp file leaked: {leftovers}"
+
 
 # frob:ticket T-0458
 class TestLockPath:

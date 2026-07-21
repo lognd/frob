@@ -368,6 +368,63 @@ would have been: `frob.clean`'s tiers operate on build/cache ARTIFACTS
 removal is its own `git worktree remove` call here, not routed through
 `frob.clean`.
 
+## Intent journal (T-0456)
+
+`frob ticket land` mutates more than one artifact in sequence (worktree
+merge, ledger splice/close, squash-apply onto the target root, optional
+version bump + native rebuild) -- a crash or power loss partway through
+used to leave no record that an operation had ever been in flight.
+`frob.tickets._journal` closes that gap:
+
+- `write_intent(root, ticket_id, worktree)` records a small
+  `<root>/.frob/journal/<ticket-id>.json` marker (via `_store.atomic_write`,
+  so the marker itself is crash-safe) at the very start of `land()`, before
+  any of its steps mutate anything.
+- `clear_intent(root, ticket_id)` removes it -- `land()` calls this from a
+  `finally` block, so it runs on EVERY exit: success, a clean/handled
+  `Err`, or a raised exception. A marker that OUTLIVES the process is
+  therefore only possible if the process died before reaching its own
+  cleanup (killed, power loss, OOM).
+- `read_all_intents(root)` lists every currently-recorded marker.
+
+`frob ticket reconcile` (above) treats a leftover marker as its third
+anomaly class -- **orphaned land intent**: reported (never resumed or
+rolled forward automatically) in every run, and cleared (aborted) only
+under `--apply`. Automatically resuming/rolling-forward a partially
+completed land was judged too risky to attempt blind (the actual git/ledger
+state after a crash could be at any of several different points in the
+sequence) -- `--apply` here means "stop treating this as in-flight", not
+"finish the job"; the ticket itself is left exactly as `land`'s own partial
+progress left it, for a human/agent to inspect and re-run `frob ticket
+land` from scratch once satisfied nothing was left dangerously
+half-applied.
+
+```
+frob ticket reconcile           # dry-run: also reports orphaned land intents
+frob ticket reconcile --apply   # also clears (aborts, does not resume) them
+```
+
+Journal files are LOCAL to `root` -- unlike the T-0473 cross-worktree lease
+side-channel (which lives under the shared git common dir so every linked
+worktree can see it), an in-flight `land` only ever mutates the one
+worktree/root pair it was invoked against, so there is nothing
+cross-worktree to reconcile for this anomaly class.
+
+## Atomic ledger writes (T-0456 hardening)
+
+`frob.tickets._store.atomic_write` (every `tickets.md`/`.frob-release.json`
+/lease/journal write goes through it) now `fsync`s the temp file before the
+`os.replace` that makes it visible under the real path. `os.replace` alone
+is atomic AT THE FILESYSTEM level (you never observe a half-renamed file),
+but without an `fsync` first, a power loss between the write and the
+rename can leave the temp file's data unflushed to disk -- on filesystems
+that journal renames separately from data blocks, replaying the rename
+after a crash can then surface a zero-length or truncated file even though
+the rename itself "completed". `fsync`ing the temp file's own fd first
+guarantees the data is durable before the rename runs, so a crash at any
+point around a `tickets.md` write leaves either the OLD content or the
+FULLY-written NEW content, never a partial one.
+
 ## Scope/lease change protocol (T-0455)
 
 `frob ticket scope <id> --add GLOB... --remove GLOB... --reason TEXT`

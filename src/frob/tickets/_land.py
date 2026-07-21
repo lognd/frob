@@ -24,6 +24,7 @@ from typani.result import Err, Ok, Result
 
 from frob.gitio import current_branch, run_argv
 from frob.logging import get_logger
+from frob.tickets._journal import clear_intent, write_intent
 from frob.tickets._models import (
     CMD_EVIDENCE_ALLOWED_KINDS,
     LandError,
@@ -700,49 +701,58 @@ def land(
         return Err(precheck.danger_err)
     ticket, main_branch_name = precheck.danger_ok
 
-    stage = _land_merge_stage(
-        root, worktree, ticket, ticket_id, main_branch_name, dry_run
-    )
-    if stage.is_err:
-        return Err(stage.danger_err)
-    wip_committed, did_merge, dry_run_report = stage.danger_ok
+    # T-0456: record that a multi-step land is starting BEFORE any of the
+    # steps below mutate the worktree/root -- cleared in the `finally` below
+    # on every exit (success or a clean, handled Err) so a marker that
+    # OUTLIVES this process means it crashed mid-land, the condition `frob
+    # ticket reconcile` surfaces as an anomaly instead of it going unnoticed.
+    write_intent(root, ticket_id, worktree)
+    try:
+        stage = _land_merge_stage(
+            root, worktree, ticket, ticket_id, main_branch_name, dry_run
+        )
+        if stage.is_err:
+            return Err(stage.danger_err)
+        wip_committed, did_merge, dry_run_report = stage.danger_ok
 
-    # D-05: re-verify BEFORE the dry-run early return -- otherwise a
-    # `--dry-run` would report clean without ever running the post-merge
-    # check, defeating T-0176's "a clean dry run is a real guarantee, not
-    # a guess" design intent.
-    post_merge_check = _reverify_evidence_post_merge(
-        worktree, ticket_id, collected, passed
-    )
-    if post_merge_check.is_err:
-        if did_merge:
-            _abort_merge(worktree)
-        return Err(post_merge_check.danger_err)
+        # D-05: re-verify BEFORE the dry-run early return -- otherwise a
+        # `--dry-run` would report clean without ever running the
+        # post-merge check, defeating T-0176's "a clean dry run is a real
+        # guarantee, not a guess" design intent.
+        post_merge_check = _reverify_evidence_post_merge(
+            worktree, ticket_id, collected, passed
+        )
+        if post_merge_check.is_err:
+            if did_merge:
+                _abort_merge(worktree)
+            return Err(post_merge_check.danger_err)
 
-    if dry_run_report is not None:
-        return Ok(dry_run_report)
+        if dry_run_report is not None:
+            return Ok(dry_run_report)
 
-    _refresh_prework_sweep(worktree, ticket)
+        _refresh_prework_sweep(worktree, ticket)
 
-    finalized = _land_finalize_and_close(
-        worktree, ticket_id, did_merge, main_branch_name, covers_scope=covers_scope
-    )
-    if finalized.is_err:
-        return Err(finalized.danger_err)
-    final_id = finalized.danger_ok
+        finalized = _land_finalize_and_close(
+            worktree, ticket_id, did_merge, main_branch_name, covers_scope=covers_scope
+        )
+        if finalized.is_err:
+            return Err(finalized.danger_err)
+        final_id = finalized.danger_ok
 
-    return _land_squash_apply(
-        root,
-        worktree,
-        ticket,
-        ticket_id,
-        final_id,
-        wip_committed,
-        did_merge,
-        main_branch_name,
-        bump_version=bump_version,
-        rebuild_natives=rebuild_natives,
-    )
+        return _land_squash_apply(
+            root,
+            worktree,
+            ticket,
+            ticket_id,
+            final_id,
+            wip_committed,
+            did_merge,
+            main_branch_name,
+            bump_version=bump_version,
+            rebuild_natives=rebuild_natives,
+        )
+    finally:
+        clear_intent(root, ticket_id)
 
 
 def _reverify_evidence_post_merge(

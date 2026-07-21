@@ -17,6 +17,43 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.55.0] - unreleased (tickets chain 3: frob:debt)
+
+T-0412: `frob:debt` vs `frob:waive` -- a TEMPORARY, ticket-bound, tracked
+exception distinct from `frob:waive`'s PERMANENT one. New public API:
+`EdgeKind.DEBT`, `frob.gates.debt_gate`/`list_debt`/`DebtEntry`, and the
+`DEBT001`/`DEBT002`/`DEBT003` rule ids (malformed directive / non-open
+ticket / expired `until`). `frob.gates.release_gate` (REL001) now
+additionally fails while ANY `frob:debt` is open, expired or not -- debt
+is collected and re-raised before a release, never silently carried
+forward. New `frob debt [--json]` CLI (`frob.app.debt_runner`) lists every
+outstanding entry (rule, site, ticket, until, expired). Migration of the
+~143 existing debt-shaped `frob:waive` directives to `frob:debt` is
+deliberately NOT done in this release -- see docs/guides/extending/
+comment-dsl-directives.md's migration-guidance note; it is a follow-up
+burndown ticket.
+
+## [0.54.0] - unreleased (tickets chain 3: intent journal)
+
+T-0456: crash/interrupt recovery, the remaining delta after T-0473
+(cross-worktree lease registry)/T-0476 (reconcile)/T-0479 (own-block ledger
+splice) had already landed the rest. Added `frob.tickets._journal` (new
+public `write_intent`/`clear_intent`/`read_all_intents`/`LandIntent`/
+`JournalError`/`journal_dir`): `frob ticket land` now records a small
+`.frob/journal/<ticket-id>.json` marker before it starts mutating anything
+and clears it in a `finally` block on every exit, so a marker outliving the
+process means it crashed mid-land. `frob ticket reconcile` gained a third
+anomaly class, orphaned land intents, reported every run and cleared
+(never auto-resumed) under `--apply`. `frob.tickets._store.atomic_write`
+now `fsync`s the temp file before the `os.replace` that makes it visible,
+closing the "rename completed but data unflushed" crash window for every
+`tickets.md`/`.frob-release.json`/lease/journal write.
+
+T-0507: extended the T-0431 `FROB_WORKTREE` lease guard to `frob release
+stamp` (`frob.release.stamp`, new `ReleaseError.WorktreeLeaseViolation`
+member) and `frob ack` (`frob.app.ack_runner.run`) -- the two remaining
+mutating entry points T-0431 had not yet covered.
+
 ## [0.53.0] - unreleased
 
 T-0517: `frob.dup._cache`'s `dup.db` gained a version fingerprint (reusing

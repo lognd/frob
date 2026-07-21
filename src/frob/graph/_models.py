@@ -87,6 +87,9 @@ class EdgeKind(StrEnum):
     TICKET = "ticket"
     TODO = "todo"
     WAIVE = "waive"
+    # T-0412: a TEMPORARY, ticket-bound, collected-before-release exception --
+    # distinct from WAIVE's PERMANENT, forever-acceptable one.
+    DEBT = "debt"
     DESCRIBES = "describes"
     TESTS = "tests"
     DECISION = "decision"
