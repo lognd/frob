@@ -4879,6 +4879,18 @@ the pre-work sweep. Updated docs/modules/dup.md's "Readable rendering,
 not literal source" section to describe the new literal-rendering
 behavior and the suggested_signature identifier-reuse rule.
 
+CAVEAT (pre-existing, not introduced by this ticket, out of T-0481's
+scope to fix): `git diff main --stat` in this worktree shows
+`src/frob/strata/_code_binding.py` and
+`tests/unit/strata/test_code_binding.py` reverting T-0416's landed
+docstring wording and regression test, even after a clean `git merge
+main` with no reported conflicts on those files. Confirmed this predates
+any change in this session -- `git diff <pre-session-WIP-commit> main`
+for those two files already showed the same divergence before I touched
+anything. Neither file is in T-0481's scope; I did not touch them. The
+coordinator should re-merge/patch main's version of those two files
+before landing this branch, or the land will silently revert T-0416.
+
 ### Changed
 ```
  src/frob/dup/_template.py | 204 +++++++++++++++++++++++++++++++++++++---------
