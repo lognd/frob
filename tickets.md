@@ -4344,9 +4344,30 @@ threat: null
 ```
 T-0506 extended COV006 with a one-hop same-file public-wrapper rescue, reducing the finding count from 98 to 89 (measured via frob check before/after on this worktree). The residual 89 are either genuinely broken frob:tests bindings needing a real bound symbol, or FP shapes not covered by the wrapper rescue (e.g. cross-file wrapper, two-hop chains, or a test calling the private symbol via an attribute/instance rather than a bare call token). Triage the residual list from a fresh frob check run and either bind real tests, fix wrong directives, or narrow to a documented remaining FP class.
 
-<!-- ticket:T-draft-5b42a1c3 -->
+<!-- ticket:T-0517 -->
 ```yaml
-id: T-draft-5b42a1c3
+id: T-0517
+title: dup.db fingerprint cache lacks version/algorithm invalidation key -- stale
+  caches silently change find_clones results
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope: []
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Incident (2026-07-21): tests/fixtures/dup_cross_lang/.frob/dup.db, an untracked leftover from a pre-T-0487 run, made the landed T-0494 cross-lang R5 tests fail on main while passing in fresh worktrees -- find_clones served 6 stale cache hits and verified 0 pairs. The graph cache.db keys its schema on a frob+grammar version fingerprint (T-0243 pattern) but dup.db does not, so any algorithm change (e.g. _KEYWORDS, r3 canonicalization) silently keeps old fingerprints. Fix: (1) key dup.db rows on the same version fingerprint and invalidate on mismatch; (2) tests must not leak dup.db into tracked fixture dirs -- point find_clones at an isolated cache in tmp_path or clean up. Scope: src/frob/dup/_legacy.py, src/frob/dup/_pipeline.py, tests/test_dup_cross_lang.py.
+
+<!-- ticket:T-0518 -->
+```yaml
+id: T-0518
 title: 'frob.dup._exhaustiveness: add DUP_CLAIMS r5/typescript entry (T-0494 found
   the proof, no claim registered)'
 state: queued
@@ -4366,9 +4387,9 @@ threat: null
 ```
 found while working T-0494: tests/test_dup_cross_lang.py now proves R5 fires cross-language for python/typescript (compute_total/computeTotal, similarity=0.88, every threshold 0.9-0.1), mirroring the r5/rust DUP_CLAIMS entry T-0487 already added (frob.dup._exhaustiveness, proof_test=tests/test_dup.py::TestCrossLanguageR5WithLet.test_r5_fires_across_languages_with_a_let_binding). No matching r5/typescript DUP_CLAIMS entry exists yet -- dup_matrix()'s r5/type3/typescript cell presumably still falls through to DUP_MATRIX_EXCUSES' generic non-python language-gap excuse, which is now stale for this cell specifically (rust already closed, typescript has a firing fixture but no registered claim). Add a DUP_CLAIMS entry for rung=r5, clone_type=3, language=typescript, proof_test=tests/test_dup_cross_lang.py::TestCrossLanguageR5NowFires.test_r5_group_fires_at_every_threshold, matching the rust entry's shape. Out of T-0494's declared scope (scope=tests/test_dup_cross_lang.py, docs/modules/dup.md -- does not include src/frob/dup/_exhaustiveness.py).
 
-<!-- ticket:T-draft-ca7de023 -->
+<!-- ticket:T-0519 -->
 ```yaml
-id: T-draft-ca7de023
+id: T-0519
 title: T-0187/T-0198 evidence test_no_clone_group_at_any_threshold does not resolve
   (COV003) after T-0494 flipped its assertion
 state: queued
