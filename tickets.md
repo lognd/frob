@@ -3965,9 +3965,9 @@ threat: null
 ```
 Split from T-0497 (too large to rush inside that ticket's remaining budget -- needs a pure-Python reference implementation designed and cross-checked, not a rushed patch). docs/audits/strata.md finding G10: FactBase.reachable/worst_age/propagated_demand are native Rust kernels (strata-core), trusted from Python with no differential or property-based test suite proving the Rust and an independent reference implementation agree on the same inputs. A subtle divergence (an off-by-one in age propagation, a wrong SCC handling, a rounding difference in demand aggregation) could silently ship undetected since only end-to-end behavioral tests exercise the combined system, not the kernel in isolation against a trusted oracle. Fix direction: a pure-Python reference implementation of at least worst_age/reachable/propagated_demand (small, deliberately naive, no perf concerns) plus a property-based (hypothesis-style, or hand-authored adversarial corpus) differential test that generates random-ish FactBase graphs and asserts the Rust kernel and the Python reference agree on every one.
 
-<!-- ticket:T-draft-7bcb1c6f -->
+<!-- ticket:T-0515 -->
 ```yaml
-id: T-draft-7bcb1c6f
+id: T-0515
 title: burn down residual 604 INV003/INV004 findings after T-0509 calibration
 state: queued
 kind: bug
@@ -3988,9 +3988,9 @@ threat: null
 ```
 T-0509 calibrated INV003/INV004: noise-stripping (fenced/inline code, links, table rows), a claim-verb requirement in the same sentence as the trigger word, INV003 scoped to INV003_SPEC_DIRS (docs/modules, docs/strata) instead of all docs/**.md, and markdown-side frob:waive support. Combined warnings dropped from 765 to 604 (INV003 88->31, INV004 677->573), measured via frob check --only invariant on this worktree before/after. 604 is still above the <30 in-ticket-burndown threshold, so this residual was NOT hand-burned down in T-0509. Next steps: bind real invariants/INV-###.md files for genuine claims, add <!-- frob:waive INV003|INV004 reason="..." --> markers for design-intent-only prose, and reword sections that used normative language loosely. INV004's 573 is the larger share (all of docs/**.md still in scope) -- consider whether INV004 also warrants directory scoping or a further claim-shape narrowing as part of this burndown.
 
-<!-- ticket:T-draft-a16d9d8f -->
+<!-- ticket:T-0516 -->
 ```yaml
-id: T-draft-a16d9d8f
+id: T-0516
 title: burn down residual 89 COV006 findings after T-0506 wrapper-reachability fix
 state: queued
 kind: bug
