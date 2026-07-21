@@ -4679,6 +4679,7 @@ scope:
 - src/frob/__main__.py
 - docs/modules/tickets.md
 - tests/test_app.py
+- tests/unit/test_app_runners_batch7.py
 scope_changes:
 - op: remove
   glob: tests/**
@@ -4690,6 +4691,13 @@ scope_changes:
   reason: T-0472 app work maps to tests/test_app.py
   actor: logan
   at: '2026-07-20'
+- op: add
+  glob: tests/unit/test_app_runners_batch7.py
+  reason: T-0455 hygiene pass pinned tests/test_app.py, a file that does not exist;
+    the real sibling convention for this CLI command (TestTicketStart) already lives
+    in tests/unit/test_app_runners_batch7.py, so TestTicketRequeue belongs there
+  actor: logan
+  at: '2026-07-21'
 evidence:
 - tests/unit/test_app_runners_batch7.py::TestTicketRequeue::test_missing_id_exits_1
 - tests/unit/test_app_runners_batch7.py::TestTicketRequeue::test_unknown_id_exits_1
@@ -5018,3 +5026,24 @@ acceptance: []
 threat: null
 ```
 make coverage runs the whole suite under coverage on every change, so the stale-stamp gate (TEST006) forces a full re-run for a one-line edit. Explore: (a) daemon-side background coverage refresh on file-change, (b) per-file/touched-set incremental coverage merged into the stamp, (c) caching unchanged modules' coverage. Goal: TEST005/TEST006 feedback in seconds, not a full suite.
+
+<!-- ticket:T-draft-d6d316c8 -->
+```yaml
+id: T-draft-d6d316c8
+title: T-0416 evidence test_nested_git_checkout_pruned_even_when_not_covered_by_exclude_globs
+  does not resolve (COV003)
+state: queued
+kind: bug
+origin: human
+created: '2026-07-21'
+blocked_by: []
+parent: null
+scope:
+- tests/unit/strata/test_code_binding.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+found while working T-0472: frob check --ticket T-0472 reports COV003 for T-0416 (already closed/done) -- its recorded evidence id tests/unit/strata/test_code_binding.py::TestBindCode::test_nested_git_checkout_pruned_even_when_not_covered_by_exclude_globs does not exist anywhere in the repo (grep -rn finds nothing), even after deleting .frob/pytest-collect.json to force a cache rebuild. Either the test was removed/renamed after T-0416 closed, or the evidence id was never real. Unrelated to T-0472's scope; filing separately per the playbook out-of-scope rule.
