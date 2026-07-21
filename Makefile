@@ -57,8 +57,28 @@ playbook:
 # makes `combine` fail with "Can't combine branch coverage data with
 # statement data". Fixture repos instead gitignore the stray `.coverage.*`
 # locally, the same way they gitignore `.frob/`.
+#
+# T-0538: `$(STAMP)`'s `uv sync` (re-run whenever pyproject.toml is newer
+# than the stamp) silently REMOVES the editable `strata_core`/`frob_core`
+# natives `make core` installed -- `uv sync` reconciles the venv against
+# only the declared dependency set, and the maturin-built natives are not
+# in it. The incident: `make coverage` ran, `uv sync` clobbered both
+# natives mid-run, and pytest then hard-failed collecting
+# tests/system/test_frob_self_model.py with 44 phantom `frob check`
+# violations (SYS004, 16 COV003, DRIFT fallout) until `make core` was
+# re-run by hand. `frob doctor` (src/frob/doctor.py) already knows how to
+# check + name this exact failure in one line, so it runs FIRST, right
+# after the stamp-guarded sync -- a missing native now fails loudly and
+# immediately (`frob doctor`'s own exit 1), before a single test collects,
+# instead of surfacing as an oblique mid-suite ModuleNotFoundError. `make
+# core` then unconditionally re-installs both natives (a from-source
+# rebuild is a cheap no-op only in wall-clock terms if unchanged -- maturin
+# still re-links -- but it is what restores what `uv sync` just removed)
+# before pytest runs at all.
 coverage: $(STAMP)
 	rm -f .coverage .coverage.*
+	$(MAKE) core
+	uv run frob doctor
 	COVERAGE_PROCESS_START=$(CURDIR)/pyproject.toml uv run pytest --cov=src/frob --cov-branch --cov-report= -q
 	uv run coverage combine
 	uv run coverage xml
@@ -89,12 +109,21 @@ coverage: $(STAMP)
 # report): a background/daemon-side refresh (the ticket's option (a)) and
 # non-python touched-set coverage (rust/strata are still measured only by
 # the full `make coverage` run) -- both are separately-scoped follow-ups.
+#
+# T-0538: this target also depends on `$(STAMP)` (`uv sync`), so it is
+# subject to the exact same natives-clobber hazard as `make coverage`
+# above whenever it takes the incremental (non-fallback) branch -- the
+# `$(MAKE) coverage` fallback branch already inherits the guard from
+# `coverage:` itself. `$(MAKE) core && uv run frob doctor || exit 1`
+# restores the natives and fails the whole recipe on one clear `frob
+# doctor` line before any pytest collection is attempted.
 BASE ?= main
 coverage-fast: $(STAMP)
 	@if [ ! -f .coverage ]; then \
 		echo "coverage-fast: no prior .coverage data to append onto -- running full make coverage"; \
 		$(MAKE) coverage; \
 	else \
+		$(MAKE) core && uv run frob doctor || exit 1; \
 		targets="$$(uv run python -c "from pathlib import Path; from frob.graph import build_graph, load_graph; from frob.testing import python_coverage_targets; root = Path('.'); cache = root / '.frob' / 'cache.db'; loaded = load_graph(cache); snap = (loaded if loaded.is_ok else build_graph(root, cache)).danger_ok; print('\n'.join(t for t in python_coverage_targets(root, snap, '$(BASE)') if t != '*'))" 2>/dev/null)"; \
 		if [ -z "$$targets" ]; then \
 			echo "coverage-fast: touched set selects no python target against $(BASE) -- nothing incremental to run"; \
