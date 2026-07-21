@@ -4887,7 +4887,7 @@ T-0327 added TreeNode.span (byte offsets) threaded through frob.lang._common.exp
 ```yaml
 id: T-0482
 title: 'WALK-lint migration: check/_python.py rglob sites'
-state: in-progress
+state: dropped
 kind: bug
 origin: human
 created: '2026-07-20'
@@ -4916,6 +4916,8 @@ acceptance: []
 threat: null
 ```
 found while working T-0471: WALK001's gate flags 3 raw traversal sites in src/frob/check/_python.py (_build_import_graph:131 scan_root.rglob('*.py') with a hand-maintained skip set duplicating frob.excludes.BUILTIN_SKIP_DIRS; _has_bind_markers:691 scan.rglob('*.py'); _run_exports:783 scan.rglob('__init__.py')) that T-0471's own declared scope (src/frob/excludes.py, src/frob/gates/, src/frob/arch/, src/frob/xref/, src/frob/vet/, docs/, tests/**) did not cover, even though the ticket body named check/_python.py as a migration target. Migrate all three to frob.excludes.iter_files (suffix='.py' / suffix=None + name filter), same shape as the arch/xref/vet migrations T-0471 landed. A prototype migration was drafted and reverted in T-0471's worktree for SCOPE001; the diff shape is straightforward (see T-0471 Done report).
+
+Dropped (2026-07-21): work already landed upstream in 428c753 (coordinator WALK001 sweep) before this ticket was picked up; verification evidence recorded below, nothing left to implement.
 
 ## Done report
 
