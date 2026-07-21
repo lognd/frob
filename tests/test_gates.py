@@ -693,6 +693,95 @@ class TestCoverageGate:
         violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert not any(v.rule == "COV003" for v in violations)
 
+    def test_cov003_passes_for_file_level_evidence(self, tmp_path: Path) -> None:
+        """T-0298: a done ticket may cite a bare test FILE as its evidence
+        (`tests/test_vet.py`, no `::`) -- root-cause of a 25-error
+        main-red incident (2026-07-19), where a refactor touching ~20
+        files recorded exactly this shape and COV003 could never resolve
+        it. Resolves iff >=1 collected node id lives under that file."""
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(
+            tickets={
+                "T-0002": _ticket(
+                    ticket_id="T-0002",
+                    state=TicketState.DONE,
+                    evidence=("tests/test_vet.py",),
+                )
+            }
+        )
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(
+            node_ids=frozenset(
+                {"tests/test_vet.py::test_a", "tests/test_vet.py::test_b"}
+            )
+        )
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert not any(v.rule == "COV003" for v in violations)
+
+    def test_cov003_passes_for_directory_level_evidence(self, tmp_path: Path) -> None:
+        """T-0298: a bare directory (`tests/unit/deploy`, no `::`) resolves
+        the same way a file does -- any collected node id under it counts."""
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(
+            tickets={
+                "T-0002": _ticket(
+                    ticket_id="T-0002",
+                    state=TicketState.DONE,
+                    evidence=("tests/unit/deploy",),
+                )
+            }
+        )
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(
+            node_ids=frozenset({"tests/unit/deploy/test_x.py::test_y"})
+        )
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert not any(v.rule == "COV003" for v in violations)
+
+    def test_cov003_rejects_empty_directory_level_evidence(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0298: file-/directory-level resolution must NOT be vacuous --
+        a path with zero collected node ids under it (nothing landed there,
+        or the directory does not correspond to any real test) still
+        fails COV003, honest per the ticket's requirement."""
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(
+            tickets={
+                "T-0002": _ticket(
+                    ticket_id="T-0002",
+                    state=TicketState.DONE,
+                    evidence=("tests/unit/nonexistent",),
+                )
+            }
+        )
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(
+            node_ids=frozenset({"tests/unit/deploy/test_x.py::test_y"})
+        )
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert any(v.rule == "COV003" for v in violations)
+
+    def test_cov003_prefers_node_level_over_path_level(self, tmp_path: Path) -> None:
+        """T-0298: node-level resolution stays available and preferred --
+        a precise `path::func` evidence id still resolves exactly as
+        before, unaffected by the new path-level fallback existing."""
+        snap = _snapshot(tmp_path)
+        node = "tests/test_vet.py::test_a"
+        queue = TicketQueue(
+            tickets={
+                "T-0002": _ticket(
+                    ticket_id="T-0002", state=TicketState.DONE, evidence=(node,)
+                )
+            }
+        )
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(
+            node_ids=frozenset({node, "tests/test_vet.py::test_b"})
+        )
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert not any(v.rule == "COV003" for v in violations)
+
     def test_cov003_passes_for_rust_evidence_id(self, tmp_path: Path) -> None:
         """T-0092: a done ticket citing a cargo test id resolves against
         `collect_rust_tests`' node ids the same way a pytest id resolves
