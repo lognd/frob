@@ -4444,7 +4444,7 @@ CHANGELOG updated, uv.lock refreshed, `frob release stamp` run.
 id: T-0510
 title: add missing CWE-916/1321/1333/601/1336 WeaknessEntry rows and cve-fingerprint
   needles
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-21'
