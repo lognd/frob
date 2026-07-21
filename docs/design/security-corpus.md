@@ -139,12 +139,16 @@ performed here.
 
 ## 4. CVE Fingerprint Classes (canonical vulnerable-code patterns)
 
-Extends `CVE_FINGERPRINTS` (`src/frob/strata/_cve_fingerprint.py`, 9
-entries, all verified live against NVD/vendor advisories). Table below
-repeats the 9 in-repo entries for completeness, then adds verified
-additional classes the repo's own docstring names as deliberately deferred
-(TLS verify=False / CWE-295, weak-hash password storage / CWE-916, XXE /
-CWE-611) plus other canonical classes outside its curated set.
+Extends `CVE_FINGERPRINTS` (`src/frob/strata/_cve_fingerprint.py`, 18
+entries as of T-0510, all verified live against NVD/vendor advisories).
+Table below repeats the 9 original in-repo entries for completeness; the
+remaining 9 (TLS verify=False / CWE-295, XXE / CWE-611, weak-hash password
+storage / CWE-916, prototype pollution / CWE-1321, ReDoS / CWE-1333, open
+redirect / CWE-601, SSTI / CWE-1336, plus the two extra FP-TLS-VERIFY-*
+needles) have all shipped -- T-0188/T-0189 landed CWE-295/611 earlier,
+T-0510 landed the remaining five. Only the Log4Shell/JNDI class (table
+4b) stays a disclosed non-shipped gap (no equivalent construct in any
+scanned language).
 
 ### 4a. In-repo (verified against the file above; all citations already
 primary-sourced in the code)
@@ -161,22 +165,21 @@ primary-sourced in the code)
 | FP-CODEEVAL-TEMPLATE-001 | CWE-94 | CVE-2021-23358 (underscore.js template) | `new Function(` w/ configurable string | needle-detectable |
 | FP-HARDCODED-CRED-001 | CWE-798 | CVE-2015-7755 (Juniper ScreenOS backdoor) | literal `password = "..."` | needle-detectable |
 
-### 4b. Verified additions -- classes the repo names as deferred, each now
-with an independently verified primary-source exemplar (each still needs a
-matching `WeaknessEntry` before it can join `std.cwe`'s drift-lock per the
-repo's own CVEFP001 rule; presented here as the missing citation, not as a
-ready-to-ship fingerprint):
+### 4b. Verified additions -- classes the repo previously named as
+deferred; all but the Log4Shell/JNDI row have since shipped a matching
+`WeaknessEntry` + `CveFingerprint` (T-0188/T-0189 for CWE-295/611,
+T-0510 for the remaining five):
 
-| Class | CWE (needs WeaknessEntry) | Exemplar CVE (verified) | Pattern | Source |
+| Class | CWE | Exemplar CVE (verified) | Pattern | Status |
 |---|---|---|---|---|
-| TLS certificate verification disabled | CWE-295 | CVE-2014-1266 (Apple "goto fail" -- unreachable cert-chain validation code, not literally `verify=False` but the canonical "TLS verification silently skipped" exemplar); also CVE-2021-3572 (`requests`/`urllib3` docs cite `verify=False` misuse pattern directly, no single CVE ID for the pattern itself) | `verify=False`, `ssl._create_unverified_context()`, `rejectUnauthorized: false` | https://nvd.nist.gov/vuln/detail/CVE-2014-1266 |
-| Weak/fast-hash password storage | CWE-916 | CVE-2012-3287 (vBulletin, unsalted MD5 password hashes) | `hashlib.md5(password)`, `hashlib.sha1(password)` used for credential storage | https://nvd.nist.gov/vuln/detail/CVE-2012-3287 ; canonical guidance: OWASP Password Storage Cheat Sheet |
-| XML External Entity (XXE) | CWE-611 | CVE-2014-3660 (Google Web Toolkit XXE via unconfigured `DocumentBuilderFactory`) | `XMLParser(resolve_entities=True)`, `DocumentBuilderFactory` w/o `setFeature(... external-general-entities, false)` | https://nvd.nist.gov/vuln/detail/CVE-2014-3660 ; https://cwe.mitre.org/data/definitions/611.html |
-| Prototype pollution | CWE-1321 (not yet in any repo catalog) | CVE-2019-10744 (lodash `_.defaultsDeep` merge into `Object.prototype`) | unguarded recursive merge of attacker-controlled key incl. `__proto__` | https://nvd.nist.gov/vuln/detail/CVE-2019-10744 ; https://cwe.mitre.org/data/definitions/1321.html |
-| ReDoS (regex denial of service) | CWE-1333 (not yet in any repo catalog) | CVE-2018-11698 (js-yaml Cloudflare-reported catastrophic-backtracking regex triggering ReDoS on untrusted input) | user-controlled regex construction, or a fixed regex with nested-quantifier backtracking applied to attacker-influenced input | https://cwe.mitre.org/data/definitions/1333.html |
-| Open redirect | CWE-601 (not yet in any repo catalog) | CVE-2014-4021 (Django's now-deprecated `is_safe_url` bypass, host-header-derived redirect target) | request-influenced value passed directly into a redirect Location header/response | https://cwe.mitre.org/data/definitions/601.html |
-| Log4Shell-class JNDI lookup injection | CWE-917 | CVE-2021-44228 (Log4Shell, CVSS 10.0) | `${jndi:ldap://...}` interpolated into a logged string, resolved by a lookup-substitution engine | https://nvd.nist.gov/vuln/detail/CVE-2021-44228 -- Java-specific; repo's own docstring already correctly excludes this (no JNDI-equivalent construct in python/typescript/rust/c-cpp), reconfirmed here rather than re-litigated |
-| SSTI (server-side template injection) | CWE-1336 (not yet in any repo catalog) | CVE-2019-8331 (Bootstrap tooltip/popover XSS-adjacent) is NOT SSTI; correct SSTI exemplar: CVE-2016-4977 (Spring Security OAuth SpEL injection via error view) | user-controlled string rendered as a template body (`render_template_string(user_input)`, Jinja2/Flask) rather than as template data | https://nvd.nist.gov/vuln/detail/CVE-2016-4977 ; https://cwe.mitre.org/data/definitions/1336.html |
+| TLS certificate verification disabled | CWE-295 | CVE-2014-1266 (Apple "goto fail" -- unreachable cert-chain validation code, not literally `verify=False` but the canonical "TLS verification silently skipped" exemplar); also CVE-2021-3572 (`requests`/`urllib3` docs cite `verify=False` misuse pattern directly, no single CVE ID for the pattern itself) | `verify=False`, `ssl._create_unverified_context()`, `rejectUnauthorized: false` | shipped (FP-TLS-VERIFY-001/002/003, T-0188) |
+| Weak/fast-hash password storage | CWE-916 | CVE-2012-3287 (vBulletin, unsalted MD5 password hashes) | `hashlib.md5(password)`, `hashlib.sha1(password)` used for credential storage | shipped (FP-WEAKHASH-PASSWORD-001, T-0510) |
+| XML External Entity (XXE) | CWE-611 | CVE-2014-3660 (Google Web Toolkit XXE via unconfigured `DocumentBuilderFactory`) | `XMLParser(resolve_entities=True)`, `DocumentBuilderFactory` w/o `setFeature(... external-general-entities, false)` | shipped (FP-XXE-PARSE-001, T-0189) |
+| Prototype pollution | CWE-1321 | CVE-2019-10744 (lodash `_.defaultsDeep` merge into `Object.prototype`) | unguarded recursive merge of attacker-controlled key incl. `__proto__` | shipped (FP-PROTO-POLLUTION-001, T-0510) |
+| ReDoS (regex denial of service) | CWE-1333 | CVE-2018-11698 (js-yaml Cloudflare-reported catastrophic-backtracking regex triggering ReDoS on untrusted input) | user-controlled regex construction, or a fixed regex with nested-quantifier backtracking applied to attacker-influenced input | shipped (FP-REDOS-REGEX-001, T-0510) |
+| Open redirect | CWE-601 | CVE-2014-4021 (Django's now-deprecated `is_safe_url` bypass, host-header-derived redirect target) | request-influenced value passed directly into a redirect Location header/response | shipped (FP-OPEN-REDIRECT-001, T-0510) |
+| Log4Shell-class JNDI lookup injection | CWE-917 | CVE-2021-44228 (Log4Shell, CVSS 10.0) | `${jndi:ldap://...}` interpolated into a logged string, resolved by a lookup-substitution engine | https://nvd.nist.gov/vuln/detail/CVE-2021-44228 -- Java-specific; repo's own docstring already correctly excludes this (no JNDI-equivalent construct in python/typescript/rust/c-cpp), reconfirmed here rather than re-litigated -- NOT shipped, disclosed gap only |
+| SSTI (server-side template injection) | CWE-1336 | CVE-2019-8331 (Bootstrap tooltip/popover XSS-adjacent) is NOT SSTI; correct SSTI exemplar: CVE-2016-4977 (Spring Security OAuth SpEL injection via error view) | user-controlled string rendered as a template body (`render_template_string(user_input)`, Jinja2/Flask) rather than as template data | shipped (FP-SSTI-TEMPLATE-001, T-0510) |
 
 ---
 
@@ -249,7 +252,7 @@ not silently skipped nor fabricated.
 |---|---|---|---|---|
 | CWE Top 25 (2025) | 25 | 8 (CWE-79/89/78/94/502/918/22-partial/639) | 12 (memory-safety cluster + authz cluster + CWE-20/77/306) | 5 net-new-to-2025 uncataloged (CWE-120/121/122/284/770) + CWE-200 |
 | OWASP Top 10 (2021) | 10 | 4 categories with partial `WeaknessEntry` coverage (A01 partial, A03, A08 partial, A10) + A06 in separate vet subsystem | 1 (A04, methodology category) | 5 with zero repo representation (A02, A05 non-XXE, A07, A09, and A01/A08's uncovered member CWEs) |
-| CVE fingerprint classes | 9 in-repo + 7 verified-addition candidates = 16 total surveyed | 9 needle-detectable, shipped | -- | 7 named with verified exemplar CVE, blocked on a missing `WeaknessEntry` (3 the repo itself already discloses: CWE-295/916/611; 4 newly surveyed here: CWE-1321/1333/601/1336) |
+| CVE fingerprint classes | 18 in-repo + 1 disclosed-non-shipped (Log4Shell/JNDI) = 19 total surveyed | 18 needle-detectable, shipped | -- | 1 (Log4Shell/JNDI -- no equivalent construct in any scanned language) |
 | Threat-modeling frameworks | 7 surveyed (STRIDE, LINDDUN, PASTA, attack trees, ATT&CK, CAPEC, +CWE-1000 as a structural view) | 0 (all methodology-level, not-checkable/advisory) | 7 | 0 (none claimed as checkable that isn't) |
 | Foundational canon | 7 surveyed | 0 directly checkable; 2 (Rule of Two, Saltzer&Schroeder fail-safe/least-privilege) named as candidate future checks | 5 | 1 clear gap (SLSA / supply-chain provenance family entirely unmodeled) |
 

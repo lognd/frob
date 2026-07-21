@@ -953,6 +953,77 @@ QUALITY_CATALOG: tuple[WeaknessEntry, ...] = (
         mitigation="certificate_verification_enabled",
         rung=Rung.L4,
     ),
+    # frob:ticket T-0510
+    WeaknessEntry(
+        id="CWE-916",
+        title="Use of Password Hash With Insufficient Computational Effort",
+        cite="https://cwe.mitre.org/data/definitions/916.html",
+        family="security",
+        # T-0510 (following CWE-295's precedent immediately above): a
+        # fast-hash-for-password-storage precondition (hashlib.md5/sha1
+        # applied to a credential) is not a `may`-capability
+        # auto-instantiation shape either -- fired exclusively by the
+        # `std.cve` fingerprint layer's FP-WEAKHASH-* needle, same
+        # "citation-only, discharge lives elsewhere" shape.
+        capability_kind=None,
+        mitigation="strong_password_hash",
+        rung=Rung.L4,
+    ),
+    # frob:ticket T-0510
+    WeaknessEntry(
+        id="CWE-1321",
+        title="Improperly Controlled Modification of Object Prototype "
+        "Attributes ('Prototype Pollution')",
+        cite="https://cwe.mitre.org/data/definitions/1321.html",
+        family="security",
+        capability_kind=None,  # T-0510: unguarded recursive merge into an
+        # object touching __proto__/constructor/prototype -- a JS/TS-
+        # specific object-shape precondition with no `may` capability join;
+        # discharged by the `std.cve` fingerprint layer only.
+        mitigation="prototype_pollution_guard",
+        rung=Rung.L4,
+    ),
+    # frob:ticket T-0510
+    WeaknessEntry(
+        id="CWE-1333",
+        title="Inefficient Regular Expression Complexity (ReDoS)",
+        cite="https://cwe.mitre.org/data/definitions/1333.html",
+        family="security",
+        capability_kind=None,  # T-0510: catastrophic-backtracking regex
+        # applied to attacker-influenced input -- a pattern-shape
+        # precondition, not a `may` capability; discharged by the
+        # `std.cve` fingerprint layer only.
+        mitigation="redos_safe_regex",
+        rung=Rung.L4,
+    ),
+    # frob:ticket T-0510
+    WeaknessEntry(
+        id="CWE-601",
+        title="URL Redirection to Untrusted Site ('Open Redirect')",
+        cite="https://cwe.mitre.org/data/definitions/601.html",
+        family="security",
+        capability_kind=None,  # T-0510: a request-influenced value reaching
+        # a redirect Location header unvalidated -- a flow-to-redirect-sink
+        # precondition, capability_kind=None the same as CWE-22's
+        # flow-to-filesystem-path-sink precedent above; discharged by the
+        # `std.cve` fingerprint layer only.
+        mitigation="redirect_target_allowlisted",
+        rung=Rung.L4,
+    ),
+    # frob:ticket T-0510
+    WeaknessEntry(
+        id="CWE-1336",
+        title="Improper Neutralization of Special Elements Used in a "
+        "Template Engine (Server-Side Template Injection)",
+        cite="https://cwe.mitre.org/data/definitions/1336.html",
+        family="security",
+        capability_kind=None,  # T-0510: user-controlled string rendered as
+        # a template BODY rather than template data -- a flow-to-template-
+        # sink precondition, no `may` capability join; discharged by the
+        # `std.cve` fingerprint layer only.
+        mitigation="template_input_not_body",
+        rung=Rung.L4,
+    ),
 )
 
 #: T-0171: the union sink taxonomy across EVERY family catalog this module

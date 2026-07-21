@@ -28,28 +28,20 @@ memory) for the pattern class it fingerprints. A handful of the ticket's
 suggested example classes are deliberately NOT shipped here rather than
 force-fit with a low-confidence or fabricated citation:
 
-- Weak-hash password storage (CWE-916): no `WeaknessEntry` for CWE-916
-  exists in ANY catalog tuple yet
-  (`CWE_CATALOG`/`CWE_TOP_25_CATALOG`/`QUALITY_CATALOG`) -- shipping a
-  fingerprint for it would fail `check_fingerprint_catalog_drift`
-  outright by this module's OWN drift-lock rule, confirming it must wait
-  for a `WeaknessEntry` (a separate, catalog-scoped ticket) before a
-  fingerprint can honestly join it. TLS `verify=False` (CWE-295, T-0188 ->
-  `QUALITY_CATALOG`) and XML external entities (CWE-611, T-0189 ->
-  `CWE_CATALOG`) were both in this same disclosed-gap bucket until their
-  `WeaknessEntry` rows landed -- the FP-TLS-VERIFY-* and FP-XXE-PARSE-*
-  entries below are those follow-ups.
 - JNDI-style lookup injection (the Log4Shell class): Log4Shell is a
   Java/JNDI-specific shape with no equivalent construct in any of the four
   languages `frob.vet._capability` scans (python/typescript/rust/c-cpp) --
   a fingerprint with no genuine needle in a scanned language would be
   undetectable data, not a real pattern-match capability.
 
-Thirteen fingerprints ship, each with a needle in a language the vet
-scanner actually covers. Weak-hash password storage (CWE-916) remains
-tracked as an honest, disclosed gap (this docstring) rather than silently
-dropped; a follow-up ticket adding the missing CWE-916 `WeaknessEntry`
-row would unblock it.
+Weak-hash password storage (CWE-916), TLS `verify=False` (CWE-295,
+T-0188), XML external entities (CWE-611, T-0189), prototype pollution
+(CWE-1321), ReDoS (CWE-1333), open redirect (CWE-601), and SSTI
+(CWE-1336) were all in the disclosed-gap bucket above until their
+`WeaknessEntry` rows landed (`QUALITY_CATALOG`/`CWE_CATALOG` in
+`_threat.py`) -- CWE-916/1321/1333/601/1336 landed via T-0510, the last
+five follow-ups this docstring named. Eighteen fingerprints ship now,
+each with a needle in a language the vet scanner actually covers.
 """
 
 from __future__ import annotations
@@ -292,6 +284,89 @@ CVE_FINGERPRINTS: tuple[CveFingerprint, ...] = (
         "no_network=True, load_dtd=False) explicitly, and for xml.sax call "
         "parser.setFeature(xml.sax.handler.feature_external_ges, False) -- "
         "or parse with defusedxml instead of the stdlib/lxml parser directly",
+    ),
+    # frob:ticket T-0510
+    CveFingerprint(
+        id="FP-WEAKHASH-PASSWORD-001",
+        title="fast/weak hash (md5/sha1) applied to a password value",
+        cve=("CVE-2012-3287",),  # vBulletin: passwords stored as unsalted
+        # MD5 hashes, letting an attacker who obtains the hash database
+        # recover plaintext credentials via off-the-shelf cracking/rainbow
+        # tables -- the canonical "fast general-purpose hash used for
+        # credential storage" exemplar this needle class targets.
+        cwe_id="CWE-916",
+        language="python",
+        needles=("hashlib.md5(password", "hashlib.sha1(password"),
+        remediation="use a purpose-built slow password hash (argon2, "
+        "bcrypt, scrypt, or hashlib.pbkdf2_hmac with a high iteration "
+        "count) -- never a fast general-purpose digest (md5/sha1/sha256) "
+        "for credential storage",
+    ),
+    # frob:ticket T-0510
+    CveFingerprint(
+        id="FP-PROTO-POLLUTION-001",
+        title="recursive object merge writing into __proto__/constructor.prototype",
+        cve=("CVE-2019-10744",),  # lodash < 4.17.12: _.defaultsDeep merged
+        # an attacker-controlled key path (including "__proto__") straight
+        # into the merge target, letting a crafted payload pollute
+        # Object.prototype for every object in the process.
+        cwe_id="CWE-1321",
+        language="typescript",
+        needles=("__proto__", "defaultsDeep("),
+        remediation="reject/strip __proto__, constructor, and prototype "
+        "keys before any recursive merge of attacker-controlled data, or "
+        "use a merge utility with prototype-pollution hardening "
+        "(lodash >= 4.17.12's own fix, or Object.create(null) targets)",
+    ),
+    # frob:ticket T-0510
+    CveFingerprint(
+        id="FP-REDOS-REGEX-001",
+        title="dynamically constructed regex applied to untrusted input",
+        cve=("CVE-2018-11698",),  # js-yaml: a catastrophic-backtracking
+        # regex in the YAML timestamp/reference resolver let an attacker-
+        # controlled document body hang the parsing process, a ReDoS
+        # denial of service from a fixed-but-vulnerable regex shape.
+        cwe_id="CWE-1333",
+        language="typescript",
+        needles=("new RegExp(",),
+        remediation="avoid constructing a RegExp from runtime/request-"
+        "influenced text; if unavoidable, validate/escape the input and "
+        "bound match complexity (a linear-time engine, or a hard timeout) "
+        "before applying it to untrusted text",
+    ),
+    # frob:ticket T-0510
+    CveFingerprint(
+        id="FP-OPEN-REDIRECT-001",
+        title="redirect target built directly from a request-controlled value",
+        cve=("CVE-2014-4021",),  # Django's now-deprecated is_safe_url()
+        # could be bypassed via a host-header-derived value, letting a
+        # request-influenced target reach a redirect Location header
+        # unvalidated -- the canonical open-redirect exemplar.
+        cwe_id="CWE-601",
+        language="python",
+        needles=("redirect(request.GET", "redirect(request.args"),
+        remediation="validate a redirect target against an explicit "
+        "allowlist of same-origin paths before issuing the redirect -- "
+        "never pass a request-controlled value straight into a redirect "
+        "call",
+    ),
+    # frob:ticket T-0510
+    CveFingerprint(
+        id="FP-SSTI-TEMPLATE-001",
+        title="request-controlled string rendered as a template body",
+        cve=("CVE-2016-4977",),  # Spring Security OAuth: an error view
+        # rendered an attacker-controlled parameter as a Spring Expression
+        # Language (SpEL) template body rather than as data, a server-side
+        # template injection RCE primitive -- the canonical "user input
+        # becomes the template, not the template's data" exemplar this
+        # needle class (render_template_string) reproduces in Python/Jinja2.
+        cwe_id="CWE-1336",
+        language="python",
+        needles=("render_template_string(",),
+        remediation="never pass a request-influenced string as the "
+        "template BODY (render_template_string); render a fixed, "
+        "source-controlled template file and pass untrusted values only "
+        "as auto-escaped template DATA/context variables",
     ),
 )
 

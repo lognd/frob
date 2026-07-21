@@ -17,6 +17,22 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.54.0] - unreleased
+
+T-0510: `frob.strata._threat` gained five `WeaknessEntry` rows in
+`QUALITY_CATALOG` (CWE-916 weak-hash password storage, CWE-1321
+prototype pollution, CWE-1333 ReDoS, CWE-601 open redirect, CWE-1336
+SSTI), each catalog-only (`capability_kind=None`, discharged by the
+`std.cve` fingerprint layer, mirroring CWE-295's precedent) -- previously
+disclosed gaps `_cve_fingerprint.py`'s own docstring named as blocked on
+a missing `WeaknessEntry`. `frob.strata._cve_fingerprint.CVE_FINGERPRINTS`
+gained a matching real-CVE-cited needle per CWE (FP-WEAKHASH-PASSWORD-001,
+FP-PROTO-POLLUTION-001, FP-REDOS-REGEX-001, FP-OPEN-REDIRECT-001,
+FP-SSTI-TEMPLATE-001), 13 -> 18 entries. `docs/design/registry/
+weaknesses.yaml`'s five matching `SEC-CVE-FINGERPRINT-CWE-*` rows flipped
+from `disposition: deferred:T-0510` to `handled_by:SEC-CVE-FINGERPRINT-001`
+with the new fingerprint ids cross-referenced.
+
 ## [0.53.0] - unreleased
 
 T-0517: `frob.dup._cache`'s `dup.db` gained a version fingerprint (reusing

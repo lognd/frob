@@ -243,6 +243,28 @@ class TestQualityFamilies:
         for entry in QUALITY_OUT_OF_SCOPE:
             assert entry.reason
 
+    # frob:ticket T-0510
+    # frob:tests src/frob/strata/_threat.py::QUALITY_CATALOG kind="unit"
+    @pytest.mark.parametrize(
+        "cwe_id",
+        ["CWE-916", "CWE-1321", "CWE-1333", "CWE-601", "CWE-1336"],
+    )
+    def test_t0510_entries_are_cataloged_with_no_capability_kind_or_view(
+        self, cwe_id: str
+    ):
+        # T-0510: the five previously-disclosed-gap CWEs (weak-hash,
+        # prototype pollution, ReDoS, open redirect, SSTI) follow CWE-295's
+        # exact precedent immediately above -- catalog-only entries,
+        # discharged solely by the `std.cve` fingerprint layer, no `may`
+        # capability join and no default-view membership.
+        entry = next(e for e in QUALITY_CATALOG if e.id == cwe_id)
+        assert entry.family == "security"
+        assert entry.capability_kind is None
+        assert entry.id not in VIEWS["owasp-top-10"]
+        assert entry.id not in {e.id for e in CWE_CATALOG}
+        assert entry.id not in CWE_TOP_25_VIEWS["cwe-top-25"]
+        assert all(entry.id not in members for members in QUALITY_VIEWS.values())
+
 
 # frob:ticket T-0143
 # frob:ticket T-0345

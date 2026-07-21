@@ -5,11 +5,14 @@ fingerprints-code-level-pattern-catalog-t-0153."""
 
 from __future__ import annotations
 
+import pytest
+
 from frob.strata._cve_fingerprint import (
     CVE_FINGERPRINT_VIEWS,
     CVE_FINGERPRINTS,
     CveFingerprint,
     check_fingerprint_catalog_drift,
+    scan_text_for_fingerprints,
 )
 from frob.strata._threat import (
     CWE_CATALOG,
@@ -124,3 +127,77 @@ class TestXxeFingerprint:
         assert result.is_ok
         flagged = {v.fingerprint_id for v in result.danger_ok}
         assert "FP-XXE-PARSE-001" not in flagged
+
+
+# frob:ticket T-0510
+class TestT0510Fingerprints:
+    """T-0510: the five previously disclosed-gap fingerprints (weak-hash,
+    prototype pollution, ReDoS, open redirect, SSTI) each join a NEW
+    `WeaknessEntry` this ticket also added to `QUALITY_CATALOG` --
+    counterexample-first: prove each joins its cwe_id AND actually fires
+    on its own needle (not just data-shape correct)."""
+
+    _EXPECTED = {
+        "FP-WEAKHASH-PASSWORD-001": ("CWE-916", "python", "CVE-2012-3287"),
+        "FP-PROTO-POLLUTION-001": ("CWE-1321", "typescript", "CVE-2019-10744"),
+        "FP-REDOS-REGEX-001": ("CWE-1333", "typescript", "CVE-2018-11698"),
+        "FP-OPEN-REDIRECT-001": ("CWE-601", "python", "CVE-2014-4021"),
+        "FP-SSTI-TEMPLATE-001": ("CWE-1336", "python", "CVE-2016-4977"),
+    }
+
+    # frob:tests src/frob/strata/_cve_fingerprint.py::CVE_FINGERPRINTS kind="unit"
+    @pytest.mark.parametrize("fingerprint_id", list(_EXPECTED))
+    def test_entry_exists_and_joins_expected_cwe(self, fingerprint_id: str):
+        expected_cwe, expected_language, expected_cve = self._EXPECTED[fingerprint_id]
+        entry = next((e for e in CVE_FINGERPRINTS if e.id == fingerprint_id), None)
+        assert entry is not None
+        assert entry.cwe_id == expected_cwe
+        assert entry.language == expected_language
+        assert entry.cve == (expected_cve,)
+
+    # frob:tests src/frob/strata/_cve_fingerprint.py::check_fingerprint_catalog_drift kind="unit"
+    def test_all_five_resolve_against_the_default_joined_catalog(self):
+        result = check_fingerprint_catalog_drift()
+        assert result.is_ok
+        flagged = {v.fingerprint_id for v in result.danger_ok}
+        assert flagged.isdisjoint(self._EXPECTED)
+
+    # frob:tests src/frob/strata/_cve_fingerprint.py::scan_text_for_fingerprints kind="unit"
+    def test_weakhash_needle_fires_on_smelly_python(self):
+        hits = scan_text_for_fingerprints(
+            "digest = hashlib.md5(password.encode()).hexdigest()", "python"
+        )
+        assert any(h.fingerprint_id == "FP-WEAKHASH-PASSWORD-001" for h in hits)
+
+    # frob:tests src/frob/strata/_cve_fingerprint.py::scan_text_for_fingerprints kind="unit"
+    def test_weakhash_needle_does_not_fire_on_clean_python(self):
+        hits = scan_text_for_fingerprints("digest = argon2.hash(password)", "python")
+        assert not any(h.fingerprint_id == "FP-WEAKHASH-PASSWORD-001" for h in hits)
+
+    # frob:tests src/frob/strata/_cve_fingerprint.py::scan_text_for_fingerprints kind="unit"
+    def test_proto_pollution_needle_fires_on_smelly_typescript(self):
+        hits = scan_text_for_fingerprints(
+            'merged[key] = obj["__proto__"];', "typescript"
+        )
+        assert any(h.fingerprint_id == "FP-PROTO-POLLUTION-001" for h in hits)
+
+    # frob:tests src/frob/strata/_cve_fingerprint.py::scan_text_for_fingerprints kind="unit"
+    def test_redos_needle_fires_on_smelly_typescript(self):
+        hits = scan_text_for_fingerprints(
+            "const re = new RegExp(userInput);", "typescript"
+        )
+        assert any(h.fingerprint_id == "FP-REDOS-REGEX-001" for h in hits)
+
+    # frob:tests src/frob/strata/_cve_fingerprint.py::scan_text_for_fingerprints kind="unit"
+    def test_open_redirect_needle_fires_on_smelly_python(self):
+        hits = scan_text_for_fingerprints(
+            "return redirect(request.GET.get('next'))", "python"
+        )
+        assert any(h.fingerprint_id == "FP-OPEN-REDIRECT-001" for h in hits)
+
+    # frob:tests src/frob/strata/_cve_fingerprint.py::scan_text_for_fingerprints kind="unit"
+    def test_ssti_needle_fires_on_smelly_python(self):
+        hits = scan_text_for_fingerprints(
+            "return render_template_string(user_supplied)", "python"
+        )
+        assert any(h.fingerprint_id == "FP-SSTI-TEMPLATE-001" for h in hits)

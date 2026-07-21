@@ -6792,8 +6792,9 @@ other_weakness_framework_entries:
   framework: cve-fingerprint
   source_doc: docs/design/security-corpus.md
   checkability: advisory
-  disposition: deferred:T-0510
-  cross_refs: []
+  disposition: handled_by:SEC-CVE-FINGERPRINT-001
+  cross_refs:
+  - FP-WEAKHASH-PASSWORD-001
 - id: SEC-CVE-FINGERPRINT-CWE-611-XXE
   name: CWE-611-XXE
   framework: cve-fingerprint
@@ -6807,29 +6808,33 @@ other_weakness_framework_entries:
   framework: cve-fingerprint
   source_doc: docs/design/security-corpus.md
   checkability: advisory
-  disposition: deferred:T-0510
-  cross_refs: []
+  disposition: handled_by:SEC-CVE-FINGERPRINT-001
+  cross_refs:
+  - FP-PROTO-POLLUTION-001
 - id: SEC-CVE-FINGERPRINT-CWE-1333-REDOS
   name: CWE-1333-REDOS
   framework: cve-fingerprint
   source_doc: docs/design/security-corpus.md
   checkability: advisory
-  disposition: deferred:T-0510
-  cross_refs: []
+  disposition: handled_by:SEC-CVE-FINGERPRINT-001
+  cross_refs:
+  - FP-REDOS-REGEX-001
 - id: SEC-CVE-FINGERPRINT-CWE-601-OPEN-REDIRECT
   name: CWE-601-OPEN-REDIRECT
   framework: cve-fingerprint
   source_doc: docs/design/security-corpus.md
   checkability: advisory
-  disposition: deferred:T-0510
-  cross_refs: []
+  disposition: handled_by:SEC-CVE-FINGERPRINT-001
+  cross_refs:
+  - FP-OPEN-REDIRECT-001
 - id: SEC-CVE-FINGERPRINT-CWE-1336-SSTI
   name: CWE-1336-SSTI
   framework: cve-fingerprint
   source_doc: docs/design/security-corpus.md
   checkability: advisory
-  disposition: deferred:T-0510
-  cross_refs: []
+  disposition: handled_by:SEC-CVE-FINGERPRINT-001
+  cross_refs:
+  - FP-SSTI-TEMPLATE-001
 - id: SEC-THREAT-FRAMEWORK-STRIDE
   name: STRIDE
   framework: threat-framework

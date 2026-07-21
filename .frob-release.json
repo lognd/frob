@@ -692,7 +692,7 @@
     "src/frob/strata/_compliance.py::evaluate_compliance": "93d56bb4939a20f9d396dd3ea1bbdaee22b40b56e392434b329e623e68c70b1d",
     "src/frob/strata/_crash.py::CrashContractReport": "6c9c8747435f85448380445025c63928b40558a30472c7b743537dbfefb92a8a",
     "src/frob/strata/_crash.py::evaluate_crash_contracts": "04377ca7c4e0b3f24305f3424333f33c760a8871b0af4bc3cc101998c5492f23",
-    "src/frob/strata/_cve_fingerprint.py::CVE_FINGERPRINTS": "d13787734b67e568b66a2ec8224f70f3aa115e4fc991d535840daed61de0597a",
+    "src/frob/strata/_cve_fingerprint.py::CVE_FINGERPRINTS": "2c0d6197672a4f2b934f1cf97cbb63ccf8f36725b6010283139ce5ac2fa3b4f4",
     "src/frob/strata/_cve_fingerprint.py::CVE_FINGERPRINT_VIEWS": "7c8092fc383a49d1d019b6d6d4fe333d34cd038cda4d57638993bb74cce5d4db",
     "src/frob/strata/_cve_fingerprint.py::CveFingerprint": "f2e5a49737e45375ef573724a99619ea994c71f6e4ff5ec8b4f2f721ecc41478",
     "src/frob/strata/_cve_fingerprint.py::FingerprintHit": "5be80971339848d571d3b08a360aa78dc88336bc302fef002605671427ce4da4",
@@ -863,7 +863,7 @@
     "src/frob/strata/_threat.py::CWE_TOP_25_VIEWS": "287d46a6d9a1f99aef10839458c8ede72466383cb8ab92c8d36cab2c98adf245",
     "src/frob/strata/_threat.py::DEFAULT_BENIGN_CAPABILITIES": "71799e3ac9220c1515ba633cd9f2afa7985b1f7f9f60543b960bf6b0599a5fd7",
     "src/frob/strata/_threat.py::OutOfScopeEntry": "62b72243142509ba3b79935ce59db1477cd320076b12f390a357a87984aec455",
-    "src/frob/strata/_threat.py::QUALITY_CATALOG": "513bdcb44f7bdbd825188b684bdbca900b6bc1c337c212a61bcaacc79c1d6fd1",
+    "src/frob/strata/_threat.py::QUALITY_CATALOG": "2c9090d5d1313b69d5d34421a24ab6e993a6376a8dda56dd41333618704522c7",
     "src/frob/strata/_threat.py::QUALITY_OUT_OF_SCOPE": "a2b1805f68803d2af9c6496866fbc8b09cfc04ade925ab387c089781040bd358",
     "src/frob/strata/_threat.py::QUALITY_VIEWS": "c89b4c9531cb36b2724e9a2937a711cbd2359eff680d48cf0c3b2c84128ad85e",
     "src/frob/strata/_threat.py::ThreatReport": "94ed4f10cc014e0face02567d3205931b1e8aae63e6f0323840d7a2edcb2f71c",
@@ -1068,5 +1068,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.53.0"
+  "version": "0.54.0"
 }
