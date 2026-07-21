@@ -1969,6 +1969,103 @@ class TestTestGate:
         assert not any(v.rule == "TEST003" for v in kept)
         assert any(v.rule == "TEST003" for v in waived)
 
+    def test_match_waiver_prefix_reach_gated_to_package_scoped_rules(self) -> None:
+        """T-0470 counterexample: BEFORE this fix, `_match_waiver`'s
+        directory-prefix branch ran for every symref-less violation
+        regardless of rule -- any rule whose `violation.file` happened to
+        be directory-shaped (no extension) inherited unbounded prefix
+        reach it was never reviewed for. A non-package-scoped rule (i.e.
+        not in `_PACKAGE_SCOPED_RULES`) with a directory-shaped `file`
+        must now match ONLY a waiver whose own site is that exact
+        file/directory string -- never a waiver nested somewhere under
+        it via the prefix fallback."""
+        # frob:tests src/frob/gates/__init__.py::_match_waiver
+        from frob.gates import _match_waiver
+        from frob.graph import Edge, EdgeKind
+
+        directory_shaped_violation = Violation(
+            rule="SYS002",  # not in _PACKAGE_SCOPED_RULES
+            severity=Severity.WARN,
+            file="design/boundary/foo",
+            line=0,
+            message="x",
+        )
+        nested_waiver = Edge(
+            kind=EdgeKind.WAIVE,
+            src="design/boundary/foo/bar.py",
+            target="SYS002",
+            origin="design/boundary/foo/bar.py:1",
+            attrs={"reason": "x"},
+        )
+        assert (
+            _match_waiver(directory_shaped_violation, {"SYS002": [nested_waiver]})
+            is None
+        )
+
+        # The package-scoped rules keep their prefix reach unchanged.
+        package_violation = Violation(
+            rule="TEST003",
+            severity=Severity.ERROR,
+            file="src/frob/pkg",
+            line=0,
+            message="x",
+        )
+        package_waiver = Edge(
+            kind=EdgeKind.WAIVE,
+            src="src/frob/pkg/a.py",
+            target="TEST003",
+            origin="src/frob/pkg/a.py:1",
+            attrs={"reason": "x"},
+        )
+        assert (
+            _match_waiver(package_violation, {"TEST003": [package_waiver]})
+            == package_waiver
+        )
+
+    def test_waive003_flags_waiver_reaching_multiple_packages(self) -> None:
+        """T-0470: one `frob:waive TEST003` written in a file nested under
+        `src/frob/pkg/sub` also reaches the ANCESTOR package `src/frob/pkg`
+        via the same directory-prefix fallback -- both are real TEST003
+        violations the same directive silently suppresses. WAIVE003 must
+        flag that as over-broad."""
+        # frob:tests src/frob/gates/__init__.py::_waive003_violations
+        from frob.gates import _waive003_violations
+        from frob.graph import Edge, EdgeKind, GraphSnapshot
+
+        violations = (
+            Violation(
+                rule="TEST003",
+                severity=Severity.ERROR,
+                file="src/frob/pkg",
+                line=0,
+                message="x",
+            ),
+            Violation(
+                rule="TEST003",
+                severity=Severity.ERROR,
+                file="src/frob/pkg/sub",
+                line=0,
+                message="x",
+            ),
+        )
+        waiver = Edge(
+            kind=EdgeKind.WAIVE,
+            src="src/frob/pkg/sub/deep.py",
+            target="TEST003",
+            origin="src/frob/pkg/sub/deep.py:1",
+            attrs={"reason": "x"},
+        )
+        snap = GraphSnapshot(root=".", symbols={}, edges=(waiver,))
+        found = _waive003_violations(violations, snap)
+        assert len(found) == 1
+        assert found[0].rule == "WAIVE003"
+        assert "src/frob/pkg" in found[0].message
+        assert "src/frob/pkg/sub" in found[0].message
+
+        # A waiver that reaches only ONE package is not over-broad.
+        single = _waive003_violations(violations[:1], snap)
+        assert single == ()
+
     def test_test004_system_below_min_e2e(self, tmp_path: Path) -> None:
         from typani.option import Nothing
 

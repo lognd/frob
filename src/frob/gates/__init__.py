@@ -711,6 +711,8 @@ _KNOWN_GATE_RULES = frozenset(
         "TODO002",
         "WAIVE001",
         "WAIVE002",
+        # T-0470: over-broad package-prefix waiver reach.
+        "WAIVE003",
         "DEC001",
         "DEC002",
         "REL001",
@@ -879,6 +881,82 @@ def _waive002_violation_for(edge: Edge, arch_categories: frozenset[str]) -> Viol
     )
 
 
+# frob:ticket T-0470
+def _waive003_violations(
+    violations: tuple[Violation, ...], snapshot: GraphSnapshot
+) -> tuple[Violation, ...]:
+    """WAIVE003: a single `frob:waive` edge on a package-scoped rule
+    (`_PACKAGE_SCOPED_RULES`) that reaches MORE THAN ONE distinct violated
+    package/system id via `_match_waiver`'s directory-prefix fallback.
+
+    A waiver sitting in one file under `src/frob` matches every TEST003/
+    TEST007 violation for every ancestor package prefix of that file's own
+    path (`src/frob`, `src/frob/gates`, ...) simultaneously -- the same
+    directive silently suppresses findings the author most likely never
+    saw, let alone intended to waive, because they were reasoning about
+    their own immediate package, not its ancestors. WARN severity: this is
+    a scope-hygiene nudge (split into one waiver per package, or move each
+    to its own package), not a correctness bug on its own.
+    """
+    waivers_by_rule = _waivers_by_rule(snapshot)
+    reach: dict[tuple[str, str], set[str]] = {}
+    for violation in violations:
+        if violation.rule not in _PACKAGE_SCOPED_RULES:
+            continue
+        match = _match_waiver(violation, waivers_by_rule)
+        if match is None:
+            continue
+        reach.setdefault((violation.rule, match.origin), set()).add(violation.file)
+    out: list[Violation] = []
+    for (rule, origin), files in reach.items():
+        if len(files) <= 1:
+            continue
+        file, _, line_text = origin.rpartition(":")
+        line = int(line_text) if line_text.isdigit() else 0
+        packages = ", ".join(sorted(files))
+        _log.warning(
+            "WAIVE003: %s frob:waive %s reaches %d packages: %s",
+            origin,
+            rule,
+            len(files),
+            packages,
+        )
+        out.append(
+            Violation(
+                rule="WAIVE003",
+                severity=Severity.WARN,
+                file=file or origin,
+                line=line,
+                message=(
+                    f"WAIVE003: {origin} frob:waive {rule} matches {len(files)} "
+                    f"distinct packages ({packages}) via directory-prefix reach; "
+                    f"likely broader than intended -- split into one waiver per "
+                    f"package"
+                ),
+            )
+        )
+    return tuple(out)
+
+
+# frob:ticket T-0470
+# PLACE001 (class-fallback directive placement) was prototyped here and
+# DELIBERATELY DROPPED before landing: a "distance from the class's own
+# span start" heuristic fires on this repo's own widespread, legitimate
+# idiom of per-field `frob:waive`/`frob:ticket` comments documenting one
+# field deep inside a large pydantic config class (e.g. `src/frob/app/
+# config.py`'s `AppConfig`, `frob:waive SCOPE001` at line 212, 150+ lines
+# past the class's `class AppConfig:` line) -- fields are not `RawSymbol`s
+# (only FUNCTION/METHOD/CLASS/CONST/TYPE are), so a directive above one
+# always falls back to the enclosing class by construction, and doing so
+# far from the class top is completely intentional there, not mis-scoped.
+# A real fix needs a materially different signal (e.g. detecting a nearby
+# symbol the directive plausibly SHOULD have bound to via `following` but
+# didn't reach, rather than raw line distance from the class start) --
+# out of this ticket's remaining scope/effort budget; a follow-up ticket
+# for prong (2) is filed with this exact counterexample instead of
+# shipping a lint proven noisy against the repo's own real pattern.
+
+
 # _match_waiver has three matching modes, chosen by `violation.symref`/
 # `violation.rule` -- this comment (not the docstring) carries the
 # historical detail so frob-arch's long-function line count reflects
@@ -921,6 +999,20 @@ def _waive002_violation_for(edge: Edge, arch_categories: frozenset[str]) -> Viol
 # this, not to any check_type-based exclusion of `.rs` directives,
 # which does not exist: `frob.graph.build_graph`/`_load_tests` are
 # check_type-agnostic).
+#
+# T-0470: the package-prefix branch is gated to `_PACKAGE_SCOPED_RULES`
+# ONLY -- it used to run for every symref-less violation regardless of
+# rule, on the (empirically true today, but not future-proof) assumption
+# that no other rule's `violation.file` is ever directory-shaped. TEST007
+# also emits a directory-shaped `file` (a package id, `_test007_check_
+# pair`), so it needed the same prefix reach TEST003/004 already had --
+# but any FUTURE rule that reuses a bare directory/virtual id as `file`
+# (a `[[system]]`-style id, a `design/...` construct id) would have
+# silently inherited unbounded directory-prefix matching it was never
+# reviewed for, purely because it happens to have no symref. Restricting
+# the branch to an explicit allowlist means adding prefix reach to a new
+# rule is a deliberate, reviewable one-line change, not a side effect of
+# giving that rule a directory-shaped `file`.
 # T-0289: a waiver may carry `ceiling="N"` (currently only meaningful for
 # ARCH001) -- a reasoned "this long function is justified up to N lines"
 # escape that re-fires once the function outgrows N, instead of muting the
@@ -928,6 +1020,16 @@ def _waive002_violation_for(edge: Edge, arch_categories: frozenset[str]) -> Viol
 # sets `metric` can use it), not ARCH001-specific, so a future rule with the
 # same "reasoned up to a measured bound" shape does not need its own
 # matching path.
+# frob:ticket T-0470
+# The only rules whose `Violation.file` is a directory/system id rather
+# than a real leaf file with an extension -- see the T-0470 comment
+# above `_match_waiver` for why this must be an explicit allowlist, not
+# "every symref-less rule". Keep this in sync with any rule that starts
+# emitting a package/system-shaped `file` (`_test003`, `_test004`,
+# `_test007_check_pair` are the current three sites).
+_PACKAGE_SCOPED_RULES = frozenset({"TEST003", "TEST004", "TEST007"})
+
+
 def _ceiling_ok(waiver: Edge, violation: Violation) -> bool:
     """Whether `waiver` still covers `violation` given its optional
     `ceiling=` attribute: always true when no ceiling is set (or the
@@ -962,13 +1064,14 @@ def _match_waiver(
             if waiver.src == violation.symref and _ceiling_ok(waiver, violation):
                 return waiver
         return None
+    package_scoped = violation.rule in _PACKAGE_SCOPED_RULES
     package_prefix = violation.file.rstrip("/") + "/"
     for waiver in candidates:
         waiver_file = waiver.src.split("::", 1)[0]
         if (
             waiver.src == violation.file
             or waiver_file == violation.file
-            or waiver_file.startswith(package_prefix)
+            or (package_scoped and waiver_file.startswith(package_prefix))
         ) and _ceiling_ok(waiver, violation):
             return waiver
     return None
@@ -4705,6 +4808,11 @@ def _assemble_gate_report(
     job_violations, counts, timing = _run_combined_jobs(thread_jobs, process_jobs)
     counts["waive"] = len(all_violations)
     all_violations.extend(job_violations)
+    # T-0470: WAIVE003 needs the full assembled violation set (it re-runs
+    # `_match_waiver` per package-scoped violation to see how many distinct
+    # packages one waiver reaches), so it runs after `job_violations` is
+    # folded in, not alongside the other WAIVE00* self-checks above.
+    all_violations.extend(_waive003_violations(tuple(all_violations), st.snapshot))
 
     kept, waived = _apply_waivers(tuple(all_violations), st.snapshot)
     kept = _apply_severity_overrides(kept, cfg.root)

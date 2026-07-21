@@ -50,6 +50,7 @@ declaration).
 | SEC003 | secrets | a git-tracked file contains a live Stripe secret key (`sk_live_...`) or a private-key PEM header -- unwaivable, see `_UNWAIVABLE_RULES` |
 | WAIVE001 | (always on) | a `frob:waive` directive is missing `reason="..."` |
 | WAIVE002 | (always on) | a `frob:waive` targets a rule id that can never be matched -- see "Waive boundary" below |
+| WAIVE003 | (always on) | a `frob:waive` on a package-scoped rule (TEST003/TEST004/TEST007) reaches more than one distinct violated package/system id via directory-prefix matching -- see "Waiver over-breadth (T-0470)" below |
 | ARCH001 | arch | `frob.arch`'s complexity-aware long-function check (docs/modules/arch.md) still flags a function after its flat-body filter -- the one `frob.arch` category channeled into a real gate `Violation`, waivable with a reasoned `frob:waive ARCH001 reason="..." [ceiling=N]` (T-0289) |
 | PII010 | pii_structural | a pydantic/dataclass/TypedDict/attrs field's name or type annotation matches a PII-shaped signature (`FIELD_SIGNATURES`) with no `frob:waive PII010 reason="..."` -- see "PII010/SEC110" below |
 | PII011 | pii_structural | a tracked `.py` file's string-literal constant is structurally email-shaped (`_is_email_shaped`, `email.utils.parseaddr`-based) with no `frob:secret-fake` marker or `frob:waive PII011 reason="..."` -- see "PII010/SEC110" below |
@@ -129,6 +130,48 @@ also flagged as WAIVE002 the same way. `frob.gates._KNOWN_GATE_RULES`
 outside it is presumed unwaivable. If a future change makes another arch
 category waivable, remove it from `_unwaivable_channel_rules`'s returned
 set the same way `long-function` was removed, and update this note.
+
+### Waiver over-breadth (T-0470)
+
+`_match_waiver`'s directory-prefix fallback (T-0276, see the comment
+above `_match_waiver` in `src/frob/gates/__init__.py`) exists because
+TEST003/TEST004/TEST007's `Violation.file` is a package or system id
+(`crates/foo/src`, `[[system]] my-sys`), never a real leaf file -- no
+real source path can ever equal that string, so without the fallback no
+placement of a waiver could ever match it. That reach is now gated to an
+explicit allowlist, `frob.gates._PACKAGE_SCOPED_RULES = {TEST003, TEST004,
+TEST007}` -- it used to run for every symref-less violation regardless of
+rule, on the assumption that no other rule's `file` is ever directory-
+shaped. Any future rule that reuses a bare directory/virtual id as `file`
+must be added to that set deliberately; it no longer inherits unbounded
+prefix reach as a side effect of having no symref.
+
+Even correctly gated, the prefix fallback has a real over-breadth shape:
+a waiver written in one file reaches every ANCESTOR package prefix of that
+file's own path too (a waiver in `src/frob/pkg/sub/deep.py` matches a
+TEST003 finding against `src/frob/pkg/sub` AND against `src/frob/pkg`
+simultaneously), which is almost always broader than the author was
+reasoning about when they wrote it. **WAIVE003** flags any single waiver
+that reaches more than one distinct violated package/system id this way
+-- the fix is to split it into one waiver per package, or move each to
+that package's own file.
+
+A second prong was investigated for this ticket -- warning when a
+class-bound directive of any verb is not near the class's own top,
+on the theory that a directive with nothing recognizable following it
+(`frob.graph.dsl._enclosing_src`'s fallback to the ENCLOSING symbol) and
+sitting far from the class start was probably meant for a nested member.
+That heuristic was prototyped and DROPPED before landing: it fires
+constantly on this repo's own real, intentional idiom of a per-field
+`frob:waive`/`frob:ticket` comment documenting one field deep inside a
+large pydantic config class (fields are not `RawSymbol`s, so a directive
+above one always falls back to the enclosing class, by design, however
+far into the body it sits -- e.g. `src/frob/app/config.py`'s `AppConfig`
+carries several such comments 150+ lines past its `class AppConfig:`
+line, none of them mis-scoped). A real version of this check needs a
+different signal than raw line-distance from the class top; tracked as a
+follow-up rather than shipped as a lint proven noisy against the repo's
+own pattern.
 
 ### `frob check`'s dup/arch stage summaries are also waiver-aware (T-0375)
 
