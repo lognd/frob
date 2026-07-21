@@ -16,6 +16,33 @@ NOT reimplemented here -- `frob.testing._collect._compiled_artifacts` (the
 T-0333 precedent) is reused as-is, so there is exactly one place in the repo
 that knows how to find the compiled output behind a native module name.
 
+**T-0513 (strata audit G9): mtime alone is defeated by a bare `touch`.**
+A `touch`/`os.utime` on the built artifact (no rebuild) advances its mtime
+past a genuinely newer source edit with no content change at all -- the
+mtime-only check above would report clean against genuinely stale compiled
+code, since it compares TIMESTAMPS, never bytes. `stale_natives` now ALSO
+maintains a small persisted content-digest stamp
+(`.frob/native-content-stamps.json`, `_load_stamps`/`_save_stamps`) per
+native: whenever the mtime check reports "not stale," it additionally
+computes a source-tree content digest (`_source_content_digest`, over
+every non-pruned file's path+bytes, deterministic and order-stable) and
+reuses `frob.testing._collect._native_artifact_digest` (T-0333's own
+built-artifact-bytes hash, the SAME "friend" cross-module reuse
+`_compiled_artifacts` already establishes -- charter: no duplication) for
+the artifact side. If the STORED artifact digest from the last observation
+still matches (the compiled bytes have not changed since last time) but
+the STORED source digest no longer matches CURRENT source content, the
+source changed with NO corresponding rebuild -- exactly the touch-without-
+rebuild signature -- and this now reports `StaleNative` via
+`reason="content-digest"` even though mtime alone said "fresh." A real
+rebuild (which changes the compiled artifact's bytes) is distinguished
+correctly: the artifact digest changes too, so the stamp is simply
+refreshed, no false positive. First observation of a given native (no
+stamp on disk yet) trusts mtime and records a baseline -- there is no
+prior content to compare against, the same "nothing to compare against
+yet" posture `_newest_mtime`'s `None`-for-missing-directory case already
+takes.
+
 Two call sites (T-0248's plan):
 - `frob.tickets._land.land` warns (does not block) when a just-landed source
   tree outpaces its own built native, so the coordinator sees it immediately
@@ -28,18 +55,26 @@ Two call sites (T-0248's plan):
 
 from __future__ import annotations
 
+import hashlib
 import importlib.util
+import json
 import sys
 from dataclasses import dataclass
 from pathlib import Path
 
 from frob.excludes import walk_pruned
 from frob.logging import get_logger
-from frob.testing._collect import _compiled_artifacts
+from frob.testing._collect import _compiled_artifacts, _native_artifact_digest
 from frob.testing._models import NativeSpec
 from frob.testing._runners import load_natives
 
 _log = get_logger(__name__)
+
+#: T-0513: where the per-native content-digest stamp (source digest +
+#: artifact digest at the last "not stale by mtime" observation) is
+#: persisted -- `.frob/` is this repo's own local-state directory
+#: convention (mirrors `.frob/pytest-collect.json`'s cache, `_collect.py`).
+_STAMP_REL = Path(".frob") / "native-content-stamps.json"
 
 #: Native-crate source roots this repo builds via `make core` (mirrors
 #: T-0333's `[[native]]` entries in frob.toml). A native whose `name`
@@ -53,12 +88,19 @@ NATIVE_SOURCE_DIRS: tuple[str, ...] = ("strata-core", "frob-core")
 @dataclass(frozen=True)
 class StaleNative:
     """One declared `[[native]]` whose built artifact is OLDER than its own
-    source tree -- the exact `make core` reminder T-0248 automates."""
+    source tree -- the exact `make core` reminder T-0248 automates.
+    `reason` (T-0513): `"mtime"` for the original timestamp-only detection,
+    `"content-digest"` when mtime alone said "fresh" but the artifact-bytes
+    digest was unchanged while the source-tree digest was NOT (a touch
+    without a rebuild) -- distinguishing the two matters for the warning
+    text (T-0166's genuine "you forgot to rebuild" vs the touch-attack
+    class this ticket closes)."""
 
     spec: NativeSpec
     source_dir: str
     artifact_mtime: float
     source_mtime: float
+    reason: str = "mtime"
 
 
 def _newest_mtime(directory: Path) -> float | None:
@@ -116,6 +158,71 @@ def _source_dir_for(root: Path, spec: NativeSpec) -> str | None:
     return None
 
 
+def _source_content_digest(directory: Path) -> str:
+    """T-0513: an order-stable sha256 over every non-pruned file's
+    (relative path, content bytes) under `directory` -- the source-tree
+    digest `stale_natives` compares against the persisted stamp so a bare
+    mtime touch (no byte change) can never look like a genuine edit.
+    Deliberately hashes ALL files under the crate dir (not only `*.rs` +
+    `Cargo.toml`/`Cargo.lock` as the ticket's own suggestion names) --
+    narrowing to specific extensions would silently miss a real source
+    change in a file the narrower list forgot (a build script, a vendored
+    grammar asset); recall-over-precision is the same posture
+    `frob.vet._capability`'s needle philosophy already takes for exactly
+    this reason. An unreadable file is skipped (mirrors `_newest_mtime`'s
+    own `except OSError: continue`), not fatal -- one unreadable file
+    should degrade the digest's precision, not crash the whole check."""
+    hasher = hashlib.sha256()
+    for path in sorted(walk_pruned(directory), key=lambda p: p.as_posix()):
+        try:
+            content = path.read_bytes()
+        except OSError:
+            continue
+        hasher.update(path.relative_to(directory).as_posix().encode())
+        hasher.update(b"\0")
+        hasher.update(hashlib.sha256(content).digest())
+        hasher.update(b"\n")
+    return hasher.hexdigest()
+
+
+def _stamp_path(root: Path) -> Path:
+    """Where T-0513's per-native content-digest stamps live under `root`."""
+    return root / _STAMP_REL
+
+
+def _load_stamps(root: Path) -> dict[str, dict[str, str]]:
+    """T-0513: the persisted `{name: {"source": ..., "artifact": ...}}`
+    stamp map, or `{}` for a missing/malformed file -- a corrupt or absent
+    stamp degrades to "no prior observation" (every native's next
+    not-stale-by-mtime check re-bootstraps its baseline), never a crash."""
+    path = _stamp_path(root)
+    try:
+        raw = path.read_text()
+    except OSError:
+        return {}
+    try:
+        loaded = json.loads(raw)
+    except json.JSONDecodeError:
+        _log.warning("native staleness: malformed stamp file %s, ignoring", path)
+        return {}
+    if not isinstance(loaded, dict):
+        return {}
+    return loaded
+
+
+def _save_stamps(root: Path, stamps: dict[str, dict[str, str]]) -> None:
+    """Persist T-0513's stamp map, creating `.frob/` if needed -- best
+    effort: a write failure is logged, not raised (the stamp is an
+    optimization/detection aid, never a correctness-load-bearing file the
+    rest of `frob` depends on existing)."""
+    path = _stamp_path(root)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(stamps, sort_keys=True, indent=2) + "\n")
+    except OSError as exc:
+        _log.warning("native staleness: could not write stamp file %s: %s", path, exc)
+
+
 # frob:doc docs/modules/testing.md#public-api
 # frob:tests tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_reports_native_grammar_ahead_of_native  # noqa: E501
 # frob:tests tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_fresh_native_reports_nothing  # noqa: E501
@@ -130,7 +237,16 @@ def stale_natives(root: Path) -> tuple[StaleNative, ...]:
 
     Deliberately excludes natives that are not built at all (T-0333's
     `missing_natives` territory) and natives with no matching declared
-    source directory (nothing to compare against)."""
+    source directory (nothing to compare against).
+
+    T-0513: when the mtime check alone says "not stale," a second,
+    content-digest-based check runs (module docstring) -- a bare `touch`
+    on the built artifact can advance its mtime past a genuine source edit
+    with no byte change at all, which mtime comparison structurally cannot
+    detect. That second check needs a persisted baseline (`_load_stamps`/
+    `_save_stamps`) from the LAST such observation; the very first
+    observation of a given native has nothing to compare against yet and
+    trusts mtime, recording a baseline for next time."""
     root = Path(root)
     loaded = load_natives(root)
     if loaded.is_err:
@@ -140,6 +256,8 @@ def stale_natives(root: Path) -> tuple[StaleNative, ...]:
         )
         return ()
     stale: list[StaleNative] = []
+    stamps = _load_stamps(root)
+    stamps_changed = False
     for spec in loaded.danger_ok:
         source_dir = _source_dir_for(root, spec)
         if source_dir is None:
@@ -157,8 +275,50 @@ def stale_natives(root: Path) -> tuple[StaleNative, ...]:
                     source_dir=source_dir,
                     artifact_mtime=artifact_mtime,
                     source_mtime=source_mtime,
+                    reason="mtime",
                 )
             )
+            continue
+        # T-0513: mtime says fresh -- verify via content digest, which a
+        # bare touch cannot fake.
+        source_digest = _source_content_digest(root / source_dir)
+        artifact_digest = _native_artifact_digest(spec)
+        prior = stamps.get(spec.name)
+        if prior is None:
+            # first observation of this native -- nothing to compare
+            # against, trust mtime and record the baseline.
+            stamps[spec.name] = {"source": source_digest, "artifact": artifact_digest}
+            stamps_changed = True
+            continue
+        if artifact_digest == prior.get("artifact") and source_digest != prior.get(
+            "source"
+        ):
+            # the compiled artifact's bytes have NOT changed since the
+            # last observation, yet the source tree HAS -- the exact
+            # touch-without-rebuild signature this ticket exists to catch.
+            stale.append(
+                StaleNative(
+                    spec=spec,
+                    source_dir=source_dir,
+                    artifact_mtime=artifact_mtime,
+                    source_mtime=source_mtime,
+                    reason="content-digest",
+                )
+            )
+            # do NOT overwrite the stamp here -- the next run must keep
+            # detecting the same unrebuilt edit until a real rebuild
+            # actually changes the artifact bytes.
+            continue
+        if source_digest != prior.get("source") or artifact_digest != prior.get(
+            "artifact"
+        ):
+            # a genuine rebuild happened (artifact bytes changed) -- or
+            # this is the first digest-comparable run after a legitimate
+            # edit+rebuild cycle. Refresh the baseline.
+            stamps[spec.name] = {"source": source_digest, "artifact": artifact_digest}
+            stamps_changed = True
+    if stamps_changed:
+        _save_stamps(root, stamps)
     if stale:
         _log.warning(
             "stale_natives: %d native(s) stale vs their own source: %s",
@@ -176,17 +336,29 @@ def stale_native_warning(root: Path) -> str | None:
     `root` and the remedy (its `build_cmd`), or `None` if none are stale --
     the message `frob ticket land` logs before its final commit and `make
     check` prints (and fails on) via `check_native_staleness_or_exit`
-    (T-0248)."""
+    (T-0248). T-0513: when ANY reported native was caught only via the
+    content-digest check (mtime alone said fresh), the message says so
+    explicitly -- a caller who trusts mtime output at a glance should not
+    mistake this for the ordinary "you forgot to rebuild" case."""
     stale = stale_natives(root)
     if not stale:
         return None
     names = ", ".join(sorted({s.spec.name for s in stale}))
     dirs = ", ".join(sorted({s.source_dir for s in stale}))
     build_cmds = " && ".join(sorted({s.spec.build_cmd for s in stale}))
+    digest_only = sorted({s.spec.name for s in stale if s.reason == "content-digest"})
+    digest_note = (
+        f" [{', '.join(digest_only)}] detected via content digest only "
+        "(built artifact bytes unchanged since last check, but source "
+        "tree content changed -- a bare touch cannot mask this);"
+        if digest_only
+        else ""
+    )
     return (
         f"STALE NATIVE: built extension(s) [{names}] predate their own "
-        f"source tree ({dirs}); frob check/frob test will silently run "
-        f"against the OLD native until you rebuild. Run: {build_cmds}"
+        f"source tree ({dirs});{digest_note} frob check/frob test will "
+        f"silently run against the OLD native until you rebuild. "
+        f"Run: {build_cmds}"
     )
 
 

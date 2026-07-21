@@ -110,6 +110,107 @@ class TestStaleNatives:
         assert stale_natives(tmp_path) == ()
         assert stale_native_warning(tmp_path) is None
 
+    # frob:ticket T-0513
+    def test_touch_without_rebuild_is_caught_by_content_digest(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """strata audit G9 counterexample: a bare `touch` on the built
+        artifact (no rebuild) advances its mtime past a genuine source
+        edit with NO content change to the compiled bytes -- proving (1)
+        the mtime SIGNAL ALONE is fooled (`source_mtime <= artifact_mtime`
+        after the touch, exactly what a pre-fix mtime-only check would
+        see as "clean"), then (2) `stale_natives` still reports it via
+        `reason="content-digest"` because the fix compares content, not
+        just timestamps."""
+        # frob:tests tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_touch_without_rebuild_is_caught_by_content_digest kind="unit"
+        name = "fake_native_src_touch_attack"
+        source_dir = "fake-native-src-touch-attack"
+        monkeypatch.setattr(
+            "frob.strata._native_staleness.NATIVE_SOURCE_DIRS", (source_dir,)
+        )
+        monkeypatch.setattr(
+            "frob.strata._native_staleness._STAMP_REL",
+            Path(".frob") / "native-content-stamps-test.json",
+        )
+        _write_frob_toml(tmp_path, name)
+        base_time = time.time() - 1000.0
+        _write_source_dir(tmp_path, source_dir, mtime=base_time)
+        _fake_native_package(tmp_path, name, b"\x00compiled-v1")
+        monkeypatch.syspath_prepend(str(tmp_path))
+        importlib.invalidate_caches()
+
+        # First observation: genuinely fresh, no prior stamp -- establishes
+        # the baseline (source digest + artifact digest) this attack must
+        # get past.
+        assert stale_natives(tmp_path) == ()
+
+        # Attacker (or an editor auto-save, or a careless rebase) edits the
+        # source WITHOUT rebuilding the native at all -- the compiled
+        # artifact's bytes on disk are untouched.
+        lib = tmp_path / source_dir / "src" / "lib.rs"
+        lib.write_text("// EDITED -- a real, un-rebuilt change\n")
+        artifact = tmp_path / name / f"{name}.abi3.so"
+        # ... then advances BOTH mtimes so the artifact still looks newer
+        # than the edited source -- the exact touch-without-rebuild shape.
+        now = time.time()
+        os.utime(lib, (now, now))
+        os.utime(artifact, (now + 50.0, now + 50.0))
+
+        # Counterexample part 1: the mtime SIGNAL ALONE says "clean" --
+        # this is the vulnerability G9 names.
+        assert lib.stat().st_mtime <= artifact.stat().st_mtime
+
+        # Counterexample part 2: the fix catches it anyway.
+        stale = stale_natives(tmp_path)
+        assert len(stale) == 1
+        assert stale[0].spec.name == name
+        assert stale[0].reason == "content-digest"
+
+        warning = stale_native_warning(tmp_path)
+        assert warning is not None
+        assert "content digest" in warning
+        assert name in warning
+
+    # frob:ticket T-0513
+    def test_real_rebuild_after_edit_is_not_a_false_positive(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Regression guard: a GENUINE rebuild (the compiled artifact's
+        bytes actually change) after a source edit must NOT be
+        misreported as stale via content-digest -- only an unrebuilt edit
+        (artifact bytes unchanged) is the touch-attack signature."""
+        # frob:tests tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_real_rebuild_after_edit_is_not_a_false_positive kind="unit"
+        name = "fake_native_src_real_rebuild"
+        source_dir = "fake-native-src-real-rebuild"
+        monkeypatch.setattr(
+            "frob.strata._native_staleness.NATIVE_SOURCE_DIRS", (source_dir,)
+        )
+        monkeypatch.setattr(
+            "frob.strata._native_staleness._STAMP_REL",
+            Path(".frob") / "native-content-stamps-test-2.json",
+        )
+        _write_frob_toml(tmp_path, name)
+        base_time = time.time() - 1000.0
+        _write_source_dir(tmp_path, source_dir, mtime=base_time)
+        _fake_native_package(tmp_path, name, b"\x00compiled-v1")
+        monkeypatch.syspath_prepend(str(tmp_path))
+        importlib.invalidate_caches()
+
+        assert stale_natives(tmp_path) == ()  # establishes the baseline
+
+        lib = tmp_path / source_dir / "src" / "lib.rs"
+        lib.write_text("// a real, then genuinely rebuilt, change\n")
+        artifact = tmp_path / name / f"{name}.abi3.so"
+        # a REAL rebuild: the compiled artifact's BYTES actually change,
+        # not just its mtime.
+        artifact.write_bytes(b"\x00compiled-v2-really-rebuilt")
+        now = time.time()
+        os.utime(lib, (now, now))
+        os.utime(artifact, (now + 50.0, now + 50.0))
+
+        assert stale_natives(tmp_path) == ()
+        assert stale_native_warning(tmp_path) is None
+
     def test_unbuilt_native_is_not_reported_as_stale(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
