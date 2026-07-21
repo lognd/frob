@@ -27,6 +27,7 @@ from typani.result import Err, Ok, Result
 
 from frob.graph import GraphSnapshot
 from frob.logging import get_logger
+from frob.tickets._worktree_guard import enforce_worktree_lease
 
 _log = get_logger(__name__)
 
@@ -62,6 +63,9 @@ class ReleaseError(ErrorSet):
     NoManifest = "No .frob-release.json; run `frob release stamp` first"
     Malformed = "Release manifest is not valid JSON"
     BadVersion = "Version string is not X.Y.Z"
+    WorktreeLeaseViolation = (
+        "FROB_WORKTREE is leased to a different worktree than this command's cwd"
+    )
 
 
 def _public_api(snapshot: GraphSnapshot) -> dict[str, str]:
@@ -102,10 +106,18 @@ def load_manifest(root: Path) -> Result[ReleaseManifest, ReleaseError]:
 
 
 # frob:doc docs/modules/release.md#public-api
+# frob:tests tests/test_release_worktree_lease.py::TestStampWorktreeLease.test_mismatched_lease_refuses  # noqa: E501
+# frob:tests tests/test_release_worktree_lease.py::TestStampWorktreeLease.test_no_lease_succeeds  # noqa: E501
 def stamp(
     root: Path, snapshot: GraphSnapshot, version: str
 ) -> Result[str, ReleaseError]:
-    """Write the current public API + `version` to the tracked manifest."""
+    """Write the current public API + `version` to the tracked manifest
+    (T-0507: refuses with `Err(WorktreeLeaseViolation)` if `FROB_WORKTREE`
+    names a different worktree than `root`, same guard as `frob check
+    --stamp-baseline`/`--stamp-coverage` (T-0431))."""
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(ReleaseError.WorktreeLeaseViolation)
     manifest = ReleaseManifest(version=version, api=_public_api(snapshot))
     path = manifest_path(root)
     path.write_text(

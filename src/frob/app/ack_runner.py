@@ -9,6 +9,7 @@ from pathlib import Path
 
 from frob.app.config import AppConfig
 from frob.logging import get_logger
+from frob.tickets._worktree_guard import enforce_worktree_lease
 
 _log = get_logger(__name__)
 
@@ -73,13 +74,24 @@ def _acknowledge_and_write(cfg: AppConfig, lock, snapshot, lock_path: Path) -> N
 
 # frob:doc docs/modules/app.md#runners
 # frob:waive TEST005 reason="run 0.0% branch cover, debt T-0160"
+# frob:tests tests/test_ack_worktree_lease.py::TestAckWorktreeLease.test_mismatched_lease_refuses  # noqa: E501
+# frob:tests tests/test_ack_worktree_lease.py::TestAckWorktreeLease.test_no_lease_reaches_normal_ack_failure  # noqa: E501
 def run(cfg: AppConfig) -> None:
-    """Load (building if the cache is stale), acknowledge refs, and write the lock."""
+    """Load (building if the cache is stale), acknowledge refs, and write the lock.
+
+    T-0507: refuses LOUDLY (exit 1) if `FROB_WORKTREE` names a worktree
+    other than `cfg.ack_path`'s resolved root -- the same guard `frob check
+    --stamp-baseline`/`--stamp-coverage` and `frob release stamp` enforce
+    (T-0431/T-0507)."""
     if not cfg.ack_refs:
         _log.error("frob ack requires at least one <ref>")
         sys.exit(1)
 
     root = (cfg.ack_path or Path(".")).resolve()
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        _log.error("ack: worktree lease violation: %s", leased.danger_err)
+        sys.exit(1)
     snapshot = _load_snapshot_for_ack(root, root / _CACHE_REL)
 
     lock_path = root / "frob.lock"
