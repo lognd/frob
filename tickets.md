@@ -4366,7 +4366,7 @@ DEBT<->TODO COHERENCE (user, 2026-07-20): frob:debt and frob:todo must work toge
 id: T-0413
 title: 'perf META-GAP: PERF gate is blind to cross-stage redundant recomputation (frob
   did not detect its own 168s parse waste)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
