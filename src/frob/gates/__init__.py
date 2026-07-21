@@ -1899,6 +1899,55 @@ def _old_directive_bindings(
     return tuple(bindings)
 
 
+# frob:ticket T-0506
+def _cov006_public_wrapper_reachable(root: Path, edge: Edge) -> bool:
+    """One-hop COV006 rescue: True if a PUBLIC symbol in the bound private
+    target's own file both calls that target directly and is itself
+    called, by name, from the test's own body -- the same-file
+    test -> public-wrapper -> private-target shape `build_call_graph`
+    cannot represent (it never records edges into public callees, T-0483).
+    Scoped to this gate only; the shared `CallGraph` substrate is
+    untouched so `frob.dup`/arch consumers keep their public-boundary-stop
+    behavior.
+    """
+    from frob.graph.callgraph import _called_names, _short_name
+    from frob.lang import parse_file
+
+    target_file = edge.target.split("::", 1)[0]
+    test_file = edge.src.split("::", 1)[0]
+    target_qualname = edge.target.split("::", 1)[1]
+    target_short = _short_name(target_qualname)
+
+    target_parsed = parse_file(root / target_file)
+    if target_parsed.is_err:
+        return False
+    target_symbols = target_parsed.danger_ok.symbols
+
+    wrapper_short_names = {
+        _short_name(sym.qualname)
+        for sym in target_symbols
+        if sym.public and target_short in _called_names(sym.body_tokens)
+    }
+    if not wrapper_short_names:
+        return False
+
+    if test_file == target_file:
+        test_symbols = target_symbols
+    else:
+        test_parsed = parse_file(root / test_file)
+        if test_parsed.is_err:
+            return False
+        test_symbols = test_parsed.danger_ok.symbols
+
+    test_qualname = edge.src.split("::", 1)[1]
+    test_sym = next(
+        (sym for sym in test_symbols if sym.qualname == test_qualname), None
+    )
+    if test_sym is None:
+        return False
+    return bool(wrapper_short_names & _called_names(test_sym.body_tokens))
+
+
 # frob:ticket T-0483
 def _cov006(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """COV006: a `frob:tests` edge bound to a PRIVATE symbol whose named
@@ -1921,20 +1970,24 @@ def _cov006(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     different files can alias), so a miss is a prompt to double check, not
     proof the binding is wrong.
 
-    KNOWN adoption-noise shape (T-0483, disclosed rather than silently
-    tuned away): a test that reaches its bound private helper only
-    INDIRECTLY, by calling a PUBLIC entry point in the same file that
-    itself calls the helper, is reported unreachable -- `build_call_graph`
-    never records an edge INTO a public callee, so the graph has no edge
-    for that first hop at all, and `closure` can never walk through it.
-    This is the single most common shape of "false" COV006 finding on this
-    repo's own test suite today (a `frob:tests` binding a private helper
-    while the test body only calls the public function wrapping it), not
-    a bug in the traversal -- `frob.graph.callgraph`'s public-boundary-stop
-    behavior is load-bearing for its other two consumers (T-0288/T-0290)
-    and is reused here as-is per this ticket's own instruction, not
-    special-cased. A COV006 finding is a prompt to double check, same as
-    any other WARN-tier gate here on first adoption.
+    T-0506: the single most common shape of "false" COV006 finding
+    (T-0483, disclosed at landing) was a test that reaches its bound
+    private helper only INDIRECTLY, by calling a PUBLIC entry point in
+    the SAME FILE as the helper that itself calls it -- `build_call_graph`
+    never records an edge INTO a public callee (that behavior is
+    load-bearing for its other two consumers, T-0288/T-0290, and is left
+    untouched here), so the shared graph has no edge for that first hop
+    and `closure` can never walk through it. Rather than special-case the
+    shared substrate, this check does its own one-hop lookahead, scoped to
+    THIS gate only: `_cov006_public_wrapper_reachable` re-parses just the
+    target's file (and the test's file, if different) and asks whether
+    any PUBLIC symbol in the target's file both (a) calls the private
+    target directly and (b) is itself called, by name, from the test's
+    own body. If so, the binding is accepted as reachable one hop out
+    without ever recording a public-callee edge in the shared `CallGraph`.
+    A COV006 finding that survives both the direct closure check and this
+    one-hop public-wrapper check is a prompt to double check, same as any
+    other WARN-tier gate here on first adoption.
 
     `build_call_graph` re-`frob.lang.parse_file`s every path it's given, and
     a repo's own test suite routinely binds many private helpers from the
@@ -1961,6 +2014,8 @@ def _cov006(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
             graph = build_call_graph(root, paths)
             graph_cache[paths] = graph
         if edge.target in closure(graph, edge.src):
+            continue
+        if _cov006_public_wrapper_reachable(root, edge):
             continue
         _log.debug(
             "COV006: %s -> %s has no call-graph reachability", edge.src, edge.target
