@@ -3724,7 +3724,10 @@ scope:
 - frob.toml
 - docs/modules/gates.md
 scope_changes: []
-evidence: []
+evidence:
+- tests/test_gates.py::TestCoverageGate::test_todo002_unbound_directive
+- tests/test_gates.py::TestCoverageGate::test_todo001_bare_comment_in_touched_file
+- tests/test_gates.py::TestCoverageGate::test_todo002_edge_to_closed_ticket
 attachments: []
 acceptance: []
 threat: null
@@ -3732,6 +3735,40 @@ threat: null
 User (2026-07-20): is it smart to categorize both failure modes under TODO001? No. TODO001 conflates TWO distinct failure modes: (a) _todo001_bare -- a bare untracked TODO/FIXME comment (work marked, not accounted for at all; fix = file a ticket + convert to frob:todo T-####); (b) _todo001_edges -- a frob:todo bound to a CLOSED/MISSING ticket (work accounted, but the reference is dangling; fix = ticket is closed so remove the TODO/reopen, or the id is wrong so correct it). Different diagnoses, different fixes, yet one rule id -- so you cannot tier their severity independently, cannot frob:waive one without the other, and cannot filter/report them apart. This VIOLATES frobs own one-id-per-failure-mode convention: every other family splits its modes (WAIVE001/WAIVE002, COV001-004, TEST001-010, DUP001/002, PERF001-004). TODO having ONE id for TWO modes is a self-consistency gap -- exactly the "frob does not apply its own standard to itself" class T-0424 (reflexive completeness) should catch.
 
 FIX: split into distinct rule ids -- e.g. TODO001 = bare untracked TODO/FIXME, TODO002 = frob:todo -> non-open/missing ticket (choose numbering; keep TODO001 as the most common/original mode for waiver back-compat, or migrate existing frob:waive TODO001 sites deliberately). Update _KNOWN_GATE_RULES, the waiver machinery, docs/modules/gates.md rule catalog, and any existing frob:waive TODO001 directives in this repo (+ note the per-project migration for sibling repos). COORDINATE with T-0412 (frob:debt<->frob:todo coherence): the debt/todo coherence adds MORE modes (debt-without-todo, debt/todo ticket-mismatch, todo-on-closed-ticket) -- each of THOSE should also be its own rule id, not piled onto a conflated TODO001. Acceptance: each todo/debt failure mode has its own rule id, independently severable/waivable/reportable; the rule catalog documents each; existing waivers migrated; no mode silently shares an id with a semantically-different one. Queued behind T-0343 (gates/__init__.py overlap).
+
+## Done report
+
+Split the conflated TODO001 rule into two per-failure-mode rule ids,
+matching frob's own one-id-per-mode convention (WAIVE001/002, COV001-004,
+TEST001-010, DUP001/002, PERF001-004):
+
+- TODO001: a bare, wholly untracked TODO/FIXME comment in a diff-touched
+  file (`_todo001_bare`/`_todo001_bare_comment`) -- work not accounted for
+  at all.
+- TODO002: a `frob:todo` edge bound to a non-open (closed or missing)
+  ticket (`_todo002_edges`) -- work was accounted for once, but the
+  reference is now dangling.
+
+`_todo001` is now a thin dispatcher over both, `_KNOWN_GATE_RULES` lists
+both ids, `docs/modules/gates.md`'s rule catalog and severity-defaults note
+both cover TODO002, and `tests/test_gates.py` carries dedicated cases per
+mode (bare-untracked, dangling-to-missing, dangling-to-closed) plus a
+negative assertion that each case does NOT also fire the other rule id.
+Swept the repo for other TODO001-only references (frob.toml has no
+TODO001-specific entries to migrate; existing docs/tests already updated
+in the same change).
+
+### Changed
+```
+ docs/modules/gates.md      |  5 +++--
+ src/frob/gates/__init__.py | 44 +++++++++++++++++++++++++++++-------------
+ tests/test_gates.py        | 21 ++++++++++++++++++--
+ tickets.md                 | 48 ++++++++++++++++++++++++++++++++++++++++++++--
+ 4 files changed, 99 insertions(+), 19 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
 
 <!-- ticket:T-0428 -->
 ```yaml
