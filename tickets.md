@@ -5098,7 +5098,7 @@ T-0515 calibrated INV003/INV004: INV004 changed from per-section to per-file gra
 id: T-0521
 title: 'SCOPE001: bare directory scope entries (no trailing slash) never expand and
   silently drop from a ticket''s real scope'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-21'
