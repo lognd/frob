@@ -4780,7 +4780,7 @@ User directive (2026-07-20): frob check takes forever; do a PERF audit -- measur
 id: T-0411
 title: 'Queue health + priority model: nothing important rots silently (tickets have
   no priority/value today; doable is age-only)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
