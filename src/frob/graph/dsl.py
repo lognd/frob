@@ -362,6 +362,100 @@ def _resolve_block_srcs(comments: tuple[RawComment, ...], path: str) -> dict[int
     return resolved
 
 
+# T-0526: frob:debt/frob:todo coherence.
+#
+# A `frob:debt` suppresses a GATE FINDING (the symptom); a `frob:todo`
+# tracks DEFERRED WORK (the payoff). Per T-0412's own follow-up
+# requirement, a debt without visible payoff-work must not be a silent
+# suppression: (1) a `frob:debt` at a site with no co-located explicit
+# `frob:todo` implicitly REGISTERS one -- same `src`, target is the debt's
+# own `ticket=` attribute -- so the debt's payoff work appears in every
+# ordinary TODO-edge consumer (TODO002's open-ticket check, `frob todo`-
+# style listings) for free, with no separate DEBT<->TODO wiring anywhere
+# else. (2) both directives already require an open ticket today (DEBT002
+# reuses the same open-ticket check TODO002 applies to `frob:todo`, per
+# T-0412's Done report), so an implicit registration is just as enforced
+# as an explicit one. (3) a `frob:debt` and an EXPLICIT co-located
+# `frob:todo` naming DIFFERENT tickets is a coherence error: reusing
+# DEBT001's own `"frob:debt" in md.reason` substring filter
+# (`frob.gates._debt001_violations`) by shaping the `MalformedDirective`
+# reason to contain that literal substring, so the mismatch surfaces as a
+# DEBT001 violation with no new gate rule id and no `frob.gates` change at
+# all -- this coherence rule lives entirely in the DSL parse step, exactly
+# like DEBT001/TEST010's existing "shape the malformed reason, let an
+# established gate's substring filter pick it up" pattern.
+#
+# Requirement (4) from T-0412's body -- surfacing BOTH the debt and its
+# todo at ticket-close time so neither resolves silently -- is NOT
+# implemented here: it is ticket-lifecycle behavior belonging to
+# `frob.tickets`/`frob.gates`, outside this module's declared scope
+# (T-0526 scopes only `src/frob/graph/dsl.py`). Filed as its own follow-up
+# rather than folded in silently; see T-0526's Done report.
+def _debt_todo_coherence(
+    edges: list[Edge],
+) -> tuple[list[Edge], list[MalformedDirective]]:
+    """Reconcile `frob:debt`/`frob:todo` edges sharing a `src`: synthesize an
+    implicit `frob:todo` for an unpaired debt (payoff work must always be
+    visible, never only a gate suppression), and flag a mismatched explicit
+    pairing (debt/todo naming different tickets at the same site) as a
+    DEBT001-shaped `MalformedDirective` (T-0526)."""
+    todo_by_src: dict[str, list[Edge]] = {}
+    for edge in edges:
+        if edge.kind == EdgeKind.TODO:
+            todo_by_src.setdefault(edge.src, []).append(edge)
+
+    extra_edges: list[Edge] = []
+    malformed: list[MalformedDirective] = []
+    for edge in edges:
+        if edge.kind != EdgeKind.DEBT:
+            continue
+        ticket = edge.attrs.get("ticket")
+        if not ticket:
+            # A debt with no ticket= is already DEBT001-malformed at parse
+            # time (_parse_attrs) and never reaches here as a DEBT edge.
+            continue
+        co_located = todo_by_src.get(edge.src, [])
+        mismatched = [t for t in co_located if t.target != ticket]
+        if mismatched:
+            file, _, line = edge.origin.rpartition(":")
+            _log.debug(
+                "T-0526: frob:debt/frob:todo ticket mismatch at %s (debt=%s todo=%s)",
+                edge.src,
+                ticket,
+                mismatched[0].target,
+            )
+            malformed.append(
+                MalformedDirective(
+                    file=file or edge.origin,
+                    line=int(line) if line.isdigit() else 0,
+                    reason=(
+                        f"frob:debt/frob:todo mismatch at {edge.src}: "
+                        f"frob:debt names ticket={ticket!r} but the co-located "
+                        f"frob:todo names {mismatched[0].target!r}; both must "
+                        f"name the same ticket"
+                    ),
+                )
+            )
+            continue
+        if not co_located:
+            _log.debug(
+                "T-0526: implicit frob:todo registered for unpaired frob:debt "
+                "at %s -> %s",
+                edge.src,
+                ticket,
+            )
+            extra_edges.append(
+                Edge(
+                    src=edge.src,
+                    kind=EdgeKind.TODO,
+                    target=ticket,
+                    origin=edge.origin,
+                    attrs={"implicit": "debt"},
+                )
+            )
+    return extra_edges, malformed
+
+
 # frob:doc docs/modules/graph.md#comment-dsl
 def parse_directives(
     parsed: ParsedFile,
@@ -390,6 +484,9 @@ def parse_directives(
             edges.append(result)
         else:
             malformed.append(result)
+    extra_edges, coherence_malformed = _debt_todo_coherence(edges)
+    edges.extend(extra_edges)
+    malformed.extend(coherence_malformed)
     if malformed:
         _log.warning("%s: %d malformed directive(s)", parsed.path, len(malformed))
     _log.debug("%s: parsed %d directive edge(s)", parsed.path, len(edges))

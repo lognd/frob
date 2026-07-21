@@ -3054,13 +3054,74 @@ blocked_by: []
 parent: T-0412
 scope:
 - src/frob/graph/dsl.py
-scope_changes: []
-evidence: []
+- tests/unit/graph/test_dsl.py
+scope_changes:
+- op: add
+  glob: tests/unit/graph/test_dsl.py
+  reason: T-0526 debt/todo coherence needs regression tests in the existing dsl.py
+    test file
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/unit/graph/test_dsl.py::TestDebtTodoCoherence::test_unpaired_debt_registers_implicit_todo
+- tests/unit/graph/test_dsl.py::TestDebtTodoCoherence::test_explicit_paired_todo_same_ticket_no_implicit_duplicate
+- tests/unit/graph/test_dsl.py::TestDebtTodoCoherence::test_mismatched_explicit_todo_is_debt001_shaped_malformed
 attachments: []
 acceptance: []
 threat: null
 ```
+## Done report
 
+Implemented T-0412's DEBT<->TODO coherence follow-up requirements (1)-(3)
+entirely inside `src/frob/graph/dsl.py`, this ticket's declared scope:
+
+- New `_debt_todo_coherence(edges)` post-pass over one file's parsed edges,
+  called from `parse_directives` after the normal per-line parse:
+  - (1) An unpaired `frob:debt` (no explicit co-located `frob:todo` at the
+    same `src`) implicitly REGISTERS a synthesized `TODO` edge (target =
+    the debt's own `ticket=` attribute, `attrs={"implicit": "debt"}`), so
+    the debt's payoff work is visible to every ordinary TODO-edge consumer
+    with zero changes to `frob.gates` -- it flows straight into the
+    existing `_todo002_edges` open-ticket check for free.
+  - (2) Both directives already require an open ticket (DEBT002 reuses
+    TODO002's check per T-0412's own Done report); the implicit
+    registration inherits that enforcement automatically, nothing new to
+    add here.
+  - (3) An explicit `frob:debt` + explicit `frob:todo` at the same `src`
+    naming DIFFERENT tickets is a coherence error, surfaced by shaping the
+    `MalformedDirective.reason` to contain the literal substring
+    `"frob:debt"` -- DEBT001's existing `_debt001_violations` filter
+    (`if "frob:debt" not in md.reason: continue`) picks it up automatically,
+    so no new gate rule id and no `frob.gates` change was needed at all
+    (same "shape the malformed reason, reuse an established gate's
+    substring filter" pattern DEBT001/TEST010 already use).
+
+Requirement (4) -- symmetric resolution surfacing of both the debt and
+the todo at ticket-close time -- is NOT implemented here: it is
+ticket-lifecycle behavior belonging to `frob.tickets`/`frob.gates`, both
+outside this ticket's declared scope (`src/frob/graph/dsl.py` only). Filed
+as its own follow-up: T-draft-64ba9cf3 "frob:debt/frob:todo symmetric
+resolution surfacing at ticket close (T-0412 req 4)", scoped to
+`src/frob/tickets/` + `src/frob/gates/__init__.py`.
+
+Scope was widened by one file via `frob ticket scope --add
+tests/unit/graph/test_dsl.py` (the ticket's original scope named only the
+implementation file, with no mirrored test path) to add the three
+regression tests below to the existing dsl.py test file rather than
+inventing a new untracked one.
+
+Gates: `uv run frob check --ticket T-0526 --json` -> 0 errors (568
+pre-existing warnings/118 waivers repo-wide, unrelated to this ticket's
+touched files). `ruff check`/`ruff format --check` clean on both touched
+files under both the PATH `ruff` and `uv run ruff`.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/unit/graph/test_dsl.py::TestDebtTodoCoherence::test_unpaired_debt_registers_implicit_todo` (pytest node id, verified passing when recorded)
+- `tests/unit/graph/test_dsl.py::TestDebtTodoCoherence::test_explicit_paired_todo_same_ticket_no_implicit_duplicate` (pytest node id, verified passing when recorded)
+- `tests/unit/graph/test_dsl.py::TestDebtTodoCoherence::test_mismatched_explicit_todo_is_debt001_shaped_malformed` (pytest node id, verified passing when recorded)
 <!-- ticket:T-0527 -->
 ```yaml
 id: T-0527
@@ -3321,3 +3382,26 @@ standalone drift-lock/decision-record anchor with no public wrapper), or
 demote/reword a stale reference. Batch by module, commit per batch, same
 as T-0524's pattern -- this ticket exists so the residual gets the same
 per-finding triage rather than being silently left unaccounted for.
+
+<!-- ticket:T-draft-64ba9cf3 -->
+```yaml
+id: T-draft-64ba9cf3
+title: frob:debt/frob:todo symmetric resolution surfacing at ticket close (T-0412
+  req 4)
+state: queued
+kind: feature
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/tickets/
+- src/frob/gates/__init__.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0412 DEBT-TODO coherence follow-up requirement 4: closing a ticket should surface BOTH the debt and the todo so neither is silently orphaned when the other resolves. T-0526 implemented requirements 1-3 (implicit todo registration for an unpaired debt, reused open-ticket check, same-ticket consistency check) entirely inside src/frob/graph/dsl.py per its declared scope. This requirement needs frob.tickets close-time reporting and/or frob.gates surfacing, both out of T-0526 scope, filed as its own unit of work.
