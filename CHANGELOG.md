@@ -17,6 +17,22 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.43.0] - unreleased
+
+Public-API surface change since 0.42.0 (mechanical semver via REL001): an
+additive (minor) bump -- new `frob.gates.known_gate_rule_ids` accessor.
+
+- T-0499: wire real `known_rule_ids` into `evaluate_exhaustiveness`/
+  `evaluate_compliance` production callsites. New public
+  `frob.gates.known_gate_rule_ids()` returning the live gate-rule-id set;
+  `frob.app.sys_runner._evaluate_audit` now threads it into
+  `evaluate_exhaustiveness`, and `frob.strata._audit`'s compliance path
+  threads the same `known_rule_ids` into `evaluate_compliance` so
+  THREAT006 and COMPLIANCE004's `caught_by` checks can both actually
+  resolve a rule-id-shaped reference instead of always defaulting to
+  empty (dormant since T-0382 wired the parameters but never called
+  either production entrypoint with a live set).
+
 ## [0.42.0] - unreleased
 
 Public-API surface change since 0.41.0 (mechanical semver via REL001): an
