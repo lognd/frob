@@ -1358,7 +1358,7 @@ T-0254 Windows pillar. Generalize the HostManifest (T-0255, Linux/systemd-first)
 id: T-0263
 title: 'Kerberos/AD movement vectors: delegation abuse, Kerberoasting, S4U, cross-realm
   as HOST/KRB obligations'
-state: queued
+state: in-progress
 kind: security
 origin: human
 created: '2026-07-18'
@@ -3620,7 +3620,7 @@ Root cause of the arch double-run (T-0418): _arch_violations_from_suggestions wa
 id: T-0423
 title: 'compute-once contract: run-scoped memoization for the heavy pure analyses
   (parse/build_graph/analyze_project/find_duplicates)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-07-20'
@@ -4423,7 +4423,7 @@ Design (two mutually-reinforcing enforcements of the same invariant):
 id: T-0460
 title: 'render vocabulary: table, tree, progress (TTY-only clears-on-completion, T-0419
   contract), count-deltas elements on RenderWriter (T-0448 follow-on)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -4843,7 +4843,7 @@ T-0327 added TreeNode.span (byte offsets) threaded through frob.lang._common.exp
 ```yaml
 id: T-0482
 title: 'WALK-lint migration: check/_python.py rglob sites'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-07-20'
