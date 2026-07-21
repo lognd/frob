@@ -22,6 +22,7 @@ from frob.arch._models import (
     ArchSeverity,
     ArchSuggestion,
 )
+from frob.check._memo import memoize_per_run
 from frob.excludes import (
     is_excluded,
     is_test_file,
@@ -263,6 +264,10 @@ def _run_python_checks(
 
 
 # frob:doc docs/modules/arch.md#public-api
+# frob:doc docs/commands/check.md#run-scoped-memoization
+# frob:tests tests/unit/test_memo.py::test_analyze_project_second_call_is_memo_hit
+# frob:ticket T-0423
+@memoize_per_run
 def analyze_project(
     root: Path,
     *,
@@ -272,6 +277,15 @@ def analyze_project(
     max_nesting_depth: int = 4,
     max_file_lines: int = 500,
 ) -> ArchResult:
+    """Scan `root` for long functions, god classes, deep nesting, high
+    coupling, large files, and shared-signature abstraction opportunities.
+
+    Memoized per `frob check` run (T-0423, `frob.check._memo.memoize_
+    per_run`): a second call with identical arguments in the same run is a
+    cache hit, not a re-walk -- this was the root cause of the T-0418 arch
+    double-run (`analyze_project` invoked once by the advisory arch stage
+    and once by the ARCH001 gate, over the same tree).
+    """
     from frob.logging.quiet import quiet_stdout_logs
 
     limits = _Limits(

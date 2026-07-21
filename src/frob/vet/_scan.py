@@ -37,7 +37,7 @@ from frob.vet import (
     _typosquat,
 )
 from frob.vet._allow import _load_vet_config
-from frob.vet._lockfile import _find_lockfile, _parse_lockfile
+from frob.vet._lockfile import _find_all_lockfiles, _parse_lockfile
 from frob.vet._models import (
     Dependency,
     PackageVerdict,
@@ -413,6 +413,25 @@ def _apply_npm_and_prehook_checks(
         signals.extend(pre_signals)
 
 
+def _source_unavailable_violation(dep: Dependency, lockfile_name: str) -> Violation:
+    """T-0400 audit finding #1: a dependency `frob vet` never read must
+    never be indistinguishable from one it read and found clean -- an
+    honest, fail-CLOSED ERROR finding (mirrors `_timeout_verdict`'s
+    already-honest VET-TIMEOUT shape) so an allow-listed package whose
+    source is not present locally cannot silently pass as "approved"."""
+    return Violation(
+        rule="VET-SOURCE-UNAVAILABLE",
+        severity=Severity.ERROR,
+        file=lockfile_name,
+        line=0,
+        message=(
+            f"{dep.name}@{dep.version}: source not found locally "
+            f"(not installed/cached); capability scan could not run -- "
+            f"this dependency was NEVER READ, not verified clean"
+        ),
+    )
+
+
 def _scan_located_source(
     dep: Dependency,
     root: Path,
@@ -424,12 +443,17 @@ def _scan_located_source(
     violations: list[Violation],
 ) -> None:
     """Locate `dep`'s source and, if found, scan it, folding results (in
-    place) into `capabilities`/`signals`/`violations`."""
+    place) into `capabilities`/`signals`/`violations`. T-0400: when source
+    cannot be located this now appends a `VET-SOURCE-UNAVAILABLE` ERROR
+    violation (fail-closed) instead of silently returning an empty,
+    indistinguishable-from-clean capability set."""
     source_dir = _source._locate_source(root, dep.ecosystem, dep.name, dep.version)
     if source_dir is None:
         signals.append("source-unavailable")
-        _log.info(
-            "vet: %s/%s@%s: source unavailable locally; empty capability set",
+        violations.append(_source_unavailable_violation(dep, lockfile.name))
+        _log.warning(
+            "vet: %s/%s@%s: source unavailable locally; NEVER SCANNED "
+            "(fail-closed VET-SOURCE-UNAVAILABLE)",
             dep.ecosystem,
             dep.name,
             dep.version,
@@ -699,13 +723,18 @@ def _collect_supplementary_findings(
     return skipped
 
 
-def _resolve_lockfile_and_deps(
+def _resolve_lockfiles_and_deps(
     root: Path,
-) -> Result[tuple[Path, tuple[Dependency, ...], Path, VetConfig, Path], VetError]:
-    """Locate `root`'s lockfile, parse its dependencies, and resolve the
-    project root + `[vet]` config + cache path `scan_tree` needs."""
-    lockfile = _find_lockfile(root)
-    if lockfile is None:
+) -> Result[
+    tuple[tuple[tuple[Path, tuple[Dependency, ...]], ...], Path, VetConfig, Path],
+    VetError,
+]:
+    """Locate EVERY supported lockfile under `root` (T-0400 audit finding
+    #2 -- a polyglot repo's second lockfile must not go unscanned), parse
+    each one's dependencies, and resolve the project root + `[vet]` config
+    + cache path `scan_tree` needs (shared across every lockfile found)."""
+    lockfiles = _find_all_lockfiles(root)
+    if not lockfiles:
         _log.warning(
             "vet: no supported lockfile (uv.lock, package-lock.json, "
             "pnpm-lock.yaml, Cargo.lock) under %s",
@@ -713,22 +742,25 @@ def _resolve_lockfile_and_deps(
         )
         return Err(VetError.LockfileUnsupported)
 
-    parsed = _parse_lockfile(lockfile)
-    if parsed.is_err:
-        return Err(parsed.danger_err)
-    deps = parsed.danger_ok
-    _log.info("vet: scanning %d dependency(ies) from %s", len(deps), lockfile)
+    parsed_lockfiles: list[tuple[Path, tuple[Dependency, ...]]] = []
+    for lockfile in lockfiles:
+        parsed = _parse_lockfile(lockfile)
+        if parsed.is_err:
+            return Err(parsed.danger_err)
+        deps = parsed.danger_ok
+        _log.info("vet: scanning %d dependency(ies) from %s", len(deps), lockfile)
+        parsed_lockfiles.append((lockfile, deps))
 
-    # T-0221: `root` may itself be a lockfile path (_find_lockfile returns it
-    # directly). Project-relative lookups (config, cache) need the
-    # containing directory, never the lockfile path itself.
-    project_root = root if root.is_dir() else lockfile.parent
+    # T-0221: `root` may itself be a lockfile path (_find_all_lockfiles
+    # returns it directly, as a 1-tuple). Project-relative lookups (config,
+    # cache) need the containing directory, never the lockfile path itself.
+    project_root = root if root.is_dir() else lockfiles[0].parent
 
     cfg = _load_vet_config(project_root)
     cache_path = project_root / _CACHE_REL
     if not cfg.present:
         _log.info("vet: no [vet] section; advisory-only mode")
-    return Ok((lockfile, deps, project_root, cfg, cache_path))
+    return Ok((tuple(parsed_lockfiles), project_root, cfg, cache_path))
 
 
 # frob:doc docs/modules/vet.md#public-api
@@ -747,16 +779,38 @@ def scan_tree(
     (T-0208) bounds each package's scan in seconds; on expiry that package
     gets an honest VET-TIMEOUT verdict, never a silent skip. `jobs` > 1 runs
     packages concurrently -- see `_scan_dependencies`'s docstring for the
-    shared-cache risk this discloses before you raise it above 1."""
-    resolved = _resolve_lockfile_and_deps(root)
+    shared-cache risk this discloses before you raise it above 1.
+
+    T-0400: scans EVERY supported lockfile found under `root` (uv.lock,
+    package-lock.json, pnpm-lock.yaml, Cargo.lock), not just the first one a
+    fixed-order search hits -- a polyglot repo with both a `uv.lock` and a
+    `package-lock.json` used to have its entire npm dependency set silently
+    unscanned. Verdicts/violations/skipped-notes from every lockfile are
+    merged into one report."""
+    resolved = _resolve_lockfiles_and_deps(root)
     if resolved.is_err:
         return Err(resolved.danger_err)
-    lockfile, deps, project_root, cfg, cache_path = resolved.danger_ok
+    parsed_lockfiles, project_root, cfg, cache_path = resolved.danger_ok
 
-    violations, verdicts = _scan_dependencies(
-        deps, project_root, lockfile, cfg, cache_path, fetch, timeout=timeout, jobs=jobs
-    )
-    skipped = _collect_supplementary_findings(project_root, lockfile, cfg, violations)
+    violations: list[Violation] = []
+    verdicts: list[PackageVerdict] = []
+    skipped: list[str] = []
+    for lockfile, deps in parsed_lockfiles:
+        lf_violations, lf_verdicts = _scan_dependencies(
+            deps,
+            project_root,
+            lockfile,
+            cfg,
+            cache_path,
+            fetch,
+            timeout=timeout,
+            jobs=jobs,
+        )
+        violations.extend(lf_violations)
+        verdicts.extend(lf_verdicts)
+        skipped.extend(
+            _collect_supplementary_findings(project_root, lockfile, cfg, violations)
+        )
 
     report = VetReport(
         verdicts=tuple(verdicts),
@@ -766,7 +820,9 @@ def scan_tree(
         skipped=tuple(skipped),
     )
     _log.info(
-        "vet: scan complete: %d verdict(s), %d violation(s), enforce=%s",
+        "vet: scan complete: %d lockfile(s), %d verdict(s), %d violation(s), "
+        "enforce=%s",
+        len(parsed_lockfiles),
         len(verdicts),
         len(violations),
         cfg.enforce,

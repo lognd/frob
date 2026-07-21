@@ -1603,7 +1603,7 @@ Recurring: implementer agents put a 'frob:tests <self>' directive above their ow
 ```yaml
 id: T-0287
 title: 'dup: type-generalizing anti-unification (holes bind types, propose generics)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-19'
@@ -1718,7 +1718,7 @@ PERF005/006 recursion termination prover (well-founded measure + base case, or f
 id: T-0298
 title: 'COV003: resolve file-level and directory-level evidence (any collected test
   under the path)'
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-07-19'
@@ -1929,7 +1929,7 @@ THE stall-killer, extractable before the full daemon. Observed: implementer agen
 ```yaml
 id: T-0324
 title: evidence/COV003 resolution must accept parametrized node ids (file::Class::method[param])
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-07-19'
@@ -2561,7 +2561,7 @@ User critique (2026-07-20): the corpora hedged where the mandate is to EXHAUST -
 ```yaml
 id: T-0348
 title: 'structural PII/secrets: DB/DDL schema scanning (family 2)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -2605,7 +2605,7 @@ CORPUS UNIVERSE ADDITION (2026-07-20): the code-level performance corpus (docs/d
 ```yaml
 id: T-0349
 title: 'structural PII/secrets: email-shape value detection, non-regex (family 4)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -2647,7 +2647,7 @@ T-0207 follow-on: detect email-shaped string literals via a structural parse (em
 ```yaml
 id: T-0350
 title: 'structural PII/secrets: keyword-sweep suggestion severity (family 5)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -2690,7 +2690,7 @@ T-0207 follow-on: identifier/comment keyword hits at suggestion severity only (n
 id: T-0351
 title: 'structural PII/secrets: join PII010/SEC110 findings to std.pii/std.secrets
   declarations'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -3571,7 +3571,7 @@ this ticket's own evidence in `::` form.
 id: T-0401
 title: 'AUDIT: strata vacuous-proof closure -- bind proofs to code, fail-closed on
   incompleteness (docs/audits/strata.md)'
-state: queued
+state: in-progress
 kind: security
 origin: human
 created: '2026-07-20'
@@ -3970,7 +3970,7 @@ User spotted from frob check output: frob-arch appears as its own stage AND arch
 id: T-0419
 title: 'frob check TTY UX: live task-list with progress bars (TTY-only, clears on
   completion)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -3993,7 +3993,7 @@ User UX ask: when frob check runs from a human TTY (isatty), show a LIVE task li
 id: T-0420
 title: 'frob check output: split the single gates line into named per-family stages
   + a gate summary; consistent coloring incl pre-summary warnings'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -4015,7 +4015,7 @@ User UX asks (3 related output issues): (1) The pre-summary WARNING lines (PII01
 id: T-0421
 title: 'frob check per-language tooling display: show skipped (unchanged) vs hidden
   (language absent), not silently omitted'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -5636,7 +5636,7 @@ docs/modules/tickets.md (state-machine section + CLI command list).
 id: T-0473
 title: 'scope-lease is worktree-local: frob ticket start in an isolated worktree never
   reaches main, so collision-aware doable (T-0453) is inert across parallel agents'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-07-20'
@@ -5656,7 +5656,7 @@ id: T-0474
 title: 'frob ticket start is not instant: it runs a synchronous whole-repo dup+xref
   pre-work sweep (57s on /mnt/c) instead of just the queued->in-progress transition
   -- defer/background/incrementalize the baseline snapshot'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-07-20'
@@ -5703,7 +5703,7 @@ title: 'ticket<->worktree binding + liveness reconcile (regular op AND recovery)
   instead of the coordinator polling output-file mtimes. Sharpens T-0456; relates
   T-0473 (worktree-local lease) T-0475 (splice state resurrection) T-0457 (tiered
   clean)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -5770,7 +5770,7 @@ title: 'frob ticket land: auto-reconcile the ledger and non-owned code conflicts
   scope by taking main''s version (the worktree never legitimately changed them);
   only surface conflicts in IN-SCOPE files for manual resolution. Implements the coordinator''s
   hand-run restore recipe (playbook 10b) as land behavior. Subsumes T-0475.'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -6019,7 +6019,7 @@ rebind).
 id: T-0484
 title: 'coverage cycle is too slow to run per-change: incrementalize / background
   it (daemon-side), so TEST005/TEST006 feedback is not a full-suite wait'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-21'
@@ -6068,7 +6068,7 @@ Found during the 2026-07-21 doable-warning scope-narrowing sweep. frob ticket sc
 id: T-0486
 title: 'dup/_legacy_py._harvest_with: with-item alias lookup uses nonexistent ''alias''
   field, as-pattern binding names never join the alpha-rename set'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-07-21'
@@ -6088,7 +6088,7 @@ Recovered filing: T-draft-7bae70b7 was filed in T-0160 batch work but its ledger
 id: T-0487
 title: 'dup: python-centric _KEYWORDS misclassifies rust/ts/c/cpp keywords (let/fn/etc)
   as identifiers in R5 def-use labeling'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-07-21'
