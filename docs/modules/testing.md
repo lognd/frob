@@ -224,6 +224,7 @@ required for this one.
 <!-- frob:describes src/frob/testing/_runners.py::load_natives -->
 <!-- frob:describes src/frob/strata/_native_test.py::run_native_sys_audit -->
 <!-- frob:describes src/frob/strata/_native_test.py::NativeAuditOutcome -->
+<!-- frob:describes src/frob/testing/_incremental_coverage.py::python_coverage_targets -->
 
 ```python
 # frob/gitio.py -- the ONE git subprocess seam (shared with frob.gates)
@@ -276,6 +277,14 @@ def collect_rust_tests(root: Path) -> Result[CollectedTests, TestingError]
     # Cargo.toml; Err (not an empty Ok) when the PyO3 env cannot be
     # resolved -- see "Rust runner" above. Merged with collect_python_tests
     # by frob.gates._load_tests into one CollectedTests for COV003.
+
+# frob/testing/_incremental_coverage.py (T-0484)
+def python_coverage_targets(root: Path, snapshot: GraphSnapshot,
+                            base: str) -> tuple[str, ...]
+    # The touched set's selected python pytest targets against base, via
+    # select_tests -- feeds `make coverage-fast`'s touched-set-only,
+    # --cov-append coverage run instead of a full-suite re-run per change.
+    # () on a diff/selection failure or an empty selection; never raises.
 ```
 
 **Deviation**: `frob.testing`'s `suite` fallback mode is threaded through the

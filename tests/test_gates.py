@@ -668,6 +668,119 @@ class TestCoverageGate:
         violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert not any(v.rule == "COV003" for v in violations)
 
+    def test_cov003_passes_for_parametrized_evidence_with_dot_in_case_id(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0324 regression: an evidence id naming ONE specific
+        `@pytest.mark.parametrize` case whose case text itself contains a
+        dot (e.g. a version string `3.11.4`, exactly what `frob ticket
+        evidence` recorded from T-0222's auto-generated fixture ids) must
+        resolve. Before the fix, `_symref_to_nodeid`'s blanket
+        `qualname.replace('.', '::')` corrupted dots INSIDE the `[...]`
+        case suffix too, so the bracket-less base resolved (`_evidence_
+        collected`'s prefix-match branch) but the specific bracketed case
+        id did not -- exactly the split reported."""
+        snap = _snapshot(tmp_path)
+        node = "tests/test_x.py::test_needle_present[015-python-3.11.4]"
+        queue = TicketQueue(
+            tickets={
+                "T-0002": _ticket(
+                    ticket_id="T-0002", state=TicketState.DONE, evidence=(node,)
+                )
+            }
+        )
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset({node}))
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert not any(v.rule == "COV003" for v in violations)
+
+    def test_cov003_passes_for_file_level_evidence(self, tmp_path: Path) -> None:
+        """T-0298: a done ticket may cite a bare test FILE as its evidence
+        (`tests/test_vet.py`, no `::`) -- root-cause of a 25-error
+        main-red incident (2026-07-19), where a refactor touching ~20
+        files recorded exactly this shape and COV003 could never resolve
+        it. Resolves iff >=1 collected node id lives under that file."""
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(
+            tickets={
+                "T-0002": _ticket(
+                    ticket_id="T-0002",
+                    state=TicketState.DONE,
+                    evidence=("tests/test_vet.py",),
+                )
+            }
+        )
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(
+            node_ids=frozenset(
+                {"tests/test_vet.py::test_a", "tests/test_vet.py::test_b"}
+            )
+        )
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert not any(v.rule == "COV003" for v in violations)
+
+    def test_cov003_passes_for_directory_level_evidence(self, tmp_path: Path) -> None:
+        """T-0298: a bare directory (`tests/unit/deploy`, no `::`) resolves
+        the same way a file does -- any collected node id under it counts."""
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(
+            tickets={
+                "T-0002": _ticket(
+                    ticket_id="T-0002",
+                    state=TicketState.DONE,
+                    evidence=("tests/unit/deploy",),
+                )
+            }
+        )
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(
+            node_ids=frozenset({"tests/unit/deploy/test_x.py::test_y"})
+        )
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert not any(v.rule == "COV003" for v in violations)
+
+    def test_cov003_rejects_empty_directory_level_evidence(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0298: file-/directory-level resolution must NOT be vacuous --
+        a path with zero collected node ids under it (nothing landed there,
+        or the directory does not correspond to any real test) still
+        fails COV003, honest per the ticket's requirement."""
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(
+            tickets={
+                "T-0002": _ticket(
+                    ticket_id="T-0002",
+                    state=TicketState.DONE,
+                    evidence=("tests/unit/nonexistent",),
+                )
+            }
+        )
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(
+            node_ids=frozenset({"tests/unit/deploy/test_x.py::test_y"})
+        )
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert any(v.rule == "COV003" for v in violations)
+
+    def test_cov003_prefers_node_level_over_path_level(self, tmp_path: Path) -> None:
+        """T-0298: node-level resolution stays available and preferred --
+        a precise `path::func` evidence id still resolves exactly as
+        before, unaffected by the new path-level fallback existing."""
+        snap = _snapshot(tmp_path)
+        node = "tests/test_vet.py::test_a"
+        queue = TicketQueue(
+            tickets={
+                "T-0002": _ticket(
+                    ticket_id="T-0002", state=TicketState.DONE, evidence=(node,)
+                )
+            }
+        )
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset({node, "tests/test_vet.py::test_b"}))
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert not any(v.rule == "COV003" for v in violations)
+
     def test_cov003_passes_for_rust_evidence_id(self, tmp_path: Path) -> None:
         """T-0092: a done ticket citing a cargo test id resolves against
         `collect_rust_tests`' node ids the same way a pytest id resolves
@@ -1662,6 +1775,37 @@ class TestTestGate:
                 {
                     "tests/test_thermo.py::test_density[1]",
                     "tests/test_thermo.py::test_density[2]",
+                }
+            )
+        )
+        violations = run_test_gate(snap, (), Nothing(), tests, TestPolicy())
+        assert "TEST003" not in _rules(violations)
+
+    def test_test003_satisfied_by_parametrized_case_with_dot_in_case_id(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0324 regression, TEST003 side of the same bug: a `frob:tests`
+        directive bound to a parametrized test whose ONLY collected cases
+        carry a dot inside their `[...]` case text (e.g. `[3.11]`, a float
+        or version-string parametrize value) must still satisfy TEST003 --
+        `_symref_to_nodeid` must not corrupt those in-bracket dots into
+        `::` while converting the directive's own dotted qualname."""
+        from typani.option import Nothing
+
+        _write(tmp_path, "src/frob/pkg/thermo.py", "def helper(x):\n    return x\n")
+        test_source = (
+            '# frob:tests src/frob/pkg/thermo.py kind="integration"\n'
+            "@pytest.mark.parametrize('x', [3.11, 4.22])\n"
+            "def test_density(x):\n"
+            "    assert True\n"
+        )
+        _write(tmp_path, "tests/test_thermo.py", test_source)
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(
+            node_ids=frozenset(
+                {
+                    "tests/test_thermo.py::test_density[3.11]",
+                    "tests/test_thermo.py::test_density[4.22]",
                 }
             )
         )

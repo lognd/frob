@@ -16,7 +16,7 @@ declaration).
 | DRIFT002 | drift | edge endpoint no longer resolves (rename/delete) |
 | COV001 | coverage | public symbol has no `doc` edge (docstring counts via `doc` facet only if policy says so) |
 | COV002 | coverage | changed symbol has neither a `frob:ticket` edge to an open ticket NOR an open ticket whose `scope` glob covers its file (so one scoped ticket accounts for a whole refactor, not a per-symbol directive). A `frob:ticket` edge to a ticket that just closed to `DONE` in this same uncommitted diff (`tickets.md` itself touched) also counts -- T-0214's grace window, see design decisions below |
-| COV003 | coverage | ticket in state done with evidence ids that do not resolve to collected tests (never verifies PASS/FAIL, nor scope-binding -- see the T-0398 note below the table) |
+| COV003 | coverage | ticket in state done with evidence ids that do not resolve to collected tests (never verifies PASS/FAIL, nor scope-binding -- see the T-0398 note below the table; node-, file-, and directory-level evidence ids all resolve, T-0298 below) |
 | COV004 | coverage | attachment sha256 mismatch or file missing |
 | COV005 | coverage | a diff-touched file's `frob:` directive now binds a PRIVATE symbol whose span overlaps this diff's hunks, where the same `(kind, target)` directive bound a PUBLIC symbol in that file at the diff's base revision -- a displaced obligation (T-0297), see design decisions below |
 | TODO001 | coverage | bare TODO/FIXME comment (not `frob:`-prefixed) in a diff-touched file -- work marked but not accounted for at all |
@@ -76,6 +76,22 @@ ticket` CLI's own wiring of real values into these parameters is a
 disclosed follow-up, not yet done) supplies the answer. See
 docs/modules/tickets.md's `add_evidence`/`transition`/`land` entries for
 the parameter contracts.
+
+**T-0298 (file-/directory-level COV003 evidence)**: an evidence id with no
+`::` at all (a bare path, e.g. `tests/test_vet.py` or `tests/unit/deploy`)
+resolves iff at least one collected node id lives under it -- as that exact
+file (`<path>::...`) or inside that directory (`<path>/...`). Node-level
+resolution (`path::Class::method`) is tried FIRST and stays the preferred,
+most precise granularity; the path-level check is a fallback, not a
+replacement. It is deliberately non-vacuous: a path with zero matching
+collected node ids (nothing landed there, or a typo'd/nonexistent
+directory) still fails COV003 -- "this whole file/dir passes" only counts
+when something under it actually collected. This exists because a refactor
+touching ~20 files naturally produces evidence at file granularity ("this
+test file passes"), not one node id per file; forcing node-level-only
+evidence for that shape of change is what produced a real 25-error
+main-red incident (2026-07-19) when two agents both recorded file-level
+ids COV003 could not, at the time, resolve at all.
 
 Severity: `error` (exit 1) or `warn`; per-rule default overridable via the
 `[gates.severity]` table in `frob.toml` (`COV001 = "warn"`), applied as a

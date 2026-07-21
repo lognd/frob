@@ -213,6 +213,40 @@ DUP_CLAIMS: tuple[DupClaim, ...] = (
         note="mod_r6.py::add_twice_a/add_twice_b -- different algorithm "
         "(`x + x` vs `2 * x`), same behavior, proven via probe_equivalence",
     ),
+    # T-0487: T-0447 landed frob-core's r3_canonicalize (literal abstraction
+    # + elif control-flow desugar), so r3 now independently fires where r2
+    # does not -- the r3-vs-r2 excuse below is stale and removed in favor
+    # of this claim. Fixture lives in tests/test_dup.py (not an existing
+    # fixture_root dir like the claims above; T-0199's "reuse an existing
+    # fixture directory" note predates T-0447's in-test tmp_path fixtures).
+    DupClaim(
+        rung="r3",
+        clone_type=2,
+        language="python",
+        fixture_root="tests/test_dup.py (inline tmp_path fixture)",
+        proof_test="tests/test_dup.py::TestR3LiteralAbstraction.test_r3_fires_where_r2_does_not",
+        note="offset_by_one/offset_by_two -- identical shape, differ only "
+        "by a numeric literal; r3's literal abstraction collapses both "
+        "literals to a shared placeholder, r2 does not",
+    ),
+    # T-0487: R5's WL-hash operates on `_real_dataflow_graph`'s structural
+    # def/use labels, not literal token identity, so it was already
+    # cross-language-capable in principle; the `_KEYWORDS` fix (a Rust
+    # `let` no longer mis-labels as an identifier) makes that provable even
+    # when the rust side declares a local binding, closing the rust cell
+    # of the generic non-python language-gap excuse for r5/type3.
+    DupClaim(
+        rung="r5",
+        clone_type=3,
+        language="rust",
+        fixture_root="tests/test_dup.py (inline tmp_path fixture)",
+        proof_test="tests/test_dup.py::TestCrossLanguageR5WithLet."
+        "test_r5_fires_across_languages_with_a_let_binding",
+        note="sum_with_local_py/sum_with_local_rs -- structurally "
+        "identical function (one local binding, one return) written once "
+        "in python and once in rust; r5's structural def-use graph "
+        "collides across languages",
+    ),
 )
 
 # frob:doc docs/modules/dup.md#public-api
@@ -222,31 +256,10 @@ DUP_CLAIMS: tuple[DupClaim, ...] = (
 #: work these name -- filed as a follow-up rather than silently dropped
 #: (T-0158 "escape valve" precedent).
 DUP_MATRIX_EXCUSES: tuple[DupMatrixExcuse, ...] = (
-    # -- r3: current implementation does not distinguish it from r2 -------
-    # `frob.dup._pipeline._fingerprint_symbol` feeds r3_canonical_hash the
-    # SAME `_r2_normalize` output r2 hashes (only alpha-renaming; no
-    # literal abstraction, no commutative-operand ordering, no for/while
-    # control-flow desugaring is implemented in `_pipeline.py` despite
-    # `frob-core/src/lib.rs::r3_canonical_hash`'s docstring assuming the
-    # caller already did that normalization). Verified directly (T-0199):
-    # a for-loop/while-loop pair computing the same accumulation produces
-    # DIFFERENT r2-normalized token streams (`for`/`in` vs `while`/`.pop(`
-    # never collide), so no fixture can currently isolate r3 from r2 --
-    # this is a real doc/implementation drift, not a missing fixture,
-    # tracked by T-draft-d6bca168 rather than fixed here (out of T-0199's scope,
-    # which excludes src/frob/gates/__init__.py and frob-core/**, and this
-    # needs an actual `_pipeline.py`/`frob-core` canonicalization pass, not
-    # a test).
-    DupMatrixExcuse(
-        rung="r3",
-        clone_type=2,
-        language="python",
-        reason="r3_canonical_hash currently folds the same r2-normalized "
-        "token stream r2 hashes (no literal abstraction/control-flow "
-        "desugar implemented in _pipeline.py yet), so no fixture can "
-        "isolate an r3-only fire from r2 today -- doc/impl drift tracked "
-        "by T-draft-d6bca168, not a missing fixture",
-    ),
+    # -- r3-vs-r2 excuse removed (T-0487): T-0447 landed frob-core's
+    # r3_canonicalize (literal abstraction + elif desugar), so r3 now
+    # independently fires where r2 does not -- see the r3/python DUP_CLAIMS
+    # entry above, which supersedes this excuse.
     # -- r7: opt-in, zero fixtures, dependency not installed by default ---
     DupMatrixExcuse(
         rung="r7",
@@ -282,15 +295,22 @@ def _language_gap_reason(rung: str) -> str:
 
 def _non_python_excuses() -> tuple[DupMatrixExcuse, ...]:
     """Every (rung, clone_type, non-python-language) cell that follows
-    from `RUNG_SPECS`, excused with `_language_gap_reason` -- generated
-    rather than hand-listed so a new rung or a new `LANGUAGES` entry is
-    covered automatically instead of silently falling through as an
-    unexcused empty cell."""
+    from `RUNG_SPECS` and has no `DUP_CLAIMS` entry of its own, excused
+    with `_language_gap_reason` -- generated rather than hand-listed so a
+    new rung or a new `LANGUAGES` entry is covered automatically instead
+    of silently falling through as an unexcused empty cell. A cell already
+    covered by a `DUP_CLAIMS` entry (T-0487: e.g. r5/rust) is skipped here
+    -- generating an excuse for an already-claimed cell would trip
+    `test_no_cell_is_both_claimed_and_excused`, the same claimed-xor-
+    excused discipline `DUP_MATRIX_EXCUSES` itself follows."""
+    claimed_keys = {(c.rung, c.clone_type, c.language) for c in DUP_CLAIMS}
     out: list[DupMatrixExcuse] = []
     for spec in RUNG_SPECS:
         for clone_type in spec.claimed_clone_types:
             for language in LANGUAGES:
                 if language == "python":
+                    continue
+                if (spec.rung, clone_type, language) in claimed_keys:
                     continue
                 out.append(
                     DupMatrixExcuse(

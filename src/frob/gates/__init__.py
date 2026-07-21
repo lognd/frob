@@ -144,9 +144,24 @@ def _touched_files(diff: Diff) -> set[str]:
 
 
 def _symref_to_nodeid(symref: str) -> str:
-    """`path::a.b` -> `path::a::b`, the pytest node id spelling of a qualname."""
+    """`path::a.b` -> `path::a::b`, the pytest node id spelling of a qualname.
+
+    frob:ticket T-0324
+    A parametrized test's `frob:tests`/evidence symref carries its case
+    suffix verbatim (`path::a.b[015-python-3.11.4]`) -- pytest node ids for
+    a `@pytest.mark.parametrize`-expanded case routinely contain their own
+    literal dots (version strings, floats, dotted module paths passed as
+    case values). A blanket `qualname.replace('.', '::')` over the WHOLE
+    qualname corrupted those in-bracket dots too (`3.11.4` ->`3::11::4`),
+    so a bracketed case id could never resolve against its real collected
+    node id even though the bracket-less base did (only the base's dots,
+    if any, sit outside a `[...]` suffix). Only the qualname portion before
+    the first `[` is a dotted Class.method path; the `[...]` suffix (if
+    any) is opaque pytest-generated case text and must pass through
+    unchanged."""
     path, _, qualname = symref.partition("::")
-    return f"{path}::{qualname.replace('.', '::')}"
+    head, bracket, tail = qualname.partition("[")
+    return f"{path}::{head.replace('.', '::')}{bracket}{tail}"
 
 
 # frob:ticket T-0275
@@ -245,13 +260,57 @@ def _snake(name: str) -> str:
     return re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
 
 
+# frob:ticket T-0298
+def _is_path_level_evidence(evidence: str) -> bool:
+    """True if `evidence` names a file or directory rather than a single
+    test node (`path::qualname`) -- no `::` at all, e.g. `tests/test_vet.py`
+    or `tests/unit/deploy`."""
+    return "::" not in evidence
+
+
+# frob:ticket T-0298
+def _path_level_evidence_collected(evidence: str, tests: CollectedTests) -> bool:
+    """COV003 file-/directory-level evidence resolution: `evidence` (a bare
+    path with no `::`) resolves iff at least one collected node id lives
+    under it -- either AS that exact file (`evidence::...`) or inside that
+    directory (`evidence/...`).
+
+    T-0298: a refactor touching ~20 files naturally produces evidence at
+    file granularity ("this whole test file passes"), not one node id per
+    file; forcing node-level ids for that shape of change is what led two
+    real agents (root-cause incident, 2026-07-19 main-red) to record
+    unresolvable ids like `tests/test_vet.py` or `tests/unit/deploy` that
+    COV003 could never validate. This is deliberately NOT vacuous: an empty
+    or nonexistent path (zero matching collected node ids) still fails --
+    "this file/dir passes" only counts when something under it actually
+    collected. Node-level evidence (`_evidence_collected`) remains the
+    preferred, more precise granularity and is tried first by
+    `_evidence_valid_for_ticket`; this is the coarser fallback, not a
+    replacement."""
+    stripped = evidence.rstrip("/")
+    file_prefix = f"{stripped}::"
+    dir_prefix = f"{stripped}/"
+    return any(
+        node.startswith(file_prefix) or node.startswith(dir_prefix)
+        for node in tests.node_ids
+    )
+
+
 def _evidence_collected(evidence: str, tests: CollectedTests) -> bool:
     """Exact node-id membership, or bare-function match for parametrized
-    tests (`f` satisfies evidence when only `f[param]` variants collect).
-    Thin wrapper over `frob.tickets._models.matches_collected` -- the
-    single shared implementation (D-11 dedupe; `frob.tickets.add_evidence`
-    used to carry an independent, hand-written copy of this exact rule)."""
-    return matches_collected(evidence, tests.node_ids)
+    tests (`f` satisfies evidence when only `f[param]` variants collect) --
+    via `frob.tickets._models.matches_collected`, the single shared
+    implementation (D-11 dedupe; `frob.tickets.add_evidence` used to carry
+    an independent, hand-written copy of this exact rule). Node-level
+    resolution is tried first (preferred, most precise); a bare file- or
+    directory-path evidence id (T-0298, no `::`) falls back to
+    `_path_level_evidence_collected` -- "any collected node under this
+    path" -- rather than failing outright."""
+    if matches_collected(evidence, tests.node_ids):
+        return True
+    if _is_path_level_evidence(evidence):
+        return _path_level_evidence_collected(evidence, tests)
+    return False
 
 
 # frob:ticket T-0215
