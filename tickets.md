@@ -5699,7 +5699,7 @@ clean). `pytest tests/unit/strata/test_threat.py -q` and
 ```yaml
 id: T-0512
 title: 'strata audit G6: make cwe-top-25 a default security view alongside owasp-top-10'
-state: in-progress
+state: done
 kind: security
 origin: human
 created: '2026-07-21'
