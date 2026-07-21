@@ -3264,7 +3264,7 @@ Observed twice while working T-0348/T-0349 in this worktree: each ticket's pre-e
 id: T-0494
 title: 'tests/test_dup_cross_lang.py: T-0198 characterization test now wrong -- R5
   correctly fires cross-language python/typescript after T-0487''s keyword fix'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-07-21'
@@ -3273,8 +3273,20 @@ blocked_by: []
 parent: null
 scope:
 - tests/test_dup_cross_lang.py
-scope_changes: []
-evidence: []
+- docs/modules/dup.md
+scope_changes:
+- op: add
+  glob: docs/modules/dup.md
+  reason: mission instructions require updating dup.md's now-stale 'only python is
+    proven cross-rung' claim to reflect T-0494's r5/python-typescript positive finding
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_dup_cross_lang.py::TestCrossLanguageR5NowFires::test_r5_group_fires_at_every_threshold[0.9]
+- tests/test_dup_cross_lang.py::TestCrossLanguageR5NowFires::test_r5_group_fires_at_every_threshold[0.1]
+- tests/test_dup_cross_lang.py::TestCrossLanguageR5NowFires::test_r5_group_is_not_gated_by_a_threshold_above_its_own_similarity
+- tests/test_dup_cross_lang.py::TestCrossLanguageCloneNotYetDetected::test_both_languages_parse_into_the_snapshot
+- tests/test_dup_cross_lang.py::TestCrossLanguageCloneNotYetDetected::test_both_symbols_are_individually_fingerprinted
 attachments: []
 acceptance: []
 threat: null
@@ -3522,3 +3534,47 @@ acceptance: []
 threat: null
 ```
 T-0462/T-0452 landed WARN-severity as disclosed, but the exclusivity/normative corpora fire 765 times across docs/ -- far too noisy to burn down by hand and mostly bare-'only' prose, not genuine invariant claims. Calibrate first: require stronger claim shapes (subject+exclusivity+verb patterns, skip code fences/links/tables), add markdown-side frob:waive support so genuine-but-unprovable claims can be dispositioned, and consider scoping INV003 to spec-normative docs (docs/modules, docs/strata) rather than all docs/**.md. Then burn the residual down to zero. Scope: src/frob/gates/invariants.py, src/frob/gates/__init__.py, tests/test_gates.py, docs/modules/gates.md.
+
+<!-- ticket:T-draft-5b42a1c3 -->
+```yaml
+id: T-draft-5b42a1c3
+title: 'frob.dup._exhaustiveness: add DUP_CLAIMS r5/typescript entry (T-0494 found
+  the proof, no claim registered)'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/dup/_exhaustiveness.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+found while working T-0494: tests/test_dup_cross_lang.py now proves R5 fires cross-language for python/typescript (compute_total/computeTotal, similarity=0.88, every threshold 0.9-0.1), mirroring the r5/rust DUP_CLAIMS entry T-0487 already added (frob.dup._exhaustiveness, proof_test=tests/test_dup.py::TestCrossLanguageR5WithLet.test_r5_fires_across_languages_with_a_let_binding). No matching r5/typescript DUP_CLAIMS entry exists yet -- dup_matrix()'s r5/type3/typescript cell presumably still falls through to DUP_MATRIX_EXCUSES' generic non-python language-gap excuse, which is now stale for this cell specifically (rust already closed, typescript has a firing fixture but no registered claim). Add a DUP_CLAIMS entry for rung=r5, clone_type=3, language=typescript, proof_test=tests/test_dup_cross_lang.py::TestCrossLanguageR5NowFires.test_r5_group_fires_at_every_threshold, matching the rust entry's shape. Out of T-0494's declared scope (scope=tests/test_dup_cross_lang.py, docs/modules/dup.md -- does not include src/frob/dup/_exhaustiveness.py).
+
+<!-- ticket:T-draft-ca7de023 -->
+```yaml
+id: T-draft-ca7de023
+title: T-0187/T-0198 evidence test_no_clone_group_at_any_threshold does not resolve
+  (COV003) after T-0494 flipped its assertion
+state: queued
+kind: bug
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- tickets.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+found while working T-0494: T-0494 legitimately removed tests/test_dup_cross_lang.py::TestCrossLanguageCloneNotYetDetected::test_no_clone_group_at_any_threshold (its assertion, report.groups == (), is now FALSE at every threshold since T-0487's _KEYWORDS fix made R5 correctly fire cross-language for this fixture -- see T-0494's Done report and the new TestCrossLanguageR5NowFires class replacing it). This leaves T-0187 (1 evidence id) and T-0198 (5 evidence ids, one per threshold parametrization) in tickets-archive.md pointing at a test id that no longer exists, firing COV003 for both archived tickets on every frob check. Same shape as the T-0416/T-0472 precedent (evidence pointing at a removed/renamed test). Remedy: update T-0187's and T-0198's archived evidence lists to point at still-valid replacement ids (e.g. TestCrossLanguageR5NowFires::test_r5_group_fires_at_every_threshold[*] for the threshold-parametrized ones, or drop the stale id with a note that the original claim inverted) via the tickets CLI against tickets-archive.md. Out of T-0494's declared scope (scope=tests/test_dup_cross_lang.py, docs/modules/dup.md -- does not include editing OTHER tickets' archived evidence).

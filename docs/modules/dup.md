@@ -486,13 +486,27 @@ which excludes `frob-core/**`):
   docstring assuming the caller already did that work. Verified directly:
   a for-loop/while-loop pair computing the same accumulation produces
   different r2-normalized token streams, so R3 never independently fires.
-- **Only python is proven cross-rung today.** R1-R5 operate on
-  `frob.lang`'s normalized token/AST output and are not language-
-  restricted by construction, but no typescript/rust/c/cpp litmus fixture
-  has been authored yet to prove any rung fires cross-language. R6/R7 ARE
-  structurally python-only (`_load_python_callable` resolves to an
-  importable Python callable; `Err(NotPure)` for every other language) --
-  a real limit, not a missing-fixture gap.
+- **R1-R4 are only proven cross-rung within python today; R5 is now
+  proven cross-language (T-0494, updating the earlier "only python"
+  claim).** `tests/test_dup_cross_lang.py` runs the SAME
+  accumulator-with-clamp logic written once in Python
+  (`compute_total`) and once in TypeScript (`computeTotal`) through the
+  real pipeline: R1-R3 never bucket the pair together (they bucket on
+  literal token vocabulary the two grammars do not share -- a real,
+  still-open gap), but R5 -- which buckets on `_real_dataflow_graph`'s
+  structural def/use labels, not literal tokens -- WL-hash-collides the
+  pair at similarity=0.88, at every threshold tested (0.9 down to 0.1).
+  This followed directly from T-0487's `_KEYWORDS` fix (TypeScript's
+  `let`/`const` no longer mis-labeled as identifiers), which also
+  proved R5 fires python/rust (`tests/test_dup.py::
+  TestCrossLanguageR5WithLet`, `DUP_CLAIMS` r5/rust in
+  `frob.dup._exhaustiveness`). No rust/c/cpp litmus fixture proves R2-R4
+  cross-language yet, and no typescript `DUP_CLAIMS` entry exists
+  alongside the rust one (filed as a follow-up, not fixed here --
+  `src/frob/dup/_exhaustiveness.py` is out of T-0494's declared scope).
+  R6/R7 ARE structurally python-only (`_load_python_callable` resolves
+  to an importable Python callable; `Err(NotPure)` for every other
+  language) -- a real limit, not a missing-fixture gap.
 
 ## Gate integration
 
