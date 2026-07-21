@@ -5968,7 +5968,7 @@ just at the node-walker unit level.
 id: T-0487
 title: 'dup: python-centric _KEYWORDS misclassifies rust/ts/c/cpp keywords (let/fn/etc)
   as identifiers in R5 def-use labeling'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-07-21'
