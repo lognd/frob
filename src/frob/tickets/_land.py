@@ -34,6 +34,7 @@ from frob.tickets._models import (
     has_substantive_done_report,
     is_cmd_evidence,
     matches_collected,
+    scope_matches,
 )
 from frob.tickets._provisional import is_draft_id
 from frob.tickets._store import _parse_ledger, _render_ledger, archive_path, ledger_path
@@ -171,6 +172,57 @@ def _drop_resurrected_ids(
         )
 
 
+# frob:ticket T-0479
+def _splice_only_ticket(
+    main_text: str,
+    worktree_text: str,
+    ticket_id: str,
+    *,
+    archived_ids: frozenset[str] = frozenset(),
+) -> Result[str, TicketError]:
+    """Merge `tickets.md` by taking MAIN's ledger as the base and overlaying
+    ONLY `ticket_id`'s own block from `worktree_text` (T-0479): every other
+    ticket id comes from `main_text` untouched. `splice_ledger`'s original
+    whole-ledger, keep-newest-per-id merge let a worktree's stale view of a
+    SIBLING ticket (in-progress in the worktree from before that sibling was
+    later requeued back to queued on main) win the `_newer` state-rank
+    comparison and resurrect the stale state on main (T-0475) -- state-rank
+    assumes forward-only progress and cannot tell a genuine advance from a
+    requeue's backward transition. Scoping the overlay to just the one
+    ticket actually being landed makes that whole class of resurrection
+    structurally impossible: a sibling ticket's ledger entry is never even
+    considered here, no matter what the worktree's copy says. If `ticket_id`
+    is present in both with a genuine divergence, `_newer` still resolves
+    the winner (and unions evidence) for that one id, exactly as before.
+    A `ticket_id` that exists only in `worktree_text` (not yet in
+    `main_text`, e.g. a fresh/draft ticket) is still applied -- `land`
+    lands one ticket per call, and this is that ticket's own first entry
+    onto main."""
+    main_parsed = _parse_ledger(main_text)
+    if main_parsed.is_err:
+        return Err(main_parsed.danger_err)
+    worktree_parsed = _parse_ledger(worktree_text)
+    if worktree_parsed.is_err:
+        return Err(worktree_parsed.danger_err)
+    main_tickets, worktree_tickets = main_parsed.danger_ok, worktree_parsed.danger_ok
+
+    merged = dict(main_tickets)
+    incoming = worktree_tickets.get(ticket_id)
+    if incoming is not None:
+        if ticket_id in merged and merged[ticket_id] != incoming:
+            merged[ticket_id] = _newer(merged[ticket_id], incoming)
+        else:
+            merged[ticket_id] = incoming
+    _drop_resurrected_ids(merged, archived_ids)
+    _log.info(
+        "tickets: land splice (ticket-scoped) -- %s only, main=%d ticket(s), merged=%d",
+        ticket_id,
+        len(main_tickets),
+        len(merged),
+    )
+    return Ok(_render_ledger(merged))
+
+
 def _porcelain_dirty(root: Path) -> Result[bool, LandError]:
     """Whether `root`'s working tree has any uncommitted change (tracked or not)."""
     spawned = run_argv(["git", "-C", str(root), "status", "--porcelain"])
@@ -305,15 +357,29 @@ def _splice_and_stage(
     incoming_text: str,
     *,
     archived_ids: frozenset[str] = frozenset(),
+    ticket_id: str | None = None,
 ) -> Result[str, LandError]:
-    """Write the id-level splice of `pre_text`/`incoming_text` to `checkout`'s
+    """Write the ledger splice of `pre_text`/`incoming_text` to `checkout`'s
     tickets.md and `git add` it; overrides whatever git's own textual merge
-    produced -- tickets.md is ALWAYS resolved via `splice_ledger`, never via
-    git's line-level algorithm, so a both-sides-append never false-conflicts
-    and a same-id divergence always keeps the newest state (T-0176).
-    `archived_ids` excludes anything main has already archived from ever
-    re-entering the merged active ledger."""
-    spliced = splice_ledger(pre_text, incoming_text, archived_ids=archived_ids)
+    produced -- tickets.md is ALWAYS resolved via a splice, never via git's
+    line-level algorithm, so a both-sides-append never false-conflicts and a
+    same-id divergence always keeps the newest state (T-0176).
+
+    `ticket_id`, when given, scopes the splice to ONLY that ticket's own
+    block via `_splice_only_ticket` (T-0479) -- every other id comes from
+    `pre_text` untouched, so a worktree's stale sibling-ticket state can
+    never overlay main's newer one. `ticket_id=None` (the default) keeps the
+    original whole-ledger `splice_ledger` merge, used only where BOTH sides
+    are pulling in each other's full set of tickets on purpose (there is no
+    "one ticket being landed" to scope to). `archived_ids` excludes anything
+    main has already archived from ever re-entering the merged active
+    ledger, either way."""
+    if ticket_id is not None:
+        spliced = _splice_only_ticket(
+            pre_text, incoming_text, ticket_id, archived_ids=archived_ids
+        )
+    else:
+        spliced = splice_ledger(pre_text, incoming_text, archived_ids=archived_ids)
     if spliced.is_err:
         _log.error(
             "land: tickets.md splice failed (%s) -- resolve manually in %s",
@@ -359,8 +425,23 @@ def _merge_main_into_worktree(
     if conflict_check.is_err:
         return Err(conflict_check.danger_err)
 
+    # T-0479/T-0475: base the splice on MAIN's ledger (main_text), not the
+    # worktree's, and overlay ONLY the ticket being landed (`ticket.id`)
+    # from the worktree's pre-merge copy. This is the exact site of the
+    # T-0475 incident: the old whole-ledger merge based the splice on the
+    # worktree's stale `pre_text`, so a sibling ticket the worktree still
+    # remembered as in-progress (from before it was later requeued back to
+    # queued on main) beat main's newer queued state on `_newer`'s state-
+    # rank comparison and resurrected it. Scoping to `ticket.id` makes every
+    # sibling ticket's state come from main untouched, unconditionally --
+    # only the ticket actually being landed is ever taken from the
+    # worktree.
     spliced = _splice_and_stage(
-        worktree, pre_text, main_text, archived_ids=_archived_ids(root)
+        worktree,
+        main_text,
+        pre_text,
+        archived_ids=_archived_ids(root),
+        ticket_id=ticket.id,
     )
     if spliced.is_err:
         _abort_merge(worktree)
@@ -368,22 +449,85 @@ def _merge_main_into_worktree(
     return Ok(True)
 
 
+# frob:ticket T-0479
+def _auto_resolve_out_of_scope_conflicts(
+    cwd: Path, ticket: Ticket, *, keep: str
+) -> Result[frozenset[str], LandError]:
+    """After a merge/squash leaves paths conflicted in `cwd`, auto-resolve
+    every conflicted path OUTSIDE `ticket.scope` by `git checkout --<keep>`
+    (`keep` is "ours" or "theirs", matching git's own vocabulary for the
+    merge direction in play) and staging it, then return whatever is STILL
+    conflicted (i.e. paths inside `ticket.scope`, plus any out-of-scope path
+    the checkout itself failed on) for the caller to treat as a real
+    conflict (T-0479).
+
+    `ticket.scope` genuinely never authorized the worktree to change a file
+    outside it -- a conflict there is definitionally noise from an
+    unrelated concurrent main change, not an editorial decision belonging
+    to this ticket, so taking `keep`'s side is always correct rather than a
+    guess. `tickets.md` is excluded unconditionally; it is always resolved
+    via a ledger splice (`_splice_and_stage`), never via `git checkout`."""
+    conflicted = _conflicted_files(cwd) - {"tickets.md"}
+    if not conflicted:
+        return Ok(frozenset())
+    still_conflicted = {f for f in conflicted if scope_matches(f, ticket.scope)}
+    for path in sorted(conflicted - still_conflicted):
+        resolved = _checkout_and_stage(cwd, keep, path)
+        if resolved.is_err:
+            _log.warning(
+                "land: %s auto-resolve of out-of-scope conflict %s (keep=%s) "
+                "failed -- leaving it conflicted for manual resolution",
+                ticket.id,
+                path,
+                keep,
+            )
+            still_conflicted.add(path)
+            continue
+        _log.info(
+            "land: %s auto-resolved out-of-scope conflict in %s by keeping "
+            "%s's side (not in scope %s)",
+            ticket.id,
+            path,
+            keep,
+            list(ticket.scope),
+        )
+    return Ok(frozenset(still_conflicted))
+
+
+def _checkout_and_stage(cwd: Path, keep: str, path: str) -> Result[None, LandError]:
+    """`git checkout --<keep> -- <path> && git add <path>` in `cwd`."""
+    checkout = run_argv(["git", "-C", str(cwd), "checkout", f"--{keep}", "--", path])
+    if checkout.is_err or checkout.danger_ok.returncode != 0:
+        return Err(LandError.GitFailed)
+    add = run_argv(["git", "-C", str(cwd), "add", "--", path])
+    if add.is_err or add.danger_ok.returncode != 0:
+        return Err(LandError.GitFailed)
+    return Ok(None)
+
+
 def _check_only_tickets_conflicted(
     worktree: Path, ticket: Ticket, main_branch: str
 ) -> Result[None, LandError]:
-    """`Err(MergeConflict)` (aborting the merge) if anything besides
-    tickets.md is conflicted after `_merge_main_into_worktree`'s merge."""
-    conflicted = _conflicted_files(worktree)
-    if conflicted - {"tickets.md"}:
+    """`Err(MergeConflict)` (aborting the merge) if any IN-SCOPE file besides
+    tickets.md is still conflicted after `_merge_main_into_worktree`'s
+    merge; any OUT-OF-SCOPE conflict is auto-resolved by taking main's side
+    first (T-0479), since main is `theirs` in this merge direction (main
+    merged into the worktree)."""
+    resolved = _auto_resolve_out_of_scope_conflicts(worktree, ticket, keep="theirs")
+    if resolved.is_err:
+        _abort_merge(worktree)
+        return Err(resolved.danger_err)
+    remaining = resolved.danger_ok
+    if remaining:
         _abort_merge(worktree)
         _log.error(
-            "land: %s merging %s into %s conflicts outside tickets.md: %s -- "
+            "land: %s merging %s into %s conflicts in scoped file(s): %s -- "
             "resolve manually (cd %s && git merge %s), commit, then retry "
             "`frob ticket land %s --worktree %s`",
             ticket.id,
             main_branch,
             worktree,
-            sorted(conflicted),
+            sorted(remaining),
             worktree,
             main_branch,
             ticket.id,
@@ -976,24 +1120,32 @@ def _commit_finalize_writes(worktree: Path, final_id: str) -> Result[None, LandE
 
 
 def _check_squash_conflicted(
-    root: Path, worktree: Path, final_id: str, branch_name: str
+    root: Path, worktree: Path, ticket: Ticket, branch_name: str
 ) -> Result[None, LandError]:
-    """`Err(SquashConflict)` (unwinding the squash) if anything besides
-    tickets.md is conflicted after the squash merge."""
-    conflicted_root = _conflicted_files(root)
-    if conflicted_root - {"tickets.md"}:
+    """`Err(SquashConflict)` (unwinding the squash) if any IN-SCOPE file
+    besides tickets.md is still conflicted after the squash merge; any
+    OUT-OF-SCOPE conflict is auto-resolved by taking main's side first
+    (T-0479) -- main is `ours` here (root's checked-out branch, with the
+    worktree's finalized branch squash-merged in as `theirs`)."""
+    resolved = _auto_resolve_out_of_scope_conflicts(root, ticket, keep="ours")
+    if resolved.is_err:
+        run_argv(["git", "-C", str(root), "reset", "--hard"])
+        run_argv(["git", "-C", str(root), "clean", "-fd"])
+        return Err(resolved.danger_err)
+    remaining = resolved.danger_ok
+    if remaining:
         run_argv(["git", "-C", str(root), "reset", "--hard"])
         run_argv(["git", "-C", str(root), "clean", "-fd"])
         _log.error(
-            "land: %s squash-apply onto %s conflicts outside tickets.md: %s "
+            "land: %s squash-apply onto %s conflicts in scoped file(s): %s "
             "-- resolve manually (cd %s && git merge --squash %s), commit, "
             "then retry `frob ticket land %s --worktree %s`",
-            final_id,
+            ticket.id,
             root,
-            sorted(conflicted_root),
+            sorted(remaining),
             root,
             branch_name,
-            final_id,
+            ticket.id,
             worktree,
         )
         return Err(LandError.SquashConflict)
@@ -1001,11 +1153,12 @@ def _check_squash_conflicted(
 
 
 def _squash_and_splice_ledger(
-    root: Path, worktree: Path, final_id: str, branch_name: str
+    root: Path, worktree: Path, ticket: Ticket, final_id: str, branch_name: str
 ) -> Result[None, LandError]:
     """`git merge --squash --no-commit` the worktree's finalized `branch_name`
     onto `root`, then splice tickets.md; unwinds the squash on any
-    non-tickets.md conflict or splice failure."""
+    conflict outside `ticket.scope` (or a true in-scope conflict), or a
+    splice failure."""
     root_pre_text = _read_ledger_text_or_empty(root)
 
     squash = run_argv(
@@ -1014,13 +1167,23 @@ def _squash_and_splice_ledger(
     if squash.is_err:
         return Err(LandError.GitFailed)
 
-    conflict_check = _check_squash_conflicted(root, worktree, final_id, branch_name)
+    conflict_check = _check_squash_conflicted(root, worktree, ticket, branch_name)
+    # (ticket-scoped; final_id is used only for the ledger splice below)
     if conflict_check.is_err:
         return Err(conflict_check.danger_err)
 
     worktree_final_text = ledger_path(worktree).read_text(encoding="utf-8")
+    # T-0479: base on root's CURRENT tickets.md, overlay only `final_id`'s
+    # own block from the worktree's finalized copy -- see the analogous
+    # comment in `_merge_main_into_worktree`. This is the final splice that
+    # actually lands on main, so it is the last line of defense against
+    # sibling-ticket resurrection even if something upstream missed it.
     spliced = _splice_and_stage(
-        root, root_pre_text, worktree_final_text, archived_ids=_archived_ids(root)
+        root,
+        root_pre_text,
+        worktree_final_text,
+        archived_ids=_archived_ids(root),
+        ticket_id=final_id,
     )
     if spliced.is_err:
         run_argv(["git", "-C", str(root), "reset", "--hard"])
@@ -1220,7 +1383,7 @@ def _land_squash_apply(
         return Err(LandError.GitFailed)
     branch_name = branch.danger_ok
 
-    squashed = _squash_and_splice_ledger(root, worktree, final_id, branch_name)
+    squashed = _squash_and_splice_ledger(root, worktree, ticket, final_id, branch_name)
     if squashed.is_err:
         return Err(squashed.danger_err)
 
