@@ -15,6 +15,7 @@ from frob.check import (
 )
 from frob.logging import get_logger, quiet_stdout_logs, stdout_log_level
 from frob.process.parsers.common import Diagnostic, ToolResult
+from frob.render import Progress, Renderer
 
 #: DEPLOY001/DEPLOY002/DEPLOY003's severity literal, matching
 #: `Diagnostic.severity`'s type (`frob.process.parsers.common.Severity`)
@@ -229,7 +230,15 @@ def _dispatch_check(cfg: AppConfig, root: Path, project_type: str) -> CheckResul
 
 
 # frob:ticket T-0229
-def _run_all_detected(cfg: AppConfig, root: Path, types: list[str]) -> CheckResult:
+# frob:ticket T-0419
+def _run_all_detected(
+    cfg: AppConfig,
+    root: Path,
+    types: list[str],
+    *,
+    progress: Progress | None = None,
+    total: int = 0,
+) -> CheckResult:
     """Run every detected language stage and merge their results into one report.
 
     T-0229: a polyglot repo used to auto-detect and run exactly ONE
@@ -242,10 +251,19 @@ def _run_all_detected(cfg: AppConfig, root: Path, types: list[str]) -> CheckResu
     (`_skip_note_result`). `total_errors`/`total_warnings` sum naturally
     across the merged `results` list, so a failure in ANY detected stage
     fails the overall run.
+
+    T-0419: `progress` (a no-op off a TTY) is updated once per language
+    stage as it completes, against `total`'s overall stage count -- the
+    live task-list contract lives entirely in `Progress`; this just feeds
+    it labels/counts as the orchestrator's existing stage loop advances.
     """
     results: list[ToolResult] = []
-    for project_type in types:
+    for i, project_type in enumerate(types):
+        if progress is not None:
+            progress.update(f"check: {project_type}", i, total)
         results.extend(_dispatch_check(cfg, root, project_type).results)
+        if progress is not None:
+            progress.update(f"check: {project_type}", i + 1, total)
     return CheckResult(path=str(root), results=results)
 
 
@@ -395,7 +413,9 @@ def _report_check_result(cfg: AppConfig, result) -> None:  # noqa: ANN001
         sys.exit(1)
 
 
-def _run_auto_detected_stages(cfg: AppConfig, root: Path) -> CheckResult:
+def _run_auto_detected_stages(
+    cfg: AppConfig, root: Path, *, progress: Progress | None = None, total: int = 0
+) -> CheckResult:
     """`check_type` unset: run every detected project-type stage
     (`_run_all_detected`), logging which ones on a polyglot repo (T-0229)."""
     detected = _detected_types(root) or [detect_project_type(root)]
@@ -406,10 +426,12 @@ def _run_auto_detected_stages(cfg: AppConfig, root: Path) -> CheckResult:
             "just one",
             "/".join(detected),
         )
-    return _run_all_detected(cfg, root, detected)
+    return _run_all_detected(cfg, root, detected, progress=progress, total=total)
 
 
-def _run_pinned_stage(cfg: AppConfig, root: Path) -> CheckResult:
+def _run_pinned_stage(
+    cfg: AppConfig, root: Path, *, progress: Progress | None = None, total: int = 0
+) -> CheckResult:
     """`check_type` pinned: run just that stage, appending a `SKIPPED: ...`
     note (T-0022) for every other detected language on a polyglot repo."""
     assert cfg.check_type is not None  # narrows for the type checker; caller-guaranteed
@@ -417,7 +439,11 @@ def _run_pinned_stage(cfg: AppConfig, root: Path) -> CheckResult:
     others = [t for t in _detected_types(root) if t != project_type]
     # frob:ticket T-0022
     _warn_if_polyglot(root, project_type, others)
+    if progress is not None:
+        progress.update(f"check: {project_type}", 0, total)
     result = _dispatch_check(cfg, root, project_type)
+    if progress is not None:
+        progress.update(f"check: {project_type}", 1, total)
     if others:
         result = CheckResult(
             path=result.path,
@@ -429,18 +455,37 @@ def _run_pinned_stage(cfg: AppConfig, root: Path) -> CheckResult:
     return result
 
 
-def _append_deploy_stages(root: Path, result: CheckResult) -> CheckResult:
+# frob:ticket T-0419
+def _append_deploy_stages(
+    root: Path,
+    result: CheckResult,
+    *,
+    progress: Progress | None = None,
+    base: int = 0,
+    total: int = 0,
+) -> CheckResult:
     """Fold the opt-in `deploy-drift`/`deploy-conformance` stages (each
-    `None` when `deploy/` is absent) onto `result`."""
+    `None` when `deploy/` is absent) onto `result`.
+
+    `progress`/`base`/`total` (T-0419) advance the same live task-list
+    `_run_all_detected` feeds, continuing its count rather than restarting
+    at zero, so the deploy stages read as the tail of one list, not a
+    second one."""
+    if progress is not None:
+        progress.update("check: deploy-drift", base, total)
     deploy_result = _deploy_drift_result(root)
     if deploy_result is not None:
         result = CheckResult(path=result.path, results=[*result.results, deploy_result])
+    if progress is not None:
+        progress.update("check: deploy-conformance", base + 1, total)
     deploy_conform_result = _deploy_conformance_result(root)
     if deploy_conform_result is not None:
         result = CheckResult(
             path=result.path,
             results=[*result.results, deploy_conform_result],
         )
+    if progress is not None:
+        progress.update("check: done", total, total)
     return result
 
 
@@ -465,25 +510,70 @@ def _stdout_log_ctx(cfg: AppConfig):  # noqa: ANN201
     return stdout_log_level(_verbosity_to_level(cfg.check_verbose))
 
 
-def _run_all_stages(cfg: AppConfig, root: Path) -> CheckResult:
+# frob:ticket T-0419
+def _stage_total(cfg: AppConfig, root: Path) -> int:
+    """The live task-list's overall stage count: one per language stage
+    that will actually run, plus one each for `deploy-drift`/
+    `deploy-conformance` when `deploy/` exists -- computed up front so
+    `Progress.update` can report a stable `current/total`, not a count
+    that grows mid-run."""
+    if cfg.check_type is None:
+        n_lang = len(_detected_types(root)) or 1
+    else:
+        n_lang = 1
+    n_deploy = 2 if (root / "deploy").is_dir() else 0
+    return n_lang + n_deploy
+
+
+# frob:ticket T-0419
+def _run_all_stages(
+    cfg: AppConfig, root: Path, *, progress: Progress | None = None
+) -> CheckResult:
     """Run the auto-detected or pinned project-type stage(s) plus the
-    opt-in deploy stages, under `run`'s stdout-logging context."""
+    opt-in deploy stages, under `run`'s stdout-logging context.
+
+    `progress` (T-0419, a no-op off a TTY) is fed the running stage label
+    and `current/total` count as each stage completes -- the TTY-only live
+    task list; a piped/CI run never constructs a real `Progress` at all
+    (see `run`), so this parameter changes nothing there.
+    """
     with _stdout_log_ctx(cfg):
         cfg = _apply_frob_toml_defaults(cfg, root)
+        total = _stage_total(cfg, root)
+        n_deploy = 2 if (root / "deploy").is_dir() else 0
+        n_lang = total - n_deploy
         # frob:ticket T-0229
         if cfg.check_type is None:
-            result = _run_auto_detected_stages(cfg, root)
+            result = _run_auto_detected_stages(
+                cfg, root, progress=progress, total=total
+            )
         else:
-            result = _run_pinned_stage(cfg, root)
-        return _append_deploy_stages(root, result)
+            result = _run_pinned_stage(cfg, root, progress=progress, total=total)
+        return _append_deploy_stages(
+            root, result, progress=progress, base=n_lang, total=total
+        )
 
 
+# frob:ticket T-0419
+# frob:tests tests/system/test_cli_check.py::TestCheckPolyglot::test_unpinned_polyglot_runs_python_stage
+# frob:tests tests/system/test_cli_check.py::TestCheckPolyglot::test_pinned_check_type_reports_skipped_line
+# frob:tests tests/system/test_cli_check.py::TestCheckCleanProject::test_clean_code_exits_zero
+# frob:tests tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta::test_delta_reports_only_new_violation
 # frob:doc docs/modules/app.md#runners
 def run(cfg: AppConfig) -> None:
     """`frob check [--type T] [--json] [--stamp-coverage|--stamp-baseline]`:
     run every applicable stage (ruff/ty/arch/cycle/dup/bind/exports plus the
     opt-in deploy stages) and report combined violations, exiting 1 on any
-    error."""
+    error.
+
+    T-0419: on a human TTY (and never for `--json`, which must stay byte-
+    stable for machine capture), a live task-list with a progress bar
+    tracks the running stages and clears itself entirely once the run
+    completes, leaving only the final summary `_report_check_result`
+    prints -- the `Renderer`/`Progress` contract from `frob.render`
+    (`Progress` is a no-op off a TTY, so this never changes non-TTY/CI
+    output).
+    """
     root = cfg.check_path or Path(".")
 
     if not root.exists():
@@ -493,5 +583,10 @@ def run(cfg: AppConfig) -> None:
     if _handle_stamp_modes(root, cfg):
         return
 
-    result = _run_all_stages(cfg, root)
+    if cfg.check_json:
+        result = _run_all_stages(cfg, root)
+    else:
+        renderer = Renderer.for_stream(sys.stdout)
+        with renderer.write.progress("frob check") as progress:
+            result = _run_all_stages(cfg, root, progress=progress)
     _report_check_result(cfg, result)

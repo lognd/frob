@@ -3804,7 +3804,7 @@ User spotted from frob check output: frob-arch appears as its own stage AND arch
 id: T-0419
 title: 'frob check TTY UX: live task-list with progress bars (TTY-only, clears on
   completion)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -3815,12 +3815,39 @@ scope:
 - src/frob/check/
 - src/frob/logging/
 scope_changes: []
-evidence: []
+evidence:
+- tests/system/test_cli_check.py::TestCheckPolyglot::test_unpinned_polyglot_runs_python_stage
+- tests/system/test_cli_check.py::TestCheckPolyglot::test_pinned_check_type_reports_skipped_line
+- tests/system/test_cli_check.py::TestCheckCleanProject::test_clean_code_exits_zero
+- tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta::test_delta_reports_only_new_violation
 attachments: []
 acceptance: []
 threat: null
 ```
 User UX ask: when frob check runs from a human TTY (isatty), show a LIVE task list with progress bars for the running stages so the human can see what is happening during the slow ~2min run, and have it CLEAR/go-away on completion leaving only the final summary. TTY-ONLY: in non-TTY / piped / CI (not isatty) keep the current plain line-buffered output (no progress bars, no cursor control -- must stay clean for logs/CI capture). Reuse the existing stage set the orchestrator already runs. Do not change the final summary content, only add the ephemeral live progress on TTY.
+
+## Done report
+
+Added a TTY-only live task-list to `frob check` on top of the T-0460 render
+vocabulary (`Progress`, `Renderer`). `run()` builds a `Renderer` bound to
+stdout and, for non-`--json` runs, wraps the whole stage pipeline in
+`renderer.write.progress("frob check")`; `Progress` is a no-op off a real
+TTY (per its existing contract), so `--json`/piped/CI output is untouched.
+`_run_all_stages`/`_run_all_detected`/`_run_auto_detected_stages`/
+`_run_pinned_stage`/`_append_deploy_stages` now thread an optional
+`progress`/`total` pair, updating the in-place bar once per language stage
+and once per opt-in deploy stage as each completes, then clearing
+automatically on the `with` block's exit so only the final summary
+remains. Verified by eye with `script` (pty) showing the bar redraw
+in-place and disappear before the PASS/FAIL summary line, and by piping
+`frob check` through a non-tty pipe showing the exact prior plain output
+(no ANSI, no bar artifacts).
+
+### Changed
+(no changed files detected)
+
+### Evidence
+(no evidence recorded)
 
 <!-- ticket:T-0420 -->
 ```yaml
