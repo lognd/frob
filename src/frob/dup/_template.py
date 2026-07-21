@@ -67,7 +67,6 @@ def _flatten_with_spans(node: "TreeNode") -> _NodeArrays:
     return tuple(labels), tuple(parents), tuple(spans)
 
 
-# frob:doc docs/modules/dup.md#clone-template
 def _region_tree(root: Path, region: CloneRegion) -> _NodeArrays | None:
     """`(labels, parents, spans)` node arrays for `region`'s subtree, or `None`.
 
@@ -113,7 +112,6 @@ def _literal_text(source: bytes, span: tuple[int, int]) -> str:
     return source[span[0] : span[1]].decode("utf-8", errors="replace")
 
 
-# frob:doc docs/modules/dup.md#clone-template
 def _render_literal(
     t_labels: tuple[str, ...],
     t_parents: tuple[int, ...],
@@ -145,6 +143,7 @@ def _render_literal(
     m_children = _children_of(m_parents, m_idx)
     pieces: list[str] = []
     cursor = full_span[0]
+    # frob:invariant terminates reason="t_child ranges over children of t_idx in a `(labels, parents)` node array built from a real (acyclic, finite) folded template, so each t_child is a proper descendant of t_idx, never t_idx itself" measure="the subtree rooted at t_idx has strictly fewer nodes than the subtree rooted at its parent; bounded below by a single leaf node"  # noqa: E501
     for t_child, m_child in zip(t_children, m_children, strict=True):
         child_span = m_spans[m_child]
         pieces.append(_literal_text(source, (cursor, child_span[0])))
