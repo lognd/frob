@@ -1280,6 +1280,29 @@ def _write_scope_mutation(
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_lease.py::TestDoable.test_ignore_lease_returns_raw_list
 # frob:waive DRIFT001 reason="T-0453 added root/ignore_lease params; frob.lock ack out of scope, no inline-waivable syntax for JSON -- reviewer re-acks at land"  # noqa: E501
+# frob:ticket T-0409
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/unit/test_ticket_store.py::TestClosedTicketIds.test_returns_done_and_dropped_only  # noqa: E501
+def closed_ticket_ids(queue: TicketQueue) -> tuple[str, ...]:
+    """Ids in `queue` (whatever store it was loaded from -- active-only or
+    merged) whose state is DONE or DROPPED, oldest-first (T-0409): the
+    ledger-hygiene gate's (TICK003, `frob.gates.tickets_gate`) building
+    block for "how many closed tickets are sitting un-archived" -- called
+    with `load_active`'s active-only queue there, since an ARCHIVED closed
+    ticket is by definition no longer a hygiene problem. Kept here (not
+    computed inline in `frob.gates`) so the "closed" predicate has exactly
+    one definition, reused by anything that needs to answer the same
+    question (`frob ticket archive`'s own move-eligibility check already
+    uses the equivalent inline predicate; this is the reusable, testable
+    form of it)."""
+    closed = [
+        t
+        for t in queue.tickets.values()
+        if t.state in (TicketState.DONE, TicketState.DROPPED)
+    ]
+    return tuple(t.id for t in sorted(closed, key=lambda t: (t.created, t.id)))
+
+
 def doable(
     queue: TicketQueue, root: Path | None = None, *, ignore_lease: bool = False
 ) -> tuple[Ticket, ...]:

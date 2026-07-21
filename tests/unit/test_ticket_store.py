@@ -12,6 +12,7 @@ import pytest
 
 from frob.tickets import (
     TicketSpec,
+    closed_ticket_ids,
     new_ticket,
     replay_evidence_from_done_report,
     set_done_report,
@@ -22,6 +23,7 @@ from frob.tickets._models import (
     Ticket,
     TicketError,
     TicketKind,
+    TicketQueue,
     TicketState,
     replace_done_report_section,
 )
@@ -551,6 +553,53 @@ class TestReplayEvidenceFromDoneReport:
         result = transition(tmp_path, "T-0001", TicketState.DONE)
         assert result.is_ok
         assert result.danger_ok.evidence == ("tests/x.py::test_y",)
+
+
+def _ticket_state(
+    ticket_id: str, state: TicketState, *, created: date = date(2026, 1, 1)
+) -> Ticket:
+    return Ticket(
+        id=ticket_id,
+        title=f"{ticket_id} ticket",
+        state=state,
+        kind=TicketKind.FEATURE,
+        origin=Origin.HUMAN,
+        created=created,
+        body="## Description\nsomething\n",
+    )
+
+
+# frob:ticket T-0409
+class TestClosedTicketIds:
+    def test_returns_done_and_dropped_only(self) -> None:
+        # frob:tests tests/unit/test_ticket_store.py::TestClosedTicketIds.test_returns_done_and_dropped_only  # noqa: E501
+        queue = TicketQueue(
+            tickets={
+                "T-0001": _ticket_state("T-0001", TicketState.DONE),
+                "T-0002": _ticket_state("T-0002", TicketState.DROPPED),
+                "T-0003": _ticket_state("T-0003", TicketState.QUEUED),
+                "T-0004": _ticket_state("T-0004", TicketState.IN_PROGRESS),
+            }
+        )
+        assert closed_ticket_ids(queue) == ("T-0001", "T-0002")
+
+    def test_orders_oldest_first(self) -> None:
+        # frob:tests tests/unit/test_ticket_store.py::TestClosedTicketIds.test_orders_oldest_first  # noqa: E501
+        queue = TicketQueue(
+            tickets={
+                "T-0002": _ticket_state(
+                    "T-0002", TicketState.DONE, created=date(2026, 2, 1)
+                ),
+                "T-0001": _ticket_state(
+                    "T-0001", TicketState.DONE, created=date(2026, 1, 1)
+                ),
+            }
+        )
+        assert closed_ticket_ids(queue) == ("T-0001", "T-0002")
+
+    def test_empty_queue_is_empty(self) -> None:
+        # frob:tests tests/unit/test_ticket_store.py::TestClosedTicketIds.test_empty_queue_is_empty  # noqa: E501
+        assert closed_ticket_ids(TicketQueue(tickets={})) == ()
 
 
 # frob:ticket T-0458
