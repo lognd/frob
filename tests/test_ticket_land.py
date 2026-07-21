@@ -196,6 +196,63 @@ class TestSpliceLedger:
         assert spliced.is_err
 
 
+class TestSpliceOnlyTicket:
+    """`_splice_only_ticket` (T-0479) -- the ledger splice scoped to ONE
+    ticket id, the fix for the T-0475 sibling-resurrection incident."""
+
+    # frob:tests src/frob/tickets/_land.py::_splice_only_ticket kind="unit"
+    def test_sibling_state_never_taken_from_worktree(self, tmp_path: Path) -> None:
+        """Main has T-A queued (already requeued back from in-progress) and
+        T-B queued. The worktree's stale copy still remembers T-A as
+        in-progress. Landing T-B must not resurrect T-A's stale
+        in-progress state -- only T-B's own block may come from the
+        worktree."""
+        created_a = new_ticket(tmp_path, _spec("Sibling A"))
+        assert created_a.is_ok
+        tid_a = created_a.danger_ok.id
+        created_b = new_ticket(tmp_path, _spec("Sibling B"))
+        assert created_b.is_ok
+        tid_b = created_b.danger_ok.id
+
+        # Worktree's stale snapshot: T-A in-progress.
+        assert transition(tmp_path, tid_a, TicketState.PLANNED).is_ok
+        assert transition(tmp_path, tid_a, TicketState.IN_PROGRESS).is_ok
+        worktree_text = ledger_path(tmp_path).read_text()
+
+        # Main has since requeued T-A back to queued, and separately
+        # progressed T-B to planned.
+        assert transition(tmp_path, tid_a, TicketState.QUEUED).is_ok
+        assert transition(tmp_path, tid_b, TicketState.PLANNED).is_ok
+        main_text = ledger_path(tmp_path).read_text()
+
+        spliced = _land_mod._splice_only_ticket(main_text, worktree_text, tid_b)
+        assert spliced.is_ok
+        from frob.tickets._store import _parse_ledger
+
+        parsed = _parse_ledger(spliced.danger_ok)
+        assert parsed.is_ok
+        merged = parsed.danger_ok
+        assert merged[tid_a].state == TicketState.QUEUED  # sibling untouched
+        assert merged[tid_b].state == TicketState.PLANNED  # landed ticket's own block
+
+    # frob:tests src/frob/tickets/_land.py::_splice_only_ticket kind="unit"
+    def test_landed_tickets_own_divergence_still_resolved(self, tmp_path: Path) -> None:
+        """If the SAME ticket id genuinely diverges between main and the
+        worktree, `_newer` still resolves it (via the scoped splice) --
+        only sibling ids are excluded from consideration."""
+        created = new_ticket(tmp_path, _spec("Landing"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        main_text = ledger_path(tmp_path).read_text()
+
+        assert transition(tmp_path, tid, TicketState.PLANNED).is_ok
+        worktree_text = ledger_path(tmp_path).read_text()
+
+        spliced = _land_mod._splice_only_ticket(main_text, worktree_text, tid)
+        assert spliced.is_ok
+        assert "state: planned" in spliced.danger_ok
+
+
 class TestLand:
     """`frob.tickets.land` against real fixture repos."""
 
@@ -728,6 +785,40 @@ class TestMergeConflictOutsideLedger:
 
         # _abort_merge must have run -- worktree left exactly as found.
         assert _run(["git", "status", "--porcelain"], wt).stdout.strip() == ""
+
+
+class TestOutOfScopeConflictAutoResolved:
+    """T-0479(b): a conflict in a file OUTSIDE the landing ticket's scope
+    must auto-resolve to main's side instead of aborting the land."""
+
+    def test_conflict_outside_scope_takes_mains_side_and_lands(
+        self, repo: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::land kind="unit"
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-oos", str(wt)], repo)
+
+        # Worktree ticket is scoped ONLY to src/other.py; it never legitimately
+        # touches feature.py.
+        (wt / "src" / "other.py").write_text("worktree change\n")
+        (wt / "src" / "feature.py").write_text("# worktree-side unrelated edit\n")
+        created = new_ticket(
+            wt, _spec("Out of scope conflict", scope=("src/other.py",))
+        )
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        _commit_all(wt, "worktree edits other.py and (out of scope) feature.py")
+
+        # Main independently changes the SAME line of feature.py.
+        (repo / "src" / "feature.py").write_text("# main-side edit\n")
+        _commit_all(repo, "main edits feature.py")
+
+        result = land(repo, tid, wt, dry_run=False)
+        assert result.is_ok, result.err
+        # Main's side of the out-of-scope conflict won.
+        assert (repo / "src" / "feature.py").read_text() == "# main-side edit\n"
+        assert (repo / "src" / "other.py").read_text() == "worktree change\n"
 
 
 class TestDraftIdFinalization:

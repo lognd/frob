@@ -52,6 +52,8 @@ declaration).
 | WAIVE002 | (always on) | a `frob:waive` targets a rule id that can never be matched -- see "Waive boundary" below |
 | ARCH001 | arch | `frob.arch`'s complexity-aware long-function check (docs/modules/arch.md) still flags a function after its flat-body filter -- the one `frob.arch` category channeled into a real gate `Violation`, waivable with a reasoned `frob:waive ARCH001 reason="..." [ceiling=N]` (T-0289) |
 | PII010 | pii_structural | a pydantic/dataclass/TypedDict/attrs field's name or type annotation matches a PII-shaped signature (`FIELD_SIGNATURES`) with no `frob:waive PII010 reason="..."` -- see "PII010/SEC110" below |
+| PII011 | pii_structural | a tracked `.py` file's string-literal constant is structurally email-shaped (`_is_email_shaped`, `email.utils.parseaddr`-based) with no `frob:secret-fake` marker or `frob:waive PII011 reason="..."` -- see "PII010/SEC110" below |
+| PII012 | pii_structural | a plain identifier or `#`-comment word token resembles a `FIELD_SIGNATURES` keyword (suggestion severity, not deny-by-default) -- see "PII010/SEC110" below |
 | SEC110 | pii_structural | an `os.environ[...]`/`os.environ.get(...)`/`os.getenv(...)` call site with no `frob:waive SEC110 reason="..."` -- see "PII010/SEC110" below |
 | REF001 | refs | a git-tracked file has zero inbound references (auto-detected or verified `frob:used-by`) from any other tracked file -- see "Anti-orphan file-reference gate" below |
 | REF002 | refs | a git-tracked file has exactly one inbound reference (fragile single anchor) -- see "Anti-orphan file-reference gate" below |
@@ -233,14 +235,49 @@ structures and env-var access sites, drawn from
 - Self-match exclusion (T-0201 lesson): `_pii_structural.py`'s own path is
   hardcoded-excluded from the scan, so `FIELD_SIGNATURES`'s own keyword
   string literals can never be misread as a scanned field.
+- **PII010 also covers DB/DDL schema scanning (T-0348, family 2)**:
+  sqlalchemy ORM declarative `name = Column(...)` assignments and alembic-
+  style positional `Column("name", ...)` calls (`_scan_orm_columns`), plus
+  raw-SQL `CREATE TABLE(...)` column lists embedded in tracked-`.py`
+  string literals (`_scan_ddl_strings`) -- both matched against the same
+  `FIELD_SIGNATURES` table, no second registry. Schema headers are the
+  highest-value PII surface per the umbrella ticket body.
+- **PII011 (T-0349, family 4): structural email-shape value detection**:
+  every string-literal constant in a tracked `.py` file, checked via
+  `email.utils.parseaddr` (an RFC 822 header parser) plus a plain
+  character-set validation of the parsed local/domain parts
+  (`_is_email_shaped`) -- explicitly NOT a regex, per the ticket body's
+  mandate. Escaped by a `frob:secret-fake` comment on the literal's own
+  line or the line directly above it, the same T-0157 marker convention
+  the secrets scanner uses (a fixture literal discharges both gates with
+  one comment).
+- **PII012 (T-0350, family 5): keyword-sweep at suggestion severity**:
+  every plain identifier (variable/parameter/function name) and every
+  `#`-comment word token matching a `FIELD_SIGNATURES` name-kind keyword,
+  excluding sites PII010 already reports on. Fires at WARN severity only
+  -- "no hard fail on names alone" per the ticket body -- distinct from
+  PII010's deny-by-default posture over an actual declared data-structure
+  field.
+- **std.pii/std.secrets declaration join (T-0351)**: `_load_declared_
+  surface` loads every `.strata` design file under the repo's design
+  directory (the same loader `sys_gate` already uses, `load_design_ids`),
+  tier-2 code-binds each file to its owning `Node` (`bind_code`, also
+  reused from `sys_gate`'s SYS003), and joins that node's `carries` PII
+  tags (`frob.strata._pii.node_pii_tags`) and `clearance == "Secret"`
+  status (the same best-effort std.secrets proxy
+  `_design_load.DesignIds.secrets` already documents) into a
+  `_DeclaredSurface`. A PII010 finding whose file is already code-bound to
+  a node that `carries` the SAME category is discharged outright; a
+  SEC110 finding whose file is code-bound to a Secret-clearance node is
+  likewise discharged. A repo with no design directory (or no matching
+  binding) degrades to the empty surface -- every finding still fires
+  exactly as before this ticket, waiver-only. PII011 (bare string-literal
+  values have no "owning field" to carry a category against) and PII012
+  (already suggestion-severity, not deny-by-default) are NOT joined.
 - **Deliberately not built this pass** (see `_pii_structural.py`'s module
-  docstring and this ticket's Done report): DB/DDL schema scanning (`CREATE
-  TABLE`, sqlalchemy `Column`), structural (non-regex) email-shape value
-  detection, identifier/comment keyword-sweep at suggestion severity, and
-  non-Python language equivalents. Filed as follow-on tickets, not silently
-  dropped. A direct join from a PII010/SEC110 finding to a T-0154 `carries`
-  tag or a T-0082 `std.secrets` node (rather than a bare waiver) is likewise
-  a follow-on -- today's only discharge mechanism is the waiver.
+  docstring and this ticket's Done report): non-Python language
+  equivalents and non-Python DDL sources (`.sql` migration files). Filed
+  as follow-on tickets, not silently dropped.
 
 ### Anti-orphan file-reference gate T-0396
 
