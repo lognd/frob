@@ -10,6 +10,7 @@ tree from `plan` into finished, evidenced work.
 
 ## The loop
 
+<!-- frob:waive DOC004 reason="illustrative agent-workflow example, not command reference" -->
 ```bash
 frob ticket doable                 # ordered, unblocked, oldest-first
 ```

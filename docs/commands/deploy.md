@@ -8,6 +8,7 @@ snapshot-diff harness (`audit`, T-0259). Two verbs: `generate` and
 
 ## Quickstart
 
+<!-- frob:describes src/frob/deploy/_generate.py::generate_all -->
 ```bash
 frob deploy generate                # write deploy/install.sh, status.sh, uninstall.sh
 frob deploy generate --check        # verify committed scripts match the current model; no writes
@@ -95,6 +96,7 @@ expensive (needs a real VirtualBox guest) and deliberately NOT part of
 deploy audit` directly, typically before a release or when
 `install.sh`/`uninstall.sh` themselves change.
 
+<!-- frob:describes src/frob/deploy/_vm_runner.py::run_vm_audit -->
 ```bash
 frob deploy audit --vm my-vm \
     --ssh-host 10.0.2.15 --ssh-user root --ssh-key ~/.ssh/frob_vm_key \

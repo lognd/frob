@@ -10,6 +10,7 @@ standing evidence.
 
 ## Find the gap
 
+<!-- frob:waive DOC004 reason="illustrative agent-workflow example, not command reference" -->
 ```bash
 frob check --only invariant           # INV001 (no evidence) / INV002 (no anchor)
 ```
@@ -66,6 +67,7 @@ before citing it.
 
 ## Loop until clean
 
+<!-- frob:waive DOC004 reason="illustrative agent-workflow example, not command reference" -->
 ```bash
 pytest tests/ --collect-only -q | grep <new test file>   # confirm collection
 frob check --only invariant                              # must show zero violations

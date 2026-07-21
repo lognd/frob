@@ -10,6 +10,7 @@ outside its declared `scope`.
 
 ## Workflow
 
+<!-- frob:waive DOC004 reason="illustrative agent-workflow example, not command reference" -->
 ```bash
 frob ticket doable                        # ordered list of unblocked tickets
 frob ticket show T-0042                   # read the ticket you're taking
@@ -35,6 +36,7 @@ If you find work that must happen but is outside `scope` -- a bug in a
 neighboring module, a missing abstraction, a stale doc you don't own --
 do NOT fix it silently and do NOT expand scope yourself:
 
+<!-- frob:waive DOC004 reason="illustrative agent-workflow example, not command reference" -->
 ```bash
 frob ticket new --title "..." --kind bug --scope "..." --body "found while working T-0042"
 ```
@@ -43,6 +45,7 @@ File it, note the new id in the Done report, and continue your own ticket.
 
 ## Verify before closing
 
+<!-- frob:waive DOC004 reason="illustrative agent-workflow example, not command reference" -->
 ```bash
 frob check --ticket T-0042                # scope/pre-work/drift/coverage/test gates
 pytest <touched test files> -x --tb=short  # confirm evidence is real and passing
@@ -65,6 +68,7 @@ Filed: <any new ticket ids opened for out-of-scope discoveries, or "none">
 Gates: frob check --ticket T-0042 clean (or: waived RULE-ID at file:line, reason)
 ```
 
+<!-- frob:waive DOC004 reason="illustrative agent-workflow example, not command reference" -->
 ```bash
 frob ticket close T-0042                  # requires non-empty evidence + Done report
 ```

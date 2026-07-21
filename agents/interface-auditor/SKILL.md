@@ -16,6 +16,7 @@ into multiple auditor missions -- do not silently widen your own mission.
 
 ## frob workflow
 
+<!-- frob:waive DOC004 reason="illustrative agent-workflow example, not command reference" -->
 ```bash
 frob exports src/frob/<pkg>/          # what this package actually exposes
 frob xref <symbol> src/               # every external caller of a public symbol
@@ -47,6 +48,7 @@ frob check --only test                # TEST003: is this boundary already flagge
 Every finding is a ticket, `origin: auditor`, scoped to the fix location
 (which may be the audited package or the caller, whichever must change):
 
+<!-- frob:waive DOC004 reason="illustrative agent-workflow example, not command reference" -->
 ```bash
 frob ticket new --title "..." --kind bug --origin auditor \
     --scope "src/frob/<pkg>/**" --body "..."

@@ -7606,3 +7606,44 @@ acceptance: []
 threat: null
 ```
 docs/audits/strata.md G2+G7 (HIGH/MEDIUM), from T-0401. _mitigation_is_chokepoint's first branch (_threat.py:1196) returns True when NoFlow holds with EVERY boundary removed -- i.e. the sink is simply unreachable from foreign in the model, so an incomplete/attacker-authored .strata discharges a real capability with NO mitigation modeled at all (G2). Same root cause as G7: _discharges_as_chokepoint's src=foreign expansion (_claims.py _expand) yields an empty source set when the model declares no foreign-trust node at all, so NoFlow proves vacuously (nothing to walk from) and every obligation on that model discharges with no adversary present. Fix direction: require at least one modeled path from a foreign source to the firing node (and at least one foreign-trust node in the model) before accepting the vacuous short-circuit as a discharge; otherwise emit a distinct 'obligation fires but sink unreachable / no adversary modeled -- model likely incomplete' diagnostic instead of silent PROVED. High-risk core-engine change (this family has the highest REJECT rate in repo history) -- build the counterexample litmus FIRST, confirm it currently discharges vacuously, THEN harden.
+
+<!-- ticket:T-draft-227b71a9 -->
+```yaml
+id: T-draft-227b71a9
+title: 'DOC004 console-tier burndown: anchor or waive the 59 unbound fences'
+state: in-progress
+kind: docs
+origin: agent
+created: '2026-07-21'
+blocked_by: []
+parent: null
+scope: []
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Console/bash command-drift tier (T-0443) flags 59 unbound fences across agents/**, skills/**, docs/commands/**, docs/modules/**, docs/guides/agentic-workflow.md, docs/guides/install.md. Per playbook: waive illustrative agent/skill workflow examples narrowly per-fence; bind real command reference docs with genuine anchors, fixing stale text where drifted. Skip docs/modules/gates.md (owned by sibling gates-chain agent) and src/frob/gates/** (out of scope).
+
+## Done report
+
+Changed:
+- 12 agents/*/SKILL.md and skills/*/SKILL.md files (waived, 27 fences total)
+- docs/commands/check.md, deploy.md, exports.md, gitlog.md, scaffold.md, sys.md (bound, 25 fences total)
+- docs/modules/clean.md, mutate.md, release.md, stats.md (bound, 4 fences total)
+- docs/guides/agentic-workflow.md (bound, 6 fences), docs/guides/install.md (bound, 1 fence)
+
+Evidence: uv run frob check --only docblocks -> 0 errors, 0 warnings (was 59 warnings)
+Filed: none (no gate-design gap found; every fence classified cleanly)
+Gates: uv run frob check --only docblocks clean (0/0); uv run frob check clean (0 errors,
+314 pre-existing warnings unrelated to DOC004, 95 pre-existing waived)
+Caveats: skipped docs/modules/gates.md entirely per coordinator instruction (sibling
+gates-chain agent territory) -- it had 0 DOC004 warnings in this run already, so nothing
+was left behind there. Did not touch src/frob/gates/** per instruction.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+(no evidence recorded)

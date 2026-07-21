@@ -4,6 +4,7 @@ One sentence: `frob clean` removes ONLY known build/test/cache artifacts --
 never source, never a git-tracked file -- previewing what it would remove
 by default and executing only with `-y`/`--yes`.
 
+<!-- frob:describes src/frob/clean/_core.py::clean -->
 ```bash
 frob clean               # tier 1 (SAFE): preview only, prints candidates
 frob clean -y            # tier 1: execute

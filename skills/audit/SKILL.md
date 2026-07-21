@@ -11,6 +11,7 @@ if it isn't a ticket, a policy rule, or an invariant, it didn't happen.
 
 ## Step 1: Enumerate boundaries
 
+<!-- frob:waive DOC004 reason="illustrative agent-workflow example, not command reference" -->
 ```bash
 frob map src/                        # package layout
 frob check --only test                # TEST003 already flags known interfaces
@@ -39,6 +40,7 @@ any real finding was reported.
 
 ## Step 4: Collect and dedupe
 
+<!-- frob:waive DOC004 reason="illustrative agent-workflow example, not command reference" -->
 ```bash
 frob ticket list --kind bug --kind security --origin auditor
 ```
