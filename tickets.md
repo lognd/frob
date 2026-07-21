@@ -2393,7 +2393,7 @@ RawSymbol.body_norm cross-grammar structural vocabulary via _canonical_tokens, w
 ```yaml
 id: T-0335
 title: extend prune-before-descend to remaining os.walk sites (gates secrets/sys/tickets/archgate/prework)
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-19'
@@ -2416,7 +2416,9 @@ scope_changes:
   reason: T-0335 gates work maps to tests/test_gates.py
   actor: logan
   at: '2026-07-20'
-evidence: []
+evidence:
+- tests/test_walk_lint_gate.py::TestHelper::test_walk_pruned_call_is_silent
+- tests/test_walk_lint_gate.py::TestSelfMatchExclusion::test_own_files_not_scanned
 attachments: []
 acceptance:
 - given 100+ gitignored nested worktrees under .claude/worktrees/, when frob check
@@ -2428,6 +2430,44 @@ acceptance:
 threat: null
 ```
 T-0239 fixed graph/outline walking but a full frob check still shows archgate/secrets/sys/tickets each ~350s -- these gates have their OWN os.walk/rglob sites (gates/_baseline.py, _coverage.py, _secrets.py, _prework.py, tickets sweep) still descending into every stale worktree. T-0239's Done report flagged this follow-up. Sweep every remaining os.walk/rglob in gates/ and tickets/ onto prune-before-descend using shared frob.excludes helpers (_is_nested_worktree/_should_prune_dir/load_exclude_globs); do NOT duplicate the rule. Verify before/after full-check timing.
+
+## Done report
+
+Verified rather than re-implemented: the coordinator sweep commits
+a497008/428c753 ("fix(walk): route raw traversals through frob.excludes
+helpers (WALK001)") landed on main earlier the same day this ticket was
+filed and already migrated every os.walk/rglob site the ticket names
+(gates/_secrets.py now uses git ls-files via frob.gitio.run_argv,
+gates/_prework.py uses frob.excludes.load_exclude_globs +
+_is_scan_path_pruned, gates/_baseline.py and gates/_coverage.py carry no
+raw traversal at all, sys_gate/archgate_gate/tickets_gate consume a
+pre-built GraphSnapshot rather than walking themselves, and
+src/frob/tickets/__init__.py's own sweep already routes through the
+shared prune helpers per its own docstring history). WALK001 no longer
+fires unwaived anywhere in src/frob/gates/** or src/frob/tickets/** --
+the remaining 14 WALK001 findings gate-wide are all outside this
+ticket's scope and already carry honest frob:waive reasons from the
+prior sweep (cache-dir scanners, bounded single-directory walks,
+Cargo/npm workspace globs, doclink ** semantics).
+
+Timed a fresh `uv run frob check --only gates`: archgate=2.89s,
+secrets=1.88s, sys=0.71s, tickets=0.46s, prework folded into the
+tickets/scope stages at 0.00s -- none anywhere near the ~350s baseline
+this ticket describes; a second run with --ticket T-0335 confirms the
+same (archgate=0.00s cache hit, secrets=1.98s, sys=0.76s, tickets=0.48s,
+prework=0.00s).
+
+No source changes were needed; this ticket's acceptance criteria were
+already met by the prior sweep. The one gates-stage error
+(docs/commands/sys.md:122 DOC003) is pre-existing and unrelated to
+os.walk/prune work -- confirmed present before this ticket's start (no
+local diff at ticket-start time).
+
+### Changed
+(no changed files detected)
+
+### Evidence
+(no evidence recorded)
 
 <!-- ticket:T-0338 -->
 ```yaml
@@ -8220,3 +8260,23 @@ acceptance: []
 threat: null
 ```
 Found while landing T-0483 in a worktree (branch worktree-agent-ae00df0ca54dd3df2, off main). Running frob ticket start/evidence/done-report/sweep (any command that rewrites the whole tickets.md ledger) on this branch silently reverted an already-finalized, unrelated ticket (T-0503, real id on main) back to its draft form (T-draft-94774bc5) in the rewritten tickets.md -- confirmed by diffing against main: the T-0503 marker+id both became T-draft-94774bc5 with no ticket CLI command targeting T-0503 at all. A stale Done report elsewhere in the ledger mentions 'Filed T-draft-94774bc5' in prose (harmless, just text), and something in the ledger-write path appears to match that provisional id string against a currently-finalized ticket sharing the same title and reassign its id backward when the write happens off the default branch. This corrupts a finalized ticket's identity as a side effect of an unrelated ticket's write -- worked around by hand-restoring the T-0503 marker/id in tickets.md before landing T-0483 (not a real fix). Needs root-causing in src/frob/tickets (is_draft_id/on_default_branch/finalize_draft or wherever ledger writes reconcile ids) and a regression test that writing an unrelated ticket off-default-branch never touches another already-finalized ticket's id.
+
+<!-- ticket:T-0506 -->
+```yaml
+id: T-0506
+title: 'COV006 false-positive class: extend reachability through same-file public
+  wrappers before burndown of the ~97 findings'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-21'
+blocked_by: []
+parent: null
+scope: []
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0483's COV006 (frob:tests edge to a private symbol with no call-graph reachability from the test) has a disclosed common FP shape: the call graph never records edges INTO public callees, so a test calling a same-file public wrapper that itself calls the bound private helper reads as unreachable. Before hand-burning down the ~97 COV006 / ~61 COV007 warn findings, extend the reachability check one hop through same-file public wrappers (or record public-callee edges for this check's purposes). Scope: src/frob/gates/__init__.py (COV006 helpers), tests/test_gates.py.
