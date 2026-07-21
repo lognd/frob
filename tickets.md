@@ -4696,7 +4696,7 @@ consumes _cache's get/put functions and needed no changes either.
 id: T-0518
 title: 'frob.dup._exhaustiveness: add DUP_CLAIMS r5/typescript entry (T-0494 found
   the proof, no claim registered)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-07-21'
