@@ -5559,7 +5559,7 @@ Found during the 2026-07-21 doable-warning scope-narrowing sweep. frob ticket sc
 id: T-0486
 title: 'dup/_legacy_py._harvest_with: with-item alias lookup uses nonexistent ''alias''
   field, as-pattern binding names never join the alpha-rename set'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-21'
