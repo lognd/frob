@@ -3196,7 +3196,7 @@ threat: null
 id: T-0485
 title: ticket scope --add refuses narrowing inside a ticket's own pre-existing broad
   overlap (ScopeLeaseConflict)
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-07-21'
@@ -3207,8 +3207,19 @@ scope:
 - src/frob/tickets/__init__.py
 - tests/test_tickets_scope_mutation.py
 - docs/modules/tickets.md
-scope_changes: []
-evidence: []
+- src/frob/tickets/_models.py
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: shared _glob_is_subset helper lives alongside scope_overlap_globs in _models.py
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_tickets_scope_mutation.py::TestMutateScope::test_add_subset_of_own_leased_overlap_is_accepted
+- tests/test_tickets_scope_mutation.py::TestMutateScope::test_add_beyond_own_leased_overlap_still_rejected
+- tests/test_tickets_scope_mutation.py::TestGlobIsSubset::test_concrete_path_under_double_star_is_subset
+- tests/test_tickets_scope_mutation.py::TestGlobIsSubset::test_wildcard_bearing_narrow_is_never_subset
+- tests/test_tickets_scope_mutation.py::TestGlobIsSubset::test_concrete_path_outside_broad_glob_is_not_subset
 attachments: []
 acceptance:
 - given a queued ticket whose existing scope glob already overlaps an in-progress
@@ -3219,6 +3230,61 @@ threat: null
 ```
 Found during the 2026-07-21 doable-warning scope-narrowing sweep. frob ticket scope --add checks every added glob against in-progress leases, but queued tickets ALREADY hold broad globs that overlap those same leases (grandfathered at creation). Narrowing 'src/frob/strata/**' down to 'src/frob/strata/_host.py' is refused (ScopeLeaseConflict, e.g. vs T-0263's strata lease) even though the change strictly SHRINKS the overlap. Because scope changes are atomic, the whole narrowing fails and the chronically-over-broad glob (and its doable WARNING) cannot be cleared until the leaseholder lands. Fix: when validating --add, subtract the ticket's own existing scope coverage first -- an add that is a subset of what the ticket already covers can never create NEW contention and must be allowed. Related interplay: ScopeRemoveOrphansEvidence forces a covering --add for recorded evidence, so a ticket whose evidence lies under another ticket's leased tree (T-0160: tests/unit/strata/test_native_staleness.py under T-0263's lease) is fully wedged: cannot remove tests/** without an add, cannot add the evidence path. Tickets left un-narrowed by the sweep, to re-narrow once T-0263/T-0423/T-0460 land: T-0235 T-0261 T-0339 T-0341 T-0383 T-0384 T-0392 T-0393 T-0394 T-0395 T-0401 T-0410 T-0428 T-0439 T-0440; partial leftovers: T-0160 (tests/** stays), T-0461 (add src/frob/render/ post-T-0460).
 
+## Done report
+
+Root cause: `_scope_add_conflicts` checked an `--add` glob against every OTHER
+in-progress ticket's declared scope with no exemption for globs the
+requesting ticket ALREADY covers. A queued ticket that grandfathers a broad
+glob (e.g. `src/frob/strata/**`) overlapping an in-progress ticket's lease
+could never narrow that overlap down to a concrete subset path (e.g.
+`src/frob/strata/_host.py`) -- the narrowing itself was rejected as a fresh
+`ScopeLeaseConflict`, even though it strictly SHRINKS contention and can
+never create new contention.
+
+Fix: added `_glob_is_subset(narrow, broad)` (src/frob/tickets/_models.py) --
+exact when `narrow` is a concrete literal path (delegates to
+`fnmatch.fnmatch`), conservatively `False` whenever `narrow` still carries a
+wildcard (so a genuine expansion can never slip through disguised as a
+narrowing). `_scope_add_conflicts` now takes the requesting ticket's own
+pre-mutation `scope` and exempts any `--add` glob that is a subset of
+something already in it, before ever checking against other holders'
+leases. `_validate_scope_mutation` passes `ticket.scope` through.
+
+Re-narrowing the 16 tickets listed in T-0485's body: read all 16 ticket
+bodies (T-0235, T-0261, T-0339, T-0341, T-0383, T-0384, T-0392, T-0393,
+T-0394, T-0395, T-0401, T-0410, T-0428, T-0440, T-0160, T-0461). Disclosing
+plainly: none of them yielded a genuinely narrower concrete touch set
+distinct from what they already declare -- they are open-ended audits/
+reconciliations/refactor sweeps (arch-advisory triage across src/frob/,
+registry-vs-enforcement reconciliation across the whole capability matrix,
+a repo-wide perf audit, a coverage backlog spanning ~78 modules) whose
+declared breadth is what the described work actually requires, not an
+artifact of the T-0455-era sweep failing to narrow them. Fabricating a
+concrete file list not actually derived from the body would misrepresent
+scope for whoever picks these up next, so no scope mutation was applied to
+any of the 16. Also, only T-0401 is currently in-progress among them
+(holding `src/frob/strata/`) -- the other 15 are queued and not blocking
+any live lease today; `frob ticket doable | grep WARNING` count is
+unrelated to lease contention (breadth-threshold nudges, not lease
+rejections) and was not the mechanism this bug affected. The concrete,
+verified fix is the mechanism itself (proven by the two new
+TestMutateScope cases below), available for any agent to invoke on any of
+the 16 once it identifies a real narrower touch set from its own work.
+
+REL001: not required -- no public symbol's signature/behavior changed
+(`_scope_add_conflicts`/`_validate_scope_mutation` are private; the new
+`_glob_is_subset` is private). `frob release check` reports OK at 0.53.0
+unchanged.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/test_tickets_scope_mutation.py::TestMutateScope::test_add_subset_of_own_leased_overlap_is_accepted` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_scope_mutation.py::TestMutateScope::test_add_beyond_own_leased_overlap_still_rejected` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_scope_mutation.py::TestGlobIsSubset::test_concrete_path_under_double_star_is_subset` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_scope_mutation.py::TestGlobIsSubset::test_wildcard_bearing_narrow_is_never_subset` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_scope_mutation.py::TestGlobIsSubset::test_concrete_path_outside_broad_glob_is_not_subset` (pytest node id, verified passing when recorded)
 <!-- ticket:T-0491 -->
 ```yaml
 id: T-0491

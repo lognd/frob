@@ -272,6 +272,23 @@ def scope_overlap_globs(
     return None
 
 
+# frob:ticket T-0485
+# frob:tests tests/test_tickets_scope_mutation.py::TestGlobIsSubset.test_concrete_path_under_double_star_is_subset  # noqa: E501
+# frob:tests tests/test_tickets_scope_mutation.py::TestGlobIsSubset.test_wildcard_bearing_narrow_is_never_subset  # noqa: E501
+def _glob_is_subset(narrow: str, broad: str) -> bool:
+    """Whether every path `narrow` can match is also matched by `broad` --
+    decided EXACTLY when `narrow` denotes one concrete literal path (no
+    `*`/`?`/`[...]`), by delegating to `fnmatch.fnmatch(narrow, broad)`
+    (narrow's matched set is then the singleton `{narrow}`, so this is
+    precise, not a heuristic). Conservatively `False` whenever `narrow`
+    itself still carries a wildcard: a wildcard-bearing glob's full matched
+    set is not proven a subset by this check, so a genuine scope expansion
+    can never slip through disguised as a 'narrowing' add (T-0485)."""
+    if any(ch in narrow for ch in "*?["):
+        return False
+    return fnmatch.fnmatch(narrow, broad)
+
+
 # frob:ticket T-0453
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_lease.py::TestScopeOverlap.test_precise_scopes_disjoint
