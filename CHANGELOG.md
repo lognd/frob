@@ -17,6 +17,26 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.37.0] - unreleased
+
+Public-API surface change since 0.36.0 (mechanical semver via REL001): an
+additive (minor) bump -- new `frob.check._memo` run-scoped memoization
+module.
+
+- T-0423: compute-once contract for the heavy pure analyses. New
+  `frob.check._memo` module: `run_memo_scope` (context manager activating
+  memoization for one `frob check` invocation), `reset_run_memo` (test/
+  convenience entry into an unconditionally-active scope), `run_memo_stats`
+  (hit/miss instrumentation, mirroring `frob.lang.parse_cache_stats`), and
+  `memoize_per_run` (the decorator itself). Applied to `frob.graph.
+  build_graph` and `frob.arch.analyze_project` at their definition site --
+  a second call with identical arguments while a scope is active is a
+  cache hit, not a recompute, regardless of which `frob check` stage calls
+  it. Generalizes the T-0414 parse-cache pattern one level up; closes the
+  T-0418 arch-double-run class of bug. `frob.dup.find_duplicates` was
+  deliberately NOT touched (out of this ticket's scope; `src/frob/dup/` is
+  concurrently under active rework) -- filed as a follow-up.
+
 ## [0.36.0] - unreleased
 
 Public-API surface change since 0.35.0 (mechanical semver via REL001): an

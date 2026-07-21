@@ -276,7 +276,12 @@ rule is a natural follow-up, not yet built).
 
 - **Input**: the lockfiles frob already understands the shape of
   (uv.lock/poetry.lock, Cargo.lock, package-lock.json/pnpm-lock.yaml) --
-  name, version, artifact hash per dependency.
+  name, version, artifact hash per dependency. `scan_tree` scans EVERY
+  supported lockfile found directly under the root (`_lockfile.
+  _find_all_lockfiles`), not just the first one a fixed-order search
+  hits -- as of T-0400, a polyglot repo with both a `uv.lock` and a
+  `package-lock.json` gets both ecosystems vetted in one pass; before
+  T-0400 the second lockfile's dependencies were silently never scanned.
 - **Scan**: fetch/locate the package source (local caches first: uv/pip
   cache, cargo registry cache, node_modules; network fetch only with
   consent), parse with frob.lang, run tree-sitter capability queries
@@ -668,6 +673,7 @@ discipline `_capability.py`'s module docstring already documents for
 <!-- frob:describes src/frob/vet/_hook.py::parse_hook_command -->
 <!-- frob:describes src/frob/vet/_hook.py::check_package -->
 <!-- frob:describes src/frob/vet/_lockfile.py::_find_lockfile -->
+<!-- frob:describes src/frob/vet/_lockfile.py::_find_all_lockfiles -->
 <!-- frob:describes src/frob/vet/_lockfile.py::_parse_lockfile -->
 <!-- frob:describes src/frob/vet/_capability.py::language_for -->
 <!-- frob:describes src/frob/vet/_capability.py::scan_file_capabilities -->
@@ -1044,8 +1050,13 @@ What landed on top of the lockfile-conformance MVP:
   (`.venv/lib/*/site-packages`, `~/.cache/uv`, `~/.cache/pip`,
   `node_modules/<name>`, `~/.cargo/registry/src`). No network fetch is
   implemented; a dependency not found locally scans with an empty
-  capability set plus a `source-unavailable` signal, never a crash or a
-  false "clean" verdict.
+  capability set plus a `source-unavailable` signal AND, as of T-0400, a
+  fail-CLOSED `VET-SOURCE-UNAVAILABLE` ERROR violation (`_scan.py::
+  _source_unavailable_violation`) -- never a crash, and never a silent
+  "clean" verdict indistinguishable from a package that was actually
+  scanned and found benign. Before T-0400 this case emitted the signal
+  but zero violations, so an allow-listed dependency whose code was never
+  installed locally silently "passed" vet without ever being read.
 - **Obfuscation ensemble** (`_obfuscation.py`, VET004): string-literal
   Shannon entropy vs a fixed per-language threshold, Unicode bidi/zero-
   width/BOM scan (deterministic, always fatal), and hex-identifier ratio

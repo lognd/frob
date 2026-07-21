@@ -34,17 +34,32 @@ _LOCKFILE_NAMES = (
 def _find_lockfile(root: Path) -> Path | None:
     """`root` itself if it is already a supported lockfile path (T-0221 --
     `frob vet uv.lock` must not be misread as "look for uv.lock under
-    ./uv.lock/"), else the first supported lockfile found directly under
-    `root` as a directory, or `None` if neither resolves."""
+    ./uv.lock/"), else the FIRST supported lockfile found directly under
+    `root` as a directory (fixed order, see `_LOCKFILE_NAMES`), or `None` if
+    neither resolves. Kept for callers that intentionally want single-
+    lockfile resolution (e.g. `scan_tree(<path/to/a/specific/lockfile>)`);
+    `scan_tree`'s directory-root path uses `_find_all_lockfiles` instead
+    (T-0400: a polyglot repo's second lockfile must not go unscanned)."""
+    found = _find_all_lockfiles(root)
+    return found[0] if found else None
+
+
+# frob:doc docs/modules/vet.md#public-api
+def _find_all_lockfiles(root: Path) -> tuple[Path, ...]:
+    """Every supported lockfile found directly under `root` (fixed
+    `_LOCKFILE_NAMES` order), or `(root,)` if `root` is itself already a
+    supported lockfile path. T-0400 audit finding #2: `scan_tree` used to
+    scan only the FIRST lockfile a fixed-order search found -- a repo with
+    both `uv.lock` and `package-lock.json` had every npm dependency
+    completely unscanned. This is the fail-closed replacement: callers must
+    scan every entry returned, not just the first."""
     if root.is_file() and root.name in _LOCKFILE_NAMES:
         _log.debug("vet: using lockfile path directly %s", root)
-        return root
-    for name in _LOCKFILE_NAMES:
-        candidate = root / name
-        if candidate.exists():
-            _log.debug("vet: found lockfile %s", candidate)
-            return candidate
-    return None
+        return (root,)
+    found = tuple(root / name for name in _LOCKFILE_NAMES if (root / name).exists())
+    if found:
+        _log.debug("vet: found %d lockfile(s) under %s: %s", len(found), root, found)
+    return found
 
 
 # frob:doc docs/modules/vet.md#public-api
@@ -168,4 +183,4 @@ def _parse_pnpm_lock(path: Path) -> Result[tuple[Dependency, ...], VetError]:
     return Ok(tuple(deps))
 
 
-__all__ = ["_find_lockfile", "_parse_lockfile"]
+__all__ = ["_find_all_lockfiles", "_find_lockfile", "_parse_lockfile"]

@@ -81,7 +81,7 @@
       "ref": "src/frob/gitio.py::working_diff"
     },
     {
-      "digest": "c2b6a00c4af34fbd04caf36a73074fffec5268c9c1467d257131b9774fb36755",
+      "digest": "b4eb47a618c77ecebf4289339ff76a6343bd9ca19c4800c295797b1477fad00a",
       "facet": "sig",
       "ref": "src/frob/graph/__init__.py::build_graph"
     },
