@@ -5391,7 +5391,7 @@ User (2026-07-20): ensure the exhaustive researcher has the mechanisms to MAKE t
 id: T-0431
 title: 'Worktree-lease guard: frob mutating commands + git hooks fail LOUDLY when
   a dispatched agent operates outside its worktree'
-state: queued
+state: in-progress
 kind: security
 origin: human
 created: '2026-07-20'
@@ -5402,13 +5402,207 @@ scope:
 - src/frob/gates/
 - src/frob/scaffold/
 - frob.toml
-scope_changes: []
-evidence: []
+- tests/test_worktree_guard.py
+- tests/test_gates_worktree_lease.py
+- tests/test_scaffold_worktree_lease_hook.py
+- docs/modules/tickets.md
+- docs/commands/scaffold.md
+- .frob-release.json
+- CHANGELOG.md
+- pyproject.toml
+- uv.lock
+- tests/test_gates_tickets_hygiene.py
+- tests/test_ticket_land.py
+- tests/test_tickets_collision.py
+- tests/unit/test_ticket_runner_land_release.py
+- tests/unit/test_ticket_store.py
+scope_changes:
+- op: add
+  glob: tests/test_worktree_guard.py
+  reason: test coverage + doc sections live outside src/frob/{tickets,gates,scaffold}/
+    scope globs
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_gates_worktree_lease.py
+  reason: test coverage + doc sections live outside src/frob/{tickets,gates,scaffold}/
+    scope globs
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_scaffold_worktree_lease_hook.py
+  reason: test coverage + doc sections live outside src/frob/{tickets,gates,scaffold}/
+    scope globs
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: test coverage + doc sections live outside src/frob/{tickets,gates,scaffold}/
+    scope globs
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/commands/scaffold.md
+  reason: test coverage + doc sections live outside src/frob/{tickets,gates,scaffold}/
+    scope globs
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: REL001 bump for new public enforce_worktree_lease/install_worktree_lease_hook
+    symbols
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: CHANGELOG.md
+  reason: REL001 bump for new public enforce_worktree_lease/install_worktree_lease_hook
+    symbols
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: pyproject.toml
+  reason: REL001 bump for new public enforce_worktree_lease/install_worktree_lease_hook
+    symbols
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: uv lock update accompanies the version bump
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_gates_tickets_hygiene.py
+  reason: 'sequential single-worktree dispatch: prior tickets'' (T-0357/T-0338/T-0409)
+    committed test files still show in the diff-vs-main SCOPE001 check'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: 'sequential single-worktree dispatch: prior tickets'' (T-0357/T-0338/T-0409)
+    committed test files still show in the diff-vs-main SCOPE001 check'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_tickets_collision.py
+  reason: 'sequential single-worktree dispatch: prior tickets'' (T-0357/T-0338/T-0409)
+    committed test files still show in the diff-vs-main SCOPE001 check'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/test_ticket_runner_land_release.py
+  reason: 'sequential single-worktree dispatch: prior tickets'' (T-0357/T-0338/T-0409)
+    committed test files still show in the diff-vs-main SCOPE001 check'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/test_ticket_store.py
+  reason: 'sequential single-worktree dispatch: prior tickets'' (T-0357/T-0338/T-0409)
+    committed test files still show in the diff-vs-main SCOPE001 check'
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_worktree_guard.py::TestEnforceWorktreeLease::test_no_env_var_is_unrestricted
+- tests/test_worktree_guard.py::TestEnforceWorktreeLease::test_matching_worktree_passes
+- tests/test_worktree_guard.py::TestEnforceWorktreeLease::test_mismatched_worktree_refuses
+- tests/test_worktree_guard.py::TestEnforceWorktreeLease::test_non_repo_root_passes_through
+- tests/test_worktree_guard.py::TestWorktreeGuardWiredIntoMutations::test_new_ticket_from_main_while_leased_elsewhere_fails
+- tests/test_worktree_guard.py::TestWorktreeGuardWiredIntoMutations::test_new_ticket_from_leased_worktree_succeeds
+- tests/test_worktree_guard.py::TestWorktreeGuardWiredIntoMutations::test_coordinator_with_no_lease_mutates_main_fine
+- tests/test_gates_worktree_lease.py::TestStampBaselineWorktreeLease::test_mismatched_lease_refuses
+- tests/test_gates_worktree_lease.py::TestStampBaselineWorktreeLease::test_no_lease_succeeds
+- tests/test_gates_worktree_lease.py::TestStampCoverageWorktreeLease::test_mismatched_lease_refuses
+- tests/test_gates_worktree_lease.py::TestStampCoverageWorktreeLease::test_no_lease_reaches_normal_missing_coverage_error
+- tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_installs_pre_commit_and_pre_merge_commit
+- tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_refuses_existing_hook_without_force
+- tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_not_a_git_repo_fails
+- tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_installed_hook_aborts_commit_under_frob_agent
+- tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_installed_hook_allows_commit_without_frob_agent
 attachments: []
 acceptance: []
 threat: null
 ```
 User (2026-07-20), after an incident: a dispatched worktree agent accidentally ran bash commands (git merge main, make core, frob ticket new -> created T-0427) against the SHARED main checkout instead of its worktree; the Edit tool caught FILE edits but bash commands went through, mutating live main. Make it HARD for a dispatched agent to damage the repo via frob, failing loudly (subagent scoping). MECHANISM: (1) LEASE -- when an agent is dispatched to a worktree, record a lease (a .frob/agent-lease file naming the worktree path + agent id, OR the dispatcher sets env FROB_WORKTREE=<abs path>). (2) frob MUTATING-COMMAND GUARD -- every frob command that WRITES (ticket new/close/renumber/land/start/sweep/attach/block/fail/evidence, release stamp/check --stamp, ack, check --stamp-coverage/--stamp-baseline) checks: if a lease/FROB_WORKTREE is active AND the cwd git top-level (`git rev-parse --show-toplevel`) is NOT the leased worktree (e.g. it is main), REFUSE with a loud error naming both paths ("agent leased to <W>; refusing to mutate <main>"). Read-only frob commands (check --ticket, show, list, doable) stay allowed anywhere. (3) GIT HOOK -- frob worktree/scaffold setup installs a pre-commit + pre-merge hook in the MAIN checkout that aborts when an agent-context marker (FROB_WORKTREE / FROB_AGENT) is set, catching a stray raw `git merge main`/`git commit` from an agent shell. (4) The COORDINATOR (no lease / a coordinator marker) mutates main normally. Careful about FALSE POSITIVES: the coordinator landing worktree changes onto main must NOT be blocked (it runs without an agent lease); a legitimately-cd-into-worktree frob command must work. Acceptance: a frob ticket new run from main WHILE FROB_WORKTREE points elsewhere FAILS loudly; the same command from inside the leased worktree SUCCEEDS; the coordinator (no lease) mutates main fine; a raw git commit on main with FROB_AGENT set is aborted by the hook. This is the "hard to be careless" guard for the dispatch layer -- make repo damage require deliberately clearing the lease, not a stray cwd.
+
+## Done report
+
+Added a worktree-lease guard for the incident named in the ticket: a
+dispatched agent's shell ran git merge/make core/frob ticket new
+directly against the shared main checkout instead of its own worktree.
+
+Mechanism: FROB_WORKTREE=<abs path> is a dispatcher-set env var naming
+the one worktree an agent's shell is authorized to mutate frob's tracked
+ticket state in. New frob.tickets.enforce_worktree_lease(root) resolves
+root's actual git top-level (repo_root, worktree-correct) and refuses
+(Err(WorktreeLeaseViolation)) if FROB_WORKTREE is set and does not match
+it. Wired as the first statement of every mutating frob.tickets entry
+point: new_ticket, transition (covers start/close/requeue/block/fail),
+add_evidence, add_cmd_evidence, set_done_report, record_failure, attach,
+archive, renumber, renumber_one. The same guard (mapped to
+GateError.WorktreeLeaseViolation) covers frob.gates' stamp_baseline/
+stamp_coverage (--stamp-baseline/--stamp-coverage), which also write
+tracked repo state. FROB_WORKTREE unset is Ok(None) -- unrestricted --
+so the coordinator's own commands (landing worktree changes onto main,
+etc.) are unaffected; read-only commands never call this guard.
+
+Defense in depth: frob.scaffold.install_worktree_lease_hook installs
+pre-commit + pre-merge-commit git hooks that abort loudly whenever
+FROB_AGENT is set non-empty, catching a raw git commit/merge an agent
+shell ran directly, independent of whether it went through
+frob.tickets at all. Verified end to end with a real git commit under
+FROB_AGENT.
+
+Out of scope (noted, not built): `frob release stamp` and `frob ack`
+live outside src/frob/{tickets,gates,scaffold}/ (this ticket's declared
+scope) and are not yet guarded -- filed as T-draft-0afb5f70.
+
+### Changed
+```
+ .frob-release.json                            |   9 +-
+ CHANGELOG.md                                  |  82 ++++++
+ docs/commands/scaffold.md                     |  13 +-
+ docs/modules/tickets.md                       | 113 +++++++-
+ pyproject.toml                                |   2 +-
+ src/frob/app/ticket_runner.py                 | 209 +++++++++++++-
+ src/frob/gates/__init__.py                    |  89 +++++-
+ src/frob/gates/_baseline.py                   |   4 +
+ src/frob/gates/_coverage.py                   |   4 +
+ src/frob/gates/_models.py                     |   5 +
+ src/frob/scaffold/__init__.py                 |  17 +-
+ src/frob/scaffold/project.py                  | 108 ++++++++
+ src/frob/tickets/__init__.py                  | 159 +++++++++++
+ src/frob/tickets/_land.py                     | 132 ++++++++-
+ src/frob/tickets/_models.py                   |  15 ++
+ src/frob/tickets/_worktree_guard.py           |  83 ++++++
+ tests/test_gates_tickets_hygiene.py           | 105 ++++++++
+ tests/test_gates_worktree_lease.py            |  73 +++++
+ tests/test_scaffold_worktree_lease_hook.py    | 107 ++++++++
+ tests/test_ticket_land.py                     | 167 ++++++++++++
+ tests/test_tickets_collision.py               |   8 +-
+ tests/test_worktree_guard.py                  | 118 ++++++++
+ tests/unit/test_ticket_runner_land_release.py | 182 +++++++++++++
+ tests/unit/test_ticket_store.py               | 117 ++++++++
+ tickets.md                                    | 374 +++++++++++++++++++++++++-
+ uv.lock                                       |   2 +-
+ 26 files changed, 2268 insertions(+), 29 deletions(-)
+```
+
+### Evidence
+- `tests/test_worktree_guard.py::TestEnforceWorktreeLease::test_no_env_var_is_unrestricted` (pytest node id, verified passing when recorded)
+- `tests/test_worktree_guard.py::TestEnforceWorktreeLease::test_matching_worktree_passes` (pytest node id, verified passing when recorded)
+- `tests/test_worktree_guard.py::TestEnforceWorktreeLease::test_mismatched_worktree_refuses` (pytest node id, verified passing when recorded)
+- `tests/test_worktree_guard.py::TestEnforceWorktreeLease::test_non_repo_root_passes_through` (pytest node id, verified passing when recorded)
+- `tests/test_worktree_guard.py::TestWorktreeGuardWiredIntoMutations::test_new_ticket_from_main_while_leased_elsewhere_fails` (pytest node id, verified passing when recorded)
+- `tests/test_worktree_guard.py::TestWorktreeGuardWiredIntoMutations::test_new_ticket_from_leased_worktree_succeeds` (pytest node id, verified passing when recorded)
+- `tests/test_worktree_guard.py::TestWorktreeGuardWiredIntoMutations::test_coordinator_with_no_lease_mutates_main_fine` (pytest node id, verified passing when recorded)
+- `tests/test_gates_worktree_lease.py::TestStampBaselineWorktreeLease::test_mismatched_lease_refuses` (pytest node id, verified passing when recorded)
+- `tests/test_gates_worktree_lease.py::TestStampBaselineWorktreeLease::test_no_lease_succeeds` (pytest node id, verified passing when recorded)
+- `tests/test_gates_worktree_lease.py::TestStampCoverageWorktreeLease::test_mismatched_lease_refuses` (pytest node id, verified passing when recorded)
+- `tests/test_gates_worktree_lease.py::TestStampCoverageWorktreeLease::test_no_lease_reaches_normal_missing_coverage_error` (pytest node id, verified passing when recorded)
+- `tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_installs_pre_commit_and_pre_merge_commit` (pytest node id, verified passing when recorded)
+- `tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_refuses_existing_hook_without_force` (pytest node id, verified passing when recorded)
+- `tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_not_a_git_repo_fails` (pytest node id, verified passing when recorded)
+- `tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_installed_hook_aborts_commit_under_frob_agent` (pytest node id, verified passing when recorded)
+- `tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_installed_hook_allows_commit_without_frob_agent` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0432 -->
 ```yaml
@@ -8256,3 +8450,23 @@ acceptance: []
 threat: null
 ```
 docs/audits/strata.md G2+G7 (HIGH/MEDIUM), from T-0401. _mitigation_is_chokepoint's first branch (_threat.py:1196) returns True when NoFlow holds with EVERY boundary removed -- i.e. the sink is simply unreachable from foreign in the model, so an incomplete/attacker-authored .strata discharges a real capability with NO mitigation modeled at all (G2). Same root cause as G7: _discharges_as_chokepoint's src=foreign expansion (_claims.py _expand) yields an empty source set when the model declares no foreign-trust node at all, so NoFlow proves vacuously (nothing to walk from) and every obligation on that model discharges with no adversary present. Fix direction: require at least one modeled path from a foreign source to the firing node (and at least one foreign-trust node in the model) before accepting the vacuous short-circuit as a discharge; otherwise emit a distinct 'obligation fires but sink unreachable / no adversary modeled -- model likely incomplete' diagnostic instead of silent PROVED. High-risk core-engine change (this family has the highest REJECT rate in repo history) -- build the counterexample litmus FIRST, confirm it currently discharges vacuously, THEN harden.
+
+<!-- ticket:T-draft-0afb5f70 -->
+```yaml
+id: T-draft-0afb5f70
+title: Extend worktree-lease guard to frob release stamp and frob ack
+state: queued
+kind: security
+origin: human
+created: '2026-07-21'
+blocked_by: []
+parent: null
+scope:
+- src/frob/release/
+- src/frob/app/
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
