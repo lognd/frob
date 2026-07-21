@@ -172,6 +172,10 @@ def repo(tmp_path: Path) -> Path:
     main_repo = tmp_path / "main"
     _git_init(main_repo)
     atomic_write(ledger_path(main_repo), "# Tickets\n\n")
+    # .frob/ is local state (T-0178 telemetry writes .frob/telemetry.jsonl on
+    # every CLI call); gitignore it so the clean-status assertions below are
+    # not tripped by an incidental untracked telemetry file.
+    (main_repo / ".gitignore").write_text(".frob/\n")
     (main_repo / ".gitattributes").write_text("tickets.md merge=frob-ledger\n")
     _run(
         [
