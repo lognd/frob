@@ -5391,7 +5391,7 @@ User (2026-07-20): ensure the exhaustive researcher has the mechanisms to MAKE t
 id: T-0431
 title: 'Worktree-lease guard: frob mutating commands + git hooks fail LOUDLY when
   a dispatched agent operates outside its worktree'
-state: in-progress
+state: done
 kind: security
 origin: human
 created: '2026-07-20'
