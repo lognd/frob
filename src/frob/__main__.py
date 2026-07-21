@@ -673,6 +673,26 @@ def _add_ticket_progress_parsers(ticket_sub) -> list:
     )
     ticket_sweep_p.add_argument("ticket_id", metavar="id")
 
+    ticket_reconcile_p = ticket_sub.add_parser(
+        "reconcile",
+        help="heal ticket<->worktree binding drift (T-0476): stale "
+        "in-progress holds with no live lease, and orphan live worktrees "
+        "with no lease at all",
+    )
+    ticket_reconcile_p.add_argument(
+        "--apply",
+        dest="ticket_reconcile_apply",
+        action="store_true",
+        help="actually requeue stale holds (default: dry-run report only)",
+    )
+    ticket_reconcile_p.add_argument(
+        "--remove-orphans",
+        dest="ticket_reconcile_remove_orphans",
+        action="store_true",
+        help="with --apply, also `git worktree remove` orphan worktrees "
+        "(a strictly more destructive action, gated separately)",
+    )
+
     ticket_migrate_p = ticket_sub.add_parser(
         "migrate", help="collapse legacy tickets/*.md into a single tickets.md ledger"
     )
@@ -684,6 +704,7 @@ def _add_ticket_progress_parsers(ticket_sub) -> list:
         ticket_requeue_p,
         ticket_start_p,
         ticket_sweep_p,
+        ticket_reconcile_p,
         ticket_migrate_p,
         ticket_renumber_p,
         ticket_land_p,

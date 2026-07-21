@@ -17,6 +17,41 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.39.0] - unreleased
+
+Public-API surface change since 0.38.0 (mechanical semver via REL001): an
+additive (minor) bump -- new `frob.tickets._reconcile` module and `frob
+ticket reconcile` CLI command.
+
+- T-0476: ticket<->worktree binding + liveness reconcile. New `frob.
+  tickets.reconcile`/`ReconcileReport` (`src/frob/tickets/_reconcile.py`),
+  reusing the T-0473 lease registry to judge two anomaly classes
+  structurally: a stale `IN_PROGRESS` hold (a checkout's own ledger shows
+  it, but no live lease backs it -- requeued to `QUEUED` via the same edge
+  `frob ticket requeue` uses) and an orphan live worktree (a real `git
+  worktree` entry with no lease naming it -- flagged, and only removed with
+  `--remove-orphans`, a strictly more destructive opt-in gated separately
+  from `--apply`). New `frob ticket reconcile [--apply] [--remove-orphans]`
+  CLI command.
+
+## [0.38.0] - unreleased
+
+Public-API surface change since 0.37.0 (mechanical semver via REL001): an
+additive (minor) bump -- new `frob.tickets._leases` cross-worktree
+scope-lease side channel.
+
+- T-0473: `frob ticket start`'s in-progress scope-lease (T-0453) lived only
+  in the per-worktree `tickets.md` ledger, making collision-aware `doable`
+  inert across isolated worktrees. New `frob.tickets._leases` module
+  (`LeaseRecord`, `LeaseError`, `git_common_dir`, `leases_dir`,
+  `record_lease`, `release_lease`, `read_all_leases`) stores one lease file
+  per in-progress ticket under `<git-common-dir>/frob-leases/`, shared by
+  every linked worktree of the repository; `transition`/`mutate_scope` keep
+  it in sync, and `leased_by` (and therefore `doable`) now consults it in
+  addition to the local ledger's own `IN_PROGRESS` rows. A lease naming a
+  worktree path that no longer exists on disk is treated as stale and
+  skipped.
+
 ## [0.37.0] - unreleased
 
 Public-API surface change since 0.36.0 (mechanical semver via REL001): an

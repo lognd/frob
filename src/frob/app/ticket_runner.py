@@ -1,6 +1,6 @@
 """CLI wiring for `frob ticket new|list|show|doable|plan|start|requeue|
-sweep|land|merge-driver|attach|block|close|fail|evidence|done-report|
-scope|archive` (docs/modules/tickets.md)."""
+sweep|reconcile|land|merge-driver|attach|block|close|fail|evidence|
+done-report|scope|archive` (docs/modules/tickets.md)."""
 
 # frob:waive TEST005 reason="module line coverage 22.7%, debt T-0160"
 # frob:waive SCOPE001 reason="T-0323 scope omitted this file, filed T-draft-bc39c17f"
@@ -47,6 +47,7 @@ def _ticket_dispatch_table() -> dict:
         "start": _start,
         "requeue": _requeue,
         "sweep": _sweep_cmd,
+        "reconcile": _reconcile_cmd,
         "migrate": lambda root, _cfg: _migrate(root),
         "renumber": _renumber,
         "land": _land,
@@ -72,7 +73,7 @@ def run(cfg: AppConfig) -> None:
     if handler is None:
         _log.error(
             "usage: frob ticket <new|list|show|doable|plan|start|requeue|"
-            "sweep|land|merge-driver|attach|block|close|fail|evidence|"
+            "sweep|reconcile|land|merge-driver|attach|block|close|fail|evidence|"
             "done-report|scope|archive> ..."
         )
         sys.exit(1)
@@ -833,6 +834,48 @@ def _sweep_cmd(root: Path, cfg: AppConfig) -> None:
         _log.error("ticket sweep: %s is not in-progress", cfg.ticket_id)
         sys.exit(1)
     _run_sweep(root, ticket)
+
+
+# frob:ticket T-0476
+def _reconcile_cmd(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket reconcile [--apply] [--remove-orphans]`: report (and,
+    with `--apply`, heal) T-0476's two ticket<->worktree binding anomalies.
+    Always logs a human-readable summary; exits 0 whether or not anomalies
+    were found (finding an anomaly is not itself a command failure -- only
+    a real error loading the ledger is)."""
+    from frob.tickets import reconcile
+
+    result = reconcile(
+        root,
+        apply=cfg.ticket_reconcile_apply,
+        remove_orphans=cfg.ticket_reconcile_remove_orphans,
+    )
+    if result.is_err:
+        _log.error("ticket reconcile failed: %s", result.danger_err)
+        sys.exit(1)
+    report = result.danger_ok
+
+    verb = "requeued" if report.applied else "would requeue"
+    if report.requeued_tickets:
+        _log.info(
+            "reconcile: %s %d stale in-progress hold(s): %s",
+            verb,
+            len(report.requeued_tickets),
+            list(report.requeued_tickets),
+        )
+    else:
+        _log.info("reconcile: no stale in-progress holds found")
+
+    if report.orphan_worktrees:
+        removed_verb = "removed" if report.removed_orphans else "flagged (not removed)"
+        _log.info(
+            "reconcile: %s %d orphan worktree(s) (no lease): %s",
+            removed_verb,
+            len(report.orphan_worktrees),
+            list(report.orphan_worktrees),
+        )
+    else:
+        _log.info("reconcile: no orphan worktrees found")
 
 
 def _xref_hits_for_scope(root: Path, scope: tuple[str, ...]) -> list[str]:

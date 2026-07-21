@@ -227,6 +227,10 @@ class AppConfig(BaseModel):
     # `frob ticket start <id> --foreground` -- run the pre-work sweep
     # synchronously (the pre-T-0474 default) instead of backgrounding it.
     ticket_foreground: bool = False
+    # frob:ticket T-0476
+    # `frob ticket reconcile [--apply] [--remove-orphans]`.
+    ticket_reconcile_apply: bool = False
+    ticket_reconcile_remove_orphans: bool = False
     # frob:ticket T-0458
     # `frob ticket done-report <id> (--why TEXT | --why-file PATH)` --
     # TEXT of "-" (or --why-file omitted with neither given) reads stdin,
@@ -575,6 +579,8 @@ class AppConfig(BaseModel):
             "sys_apply",
             "ticket_dry_run",
             "ticket_foreground",
+            "ticket_reconcile_apply",
+            "ticket_reconcile_remove_orphans",
             "deploy_check",
             "clean_all",
             "clean_deep",

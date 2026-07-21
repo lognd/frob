@@ -719,6 +719,31 @@ class TestTicketSweep:
         assert "is not in-progress" in caplog.text
 
 
+class TestTicketReconcileCli:
+    """`frob ticket reconcile` (T-0476) dispatch smoke test -- the real
+    stale-hold/orphan-worktree behavior is covered end to end (real `git
+    worktree` fixtures) by `tests/test_ticket_reconcile.py`; this just
+    exercises the CLI plumbing (flag wiring, log summary, clean exit) on
+    the trivial no-anomalies case."""
+
+    def test_no_anomalies_logs_clean_summary(self, tmp_path: Path, caplog) -> None:
+        import subprocess
+
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        cfg = AppConfig(ticket_command="reconcile", ticket_path=tmp_path)
+        with caplog.at_level("INFO"):
+            ticket_run(cfg)
+        assert "no stale in-progress holds found" in caplog.text
+        assert "no orphan worktrees found" in caplog.text
+
+    def test_load_error_exits_1(self, tmp_path: Path, caplog) -> None:
+        _write_malformed_ledger(tmp_path)
+        cfg = AppConfig(ticket_command="reconcile", ticket_path=tmp_path)
+        with caplog.at_level("ERROR"), pytest.raises(SystemExit):
+            ticket_run(cfg)
+        assert "ticket reconcile failed" in caplog.text
+
+
 class TestClipboardAttachOnNew:
     """`_maybe_attach_clipboard_image`, exercised via `frob ticket new` on a
     monkeypatched TTY + clipboard."""

@@ -311,6 +311,43 @@ existence) that keeps a dead worktree's forgotten lease from wedging
 (dead in-progress ticket -> requeue, live worktree with no in-progress
 ticket -> flag/clean) is T-0476's job, not this one's.
 
+## `frob ticket reconcile` (T-0476)
+
+The fuller two-way healing the T-0473 section above defers to. Reuses the
+same `frob.tickets._leases` registry (T-0473) to judge two anomaly classes
+structurally -- no coordinator polling of output-file mtimes:
+
+1. **Stale hold**: a ticket the checkout's OWN `tickets.md` shows
+   `IN_PROGRESS` with no corresponding LIVE lease (`read_all_leases`
+   already drops any lease whose recorded worktree path no longer exists,
+   T-0473's own liveness guard, so "no live lease" covers both "never had
+   one" and "had one, but the worktree died"). Reconciled by transitioning
+   it back to `QUEUED` -- the exact same legal state-machine edge `frob
+   ticket requeue` (T-0472) uses -- which releases any lingering lease as
+   a side effect of `transition` itself (T-0473's sync).
+2. **Orphan worktree**: a real, live `git worktree` (`git worktree list
+   --porcelain`, excluding the main checkout) that no lease names at all --
+   an agent whose ticket was closed/requeued/failed out from under it, or
+   that never started one.
+
+```
+frob ticket reconcile                          # dry-run: report only
+frob ticket reconcile --apply                   # requeue stale holds;
+                                                 # flag (not remove) orphans
+frob ticket reconcile --apply --remove-orphans  # also `git worktree
+                                                 # remove --force` orphans
+```
+
+`--apply` alone only touches ticket state (a reversible, cheap action);
+actually deleting a worktree (`--remove-orphans`, which requires `--apply`
+too) is gated behind its own separate opt-in since it is a strictly more
+destructive action than requeuing a ticket -- this is a narrower,
+safety-first reading of "auto-clean" than a bare `frob clean` tier reuse
+would have been: `frob.clean`'s tiers operate on build/cache ARTIFACTS
+(`__pycache__`, `dist/`, ...), not on live git worktrees, so orphan-worktree
+removal is its own `git worktree remove` call here, not routed through
+`frob.clean`.
+
 ## Scope/lease change protocol (T-0455)
 
 `frob ticket scope <id> --add GLOB... --remove GLOB... --reason TEXT`

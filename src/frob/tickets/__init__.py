@@ -54,6 +54,7 @@ from frob.tickets._models import (
 )
 from frob.tickets._models import _split_scope_entries as _normalize_scope_entries
 from frob.tickets._provisional import is_draft_id, mint_draft_id, on_default_branch
+from frob.tickets._reconcile import ReconcileReport, reconcile
 from frob.tickets._store import (
     archive_path,
     atomic_write,
@@ -2165,6 +2166,8 @@ __all__ = [
     "new_ticket",
     "renumber",
     "record_failure",
+    "reconcile",
+    "ReconcileReport",
     "render_changed_block",
     "render_evidence_block",
     "reverify_cmd_evidence",
