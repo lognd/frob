@@ -857,42 +857,67 @@ itself -- see that helper's docstring for why (a COV005 false-positive
 this repo hit once already, from directive-target reuse across public
 and private symbols in the same file).
 
-Net effect measured on this repo (`frob check --only invariant`):
-INV003+INV004 combined, 765 -> 604 warnings (INV003 88 -> 31, INV004
-677 -> 573). The residual is tracked as a follow-up burndown ticket
-rather than hand-closed in one pass.
+Net effect measured on this repo after T-0509 (`frob check --only
+invariant`): INV003+INV004 combined, 765 -> 604 warnings (INV003 88 ->
+31, INV004 677 -> 573). The residual was tracked as a follow-up burndown
+ticket rather than hand-closed in one pass; see the INV004 section below
+for T-0515's further calibration of that residual.
 
-### INV004 (T-0452)
+### INV004 (T-0452, T-0515)
 
 <!-- frob:describes src/frob/gates/invariants.py::find_normative_claims -->
 <!-- frob:describes src/frob/gates/invariants.py::NORMATIVE_CLAIM_PATTERNS -->
 <!-- frob:describes src/frob/gates/__init__.py::inv004_gate -->
 
 INV003 is a per-CLAIM lint: one specific exclusivity assertion needs one
-specific bound invariant. INV004 is the INVERSE, section-level signal:
-split each `docs/**.md` file into ATX-heading-delimited sections
-(`_markdown_sections`); a section using ANY normative language at all --
-`must`, `must not`, `never`, `always`, `shall`, `guarantees`, `ensures`,
-`requires`, plus INV003's exclusivity vocabulary
-(`NORMATIVE_CLAIM_PATTERNS`, `find_normative_claims`) -- but anchoring
-ZERO `<!-- frob:invariant INV-### -->` markers at all (unlike INV003, a
-marker naming an unknown id still counts here -- INV004 only asks "is
-*anything* tracked here") is flagged as a likely under-specified region:
-the "silence" a per-claim lint can't see, because there is no single
-explicit claim to anchor on.
+specific bound invariant. INV004 is the INVERSE, FILE-level signal: a
+doc file using ANY normative language at all -- `must`, `must not`,
+`never`, `always`, `shall`, `guarantees`, `ensures`, `requires`, plus
+INV003's exclusivity vocabulary (`NORMATIVE_CLAIM_PATTERNS`,
+`find_normative_claims`) -- but anchoring ZERO `<!-- frob:invariant
+INV-### -->` markers anywhere in the FILE (unlike INV003, a marker naming
+an unknown id still counts here -- INV004 only asks "is *anything*
+tracked here") is flagged as a likely under-specified doc: the "silence"
+a per-claim lint can't see, because there is no single explicit claim to
+anchor on.
 
 Always `Severity.WARN` -- advisory by design, a suggestion to formalize
 rather than a broken obligation; INV004 does not fail `frob check`.
 
 INV004 shares INV003's T-0509 noise-stripping and claim-shape scan
 (`find_normative_claims` calls the same `_claim_shaped_sentences`
-preprocessing as `find_exclusivity_claims`), but is NOT scoped to
-`INV003_SPEC_DIRS` -- it still runs over all of `docs/**.md`, since its
-job is the coarser "is anything tracked in this doc region at all"
-signal rather than INV003's per-claim check. A section-scoped markdown
-`frob:waive` marker (`<!-- frob:waive INV004 reason="..." -->`, applied
-via `_inv004_waived_headings`/`_inv004_message_heading` from `inv004_gate`)
-dispositions one under-specified section without a fake bound invariant.
+preprocessing as `find_exclusivity_claims`).
+
+**T-0515 calibration.** After T-0509, INV004 was still section-level
+(`_markdown_sections`) and ran over all of `docs/**.md`, and its 573
+residual warnings dwarfed INV003's 31 -- mostly many hits per file for a
+handful of entirely-unbound docs, not 573 distinct under-specified
+regions worth separate triage. Two changes, mirroring INV003's own T-0509
+rationale:
+
+- **File granularity, not per-section** (`_inv004_doc_violations`): one
+  advisory per file (a doc large enough to need section-level invariant
+  tracking should already be split into `invariants/INV-###.md` entries),
+  not one per ATX section.
+- **Directory scoping** (`INV003_SPEC_DIRS`, shared with INV003): INV004
+  now runs only over `docs/modules` and `docs/strata`, not all of
+  `docs/**.md` -- a narrative design/audit/guide doc using "must" or
+  "always" in passing is a different failure mode than an
+  enforced-contract doc with zero bound invariants at all.
+
+A file-scoped markdown `frob:waive` marker (`<!-- frob:waive INV004
+reason="..." -->` anywhere in the file, applied via
+`_file_has_reasoned_doc_waiver` from `inv004_gate`, the same helper
+INV003 uses) dispositions one under-specified file without a fake bound
+invariant.
+
+Net effect measured on this repo (`frob check --only invariant`):
+INV003+INV004 combined, 604 -> 63 warnings (INV003 unchanged at 30,
+INV004 573 -> 33). The residual 63 spans 33 files under `docs/modules`
+and `docs/strata` that assert real behavior with no invariant bound at
+all yet; each needs individual triage (bind a real invariant, reword, or
+waive with a specific reason) rather than a blanket disposition -- tracked
+as a further follow-up ticket rather than hand-closed in this pass.
 
 ## Policy rules (`frob.toml`, `[policy]`)
 
