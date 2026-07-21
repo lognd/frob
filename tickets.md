@@ -3045,7 +3045,7 @@ Discovered while working T-0516: COV006 Violation objects carry no symref (file=
 ```yaml
 id: T-0526
 title: 'frob:debt/frob:todo coherence: paired todo, same-ticket check, symmetric resolution'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-21'
