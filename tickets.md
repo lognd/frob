@@ -5134,7 +5134,12 @@ Added a regression test covering the recursive match, the sibling-dir
 non-match, and the literal-file-is-not-a-directory case.
 
 ### Changed
-(no changed files detected)
+```
+ src/frob/tickets/_models.py | 25 ++++++++++++++++++++++---
+ tests/test_tickets.py       |  9 +++++++++
+ tickets.md                  | 29 ++++++++++++++++++++++++++---
+ 3 files changed, 57 insertions(+), 6 deletions(-)
+```
 
 ### Evidence
 - `tests/test_tickets.py::TestScopeMatching::test_bare_dir_entry_no_trailing_slash_globs_recursively` (pytest node id, verified passing when recorded)
