@@ -36,6 +36,7 @@ BUILTIN_SKIP_DIRS = frozenset(
         "build",
         "dist",
         ".frob",
+        ".claude",
         ".worktrees",
         ".mypy_cache",
         ".pytest_cache",
