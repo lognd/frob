@@ -1358,7 +1358,7 @@ T-0254 Windows pillar. Generalize the HostManifest (T-0255, Linux/systemd-first)
 id: T-0263
 title: 'Kerberos/AD movement vectors: delegation abuse, Kerberoasting, S4U, cross-realm
   as HOST/KRB obligations'
-state: in-progress
+state: done
 kind: security
 origin: human
 created: '2026-07-18'
@@ -1384,7 +1384,22 @@ scope_changes:
   reason: T-0263 strata work maps to tests/unit/strata/
   actor: logan
   at: '2026-07-20'
-evidence: []
+evidence:
+- tests/unit/strata/test_krb_movement.py::TestKrb001::test_fires
+- tests/unit/strata/test_krb_movement.py::TestKrb001::test_skips_constrained
+- tests/unit/strata/test_krb_movement.py::TestKrb002::test_fires
+- tests/unit/strata/test_krb_movement.py::TestKrb002::test_no_spn_no_finding
+- tests/unit/strata/test_krb_movement.py::TestKrb002::test_waivable_with_gmsa_reason
+- tests/unit/strata/test_krb_movement.py::TestKrb003::test_chains
+- tests/unit/strata/test_krb_movement.py::TestKrb003::test_non_chaining_same_trust_discharges
+- tests/unit/strata/test_krb_movement.py::TestKrb004::test_fires
+- tests/unit/strata/test_krb_movement.py::TestKrb004::test_same_trust_realms_discharge
+- tests/unit/strata/test_krb_movement.py::TestKrbScen::test_all
+- tests/unit/strata/test_krb_movement.py::TestKrbScen::test_constrained_bounded_to_targets
+- tests/unit/strata/test_krb_movement.py::TestKrbScen::test_unknown_node_fails_closed
+- tests/unit/strata/test_krb_movement.py::TestKrbCatalog::test_catalog_completeness_over_own_view
+- tests/unit/strata/test_litmus_krb_movement.py::TestKrbMovementVulnLitmus::test_vuln_model_fires_all_four_rules
+- tests/unit/strata/test_litmus_krb_movement.py::TestKrbMovementHardenedLitmus::test_hardened_model_discharges
 attachments: []
 acceptance: []
 threat: elevation-of-privilege
