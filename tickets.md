@@ -3062,3 +3062,26 @@ component: null
 labels: []
 ```
 Incident (2026-07-22): the COV-finish branch hit a tickets.md conflict mid-flight, resolved it manually, and its land carried stale queued states for 7 tickets main had already closed (T-0454/T-0498/T-0500/T-0514/T-0520/T-0526/T-0527); coordinator restored from the pre-merge ledger. T-0479's own-block splice protects frob ticket land, and T-0505 protects CLI writes, but a raw git merge with hand-resolved conflicts bypasses both. Fix: (1) splice_ledger/merge-driver must never move a ticket from done/dropped to an earlier state unless the landing ticket IS that ticket; (2) a cheap post-merge lint (tickets gate) that diffs states vs the merge's first parent and errors on terminal->non-terminal transitions outside the landed ticket. Scope: src/frob/tickets/_land.py, src/frob/tickets/__init__.py, src/frob/gates/__init__.py, tests.
+
+<!-- ticket:T-0538 -->
+```yaml
+id: T-0538
+title: make coverage clobbers maturin natives (uv sync) then fails on strata_core
+  imports -- guard the target
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope: []
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Incident (2026-07-22): make coverage removed the editable strata_core/frob_core natives mid-run (the known uv-sync clobber, same family as the uv build --wheel gotcha), then died collecting tests/system/test_frob_self_model.py and left 44 phantom errors in frob check (SYS004 native-missing, 16 COV003 unresolvable kernel-property evidence, DRIFT fallout) until make core was re-run. Fix: the coverage target must either pin/exclude the natives from sync or run make core (cheap no-op when fresh) before pytest, and frob doctor's native check should run first so the failure is one clear line. Scope: Makefile, docs/modules/testing.md.
