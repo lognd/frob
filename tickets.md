@@ -6395,30 +6395,9 @@ threat: null
 ```
 Found while working T-0400. `frob ticket evidence <id> "path::Class.method"` (the dot form the playbook/docs document as the canonical evidence-id spelling) ALWAYS fails with EvidenceNotPassing, even when the test genuinely passes. Root cause: _apply_evidence (src/frob/app/ticket_runner.py) passes the raw, un-normalized node_ids straight into _verify_ids_passing, which buckets ids via matches_collected(n, python_collected) -- but python_collected (from _collect_python_and_rust_ids) stores pytest's native '::' form only. A dot-form id never matches_collected() against that set, so its bucket is empty, run_selected has nothing to run, and the id silently ends up absent from the returned passing frozenset -- rejected downstream as EvidenceNotPassing with a misleading message (the test did pass, it was just never actually invoked for this check). add_evidence's OWN normalization (_validate_evidence_list, T-0293) already converts dot-form to :: form before resolution/persistence; _apply_evidence needs to pass that SAME normalized list into _verify_ids_passing instead of the raw CLI args, or the two normalization paths silently diverge. Repro: 'frob ticket evidence T-XXXX "tests/test_foo.py::TestBar.test_baz"' rejects; 'frob ticket evidence T-XXXX "tests/test_foo.py::TestBar::test_baz"' (:: form) for the identical test succeeds. Workaround used in T-0400: recorded evidence in :: form.
 
-<!-- ticket:T-draft-c1e0af4c -->
+<!-- ticket:T-0493 -->
 ```yaml
-id: T-draft-c1e0af4c
-title: ruff E501 in src/frob/strata/_scenarios.py:518 (pre-existing, from KRB001-004
-  landing)
-state: queued
-kind: bug
-origin: human
-created: '2026-07-21'
-blocked_by: []
-parent: null
-scope:
-- src/frob/strata/_scenarios.py
-scope_changes: []
-evidence: []
-attachments: []
-acceptance: []
-threat: null
-```
-Found while working T-0351 (unrelated file, only src/frob/strata/_pii_structural.py's sibling gates work is in T-0351's actual touched set): uv run frob check reports 'ruff-check 1 errors' -- E501 line too long (109 > 88) at src/frob/strata/_scenarios.py:518, introduced by 8507388 'feat(strata): add KRB001-004 Kerberos movement-impossibility proofs' landing on main. Wrap the offending line (a frob:waive PERF004 comment) under 88 cols.
-
-<!-- ticket:T-draft-f63cc9eb -->
-```yaml
-id: T-draft-f63cc9eb
+id: T-0493
 title: frob ticket done-report leaves a stray empty '## Done report' heading before
   the rendered one
 state: queued
