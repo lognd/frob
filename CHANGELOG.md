@@ -17,6 +17,14 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.40.0] - unreleased
+
+Public-API surface change since 0.39.0 (mechanical semver via REL001):
+strata caught_by integrity -- new COMPLIANCE004 check, shared public
+`caught_by_unresolved_tokens` helper in frob.strata._threat (T-0382),
+and the eval/CWE-94 threat join with self-conformance updates (T-0401
+G3).
+
 ## [0.39.0] - unreleased
 
 Public-API surface change since 0.38.0 (mechanical semver via REL001): an

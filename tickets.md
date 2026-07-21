@@ -4097,7 +4097,7 @@ this ticket's own evidence in `::` form.
 id: T-0401
 title: 'AUDIT: strata vacuous-proof closure -- bind proofs to code, fail-closed on
   incompleteness (docs/audits/strata.md)'
-state: in-progress
+state: queued
 kind: security
 origin: human
 created: '2026-07-20'
@@ -7487,9 +7487,9 @@ threat: null
 ```
 found while working T-0287 (dup type-generalizing anti-unification): _template._is_type_position classifies a hole as a TYPE hole by checking whether its immediate parent node's label is a real type-annotation wrapper (python's 'type' node, typescript's 'type_annotation'). Rust/c/cpp place the type node as a direct, unwrapped sibling distinguished only by tree-sitter FIELD NAME (e.g. rust's 'parameter' node's 'type' field vs its 'pattern' field), which frob.lang.TreeNode does not carry today (label + children + span only, per docs/modules/lang.md). Extending TreeNode with an optional per-child field-name array (mirroring frob.lang._common.export_tree's existing recursive shape) would let _template._TYPE_WRAPPER_LABELS-style classification extend to a field-name-based rule for rust/c/cpp, closing the honest gap documented in docs/modules/dup.md's 'Type-hole classification (T-0287)' section and src/frob/dup/_template.py's _TYPE_WRAPPER_LABELS docstring. Out of T-0287's declared scope (frob-core/**, src/frob/dup/**, docs/modules/dup.md, tickets.md, tests/test_dup.py, tests/unit/test_dup_template.py -- does not include src/frob/lang/**).
 
-<!-- ticket:T-draft-2bcbb133 -->
+<!-- ticket:T-0496 -->
 ```yaml
-id: T-draft-2bcbb133
+id: T-0496
 title: 'strata audit G5: utility/krb_no_transit flow marker silently defeats confidentiality
   NoFlow'
 state: queued
@@ -7508,9 +7508,9 @@ threat: null
 ```
 docs/audits/strata.md G5 (MEDIUM), from T-0401. _facts.py:63,160: any flow carrying the surface attr utility (or synthetic krb_no_transit) is a TERMINAL edge -- taint does not chain past it -- honored on the security noflow side too (_eval_noflow uses the same reachable). A real exfiltration path transiting a hub edge marked utility is invisible to noflow, so any THREAT003 discharge built on it is vacuous; the marker is author-controlled with no compensating check. Repro: flow log_hub{src=secret_store,dst=logger,utility} then flow leak{src=logger,dst=foreign_sink}: noflow(secret_store,foreign_sink) PROVES despite the two-hop leak. Fix direction: forbid utility on flows whose payload label is above a floor, or exclude utility termination when evaluating confidentiality noflow specifically (keep it only for capacity/availability closures where T-0226 needed it).
 
-<!-- ticket:T-draft-4dab484e -->
+<!-- ticket:T-0497 -->
 ```yaml
-id: T-draft-4dab484e
+id: T-0497
 title: 'strata audit G6/G8-G12: default view coverage, THREAT005 KeyError risk, native-staleness
   mtime-only, LATENCY dead metric, per-repo BenignCapability allowlist'
 state: queued
@@ -7529,9 +7529,9 @@ threat: null
 ```
 docs/audits/strata.md G6+G8-G12 (MEDIUM/LOW), from T-0401, grouped as smaller/lower-severity items for one dispatchable ticket (split further if a single agent finds the combined scope too broad): G6 DEFAULT_SECURITY_VIEWS is only owasp-top-10 (8 CWEs), cwe-top-25 is not a default -- a default frob sys audit proves exhaustiveness over 8 weaknesses and reports proved (_audit.py:109, _threat.py:653). G8 THREAT005 indexes binding.owner[effect.file] (_threat.py:1474) -- if extract_effects ever yields a FOREIGN file this KeyErrors (crash, not fail-closed); verify/harden. G9 native staleness is mtime-only (_native_staleness.py:89,160) -- a touch defeats it; consider a content digest. G10 FactBase.reachable/worst_age/propagated_demand (native Rust kernels) are trusted un-audited from Python; add differential/property tests against a pure-Python reference. G11 _eval_bound_latency_or_size (_claims.py:564) hardcodes declared to flow.size when metric is LATENCY -- LATENCY bounds can NEVER prove, always refute-as-missing; either support it or error instead of masquerading as a refutation. G12 load_repo_benign_capabilities (_threat.py:290) lets a consuming repo excuse ANY capability kind via frob.toml with just a reason string, no allowlist of excusable kinds.
 
-<!-- ticket:T-draft-89cbfef2 -->
+<!-- ticket:T-0498 -->
 ```yaml
-id: T-draft-89cbfef2
+id: T-0498
 title: 'strata audit G1: bind ENDORSE Boundary predicates to observed code (THREAT003
   discharge is a declared string, not a proof)'
 state: queued
@@ -7552,9 +7552,9 @@ threat: null
 ```
 docs/audits/strata.md G1 (HIGH), from T-0401. _mitigation_is_chokepoint (_threat.py:1190ish) accepts any ENDORSE Boundary whose predicate string matches entry.mitigation -- no module joins a Boundary against observed code (grep confirmed only _models/__init__/_threat import both Boundary and effect-scanning, and _threat uses boundaries purely declaratively). Repro: may=sql node, an endorse boundary with predicate=parameterization on the only foreign inflow, and a weakness:CWE-89:<node> NoFlow claim -> THREAT003 PROVED with zero real parameterization in code. Fix direction: a SYS-family rule binding each ENDORSE boundary predicate to an observed sanitizer site in code=-bound files (analogous to SYS100), or at minimum require chokepoint boundaries to carry an evidence ref (code=/claim) selfconform verifies. Non-vacuous acceptance: a litmus where the claimed predicate has NO matching code site is REFUSED, plus the positive case where it does.
 
-<!-- ticket:T-draft-cf67e0c9 -->
+<!-- ticket:T-0499 -->
 ```yaml
-id: T-draft-cf67e0c9
+id: T-0499
 title: 'strata: wire real known_rule_ids into evaluate_exhaustiveness/evaluate_compliance
   production callsites'
 state: queued
@@ -7575,9 +7575,9 @@ threat: null
 ```
 Found while working T-0382. THREAT006 (check_caught_by_integrity) and the new COMPLIANCE004 (check_regulation_caught_by_integrity) both take a known_rule_ids frozenset[str] param that must be the live gate-rule-id set (frob.gates._KNOWN_GATE_RULES) for rule-id-shaped caught_by references to ever resolve -- otherwise every rule-id-shaped reference is (correctly, fail-closed) treated as unresolved, and no positive case can ever pass in production. Today: (1) frob.gates has no known_gate_rule_ids() public accessor despite _audit.py's evaluate_exhaustiveness docstring already naming it as the expected source; (2) the only two callers of evaluate_exhaustiveness (src/frob/app/sys_runner.py:615, src/frob/strata/_native_test.py:136) never pass known_rule_ids, so it silently defaults to empty; (3) evaluate_compliance's new known_rule_ids param (T-0382) is similarly never threaded from sys_runner.py. No current caught_by entry references a rule-id-shaped token so this is currently dormant, not actively wrong -- but a future entry that legitimately names a real gate rule (e.g. SEC001) would be incorrectly refused. Add known_gate_rule_ids() to frob.gates (public, returns _KNOWN_GATE_RULES) and thread it through both production callsites for both families.
 
-<!-- ticket:T-draft-d70e7782 -->
+<!-- ticket:T-0500 -->
 ```yaml
-id: T-draft-d70e7782
+id: T-0500
 title: 'strata audit G4: FOREIGN file in an already-modeled directory (or loose under
   src/frob/) escapes ALL sys rules + THREAT004/005'
 state: queued
@@ -7596,9 +7596,9 @@ threat: null
 ```
 docs/audits/strata.md G4 (HIGH), from T-0401. _selfconform.py:538 _unmodeled_violations marks a directory owned if ANY file in it is non-FOREIGN; SYS100/101 and effect-extraction scan only _sorted_owned_files. A new .py/.ts file placed in an existing modeled directory but matched by no code= glob is FOREIGN -> invisible to capability observation AND does not trip SYS102 (its directory is already prefix_owned). SYS102 also only iterates directories (_top_level_dirs), so a FOREIGN file placed directly under src/frob/ (not in a subdir) also escapes. Repro: src/frob/vet/backdoor.py doing subprocess.run(user_input) where no node's code= glob matches backdoor.py -> frob sys audit stays clean. Fix direction: SYS102 must fire per-FOREIGN-file (or per unowned file within an owned dir), not per fully-FOREIGN top-level dir; effect extraction should raise on any FOREIGN capability-scannable file rather than skipping it.
 
-<!-- ticket:T-draft-eadec5fd -->
+<!-- ticket:T-0501 -->
 ```yaml
-id: T-draft-eadec5fd
+id: T-0501
 title: 'strata audit G2/G7: vacuous NoFlow discharge when foreign->sink flow is un-modeled
   or no foreign-trust node exists'
 state: queued
