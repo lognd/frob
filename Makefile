@@ -40,14 +40,26 @@ playbook:
 # subprocess test covers reads as 0% hit and coverage.xml comes out
 # deflated (observed line-rate 0.49 vs a real 0.87), which explodes TEST005
 # into hundreds of false per-symbol/per-module coverage-floor findings.
-# COVERAGE_PROCESS_START=pyproject.toml + [tool.coverage.run] parallel=true
+# COVERAGE_PROCESS_START must be ABSOLUTE ($(CURDIR)/pyproject.toml): the
+# .pth hook resolves it against each subprocess's OWN cwd, and subprocess
+# tests run in tmp_path, so a relative value makes coverage raise
+# ConfigError on stderr -- both losing that subprocess's coverage and
+# breaking tests that assert the child's stderr is empty.
+# COVERAGE_PROCESS_START + [tool.coverage.run] parallel=true
 # (pyproject.toml) makes every subprocess (via the coverage-installed .pth
 # site hook) write its own `.coverage.*` data file; `coverage combine`
 # merges them all before the xml report is generated, so `frob check
 # --stamp-coverage` stamps and TEST005 evaluates against real coverage.
+# NOTE: do NOT also pin COVERAGE_FILE here to corral the subprocess data
+# files. It is inherited by nested projects too -- the scaffold DX tests
+# build a demo project and run ITS coverage, and a global COVERAGE_FILE
+# redirects that statement-only data into frob's branch-mode file, which
+# makes `combine` fail with "Can't combine branch coverage data with
+# statement data". Fixture repos instead gitignore the stray `.coverage.*`
+# locally, the same way they gitignore `.frob/`.
 coverage: $(STAMP)
 	rm -f .coverage .coverage.*
-	COVERAGE_PROCESS_START=pyproject.toml uv run pytest --cov=src/frob --cov-branch --cov-report= -q
+	COVERAGE_PROCESS_START=$(CURDIR)/pyproject.toml uv run pytest --cov=src/frob --cov-branch --cov-report= -q
 	uv run coverage combine
 	uv run coverage xml
 	uv run frob check --stamp-coverage

@@ -201,7 +201,11 @@ def _retread_candidates(
         for key, evs in groups.items()
         if len(evs) > 1 and key[2] != "unknown"
     ]
-    candidates.sort(key=lambda c: -c.total_ms)  # frob:waive PERF004 reason="runs once after the list comprehension above builds candidates, not per-iteration; indentation-blind FP (T-0367 precedent)"
+    candidates.sort(
+        key=lambda c: -c.total_ms
+    )  # frob:waive PERF004 reason="runs once after the list comprehension above \
+    # builds candidates, not per-iteration; indentation-blind FP \
+    # (T-0367 precedent)"
     return tuple(candidates)
 
 
