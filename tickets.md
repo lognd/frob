@@ -4602,7 +4602,7 @@ pre-existing, none new). `frob ticket sweep T-0510` refreshed
 id: T-0511
 title: 'strata audit G12: restrict load_repo_benign_capabilities to genuinely excusable
   kinds'
-state: in-progress
+state: done
 kind: security
 origin: human
 created: '2026-07-21'
