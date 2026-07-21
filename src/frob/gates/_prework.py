@@ -67,7 +67,6 @@ def record_prework(
     return Ok(Unit())
 
 
-# frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-0240
 def _scope_pattern_scan_path(root: Path, pattern: str) -> Path:
     """The directory (or file) a scope glob's literal, non-wildcard prefix
@@ -79,7 +78,6 @@ def _scope_pattern_scan_path(root: Path, pattern: str) -> Path:
     return root / base if base != "." else root
 
 
-# frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-0240
 def _is_scan_path_pruned(
     root: Path, scan_path: Path, exclude_globs: tuple[str, ...]
@@ -103,7 +101,6 @@ def _is_scan_path_pruned(
     return is_excluded(rel, exclude_globs) or is_excluded(f"{rel}/.", exclude_globs)
 
 
-# frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-0240
 def _real_symbol_for_scope_pattern(scan_path_rel: str, snapshot) -> str | None:
     """A real, graph-known public symbol name rooted under `scan_path_rel`,

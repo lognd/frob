@@ -212,6 +212,10 @@ def _load_declared_surface(root: Path) -> _DeclaredSurface:
     )
 
 
+# frob:waive COV007 reason="docs/modules/gates.md's Public API section \
+# also individually frob:describes this private dataclass by name \
+# (T-0529) -- a deliberate architecture doc, not accidental drift onto a \
+# private helper"
 @dataclass(frozen=True)
 # frob:doc docs/modules/gates.md#structural-pii-secrets-detection-t-0207
 class _FieldSignature:

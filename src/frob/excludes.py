@@ -80,7 +80,6 @@ def is_skipped_dir(name: str) -> bool:
     return name in BUILTIN_SKIP_DIRS or name.endswith(".egg-info")
 
 
-# frob:doc docs/modules/app.md#shared-exclude-glob-logic
 # frob:ticket T-0239
 # frob:tests tests/test_excludes.py::test_is_nested_worktree_detects_own_git_dir
 # frob:tests tests/test_excludes.py::test_is_nested_worktree_git_file_form
@@ -102,7 +101,6 @@ def _is_nested_worktree(dir_path: Path, root: Path) -> bool:
     return dir_path != root and (dir_path / ".git").exists()
 
 
-# frob:doc docs/modules/app.md#shared-exclude-glob-logic
 # frob:ticket T-0239
 # frob:tests tests/test_excludes.py::test_should_prune_dir_covers_all_three_signals
 def _should_prune_dir(
