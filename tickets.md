@@ -6202,7 +6202,7 @@ title: 'waiver over-breadth + class-ignore placement lint: (1) _match_waiver mat
   symref-LESS (file-scoped) findings by file OR package-PREFIX, so one frob:waive
   can suppress broadly; (2) warn when a class-bound frob:waive/directive is not at
   the class top (likely mis-scoped)'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-20'
@@ -6223,11 +6223,21 @@ scope_changes:
   reason: T-0470 gates work maps to tests/test_gates.py
   actor: logan
   at: '2026-07-20'
-evidence: []
+evidence:
+- tests/test_gates.py::TestTestGate::test_waive003_flags_waiver_reaching_multiple_packages
 attachments: []
 acceptance: []
 threat: null
 ```
+## Done report
+
+Prong (1) LANDED as WAIVE003: a single frob:waive whose file/package-prefix match reaches violations across MULTIPLE packages is flagged as over-broad (src/frob/gates/__init__.py::_waive003_violations, registered in _KNOWN_GATE_RULES, run over the full assembled violation set). Non-vacuous tests: multi-package waiver flagged, single-package waiver not. Prong (2) PLACE001 class-ignore placement was prototyped and DELIBERATELY DROPPED as unsound (distance-from-class-start fires on the legitimate per-field waiver idiom in large pydantic classes; counterexample preserved in the dropped-PLACE001 comment near gates/__init__.py:961); refiled with that counterexample as T-0504. Implemented by the gates-chain agent (branch worktree-agent-ae00df0ca54dd3df2); its worktree ledger close was lost to the off-default-branch ledger-corruption hazard tracked as T-0505, so this Done report reconstructs the bookkeeping on main against the already-landed code.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+(no evidence recorded)
 
 <!-- ticket:T-0472 -->
 ```yaml
@@ -8169,9 +8179,29 @@ threat: null
 ```
 Found while working T-0499. _audit.py::_compliance_pii_lint_fingerprint_gaps calls evaluate_compliance(model, view, known_rule_ids=known_rule_ids) with no out_of_scope argument -- it always defaults to (). Unlike the security/quality families (CWE_TOP_25_OUT_OF_SCOPE, QUALITY_OUT_OF_SCOPE imported and passed at _audit.py:469), there is no module-level OutOfScopeRegulation tuple defined anywhere for compliance, and none is threaded from sys_runner.py either. Effect: COMPLIANCE004 (caught_by integrity for compliance out-of-scope exclusions) can never actually fire in production regardless of T-0499's known_rule_ids threading, since check_regulation_caught_by_integrity always receives an empty out_of_scope tuple from this callsite. check_regulation_caught_by_integrity itself is correctly unit-tested with a non-empty out_of_scope (tests/unit/strata/test_compliance.py), so the gap is purely in the production wiring, same shape as the known_rule_ids gap T-0499 fixed. Fix direction: define a COMPLIANCE_OUT_OF_SCOPE catalog (or repo-configurable equivalent, mirroring load_repo_benign_capabilities) and thread it through _compliance_pii_lint_fingerprint_gaps -> evaluate_compliance.
 
-<!-- ticket:T-draft-57529330 -->
+<!-- ticket:T-0504 -->
 ```yaml
-id: T-draft-57529330
+id: T-0504
+title: 'class-directive placement lint (T-0470 prong 2): detect a nearby symbol the
+  directive plausibly SHOULD have bound to, not raw line distance'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-21'
+blocked_by: []
+parent: null
+scope: []
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+PLACE001 was prototyped in T-0470 and deliberately dropped: distance-from-class-start fires on the legitimate per-field frob:waive idiom inside large pydantic config classes (fields are not RawSymbols, so directives above them always class-fallback by construction -- e.g. AppConfig's SCOPE001 waiver 150+ lines past the class line). A sound signal must instead detect a nearby symbol the directive plausibly should have bound to via 'following' but did not reach. Counterexample preserved in the comment above src/frob/gates/__init__.py's dropped-PLACE001 note (near line 961). Scope: src/frob/gates/__init__.py, tests/test_gates.py.
+
+<!-- ticket:T-0505 -->
+```yaml
+id: T-0505
 title: off-default-branch ticket write silently reverts an unrelated already-finalized
   ticket id to draft form
 state: queued
