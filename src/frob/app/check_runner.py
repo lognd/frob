@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import contextlib
 import logging
 import sys
 from pathlib import Path
 
+from frob.app._style import style_fail, style_warn
 from frob.app.config import AppConfig
 from frob.check import (
     CheckResult,
@@ -14,6 +16,7 @@ from frob.check import (
     run_check_ts,
 )
 from frob.logging import get_logger, quiet_stdout_logs, stdout_log_level
+from frob.logging.color import should_color
 from frob.process.parsers.common import Diagnostic, ToolResult
 from frob.render import Progress, Renderer
 
@@ -64,6 +67,9 @@ def _toml_check_section_updates(cfg: AppConfig, section: dict) -> dict:
         field = f"check_skip_{str(stage).replace('-', '_')}"
         if hasattr(cfg, field) and not getattr(cfg, field):
             updates[field] = True
+    # frob:ticket T-0421
+    if not cfg.check_skip_unchanged and section.get("skip_unchanged") is True:
+        updates["check_skip_unchanged"] = True
     return updates
 
 
@@ -116,6 +122,57 @@ def _detected_types(root: Path) -> list[str]:
         "typescript": (root / "package.json").exists(),
     }
     return [lang for lang in ("rust", "cpp", "python", "typescript") if sentinels[lang]]
+
+
+# frob:ticket T-0421
+#: File suffixes (and repo-root marker files) that count as a change to a
+#: language's own tooling surface -- the set `_language_unchanged` diffs
+#: against, so a Rust-only edit never marks Python SKIPPED-unchanged and
+#: vice versa.
+_LANGUAGE_SUFFIXES: dict[str, tuple[str, ...]] = {
+    "rust": (".rs", "Cargo.toml", "Cargo.lock"),
+    "cpp": (".c", ".h", ".cc", ".cpp", ".hpp", ".hh", "CMakeLists.txt"),
+    "python": (".py", "pyproject.toml"),
+    "typescript": (".ts", ".tsx", ".js", ".jsx", "package.json"),
+}
+
+
+# frob:ticket T-0421
+def _language_unchanged(root: Path, base: str, project_type: str) -> bool:
+    """Whether NO file matching `project_type`'s suffixes changed against
+    `base` (T-0421): reuses `frob.gitio.working_diff`'s merge-base hunk
+    listing, the same change surface `--delta`/scoped gates already diff
+    against, rather than a second bespoke git invocation. Defaults to
+    `False` (never silently skip) on any git failure (no repo, no `base`
+    ref, detached/shallow clone) -- an honest "could not determine
+    unchanged" always falls back to running the stage.
+    """
+    from frob.gitio import working_diff
+
+    result = working_diff(root, base)
+    if result.is_err:
+        return False
+    suffixes = _LANGUAGE_SUFFIXES.get(project_type, ())
+    return not any(
+        hunk.file.endswith(suffixes) for hunk in result.danger_ok.hunks
+    )
+
+
+# frob:ticket T-0421
+def _unchanged_skip_result(project_type: str) -> ToolResult:
+    """A `SKIPPED (unchanged)` `ToolResult` for `project_type` (T-0421): the
+    language IS present in the project but nothing under its own suffixes
+    changed since `base`, so its tooling did not re-run this time -- honest
+    and visible, distinct from `_skip_note_result`'s "pinned away" case and
+    from a language that is simply absent (which shows no line at all,
+    `_detected_types` never naming it)."""
+    summary = f"SKIPPED: {project_type} (unchanged since base)"
+    return ToolResult(
+        tool=f"skipped:{project_type}",
+        exit_code=0,
+        summary=summary,
+        diagnostics=[Diagnostic(severity="note", message=summary)],
+    )
 
 
 def _skip_note_result(skipped: str, chosen: str) -> ToolResult:
@@ -231,6 +288,10 @@ def _dispatch_check(cfg: AppConfig, root: Path, project_type: str) -> CheckResul
 
 # frob:ticket T-0229
 # frob:ticket T-0419
+# frob:ticket T-0421
+# frob:tests tests/unit/test_app_runners_batch6.py::TestSkipUnchangedLanguage::test_unchanged_python_reports_skipped_not_silent  # noqa: E501
+# frob:tests tests/unit/test_app_runners_batch6.py::TestSkipUnchangedLanguage::test_changed_python_still_runs  # noqa: E501
+# frob:tests tests/unit/test_app_runners_batch6.py::TestSkipUnchangedLanguage::test_absent_language_never_shown  # noqa: E501
 def _run_all_detected(
     cfg: AppConfig,
     root: Path,
@@ -256,12 +317,24 @@ def _run_all_detected(
     stage as it completes, against `total`'s overall stage count -- the
     live task-list contract lives entirely in `Progress`; this just feeds
     it labels/counts as the orchestrator's existing stage loop advances.
+
+    T-0421: when `cfg.check_skip_unchanged` is set (frob.toml opt-in
+    only), a language whose own suffixes show no change against
+    `cfg.check_base` (`_language_unchanged`) reports a visible
+    `SKIPPED: <lang> (unchanged since base)` line instead of re-running
+    its full stage -- honest and distinct from a language that is simply
+    absent (never named at all, see `_detected_types`).
     """
     results: list[ToolResult] = []
     for i, project_type in enumerate(types):
         if progress is not None:
             progress.update(f"check: {project_type}", i, total)
-        results.extend(_dispatch_check(cfg, root, project_type).results)
+        if cfg.check_skip_unchanged and _language_unchanged(
+            root, cfg.check_base or "main", project_type
+        ):
+            results.append(_unchanged_skip_result(project_type))
+        else:
+            results.extend(_dispatch_check(cfg, root, project_type).results)
         if progress is not None:
             progress.update(f"check: {project_type}", i + 1, total)
     return CheckResult(path=str(root), results=results)
@@ -510,6 +583,73 @@ def _stdout_log_ctx(cfg: AppConfig):  # noqa: ANN201
     return stdout_log_level(_verbosity_to_level(cfg.check_verbose))
 
 
+# frob:ticket T-0420
+class _ColorizedLevelFormatter(logging.Formatter):
+    """Wraps `base`'s formatted line in `style_warn`/`style_fail` by level
+    (T-0420): the pre-summary `PII010`/`SEC110`/module-policy-auto-inject
+    WARNING lines used to print as PLAIN uncolored text while the final
+    pass/FAIL summary was colored -- this makes both consistent. `color`
+    is resolved once by the caller (TTY-aware, `NO_COLOR`/`FORCE_COLOR`
+    honored via `should_color`) and never re-checked per record, matching
+    every other coloring decision in this module."""
+
+    def __init__(self, base: logging.Formatter, *, color: bool) -> None:
+        """Bind this formatter to `base` (the pre-existing formatter whose
+        text it wraps) and a resolved `color` decision."""
+        super().__init__()
+        self._base = base
+        self._color = color
+
+    def format(self, record: logging.LogRecord) -> str:
+        """Format via `base`, then paint ERROR+ red / WARNING yellow when
+        `color` is on; DEBUG/INFO pass through unchanged."""
+        msg = self._base.format(record)
+        if record.levelno >= logging.ERROR:
+            return style_fail(msg, self._color)
+        if record.levelno >= logging.WARNING:
+            return style_warn(msg, self._color)
+        return msg
+
+
+# frob:ticket T-0420
+def _stderr_stream_handlers() -> list[logging.StreamHandler]:
+    """The root logger's `StreamHandler`s writing to `sys.stderr` -- the
+    WARNING+ handler(s) `frob.logging.config.toml` splits errors/warnings
+    onto, mirroring `frob.logging.quiet._stdout_stream_handlers`'s stdout
+    counterpart."""
+    root_logger = logging.getLogger()
+    return [
+        h
+        for h in root_logger.handlers
+        if isinstance(h, logging.StreamHandler) and h.stream is sys.stderr
+    ]
+
+
+# frob:ticket T-0420
+@contextlib.contextmanager
+def _colorized_stderr_logs():  # noqa: ANN201
+    """Wrap every stderr `StreamHandler`'s formatter in
+    `_ColorizedLevelFormatter` for the duration of the block, restoring the
+    original formatter after (T-0420): the ONE place `frob check` makes its
+    pre-summary WARNING/ERROR log lines match the final summary's coloring,
+    TTY-aware via `should_color(sys.stderr)` so a piped/non-TTY run emits
+    the exact same plain text as before. `--json` runs skip this entirely
+    (see `run`) since `_stdout_log_ctx`'s `quiet_stdout_logs` already
+    raises the bar to WARNING there and the JSON payload must stay
+    unaffected by any stderr-side change."""
+    handlers = _stderr_stream_handlers()
+    color = should_color(sys.stderr)
+    saved = [h.formatter for h in handlers]
+    for h in handlers:
+        base = h.formatter or logging.Formatter()
+        h.setFormatter(_ColorizedLevelFormatter(base, color=color))
+    try:
+        yield
+    finally:
+        for h, formatter in zip(handlers, saved, strict=True):
+            h.setFormatter(formatter)
+
+
 # frob:ticket T-0419
 def _stage_total(cfg: AppConfig, root: Path) -> int:
     """The live task-list's overall stage count: one per language stage
@@ -537,7 +677,12 @@ def _run_all_stages(
     task list; a piped/CI run never constructs a real `Progress` at all
     (see `run`), so this parameter changes nothing there.
     """
-    with _stdout_log_ctx(cfg):
+    stack = contextlib.ExitStack()
+    stack.enter_context(_stdout_log_ctx(cfg))
+    # frob:ticket T-0420
+    if not cfg.check_json:
+        stack.enter_context(_colorized_stderr_logs())
+    with stack:
         cfg = _apply_frob_toml_defaults(cfg, root)
         total = _stage_total(cfg, root)
         n_deploy = 2 if (root / "deploy").is_dir() else 0
@@ -555,10 +700,10 @@ def _run_all_stages(
 
 
 # frob:ticket T-0419
-# frob:tests tests/system/test_cli_check.py::TestCheckPolyglot::test_unpinned_polyglot_runs_python_stage
-# frob:tests tests/system/test_cli_check.py::TestCheckPolyglot::test_pinned_check_type_reports_skipped_line
-# frob:tests tests/system/test_cli_check.py::TestCheckCleanProject::test_clean_code_exits_zero
-# frob:tests tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta::test_delta_reports_only_new_violation
+# frob:tests tests/system/test_cli_check.py::TestCheckPolyglot::test_unpinned_polyglot_runs_python_stage  # noqa: E501
+# frob:tests tests/system/test_cli_check.py::TestCheckPolyglot::test_pinned_check_type_reports_skipped_line  # noqa: E501
+# frob:tests tests/system/test_cli_check.py::TestCheckCleanProject::test_clean_code_exits_zero  # noqa: E501
+# frob:tests tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta::test_delta_reports_only_new_violation  # noqa: E501
 # frob:doc docs/modules/app.md#runners
 def run(cfg: AppConfig) -> None:
     """`frob check [--type T] [--json] [--stamp-coverage|--stamp-baseline]`:

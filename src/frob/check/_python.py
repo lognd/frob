@@ -554,7 +554,7 @@ def _run_gates(
     base: str | None = None,
     gates: frozenset[str] = frozenset(),
     delta: bool = False,
-) -> ToolResult:
+) -> ToolResult | list[ToolResult]:
     """Run frob.gates.run_gates as a check stage. Most load failures (git repo
     / tickets dir not guaranteed to exist for every `frob check` caller) are a
     soft skip, but a failure to load the ticket queue is a hard ERROR with
@@ -565,6 +565,13 @@ def _run_gates(
     to those absent from `.frob/baseline` before scoring/reporting -- the
     agent-facing signal-only mode; a missing or stale baseline degrades to
     the full (unfiltered) set with a WARN diagnostic, never a silent no-op.
+
+    T-0420: a successful run now reports as a LIST of `ToolResult`s -- one
+    named `gate:<FAMILY>` stage per rule family plus a trailing
+    `gate-summary` totals+timing line -- rather than one monolithic
+    `gates` line; a load failure still reports as the single `gates`
+    `ToolResult` `_gates_error_result` already built (nothing to split,
+    there is no report to group by family).
     """
     from frob.gates import GateConfig, GateError, run_gates
 
@@ -603,9 +610,93 @@ def _gates_error_result(err, gate_error_cls) -> ToolResult:  # noqa: ANN001
     )
 
 
-def _gates_success_result(report, *, root: Path, delta: bool) -> ToolResult:  # noqa: ANN001
-    """The `ToolResult` for a successful `run_gates` report: delta-filtering,
-    diagnostics, and the error/warning/waived summary line."""
+# frob:ticket T-0420
+def _rule_family(rule: str) -> str:
+    """The named-family prefix of a gate rule id (T-0420): `COV001` -> `COV`,
+    `PII010` -> `PII`, `SEC110` -> `SEC` -- everything up to the first
+    digit. `frob check`'s single monolithic `gates` line used to bury every
+    family behind one timing blob; grouping violations/waivers by this
+    prefix is what lets each family get its own named pass/FAIL stage line
+    instead."""
+    for i, ch in enumerate(rule):
+        if ch.isdigit():
+            return rule[:i]
+    return rule
+
+
+# frob:ticket T-0420
+def _gates_family_result(
+    family: str, violations: list, waived: list
+) -> ToolResult:  # noqa: ANN001
+    """One named per-family `ToolResult` (`gate:TEST`, `gate:COV`, ...):
+    its own diagnostics and its own error/warning/waived count, so a human
+    reads `TEST FAIL 2 errors` instead of hunting inside one shared `gates`
+    timing blob for which family actually failed (T-0420)."""
+    diags = [*_violation_diags(violations), *_waived_diags(waived)]
+    n_err = _error_count(violations)
+    n_warn = len(violations) - n_err
+    summary = (
+        f"{n_err} error{'s' if n_err != 1 else ''}, "
+        f"{n_warn} warning{'s' if n_warn != 1 else ''}, "
+        f"{len(waived)} waived"
+    )
+    return ToolResult(
+        tool=f"gate:{family}",
+        exit_code=1 if n_err > 0 else 0,
+        diagnostics=diags,
+        summary=summary,
+    )
+
+
+# frob:ticket T-0420
+def _gates_family_results(violations, waived) -> list[ToolResult]:  # noqa: ANN001
+    """Every named per-family stage (T-0420), ordered alphabetically by
+    family name for a stable, scannable list -- families present only in
+    `waived` (never in a kept violation) still get their own line, since a
+    fully-waived family is real signal ("this family found things, all
+    discharged"), not silence."""
+    families: dict[str, tuple[list, list]] = {}
+    for v in violations:
+        families.setdefault(_rule_family(v.rule), ([], []))[0].append(v)
+    for w in waived:
+        families.setdefault(_rule_family(w.rule), ([], []))[1].append(w)
+    return [
+        _gates_family_result(family, fam_violations, fam_waived)
+        for family, (fam_violations, fam_waived) in sorted(families.items())
+    ]
+
+
+# frob:ticket T-0420
+def _gate_summary_result(
+    violations, report, *, n_err: int, delta: bool, timing: str
+) -> ToolResult:  # noqa: ANN001
+    """The final `gate-summary` `ToolResult` (T-0420): overall totals plus
+    the per-gate timing blob (kept here, not per-family, since timing is
+    measured per underlying gate function, not per rule family) -- the one
+    line a human reads after scanning the named per-family stages above
+    it."""
+    summary = _gates_summary(violations, report, n_err=n_err, delta=delta)
+    return ToolResult(
+        tool="gate-summary",
+        exit_code=1 if n_err > 0 else 0,
+        summary=f"{summary}  [{timing}]",
+    )
+
+
+# frob:ticket T-0420
+# frob:tests tests/unit/test_check.py::TestSummarySeverityHonesty::test_warn_only_gate_summary_splits_errors_and_warnings  # noqa: E501
+# frob:tests tests/unit/test_check.py::TestRunGatesDelta::test_no_baseline_falls_back_to_full_set_with_warning  # noqa: E501
+# frob:tests tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta::test_delta_reports_only_new_violation  # noqa: E501
+def _gates_success_result(
+    report, *, root: Path, delta: bool
+) -> list[ToolResult]:  # noqa: ANN001
+    """`run_gates`'s report rendered as `frob check` stages (T-0420):
+    one named `gate:<FAMILY>` `ToolResult` per rule family present, plus a
+    trailing `gate-summary` totals+timing line -- replacing the single
+    monolithic `gates` line that used to bury every family (and its own
+    pass/FAIL signal) behind one combined count and timing blob.
+    Delta-filtering (T-0095) still applies before grouping, so `--delta`
+    narrows both the per-family lines and the summary identically."""
     violations, delta_note = (
         _apply_delta(root, report.violations)
         if delta
@@ -614,17 +705,27 @@ def _gates_success_result(report, *, root: Path, delta: bool) -> ToolResult:  # 
             None,
         )
     )
-    diags = [*_violation_diags(violations), *_waived_diags(report.waived)]
-    if delta_note is not None:
-        diags.append(Diagnostic(severity="warning", message=delta_note))
     n_err = _error_count(violations)
-    summary = _gates_summary(violations, report, n_err=n_err, delta=delta)
-    return ToolResult(
-        tool="gates",
-        exit_code=1 if n_err > 0 else 0,
-        diagnostics=diags,
-        summary=f"{summary}  [{_timing_str(report.stats)}]",
+    results = _gates_family_results(violations, report.waived)
+    if delta_note is not None:
+        results.append(
+            ToolResult(
+                tool="gate:delta",
+                exit_code=0,
+                diagnostics=[Diagnostic(severity="warning", message=delta_note)],
+                summary=delta_note,
+            )
+        )
+    results.append(
+        _gate_summary_result(
+            violations,
+            report,
+            n_err=n_err,
+            delta=delta,
+            timing=_timing_str(report.stats),
+        )
     )
+    return results
 
 
 def _gates_summary(violations, report, *, n_err: int, delta: bool) -> str:  # noqa: ANN001

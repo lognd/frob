@@ -431,9 +431,11 @@ class TestCheckStampBaselineAndDelta:
         out = delta.stdout + delta.stderr
         assert delta.returncode != 0, out
         # Reported diagnostic lines (as opposed to internal debug logging,
-        # which still names every violation while computing them) carry the
-        # "[gates]" tag -- that's the set `--delta` actually filters.
-        reported = [line for line in out.splitlines() if "[gates]" in line]
+        # which still names every violation while computing them) carry a
+        # "[gate:<FAMILY>]" tag (T-0420 split the single "[gates]" line
+        # into named per-family stages) -- that's the set `--delta`
+        # actually filters.
+        reported = [line for line in out.splitlines() if "[gate:" in line]
         assert any("pkg2.py" in line for line in reported)
         assert not any("pkg.py:" in line for line in reported)
 
