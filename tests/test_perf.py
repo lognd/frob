@@ -10,7 +10,13 @@ from pathlib import Path
 
 from frob.graph import build_graph
 from frob.lang import parse_file
-from frob.perf import heat, load_artifact, perf_rules, profile_command
+from frob.perf import (
+    heat,
+    load_artifact,
+    perf_rules,
+    profile_command,
+    redundant_computation_violations,
+)
 
 
 def _snapshot(root: Path):
@@ -847,6 +853,113 @@ def test_load_artifact_missing_pstats_is_bad_artifact(tmp_path):
     result = load_artifact(tmp_path, ref=sha)
     assert result.is_err
     assert result.danger_err.name == "BadArtifact"
+
+
+def _git_init(root: Path) -> None:
+    subprocess.run(["git", "init", "-q", "-b", "main"], cwd=root, check=True)
+    subprocess.run(
+        ["git", "config", "user.email", "t@example.com"], cwd=root, check=True
+    )
+    subprocess.run(["git", "config", "user.name", "Test"], cwd=root, check=True)
+
+
+def _git_add(root: Path) -> None:
+    subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+
+
+class TestPerf007RedundantComputation:
+    """T-0413 (the PERF META-GAP): the same `frob.toml`-configured expensive
+    call invoked from 2+ distinct top-level symbols with no shared cache is
+    PERF007; a single call site, or a cached definition, is not."""
+
+    def test_two_stages_calling_the_same_uncached_parse_is_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        _git_init(tmp_path)
+        _write(
+            tmp_path,
+            "frob.toml",
+            '[[perf.heavy]]\nname = "heavy_parse"\n',
+        )
+        src = (
+            "def heavy_parse(path):\n"
+            "    return open(path).read()\n\n\n"
+            "def stage_a(path):\n"
+            "    return heavy_parse(path)\n\n\n"
+            "def stage_b(path):\n"
+            "    return heavy_parse(path)\n"
+        )
+        path = _write(tmp_path, "mod.py", src)
+        _git_add(tmp_path)
+        parsed = parse_file(path).danger_ok
+        snapshot = _snapshot(tmp_path)
+
+        violations = redundant_computation_violations(tmp_path, [parsed])
+        assert any(v.rule == "PERF007" for v in violations)
+        # And wired all the way through perf_rules, per T-0413's plan.
+        assert any(v.rule == "PERF007" for v in perf_rules(snapshot, [parsed]))
+
+    def test_single_shared_call_site_is_not_flagged(self, tmp_path: Path) -> None:
+        _git_init(tmp_path)
+        _write(
+            tmp_path,
+            "frob.toml",
+            '[[perf.heavy]]\nname = "heavy_parse"\n',
+        )
+        src = (
+            "def heavy_parse(path):\n"
+            "    return open(path).read()\n\n\n"
+            "def stage_a(path):\n"
+            "    return heavy_parse(path)\n\n\n"
+            "def stage_b(path, cached_text):\n"
+            "    return cached_text\n"
+        )
+        path = _write(tmp_path, "mod.py", src)
+        _git_add(tmp_path)
+        parsed = parse_file(path).danger_ok
+
+        violations = redundant_computation_violations(tmp_path, [parsed])
+        assert not any(v.rule == "PERF007" for v in violations)
+
+    def test_cached_definition_suppresses_the_warning(self, tmp_path: Path) -> None:
+        _git_init(tmp_path)
+        _write(
+            tmp_path,
+            "frob.toml",
+            '[[perf.heavy]]\nname = "heavy_parse"\n',
+        )
+        src = (
+            "@memoize_per_run\n"
+            "def heavy_parse(path):\n"
+            "    return open(path).read()\n\n\n"
+            "def stage_a(path):\n"
+            "    return heavy_parse(path)\n\n\n"
+            "def stage_b(path):\n"
+            "    return heavy_parse(path)\n"
+        )
+        path = _write(tmp_path, "mod.py", src)
+        _git_add(tmp_path)
+        parsed = parse_file(path).danger_ok
+
+        violations = redundant_computation_violations(tmp_path, [parsed])
+        assert not any(v.rule == "PERF007" for v in violations)
+
+    def test_no_config_means_no_perf007_checking(self, tmp_path: Path) -> None:
+        _git_init(tmp_path)
+        src = (
+            "def heavy_parse(path):\n"
+            "    return open(path).read()\n\n\n"
+            "def stage_a(path):\n"
+            "    return heavy_parse(path)\n\n\n"
+            "def stage_b(path):\n"
+            "    return heavy_parse(path)\n"
+        )
+        path = _write(tmp_path, "mod.py", src)
+        _git_add(tmp_path)
+        parsed = parse_file(path).danger_ok
+
+        violations = redundant_computation_violations(tmp_path, [parsed])
+        assert violations == ()
 
 
 def test_perf_end_to_end_profile_load_and_heat(tmp_path):

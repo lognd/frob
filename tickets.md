@@ -4018,7 +4018,7 @@ DEBT<->TODO COHERENCE (user, 2026-07-20): frob:debt and frob:todo must work toge
 id: T-0413
 title: 'perf META-GAP: PERF gate is blind to cross-stage redundant recomputation (frob
   did not detect its own 168s parse waste)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -4027,7 +4027,13 @@ parent: T-0410
 scope:
 - src/frob/perf/
 - src/frob/gates/
-scope_changes: []
+- docs/modules/perf.md
+scope_changes:
+- op: add
+  glob: docs/modules/perf.md
+  reason: T-0413 requires a frob:doc anchor for the new PERF007 public symbol (COV001)
+  actor: logan
+  at: '2026-07-21'
 evidence: []
 attachments: []
 acceptance: []

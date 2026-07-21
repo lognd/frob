@@ -33,6 +33,7 @@ from frob.graph import GraphSnapshot
 from frob.lang._models import ParsedFile, RawSymbol, SymbolKind
 from frob.logging import get_logger
 from frob.perf._recursion import recursion_rules
+from frob.perf._redundancy import redundant_computation_violations
 
 _log = get_logger(__name__)
 
@@ -630,18 +631,23 @@ def _symbol_violations(file: ParsedFile, symbol: RawSymbol) -> tuple[Violation, 
 def perf_rules(
     snapshot: GraphSnapshot, files: Sequence[ParsedFile]
 ) -> tuple[Violation, ...]:
-    """PERF001..PERF006 over every function/method symbol in `files`; pure,
+    """PERF001..PERF007 over every function/method symbol in `files`; pure,
     consumed by the policy/gates stage per docs/modules/perf.md's Integration
     points. PERF001-004 are self-contained per `ParsedFile` and never
     consult `snapshot`; PERF005/PERF006 (T-0290, recursion
     termination/depth) do -- `snapshot.edges` is where a reasoned
     `frob:invariant terminates reason="..." measure="..."` escape hatch
-    lives (`frob.perf._recursion._termination_reasoned`)."""
+    lives (`frob.perf._recursion._termination_reasoned`). PERF007 (T-0413,
+    the PERF META-GAP) is the one cross-FILE check here: a
+    `frob.toml`-configured expensive call target invoked from 2+ distinct
+    top-level symbols with no shared cache -- see
+    `frob.perf._redundancy.redundant_computation_violations`."""
     violations: list[Violation] = []
     for file in files:
         for symbol in file.symbols:
             violations.extend(_symbol_violations(file, symbol))
     violations.extend(recursion_rules(snapshot, files))
+    violations.extend(redundant_computation_violations(Path(snapshot.root), files))
     _log.info(
         "perf_rules: scanned %d file(s), %d violation(s)", len(files), len(violations)
     )
