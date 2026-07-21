@@ -3804,7 +3804,55 @@ scope:
 - src/frob/strata/
 - src/frob/vet/
 - src/frob/check/
-scope_changes: []
+- docs/commands/check.md
+- tests/unit/test_memo.py
+- pyproject.toml
+- CHANGELOG.md
+- frob.lock
+- uv.lock
+scope_changes:
+- op: add
+  glob: docs/commands/check.md
+  reason: T-0423's new public symbols/version bump require doc anchor + test file
+    + release bookkeeping edits outside the original src-only scope glob; frob.lock/uv.lock
+    touched only as a mechanical side-effect of frob ack / native rebuild
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/test_memo.py
+  reason: T-0423's new public symbols/version bump require doc anchor + test file
+    + release bookkeeping edits outside the original src-only scope glob; frob.lock/uv.lock
+    touched only as a mechanical side-effect of frob ack / native rebuild
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: pyproject.toml
+  reason: T-0423's new public symbols/version bump require doc anchor + test file
+    + release bookkeeping edits outside the original src-only scope glob; frob.lock/uv.lock
+    touched only as a mechanical side-effect of frob ack / native rebuild
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: CHANGELOG.md
+  reason: T-0423's new public symbols/version bump require doc anchor + test file
+    + release bookkeeping edits outside the original src-only scope glob; frob.lock/uv.lock
+    touched only as a mechanical side-effect of frob ack / native rebuild
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: frob.lock
+  reason: T-0423's new public symbols/version bump require doc anchor + test file
+    + release bookkeeping edits outside the original src-only scope glob; frob.lock/uv.lock
+    touched only as a mechanical side-effect of frob ack / native rebuild
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: T-0423's new public symbols/version bump require doc anchor + test file
+    + release bookkeeping edits outside the original src-only scope glob; frob.lock/uv.lock
+    touched only as a mechanical side-effect of frob ack / native rebuild
+  actor: logan
+  at: '2026-07-21'
 evidence: []
 attachments: []
 acceptance: []
@@ -5682,6 +5730,26 @@ acceptance: []
 threat: null
 ```
 T-0263 added public API (KrbMovementViolation, evaluate_krb_movement_waived, evaluate_unconstrained_delegation, evaluate_roastable_spn, evaluate_constrained_delegation_blast_radius, evaluate_cross_realm_containment, KRB_MOVEMENT_CATALOG/_OUT_OF_SCOPE/_VIEWS, KRB_MULTI_INSTANCE_WAIVER_FAMILIES, build_compromised_krb_scenario) to frob.strata, which frob check's REL001 gate flags as a minor API change needing a version bump (>= 0.36.0) plus a CHANGELOG.md entry and frob release stamp. T-0263's own scope glob does not include pyproject.toml/CHANGELOG.md/.frob-release.json, so this is filed as separate follow-on release-management work rather than silently widening T-0263's scope.
+
+<!-- ticket:T-draft-4c5fea52 -->
+```yaml
+id: T-draft-4c5fea52
+title: fix pre-existing E501 in src/frob/strata/_scenarios.py:518
+state: queued
+kind: bug
+origin: human
+created: '2026-07-21'
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/_scenarios.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Landed on main via the krb_movement merge (T-0423's own git merge main pulled this in): src/frob/strata/_scenarios.py:518 is a 109-char frob:waive PERF004 comment, over ruff's 88-col E501 limit. Pre-existing on main at merge time, unrelated to T-0423's build_graph/analyze_project memoization work -- filed rather than fixed silently since it is outside T-0423's actual task, even though its path loosely matches that ticket's src/frob/strata/ scope glob. Fix: wrap the comment or add a targeted noqa: E501.
 
 <!-- ticket:T-draft-5443bd5e -->
 ```yaml
