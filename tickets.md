@@ -4726,7 +4726,7 @@ rather than forced or faked.
 ```yaml
 id: T-0516
 title: burn down residual 89 COV006 findings after T-0506 wrapper-reachability fix
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-07-21'
@@ -4832,7 +4832,12 @@ phantom `test_gate` "test"). The import-alias resolution in the checker
 is the correct fix and does not touch the test file's existing alias.
 
 ### Changed
-(no changed files detected)
+```
+ src/frob/gates/__init__.py |  94 ++++++++++++++++++++++---
+ tests/test_gates.py        |  77 +++++++++++++++++++++
+ tickets.md                 | 166 ++++++++++++++++++++++++++++++++++++++++++++-
+ 3 files changed, 327 insertions(+), 10 deletions(-)
+```
 
 ### Evidence
 - `tests/test_gates.py::TestCoverageGate::test_cov006_silent_when_test_reaches_via_two_hop_wrapper_chain` (pytest node id, verified passing when recorded)
@@ -4841,7 +4846,6 @@ is the correct fix and does not touch the test file's existing alias.
 - `tests/test_gates.py::TestCoverageGate::test_cov006_still_fires_when_no_public_wrapper_reaches_the_target` (pytest node id, verified passing when recorded)
 - `tests/test_gates.py::TestProcessPoolGates::test_process_job_runs_in_a_separate_process` (pytest node id, verified passing when recorded)
 - `tests/test_gates.py::TestGateOrderSetEquality::test_canonical_gate_order_matches_all_gates` (pytest node id, verified passing when recorded)
-
 <!-- ticket:T-0517 -->
 ```yaml
 id: T-0517
