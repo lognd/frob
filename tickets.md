@@ -9252,9 +9252,9 @@ acceptance: []
 threat: null
 ```
 
-<!-- ticket:T-draft-92456503 -->
+<!-- ticket:T-0508 -->
 ```yaml
-id: T-draft-92456503
+id: T-0508
 title: reconcile weaknesses.yaml SEC-CVE-FINGERPRINT-* dispositions now that T-0439
   shipped SEC-CVE-FINGERPRINT-001
 state: queued

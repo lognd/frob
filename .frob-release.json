@@ -318,6 +318,7 @@
     "src/frob/gates/_coverage.py::load_coverage": "11c8be26f27b5dc5f7fedb8bd72404b05212131cff0dec4602e153ff01745296",
     "src/frob/gates/_coverage.py::load_stamp": "2126d7d6a7815cc0638aa0e4d6a044ee861032da69b9d659e064ee406e5c023f",
     "src/frob/gates/_coverage.py::stamp_coverage": "17dd518b00c5b5c1c6f90b1092a682270844d7425b395896339e226c5165c903",
+    "src/frob/gates/_cve_fingerprint_scan.py::cve_fingerprint_scan_gate": "a7667099c722e4afaa5b0ec0fd40f6f917368267b0ae9afc8116a4f0fe34ddff",
     "src/frob/gates/_docblocks.py::doc004_gate": "ae1933bdb3d41939434b20539b217c3b3ea97d541ac837ded6bf3098bf6ba8a9",
     "src/frob/gates/_models.py::CoverageData": "001138b91932cc4d61786cd5c81887b9816e4afa8e020c55b42a31532c511915",
     "src/frob/gates/_models.py::CoverageError": "fc2537c0a4f1aa14112c26bf6107b886f2c2a6d3076f4b687a8cf2a4e734f601",
@@ -669,6 +670,7 @@
     "src/frob/strata/_code_binding.py::check_import_conformance": "1d0a8346dd268a2983e39c8b55f8cfa13d8e7109cecfdc3f77c493f6a41865d4",
     "src/frob/strata/_code_binding.py::is_managed": "aba6c15e41c0257249ca634b1033cddff76fd23a17b9efcb294776e58b29bcde",
     "src/frob/strata/_compliance.py::COMPLIANCE_CATALOG": "9f0b63cf4bf9ef9be6c9a9a43c6d3ba70a4b9470d010e683c286aab073d3b4bb",
+    "src/frob/strata/_compliance.py::COMPLIANCE_OUT_OF_SCOPE": "80366d1f19a3cde4d0eec6056ebcda80ce3f0f4610cd1000c55af382896a72c6",
     "src/frob/strata/_compliance.py::ComplianceReport": "ff1d8bde3dee10d1ba49de9b2351133bb956ccd5644dc516ca690bc0f062f889",
     "src/frob/strata/_compliance.py::ComplianceViolation": "fc270d1eb8ea7872c1868dc64786a84fac03c7ce36b315b17cc999a119b7e5a7",
     "src/frob/strata/_compliance.py::OutOfScopeRegulation": "b0cae7dcdd2cee8c238dbb976c2958df797c64285b1f71fb24ede388e8b17230",
@@ -685,8 +687,10 @@
     "src/frob/strata/_cve_fingerprint.py::CVE_FINGERPRINTS": "d13787734b67e568b66a2ec8224f70f3aa115e4fc991d535840daed61de0597a",
     "src/frob/strata/_cve_fingerprint.py::CVE_FINGERPRINT_VIEWS": "7c8092fc383a49d1d019b6d6d4fe333d34cd038cda4d57638993bb74cce5d4db",
     "src/frob/strata/_cve_fingerprint.py::CveFingerprint": "f2e5a49737e45375ef573724a99619ea994c71f6e4ff5ec8b4f2f721ecc41478",
+    "src/frob/strata/_cve_fingerprint.py::FingerprintHit": "5be80971339848d571d3b08a360aa78dc88336bc302fef002605671427ce4da4",
     "src/frob/strata/_cve_fingerprint.py::FingerprintViolation": "e0a1a3b225f1142f46de505837a8f3903c0f96d85898ae35c979628195172814",
     "src/frob/strata/_cve_fingerprint.py::check_fingerprint_catalog_drift": "1608f1e93716a12a2228f5ee5375ebe45001369e3917dc7f5c1f8dfe8cc630b8",
+    "src/frob/strata/_cve_fingerprint.py::scan_text_for_fingerprints": "2a403463d56d11c9ab3ab20c4f36d38cc4cf06cf9a3427d942f400e822388aad",
     "src/frob/strata/_deploy.py::DeployContractReport": "f896bf92ea1d1c3d1397455bedc6e386ebd83bbb75cedbae1bf31b21bbe3a9ad",
     "src/frob/strata/_deploy.py::evaluate_deploy_contracts": "fbc8c77eb1c4fe024288a8466a42d8208cc2cccd45b59f5c0757e7432632f71e",
     "src/frob/strata/_design_load.py::DEFAULT_DESIGN_DIR": "3dea6ffe4862d6586d761a7fca0407dc38e46fa182d5986752e49ea217557c4a",
@@ -1052,5 +1056,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.47.0"
+  "version": "0.48.0"
 }
