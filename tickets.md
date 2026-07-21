@@ -6216,7 +6216,7 @@ Added a regression test using the exact gates.md example text.
 ```yaml
 id: T-0523
 title: burn down residual 59 COV006 findings outside gates/test_gates.py scope
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-21'
