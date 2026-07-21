@@ -4577,6 +4577,7 @@ acceptance: []
 threat: null
 ```
 T-0509 calibrated INV003/INV004: noise-stripping (fenced/inline code, links, table rows), a claim-verb requirement in the same sentence as the trigger word, INV003 scoped to INV003_SPEC_DIRS (docs/modules, docs/strata) instead of all docs/**.md, and markdown-side frob:waive support. Combined warnings dropped from 765 to 604 (INV003 88->31, INV004 677->573), measured via frob check --only invariant on this worktree before/after. 604 is still above the <30 in-ticket-burndown threshold, so this residual was NOT hand-burned down in T-0509. Next steps: bind real invariants/INV-###.md files for genuine claims, add <!-- frob:waive INV003|INV004 reason="..." --> markers for design-intent-only prose, and reword sections that used normative language loosely. INV004's 573 is the larger share (all of docs/**.md still in scope) -- consider whether INV004 also warrants directory scoping or a further claim-shape narrowing as part of this burndown.
+
 <!-- ticket:T-0516 -->
 ```yaml
 id: T-0516
@@ -4598,33 +4599,105 @@ acceptance: []
 threat: null
 ```
 T-0506 extended COV006 with a one-hop same-file public-wrapper rescue, reducing the finding count from 98 to 89 (measured via frob check before/after on this worktree). The residual 89 are either genuinely broken frob:tests bindings needing a real bound symbol, or FP shapes not covered by the wrapper rescue (e.g. cross-file wrapper, two-hop chains, or a test calling the private symbol via an attribute/instance rather than a bare call token). Triage the residual list from a fresh frob check run and either bind real tests, fix wrong directives, or narrow to a documented remaining FP class.
+
 <!-- ticket:T-0517 -->
 ```yaml
 id: T-0517
 title: dup.db fingerprint cache lacks version/algorithm invalidation key -- stale
   caches silently change find_clones results
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-21'
 priority: medium
 blocked_by: []
 parent: null
-scope: []
-scope_changes: []
-evidence: []
+scope:
+- src/frob/dup/_cache.py
+- tests/unit/test_dup_cache.py
+- tests/test_dup_cross_lang.py
+scope_changes:
+- op: add
+  glob: src/frob/dup/_cache.py
+  reason: declared scope was empty at close time; back-filling so SCOPE001's cross-ticket
+    exemption (T-0108) recognizes these commits for sibling tickets sharing this worktree
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/test_dup_cache.py
+  reason: declared scope was empty at close time; back-filling so SCOPE001's cross-ticket
+    exemption (T-0108) recognizes these commits for sibling tickets sharing this worktree
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_dup_cross_lang.py
+  reason: declared scope was empty at close time; back-filling so SCOPE001's cross-ticket
+    exemption (T-0108) recognizes these commits for sibling tickets sharing this worktree
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/unit/test_dup_cache.py::TestFingerprintInvalidation::test_stale_fingerprint_row_is_not_served
+- tests/unit/test_dup_cache.py::TestFingerprintInvalidation::test_matching_fingerprint_row_still_served
 attachments: []
 acceptance: []
 threat: null
 ```
 Incident (2026-07-21): tests/fixtures/dup_cross_lang/.frob/dup.db, an untracked leftover from a pre-T-0487 run, made the landed T-0494 cross-lang R5 tests fail on main while passing in fresh worktrees -- find_clones served 6 stale cache hits and verified 0 pairs. The graph cache.db keys its schema on a frob+grammar version fingerprint (T-0243 pattern) but dup.db does not, so any algorithm change (e.g. _KEYWORDS, r3 canonicalization) silently keeps old fingerprints. Fix: (1) key dup.db rows on the same version fingerprint and invalidate on mismatch; (2) tests must not leak dup.db into tracked fixture dirs -- point find_clones at an isolated cache in tmp_path or clean up. Scope: src/frob/dup/_legacy.py, src/frob/dup/_pipeline.py, tests/test_dup_cross_lang.py.
 
+## Done report
+
+Changed:
+src/frob/dup/_cache.py::_check_fingerprint
+tests/unit/test_dup_cache.py::TestFingerprintInvalidation
+tests/test_dup_cross_lang.py::_isolated_dup_cache
+
+dup.db carried no version/algorithm invalidation key, so an untracked
+leftover dup.db (or any dup.db written under an older frob/tree-sitter
+grammar version) could silently serve stale fingerprint/verdict rows
+after an algorithm change -- exactly the incident that made T-0494's
+cross-lang R5 fixture flip results depending on which worktree ran it
+(6 cache hits, 0 pairs verified). Reused the existing T-0243 fingerprint
+mechanism from frob.graph.cache (`_compute_fingerprint`) rather than a
+second implementation: `frob.dup._cache` now stores that same fingerprint
+string in a `meta` table and wipes `fingerprints`/`verdicts` on any
+mismatch, mirroring `frob.graph.cache._check_fingerprint`'s shape.
+
+Also fixed the cross-lang test module (T-0517 part 2): `find_clones`
+writes its cache to `snapshot.root/.frob/dup.db`, and `snapshot.root` for
+`tests/test_dup_cross_lang.py` is the tracked fixture directory itself --
+an unpatched run leaked `.frob/dup.db` straight into a tracked path. Added
+an autouse fixture that monkeypatches `_cache._db_path` to redirect every
+write in that module to `tmp_path`, plus a defensive cleanup of any
+pre-existing leaked sidecar files.
+
+Non-vacuous regression: `TestFingerprintInvalidation` in
+tests/unit/test_dup_cache.py seeds a poisoned fingerprint row under a
+monkeypatched wrong-version fingerprint, reconnects under the real
+(current) fingerprint, and asserts the poisoned row is gone -- proving
+`_check_fingerprint` actually invalidates rather than just existing.
+A same-version reconnect case proves the common path does NOT wipe rows
+it shouldn't.
+
+Scope note: the ticket's prose named src/frob/dup/_legacy.py and
+src/frob/dup/_pipeline.py, but the actual dup.db read/write/schema logic
+lives in src/frob/dup/_cache.py (the YAML `scope:` field for this ticket
+was empty/unset, so no glob restriction applied) -- _legacy.py has no
+dup.db logic at all and did not need touching; _pipeline.py only
+consumes _cache's get/put functions and needed no changes either.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/unit/test_dup_cache.py::TestFingerprintInvalidation::test_stale_fingerprint_row_is_not_served` (pytest node id, verified passing when recorded)
+- `tests/unit/test_dup_cache.py::TestFingerprintInvalidation::test_matching_fingerprint_row_still_served` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0518 -->
 ```yaml
 id: T-0518
 title: 'frob.dup._exhaustiveness: add DUP_CLAIMS r5/typescript entry (T-0494 found
   the proof, no claim registered)'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-21'
@@ -4633,13 +4706,99 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/dup/_exhaustiveness.py
-scope_changes: []
-evidence: []
+- pyproject.toml
+- CHANGELOG.md
+- uv.lock
+- .frob-release.json
+scope_changes:
+- op: add
+  glob: pyproject.toml
+  reason: REL001 forced a version bump (0.52.0 -> 0.53.0) when DUP_CLAIMS' public
+    digest changed; changelog/lock/stamp are the mandated side effects
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: CHANGELOG.md
+  reason: REL001 forced a version bump (0.52.0 -> 0.53.0) when DUP_CLAIMS' public
+    digest changed; changelog/lock/stamp are the mandated side effects
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: REL001 forced a version bump (0.52.0 -> 0.53.0) when DUP_CLAIMS' public
+    digest changed; changelog/lock/stamp are the mandated side effects
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: REL001 forced a version bump (0.52.0 -> 0.53.0) when DUP_CLAIMS' public
+    digest changed; changelog/lock/stamp are the mandated side effects
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_dup_cross_lang.py::TestCrossLanguageR5NowFires::test_r5_group_fires_at_every_threshold
+- tests/test_dup_exhaustiveness.py::TestMatrixExhaustiveness::test_no_unclaimed_cells
+- tests/test_dup_exhaustiveness.py::TestMatrixExhaustiveness::test_matrix_covers_every_rung_clone_type_and_language
 attachments: []
 acceptance: []
 threat: null
 ```
 found while working T-0494: tests/test_dup_cross_lang.py now proves R5 fires cross-language for python/typescript (compute_total/computeTotal, similarity=0.88, every threshold 0.9-0.1), mirroring the r5/rust DUP_CLAIMS entry T-0487 already added (frob.dup._exhaustiveness, proof_test=tests/test_dup.py::TestCrossLanguageR5WithLet.test_r5_fires_across_languages_with_a_let_binding). No matching r5/typescript DUP_CLAIMS entry exists yet -- dup_matrix()'s r5/type3/typescript cell presumably still falls through to DUP_MATRIX_EXCUSES' generic non-python language-gap excuse, which is now stale for this cell specifically (rust already closed, typescript has a firing fixture but no registered claim). Add a DUP_CLAIMS entry for rung=r5, clone_type=3, language=typescript, proof_test=tests/test_dup_cross_lang.py::TestCrossLanguageR5NowFires.test_r5_group_fires_at_every_threshold, matching the rust entry's shape. Out of T-0494's declared scope (scope=tests/test_dup_cross_lang.py, docs/modules/dup.md -- does not include src/frob/dup/_exhaustiveness.py).
+
+## Done report
+
+Changed:
+src/frob/dup/_exhaustiveness.py::DUP_CLAIMS
+pyproject.toml (version 0.52.0 -> 0.53.0)
+CHANGELOG.md
+uv.lock
+.frob-release.json
+
+Added the missing r5/typescript `DupClaim` entry to `DUP_CLAIMS`
+(`src/frob/dup/_exhaustiveness.py`), mirroring the r5/rust entry T-0487
+already added. T-0494's fixture (`compute_total`/`computeTotal`,
+similarity=0.88, fires at every threshold 0.9-0.1) is the proof; this
+just registers the claim so `dup_matrix()`'s r5/type3/typescript cell no
+longer falls through the generic non-python language-gap excuse.
+
+REL001 fired because DUP_CLAIMS' public digest changed (a public constant's
+value counts as public API, not just its shape) -- bumped 0.52.0 ->
+0.53.0, added a CHANGELOG.md entry for both T-0517 and T-0518, re-ran
+`uv lock`, and ran `frob release stamp`.
+
+Scope: T-0518's declared scope only named `src/frob/dup/_exhaustiveness.py`;
+extended it (`frob ticket scope --add`) to cover `pyproject.toml`,
+`CHANGELOG.md`, `uv.lock`, `.frob-release.json` since REL001's mandated
+side effects touch those files.
+
+Caveat -- known SCOPE001 residue, not a new violation: `frob check
+--ticket T-0518` still reports 3 SCOPE001 hits (src/frob/dup/_cache.py,
+tests/unit/test_dup_cache.py, tests/test_dup_cross_lang.py) that are
+T-0517's own already-closed, already-committed changes sharing this
+worktree's branch. T-0517's scope was backfilled after close so the
+gate's T-0108 cross-ticket exemption could recognize them, but that
+exemption keys off the COMMIT SUBJECT naming the ticket id, and my
+T-0517 commit's subject line (`fix(dup): key dup.db rows on the graph
+cache's version fingerprint`) does not mention T-0517 -- only its body
+does. I did not amend that commit (git safety rule: never amend, always
+a new commit) to fix the exemption after the fact. This is a diff-vs-main
+artifact of doing two tickets sequentially in one unlanded worktree; it
+resolves itself once T-0517 lands to main on its own, at which point its
+diff no longer appears against T-0518's base.
+
+### Changed
+```
+ src/frob/dup/_cache.py       | 38 +++++++++++++++++++++++++++++++
+ tests/test_dup_cross_lang.py | 26 ++++++++++++++++++++++
+ tests/unit/test_dup_cache.py | 36 ++++++++++++++++++++++++++++++
+ tickets.md                   | 53 ++++++++++++++++++++++++++++++++++++++++++--
+ 4 files changed, 151 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/test_dup_cross_lang.py::TestCrossLanguageR5NowFires::test_r5_group_fires_at_every_threshold` (pytest node id, verified passing when recorded)
+- `tests/test_dup_exhaustiveness.py::TestMatrixExhaustiveness::test_no_unclaimed_cells` (pytest node id, verified passing when recorded)
+- `tests/test_dup_exhaustiveness.py::TestMatrixExhaustiveness::test_matrix_covers_every_rung_clone_type_and_language` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0519 -->
 ```yaml

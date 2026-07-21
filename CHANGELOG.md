@@ -17,6 +17,22 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.53.0] - unreleased
+
+T-0517: `frob.dup._cache`'s `dup.db` gained a version fingerprint (reusing
+`frob.graph.cache._compute_fingerprint`, the T-0243 pattern) -- a
+`dup.db` written under an older frob/tree-sitter grammar version now has
+its `fingerprints`/`verdicts` rows invalidated on reconnect instead of
+silently serving stale content-addressed rows under an algorithm change.
+`tests/test_dup_cross_lang.py` also no longer leaks an untracked
+`.frob/dup.db` into the tracked fixture directory it runs against.
+
+T-0518: `frob.dup._exhaustiveness.DUP_CLAIMS` gained the r5/typescript
+cell (`compute_total`/`computeTotal`, T-0494's fixture), mirroring the
+r5/rust entry T-0487 already added -- the cross-language R5 capability
+this repo actually has is now reflected in the exhaustiveness matrix
+instead of falling through the generic non-python language-gap excuse.
+
 ## [0.52.0] - unreleased (tickets-bugs chain)
 
 T-0446: `frob.tickets.scope_matches` gained an optional `kind` keyword --

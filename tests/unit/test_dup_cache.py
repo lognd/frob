@@ -92,6 +92,42 @@ class TestVerdictRoundTrip:
         assert _cache.get_verdict(tmp_path, "x", "y", "r4", 0) is None
 
 
+class TestFingerprintInvalidation:
+    """T-0517: a `dup.db` written under a different frob/grammar version
+    fingerprint must not serve its cached rows to the current process."""
+
+    # frob:tests tests/unit/test_dup_cache.py::TestFingerprintInvalidation.test_stale_fingerprint_row_is_not_served kind="unit"  # noqa: E501
+    def test_stale_fingerprint_row_is_not_served(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # Seed a poisoned row under a wrong-version fingerprint, bypassing
+        # the version check entirely (as a pre-T-0517 db on disk would
+        # already have done), then reconnect under the CURRENT fingerprint
+        # and prove the poisoned row is gone rather than served.
+        monkeypatch.setattr(
+            _cache, "_compute_fingerprint", lambda: "wrong-version==0.0.0"
+        )
+        put_result = _cache.put_fingerprint(
+            tmp_path, "poisoned-digest", "r3", ("stale",)
+        )
+        assert put_result.is_ok, put_result.err
+        assert _cache.get_fingerprint(tmp_path, "poisoned-digest", "r3") == ["stale"]
+
+        # Force a fresh connection (a new process would open one from
+        # scratch) so `_check_fingerprint` runs against the current,
+        # un-monkeypatched fingerprint.
+        _cache._close_all()
+        monkeypatch.undo()
+        assert _cache.get_fingerprint(tmp_path, "poisoned-digest", "r3") is None
+
+    # frob:tests tests/unit/test_dup_cache.py::TestFingerprintInvalidation.test_matching_fingerprint_row_still_served kind="unit"  # noqa: E501
+    def test_matching_fingerprint_row_still_served(self, tmp_path: Path) -> None:
+        # Same-version reconnect (the normal case) must NOT wipe rows.
+        _cache.put_fingerprint(tmp_path, "fresh-digest", "r3", ("current",))
+        _cache._close_all()
+        assert _cache.get_fingerprint(tmp_path, "fresh-digest", "r3") == ["current"]
+
+
 class TestConnectionReuse:
     """T-0191: get/put no longer reopen `.frob/dup.db` on every call -- one
     connection is cached per resolved db path for the process's lifetime."""

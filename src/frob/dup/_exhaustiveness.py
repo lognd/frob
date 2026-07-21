@@ -247,6 +247,23 @@ DUP_CLAIMS: tuple[DupClaim, ...] = (
         "in python and once in rust; r5's structural def-use graph "
         "collides across languages",
     ),
+    # T-0518: T-0494 proved r5 also fires python/typescript (the same
+    # _KEYWORDS fix that closed the rust cell above applies here -- a
+    # TypeScript `let`/`const` no longer mis-labels as a plain identifier),
+    # closing the typescript cell of the generic non-python language-gap
+    # excuse for r5/type3.
+    DupClaim(
+        rung="r5",
+        clone_type=3,
+        language="typescript",
+        fixture_root="tests/fixtures/dup_cross_lang",
+        proof_test="tests/test_dup_cross_lang.py::TestCrossLanguageR5NowFires."
+        "test_r5_group_fires_at_every_threshold",
+        note="compute_total/computeTotal -- a running-total accumulator "
+        "with a clamp, written once in python and once in typescript; "
+        "r5's structural def-use WL-hash collides across languages "
+        "(similarity=0.88, fires at every threshold 0.9-0.1)",
+    ),
 )
 
 # frob:doc docs/modules/dup.md#public-api
