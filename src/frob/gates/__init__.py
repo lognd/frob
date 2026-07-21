@@ -2095,34 +2095,103 @@ def _old_directive_bindings(
     return tuple(bindings)
 
 
+_PY_IMPORT_AS_RE = re.compile(r"\b([\w.]+)\s+as\s+(\w+)\b")
+_PY_FROM_IMPORT_BLOCK_RE = re.compile(
+    r"from\s+[\w.]+\s+import\s*\(([^)]*)\)", re.DOTALL
+)
+_PY_FROM_IMPORT_LINE_RE = re.compile(r"from\s+[\w.]+\s+import\s+([^\n(]+)")
+_PY_IMPORT_LINE_RE = re.compile(r"^\s*import\s+[\w.]+\s+as\s+\w+", re.MULTILINE)
+
+
+def _py_import_aliases(source: str) -> dict[str, str]:
+    """`local alias name -> real short name` for Python `X as Y` imports in
+    `source` (single-line `from ... import a as b`, parenthesized
+    multi-line `from ... import (\\n    a as b,\\n)`, and `import a as b`),
+    best-effort regex scan -- no AST, so a same-spelled non-import `as`
+    (e.g. `with ctx() as x`) could in principle be swept in, but import
+    aliasing is what T-0516's `_cov006_public_wrapper_reachable` needs to
+    see through: a test importing a public wrapper under a local alias
+    (routinely done to dodge pytest collecting a `test_*`-named import as
+    its own test item) calls the ALIAS by name, never the wrapper's real
+    short name, which otherwise defeats this rescue's name-based match.
+    Python only -- other grammars' import-aliasing syntax differs enough
+    that this scan does not attempt to cover them (T-0516 Done report).
+    """
+    aliases: dict[str, str] = {}
+    for block in _PY_FROM_IMPORT_BLOCK_RE.findall(source):
+        for real, alias in _PY_IMPORT_AS_RE.findall(block):
+            aliases[alias] = real.rsplit(".", 1)[-1]
+    for line in _PY_FROM_IMPORT_LINE_RE.findall(source):
+        for real, alias in _PY_IMPORT_AS_RE.findall(line):
+            aliases[alias] = real.rsplit(".", 1)[-1]
+    for line in source.splitlines():
+        if _PY_IMPORT_LINE_RE.match(line):
+            for real, alias in _PY_IMPORT_AS_RE.findall(line):
+                aliases[alias] = real.rsplit(".", 1)[-1]
+    return aliases
+
+
 # frob:ticket T-0506
+# frob:ticket T-0516
 def _cov006_public_wrapper_reachable(root: Path, edge: Edge) -> bool:
-    """One-hop COV006 rescue: True if a PUBLIC symbol in the bound private
-    target's own file both calls that target directly and is itself
-    called, by name, from the test's own body -- the same-file
-    test -> public-wrapper -> private-target shape `build_call_graph`
-    cannot represent (it never records edges into public callees, T-0483).
+    """COV006 rescue: True if a PUBLIC symbol in the bound private target's
+    own file is itself called, by name (or by a Python `X as Y` import
+    alias resolved back to its real name, T-0516), from the test's own
+    body, and reaches the private target either directly or transitively
+    through same-file private helper calls -- the same-file
+    test -> public-wrapper -> (private helper)* -> private-target shape
+    `build_call_graph` cannot represent (it never records edges into
+    public callees, T-0483). T-0506 covered only the direct one-hop case
+    (wrapper calls target by name); T-0516 generalizes this to any depth
+    of private-helper indirection between the public wrapper and the
+    bound private target, reusing the shared private-only call graph's
+    `closure` for the transitive part -- a public wrapper calling a
+    private helper IS recorded as an edge (only edges INTO public symbols
+    are dropped), so `closure` seeded at the wrapper's own symref already
+    walks through any number of private hops on the way to the target.
     Scoped to this gate only; the shared `CallGraph` substrate is
     untouched so `frob.dup`/arch consumers keep their public-boundary-stop
     behavior.
     """
-    from frob.graph.callgraph import _called_names, _short_name
+    from frob.graph.callgraph import (
+        _called_names,
+        _short_name,
+        build_call_graph,
+        closure,
+    )
     from frob.lang import parse_file
 
     target_file = edge.target.split("::", 1)[0]
     test_file = edge.src.split("::", 1)[0]
     target_qualname = edge.target.split("::", 1)[1]
-    target_short = _short_name(target_qualname)
 
     target_parsed = parse_file(root / target_file)
     if target_parsed.is_err:
         return False
     target_symbols = target_parsed.danger_ok.symbols
 
+    target_symref = f"{target_file}::{target_qualname}"
+    target_graph = build_call_graph(root, (target_file,))
+
+    # A generous, gate-local closure budget (well above `closure`'s shared
+    # defaults sized for cross-package fan-out): a single wrapper in a
+    # gates-style module routinely has a dozen-plus direct private
+    # callees (e.g. `coverage_gate` dispatching to `_cov001".."_cov007`),
+    # which exhausts the default max_nodes before ever reaching a second
+    # hop. This lookup is scoped to one already-parsed file and one
+    # wrapper at a time, so a larger budget here is cheap and does not
+    # touch the shared `closure` defaults other consumers rely on.
     wrapper_short_names = {
         _short_name(sym.qualname)
         for sym in target_symbols
-        if sym.public and target_short in _called_names(sym.body_tokens)
+        if sym.public
+        and target_symref
+        in closure(
+            target_graph,
+            f"{target_file}::{sym.qualname}",
+            max_depth=8,
+            max_nodes=200,
+        )
     }
     if not wrapper_short_names:
         return False
@@ -2141,7 +2210,14 @@ def _cov006_public_wrapper_reachable(root: Path, edge: Edge) -> bool:
     )
     if test_sym is None:
         return False
-    return bool(wrapper_short_names & _called_names(test_sym.body_tokens))
+    called = _called_names(test_sym.body_tokens)
+    if wrapper_short_names & called:
+        return True
+    if not test_file.endswith(".py"):
+        return False
+    aliases = _py_import_aliases((root / test_file).read_text(encoding="utf-8"))
+    resolved = {aliases.get(name, name) for name in called}
+    return bool(wrapper_short_names & resolved)
 
 
 # frob:ticket T-0483

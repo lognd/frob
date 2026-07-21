@@ -4582,7 +4582,7 @@ T-0509 calibrated INV003/INV004: noise-stripping (fenced/inline code, links, tab
 ```yaml
 id: T-0516
 title: burn down residual 89 COV006 findings after T-0506 wrapper-reachability fix
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-07-21'
@@ -4593,13 +4593,110 @@ scope:
 - src/frob/gates/__init__.py
 - tests/test_gates.py
 scope_changes: []
-evidence: []
+evidence:
+- tests/test_gates.py::TestCoverageGate::test_cov006_silent_when_test_reaches_via_two_hop_wrapper_chain
+- tests/test_gates.py::TestCoverageGate::test_cov006_silent_when_wrapper_called_via_import_alias
+- tests/test_gates.py::TestCoverageGate::test_cov006_silent_when_test_reaches_via_same_file_public_wrapper
+- tests/test_gates.py::TestCoverageGate::test_cov006_still_fires_when_no_public_wrapper_reaches_the_target
+- tests/test_gates.py::TestProcessPoolGates::test_process_job_runs_in_a_separate_process
+- tests/test_gates.py::TestGateOrderSetEquality::test_canonical_gate_order_matches_all_gates
 attachments: []
 acceptance: []
 threat: null
 ```
 T-0506 extended COV006 with a one-hop same-file public-wrapper rescue, reducing the finding count from 98 to 89 (measured via frob check before/after on this worktree). The residual 89 are either genuinely broken frob:tests bindings needing a real bound symbol, or FP shapes not covered by the wrapper rescue (e.g. cross-file wrapper, two-hop chains, or a test calling the private symbol via an attribute/instance rather than a bare call token). Triage the residual list from a fresh frob check run and either bind real tests, fix wrong directives, or narrow to a documented remaining FP class.
 
+## Done report
+
+T-0506's COV006 rescue only covered a direct one-hop shape (public wrapper
+calls the private target by name). Fixed the checker itself
+(`_cov006_public_wrapper_reachable`) to (1) walk the same-file private
+call graph transitively from each public wrapper via `closure` (any depth
+of private-helper indirection, with a gate-local, generously sized
+max_depth/max_nodes budget since a `coverage_gate`-style dispatcher has a
+dozen-plus direct callees that exhaust the shared default budget before a
+second hop), and (2) resolve Python `X as Y` import aliases in the test
+file back to the wrapper's real short name before matching (tests
+routinely import a public wrapper under a local alias specifically to
+dodge pytest collecting a `test_*`-named import as its own test item,
+which silently defeated the old name-based match). Both fixes are scoped
+to this gate's own helper; the shared `frob.graph.callgraph` substrate
+other consumers (dup/arch) depend on is untouched.
+
+Measured on this worktree via `frob check --only coverage`:
+- COV006 before: 90 warnings repo-wide
+- COV006 after the checker fix alone: 61 warnings repo-wide (29 fixed by
+  the transitive-closure + import-alias generalization, repo-wide, not
+  just in this ticket's declared scope files)
+- Within T-0516's declared scope (src/frob/gates/__init__.py +
+  tests/test_gates.py): went from 13 findings to 0 unwaived (2 findings
+  remain, both waived with reasons -- see below)
+
+Per-category counts (T-0516's declared scope only):
+- fixed-binding: 0 (no wrong/stale frob:tests directives found in scope)
+- added-test: 2 new tests
+  (test_cov006_silent_when_test_reaches_via_two_hop_wrapper_chain,
+  test_cov006_silent_when_wrapper_called_via_import_alias) proving the
+  two new rescue shapes, plus the checker fix itself resolved 11 of the
+  13 in-scope findings without any test/binding change (they were sound
+  bindings the old rescue simply couldn't see)
+- moved-doc-edge: 0 (COV006 is a frob:tests concern; no COV007 findings
+  are in T-0516's declared scope -- COV007 was explicitly out of scope
+  for this ticket's predecessor T-0483 too, and a separate calibration
+  ticket was filed for it rather than silently expanding scope)
+- waived-with-reason: 2 (one waiver comment covering both remaining
+  findings, since COV006 waivers match at FILE granularity, not per
+  finding -- see the second calibration ticket below):
+  - TestProcessPoolGates.test_process_job_runs_in_a_separate_process ->
+    _run_process_gate: genuinely indirect, the test submits
+    _run_process_gate to a ProcessPoolExecutor by function reference,
+    never by a name-call token in its own body
+  - TestGateOrderSetEquality.test_canonical_gate_order_matches_all_gates
+    -> _merge_canonical_order: a module-level-data set-equality invariant
+    with no call path to its consumer function (module constants have no
+    symref for the graph to track)
+- deferred-to-calibration: 59 COV006 findings outside T-0516's declared
+  scope files, entirely untriaged by this ticket (new ticket filed); plus
+  a distinct COV006-waiver-granularity design gap (new ticket filed)
+
+COV007 was never in T-0516's declared scope (title/body only mention
+COV006; its predecessor T-0483 explicitly scoped COV007 out too, "a
+different gate"). 130 COV007 findings remain repo-wide, untouched by this
+ticket -- a separate ticket was filed for that burndown rather than
+silently pulling it into T-0516's scope.
+
+Filed tickets (provisional ids, this worktree is off the default branch;
+renumbered at land):
+- T-draft-5b46101c: burn down residual 59 COV006 findings outside
+  gates/test_gates.py scope
+- T-draft-b728e11e: COV006 waiver granularity is file-scoped, not
+  symbol-scoped -- can silently over-waive (a real incident hit while
+  working this ticket: a waiver comment added for one finding silently
+  suppressed 5 unrelated, genuinely-broken import-alias findings in the
+  same file until the alias-resolution fix above made all 7 in that file
+  legitimately resolved or waived)
+- T-draft-9dbcee76: burn down 130 COV007 findings (frob:doc on private
+  symbols)
+
+Note: a prior attempt at this same fix earlier in this session used a
+`from frob.gates import test_gate as run_test_gate` -> plain `test_gate`
+rename in tests/test_gates.py to sidestep the alias-matching problem
+directly; that rename was WRONG and reverted -- pytest collects any
+imported `test_*`-named symbol into a module's namespace as its own test
+item, so the rename broke collection (`fixture 'snapshot' not found` on a
+phantom `test_gate` "test"). The import-alias resolution in the checker
+is the correct fix and does not touch the test file's existing alias.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/test_gates.py::TestCoverageGate::test_cov006_silent_when_test_reaches_via_two_hop_wrapper_chain` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCoverageGate::test_cov006_silent_when_wrapper_called_via_import_alias` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCoverageGate::test_cov006_silent_when_test_reaches_via_same_file_public_wrapper` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCoverageGate::test_cov006_still_fires_when_no_public_wrapper_reaches_the_target` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestProcessPoolGates::test_process_job_runs_in_a_separate_process` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestGateOrderSetEquality::test_canonical_gate_order_matches_all_gates` (pytest node id, verified passing when recorded)
 <!-- ticket:T-0517 -->
 ```yaml
 id: T-0517
@@ -4664,3 +4761,69 @@ acceptance: []
 threat: null
 ```
 found while working T-0494: T-0494 legitimately removed tests/test_dup_cross_lang.py::TestCrossLanguageCloneNotYetDetected::test_no_clone_group_at_any_threshold (its assertion, report.groups == (), is now FALSE at every threshold since T-0487's _KEYWORDS fix made R5 correctly fire cross-language for this fixture -- see T-0494's Done report and the new TestCrossLanguageR5NowFires class replacing it). This leaves T-0187 (1 evidence id) and T-0198 (5 evidence ids, one per threshold parametrization) in tickets-archive.md pointing at a test id that no longer exists, firing COV003 for both archived tickets on every frob check. Same shape as the T-0416/T-0472 precedent (evidence pointing at a removed/renamed test). Remedy: update T-0187's and T-0198's archived evidence lists to point at still-valid replacement ids (e.g. TestCrossLanguageR5NowFires::test_r5_group_fires_at_every_threshold[*] for the threshold-parametrized ones, or drop the stale id with a note that the original claim inverted) via the tickets CLI against tickets-archive.md. Out of T-0494's declared scope (scope=tests/test_dup_cross_lang.py, docs/modules/dup.md -- does not include editing OTHER tickets' archived evidence).
+
+<!-- ticket:T-draft-5b46101c -->
+```yaml
+id: T-draft-5b46101c
+title: burn down residual 59 COV006 findings outside gates/test_gates.py scope
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/**
+- tests/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0516 fixed the systematic COV006 FP class (two-hop private-helper chains through a same-file public wrapper, and Python import-alias name mismatches in the wrapper-reachability rescue), which dropped total repo COV006 findings from 90 to 61 (measured via frob check --only coverage on this worktree before/after). T-0516's declared scope was narrowly src/frob/gates/__init__.py + tests/test_gates.py, where all findings are now resolved (2 remaining, both legitimately waived: a ProcessPoolExecutor function-reference indirection and a module-level-data invariant test with no call path to its consumer). The other 59 COV006 findings live in test files/target modules entirely outside that scope (tests/unit/strata/*, tests/test_dup_region.py, tests/test_lang.py, tests/test_graph.py, tests/test_serve.py, tests/test_vet.py, tests/test_tickets.py, tests/system/*, frob-core/src/lib.rs bindings, etc.) and were never triaged by T-0516 -- each needs the same per-finding policy applied (fix wrong binding / add missing test call / waive with a real reason) with a fresh frob check --only coverage list, since some may already be resolved by T-0516's checker fix and need re-measuring before triage.
+
+<!-- ticket:T-draft-b728e11e -->
+```yaml
+id: T-draft-b728e11e
+title: COV006 waiver granularity is file-scoped, not symbol-scoped -- can silently
+  over-waive
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-21'
+priority: low
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/__init__.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Discovered while working T-0516: COV006 Violation objects carry no symref (file=test_file, line=0), so _match_waiver falls back to file-level matching for a frob:waive COV006 comment anywhere in that file -- ANY single COV006 waiver in a test file silently suppresses EVERY COV006 finding in that file, not just the one it was written next to. Verified directly: adding one waiver comment near one test in tests/test_gates.py suppressed all 7 COV006 findings then present in that file, including unrelated ones that were NOT sound (an import-alias false-positive that needed a real fix, not a waiver). Consider giving COV006 violations a symref (the test's own qualname) so _match_waiver can do symbol-exact matching the way most other rules do, instead of falling back to file-scope for a rule that very plausibly has multiple independent findings per file.
+
+<!-- ticket:T-draft-9dbcee76 -->
+```yaml
+id: T-draft-9dbcee76
+title: burn down 130 COV007 findings (frob:doc on private symbols)
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/**
+- docs/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+COV007 (frob:doc bound to a private symbol) currently has 130 warn-level findings repo-wide (measured via frob check --only coverage on this worktree), spread across src/frob/strata, src/frob/lang, src/frob/tickets, src/frob/dup, src/frob/graph, src/frob/app, etc. T-0483 explicitly scoped COV007 out of its own ticket ('COV007 unchanged at 126 -- out of scope for this ticket; a different gate') and T-0516 (COV006's successor) never took it on either -- no ticket has triaged this list yet. Per policy, most of these frob:doc edges on private helpers should move to the public caller they actually document (updating doc text if needed); a genuine minority may warrant a waive with a specific reason (private symbol IS the documented contract). This ticket exists so the 130-finding COV007 list gets the same per-finding triage COV006 got in T-0516, rather than being silently absorbed into an unrelated ticket's scope.

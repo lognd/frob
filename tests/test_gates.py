@@ -1036,6 +1036,68 @@ class TestCoverageGate:
         violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert _first_rule(violations, "COV006") is not None
 
+    def test_cov006_silent_when_test_reaches_via_two_hop_wrapper_chain(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0516: the T-0506 rescue only checked the wrapper's DIRECT
+        callees; a test that reaches its bound private target through a
+        public wrapper calling a private INTERMEDIATE helper (which then
+        calls the target) must also be rescued, not just the one-hop
+        wrapper-calls-target-directly shape."""
+        # frob:tests src/frob/gates/__init__.py::_cov006_public_wrapper_reachable
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def wrapper(x):\n"
+            "    return _middle(x)\n\n\n"
+            "def _middle(x):\n"
+            "    return _helper(x)\n\n\n"
+            "def _helper(x):\n"
+            "    return x\n",
+        )
+        _write(
+            tmp_path,
+            "tests/test_a.py",
+            "# frob:tests src/a.py::_helper\n"
+            "def test_wrapper_ok():\n"
+            "    assert wrapper(1) == 1\n",
+        )
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert not any(v.rule == "COV006" for v in violations)
+
+    def test_cov006_silent_when_wrapper_called_via_import_alias(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0516: a test that imports the public wrapper under a local
+        `as` alias (e.g. to dodge pytest collecting a `test_*`-prefixed
+        import as its own test item) and calls the ALIAS must still be
+        rescued -- the alias is resolved back to the wrapper's real short
+        name before matching."""
+        # frob:tests src/frob/gates/__init__.py::_cov006_public_wrapper_reachable
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def test_wrapper(x):\n    return _helper(x)\n\n\ndef _helper(x):\n    return x\n",
+        )
+        _write(
+            tmp_path,
+            "tests/test_a.py",
+            "from src.a import test_wrapper as run_wrapper\n\n"
+            "# frob:tests src/a.py::_helper\n"
+            "def test_alias_ok():\n"
+            "    assert run_wrapper(1) == 1\n",
+        )
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert not any(v.rule == "COV006" for v in violations)
+
     def test_cov006_never_fires_for_a_public_target(self, tmp_path: Path) -> None:
         """`build_call_graph` never records an edge to a PUBLIC callee, so
         checking a public target would ALWAYS look "unreachable" -- COV006
@@ -3244,6 +3306,21 @@ class TestProcessPoolGates:
     def test_process_job_runs_in_a_separate_process(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/__init__.py::_run_combined_jobs
         # frob:tests src/frob/gates/__init__.py::_run_process_gate
+        # frob:waive COV006 reason="two sound-but-invisible-to-the-name-\
+        # based-call-graph shapes in this file (T-0516): (1) this test \
+        # submits _run_process_gate to a ProcessPoolExecutor by function \
+        # reference (ppool.submit(_run_process_gate, ...)), not a \
+        # name-call token in the test's own body; (2) \
+        # test_canonical_gate_order_matches_all_gates below checks \
+        # _CANONICAL_GATE_ORDER/_ALL_GATES set-equality directly and never \
+        # calls _merge_canonical_order, the consumer whose correctness \
+        # that invariant protects -- module-level constants have no \
+        # symref for the graph to track. COV006 waivers match at file \
+        # granularity (no violation.symref), so one waiver here covers \
+        # both; do not add more COV006 findings to this file without \
+        # first re-checking whether they still deserve this waiver's \
+        # blanket reach, or split the waiver mechanism to be symbol-scoped \
+        # (see the T-0516 calibration ticket filed for this)"
         import os
 
         from frob.gates import _ProcessJob, _run_combined_jobs
