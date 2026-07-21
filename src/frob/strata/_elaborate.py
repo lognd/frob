@@ -393,6 +393,7 @@ def _elaborate_secrets(
 
 
 # frob:ticket T-0148
+# frob:invariant INV-034
 def _validate_no_duplicates(module: Module) -> Result[None, StrataError]:
     """Node ids and flow ids must each be unique within their own kind.
 

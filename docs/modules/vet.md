@@ -42,6 +42,8 @@ code cannot be vetted statically and is therefore trusted only by explicit
 declaration (`native = ["pydantic-core"]`); obfuscation signals are never
 declarable -- they are VET004 errors, full stop.
 
+<!-- frob:invariant INV-025 -->
+
 ## JavaScript/TypeScript: first-priority ecosystem
 
 npm is where the attack volume is (the 2024-2026 waves ran overwhelmingly

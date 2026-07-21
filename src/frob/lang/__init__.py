@@ -366,6 +366,7 @@ def _parse_strata_file(path: Path) -> Result[ParsedFile, LangError]:
 
 
 # frob:doc docs/modules/graph.md#public-api
+# frob:invariant INV-015
 def parse_file(path: Path) -> Result[ParsedFile, LangError]:
     """Read, parse, and extract `path` into a `ParsedFile` (dispatch by extension).
 

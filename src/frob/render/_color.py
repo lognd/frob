@@ -35,6 +35,7 @@ ColorFlag = Literal["auto", "always", "never"]
 
 # frob:ticket T-0448
 # frob:doc docs/modules/render.md#color-resolution
+# frob:invariant INV-020
 def resolve_color(
     stream: IO[str] | None = None,
     *,

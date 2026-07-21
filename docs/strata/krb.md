@@ -80,6 +80,8 @@ flow app_to_backend: app -> backend {
   (the safer default per charter law 2: a trust must be explicitly
   widened to two-way, never silently assumed bidirectional). Repeatable:
   a realm may trust more than one other realm.
+
+  <!-- frob:invariant INV-031 -->
 - `authenticates_via tgt|st` -- a `flow`-level clause marking that flow as
   crossing a Kerberos authentication boundary (a ticket-granting-ticket
   exchange or a service-ticket exchange). IDENT, closed to `tgt`/`st`

@@ -197,7 +197,11 @@ so both sub-targets now derive REAL findings from `HostManifest.group`/
 discipline every other sub-target follows: `shared-group` fires once per
 OS group two users' `group` tuples have in common; `sudoers` fires once
 per grant a user's `sudoers` tuple declares. A pair/user with no
-declared `group`/`sudoers` now correctly produces no finding. `setuid`
+declared `group`/`sudoers` now correctly produces no finding.
+
+<!-- frob:invariant INV-033 -->
+
+`setuid`
 needed no new grammar at all -- a 4-digit `owns "PATH" "4755"` mode
 already carries the setuid bit.
 

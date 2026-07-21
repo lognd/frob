@@ -2,6 +2,7 @@ import logging
 
 
 # frob:doc docs/modules/logging.md#public-api
+# frob:invariant INV-016
 class _BelowLevelFilter(logging.Filter):
     """Pass records strictly below `below` level (used to keep stdout clean)."""
 

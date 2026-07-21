@@ -472,6 +472,7 @@ def _fully_excluded_node_ids(model: KernelModel, root: Path) -> frozenset[str]:
     return frozenset(fully_excluded)
 
 
+# frob:invariant INV-026
 def _stale_design_violations(
     model: KernelModel, binding: CodeBinding, root: Path
 ) -> list[SelfConformViolation]:

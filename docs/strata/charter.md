@@ -1,6 +1,8 @@
 # strata -- charter
 
 <!-- frob:ticket T-0048 -->
+<!-- frob:waive INV003 reason="this page is the six-laws constitution for the whole strata language, not an individual enforced claim -- each law that is currently mechanically checked already binds its own invariant in the dedicated doc that implements it (docs/strata/kernel.md's elaboration-exhaustiveness INV, docs/strata/boundary.md's INV-027 no-hang check, docs/strata/selfconform.md's INV-026); duplicating those bindings here would misattribute the enforcement site. Law 3's 'overdue assumptions are gate failures' specifically is NOT yet wired into frob check (evaluate_claims flags an overdue assume in its detail text but stays verdict=ASSUMED, not a gate error) -- that gap is real design debt, not something to falsely bind as proven" -->
+<!-- frob:waive INV004 reason="same rationale as the INV003 waiver above: this is the cross-cutting charter, individual laws are bound at their enforcing site's own doc, and law 3's assumption-expiry gate wiring is acknowledged-incomplete rather than falsely claimed done" -->
 
 One sentence: strata is a deny-by-default system-design language, checked
 like code, in which every claim about a system -- security, freshness,

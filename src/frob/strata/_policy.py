@@ -76,6 +76,7 @@ def _resolve_scope(
     return Err(StrataError.UnknownReference)
 
 
+# frob:invariant INV-030
 def _resolve_trust_scope(
     value: str, model: KernelModel
 ) -> Result[tuple[str, ...], StrataError]:

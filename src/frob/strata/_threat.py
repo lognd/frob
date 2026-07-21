@@ -1288,6 +1288,7 @@ def _catalog_violation(view: str, cwe_id: str) -> ThreatViolation:
 
 
 # frob:doc docs/strata/threat.md#the-exhaustiveness-proof-the-point
+# frob:invariant INV-035
 def check_catalog_completeness(
     view: str,
     catalog: tuple[WeaknessEntry, ...] = CWE_CATALOG,
@@ -1731,6 +1732,7 @@ def _mitigation_is_chokepoint(
     return _claim_holds(_restricted_to_boundaries(model, matching, claim), claim)
 
 
+# frob:invariant INV-029
 def _check_discharge_shape_and_rung(
     entry: WeaknessEntry,
     node_id: str,

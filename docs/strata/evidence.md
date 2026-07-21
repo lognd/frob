@@ -22,6 +22,8 @@ Rules:
 - Every claim declares `require proof >= Ln` or inherits a minimum rung
   from its criticality. Evidence weaker than the required rung fails the
   SYS gate.
+
+  <!-- frob:invariant INV-029 -->
 - Every verdict records its quantifier; reports may never present
   exists-evidence as a guarantee.
 - Dropping below the required rung is only possible via an `assume` --

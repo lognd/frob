@@ -734,6 +734,7 @@ def _vertical_user_violations(
 
 
 # frob:doc docs/strata/host.md#movement-impossibility-proofs
+# frob:invariant INV-033
 def evaluate_vertical_isolation(
     model: KernelModel,
 ) -> Result[tuple[HostIsolationViolation, ...], StrataError]:
