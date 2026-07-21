@@ -3080,7 +3080,7 @@ entirely inside `src/frob/graph/dsl.py`, this ticket's declared scope:
   - (1) An unpaired `frob:debt` (no explicit co-located `frob:todo` at the
     same `src`) implicitly REGISTERS a synthesized `TODO` edge (target =
     the debt's own `ticket=` attribute, `attrs={"implicit": "debt"}`), so
-    the debt's payoff work is visible to every ordinary TODO-edge consumer
+    the debt's payoff work is visible to every ordinary todo-edge consumer
     with zero changes to `frob.gates` -- it flows straight into the
     existing `_todo002_edges` open-ticket check for free.
   - (2) Both directives already require an open ticket (DEBT002 reuses
@@ -3091,10 +3091,10 @@ entirely inside `src/frob/graph/dsl.py`, this ticket's declared scope:
     naming DIFFERENT tickets is a coherence error, surfaced by shaping the
     `MalformedDirective.reason` to contain the literal substring
     `"frob:debt"` -- DEBT001's existing `_debt001_violations` filter
-    (`if "frob:debt" not in md.reason: continue`) picks it up automatically,
-    so no new gate rule id and no `frob.gates` change was needed at all
-    (same "shape the malformed reason, reuse an established gate's
-    substring filter" pattern DEBT001/TEST010 already use).
+    picks it up automatically, so no new gate rule id and no
+    `frob.gates` change was needed at all (same "shape the malformed
+    reason, reuse an established gate's substring filter" pattern
+    DEBT001/TEST010 already use).
 
 Requirement (4) -- symmetric resolution surfacing of both the debt and
 the todo at ticket-close time -- is NOT implemented here: it is
@@ -3110,17 +3110,24 @@ implementation file, with no mirrored test path) to add the three
 regression tests below to the existing dsl.py test file rather than
 inventing a new untracked one.
 
-Gates: `uv run frob check --ticket T-0526 --json` -> 0 errors (568
+Correction mid-pass: the new module comment's prose used the bare word
+"TODO" (e.g. "TODO002"), which TODO001's bare-comment scanner flagged as
+an unbound TODO; reworded to drop the literal word while keeping the
+same explanation (see the follow-up commit).
+
+Gates: `uv run frob check --ticket T-0526 --json` -> 0 errors (566
 pre-existing warnings/118 waivers repo-wide, unrelated to this ticket's
-touched files). `ruff check`/`ruff format --check` clean on both touched
-files under both the PATH `ruff` and `uv run ruff`.
+touched files; gate:TODO clean after the reword). `ruff check`/`ruff
+format --check` clean on both touched files under both the PATH `ruff`
+and `uv run ruff`. `uv run pytest tests/unit/graph/test_dsl.py -q` -> 20
+passed.
 
 ### Changed
 ```
  src/frob/graph/dsl.py        | 97 ++++++++++++++++++++++++++++++++++++++++++++
  tests/unit/graph/test_dsl.py | 57 ++++++++++++++++++++++++++
- tickets.md                   | 88 +++++++++++++++++++++++++++++++++++++++-
- 3 files changed, 240 insertions(+), 2 deletions(-)
+ tickets.md                   | 95 +++++++++++++++++++++++++++++++++++++++++--
+ 3 files changed, 246 insertions(+), 3 deletions(-)
 ```
 
 ### Evidence
