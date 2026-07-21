@@ -776,9 +776,7 @@ class TestCoverageGate:
             }
         )
         diff = Diff(base="x", hunks=())
-        tests = CollectedTests(
-            node_ids=frozenset({node, "tests/test_vet.py::test_b"})
-        )
+        tests = CollectedTests(node_ids=frozenset({node, "tests/test_vet.py::test_b"}))
         violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert not any(v.rule == "COV003" for v in violations)
 
