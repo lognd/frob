@@ -3326,6 +3326,8 @@ evidence:
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 T-0524 measured 128 COV007 findings repo-wide (`frob check --only
 coverage`, this worktree). Triaged and dispositioned 36 across 5 batches
@@ -3482,53 +3484,53 @@ errors (COV: 0 errors, 3 warnings, 72 waived).
 
 ### Changed
 ```
- src/frob/app/check_runner.py      |   1 -
- src/frob/check/_python.py         |   2 -
- src/frob/dup/_cache.py            |   1 -
- src/frob/dup/_pipeline.py         |   3 +
- src/frob/excludes.py              |   2 -
- src/frob/gates/__init__.py        | 520 +++++++++++++++++++++++++++++++++++++-
- src/frob/gates/_pii_structural.py |   4 +
- src/frob/gates/_prework.py        |   3 -
- src/frob/gates/_secrets.py        |   7 +
- src/frob/gates/decisions.py       |   4 +
- src/frob/gates/invariants.py      |   3 +
- src/frob/graph/digest.py          |   9 +
- src/frob/graph/dsl.py             |   1 -
- src/frob/lang/__init__.py         |   1 -
- src/frob/lang/_walk_python.py     |   1 -
- src/frob/logging/filter.py        |   4 +
- src/frob/logging/formatter.py     |   4 +
- src/frob/strata/_ast.py           |   3 -
- src/frob/strata/_claims.py        |  20 ++
- src/frob/strata/_code_binding.py  |   1 -
- src/frob/strata/_facts.py         |   1 +
- src/frob/strata/_host.py          |   1 -
- src/frob/strata/_krb.py           |   1 -
- src/frob/strata/_plan.py          |   4 -
- src/frob/strata/_selfconform.py   |   2 -
- src/frob/strata/_threat.py        |   2 -
- src/frob/strata/_waive.py         |   3 -
- src/frob/testing/_runners.py      |   3 -
- src/frob/tickets/_land.py         |   1 -
- src/frob/tickets/_models.py       |   4 -
- src/frob/tickets/_reconcile.py    |   1 -
- src/frob/tickets/_store.py        |  14 +-
- src/frob/vet/_allow.py            |   3 +
- src/frob/vet/_cache.py            |   6 +
- src/frob/vet/_capability.py       |  13 +-
- src/frob/vet/_containment.py      |   1 -
- src/frob/vet/_ecosystem.py        |   9 +
- src/frob/vet/_lifecycle.py        |   3 +
- src/frob/vet/_lockfile.py         |   9 +
- src/frob/vet/_models.py           |   3 +
- src/frob/vet/_obfuscation.py      |  15 ++
- src/frob/vet/_osv.py              |   6 +
- src/frob/vet/_registry.py         |   6 +
- src/frob/vet/_source.py           |  12 +
- src/frob/vet/_typosquat.py        |   6 +
- tickets.md                        | 127 +++++++++-
- 46 files changed, 797 insertions(+), 53 deletions(-)
+ src/frob/app/check_runner.py      |    1 -
+ src/frob/check/_python.py         |    2 -
+ src/frob/dup/_cache.py            |    1 -
+ src/frob/dup/_pipeline.py         |    3 +
+ src/frob/excludes.py              |    2 -
+ src/frob/gates/__init__.py        |  520 +++++++++++-
+ src/frob/gates/_pii_structural.py |    4 +
+ src/frob/gates/_prework.py        |    3 -
+ src/frob/gates/_secrets.py        |    7 +
+ src/frob/gates/decisions.py       |    4 +
+ src/frob/gates/invariants.py      |    3 +
+ src/frob/graph/digest.py          |    9 +
+ src/frob/graph/dsl.py             |    1 -
+ src/frob/lang/__init__.py         |    1 -
+ src/frob/lang/_walk_python.py     |    1 -
+ src/frob/logging/filter.py        |    4 +
+ src/frob/logging/formatter.py     |    4 +
+ src/frob/strata/_ast.py           |    3 -
+ src/frob/strata/_claims.py        |   20 +
+ src/frob/strata/_code_binding.py  |    1 -
+ src/frob/strata/_facts.py         |    1 +
+ src/frob/strata/_host.py          |    1 -
+ src/frob/strata/_krb.py           |    1 -
+ src/frob/strata/_plan.py          |    4 -
+ src/frob/strata/_selfconform.py   |    2 -
+ src/frob/strata/_threat.py        |    2 -
+ src/frob/strata/_waive.py         |    3 -
+ src/frob/testing/_runners.py      |    3 -
+ src/frob/tickets/_land.py         |    1 -
+ src/frob/tickets/_models.py       |    4 -
+ src/frob/tickets/_reconcile.py    |    1 -
+ src/frob/tickets/_store.py        |   14 +-
+ src/frob/vet/_allow.py            |    3 +
+ src/frob/vet/_cache.py            |    6 +
+ src/frob/vet/_capability.py       |   13 +-
+ src/frob/vet/_containment.py      |    1 -
+ src/frob/vet/_ecosystem.py        |    9 +
+ src/frob/vet/_lifecycle.py        |    3 +
+ src/frob/vet/_lockfile.py         |    9 +
+ src/frob/vet/_models.py           |    3 +
+ src/frob/vet/_obfuscation.py      |   15 +
+ src/frob/vet/_osv.py              |    6 +
+ src/frob/vet/_registry.py         |    6 +
+ src/frob/vet/_source.py           |   12 +
+ src/frob/vet/_typosquat.py        |    6 +
+ tickets.md                        | 1569 ++++++-------------------------------
+ 46 files changed, 921 insertions(+), 1371 deletions(-)
 ```
 
 ### Evidence
