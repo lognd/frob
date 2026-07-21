@@ -4972,7 +4972,14 @@ suppresses; no `[[docblocks.commands]]` entries means no console checking
 at all -- all five as automated tests in tests/test_gates.py.
 
 ### Changed
-(no changed files detected)
+```
+ docs/modules/gates.md        |  35 +++++--
+ frob.toml                    |  12 +++
+ src/frob/gates/_docblocks.py | 239 +++++++++++++++++++++++++++++++++++++++++--
+ tests/test_gates.py          | 104 +++++++++++++++++++
+ tickets.md                   |  47 ++++++++-
+ 5 files changed, 418 insertions(+), 19 deletions(-)
+```
 
 ### Evidence
 - `tests/test_gates.py::TestDoc004ConsoleCommandDrift::test_nonexistent_subcommand_is_stale` (pytest node id, verified passing when recorded)
