@@ -3463,7 +3463,7 @@ THE META-GAP (per the standing rule: frobs own perf stupidity is a frob detectio
 id: T-0416
 title: strata _sorted_py_files pruned walk now prunes nested git checkouts not covered
   by exclude globs (T-0414 caveat)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-07-20'
