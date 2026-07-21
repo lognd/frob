@@ -5825,6 +5825,7 @@ unintended deletions from the merge).
 - `tests/unit/strata/test_audit.py::TestExhaustiveness::test_default_run_discloses_narrower_than_baseline` (pytest node id, verified passing when recorded)
 - `tests/unit/strata/test_audit.py::TestExhaustiveness::test_explicit_full_security_views_clears_the_disclosure` (pytest node id, verified passing when recorded)
 - `tests/unit/strata/test_audit.py::TestGroupGaps::test_group_gaps_by_view` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0513 -->
 ```yaml
 id: T-0513
@@ -5963,6 +5964,7 @@ returning `None`.
 - `tests/unit/strata/test_native_staleness.py::TestStaleNatives::test_real_rebuild_after_edit_is_not_a_false_positive` (pytest node id, verified passing when recorded)
 - `tests/unit/strata/test_native_staleness.py::TestStaleNatives::test_fresh_native_reports_nothing` (pytest node id, verified passing when recorded)
 - `tests/unit/strata/test_native_staleness.py::TestStaleNatives::test_reports_native_grammar_ahead_of_native` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0514 -->
 ```yaml
 id: T-0514
@@ -6693,9 +6695,9 @@ acceptance: []
 threat: null
 ```
 
-<!-- ticket:T-draft-f7c534ab -->
+<!-- ticket:T-0527 -->
 ```yaml
-id: T-draft-f7c534ab
+id: T-0527
 title: SCOPE001 cross-ticket exemption breaks on a plain merge commit with no ticket
   reference
 state: queued
