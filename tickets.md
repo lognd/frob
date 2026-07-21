@@ -7155,7 +7155,7 @@ closer per the dispatch note rather than forced.
 id: T-0483
 title: 'COV: frob:tests evidence with no call-graph reachability to bound symbol,
   and frob:doc anchors on private helpers'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-07-20'
