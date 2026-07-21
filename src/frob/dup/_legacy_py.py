@@ -88,10 +88,12 @@ def _harvest_binding_stmt(child_node: Node, out: set[str]) -> None:
             _harvest_pattern(left, out)
         body = child_node.child_by_field_name("body")
         if body:
+            # frob:invariant terminates reason="body is child_node's own 'body' field child, a proper descendant in the finite tree-sitter parse tree" measure="child_node's subtree depth strictly decreases"  # noqa: E501
             _collect_assigned_names(body, out)
     elif t == "with_statement":
         _harvest_with(child_node, out)
     elif t in ("if_statement", "while_statement", "try_statement", "block", "suite"):
+        # frob:invariant terminates reason="child_node is a proper descendant of the node whose .children were iterated by the caller (_collect_assigned_names), a finite tree-sitter parse tree" measure="child_node's subtree depth strictly decreases"  # noqa: E501
         _collect_assigned_names(child_node, out)
 
 
@@ -130,12 +132,14 @@ def _harvest_with(child_node: Node, out: set[str]) -> None:
                     _harvest_with_item(sub, out)
     body = child_node.child_by_field_name("body")
     if body:
+        # frob:invariant terminates reason="body is child_node's own 'body' field child, a proper descendant in the finite tree-sitter parse tree" measure="child_node's subtree depth strictly decreases"  # noqa: E501
         _collect_assigned_names(body, out)
 
 
 def _collect_assigned_names(node: Node, out: set[str]) -> None:
     """Walk the body and harvest assignment/for/with binding names."""
     for c in node.children:
+        # frob:invariant terminates reason="c ranges over node's children, each a proper descendant in the finite tree-sitter parse tree; mutually recurses with _harvest_binding_stmt, which only descends into field/child nodes of its argument" measure="node's subtree depth strictly decreases"  # noqa: E501
         _harvest_binding_stmt(c, out)
 
 
@@ -145,6 +149,7 @@ def _harvest_pattern(node: Node, out: set[str]) -> None:
         out.add(_node_text(node))
     else:
         for c in node.named_children:
+            # frob:invariant terminates reason="c ranges over node's named_children, each a proper descendant in the finite tree-sitter parse tree" measure="node's subtree depth strictly decreases"  # noqa: E501
             _harvest_pattern(c, out)
 
 

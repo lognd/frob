@@ -199,6 +199,7 @@ def _dispatch(ctx: _Ctx, node: Node, stack: tuple[str, ...], cur_access: str) ->
             symbol, body, default_access = built
             ctx.symbols.append(symbol)
             name = child_text(node.child_by_field_name("name"))
+            # frob:invariant terminates reason="body is node's own 'body' field child, and node is itself a proper descendant of the container passed to the caller's _visit; both mutually recurse only by descending into a field/child of the finite tree-sitter parse tree" measure="container's subtree depth strictly decreases"  # noqa: E501
             _visit(ctx, body, (*stack, name), default_access)
     elif node.type == "enum_specifier":
         _append(ctx, _enum_symbol(ctx, node, stack, doc))
@@ -215,6 +216,7 @@ def _recurse_namespace(ctx: _Ctx, node: Node, stack: tuple[str, ...]) -> None:
     name = child_text(node.child_by_field_name("name"))
     body = node.child_by_field_name("body")
     if body is not None:
+        # frob:invariant terminates reason="body is node's own 'body' field child, and node is itself a proper descendant of the container passed to the caller's _visit" measure="container's subtree depth strictly decreases"  # noqa: E501
         _visit(ctx, body, (*stack, name) if name else stack, "public")
 
 

@@ -158,6 +158,7 @@ def _visit(container: Node, stack: tuple[str, ...], symbols: list[RawSymbol]) ->
             if built is not None:
                 symbol, body, name = built
                 symbols.append(symbol)
+                # frob:invariant terminates reason="body is derived from node's class body field by _class_symbol, and node is a child of container, so body is a proper descendant of container in the finite tree-sitter parse tree" measure="container's subtree depth strictly decreases"  # noqa: E501
                 _visit(body, (*stack, name), symbols)
         elif node.type == "method_definition" and stack:
             _append(symbols, _method_symbol(node, raw_child, stack, doc))

@@ -59,11 +59,13 @@ class RenderWriter:
     # frob:doc docs/modules/render.md#renderer
     def heading(self, text: str) -> None:
         """Emit a top-level section heading."""
+        # frob:invariant terminates reason="not actual recursion: this call resolves to the module-level frob.render._elements.heading imported above, a distinct function with the same name, never RenderWriter.heading itself" measure="not recursive; call depth is fixed at 1"  # noqa: E501
         self._emit(heading(text, color=self.color))
 
     # frob:doc docs/modules/render.md#renderer
     def subhead(self, text: str) -> None:
         """Emit a secondary section heading."""
+        # frob:invariant terminates reason="not actual recursion: this call resolves to the module-level frob.render._elements.subhead imported above, a distinct function with the same name, never RenderWriter.subhead itself" measure="not recursive; call depth is fixed at 1"  # noqa: E501
         self._emit(subhead(text, color=self.color))
 
     # frob:doc docs/modules/render.md#renderer
@@ -84,6 +86,7 @@ class RenderWriter:
     # frob:doc docs/modules/render.md#renderer
     def count_summary(self, counts: Mapping[str, int]) -> None:
         """Emit a `key=n, key=n` rollup line."""
+        # frob:invariant terminates reason="not actual recursion: this call resolves to the module-level frob.render._elements.count_summary imported above, a distinct function with the same name, never RenderWriter.count_summary itself" measure="not recursive; call depth is fixed at 1"  # noqa: E501
         self._emit(count_summary(counts, color=self.color))
 
     # frob:doc docs/modules/render.md#renderer
@@ -104,21 +107,25 @@ class RenderWriter:
     # frob:doc docs/modules/render.md#renderer
     def good(self, text: str) -> None:
         """Emit `text` painted `good` -- a passed check or healthy state."""
+        # frob:invariant terminates reason="not actual recursion: this call resolves to the module-level frob.render._palette.good imported above, a distinct function with the same name, never RenderWriter.good itself" measure="not recursive; call depth is fixed at 1"  # noqa: E501
         self._emit(good(text, self.color))
 
     # frob:doc docs/modules/render.md#renderer
     def warn(self, text: str) -> None:
         """Emit `text` painted `warn` -- a degraded-but-not-broken state."""
+        # frob:invariant terminates reason="not actual recursion: this call resolves to the module-level frob.render._palette.warn imported above, a distinct function with the same name, never RenderWriter.warn itself" measure="not recursive; call depth is fixed at 1"  # noqa: E501
         self._emit(warn(text, self.color))
 
     # frob:doc docs/modules/render.md#renderer
     def critical(self, text: str) -> None:
         """Emit `text` painted `critical` -- a failed check or error."""
+        # frob:invariant terminates reason="not actual recursion: this call resolves to the module-level frob.render._palette.critical imported above, a distinct function with the same name, never RenderWriter.critical itself" measure="not recursive; call depth is fixed at 1"  # noqa: E501
         self._emit(critical(text, self.color))
 
     # frob:doc docs/modules/render.md#renderer
     def muted(self, text: str) -> None:
         """Emit `text` painted `muted` -- secondary/low-priority context."""
+        # frob:invariant terminates reason="not actual recursion: this call resolves to the module-level frob.render._palette.muted imported above, a distinct function with the same name, never RenderWriter.muted itself" measure="not recursive; call depth is fixed at 1"  # noqa: E501
         self._emit(muted(text, self.color))
 
 

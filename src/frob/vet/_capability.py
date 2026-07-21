@@ -756,6 +756,7 @@ def _resolve_py_expr(
     if node.type == "identifier":
         return _resolve_py_identifier(node, import_table, scope_cache, alias_table)
     if node.type == "attribute":
+        # frob:invariant terminates reason="mutually recurses with _resolve_py_attribute, which only calls back here with node.child_by_field_name('object'), a proper descendant of node in the finite tree-sitter parse tree" measure="node's subtree depth strictly decreases"  # noqa: E501
         return _resolve_py_attribute(node, import_table, scope_cache, alias_table)
     return None
 
@@ -793,6 +794,7 @@ def _resolve_py_attribute(
     attr = node.child_by_field_name("attribute")
     if obj is None or attr is None:
         return None
+    # frob:invariant terminates reason="obj is node's own 'object' field child, a proper descendant of node in the finite tree-sitter parse tree; mutually recurses with _resolve_py_expr, which only descends into the 'attribute' branch by calling back here" measure="node's subtree depth strictly decreases"  # noqa: E501
     resolved_obj = _resolve_py_expr(obj, import_table, scope_cache, alias_table)
     if resolved_obj is None:
         return None
@@ -1586,6 +1588,7 @@ def _resolve_ts_subscript(
     index = node.child_by_field_name("index")
     if obj is None or index is None:
         return None
+    # frob:invariant terminates reason="obj is node's own 'object' field child, a proper descendant of node in the finite tree-sitter parse tree; mutually recurses with _resolve_ts_expr, which only descends into the subscript/member branches by calling back here" measure="node's subtree depth strictly decreases"  # noqa: E501
     resolved_obj = _resolve_ts_expr(obj, import_table, scope_cache)
     if resolved_obj is None:
         return None
@@ -1605,6 +1608,7 @@ def _resolve_ts_member(
     prop = node.child_by_field_name("property")
     if obj is None or prop is None:
         return None
+    # frob:invariant terminates reason="obj is node's own 'object' field child, a proper descendant of node in the finite tree-sitter parse tree; mutually recurses with _resolve_ts_expr, which only descends into the subscript/member branches by calling back here" measure="node's subtree depth strictly decreases"  # noqa: E501
     resolved_obj = _resolve_ts_expr(obj, import_table, scope_cache)
     if resolved_obj is None:
         return None
@@ -1632,8 +1636,10 @@ def _resolve_ts_expr(
             return None
         return import_table.get(name)
     if node.type == "member_expression":
+        # frob:invariant terminates reason="mutually recurses with _resolve_ts_member, which only calls back here with node.child_by_field_name('object'), a proper descendant of node in the finite tree-sitter parse tree" measure="node's subtree depth strictly decreases"  # noqa: E501
         return _resolve_ts_member(node, import_table, scope_cache)
     if node.type == "subscript_expression":
+        # frob:invariant terminates reason="mutually recurses with _resolve_ts_subscript, which only calls back here with node.child_by_field_name('object'), a proper descendant of node in the finite tree-sitter parse tree" measure="node's subtree depth strictly decreases"  # noqa: E501
         return _resolve_ts_subscript(node, import_table, scope_cache)
     if node.type == "call_expression":
         # T-0377 reviewer round 2: an INLINE `require('x')['fn']`/
@@ -2568,11 +2574,16 @@ def _c_declared_name(node) -> str | None:  # noqa: ANN001
     `pointer_declarator` -> `identifier`) resolves to `"system3"`. `None`
     for a declarator shape with no reachable identifier (e.g. an abstract
     declarator)."""
-    if node is None:
-        return None
-    if node.type == "identifier":
-        return node_text(node)
-    return _c_declared_name(node.child_by_field_name("declarator"))
+    # PERF006: rewritten from tail recursion to an explicit loop -- Python
+    # has no TCO, and the walk depth tracks a declarator chain's nesting
+    # (pointer/array/init/reference wrappers), which is not statically
+    # bounded, so a loop removes the stack-overflow hazard outright rather
+    # than merely proving a depth bound.
+    while node is not None:
+        if node.type == "identifier":
+            return node_text(node)
+        node = node.child_by_field_name("declarator")
+    return None
 
 
 def _c_collect_declaration_names(node, position: int, bound: dict[str, int]) -> None:  # noqa: ANN001

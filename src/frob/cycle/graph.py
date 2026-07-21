@@ -53,6 +53,7 @@ class _TarjanState:
 
         for w in self.graph.neighbors(v):
             if w not in self.index:
+                # frob:invariant terminates reason="each recursive call marks w in self.index before descending, and only unindexed w reach the call" measure="len(self.graph.nodes) - len(self.index) strictly decreases each call"  # noqa: E501
                 self._strongconnect(w)
                 self.lowlink[v] = min(self.lowlink[v], self.lowlink[w])
             elif w in self.on_stack:

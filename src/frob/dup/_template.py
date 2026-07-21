@@ -62,6 +62,7 @@ def _render_subtree(
     children = _children_of(parents, index)
     if not children:
         return labels[index]
+    # frob:invariant terminates reason="c ranges over children of index in a `(labels, parents)` node array built by flatten_tree from a real (acyclic, finite) AST/parse-tree subtree, so each c is a proper descendant of index, never index itself" measure="the subtree rooted at index has strictly fewer nodes than the subtree rooted at its parent; bounded below by a single leaf node"  # noqa: E501
     rendered = ", ".join(_render_subtree(labels, parents, c) for c in children)
     return f"{labels[index]}({rendered})"
 

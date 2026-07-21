@@ -53,9 +53,11 @@ def _harvest_cpp_declarator_name(node: Node, out: set[str]) -> None:
     ):
         inner = node.child_by_field_name("declarator")
         if inner:
+            # frob:invariant terminates reason="inner is node's own 'declarator' field child, a proper descendant in the finite tree-sitter parse tree" measure="node's subtree depth strictly decreases"  # noqa: E501
             _harvest_cpp_declarator_name(inner, out)
     else:
         for c in node.named_children:
+            # frob:invariant terminates reason="c ranges over node's named_children, each a proper descendant in the finite tree-sitter parse tree" measure="node's subtree depth strictly decreases"  # noqa: E501
             _harvest_cpp_declarator_name(c, out)
 
 
@@ -76,6 +78,7 @@ def _collect_assigned_names_cpp(node: Node, out: set[str]) -> None:
             "compound_statement",
             "try_statement",
         ):
+            # frob:invariant terminates reason="c ranges over node's named_children, each a proper descendant in the finite tree-sitter parse tree; mutually recurses with _harvest_cpp_for below, which also only descends into init/body children" measure="node's subtree depth strictly decreases"  # noqa: E501
             _collect_assigned_names_cpp(c, out)
 
 
@@ -83,9 +86,11 @@ def _harvest_cpp_for(node: Node, out: set[str]) -> None:
     """Harvest binding names from a C++ for-loop's initializer and body."""
     init = node.child_by_field_name("initializer")
     if init:
+        # frob:invariant terminates reason="init is node's own 'initializer' field child, a proper descendant in the finite tree-sitter parse tree" measure="node's subtree depth strictly decreases"  # noqa: E501
         _collect_assigned_names_cpp(init, out)
     body = node.child_by_field_name("body")
     if body:
+        # frob:invariant terminates reason="body is node's own 'body' field child, a proper descendant in the finite tree-sitter parse tree" measure="node's subtree depth strictly decreases"  # noqa: E501
         _collect_assigned_names_cpp(body, out)
 
 
@@ -182,4 +187,5 @@ def _iter_functions_cpp(root_node: Node) -> Iterator[tuple[Node, str]]:
             symbol = f"{class_name}.{func_name}" if class_name else func_name
             yield root_node, symbol
     for c in root_node.named_children:
+        # frob:invariant terminates reason="c ranges over root_node's named_children, each a proper descendant in the finite tree-sitter parse tree" measure="root_node's subtree depth strictly decreases"  # noqa: E501
         yield from _iter_functions_cpp(c)

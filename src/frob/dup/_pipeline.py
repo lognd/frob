@@ -565,6 +565,7 @@ def _substitute_calls(
     i = 0
     n = len(tokens)
     while i < n:
+        # frob:invariant terminates reason="mutually recurses with _substitute_calls only through _splice_call_site, which increments depth and decrements budget[0] on every recursive descent; this call itself is a plain token scan, not a recursive step" measure="state.cfg.inline_max_depth - depth strictly decreases across the mutual-recursion chain, and budget[0] is checked >0 at each entry"  # noqa: E501
         spliced = _splice_call_site(
             state, tokens, i, name_map, visited, caller_counts, budget, depth
         )
@@ -613,6 +614,7 @@ def _splice_call_site(
         return None
     budget[0] -= 1
     callee_path = callee_symref.split("::", 1)[0]
+    # frob:invariant terminates reason="_substitute_calls checks 'depth >= state.cfg.inline_max_depth or budget[0] <= 0' and returns immediately without recursing once either bound is hit; depth+1 is passed here and budget[0] was decremented above" measure="state.cfg.inline_max_depth - depth strictly decreases each recursive descent, bounded below by 0"  # noqa: E501
     substituted = _substitute_calls(
         state,
         callee_path,
@@ -1943,6 +1945,7 @@ def _smt_translate(node: Any, z3: Any, env: dict[str, Any]) -> Any:
     import ast as _ast
 
     if isinstance(node, _ast.IfExp):
+        # frob:invariant terminates reason="node.test/body/orelse are node's own AST fields, each a proper descendant node in the finite Python ast tree produced by ast.parse; _smt_translate_simple and its helpers (_smt_unaryop/_smt_binop/_smt_boolop/_smt_compare) mutually recurse the same way, only ever descending into a field of their argument" measure="node's ast subtree depth strictly decreases"  # noqa: E501
         return z3.If(
             _smt_translate(node.test, z3, env),
             _smt_translate(node.body, z3, env),

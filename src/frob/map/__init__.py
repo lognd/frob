@@ -165,6 +165,7 @@ def _walk(
             out.append(child)
         elif child.is_dir():
             if max_depth is None or current_depth < max_depth:
+                # frob:invariant terminates reason="child is a strict subdirectory of current on the real filesystem tree (no symlink traversal here), and current_depth is bounded above by max_depth when given" measure="max_depth is not None: max_depth - current_depth strictly decreases; max_depth is None: bounded by the finite depth of the real directory tree"  # noqa: E501
                 _walk(root, child, current_depth + 1, max_depth, out)
 
 

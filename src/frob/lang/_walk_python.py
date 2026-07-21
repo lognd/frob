@@ -171,6 +171,7 @@ def _visit(container: Node, stack: tuple[str, ...], symbols: list[RawSymbol]) ->
                 continue
             name = child_text(node.child_by_field_name("name"))
             symbols.append(_class_symbol(node, sig_node, stack, name, body))
+            # frob:invariant terminates reason="body is node's own 'body' field child, and node is a child of container, so body is a proper descendant of container in the finite tree-sitter parse tree" measure="container's subtree depth strictly decreases"  # noqa: E501
             _visit(body, (*stack, name), symbols)
         elif node.type in ("expression_statement", "assignment") and not stack:
             const = _const_symbol(node)
@@ -203,6 +204,7 @@ def _docstring_nodes(container: Node) -> list[Node]:
         if node.type in _DEF_TYPES:
             body = node.child_by_field_name("body")
             if body is not None:
+                # frob:invariant terminates reason="body is node's own 'body' field child, and node is a child of container, so body is a proper descendant of container in the finite tree-sitter parse tree" measure="container's subtree depth strictly decreases"  # noqa: E501
                 nodes.extend(_docstring_nodes(body))
     return nodes
 

@@ -206,6 +206,7 @@ def _recurse_trait(
     body = node.child_by_field_name("body")
     if body is not None:
         name = child_text(node.child_by_field_name("name"))
+        # frob:invariant terminates reason="body is node's own 'body' field child, and node is a child of the container passed to the caller's _visit, so body is a proper descendant of that container in the finite tree-sitter parse tree" measure="container's subtree depth strictly decreases"  # noqa: E501
         _visit(body, (*stack, name), symbols, in_impl=True)
 
 
@@ -214,6 +215,7 @@ def _recurse_impl(node: Node, stack: tuple[str, ...], symbols: list[RawSymbol]) 
     name = child_text(node.child_by_field_name("type"))
     body = node.child_by_field_name("body")
     if body is not None:
+        # frob:invariant terminates reason="body is node's own 'body' field child, and node is a child of the container passed to the caller's _visit, so body is a proper descendant of that container in the finite tree-sitter parse tree" measure="container's subtree depth strictly decreases"  # noqa: E501
         _visit(
             body,
             (*stack, name),
@@ -230,6 +232,7 @@ def _recurse_mod(
     name = child_text(node.child_by_field_name("name"))
     body = node.child_by_field_name("body")
     if body is not None:
+        # frob:invariant terminates reason="body is node's own 'body' field child, and node is a child of the container passed to the caller's _visit, so body is a proper descendant of that container in the finite tree-sitter parse tree" measure="container's subtree depth strictly decreases"  # noqa: E501
         _visit(body, (*stack, name), symbols, in_impl)
 
 
