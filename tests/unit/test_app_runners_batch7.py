@@ -550,8 +550,7 @@ class TestTicketRequeue:
             caplog.text
         )
         assert (
-            load_queue(tmp_path).danger_ok.tickets["T-0001"].state
-            == TicketState.QUEUED
+            load_queue(tmp_path).danger_ok.tickets["T-0001"].state == TicketState.QUEUED
         )
 
     def test_requeue_not_in_progress_exits_1(self, tmp_path: Path, caplog) -> None:
