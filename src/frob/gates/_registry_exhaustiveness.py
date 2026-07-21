@@ -376,7 +376,9 @@ def _load_registry_files(
         if not path.exists():
             continue
         rel_path = (
-            str(path.relative_to(repo_root)) if _is_relative(path, repo_root) else str(path)
+            str(path.relative_to(repo_root))
+            if _is_relative(path, repo_root)
+            else str(path)
         )
         data = _load_yaml_file(path)
         if data is None:
@@ -431,7 +433,9 @@ def _classify_all_entries(
                     continue
                 entry_id = entry["id"]
                 disposition = _entry_disposition(entry)
-                outcome = _classify(entry_id, disposition, known_rules, all_ids_frozen, queue)
+                outcome = _classify(
+                    entry_id, disposition, known_rules, all_ids_frozen, queue
+                )
                 if outcome is None:
                     continue
                 rule, message = outcome

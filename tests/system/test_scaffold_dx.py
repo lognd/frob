@@ -28,7 +28,8 @@ def _uv_available() -> bool:
 
 
 def _subprocess_env() -> dict[str, str]:
-    """Parent env minus VIRTUAL_ENV/UV_PROJECT_ENVIRONMENT.
+    """Parent env minus VIRTUAL_ENV/UV_PROJECT_ENVIRONMENT and the
+    COVERAGE_* measurement vars.
 
     This test suite itself runs under `uv run pytest` inside frob's own
     dev venv, which sets VIRTUAL_ENV -- inherited by every subprocess.run
@@ -37,10 +38,20 @@ def _subprocess_env() -> dict[str, str]:
     typecheck against frob's dependencies (missing `dotenv`, etc.)
     instead of the freshly scaffolded project's. A real terminal driving
     `make check` never has this var set, so strip it to match.
+
+    COVERAGE_PROCESS_START is the same hazard: under `make coverage` it
+    points at FROB's pyproject (branch = true), and the scaffolded
+    project runs its own statement-mode coverage. Leaking it makes the
+    demo's subprocesses record branch data into the demo's own data
+    files, and its `combine` then dies with "Can't combine branch
+    coverage data with statement data" -- a failure entirely manufactured
+    by the parent's measurement setup.
     """
     env = os.environ.copy()
     env.pop("VIRTUAL_ENV", None)
     env.pop("UV_PROJECT_ENVIRONMENT", None)
+    env.pop("COVERAGE_PROCESS_START", None)
+    env.pop("COVERAGE_FILE", None)
     return env
 
 
