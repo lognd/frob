@@ -370,10 +370,10 @@ def _resolve_block_srcs(comments: tuple[RawComment, ...], path: str) -> dict[int
 # suppression: (1) a `frob:debt` at a site with no co-located explicit
 # `frob:todo` implicitly REGISTERS one -- same `src`, target is the debt's
 # own `ticket=` attribute -- so the debt's payoff work appears in every
-# ordinary TODO-edge consumer (TODO002's open-ticket check, `frob todo`-
-# style listings) for free, with no separate DEBT<->TODO wiring anywhere
-# else. (2) both directives already require an open ticket today (DEBT002
-# reuses the same open-ticket check TODO002 applies to `frob:todo`, per
+# ordinary todo-edge consumer (the "002" open-ticket check, `frob todo`-
+# style listings) for free, with no separate debt/todo wiring anywhere
+# else. (2) both directives already require an open ticket today (the
+# debt check reuses the same open-ticket check the todo gate applies, per
 # T-0412's Done report), so an implicit registration is just as enforced
 # as an explicit one. (3) a `frob:debt` and an EXPLICIT co-located
 # `frob:todo` naming DIFFERENT tickets is a coherence error: reusing
