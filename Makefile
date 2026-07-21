@@ -2,8 +2,8 @@
 STAMP := .venv/.install-stamp
 
 .PHONY: all check install install-tool core format lint lint-fix typecheck test test-fast \
-        test-unit test-integration test-system coverage clean upload sync-skills playbook \
-        deploy-audit
+        test-unit test-integration test-system coverage coverage-fast clean upload \
+        sync-skills playbook deploy-audit
 
 PYPI_NAME := frob
 SRC       := src
@@ -64,6 +64,47 @@ coverage: $(STAMP)
 	uv run coverage xml
 	uv run frob check --stamp-coverage
 	uv run frob clean -y
+
+# T-0484: incremental coverage for the common "one small change" loop --
+# `make coverage` above always re-runs the WHOLE suite under coverage, so
+# TEST005/TEST006 feedback costs a full-suite wait even for a one-line
+# edit. This restricts the pytest run to the touched set's own selected
+# python targets (frob.testing.python_coverage_targets -- the SAME
+# selection algorithm `frob test --base` already runs and already trusts,
+# not a second hand-written diff-to-tests mapping) and APPENDS onto the
+# existing `.coverage` data (no `rm -f .coverage` first) instead of
+# starting from zero: every file the touched-set run does not re-execute
+# keeps its prior run's hit data, valid precisely because that file's
+# source has not changed since the last full/incremental run measured it.
+# BASE defaults to main; override with `make coverage-fast BASE=<ref>`.
+# Falls back to a full `make coverage` when there is no `.coverage` data
+# yet to append onto (first run always needs the full baseline) OR the
+# touched set selects nothing (an untracked/target-less diff, e.g. a
+# docs-only change) -- coverage-fast in that case has nothing incremental
+# to do and stamping cheaply refreshes file hashes against the unchanged
+# coverage.xml, which is what `frob check --stamp-coverage` alone would
+# already require regardless.
+#
+# NOT built here (disclosed, not silently dropped -- see T-0484's Done
+# report): a background/daemon-side refresh (the ticket's option (a)) and
+# non-python touched-set coverage (rust/strata are still measured only by
+# the full `make coverage` run) -- both are separately-scoped follow-ups.
+BASE ?= main
+coverage-fast: $(STAMP)
+	@if [ ! -f .coverage ]; then \
+		echo "coverage-fast: no prior .coverage data to append onto -- running full make coverage"; \
+		$(MAKE) coverage; \
+	else \
+		targets="$$(uv run python -c "from pathlib import Path; from frob.graph import build_graph, load_graph; from frob.testing import python_coverage_targets; root = Path('.'); cache = root / '.frob' / 'cache.db'; loaded = load_graph(cache); snap = (loaded if loaded.is_ok else build_graph(root, cache)).danger_ok; print('\n'.join(t for t in python_coverage_targets(root, snap, '$(BASE)') if t != '*'))" 2>/dev/null)"; \
+		if [ -z "$$targets" ]; then \
+			echo "coverage-fast: touched set selects no python target against $(BASE) -- nothing incremental to run"; \
+		else \
+			echo "$$targets" | COVERAGE_PROCESS_START=$(CURDIR)/pyproject.toml xargs uv run pytest --cov=src/frob --cov-branch --cov-append --cov-report= -q; \
+		fi; \
+		uv run coverage combine --append 2>/dev/null || uv run coverage combine; \
+		uv run coverage xml; \
+		uv run frob check --stamp-coverage; \
+	fi
 
 # VirtualBox snapshot-diff harness proving artifact-free install/uninstall
 # (T-0259, deploy epic T-0254 child 5). NOT part of `check`/`all` -- it

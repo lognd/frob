@@ -92,6 +92,13 @@ class CloneBinding(BaseModel):
     (docs/modules/lang.md) does not carry source spans/text today, so the
     report shows the bound subtree's shape rather than its exact characters.
     See docs/modules/dup.md's "Reverse-templating report" section for why.
+
+    `type_var` (T-0287) is set when this hole's divergence sits in a TYPE
+    position (every group member's bound node's parent is a real type-
+    annotation wrapper node -- `frob.dup._template._TYPE_WRAPPER_LABELS`)
+    rather than a plain value position: `None` for an ordinary value hole,
+    the shared type-variable name (e.g. `"T0"`) `CloneTemplate.type_params`
+    assigns this hole's equivalence class otherwise.
     """
 
     model_config = ConfigDict(frozen=True)
@@ -99,6 +106,7 @@ class CloneBinding(BaseModel):
     hole: int
     region: CloneRegion
     source_text: str
+    type_var: str | None = None
 
 
 # frob:doc docs/modules/dup.md#clone-template
@@ -107,14 +115,31 @@ class CloneTemplate(BaseModel):
 
     `skeleton_text` is the anti-unified template (docs/modules/dup.md's
     "Anti-unification (Plotkin lgg)" section) rendered as readable
-    `label(child, ...)` text with `$hole_N` at each divergence point.
-    `bindings` holds one tuple of `CloneBinding` per distinct group member,
-    in the same order every member's binding list uses the same hole ids
-    (`build_group_template`'s per-member re-anti-unification against the
-    folded template keeps hole numbering stable across members -- see
-    `frob.dup._template`). `suggested_signature` is advisory text embedded
-    in DUP001's message, never an auto-applied patch (every other frob gate
-    is conformance-only; this one is no different).
+    `label(child, ...)` text with `$hole_N` at each divergence point (a
+    plain value hole) or the shared type-variable name (a type hole, see
+    `type_params`) spliced in instead. `bindings` holds one tuple of
+    `CloneBinding` per distinct group member, in the same order every
+    member's binding list uses the same hole ids (`build_group_template`'s
+    per-member re-anti-unification against the folded template keeps hole
+    numbering stable across members -- see `frob.dup._template`).
+    `suggested_signature` is advisory text embedded in DUP001's message,
+    never an auto-applied patch (every other frob gate is conformance-only;
+    this one is no different).
+
+    `type_params` (T-0287, docs/modules/dup-sota-survey.md sec 4's "type-
+    generalizing anti-unification" extension) names every distinct type
+    variable this template's holes were classified into, in first-
+    appearance order: a hole whose divergence sits in a real type-
+    annotation position (`frob.dup._template._TYPE_WRAPPER_LABELS`) in
+    EVERY group member proposes a shared type parameter (e.g. `def
+    f(x: T0) -> T0: ...` generalizing `int`-typed and `str`-typed clones)
+    instead of a bare value hole; two type holes whose per-member bound
+    type sequence agrees exactly share one type variable (they are
+    provably the same abstracted type, e.g. a parameter annotation and a
+    matching return annotation), rather than getting independent names for
+    what is really one generalization. Empty when no hole qualified --
+    every clone still gets a (possibly type-var-free) template, this is a
+    strictly additive refinement of the existing value-hole behavior.
     """
 
     model_config = ConfigDict(frozen=True)
@@ -123,6 +148,7 @@ class CloneTemplate(BaseModel):
     holes: tuple[int, ...] = ()
     bindings: tuple[tuple[CloneBinding, ...], ...] = ()
     suggested_signature: str = ""
+    type_params: tuple[str, ...] = ()
 
 
 # frob:doc docs/modules/dup.md#clone-group

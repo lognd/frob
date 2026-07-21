@@ -15,6 +15,7 @@ from frob.testing._collect import (
     collect_rust_tests,
     drop_collection_cache,
 )
+from frob.testing._incremental_coverage import python_coverage_targets
 from frob.testing._models import (
     CollectedTests,
     NativeSpec,
@@ -47,6 +48,7 @@ __all__ = [
     "extension_language",
     "load_natives",
     "load_runners",
+    "python_coverage_targets",
     "run_selected",
     "select_tests",
 ]
