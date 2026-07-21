@@ -270,7 +270,27 @@ def _scan_directory_obfuscation(
     return tuple(sorted(signals))
 
 
-_SCANNABLE_SUFFIXES = (".py", ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".rs")
+# T-0400 audit finding #5: C/C++/Kotlin were entirely excluded, so the
+# deterministic Trojan-Source bidi/zero-width scan (CVE-2021-42574,
+# demonstrated in C/C++) never ran on a C/C++/Kotlin dependency at all --
+# not a precision tradeoff, a blind spot on the one sound detector in this
+# module.
+_SCANNABLE_SUFFIXES = (
+    ".py",
+    ".ts",
+    ".tsx",
+    ".js",
+    ".jsx",
+    ".mjs",
+    ".cjs",
+    ".rs",
+    ".c",
+    ".h",
+    ".cpp",
+    ".hpp",
+    ".cc",
+    ".kt",
+)
 
 
 def _collect_dir_signals(source_dir: Path, max_files: int) -> set[str]:
