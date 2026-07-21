@@ -8,11 +8,14 @@ done-report|scope|archive` (docs/modules/tickets.md)."""
 
 from __future__ import annotations
 
+import re
 import subprocess
 import sys
 from datetime import date
 from pathlib import Path
 from typing import TYPE_CHECKING
+
+from typani.result import Err, Ok
 
 from frob.app._style import style_state, style_ticket_id
 from frob.app.config import AppConfig
@@ -472,6 +475,14 @@ def _report_land_result(root: Path, report) -> None:  # noqa: ANN001
     )
     for f in report.files_changed:
         _log.info("  %s", f)
+    if report.release_bumped_to is not None:
+        _log.info(
+            "land %s: REL001 bumped to %s",
+            report.ticket_id,
+            report.release_bumped_to,
+        )
+    if report.natives_rebuilt:
+        _log.info("land %s: native extension(s) rebuilt", report.ticket_id)
 
 
 # frob:ticket T-0398
@@ -534,6 +545,183 @@ def _land_covers_scope_fn(worktree: Path):  # noqa: ANN201
     return fn
 
 
+# frob:ticket T-0338
+def _land_bump_version_fn():  # noqa: ANN201
+    """CLI closure: `land()` calls this AFTER the squash-apply is staged
+    onto `root`, computing whatever `frob.release` says the just-squashed
+    public API demands and applying it -- the REL001 half of T-0338's
+    coordinator-plumbing consolidation. `frob.release`/`frob.graph` access
+    lives here (the CLI layer), not in `frob.tickets` (docs/rework.md
+    cycle-avoidance, same reasoning as `_land_covers_scope_fn`)."""
+
+    def fn(root: Path, ticket, final_id: str):  # noqa: ANN001, ANN202
+        return _apply_release_bump_for_land(root, ticket, final_id)
+
+    return fn
+
+
+# frob:ticket T-0338
+def _apply_release_bump_for_land(root: Path, ticket, final_id: str):  # noqa: ANN001, ANN201
+    """Compute the REL001 bump class for `root`'s just-squashed public API
+    against its release manifest and, if the declared version does not
+    already cover it, bump `pyproject.toml`'s `version`, append a minimal
+    CHANGELOG.md entry (satisfies `_changelog_mentions`'s "the version
+    string appears somewhere" contract), and `frob release stamp` the new
+    manifest -- staging all three files in `root`'s index so they land in
+    the same commit as the squash-apply (T-0338).
+
+    Returns `Ok(None)` (no write at all) when no manifest exists yet (the
+    repo has never opted into `frob release stamp`) or when the diff class
+    is `BumpClass.NONE`; `Ok(new_version)` after a successful bump+stamp;
+    `Err(LandError.ReleaseBumpFailed)` on any failure along the way (an
+    unreadable manifest, an unparsable `pyproject.toml` version, or a
+    graph build failure) -- fail-closed, since a silently-skipped bump
+    would let a landed API change slip past REL001 undetected."""
+    from frob.gitio import run_argv
+    from frob.release import (
+        BumpClass,
+        diff_class,
+        load_manifest,
+        required_version,
+        stamp,
+    )
+    from frob.tickets._land import LandError
+
+    manifest_result = load_manifest(root)
+    if manifest_result.is_err:
+        _log.debug("land: no release manifest at %s, skipping REL001 bump", root)
+        return Ok(None)
+    manifest = manifest_result.danger_ok
+
+    snapshot = _graph_snapshot(root)
+    if snapshot.is_err:
+        _log.error(
+            "land: %s graph unavailable (%s), cannot compute REL001 bump",
+            final_id,
+            snapshot.danger_err,
+        )
+        return Err(LandError.ReleaseBumpFailed)
+
+    bump = diff_class(manifest, snapshot.danger_ok)
+    if bump == BumpClass.NONE:
+        return Ok(None)
+
+    needed = required_version(manifest.version, bump)
+    if needed.is_err:
+        _log.error(
+            "land: %s manifest version %r is not parseable, cannot compute REL001 bump",
+            final_id,
+            manifest.version,
+        )
+        return Err(LandError.ReleaseBumpFailed)
+    new_version = needed.danger_ok
+
+    written = _write_release_bump(root, ticket, final_id, new_version)
+    if written.is_err:
+        return Err(written.danger_err)
+
+    fresh_snapshot = _graph_snapshot(root)
+    if fresh_snapshot.is_err:
+        _log.error(
+            "land: %s graph unavailable post-bump (%s), cannot stamp release manifest",
+            final_id,
+            fresh_snapshot.danger_err,
+        )
+        return Err(LandError.ReleaseBumpFailed)
+    stamp(root, fresh_snapshot.danger_ok, new_version)
+
+    staged = run_argv(
+        [
+            "git",
+            "-C",
+            str(root),
+            "add",
+            "pyproject.toml",
+            "CHANGELOG.md",
+            ".frob-release.json",
+        ]
+    )
+    if staged.is_err or staged.danger_ok.returncode != 0:
+        _log.error("land: %s failed to stage the REL001 bump files", final_id)
+        return Err(LandError.ReleaseBumpFailed)
+    return Ok(new_version)
+
+
+# frob:ticket T-0338
+_PYPROJECT_VERSION_RE = re.compile(r'(?m)^version\s*=\s*"[^"]*"')
+
+
+def _write_release_bump(root: Path, ticket, final_id: str, new_version: str):  # noqa: ANN001, ANN201
+    """Rewrite `root/pyproject.toml`'s `version = "..."` line to
+    `new_version` and append a minimal `## [new_version] - unreleased`
+    CHANGELOG.md entry naming `final_id`/`ticket.title` (T-0338)."""
+    from frob.tickets._land import LandError
+
+    pyproject_path = root / "pyproject.toml"
+    text = pyproject_path.read_text(encoding="utf-8")
+    new_text, count = _PYPROJECT_VERSION_RE.subn(
+        f'version = "{new_version}"', text, count=1
+    )
+    if count != 1:
+        _log.error(
+            'land: %s could not find a `version = "..."` line in %s',
+            final_id,
+            pyproject_path,
+        )
+        return Err(LandError.ReleaseBumpFailed)
+    pyproject_path.write_text(new_text, encoding="utf-8")
+
+    changelog_path = root / "CHANGELOG.md"
+    changelog_text = changelog_path.read_text(encoding="utf-8")
+    entry = f"## [{new_version}] - unreleased\n\n- {final_id}: {ticket.title}\n\n"
+    lines = changelog_text.splitlines(keepends=True)
+    insert_at = next(
+        (i for i, line in enumerate(lines) if line.startswith("## ")), len(lines)
+    )
+    lines[insert_at:insert_at] = [entry]
+    changelog_path.write_text("".join(lines), encoding="utf-8")
+    _log.info(
+        "land: %s wrote REL001 bump -> %s in %s and %s",
+        final_id,
+        new_version,
+        pyproject_path,
+        changelog_path,
+    )
+    return Ok(None)
+
+
+# frob:ticket T-0338
+def _land_rebuild_natives_fn():  # noqa: ANN201
+    """CLI closure: `land()` calls this with `root` only when the landed
+    changeset touches a native source tree (frob-core/, strata-core/) --
+    runs `make core` in `root` and returns whether it exited 0 (T-0338).
+    Best-effort: `land` treats a `False` as a logged warning, never a hard
+    failure (a native rebuild is cheap to re-run by hand, and a `make
+    core` failure in a from-scratch clone is not necessarily this land's
+    fault)."""
+
+    def fn(root: Path) -> bool:
+        result = subprocess.run(
+            ["make", "core"],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            timeout=600,
+            check=False,
+        )
+        if result.returncode != 0:
+            _log.warning(
+                "land: `make core` in %s exited %d -- stdout=%r stderr=%r",
+                root,
+                result.returncode,
+                result.stdout[-2000:],
+                result.stderr[-2000:],
+            )
+        return result.returncode == 0
+
+    return fn
+
+
 def _land(root: Path, cfg: AppConfig) -> None:
     """`frob ticket land <id> --worktree <path> [--dry-run]`: run the whole
     merge-check-splice-close-commit chain via `frob.tickets.land`, reporting
@@ -546,7 +734,12 @@ def _land(root: Path, cfg: AppConfig) -> None:
     must be computed against, see `land`'s own docstring), so a stale/
     red/unrelated evidence id can never silently land onto main through
     the real `frob ticket land` command, even though the library function
-    itself still defaults to permissive (`None`) for other callers/tests."""
+    itself still defaults to permissive (`None`) for other callers/tests.
+
+    T-0338: `bump_version`/`rebuild_natives` are ALSO always supplied here
+    (`_land_bump_version_fn`/`_land_rebuild_natives_fn`), folding the
+    REL001 version-bump/stamp and native-rebuild-trigger coordinator steps
+    into this same one command."""
     from frob.tickets import land
 
     _require_land_args(cfg)
@@ -562,6 +755,8 @@ def _land(root: Path, cfg: AppConfig) -> None:
         collected=_land_collected_fn(worktree),
         passed=_land_passed_fn(worktree),
         covers_scope=_land_covers_scope_fn(worktree),
+        bump_version=_land_bump_version_fn(),
+        rebuild_natives=_land_rebuild_natives_fn(),
     )
     if result.is_err:
         _log.error("ticket land failed: %s", result.danger_err)

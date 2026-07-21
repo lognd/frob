@@ -529,6 +529,11 @@ concurrent automation.
 <!-- frob:describes src/frob/tickets/_land.py::splice_ledger -->
 <!-- frob:describes src/frob/tickets/_land.py::_assert_land_complete -->
 <!-- frob:describes src/frob/tickets/_land.py::_worktree_full_changeset -->
+<!-- frob:describes src/frob/tickets/_land.py::_apply_release_bump -->
+<!-- frob:describes src/frob/tickets/_land.py::_maybe_rebuild_natives -->
+<!-- frob:describes src/frob/app/ticket_runner.py::_apply_release_bump_for_land -->
+<!-- frob:describes src/frob/app/ticket_runner.py::_write_release_bump -->
+<!-- frob:describes src/frob/app/ticket_runner.py::_land_rebuild_natives_fn -->
 
 The landing procedure used to be manual coordinator surgery repeated per
 ticket: wip-commit in the worktree, merge main into it, a deletion-filter
@@ -542,7 +547,9 @@ def land(root: Path, ticket_id: str, worktree: Path, *,
          dry_run: bool = False,
          collected: frozenset[str] | None = None,
          passed: frozenset[str] | None = None,
-         covers_scope: bool | None = None) -> Result[LandReport, LandError]
+         covers_scope: bool | None = None,
+         bump_version: Callable[[Path, Ticket, str], Result[str | None, LandError]] | None = None,
+         rebuild_natives: Callable[[Path], bool] | None = None) -> Result[LandReport, LandError]
     # T-0398 D-05: `collected`/`passed`/`covers_scope`, when supplied by a
     # caller with a fresh test-collection/run/graph-binding oracle computed
     # against the POST-MERGE worktree tree, re-verify the ticket's evidence
@@ -551,6 +558,14 @@ def land(root: Path, ticket_id: str, worktree: Path, *,
     # and re-ran nothing. All three default to `None` (skip, unchanged
     # behavior) since computing them needs frob.testing/frob.graph access
     # frob.tickets deliberately does not have.
+    # T-0338: `bump_version(root, ticket, final_id)` and `rebuild_natives
+    # (root)`, when supplied, fold the REL001 version-bump/stamp and
+    # native-rebuild-trigger coordinator steps into this same land -- both
+    # invoked AFTER the squash-apply is staged (so their writes land in the
+    # SAME commit) but BEFORE the T-0463 completeness assertion and final
+    # commit. Both default to `None` (skip) for the same cycle-avoidance
+    # reason as collected/passed/covers_scope; `frob ticket land` supplies
+    # both by default.
 def splice_ledger(ours_text: str, theirs_text: str) -> Result[str, TicketError]
     # Merge two tickets.md texts at the TICKET-ID level (newest state per
     # id wins) instead of git's line-level textual merge. T-0398 D-09: the
@@ -643,6 +658,29 @@ Order of operations, and why it is this order:
     reported back as `LandReport.worktree_changeset`, and the actually
     landed paths as `LandReport.files_changed` -- on a real (non-dry-run)
     success the former is always a subset of the latter, by construction.
+9.6. **REL001 version bump** (T-0338, only when `bump_version` was
+    supplied, runs right after step 9's squash and BEFORE the step 9.5
+    completeness assertion): `bump_version(root, ticket, final_id)`
+    computes the semver class the just-squashed public API demands
+    (`frob.release.diff_class`/`required_version` against the tracked
+    `.frob-release.json` manifest), and if the declared `pyproject.toml`
+    version does not already cover it, rewrites `version = "..."`,
+    prepends a minimal `## [<version>] - unreleased` CHANGELOG.md entry
+    naming the ticket, and `frob release stamp`s the new manifest --
+    staging all three files so they land in the SAME commit as the
+    squash-apply. `Ok(None)` (no manifest yet, or no bump needed) is a
+    no-op; `Err(LandError.ReleaseBumpFailed)` unwinds the squash (`git
+    reset --hard && git clean -fd`) exactly like any other land failure --
+    a silently-skipped bump would let a landed API change slip past
+    REL001 undetected. Reported back as `LandReport.release_bumped_to`.
+9.7. **Native rebuild trigger** (T-0338, only when `rebuild_natives` was
+    supplied AND the landed changeset touches a native source tree --
+    `frob-core/` or `strata-core/`): `rebuild_natives(root)` runs `make
+    core` in `root`. Best-effort: a `False`/failed rebuild is logged as a
+    warning (alongside the existing T-0248 stale-native warning, which
+    still fires unconditionally) but never unwinds or blocks the land --
+    a native rebuild is cheap to re-run by hand. Reported back as
+    `LandReport.natives_rebuilt`.
 10. **Commit** with a conventional-commit message template
     (`<type>(tickets): land <final-id> <title>`, type derived from
     `ticket.kind`; `feature`->`feat`, `bug`/`security`/`ux`/`incident`->

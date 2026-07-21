@@ -604,6 +604,7 @@ class LandError(ErrorSet):
         "the staged squash-apply is missing file(s) the worktree changed "
         "(T-0463 completeness assertion)"
     )
+    ReleaseBumpFailed = "the caller's REL001 version-bump callback failed (T-0338)"
 
 
 # frob:ticket T-0176
@@ -630,3 +631,11 @@ class LandReport(BaseModel):
     # is ever made. Always empty on a real (non-dry-run) success since a
     # completeness gap aborts the land instead of returning a report.
     worktree_changeset: tuple[str, ...] = ()
+    # T-0338: the version `bump_version` actually applied and staged
+    # (pyproject.toml + CHANGELOG.md + the release manifest), or `None` if
+    # no bump was needed (or no `bump_version` callback was supplied).
+    release_bumped_to: str | None = None
+    # T-0338: whether `rebuild_natives` was invoked because the landed
+    # changeset touched a native-extension source tree (frob-core/
+    # strata-core).
+    natives_rebuilt: bool = False
