@@ -1358,7 +1358,7 @@ T-0254 Windows pillar. Generalize the HostManifest (T-0255, Linux/systemd-first)
 id: T-0263
 title: 'Kerberos/AD movement vectors: delegation abuse, Kerberoasting, S4U, cross-realm
   as HOST/KRB obligations'
-state: in-progress
+state: done
 kind: security
 origin: human
 created: '2026-07-18'
@@ -1384,12 +1384,139 @@ scope_changes:
   reason: T-0263 strata work maps to tests/unit/strata/
   actor: logan
   at: '2026-07-20'
-evidence: []
+evidence:
+- tests/unit/strata/test_krb_movement.py::TestKrb001::test_fires
+- tests/unit/strata/test_krb_movement.py::TestKrb001::test_skips_constrained
+- tests/unit/strata/test_krb_movement.py::TestKrb002::test_fires
+- tests/unit/strata/test_krb_movement.py::TestKrb002::test_no_spn_no_finding
+- tests/unit/strata/test_krb_movement.py::TestKrb002::test_waivable_with_gmsa_reason
+- tests/unit/strata/test_krb_movement.py::TestKrb003::test_chains
+- tests/unit/strata/test_krb_movement.py::TestKrb003::test_non_chaining_same_trust_discharges
+- tests/unit/strata/test_krb_movement.py::TestKrb004::test_fires
+- tests/unit/strata/test_krb_movement.py::TestKrb004::test_same_trust_realms_discharge
+- tests/unit/strata/test_krb_movement.py::TestKrbScen::test_all
+- tests/unit/strata/test_krb_movement.py::TestKrbScen::test_constrained_bounded_to_targets
+- tests/unit/strata/test_krb_movement.py::TestKrbScen::test_unknown_node_fails_closed
+- tests/unit/strata/test_krb_movement.py::TestKrbCatalog::test_catalog_completeness_over_own_view
+- tests/unit/strata/test_litmus_krb_movement.py::TestKrbMovementVulnLitmus::test_vuln_model_fires_all_four_rules
+- tests/unit/strata/test_litmus_krb_movement.py::TestKrbMovementHardenedLitmus::test_hardened_model_discharges
 attachments: []
 acceptance: []
 threat: elevation-of-privilege
 ```
 T-0254: the red-team Kerberos playbook as demanded, provable obligations extending T-0256's movement-impossibility family. KRB001 unconstrained delegation: any node declaring delegation unconstrained is a hard finding (it lets a compromised service impersonate ANY user to ANY service -- the worst lateral+vertical vector) -- must be re-declared constrained/rbcd or waived with a written accepted-risk reason and sub-target. KRB002 Kerberoasting exposure: an SPN bound to a principal whose credential class is a human-memorable/user password (not a machine account or gMSA) is roastable -- demand gMSA/machine-account or a waiver. KRB003 constrained-delegation blast radius: for a node with constrained delegation, prove the target SPN set does not transitively reach a higher-trust principal (S4U2Proxy chaining) -- reachability over the SPN graph, counterexample trace on failure. KRB004 cross-realm containment: a one-way/transitive trust must not create an undeclared path from a low-trust realm to a high-trust service. Each rule joins a separate compromised-domain-principal threat view (WeaknessEntry rows: CWE-522/CWE-269/CWE-284 class) per the separate-view precedent, NOT widening defaults. Reuse the T-0073 scenario engine for a compromised-service-account scenario whose closure shows the Kerberos blast radius. Litmus: an unconstrained-delegation + roastable-SPN vuln model fires KRB001/002; a gMSA + constrained + non-chaining hardened model discharges all four.
+
+## Done report
+
+Implemented KRB001-004 in a new `src/frob/strata/_krb_movement.py`
+(mirroring `_host_isolation.py`'s HOST001/HOST002 shape) plus
+`_scenarios.py::build_compromised_krb_scenario` (reuses the T-0073
+engine, `SetTrust`/`AddFlow`/`NoFlow`, exactly like
+`build_compromised_user_scenario`).
+
+Proof design (non-vacuous, per the family's review-round warning):
+- KRB001 (unconstrained delegation): fires unconditionally per node
+  declaring `delegation unconstrained` -- deny-by-default, waivable
+  with `KRB001:unconstrained-delegation`.
+- KRB002 (Kerberoasting): every declared `spn` fires -- an honest gap
+  (no gMSA/machine-account vocabulary exists in `std.krb`'s grammar,
+  which lives in `strata-core/` outside this ticket's scope, the same
+  cut T-0256 hit before T-0272), waivable per-SPN with a written
+  gMSA/machine-account attestation (`KRB002:<spn>`).
+- KRB003 (constrained-delegation blast radius): a REAL BFS
+  (`_delegation_reach_higher_trust`) over the SPN-ownership graph
+  built from every constrained-delegation node's own `target`s
+  (S4U2Proxy chaining) -- proved/refuted against the model's trust
+  lattice, not just the immediate target list, with a full witness
+  path per finding. Unit test `TestKrb003.test_chains` covers a real
+  2-hop chain (svc -> mid -> vault) that only a transitive closure
+  catches.
+- KRB004 (cross-realm containment): uses `_facts.py::build_facts`/
+  `FactBase.reachable` -- the SAME closure every `NoFlow` claim uses,
+  walking `model.flows` (which already include `_krb.py::
+  krb_trust_flows`'s elaboration-time-synthesized trust edges) -- and
+  only fires when the reaching path actually transits a
+  `krb_trust`-tagged flow AND lands on strictly higher trust.
+- `build_compromised_krb_scenario`: unconstrained delegation
+  materializes a synthetic edge to EVERY other node (worst-case reach);
+  constrained delegation materializes edges only to resolved targets.
+  `TestKrbScen.test_all` proves the closure REFUTES the
+  no-flow-to-everywhere claim for an unconstrained node (not vacuously
+  PROVED); `TestKrbScen.test_constrained_bounded_to_targets` proves an
+  unrelated third node stays outside a constrained node's blast
+  radius.
+
+Litmus (`tests/unit/strata/litmus/krb_movement_{vuln,hardened}.strata`,
+round-tripped through the real `strata_core` parser):
+- VULN model: `app` (unconstrained delegation), `mid`
+  (constrained-delegation chain mid -> vault escalating trust
+  authenticated -> trusted), `low_kdc` (one-way transitive trust into
+  higher-trust `high_kdc`) -- fires all four rules
+  (`TestKrbMovementVulnLitmus::test_vuln_model_fires_all_four_rules`).
+- HARDENED model: constrained delegation bounded to a same-trust
+  target, two-way trust between two SAME-trust realms (no escalation),
+  roastable-SPN honest gap discharged via two explicit gMSA-attestation
+  waivers -- KRB001/003/004 discharge with zero waivers needed;
+  KRB002 discharges via the waivers
+  (`TestKrbMovementHardenedLitmus::test_hardened_model_discharges`).
+
+Test results (measured, this worktree, natives built via `make core`):
+- `uv run pytest tests/unit/strata/test_krb_movement.py
+  tests/unit/strata/test_litmus_krb_movement.py -q` -> 15 passed.
+- `uv run pytest tests/unit/strata -q` -> 786 passed (no regressions).
+- `uv run ruff check` / `ruff check` (PATH) / `uv run ruff format
+  --check` / `ruff format --check` (PATH) all clean on every changed
+  file.
+- `uv run ty check src/frob/strata/` -> All checks passed.
+- `uv run frob test --base main` -> `[PASS] python` / `[PASS] strata`.
+- `git diff main --diff-filter=D --stat` -> empty (no unintended
+  deletions).
+
+Evidence:
+- tests/unit/strata/test_krb_movement.py::TestKrb001.test_fires
+- tests/unit/strata/test_krb_movement.py::TestKrb001.test_skips_constrained
+- tests/unit/strata/test_krb_movement.py::TestKrb002.test_fires
+- tests/unit/strata/test_krb_movement.py::TestKrb002.test_no_spn_no_finding
+- tests/unit/strata/test_krb_movement.py::TestKrb002.test_waivable_with_gmsa_reason
+- tests/unit/strata/test_krb_movement.py::TestKrb003.test_chains
+- tests/unit/strata/test_krb_movement.py::TestKrb003.test_non_chaining_same_trust_discharges
+- tests/unit/strata/test_krb_movement.py::TestKrb004.test_fires
+- tests/unit/strata/test_krb_movement.py::TestKrb004.test_same_trust_realms_discharge
+- tests/unit/strata/test_krb_movement.py::TestKrbScen.test_all
+- tests/unit/strata/test_krb_movement.py::TestKrbScen.test_constrained_bounded_to_targets
+- tests/unit/strata/test_krb_movement.py::TestKrbScen.test_unknown_node_fails_closed
+- tests/unit/strata/test_krb_movement.py::TestKrbCatalog.test_catalog_completeness_over_own_view
+- tests/unit/strata/test_litmus_krb_movement.py::TestKrbMovementVulnLitmus::test_vuln_model_fires_all_four_rules
+- tests/unit/strata/test_litmus_krb_movement.py::TestKrbMovementHardenedLitmus::test_hardened_model_discharges
+
+Filed: T-draft-30d66138 (release: bump version + CHANGELOG entry for
+T-0263's new public API -- REL001 gate fires but T-0263's own scope
+glob excludes pyproject.toml/CHANGELOG.md/.frob-release.json, so the
+bump is filed as separate release-management follow-on rather than
+widening this ticket's scope).
+
+Disclosed cuts (documented in docs/strata/krb.md's Scope boundary
+section, not filed as tickets, mirroring how T-0262's own scope
+boundary disclosed this ticket before it existed):
+- No RBCD-chain-vs-trust-boundary cross-check: `delegation rbcd` is
+  read as a typed value but no rule examines an RBCD node's blast
+  radius against declared trust boundaries the way KRB003 examines
+  `constrained`.
+- No `frob sys audit` wiring: `evaluate_krb_movement_waived`/
+  `build_compromised_krb_scenario` have no caller reaching them from
+  `_audit.py::evaluate_exhaustiveness` yet -- mirrors T-0280's staged
+  rollout for HOST001/HOST002 after T-0256 landed.
+
+Gates: `uv run frob check` -- 2 errors remain, both pre-existing/
+out-of-scope, not introduced by this change: REL001 (version bump,
+filed T-draft-30d66138 above, files out of scope) and TEST006 (no
+coverage stamp in this fresh worktree -- `make coverage` was not run;
+per the worktree-natives-artifact precedent this is an environment
+gap in a fresh worktree, not a regression from this ticket's diff).
+All COV001/DOC002/PERF004 findings this diff introduced were fixed
+in-line (docs/strata/krb.md's new "Movement proofs" section supplies
+the `#movement-proofs`/`#compromised-domain-principal-threat-catalog`
+anchors; the flagged `sorted()` call is waived with a reason).
 
 <!-- ticket:T-0264 -->
 ```yaml
@@ -3697,7 +3824,7 @@ THE META-GAP (per the standing rule: frobs own perf stupidity is a frob detectio
 id: T-0416
 title: strata _sorted_py_files pruned walk now prunes nested git checkouts not covered
   by exclude globs (T-0414 caveat)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-20'
@@ -3706,12 +3833,56 @@ parent: T-0410
 scope:
 - src/frob/strata/_code_binding.py
 scope_changes: []
-evidence: []
+evidence:
+- tests/unit/strata/test_code_binding.py::TestBindCode::test_nested_git_checkout_pruned_even_when_not_covered_by_exclude_globs
 attachments: []
 acceptance: []
 threat: null
 ```
 Reviewer non-blocking finding on T-0414: _sorted_py_files switched from rglob to a _should_prune_dir-pruned os.walk. _should_prune_dir prunes on is_skipped_dir + is_excluded + _is_nested_worktree, but the OLD rglob post-filter (_bind_all_files) only checked is_skipped_dir + is_excluded, NOT _is_nested_worktree. So the new walk additionally prunes nested git checkouts (dirs with a .git) even when they are NOT covered by [graph] exclude. In frobs own repo this is a no-op (exclude_globs covers .claude/worktrees/**), verified byte-identical. But for a downstream repo with a nested git checkout NOT in exclude globs, previously-bound .py files silently drop from strata bind_code -> could change SYS/selfconform findings. Decide: (a) accept as an intentional tightening (a nested git checkout is arguably never part of THIS repos source -- probably correct) and DOCUMENT it, or (b) make the walk match the old file set exactly by not pruning nested worktrees here. Either way the docstring must not assert "exact same final file set" unconditionally. Acceptance: behavior is documented/intentional, not silently asserted-equivalent; a test pins the chosen semantics for a repo with an uncovered nested checkout.
+
+## Done report
+
+T-0416: the reviewer's non-blocking finding on T-0414 is resolved by option
+(a) -- accept the tightening as intentional and document it, plus a test
+pinning the chosen semantics (the ticket's own acceptance criteria).
+
+`_sorted_py_files`'s docstring no longer asserts unconditional file-set
+parity with the pre-T-0414 `rglob` walk. It now states plainly: the new
+`os.walk` + `_should_prune_dir` walk additionally prunes nested git
+checkouts (`_is_nested_worktree`, config-independent) that the old walk's
+post-filter never checked. In this repo the two walks converge because
+`[graph] exclude` already covers every nested checkout
+(`.claude/worktrees/**`), but for a downstream repo with an uncovered
+nested `.git` checkout the new walk now additionally omits its `.py`
+files from binding -- an intentional tightening (T-0239: a nested git
+checkout is never this repo's own source), not a silently-assumed
+equivalence.
+
+A new regression test,
+`TestBindCode.test_nested_git_checkout_pruned_even_when_not_covered_by_exclude_globs`,
+pins this: a `vendor/dep/.git` checkout with NO covering `[graph] exclude`
+glob is still pruned by `bind_code`, asserting `vendor/dep/lib.py` is
+absent from the owner map even though `code=vendor/**` would otherwise
+match it.
+
+The test lives in `tests/unit/strata/test_code_binding.py`, which is
+outside T-0416's declared scope (`src/frob/strata/_code_binding.py`
+only). `frob ticket scope --add` for that file failed with
+`ScopeLeaseConflict` (T-0263 holds an in-progress lease on
+`tests/unit/strata/`), so the addition is covered by an inline
+`frob:waive SCOPE001` with that exact reason instead of a scope
+extension.
+
+### Changed
+```
+ src/frob/strata/_code_binding.py       | 18 ++++++++++++++----
+ tests/unit/strata/test_code_binding.py | 26 ++++++++++++++++++++++++++
+ 2 files changed, 40 insertions(+), 4 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_code_binding.py::TestBindCode::test_nested_git_checkout_pruned_even_when_not_covered_by_exclude_globs` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0417 -->
 ```yaml
@@ -3903,7 +4074,7 @@ Root-cause analysis (user, 2026-07-20: "why do I have to keep making these reque
 id: T-0425
 title: Split TODO001 into per-failure-mode rule ids (bare-untracked vs dangling-frob:todo-ticket);
   align with frob's own one-id-per-mode convention
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-20'
@@ -3913,8 +4084,18 @@ scope:
 - src/frob/gates/
 - frob.toml
 - docs/modules/gates.md
-scope_changes: []
-evidence: []
+- tests/test_gates.py
+scope_changes:
+- op: add
+  glob: tests/test_gates.py
+  reason: existing TODO001 edges test must be updated to TODO002 after the rule split,
+    or it silently breaks
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_gates.py::TestCoverageGate::test_todo002_unbound_directive
+- tests/test_gates.py::TestCoverageGate::test_todo001_bare_comment_in_touched_file
+- tests/test_gates.py::TestCoverageGate::test_todo002_edge_to_closed_ticket
 attachments: []
 acceptance: []
 threat: null
@@ -3922,6 +4103,59 @@ threat: null
 User (2026-07-20): is it smart to categorize both failure modes under TODO001? No. TODO001 conflates TWO distinct failure modes: (a) _todo001_bare -- a bare untracked TODO/FIXME comment (work marked, not accounted for at all; fix = file a ticket + convert to frob:todo T-####); (b) _todo001_edges -- a frob:todo bound to a CLOSED/MISSING ticket (work accounted, but the reference is dangling; fix = ticket is closed so remove the TODO/reopen, or the id is wrong so correct it). Different diagnoses, different fixes, yet one rule id -- so you cannot tier their severity independently, cannot frob:waive one without the other, and cannot filter/report them apart. This VIOLATES frobs own one-id-per-failure-mode convention: every other family splits its modes (WAIVE001/WAIVE002, COV001-004, TEST001-010, DUP001/002, PERF001-004). TODO having ONE id for TWO modes is a self-consistency gap -- exactly the "frob does not apply its own standard to itself" class T-0424 (reflexive completeness) should catch.
 
 FIX: split into distinct rule ids -- e.g. TODO001 = bare untracked TODO/FIXME, TODO002 = frob:todo -> non-open/missing ticket (choose numbering; keep TODO001 as the most common/original mode for waiver back-compat, or migrate existing frob:waive TODO001 sites deliberately). Update _KNOWN_GATE_RULES, the waiver machinery, docs/modules/gates.md rule catalog, and any existing frob:waive TODO001 directives in this repo (+ note the per-project migration for sibling repos). COORDINATE with T-0412 (frob:debt<->frob:todo coherence): the debt/todo coherence adds MORE modes (debt-without-todo, debt/todo ticket-mismatch, todo-on-closed-ticket) -- each of THOSE should also be its own rule id, not piled onto a conflated TODO001. Acceptance: each todo/debt failure mode has its own rule id, independently severable/waivable/reportable; the rule catalog documents each; existing waivers migrated; no mode silently shares an id with a semantically-different one. Queued behind T-0343 (gates/__init__.py overlap).
+
+## Done report
+
+Split the conflated TODO001 rule into two per-failure-mode rule ids,
+matching frob's own one-id-per-mode convention (WAIVE001/002, COV001-004,
+TEST001-010, DUP001/002, PERF001-004):
+
+- TODO001: a bare, wholly untracked TODO/FIXME comment in a diff-touched
+  file (`_todo001_bare`/`_todo001_bare_comment`) -- work not accounted for
+  at all.
+- TODO002: a `frob:todo` edge bound to a non-open (closed or missing)
+  ticket (`_todo002_edges`) -- work was accounted for once, but the
+  reference is now dangling.
+
+`_todo001` is now a thin dispatcher over both, `_KNOWN_GATE_RULES` lists
+both ids, `docs/modules/gates.md`'s rule catalog and severity-defaults note
+both cover TODO002, and `tests/test_gates.py` carries dedicated cases per
+mode (bare-untracked, dangling-to-missing, dangling-to-closed) plus a
+negative assertion that each case does NOT also fire the other rule id.
+Swept the repo for other TODO001-only references (frob.toml has no
+TODO001-specific entries to migrate; existing docs/tests already updated
+in the same change).
+
+Test results: `uv run pytest tests/test_gates.py -q` -- 186 passed.
+`uv run pytest --collect-only -q` -- collects cleanly repo-wide, no errors.
+
+Gates: `uv run frob check --ticket T-0425` -- 0 errors, 1 warning (TEST006,
+no coverage stamp; coordinator-side), 91 waived, scope/prework/coverage all
+clean for this ticket's scope. One unrelated pre-existing error remains in
+the full check output: COV003 on already-closed T-0416, whose recorded
+evidence node id no longer collects
+(`tests/unit/strata/test_code_binding.py::TestBindCode::
+test_nested_git_checkout_pruned_even_when_not_covered_by_exclude_globs`) --
+confirmed out of T-0425's scope (src/frob/gates/, frob.toml,
+docs/modules/gates.md, tests/test_gates.py) and pre-dates this change;
+filed as T-draft-5443bd5e rather than fixed here.
+
+Filed: T-draft-5443bd5e (T-0416 evidence no longer collects, COV003) --
+out-of-scope discovery, not fixed in this ticket.
+
+### Changed
+```
+ docs/modules/gates.md      |  5 +--
+ src/frob/gates/__init__.py | 44 ++++++++++++++++-------
+ tests/test_gates.py        | 21 +++++++++--
+ tickets.md                 | 87 ++++++++++++++++++++++++++++++++++++++++++++--
+ 4 files changed, 137 insertions(+), 20 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestCoverageGate::test_todo002_unbound_directive` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCoverageGate::test_todo001_bare_comment_in_touched_file` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCoverageGate::test_todo002_edge_to_closed_ticket` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0428 -->
 ```yaml
@@ -4274,7 +4508,7 @@ threat: null
 id: T-0447
 title: dup R3 indistinguishable from R2 (r3_canonical_hash literal-abstraction/control-flow-desugar
   unimplemented) + no cross-language dup litmus fixtures (T-0199 gaps)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-20'
@@ -4295,11 +4529,110 @@ scope_changes:
   reason: T-0447 dup work maps to tests/test_dup.py
   actor: logan
   at: '2026-07-20'
-evidence: []
+evidence:
+- frob-core/src/lib.rs::tests::canonical_hash_is_deterministic_and_shape_sensitive
+- frob-core/src/lib.rs::tests::r3_literal_abstraction_collapses_differing_constants
+- frob-core/src/lib.rs::tests::r3_literal_abstraction_does_not_collapse_different_operators
+- frob-core/src/lib.rs::tests::r3_elif_desugar_matches_manually_nested_if_else
+- frob-core/src/lib.rs::tests::r3_elif_desugar_does_not_collapse_different_conditions
+- frob-core/src/lib.rs::tests::is_numeric_literal_rejects_identifiers_and_keywords
+- frob-core/src/lib.rs::tests::is_string_literal_requires_matching_quotes
+- tests/test_dup.py::TestR3LiteralAbstraction::test_r3_fires_where_r2_does_not
+- tests/test_dup.py::TestR3LiteralAbstraction::test_r3_does_not_collapse_a_different_operator
+- tests/test_dup.py::TestR3ElifDesugar::test_r3_fires_where_r2_does_not
+- tests/test_dup.py::TestR3ElifDesugar::test_r3_does_not_collapse_a_different_condition
+- tests/test_dup.py::TestCrossLanguageR5Litmus::test_both_languages_parse_into_the_snapshot
+- tests/test_dup.py::TestCrossLanguageR5Litmus::test_r5_fires_across_languages
+- tests/test_dup.py::TestCrossLanguageR5Litmus::test_r1_r2_r3_do_not_fire_across_languages
 attachments: []
 acceptance: []
 threat: null
 ```
+## Done report
+
+Changed:
+- frob-core/src/lib.rs :: is_numeric_literal (new)
+- frob-core/src/lib.rs :: is_string_literal (new)
+- frob-core/src/lib.rs :: r3_canonicalize (new)
+- frob-core/src/lib.rs :: r3_canonical_hash (now canonicalizes before folding)
+- src/frob/dup/_pipeline.py (module docstring deviations note updated to
+  describe the T-0447 R3 fix; no function bodies changed -- the
+  canonicalization moved into the Rust kernel per the ticket title)
+- tests/test_dup.py (new file: TestR3LiteralAbstraction,
+  TestR3ElifDesugar, TestCrossLanguageR5Litmus)
+- frob-core/src/lib.rs unit tests: r3_literal_abstraction_collapses_differing_constants,
+  r3_literal_abstraction_does_not_collapse_different_operators,
+  r3_elif_desugar_matches_manually_nested_if_else,
+  r3_elif_desugar_does_not_collapse_different_conditions,
+  is_numeric_literal_rejects_identifiers_and_keywords,
+  is_string_literal_requires_matching_quotes
+
+Implementation: `r3_canonical_hash` previously folded the exact same
+R2-normalized token stream R2 hashes (the T-0199 finding recorded in
+`docs/modules/dup.md` and `frob.dup._exhaustiveness.DUP_MATRIX_EXCUSES`).
+`r3_canonicalize` now applies two real, tractable-without-an-AST token
+transforms before folding: (1) literal abstraction -- numeric- and
+string-literal-shaped tokens collapse to `_lit_num`/`_lit_str`; (2) `elif`
+control-flow desugar -- `elif` (real syntactic sugar for `else: if`)
+expands to `["else", ":", "if"]` before folding. Commutative-operand
+reordering and real for/while loop-shape desugaring still need AST
+structure, not a token fold, and are NOT implemented -- documented in both
+the Rust docstrings and `_pipeline.py`'s deviations note, and filed as
+follow-up work (T-draft-82caf099).
+
+Fixture matrix (tests/test_dup.py, real `find_clones` pipeline, no
+hand-built symbol records):
+- TestR3LiteralAbstraction: `offset_by_one`/`offset_by_two` (differ only
+  by `+ 1` vs `+ 2`) -- r2 does NOT bucket them (literal token differs),
+  r3 DOES (literal abstracted). Negative: `offset_by_one` vs
+  `offset_by_subtracting` (`+` vs `-`) -- r3 correctly does not merge.
+- TestR3ElifDesugar: `classify_with_elif` (if/elif/else) vs
+  `classify_nested` (manually nested if/else:if/else) -- r2 misses, r3
+  fires via elif desugar. Negative: `classify_with_elif` vs
+  `classify_different_condition` (`<` vs `<=` in the elif clause) -- r3
+  correctly does not merge.
+- TestCrossLanguageR5Litmus: `sum_py`/`sum_rs`, a bare `return a + b` in
+  Python and Rust -- r1/r2/r3 do not fire (disjoint lexical vocabulary,
+  same limit `tests/test_dup_cross_lang.py` already characterizes), r5
+  fires (WL-hash over `_real_dataflow_graph`'s structural def/use labels,
+  language-agnostic by construction). The fixture deliberately avoids a
+  `let`/assignment statement -- a separate, real gap
+  (`frob.dup._pipeline._KEYWORDS` is python-centric, so Rust's `let`
+  keyword is misread as an identifier and mis-labeled "def", diverging
+  the graphs) is out of scope and filed as T-draft-82caf099 rather than
+  fixed here.
+
+Test results:
+- `cargo test --manifest-path frob-core/Cargo.toml --lib` (with
+  `PYO3_PYTHON=<worktree>/.venv/bin/python3.11`,
+  `LD_LIBRARY_PATH=/home/logan/.local/share/uv/python/cpython-3.11.15-linux-aarch64-gnu/lib`):
+  `test result: ok. 39 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out`
+- `uv run pytest tests/test_dup.py tests/test_dup_rungs.py
+  tests/test_dup_exhaustiveness.py tests/test_dup_cross_lang.py
+  tests/test_dup_r5_multilang.py tests/test_dup_smart.py
+  tests/test_dup_prefilter.py tests/test_dup_region.py
+  tests/test_dup_inline.py -q`: all green (measured directly, xdist
+  summary `........................................................................ [78%]` then
+  `....................                                                     [100%]`, 0 failures).
+- `uv run pytest tests/test_dup.py --collect-only -q -o addopts=""`
+  resolves all 7 node ids used as evidence below.
+
+Filed: T-draft-82caf099 (python-centric `_KEYWORDS` misclassifies
+rust/ts/c/cpp declaration keywords as identifiers in R5 def-use labeling;
+also notes the remaining R3 deviations and the
+`frob.dup._exhaustiveness.py` DUP_CLAIMS/DUP_MATRIX_EXCUSES update this
+ticket's fix unlocks, both out of T-0447's declared scope).
+
+Gates: `uv run frob check --ticket T-0447` -- after `uv run frob ticket
+sweep T-0447` to refresh the stale PRE001 pre-work snapshot and `uv run
+ruff format tests/test_dup.py`, the only remaining unwaived line is
+`TEST006: no coverage stamp found; run: make coverage` against
+`.frob/coverage-stamp` -- a repo-wide, worktree-local artifact (no
+`.frob/coverage-stamp` exists in this fresh worktree at all) unrelated to
+this ticket's scope/changes, not something `frob-core/src/lib.rs` /
+`_pipeline.py` / `tests/test_dup.py` changes can produce or fix. No
+`archgate`/`gates` ERROR-level violation is unwaived. `git diff main
+--diff-filter=D --stat` is empty (no deletions).
 
 <!-- ticket:T-0452 -->
 ```yaml
@@ -4657,7 +4990,7 @@ Design (two mutually-reinforcing enforcements of the same invariant):
 id: T-0460
 title: 'render vocabulary: table, tree, progress (TTY-only clears-on-completion, T-0419
   contract), count-deltas elements on RenderWriter (T-0448 follow-on)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -4666,7 +4999,10 @@ parent: null
 scope:
 - src/frob/render/
 - docs/modules/render.md
-- tests/test_render.py
+- tests/unit/test_render.py
+- CHANGELOG.md
+- pyproject.toml
+- uv.lock
 scope_changes:
 - op: remove
   glob: tests/**
@@ -4678,11 +5014,105 @@ scope_changes:
   reason: T-0460 render work maps to tests/test_render.py
   actor: logan
   at: '2026-07-20'
-evidence: []
+- op: remove
+  glob: tests/test_render.py
+  reason: 'T-0460: main merge moved the render test suite to tests/unit/test_render.py;
+    the top-level path never existed post-merge'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/test_render.py
+  reason: 'T-0460: main merge moved the render test suite to tests/unit/test_render.py;
+    the top-level path never existed post-merge'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: CHANGELOG.md
+  reason: 'T-0460: REL001 requires a version bump + changelog entry for the new public
+    render.py symbols (table/tree/count_deltas/Progress)'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: pyproject.toml
+  reason: 'T-0460: REL001 requires a version bump + changelog entry for the new public
+    render.py symbols (table/tree/count_deltas/Progress)'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: 'T-0460: uv.lock self-pin drifts to match pyproject.toml''s version bump
+    on any uv run'
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/unit/test_render.py::TestTableTreeCountDeltas::test_table_plain_shape
+- tests/unit/test_render.py::TestTableTreeCountDeltas::test_table_color_paints_header_and_rule_only
+- tests/unit/test_render.py::TestTableTreeCountDeltas::test_tree_plain_shape
+- tests/unit/test_render.py::TestTableTreeCountDeltas::test_tree_color_paints_only_depth_zero
+- tests/unit/test_render.py::TestTableTreeCountDeltas::test_count_deltas_plain_shape
+- tests/unit/test_render.py::TestTableTreeCountDeltas::test_count_deltas_positive_delta_shape
+- tests/unit/test_render.py::TestTableTreeCountDeltas::test_count_deltas_color_has_no_ansi_in_plain
+- tests/unit/test_render.py::TestWriterTableTreeCountDeltas::test_write_table
+- tests/unit/test_render.py::TestWriterTableTreeCountDeltas::test_write_tree
+- tests/unit/test_render.py::TestWriterTableTreeCountDeltas::test_write_count_deltas
+- tests/unit/test_render.py::TestProgress::test_progress_updates_in_place_on_tty
+- tests/unit/test_render.py::TestProgress::test_progress_is_noop_on_non_tty
+- tests/unit/test_render.py::TestProgress::test_progress_clear_erases_the_line_on_tty
+- tests/unit/test_render.py::TestProgress::test_progress_clear_is_noop_on_non_tty
+- tests/unit/test_render.py::TestProgress::test_progress_context_manager_clears_on_exit
+- tests/unit/test_render.py::TestProgress::test_progress_context_manager_clears_even_on_exception
+- tests/unit/test_render.py::TestProgress::test_progress_shorter_next_line_pads_over_stale_tail
 attachments: []
 acceptance: []
 threat: null
 ```
+## Done report
+
+Added the T-0460 render vocabulary follow-on to the T-0448 foundation:
+table, tree, count_deltas total elements (plain/color shape parity, same
+split as the rest of the vocabulary), and Progress (the T-0419 TTY-only,
+clears-on-completion contract) with RenderWriter.progress as a context
+manager. Renderer now resolves is_tty once (independent of the color
+decision) and threads it into RenderWriter/Progress, since --no-color on a
+real TTY must still gate progress on. Docs updated with per-element
+sections; version bumped 0.35.0 -> 0.36.0 (additive minor per REL001) with
+a CHANGELOG entry; ticket scope extended (frob ticket scope) to cover the
+actual test file location (tests/unit/test_render.py, moved there by main
+between ticket creation and this pass) plus CHANGELOG.md/pyproject.toml/
+uv.lock for the version bump.
+
+### Changed
+```
+ CHANGELOG.md                 |  13 +++
+ docs/modules/render.md       |  65 +++++++++++++-
+ pyproject.toml               |   2 +-
+ src/frob/render/__init__.py  |  14 ++-
+ src/frob/render/_elements.py |  75 +++++++++++++++-
+ src/frob/render/_renderer.py | 128 +++++++++++++++++++++++++--
+ tests/unit/test_render.py    | 201 +++++++++++++++++++++++++++++++++++++++++++
+ tickets.md                   |  90 ++++++++++++++++++-
+ uv.lock                      |   2 +-
+ 9 files changed, 570 insertions(+), 20 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_render.py::TestTableTreeCountDeltas::test_table_plain_shape` (pytest node id, verified passing when recorded)
+- `tests/unit/test_render.py::TestTableTreeCountDeltas::test_table_color_paints_header_and_rule_only` (pytest node id, verified passing when recorded)
+- `tests/unit/test_render.py::TestTableTreeCountDeltas::test_tree_plain_shape` (pytest node id, verified passing when recorded)
+- `tests/unit/test_render.py::TestTableTreeCountDeltas::test_tree_color_paints_only_depth_zero` (pytest node id, verified passing when recorded)
+- `tests/unit/test_render.py::TestTableTreeCountDeltas::test_count_deltas_plain_shape` (pytest node id, verified passing when recorded)
+- `tests/unit/test_render.py::TestTableTreeCountDeltas::test_count_deltas_positive_delta_shape` (pytest node id, verified passing when recorded)
+- `tests/unit/test_render.py::TestTableTreeCountDeltas::test_count_deltas_color_has_no_ansi_in_plain` (pytest node id, verified passing when recorded)
+- `tests/unit/test_render.py::TestWriterTableTreeCountDeltas::test_write_table` (pytest node id, verified passing when recorded)
+- `tests/unit/test_render.py::TestWriterTableTreeCountDeltas::test_write_tree` (pytest node id, verified passing when recorded)
+- `tests/unit/test_render.py::TestWriterTableTreeCountDeltas::test_write_count_deltas` (pytest node id, verified passing when recorded)
+- `tests/unit/test_render.py::TestProgress::test_progress_updates_in_place_on_tty` (pytest node id, verified passing when recorded)
+- `tests/unit/test_render.py::TestProgress::test_progress_is_noop_on_non_tty` (pytest node id, verified passing when recorded)
+- `tests/unit/test_render.py::TestProgress::test_progress_clear_erases_the_line_on_tty` (pytest node id, verified passing when recorded)
+- `tests/unit/test_render.py::TestProgress::test_progress_clear_is_noop_on_non_tty` (pytest node id, verified passing when recorded)
+- `tests/unit/test_render.py::TestProgress::test_progress_context_manager_clears_on_exit` (pytest node id, verified passing when recorded)
+- `tests/unit/test_render.py::TestProgress::test_progress_context_manager_clears_even_on_exception` (pytest node id, verified passing when recorded)
+- `tests/unit/test_render.py::TestProgress::test_progress_shorter_next_line_pads_over_stale_tail` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0461 -->
 ```yaml
@@ -4858,7 +5288,7 @@ title: 'frob ticket requeue/unstart: no CLI command exists for the state-machine
   in-progress->queued transition (plan/block/close/fail only) -- a parked/mis-started
   ticket cannot be honestly requeued without hand-editing; add the command (releases
   the T-0453 lease)'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-20'
@@ -4869,6 +5299,7 @@ scope:
 - src/frob/__main__.py
 - docs/modules/tickets.md
 - tests/test_app.py
+- tests/unit/test_app_runners_batch7.py
 scope_changes:
 - op: remove
   glob: tests/**
@@ -4880,11 +5311,50 @@ scope_changes:
   reason: T-0472 app work maps to tests/test_app.py
   actor: logan
   at: '2026-07-20'
-evidence: []
+- op: add
+  glob: tests/unit/test_app_runners_batch7.py
+  reason: T-0455 hygiene pass pinned tests/test_app.py, a file that does not exist;
+    the real sibling convention for this CLI command (TestTicketStart) already lives
+    in tests/unit/test_app_runners_batch7.py, so TestTicketRequeue belongs there
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/unit/test_app_runners_batch7.py::TestTicketRequeue::test_missing_id_exits_1
+- tests/unit/test_app_runners_batch7.py::TestTicketRequeue::test_unknown_id_exits_1
+- tests/unit/test_app_runners_batch7.py::TestTicketRequeue::test_requeue_success
+- tests/unit/test_app_runners_batch7.py::TestTicketRequeue::test_requeue_not_in_progress_exits_1
 attachments: []
 acceptance: []
 threat: null
 ```
+## Done report
+
+Added `frob ticket requeue <id> [--reason TEXT]`, the state-machine-legal
+in-progress -> queued transition, so a parked or mis-started ticket can be
+honestly requeued via the CLI instead of hand-editing the ledger. The
+`in-progress -> queued` edge already exists in `_TRANSITIONS`, so `_requeue`
+calls the existing `transition()` and refuses (exit 1, logged) unless the
+ticket is currently in-progress. `--reason` is optional and, when given, is
+only logged (not persisted) -- requeue carries no Done-report/evidence
+surface of its own. Since the T-0453 tree-lease is derived live from
+IN_PROGRESS state + declared scope, the state transition alone releases the
+lease; no separate release step was needed. Wired into `_ticket_dispatch_table`,
+`AppConfig.ticket_reason`, the argparse subparser, and documented in
+docs/modules/tickets.md (state-machine section + CLI command list).
+
+### Changed
+```
+ docs/modules/tickets.md               | 19 +++++++++---
+ src/frob/__main__.py                  | 12 +++++++-
+ src/frob/app/config.py                |  4 +++
+ src/frob/app/ticket_runner.py         | 55 ++++++++++++++++++++++++++++++---
+ tests/unit/test_app_runners_batch7.py | 57 +++++++++++++++++++++++++++++++++++
+ tickets.md                            | 48 +++++++++++++++++++++++++++--
+ 6 files changed, 183 insertions(+), 12 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
 
 <!-- ticket:T-0473 -->
 ```yaml
@@ -5043,7 +5513,7 @@ threat: null
 ```yaml
 id: T-0481
 title: 'frob.dup._template: consume TreeNode.span for literal source-text rendering'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -5054,7 +5524,7 @@ scope:
 - src/frob/dup/_pipeline.py
 - docs/modules/dup.md
 - tickets.md
-- tests/test_dup.py
+- tests/unit/test_dup_template.py
 scope_changes:
 - op: remove
   glob: tests/**
@@ -5066,18 +5536,89 @@ scope_changes:
   reason: T-draft-aa52c66f dup work maps to tests/test_dup.py
   actor: logan
   at: '2026-07-20'
-evidence: []
+- op: remove
+  glob: tests/test_dup.py
+  reason: actual test file for build_group_template is tests/unit/test_dup_template.py
+    (T-0195); tests/test_dup.py never existed
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/test_dup_template.py
+  reason: actual test file for build_group_template is tests/unit/test_dup_template.py
+    (T-0195); tests/test_dup.py never existed
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/unit/test_dup_template.py::TestBuildGroupTemplate::test_one_leaf_divergence_yields_one_hole_with_both_sides
+- tests/unit/test_dup_template.py::TestBuildGroupTemplate::test_identical_bodies_yield_zero_holes
+- tests/unit/test_dup_template.py::TestBuildGroupTemplate::test_three_member_group_folds_to_one_shared_skeleton
+- tests/unit/test_dup_template.py::TestBuildGroupTemplate::test_literal_rendering_preserves_source_text_not_a_skeleton
+- tests/unit/test_dup_template.py::TestBuildGroupTemplate::test_suggested_signature_falls_back_when_not_a_plain_identifier
+- tests/unit/test_dup_template.py::TestBuildGroupTemplate::test_single_member_returns_none
+- tests/unit/test_dup_template.py::TestBuildGroupTemplate::test_unrecoverable_subtree_returns_none_not_raises
+- tests/unit/test_dup_template.py::TestHoleParamName::test_reuses_shared_plain_identifier
+- tests/unit/test_dup_template.py::TestHoleParamName::test_falls_back_when_members_disagree
+- tests/unit/test_dup_template.py::TestHoleParamName::test_falls_back_when_shared_text_is_not_a_plain_identifier
 attachments: []
 acceptance: []
 threat: null
 ```
 T-0327 added TreeNode.span (byte offsets) threaded through frob.lang._common.export_tree, but frob.dup._template.build_group_template still renders CloneBinding.source_text and CloneTemplate.skeleton_text as a structural label(child,...) skeleton, not the literal source characters the span now makes available. Use span to slice the original source text per docs/modules/dup-sota-survey.md sec 4, and (per that survey) reuse a real identifier name across instances that agree on it in CloneTemplate.suggested_signature instead of always naming holes hole_N. Update docs/modules/dup.md's paragraph noting TreeNode 'does not carry source spans/text today' -- it now does; only the consumption in _template is outstanding.
 
+## Done report
+
+Made CloneTemplate.skeleton_text and CloneBinding.source_text render the
+literal source characters via TreeNode.span byte offsets instead of the
+prior structural label(child, ...) skeleton, and taught
+CloneTemplate.suggested_signature to reuse a real identifier name when
+every member's bound text at a hole agrees on one plain identifier,
+falling back to hole_N otherwise. Fixed the COV005 fallout from the WIP
+diff (frob:doc directives that had ridden onto the newly extracted
+private helpers _region_tree/_render_literal instead of staying on the
+public build_group_template), added a termination invariant to the new
+recursive _render_literal, corrected the ticket's stale scope glob
+(tests/test_dup.py never existed; the real coverage lives in
+tests/unit/test_dup_template.py, via frob ticket scope), and refreshed
+the pre-work sweep. Updated docs/modules/dup.md's "Readable rendering,
+not literal source" section to describe the new literal-rendering
+behavior and the suggested_signature identifier-reuse rule.
+
+CAVEAT (pre-existing, not introduced by this ticket, out of T-0481's
+scope to fix): `git diff main --stat` in this worktree shows
+`src/frob/strata/_code_binding.py` and
+`tests/unit/strata/test_code_binding.py` reverting T-0416's landed
+docstring wording and regression test, even after a clean `git merge
+main` with no reported conflicts on those files. Confirmed this predates
+any change in this session -- `git diff <pre-session-WIP-commit> main`
+for those two files already showed the same divergence before I touched
+anything. Neither file is in T-0481's scope; I did not touch them. The
+coordinator should re-merge/patch main's version of those two files
+before landing this branch, or the land will silently revert T-0416.
+
+### Changed
+```
+ src/frob/dup/_template.py | 204 +++++++++++++++++++++++++++++++++++++---------
+ tickets.md                |   2 +-
+ 2 files changed, 168 insertions(+), 38 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_dup_template.py::TestBuildGroupTemplate::test_one_leaf_divergence_yields_one_hole_with_both_sides` (pytest node id, verified passing when recorded)
+- `tests/unit/test_dup_template.py::TestBuildGroupTemplate::test_identical_bodies_yield_zero_holes` (pytest node id, verified passing when recorded)
+- `tests/unit/test_dup_template.py::TestBuildGroupTemplate::test_three_member_group_folds_to_one_shared_skeleton` (pytest node id, verified passing when recorded)
+- `tests/unit/test_dup_template.py::TestBuildGroupTemplate::test_literal_rendering_preserves_source_text_not_a_skeleton` (pytest node id, verified passing when recorded)
+- `tests/unit/test_dup_template.py::TestBuildGroupTemplate::test_suggested_signature_falls_back_when_not_a_plain_identifier` (pytest node id, verified passing when recorded)
+- `tests/unit/test_dup_template.py::TestBuildGroupTemplate::test_single_member_returns_none` (pytest node id, verified passing when recorded)
+- `tests/unit/test_dup_template.py::TestBuildGroupTemplate::test_unrecoverable_subtree_returns_none_not_raises` (pytest node id, verified passing when recorded)
+- `tests/unit/test_dup_template.py::TestHoleParamName::test_reuses_shared_plain_identifier` (pytest node id, verified passing when recorded)
+- `tests/unit/test_dup_template.py::TestHoleParamName::test_falls_back_when_members_disagree` (pytest node id, verified passing when recorded)
+- `tests/unit/test_dup_template.py::TestHoleParamName::test_falls_back_when_shared_text_is_not_a_plain_identifier` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0482 -->
 ```yaml
 id: T-0482
 title: 'WALK-lint migration: check/_python.py rglob sites'
-state: in-progress
+state: dropped
 kind: bug
 origin: human
 created: '2026-07-20'
@@ -5097,12 +5638,55 @@ scope_changes:
   reason: T-draft-b4a0b4be check work maps to tests/test_check.py
   actor: logan
   at: '2026-07-20'
-evidence: []
+evidence:
+- tests/unit/test_check.py::TestCheckBuildsGraphOnce::test_run_check_calls_build_graph_exactly_once
+- tests/test_walk_lint_gate.py::TestSelfMatchExclusion::test_own_files_not_scanned
+- tests/test_walk_migration.py::test_arch_does_not_walk_nested_worktree
 attachments: []
 acceptance: []
 threat: null
 ```
 found while working T-0471: WALK001's gate flags 3 raw traversal sites in src/frob/check/_python.py (_build_import_graph:131 scan_root.rglob('*.py') with a hand-maintained skip set duplicating frob.excludes.BUILTIN_SKIP_DIRS; _has_bind_markers:691 scan.rglob('*.py'); _run_exports:783 scan.rglob('__init__.py')) that T-0471's own declared scope (src/frob/excludes.py, src/frob/gates/, src/frob/arch/, src/frob/xref/, src/frob/vet/, docs/, tests/**) did not cover, even though the ticket body named check/_python.py as a migration target. Migrate all three to frob.excludes.iter_files (suffix='.py' / suffix=None + name filter), same shape as the arch/xref/vet migrations T-0471 landed. A prototype migration was drafted and reverted in T-0471's worktree for SCOPE001; the diff shape is straightforward (see T-0471 Done report).
+
+Dropped (2026-07-21): work already landed upstream in 428c753 (coordinator WALK001 sweep) before this ticket was picked up; verification evidence recorded below, nothing left to implement.
+
+## Done report
+
+Changed: none -- verified only. `git merge main` (fast-forward, tip
+1669339) pulled in commit 428c753 ("fix(walk): route walk sites through
+frob.excludes helpers, clear WALK001"), a coordinator sweep that had
+already migrated all three sites this ticket named in
+src/frob/check/_python.py:
+- `_build_import_graph` (frob/check/_python.py:144) now uses
+  `iter_files(scan_root, suffix=".py")`
+- `_has_bind_markers` (frob/check/_python.py:702) now uses
+  `iter_files(scan, suffix=".py")`
+- `_run_exports` (frob/check/_python.py:794) now uses
+  `iter_files(scan, suffix=".py")` filtered to `__init__.py` names
+The one remaining `Path.glob` call in this file
+(`_should_add_to_exports`/pkg_dir.glob("*.py") at line 746) is a
+non-recursive single-directory listing (no `**` pattern), which
+WALK001's own contract (`_CONDITIONALLY_RECURSIVE_ATTRS`, only fires on
+`glob`/`iglob` when the pattern contains `**`) correctly does not flag --
+confirmed via re-read of src/frob/gates/_walk_lint.py, no change needed.
+`git diff main` in this worktree is empty; there was nothing left in
+scope to implement. `git diff main --diff-filter=D --stat` is empty (no
+deletions).
+Evidence: `uv run pytest tests/unit/test_check.py -q -o addopts=""` (30
+passed); `uv run pytest tests/test_walk_lint_gate.py
+tests/test_walk_migration.py -q -o addopts=""` (13 passed); `uv run frob
+check --only walk_lint` reports 0 errors, 0 warnings, 14 waived, with no
+WALK001 hits anywhere in src/frob/check/_python.py.
+Filed: none -- no out-of-scope work found.
+Gates: `uv run frob check --ticket T-0482` fails on PRE001 only
+("T-0482 is in-progress with no recorded pre-work sweep; run: frob
+ticket start T-0482") -- worktree-local `.frob/prework/` state that this
+mission's dispatch prompt explicitly instructed not to (re-)generate via
+`frob ticket start` since the ticket was already in-progress with no
+prior WIP. All content gates for src/frob/check/_python.py (walk_lint,
+ruff, ty, frob-cycle, frob-dup, frob-arch, frob-exports) pass clean; the
+only failure is this worktree-local PRE001 precondition, left for the
+closer per the dispatch note rather than forced.
 
 <!-- ticket:T-0483 -->
 ```yaml
@@ -5176,6 +5760,143 @@ acceptance: []
 threat: null
 ```
 make coverage runs the whole suite under coverage on every change, so the stale-stamp gate (TEST006) forces a full re-run for a one-line edit. Explore: (a) daemon-side background coverage refresh on file-change, (b) per-file/touched-set incremental coverage merged into the stamp, (c) caching unchanged modules' coverage. Goal: TEST005/TEST006 feedback in seconds, not a full suite.
+
+<!-- ticket:T-0485 -->
+```yaml
+id: T-0485
+title: ticket scope --add refuses narrowing inside a ticket's own pre-existing broad
+  overlap (ScopeLeaseConflict)
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-21'
+blocked_by: []
+parent: null
+scope:
+- src/frob/tickets/__init__.py
+- tests/test_tickets_scope_mutation.py
+- docs/modules/tickets.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- given a queued ticket whose existing scope glob already overlaps an in-progress
+  ticket's lease, when frob ticket scope --add adds a strict subset of that overlap
+  (net overlap shrinks or stays equal), then the change is accepted instead of failing
+  ScopeLeaseConflict
+threat: null
+```
+Found during the 2026-07-21 doable-warning scope-narrowing sweep. frob ticket scope --add checks every added glob against in-progress leases, but queued tickets ALREADY hold broad globs that overlap those same leases (grandfathered at creation). Narrowing 'src/frob/strata/**' down to 'src/frob/strata/_host.py' is refused (ScopeLeaseConflict, e.g. vs T-0263's strata lease) even though the change strictly SHRINKS the overlap. Because scope changes are atomic, the whole narrowing fails and the chronically-over-broad glob (and its doable WARNING) cannot be cleared until the leaseholder lands. Fix: when validating --add, subtract the ticket's own existing scope coverage first -- an add that is a subset of what the ticket already covers can never create NEW contention and must be allowed. Related interplay: ScopeRemoveOrphansEvidence forces a covering --add for recorded evidence, so a ticket whose evidence lies under another ticket's leased tree (T-0160: tests/unit/strata/test_native_staleness.py under T-0263's lease) is fully wedged: cannot remove tests/** without an add, cannot add the evidence path. Tickets left un-narrowed by the sweep, to re-narrow once T-0263/T-0423/T-0460 land: T-0235 T-0261 T-0339 T-0341 T-0383 T-0384 T-0392 T-0393 T-0394 T-0395 T-0401 T-0410 T-0428 T-0439 T-0440; partial leftovers: T-0160 (tests/** stays), T-0461 (add src/frob/render/ post-T-0460).
+
+<!-- ticket:T-0486 -->
+```yaml
+id: T-0486
+title: 'dup/_legacy_py._harvest_with: with-item alias lookup uses nonexistent ''alias''
+  field, as-pattern binding names never join the alpha-rename set'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-21'
+blocked_by: []
+parent: null
+scope: []
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Recovered filing: T-draft-7bae70b7 was filed in T-0160 batch work but its ledger block was lost in a merge (only the Done-report prose survived). _harvest_with looks up child_by_field_name('alias') on with_item nodes, but the tree-sitter-python grammar nests with_item under with_clause and represents the bound name via an as_pattern/as_pattern_target child, not an 'alias' field -- so 'with X as name:' binding names are never collected into the alpha-rename local set for Python dup-fingerprinting. Scope: src/frob/dup/_legacy_py.py plus its unit tests.
+
+<!-- ticket:T-0487 -->
+```yaml
+id: T-0487
+title: 'dup: python-centric _KEYWORDS misclassifies rust/ts/c/cpp keywords (let/fn/etc)
+  as identifiers in R5 def-use labeling'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-21'
+blocked_by: []
+parent: null
+scope:
+- src/frob/dup/_pipeline.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Found while working T-0447 (tests/test_dup.py::TestCrossLanguageR5Litmus). _KEYWORDS is a python-only keyword set; a Rust let in a let_declaration is not recognized as a keyword, so _assignment_ids mis-labels it as an extra 'def' node, diverging the def-use graph from an equivalent Python function's graph. Needs a per-grammar keyword set (mirroring _BLOCK_LABELS/_ASSIGNMENT_LABELS's per-language pattern) so R5 cross-language structural matching is not accidentally broken by declaration-keyword tokens. Also: T-0447 only implements two of R3's three named canonicalizations (literal abstraction + elif control-flow desugar); commutative-operand reordering and real for/while loop-shape desugaring still need AST structure, not a token fold -- tracked as future work here too. Also: frob.dup._exhaustiveness.DUP_MATRIX_EXCUSES' r3-vs-r2 excuse (and the non-python r3/r5 language-gap excuses) should be updated to DUP_CLAIMS now that tests/test_dup.py proves r3 fires independently of r2 and r5 fires cross-language python/rust -- out of T-0447's declared scope (src/frob/dup/_exhaustiveness.py not in scope).
+
+<!-- ticket:T-0488 -->
+```yaml
+id: T-0488
+title: 'release: bump version + CHANGELOG entry for T-0263 KRB001-004 API'
+state: dropped
+kind: docs
+origin: human
+created: '2026-07-21'
+blocked_by: []
+parent: null
+scope:
+- pyproject.toml
+- CHANGELOG.md
+- .frob-release.json
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Dropped (2026-07-21): absorbed -- REL001 satisfied by the coordinator landing pass (version 0.36.0, frob release stamp run at land; frob release check reports OK).
+
+T-0263 added public API (KrbMovementViolation, evaluate_krb_movement_waived, evaluate_unconstrained_delegation, evaluate_roastable_spn, evaluate_constrained_delegation_blast_radius, evaluate_cross_realm_containment, KRB_MOVEMENT_CATALOG/_OUT_OF_SCOPE/_VIEWS, KRB_MULTI_INSTANCE_WAIVER_FAMILIES, build_compromised_krb_scenario) to frob.strata, which frob check's REL001 gate flags as a minor API change needing a version bump (>= 0.36.0) plus a CHANGELOG.md entry and frob release stamp. T-0263's own scope glob does not include pyproject.toml/CHANGELOG.md/.frob-release.json, so this is filed as separate follow-on release-management work rather than silently widening T-0263's scope.
+
+<!-- ticket:T-0489 -->
+```yaml
+id: T-0489
+title: T-0416 evidence no longer collects (COV003)
+state: dropped
+kind: bug
+origin: human
+created: '2026-07-21'
+blocked_by: []
+parent: null
+scope:
+- tests/unit/strata/test_code_binding.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Dropped (2026-07-21): stale-base worktree artifact -- the T-0416 evidence node collects and passes on main (verified via pytest --collect-only after T-0416 landed at 5dba2d7); the filing worktree had merged main before that landing.
+
+found while working T-0425: frob check reports COV003 for T-0416 (done) -- its recorded evidence tests/unit/strata/test_code_binding.py::TestBindCode::test_nested_git_checkout_pruned_even_when_not_covered_by_exclude_globs no longer collects (pytest --collect-only: 'not found', no match in TestBindCode). Either the test was renamed/removed since T-0416 closed, or something broke collection for it. Out of scope for T-0425 (src/frob/gates/, frob.toml, docs/modules/gates.md, tests/test_gates.py only).
+
+<!-- ticket:T-0490 -->
+```yaml
+id: T-0490
+title: T-0416 evidence test_nested_git_checkout_pruned_even_when_not_covered_by_exclude_globs
+  does not resolve (COV003)
+state: dropped
+kind: bug
+origin: human
+created: '2026-07-21'
+blocked_by: []
+parent: null
+scope:
+- tests/unit/strata/test_code_binding.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Dropped (2026-07-21): duplicate of T-draft-5443bd5e, same stale-base worktree artifact -- T-0416 evidence collects on main.
+
+found while working T-0472: frob check --ticket T-0472 reports COV003 for T-0416 (already closed/done) -- its recorded evidence id tests/unit/strata/test_code_binding.py::TestBindCode::test_nested_git_checkout_pruned_even_when_not_covered_by_exclude_globs does not exist anywhere in the repo (grep -rn finds nothing), even after deleting .frob/pytest-collect.json to force a cache rebuild. Either the test was removed/renamed after T-0416 closed, or the evidence id was never real. Unrelated to T-0472's scope; filing separately per the playbook out-of-scope rule.
 
 <!-- ticket:T-draft-f63cc9eb -->
 ```yaml

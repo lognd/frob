@@ -57,10 +57,12 @@ from ._claims import evaluate_claims
 from ._errors import StrataError
 from ._host import host_manifest_for
 from ._host_isolation import host_movement_flows
+from ._krb import KrbDelegationKind, krb_manifest_for
 from ._models import (
     AddFlow,
     Claim,
     ClaimResult,
+    Flow,
     KernelModel,
     NoFlow,
     RemoveNode,
@@ -418,3 +420,116 @@ def _blast_radius_claims(
         )
         for node_id in outside
     )
+
+
+def _no_krb_node_error(node_id: str) -> StrataError:
+    """Log and return the `UnknownReference` error for a compromised-krb
+    scenario naming no declared node, for
+    `build_compromised_krb_scenario`."""
+    _log.error("scenario: compromised-krb scenario names undeclared node %r", node_id)
+    return StrataError.UnknownReference
+
+
+# frob:doc docs/strata/krb.md#movement-proofs
+# frob:tests tests/unit/strata/test_krb_movement.py::TestKrbScen.test_all kind="unit"
+def build_compromised_krb_scenario(
+    model: KernelModel, node_id: str, scenario_id: str
+) -> Result[Scenario, StrataError]:
+    """Build the compromised-krb-principal red-team `Scenario` (T-0263,
+    reusing the T-0073 scenario engine `build_compromised_user_scenario`
+    already reuses for HOST001/HOST002, T-0256): `node_id` is downgraded
+    via `SetTrust(node_id, "foreign")`, plus one `AddFlow` per edge
+    `_krb_delegation_movement_flows` derives from its declared
+    `delegation` -- unconstrained delegation materializes an edge to
+    EVERY other node (the true worst-case reach KRB001 names: it can
+    impersonate ANY user to ANY service), constrained delegation
+    materializes edges only to its resolved `target` SPNs' owning nodes.
+    One `NoFlow(src="foreign", dst=<node>)` claim is asserted per node
+    OUTSIDE that reach set, so `evaluate_scenarios` re-checking this
+    scenario proves (or refutes) the compromise's blast radius is
+    bounded by exactly what the node's own delegation grants -- refuted
+    the moment the closure actually reaches further, never vacuously
+    proved over an unrelated declared-flow graph (the T-0256 review-round
+    failure `_host_isolation.py`'s module docstring records, guarded
+    against here the same way).
+
+    Fails closed (`StrataError.UnknownReference`) when `node_id` names no
+    node in `model` at all -- zero rewrites would vacuously "prove" every
+    claim, misreporting a typo'd node id as a genuine isolation proof
+    (charter law 2, deny-by-default)."""
+    known_ids = {n.id for n in model.nodes}
+    if node_id not in known_ids:
+        return Err(_no_krb_node_error(node_id))
+    movement_flows = _krb_delegation_movement_flows(model, node_id)
+    rewrites: tuple[Rewrite, ...] = (
+        *(AddFlow(flow=flow) for flow in movement_flows),
+        SetTrust(node_id=node_id, level=_COMPROMISED_TRUST),
+    )
+    outside = sorted(n.id for n in model.nodes if n.id != node_id)
+    claims = tuple(
+        Claim(
+            id=f"krb-blast-radius:{node_id}:{other_id}",
+            body=NoFlow(src=_COMPROMISED_TRUST, dst=other_id),
+        )
+        for other_id in outside
+    )
+    _log.info(
+        "scenario: built compromised-krb scenario %s for %r (%d movement "
+        "flow(s), %d blast-radius claim(s))",
+        scenario_id,
+        node_id,
+        len(movement_flows),
+        len(claims),
+    )
+    return Ok(Scenario(id=scenario_id, rewrites=rewrites, claims=claims))
+
+
+def _krb_delegation_movement_flows(
+    model: KernelModel, node_id: str
+) -> tuple[Flow, ...]:
+    """The synthetic `Flow`s `build_compromised_krb_scenario` adds for
+    one compromised krb-bound node, derived purely from its OWN declared
+    `delegation` (module docstring's per-kind reach)."""
+    node = next((n for n in model.nodes if n.id == node_id), None)
+    if node is None:
+        return ()
+    manifest = krb_manifest_for(node)
+    if manifest is None or manifest.delegation is None:
+        return ()
+    if manifest.delegation == KrbDelegationKind.UNCONSTRAINED:
+        return tuple(
+            Flow(
+                id=f"krb-movement:{node_id}->{other.id}",
+                src=node_id,
+                dst=other.id,
+                attrs=("krb_movement=unconstrained",),
+            )
+            for other in model.nodes
+            if other.id != node_id
+        )
+    if manifest.delegation == KrbDelegationKind.CONSTRAINED:
+        spn_owner: dict[str, str] = {}
+        for other in model.nodes:
+            other_manifest = krb_manifest_for(other)
+            if other_manifest is None:
+                continue
+            for spn in other_manifest.spns:
+                spn_owner.setdefault(spn, other.id)
+        # frob:waive PERF004 reason="one node's own delegation_targets, not a re-sort of a shared collection"
+        targets = sorted(
+            {
+                spn_owner[target_spn]
+                for target_spn in manifest.delegation_targets
+                if target_spn in spn_owner and spn_owner[target_spn] != node_id
+            }
+        )
+        return tuple(
+            Flow(
+                id=f"krb-movement:{node_id}->{target}",
+                src=node_id,
+                dst=target,
+                attrs=("krb_movement=constrained",),
+            )
+            for target in targets
+        )
+    return ()

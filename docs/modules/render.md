@@ -45,8 +45,10 @@ The standardized elements are namespaced off `Renderer.write` (a
 `RenderWriter`), so a command calls `r.write.heading(...)`,
 `r.write.kv(...)`, etc. rather than accumulating flat methods on `Renderer`
 (the god-class split). Elements: `heading`, `subhead`, `kv`, `status`,
-`count_summary`, `path`, `ticket_id`, and the severity shortcuts `good`,
-`warn`, `critical`, `muted`.
+`count_summary`, `path`, `ticket_id`, `table`, `tree`, `count_deltas`, and
+the severity shortcuts `good`, `warn`, `critical`, `muted`. `progress`
+(T-0460) is the one TTY-only, ephemeral exception -- see its own section
+below.
 
 Every element has BOTH a colored-TTY rendering and a deterministic PLAIN
 rendering. The plain rendering is the canonical, machine-stable form: no ANSI
@@ -58,12 +60,67 @@ Element contract -- total vs fallible:
 
 | Element kind | Return | Notes |
 |--------------|--------|-------|
-| Structural writers (`heading`, `subhead`, `kv`, `count_summary`, `path`, severity text) | total (`str` / direct write) | cannot fail |
+| Structural writers (`heading`, `subhead`, `kv`, `count_summary`, `path`, `table`, `tree`, `count_deltas`, severity text) | total (`str` / `list[str]` / direct write) | cannot fail |
 | Validated elements (`status`/`status_pill`, `ticket_id`/`ticket_id_label`) | typani `Result` | reject malformed input as `Err(RenderError)` rather than emitting a wrong glyph |
 
 New elements must follow the same split: a fallible element returns a
-`Result`; a total element returns a string. `RenderError` is the fallible
+`Result`; a total element returns a string (or, for multi-line elements
+like `table`/`tree`, a `list[str]` of lines). `RenderError` is the fallible
 error type.
+
+### `table`
+
+`r.write.table(headers, rows)` renders a fixed-column table: a header row
+(painted `accent`), a `-`-rule separator (painted `muted`), then one line
+per data row. Column widths are the max width across the header and every
+row's cell in that column, so color and plain mode share the exact same
+column layout -- color only paints the header/rule, never the data cells,
+and never changes a width.
+
+### `tree`
+
+`r.write.tree(entries)` renders a hierarchical listing from `(depth,
+label)` pairs. Each line is `"  " * depth` of indent plus a `- ` marker;
+depth-0 labels are painted `accent`. Deliberately no box-drawing
+connectors (`|--`, `` `-- ``) -- those need sibling lookahead to place
+correctly, and a lookahead-dependent shape is exactly the kind of thing
+that could silently differ between callers. Plain indent+marker is
+deterministic from the `(depth, label)` sequence alone.
+
+### `count_deltas`
+
+`r.write.count_deltas(deltas)` renders a `key: old -> new (+n/-n)` rollup
+line from a `{key: (before, after)}` mapping -- the `frob check --delta`
+before/after use case. This element assumes fewer is the improving
+direction (a violation-count convention): a non-positive delta paints
+`good`, a positive delta paints `critical`, unchanged paints `muted`. A
+caller with a metric where "more" is the improving direction should not
+reach for this element as-is.
+
+### `progress` (T-0419 contract, TTY-only)
+
+`r.write.progress(label)` returns a `Progress`, meant to be used as a
+context manager around a unit of long-running work:
+
+```python
+with r.write.progress("running gates") as p:
+    for i, stage in enumerate(stages):
+        p.update(stage.name, i, len(stages))
+        run(stage)
+```
+
+`Progress.update(label, current, total)` redraws one in-place line
+(`label [#####-----] NN%`) via a carriage return -- no new line is ever
+appended per update. `Progress.clear()` (also called automatically on
+`__exit__`, success or exception) erases that line entirely, leaving no
+residue, per the T-0419 "clears on completion" contract. On a non-TTY
+stream (piped, redirected, CI) both methods are unconditional no-ops: no
+carriage return, no ANSI, nothing reaches the captured output at all --
+this is the one element in the vocabulary that is TTY-only by design
+rather than "same shape, only the paint differs." `Renderer.is_tty` is
+resolved once per `Renderer` (independent of the color decision, since
+`--no-color` on a real TTY must still gate `progress` on) and threaded
+into every `Progress` the writer builds.
 
 ## Renderer
 
