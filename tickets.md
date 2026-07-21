@@ -4201,7 +4201,7 @@ real id at land) with the exact before/after counts and next-step guidance.
 ```yaml
 id: T-0507
 title: Extend worktree-lease guard to frob release stamp and frob ack
-state: in-progress
+state: done
 kind: security
 origin: human
 created: '2026-07-21'
@@ -4286,9 +4286,13 @@ touched, see T-0519's Done report which observed the same DOC/REG errors).
 
 ### Changed
 ```
- tickets-archive.md | 17 ++++-------------
- tickets.md         | 45 ++++++++++++++++++++++++++++++++++++++++++---
- 2 files changed, 46 insertions(+), 16 deletions(-)
+ src/frob/app/ack_runner.py           |  14 +++-
+ src/frob/release/__init__.py         |  14 +++-
+ tests/test_ack_worktree_lease.py     |  55 +++++++++++++++
+ tests/test_release_worktree_lease.py |  52 ++++++++++++++
+ tickets-archive.md                   |  17 ++---
+ tickets.md                           | 129 +++++++++++++++++++++++++++++++++--
+ 6 files changed, 260 insertions(+), 21 deletions(-)
 ```
 
 ### Evidence
