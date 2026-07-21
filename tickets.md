@@ -5565,8 +5565,32 @@ origin: agent
 created: '2026-07-21'
 blocked_by: []
 parent: null
-scope: []
-scope_changes: []
+scope:
+- src/frob/dup/_legacy_py.py
+- tests/unit/test_dup.py
+- tests/unit/test_dup_legacy_py.py
+scope_changes:
+- op: add
+  glob: src/frob/dup/_legacy_py.py
+  reason: T-0486's frontmatter scope was empty (recovered ticket only stated scope
+    in free-text body); backfilling it so SCOPE001's cross-ticket exemption recognizes
+    tests/unit/test_dup.py as T-0486's own scope, not T-0487's
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/test_dup.py
+  reason: T-0486's frontmatter scope was empty (recovered ticket only stated scope
+    in free-text body); backfilling it so SCOPE001's cross-ticket exemption recognizes
+    tests/unit/test_dup.py as T-0486's own scope, not T-0487's
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/test_dup_legacy_py.py
+  reason: T-0486's frontmatter scope was empty (recovered ticket only stated scope
+    in free-text body); backfilling it so SCOPE001's cross-ticket exemption recognizes
+    tests/unit/test_dup.py as T-0486's own scope, not T-0487's
+  actor: logan
+  at: '2026-07-21'
 evidence:
 - tests/unit/test_dup.py::TestFindDuplicates::test_with_target_alpha_rename_matches_at_renamed_rung
 attachments: []
@@ -5601,7 +5625,7 @@ just at the node-walker unit level.
 id: T-0487
 title: 'dup: python-centric _KEYWORDS misclassifies rust/ts/c/cpp keywords (let/fn/etc)
   as identifiers in R5 def-use labeling'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-07-21'
@@ -5609,7 +5633,30 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/dup/_pipeline.py
-scope_changes: []
+- src/frob/dup/_exhaustiveness.py
+- tests/test_dup.py
+- tests/test_dup_exhaustiveness.py
+scope_changes:
+- op: add
+  glob: src/frob/dup/_exhaustiveness.py
+  reason: coordinator mission explicitly directs updating DUP_MATRIX_EXCUSES/DUP_CLAIMS
+    in the same ticket, per T-0447's already-landed R3 work
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_dup.py
+  reason: regression test for the per-grammar keyword fix belongs alongside TestCrossLanguageR5Litmus
+    (tests/test_dup.py), which already documents this exact gap; DUP_CLAIMS/DUP_MATRIX_EXCUSES
+    update needs its drift-lock test file updated in the same ticket
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_dup_exhaustiveness.py
+  reason: regression test for the per-grammar keyword fix belongs alongside TestCrossLanguageR5Litmus
+    (tests/test_dup.py), which already documents this exact gap; DUP_CLAIMS/DUP_MATRIX_EXCUSES
+    update needs its drift-lock test file updated in the same ticket
+  actor: logan
+  at: '2026-07-21'
 evidence: []
 attachments: []
 acceptance: []
@@ -5685,3 +5732,24 @@ threat: null
 Dropped (2026-07-21): duplicate of T-draft-5443bd5e, same stale-base worktree artifact -- T-0416 evidence collects on main.
 
 found while working T-0472: frob check --ticket T-0472 reports COV003 for T-0416 (already closed/done) -- its recorded evidence id tests/unit/strata/test_code_binding.py::TestBindCode::test_nested_git_checkout_pruned_even_when_not_covered_by_exclude_globs does not exist anywhere in the repo (grep -rn finds nothing), even after deleting .frob/pytest-collect.json to force a cache rebuild. Either the test was removed/renamed after T-0416 closed, or the evidence id was never real. Unrelated to T-0472's scope; filing separately per the playbook out-of-scope rule.
+
+<!-- ticket:T-draft-413001ba -->
+```yaml
+id: T-draft-413001ba
+title: 'tests/test_dup_cross_lang.py: T-0198 characterization test now wrong -- R5
+  correctly fires cross-language python/typescript after T-0487''s keyword fix'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-21'
+blocked_by: []
+parent: null
+scope:
+- tests/test_dup_cross_lang.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+found while working T-0487: the _KEYWORDS python-centric-keyword fix (frob.dup._pipeline) makes R5 correctly recognize TypeScript's 'let'/'const' as declaration keywords instead of mis-labeling them as identifiers, so _real_dataflow_graph now builds a structurally-correct def-use graph for tests/fixtures/dup_cross_lang's mod_b.ts::computeTotal -- and it now genuinely WL-hash-collides with mod_a.py::compute_total at r5, similarity=0.88, verified directly against find_clones. This is a real accuracy improvement (R5 is documented as structural/language-agnostic, T-0196/T-0199), not a regression, but it makes tests/test_dup_cross_lang.py::TestCrossLanguageCloneNotYetDetected::test_no_clone_group_at_any_threshold (asserting report.groups == () at every threshold) fail: 5 parametrized cases now see a real r5 group. The test's docstring/module-level claim ('cross-grammar structural bucketing... tracked as a follow-up') needs updating to reflect that R5 already closes this specific case; the test needs to assert r5 DOES fire (or drop the blanket 'zero groups' assertion and characterize per-rung instead), and frob.dup._exhaustiveness's r5/typescript language-gap excuse likely needs a DUP_CLAIMS entry the same way T-0487 added one for r5/rust. Out of T-0487's declared scope (tests/test_dup_cross_lang.py not in T-0487's scope).
