@@ -23,6 +23,8 @@ scope. Filed as T-0137 rather than fixed silently."""
 
 from __future__ import annotations
 
+from unittest.mock import patch
+
 from frob.strata import (
     Boundary,
     BoundaryDirection,
@@ -80,6 +82,31 @@ class TestExhaustiveness:
         assert "security:owasp-top-10" in report.views_checked
         assert "quality:web-quality-security-baseline" in report.views_checked
         assert "compliance:all-regulations" in report.views_checked
+
+    # frob:ticket T-0499
+    # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness kind="unit"
+    def test_known_rule_ids_reaches_compliance_caught_by_check(self):
+        """T-0499: `known_rule_ids` passed to `evaluate_exhaustiveness`
+        must reach `evaluate_compliance`'s own `known_rule_ids` param (its
+        COMPLIANCE004 caught_by check), not just the THREAT006 caught_by
+        path -- both families were named in the ticket's dormant-wiring
+        gap. Asserted via the actual kwarg `evaluate_compliance` is called
+        with, since no `OutOfScopeRegulation` catalog is threaded into this
+        module yet (a separate, out-of-scope gap) to observe a firing/
+        non-firing COMPLIANCE004 violation end-to-end."""
+        model = KernelModel(nodes=(Node(id="api", trust="trusted"),))
+        rule_ids = frozenset({"SEC001"})
+        with patch(
+            "frob.strata._audit.evaluate_compliance",
+            wraps=__import__(
+                "frob.strata._audit", fromlist=["evaluate_compliance"]
+            ).evaluate_compliance,
+        ) as spy:
+            result = evaluate_exhaustiveness(model, known_rule_ids=rule_ids)
+        assert result.is_ok
+        assert spy.call_count > 0
+        for call in spy.call_args_list:
+            assert call.kwargs["known_rule_ids"] == rule_ids
 
     # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness kind="unit"
     def test_unknown_view_errs(self):

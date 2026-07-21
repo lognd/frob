@@ -39,6 +39,7 @@ from pathlib import Path
 
 from frob.app._style import style_fail, style_ok, style_rule, style_warn
 from frob.app.config import AppConfig
+from frob.gates import known_gate_rule_ids
 from frob.graph import GraphSnapshot, build_graph, load_graph
 from frob.logging import get_logger
 from frob.logging.quiet import quiet_stdout_logs
@@ -612,7 +613,13 @@ def _evaluate_audit(model: KernelModel, root: Path):  # noqa: ANN201
         sys.exit(1)
     benign = DEFAULT_BENIGN_CAPABILITIES + repo_benign.danger_ok
 
-    audited = evaluate_exhaustiveness(model, benign=benign)
+    # frob:ticket T-0499
+    # Live gate-rule-id set so rule-id-shaped `caught_by` references
+    # (THREAT006/COMPLIANCE004) can actually resolve instead of always
+    # being treated as unresolved (T-0382 left this defaulting to empty).
+    audited = evaluate_exhaustiveness(
+        model, benign=benign, known_rule_ids=known_gate_rule_ids()
+    )
     if audited.is_err:
         _log.error("sys audit: %s", audited.danger_err)
         sys.exit(1)

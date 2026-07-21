@@ -24,6 +24,7 @@ from frob.gates import (
     drift_gate,
     invariant_gate,
     is_baseline_stale,
+    known_gate_rule_ids,
     load_baseline,
     load_coverage,
     prework_gate,
@@ -4234,3 +4235,20 @@ class TestDoc004ConsoleCommandDrift:
         violations = doc004_gate(tmp_path, snapshot)
 
         assert _by_rule(violations, "DOC004") == []
+
+
+# frob:ticket T-0499
+class TestKnownGateRuleIds:
+    """`known_gate_rule_ids()` is the public accessor strata's
+    `caught_by` verification (THREAT006/COMPLIANCE004) needs to resolve
+    rule-id-shaped references against; production callsites (T-0499)
+    thread it in instead of silently defaulting to empty."""
+
+    def test_returns_known_rule_id(self) -> None:
+        """A real, stable gate rule id is present in the returned set."""
+        assert "SEC001" in known_gate_rule_ids()
+
+    def test_is_frozenset(self) -> None:
+        """Return type is an immutable frozenset, not a mutable copy a
+        caller could accidentally mutate shared state through."""
+        assert isinstance(known_gate_rule_ids(), frozenset)

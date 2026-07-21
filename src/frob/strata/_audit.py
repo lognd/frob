@@ -478,14 +478,21 @@ def _caught_by_gaps(
 
 
 def _compliance_pii_lint_fingerprint_gaps(
-    model: KernelModel, compliance_views: tuple[str, ...]
+    model: KernelModel,
+    compliance_views: tuple[str, ...],
+    known_rule_ids: frozenset[str] = frozenset(),
 ) -> Result[tuple[list[FamilyGap], list[str]], StrataError]:
-    """COMPLIANCE001-002, PII, lint, and CVE-fingerprint gaps, in order."""
+    """COMPLIANCE001-002, PII, lint, and CVE-fingerprint gaps, in order.
+    `known_rule_ids` (T-0499) is threaded into `evaluate_compliance` so its
+    COMPLIANCE004 `caught_by` check gets the same live gate-rule-id set
+    THREAT006 does, instead of silently defaulting to empty."""
     gaps: list[FamilyGap] = []
     checked: list[str] = []
 
     for view in compliance_views:
-        compliance_report = evaluate_compliance(model, view)
+        compliance_report = evaluate_compliance(
+            model, view, known_rule_ids=known_rule_ids
+        )
         if compliance_report.is_err:
             return Err(compliance_report.danger_err)
         gaps.extend(_compliance_gaps(view, compliance_report.danger_ok.violations))
@@ -662,7 +669,9 @@ def _collect_all_family_gaps(
     gaps.extend(caught_by_gaps)
     checked.extend(caught_by_checked)
 
-    other_result = _compliance_pii_lint_fingerprint_gaps(model, compliance_views)
+    other_result = _compliance_pii_lint_fingerprint_gaps(
+        model, compliance_views, known_rule_ids
+    )
     if other_result.is_err:
         return Err(other_result.danger_err)
     other_gaps, other_checked = other_result.danger_ok
