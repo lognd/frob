@@ -4462,7 +4462,7 @@ META-PRINCIPLE (encode): every time we discover we "got away with" something, th
 id: T-0409
 title: 'Ledger-hygiene gate: enforce regular archiving (warn/fail when too many closed
   tickets sit un-archived)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
