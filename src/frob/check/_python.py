@@ -625,9 +625,7 @@ def _rule_family(rule: str) -> str:
 
 
 # frob:ticket T-0420
-def _gates_family_result(
-    family: str, violations: list, waived: list
-) -> ToolResult:  # noqa: ANN001
+def _gates_family_result(family: str, violations: list, waived: list) -> ToolResult:  # noqa: ANN001
     """One named per-family `ToolResult` (`gate:TEST`, `gate:COV`, ...):
     its own diagnostics and its own error/warning/waived count, so a human
     reads `TEST FAIL 2 errors` instead of hunting inside one shared `gates`
@@ -684,12 +682,10 @@ def _gate_summary_result(
 
 
 # frob:ticket T-0420
-# frob:tests tests/unit/test_check.py::TestSummarySeverityHonesty::test_warn_only_gate_summary_splits_errors_and_warnings  # noqa: E501
-# frob:tests tests/unit/test_check.py::TestRunGatesDelta::test_no_baseline_falls_back_to_full_set_with_warning  # noqa: E501
-# frob:tests tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta::test_delta_reports_only_new_violation  # noqa: E501
-def _gates_success_result(
-    report, *, root: Path, delta: bool
-) -> list[ToolResult]:  # noqa: ANN001
+# frob:tests tests/unit/test_check.py::TestSummarySeverityHonesty.test_warn_only_gate_summary_splits_errors_and_warnings  # noqa: E501
+# frob:tests tests/unit/test_check.py::TestRunGatesDelta.test_no_baseline_falls_back_to_full_set_with_warning  # noqa: E501
+# frob:tests tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta.test_delta_reports_only_new_violation  # noqa: E501
+def _gates_success_result(report, *, root: Path, delta: bool) -> list[ToolResult]:  # noqa: ANN001
     """`run_gates`'s report rendered as `frob check` stages (T-0420):
     one named `gate:<FAMILY>` `ToolResult` per rule family present, plus a
     trailing `gate-summary` totals+timing line -- replacing the single

@@ -172,6 +172,9 @@ class TestRunGatesQueueFailure:
             "# Tickets\n\n<!-- ticket:T-0001 -->\nnot even close to yaml\n"
         )
         result = _run_gates(tmp_path)
+        # A load failure (this test's case) always reports as the single
+        # "gates" ToolResult, never the T-0420 per-family list.
+        assert isinstance(result, ToolResult)
         assert result.tool == "gates"
         assert result.exit_code != 0, (
             "a failed ticket queue load must fail the gates stage, "
@@ -220,6 +223,7 @@ class TestRunGatesDelta:
         (tmp_path / "a.py").write_text("x = 2\n")
         # T-0420: same list-of-ToolResults shape as the no-baseline case above.
         results = _run_gates(tmp_path, delta=True)
+        assert isinstance(results, list)
         all_diags = [d for r in results for d in r.diagnostics]
         assert any("stale" in d.message for d in all_diags)
 
@@ -259,6 +263,7 @@ class TestSummarySeverityHonesty:
         # T-0420: the overall totals now live on the trailing gate-summary
         # ToolResult, not a single "gates" result.
         results = _run_gates(tmp_path)
+        assert isinstance(results, list)
         result = next(r for r in results if r.tool == "gate-summary")
 
         assert result.exit_code == 0, "warn-only findings must not fail the stage"
