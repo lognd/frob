@@ -52,6 +52,7 @@ declaration).
 | ARCH001 | arch | `frob.arch`'s complexity-aware long-function check (docs/modules/arch.md) still flags a function after its flat-body filter -- the one `frob.arch` category channeled into a real gate `Violation`, waivable with a reasoned `frob:waive ARCH001 reason="..." [ceiling=N]` (T-0289) |
 | PII010 | pii_structural | a pydantic/dataclass/TypedDict/attrs field's name or type annotation matches a PII-shaped signature (`FIELD_SIGNATURES`) with no `frob:waive PII010 reason="..."` -- see "PII010/SEC110" below |
 | PII011 | pii_structural | a tracked `.py` file's string-literal constant is structurally email-shaped (`_is_email_shaped`, `email.utils.parseaddr`-based) with no `frob:secret-fake` marker or `frob:waive PII011 reason="..."` -- see "PII010/SEC110" below |
+| PII012 | pii_structural | a plain identifier or `#`-comment word token resembles a `FIELD_SIGNATURES` keyword (suggestion severity, not deny-by-default) -- see "PII010/SEC110" below |
 | SEC110 | pii_structural | an `os.environ[...]`/`os.environ.get(...)`/`os.getenv(...)` call site with no `frob:waive SEC110 reason="..."` -- see "PII010/SEC110" below |
 | REF001 | refs | a git-tracked file has zero inbound references (auto-detected or verified `frob:used-by`) from any other tracked file -- see "Anti-orphan file-reference gate" below |
 | REF002 | refs | a git-tracked file has exactly one inbound reference (fragile single anchor) -- see "Anti-orphan file-reference gate" below |
@@ -249,14 +250,20 @@ structures and env-var access sites, drawn from
   line or the line directly above it, the same T-0157 marker convention
   the secrets scanner uses (a fixture literal discharges both gates with
   one comment).
+- **PII012 (T-0350, family 5): keyword-sweep at suggestion severity**:
+  every plain identifier (variable/parameter/function name) and every
+  `#`-comment word token matching a `FIELD_SIGNATURES` name-kind keyword,
+  excluding sites PII010 already reports on. Fires at WARN severity only
+  -- "no hard fail on names alone" per the ticket body -- distinct from
+  PII010's deny-by-default posture over an actual declared data-structure
+  field.
 - **Deliberately not built this pass** (see `_pii_structural.py`'s module
-  docstring and this ticket's Done report): identifier/comment
-  keyword-sweep at suggestion severity, non-Python language equivalents,
-  and non-Python DDL sources (`.sql` migration files). Filed as follow-on
-  tickets, not silently dropped. A direct join from a PII010/PII011/SEC110
-  finding to a T-0154 `carries` tag or a T-0082 `std.secrets` node (rather
-  than a bare waiver) is likewise a follow-on -- today's only discharge
-  mechanism is the waiver.
+  docstring and this ticket's Done report): non-Python language
+  equivalents and non-Python DDL sources (`.sql` migration files). Filed
+  as follow-on tickets, not silently dropped. A direct join from a
+  PII010/PII011/PII012/SEC110 finding to a T-0154 `carries` tag or a
+  T-0082 `std.secrets` node (rather than a bare waiver) is likewise a
+  follow-on -- today's only discharge mechanism is the waiver.
 
 ### Anti-orphan file-reference gate T-0396
 

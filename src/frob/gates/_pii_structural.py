@@ -61,12 +61,22 @@ way T-0157's secrets scanner escapes a fixture: a `frob:secret-fake`
 comment on the literal's own line or the line directly above it
 (`_line_marks_fake_email`).
 
+T-0350 (family 5, keyword sweep) added PII012: every plain identifier
+(variable/parameter/function name, `_scan_identifier_keywords`) and every
+`#`-comment word token (`_scan_comment_keywords`) matching a
+`FIELD_SIGNATURES` name-kind keyword, EXCLUDING sites PII010 already
+reports on (a bare local variable or parameter named `password` is a
+weaker signal than a declared data-structure field -- "no hard fail on
+names alone" per the ticket body). Fires at WARN ("suggestion") severity,
+the same severity `frob check` already treats as non-failing by default --
+this family is explicitly advisory, never a deny-by-default surface the
+way PII010/PII011/SEC110 are.
+
 Deliberately NOT built this pass (disclosed, not silently dropped -- see
-this ticket's Done report for the filed follow-on ticket ids): family (5)
-keyword-only suggestion-severity sweep of identifiers/comments, and non-
-Python languages (TS/Rust field-shape equivalents, and non-Python DDL
-sources such as `.sql` migration files). `PII010`/`PII011`/`SEC110` cover
-exactly families (1), (2), (3), and (4), scoped to Python via `frob.lang`'s
+this ticket's Done report for the filed follow-on ticket ids): non-Python
+languages (TS/Rust field-shape equivalents, and non-Python DDL sources
+such as `.sql` migration files). `PII010`/`PII011`/`PII012`/`SEC110` cover
+exactly families (1) through (5), scoped to Python via `frob.lang`'s
 existing parse surface.
 
 T-0430 (`docs/design/registry/pii.yaml`'s six deferred sections) extended
@@ -608,6 +618,138 @@ def _scan_python_email_values(
     return tuple(violations)
 
 
+#: T-0350 (family 5) word-token extraction for a single comment string --
+#: NOT the email-shape ban on regex (that ban is specific to family 4's
+#: value-shape match); a bare `[A-Za-z_]+` run split is a tokenizer, not a
+#: value-shape detector, the same kind of split `_field_name_hit` already
+#: does via `str.split("_")` for identifiers.
+_COMMENT_WORD_RE = re.compile(r"[A-Za-z_]+")
+
+
+def _pii012_violation(
+    rel_path: str, lineno: int, token: str, sig: _FieldSignature
+) -> Violation:
+    """The PII012 `Violation` for one keyword-sweep hit (T-0350 family 5) --
+    SUGGESTION-level signal: an identifier or comment word alone is never
+    proof of an actual PII surface (module docstring: "no hard fail on
+    names alone"), so this fires at the same WARN severity `frob check`
+    already treats as non-failing by default, explicitly worded as a
+    suggestion rather than a declared-surface finding."""
+    _log.warning(
+        "PII012: %s:%d keyword-sweep hit %r matches %s (%s) -- category %s",
+        rel_path,
+        lineno,
+        token,
+        sig.id,
+        sig.kind,
+        sig.category,
+    )
+    return Violation(
+        rule="PII012",
+        severity=Severity.WARN,
+        file=rel_path,
+        line=lineno,
+        message=(
+            f"PII012 (suggestion): {rel_path}:{lineno} identifier/comment "
+            f"token {token!r} resembles a PII-shaped keyword (matches "
+            f"{sig.kind} signature {sig.keyword!r}, category "
+            f"{sig.category!r}) -- worth a second look, not a confirmed "
+            f"PII surface on a name alone; declare via std.pii if this "
+            f"really does carry personal data, or `frob:waive PII012 "
+            f'reason="..."` to quiet a false positive'
+        ),
+    )
+
+
+def _is_data_structure_field_target(node: ast.AST) -> bool:
+    """Whether `node` is the `Name` target of an `AnnAssign` field already
+    covered by PII010 (`_scan_class_fields`) -- excluded from the family-5
+    keyword sweep so the same field name is not reported twice under two
+    different rule ids for the identical site."""
+    return (
+        isinstance(node, ast.AnnAssign)
+        and isinstance(node.target, ast.Name)
+        and _field_name_hit(node.target.id) is not None
+    )
+
+
+def _scan_identifier_keywords(tree: ast.Module, rel_path: str) -> list[Violation]:
+    """PII012 over every plain identifier (variable/parameter/function
+    name) matching a `FIELD_SIGNATURES` name-kind keyword, EXCLUDING sites
+    `_scan_python_fields` (PII010) already reports on -- T-0350 family 5:
+    "identifier/comment keyword hits", the broader, weaker-signal
+    population PII010's data-structure-field scan deliberately excludes
+    (a bare local variable, function parameter, or plain-class attribute
+    named `password` is not itself a declared data-structure field)."""
+    already_covered: set[int] = {
+        node.lineno
+        for node in ast.walk(tree)
+        if isinstance(node, ast.AnnAssign) and _is_data_structure_field_target(node)
+    }
+    seen: set[tuple[int, str]] = set()
+    violations: list[Violation] = []
+    for node in ast.walk(tree):
+        name: str | None = None
+        lineno = 0
+        if isinstance(node, ast.arg):
+            name, lineno = node.arg, node.lineno
+        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            name, lineno = node.name, node.lineno
+        elif isinstance(node, ast.Name) and isinstance(node.ctx, ast.Store):
+            name, lineno = node.id, node.lineno
+        if name is None or lineno in already_covered:
+            continue
+        sig = _field_name_hit(name)
+        if sig is None:
+            continue
+        key = (lineno, name)
+        if key in seen:
+            continue
+        seen.add(key)
+        violations.append(_pii012_violation(rel_path, lineno, name, sig))
+    return violations
+
+
+def _scan_comment_keywords(text: str, rel_path: str) -> list[Violation]:
+    """PII012 over every `#`-comment line's word tokens matching a
+    `FIELD_SIGNATURES` name-kind keyword (T-0350 family 5). A plain
+    line-oriented scan of `#`-prefixed trailing text, not a full tokenizer
+    pass -- adequate for a comment-word suggestion signal and avoids
+    misreading a `#` inside a string literal as a comment only in the rare
+    case a string itself contains one, the same trade-off `_secrets.py`'s
+    line-oriented scanner already documents as an honest limitation."""
+    violations: list[Violation] = []
+    seen: set[tuple[int, str]] = set()
+    for lineno, line in enumerate(text.splitlines(), start=1):
+        hash_index = line.find("#")
+        if hash_index < 0:
+            continue
+        comment = line[hash_index + 1 :]
+        for match in _COMMENT_WORD_RE.finditer(comment):
+            token = match.group(0)
+            sig = _field_name_hit(token)
+            if sig is None:
+                continue
+            key = (lineno, token)
+            if key in seen:
+                continue
+            seen.add(key)
+            violations.append(_pii012_violation(rel_path, lineno, token, sig))
+    return violations
+
+
+# frob:tests tests/test_pii_structural_gate.py::TestKeywordSweep.test_identifier_keyword_fires_at_suggestion_severity  # noqa: E501
+def _scan_python_keyword_sweep(
+    tree: ast.Module, rel_path: str, text: str
+) -> tuple[Violation, ...]:
+    """PII012 (T-0350 family 5): identifier and comment keyword hits at
+    suggestion severity, reusing `FIELD_SIGNATURES` -- no hard fail on a
+    bare name/comment word alone."""
+    violations = _scan_identifier_keywords(tree, rel_path)
+    violations.extend(_scan_comment_keywords(text, rel_path))
+    return tuple(violations)
+
+
 #: Attribute/function names an env-access call site's dotted path may end
 #: in, for `_is_env_access` (corpus family 3: "os.environ[...]/os.getenv/
 #: load_dotenv() ... process.env, std::env::var" -- Python subset here).
@@ -790,6 +932,7 @@ def pii_structural_gate(root: Path) -> tuple[Violation, ...]:
         violations.extend(_scan_python_env_access(tree, rel_path))
         violations.extend(_scan_python_ddl(tree, rel_path))
         violations.extend(_scan_python_email_values(tree, rel_path, text))
+        violations.extend(_scan_python_keyword_sweep(tree, rel_path, text))
 
     _log.info(
         "pii_structural_gate: scanned %d tracked .py file(s), %d violation(s)",
@@ -807,4 +950,5 @@ __all__ = [
     "_scan_python_fields",
     "_scan_python_ddl",
     "_scan_python_email_values",
+    "_scan_python_keyword_sweep",
 ]

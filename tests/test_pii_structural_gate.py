@@ -14,6 +14,7 @@ from pathlib import Path
 
 import pytest
 
+from frob.gates._models import Severity
 from frob.gates._pii_structural import (
     FIELD_SIGNATURES,
     _is_data_structure,
@@ -22,6 +23,7 @@ from frob.gates._pii_structural import (
     _scan_python_email_values,
     _scan_python_env_access,
     _scan_python_fields,
+    _scan_python_keyword_sweep,
     pii_structural_gate,
 )
 
@@ -291,6 +293,62 @@ class TestEmailShapeValues:
         tree = ast.parse(src)
         violations = _scan_python_email_values(tree, "example.py", src)
         assert violations == ()
+
+
+class TestKeywordSweep:
+    """PII012 (T-0350 family 5): identifier/comment keyword hits at
+    suggestion severity, excluding sites PII010 already reports."""
+
+    def test_identifier_keyword_fires_at_suggestion_severity(self) -> None:
+        # frob:tests src/frob/gates/_pii_structural.py::_scan_python_keyword_sweep  # noqa: E501
+        src = "def handler():\n    password = fetch_value()\n    return password\n"
+        tree = ast.parse(src)
+        violations = _scan_python_keyword_sweep(tree, "example.py", src)
+        assert any(
+            v.rule == "PII012" and v.severity == Severity.WARN for v in violations
+        )
+
+    def test_function_parameter_keyword_fires(self) -> None:
+        src = "def handler(api_key):\n    return api_key\n"
+        tree = ast.parse(src)
+        violations = _scan_python_keyword_sweep(tree, "example.py", src)
+        assert any(v.rule == "PII012" for v in violations)
+
+    def test_comment_keyword_fires(self) -> None:
+        src = "x = 1  # stores the user ssn for lookup\n"
+        tree = ast.parse(src)
+        violations = _scan_python_keyword_sweep(tree, "example.py", src)
+        assert any(v.rule == "PII012" for v in violations)
+
+    def test_unrelated_identifier_does_not_fire(self) -> None:
+        src = "def handler(width, height):\n    return width + height\n"
+        tree = ast.parse(src)
+        violations = _scan_python_keyword_sweep(tree, "example.py", src)
+        assert violations == ()
+
+    def test_tokenizer_identifier_does_not_falsely_match_token(self) -> None:
+        """Whole-token match, not substring, same T-0219 discipline PII010
+        already applies -- `tokenizer` must not match the `token` keyword."""
+        src = "def handler():\n    tokenizer = build()\n    return tokenizer\n"
+        tree = ast.parse(src)
+        violations = _scan_python_keyword_sweep(tree, "example.py", src)
+        assert violations == ()
+
+    def test_data_structure_field_not_double_reported(self) -> None:
+        """A field PII010 already reports on (a `password` field in a
+        `@dataclass`) is excluded from the family-5 identifier sweep --
+        no double report of the identical site under two rule ids."""
+        src = (
+            "from dataclasses import dataclass\n\n"
+            "@dataclass\n"
+            "class User:\n"
+            "    password: str\n"
+        )
+        tree = ast.parse(src)
+        field_violations = _scan_python_fields(tree, "example.py")
+        sweep_violations = _scan_python_keyword_sweep(tree, "example.py", src)
+        assert any(v.rule == "PII010" for v in field_violations)
+        assert not any(v.rule == "PII012" for v in sweep_violations)
 
 
 class TestSelfMatchExclusion:
