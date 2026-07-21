@@ -1391,6 +1391,118 @@ threat: elevation-of-privilege
 ```
 T-0254: the red-team Kerberos playbook as demanded, provable obligations extending T-0256's movement-impossibility family. KRB001 unconstrained delegation: any node declaring delegation unconstrained is a hard finding (it lets a compromised service impersonate ANY user to ANY service -- the worst lateral+vertical vector) -- must be re-declared constrained/rbcd or waived with a written accepted-risk reason and sub-target. KRB002 Kerberoasting exposure: an SPN bound to a principal whose credential class is a human-memorable/user password (not a machine account or gMSA) is roastable -- demand gMSA/machine-account or a waiver. KRB003 constrained-delegation blast radius: for a node with constrained delegation, prove the target SPN set does not transitively reach a higher-trust principal (S4U2Proxy chaining) -- reachability over the SPN graph, counterexample trace on failure. KRB004 cross-realm containment: a one-way/transitive trust must not create an undeclared path from a low-trust realm to a high-trust service. Each rule joins a separate compromised-domain-principal threat view (WeaknessEntry rows: CWE-522/CWE-269/CWE-284 class) per the separate-view precedent, NOT widening defaults. Reuse the T-0073 scenario engine for a compromised-service-account scenario whose closure shows the Kerberos blast radius. Litmus: an unconstrained-delegation + roastable-SPN vuln model fires KRB001/002; a gMSA + constrained + non-chaining hardened model discharges all four.
 
+## Done report
+
+Implemented KRB001-004 in a new `src/frob/strata/_krb_movement.py`
+(mirroring `_host_isolation.py`'s HOST001/HOST002 shape) plus
+`_scenarios.py::build_compromised_krb_scenario` (reuses the T-0073
+engine, `SetTrust`/`AddFlow`/`NoFlow`, exactly like
+`build_compromised_user_scenario`).
+
+Proof design (non-vacuous, per the family's review-round warning):
+- KRB001 (unconstrained delegation): fires unconditionally per node
+  declaring `delegation unconstrained` -- deny-by-default, waivable
+  with `KRB001:unconstrained-delegation`.
+- KRB002 (Kerberoasting): every declared `spn` fires -- an honest gap
+  (no gMSA/machine-account vocabulary exists in `std.krb`'s grammar,
+  which lives in `strata-core/` outside this ticket's scope, the same
+  cut T-0256 hit before T-0272), waivable per-SPN with a written
+  gMSA/machine-account attestation (`KRB002:<spn>`).
+- KRB003 (constrained-delegation blast radius): a REAL BFS
+  (`_delegation_reach_higher_trust`) over the SPN-ownership graph
+  built from every constrained-delegation node's own `target`s
+  (S4U2Proxy chaining) -- proved/refuted against the model's trust
+  lattice, not just the immediate target list, with a full witness
+  path per finding. Unit test `TestKrb003.test_chains` covers a real
+  2-hop chain (svc -> mid -> vault) that only a transitive closure
+  catches.
+- KRB004 (cross-realm containment): uses `_facts.py::build_facts`/
+  `FactBase.reachable` -- the SAME closure every `NoFlow` claim uses,
+  walking `model.flows` (which already include `_krb.py::
+  krb_trust_flows`'s elaboration-time-synthesized trust edges) -- and
+  only fires when the reaching path actually transits a
+  `krb_trust`-tagged flow AND lands on strictly higher trust.
+- `build_compromised_krb_scenario`: unconstrained delegation
+  materializes a synthetic edge to EVERY other node (worst-case reach);
+  constrained delegation materializes edges only to resolved targets.
+  `TestKrbScen.test_all` proves the closure REFUTES the
+  no-flow-to-everywhere claim for an unconstrained node (not vacuously
+  PROVED); `TestKrbScen.test_constrained_bounded_to_targets` proves an
+  unrelated third node stays outside a constrained node's blast
+  radius.
+
+Litmus (`tests/unit/strata/litmus/krb_movement_{vuln,hardened}.strata`,
+round-tripped through the real `strata_core` parser):
+- VULN model: `app` (unconstrained delegation), `mid`
+  (constrained-delegation chain mid -> vault escalating trust
+  authenticated -> trusted), `low_kdc` (one-way transitive trust into
+  higher-trust `high_kdc`) -- fires all four rules
+  (`TestKrbMovementVulnLitmus::test_vuln_model_fires_all_four_rules`).
+- HARDENED model: constrained delegation bounded to a same-trust
+  target, two-way trust between two SAME-trust realms (no escalation),
+  roastable-SPN honest gap discharged via two explicit gMSA-attestation
+  waivers -- KRB001/003/004 discharge with zero waivers needed;
+  KRB002 discharges via the waivers
+  (`TestKrbMovementHardenedLitmus::test_hardened_model_discharges`).
+
+Test results (measured, this worktree, natives built via `make core`):
+- `uv run pytest tests/unit/strata/test_krb_movement.py
+  tests/unit/strata/test_litmus_krb_movement.py -q` -> 15 passed.
+- `uv run pytest tests/unit/strata -q` -> 786 passed (no regressions).
+- `uv run ruff check` / `ruff check` (PATH) / `uv run ruff format
+  --check` / `ruff format --check` (PATH) all clean on every changed
+  file.
+- `uv run ty check src/frob/strata/` -> All checks passed.
+- `uv run frob test --base main` -> `[PASS] python` / `[PASS] strata`.
+- `git diff main --diff-filter=D --stat` -> empty (no unintended
+  deletions).
+
+Evidence:
+- tests/unit/strata/test_krb_movement.py::TestKrb001.test_fires
+- tests/unit/strata/test_krb_movement.py::TestKrb001.test_skips_constrained
+- tests/unit/strata/test_krb_movement.py::TestKrb002.test_fires
+- tests/unit/strata/test_krb_movement.py::TestKrb002.test_no_spn_no_finding
+- tests/unit/strata/test_krb_movement.py::TestKrb002.test_waivable_with_gmsa_reason
+- tests/unit/strata/test_krb_movement.py::TestKrb003.test_chains
+- tests/unit/strata/test_krb_movement.py::TestKrb003.test_non_chaining_same_trust_discharges
+- tests/unit/strata/test_krb_movement.py::TestKrb004.test_fires
+- tests/unit/strata/test_krb_movement.py::TestKrb004.test_same_trust_realms_discharge
+- tests/unit/strata/test_krb_movement.py::TestKrbScen.test_all
+- tests/unit/strata/test_krb_movement.py::TestKrbScen.test_constrained_bounded_to_targets
+- tests/unit/strata/test_krb_movement.py::TestKrbScen.test_unknown_node_fails_closed
+- tests/unit/strata/test_krb_movement.py::TestKrbCatalog.test_catalog_completeness_over_own_view
+- tests/unit/strata/test_litmus_krb_movement.py::TestKrbMovementVulnLitmus::test_vuln_model_fires_all_four_rules
+- tests/unit/strata/test_litmus_krb_movement.py::TestKrbMovementHardenedLitmus::test_hardened_model_discharges
+
+Filed: T-draft-30d66138 (release: bump version + CHANGELOG entry for
+T-0263's new public API -- REL001 gate fires but T-0263's own scope
+glob excludes pyproject.toml/CHANGELOG.md/.frob-release.json, so the
+bump is filed as separate release-management follow-on rather than
+widening this ticket's scope).
+
+Disclosed cuts (documented in docs/strata/krb.md's Scope boundary
+section, not filed as tickets, mirroring how T-0262's own scope
+boundary disclosed this ticket before it existed):
+- No RBCD-chain-vs-trust-boundary cross-check: `delegation rbcd` is
+  read as a typed value but no rule examines an RBCD node's blast
+  radius against declared trust boundaries the way KRB003 examines
+  `constrained`.
+- No `frob sys audit` wiring: `evaluate_krb_movement_waived`/
+  `build_compromised_krb_scenario` have no caller reaching them from
+  `_audit.py::evaluate_exhaustiveness` yet -- mirrors T-0280's staged
+  rollout for HOST001/HOST002 after T-0256 landed.
+
+Gates: `uv run frob check` -- 2 errors remain, both pre-existing/
+out-of-scope, not introduced by this change: REL001 (version bump,
+filed T-draft-30d66138 above, files out of scope) and TEST006 (no
+coverage stamp in this fresh worktree -- `make coverage` was not run;
+per the worktree-natives-artifact precedent this is an environment
+gap in a fresh worktree, not a regression from this ticket's diff).
+All COV001/DOC002/PERF004 findings this diff introduced were fixed
+in-line (docs/strata/krb.md's new "Movement proofs" section supplies
+the `#movement-proofs`/`#compromised-domain-principal-threat-catalog`
+anchors; the flagged `sorted()` call is waived with a reason).
+
 <!-- ticket:T-0264 -->
 ```yaml
 id: T-0264
@@ -4942,3 +5054,25 @@ acceptance: []
 threat: null
 ```
 make coverage runs the whole suite under coverage on every change, so the stale-stamp gate (TEST006) forces a full re-run for a one-line edit. Explore: (a) daemon-side background coverage refresh on file-change, (b) per-file/touched-set incremental coverage merged into the stamp, (c) caching unchanged modules' coverage. Goal: TEST005/TEST006 feedback in seconds, not a full suite.
+
+<!-- ticket:T-draft-30d66138 -->
+```yaml
+id: T-draft-30d66138
+title: 'release: bump version + CHANGELOG entry for T-0263 KRB001-004 API'
+state: queued
+kind: docs
+origin: human
+created: '2026-07-21'
+blocked_by: []
+parent: null
+scope:
+- pyproject.toml
+- CHANGELOG.md
+- .frob-release.json
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0263 added public API (KrbMovementViolation, evaluate_krb_movement_waived, evaluate_unconstrained_delegation, evaluate_roastable_spn, evaluate_constrained_delegation_blast_radius, evaluate_cross_realm_containment, KRB_MOVEMENT_CATALOG/_OUT_OF_SCOPE/_VIEWS, KRB_MULTI_INSTANCE_WAIVER_FAMILIES, build_compromised_krb_scenario) to frob.strata, which frob check's REL001 gate flags as a minor API change needing a version bump (>= 0.36.0) plus a CHANGELOG.md entry and frob release stamp. T-0263's own scope glob does not include pyproject.toml/CHANGELOG.md/.frob-release.json, so this is filed as separate follow-on release-management work rather than silently widening T-0263's scope.

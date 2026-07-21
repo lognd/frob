@@ -207,14 +207,92 @@ the kernel-level coverage.
 correctly today -- any T-0263/T-0264 containment reasoning over krb trust
 chains may rely on `transitive=False` to bound cross-realm reachability.
 
+## Movement proofs
+
+T-0263 is the examiner `_krb.py`'s module docstring promised: `_krb_
+movement.py` implements four rules, every one DERIVED from `KrbManifest`
+(never a hand-written per-node table), the KRB sibling of HOST001/
+HOST002's compromised-service-owner family (`docs/strata/host.md
+#movement-impossibility-proofs`, T-0256):
+
+- **KRB001 (unconstrained delegation)** -- any node declaring `delegation
+  unconstrained` is a hard finding: a compromise of that node can
+  impersonate ANY user to ANY service in the realm, the worst
+  lateral+vertical vector std.krb can represent. Fires unconditionally,
+  deny-by-default, until re-declared constrained/rbcd or waived with a
+  written accepted-risk reason.
+- **KRB002 (Kerberoasting exposure)** -- every declared `spn` is presumed
+  roastable. `std.krb` has no vocabulary distinguishing a gMSA/machine-
+  account principal from a human-memorable one (that grammar lives in
+  `strata-core/src/parse.rs`, outside T-0263's `src/frob/strata/**` scope,
+  the identical cut T-0256 hit before T-0272 added `group`/`sudoers`), so
+  this is an always-fire honest gap exactly like HOST002's pre-T-0272
+  `sudoers` sub-target -- an operator either accepts the finding or waives
+  it with a written gMSA/machine-account attestation.
+- **KRB003 (constrained-delegation blast radius)** -- for a node with
+  `delegation constrained`, the transitive closure of its `target` SPNs is
+  followed over every OTHER constrained-delegation node's own targets
+  (S4U2Proxy chaining, `_krb_movement.py::_delegation_reach_higher_
+  trust`), never just the immediate `target` list, and must never reach a
+  node whose trust is strictly higher than the delegating node's own. Each
+  reached higher-trust node is its own finding with a full witness path.
+- **KRB004 (cross-realm containment)** -- for every node declaring a
+  `realm`, no OTHER realm's node may be reachable via `_facts.py::
+  FactBase.reachable` (the SAME closure engine every `noflow` claim uses,
+  walking `model.flows` INCLUDING the krb-trust `Flow`s `krb_trust_flows`
+  already synthesizes at elaboration time) whose trust is strictly higher
+  AND whose reaching path actually transits a `krb_trust`-tagged edge --
+  an escalation reached by an ordinary declared app `Flow` is a different
+  obligation's business, not this rule's undeclared-trust-path claim.
+
+Every rule is multi-instance-per-node (one KRB002 finding per SPN, one
+KRB003/KRB004 finding per distinct higher-trust node reached) --
+`_krb_movement.py::KRB_MULTI_INSTANCE_WAIVER_FAMILIES` requires the SAME
+`RULE:SUBTARGET` waiver shape T-0174 established, run through the SAME
+`_waive.py::apply_waivers` channel `evaluate_host_isolation_waived` uses
+(`evaluate_krb_movement_waived`), each rule scoped to its own family so
+one rule's waiver can never silently swallow another's finding.
+
+### Compromised-domain-principal threat catalog
+
+`_krb_movement.py::KRB_MOVEMENT_CATALOG` adds CWE-269 (improper privilege
+management, KRB001/KRB003's escalation-via-delegation class), CWE-284
+(improper access control, KRB004's cross-realm class), and CWE-522
+(insufficiently protected credentials, KRB002's roastable-SPN class) to a
+SEPARATE `krb-movement-baseline` view (`KRB_MOVEMENT_VIEWS`) -- never
+appended to `_threat.py::CWE_CATALOG`/`VIEWS`, the same separate-view
+precedent `COMPROMISED_OWNER_CATALOG` set for HOST001/HOST002.
+
+### Compromised-krb-principal scenario
+
+`_scenarios.py::build_compromised_krb_scenario` reuses the T-0073
+scenario engine (the SAME `SetTrust`/`AddFlow`/`NoFlow` primitives
+`build_compromised_user_scenario` already reuses for HOST001/HOST002) to
+prove a compromised krb-bound node's blast radius is bounded by exactly
+what its OWN delegation grants: unconstrained delegation materializes a
+synthetic edge to EVERY other node (the true worst-case reach KRB001
+names), constrained delegation materializes edges only to its resolved
+`target` SPNs' owning nodes. A `NoFlow` claim per node outside that reach
+set is refuted the moment the closure actually gets there -- not
+vacuously proved over an unrelated declared-flow graph, guarded against
+the identical way `_scenarios.py`'s module docstring records T-0256's
+review-round REJECT fix.
+
 ## Scope boundary (what is NOT built here)
 
-- **No delegation-abuse obligations** (T-0263) -- no rule flags
-  unconstrained delegation reachable from an untrusted node, no rule
-  checks an RBCD chain against trust boundaries, no rule cross-references
-  `delegation_targets` against declared SPNs elsewhere in the model. Every
-  such check is exactly the crown-jewel obligation work T-0263 exists for;
-  this ticket only makes the FACTS representable.
+- **No RBCD-chain-vs-trust-boundary cross-check** (disclosed cut,
+  T-0263): KRB003 follows constrained-delegation chains, but an RBCD
+  (`delegation rbcd`) node's blast radius against declared trust
+  boundaries is not separately modeled -- `rbcd` nodes are read (typed
+  enum value) but no rule yet examines them the way `constrained` is
+  examined by KRB003. Filed as follow-on work rather than silently
+  expanding this ticket's scope.
+- **No `frob sys audit` wiring** (disclosed cut, T-0263, mirrors T-0280's
+  staged rollout for HOST001/HOST002): `evaluate_krb_movement_waived`/
+  `build_compromised_krb_scenario` are built and sound but have no caller
+  reaching them from `_audit.py::evaluate_exhaustiveness` yet -- exactly
+  the gap T-0280 closed for HOST001/HOST002 after T-0256, filed
+  separately rather than silently widening this ticket's scope.
 - **No store-level std.krb clauses.** `std.host` extended `runs_as`/
   `unit`/`owns`/`listens` to both `parse_node` and `parse_store` (a store
   is a node too). This ticket adds `realm`/`kdc`/`spn`/`delegation`/
@@ -243,3 +321,12 @@ chains may rely on `transitive=False` to bound cross-realm reachability.
 - `tests/unit/strata/test_litmus_krb.py` -- parse -> elaborate ->
   `krb_manifest_for`/`krb_trust_flows`/`flow_authenticates_via` round trip
   over the declared/undeclared litmus pair.
+- `src/frob/strata/_krb_movement.py` -- KRB001-004, `KrbMovementViolation`,
+  `evaluate_krb_movement_waived`, `KRB_MOVEMENT_CATALOG`.
+- `src/frob/strata/_scenarios.py::build_compromised_krb_scenario` -- the
+  compromised-krb-principal red-team scenario.
+- `tests/unit/strata/test_krb_movement.py` -- unit coverage for each rule
+  and the compromised-krb scenario against hand-built values.
+- `tests/unit/strata/test_litmus_krb_movement.py` -- parse -> elaborate ->
+  `evaluate_krb_movement_waived` round trip over the vuln/hardened
+  litmus pair.
