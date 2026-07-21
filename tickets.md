@@ -2908,7 +2908,7 @@ threat: null
 id: T-0498
 title: 'strata audit G1: bind ENDORSE Boundary predicates to observed code (THREAT003
   discharge is a declared string, not a proof)'
-state: in-progress
+state: done
 kind: security
 origin: human
 created: '2026-07-21'
