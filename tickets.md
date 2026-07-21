@@ -5464,7 +5464,7 @@ User (2026-07-20): account for anything that looks like a tool usage/guide, and 
 id: T-0439
 title: 'feat(sec-patterns): needle/fingerprint pattern-scan gate for CVE code-smell
   corpus (SEC-CVE-FINGERPRINT-*)'
-state: queued
+state: in-progress
 kind: security
 origin: human
 created: '2026-07-20'
@@ -5475,6 +5475,10 @@ scope:
 - src/frob/gates/
 - docs/design/registry/weaknesses.yaml
 - tests/unit/strata/
+- pyproject.toml
+- uv.lock
+- CHANGELOG.md
+- .frob-release.json
 scope_changes:
 - op: remove
   glob: tests/**
@@ -5486,11 +5490,188 @@ scope_changes:
   reason: T-0439 strata work maps to tests/unit/strata/
   actor: logan
   at: '2026-07-20'
-evidence: []
+- op: add
+  glob: pyproject.toml
+  reason: REL001 version bump for scan_text_for_fingerprints/FingerprintHit/cve_fingerprint_scan_gate
+    public API additions
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: REL001 version bump for scan_text_for_fingerprints/FingerprintHit/cve_fingerprint_scan_gate
+    public API additions
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: CHANGELOG.md
+  reason: REL001 version bump for scan_text_for_fingerprints/FingerprintHit/cve_fingerprint_scan_gate
+    public API additions
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: REL001 version bump for scan_text_for_fingerprints/FingerprintHit/cve_fingerprint_scan_gate
+    public API additions
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/unit/strata/test_cve_fingerprint_scan.py::TestScanTextForFingerprints::test_smelly_text_fires
+- tests/unit/strata/test_cve_fingerprint_scan.py::TestScanTextForFingerprints::test_clean_text_does_not_fire
+- tests/unit/strata/test_cve_fingerprint_scan.py::TestScanTextForFingerprints::test_wrong_language_does_not_fire
+- tests/unit/strata/test_cve_fingerprint_scan.py::TestScanTextForFingerprints::test_multiple_occurrences_each_reported
+- tests/unit/strata/test_cve_fingerprint_scan.py::TestScanTextForFingerprints::test_real_catalog_pickle_needle_fires
+- tests/unit/strata/test_cve_fingerprint_scan.py::TestGate::test_smelly_file_fires
+- tests/unit/strata/test_cve_fingerprint_scan.py::TestGate::test_clean_file_does_not_fire
+- tests/unit/strata/test_cve_fingerprint_scan.py::TestGate::test_self_excluded_files_not_scanned
+- tests/unit/strata/test_cve_fingerprint_scan.py::TestGate::test_unscanned_extension_is_silent
 attachments: []
 acceptance: []
 threat: null
 ```
+## Done report
+
+The ticket ledger carried only a title (no Description/Plan body -- a
+draft-created ticket with no elaboration ever recorded). Design taken from
+the coordinator's dispatch note plus the existing `std.cve` fingerprint
+catalog (`frob.strata._cve_fingerprint`, T-0153): a real gate module,
+distinct from two existing narrower uses of the same catalog --
+
+- `check_fingerprint_catalog_drift` (CVEFP001) only checks the CATALOG for
+  drift (does `cwe_id` still join a real `WeaknessEntry`); never scans any
+  source text.
+- `frob.vet._capability._scan_file_fingerprints` scans a THIRD-PARTY
+  dependency's local source (via `frob vet`) and reports only WHICH
+  fingerprints matched somewhere in that dependency, with no file:line.
+
+Added the missing first-party-source-lint sibling:
+
+- `frob.strata._cve_fingerprint.scan_text_for_fingerprints` (+
+  `FingerprintHit`): a line-level substring scan of `text` against
+  `CVE_FINGERPRINTS`' needles, reporting one hit per needle occurrence
+  with a 1-indexed line number. Deliberately simpler than `frob.vet.
+  _capability`'s scanner (no comment-span/whitespace-evasion filtering) --
+  documented as a disclosed, accepted false-positive class rather than
+  silently claimed equivalent.
+- `frob.gates._cve_fingerprint_scan.cve_fingerprint_scan_gate`: walks every
+  git-tracked, language-bucketed file (extension table mirrors `frob.vet.
+  _capability._EXT_LANGUAGE`, duplicated per the same small-helper-not-
+  worth-the-coupling precedent `frob.gates._walk_lint` already sets) and
+  emits one WARN-severity `SEC-CVE-FINGERPRINT-001` `Violation` per matched
+  needle occurrence. Registered in `_KNOWN_GATE_RULES` and wired into
+  `run_gates`'s process-job table (repo-wide, like `secrets`/`walk_lint`).
+  Imports `frob.strata._cve_fingerprint` LAZILY (module-function-local),
+  mirroring `frob.gates.__init__`'s own deferred-`frob.strata`-import
+  convention (T-0135: avoids paying the `strata_core` native-extension
+  import cost on every `frob check` invocation).
+
+Non-vacuous fixture pairs (the ticket's explicit requirement):
+`tests/unit/strata/test_cve_fingerprint_scan.py` -- a "smelly" fixture
+(`shell=True`) fires with the real shipped catalog; a "clean" twin using
+the safe alternative (`shell=False`) and an out-of-scanned-language file
+(`.md`) do not. Also exercises the gate wrapper directly (`TestGate`, over
+a real ephemeral git repo, `git ls-files`-backed) rather than only the
+underlying pure `scan_text_for_fingerprints` function, and a sanity check
+against the REAL (non-fixture) `CVE_FINGERPRINTS` catalog
+(`test_real_catalog_pickle_needle_fires`).
+
+Self-match false positive (T-0151's own documented class, part b):
+this gate's own module docstring initially spelled out literal needle
+substrings (`yaml.load(`, `pickle.loads(`) as prose examples -- caught by
+`test_selfconform.py::TestRealGateGreen` firing a NEW SYS100 ("capability
+'deserialize' observed but not declared" on the `gates` design node),
+since `frob.vet._capability`'s own SYS100 capability scan matched those
+same needle strings as literal DATA in the docstring, same self-match
+class `_capability.py`'s own module docstring already discloses for
+itself. Fixed by rewording the docstring to describe the pattern classes
+without spelling out the literal needle strings, rather than declaring a
+fake `may "deserialize"` capability for a docstring artifact. Both source
+files (`_cve_fingerprint_scan.py` and `_cve_fingerprint.py` itself) are
+self-excluded from the gate's own scan for the same reason (they carry
+every needle as literal catalog/table data).
+
+Registry dispositions (`docs/design/registry/weaknesses.yaml`): checked
+`frob check`'s `registry` gate (REG001-005) before and after this change
+-- unaffected, 0 REG-family errors either way. No CWE entry currently
+carries a `handled_by:SEC-CVE-FINGERPRINT-001`-shaped disposition, so
+REG002 (unknown `handled_by` rule id) had nothing to newly break; the new
+rule id is registered in `_KNOWN_GATE_RULES` so a future disposition
+naming it would resolve. Did NOT reclassify the several CWE entries
+(CWE-78/79/89/94/502/798/918) this fingerprint set happens to also cover,
+which currently carry `deferred:T-0384` -- that reconciliation is T-0384's
+own ticket family's job, out of this ticket's scope to second-guess.
+
+REL001: three new public symbols (`scan_text_for_fingerprints`,
+`FingerprintHit`, `cve_fingerprint_scan_gate`) -> minor version bump
+0.44.0 -> 0.45.0 (pyproject.toml, uv.lock via `uv lock`, CHANGELOG.md,
+`.frob-release.json` via `frob release stamp`).
+
+Verification:
+- `uv run pytest tests/unit/strata -q`: all green except
+  `test_export_golden.py::TestExportGolden::test_seccomp`, confirmed
+  pre-existing and unrelated to this ticket (same failure reproduces with
+  this ticket's changes checked out to their pre-change state; see
+  T-0503's Done report for the identical finding and the checkout+patch
+  method used instead of `git stash`, which is banned in a worktree).
+- `uv run pytest tests/unit/strata/test_selfconform.py::TestRealGateGreen
+  -q`: green (1 passed), after the docstring-wording fix above.
+- `uv run ruff check` / `uv run ruff format --check` on every touched
+  file: clean.
+- `uv run ty check` on every touched file: clean.
+- `uv run frob check --ticket T-0439`: 7 errors remaining, all confirmed
+  pre-existing and out of this ticket's scope: 6x COV003 (T-0470/T-0483
+  evidence referencing `tests/test_gates.py` node ids that do not
+  currently exist in that file -- a known, already-tracked ledger-
+  reconstruction gap per those tickets' own Done report prose, `tests/
+  test_gates.py` is not in T-0439's scope) and 1x DOC003 (`docs/commands/
+  sys.md` THREAT003 CWE-78 on the `gates` design node -- confirmed
+  pre-existing via the same checkout-revert-then-restore method T-0503
+  used, unrelated to compliance/fingerprints). No new errors from this
+  ticket's change. The new gate itself fires 28 WARN-severity (non-
+  build-failing) `SEC-CVE-FINGERPRINT-001` hits across the existing repo
+  (mostly needle-as-literal-data false positives in `frob.vet.
+  _capability_registry`'s own needle table and test fixtures citing real
+  needle strings) -- left unwaived as an honest first-turn-on baseline,
+  same posture `_registry_exhaustiveness.py`'s own docstring documents for
+  REG's first-turn-on red state, since triaging/waiving each individually
+  is a distinct follow-up, not this ticket's wiring task.
+
+Caveat: mid-ticket, `git checkout main -- tickets.md` was needed (T-0503's
+same land-timing trap: main had advanced past this worktree's branch
+point with other tickets closing) -- resolved via the playbook's section
+10b recipe (restore ledger to main verbatim, re-run `ticket start`/scope/
+evidence/done-report against the restored ledger, never a `git merge
+main` this late).
+
+Filed: none.
+
+### Changed
+```
+ .frob-release.json                              |   6 +-
+ CHANGELOG.md                                    |  40 +++
+ pyproject.toml                                  |   2 +-
+ src/frob/gates/__init__.py                      |  10 +
+ src/frob/gates/_cve_fingerprint_scan.py         | 177 ++++++++++
+ src/frob/strata/_audit.py                       |  19 +-
+ src/frob/strata/_compliance.py                  |  34 ++
+ src/frob/strata/_cve_fingerprint.py             |  78 +++++
+ tests/unit/strata/test_audit.py                 |  67 +++-
+ tests/unit/strata/test_cve_fingerprint_scan.py  | 148 +++++++++
+ tests/unit/strata/test_litmus_audit_hardened.py |   8 +-
+ tickets.md                                      | 409 +++++++++++++++++++++++-
+ uv.lock                                         |   2 +-
+ 13 files changed, 976 insertions(+), 24 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_cve_fingerprint_scan.py::TestScanTextForFingerprints::test_smelly_text_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_cve_fingerprint_scan.py::TestScanTextForFingerprints::test_clean_text_does_not_fire` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_cve_fingerprint_scan.py::TestScanTextForFingerprints::test_wrong_language_does_not_fire` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_cve_fingerprint_scan.py::TestScanTextForFingerprints::test_multiple_occurrences_each_reported` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_cve_fingerprint_scan.py::TestScanTextForFingerprints::test_real_catalog_pickle_needle_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_cve_fingerprint_scan.py::TestGate::test_smelly_file_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_cve_fingerprint_scan.py::TestGate::test_clean_file_does_not_fire` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_cve_fingerprint_scan.py::TestGate::test_self_excluded_files_not_scanned` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_cve_fingerprint_scan.py::TestGate::test_unscanned_extension_is_silent` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0440 -->
 ```yaml
