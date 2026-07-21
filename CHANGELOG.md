@@ -17,7 +17,17 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
-## [0.46.0] - unreleased
+## [0.49.0] - unreleased (reconciliation)
+
+Another parallel landing chain (T-0335/T-0462/T-0452/T-0465, gates-area
+tickets worked sequentially in one worktree) independently claimed
+version numbers 0.44.0-0.46.0, colliding with the land-machinery/strata
+chains reconciled at 0.47.0/0.48.0 below. Final reconciled version is
+0.49.0; that chain's own three sections follow immediately below under
+the numbers they were authored with, same reconciliation pattern as
+0.47.0.
+
+## [0.46.0] - unreleased (gates-area chain)
 
 Public-API surface change since 0.45.0 (mechanical semver via REL001): an
 additive (minor) bump -- new hazard-guard gate rule.
@@ -33,7 +43,7 @@ additive (minor) bump -- new hazard-guard gate rule.
   Added the same hazard as a hard rule in
   docs/guides/agent-playbook.md (section 1c).
 
-## [0.45.0] - unreleased
+## [0.45.0] - unreleased (gates-area chain)
 
 Public-API surface change since 0.44.0 (mechanical semver via REL001): an
 additive (minor) bump -- new advisory invariant density lint.
@@ -48,7 +58,7 @@ additive (minor) bump -- new advisory invariant density lint.
   can't see. New public `frob.gates.invariants.find_normative_claims` /
   `NORMATIVE_CLAIM_PATTERNS` and `frob.gates.inv004_gate`.
 
-## [0.44.0] - unreleased
+## [0.44.0] - unreleased (gates-area chain)
 
 Public-API surface change since 0.43.0 (mechanical semver via REL001): an
 additive (minor) bump -- new invariant-language lint.
@@ -65,21 +75,138 @@ additive (minor) bump -- new invariant-language lint.
   hardening specific docs to ERROR (or building markdown-side
   `frob:waive` support) is follow-up work, not done in this pass.
 
+## [0.48.0] - unreleased (strata round 2, part 2)
+
+Public-API surface change since 0.44.0 (mechanical semver via REL001): an
+additive (minor) bump -- new `frob.strata.scan_text_for_fingerprints`/
+`FingerprintHit` and `frob.gates.cve_fingerprint_scan_gate`.
+
+- T-0439: added SEC-CVE-FINGERPRINT-001, a `frob check` gate scanning
+  first-party repo source for the `CVE_FINGERPRINTS` needle corpus
+  (`frob.strata._cve_fingerprint`) -- the missing first-party-source-lint
+  sibling of CVEFP001 (catalog-drift only, no source scan) and `frob vet`'s
+  `_scan_file_fingerprints` (third-party dependency source, no file:line).
+  New `frob.strata.scan_text_for_fingerprints`/`FingerprintHit` do the
+  line-level needle scan; `frob.gates.cve_fingerprint_scan_gate`
+  (`src/frob/gates/_cve_fingerprint_scan.py`) walks every git-tracked,
+  language-bucketed file and wires it into `frob check` as WARN-severity
+  `SEC-CVE-FINGERPRINT-001` (registered in `_KNOWN_GATE_RULES`). Litmus
+  pair: `tests/unit/strata/test_cve_fingerprint_scan.py` -- a "smelly" fixture
+  (`shell=True`) fires, a "clean" one (`shell=False`) and an out-of-language
+  file do not.
+
+## [0.48.0] - unreleased (strata round 2, part 1)
+
+Public-API surface change since 0.43.0 (mechanical semver via REL001): an
+additive (minor) bump -- new `frob.strata.COMPLIANCE_OUT_OF_SCOPE` catalog.
+
+- T-0503: COMPLIANCE004 (`caught_by` integrity for compliance out-of-scope
+  exclusions) was vacuous in production -- `_audit.py` never threaded an
+  `out_of_scope` catalog into `evaluate_compliance` (unlike the security/
+  quality families' `CWE_TOP_25_OUT_OF_SCOPE`/`QUALITY_OUT_OF_SCOPE`), so
+  it always defaulted to `()` and the check trivially passed regardless of
+  a fabricated `caught_by`. Added `COMPLIANCE_OUT_OF_SCOPE` (a real,
+  production `OutOfScopeRegulation` catalog, `frob.strata._compliance`) and
+  threaded it into `_compliance_pii_lint_fingerprint_gaps`'s
+  `evaluate_compliance` call. Non-vacuous proof: `tests/unit/strata/
+  test_audit.py::TestExhaustiveness.
+  test_compliance_out_of_scope_bad_caught_by_fails_real_audit_path` shows a
+  fabricated `caught_by` failing through the real production entrypoint
+  (`evaluate_exhaustiveness`, exactly what `frob sys audit` calls), not
+  just the unit-level `check_regulation_caught_by_integrity` evaluator.
+
+## [0.47.0] - unreleased
+
+Reconciliation section: two parallel landing chains independently claimed
+overlapping version numbers. The check-output UX chain (T-0419/T-0420/
+T-0421: TTY progress task-list, per-family gate stages + gate-summary,
+skip_unchanged per-language reporting; new RenderWriter-driven check
+runner surface) stamped 0.44.0 without a section, colliding with the
+land-machinery chain's sections below. Final reconciled version is
+0.47.0; the sections below document the land-machinery surface under the
+numbers they were authored with.
+
+## [0.46.0] - unreleased
+
+Public-API surface change since 0.45.0 (mechanical semver via REL001): an
+additive (minor) bump -- new `frob.tickets.enforce_worktree_lease` and
+`frob.scaffold.install_worktree_lease_hook`.
+
+- T-0431: worktree-lease guard. New `FROB_WORKTREE=<abs path>` env var
+  names the one worktree an agent's shell is authorized to mutate frob's
+  tracked ticket state in; `frob.tickets.enforce_worktree_lease(root)`
+  refuses (`Err(WorktreeLeaseViolation)`) when it is set and `root`'s
+  actual git top-level does not match it -- wired as the first statement
+  of every mutating `frob.tickets` entry point (`new_ticket`,
+  `transition`, `add_evidence`, `add_cmd_evidence`, `set_done_report`,
+  `record_failure`, `attach`, `archive`, `renumber`/`renumber_one`) and
+  into `frob.gates`' `stamp_baseline`/`stamp_coverage`. Unset (the
+  coordinator's own commands) is unrestricted, matching prior behavior.
+  New `frob.scaffold.install_worktree_lease_hook` installs `pre-commit`/
+  `pre-merge-commit` git hooks that abort loudly when `FROB_AGENT` is set
+  non-empty, catching a raw `git commit`/`git merge` an agent shell ran
+  directly against the wrong checkout, independent of `frob.tickets`.
+
+## [0.45.0] - unreleased
+
+Public-API surface change since 0.44.0 (mechanical semver via REL001): an
+additive (minor) bump -- new `frob.tickets.closed_ticket_ids`.
+
+- T-0409: ledger-hygiene gate (TICK003). WARN (escalating to ERROR past a
+  hard cap) when the active `tickets.md` ledger holds more than a
+  configurable threshold (`frob.toml` `[tickets]` `stale_archive_warn`/
+  `stale_archive_error`, default 20/60) of closed (done/dropped) tickets
+  sitting un-archived -- the repeated "we got away with not running `frob
+  ticket archive`" gap this ticket exists to close. New public
+  `frob.tickets.closed_ticket_ids(queue)` is the shared "which tickets are
+  closed" predicate the gate counts over. Resurrection-safe by
+  construction: the gate only counts and recommends `frob ticket archive`,
+  never writes anything itself, so it can never interact with the land/
+  splice path's archive-resurrection guards (`_drop_resurrected_ids`,
+  `splice_ledger`).
+
+## [0.44.0] - unreleased
+
+Public-API surface change since 0.43.0 (mechanical semver via REL001): a
+signature change to an existing public symbol (`frob.tickets.land`), so
+REL001 computes it as MAJOR-class -- under the "0.x is initial
+development" semver rule this bumps the MINOR, not to 1.0.0.
+
+- T-0338: `frob ticket land` now owns the two remaining coordinator-
+  plumbing steps the T-0479 own-block-only splice did not cover: a
+  REL001 version-bump/stamp step and a native-rebuild trigger. New
+  optional `land()` parameters `bump_version` and `rebuild_natives`
+  (both default `None`, matching the T-0398/D-05 `collected`/`passed`/
+  `covers_scope` pattern): `bump_version(root, ticket, final_id)` is
+  invoked right after the squash-apply is staged, computing whatever
+  `frob.release` says the just-squashed public API demands and, if
+  needed, rewriting `pyproject.toml`'s version, prepending a minimal
+  CHANGELOG.md entry, and `frob release stamp`-ing the manifest, all
+  staged into the same landing commit; `rebuild_natives(root)` runs only
+  when the landed changeset touches `frob-core/`/`strata-core/` and
+  triggers a rebuild (best-effort, non-blocking on failure). `LandReport`
+  grew `release_bumped_to`/`natives_rebuilt` fields. The `frob ticket
+  land` CLI supplies both by default
+  (`frob.app.ticket_runner._apply_release_bump_for_land`/
+  `_land_rebuild_natives_fn`).
+
 ## [0.43.0] - unreleased
 
 Public-API surface change since 0.42.0 (mechanical semver via REL001): an
-additive (minor) bump -- new `frob.gates.known_gate_rule_ids` accessor.
+additive (minor) bump -- new `frob.tickets.replay_evidence_from_done_report`.
 
-- T-0499: wire real `known_rule_ids` into `evaluate_exhaustiveness`/
-  `evaluate_compliance` production callsites. New public
-  `frob.gates.known_gate_rule_ids()` returning the live gate-rule-id set;
-  `frob.app.sys_runner._evaluate_audit` now threads it into
-  `evaluate_exhaustiveness`, and `frob.strata._audit`'s compliance path
-  threads the same `known_rule_ids` into `evaluate_compliance` so
-  THREAT006 and COMPLIANCE004's `caught_by` checks can both actually
-  resolve a rule-id-shaped reference instead of always defaulting to
-  empty (dormant since T-0382 wired the parameters but never called
-  either production entrypoint with a live set).
+- T-0357: coordinator-land evidence-loss recovery. A ticket closed straight
+  from a hand-merged worktree (`git merge --no-ff`, bypassing `frob ticket
+  land`'s ledger splice) could arrive at `transition(..., DONE)` with an
+  empty structured `evidence:` field even though its Done report prose
+  still carried the rendered ids -- failing MissingEvidence and forcing a
+  manual `frob ticket evidence` re-record on main (the T-0248/T-0266
+  incidents). New `frob.tickets.replay_evidence_from_done_report` parses a
+  ticket's own rendered `### Evidence` Done-report section (the inverse of
+  `render_evidence_block`) and recovers those ids into the structured
+  field; `transition(..., DONE)` now attempts this automatically,
+  best-effort, before falling through to the ordinary MissingEvidence
+  rejection.
 
 ## [0.42.0] - unreleased
 

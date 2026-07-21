@@ -47,6 +47,7 @@ from frob.gates._baseline import (
     violation_fingerprint,
 )
 from frob.gates._coverage import load_coverage, load_stamp, stamp_coverage
+from frob.gates._cve_fingerprint_scan import cve_fingerprint_scan_gate
 from frob.gates._docblocks import doc004_gate
 from frob.gates._exclude_hazard import exclude_hazard_gate
 from frob.gates._models import (
@@ -96,7 +97,7 @@ from frob.lang._models import ParsedFile
 from frob.lang._walk_rust import _MACRO_SYMBOL_SUFFIX
 from frob.logging import get_logger
 from frob.testing import CollectedTests, collect_python_tests, collect_rust_tests
-from frob.tickets import Ticket, TicketQueue, TicketState, load_queue
+from frob.tickets import Ticket, TicketQueue, TicketState, closed_ticket_ids, load_queue
 from frob.tickets._models import (
     CMD_EVIDENCE_ALLOWED_KINDS,
     is_cmd_evidence,
@@ -753,6 +754,10 @@ _KNOWN_GATE_RULES = frozenset(
         "SEC003",
         "TICK001",
         "TICK002",
+        # T-0409: ledger-hygiene gate (frob.gates.tickets_gate's
+        # _tick003_stale_archive) -- too many closed tickets sitting
+        # un-archived in the active tickets.md ledger.
+        "TICK003",
         "PII010",
         "SEC110",
         # T-0289: long-function is the one frob-arch category channeled into
@@ -778,6 +783,9 @@ _KNOWN_GATE_RULES = frozenset(
         # T-0465: .git/info/exclude entry shadowing tracked source
         # (frob.gates._exclude_hazard).
         "EXCL001",
+        # T-0439: CVE code-smell needle/fingerprint pattern-scan
+        # (frob.gates._cve_fingerprint_scan).
+        "SEC-CVE-FINGERPRINT-001",
     }
 )
 
@@ -3525,10 +3533,89 @@ def _tick002_draft_on_default(root: Path, queue: TicketQueue) -> tuple[Violation
     )
 
 
+# frob:ticket T-0409
+_TICK003_DEFAULT_WARN = 20
+_TICK003_DEFAULT_ERROR = 60
+
+
+def _tick003_thresholds(root: Path) -> tuple[int, int]:
+    """`(warn_at, error_at)` un-archived-closed-ticket count thresholds
+    (T-0409) from `frob.toml`'s `[tickets]` table (`stale_archive_warn`/
+    `stale_archive_error`), defaulting to
+    `(_TICK003_DEFAULT_WARN, _TICK003_DEFAULT_ERROR)`. A missing/malformed
+    `frob.toml` degrades to the defaults rather than blocking the gate --
+    ledger hygiene is a hint, not something a config-loading hiccup should
+    take down."""
+    toml_path = root / "frob.toml"
+    if not toml_path.exists():
+        return _TICK003_DEFAULT_WARN, _TICK003_DEFAULT_ERROR
+    try:
+        with toml_path.open("rb") as fh:
+            table = tomllib.load(fh).get("tickets", {})
+        return (
+            int(table.get("stale_archive_warn", _TICK003_DEFAULT_WARN)),
+            int(table.get("stale_archive_error", _TICK003_DEFAULT_ERROR)),
+        )
+    except (OSError, tomllib.TOMLDecodeError, TypeError, ValueError) as exc:
+        _log.warning(
+            "tick003: frob.toml unreadable/malformed (%s), using defaults", exc
+        )
+        return _TICK003_DEFAULT_WARN, _TICK003_DEFAULT_ERROR
+
+
+def _tick003_violation(count: int, severity: Severity, threshold: int) -> Violation:
+    """One TICK003 `Violation` at `severity`, naming `count` and the
+    `threshold` it crossed, always pointing at `frob ticket archive` as the
+    fix (T-0409)."""
+    return Violation(
+        rule="TICK003",
+        severity=severity,
+        file="tickets.md",
+        line=0,
+        message=(
+            f"TICK003: {count} closed ticket(s) sitting un-archived in "
+            f"tickets.md (threshold {threshold}) -- run `frob ticket "
+            f"archive` (in a quiet window, no in-flight worktrees) to clear it"
+        ),
+    )
+
+
+def _tick003_stale_archive(root: Path) -> tuple[Violation, ...]:
+    """TICK003 (T-0409): WARN (escalating to ERROR past a hard cap) when
+    the ACTIVE ledger (never the archive -- an already-archived closed
+    ticket is not a hygiene problem) holds more than a configurable
+    threshold of closed (done/dropped) tickets un-archived.
+
+    Resurrection-safe by construction: this gate only ever COUNTS and
+    recommends `frob ticket archive`; it never archives anything itself, so
+    it can never interact with the land/splice path's archive-resurrection
+    guards (`_drop_resurrected_ids`, `splice_ledger`, docs/modules/
+    tickets.md#frob-ticket-land) -- those guard a WRITE this gate never
+    performs. `frob ticket archive` itself should still only be run in a
+    quiet window (no active worktrees), per the same known hazard; this
+    gate's message says so but cannot enforce it.
+    """
+    active = _tickets_load_all(root)
+    if active.is_err:
+        return ()
+    count = len(closed_ticket_ids(TicketQueue(tickets=active.danger_ok)))
+    warn_at, error_at = _tick003_thresholds(root)
+    if count > error_at:
+        return (_tick003_violation(count, Severity.ERROR, error_at),)
+    if count > warn_at:
+        return (_tick003_violation(count, Severity.WARN, warn_at),)
+    return ()
+
+
 # frob:doc docs/modules/tickets.md#decision-record-t-0162
 def tickets_gate(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
-    """TICK001/TICK002: the T-0162 ticket-id collision invariant gate."""
-    return _tick001_duplicate_ids(root) + _tick002_draft_on_default(root, queue)
+    """TICK001/TICK002/TICK003: the T-0162 ticket-id collision invariant
+    gate, plus the T-0409 ledger-hygiene check."""
+    return (
+        _tick001_duplicate_ids(root)
+        + _tick002_draft_on_default(root, queue)
+        + _tick003_stale_archive(root)
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -4902,6 +4989,11 @@ def _build_jobs(
         # WALK001 result as an unscoped run since a raw traversal call
         # anywhere in src/frob/ is a repo-wide concern, not a subdir one.
         "walk_lint": _ProcessJob(walk_lint_gate, (st.repo_root,)),
+        # T-0439: whole-repo tracked-file scan, always against repo_root --
+        # same reasoning as secrets/walk_lint above: a CVE-fingerprint
+        # needle anywhere in the tree is a repo-wide concern, not a
+        # subdir-scoped one.
+        "cve_fingerprint_scan": _ProcessJob(cve_fingerprint_scan_gate, (st.repo_root,)),
     }
     selected_thread = {
         name: job for name, job in thread_jobs.items() if name in selected
@@ -5188,6 +5280,7 @@ __all__ = [
     "load_baseline",
     "load_coverage",
     "load_invariants",
+    "cve_fingerprint_scan_gate",
     "decisions_gate",
     "doclink_gate",
     "docanchor_gate",

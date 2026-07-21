@@ -132,6 +132,14 @@ class AppConfig(BaseModel):
     check_stamp_coverage: bool = False
     check_stamp_baseline: bool = False
     check_delta: bool = False
+    # frob:ticket T-0421
+    #: `[check] skip_unchanged = true` in frob.toml only (no CLI flag, to
+    #: keep __main__'s argument surface untouched) -- opts a polyglot
+    #: auto-detect run into skipping a language's stage entirely when no
+    #: file matching its own suffixes changed since `check_base`, reporting
+    #: a visible SKIPPED (unchanged) line instead of silently re-running an
+    #: untouched language every time.
+    check_skip_unchanged: bool = False
     # -v/-vv count (T-0202): 0=summary+violations only, 1=INFO firehose,
     # 2+=full per-symbol DEBUG.
     check_verbose: int = 0

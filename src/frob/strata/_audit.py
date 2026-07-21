@@ -37,7 +37,12 @@ from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
 
-from ._compliance import REGULATION_VIEWS, ComplianceViolation, evaluate_compliance
+from ._compliance import (
+    COMPLIANCE_OUT_OF_SCOPE,
+    REGULATION_VIEWS,
+    ComplianceViolation,
+    evaluate_compliance,
+)
 from ._cve_fingerprint import (
     CVE_FINGERPRINTS,
     FingerprintViolation,
@@ -485,13 +490,21 @@ def _compliance_pii_lint_fingerprint_gaps(
     """COMPLIANCE001-002, PII, lint, and CVE-fingerprint gaps, in order.
     `known_rule_ids` (T-0499) is threaded into `evaluate_compliance` so its
     COMPLIANCE004 `caught_by` check gets the same live gate-rule-id set
-    THREAT006 does, instead of silently defaulting to empty."""
+    THREAT006 does, instead of silently defaulting to empty. `COMPLIANCE_
+    OUT_OF_SCOPE` (T-0503) is likewise threaded in as `out_of_scope` --
+    mirroring `CWE_TOP_25_OUT_OF_SCOPE + QUALITY_OUT_OF_SCOPE` at
+    `_caught_by_gaps` above -- so COMPLIANCE004 has a real, non-empty
+    catalog to verify in production instead of trivially passing on an
+    always-empty tuple."""
     gaps: list[FamilyGap] = []
     checked: list[str] = []
 
     for view in compliance_views:
         compliance_report = evaluate_compliance(
-            model, view, known_rule_ids=known_rule_ids
+            model,
+            view,
+            out_of_scope=COMPLIANCE_OUT_OF_SCOPE,
+            known_rule_ids=known_rule_ids,
         )
         if compliance_report.is_err:
             return Err(compliance_report.danger_err)

@@ -5,7 +5,11 @@
 // hosting. Both edges are plain (unmarked) flows, so the closure treats
 // `logs` as fully transitive: `tui -> logs -> server` is a real witness
 // path and `noflow tui -> server` is REFUTED -- exactly the false defeat
-// the ticket describes when a utility hub is left unmarked.
+// the ticket describes when a utility hub is left unmarked. Unaffected by
+// T-0496 (docs/audits/strata.md G5): this fixture never marks `utility` at
+// all, so `_NOFLOW_NON_TRANSITIVE_ATTRS` excluding `utility` for the
+// confidentiality closure changes nothing here -- see
+// `utility_hub_hardened.strata`'s own header for what DID need correcting.
 //
 // tested end to end (parse -> elaborate -> evaluate_claims) by
 // tests/unit/strata/test_litmus_utility_hub.py.

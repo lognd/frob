@@ -207,6 +207,11 @@ class GateError(ErrorSet):
     QueueUnavailable = "Ticket queue failed to load"
     ConfigMalformed = "frob.toml [testing]/[[system]]/[gates] table is malformed"
     WriteFailed = "Could not write gate state to disk"
+    # T-0431: FROB_WORKTREE is leased to a different worktree than the cwd
+    # a stamping command (--stamp-baseline/--stamp-coverage) is running in.
+    WorktreeLeaseViolation = (
+        "FROB_WORKTREE is leased to a different worktree than this command's cwd"
+    )
 
 
 # frob:doc docs/modules/gates.md#error-types

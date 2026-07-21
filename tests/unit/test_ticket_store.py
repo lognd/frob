@@ -12,14 +12,18 @@ import pytest
 
 from frob.tickets import (
     TicketSpec,
+    closed_ticket_ids,
     new_ticket,
+    replay_evidence_from_done_report,
     set_done_report,
+    transition,
 )
 from frob.tickets._models import (
     Origin,
     Ticket,
     TicketError,
     TicketKind,
+    TicketQueue,
     TicketState,
     replace_done_report_section,
 )
@@ -483,6 +487,119 @@ class TestSetDoneReport:
         assert body.count("## Done report") == 1
         assert "second, corrected attempt" in body
         assert "first attempt" not in body
+
+
+# frob:ticket T-0357
+class TestReplayEvidenceFromDoneReport:
+    def test_recovers_ids_when_structured_evidence_empty(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport.test_recovers_ids_when_structured_evidence_empty  # noqa: E501
+        """The T-0357 recovery path: a hand `git merge --no-ff` that lands
+        the Done report prose but drops the structured `evidence:` field
+        must still let `transition(..., DONE)` succeed by recovering the
+        ids straight out of the rendered '### Evidence' section."""
+        write_ticket(tmp_path, _ticket_evidence(evidence=("tests/x.py::test_y",)))
+        set_done_report(
+            tmp_path, "T-0001", why="did the thing", base_ref="does-not-exist"
+        )
+        # Simulate the bug: structured evidence lost, Done report text intact.
+        loaded = load_all(tmp_path)
+        assert loaded.is_ok
+        ticket = loaded.danger_ok["T-0001"]
+        assert "tests/x.py::test_y" in ticket.body
+        stripped = ticket.model_copy(update={"evidence": ()})
+        write_ticket(tmp_path, stripped)
+
+        result = replay_evidence_from_done_report(tmp_path, "T-0001")
+        assert result.is_ok
+        assert result.danger_ok.evidence == ("tests/x.py::test_y",)
+
+        reloaded = load_all(tmp_path)
+        assert reloaded.is_ok
+        assert reloaded.danger_ok["T-0001"].evidence == ("tests/x.py::test_y",)
+
+    def test_noop_when_evidence_already_present(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport.test_noop_when_evidence_already_present  # noqa: E501
+        write_ticket(tmp_path, _ticket_evidence(evidence=("tests/x.py::test_y",)))
+        result = replay_evidence_from_done_report(tmp_path, "T-0001")
+        assert result.is_ok
+        assert result.danger_ok.evidence == ("tests/x.py::test_y",)
+
+    def test_missing_evidence_when_nothing_recoverable(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport.test_missing_evidence_when_nothing_recoverable  # noqa: E501
+        write_ticket(tmp_path, _ticket_evidence(evidence=()))
+        result = replay_evidence_from_done_report(tmp_path, "T-0001")
+        assert result.is_err
+        assert result.danger_err == TicketError.MissingEvidence
+
+    def test_transition_to_done_auto_replays_lost_evidence(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport.test_transition_to_done_auto_replays_lost_evidence  # noqa: E501
+        """The end-to-end T-0357 fix: `transition(..., DONE)` on a ticket
+        whose structured evidence was lost (but Done report prose survived)
+        succeeds by auto-replaying, rather than failing MissingEvidence."""
+        write_ticket(
+            tmp_path,
+            _ticket_evidence(evidence=("tests/x.py::test_y",)),
+        )
+        set_done_report(
+            tmp_path, "T-0001", why="did the thing", base_ref="does-not-exist"
+        )
+        loaded = load_all(tmp_path)
+        assert loaded.is_ok
+        stripped = loaded.danger_ok["T-0001"].model_copy(update={"evidence": ()})
+        write_ticket(tmp_path, stripped)
+
+        result = transition(tmp_path, "T-0001", TicketState.DONE)
+        assert result.is_ok
+        assert result.danger_ok.evidence == ("tests/x.py::test_y",)
+
+
+def _ticket_state(
+    ticket_id: str, state: TicketState, *, created: date = date(2026, 1, 1)
+) -> Ticket:
+    return Ticket(
+        id=ticket_id,
+        title=f"{ticket_id} ticket",
+        state=state,
+        kind=TicketKind.FEATURE,
+        origin=Origin.HUMAN,
+        created=created,
+        body="## Description\nsomething\n",
+    )
+
+
+# frob:ticket T-0409
+class TestClosedTicketIds:
+    def test_returns_done_and_dropped_only(self) -> None:
+        # frob:tests tests/unit/test_ticket_store.py::TestClosedTicketIds.test_returns_done_and_dropped_only  # noqa: E501
+        queue = TicketQueue(
+            tickets={
+                "T-0001": _ticket_state("T-0001", TicketState.DONE),
+                "T-0002": _ticket_state("T-0002", TicketState.DROPPED),
+                "T-0003": _ticket_state("T-0003", TicketState.QUEUED),
+                "T-0004": _ticket_state("T-0004", TicketState.IN_PROGRESS),
+            }
+        )
+        assert closed_ticket_ids(queue) == ("T-0001", "T-0002")
+
+    def test_orders_oldest_first(self) -> None:
+        # frob:tests tests/unit/test_ticket_store.py::TestClosedTicketIds.test_orders_oldest_first  # noqa: E501
+        queue = TicketQueue(
+            tickets={
+                "T-0002": _ticket_state(
+                    "T-0002", TicketState.DONE, created=date(2026, 2, 1)
+                ),
+                "T-0001": _ticket_state(
+                    "T-0001", TicketState.DONE, created=date(2026, 1, 1)
+                ),
+            }
+        )
+        assert closed_ticket_ids(queue) == ("T-0001", "T-0002")
+
+    def test_empty_queue_is_empty(self) -> None:
+        # frob:tests tests/unit/test_ticket_store.py::TestClosedTicketIds.test_empty_queue_is_empty  # noqa: E501
+        assert closed_ticket_ids(TicketQueue(tickets={})) == ()
 
 
 # frob:ticket T-0458

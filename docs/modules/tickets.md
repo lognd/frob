@@ -99,6 +99,7 @@ attachments:
 <!-- frob:describes src/frob/tickets/__init__.py::set_done_report -->
 <!-- frob:describes src/frob/tickets/__init__.py::compose_done_report -->
 <!-- frob:describes src/frob/tickets/__init__.py::render_evidence_block -->
+<!-- frob:describes src/frob/tickets/__init__.py::replay_evidence_from_done_report -->
 <!-- frob:describes src/frob/tickets/__init__.py::render_changed_block -->
 <!-- frob:describes src/frob/tickets/__init__.py::compute_changed_lines -->
 <!-- frob:describes src/frob/tickets/_store.py::ledger_lock -->
@@ -221,6 +222,18 @@ def render_evidence_block(evidence: Sequence[str]) -> str
     # ALREADY validated resolvable-and-passing (add_evidence's D-01 check)
     # or exit=0 (cmd: entries) at record time. "(no evidence recorded)" if
     # empty.
+def replay_evidence_from_done_report(root: Path, ticket_id: str) -> Result[Ticket, TicketError]
+    # T-0357: recovers a ticket's structured evidence: field from its own
+    # rendered '### Evidence' Done-report prose when the field is empty --
+    # the coordinator-land bug where evidence recorded via add_evidence in a
+    # worktree never reached main's ledger in a form transition(..., DONE)
+    # recognizes (a hand `git merge --no-ff` that bypassed the T-0176/T-0479
+    # ledger splice). No-op (Ok, no write) if evidence is already present;
+    # Err(MissingEvidence) unchanged if nothing recoverable is found.
+    # Recovered ids are NOT re-validated against a fresh collection/pass
+    # run -- follow up with `frob check`'s COV003/TEST001 for that. Wired
+    # automatically into transition(..., DONE) as a best-effort recovery
+    # attempt before the ordinary MissingEvidence rejection.
 def render_changed_block(lines: Sequence[str]) -> str
     # T-0458: fences compute_changed_lines's output verbatim (git --stat
     # output is already human-readable columns). "(no changed files
@@ -516,6 +529,11 @@ concurrent automation.
 <!-- frob:describes src/frob/tickets/_land.py::splice_ledger -->
 <!-- frob:describes src/frob/tickets/_land.py::_assert_land_complete -->
 <!-- frob:describes src/frob/tickets/_land.py::_worktree_full_changeset -->
+<!-- frob:describes src/frob/tickets/_land.py::_apply_release_bump -->
+<!-- frob:describes src/frob/tickets/_land.py::_maybe_rebuild_natives -->
+<!-- frob:describes src/frob/app/ticket_runner.py::_apply_release_bump_for_land -->
+<!-- frob:describes src/frob/app/ticket_runner.py::_write_release_bump -->
+<!-- frob:describes src/frob/app/ticket_runner.py::_land_rebuild_natives_fn -->
 
 The landing procedure used to be manual coordinator surgery repeated per
 ticket: wip-commit in the worktree, merge main into it, a deletion-filter
@@ -529,7 +547,9 @@ def land(root: Path, ticket_id: str, worktree: Path, *,
          dry_run: bool = False,
          collected: frozenset[str] | None = None,
          passed: frozenset[str] | None = None,
-         covers_scope: bool | None = None) -> Result[LandReport, LandError]
+         covers_scope: bool | None = None,
+         bump_version: Callable[[Path, Ticket, str], Result[str | None, LandError]] | None = None,
+         rebuild_natives: Callable[[Path], bool] | None = None) -> Result[LandReport, LandError]
     # T-0398 D-05: `collected`/`passed`/`covers_scope`, when supplied by a
     # caller with a fresh test-collection/run/graph-binding oracle computed
     # against the POST-MERGE worktree tree, re-verify the ticket's evidence
@@ -538,6 +558,14 @@ def land(root: Path, ticket_id: str, worktree: Path, *,
     # and re-ran nothing. All three default to `None` (skip, unchanged
     # behavior) since computing them needs frob.testing/frob.graph access
     # frob.tickets deliberately does not have.
+    # T-0338: `bump_version(root, ticket, final_id)` and `rebuild_natives
+    # (root)`, when supplied, fold the REL001 version-bump/stamp and
+    # native-rebuild-trigger coordinator steps into this same land -- both
+    # invoked AFTER the squash-apply is staged (so their writes land in the
+    # SAME commit) but BEFORE the T-0463 completeness assertion and final
+    # commit. Both default to `None` (skip) for the same cycle-avoidance
+    # reason as collected/passed/covers_scope; `frob ticket land` supplies
+    # both by default.
 def splice_ledger(ours_text: str, theirs_text: str) -> Result[str, TicketError]
     # Merge two tickets.md texts at the TICKET-ID level (newest state per
     # id wins) instead of git's line-level textual merge. T-0398 D-09: the
@@ -630,6 +658,29 @@ Order of operations, and why it is this order:
     reported back as `LandReport.worktree_changeset`, and the actually
     landed paths as `LandReport.files_changed` -- on a real (non-dry-run)
     success the former is always a subset of the latter, by construction.
+9.6. **REL001 version bump** (T-0338, only when `bump_version` was
+    supplied, runs right after step 9's squash and BEFORE the step 9.5
+    completeness assertion): `bump_version(root, ticket, final_id)`
+    computes the semver class the just-squashed public API demands
+    (`frob.release.diff_class`/`required_version` against the tracked
+    `.frob-release.json` manifest), and if the declared `pyproject.toml`
+    version does not already cover it, rewrites `version = "..."`,
+    prepends a minimal `## [<version>] - unreleased` CHANGELOG.md entry
+    naming the ticket, and `frob release stamp`s the new manifest --
+    staging all three files so they land in the SAME commit as the
+    squash-apply. `Ok(None)` (no manifest yet, or no bump needed) is a
+    no-op; `Err(LandError.ReleaseBumpFailed)` unwinds the squash (`git
+    reset --hard && git clean -fd`) exactly like any other land failure --
+    a silently-skipped bump would let a landed API change slip past
+    REL001 undetected. Reported back as `LandReport.release_bumped_to`.
+9.7. **Native rebuild trigger** (T-0338, only when `rebuild_natives` was
+    supplied AND the landed changeset touches a native source tree --
+    `frob-core/` or `strata-core/`): `rebuild_natives(root)` runs `make
+    core` in `root`. Best-effort: a `False`/failed rebuild is logged as a
+    warning (alongside the existing T-0248 stale-native warning, which
+    still fires unconditionally) but never unwinds or blocks the land --
+    a native rebuild is cheap to re-run by hand. Reported back as
+    `LandReport.natives_rebuilt`.
 10. **Commit** with a conventional-commit message template
     (`<type>(tickets): land <final-id> <title>`, type derived from
     `ticket.kind`; `feature`->`feat`, `bug`/`security`/`ux`/`incident`->
@@ -913,6 +964,66 @@ def ledger_lock(root: Path) -> Iterator[None]
     #   # no concurrent new_ticket() call can observe the pre-write state
     #   # in between -- the whole allocate+claim sequence is atomic.
 ```
+
+## Worktree-lease guard (T-0431)
+
+<!-- frob:describes src/frob/tickets/_worktree_guard.py::enforce_worktree_lease -->
+
+**Incident:** a dispatched worktree agent's shell ran `git merge main`,
+`make core`, and `frob ticket new` (minting T-0427) directly against the
+SHARED main checkout instead of its own worktree -- the harness's Edit
+tool scopes FILE edits to a worktree, but a stray bash command is not
+caught by anything. This is the "hard to be careless" guard for the
+dispatch layer: repo damage from a stray cwd should require deliberately
+clearing a lease, not just happen.
+
+```python
+# frob/tickets/_worktree_guard.py
+FROB_WORKTREE_ENV = "FROB_WORKTREE"
+
+def enforce_worktree_lease(root: Path) -> Result[None, TicketError]
+    # Err(WorktreeLeaseViolation) if FROB_WORKTREE is set AND root's actual
+    # git top-level (repo_root, worktree-correct) does not match it.
+    # FROB_WORKTREE unset (coordinator-run commands, or any environment
+    # that never opted in) is Ok(None): unrestricted.
+```
+
+`FROB_WORKTREE=<abs path>` is a dispatcher-set env var naming the ONE
+worktree an agent's shell is authorized to mutate frob's tracked ticket
+state in. Every mutating `frob.tickets` entry point calls
+`enforce_worktree_lease(root)` as its first statement and returns
+`Err(WorktreeLeaseViolation)` immediately if it fails, before touching
+the ledger at all: `new_ticket`, `transition` (covers start/close/
+requeue/block/fail -- every state change goes through one place),
+`add_evidence`, `add_cmd_evidence`, `set_done_report`, `record_failure`,
+`attach`, `archive`, `renumber`, `renumber_one`. `frob.gates`'
+`stamp_baseline`/`stamp_coverage` (`--stamp-baseline`/`--stamp-coverage`)
+carry the same guard, mapped to `GateError.WorktreeLeaseViolation` --
+these also write tracked repo state (`.frob/baseline`,
+`.frob/coverage-stamp`) an agent could otherwise stamp against the wrong
+checkout. Read-only commands (`check --ticket`, `show`, `list`, `doable`)
+never call this guard and remain unrestricted anywhere.
+
+**A coordinator process is unaffected by design**: landing worktree
+changes onto main, or any other coordinator-run mutation, runs with no
+`FROB_WORKTREE` set, so `enforce_worktree_lease` is `Ok(None)` -- a no-op.
+The guard's whole job is catching an AGENT shell that wandered outside
+its assigned worktree, not restricting the coordinator's own legitimate
+cross-checkout work.
+
+**Git hook (defense in depth).**
+`frob.scaffold.install_worktree_lease_hook(root, *, force=False)`
+(docs/commands/scaffold.md) installs `pre-commit` and `pre-merge-commit`
+hooks into `root`'s real hooks directory (`git rev-parse --git-path
+hooks`, worktree-correct) that abort loudly whenever `FROB_AGENT` is set
+non-empty in the shell running the commit -- catching a stray raw `git
+commit`/`git merge` an agent shell ran directly, independent of whether
+it went through `frob.tickets` at all. `FROB_AGENT` is a SEPARATE env var
+from `FROB_WORKTREE` (an agent-context marker, not a specific worktree
+path) since the hook only needs to know "is this shell an agent," not
+which worktree it should have been in -- the git hook fires from
+whichever checkout the raw git command happened to run in. Refuses to
+overwrite an existing hook file without `force=True`.
 
 ## Design decisions
 

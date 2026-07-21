@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from frob.gates import known_gate_rule_ids
 from frob.strata import KernelModel, elaborate, parse_module
 from frob.strata._audit import evaluate_exhaustiveness
 
@@ -56,8 +57,13 @@ class TestAuditHardenedGolden:
 
     # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness kind="unit"
     def test_proves_clean_in_security_and_quality(self):
+        """T-0503: `known_rule_ids=known_gate_rule_ids()` is now required
+        for a clean PROVED result -- `COMPLIANCE_OUT_OF_SCOPE`'s caught_by
+        entry references a real gate rule (PII010) that only resolves
+        against the live gate-rule-id set, mirroring `frob.app.sys_runner`'s
+        own production callsite."""
         model = _load_model()
-        result = evaluate_exhaustiveness(model)
+        result = evaluate_exhaustiveness(model, known_rule_ids=known_gate_rule_ids())
         assert result.is_ok
         report = result.danger_ok
         assert report.proved

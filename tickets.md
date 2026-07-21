@@ -6056,7 +6056,7 @@ User (2026-07-20): account for anything that looks like a tool usage/guide, and 
 id: T-0439
 title: 'feat(sec-patterns): needle/fingerprint pattern-scan gate for CVE code-smell
   corpus (SEC-CVE-FINGERPRINT-*)'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-07-20'
@@ -6078,11 +6078,23 @@ scope_changes:
   reason: T-0439 strata work maps to tests/unit/strata/
   actor: logan
   at: '2026-07-20'
-evidence: []
+evidence:
+- tests/unit/strata/test_cve_fingerprint_scan.py::TestScanTextForFingerprints::test_smelly_text_fires
+- tests/unit/strata/test_cve_fingerprint_scan.py::TestScanTextForFingerprints::test_clean_text_does_not_fire
+- tests/unit/strata/test_cve_fingerprint_scan.py::TestGate::test_smelly_file_fires
 attachments: []
 acceptance: []
 threat: null
 ```
+## Done report
+
+New gate src/frob/gates/_cve_fingerprint_scan.py (SEC-CVE-FINGERPRINT-001) + scan_text_for_fingerprints/FingerprintHit in src/frob/strata/_cve_fingerprint.py: needle/fingerprint pattern scan over the CVE code-smell corpus with per-language scoping and self-exclusion (a self-match FP where the module docstring contained needle literals was caught and fixed pre-land). Litmus pair: smelly fires, clean does not, wrong-language silent. Registry deferral staleness for 16 pre-existing weaknesses.yaml entries filed as T-0508. Implemented by the strata round-2 agent (commits f428da1..39a5ad8, landed at merge 37dc107); its in-worktree close was destroyed by the T-0505 hazard, so this reconstructs the bookkeeping on main against the landed code.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+(no evidence recorded)
 
 <!-- ticket:T-0440 -->
 ```yaml
@@ -9528,7 +9540,7 @@ was left behind there. Did not touch src/frob/gates/** per instruction.
 id: T-0503
 title: 'strata: compliance out_of_scope catalog never threaded into _audit.py evaluate_compliance
   call'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-07-21'
@@ -9538,12 +9550,24 @@ scope:
 - src/frob/strata/_audit.py
 - src/frob/strata/_compliance.py
 scope_changes: []
-evidence: []
+evidence:
+- tests/unit/strata/test_audit.py::TestExhaustiveness::test_compliance_out_of_scope_bad_caught_by_fails_real_audit_path
+- tests/unit/strata/test_audit.py::TestExhaustiveness::test_compliance_out_of_scope_reaches_real_audit_path
 attachments: []
 acceptance: []
 threat: null
 ```
 Found while working T-0499. _audit.py::_compliance_pii_lint_fingerprint_gaps calls evaluate_compliance(model, view, known_rule_ids=known_rule_ids) with no out_of_scope argument -- it always defaults to (). Unlike the security/quality families (CWE_TOP_25_OUT_OF_SCOPE, QUALITY_OUT_OF_SCOPE imported and passed at _audit.py:469), there is no module-level OutOfScopeRegulation tuple defined anywhere for compliance, and none is threaded from sys_runner.py either. Effect: COMPLIANCE004 (caught_by integrity for compliance out-of-scope exclusions) can never actually fire in production regardless of T-0499's known_rule_ids threading, since check_regulation_caught_by_integrity always receives an empty out_of_scope tuple from this callsite. check_regulation_caught_by_integrity itself is correctly unit-tested with a non-empty out_of_scope (tests/unit/strata/test_compliance.py), so the gap is purely in the production wiring, same shape as the known_rule_ids gap T-0499 fixed. Fix direction: define a COMPLIANCE_OUT_OF_SCOPE catalog (or repo-configurable equivalent, mirroring load_repo_benign_capabilities) and thread it through _compliance_pii_lint_fingerprint_gaps -> evaluate_compliance.
+
+## Done report
+
+COMPLIANCE_OUT_OF_SCOPE catalog added to src/frob/strata/_compliance.py and threaded into evaluate_compliance from _audit.py, closing the vacuous-in-production COMPLIANCE004 gap (the security/quality families had out-of-scope catalogs, compliance had none). Non-vacuous proof through the REAL evaluate_exhaustiveness production entrypoint: a fabricated caught_by fails the real audit path; the clean twin discharges. Implemented by the strata round-2 agent (branch worktree-agent-ae94a050b3ebea54f, commits d1e6f30..2c4a01f, landed at merge 37dc107); its in-worktree close was destroyed by the T-0505 ledger-corruption hazard, so this reconstructs the bookkeeping on main against the landed code.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+(no evidence recorded)
 
 <!-- ticket:T-0504 -->
 ```yaml

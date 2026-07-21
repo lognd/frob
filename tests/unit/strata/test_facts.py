@@ -166,14 +166,54 @@ class TestClosure:
 
     # frob:tests src/frob/strata/_facts.py::FactBase.reachable kind="unit"
     def test_utility_attr_stops_chaining_past_that_hop(self):
-        # T-0226: a flow tagged `utility` (the general-purpose surface
-        # marker `flow ... { utility; }`) is a terminal edge -- its dst is
-        # reachable directly, but the closure must not chain past it, the
-        # same terminal-edge semantics `krb_no_transit` already gets.
+        # T-0226/T-0496: a flow tagged `utility` (the general-purpose
+        # surface marker `flow ... { utility; }`) is a terminal edge under
+        # `through_barriers=True` (the existential reach/independent/
+        # readers/krb-movement closures) -- its dst is reachable directly,
+        # but the closure must not chain past it there.
         model = KernelModel(
             nodes=(_node("a"), _node("b"), _node("c")),
             flows=(
                 _flow("f1", "a", "b", attrs=("utility",)),
+                _flow("f2", "b", "c"),
+            ),
+        )
+        facts = build_facts(model).danger_ok
+        paths = facts.reachable("a", through_barriers=True)
+        assert "b" in paths
+        assert "c" not in paths
+
+    # frob:tests src/frob/strata/_facts.py::FactBase.reachable kind="unit"
+    def test_utility_attr_does_not_stop_chaining_for_confidentiality_noflow(self):
+        """T-0496 (docs/audits/strata.md G5): the confidentiality closure
+        (`through_barriers=False`, the ONLY caller being `noflow`) must NOT
+        honor `utility` as terminal -- a real downstream leak transiting an
+        otherwise-innocuous `utility`-marked hub must still be caught.
+        Repro straight from the ticket: `log_hub{utility}` then a real
+        `leak` edge out of the hub -- `c` MUST be reached, not silently
+        hidden the way the pre-fix behavior hid it."""
+        model = KernelModel(
+            nodes=(_node("a"), _node("b"), _node("c")),
+            flows=(
+                _flow("f1", "a", "b", attrs=("utility",)),
+                _flow("f2", "b", "c"),
+            ),
+        )
+        facts = build_facts(model).danger_ok
+        paths = facts.reachable("a")
+        assert "b" in paths
+        assert "c" in paths
+
+    # frob:tests src/frob/strata/_facts.py::FactBase.reachable kind="unit"
+    def test_krb_no_transit_still_terminal_for_confidentiality_noflow(self):
+        """`krb_no_transit` is NOT excluded from `_NOFLOW_NON_TRANSITIVE_
+        ATTRS` (T-0496's comment: no known equivalent gap for it) -- it
+        stays a terminal edge under `through_barriers=False` too, same as
+        before this ticket's fix."""
+        model = KernelModel(
+            nodes=(_node("a"), _node("b"), _node("c")),
+            flows=(
+                _flow("f1", "a", "b", attrs=("krb_trust", "krb_no_transit")),
                 _flow("f2", "b", "c"),
             ),
         )
