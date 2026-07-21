@@ -90,6 +90,7 @@ def net_enabled() -> bool:
 
 
 # frob:doc docs/modules/process.md#public-api
+# frob:invariant INV-019
 def guarded_subprocess_run(
     args: Sequence[str], **kwargs: object
 ) -> Result[subprocess.CompletedProcess[str], ProcessGuardError]:

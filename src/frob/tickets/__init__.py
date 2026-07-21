@@ -1396,6 +1396,7 @@ def _doable_sort_key(t: Ticket) -> tuple[int, date, str]:
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_lease.py::TestDoable.test_ignore_lease_returns_raw_list
 # frob:waive DRIFT001 reason="T-0453 added root/ignore_lease params; frob.lock ack out of scope, no inline-waivable syntax for JSON -- reviewer re-acks at land"  # noqa: E501
+# frob:invariant INV-024
 def doable(
     queue: TicketQueue, root: Path | None = None, *, ignore_lease: bool = False
 ) -> tuple[Ticket, ...]:

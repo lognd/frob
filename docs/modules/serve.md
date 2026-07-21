@@ -10,6 +10,8 @@ tool is a thin, JSON-serializable wrapper around an existing `frob.graph`,
 cache-first and rebuilt only on a stale/missing cache, same as `frob graph
 query`.
 
+<!-- frob:invariant INV-021 -->
+
 ## mcp SDK
 
 <!-- frob:describes src/frob/serve/_tools.py::ServeError -->
