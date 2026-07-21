@@ -5554,51 +5554,29 @@ threat: null
 ```
 Found during the 2026-07-21 doable-warning scope-narrowing sweep. frob ticket scope --add checks every added glob against in-progress leases, but queued tickets ALREADY hold broad globs that overlap those same leases (grandfathered at creation). Narrowing 'src/frob/strata/**' down to 'src/frob/strata/_host.py' is refused (ScopeLeaseConflict, e.g. vs T-0263's strata lease) even though the change strictly SHRINKS the overlap. Because scope changes are atomic, the whole narrowing fails and the chronically-over-broad glob (and its doable WARNING) cannot be cleared until the leaseholder lands. Fix: when validating --add, subtract the ticket's own existing scope coverage first -- an add that is a subset of what the ticket already covers can never create NEW contention and must be allowed. Related interplay: ScopeRemoveOrphansEvidence forces a covering --add for recorded evidence, so a ticket whose evidence lies under another ticket's leased tree (T-0160: tests/unit/strata/test_native_staleness.py under T-0263's lease) is fully wedged: cannot remove tests/** without an add, cannot add the evidence path. Tickets left un-narrowed by the sweep, to re-narrow once T-0263/T-0423/T-0460 land: T-0235 T-0261 T-0339 T-0341 T-0383 T-0384 T-0392 T-0393 T-0394 T-0395 T-0401 T-0410 T-0428 T-0439 T-0440; partial leftovers: T-0160 (tests/** stays), T-0461 (add src/frob/render/ post-T-0460).
 
-<!-- ticket:T-draft-30d66138 -->
+<!-- ticket:T-0486 -->
 ```yaml
-id: T-draft-30d66138
-title: 'release: bump version + CHANGELOG entry for T-0263 KRB001-004 API'
-state: queued
-kind: docs
-origin: human
-created: '2026-07-21'
-blocked_by: []
-parent: null
-scope:
-- pyproject.toml
-- CHANGELOG.md
-- .frob-release.json
-scope_changes: []
-evidence: []
-attachments: []
-acceptance: []
-threat: null
-```
-T-0263 added public API (KrbMovementViolation, evaluate_krb_movement_waived, evaluate_unconstrained_delegation, evaluate_roastable_spn, evaluate_constrained_delegation_blast_radius, evaluate_cross_realm_containment, KRB_MOVEMENT_CATALOG/_OUT_OF_SCOPE/_VIEWS, KRB_MULTI_INSTANCE_WAIVER_FAMILIES, build_compromised_krb_scenario) to frob.strata, which frob check's REL001 gate flags as a minor API change needing a version bump (>= 0.36.0) plus a CHANGELOG.md entry and frob release stamp. T-0263's own scope glob does not include pyproject.toml/CHANGELOG.md/.frob-release.json, so this is filed as separate follow-on release-management work rather than silently widening T-0263's scope.
-
-<!-- ticket:T-draft-5443bd5e -->
-```yaml
-id: T-draft-5443bd5e
-title: T-0416 evidence no longer collects (COV003)
+id: T-0486
+title: 'dup/_legacy_py._harvest_with: with-item alias lookup uses nonexistent ''alias''
+  field, as-pattern binding names never join the alpha-rename set'
 state: queued
 kind: bug
-origin: human
+origin: agent
 created: '2026-07-21'
 blocked_by: []
 parent: null
-scope:
-- tests/unit/strata/test_code_binding.py
+scope: []
 scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
 threat: null
 ```
-found while working T-0425: frob check reports COV003 for T-0416 (done) -- its recorded evidence tests/unit/strata/test_code_binding.py::TestBindCode::test_nested_git_checkout_pruned_even_when_not_covered_by_exclude_globs no longer collects (pytest --collect-only: 'not found', no match in TestBindCode). Either the test was renamed/removed since T-0416 closed, or something broke collection for it. Out of scope for T-0425 (src/frob/gates/, frob.toml, docs/modules/gates.md, tests/test_gates.py only).
+Recovered filing: T-draft-7bae70b7 was filed in T-0160 batch work but its ledger block was lost in a merge (only the Done-report prose survived). _harvest_with looks up child_by_field_name('alias') on with_item nodes, but the tree-sitter-python grammar nests with_item under with_clause and represents the bound name via an as_pattern/as_pattern_target child, not an 'alias' field -- so 'with X as name:' binding names are never collected into the alpha-rename local set for Python dup-fingerprinting. Scope: src/frob/dup/_legacy_py.py plus its unit tests.
 
-<!-- ticket:T-draft-82caf099 -->
+<!-- ticket:T-0487 -->
 ```yaml
-id: T-draft-82caf099
+id: T-0487
 title: 'dup: python-centric _KEYWORDS misclassifies rust/ts/c/cpp keywords (let/fn/etc)
   as identifiers in R5 def-use labeling'
 state: queued
@@ -5617,12 +5595,35 @@ threat: null
 ```
 Found while working T-0447 (tests/test_dup.py::TestCrossLanguageR5Litmus). _KEYWORDS is a python-only keyword set; a Rust let in a let_declaration is not recognized as a keyword, so _assignment_ids mis-labels it as an extra 'def' node, diverging the def-use graph from an equivalent Python function's graph. Needs a per-grammar keyword set (mirroring _BLOCK_LABELS/_ASSIGNMENT_LABELS's per-language pattern) so R5 cross-language structural matching is not accidentally broken by declaration-keyword tokens. Also: T-0447 only implements two of R3's three named canonicalizations (literal abstraction + elif control-flow desugar); commutative-operand reordering and real for/while loop-shape desugaring still need AST structure, not a token fold -- tracked as future work here too. Also: frob.dup._exhaustiveness.DUP_MATRIX_EXCUSES' r3-vs-r2 excuse (and the non-python r3/r5 language-gap excuses) should be updated to DUP_CLAIMS now that tests/test_dup.py proves r3 fires independently of r2 and r5 fires cross-language python/rust -- out of T-0447's declared scope (src/frob/dup/_exhaustiveness.py not in scope).
 
-<!-- ticket:T-draft-d6d316c8 -->
+<!-- ticket:T-0488 -->
 ```yaml
-id: T-draft-d6d316c8
-title: T-0416 evidence test_nested_git_checkout_pruned_even_when_not_covered_by_exclude_globs
-  does not resolve (COV003)
-state: queued
+id: T-0488
+title: 'release: bump version + CHANGELOG entry for T-0263 KRB001-004 API'
+state: dropped
+kind: docs
+origin: human
+created: '2026-07-21'
+blocked_by: []
+parent: null
+scope:
+- pyproject.toml
+- CHANGELOG.md
+- .frob-release.json
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Dropped (2026-07-21): absorbed -- REL001 satisfied by the coordinator landing pass (version 0.36.0, frob release stamp run at land; frob release check reports OK).
+
+T-0263 added public API (KrbMovementViolation, evaluate_krb_movement_waived, evaluate_unconstrained_delegation, evaluate_roastable_spn, evaluate_constrained_delegation_blast_radius, evaluate_cross_realm_containment, KRB_MOVEMENT_CATALOG/_OUT_OF_SCOPE/_VIEWS, KRB_MULTI_INSTANCE_WAIVER_FAMILIES, build_compromised_krb_scenario) to frob.strata, which frob check's REL001 gate flags as a minor API change needing a version bump (>= 0.36.0) plus a CHANGELOG.md entry and frob release stamp. T-0263's own scope glob does not include pyproject.toml/CHANGELOG.md/.frob-release.json, so this is filed as separate follow-on release-management work rather than silently widening T-0263's scope.
+
+<!-- ticket:T-0489 -->
+```yaml
+id: T-0489
+title: T-0416 evidence no longer collects (COV003)
+state: dropped
 kind: bug
 origin: human
 created: '2026-07-21'
@@ -5636,4 +5637,29 @@ attachments: []
 acceptance: []
 threat: null
 ```
+Dropped (2026-07-21): stale-base worktree artifact -- the T-0416 evidence node collects and passes on main (verified via pytest --collect-only after T-0416 landed at 5dba2d7); the filing worktree had merged main before that landing.
+
+found while working T-0425: frob check reports COV003 for T-0416 (done) -- its recorded evidence tests/unit/strata/test_code_binding.py::TestBindCode::test_nested_git_checkout_pruned_even_when_not_covered_by_exclude_globs no longer collects (pytest --collect-only: 'not found', no match in TestBindCode). Either the test was renamed/removed since T-0416 closed, or something broke collection for it. Out of scope for T-0425 (src/frob/gates/, frob.toml, docs/modules/gates.md, tests/test_gates.py only).
+
+<!-- ticket:T-0490 -->
+```yaml
+id: T-0490
+title: T-0416 evidence test_nested_git_checkout_pruned_even_when_not_covered_by_exclude_globs
+  does not resolve (COV003)
+state: dropped
+kind: bug
+origin: human
+created: '2026-07-21'
+blocked_by: []
+parent: null
+scope:
+- tests/unit/strata/test_code_binding.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Dropped (2026-07-21): duplicate of T-draft-5443bd5e, same stale-base worktree artifact -- T-0416 evidence collects on main.
+
 found while working T-0472: frob check --ticket T-0472 reports COV003 for T-0416 (already closed/done) -- its recorded evidence id tests/unit/strata/test_code_binding.py::TestBindCode::test_nested_git_checkout_pruned_even_when_not_covered_by_exclude_globs does not exist anywhere in the repo (grep -rn finds nothing), even after deleting .frob/pytest-collect.json to force a cache rebuild. Either the test was removed/renamed after T-0416 closed, or the evidence id was never real. Unrelated to T-0472's scope; filing separately per the playbook out-of-scope rule.
