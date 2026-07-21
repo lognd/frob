@@ -6202,7 +6202,7 @@ title: 'waiver over-breadth + class-ignore placement lint: (1) _match_waiver mat
   symref-LESS (file-scoped) findings by file OR package-PREFIX, so one frob:waive
   can suppress broadly; (2) warn when a class-bound frob:waive/directive is not at
   the class top (likely mis-scoped)'
-state: in-progress
+state: queued
 kind: bug
 origin: human
 created: '2026-07-20'
@@ -6223,59 +6223,11 @@ scope_changes:
   reason: T-0470 gates work maps to tests/test_gates.py
   actor: logan
   at: '2026-07-20'
-evidence:
-- tests/test_gates.py::TestTestGate::test_match_waiver_prefix_reach_gated_to_package_scoped_rules
-- tests/test_gates.py::TestTestGate::test_waive003_flags_waiver_reaching_multiple_packages
-- tests/test_gates.py::TestTestGate::test_test003_waiver_in_a_file_under_the_package_matches
+evidence: []
 attachments: []
 acceptance: []
 threat: null
 ```
-## Done report
-
-Fixed the confirmed part of the over-breadth bug: `_match_waiver`'s
-directory-prefix fallback branch (T-0276) ran for EVERY symref-less
-violation regardless of rule, on the unstated assumption that no rule
-other than TEST003/TEST004 ever has a directory-shaped `violation.file`.
-That assumption was already false (TEST007 also emits a package id as
-`file`), so the branch is now gated to an explicit allowlist,
-`_PACKAGE_SCOPED_RULES = {TEST003, TEST004, TEST007}` -- any future rule
-that reuses a bare directory/virtual id as `file` must be added there
-deliberately instead of silently inheriting unbounded prefix reach.
-
-Added WAIVE003 (warn): a package-scoped waiver's directory-prefix reach
-extends to every ANCESTOR package of the waiver's own file, not just its
-immediate package -- a waiver in `src/frob/pkg/sub/deep.py` matches BOTH
-a `src/frob/pkg/sub` and a `src/frob/pkg` TEST003/004/007 finding at
-once. WAIVE003 flags any single waiver reaching more than one distinct
-package/system id this way. Verified real (not vacuous) via a
-constructed two-package fixture and confirmed silent on a single-package
-match. Ran against frob's own repo: 0 WAIVE003 findings, so no existing
-waiver here is over-broad by this measure today.
-
-Part (b) of the ticket (warn when a class-bound directive is not at the
-class top) was prototyped as PLACE001 and DELIBERATELY DROPPED before
-landing -- it fired on this repo's own widespread, legitimate idiom of a
-per-field frob:waive/frob:ticket comment documenting one field deep in a
-large pydantic config class (fields are not RawSymbols, so the directive
-always falls back to the enclosing class by construction, however far
-into the body -- e.g. src/frob/app/config.py's AppConfig has several
-such comments 150+ lines past its class line, none mis-scoped). A raw
-line-distance-from-class-top heuristic cannot distinguish that from a
-genuinely mis-scoped directive; shipping it would have been exactly the
-false-suppress/over-exclusion failure mode this ticket's own caution
-warned about, just inverted into false-positive noise instead. Filed
-T-draft-64b86c15 with the counterexample and a sketch of what a sound
-signal would need (detecting a nearby symbol the directive plausibly
-should have reached via `following` but didn't, not raw distance).
-
-### Changed
-(no changed files detected)
-
-### Evidence
-- `tests/test_gates.py::TestTestGate::test_match_waiver_prefix_reach_gated_to_package_scoped_rules` (pytest node id, verified passing when recorded)
-- `tests/test_gates.py::TestTestGate::test_waive003_flags_waiver_reaching_multiple_packages` (pytest node id, verified passing when recorded)
-- `tests/test_gates.py::TestTestGate::test_test003_waiver_in_a_file_under_the_package_matches` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0472 -->
 ```yaml
@@ -7946,26 +7898,3 @@ acceptance: []
 threat: null
 ```
 docs/audits/strata.md G2+G7 (HIGH/MEDIUM), from T-0401. _mitigation_is_chokepoint's first branch (_threat.py:1196) returns True when NoFlow holds with EVERY boundary removed -- i.e. the sink is simply unreachable from foreign in the model, so an incomplete/attacker-authored .strata discharges a real capability with NO mitigation modeled at all (G2). Same root cause as G7: _discharges_as_chokepoint's src=foreign expansion (_claims.py _expand) yields an empty source set when the model declares no foreign-trust node at all, so NoFlow proves vacuously (nothing to walk from) and every obligation on that model discharges with no adversary present. Fix direction: require at least one modeled path from a foreign source to the firing node (and at least one foreign-trust node in the model) before accepting the vacuous short-circuit as a discharge; otherwise emit a distinct 'obligation fires but sink unreachable / no adversary modeled -- model likely incomplete' diagnostic instead of silent PROVED. High-risk core-engine change (this family has the highest REJECT rate in repo history) -- build the counterexample litmus FIRST, confirm it currently discharges vacuously, THEN harden.
-
-<!-- ticket:T-draft-64b86c15 -->
-```yaml
-id: T-draft-64b86c15
-title: 'class-fallback frob: directive placement lint (sound version) -- T-0470 prong
-  2 follow-up'
-state: queued
-kind: bug
-origin: human
-created: '2026-07-21'
-blocked_by: []
-parent: null
-scope:
-- src/frob/gates/__init__.py
-- docs/modules/gates.md
-- tests/test_gates.py
-scope_changes: []
-evidence: []
-attachments: []
-acceptance: []
-threat: null
-```
-T-0470 prototyped and dropped a 'directive resolves to enclosing CLASS symbol far from its span start' heuristic meant to catch a frob:waive/directive mis-scoped to a whole class when the author meant a nested member. It fires on this repo's own widespread, legitimate idiom: a per-field frob:waive/frob:ticket comment documenting one field deep inside a large pydantic config class (fields are not RawSymbols, so following=None and the directive always falls back to the enclosing class by construction -- this is intentional there, not mis-scoped). Counterexample: src/frob/app/config.py's AppConfig has several such comments 150+ lines past the class start, none mis-scoped. A sound version needs a materially different signal than raw line-distance-from-class-top -- e.g. detecting a nearby symbol (method/function) the directive plausibly SHOULD have bound to via following but structurally could not reach (a gap/adjacency-window miss), distinguishing that from 'nothing here is a symbol at all, class fallback is the only option and is the norm'. See docs/modules/gates.md's 'Waiver over-breadth (T-0470)' section for the dropped prototype's exact shape and the false-positive evidence.
