@@ -1276,10 +1276,6 @@ def _write_scope_mutation(
     return Ok(updated)
 
 
-# frob:ticket T-0453
-# frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_tickets_lease.py::TestDoable.test_ignore_lease_returns_raw_list
-# frob:waive DRIFT001 reason="T-0453 added root/ignore_lease params; frob.lock ack out of scope, no inline-waivable syntax for JSON -- reviewer re-acks at land"  # noqa: E501
 # frob:ticket T-0409
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/unit/test_ticket_store.py::TestClosedTicketIds.test_returns_done_and_dropped_only  # noqa: E501
@@ -1303,6 +1299,10 @@ def closed_ticket_ids(queue: TicketQueue) -> tuple[str, ...]:
     return tuple(t.id for t in sorted(closed, key=lambda t: (t.created, t.id)))
 
 
+# frob:ticket T-0453
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets_lease.py::TestDoable.test_ignore_lease_returns_raw_list
+# frob:waive DRIFT001 reason="T-0453 added root/ignore_lease params; frob.lock ack out of scope, no inline-waivable syntax for JSON -- reviewer re-acks at land"  # noqa: E501
 def doable(
     queue: TicketQueue, root: Path | None = None, *, ignore_lease: bool = False
 ) -> tuple[Ticket, ...]:

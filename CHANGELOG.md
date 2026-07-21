@@ -17,6 +17,24 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.45.0] - unreleased
+
+Public-API surface change since 0.44.0 (mechanical semver via REL001): an
+additive (minor) bump -- new `frob.tickets.closed_ticket_ids`.
+
+- T-0409: ledger-hygiene gate (TICK003). WARN (escalating to ERROR past a
+  hard cap) when the active `tickets.md` ledger holds more than a
+  configurable threshold (`frob.toml` `[tickets]` `stale_archive_warn`/
+  `stale_archive_error`, default 20/60) of closed (done/dropped) tickets
+  sitting un-archived -- the repeated "we got away with not running `frob
+  ticket archive`" gap this ticket exists to close. New public
+  `frob.tickets.closed_ticket_ids(queue)` is the shared "which tickets are
+  closed" predicate the gate counts over. Resurrection-safe by
+  construction: the gate only counts and recommends `frob ticket archive`,
+  never writes anything itself, so it can never interact with the land/
+  splice path's archive-resurrection guards (`_drop_resurrected_ids`,
+  `splice_ledger`).
+
 ## [0.44.0] - unreleased
 
 Public-API surface change since 0.43.0 (mechanical semver via REL001): a
