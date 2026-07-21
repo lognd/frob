@@ -9253,7 +9253,7 @@ session).
 id: T-0497
 title: 'strata audit G6/G8-G12: default view coverage, THREAT005 KeyError risk, native-staleness
   mtime-only, LATENCY dead metric, per-repo BenignCapability allowlist'
-state: queued
+state: in-progress
 kind: security
 origin: human
 created: '2026-07-21'
@@ -9261,7 +9261,33 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/strata/
-scope_changes: []
+- tests/unit/test_claims_and_store_batch6.py
+- tests/unit/strata/test_threat.py
+scope_changes:
+- op: add
+  glob: tests/unit/strata/
+  reason: test coverage for src/frob/strata/ fixes lives in these test dirs (existing
+    repo convention -- code+its tests declared together)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/test_claims_and_store_batch6.py
+  reason: test coverage for src/frob/strata/ fixes lives in these test dirs (existing
+    repo convention -- code+its tests declared together)
+  actor: logan
+  at: '2026-07-21'
+- op: remove
+  glob: tests/unit/strata/
+  reason: narrow the over-broad tests/unit/strata/ glob down to the one test file
+    actually touched (G8)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/strata/test_threat.py
+  reason: narrow the over-broad tests/unit/strata/ glob down to the one test file
+    actually touched (G8)
+  actor: logan
+  at: '2026-07-21'
 evidence: []
 attachments: []
 acceptance: []

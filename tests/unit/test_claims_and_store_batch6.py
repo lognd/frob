@@ -306,6 +306,32 @@ class TestBoundClaimEdgeCases:
         assert outcome.is_err
         assert outcome.danger_err is StrataError.UnknownReference
 
+    # frob:tests tests/unit/test_claims_and_store_batch6.py::TestBoundClaimEdgeCases.test_latency_on_a_real_flow_is_refused_not_silently_refuted  # noqa: E501
+    def test_latency_on_a_real_flow_is_refused_not_silently_refuted(self) -> None:
+        """strata audit G11 (T-0497) counterexample: before this fix, a
+        LATENCY bound against a REAL flow (not just an unknown target) would
+        silently REFUTE-as-missing every time, forever -- `Flow` has no
+        `latency` field to ever declare. Prove it now comes back as a typed
+        `UnsupportedMetric` error instead of a fake ordinary-looking
+        REFUTED verdict."""
+        model = KernelModel(
+            nodes=(_node("a"), _node("b")),
+            flows=(_flow("f1", "a", "b"),),
+            claims=(
+                Claim(
+                    id="c1",
+                    body=BoundClaim(
+                        metric=Metric.LATENCY,
+                        target="f1",
+                        limit=Quantity(value=1, unit="s"),
+                    ),
+                ),
+            ),
+        )
+        outcome = evaluate_claims(model)
+        assert outcome.is_err
+        assert outcome.danger_err is StrataError.UnsupportedMetric
+
     # frob:tests tests/unit/test_claims_and_store_batch6.py::TestBoundClaimEdgeCases.test_size_no_declared_size_refutes
     def test_size_no_declared_size_refutes(self) -> None:
         model = KernelModel(

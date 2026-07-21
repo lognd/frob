@@ -137,3 +137,13 @@ class StrataError(ErrorSet):
         "failed to parse at all (docs/strata/threat.md#per-repo-benign-"
         "capability-declarations, T-0017 graphite adoption)"
     )
+    UnsupportedMetric = (
+        "A `bound` claim names a Metric the kernel has no declared quantity "
+        "for on its target -- e.g. `latency`: `Flow` (docs/strata/kernel.md"
+        "#data-models) has no `latency` field at all, only `rate`/`age`/"
+        "`size`/`timeout`, so a LATENCY bound could never prove and would "
+        "otherwise silently masquerade as an ordinary REFUTED-as-missing "
+        "result forever (strata audit G11, T-0497) -- refused as a typed "
+        "error instead, so 'this metric is not implemented yet' is never "
+        "confused with 'this metric was checked and failed'"
+    )

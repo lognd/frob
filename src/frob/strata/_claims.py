@@ -557,11 +557,18 @@ def _fastest_inbound_growth(facts: FactBase, target: str) -> float | None:
 def _eval_bound_latency_or_size(
     facts: FactBase, claim: Claim, body: BoundClaim
 ) -> Result[ClaimResult, StrataError]:
-    """LATENCY / SIZE: direct comparison against the flow's declared quantity."""
+    """SIZE: direct comparison against the flow's declared quantity. LATENCY
+    is refused outright (strata audit G11, T-0497): `Flow` has no `latency`
+    field at all, so a LATENCY bound could never do anything but REFUTE-as-
+    missing every single time -- an always-refutes metric silently
+    masquerading as a real (if failing) check is worse than an honest typed
+    error naming the gap."""
     flow = facts.flows.get(body.target)
     if flow is None:
         return Err(StrataError.UnknownReference)
-    declared = flow.size if body.metric is Metric.SIZE else None
+    if body.metric is Metric.LATENCY:
+        return Err(StrataError.UnsupportedMetric)
+    declared = flow.size
     if declared is None:
         return Ok(
             _refuted(claim, f"{flow.id} declares no {body.metric.value} to check")
