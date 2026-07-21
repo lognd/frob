@@ -141,7 +141,8 @@ def _close_all() -> None:
 
 
 # frob:doc docs/modules/dup.md#caching
-# frob:waive TEST005 reason="get_fingerprint 85.7% branch cover, debt T-0160"
+# frob:tests tests/unit/test_dup_cache.py::TestFingerprintRoundTrip.test_put_then_get_returns_same_payload  # noqa: E501
+# frob:tests tests/unit/test_dup_cache.py::TestFingerprintRoundTrip.test_get_fingerprint_connect_error_returns_none  # noqa: E501
 def get_fingerprint(root: Path, digest: str, rung: str) -> tuple[object, ...] | None:
     """The cached fingerprint payload for `digest`/`rung`, or None on a miss."""
     conn_r = _connect(root)
@@ -199,7 +200,9 @@ def get_verdict(
 
 
 # frob:doc docs/modules/dup.md#caching
-# frob:waive TEST005 reason="put_verdict 71.4% branch cover, debt T-0160"
+# frob:tests tests/unit/test_dup_cache.py::TestVerdictRoundTrip.test_put_then_get_returns_same_payload  # noqa: E501
+# frob:tests tests/unit/test_dup_cache.py::TestVerdictRoundTrip.test_put_verdict_evicts_lru_rows_beyond_cache_entries  # noqa: E501
+# frob:tests tests/unit/test_dup_cache.py::TestVerdictRoundTrip.test_put_verdict_connect_error_is_propagated  # noqa: E501
 def put_verdict(
     root: Path,
     d1: str,

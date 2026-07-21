@@ -171,6 +171,21 @@ class TestAckDrift:
         assert result.is_err
         assert result.danger_err == LockError.UnknownRef
 
+    def test_acknowledge_endpoint_that_does_not_resolve_is_err(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/lock.py::acknowledge
+        # A doc anchor is an edge endpoint (the `frob:doc` edge's target)
+        # but is not itself a symbol ref -- `resolve` must fail on it even
+        # though `_edge_endpoints` includes it, exercising the
+        # record_result.is_err branch distinct from the "not an endpoint
+        # at all" branch above.
+        snap = self._snapshot(tmp_path)
+        lock = load_lock(tmp_path / "frob.lock").danger_ok
+        result = acknowledge(lock, snap, ["docs/x.md#widget"])
+        assert result.is_err
+        assert result.danger_err == LockError.UnknownRef
+
     def test_write_lock_deterministic(self, tmp_path: Path) -> None:
         # frob:tests src/frob/graph/lock.py::write_lock
         snap = self._snapshot(tmp_path)
@@ -202,6 +217,26 @@ class TestAckDrift:
         assert result.is_ok
         assert len(calls) == 1
         assert Path(calls[0][1]) == path
+
+    def test_write_lock_oserror_on_replace_is_write_failed(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/graph/lock.py::write_lock
+        # Drives the OSError except-branch: `os.replace` failing (e.g. a
+        # cross-device rename or permission error) must surface as
+        # LockError.WriteFailed, not propagate the raw OSError.
+        snap = self._snapshot(tmp_path)
+        lock = load_lock(tmp_path / "frob.lock").danger_ok
+        acked = acknowledge(lock, snap, ["src/a.py::Widget.render"]).danger_ok
+        path = tmp_path / "frob.lock"
+
+        def fail_replace(src: str, dst: str) -> None:
+            raise OSError("simulated replace failure")
+
+        monkeypatch.setattr("frob.graph.lock.os.replace", fail_replace)
+        result = write_lock(acked, path)
+        assert result.is_err
+        assert result.danger_err == LockError.WriteFailed
 
 
 class TestLoadLock:
