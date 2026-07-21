@@ -6308,7 +6308,7 @@ output -- exactly 59 - 3 fixed = 56.
 ```yaml
 id: T-0524
 title: burn down 130 COV007 findings (frob:doc on private symbols)
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-07-21'
@@ -6325,7 +6325,6 @@ acceptance: []
 threat: null
 ```
 COV007 (frob:doc bound to a private symbol) currently has 130 warn-level findings repo-wide (measured via frob check --only coverage on this worktree), spread across src/frob/strata, src/frob/lang, src/frob/tickets, src/frob/dup, src/frob/graph, src/frob/app, etc. T-0483 explicitly scoped COV007 out of its own ticket ('COV007 unchanged at 126 -- out of scope for this ticket; a different gate') and T-0516 (COV006's successor) never took it on either -- no ticket has triaged this list yet. Per policy, most of these frob:doc edges on private helpers should move to the public caller they actually document (updating doc text if needed); a genuine minority may warrant a waive with a specific reason (private symbol IS the documented contract). This ticket exists so the 130-finding COV007 list gets the same per-finding triage COV006 got in T-0516, rather than being silently absorbed into an unrelated ticket's scope.
-
 <!-- ticket:T-0525 -->
 ```yaml
 id: T-0525
@@ -6498,3 +6497,111 @@ static call-graph entirely and may just need a documented exemption
 (kind=\"integration\"/\"cli\" tagged `frob:tests` edges skip COV006).
 Class 4 needs Rust support added to `frob.graph.callgraph`'s language
 handling, or a documented exemption for non-Python `frob:tests` targets.
+
+<!-- ticket:T-draft-9cd762ad -->
+```yaml
+id: T-draft-9cd762ad
+title: 'COV007 burndown continuation: 92 residual findings across 43 files'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0524 measured 128 COV007 findings repo-wide (`frob check --only
+coverage`, this worktree). Triaged and dispositioned 36 across 5 batches
+(each committed separately):
+
+- `src/frob/tickets/__init__.py` (10): 9 redundant `frob:doc` directives
+  removed (already covered by the public entrypoint they feed --
+  `leased_by`, `scope_breadth_context`, `has_substantive_done_report`);
+  1 waived (`_allocate_ticket_id`'s decision-record anchor documents its
+  own algorithm, not a public-API surface).
+- `src/frob/lang/_common.py` (7): all 7 waived -- docs/modules/lang.md's
+  "Primitives" section is a deliberate, per-function architecture doc of
+  this module's internal tree-sitter helpers, individually named by
+  bullet.
+- `src/frob/dup/_core.py` (7): all 7 waived -- docs/modules/dup.md
+  individually `frob:describes` each private frob_core shim by name
+  across its Rust-core/rung-r4/R1.5/rung-r5 sections.
+- `src/frob/vet/_capability_registry.py` (6): 5 redundant directives
+  removed (already covered by `DANGEROUS_OPERATIONS`/
+  `CAPABILITY_MATRIX_EXCUSES`/`capability_matrix`, the public constants/
+  function these private schema classes and helpers feed); 1 waived
+  (`_validate_registry_kinds` is a standalone drift-lock helper with no
+  public wrapper, called directly by its own tests).
+- `src/frob/gates/__init__.py` (6): 2 redundant directives removed
+  (`_severity_overrides`/`_anchor_mismatch_message`, already covered by
+  `run_gates`/`docanchor_gate`); 4 waived (`_file_has_reasoned_doc_waiver`/
+  `_inv003_doc_violations`/`_markdown_sections`/`_inv004_doc_violations`
+  are individually walked through by docs/modules/gates.md's Invariants
+  section, a deliberate architecture doc of the INV003/INV004 design).
+
+The remaining 92 findings (measured via a fresh `frob check --only
+coverage` after all 5 batches landed) span 43 files, none yet triaged:
+
+```
+5 src/frob/vet/_obfuscation.py
+5 src/frob/vet/_capability.py
+5 src/frob/tickets/_store.py
+5 src/frob/strata/_claims.py
+4 src/frob/vet/_source.py
+4 src/frob/tickets/_models.py
+4 src/frob/strata/_plan.py
+3 src/frob/vet/_lockfile.py
+3 src/frob/vet/_ecosystem.py
+3 src/frob/testing/_runners.py
+3 src/frob/strata/_waive.py
+3 src/frob/strata/_ast.py
+3 src/frob/graph/digest.py
+3 src/frob/gates/_prework.py
+2 src/frob/vet/_typosquat.py
+2 src/frob/vet/_registry.py
+2 src/frob/vet/_osv.py
+2 src/frob/vet/_cache.py
+2 src/frob/strata/_threat.py
+2 src/frob/strata/_selfconform.py
+2 src/frob/gates/_secrets.py
+2 src/frob/excludes.py
+2 src/frob/check/_python.py
+1 src/frob/vet/_models.py
+1 src/frob/vet/_lifecycle.py
+1 src/frob/vet/_containment.py
+1 src/frob/vet/_allow.py
+1 src/frob/tickets/_reconcile.py
+1 src/frob/tickets/_land.py
+1 src/frob/strata/_krb.py
+1 src/frob/strata/_host.py
+1 src/frob/strata/_facts.py
+1 src/frob/strata/_code_binding.py
+1 src/frob/logging/formatter.py
+1 src/frob/logging/filter.py
+1 src/frob/lang/_walk_python.py
+1 src/frob/lang/__init__.py
+1 src/frob/graph/dsl.py
+1 src/frob/gates/invariants.py
+1 src/frob/gates/decisions.py
+1 src/frob/gates/_pii_structural.py
+1 src/frob/dup/_pipeline.py
+1 src/frob/dup/_cache.py
+1 src/frob/app/check_runner.py
+```
+
+The same three dispositions from T-0524's batches apply per finding:
+move the `frob:doc` edge to the public caller/constant that already (or
+should) carry it, waive with a specific reason when the private symbol
+genuinely is a deliberately-documented internal contract (an
+architecture-doc section individually naming private helpers, a
+standalone drift-lock/decision-record anchor with no public wrapper), or
+demote/reword a stale reference. Batch by module, commit per batch, same
+as T-0524's pattern -- this ticket exists so the residual gets the same
+per-finding triage rather than being silently left unaccounted for.
