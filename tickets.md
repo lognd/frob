@@ -4648,7 +4648,7 @@ found while working T-0494: tests/test_dup_cross_lang.py now proves R5 fires cro
 id: T-0519
 title: T-0187/T-0198 evidence test_no_clone_group_at_any_threshold does not resolve
   (COV003) after T-0494 flipped its assertion
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-07-21'
@@ -4658,11 +4658,18 @@ parent: null
 scope:
 - tickets.md
 - tickets-archive.md
+- tests/integration/test_interfaces.py
 scope_changes:
 - op: add
   glob: tickets-archive.md
   reason: T-0519 dedupes the T-0187/T-0198 archived evidence lines that live in tickets-archive.md,
     not tickets.md
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/integration/test_interfaces.py
+  reason: 'route 2 evidence-scope binding (D-02): the recorded T-0167-precedent CLI-dispatch
+    evidence file must itself be in scope for close to recognize it as covering'
   actor: logan
   at: '2026-07-21'
 evidence:
