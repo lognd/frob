@@ -5,6 +5,7 @@ errors first, and exits non-zero if any tool reports errors.
 
 ## Usage
 
+<!-- frob:describes src/frob/__main__.py::_add_check_parser -->
 ```bash
 frob check src/                        # Python (auto-detected)
 frob check src/ --type python          # force Python mode
@@ -85,6 +86,7 @@ one-line summary. Fails fast if errors are found.
 
 ### Skip flags
 
+<!-- frob:describes src/frob/__main__.py::_add_check_parser -->
 ```bash
 frob check src/ --skip-ruff
 frob check src/ --skip-ty
@@ -98,6 +100,7 @@ frob check src/ --skip-gates
 
 ### Gates integration flags
 
+<!-- frob:describes src/frob/__main__.py::_add_check_parser -->
 ```bash
 frob check --ticket T-0042             # explicit ticket context for scope/pre-work gates
 frob check --base main                 # base ref for the drift/coverage diff (default: main)
@@ -172,6 +175,7 @@ message fingerprint, plus a per-file content hash for staleness detection)
 to `.frob/baseline`. `--delta` then makes the gates stage report only
 violations absent from that stamp:
 
+<!-- frob:describes src/frob/__main__.py::_add_check_parser -->
 ```bash
 frob check --stamp-baseline            # once, e.g. at the start of a work session
 frob check --only gates --delta        # afterwards: only new violations
@@ -212,6 +216,7 @@ Runs in order:
 3. `clang-format --check` on all sources
 4. `ctest` (optionally with `valgrind`)
 
+<!-- frob:describes src/frob/check/__init__.py::run_check_cpp -->
 ```bash
 frob check . --type cpp
 frob check . --type cpp --valgrind
@@ -227,6 +232,7 @@ Runs in order:
 3. `cargo fmt --check`
 4. `cargo test` (optionally with `valgrind`)
 
+<!-- frob:describes src/frob/check/__init__.py::run_check_rust -->
 ```bash
 frob check . --type rust
 frob check . --type rust --valgrind
@@ -244,6 +250,7 @@ Runs in order (each via `npx`):
 A missing `npx`/node toolchain is a soft skip with a note on each stage,
 never a crash.
 
+<!-- frob:describes src/frob/check/__init__.py::run_check_ts -->
 ```bash
 frob check . --type typescript
 frob check . --type typescript --skip-eslint --skip-prettier
@@ -252,6 +259,7 @@ frob check . --type typescript --skip-tests
 
 ### TypeScript skip flags
 
+<!-- frob:describes src/frob/__main__.py::_add_check_parser -->
 ```bash
 frob check src/ --skip-tsc
 frob check src/ --skip-eslint
@@ -294,6 +302,7 @@ JSON output (`--json`) includes the full structured `CheckResult` with per-tool
 
 ## Use in CI
 
+<!-- frob:describes src/frob/check/__init__.py::run_check -->
 ```bash
 frob check src/ && echo "all clear"
 # Exits 0 only if zero errors across all tools.

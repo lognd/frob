@@ -16,6 +16,7 @@ applies it with `git apply`.
 
 ## frob workflow
 
+<!-- frob:waive DOC004 reason="illustrative agent-workflow example, not command reference" -->
 ```bash
 frob outline src/file.py             # signatures without reading full bodies
 frob docs src/file.py                # docstrings for edge case hints
@@ -97,6 +98,7 @@ If you cannot fix the error after a genuine attempt -- or you determine the
 fix requires information/access you don't have -- do not leave silent
 failure for the next session to rediscover. If this is bound to a ticket:
 
+<!-- frob:waive DOC004 reason="illustrative agent-workflow example, not command reference" -->
 ```bash
 frob ticket fail T-0042 "<one-line why this attempt failed>"
 ```

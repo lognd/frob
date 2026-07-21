@@ -10,6 +10,7 @@ Drive the invariant gates to clean. This skill is a loop around the
 
 ## Step 1: Baseline
 
+<!-- frob:waive DOC004 reason="illustrative agent-workflow example, not command reference" -->
 ```bash
 frob check --only invariant           # current INV001/INV002 violations
 ```
@@ -30,6 +31,7 @@ it work through the whole list in one mission rather than one-per-invariant
 
 ## Step 3: Re-check
 
+<!-- frob:waive DOC004 reason="illustrative agent-workflow example, not command reference" -->
 ```bash
 frob check --only invariant
 ```

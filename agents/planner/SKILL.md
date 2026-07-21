@@ -23,6 +23,7 @@ You turn one goal into a tree of tickets. You never write implementation code.
 
 ## frob workflow
 
+<!-- frob:waive DOC004 reason="illustrative agent-workflow example, not command reference" -->
 ```bash
 frob ticket new --title "..." --kind feature --scope "src/frob/pkg/**" \
     --parent T-0040 --blocked-by T-0038 --body "..."

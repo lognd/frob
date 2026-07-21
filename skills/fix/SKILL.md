@@ -68,6 +68,7 @@ Read all three (~50 tokens total with frob, or ~200 tokens without).
 
 For each type error, understand the flow before touching anything:
 
+<!-- frob:waive DOC004 reason="illustrative agent-workflow example, not command reference" -->
 ```bash
 # Where is the mismatched value coming from?
 frob xref <symbol> src/          # if using frob
