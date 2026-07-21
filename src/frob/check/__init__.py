@@ -19,6 +19,7 @@ from typing import Callable
 
 from pydantic import BaseModel
 
+from frob.check._memo import run_memo_scope
 from frob.check._native import (
     _run_cargo,
     _run_cargo_fmt_check,
@@ -406,17 +407,23 @@ def _run_check_with_skips(
     if unknown:
         return _unknown_only_result(root, unknown)
 
-    tasks = _python_tasks(
-        root,
-        only=only,
-        gate_only=gate_only,
-        ruff_args=ruff_args,
-        ticket=ticket,
-        base=base,
-        skips=skips,
-        delta=delta,
-    )
-    return CheckResult(path=str(root), results=_collect_results(tasks))
+    # T-0423: memoize the heavy pure analyses (build_graph/analyze_project)
+    # for exactly the lifetime of this run (`frob.check._memo.run_memo_
+    # scope`'s docstring) -- a stage that calls one twice within this
+    # `with` block gets a cache hit; any caller outside it (CLI runners,
+    # tests exercising real incremental rebuilds) is unaffected.
+    with run_memo_scope():
+        tasks = _python_tasks(
+            root,
+            only=only,
+            gate_only=gate_only,
+            ruff_args=ruff_args,
+            ticket=ticket,
+            base=base,
+            skips=skips,
+            delta=delta,
+        )
+        return CheckResult(path=str(root), results=_collect_results(tasks))
 
 
 # ---------------------------------------------------------------------------
