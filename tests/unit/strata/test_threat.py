@@ -912,6 +912,8 @@ class TestBenignCapability:
     # frob:tests src/frob/strata/_threat.py::BenignCapability kind="unit"
     def test_missing_caught_by_is_rejected(self):
         with pytest.raises(ValidationError):
+            # ty: ignore[missing-argument] -- intentionally omit the required
+            # caught_by to verify pydantic rejects the construction at runtime
             BenignCapability(kind="metrics", reason="no CWE weakness")
 
 
