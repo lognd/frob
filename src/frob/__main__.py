@@ -657,10 +657,16 @@ def _add_ticket_progress_parsers(ticket_sub) -> list:
 
     ticket_start_p = ticket_sub.add_parser(
         "start",
-        help="transition to in-progress (auto-plans a queued ticket) and run "
-        "the pre-work sweep",
+        help="transition to in-progress (auto-plans a queued ticket) and "
+        "BACKGROUND the pre-work sweep (T-0474; --foreground blocks instead)",
     )
     ticket_start_p.add_argument("ticket_id", metavar="id")
+    ticket_start_p.add_argument(
+        "--foreground",
+        dest="ticket_foreground",
+        action="store_true",
+        help="run the pre-work sweep synchronously instead of backgrounding it",
+    )
 
     ticket_sweep_p = ticket_sub.add_parser(
         "sweep", help="re-record the pre-work sweep (after widening scope)"

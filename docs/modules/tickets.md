@@ -975,6 +975,21 @@ def ledger_lock(root: Path) -> Iterator[None]
   hard error naming `frob ticket sweep <id>` as the refresh path, not a
   silent idempotent no-op -- `sweep` already exists as that mechanism, so a
   second entry point doing the same thing would just be duplication.
+- **Instant start (T-0474)**: `frob ticket start` is just the state
+  transition by default -- the pre-work sweep (dup scan + xref + scope
+  digest) is launched as a DETACHED background process
+  (`subprocess.Popen(..., start_new_session=True)`) rather than run
+  synchronously, so `start` no longer blocks for however long the sweep
+  takes on a large repo. `--foreground` opts back into the old, fully
+  synchronous behavior (the sweep completes before `start` returns) --
+  useful for a script that wants the sweep guaranteed recorded
+  immediately. `frob ticket sweep <id>` is unaffected either way: it
+  always runs synchronously, so PRE001 stays satisfiable on demand
+  regardless of whether `start`'s own background launch has landed yet. A
+  spawn failure (e.g. `subprocess.Popen` refused by a locked-down sandbox)
+  falls back to running the sweep synchronously right there -- `start`
+  never silently skips recording a sweep, only ever trades "instant" for
+  "eventually".
 
 Ticket kinds: feature, bug, security, ux, docs, invariant, incident.
 - `--kind incident` seeds a blameless-postmortem body template (Summary,

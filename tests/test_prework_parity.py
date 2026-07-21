@@ -117,8 +117,11 @@ class TestCliStartRecordsGateCompatibleDigest:
             part for part in new.stdout.split() if part.startswith("T-")
         ).strip(":")
 
+        # T-0474: `start` backgrounds the sweep by default now -- this test
+        # wants the synchronous, immediately-consistent old contract, which
+        # `--foreground` still provides.
         start = subprocess.run(
-            [*frob, "ticket", "start", ticket_id],
+            [*frob, "ticket", "start", ticket_id, "--foreground"],
             cwd=root,
             capture_output=True,
             text=True,

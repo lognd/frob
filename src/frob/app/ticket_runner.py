@@ -8,6 +8,7 @@ scope|archive` (docs/modules/tickets.md)."""
 
 from __future__ import annotations
 
+import subprocess
 import sys
 from datetime import date
 from pathlib import Path
@@ -754,7 +755,70 @@ def _start(root: Path, cfg: AppConfig) -> None:
 
     record_ticket_event(root, ticket_id=cfg.ticket_id, event="started")
 
-    _run_sweep(root, transitioned.danger_ok)
+    # frob:ticket T-0474
+    # By default `start` is now just the state transition above -- the
+    # pre-work sweep (a synchronous whole-repo dup+xref scan, 57s on this
+    # repo's /mnt/c checkout) runs in the BACKGROUND instead of blocking the
+    # command. `--foreground` opts back into the old synchronous behavior
+    # (useful for a script/test that wants the sweep guaranteed recorded the
+    # instant `start` returns). Either way, `frob ticket sweep <id>` remains
+    # the always-available, always-synchronous way to (re)record it, so
+    # PRE001 stays satisfiable regardless of how `start` recorded it.
+    if cfg.ticket_foreground:
+        _run_sweep(root, transitioned.danger_ok)
+    else:
+        _spawn_background_sweep(root, cfg.ticket_id)
+
+
+def _spawn_background_sweep(root: Path, ticket_id: str) -> None:
+    """Launch `frob ticket sweep <ticket_id>` as a detached background
+    process against `root` (T-0474) -- `start` returns as soon as this is
+    spawned, without waiting for the sweep (dup scan + xref + scope digest)
+    to finish. `start_new_session=True` detaches it from this process's
+    session so it keeps running after the `start` CLI invocation exits;
+    stdout/stderr are discarded (the sweep's own `record_prework` call is
+    the durable side effect a caller cares about -- `frob check`'s PRE001
+    gate, or a later `frob ticket sweep`/`frob ticket show`, is how a
+    caller observes whether it has landed yet, not this process's output).
+
+    Best-effort: if spawning itself fails (e.g. `sys.executable` refused by
+    a locked-down sandbox), this logs a warning and falls back to running
+    the sweep synchronously right here -- `start` must never silently skip
+    recording a sweep at all, only ever trade "instant" for "eventually"."""
+    try:
+        subprocess.Popen(  # noqa: S603
+            [
+                sys.executable,
+                "-m",
+                "frob",
+                "ticket",
+                "sweep",
+                ticket_id,
+                "--path",
+                str(root),
+            ],
+            cwd=str(root),
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            stdin=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+    except OSError as exc:
+        _log.warning(
+            "ticket start: %s background sweep spawn failed (%s) -- "
+            "running it synchronously instead",
+            ticket_id,
+            exc,
+        )
+        ticket = _load_ticket_or_exit(root, ticket_id, verb="start")
+        _run_sweep(root, ticket)
+        return
+    _log.info(
+        "ticket start: %s pre-work sweep launched in the background -- "
+        "`frob ticket sweep %s` re-runs it synchronously if needed sooner",
+        ticket_id,
+        ticket_id,
+    )
 
 
 def _sweep_cmd(root: Path, cfg: AppConfig) -> None:

@@ -223,6 +223,10 @@ class AppConfig(BaseModel):
     ticket_new_id: str | None = None
     ticket_dry_run: bool = False
     ticket_worktree: Path | None = None
+    # frob:ticket T-0474
+    # `frob ticket start <id> --foreground` -- run the pre-work sweep
+    # synchronously (the pre-T-0474 default) instead of backgrounding it.
+    ticket_foreground: bool = False
     # frob:ticket T-0458
     # `frob ticket done-report <id> (--why TEXT | --why-file PATH)` --
     # TEXT of "-" (or --why-file omitted with neither given) reads stdin,
@@ -570,6 +574,7 @@ class AppConfig(BaseModel):
             "perf_smells",
             "sys_apply",
             "ticket_dry_run",
+            "ticket_foreground",
             "deploy_check",
             "clean_all",
             "clean_deep",
