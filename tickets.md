@@ -3854,7 +3854,7 @@ in-place and disappear before the PASS/FAIL summary line, and by piping
 id: T-0420
 title: 'frob check output: split the single gates line into named per-family stages
   + a gate summary; consistent coloring incl pre-summary warnings'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -3863,20 +3863,115 @@ parent: T-0410
 scope:
 - src/frob/app/
 - src/frob/check/
-scope_changes: []
-evidence: []
+- tests/system/test_cli_check.py
+- tests/unit/test_check.py
+- pyproject.toml
+- .frob-release.json
+- uv.lock
+scope_changes:
+- op: add
+  glob: tests/system/test_cli_check.py
+  reason: T-0420's gate-family split changed the shape of _run_gates's return value
+    and the [gates] diagnostic tag these two test files assert on; updating them to
+    the new gate:<FAMILY>/gate-summary shape is part of implementing this ticket,
+    not a separate change
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/test_check.py
+  reason: T-0420's gate-family split changed the shape of _run_gates's return value
+    and the [gates] diagnostic tag these two test files assert on; updating them to
+    the new gate:<FAMILY>/gate-summary shape is part of implementing this ticket,
+    not a separate change
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: pyproject.toml
+  reason: REL001 requires bumping pyproject.toml's version + frob release stamp (.frob-release.json,
+    uv.lock lockfile hash) whenever a ticket adds a public symbol (AppConfig.check_skip_unchanged,
+    _ColorizedLevelFormatter) -- routine release bookkeeping for this ticket's change,
+    not separate work
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: REL001 requires bumping pyproject.toml's version + frob release stamp (.frob-release.json,
+    uv.lock lockfile hash) whenever a ticket adds a public symbol (AppConfig.check_skip_unchanged,
+    _ColorizedLevelFormatter) -- routine release bookkeeping for this ticket's change,
+    not separate work
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: REL001 requires bumping pyproject.toml's version + frob release stamp (.frob-release.json,
+    uv.lock lockfile hash) whenever a ticket adds a public symbol (AppConfig.check_skip_unchanged,
+    _ColorizedLevelFormatter) -- routine release bookkeeping for this ticket's change,
+    not separate work
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/unit/test_check.py::TestSummarySeverityHonesty::test_warn_only_gate_summary_splits_errors_and_warnings
+- tests/unit/test_check.py::TestRunGatesDelta::test_no_baseline_falls_back_to_full_set_with_warning
 attachments: []
 acceptance: []
 threat: null
 ```
 User UX asks (3 related output issues): (1) The pre-summary WARNING lines (PII010/SEC110/module-policy auto-inject) print as PLAIN uncolored log output while the pass/FAIL summary is colored -- make coloring consistent (or route these through the same formatter), TTY-aware (no ANSI in non-TTY). (2) The gates stage is ONE line with a timing blob [archgate=.. clones=.. coverage=.. ..]; SPLIT it into named per-family stage lines (like ruff-check/ruff-format/ty) -- TEST/COV/DRIFT/SCOPE/SEC/PII/PERF/SYS/DOC/... each its own pass/FAIL line with its count -- and a GATE SUMMARY (totals: N errors, M warnings, K waived) at the end. (3) De-dupe the reporting: frob-arch/frob-dup show as their own stages AND as archgate/clones inside the gates timing -- once T-0410-arch-double-run is fixed, ensure each is reported ONCE with a clear name. Goal: a human reads named stages + a clean summary, not a monolithic gates blob.
 
+## Done report
+
+Split `frob check`'s single monolithic `gates` line into named per-family
+stages plus a trailing summary (T-0420). `_run_gates`/`_gates_success_result`
+in `frob.check._python` now group `run_gates`'s violations/waived by rule
+family (`_rule_family`: the alpha prefix before the first digit, e.g.
+`COV001` -> `COV`, `PII010` -> `PII`) and emit one `gate:<FAMILY>`
+`ToolResult` per family plus a trailing `gate-summary` `ToolResult`
+carrying the overall totals and the existing per-gate timing blob,
+replacing the single `gates` line that used to bury both behind one
+combined count. `--delta` still narrows both the per-family lines and the
+summary identically (the delta note, when present, is its own
+`gate:delta` line). Also (same ticket): pre-summary WARNING/ERROR log
+lines on stderr (PII010/SEC110/module-policy warnings, etc.) now go
+through a `_ColorizedLevelFormatter` wrapped around the stderr
+`StreamHandler`(s) for the duration of a non-`--json` check run
+(`_colorized_stderr_logs`), resolved once via `should_color(sys.stderr)`
+so a piped/non-TTY run stays byte-plain -- consistent with the final
+pass/FAIL summary's coloring instead of printing plain while the summary
+was colored.
+
+Verified by eye: `frob check --type python --only gates` under a real TTY
+(`script`) now prints a `pass`/`FAIL` line per family (`gate:ARCH`,
+`gate:COV`, `gate:DRIFT`, `gate:PERF`, `gate:PII`, `gate:REF`, `gate:REL`,
+`gate:SEC`, `gate:TEST`, `gate:WALK`) followed by one `gate-summary` line
+with totals + the timing blob, each colored green/red by pass/FAIL.
+Updated `tests/unit/test_check.py`'s three call sites that asserted a
+single `.tool == "gates"` result and one `tests/system/test_cli_check.py`
+grep on the `"[gates]"` diagnostic tag to match the new
+`list[ToolResult]`/`"[gate:"` shape -- the underlying `--delta` filtering
+behavior these tests exercise is unchanged, only the reporting shape.
+
+### Changed
+```
+ src/frob/app/check_runner.py          | 271 ++++++++++++++++++++++++++++++++--
+ src/frob/app/config.py                |   8 +
+ src/frob/check/_python.py             | 127 ++++++++++++++--
+ tests/system/test_cli_check.py        |   8 +-
+ tests/unit/test_app_runners_batch6.py |  89 +++++++++++
+ tests/unit/test_check.py              |  23 ++-
+ tickets.md                            |  31 +++-
+ 7 files changed, 517 insertions(+), 40 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_check.py::TestSummarySeverityHonesty::test_warn_only_gate_summary_splits_errors_and_warnings` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunGatesDelta::test_no_baseline_falls_back_to_full_set_with_warning` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0421 -->
 ```yaml
 id: T-0421
 title: 'frob check per-language tooling display: show skipped (unchanged) vs hidden
   (language absent), not silently omitted'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -3886,7 +3981,15 @@ scope:
 - src/frob/app/
 - src/frob/check/
 - frob.toml
-scope_changes: []
+- tests/unit/test_app_runners_batch6.py
+scope_changes:
+- op: add
+  glob: tests/unit/test_app_runners_batch6.py
+  reason: new TestSkipUnchangedLanguage coverage for the T-0421 skip-unchanged-vs-hidden-absent
+    behavior lives in this existing batch file, alongside the other check_runner runner
+    tests
+  actor: logan
+  at: '2026-07-21'
 evidence: []
 attachments: []
 acceptance: []
