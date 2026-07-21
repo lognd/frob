@@ -1084,6 +1084,15 @@ class TestScopeMatching:
         assert scope_matches("design/f.py", ("design/",))
         assert not scope_matches("other/f.py", ("design/",))
 
+    def test_bare_dir_entry_no_trailing_slash_globs_recursively(self) -> None:
+        # frob:tests src/frob/tickets/_models.py::scope_matches
+        assert scope_matches("docs/modules/gates.md", ("docs/modules",))
+        assert scope_matches("docs/modules", ("docs/modules",))
+        assert not scope_matches("docs/strata/x.md", ("docs/modules",))
+        # a literal file entry (dot-extension on the final segment) must NOT
+        # be treated as an implied directory prefix
+        assert not scope_matches("src/frob/foo/bar.py", ("src/frob/foo.py",))
+
     def test_ledger_always_in_scope(self) -> None:
         # frob:tests src/frob/tickets/_models.py::scope_matches
         assert scope_matches("tickets.md", ("src/frob/foo/**",))

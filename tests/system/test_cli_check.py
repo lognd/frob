@@ -491,7 +491,12 @@ class TestCheckPolyglot:
     must report a `SKIPPED: ...` line naming what it excludes."""
 
     def _make_polyglot_project(self, tmp_path: Path) -> Path:
-        # frob:tests tests/system/test_cli_check.py::TestCheckPolyglot._make_polyglot_project
+        # T-0523: this was a self-referential frob:tests directive (this
+        # private fixture helper naming ITSELF as its own tested target,
+        # which COV006 correctly flagged as unreachable -- a symbol can't
+        # be evidence for its own coverage). It is a shared test fixture,
+        # exercised by every test method in this class that calls it; no
+        # standalone frob:tests binding belongs on it.
         """A repo with both a Rust and a Python marker file present."""
         (tmp_path / "Cargo.toml").write_text(
             '[package]\nname = "polyfix"\nversion = "0.1.0"\nedition = "2021"\n'

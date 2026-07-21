@@ -104,8 +104,10 @@ CAPABILITY_KINDS: tuple[str, ...] = (
 )
 
 
-# frob:doc docs/modules/vet.md#public-api
-# frob:doc docs/guides/extending/capability-registry.md#capability-registry
+# T-0524: frob:doc removed -- DANGEROUS_OPERATIONS (public, below) already
+# carries both the same docs/modules/vet.md#public-api anchor and the
+# extending-guide anchor (COV007: a private schema class does not need
+# its own copy of the doc edge its public constant already carries).
 class _DangerousOperation(BaseModel):
     """One structured dangerous-operation entry (T-0158 addendum 1):
     a single builtin/stdlib/library function or literal pattern that
@@ -131,7 +133,8 @@ class _DangerousOperation(BaseModel):
     needles: tuple[str, ...] = ()
 
 
-# frob:doc docs/modules/vet.md#public-api
+# T-0524: frob:doc removed -- CAPABILITY_MATRIX_EXCUSES (public, below)
+# already carries the same docs/modules/vet.md#public-api anchor (COV007).
 class _MatrixExcuse(BaseModel):
     """A written, specific reason a (kind, language) cell has NO
     `_DangerousOperation` entries -- T-0158 retires the old blanket C/C++
@@ -1792,7 +1795,9 @@ CAPABILITY_MATRIX_EXCUSES: tuple[_MatrixExcuse, ...] = (
 )
 
 
-# frob:doc docs/modules/vet.md#public-api
+# T-0524: frob:doc removed -- capability_matrix (public, below) returns
+# this type and already carries the same docs/modules/vet.md#public-api
+# anchor (COV007).
 class _MatrixCell(BaseModel):
     """One (capability_kind, language) matrix cell's verdict: `patterned`
     (has >=1 `_DangerousOperation`), `excused` (has a `_MatrixExcuse`), or
@@ -1841,7 +1846,8 @@ def capability_matrix() -> tuple[_MatrixCell, ...]:
     return tuple(cells)
 
 
-# frob:doc docs/modules/vet.md#public-api
+# T-0524: frob:doc removed -- calls capability_matrix (public), which
+# already carries the same docs/modules/vet.md#public-api anchor (COV007).
 # frob:ticket T-0158
 def _unexcused_empty_cells() -> tuple[_MatrixCell, ...]:
     """Every matrix cell with zero patterns and zero excuse -- the T-0158
@@ -1850,6 +1856,10 @@ def _unexcused_empty_cells() -> tuple[_MatrixCell, ...]:
 
 
 # frob:doc docs/modules/vet.md#public-api
+# frob:waive COV007 reason="a standalone drift-lock helper with no public \
+# wrapper -- called directly by its own tests (T-0524), not through any \
+# other public entrypoint in this module, so the private symbol genuinely \
+# is the documented contract here"
 # frob:ticket T-0158
 def _validate_registry_kinds(external_kinds: frozenset[str]) -> tuple[str, ...]:
     """Drift-lock (extends T-0150): every kind `external_kinds` names (e.g.

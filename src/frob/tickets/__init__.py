@@ -224,6 +224,11 @@ def _write_archived_and_active(
 
 # frob:ticket T-0162
 # frob:doc docs/modules/tickets.md#decision-record-t-0162
+# frob:waive COV007 reason="the decision-record anchor documents THIS \
+# private function's own allocation algorithm/design rationale (why \
+# provisional ids vs branch-tip scanning vs content-nonce were compared, \
+# T-0162), not the public API surface -- the private symbol genuinely is \
+# the documented contract here, not a caller-side summary"
 def _allocate_ticket_id(
     root: Path, existing: dict[str, Ticket], merged: dict[str, Ticket]
 ) -> str:
@@ -709,7 +714,9 @@ def _doable_candidates(queue: TicketQueue) -> list[Ticket]:
 
 
 # frob:ticket T-0453
-# frob:doc docs/modules/tickets.md#public-api
+# T-0524: frob:doc removed -- this feeds `leased_by` (public), which
+# already carries the same docs/modules/tickets.md#public-api anchor
+# (COV007: a private helper does not need its own copy).
 def _in_progress_leases(queue: TicketQueue) -> tuple[tuple[str, tuple[str, ...]], ...]:
     """`(ticket_id, scope)` for every IN_PROGRESS ticket, id-ordered -- the
     active scope-leases `doable`'s default collision filter and
@@ -771,7 +778,9 @@ _LARGE_GLOB_DEFAULT_MAX_FILES = 25
 
 
 # frob:ticket T-0453
-# frob:doc docs/modules/tickets.md#public-api
+# T-0524: frob:doc removed -- feeds `scope_breadth_context` (public),
+# which already carries the same docs/modules/tickets.md#public-api
+# anchor (COV007).
 def _load_large_glob_max_files(root: Path) -> int:
     """Read `[tickets] large_glob_max_files` from `frob.toml` -- the
     tunable file-count threshold `large_glob_warnings`/`leased_by` flag a
@@ -796,7 +805,9 @@ def _load_large_glob_max_files(root: Path) -> int:
 
 
 # frob:ticket T-0453
-# frob:doc docs/modules/tickets.md#public-api
+# T-0524: frob:doc removed -- feeds `_repo_files`/`scope_breadth_context`
+# (public), which already carries the same
+# docs/modules/tickets.md#public-api anchor (COV007).
 def _is_excluded_breadth_path(path: str) -> bool:
     """Whether `path` should never count toward the T-0453 breadth measure
     regardless of tracking status -- `.git`/`.venv`/`__pycache__`/... (any
@@ -814,7 +825,9 @@ def _is_excluded_breadth_path(path: str) -> bool:
 
 
 # frob:ticket T-0453
-# frob:doc docs/modules/tickets.md#public-api
+# T-0524: frob:doc removed -- feeds `_repo_files`/`scope_breadth_context`
+# (public), which already carries the same
+# docs/modules/tickets.md#public-api anchor (COV007).
 def _repo_files_git(root: Path) -> tuple[str, ...] | None:
     """`git ls-files` under `root` -- tracked files only, `root`-relative
     posix paths, breadth-excluded paths dropped -- or `None` if `root` is
@@ -845,7 +858,9 @@ def _repo_files_git(root: Path) -> tuple[str, ...] | None:
 
 
 # frob:ticket T-0453
-# frob:doc docs/modules/tickets.md#public-api
+# T-0524: frob:doc removed -- feeds `_repo_files`/`scope_breadth_context`
+# (public), which already carries the same
+# docs/modules/tickets.md#public-api anchor (COV007).
 def _repo_files_walk_fallback(root: Path) -> tuple[str, ...]:
     """Every real file under `root` as `root`-relative posix paths, with
     built-in skip dirs (`.git`, `.venv`, `__pycache__`, ...) and
@@ -864,7 +879,9 @@ def _repo_files_walk_fallback(root: Path) -> tuple[str, ...]:
 
 
 # frob:ticket T-0453
-# frob:doc docs/modules/tickets.md#public-api
+# T-0524: frob:doc removed -- feeds `scope_breadth_context` (public),
+# which already carries the same docs/modules/tickets.md#public-api
+# anchor (COV007).
 def _repo_files(root: Path) -> tuple[str, ...]:
     """The T-0453 breadth-check file universe under `root`: `git ls-files`
     (tracked files, fast) when `root` is a git work tree, else a pruned
@@ -893,7 +910,9 @@ def scope_breadth_context(root: Path) -> tuple[int, tuple[str, ...]]:
 
 
 # frob:ticket T-0453
-# frob:doc docs/modules/tickets.md#public-api
+# T-0524: frob:doc removed -- feeds `_over_broad_scope_entries`, whose own
+# caller `leased_by` (public) already carries the same
+# docs/modules/tickets.md#public-api anchor (COV007).
 def _entry_to_glob(entry: str) -> str:
     """Expand a bare directory-prefix scope entry (`"docs/"`, no wildcard
     metacharacters) into its recursive glob (`"docs/**"`) -- the SAME
@@ -907,7 +926,9 @@ def _entry_to_glob(entry: str) -> str:
 
 
 # frob:ticket T-0453
-# frob:doc docs/modules/tickets.md#public-api
+# T-0524: frob:doc removed -- called from `leased_by` (public), which
+# already carries the same docs/modules/tickets.md#public-api anchor
+# (COV007).
 def _over_broad_scope_entries(
     scope: Sequence[str], threshold: int, files: Sequence[str]
 ) -> tuple[str, ...]:
@@ -1529,7 +1550,10 @@ def _validate_evidence_list(
 
 # frob:ticket T-0102
 # frob:ticket T-0398
-# frob:doc docs/modules/tickets.md#public-api
+# T-0524: frob:doc removed -- this is a thin wrapper delegating to
+# has_substantive_done_report (frob.tickets._models), which already
+# carries the same docs/modules/tickets.md#public-api anchor; a second
+# copy on this private pass-through was redundant (COV007).
 def _has_done_report(body: str) -> bool:
     """Whether `body` has a substantive '## Done report' section (D-03):
     thin wrapper kept for call-site stability, delegating to

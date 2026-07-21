@@ -276,7 +276,10 @@ class TestSummarySeverityHonesty:
         assert "0 waived" in result.summary
 
     def test_cycle_summary_splits_by_severity(self) -> None:
-        # frob:tests src/frob/check/_python.py::_run_cycle kind="unit"
+        # T-0523: this test directly imports and calls
+        # _severity_counts_summary, never _run_cycle -- the frob:tests
+        # binding was stale/wrong (a COV006 finding correctly caught it).
+        # frob:tests src/frob/check/_python.py::_severity_counts_summary kind="unit"  # noqa: E501
         from frob.check._python import _severity_counts_summary
         from frob.process.parsers.common import Diagnostic
 

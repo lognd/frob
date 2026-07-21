@@ -1353,7 +1353,9 @@ def _apply_waivers(
     return tuple(kept), tuple(waived)
 
 
-# frob:doc docs/modules/gates.md#public-api
+# T-0524: frob:doc removed -- feeds run_gates (public, via
+# _apply_severity_overrides), which already carries the same
+# docs/modules/gates.md#public-api anchor (COV007).
 # frob:uses-contract src/frob/graph/__init__.py::build_graph
 # frob:uses-contract src/frob/graph/lock.py::drift
 # frob:uses-contract src/frob/tickets/__init__.py::load_queue
@@ -3021,6 +3023,16 @@ _DOC_WAIVE_MARKER_RE = re.compile(
 )
 
 # frob:doc docs/modules/gates.md#invariants
+# frob:ticket T-0522
+# A reason consisting of nothing but a placeholder ellipsis (the literal
+# `"..."` gates.md's own INV003/INV004 documentation necessarily spells
+# out when it teaches the marker syntax by example) is not a real,
+# specific reason -- treat it the same as an empty reason so a doc's
+# ILLUSTRATIVE example of the waiver syntax cannot silently self-satisfy
+# that same doc's own INV003/INV004 findings (T-0522).
+_DOC_WAIVE_PLACEHOLDER_RE = re.compile(r"^\.{2,}$")
+
+# frob:doc docs/modules/gates.md#invariants
 # frob:ticket T-0509
 # INV003 is scoped to these repo-relative directories (spec-normative
 # design/module docs), not all of docs/**.md -- exclusivity claims worth
@@ -3032,6 +3044,10 @@ INV003_SPEC_DIRS: tuple[str, ...] = ("docs/modules", "docs/strata")
 
 
 # frob:doc docs/modules/gates.md#invariants
+# frob:waive COV007 reason="docs/modules/gates.md's Invariants section \
+# (INV003/INV004 subsections) is a deliberate architecture doc walking \
+# through this exact helper's design (T-0524), not a caller-side \
+# public-API summary"
 # frob:ticket T-0509
 def _file_has_reasoned_doc_waiver(path: Path, rule: str) -> bool:
     """True if `path` carries a `<!-- frob:waive <rule> reason="..." -->`
@@ -3047,6 +3063,14 @@ def _file_has_reasoned_doc_waiver(path: Path, rule: str) -> bool:
     directive rode onto a new private symbol" even though nothing rebound.
     Applying the waiver filter from the (public, freshly-tagged) gate
     function instead avoids that false positive entirely.
+
+    T-0522: a placeholder-ellipsis reason (`reason="..."`, the literal
+    text gates.md's own INV003/INV004 sections necessarily spell out when
+    they teach the marker syntax by illustrative example) does NOT count
+    as a reasoned waiver -- without this, a doc that merely EXPLAINS the
+    waiver syntax in prose silently self-waived its own findings, since
+    the regex has no way to distinguish a real marker from an example one
+    written in the same literal shape.
     """
     try:
         text = path.read_text(encoding="utf-8")
@@ -3054,12 +3078,16 @@ def _file_has_reasoned_doc_waiver(path: Path, rule: str) -> bool:
         _log.warning("%s: could not read %s for waiver check: %s", rule, path, exc)
         return False
     return any(
-        matched_rule == rule and reason
+        matched_rule == rule and reason and not _DOC_WAIVE_PLACEHOLDER_RE.match(reason)
         for matched_rule, reason in _DOC_WAIVE_MARKER_RE.findall(text)
     )
 
 
 # frob:doc docs/modules/gates.md#invariants
+# frob:waive COV007 reason="docs/modules/gates.md's Invariants section \
+# (INV003 subsection) is a deliberate architecture doc walking through \
+# this exact helper's design (T-0524), not a caller-side public-API \
+# summary"
 # frob:ticket T-0462
 def _inv003_doc_violations(
     root: Path, path: Path, known_ids: frozenset[str]
@@ -3147,6 +3175,10 @@ _MD_HEADING_RE = re.compile(r"^#{1,6}\s", re.MULTILINE)
 
 
 # frob:doc docs/modules/gates.md#invariants
+# frob:waive COV007 reason="docs/modules/gates.md's Invariants section \
+# (INV004 subsection) is a deliberate architecture doc walking through \
+# this exact helper's design (T-0524), not a caller-side public-API \
+# summary"
 # frob:ticket T-0452
 def _markdown_sections(text: str) -> tuple[str, ...]:
     """Split `text` into ATX-heading-delimited sections (each section runs
@@ -3167,6 +3199,10 @@ def _markdown_sections(text: str) -> tuple[str, ...]:
 # frob:doc docs/modules/gates.md#invariants
 # frob:ticket T-0515
 # frob:waive COV005 reason="removing the three now-dead T-0509 section-waiver helpers above (_inv004_waived_headings, _INV004_MESSAGE_HEADING_RE, _inv004_message_heading) shifted this file's Nth same-target 'docs/modules/gates.md#invariants' directive; COV005's rebind check matches old/new bindings by (kind, target) alone and reads the shift as a rebind onto a new private symbol -- this directive has bound _inv004_doc_violations (private) all along, see _file_has_reasoned_doc_waiver's docstring for the same false-positive class"  # noqa: E501
+# frob:waive COV007 reason="docs/modules/gates.md's Invariants section \
+# (INV004 subsection) is a deliberate architecture doc walking through \
+# this exact helper's design (T-0524), not a caller-side public-API \
+# summary"
 def _inv004_doc_violations(root: Path, path: Path) -> tuple[Violation, ...]:
     """INV004 findings for one doc file: at least one section uses
     normative language (`frob.gates.invariants.find_normative_claims`)
@@ -5184,7 +5220,9 @@ def _doc_anchor_slugs(path: Path) -> Option[set[str]]:
     return Some(slugs)
 
 
-# frob:doc docs/modules/gates.md#public-api
+# T-0524: frob:doc removed -- reached via docanchor_gate (public), which
+# already carries the same docs/modules/gates.md#public-api anchor
+# (COV007).
 def _anchor_mismatch_message(
     target: str, docfile: str, slug: str, slugs: set[str]
 ) -> str:
