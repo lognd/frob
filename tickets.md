@@ -4376,13 +4376,24 @@ scope:
 - src/frob/perf/
 - src/frob/gates/
 - docs/modules/perf.md
+- tests/test_perf.py
 scope_changes:
 - op: add
   glob: docs/modules/perf.md
   reason: T-0413 requires a frob:doc anchor for the new PERF007 public symbol (COV001)
   actor: logan
   at: '2026-07-21'
-evidence: []
+- op: add
+  glob: tests/test_perf.py
+  reason: T-0413 PERF007 acceptance tests live in tests/test_perf.py (dispatch-declared
+    file)
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_perf.py::TestPerf007RedundantComputation::test_two_stages_calling_the_same_uncached_parse_is_flagged
+- tests/test_perf.py::TestPerf007RedundantComputation::test_single_shared_call_site_is_not_flagged
+- tests/test_perf.py::TestPerf007RedundantComputation::test_cached_definition_suppresses_the_warning
+- tests/test_perf.py::TestPerf007RedundantComputation::test_no_config_means_no_perf007_checking
 attachments: []
 acceptance: []
 threat: null

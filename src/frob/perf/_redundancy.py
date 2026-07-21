@@ -165,7 +165,8 @@ def _is_already_cached(root: Path, name: str, cached_by: tuple[str, ...]) -> boo
     return False
 
 
-# frob:doc docs/modules/perf.md#cross-stage-redundant-recomputation-perf007-t-0413----the-perf-meta-gap
+# frob:doc docs/modules/perf.md#cross-stage-redundant-recomputation-perf007-\
+# t-0413----the-perf-meta-gap
 # frob:tests tests/test_perf.py::TestPerf007RedundantComputation.\
 # test_two_stages_calling_the_same_uncached_parse_is_flagged
 # frob:tests tests/test_perf.py::TestPerf007RedundantComputation.\
