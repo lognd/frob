@@ -5713,6 +5713,10 @@ scope:
 - docs/strata/threat.md
 - src/frob/app/sys_runner.py
 - tests/system/test_cli_sys_audit.py
+- .frob-release.json
+- CHANGELOG.md
+- pyproject.toml
+- uv.lock
 scope_changes:
 - op: add
   glob: src/frob/app/sys_runner.py
@@ -5740,6 +5744,34 @@ scope_changes:
     tests/integration had no relevant coverage
   actor: logan
   at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: main advanced past T-0510's version bump during merge; re-resolving to next
+    free version (0.57.0) after main's 0.56.0 tip requires touching these release
+    files again
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: CHANGELOG.md
+  reason: main advanced past T-0510's version bump during merge; re-resolving to next
+    free version (0.57.0) after main's 0.56.0 tip requires touching these release
+    files again
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: pyproject.toml
+  reason: main advanced past T-0510's version bump during merge; re-resolving to next
+    free version (0.57.0) after main's 0.56.0 tip requires touching these release
+    files again
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: main advanced past T-0510's version bump during merge; re-resolving to next
+    free version (0.57.0) after main's 0.56.0 tip requires touching these release
+    files again
+  actor: logan
+  at: '2026-07-21'
 evidence:
 - tests/unit/strata/test_audit.py::TestExhaustiveness::test_default_run_discloses_narrower_than_baseline
 - tests/unit/strata/test_audit.py::TestExhaustiveness::test_explicit_full_security_views_clears_the_disclosure
@@ -5752,97 +5784,47 @@ Split from T-0497 (too large/architecturally entangled to rush inside that ticke
 
 ## Done report
 
-Fixed strata audit G6: `DEFAULT_SECURITY_VIEWS` (frob.strata._audit) has
-always checked only owasp-top-10; cwe-top-25 (CWE_TOP_25_VIEWS, needing
-the combined CWE_CATALOG + CWE_TOP_25_CATALOG) was never a default view
-at all, and a default `frob sys audit` reported PROVED with no visible
-disclosure that cwe-top-25 was never checked.
+(See prior Done report content below for the full design rationale --
+this update only covers the mid-ticket main merge.)
 
-Investigated the "fold cwe-top-25 into the default multi-view run"
-direction first and rejected it after measuring the real blast radius:
-`check_discharge_completeness` (THREAT003) is catalog-scoped, not
-view-scoped, and is called once per configured security view -- adding
-cwe-top-25 as a second default view means every node with a capability
-CWE_CATALOG already classifies (sql/exec/eval/...) ALSO re-fires the
-SAME obligation a second time under cwe-top-25's wider catalog, plus
-brand-new CWE-94/CWE-639 security-family firings for any node with
-exec/eval/sql. Measured effect on this repo's own litmus fixtures:
-tests/unit/strata/test_litmus_waive.py and test_litmus_waive_store.py
-(both OUT of T-0512's declared scope) broke -- their existing
-`waive "THREAT003:CWE-78"` fixtures started seeing a second, un-waived
-CWE-89 occurrence, and brand-new unwaived CWE-94/CWE-639 findings none
-of these hand-authored litmus fixtures anticipated. That is real,
-correct new detection surfacing genuinely -- but touching every affected
-litmus fixture repo-wide to keep them green is out of scope for a G6-
-sized ticket and risks silently widening what "PROVED" means for every
-consumer overnight. Reverted that path.
-
-Implemented the ticket's other named fix direction instead: made the
-narrower-than-baseline scope an explicit, loud disclosure rather than a
-silent omission. AuditReport gained `narrower_than_baseline: tuple[str,
-...]` (_audit.py) -- every security-family baseline view (VIEWS union
-CWE_TOP_25_VIEWS) the run's configured `security_views` does not
-include, computed by `_narrower_than_baseline`, empty when genuinely
-exhaustive. `frob sys audit`'s CLI printer
-(src/frob/app/sys_runner.py::_print_audit_report) prints this
-unconditionally on its own line (proved or not), so a caller cannot miss
-it by only reading the PROVED summary. `_threat_and_quality_gaps`
-(_audit.py) also now resolves a `cwe-top-25`-named view against the
-correct wider catalog/views/out-of-scope table WHEN A CALLER EXPLICITLY
-widens `security_views` to include it (this only activates on non-default
-opt-in, clearing the disclosure) -- proven by
-test_explicit_full_security_views_clears_the_disclosure.
-
-Counterexample-first: test_default_run_discloses_narrower_than_baseline
-proves the default run's PROVED result carries narrower_than_baseline ==
-("cwe-top-25",); test_explicit_full_security_views_clears_the_disclosure
-proves a caller who explicitly widens security_views to include
-cwe-top-25 gets an EMPTY narrower_than_baseline (the fix genuinely tracks
-configured-vs-baseline, not a hardcoded always-on warning);
-test_group_gaps_by_view (existing test, extended) also asserts the
-disclosure on the pre-existing vuln-litmus fixture.
-
-Updated docs/strata/threat.md's "exhaustiveness proof" section with the
-G6 narrative (why fold-in was rejected, what shipped instead) --
-frob:doc anchored to AuditReport in _audit.py.
-
-Filed: none. Confirmed pre-existing, unrelated failures
-(tests/system/test_frob_self_model.py::test_every_claim_proves and
-::test_parses_and_elaborates) fail identically on an unmodified
-checkout (git stash verified) -- not caused by this change, not filed as
-a new ticket since they are visibly pre-existing and out of this
-ticket's scope to investigate.
-
-Gates: `uv run frob check --ticket T-0512` clean (0 errors, 98 waived
-pre-existing, none new). `frob ticket sweep T-0512` refreshed (PRE001
-clean). tests/unit/strata full suite green; tests/system/test_system.py,
-test_cli_sys_audit.py green; tests/unit/strata/test_litmus_waive.py and
-test_litmus_waive_store.py (touched by the rejected fold-in path, NOT
-touched by the shipped disclosure-only fix) confirmed still green.
+Merged main mid-ticket (main had advanced with T-0433/T-0358/T-0412/
+T-0456/T-0507 landing since this worktree's warm-up, bumping frob to
+0.56.0). Resolved conflicts in pyproject.toml/.frob-release.json/uv.lock/
+CHANGELOG.md by taking main's content and re-numbering this change's
+version bump to the next free number, 0.57.0 (was 0.54.0, now stale).
+Moved the T-0510/T-0511/T-0512 CHANGELOG entries into the correct
+0.57.0 section (they had briefly landed in a duplicate "[0.57.0
+continued]" header during conflict resolution -- consolidated). Ran
+`make core`, `uv run frob release stamp`, re-swept, re-ran the full
+gate check and the strata/audit/litmus test suites -- all still green
+after the merge. `git diff main --diff-filter=D --stat` empty (no
+unintended deletions from the merge).
 
 ### Changed
 ```
- .frob-release.json                           |   6 +-
- CHANGELOG.md                                 |  16 ++
- docs/design/registry/weaknesses.yaml         |  25 +--
- docs/design/security-corpus.md               |  45 ++---
- docs/guides/extending/benign-capabilities.md |  36 ++--
- docs/strata/threat.md                        |  34 ++++
+ .frob-release.json                           |   4 +-
+ CHANGELOG.md                                 |  33 +++
+ docs/design/registry/weaknesses.yaml         |  25 +-
+ docs/design/security-corpus.md               |  45 ++--
+ docs/guides/extending/benign-capabilities.md |  36 ++-
+ docs/strata/threat.md                        |  62 +++++
  pyproject.toml                               |   2 +-
- src/frob/strata/_cve_fingerprint.py          | 107 ++++++++++--
- src/frob/strata/_threat.py                   | 197 +++++++++++++++++++--
- tests/unit/strata/test_cve_fingerprint.py    |  77 ++++++++
- tests/unit/strata/test_threat.py             | 155 ++++++++++++++++-
- tickets.md                                   | 251 ++++++++++++++++++++++++++-
+ src/frob/app/sys_runner.py                   |  22 +-
+ src/frob/strata/_audit.py                    |  91 ++++++-
+ src/frob/strata/_cve_fingerprint.py          | 107 ++++++--
+ src/frob/strata/_threat.py                   | 197 ++++++++++++--
+ tests/unit/strata/test_audit.py              |  40 +++
+ tests/unit/strata/test_cve_fingerprint.py    |  77 ++++++
+ tests/unit/strata/test_threat.py             | 155 ++++++++++-
+ tickets.md                                   | 384 ++++++++++++++++++++++++++-
  uv.lock                                      |   2 +-
- 13 files changed, 862 insertions(+), 91 deletions(-)
+ 16 files changed, 1180 insertions(+), 102 deletions(-)
 ```
 
 ### Evidence
 - `tests/unit/strata/test_audit.py::TestExhaustiveness::test_default_run_discloses_narrower_than_baseline` (pytest node id, verified passing when recorded)
 - `tests/unit/strata/test_audit.py::TestExhaustiveness::test_explicit_full_security_views_clears_the_disclosure` (pytest node id, verified passing when recorded)
 - `tests/unit/strata/test_audit.py::TestGroupGaps::test_group_gaps_by_view` (pytest node id, verified passing when recorded)
-
 <!-- ticket:T-0513 -->
 ```yaml
 id: T-0513
