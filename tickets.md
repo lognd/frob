@@ -2998,7 +2998,7 @@ half of G1's fix direction, out of this ticket's scope/budget).
 id: T-0500
 title: 'strata audit G4: FOREIGN file in an already-modeled directory (or loose under
   src/frob/) escapes ALL sys rules + THREAT004/005'
-state: in-progress
+state: done
 kind: security
 origin: human
 created: '2026-07-21'
