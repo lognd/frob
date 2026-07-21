@@ -1,5 +1,6 @@
 # frob:waive TEST005 reason="module line coverage 0.0%, debt T-0160"
 # frob:waive SCOPE001 reason="T-0176 scope omitted this file, filed T-0220"
+# frob:waive SCOPE001 reason="T-0411 needs --priority/priority subcommand wiring here; T-0453/T-0455 bootstrap precedent, T-0446 tracks the general scope-declaration gap for CLI-wiring tickets"  # noqa: E501
 from __future__ import annotations
 
 import argparse
@@ -569,6 +570,15 @@ def _add_ticket_new_identity_args(ticket_new_p) -> None:
         ],
         help="STRIDE category for a kind=security ticket",
     )
+    # frob:ticket T-0411
+    ticket_new_p.add_argument(
+        "--priority",
+        dest="ticket_priority",
+        choices=["low", "medium", "high", "critical"],
+        help="how important this ticket is, independent of age (default: "
+        "medium, T-0411) -- `frob ticket doable` orders highest priority "
+        "first",
+    )
 
 
 def _add_ticket_new_graph_args(ticket_new_p) -> None:
@@ -927,15 +937,34 @@ def _add_ticket_scope_parser(ticket_sub):
     return ticket_scope_p
 
 
+# frob:ticket T-0411
+def _add_ticket_priority_parser(ticket_sub):
+    """Register `frob ticket priority <id> <level>` -- reprioritize an
+    existing ticket (T-0411), the accountable, single-writer alternative to
+    hand-editing `tickets.md` frontmatter (same shape as `_add_ticket_scope_
+    parser`'s T-0455 precedent)."""
+    ticket_priority_p = ticket_sub.add_parser(
+        "priority", help="set a ticket's priority (T-0411)"
+    )
+    ticket_priority_p.add_argument("ticket_id", metavar="id")
+    ticket_priority_p.add_argument(
+        "ticket_priority_level",
+        metavar="level",
+        choices=["low", "medium", "high", "critical"],
+    )
+    return ticket_priority_p
+
+
 def _add_ticket_closeout_parsers(ticket_sub) -> list:
     """Register the ticket closeout subcommands: attach/block/close/fail/
-    evidence/done-report/scope."""
+    evidence/done-report/scope/priority."""
     return (
         _add_ticket_attach_and_lifecycle_end_parsers(ticket_sub)
         + _add_ticket_fail_evidence_archive_parsers(ticket_sub)
         + [
             _add_ticket_done_report_parser(ticket_sub),
             _add_ticket_scope_parser(ticket_sub),
+            _add_ticket_priority_parser(ticket_sub),
         ]
     )
 

@@ -29,12 +29,14 @@ from frob.tickets._models import (
     DONE_REPORT_HEADING,
     LEDGER_PATH,
     OVER_BROAD_LITERAL_GLOBS,
+    PRIORITY_RANK,
     Attachment,
     AttachmentSource,
     FailureEntry,
     LandError,
     LandReport,
     Origin,
+    Priority,
     RenumberReport,
     ScopeChangeEntry,
     ScopeChangeOp,
@@ -267,6 +269,7 @@ def _ticket_from_spec(
         kind=spec.kind,
         origin=spec.origin,
         created=date.today(),
+        priority=spec.priority,
         blocked_by=spec.blocked_by,
         parent=spec.parent,
         scope=spec.scope,
@@ -1292,6 +1295,33 @@ def _write_scope_mutation(
     return Ok(updated)
 
 
+# frob:ticket T-0411
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets_priority.py::TestSetPriority.test_updates_priority_field
+def set_priority(
+    root: Path, ticket_id: str, priority: Priority
+) -> Result[Ticket, TicketError]:
+    """Set `ticket_id`'s `priority` field (T-0411) -- the accountable,
+    single-writer way to reprioritize a ticket instead of hand-editing
+    `tickets.md` frontmatter. Held under `ledger_lock` (same discipline as
+    `mutate_scope`) so this can never interleave with a concurrent ledger
+    mutation. A no-op write (still logged) if `priority` already matches."""
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
+    with ledger_lock(root):
+        loaded = _load_ticket_and_queue(root, ticket_id)
+        if loaded.is_err:
+            return Err(loaded.danger_err)
+        ticket, _queue = loaded.danger_ok
+        updated = ticket.model_copy(update={"priority": priority})
+        write_result = write_ticket(root, updated)
+        if write_result.is_err:
+            return Err(write_result.danger_err)
+    _log.info("tickets: %s priority set to %s", ticket_id, priority.value)
+    return Ok(updated)
+
+
 # frob:ticket T-0409
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/unit/test_ticket_store.py::TestClosedTicketIds.test_returns_done_and_dropped_only  # noqa: E501
@@ -1315,6 +1345,17 @@ def closed_ticket_ids(queue: TicketQueue) -> tuple[str, ...]:
     return tuple(t.id for t in sorted(closed, key=lambda t: (t.created, t.id)))
 
 
+# frob:ticket T-0411
+# frob:tests tests/test_tickets_priority.py::TestDoablePriorityOrdering.test_high_priority_surfaces_before_older_low_priority  # noqa: E501
+def _doable_sort_key(t: Ticket) -> tuple[int, date, str]:
+    """`doable`/`doable_blocked` ordering key (T-0411): highest PRIORITY_RANK
+    first, then oldest-created, then id -- priority is the primary axis so a
+    high-value ticket never rots behind a pile of older low-value ones, with
+    age still breaking ties within the same priority (the prior behavior for
+    tickets that were all effectively MEDIUM)."""
+    return (-PRIORITY_RANK[t.priority], t.created, t.id)
+
+
 # frob:ticket T-0453
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_lease.py::TestDoable.test_ignore_lease_returns_raw_list
@@ -1322,8 +1363,8 @@ def closed_ticket_ids(queue: TicketQueue) -> tuple[str, ...]:
 def doable(
     queue: TicketQueue, root: Path | None = None, *, ignore_lease: bool = False
 ) -> tuple[Ticket, ...]:
-    """Tickets in {queued, planned} with no open blockers, ordered
-    oldest-first.
+    """Tickets in {queued, planned} with no open blockers, ordered by
+    priority (highest first, T-0411) then oldest-first within a priority tier.
 
     By DEFAULT also excludes any candidate whose declared scope overlaps
     an in-progress ticket's active scope-lease (T-0453 scope-lease model,
@@ -1342,7 +1383,7 @@ def doable(
         candidates = [
             t for t in candidates if not leased_by(queue, t, root, breadth=breadth)
         ]
-    return tuple(sorted(candidates, key=lambda t: (t.created, t.id)))
+    return tuple(sorted(candidates, key=_doable_sort_key))
 
 
 # frob:ticket T-0453
@@ -1364,7 +1405,7 @@ def doable_blocked(
     if root is not None and breadth is None:
         breadth = scope_breadth_context(root)
     blocked: list[tuple[Ticket, tuple[tuple[str, str], ...]]] = []
-    for t in sorted(candidates, key=lambda t: (t.created, t.id)):
+    for t in sorted(candidates, key=_doable_sort_key):
         hits = leased_by(queue, t, root, breadth=breadth)
         if hits:
             blocked.append((t, hits))
@@ -2295,6 +2336,8 @@ __all__ = [
     "LandError",
     "LandReport",
     "Origin",
+    "PRIORITY_RANK",
+    "Priority",
     "ScopeChangeEntry",
     "ScopeChangeOp",
     "Ticket",
@@ -2320,6 +2363,7 @@ __all__ = [
     "load_active",
     "load_queue",
     "mutate_scope",
+    "set_priority",
     "Stride",
     "migrate",
     "new_ticket",

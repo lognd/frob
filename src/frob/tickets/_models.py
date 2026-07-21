@@ -398,6 +398,32 @@ class Stride(StrEnum):
     ELEVATION_OF_PRIVILEGE = "elevation-of-privilege"
 
 
+# frob:ticket T-0411
+# frob:doc docs/modules/tickets.md#data-models
+class Priority(StrEnum):
+    """How important a ticket is, independent of age (T-0411): `doable`
+    orders on this first so a high-value ticket never rots invisibly
+    behind a pile of older low-value ones. Default is MEDIUM so every
+    ticket created before this field existed (and any new one that omits
+    `--priority`) keeps its prior age-only ordering relative to peers."""
+
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
+
+
+# frob:ticket T-0411
+# frob:doc docs/modules/tickets.md#data-models
+# frob:tests tests/test_tickets_priority.py::TestPriorityRank.test_critical_outranks_low
+PRIORITY_RANK: dict[Priority, int] = {
+    Priority.LOW: 0,
+    Priority.MEDIUM: 1,
+    Priority.HIGH: 2,
+    Priority.CRITICAL: 3,
+}
+
+
 # frob:doc docs/modules/tickets.md#data-models
 class Origin(StrEnum):
     """Who filed a ticket."""
@@ -468,6 +494,8 @@ class Ticket(BaseModel):
     kind: TicketKind
     origin: Origin
     created: date
+    # frob:ticket T-0411
+    priority: Priority = Priority.MEDIUM
     blocked_by: tuple[str, ...] = ()
     parent: str | None = None
     scope: tuple[str, ...] = ()
@@ -502,6 +530,8 @@ class TicketSpec(BaseModel):
     title: str
     kind: TicketKind
     origin: Origin
+    # frob:ticket T-0411
+    priority: Priority = Priority.MEDIUM
     scope: tuple[str, ...] = ()
     blocked_by: tuple[str, ...] = ()
     parent: str | None = None

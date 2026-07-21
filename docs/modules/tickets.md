@@ -104,6 +104,8 @@ attachments:
 <!-- frob:describes src/frob/tickets/__init__.py::compute_changed_lines -->
 <!-- frob:describes src/frob/tickets/_store.py::ledger_lock -->
 <!-- frob:describes src/frob/tickets/__init__.py::mutate_scope -->
+<!-- frob:describes src/frob/tickets/__init__.py::set_priority -->
+<!-- frob:describes src/frob/tickets/__init__.py::_doable_sort_key -->
 
 ```python
 # frob/tickets/__init__.py
@@ -122,7 +124,12 @@ def new_ticket(root: Path, spec: TicketSpec,
     # (default) preserves schema-only validation but now logs an explicit
     # UNRESOLVED warning instead of silently skipping the check.
 def doable(queue: TicketQueue) -> tuple[Ticket, ...]
-    # state in {queued, planned} and no open blockers, ordered oldest-first.
+    # state in {queued, planned} and no open blockers, ordered by priority
+    # (highest PRIORITY_RANK first, T-0411) then oldest-first within a tier.
+def set_priority(root: Path, ticket_id: str, priority: Priority) -> Result[Ticket, TicketError]
+    # T-0411: `frob ticket priority <id> <level>` -- the accountable,
+    # single-writer way to reprioritize a ticket instead of hand-editing
+    # tickets.md frontmatter (same shape as mutate_scope/T-0455).
 def transition(root: Path, ticket_id: str, to: TicketState, *,
                 covers_scope: bool | None = None) -> Result[Ticket, TicketError]
     # Enforces the state machine; done additionally requires evidence
@@ -809,6 +816,11 @@ class TicketKind(StrEnum):
 class Origin(StrEnum):
     HUMAN = "human"; AGENT = "agent"; AUDITOR = "auditor"
 
+class Priority(StrEnum):        # T-0411: importance, independent of age
+    LOW = "low"; MEDIUM = "medium"; HIGH = "high"; CRITICAL = "critical"
+
+# PRIORITY_RANK: dict[Priority, int] -- LOW=0 .. CRITICAL=3, `doable`'s sort key
+
 class Stride(StrEnum):          # STRIDE threat category, kind=security only
     SPOOFING = "spoofing"; TAMPERING = "tampering"
     REPUDIATION = "repudiation"; INFO_DISCLOSURE = "info-disclosure"
@@ -832,6 +844,7 @@ class Ticket(BaseModel):
     kind: TicketKind
     origin: Origin
     created: date
+    priority: Priority = Priority.MEDIUM   # T-0411: importance, doable's primary sort key
     blocked_by: tuple[str, ...]
     parent: str | None
     scope: tuple[str, ...]      # path globs and/or symrefs
@@ -843,6 +856,7 @@ class TicketSpec(BaseModel):    # input to new_ticket; id/created assigned
     title: str
     kind: TicketKind
     origin: Origin
+    priority: Priority = Priority.MEDIUM   # `frob ticket new --priority low|medium|high|critical`
     scope: tuple[str, ...] = ()
     blocked_by: tuple[str, ...] = ()
     parent: str | None = None

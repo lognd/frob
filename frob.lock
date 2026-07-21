@@ -171,6 +171,11 @@
       "ref": "src/frob/testing/_select.py::select_tests"
     },
     {
+      "digest": "3eb8e14206d9bda5ef6424e9637ee4986eda1de476d24b3cabc9d618dd172297",
+      "facet": "sig",
+      "ref": "src/frob/tickets/__init__.py::_doable_sort_key"
+    },
+    {
       "digest": "5df30457c0549f6170224e79cdb437421a48d725f985f150f2bbd2e073947b2c",
       "facet": "sig",
       "ref": "src/frob/tickets/__init__.py::attach"

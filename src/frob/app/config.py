@@ -225,6 +225,10 @@ class AppConfig(BaseModel):
     ticket_scope_add: list[str] = []
     ticket_scope_remove: list[str] = []
     ticket_scope_reason: str | None = None
+    # frob:ticket T-0411
+    # frob:waive SCOPE001 reason="T-0411 needs new/priority AppConfig fields; T-0453/T-0455 bootstrap precedent, T-0446 tracks the general gap"  # noqa: E501
+    ticket_priority: str | None = None
+    ticket_priority_level: str | None = None
     ticket_evidence_ids: list[str] = []
     ticket_evidence_cmd: str | None = None
     ticket_old_id: str | None = None
@@ -405,6 +409,8 @@ class AppConfig(BaseModel):
             "ticket_why",
             "ticket_base_ref",
             "ticket_scope_reason",
+            "ticket_priority",
+            "ticket_priority_level",
             "test_base",
             "test_fallback",
             "vet_hook",
