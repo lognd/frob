@@ -19,19 +19,105 @@ fn hash_str(s: &str) -> u64 {
     h.finish()
 }
 
+/// True iff `tok` is shaped like a numeric literal (optional leading `-`,
+/// digits, at most one `.`) -- e.g. `1`, `-3`, `2.5`. Deliberately
+/// conservative: anything ambiguous (an identifier, a keyword) is left
+/// alone rather than risk collapsing two DIFFERENT non-literal tokens
+/// into the same placeholder (T-0447).
+fn is_numeric_literal(tok: &str) -> bool {
+    let body = tok.strip_prefix('-').unwrap_or(tok);
+    if body.is_empty() {
+        return false;
+    }
+    let mut seen_dot = false;
+    let mut seen_digit = false;
+    for c in body.chars() {
+        if c == '.' {
+            if seen_dot {
+                return false;
+            }
+            seen_dot = true;
+        } else if c.is_ascii_digit() {
+            seen_digit = true;
+        } else {
+            return false;
+        }
+    }
+    seen_digit
+}
+
+/// True iff `tok` is a quoted string literal (starts and ends with the
+/// same quote character, `'` or `"`, and is at least two characters --
+/// i.e. the quotes are not the same single character counted twice).
+fn is_string_literal(tok: &str) -> bool {
+    let mut chars = tok.chars();
+    let Some(first) = chars.next() else {
+        return false;
+    };
+    if first != '\'' && first != '"' {
+        return false;
+    }
+    tok.len() >= 2 && tok.ends_with(first) && tok.chars().count() >= 2
+}
+
+/// R3 canonicalization pass: literal abstraction + control-flow desugar,
+/// applied to an already alpha-renamed (R2) token stream before folding.
+///
+/// WHY here and not in Python: `docs/modules/dup.md`'s R3 row promises
+/// "canonicalized-AST subtree hash: alpha-rename, literal abstraction, ...
+/// control-flow normalization", but until T-0447 `r3_canonical_hash` only
+/// folded the raw R2 stream -- literally indistinguishable from R2 (T-0199
+/// finding). Two real, tractable-without-an-AST transforms close that gap:
+///
+/// - literal abstraction: every numeric-literal-shaped or quoted-string-
+///   literal-shaped token collapses to one canonical placeholder per kind
+///   (`_lit_num` / `_lit_str`), so two bodies differing only in a constant
+///   value hash identically.
+/// - control-flow desugar: `elif` is real syntactic sugar for `else: if`
+///   (true in every grammar frob.lang parses that has an `elif` keyword,
+///   Python's included) -- expanding it to the three tokens
+///   `["else", ":", "if"]` before folding makes an `if/elif/else` chain
+///   and its manually-nested `if/else: if/else` equivalent hash the same,
+///   without needing real AST restructuring.
+///
+/// Anything beyond these two (commutative-operand reordering, real
+/// for/while loop-shape desugaring) needs actual AST structure, not a
+/// token fold, and is intentionally NOT attempted here -- see
+/// `docs/modules/dup.md`'s R3 deviations note and `frob:todo T-0001`.
+fn r3_canonicalize(tokens: &[String]) -> Vec<String> {
+    let mut out = Vec::with_capacity(tokens.len());
+    for tok in tokens {
+        if tok == "elif" {
+            out.push("else".to_string());
+            out.push(":".to_string());
+            out.push("if".to_string());
+        } else if is_numeric_literal(tok) {
+            out.push("_lit_num".to_string());
+        } else if is_string_literal(tok) {
+            out.push("_lit_str".to_string());
+        } else {
+            out.push(tok.clone());
+        }
+    }
+    out
+}
+
 /// R3: canonicalized-AST subtree hash.
 ///
-/// WHY: the caller (frob.dup._pipeline) has already alpha-renamed locals,
-/// abstracted literals, and normalized control flow via frob.lang -- this
-/// function's only job is to fold the resulting token sequence into one
-/// stable hex digest so equal-shape bodies collide regardless of source
-/// length. Kept as a pure fold (not a crate like blake3) to keep the
-/// dependency surface at just pyo3.
+/// WHY: the caller (frob.dup._pipeline) has already alpha-renamed locals
+/// via `frob.lang` (R2 normalization) -- this function's job is to finish
+/// canonicalizing the resulting token sequence (literal abstraction,
+/// `elif` control-flow desugar -- `r3_canonicalize`, T-0447) and fold it
+/// into one stable hex digest, so equal-shape bodies collide regardless of
+/// source length, constant values, or `elif`-vs-nested-`if/else` spelling.
+/// Kept as a pure fold (not a crate like blake3) to keep the dependency
+/// surface at just pyo3.
 #[pyfunction]
 fn r3_canonical_hash(tokens: Vec<String>) -> String {
     // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
+    let canonical = r3_canonicalize(&tokens);
     let mut acc: u64 = 0xcbf29ce484222325; // FNV offset basis, arbitrary seed
-    for tok in &tokens {
+    for tok in &canonical {
         let h = hash_str(tok);
         acc = acc.rotate_left(5) ^ h;
     }
@@ -949,6 +1035,141 @@ mod tests {
         let c = vec!["def".into(), "_v0".into(), "return".into(), "_N_".into()];
         assert_eq!(r3_canonical_hash(a.clone()), r3_canonical_hash(b));
         assert_ne!(r3_canonical_hash(a), r3_canonical_hash(c));
+    }
+
+    #[test]
+    fn r3_literal_abstraction_collapses_differing_constants() {
+        // frob:tests frob-core/src/lib.rs::r3_canonical_hash kind="unit"
+        let a = vec![
+            "def".into(),
+            "_v0".into(),
+            "return".into(),
+            "_v0".into(),
+            "+".into(),
+            "1".into(),
+        ];
+        let b = vec![
+            "def".into(),
+            "_v0".into(),
+            "return".into(),
+            "_v0".into(),
+            "+".into(),
+            "2".into(),
+        ];
+        assert_eq!(r3_canonical_hash(a), r3_canonical_hash(b));
+    }
+
+    #[test]
+    fn r3_literal_abstraction_does_not_collapse_different_operators() {
+        // frob:tests frob-core/src/lib.rs::r3_canonical_hash kind="unit"
+        let plus = vec![
+            "def".into(),
+            "_v0".into(),
+            "return".into(),
+            "_v0".into(),
+            "+".into(),
+            "1".into(),
+        ];
+        let minus = vec![
+            "def".into(),
+            "_v0".into(),
+            "return".into(),
+            "_v0".into(),
+            "-".into(),
+            "1".into(),
+        ];
+        assert_ne!(r3_canonical_hash(plus), r3_canonical_hash(minus));
+    }
+
+    #[test]
+    fn r3_elif_desugar_matches_manually_nested_if_else() {
+        // frob:tests frob-core/src/lib.rs::r3_canonical_hash kind="unit"
+        let with_elif = vec![
+            "if".into(),
+            "_v0".into(),
+            ":".into(),
+            "return".into(),
+            "1".into(),
+            "elif".into(),
+            "_v0".into(),
+            ":".into(),
+            "return".into(),
+            "2".into(),
+            "else".into(),
+            ":".into(),
+            "return".into(),
+            "3".into(),
+        ];
+        let nested = vec![
+            "if".into(),
+            "_v0".into(),
+            ":".into(),
+            "return".into(),
+            "1".into(),
+            "else".into(),
+            ":".into(),
+            "if".into(),
+            "_v0".into(),
+            ":".into(),
+            "return".into(),
+            "2".into(),
+            "else".into(),
+            ":".into(),
+            "return".into(),
+            "3".into(),
+        ];
+        assert_eq!(r3_canonical_hash(with_elif), r3_canonical_hash(nested));
+    }
+
+    #[test]
+    fn r3_elif_desugar_does_not_collapse_different_conditions() {
+        // frob:tests frob-core/src/lib.rs::r3_canonical_hash kind="unit"
+        let a = vec![
+            "if".into(),
+            "_v0".into(),
+            ":".into(),
+            "return".into(),
+            "1".into(),
+            "elif".into(),
+            "_v1".into(),
+            ":".into(),
+            "return".into(),
+            "2".into(),
+        ];
+        let b = vec![
+            "if".into(),
+            "_v0".into(),
+            ":".into(),
+            "return".into(),
+            "1".into(),
+            "elif".into(),
+            "_v2".into(),
+            ":".into(),
+            "return".into(),
+            "2".into(),
+        ];
+        assert_ne!(r3_canonical_hash(a), r3_canonical_hash(b));
+    }
+
+    #[test]
+    fn is_numeric_literal_rejects_identifiers_and_keywords() {
+        // frob:tests frob-core/src/lib.rs::is_numeric_literal kind="unit"
+        assert!(is_numeric_literal("1"));
+        assert!(is_numeric_literal("-3"));
+        assert!(is_numeric_literal("2.5"));
+        assert!(!is_numeric_literal("_v0"));
+        assert!(!is_numeric_literal("return"));
+        assert!(!is_numeric_literal(""));
+        assert!(!is_numeric_literal("1.2.3"));
+    }
+
+    #[test]
+    fn is_string_literal_requires_matching_quotes() {
+        // frob:tests frob-core/src/lib.rs::is_string_literal kind="unit"
+        assert!(is_string_literal("\"hi\""));
+        assert!(is_string_literal("'hi'"));
+        assert!(!is_string_literal("hi"));
+        assert!(!is_string_literal("\""));
     }
 
     #[test]
