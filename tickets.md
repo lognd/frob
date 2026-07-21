@@ -2434,7 +2434,7 @@ User critique (2026-07-20): the corpora hedged where the mandate is to EXHAUST -
 ```yaml
 id: T-0348
 title: 'structural PII/secrets: DB/DDL schema scanning (family 2)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -2486,8 +2486,6 @@ threat: null
 T-0207 follow-on: CREATE TABLE / column DDL in migrations (alembic, raw SQL) and sqlalchemy Column(...) ORM models scanned with the FIELD_SIGNATURES keyword+type table (frob.gates._pii_structural). Deferred from T-0207's scope (Python data-structure fields + env access only).
 
 CORPUS UNIVERSE ADDITION (2026-07-20): the code-level performance corpus (docs/design/coding-performance-corpus.md -- conceptual/algorithmic + low-level/mechanical-sympathy) and the system-performance corpus (docs/design/system-performance-corpus.md -- USE/RED methods, profiling, queueing/USL, latency/coordinated-omission, capacity planning) join the registry universe on the same terms: each emits a DENOMINATOR MANIFEST, is folded into docs/design/registry/ (perf.yaml), reconciled against src/frob/perf's PERF rules, and every entry gets a disposition. They feed the arch/perf-check side of the exhaustiveness drift-lock (T-0343).
-
-## Done report
 
 ## Done report
 
