@@ -3028,7 +3028,7 @@ id: T-0456
 title: 'crash/interrupt recovery: reconcile orphaned in-progress tickets, stale leases,
   dirty/abandoned worktrees, and partial multi-step ops (land) after power/network
   loss -- intent-journal + atomic ledger writes + frob ticket reconcile'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -3298,13 +3298,26 @@ PATH ruff and `uv run ruff` for every touched file.
 
 ### Changed
 ```
- src/frob/app/ack_runner.py           |  14 +++-
- src/frob/release/__init__.py         |  14 +++-
- tests/test_ack_worktree_lease.py     |  55 +++++++++++++++
- tests/test_release_worktree_lease.py |  52 ++++++++++++++
- tickets-archive.md                   |  17 ++---
- tickets.md                           | 133 +++++++++++++++++++++++++++++++++--
- 6 files changed, 264 insertions(+), 21 deletions(-)
+ .frob-release.json                   |   9 +-
+ CHANGELOG.md                         |  21 ++
+ docs/modules/tickets.md              |  57 ++++++
+ pyproject.toml                       |   2 +-
+ src/frob/app/ack_runner.py           |  14 +-
+ src/frob/app/ticket_runner.py        |  20 +-
+ src/frob/release/__init__.py         |  14 +-
+ src/frob/tickets/_journal.py         | 157 +++++++++++++++
+ src/frob/tickets/_land.py            |  88 +++++----
+ src/frob/tickets/_reconcile.py       |  30 ++-
+ src/frob/tickets/_store.py           |  15 +-
+ tests/test_ack_worktree_lease.py     |  55 ++++++
+ tests/test_release_worktree_lease.py |  52 +++++
+ tests/test_ticket_journal.py         |  93 +++++++++
+ tests/test_ticket_reconcile.py       |  35 ++++
+ tests/unit/test_ticket_store.py      |  51 +++++
+ tickets-archive.md                   |  17 +-
+ tickets.md                           | 361 ++++++++++++++++++++++++++++++++++-
+ uv.lock                              |   2 +-
+ 19 files changed, 1022 insertions(+), 71 deletions(-)
 ```
 
 ### Evidence
