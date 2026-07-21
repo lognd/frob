@@ -22,6 +22,7 @@ from frob.gates import (
     coverage_gate,
     delta_violations,
     drift_gate,
+    exclude_hazard_gate,
     inv003_gate,
     inv004_gate,
     invariant_gate,
@@ -1641,6 +1642,47 @@ class TestInv004Gate:
 
     def test_missing_docs_dir_is_silent(self, tmp_path: Path) -> None:
         assert inv004_gate(tmp_path) == ()
+
+
+class TestExcludeHazardGate:
+    # frob:tests src/frob/gates/_exclude_hazard.py::exclude_hazard_gate
+    def test_entry_shadowing_tracked_dir_fires(self, tmp_path: Path) -> None:
+        _write(tmp_path, "src/pkg/a.py", "x = 1\n")
+        _git_init(tmp_path)
+        (tmp_path / ".git" / "info" / "exclude").write_text("src/pkg/\n")
+        violations = exclude_hazard_gate(tmp_path)
+        assert len(violations) == 1
+        assert violations[0].rule == "EXCL001"
+        assert violations[0].severity == Severity.ERROR
+        assert "src/pkg" in violations[0].message
+
+    def test_entry_matching_no_tracked_path_is_silent(self, tmp_path: Path) -> None:
+        _write(tmp_path, "src/pkg/a.py", "x = 1\n")
+        _git_init(tmp_path)
+        (tmp_path / ".git" / "info" / "exclude").write_text("*.pyc\nbuild/\n")
+        assert exclude_hazard_gate(tmp_path) == ()
+
+    def test_comment_and_negated_lines_are_ignored(self, tmp_path: Path) -> None:
+        _write(tmp_path, "src/pkg/a.py", "x = 1\n")
+        _git_init(tmp_path)
+        (tmp_path / ".git" / "info" / "exclude").write_text("# src/pkg/\n!src/pkg/\n")
+        assert exclude_hazard_gate(tmp_path) == ()
+
+    def test_exact_tracked_file_entry_fires(self, tmp_path: Path) -> None:
+        _write(tmp_path, "README.md", "hi\n")
+        _git_init(tmp_path)
+        (tmp_path / ".git" / "info" / "exclude").write_text("README.md\n")
+        violations = exclude_hazard_gate(tmp_path)
+        assert len(violations) == 1
+
+    def test_empty_exclude_file_is_silent(self, tmp_path: Path) -> None:
+        _write(tmp_path, "src/pkg/a.py", "x = 1\n")
+        _git_init(tmp_path)
+        assert exclude_hazard_gate(tmp_path) == ()
+
+    def test_non_git_root_is_silent(self, tmp_path: Path) -> None:
+        _write(tmp_path, "src/pkg/a.py", "x = 1\n")
+        assert exclude_hazard_gate(tmp_path) == ()
 
 
 class TestInvariantLoad:

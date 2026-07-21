@@ -48,6 +48,7 @@ from frob.gates._baseline import (
 )
 from frob.gates._coverage import load_coverage, load_stamp, stamp_coverage
 from frob.gates._docblocks import doc004_gate
+from frob.gates._exclude_hazard import exclude_hazard_gate
 from frob.gates._models import (
     CoverageData,
     CoverageError,
@@ -774,6 +775,9 @@ _KNOWN_GATE_RULES = frozenset(
         "DOC004",
         # T-0471: unpruned filesystem traversal (frob.gates._walk_lint).
         "WALK001",
+        # T-0465: .git/info/exclude entry shadowing tracked source
+        # (frob.gates._exclude_hazard).
+        "EXCL001",
     }
 )
 
@@ -828,7 +832,12 @@ def known_gate_rule_ids() -> frozenset[str]:
 # catch -- a `frob:waive TICK002 reason="..."` sitting in the tree would
 # let a live collision risk sit there quietly forever. See the decision
 # record in docs/modules/tickets.md#decision-record-t-0162.
-_UNWAIVABLE_RULES = frozenset({"TEST008", "SEC003", "TICK001", "TICK002"})
+# T-0465: EXCL001 joins the same unwaivable set -- a `frob:waive` comment
+# lives in a source file, but the violation's own "file" is
+# `.git/info/exclude` itself; there is nowhere honest to attach a waiver,
+# and the remedy is always the same (remove the entry, or use a
+# genuinely untracked path). See docs/modules/gates.md#excl001-t-0465.
+_UNWAIVABLE_RULES = frozenset({"TEST008", "SEC003", "TICK001", "TICK002", "EXCL001"})
 
 
 def _unwaivable_channel_rules() -> frozenset[str]:
@@ -4543,6 +4552,7 @@ _ALL_GATES = frozenset(
         "registry",
         "docblocks",
         "walk_lint",
+        "excludehazard",
     }
 )
 
@@ -4800,6 +4810,7 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     "registry",
     "docblocks",
     "walk_lint",
+    "excludehazard",
     "scope",
     "prework",
 )
@@ -4859,6 +4870,11 @@ def _build_jobs(
         "release": lambda: release_gate(st.root, st.snapshot),
         "decisions": lambda: decisions_gate(st.root, st.snapshot),
         "tickets": lambda: tickets_gate(st.root, st.queue),
+        # T-0465: `.git/info/exclude` is the SHARED common-dir file across
+        # every worktree of this clone, always against repo_root (never
+        # the possibly-scoped st.root) for the same reason secrets/refs
+        # are -- the hazard is repo-wide by construction.
+        "excludehazard": lambda: exclude_hazard_gate(st.repo_root),
         # T-0396: whole-repo scan, always against repo_root (never the
         # possibly-scoped st.root) -- a `frob check <subdir>` run must see
         # the same inbound-reference graph as an unscoped run, same
@@ -5164,6 +5180,7 @@ __all__ = [
     "coverage_gate",
     "delta_violations",
     "drift_gate",
+    "exclude_hazard_gate",
     "inv003_gate",
     "inv004_gate",
     "invariant_gate",

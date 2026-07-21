@@ -56,6 +56,34 @@ late just to sync `tickets.md` -- finalize the ledger via the restore +
 `done-report` recipe in section 10b instead (a late ledger merge corrupts
 sibling tickets).
 
+## 1c. NEVER edit `.git/info/exclude` (it is repo-global, not worktree-local)
+
+Same hazard class as section 1b's `git stash`, same root cause: `.git/
+info/exclude` lives under the COMMON `.git` dir every worktree of a clone
+shares (`git rev-parse --git-common-dir`), not a per-worktree path. It
+looks like a personal, untracked `.gitignore` -- but adding an entry
+there to silence `git status` noise from your own scratch files affects
+`git status`/`git add -A` in EVERY worktree of the clone and `main`
+simultaneously, permanently, until someone notices and removes it.
+
+A real incident: an agent added `src/frob/render/` to `.git/info/exclude`
+to hide its own in-progress untracked files. That did not untrack
+anything already committed -- but it gave a real, git-tracked source
+directory a standing blind spot: every NEW file added under it
+afterward, by any agent in any worktree, silently never showed up as
+untracked and never got `git add -A`ed or committed. The whole T-0448
+foundation went missing this way before anyone noticed.
+
+Never add an entry to `.git/info/exclude` to hide work-in-progress or
+quiet `git status`. If a path is genuinely generated/vendored and should
+never be tracked, it belongs in the repo's tracked `.gitignore` instead
+(reviewable, shared, and NOT this hazard) or scoped narrowly enough that
+it cannot shadow a real source directory. `frob check`'s `excludehazard`
+stage (EXCL001, unwaivable -- docs/modules/gates.md#excl001-t-0465)
+statically flags any existing entry that shadows tracked source; treat a
+finding there as a hard stop, not something to waive around (it cannot
+be waived at all).
+
 ## 2. Gate-affecting source only takes effect via
 
 - `uv run frob ...` (editable install picks up local source changes on

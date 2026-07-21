@@ -17,6 +17,22 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.46.0] - unreleased
+
+Public-API surface change since 0.45.0 (mechanical semver via REL001): an
+additive (minor) bump -- new hazard-guard gate rule.
+
+- T-0465: EXCL001, a new (ERROR-severity, unwaivable) gate rule flagging
+  `.git/info/exclude` entries that shadow git-tracked source. `.git/
+  info/exclude` is the SHARED common-dir file across every worktree of a
+  clone -- an agent once added `src/frob/render/` to it to hide its own
+  scratch files, silently blinding `git status`/`git add -A` to every
+  NEW file added under that real source directory afterward, in every
+  worktree, until the T-0448 foundation went missing. New public
+  `frob.gates.exclude_hazard_gate` (`src/frob/gates/_exclude_hazard.py`).
+  Added the same hazard as a hard rule in
+  docs/guides/agent-playbook.md (section 1c).
+
 ## [0.45.0] - unreleased
 
 Public-API surface change since 0.44.0 (mechanical semver via REL001): an

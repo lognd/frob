@@ -64,6 +64,7 @@ declaration).
 | REF002 | refs | a git-tracked file has exactly one inbound reference (fragile single anchor) -- see "Anti-orphan file-reference gate" below |
 | REF003 | refs | a `frob:used-by <consumer>` declaration is dangling: the named consumer does not exist as a tracked file, or does not itself reference the declaring file back -- see "Anti-orphan file-reference gate" below |
 | DOC004 | docblocks | a fenced code block in a tracked `.md` doc references the project's OWN code surface (manifest-derived python/rust/ts namespaces) and either does not resolve (error, "stale") or resolves but carries no nearby `frob:doc`/`frob:describes`/`frob:tests` anchor (warn, "unbound") -- see "Unbound/stale doc code blocks" below |
+| EXCL001 | excludehazard | a `.git/info/exclude` entry shadows a git-tracked file or a directory containing tracked files -- see "EXCL001 (T-0465)" below |
 
 **T-0398 (evidence integrity) note on COV003**: COV003 only ever answers
 "does this evidence id resolve to a currently-collected test" -- it does
@@ -607,6 +608,41 @@ genuinely small, bounded-scope walk (e.g. `design_dir.rglob("*.strata")`
 over a directory that will never be large enough to matter) -- the message
 always names the remedy: route through `frob.excludes.iter_files` /
 `frob.excludes.walk_pruned`.
+
+### EXCL001 (T-0465)
+
+<!-- frob:describes src/frob/gates/_exclude_hazard.py::exclude_hazard_gate -->
+
+`frob.gates._exclude_hazard` -- `exclude_hazard_gate` (gate name
+`excludehazard`, default-on, ERROR severity, unwaivable by design -- see
+below). Motivating incident: an agent added `src/frob/render/` to
+`.git/info/exclude` to hide its own in-progress untracked scratch files.
+`.git/info/exclude` is a personal, UNTRACKED gitignore -- but it lives
+under `.git/`, which is the COMMON dir shared by every worktree of one
+clone (`git rev-parse --git-common-dir`), not a per-worktree path. One
+entry there silently changes `git status`/`git add -A` behavior in every
+worktree of the clone AND `main` simultaneously. The hazard isn't that
+excluding a directory untracks files already committed (it does not) --
+it's that a real, git-tracked source directory now has a standing blind
+spot: any NEW file added under it later never shows up as untracked,
+never gets `git add -A`ed, and silently never gets committed. That is
+exactly how the T-0448 foundation went missing.
+
+`exclude_hazard_gate` reads the shared common dir's `info/exclude`
+directly (not the repo-relative, possibly-scoped root -- the file is
+one, shared, common-dir path regardless of which worktree runs `frob
+check`), parses each non-comment, non-negated gitignore-format line into
+its directory/file prefix, and flags any prefix that names an exact
+git-tracked file or a directory under which `git ls-files` finds at
+least one tracked file. An entry matching nothing tracked (`*.pyc`,
+`build/`, any genuinely-generated or never-tracked path) is silent --
+those are exactly what `.git/info/exclude` is FOR.
+
+Deliberately unwaivable (no `frob:waive EXCL001` escape hatch): the
+entry lives in `.git/info/exclude` itself, not in a source file a
+`frob:waive` comment could attach to, and the honest fix is always the
+same -- remove the entry, or use a genuinely untracked path instead of
+hiding work under a real source directory.
 
 ```python
 # frob/gates/__init__.py

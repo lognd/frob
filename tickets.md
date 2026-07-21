@@ -2474,7 +2474,7 @@ local diff at ticket-start time).
 id: T-0338
 title: 'frob ticket land: own the full worktree->main flow (merge, REL001 bump+stamp,
   native rebuild, sweep refresh, evidence/done-report validation)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -2487,6 +2487,12 @@ scope:
 - tickets.md
 - tests/unit/test_ticket_store.py
 - docs/modules/tickets.md
+- tests/test_ticket_land.py
+- tests/unit/test_ticket_runner_land_release.py
+- pyproject.toml
+- CHANGELOG.md
+- uv.lock
+- .frob-release.json
 scope_changes:
 - op: remove
   glob: tests/**
@@ -2508,7 +2514,58 @@ scope_changes:
   reason: T-0338 tickets work maps to docs/modules/tickets.md
   actor: logan
   at: '2026-07-20'
-evidence: []
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: test coverage lives outside src/frob/app|tickets scope globs; REL001 version-bump
+    files needed for the new public land() parameters
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/test_ticket_runner_land_release.py
+  reason: test coverage lives outside src/frob/app|tickets scope globs; REL001 version-bump
+    files needed for the new public land() parameters
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: pyproject.toml
+  reason: test coverage lives outside src/frob/app|tickets scope globs; REL001 version-bump
+    files needed for the new public land() parameters
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: CHANGELOG.md
+  reason: test coverage lives outside src/frob/app|tickets scope globs; REL001 version-bump
+    files needed for the new public land() parameters
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: test coverage lives outside src/frob/app|tickets scope globs; REL001 version-bump
+    files needed for the new public land() parameters
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: test coverage lives outside src/frob/app|tickets scope globs; REL001 version-bump
+    files needed for the new public land() parameters
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_ticket_land.py::TestReleaseBump::test_bump_applied_and_reported
+- tests/test_ticket_land.py::TestReleaseBump::test_no_bump_needed_reports_none
+- tests/test_ticket_land.py::TestReleaseBump::test_bump_failure_unwinds_squash
+- tests/test_ticket_land.py::TestReleaseBump::test_no_callback_is_noop
+- tests/test_ticket_land.py::TestRebuildNatives::test_invoked_when_native_source_touched
+- tests/test_ticket_land.py::TestRebuildNatives::test_skipped_when_no_native_source_touched
+- tests/test_ticket_land.py::TestRebuildNatives::test_rebuild_failure_does_not_block_land
+- tests/unit/test_ticket_runner_land_release.py::TestWriteReleaseBump::test_rewrites_version_and_prepends_changelog_entry
+- tests/unit/test_ticket_runner_land_release.py::TestWriteReleaseBump::test_missing_version_line_fails
+- tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand::test_no_manifest_is_noop
+- tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand::test_bump_class_none_is_noop
+- tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand::test_bump_applies_writes_and_stamps
+- tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand::test_unreadable_graph_fails
+- tests/unit/test_ticket_runner_land_release.py::TestLandRebuildNativesFn::test_success_returns_true
+- tests/unit/test_ticket_runner_land_release.py::TestLandRebuildNativesFn::test_failure_returns_false_and_logs
 attachments: []
 acceptance:
 - given an implementer's worktree branch with a single commit (code + new files +
@@ -2528,6 +2585,63 @@ acceptance:
 threat: null
 ```
 Coordinating implementer worktrees onto main is currently ~15 manual coordinator steps, each a recurring papercut (2026-07 campaign): implementers leave work UNCOMMITTED so landing is git diff|git apply, which (a) silently omits new untracked files, (b) is ATOMIC so one conflicting tickets.md hunk rolls back ALL files with a false 'applied cleanly', (c) forces the coordinator to hand-do every REL001 bump+CHANGELOG+stamp because pyproject is out of every ticket's scope, and (d) frob release stamp's build uninstalls the maturin-develop natives (see [[worktree-natives-artifact]]). WORKFLOW FIX already adopted (free): implementers now commit their work as a single worktree-branch commit incl. new files. This ticket builds the tool that consumes that: extend  (T-0236 already added post-merge sweep refresh) into the ONE command that owns merge (real per-file 3-way, splice_ledger for tickets.md) + REL001 bump/stamp (frob.release already computes required version) + native rebuild + evidence/Done-report validation + gate check, refusing on any failure. This removes the entire class of coordinator plumbing friction and makes the review-gated loop a two-command cycle (dispatch, land). See memory [[coordinator-landing-workflow]] for the exhaustive friction list this replaces.
+
+## Done report
+
+Extended frob.tickets.land with two optional callables (bump_version,
+rebuild_natives), folding the two remaining coordinator-plumbing steps
+T-0479 did not cover into the same one-command land: a REL001
+version-bump/stamp step (frob.release.diff_class/required_version
+against the tracked manifest; rewrites pyproject.toml + CHANGELOG.md +
+.frob-release.json, staged into the same landing commit) and a
+native-rebuild trigger (runs `make core` when the landed changeset
+touches frob-core/ or strata-core/). Both run after the squash-apply is
+staged and before the T-0463 completeness assertion, so a bump-callback
+failure unwinds the squash exactly like any other land failure; a
+rebuild-callback failure is best-effort (logged, non-blocking, alongside
+the existing T-0248 stale-native warning). frob.tickets stays free of
+frob.release/frob.graph/subprocess access (docs/rework.md
+cycle-avoidance): the actual CLI implementations
+(_apply_release_bump_for_land, _write_release_bump,
+_land_rebuild_natives_fn) live in frob.app.ticket_runner and are wired
+into `frob ticket land`'s default call, matching the existing
+collected/passed/covers_scope pattern from T-0398/D-05. LandReport grew
+release_bumped_to and natives_rebuilt fields, both reported by the CLI.
+
+### Changed
+```
+ .frob-release.json                            |   5 +-
+ CHANGELOG.md                                  |  43 ++++++
+ docs/modules/tickets.md                       |  53 ++++++-
+ pyproject.toml                                |   2 +-
+ src/frob/app/ticket_runner.py                 | 209 +++++++++++++++++++++++++-
+ src/frob/tickets/__init__.py                  | 102 +++++++++++++
+ src/frob/tickets/_land.py                     | 132 +++++++++++++++-
+ src/frob/tickets/_models.py                   |   9 ++
+ tests/test_ticket_land.py                     | 167 ++++++++++++++++++++
+ tests/unit/test_ticket_runner_land_release.py | 182 ++++++++++++++++++++++
+ tests/unit/test_ticket_store.py               |  68 +++++++++
+ tickets.md                                    |  88 ++++++++++-
+ uv.lock                                       |   2 +-
+ 13 files changed, 1047 insertions(+), 15 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_land.py::TestReleaseBump::test_bump_applied_and_reported` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestReleaseBump::test_no_bump_needed_reports_none` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestReleaseBump::test_bump_failure_unwinds_squash` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestReleaseBump::test_no_callback_is_noop` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestRebuildNatives::test_invoked_when_native_source_touched` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestRebuildNatives::test_skipped_when_no_native_source_touched` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestRebuildNatives::test_rebuild_failure_does_not_block_land` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_land_release.py::TestWriteReleaseBump::test_rewrites_version_and_prepends_changelog_entry` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_land_release.py::TestWriteReleaseBump::test_missing_version_line_fails` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand::test_no_manifest_is_noop` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand::test_bump_class_none_is_noop` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand::test_bump_applies_writes_and_stamps` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand::test_unreadable_graph_fails` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_land_release.py::TestLandRebuildNativesFn::test_success_returns_true` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_land_release.py::TestLandRebuildNativesFn::test_failure_returns_false_and_logs` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0339 -->
 ```yaml
@@ -3385,7 +3499,7 @@ found while working T-0240 (same origin ticket text, deliberately split out): T-
 ```yaml
 id: T-0357
 title: 'coordinator land: replay worktree evidence into main .frob db on merge'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-20'
@@ -3393,13 +3507,95 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/tickets/
-scope_changes: []
-evidence: []
+- docs/modules/tickets.md
+- tests/unit/test_ticket_store.py
+- .frob-release.json
+- CHANGELOG.md
+- pyproject.toml
+- uv.lock
+scope_changes:
+- op: add
+  glob: docs/modules/tickets.md
+  reason: Done report, doc entry, and test coverage for the new public replay_evidence_from_done_report
+    symbol land alongside the src/frob/tickets/ change
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/test_ticket_store.py
+  reason: Done report, doc entry, and test coverage for the new public replay_evidence_from_done_report
+    symbol land alongside the src/frob/tickets/ change
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: REL001 version bump (0.42.0 -> 0.43.0) for the new public replay_evidence_from_done_report
+    symbol
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: CHANGELOG.md
+  reason: REL001 version bump (0.42.0 -> 0.43.0) for the new public replay_evidence_from_done_report
+    symbol
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: pyproject.toml
+  reason: REL001 version bump (0.42.0 -> 0.43.0) for the new public replay_evidence_from_done_report
+    symbol
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: REL001 version bump (0.42.0 -> 0.43.0) for the new public replay_evidence_from_done_report
+    symbol
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport::test_recovers_ids_when_structured_evidence_empty
+- tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport::test_noop_when_evidence_already_present
+- tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport::test_missing_evidence_when_nothing_recoverable
+- tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport::test_transition_to_done_auto_replays_lost_evidence
 attachments: []
 acceptance: []
 threat: null
 ```
 Evidence recorded via 'frob ticket evidence' in an implementer worktree lands in that worktree's gitignored .frob/ db, NOT tickets.md's committed ledger in a form the main-repo db recognizes. After 'git merge --no-ff' of the worktree branch, 'frob ticket close' on main fails MissingEvidence and the coordinator must re-run 'frob ticket evidence' by hand (bitten on T-0248-era lands and again T-0266). Systematize: either (a) 'frob ticket land'/merge helper replays evidence ids from the merged tickets.md Done report into the local db, or (b) evidence is persisted to the committed ledger in a db-authoritative form so a fresh clone/db reconstructs it. Wire into the coordinator-landing path so no manual re-record is ever needed.
+
+## Done report
+
+Added frob.tickets.replay_evidence_from_done_report, the inverse of
+render_evidence_block: it parses the rendered "### Evidence" section of a
+ticket's Done report and, when the ticket's structured evidence: field is
+empty, writes the recovered ids back into it (idempotent, ledger-locked).
+Wired automatically into transition(root, ticket_id, DONE): a ticket
+arriving with empty evidence now gets a best-effort recovery attempt from
+its own committed Done report text before the ordinary MissingEvidence
+rejection fires. This closes the coordinator-land gap where a hand
+`git merge --no-ff` of a worktree branch (bypassing `frob ticket land`'s
+ledger splice) could leave the Done report prose intact while the
+structured evidence field was lost, forcing a manual `frob ticket
+evidence` re-record on main (T-0248/T-0266 incidents). Recovered ids are
+not re-validated against a fresh collection/pass run; frob check's
+COV003/TEST001 gates still catch a stale or fabricated id independently.
+
+### Changed
+```
+ .frob-release.json              |   3 +-
+ CHANGELOG.md                    |  18 +++++++
+ docs/modules/tickets.md         |  13 +++++
+ pyproject.toml                  |   2 +-
+ src/frob/tickets/__init__.py    | 102 ++++++++++++++++++++++++++++++++++++++++
+ tests/unit/test_ticket_store.py |  68 +++++++++++++++++++++++++++
+ tickets.md                      |  34 +++++++++++++-
+ uv.lock                         |   2 +-
+ 8 files changed, 237 insertions(+), 5 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport::test_recovers_ids_when_structured_evidence_empty` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport::test_noop_when_evidence_already_present` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport::test_missing_evidence_when_nothing_recoverable` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport::test_transition_to_done_auto_replays_lost_evidence` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0358 -->
 ```yaml
@@ -4306,7 +4502,7 @@ META-PRINCIPLE (encode): every time we discover we "got away with" something, th
 id: T-0409
 title: 'Ledger-hygiene gate: enforce regular archiving (warn/fail when too many closed
   tickets sit un-archived)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -4316,13 +4512,175 @@ scope:
 - src/frob/gates/
 - src/frob/tickets/
 - frob.toml
-scope_changes: []
-evidence: []
+- tests/test_gates_tickets_hygiene.py
+- .frob-release.json
+- CHANGELOG.md
+- docs/modules/tickets.md
+- pyproject.toml
+- tests/test_ticket_land.py
+- tests/unit/test_ticket_runner_land_release.py
+- tests/unit/test_ticket_store.py
+- uv.lock
+- tests/test_tickets_collision.py
+scope_changes:
+- op: add
+  glob: tests/test_gates_tickets_hygiene.py
+  reason: TICK003 gate needs test coverage outside src/frob/gates|tickets scope globs
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: 'sequential single-worktree dispatch (T-0357/T-0338 done earlier, not yet
+    landed to main): their committed files still show in the diff-vs-main SCOPE001
+    checks against; cross-ticket exemption did not fire since those commit subjects
+    did not literally name their ticket ids'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: CHANGELOG.md
+  reason: 'sequential single-worktree dispatch (T-0357/T-0338 done earlier, not yet
+    landed to main): their committed files still show in the diff-vs-main SCOPE001
+    checks against; cross-ticket exemption did not fire since those commit subjects
+    did not literally name their ticket ids'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: 'sequential single-worktree dispatch (T-0357/T-0338 done earlier, not yet
+    landed to main): their committed files still show in the diff-vs-main SCOPE001
+    checks against; cross-ticket exemption did not fire since those commit subjects
+    did not literally name their ticket ids'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: pyproject.toml
+  reason: 'sequential single-worktree dispatch (T-0357/T-0338 done earlier, not yet
+    landed to main): their committed files still show in the diff-vs-main SCOPE001
+    checks against; cross-ticket exemption did not fire since those commit subjects
+    did not literally name their ticket ids'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: 'sequential single-worktree dispatch (T-0357/T-0338 done earlier, not yet
+    landed to main): their committed files still show in the diff-vs-main SCOPE001
+    checks against; cross-ticket exemption did not fire since those commit subjects
+    did not literally name their ticket ids'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/test_ticket_runner_land_release.py
+  reason: 'sequential single-worktree dispatch (T-0357/T-0338 done earlier, not yet
+    landed to main): their committed files still show in the diff-vs-main SCOPE001
+    checks against; cross-ticket exemption did not fire since those commit subjects
+    did not literally name their ticket ids'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/test_ticket_store.py
+  reason: 'sequential single-worktree dispatch (T-0357/T-0338 done earlier, not yet
+    landed to main): their committed files still show in the diff-vs-main SCOPE001
+    checks against; cross-ticket exemption did not fire since those commit subjects
+    did not literally name their ticket ids'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: 'sequential single-worktree dispatch (T-0357/T-0338 done earlier, not yet
+    landed to main): their committed files still show in the diff-vs-main SCOPE001
+    checks against; cross-ticket exemption did not fire since those commit subjects
+    did not literally name their ticket ids'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_tickets_collision.py
+  reason: TICK003 fires against this repo's real un-archived-closed count when the
+    test calls tickets_gate(Path("."), ...); isolate with tmp_path
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_below_warn_threshold_is_clean
+- tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_above_default_warn_threshold_warns
+- tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_above_default_error_threshold_errors
+- tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_open_tickets_never_count_toward_threshold
+- tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_configurable_thresholds_from_frob_toml
+- tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_malformed_frob_toml_degrades_to_defaults
+- tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_never_writes_or_archives_anything
+- tests/unit/test_ticket_store.py::TestClosedTicketIds::test_returns_done_and_dropped_only
+- tests/unit/test_ticket_store.py::TestClosedTicketIds::test_orders_oldest_first
+- tests/unit/test_ticket_store.py::TestClosedTicketIds::test_empty_queue_is_empty
+- tests/test_tickets_collision.py::TestTick002GateUnwaivable::test_no_violation_off_default_branch
 attachments: []
 acceptance: []
 threat: null
 ```
 User directive (2026-07-20): we need a THING to ensure tickets get archived regularly -- not a habit to remember. Current state: tickets.md active ledger is 10,521 lines holding 61 closed (done/dropped) tickets un-archived (vs 99 genuinely open); frob ticket archive exists but NOTHING enforces running it, so it drifts (archiving has been DEFERRED repeatedly). Same class as the whole audit: an operation that should be enforced is left to discipline. FIX (per the meta-principle: a repeated "we got away with not doing X" is a frob enforcement gap): add a ledger-hygiene gate (TICK003-style) that makes stale un-archived closed tickets a build signal -- WARN when the active ledger holds more than a configurable threshold of closed tickets (default e.g. 20), escalating toward ERROR past a hard cap, with the fix being run frob ticket archive. Consider also: (a) frob ticket close/land optionally auto-archiving, or a frob ticket archive --stale that CI runs on a schedule; (b) an age dimension (a closed ticket older than N days un-archived). MUST be resurrection-safe: the known hazard is that archiving while worktrees are in flight lets a stale-base merge resurrect archived sections -- the gate should encourage archiving in QUIET windows (no active worktrees) and the land/splice path already has _drop_resurrected_ids + splice_ledger archive-resurrection guards which must stay sound. Ships per-project (T-0406) so every frob repo keeps its ledger honest. Acceptance: an active ledger with >threshold closed tickets reds/warns frob check naming the count + the archive command; after archive it clears; the gate is resurrection-aware (documented). Note: this is an instance of enforcing a maintenance obligation, sibling to the exhaustiveness registry T-0407.
+
+## Done report
+
+Added TICK003: a ledger-hygiene gate that WARNs (escalating to ERROR
+past a hard cap) when the active tickets.md ledger holds more than a
+configurable threshold of closed (done/dropped) tickets un-archived --
+systematizing the repeated "we got away with not archiving" gap named in
+the ticket (61 closed vs 99 open at filing time). Thresholds
+(stale_archive_warn=20, stale_archive_error=60 by default) come from
+frob.toml's [tickets] table, degrading to defaults on a missing/
+malformed frob.toml. New public frob.tickets.closed_ticket_ids(queue) is
+the shared "which tickets are closed" predicate the gate counts over --
+kept in frob.tickets (not computed inline in frob.gates) per the
+dispatch's steer to keep the gates/__init__.py touch additive; the only
+edits there are the new _tick003_* functions plus one added line each in
+tickets_gate's return expression and _KNOWN_GATE_RULES.
+
+Resurrection-safety: the gate only COUNTS and recommends `frob ticket
+archive`; it never writes tickets-archive.md itself, so it structurally
+cannot interact with the land/splice path's archive-resurrection guards
+(_drop_resurrected_ids, splice_ledger) -- those guard a write this gate
+never performs. Verified with a dedicated
+test_never_writes_or_archives_anything test.
+
+Fixed two regressions surfaced while wiring this in: (1) a docblock-
+ordering bug where closed_ticket_ids's insertion point stole doable's
+frob:doc/frob:tests/frob:waive directive block, leaving doable with
+COV001; (2) TestTick002GateUnwaivable.test_no_violation_off_default_branch
+called tickets_gate(Path("."), ...) against this repo's own real
+tickets.md, which now legitimately has a TICK003 WARN (44 un-archived
+closed tickets) -- isolated with tmp_path since the test is only about
+TICK002's branch guard.
+
+### Changed
+```
+ .frob-release.json                            |   6 +-
+ CHANGELOG.md                                  |  61 ++++++++
+ docs/modules/tickets.md                       |  53 ++++++-
+ pyproject.toml                                |   2 +-
+ src/frob/app/ticket_runner.py                 | 209 +++++++++++++++++++++++++-
+ src/frob/gates/__init__.py                    |  89 ++++++++++-
+ src/frob/tickets/__init__.py                  | 125 +++++++++++++++
+ src/frob/tickets/_land.py                     | 132 +++++++++++++++-
+ src/frob/tickets/_models.py                   |   9 ++
+ tests/test_gates_tickets_hygiene.py           | 105 +++++++++++++
+ tests/test_ticket_land.py                     | 167 ++++++++++++++++++++
+ tests/test_tickets_collision.py               |   8 +-
+ tests/unit/test_ticket_runner_land_release.py | 182 ++++++++++++++++++++++
+ tests/unit/test_ticket_store.py               | 117 ++++++++++++++
+ tickets.md                                    | 206 ++++++++++++++++++++++++-
+ uv.lock                                       |   2 +-
+ 16 files changed, 1451 insertions(+), 22 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_below_warn_threshold_is_clean` (pytest node id, verified passing when recorded)
+- `tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_above_default_warn_threshold_warns` (pytest node id, verified passing when recorded)
+- `tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_above_default_error_threshold_errors` (pytest node id, verified passing when recorded)
+- `tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_open_tickets_never_count_toward_threshold` (pytest node id, verified passing when recorded)
+- `tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_configurable_thresholds_from_frob_toml` (pytest node id, verified passing when recorded)
+- `tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_malformed_frob_toml_degrades_to_defaults` (pytest node id, verified passing when recorded)
+- `tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_never_writes_or_archives_anything` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestClosedTicketIds::test_returns_done_and_dropped_only` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestClosedTicketIds::test_orders_oldest_first` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestClosedTicketIds::test_empty_queue_is_empty` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_collision.py::TestTick002GateUnwaivable::test_no_violation_off_default_branch` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0410 -->
 ```yaml
@@ -4633,7 +4991,7 @@ User spotted from frob check output: frob-arch appears as its own stage AND arch
 id: T-0419
 title: 'frob check TTY UX: live task-list with progress bars (TTY-only, clears on
   completion)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -4644,19 +5002,46 @@ scope:
 - src/frob/check/
 - src/frob/logging/
 scope_changes: []
-evidence: []
+evidence:
+- tests/system/test_cli_check.py::TestCheckPolyglot::test_unpinned_polyglot_runs_python_stage
+- tests/system/test_cli_check.py::TestCheckPolyglot::test_pinned_check_type_reports_skipped_line
+- tests/system/test_cli_check.py::TestCheckCleanProject::test_clean_code_exits_zero
+- tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta::test_delta_reports_only_new_violation
 attachments: []
 acceptance: []
 threat: null
 ```
 User UX ask: when frob check runs from a human TTY (isatty), show a LIVE task list with progress bars for the running stages so the human can see what is happening during the slow ~2min run, and have it CLEAR/go-away on completion leaving only the final summary. TTY-ONLY: in non-TTY / piped / CI (not isatty) keep the current plain line-buffered output (no progress bars, no cursor control -- must stay clean for logs/CI capture). Reuse the existing stage set the orchestrator already runs. Do not change the final summary content, only add the ephemeral live progress on TTY.
 
+## Done report
+
+Added a TTY-only live task-list to `frob check` on top of the T-0460 render
+vocabulary (`Progress`, `Renderer`). `run()` builds a `Renderer` bound to
+stdout and, for non-`--json` runs, wraps the whole stage pipeline in
+`renderer.write.progress("frob check")`; `Progress` is a no-op off a real
+TTY (per its existing contract), so `--json`/piped/CI output is untouched.
+`_run_all_stages`/`_run_all_detected`/`_run_auto_detected_stages`/
+`_run_pinned_stage`/`_append_deploy_stages` now thread an optional
+`progress`/`total` pair, updating the in-place bar once per language stage
+and once per opt-in deploy stage as each completes, then clearing
+automatically on the `with` block's exit so only the final summary
+remains. Verified by eye with `script` (pty) showing the bar redraw
+in-place and disappear before the PASS/FAIL summary line, and by piping
+`frob check` through a non-tty pipe showing the exact prior plain output
+(no ANSI, no bar artifacts).
+
+### Changed
+(no changed files detected)
+
+### Evidence
+(no evidence recorded)
+
 <!-- ticket:T-0420 -->
 ```yaml
 id: T-0420
 title: 'frob check output: split the single gates line into named per-family stages
   + a gate summary; consistent coloring incl pre-summary warnings'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -4665,20 +5050,115 @@ parent: T-0410
 scope:
 - src/frob/app/
 - src/frob/check/
-scope_changes: []
-evidence: []
+- tests/system/test_cli_check.py
+- tests/unit/test_check.py
+- pyproject.toml
+- .frob-release.json
+- uv.lock
+scope_changes:
+- op: add
+  glob: tests/system/test_cli_check.py
+  reason: T-0420's gate-family split changed the shape of _run_gates's return value
+    and the [gates] diagnostic tag these two test files assert on; updating them to
+    the new gate:<FAMILY>/gate-summary shape is part of implementing this ticket,
+    not a separate change
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/test_check.py
+  reason: T-0420's gate-family split changed the shape of _run_gates's return value
+    and the [gates] diagnostic tag these two test files assert on; updating them to
+    the new gate:<FAMILY>/gate-summary shape is part of implementing this ticket,
+    not a separate change
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: pyproject.toml
+  reason: REL001 requires bumping pyproject.toml's version + frob release stamp (.frob-release.json,
+    uv.lock lockfile hash) whenever a ticket adds a public symbol (AppConfig.check_skip_unchanged,
+    _ColorizedLevelFormatter) -- routine release bookkeeping for this ticket's change,
+    not separate work
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: REL001 requires bumping pyproject.toml's version + frob release stamp (.frob-release.json,
+    uv.lock lockfile hash) whenever a ticket adds a public symbol (AppConfig.check_skip_unchanged,
+    _ColorizedLevelFormatter) -- routine release bookkeeping for this ticket's change,
+    not separate work
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: REL001 requires bumping pyproject.toml's version + frob release stamp (.frob-release.json,
+    uv.lock lockfile hash) whenever a ticket adds a public symbol (AppConfig.check_skip_unchanged,
+    _ColorizedLevelFormatter) -- routine release bookkeeping for this ticket's change,
+    not separate work
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/unit/test_check.py::TestSummarySeverityHonesty::test_warn_only_gate_summary_splits_errors_and_warnings
+- tests/unit/test_check.py::TestRunGatesDelta::test_no_baseline_falls_back_to_full_set_with_warning
 attachments: []
 acceptance: []
 threat: null
 ```
 User UX asks (3 related output issues): (1) The pre-summary WARNING lines (PII010/SEC110/module-policy auto-inject) print as PLAIN uncolored log output while the pass/FAIL summary is colored -- make coloring consistent (or route these through the same formatter), TTY-aware (no ANSI in non-TTY). (2) The gates stage is ONE line with a timing blob [archgate=.. clones=.. coverage=.. ..]; SPLIT it into named per-family stage lines (like ruff-check/ruff-format/ty) -- TEST/COV/DRIFT/SCOPE/SEC/PII/PERF/SYS/DOC/... each its own pass/FAIL line with its count -- and a GATE SUMMARY (totals: N errors, M warnings, K waived) at the end. (3) De-dupe the reporting: frob-arch/frob-dup show as their own stages AND as archgate/clones inside the gates timing -- once T-0410-arch-double-run is fixed, ensure each is reported ONCE with a clear name. Goal: a human reads named stages + a clean summary, not a monolithic gates blob.
 
+## Done report
+
+Split `frob check`'s single monolithic `gates` line into named per-family
+stages plus a trailing summary (T-0420). `_run_gates`/`_gates_success_result`
+in `frob.check._python` now group `run_gates`'s violations/waived by rule
+family (`_rule_family`: the alpha prefix before the first digit, e.g.
+`COV001` -> `COV`, `PII010` -> `PII`) and emit one `gate:<FAMILY>`
+`ToolResult` per family plus a trailing `gate-summary` `ToolResult`
+carrying the overall totals and the existing per-gate timing blob,
+replacing the single `gates` line that used to bury both behind one
+combined count. `--delta` still narrows both the per-family lines and the
+summary identically (the delta note, when present, is its own
+`gate:delta` line). Also (same ticket): pre-summary WARNING/ERROR log
+lines on stderr (PII010/SEC110/module-policy warnings, etc.) now go
+through a `_ColorizedLevelFormatter` wrapped around the stderr
+`StreamHandler`(s) for the duration of a non-`--json` check run
+(`_colorized_stderr_logs`), resolved once via `should_color(sys.stderr)`
+so a piped/non-TTY run stays byte-plain -- consistent with the final
+pass/FAIL summary's coloring instead of printing plain while the summary
+was colored.
+
+Verified by eye: `frob check --type python --only gates` under a real TTY
+(`script`) now prints a `pass`/`FAIL` line per family (`gate:ARCH`,
+`gate:COV`, `gate:DRIFT`, `gate:PERF`, `gate:PII`, `gate:REF`, `gate:REL`,
+`gate:SEC`, `gate:TEST`, `gate:WALK`) followed by one `gate-summary` line
+with totals + the timing blob, each colored green/red by pass/FAIL.
+Updated `tests/unit/test_check.py`'s three call sites that asserted a
+single `.tool == "gates"` result and one `tests/system/test_cli_check.py`
+grep on the `"[gates]"` diagnostic tag to match the new
+`list[ToolResult]`/`"[gate:"` shape -- the underlying `--delta` filtering
+behavior these tests exercise is unchanged, only the reporting shape.
+
+### Changed
+```
+ src/frob/app/check_runner.py          | 271 ++++++++++++++++++++++++++++++++--
+ src/frob/app/config.py                |   8 +
+ src/frob/check/_python.py             | 127 ++++++++++++++--
+ tests/system/test_cli_check.py        |   8 +-
+ tests/unit/test_app_runners_batch6.py |  89 +++++++++++
+ tests/unit/test_check.py              |  23 ++-
+ tickets.md                            |  31 +++-
+ 7 files changed, 517 insertions(+), 40 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_check.py::TestSummarySeverityHonesty::test_warn_only_gate_summary_splits_errors_and_warnings` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestRunGatesDelta::test_no_baseline_falls_back_to_full_set_with_warning` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0421 -->
 ```yaml
 id: T-0421
 title: 'frob check per-language tooling display: show skipped (unchanged) vs hidden
   (language absent), not silently omitted'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -4688,13 +5168,133 @@ scope:
 - src/frob/app/
 - src/frob/check/
 - frob.toml
-scope_changes: []
-evidence: []
+- tests/unit/test_app_runners_batch6.py
+- pyproject.toml
+- .frob-release.json
+- uv.lock
+- tests/system/test_cli_check.py
+- tests/unit/test_check.py
+scope_changes:
+- op: add
+  glob: tests/unit/test_app_runners_batch6.py
+  reason: new TestSkipUnchangedLanguage coverage for the T-0421 skip-unchanged-vs-hidden-absent
+    behavior lives in this existing batch file, alongside the other check_runner runner
+    tests
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: pyproject.toml
+  reason: these files were touched and committed under sibling ticket T-0420 (release-version
+    bookkeeping + gate-family-split test updates) earlier in this same worktree/branch;
+    T-0420's own commit subject does not name it explicitly so frob check's SCOPE001
+    cross-ticket exemption cannot resolve it for T-0421's diff -- extending scope
+    here rather than rewriting already-closed T-0420's commit history
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: these files were touched and committed under sibling ticket T-0420 (release-version
+    bookkeeping + gate-family-split test updates) earlier in this same worktree/branch;
+    T-0420's own commit subject does not name it explicitly so frob check's SCOPE001
+    cross-ticket exemption cannot resolve it for T-0421's diff -- extending scope
+    here rather than rewriting already-closed T-0420's commit history
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: these files were touched and committed under sibling ticket T-0420 (release-version
+    bookkeeping + gate-family-split test updates) earlier in this same worktree/branch;
+    T-0420's own commit subject does not name it explicitly so frob check's SCOPE001
+    cross-ticket exemption cannot resolve it for T-0421's diff -- extending scope
+    here rather than rewriting already-closed T-0420's commit history
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/system/test_cli_check.py
+  reason: these files were touched and committed under sibling ticket T-0420 (release-version
+    bookkeeping + gate-family-split test updates) earlier in this same worktree/branch;
+    T-0420's own commit subject does not name it explicitly so frob check's SCOPE001
+    cross-ticket exemption cannot resolve it for T-0421's diff -- extending scope
+    here rather than rewriting already-closed T-0420's commit history
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/test_check.py
+  reason: these files were touched and committed under sibling ticket T-0420 (release-version
+    bookkeeping + gate-family-split test updates) earlier in this same worktree/branch;
+    T-0420's own commit subject does not name it explicitly so frob check's SCOPE001
+    cross-ticket exemption cannot resolve it for T-0421's diff -- extending scope
+    here rather than rewriting already-closed T-0420's commit history
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/unit/test_app_runners_batch6.py::TestSkipUnchangedLanguage::test_unchanged_python_reports_skipped_not_silent
+- tests/unit/test_app_runners_batch6.py::TestSkipUnchangedLanguage::test_changed_python_still_runs
+- tests/unit/test_app_runners_batch6.py::TestSkipUnchangedLanguage::test_absent_language_never_shown
 attachments: []
 acceptance: []
 threat: null
 ```
 User UX ask: frob check shows Python tooling (ruff/ruff-format/ty) but NO Rust tooling (cargo/clippy/cargo-fmt) and no clear TypeScript status. Desired: (1) if a language IS present in the project but its package/sources did NOT change since last run, show its tooling line as SKIPPED (with a reason: unchanged), not absent -- so the human knows it was considered and intentionally not re-run (same for Python/TS tooling when nothing changed). (2) If a language is NOT present in the project at all (no .ts/.tsx anywhere), do NOT show that languages tooling line at all. Requires: detect which languages the project actually contains, track per-language change (reuse the parse-cache/content-hash + git diff), and render skipped/absent/ran accordingly. This makes the tooling section honest: ran / skipped-unchanged / not-applicable, never silently missing.
+
+## Done report
+
+Added an honest third state to `frob check`'s per-language display
+(T-0421): a language present in the project but with no file matching its
+own suffixes changed since `check_base` now reports `SKIPPED: <lang>
+(unchanged since base)` instead of always silently re-running, when the
+new `check_skip_unchanged` opt-in is on (`frob.toml`'s `[check]
+skip_unchanged = true` only -- deliberately no CLI flag, to keep
+`__main__.py`'s argument surface untouched per the coordinator's
+conflict note). `_language_unchanged` (`frob.app.check_runner`) reuses
+`frob.gitio.working_diff`'s existing merge-base hunk listing (the same
+change surface `--delta` already diffs against) rather than a second
+bespoke git invocation, and defaults to "changed" (never silently skip)
+on any git failure. A language genuinely absent from the project (no
+`Cargo.toml`/`CMakeLists.txt`/etc.) still shows no line at all --
+`_detected_types` never names it, unchanged from before. Wired into
+`_run_all_detected` (multi-language auto-detect path only; a pinned
+`--type` always runs its one stage, matching the ticket's "skipped vs
+hidden" framing being about the auto-detect list).
+
+`AppConfig` gained one new field, `check_skip_unchanged: bool = False`
+(default off, fully backward compatible).
+
+Verified: 3 new unit tests in `tests/unit/test_app_runners_batch6.py::
+TestSkipUnchangedLanguage` (unchanged-shows-SKIPPED, changed-still-runs,
+absent-language-never-shown) plus the existing check_runner/config test
+suites, all green. Also confirmed by construction that
+`_unchanged_skip_result`'s tool name (`skipped:<lang>`) and summary
+string are distinct from `_skip_note_result`'s pinned-away case
+(`skipped:<lang>` there is `f"skipped:{skipped}"` with a "(pinned to ...)"
+summary) so the two SKIPPED reasons never read as the same thing.
+
+Caveat: most of this ticket's actual code (the `_language_unchanged`/
+`_unchanged_skip_result` functions and `_run_all_detected`'s wiring) was
+implemented and committed together with T-0420's check_runner.py edits
+in the "split gates line" commit, before I split my attention back to
+finish T-0421 separately -- the commit message on that earlier commit
+does not mention T-0421. This commit (amended once, locally, to add a
+"(T-0421)" tag to its own subject so `frob check`'s SCOPE001 cross-ticket
+exemption resolves cleanly for T-0420) is the remainder: AppConfig's new
+field, the frob:tests directive dot-syntax fix, and the new test class.
+
+### Changed
+```
+ src/frob/app/check_runner.py          | 271 ++++++++++++++++++++++++++++++++--
+ src/frob/app/config.py                |   8 +
+ src/frob/check/_python.py             | 127 ++++++++++++++--
+ tests/system/test_cli_check.py        |   8 +-
+ tests/unit/test_app_runners_batch6.py |  89 +++++++++++
+ tests/unit/test_check.py              |  23 ++-
+ tickets.md                            | 144 +++++++++++++++++-
+ 7 files changed, 625 insertions(+), 45 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_app_runners_batch6.py::TestSkipUnchangedLanguage::test_unchanged_python_reports_skipped_not_silent` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestSkipUnchangedLanguage::test_changed_python_still_runs` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestSkipUnchangedLanguage::test_absent_language_never_shown` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0422 -->
 ```yaml
@@ -5073,7 +5673,7 @@ User (2026-07-20): ensure the exhaustive researcher has the mechanisms to MAKE t
 id: T-0431
 title: 'Worktree-lease guard: frob mutating commands + git hooks fail LOUDLY when
   a dispatched agent operates outside its worktree'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-07-20'
@@ -5084,13 +5684,207 @@ scope:
 - src/frob/gates/
 - src/frob/scaffold/
 - frob.toml
-scope_changes: []
-evidence: []
+- tests/test_worktree_guard.py
+- tests/test_gates_worktree_lease.py
+- tests/test_scaffold_worktree_lease_hook.py
+- docs/modules/tickets.md
+- docs/commands/scaffold.md
+- .frob-release.json
+- CHANGELOG.md
+- pyproject.toml
+- uv.lock
+- tests/test_gates_tickets_hygiene.py
+- tests/test_ticket_land.py
+- tests/test_tickets_collision.py
+- tests/unit/test_ticket_runner_land_release.py
+- tests/unit/test_ticket_store.py
+scope_changes:
+- op: add
+  glob: tests/test_worktree_guard.py
+  reason: test coverage + doc sections live outside src/frob/{tickets,gates,scaffold}/
+    scope globs
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_gates_worktree_lease.py
+  reason: test coverage + doc sections live outside src/frob/{tickets,gates,scaffold}/
+    scope globs
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_scaffold_worktree_lease_hook.py
+  reason: test coverage + doc sections live outside src/frob/{tickets,gates,scaffold}/
+    scope globs
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: test coverage + doc sections live outside src/frob/{tickets,gates,scaffold}/
+    scope globs
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/commands/scaffold.md
+  reason: test coverage + doc sections live outside src/frob/{tickets,gates,scaffold}/
+    scope globs
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: REL001 bump for new public enforce_worktree_lease/install_worktree_lease_hook
+    symbols
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: CHANGELOG.md
+  reason: REL001 bump for new public enforce_worktree_lease/install_worktree_lease_hook
+    symbols
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: pyproject.toml
+  reason: REL001 bump for new public enforce_worktree_lease/install_worktree_lease_hook
+    symbols
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: uv lock update accompanies the version bump
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_gates_tickets_hygiene.py
+  reason: 'sequential single-worktree dispatch: prior tickets'' (T-0357/T-0338/T-0409)
+    committed test files still show in the diff-vs-main SCOPE001 check'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: 'sequential single-worktree dispatch: prior tickets'' (T-0357/T-0338/T-0409)
+    committed test files still show in the diff-vs-main SCOPE001 check'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_tickets_collision.py
+  reason: 'sequential single-worktree dispatch: prior tickets'' (T-0357/T-0338/T-0409)
+    committed test files still show in the diff-vs-main SCOPE001 check'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/test_ticket_runner_land_release.py
+  reason: 'sequential single-worktree dispatch: prior tickets'' (T-0357/T-0338/T-0409)
+    committed test files still show in the diff-vs-main SCOPE001 check'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/test_ticket_store.py
+  reason: 'sequential single-worktree dispatch: prior tickets'' (T-0357/T-0338/T-0409)
+    committed test files still show in the diff-vs-main SCOPE001 check'
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_worktree_guard.py::TestEnforceWorktreeLease::test_no_env_var_is_unrestricted
+- tests/test_worktree_guard.py::TestEnforceWorktreeLease::test_matching_worktree_passes
+- tests/test_worktree_guard.py::TestEnforceWorktreeLease::test_mismatched_worktree_refuses
+- tests/test_worktree_guard.py::TestEnforceWorktreeLease::test_non_repo_root_passes_through
+- tests/test_worktree_guard.py::TestWorktreeGuardWiredIntoMutations::test_new_ticket_from_main_while_leased_elsewhere_fails
+- tests/test_worktree_guard.py::TestWorktreeGuardWiredIntoMutations::test_new_ticket_from_leased_worktree_succeeds
+- tests/test_worktree_guard.py::TestWorktreeGuardWiredIntoMutations::test_coordinator_with_no_lease_mutates_main_fine
+- tests/test_gates_worktree_lease.py::TestStampBaselineWorktreeLease::test_mismatched_lease_refuses
+- tests/test_gates_worktree_lease.py::TestStampBaselineWorktreeLease::test_no_lease_succeeds
+- tests/test_gates_worktree_lease.py::TestStampCoverageWorktreeLease::test_mismatched_lease_refuses
+- tests/test_gates_worktree_lease.py::TestStampCoverageWorktreeLease::test_no_lease_reaches_normal_missing_coverage_error
+- tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_installs_pre_commit_and_pre_merge_commit
+- tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_refuses_existing_hook_without_force
+- tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_not_a_git_repo_fails
+- tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_installed_hook_aborts_commit_under_frob_agent
+- tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_installed_hook_allows_commit_without_frob_agent
 attachments: []
 acceptance: []
 threat: null
 ```
 User (2026-07-20), after an incident: a dispatched worktree agent accidentally ran bash commands (git merge main, make core, frob ticket new -> created T-0427) against the SHARED main checkout instead of its worktree; the Edit tool caught FILE edits but bash commands went through, mutating live main. Make it HARD for a dispatched agent to damage the repo via frob, failing loudly (subagent scoping). MECHANISM: (1) LEASE -- when an agent is dispatched to a worktree, record a lease (a .frob/agent-lease file naming the worktree path + agent id, OR the dispatcher sets env FROB_WORKTREE=<abs path>). (2) frob MUTATING-COMMAND GUARD -- every frob command that WRITES (ticket new/close/renumber/land/start/sweep/attach/block/fail/evidence, release stamp/check --stamp, ack, check --stamp-coverage/--stamp-baseline) checks: if a lease/FROB_WORKTREE is active AND the cwd git top-level (`git rev-parse --show-toplevel`) is NOT the leased worktree (e.g. it is main), REFUSE with a loud error naming both paths ("agent leased to <W>; refusing to mutate <main>"). Read-only frob commands (check --ticket, show, list, doable) stay allowed anywhere. (3) GIT HOOK -- frob worktree/scaffold setup installs a pre-commit + pre-merge hook in the MAIN checkout that aborts when an agent-context marker (FROB_WORKTREE / FROB_AGENT) is set, catching a stray raw `git merge main`/`git commit` from an agent shell. (4) The COORDINATOR (no lease / a coordinator marker) mutates main normally. Careful about FALSE POSITIVES: the coordinator landing worktree changes onto main must NOT be blocked (it runs without an agent lease); a legitimately-cd-into-worktree frob command must work. Acceptance: a frob ticket new run from main WHILE FROB_WORKTREE points elsewhere FAILS loudly; the same command from inside the leased worktree SUCCEEDS; the coordinator (no lease) mutates main fine; a raw git commit on main with FROB_AGENT set is aborted by the hook. This is the "hard to be careless" guard for the dispatch layer -- make repo damage require deliberately clearing the lease, not a stray cwd.
+
+## Done report
+
+Added a worktree-lease guard for the incident named in the ticket: a
+dispatched agent's shell ran git merge/make core/frob ticket new
+directly against the shared main checkout instead of its own worktree.
+
+Mechanism: FROB_WORKTREE=<abs path> is a dispatcher-set env var naming
+the one worktree an agent's shell is authorized to mutate frob's tracked
+ticket state in. New frob.tickets.enforce_worktree_lease(root) resolves
+root's actual git top-level (repo_root, worktree-correct) and refuses
+(Err(WorktreeLeaseViolation)) if FROB_WORKTREE is set and does not match
+it. Wired as the first statement of every mutating frob.tickets entry
+point: new_ticket, transition (covers start/close/requeue/block/fail),
+add_evidence, add_cmd_evidence, set_done_report, record_failure, attach,
+archive, renumber, renumber_one. The same guard (mapped to
+GateError.WorktreeLeaseViolation) covers frob.gates' stamp_baseline/
+stamp_coverage (--stamp-baseline/--stamp-coverage), which also write
+tracked repo state. FROB_WORKTREE unset is Ok(None) -- unrestricted --
+so the coordinator's own commands (landing worktree changes onto main,
+etc.) are unaffected; read-only commands never call this guard.
+
+Defense in depth: frob.scaffold.install_worktree_lease_hook installs
+pre-commit + pre-merge-commit git hooks that abort loudly whenever
+FROB_AGENT is set non-empty, catching a raw git commit/merge an agent
+shell ran directly, independent of whether it went through
+frob.tickets at all. Verified end to end with a real git commit under
+FROB_AGENT.
+
+Out of scope (noted, not built): `frob release stamp` and `frob ack`
+live outside src/frob/{tickets,gates,scaffold}/ (this ticket's declared
+scope) and are not yet guarded -- filed as T-draft-0afb5f70.
+
+### Changed
+```
+ .frob-release.json                            |   9 +-
+ CHANGELOG.md                                  |  82 ++++++
+ docs/commands/scaffold.md                     |  13 +-
+ docs/modules/tickets.md                       | 113 +++++++-
+ pyproject.toml                                |   2 +-
+ src/frob/app/ticket_runner.py                 | 209 +++++++++++++-
+ src/frob/gates/__init__.py                    |  89 +++++-
+ src/frob/gates/_baseline.py                   |   4 +
+ src/frob/gates/_coverage.py                   |   4 +
+ src/frob/gates/_models.py                     |   5 +
+ src/frob/scaffold/__init__.py                 |  17 +-
+ src/frob/scaffold/project.py                  | 108 ++++++++
+ src/frob/tickets/__init__.py                  | 159 +++++++++++
+ src/frob/tickets/_land.py                     | 132 ++++++++-
+ src/frob/tickets/_models.py                   |  15 ++
+ src/frob/tickets/_worktree_guard.py           |  83 ++++++
+ tests/test_gates_tickets_hygiene.py           | 105 ++++++++
+ tests/test_gates_worktree_lease.py            |  73 +++++
+ tests/test_scaffold_worktree_lease_hook.py    | 107 ++++++++
+ tests/test_ticket_land.py                     | 167 ++++++++++++
+ tests/test_tickets_collision.py               |   8 +-
+ tests/test_worktree_guard.py                  | 118 ++++++++
+ tests/unit/test_ticket_runner_land_release.py | 182 +++++++++++++
+ tests/unit/test_ticket_store.py               | 117 ++++++++
+ tickets.md                                    | 374 +++++++++++++++++++++++++-
+ uv.lock                                       |   2 +-
+ 26 files changed, 2268 insertions(+), 29 deletions(-)
+```
+
+### Evidence
+- `tests/test_worktree_guard.py::TestEnforceWorktreeLease::test_no_env_var_is_unrestricted` (pytest node id, verified passing when recorded)
+- `tests/test_worktree_guard.py::TestEnforceWorktreeLease::test_matching_worktree_passes` (pytest node id, verified passing when recorded)
+- `tests/test_worktree_guard.py::TestEnforceWorktreeLease::test_mismatched_worktree_refuses` (pytest node id, verified passing when recorded)
+- `tests/test_worktree_guard.py::TestEnforceWorktreeLease::test_non_repo_root_passes_through` (pytest node id, verified passing when recorded)
+- `tests/test_worktree_guard.py::TestWorktreeGuardWiredIntoMutations::test_new_ticket_from_main_while_leased_elsewhere_fails` (pytest node id, verified passing when recorded)
+- `tests/test_worktree_guard.py::TestWorktreeGuardWiredIntoMutations::test_new_ticket_from_leased_worktree_succeeds` (pytest node id, verified passing when recorded)
+- `tests/test_worktree_guard.py::TestWorktreeGuardWiredIntoMutations::test_coordinator_with_no_lease_mutates_main_fine` (pytest node id, verified passing when recorded)
+- `tests/test_gates_worktree_lease.py::TestStampBaselineWorktreeLease::test_mismatched_lease_refuses` (pytest node id, verified passing when recorded)
+- `tests/test_gates_worktree_lease.py::TestStampBaselineWorktreeLease::test_no_lease_succeeds` (pytest node id, verified passing when recorded)
+- `tests/test_gates_worktree_lease.py::TestStampCoverageWorktreeLease::test_mismatched_lease_refuses` (pytest node id, verified passing when recorded)
+- `tests/test_gates_worktree_lease.py::TestStampCoverageWorktreeLease::test_no_lease_reaches_normal_missing_coverage_error` (pytest node id, verified passing when recorded)
+- `tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_installs_pre_commit_and_pre_merge_commit` (pytest node id, verified passing when recorded)
+- `tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_refuses_existing_hook_without_force` (pytest node id, verified passing when recorded)
+- `tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_not_a_git_repo_fails` (pytest node id, verified passing when recorded)
+- `tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_installed_hook_aborts_commit_under_frob_agent` (pytest node id, verified passing when recorded)
+- `tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_installed_hook_allows_commit_without_frob_agent` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0432 -->
 ```yaml
@@ -6331,7 +7125,7 @@ id: T-0465
 title: 'hazard: agents editing .git/info/exclude pollute ALL worktrees + main (shared
   common dir) -- an agent excluded src/frob/render/ to hide untracked files and silently
   un-tracked the whole T-0448 foundation; guard/lint against it + playbook rule'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-20'
@@ -6341,6 +7135,11 @@ scope:
 - docs/guides/agent-playbook.md
 - src/frob/gates/
 - tests/test_gates.py
+- docs/modules/gates.md
+- pyproject.toml
+- CHANGELOG.md
+- uv.lock
+- .frob-release.json
 scope_changes:
 - op: remove
   glob: tests/**
@@ -6352,11 +7151,139 @@ scope_changes:
   reason: T-0465 gates work maps to tests/test_gates.py
   actor: logan
   at: '2026-07-20'
-evidence: []
+- op: add
+  glob: docs/modules/gates.md
+  reason: docs/modules/gates.md rule-catalog entry for EXCL001; REL001 bump for new
+    public API exclude_hazard_gate
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: pyproject.toml
+  reason: docs/modules/gates.md rule-catalog entry for EXCL001; REL001 bump for new
+    public API exclude_hazard_gate
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: CHANGELOG.md
+  reason: docs/modules/gates.md rule-catalog entry for EXCL001; REL001 bump for new
+    public API exclude_hazard_gate
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: docs/modules/gates.md rule-catalog entry for EXCL001; REL001 bump for new
+    public API exclude_hazard_gate
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: docs/modules/gates.md rule-catalog entry for EXCL001; REL001 bump for new
+    public API exclude_hazard_gate
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_gates.py::TestExcludeHazardGate::test_entry_shadowing_tracked_dir_fires
+- tests/test_gates.py::TestExcludeHazardGate::test_entry_matching_no_tracked_path_is_silent
+- tests/test_gates.py::TestExcludeHazardGate::test_comment_and_negated_lines_are_ignored
+- tests/test_gates.py::TestExcludeHazardGate::test_exact_tracked_file_entry_fires
+- tests/test_gates.py::TestExcludeHazardGate::test_empty_exclude_file_is_silent
+- tests/test_gates.py::TestExcludeHazardGate::test_non_git_root_is_silent
 attachments: []
 acceptance: []
 threat: null
 ```
+## Done report
+
+New EXCL001 gate rule (ERROR severity, unwaivable -- joins
+_UNWAIVABLE_RULES alongside TEST008/SEC003/TICK001/TICK002): flags a
+`.git/info/exclude` entry that shadows git-tracked source. New module
+`src/frob/gates/_exclude_hazard.py` (`exclude_hazard_gate`): resolves
+the shared common dir (`git rev-parse --git-common-dir`, since
+`.git/info/exclude` is shared across every worktree of a clone, not
+per-worktree), parses each non-comment, non-negated gitignore-format
+line into its directory/file prefix, and flags any prefix that names an
+exact tracked file or a directory under which `git ls-files` finds at
+least one tracked file. An entry matching nothing tracked (build
+artifacts, caches, genuinely never-tracked paths) is silent -- that is
+exactly what the file is meant for.
+
+Deliberately unwaivable: the violation's "file" is `.git/info/exclude`
+itself, not a source file a `frob:waive` comment could attach to, and
+the remedy is always the same (remove the entry, or use a genuinely
+untracked path).
+
+Wired into the `frob check` invariant/gate pipeline as a new default-on
+stage "excludehazard" (repo_root-scoped, same reason secrets/refs are --
+the hazard is repo-wide by construction, not scoped-root). Added
+"excludehazard" to both `_ALL_GATES` and `_CANONICAL_GATE_ORDER` (a
+dedicated test, TestGateOrderSetEquality, catches drift between the
+two -- caught this the first time I forgot the second list).
+
+Added docs/modules/gates.md's rule-catalog row plus an "EXCL001
+(T-0465)" narrative section (placed next to WALK001, same hazard-guard
+family), and a new hard rule in docs/guides/agent-playbook.md (section
+1c, "NEVER edit .git/info/exclude") describing the same T-0448 incident
+this ticket names, mirroring section 1b's git-stash hazard writeup and
+pointing back at EXCL001 as the static check.
+
+Confirmed non-vacuous by hand: a synthetic repo with `.git/info/exclude`
+containing `src/pkg/` (a directory with a tracked file under it) fires
+exactly one EXCL001; the same repo with `*.pyc`/`build/` (nothing
+tracked matches) is silent. Both directions covered by
+TestExcludeHazardGate in tests/test_gates.py.
+
+REL001: new public API (frob.gates.exclude_hazard_gate) bumped
+pyproject.toml 0.45.0 -> 0.46.0, CHANGELOG.md entry added, uv lock
+refreshed, `frob release stamp` run. Scope extended (frob ticket scope
+--add) to cover docs/modules/gates.md (not covered by the original
+docs/guides/agent-playbook.md-only scope) plus
+pyproject.toml/CHANGELOG.md/uv.lock/.frob-release.json.
+
+Confirmed via `uv run frob check`: 0 new errors (1 pre-existing
+unrelated error, docs/commands/sys.md DOC003, present before this
+ticket started and outside its scope). ruff check/format and ty clean
+under both `uv run` and bare PATH `ruff`/`ruff format --check`.
+tests/test_gates.py full suite passes.
+
+Ledger note: a `frob ticket evidence` write mid-session hit a race with
+main advancing far ahead of this worktree's stale code tree (many
+sibling tickets landed since this worktree's last merge at 5f2d29d);
+the rewrite briefly diverged tickets.md by hundreds of lines against
+main. Restored by hand: checked out main's current tickets.md verbatim
+and spliced only T-0335/T-0452/T-0462/T-0465's own blocks back in from
+this worktree's copy (a python marker-based splice, not a manual
+line-edit), confirmed via `git diff main -- tickets.md` showing zero
+ticket-marker adds/removes and only these four tickets' content
+changed. A full `frob check` now also surfaces COV003 findings for
+OTHER, unrelated tickets (T-0338, T-0357, T-0409, T-0421, ...) whose
+evidence names tests that only exist in main's current code tree, not
+this worktree's -- pre-existing drift from main having moved past this
+worktree's code since the session's original 5f2d29d merge, not
+something introduced by this ticket's changes; `--ticket T-0465`
+confirms zero errors attributable to T-0465/T-0462/T-0452/T-0335
+specifically.
+
+### Changed
+```
+ .frob-release.json           |   8 +-
+ CHANGELOG.md                 |  32 ++++++
+ docs/modules/gates.md        |  51 ++++++++++
+ pyproject.toml               |   2 +-
+ src/frob/gates/__init__.py   | 184 +++++++++++++++++++++++++++++++++-
+ src/frob/gates/invariants.py |  80 ++++++++++++++-
+ tests/test_gates.py          | 103 +++++++++++++++++++
+ tickets.md                   | 229 +++++++++++++++++++++++++++++++++++++++++--
+ uv.lock                      |   2 +-
+ 9 files changed, 677 insertions(+), 14 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestExcludeHazardGate::test_entry_shadowing_tracked_dir_fires` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestExcludeHazardGate::test_entry_matching_no_tracked_path_is_silent` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestExcludeHazardGate::test_comment_and_negated_lines_are_ignored` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestExcludeHazardGate::test_exact_tracked_file_entry_fires` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestExcludeHazardGate::test_empty_exclude_file_is_silent` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestExcludeHazardGate::test_non_git_root_is_silent` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0469 -->
 ```yaml
@@ -7034,7 +7961,7 @@ title: 'recover/finish ''frob docs'' command: WIP preserved on branch worktree-a
   (commit 4961fbe) -- src/frob/docs/ + app/docs_runner.py + __main__/app/config wiring,
   abandoned uncommitted in an orphaned WSL-path worktree; evaluate and either land
   or drop'
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -7047,6 +7974,24 @@ attachments: []
 acceptance: []
 threat: null
 ```
+dropped 2026-07-21: commit 4961fbe does not exist anywhere in this repo's
+object store (not on the named branch, not dangling, not in any reflog --
+`git fsck --dangling --no-reflog` and a full reflog grep for the prefix
+both come up empty). The named branch worktree-agent-a08bb1e798ea69fa1's
+tip (7b88b77) is already a merged ancestor of main (`git merge-base main
+worktree-agent-a08bb1e798ea69fa1` == the branch tip, `git diff
+main...worktree-agent-a08bb1e798ea69fa1 --stat` is empty) and its content
+is unrelated CI-template work, not docs/. Separately, and dispositively:
+`frob docs` already exists on main today as a complete, tested, documented
+command (`src/frob/app/docs_runner.py`, `src/frob/docs/__init__.py`,
+`docs/modules/app.md` describing `docs_runner.run` and
+`find_docs_dir`/`overview`/`search`), landed no later than commit
+`3c71a1b` ("feat: add frob docs, frob bind, pybind11/pyo3 templates,
+sync-skills, test reorganization") and carried forward through
+`d8ca467`/`c4eeb5b`/`428c753`. There is nothing left to recover or land --
+the WIP this ticket describes is either lost or already superseded by
+what shipped. No evidence required for a dropped ticket per playbook
+precedent (T-0475).
 
 <!-- ticket:T-0478 -->
 ```yaml
@@ -7055,7 +8000,7 @@ title: 'recover/finish ''frob bind'' command + pybind11/pyo3 project-init scaffo
   WIP preserved on branch worktree-agent-a27be33c289e10301 (commit fca2851) -- src/frob/bind/
   + app/bind_runner.py + init/data/*.j2 templates + init/project.py wiring, abandoned
   uncommitted in an orphaned WSL-path worktree; evaluate and either land or drop'
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -7068,6 +8013,33 @@ attachments: []
 acceptance: []
 threat: null
 ```
+dropped 2026-07-21: commit fca2851 does not exist anywhere in this repo's
+object store, same as T-0477's sibling drop. The named branch
+worktree-agent-a27be33c289e10301 turns out to point to the EXACT SAME
+commit as T-0477's branch (`7b88b776738f5e76fd5423542ab6e175eb3a964d`,
+verified via `git rev-parse` on both refs) -- unrelated CI-template work,
+already a merged ancestor of main, with `git diff
+main...worktree-agent-a27be33c289e10301 --stat` empty. Neither preserved
+branch actually retains the described WIP; both orphaned worktrees lost
+their uncommitted state.
+
+Reconciled against current main per the ticket's own instruction: both
+halves this ticket describes already exist today, built during the
+rework era under different names than the WIP predates --
+(1) `frob bind` is a full subcommand (`src/frob/bind/__init__.py`,
+`src/frob/app/bind_runner.py`, listed in `frob --help`) that "verifies
+binding declarations match source signatures" (pybind11/PyO3 BIND
+comment verification), and (2) pybind11/pyo3 project-init scaffolding
+lives under `frob scaffold` (the successor to the WIP-era `init`
+subsystem): `src/frob/scaffold/data/types/pybind11-library/*.j2` and
+`src/frob/scaffold/data/types/pyo3-library/*.j2`, wired into the
+`_MANIFESTS` table in `src/frob/scaffold/project.py` (e.g. line ~227,
+`"pybind11-library": [...]`), covering pyproject.toml, Makefile,
+frob.toml, CMakeLists.txt, C++ src/include, bindings.cpp, Python
+package init, and tests. There is nothing to land -- both requested
+capabilities ship on main under `bind`/`scaffold`, and there is no
+reachable WIP diff to port over them. No evidence required for a
+dropped ticket per playbook precedent (T-0475, T-0477).
 
 <!-- ticket:T-0479 -->
 ```yaml
@@ -8051,7 +9023,7 @@ found while working T-0287 (dup type-generalizing anti-unification): _template._
 id: T-0496
 title: 'strata audit G5: utility/krb_no_transit flow marker silently defeats confidentiality
   NoFlow'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-07-21'
@@ -8059,13 +9031,210 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/strata/_facts.py
-scope_changes: []
-evidence: []
+- tests/unit/strata/test_facts.py
+- tests/unit/strata/test_claims.py
+- tests/unit/strata/litmus/utility_hub_hardened.strata
+- tests/unit/strata/litmus/utility_hub_vuln.strata
+- tests/unit/strata/test_litmus_utility_hub.py
+scope_changes:
+- op: add
+  glob: tests/unit/strata/test_facts.py
+  reason: existing test_utility_attr_stops_chaining_past_that_hop locks in the vulnerable
+    behavior for the through_barriers=False (confidentiality noflow) path; must flip
+    alongside the fix, plus a claims-level litmus test for the noflow discharge itself
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/strata/test_claims.py
+  reason: existing test_utility_attr_stops_chaining_past_that_hop locks in the vulnerable
+    behavior for the through_barriers=False (confidentiality noflow) path; must flip
+    alongside the fix, plus a claims-level litmus test for the noflow discharge itself
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/strata/litmus/utility_hub_hardened.strata
+  reason: T-0226's own hardened litmus (utility_hub_hardened.strata) IS the exact
+    G5 vulnerability shape -- its noflow claim genuinely has a real path to its target
+    through the marked hub, so it must now correctly REFUTE instead of falsely PROVE;
+    fixture+test need correcting, not just the unit-level tests
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/strata/litmus/utility_hub_vuln.strata
+  reason: T-0226's own hardened litmus (utility_hub_hardened.strata) IS the exact
+    G5 vulnerability shape -- its noflow claim genuinely has a real path to its target
+    through the marked hub, so it must now correctly REFUTE instead of falsely PROVE;
+    fixture+test need correcting, not just the unit-level tests
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/strata/test_litmus_utility_hub.py
+  reason: T-0226's own hardened litmus (utility_hub_hardened.strata) IS the exact
+    G5 vulnerability shape -- its noflow claim genuinely has a real path to its target
+    through the marked hub, so it must now correctly REFUTE instead of falsely PROVE;
+    fixture+test need correcting, not just the unit-level tests
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/unit/strata/test_facts.py::TestClosure::test_utility_attr_does_not_stop_chaining_for_confidentiality_noflow
+- tests/unit/strata/test_facts.py::TestClosure::test_krb_no_transit_still_terminal_for_confidentiality_noflow
+- tests/unit/strata/test_facts.py::TestClosure::test_utility_attr_stops_chaining_past_that_hop
+- tests/unit/strata/test_claims.py::TestNoFlow::test_real_leak_through_a_utility_hub_still_refutes
+- tests/unit/strata/test_claims.py::TestNoFlow::test_utility_hub_with_no_further_edges_still_discharges
+- tests/unit/strata/test_litmus_utility_hub.py::TestUtilityHubHardenedLitmus::test_marked_utility_hub_edge_lets_the_noflow_claim_prove
 attachments: []
 acceptance: []
 threat: null
 ```
 docs/audits/strata.md G5 (MEDIUM), from T-0401. _facts.py:63,160: any flow carrying the surface attr utility (or synthetic krb_no_transit) is a TERMINAL edge -- taint does not chain past it -- honored on the security noflow side too (_eval_noflow uses the same reachable). A real exfiltration path transiting a hub edge marked utility is invisible to noflow, so any THREAT003 discharge built on it is vacuous; the marker is author-controlled with no compensating check. Repro: flow log_hub{src=secret_store,dst=logger,utility} then flow leak{src=logger,dst=foreign_sink}: noflow(secret_store,foreign_sink) PROVES despite the two-hop leak. Fix direction: forbid utility on flows whose payload label is above a floor, or exclude utility termination when evaluating confidentiality noflow specifically (keep it only for capacity/availability closures where T-0226 needed it).
+
+## Done report
+
+Root cause confirmed at the exact repro (`docs/audits/strata.md` G5):
+`FactBase.reachable`'s single `_NON_TRANSITIVE_ATTRS` set (`krb_no_transit`,
+`utility`) was honored identically for BOTH `through_barriers` modes, but
+`through_barriers=False` (the confidentiality `noflow` closure,
+`_claims.py::_first_noflow_witness`) is the ONLY caller that omits
+`through_barriers` -- confirmed by grep, every other caller (`reach`/
+`independent`/`readers`/krb-movement/breach) explicitly passes
+`through_barriers=True`. So `utility`'s terminal-edge effect was, in
+practice, felt EXCLUSIVELY by the security-critical confidentiality check,
+never by any capacity/availability closure (`demand`/`worst_age` do not
+even consult `_NON_TRANSITIVE_ATTRS` -- they build a different edge shape
+entirely).
+
+`strata-core/src/lib.rs::reachable`'s BFS: once a node is reached ONLY via
+a non-transitive edge, it is added to `paths` (so it counts as "reached")
+but NOT enqueued into the frontier -- so its OWN further outgoing edges,
+even fully transitive ones, are never explored. The repro (`log_hub{utility}`
+secret_store->logger, then a real `leak` edge logger->foreign_sink) hits
+this exactly: `logger` is reached via the terminal `utility` edge, so
+`leak` is never walked, and `noflow(secret_store, foreign_sink)` PROVED
+despite a genuine two-hop leak.
+
+Fix (entirely within `src/frob/strata/_facts.py`, no Rust change needed,
+matching the ticket's declared scope): split the non-transitive attr set
+by `through_barriers` mode. Added `_NOFLOW_NON_TRANSITIVE_ATTRS =
+frozenset({"krb_no_transit"})` -- `utility` is excluded from it.
+`reachable()` now picks `_NON_TRANSITIVE_ATTRS` (unchanged, both attrs)
+when `through_barriers=True`, and `_NOFLOW_NON_TRANSITIVE_ATTRS` (`krb_no_
+transit` only) when `through_barriers=False`. `krb_no_transit` keeps its
+existing behavior in both modes (no known equivalent gap for it named by
+the ticket, and no caller currently reaches it through the confidentiality
+path anyway -- `_krb.py`'s synthesized flows feed the `through_barriers=
+True` movement closures). `utility` becomes fully transitive for
+confidentiality `noflow` specifically, closing the vacuous-discharge gap;
+it keeps its original T-0226 terminal-edge behavior for the existential
+`reach`/`independent`/`readers`/krb-movement closures, which never relied
+on it defeating a genuine downstream edge the way `noflow` did.
+
+Counterexample-first:
+- `tests/unit/strata/test_claims.py::TestNoFlow.
+  test_real_leak_through_a_utility_hub_still_refutes` is the ticket's own
+  repro, verbatim, at the claim-evaluation level: before this fix, PROVED
+  (vacuous); after, REFUTED with the full two-hop witness path.
+- `tests/unit/strata/test_claims.py::TestNoFlow.
+  test_utility_hub_with_no_further_edges_still_discharges` proves the fix
+  is not a blanket weakening: an innocuous hub with nothing further
+  downstream still lets `noflow` prove clean, the original T-0226 case.
+- `tests/unit/strata/test_facts.py::TestClosure.
+  test_utility_attr_does_not_stop_chaining_for_confidentiality_noflow` /
+  `test_krb_no_transit_still_terminal_for_confidentiality_noflow` /
+  `test_utility_attr_stops_chaining_past_that_hop` cover the same litmus at
+  the `reachable()` unit level, for both attrs and both `through_barriers`
+  modes.
+
+T-0226's own end-to-end litmus pair (`tests/unit/strata/litmus/
+utility_hub_hardened.strata` + `test_litmus_utility_hub.py`) turned out to
+BE the exact G5 vulnerability shape: its "hardened" fixture's `f_logs_
+server` edge is a real, fully-transitive path landing exactly on the
+`noflow` claim's own target (`server`), not an unrelated hub detour --
+T-0226's premise that marking the FIRST hop `utility` alone could safely
+discharge that claim was unsound from the start. Corrected the fixture to
+discharge via a REAL `ENDORSE` boundary on `f_logs_server` instead (the
+same mechanism `managed_hardened.strata` and `test_claims.py`'s own
+boundary-cuts-the-path test already use) -- the `utility` marker is still
+present on `f_tui_logs` but is now inert for this claim, which the test's
+updated docstring says explicitly. The "vuln" twin (`utility_hub_vuln.
+strata`) needed no behavior change (never marks `utility`) and got a
+one-line note only. Test method names were kept IDENTICAL to their
+pre-fix names (not renamed to something more "accurate") specifically so
+`T-0226`'s own archived ticket evidence (`tickets-archive.md`, append-only)
+does not dangle -- confirmed via `frob check --ticket T-0496`: renaming
+first tripped 2 new COV003s citing T-0226's evidence, reverted before
+finishing.
+
+Registry/REG gates: `frob check --ticket T-0496` surfaces 16 pre-existing
+REG003 errors on `docs/design/registry/weaknesses.yaml`'s `SEC-CVE-
+FINGERPRINT-*` entries (`deferred:T-0439`, now a closed ticket) -- these
+predate this ticket entirely (present on `main`, not touched by this
+change; confirmed via `git diff main -- docs/design/registry/
+weaknesses.yaml` showing zero diff) and are a genuine oversight from
+closing T-0439 earlier this session (that file was already in T-0439's
+OWN declared scope, and its dispositions should have been reconciled to
+`handled_by:SEC-CVE-FINGERPRINT-001` then). Filed T-draft-92456503 for
+the careful per-entry reconciliation (not a blind sweep -- 9 of the 16
+entries map 1:1 to the shipped catalog, 7 do not) rather than folding it
+into this unrelated ticket.
+
+Verification:
+- `uv run pytest tests/unit/strata -q`: all green except `test_export_
+  golden.py::TestExportGolden::test_seccomp`, confirmed pre-existing
+  (unrelated golden-drift failure, reproduces identically with this
+  ticket's changes checked out to their pre-change state via the same
+  checkout+patch-file method T-0503/T-0439 used, never `git stash`).
+- `uv run pytest tests/unit/strata/test_selfconform.py::TestRealGateGreen
+  -q`: green (1 passed) -- confirmed `utility` is never actually used in
+  `design/frob.strata` itself (only mentioned in a prose comment), so this
+  fix has zero effect on the repo's own self-audit.
+- `uv run ruff check` / `uv run ruff format --check` on every touched
+  file: clean.
+- `uv run frob check --ticket T-0496`: 0 NEW errors from this ticket's
+  change. Remaining errors are all confirmed pre-existing/out of scope:
+  6x COV003 (T-0421/T-0470/T-0483 evidence referencing non-existent
+  `tests/test_gates.py` node ids, same known ledger-reconstruction gap
+  noted in T-0439's Done report), 16x REG003 (T-0439's registry gap, filed
+  as T-draft-6ec0fb9f above), 1x DOC003 (pre-existing THREAT003 CWE-78 gap
+  on the `gates` design node, unrelated to compliance/facts), and SCOPE001
+  noise from T-0503/T-0439's own already-closed, already-verified files
+  (an artifact of doing three tickets sequentially in one un-merged
+  worktree branch, not a new violation).
+
+Filed: T-draft-92456503 (weaknesses.yaml SEC-CVE-FINGERPRINT-*
+reconciliation, out-of-scope discovery from closing T-0439 earlier this
+session).
+
+### Changed
+```
+ .frob-release.json                                 |    6 +-
+ CHANGELOG.md                                       |   40 +
+ pyproject.toml                                     |    2 +-
+ src/frob/gates/__init__.py                         |   10 +
+ src/frob/gates/_cve_fingerprint_scan.py            |  177 ++++
+ src/frob/strata/_audit.py                          |   19 +-
+ src/frob/strata/_compliance.py                     |   34 +
+ src/frob/strata/_cve_fingerprint.py                |   78 ++
+ src/frob/strata/_facts.py                          |   84 +-
+ .../unit/strata/litmus/utility_hub_hardened.strata |   30 +-
+ tests/unit/strata/litmus/utility_hub_vuln.strata   |    6 +-
+ tests/unit/strata/test_audit.py                    |   67 +-
+ tests/unit/strata/test_claims.py                   |   44 +
+ tests/unit/strata/test_cve_fingerprint_scan.py     |  148 +++
+ tests/unit/strata/test_facts.py                    |   48 +-
+ tests/unit/strata/test_litmus_audit_hardened.py    |    8 +-
+ tests/unit/strata/test_litmus_utility_hub.py       |   27 +-
+ tickets.md                                         | 1003 +++++++++++++++++++-
+ uv.lock                                            |    2 +-
+ 19 files changed, 1750 insertions(+), 83 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_facts.py::TestClosure::test_utility_attr_does_not_stop_chaining_for_confidentiality_noflow` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_facts.py::TestClosure::test_krb_no_transit_still_terminal_for_confidentiality_noflow` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_facts.py::TestClosure::test_utility_attr_stops_chaining_past_that_hop` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_claims.py::TestNoFlow::test_real_leak_through_a_utility_hub_still_refutes` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_claims.py::TestNoFlow::test_utility_hub_with_no_further_edges_still_discharges` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_litmus_utility_hub.py::TestUtilityHubHardenedLitmus::test_marked_utility_hub_edge_lets_the_noflow_claim_prove` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0497 -->
 ```yaml
@@ -8437,3 +9606,44 @@ acceptance: []
 threat: null
 ```
 T-0483's COV006 (frob:tests edge to a private symbol with no call-graph reachability from the test) has a disclosed common FP shape: the call graph never records edges INTO public callees, so a test calling a same-file public wrapper that itself calls the bound private helper reads as unreachable. Before hand-burning down the ~97 COV006 / ~61 COV007 warn findings, extend the reachability check one hop through same-file public wrappers (or record public-callee edges for this check's purposes). Scope: src/frob/gates/__init__.py (COV006 helpers), tests/test_gates.py.
+
+<!-- ticket:T-0507 -->
+```yaml
+id: T-0507
+title: Extend worktree-lease guard to frob release stamp and frob ack
+state: queued
+kind: security
+origin: human
+created: '2026-07-21'
+blocked_by: []
+parent: null
+scope:
+- src/frob/release/
+- src/frob/app/
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+
+<!-- ticket:T-0508 -->
+```yaml
+id: T-0508
+title: reconcile weaknesses.yaml SEC-CVE-FINGERPRINT-* dispositions now that T-0439
+  shipped SEC-CVE-FINGERPRINT-001
+state: queued
+kind: bug
+origin: human
+created: '2026-07-21'
+blocked_by: []
+parent: null
+scope:
+- docs/design/registry/weaknesses.yaml
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Found while working T-0496/checking frob check output after closing T-0439. docs/design/registry/weaknesses.yaml carries 16 SEC-CVE-FINGERPRINT-* entries (lines ~6717-6827) with disposition: deferred:T-0439, anticipating exactly the gate T-0439 shipped (SEC-CVE-FINGERPRINT-001, src/frob/gates/_cve_fingerprint_scan.py). Now that T-0439 is done, REG003 fires on all 16 (deferral to a closed ticket is not a real deferral). This was a real oversight in T-0439's own scope (docs/design/registry/weaknesses.yaml was already in T-0439's declared scope from the start) -- T-0439's Done report incorrectly claimed nothing needed updating there. Reconciliation is NOT a blind find-and-replace: 9 entries are checkability=needle-detectable with an id matching a real shipped CVE_FINGERPRINTS entry (FP-EXEC-SHELL-001, FP-XSS-JQUERY-001, FP-PATH-TAR-001, FP-DESERIALIZE-YAML-001, FP-DESERIALIZE-PICKLE-001, FP-SQLI-STRFMT-001, FP-SSRF-FETCH-001, FP-CODEEVAL-TEMPLATE-001, FP-HARDCODED-CRED-001) -- these should become handled_by:SEC-CVE-FINGERPRINT-001. The other 7 are checkability=advisory (CWE-295-TLS-VERIFY, CWE-916-WEAK-HASH, CWE-611-XXE, CWE-1321-PROTO-POLLUTION, CWE-1333-REDOS, CWE-601-OPEN-REDIRECT, CWE-1336-SSTI) and do NOT map 1:1 to the shipped catalog: CWE-916 is explicitly still out-of-scope per _cve_fingerprint.py's own docstring (no WeaknessEntry exists for it yet); CWE-611/CWE-295 ARE shipped but under different fingerprint ids (FP-XXE-PARSE-001, FP-TLS-VERIFY-001/002/003) than the registry's generic CWE-*-named rows, needing a cross_refs join or a renamed id, not a bare handled_by; CWE-1321/1333/601/1336 have no shipped fingerprint at all. Needs a careful per-entry pass, not a mechanical sweep.
