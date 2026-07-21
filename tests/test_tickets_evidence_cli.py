@@ -132,6 +132,49 @@ class TestTicketNewEvidence:
         assert ticket.evidence == ("tests/x.py::test_a",)
 
 
+# frob:ticket T-0492
+class TestDotFormEvidenceNormalizesBeforePassingCheck:
+    """T-0492 regression: `_apply_evidence` must normalize a dot-form
+    `path::Class.method` id BEFORE checking whether it passed, not just
+    before recording it -- otherwise the passing-check's `matches_collected`
+    bucketing (which only ever holds pytest's native `::`-form ids) silently
+    finds no bucket for the raw dot-form id, and the id is rejected as
+    `EvidenceNotPassing` even though the underlying test genuinely passed.
+    Deliberately does NOT monkeypatch `_verify_ids_passing` itself (unlike
+    this file's other tests) -- the whole point is to exercise the REAL
+    bucket-matching + run path with a dot-form id."""
+
+    def test_dot_form_id_passes_exactly_like_its_colon_form(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_tickets_evidence_cli.py::TestDotFormEvidenceNormalizesBeforePassingCheck.test_dot_form_id_passes_exactly_like_its_colon_form  # noqa: E501
+        import frob.testing as testing_mod
+        from frob.app.ticket_runner import _apply_evidence
+        from frob.testing._models import TestRunReport
+
+        colon_id = "tests/test_foo.py::TestBar::test_baz"
+        dot_id = "tests/test_foo.py::TestBar.test_baz"
+
+        _patch_collect(monkeypatch, frozenset({colon_id}))
+
+        def _fake_run_selected(selection, runners, root):  # noqa: ANN001
+            return Ok(TestRunReport(selection=selection, outcomes=(), ok=True))
+
+        monkeypatch.setattr(testing_mod, "run_selected", _fake_run_selected)
+
+        new_cfg = AppConfig(
+            ticket_command="new",
+            ticket_title="dot-form evidence",
+            ticket_kind="feature",
+            ticket_path=tmp_path,
+        )
+        _new(tmp_path, new_cfg)
+
+        result = _apply_evidence(tmp_path, "T-0001", [dot_id])
+        assert result.is_ok, result.err
+        assert result.danger_ok.evidence == (colon_id,)
+
+
 class TestTicketCloseEvidence:
     """`frob ticket close --evidence <id>...` (T-0106)."""
 
