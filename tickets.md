@@ -7208,7 +7208,7 @@ closer per the dispatch note rather than forced.
 id: T-0483
 title: 'COV: frob:tests evidence with no call-graph reachability to bound symbol,
   and frob:doc anchors on private helpers'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-07-20'
@@ -7230,7 +7230,12 @@ scope_changes:
   reason: T-draft-e6aafc2f gates work maps to tests/test_gates.py
   actor: logan
   at: '2026-07-20'
-evidence: []
+evidence:
+- tests/test_gates.py::TestCoverageGate::test_cov006_flags_test_with_no_call_graph_reachability
+- tests/test_gates.py::TestCoverageGate::test_cov006_silent_when_test_calls_the_bound_symbol
+- tests/test_gates.py::TestCoverageGate::test_cov006_never_fires_for_a_public_target
+- tests/test_gates.py::TestCoverageGate::test_cov007_flags_doc_anchor_on_private_helper
+- tests/test_gates.py::TestCoverageGate::test_cov007_silent_for_doc_anchor_on_public_symbol
 attachments: []
 acceptance: []
 threat: null

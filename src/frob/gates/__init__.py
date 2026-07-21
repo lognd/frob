@@ -690,6 +690,10 @@ _KNOWN_GATE_RULES = frozenset(
         "COV003",
         "COV004",
         "COV005",
+        # T-0483: `frob:tests` call-graph reachability (COV006) and
+        # a `frob:doc` anchor bound to a private helper (COV007).
+        "COV006",
+        "COV007",
         "DRIFT001",
         "DRIFT002",
         "SCOPE001",
@@ -1268,6 +1272,8 @@ def coverage_gate(
     violations.extend(_cov003(queue, tests))
     violations.extend(_cov004(queue))
     violations.extend(_cov005(root, snapshot, diff))
+    violations.extend(_cov006(root, snapshot))
+    violations.extend(_cov007(snapshot))
     violations.extend(_todo001(snapshot, queue, diff))
     return tuple(violations)
 
@@ -1852,6 +1858,127 @@ def _old_directive_bindings(
         was_public = public_by_qualname.get(qualname, False)
         bindings.append((edge.kind, edge.target, was_public))
     return tuple(bindings)
+
+
+# frob:ticket T-0483
+def _cov006(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
+    """COV006: a `frob:tests` edge bound to a PRIVATE symbol whose named
+    test has no call-graph reachability to that symbol.
+
+    Reuses `frob.graph.callgraph` (T-0288/T-0290's shared substrate) rather
+    than a second traversal implementation -- `build_call_graph` scoped to
+    just the test's own file plus the bound symbol's file (the cheapest
+    scope that can possibly show a direct or one-hop-private-helper path
+    between them), then `closure` from the test's own symref.
+
+    Restricted to PRIVATE targets ONLY: `build_call_graph` never records an
+    edge to a PUBLIC callee by construction (its docstring: this is what
+    lets dup/perf's closures stop at the public-API boundary for free), so
+    a target that resolves to a public symbol would ALWAYS show up
+    "unreachable" here regardless of whether the test genuinely exercises
+    it -- checking public targets would be unsound, not merely noisier.
+    WARN severity (not error): `frob.graph.callgraph` is an explicitly
+    best-effort, name-based resolver (two same-named private helpers in
+    different files can alias), so a miss is a prompt to double check, not
+    proof the binding is wrong.
+
+    KNOWN adoption-noise shape (T-0483, disclosed rather than silently
+    tuned away): a test that reaches its bound private helper only
+    INDIRECTLY, by calling a PUBLIC entry point in the same file that
+    itself calls the helper, is reported unreachable -- `build_call_graph`
+    never records an edge INTO a public callee, so the graph has no edge
+    for that first hop at all, and `closure` can never walk through it.
+    This is the single most common shape of "false" COV006 finding on this
+    repo's own test suite today (a `frob:tests` binding a private helper
+    while the test body only calls the public function wrapping it), not
+    a bug in the traversal -- `frob.graph.callgraph`'s public-boundary-stop
+    behavior is load-bearing for its other two consumers (T-0288/T-0290)
+    and is reused here as-is per this ticket's own instruction, not
+    special-cased. A COV006 finding is a prompt to double check, same as
+    any other WARN-tier gate here on first adoption.
+
+    `build_call_graph` re-`frob.lang.parse_file`s every path it's given, and
+    a repo's own test suite routinely binds many private helpers from the
+    SAME (test_file, target_file) pair -- one call graph per `frob:tests`
+    edge would reparse both files once per binding. `graph_cache` memoizes
+    by the exact `paths` tuple passed to `build_call_graph`, so a pair seen
+    twice only builds once.
+    """
+    from frob.graph.callgraph import CallGraph, build_call_graph, closure
+
+    graph_cache: dict[tuple[str, ...], CallGraph] = {}
+    violations: list[Violation] = []
+    for edge in snapshot.edges:
+        if edge.kind != EdgeKind.TESTS:
+            continue
+        target_record = snapshot.symbols.get(edge.target)
+        if target_record is None or target_record.public:
+            continue
+        test_file = edge.src.split("::", 1)[0]
+        target_file = edge.target.split("::", 1)[0]
+        paths = (test_file,) if test_file == target_file else (test_file, target_file)
+        graph = graph_cache.get(paths)
+        if graph is None:
+            graph = build_call_graph(root, paths)
+            graph_cache[paths] = graph
+        if edge.target in closure(graph, edge.src):
+            continue
+        _log.debug(
+            "COV006: %s -> %s has no call-graph reachability", edge.src, edge.target
+        )
+        violations.append(
+            Violation(
+                rule="COV006",
+                severity=Severity.WARN,
+                file=test_file,
+                line=0,
+                message=(
+                    f"COV006: frob:tests {edge.src} -> {edge.target} has no "
+                    f"call-graph reachability to the bound private symbol "
+                    f"(frob.graph.callgraph, best-effort); confirm the test "
+                    f"actually exercises it, or bind a symbol it calls"
+                ),
+            )
+        )
+    return tuple(violations)
+
+
+# frob:ticket T-0483
+def _cov007(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
+    """COV007: a `frob:doc` edge whose src symbol is PRIVATE.
+
+    `frob:doc` obligations (COV001) exist to keep public-surface docs in
+    sync; a private helper carrying its own doc anchor is usually either a
+    directive that rode along onto the wrong symbol (see COV005's rebind
+    case) or documentation that belongs on the public caller instead. WARN
+    severity: a private helper can legitimately warrant its own doc anchor
+    (a complex internal algorithm, say) -- this flags it for a human
+    decision, it does not forbid the pattern.
+    """
+    violations: list[Violation] = []
+    for edge in snapshot.edges:
+        if edge.kind != EdgeKind.DOC:
+            continue
+        record = snapshot.symbols.get(edge.src)
+        if record is None or record.public:
+            continue
+        file = edge.src.split("::", 1)[0]
+        _log.debug("COV007: frob:doc on private symbol %s", edge.src)
+        violations.append(
+            Violation(
+                rule="COV007",
+                severity=Severity.WARN,
+                file=file,
+                line=record.span[0],
+                message=(
+                    f"COV007: frob:doc on private symbol {edge.src} -- doc "
+                    f"anchors normally cover the public API surface; move it "
+                    f"onto the public caller, or confirm this private helper "
+                    f"genuinely needs its own doc anchor"
+                ),
+            )
+        )
+    return tuple(violations)
 
 
 def _todo002_edges(snapshot: GraphSnapshot, queue: TicketQueue) -> list[Violation]:

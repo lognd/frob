@@ -933,6 +933,104 @@ class TestCoverageGate:
         violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert not any(v.rule == "COV005" for v in violations)
 
+    def test_cov006_flags_test_with_no_call_graph_reachability(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0483: a `frob:tests` edge bound to a PRIVATE symbol whose named
+        test body never calls it (no `frob.graph.callgraph` reachability)
+        must fire COV006."""
+        # frob:tests src/frob/gates/__init__.py::_cov006
+        _write(tmp_path, "src/a.py", "def _helper(x):\n    return x\n")
+        _write(
+            tmp_path,
+            "tests/test_a.py",
+            "# frob:tests src/a.py::_helper\n"
+            "def test_helper_broken():\n"
+            "    assert True\n",
+        )
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        v = _first_rule(violations, "COV006")
+        assert v is not None
+        assert v.severity == Severity.WARN
+        assert "_helper" in v.message
+
+    def test_cov006_silent_when_test_calls_the_bound_symbol(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::_cov006
+        _write(tmp_path, "src/a.py", "def _helper(x):\n    return x\n")
+        _write(
+            tmp_path,
+            "tests/test_a.py",
+            "# frob:tests src/a.py::_helper\n"
+            "def test_helper_ok():\n"
+            "    assert _helper(1) == 1\n",
+        )
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert not any(v.rule == "COV006" for v in violations)
+
+    def test_cov006_never_fires_for_a_public_target(self, tmp_path: Path) -> None:
+        """`build_call_graph` never records an edge to a PUBLIC callee, so
+        checking a public target would ALWAYS look "unreachable" -- COV006
+        must skip public targets entirely rather than emit a spurious
+        finding on every legitimately-tested public function."""
+        # frob:tests src/frob/gates/__init__.py::_cov006
+        _write(tmp_path, "src/a.py", "def helper(x):\n    return x\n")
+        _write(
+            tmp_path,
+            "tests/test_a.py",
+            "# frob:tests src/a.py::helper\ndef test_helper():\n    assert True\n",
+        )
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert not any(v.rule == "COV006" for v in violations)
+
+    def test_cov007_flags_doc_anchor_on_private_helper(self, tmp_path: Path) -> None:
+        """T-0483: a `frob:doc` edge whose src symbol is PRIVATE fires
+        COV007 -- doc anchors are for the public API surface."""
+        # frob:tests src/frob/gates/__init__.py::_cov007
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def _helper(x):\n"
+            '    """helper"""\n'
+            "    # frob:doc docs/x.md#helper\n"
+            "    return x\n",
+        )
+        _write(tmp_path, "docs/x.md", "# Helper\n")
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        v = _first_rule(violations, "COV007")
+        assert v is not None
+        assert v.severity == Severity.WARN
+        assert "_helper" in v.message
+
+    def test_cov007_silent_for_doc_anchor_on_public_symbol(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::_cov007
+        _write(tmp_path, "src/a.py", _WIDGET_PY)
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert not any(v.rule == "COV007" for v in violations)
+
     def test_todo002_unbound_directive(self, tmp_path: Path) -> None:
         """A `frob:todo` edge bound to a missing ticket is TODO002 (dangling
         reference), distinct from TODO001 (bare, wholly untracked comment)."""

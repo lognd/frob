@@ -19,6 +19,8 @@ declaration).
 | COV003 | coverage | ticket in state done with evidence ids that do not resolve to collected tests (never verifies PASS/FAIL, nor scope-binding -- see the T-0398 note below the table; node-, file-, and directory-level evidence ids all resolve, T-0298 below) |
 | COV004 | coverage | attachment sha256 mismatch or file missing |
 | COV005 | coverage | a diff-touched file's `frob:` directive now binds a PRIVATE symbol whose span overlaps this diff's hunks, where the same `(kind, target)` directive bound a PUBLIC symbol in that file at the diff's base revision -- a displaced obligation (T-0297), see design decisions below |
+| COV006 | coverage | (warn) a `frob:tests` edge bound to a PRIVATE symbol whose test has no `frob.graph.callgraph` reachability to it -- see "COV006/COV007 (T-0483)" below, including a disclosed known false-positive shape |
+| COV007 | coverage | (warn) a `frob:doc` edge whose src symbol is PRIVATE -- see "COV006/COV007 (T-0483)" below |
 | TODO001 | coverage | bare TODO/FIXME comment (not `frob:`-prefixed) in a diff-touched file -- work marked but not accounted for at all |
 | TODO002 | coverage | `frob:todo` edge bound to a non-open (closed or missing) ticket -- work accounted for, but the reference is dangling |
 | SCOPE001 | scope | diff touches paths/symbols outside the active ticket's `scope` |
@@ -130,6 +132,50 @@ also flagged as WAIVE002 the same way. `frob.gates._KNOWN_GATE_RULES`
 outside it is presumed unwaivable. If a future change makes another arch
 category waivable, remove it from `_unwaivable_channel_rules`'s returned
 set the same way `long-function` was removed, and update this note.
+
+### COV006/COV007 (T-0483)
+
+T-0297 shipped candidate (a) of a three-part COV idea as COV005 (a
+directive silently rebound onto a private helper by an extraction).
+Candidates (b) and (c) landed here as COV006/COV007:
+
+- **COV006** (warn): a `frob:tests` edge bound to a PRIVATE symbol whose
+  named test has no reachability to it in `frob.graph.callgraph`
+  (T-0288/T-0290's shared call-graph substrate -- reused as-is, not a
+  second traversal implementation). Restricted to PRIVATE targets only:
+  `build_call_graph` never records an edge to a PUBLIC callee by
+  construction (the mechanism dup/perf rely on to stop expanding at the
+  public-API boundary for free), so checking a public target would ALWAYS
+  report "unreachable" regardless of whether the test genuinely exercises
+  it -- unsound, not merely noisier, which is why COV006 skips it
+  entirely rather than caveat it.
+
+  **Known false-positive shape, disclosed rather than tuned away**: a
+  test that reaches its bound private helper only INDIRECTLY, via a
+  PUBLIC entry point in the same file that itself calls the helper, is
+  reported unreachable -- there is no edge for that first hop at all
+  (public callees are never edges), so `closure` can never walk through
+  it. This is the single most common COV006 finding on this repo's own
+  suite today (many `frob:tests <private-helper>` bindings whose test body
+  only calls the public gate/wrapper function). It is not a traversal bug;
+  `frob.graph.callgraph`'s public-boundary-stop behavior is load-bearing
+  for its other two consumers and is used unmodified here. Warn severity
+  reflects exactly this: a COV006 finding is a prompt to double check, not
+  proof the binding is wrong -- expect a real "adoption cliff" wave of
+  these on first landing in any repo with this test-via-public-wrapper
+  idiom, same as any other warn-tier gate here.
+
+- **COV007** (warn): a `frob:doc` edge whose src symbol is PRIVATE. Doc
+  anchors normally cover the public API surface (COV001 only ever asks
+  for one on a PUBLIC symbol), so one on a private helper is usually
+  either a directive that rode along onto the wrong symbol after an
+  extraction (COV005's failure mode, just discovered post hoc instead of
+  diff-scoped) or documentation that belongs on the public caller instead.
+  Warn, not error: a private helper can legitimately warrant its own doc
+  anchor (a genuinely complex internal algorithm), and this repo's own
+  code has real examples of that (`frob.logging._FrobFormatter`,
+  `frob.gates._pii_structural._FieldSignature`) -- COV007 flags the
+  pattern for a human decision, it does not forbid it.
 
 ### Waiver over-breadth (T-0470)
 
