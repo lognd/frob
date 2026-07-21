@@ -934,6 +934,104 @@ class TestCoverageGate:
         violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert not any(v.rule == "COV005" for v in violations)
 
+    def test_cov006_flags_test_with_no_call_graph_reachability(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0483: a `frob:tests` edge bound to a PRIVATE symbol whose named
+        test body never calls it (no `frob.graph.callgraph` reachability)
+        must fire COV006."""
+        # frob:tests src/frob/gates/__init__.py::_cov006
+        _write(tmp_path, "src/a.py", "def _helper(x):\n    return x\n")
+        _write(
+            tmp_path,
+            "tests/test_a.py",
+            "# frob:tests src/a.py::_helper\n"
+            "def test_helper_broken():\n"
+            "    assert True\n",
+        )
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        v = _first_rule(violations, "COV006")
+        assert v is not None
+        assert v.severity == Severity.WARN
+        assert "_helper" in v.message
+
+    def test_cov006_silent_when_test_calls_the_bound_symbol(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::_cov006
+        _write(tmp_path, "src/a.py", "def _helper(x):\n    return x\n")
+        _write(
+            tmp_path,
+            "tests/test_a.py",
+            "# frob:tests src/a.py::_helper\n"
+            "def test_helper_ok():\n"
+            "    assert _helper(1) == 1\n",
+        )
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert not any(v.rule == "COV006" for v in violations)
+
+    def test_cov006_never_fires_for_a_public_target(self, tmp_path: Path) -> None:
+        """`build_call_graph` never records an edge to a PUBLIC callee, so
+        checking a public target would ALWAYS look "unreachable" -- COV006
+        must skip public targets entirely rather than emit a spurious
+        finding on every legitimately-tested public function."""
+        # frob:tests src/frob/gates/__init__.py::_cov006
+        _write(tmp_path, "src/a.py", "def helper(x):\n    return x\n")
+        _write(
+            tmp_path,
+            "tests/test_a.py",
+            "# frob:tests src/a.py::helper\ndef test_helper():\n    assert True\n",
+        )
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert not any(v.rule == "COV006" for v in violations)
+
+    def test_cov007_flags_doc_anchor_on_private_helper(self, tmp_path: Path) -> None:
+        """T-0483: a `frob:doc` edge whose src symbol is PRIVATE fires
+        COV007 -- doc anchors are for the public API surface."""
+        # frob:tests src/frob/gates/__init__.py::_cov007
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def _helper(x):\n"
+            '    """helper"""\n'
+            "    # frob:doc docs/x.md#helper\n"
+            "    return x\n",
+        )
+        _write(tmp_path, "docs/x.md", "# Helper\n")
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        v = _first_rule(violations, "COV007")
+        assert v is not None
+        assert v.severity == Severity.WARN
+        assert "_helper" in v.message
+
+    def test_cov007_silent_for_doc_anchor_on_public_symbol(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::_cov007
+        _write(tmp_path, "src/a.py", _WIDGET_PY)
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert not any(v.rule == "COV007" for v in violations)
+
     def test_todo002_unbound_directive(self, tmp_path: Path) -> None:
         """A `frob:todo` edge bound to a missing ticket is TODO002 (dangling
         reference), distinct from TODO001 (bare, wholly untracked comment)."""
@@ -1970,6 +2068,103 @@ class TestTestGate:
         kept, waived = _apply_waivers(violations, snap)
         assert not any(v.rule == "TEST003" for v in kept)
         assert any(v.rule == "TEST003" for v in waived)
+
+    def test_match_waiver_prefix_reach_gated_to_package_scoped_rules(self) -> None:
+        """T-0470 counterexample: BEFORE this fix, `_match_waiver`'s
+        directory-prefix branch ran for every symref-less violation
+        regardless of rule -- any rule whose `violation.file` happened to
+        be directory-shaped (no extension) inherited unbounded prefix
+        reach it was never reviewed for. A non-package-scoped rule (i.e.
+        not in `_PACKAGE_SCOPED_RULES`) with a directory-shaped `file`
+        must now match ONLY a waiver whose own site is that exact
+        file/directory string -- never a waiver nested somewhere under
+        it via the prefix fallback."""
+        # frob:tests src/frob/gates/__init__.py::_match_waiver
+        from frob.gates import _match_waiver
+        from frob.graph import Edge, EdgeKind
+
+        directory_shaped_violation = Violation(
+            rule="SYS002",  # not in _PACKAGE_SCOPED_RULES
+            severity=Severity.WARN,
+            file="design/boundary/foo",
+            line=0,
+            message="x",
+        )
+        nested_waiver = Edge(
+            kind=EdgeKind.WAIVE,
+            src="design/boundary/foo/bar.py",
+            target="SYS002",
+            origin="design/boundary/foo/bar.py:1",
+            attrs={"reason": "x"},
+        )
+        assert (
+            _match_waiver(directory_shaped_violation, {"SYS002": [nested_waiver]})
+            is None
+        )
+
+        # The package-scoped rules keep their prefix reach unchanged.
+        package_violation = Violation(
+            rule="TEST003",
+            severity=Severity.ERROR,
+            file="src/frob/pkg",
+            line=0,
+            message="x",
+        )
+        package_waiver = Edge(
+            kind=EdgeKind.WAIVE,
+            src="src/frob/pkg/a.py",
+            target="TEST003",
+            origin="src/frob/pkg/a.py:1",
+            attrs={"reason": "x"},
+        )
+        assert (
+            _match_waiver(package_violation, {"TEST003": [package_waiver]})
+            == package_waiver
+        )
+
+    def test_waive003_flags_waiver_reaching_multiple_packages(self) -> None:
+        """T-0470: one `frob:waive TEST003` written in a file nested under
+        `src/frob/pkg/sub` also reaches the ANCESTOR package `src/frob/pkg`
+        via the same directory-prefix fallback -- both are real TEST003
+        violations the same directive silently suppresses. WAIVE003 must
+        flag that as over-broad."""
+        # frob:tests src/frob/gates/__init__.py::_waive003_violations
+        from frob.gates import _waive003_violations
+        from frob.graph import Edge, EdgeKind, GraphSnapshot
+
+        violations = (
+            Violation(
+                rule="TEST003",
+                severity=Severity.ERROR,
+                file="src/frob/pkg",
+                line=0,
+                message="x",
+            ),
+            Violation(
+                rule="TEST003",
+                severity=Severity.ERROR,
+                file="src/frob/pkg/sub",
+                line=0,
+                message="x",
+            ),
+        )
+        waiver = Edge(
+            kind=EdgeKind.WAIVE,
+            src="src/frob/pkg/sub/deep.py",
+            target="TEST003",
+            origin="src/frob/pkg/sub/deep.py:1",
+            attrs={"reason": "x"},
+        )
+        snap = GraphSnapshot(root=".", symbols={}, edges=(waiver,))
+        found = _waive003_violations(violations, snap)
+        assert len(found) == 1
+        assert found[0].rule == "WAIVE003"
+        assert "src/frob/pkg" in found[0].message
+        assert "src/frob/pkg/sub" in found[0].message
+
+        # A waiver that reaches only ONE package is not over-broad.
+        single = _waive003_violations(violations[:1], snap)
+        assert single == ()
 
     def test_test004_system_below_min_e2e(self, tmp_path: Path) -> None:
         from typani.option import Nothing
