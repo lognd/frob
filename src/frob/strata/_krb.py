@@ -248,6 +248,7 @@ def _parse_krb_trust_attr(attr: str) -> KrbTrust:
 
 # frob:doc docs/strata/krb.md#domain-trust-lattice
 # frob:tests tests/unit/strata/test_krb.py::TestKrbTrustFlows.test_sync kind="unit"
+# frob:invariant INV-031
 def krb_trust_flows(nodes: tuple[Node, ...]) -> tuple[Flow, ...]:
     """Synthesize one `Flow` per declared `trusts` edge (two for `two-way`).
 

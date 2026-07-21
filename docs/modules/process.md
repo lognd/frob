@@ -140,6 +140,8 @@ tool-runner subprocess (ruff/ty/cmake/cargo/clang-tidy/clang-format/ctest/
 npx-driven tsc/eslint/prettier/vitest) without a redeploy or code change;
 unset it (or leave it unset) to re-enable.
 
+<!-- frob:invariant INV-019 -->
+
 ## Dependencies
 
 Pure stdlib + `pydantic` for the shared models; no dependency on `frob.check`

@@ -1647,6 +1647,76 @@ class TestScopePrework:
         violations = scope_gate(diff, ticket_b, snap, root=tmp_path, queue=queue)
         assert any(v.file == "src/a/mod.py" for v in violations)
 
+    def test_scope001_merge_commit_with_no_ticket_ref_falls_back_to_parent(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::scope_gate
+        # T-0527: a plain `git merge` conflict-resolution commit carries NO
+        # ticket reference of its own in its subject (the default merge
+        # message), yet `git blame` attributes the reconciled hunk to that
+        # merge commit rather than either parent. The exemption must not
+        # treat this as an unattributed touch -- it should fall back to the
+        # merge commit's PARENTS' subjects to recover the ticket reference
+        # that actually attributes the reconciled content.
+        _git_init(tmp_path)
+        _write_ticket(
+            tmp_path,
+            _ticket(ticket_id="T-0001", scope=("src/a/**",)),
+        )
+        _write_ticket(
+            tmp_path,
+            _ticket(ticket_id="T-0002", scope=("src/b/**",)),
+        )
+        subprocess.run(
+            ["git", "checkout", "-q", "-b", "work"], cwd=tmp_path, check=True
+        )
+        _write(tmp_path, "src/a/mod.py", "def f():\n    return 1\n")
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "feat(a): add mod (T-0001)"],
+            cwd=tmp_path,
+            check=True,
+        )
+        subprocess.run(["git", "checkout", "-q", "main"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "checkout", "-q", "-b", "conflict-source"],
+            cwd=tmp_path,
+            check=True,
+        )
+        _write(tmp_path, "src/a/mod.py", "def f():\n    return 2\n")
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "feat(a): conflicting change (T-0001)"],
+            cwd=tmp_path,
+            check=True,
+        )
+        subprocess.run(["git", "checkout", "-q", "work"], cwd=tmp_path, check=True)
+        merge = subprocess.run(
+            ["git", "merge", "-q", "--no-ff", "conflict-source"],
+            cwd=tmp_path,
+            check=False,
+        )
+        assert merge.returncode != 0  # a real conflict, not a trivial merge
+        _write(tmp_path, "src/a/mod.py", "def f():\n    return 3\n")
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "Merge branch 'conflict-source'"],
+            cwd=tmp_path,
+            check=True,
+        )
+        queue = TicketQueue(
+            tickets={
+                "T-0001": _ticket(ticket_id="T-0001", scope=("src/a/**",)),
+                "T-0002": _ticket(ticket_id="T-0002", scope=("src/b/**",)),
+            }
+        )
+        diff = working_diff(tmp_path, "main").danger_ok
+        snap = _snapshot(tmp_path)
+        ticket_b = _ticket(ticket_id="T-0002", scope=("src/b/**",))
+
+        violations = scope_gate(diff, ticket_b, snap, root=tmp_path, queue=queue)
+        assert not any(v.file == "src/a/mod.py" for v in violations)
+
     def test_pre001_missing_sweep(self, tmp_path: Path) -> None:
         from typani.option import Nothing
 

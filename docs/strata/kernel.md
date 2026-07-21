@@ -143,6 +143,8 @@ consumer; payload label above destination clearance).
 - `FactBase.worst_age` -- longest-path staleness accumulation in seconds;
   a positive-age cycle yields `inf` plus the cycle as witness, never a
   silent clamp.
+
+  <!-- frob:invariant INV-028 -->
 - `FactBase.demand` -- propagated inbound demand sum in base units
   (fanout-multiplied; see "Capacity semantics" below).
 - `FactBase.propagated_demand` -- the same, plus a witness path/cycle.

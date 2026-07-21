@@ -199,6 +199,7 @@ class FactBase:
         _log.debug("closure from %s reached %d node(s)", src, len(paths) - 1)
         return paths
 
+    # frob:invariant INV-028
     def worst_age(self, target: str) -> tuple[float, tuple[str, ...]]:
         """Worst-case accumulated staleness reaching `target`, in seconds.
 

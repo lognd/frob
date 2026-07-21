@@ -1,6 +1,6 @@
-"""CLI wiring for `frob ticket new|list|show|doable|plan|start|requeue|
-sweep|reconcile|land|merge-driver|attach|block|close|fail|evidence|
-done-report|scope|priority|archive` (docs/modules/tickets.md)."""
+"""CLI wiring for `frob ticket new|list|show|doable|board|epic|plan|start|
+requeue|sweep|reconcile|land|merge-driver|attach|block|close|fail|evidence|
+done-report|scope|priority|component|label|archive` (docs/modules/tickets.md)."""
 
 # frob:waive TEST005 reason="module line coverage 22.7%, debt T-0160"
 # frob:waive SCOPE001 reason="T-0323 scope omitted this file, filed T-draft-bc39c17f"
@@ -65,6 +65,10 @@ def _ticket_dispatch_table() -> dict:
         "done-report": _done_report,
         "scope": _scope,
         "priority": _priority,
+        "component": _component,
+        "label": _label,
+        "board": _board,
+        "epic": _epic,
         "archive": lambda root, _cfg: _archive(root),
     }
 
@@ -78,9 +82,10 @@ def run(cfg: AppConfig) -> None:
     handler = _ticket_dispatch_table().get(cfg.ticket_command)
     if handler is None:
         _log.error(
-            "usage: frob ticket <new|list|show|doable|plan|start|requeue|"
-            "sweep|reconcile|land|merge-driver|attach|block|close|fail|evidence|"
-            "done-report|scope|priority|archive> ..."
+            "usage: frob ticket <new|list|show|doable|board|epic|plan|start|"
+            "requeue|sweep|reconcile|land|merge-driver|attach|block|close|"
+            "fail|evidence|done-report|scope|priority|component|label|"
+            "archive> ..."
         )
         sys.exit(1)
     handler(root, cfg)
@@ -108,6 +113,9 @@ def _ticket_spec_from_cfg(cfg: AppConfig, *, title: str, kind: str):  # noqa: AN
         parent=cfg.ticket_parent,
         acceptance=tuple(cfg.ticket_acceptance),
         threat=Stride(cfg.ticket_threat) if cfg.ticket_threat else None,
+        # frob:ticket T-0454
+        component=cfg.ticket_component,
+        labels=tuple(cfg.ticket_labels),
         body=cfg.ticket_body,
     )
 
@@ -1540,6 +1548,157 @@ def _priority(root: Path, cfg: AppConfig) -> None:
         sys.exit(1)
     ticket = result.danger_ok
     _log.info("%s: priority now %s", cfg.ticket_id, ticket.priority.value)
+
+
+# frob:ticket T-0454
+def _component(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket component <id> <name>`: forward to
+    `frob.tickets.set_component` -- `name == "none"` clears the field back
+    to uncategorized (T-0454, same pattern as `_priority`/`_scope`)."""
+    from frob.tickets import set_component
+
+    if cfg.ticket_id is None or cfg.ticket_component is None:
+        _log.error("frob ticket component requires <id> <name>")
+        sys.exit(1)
+
+    value = None if cfg.ticket_component == "none" else cfg.ticket_component
+    result = set_component(root, cfg.ticket_id, value)
+    if result.is_err:
+        _log.error("component change failed: %s", result.danger_err)
+        sys.exit(1)
+    ticket = result.danger_ok
+    _log.info("%s: component now %s", cfg.ticket_id, ticket.component)
+
+
+# frob:ticket T-0454
+def _label(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket label <id> --add TAG... --remove TAG...`: forward to
+    `frob.tickets.mutate_labels` -- all validation lives there (T-0454, same
+    "this command does nothing but forward" pattern as `_scope`)."""
+    from frob.tickets import mutate_labels
+
+    if cfg.ticket_id is None:
+        _log.error("frob ticket label requires <id>")
+        sys.exit(1)
+    if not cfg.ticket_label_add and not cfg.ticket_label_remove:
+        _log.error("frob ticket label requires --add and/or --remove TAG")
+        sys.exit(1)
+
+    result = mutate_labels(
+        root,
+        cfg.ticket_id,
+        add=cfg.ticket_label_add,
+        remove=cfg.ticket_label_remove,
+    )
+    if result.is_err:
+        _log.error("label change failed: %s", result.danger_err)
+        sys.exit(1)
+    ticket = result.danger_ok
+    _log.info(
+        "%s: labels now %s (+%d/-%d this change)",
+        cfg.ticket_id,
+        list(ticket.labels),
+        len(cfg.ticket_label_add),
+        len(cfg.ticket_label_remove),
+    )
+
+
+# frob:ticket T-0454
+def _board(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket board [--component NAME] [--label TAG] [--json]`:
+    render `frob.tickets.board_view`'s fixed state columns, each
+    priority-then-age ordered (T-0454)."""
+    from frob.tickets import board_view, load_active
+
+    result = load_active(root)
+    if result.is_err:
+        _log.error("ticket board failed: %s", result.danger_err)
+        sys.exit(1)
+    queue = result.danger_ok
+    columns = board_view(
+        queue, component=cfg.ticket_board_component, label=cfg.ticket_board_label
+    )
+
+    if cfg.ticket_json:
+        import json
+
+        payload = [
+            {
+                "state": col.state.value,
+                "tickets": [t.model_dump(mode="json") for t in col.tickets],
+            }
+            for col in columns
+        ]
+        _log.info(json.dumps(payload, indent=2))
+        return
+
+    color = _stdout_color()
+    for col in columns:
+        _log.info("%s (%d)", style_state(col.state.value, color), len(col.tickets))
+        if not col.tickets:
+            continue
+        for t in col.tickets:
+            _log.info(
+                "  %s  %s  (%s, %s)",
+                style_ticket_id(t.id, color),
+                t.title,
+                t.priority.value,
+                t.component or "uncategorized",
+            )
+
+
+# frob:ticket T-0454
+def _epic(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket epic <id> [--json]`: render `frob.tickets.epic_rollup`'s
+    subtree summary (T-0454)."""
+    from frob.tickets import epic_rollup, load_active
+
+    if cfg.ticket_id is None:
+        _log.error("frob ticket epic requires <id>")
+        sys.exit(1)
+    result = load_active(root)
+    if result.is_err:
+        _log.error("ticket epic failed: %s", result.danger_err)
+        sys.exit(1)
+    queue = result.danger_ok
+    rollup_result = epic_rollup(queue, cfg.ticket_id)
+    if rollup_result.is_err:
+        _log.error("ticket epic failed: %s", rollup_result.danger_err)
+        sys.exit(1)
+    rollup = rollup_result.danger_ok
+
+    if cfg.ticket_json:
+        import json
+
+        payload = {
+            "epic": rollup.epic.model_dump(mode="json"),
+            "descendants": [t.model_dump(mode="json") for t in rollup.descendants],
+            "done": rollup.done,
+            "total": rollup.total,
+            "percent_complete": rollup.percent_complete,
+            "blocked_leaves": list(rollup.blocked_leaves),
+        }
+        _log.info(json.dumps(payload, indent=2))
+        return
+
+    color = _stdout_color()
+    _log.info(
+        "%s  %s  -- %d/%d done (%.0f%%)",
+        style_ticket_id(rollup.epic.id, color),
+        rollup.epic.title,
+        rollup.done,
+        rollup.total,
+        rollup.percent_complete,
+    )
+    for t in rollup.descendants:
+        _log.info(
+            "  %s  [%s]  %s",
+            style_ticket_id(t.id, color),
+            style_state(t.state.value, color),
+            t.title,
+        )
+    if rollup.blocked_leaves:
+        _log.info("blocked leaves: %s", list(rollup.blocked_leaves))
 
 
 # frob:ticket T-0398

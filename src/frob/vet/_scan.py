@@ -140,6 +140,7 @@ def _vet001_violation(
 # frob:waive DUP001 reason="dup grouped this with frob.gates's \
 # _doc001_orphan purely on generic Violation(...)-builder shape; different \
 # gate family (dependency-vet vs doc-graph), unrelated rules"
+# frob:invariant INV-025
 def _vet004_violation(
     dep: Dependency, lockfile_name: str, signals: list[str]
 ) -> Violation:

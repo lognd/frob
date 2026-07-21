@@ -149,6 +149,22 @@ class TestLoadAllAndWriteTicket:
         assert result.is_ok
         assert result.danger_ok == {}
 
+    def test_component_and_labels_round_trip(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/_store.py::write_ticket kind="unit"
+        # frob:tests src/frob/tickets/_store.py::load_all kind="unit"
+        # T-0454: schema-addition round-trip test, same precedent T-0411's
+        # priority field established for a new Ticket field.
+        ticket = _ticket().model_copy(
+            update={"component": "tickets", "labels": ("board", "epic")}
+        )
+        written = write_ticket(tmp_path, ticket)
+        assert written.is_ok
+
+        loaded = load_all(tmp_path)
+        assert loaded.is_ok
+        assert loaded.danger_ok["T-0001"].component == "tickets"
+        assert loaded.danger_ok["T-0001"].labels == ("board", "epic")
+
 
 class TestMigrateToLedger:
     def test_moves_legacy_files_into_ledger(self, tmp_path: Path) -> None:

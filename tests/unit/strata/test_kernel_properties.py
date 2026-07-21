@@ -35,6 +35,7 @@ strata_core = pytest.importorskip(
 # frob:tests strata-core/src/lib.rs::reachable kind="unit"
 # frob:tests strata-core/src/lib.rs::worst_age kind="unit"
 # frob:tests strata-core/src/lib.rs::demand kind="unit"
+# frob:tests strata-core/src/lib.rs::propagated_demand kind="unit"
 
 _NODE_IDS = tuple(f"n{i}" for i in range(12))
 
@@ -375,6 +376,179 @@ def test_demand_is_deterministic(rates, target_node) -> None:
     first = strata_core.demand(rates, target_node)
     second = strata_core.demand(rates, target_node)
     assert first == second
+
+
+# G10 (docs/audits/strata.md): `propagated_demand` (fanout-multiplied,
+# cycle-aware, unlike the plain rate-sum `demand` pyfunction already
+# covered above) had no differential/property coverage at all -- the
+# single most safety-critical remaining kernel per this ticket's own
+# framing, since a silent undercount here can make a RATE/UTILIZATION
+# bound claim falsely PROVED (the exact bug class T-0065's `worst_age`
+# reviewer round already found once, in the sibling kernel).
+@st.composite
+def _demand_edges(
+    draw: st.DrawFn,
+) -> tuple[tuple[str, ...], list[tuple[str, str, str, float | None, float]]]:
+    """A random directed graph (cycles allowed) with declared or undeclared
+    per-edge rates and a fanout multiplier, up to 6 nodes / 14 flows --
+    small enough for the O(iterations * edges) fixpoint oracle below to
+    stay fast, large enough to form both fed and unfed cycles."""
+    n = draw(st.integers(min_value=1, max_value=6))
+    nodes = _node_ids(n)
+    num_edges = draw(st.integers(min_value=0, max_value=14))
+    edges: list[tuple[str, str, str, float | None, float]] = []
+    for i in range(num_edges):
+        src = draw(st.sampled_from(nodes))
+        dst = draw(st.sampled_from(nodes))
+        has_rate = draw(st.booleans())
+        rate = (
+            draw(
+                st.floats(
+                    min_value=0.0,
+                    max_value=100.0,
+                    allow_nan=False,
+                    allow_infinity=False,
+                )
+            )
+            if has_rate
+            else None
+        )
+        fanout = draw(st.sampled_from([1.0, 1.0, 2.0, 0.5]))
+        edges.append((f"f{i}", src, dst, rate, fanout))
+    return nodes, edges
+
+
+def _fixpoint_demand_oracle(
+    nodes: tuple[str, ...],
+    edges: list[tuple[str, str, str, float | None, float]],
+    target: str,
+) -> float:
+    """Independent reference for `strata_core.propagated_demand`: plain
+    Gauss-Seidel fixpoint iteration over `demand[n] = sum(declared
+    contributions) + sum(demand[src] * fanout for each undeclared-rate
+    inbound edge)`, deliberately NOT the Rust kernel's recursive-with-
+    active-stack algorithm (a materially different computation path is
+    the point of a differential oracle -- a shared bug in both would
+    otherwise go undetected).
+
+    An unfed cycle (no path from any declared-rate source reaches it)
+    keeps circulating exactly 0 forever, since its base contribution and
+    every upstream value inside the cycle is 0 -- the fixpoint is stable
+    at 0.0, matching the kernel's documented behavior. A fed cycle whose
+    net per-lap multiplier exceeds 1 diverges: the target's value keeps
+    growing between round `n` and round `2n`, which this oracle reports
+    as `+inf`, same as the kernel's cycle-detection witness path does
+    (this oracle drops witness paths entirely -- callers needing one
+    already have `TestReviewerRegression`-style direct kernel tests for
+    that; this property only needs the NUMBER to agree)."""
+    declared_contrib: dict[str, float] = dict.fromkeys(nodes, 0.0)
+    undeclared_in: dict[str, list[tuple[str, float]]] = {n: [] for n in nodes}
+    for _flow_id, src, dst, rate, fanout in edges:
+        if rate is None:
+            undeclared_in[dst].append((src, fanout))
+        else:
+            declared_contrib[dst] += rate * fanout
+
+    demand = dict.fromkeys(nodes, 0.0)
+    rounds = 2 * len(nodes) + 4
+    checkpoint = demand[target]
+    for i in range(rounds):
+        demand = {
+            n: declared_contrib[n]
+            + sum(demand[src] * fanout for src, fanout in undeclared_in[n])
+            for n in nodes
+        }
+        if i == len(nodes) + 1:
+            checkpoint = demand[target]
+    if (
+        not math.isclose(checkpoint, demand[target], rel_tol=1e-9, abs_tol=1e-9)
+        and demand[target] > checkpoint
+    ):
+        return float("inf")
+    return demand[target]
+
+
+@settings(max_examples=80, deadline=None)
+@given(_demand_edges())
+def test_propagated_demand_matches_fixpoint_oracle(graph) -> None:
+    """`strata_core.propagated_demand` agrees with an independent
+    Gauss-Seidel fixpoint oracle on the SOUND direction charter law 2
+    cares about: it must NEVER report a finite value lower than the true
+    (oracle) value -- that would be a silent undercount, the falsely-
+    PROVED failure class T-0065's `worst_age` reviewer round already
+    found once. The kernel MAY report `+inf` in cases the oracle proves
+    are actually finite (its `rate_sources` fed-cycle detection is
+    magnitude- and destination-blind -- see `TestZeroDeclaredRateFedCycle`
+    and this ticket's Done report for the disclosed, filed-not-fixed
+    over-approximation) -- that direction is the documented, ACCEPTABLE
+    fail-safe one ("fails toward overcounting load, not undercounting
+    it"), so it is allowed here, not asserted away. When the kernel does
+    NOT report unbounded, its value must match the oracle exactly (no
+    tolerance for "close enough but not equal" once both sides agree the
+    graph is finite)."""
+    nodes, edges = graph
+    if not nodes:
+        return
+    target = nodes[-1]
+    got_value, _got_witness = strata_core.propagated_demand(edges, target)
+    want_value = _fixpoint_demand_oracle(nodes, edges, target)
+
+    if got_value == float("inf"):
+        return  # kernel's allowed conservative direction (see docstring)
+    assert want_value != float("inf"), (
+        f"kernel reported a FINITE demand ({got_value}) for a graph the "
+        f"independent oracle proves is unbounded ({want_value}) -- this "
+        f"is the disallowed undercount direction, a real soundness bug"
+    )
+    assert math.isclose(got_value, want_value, rel_tol=1e-6, abs_tol=1e-6)
+
+
+@settings(max_examples=30, deadline=None)
+@given(_demand_edges())
+def test_propagated_demand_is_deterministic(graph) -> None:
+    """Calling `propagated_demand` twice on the same input yields the
+    same value (the witness path may differ in a tie, but the VALUE --
+    the number a RATE/UTILIZATION claim is actually compared against --
+    must not)."""
+    nodes, edges = graph
+    if not nodes:
+        return
+    target = nodes[-1]
+    first_value, _ = strata_core.propagated_demand(edges, target)
+    second_value, _ = strata_core.propagated_demand(edges, target)
+    assert first_value == second_value
+
+
+class TestZeroDeclaredRateFedCycle:
+    """G10 differential-testing follow-up (docs/audits/strata.md), found
+    BY the new `test_propagated_demand_matches_fixpoint_oracle` property
+    while writing this ticket: `propagated_demand`'s `rate_sources` (the
+    "is this node forward-reachable from a rate declaration" set used to
+    decide whether an undeclared-rate cycle is 'fed', hence unbounded)
+    is populated by ANY declared rate, magnitude-blind -- `Some(r) =>
+    rate_sources.insert(...)` never checks `r > 0.0`. The function's own
+    docstring says "POSITIVE-rate cycles ... are unbounded", but the code
+    flags a cycle fed ONLY by a literal `rate=0.0` declaration as `+inf`
+    too, even though that cycle's true numeric value converges to exactly
+    0.0 (confirmed: the independent fixpoint oracle above converges to
+    0.0 for this exact shape). This is disclosed here as a genuine
+    docstring/implementation discrepancy for a maintainer decision (fix
+    the code to check magnitude, or fix the docstring to say "declared-
+    rate" not "positive-rate") -- NOT silently resolved either way by
+    this ticket, whose job is proving kernel/oracle agreement, not
+    picking a semantics. Kept as a permanent regression pin so the
+    CURRENT behavior cannot silently change without this test's author
+    noticing (frob:tests binds it to the exact kernel line the WHY
+    comment above `propagated_demand` names)."""
+
+    # frob:tests strata-core/src/lib.rs::propagated_demand kind="unit"
+    def test_self_loop_fed_by_literal_zero_rate_reports_unbounded(self) -> None:
+        edges = [
+            ("f0", "n0", "n0", None, 1.0),
+            ("f1", "n0", "n0", 0.0, 1.0),
+        ]
+        value, _witness = strata_core.propagated_demand(edges, "n0")
+        assert value == float("inf")
 
 
 class TestReviewerRegression:

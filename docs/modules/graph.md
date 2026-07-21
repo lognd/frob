@@ -87,6 +87,8 @@ is the next planned consumer) rather than each re-deriving call resolution.
   symbol is never recorded as an edge at all -- that is what makes
   `closure` stop at the public-API boundary for free, with no separate
   bookkeeping.
+
+  <!-- frob:invariant INV-014 -->
 - `closure(graph, start, *, max_depth, max_nodes)` -- bounded BFS from
   `start`: depth-limited, node-count-capped, cycle-guarded (a visited set
   handles mutual recursion), breadth-first order. Returns the reachable

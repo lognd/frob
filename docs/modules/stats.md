@@ -53,6 +53,8 @@ networked. Free-text fields (command args, tool inputs) are redacted
 through `frob.gates._secrets`'s existing provider patterns before being
 written, never through a second hand-rolled scanner.
 
+<!-- frob:invariant INV-022 -->
+
 ## Public API
 
 <!-- frob:describes src/frob/stats/__init__.py::TicketStats -->

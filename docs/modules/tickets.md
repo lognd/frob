@@ -106,6 +106,10 @@ attachments:
 <!-- frob:describes src/frob/tickets/__init__.py::mutate_scope -->
 <!-- frob:describes src/frob/tickets/__init__.py::set_priority -->
 <!-- frob:describes src/frob/tickets/__init__.py::_doable_sort_key -->
+<!-- frob:describes src/frob/tickets/__init__.py::set_component -->
+<!-- frob:describes src/frob/tickets/__init__.py::mutate_labels -->
+<!-- frob:describes src/frob/tickets/__init__.py::board_view -->
+<!-- frob:describes src/frob/tickets/__init__.py::epic_rollup -->
 
 ```python
 # frob/tickets/__init__.py
@@ -251,6 +255,31 @@ def compute_changed_lines(root: Path, base_ref: str = "main") -> tuple[str, ...]
     # empty tuple (never raises) if root is not a git checkout or the diff
     # fails; the Changed block is auxiliary evidence, not a write
     # precondition.
+def set_component(root: Path, ticket_id: str, component: str | None) -> Result[Ticket, TicketError]
+    # T-0454: `frob ticket component <id> <name>` -- which module/area this
+    # ticket belongs to (freeform, not an enum). `component=None` clears it
+    # back to uncategorized. Same single-writer, ledger-locked pattern as
+    # set_priority.
+def mutate_labels(root: Path, ticket_id: str, *, add: Sequence[str] = (),
+                   remove: Sequence[str] = ()) -> Result[Ticket, TicketError]
+    # T-0454: `frob ticket label <id> --add TAG... --remove TAG...` --
+    # freeform tags orthogonal to component, comma-split the same way scope
+    # entries are (T-0241). No lease-conflict check (a label is not a
+    # filesystem glob) and no audit trail the way mutate_scope keeps for
+    # scope_changes -- Err(LabelChangeEmpty) if neither add nor remove
+    # names anything.
+def board_view(queue: TicketQueue, *, component: str | None = None,
+                label: str | None = None) -> tuple[BoardColumn, ...]
+    # T-0454: `frob ticket board` -- every ticket grouped into BOARD_STATES
+    # columns (queued -> planned -> in-progress -> blocked -> done ->
+    # dropped), each priority-then-age ordered (_doable_sort_key, T-0411).
+    # Every column is always present, even empty. component/label narrow to
+    # one area/tag; a ticket must match BOTH when both are given.
+def epic_rollup(queue: TicketQueue, epic_id: str) -> Result[EpicRollup, TicketError]
+    # T-0454: `frob ticket epic <id>` -- the full descendant subtree of
+    # epic_id via the parent chain (any depth), a done/total count, and the
+    # ids of any LEAF descendant (no children of its own) currently
+    # BLOCKED. Err(NotFound) if epic_id itself does not resolve.
 
 # frob/tickets/clipboard.py
 def clipboard_image() -> Result[bytes, ClipboardError]
@@ -267,6 +296,8 @@ IN-PROGRESS ticket's active scope-LEASE, so two agents dispatched straight
 off `doable` can never collide on the same files. This replaces hand-
 maintained collision blocklists a coordinator would otherwise have to build
 and update on every dispatch.
+
+<!-- frob:invariant INV-024 -->
 
 - **Overlap** is a sound glob-set intersection (`scope_overlap_globs`,
   `_globs_intersect`): two globs collide if some concrete path could match
@@ -497,6 +528,67 @@ trips SCOPE001 and still needs an explicit `frob ticket scope --add` (or a
 new ticket) like any other out-of-scope file. `kind=None` (the default,
 and every call site that predates T-0446) preserves the exact prior
 behavior -- this is additive, not a loosening of any existing check.
+
+## Organization: components, labels, board, epics (T-0454)
+
+The user's "professional dev-team workflow, no ceremony" request made
+concrete: additive fields plus read-only views on top of the existing
+flat ledger, never a second parallel store.
+
+- **`component: str | None`** -- which module/area a ticket belongs to
+  (`gates`, `strata`, `dup`, `vet`, `deploy`, `render`, `tickets`, ...).
+  Freeform, not an `enum`, since the set of components grows with the
+  codebase and a fixed enum would need a migration every time a new
+  subsystem is carved out. `frob ticket component <id> <name>` sets it
+  (`set_component`); `<name>` may be the literal string `"none"` to clear
+  it back to uncategorized. `frob ticket new --component NAME` sets it at
+  creation time.
+- **`labels: tuple[str, ...]`** -- freeform tags orthogonal to
+  `component` (cross-cutting concerns like `perf`, `security`, `flaky`).
+  `frob ticket label <id> --add TAG... --remove TAG...` (`mutate_labels`)
+  mutates an existing ticket's labels; `frob ticket new --label TAG`
+  (repeatable) sets them at creation. Comma-joined entries split the same
+  way `scope` entries do (T-0241's `_split_scope_entries`, reused as-is).
+  Unlike `mutate_scope`, a label mutation carries no lease-conflict check
+  (a label is not a filesystem glob) and no `scope_changes`-style audit
+  trail -- it is a plain organizational tag, not a claim on the tree.
+- **Epic -> story -> task rollup**, via the EXISTING `parent` field made
+  first-class: `frob ticket epic <id>` (`epic_rollup`) walks every
+  descendant transitively (any depth, not just direct children) and
+  reports `done`/`total`/`percent_complete` plus the ids of any LEAF
+  descendant (no children of its own) that is currently `BLOCKED` -- the
+  two numbers a human scanning an epic wants first, computed once instead
+  of hand-counted. `Err(NotFound)` if the epic id itself does not resolve.
+- **Priority-ordered board**: `frob ticket board [--component NAME]
+  [--label TAG] [--json]` (`board_view`) groups every ACTIVE ticket into
+  `BOARD_STATES` columns (`queued -> planned -> in-progress -> blocked ->
+  done -> dropped`, always ALL SIX, even empty), each ordered by
+  `_doable_sort_key` (highest priority first, then oldest, the same T-0411
+  ordering `doable` uses) -- a glance at the board reads like a pipeline,
+  not an arbitrary id-ordered dump. `--component`/`--label` narrow to one
+  area/tag; a ticket must match BOTH when both are given.
+- **Additive, splice-safe**: every new field is optional with a default
+  (`component=None`, `labels=()`), so every ticket written before T-0454
+  stays valid on load with no migration step, and each round-trips through
+  `write_ticket`/`_splice_ticket_section` for free -- both call the
+  generic `ticket.model_dump(mode="json", exclude={"body"})` (T-0505's
+  single-writer splice path), so a NEW pydantic field needs no
+  serialization code of its own, only a schema addition (same as T-0411's
+  `priority` field before it). The T-0323 ledger merge-driver
+  (`splice_ledger`) operates on whole `<!-- ticket:... -->` sections, not
+  individual fields, so it is unaffected by any field addition here too.
+
+**Deliberately NOT built in this pass** (filed as follow-ups rather than
+half-landed): sprints/milestones (a `sprint`/`milestone` id+goal+date-
+window field plus `frob ticket sprint new/list/show/assign` CRUD) --
+"if they fit" per the ticket's own body, and a full sprint lifecycle is a
+second feature-sized surface on top of the component/label/board/epic
+core this pass delivers; a `--component`/`--label` filter on `frob ticket
+doable`/`list` (currently only `board` filters, so a coordinator draining
+one area still uses `board` for that, not `doable`); and bulk
+component/label reassignment (each mutation is one ticket at a time via
+`set_component`/`mutate_labels`, matching every other single-ticket
+mutation command's granularity).
 
 ## State machine
 
@@ -934,6 +1026,8 @@ class Ticket(BaseModel):
     scope: tuple[str, ...]      # path globs and/or symrefs
     evidence: tuple[str, ...]   # pytest node ids or policy rule ids
     attachments: tuple[Attachment, ...]
+    component: str | None = None   # T-0454: which module/area (freeform)
+    labels: tuple[str, ...] = ()   # T-0454: freeform tags, orthogonal to component
     body: str                   # markdown after frontmatter, verbatim
 
 class TicketSpec(BaseModel):    # input to new_ticket; id/created assigned
@@ -944,6 +1038,8 @@ class TicketSpec(BaseModel):    # input to new_ticket; id/created assigned
     scope: tuple[str, ...] = ()
     blocked_by: tuple[str, ...] = ()
     parent: str | None = None
+    component: str | None = None   # `frob ticket new --component NAME`
+    labels: tuple[str, ...] = ()   # `frob ticket new --label TAG` (repeatable)
     body: str = ""
 
 class TicketQueue(BaseModel):
@@ -951,6 +1047,21 @@ class TicketQueue(BaseModel):
 
 class AttachmentSource(BaseModel):
     path: Path | None           # None means clipboard
+
+# T-0454: `frob ticket board`'s fixed column order
+BOARD_STATES: tuple[TicketState, ...]  # QUEUED, PLANNED, IN_PROGRESS, BLOCKED, DONE, DROPPED
+
+class BoardColumn(BaseModel):   # T-0454
+    state: TicketState
+    tickets: tuple[Ticket, ...] = ()   # priority-then-age ordered (_doable_sort_key)
+
+class EpicRollup(BaseModel):    # T-0454
+    epic: Ticket
+    descendants: tuple[Ticket, ...] = ()   # every descendant via `parent`, any depth
+    done: int = 0
+    total: int = 0
+    blocked_leaves: tuple[str, ...] = ()   # leaf (childless) descendants currently BLOCKED
+    percent_complete: float          # property: done/total*100, or 0.0 if total==0
 ```
 
 ## Error types
@@ -967,6 +1078,7 @@ class TicketError(ErrorSet):
     UnknownEvidence     = "Evidence id does not resolve to a collected test"
     EvidenceKindNotAllowed = "cmd evidence is only allowed for docs-kind tickets"
     EvidenceCmdFailed   = "evidence command failed to launch or exited nonzero"
+    LabelChangeEmpty    = "label change requires at least one --add or --remove label"
 
 class ClipboardError(ErrorSet):
     NoBackend     = "No clipboard backend available on this platform"

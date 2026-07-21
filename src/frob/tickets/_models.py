@@ -608,6 +608,18 @@ class Ticket(BaseModel):
     acceptance: tuple[str, ...] = ()
     # STRIDE category for kind=security tickets (T-0007)
     threat: Stride | None = None
+    # frob:ticket T-0454
+    # which module/area this ticket belongs to (gates, strata, dup, vet,
+    # deploy, render, tickets, ...) -- freeform, not an enum: the set of
+    # components grows with the codebase and a fixed enum would need a
+    # migration every time a new subsystem is carved out. `None` means
+    # uncategorized, never coerced to an empty string.
+    component: str | None = None
+    # frob:ticket T-0454
+    # freeform tags orthogonal to `component` (cross-cutting concerns like
+    # "perf", "security", "flaky") -- `frob ticket board`/`doable` can
+    # filter on either axis independently.
+    labels: tuple[str, ...] = ()
     body: str = ""
 
     @field_validator("scope", mode="before")
@@ -615,6 +627,14 @@ class Ticket(BaseModel):
     def _normalize_scope(cls, value: Sequence[str]) -> tuple[str, ...]:
         """Split any comma-joined entry into separate globs on load or
         construction (T-0241) -- see `_split_scope_entries`."""
+        return _split_scope_entries(value)
+
+    @field_validator("labels", mode="before")
+    @classmethod
+    def _normalize_labels(cls, value: Sequence[str]) -> tuple[str, ...]:
+        """Split any comma-joined entry into separate labels (T-0454), the
+        same normalization `scope` gets from `_split_scope_entries` (T-0241)
+        -- a hand-typed `--label 'a,b'` must not become one unmatchable tag."""
         return _split_scope_entries(value)
 
 
@@ -635,6 +655,9 @@ class TicketSpec(BaseModel):
     acceptance: tuple[str, ...] = ()
     threat: Stride | None = None
     evidence: tuple[str, ...] = ()
+    # frob:ticket T-0454
+    component: str | None = None
+    labels: tuple[str, ...] = ()
     body: str = ""
 
     @field_validator("scope", mode="before")
@@ -642,6 +665,13 @@ class TicketSpec(BaseModel):
     def _normalize_scope(cls, value: Sequence[str]) -> tuple[str, ...]:
         """Split any comma-joined entry into separate globs before the spec
         is turned into a `Ticket` (T-0241) -- see `_split_scope_entries`."""
+        return _split_scope_entries(value)
+
+    @field_validator("labels", mode="before")
+    @classmethod
+    def _normalize_labels(cls, value: Sequence[str]) -> tuple[str, ...]:
+        """Split any comma-joined entry into separate labels (T-0454) before
+        the spec is turned into a `Ticket` -- see `_split_scope_entries`."""
         return _split_scope_entries(value)
 
 
@@ -709,6 +739,8 @@ class TicketError(ErrorSet):
     ScopeRemoveOrphansEvidence = (
         "cannot remove a scope glob that already covers recorded evidence"
     )
+    # T-0454: `frob ticket label` failure mode -- mirrors ScopeChangeEmpty
+    LabelChangeEmpty = "label change requires at least one --add or --remove label"
     # T-0431: FROB_WORKTREE names a leased worktree that does not match the
     # cwd's actual git top-level -- a dispatched agent's shell wandered
     # (accidentally or otherwise) outside its assigned worktree.
@@ -772,3 +804,57 @@ class LandReport(BaseModel):
     # changeset touched a native-extension source tree (frob-core/
     # strata-core).
     natives_rebuilt: bool = False
+
+
+# frob:ticket T-0454
+# frob:doc docs/modules/tickets.md#public-api
+# The fixed column order `frob ticket board` renders in -- left-to-right the
+# same direction work actually flows, so a glance at the board reads like a
+# pipeline rather than an arbitrary bucket dump. DROPPED is last (dead work,
+# not a destination).
+BOARD_STATES: tuple[TicketState, ...] = (
+    TicketState.QUEUED,
+    TicketState.PLANNED,
+    TicketState.IN_PROGRESS,
+    TicketState.BLOCKED,
+    TicketState.DONE,
+    TicketState.DROPPED,
+)
+
+
+# frob:ticket T-0454
+# frob:doc docs/modules/tickets.md#public-api
+class BoardColumn(BaseModel):
+    """One state-column of `frob ticket board`: its tickets, priority-then-age
+    ordered (the same key `doable` uses, T-0411)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    state: TicketState
+    tickets: tuple[Ticket, ...] = ()
+
+
+# frob:ticket T-0454
+# frob:doc docs/modules/tickets.md#public-api
+class EpicRollup(BaseModel):
+    """`frob ticket epic <id>`'s subtree summary: every descendant (via the
+    `parent` chain, any depth), how many are DONE vs the total, and which
+    LEAF descendants (no children of their own) are currently BLOCKED --
+    the two numbers a human scanning an epic actually wants first."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    epic: Ticket
+    descendants: tuple[Ticket, ...] = ()
+    done: int = 0
+    total: int = 0
+    blocked_leaves: tuple[str, ...] = ()
+
+    @property
+    # frob:doc docs/modules/tickets.md#public-api
+    def percent_complete(self) -> float:
+        """`done / total * 100`, or `0.0` for a childless epic (never
+        divides by zero)."""
+        if self.total == 0:
+            return 0.0
+        return (self.done / self.total) * 100.0

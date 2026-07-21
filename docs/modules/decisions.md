@@ -5,6 +5,8 @@ records, code that implements one anchors it with `frob:decision AD-###`,
 and the DEC gates keep the "why" from rotting away from the code -- an
 accepted decision must be anchored, and a decision reference must resolve.
 
+<!-- frob:invariant INV-010 -->
+
 ## The record
 
 `decisions/AD-001.md`:

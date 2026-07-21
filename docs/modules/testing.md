@@ -27,6 +27,8 @@ the gates prove the bindings exist; `frob test` runs the bound tests.
    makes it look selected (e.g. a brand-new test file's own methods count
    as "touched," which used to leak the paired source symbol's node id
    into the pytest argv and crash collection).
+
+   <!-- frob:invariant INV-023 -->
 4. Contract ripple (T-0398 D-07: bounded multi-hop, up to 4 `uses-contract`
    hops -- widened from a single hop, which missed a caller two or more
    hops removed from a touched leaf): symbols holding a `uses-contract`

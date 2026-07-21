@@ -91,6 +91,8 @@ generated mechanically.
   crash + retry implies at-least-once, which demands idempotent effects
   downstream (T-0074).
 
+  <!-- frob:invariant INV-027 -->
+
 ## v0 implementation
 
 <!-- frob:ticket T-0069 -->

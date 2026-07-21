@@ -273,7 +273,7 @@ class TestTick002GateUnwaivable:
             state=TicketState.QUEUED,
             kind=TicketKind.BUG,
             origin=Origin.AGENT,
-            created=__import__("datetime").date(2026, 1, 1),
+            created=__import__("datetime").date.today(),
         )
         queue = TicketQueue(tickets={draft.id: draft})
         violations = tickets_gate(Path("."), queue)
@@ -303,7 +303,7 @@ class TestTick002GateUnwaivable:
             state=TicketState.QUEUED,
             kind=TicketKind.BUG,
             origin=Origin.AGENT,
-            created=__import__("datetime").date(2026, 1, 1),
+            created=__import__("datetime").date.today(),
         )
         queue = TicketQueue(tickets={draft.id: draft})
         violations = tickets_gate(tmp_path, queue)

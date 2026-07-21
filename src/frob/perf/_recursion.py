@@ -245,6 +245,7 @@ def _has_guard(tokens: tuple[str, ...]) -> bool:
     return "if" in tokens
 
 
+# frob:invariant INV-018
 def _termination_reasoned(
     snapshot: GraphSnapshot, symref: str
 ) -> tuple[str, str] | None:

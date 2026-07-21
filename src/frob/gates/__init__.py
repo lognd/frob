@@ -280,6 +280,7 @@ def _is_path_level_evidence(evidence: str) -> bool:
 
 
 # frob:ticket T-0298
+# frob:invariant INV-013
 def _path_level_evidence_collected(evidence: str, tests: CollectedTests) -> bool:
     """COV003 file-/directory-level evidence resolution: `evidence` (a bare
     path with no `::`) resolves iff at least one collected node id lives
@@ -1275,6 +1276,7 @@ def _place001(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 _PACKAGE_SCOPED_RULES = frozenset({"TEST003", "TEST004", "TEST007"})
 
 
+# frob:invariant INV-006
 def _ceiling_ok(waiver: Edge, violation: Violation) -> bool:
     """Whether `waiver` still covers `violation` given its optional
     `ceiling=` attribute: always true when no ceiling is set (or the
@@ -3266,25 +3268,59 @@ def _commit_subject(root: Path, sha: str) -> Option[str]:
     return Some(spawned.danger_ok.stdout.strip())
 
 
+def _commit_parents(root: Path, sha: str) -> tuple[str, ...]:
+    """Parent shas of commit `sha` (`git log -1 --format=%P`), empty if `sha`
+    is a root commit or is unreadable (T-0527: used to detect a merge commit
+    and recover the ticket reference its OWN subject may lack)."""
+    spawned = run_argv(("git", "-C", str(root), "log", "-1", "--format=%P", sha))
+    if spawned.is_err or spawned.danger_ok.returncode != 0:
+        _log.debug("scope_gate: could not read parents of %s", sha)
+        return ()
+    return tuple(spawned.danger_ok.stdout.split())
+
+
 def _commit_exempts_file(
     root: Path, sha: str, file: str, ticket: Ticket, queue: TicketQueue
 ) -> bool:
-    """True if commit `sha`'s subject names another ticket (not `ticket`) whose
-    own declared `scope` covers `file` -- the SCOPE001 cross-ticket exemption
-    (T-0108): a commit's authorship is attributed by the ticket id its subject
-    references, not by whichever ticket happens to be running the check now."""
+    """True if commit `sha` (or, for a merge commit whose own subject carries
+    no ticket reference, one of its parents) names another ticket (not
+    `ticket`) whose own declared `scope` covers `file` -- the SCOPE001
+    cross-ticket exemption (T-0108): a commit's authorship is attributed by
+    the ticket id its subject references, not by whichever ticket happens to
+    be running the check now.
 
+    T-0527: a plain `git merge main` merge commit's OWN subject typically
+    carries no ticket reference at all, yet `git blame` can still attribute
+    a hunk to it (conflict-resolution content that differs from every
+    parent, e.g. a version-bump line both sides touched) -- that content is
+    still just reconciling the parents' own already-scoped work, not new
+    unscoped work introduced by this check's own ticket. So a merge commit
+    (more than one parent) whose subject has no usable ticket reference
+    falls back to searching its PARENTS' subjects for the reference that
+    actually attributes the reconciled content, instead of being treated as
+    a wholly unattributed touch."""
+
+    subjects = []
     subject = _commit_subject(root, sha)
-    if subject.is_nothing:
-        return False
-    for ref in _TICKET_REF_RE.findall(subject.danger_some):
-        if ref == ticket.id:
-            continue
-        other = queue.tickets.get(ref)
-        if other is None:
-            continue
-        if scope_matches(file, other.scope):
-            return True
+    if subject.is_some:
+        subjects.append(subject.danger_some)
+    parents = _commit_parents(root, sha)
+    if len(parents) > 1 and not (
+        subject.is_some and _TICKET_REF_RE.search(subject.danger_some)
+    ):
+        for parent in parents:
+            parent_subject = _commit_subject(root, parent)
+            if parent_subject.is_some:
+                subjects.append(parent_subject.danger_some)
+    for subject_text in subjects:
+        for ref in _TICKET_REF_RE.findall(subject_text):
+            if ref == ticket.id:
+                continue
+            other = queue.tickets.get(ref)
+            if other is None:
+                continue
+            if scope_matches(file, other.scope):
+                return True
     return False
 
 
@@ -5336,6 +5372,7 @@ def _dup_config(root: Path) -> tuple[bool, float, bool]:
 # frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-0001
 # frob:waive TEST005 reason="dup_gate 52.2% branch cover, debt T-0160"
+# frob:invariant INV-011
 def dup_gate(root: Path, snapshot: GraphSnapshot, diff) -> tuple[Violation, ...]:  # noqa: ANN001
     """DUP001/DUP002: the diff introduces a clone of an existing symbol.
 

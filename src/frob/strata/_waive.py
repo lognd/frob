@@ -279,6 +279,7 @@ def _index_declared_waivers(
     return {(node_id, *_split_waiver_rule(w.rule)): w for node_id, w in declared}
 
 
+# frob:invariant INV-036
 def _split_kept_and_waived(
     findings: Sequence[_F],
     by_key: dict[tuple[str, str, str | None], Waiver],

@@ -66,6 +66,7 @@ def _called_names(body_tokens: tuple[str, ...]) -> frozenset[str]:
 
 
 # frob:doc docs/modules/graph.md#call-graph
+# frob:invariant INV-014
 def build_call_graph(root: Path, paths: Sequence[str]) -> CallGraph:
     """Build the intra-file + intra-package call graph over `paths`.
 

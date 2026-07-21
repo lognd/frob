@@ -363,3 +363,60 @@ class TestBlockBinding:
         resolved = _resolve_block_srcs(comments, "a.strata")
         assert resolved[1] == "a.strata::FooNode"
         assert resolved[0] == "a.strata"  # bare path: no enclosing, no propagation
+
+
+class TestDebtTodoCoherence:
+    """`frob:debt`/`frob:todo` coherence (T-0526): an unpaired debt implicitly
+    registers a todo, and a mismatched explicit pairing is a DEBT001-shaped
+    `MalformedDirective`."""
+
+    def test_unpaired_debt_registers_implicit_todo(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/dsl.py::_debt_todo_coherence
+        src = (
+            "def foo() -> None:\n"
+            '    # frob:debt RULE-1 reason="temp gap" ticket="T-0001"\n'
+            "    pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        assert len(edges) == 2
+        debt = next(e for e in edges if e.kind == "debt")
+        todo = next(e for e in edges if e.kind == "todo")
+        assert todo.src == debt.src
+        assert todo.target == "T-0001"
+        assert todo.attrs["implicit"] == "debt"
+
+    def test_explicit_paired_todo_same_ticket_no_implicit_duplicate(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/dsl.py::_debt_todo_coherence
+        src = (
+            "def foo() -> None:\n"
+            '    # frob:debt RULE-1 reason="temp gap" ticket="T-0001"\n'
+            "    # frob:todo T-0001\n"
+            "    pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        todo_edges = [e for e in edges if e.kind == "todo"]
+        assert len(todo_edges) == 1
+        assert "implicit" not in todo_edges[0].attrs
+
+    def test_mismatched_explicit_todo_is_debt001_shaped_malformed(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/dsl.py::_debt_todo_coherence
+        src = (
+            "def foo() -> None:\n"
+            '    # frob:debt RULE-1 reason="temp gap" ticket="T-0001"\n'
+            "    # frob:todo T-0002\n"
+            "    pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        _edges, malformed = parse_directives(pf)
+        assert len(malformed) == 1
+        assert "frob:debt" in malformed[0].reason
+        assert "T-0001" in malformed[0].reason
+        assert "T-0002" in malformed[0].reason

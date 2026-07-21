@@ -210,6 +210,8 @@ def configure_all_the_things(...):
   exception honest instead of a permanent mute. No `ceiling=` means the
   waiver covers the function at any size (the same behavior every other
   `frob:waive` directive has).
+
+  <!-- frob:invariant INV-006 -->
 - No qualname table in `frob.toml` -- the waiver lives at the function it
   excuses, travels with a rename (bound via `frob.graph.dsl`'s
   following/enclosing resolution, the same as every other directive), and

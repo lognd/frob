@@ -20,6 +20,8 @@ fixtures that every language change must keep expressible and firing.
 Phase parents are chained with `blocked_by`, so `frob ticket doable`
 always surfaces work in proof-dependency order.
 
+<!-- frob:invariant INV-032 -->
+
 ## CLI surface (target)
 
 ```
