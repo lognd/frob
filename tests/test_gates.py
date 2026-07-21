@@ -1799,6 +1799,25 @@ class TestInv003Gate:
         violations = inv003_gate(tmp_path, ())
         assert len(violations) == 1
 
+    def test_illustrative_example_reason_does_not_self_waive(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0522: gates.md's OWN INV003 documentation necessarily spells
+        out the marker syntax by illustrative example, using a literal
+        `reason="..."` placeholder -- this must not be mistaken for a
+        real, reasoned waiver of that same file's genuine findings. Uses
+        the exact example text from docs/modules/gates.md."""
+        _write(
+            tmp_path,
+            "docs/modules/x.md",
+            "# X\n\nMarkdown-side `frob:waive` support: "
+            '`<!-- frob:waive INV003 reason="..." -->` anywhere in a file '
+            "dispositions that file's INV003 findings.\n\n"
+            "The only writer of this file is the daemon.\n",
+        )
+        violations = inv003_gate(tmp_path, ())
+        assert len(violations) == 1
+
 
 class TestInv004Gate:
     # frob:tests src/frob/gates/__init__.py::inv004_gate

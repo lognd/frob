@@ -2780,6 +2780,16 @@ _DOC_WAIVE_MARKER_RE = re.compile(
 )
 
 # frob:doc docs/modules/gates.md#invariants
+# frob:ticket T-0522
+# A reason consisting of nothing but a placeholder ellipsis (the literal
+# `"..."` gates.md's own INV003/INV004 documentation necessarily spells
+# out when it teaches the marker syntax by example) is not a real,
+# specific reason -- treat it the same as an empty reason so a doc's
+# ILLUSTRATIVE example of the waiver syntax cannot silently self-satisfy
+# that same doc's own INV003/INV004 findings (T-0522).
+_DOC_WAIVE_PLACEHOLDER_RE = re.compile(r"^\.{2,}$")
+
+# frob:doc docs/modules/gates.md#invariants
 # frob:ticket T-0509
 # INV003 is scoped to these repo-relative directories (spec-normative
 # design/module docs), not all of docs/**.md -- exclusivity claims worth
@@ -2806,6 +2816,14 @@ def _file_has_reasoned_doc_waiver(path: Path, rule: str) -> bool:
     directive rode onto a new private symbol" even though nothing rebound.
     Applying the waiver filter from the (public, freshly-tagged) gate
     function instead avoids that false positive entirely.
+
+    T-0522: a placeholder-ellipsis reason (`reason="..."`, the literal
+    text gates.md's own INV003/INV004 sections necessarily spell out when
+    they teach the marker syntax by illustrative example) does NOT count
+    as a reasoned waiver -- without this, a doc that merely EXPLAINS the
+    waiver syntax in prose silently self-waived its own findings, since
+    the regex has no way to distinguish a real marker from an example one
+    written in the same literal shape.
     """
     try:
         text = path.read_text(encoding="utf-8")
@@ -2813,7 +2831,7 @@ def _file_has_reasoned_doc_waiver(path: Path, rule: str) -> bool:
         _log.warning("%s: could not read %s for waiver check: %s", rule, path, exc)
         return False
     return any(
-        matched_rule == rule and reason
+        matched_rule == rule and reason and not _DOC_WAIVE_PLACEHOLDER_RE.match(reason)
         for matched_rule, reason in _DOC_WAIVE_MARKER_RE.findall(text)
     )
 
