@@ -3096,12 +3096,13 @@ here -- left untouched, out of this ticket's scope.
 id: T-0501
 title: 'strata audit G2/G7: vacuous NoFlow discharge when foreign->sink flow is un-modeled
   or no foreign-trust node exists'
-state: queued
+state: in-progress
 kind: security
 origin: human
 created: '2026-07-21'
 priority: medium
-blocked_by: []
+blocked_by:
+- T-draft-ac0b652c
 parent: null
 scope:
 - src/frob/strata/_threat.py
@@ -3113,7 +3114,6 @@ acceptance: []
 threat: null
 ```
 docs/audits/strata.md G2+G7 (HIGH/MEDIUM), from T-0401. _mitigation_is_chokepoint's first branch (_threat.py:1196) returns True when NoFlow holds with EVERY boundary removed -- i.e. the sink is simply unreachable from foreign in the model, so an incomplete/attacker-authored .strata discharges a real capability with NO mitigation modeled at all (G2). Same root cause as G7: _discharges_as_chokepoint's src=foreign expansion (_claims.py _expand) yields an empty source set when the model declares no foreign-trust node at all, so NoFlow proves vacuously (nothing to walk from) and every obligation on that model discharges with no adversary present. Fix direction: require at least one modeled path from a foreign source to the firing node (and at least one foreign-trust node in the model) before accepting the vacuous short-circuit as a discharge; otherwise emit a distinct 'obligation fires but sink unreachable / no adversary modeled -- model likely incomplete' diagnostic instead of silent PROVED. High-risk core-engine change (this family has the highest REJECT rate in repo history) -- build the counterexample litmus FIRST, confirm it currently discharges vacuously, THEN harden.
-
 <!-- ticket:T-0514 -->
 ```yaml
 id: T-0514
@@ -3487,3 +3487,27 @@ acceptance: []
 threat: null
 ```
 Follow-up to T-0498 (docs/audits/strata.md G1). T-0498 closed the vacuous half of G1 (an ENDORSE boundary's predicate string now needs a resolving obligations/claim ref, not a bare self-declared name) but does NOT yet verify the predicate corresponds to an OBSERVED sanitizer/mitigation call site in the boundary's node's code=-bound files -- the audit finding's stronger fix direction: 'a SYS-family rule binding each ENDORSE boundary predicate to an observed sanitizer site in code=-bound files (analogous to SYS100)'. This needs a per-predicate sanitizer-pattern registry (or a pluggable convention, since predicate names are free text today) and a scan over code=-bound files analogous to _selfconform.py's SYS100/SYS101 joins. Non-vacuous acceptance: a litmus where the claimed predicate has no matching code site is REFUSED, plus the positive case where it does.
+
+<!-- ticket:T-draft-ac0b652c -->
+```yaml
+id: T-draft-ac0b652c
+title: 'design decision: distinguish T-0223 library-mode discharge-by-absence from
+  G2/G7''s ''no adversary modeled'' vacuous discharge'
+state: queued
+kind: security
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/_threat.py
+- src/frob/strata/_claims.py
+- docs/strata/threat.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Blocks T-0501 (docs/audits/strata.md G2+G7). G2/G7's own fix direction ('require at least one modeled path from a foreign source to the firing node, and at least one foreign-trust node in the model, before accepting the vacuous short-circuit as a discharge') is IN DIRECT CONFLICT with T-0223's already-shipped, deliberately tested 'library-mode discharge-by-absence' feature (docs/strata/threat.md#library-mode-discharge-by-absence, tests/unit/strata/test_threat.py::TestLibraryModeForeignlessDischarge): a foreign-less library model (literally zero foreign-trust nodes) is INTENDED to vacuously discharge CWE-78/etc via NoFlow(src=foreign,...) proving true by absence. Applying G2/G7's fix direction verbatim (require >=1 foreign-trust node before accepting vacuous discharge) would REFUTE every T-0223 library-mode model outright, a real regression of a real feature. The two cases (intentional library mode with no adversary vs. a production model that simply forgot to model its adversary) are INDISTINGUISHABLE in the kernel today -- both produce a KernelModel with zero foreign-trust nodes. A resolution needs an explicit signal: e.g. a  declaration ( module kind, or similar) that marks a model as deliberately adversary-free so THAT case (and only that case) is exempt from G2/G7's tightened requirement, while an undeclared model with zero foreign nodes gets the new distinct diagnostic instead of silent PROVED. This is a product/security design call, not something T-0501 should decide unilaterally mid-patch -- filed per the BLOCKER protocol rather than force either a broken fix or a silently-narrowed one. docs/strata/threat.md#phasing and #library-mode-discharge-by-absence need to document whichever resolution is chosen.
