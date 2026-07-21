@@ -8162,7 +8162,7 @@ was left behind there. Did not touch src/frob/gates/** per instruction.
 id: T-0503
 title: 'strata: compliance out_of_scope catalog never threaded into _audit.py evaluate_compliance
   call'
-state: in-progress
+state: done
 kind: security
 origin: human
 created: '2026-07-21'
