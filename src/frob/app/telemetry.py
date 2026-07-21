@@ -44,7 +44,9 @@ T = TypeVar("T")
 def is_disabled() -> bool:
     """True when the operator opted out via `FROB_NO_TELEMETRY` (any
     non-empty, non-`0`/`false` value)."""
-    value = os.environ.get(_NO_TELEMETRY_ENV, "")  # frob:waive SEC110 reason="opt-out flag, not a secret"
+    value = os.environ.get(
+        _NO_TELEMETRY_ENV, ""
+    )  # frob:waive SEC110 reason="opt-out flag, not a secret"
     return value.strip().lower() not in ("", "0", "false")
 
 
