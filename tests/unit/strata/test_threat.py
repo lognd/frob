@@ -1521,6 +1521,37 @@ class TestCheckEffectCompleteness:
         assert result.danger_ok == ()
 
     # frob:tests src/frob/strata/_threat.py::check_effect_completeness kind="unit"
+    def test_effect_on_a_file_absent_from_owner_does_not_crash(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
+        """strata audit G8 (T-0497) counterexample: `extract_effects`
+        filters to non-FOREIGN owned files today, so `effect.file` is
+        always a `binding.owner` key in practice -- but
+        `check_effect_completeness` used to trust that via a bare
+        `binding.owner[effect.file]` subscript. Force the untrusted case
+        directly (an effect naming a file `extract_effects` never actually
+        would) and prove the join degrades to a FOREIGN-owner Violation
+        instead of raising KeyError."""
+        from frob.strata import _threat as threat_module
+        from frob.strata._effects import ObservedEffect
+
+        node = Node(id="Api", trust="trusted", attrs=("code=api/**",))
+        model = KernelModel(nodes=(node,))
+        binding = bind_code(model, tmp_path).danger_ok
+        monkeypatch.setattr(
+            threat_module,
+            "extract_effects",
+            lambda _binding, _root: (
+                ObservedEffect(
+                    file="not/a/bound/file.py", line=1, kind="net", needle="x"
+                ),
+            ),
+        )
+        result = check_effect_completeness(model, binding, tmp_path)
+        assert result.is_ok
+        assert result.danger_ok[0].node == "__foreign__"
+
+    # frob:tests src/frob/strata/_threat.py::check_effect_completeness kind="unit"
     def test_non_default_catalog_moves_the_sink_taxonomy_with_it(self, tmp_path: Path):
         _write(tmp_path, "api/handler.py", "requests.get('https://x')\n")
         extra = WeaknessEntry(

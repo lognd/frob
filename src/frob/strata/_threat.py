@@ -85,7 +85,7 @@ from typani.result import Err, Ok, Result
 from frob.logging import get_logger
 
 from ._claims import evaluate_claims
-from ._code_binding import CodeBinding, is_managed
+from ._code_binding import FOREIGN, CodeBinding, is_managed
 from ._effects import (
     CapabilityViolation,
     ObservedEffect,
@@ -1802,8 +1802,20 @@ def check_effect_completeness(
     conformance = check_capability_conformance(model, binding, root)
     undeclared = tuple(_undeclared_sink_violation(v) for v in conformance.violations)
 
+    # strata audit G8 (T-0497): `extract_effects` only walks
+    # `binding.owner`'s non-FOREIGN files today, so every `effect.file` it
+    # yields is currently guaranteed present in `binding.owner` -- but that
+    # guarantee lives in a DIFFERENT module (`_effects.py`) and this join
+    # trusted it implicitly via a bare `binding.owner[effect.file]`
+    # subscript, which would KeyError (crash, not a fail-closed Violation)
+    # the instant that filtering invariant ever drifted. `.get(...,
+    # FOREIGN)` makes the same case that is unreachable today explicit and
+    # non-crashing, reusing the SAME `FOREIGN` sentinel `_code_binding.py`
+    # already uses for "no real owner" everywhere else (charter: no
+    # duplication) -- a future drift degrades to a `FOREIGN`-owner message,
+    # never a hard crash.
     unclassified = tuple(
-        _unclassified_sink_violation(effect, binding.owner[effect.file])
+        _unclassified_sink_violation(effect, binding.owner.get(effect.file, FOREIGN))
         for effect in extract_effects(binding, root)
         if effect.kind not in known and effect.kind not in excused
     )
