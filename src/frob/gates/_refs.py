@@ -667,7 +667,9 @@ def _ref_gate_file_violations(
     body of `ref_gate`'s main loop, extracted for ARCH001 (line-count)."""
     violations: list[Violation] = []
     if text is not None:
-        violations.extend(_dangling_declarations(rel_path, text, tracked_set, tokens_by_file))
+        violations.extend(
+            _dangling_declarations(rel_path, text, tracked_set, tokens_by_file)
+        )
 
     if rel_path in allowlist or _is_collectible_test_filename(rel_path):
         return violations
@@ -688,7 +690,9 @@ def _ref_gate_file_violations(
     if native_manifest is not None:
         inbound = inbound | {native_manifest}
     tier_violation = _ref001_or_002(rel_path, inbound)
-    if tier_violation is not None and tier_violation.rule not in _md_waived_rules(rel_path, text):
+    if tier_violation is not None and tier_violation.rule not in _md_waived_rules(
+        rel_path, text
+    ):
         violations.append(tier_violation)
     return violations
 

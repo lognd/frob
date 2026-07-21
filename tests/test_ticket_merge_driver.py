@@ -174,8 +174,11 @@ def repo(tmp_path: Path) -> Path:
     atomic_write(ledger_path(main_repo), "# Tickets\n\n")
     # .frob/ is local state (T-0178 telemetry writes .frob/telemetry.jsonl on
     # every CLI call); gitignore it so the clean-status assertions below are
-    # not tripped by an incidental untracked telemetry file.
-    (main_repo / ".gitignore").write_text(".frob/\n")
+    # not tripped by an incidental untracked telemetry file. `.coverage*` is
+    # the same class: under `make coverage` the subprocess .pth hook drops a
+    # `.coverage.<host>.<pid>.<rand>` file into whatever cwd the child ran in,
+    # which is this fixture repo.
+    (main_repo / ".gitignore").write_text(".frob/\n.coverage*\n")
     (main_repo / ".gitattributes").write_text("tickets.md merge=frob-ledger\n")
     _run(
         [
