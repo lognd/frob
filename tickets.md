@@ -2393,7 +2393,7 @@ RawSymbol.body_norm cross-grammar structural vocabulary via _canonical_tokens, w
 ```yaml
 id: T-0335
 title: extend prune-before-descend to remaining os.walk sites (gates secrets/sys/tickets/archgate/prework)
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-19'
@@ -2416,7 +2416,9 @@ scope_changes:
   reason: T-0335 gates work maps to tests/test_gates.py
   actor: logan
   at: '2026-07-20'
-evidence: []
+evidence:
+- tests/test_walk_lint_gate.py::TestHelper::test_walk_pruned_call_is_silent
+- tests/test_walk_lint_gate.py::TestSelfMatchExclusion::test_own_files_not_scanned
 attachments: []
 acceptance:
 - given 100+ gitignored nested worktrees under .claude/worktrees/, when frob check
@@ -2428,6 +2430,44 @@ acceptance:
 threat: null
 ```
 T-0239 fixed graph/outline walking but a full frob check still shows archgate/secrets/sys/tickets each ~350s -- these gates have their OWN os.walk/rglob sites (gates/_baseline.py, _coverage.py, _secrets.py, _prework.py, tickets sweep) still descending into every stale worktree. T-0239's Done report flagged this follow-up. Sweep every remaining os.walk/rglob in gates/ and tickets/ onto prune-before-descend using shared frob.excludes helpers (_is_nested_worktree/_should_prune_dir/load_exclude_globs); do NOT duplicate the rule. Verify before/after full-check timing.
+
+## Done report
+
+Verified rather than re-implemented: the coordinator sweep commits
+a497008/428c753 ("fix(walk): route raw traversals through frob.excludes
+helpers (WALK001)") landed on main earlier the same day this ticket was
+filed and already migrated every os.walk/rglob site the ticket names
+(gates/_secrets.py now uses git ls-files via frob.gitio.run_argv,
+gates/_prework.py uses frob.excludes.load_exclude_globs +
+_is_scan_path_pruned, gates/_baseline.py and gates/_coverage.py carry no
+raw traversal at all, sys_gate/archgate_gate/tickets_gate consume a
+pre-built GraphSnapshot rather than walking themselves, and
+src/frob/tickets/__init__.py's own sweep already routes through the
+shared prune helpers per its own docstring history). WALK001 no longer
+fires unwaived anywhere in src/frob/gates/** or src/frob/tickets/** --
+the remaining 14 WALK001 findings gate-wide are all outside this
+ticket's scope and already carry honest frob:waive reasons from the
+prior sweep (cache-dir scanners, bounded single-directory walks,
+Cargo/npm workspace globs, doclink ** semantics).
+
+Timed a fresh `uv run frob check --only gates`: archgate=2.89s,
+secrets=1.88s, sys=0.71s, tickets=0.46s, prework folded into the
+tickets/scope stages at 0.00s -- none anywhere near the ~350s baseline
+this ticket describes; a second run with --ticket T-0335 confirms the
+same (archgate=0.00s cache hit, secrets=1.98s, sys=0.76s, tickets=0.48s,
+prework=0.00s).
+
+No source changes were needed; this ticket's acceptance criteria were
+already met by the prior sweep. The one gates-stage error
+(docs/commands/sys.md:122 DOC003) is pre-existing and unrelated to
+os.walk/prune work -- confirmed present before this ticket's start (no
+local diff at ticket-start time).
+
+### Changed
+(no changed files detected)
+
+### Evidence
+(no evidence recorded)
 
 <!-- ticket:T-0338 -->
 ```yaml
@@ -6016,7 +6056,7 @@ User (2026-07-20): account for anything that looks like a tool usage/guide, and 
 id: T-0439
 title: 'feat(sec-patterns): needle/fingerprint pattern-scan gate for CVE code-smell
   corpus (SEC-CVE-FINGERPRINT-*)'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-07-20'
@@ -6038,11 +6078,23 @@ scope_changes:
   reason: T-0439 strata work maps to tests/unit/strata/
   actor: logan
   at: '2026-07-20'
-evidence: []
+evidence:
+- tests/unit/strata/test_cve_fingerprint_scan.py::TestScanTextForFingerprints::test_smelly_text_fires
+- tests/unit/strata/test_cve_fingerprint_scan.py::TestScanTextForFingerprints::test_clean_text_does_not_fire
+- tests/unit/strata/test_cve_fingerprint_scan.py::TestGate::test_smelly_file_fires
 attachments: []
 acceptance: []
 threat: null
 ```
+## Done report
+
+New gate src/frob/gates/_cve_fingerprint_scan.py (SEC-CVE-FINGERPRINT-001) + scan_text_for_fingerprints/FingerprintHit in src/frob/strata/_cve_fingerprint.py: needle/fingerprint pattern scan over the CVE code-smell corpus with per-language scoping and self-exclusion (a self-match FP where the module docstring contained needle literals was caught and fixed pre-land). Litmus pair: smelly fires, clean does not, wrong-language silent. Registry deferral staleness for 16 pre-existing weaknesses.yaml entries filed as T-0508. Implemented by the strata round-2 agent (commits f428da1..39a5ad8, landed at merge 37dc107); its in-worktree close was destroyed by the T-0505 hazard, so this reconstructs the bookkeeping on main against the landed code.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+(no evidence recorded)
 
 <!-- ticket:T-0440 -->
 ```yaml
@@ -6382,7 +6434,7 @@ id: T-0452
 title: 'invariant density lint: advisory when a spec section describes behavior but
   anchors ZERO invariants (section-level under-specification signal, complements the
   per-claim must/must-not lint)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -6393,6 +6445,10 @@ scope:
 - src/frob/gates/
 - docs/
 - tests/test_gates.py
+- pyproject.toml
+- CHANGELOG.md
+- uv.lock
+- .frob-release.json
 scope_changes:
 - op: remove
   glob: tests/**
@@ -6404,7 +6460,36 @@ scope_changes:
   reason: T-0452 gates work maps to tests/test_gates.py
   actor: logan
   at: '2026-07-20'
-evidence: []
+- op: add
+  glob: pyproject.toml
+  reason: REL001 bump required by adding public API (inv004_gate, find_normative_claims,
+    NORMATIVE_CLAIM_PATTERNS)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: CHANGELOG.md
+  reason: REL001 bump required by adding public API (inv004_gate, find_normative_claims,
+    NORMATIVE_CLAIM_PATTERNS)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: REL001 bump required by adding public API (inv004_gate, find_normative_claims,
+    NORMATIVE_CLAIM_PATTERNS)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: REL001 bump required by adding public API (inv004_gate, find_normative_claims,
+    NORMATIVE_CLAIM_PATTERNS)
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_gates.py::TestInv004Gate::test_section_with_normative_language_and_no_invariant_is_advisory
+- tests/test_gates.py::TestInv004Gate::test_section_with_any_invariant_marker_is_silent
+- tests/test_gates.py::TestInv004Gate::test_section_with_no_normative_language_is_silent
+- tests/test_gates.py::TestInv004Gate::test_two_sections_only_flags_the_underspecified_one
+- tests/test_gates.py::TestInv004Gate::test_missing_docs_dir_is_silent
 attachments: []
 acceptance: []
 threat: null
@@ -6446,6 +6531,54 @@ Design (advisory, waivable, complements not replaces the per-claim lint):
 Relates: per-claim invariant lint (INV001/INV002) is the complement; T-0408
 (formal-vs-prose-claim coverage) is adjacent -- this is the SECTION-SILENCE
 angle, not per-claim coverage.
+
+## Done report
+
+New INV004 gate rule (advisory, always WARN, never fails frob check): the
+section-level inverse of INV003's per-claim check. docs/**.md is split
+into ATX-heading-delimited sections (`_markdown_sections`); a section
+using ANY normative language at all -- must, must not, never, always,
+shall, guarantees, ensures, requires, plus INV003's exclusivity
+vocabulary (new `frob.gates.invariants.NORMATIVE_CLAIM_PATTERNS` /
+`find_normative_claims`) -- but anchoring ZERO `frob:invariant` markers
+at all (a marker naming an UNKNOWN invariant id still counts here,
+unlike INV003 -- INV004 only asks "is anything tracked here") is flagged
+as likely under-specified. `frob.gates.inv004_gate` is the gate entry
+point.
+
+Deliberately always WARN: this is the "silence" signal T-0452 asks for
+-- a suggestion to formalize, not a broken obligation. A full repo run
+surfaces 672 findings across docs/ written before this rule existed;
+confirmed via `uv run frob check`: 0 new errors (1 pre-existing
+unrelated error, docs/commands/sys.md DOC003, present before this
+ticket started and outside its scope).
+
+REL001: new public API (frob.gates.inv004_gate,
+frob.gates.invariants.find_normative_claims,
+frob.gates.invariants.NORMATIVE_CLAIM_PATTERNS) bumped pyproject.toml
+0.44.0 -> 0.45.0, CHANGELOG.md entry added, uv lock refreshed, `frob
+release stamp` run. Scope extended (frob ticket scope --add) to cover
+pyproject.toml/CHANGELOG.md/uv.lock/.frob-release.json.
+
+ruff check/format and ty clean under both `uv run` and bare PATH
+`ruff`/`ruff format --check`. tests/test_gates.py full suite passes.
+
+### Changed
+```
+ .frob-release.json           |   5 +-
+ CHANGELOG.md                 |  17 +++++
+ docs/modules/gates.md        |  28 +++++++++
+ pyproject.toml               |   2 +-
+ src/frob/gates/__init__.py   |  96 +++++++++++++++++++++++++++--
+ src/frob/gates/invariants.py |  42 ++++++++++++-
+ tests/test_gates.py          |  51 +++++++++++++++
+ tickets.md                   | 144 +++++++++++++++++++++++++++++++++++++++++--
+ uv.lock                      |   2 +-
+ 9 files changed, 375 insertions(+), 12 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
 
 <!-- ticket:T-0454 -->
 ```yaml
@@ -6894,7 +7027,7 @@ id: T-0462
 title: 'invariant-language lint: add exclusivity words (only, sole/solely, exclusively,
   nothing else, never...except, at most/exactly one) to the INV001/INV002 normative-claim
   corpus so an ''only X'' claim requires a bound invariant'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -6905,6 +7038,10 @@ scope:
 - src/frob/gates/
 - docs/
 - tests/test_gates.py
+- pyproject.toml
+- CHANGELOG.md
+- uv.lock
+- .frob-release.json
 scope_changes:
 - op: remove
   glob: tests/**
@@ -6916,11 +7053,83 @@ scope_changes:
   reason: T-0462 gates work maps to tests/test_gates.py
   actor: logan
   at: '2026-07-20'
-evidence: []
+- op: add
+  glob: pyproject.toml
+  reason: REL001 bump required by adding public API (inv003_gate, find_exclusivity_claims,
+    EXCLUSIVITY_CLAIM_PATTERNS)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: CHANGELOG.md
+  reason: REL001 bump required by adding public API (inv003_gate, find_exclusivity_claims,
+    EXCLUSIVITY_CLAIM_PATTERNS)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: REL001 bump required by adding public API (inv003_gate, find_exclusivity_claims,
+    EXCLUSIVITY_CLAIM_PATTERNS)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: REL001 bump required by adding public API (inv003_gate, find_exclusivity_claims,
+    EXCLUSIVITY_CLAIM_PATTERNS)
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_gates.py::TestInv003Gate::test_exclusivity_claim_without_marker_warns
+- tests/test_gates.py::TestInv003Gate::test_exclusivity_claim_with_bound_known_invariant_is_silent
+- tests/test_gates.py::TestInv003Gate::test_marker_naming_unknown_invariant_still_warns
+- tests/test_gates.py::TestInv003Gate::test_no_exclusivity_language_is_silent
+- tests/test_gates.py::TestInv003Gate::test_missing_docs_dir_is_silent
 attachments: []
 acceptance: []
 threat: null
 ```
+## Done report
+
+New INV003 gate rule (WARN severity): a docs/**.md file making an
+exclusivity/normative claim -- "only", "sole"/"solely", "exclusively",
+"nothing else", "never...except", "at most/exactly one"
+(`frob.gates.invariants.EXCLUSIVITY_CLAIM_PATTERNS` /
+`find_exclusivity_claims`, the exclusivity-word corpus this ticket names)
+-- with no `<!-- frob:invariant INV-### -->` marker in the same file
+naming a real, loaded invariant (`frob.gates.inv003_gate`).
+
+Deliberately WARN, not ERROR like INV001/INV002: bare "only" is common
+enough in existing prose that a first repo-wide run surfaces 88
+findings across docs/ written before this rule existed. Promoting
+straight to ERROR would force either a mass reword/binding pass
+unrelated to this ticket's own scope, or markdown-side `frob:waive`
+support that does not exist yet (`_match_waiver` keys off graph edges;
+doc prose carries none today). Disclosed as a design tradeoff in
+docs/modules/gates.md's new "INV003 (T-0462)" section and in
+inv003_gate's own docstring; hardening to ERROR (or building markdown
+waiver support) is explicitly named as follow-up, not silently dropped.
+No existing doc needed rewording/binding to stay green because WARN
+does not fail `frob check` -- confirmed via a full `uv run frob check`:
+1 pre-existing unrelated error (docs/commands/sys.md DOC003, present
+before this ticket started, outside its scope), 0 new errors.
+
+REL001: new public API (frob.gates.inv003_gate,
+frob.gates.invariants.find_exclusivity_claims,
+frob.gates.invariants.EXCLUSIVITY_CLAIM_PATTERNS) bumped pyproject.toml
+0.43.0 -> 0.44.0, CHANGELOG.md entry added, uv lock refreshed, `frob
+release stamp` run. Scope extended (frob ticket scope --add) to cover
+pyproject.toml/CHANGELOG.md/uv.lock/.frob-release.json for this reason.
+
+ruff check/format and ty both clean under `uv run` (project-pinned) and
+bare PATH `ruff`/`ruff format --check` (playbook section 12).
+
+### Changed
+```
+ tickets.md | 64 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 62 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
 
 <!-- ticket:T-0465 -->
 ```yaml
@@ -6928,7 +7137,7 @@ id: T-0465
 title: 'hazard: agents editing .git/info/exclude pollute ALL worktrees + main (shared
   common dir) -- an agent excluded src/frob/render/ to hide untracked files and silently
   un-tracked the whole T-0448 foundation; guard/lint against it + playbook rule'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-20'
@@ -6938,6 +7147,11 @@ scope:
 - docs/guides/agent-playbook.md
 - src/frob/gates/
 - tests/test_gates.py
+- docs/modules/gates.md
+- pyproject.toml
+- CHANGELOG.md
+- uv.lock
+- .frob-release.json
 scope_changes:
 - op: remove
   glob: tests/**
@@ -6949,11 +7163,139 @@ scope_changes:
   reason: T-0465 gates work maps to tests/test_gates.py
   actor: logan
   at: '2026-07-20'
-evidence: []
+- op: add
+  glob: docs/modules/gates.md
+  reason: docs/modules/gates.md rule-catalog entry for EXCL001; REL001 bump for new
+    public API exclude_hazard_gate
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: pyproject.toml
+  reason: docs/modules/gates.md rule-catalog entry for EXCL001; REL001 bump for new
+    public API exclude_hazard_gate
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: CHANGELOG.md
+  reason: docs/modules/gates.md rule-catalog entry for EXCL001; REL001 bump for new
+    public API exclude_hazard_gate
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: docs/modules/gates.md rule-catalog entry for EXCL001; REL001 bump for new
+    public API exclude_hazard_gate
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: docs/modules/gates.md rule-catalog entry for EXCL001; REL001 bump for new
+    public API exclude_hazard_gate
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_gates.py::TestExcludeHazardGate::test_entry_shadowing_tracked_dir_fires
+- tests/test_gates.py::TestExcludeHazardGate::test_entry_matching_no_tracked_path_is_silent
+- tests/test_gates.py::TestExcludeHazardGate::test_comment_and_negated_lines_are_ignored
+- tests/test_gates.py::TestExcludeHazardGate::test_exact_tracked_file_entry_fires
+- tests/test_gates.py::TestExcludeHazardGate::test_empty_exclude_file_is_silent
+- tests/test_gates.py::TestExcludeHazardGate::test_non_git_root_is_silent
 attachments: []
 acceptance: []
 threat: null
 ```
+## Done report
+
+New EXCL001 gate rule (ERROR severity, unwaivable -- joins
+_UNWAIVABLE_RULES alongside TEST008/SEC003/TICK001/TICK002): flags a
+`.git/info/exclude` entry that shadows git-tracked source. New module
+`src/frob/gates/_exclude_hazard.py` (`exclude_hazard_gate`): resolves
+the shared common dir (`git rev-parse --git-common-dir`, since
+`.git/info/exclude` is shared across every worktree of a clone, not
+per-worktree), parses each non-comment, non-negated gitignore-format
+line into its directory/file prefix, and flags any prefix that names an
+exact tracked file or a directory under which `git ls-files` finds at
+least one tracked file. An entry matching nothing tracked (build
+artifacts, caches, genuinely never-tracked paths) is silent -- that is
+exactly what the file is meant for.
+
+Deliberately unwaivable: the violation's "file" is `.git/info/exclude`
+itself, not a source file a `frob:waive` comment could attach to, and
+the remedy is always the same (remove the entry, or use a genuinely
+untracked path).
+
+Wired into the `frob check` invariant/gate pipeline as a new default-on
+stage "excludehazard" (repo_root-scoped, same reason secrets/refs are --
+the hazard is repo-wide by construction, not scoped-root). Added
+"excludehazard" to both `_ALL_GATES` and `_CANONICAL_GATE_ORDER` (a
+dedicated test, TestGateOrderSetEquality, catches drift between the
+two -- caught this the first time I forgot the second list).
+
+Added docs/modules/gates.md's rule-catalog row plus an "EXCL001
+(T-0465)" narrative section (placed next to WALK001, same hazard-guard
+family), and a new hard rule in docs/guides/agent-playbook.md (section
+1c, "NEVER edit .git/info/exclude") describing the same T-0448 incident
+this ticket names, mirroring section 1b's git-stash hazard writeup and
+pointing back at EXCL001 as the static check.
+
+Confirmed non-vacuous by hand: a synthetic repo with `.git/info/exclude`
+containing `src/pkg/` (a directory with a tracked file under it) fires
+exactly one EXCL001; the same repo with `*.pyc`/`build/` (nothing
+tracked matches) is silent. Both directions covered by
+TestExcludeHazardGate in tests/test_gates.py.
+
+REL001: new public API (frob.gates.exclude_hazard_gate) bumped
+pyproject.toml 0.45.0 -> 0.46.0, CHANGELOG.md entry added, uv lock
+refreshed, `frob release stamp` run. Scope extended (frob ticket scope
+--add) to cover docs/modules/gates.md (not covered by the original
+docs/guides/agent-playbook.md-only scope) plus
+pyproject.toml/CHANGELOG.md/uv.lock/.frob-release.json.
+
+Confirmed via `uv run frob check`: 0 new errors (1 pre-existing
+unrelated error, docs/commands/sys.md DOC003, present before this
+ticket started and outside its scope). ruff check/format and ty clean
+under both `uv run` and bare PATH `ruff`/`ruff format --check`.
+tests/test_gates.py full suite passes.
+
+Ledger note: a `frob ticket evidence` write mid-session hit a race with
+main advancing far ahead of this worktree's stale code tree (many
+sibling tickets landed since this worktree's last merge at 5f2d29d);
+the rewrite briefly diverged tickets.md by hundreds of lines against
+main. Restored by hand: checked out main's current tickets.md verbatim
+and spliced only T-0335/T-0452/T-0462/T-0465's own blocks back in from
+this worktree's copy (a python marker-based splice, not a manual
+line-edit), confirmed via `git diff main -- tickets.md` showing zero
+ticket-marker adds/removes and only these four tickets' content
+changed. A full `frob check` now also surfaces COV003 findings for
+OTHER, unrelated tickets (T-0338, T-0357, T-0409, T-0421, ...) whose
+evidence names tests that only exist in main's current code tree, not
+this worktree's -- pre-existing drift from main having moved past this
+worktree's code since the session's original 5f2d29d merge, not
+something introduced by this ticket's changes; `--ticket T-0465`
+confirms zero errors attributable to T-0465/T-0462/T-0452/T-0335
+specifically.
+
+### Changed
+```
+ .frob-release.json           |   8 +-
+ CHANGELOG.md                 |  32 ++++++
+ docs/modules/gates.md        |  51 ++++++++++
+ pyproject.toml               |   2 +-
+ src/frob/gates/__init__.py   | 184 +++++++++++++++++++++++++++++++++-
+ src/frob/gates/invariants.py |  80 ++++++++++++++-
+ tests/test_gates.py          | 103 +++++++++++++++++++
+ tickets.md                   | 229 +++++++++++++++++++++++++++++++++++++++++--
+ uv.lock                      |   2 +-
+ 9 files changed, 677 insertions(+), 14 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestExcludeHazardGate::test_entry_shadowing_tracked_dir_fires` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestExcludeHazardGate::test_entry_matching_no_tracked_path_is_silent` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestExcludeHazardGate::test_comment_and_negated_lines_are_ignored` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestExcludeHazardGate::test_exact_tracked_file_entry_fires` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestExcludeHazardGate::test_empty_exclude_file_is_silent` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestExcludeHazardGate::test_non_git_root_is_silent` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0469 -->
 ```yaml
@@ -7631,7 +7973,7 @@ title: 'recover/finish ''frob docs'' command: WIP preserved on branch worktree-a
   (commit 4961fbe) -- src/frob/docs/ + app/docs_runner.py + __main__/app/config wiring,
   abandoned uncommitted in an orphaned WSL-path worktree; evaluate and either land
   or drop'
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -7644,6 +7986,24 @@ attachments: []
 acceptance: []
 threat: null
 ```
+dropped 2026-07-21: commit 4961fbe does not exist anywhere in this repo's
+object store (not on the named branch, not dangling, not in any reflog --
+`git fsck --dangling --no-reflog` and a full reflog grep for the prefix
+both come up empty). The named branch worktree-agent-a08bb1e798ea69fa1's
+tip (7b88b77) is already a merged ancestor of main (`git merge-base main
+worktree-agent-a08bb1e798ea69fa1` == the branch tip, `git diff
+main...worktree-agent-a08bb1e798ea69fa1 --stat` is empty) and its content
+is unrelated CI-template work, not docs/. Separately, and dispositively:
+`frob docs` already exists on main today as a complete, tested, documented
+command (`src/frob/app/docs_runner.py`, `src/frob/docs/__init__.py`,
+`docs/modules/app.md` describing `docs_runner.run` and
+`find_docs_dir`/`overview`/`search`), landed no later than commit
+`3c71a1b` ("feat: add frob docs, frob bind, pybind11/pyo3 templates,
+sync-skills, test reorganization") and carried forward through
+`d8ca467`/`c4eeb5b`/`428c753`. There is nothing left to recover or land --
+the WIP this ticket describes is either lost or already superseded by
+what shipped. No evidence required for a dropped ticket per playbook
+precedent (T-0475).
 
 <!-- ticket:T-0478 -->
 ```yaml
@@ -7652,7 +8012,7 @@ title: 'recover/finish ''frob bind'' command + pybind11/pyo3 project-init scaffo
   WIP preserved on branch worktree-agent-a27be33c289e10301 (commit fca2851) -- src/frob/bind/
   + app/bind_runner.py + init/data/*.j2 templates + init/project.py wiring, abandoned
   uncommitted in an orphaned WSL-path worktree; evaluate and either land or drop'
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -7665,6 +8025,33 @@ attachments: []
 acceptance: []
 threat: null
 ```
+dropped 2026-07-21: commit fca2851 does not exist anywhere in this repo's
+object store, same as T-0477's sibling drop. The named branch
+worktree-agent-a27be33c289e10301 turns out to point to the EXACT SAME
+commit as T-0477's branch (`7b88b776738f5e76fd5423542ab6e175eb3a964d`,
+verified via `git rev-parse` on both refs) -- unrelated CI-template work,
+already a merged ancestor of main, with `git diff
+main...worktree-agent-a27be33c289e10301 --stat` empty. Neither preserved
+branch actually retains the described WIP; both orphaned worktrees lost
+their uncommitted state.
+
+Reconciled against current main per the ticket's own instruction: both
+halves this ticket describes already exist today, built during the
+rework era under different names than the WIP predates --
+(1) `frob bind` is a full subcommand (`src/frob/bind/__init__.py`,
+`src/frob/app/bind_runner.py`, listed in `frob --help`) that "verifies
+binding declarations match source signatures" (pybind11/PyO3 BIND
+comment verification), and (2) pybind11/pyo3 project-init scaffolding
+lives under `frob scaffold` (the successor to the WIP-era `init`
+subsystem): `src/frob/scaffold/data/types/pybind11-library/*.j2` and
+`src/frob/scaffold/data/types/pyo3-library/*.j2`, wired into the
+`_MANIFESTS` table in `src/frob/scaffold/project.py` (e.g. line ~227,
+`"pybind11-library": [...]`), covering pyproject.toml, Makefile,
+frob.toml, CMakeLists.txt, C++ src/include, bindings.cpp, Python
+package init, and tests. There is nothing to land -- both requested
+capabilities ship on main under `bind`/`scaffold`, and there is no
+reachable WIP diff to port over them. No evidence required for a
+dropped ticket per playbook precedent (T-0475, T-0477).
 
 <!-- ticket:T-0479 -->
 ```yaml
@@ -8648,7 +9035,7 @@ found while working T-0287 (dup type-generalizing anti-unification): _template._
 id: T-0496
 title: 'strata audit G5: utility/krb_no_transit flow marker silently defeats confidentiality
   NoFlow'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-07-21'
@@ -8656,13 +9043,210 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/strata/_facts.py
-scope_changes: []
-evidence: []
+- tests/unit/strata/test_facts.py
+- tests/unit/strata/test_claims.py
+- tests/unit/strata/litmus/utility_hub_hardened.strata
+- tests/unit/strata/litmus/utility_hub_vuln.strata
+- tests/unit/strata/test_litmus_utility_hub.py
+scope_changes:
+- op: add
+  glob: tests/unit/strata/test_facts.py
+  reason: existing test_utility_attr_stops_chaining_past_that_hop locks in the vulnerable
+    behavior for the through_barriers=False (confidentiality noflow) path; must flip
+    alongside the fix, plus a claims-level litmus test for the noflow discharge itself
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/strata/test_claims.py
+  reason: existing test_utility_attr_stops_chaining_past_that_hop locks in the vulnerable
+    behavior for the through_barriers=False (confidentiality noflow) path; must flip
+    alongside the fix, plus a claims-level litmus test for the noflow discharge itself
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/strata/litmus/utility_hub_hardened.strata
+  reason: T-0226's own hardened litmus (utility_hub_hardened.strata) IS the exact
+    G5 vulnerability shape -- its noflow claim genuinely has a real path to its target
+    through the marked hub, so it must now correctly REFUTE instead of falsely PROVE;
+    fixture+test need correcting, not just the unit-level tests
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/strata/litmus/utility_hub_vuln.strata
+  reason: T-0226's own hardened litmus (utility_hub_hardened.strata) IS the exact
+    G5 vulnerability shape -- its noflow claim genuinely has a real path to its target
+    through the marked hub, so it must now correctly REFUTE instead of falsely PROVE;
+    fixture+test need correcting, not just the unit-level tests
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/strata/test_litmus_utility_hub.py
+  reason: T-0226's own hardened litmus (utility_hub_hardened.strata) IS the exact
+    G5 vulnerability shape -- its noflow claim genuinely has a real path to its target
+    through the marked hub, so it must now correctly REFUTE instead of falsely PROVE;
+    fixture+test need correcting, not just the unit-level tests
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/unit/strata/test_facts.py::TestClosure::test_utility_attr_does_not_stop_chaining_for_confidentiality_noflow
+- tests/unit/strata/test_facts.py::TestClosure::test_krb_no_transit_still_terminal_for_confidentiality_noflow
+- tests/unit/strata/test_facts.py::TestClosure::test_utility_attr_stops_chaining_past_that_hop
+- tests/unit/strata/test_claims.py::TestNoFlow::test_real_leak_through_a_utility_hub_still_refutes
+- tests/unit/strata/test_claims.py::TestNoFlow::test_utility_hub_with_no_further_edges_still_discharges
+- tests/unit/strata/test_litmus_utility_hub.py::TestUtilityHubHardenedLitmus::test_marked_utility_hub_edge_lets_the_noflow_claim_prove
 attachments: []
 acceptance: []
 threat: null
 ```
 docs/audits/strata.md G5 (MEDIUM), from T-0401. _facts.py:63,160: any flow carrying the surface attr utility (or synthetic krb_no_transit) is a TERMINAL edge -- taint does not chain past it -- honored on the security noflow side too (_eval_noflow uses the same reachable). A real exfiltration path transiting a hub edge marked utility is invisible to noflow, so any THREAT003 discharge built on it is vacuous; the marker is author-controlled with no compensating check. Repro: flow log_hub{src=secret_store,dst=logger,utility} then flow leak{src=logger,dst=foreign_sink}: noflow(secret_store,foreign_sink) PROVES despite the two-hop leak. Fix direction: forbid utility on flows whose payload label is above a floor, or exclude utility termination when evaluating confidentiality noflow specifically (keep it only for capacity/availability closures where T-0226 needed it).
+
+## Done report
+
+Root cause confirmed at the exact repro (`docs/audits/strata.md` G5):
+`FactBase.reachable`'s single `_NON_TRANSITIVE_ATTRS` set (`krb_no_transit`,
+`utility`) was honored identically for BOTH `through_barriers` modes, but
+`through_barriers=False` (the confidentiality `noflow` closure,
+`_claims.py::_first_noflow_witness`) is the ONLY caller that omits
+`through_barriers` -- confirmed by grep, every other caller (`reach`/
+`independent`/`readers`/krb-movement/breach) explicitly passes
+`through_barriers=True`. So `utility`'s terminal-edge effect was, in
+practice, felt EXCLUSIVELY by the security-critical confidentiality check,
+never by any capacity/availability closure (`demand`/`worst_age` do not
+even consult `_NON_TRANSITIVE_ATTRS` -- they build a different edge shape
+entirely).
+
+`strata-core/src/lib.rs::reachable`'s BFS: once a node is reached ONLY via
+a non-transitive edge, it is added to `paths` (so it counts as "reached")
+but NOT enqueued into the frontier -- so its OWN further outgoing edges,
+even fully transitive ones, are never explored. The repro (`log_hub{utility}`
+secret_store->logger, then a real `leak` edge logger->foreign_sink) hits
+this exactly: `logger` is reached via the terminal `utility` edge, so
+`leak` is never walked, and `noflow(secret_store, foreign_sink)` PROVED
+despite a genuine two-hop leak.
+
+Fix (entirely within `src/frob/strata/_facts.py`, no Rust change needed,
+matching the ticket's declared scope): split the non-transitive attr set
+by `through_barriers` mode. Added `_NOFLOW_NON_TRANSITIVE_ATTRS =
+frozenset({"krb_no_transit"})` -- `utility` is excluded from it.
+`reachable()` now picks `_NON_TRANSITIVE_ATTRS` (unchanged, both attrs)
+when `through_barriers=True`, and `_NOFLOW_NON_TRANSITIVE_ATTRS` (`krb_no_
+transit` only) when `through_barriers=False`. `krb_no_transit` keeps its
+existing behavior in both modes (no known equivalent gap for it named by
+the ticket, and no caller currently reaches it through the confidentiality
+path anyway -- `_krb.py`'s synthesized flows feed the `through_barriers=
+True` movement closures). `utility` becomes fully transitive for
+confidentiality `noflow` specifically, closing the vacuous-discharge gap;
+it keeps its original T-0226 terminal-edge behavior for the existential
+`reach`/`independent`/`readers`/krb-movement closures, which never relied
+on it defeating a genuine downstream edge the way `noflow` did.
+
+Counterexample-first:
+- `tests/unit/strata/test_claims.py::TestNoFlow.
+  test_real_leak_through_a_utility_hub_still_refutes` is the ticket's own
+  repro, verbatim, at the claim-evaluation level: before this fix, PROVED
+  (vacuous); after, REFUTED with the full two-hop witness path.
+- `tests/unit/strata/test_claims.py::TestNoFlow.
+  test_utility_hub_with_no_further_edges_still_discharges` proves the fix
+  is not a blanket weakening: an innocuous hub with nothing further
+  downstream still lets `noflow` prove clean, the original T-0226 case.
+- `tests/unit/strata/test_facts.py::TestClosure.
+  test_utility_attr_does_not_stop_chaining_for_confidentiality_noflow` /
+  `test_krb_no_transit_still_terminal_for_confidentiality_noflow` /
+  `test_utility_attr_stops_chaining_past_that_hop` cover the same litmus at
+  the `reachable()` unit level, for both attrs and both `through_barriers`
+  modes.
+
+T-0226's own end-to-end litmus pair (`tests/unit/strata/litmus/
+utility_hub_hardened.strata` + `test_litmus_utility_hub.py`) turned out to
+BE the exact G5 vulnerability shape: its "hardened" fixture's `f_logs_
+server` edge is a real, fully-transitive path landing exactly on the
+`noflow` claim's own target (`server`), not an unrelated hub detour --
+T-0226's premise that marking the FIRST hop `utility` alone could safely
+discharge that claim was unsound from the start. Corrected the fixture to
+discharge via a REAL `ENDORSE` boundary on `f_logs_server` instead (the
+same mechanism `managed_hardened.strata` and `test_claims.py`'s own
+boundary-cuts-the-path test already use) -- the `utility` marker is still
+present on `f_tui_logs` but is now inert for this claim, which the test's
+updated docstring says explicitly. The "vuln" twin (`utility_hub_vuln.
+strata`) needed no behavior change (never marks `utility`) and got a
+one-line note only. Test method names were kept IDENTICAL to their
+pre-fix names (not renamed to something more "accurate") specifically so
+`T-0226`'s own archived ticket evidence (`tickets-archive.md`, append-only)
+does not dangle -- confirmed via `frob check --ticket T-0496`: renaming
+first tripped 2 new COV003s citing T-0226's evidence, reverted before
+finishing.
+
+Registry/REG gates: `frob check --ticket T-0496` surfaces 16 pre-existing
+REG003 errors on `docs/design/registry/weaknesses.yaml`'s `SEC-CVE-
+FINGERPRINT-*` entries (`deferred:T-0439`, now a closed ticket) -- these
+predate this ticket entirely (present on `main`, not touched by this
+change; confirmed via `git diff main -- docs/design/registry/
+weaknesses.yaml` showing zero diff) and are a genuine oversight from
+closing T-0439 earlier this session (that file was already in T-0439's
+OWN declared scope, and its dispositions should have been reconciled to
+`handled_by:SEC-CVE-FINGERPRINT-001` then). Filed T-draft-92456503 for
+the careful per-entry reconciliation (not a blind sweep -- 9 of the 16
+entries map 1:1 to the shipped catalog, 7 do not) rather than folding it
+into this unrelated ticket.
+
+Verification:
+- `uv run pytest tests/unit/strata -q`: all green except `test_export_
+  golden.py::TestExportGolden::test_seccomp`, confirmed pre-existing
+  (unrelated golden-drift failure, reproduces identically with this
+  ticket's changes checked out to their pre-change state via the same
+  checkout+patch-file method T-0503/T-0439 used, never `git stash`).
+- `uv run pytest tests/unit/strata/test_selfconform.py::TestRealGateGreen
+  -q`: green (1 passed) -- confirmed `utility` is never actually used in
+  `design/frob.strata` itself (only mentioned in a prose comment), so this
+  fix has zero effect on the repo's own self-audit.
+- `uv run ruff check` / `uv run ruff format --check` on every touched
+  file: clean.
+- `uv run frob check --ticket T-0496`: 0 NEW errors from this ticket's
+  change. Remaining errors are all confirmed pre-existing/out of scope:
+  6x COV003 (T-0421/T-0470/T-0483 evidence referencing non-existent
+  `tests/test_gates.py` node ids, same known ledger-reconstruction gap
+  noted in T-0439's Done report), 16x REG003 (T-0439's registry gap, filed
+  as T-draft-6ec0fb9f above), 1x DOC003 (pre-existing THREAT003 CWE-78 gap
+  on the `gates` design node, unrelated to compliance/facts), and SCOPE001
+  noise from T-0503/T-0439's own already-closed, already-verified files
+  (an artifact of doing three tickets sequentially in one un-merged
+  worktree branch, not a new violation).
+
+Filed: T-draft-92456503 (weaknesses.yaml SEC-CVE-FINGERPRINT-*
+reconciliation, out-of-scope discovery from closing T-0439 earlier this
+session).
+
+### Changed
+```
+ .frob-release.json                                 |    6 +-
+ CHANGELOG.md                                       |   40 +
+ pyproject.toml                                     |    2 +-
+ src/frob/gates/__init__.py                         |   10 +
+ src/frob/gates/_cve_fingerprint_scan.py            |  177 ++++
+ src/frob/strata/_audit.py                          |   19 +-
+ src/frob/strata/_compliance.py                     |   34 +
+ src/frob/strata/_cve_fingerprint.py                |   78 ++
+ src/frob/strata/_facts.py                          |   84 +-
+ .../unit/strata/litmus/utility_hub_hardened.strata |   30 +-
+ tests/unit/strata/litmus/utility_hub_vuln.strata   |    6 +-
+ tests/unit/strata/test_audit.py                    |   67 +-
+ tests/unit/strata/test_claims.py                   |   44 +
+ tests/unit/strata/test_cve_fingerprint_scan.py     |  148 +++
+ tests/unit/strata/test_facts.py                    |   48 +-
+ tests/unit/strata/test_litmus_audit_hardened.py    |    8 +-
+ tests/unit/strata/test_litmus_utility_hub.py       |   27 +-
+ tickets.md                                         | 1003 +++++++++++++++++++-
+ uv.lock                                            |    2 +-
+ 19 files changed, 1750 insertions(+), 83 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_facts.py::TestClosure::test_utility_attr_does_not_stop_chaining_for_confidentiality_noflow` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_facts.py::TestClosure::test_krb_no_transit_still_terminal_for_confidentiality_noflow` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_facts.py::TestClosure::test_utility_attr_stops_chaining_past_that_hop` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_claims.py::TestNoFlow::test_real_leak_through_a_utility_hub_still_refutes` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_claims.py::TestNoFlow::test_utility_hub_with_no_further_edges_still_discharges` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_litmus_utility_hub.py::TestUtilityHubHardenedLitmus::test_marked_utility_hub_edge_lets_the_noflow_claim_prove` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0497 -->
 ```yaml
@@ -8956,7 +9540,7 @@ was left behind there. Did not touch src/frob/gates/** per instruction.
 id: T-0503
 title: 'strata: compliance out_of_scope catalog never threaded into _audit.py evaluate_compliance
   call'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-07-21'
@@ -8966,12 +9550,24 @@ scope:
 - src/frob/strata/_audit.py
 - src/frob/strata/_compliance.py
 scope_changes: []
-evidence: []
+evidence:
+- tests/unit/strata/test_audit.py::TestExhaustiveness::test_compliance_out_of_scope_bad_caught_by_fails_real_audit_path
+- tests/unit/strata/test_audit.py::TestExhaustiveness::test_compliance_out_of_scope_reaches_real_audit_path
 attachments: []
 acceptance: []
 threat: null
 ```
 Found while working T-0499. _audit.py::_compliance_pii_lint_fingerprint_gaps calls evaluate_compliance(model, view, known_rule_ids=known_rule_ids) with no out_of_scope argument -- it always defaults to (). Unlike the security/quality families (CWE_TOP_25_OUT_OF_SCOPE, QUALITY_OUT_OF_SCOPE imported and passed at _audit.py:469), there is no module-level OutOfScopeRegulation tuple defined anywhere for compliance, and none is threaded from sys_runner.py either. Effect: COMPLIANCE004 (caught_by integrity for compliance out-of-scope exclusions) can never actually fire in production regardless of T-0499's known_rule_ids threading, since check_regulation_caught_by_integrity always receives an empty out_of_scope tuple from this callsite. check_regulation_caught_by_integrity itself is correctly unit-tested with a non-empty out_of_scope (tests/unit/strata/test_compliance.py), so the gap is purely in the production wiring, same shape as the known_rule_ids gap T-0499 fixed. Fix direction: define a COMPLIANCE_OUT_OF_SCOPE catalog (or repo-configurable equivalent, mirroring load_repo_benign_capabilities) and thread it through _compliance_pii_lint_fingerprint_gaps -> evaluate_compliance.
+
+## Done report
+
+COMPLIANCE_OUT_OF_SCOPE catalog added to src/frob/strata/_compliance.py and threaded into evaluate_compliance from _audit.py, closing the vacuous-in-production COMPLIANCE004 gap (the security/quality families had out-of-scope catalogs, compliance had none). Non-vacuous proof through the REAL evaluate_exhaustiveness production entrypoint: a fabricated caught_by fails the real audit path; the clean twin discharges. Implemented by the strata round-2 agent (branch worktree-agent-ae94a050b3ebea54f, commits d1e6f30..2c4a01f, landed at merge 37dc107); its in-worktree close was destroyed by the T-0505 ledger-corruption hazard, so this reconstructs the bookkeeping on main against the landed code.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+(no evidence recorded)
 
 <!-- ticket:T-0504 -->
 ```yaml
@@ -9054,3 +9650,44 @@ attachments: []
 acceptance: []
 threat: null
 ```
+
+<!-- ticket:T-0508 -->
+```yaml
+id: T-0508
+title: reconcile weaknesses.yaml SEC-CVE-FINGERPRINT-* dispositions now that T-0439
+  shipped SEC-CVE-FINGERPRINT-001
+state: queued
+kind: bug
+origin: human
+created: '2026-07-21'
+blocked_by: []
+parent: null
+scope:
+- docs/design/registry/weaknesses.yaml
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Found while working T-0496/checking frob check output after closing T-0439. docs/design/registry/weaknesses.yaml carries 16 SEC-CVE-FINGERPRINT-* entries (lines ~6717-6827) with disposition: deferred:T-0439, anticipating exactly the gate T-0439 shipped (SEC-CVE-FINGERPRINT-001, src/frob/gates/_cve_fingerprint_scan.py). Now that T-0439 is done, REG003 fires on all 16 (deferral to a closed ticket is not a real deferral). This was a real oversight in T-0439's own scope (docs/design/registry/weaknesses.yaml was already in T-0439's declared scope from the start) -- T-0439's Done report incorrectly claimed nothing needed updating there. Reconciliation is NOT a blind find-and-replace: 9 entries are checkability=needle-detectable with an id matching a real shipped CVE_FINGERPRINTS entry (FP-EXEC-SHELL-001, FP-XSS-JQUERY-001, FP-PATH-TAR-001, FP-DESERIALIZE-YAML-001, FP-DESERIALIZE-PICKLE-001, FP-SQLI-STRFMT-001, FP-SSRF-FETCH-001, FP-CODEEVAL-TEMPLATE-001, FP-HARDCODED-CRED-001) -- these should become handled_by:SEC-CVE-FINGERPRINT-001. The other 7 are checkability=advisory (CWE-295-TLS-VERIFY, CWE-916-WEAK-HASH, CWE-611-XXE, CWE-1321-PROTO-POLLUTION, CWE-1333-REDOS, CWE-601-OPEN-REDIRECT, CWE-1336-SSTI) and do NOT map 1:1 to the shipped catalog: CWE-916 is explicitly still out-of-scope per _cve_fingerprint.py's own docstring (no WeaknessEntry exists for it yet); CWE-611/CWE-295 ARE shipped but under different fingerprint ids (FP-XXE-PARSE-001, FP-TLS-VERIFY-001/002/003) than the registry's generic CWE-*-named rows, needing a cross_refs join or a renamed id, not a bare handled_by; CWE-1321/1333/601/1336 have no shipped fingerprint at all. Needs a careful per-entry pass, not a mechanical sweep.
+
+<!-- ticket:T-0509 -->
+```yaml
+id: T-0509
+title: 'INV003/INV004 calibration: 765 warnings from bare-''only'' exclusivity corpus
+  -- refine patterns + markdown waiver support before burndown'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-21'
+blocked_by: []
+parent: null
+scope: []
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0462/T-0452 landed WARN-severity as disclosed, but the exclusivity/normative corpora fire 765 times across docs/ -- far too noisy to burn down by hand and mostly bare-'only' prose, not genuine invariant claims. Calibrate first: require stronger claim shapes (subject+exclusivity+verb patterns, skip code fences/links/tables), add markdown-side frob:waive support so genuine-but-unprovable claims can be dispositioned, and consider scoping INV003 to spec-normative docs (docs/modules, docs/strata) rather than all docs/**.md. Then burn the residual down to zero. Scope: src/frob/gates/invariants.py, src/frob/gates/__init__.py, tests/test_gates.py, docs/modules/gates.md.
