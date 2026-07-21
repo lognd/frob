@@ -4846,6 +4846,7 @@ is the correct fix and does not touch the test file's existing alias.
 - `tests/test_gates.py::TestCoverageGate::test_cov006_still_fires_when_no_public_wrapper_reaches_the_target` (pytest node id, verified passing when recorded)
 - `tests/test_gates.py::TestProcessPoolGates::test_process_job_runs_in_a_separate_process` (pytest node id, verified passing when recorded)
 - `tests/test_gates.py::TestGateOrderSetEquality::test_canonical_gate_order_matches_all_gates` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0517 -->
 ```yaml
 id: T-0517
@@ -5136,9 +5137,9 @@ threat: null
 ```
 Found while working T-0515: _DOC_WAIVE_MARKER_RE (frob.gates.__init__) matches any '<!-- frob:waive INV003|INV004 reason="..." -->' text found anywhere in a file's raw text, with no distinction between a REAL waiver marker and an ILLUSTRATIVE example demonstrating the syntax in prose. docs/modules/gates.md's own INV003/INV004 documentation necessarily spells out the marker syntax as a literal example, e.g. reason="..." (literal three dots) -- which is non-empty and satisfies the regex, so gates.md has silently self-waived its own INV003 and INV004 findings since T-0509/T-0515, never appearing in the residual list despite having plenty of exclusivity/normative prose. Fix direction: either scan for the marker only outside fenced/inline code (the same _strip_markdown_noise pass find_exclusivity_claims/find_normative_claims already apply, which would not help here since these examples are NOT inside code fences), or require the reason text to not be a placeholder ellipsis/generic string, or accept this as a known limitation and document it explicitly in docs/modules/gates.md's INV003/INV004 sections. Low priority since it only affects gates.md's own meta-documentation of the gate today, but the same trap would silently hit ANY doc that ever explains the waiver syntax by literal example.
 
-<!-- ticket:T-draft-5b46101c -->
+<!-- ticket:T-0523 -->
 ```yaml
-id: T-draft-5b46101c
+id: T-0523
 title: burn down residual 59 COV006 findings outside gates/test_gates.py scope
 state: queued
 kind: bug
@@ -5158,9 +5159,9 @@ threat: null
 ```
 T-0516 fixed the systematic COV006 FP class (two-hop private-helper chains through a same-file public wrapper, and Python import-alias name mismatches in the wrapper-reachability rescue), which dropped total repo COV006 findings from 90 to 61 (measured via frob check --only coverage on this worktree before/after). T-0516's declared scope was narrowly src/frob/gates/__init__.py + tests/test_gates.py, where all findings are now resolved (2 remaining, both legitimately waived: a ProcessPoolExecutor function-reference indirection and a module-level-data invariant test with no call path to its consumer). The other 59 COV006 findings live in test files/target modules entirely outside that scope (tests/unit/strata/*, tests/test_dup_region.py, tests/test_lang.py, tests/test_graph.py, tests/test_serve.py, tests/test_vet.py, tests/test_tickets.py, tests/system/*, frob-core/src/lib.rs bindings, etc.) and were never triaged by T-0516 -- each needs the same per-finding policy applied (fix wrong binding / add missing test call / waive with a real reason) with a fresh frob check --only coverage list, since some may already be resolved by T-0516's checker fix and need re-measuring before triage.
 
-<!-- ticket:T-draft-9dbcee76 -->
+<!-- ticket:T-0524 -->
 ```yaml
-id: T-draft-9dbcee76
+id: T-0524
 title: burn down 130 COV007 findings (frob:doc on private symbols)
 state: queued
 kind: bug
@@ -5180,9 +5181,9 @@ threat: null
 ```
 COV007 (frob:doc bound to a private symbol) currently has 130 warn-level findings repo-wide (measured via frob check --only coverage on this worktree), spread across src/frob/strata, src/frob/lang, src/frob/tickets, src/frob/dup, src/frob/graph, src/frob/app, etc. T-0483 explicitly scoped COV007 out of its own ticket ('COV007 unchanged at 126 -- out of scope for this ticket; a different gate') and T-0516 (COV006's successor) never took it on either -- no ticket has triaged this list yet. Per policy, most of these frob:doc edges on private helpers should move to the public caller they actually document (updating doc text if needed); a genuine minority may warrant a waive with a specific reason (private symbol IS the documented contract). This ticket exists so the 130-finding COV007 list gets the same per-finding triage COV006 got in T-0516, rather than being silently absorbed into an unrelated ticket's scope.
 
-<!-- ticket:T-draft-b728e11e -->
+<!-- ticket:T-0525 -->
 ```yaml
-id: T-draft-b728e11e
+id: T-0525
 title: COV006 waiver granularity is file-scoped, not symbol-scoped -- can silently
   over-waive
 state: queued
