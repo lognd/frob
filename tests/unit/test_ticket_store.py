@@ -496,7 +496,9 @@ class TestReplayEvidenceFromDoneReport:
         must still let `transition(..., DONE)` succeed by recovering the
         ids straight out of the rendered '### Evidence' section."""
         write_ticket(tmp_path, _ticket_evidence(evidence=("tests/x.py::test_y",)))
-        set_done_report(tmp_path, "T-0001", why="did the thing", base_ref="does-not-exist")
+        set_done_report(
+            tmp_path, "T-0001", why="did the thing", base_ref="does-not-exist"
+        )
         # Simulate the bug: structured evidence lost, Done report text intact.
         loaded = load_all(tmp_path)
         assert loaded.is_ok
@@ -538,7 +540,9 @@ class TestReplayEvidenceFromDoneReport:
             tmp_path,
             _ticket_evidence(evidence=("tests/x.py::test_y",)),
         )
-        set_done_report(tmp_path, "T-0001", why="did the thing", base_ref="does-not-exist")
+        set_done_report(
+            tmp_path, "T-0001", why="did the thing", base_ref="does-not-exist"
+        )
         loaded = load_all(tmp_path)
         assert loaded.is_ok
         stripped = loaded.danger_ok["T-0001"].model_copy(update={"evidence": ()})

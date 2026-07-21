@@ -45,6 +45,7 @@ from frob.tickets._models import (
     TicketQueue,
     TicketSpec,
     TicketState,
+    _done_report_section_lines,
     has_substantive_done_report,
     is_cmd_evidence,
     matches_collected,
@@ -52,7 +53,6 @@ from frob.tickets._models import (
     scope_matches,
     scope_overlap_globs,
 )
-from frob.tickets._models import _done_report_section_lines
 from frob.tickets._models import _split_scope_entries as _normalize_scope_entries
 from frob.tickets._provisional import is_draft_id, mint_draft_id, on_default_branch
 from frob.tickets._reconcile import ReconcileReport, reconcile
@@ -1953,8 +1953,8 @@ def _parse_evidence_ids_from_done_report(body: str) -> tuple[str, ...]:
 
 # frob:ticket T-0357
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport::test_recovers_ids_when_structured_evidence_empty  # noqa: E501
-# frob:tests tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport::test_noop_when_evidence_already_present  # noqa: E501
+# frob:tests tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport.test_recovers_ids_when_structured_evidence_empty  # noqa: E501
+# frob:tests tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport.test_noop_when_evidence_already_present  # noqa: E501
 def replay_evidence_from_done_report(
     root: Path, ticket_id: str
 ) -> Result[Ticket, TicketError]:

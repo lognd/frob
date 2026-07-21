@@ -17,6 +17,24 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.43.0] - unreleased
+
+Public-API surface change since 0.42.0 (mechanical semver via REL001): an
+additive (minor) bump -- new `frob.tickets.replay_evidence_from_done_report`.
+
+- T-0357: coordinator-land evidence-loss recovery. A ticket closed straight
+  from a hand-merged worktree (`git merge --no-ff`, bypassing `frob ticket
+  land`'s ledger splice) could arrive at `transition(..., DONE)` with an
+  empty structured `evidence:` field even though its Done report prose
+  still carried the rendered ids -- failing MissingEvidence and forcing a
+  manual `frob ticket evidence` re-record on main (the T-0248/T-0266
+  incidents). New `frob.tickets.replay_evidence_from_done_report` parses a
+  ticket's own rendered `### Evidence` Done-report section (the inverse of
+  `render_evidence_block`) and recovers those ids into the structured
+  field; `transition(..., DONE)` now attempts this automatically,
+  best-effort, before falling through to the ordinary MissingEvidence
+  rejection.
+
 ## [0.42.0] - unreleased
 
 Public-API surface change since 0.41.0 (mechanical semver via REL001): an
