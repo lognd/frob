@@ -3309,7 +3309,7 @@ waived).
 ```yaml
 id: T-0529
 title: 'COV007 burndown continuation: 92 residual findings across 43 files'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-21'
