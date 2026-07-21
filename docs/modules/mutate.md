@@ -6,6 +6,7 @@ tests against each mutant, and reports which SURVIVED -- a survivor is a
 behavior change no test caught, i.e. a real gap the coverage and case-count
 gates only approximate.
 
+<!-- frob:describes src/frob/mutate/__init__.py::run_mutations -->
 ```bash
 frob mutate src/pkg/m.py                       # default: uv run pytest -q
 frob mutate src/pkg/m.py -- python -m pytest -q tests/test_m.py

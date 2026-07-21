@@ -130,7 +130,9 @@ class TestTicketRootFromLinkedWorktree:
         assert r.returncode == 0, r.stdout + r.stderr
         new_id = _new_ticket_id(r.stdout + r.stderr)
 
-        r = run("ticket", "start", new_id, cwd=wt)
+        # T-0474: `start` backgrounds the sweep by default -- `--foreground`
+        # keeps this test's synchronous, deterministic assertion valid.
+        r = run("ticket", "start", new_id, "--foreground", cwd=wt)
         assert r.returncode == 0, r.stdout + r.stderr
 
         assert (wt / ".frob" / "prework" / f"{new_id}.json").exists()

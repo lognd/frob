@@ -60,15 +60,34 @@ explicit user refinements folded in):
    illustrative block the heuristic cannot confidently classify -- see
    `_nearby_waive_reason`.
 
-Console/bash command-drift checking (the original ticket's tier (a)) is
-NOT implemented in this pass: T-0436's refinement 1 explicitly demands a
-CONFIGURABLE command source (a `frob.toml`-declared entry point, generic
-per project, frob being only one instance) rather than a hardcoded
-argparse-of-frob special case, and building that generically was judged
-out of scope for a first, conservative landing -- filed as a follow-up
-(see this ticket's Done report in tickets.md for the filed id). Every
-acceptance case in the ticket body that does NOT require console-command
-resolution is covered by this module.
+5. Console/bash command-drift checking (T-0443, the tier T-0436 deferred):
+   a ` ```console ``` `/` ```bash ``` `/` ```sh ``` `/` ```shell ``` ` fenced
+   block's lines are scanned for an invocation of a CONFIGURED command
+   (never a hardcoded, frob-specific subcommand list -- frob is only one
+   instance of a project this gate can run over). `frob.toml`'s
+   `[[docblocks.commands]]` array declares each command source generically:
+
+   ```toml
+   [[docblocks.commands]]
+   prog = "frob"
+   parser = "frob.__main__:_build_parser"
+   ```
+
+   `prog` is the console word introducing the invocation; `parser` is a
+   `module:callable` dotted path to a zero-argument factory returning an
+   `argparse.ArgumentParser` (this project's own CLI already has exactly
+   one: `frob.__main__._build_parser`). The gate imports that callable AT
+   CHECK TIME and walks its live `add_subparsers` tree to derive the valid
+   subcommand chains -- this is deliberately NOT a second, hand-maintained
+   copy of the CLI surface; the argparse registry IS the single source of
+   truth, and a subcommand rename/removal there is picked up automatically
+   with zero edits to this gate or to `frob.toml`. A `prog word ...` line
+   whose subcommand chain does not walk the tree is STALE (error); one that
+   does resolve is checked for a nearby binding directive same as the other
+   tiers (UNBOUND, warn). No configured `[[docblocks.commands]]` entries at
+   all (a project that has not opted in) means no console/bash checking
+   happens -- fail-open, same posture as every other namespace source in
+   this module.
 """
 
 from __future__ import annotations
@@ -291,6 +310,180 @@ def _iter_fenced_blocks(text: str) -> tuple[_FencedBlock, ...]:
 _PYTHON_LANGS = frozenset({"python", "py"})
 _RUST_LANGS = frozenset({"rust", "rs"})
 _TS_LANGS = frozenset({"ts", "tsx", "js", "jsx", "javascript", "typescript"})
+_CONSOLE_LANGS = frozenset({"console", "bash", "sh", "shell"})
+
+
+# ---------------------------------------------------------------------------
+# Console/bash command-drift checking (T-0443): frob.toml-configurable
+# command source, never a hardcoded per-tool subcommand list.
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class _ConsoleCommandSource:
+    """One `[[docblocks.commands]]` entry: the console word (`prog`) that
+    introduces an invocation, plus the dotted `module:callable` path to a
+    zero-argument `argparse.ArgumentParser` factory (`parser`) this gate
+    imports and walks AT CHECK TIME -- the live registry is the only source
+    of truth, so a renamed/removed subcommand is caught with zero edits
+    here or in `frob.toml`."""
+
+    prog: str
+    parser: str
+
+
+def _console_command_sources(root: Path) -> tuple[_ConsoleCommandSource, ...]:
+    """Every `[[docblocks.commands]]` entry declared in this project's
+    `frob.toml`, or `()` if the table is absent/malformed -- fail-open,
+    same posture as every other namespace source in this module: a project
+    that has not opted in gets no console/bash checking, never a crash."""
+    data = _read_toml(root / "frob.toml")
+    if data is None:
+        return ()
+    entries = data.get("docblocks", {}).get("commands", [])
+    if not isinstance(entries, list):
+        return ()
+    sources: list[_ConsoleCommandSource] = []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        prog = entry.get("prog")
+        parser = entry.get("parser")
+        if isinstance(prog, str) and prog and isinstance(parser, str) and parser:
+            sources.append(_ConsoleCommandSource(prog=prog, parser=parser))
+    return tuple(sources)
+
+
+def _load_parser_factory(dotted: str):
+    """Resolve a `module:callable` dotted path to the callable itself, or
+    `None` on any import/lookup failure -- a malformed/stale config entry
+    degrades to "no console checking for this source", never a gate
+    crash."""
+    import importlib
+
+    module_name, _, attr = dotted.partition(":")
+    if not module_name or not attr:
+        _log.warning(
+            "doc004: malformed parser path %r (want 'module:callable')", dotted
+        )
+        return None
+    try:
+        module = importlib.import_module(module_name)
+        return getattr(module, attr)
+    except (ImportError, AttributeError) as exc:
+        _log.warning("doc004: could not resolve parser %r: %s", dotted, exc)
+        return None
+
+
+def _subparser_tree(parser) -> dict:
+    """`{subcommand_name: subtree}` recursively, walking every
+    `argparse._SubParsersAction` registered via `add_subparsers` on
+    `parser` -- the live shape of the CLI's own subcommand registry,
+    derived at check time rather than duplicated by hand."""
+    import argparse
+
+    tree: dict = {}
+    subparsers_group = getattr(parser, "_subparsers", None)
+    actions = subparsers_group._group_actions if subparsers_group is not None else ()
+    for action in actions:
+        if not isinstance(action, argparse._SubParsersAction):
+            continue
+        for name, subparser in action.choices.items():
+            tree[name] = _subparser_tree(subparser)
+    return tree
+
+
+def _resolve_command_chain(tree: dict, words: list[str]) -> bool:
+    """Whether `words` (the tokens following `prog` on a console line) walk
+    a real path through `tree` -- stops at the first word that either does
+    not match a known subcommand (chain does not resolve) or that has no
+    further subparsers (chain resolves at a leaf; trailing words are
+    ordinary arguments/flags, not further subcommands)."""
+    node = tree
+    if not words:
+        return True
+    for word in words:
+        if word.startswith("-"):
+            return True
+        if word not in node:
+            return False
+        node = node[word]
+        if not node:
+            return True
+    return True
+
+
+_CONSOLE_LINE_RE = re.compile(r"^\s*(?:\$\s*)?([\w.-]+)\b(.*)$")
+
+
+def _console_command_violations(
+    block: _FencedBlock,
+    doc_path: str,
+    doc_lines: list[str],
+    sources: tuple[_ConsoleCommandSource, ...],
+    trees: dict[str, dict],
+) -> list[Violation]:
+    """Check every `<prog> <subcommand...>` invocation in `block` against
+    the live subparser tree for that `prog` (built once per gate run in
+    `trees`). A chain that does not resolve is STALE; one that resolves
+    but has no nearby binding directive is UNBOUND, matching the other
+    reference tiers in this module."""
+    violations: list[Violation] = []
+    window = _nearby_window(doc_lines, block)
+    waive_reason = _nearby_waive_reason(window)
+    any_resolved_reference = False
+    for raw_line in block.body.splitlines():
+        match = _CONSOLE_LINE_RE.match(raw_line)
+        if match is None:
+            continue
+        prog = match.group(1)
+        source = next((s for s in sources if s.prog == prog), None)
+        if source is None:
+            continue
+        tree = trees.get(source.parser)
+        if tree is None:
+            continue
+        words = match.group(2).split()
+        chain = []
+        for word in words:
+            if word.startswith("-"):
+                break
+            chain.append(word)
+        if waive_reason is not None:
+            _log.debug("doc004: %s waived (%s): %s", doc_path, waive_reason, raw_line)
+            continue
+        if not chain:
+            # a bare `prog` invocation (e.g. `frob --version`) has nothing
+            # to resolve as a subcommand -- never flagged.
+            continue
+        if not _resolve_command_chain(tree, chain):
+            violations.append(
+                _doc004_violation(
+                    doc_path,
+                    block.start_line,
+                    tier="stale",
+                    detail=(
+                        f"console command `{prog} {' '.join(chain)}` does not "
+                        f"resolve to a known subcommand"
+                    ),
+                )
+            )
+        else:
+            any_resolved_reference = True
+    if (
+        any_resolved_reference
+        and waive_reason is None
+        and not _has_binding_directive(window)
+    ):
+        violations.append(
+            _doc004_violation(
+                doc_path,
+                block.start_line,
+                tier="unbound",
+                detail="console command example is not anchored",
+            )
+        )
+    return violations
 
 
 # ---------------------------------------------------------------------------
@@ -708,6 +901,16 @@ def _tracked_md_files(root: Path) -> tuple[str, ...]:
 # test_rust_use_of_real_item_passes_or_warns_never_stale
 # frob:tests tests/test_docblocks_gate.py::TestRustNamespace.\
 # test_external_crate_use_not_flagged
+# frob:tests tests/test_gates.py::TestDoc004ConsoleCommandDrift.\
+# test_nonexistent_subcommand_is_stale
+# frob:tests tests/test_gates.py::TestDoc004ConsoleCommandDrift.\
+# test_real_subcommand_anchored_passes
+# frob:tests tests/test_gates.py::TestDoc004ConsoleCommandDrift.\
+# test_real_subcommand_unanchored_warns_unbound
+# frob:tests tests/test_gates.py::TestDoc004ConsoleCommandDrift.\
+# test_waive_suppresses_console_stale
+# frob:tests tests/test_gates.py::TestDoc004ConsoleCommandDrift.\
+# test_no_config_means_no_console_checking
 def doc004_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """DOC004: scan every tracked `.md` doc's fenced code blocks for
     references to THIS PROJECT's own code surface (manifest-derived
@@ -720,6 +923,18 @@ def doc004_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     namespaces = _project_namespaces(root)
     module_map = _python_module_map(root)
     symbol_names_by_path = _python_symbol_names_by_path(snapshot)
+    console_sources = _console_command_sources(root)
+    console_trees: dict[str, dict] = {}
+    for source in console_sources:
+        factory = _load_parser_factory(source.parser)
+        if factory is None:
+            continue
+        try:
+            parser = factory()
+        except Exception as exc:  # noqa: BLE001 -- a broken factory never fails the gate
+            _log.warning("doc004: parser factory %r raised: %s", source.parser, exc)
+            continue
+        console_trees[source.parser] = _subparser_tree(parser)
 
     violations: list[Violation] = []
     for doc_path in _tracked_md_files(root):
@@ -747,6 +962,12 @@ def doc004_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
             elif block.lang in _TS_LANGS:
                 violations.extend(
                     _ts_reference_violations(block, doc_path, doc_lines, namespaces.ts)
+                )
+            elif block.lang in _CONSOLE_LANGS and console_sources:
+                violations.extend(
+                    _console_command_violations(
+                        block, doc_path, doc_lines, console_sources, console_trees
+                    )
                 )
     _log.info("doc004: %d violation(s) across tracked .md docs", len(violations))
     return tuple(violations)

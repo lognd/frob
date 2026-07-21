@@ -83,6 +83,15 @@ node cli : trusted {
     // (os.environ.get) to opt out of/into the non-gated agentic telemetry
     // stream and its `--agentic` report trigger.
     may "env";
+    // T-0474: `frob ticket start` detaches its pre-work sweep as a
+    // background `frob ticket sweep` child (subprocess.Popen of
+    // sys.executable in app/ticket_runner.py::_spawn_background_sweep).
+    // Same T-0200 discipline as the checker node: the spawn honors the
+    // real, live FROB_DISABLE_EXEC kill switch (frob.process._guard.
+    // exec_enabled) by degrading to the synchronous in-process sweep, so
+    // this is a switchable capability, not an aspirational claim.
+    may "exec";
+    attr flag=frob_check_exec_kill_switch;
 }
 
 // graph+lang: src/frob/graph/**, src/frob/lang/**, src/frob/arch/**. Owns
@@ -129,6 +138,13 @@ node gates : trusted {
     may "env";
     may "fs";
     may "fs-read";
+    // T-0443: the DOC004 console/bash command-drift tier resolves the
+    // `[[docblocks.commands]]` parser source by dotted path via
+    // importlib.import_module (gates/_docblocks.py) -- a dynamic-import
+    // (eval-family) capability the scanner rightly observes. The import
+    // target comes from tracked frob.toml, not user input, and failures
+    // fail open to the unbound warning path.
+    may "eval";
 }
 
 // check orchestration: src/frob/check/**. Runs the gate suite plus the
@@ -504,6 +520,62 @@ assume "weakness:CWE-78:tickets_ledger" noflow registry -> tickets_ledger owner 
 // scope, but honestly discharged here rather than left dangling.
 // frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
 assume "weakness:CWE-78:vet" noflow registry -> vet owner logan review "2026-10-15"
+
+// T-0401 (docs/audits/strata.md G3): `eval` used to be globally
+// `BenignCapability`-excused ("no CWE_CATALOG entry targets dynamic code
+// evaluation") -- false, CWE-94 IS that entry, it just was not joined to
+// the `eval` capability kind. Removing the excuse means every `may "eval"`
+// declaration above (cli/graphlang/stratamod/core/tickets_ledger) now
+// drags in a real THREAT003 CWE-94 discharge obligation, same shape as
+// the CWE-78 block above. Each is discharged honestly below:
+//
+// cli/graphlang/stratamod/core: T-0150/T-0151 already established that
+// this repo's `eval` measurement is a scanner-precision artifact -- vet's
+// `eval` pattern needle matches a bare `compile(`/`importlib.import_
+// module(` call regardless of whether the argument is attacker-
+// influenceable, and every measured site under these four nodes' `code=`
+// globs is `re.compile(...)` (regex compilation, not dynamic code
+// evaluation) or a fixed-literal `importlib.import_module(...)` (see
+// tickets_ledger's own comment above); no genuine `eval(...)`/exec-string
+// site exists under any of these globs (verified by direct grep, same
+// standard T-0150/T-0151's Done reports already applied to `exec`/`sql`
+// above). Filed as its own scanner-precision ticket (T-0151-class,
+// unfixed here per that ticket's scope) rather than silently narrowed
+// away.
+// frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
+assume "weakness:CWE-94:cli" noflow registry -> cli owner logan review "2026-10-15"
+// frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
+assume "weakness:CWE-94:graphlang" noflow registry -> graphlang owner logan review "2026-10-15"
+// frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
+assume "weakness:CWE-94:stratamod" noflow registry -> stratamod owner logan review "2026-10-15"
+// frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
+assume "weakness:CWE-94:core" noflow registry -> core owner logan review "2026-10-15"
+
+// `eval` also joins `CWE-78` WITHIN `CWE_CATALOG` itself (the `owasp-
+// top-10` default view does not include CWE-94 at all, G6 -- a separate
+// disclosed gap), so cli/graphlang/stratamod each ALSO drag in a fresh
+// CWE-78 obligation they did not have before (none of the three declare
+// `may "exec"`, only `eval`) -- core/tickets_ledger already carry a
+// `weakness:CWE-78:<node>` claim from their `exec` capability above, so
+// this one join covers both firings for those two; the same reasoning
+// (bare `compile(`/`importlib.import_module(` scanner match, no genuine
+// dynamic-code-exec site) applies here as it does to the CWE-94 claims
+// just above.
+// frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
+assume "weakness:CWE-78:cli" noflow registry -> cli owner logan review "2026-10-15"
+// frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
+assume "weakness:CWE-78:graphlang" noflow registry -> graphlang owner logan review "2026-10-15"
+// frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
+assume "weakness:CWE-78:stratamod" noflow registry -> stratamod owner logan review "2026-10-15"
+
+// tickets_ledger: same "provably NoFlow via c_no_registry_ledger, assume
+// anyway for uniformity with the discharge shape THREAT003 requires"
+// precedent the CWE-78 block above already documents for this node;
+// `_store.py`'s `importlib.import_module("fcntl")` is a fixed literal
+// module name, never attacker-influenceable (see the `may "eval"` comment
+// on this store above).
+// frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
+assume "weakness:CWE-94:tickets_ledger" noflow registry -> tickets_ledger owner logan review "2026-10-15"
 
 // T-0158: `may "sql"` newly declared for graphlang/vet (the exhaustive
 // dangerous-operations registry now patterns sqlite3 string-formatted

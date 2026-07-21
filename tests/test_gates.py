@@ -24,6 +24,7 @@ from frob.gates import (
     drift_gate,
     invariant_gate,
     is_baseline_stale,
+    known_gate_rule_ids,
     load_baseline,
     load_coverage,
     prework_gate,
@@ -38,6 +39,7 @@ from frob.gates import (
 from frob.gates import (
     test_gate as run_test_gate,
 )
+from frob.gates._docblocks import doc004_gate
 from frob.gates.invariants import InvariantError, _Criticality, load_invariants
 from frob.gitio import Diff, Hunk, working_diff
 from frob.graph import build_graph
@@ -667,6 +669,119 @@ class TestCoverageGate:
         violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert not any(v.rule == "COV003" for v in violations)
 
+    def test_cov003_passes_for_parametrized_evidence_with_dot_in_case_id(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0324 regression: an evidence id naming ONE specific
+        `@pytest.mark.parametrize` case whose case text itself contains a
+        dot (e.g. a version string `3.11.4`, exactly what `frob ticket
+        evidence` recorded from T-0222's auto-generated fixture ids) must
+        resolve. Before the fix, `_symref_to_nodeid`'s blanket
+        `qualname.replace('.', '::')` corrupted dots INSIDE the `[...]`
+        case suffix too, so the bracket-less base resolved (`_evidence_
+        collected`'s prefix-match branch) but the specific bracketed case
+        id did not -- exactly the split reported."""
+        snap = _snapshot(tmp_path)
+        node = "tests/test_x.py::test_needle_present[015-python-3.11.4]"
+        queue = TicketQueue(
+            tickets={
+                "T-0002": _ticket(
+                    ticket_id="T-0002", state=TicketState.DONE, evidence=(node,)
+                )
+            }
+        )
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset({node}))
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert not any(v.rule == "COV003" for v in violations)
+
+    def test_cov003_passes_for_file_level_evidence(self, tmp_path: Path) -> None:
+        """T-0298: a done ticket may cite a bare test FILE as its evidence
+        (`tests/test_vet.py`, no `::`) -- root-cause of a 25-error
+        main-red incident (2026-07-19), where a refactor touching ~20
+        files recorded exactly this shape and COV003 could never resolve
+        it. Resolves iff >=1 collected node id lives under that file."""
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(
+            tickets={
+                "T-0002": _ticket(
+                    ticket_id="T-0002",
+                    state=TicketState.DONE,
+                    evidence=("tests/test_vet.py",),
+                )
+            }
+        )
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(
+            node_ids=frozenset(
+                {"tests/test_vet.py::test_a", "tests/test_vet.py::test_b"}
+            )
+        )
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert not any(v.rule == "COV003" for v in violations)
+
+    def test_cov003_passes_for_directory_level_evidence(self, tmp_path: Path) -> None:
+        """T-0298: a bare directory (`tests/unit/deploy`, no `::`) resolves
+        the same way a file does -- any collected node id under it counts."""
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(
+            tickets={
+                "T-0002": _ticket(
+                    ticket_id="T-0002",
+                    state=TicketState.DONE,
+                    evidence=("tests/unit/deploy",),
+                )
+            }
+        )
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(
+            node_ids=frozenset({"tests/unit/deploy/test_x.py::test_y"})
+        )
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert not any(v.rule == "COV003" for v in violations)
+
+    def test_cov003_rejects_empty_directory_level_evidence(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0298: file-/directory-level resolution must NOT be vacuous --
+        a path with zero collected node ids under it (nothing landed there,
+        or the directory does not correspond to any real test) still
+        fails COV003, honest per the ticket's requirement."""
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(
+            tickets={
+                "T-0002": _ticket(
+                    ticket_id="T-0002",
+                    state=TicketState.DONE,
+                    evidence=("tests/unit/nonexistent",),
+                )
+            }
+        )
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(
+            node_ids=frozenset({"tests/unit/deploy/test_x.py::test_y"})
+        )
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert any(v.rule == "COV003" for v in violations)
+
+    def test_cov003_prefers_node_level_over_path_level(self, tmp_path: Path) -> None:
+        """T-0298: node-level resolution stays available and preferred --
+        a precise `path::func` evidence id still resolves exactly as
+        before, unaffected by the new path-level fallback existing."""
+        snap = _snapshot(tmp_path)
+        node = "tests/test_vet.py::test_a"
+        queue = TicketQueue(
+            tickets={
+                "T-0002": _ticket(
+                    ticket_id="T-0002", state=TicketState.DONE, evidence=(node,)
+                )
+            }
+        )
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset({node, "tests/test_vet.py::test_b"}))
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert not any(v.rule == "COV003" for v in violations)
+
     def test_cov003_passes_for_rust_evidence_id(self, tmp_path: Path) -> None:
         """T-0092: a done ticket citing a cargo test id resolves against
         `collect_rust_tests`' node ids the same way a pytest id resolves
@@ -818,6 +933,104 @@ class TestCoverageGate:
         tests = CollectedTests(node_ids=frozenset())
         violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert not any(v.rule == "COV005" for v in violations)
+
+    def test_cov006_flags_test_with_no_call_graph_reachability(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0483: a `frob:tests` edge bound to a PRIVATE symbol whose named
+        test body never calls it (no `frob.graph.callgraph` reachability)
+        must fire COV006."""
+        # frob:tests src/frob/gates/__init__.py::_cov006
+        _write(tmp_path, "src/a.py", "def _helper(x):\n    return x\n")
+        _write(
+            tmp_path,
+            "tests/test_a.py",
+            "# frob:tests src/a.py::_helper\n"
+            "def test_helper_broken():\n"
+            "    assert True\n",
+        )
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        v = _first_rule(violations, "COV006")
+        assert v is not None
+        assert v.severity == Severity.WARN
+        assert "_helper" in v.message
+
+    def test_cov006_silent_when_test_calls_the_bound_symbol(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::_cov006
+        _write(tmp_path, "src/a.py", "def _helper(x):\n    return x\n")
+        _write(
+            tmp_path,
+            "tests/test_a.py",
+            "# frob:tests src/a.py::_helper\n"
+            "def test_helper_ok():\n"
+            "    assert _helper(1) == 1\n",
+        )
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert not any(v.rule == "COV006" for v in violations)
+
+    def test_cov006_never_fires_for_a_public_target(self, tmp_path: Path) -> None:
+        """`build_call_graph` never records an edge to a PUBLIC callee, so
+        checking a public target would ALWAYS look "unreachable" -- COV006
+        must skip public targets entirely rather than emit a spurious
+        finding on every legitimately-tested public function."""
+        # frob:tests src/frob/gates/__init__.py::_cov006
+        _write(tmp_path, "src/a.py", "def helper(x):\n    return x\n")
+        _write(
+            tmp_path,
+            "tests/test_a.py",
+            "# frob:tests src/a.py::helper\ndef test_helper():\n    assert True\n",
+        )
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert not any(v.rule == "COV006" for v in violations)
+
+    def test_cov007_flags_doc_anchor_on_private_helper(self, tmp_path: Path) -> None:
+        """T-0483: a `frob:doc` edge whose src symbol is PRIVATE fires
+        COV007 -- doc anchors are for the public API surface."""
+        # frob:tests src/frob/gates/__init__.py::_cov007
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def _helper(x):\n"
+            '    """helper"""\n'
+            "    # frob:doc docs/x.md#helper\n"
+            "    return x\n",
+        )
+        _write(tmp_path, "docs/x.md", "# Helper\n")
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        v = _first_rule(violations, "COV007")
+        assert v is not None
+        assert v.severity == Severity.WARN
+        assert "_helper" in v.message
+
+    def test_cov007_silent_for_doc_anchor_on_public_symbol(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::_cov007
+        _write(tmp_path, "src/a.py", _WIDGET_PY)
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert not any(v.rule == "COV007" for v in violations)
 
     def test_todo002_unbound_directive(self, tmp_path: Path) -> None:
         """A `frob:todo` edge bound to a missing ticket is TODO002 (dangling
@@ -1667,6 +1880,37 @@ class TestTestGate:
         violations = run_test_gate(snap, (), Nothing(), tests, TestPolicy())
         assert "TEST003" not in _rules(violations)
 
+    def test_test003_satisfied_by_parametrized_case_with_dot_in_case_id(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0324 regression, TEST003 side of the same bug: a `frob:tests`
+        directive bound to a parametrized test whose ONLY collected cases
+        carry a dot inside their `[...]` case text (e.g. `[3.11]`, a float
+        or version-string parametrize value) must still satisfy TEST003 --
+        `_symref_to_nodeid` must not corrupt those in-bracket dots into
+        `::` while converting the directive's own dotted qualname."""
+        from typani.option import Nothing
+
+        _write(tmp_path, "src/frob/pkg/thermo.py", "def helper(x):\n    return x\n")
+        test_source = (
+            '# frob:tests src/frob/pkg/thermo.py kind="integration"\n'
+            "@pytest.mark.parametrize('x', [3.11, 4.22])\n"
+            "def test_density(x):\n"
+            "    assert True\n"
+        )
+        _write(tmp_path, "tests/test_thermo.py", test_source)
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(
+            node_ids=frozenset(
+                {
+                    "tests/test_thermo.py::test_density[3.11]",
+                    "tests/test_thermo.py::test_density[4.22]",
+                }
+            )
+        )
+        violations = run_test_gate(snap, (), Nothing(), tests, TestPolicy())
+        assert "TEST003" not in _rules(violations)
+
     def test_test003_satisfied_by_proptest_macro_block(self, tmp_path: Path) -> None:
         """T-0318 litmus (feldspar): a `frob:tests` comment sitting directly
         above a `proptest! { ... }` block must satisfy TEST003. proptest's
@@ -1824,6 +2068,103 @@ class TestTestGate:
         kept, waived = _apply_waivers(violations, snap)
         assert not any(v.rule == "TEST003" for v in kept)
         assert any(v.rule == "TEST003" for v in waived)
+
+    def test_match_waiver_prefix_reach_gated_to_package_scoped_rules(self) -> None:
+        """T-0470 counterexample: BEFORE this fix, `_match_waiver`'s
+        directory-prefix branch ran for every symref-less violation
+        regardless of rule -- any rule whose `violation.file` happened to
+        be directory-shaped (no extension) inherited unbounded prefix
+        reach it was never reviewed for. A non-package-scoped rule (i.e.
+        not in `_PACKAGE_SCOPED_RULES`) with a directory-shaped `file`
+        must now match ONLY a waiver whose own site is that exact
+        file/directory string -- never a waiver nested somewhere under
+        it via the prefix fallback."""
+        # frob:tests src/frob/gates/__init__.py::_match_waiver
+        from frob.gates import _match_waiver
+        from frob.graph import Edge, EdgeKind
+
+        directory_shaped_violation = Violation(
+            rule="SYS002",  # not in _PACKAGE_SCOPED_RULES
+            severity=Severity.WARN,
+            file="design/boundary/foo",
+            line=0,
+            message="x",
+        )
+        nested_waiver = Edge(
+            kind=EdgeKind.WAIVE,
+            src="design/boundary/foo/bar.py",
+            target="SYS002",
+            origin="design/boundary/foo/bar.py:1",
+            attrs={"reason": "x"},
+        )
+        assert (
+            _match_waiver(directory_shaped_violation, {"SYS002": [nested_waiver]})
+            is None
+        )
+
+        # The package-scoped rules keep their prefix reach unchanged.
+        package_violation = Violation(
+            rule="TEST003",
+            severity=Severity.ERROR,
+            file="src/frob/pkg",
+            line=0,
+            message="x",
+        )
+        package_waiver = Edge(
+            kind=EdgeKind.WAIVE,
+            src="src/frob/pkg/a.py",
+            target="TEST003",
+            origin="src/frob/pkg/a.py:1",
+            attrs={"reason": "x"},
+        )
+        assert (
+            _match_waiver(package_violation, {"TEST003": [package_waiver]})
+            == package_waiver
+        )
+
+    def test_waive003_flags_waiver_reaching_multiple_packages(self) -> None:
+        """T-0470: one `frob:waive TEST003` written in a file nested under
+        `src/frob/pkg/sub` also reaches the ANCESTOR package `src/frob/pkg`
+        via the same directory-prefix fallback -- both are real TEST003
+        violations the same directive silently suppresses. WAIVE003 must
+        flag that as over-broad."""
+        # frob:tests src/frob/gates/__init__.py::_waive003_violations
+        from frob.gates import _waive003_violations
+        from frob.graph import Edge, EdgeKind, GraphSnapshot
+
+        violations = (
+            Violation(
+                rule="TEST003",
+                severity=Severity.ERROR,
+                file="src/frob/pkg",
+                line=0,
+                message="x",
+            ),
+            Violation(
+                rule="TEST003",
+                severity=Severity.ERROR,
+                file="src/frob/pkg/sub",
+                line=0,
+                message="x",
+            ),
+        )
+        waiver = Edge(
+            kind=EdgeKind.WAIVE,
+            src="src/frob/pkg/sub/deep.py",
+            target="TEST003",
+            origin="src/frob/pkg/sub/deep.py:1",
+            attrs={"reason": "x"},
+        )
+        snap = GraphSnapshot(root=".", symbols={}, edges=(waiver,))
+        found = _waive003_violations(violations, snap)
+        assert len(found) == 1
+        assert found[0].rule == "WAIVE003"
+        assert "src/frob/pkg" in found[0].message
+        assert "src/frob/pkg/sub" in found[0].message
+
+        # A waiver that reaches only ONE package is not over-broad.
+        single = _waive003_violations(violations[:1], snap)
+        assert single == ()
 
     def test_test004_system_below_min_e2e(self, tmp_path: Path) -> None:
         from typani.option import Nothing
@@ -3986,3 +4327,123 @@ class TestGateOrderSetEquality:
         assert len(_CANONICAL_GATE_ORDER) == len(set(_CANONICAL_GATE_ORDER)), (
             "_CANONICAL_GATE_ORDER contains a duplicate gate name"
         )
+
+
+class TestDoc004ConsoleCommandDrift:
+    """T-0443: DOC004's console/bash `<prog> <subcommand>` tier is driven
+    entirely by `frob.toml`'s `[[docblocks.commands]]` array -- `prog` plus
+    a `module:callable` dotted path to an `argparse.ArgumentParser` factory
+    this gate imports and walks at check time. No frob-specific subcommand
+    list is hardcoded anywhere in `frob.gates._docblocks`; these tests use
+    frob's OWN real CLI factory (`frob.__main__:_build_parser`) as the
+    configured source, proving the tier derives from the live registry
+    rather than a second, hand-maintained copy of it."""
+
+    _CONFIG = (
+        '[[docblocks.commands]]\nprog = "frob"\n'
+        'parser = "frob.__main__:_build_parser"\n'
+    )
+
+    def test_nonexistent_subcommand_is_stale(self, tmp_path: Path) -> None:
+        _git_init(tmp_path)
+        _write(tmp_path, "frob.toml", self._CONFIG)
+        _write(
+            tmp_path,
+            "docs/guide.md",
+            "```console\n$ frob nonexistent-subcommand --flag\n```\n",
+        )
+
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        snapshot = _snapshot(tmp_path)
+        violations = doc004_gate(tmp_path, snapshot)
+
+        stale = _by_rule(violations, "DOC004")
+        assert stale
+        assert any(
+            v.severity == Severity.ERROR and "nonexistent-subcommand" in v.message
+            for v in stale
+        )
+
+    def test_real_subcommand_anchored_passes(self, tmp_path: Path) -> None:
+        _git_init(tmp_path)
+        _write(tmp_path, "frob.toml", self._CONFIG)
+        _write(
+            tmp_path,
+            "docs/guide.md",
+            "<!-- frob:doc docs/guide.md -->\n\n"
+            "```console\n$ frob check --delta\n```\n",
+        )
+
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        snapshot = _snapshot(tmp_path)
+        violations = doc004_gate(tmp_path, snapshot)
+
+        assert all(v.severity != Severity.ERROR for v in _by_rule(violations, "DOC004"))
+
+    def test_real_subcommand_unanchored_warns_unbound(self, tmp_path: Path) -> None:
+        _git_init(tmp_path)
+        _write(tmp_path, "frob.toml", self._CONFIG)
+        _write(
+            tmp_path,
+            "docs/guide.md",
+            "```console\n$ frob check --delta\n```\n",
+        )
+
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        snapshot = _snapshot(tmp_path)
+        violations = doc004_gate(tmp_path, snapshot)
+
+        warned = _by_rule(violations, "DOC004")
+        assert warned
+        assert all(v.severity == Severity.WARN for v in warned)
+
+    def test_waive_suppresses_console_stale(self, tmp_path: Path) -> None:
+        _git_init(tmp_path)
+        _write(tmp_path, "frob.toml", self._CONFIG)
+        _write(
+            tmp_path,
+            "docs/guide.md",
+            '<!-- frob:waive DOC004 reason="illustrative, not real" -->\n\n'
+            "```console\n$ frob nonexistent-subcommand\n```\n",
+        )
+
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        snapshot = _snapshot(tmp_path)
+        violations = doc004_gate(tmp_path, snapshot)
+
+        assert _by_rule(violations, "DOC004") == []
+
+    def test_no_config_means_no_console_checking(self, tmp_path: Path) -> None:
+        """No `[[docblocks.commands]]` entries at all -- fail-open, same
+        posture as every other namespace source in this module: a project
+        that has not opted in gets zero console/bash checking, never a
+        crash on a plain shell example."""
+        _git_init(tmp_path)
+        _write(
+            tmp_path,
+            "docs/guide.md",
+            "```console\n$ frob nonexistent-subcommand\n```\n",
+        )
+
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        snapshot = _snapshot(tmp_path)
+        violations = doc004_gate(tmp_path, snapshot)
+
+        assert _by_rule(violations, "DOC004") == []
+
+
+# frob:ticket T-0499
+class TestKnownGateRuleIds:
+    """`known_gate_rule_ids()` is the public accessor strata's
+    `caught_by` verification (THREAT006/COMPLIANCE004) needs to resolve
+    rule-id-shaped references against; production callsites (T-0499)
+    thread it in instead of silently defaulting to empty."""
+
+    def test_returns_known_rule_id(self) -> None:
+        """A real, stable gate rule id is present in the returned set."""
+        assert "SEC001" in known_gate_rule_ids()
+
+    def test_is_frozenset(self) -> None:
+        """Return type is an immutable frozenset, not a mutable copy a
+        caller could accidentally mutate shared state through."""
+        assert isinstance(known_gate_rule_ids(), frozenset)

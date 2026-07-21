@@ -11,6 +11,7 @@ touch it.
 
 ## Step 1: Get the drift report
 
+<!-- frob:waive DOC004 reason="illustrative agent-workflow example, not command reference" -->
 ```bash
 frob check --only drift               # DRIFT001: acked digest moved without re-ack
                                        # DRIFT002: edge endpoint no longer resolves
@@ -25,6 +26,7 @@ or a pointer to the missing edge) -- do not guess at what changed.
 **DRIFT001** (acked digest moved): the code or doc changed since the last
 ack. Read both sides:
 
+<!-- frob:waive DOC004 reason="illustrative agent-workflow example, not command reference" -->
 ```bash
 frob graph why <ref>                  # what changed, sig vs body vs doc facet
 ```
@@ -39,6 +41,7 @@ frob graph why <ref>                  # what changed, sig vs body vs doc facet
 **DRIFT002** (dangling edge): the symbol was renamed or deleted. Check the
 gate's rename candidates (body-digest match) before editing the doc:
 
+<!-- frob:waive DOC004 reason="illustrative agent-workflow example, not command reference" -->
 ```bash
 frob graph why <ref>                  # lists candidate replacements
 ```
@@ -69,6 +72,7 @@ Ok(X) on success, Err(E.Y) if Z."
 
 ## Step 4: Re-ack
 
+<!-- frob:waive DOC004 reason="illustrative agent-workflow example, not command reference" -->
 ```bash
 frob ack <ref> [--facet sig|body|doc]     # one ref at a time; verify first
 ```
@@ -79,6 +83,7 @@ claim that a human or agent looked at it.
 
 ## Step 5: Verify clean
 
+<!-- frob:waive DOC004 reason="illustrative agent-workflow example, not command reference" -->
 ```bash
 frob check --only drift
 frob check --only coverage

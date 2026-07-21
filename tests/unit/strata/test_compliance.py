@@ -22,6 +22,7 @@ from frob.strata._compliance import (
     REGULATION_VIEWS,
     check_privacy_policy,
     check_regulation_catalog_completeness,
+    check_regulation_caught_by_integrity,
     check_regulation_discharge,
     evaluate_compliance,
 )
@@ -398,6 +399,79 @@ class TestPrivacyPolicy:
         assert violations == ()
 
 
+class TestRegulationCaughtByIntegrity:
+    """COMPLIANCE004 (T-0382): a `caught_by` naming a rule id must resolve
+    against the live gate-rule-id set -- existence AND (via that set being
+    exactly the rule ids a real Violation-producing gate can emit)
+    efficacy, not just a registered-looking string. Non-vacuous pairing:
+    the claimed control absent -> discharge REFUSED (negative case below),
+    the claimed control present -> discharge succeeds (positive case)."""
+
+    # frob:tests src/frob/strata/_compliance.py::check_regulation_caught_by_integrity kind="unit"
+    def test_honest_none_caught_by_never_fails(self):
+        entry = OutOfScopeRegulation(
+            id="COPPA",
+            reason="not applicable",
+            owner="legal@example.com",
+            review="2027-01-01",
+            caught_by="none -- no compensating control today",
+        )
+        result = check_regulation_caught_by_integrity(out_of_scope=(entry,))
+        assert result.is_ok
+        assert result.danger_ok == ()
+
+    # frob:tests src/frob/strata/_compliance.py::check_regulation_caught_by_integrity kind="unit"
+    def test_caught_by_naming_absent_control_is_refused(self):
+        """Negative case: the claimed control (SEC999) does not exist in
+        the live rule-id set -- discharge must be REFUSED, not silently
+        trusted."""
+        entry = OutOfScopeRegulation(
+            id="COPPA",
+            reason="claims coverage",
+            owner="legal@example.com",
+            review="2027-01-01",
+            caught_by="already enforced by SEC999",
+        )
+        result = check_regulation_caught_by_integrity(
+            out_of_scope=(entry,), known_rule_ids=frozenset({"SEC001"})
+        )
+        assert result.is_ok
+        violations = result.danger_ok
+        assert len(violations) == 1
+        assert violations[0].rule == "COMPLIANCE004"
+        assert "SEC999" in violations[0].detail
+
+    # frob:tests src/frob/strata/_compliance.py::check_regulation_caught_by_integrity kind="unit"
+    def test_caught_by_naming_present_control_discharges(self):
+        """Positive case: the identical claim, but SEC001 is actually in
+        the live rule-id set -- discharge succeeds."""
+        entry = OutOfScopeRegulation(
+            id="COPPA",
+            reason="claims coverage",
+            owner="legal@example.com",
+            review="2027-01-01",
+            caught_by="already enforced by SEC001",
+        )
+        result = check_regulation_caught_by_integrity(
+            out_of_scope=(entry,), known_rule_ids=frozenset({"SEC001"})
+        )
+        assert result.is_ok
+        assert result.danger_ok == ()
+
+    # frob:tests src/frob/strata/_compliance.py::check_regulation_caught_by_integrity kind="unit"
+    def test_free_text_with_no_rule_id_token_is_not_checked_further(self):
+        entry = OutOfScopeRegulation(
+            id="COPPA",
+            reason="no under-13 flows in this deployment",
+            owner="legal@example.com",
+            review="2027-01-01",
+            caught_by="legal intake process reviews age-gating at onboarding",
+        )
+        result = check_regulation_caught_by_integrity(out_of_scope=(entry,))
+        assert result.is_ok
+        assert result.danger_ok == ()
+
+
 class TestEvaluateCompliance:
     # frob:tests src/frob/strata/_compliance.py::evaluate_compliance kind="unit"
     def test_conjunction_of_catalog_discharge_and_policy(self):
@@ -412,3 +486,55 @@ class TestEvaluateCompliance:
         model = KernelModel()
         result = evaluate_compliance(model, view="no-such-view")
         assert result.is_err
+
+    # frob:tests src/frob/strata/_compliance.py::evaluate_compliance kind="unit"
+    def test_caught_by_integrity_folds_into_the_conjunction(self):
+        """T-0382: `evaluate_compliance` itself refuses an out-of-scope
+        exclusion whose caught_by names an absent control -- COMPLIANCE004
+        fires from the real entrypoint, not merely as a standalone
+        function nobody calls."""
+        thin_catalog = tuple(e for e in COMPLIANCE_CATALOG if e.id != "COPPA")
+        out_of_scope = (
+            OutOfScopeRegulation(
+                id="COPPA",
+                reason="claims coverage",
+                owner="legal@example.com",
+                review="2027-01-01",
+                caught_by="already enforced by SEC999",
+            ),
+        )
+        model = KernelModel()
+        result = evaluate_compliance(
+            model,
+            view="us-coppa",
+            catalog=thin_catalog,
+            out_of_scope=out_of_scope,
+            known_rule_ids=frozenset({"SEC001"}),
+        )
+        assert result.is_ok
+        rules = {v.rule for v in result.danger_ok.violations}
+        assert "COMPLIANCE004" in rules
+
+    # frob:tests src/frob/strata/_compliance.py::evaluate_compliance kind="unit"
+    def test_caught_by_integrity_passes_when_control_is_real(self):
+        thin_catalog = tuple(e for e in COMPLIANCE_CATALOG if e.id != "COPPA")
+        out_of_scope = (
+            OutOfScopeRegulation(
+                id="COPPA",
+                reason="claims coverage",
+                owner="legal@example.com",
+                review="2027-01-01",
+                caught_by="already enforced by SEC001",
+            ),
+        )
+        model = KernelModel()
+        result = evaluate_compliance(
+            model,
+            view="us-coppa",
+            catalog=thin_catalog,
+            out_of_scope=out_of_scope,
+            known_rule_ids=frozenset({"SEC001"}),
+        )
+        assert result.is_ok
+        rules = {v.rule for v in result.danger_ok.violations}
+        assert "COMPLIANCE004" not in rules

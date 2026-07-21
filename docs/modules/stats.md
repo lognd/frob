@@ -4,6 +4,7 @@ One sentence: `frob stats` reports ticket-queue health and commit cadence
 so a team can see delivery trends -- measurement only, never a gate (a
 thermometer, not a thermostat).
 
+<!-- frob:describes src/frob/stats/__init__.py::collect -->
 ```bash
 frob stats               # queue health + commits over the last 30 days
 frob stats --days 90     # wider commit window

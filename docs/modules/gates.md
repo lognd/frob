@@ -16,9 +16,11 @@ declaration).
 | DRIFT002 | drift | edge endpoint no longer resolves (rename/delete) |
 | COV001 | coverage | public symbol has no `doc` edge (docstring counts via `doc` facet only if policy says so) |
 | COV002 | coverage | changed symbol has neither a `frob:ticket` edge to an open ticket NOR an open ticket whose `scope` glob covers its file (so one scoped ticket accounts for a whole refactor, not a per-symbol directive). A `frob:ticket` edge to a ticket that just closed to `DONE` in this same uncommitted diff (`tickets.md` itself touched) also counts -- T-0214's grace window, see design decisions below |
-| COV003 | coverage | ticket in state done with evidence ids that do not resolve to collected tests (never verifies PASS/FAIL, nor scope-binding -- see the T-0398 note below the table) |
+| COV003 | coverage | ticket in state done with evidence ids that do not resolve to collected tests (never verifies PASS/FAIL, nor scope-binding -- see the T-0398 note below the table; node-, file-, and directory-level evidence ids all resolve, T-0298 below) |
 | COV004 | coverage | attachment sha256 mismatch or file missing |
 | COV005 | coverage | a diff-touched file's `frob:` directive now binds a PRIVATE symbol whose span overlaps this diff's hunks, where the same `(kind, target)` directive bound a PUBLIC symbol in that file at the diff's base revision -- a displaced obligation (T-0297), see design decisions below |
+| COV006 | coverage | (warn) a `frob:tests` edge bound to a PRIVATE symbol whose test has no `frob.graph.callgraph` reachability to it -- see "COV006/COV007 (T-0483)" below, including a disclosed known false-positive shape |
+| COV007 | coverage | (warn) a `frob:doc` edge whose src symbol is PRIVATE -- see "COV006/COV007 (T-0483)" below |
 | TODO001 | coverage | bare TODO/FIXME comment (not `frob:`-prefixed) in a diff-touched file -- work marked but not accounted for at all |
 | TODO002 | coverage | `frob:todo` edge bound to a non-open (closed or missing) ticket -- work accounted for, but the reference is dangling |
 | SCOPE001 | scope | diff touches paths/symbols outside the active ticket's `scope` |
@@ -50,8 +52,11 @@ declaration).
 | SEC003 | secrets | a git-tracked file contains a live Stripe secret key (`sk_live_...`) or a private-key PEM header -- unwaivable, see `_UNWAIVABLE_RULES` |
 | WAIVE001 | (always on) | a `frob:waive` directive is missing `reason="..."` |
 | WAIVE002 | (always on) | a `frob:waive` targets a rule id that can never be matched -- see "Waive boundary" below |
+| WAIVE003 | (always on) | a `frob:waive` on a package-scoped rule (TEST003/TEST004/TEST007) reaches more than one distinct violated package/system id via directory-prefix matching -- see "Waiver over-breadth (T-0470)" below |
 | ARCH001 | arch | `frob.arch`'s complexity-aware long-function check (docs/modules/arch.md) still flags a function after its flat-body filter -- the one `frob.arch` category channeled into a real gate `Violation`, waivable with a reasoned `frob:waive ARCH001 reason="..." [ceiling=N]` (T-0289) |
 | PII010 | pii_structural | a pydantic/dataclass/TypedDict/attrs field's name or type annotation matches a PII-shaped signature (`FIELD_SIGNATURES`) with no `frob:waive PII010 reason="..."` -- see "PII010/SEC110" below |
+| PII011 | pii_structural | a tracked `.py` file's string-literal constant is structurally email-shaped (`_is_email_shaped`, `email.utils.parseaddr`-based) with no `frob:secret-fake` marker or `frob:waive PII011 reason="..."` -- see "PII010/SEC110" below |
+| PII012 | pii_structural | a plain identifier or `#`-comment word token resembles a `FIELD_SIGNATURES` keyword (suggestion severity, not deny-by-default) -- see "PII010/SEC110" below |
 | SEC110 | pii_structural | an `os.environ[...]`/`os.environ.get(...)`/`os.getenv(...)` call site with no `frob:waive SEC110 reason="..."` -- see "PII010/SEC110" below |
 | REF001 | refs | a git-tracked file has zero inbound references (auto-detected or verified `frob:used-by`) from any other tracked file -- see "Anti-orphan file-reference gate" below |
 | REF002 | refs | a git-tracked file has exactly one inbound reference (fragile single anchor) -- see "Anti-orphan file-reference gate" below |
@@ -74,6 +79,22 @@ ticket` CLI's own wiring of real values into these parameters is a
 disclosed follow-up, not yet done) supplies the answer. See
 docs/modules/tickets.md's `add_evidence`/`transition`/`land` entries for
 the parameter contracts.
+
+**T-0298 (file-/directory-level COV003 evidence)**: an evidence id with no
+`::` at all (a bare path, e.g. `tests/test_vet.py` or `tests/unit/deploy`)
+resolves iff at least one collected node id lives under it -- as that exact
+file (`<path>::...`) or inside that directory (`<path>/...`). Node-level
+resolution (`path::Class::method`) is tried FIRST and stays the preferred,
+most precise granularity; the path-level check is a fallback, not a
+replacement. It is deliberately non-vacuous: a path with zero matching
+collected node ids (nothing landed there, or a typo'd/nonexistent
+directory) still fails COV003 -- "this whole file/dir passes" only counts
+when something under it actually collected. This exists because a refactor
+touching ~20 files naturally produces evidence at file granularity ("this
+test file passes"), not one node id per file; forcing node-level-only
+evidence for that shape of change is what produced a real 25-error
+main-red incident (2026-07-19) when two agents both recorded file-level
+ids COV003 could not, at the time, resolve at all.
 
 Severity: `error` (exit 1) or `warn`; per-rule default overridable via the
 `[gates.severity]` table in `frob.toml` (`COV001 = "warn"`), applied as a
@@ -111,6 +132,92 @@ also flagged as WAIVE002 the same way. `frob.gates._KNOWN_GATE_RULES`
 outside it is presumed unwaivable. If a future change makes another arch
 category waivable, remove it from `_unwaivable_channel_rules`'s returned
 set the same way `long-function` was removed, and update this note.
+
+### COV006/COV007 (T-0483)
+
+T-0297 shipped candidate (a) of a three-part COV idea as COV005 (a
+directive silently rebound onto a private helper by an extraction).
+Candidates (b) and (c) landed here as COV006/COV007:
+
+- **COV006** (warn): a `frob:tests` edge bound to a PRIVATE symbol whose
+  named test has no reachability to it in `frob.graph.callgraph`
+  (T-0288/T-0290's shared call-graph substrate -- reused as-is, not a
+  second traversal implementation). Restricted to PRIVATE targets only:
+  `build_call_graph` never records an edge to a PUBLIC callee by
+  construction (the mechanism dup/perf rely on to stop expanding at the
+  public-API boundary for free), so checking a public target would ALWAYS
+  report "unreachable" regardless of whether the test genuinely exercises
+  it -- unsound, not merely noisier, which is why COV006 skips it
+  entirely rather than caveat it.
+
+  **Known false-positive shape, disclosed rather than tuned away**: a
+  test that reaches its bound private helper only INDIRECTLY, via a
+  PUBLIC entry point in the same file that itself calls the helper, is
+  reported unreachable -- there is no edge for that first hop at all
+  (public callees are never edges), so `closure` can never walk through
+  it. This is the single most common COV006 finding on this repo's own
+  suite today (many `frob:tests <private-helper>` bindings whose test body
+  only calls the public gate/wrapper function). It is not a traversal bug;
+  `frob.graph.callgraph`'s public-boundary-stop behavior is load-bearing
+  for its other two consumers and is used unmodified here. Warn severity
+  reflects exactly this: a COV006 finding is a prompt to double check, not
+  proof the binding is wrong -- expect a real "adoption cliff" wave of
+  these on first landing in any repo with this test-via-public-wrapper
+  idiom, same as any other warn-tier gate here.
+
+- **COV007** (warn): a `frob:doc` edge whose src symbol is PRIVATE. Doc
+  anchors normally cover the public API surface (COV001 only ever asks
+  for one on a PUBLIC symbol), so one on a private helper is usually
+  either a directive that rode along onto the wrong symbol after an
+  extraction (COV005's failure mode, just discovered post hoc instead of
+  diff-scoped) or documentation that belongs on the public caller instead.
+  Warn, not error: a private helper can legitimately warrant its own doc
+  anchor (a genuinely complex internal algorithm), and this repo's own
+  code has real examples of that (`frob.logging._FrobFormatter`,
+  `frob.gates._pii_structural._FieldSignature`) -- COV007 flags the
+  pattern for a human decision, it does not forbid it.
+
+### Waiver over-breadth (T-0470)
+
+`_match_waiver`'s directory-prefix fallback (T-0276, see the comment
+above `_match_waiver` in `src/frob/gates/__init__.py`) exists because
+TEST003/TEST004/TEST007's `Violation.file` is a package or system id
+(`crates/foo/src`, `[[system]] my-sys`), never a real leaf file -- no
+real source path can ever equal that string, so without the fallback no
+placement of a waiver could ever match it. That reach is now gated to an
+explicit allowlist, `frob.gates._PACKAGE_SCOPED_RULES = {TEST003, TEST004,
+TEST007}` -- it used to run for every symref-less violation regardless of
+rule, on the assumption that no other rule's `file` is ever directory-
+shaped. Any future rule that reuses a bare directory/virtual id as `file`
+must be added to that set deliberately; it no longer inherits unbounded
+prefix reach as a side effect of having no symref.
+
+Even correctly gated, the prefix fallback has a real over-breadth shape:
+a waiver written in one file reaches every ANCESTOR package prefix of that
+file's own path too (a waiver in `src/frob/pkg/sub/deep.py` matches a
+TEST003 finding against `src/frob/pkg/sub` AND against `src/frob/pkg`
+simultaneously), which is almost always broader than the author was
+reasoning about when they wrote it. **WAIVE003** flags any single waiver
+that reaches more than one distinct violated package/system id this way
+-- the fix is to split it into one waiver per package, or move each to
+that package's own file.
+
+A second prong was investigated for this ticket -- warning when a
+class-bound directive of any verb is not near the class's own top,
+on the theory that a directive with nothing recognizable following it
+(`frob.graph.dsl._enclosing_src`'s fallback to the ENCLOSING symbol) and
+sitting far from the class start was probably meant for a nested member.
+That heuristic was prototyped and DROPPED before landing: it fires
+constantly on this repo's own real, intentional idiom of a per-field
+`frob:waive`/`frob:ticket` comment documenting one field deep inside a
+large pydantic config class (fields are not `RawSymbol`s, so a directive
+above one always falls back to the enclosing class, by design, however
+far into the body it sits -- e.g. `src/frob/app/config.py`'s `AppConfig`
+carries several such comments 150+ lines past its `class AppConfig:`
+line, none of them mis-scoped). A real version of this check needs a
+different signal than raw line-distance from the class top; tracked as a
+follow-up rather than shipped as a lint proven noisy against the repo's
+own pattern.
 
 ### `frob check`'s dup/arch stage summaries are also waiver-aware (T-0375)
 
@@ -166,6 +273,7 @@ advisory count in `frob check`'s printed summary honest.
 <!-- frob:describes src/frob/gates/_pii_structural.py::_FieldSignature -->
 <!-- frob:describes src/frob/gates/_pii_structural.py::_scan_python_fields -->
 <!-- frob:describes src/frob/gates/_pii_structural.py::_scan_python_env_access -->
+<!-- frob:describes src/frob/gates/__init__.py::known_gate_rule_ids -->
 
 - `load_stamp` -- the raw `.frob/coverage-stamp` document, or `None` if
   never stamped/unreadable; TEST006 compares it against live file hashes.
@@ -208,6 +316,12 @@ advisory count in `frob check`'s printed summary honest.
   waivable with a written reason like every other rule.
 - `run_gates` -- the single entry point: loads all state once, then runs
   the selected gates in parallel and merges/severity-overrides the result.
+- `known_gate_rule_ids` -- every rule id a gate can emit (T-0499), the
+  live set strata's `caught_by` verification (THREAT006, COMPLIANCE004)
+  needs to recognize a rule-id-shaped reference (e.g. `SEC001`) instead of
+  treating it as unresolved fail-closed; threaded into
+  `evaluate_exhaustiveness`/`evaluate_compliance` from `frob sys audit`'s
+  `_evaluate_audit` (`frob.app.sys_runner`).
 
 ### Structural PII secrets detection T-0207
 
@@ -233,14 +347,49 @@ structures and env-var access sites, drawn from
 - Self-match exclusion (T-0201 lesson): `_pii_structural.py`'s own path is
   hardcoded-excluded from the scan, so `FIELD_SIGNATURES`'s own keyword
   string literals can never be misread as a scanned field.
+- **PII010 also covers DB/DDL schema scanning (T-0348, family 2)**:
+  sqlalchemy ORM declarative `name = Column(...)` assignments and alembic-
+  style positional `Column("name", ...)` calls (`_scan_orm_columns`), plus
+  raw-SQL `CREATE TABLE(...)` column lists embedded in tracked-`.py`
+  string literals (`_scan_ddl_strings`) -- both matched against the same
+  `FIELD_SIGNATURES` table, no second registry. Schema headers are the
+  highest-value PII surface per the umbrella ticket body.
+- **PII011 (T-0349, family 4): structural email-shape value detection**:
+  every string-literal constant in a tracked `.py` file, checked via
+  `email.utils.parseaddr` (an RFC 822 header parser) plus a plain
+  character-set validation of the parsed local/domain parts
+  (`_is_email_shaped`) -- explicitly NOT a regex, per the ticket body's
+  mandate. Escaped by a `frob:secret-fake` comment on the literal's own
+  line or the line directly above it, the same T-0157 marker convention
+  the secrets scanner uses (a fixture literal discharges both gates with
+  one comment).
+- **PII012 (T-0350, family 5): keyword-sweep at suggestion severity**:
+  every plain identifier (variable/parameter/function name) and every
+  `#`-comment word token matching a `FIELD_SIGNATURES` name-kind keyword,
+  excluding sites PII010 already reports on. Fires at WARN severity only
+  -- "no hard fail on names alone" per the ticket body -- distinct from
+  PII010's deny-by-default posture over an actual declared data-structure
+  field.
+- **std.pii/std.secrets declaration join (T-0351)**: `_load_declared_
+  surface` loads every `.strata` design file under the repo's design
+  directory (the same loader `sys_gate` already uses, `load_design_ids`),
+  tier-2 code-binds each file to its owning `Node` (`bind_code`, also
+  reused from `sys_gate`'s SYS003), and joins that node's `carries` PII
+  tags (`frob.strata._pii.node_pii_tags`) and `clearance == "Secret"`
+  status (the same best-effort std.secrets proxy
+  `_design_load.DesignIds.secrets` already documents) into a
+  `_DeclaredSurface`. A PII010 finding whose file is already code-bound to
+  a node that `carries` the SAME category is discharged outright; a
+  SEC110 finding whose file is code-bound to a Secret-clearance node is
+  likewise discharged. A repo with no design directory (or no matching
+  binding) degrades to the empty surface -- every finding still fires
+  exactly as before this ticket, waiver-only. PII011 (bare string-literal
+  values have no "owning field" to carry a category against) and PII012
+  (already suggestion-severity, not deny-by-default) are NOT joined.
 - **Deliberately not built this pass** (see `_pii_structural.py`'s module
-  docstring and this ticket's Done report): DB/DDL schema scanning (`CREATE
-  TABLE`, sqlalchemy `Column`), structural (non-regex) email-shape value
-  detection, identifier/comment keyword-sweep at suggestion severity, and
-  non-Python language equivalents. Filed as follow-on tickets, not silently
-  dropped. A direct join from a PII010/SEC110 finding to a T-0154 `carries`
-  tag or a T-0082 `std.secrets` node (rather than a bare waiver) is likewise
-  a follow-on -- today's only discharge mechanism is the waiver.
+  docstring and this ticket's Done report): non-Python language
+  equivalents and non-Python DDL sources (`.sql` migration files). Filed
+  as follow-on tickets, not silently dropped.
 
 ### Anti-orphan file-reference gate T-0396
 
@@ -372,14 +521,33 @@ false-positive lesson applies here too: a noisy gate gets blanket-waived):
    external or illustrative block the heuristic cannot confidently
    classify.
 
-**Scope cut (disclosed, not silent)**: console/bash command-drift checking
-(`frob <subcommand>` against a live registry) is NOT implemented in this
-landing -- the ticket's own refinement demanded a CONFIGURABLE command
-source (a `frob.toml`-declared entry point, generic per project, frob
-being only one instance among many) rather than a hardcoded argparse-of-
-frob special case, and building that generically was judged out of scope
-for a first, conservative pass. Filed as a follow-up ticket (see T-0436's
-Done report in `tickets.md` for the id).
+5. **Console/bash command-drift checking (T-0443)**: a
+   ` ```console ``` `/` ```bash ``` `/` ```sh ``` `/` ```shell ``` ` fenced
+   block's lines are scanned for `<prog> <subcommand...>` invocations of a
+   CONFIGURED command source -- never a hardcoded, frob-specific
+   subcommand list. `frob.toml`'s `[[docblocks.commands]]` array declares
+   each source generically:
+
+   ```toml
+   [[docblocks.commands]]
+   prog = "frob"
+   parser = "frob.__main__:_build_parser"
+   ```
+
+   `parser` is a `module:callable` dotted path to a zero-argument factory
+   returning an `argparse.ArgumentParser`; the gate imports it AT CHECK
+   TIME and walks its live `add_subparsers` tree, so the argparse registry
+   is the single source of truth -- a subcommand rename/removal there is
+   caught automatically, with zero edits to this gate or to `frob.toml`.
+   A chain that does not walk the tree is STALE (error); one that does
+   resolve is checked for a nearby binding directive same as every other
+   tier (UNBOUND, warn). No `[[docblocks.commands]]` entries at all (a
+   project that has not opted in) means zero console/bash checking --
+   fail-open, matching every other namespace source in this module.
+
+This repo configures itself as its own first instance -- see
+`frob.toml`'s `[[docblocks.commands]]` table, pointed at
+`frob.__main__:_build_parser`.
 
 **Dogfooding result (T-0436 Done report has the full finding-by-finding
 detail)**: run on this repo's own tracked docs, DOC004 found 5 real

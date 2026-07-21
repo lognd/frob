@@ -277,6 +277,77 @@ and update on every dispatch.
   (e.g. `src/frob/gates/`) still hard-blocks a real collision under it.
   Callers with no repo root (`root=None`) get the strict, undemoted check.
 
+## Cross-worktree lease side-channel (T-0473)
+
+The scope-lease model above is derived purely from the LOCAL `tickets.md`'s
+`IN_PROGRESS` rows -- fine for one checkout, but a real dispatch session
+runs each agent in its OWN isolated git worktree, each with its own copy of
+`tickets.md`. A lease taken by `frob ticket start` in worktree A never
+reaches worktree B's ledger until one lands/merges into the other, so
+`doable`'s collision filter was structurally inert across worktrees before
+T-0473 -- two agents in separate worktrees could be handed overlapping
+scope with neither's `doable` ever seeing the other's hold.
+
+`frob.tickets._leases` fixes this with a side channel under the git
+**common** directory (`git rev-parse --git-common-dir`), which every
+linked worktree of one repository resolves to the SAME absolute path
+(unlike `root / ".git"`, a per-worktree pointer file for a linked
+worktree). `<common-dir>/frob-leases/<ticket-id>.json` holds one
+`LeaseRecord` (scope, worktree path, branch, timestamp) per currently
+`IN_PROGRESS` ticket -- `frob.tickets.transition` writes it on entering
+`IN_PROGRESS` and removes it on leaving, and `mutate_scope` re-writes it
+when an in-progress ticket's scope changes, so it never drifts from the
+ledger's own `state:`/`scope:` fields, which remain the sole source of
+truth for anything the local `tickets.md` already knows about.
+
+`leased_by` (and therefore `doable`) now unions the local ledger's own
+`IN_PROGRESS` rows with every OTHER worktree's recorded lease
+(`read_all_leases`), local always winning on an id collision. A lease
+whose recorded worktree path no longer exists on disk (a crashed or
+abandoned agent checkout, never cleaned up) is treated as stale and
+skipped by `read_all_leases` -- a structural, cheap liveness check (path
+existence) that keeps a dead worktree's forgotten lease from wedging
+`doable` for everyone else forever; the fuller two-way reconciliation
+(dead in-progress ticket -> requeue, live worktree with no in-progress
+ticket -> flag/clean) is T-0476's job, not this one's.
+
+## `frob ticket reconcile` (T-0476)
+
+The fuller two-way healing the T-0473 section above defers to. Reuses the
+same `frob.tickets._leases` registry (T-0473) to judge two anomaly classes
+structurally -- no coordinator polling of output-file mtimes:
+
+1. **Stale hold**: a ticket the checkout's OWN `tickets.md` shows
+   `IN_PROGRESS` with no corresponding LIVE lease (`read_all_leases`
+   already drops any lease whose recorded worktree path no longer exists,
+   T-0473's own liveness guard, so "no live lease" covers both "never had
+   one" and "had one, but the worktree died"). Reconciled by transitioning
+   it back to `QUEUED` -- the exact same legal state-machine edge `frob
+   ticket requeue` (T-0472) uses -- which releases any lingering lease as
+   a side effect of `transition` itself (T-0473's sync).
+2. **Orphan worktree**: a real, live `git worktree` (`git worktree list
+   --porcelain`, excluding the main checkout) that no lease names at all --
+   an agent whose ticket was closed/requeued/failed out from under it, or
+   that never started one.
+
+```
+frob ticket reconcile                          # dry-run: report only
+frob ticket reconcile --apply                   # requeue stale holds;
+                                                 # flag (not remove) orphans
+frob ticket reconcile --apply --remove-orphans  # also `git worktree
+                                                 # remove --force` orphans
+```
+
+`--apply` alone only touches ticket state (a reversible, cheap action);
+actually deleting a worktree (`--remove-orphans`, which requires `--apply`
+too) is gated behind its own separate opt-in since it is a strictly more
+destructive action than requeuing a ticket -- this is a narrower,
+safety-first reading of "auto-clean" than a bare `frob clean` tier reuse
+would have been: `frob.clean`'s tiers operate on build/cache ARTIFACTS
+(`__pycache__`, `dist/`, ...), not on live git worktrees, so orphan-worktree
+removal is its own `git worktree remove` call here, not routed through
+`frob.clean`.
+
 ## Scope/lease change protocol (T-0455)
 
 `frob ticket scope <id> --add GLOB... --remove GLOB... --reason TEXT`
@@ -941,6 +1012,21 @@ def ledger_lock(root: Path) -> Iterator[None]
   hard error naming `frob ticket sweep <id>` as the refresh path, not a
   silent idempotent no-op -- `sweep` already exists as that mechanism, so a
   second entry point doing the same thing would just be duplication.
+- **Instant start (T-0474)**: `frob ticket start` is just the state
+  transition by default -- the pre-work sweep (dup scan + xref + scope
+  digest) is launched as a DETACHED background process
+  (`subprocess.Popen(..., start_new_session=True)`) rather than run
+  synchronously, so `start` no longer blocks for however long the sweep
+  takes on a large repo. `--foreground` opts back into the old, fully
+  synchronous behavior (the sweep completes before `start` returns) --
+  useful for a script that wants the sweep guaranteed recorded
+  immediately. `frob ticket sweep <id>` is unaffected either way: it
+  always runs synchronously, so PRE001 stays satisfiable on demand
+  regardless of whether `start`'s own background launch has landed yet. A
+  spawn failure (e.g. `subprocess.Popen` refused by a locked-down sandbox)
+  falls back to running the sweep synchronously right there -- `start`
+  never silently skips recording a sweep, only ever trades "instant" for
+  "eventually".
 
 Ticket kinds: feature, bug, security, ux, docs, invariant, incident.
 - `--kind incident` seeds a blameless-postmortem body template (Summary,

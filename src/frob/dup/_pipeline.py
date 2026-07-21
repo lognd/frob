@@ -155,52 +155,54 @@ from frob.dup._template import build_group_template
 from frob.gitio import Diff
 from frob.graph._models import GraphSnapshot, SymbolKind
 from frob.graph.callgraph import CallGraph, build_call_graph
+from frob.lang._common import _CANONICAL_VOCAB
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
 
 _IDENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
-_KEYWORDS = frozenset(
+
+# Python-specific pseudo-keywords `frob.lang._common._CANONICAL_VOCAB`
+# does not carry (it pools only constructs shared/analogous across at
+# least two of python/typescript/rust/c/cpp; these are python-only literal
+# spellings/soft keywords with no cross-grammar counterpart to pool
+# against): `with`/`as`/`is`/`global`/`nonlocal`/`assert`/`del`/`await`
+# have no entry there, and `None`/`True`/`False`/`self`/`cls` are literal
+# or convention-bound spellings, not grammar keywords, so they would never
+# belong in a cross-grammar keyword-vocabulary table.
+_PY_ONLY_KEYWORDS = frozenset(
     {
-        "def",
-        "class",
-        "return",
-        "if",
-        "elif",
-        "else",
-        "for",
-        "while",
-        "in",
-        "not",
-        "and",
-        "or",
-        "is",
-        "import",
-        "from",
-        "as",
         "with",
-        "try",
-        "except",
-        "finally",
-        "raise",
-        "pass",
-        "break",
-        "continue",
-        "lambda",
-        "yield",
-        "async",
+        "as",
+        "is",
+        "global",
+        "nonlocal",
+        "assert",
+        "del",
         "await",
         "None",
         "True",
         "False",
         "self",
         "cls",
-        "global",
-        "nonlocal",
-        "assert",
-        "del",
     }
 )
+
+# T-0487: `_KEYWORDS` was python-only, so a Rust `let` (or any other
+# non-python grammar keyword: `fn`, `impl`, `struct`, `match`, `switch`,
+# `case`, ...) matched `_IDENT_RE` and was never excluded, mis-labeling it
+# as an identifier and skewing R2's alpha-rename hash plus R5's def-use
+# labeling (`_labeled_ids`/`_add_chunk_nodes`) for every non-python
+# grammar. Reusing `frob.lang._common._CANONICAL_VOCAB` (the existing
+# pooled keyword/punctuation-spelling table `_BLOCK_LABELS`/
+# `_ASSIGNMENT_LABELS` already mirror this per-grammar-pooled-into-one-set
+# pattern for) closes that gap without a second hand-maintained per-
+# language keyword list (NO DUPLICATION) -- its keys already cover every
+# real keyword spelling `_canonical_tokens` treats as non-identifier
+# across all five grammars; punctuation/operator entries in that table
+# (e.g. `"{"`, `"="`) never match `_IDENT_RE` so folding them in here is
+# harmless.
+_KEYWORDS = _PY_ONLY_KEYWORDS | frozenset(_CANONICAL_VOCAB)
 
 # Statement-starting keywords for the heuristic chunker (module docstring's
 # "Statement chunking" deviation note).

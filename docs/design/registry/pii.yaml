@@ -44,6 +44,6 @@ entries:
     total_items: 7
     sourcing: "verified"
     source_doc: "docs/design/secrets-pii-corpus.md"
-    disposition: "deferred:T-0351"
+    disposition: "handled_by:PII010"
     cross_refs: []
 total_sections: 7

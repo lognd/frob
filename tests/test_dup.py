@@ -209,18 +209,11 @@ class TestCrossLanguageR5Litmus:
     DOES collide at R5, independent of R1/2/3's lexical miss.
 
     The fixture is deliberately a single bare `return a + b` (no local
-    `let`/assignment): `frob.dup._pipeline._KEYWORDS` is a python-centric
-    keyword set, so a Rust `let` token in a declaration statement is NOT
-    recognized as a keyword and gets mis-labeled as an identifier
-    (`_assignment_ids` then emits a spurious extra "def" node for `let`
-    itself, diverging the two graphs) -- a real, separate, python-centric-
-    keyword-list gap, out of T-0447's declared scope (frob-core/**,
-    _pipeline.py's canonicalization wiring, this test file -- not a
-    per-grammar keyword-list audit), filed as a follow-up rather than
-    fixed here. Avoiding a `let`/assignment statement in this fixture
-    keeps the litmus honest: it isolates the claim T-0447 is actually
-    proving (R5 fires cross-language because its labels are structural,
-    not lexical) from that separate keyword-list gap."""
+    `let`/assignment), isolating the claim this class proves (R5 fires
+    cross-language because its labels are structural, not lexical) from
+    the separate `let`-as-identifier gap `TestCrossLanguageR5WithLet`
+    (T-0487) now covers directly with a fixture that DOES declare a local
+    binding."""
 
     @pytest.fixture()
     def snapshot(self, tmp_path):
@@ -273,4 +266,49 @@ class TestCrossLanguageR5Litmus:
         assert rungs.isdisjoint({"r1", "r2", "r3"}), (
             f"r1/r2/r3 bucket on literal token vocabulary the python/rust "
             f"grammars do not share; unexpected fire: {rungs}"
+        )
+
+
+class TestCrossLanguageR5WithLet:
+    """T-0487 regression: `frob.dup._pipeline._KEYWORDS` was python-only,
+    so a Rust `let` in a `let_declaration` matched `_IDENT_RE` and was
+    never excluded, mis-labeling it as an extra def/use node
+    (`_labeled_ids`/`_statement_ids`) and diverging the def-use graph from
+    an equivalent Python function's -- unlike `TestCrossLanguageR5Litmus`
+    above (which deliberately avoids a local binding to isolate R5's
+    structural-collision claim from this gap), this fixture DOES declare
+    one on both sides, so it fails if the `let`-as-identifier bug is
+    reintroduced."""
+
+    @pytest.fixture()
+    def snapshot(self, tmp_path):
+        _write(
+            tmp_path,
+            "add_let.py",
+            "def sum_with_local_py(a, b):\n    total = a + b\n    return total\n",
+        )
+        _write(
+            tmp_path,
+            "add_let.rs",
+            "fn sum_with_local_rs(a: i32, b: i32) -> i32 {\n"
+            "    let total = a + b;\n"
+            "    return total;\n"
+            "}\n",
+        )
+        cache = tmp_path / "graph-cache"
+        result = build_graph(tmp_path, cache)
+        assert result.is_ok, result.err
+        return result.danger_ok
+
+    # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
+    # frob:ticket T-0487
+    def test_r5_fires_across_languages_with_a_let_binding(self, snapshot):
+        report = find_clones(
+            snapshot, DupConfig(min_tokens=1, threshold=0.99)
+        ).danger_ok
+        rungs = _rungs_for(report, "sum_with_local_py", "sum_with_local_rs")
+        assert "r5" in rungs, (
+            f"expected r5 to fire across python/rust even when the rust "
+            f"side declares a local `let` binding; got rungs={rungs}, "
+            f"groups={report.groups!r}"
         )

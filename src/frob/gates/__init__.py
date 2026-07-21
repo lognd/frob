@@ -144,9 +144,24 @@ def _touched_files(diff: Diff) -> set[str]:
 
 
 def _symref_to_nodeid(symref: str) -> str:
-    """`path::a.b` -> `path::a::b`, the pytest node id spelling of a qualname."""
+    """`path::a.b` -> `path::a::b`, the pytest node id spelling of a qualname.
+
+    frob:ticket T-0324
+    A parametrized test's `frob:tests`/evidence symref carries its case
+    suffix verbatim (`path::a.b[015-python-3.11.4]`) -- pytest node ids for
+    a `@pytest.mark.parametrize`-expanded case routinely contain their own
+    literal dots (version strings, floats, dotted module paths passed as
+    case values). A blanket `qualname.replace('.', '::')` over the WHOLE
+    qualname corrupted those in-bracket dots too (`3.11.4` ->`3::11::4`),
+    so a bracketed case id could never resolve against its real collected
+    node id even though the bracket-less base did (only the base's dots,
+    if any, sit outside a `[...]` suffix). Only the qualname portion before
+    the first `[` is a dotted Class.method path; the `[...]` suffix (if
+    any) is opaque pytest-generated case text and must pass through
+    unchanged."""
     path, _, qualname = symref.partition("::")
-    return f"{path}::{qualname.replace('.', '::')}"
+    head, bracket, tail = qualname.partition("[")
+    return f"{path}::{head.replace('.', '::')}{bracket}{tail}"
 
 
 # frob:ticket T-0275
@@ -245,13 +260,57 @@ def _snake(name: str) -> str:
     return re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
 
 
+# frob:ticket T-0298
+def _is_path_level_evidence(evidence: str) -> bool:
+    """True if `evidence` names a file or directory rather than a single
+    test node (`path::qualname`) -- no `::` at all, e.g. `tests/test_vet.py`
+    or `tests/unit/deploy`."""
+    return "::" not in evidence
+
+
+# frob:ticket T-0298
+def _path_level_evidence_collected(evidence: str, tests: CollectedTests) -> bool:
+    """COV003 file-/directory-level evidence resolution: `evidence` (a bare
+    path with no `::`) resolves iff at least one collected node id lives
+    under it -- either AS that exact file (`evidence::...`) or inside that
+    directory (`evidence/...`).
+
+    T-0298: a refactor touching ~20 files naturally produces evidence at
+    file granularity ("this whole test file passes"), not one node id per
+    file; forcing node-level ids for that shape of change is what led two
+    real agents (root-cause incident, 2026-07-19 main-red) to record
+    unresolvable ids like `tests/test_vet.py` or `tests/unit/deploy` that
+    COV003 could never validate. This is deliberately NOT vacuous: an empty
+    or nonexistent path (zero matching collected node ids) still fails --
+    "this file/dir passes" only counts when something under it actually
+    collected. Node-level evidence (`_evidence_collected`) remains the
+    preferred, more precise granularity and is tried first by
+    `_evidence_valid_for_ticket`; this is the coarser fallback, not a
+    replacement."""
+    stripped = evidence.rstrip("/")
+    file_prefix = f"{stripped}::"
+    dir_prefix = f"{stripped}/"
+    return any(
+        node.startswith(file_prefix) or node.startswith(dir_prefix)
+        for node in tests.node_ids
+    )
+
+
 def _evidence_collected(evidence: str, tests: CollectedTests) -> bool:
     """Exact node-id membership, or bare-function match for parametrized
-    tests (`f` satisfies evidence when only `f[param]` variants collect).
-    Thin wrapper over `frob.tickets._models.matches_collected` -- the
-    single shared implementation (D-11 dedupe; `frob.tickets.add_evidence`
-    used to carry an independent, hand-written copy of this exact rule)."""
-    return matches_collected(evidence, tests.node_ids)
+    tests (`f` satisfies evidence when only `f[param]` variants collect) --
+    via `frob.tickets._models.matches_collected`, the single shared
+    implementation (D-11 dedupe; `frob.tickets.add_evidence` used to carry
+    an independent, hand-written copy of this exact rule). Node-level
+    resolution is tried first (preferred, most precise); a bare file- or
+    directory-path evidence id (T-0298, no `::`) falls back to
+    `_path_level_evidence_collected` -- "any collected node under this
+    path" -- rather than failing outright."""
+    if matches_collected(evidence, tests.node_ids):
+        return True
+    if _is_path_level_evidence(evidence):
+        return _path_level_evidence_collected(evidence, tests)
+    return False
 
 
 # frob:ticket T-0215
@@ -631,6 +690,10 @@ _KNOWN_GATE_RULES = frozenset(
         "COV003",
         "COV004",
         "COV005",
+        # T-0483: `frob:tests` call-graph reachability (COV006) and
+        # a `frob:doc` anchor bound to a private helper (COV007).
+        "COV006",
+        "COV007",
         "DRIFT001",
         "DRIFT002",
         "SCOPE001",
@@ -652,6 +715,8 @@ _KNOWN_GATE_RULES = frozenset(
         "TODO002",
         "WAIVE001",
         "WAIVE002",
+        # T-0470: over-broad package-prefix waiver reach.
+        "WAIVE003",
         "DEC001",
         "DEC002",
         "REL001",
@@ -669,6 +734,7 @@ _KNOWN_GATE_RULES = frozenset(
         "PERF004",
         "PERF005",
         "PERF006",
+        "PERF007",
         "SYS001",
         "SYS002",
         "SYS003",
@@ -702,6 +768,20 @@ _KNOWN_GATE_RULES = frozenset(
         "WALK001",
     }
 )
+
+
+# frob:ticket T-0499
+# frob:doc docs/modules/gates.md#public-api
+# frob:tests tests/test_gates.py::TestKnownGateRuleIds.test_returns_known_rule_id
+# frob:tests tests/test_gates.py::TestKnownGateRuleIds.test_is_frozenset
+def known_gate_rule_ids() -> frozenset[str]:
+    """Return every rule id a gate can emit, for strata `caught_by`
+    resolution to recognize rule-id-shaped references (e.g. THREAT006's
+    and COMPLIANCE004's `known_rule_ids` param) instead of treating them
+    as unresolved by default.
+    """
+    return _KNOWN_GATE_RULES
+
 
 # frob:ticket T-0148
 # TEST008 (coverage.xml carried data but zero of it joined to a known repo
@@ -820,6 +900,82 @@ def _waive002_violation_for(edge: Edge, arch_categories: frozenset[str]) -> Viol
     )
 
 
+# frob:ticket T-0470
+def _waive003_violations(
+    violations: tuple[Violation, ...], snapshot: GraphSnapshot
+) -> tuple[Violation, ...]:
+    """WAIVE003: a single `frob:waive` edge on a package-scoped rule
+    (`_PACKAGE_SCOPED_RULES`) that reaches MORE THAN ONE distinct violated
+    package/system id via `_match_waiver`'s directory-prefix fallback.
+
+    A waiver sitting in one file under `src/frob` matches every TEST003/
+    TEST007 violation for every ancestor package prefix of that file's own
+    path (`src/frob`, `src/frob/gates`, ...) simultaneously -- the same
+    directive silently suppresses findings the author most likely never
+    saw, let alone intended to waive, because they were reasoning about
+    their own immediate package, not its ancestors. WARN severity: this is
+    a scope-hygiene nudge (split into one waiver per package, or move each
+    to its own package), not a correctness bug on its own.
+    """
+    waivers_by_rule = _waivers_by_rule(snapshot)
+    reach: dict[tuple[str, str], set[str]] = {}
+    for violation in violations:
+        if violation.rule not in _PACKAGE_SCOPED_RULES:
+            continue
+        match = _match_waiver(violation, waivers_by_rule)
+        if match is None:
+            continue
+        reach.setdefault((violation.rule, match.origin), set()).add(violation.file)
+    out: list[Violation] = []
+    for (rule, origin), files in reach.items():
+        if len(files) <= 1:
+            continue
+        file, _, line_text = origin.rpartition(":")
+        line = int(line_text) if line_text.isdigit() else 0
+        packages = ", ".join(sorted(files))
+        _log.warning(
+            "WAIVE003: %s frob:waive %s reaches %d packages: %s",
+            origin,
+            rule,
+            len(files),
+            packages,
+        )
+        out.append(
+            Violation(
+                rule="WAIVE003",
+                severity=Severity.WARN,
+                file=file or origin,
+                line=line,
+                message=(
+                    f"WAIVE003: {origin} frob:waive {rule} matches {len(files)} "
+                    f"distinct packages ({packages}) via directory-prefix reach; "
+                    f"likely broader than intended -- split into one waiver per "
+                    f"package"
+                ),
+            )
+        )
+    return tuple(out)
+
+
+# frob:ticket T-0470
+# PLACE001 (class-fallback directive placement) was prototyped here and
+# DELIBERATELY DROPPED before landing: a "distance from the class's own
+# span start" heuristic fires on this repo's own widespread, legitimate
+# idiom of per-field `frob:waive`/`frob:ticket` comments documenting one
+# field deep inside a large pydantic config class (e.g. `src/frob/app/
+# config.py`'s `AppConfig`, `frob:waive SCOPE001` at line 212, 150+ lines
+# past the class's `class AppConfig:` line) -- fields are not `RawSymbol`s
+# (only FUNCTION/METHOD/CLASS/CONST/TYPE are), so a directive above one
+# always falls back to the enclosing class by construction, and doing so
+# far from the class top is completely intentional there, not mis-scoped.
+# A real fix needs a materially different signal (e.g. detecting a nearby
+# symbol the directive plausibly SHOULD have bound to via `following` but
+# didn't reach, rather than raw line distance from the class start) --
+# out of this ticket's remaining scope/effort budget; a follow-up ticket
+# for prong (2) is filed with this exact counterexample instead of
+# shipping a lint proven noisy against the repo's own real pattern.
+
+
 # _match_waiver has three matching modes, chosen by `violation.symref`/
 # `violation.rule` -- this comment (not the docstring) carries the
 # historical detail so frob-arch's long-function line count reflects
@@ -862,6 +1018,20 @@ def _waive002_violation_for(edge: Edge, arch_categories: frozenset[str]) -> Viol
 # this, not to any check_type-based exclusion of `.rs` directives,
 # which does not exist: `frob.graph.build_graph`/`_load_tests` are
 # check_type-agnostic).
+#
+# T-0470: the package-prefix branch is gated to `_PACKAGE_SCOPED_RULES`
+# ONLY -- it used to run for every symref-less violation regardless of
+# rule, on the (empirically true today, but not future-proof) assumption
+# that no other rule's `violation.file` is ever directory-shaped. TEST007
+# also emits a directory-shaped `file` (a package id, `_test007_check_
+# pair`), so it needed the same prefix reach TEST003/004 already had --
+# but any FUTURE rule that reuses a bare directory/virtual id as `file`
+# (a `[[system]]`-style id, a `design/...` construct id) would have
+# silently inherited unbounded directory-prefix matching it was never
+# reviewed for, purely because it happens to have no symref. Restricting
+# the branch to an explicit allowlist means adding prefix reach to a new
+# rule is a deliberate, reviewable one-line change, not a side effect of
+# giving that rule a directory-shaped `file`.
 # T-0289: a waiver may carry `ceiling="N"` (currently only meaningful for
 # ARCH001) -- a reasoned "this long function is justified up to N lines"
 # escape that re-fires once the function outgrows N, instead of muting the
@@ -869,6 +1039,16 @@ def _waive002_violation_for(edge: Edge, arch_categories: frozenset[str]) -> Viol
 # sets `metric` can use it), not ARCH001-specific, so a future rule with the
 # same "reasoned up to a measured bound" shape does not need its own
 # matching path.
+# frob:ticket T-0470
+# The only rules whose `Violation.file` is a directory/system id rather
+# than a real leaf file with an extension -- see the T-0470 comment
+# above `_match_waiver` for why this must be an explicit allowlist, not
+# "every symref-less rule". Keep this in sync with any rule that starts
+# emitting a package/system-shaped `file` (`_test003`, `_test004`,
+# `_test007_check_pair` are the current three sites).
+_PACKAGE_SCOPED_RULES = frozenset({"TEST003", "TEST004", "TEST007"})
+
+
 def _ceiling_ok(waiver: Edge, violation: Violation) -> bool:
     """Whether `waiver` still covers `violation` given its optional
     `ceiling=` attribute: always true when no ceiling is set (or the
@@ -903,13 +1083,14 @@ def _match_waiver(
             if waiver.src == violation.symref and _ceiling_ok(waiver, violation):
                 return waiver
         return None
+    package_scoped = violation.rule in _PACKAGE_SCOPED_RULES
     package_prefix = violation.file.rstrip("/") + "/"
     for waiver in candidates:
         waiver_file = waiver.src.split("::", 1)[0]
         if (
             waiver.src == violation.file
             or waiver_file == violation.file
-            or waiver_file.startswith(package_prefix)
+            or (package_scoped and waiver_file.startswith(package_prefix))
         ) and _ceiling_ok(waiver, violation):
             return waiver
     return None
@@ -1105,6 +1286,8 @@ def coverage_gate(
     violations.extend(_cov003(queue, tests))
     violations.extend(_cov004(queue))
     violations.extend(_cov005(root, snapshot, diff))
+    violations.extend(_cov006(root, snapshot))
+    violations.extend(_cov007(snapshot))
     violations.extend(_todo001(snapshot, queue, diff))
     return tuple(violations)
 
@@ -1689,6 +1872,127 @@ def _old_directive_bindings(
         was_public = public_by_qualname.get(qualname, False)
         bindings.append((edge.kind, edge.target, was_public))
     return tuple(bindings)
+
+
+# frob:ticket T-0483
+def _cov006(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
+    """COV006: a `frob:tests` edge bound to a PRIVATE symbol whose named
+    test has no call-graph reachability to that symbol.
+
+    Reuses `frob.graph.callgraph` (T-0288/T-0290's shared substrate) rather
+    than a second traversal implementation -- `build_call_graph` scoped to
+    just the test's own file plus the bound symbol's file (the cheapest
+    scope that can possibly show a direct or one-hop-private-helper path
+    between them), then `closure` from the test's own symref.
+
+    Restricted to PRIVATE targets ONLY: `build_call_graph` never records an
+    edge to a PUBLIC callee by construction (its docstring: this is what
+    lets dup/perf's closures stop at the public-API boundary for free), so
+    a target that resolves to a public symbol would ALWAYS show up
+    "unreachable" here regardless of whether the test genuinely exercises
+    it -- checking public targets would be unsound, not merely noisier.
+    WARN severity (not error): `frob.graph.callgraph` is an explicitly
+    best-effort, name-based resolver (two same-named private helpers in
+    different files can alias), so a miss is a prompt to double check, not
+    proof the binding is wrong.
+
+    KNOWN adoption-noise shape (T-0483, disclosed rather than silently
+    tuned away): a test that reaches its bound private helper only
+    INDIRECTLY, by calling a PUBLIC entry point in the same file that
+    itself calls the helper, is reported unreachable -- `build_call_graph`
+    never records an edge INTO a public callee, so the graph has no edge
+    for that first hop at all, and `closure` can never walk through it.
+    This is the single most common shape of "false" COV006 finding on this
+    repo's own test suite today (a `frob:tests` binding a private helper
+    while the test body only calls the public function wrapping it), not
+    a bug in the traversal -- `frob.graph.callgraph`'s public-boundary-stop
+    behavior is load-bearing for its other two consumers (T-0288/T-0290)
+    and is reused here as-is per this ticket's own instruction, not
+    special-cased. A COV006 finding is a prompt to double check, same as
+    any other WARN-tier gate here on first adoption.
+
+    `build_call_graph` re-`frob.lang.parse_file`s every path it's given, and
+    a repo's own test suite routinely binds many private helpers from the
+    SAME (test_file, target_file) pair -- one call graph per `frob:tests`
+    edge would reparse both files once per binding. `graph_cache` memoizes
+    by the exact `paths` tuple passed to `build_call_graph`, so a pair seen
+    twice only builds once.
+    """
+    from frob.graph.callgraph import CallGraph, build_call_graph, closure
+
+    graph_cache: dict[tuple[str, ...], CallGraph] = {}
+    violations: list[Violation] = []
+    for edge in snapshot.edges:
+        if edge.kind != EdgeKind.TESTS:
+            continue
+        target_record = snapshot.symbols.get(edge.target)
+        if target_record is None or target_record.public:
+            continue
+        test_file = edge.src.split("::", 1)[0]
+        target_file = edge.target.split("::", 1)[0]
+        paths = (test_file,) if test_file == target_file else (test_file, target_file)
+        graph = graph_cache.get(paths)
+        if graph is None:
+            graph = build_call_graph(root, paths)
+            graph_cache[paths] = graph
+        if edge.target in closure(graph, edge.src):
+            continue
+        _log.debug(
+            "COV006: %s -> %s has no call-graph reachability", edge.src, edge.target
+        )
+        violations.append(
+            Violation(
+                rule="COV006",
+                severity=Severity.WARN,
+                file=test_file,
+                line=0,
+                message=(
+                    f"COV006: frob:tests {edge.src} -> {edge.target} has no "
+                    f"call-graph reachability to the bound private symbol "
+                    f"(frob.graph.callgraph, best-effort); confirm the test "
+                    f"actually exercises it, or bind a symbol it calls"
+                ),
+            )
+        )
+    return tuple(violations)
+
+
+# frob:ticket T-0483
+def _cov007(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
+    """COV007: a `frob:doc` edge whose src symbol is PRIVATE.
+
+    `frob:doc` obligations (COV001) exist to keep public-surface docs in
+    sync; a private helper carrying its own doc anchor is usually either a
+    directive that rode along onto the wrong symbol (see COV005's rebind
+    case) or documentation that belongs on the public caller instead. WARN
+    severity: a private helper can legitimately warrant its own doc anchor
+    (a complex internal algorithm, say) -- this flags it for a human
+    decision, it does not forbid the pattern.
+    """
+    violations: list[Violation] = []
+    for edge in snapshot.edges:
+        if edge.kind != EdgeKind.DOC:
+            continue
+        record = snapshot.symbols.get(edge.src)
+        if record is None or record.public:
+            continue
+        file = edge.src.split("::", 1)[0]
+        _log.debug("COV007: frob:doc on private symbol %s", edge.src)
+        violations.append(
+            Violation(
+                rule="COV007",
+                severity=Severity.WARN,
+                file=file,
+                line=record.span[0],
+                message=(
+                    f"COV007: frob:doc on private symbol {edge.src} -- doc "
+                    f"anchors normally cover the public API surface; move it "
+                    f"onto the public caller, or confirm this private helper "
+                    f"genuinely needs its own doc anchor"
+                ),
+            )
+        )
+    return tuple(violations)
 
 
 def _todo002_edges(snapshot: GraphSnapshot, queue: TicketQueue) -> list[Violation]:
@@ -4646,6 +4950,11 @@ def _assemble_gate_report(
     job_violations, counts, timing = _run_combined_jobs(thread_jobs, process_jobs)
     counts["waive"] = len(all_violations)
     all_violations.extend(job_violations)
+    # T-0470: WAIVE003 needs the full assembled violation set (it re-runs
+    # `_match_waiver` per package-scoped violation to see how many distinct
+    # packages one waiver reaches), so it runs after `job_violations` is
+    # folded in, not alongside the other WAIVE00* self-checks above.
+    all_violations.extend(_waive003_violations(tuple(all_violations), st.snapshot))
 
     kept, waived = _apply_waivers(tuple(all_violations), st.snapshot)
     kept = _apply_severity_overrides(kept, cfg.root)

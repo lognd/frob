@@ -26,6 +26,7 @@ today's instance and guarantees tomorrow's recurrence goes undetected.
 
 ## frob workflow
 
+<!-- frob:waive DOC004 reason="illustrative agent-workflow example, not command reference" -->
 ```bash
 frob check --only policy              # what's already covered
 frob arch src/                        # structural smells worth a norm rule
@@ -74,6 +75,7 @@ Rationale: ...
 
 ## Filing the fix ticket
 
+<!-- frob:waive DOC004 reason="illustrative agent-workflow example, not command reference" -->
 ```bash
 frob ticket new --title "..." --kind security --origin auditor \
     --scope "src/frob/graph/lock.py" --body "..."

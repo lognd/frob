@@ -23,6 +23,7 @@ from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
 from frob.tickets._land import land, splice_ledger
+from frob.tickets._leases import read_all_leases
 from frob.tickets._models import (
     CMD_EVIDENCE_ALLOWED_KINDS,
     DONE_REPORT_HEADING,
@@ -53,6 +54,7 @@ from frob.tickets._models import (
 )
 from frob.tickets._models import _split_scope_entries as _normalize_scope_entries
 from frob.tickets._provisional import is_draft_id, mint_draft_id, on_default_branch
+from frob.tickets._reconcile import ReconcileReport, reconcile
 from frob.tickets._store import (
     archive_path,
     atomic_write,
@@ -702,6 +704,49 @@ def _in_progress_leases(queue: TicketQueue) -> tuple[tuple[str, tuple[str, ...]]
     )
 
 
+# frob:ticket T-0473
+def _cross_worktree_leases(
+    queue: TicketQueue, root: Path
+) -> tuple[tuple[str, tuple[str, ...]], ...]:
+    """`(ticket_id, scope)` for every lease `frob.tickets._leases` reports
+    from ANY worktree of `root`'s repository (T-0473) -- the fix for the
+    T-0453 lease model being inert across worktrees, since a ticket started
+    in an isolated worktree never reaches THIS worktree's own
+    `tickets.md`. A lease whose ticket id the LOCAL ledger already shows as
+    `DONE`/`DROPPED` is dropped as stale (a crashed worktree's unreleased
+    lease for an already-finished ticket must not block `doable` forever;
+    full liveness reconciliation across worktrees is T-0476's job, this is
+    only a cheap local-ledger staleness guard, not a substitute for it)."""
+    leases = read_all_leases(root)
+    kept: list[tuple[str, tuple[str, ...]]] = []
+    for lease in leases:
+        local = queue.tickets.get(lease.ticket_id)
+        if local is not None and local.state in (TicketState.DONE, TicketState.DROPPED):
+            continue
+        kept.append((lease.ticket_id, lease.scope))
+    return tuple(kept)
+
+
+# frob:ticket T-0473
+def _all_leases(
+    queue: TicketQueue, root: Path | None
+) -> tuple[tuple[str, tuple[str, ...]], ...]:
+    """`_in_progress_leases(queue)` (the local ledger's own view) UNIONED
+    with `_cross_worktree_leases` (every OTHER worktree's recorded lease),
+    deduplicated by ticket id with the LOCAL ledger's entry always winning
+    (it is authoritative for any ticket this worktree's own `tickets.md`
+    already knows about) (T-0473). `root=None` (no repo to consult the
+    shared lease directory from -- e.g. a caller with no filesystem root)
+    keeps the exact pre-T-0473 local-only behavior."""
+    local = _in_progress_leases(queue)
+    if root is None:
+        return local
+    merged: dict[str, tuple[str, ...]] = dict(local)
+    for ticket_id, scope in _cross_worktree_leases(queue, root):
+        merged.setdefault(ticket_id, scope)
+    return tuple(sorted(merged.items()))
+
+
 # frob:ticket T-0453
 # frob:doc docs/modules/tickets.md#public-api
 _LARGE_GLOB_DEFAULT_MAX_FILES = 25
@@ -970,7 +1015,7 @@ def leased_by(
     if root is not None and breadth is None:
         breadth = scope_breadth_context(root)
     hits: list[tuple[str, str]] = []
-    for holder_id, holder_scope in _in_progress_leases(queue):
+    for holder_id, holder_scope in _all_leases(queue, root):
         if holder_id == ticket.id:
             continue
         effective_scope = holder_scope
@@ -1183,6 +1228,15 @@ def mutate_scope(
         if result.is_err:
             return Err(result.danger_err)
         updated = result.danger_ok
+    # frob:ticket T-0473
+    # The cross-worktree lease's recorded scope must never drift from the
+    # ledger's once an in-progress ticket's scope changes -- otherwise
+    # another worktree's `doable` would keep colliding against (or missing)
+    # a stale scope forever.
+    if updated.state is TicketState.IN_PROGRESS:
+        from frob.tickets._leases import record_lease
+
+        record_lease(root, ticket_id, updated.scope)
     _log.info(
         "tickets: %s scope changed (+%d/-%d): %s",
         ticket_id,
@@ -1521,7 +1575,30 @@ def transition(
     if write_result.is_err:
         return Err(write_result.danger_err)
     _log.info("tickets: %s transitioned %s -> %s", ticket_id, ticket.state, to)
+    _sync_cross_worktree_lease(root, ticket_id, ticket.state, to, updated.scope)
     return Ok(updated)
+
+
+# frob:ticket T-0473
+def _sync_cross_worktree_lease(
+    root: Path,
+    ticket_id: str,
+    from_state: TicketState,
+    to_state: TicketState,
+    scope: tuple[str, ...],
+) -> None:
+    """Keep the cross-worktree lease side-channel (`frob.tickets._leases`,
+    T-0473) in sync with every `transition` call: record a lease on entering
+    `IN_PROGRESS`, release it on leaving. Best-effort -- `_leases` degrades
+    every failure to a logged warning internally, never raising here, so a
+    side-channel write failure can never turn a successful ledger
+    transition into a reported one."""
+    from frob.tickets._leases import record_lease, release_lease
+
+    if to_state is TicketState.IN_PROGRESS:
+        record_lease(root, ticket_id, scope)
+    elif from_state is TicketState.IN_PROGRESS:
+        release_lease(root, ticket_id)
 
 
 # frob:doc docs/modules/tickets.md#public-api
@@ -2089,6 +2166,8 @@ __all__ = [
     "new_ticket",
     "renumber",
     "record_failure",
+    "reconcile",
+    "ReconcileReport",
     "render_changed_block",
     "render_evidence_block",
     "reverify_cmd_evidence",
