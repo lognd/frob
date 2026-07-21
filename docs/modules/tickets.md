@@ -408,11 +408,38 @@ of waiving the gate, and the mutation is recorded, not hidden.
   - An over-broad `--add` glob (the same criterion `large_glob_warnings`
     uses) is logged at WARNING, not rejected -- a nudge, not a hard block,
     matching T-0453's existing breadth posture.
-- **Example** (the T-0446 new-subcommand scope gap, formalized): a ticket
-  scoped to `src/frob/tickets/**` that needs to register a new CLI
-  subcommand runs `frob ticket scope T-#### --add src/frob/__main__.py
-  --reason "new subcommand registration"` instead of `frob:waive SCOPE001
-  reason="... T-0176/T-0220 precedent"`.
+- **Example** (the T-0446 new-subcommand scope gap): before T-0446, a
+  ticket scoped to `src/frob/tickets/**` that needed to register a new CLI
+  subcommand had to run `frob ticket scope T-#### --add
+  src/frob/__main__.py --reason "new subcommand registration"` (repeated
+  per wiring file) instead of `frob:waive SCOPE001 reason="... T-0176/
+  T-0220 precedent"`. This is still the right move for anything OTHER
+  than the three well-known wiring files below -- see the next section for
+  what no longer needs it.
+
+### CLI-wiring files are implicitly in scope for FEATURE tickets (T-0446)
+
+Every `frob ticket <subcommand>` a feature ticket adds structurally needs
+to touch the SAME three files no matter what scope was declared at filing
+time: the dispatch table (`src/frob/__main__.py`), the CLI flags it reads
+(`src/frob/app/config.py`), and the runner that implements it
+(`src/frob/app/ticket_runner.py`) -- `frob.tickets._models.
+CLI_WIRING_FILES`. T-0323 (the `merge-driver` subcommand) hit exactly this:
+scoped to `src/frob/tickets/**`, it needed all three and had to run
+`frob ticket scope --add` per file, which is exactly the "scope-expansion
+ceremony" T-0446 was filed to close.
+
+`scope_matches(path, scope, kind=ticket.kind)` -- and, downstream, the
+SCOPE001 gate (`scope_gate`, which now passes `ticket.kind` through) --
+treats `CLI_WIRING_FILES` as implicitly in scope whenever `kind ==
+TicketKind.FEATURE`, the same pattern `LEDGER_PATH`'s always-in-scope rule
+(T-0241) established for `tickets.md`. This is deliberately FEATURE-only:
+a bug/docs/security ticket touching the CLI dispatch table unannounced is
+real scope creep, not the structural necessity this closes, so it still
+trips SCOPE001 and still needs an explicit `frob ticket scope --add` (or a
+new ticket) like any other out-of-scope file. `kind=None` (the default,
+and every call site that predates T-0446) preserves the exact prior
+behavior -- this is additive, not a loosening of any existing check.
 
 ## State machine
 

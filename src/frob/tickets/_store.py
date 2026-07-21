@@ -328,6 +328,22 @@ def _parse_ledger(text: str) -> Result[dict[str, Ticket], TicketError]:
     return Ok(tickets)
 
 
+# frob:doc docs/modules/tickets.md#storage-internals
+def _render_section(ticket_id: str, ticket: Ticket) -> str:
+    """One ledger section's text, LEADING blank-line included (`\\n<!--
+    ticket:... -->...`) -- the single home for the marker+yaml+body layout,
+    shared by `_render_ledger` (whole-file) and `_splice_ticket_section`
+    (single-block, T-0505) so the two paths can never format a section
+    differently."""
+    body = ticket.body.strip("\n")
+    section = (
+        f"\n<!-- ticket:{ticket_id} -->\n```yaml\n{_frontmatter_yaml(ticket)}```\n"
+    )
+    if body:
+        section += f"{body}\n"
+    return section
+
+
 def _render_ledger(tickets: dict[str, Ticket], header: str = _LEDGER_HEADER) -> str:
     """Render an id -> Ticket map to ledger text, ordered by id (same section
     format for both the active ledger and the archive -- only the header
@@ -335,15 +351,45 @@ def _render_ledger(tickets: dict[str, Ticket], header: str = _LEDGER_HEADER) -> 
     parts = [header]
     ordered_ids = sorted(tickets)
     for ticket_id in ordered_ids:
-        ticket = tickets[ticket_id]
-        body = ticket.body.strip("\n")
-        section = (
-            f"\n<!-- ticket:{ticket_id} -->\n```yaml\n{_frontmatter_yaml(ticket)}```\n"
-        )
-        if body:
-            section += f"{body}\n"
-        parts.append(section)
+        parts.append(_render_section(ticket_id, tickets[ticket_id]))
     return "".join(parts)
+
+
+# frob:ticket T-0505
+# frob:doc docs/modules/tickets.md#storage-internals
+def _splice_ticket_section(text: str, ticket: Ticket) -> str:
+    """Rewrite ONLY `ticket.id`'s own marker block within `text`, leaving
+    every other byte of `text` untouched.
+
+    T-0505: `write_ticket`'s old single-ticket path read the WHOLE ledger,
+    upserted one id into the in-memory map, and re-rendered EVERY section
+    from scratch (`_render_ledger`) -- so a write that only ever touched one
+    ticket produced a diff spanning the entire file, byte-for-byte
+    reproducing whatever every OTHER ticket's section happened to look like
+    in THIS worktree's on-disk copy at read time. On a branch whose local
+    tickets.md predates a sibling ticket's later state on `main` (a finalize,
+    a close, a requeue), that "byte-for-byte reproduction" is actually a
+    silent revert the moment this write lands -- the command never touched
+    that sibling id, but its bytes moved anyway. Splicing only the target
+    section (the same single-writer principle as `_land._splice_only_ticket`,
+    T-0479) makes every other ticket's bytes provably absent from the diff,
+    so a sibling's state can never travel through a write it was never part
+    of.
+
+    If `ticket.id` already has a marker in `text`, only that marker's span
+    (start of its marker line through the next marker's start, or EOF) is
+    replaced. Otherwise the ticket is new to this file and its section is
+    appended at the end, matching `_render_ledger`'s section format
+    (leading blank line included)."""
+    markers = list(_LEDGER_MARKER_RE.finditer(text))
+    for i, marker in enumerate(markers):
+        if marker.group(1) != ticket.id:
+            continue
+        start = marker.start()
+        end = markers[i + 1].start() if i + 1 < len(markers) else len(text)
+        replacement = _render_section(ticket.id, ticket).lstrip("\n")
+        return text[:start] + replacement + text[end:]
+    return text + _render_section(ticket.id, ticket)
 
 
 # ---------------------------------------------------------------------------
@@ -400,21 +446,35 @@ def write_archive(root: Path, tickets: dict[str, Ticket]) -> Result[None, Ticket
 def write_ticket(root: Path, ticket: Ticket) -> Result[None, TicketError]:
     """Upsert one ticket into whichever backend the repo uses (atomic).
 
-    Single mode reads the whole ledger, merges `ticket` in, and rewrites it
-    -- the read-modify-write is held under `ledger_lock` end to end (T-0458)
-    so a concurrent writer can never read the pre-merge state and clobber
-    this write (or vice versa). Dir mode has no read step (one file per
-    ticket) but still locks, so it serializes correctly against a
+    Single mode reads the raw ledger TEXT, still Err-propagates if the file
+    as a whole fails to parse (`_parse_ledger`, unchanged malformed-ledger
+    behavior), then splices in ONLY `ticket`'s own marker block
+    (`_splice_ticket_section`, T-0505) using that raw text -- every other
+    ticket's bytes pass through completely untouched, never round-tripped
+    through parse-then-`_render_ledger`. Before T-0505 this reparsed the
+    WHOLE ledger into a dict and re-rendered every section from scratch, so
+    a write that only ever touched one ticket produced a diff spanning the
+    entire file: on a branch whose on-disk tickets.md predated a sibling
+    ticket's later state on `main`, that "diff spanning the entire file"
+    silently carried the sibling's stale state along for the ride the
+    moment this write landed, even though the command never touched that
+    id. The read-modify-write is still held under `ledger_lock` end to end
+    (T-0458) so a concurrent writer can never read the pre-write state and
+    clobber this write (or vice versa). Dir mode has no read step (one file
+    per ticket) but still locks, so it serializes correctly against a
     concurrent `write_all`/`archive` touching the same store.
     """
     with ledger_lock(root):
         if _store_mode(root) == "single":
-            existing = load_all(root)
-            if existing.is_err:
-                return Err(existing.danger_err)
-            tickets = existing.danger_ok
-            tickets[ticket.id] = ticket
-            return atomic_write(ledger_path(root), _render_ledger(tickets))
+            path = ledger_path(root)
+            if not path.exists():
+                fresh = _splice_ticket_section(_LEDGER_HEADER, ticket)
+                return atomic_write(path, fresh)
+            text = path.read_text(encoding="utf-8")
+            parsed = _parse_ledger(text)
+            if parsed.is_err:
+                return Err(parsed.danger_err)
+            return atomic_write(path, _splice_ticket_section(text, ticket))
         return atomic_write(_dir_path_for(root, ticket), _serialize_ticket(ticket))
 
 

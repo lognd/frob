@@ -2826,7 +2826,7 @@ re-splitting only where a physical line would exceed the limit.
 id: T-0446
 title: 'ticket scope-declaration gap: new subcommands require CLI-wiring files (__main__/config/ticket_runner)
   not in declared scope (T-0323 sibling)'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-20'
@@ -2836,12 +2836,127 @@ parent: null
 scope:
 - src/frob/tickets/
 - docs/
-scope_changes: []
-evidence: []
+- tests/test_tickets.py
+- tests/test_gates.py
+- src/frob/gates/__init__.py
+- pyproject.toml
+- CHANGELOG.md
+- uv.lock
+- .frob-release.json
+scope_changes:
+- op: add
+  glob: tests/test_tickets.py
+  reason: T-0446 fix touches scope_matches (tests/test_tickets.py) plus the SCOPE001
+    gate call site and its tests (src/frob/gates/__init__.py, tests/test_gates.py)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_gates.py
+  reason: T-0446 fix touches scope_matches (tests/test_tickets.py) plus the SCOPE001
+    gate call site and its tests (src/frob/gates/__init__.py, tests/test_gates.py)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: T-0446 fix touches scope_matches (tests/test_tickets.py) plus the SCOPE001
+    gate call site and its tests (src/frob/gates/__init__.py, tests/test_gates.py)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: pyproject.toml
+  reason: T-0446 changed public API (scope_matches signature, new CLI_WIRING_FILES
+    constant), requiring REL001 version bump per repo convention
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: CHANGELOG.md
+  reason: T-0446 changed public API (scope_matches signature, new CLI_WIRING_FILES
+    constant), requiring REL001 version bump per repo convention
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: T-0446 changed public API (scope_matches signature, new CLI_WIRING_FILES
+    constant), requiring REL001 version bump per repo convention
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: frob release stamp writes this file as part of the REL001 bump for T-0446
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_tickets.py::TestScopeMatching::test_feature_kind_implies_cli_wiring_files_in_scope
+- tests/test_tickets.py::TestScopeMatching::test_non_feature_kind_does_not_imply_cli_wiring_files
+- tests/test_gates.py::TestScopePrework::test_scope001_feature_ticket_cli_wiring_files_implicitly_in_scope
+- tests/test_gates.py::TestScopePrework::test_scope001_non_feature_ticket_cli_wiring_files_still_out_of_scope
 attachments: []
 acceptance: []
 threat: null
 ```
+## Done report
+
+T-0323 (adding the `frob ticket merge-driver` subcommand) had to run `frob
+ticket scope --add` three separate times just to touch
+`src/frob/__main__.py`, `src/frob/app/config.py`, and
+`src/frob/app/ticket_runner.py` -- the same three files EVERY feature
+ticket that adds a new subcommand structurally needs, regardless of what
+scope was declared when the ticket was filed. This ticket closes that
+recurring "scope-expansion ceremony" gap.
+
+Fix: `frob.tickets._models.CLI_WIRING_FILES` names the three well-known
+wiring files. `scope_matches` gains an optional `kind: TicketKind | None =
+None` keyword: when `kind is TicketKind.FEATURE`, these files are ALSO
+treated as implicitly in scope, mirroring the exact pattern T-0241
+established for `tickets.md` (`LEDGER_PATH`, always in scope for every
+ticket regardless of kind). `scope_gate` (the SCOPE001 gate implementation
+in src/frob/gates/__init__.py) now passes `ticket.kind` through to
+`scope_matches`, so a feature ticket's edits to these files no longer trip
+SCOPE001. `kind=None` (the default, and every pre-T-0446 call site)
+preserves prior behavior exactly -- this is additive, never a loosening of
+an existing check: non-FEATURE tickets (bug/docs/security/...) still trip
+SCOPE001 on these files exactly as before, since an unannounced edit to
+the CLI dispatch table from a bug ticket is real scope creep, not the
+structural necessity this closes.
+
+docs/modules/tickets.md's "Scope/lease change protocol" section now
+documents the new implicit-scope rule directly under its existing T-0446
+example (which previously only showed the manual `frob ticket scope --add`
+workaround).
+
+REL001: `scope_matches`'s signature changed and a new public
+`CLI_WIRING_FILES` constant was added -- version bumped 0.50.0 -> 0.51.0,
+CHANGELOG.md entry added, uv.lock refreshed, `frob release stamp` run.
+
+Regression tests: both at the `scope_matches` unit level (feature vs.
+non-feature kind) and at the `scope_gate` (SCOPE001) integration level
+(a feature ticket's diff touching all three wiring files passes cleanly;
+a bug ticket's diff touching the same file still fires SCOPE001).
+
+### Changed
+```
+ .frob-release.json                 |   5 +-
+ CHANGELOG.md                       |  15 ++++
+ docs/modules/tickets.md            |  37 +++++++--
+ pyproject.toml                     |   2 +-
+ src/frob/app/ticket_runner.py      |  25 +++++-
+ src/frob/gates/__init__.py         |   7 +-
+ src/frob/tickets/_models.py        | 101 +++++++++++++++++++-----
+ src/frob/tickets/_store.py         |  98 ++++++++++++++++++-----
+ tests/test_gates.py                |  33 +++++++-
+ tests/test_tickets.py              |  50 ++++++++++++
+ tests/test_tickets_evidence_cli.py |  43 +++++++++++
+ tests/unit/test_ticket_store.py    |  14 ++++
+ tickets.md                         | 154 +++++++++++++++++++++++++++++++++++--
+ uv.lock                            |   2 +-
+ 14 files changed, 524 insertions(+), 62 deletions(-)
+```
+
+### Evidence
+- `tests/test_tickets.py::TestScopeMatching::test_feature_kind_implies_cli_wiring_files_in_scope` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestScopeMatching::test_non_feature_kind_does_not_imply_cli_wiring_files` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestScopePrework::test_scope001_feature_ticket_cli_wiring_files_implicitly_in_scope` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestScopePrework::test_scope001_non_feature_ticket_cli_wiring_files_still_out_of_scope` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0454 -->
 ```yaml
@@ -3220,7 +3335,7 @@ Both were present identically before and after this ticket's changes.
 id: T-0492
 title: 'frob ticket evidence: dot-form Class.method ids never verify as passing (raw
   ids passed to _verify_ids_passing before normalization)'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-21'
@@ -3229,20 +3344,65 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/app/ticket_runner.py
-scope_changes: []
-evidence: []
+- tests/test_tickets_evidence_cli.py
+scope_changes:
+- op: add
+  glob: tests/test_tickets_evidence_cli.py
+  reason: T-0492 regression test for dot-form evidence-id normalization mirrors src/frob/app/ticket_runner.py
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_tickets_evidence_cli.py::TestDotFormEvidenceNormalizesBeforePassingCheck::test_dot_form_id_passes_exactly_like_its_colon_form
 attachments: []
 acceptance: []
 threat: null
 ```
 Found while working T-0400. `frob ticket evidence <id> "path::Class.method"` (the dot form the playbook/docs document as the canonical evidence-id spelling) ALWAYS fails with EvidenceNotPassing, even when the test genuinely passes. Root cause: _apply_evidence (src/frob/app/ticket_runner.py) passes the raw, un-normalized node_ids straight into _verify_ids_passing, which buckets ids via matches_collected(n, python_collected) -- but python_collected (from _collect_python_and_rust_ids) stores pytest's native '::' form only. A dot-form id never matches_collected() against that set, so its bucket is empty, run_selected has nothing to run, and the id silently ends up absent from the returned passing frozenset -- rejected downstream as EvidenceNotPassing with a misleading message (the test did pass, it was just never actually invoked for this check). add_evidence's OWN normalization (_validate_evidence_list, T-0293) already converts dot-form to :: form before resolution/persistence; _apply_evidence needs to pass that SAME normalized list into _verify_ids_passing instead of the raw CLI args, or the two normalization paths silently diverge. Repro: 'frob ticket evidence T-XXXX "tests/test_foo.py::TestBar.test_baz"' rejects; 'frob ticket evidence T-XXXX "tests/test_foo.py::TestBar::test_baz"' (:: form) for the identical test succeeds. Workaround used in T-0400: recorded evidence in :: form.
 
+## Done report
+
+Root cause: `_apply_evidence` (src/frob/app/ticket_runner.py) passed the raw,
+un-normalized `--evidence` CLI node ids straight into `_verify_ids_passing`,
+which buckets ids via `matches_collected(n, collected)` -- but the collected
+sets (`python_ids`/`rust_ids`) only ever hold pytest's native `::`-form node
+ids. A dot-form id (`path::Class.method`, the canonical spelling this repo's
+own docs teach) never matches either bucket, so its bucket is empty,
+`run_selected` never actually runs it, and it silently ends up absent from
+the returned `passing` frozenset -- rejected downstream as
+`EvidenceNotPassing` even though the test genuinely passed.
+`add_evidence`'s own normalization (`_validate_evidence_list`, T-0293)
+already converts dot-form to `::` form before resolution/persistence, so the
+two normalization paths had silently diverged.
+
+Fix: normalize `node_ids` via `normalize_evidence_separator` (the same
+function `validate_evidence` calls) BEFORE handing them to
+`_verify_ids_passing`, and pass that SAME normalized list into `add_evidence`
+too, so both paths see identical ids and can never diverge again.
+
+Regression test: TestDotFormEvidenceNormalizesBeforePassingCheck deliberately
+does NOT monkeypatch `_verify_ids_passing` (unlike this file's other tests)
+so the real bucket-matching + run path is exercised with a dot-form id,
+asserting it resolves and records identically to its `::` form.
+
+### Changed
+```
+ src/frob/app/ticket_runner.py      | 25 ++++++++--
+ src/frob/tickets/_store.py         | 98 ++++++++++++++++++++++++++++++--------
+ tests/test_tickets.py              | 32 +++++++++++++
+ tests/test_tickets_evidence_cli.py | 43 +++++++++++++++++
+ tickets.md                         | 43 ++++++++++++++++-
+ 5 files changed, 216 insertions(+), 25 deletions(-)
+```
+
+### Evidence
+- `tests/test_tickets_evidence_cli.py::TestDotFormEvidenceNormalizesBeforePassingCheck::test_dot_form_id_passes_exactly_like_its_colon_form` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0493 -->
 ```yaml
 id: T-0493
 title: frob ticket done-report leaves a stray empty '## Done report' heading before
   the rendered one
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-21'
@@ -3251,13 +3411,69 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/tickets/**
-scope_changes: []
-evidence: []
+- tests/unit/test_ticket_store.py
+scope_changes:
+- op: add
+  glob: tests/unit/test_ticket_store.py
+  reason: T-0493 regression test for stray-heading self-heal mirrors src/frob/tickets/_models.py
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/unit/test_ticket_store.py::TestReplaceDoneReportSection::test_stray_empty_heading_before_real_one_collapses_to_one
 attachments: []
 acceptance: []
 threat: null
 ```
 Observed twice while working T-0348/T-0349 in this worktree: each ticket's pre-existing empty '## Done report' placeholder heading (present in the queued-ticket template) is not reused/filled by 'frob ticket done-report' -- it appends a SECOND '## Done report' heading right after the empty one, and 'frob ticket close' then fails with MissingEvidence (reads the first, empty, heading) until the stray empty heading is manually deleted. Reproduce: frob ticket start T-XXXX; frob ticket evidence T-XXXX <node-id>; frob ticket done-report T-XXXX --why-file <file>; frob ticket close T-XXXX -- fails first time, succeeds after manually removing the leading blank '## Done report' line.
+
+## Done report
+
+Root cause: `_done_report_section_lines`/`replace_done_report_section`
+(src/frob/tickets/_models.py) both located the section's END boundary by
+stopping at the NEXT `## ` heading, including another `## Done report`
+heading. If a stray, empty `## Done report` heading ever preceded a real,
+substantive one (hand-typed as a placeholder, or left over from an earlier
+corrupted write), the FIRST (empty) heading's own section boundary was the
+SECOND heading's line -- meaning `has_substantive_done_report` only ever
+examined the empty first section (0 lines of content between the two
+headings), permanently rejecting a genuinely-done ticket as
+`MissingEvidence`. `replace_done_report_section` had the mirror bug on the
+write side: it only ever replaced the first, empty section, leaving the
+real second heading + its content stuck as `after`, untouched, on every
+subsequent `frob ticket done-report` call -- the exact "stray empty heading
+before the rendered one" this ticket describes, and the reason manually
+deleting the leading blank heading was the only workaround.
+
+Fix: added `_done_report_section_end`, the single home for this boundary
+scan, used by both functions -- it now SKIPS OVER a repeated `## Done
+report` heading (treating it as still part of the same section) and only
+stops at a genuinely different `## ` heading or EOF. This makes both
+functions treat a run of one-or-more Done-report headings as one section:
+`has_substantive_done_report` now sees the real content past a stray empty
+heading, and `replace_done_report_section` collapses the whole run into the
+one freshly-composed section on the very next write -- self-healing a
+stray duplicate instead of leaving it stuck forever.
+
+Regression test: TestReplaceDoneReportSection.test_stray_empty_heading_
+before_real_one_collapses_to_one reproduces the exact corrupted shape (an
+empty heading immediately followed by a real, substantive one) and asserts
+a single `replace_done_report_section` call collapses it to exactly one
+heading with the new content.
+
+### Changed
+```
+ src/frob/app/ticket_runner.py      | 25 ++++++++--
+ src/frob/tickets/_models.py        | 56 +++++++++++++++++-----
+ src/frob/tickets/_store.py         | 98 ++++++++++++++++++++++++++++++--------
+ tests/test_tickets.py              | 32 +++++++++++++
+ tests/test_tickets_evidence_cli.py | 43 +++++++++++++++++
+ tests/unit/test_ticket_store.py    | 14 ++++++
+ tickets.md                         | 93 ++++++++++++++++++++++++++++++++++--
+ 7 files changed, 321 insertions(+), 40 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_ticket_store.py::TestReplaceDoneReportSection::test_stray_empty_heading_before_real_one_collapses_to_one` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0494 -->
 ```yaml
@@ -3859,7 +4075,7 @@ REL001 version bump needed.
 id: T-0505
 title: off-default-branch ticket write silently reverts an unrelated already-finalized
   ticket id to draft form
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-21'
@@ -3870,12 +4086,52 @@ scope:
 - src/frob/tickets/**
 - tests/test_tickets.py
 scope_changes: []
-evidence: []
+evidence:
+- tests/test_tickets.py::TestSingleFileLedger::test_write_ticket_never_touches_a_sibling_ticket_bytes
 attachments: []
 acceptance: []
 threat: null
 ```
 Found while landing T-0483 in a worktree (branch worktree-agent-ae00df0ca54dd3df2, off main). Running frob ticket start/evidence/done-report/sweep (any command that rewrites the whole tickets.md ledger) on this branch silently reverted an already-finalized, unrelated ticket (T-0503, real id on main) back to its draft form (T-draft-94774bc5) in the rewritten tickets.md -- confirmed by diffing against main: the T-0503 marker+id both became T-draft-94774bc5 with no ticket CLI command targeting T-0503 at all. A stale Done report elsewhere in the ledger mentions 'Filed T-draft-94774bc5' in prose (harmless, just text), and something in the ledger-write path appears to match that provisional id string against a currently-finalized ticket sharing the same title and reassign its id backward when the write happens off the default branch. This corrupts a finalized ticket's identity as a side effect of an unrelated ticket's write -- worked around by hand-restoring the T-0503 marker/id in tickets.md before landing T-0483 (not a real fix). Needs root-causing in src/frob/tickets (is_draft_id/on_default_branch/finalize_draft or wherever ledger writes reconcile ids) and a regression test that writing an unrelated ticket off-default-branch never touches another already-finalized ticket's id.
+
+## Done report
+
+Root cause: `write_ticket`'s single-file-ledger path (src/frob/tickets/_store.py)
+read the whole ledger into an id->Ticket dict, upserted one id, and re-rendered
+EVERY section from scratch via `_render_ledger`. Every ticket-write command
+(`start`/`evidence`/`done-report`/`sweep`, all via `transition`/`add_evidence`
+calling `write_ticket`) therefore rewrote the ENTIRE file even though it only
+ever touched one ticket's state. On a branch whose on-disk tickets.md predates
+a sibling ticket's later state on main (a finalize, close, or requeue), that
+whole-file rewrite silently reproduced the WORKTREE's stale copy of every
+other ticket, and the moment it landed/merged, a sibling ticket's already-
+finalized state (e.g. T-0503) reverted even though no command ever targeted
+it.
+
+Fix: added `_splice_ticket_section` (single-block text splice, the write-time
+analogue of `_land._splice_only_ticket`'s T-0479 own-block-only merge) and
+rewired `write_ticket`'s single mode to use it: only the target ticket's own
+marker-delimited span in the raw ledger TEXT is replaced (or appended, if
+new); every other ticket's bytes pass through completely untouched, never
+round-tripped through parse-then-render. `write_ticket` still calls
+`_parse_ledger` first to Err-propagate on a malformed ledger (unchanged
+safety net), but only for validation -- the actual write uses the raw text
+splice, not the re-rendered dict.
+
+Regression test: TestSingleFileLedger.test_write_ticket_never_touches_a_
+sibling_ticket_bytes creates two tickets, transitions one, and asserts the
+other ticket's on-disk section is byte-identical before and after (not just
+value-equal after a fresh parse).
+
+### Changed
+```
+ src/frob/tickets/_store.py | 98 +++++++++++++++++++++++++++++++++++++---------
+ tests/test_tickets.py      | 32 +++++++++++++++
+ 2 files changed, 111 insertions(+), 19 deletions(-)
+```
+
+### Evidence
+- `tests/test_tickets.py::TestSingleFileLedger::test_write_ticket_never_touches_a_sibling_ticket_bytes` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0506 -->
 ```yaml

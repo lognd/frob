@@ -129,12 +129,13 @@ def _ticket(
     evidence: tuple[str, ...] = (),
     attachments: tuple = (),
     body: str = "## Description\nx\n\n## Done report\ndone\n",
+    kind: TicketKind = TicketKind.FEATURE,
 ) -> Ticket:
     return Ticket(
         id=ticket_id,
         title="Sample",
         state=state,
-        kind=TicketKind.FEATURE,
+        kind=kind,
         origin=Origin.HUMAN,
         created=date(2026, 1, 1),
         scope=scope,
@@ -1301,6 +1302,36 @@ class TestScopePrework:
         ticket = _ticket(scope=("src/a/**",))
         diff = Diff(base="x", hunks=(Hunk(file="tickets.md", span=(1, 1)),))
         assert scope_gate(diff, ticket, snap) == ()
+
+    # frob:ticket T-0446
+    def test_scope001_feature_ticket_cli_wiring_files_implicitly_in_scope(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::scope_gate
+        # T-0446: a FEATURE ticket adding a new subcommand structurally
+        # needs to touch the CLI dispatch/config/runner wiring files no
+        # matter what scope it declared -- these must never trip SCOPE001.
+        from frob.tickets._models import CLI_WIRING_FILES
+
+        snap = _snapshot(tmp_path)
+        ticket = _ticket(scope=("src/frob/tickets/**",), kind=TicketKind.FEATURE)
+        diff = Diff(
+            base="x",
+            hunks=tuple(Hunk(file=f, span=(1, 1)) for f in sorted(CLI_WIRING_FILES)),
+        )
+        assert scope_gate(diff, ticket, snap) == ()
+
+    def test_scope001_non_feature_ticket_cli_wiring_files_still_out_of_scope(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::scope_gate
+        # T-0446: the exemption is FEATURE-only -- a bug ticket touching
+        # the CLI dispatch table unannounced is real scope creep, not the
+        # structural-necessity case T-0446 fixes.
+        snap = _snapshot(tmp_path)
+        ticket = _ticket(scope=("src/frob/tickets/**",), kind=TicketKind.BUG)
+        diff = Diff(base="x", hunks=(Hunk(file="src/frob/__main__.py", span=(1, 1)),))
+        assert any(v.rule == "SCOPE001" for v in scope_gate(diff, ticket, snap))
 
     def test_scope001_exempts_file_committed_by_earlier_ticket(
         self, tmp_path: Path

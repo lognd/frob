@@ -82,6 +82,29 @@ def is_cmd_evidence(entry: str) -> bool:
 # trips SCOPE001 (T-0241).
 LEDGER_PATH = "tickets.md"
 
+# frob:ticket T-0446
+# frob:doc docs/modules/tickets.md#public-api
+# The three files EVERY new `frob ticket <subcommand>` structurally must
+# touch to actually wire the command in: the dispatch table (`__main__.py`),
+# the CLI flags it reads (`app/config.py`), and the runner that implements
+# it (`app/ticket_runner.py`). T-0323 (git-merge-driver ticket, adding `frob
+# ticket merge-driver`) needed all three despite a scope declared as
+# `src/frob/tickets/**` -- every feature ticket that adds a subcommand hits
+# this same "scope-expansion ceremony" (a `frob ticket scope --add` per
+# wiring file, every time) because these files are structurally required
+# but never anticipated at ticket-filing time. Implicitly in scope for any
+# `TicketKind.FEATURE` ticket, the same LEDGER_PATH-always-in-scope pattern
+# T-0241 established for tickets.md -- NOT extended to every kind, since a
+# bug/docs/security ticket touching the CLI dispatch table unannounced is
+# exactly the scope-creep SCOPE001 exists to catch.
+CLI_WIRING_FILES = frozenset(
+    {
+        "src/frob/__main__.py",
+        "src/frob/app/config.py",
+        "src/frob/app/ticket_runner.py",
+    }
+)
+
 
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets.py::TestScopeMatching.test_comma_joined_entry_splits
@@ -128,7 +151,10 @@ def _scope_globs(scope: Sequence[str]) -> tuple[str, ...]:
 
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets.py::TestScopeMatching.test_ledger_always_in_scope
-def scope_matches(path: str, scope: Sequence[str]) -> bool:
+# frob:tests tests/test_tickets.py::TestScopeMatching.test_feature_kind_implies_cli_wiring_files_in_scope  # noqa: E501
+def scope_matches(
+    path: str, scope: Sequence[str], *, kind: TicketKind | None = None
+) -> bool:
     """Whether `path` is covered by a ticket's declared `scope`.
 
     THE one implementation every scope-consulting site (`frob.tickets`'s
@@ -138,11 +164,18 @@ def scope_matches(path: str, scope: Sequence[str]) -> bool:
     comma-joined entries defensively even though `Ticket`/`TicketSpec`
     normalize on construction, so a raw, un-modeled `scope` sequence passed
     directly still matches correctly.
-    """
-    return any(
-        fnmatch.fnmatch(path, glob)
-        for glob in _scope_globs(_split_scope_entries(scope))
-    )
+
+    T-0446: when `kind` is `TicketKind.FEATURE`, `CLI_WIRING_FILES` is ALSO
+    implicitly in scope, mirroring the `LEDGER_PATH`-always-in-scope
+    pattern above -- a feature ticket adding a new `frob ticket <cmd>`
+    structurally needs to touch the dispatch table/config/runner wiring no
+    matter what its author anticipated when filing it. `kind=None` (the
+    default, and every pre-T-0446 call site) preserves the exact prior
+    behavior unchanged."""
+    globs = _scope_globs(_split_scope_entries(scope))
+    if kind is TicketKind.FEATURE:
+        globs = (*globs, *CLI_WIRING_FILES)
+    return any(fnmatch.fnmatch(path, glob) for glob in globs)
 
 
 # frob:ticket T-0453
@@ -306,9 +339,40 @@ _MIN_DONE_REPORT_CHARS = 3
 _MIN_DONE_REPORT_LINES = 1
 
 
+# frob:ticket T-0493
+def _done_report_section_end(lines: list[str], heading_idx: int) -> int:
+    """The index one past the END of the `## Done report` section starting
+    at `heading_idx`: the next `## ` heading that is NOT itself another
+    `## Done report` heading, or `len(lines)`.
+
+    T-0493: a stray, empty `## Done report` heading (hand-typed as a
+    placeholder, or left behind by an earlier corrupted write) sitting
+    BEFORE the real, substantive one must not be treated as its own
+    section boundary -- doing so is exactly what let a duplicate heading
+    persist forever: `has_substantive_done_report` would only ever see the
+    empty first section (rejecting a genuinely-done ticket as
+    `MissingEvidence`), and `replace_done_report_section` would only ever
+    overwrite that first, empty section, leaving the second, real one
+    stuck untouched on every subsequent write. Treating a REPEATED
+    `## Done report` heading as still part of the same section (skip past
+    it, keep scanning) means both functions see -- and, for the write
+    side, collapse -- the WHOLE run of Done-report headings as one
+    section, so a stray duplicate self-heals the next time either runs."""
+    end_idx = len(lines)
+    for i in range(heading_idx + 1, len(lines)):
+        stripped = lines[i].strip()
+        if stripped == _DONE_REPORT_HEADING:
+            continue
+        if stripped.startswith("## "):
+            end_idx = i
+            break
+    return end_idx
+
+
 def _done_report_section_lines(body: str) -> list[str] | None:
     """The raw lines of body's `## Done report` section (up to the next
-    `## ` heading or EOF), or `None` if no such heading exists."""
+    non-Done-report `## ` heading or EOF, T-0493), or `None` if no such
+    heading exists."""
     lines = body.splitlines()
     heading_idx = None
     for i, line in enumerate(lines):
@@ -317,12 +381,8 @@ def _done_report_section_lines(body: str) -> list[str] | None:
             break
     if heading_idx is None:
         return None
-    section: list[str] = []
-    for line in lines[heading_idx + 1 :]:
-        if line.strip().startswith("## "):
-            break
-        section.append(line)
-    return section
+    end_idx = _done_report_section_end(lines, heading_idx)
+    return lines[heading_idx + 1 : end_idx]
 
 
 # frob:ticket T-0398
@@ -363,6 +423,15 @@ def replace_done_report_section(body: str, new_section: str) -> str:
     (T-0458) -- the exact hand-edit failure mode (an Edit call landing
     mid-section, or missing the next `## ` boundary) that repeatedly
     corrupted `tickets.md` this session.
+
+    T-0493: if MORE THAN ONE `## Done report` heading is already present
+    (e.g. a stray empty placeholder left before a real one), the entire
+    run of them -- from the FIRST heading through whatever follows the
+    LAST one (`_done_report_section_end`'s repeated-heading skip, T-0493)
+    -- is replaced, not just the first. Otherwise a stray heading, once
+    introduced by any means, could never be cleared: this function would
+    keep overwriting only the empty first section forever, leaving a
+    real second one stuck untouched.
     """
     lines = body.splitlines()
     heading_idx = None
@@ -374,11 +443,7 @@ def replace_done_report_section(body: str, new_section: str) -> str:
     if heading_idx is None:
         separator: list[str] = [] if not lines or lines[-1] == "" else [""]
         return "\n".join([*lines, *separator, *new_lines]) + "\n"
-    end_idx = len(lines)
-    for i in range(heading_idx + 1, len(lines)):
-        if lines[i].strip().startswith("## "):
-            end_idx = i
-            break
+    end_idx = _done_report_section_end(lines, heading_idx)
     before, after = lines[:heading_idx], lines[end_idx:]
     result = [*before, *new_lines]
     if after:

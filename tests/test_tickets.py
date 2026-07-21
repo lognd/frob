@@ -854,6 +854,38 @@ class TestSingleFileLedger:
         assert result.is_err
         assert result.danger_err == TicketError.MalformedFrontmatter
 
+    # frob:ticket T-0505
+    def test_write_ticket_never_touches_a_sibling_ticket_bytes(self, tmp_path):
+        """T-0505 regression: writing ticket A must not change ANY byte of
+        ticket B's section, even when B's on-disk section is stale/unusual
+        relative to what a fresh parse+re-render would produce (formatting
+        drift is exactly what let a sibling's state silently travel through
+        an unrelated write before this fix)."""
+        from frob.tickets import TicketState, load_queue, new_ticket, transition
+        from frob.tickets._store import ledger_path
+
+        a = new_ticket(tmp_path, self._spec("ticket a")).danger_ok
+        b = new_ticket(tmp_path, self._spec("ticket b")).danger_ok
+
+        before = ledger_path(tmp_path).read_text(encoding="utf-8")
+        b_marker = f"<!-- ticket:{b.id} -->"
+        assert b_marker in before
+        b_section_before = before[before.index(b_marker) :]
+
+        transitioned = transition(tmp_path, a.id, TicketState.PLANNED)
+        assert transitioned.is_ok
+
+        after = ledger_path(tmp_path).read_text(encoding="utf-8")
+        b_section_after = after[after.index(b_marker) :]
+        assert b_section_after == b_section_before, (
+            "writing ticket a's transition must not change a single byte "
+            "of ticket b's own section"
+        )
+
+        q = load_queue(tmp_path).danger_ok
+        assert q.tickets[a.id].state == TicketState.PLANNED
+        assert q.tickets[b.id].state == TicketState.QUEUED
+
     def test_migrate_collapses_dir_into_ledger(self, tmp_path):
         from datetime import date
 
@@ -1056,6 +1088,24 @@ class TestScopeMatching:
         # frob:tests src/frob/tickets/_models.py::scope_matches
         assert scope_matches("tickets.md", ("src/frob/foo/**",))
         assert scope_matches("tickets.md", ())
+
+    # frob:ticket T-0446
+    def test_feature_kind_implies_cli_wiring_files_in_scope(self) -> None:
+        # frob:tests src/frob/tickets/_models.py::scope_matches
+        from frob.tickets._models import CLI_WIRING_FILES
+
+        narrow_scope = ("src/frob/tickets/**",)
+        for wiring_file in CLI_WIRING_FILES:
+            assert not scope_matches(wiring_file, narrow_scope)
+            assert scope_matches(wiring_file, narrow_scope, kind=TicketKind.FEATURE)
+
+    def test_non_feature_kind_does_not_imply_cli_wiring_files(self) -> None:
+        # frob:tests src/frob/tickets/_models.py::scope_matches
+        from frob.tickets._models import CLI_WIRING_FILES
+
+        narrow_scope = ("src/frob/tickets/**",)
+        for wiring_file in CLI_WIRING_FILES:
+            assert not scope_matches(wiring_file, narrow_scope, kind=TicketKind.BUG)
 
     def test_new_ticket_normalizes_comma_joined_scope(self, tmp_path: Path) -> None:
         # frob:tests src/frob/tickets/_models.py::TicketSpec

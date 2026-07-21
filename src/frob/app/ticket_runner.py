@@ -1699,8 +1699,22 @@ def _apply_evidence(root: Path, ticket_id: str, node_ids: list[str]):
     skipped evidence test rejects the whole batch (`EvidenceNotPassing`)
     through the real `frob ticket evidence`/`close` commands, not just the
     library function a caller could otherwise bypass by never supplying
-    `passed`."""
-    from frob.tickets import add_evidence
+    `passed`.
+
+    T-0492: `node_ids` is normalized (`normalize_evidence_separator`, the
+    SAME dot-to-`::` rewrite `add_evidence`'s own `_validate_evidence_list`
+    applies, T-0293) BEFORE it is handed to `_verify_ids_passing` here --
+    not after. `_verify_ids_passing` buckets ids via `matches_collected`
+    against `python_ids`/`rust_ids`, which only ever contain pytest's
+    native `::`-form node ids; a raw dot-form id (`path::Class.method`,
+    the canonical spelling this module's own docs teach) never matches
+    either bucket, so its "did it pass" check silently runs on an empty
+    selection and the id ends up absent from `passing` -- rejected
+    downstream as `EvidenceNotPassing` even though the test genuinely
+    passed. Passing the SAME normalized list into both the passing-check
+    and `add_evidence` keeps the two normalization paths from silently
+    diverging again."""
+    from frob.tickets import add_evidence, normalize_evidence_separator
 
     collected = _collect_python_and_rust_ids(root)
     if collected.is_err:
@@ -1711,9 +1725,12 @@ def _apply_evidence(root: Path, ticket_id: str, node_ids: list[str]):
     python_ids, rust_ids, runners = collected.danger_ok
     collected_ids = python_ids | rust_ids
 
-    passing = _verify_ids_passing(root, node_ids, python_ids, rust_ids, runners)
+    normalized_ids = [normalize_evidence_separator(n) for n in node_ids]
+    passing = _verify_ids_passing(root, normalized_ids, python_ids, rust_ids, runners)
 
-    result = add_evidence(root, ticket_id, node_ids, collected_ids, passed=passing)
+    result = add_evidence(
+        root, ticket_id, normalized_ids, collected_ids, passed=passing
+    )
     _log_evidence_result(ticket_id, result)
     return result
 
