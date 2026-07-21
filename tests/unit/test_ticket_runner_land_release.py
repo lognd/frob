@@ -106,7 +106,7 @@ class TestApplyReleaseBumpForLand:
             lambda previous, bump: Ok("0.2.0"),
         )
 
-        def _fake_stamp(root: Path, snapshot: object, version: str) -> Ok:
+        def _fake_stamp(root: Path, snapshot: object, version: str):  # noqa: ANN202
             stamp_calls.append(version)
             (root / ".frob-release.json").write_text("{}")
             return Ok(version)
@@ -143,8 +143,10 @@ class TestApplyReleaseBumpForLand:
 
 
 class _FakeProc:
-    def __init__(self, returncode: int) -> None:
+    def __init__(self, returncode: int, stdout: str = "", stderr: str = "") -> None:
         self.returncode = returncode
+        self.stdout = stdout
+        self.stderr = stderr
 
 
 class TestLandRebuildNativesFn:
@@ -171,10 +173,7 @@ class TestLandRebuildNativesFn:
     ) -> None:
         # frob:tests tests/unit/test_ticket_runner_land_release.py::TestLandRebuildNativesFn.test_failure_returns_false_and_logs  # noqa: E501
         def _fake_run(argv, **kwargs):  # noqa: ANN001, ANN202
-            proc = _FakeProc(1)
-            proc.stdout = ""
-            proc.stderr = "boom"
-            return proc
+            return _FakeProc(1, stderr="boom")
 
         monkeypatch.setattr(ticket_runner.subprocess, "run", _fake_run)
         fn = ticket_runner._land_rebuild_natives_fn()

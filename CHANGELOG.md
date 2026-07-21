@@ -17,6 +17,31 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.44.0] - unreleased
+
+Public-API surface change since 0.43.0 (mechanical semver via REL001): a
+signature change to an existing public symbol (`frob.tickets.land`), so
+REL001 computes it as MAJOR-class -- under the "0.x is initial
+development" semver rule this bumps the MINOR, not to 1.0.0.
+
+- T-0338: `frob ticket land` now owns the two remaining coordinator-
+  plumbing steps the T-0479 own-block-only splice did not cover: a
+  REL001 version-bump/stamp step and a native-rebuild trigger. New
+  optional `land()` parameters `bump_version` and `rebuild_natives`
+  (both default `None`, matching the T-0398/D-05 `collected`/`passed`/
+  `covers_scope` pattern): `bump_version(root, ticket, final_id)` is
+  invoked right after the squash-apply is staged, computing whatever
+  `frob.release` says the just-squashed public API demands and, if
+  needed, rewriting `pyproject.toml`'s version, prepending a minimal
+  CHANGELOG.md entry, and `frob release stamp`-ing the manifest, all
+  staged into the same landing commit; `rebuild_natives(root)` runs only
+  when the landed changeset touches `frob-core/`/`strata-core/` and
+  triggers a rebuild (best-effort, non-blocking on failure). `LandReport`
+  grew `release_bumped_to`/`natives_rebuilt` fields. The `frob ticket
+  land` CLI supplies both by default
+  (`frob.app.ticket_runner._apply_release_bump_for_land`/
+  `_land_rebuild_natives_fn`).
+
 ## [0.43.0] - unreleased
 
 Public-API surface change since 0.42.0 (mechanical semver via REL001): an

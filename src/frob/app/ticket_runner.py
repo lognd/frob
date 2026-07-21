@@ -561,30 +561,13 @@ def _land_bump_version_fn():  # noqa: ANN201
 
 
 # frob:ticket T-0338
-def _apply_release_bump_for_land(root: Path, ticket, final_id: str):  # noqa: ANN001, ANN201
-    """Compute the REL001 bump class for `root`'s just-squashed public API
-    against its release manifest and, if the declared version does not
-    already cover it, bump `pyproject.toml`'s `version`, append a minimal
-    CHANGELOG.md entry (satisfies `_changelog_mentions`'s "the version
-    string appears somewhere" contract), and `frob release stamp` the new
-    manifest -- staging all three files in `root`'s index so they land in
-    the same commit as the squash-apply (T-0338).
-
-    Returns `Ok(None)` (no write at all) when no manifest exists yet (the
-    repo has never opted into `frob release stamp`) or when the diff class
-    is `BumpClass.NONE`; `Ok(new_version)` after a successful bump+stamp;
-    `Err(LandError.ReleaseBumpFailed)` on any failure along the way (an
-    unreadable manifest, an unparsable `pyproject.toml` version, or a
-    graph build failure) -- fail-closed, since a silently-skipped bump
-    would let a landed API change slip past REL001 undetected."""
-    from frob.gitio import run_argv
-    from frob.release import (
-        BumpClass,
-        diff_class,
-        load_manifest,
-        required_version,
-        stamp,
-    )
+def _required_release_bump(root: Path, final_id: str):  # noqa: ANN201
+    """The REL001-required version string for `root`'s current public API
+    against its tracked release manifest, or `Ok(None)` if no bump is
+    needed (no manifest yet, or `BumpClass.NONE`) -- split out of
+    `_apply_release_bump_for_land` to keep each half under the ARCH001
+    line-count threshold (T-0338)."""
+    from frob.release import BumpClass, diff_class, load_manifest, required_version
     from frob.tickets._land import LandError
 
     manifest_result = load_manifest(root)
@@ -614,6 +597,35 @@ def _apply_release_bump_for_land(root: Path, ticket, final_id: str):  # noqa: AN
             manifest.version,
         )
         return Err(LandError.ReleaseBumpFailed)
+    return Ok(needed.danger_ok)
+
+
+# frob:ticket T-0338
+def _apply_release_bump_for_land(root: Path, ticket, final_id: str):  # noqa: ANN001, ANN201
+    """Compute the REL001 bump class for `root`'s just-squashed public API
+    against its release manifest and, if the declared version does not
+    already cover it, bump `pyproject.toml`'s `version`, append a minimal
+    CHANGELOG.md entry (satisfies `_changelog_mentions`'s "the version
+    string appears somewhere" contract), and `frob release stamp` the new
+    manifest -- staging all three files in `root`'s index so they land in
+    the same commit as the squash-apply (T-0338).
+
+    Returns `Ok(None)` (no write at all) when no manifest exists yet (the
+    repo has never opted into `frob release stamp`) or when the diff class
+    is `BumpClass.NONE`; `Ok(new_version)` after a successful bump+stamp;
+    `Err(LandError.ReleaseBumpFailed)` on any failure along the way (an
+    unreadable manifest, an unparsable `pyproject.toml` version, or a
+    graph build failure) -- fail-closed, since a silently-skipped bump
+    would let a landed API change slip past REL001 undetected."""
+    from frob.gitio import run_argv
+    from frob.release import stamp
+    from frob.tickets._land import LandError
+
+    needed = _required_release_bump(root, final_id)
+    if needed.is_err:
+        return Err(needed.danger_err)
+    if needed.danger_ok is None:
+        return Ok(None)
     new_version = needed.danger_ok
 
     written = _write_release_bump(root, ticket, final_id, new_version)
