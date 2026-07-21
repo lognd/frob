@@ -31,8 +31,14 @@ Implements docs/modules/dup.md's `find_clones` across the full rung ladder:
   directly. Good enough to catch pure rename clones; a future
   `frob.lang` token-kind channel would make it exact.
 - R3 is computed by the frob_core kernel over the R2-normalized token
-  stream, not full literal-abstraction/control-flow normalization (which
-  `frob.lang` does not yet expose per-token).
+  stream. `frob_core::r3_canonicalize` (T-0447) further abstracts
+  numeric/string-literal-shaped tokens to a shared placeholder and
+  desugars `elif` to `else: if` before folding, so R3 now independently
+  fires on literal-only and elif-vs-nested-if/else differences R2 misses
+  -- see `tests/test_dup.py`. Commutative-operand ordering and real
+  for/while loop-shape desugaring still need actual AST structure (not a
+  token fold) and remain unimplemented (`frob:todo T-0001`), since
+  `frob.lang` does not yet expose per-token node-type metadata.
 - **R4 verification is now real tree edit distance.** `_apted_similarity_for_pair`
   calls `frob.lang.symbol_tree` to get actual node structure for both
   candidates and runs `frob_core._apted_similarity` (Zhang-Shasha over the

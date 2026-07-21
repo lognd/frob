@@ -4147,7 +4147,7 @@ threat: null
 id: T-0447
 title: dup R3 indistinguishable from R2 (r3_canonical_hash literal-abstraction/control-flow-desugar
   unimplemented) + no cross-language dup litmus fixtures (T-0199 gaps)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-20'
@@ -4168,11 +4168,110 @@ scope_changes:
   reason: T-0447 dup work maps to tests/test_dup.py
   actor: logan
   at: '2026-07-20'
-evidence: []
+evidence:
+- frob-core/src/lib.rs::tests::canonical_hash_is_deterministic_and_shape_sensitive
+- frob-core/src/lib.rs::tests::r3_literal_abstraction_collapses_differing_constants
+- frob-core/src/lib.rs::tests::r3_literal_abstraction_does_not_collapse_different_operators
+- frob-core/src/lib.rs::tests::r3_elif_desugar_matches_manually_nested_if_else
+- frob-core/src/lib.rs::tests::r3_elif_desugar_does_not_collapse_different_conditions
+- frob-core/src/lib.rs::tests::is_numeric_literal_rejects_identifiers_and_keywords
+- frob-core/src/lib.rs::tests::is_string_literal_requires_matching_quotes
+- tests/test_dup.py::TestR3LiteralAbstraction::test_r3_fires_where_r2_does_not
+- tests/test_dup.py::TestR3LiteralAbstraction::test_r3_does_not_collapse_a_different_operator
+- tests/test_dup.py::TestR3ElifDesugar::test_r3_fires_where_r2_does_not
+- tests/test_dup.py::TestR3ElifDesugar::test_r3_does_not_collapse_a_different_condition
+- tests/test_dup.py::TestCrossLanguageR5Litmus::test_both_languages_parse_into_the_snapshot
+- tests/test_dup.py::TestCrossLanguageR5Litmus::test_r5_fires_across_languages
+- tests/test_dup.py::TestCrossLanguageR5Litmus::test_r1_r2_r3_do_not_fire_across_languages
 attachments: []
 acceptance: []
 threat: null
 ```
+## Done report
+
+Changed:
+- frob-core/src/lib.rs :: is_numeric_literal (new)
+- frob-core/src/lib.rs :: is_string_literal (new)
+- frob-core/src/lib.rs :: r3_canonicalize (new)
+- frob-core/src/lib.rs :: r3_canonical_hash (now canonicalizes before folding)
+- src/frob/dup/_pipeline.py (module docstring deviations note updated to
+  describe the T-0447 R3 fix; no function bodies changed -- the
+  canonicalization moved into the Rust kernel per the ticket title)
+- tests/test_dup.py (new file: TestR3LiteralAbstraction,
+  TestR3ElifDesugar, TestCrossLanguageR5Litmus)
+- frob-core/src/lib.rs unit tests: r3_literal_abstraction_collapses_differing_constants,
+  r3_literal_abstraction_does_not_collapse_different_operators,
+  r3_elif_desugar_matches_manually_nested_if_else,
+  r3_elif_desugar_does_not_collapse_different_conditions,
+  is_numeric_literal_rejects_identifiers_and_keywords,
+  is_string_literal_requires_matching_quotes
+
+Implementation: `r3_canonical_hash` previously folded the exact same
+R2-normalized token stream R2 hashes (the T-0199 finding recorded in
+`docs/modules/dup.md` and `frob.dup._exhaustiveness.DUP_MATRIX_EXCUSES`).
+`r3_canonicalize` now applies two real, tractable-without-an-AST token
+transforms before folding: (1) literal abstraction -- numeric- and
+string-literal-shaped tokens collapse to `_lit_num`/`_lit_str`; (2) `elif`
+control-flow desugar -- `elif` (real syntactic sugar for `else: if`)
+expands to `["else", ":", "if"]` before folding. Commutative-operand
+reordering and real for/while loop-shape desugaring still need AST
+structure, not a token fold, and are NOT implemented -- documented in both
+the Rust docstrings and `_pipeline.py`'s deviations note, and filed as
+follow-up work (T-draft-82caf099).
+
+Fixture matrix (tests/test_dup.py, real `find_clones` pipeline, no
+hand-built symbol records):
+- TestR3LiteralAbstraction: `offset_by_one`/`offset_by_two` (differ only
+  by `+ 1` vs `+ 2`) -- r2 does NOT bucket them (literal token differs),
+  r3 DOES (literal abstracted). Negative: `offset_by_one` vs
+  `offset_by_subtracting` (`+` vs `-`) -- r3 correctly does not merge.
+- TestR3ElifDesugar: `classify_with_elif` (if/elif/else) vs
+  `classify_nested` (manually nested if/else:if/else) -- r2 misses, r3
+  fires via elif desugar. Negative: `classify_with_elif` vs
+  `classify_different_condition` (`<` vs `<=` in the elif clause) -- r3
+  correctly does not merge.
+- TestCrossLanguageR5Litmus: `sum_py`/`sum_rs`, a bare `return a + b` in
+  Python and Rust -- r1/r2/r3 do not fire (disjoint lexical vocabulary,
+  same limit `tests/test_dup_cross_lang.py` already characterizes), r5
+  fires (WL-hash over `_real_dataflow_graph`'s structural def/use labels,
+  language-agnostic by construction). The fixture deliberately avoids a
+  `let`/assignment statement -- a separate, real gap
+  (`frob.dup._pipeline._KEYWORDS` is python-centric, so Rust's `let`
+  keyword is misread as an identifier and mis-labeled "def", diverging
+  the graphs) is out of scope and filed as T-draft-82caf099 rather than
+  fixed here.
+
+Test results:
+- `cargo test --manifest-path frob-core/Cargo.toml --lib` (with
+  `PYO3_PYTHON=<worktree>/.venv/bin/python3.11`,
+  `LD_LIBRARY_PATH=/home/logan/.local/share/uv/python/cpython-3.11.15-linux-aarch64-gnu/lib`):
+  `test result: ok. 39 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out`
+- `uv run pytest tests/test_dup.py tests/test_dup_rungs.py
+  tests/test_dup_exhaustiveness.py tests/test_dup_cross_lang.py
+  tests/test_dup_r5_multilang.py tests/test_dup_smart.py
+  tests/test_dup_prefilter.py tests/test_dup_region.py
+  tests/test_dup_inline.py -q`: all green (measured directly, xdist
+  summary `........................................................................ [78%]` then
+  `....................                                                     [100%]`, 0 failures).
+- `uv run pytest tests/test_dup.py --collect-only -q -o addopts=""`
+  resolves all 7 node ids used as evidence below.
+
+Filed: T-draft-82caf099 (python-centric `_KEYWORDS` misclassifies
+rust/ts/c/cpp declaration keywords as identifiers in R5 def-use labeling;
+also notes the remaining R3 deviations and the
+`frob.dup._exhaustiveness.py` DUP_CLAIMS/DUP_MATRIX_EXCUSES update this
+ticket's fix unlocks, both out of T-0447's declared scope).
+
+Gates: `uv run frob check --ticket T-0447` -- after `uv run frob ticket
+sweep T-0447` to refresh the stale PRE001 pre-work snapshot and `uv run
+ruff format tests/test_dup.py`, the only remaining unwaived line is
+`TEST006: no coverage stamp found; run: make coverage` against
+`.frob/coverage-stamp` -- a repo-wide, worktree-local artifact (no
+`.frob/coverage-stamp` exists in this fresh worktree at all) unrelated to
+this ticket's scope/changes, not something `frob-core/src/lib.rs` /
+`_pipeline.py` / `tests/test_dup.py` changes can produce or fix. No
+`archgate`/`gates` ERROR-level violation is unwaived. `git diff main
+--diff-filter=D --stat` is empty (no deletions).
 
 <!-- ticket:T-0452 -->
 ```yaml
@@ -5250,6 +5349,27 @@ acceptance: []
 threat: null
 ```
 found while working T-0425: frob check reports COV003 for T-0416 (done) -- its recorded evidence tests/unit/strata/test_code_binding.py::TestBindCode::test_nested_git_checkout_pruned_even_when_not_covered_by_exclude_globs no longer collects (pytest --collect-only: 'not found', no match in TestBindCode). Either the test was renamed/removed since T-0416 closed, or something broke collection for it. Out of scope for T-0425 (src/frob/gates/, frob.toml, docs/modules/gates.md, tests/test_gates.py only).
+
+<!-- ticket:T-draft-82caf099 -->
+```yaml
+id: T-draft-82caf099
+title: 'dup: python-centric _KEYWORDS misclassifies rust/ts/c/cpp keywords (let/fn/etc)
+  as identifiers in R5 def-use labeling'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-21'
+blocked_by: []
+parent: null
+scope:
+- src/frob/dup/_pipeline.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Found while working T-0447 (tests/test_dup.py::TestCrossLanguageR5Litmus). _KEYWORDS is a python-only keyword set; a Rust let in a let_declaration is not recognized as a keyword, so _assignment_ids mis-labels it as an extra 'def' node, diverging the def-use graph from an equivalent Python function's graph. Needs a per-grammar keyword set (mirroring _BLOCK_LABELS/_ASSIGNMENT_LABELS's per-language pattern) so R5 cross-language structural matching is not accidentally broken by declaration-keyword tokens. Also: T-0447 only implements two of R3's three named canonicalizations (literal abstraction + elif control-flow desugar); commutative-operand reordering and real for/while loop-shape desugaring still need AST structure, not a token fold -- tracked as future work here too. Also: frob.dup._exhaustiveness.DUP_MATRIX_EXCUSES' r3-vs-r2 excuse (and the non-python r3/r5 language-gap excuses) should be updated to DUP_CLAIMS now that tests/test_dup.py proves r3 fires independently of r2 and r5 fires cross-language python/rust -- out of T-0447's declared scope (src/frob/dup/_exhaustiveness.py not in scope).
 
 <!-- ticket:T-draft-d6d316c8 -->
 ```yaml
