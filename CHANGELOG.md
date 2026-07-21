@@ -17,6 +17,27 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.53.0] - unreleased
+
+T-0456: crash/interrupt recovery, the remaining delta after T-0473
+(cross-worktree lease registry)/T-0476 (reconcile)/T-0479 (own-block ledger
+splice) had already landed the rest. Added `frob.tickets._journal` (new
+public `write_intent`/`clear_intent`/`read_all_intents`/`LandIntent`/
+`JournalError`/`journal_dir`): `frob ticket land` now records a small
+`.frob/journal/<ticket-id>.json` marker before it starts mutating anything
+and clears it in a `finally` block on every exit, so a marker outliving the
+process means it crashed mid-land. `frob ticket reconcile` gained a third
+anomaly class, orphaned land intents, reported every run and cleared
+(never auto-resumed) under `--apply`. `frob.tickets._store.atomic_write`
+now `fsync`s the temp file before the `os.replace` that makes it visible,
+closing the "rename completed but data unflushed" crash window for every
+`tickets.md`/`.frob-release.json`/lease/journal write.
+
+T-0507: extended the T-0431 `FROB_WORKTREE` lease guard to `frob release
+stamp` (`frob.release.stamp`, new `ReleaseError.WorktreeLeaseViolation`
+member) and `frob ack` (`frob.app.ack_runner.run`) -- the two remaining
+mutating entry points T-0431 had not yet covered.
+
 ## [0.52.0] - unreleased (tickets-bugs chain)
 
 T-0446: `frob.tickets.scope_matches` gained an optional `kind` keyword --

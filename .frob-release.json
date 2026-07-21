@@ -933,6 +933,13 @@
     "src/frob/tickets/__init__.py::set_priority": "c4c5efc225ac364f5c558302f3dffcb2ca395e77f1c280b69ebcee7bec1c73d5",
     "src/frob/tickets/__init__.py::transition": "29733ec2d6214f39cd26c3eb43be4f75fc365a13eec06b694caebedb4609ca71",
     "src/frob/tickets/__init__.py::validate_evidence": "1b4100163a3cd37930c828128c2a80be0ab108617beafbcae64cd5fa776a600c",
+    "src/frob/tickets/_journal.py::JOURNAL_DIRNAME": "baac871bdabdf7bf8c896cdc00f538ab0ce46750cb788f5c75966ce1a7a59c8a",
+    "src/frob/tickets/_journal.py::JournalError": "fea8c9c33a88ab7fae7d0ff7806fd31b29e79dbf57b45a0c71d5685768ccd209",
+    "src/frob/tickets/_journal.py::LandIntent": "078e6f3dcd45eb8064247b50d54467afe781480ce38fcde44eca58dbf05200fc",
+    "src/frob/tickets/_journal.py::clear_intent": "eae8ce9a7c4429b0104ce7019ea432bbf3ed90bb36883229f779a7d32e177bfd",
+    "src/frob/tickets/_journal.py::journal_dir": "2ed745a2f20b534a883e3a5e4e48b5581269e9002d17cde053a250ef50d90fc2",
+    "src/frob/tickets/_journal.py::read_all_intents": "24b2c66340b3882d4c61b5d652bd4cb386762234840a8a8ff27ce74202c968df",
+    "src/frob/tickets/_journal.py::write_intent": "da0e4646554749604b9207c804af10d1601108bfd35d6b6f93637b6420317633",
     "src/frob/tickets/_land.py::land": "67c9e1c2b4f907fc743e02e857687df977bddf30422d6374dc067203b110a932",
     "src/frob/tickets/_land.py::splice_ledger": "610f4bac447ded94ffaec86a82c7e915909587333570c4fc8292d23907480a39",
     "src/frob/tickets/_leases.py::LEASES_DIRNAME": "fee506bf6466be5e840b3532d540285d0939d687ef8d30aad96b767b248ce75b",
@@ -1068,5 +1075,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.52.0"
+  "version": "0.53.0"
 }
