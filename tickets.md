@@ -3264,7 +3264,7 @@ Observed twice while working T-0348/T-0349 in this worktree: each ticket's pre-e
 id: T-0494
 title: 'tests/test_dup_cross_lang.py: T-0198 characterization test now wrong -- R5
   correctly fires cross-language python/typescript after T-0487''s keyword fix'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-07-21'
