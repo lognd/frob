@@ -17,6 +17,21 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.51.0] - unreleased
+
+T-0446: `frob.tickets.scope_matches` gained an optional `kind` keyword --
+when `kind=TicketKind.FEATURE`, the three well-known CLI-wiring files
+(`src/frob/__main__.py`, `src/frob/app/config.py`,
+`src/frob/app/ticket_runner.py`, `frob.tickets._models.CLI_WIRING_FILES`)
+are implicitly in scope, mirroring `LEDGER_PATH`'s always-in-scope rule
+(T-0241). The SCOPE001 gate (`scope_gate`) now passes `ticket.kind`
+through, so a feature ticket adding a new `frob ticket <subcommand>` no
+longer needs a `frob ticket scope --add` per wiring file just to avoid
+SCOPE001 -- the exact "scope-expansion ceremony" T-0323 (adding `frob
+ticket merge-driver`) hit and T-0446 was filed to close. `kind=None` (the
+default, and every pre-T-0446 call site) preserves prior behavior exactly;
+non-FEATURE tickets still trip SCOPE001 on these files as before.
+
 ## [0.50.0] - unreleased
 
 T-0411: queue health + priority model. Tickets carry a `priority`

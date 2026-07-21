@@ -1089,6 +1089,24 @@ class TestScopeMatching:
         assert scope_matches("tickets.md", ("src/frob/foo/**",))
         assert scope_matches("tickets.md", ())
 
+    # frob:ticket T-0446
+    def test_feature_kind_implies_cli_wiring_files_in_scope(self) -> None:
+        # frob:tests src/frob/tickets/_models.py::scope_matches
+        from frob.tickets._models import CLI_WIRING_FILES
+
+        narrow_scope = ("src/frob/tickets/**",)
+        for wiring_file in CLI_WIRING_FILES:
+            assert not scope_matches(wiring_file, narrow_scope)
+            assert scope_matches(wiring_file, narrow_scope, kind=TicketKind.FEATURE)
+
+    def test_non_feature_kind_does_not_imply_cli_wiring_files(self) -> None:
+        # frob:tests src/frob/tickets/_models.py::scope_matches
+        from frob.tickets._models import CLI_WIRING_FILES
+
+        narrow_scope = ("src/frob/tickets/**",)
+        for wiring_file in CLI_WIRING_FILES:
+            assert not scope_matches(wiring_file, narrow_scope, kind=TicketKind.BUG)
+
     def test_new_ticket_normalizes_comma_joined_scope(self, tmp_path: Path) -> None:
         # frob:tests src/frob/tickets/_models.py::TicketSpec
         from frob.tickets import TicketSpec

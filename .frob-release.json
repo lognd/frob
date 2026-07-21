@@ -944,6 +944,7 @@
     "src/frob/tickets/_leases.py::release_lease": "d67d35f4063182ea14399cf5bdbfb90449d04d593f0aa9f81fc36aca3377d7bb",
     "src/frob/tickets/_models.py::Attachment": "4bfd3d2416fb5e40f4972cd7c7d4bf518fd7362baea7588bb6572dccbc0613dc",
     "src/frob/tickets/_models.py::AttachmentSource": "a0a9c8975fd2eb8cc28ede62fe915cf5ebd511ef88ecfbb0669c195ddc22980e",
+    "src/frob/tickets/_models.py::CLI_WIRING_FILES": "bd8f84831df7858b311d67d7d27d8073c902a0ff46a5161e99c557715f7adfa2",
     "src/frob/tickets/_models.py::CMD_EVIDENCE_ALLOWED_KINDS": "17ae1ff3a3a533e17ee02554605f9265dacac83389214897311c270889ee6fc9",
     "src/frob/tickets/_models.py::DONE_REPORT_HEADING": "9883b39dff3f2fa407a065003b545bb03cabccc5c14f6a68a85b1c66623d6f67",
     "src/frob/tickets/_models.py::FailureEntry": "64bf31f9c426ea915ff3ad8a81da174d2fb331b4ef7f015b9d99b877eb117b53",
@@ -968,7 +969,7 @@
     "src/frob/tickets/_models.py::is_cmd_evidence": "e8b1ed06b21a176bd633ea5746afb179e7eb34eadf7e8a0299d022643ddedb52",
     "src/frob/tickets/_models.py::matches_collected": "90ca48e9c7f61d7e4a6b52d47160455e69e38ec0520b21c2dc5acab712eaee04",
     "src/frob/tickets/_models.py::replace_done_report_section": "cc46d70298699ef49716b87c7df038afb774b050331b0fc63faa5a2cb8c00081",
-    "src/frob/tickets/_models.py::scope_matches": "a02f00f0be8531d45b87ae6f39ef811b8de5f03aabab009705ba2255fa81b867",
+    "src/frob/tickets/_models.py::scope_matches": "5eef8e395b850fdcd75ee4bb7d0bacdba99fcf6b8e1a4fe3d21a92d37092ad9e",
     "src/frob/tickets/_models.py::scope_overlap": "a8c5ddb231db9c182af2c435d569fcb8481420d094a153d26861f6bf39458983",
     "src/frob/tickets/_models.py::scope_overlap_globs": "95814d53043fdda1de635cc0c9e9367b58c2ebc6cd1853381b49a9697c1a7ba1",
     "src/frob/tickets/_provisional.py::DRAFT_PREFIX": "cc54a35e6c7d0d8fc9a0364bbefaf94dfc09c0e71920015cc63ff9261da0ca18",
@@ -1066,5 +1067,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.50.0"
+  "version": "0.51.0"
 }

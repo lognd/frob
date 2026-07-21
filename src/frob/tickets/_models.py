@@ -82,6 +82,29 @@ def is_cmd_evidence(entry: str) -> bool:
 # trips SCOPE001 (T-0241).
 LEDGER_PATH = "tickets.md"
 
+# frob:ticket T-0446
+# frob:doc docs/modules/tickets.md#public-api
+# The three files EVERY new `frob ticket <subcommand>` structurally must
+# touch to actually wire the command in: the dispatch table (`__main__.py`),
+# the CLI flags it reads (`app/config.py`), and the runner that implements
+# it (`app/ticket_runner.py`). T-0323 (git-merge-driver ticket, adding `frob
+# ticket merge-driver`) needed all three despite a scope declared as
+# `src/frob/tickets/**` -- every feature ticket that adds a subcommand hits
+# this same "scope-expansion ceremony" (a `frob ticket scope --add` per
+# wiring file, every time) because these files are structurally required
+# but never anticipated at ticket-filing time. Implicitly in scope for any
+# `TicketKind.FEATURE` ticket, the same LEDGER_PATH-always-in-scope pattern
+# T-0241 established for tickets.md -- NOT extended to every kind, since a
+# bug/docs/security ticket touching the CLI dispatch table unannounced is
+# exactly the scope-creep SCOPE001 exists to catch.
+CLI_WIRING_FILES = frozenset(
+    {
+        "src/frob/__main__.py",
+        "src/frob/app/config.py",
+        "src/frob/app/ticket_runner.py",
+    }
+)
+
 
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets.py::TestScopeMatching.test_comma_joined_entry_splits
@@ -128,7 +151,10 @@ def _scope_globs(scope: Sequence[str]) -> tuple[str, ...]:
 
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets.py::TestScopeMatching.test_ledger_always_in_scope
-def scope_matches(path: str, scope: Sequence[str]) -> bool:
+# frob:tests tests/test_tickets.py::TestScopeMatching.test_feature_kind_implies_cli_wiring_files_in_scope  # noqa: E501
+def scope_matches(
+    path: str, scope: Sequence[str], *, kind: TicketKind | None = None
+) -> bool:
     """Whether `path` is covered by a ticket's declared `scope`.
 
     THE one implementation every scope-consulting site (`frob.tickets`'s
@@ -138,11 +164,18 @@ def scope_matches(path: str, scope: Sequence[str]) -> bool:
     comma-joined entries defensively even though `Ticket`/`TicketSpec`
     normalize on construction, so a raw, un-modeled `scope` sequence passed
     directly still matches correctly.
-    """
-    return any(
-        fnmatch.fnmatch(path, glob)
-        for glob in _scope_globs(_split_scope_entries(scope))
-    )
+
+    T-0446: when `kind` is `TicketKind.FEATURE`, `CLI_WIRING_FILES` is ALSO
+    implicitly in scope, mirroring the `LEDGER_PATH`-always-in-scope
+    pattern above -- a feature ticket adding a new `frob ticket <cmd>`
+    structurally needs to touch the dispatch table/config/runner wiring no
+    matter what its author anticipated when filing it. `kind=None` (the
+    default, and every pre-T-0446 call site) preserves the exact prior
+    behavior unchanged."""
+    globs = _scope_globs(_split_scope_entries(scope))
+    if kind is TicketKind.FEATURE:
+        globs = (*globs, *CLI_WIRING_FILES)
+    return any(fnmatch.fnmatch(path, glob) for glob in globs)
 
 
 # frob:ticket T-0453
