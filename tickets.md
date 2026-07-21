@@ -13,10 +13,182 @@ created: '2026-07-18'
 blocked_by: []
 parent: null
 scope:
-- src/frob/**
 - tests/**
 - frob.toml
-scope_changes: []
+- src/frob/app/ack_runner.py
+- src/frob/app/arch_runner.py
+- src/frob/app/bind_runner.py
+- src/frob/app/check_runner.py
+- src/frob/app/clean_runner.py
+- src/frob/app/cycle_runner.py
+- src/frob/app/deploy_runner.py
+- src/frob/app/docs_runner.py
+- src/frob/app/doctor_runner.py
+- src/frob/app/dup_runner.py
+- src/frob/app/exports_runner.py
+- src/frob/app/gitlog_runner.py
+- src/frob/app/graph_runner.py
+- src/frob/app/map_runner.py
+- src/frob/app/mutate_runner.py
+- src/frob/app/outline_runner.py
+- src/frob/app/parse_runner.py
+- src/frob/app/perf_runner.py
+- src/frob/app/release_runner.py
+- src/frob/app/scaffold_runner.py
+- src/frob/app/serve_runner.py
+- src/frob/app/stats_runner.py
+- src/frob/app/sys_runner.py
+- src/frob/app/test_runner.py
+- src/frob/app/ticket_runner.py
+- src/frob/app/vet_runner.py
+- src/frob/app/xref_runner.py
+- src/frob/tickets/_store.py
+scope_changes:
+- op: remove
+  glob: src/frob/**
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/ack_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/arch_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/bind_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/check_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/clean_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/cycle_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/deploy_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/docs_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/doctor_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/dup_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/exports_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/gitlog_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/graph_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/map_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/mutate_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/outline_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/parse_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/perf_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/release_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/scaffold_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/serve_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/stats_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/sys_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/test_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/ticket_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/vet_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/xref_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/tickets/_store.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
 evidence:
 - tests/test_gates.py::TestInvariantLoad::test_unreadable_file_is_malformed
 - tests/test_gates.py::TestInvariantLoad::test_no_frontmatter_block_is_malformed
@@ -944,12 +1116,15 @@ scope:
 - src/frob/serve/**
 - src/frob/gates/**
 - src/frob/graph/**
-- src/frob/app/**
 - pyproject.toml
 - Makefile
 - docs/modules/serve.md
 - tickets.md
 - tests/test_serve.py
+- src/frob/app/serve_runner.py
+- src/frob/app/check_runner.py
+- src/frob/app/app.py
+- src/frob/app/config.py
 scope_changes:
 - op: remove
   glob: tests/**
@@ -961,6 +1136,31 @@ scope_changes:
   reason: T-0177 serve work maps to tests/test_serve.py
   actor: logan
   at: '2026-07-20'
+- op: remove
+  glob: src/frob/app/**
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/serve_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/check_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/app.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/config.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
 evidence: []
 attachments: []
 acceptance: []
@@ -1173,12 +1373,24 @@ created: '2026-07-18'
 blocked_by: []
 parent: null
 scope:
-- src/frob/**
-- tests/**
 - frob.toml
-- docs/**
 - tickets.md
-scope_changes: []
+scope_changes:
+- op: remove
+  glob: src/frob/**
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: remove
+  glob: tests/**
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: remove
+  glob: docs/**
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
 evidence: []
 attachments: []
 acceptance: []
@@ -1276,14 +1488,26 @@ created: '2026-07-18'
 blocked_by: []
 parent: null
 scope:
-- src/frob/**
 - strata-core/**
 - design/**
-- docs/**
-- tests/**
 - Makefile
 - tickets.md
-scope_changes: []
+scope_changes:
+- op: remove
+  glob: src/frob/**
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: remove
+  glob: docs/**
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: remove
+  glob: tests/**
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
 evidence: []
 attachments: []
 acceptance: []
@@ -1304,10 +1528,18 @@ blocked_by:
 - T-0257
 parent: T-0254
 scope:
-- docs/**
-- tests/**
 - tickets.md
-scope_changes: []
+scope_changes:
+- op: remove
+  glob: docs/**
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: remove
+  glob: tests/**
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
 evidence: []
 attachments: []
 acceptance: []
@@ -1406,10 +1638,10 @@ blocked_by:
 parent: T-0254
 scope:
 - src/frob/deploy/**
-- src/frob/app/**
 - tickets.md
 - docs/modules/deploy.md
 - tests/unit/deploy/
+- src/frob/app/deploy_runner.py
 scope_changes:
 - op: remove
   glob: docs/**
@@ -1431,6 +1663,16 @@ scope_changes:
   reason: T-0264 deploy work maps to tests/unit/deploy/
   actor: logan
   at: '2026-07-20'
+- op: remove
+  glob: src/frob/app/**
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/deploy_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
 evidence: []
 attachments: []
 acceptance: []
@@ -1680,7 +1922,6 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/serve/**
-- src/frob/**
 - tickets.md
 - docs/modules/serve.md
 scope_changes:
@@ -1694,6 +1935,11 @@ scope_changes:
   reason: T-0321 serve work maps to docs/modules/serve.md
   actor: logan
   at: '2026-07-20'
+- op: remove
+  glob: src/frob/**
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
 evidence: []
 attachments: []
 acceptance: []
@@ -1775,11 +2021,13 @@ created: '2026-07-19'
 blocked_by: []
 parent: null
 scope:
-- src/frob/app/**
 - src/frob/testing/**
 - src/frob/serve/**
 - tickets.md
 - tests/test_app.py
+- src/frob/app/test_runner.py
+- src/frob/app/app.py
+- Makefile
 scope_changes:
 - op: remove
   glob: tests/**
@@ -1791,6 +2039,26 @@ scope_changes:
   reason: T-0322 app work maps to tests/test_app.py
   actor: logan
   at: '2026-07-20'
+- op: remove
+  glob: src/frob/app/**
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/test_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/app.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: Makefile
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
 evidence: []
 attachments: []
 acceptance: []
@@ -1959,11 +2227,10 @@ created: '2026-07-19'
 blocked_by: []
 parent: null
 scope:
-- src/frob/strata/**
 - strata-core/**
 - docs/strata/**
 - tickets.md
-- tests/unit/strata/
+- docs/design/structural-linter-adversarial-hardening.md
 scope_changes:
 - op: remove
   glob: tests/**
@@ -1975,6 +2242,21 @@ scope_changes:
   reason: T-0331 strata work maps to tests/unit/strata/
   actor: logan
   at: '2026-07-20'
+- op: remove
+  glob: src/frob/strata/**
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: remove
+  glob: tests/unit/strata/
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/design/structural-linter-adversarial-hardening.md
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
 evidence: []
 attachments: []
 acceptance: []
@@ -2137,11 +2419,12 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/tickets/**
-- src/frob/app/**
 - src/frob/release/**
 - tickets.md
 - tests/unit/test_ticket_store.py
 - docs/modules/tickets.md
+- src/frob/app/ticket_runner.py
+- src/frob/app/release_runner.py
 scope_changes:
 - op: remove
   glob: tests/**
@@ -2163,6 +2446,21 @@ scope_changes:
   reason: T-0338 tickets work maps to docs/modules/tickets.md
   actor: logan
   at: '2026-07-20'
+- op: remove
+  glob: src/frob/app/**
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/ticket_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/release_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
 evidence: []
 attachments: []
 acceptance:
@@ -2262,9 +2560,25 @@ parent: null
 scope:
 - Makefile
 - pyproject.toml
-- docs/**
 - tickets.md
-scope_changes: []
+- docs/guides/agent-playbook.md
+- docs/guides/install.md
+scope_changes:
+- op: remove
+  glob: docs/**
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/guides/agent-playbook.md
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/guides/install.md
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
 evidence: []
 attachments: []
 acceptance:
@@ -2388,10 +2702,9 @@ blocked_by: []
 parent: null
 scope:
 - docs/design/**
-- src/frob/strata/**
 - src/frob/arch/**
 - tickets.md
-- tests/unit/strata/
+- tests/test_registry_exhaustiveness.py
 scope_changes:
 - op: remove
   glob: tests/**
@@ -2403,6 +2716,21 @@ scope_changes:
   reason: T-0346 strata work maps to tests/unit/strata/
   actor: logan
   at: '2026-07-20'
+- op: remove
+  glob: src/frob/strata/**
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: remove
+  glob: tests/unit/strata/
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_registry_exhaustiveness.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
 evidence: []
 attachments: []
 acceptance:
@@ -3118,8 +3446,24 @@ created: '2026-07-20'
 blocked_by: []
 parent: null
 scope:
-- src/frob/
-scope_changes: []
+- docs/audits/
+- tickets.md
+scope_changes:
+- op: remove
+  glob: src/frob/
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/audits/
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tickets.md
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
 evidence: []
 attachments: []
 acceptance: []
@@ -3295,9 +3639,25 @@ created: '2026-07-20'
 blocked_by: []
 parent: T-0397
 scope:
-- src/frob/
 - docs/design/registry/
-scope_changes: []
+- src/frob/gates/
+- src/frob/registry/**
+scope_changes:
+- op: remove
+  glob: src/frob/
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/gates/
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/registry/**
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
 evidence: []
 attachments: []
 acceptance: []
@@ -3323,8 +3683,18 @@ parent: T-0407
 scope:
 - src/frob/gates/
 - invariants/
-- src/frob/
-scope_changes: []
+- tests/test_gates.py
+scope_changes:
+- op: remove
+  glob: src/frob/
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_gates.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
 evidence: []
 attachments: []
 acceptance: []
@@ -3581,10 +3951,32 @@ created: '2026-07-20'
 blocked_by: []
 parent: T-0410
 scope:
-- src/frob/app/
 - src/frob/check/
 - src/frob/logging/
-scope_changes: []
+- src/frob/app/check_runner.py
+- src/frob/app/_style.py
+- src/frob/app/app.py
+scope_changes:
+- op: remove
+  glob: src/frob/app/
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/check_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/_style.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/app.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
 evidence: []
 attachments: []
 acceptance: []
@@ -3604,9 +3996,25 @@ created: '2026-07-20'
 blocked_by: []
 parent: T-0410
 scope:
-- src/frob/app/
 - src/frob/check/
-scope_changes: []
+- src/frob/app/check_runner.py
+- src/frob/app/_style.py
+scope_changes:
+- op: remove
+  glob: src/frob/app/
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/check_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/_style.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
 evidence: []
 attachments: []
 acceptance: []
@@ -3626,10 +4034,26 @@ created: '2026-07-20'
 blocked_by: []
 parent: T-0410
 scope:
-- src/frob/app/
 - src/frob/check/
 - frob.toml
-scope_changes: []
+- src/frob/app/check_runner.py
+- src/frob/app/config.py
+scope_changes:
+- op: remove
+  glob: src/frob/app/
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/check_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/config.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
 evidence: []
 attachments: []
 acceptance: []
@@ -3698,9 +4122,19 @@ blocked_by: []
 parent: T-0397
 scope:
 - docs/audits/
-- src/frob/
 - frob.toml
-scope_changes: []
+- src/frob/gates/
+scope_changes:
+- op: remove
+  glob: src/frob/
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/gates/
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
 evidence: []
 attachments: []
 acceptance: []
@@ -3771,9 +4205,29 @@ blocked_by: []
 parent: T-0407
 scope:
 - .claude/agents/
-- src/frob/
-- docs/guides/
-scope_changes: []
+- docs/guides/exhaustive-research.md
+- src/frob/gates/_registry_exhaustiveness.py
+scope_changes:
+- op: remove
+  glob: src/frob/
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: remove
+  glob: docs/guides/
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/guides/exhaustive-research.md
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/gates/_registry_exhaustiveness.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
 evidence: []
 attachments: []
 acceptance: []
@@ -3795,9 +4249,19 @@ parent: T-0397
 scope:
 - src/frob/tickets/
 - src/frob/gates/
-- src/frob/scaffold/
 - frob.toml
-scope_changes: []
+- src/frob/scaffold/project.py
+scope_changes:
+- op: remove
+  glob: src/frob/scaffold/
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/scaffold/project.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
 evidence: []
 attachments: []
 acceptance: []
@@ -3862,8 +4326,18 @@ parent: T-0424
 scope:
 - src/frob/gates/
 - README.md
-- docs/
-scope_changes: []
+- docs/modules/gates.md
+scope_changes:
+- op: remove
+  glob: docs/
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/modules/gates.md
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
 evidence: []
 attachments: []
 acceptance: []
@@ -3885,9 +4359,25 @@ parent: T-0435
 scope:
 - src/frob/gates/
 - src/frob/graph/
-- docs/
 - frob.toml
-scope_changes: []
+- docs/modules/gates.md
+- tests/test_gates.py
+scope_changes:
+- op: remove
+  glob: docs/
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/modules/gates.md
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_gates.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
 evidence: []
 attachments: []
 acceptance: []
@@ -3964,9 +4454,41 @@ parent: null
 scope:
 - src/frob/graph/dsl.py
 - src/frob/gates/
-- src/frob/app/
-- docs/
-scope_changes: []
+- src/frob/app/check_runner.py
+- src/frob/app/config.py
+- src/frob/__main__.py
+- docs/modules/graph.md
+scope_changes:
+- op: remove
+  glob: src/frob/app/
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: remove
+  glob: docs/
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/check_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/config.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/__main__.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/modules/graph.md
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
 evidence: []
 attachments: []
 acceptance: []
@@ -4071,8 +4593,18 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/tickets/
-- docs/
-scope_changes: []
+- docs/modules/tickets.md
+scope_changes:
+- op: remove
+  glob: docs/
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
 evidence: []
 attachments: []
 acceptance: []
@@ -4126,8 +4658,8 @@ parent: null
 scope:
 - src/frob/gates/invariants.py
 - src/frob/gates/
-- docs/
 - tests/test_gates.py
+- docs/modules/gates.md
 scope_changes:
 - op: remove
   glob: tests/**
@@ -4139,6 +4671,16 @@ scope_changes:
   reason: T-0452 gates work maps to tests/test_gates.py
   actor: logan
   at: '2026-07-20'
+- op: remove
+  glob: docs/
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/modules/gates.md
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
 evidence: []
 attachments: []
 acceptance: []
@@ -4198,8 +4740,8 @@ scope:
 - src/frob/tickets/
 - src/frob/app/ticket_runner.py
 - src/frob/__main__.py
-- docs/
 - tests/unit/test_ticket_store.py
+- docs/modules/tickets.md
 scope_changes:
 - op: remove
   glob: tests/**
@@ -4211,6 +4753,16 @@ scope_changes:
   reason: T-0454 tickets work maps to tests/unit/test_ticket_store.py
   actor: logan
   at: '2026-07-20'
+- op: remove
+  glob: docs/
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
 evidence: []
 attachments: []
 acceptance: []
@@ -4344,8 +4896,8 @@ scope:
 - src/frob/tickets/
 - src/frob/app/ticket_runner.py
 - src/frob/__main__.py
-- docs/
 - tests/unit/test_ticket_store.py
+- docs/modules/tickets.md
 scope_changes:
 - op: remove
   glob: tests/**
@@ -4357,6 +4909,16 @@ scope_changes:
   reason: T-0456 tickets work maps to tests/unit/test_ticket_store.py
   actor: logan
   at: '2026-07-20'
+- op: remove
+  glob: docs/
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
 evidence: []
 attachments: []
 acceptance: []
@@ -4506,9 +5068,34 @@ created: '2026-07-20'
 blocked_by: []
 parent: null
 scope:
-- src/frob/
-- src/frob/app/
 - tests/test_app.py
+- src/frob/app/ack_runner.py
+- src/frob/app/arch_runner.py
+- src/frob/app/bind_runner.py
+- src/frob/app/check_runner.py
+- src/frob/app/clean_runner.py
+- src/frob/app/cycle_runner.py
+- src/frob/app/deploy_runner.py
+- src/frob/app/docs_runner.py
+- src/frob/app/doctor_runner.py
+- src/frob/app/dup_runner.py
+- src/frob/app/exports_runner.py
+- src/frob/app/gitlog_runner.py
+- src/frob/app/graph_runner.py
+- src/frob/app/map_runner.py
+- src/frob/app/mutate_runner.py
+- src/frob/app/outline_runner.py
+- src/frob/app/parse_runner.py
+- src/frob/app/perf_runner.py
+- src/frob/app/release_runner.py
+- src/frob/app/scaffold_runner.py
+- src/frob/app/serve_runner.py
+- src/frob/app/stats_runner.py
+- src/frob/app/sys_runner.py
+- src/frob/app/test_runner.py
+- src/frob/app/ticket_runner.py
+- src/frob/app/vet_runner.py
+- src/frob/app/xref_runner.py
 scope_changes:
 - op: remove
   glob: tests/**
@@ -4520,6 +5107,151 @@ scope_changes:
   reason: T-0461 app work maps to tests/test_app.py
   actor: logan
   at: '2026-07-20'
+- op: remove
+  glob: src/frob/
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: remove
+  glob: src/frob/app/
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/ack_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/arch_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/bind_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/check_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/clean_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/cycle_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/deploy_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/docs_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/doctor_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/dup_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/exports_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/gitlog_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/graph_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/map_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/mutate_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/outline_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/parse_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/perf_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/release_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/scaffold_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/serve_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/stats_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/sys_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/test_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/ticket_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/vet_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/xref_runner.py
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
 evidence: []
 attachments: []
 acceptance: []
@@ -4541,8 +5273,8 @@ parent: null
 scope:
 - src/frob/gates/invariants.py
 - src/frob/gates/
-- docs/
 - tests/test_gates.py
+- docs/modules/gates.md
 scope_changes:
 - op: remove
   glob: tests/**
@@ -4554,6 +5286,16 @@ scope_changes:
   reason: T-0462 gates work maps to tests/test_gates.py
   actor: logan
   at: '2026-07-20'
+- op: remove
+  glob: docs/
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/modules/gates.md
+  reason: narrow over-broad scope to concrete touch set (doable warning hygiene)
+  actor: logan
+  at: '2026-07-21'
 evidence: []
 attachments: []
 acceptance: []
@@ -5029,3 +5771,30 @@ acceptance: []
 threat: null
 ```
 make coverage runs the whole suite under coverage on every change, so the stale-stamp gate (TEST006) forces a full re-run for a one-line edit. Explore: (a) daemon-side background coverage refresh on file-change, (b) per-file/touched-set incremental coverage merged into the stamp, (c) caching unchanged modules' coverage. Goal: TEST005/TEST006 feedback in seconds, not a full suite.
+
+<!-- ticket:T-0485 -->
+```yaml
+id: T-0485
+title: ticket scope --add refuses narrowing inside a ticket's own pre-existing broad
+  overlap (ScopeLeaseConflict)
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-21'
+blocked_by: []
+parent: null
+scope:
+- src/frob/tickets/__init__.py
+- tests/test_tickets_scope_mutation.py
+- docs/modules/tickets.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- given a queued ticket whose existing scope glob already overlaps an in-progress
+  ticket's lease, when frob ticket scope --add adds a strict subset of that overlap
+  (net overlap shrinks or stays equal), then the change is accepted instead of failing
+  ScopeLeaseConflict
+threat: null
+```
+Found during the 2026-07-21 doable-warning scope-narrowing sweep. frob ticket scope --add checks every added glob against in-progress leases, but queued tickets ALREADY hold broad globs that overlap those same leases (grandfathered at creation). Narrowing 'src/frob/strata/**' down to 'src/frob/strata/_host.py' is refused (ScopeLeaseConflict, e.g. vs T-0263's strata lease) even though the change strictly SHRINKS the overlap. Because scope changes are atomic, the whole narrowing fails and the chronically-over-broad glob (and its doable WARNING) cannot be cleared until the leaseholder lands. Fix: when validating --add, subtract the ticket's own existing scope coverage first -- an add that is a subset of what the ticket already covers can never create NEW contention and must be allowed. Related interplay: ScopeRemoveOrphansEvidence forces a covering --add for recorded evidence, so a ticket whose evidence lies under another ticket's leased tree (T-0160: tests/unit/strata/test_native_staleness.py under T-0263's lease) is fully wedged: cannot remove tests/** without an add, cannot add the evidence path. Tickets left un-narrowed by the sweep, to re-narrow once T-0263/T-0423/T-0460 land: T-0235 T-0261 T-0339 T-0341 T-0383 T-0384 T-0392 T-0393 T-0394 T-0395 T-0401 T-0410 T-0428 T-0439 T-0440; partial leftovers: T-0160 (tests/** stays), T-0461 (add src/frob/render/ post-T-0460).
