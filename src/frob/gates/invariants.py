@@ -26,6 +26,39 @@ _log = get_logger(__name__)
 _ID_RE = re.compile(r"^INV-\d{3}$")
 _FRONTMATTER_RE = re.compile(r"^---\n(.*?)\n---\n?(.*)$", re.DOTALL)
 
+# frob:doc docs/modules/gates.md#invariants
+# frob:ticket T-0462
+# The exclusivity vocabulary INV003 (frob.gates.__init__) treats as a
+# normative claim that needs a bound invariant: "only X", "sole"/"solely",
+# "exclusively", "nothing else", "never...except", and "at most/exactly
+# one" all assert a closed set or a single permitted case -- exactly the
+# kind of claim that silently rots when the code it describes grows a
+# second case and nothing catches it. Word-boundary patterns so "lonely"
+# doesn't false-positive on "only", and `never...except` allows an
+# unbounded span between the two words since real prose interleaves
+# qualifiers ("never reads the file, except under --force").
+EXCLUSIVITY_CLAIM_PATTERNS: tuple[re.Pattern[str], ...] = (
+    re.compile(r"\bonly\b"),
+    re.compile(r"\bsole(?:ly)?\b"),
+    re.compile(r"\bexclusively\b"),
+    re.compile(r"\bnothing else\b"),
+    re.compile(r"\bnever\b.{0,120}?\bexcept\b", re.DOTALL),
+    re.compile(r"\bat (?:most|exactly) one\b"),
+)
+
+
+# frob:doc docs/modules/gates.md#invariants
+# frob:ticket T-0462
+# frob:tests tests/test_gates.py::TestInv003Gate.test_exclusivity_claim_without_marker_warns kind="unit"  # noqa: E501
+def find_exclusivity_claims(text: str) -> tuple[str, ...]:
+    """Every distinct exclusivity phrase (`EXCLUSIVITY_CLAIM_PATTERNS`)
+    matched anywhere in `text`, for INV003's normative-claim scan."""
+    return tuple(
+        pattern.pattern
+        for pattern in EXCLUSIVITY_CLAIM_PATTERNS
+        if pattern.search(text) is not None
+    )
+
 
 # frob:doc docs/modules/gates.md#invariants
 class _Criticality(StrEnum):
@@ -171,4 +204,11 @@ def load_invariants(root: Path) -> Result[tuple[Invariant, ...], InvariantError]
     return Ok(tuple(invariants.values()))
 
 
-__all__ = ["_Criticality", "Invariant", "InvariantError", "load_invariants"]
+__all__ = [
+    "EXCLUSIVITY_CLAIM_PATTERNS",
+    "Invariant",
+    "InvariantError",
+    "_Criticality",
+    "find_exclusivity_claims",
+    "load_invariants",
+]

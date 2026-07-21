@@ -27,6 +27,7 @@ declaration).
 | PRE001 | pre-work | ticket moved to in-progress without a recorded pre-work sweep |
 | INV001 | invariant | invariant has no evidence (test or policy rule) |
 | INV002 | invariant | invariant has no code anchor (`frob:invariant`) |
+| INV003 | invariant | (warn) a `docs/**.md` file makes an exclusivity/normative claim (`only`, `sole`/`solely`, `exclusively`, `nothing else`, `never...except`, `at most/exactly one`) with no `<!-- frob:invariant INV-### -->` marker in the file naming a real (loaded) invariant -- see "INV003 (T-0462)" below |
 | DEC001 | decisions | a `frob:decision AD-###` edge points at a record that does not exist (opt-in: a `decisions/` dir must exist) |
 | DEC002 | decisions | an `accepted` decision record has no `frob:decision` code anchor |
 | TEST001 | test | public function/method has no `frob:tests` unit edge |
@@ -703,6 +704,33 @@ INV001/INV002 close the loop: every invariant is anchored in code
 that `frob check` verifies still exists (test collected, rule loaded).
 Security work becomes monotonic: each audit finding lands as an invariant
 plus a policy rule or property test, never a one-off fix.
+
+### INV003 (T-0462)
+
+<!-- frob:describes src/frob/gates/invariants.py::find_exclusivity_claims -->
+<!-- frob:describes src/frob/gates/invariants.py::EXCLUSIVITY_CLAIM_PATTERNS -->
+<!-- frob:describes src/frob/gates/__init__.py::inv003_gate -->
+
+INV001/INV002 close the loop for invariants that already got written down
+in `invariants/INV-###.md`. INV003 catches the earlier failure mode: prose
+in `docs/**.md` asserting an exclusivity/normative claim -- "only",
+"sole"/"solely", "exclusively", "nothing else", "never...except",
+"at most/exactly one" (`find_exclusivity_claims`,
+`EXCLUSIVITY_CLAIM_PATTERNS`) -- with nothing tracking whether it still
+holds. A doc file making such a claim needs a
+`<!-- frob:invariant INV-### -->` marker somewhere in the same file
+naming a real, loaded invariant; a marker naming an unknown id does not
+count (`inv003_gate`).
+
+INV003 is `Severity.WARN`, not `ERROR` like INV001/INV002: the
+vocabulary includes bare "only", common enough in ordinary prose that a
+first run across this repo's own `docs/` surfaced roughly 90 findings --
+promoting straight to ERROR would force either a mass reword/binding
+pass unrelated to whatever change triggered `frob check`, or markdown-
+side `frob:waive` support that does not exist yet (`_match_waiver` keys
+off graph edges; doc prose carries none today). Hardening specific docs
+to ERROR, or building markdown waiver support, is tracked as follow-up
+work rather than forced through in one pass.
 
 ## Policy rules (`frob.toml`, `[policy]`)
 

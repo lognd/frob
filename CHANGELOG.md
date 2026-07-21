@@ -17,6 +17,23 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.44.0] - unreleased
+
+Public-API surface change since 0.43.0 (mechanical semver via REL001): an
+additive (minor) bump -- new invariant-language lint.
+
+- T-0462: INV003, a new (warn-severity) invariant gate rule: a
+  `docs/**.md` file making an exclusivity/normative claim ("only",
+  "sole"/"solely", "exclusively", "nothing else", "never...except", "at
+  most/exactly one") needs a `<!-- frob:invariant INV-### -->` marker in
+  the same file naming a real, loaded invariant. New public
+  `frob.gates.invariants.find_exclusivity_claims` /
+  `EXCLUSIVITY_CLAIM_PATTERNS` (the exclusivity-word corpus) and
+  `frob.gates.inv003_gate`. WARN, not ERROR: the vocabulary's bare "only"
+  surfaces ~90 findings across this repo's own pre-existing docs;
+  hardening specific docs to ERROR (or building markdown-side
+  `frob:waive` support) is follow-up work, not done in this pass.
+
 ## [0.43.0] - unreleased
 
 Public-API surface change since 0.42.0 (mechanical semver via REL001): an

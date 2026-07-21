@@ -22,6 +22,7 @@ from frob.gates import (
     coverage_gate,
     delta_violations,
     drift_gate,
+    inv003_gate,
     invariant_gate,
     is_baseline_stale,
     known_gate_rule_ids,
@@ -1538,6 +1539,56 @@ class TestInvariantGate:
         tests = CollectedTests(node_ids=frozenset())
         violations = invariant_gate((inv,), snap, tests, frozenset({"POL-thing"}))
         assert not any(v.rule == "INV001" for v in violations)
+
+
+class TestInv003Gate:
+    # frob:tests src/frob/gates/__init__.py::inv003_gate
+    def test_exclusivity_claim_without_marker_warns(self, tmp_path: Path) -> None:
+        _write(
+            tmp_path,
+            "docs/x.md",
+            "# X\n\nThe only writer of this file is the daemon.\n",
+        )
+        violations = inv003_gate(tmp_path, ())
+        assert len(violations) == 1
+        assert violations[0].rule == "INV003"
+        assert violations[0].severity == Severity.WARN
+        assert violations[0].file == "docs/x.md"
+
+    def test_exclusivity_claim_with_bound_known_invariant_is_silent(
+        self, tmp_path: Path
+    ) -> None:
+        from frob.gates.invariants import Invariant
+
+        _write(
+            tmp_path,
+            "docs/x.md",
+            "# X\n\n<!-- frob:invariant INV-001 -->\n"
+            "The only writer of this file is the daemon.\n",
+        )
+        inv = Invariant(
+            id="INV-001", statement="x", criticality=_Criticality.HIGH, evidence=()
+        )
+        violations = inv003_gate(tmp_path, (inv,))
+        assert violations == ()
+
+    def test_marker_naming_unknown_invariant_still_warns(self, tmp_path: Path) -> None:
+        _write(
+            tmp_path,
+            "docs/x.md",
+            "# X\n\n<!-- frob:invariant INV-999 -->\n"
+            "The only writer of this file is the daemon.\n",
+        )
+        violations = inv003_gate(tmp_path, ())
+        assert len(violations) == 1
+
+    def test_no_exclusivity_language_is_silent(self, tmp_path: Path) -> None:
+        _write(tmp_path, "docs/x.md", "# X\n\nThe daemon writes this file.\n")
+        violations = inv003_gate(tmp_path, ())
+        assert violations == ()
+
+    def test_missing_docs_dir_is_silent(self, tmp_path: Path) -> None:
+        assert inv003_gate(tmp_path, ()) == ()
 
 
 class TestInvariantLoad:

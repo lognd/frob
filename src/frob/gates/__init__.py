@@ -37,7 +37,7 @@ from typani import Err, Ok
 from typani.option import Nothing, Option, Some
 from typani.result import Result
 
-from frob.excludes import is_excluded, is_test_file, load_exclude_globs
+from frob.excludes import is_excluded, is_test_file, iter_files, load_exclude_globs
 from frob.gates._arch import arch_gate
 from frob.gates._baseline import (
     delta_violations,
@@ -69,7 +69,12 @@ from frob.gates._registry_exhaustiveness import registry_gate
 from frob.gates._secrets import secrets_gate
 from frob.gates._walk_lint import walk_lint_gate
 from frob.gates.decisions import DecisionError
-from frob.gates.invariants import Invariant, InvariantError, load_invariants
+from frob.gates.invariants import (
+    Invariant,
+    InvariantError,
+    find_exclusivity_claims,
+    load_invariants,
+)
 from frob.gitio import Diff, Hunk, current_branch, run_argv, working_diff
 from frob.graph import (
     Edge,
@@ -700,6 +705,7 @@ _KNOWN_GATE_RULES = frozenset(
         "PRE001",
         "INV001",
         "INV002",
+        "INV003",
         "TEST001",
         "TEST002",
         "TEST003",
@@ -2406,6 +2412,86 @@ def invariant_gate(
         if inv.id not in anchors:
             _log.debug("INV002: %s has no code anchor", inv.id)
             violations.append(_inv002(inv))
+    return tuple(violations)
+
+
+# frob:doc docs/modules/gates.md#invariants
+# frob:ticket T-0462
+_DOC_INVARIANT_MARKER_RE = re.compile(r"<!--\s*frob:invariant\s+(INV-\d{3})\s*-->")
+
+
+# frob:doc docs/modules/gates.md#invariants
+# frob:ticket T-0462
+def _inv003_doc_violations(
+    root: Path, path: Path, known_ids: frozenset[str]
+) -> tuple[Violation, ...]:
+    """INV003 findings for one doc file: an exclusivity claim
+    (`frob.gates.invariants.find_exclusivity_claims`) with no
+    `<!-- frob:invariant INV-### -->` marker in the same file naming a
+    REAL (loaded) invariant id.
+
+    File-granularity, not per-section: a doc large enough to need
+    section-level binding should already be split, and file granularity
+    is enough to catch the actual failure mode this ticket names --
+    prose asserting exclusivity with nothing tracking whether it still
+    holds.
+    """
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        _log.warning("INV003: could not read %s: %s", path, exc)
+        return ()
+    claims = find_exclusivity_claims(text)
+    if not claims:
+        return ()
+    bound_ids = set(_DOC_INVARIANT_MARKER_RE.findall(text))
+    if bound_ids & known_ids:
+        return ()
+    rel = path.relative_to(root).as_posix()
+    return (
+        Violation(
+            rule="INV003",
+            severity=Severity.WARN,
+            file=rel,
+            line=0,
+            message=(
+                f"INV003: {rel} makes an exclusivity/normative claim "
+                f"({', '.join(sorted(claims))}) with no "
+                f"`<!-- frob:invariant INV-### -->` marker in the file "
+                f"naming a real invariant -- bind an invariant that "
+                f"covers the claim, or reword to drop the exclusivity "
+                f"language if it isn't actually enforced"
+            ),
+        ),
+    )
+
+
+# frob:doc docs/modules/gates.md#public-api
+# frob:ticket T-0462
+def inv003_gate(root: Path, invariants: tuple[Invariant, ...]) -> tuple[Violation, ...]:
+    """INV003: every docs/**.md exclusivity claim needs a bound invariant.
+
+    Runs over `docs/` only (not the whole repo) -- normative claims worth
+    gating live in prose documentation, not generated/vendored trees.
+
+    WARN severity (does not fail `frob check`), not ERROR like INV001/
+    INV002: the exclusivity vocabulary (T-0462) includes bare "only",
+    common enough in ordinary prose that a repo-wide first run surfaces
+    ~90 findings across docs/ written before this rule existed --
+    promoting straight to ERROR would either force a mass reword/binding
+    pass unrelated to any single change, or require markdown-side
+    `frob:waive` support (not yet wired: `_match_waiver` keys off graph
+    edges, and doc prose carries no such edges today). WARN surfaces the
+    signal now; hardening specific docs to ERROR (or building markdown
+    waiver support) is follow-up work, not silently dropped.
+    """
+    docs_dir = root / "docs"
+    if not docs_dir.is_dir():
+        return ()
+    known_ids = frozenset(inv.id for inv in invariants)
+    violations: list[Violation] = []
+    for path in iter_files(docs_dir, suffix=".md"):
+        violations.extend(_inv003_doc_violations(root, path, known_ids))
     return tuple(violations)
 
 
@@ -4664,8 +4750,9 @@ def _build_jobs(
         "coverage": lambda: coverage_gate(
             st.repo_root, st.snapshot, st.queue, st.diff, st.tests
         ),
-        "invariant": lambda: invariant_gate(
-            st.invariants, st.snapshot, st.tests, st.rule_ids
+        "invariant": lambda: (
+            *invariant_gate(st.invariants, st.snapshot, st.tests, st.rule_ids),
+            *inv003_gate(st.repo_root, st.invariants),
         ),
         "test": lambda: test_gate(
             st.snapshot, st.systems, st.coverage, st.tests, st.test_policy
@@ -4990,6 +5077,7 @@ __all__ = [
     "coverage_gate",
     "delta_violations",
     "drift_gate",
+    "inv003_gate",
     "invariant_gate",
     "is_baseline_stale",
     "load_baseline",

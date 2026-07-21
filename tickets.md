@@ -6140,7 +6140,7 @@ id: T-0462
 title: 'invariant-language lint: add exclusivity words (only, sole/solely, exclusively,
   nothing else, never...except, at most/exactly one) to the INV001/INV002 normative-claim
   corpus so an ''only X'' claim requires a bound invariant'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -6151,6 +6151,10 @@ scope:
 - src/frob/gates/
 - docs/
 - tests/test_gates.py
+- pyproject.toml
+- CHANGELOG.md
+- uv.lock
+- .frob-release.json
 scope_changes:
 - op: remove
   glob: tests/**
@@ -6162,11 +6166,83 @@ scope_changes:
   reason: T-0462 gates work maps to tests/test_gates.py
   actor: logan
   at: '2026-07-20'
-evidence: []
+- op: add
+  glob: pyproject.toml
+  reason: REL001 bump required by adding public API (inv003_gate, find_exclusivity_claims,
+    EXCLUSIVITY_CLAIM_PATTERNS)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: CHANGELOG.md
+  reason: REL001 bump required by adding public API (inv003_gate, find_exclusivity_claims,
+    EXCLUSIVITY_CLAIM_PATTERNS)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: REL001 bump required by adding public API (inv003_gate, find_exclusivity_claims,
+    EXCLUSIVITY_CLAIM_PATTERNS)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: REL001 bump required by adding public API (inv003_gate, find_exclusivity_claims,
+    EXCLUSIVITY_CLAIM_PATTERNS)
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_gates.py::TestInv003Gate::test_exclusivity_claim_without_marker_warns
+- tests/test_gates.py::TestInv003Gate::test_exclusivity_claim_with_bound_known_invariant_is_silent
+- tests/test_gates.py::TestInv003Gate::test_marker_naming_unknown_invariant_still_warns
+- tests/test_gates.py::TestInv003Gate::test_no_exclusivity_language_is_silent
+- tests/test_gates.py::TestInv003Gate::test_missing_docs_dir_is_silent
 attachments: []
 acceptance: []
 threat: null
 ```
+## Done report
+
+New INV003 gate rule (WARN severity): a docs/**.md file making an
+exclusivity/normative claim -- "only", "sole"/"solely", "exclusively",
+"nothing else", "never...except", "at most/exactly one"
+(`frob.gates.invariants.EXCLUSIVITY_CLAIM_PATTERNS` /
+`find_exclusivity_claims`, the exclusivity-word corpus this ticket names)
+-- with no `<!-- frob:invariant INV-### -->` marker in the same file
+naming a real, loaded invariant (`frob.gates.inv003_gate`).
+
+Deliberately WARN, not ERROR like INV001/INV002: bare "only" is common
+enough in existing prose that a first repo-wide run surfaces 88
+findings across docs/ written before this rule existed. Promoting
+straight to ERROR would force either a mass reword/binding pass
+unrelated to this ticket's own scope, or markdown-side `frob:waive`
+support that does not exist yet (`_match_waiver` keys off graph edges;
+doc prose carries none today). Disclosed as a design tradeoff in
+docs/modules/gates.md's new "INV003 (T-0462)" section and in
+inv003_gate's own docstring; hardening to ERROR (or building markdown
+waiver support) is explicitly named as follow-up, not silently dropped.
+No existing doc needed rewording/binding to stay green because WARN
+does not fail `frob check` -- confirmed via a full `uv run frob check`:
+1 pre-existing unrelated error (docs/commands/sys.md DOC003, present
+before this ticket started, outside its scope), 0 new errors.
+
+REL001: new public API (frob.gates.inv003_gate,
+frob.gates.invariants.find_exclusivity_claims,
+frob.gates.invariants.EXCLUSIVITY_CLAIM_PATTERNS) bumped pyproject.toml
+0.43.0 -> 0.44.0, CHANGELOG.md entry added, uv lock refreshed, `frob
+release stamp` run. Scope extended (frob ticket scope --add) to cover
+pyproject.toml/CHANGELOG.md/uv.lock/.frob-release.json for this reason.
+
+ruff check/format and ty both clean under `uv run` (project-pinned) and
+bare PATH `ruff`/`ruff format --check` (playbook section 12).
+
+### Changed
+```
+ tickets.md | 64 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 62 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
 
 <!-- ticket:T-0465 -->
 ```yaml
