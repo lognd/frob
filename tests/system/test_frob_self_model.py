@@ -113,8 +113,14 @@ class TestFrobSelfModel:
         # implemented), un-folding `src/frob/tickets/**`'s code off `core`
         # onto `tickets_ledger`'s own `code`/`may` -- its `may "exec"`
         # drags in one more `weakness:CWE-78:tickets_ledger` discharge
-        # claim = 13.
-        assert len(_model.claims) == 13
+        # claim = 13. T-0401 (G3): `eval` joined to CWE-94 and CWE-78 in
+        # CWE_CATALOG, dragging in CWE-94 discharges for every
+        # eval-declaring node (cli/graphlang/stratamod/core/
+        # tickets_ledger) plus fresh CWE-78 discharges for the
+        # eval-only nodes (cli/graphlang/stratamod) = 21. T-0443: `gates`
+        # gained `may "eval"` (importlib of the [[docblocks.commands]]
+        # parser source), dragging in its own CWE-94 + CWE-78 pair = 23.
+        assert len(_model.claims) == 23
 
     # frob:tests tests/system/test_frob_self_model.py::TestFrobSelfModel.test_every_claim_proves kind="e2e"
     def test_every_claim_proves(self, _model) -> None:
@@ -137,7 +143,7 @@ class TestFrobSelfModel:
         outcome = evaluate_claims(_model)
         assert outcome.is_ok, f"evaluate_claims failed: {outcome.err}"
         claim_results = outcome.danger_ok
-        assert len(claim_results) == 13
+        assert len(claim_results) == 23
         proved_ids = {
             "c_no_registry_ledger",
             "c_cache_derivable",
@@ -159,6 +165,20 @@ class TestFrobSelfModel:
             "weakness:CWE-639:vet",
             "weakness:CWE-918:vet",
             "weakness:CWE-502:vet",
+            # T-0401 (G3): `eval` joins CWE-94 (and CWE-78 for the
+            # eval-only nodes) in CWE_CATALOG -- see design/frob.strata's
+            # discharge comments for the per-node reasoning.
+            "weakness:CWE-94:cli",
+            "weakness:CWE-94:graphlang",
+            "weakness:CWE-94:stratamod",
+            "weakness:CWE-94:core",
+            "weakness:CWE-94:tickets_ledger",
+            "weakness:CWE-78:cli",
+            "weakness:CWE-78:graphlang",
+            "weakness:CWE-78:stratamod",
+            # T-0443: `gates` importlib parser-source eval capability.
+            "weakness:CWE-94:gates",
+            "weakness:CWE-78:gates",
         }
         seen_ids: set[str] = set()
         for claim_result in claim_results:
