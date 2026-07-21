@@ -28,6 +28,7 @@ from frob.check._memo import (
     run_memo_scope,
     run_memo_stats,
 )
+from frob.dup import find_duplicates
 from frob.graph import build_graph
 
 
@@ -241,3 +242,43 @@ def test_analyze_project_second_call_is_memo_hit(tmp_path: Path) -> None:
         hits, misses = run_memo_stats()
         assert hits == 1
         assert misses == 1
+
+
+def test_find_duplicates_second_call_is_memo_hit(tmp_path: Path) -> None:
+    """`find_duplicates` (T-0491, extending the T-0423 precedent) called
+    twice with the same (root, min_lines) inside one scope returns the
+    identical object the second time -- a memo hit, not a second scan."""
+    _write_py_file(tmp_path)
+
+    with run_memo_scope():
+        first = find_duplicates(tmp_path)
+        second = find_duplicates(tmp_path)
+
+        assert first is second
+        hits, misses = run_memo_stats()
+        assert hits == 1
+        assert misses == 1
+
+
+def test_find_duplicates_no_cross_run_leak(tmp_path: Path) -> None:
+    """A memo hit inside one `run_memo_scope` must never survive into a
+    later, independent scope -- each `frob check` invocation gets a fresh
+    scan, never a decade-stale result from an earlier run."""
+    _write_py_file(tmp_path)
+
+    with run_memo_scope():
+        first = find_duplicates(tmp_path)
+        hits, misses = run_memo_stats()
+        assert hits == 0
+        assert misses == 1
+
+    with run_memo_scope():
+        second = find_duplicates(tmp_path)
+        hits, misses = run_memo_stats()
+        assert hits == 0
+        assert misses == 1
+
+    # Equal content, but the second scope recomputed from scratch rather
+    # than reusing the first scope's cached object.
+    assert first == second
+    assert first is not second

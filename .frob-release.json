@@ -240,7 +240,7 @@
     "src/frob/dup/_legacy.py::DupResult.as_json": "48b9248523b087dc9e7b32cb2edf9190690bf1624ca640ac8c00b6a7182c4266",
     "src/frob/dup/_legacy.py::DupResult.as_text": "172dd4d365ee80aaeb22db8a426cfe5fe2ad5b39de7e8b75834a087a19975f51",
     "src/frob/dup/_legacy.py::DupResult.total_clones": "9cb437d6d3b64007324f725cf57ab978848e41bb73a7e62f2416767e7d3e6f7c",
-    "src/frob/dup/_legacy.py::find_duplicates": "1076e3590ebc728eb20ecc1cca28f598a8e53434f42d9f9beee60c38603644d7",
+    "src/frob/dup/_legacy.py::find_duplicates": "18620b183f5b030e6f7647d9bf1892a09b60db97e6c1729b8bf32b30b9cfff6e",
     "src/frob/dup/_models.py::AntiUnifyTemplate": "68af225bf83ebf4e7bfc1cb91187656997e16714f6ecbae353cc2ad93d3e1472",
     "src/frob/dup/_models.py::CloneBinding": "ca29f531102a1f8894b07667e9695755d5f047594d37ecf2e1014eb1a96e9d2b",
     "src/frob/dup/_models.py::CloneMatchGroup": "b6cd1d8aad470993431c39f1f1974868193f9ff72930174951f799a042b3393f",
@@ -1063,5 +1063,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.49.0"
+  "version": "0.50.0"
 }
