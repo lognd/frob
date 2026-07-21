@@ -9025,7 +9025,15 @@ Pre-existing gate failures observed and NOT fixed (out of scope for T-0491):
 Both were present identically before and after this ticket's changes.
 
 ### Changed
-(no changed files detected)
+```
+ .frob-release.json      |  4 +--
+ pyproject.toml          |  2 +-
+ src/frob/dup/_legacy.py | 16 ++++++++-
+ tests/unit/test_memo.py | 41 ++++++++++++++++++++++
+ tickets.md              | 91 +++++++++++++++++++++++++++++++++++++++++++++++--
+ uv.lock                 |  2 +-
+ 6 files changed, 148 insertions(+), 8 deletions(-)
+```
 
 ### Evidence
 - `tests/unit/test_memo.py::test_find_duplicates_second_call_is_memo_hit` (pytest node id, verified passing when recorded)
