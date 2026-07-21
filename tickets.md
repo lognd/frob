@@ -3345,7 +3345,7 @@ found while working T-0240 (same origin ticket text, deliberately split out): T-
 ```yaml
 id: T-0357
 title: 'coordinator land: replay worktree evidence into main .frob db on merge'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-07-20'
