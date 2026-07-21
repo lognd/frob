@@ -33,12 +33,16 @@ across 28k files whose fix was literally a hashset.)
 | PERF004 | `sorted()`/`.sort()` inside a loop over data unchanged by the loop | hoist the sort, or use a sorted container |
 | PERF005 | recursive function (self- or same-file mutual recursion) with no provable termination measure | add `frob:invariant terminates reason="..." measure="..."`, or restructure so termination is provable |
 | PERF006 | tail-recursive function with no proven depth bound (Python has no TCO -- unbounded input depth is a stack-overflow/DoS bug) | rewrite as an explicit loop, or prove a static depth bound |
+| PERF007 | a `frob.toml`-configured expensive call (`[[perf.heavy]]`) invoked from 2+ distinct top-level symbols with no shared-cache decorator on its own definition (T-0413, the PERF META-GAP) | wrap the call target in `memoize_per_run`/`lru_cache`/`cache`, or route every call site through one shared call |
 
 Severity: PERF001-004 are `warn` by default (static size-blindness is real
 -- a 3-element list is fine as a list); promotable per-repo via
 `[gates.severity]` (`PERF001 = "error"`). PERF005/PERF006 are `error` by
 default -- unlike the lexical smells, unreasoned unbounded recursion is a
-control-flow hazard (T-0290), not a size-blind heuristic. Broader
+control-flow hazard (T-0290), not a size-blind heuristic. PERF007 is
+`error` by default and opt-in via config (see below) -- an unconfigured
+project gets zero PERF007 checking, never a false positive from a guess
+at what "expensive" means for it. Broader
 conceptual and mechanical-sympathy background these lexical rules draw
 from -- including which smells are `STATIC` (linter-shaped like the table
 above), `PROFILE`-only, or `ADVISORY` -- lives in
@@ -79,6 +83,58 @@ for arch complexity overrides.
   `frob:invariant terminates reason="..." measure="..."` directive silences
   PERF006 too (a proven depth bound is also a proven termination measure).
 
+## Cross-stage redundant recomputation (PERF007, T-0413 -- the PERF META-GAP)
+
+PERF001-006 all reason about ONE function body at a time -- lexical
+linear-scan smells, or a recursive function's own termination proof. None
+of them can see the class of waste that actually dominated a real `frob
+check` run this repo shipped: the SAME expensive computation
+(`frob.lang._parse`) invoked repeatedly, from DIFFERENT top-level
+functions/stages, on the same kind of input, with no shared cache -- 168s
+of redundant CPU across an entire `frob check` invocation that PERF never
+flagged, because it never looked ACROSS call sites. T-0423's run-scoped
+memoization (`frob.check._memo.memoize_per_run`) fixed the concrete
+incident; PERF007 is the enforcement so a NEW instance of the same class
+(a different expensive function, called from two different stages, again
+uncached) is caught statically instead of waiting for a second profiling
+incident.
+
+Config-driven, generic, project-agnostic (the same posture as
+`frob.gates._docblocks`'s `[[docblocks.commands]]` -- never a hardcoded
+per-project "these are frob's expensive functions" list): `frob.toml`'s
+`[[perf.heavy]]` array names each call target this project considers
+expensive enough to deduplicate:
+
+```toml
+[[perf.heavy]]
+name = "parse_file"
+cached_by = ["memoize_per_run", "lru_cache", "cache"]
+```
+
+`name` is the bare call-target identifier as it appears in a call
+expression's token stream (matching every other PERF rule's token-level,
+not import-resolved, posture). `cached_by` (optional, defaults to
+`memoize_per_run`/`lru_cache`/`cache`) lists decorator names that, found
+immediately above `name`'s own `def`/`fn` in this project's tracked
+sources, mean a shared cache already exists.
+
+Detection (`frob.perf._redundancy.redundant_computation_violations`, pure,
+over the already-parsed token stream -- no re-parsing): every top-level
+`FUNCTION`/`METHOD` symbol's `body_tokens` is scanned for a `<heavy-name>
+(` call-site pattern. If a heavy name is called from 2+ DISTINCT top-level
+symbols (a real cross-call-site repeat -- two calls inside the SAME
+function are that function's own business, not PERF007's concern) and its
+own definition carries none of `cached_by`'s decorator names, every call
+site beyond the first fires PERF007 naming both the redundant site and the
+first one it duplicates. No `[[perf.heavy]]` entries at all means zero
+PERF007 checking -- fail-open, same posture as every DOC004 namespace/
+command source.
+
+Acceptance (T-0413's own wording): a fixture where two functions both call
+an uncached configured target is flagged; a fixture where only one
+function calls it (or the target is `@memoize_per_run`-decorated) is not
+-- see `tests/test_perf.py::TestPerf007RedundantComputation`.
+
 ## The killer join: hot AND quadratic
 
 `frob perf heat --smells` intersects the two signals: symbols ranked by
@@ -98,6 +154,7 @@ goes". Ranked output, remedy per row.
 <!-- frob:describes src/frob/perf/_heat.py::join_smells -->
 <!-- frob:describes src/frob/perf/_heat.py::render_bar -->
 <!-- frob:describes src/frob/perf/_recursion.py::recursion_rules -->
+<!-- frob:describes src/frob/perf/_redundancy.py::redundant_computation_violations -->
 
 ```python
 # frob/perf/__init__.py
@@ -107,11 +164,16 @@ def load_artifact(root: Path, ref: str | None = None) -> Result[ProfileArtifact,
 def heat(artifact: ProfileArtifact, snapshot: GraphSnapshot) -> HeatReport
     # Pure join of pstats rows onto symbol spans.
 def perf_rules(snapshot: GraphSnapshot, files: Sequence[ParsedFile]) -> tuple[Violation, ...]
-    # PERF001..PERF006; pure; consumed by the policy gate stage.
+    # PERF001..PERF007; pure; consumed by the policy gate stage.
 
 # frob/perf/_recursion.py
 def recursion_rules(snapshot: GraphSnapshot, files: Sequence[ParsedFile]) -> tuple[Violation, ...]
     # PERF005 (unproven termination) + PERF006 (unbounded tail recursion).
+
+# frob/perf/_redundancy.py
+def redundant_computation_violations(root: Path, files: Sequence[ParsedFile]) -> tuple[Violation, ...]
+    # PERF007: a frob.toml [[perf.heavy]]-configured call invoked from 2+
+    # distinct top-level symbols with no shared cache.
 
 # frob/perf/_heat.py
 def join_smells(report: HeatReport, violations_by_ref: dict[str, tuple[str, ...]]) -> HeatReport

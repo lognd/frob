@@ -17,9 +17,9 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
-## [0.41.0] - unreleased
+## [0.42.0] - unreleased
 
-Public-API surface change since 0.40.0 (mechanical semver via REL001): an
+Public-API surface change since 0.41.0 (mechanical semver via REL001): an
 additive (minor) bump -- new `frob.tickets._reconcile` module and `frob
 ticket reconcile` CLI command.
 
@@ -33,6 +33,13 @@ ticket reconcile` CLI command.
   `--remove-orphans`, a strictly more destructive opt-in gated separately
   from `--apply`). New `frob ticket reconcile [--apply] [--remove-orphans]`
   CLI command.
+
+## [0.41.0] - unreleased
+
+Public-API surface change since 0.40.0 (mechanical semver via REL001):
+additive minor bump -- DOC004 console/bash command-drift tier driven by
+[[docblocks.commands]] (T-0443) and PERF007 cross-stage redundant-
+recomputation detection in frob.perf._redundancy (T-0413).
 
 ## [0.40.0] - unreleased
 

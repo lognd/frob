@@ -38,6 +38,7 @@ from frob.gates import (
 from frob.gates import (
     test_gate as run_test_gate,
 )
+from frob.gates._docblocks import doc004_gate
 from frob.gates.invariants import InvariantError, _Criticality, load_invariants
 from frob.gitio import Diff, Hunk, working_diff
 from frob.graph import build_graph
@@ -4130,3 +4131,106 @@ class TestGateOrderSetEquality:
         assert len(_CANONICAL_GATE_ORDER) == len(set(_CANONICAL_GATE_ORDER)), (
             "_CANONICAL_GATE_ORDER contains a duplicate gate name"
         )
+
+
+class TestDoc004ConsoleCommandDrift:
+    """T-0443: DOC004's console/bash `<prog> <subcommand>` tier is driven
+    entirely by `frob.toml`'s `[[docblocks.commands]]` array -- `prog` plus
+    a `module:callable` dotted path to an `argparse.ArgumentParser` factory
+    this gate imports and walks at check time. No frob-specific subcommand
+    list is hardcoded anywhere in `frob.gates._docblocks`; these tests use
+    frob's OWN real CLI factory (`frob.__main__:_build_parser`) as the
+    configured source, proving the tier derives from the live registry
+    rather than a second, hand-maintained copy of it."""
+
+    _CONFIG = (
+        '[[docblocks.commands]]\nprog = "frob"\n'
+        'parser = "frob.__main__:_build_parser"\n'
+    )
+
+    def test_nonexistent_subcommand_is_stale(self, tmp_path: Path) -> None:
+        _git_init(tmp_path)
+        _write(tmp_path, "frob.toml", self._CONFIG)
+        _write(
+            tmp_path,
+            "docs/guide.md",
+            "```console\n$ frob nonexistent-subcommand --flag\n```\n",
+        )
+
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        snapshot = _snapshot(tmp_path)
+        violations = doc004_gate(tmp_path, snapshot)
+
+        stale = _by_rule(violations, "DOC004")
+        assert stale
+        assert any(
+            v.severity == Severity.ERROR and "nonexistent-subcommand" in v.message
+            for v in stale
+        )
+
+    def test_real_subcommand_anchored_passes(self, tmp_path: Path) -> None:
+        _git_init(tmp_path)
+        _write(tmp_path, "frob.toml", self._CONFIG)
+        _write(
+            tmp_path,
+            "docs/guide.md",
+            "<!-- frob:doc docs/guide.md -->\n\n"
+            "```console\n$ frob check --delta\n```\n",
+        )
+
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        snapshot = _snapshot(tmp_path)
+        violations = doc004_gate(tmp_path, snapshot)
+
+        assert all(v.severity != Severity.ERROR for v in _by_rule(violations, "DOC004"))
+
+    def test_real_subcommand_unanchored_warns_unbound(self, tmp_path: Path) -> None:
+        _git_init(tmp_path)
+        _write(tmp_path, "frob.toml", self._CONFIG)
+        _write(
+            tmp_path,
+            "docs/guide.md",
+            "```console\n$ frob check --delta\n```\n",
+        )
+
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        snapshot = _snapshot(tmp_path)
+        violations = doc004_gate(tmp_path, snapshot)
+
+        warned = _by_rule(violations, "DOC004")
+        assert warned
+        assert all(v.severity == Severity.WARN for v in warned)
+
+    def test_waive_suppresses_console_stale(self, tmp_path: Path) -> None:
+        _git_init(tmp_path)
+        _write(tmp_path, "frob.toml", self._CONFIG)
+        _write(
+            tmp_path,
+            "docs/guide.md",
+            '<!-- frob:waive DOC004 reason="illustrative, not real" -->\n\n'
+            "```console\n$ frob nonexistent-subcommand\n```\n",
+        )
+
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        snapshot = _snapshot(tmp_path)
+        violations = doc004_gate(tmp_path, snapshot)
+
+        assert _by_rule(violations, "DOC004") == []
+
+    def test_no_config_means_no_console_checking(self, tmp_path: Path) -> None:
+        """No `[[docblocks.commands]]` entries at all -- fail-open, same
+        posture as every other namespace source in this module: a project
+        that has not opted in gets zero console/bash checking, never a
+        crash on a plain shell example."""
+        _git_init(tmp_path)
+        _write(
+            tmp_path,
+            "docs/guide.md",
+            "```console\n$ frob nonexistent-subcommand\n```\n",
+        )
+
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        snapshot = _snapshot(tmp_path)
+        violations = doc004_gate(tmp_path, snapshot)
+
+        assert _by_rule(violations, "DOC004") == []

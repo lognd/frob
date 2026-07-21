@@ -4366,7 +4366,7 @@ DEBT<->TODO COHERENCE (user, 2026-07-20): frob:debt and frob:todo must work toge
 id: T-0413
 title: 'perf META-GAP: PERF gate is blind to cross-stage redundant recomputation (frob
   did not detect its own 168s parse waste)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -4375,13 +4375,107 @@ parent: T-0410
 scope:
 - src/frob/perf/
 - src/frob/gates/
-scope_changes: []
-evidence: []
+- docs/modules/perf.md
+- tests/test_perf.py
+scope_changes:
+- op: add
+  glob: docs/modules/perf.md
+  reason: T-0413 requires a frob:doc anchor for the new PERF007 public symbol (COV001)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_perf.py
+  reason: T-0413 PERF007 acceptance tests live in tests/test_perf.py (dispatch-declared
+    file)
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_perf.py::TestPerf007RedundantComputation::test_two_stages_calling_the_same_uncached_parse_is_flagged
+- tests/test_perf.py::TestPerf007RedundantComputation::test_single_shared_call_site_is_not_flagged
+- tests/test_perf.py::TestPerf007RedundantComputation::test_cached_definition_suppresses_the_warning
+- tests/test_perf.py::TestPerf007RedundantComputation::test_no_config_means_no_perf007_checking
 attachments: []
 acceptance: []
 threat: null
 ```
 THE META-GAP (per the standing rule: frobs own perf stupidity is a frob detection gap). PERF001-004 are per-FUNCTION lexical smells (sort-in-loop, membership-in-loop, nested-equality). They are structurally blind to the ACTUAL dominant cost: the same expensive input (a source file / the whole repo) parsed+walked N times ACROSS stages -- ~168s of redundant CPU that PERF never flagged. Add an enforcement (PERF005+/architecture-level) that catches "the same expensive computation is repeated on the same input across call sites/stages" and "an uncached hot function is called on the same key many times" -- e.g. detect a parse/hash/walk over the same path invoked from N stages with no shared cache. It should have red-flagged frob.lang._parse being called 2-6x per file. Ships per-project (T-0406). Acceptance: a fixture that parses the same file twice across two stages with no cache is flagged; a single-shared-parse version is not.
+
+## Done report
+
+Closed the PERF META-GAP: PERF001-006 all reason about one function body
+at a time, so none could ever have caught the class of waste that
+actually dominated a real `frob check` run here -- the same expensive
+computation called repeatedly across different stages with no shared
+cache (T-0423's run-scoped memoization fixed the one concrete incident;
+this ticket is the enforcement so a NEW instance is caught statically).
+
+Added PERF007 (`frob.perf._redundancy.redundant_computation_violations`,
+wired into `perf_rules` in `src/frob/perf/_rules.py`): a
+`frob.toml`-configured `[[perf.heavy]]` call target (`name` + optional
+`cached_by` decorator names, default `memoize_per_run`/`lru_cache`/
+`cache`) invoked from 2+ distinct top-level FUNCTION/METHOD symbols with
+none of `cached_by`'s decorators on its own definition fires an error
+naming both the redundant call site and the first one it duplicates. No
+`[[perf.heavy]]` entries at all means zero PERF007 checking -- fail-open,
+matching every other config-driven source in this codebase (DOC004's
+namespace/command sources).
+
+Wiring stayed additive: `perf_rules` (fully in scope, `src/frob/perf/
+_rules.py`) now also calls `redundant_computation_violations`, so
+`gates.py::perf_gate` (out of my declared scope, coverage-family agent's
+territory) needed zero changes -- the only `src/frob/gates/__init__.py`
+touch is the single additive line registering "PERF007" in
+`_KNOWN_GATE_RULES` (so `frob:waive PERF007 reason="..."` is a real,
+matchable waiver channel, WAIVE002's own contract).
+
+Acceptance verified exactly per the ticket's wording: a fixture where two
+top-level functions both call an uncached configured target is flagged; a
+fixture where only one calls it, or the target carries
+`@memoize_per_run`, is not; no `[[perf.heavy]]` config at all means zero
+checking. Four tests in `tests/test_perf.py::TestPerf007RedundantComputation`
+cover exactly these four cases (see Evidence).
+
+### Caveats
+- REL001 (`pyproject.toml`'s public-API-vs-version-stamp check) now fires
+  repo-wide because `frob.perf`'s `__all__` gained
+  `redundant_computation_violations` -- a real, correct consequence of
+  this ticket's public API addition, but `pyproject.toml`/the release
+  stamp are NOT in T-0413's declared scope and multiple parallel
+  worktrees are adding public API in this same window, so bumping the
+  version here would race every sibling ticket's own API addition.
+  Leaving the version stamp as a land-time/coordinator concern (same
+  posture the T-0418/T-0423 Done reports already used), not silently
+  worked around.
+- `frob check --ticket T-0413` alone shows 3 SCOPE001 findings
+  (`docs/modules/gates.md`, `frob.toml`, `tests/test_gates.py`) -- those
+  are T-0443's own already-closed, already-scoped files, present in this
+  worktree's cumulative diff because both tickets were worked
+  sequentially in one worktree; `frob check --delta` (no single-ticket
+  scope filter) shows zero SCOPE001, confirming this is a --ticket-scoped
+  view artifact of the two-tickets-in-one-diff shape, not a real
+  violation.
+
+### Changed
+```
+ docs/modules/gates.md        |  35 +++++--
+ docs/modules/perf.md         |  66 +++++++++++-
+ frob.toml                    |  12 +++
+ src/frob/gates/__init__.py   |   1 +
+ src/frob/gates/_docblocks.py | 239 +++++++++++++++++++++++++++++++++++++++--
+ src/frob/perf/__init__.py    |  10 +-
+ src/frob/perf/_redundancy.py | 245 +++++++++++++++++++++++++++++++++++++++++++
+ src/frob/perf/_rules.py      |  10 +-
+ tests/test_gates.py          | 104 ++++++++++++++++++
+ tests/test_perf.py           | 115 +++++++++++++++++++-
+ tickets.md                   | 236 +++++++++++++----------------------------
+ 11 files changed, 887 insertions(+), 186 deletions(-)
+```
+
+### Evidence
+- `tests/test_perf.py::TestPerf007RedundantComputation::test_two_stages_calling_the_same_uncached_parse_is_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_perf.py::TestPerf007RedundantComputation::test_single_shared_call_site_is_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_perf.py::TestPerf007RedundantComputation::test_cached_definition_suppresses_the_warning` (pytest node id, verified passing when recorded)
+- `tests/test_perf.py::TestPerf007RedundantComputation::test_no_config_means_no_perf007_checking` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0416 -->
 ```yaml
@@ -5248,7 +5342,7 @@ re-splitting only where a physical line would exceed the limit.
 id: T-0443
 title: 'docblocks: console/bash ''frob <subcommand>'' command-drift tier for DOC004
   (needs frob.toml-configurable command source)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -5280,11 +5374,61 @@ scope_changes:
   reason: T-0443 gates work maps to docs/modules/gates.md
   actor: logan
   at: '2026-07-20'
-evidence: []
+evidence:
+- tests/test_gates.py::TestDoc004ConsoleCommandDrift::test_nonexistent_subcommand_is_stale
+- tests/test_gates.py::TestDoc004ConsoleCommandDrift::test_real_subcommand_anchored_passes
+- tests/test_gates.py::TestDoc004ConsoleCommandDrift::test_real_subcommand_unanchored_warns_unbound
+- tests/test_gates.py::TestDoc004ConsoleCommandDrift::test_waive_suppresses_console_stale
+- tests/test_gates.py::TestDoc004ConsoleCommandDrift::test_no_config_means_no_console_checking
 attachments: []
 acceptance: []
 threat: null
 ```
+## Done report
+
+Added the console/bash command-drift tier to DOC004
+(`frob.gates._docblocks`): a ```console```/```bash```/```sh```/```shell```
+fenced block's `<prog> <subcommand...>` invocations are checked against a
+frob.toml-configured `[[docblocks.commands]]` array (`prog` + a
+`module:callable` dotted path to a zero-argument argparse.ArgumentParser
+factory). The gate imports that factory at check time and walks its live
+`add_subparsers` tree -- the argparse registry is the single source of
+truth, never a second hand-maintained subcommand list. A chain that does
+not resolve is STALE (error); a resolving one with no nearby
+frob:doc/frob:describes/frob:tests anchor is UNBOUND (warn), matching the
+existing python/rust/ts tiers. No configured commands means zero
+console/bash checking (fail-open).
+
+This repo now configures itself as the first instance
+(`[[docblocks.commands]] prog = "frob" parser =
+"frob.__main__:_build_parser"` in frob.toml) -- dogfooding it against this
+repo's own docs found 0 stale console commands and 59 unbound-console
+warnings (pre-existing undocumented examples, no error-level regressions),
+confirmed via `frob check --only docblocks --json`.
+
+Acceptance verified: a fenced ```console``` block citing
+`frob nonexistent-subcommand` fires DOC004 (stale, error); a real
+subcommand (`frob check --delta`) with a nearby anchor passes; the same
+real subcommand unanchored warns unbound; `frob:waive DOC004 reason="..."`
+suppresses; no `[[docblocks.commands]]` entries means no console checking
+at all -- all five as automated tests in tests/test_gates.py.
+
+### Changed
+```
+ docs/modules/gates.md        |  35 +++++--
+ frob.toml                    |  12 +++
+ src/frob/gates/_docblocks.py | 239 +++++++++++++++++++++++++++++++++++++++++--
+ tests/test_gates.py          | 104 +++++++++++++++++++
+ tickets.md                   |  47 ++++++++-
+ 5 files changed, 418 insertions(+), 19 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestDoc004ConsoleCommandDrift::test_nonexistent_subcommand_is_stale` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestDoc004ConsoleCommandDrift::test_real_subcommand_anchored_passes` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestDoc004ConsoleCommandDrift::test_real_subcommand_unanchored_warns_unbound` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestDoc004ConsoleCommandDrift::test_waive_suppresses_console_stale` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestDoc004ConsoleCommandDrift::test_no_config_means_no_console_checking` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0446 -->
 ```yaml

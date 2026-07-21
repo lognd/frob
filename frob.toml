@@ -1,5 +1,17 @@
 check_base = "main"
 
+# T-0443: DOC004's console/bash command-drift tier (frob.gates._docblocks.
+# doc004_gate) -- `prog` is the console word introducing an invocation in a
+# ```console```/```bash```/```sh```/```shell``` fenced doc block; `parser`
+# is a `module:callable` dotted path to a zero-argument argparse.
+# ArgumentParser factory the gate imports and walks AT CHECK TIME. This
+# repo names itself as the first configured instance, pointed at its own
+# real CLI registry -- never a hand-maintained second copy of the
+# subcommand list.
+[[docblocks.commands]]
+prog = "frob"
+parser = "frob.__main__:_build_parser"
+
 # T-0373: the arch gate (frob.gates._arch.arch_gate, via frob.app.config.
 # load_arch_config) and the standalone `frob arch` linter both read this
 # table. These are a deliberate calibration, not the library's own
