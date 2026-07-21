@@ -4605,7 +4605,7 @@ T-0506 extended COV006 with a one-hop same-file public-wrapper rescue, reducing 
 id: T-0517
 title: dup.db fingerprint cache lacks version/algorithm invalidation key -- stale
   caches silently change find_clones results
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-07-21'
@@ -4614,13 +4614,62 @@ blocked_by: []
 parent: null
 scope: []
 scope_changes: []
-evidence: []
+evidence:
+- tests/unit/test_dup_cache.py::TestFingerprintInvalidation::test_stale_fingerprint_row_is_not_served
+- tests/unit/test_dup_cache.py::TestFingerprintInvalidation::test_matching_fingerprint_row_still_served
 attachments: []
 acceptance: []
 threat: null
 ```
 Incident (2026-07-21): tests/fixtures/dup_cross_lang/.frob/dup.db, an untracked leftover from a pre-T-0487 run, made the landed T-0494 cross-lang R5 tests fail on main while passing in fresh worktrees -- find_clones served 6 stale cache hits and verified 0 pairs. The graph cache.db keys its schema on a frob+grammar version fingerprint (T-0243 pattern) but dup.db does not, so any algorithm change (e.g. _KEYWORDS, r3 canonicalization) silently keeps old fingerprints. Fix: (1) key dup.db rows on the same version fingerprint and invalidate on mismatch; (2) tests must not leak dup.db into tracked fixture dirs -- point find_clones at an isolated cache in tmp_path or clean up. Scope: src/frob/dup/_legacy.py, src/frob/dup/_pipeline.py, tests/test_dup_cross_lang.py.
 
+## Done report
+
+Changed:
+src/frob/dup/_cache.py::_check_fingerprint
+tests/unit/test_dup_cache.py::TestFingerprintInvalidation
+tests/test_dup_cross_lang.py::_isolated_dup_cache
+
+dup.db carried no version/algorithm invalidation key, so an untracked
+leftover dup.db (or any dup.db written under an older frob/tree-sitter
+grammar version) could silently serve stale fingerprint/verdict rows
+after an algorithm change -- exactly the incident that made T-0494's
+cross-lang R5 fixture flip results depending on which worktree ran it
+(6 cache hits, 0 pairs verified). Reused the existing T-0243 fingerprint
+mechanism from frob.graph.cache (`_compute_fingerprint`) rather than a
+second implementation: `frob.dup._cache` now stores that same fingerprint
+string in a `meta` table and wipes `fingerprints`/`verdicts` on any
+mismatch, mirroring `frob.graph.cache._check_fingerprint`'s shape.
+
+Also fixed the cross-lang test module (T-0517 part 2): `find_clones`
+writes its cache to `snapshot.root/.frob/dup.db`, and `snapshot.root` for
+`tests/test_dup_cross_lang.py` is the tracked fixture directory itself --
+an unpatched run leaked `.frob/dup.db` straight into a tracked path. Added
+an autouse fixture that monkeypatches `_cache._db_path` to redirect every
+write in that module to `tmp_path`, plus a defensive cleanup of any
+pre-existing leaked sidecar files.
+
+Non-vacuous regression: `TestFingerprintInvalidation` in
+tests/unit/test_dup_cache.py seeds a poisoned fingerprint row under a
+monkeypatched wrong-version fingerprint, reconnects under the real
+(current) fingerprint, and asserts the poisoned row is gone -- proving
+`_check_fingerprint` actually invalidates rather than just existing.
+A same-version reconnect case proves the common path does NOT wipe rows
+it shouldn't.
+
+Scope note: the ticket's prose named src/frob/dup/_legacy.py and
+src/frob/dup/_pipeline.py, but the actual dup.db read/write/schema logic
+lives in src/frob/dup/_cache.py (the YAML `scope:` field for this ticket
+was empty/unset, so no glob restriction applied) -- _legacy.py has no
+dup.db logic at all and did not need touching; _pipeline.py only
+consumes _cache's get/put functions and needed no changes either.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/unit/test_dup_cache.py::TestFingerprintInvalidation::test_stale_fingerprint_row_is_not_served` (pytest node id, verified passing when recorded)
+- `tests/unit/test_dup_cache.py::TestFingerprintInvalidation::test_matching_fingerprint_row_still_served` (pytest node id, verified passing when recorded)
 <!-- ticket:T-0518 -->
 ```yaml
 id: T-0518
