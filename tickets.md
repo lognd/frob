@@ -5464,7 +5464,7 @@ User (2026-07-20): account for anything that looks like a tool usage/guide, and 
 id: T-0439
 title: 'feat(sec-patterns): needle/fingerprint pattern-scan gate for CVE code-smell
   corpus (SEC-CVE-FINGERPRINT-*)'
-state: in-progress
+state: done
 kind: security
 origin: human
 created: '2026-07-20'
