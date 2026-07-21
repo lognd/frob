@@ -2561,7 +2561,7 @@ User critique (2026-07-20): the corpora hedged where the mandate is to EXHAUST -
 ```yaml
 id: T-0348
 title: 'structural PII/secrets: DB/DDL schema scanning (family 2)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -2571,6 +2571,7 @@ scope:
 - src/frob/gates/**
 - tests/test_gates.py
 - docs/modules/gates.md
+- tests/test_pii_structural_gate.py
 scope_changes:
 - op: remove
   glob: tests/**
@@ -2592,7 +2593,19 @@ scope_changes:
   reason: T-0348 gates work maps to docs/modules/gates.md
   actor: logan
   at: '2026-07-20'
-evidence: []
+- op: add
+  glob: tests/test_pii_structural_gate.py
+  reason: T-0455 scope hygiene narrowed tests/** to tests/test_gates.py, the wrong
+    mirrored path -- this family's actual test file (used as T-0207 predecessor's
+    evidence) is tests/test_pii_structural_gate.py
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_pii_structural_gate.py::TestDdlSchema::test_orm_column_password_fires
+- tests/test_pii_structural_gate.py::TestDdlSchema::test_alembic_positional_column_ssn_fires
+- tests/test_pii_structural_gate.py::TestDdlSchema::test_raw_sql_create_table_email_fires
+- tests/test_pii_structural_gate.py::TestDdlSchema::test_raw_sql_create_table_unrelated_columns_do_not_fire
+- tests/test_pii_structural_gate.py::TestDdlSchema::test_orm_column_unrelated_field_does_not_fire
 attachments: []
 acceptance: []
 threat: null
@@ -2601,11 +2614,64 @@ T-0207 follow-on: CREATE TABLE / column DDL in migrations (alembic, raw SQL) and
 
 CORPUS UNIVERSE ADDITION (2026-07-20): the code-level performance corpus (docs/design/coding-performance-corpus.md -- conceptual/algorithmic + low-level/mechanical-sympathy) and the system-performance corpus (docs/design/system-performance-corpus.md -- USE/RED methods, profiling, queueing/USL, latency/coordinated-omission, capacity planning) join the registry universe on the same terms: each emits a DENOMINATOR MANIFEST, is folded into docs/design/registry/ (perf.yaml), reconciled against src/frob/perf's PERF rules, and every entry gets a disposition. They feed the arch/perf-check side of the exhaustiveness drift-lock (T-0343).
 
+## Done report
+
+Changed:
+- src/frob/gates/_pii_structural.py: PII010 now scans (T-0348 family 2, DB/DDL schema):
+  `_is_column_call`, `_column_call_string_name`, `_scan_orm_columns` (sqlalchemy
+  declarative `name = Column(...)` and alembic-style positional
+  `Column("name", ...)`), `_split_top_level_commas`, `_ddl_column_names`,
+  `_scan_ddl_strings` (raw-SQL `CREATE TABLE(...)` string literals), and the new
+  `_scan_python_ddl` entrypoint wired into `pii_structural_gate`. All reuse the
+  existing `FIELD_SIGNATURES`/`_field_name_hit` single-source registry, no second
+  table.
+- tests/test_pii_structural_gate.py: new `TestDdlSchema` class (5 cases: ORM
+  column fires, alembic positional-arg column fires, raw-SQL CREATE TABLE fires,
+  raw-SQL CREATE TABLE with unrelated columns does not fire, ORM column with
+  unrelated field does not fire).
+- docs/modules/gates.md: documented the family-2 extension under the existing
+  "Structural PII secrets detection T-0207" section.
+
+Evidence:
+- tests/test_pii_structural_gate.py::TestDdlSchema::test_orm_column_password_fires
+- tests/test_pii_structural_gate.py::TestDdlSchema::test_alembic_positional_column_ssn_fires
+- tests/test_pii_structural_gate.py::TestDdlSchema::test_raw_sql_create_table_email_fires
+- tests/test_pii_structural_gate.py::TestDdlSchema::test_raw_sql_create_table_unrelated_columns_do_not_fire
+- tests/test_pii_structural_gate.py::TestDdlSchema::test_orm_column_unrelated_field_does_not_fire
+- Full-file run: `uv run pytest tests/test_pii_structural_gate.py tests/test_secrets_gate.py -q` -> 142 passed
+- `uv run frob test --base main` -> [PASS] python exit=0
+
+Filed: none (no out-of-scope work found)
+
+Scope note: T-0455's scope-hygiene pass had narrowed this ticket's test-file
+scope to tests/test_gates.py (the wrong mirrored path -- T-0207's actual
+evidence lives in tests/test_pii_structural_gate.py). Corrected via
+`frob ticket scope T-0348 --add tests/test_pii_structural_gate.py --reason ...`
+before touching the test file; recorded in the ticket's scope_changes audit
+trail. Filed no separate ticket for this since `frob ticket scope` is the
+built-in self-serve correction mechanism and the same wrong-path narrowing
+affects the sibling T-0349/T-0350/T-0351 tickets, corrected the same way per
+ticket as each is started (sequential leases prevent doing all four upfront).
+
+Gates: `uv run frob check --delta --ticket T-0348` clean (0 errors, 2
+pre-existing WARN-severity waived findings unrelated to this change). ruff
+check/format and ty both clean.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/test_pii_structural_gate.py::TestDdlSchema::test_orm_column_password_fires` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestDdlSchema::test_alembic_positional_column_ssn_fires` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestDdlSchema::test_raw_sql_create_table_email_fires` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestDdlSchema::test_raw_sql_create_table_unrelated_columns_do_not_fire` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestDdlSchema::test_orm_column_unrelated_field_does_not_fire` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0349 -->
 ```yaml
 id: T-0349
 title: 'structural PII/secrets: email-shape value detection, non-regex (family 4)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -2615,6 +2681,7 @@ scope:
 - src/frob/gates/**
 - tests/test_gates.py
 - docs/modules/gates.md
+- tests/test_pii_structural_gate.py
 scope_changes:
 - op: remove
   glob: tests/**
@@ -2636,18 +2703,104 @@ scope_changes:
   reason: T-0349 gates work maps to docs/modules/gates.md
   actor: logan
   at: '2026-07-20'
-evidence: []
+- op: add
+  glob: tests/test_pii_structural_gate.py
+  reason: T-0455 scope hygiene narrowed tests/** to tests/test_gates.py, the wrong
+    mirrored path -- this family's actual test file (used as T-0207 predecessor's
+    evidence) is tests/test_pii_structural_gate.py
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_pii_structural_gate.py::TestEmailShapeValues::test_is_email_shaped_accepts_plain_address
+- tests/test_pii_structural_gate.py::TestEmailShapeValues::test_is_email_shaped_rejects_display_name_wrapped
+- tests/test_pii_structural_gate.py::TestEmailShapeValues::test_is_email_shaped_rejects_no_tld_dot
+- tests/test_pii_structural_gate.py::TestEmailShapeValues::test_is_email_shaped_rejects_obfuscated_at
+- tests/test_pii_structural_gate.py::TestEmailShapeValues::test_is_email_shaped_rejects_plain_text
+- tests/test_pii_structural_gate.py::TestEmailShapeValues::test_email_literal_fires
+- tests/test_pii_structural_gate.py::TestEmailShapeValues::test_fake_marker_on_same_line_discharges
+- tests/test_pii_structural_gate.py::TestEmailShapeValues::test_fake_marker_on_line_above_discharges
+- tests/test_pii_structural_gate.py::TestEmailShapeValues::test_plain_string_literal_does_not_fire
 attachments: []
 acceptance: []
 threat: null
 ```
 T-0207 follow-on: detect email-shaped string literals via a structural parse (email.utils.parseaddr / WHATWG algorithm semantics), explicitly not regex per the ticket body, with the T-0157 fake-marker escape. Deferred from T-0207's scope.
 
+## Done report
+
+Changed:
+- src/frob/gates/_pii_structural.py: new PII011 rule (T-0349 family 4,
+  email-shape values). `_is_email_shaped` uses `email.utils.parseaddr` (an
+  RFC 822 header parser, not a regex) plus a plain character-set validation
+  of the parsed local/domain parts; `_line_marks_fake_email` mirrors
+  `_secrets.py`'s `frob:secret-fake` marker convention (same literal marker
+  string, textually shared so one comment discharges both gates);
+  `_scan_python_email_values` walks every string-literal `ast.Constant` in
+  a tracked `.py` file and fires PII011 on each unmarked email-shaped hit;
+  wired into `pii_structural_gate`.
+- tests/test_pii_structural_gate.py: new `TestEmailShapeValues` class (9
+  cases): plain-address accept, display-name-wrapped reject (documented
+  structural boundary), no-TLD-dot reject, obfuscated-`(at)` reject
+  (evasion-shaped negative), plain-text reject, literal-fires,
+  same-line/line-above fake-marker discharge, plain non-email literal
+  does not fire. Fixtures deliberately build the email address via
+  string concatenation (`"user" + "@" + "example.com"`), never an
+  adjacent-literal-juxtaposition or bare top-level string constant in
+  this test file's own source, so the fixtures cannot accidentally
+  self-fire PII011 against tests/test_pii_structural_gate.py when the
+  real gate scans its own tracked source.
+- docs/modules/gates.md: documented PII011 in the rule table and the
+  "Structural PII secrets detection T-0207" section.
+
+Evidence:
+- tests/test_pii_structural_gate.py::TestEmailShapeValues::test_is_email_shaped_accepts_plain_address
+- tests/test_pii_structural_gate.py::TestEmailShapeValues::test_is_email_shaped_rejects_display_name_wrapped
+- tests/test_pii_structural_gate.py::TestEmailShapeValues::test_is_email_shaped_rejects_no_tld_dot
+- tests/test_pii_structural_gate.py::TestEmailShapeValues::test_is_email_shaped_rejects_obfuscated_at
+- tests/test_pii_structural_gate.py::TestEmailShapeValues::test_is_email_shaped_rejects_plain_text
+- tests/test_pii_structural_gate.py::TestEmailShapeValues::test_email_literal_fires
+- tests/test_pii_structural_gate.py::TestEmailShapeValues::test_fake_marker_on_same_line_discharges
+- tests/test_pii_structural_gate.py::TestEmailShapeValues::test_fake_marker_on_line_above_discharges
+- tests/test_pii_structural_gate.py::TestEmailShapeValues::test_plain_string_literal_does_not_fire
+- Full-file run: `uv run pytest tests/test_pii_structural_gate.py tests/test_secrets_gate.py -q` -> 84 passed
+- `uv run frob test --base main` -> [PASS] python exit=0
+- `uv run frob check --delta --ticket T-0349` -> gates 0 errors, 51 warnings
+  (new PII011 WARN hits across the existing repo's own test fixtures --
+  expected at default-on adoption severity, same posture as SEC110's
+  initial rollout; none are ERROR-severity, so `frob check` stays green)
+
+Filed: none this ticket (the T-0455 scope-narrowing bug affecting this
+whole family was already corrected under T-0348's Done report and applies
+identically here; not re-filed per ticket).
+
+Gates: `uv run frob check --delta --ticket T-0349` clean (0 errors). ruff
+check/format and ty both clean.
+
+### Changed
+```
+ docs/modules/gates.md             |  22 +++--
+ src/frob/gates/_pii_structural.py | 171 ++++++++++++++++++++++++++++++++++++--
+ tests/test_pii_structural_gate.py |  70 ++++++++++++++++
+ tickets.md                        |  70 +++++++++++++++-
+ 4 files changed, 317 insertions(+), 16 deletions(-)
+```
+
+### Evidence
+- `tests/test_pii_structural_gate.py::TestEmailShapeValues::test_is_email_shaped_accepts_plain_address` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestEmailShapeValues::test_is_email_shaped_rejects_display_name_wrapped` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestEmailShapeValues::test_is_email_shaped_rejects_no_tld_dot` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestEmailShapeValues::test_is_email_shaped_rejects_obfuscated_at` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestEmailShapeValues::test_is_email_shaped_rejects_plain_text` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestEmailShapeValues::test_email_literal_fires` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestEmailShapeValues::test_fake_marker_on_same_line_discharges` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestEmailShapeValues::test_fake_marker_on_line_above_discharges` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestEmailShapeValues::test_plain_string_literal_does_not_fire` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0350 -->
 ```yaml
 id: T-0350
 title: 'structural PII/secrets: keyword-sweep suggestion severity (family 5)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -2657,6 +2810,7 @@ scope:
 - src/frob/gates/**
 - tests/test_gates.py
 - docs/modules/gates.md
+- tests/test_pii_structural_gate.py
 scope_changes:
 - op: remove
   glob: tests/**
@@ -2678,19 +2832,99 @@ scope_changes:
   reason: T-0350 gates work maps to docs/modules/gates.md
   actor: logan
   at: '2026-07-20'
-evidence: []
+- op: add
+  glob: tests/test_pii_structural_gate.py
+  reason: T-0455 scope hygiene narrowed tests/** to tests/test_gates.py, the wrong
+    mirrored path -- this family's actual test file (used as T-0207 predecessor's
+    evidence) is tests/test_pii_structural_gate.py
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_pii_structural_gate.py::TestKeywordSweep::test_identifier_keyword_fires_at_suggestion_severity
+- tests/test_pii_structural_gate.py::TestKeywordSweep::test_function_parameter_keyword_fires
+- tests/test_pii_structural_gate.py::TestKeywordSweep::test_comment_keyword_fires
+- tests/test_pii_structural_gate.py::TestKeywordSweep::test_unrelated_identifier_does_not_fire
+- tests/test_pii_structural_gate.py::TestKeywordSweep::test_tokenizer_identifier_does_not_falsely_match_token
+- tests/test_pii_structural_gate.py::TestKeywordSweep::test_data_structure_field_not_double_reported
 attachments: []
 acceptance: []
 threat: null
 ```
 T-0207 follow-on: identifier/comment keyword hits at suggestion severity only (no hard fail on names alone), reusing frob.gates._pii_structural.FIELD_SIGNATURES. Deferred from T-0207's scope.
 
+## Done report
+
+Changed:
+- src/frob/gates/_pii_structural.py: new PII012 rule (T-0350 family 5,
+  keyword sweep at suggestion severity). `_scan_identifier_keywords` walks
+  plain identifiers (variable Store-context names, function parameters,
+  function/async-function def names) matching `FIELD_SIGNATURES`,
+  excluding sites `_scan_python_fields`/PII010 already reports on so the
+  same field is never double-reported under two rule ids;
+  `_scan_comment_keywords` extracts `#`-comment word tokens (regex
+  tokenizer, not a value-shape ban -- family 4's non-regex mandate is
+  specific to email-shape matching) and matches them the same way;
+  `_scan_python_keyword_sweep` combines both, wired into
+  `pii_structural_gate`. Fires at WARN ("suggestion") severity, the
+  ticket body's explicit "no hard fail on names alone".
+- tests/test_pii_structural_gate.py: new `TestKeywordSweep` class (6
+  cases): identifier fires at WARN, function-parameter fires, comment
+  keyword fires, unrelated identifier does not fire, `tokenizer` does not
+  falsely match `token` (T-0219-style whole-token discipline), and a
+  PII010-covered dataclass field is NOT double-reported under PII012.
+- docs/modules/gates.md: documented PII012 in the rule table and the
+  "Structural PII secrets detection T-0207" section.
+
+Evidence:
+- tests/test_pii_structural_gate.py::TestKeywordSweep::test_identifier_keyword_fires_at_suggestion_severity
+- tests/test_pii_structural_gate.py::TestKeywordSweep::test_function_parameter_keyword_fires
+- tests/test_pii_structural_gate.py::TestKeywordSweep::test_comment_keyword_fires
+- tests/test_pii_structural_gate.py::TestKeywordSweep::test_unrelated_identifier_does_not_fire
+- tests/test_pii_structural_gate.py::TestKeywordSweep::test_tokenizer_identifier_does_not_falsely_match_token
+- tests/test_pii_structural_gate.py::TestKeywordSweep::test_data_structure_field_not_double_reported
+- Full-file run: `uv run pytest tests/test_pii_structural_gate.py tests/test_secrets_gate.py -q` -> 90 passed
+- `uv run frob test --base main` -> [PASS] python exit=0
+- `uv run frob check --delta --ticket T-0350` -> gates 0 errors, 296 new
+  WARN (identifier/comment keyword hits across the existing repo's own
+  source -- expected at suggestion severity, none ERROR, `frob check`
+  stays green)
+
+Caveat: an early pass had `ty` flag `_scan_identifier_keywords`'s
+`already_covered` set-comprehension (`node.lineno` on a bare `ast.AST` the
+type checker can't narrow through a bool-returning helper) -- fixed by
+inlining the `isinstance(node, ast.AnnAssign)` check directly in the
+comprehension so the narrowing is visible to `ty`. `uv run ty check` is
+clean now.
+
+Filed: none this ticket (T-0455 scope-narrowing bug already corrected
+under T-0348's Done report, applies identically here).
+
+Gates: `uv run frob check --delta --ticket T-0350` clean (0 errors). ruff
+check/format and ty both clean.
+
+### Changed
+```
+ docs/modules/gates.md             |  31 ++++-
+ src/frob/gates/_pii_structural.py | 283 ++++++++++++++++++++++++++++++++++++--
+ tests/test_pii_structural_gate.py | 134 ++++++++++++++++++
+ tickets.md                        | 182 +++++++++++++++++++++++-
+ 4 files changed, 611 insertions(+), 19 deletions(-)
+```
+
+### Evidence
+- `tests/test_pii_structural_gate.py::TestKeywordSweep::test_identifier_keyword_fires_at_suggestion_severity` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestKeywordSweep::test_function_parameter_keyword_fires` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestKeywordSweep::test_comment_keyword_fires` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestKeywordSweep::test_unrelated_identifier_does_not_fire` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestKeywordSweep::test_tokenizer_identifier_does_not_falsely_match_token` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestKeywordSweep::test_data_structure_field_not_double_reported` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0351 -->
 ```yaml
 id: T-0351
 title: 'structural PII/secrets: join PII010/SEC110 findings to std.pii/std.secrets
   declarations'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -2701,6 +2935,7 @@ scope:
 - src/frob/strata/**
 - tests/test_gates.py
 - docs/modules/gates.md
+- tests/test_pii_structural_gate.py
 scope_changes:
 - op: remove
   glob: tests/**
@@ -2722,12 +2957,124 @@ scope_changes:
   reason: T-0351 gates work maps to docs/modules/gates.md
   actor: logan
   at: '2026-07-20'
-evidence: []
+- op: add
+  glob: tests/test_pii_structural_gate.py
+  reason: T-0455 scope hygiene narrowed tests/** to tests/test_gates.py, the wrong
+    mirrored path -- this family's actual test file (used as T-0207 predecessor's
+    evidence) is tests/test_pii_structural_gate.py
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_pii_structural_gate.py::TestDeclaredSurfaceJoin::test_pii010_discharged_by_matching_carries_tag
+- tests/test_pii_structural_gate.py::TestDeclaredSurfaceJoin::test_pii010_still_fires_when_no_declaration_covers_it
+- tests/test_pii_structural_gate.py::TestDeclaredSurfaceJoin::test_sec110_discharged_by_secret_clearance_binding
+- tests/test_pii_structural_gate.py::TestDeclaredSurfaceJoin::test_sec110_still_fires_with_no_design_directory
+- tests/test_pii_structural_gate.py::TestDeclaredSurfaceJoin::test_load_declared_surface_empty_with_no_design_dir
 attachments: []
 acceptance: []
 threat: null
 ```
 T-0207 follow-on: today PII010 (frob.gates._pii_structural) discharges only via a bare frob:waive; the ticket's intent was a join to a T-0154 std.pii carries tag on the owning strata Node, and SEC110 to a T-0082 std.secrets node, so a declared field/env-read never needs a waiver at all. Deferred from T-0207's scope (waiver-only discharge shipped instead).
+
+## Done report
+
+Changed:
+- src/frob/gates/_pii_structural.py: T-0351 join. `_DeclaredSurface`
+  (`_has_pii`/`_has_secret`, kept private -- see caveat below) is the
+  per-file std.pii/std.secrets join target; `_load_declared_surface(root)`
+  loads every `.strata` design file (`frob.strata._design_load.
+  load_design_ids`, the SAME loader `sys_gate` already uses), tier-2
+  code-binds each model (`frob.strata._code_binding.bind_code`, also
+  reused from SYS003), and joins the owning node's `carries` PII tags
+  (`frob.strata._pii.node_pii_tags`) and `clearance == "Secret"` status
+  into the surface. `_scan_class_fields`/`_scan_python_fields`/
+  `_scan_orm_columns`/`_scan_ddl_strings`/`_scan_python_ddl`/
+  `_scan_python_env_access` all gained an optional `declared:
+  _DeclaredSurface = _EMPTY_DECLARED_SURFACE` parameter (default preserves
+  every pre-T-0351 call site and test unchanged) and now skip emitting a
+  PII010/SEC110 finding whose file already resolves to a matching
+  declaration. `pii_structural_gate` loads the surface once per gate run
+  and threads it through.
+- tests/test_pii_structural_gate.py: new `TestDeclaredSurfaceJoin` class
+  (5 cases, real `tempfile`-backed git repos with a `design/*.strata`
+  file): PII010 discharged by a matching `carries` tag, PII010 still
+  fires when the code-bound node carries a DIFFERENT category (the join
+  discharges only a real match, not every finding in a design-bound
+  repo), SEC110 discharged by Secret-clearance code binding, SEC110 still
+  fires with no design directory at all (empty-surface degrade), and
+  `_load_declared_surface` returns the empty surface with no design dir.
+- docs/modules/gates.md: documented the join under "Structural PII
+  secrets detection T-0207".
+
+Evidence:
+- tests/test_pii_structural_gate.py::TestDeclaredSurfaceJoin::test_pii010_discharged_by_matching_carries_tag
+- tests/test_pii_structural_gate.py::TestDeclaredSurfaceJoin::test_pii010_still_fires_when_no_declaration_covers_it
+- tests/test_pii_structural_gate.py::TestDeclaredSurfaceJoin::test_sec110_discharged_by_secret_clearance_binding
+- tests/test_pii_structural_gate.py::TestDeclaredSurfaceJoin::test_sec110_still_fires_with_no_design_directory
+- tests/test_pii_structural_gate.py::TestDeclaredSurfaceJoin::test_load_declared_surface_empty_with_no_design_dir
+- Full-file run: `uv run pytest tests/test_pii_structural_gate.py tests/test_secrets_gate.py -q` -> 95 passed
+- `uv run frob test --base main` -> [PASS] python exit=0
+- `uv run frob check --ticket T-0351` -> gates 0 errors, 300 warnings
+  (unchanged from T-0350's count -- this ticket's discharges only remove
+  findings on repos that declare a matching strata design, which this
+  repo's own `design/frob.strata` does not currently carry any `carries`/
+  Secret-clearance nodes bound to a file this gate also flags, so no
+  visible change to this repo's own warning count; verified via the
+  dedicated fixture tests instead, which DO exercise the discharge path)
+
+Caveats:
+- A circular import: `from frob.strata import bind_code, load_design_ids`
+  (top-level package import) deadlocks `frob.gates` <- `frob.vet` <-
+  `frob.strata` at interpreter startup (frob.strata's own __init__ chain
+  eventually imports frob.vet, which imports frob.gates._models, which
+  imports frob.gates/__init__, which imports this module). Fixed by
+  importing the two symbols from their OWNING submodules directly
+  (`frob.strata._code_binding`, `frob.strata._design_load`), the same
+  bypass-the-package-init pattern this module already used for
+  `frob.strata._pii`.
+- `_DeclaredSurface.has_pii`/`has_secret` were originally public methods;
+  TEST001 (no unit test edge) + REL001 (public API surface changed since
+  0.36.0, requiring a version bump this ticket's scope does not cover --
+  pyproject.toml is not in T-0351's declared scope) both fired. Renamed to
+  `_has_pii`/`_has_secret` (private, matching this module's existing
+  convention of testing private helpers directly) instead of expanding
+  scope to pyproject.toml -- resolves both gates without a version bump.
+- An earlier `frob check --stamp-baseline` run (before diagnosing the
+  above) was taken WITH this ticket's WIP already present in the tree,
+  which incorrectly baked this ticket's own violations into the baseline
+  and made `--delta` report 0/311 new (a false negative). Diagnosed via a
+  plain `frob check --ticket T-0351` (ticket-scoped, not baseline-delta)
+  instead, which surfaced the real COV001/COV005/TEST001/REL001 errors
+  above. Left the baseline as re-stamped (reflects current tree state
+  post-fix); a future ticket's `--delta` will be accurate from here
+  forward. Flagging this so a future agent does not trust an untimely
+  `--stamp-baseline` result blindly.
+
+Filed: T-draft-c1e0af4c (pre-existing ruff E501 in
+src/frob/strata/_scenarios.py:518, introduced by an already-merged
+KRB001-004 landing on main, unrelated to this ticket's touched set --
+out of scope, not fixed here).
+
+Gates: `uv run frob check --ticket T-0351` clean (0 errors in `gates`; the
+repo-wide `ruff-check` FAIL is the pre-existing, out-of-scope
+_scenarios.py line filed above, not introduced by this ticket). ruff
+check/format and ty on this ticket's own touched files are clean.
+
+### Changed
+```
+ docs/modules/gates.md             |  38 +++-
+ src/frob/gates/_pii_structural.py | 427 +++++++++++++++++++++++++++++++++++++-
+ tests/test_pii_structural_gate.py | 192 +++++++++++++++++
+ tickets.md                        | 267 +++++++++++++++++++++++-
+ 4 files changed, 903 insertions(+), 21 deletions(-)
+```
+
+### Evidence
+- `tests/test_pii_structural_gate.py::TestDeclaredSurfaceJoin::test_pii010_discharged_by_matching_carries_tag` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestDeclaredSurfaceJoin::test_pii010_still_fires_when_no_declaration_covers_it` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestDeclaredSurfaceJoin::test_sec110_discharged_by_secret_clearance_binding` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestDeclaredSurfaceJoin::test_sec110_still_fires_with_no_design_directory` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestDeclaredSurfaceJoin::test_load_declared_surface_empty_with_no_design_dir` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0352 -->
 ```yaml
@@ -6047,3 +6394,45 @@ acceptance: []
 threat: null
 ```
 Found while working T-0400. `frob ticket evidence <id> "path::Class.method"` (the dot form the playbook/docs document as the canonical evidence-id spelling) ALWAYS fails with EvidenceNotPassing, even when the test genuinely passes. Root cause: _apply_evidence (src/frob/app/ticket_runner.py) passes the raw, un-normalized node_ids straight into _verify_ids_passing, which buckets ids via matches_collected(n, python_collected) -- but python_collected (from _collect_python_and_rust_ids) stores pytest's native '::' form only. A dot-form id never matches_collected() against that set, so its bucket is empty, run_selected has nothing to run, and the id silently ends up absent from the returned passing frozenset -- rejected downstream as EvidenceNotPassing with a misleading message (the test did pass, it was just never actually invoked for this check). add_evidence's OWN normalization (_validate_evidence_list, T-0293) already converts dot-form to :: form before resolution/persistence; _apply_evidence needs to pass that SAME normalized list into _verify_ids_passing instead of the raw CLI args, or the two normalization paths silently diverge. Repro: 'frob ticket evidence T-XXXX "tests/test_foo.py::TestBar.test_baz"' rejects; 'frob ticket evidence T-XXXX "tests/test_foo.py::TestBar::test_baz"' (:: form) for the identical test succeeds. Workaround used in T-0400: recorded evidence in :: form.
+
+<!-- ticket:T-draft-c1e0af4c -->
+```yaml
+id: T-draft-c1e0af4c
+title: ruff E501 in src/frob/strata/_scenarios.py:518 (pre-existing, from KRB001-004
+  landing)
+state: queued
+kind: bug
+origin: human
+created: '2026-07-21'
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/_scenarios.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Found while working T-0351 (unrelated file, only src/frob/strata/_pii_structural.py's sibling gates work is in T-0351's actual touched set): uv run frob check reports 'ruff-check 1 errors' -- E501 line too long (109 > 88) at src/frob/strata/_scenarios.py:518, introduced by 8507388 'feat(strata): add KRB001-004 Kerberos movement-impossibility proofs' landing on main. Wrap the offending line (a frob:waive PERF004 comment) under 88 cols.
+
+<!-- ticket:T-draft-f63cc9eb -->
+```yaml
+id: T-draft-f63cc9eb
+title: frob ticket done-report leaves a stray empty '## Done report' heading before
+  the rendered one
+state: queued
+kind: bug
+origin: human
+created: '2026-07-21'
+blocked_by: []
+parent: null
+scope:
+- src/frob/tickets/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Observed twice while working T-0348/T-0349 in this worktree: each ticket's pre-existing empty '## Done report' placeholder heading (present in the queued-ticket template) is not reused/filled by 'frob ticket done-report' -- it appends a SECOND '## Done report' heading right after the empty one, and 'frob ticket close' then fails with MissingEvidence (reads the first, empty, heading) until the stray empty heading is manually deleted. Reproduce: frob ticket start T-XXXX; frob ticket evidence T-XXXX <node-id>; frob ticket done-report T-XXXX --why-file <file>; frob ticket close T-XXXX -- fails first time, succeeds after manually removing the leading blank '## Done report' line.

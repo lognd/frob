@@ -21,16 +21,18 @@ signal -- NOT a duplicate of either existing module:
   `FIELD_SIGNATURES` (the single-source keyword/type registry below) fires
   -- deny-by-default, exactly like PII001's "unknown category" default:
   a PII-shaped field with no accompanying `frob:waive PII010 reason="..."`
-  is treated as an undeclared PII surface. Joining this to a T-0154
-  `carries` tag on a strata `Node` (rather than a bare waiver) is the
-  natural next step this module deliberately leaves to a follow-on ticket
-  (see the Done report this ticket's evidence is recorded against) --
-  today's discharge mechanism is the waiver alone, honestly documented as
-  the boundary of this pass, not a silent gap.
+  is treated as an undeclared PII surface, UNLESS the file is already
+  code-bound to a strata `Node` `carries`-ing that same category (T-0351,
+  `_load_declared_surface`/`_DeclaredSurface._has_pii`) -- a real
+  declaration now discharges the finding outright, not just a waiver.
 - SEC110: an `os.environ[...]`/`os.environ.get(...)`/`os.getenv(...)` call
   site is a secret-SOURCE observation (corpus Part A intro: "env/secret
   sources ... must map to a declared strata secret node (T-0082 std.secrets)
-  or be waived"). Same discharge boundary as PII010: waiver only, today.
+  or be waived"). Same T-0351 join as PII010: a file code-bound to a
+  Secret-clearance node (`DesignIds.secrets`'s existing "best-effort
+  standing proxy for std.secrets" convention, reused here rather than
+  re-derived) discharges every SEC110 finding in it
+  (`_DeclaredSurface._has_secret`).
 
 DISCIPLINE (ticket-mandated, non-negotiable):
 - Single-source registry (`FIELD_SIGNATURES`): every keyword/type entry
@@ -46,15 +48,53 @@ DISCIPLINE (ticket-mandated, non-negotiable):
   fires PII010 against a synthetic fixture class -- a registry entry with
   no firing fixture fails the test (T-0182 style).
 
+T-0348 (family 2, DB/DDL schema scanning) extended PII010 to sqlalchemy
+ORM `Column(...)` declarations (`_scan_orm_columns`) and raw-SQL `CREATE
+TABLE` string literals embedded in tracked `.py` files (`_scan_ddl_
+strings`), reusing the same `FIELD_SIGNATURES` table -- schema headers are
+the highest-value PII surface per the umbrella ticket body.
+
+T-0349 (family 4, email-shape values) added PII011: a git-tracked `.py`
+file's string-literal constants scanned via `email.utils.parseaddr` (an
+RFC 822 header parser) plus a plain character-set validation of the parsed
+local/domain parts (`_is_email_shaped`) -- explicitly NOT a regex, per the
+ticket body's "regex is bad for email matching" mandate. Escaped the same
+way T-0157's secrets scanner escapes a fixture: a `frob:secret-fake`
+comment on the literal's own line or the line directly above it
+(`_line_marks_fake_email`).
+
+T-0350 (family 5, keyword sweep) added PII012: every plain identifier
+(variable/parameter/function name, `_scan_identifier_keywords`) and every
+`#`-comment word token (`_scan_comment_keywords`) matching a
+`FIELD_SIGNATURES` name-kind keyword, EXCLUDING sites PII010 already
+reports on (a bare local variable or parameter named `password` is a
+weaker signal than a declared data-structure field -- "no hard fail on
+names alone" per the ticket body). Fires at WARN ("suggestion") severity,
+the same severity `frob check` already treats as non-failing by default --
+this family is explicitly advisory, never a deny-by-default surface the
+way PII010/PII011/SEC110 are.
+
+T-0351 joined every PII010/SEC110 finding to a loaded strata design's
+std.pii/std.secrets declarations (`_load_declared_surface`): the SAME
+tier-2 code-binding join `sys_gate`'s SYS003 already uses (`bind_code`,
+reused not re-derived) resolves each finding's file to an owning `Node`;
+`frob.strata._pii.node_pii_tags` supplies that node's declared PII
+categories (PII010's join key) and `Node.clearance == "Secret"` supplies
+the std.secrets proxy (SEC110's join key, the exact convention
+`_design_load.DesignIds.secrets` already documents). A repo with no
+strata design directory degrades to `_EMPTY_DECLARED_SURFACE` -- every
+finding still fires exactly as before this ticket, waiver-only. PII011/
+PII012 are NOT joined this pass (disclosed, not silently dropped): PII011
+fires on a bare string-literal VALUE with no natural "owning field" to
+carry a category tag against, and PII012 is already suggestion-severity
+advisory, not a deny-by-default surface a declaration needs to discharge.
+
 Deliberately NOT built this pass (disclosed, not silently dropped -- see
-this ticket's Done report for the filed follow-on ticket ids):
-family (2) database/DDL schema scanning (`CREATE TABLE`, alembic
-migrations, sqlalchemy `Column(...)`), family (4) email-shape value
-detection (structural `email.utils.parseaddr`-based, explicitly NOT regex
-per the ticket body), family (5) keyword-only suggestion-severity sweep of
-identifiers/comments, and non-Python languages (TS/Rust field-shape
-equivalents). `PII010`/`SEC110` cover exactly families (1) and (3), scoped
-to Python via `frob.lang`'s existing parse surface.
+this ticket's Done report for the filed follow-on ticket ids): non-Python
+languages (TS/Rust field-shape equivalents, and non-Python DDL sources
+such as `.sql` migration files). `PII010`/`PII011`/`PII012`/`SEC110` cover
+exactly families (1) through (5), scoped to Python via `frob.lang`'s
+existing parse surface.
 
 T-0430 (`docs/design/registry/pii.yaml`'s six deferred sections) extended
 `FIELD_SIGNATURES` toward GDPR Art.9(1) special-category / CCPA / HIPAA
@@ -77,13 +117,17 @@ dropped.
 from __future__ import annotations
 
 import ast
+import re
 from dataclasses import dataclass
+from email.utils import parseaddr
 from pathlib import Path
 
 from frob.gates._models import Severity, Violation
 from frob.gitio import run_argv
 from frob.logging import get_logger
-from frob.strata._pii import PII_CATEGORIES
+from frob.strata._code_binding import bind_code
+from frob.strata._design_load import load_design_ids
+from frob.strata._pii import PII_CATEGORIES, node_pii_tags
 
 _log = get_logger(__name__)
 
@@ -91,6 +135,81 @@ _log = get_logger(__name__)
 #: outright (T-0201 self-match lesson, module docstring). Compared against
 #: the git-relative path `_tracked_python_files` yields.
 _SELF_EXCLUDED_FILES = frozenset({"src/frob/gates/_pii_structural.py"})
+
+
+@dataclass(frozen=True)
+class _DeclaredSurface:
+    """T-0351: the per-file std.pii/std.secrets JOIN target -- which PII
+    categories a code-bound strata `Node` already `carries` for a file, and
+    whether a code-bound node for a file is a Secret-clearance node
+    (`load_design_ids`'s existing "Secret-clearance node is the best-effort
+    standing proxy for std.secrets" convention, `_design_load.py`'s
+    `DesignIds.secrets` docstring -- reused here, not re-derived). A finding
+    whose file already resolves to a matching declaration is DISCHARGED
+    (no violation emitted) rather than merely waived -- the whole point of
+    this ticket: a real declaration, not a bare `frob:waive`, is now a
+    legitimate way to clear PII010/SEC110."""
+
+    pii_categories: dict[str, frozenset[str]]
+    secret_files: frozenset[str]
+
+    def _has_pii(self, rel_path: str, category: str) -> bool:
+        """Whether `rel_path`'s code-bound node already `carries` `category`."""
+        return category in self.pii_categories.get(rel_path, frozenset())
+
+    def _has_secret(self, rel_path: str) -> bool:
+        """Whether `rel_path` is code-bound to a Secret-clearance node."""
+        return rel_path in self.secret_files
+
+
+#: The empty join target -- every scan function defaults to this so a repo
+#: with no strata design directory (or no matching bindings) behaves
+#: exactly as before T-0351 (every PII010/SEC110 site still fires,
+#: waiver-only discharge).
+_EMPTY_DECLARED_SURFACE = _DeclaredSurface(pii_categories={}, secret_files=frozenset())
+
+
+# frob:tests tests/test_pii_structural_gate.py::TestDeclaredSurfaceJoin.test_pii010_discharged_by_matching_carries_tag  # noqa: E501
+def _load_declared_surface(root: Path) -> _DeclaredSurface:
+    """Load every `.strata` design file under `root` (`load_design_ids`,
+    the SAME loader `sys_gate` already uses -- no second design-loading
+    path) and join each file's tier-2 code-binding owner node
+    (`bind_code`) to that node's `carries` PII tags (`node_pii_tags`) and
+    Secret-clearance status (T-0351). A repo with no design directory, or
+    whose design fails to load/bind, degrades to `_EMPTY_DECLARED_SURFACE`
+    (never a crash -- gates degrade, they don't fail closed on a missing
+    optional feature)."""
+    design_ids = load_design_ids(root)
+    pii_categories: dict[str, set[str]] = {}
+    secret_files: set[str] = set()
+    for model in design_ids.models:
+        bound = bind_code(model, root)
+        if bound.is_err:
+            _log.warning(
+                "_load_declared_surface: code binding ambiguous, skipping a model: %s",
+                bound.danger_err,
+            )
+            continue
+        nodes_by_id = {node.id: node for node in model.nodes}
+        for rel_path, node_id in bound.danger_ok.owner.items():
+            node = nodes_by_id.get(node_id)
+            if node is None:
+                continue
+            for tag in node_pii_tags(node):
+                category = tag.split(".", 1)[0]
+                pii_categories.setdefault(rel_path, set()).add(category)
+            if node.clearance == "Secret":
+                secret_files.add(rel_path)
+    _log.info(
+        "_load_declared_surface: %d file(s) with declared PII categories, "
+        "%d file(s) code-bound to a Secret-clearance node",
+        len(pii_categories),
+        len(secret_files),
+    )
+    return _DeclaredSurface(
+        pii_categories={path: frozenset(cats) for path, cats in pii_categories.items()},
+        secret_files=frozenset(secret_files),
+    )
 
 
 @dataclass(frozen=True)
@@ -318,9 +437,14 @@ def _pii010_violation(
     )
 
 
-def _scan_class_fields(cls: ast.ClassDef, rel_path: str) -> list[Violation]:
+def _scan_class_fields(
+    cls: ast.ClassDef,
+    rel_path: str,
+    declared: _DeclaredSurface = _EMPTY_DECLARED_SURFACE,
+) -> list[Violation]:
     """Every PII010 hit among `cls`'s direct `AnnAssign` fields, for a class
-    `_is_data_structure` already accepted."""
+    `_is_data_structure` already accepted -- skipping any field whose
+    category `declared` (T-0351) already `carries` for this file."""
     violations: list[Violation] = []
     for stmt in cls.body:
         if not isinstance(stmt, ast.AnnAssign) or not isinstance(stmt.target, ast.Name):
@@ -329,19 +453,416 @@ def _scan_class_fields(cls: ast.ClassDef, rel_path: str) -> list[Violation]:
         name_sig = _field_name_hit(field_name)
         type_sig = _field_type_hit(stmt.annotation)
         sig = name_sig or type_sig
-        if sig is not None:
+        if sig is not None and not declared._has_pii(rel_path, sig.category):
             violations.append(_pii010_violation(rel_path, stmt.lineno, field_name, sig))
     return violations
 
 
-# frob:doc docs/modules/gates.md#structural-pii-secrets-detection-t-0207
-def _scan_python_fields(tree: ast.Module, rel_path: str) -> tuple[Violation, ...]:
+def _scan_python_fields(
+    tree: ast.Module,
+    rel_path: str,
+    declared: _DeclaredSurface = _EMPTY_DECLARED_SURFACE,
+) -> tuple[Violation, ...]:
     """PII010 over every data-structure `ClassDef` in `tree` (module
-    docstring: pydantic/dataclass/TypedDict/attrs field names+types)."""
+    docstring: pydantic/dataclass/TypedDict/attrs field names+types),
+    joined against `declared`'s std.pii carries tags (T-0351)."""
     violations: list[Violation] = []
     for node in ast.walk(tree):
         if isinstance(node, ast.ClassDef) and _is_data_structure(node):
-            violations.extend(_scan_class_fields(node, rel_path))
+            violations.extend(_scan_class_fields(node, rel_path, declared))
+    return tuple(violations)
+
+
+#: `Column(...)`/`sa.Column(...)` call-name fragment (family 2, T-0348):
+#: sqlalchemy ORM declarative-model column declarations. Matched on the
+#: bare dotted-suffix, same posture as `_decorator_name`'s bare-name match
+#: (no import-alias resolution attempted -- a local, testable surface).
+_COLUMN_CALL_NAME = "Column"
+
+
+def _is_column_call(node: ast.Call) -> bool:
+    """Whether `node` is a `Column(...)`/`sa.Column(...)`/`sqlalchemy.
+    Column(...)` call (T-0348 family 2: sqlalchemy ORM column declarations)."""
+    func = node.func
+    if isinstance(func, ast.Name):
+        return func.id == _COLUMN_CALL_NAME
+    if isinstance(func, ast.Attribute):
+        return func.attr == _COLUMN_CALL_NAME
+    return False
+
+
+def _column_call_string_name(node: ast.Call) -> str | None:
+    """The literal column-name string of an alembic-style positional
+    `Column("name", ...)` / `sa.Column("name", ...)` call (`op.create_
+    table`'s column-list form), or `None` if the first arg is not a bare
+    string literal (e.g. the ORM declarative form, which has no name arg
+    at all -- the assignment target name covers that case instead)."""
+    if not node.args:
+        return None
+    return _literal_str(node.args[0])
+
+
+def _scan_orm_columns(
+    tree: ast.Module,
+    rel_path: str,
+    declared: _DeclaredSurface = _EMPTY_DECLARED_SURFACE,
+) -> list[Violation]:
+    """PII010 over `name = Column(...)` declarative-model assignments and
+    `Column("name", ...)` alembic-style positional column declarations
+    (T-0348 family 2), matched against `FIELD_SIGNATURES` the same way a
+    dataclass/pydantic field name is; joined against `declared` (T-0351)."""
+    violations: list[Violation] = []
+    for node in ast.walk(tree):
+        if not (isinstance(node, ast.Call) and _is_column_call(node)):
+            continue
+        string_name = _column_call_string_name(node)
+        if string_name is not None:
+            sig = _field_name_hit(string_name)
+            if sig is not None and not declared._has_pii(rel_path, sig.category):
+                violations.append(
+                    _pii010_violation(rel_path, node.lineno, string_name, sig)
+                )
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Assign):
+            continue
+        if not (isinstance(node.value, ast.Call) and _is_column_call(node.value)):
+            continue
+        for target in node.targets:
+            if isinstance(target, ast.Name):
+                sig = _field_name_hit(target.id)
+                if sig is not None and not declared._has_pii(rel_path, sig.category):
+                    violations.append(
+                        _pii010_violation(rel_path, node.lineno, target.id, sig)
+                    )
+    return violations
+
+
+#: `CREATE TABLE ... (col1 TYPE, col2 TYPE, ...)` column-list extraction
+#: (T-0348 family 2: raw SQL DDL embedded as a Python string literal, e.g.
+#: a raw-SQL alembic migration's `op.execute("CREATE TABLE ...")`).
+_CREATE_TABLE_RE = re.compile(
+    r"CREATE\s+TABLE\s+[\"'`]?\w+[\"'`]?\s*\((.*)\)", re.IGNORECASE | re.DOTALL
+)
+
+
+def _split_top_level_commas(body: str) -> list[str]:
+    """Split a `CREATE TABLE(...)` column-list body on top-level commas
+    only -- commas nested inside a `CHECK(...)`/`DEFAULT(...)`/type-param
+    parenthesized clause (e.g. `NUMERIC(10, 2)`) must not split a single
+    column definition in two."""
+    parts: list[str] = []
+    depth = 0
+    current: list[str] = []
+    for ch in body:
+        if ch == "(":
+            depth += 1
+            current.append(ch)
+        elif ch == ")":
+            depth -= 1
+            current.append(ch)
+        elif ch == "," and depth == 0:
+            parts.append("".join(current))
+            current = []
+        else:
+            current.append(ch)
+    if current:
+        parts.append("".join(current))
+    return parts
+
+
+#: DDL table-constraint keywords a column-list entry may start with instead
+#: of a column name (`PRIMARY KEY (...)`, `FOREIGN KEY (...)`, etc.) -- these
+#: are not column names and must not be matched against `FIELD_SIGNATURES`.
+_DDL_CONSTRAINT_KEYWORDS = frozenset(
+    {"PRIMARY", "FOREIGN", "UNIQUE", "CHECK", "CONSTRAINT"}
+)
+
+
+def _ddl_column_names(sql: str) -> list[str]:
+    """Every column NAME token in the first `CREATE TABLE(...)` statement
+    found in `sql`, skipping table-constraint entries (`_DDL_CONSTRAINT_
+    KEYWORDS`) -- a small structural parse, not a full SQL grammar (module
+    docstring precedent: `_pii_structural` favors a targeted, testable
+    surface over a general parser)."""
+    match = _CREATE_TABLE_RE.search(sql)
+    if match is None:
+        return []
+    names: list[str] = []
+    for entry in _split_top_level_commas(match.group(1)):
+        tokens = entry.strip().split()
+        if not tokens:
+            continue
+        first = tokens[0].strip('"`[]')
+        if first.upper() in _DDL_CONSTRAINT_KEYWORDS:
+            continue
+        names.append(first)
+    return names
+
+
+def _scan_ddl_strings(
+    tree: ast.Module,
+    rel_path: str,
+    declared: _DeclaredSurface = _EMPTY_DECLARED_SURFACE,
+) -> list[Violation]:
+    """PII010 over `CREATE TABLE` column names embedded in string-literal
+    constants anywhere in `tree` (T-0348 family 2: raw-SQL migrations),
+    joined against `declared` (T-0351)."""
+    violations: list[Violation] = []
+    for node in ast.walk(tree):
+        if not (isinstance(node, ast.Constant) and isinstance(node.value, str)):
+            continue
+        for column_name in _ddl_column_names(node.value):
+            sig = _field_name_hit(column_name)
+            if sig is not None and not declared._has_pii(rel_path, sig.category):
+                violations.append(
+                    _pii010_violation(rel_path, node.lineno, column_name, sig)
+                )
+    return violations
+
+
+# frob:tests tests/test_pii_structural_gate.py::TestDdlSchema.test_orm_column_password_fires  # noqa: E501
+def _scan_python_ddl(
+    tree: ast.Module,
+    rel_path: str,
+    declared: _DeclaredSurface = _EMPTY_DECLARED_SURFACE,
+) -> tuple[Violation, ...]:
+    """PII010 over sqlalchemy ORM `Column(...)` declarations and raw-SQL
+    `CREATE TABLE` string literals (T-0348 family 2: DB/DDL schema
+    scanning, deferred from T-0207)."""
+    violations = _scan_orm_columns(tree, rel_path, declared)
+    violations.extend(_scan_ddl_strings(tree, rel_path, declared))
+    return tuple(violations)
+
+
+#: T-0349 (family 4) shared fake-marker convention: the SAME literal
+#: substring `frob.gates._secrets._FAKE_MARKER` uses (T-0157) -- not
+#: imported directly (that module's fake-detection is line/entropy-aware
+#: and secret-specific; PII011's escape hatch only needs the bare marker
+#: string), but kept textually identical so one comment discharges both
+#: gates' fixture literals at once.
+_EMAIL_FAKE_MARKER = "frob:secret-fake"
+
+
+def _line_marks_fake_email(lines: list[str], lineno: int) -> bool:
+    """True if the 1-indexed `lineno` line or the line directly above it
+    carries `_EMAIL_FAKE_MARKER` -- mirrors `_secrets.py::_line_marks_fake`'s
+    same-line-or-line-above convention (T-0157)."""
+    index = lineno - 1
+    if index < 0 or index >= len(lines):
+        return False
+    if _EMAIL_FAKE_MARKER in lines[index]:
+        return True
+    if index > 0 and _EMAIL_FAKE_MARKER in lines[index - 1]:
+        return True
+    return False
+
+
+#: Structural (non-regex) local-part/domain-label character allowances for
+#: `_is_email_shaped` -- RFC 5322 dot-atom-text's common subset, kept as a
+#: plain character set (`str.isalnum()` plus these) rather than a pattern.
+_EMAIL_LOCAL_EXTRA_CHARS = frozenset("._%+-")
+_EMAIL_LABEL_EXTRA_CHARS = frozenset("-")
+
+
+def _is_email_shaped(value: str) -> bool:
+    """T-0349 (family 4): whether `value` is structurally an email address,
+    via `email.utils.parseaddr` (an RFC 822 header parser, NOT a regex --
+    the ticket body's explicit "regex is bad for email matching" mandate)
+    plus a plain character-set validation of the parsed local/domain parts.
+    Whitespace anywhere rules a literal out outright (an email address
+    never contains a space); `parseaddr` returning a DIFFERENT address than
+    `value` itself means `value` was some other RFC 822 header shape
+    (`"Name <addr>"`, a bare display name, ...), not a bare email literal."""
+    if not value or any(ch.isspace() for ch in value):
+        return False
+    _, addr = parseaddr(value)
+    if addr != value:
+        return False
+    local, sep, domain = addr.partition("@")
+    if not sep or not local or not domain or "@" in domain:
+        return False
+    labels = domain.split(".")
+    if len(labels) < 2 or any(not label for label in labels):
+        return False
+    if not all(ch.isalnum() or ch in _EMAIL_LOCAL_EXTRA_CHARS for ch in local):
+        return False
+    for label in labels:
+        if label.startswith("-") or label.endswith("-"):
+            return False
+        if not all(ch.isalnum() or ch in _EMAIL_LABEL_EXTRA_CHARS for ch in label):
+            return False
+    return True
+
+
+def _pii011_violation(rel_path: str, lineno: int, value: str) -> Violation:
+    """The PII011 `Violation` for one email-shaped string literal (T-0349)."""
+    _log.warning("PII011: %s:%d email-shaped literal %r", rel_path, lineno, value)
+    return Violation(
+        rule="PII011",
+        severity=Severity.WARN,
+        file=rel_path,
+        line=lineno,
+        message=(
+            f"PII011: {rel_path}:{lineno} string literal {value!r} is "
+            f"email-shaped (structural parseaddr match) with no PII "
+            f"declaration or waiver -- declare it via a std.pii `carries` "
+            f"tag on the owning strata node, mark it a fixture with a "
+            f"`{_EMAIL_FAKE_MARKER}` comment on this line or the line "
+            f'above, or `frob:waive PII011 reason="..."` if this is not '
+            f"actually personal data"
+        ),
+    )
+
+
+# frob:tests tests/test_pii_structural_gate.py::TestEmailShapeValues.test_email_literal_fires  # noqa: E501
+def _scan_python_email_values(
+    tree: ast.Module, rel_path: str, text: str
+) -> tuple[Violation, ...]:
+    """PII011 over every email-shaped string-literal `ast.Constant` in
+    `tree` (T-0349 family 4), skipping any literal marked fake via
+    `_EMAIL_FAKE_MARKER` on its own line or the line directly above."""
+    lines = text.splitlines()
+    violations: list[Violation] = []
+    for node in ast.walk(tree):
+        if not (isinstance(node, ast.Constant) and isinstance(node.value, str)):
+            continue
+        if not _is_email_shaped(node.value):
+            continue
+        if _line_marks_fake_email(lines, node.lineno):
+            continue
+        violations.append(_pii011_violation(rel_path, node.lineno, node.value))
+    return tuple(violations)
+
+
+#: T-0350 (family 5) word-token extraction for a single comment string --
+#: NOT the email-shape ban on regex (that ban is specific to family 4's
+#: value-shape match); a bare `[A-Za-z_]+` run split is a tokenizer, not a
+#: value-shape detector, the same kind of split `_field_name_hit` already
+#: does via `str.split("_")` for identifiers.
+_COMMENT_WORD_RE = re.compile(r"[A-Za-z_]+")
+
+
+def _pii012_violation(
+    rel_path: str, lineno: int, token: str, sig: _FieldSignature
+) -> Violation:
+    """The PII012 `Violation` for one keyword-sweep hit (T-0350 family 5) --
+    SUGGESTION-level signal: an identifier or comment word alone is never
+    proof of an actual PII surface (module docstring: "no hard fail on
+    names alone"), so this fires at the same WARN severity `frob check`
+    already treats as non-failing by default, explicitly worded as a
+    suggestion rather than a declared-surface finding."""
+    _log.warning(
+        "PII012: %s:%d keyword-sweep hit %r matches %s (%s) -- category %s",
+        rel_path,
+        lineno,
+        token,
+        sig.id,
+        sig.kind,
+        sig.category,
+    )
+    return Violation(
+        rule="PII012",
+        severity=Severity.WARN,
+        file=rel_path,
+        line=lineno,
+        message=(
+            f"PII012 (suggestion): {rel_path}:{lineno} identifier/comment "
+            f"token {token!r} resembles a PII-shaped keyword (matches "
+            f"{sig.kind} signature {sig.keyword!r}, category "
+            f"{sig.category!r}) -- worth a second look, not a confirmed "
+            f"PII surface on a name alone; declare via std.pii if this "
+            f"really does carry personal data, or `frob:waive PII012 "
+            f'reason="..."` to quiet a false positive'
+        ),
+    )
+
+
+def _is_data_structure_field_target(node: ast.AST) -> bool:
+    """Whether `node` is the `Name` target of an `AnnAssign` field already
+    covered by PII010 (`_scan_class_fields`) -- excluded from the family-5
+    keyword sweep so the same field name is not reported twice under two
+    different rule ids for the identical site."""
+    return (
+        isinstance(node, ast.AnnAssign)
+        and isinstance(node.target, ast.Name)
+        and _field_name_hit(node.target.id) is not None
+    )
+
+
+def _scan_identifier_keywords(tree: ast.Module, rel_path: str) -> list[Violation]:
+    """PII012 over every plain identifier (variable/parameter/function
+    name) matching a `FIELD_SIGNATURES` name-kind keyword, EXCLUDING sites
+    `_scan_python_fields` (PII010) already reports on -- T-0350 family 5:
+    "identifier/comment keyword hits", the broader, weaker-signal
+    population PII010's data-structure-field scan deliberately excludes
+    (a bare local variable, function parameter, or plain-class attribute
+    named `password` is not itself a declared data-structure field)."""
+    already_covered: set[int] = {
+        node.lineno
+        for node in ast.walk(tree)
+        if isinstance(node, ast.AnnAssign) and _is_data_structure_field_target(node)
+    }
+    seen: set[tuple[int, str]] = set()
+    violations: list[Violation] = []
+    for node in ast.walk(tree):
+        name: str | None = None
+        lineno = 0
+        if isinstance(node, ast.arg):
+            name, lineno = node.arg, node.lineno
+        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            name, lineno = node.name, node.lineno
+        elif isinstance(node, ast.Name) and isinstance(node.ctx, ast.Store):
+            name, lineno = node.id, node.lineno
+        if name is None or lineno in already_covered:
+            continue
+        sig = _field_name_hit(name)
+        if sig is None:
+            continue
+        key = (lineno, name)
+        if key in seen:
+            continue
+        seen.add(key)
+        violations.append(_pii012_violation(rel_path, lineno, name, sig))
+    return violations
+
+
+def _scan_comment_keywords(text: str, rel_path: str) -> list[Violation]:
+    """PII012 over every `#`-comment line's word tokens matching a
+    `FIELD_SIGNATURES` name-kind keyword (T-0350 family 5). A plain
+    line-oriented scan of `#`-prefixed trailing text, not a full tokenizer
+    pass -- adequate for a comment-word suggestion signal and avoids
+    misreading a `#` inside a string literal as a comment only in the rare
+    case a string itself contains one, the same trade-off `_secrets.py`'s
+    line-oriented scanner already documents as an honest limitation."""
+    violations: list[Violation] = []
+    seen: set[tuple[int, str]] = set()
+    for lineno, line in enumerate(text.splitlines(), start=1):
+        hash_index = line.find("#")
+        if hash_index < 0:
+            continue
+        comment = line[hash_index + 1 :]
+        for match in _COMMENT_WORD_RE.finditer(comment):
+            token = match.group(0)
+            sig = _field_name_hit(token)
+            if sig is None:
+                continue
+            key = (lineno, token)
+            if key in seen:
+                continue
+            seen.add(key)
+            violations.append(_pii012_violation(rel_path, lineno, token, sig))
+    return violations
+
+
+# frob:tests tests/test_pii_structural_gate.py::TestKeywordSweep.test_identifier_keyword_fires_at_suggestion_severity  # noqa: E501
+def _scan_python_keyword_sweep(
+    tree: ast.Module, rel_path: str, text: str
+) -> tuple[Violation, ...]:
+    """PII012 (T-0350 family 5): identifier and comment keyword hits at
+    suggestion severity, reusing `FIELD_SIGNATURES` -- no hard fail on a
+    bare name/comment word alone."""
+    violations = _scan_identifier_keywords(tree, rel_path)
+    violations.extend(_scan_comment_keywords(text, rel_path))
     return tuple(violations)
 
 
@@ -460,11 +981,18 @@ def _sec110_violation(rel_path: str, lineno: int, site: str) -> Violation:
     )
 
 
-# frob:doc docs/modules/gates.md#structural-pii-secrets-detection-t-0207
-def _scan_python_env_access(tree: ast.Module, rel_path: str) -> tuple[Violation, ...]:
+def _scan_python_env_access(
+    tree: ast.Module,
+    rel_path: str,
+    declared: _DeclaredSurface = _EMPTY_DECLARED_SURFACE,
+) -> tuple[Violation, ...]:
     """SEC110 over every `os.environ[...]`/`os.environ.get(...)`/
     `os.getenv(...)` call/subscript site in `tree` (module docstring:
-    family 3, env/secret sources)."""
+    family 3, env/secret sources), joined against `declared`'s
+    Secret-clearance code binding (T-0351) -- a file already code-bound to
+    a declared std.secrets node is discharged, not merely waivable."""
+    if declared._has_secret(rel_path):
+        return ()
     violations: list[Violation] = []
     for node in ast.walk(tree):
         if isinstance(node, ast.Subscript) and _is_environ_subscript(node):
@@ -508,8 +1036,12 @@ def pii_structural_gate(root: Path) -> tuple[Violation, ...]:
     """PII010/SEC110 (docs/modules/gates.md#structural-pii-secrets-
     detection-t-0207): every git-tracked `.py` file scanned for PII-shaped
     data-structure fields and env-var access sites. Self-excludes this
-    module's own path (`_SELF_EXCLUDED_FILES`, T-0201 lesson)."""
+    module's own path (`_SELF_EXCLUDED_FILES`, T-0201 lesson). Joins every
+    PII010/SEC110 finding against a loaded strata design's std.pii/
+    std.secrets declarations (`_load_declared_surface`, T-0351) -- a
+    real declaration discharges a finding outright, not merely a waiver."""
     root = Path(root)
+    declared = _load_declared_surface(root)
     violations: list[Violation] = []
     scanned = 0
     for rel_path in _tracked_python_files(root):
@@ -523,8 +1055,11 @@ def pii_structural_gate(root: Path) -> tuple[Violation, ...]:
             _log.debug("pii_structural_gate: skipping unparseable %s", rel_path)
             continue
         scanned += 1
-        violations.extend(_scan_python_fields(tree, rel_path))
-        violations.extend(_scan_python_env_access(tree, rel_path))
+        violations.extend(_scan_python_fields(tree, rel_path, declared))
+        violations.extend(_scan_python_env_access(tree, rel_path, declared))
+        violations.extend(_scan_python_ddl(tree, rel_path, declared))
+        violations.extend(_scan_python_email_values(tree, rel_path, text))
+        violations.extend(_scan_python_keyword_sweep(tree, rel_path, text))
 
     _log.info(
         "pii_structural_gate: scanned %d tracked .py file(s), %d violation(s)",
@@ -540,4 +1075,9 @@ __all__ = [
     "pii_structural_gate",
     "_scan_python_env_access",
     "_scan_python_fields",
+    "_scan_python_ddl",
+    "_scan_python_email_values",
+    "_scan_python_keyword_sweep",
+    "_load_declared_surface",
+    "_DeclaredSurface",
 ]
