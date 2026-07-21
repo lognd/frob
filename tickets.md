@@ -4809,7 +4809,7 @@ threat: null
 ```yaml
 id: T-0481
 title: 'frob.dup._template: consume TreeNode.span for literal source-text rendering'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-20'
