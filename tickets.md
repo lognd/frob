@@ -3104,7 +3104,7 @@ origin: human
 created: '2026-07-21'
 priority: medium
 blocked_by:
-- T-draft-ac0b652c
+- T-0532
 parent: null
 scope:
 - src/frob/strata/_threat.py
@@ -3528,9 +3528,9 @@ demote/reword a stale reference. Batch by module, commit per batch, same
 as T-0524's pattern -- this ticket exists so the residual gets the same
 per-finding triage rather than being silently left unaccounted for.
 
-<!-- ticket:T-draft-3cf0d655 -->
+<!-- ticket:T-0530 -->
 ```yaml
-id: T-draft-3cf0d655
+id: T-0530
 title: 'strata: bind ENDORSE boundary predicate to an observed sanitizer site in code
   (G1 stronger fix)'
 state: queued
@@ -3552,9 +3552,9 @@ threat: null
 ```
 Follow-up to T-0498 (docs/audits/strata.md G1). T-0498 closed the vacuous half of G1 (an ENDORSE boundary's predicate string now needs a resolving obligations/claim ref, not a bare self-declared name) but does NOT yet verify the predicate corresponds to an OBSERVED sanitizer/mitigation call site in the boundary's node's code=-bound files -- the audit finding's stronger fix direction: 'a SYS-family rule binding each ENDORSE boundary predicate to an observed sanitizer site in code=-bound files (analogous to SYS100)'. This needs a per-predicate sanitizer-pattern registry (or a pluggable convention, since predicate names are free text today) and a scan over code=-bound files analogous to _selfconform.py's SYS100/SYS101 joins. Non-vacuous acceptance: a litmus where the claimed predicate has no matching code site is REFUSED, plus the positive case where it does.
 
-<!-- ticket:T-draft-7f21bb07 -->
+<!-- ticket:T-0531 -->
 ```yaml
-id: T-draft-7f21bb07
+id: T-0531
 title: 'strata-core: propagated_demand fed-cycle reach set is magnitude/destination-blind
   (over-conservative +inf)'
 state: queued
@@ -3575,9 +3575,9 @@ threat: null
 ```
 Found by T-0514's new differential property test (docs/audits/strata.md G10). propagated_demand's rate_sources set is populated by ANY node that is the SOURCE of a declared-rate edge (Some(r) => rate_sources.insert(src)), with no check on the rate's magnitude (a literal rate=0.0 counts) and no check that the declared edge has anything to do with the cycle being classified (a node can be marked fed purely because it separately sources an unrelated declared-rate edge elsewhere). This makes the fed-cycle unbounded classification an over-approximation: a self-loop whose true numeric demand converges to exactly 0.0 can be reported as +inf. This is the SAFE failure direction per charter law 2 (fails toward overcounting, never undercounting) and is NOT a soundness bug -- confirmed via an independent Gauss-Seidel fixpoint oracle (tests/unit/strata/test_kernel_properties.py::test_propagated_demand_matches_fixpoint_oracle, which asserts the sound direction only: kernel must never undercount, may over-report unbounded) -- but it is a real precision/completeness gap: a RATE/UTILIZATION bound claim on such a node will spuriously REFUTE with no way to discharge it short of restructuring the model, even though the true load is provably bounded. docs/strata/kernel.md#capacity-semantics's own propagated_demand docstring says 'POSITIVE-rate cycles' but the code's actual test is 'declared-rate, any value, any destination' -- fix direction: either (a) tighten rate_sources to only include truly-positive rates AND restrict the reach check to whether the SPECIFIC cycle is actually fed (not merely 'this node happens to source some unrelated declared rate'), or (b) if the current broad behavior is intentional conservatism, fix the docstring to say so explicitly rather than 'positive-rate', and document the tradeoff in kernel.md. TestZeroDeclaredRateFedCycle in test_kernel_properties.py pins the current behavior as a permanent regression witness pending this decision.
 
-<!-- ticket:T-draft-ac0b652c -->
+<!-- ticket:T-0532 -->
 ```yaml
-id: T-draft-ac0b652c
+id: T-0532
 title: 'design decision: distinguish T-0223 library-mode discharge-by-absence from
   G2/G7''s ''no adversary modeled'' vacuous discharge'
 state: queued
