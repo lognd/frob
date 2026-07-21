@@ -9656,7 +9656,7 @@ threat: null
 id: T-0508
 title: reconcile weaknesses.yaml SEC-CVE-FINGERPRINT-* dispositions now that T-0439
   shipped SEC-CVE-FINGERPRINT-001
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-21'
@@ -9664,13 +9664,81 @@ blocked_by: []
 parent: null
 scope:
 - docs/design/registry/weaknesses.yaml
-scope_changes: []
-evidence: []
+- tests/test_registry_exhaustiveness.py
+scope_changes:
+- op: add
+  glob: tests/test_registry_exhaustiveness.py
+  reason: 'bind evidence: the only test suite that exercises weaknesses.yaml disposition
+    validity (D-02 evidence-scope binding requires an evidence file/TESTS-edge inside
+    declared scope; weaknesses.yaml is pure data with no coverable code symbol of
+    its own)'
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_registry_exhaustiveness.py::TestDisposition::test_handled_by_real_rule_passes
+- tests/test_registry_exhaustiveness.py::TestDisposition::test_deferred_to_open_ticket_passes
+- tests/unit/strata/test_cve_fingerprint_scan.py::TestGate::test_smelly_file_fires
+- tests/unit/strata/test_cve_fingerprint_scan.py::TestScanTextForFingerprints::test_real_catalog_pickle_needle_fires
+- tests/unit/strata/test_cve_fingerprint.py::TestXxeFingerprint::test_fp_xxe_parse_001_exists_and_joins_cwe_611
 attachments: []
 acceptance: []
 threat: null
 ```
 Found while working T-0496/checking frob check output after closing T-0439. docs/design/registry/weaknesses.yaml carries 16 SEC-CVE-FINGERPRINT-* entries (lines ~6717-6827) with disposition: deferred:T-0439, anticipating exactly the gate T-0439 shipped (SEC-CVE-FINGERPRINT-001, src/frob/gates/_cve_fingerprint_scan.py). Now that T-0439 is done, REG003 fires on all 16 (deferral to a closed ticket is not a real deferral). This was a real oversight in T-0439's own scope (docs/design/registry/weaknesses.yaml was already in T-0439's declared scope from the start) -- T-0439's Done report incorrectly claimed nothing needed updating there. Reconciliation is NOT a blind find-and-replace: 9 entries are checkability=needle-detectable with an id matching a real shipped CVE_FINGERPRINTS entry (FP-EXEC-SHELL-001, FP-XSS-JQUERY-001, FP-PATH-TAR-001, FP-DESERIALIZE-YAML-001, FP-DESERIALIZE-PICKLE-001, FP-SQLI-STRFMT-001, FP-SSRF-FETCH-001, FP-CODEEVAL-TEMPLATE-001, FP-HARDCODED-CRED-001) -- these should become handled_by:SEC-CVE-FINGERPRINT-001. The other 7 are checkability=advisory (CWE-295-TLS-VERIFY, CWE-916-WEAK-HASH, CWE-611-XXE, CWE-1321-PROTO-POLLUTION, CWE-1333-REDOS, CWE-601-OPEN-REDIRECT, CWE-1336-SSTI) and do NOT map 1:1 to the shipped catalog: CWE-916 is explicitly still out-of-scope per _cve_fingerprint.py's own docstring (no WeaknessEntry exists for it yet); CWE-611/CWE-295 ARE shipped but under different fingerprint ids (FP-XXE-PARSE-001, FP-TLS-VERIFY-001/002/003) than the registry's generic CWE-*-named rows, needing a cross_refs join or a renamed id, not a bare handled_by; CWE-1321/1333/601/1336 have no shipped fingerprint at all. Needs a careful per-entry pass, not a mechanical sweep.
+
+## Done report
+
+Reconciled all 16 SEC-CVE-FINGERPRINT-* entries in docs/design/registry/weaknesses.yaml,
+per-entry, not a blind sweep:
+
+- 9 needle-detectable entries (FP-EXEC-SHELL-001, FP-XSS-JQUERY-001, FP-PATH-TAR-001,
+  FP-DESERIALIZE-YAML-001, FP-DESERIALIZE-PICKLE-001, FP-SQLI-STRFMT-001,
+  FP-SSRF-FETCH-001, FP-CODEEVAL-TEMPLATE-001, FP-HARDCODED-CRED-001): confirmed each
+  id has a real, exact-match CveFingerprint in src/frob/strata/_cve_fingerprint.py's
+  CVE_FINGERPRINTS catalog, is listed in docs/design/security-corpus.md's
+  needle-detectable table, and the gate mechanism actually fires -- fixture evidence:
+  tests/unit/strata/test_cve_fingerprint_scan.py::TestGate::test_smelly_file_fires
+  (FP-EXEC-SHELL-001) and
+  tests/unit/strata/test_cve_fingerprint_scan.py::TestScanTextForFingerprints::test_real_catalog_pickle_needle_fires
+  (FP-DESERIALIZE-PICKLE-001), plus the catalog-wide
+  test_every_fingerprint_has_at_least_one_needle covering all 9 generically.
+  Disposition -> handled_by:SEC-CVE-FINGERPRINT-001.
+
+- CWE-295-TLS-VERIFY and CWE-611-XXE: shipped, but under DIFFERENT fingerprint ids
+  than the registry row name (FP-TLS-VERIFY-001/002/003 and FP-XXE-PARSE-001
+  respectively) -- confirmed via grep against _cve_fingerprint.py and
+  tests/unit/strata/test_cve_fingerprint.py::TestXxeFingerprint. Per the ticket's own
+  instruction this needed a cross_refs join, not a bare handled_by: added cross_refs
+  listing the real fingerprint ids, disposition -> handled_by:SEC-CVE-FINGERPRINT-001.
+
+- CWE-916-WEAK-HASH, CWE-1321-PROTO-POLLUTION, CWE-1333-REDOS, CWE-601-OPEN-REDIRECT,
+  CWE-1336-SSTI: confirmed NO shipped fingerprint exists for any of these cwe_id in
+  CVE_FINGERPRINTS, and NO WeaknessEntry row exists in any of
+  CWE_CATALOG/CWE_TOP_25_CATALOG/QUALITY_CATALOG (_threat.py) either -- the only
+  CWE-916/601/1321/1333/1336 rows elsewhere in weaknesses.yaml are CWE-1000-registry
+  rows (source_doc=docs/design/cwe-1000-registry.md, disposition=out-of-scope), a
+  different framework, not a real match. _cve_fingerprint.py's own module docstring
+  already discloses the CWE-916 half of this as a named gap needing a follow-up
+  ticket. Filed a NEW concrete ticket (T-draft-36043577, provisional id off-default-
+  branch) covering all 5 missing needles, and re-pointed all 5 dispositions to
+  deferred:T-draft-36043577 (a real, currently-open ticket, not a closed one).
+
+REG001-REG005 all clean after (0 registry violations anywhere in the check output;
+confirmed via `uv run frob check --ticket T-0508` full output grep for REG -- only
+non-REG hits are an unrelated INV004 on EXHAUSTIVENESS-GATE.md's own doc section).
+
+Caveats: `frob check --ticket T-0508` shows 2 pre-existing FAILs unrelated to this
+ticket's scope -- gate:DOC (DOC003 on docs/commands/sys.md, an owasp-top-10
+exhaustiveness claim unrelated to weaknesses.yaml) and gate:TICK (TICK003, 62
+un-archived closed tickets, a ledger-housekeeping threshold) -- both present on the
+merged main tip (87db97c) before this ticket touched anything, not introduced by
+this change.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+(no evidence recorded)
 
 <!-- ticket:T-0509 -->
 ```yaml
@@ -9691,3 +9759,26 @@ acceptance: []
 threat: null
 ```
 T-0462/T-0452 landed WARN-severity as disclosed, but the exclusivity/normative corpora fire 765 times across docs/ -- far too noisy to burn down by hand and mostly bare-'only' prose, not genuine invariant claims. Calibrate first: require stronger claim shapes (subject+exclusivity+verb patterns, skip code fences/links/tables), add markdown-side frob:waive support so genuine-but-unprovable claims can be dispositioned, and consider scoping INV003 to spec-normative docs (docs/modules, docs/strata) rather than all docs/**.md. Then burn the residual down to zero. Scope: src/frob/gates/invariants.py, src/frob/gates/__init__.py, tests/test_gates.py, docs/modules/gates.md.
+
+<!-- ticket:T-draft-36043577 -->
+```yaml
+id: T-draft-36043577
+title: add missing CWE-916/1321/1333/601/1336 WeaknessEntry rows and cve-fingerprint
+  needles
+state: queued
+kind: feature
+origin: human
+created: '2026-07-21'
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/_cve_fingerprint.py
+- src/frob/strata/_threat.py
+- docs/design/security-corpus.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Found while working T-0508. weaknesses.yaml carries 5 SEC-CVE-FINGERPRINT-CWE-* entries (CWE-916-WEAK-HASH, CWE-1321-PROTO-POLLUTION, CWE-1333-REDOS, CWE-601-OPEN-REDIRECT, CWE-1336-SSTI) with checkability=advisory but NO shipped CveFingerprint needle exists for any of them in _cve_fingerprint.py's CVE_FINGERPRINTS catalog, and no WeaknessEntry row exists in any of CWE_CATALOG/CWE_TOP_25_CATALOG/QUALITY_CATALOG (_threat.py) for these CWE ids either (confirmed: the only CWE-916/601/1321/1333/1336 rows in weaknesses.yaml are CWE-1000-registry rows, source_doc=docs/design/cwe-1000-registry.md, disposition=out-of-scope, a different framework than cve-fingerprint) -- so check_fingerprint_catalog_drift (CVEFP001) would correctly reject a fingerprint naming any of these cwe_id today. _cve_fingerprint.py's own module docstring already discloses the CWE-916 half of this gap and names it as needing a follow-up ticket adding the missing WeaknessEntry row before a fingerprint can honestly join it. This ticket: add the missing WeaknessEntry rows (or route through an existing one if a real match is found on closer research) plus a real, independently-verified CVE-cited needle per CWE, in a scanned language (python/typescript/rust/c-cpp), following the same pattern FP-TLS-VERIFY-*/FP-XXE-PARSE-* used for the CWE-295/CWE-611 disclosed-gap precedent.
