@@ -3669,7 +3669,7 @@ Root-cause analysis (user, 2026-07-20: "why do I have to keep making these reque
 id: T-0425
 title: Split TODO001 into per-failure-mode rule ids (bare-untracked vs dangling-frob:todo-ticket);
   align with frob's own one-id-per-mode convention
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-07-20'
@@ -3679,7 +3679,14 @@ scope:
 - src/frob/gates/
 - frob.toml
 - docs/modules/gates.md
-scope_changes: []
+- tests/test_gates.py
+scope_changes:
+- op: add
+  glob: tests/test_gates.py
+  reason: existing TODO001 edges test must be updated to TODO002 after the rule split,
+    or it silently breaks
+  actor: logan
+  at: '2026-07-21'
 evidence: []
 attachments: []
 acceptance: []
