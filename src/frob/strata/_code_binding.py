@@ -107,10 +107,20 @@ def _sorted_py_files(root: Path, exclude_globs: tuple[str, ...] = ()) -> list[Pa
     filter ever runs -- measured as the dominant cost of the `sys` gate's
     SYS003 check. `os.walk` with `_should_prune_dir` pruning `dirnames` in
     place (the same helper `frob.graph._walk_source_files` already uses)
-    skips descending into those directories at all, and returns the exact
-    same final file set `_bind_all_files`'s post-filter used to converge
-    on -- only the number of `os.scandir` calls changes, not which files
-    are ultimately bound."""
+    skips descending into those directories at all.
+
+    T-0416: `_should_prune_dir` additionally prunes nested git checkouts
+    (`_is_nested_worktree`, config-independent -- see `frob.excludes`),
+    which the OLD `rglob` + `_bind_all_files` post-filter never checked
+    (that filter only applied `is_skipped_dir`/`is_excluded`). For a repo
+    whose `[graph] exclude` globs already cover every nested checkout
+    (this repo: `.claude/worktrees/**`) the two walks converge on the same
+    final file set. For a repo with a nested `.git` checkout NOT covered
+    by any exclude glob, this walk now additionally omits it -- an
+    intentional tightening (a nested git checkout is never this repo's
+    own source, T-0239), not a bug, but NOT "the exact same final file
+    set" unconditionally; do not assume file-set parity with the old
+    behavior for such a repo."""
     found = [
         p for p in walk_pruned(root, exclude_globs=exclude_globs) if p.suffix == ".py"
     ]
