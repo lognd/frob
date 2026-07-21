@@ -7611,7 +7611,7 @@ docs/audits/strata.md G2+G7 (HIGH/MEDIUM), from T-0401. _mitigation_is_chokepoin
 ```yaml
 id: T-draft-227b71a9
 title: 'DOC004 console-tier burndown: anchor or waive the 59 unbound fences'
-state: in-progress
+state: done
 kind: docs
 origin: agent
 created: '2026-07-21'
@@ -7619,7 +7619,8 @@ blocked_by: []
 parent: null
 scope: []
 scope_changes: []
-evidence: []
+evidence:
+- cmd:uv run frob check --only docblocks exit=0 sha256=475855667bb8
 attachments: []
 acceptance: []
 threat: null
